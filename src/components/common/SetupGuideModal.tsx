@@ -14,6 +14,7 @@ import {
   Monitor,
   Server,
   FolderGit2,
+  Globe,
 } from 'lucide-react';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { SampleProject } from '@/types/sample.types';
@@ -26,7 +27,7 @@ export interface SetupGuideModalProps {
 }
 
 type OsType = 'macos' | 'windows' | 'linux';
-type GuideTab = 'uv' | 'pyenv' | 'ide' | 'troubleshoot' | 'project';
+type GuideTab = 'uv' | 'pyenv' | 'global-vs-local' | 'ide' | 'troubleshoot' | 'project';
 
 const CopyCommandBlock: React.FC<{
   title: string;
@@ -201,6 +202,19 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('global-vs-local')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                activeTab === 'global-vs-local'
+                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                  : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+              )}
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>3. Global vs. Từng Dự án</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('ide')}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
@@ -210,7 +224,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               )}
             >
               <Code2 className="h-3.5 w-3.5" />
-              <span>3. Cấu hình VS Code / Cursor</span>
+              <span>4. Cấu hình VS Code / Cursor</span>
             </button>
             <button
               type="button"
@@ -223,7 +237,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               )}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>4. Sửa Lỗi Thường gặp</span>
+              <span>5. Sửa Lỗi Thường gặp</span>
             </button>
           </div>
 
@@ -578,6 +592,213 @@ pip install -r requirements.txt
 # 5. Khi muốn thoát khỏi môi trường ảo:
 deactivate`
                 }
+              />
+            </div>
+          )}
+
+          {/* TAB 2.5: GLOBAL VS PER-PROJECT (LOCAL) WORKFLOW */}
+          {activeTab === 'global-vs-local' && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
+                <h3 className="text-sm font-bold text-emerald-300">
+                  Nguyên tắc Vàng phân định Global (Toàn máy) vs. Local (Từng Dự án)
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Trong Python, bạn cần tách bạch rõ <strong>2 thứ</strong>:{' '}
+                  <strong>(1) Phiên bản trình thông dịch Python</strong> (3.10, 3.11, 3.12, 3.13) và{' '}
+                  <strong>(2) Các gói thư viện / công cụ</strong>:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
+                    <div className="text-xs font-bold text-sky-300">
+                      🌐 Khi nào dùng GLOBAL (Toàn máy)?
+                    </div>
+                    <ul className="mt-1.5 space-y-1 text-xs text-slate-300">
+                      <li>
+                        • Đặt 1 <strong>phiên bản Python mặc định</strong> (VD: Python 3.12) để khi gõ <code>python</code> ở ngoài thư mục dự án (như Desktop) vẫn chạy được.
+                      </li>
+                      <li>
+                        • Cài các <strong>công cụ dòng lệnh độc lập (CLI Tools)</strong> như <code>ruff</code>, <code>httpie</code>, <code>yt-dlp</code>, <code>poetry</code> bằng <code>uv tool install</code> (hoặc <code>pipx</code>).
+                      </li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
+                    <div className="text-xs font-bold text-emerald-300">
+                      📁 Khi nào dùng LOCAL (Cho từng Dự án)?
+                    </div>
+                    <ul className="mt-1.5 space-y-1 text-xs text-slate-300">
+                      <li>
+                        • Khi <strong>Dự án A cần Python 3.10</strong> nhưng <strong>Dự án B cần Python 3.12</strong>: ghim vào file <code>.python-version</code> ở gốc từng dự án!
+                      </li>
+                      <li>
+                        • <strong>100% thư viện code</strong> (<code>fastapi</code>, <code>pandas</code>, <code>sqlalchemy</code>, <code>pytest</code>) <strong>BẮT BUỘC cài vào <code>.venv/</code> riêng của từng dự án</strong>.
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparison Table: uv vs pyenv */}
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-300">
+                      <th className="py-2.5 px-3.5 font-bold">Mục đích sử dụng</th>
+                      <th className="py-2.5 px-3.5 font-bold text-emerald-400">
+                        Với `uv` (Hiện đại - Khuyên dùng)
+                      </th>
+                      <th className="py-2.5 px-3.5 font-bold text-sky-400">
+                        Với `pyenv` + `venv` + `pip` (Truyền thống)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/70 font-mono text-[11px]">
+                    <tr>
+                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
+                        1. Đặt Python mặc định toàn máy (Global)
+                      </td>
+                      <td className="py-2.5 px-3.5 text-emerald-300">
+                        uv python install 3.12 --default
+                        <br />
+                        uv python pin --global 3.12
+                      </td>
+                      <td className="py-2.5 px-3.5 text-sky-300">
+                        pyenv install 3.12.7
+                        <br />
+                        pyenv global 3.12.7
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
+                        2. Ghim Python riêng cho 1 Dự án (Local .python-version)
+                      </td>
+                      <td className="py-2.5 px-3.5 text-emerald-300">
+                        cd my-project
+                        <br />
+                        uv python pin 3.10
+                      </td>
+                      <td className="py-2.5 px-3.5 text-sky-300">
+                        cd my-project
+                        <br />
+                        pyenv local 3.10.15
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
+                        3. Chạy thử 1 lần với bản Python khác (Tạm thời)
+                      </td>
+                      <td className="py-2.5 px-3.5 text-emerald-300">
+                        uv run --python 3.13 main.py
+                      </td>
+                      <td className="py-2.5 px-3.5 text-sky-300">
+                        pyenv shell 3.13.0 && python main.py
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
+                        4. Cài thư viện cho Dự án (Vào .venv của dự án)
+                      </td>
+                      <td className="py-2.5 px-3.5 text-emerald-300">
+                        uv add fastapi pydantic
+                        <br />
+                        uv add --dev pytest
+                      </td>
+                      <td className="py-2.5 px-3.5 text-sky-300">
+                        python -m venv .venv && source .venv/bin/activate
+                        <br />
+                        pip install fastapi pydantic pytest
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
+                        5. Cài CLI Tool dùng mọi nơi trên máy (Global Tool)
+                      </td>
+                      <td className="py-2.5 px-3.5 text-emerald-300">
+                        uv tool install ruff
+                        <br />
+                        uvx ruff check .
+                      </td>
+                      <td className="py-2.5 px-3.5 text-sky-300">
+                        pipx install ruff
+                        <br />
+                        pipx run ruff check .
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <CopyCommandBlock
+                title="Kịch bản thực tế 1: Dùng 'uv' quản lý Global vs. Nhiều Dự án khác phiên bản Python"
+                badge="uv Global + Per-Project"
+                description="Xem cách máy bạn mặc định chạy Python 3.12, nhưng tự động chuyển sang Python 3.10 khi vào dự án AI cũ:"
+                code={`# 1. [GLOBAL] Đặt Python 3.12 làm bản mặc định cho toàn máy tính:
+uv python install 3.10 3.12 3.13
+uv python install 3.12 --default
+uv python pin --global 3.12
+
+# Kiểm tra ở thư mục bất kỳ ngoài dự án (ví dụ ~/Desktop):
+python --version
+# -> Python 3.12.x (Bản Global)
+
+# =====================================================================
+# 2. [PER-PROJECT] Dự án A (Legacy AI) bắt buộc phải dùng Python 3.10:
+# =====================================================================
+mkdir legacy-ai-app && cd legacy-ai-app
+uv init
+uv python pin 3.10          # Tạo file .python-version ghi '3.10' trong thư mục này
+uv add numpy                # Tự động tạo .venv bằng Python 3.10 và cài numpy!
+uv run python --version     # -> Python 3.10.x (Chỉ áp dụng cho legacy-ai-app)
+
+# =====================================================================
+# 3. [PER-PROJECT] Dự án B (Backend Mới) dùng Python 3.12:
+# =====================================================================
+cd .. && mkdir modern-api && cd modern-api
+uv init
+uv python pin 3.12          # Tạo file .python-version ghi '3.12'
+uv add fastapi uvicorn      # Tạo .venv riêng bằng Python 3.12
+uv run python --version     # -> Python 3.12.x
+
+# =====================================================================
+# 4. [GLOBAL CLI TOOLS] Cài công cụ dùng chung cho toàn máy (không làm bẩn dự án):
+# =====================================================================
+uv tool install ruff        # Cài ruff toàn cục trong môi trường cô lập riêng
+uv tool install httpie      # Cài công cụ test API 'http' toàn cục
+uvx black --version         # Chạy thử 1 công cụ bất kỳ không cần cài (giống npx)`}
+              />
+
+              <CopyCommandBlock
+                title="Kịch bản thực tế 2: Dùng 'pyenv' + 'venv' quản lý Global vs. Từng Dự án"
+                badge="pyenv Global vs Local"
+                description="Với pyenv, lệnh 'pyenv global' đặt mặc định toàn máy, còn 'pyenv local' ghim phiên bản cho riêng thư mục dự án:"
+                code={`# 1. [GLOBAL] Cài 2 phiên bản Python và đặt 3.12.7 làm mặc định toàn máy:
+pyenv install 3.10.15
+pyenv install 3.12.7
+pyenv global 3.12.7         # Ghi vào ~/.pyenv/version
+
+# Gõ ở bất kỳ đâu trên máy:
+python --version            # -> Python 3.12.7
+
+# =====================================================================
+# 2. [PER-PROJECT] Vào thư mục Dự án A cần Python 3.10.15:
+# =====================================================================
+mkdir project-a && cd project-a
+pyenv local 3.10.15         # Tạo file .python-version tại project-a/
+python --version            # -> Tự động đổi sang Python 3.10.15!
+
+# Tạo môi trường ảo .venv cho Project A (sẽ mang phiên bản 3.10.15):
+python -m venv .venv
+${
+  selectedOs === 'windows'
+    ? '.venv\\Scripts\\Activate.ps1'
+    : 'source .venv/bin/activate'
+}
+pip install requests
+deactivate
+
+# Khi bạn 'cd ..' ra ngoài thư mục project-a:
+cd ..
+python --version            # -> Tự động quay về bản Global Python 3.12.7!`}
               />
             </div>
           )}

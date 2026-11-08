@@ -129,6 +129,43 @@ export const STAGE_0_ZERO_FUNDAMENTAL_LESSONS: LessonTopic[] = [
         caption:
           'Người mới bắt đầu: Hãy cài và dùng **Cách 1 (`uv`)** ngay hôm nay, đồng thời đọc hiểu **Cách 2 (`pyenv` + `venv` + `pip`)** để đọc tài liệu trên mạng không bị bỡ ngỡ.',
       },
+      {
+        id: 'diag-s0-global-vs-local-hierarchy',
+        title: 'Phân tầng Global (Toàn máy) vs. Local (Từng Dự án) với `uv` và `pyenv`',
+        subtitle: 'Hiểu rõ cái gì đặt Global toàn máy, cái gì bắt buộc đặt riêng ở từng thư mục dự án',
+        type: 'comparison-boxes',
+        nodes: [
+          {
+            id: 'scope-global-py',
+            badge: 'Tầng 1 • Global Python',
+            title: 'Phiên bản Python Mặc định Toàn máy',
+            subtitle: 'uv python pin --global 3.12 | pyenv global 3.12.7',
+            detail:
+              'Áp dụng khi bạn mở Terminal ở ngoài thư mục dự án (như `~/Desktop`). Chỉ dùng để chạy script lẻ hoặc lệnh kiểm tra nhanh. Lưu tại `~/.config/uv/.python-version` hoặc `~/.pyenv/version`.',
+            highlightColor: 'sky',
+          },
+          {
+            id: 'scope-local-project',
+            badge: 'Tầng 2 • Per-Project (Ưu tiên cao hơn)',
+            title: 'Phiên bản Python & .venv Riêng Từng Dự án',
+            subtitle: 'uv python pin 3.10 | pyenv local 3.10.15 + .venv/',
+            detail:
+              'Mỗi dự án có file `.python-version` và thư mục `.venv/` riêng. Khi bạn `cd` vào dự án A, máy tự động chuyển sang Python 3.10; khi `cd` sang dự án B, máy tự động chuyển sang Python 3.12! Toàn bộ thư viện (`fastapi`, `pandas`) cài vào `.venv/` ở tầng này.',
+            highlightColor: 'emerald',
+          },
+          {
+            id: 'scope-global-tools',
+            badge: 'Tầng 3 • Global CLI Tools',
+            title: 'Công cụ CLI Dùng Chung Toàn máy (uv tool / pipx)',
+            subtitle: 'uv tool install ruff | uvx <tool> | pipx install',
+            detail:
+              'Với các công cụ dòng lệnh độc lập (`ruff`, `httpie`, `yt-dlp`, `poetry`), KHÔNG dùng `pip install` toàn cục mà dùng `uv tool install <tên>` (hoặc `uvx`). Mỗi tool được tự động bọc trong một `.venv` ẩn riêng biệt tại `~/.local/share/uv/tools/`.',
+            highlightColor: 'violet',
+          },
+        ],
+        caption:
+          'Thứ tự ưu tiên khi bạn gõ lệnh: Cờ `--python` tạm thời > Môi trường `.venv` đang mở > File `.python-version` của dự án (Local) > Cấu hình Global toàn máy.',
+      },
     ],
     codeExamples: [
       {
@@ -247,6 +284,53 @@ export const STAGE_0_ZERO_FUNDAMENTAL_LESSONS: LessonTopic[] = [
           { line: 31, explanation: '`python -m venv .venv` dùng module `venv` có sẵn của Python để tạo thư mục `.venv/`.' },
           { line: 34, explanation: 'Sau khi chạy `source .venv/bin/activate`, mọi lệnh `python` và `pip` đều trỏ vào bên trong `.venv/`, hoàn toàn an toàn!' },
           { line: 40, explanation: '`pip freeze > requirements.txt` ghi toàn bộ tên và phiên bản thư viện hiện tại ra file để đồng nghiệp cài lại bằng `pip install -r requirements.txt`.' },
+        ],
+      },
+      {
+        id: 'ex-s0-0-global-vs-per-project',
+        title: 'Thực chiến: Quản lý Global (Toàn máy) vs. Per-Project (Từng Dự án) với `uv` và `pyenv`',
+        description: 'Cách chạy song song Dự án A (Python 3.10) và Dự án B (Python 3.12) trên cùng 1 máy tính và cài CLI tool toàn cục đúng chuẩn.',
+        code: `# ============================================================================
+# 1. CẤU HÌNH GLOBAL (MẶC ĐỊNH TOÀN MÁY KHI ĐỨNG NGOÀI DỰ ÁN)
+# ============================================================================
+# 👉 Với uv:
+# $ uv python install 3.10 3.12 3.13
+# $ uv python install 3.12 --default      # Đưa python 3.12 vào PATH mặc định
+# $ uv python pin --global 3.12           # Ghim 3.12 làm bản Global
+
+# 👉 Với pyenv:
+# $ pyenv install 3.10.15 && pyenv install 3.12.7
+# $ pyenv global 3.12.7                   # Ghim 3.12.7 làm bản Global
+
+# ============================================================================
+# 2. CẤU HÌNH CHO TỪNG DỰ ÁN RIÊNG BIỆT (LOCAL / PER-PROJECT)
+# ============================================================================
+# --- DỰ ÁN 1: Hệ thống AI cũ yêu cầu đúng Python 3.10 ---
+# $ mkdir ai-legacy && cd ai-legacy
+# $ uv init && uv python pin 3.10         # (Hoặc: pyenv local 3.10.15)
+# -> Sinh ra file .python-version chứa "3.10" ngay trong ai-legacy/
+# $ uv add numpy                          # Tự tạo ai-legacy/.venv (Python 3.10)
+# $ uv run python --version               # -> Python 3.10.15
+
+# --- DỰ ÁN 2: Hệ thống Backend FastAPI mới dùng Python 3.12 ---
+# $ cd .. && mkdir backend-api && cd backend-api
+# $ uv init && uv python pin 3.12         # (Hoặc: pyenv local 3.12.7)
+# -> Sinh ra file .python-version chứa "3.12" ngay trong backend-api/
+# $ uv add fastapi uvicorn                # Tự tạo backend-api/.venv (Python 3.12)
+# $ uv run python --version               # -> Python 3.12.7
+
+# ============================================================================
+# 3. CÀI CÔNG CỤ DÒNG LỆNH GLOBAL (GLOBAL CLI TOOLS) KHÔNG LÀM BẨN MÁY
+# ============================================================================
+# $ uv tool install ruff                  # Cài ruff dùng ở mọi thư mục trên máy
+# $ uv tool install httpie                # Cài lệnh 'http' để gọi thử API
+# $ uvx cookiecutter gh:tiangolo/full-stack-fastapi-template  # Chạy 1 lần như npx!`,
+        output: `ai-legacy   -> Python 3.10.15 (.venv riêng)\nbackend-api -> Python 3.12.7  (.venv riêng)\nGlobal tool -> ruff installed in isolated environment`,
+        annotations: [
+          { line: 6, explanation: '`uv python install 3.12 --default` và `uv python pin --global 3.12` thiết lập Python 3.12 làm bản mặc định khi bạn ở ngoài các thư mục dự án.' },
+          { line: 18, explanation: 'Trong thư mục `ai-legacy`, lệnh `uv python pin 3.10` (hoặc `pyenv local 3.10.15`) tạo file `.python-version` ghi đè cấu hình Global cho riêng thư mục này.' },
+          { line: 25, explanation: 'Khi chuyển sang thư mục `backend-api`, file `.python-version` tại đây tự động chuyển môi trường sang Python 3.12 mà không ảnh hưởng gì tới `ai-legacy`.' },
+          { line: 32, explanation: '`uv tool install` (hoặc `pipx install`) cài các ứng dụng CLI dùng chung toàn máy vào các môi trường cô lập riêng.' },
         ],
       },
       {
