@@ -123,42 +123,57 @@ export const Sidebar: React.FC = () => {
               </div>
               <div className="min-w-0">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                  Bắt đầu cho Người mới
+                  Cẩm nang Quản lý Dự án (2 Cách)
                 </div>
                 <div className="text-xs font-bold text-white truncate">
-                  Cài đặt Python, uv / pyenv & IDE
+                  Cách 1 (uv) & Cách 2 (pyenv/pip/Poetry)
                 </div>
               </div>
             </div>
           </div>
           <p className="text-[11px] text-slate-300 leading-relaxed">
-            Chưa cài Python hoặc chưa biết dùng <code className="text-emerald-300 font-mono">uv</code>,{' '}
-            <code className="text-emerald-300 font-mono">pyenv</code>,{' '}
-            <code className="text-emerald-300 font-mono">.venv</code> trên macOS / Windows / Linux?
+            Hướng dẫn quản lý Version, Source Code & Dependency bằng{' '}
+            <code className="text-emerald-300 font-mono">uv</code> hoặc bằng{' '}
+            <code className="text-sky-300 font-mono">pyenv + venv + pip / Poetry / Pipenv</code>:
           </p>
           <div className="grid grid-cols-2 gap-1.5 pt-0.5">
             <button
               type="button"
-              onClick={() => setSetupGuideOpen(true)}
-              className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer"
+              onClick={() => selectLesson('s0-install-setup-uv-pyenv-ide')}
+              className={cn(
+                'inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-bold transition-colors cursor-pointer',
+                selectedLessonId === 's0-install-setup-uv-pyenv-ide'
+                  ? 'border-emerald-500/60 bg-emerald-500/25 text-emerald-300'
+                  : 'border-slate-700 bg-slate-800/80 text-slate-200 hover:border-emerald-500/40'
+              )}
             >
-              <Wrench className="h-3 w-3 shrink-0" />
-              <span>Mở Cẩm nang</span>
+              <BookOpen className="h-3 w-3 text-emerald-400 shrink-0" />
+              <span>1.0A: Dùng uv</span>
             </button>
             <button
               type="button"
-              onClick={() => selectLesson('s0-install-setup-uv-pyenv-ide')}
+              onClick={() =>
+                selectLesson('s0-workflow-pyenv-venv-poetry-pipenv')
+              }
               className={cn(
-                'inline-flex items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors cursor-pointer',
-                selectedLessonId === 's0-install-setup-uv-pyenv-ide'
-                  ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
-                  : 'border-slate-700 bg-slate-800/80 text-slate-200 hover:border-slate-600'
+                'inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-bold transition-colors cursor-pointer',
+                selectedLessonId === 's0-workflow-pyenv-venv-poetry-pipenv'
+                  ? 'border-sky-500/60 bg-sky-500/25 text-sky-300'
+                  : 'border-slate-700 bg-slate-800/80 text-slate-200 hover:border-sky-500/40'
               )}
             >
-              <BookOpen className="h-3 w-3 shrink-0" />
-              <span>Bài 1.0 Chi tiết</span>
+              <BookOpen className="h-3 w-3 text-sky-400 shrink-0" />
+              <span>1.0B: pyenv/Poetry</span>
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => setSetupGuideOpen(true)}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer"
+          >
+            <Wrench className="h-3 w-3 shrink-0" />
+            <span>Mở Cẩm nang Tương tác (Đủ 2 Phương pháp)</span>
+          </button>
         </div>
 
         {/* View 1: Grouped by 7 Stages */}

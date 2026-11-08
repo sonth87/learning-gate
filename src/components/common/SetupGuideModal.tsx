@@ -14,7 +14,8 @@ import {
   Monitor,
   Server,
   FolderGit2,
-  Globe,
+  Layers,
+  Package,
 } from 'lucide-react';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { SampleProject } from '@/types/sample.types';
@@ -27,7 +28,8 @@ export interface SetupGuideModalProps {
 }
 
 type OsType = 'macos' | 'windows' | 'linux';
-type GuideTab = 'uv' | 'pyenv' | 'global-vs-local' | 'ide' | 'troubleshoot' | 'project';
+type GuideTab = 'uv-workflow' | 'non-uv-workflow' | 'ide' | 'troubleshoot' | 'project';
+type NonUvStack = 'pyenv-venv-pip' | 'poetry' | 'pipenv';
 
 const CopyCommandBlock: React.FC<{
   title: string;
@@ -95,15 +97,20 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
   const { selectLesson } = useNavigationStore();
   const [selectedOs, setSelectedOs] = useState<OsType>('macos');
   const [activeTab, setActiveTab] = useState<GuideTab>(
-    sampleProject ? 'project' : 'uv'
+    sampleProject ? 'project' : 'uv-workflow'
   );
+  const [nonUvStack, setNonUvStack] = useState<NonUvStack>('pyenv-venv-pip');
 
   if (!isOpen) return null;
 
-  const handleOpenFullLesson = () => {
-    selectLesson('s0-install-setup-uv-pyenv-ide');
+  const handleOpenLesson = (lessonId: string) => {
+    selectLesson(lessonId);
     onClose();
   };
+
+  const baseCmd = (
+    sampleProject?.interactiveCommands[0]?.command || 'uv run python main.py'
+  ).replace(/^uv run\s+/, '');
 
   return (
     <div
@@ -112,7 +119,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[90vh] w-full max-w-5xl flex-col rounded-2xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden"
+        className="flex max-h-[92vh] w-full max-w-5xl flex-col rounded-2xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden"
       >
         {/* Top Modal Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/90 px-4 py-3.5 sm:px-6">
@@ -123,26 +130,38 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-extrabold text-white truncate">
-                  Cẩm nang Cài đặt Python, uv / pyenv, .venv & Cấu hình IDE
+                  2 Phương pháp Quản lý Dự án Python Toàn diện (Dùng uv & Không dùng uv)
                 </h2>
                 <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
-                  Dành cho Người mới Bắt đầu
+                  Version • Source Code • Dependency • Lockfile
                 </span>
               </div>
               <p className="text-xs text-slate-400 truncate">
-                Hướng dẫn từng bước từ máy trắng tinh đến khi tạo dự án, quản lý phiên bản Python và chạy code thực tế
+                Chọn Phương pháp 1 (Quản lý trọn gói bằng uv) hoặc Phương pháp 2 (Quản lý bằng pyenv, venv/virtualenv, pip, Poetry, Pipenv)
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={handleOpenFullLesson}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+              onClick={() => handleOpenLesson('s0-install-setup-uv-pyenv-ide')}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+              title="Mở Bài 1.0A: Quản lý Dự án bằng uv"
             >
               <BookOpen className="h-3.5 w-3.5" />
-              <span>Đọc Bài 1.0 Chi tiết</span>
+              <span>Bài 1.0A (uv)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                handleOpenLesson('s0-workflow-pyenv-venv-poetry-pipenv')
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl bg-sky-500/15 border border-sky-500/40 px-2.5 py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-colors cursor-pointer"
+              title="Mở Bài 1.0B: Quản lý Dự án bằng pyenv / pip / Poetry / Pipenv"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>Bài 1.0B (pyenv/Poetry/pip)</span>
             </button>
             <button
               type="button"
@@ -155,9 +174,8 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
           </div>
         </div>
 
-        {/* OS Selector + Guide Tabs Bar */}
+        {/* OS Selector + Main Workflow Tabs Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-800/80 bg-slate-900/40 px-4 py-2.5 sm:px-6">
-          {/* Guide Section Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
             {sampleProject && (
               <button
@@ -171,47 +189,36 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
                 )}
               >
                 <FolderGit2 className="h-3.5 w-3.5" />
-                <span>Chạy Dự án #{sampleProject.number} trên Máy thật</span>
+                <span>Chạy Dự án #{sampleProject.number} (2 Cách)</span>
               </button>
             )}
             <button
               type="button"
-              onClick={() => setActiveTab('uv')}
+              onClick={() => setActiveTab('uv-workflow')}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
-                activeTab === 'uv'
+                activeTab === 'uv-workflow'
                   ? 'bg-emerald-500 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span>1. Cách Hiện đại: uv (Khuyên dùng)</span>
+              <span>Phương pháp 1: Quản lý Dự án bằng `uv`</span>
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('pyenv')}
+              onClick={() => setActiveTab('non-uv-workflow')}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
-                activeTab === 'pyenv'
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                activeTab === 'non-uv-workflow'
+                  ? 'bg-sky-400 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Terminal className="h-3.5 w-3.5" />
-              <span>2. Cách Truyền thống: pyenv + venv + pip</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('global-vs-local')}
-              className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
-                activeTab === 'global-vs-local'
-                  ? 'bg-emerald-500 text-slate-950 shadow-sm'
-                  : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
-              )}
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span>3. Global vs. Từng Dự án</span>
+              <Layers className="h-3.5 w-3.5" />
+              <span>
+                Phương pháp 2: Không dùng `uv` (pyenv / venv / pip / Poetry / Pipenv)
+              </span>
             </button>
             <button
               type="button"
@@ -224,7 +231,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               )}
             >
               <Code2 className="h-3.5 w-3.5" />
-              <span>4. Cấu hình VS Code / Cursor</span>
+              <span>Cấu hình VS Code / Cursor</span>
             </button>
             <button
               type="button"
@@ -237,7 +244,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               )}
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>5. Sửa Lỗi Thường gặp</span>
+              <span>Sửa Lỗi Thường gặp</span>
             </button>
           </div>
 
@@ -290,516 +297,540 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-          {/* TAB 0: SAMPLE PROJECT LOCAL RUN GUIDE */}
+          {/* TAB 0: SAMPLE PROJECT LOCAL RUN GUIDE (2 COMPLETE WAYS) */}
           {activeTab === 'project' && sampleProject && (
             <div className="space-y-4">
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <h3 className="text-sm font-bold text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
                   <span>
-                    Hướng dẫn dựng & chạy Dự án #{sampleProject.number}:{' '}
-                    {sampleProject.title} trên máy của bạn
+                    Hướng dẫn Quản lý & Chạy Dự án #{sampleProject.number}:{' '}
+                    {sampleProject.title} ({sampleProject.slug}/)
                   </span>
                 </h3>
                 <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                  Dự án này gồm <strong>{sampleProject.files.length} file</strong>{' '}
-                  trong thư mục gốc{' '}
-                  <code className="text-emerald-300 font-mono">
-                    {sampleProject.slug}/
-                  </code>
-                  . Bạn có thể tạo nhanh cấu trúc thư mục và chạy ngay bằng{' '}
-                  <strong>uv</strong> (Cách A) hoặc <strong>venv + pip</strong>{' '}
-                  (Cách B) theo hệ điều hành <strong>{selectedOs.toUpperCase()}</strong>:
+                  Dưới đây là quy trình đầy đủ theo <strong>2 phương pháp độc lập</strong>{' '}
+                  trên hệ điều hành <strong>{selectedOs.toUpperCase()}</strong> để bạn chọn theo đúng công cụ mình đang dùng:
                 </p>
               </div>
 
               <CopyCommandBlock
-                title={`Cách A (Khuyên dùng): Dựng & chạy ${sampleProject.slug} bằng công cụ 'uv'`}
-                badge="Siêu tốc • Tự động cài Python & .venv"
-                description="uv sẽ tự động tải Python 3.12 (nếu máy chưa có), tạo thư mục .venv và chạy ứng dụng chuẩn xác."
+                title={`Phương pháp 1: Quản lý & chạy dự án ${sampleProject.slug} bằng 'uv'`}
+                badge="Phương pháp 1 • Dùng uv"
+                description="Dành cho người dùng uv: Quản lý từ phiên bản Python, tạo .venv, cài dependency từ pyproject.toml đến chạy ứng dụng."
                 code={
                   selectedOs === 'windows'
-                    ? `# 1. Tạo thư mục dự án và di chuyển vào trong (PowerShell)
+                    ? `# 1. Tạo thư mục dự án và ghim phiên bản Python 3.12 (PowerShell)
 mkdir ${sampleProject.slug}
 cd ${sampleProject.slug}
-
-# 2. Khởi tạo môi trường Python 3.12 và tạo .venv
 uv python install 3.12
 uv python pin 3.12
-uv venv
 
-# 3. Tạo các file theo cây thư mục bên trái (bấm nút 'Copy file' ở từng tab để dán nội dung)
-# Sau đó đồng bộ thư viện từ pyproject.toml và chạy lệnh:
+# 2. Tạo các file theo cây thư mục mẫu, sau đó đồng bộ .venv & khóa uv.lock:
 uv sync
-${sampleProject.interactiveCommands[0]?.command || 'uv run python main.py'}`
-                    : `# 1. Tạo thư mục dự án và di chuyển vào trong
+
+# 3. Thêm thư viện mới (nếu cần) và chạy ứng dụng / kiểm thử:
+# uv add <ten_thu_vien>
+# uv add --dev pytest ruff
+uv run ${baseCmd}
+uv run pytest`
+                    : `# 1. Tạo thư mục dự án và ghim phiên bản Python 3.12
 mkdir -p ${sampleProject.slug} && cd ${sampleProject.slug}
-
-# 2. Khởi tạo môi trường Python 3.12 và tạo .venv
 uv python install 3.12
 uv python pin 3.12
-uv venv
 
-# 3. Tạo các file theo cây thư mục bên trái (bấm nút 'Copy file' ở từng tab để dán nội dung)
-# Sau đó đồng bộ thư viện từ pyproject.toml và chạy lệnh:
+# 2. Tạo các file theo cây thư mục mẫu, sau đó đồng bộ .venv & khóa uv.lock:
 uv sync
-${sampleProject.interactiveCommands[0]?.command || 'uv run python main.py'}`
+
+# 3. Thêm thư viện mới (nếu cần) và chạy ứng dụng / kiểm thử:
+# uv add <ten_thu_vien>
+# uv add --dev pytest ruff
+uv run ${baseCmd}
+uv run pytest`
                 }
               />
 
               <CopyCommandBlock
-                title={`Cách B (Truyền thống): Dựng & chạy bằng 'pyenv / python -m venv' + 'pip'`}
-                badge="Chuẩn truyền thống"
+                title={`Phương pháp 2A: Quản lý & chạy dự án ${sampleProject.slug} bằng 'pyenv + venv/virtualenv + pip'`}
+                badge="Phương pháp 2A • pyenv + venv + pip"
+                description="Dành cho người không dùng uv, sử dụng bộ công cụ chuẩn pyenv + venv + pip:"
                 code={
                   selectedOs === 'windows'
-                    ? `# 1. Tạo và kích hoạt môi trường ảo .venv trên Windows PowerShell
+                    ? `# 1. Chọn phiên bản Python bằng pyenv-win và tạo môi trường ảo .venv
 mkdir ${sampleProject.slug}
 cd ${sampleProject.slug}
+pyenv local 3.12.7
 python -m venv .venv
+
+# 2. Kích hoạt môi trường ảo (.venv) trên Windows PowerShell:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .venv\\Scripts\\Activate.ps1
 
-# 2. Cài đặt gói phụ thuộc ở chế độ Editable (đọc từ pyproject.toml)
+# 3. Cài đặt source code dự án ở chế độ Editable (-e .) kèm thư viện:
 python -m pip install --upgrade pip
 pip install -e . pytest ruff
 
-# 3. Chạy ứng dụng hoặc chạy kiểm thử
-${(sampleProject.interactiveCommands[0]?.command || 'python main.py').replace(/^uv run\s+/, '')}`
-                    : `# 1. Tạo và kích hoạt môi trường ảo .venv trên ${selectedOs === 'macos' ? 'macOS' : 'Linux'}
+# 4. Chạy ứng dụng và kiểm thử trực tiếp trong (.venv):
+${baseCmd}
+pytest`
+                    : `# 1. Chọn phiên bản Python bằng pyenv và tạo môi trường ảo .venv
 mkdir -p ${sampleProject.slug} && cd ${sampleProject.slug}
+pyenv local 3.12.7
 python3 -m venv .venv
+
+# 2. Kích hoạt môi trường ảo (.venv) trên ${selectedOs === 'macos' ? 'macOS' : 'Linux'}:
 source .venv/bin/activate
 
-# 2. Cài đặt gói phụ thuộc ở chế độ Editable (đọc từ pyproject.toml)
+# 3. Cài đặt source code dự án ở chế độ Editable (-e .) kèm thư viện:
 python -m pip install --upgrade pip
 pip install -e . pytest ruff
 
-# 3. Chạy ứng dụng hoặc chạy kiểm thử
-${(sampleProject.interactiveCommands[0]?.command || 'python main.py').replace(/^uv run\s+/, '')}`
+# 4. Chạy ứng dụng và kiểm thử trực tiếp trong (.venv):
+${baseCmd}
+pytest`
                 }
+              />
+
+              <CopyCommandBlock
+                title={`Phương pháp 2B: Quản lý & chạy dự án ${sampleProject.slug} bằng 'Poetry' hoặc 'Pipenv'`}
+                badge="Phương pháp 2B • Poetry / Pipenv"
+                description="Nếu đội ngũ của bạn quản lý dự án bằng Poetry (poetry.lock) hoặc Pipenv (Pipfile.lock):"
+                code={`# === NẾU DÙNG POETRY ===
+cd ${sampleProject.slug}
+poetry config virtualenvs.in-project true
+poetry env use 3.12
+poetry install
+poetry run ${baseCmd}
+poetry run pytest
+
+# === NẾU DÙNG PIPENV ===
+cd ${sampleProject.slug}
+export PIPENV_VENV_IN_PROJECT=1
+pipenv --python 3.12
+pipenv install -e .
+pipenv install --dev pytest ruff
+pipenv run ${baseCmd}
+pipenv run pytest`}
               />
             </div>
           )}
 
-          {/* TAB 1: MODERN UV WORKFLOW */}
-          {activeTab === 'uv' && (
+          {/* ===================================================================== */}
+          {/* TAB 1: COMPLETE WORKFLOW USING UV (PHƯƠNG PHÁP 1)                     */}
+          {/* ===================================================================== */}
+          {activeTab === 'uv-workflow' && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                <h3 className="text-sm font-bold text-emerald-300">
-                  Tại sao người mới nên dùng `uv` ngay từ ngày đầu tiên?
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-1.5">
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  Phương pháp 1 • Quy trình Khép kín 100% bằng `uv`
+                </div>
+                <h3 className="text-sm sm:text-base font-extrabold text-white">
+                  Quản lý Version Python, Tổ chức Source Code, Dependency, Lockfile & Chạy Dự án bằng `uv`
                 </h3>
-                <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                  Trước đây, bạn phải cài riêng <strong>pyenv</strong> (để cài Python),{' '}
-                  <strong>venv</strong> (để tạo môi trường ảo), <strong>pip</strong> (để cài thư viện) và{' '}
-                  <strong>poetry</strong> (để khóa file lock). Ngày nay, công cụ{' '}
-                  <strong className="text-emerald-300">uv</strong> (viết bằng Rust) gộp tất cả vào{' '}
-                  <strong>1 công cụ duy nhất</strong> — kể cả khi máy bạn chưa hề cài Python,{' '}
-                  <code>uv</code> cũng tự tải Python về cho bạn trong 2 giây!
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Khi chọn phương pháp này, bạn <strong>chỉ cần cài duy nhất công cụ `uv`</strong>. Toàn bộ 5 khâu trong vòng đời dự án (tải Python, chia cấu trúc source code, tạo <code>.venv</code>, cài/khóa thư viện <code>uv.lock</code>, chạy ứng dụng & đóng gói) đều thực hiện xuyên suốt bằng các lệnh của <code>uv</code> dưới đây:
                 </p>
               </div>
 
               <CopyCommandBlock
-                title={`Bước 1: Cài đặt 'uv' lên ${
+                title={`Giai đoạn 1: Cài đặt 'uv' lên ${
                   selectedOs === 'macos'
-                    ? 'macOS (Terminal)'
+                    ? 'macOS'
                     : selectedOs === 'windows'
-                    ? 'Windows (PowerShell)'
+                    ? 'Windows PowerShell'
                     : 'Linux / WSL2'
                 }`}
-                badge="Chỉ làm 1 lần duy nhất"
-                description="Mở ứng dụng Terminal (macOS/Linux) hoặc PowerShell (Windows), copy và chạy lệnh dưới đây:"
+                badge="Bước 1/5 • Cài đặt công cụ"
                 code={
                   selectedOs === 'macos'
-                    ? `# Cách 1: Cài bằng script chính thức của Astral (Không cần quyền sudo)
+                    ? `# Cài đặt qua script chính thức (hoặc: brew install uv)
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Cách 2: Hoặc cài qua Homebrew (nếu máy Mac đã có brew)
-brew install uv
-
-# Kiểm tra phiên bản sau khi cài xong:
 uv --version`
                     : selectedOs === 'windows'
-                    ? `# Cách 1: Chạy trực tiếp trên Windows PowerShell (Không cần quyền Admin)
+                    ? `# Cài đặt trên PowerShell (hoặc: winget install --id=Astral-sh.uv -e)
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Cách 2: Hoặc cài qua WinGet (có sẵn trên Windows 10/11)
-winget install --id=Astral-sh.uv -e
-
-# Tắt mở lại PowerShell rồi kiểm tra:
 uv --version`
-                    : `# Cài đặt trực tiếp trên Ubuntu / Debian / Fedora / Arch / WSL2:
+                    : `# Cài đặt trên Linux / WSL2
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Nạp lại PATH cho phiên làm việc hiện tại và kiểm tra:
 source $HOME/.local/bin/env
 uv --version`
                 }
               />
 
               <CopyCommandBlock
-                title="Bước 2: Dùng 'uv' cài đặt Python 3.12 / 3.13 & Chuyển đổi Phiên bản"
-                badge="Thay thế hoàn toàn pyenv"
-                description="Bạn có thể cài song song nhiều phiên bản Python (3.10, 3.12, 3.13) mà không bao giờ sợ xung đột với hệ điều hành."
-                code={`# 1. Tải và cài đặt Python 3.12 (bản chuẩn ổn định nhất) và 3.13:
-uv python install 3.12 3.13
+                title="Giai đoạn 2: Quản lý Phiên bản Python (Global toàn máy & Local từng dự án)"
+                badge="Bước 2/5 • Version Management"
+                description="Dùng 'uv python' để tải nhiều bản Python về máy, đặt bản mặc định toàn máy (Global) hoặc ghim riêng cho từng dự án (Local .python-version):"
+                code={`# 1. Tải các phiên bản Python cần dùng về máy (không cần cài Python thủ công trước):
+uv python install 3.10 3.12 3.13
 
-# 2. Xem danh sách các phiên bản Python đang có trên máy:
+# 2. Xem tất cả phiên bản Python hiện có trên máy:
 uv python list
 
-# 3. Ghim (Switch) phiên bản Python cho thư mục dự án hiện tại (tạo file .python-version):
-uv python pin 3.12
+# 3. [GLOBAL] Đặt Python 3.12 làm bản mặc định toàn máy (khi đứng ngoài thư mục dự án):
+uv python install 3.12 --default
+uv python pin --global 3.12
 
-# 4. Kiểm tra phiên bản Python đang hoạt động:
-uv run python --version`}
+# 4. [PER-PROJECT] Ghim phiên bản Python riêng cho thư mục dự án hiện tại (tạo file .python-version):
+uv python pin 3.12          # Dự án hiện tại dùng 3.12
+# uv python pin 3.10        # Nếu vào dự án cũ cần Python 3.10`}
               />
 
               <CopyCommandBlock
-                title="Bước 3: Khởi tạo Dự án mới, tạo .venv, cài Thư viện & Chạy Code"
-                badge="Quy trình chuẩn hàng ngày"
-                description="Tương đương với 'npm init', 'npm install' và 'npm run' bên Node.js:"
-                code={`# 1. Tạo dự án mới tên là 'hello-python' và đi vào thư mục:
-uv init hello-python
-cd hello-python
+                title="Giai đoạn 3: Khởi tạo & Tổ chức Cấu trúc Source Code Dự án"
+                badge="Bước 3/5 • Source Code Layout"
+                description="Tùy theo loại dự án (Ứng dụng Web/Script, Thư viện/Package chuẩn src-layout, hay Monorepo nhiều dịch vụ) mà chọn cờ khởi tạo phù hợp:"
+                code={`# 👉 KIỂU 1: Tạo dự án Ứng dụng (FastAPI, Web, CLI, Data Script) với '--app':
+uv init --app my-api-service
+cd my-api-service
+# Cấu trúc sinh ra:
+# my-api-service/
+# ├── .python-version       (Ghim phiên bản Python)
+# ├── pyproject.toml        (Khai báo metadata & dependencies)
+# ├── README.md
+# └── main.py
 
-# 2. Cài đặt thư viện (uv tự động tạo thư mục .venv/ và khóa phiên bản vào uv.lock):
-uv add requests rich fastapi
-uv add --dev pytest ruff
+# 👉 KIỂU 2: Tạo dự án chuẩn Production / SDK (Cấu trúc src/ layout) với '--package':
+uv init --package my-core-sdk
+# Cấu trúc sinh ra (Khuyên dùng cho dự án nhiều file/module):
+# my-core-sdk/
+# ├── pyproject.toml
+# └── src/
+#     └── my_core_sdk/
+#         └── __init__.py`}
+              />
 
-# 3. Chạy file code Python (uv tự động dùng môi trường .venv của dự án):
-uv run python main.py
+              <CopyCommandBlock
+                title="Giai đoạn 4: Quản lý Môi trường ảo (.venv), Dependency Groups & Khóa uv.lock"
+                badge="Bước 4/5 • Dependency & Lockfile"
+                description="Cách thêm/xóa thư viện, phân nhóm thư viện (Production vs Dev/Test/Docs), khóa phiên bản và đồng bộ môi trường:"
+                code={`# 1. Thêm thư viện chạy chính thức (Production dependencies -> ghi vào [project.dependencies]):
+uv add fastapi "uvicorn[standard]" "pydantic>=2.9,<3.0"
 
-# 4. Chạy bộ kiểm thử pytest hoặc kiểm tra code với ruff:
-uv run pytest
-uv run ruff check .`}
+# 2. Thêm thư viện chỉ dùng lúc phát triển/test (--dev -> ghi vào [dependency-groups.dev]):
+uv add --dev pytest pytest-asyncio ruff mypy
+
+# 3. Thêm nhóm phụ thuộc tùy chỉnh (ví dụ nhóm docs hoặc benchmark):
+uv add --group docs mkdocs-material
+
+# 4. Gỡ bỏ một thư viện khỏi dự án:
+uv remove mypy
+
+# 5. Xem sơ đồ cây phụ thuộc (gói nào kéo theo gói nào):
+uv tree
+
+# 6. Cập nhật file khóa uv.lock (nâng cấp 1 gói hoặc toàn bộ):
+uv lock --upgrade-package fastapi
+
+# 7. Đồng bộ môi trường khi git clone dự án về máy (hoặc trên Docker Production):
+uv sync                     # Máy Dev: Cài cả gói chính + gói dev
+uv sync --frozen --no-dev   # Server Production: Cài chính xác từ uv.lock, bỏ gói dev!
+
+# 8. Xuất ra requirements.txt (nếu cần tương thích với hệ thống cũ):
+uv export --format requirements-txt --no-hashes -o requirements.txt`}
+              />
+
+              <CopyCommandBlock
+                title="Giai đoạn 5: Chạy Ứng dụng, Chạy Script Độc lập & Quản lý Công cụ CLI Global"
+                badge="Bước 5/5 • Run, Scripts & Global Tools"
+                code={`# 1. Chạy ứng dụng hoặc bộ test bên trong .venv của dự án (Không cần gõ lệnh activate!):
+uv run python -m my_core_sdk.main
+uv run uvicorn main:app --reload
+uv run pytest -v
+
+# 2. Chạy thử code với 1 phiên bản Python khác ngay lập tức:
+uv run --python 3.13 pytest
+
+# 3. Chạy 1 file script .py lẻ bên ngoài dự án cần thư viện riêng (Inline Script PEP 723):
+uv add --script backup_db.py psycopg2-binary rich
+uv run backup_db.py
+
+# 4. Cài đặt hoặc chạy công cụ CLI toàn cục (Global CLI Tools):
+uv tool install ruff        # Cài ruff dùng ở mọi nơi trên máy
+uvx httpie https://httpbin.org/get   # Chạy 1 lần không cần cài (giống npx)
+
+# 5. Đóng gói dự án thành file Wheel (.whl) và Source (.tar.gz) vào thư mục dist/:
+uv build`}
               />
             </div>
           )}
 
-          {/* TAB 2: CLASSIC PYENV + VENV + PIP */}
-          {activeTab === 'pyenv' && (
+          {/* ===================================================================== */}
+          {/* TAB 2: COMPLETE WORKFLOW WITHOUT UV (PHƯƠNG PHÁP 2)                  */}
+          {/* ===================================================================== */}
+          {activeTab === 'non-uv-workflow' && (
             <div className="space-y-4">
-              <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4">
-                <h3 className="text-sm font-bold text-sky-300">
-                  Khi nào dùng bộ công cụ truyền thống `pyenv` + `venv` + `pip`?
-                </h3>
-                <p className="mt-1 text-xs text-slate-300 leading-relaxed">
-                  Nhiều dự án lâu năm ở các công ty hoặc tài liệu hướng dẫn trên mạng sử dụng{' '}
-                  <strong>pyenv</strong> để cài phiên bản Python, kết hợp module có sẵn{' '}
-                  <code>python -m venv .venv</code> để tạo môi trường ảo và{' '}
-                  <code>pip install -r requirements.txt</code> để cài thư viện. Dưới đây là từng bước chuẩn xác nhất:
-                </p>
+              <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 space-y-3">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                    Phương pháp 2 • Dành cho Lập trình viên & Dự án KHÔNG dùng `uv`
+                  </div>
+                  <h3 className="text-sm sm:text-base font-extrabold text-white mt-0.5">
+                    Quản lý Dự án bằng `pyenv` kết hợp `venv / virtualenv + pip`, `Poetry` hoặc `Pipenv`
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-300 leading-relaxed">
+                    Khi không dùng <code>uv</code>, bạn dùng <strong>pyenv</strong> để quản lý phiên bản Python (Global/Local), và chọn <strong>1 trong 3 bộ công cụ quản lý dự án & dependency</strong> dưới đây xuyên suốt dự án của mình:
+                  </p>
+                </div>
+
+                {/* Sub-selector for the 3 Non-uv Project Management Stacks */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setNonUvStack('pyenv-venv-pip')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+                      nonUvStack === 'pyenv-venv-pip'
+                        ? 'bg-sky-400 text-slate-950 shadow-sm'
+                        : 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-sky-500/50'
+                    )}
+                  >
+                    <Terminal className="h-3.5 w-3.5" />
+                    <span>
+                      Cách 2A: pyenv + venv / virtualenv + pip (pip-tools)
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNonUvStack('poetry')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+                      nonUvStack === 'poetry'
+                        ? 'bg-sky-400 text-slate-950 shadow-sm'
+                        : 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-sky-500/50'
+                    )}
+                  >
+                    <Package className="h-3.5 w-3.5" />
+                    <span>Cách 2B: pyenv + Poetry (pyproject.toml + poetry.lock)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNonUvStack('pipenv')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+                      nonUvStack === 'pipenv'
+                        ? 'bg-sky-400 text-slate-950 shadow-sm'
+                        : 'bg-slate-900/90 text-slate-300 border border-slate-700 hover:border-sky-500/50'
+                    )}
+                  >
+                    <Layers className="h-3.5 w-3.5" />
+                    <span>Cách 2C: pyenv + Pipenv (Pipfile + Pipfile.lock)</span>
+                  </button>
+                </div>
               </div>
 
+              {/* COMMON STEP 1 FOR ALL NON-UV STACKS: PYENV VERSION MANAGEMENT */}
               <CopyCommandBlock
-                title={`Bước 1: Cài đặt & Cấu hình Shell cho 'pyenv' trên ${
-                  selectedOs === 'macos'
-                    ? 'macOS (Zsh)'
-                    : selectedOs === 'windows'
-                    ? 'Windows (pyenv-win)'
-                    : 'Ubuntu / Linux (Bash)'
-                }`}
-                badge="Lưu ý cấu hình PATH"
-                description="90% người mới cài pyenv xong nhưng gõ 'python --version' không đổi là do quên bước nạp pyenv init vào Shell!"
+                title={`Bước Nền tảng (Chung): Cài đặt & Quản lý Phiên bản Python bằng 'pyenv' (${selectedOs.toUpperCase()})`}
+                badge="Quản lý Version Python • Global & Local"
+                description="Dùng pyenv để cài đặt nhiều phiên bản Python, đặt bản mặc định toàn máy (pyenv global) và ghim bản riêng cho từng dự án (pyenv local):"
                 code={
                   selectedOs === 'macos'
-                    ? `# 1. Cài đặt pyenv qua Homebrew:
-brew update && brew install pyenv
-
-# 2. BẮT BUỘC: Thêm cấu hình pyenv vào file ~/.zshrc để Terminal nhận diện:
+                    ? `# 1. Cài đặt pyenv qua Homebrew & cấu hình vào ~/.zshrc:
+brew update && brew install pyenv pipx
+pipx ensurepath
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
 echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
 echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+source ~/.zshrc
 
-# 3. Áp dụng cấu hình ngay lập tức:
-source ~/.zshrc`
+# 2. Tải các phiên bản Python về máy:
+pyenv install 3.10.15
+pyenv install 3.12.7
+
+# 3. Đặt bản mặc định toàn máy (GLOBAL) & ghim bản riêng cho dự án (LOCAL):
+pyenv global 3.12.7                 # Mặc định toàn máy dùng 3.12.7
+cd /duong/dan/du-an && pyenv local 3.12.7   # Tạo file .python-version trong dự án`
                     : selectedOs === 'windows'
                     ? `# 1. Cài đặt pyenv-win trên Windows PowerShell:
 Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"
 &"./install-pyenv-win.ps1"
 
-# 2. Tắt và mở lại cửa sổ PowerShell, sau đó kiểm tra:
-pyenv --version`
-                    : `# 1. Cài các gói thư viện biên dịch cần thiết (Ubuntu/Debian) và cài pyenv:
-sudo apt update && sudo apt install -y build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl git libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+# 2. Tải phiên bản Python và đặt Global / Local cho dự án:
+pyenv install 3.12.7
+pyenv global 3.12.7                 # Mặc định toàn máy
+cd C:\\du-an && pyenv local 3.12.7   # Tạo file .python-version cho dự án`
+                    : `# 1. Cài đặt pyenv trên Ubuntu / Debian / Linux & cấu hình ~/.bashrc:
 curl https://pyenv.run | bash
-
-# 2. Thêm cấu hình vào ~/.bashrc:
 echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
 echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(pyenv init -)"' >> ~/.bashrc
-source ~/.bashrc`
+source ~/.bashrc
+
+# 2. Tải phiên bản Python và đặt Global / Local cho dự án:
+pyenv install 3.12.7
+pyenv global 3.12.7                 # Mặc định toàn máy
+cd /duong/dan/du-an && pyenv local 3.12.7   # Tạo file .python-version cho dự án`
                 }
               />
 
-              <CopyCommandBlock
-                title="Bước 2: Tải Python bằng 'pyenv' và thiết lập phiên bản Global / Local"
-                badge="Quản lý đa phiên bản"
-                code={`# 1. Tải phiên bản Python 3.12.7 về máy:
-pyenv install 3.12.7
-
-# 2. Đặt Python 3.12.7 làm bản mặc định cho toàn máy tính:
-pyenv global 3.12.7
-
-# 3. Hoặc ghim phiên bản riêng cho thư mục dự án hiện tại (tạo file .python-version):
+              {/* STACK 2A: PYENV + VENV / VIRTUALENV + PIP + PIP-TOOLS */}
+              {nonUvStack === 'pyenv-venv-pip' && (
+                <div className="space-y-4">
+                  <CopyCommandBlock
+                    title="Cách 2A — Giai đoạn 1: Tổ chức Source Code & Tạo Môi trường ảo bằng 'venv' hoặc 'virtualenv'"
+                    badge="venv / virtualenv"
+                    description="Sau khi đã ghim phiên bản Python bằng 'pyenv local 3.12.7', tạo thư mục .venv ngay trong dự án và kích hoạt:"
+                    code={
+                      selectedOs === 'windows'
+                        ? `# 1. Tạo cấu trúc thư mục dự án chuẩn:
+mkdir my-service, my-service\\src, my-service\\src\\my_service, my-service\\tests
+cd my-service
 pyenv local 3.12.7
 
-# 4. Kiểm tra danh sách các bản Python đã cài:
-pyenv versions
-python --version`}
-              />
-
-              <CopyCommandBlock
-                title={`Bước 3: Tạo Môi trường ảo '.venv', Kích hoạt (Activate) & Cài gói bằng 'pip'`}
-                badge={
-                  selectedOs === 'windows'
-                    ? 'Lệnh chuẩn Windows'
-                    : 'Lệnh chuẩn macOS / Linux'
-                }
-                description="Luôn kích hoạt .venv (để đầu dòng lệnh hiện chữ (.venv)) trước khi gõ pip install!"
-                code={
-                  selectedOs === 'windows'
-                    ? `# 1. Tạo thư mục môi trường ảo '.venv' trong thư mục dự án:
+# 2. Tạo môi trường ảo '.venv' (Cách 1: dùng module venv có sẵn):
 python -m venv .venv
+# (Hoặc Cách 2: dùng công cụ 'virtualenv' nếu muốn nhanh hơn & chọn rõ bản Python):
+# pip install virtualenv && virtualenv -p python3.12 .venv
 
-# 2. Cấp quyền chạy script (chỉ cần chạy 1 lần trên Windows) & Kích hoạt .venv:
+# 3. BẮT BUỘC: Kích hoạt môi trường ảo (.venv) trước khi làm việc:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 .venv\\Scripts\\Activate.ps1
+# -> Đầu dòng lệnh hiện (.venv) là đã vào trong môi trường của dự án!`
+                        : `# 1. Tạo cấu trúc thư mục dự án chuẩn:
+mkdir -p my-service/src/my_service my-service/tests && cd my-service
+pyenv local 3.12.7
 
-# 3. Khi thấy chữ (.venv) ở đầu dòng, nâng cấp pip và cài thư viện:
-python -m pip install --upgrade pip
-pip install requests fastapi uvicorn
-
-# 4. Lưu danh sách thư viện ra file requirements.txt (hoặc cài từ file có sẵn):
-pip freeze > requirements.txt
-pip install -r requirements.txt
-
-# 5. Khi muốn thoát khỏi môi trường ảo:
-deactivate`
-                    : `# 1. Tạo thư mục môi trường ảo '.venv' trong thư mục dự án:
+# 2. Tạo môi trường ảo '.venv' (Cách 1: dùng module venv có sẵn):
 python -m venv .venv
+# (Hoặc Cách 2: dùng công cụ 'virtualenv' nếu muốn nhanh hơn & chọn rõ bản Python):
+# pipx install virtualenv && virtualenv -p python3.12 .venv
 
-# 2. Kích hoạt (Activate) môi trường ảo:
+# 3. BẮT BUỘC: Kích hoạt môi trường ảo (.venv) trước khi làm việc:
 source .venv/bin/activate
+# -> Đầu dòng lệnh hiện (.venv) là đã vào trong môi trường của dự án!`
+                    }
+                  />
 
-# 3. Khi thấy chữ (.venv) ở đầu dòng, nâng cấp pip và cài thư viện:
-python -m pip install --upgrade pip
-pip install requests fastapi uvicorn
+                  <CopyCommandBlock
+                    title="Cách 2A — Giai đoạn 2: Quản lý Dependency & Lockfile bằng 'pip' và 'pip-tools'"
+                    badge="requirements.in → requirements.txt"
+                    description="Cách quản lý phụ thuộc chuyên nghiệp bằng pip: tách file khai báo (requirements.in) và file khóa (requirements.txt) bằng pip-tools:"
+                    code={`# 1. Nâng cấp pip và cài đặt pip-tools bên trong (.venv):
+(.venv) $ python -m pip install --upgrade pip setuptools wheel pip-tools
 
-# 4. Lưu danh sách thư viện ra file requirements.txt (hoặc cài từ file có sẵn):
-pip freeze > requirements.txt
-pip install -r requirements.txt
+# 2. Tạo file 'requirements.in' (chỉ ghi các thư viện chính của ứng dụng):
+#   fastapi>=0.115.0
+#   uvicorn[standard]>=0.30.0
+#   sqlalchemy>=2.0.0
 
-# 5. Khi muốn thoát khỏi môi trường ảo:
-deactivate`
-                }
-              />
-            </div>
-          )}
+# 3. Tạo file 'requirements-dev.in' (ghi các công cụ test, format, lint):
+#   -c requirements.txt
+#   pytest>=8.3.0
+#   ruff>=0.7.0
 
-          {/* TAB 2.5: GLOBAL VS PER-PROJECT (LOCAL) WORKFLOW */}
-          {activeTab === 'global-vs-local' && (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
-                <h3 className="text-sm font-bold text-emerald-300">
-                  Nguyên tắc Vàng phân định Global (Toàn máy) vs. Local (Từng Dự án)
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Trong Python, bạn cần tách bạch rõ <strong>2 thứ</strong>:{' '}
-                  <strong>(1) Phiên bản trình thông dịch Python</strong> (3.10, 3.11, 3.12, 3.13) và{' '}
-                  <strong>(2) Các gói thư viện / công cụ</strong>:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                  <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
-                    <div className="text-xs font-bold text-sky-300">
-                      🌐 Khi nào dùng GLOBAL (Toàn máy)?
-                    </div>
-                    <ul className="mt-1.5 space-y-1 text-xs text-slate-300">
-                      <li>
-                        • Đặt 1 <strong>phiên bản Python mặc định</strong> (VD: Python 3.12) để khi gõ <code>python</code> ở ngoài thư mục dự án (như Desktop) vẫn chạy được.
-                      </li>
-                      <li>
-                        • Cài các <strong>công cụ dòng lệnh độc lập (CLI Tools)</strong> như <code>ruff</code>, <code>httpie</code>, <code>yt-dlp</code>, <code>poetry</code> bằng <code>uv tool install</code> (hoặc <code>pipx</code>).
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="rounded-lg border border-slate-800 bg-slate-950/80 p-3">
-                    <div className="text-xs font-bold text-emerald-300">
-                      📁 Khi nào dùng LOCAL (Cho từng Dự án)?
-                    </div>
-                    <ul className="mt-1.5 space-y-1 text-xs text-slate-300">
-                      <li>
-                        • Khi <strong>Dự án A cần Python 3.10</strong> nhưng <strong>Dự án B cần Python 3.12</strong>: ghim vào file <code>.python-version</code> ở gốc từng dự án!
-                      </li>
-                      <li>
-                        • <strong>100% thư viện code</strong> (<code>fastapi</code>, <code>pandas</code>, <code>sqlalchemy</code>, <code>pytest</code>) <strong>BẮT BUỘC cài vào <code>.venv/</code> riêng của từng dự án</strong>.
-                      </li>
-                    </ul>
-                  </div>
+# 4. Biên dịch ra file khóa 'requirements.txt' và 'requirements-dev.txt' (cố định mọi phiên bản ==):
+(.venv) $ pip-compile requirements.in -o requirements.txt
+(.venv) $ pip-compile requirements-dev.in -o requirements-dev.txt
+
+# 5. Cài đặt & đồng bộ chính xác môi trường theo file khóa (tự động gỡ các gói thừa!):
+(.venv) $ pip-sync requirements.txt requirements-dev.txt
+# (Hoặc cách cơ bản nếu không dùng pip-tools: pip install -r requirements.txt)
+
+# 6. Cài đặt chính source code của dự án ở chế độ Editable (-e .) để import không bị lỗi:
+(.venv) $ pip install -e .
+
+# 7. Chạy ứng dụng, chạy kiểm thử và thoát môi trường ảo khi xong việc:
+(.venv) $ python -m my_service.main
+(.venv) $ pytest
+(.venv) $ deactivate`}
+                  />
                 </div>
-              </div>
+              )}
 
-              {/* Comparison Table: uv vs pyenv */}
-              <div className="rounded-xl border border-slate-800 bg-slate-900/60 overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-300">
-                      <th className="py-2.5 px-3.5 font-bold">Mục đích sử dụng</th>
-                      <th className="py-2.5 px-3.5 font-bold text-emerald-400">
-                        Với `uv` (Hiện đại - Khuyên dùng)
-                      </th>
-                      <th className="py-2.5 px-3.5 font-bold text-sky-400">
-                        Với `pyenv` + `venv` + `pip` (Truyền thống)
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/70 font-mono text-[11px]">
-                    <tr>
-                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
-                        1. Đặt Python mặc định toàn máy (Global)
-                      </td>
-                      <td className="py-2.5 px-3.5 text-emerald-300">
-                        uv python install 3.12 --default
-                        <br />
-                        uv python pin --global 3.12
-                      </td>
-                      <td className="py-2.5 px-3.5 text-sky-300">
-                        pyenv install 3.12.7
-                        <br />
-                        pyenv global 3.12.7
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
-                        2. Ghim Python riêng cho 1 Dự án (Local .python-version)
-                      </td>
-                      <td className="py-2.5 px-3.5 text-emerald-300">
-                        cd my-project
-                        <br />
-                        uv python pin 3.10
-                      </td>
-                      <td className="py-2.5 px-3.5 text-sky-300">
-                        cd my-project
-                        <br />
-                        pyenv local 3.10.15
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
-                        3. Chạy thử 1 lần với bản Python khác (Tạm thời)
-                      </td>
-                      <td className="py-2.5 px-3.5 text-emerald-300">
-                        uv run --python 3.13 main.py
-                      </td>
-                      <td className="py-2.5 px-3.5 text-sky-300">
-                        pyenv shell 3.13.0 && python main.py
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
-                        4. Cài thư viện cho Dự án (Vào .venv của dự án)
-                      </td>
-                      <td className="py-2.5 px-3.5 text-emerald-300">
-                        uv add fastapi pydantic
-                        <br />
-                        uv add --dev pytest
-                      </td>
-                      <td className="py-2.5 px-3.5 text-sky-300">
-                        python -m venv .venv && source .venv/bin/activate
-                        <br />
-                        pip install fastapi pydantic pytest
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3.5 font-sans font-semibold text-slate-200">
-                        5. Cài CLI Tool dùng mọi nơi trên máy (Global Tool)
-                      </td>
-                      <td className="py-2.5 px-3.5 text-emerald-300">
-                        uv tool install ruff
-                        <br />
-                        uvx ruff check .
-                      </td>
-                      <td className="py-2.5 px-3.5 text-sky-300">
-                        pipx install ruff
-                        <br />
-                        pipx run ruff check .
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              {/* STACK 2B: PYENV + POETRY */}
+              {nonUvStack === 'poetry' && (
+                <div className="space-y-4">
+                  <CopyCommandBlock
+                    title="Cách 2B — Giai đoạn 1: Cài đặt Poetry, Cấu hình .venv & Khởi tạo Source Code"
+                    badge="Poetry Setup & Init"
+                    description="Poetry quản lý trọn gói pyproject.toml, tạo .venv, khóa poetry.lock và đóng gói thư viện:"
+                    code={`# 1. Cài đặt Poetry độc lập qua pipx (khuyên dùng) hoặc official installer:
+pipx install poetry
+# (Hoặc: curl -sSL https://install.python-poetry.org | python3 -)
 
-              <CopyCommandBlock
-                title="Kịch bản thực tế 1: Dùng 'uv' quản lý Global vs. Nhiều Dự án khác phiên bản Python"
-                badge="uv Global + Per-Project"
-                description="Xem cách máy bạn mặc định chạy Python 3.12, nhưng tự động chuyển sang Python 3.10 khi vào dự án AI cũ:"
-                code={`# 1. [GLOBAL] Đặt Python 3.12 làm bản mặc định cho toàn máy tính:
-uv python install 3.10 3.12 3.13
-uv python install 3.12 --default
-uv python pin --global 3.12
+# 2. CẤU HÌNH QUAN TRỌNG NHẤT: Bảo Poetry tạo thư mục '.venv/' ngay trong thư mục dự án:
+poetry config virtualenvs.in-project true
 
-# Kiểm tra ở thư mục bất kỳ ngoài dự án (ví dụ ~/Desktop):
-python --version
-# -> Python 3.12.x (Bản Global)
+# 3. Khởi tạo dự án mới với cấu trúc chuẩn 'src/' layout:
+poetry new --src my-poetry-service
+cd my-poetry-service
+# (Hoặc nếu thư mục dự án đã có sẵn code: chạy 'poetry init')
 
-# =====================================================================
-# 2. [PER-PROJECT] Dự án A (Legacy AI) bắt buộc phải dùng Python 3.10:
-# =====================================================================
-mkdir legacy-ai-app && cd legacy-ai-app
-uv init
-uv python pin 3.10          # Tạo file .python-version ghi '3.10' trong thư mục này
-uv add numpy                # Tự động tạo .venv bằng Python 3.10 và cài numpy!
-uv run python --version     # -> Python 3.10.x (Chỉ áp dụng cho legacy-ai-app)
+# 4. Liên kết Poetry với phiên bản Python (đã cài qua pyenv):
+pyenv local 3.12.7
+poetry env use 3.12
+poetry env info`}
+                  />
 
-# =====================================================================
-# 3. [PER-PROJECT] Dự án B (Backend Mới) dùng Python 3.12:
-# =====================================================================
-cd .. && mkdir modern-api && cd modern-api
-uv init
-uv python pin 3.12          # Tạo file .python-version ghi '3.12'
-uv add fastapi uvicorn      # Tạo .venv riêng bằng Python 3.12
-uv run python --version     # -> Python 3.12.x
+                  <CopyCommandBlock
+                    title="Cách 2B — Giai đoạn 2: Quản lý Dependency, Khóa poetry.lock & Chạy Dự án với Poetry"
+                    badge="poetry add / install / run"
+                    code={`# 1. Thêm thư viện chính thức (Production dependencies):
+poetry add fastapi "uvicorn[standard]" pydantic
 
-# =====================================================================
-# 4. [GLOBAL CLI TOOLS] Cài công cụ dùng chung cho toàn máy (không làm bẩn dự án):
-# =====================================================================
-uv tool install ruff        # Cài ruff toàn cục trong môi trường cô lập riêng
-uv tool install httpie      # Cài công cụ test API 'http' toàn cục
-uvx black --version         # Chạy thử 1 công cụ bất kỳ không cần cài (giống npx)`}
-              />
+# 2. Thêm thư viện vào nhóm phát triển (Dev / Test / Lint group):
+poetry add --group dev pytest pytest-cov ruff mypy
 
-              <CopyCommandBlock
-                title="Kịch bản thực tế 2: Dùng 'pyenv' + 'venv' quản lý Global vs. Từng Dự án"
-                badge="pyenv Global vs Local"
-                description="Với pyenv, lệnh 'pyenv global' đặt mặc định toàn máy, còn 'pyenv local' ghim phiên bản cho riêng thư mục dự án:"
-                code={`# 1. [GLOBAL] Cài 2 phiên bản Python và đặt 3.12.7 làm mặc định toàn máy:
-pyenv install 3.10.15
-pyenv install 3.12.7
-pyenv global 3.12.7         # Ghi vào ~/.pyenv/version
+# 3. Gỡ bỏ thư viện và xem cây phụ thuộc:
+poetry remove mypy
+poetry show --tree
 
-# Gõ ở bất kỳ đâu trên máy:
-python --version            # -> Python 3.12.7
+# 4. Khóa phiên bản vào file 'poetry.lock' và cài đặt đồng bộ:
+poetry lock
+poetry install                              # Cài đặt đầy đủ trên máy Dev
+poetry install --without dev --no-root      # Cài đặt tối giản trên Docker / Server Production
 
-# =====================================================================
-# 2. [PER-PROJECT] Vào thư mục Dự án A cần Python 3.10.15:
-# =====================================================================
-mkdir project-a && cd project-a
-pyenv local 3.10.15         # Tạo file .python-version tại project-a/
-python --version            # -> Tự động đổi sang Python 3.10.15!
+# 5. Chạy ứng dụng & bộ kiểm thử bên trong môi trường của Poetry:
+poetry run python -m my_poetry_service.main
+poetry run uvicorn my_poetry_service.main:app --reload
+poetry run pytest
 
-# Tạo môi trường ảo .venv cho Project A (sẽ mang phiên bản 3.10.15):
-python -m venv .venv
-${
-  selectedOs === 'windows'
-    ? '.venv\\Scripts\\Activate.ps1'
-    : 'source .venv/bin/activate'
-}
-pip install requests
-deactivate
+# 6. Mở trực tiếp Shell đã kích hoạt .venv hoặc Đóng gói thư viện (.whl):
+poetry shell
+poetry build`}
+                  />
+                </div>
+              )}
 
-# Khi bạn 'cd ..' ra ngoài thư mục project-a:
-cd ..
-python --version            # -> Tự động quay về bản Global Python 3.12.7!`}
-              />
+              {/* STACK 2C: PYENV + PIPENV */}
+              {nonUvStack === 'pipenv' && (
+                <div className="space-y-4">
+                  <CopyCommandBlock
+                    title="Cách 2C — Toàn bộ Quy trình Quản lý Dự án bằng 'Pipenv' (Pipfile & Pipfile.lock)"
+                    badge="Pipenv Workflow"
+                    description="Pipenv thay thế requirements.txt bằng Pipfile và Pipfile.lock, tự động quản lý virtualenv cho dự án:"
+                    code={`# 1. Cài đặt Pipenv qua pipx và bật chế độ tạo '.venv/' ngay trong thư mục dự án:
+pipx install pipenv
+export PIPENV_VENV_IN_PROJECT=1
+# (Trên Windows PowerShell: $env:PIPENV_VENV_IN_PROJECT="1")
+
+# 2. Khởi tạo dự án với phiên bản Python 3.12:
+mkdir my-django-app && cd my-django-app
+pyenv local 3.12.7
+pipenv --python 3.12
+
+# 3. Cài đặt thư viện chính (ghi vào mục [packages] trong Pipfile):
+pipenv install django gunicorn psycopg2-binary
+
+# 4. Cài đặt thư viện phát triển (ghi vào mục [dev-packages] trong Pipfile):
+pipenv install --dev pytest pytest-django ruff
+
+# 5. Khóa phiên bản an toàn vào 'Pipfile.lock' & kiểm tra cây phụ thuộc:
+pipenv lock
+pipenv graph
+
+# 6. Đồng bộ môi trường từ file khóa Pipfile.lock (Khi clone dự án về hoặc trên Server):
+pipenv sync --dev           # Trên máy Dev (cài cả gói chính + gói dev)
+pipenv sync                 # Trên Server Production (chỉ cài gói chính từ Pipfile.lock)
+
+# 7. Chạy ứng dụng hoặc mở Shell của Pipenv:
+pipenv run python manage.py runserver
+pipenv run pytest
+pipenv shell`}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -809,13 +840,15 @@ python --version            # -> Tự động quay về bản Global Python 3.12
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                   <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-                    Bước quan trọng số 1
+                    Bước quan trọng số 1 (Mọi công cụ đều giống nhau)
                   </div>
                   <h4 className="mt-1 text-sm font-bold text-white">
                     Chọn đúng Python Interpreter (.venv)
                   </h4>
                   <p className="mt-1.5 text-xs text-slate-300 leading-relaxed">
-                    Trong VS Code hoặc Cursor, bấm tổ hợp phím{' '}
+                    Dù bạn tạo <code>.venv</code> bằng <code>uv</code>,{' '}
+                    <code>python -m venv</code>, <code>Poetry</code> hay{' '}
+                    <code>Pipenv</code>, trong VS Code / Cursor hãy bấm{' '}
                     <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-emerald-300 border border-slate-700">
                       {selectedOs === 'macos'
                         ? 'Cmd + Shift + P'
@@ -825,7 +858,7 @@ python --version            # -> Tự động quay về bản Global Python 3.12
                     <code className="text-sky-300 font-mono">
                       Python: Select Interpreter
                     </code>{' '}
-                    → Chọn dòng có chứa{' '}
+                    → Chọn{' '}
                     <code className="text-emerald-300 font-mono">
                       {selectedOs === 'windows'
                         ? '.venv\\Scripts\\python.exe'
@@ -875,7 +908,6 @@ code --install-extension tamasfe.even-better-toml`}
               <CopyCommandBlock
                 title="File mẫu '.vscode/settings.json' chuẩn Senior (Format on Save + Type Checking)"
                 badge=".vscode/settings.json"
-                description="Tạo file .vscode/settings.json trong thư mục dự án và dán nội dung này vào để mỗi khi bấm Save, code tự động được căn chỉnh đẹp chuẩn PEP 8:"
                 code={`{
   "python.defaultInterpreterPath": "${
     selectedOs === 'windows'
@@ -907,35 +939,35 @@ code --install-extension tamasfe.even-better-toml`}
                     '1. Lỗi "error: externally-managed-environment" khi gõ pip install trên macOS / Ubuntu',
                   cause:
                     'Bạn đang gõ pip install trực tiếp vào Python của hệ điều hành mà chưa tạo hoặc chưa kích hoạt môi trường ảo .venv.',
-                  fix: 'Luôn tạo và kích hoạt môi trường ảo trước: chạy `uv add <tên_gói>` HOẶC `python3 -m venv .venv && source .venv/bin/activate && pip install <tên_gói>`. Tuyệt đối không dùng sudo pip install.',
+                  fix: 'Nếu dùng uv: chạy `uv add <tên_gói>`. Nếu không dùng uv: chạy `python3 -m venv .venv && source .venv/bin/activate && pip install <tên_gói>` (hoặc `poetry add` / `pipenv install`).',
                 },
                 {
                   title:
-                    '2. Lỗi đỏ "Activate.ps1 cannot be loaded because running scripts is disabled" trên Windows PowerShell',
+                    '2. Poetry hoặc Pipenv tạo môi trường ảo ở đâu đó ngoài dự án khiến VS Code không thấy thư mục .venv',
+                  cause:
+                    'Mặc định Poetry và Pipenv lưu virtualenv tập trung trong thư mục Cache của hệ điều hành.',
+                  fix: 'Với Poetry: chạy `poetry config virtualenvs.in-project true`. Với Pipenv: đặt biến môi trường `export PIPENV_VENV_IN_PROJECT=1` trước khi chạy `pipenv install`.',
+                },
+                {
+                  title:
+                    '3. Lỗi đỏ "Activate.ps1 cannot be loaded because running scripts is disabled" trên Windows PowerShell',
                   cause:
                     'Mặc định Windows PowerShell chặn chạy các file script .ps1 của người dùng.',
-                  fix: 'Mở PowerShell và chạy lệnh: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` (bấm Y để đồng ý). Hoặc dùng `uv run python ...` thì không cần chạy Activate.ps1 nữa!',
-                },
-                {
-                  title:
-                    '3. Đã cài thư viện trên Terminal nhưng VS Code vẫn báo gạch chân vàng "Import could not be resolved"',
-                  cause:
-                    'VS Code đang chọn nhầm trình thông dịch Python mặc định của máy chứ chưa chọn Python nằm trong thư mục .venv của dự án.',
-                  fix: 'Bấm `Cmd/Ctrl + Shift + P` → Gõ `Python: Select Interpreter` → Chọn dòng có đường dẫn `./.venv/bin/python` (hoặc `.venv\\Scripts\\python.exe`).',
+                  fix: 'Mở PowerShell và chạy lệnh: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`. Hoặc dùng `uv run` / `poetry run` / `pipenv run` để không cần gọi Activate.ps1.',
                 },
                 {
                   title:
                     '4. Cài pyenv xong, đã chạy pyenv global 3.12.7 nhưng gõ python --version vẫn ra bản cũ',
                   cause:
                     'Bạn chưa thêm thư mục shims của pyenv vào biến môi trường PATH trong file cấu hình Shell (`~/.zshrc` trên macOS hoặc `~/.bashrc` trên Linux).',
-                  fix: 'Chạy 3 lệnh cấu hình `PYENV_ROOT`, `PATH` và `eval "$(pyenv init -)"` ở Tab số 2 rồi chạy `source ~/.zshrc` (hoặc chuyển sang dùng `uv python pin 3.12`).',
+                  fix: 'Chạy 3 lệnh cấu hình `PYENV_ROOT`, `PATH` và `eval "$(pyenv init -)"` rồi chạy `source ~/.zshrc`.',
                 },
                 {
                   title:
-                    '5. Lỗi "ModuleNotFoundError: No module named ..." khi chạy file nằm sâu trong thư mục con',
+                    '5. Lỗi "ModuleNotFoundError: No module named ..." khi chạy file nằm trong thư mục src/',
                   cause:
-                    'Khi bạn chạy `python src/app/main.py`, Python chỉ thêm `src/app/` vào sys.path chứ không thêm thư mục gốc của dự án.',
-                  fix: 'Luôn đứng ở thư mục gốc của dự án và chạy qua cờ `-m` (ví dụ: `uv run python -m app.main`) hoặc cài gói dự án ở chế độ editable (`uv sync` / `pip install -e .`).',
+                    'Project chưa được cài đặt ở chế độ Editable vào trong `.venv`, hoặc bạn đang chạy trực tiếp đường dẫn file con thay vì chạy từ gốc dự án.',
+                  fix: 'Cài đặt package nội bộ vào `.venv` bằng `uv sync` / `pip install -e .` / `poetry install` và chạy qua cờ `-m` (ví dụ `python -m ten_package.main`).',
                 },
               ].map((item, idx) => (
                 <div

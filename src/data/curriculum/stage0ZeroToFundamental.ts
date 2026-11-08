@@ -6,9 +6,9 @@ export const STAGE_0_ZERO_FUNDAMENTAL_LESSONS: LessonTopic[] = [
     stageId: 'stage-1',
     level: 'fundamental',
     order: 0,
-    title: '1.0. Cẩm nang Cài đặt Python, Quản lý Phiên bản (uv & pyenv), Môi trường Ảo (.venv) & Cấu hình VS Code / Cursor từ A–Z',
+    title: '1.0A. Phương pháp 1 — Quản lý Dự án Toàn diện bằng uv: Version, Source Code, Dependency, Lockfile & Chạy Dự án',
     shortDescription:
-      'Hướng dẫn cầm tay chỉ việc cho người mới bắt đầu với Python: Cách cài đặt trên macOS / Windows / Linux, quản lý phiên bản bằng uv hoặc pyenv, tạo .venv, cài thư viện và cấu hình VS Code / Cursor chuẩn chỉnh.',
+      'Làm chủ trọn vẹn vòng đời dự án Python hiện đại bằng công cụ uv: Cài đặt Python, tổ chức cấu trúc source code (--app / --package / workspace), quản lý .venv, dependency groups, uv.lock, inline script và cấu hình VS Code / Cursor.',
     estimatedMinutes: 45,
     theoryParagraphs: [
       '**Tại sao người mới học Python hay bị "rối" ở bước cài đặt đầu tiên?** Nếu bạn từ JavaScript/TypeScript sang, bạn đã quen chỉ cần cài `nvm` + `Node.js` rồi gõ `npm install` là tự có thư mục `node_modules/` nằm gọn trong dự án. Nhưng với Python, lịch sử hơn 30 năm phát triển tạo ra nhiều công cụ (`python`, `python3`, `pip`, `venv`, `virtualenv`, `pyenv`, `conda`, `poetry`, `uv`). Đặc biệt, hệ điều hành macOS và Linux luôn cài sẵn một bản **System Python** dùng cho nội bộ hệ điều hành — nếu bạn gõ `pip install` thẳng vào đó, hệ điều hành sẽ chặn lại (báo lỗi `externally-managed-environment` PEP 668) hoặc gây hỏng công cụ hệ thống!',
@@ -334,6 +334,63 @@ export const STAGE_0_ZERO_FUNDAMENTAL_LESSONS: LessonTopic[] = [
         ],
       },
       {
+        id: 'ex-s0-0-uv-project-lifecycle',
+        title: 'Quản lý Vòng đời Source Code, Dependency Groups, Lockfile & Inline Script với `uv`',
+        description: 'Toàn bộ kỹ thuật tổ chức mã nguồn (--app vs --package), phân nhóm phụ thuộc (prod/dev/test), khóa uv.lock và xuất requirements.txt khi dùng uv.',
+        code: `# ============================================================================
+# 1. TỔ CHỨC CẤU TRÚC SOURCE CODE KHI KHỞI TẠO DỰ ÁN VỚI 'uv init'
+# ============================================================================
+# 👉 Kiểu 1: Ứng dụng Web / Script / FastAPI đơn giản (--app - Mặc định):
+# $ uv init --app order-service
+# -> Tạo: order-service/ (main.py, pyproject.toml, .python-version, README.md)
+
+# 👉 Kiểu 2: Dự án Chuẩn Production / Thư viện nhiều module (--package / src-layout):
+# $ uv init --package payment-sdk
+# -> Tạo cấu trúc src-layout chuẩn PEP:
+# payment-sdk/
+# ├── pyproject.toml
+# ├── .python-version
+# └── src/
+#     └── payment_sdk/
+#         └── __init__.py
+
+# ============================================================================
+# 2. QUẢN LÝ DEPENDENCY THEO NHÓM (PROD vs. DEV vs. GROUP) & LOCKFILE
+# ============================================================================
+# $ cd payment-sdk
+# $ uv add httpx "pydantic>=2.8,<3.0"     # Cài thư viện chính vào [project.dependencies]
+# $ uv add --dev pytest pytest-cov ruff   # Cài công cụ phát triển vào [dependency-groups.dev]
+# $ uv add --group docs mkdocs-material   # Tạo nhóm phụ thuộc riêng (VD: nhóm docs, lint)
+# $ uv remove httpx                       # Gỡ bỏ thư viện và tự động dọn các gói con dư thừa
+
+# Kiểm tra cây phụ thuộc & tại sao 1 thư viện con được cài vào máy:
+# $ uv tree
+
+# Cập nhật toàn bộ hoặc 1 gói cụ thể trong file khóa uv.lock:
+# $ uv lock --upgrade-package pydantic
+
+# Triển khai trên Server / Docker / CI-CD (Cài chính xác 100% từ uv.lock, không cài gói dev):
+# $ uv sync --frozen --no-dev
+
+# Khi cần xuất ra file requirements.txt cho hệ thống cũ:
+# $ uv export --format requirements-txt --no-hashes -o requirements.txt
+
+# ============================================================================
+# 3. CHẠY FILE SCRIPT ĐỘC LẬP KÈM THƯ VIỆN RIÊNG (INLINE SCRIPT METADATA - PEP 723)
+# ============================================================================
+# Bạn có 1 file ' crawl.py ' lẻ bên ngoài dự án nhưng cần thư viện 'requests' và 'rich'?
+# $ uv add --script crawl.py requests rich
+# $ uv run crawl.py   # uv tự tạo môi trường tạm cho riêng file crawl.py rồi chạy ngay!`,
+        output: `Resolved 18 packages in 12ms\npayment-sdk v0.1.0\n├── pydantic v2.9.2\n│   ├── annotated-types v0.7.0\n│   └── pydantic-core v2.23.4\n└── (dev) pytest v8.3.3`,
+        annotations: [
+          { line: 8, explanation: '`uv init --package` tự động tạo cấu trúc thư mục `src/<tên_package>/__init__.py` chuẩn chỉnh giúp chống lỗi import nhầm thư mục gốc.' },
+          { line: 20, explanation: 'Phân tách rõ thư viện chạy Production (`uv add`) và công cụ phát triển (`uv add --dev` hoặc `--group`) trong `pyproject.toml`.' },
+          { line: 25, explanation: '`uv tree` vẽ sơ đồ cây phụ thuộc trực quan ngay trên Terminal để biết gói nào kéo theo gói nào.' },
+          { line: 31, explanation: '`uv sync --frozen --no-dev` là lệnh vàng trên Docker/Production: cam kết cài đúng từng byte theo `uv.lock` và loại bỏ các gói dev nặng nề.' },
+          { line: 39, explanation: 'Tính năng PEP 723 (`uv add --script`) nhúng danh sách thư viện ngay đầu file `.py` dưới dạng comment `# /// script`, giúp gửi 1 file `.py` duy nhất cho đồng nghiệp chạy được ngay!' },
+        ],
+      },
+      {
         id: 'ex-s0-0-vscode-cursor-config',
         title: 'Cấu hình Chuẩn cho VS Code / Cursor (`.vscode/settings.json` & `pyproject.toml`)',
         description: 'Bộ cấu hình thực tế giúp VS Code / Cursor tự động nhận môi trường ảo .venv, gợi ý kiểu dữ liệu thông minh và tự động format code bằng Ruff mỗi khi lưu file.',
@@ -459,7 +516,331 @@ print("Đã sẵn sàng cấu hình .vscode/settings.json chuẩn chuyên nghi�
       },
     ],
     relatedTermIds: ['eco-uv', 'concept-gil', 'kw-def'],
-    relatedLessonIds: ['s0-python-overview-engine', 's0-versions-install-switch-run'],
+    relatedLessonIds: ['s0-workflow-pyenv-venv-poetry-pipenv', 's0-python-overview-engine', 's0-versions-install-switch-run'],
+    relatedExerciseIds: ['ex-s0-version-cli-check'],
+  },
+  {
+    id: 's0-workflow-pyenv-venv-poetry-pipenv',
+    stageId: 'stage-1',
+    level: 'fundamental',
+    order: 0.5,
+    title: '1.0B. Phương pháp 2 — Quản lý Dự án Không dùng uv: Làm chủ pyenv, venv / virtualenv, pip (pip-tools), Poetry & Pipenv',
+    shortDescription:
+      'Cẩm nang toàn diện dành cho lập trình viên không dùng uv hoặc làm việc trong các dự án doanh nghiệp đang sử dụng pyenv, venv/virtualenv, pip + pip-tools, Poetry và Pipenv để quản lý version, source code và dependencies.',
+    estimatedMinutes: 50,
+    theoryParagraphs: [
+      '**Tại sao bạn cần nắm vững cách quản lý dự án bằng hệ công cụ truyền thống & chuyên biệt (ngoài `uv`)?** Trong thực tế đi làm tại các công ty, ngân hàng, tập đoàn hoặc khi tham gia các dự án mã nguồn mở lâu năm, hệ thống CI/CD và quy chuẩn của đội ngũ có thể đang vận hành ổn định trên **`pyenv` + `venv`/`virtualenv` + `pip` (`requirements.txt`)**, hoặc sử dụng **`Poetry`** (`poetry.lock`), hoặc **`Pipenv`** (`Pipfile.lock`). Bài học này hướng dẫn bạn cách sử dụng **độc lập, trọn vẹn từ A–Z** từng công cụ đó để quản lý vòng đời dự án mà không phụ thuộc vào `uv`.',
+      '**1. Quản lý Phiên bản Python bằng `pyenv` (& `pyenv-virtualenv`)**: `pyenv` hoạt động theo cơ chế **Shims** — nó chèn thư mục `~/.pyenv/shims` lên đầu biến môi trường `PATH` để đánh chặn mọi lệnh `python`, `pip`. Khi bạn gõ `python`, `pyenv` kiểm tra theo thứ tự ưu tiên từ cao xuống thấp: (1) Biến môi trường `PYENV_VERSION` (`pyenv shell`) $\\rightarrow$ (2) File `.python-version` trong thư mục dự án hiện tại (`pyenv local`) $\\rightarrow$ (3) File `~/.pyenv/version` toàn máy (`pyenv global`). Nhờ vậy, bạn cài hàng chục bản Python trong `~/.pyenv/versions/` và gắn từng bản cho từng dự án hoàn toàn tự động.',
+      '**2. Quản lý Môi trường Ảo & Phụ thuộc bằng Bộ Mặc định (`venv` / `virtualenv` + `pip` + `pip-tools`)**: `venv` là module tích hợp sẵn trong Python 3 (`python -m venv .venv`), trong khi `virtualenv` là gói cài ngoài nhanh hơn và cho phép tạo môi trường ảo với phiên bản Python bất kỳ (`virtualenv -p python3.11 .venv`). Khi quản lý dự án chuyên nghiệp với `pip`, người ta không gõ `pip freeze > requirements.txt` bừa bãi (vì nó trộn lẫn cả gói chính lẫn gói phụ thuộc con khó nâng cấp), mà tách thành 2 tầng thông qua **`pip-tools`**: bạn chỉ khai báo các gói cấp 1 trong `requirements.in`, rồi chạy `pip-compile` để sinh ra file khóa `requirements.txt` chuẩn chỉnh, và dùng `pip-sync` để đồng bộ môi trường!',
+      '**3. Quản lý Dự án Toàn diện bằng `Poetry` và `Pipenv`**: Trước khi `uv` ra đời, **`Poetry`** là tiêu chuẩn vàng cho các dự án hiện đại: Poetry quản lý cả cấu trúc source code (`poetry new`), môi trường ảo (`poetry env use`), các nhóm phụ thuộc trong `pyproject.toml`, khóa phiên bản (`poetry.lock`) và đóng gói xuất bản (`poetry build` / `poetry publish`). Trong khi đó, **`Pipenv`** kết hợp `pip` và `virtualenv` thông qua cặp file `Pipfile` và `Pipfile.lock`, rất phổ biến trong các dự án Web Django/Flask truyền thống.',
+    ],
+    analogy: {
+      title: 'Bức tranh Hệ Công cụ Quản lý Dự án khi KHÔNG dùng uv',
+      realWorldScenario:
+        'Khi không dùng công cụ "tất cả trong một" như uv, hệ sinh thái Python phân chia nhiệm vụ rõ ràng cho từng công cụ chuyên trách:',
+      mappingPoints: [
+        {
+          realWorld: 'Trạm điều phối chọn phiên bản Động cơ Python cho từng dự án (`3.10.15` vs `3.12.7`)',
+          pythonEquivalent: '`pyenv` (`pyenv install`, `pyenv global`, `pyenv local`)',
+          explanation: 'Chuyên trách việc tải mã nguồn CPython, biên dịch và chuyển đổi phiên bản Python tự động theo file `.python-version`.',
+        },
+        {
+          realWorld: 'Khuôn đóng vách ngăn cô lập thư mục thư viện cho từng dự án (`.venv/`)',
+          pythonEquivalent: '`python -m venv .venv` hoặc `virtualenv .venv`',
+          explanation: 'Tạo thư mục môi trường ảo riêng biệt. Bắt buộc kích hoạt (`source .venv/bin/activate`) trước khi cài gói hoặc chạy code.',
+        },
+        {
+          realWorld: 'Trình cài đặt gói cơ bản & Bộ biên dịch file khóa `requirements.txt`',
+          pythonEquivalent: '`pip` + `pip-tools` (`pip-compile` & `pip-sync`)',
+          explanation: 'Viết gói chính vào `requirements.in`, biên dịch thành `requirements.txt` có khóa phiên bản chặt chẽ và đồng bộ bằng `pip-sync`.',
+        },
+        {
+          realWorld: 'Hệ thống Quản lý Dự án, Dependency & Đóng gói Khép kín (Enterprise)',
+          pythonEquivalent: '`Poetry` (`pyproject.toml` + `poetry.lock`) hoặc `Pipenv` (`Pipfile` + `Pipfile.lock`)',
+          explanation: 'Tự động tạo `.venv`, tự giải quyết xung đột phiên bản phụ thuộc, tách nhóm `dev`/`prod` và chạy code qua `poetry run` / `pipenv run`.',
+        },
+      ],
+      mentalModelTip:
+        'Dù công ty bạn chọn bộ **(A) `pyenv` + `venv` + `pip-tools`**, bộ **(B) `pyenv` + `Poetry`**, hay bộ **(C) `pyenv` + `Pipenv`**, hãy luôn cấu hình để thư mục môi trường ảo nằm ngay tại **`.venv/` bên trong dự án** để VS Code / PyCharm tự động nhận diện!',
+    },
+    diagrams: [
+      {
+        id: 'diag-s0b-non-uv-stacks',
+        title: '3 Mô hình Quản lý Dự án Chuẩn Thực tế khi Không dùng uv',
+        subtitle: 'Tùy theo quy chuẩn của dự án hoặc công ty, bạn sẽ sử dụng 1 trong 3 mô hình hoàn chỉnh dưới đây',
+        type: 'comparison-boxes',
+        nodes: [
+          {
+            id: 'stack-pyenv-pip-tools',
+            badge: 'Mô hình 1 • Chuẩn Cốt lõi & Tinh gọn',
+            title: 'pyenv + venv/virtualenv + pip + pip-tools',
+            subtitle: '.python-version • requirements.in → requirements.txt',
+            detail:
+              '• Chọn Python: `pyenv local 3.12.7`\n• Tạo & mở venv: `python -m venv .venv && source .venv/bin/activate`\n• Khóa gói: `pip-compile requirements.in -o requirements.txt`\n• Đồng bộ gói: `pip-sync requirements.txt dev-requirements.txt`\n• Cài package nội bộ: `pip install -e .`',
+            highlightColor: 'sky',
+          },
+          {
+            id: 'stack-pyenv-poetry',
+            badge: 'Mô hình 2 • Chuẩn Doanh nghiệp & Đóng gói SDK',
+            title: 'pyenv + Poetry (pyproject.toml + poetry.lock)',
+            subtitle: 'poetry new/init • poetry add • poetry install • poetry run',
+            detail:
+              '• Cấu hình đặt .venv trong dự án: `poetry config virtualenvs.in-project true`\n• Chọn Python: `poetry env use 3.12`\n• Cài gói: `poetry add fastapi` / `poetry add --group dev pytest`\n• Đồng bộ: `poetry install`\n• Chạy ứng dụng: `poetry run python -m app.main`',
+            highlightColor: 'emerald',
+          },
+          {
+            id: 'stack-pyenv-pipenv',
+            badge: 'Mô hình 3 • Chuẩn Web / Django Truyền thống',
+            title: 'pyenv + Pipenv (Pipfile + Pipfile.lock)',
+            subtitle: 'pipenv --python 3.12 • pipenv install • pipenv sync',
+            detail:
+              '• Đặt .venv trong dự án: `export PIPENV_VENV_IN_PROJECT=1`\n• Khởi tạo & cài gói: `pipenv --python 3.12` & `pipenv install django`\n• Gói dev: `pipenv install --dev pytest`\n• Triển khai Production từ lockfile: `pipenv sync`\n• Chạy ứng dụng: `pipenv run python manage.py runserver`',
+            highlightColor: 'amber',
+          },
+        ],
+        caption:
+          'Để cài đặt các công cụ quản lý như `poetry`, `pipenv` hoặc `virtualenv` lên máy một cách sạch sẽ, hãy dùng **`pipx`** (`brew install pipx` / `apt install pipx` rồi `pipx install poetry pipenv virtualenv`).',
+      },
+    ],
+    codeExamples: [
+      {
+        id: 'ex-s0b-1-pyenv-venv-pip-tools',
+        title: 'Mô hình 1: Quản lý Version, Source Code & Dependency bằng `pyenv` + `venv`/`virtualenv` + `pip` (`pip-tools`)',
+        description: 'Quy trình chuẩn từ lúc tạo dự án, ghim phiên bản Python bằng pyenv, tạo .venv, cài đặt package nội bộ (-e .) đến khóa requirements.txt bằng pip-tools.',
+        code: `# ============================================================================
+# BƯỚC 1: QUẢN LÝ PHIÊN BẢN PYTHON VỚI 'pyenv' (GLOBAL vs. LOCAL DỰ ÁN)
+# ============================================================================
+# $ pyenv install --list | grep " 3.12"   # Tìm các bản Python 3.12 có thể cài
+# $ pyenv install 3.12.7                  # Tải và biên dịch Python 3.12.7
+# $ pyenv global 3.12.7                   # Đặt làm mặc định toàn máy
+
+# Khởi tạo thư mục dự án và ghim phiên bản Python riêng cho dự án:
+# $ mkdir -p billing-service/src/billing && cd billing-service
+# $ pyenv local 3.12.7                    # Tạo file .python-version ghi '3.12.7'
+# $ pyenv which python                    # Kiểm tra đường dẫn thực thi Python hiện tại
+
+# ============================================================================
+# BƯỚC 2: TẠO & KÍCH HOẠT MÔI TRƯỜNG ẢO (.venv) BẰNG 'venv' HOẶC 'virtualenv'
+# ============================================================================
+# Cách A: Dùng module chuẩn 'venv' có sẵn trong Python:
+# $ python -m venv .venv
+
+# Cách B: Hoặc dùng 'virtualenv' (Nhanh hơn, cho phép chỉ định rõ cờ -p):
+# $ virtualenv -p python3.12 .venv
+
+# Kích hoạt môi trường ảo (BẮT BUỘC trước khi dùng pip):
+# - macOS / Linux:      $ source .venv/bin/activate
+# - Windows PowerShell: PS> .venv\\Scripts\\Activate.ps1
+
+# ============================================================================
+# BƯỚC 3: QUẢN LÝ DEPENDENCY CHUYÊN NGHIỆP VỚI 'pip' & 'pip-tools'
+# ============================================================================
+# (.venv) $ python -m pip install --upgrade pip pip-tools
+#
+# Tạo file 'requirements.in' (Chỉ ghi các thư viện chính bạn trực tiếp sử dụng):
+#   fastapi>=0.115.0
+#   uvicorn[standard]>=0.30.0
+#   pydantic>=2.9.0
+#
+# Tạo file 'requirements-dev.in' (Kế thừa file chính và thêm công cụ test/lint):
+#   -c requirements.txt
+#   pytest>=8.3.0
+#   ruff>=0.6.0
+#
+# Biên dịch ra file khóa 'requirements.txt' và 'requirements-dev.txt' cố định phiên bản:
+# (.venv) $ pip-compile requirements.in -o requirements.txt
+# (.venv) $ pip-compile requirements-dev.in -o requirements-dev.txt
+#
+# Đồng bộ chính xác môi trường .venv theo file khóa (tự gỡ các gói thừa!):
+# (.venv) $ pip-sync requirements.txt requirements-dev.txt
+#
+# Cài đặt chính source code của dự án (thư mục src/) ở chế độ Editable để import mọi nơi:
+# (.venv) $ pip install -e .`,
+        output: `(.venv) $ pip-sync requirements.txt requirements-dev.txt\nSuccessfully installed fastapi-0.115.4 pydantic-2.9.2 pytest-8.3.3 ruff-0.7.2 uvicorn-0.32.0`,
+        annotations: [
+          { line: 10, explanation: '`pyenv local 3.12.7` tạo file `.python-version`. Bất cứ khi nào bạn `cd` vào `billing-service`, `pyenv` tự động kích hoạt Python 3.12.7.' },
+          { line: 19, explanation: '`virtualenv -p python3.12 .venv` rất hữu ích khi bạn muốn tạo nhanh `.venv` bằng một bản Python cụ thể.' },
+          { line: 39, explanation: '`pip-compile` giải quyết toàn bộ phụ thuộc bắc cầu và ghi phiên bản chính xác tuyệt đối (`==`) vào `requirements.txt`.' },
+          { line: 43, explanation: '`pip-sync` đảm bảo thư mục `.venv` khớp 100% với `requirements.txt` (nếu có gói nào cài thừa bằng tay, `pip-sync` sẽ tự động gỡ bỏ).' },
+          { line: 46, explanation: '`pip install -e .` (Editable install) liên kết thư mục `src/` vào `.venv`, giúp bạn chạy `pytest` hay `python -m` không bao giờ gặp lỗi `ModuleNotFoundError`.' },
+        ],
+      },
+      {
+        id: 'ex-s0b-2-poetry-complete-workflow',
+        title: 'Mô hình 2: Quản lý Dự án Toàn diện bằng `Poetry` (`pyproject.toml` + `poetry.lock`)',
+        description: 'Toàn bộ cách sử dụng Poetry từ cài đặt, cấu hình .venv trong dự án, khởi tạo source code, quản lý nhóm dependency đến chạy ứng dụng và build package.',
+        code: `# ============================================================================
+# BƯỚC 1: CÀI ĐẶT POETRY & CẤU HÌNH ĐẶT '.venv' NGAY TRONG THƯ MỤC DỰ ÁN
+# ============================================================================
+# Cài đặt Poetry độc lập qua pipx (hoặc script chính thức):
+# $ pipx install poetry
+# (Hoặc: curl -sSL https://install.python-poetry.org | python3 -)
+
+# CẤU HÌNH VÀNG (Chỉ chạy 1 lần): Bảo Poetry luôn tạo thư mục '.venv/' ngay trong dự án
+# thay vì giấu trong thư mục cache hệ thống, giúp VS Code / PyCharm tự nhận diện ngay!
+# $ poetry config virtualenvs.in-project true
+
+# ============================================================================
+# BƯỚC 2: KHỞI TẠO CẤU TRÚC SOURCE CODE & CHỌN PHIÊN BẢN PYTHON
+# ============================================================================
+# Cách 1: Tạo dự án mới với cấu trúc src/ chuẩn chỉnh:
+# $ poetry new --src analytics-engine
+# $ cd analytics-engine
+
+# Cách 2: Hoặc khởi tạo Poetry trong thư mục code đã có sẵn:
+# $ poetry init
+
+# Chỉ định phiên bản Python cho dự án (kết hợp hoàn hảo với pyenv):
+# $ pyenv local 3.12.7
+# $ poetry env use 3.12
+# $ poetry env info               # Xem chi tiết đường dẫn .venv và phiên bản Python
+
+# ============================================================================
+# BƯỚC 3: QUẢN LÝ DEPENDENCY, LOCKFILE & ĐỒNG BỘ MÔI TRƯỜNG VỚI POETRY
+# ============================================================================
+# 1. Thêm thư viện chính (Production dependencies):
+# $ poetry add fastapi "uvicorn[standard]" sqlalchemy
+
+# 2. Thêm thư viện theo nhóm phát triển (Dev / Test / Lint groups):
+# $ poetry add --group dev pytest pytest-asyncio ruff mypy
+
+# 3. Gỡ bỏ thư viện hoặc xem cây phụ thuộc:
+# $ poetry remove sqlalchemy
+# $ poetry show --tree
+
+# 4. Khi clone dự án có sẵn 'pyproject.toml' & 'poetry.lock' về máy:
+# $ poetry install                # Cài đặt toàn bộ (cả prod + dev) và cài package hiện tại
+# $ poetry install --without dev --no-root   # Lệnh chuẩn khi cài trên Docker Production!
+
+# 5. Xuất ra requirements.txt nếu nền tảng deploy yêu cầu:
+# $ poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+# ============================================================================
+# BƯỚC 4: CHẠY CODE, KIỂM THỬ & ĐÓNG GÓI VỚI POETRY
+# ============================================================================
+# Chạy lệnh bên trong môi trường ảo của Poetry:
+# $ poetry run python -m analytics_engine.main
+# $ poetry run pytest
+# $ poetry run ruff check .
+
+# Đóng gói thành file .whl (Wheel) và .tar.gz trong thư mục dist/:
+# $ poetry build`,
+        output: `Creating virtualenv analytics-engine in /workspace/analytics-engine/.venv\nUsing version ^0.115.0 for fastapi\nInstalling dependencies from lock file\nWriting lock file`,
+        annotations: [
+          { line: 10, explanation: '`poetry config virtualenvs.in-project true` là thiết lập quan trọng nhất khi dùng Poetry để thư mục `.venv/` nằm ngay tại gốc dự án.' },
+          { line: 15, explanation: '`poetry new --src analytics-engine` tự động tạo cấu trúc thư mục `src/analytics_engine/`, `tests/`, `pyproject.toml` và `README.md`.' },
+          { line: 23, explanation: '`poetry env use 3.12` bảo Poetry tạo môi trường ảo `.venv` bằng đúng bản Python 3.12.' },
+          { line: 32, explanation: '`poetry add --group dev ...` phân tách rõ các gói phục vụ phát triển vào mục `[tool.poetry.group.dev.dependencies]`.' },
+          { line: 40, explanation: 'Trên môi trường Production/Docker, `poetry install --without dev --no-root` chỉ cài các thư viện cần thiết để chạy app.' },
+        ],
+      },
+      {
+        id: 'ex-s0b-3-pipenv-complete-workflow',
+        title: 'Mô hình 3: Quản lý Dự án bằng `Pipenv` (`Pipfile` + `Pipfile.lock`)',
+        description: 'Cách sử dụng Pipenv trong các dự án Web (Django / Flask / Backend API) sử dụng Pipfile và Pipfile.lock.',
+        code: `# ============================================================================
+# BƯỚC 1: CÀI ĐẶT PIPENV & CẤU HÌNH ĐẶT '.venv' TRONG DỰ ÁN
+# ============================================================================
+# $ pipx install pipenv
+# Thêm dòng sau vào ~/.zshrc hoặc ~/.bashrc để Pipenv luôn tạo '.venv/' ngay trong dự án:
+# $ export PIPENV_VENV_IN_PROJECT=1
+
+# ============================================================================
+# BƯỚC 2: KHỞI TẠO MÔI TRƯỜNG & QUẢN LÝ GÓI VỚI 'Pipfile'
+# ============================================================================
+# $ mkdir crm-webapp && cd crm-webapp
+# $ pipenv --python 3.12                  # Tạo .venv với Python 3.12 và sinh file Pipfile
+
+# Cài đặt thư viện chạy Production (Ghi vào mục [packages] trong Pipfile):
+# $ pipenv install django gunicorn psycopg2-binary
+
+# Cài đặt thư viện phát triển (Ghi vào mục [dev-packages] trong Pipfile):
+# $ pipenv install --dev pytest pytest-django black
+
+# Xem đồ thị cây phụ thuộc & kiểm tra lỗ hổng bảo mật CVE:
+# $ pipenv graph
+# $ pipenv check
+
+# ============================================================================
+# BƯỚC 3: KHÓA PHIÊN BẢN, ĐỒNG BỘ PRODUCTION & CHẠY ỨNG DỤNG
+# ============================================================================
+# Cập nhật file khóa Pipfile.lock (chứa mã băm SHA256 của từng gói):
+# $ pipenv lock
+
+# Khi triển khai trên Server Production (Cài chính xác 100% từ Pipfile.lock):
+# $ pipenv sync
+# (Hoặc trên máy lập trình viên cần cả gói dev: $ pipenv sync --dev)
+
+# Chạy ứng dụng hoặc mở Shell bên trong môi trường Pipenv:
+# $ pipenv run python manage.py runserver
+# $ pipenv run pytest
+# $ pipenv shell                          # Mở sub-shell đã kích hoạt .venv (gõ 'exit' để thoát)`,
+        output: `Creating a virtualenv for this project...\nPipfile.lock (e4a1b9) out of date, updating to (9c2f10)...\nLocking [packages] dependencies...\nSuccess! Updated Pipfile.lock!`,
+        annotations: [
+          { line: 6, explanation: '`PIPENV_VENV_IN_PROJECT=1` giúp Pipenv đặt thư mục môi trường ảo tại `./.venv` ngay trong dự án thay vì thư mục `~/.local/share/virtualenvs/`.' },
+          { line: 15, explanation: '`pipenv install` tự động thêm gói vào `Pipfile` và cập nhật mã băm an toàn trong `Pipfile.lock`.' },
+          { line: 31, explanation: 'Khác với `pipenv install` (có thể cập nhật lại lockfile), lệnh `pipenv sync` cam kết cài đặt nguyên trạng 100% từ `Pipfile.lock`.' },
+          { line: 35, explanation: '`pipenv run <lệnh>` giúp thực thi lệnh ngay bên trong `.venv` mà không cần mở `pipenv shell`.' },
+        ],
+      },
+    ],
+    useCases: [
+      {
+        title: 'Tham gia dự án Doanh nghiệp đang dùng Poetry hoặc requirements.txt',
+        scenario: 'Bạn nhận bàn giao một repository Backend của công ty có sẵn file `poetry.lock` hoặc `requirements.txt` + `.python-version`.',
+        whyPythonFits: 'Nhìn vào file ở thư mục gốc là biết ngay công cụ cần dùng: Có `poetry.lock` $\\rightarrow$ chạy `poetry install`; có `Pipfile.lock` $\\rightarrow$ chạy `pipenv sync --dev`; có `requirements.txt` $\\rightarrow$ tạo `.venv` bằng `python -m venv .venv` rồi `pip install -r requirements.txt`!',
+      },
+    ],
+    tipsAndBestPractices: [
+      'Cách nhận diện nhanh công cụ quản lý của bất kỳ dự án Python nào chỉ trong 3 giây bằng cách nhìn vào **file lock** ở thư mục gốc: `uv.lock` $\\rightarrow$ dùng **`uv`**; `poetry.lock` $\\rightarrow$ dùng **`Poetry`**; `Pipfile.lock` $\\rightarrow$ dùng **`Pipenv`**; `requirements.txt` $\\rightarrow$ dùng **`venv` + `pip` / `pip-tools`**.',
+      'Tuyệt đối không trộn lẫn hai trình quản lý khóa trong cùng một dự án (ví dụ: dự án đang dùng `poetry.lock` thì luôn dùng `poetry add`, không tự ý gõ `pip install` bên ngoài làm lệch file lock).',
+      'Khi dùng `Poetry` hoặc `Pipenv`, luôn bật cấu hình tạo `.venv` nằm ngay trong thư mục gốc dự án (`poetry config virtualenvs.in-project true` và `PIPENV_VENV_IN_PROJECT=1`) để dễ kiểm soát và xóa sạch chỉ bằng `rm -rf .venv` khi cần tạo lại.',
+    ],
+    commonIssues: [
+      {
+        id: 'issue-s0b-poetry-hidden-venv',
+        title: 'Poetry hoặc Pipenv tạo môi trường ảo ở thư mục ẩn ngoài dự án khiến VS Code không tự thấy',
+        severity: 'warning',
+        symptom: 'Chạy `poetry install` xong nhưng không thấy thư mục `.venv/` trong dự án và VS Code không tự gợi ý Interpreter.',
+        whyItHappens:
+          'Mặc định Poetry và Pipenv lưu tất cả virtualenv tập trung tại `~/Library/Caches/pypoetry/virtualenvs` (macOS) hoặc `~/.cache/pypoetry/virtualenvs` (Linux).',
+        wrongCode: `# Chạy poetry install ngay khi mới cài Poetry mà chưa cấu hình in-project:\n$ poetry install\n# -> Tạo venv ở ~/.cache/pypoetry/virtualenvs/my-app-9x8a7b-py3.12`,
+        rightCode: `# Chạy lệnh cấu hình 1 lần duy nhất để Poetry luôn tạo ./.venv ngay trong dự án:\n$ poetry config virtualenvs.in-project true\n# Nếu đã lỡ tạo ở ngoài, xóa env cũ đi rồi chạy lại:\n$ poetry env remove --all && poetry install`,
+        fixExplanation: 'Bật `virtualenvs.in-project true` giúp thư mục `.venv/` luôn nằm ngay trong thư mục dự án, thống nhất giữa mọi công cụ.',
+      },
+    ],
+    jsComparison: [
+      {
+        concept: 'Nhận diện Công cụ Quản lý Dự án qua File Khóa (Lockfile)',
+        jsTsWay: 'package-lock.json (npm) | yarn.lock (Yarn) | pnpm-lock.yaml (pnpm) | bun.lockb (Bun)',
+        pythonWay: 'requirements.txt (pip) | Pipfile.lock (Pipenv) | poetry.lock (Poetry) | uv.lock (uv)',
+        jsCode: `# Nhìn file lock để gõ đúng lệnh:\n# Có pnpm-lock.yaml -> pnpm install\n# Có yarn.lock      -> yarn install\n# Có bun.lockb      -> bun install`,
+        pythonCode: `# Nhìn file lock ở gốc dự án để gõ đúng lệnh:\n# Có uv.lock          -> uv sync\n# Có poetry.lock      -> poetry install\n# Có Pipfile.lock     -> pipenv sync --dev\n# Có requirements.txt -> source .venv/bin/activate && pip install -r requirements.txt`,
+        keyDifference: 'Giống hệt thế giới JavaScript (npm, Yarn, pnpm, Bun), Python có các công cụ qua từng thời kỳ (`pip`/`venv`, `Pipenv`, `Poetry`, `uv`) — chỉ cần nhìn file lock ở thư mục gốc là bạn biết ngay phải dùng lệnh nào!',
+      },
+    ],
+    externalReferences: [
+      {
+        title: 'Poetry — Python Packaging and Dependency Management Documentation',
+        url: 'https://python-poetry.org/docs/',
+        sourceType: 'Tooling Docs',
+        description: 'Tài liệu chính thức toàn diện về cách sử dụng Poetry để quản lý dự án, phụ thuộc và đóng gói thư viện.',
+      },
+      {
+        title: 'pip-tools — Compile requirements.in to locked requirements.txt',
+        url: 'https://pip-tools.readthedocs.io/',
+        sourceType: 'Tooling Docs',
+        description: 'Hướng dẫn sử dụng bộ đôi pip-compile và pip-sync để quản lý requirements.txt chuẩn Production.',
+      },
+      {
+        title: 'Pipenv — Python Dev Workflow for Humans',
+        url: 'https://pipenv.pypa.io/',
+        sourceType: 'Tooling Docs',
+        description: 'Tài liệu chính thức từ PyPA về cách quản lý Pipfile, Pipfile.lock và môi trường ảo với Pipenv.',
+      },
+    ],
+    relatedTermIds: ['eco-uv', 'concept-gil', 'kw-def'],
+    relatedLessonIds: ['s0-install-setup-uv-pyenv-ide', 's0-python-overview-engine', 's0-versions-install-switch-run'],
     relatedExerciseIds: ['ex-s0-version-cli-check'],
   },
   {

@@ -75,6 +75,20 @@ function buildDirectoryTree(files: SampleProjectFile[]): TreeFolderNode {
   return root;
 }
 
+type ProjectToolingStack = 'uv' | 'pyenv-pip' | 'poetry' | 'pipenv';
+
+function formatCommandForStack(
+  rawCommand: string,
+  stack: ProjectToolingStack
+): string {
+  if (!rawCommand.startsWith('uv run ')) return rawCommand;
+  const inner = rawCommand.replace(/^uv run\s+/, '');
+  if (stack === 'uv') return rawCommand;
+  if (stack === 'pyenv-pip') return inner;
+  if (stack === 'poetry') return `poetry run ${inner}`;
+  return `pipenv run ${inner}`;
+}
+
 export const ProjectSamplesHub: React.FC = () => {
   const { ideTheme, setIdeTheme } = useSettingsStore();
   const activeIdeTheme = getIdeThemeConfig(ideTheme);
@@ -93,6 +107,7 @@ export const ProjectSamplesHub: React.FC = () => {
   const [copiedFile, setCopiedFile] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isLocalSetupOpen, setIsLocalSetupOpen] = useState(false);
+  const [toolingStack, setToolingStack] = useState<ProjectToolingStack>('uv');
 
   // Interactive Terminal & API/cURL State
   const [activeCommandId, setActiveCommandId] = useState<string>(
@@ -130,12 +145,12 @@ export const ProjectSamplesHub: React.FC = () => {
     const firstCmd = currentProject.interactiveCommands[0];
     if (firstCmd) {
       setActiveCommandId(firstCmd.id);
-      setCustomCommandInput(firstCmd.command);
+      setCustomCommandInput(formatCommandForStack(firstCmd.command, toolingStack));
       setTerminalOutput(firstCmd.stdout);
       setActiveHttpMeta(firstCmd.httpMeta);
     }
     setCollapsedFolders({});
-  }, [currentProject.id, currentProject.defaultFilePath, currentProject.interactiveCommands]);
+  }, [currentProject.id, currentProject.defaultFilePath, currentProject.interactiveCommands, toolingStack]);
 
   const activeFile: SampleProjectFile =
     currentProject.files.find((f) => f.path === activeFilePath) ||
@@ -148,10 +163,20 @@ export const ProjectSamplesHub: React.FC = () => {
 
   const handleSelectCommand = (cmd: SampleInteractiveCommand) => {
     setActiveCommandId(cmd.id);
-    setCustomCommandInput(cmd.command);
+    setCustomCommandInput(formatCommandForStack(cmd.command, toolingStack));
     setTerminalOutput(cmd.stdout);
     setActiveHttpMeta(cmd.httpMeta);
     setRunCount((c) => c + 1);
+  };
+
+  const handleSelectToolingStack = (nextStack: ProjectToolingStack) => {
+    setToolingStack(nextStack);
+    const activeCmd =
+      currentProject.interactiveCommands.find((c) => c.id === activeCommandId) ||
+      currentProject.interactiveCommands[0];
+    if (activeCmd) {
+      setCustomCommandInput(formatCommandForStack(activeCmd.command, nextStack));
+    }
   };
 
   const handleExecuteCustomCommand = (e: React.FormEvent) => {
@@ -764,8 +789,118 @@ export const ProjectSamplesHub: React.FC = () => {
             </div>
           </div>
 
-          {/* Interactive Terminal & cURL / API Playground */}
+          {/* Interactive Terminal & Dual-Track Project Management Workflow */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3.5 shadow-xl">
+            {/* Project Management Tooling Switcher (Method 1: uv vs Method 2: pyenv/pip, Poetry, Pipenv) */}
+            <div className="rounded-xl border border-slate-800/90 bg-slate-950/70 p-3 space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-bold text-slate-200">
+                    Chọn Phương pháp Quản lý Dự án & Chạy Lệnh (Xuyên suốt 16 Project):
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handleSelectToolingStack('uv')}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                      toolingStack === 'uv'
+                        ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                    )}
+                  >
+                    Cách 1: Dùng `uv`
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectToolingStack('pyenv-pip')}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                      toolingStack === 'pyenv-pip'
+                        ? 'bg-sky-400 text-slate-950 shadow-xs'
+                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                    )}
+                  >
+                    Cách 2A: `pyenv + venv + pip`
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectToolingStack('poetry')}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                      toolingStack === 'poetry'
+                        ? 'bg-sky-400 text-slate-950 shadow-xs'
+                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                    )}
+                  >
+                    Cách 2B: `pyenv + Poetry`
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectToolingStack('pipenv')}
+                    className={cn(
+                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                      toolingStack === 'pipenv'
+                        ? 'bg-sky-400 text-slate-950 shadow-xs'
+                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                    )}
+                  >
+                    Cách 2C: `pyenv + Pipenv`
+                  </button>
+                </div>
+              </div>
+
+              {/* 3-Step Lifecycle Strip for the Selected Tooling Stack */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
+                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
+                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    1. Version & Môi trường (.venv)
+                  </div>
+                  <div className="mt-1 text-emerald-300 truncate">
+                    {toolingStack === 'uv' &&
+                      'uv python pin 3.12 && uv venv'}
+                    {toolingStack === 'pyenv-pip' &&
+                      'pyenv local 3.12.7 && python -m venv .venv && source .venv/bin/activate'}
+                    {toolingStack === 'poetry' &&
+                      'pyenv local 3.12.7 && poetry env use 3.12'}
+                    {toolingStack === 'pipenv' &&
+                      'pyenv local 3.12.7 && pipenv --python 3.12'}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
+                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    2. Quản lý Dependency & Lockfile
+                  </div>
+                  <div className="mt-1 text-sky-300 truncate">
+                    {toolingStack === 'uv' &&
+                      'uv sync  (Thêm gói: uv add <pkg>)'}
+                    {toolingStack === 'pyenv-pip' &&
+                      'pip install -e . pytest ruff  (pip-sync)'}
+                    {toolingStack === 'poetry' &&
+                      'poetry install  (Thêm gói: poetry add <pkg>)'}
+                    {toolingStack === 'pipenv' &&
+                      'pipenv install -e . --dev  (pipenv sync)'}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
+                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    3. Tiền tố Chạy Ứng dụng & Test
+                  </div>
+                  <div className="mt-1 text-amber-300 truncate">
+                    {toolingStack === 'uv' && 'uv run python ... | uv run pytest'}
+                    {toolingStack === 'pyenv-pip' &&
+                      '(.venv) $ python ... | pytest'}
+                    {toolingStack === 'poetry' &&
+                      'poetry run python ... | poetry run pytest'}
+                    {toolingStack === 'pipenv' &&
+                      'pipenv run python ... | pipenv run pytest'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Terminal className="h-4 w-4 text-emerald-400" />
@@ -814,8 +949,8 @@ export const ProjectSamplesHub: React.FC = () => {
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
             >
               <div className="flex-1 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-xs">
-                <span className="text-emerald-400 font-bold select-none">
-                  $
+                <span className="text-emerald-400 font-bold select-none shrink-0">
+                  {toolingStack === 'pyenv-pip' ? '(.venv) $' : '$'}
                 </span>
                 <input
                   type="text"
