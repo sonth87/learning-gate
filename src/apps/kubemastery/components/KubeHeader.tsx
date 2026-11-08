@@ -12,12 +12,15 @@ import {
   Sun,
   Moon,
   Monitor,
-  Container,
-  Terminal,
   X,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { switchLearningApp } from '@/apps/appRegistry';
+import {
+  PyMasteryLogo,
+  KubeMasteryLogo,
+  CicdMasteryLogo,
+} from '@/components/common/AppLogos';
 import { KUBE_LESSONS } from '../data/curriculumData';
 import { INCIDENT_SCENARIOS } from '../data/incidentsData';
 import { ANIMATED_FLOW_LIST } from '../data/animatedFlowsData';
@@ -152,10 +155,10 @@ export const KubeHeader: React.FC = () => {
           {/* Brand Logo */}
           <button
             onClick={() => setActiveTab('curriculum')}
-            className="flex items-center gap-2.5 text-left min-w-0 shrink-0"
+            className="group flex items-center gap-2.5 text-left min-w-0 shrink-0"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 shadow-xs">
-              <Container className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm shadow-sky-500/20 overflow-hidden transition-transform duration-200 group-hover:scale-105">
+              <KubeMasteryLogo className="h-full w-full" />
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
@@ -214,7 +217,7 @@ export const KubeHeader: React.FC = () => {
               title="Chuyển sang App học CI/CD Architecture (CI/CD Mastery)"
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 transition-all"
             >
-              <Workflow className="h-3.5 w-3.5 text-cyan-400" />
+              <CicdMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden sm:inline">CI/CD App</span>
             </button>
 
@@ -223,7 +226,7 @@ export const KubeHeader: React.FC = () => {
               title="Chuyển sang App học Python (PyMastery)"
               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/45 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all"
             >
-              <Terminal className="h-3.5 w-3.5 text-emerald-400" />
+              <PyMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden sm:inline">Python App</span>
             </button>
 

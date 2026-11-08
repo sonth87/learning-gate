@@ -2,11 +2,18 @@ import { useStore, type AppConfig } from '@sonth87/device-layout';
 import { PyMasteryApp } from './pymastery/PyMasteryApp';
 import { KubeMasteryApp } from './kubemastery/KubeMasteryApp';
 import { CicdMasteryApp } from './cicdmastery/CicdMasteryApp';
+import {
+  PyMasteryLogo,
+  KubeMasteryLogo,
+  CicdMasteryLogo,
+} from '@/components/common/AppLogos';
 
 export const PYMASTERY_CONFIG: AppConfig = {
   id: 'pymastery',
   name: 'Python Mastery',
-  icon: 'lucide:Terminal',
+  icon: PyMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
   iconColor: ['#10B981', '#059669'],
   render: PyMasteryApp,
   defaultMaximized: false,
@@ -86,7 +93,9 @@ export const PYMASTERY_CONFIG: AppConfig = {
 export const KUBEMASTERY_CONFIG: AppConfig = {
   id: 'kubemastery',
   name: 'Docker & K8s Mastery',
-  icon: 'lucide:Container',
+  icon: KubeMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
   iconColor: ['#0EA5E9', '#2563EB'],
   render: KubeMasteryApp,
   defaultMaximized: false,
@@ -152,7 +161,9 @@ export const KUBEMASTERY_CONFIG: AppConfig = {
 export const CICD_MASTERY_CONFIG: AppConfig = {
   id: 'cicdmastery',
   name: 'CI/CD Architecture',
-  icon: 'lucide:Workflow',
+  icon: CicdMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
   iconColor: ['#06B6D4', '#3B82F6'],
   render: CicdMasteryApp,
   defaultMaximized: false,

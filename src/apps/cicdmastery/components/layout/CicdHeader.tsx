@@ -11,9 +11,7 @@ import {
   Sun,
   Moon,
   Monitor,
-  Terminal,
   StickyNote,
-  Container,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { CicdMainTab } from '../../types/cicd.types';
@@ -22,6 +20,11 @@ import { ALL_CICD_LESSONS } from '../../data/cicdCurriculumIndex';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { switchLearningApp } from '@/apps/appRegistry';
+import {
+  PyMasteryLogo,
+  KubeMasteryLogo,
+  CicdMasteryLogo,
+} from '@/components/common/AppLogos';
 import { cn } from '@/utils/cn';
 
 export const CICD_NAV_TABS: {
@@ -116,8 +119,8 @@ export const CicdHeader: React.FC = () => {
       <div className="flex h-14 items-center justify-between gap-2 px-3 sm:px-5">
         {/* Brand Identity */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md">
-            <Workflow className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl shadow-md overflow-hidden">
+            <CicdMasteryLogo className="h-full w-full" />
           </div>
           <div className="leading-tight">
             <div className="flex items-center gap-1.5">
@@ -177,7 +180,7 @@ export const CicdHeader: React.FC = () => {
             title="Chuyển nhanh sang ứng dụng Docker & K8s Mastery"
             className="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/15 px-2.5 py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-all"
           >
-            <Container className="h-3.5 w-3.5 text-sky-400" />
+            <KubeMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
             <span className="hidden sm:inline">Docker & K8s</span>
           </button>
 
@@ -187,7 +190,7 @@ export const CicdHeader: React.FC = () => {
             title="Chuyển nhanh sang ứng dụng Python Mastery"
             className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all"
           >
-            <Terminal className="h-3.5 w-3.5 text-emerald-400" />
+            <PyMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
             <span className="hidden sm:inline">Python App</span>
           </button>
 

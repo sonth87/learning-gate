@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Deep Indigo, Violet & Cyan DevOps Background -->
+    <linearGradient id="cicdBg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1B4B" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#042F2E" />
+    </linearGradient>
+
+    <!-- Ambient Radial Glow -->
+    <radialGradient id="cicdGlow" cx="60" cy="60" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.34" />
+      <stop offset="55%" stop-color="#8B5CF6" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Outer Rim -->
+    <linearGradient id="cicdRim" x1="8" y1="8" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#67E8F9" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#8B5CF6" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0.75" />
+    </linearGradient>
+
+    <!-- CI Loop Gradient (Cyan -> Blue -> Violet) -->
+    <linearGradient id="ciLoop" x1="12" y1="34" x2="108" y2="86" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" />
+      <stop offset="48%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+
+    <!-- CD Loop Highlight Gradient -->
+    <linearGradient id="cdHighlight" x1="18" y1="78" x2="102" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#A855F7" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+  </defs>
+
+  <!-- Full-Bleed Rounded Base -->
+  <rect width="120" height="120" rx="26" fill="url(#cicdBg)" />
+  <circle cx="60" cy="60" r="54" fill="url(#cicdGlow)" />
+  <rect x="2.5" y="2.5" width="115" height="115" rx="24" stroke="url(#cicdRim)" stroke-width="2.5" />
+
+  <!-- Top & Bottom DAG Pipeline Tracks -->
+  <path d="M24 25H96" stroke="#38BDF8" stroke-opacity="0.28" stroke-width="2" stroke-dasharray="4 4" />
+  <path d="M24 95H96" stroke="#34D399" stroke-opacity="0.28" stroke-width="2" stroke-dasharray="4 4" />
+
+  <!-- Top Stage Pills: CI • DAG • CD -->
+  <rect x="18" y="16" width="24" height="13" rx="6.5" fill="#083344" stroke="#22D3EE" stroke-width="1.5" />
+  <text x="30" y="25.5" text-anchor="middle" fill="#67E8F9" font-family="monospace" font-size="8.5" font-weight="800">CI</text>
+
+  <rect x="48" y="16" width="24" height="13" rx="6.5" fill="#1E1B4B" stroke="#A78BFA" stroke-width="1.5" />
+  <text x="60" y="25.5" text-anchor="middle" fill="#DDD6FE" font-family="monospace" font-size="8" font-weight="800">DAG</text>
+
+  <rect x="78" y="16" width="24" height="13" rx="6.5" fill="#064E3B" stroke="#34D399" stroke-width="1.5" />
+  <text x="90" y="25.5" text-anchor="middle" fill="#6EE7B7" font-family="monospace" font-size="8.5" font-weight="800">CD</text>
+
+  <!-- Glowing DevOps Infinity Pipeline Loop -->
+  <!-- Shadow/Outer Glow Path -->
+  <path
+    d="M36 42C22.5 42 15 50 15 60C15 70 22.5 78 36 78C49 78 71 42 84 42C97.5 42 105 50 105 60C105 70 97.5 78 84 78C71 78 49 42 36 42Z"
+    stroke="url(#cdHighlight)"
+    stroke-width="13"
+    stroke-opacity="0.25"
+    stroke-linecap="round"
+  />
+
+  <!-- Main Infinity Ribbon -->
+  <path
+    d="M36 42C22.5 42 15 50 15 60C15 70 22.5 78 36 78C49 78 71 42 84 42C97.5 42 105 50 105 60C105 70 97.5 78 84 78C71 78 49 42 36 42Z"
+    stroke="url(#ciLoop)"
+    stroke-width="8.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Directional Flow Arrows on Loop -->
+  <path d="M32 37L39 42L32 47" stroke="#A5F3FC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M88 73L81 78L88 83" stroke="#6EE7B7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Left CI Node (Git Branch / Build) -->
+  <circle cx="34" cy="60" r="9.5" fill="#083344" stroke="#22D3EE" stroke-width="2.5" />
+  <circle cx="34" cy="60" r="4" fill="#67E8F9" />
+
+  <!-- Right CD Node (Zero-Downtime Green Check / Deploy) -->
+  <circle cx="86" cy="60" r="9.5" fill="#064E3B" stroke="#34D399" stroke-width="2.5" />
+  <path d="M82 60.2L84.8 63L90.5 57.3" stroke="#6EE7B7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Center GitOps / Gate Core Hub -->
+  <circle cx="60" cy="60" r="12" fill="#090D16" stroke="#C084FC" stroke-width="2.8" />
+  <path d="M60 53L66 60L60 67L54 60L60 53Z" fill="#A855F7" stroke="#F3E8FF" stroke-width="1.2" />
+
+  <!-- Bottom Pipeline Status Nodes -->
+  <circle cx="30" cy="95" r="4" fill="#22D3EE" />
+  <circle cx="60" cy="95" r="4" fill="#A855F7" />
+  <circle cx="90" cy="95" r="4" fill="#34D399" />
+</svg>

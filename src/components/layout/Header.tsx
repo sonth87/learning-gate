@@ -16,11 +16,14 @@ import {
   Monitor,
   Wrench,
   Terminal,
-  Container,
-  Workflow,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { switchLearningApp } from '@/apps/appRegistry';
+import {
+  PyMasteryLogo,
+  KubeMasteryLogo,
+  CicdMasteryLogo,
+} from '@/components/common/AppLogos';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
@@ -160,12 +163,8 @@ export const Header: React.FC = () => {
               onClick={() => setActiveTab('curriculum')}
               className="group flex items-center gap-2 text-left focus-visible:outline-none min-w-0"
             >
-              <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
-                <img
-                  src="/favicon.svg"
-                  alt="Learning Gate"
-                  className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
-                />
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+                <PyMasteryLogo className="h-full w-full" />
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -235,7 +234,7 @@ export const Header: React.FC = () => {
               aria-label="Mở App học CI/CD Architecture"
               className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 px-2 sm:px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 hover:border-cyan-500/60 transition-all cursor-pointer shadow-xs"
             >
-              <Workflow className="h-3.5 w-3.5 text-cyan-400 shrink-0" aria-hidden="true" />
+              <CicdMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden md:inline whitespace-nowrap">
                 CI/CD App
               </span>
@@ -252,7 +251,7 @@ export const Header: React.FC = () => {
               aria-label="Mở App học Docker & Kubernetes"
               className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-500/45 bg-sky-500/15 px-2 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 hover:border-sky-500/60 transition-all cursor-pointer shadow-xs"
             >
-              <Container className="h-3.5 w-3.5 text-sky-400 shrink-0" aria-hidden="true" />
+              <KubeMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden md:inline whitespace-nowrap">
                 Docker & K8s App
               </span>

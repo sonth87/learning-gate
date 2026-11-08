@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Deep Emerald & Slate App Background -->
+    <linearGradient id="pyBg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#062E22" />
+      <stop offset="48%" stop-color="#041914" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Ambient Radial Glow -->
+    <radialGradient id="pyGlow" cx="60" cy="54" r="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.32" />
+      <stop offset="65%" stop-color="#0EA5E9" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Outer Border Rim -->
+    <linearGradient id="pyRim" x1="12" y1="6" x2="108" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6EE7B7" stop-opacity="0.75" />
+      <stop offset="50%" stop-color="#10B981" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.55" />
+    </linearGradient>
+
+    <!-- Upper Python Module Gradient (Emerald -> Cyan) -->
+    <linearGradient id="pyTop" x1="24" y1="18" x2="88" y2="76" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6EE7B7" />
+      <stop offset="45%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <!-- Lower Python Module Gradient (Gold -> Amber) -->
+    <linearGradient id="pyBottom" x1="34" y1="46" x2="96" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE68A" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+
+  <!-- Full-Bleed Rounded Base -->
+  <rect width="120" height="120" rx="26" fill="url(#pyBg)" />
+  <circle cx="60" cy="58" r="52" fill="url(#pyGlow)" />
+  <rect x="2.5" y="2.5" width="115" height="115" rx="24" stroke="url(#pyRim)" stroke-width="2.5" />
+
+  <!-- Subtle Technical Grid Lines -->
+  <path d="M22 32H98M22 60H98M22 88H98" stroke="#34D399" stroke-opacity="0.09" stroke-width="1.5" stroke-dasharray="4 4" />
+
+  <!-- Interlocking Upper Python Block (Emerald/Cyan) -->
+  <path
+    d="M59 17C41 17 37 24.5 37 33V43H61V47.5H27C17.5 47.5 13 55 13 66C13 77 17.5 84.5 27 84.5H35V73C35 63.5 42.5 56 52 56H74C81.5 56 87 50.5 87 43V33C87 23.5 79 17 59 17Z"
+    fill="url(#pyTop)"
+  />
+  <!-- Upper Eye Node -->
+  <circle cx="47.5" cy="27.5" r="4.2" fill="#022C22" />
+  <circle cx="47.5" cy="27.5" r="2" fill="#A7F3D0" />
+
+  <!-- Interlocking Lower Python Block (Amber/Gold) -->
+  <path
+    d="M61 103C79 103 83 95.5 83 87V77H59V72.5H93C102.5 72.5 107 65 107 54C107 43 102.5 35.5 93 35.5H85V47C85 56.5 77.5 64 68 64H46C38.5 64 33 69.5 33 77V87C33 96.5 41 103 61 103Z"
+    fill="url(#pyBottom)"
+  />
+  <!-- Lower Eye Node -->
+  <circle cx="72.5" cy="92.5" r="4.2" fill="#451A03" />
+  <circle cx="72.5" cy="92.5" r="2" fill="#FEF3C7" />
+
+  <!-- Center Terminal Code Badge ('>_') -->
+  <rect x="42" y="45" width="36" height="30" rx="9" fill="#020617" fill-opacity="0.92" stroke="#6EE7B7" stroke-opacity="0.65" stroke-width="2" />
+  <path d="M49 54L56.5 60L49 66" stroke="#34D399" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M60 66H70" stroke="#FBBF24" stroke-width="3.6" stroke-linecap="round" />
+</svg>

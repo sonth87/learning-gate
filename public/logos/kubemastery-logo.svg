@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Deep Ocean & Navy Cluster Background -->
+    <linearGradient id="kubeBg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#082F49" />
+      <stop offset="48%" stop-color="#0B192C" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Ambient Radial Glow -->
+    <radialGradient id="kubeGlow" cx="60" cy="60" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.38" />
+      <stop offset="60%" stop-color="#2563EB" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Outer Rim -->
+    <linearGradient id="kubeRim" x1="10" y1="8" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7DD3FC" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#0EA5E9" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#6366F1" stop-opacity="0.65" />
+    </linearGradient>
+
+    <!-- Kubernetes Helm Wheel Gradient -->
+    <linearGradient id="helmGrad" x1="20" y1="18" x2="100" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7DD3FC" />
+      <stop offset="45%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+
+    <!-- 3D Container Cube Top Face -->
+    <linearGradient id="cubeTop" x1="42" y1="38" x2="78" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0F2FE" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+
+    <!-- 3D Container Cube Left Face -->
+    <linearGradient id="cubeLeft" x1="38" y1="50" x2="60" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5E9" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </linearGradient>
+
+    <!-- 3D Container Cube Right Face -->
+    <linearGradient id="cubeRight" x1="60" y1="50" x2="82" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#1E3A8A" />
+    </linearGradient>
+  </defs>
+
+  <!-- Full-Bleed Rounded Base -->
+  <rect width="120" height="120" rx="26" fill="url(#kubeBg)" />
+  <circle cx="60" cy="60" r="54" fill="url(#kubeGlow)" />
+  <rect x="2.5" y="2.5" width="115" height="115" rx="24" stroke="url(#kubeRim)" stroke-width="2.5" />
+
+  <!-- Outer Heptagon / Octagon Kubernetes Cluster Ring -->
+  <polygon
+    points="60,13 94,27 107,60 94,93 60,107 26,93 13,60 26,27"
+    stroke="url(#helmGrad)"
+    stroke-width="3.2"
+    stroke-opacity="0.55"
+    fill="#041022"
+    fill-opacity="0.55"
+  />
+
+  <!-- Kubernetes Helm Spokes & Handles -->
+  <g stroke="url(#helmGrad)" stroke-width="4.2" stroke-linecap="round">
+    <line x1="60" y1="12" x2="60" y2="34" />
+    <line x1="60" y1="86" x2="60" y2="108" />
+    <line x1="12" y1="60" x2="34" y2="60" />
+    <line x1="86" y1="60" x2="108" y2="60" />
+    <line x1="25" y1="25" x2="41" y2="41" />
+    <line x1="79" y1="79" x2="95" y2="95" />
+    <line x1="95" y1="25" x2="79" y2="41" />
+    <line x1="41" y1="79" x2="25" y2="95" />
+  </g>
+
+  <!-- Helm Outer Ring -->
+  <circle cx="60" cy="60" r="35" stroke="url(#helmGrad)" stroke-width="5.5" fill="#06152D" />
+
+  <!-- Spoke Tip Nodes -->
+  <g fill="#7DD3FC">
+    <circle cx="60" cy="12" r="3.5" />
+    <circle cx="60" cy="108" r="3.5" />
+    <circle cx="12" cy="60" r="3.5" />
+    <circle cx="108" cy="60" r="3.5" />
+    <circle cx="25" cy="25" r="3" />
+    <circle cx="95" cy="25" r="3" />
+    <circle cx="25" cy="95" r="3" />
+    <circle cx="95" cy="95" r="3" />
+  </g>
+
+  <!-- Isometric Docker Container Cube in Center -->
+  <!-- Top Face -->
+  <polygon points="60,36 81,48 60,60 39,48" fill="url(#cubeTop)" />
+  <!-- Left Face -->
+  <polygon points="39,48 60,60 60,84 39,72" fill="url(#cubeLeft)" />
+  <!-- Right Face -->
+  <polygon points="60,60 81,48 81,72 60,84" fill="url(#cubeRight)" />
+
+  <!-- Container Ribs & Crisp Isometric Edges -->
+  <path d="M39 48L60 36L81 48L60 60L39 48Z" stroke="#E0F2FE" stroke-width="1.6" stroke-linejoin="round" />
+  <path d="M39 48V72L60 84L81 72V48" stroke="#7DD3FC" stroke-width="1.6" stroke-linejoin="round" />
+  <line x1="60" y1="60" x2="60" y2="84" stroke="#E0F2FE" stroke-width="1.8" />
+  <!-- Docker Container Corrugation Lines -->
+  <line x1="46" y1="57" x2="46" y2="71" stroke="#BAE6FD" stroke-width="1.8" stroke-linecap="round" />
+  <line x1="53" y1="61" x2="53" y2="75" stroke="#BAE6FD" stroke-width="1.8" stroke-linecap="round" />
+  <line x1="67" y1="61" x2="67" y2="75" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+  <line x1="74" y1="57" x2="74" y2="71" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" />
+</svg>
