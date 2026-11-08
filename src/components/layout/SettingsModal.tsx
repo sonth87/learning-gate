@@ -75,31 +75,33 @@ export const SettingsModal: React.FC = () => {
   return (
     <div
       onClick={() => setSettingsOpen(false)}
-      className="absolute inset-0 z-[100] flex items-center justify-center bg-black/75 p-0 sm:p-4 backdrop-blur-xs"
+      className="absolute inset-0 z-[100] flex flex-col bg-slate-950 lg:items-center lg:justify-center lg:bg-black/75 lg:p-4 lg:backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full h-full sm:h-auto sm:max-h-[90%] sm:max-w-xl rounded-none sm:rounded-2xl border-0 sm:border border-slate-700 bg-slate-900 shadow-2xl flex flex-col overflow-hidden"
+        className="w-full h-full lg:h-auto lg:max-h-[90%] lg:max-w-xl rounded-none lg:rounded-2xl border-0 lg:border border-slate-700 bg-slate-900 shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header - Fixed top with close */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-4 sm:px-6 sm:py-4 shrink-0 bg-slate-900/95">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3.5 sm:px-6 sm:py-4 shrink-0 bg-slate-900/95">
+          <div className="flex items-center gap-2.5 min-w-0">
             <Sliders className="h-5 w-5 text-amber-400 shrink-0" />
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-bold text-white truncate">
                 Cài đặt Hệ thống & Dữ liệu
               </h3>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
+              <p className="text-[11px] text-slate-400 hidden sm:block truncate">
                 Tùy chỉnh hiển thị, giao diện & đồng bộ LocalStorage + IndexedDB
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setSettingsOpen(false)}
             aria-label="Đóng cài đặt"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1 rounded-xl border border-rose-500/40 bg-rose-500/15 px-2.5 py-1.5 text-xs font-extrabold text-rose-200 hover:bg-rose-500/25 hover:text-white transition-colors shrink-0 cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4 text-rose-400 shrink-0" />
+            <span>Đóng</span>
           </button>
         </div>
 
@@ -348,6 +350,18 @@ export const SettingsModal: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile & Tablet (< lg) Sticky Bottom Close Bar */}
+      <div className="flex lg:hidden items-center justify-end border-t border-slate-800 bg-slate-900/95 px-4 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shrink-0">
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(false)}
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950 hover:bg-emerald-400 transition-all shadow-md cursor-pointer"
+        >
+          <X className="h-4 w-4 shrink-0" />
+          <span>Đóng Cài đặt & Quay lại</span>
+        </button>
       </div>
     </div>
   </div>

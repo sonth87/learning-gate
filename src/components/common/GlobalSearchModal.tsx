@@ -152,15 +152,15 @@ export const GlobalSearchModal: React.FC = () => {
   return (
     <div
       onClick={() => setSearchOpen(false)}
-      className="absolute inset-0 z-[100] flex flex-col sm:items-center sm:justify-center bg-slate-950 sm:bg-black/80 sm:backdrop-blur-xs p-0 sm:p-4"
+      className="absolute inset-0 z-[100] flex flex-col bg-slate-950 lg:items-center lg:justify-center lg:bg-black/80 lg:backdrop-blur-xs lg:p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
-        className="w-full h-full sm:h-auto sm:max-h-[min(86%,660px)] sm:max-w-2xl rounded-none sm:rounded-2xl border-0 sm:border border-slate-700/80 bg-slate-900 shadow-2xl flex flex-col overflow-hidden text-slate-100"
+        className="w-full h-full lg:h-auto lg:max-h-[min(86%,680px)] lg:max-w-2xl rounded-none lg:rounded-2xl border-0 lg:border border-slate-700/80 bg-slate-900 shadow-2xl flex flex-col overflow-hidden text-slate-100"
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5 shrink-0 bg-slate-900/95">
+        <div className="flex items-center gap-2.5 border-b border-slate-800 px-3 sm:px-4 py-3 shrink-0 bg-slate-900/95">
           <Search className="h-5 w-5 text-amber-400 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
@@ -171,18 +171,19 @@ export const GlobalSearchModal: React.FC = () => {
               setSelectedIndex(0);
             }}
             placeholder="Tìm bài học, từ khóa (yield, async), hàm (print, sys)..."
-            className="w-full bg-transparent text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none"
+            className="flex-1 min-w-0 bg-transparent text-sm sm:text-base text-white placeholder-slate-400 focus:outline-none"
           />
 
           {/* Clear query button */}
           {query.trim().length > 0 && (
             <button
+              type="button"
               onClick={() => {
                 setQuery('');
                 setSelectedIndex(0);
                 inputRef.current?.focus();
               }}
-              className="rounded-lg p-1 text-slate-400 hover:text-slate-200 transition-colors"
+              className="rounded-lg p-1 text-slate-400 hover:text-slate-200 transition-colors shrink-0"
               title="Xóa nội dung"
             >
               <X className="h-4 w-4" />
@@ -191,23 +192,26 @@ export const GlobalSearchModal: React.FC = () => {
 
           {/* Close Modal button */}
           <button
+            type="button"
             onClick={() => setSearchOpen(false)}
             aria-label="Đóng tìm kiếm"
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-xl border border-rose-500/40 bg-rose-500/15 px-2.5 py-1.5 text-xs font-extrabold text-rose-200 hover:bg-rose-500/25 hover:text-white active:scale-95 transition-colors shrink-0 cursor-pointer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4 text-rose-400 shrink-0" />
+            <span>Đóng</span>
           </button>
         </div>
 
-        {/* Filter Category Tabs */}
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-slate-800/80 bg-slate-950/60 overflow-x-auto shrink-0 text-xs">
+        {/* Filter Category Tabs (4-column grid on mobile so all tabs fit without horizontal scrolling) */}
+        <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 sm:gap-1.5 px-3 sm:px-4 py-2 border-b border-slate-800/80 bg-slate-950/60 shrink-0 text-[11px] sm:text-xs">
           <button
+            type="button"
             onClick={() => {
               setActiveCategory('all');
               setSelectedIndex(0);
             }}
             className={cn(
-              'rounded-lg px-2.5 py-1 font-medium transition-colors shrink-0',
+              'rounded-lg px-2 py-1.5 font-medium transition-colors text-center truncate',
               activeCategory === 'all'
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
@@ -216,49 +220,52 @@ export const GlobalSearchModal: React.FC = () => {
             Tất cả ({totalCount})
           </button>
           <button
+            type="button"
             onClick={() => {
               setActiveCategory('terms');
               setSelectedIndex(0);
             }}
             className={cn(
-              'rounded-lg px-2.5 py-1 font-medium transition-colors shrink-0 flex items-center gap-1',
+              'rounded-lg px-2 py-1.5 font-medium transition-colors flex items-center justify-center gap-1 truncate',
               activeCategory === 'terms'
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             )}
           >
-            <Sparkles className="h-3 w-3" />
-            <span>Thuật ngữ ({matchedTerms.length})</span>
+            <Sparkles className="h-3 w-3 shrink-0" />
+            <span className="truncate">Thuật ngữ ({matchedTerms.length})</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               setActiveCategory('lessons');
               setSelectedIndex(0);
             }}
             className={cn(
-              'rounded-lg px-2.5 py-1 font-medium transition-colors shrink-0 flex items-center gap-1',
+              'rounded-lg px-2 py-1.5 font-medium transition-colors flex items-center justify-center gap-1 truncate',
               activeCategory === 'lessons'
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             )}
           >
-            <BookOpen className="h-3 w-3" />
-            <span>Bài học ({matchedLessons.length})</span>
+            <BookOpen className="h-3 w-3 shrink-0" />
+            <span className="truncate">Bài học ({matchedLessons.length})</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               setActiveCategory('exercises');
               setSelectedIndex(0);
             }}
             className={cn(
-              'rounded-lg px-2.5 py-1 font-medium transition-colors shrink-0 flex items-center gap-1',
+              'rounded-lg px-2 py-1.5 font-medium transition-colors flex items-center justify-center gap-1 truncate',
               activeCategory === 'exercises'
                 ? 'bg-amber-500 text-slate-950 font-bold'
                 : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
             )}
           >
-            <Code2 className="h-3 w-3" />
-            <span>Bài tập ({matchedExercises.length})</span>
+            <Code2 className="h-3 w-3 shrink-0" />
+            <span className="truncate">Bài tập ({matchedExercises.length})</span>
           </button>
         </div>
 
@@ -411,8 +418,22 @@ export const GlobalSearchModal: React.FC = () => {
           )}
         </div>
 
-        {/* Footer with shortcut hints */}
-        <div className="hidden sm:flex items-center justify-between border-t border-slate-800/80 bg-slate-950/80 px-4 py-2.5 text-xs text-slate-400 shrink-0">
+        {/* Mobile & Tablet (< lg) Sticky Bottom Close Bar + Desktop (lg+) Shortcut Footer */}
+        <div className="flex lg:hidden items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 px-3.5 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shrink-0">
+          <span className="font-mono text-xs font-bold text-amber-400">
+            {totalCount} kết quả
+          </span>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(false)}
+            className="flex-1 max-w-xs inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-400 px-4 py-2 text-xs font-extrabold text-slate-950 hover:bg-amber-300 active:scale-98 transition-all shadow-md cursor-pointer"
+          >
+            <X className="h-4 w-4 shrink-0" />
+            <span>Đóng Tìm kiếm & Quay lại</span>
+          </button>
+        </div>
+
+        <div className="hidden lg:flex items-center justify-between border-t border-slate-800/80 bg-slate-950/80 px-4 py-2.5 text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
               <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[10px] text-slate-300 border border-slate-700">
