@@ -298,11 +298,51 @@ export function tokenizePythonCode(code: string): CodeToken[] {
 }
 
 /**
- * Maps token types to IDE syntax colors (One Dark / VS Code Modern inspired).
+ * Maps token types to IDE syntax colors (supports both Dark IDE themes and Light IDE themes).
  * IMPORTANT: Never adds padding, margin, or font-weight changes that alter character width,
  * ensuring 1:1 cursor alignment in overlay editors.
  */
-export function getTokenColorClass(type: TokenType): string {
+export function getTokenColorClass(type: TokenType, isLight = false): string {
+  if (isLight) {
+    switch (type) {
+      case 'comment':
+        return 'text-[#6e7781] italic';
+      case 'string':
+        return 'text-[#0a3069]';
+      case 'fstring-interp':
+        return 'text-[#0550ae]';
+      case 'control':
+        return 'text-[#cf222e]';
+      case 'keyword':
+        return 'text-[#8250df]';
+      case 'constant':
+        return 'text-[#953800]';
+      case 'self':
+        return 'text-[#be185d] italic';
+      case 'decorator':
+        return 'text-[#9a6700]';
+      case 'builtin':
+        return 'text-[#0550ae]';
+      case 'dunder':
+        return 'text-[#6639ba]';
+      case 'function':
+        return 'text-[#6639ba]';
+      case 'class-name':
+        return 'text-[#116329]';
+      case 'number':
+        return 'text-[#0550ae]';
+      case 'operator':
+        return 'text-[#cf222e]';
+      case 'punctuation':
+        return 'text-[#57606a]';
+      case 'identifier':
+        return 'text-[#1f2328]';
+      case 'whitespace':
+      default:
+        return '';
+    }
+  }
+
   switch (type) {
     case 'comment':
       return 'text-slate-500 italic';
@@ -346,7 +386,10 @@ export function getTokenColorClass(type: TokenType): string {
  * Renders highlighted Python/TS code as React nodes.
  * Preserves every character and newline 1-to-1 for overlay editors.
  */
-export function renderHighlightedPython(code: string): React.ReactNode {
+export function renderHighlightedPython(
+  code: string,
+  isLight = false
+): React.ReactNode {
   const tokens = tokenizePythonCode(code);
 
   return tokens.map((tok, i) => {
@@ -362,14 +405,24 @@ export function renderHighlightedPython(code: string): React.ReactNode {
     ) {
       const parts = tok.value.split(/(\{[^{}]*\})/g);
       return (
-        <span key={i} className="text-amber-300">
+        <span
+          key={i}
+          className={isLight ? 'text-[#0a3069]' : 'text-amber-300'}
+        >
           {parts.map((part, pIdx) => {
             if (part.startsWith('{') && part.endsWith('}')) {
               const inner = part.slice(1, -1);
               return (
-                <span key={pIdx} className="text-cyan-300">
+                <span
+                  key={pIdx}
+                  className={isLight ? 'text-[#cf222e]' : 'text-cyan-300'}
+                >
                   {'{'}
-                  <span className="text-sky-200">{inner}</span>
+                  <span
+                    className={isLight ? 'text-[#8250df]' : 'text-sky-200'}
+                  >
+                    {inner}
+                  </span>
                   {'}'}
                 </span>
               );
@@ -380,7 +433,7 @@ export function renderHighlightedPython(code: string): React.ReactNode {
       );
     }
 
-    const cls = getTokenColorClass(tok.type);
+    const cls = getTokenColorClass(tok.type, isLight);
     return (
       <span key={i} className={cls}>
         {tok.value}

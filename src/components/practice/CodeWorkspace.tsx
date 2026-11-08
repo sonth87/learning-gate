@@ -9,22 +9,77 @@ import {
   Copy,
   Check,
   Code2,
+  Palette,
 } from 'lucide-react';
 import { PracticeExercise, VerificationResult } from '@/types/practice.types';
 import { verifyExerciseCode } from '@/utils/codeVerifier';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
+import { IDE_THEMES, getIdeThemeConfig } from '@/utils/ideThemes';
+import {
+  getPythonCompletions,
+  CompletionItem,
+  CompletionKind,
+} from '@/utils/pythonAutocompleter';
+import { cn } from '@/utils/cn';
+
+const KIND_BADGE_MAP: Record<
+  CompletionKind,
+  { label: string; className: string }
+> = {
+  variable: {
+    label: 'VAR',
+    className: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+  },
+  keyword: {
+    label: 'KW',
+    className: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  },
+  builtin: {
+    label: 'FN',
+    className: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  },
+  method: {
+    label: 'METH',
+    className: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  },
+  type: {
+    label: 'TYPE',
+    className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  },
+  dunder: {
+    label: 'DUND',
+    className: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+  },
+  snippet: {
+    label: 'SNIP',
+    className: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+  },
+};
 
 export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
   exercise,
 }) => {
   const { submissions, saveExerciseSubmission } = useUserDataStore();
+  const { ideTheme, setIdeTheme } = useSettingsStore();
   const savedRecord = submissions[exercise.id];
+
+  const activeIdeTheme = getIdeThemeConfig(ideTheme);
 
   const [code, setCode] = useState(savedRecord?.code || exercise.starterCode);
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
+  const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+
+  // IntelliSense / Auto-completion State
+  const [completions, setCompletions] = useState<CompletionItem[]>([]);
+  const [selectedCompletionIdx, setSelectedCompletionIdx] = useState(0);
+  const [replaceRange, setReplaceRange] = useState<{
+    start: number;
+    end: number;
+  }>({ start: 0, end: 0 });
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const preRef = useRef<HTMLPreElement | null>(null);
@@ -35,9 +90,11 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
     setCode(existing?.code || exercise.starterCode);
     setResult(null);
     setCursorPos({ line: 1, col: 1 });
+    setCompletions([]);
   }, [exercise.id, exercise.starterCode, submissions]);
 
   const handleRunTests = async () => {
+    setCompletions([]);
     const res = verifyExerciseCode(exercise, code);
     setResult(res);
     await saveExerciseSubmission(exercise.id, code, res.allPassed);
@@ -46,10 +103,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
   const handleReset = () => {
     setCode(exercise.starterCode);
     setResult(null);
+    setCompletions([]);
   };
 
   const handleFillSolution = () => {
     setCode(exercise.solutionCode);
+    setCompletions([]);
     const res = verifyExerciseCode(exercise, exercise.solutionCode);
     setResult(res);
   };
@@ -70,6 +129,40 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
     });
   };
 
+  const updateAutocomplete = (
+    nextCode: string,
+    cursorIdx: number
+  ) => {
+    const { replaceStart, suggestions } = getPythonCompletions(
+      nextCode,
+      cursorIdx,
+      `${exercise.starterCode}\n${exercise.solutionCode}`
+    );
+    setCompletions(suggestions);
+    setSelectedCompletionIdx(0);
+    setReplaceRange({ start: replaceStart, end: cursorIdx });
+  };
+
+  const applyCompletion = (item: CompletionItem) => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const nextCode =
+      code.slice(0, replaceRange.start) +
+      item.insertText +
+      code.slice(replaceRange.end);
+
+    setCode(nextCode);
+    setCompletions([]);
+
+    requestAnimationFrame(() => {
+      el.focus();
+      const nextCursor = replaceRange.start + item.insertText.length;
+      el.selectionStart = el.selectionEnd = nextCursor;
+      updateCursorMetrics(el);
+    });
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
     const { scrollTop, scrollLeft } = e.currentTarget;
     if (preRef.current) {
@@ -84,6 +177,39 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     const { selectionStart, selectionEnd, value } = el;
+
+    // Ctrl + Space -> Force trigger IntelliSense
+    if (e.ctrlKey && e.key === ' ') {
+      e.preventDefault();
+      updateAutocomplete(value, selectionStart);
+      return;
+    }
+
+    // Handle IntelliSense Popup keyboard navigation when open
+    if (completions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedCompletionIdx((prev) => (prev + 1) % completions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedCompletionIdx(
+          (prev) => (prev - 1 + completions.length) % completions.length
+        );
+        return;
+      }
+      if (e.key === 'Tab' || (e.key === 'Enter' && !e.ctrlKey && !e.metaKey)) {
+        e.preventDefault();
+        applyCompletion(completions[selectedCompletionIdx] || completions[0]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setCompletions([]);
+        return;
+      }
+    }
 
     // Ctrl/Cmd + Enter -> Run Tests
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -153,14 +279,40 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
   const lines = code.split('\n');
   const lineCount = lines.length;
   const displayLineCount = Math.max(lineCount, 14);
-  const editorHeightPx = Math.min(Math.max(displayLineCount * 24 + 32, 340), 540);
+  const editorHeightPx = Math.min(
+    Math.max(displayLineCount * 24 + 32, 340),
+    540
+  );
+
+  // Calculate IntelliSense popup position relative to active cursor line/col
+  const popupTopPx = Math.min(
+    Math.max(cursorPos.line * 24 + 14, 40),
+    editorHeightPx - 190
+  );
+  const popupLeftPx = Math.min(
+    Math.max((cursorPos.col - 1) * 7.8 + 16, 16),
+    280
+  );
 
   return (
     <div className="space-y-4">
       {/* IDE Editor Card */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
+      <div
+        className="rounded-2xl border overflow-hidden shadow-xl transition-colors"
+        style={{
+          borderColor: activeIdeTheme.barBorder,
+          backgroundColor: activeIdeTheme.editorBg,
+        }}
+      >
         {/* IDE Top Tab & Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/95 px-3.5 py-2">
+        <div
+          className="flex flex-wrap items-center justify-between gap-2 border-b px-3.5 py-2 transition-colors"
+          style={{
+            backgroundColor: activeIdeTheme.barBg,
+            borderColor: activeIdeTheme.barBorder,
+            color: activeIdeTheme.barText,
+          }}
+        >
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 mr-1">
               <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
@@ -168,13 +320,20 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
             </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-950 px-2.5 py-1 font-mono text-xs font-semibold text-emerald-300">
-              <Code2 className="h-3.5 w-3.5 text-emerald-400" />
+            <div
+              className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-xs font-semibold"
+              style={{
+                backgroundColor: activeIdeTheme.editorBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.isLight ? '#0550ae' : '#6ee7b7',
+              }}
+            >
+              <Code2 className="h-3.5 w-3.5 text-emerald-500" />
               <span>solution.py</span>
             </div>
 
             {savedRecord?.passed && (
-              <span className="rounded-md bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 text-[11px] font-bold text-emerald-300">
+              <span className="rounded-md bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 text-[11px] font-bold text-emerald-500">
                 ✓ Đã giải
               </span>
             )}
@@ -184,12 +343,17 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleCopyCode}
               title="Sao chép code"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/80 px-2 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors cursor-pointer',
+                activeIdeTheme.isLight
+                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                  : 'border-slate-700/80 bg-slate-800/80 text-slate-300 hover:bg-slate-700'
+              )}
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-emerald-300">Đã chép</span>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="text-emerald-500">Đã chép</span>
                 </>
               ) : (
                 <>
@@ -202,7 +366,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleReset}
               title="Khôi phục code khởi tạo ban đầu"
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/80 px-2.5 py-1 text-xs font-medium text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                activeIdeTheme.isLight
+                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                  : 'border-slate-700/80 bg-slate-800/80 text-slate-300 hover:bg-slate-700'
+              )}
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset</span>
@@ -211,7 +380,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleFillSolution}
               title="Điền lời giải chuẩn Pythonic vào trình soạn thảo"
-              className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/15 px-2.5 py-1 text-xs font-medium text-indigo-300 hover:bg-indigo-500/25 transition-colors cursor-pointer"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
+                activeIdeTheme.isLight
+                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                  : 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25'
+              )}
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span>Lời giải mẫu</span>
@@ -228,16 +402,26 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
           </div>
         </div>
 
-        {/* Syntax-Highlighted Overlay Code Editor */}
+        {/* Syntax-Highlighted Overlay Code Editor + Floating IntelliSense */}
         <div
-          className="ide-dark-surface relative flex bg-[#090d16] font-mono text-[13px] leading-6"
-          style={{ height: `${editorHeightPx}px` }}
+          className={cn(
+            'relative flex font-mono text-[13px] leading-6 transition-colors',
+            !activeIdeTheme.isLight && 'ide-dark-surface'
+          )}
+          style={{
+            height: `${editorHeightPx}px`,
+            backgroundColor: activeIdeTheme.editorBg,
+          }}
         >
           {/* Line Numbers Gutter */}
           <div
             ref={gutterRef}
             aria-hidden="true"
-            className="select-none overflow-hidden border-r border-slate-800/80 bg-slate-900/60 py-4 px-2.5 text-right font-mono text-[12px] leading-6 text-slate-600 shrink-0 w-11"
+            className="select-none overflow-hidden border-r py-4 px-2.5 text-right font-mono text-[12px] leading-6 shrink-0 w-11 transition-colors"
+            style={{
+              backgroundColor: activeIdeTheme.gutterBg,
+              borderColor: activeIdeTheme.gutterBorder,
+            }}
           >
             {Array.from({ length: displayLineCount }).map((_, i) => {
               const ln = i + 1;
@@ -245,11 +429,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               return (
                 <div
                   key={ln}
-                  className={
-                    isCurrent
-                      ? 'text-emerald-400 font-bold'
-                      : 'text-slate-600'
-                  }
+                  style={{
+                    color: isCurrent
+                      ? activeIdeTheme.gutterActiveText
+                      : activeIdeTheme.gutterText,
+                    fontWeight: isCurrent ? 700 : 400,
+                  }}
                 >
                   {ln}
                 </div>
@@ -265,7 +450,7 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               className="pointer-events-none absolute inset-0 m-0 overflow-hidden p-4 font-mono text-[13px] leading-6 whitespace-pre tab-size-4"
             >
               <code>
-                {renderHighlightedPython(code)}
+                {renderHighlightedPython(code, activeIdeTheme.isLight)}
                 {code.endsWith('\n') ? ' ' : ''}
               </code>
             </pre>
@@ -274,59 +459,245 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               ref={textareaRef}
               value={code}
               onChange={(e) => {
-                setCode(e.target.value);
+                const nextVal = e.target.value;
+                const nextPos = e.target.selectionStart || 0;
+                setCode(nextVal);
                 updateCursorMetrics(e.target);
+                updateAutocomplete(nextVal, nextPos);
               }}
-              onClick={(e) => updateCursorMetrics(e.currentTarget)}
-              onKeyUp={(e) => updateCursorMetrics(e.currentTarget)}
+              onClick={(e) => {
+                updateCursorMetrics(e.currentTarget);
+                setCompletions([]);
+              }}
+              onKeyUp={(e) => {
+                if (
+                  ![
+                    'ArrowDown',
+                    'ArrowUp',
+                    'Enter',
+                    'Tab',
+                    'Escape',
+                  ].includes(e.key)
+                ) {
+                  updateCursorMetrics(e.currentTarget);
+                }
+              }}
               onKeyDown={handleKeyDown}
+              onBlur={() => {
+                // Delay closing so clicking a suggestion registers first
+                setTimeout(() => setCompletions([]), 180);
+              }}
               onScroll={handleScroll}
               spellCheck={false}
               autoCapitalize="off"
               autoComplete="off"
               autoCorrect="off"
               aria-label="Trình soạn thảo code Python"
-              className="absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-[13px] leading-6 whitespace-pre text-transparent caret-emerald-400 selection:bg-emerald-500/25 focus:outline-none tab-size-4"
+              className={cn(
+                'absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-[13px] leading-6 whitespace-pre text-transparent focus:outline-none tab-size-4',
+                activeIdeTheme.caretClass,
+                activeIdeTheme.selectionClass
+              )}
             />
+
+            {/* Floating Python IntelliSense Auto-Complete Popup */}
+            {completions.length > 0 && (
+              <div
+                style={{
+                  top: `${popupTopPx}px`,
+                  left: `${popupLeftPx}px`,
+                }}
+                className={cn(
+                  'absolute z-30 w-80 sm:w-96 rounded-xl border shadow-2xl overflow-hidden animate-in fade-in duration-100',
+                  activeIdeTheme.isLight
+                    ? 'border-slate-300 bg-white text-slate-800'
+                    : 'border-slate-700 bg-slate-900/98 text-slate-100'
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex items-center justify-between px-2.5 py-1 border-b text-[10px] font-mono',
+                    activeIdeTheme.isLight
+                      ? 'border-slate-200 bg-slate-100 text-slate-500'
+                      : 'border-slate-800 bg-slate-950/90 text-slate-400'
+                  )}
+                >
+                  <span>Gợi ý Python (IntelliSense)</span>
+                  <span>↑↓ chọn • Tab/Enter chèn • Esc đóng</span>
+                </div>
+
+                <div className="max-h-52 overflow-y-auto divide-y divide-slate-800/30">
+                  {completions.map((item, idx) => {
+                    const isSelected = idx === selectedCompletionIdx;
+                    const badge = KIND_BADGE_MAP[item.kind];
+
+                    return (
+                      <button
+                        key={`${item.kind}-${item.label}`}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          applyCompletion(item);
+                        }}
+                        className={cn(
+                          'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-xs transition-colors cursor-pointer',
+                          isSelected
+                            ? activeIdeTheme.isLight
+                              ? 'bg-blue-50 text-blue-900'
+                              : 'bg-emerald-500/20 text-white'
+                            : activeIdeTheme.isLight
+                            ? 'hover:bg-slate-100 text-slate-800'
+                            : 'hover:bg-slate-800/70 text-slate-300'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={cn(
+                              'rounded border px-1 py-0.2 text-[9px] font-bold shrink-0',
+                              badge.className
+                            )}
+                          >
+                            {badge.label}
+                          </span>
+                          <span className="font-bold truncate">
+                            {item.label}
+                          </span>
+                        </div>
+                        <span
+                          className={cn(
+                            'text-[10px] font-sans truncate max-w-[180px]',
+                            activeIdeTheme.isLight
+                              ? 'text-slate-500'
+                              : 'text-slate-400'
+                          )}
+                        >
+                          {item.detail}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* IDE Bottom Status Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800/90 bg-slate-900/90 px-3.5 py-1.5 font-mono text-[11px] text-slate-400">
-          <div className="flex items-center gap-3">
-            <span className="text-slate-300">
+        {/* IDE Bottom Status Bar + Bottom-Right Theme Switcher Icon */}
+        <div
+          className="relative flex flex-wrap items-center justify-between gap-2 border-t px-3.5 py-1.5 font-mono text-[11px] transition-colors"
+          style={{
+            backgroundColor: activeIdeTheme.barBg,
+            borderColor: activeIdeTheme.barBorder,
+            color: activeIdeTheme.barText,
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span>
               Ln {cursorPos.line}, Col {cursorPos.col}
             </span>
-            <span className="hidden sm:inline text-slate-600">|</span>
-            <span className="hidden sm:inline">Spaces: 4</span>
-            <span className="hidden sm:inline text-slate-600">|</span>
-            <span className="hidden md:inline text-emerald-400/90">
-              Phím tắt: Tab (Thụt lề) • Ctrl/⌘ + Enter (Chạy Test)
+            <span className="hidden sm:inline opacity-40">|</span>
+            <span className="hidden sm:inline opacity-80">
+              Gợi ý tự động • Ctrl+Space (Mở gợi ý) • Tab (Chèn)
             </span>
           </div>
 
-          {/* Syntax Color Mini Legend */}
-          <div className="flex items-center gap-2.5 text-[10px]">
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-purple-400" />
-              <span className="text-purple-300">Keyword</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-sky-300" />
-              <span className="text-sky-300">Function</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-cyan-300" />
-              <span className="text-cyan-300">Builtin</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-amber-300" />
-              <span className="text-amber-300">String</span>
-            </span>
-            <span className="inline-flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-pink-400" />
-              <span className="text-pink-300">Operator</span>
-            </span>
+          {/* Right Side: Syntax Legend + Bottom-Right IDE Color Theme Picker Icon */}
+          <div className="flex items-center gap-2.5 ml-auto">
+            <div className="hidden xl:flex items-center gap-2 text-[10px] opacity-85">
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-purple-400" />
+                <span>Keyword</span>
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-sky-400" />
+                <span>Function</span>
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span>String</span>
+              </span>
+            </div>
+
+            {/* Small Icon at Bottom-Right Corner to Switch IDE Color Theme (Persisted) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsThemeMenuOpen((v) => !v)}
+                title="Đổi màu nền & giao diện IDE (Tự động lưu)"
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer',
+                  activeIdeTheme.isLight
+                    ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-2xs'
+                    : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700'
+                )}
+              >
+                <Palette className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="flex items-center gap-0.5">
+                  {activeIdeTheme.swatchColors.map((hex, i) => (
+                    <span
+                      key={i}
+                      className="h-2 w-2 rounded-full border border-black/20"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ))}
+                </span>
+                <span className="hidden sm:inline text-[10px]">
+                  {activeIdeTheme.name.split(' (')[0]}
+                </span>
+              </button>
+
+              {isThemeMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setIsThemeMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 bottom-8 z-40 w-64 rounded-2xl border border-slate-700 bg-slate-900 p-2 text-slate-100 shadow-2xl space-y-1">
+                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                      Chọn Màu Giao Diện IDE (Tự lưu)
+                    </div>
+                    {IDE_THEMES.map((t) => {
+                      const active = t.id === activeIdeTheme.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            setIdeTheme(t.id);
+                            setIsThemeMenuOpen(false);
+                          }}
+                          className={cn(
+                            'w-full flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-colors cursor-pointer',
+                            active
+                              ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40'
+                              : 'hover:bg-slate-800 text-slate-200'
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className="flex items-center gap-0.5 rounded-md border border-slate-700 p-1 shrink-0"
+                              style={{ backgroundColor: t.editorBg }}
+                            >
+                              {t.swatchColors.map((hex, i) => (
+                                <span
+                                  key={i}
+                                  className="h-2.5 w-2.5 rounded-full border border-black/20"
+                                  style={{ backgroundColor: hex }}
+                                />
+                              ))}
+                            </span>
+                            <span className="truncate font-sans">{t.name}</span>
+                          </div>
+                          {active && (
+                            <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -404,12 +775,27 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                   )}
                 </div>
 
-                <div className="ide-dark-surface flex flex-wrap items-center gap-2 rounded-lg border border-slate-800/80 bg-[#090d16] px-2.5 py-1.5 font-mono text-[11px]">
-                  <span className="text-slate-400 shrink-0">
+                <div
+                  className={cn(
+                    'flex flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 font-mono text-[11px]',
+                    !activeIdeTheme.isLight && 'ide-dark-surface'
+                  )}
+                  style={{
+                    backgroundColor: activeIdeTheme.editorBg,
+                    borderColor: activeIdeTheme.barBorder,
+                  }}
+                >
+                  <span
+                    className="shrink-0"
+                    style={{ color: activeIdeTheme.gutterText }}
+                  >
                     Expected Output:
                   </span>
                   <code className="break-all">
-                    {renderHighlightedPython(tc.expectedOutput)}
+                    {renderHighlightedPython(
+                      tc.expectedOutput,
+                      activeIdeTheme.isLight
+                    )}
                   </code>
                 </div>
 
@@ -428,19 +814,36 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
         </div>
 
         {result && (
-          <div className="ide-dark-surface rounded-xl border border-slate-800 bg-[#090d16] p-3.5">
-            <div className="flex items-center justify-between text-[11px] font-mono font-semibold text-slate-400 mb-1.5">
+          <div
+            className={cn(
+              'rounded-xl border p-3.5',
+              !activeIdeTheme.isLight && 'ide-dark-surface'
+            )}
+            style={{
+              backgroundColor: activeIdeTheme.editorBg,
+              borderColor: activeIdeTheme.barBorder,
+            }}
+          >
+            <div
+              className="flex items-center justify-between text-[11px] font-mono font-semibold mb-1.5"
+              style={{ color: activeIdeTheme.gutterText }}
+            >
               <span>$ python3 solution.py — Console Output</span>
               <span
                 className={
-                  result.allPassed ? 'text-emerald-400' : 'text-rose-400'
+                  result.allPassed ? 'text-emerald-500' : 'text-rose-500'
                 }
               >
                 Exit code: {result.allPassed ? '0' : '1'}
               </span>
             </div>
             <pre className="font-mono text-xs leading-5 whitespace-pre-wrap">
-              <code>{renderHighlightedPython(result.simulatedStdout)}</code>
+              <code>
+                {renderHighlightedPython(
+                  result.simulatedStdout,
+                  activeIdeTheme.isLight
+                )}
+              </code>
             </pre>
           </div>
         )}

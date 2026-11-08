@@ -33,8 +33,17 @@ export type CurriculumOrganizationMode = 'by-stage' | 'by-level';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export type IdeThemeId =
+  | 'vscode-dark'
+  | 'github-light'
+  | 'solarized-light'
+  | 'nord'
+  | 'dracula'
+  | 'monokai';
+
 export interface UserSettings {
   theme: ThemeMode;
+  ideTheme?: IdeThemeId;
   organizationMode: CurriculumOrganizationMode;
   showJsTsComparison: boolean;
   enableAutoHighlight: boolean;

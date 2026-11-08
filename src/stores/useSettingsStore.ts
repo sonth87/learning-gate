@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useStore as useDeviceStore } from '@sonth87/device-layout';
 import {
   CurriculumOrganizationMode,
+  IdeThemeId,
   ThemeMode,
   UserSettings,
 } from '@/types/user.types';
@@ -18,11 +19,13 @@ interface SettingsState extends UserSettings {
   ) => void;
   setFontSize: (size: 'sm' | 'base' | 'lg') => void;
   setTheme: (theme: ThemeMode) => void;
+  setIdeTheme: (ideTheme: IdeThemeId) => void;
   replaceAllSettings: (settings: UserSettings) => void;
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
   theme: 'dark',
+  ideTheme: 'nord',
   organizationMode: 'by-stage',
   showJsTsComparison: true,
   enableAutoHighlight: true,
@@ -52,6 +55,7 @@ export const useSettingsStore = create<SettingsState>()(
           useDeviceStore.getState().setColorScheme(mapped);
         }
       },
+      setIdeTheme: (ideTheme) => set({ ideTheme }),
       replaceAllSettings: (settings) => set({ ...settings }),
     }),
     {
