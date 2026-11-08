@@ -2,6 +2,383 @@ import { LessonTopic } from '@/types/curriculum.types';
 
 export const STAGE_0_ZERO_FUNDAMENTAL_LESSONS: LessonTopic[] = [
   {
+    id: 's0-install-setup-uv-pyenv-ide',
+    stageId: 'stage-1',
+    level: 'fundamental',
+    order: 0,
+    title: '1.0. Cẩm nang Cài đặt Python, Quản lý Phiên bản (uv & pyenv), Môi trường Ảo (.venv) & Cấu hình VS Code / Cursor từ A–Z',
+    shortDescription:
+      'Hướng dẫn cầm tay chỉ việc cho người mới bắt đầu với Python: Cách cài đặt trên macOS / Windows / Linux, quản lý phiên bản bằng uv hoặc pyenv, tạo .venv, cài thư viện và cấu hình VS Code / Cursor chuẩn chỉnh.',
+    estimatedMinutes: 45,
+    theoryParagraphs: [
+      '**Tại sao người mới học Python hay bị "rối" ở bước cài đặt đầu tiên?** Nếu bạn từ JavaScript/TypeScript sang, bạn đã quen chỉ cần cài `nvm` + `Node.js` rồi gõ `npm install` là tự có thư mục `node_modules/` nằm gọn trong dự án. Nhưng với Python, lịch sử hơn 30 năm phát triển tạo ra nhiều công cụ (`python`, `python3`, `pip`, `venv`, `virtualenv`, `pyenv`, `conda`, `poetry`, `uv`). Đặc biệt, hệ điều hành macOS và Linux luôn cài sẵn một bản **System Python** dùng cho nội bộ hệ điều hành — nếu bạn gõ `pip install` thẳng vào đó, hệ điều hành sẽ chặn lại (báo lỗi `externally-managed-environment` PEP 668) hoặc gây hỏng công cụ hệ thống!',
+      '**2 Quy tắc Vàng giúp bạn không bao giờ gặp lỗi môi trường Python**: (1) **Quản lý phiên bản Python bằng `uv` hoặc `pyenv`**: Không bao giờ đụng vào System Python của máy; dùng `uv` (hoặc `pyenv`) để tải và chuyển đổi các bản Python `3.10`, `3.11`, `3.12`, `3.13` độc lập. (2) **Mỗi dự án luôn có 1 thư mục `.venv/` riêng biệt**: Thư mục `.venv/` nằm ngay trong gốc dự án (tương đương 100% với `node_modules/` bên JS), chứa trình thông dịch Python và toàn bộ thư viện của riêng dự án đó.',
+      '**Nên chọn `uv` hay `pyenv + venv + pip`?**: Hiện nay (2025–2026), cộng đồng Python chuyên nghiệp chia làm 2 lộ trình mà bạn đều được hướng dẫn chi tiết từng lệnh ngay bên dưới: **(Cách 1 — Khuyên dùng số 1 cho mọi dự án mới): Dùng `uv` (do Astral phát triển bằng Rust)** — một công cụ "All-in-One" duy nhất thay thế cả `pyenv` (cài & đổi phiên bản Python), `venv` (tạo `.venv`), `pip` (cài thư viện nhanh gấp 50 lần) và `poetry` (`pyproject.toml` + `uv.lock`). **(Cách 2 — Chuẩn truyền thống cần biết khi bảo trì dự án cũ): Dùng `pyenv` kết hợp `python -m venv .venv` và `pip install -r requirements.txt`**.',
+      '**Cấu hình IDE (VS Code / Cursor / PyCharm) trong 3 phút**: Sau khi tạo môi trường ảo `.venv/`, bước quan trọng nhất là **trỏ IDE vào đúng file Python bên trong `.venv`** (`Cmd/Ctrl + Shift + P` → `Python: Select Interpreter` → chọn `./.venv/bin/python` trên macOS/Linux hoặc `.venv\\Scripts\\python.exe` trên Windows). Kết hợp với bộ 3 Extension chuẩn: **`Python` + `Pylance` (Microsoft)** để gợi ý code/kiểm tra kiểu, và **`Ruff` (Astral)** để tự động căn chỉnh format code chuẩn PEP 8 ngay khi bấm `Cmd+S / Ctrl+S`!',
+    ],
+    analogy: {
+      title: 'Bản đồ Đối chiếu Công cụ Python cho Lập trình viên Mới (Từ máy trắng tinh đến khi chạy dự án)',
+      realWorldScenario:
+        'Nếu bạn đã từng dùng Node.js (JS/TS), Java hoặc Go, hãy đối chiếu 1-1 bảng công cụ dưới đây để hiểu ngay vai trò của từng công cụ trong hệ sinh thái Python chỉ sau 30 giây:',
+      mappingPoints: [
+        {
+          realWorld: 'nvm / fnm (Cài & chuyển đổi Node 18, 20, 22 theo file .nvmrc)',
+          pythonEquivalent: '`uv python` hoặc `pyenv` (Theo file `.python-version`)',
+          explanation: 'Giúp máy tính của bạn cài song song Python 3.10, 3.11, 3.12, 3.13 và tự động đổi phiên bản khi chuyển thư mục dự án.',
+        },
+        {
+          realWorld: 'Thư mục `node_modules/` nằm riêng trong từng dự án',
+          pythonEquivalent: 'Thư mục môi trường ảo `.venv/` nằm riêng trong từng dự án',
+          explanation: 'Cô lập hoàn toàn các thư viện cài thêm (`fastapi`, `pydantic`, `pandas`) của dự án A khỏi dự án B. Luôn đưa `.venv/` vào `.gitignore`!',
+        },
+        {
+          realWorld: 'pnpm / npm / yarn + `package.json` + `pnpm-lock.yaml`',
+          pythonEquivalent: '`uv` + `pyproject.toml` + `uv.lock` (Hoặc truyền thống: `pip` + `requirements.txt`)',
+          explanation: '`uv add fastapi` tự động tạo `.venv`, tải thư viện và ghi vào `pyproject.toml` + khóa phiên bản trong `uv.lock`.',
+        },
+        {
+          realWorld: 'ESLint + Prettier (Kiểm tra lỗi & Format code khi bấm Save)',
+          pythonEquivalent: '`Ruff` (`ruff check` & `ruff format`) + `Pyright / Pylance`',
+          explanation: 'Ruff viết bằng Rust nhanh gấp 100 lần công cụ cũ (Black/Flake8/isort), format toàn bộ dự án chỉ trong vài mili-giây.',
+        },
+      ],
+      mentalModelTip:
+        'Quy tắc nhớ nhanh: Trên máy mới tinh, chỉ cần cài đúng 1 công cụ là **`uv`** (`brew install uv` hoặc `curl`/`irm`), sau đó gõ `uv init my-app && cd my-app && uv run main.py` — `uv` sẽ tự tải Python 3.12, tự tạo `.venv` và chạy code cho bạn!',
+    },
+    diagrams: [
+      {
+        id: 'diag-s0-setup-roadmap',
+        title: 'Quy trình 4 Bước Chuẩn bị Máy tính & Chạy Dự án Python Đầu tiên',
+        subtitle: 'Làm đúng theo 4 bước tuần tự này trên macOS, Windows hoặc Linux để có môi trường chuẩn Production',
+        type: 'pipeline',
+        nodes: [
+          {
+            id: 'setup-step-1',
+            badge: 'Bước 1 • Trình Quản lý',
+            title: 'Cài đặt uv (hoặc pyenv)',
+            subtitle: 'macOS (Homebrew/curl) • Windows (PowerShell) • Linux',
+            detail:
+              'Cài đặt `uv` (khuyên dùng số 1 vì tích hợp tất cả) hoặc `pyenv` vào máy. Mở lại Terminal và kiểm tra bằng lệnh `uv --version` hoặc `pyenv --version`.',
+            highlightColor: 'emerald',
+          },
+          {
+            id: 'setup-step-2',
+            badge: 'Bước 2 • Cài Python 3.12+',
+            title: 'Tải & Ghim Phiên bản Python',
+            subtitle: '$ uv python install 3.12 && uv python pin 3.12',
+            detail:
+              'Tải bản Python 3.12 chuẩn về máy (hoặc dùng `pyenv install 3.12.7 && pyenv global 3.12.7`). Không bao giờ dùng hay sửa đổi System Python của hệ điều hành.',
+            highlightColor: 'sky',
+          },
+          {
+            id: 'setup-step-3',
+            badge: 'Bước 3 • Tạo Dự án & .venv',
+            title: 'Khởi tạo Project & Môi trường Ảo',
+            subtitle: '$ uv init my_app && uv venv (hoặc python -m venv .venv)',
+            detail:
+              'Tạo thư mục dự án có cấu trúc chuẩn (`pyproject.toml`, `.python-version`, `.venv/`). Cài thư viện bằng `uv add <tên_gói>` hoặc kích hoạt `.venv` rồi `pip install`.',
+            highlightColor: 'amber',
+          },
+          {
+            id: 'setup-step-4',
+            badge: 'Bước 4 • Cấu hình VS Code / Cursor',
+            title: 'Cài Extension & Chọn Interpreter',
+            subtitle: 'Python + Pylance + Ruff → Select Interpreter (.venv)',
+            detail:
+              'Cài 3 extension `Python`, `Pylance`, `Ruff`. Bấm `Cmd/Ctrl + Shift + P` -> `Python: Select Interpreter` -> Chọn `./.venv/bin/python` để IDE nhận diện toàn bộ thư viện!',
+            highlightColor: 'violet',
+          },
+        ],
+        caption:
+          'Nếu VS Code / Cursor báo gạch chân vàng ở dòng `import fastapi`, 99% là do bạn chưa chọn Interpreter trỏ vào `.venv` ở Bước 4!',
+      },
+      {
+        id: 'diag-s0-uv-vs-pyenv-venv',
+        title: 'So sánh Trực tiếp 2 Cách Quản lý Môi trường: Hiện đại (uv) vs. Truyền thống (pyenv + venv + pip)',
+        subtitle: 'Nắm vững cả 2 cách để vừa làm dự án mới siêu tốc vừa tự tin làm việc với các repo cũ của công ty',
+        type: 'comparison-boxes',
+        nodes: [
+          {
+            id: 'way-modern-uv',
+            badge: 'Cách 1 • Khuyên dùng số 1 (Chuẩn Mới)',
+            title: 'Hệ sinh thái All-in-One với `uv`',
+            subtitle: 'Thay thế pyenv + venv + pip + poetry trong 1 công cụ',
+            detail:
+              '• Cài Python: `uv python install 3.12`\n• Tạo project: `uv init app`\n• Tạo .venv & cài gói: `uv add fastapi`\n• Chạy code ngay (không cần activate): `uv run python main.py`\n• Khóa phiên bản: Tự động sinh `pyproject.toml` & `uv.lock`.',
+            highlightColor: 'emerald',
+          },
+          {
+            id: 'way-classic-pyenv',
+            badge: 'Cách 2 • Truyền thống (Mọi repo cũ đều dùng)',
+            title: 'Bộ ba `pyenv` + `venv` + `pip`',
+            subtitle: 'Tách rời trình quản lý phiên bản và trình quản lý gói',
+            detail:
+              '• Cài Python: `pyenv install 3.12.7 && pyenv local 3.12.7`\n• Tạo .venv: `python -m venv .venv`\n• Bắt buộc kích hoạt: `source .venv/bin/activate` (Win: `.venv\\Scripts\\activate`)\n• Cài gói: `pip install -r requirements.txt`\n• Xuất danh sách gói: `pip freeze > requirements.txt`.',
+            highlightColor: 'sky',
+          },
+          {
+            id: 'way-conda-docker',
+            badge: 'Cách 3 • Đặc thù Data Science / Production',
+            title: 'Miniconda (AI/GPU) & Docker Container',
+            subtitle: 'Khi cần thư viện C/CUDA hoặc đóng gói lên Server',
+            detail:
+              '• `conda` / `mamba`: Chỉ dùng khi làm AI/Deep Learning cũ cần cài kèm thư viện C++/CUDA hệ thống.\n• `Docker`: Khi đưa lên Production, dùng image `python:3.12-slim` kết hợp `uv sync --frozen` để đóng gói.',
+            highlightColor: 'amber',
+          },
+        ],
+        caption:
+          'Người mới bắt đầu: Hãy cài và dùng **Cách 1 (`uv`)** ngay hôm nay, đồng thời đọc hiểu **Cách 2 (`pyenv` + `venv` + `pip`)** để đọc tài liệu trên mạng không bị bỡ ngỡ.',
+      },
+    ],
+    codeExamples: [
+      {
+        id: 'ex-s0-0-uv-complete-guide',
+        title: 'Cách 1 (Khuyên dùng): Cài đặt & Sử dụng `uv` từ A–Z trên macOS, Windows và Linux',
+        description: 'Copy từng dòng lệnh dưới đây chạy trên Terminal (macOS/Linux) hoặc PowerShell (Windows) để cài đặt uv, tải Python 3.12, tạo dự án và chạy code.',
+        code: `# ============================================================================
+# BƯỚC 1: CÀI ĐẶT 'uv' LÊN MÁY TÍNH (CHỈ CẦN LÀM 1 LẦN DUY NHẤT)
+# ============================================================================
+# 👉 Trên macOS hoặc Linux (Mở ứng dụng Terminal và dán lệnh sau):
+# $ curl -LsSf https://astral.sh/uv/install.sh | sh
+# (Hoặc nếu macOS đã có Homebrew):
+# $ brew install uv
+
+# 👉 Trên Windows (Mở PowerShell và dán lệnh sau):
+# PS> powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+# (Hoặc dùng WinGet trên Windows 10/11):
+# PS> winget install --id=Astral-sh.uv -e
+
+# Kiểm tra sau khi cài xong (tắt mở lại Terminal nếu cần):
+# $ uv --version
+# -> uv 0.6.x
+
+# ============================================================================
+# BƯỚC 2: DÙNG 'uv' CÀI ĐẶT PYTHON (KHÔNG CẦN TẢI FILE CÀI TỪ PYTHON.ORG!)
+# ============================================================================
+# Cài đặt Python 3.12 (bản chuẩn ổn định nhất hiện nay) và Python 3.13:
+# $ uv python install 3.12 3.13
+
+# Xem danh sách các bản Python đã có trong máy:
+# $ uv python list
+
+# ============================================================================
+# BƯỚC 3: KHỞI TẠO DỰ ÁN MỚI, TẠO .venv & CÀI THƯ VIỆN
+# ============================================================================
+# 1. Tạo thư mục dự án chuẩn 'my-first-app' và di chuyển vào trong:
+# $ uv init my-first-app
+# $ cd my-first-app
+
+# 2. Ghim phiên bản Python 3.12 cho dự án này (tạo file .python-version):
+# $ uv python pin 3.12
+
+# 3. Thêm thư viện (uv tự động tạo thư mục .venv/ và file uv.lock!):
+# $ uv add requests rich
+# $ uv add --dev pytest ruff
+
+# 4. Chạy chương trình Python trong môi trường ảo của dự án:
+# $ uv run python main.py
+# $ uv run pytest
+
+# Khi tải (git clone) dự án của người khác về máy, chỉ cần gõ đúng 1 lệnh:
+# $ uv sync`,
+        output: `Initialized project \`my-first-app\`\nPinned \`.python-version\` to \`3.12\`\nResolved 12 packages in 18ms\nHello from my-first-app!`,
+        annotations: [
+          { line: 5, explanation: 'Lệnh cài `uv` chính thức cho macOS/Linux — cài trực tiếp vào `~/.local/bin` mà không cần quyền `sudo`.' },
+          { line: 10, explanation: 'Lệnh cài `uv` chính thức cho Windows PowerShell — tự động thêm `uv` vào biến môi trường `PATH` của User.' },
+          { line: 21, explanation: '`uv python install 3.12` tự động tải bản Python 3.12 chính thức về máy chỉ trong vài giây.' },
+          { line: 30, explanation: '`uv init` tạo sẵn bộ khung dự án gồm `pyproject.toml`, `README.md`, `.gitignore`, `.python-version` và `main.py`.' },
+          { line: 37, explanation: '`uv add` tương đương `npm install <pkg>`: tự tạo `.venv/`, tải gói vào `.venv` và ghi phụ thuộc vào `pyproject.toml`.' },
+          { line: 41, explanation: '`uv run` tự động kích hoạt `.venv` ngầm và chạy lệnh bên trong đó — bạn không bao giờ sợ quên `activate`!' },
+        ],
+      },
+      {
+        id: 'ex-s0-0-pyenv-venv-complete-guide',
+        title: 'Cách 2 (Truyền thống): Cài đặt `pyenv` + Cấu hình Shell (`~/.zshrc` / `~/.bashrc`) + `venv` & `pip`',
+        description: 'Hướng dẫn đầy đủ cách cài pyenv (kèm cấu hình PATH để không bị lỗi không nhận lệnh), tạo môi trường ảo .venv bằng tay và dùng pip.',
+        code: `# ============================================================================
+# PHẦN 1: CÀI ĐẶT & CẤU HÌNH 'pyenv' (TRÌNH QUẢN LÝ PHIÊN BẢN PYTHON TRUYỀN THỐNG)
+# ============================================================================
+# 👉 1A. Trên macOS (dùng Homebrew):
+# $ brew update && brew install pyenv
+# Cấu hình biến môi trường vào ~/.zshrc (BẮT BUỘC để lệnh python nhận pyenv!):
+# $ echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+# $ echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+# $ echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+# $ source ~/.zshrc
+
+# 👉 1B. Trên Ubuntu / Debian / WSL2 Linux:
+# $ curl https://pyenv.run | bash
+# (Sau đó thêm 3 dòng export PYENV_ROOT / PATH / eval "$(pyenv init -)" vào ~/.bashrc)
+
+# 👉 1C. Trên Windows (dùng pyenv-win trên PowerShell):
+# PS> Invoke-WebRequest -UseBasicParsing -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" -OutFile "./install-pyenv-win.ps1"; &"./install-pyenv-win.ps1"
+
+# ============================================================================
+# PHẦN 2: DÙNG 'pyenv' TẢI VÀ CHUYỂN ĐỔI PHIÊN BẢN PYTHON
+# ============================================================================
+# $ pyenv install 3.12.7          # Tải và biên dịch Python 3.12.7
+# $ pyenv global 3.12.7           # Đặt 3.12.7 làm bản mặc định cho toàn máy
+# $ pyenv local 3.12.7            # Đặt 3.12.7 cho riêng thư mục dự án hiện tại (.python-version)
+# $ pyenv versions                # Kiểm tra các bản đã cài và bản đang kích hoạt (*)
+
+# ============================================================================
+# PHẦN 3: TẠO MÔI TRƯỜNG ẢO '.venv' VÀ CÀI THƯ VIỆN BẰNG 'pip'
+# ============================================================================
+# 1. Tạo thư mục môi trường ảo tên là '.venv' ngay trong thư mục dự án:
+# $ python -m venv .venv
+
+# 2. Kích hoạt (Activate) môi trường ảo (Con trỏ Terminal sẽ hiện chữ (.venv) ở đầu):
+# - Trên macOS / Linux:          $ source .venv/bin/activate
+# - Trên Windows PowerShell:     PS> .venv\\Scripts\\Activate.ps1
+# - Trên Windows CMD:            C:\\> .venv\\Scripts\\activate.bat
+
+# 3. Nâng cấp pip và cài đặt thư viện bên trong (.venv):
+# (.venv) $ python -m pip install --upgrade pip
+# (.venv) $ pip install requests fastapi uvicorn
+# (.venv) $ pip freeze > requirements.txt        # Xuất danh sách gói ra file
+# (.venv) $ pip install -r requirements.txt      # Cài lại từ file requirements.txt
+
+# 4. Khi muốn thoát khỏi môi trường ảo:
+# (.venv) $ deactivate`,
+        output: `(.venv) $ python --version\nPython 3.12.7\n(.venv) $ which python\n/Users/dev/my-project/.venv/bin/python`,
+        annotations: [
+          { line: 6, explanation: '90% người mới cài `pyenv` xong nhưng gõ `python -V` vẫn ra bản cũ của hệ thống là vì quên thêm `eval "$(pyenv init -)"` vào `~/.zshrc` hoặc `~/.bashrc`!' },
+          { line: 22, explanation: '`pyenv global 3.12.7` đặt phiên bản mặc định cho toàn bộ máy, còn `pyenv local 3.12.7` tạo file `.python-version` cho riêng thư mục đang đứng.' },
+          { line: 31, explanation: '`python -m venv .venv` dùng module `venv` có sẵn của Python để tạo thư mục `.venv/`.' },
+          { line: 34, explanation: 'Sau khi chạy `source .venv/bin/activate`, mọi lệnh `python` và `pip` đều trỏ vào bên trong `.venv/`, hoàn toàn an toàn!' },
+          { line: 40, explanation: '`pip freeze > requirements.txt` ghi toàn bộ tên và phiên bản thư viện hiện tại ra file để đồng nghiệp cài lại bằng `pip install -r requirements.txt`.' },
+        ],
+      },
+      {
+        id: 'ex-s0-0-vscode-cursor-config',
+        title: 'Cấu hình Chuẩn cho VS Code / Cursor (`.vscode/settings.json` & `pyproject.toml`)',
+        description: 'Bộ cấu hình thực tế giúp VS Code / Cursor tự động nhận môi trường ảo .venv, gợi ý kiểu dữ liệu thông minh và tự động format code bằng Ruff mỗi khi lưu file.',
+        code: `# 1. Lệnh cài nhanh 4 Extension quan trọng nhất cho VS Code / Cursor trên Terminal:
+# $ code --install-extension ms-python.python
+# $ code --install-extension ms-python.vscode-pylance
+# $ code --install-extension charliermarsh.ruff
+# $ code --install-extension tamasfe.even-better-toml
+
+# 2. Nội dung file '.vscode/settings.json' đặt trong thư mục dự án:
+vscode_settings_json = """
+{
+  // Tự động trỏ vào môi trường ảo .venv của dự án
+  "python.defaultInterpreterPath": "\${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  // Bật kiểm tra kiểu dữ liệu tĩnh (Type Checking) với Pylance/Pyright
+  "python.analysis.typeCheckingMode": "standard",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.inlayHints.functionReturnTypes": true,
+
+  // Dùng Ruff làm Formatter & Linter mặc định mỗi khi bấm Save (Cmd+S / Ctrl+S)
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  }
+}
+"""
+print("Đã sẵn sàng cấu hình .vscode/settings.json chuẩn chuyên nghiệp!")`,
+        output: `Đã sẵn sàng cấu hình .vscode/settings.json chuẩn chuyên nghiệp!`,
+        annotations: [
+          { line: 2, explanation: 'Bộ 4 Extension nền tảng: `ms-python.python` (chạy & debug), `vscode-pylance` (IntelliSense & kiểm tra kiểu), `ruff` (lint & format siêu tốc), `even-better-toml` (đọc `pyproject.toml`).' },
+          { line: 11, explanation: '`python.defaultInterpreterPath` giúp VS Code / Cursor tự động dùng Python trong `.venv` ngay khi mở thư mục dự án.' },
+          { line: 15, explanation: '`typeCheckingMode: "standard"` giúp phát hiện sớm lỗi truyền sai kiểu dữ liệu ngay khi đang gõ code (giống TypeScript).' },
+          { line: 20, explanation: 'Khi bấm `Cmd+S` / `Ctrl+S`, Ruff tự động căn chỉnh khoảng trắng chuẩn PEP 8 và sắp xếp lại thứ tự các dòng `import` gọn gàng!' },
+        ],
+      },
+    ],
+    useCases: [
+      {
+        title: 'Thiết lập máy tính mới (MacBook / Windows Laptop) từ con số 0 trong 5 phút',
+        scenario: 'Bạn vừa nhận máy mới hoặc mới chuyển từ ngôn ngữ khác sang Python và muốn cài đặt bộ công cụ sạch sẽ, không rác hệ thống.',
+        whyPythonFits: 'Chỉ cần cài `uv` + VS Code/Cursor + 4 Extensions (`Python`, `Pylance`, `Ruff`, `Even Better TOML`) là bạn đã có môi trường đạt chuẩn kỹ sư Senior.',
+      },
+      {
+        title: 'Clone và chạy bất kỳ dự án mẫu hoặc mã nguồn mở Python nào trên GitHub',
+        scenario: 'Khi tải một dự án trên GitHub (hoặc 1 trong 16 Dự án Mẫu của Learning Gate) về máy cá nhân.',
+        whyPythonFits: 'Nếu dự án có `pyproject.toml`, chỉ cần chạy `uv sync` rồi `uv run ...`. Nếu dự án có `requirements.txt`, chỉ cần `uv venv && uv pip install -r requirements.txt`!',
+      },
+    ],
+    tipsAndBestPractices: [
+      'Luôn kiểm tra mình đang dùng Python ở đâu bằng lệnh `which python` (macOS/Linux) hoặc `Get-Command python` (Windows PowerShell). Đường dẫn đúng phải nằm trong `.venv` hoặc `.local/share/uv` / `.pyenv`.',
+      'Đặt tên thư mục môi trường ảo thống nhất là **`.venv`** (có dấu chấm ở đầu) vì cả VS Code, Cursor, PyCharm và `uv` đều tự động nhận diện tên `.venv` mà không cần cấu hình thủ công.',
+      'Để chạy các công cụ CLI viết bằng Python (như `ruff`, `httpie`, `yt-dlp`, `cookiecutter`) ở mọi nơi mà không cần cài vào dự án, hãy dùng lệnh `uvx <tên_công_cụ>` (tương đương `npx` bên Node.js!).',
+    ],
+    commonIssues: [
+      {
+        id: 'issue-s0-command-not-found-python',
+        title: 'Lỗi `zsh: command not found: python` trên macOS / Linux mới',
+        severity: 'warning',
+        symptom: 'Gõ `python --version` trên macOS hoặc Ubuntu thì báo `command not found: python`, dù gõ `python3 --version` lại có.',
+        whyItHappens:
+          'Từ macOS Monterey và Ubuntu 20.04+, hệ điều hành đã gỡ bỏ tên tắt `python` (vốn từng trỏ vào Python 2 cũ) và chỉ để lại lệnh `python3`.',
+        wrongCode: `# Gõ trực tiếp python khi chưa cài uv/pyenv hoặc chưa kích hoạt .venv:\n$ python main.py\n# -> zsh: command not found: python`,
+        rightCode: `# Cách 1: Chạy qua uv (Tự động ánh xạ chuẩn cả python và python3)\n$ uv run python main.py\n\n# Cách 2: Khi đã kích hoạt .venv (source .venv/bin/activate), lệnh 'python' tự động có sẵn!\n$ source .venv/bin/activate\n(.venv) $ python main.py`,
+        fixExplanation: 'Khi làm việc bên trong môi trường ảo `.venv` hoặc dùng `uv run` / `pyenv`, lệnh `python` luôn được ánh xạ tự động tới Python 3 của dự án.',
+      },
+      {
+        id: 'issue-s0-windows-execution-policy',
+        title: 'Lỗi không kích hoạt được `.venv` trên Windows PowerShell (`running scripts is disabled on this system`)',
+        severity: 'critical',
+        symptom: 'Trên Windows PowerShell, khi gõ `.venv\\Scripts\\activate` thì báo lỗi đỏ: `Activate.ps1 cannot be loaded because running scripts is disabled on this system (PSSecurityException)`.',
+        whyItHappens:
+          'Mặc định Windows PowerShell chặn chạy các file script `.ps1` để bảo mật cho đến khi bạn cấp quyền `RemoteSigned` cho tài khoản hiện tại.',
+        wrongCode: `PS C:\\my-app> .venv\\Scripts\\activate\n# LỖI: File .venv\\Scripts\\Activate.ps1 cannot be loaded because running scripts is disabled`,
+        rightCode: `# Chạy lệnh cấp quyền 1 lần duy nhất cho CurrentUser trên PowerShell:\nPS C:\\my-app> Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser\n\n# Sau đó kích hoạt bình thường (hoặc dùng thẳng 'uv run' không cần activate!):\nPS C:\\my-app> .venv\\Scripts\\Activate.ps1\n(.venv) PS C:\\my-app> python main.py`,
+        fixExplanation: 'Chạy `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser` trên PowerShell, hoặc dùng `uv run python main.py` để bỏ qua hoàn toàn bước chạy script `Activate.ps1`.',
+      },
+      {
+        id: 'issue-s0-vscode-unresolved-import',
+        title: 'Lỗi đã cài thư viện thành công trên Terminal nhưng VS Code vẫn báo gạch vàng `Import "..." could not be resolved`',
+        severity: 'warning',
+        symptom: 'Chạy `uv add fastapi` hoặc `pip install fastapi` xong, chạy code trên Terminal thì được nhưng trong VS Code / Cursor vẫn gạch chân vàng báo không tìm thấy thư viện.',
+        whyItHappens:
+          'VS Code đang trỏ nhầm vào Python mặc định của máy (nơi không có thư viện) chứ chưa trỏ vào thư mục `.venv/` của dự án.',
+        wrongCode: `# Dưới góc phải thanh trạng thái (Status Bar) của VS Code đang hiện:\n# Python 3.9.6 ('/usr/bin/python3') -> Sai Interpreter!`,
+        rightCode: `# Bấm tổ hợp phím Cmd + Shift + P (macOS) hoặc Ctrl + Shift + P (Windows/Linux)\n# Gõ: Python: Select Interpreter\n# Chọn dòng có chữ Recommended: Python 3.12.x ('.venv': venv) ./venv/bin/python`,
+        fixExplanation: 'Luôn chọn Python Interpreter trỏ vào `./.venv/bin/python` (macOS/Linux) hoặc `.venv\\Scripts\\python.exe` (Windows) trong VS Code / Cursor.',
+      },
+    ],
+    jsComparison: [
+      {
+        concept: 'Toàn bộ Quy trình Khởi tạo Dự án, Cài gói & Chạy Script',
+        jsTsWay: 'nvm + pnpm/npm + package.json + node_modules + npx',
+        pythonWay: 'uv (hoặc pyenv + venv + pip) + pyproject.toml + .venv + uvx',
+        jsCode: `nvm install 22 && nvm use 22\npnpm init\npnpm add fastify\npnpm add -D vitest eslint\npnpm run dev\nnpx create-vite@latest`,
+        pythonCode: `uv python install 3.12 && uv python pin 3.12\nuv init\nuv add fastapi\nuv add --dev pytest ruff\nuv run python main.py\nuvx ruff check .`,
+        keyDifference: 'Công cụ `uv` mang lại trải nghiệm giống hệt `nvm` + `pnpm` + `npx` gộp làm một, giúp lập trình viên chuyển sang Python cảm thấy quen thuộc ngay lập tức.',
+      },
+    ],
+    externalReferences: [
+      {
+        title: 'Astral uv — Official Installation & User Guide',
+        url: 'https://docs.astral.sh/uv/',
+        sourceType: 'Tooling Docs',
+        description: 'Tài liệu chính thức của uv: cài đặt trên macOS/Windows/Linux, quản lý Python, tạo dự án và cài đặt thư viện.',
+      },
+      {
+        title: 'pyenv — Simple Python Version Management',
+        url: 'https://github.com/pyenv/pyenv',
+        sourceType: 'Tooling Docs',
+        description: 'Hướng dẫn cài đặt và cấu hình pyenv trên macOS/Linux (và pyenv-win cho Windows).',
+      },
+      {
+        title: 'VS Code Python Tutorial — Getting Started & Selecting Interpreter',
+        url: 'https://code.visualstudio.com/docs/python/python-tutorial',
+        sourceType: 'Official Docs',
+        description: 'Hướng dẫn chính thức từ Microsoft về cấu hình VS Code cho lập trình Python, chọn môi trường .venv và debug.',
+      },
+    ],
+    relatedTermIds: ['eco-uv', 'concept-gil', 'kw-def'],
+    relatedLessonIds: ['s0-python-overview-engine', 's0-versions-install-switch-run'],
+    relatedExerciseIds: ['ex-s0-version-cli-check'],
+  },
+  {
     id: 's0-python-overview-engine',
     stageId: 'stage-1',
     level: 'fundamental',

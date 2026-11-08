@@ -19,7 +19,9 @@ import {
   Info,
   Send,
   SlidersHorizontal,
+  Wrench,
 } from 'lucide-react';
+import { SetupGuideModal } from '@/components/common/SetupGuideModal';
 import { ALL_SAMPLE_PROJECTS } from '@/data/samples/samplesData';
 import {
   SampleProject,
@@ -90,6 +92,7 @@ export const ProjectSamplesHub: React.FC = () => {
   >({});
   const [copiedFile, setCopiedFile] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isLocalSetupOpen, setIsLocalSetupOpen] = useState(false);
 
   // Interactive Terminal & API/cURL State
   const [activeCommandId, setActiveCommandId] = useState<string>(
@@ -315,8 +318,18 @@ export const ProjectSamplesHub: React.FC = () => {
             </button>
           </div>
 
-          {/* Right: Open 16-Project Catalog Button */}
+          {/* Right: Setup Guide + Open 16-Project Catalog Button */}
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsLocalSetupOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+              title="Xem hướng dẫn cài đặt Python, uv / pyenv, tạo .venv và chạy dự án mẫu này trên máy thật"
+            >
+              <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span>Cài đặt Python (uv/pyenv) & Chạy trên Máy thật</span>
+            </button>
+
             <span className="hidden xl:inline-flex items-center gap-1.5 rounded-xl bg-slate-950 border border-slate-800 px-2.5 py-1.5 font-mono text-xs text-slate-300">
               <Layers className="h-3.5 w-3.5 text-sky-400" />
               <span>{currentProject.complexityLabel}</span>
@@ -889,6 +902,13 @@ export const ProjectSamplesHub: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Step-by-Step Local Environment & Project Setup Modal */}
+      <SetupGuideModal
+        isOpen={isLocalSetupOpen}
+        onClose={() => setIsLocalSetupOpen(false)}
+        sampleProject={currentProject}
+      />
     </div>
   );
 };

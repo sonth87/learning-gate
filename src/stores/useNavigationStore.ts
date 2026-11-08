@@ -26,6 +26,7 @@ interface NavigationState {
   filterStage: StageId | 'all';
   isSearchOpen: boolean;
   isSettingsOpen: boolean;
+  isSetupGuideOpen: boolean;
   isMobileSidebarOpen: boolean;
   isMobileTocOpen: boolean;
   notesDrawerTarget: {
@@ -44,6 +45,7 @@ interface NavigationState {
   setFilterStage: (stage: StageId | 'all') => void;
   setSearchOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setSetupGuideOpen: (open: boolean) => void;
   setMobileSidebarOpen: (open: boolean) => void;
   setMobileTocOpen: (open: boolean) => void;
   openNotesDrawer: (
@@ -66,19 +68,20 @@ let popoverHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const useNavigationStore = create<NavigationState>((set) => ({
   activeTab: 'curriculum',
-  selectedLessonId: 's0-python-overview-engine',
+  selectedLessonId: 's0-install-setup-uv-pyenv-ide',
   selectedExerciseId: 'ex-s0-version-cli-check',
   selectedExamId: 'exam-fundamental-basic',
   filterLevel: 'all',
   filterStage: 'all',
   isSearchOpen: false,
   isSettingsOpen: false,
+  isSetupGuideOpen: false,
   isMobileSidebarOpen: false,
   isMobileTocOpen: false,
   notesDrawerTarget: {
     isOpen: false,
     targetType: 'lesson',
-    targetId: 's0-python-overview-engine',
+    targetId: 's0-install-setup-uv-pyenv-ide',
     targetTitle: '',
   },
   activePopover: null,
@@ -118,6 +121,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
   setFilterStage: (filterStage) => set({ filterStage }),
   setSearchOpen: (isSearchOpen) => set({ isSearchOpen }),
   setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
+  setSetupGuideOpen: (isSetupGuideOpen) => set({ isSetupGuideOpen }),
   setMobileSidebarOpen: (isMobileSidebarOpen) => set({ isMobileSidebarOpen }),
   setMobileTocOpen: (isMobileTocOpen) => set({ isMobileTocOpen }),
   openNotesDrawer: (targetType, targetId, targetTitle) =>

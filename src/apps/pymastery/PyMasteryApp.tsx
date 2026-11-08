@@ -17,6 +17,7 @@ import { ReferenceHub } from '@/components/reference/ReferenceHub';
 import { TermPopover } from '@/components/common/TermPopover';
 import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { GlobalSearchModal } from '@/components/common/GlobalSearchModal';
+import { SetupGuideModal } from '@/components/common/SetupGuideModal';
 import { cn } from '@/utils/cn';
 
 export interface PyMasteryAppProps {
@@ -31,6 +32,8 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
     hideTermPopover,
     setSearchOpen,
     setSettingsOpen,
+    isSetupGuideOpen,
+    setSetupGuideOpen,
     openNotesDrawer,
     selectedLessonId,
   } = useNavigationStore();
@@ -137,6 +140,10 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
       <NotesDrawer />
       <GlobalSearchModal />
       <SettingsModal />
+      <SetupGuideModal
+        isOpen={isSetupGuideOpen}
+        onClose={() => setSetupGuideOpen(false)}
+      />
     </div>
   );
 };

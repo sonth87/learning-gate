@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Wrench,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
@@ -106,6 +107,7 @@ export const Header: React.FC = () => {
     setActiveTab,
     setSearchOpen,
     setSettingsOpen,
+    setSetupGuideOpen,
     openNotesDrawer,
     selectedLessonId,
   } = useNavigationStore();
@@ -213,6 +215,23 @@ export const Header: React.FC = () => {
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Quick Setup Guide Button (Python / uv / pyenv / VS Code) */}
+          <HeaderTooltip
+            label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
+            align="right"
+          >
+            <button
+              onClick={() => setSetupGuideOpen(true)}
+              aria-label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
+            >
+              <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+              <span className="hidden xl:inline whitespace-nowrap">
+                Cài đặt Python / uv / pyenv
+              </span>
+            </button>
+          </HeaderTooltip>
+
           {/* Quick Search Cmd+K (Icon Only) */}
           <HeaderTooltip label="Tìm kiếm nhanh" shortcut="⌘K" align="right">
             <button

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   X,
   BookOpen,
+  Wrench,
 } from 'lucide-react';
 import { CURRICULUM_STAGES, STAGE_MAP } from '@/constants/stages';
 import { SKILL_LEVELS } from '@/constants/levels';
@@ -24,6 +25,7 @@ export const Sidebar: React.FC = () => {
   const {
     selectedLessonId,
     selectLesson,
+    setSetupGuideOpen,
     isMobileSidebarOpen,
     setMobileSidebarOpen,
   } = useNavigationStore();
@@ -112,6 +114,53 @@ export const Sidebar: React.FC = () => {
 
       {/* Scrollable Curriculum Tree */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* Quick Beginner Setup Card */}
+        <div className="rounded-xl border border-emerald-500/35 bg-gradient-to-br from-emerald-500/15 via-slate-900/90 to-slate-900 p-3 space-y-2 shadow-sm">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
+                <Wrench className="h-3.5 w-3.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                  Bắt đầu cho Người mới
+                </div>
+                <div className="text-xs font-bold text-white truncate">
+                  Cài đặt Python, uv / pyenv & IDE
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-300 leading-relaxed">
+            Chưa cài Python hoặc chưa biết dùng <code className="text-emerald-300 font-mono">uv</code>,{' '}
+            <code className="text-emerald-300 font-mono">pyenv</code>,{' '}
+            <code className="text-emerald-300 font-mono">.venv</code> trên macOS / Windows / Linux?
+          </p>
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => setSetupGuideOpen(true)}
+              className="inline-flex items-center justify-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer"
+            >
+              <Wrench className="h-3 w-3 shrink-0" />
+              <span>Mở Cẩm nang</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => selectLesson('s0-install-setup-uv-pyenv-ide')}
+              className={cn(
+                'inline-flex items-center justify-center gap-1 rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition-colors cursor-pointer',
+                selectedLessonId === 's0-install-setup-uv-pyenv-ide'
+                  ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                  : 'border-slate-700 bg-slate-800/80 text-slate-200 hover:border-slate-600'
+              )}
+            >
+              <BookOpen className="h-3 w-3 shrink-0" />
+              <span>Bài 1.0 Chi tiết</span>
+            </button>
+          </div>
+        </div>
+
         {/* View 1: Grouped by 7 Stages */}
         {organizationMode === 'by-stage' &&
           CURRICULUM_STAGES.map((stage) => {
