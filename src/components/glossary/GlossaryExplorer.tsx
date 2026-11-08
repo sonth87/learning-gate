@@ -12,8 +12,11 @@ import {
   ChevronsUpDown,
   ChevronsDownUp,
   Sparkles,
+  Package,
 } from 'lucide-react';
 import { ALL_GLOSSARY_TERMS, GLOSSARY_BY_ID } from '@/data/glossary';
+import { PYTHON_LIBRARIES_CATALOG } from '@/data/libraries/pythonLibrariesCatalog';
+import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
 import { GlossaryCategory } from '@/types/glossary.types';
 import { SkillLevel } from '@/types/curriculum.types';
 import { SKILL_LEVELS } from '@/constants/levels';
@@ -37,6 +40,7 @@ const CATEGORY_FILTERS: { id: GlossaryCategory | 'all'; label: string }[] = [
 ];
 
 export const GlossaryExplorer: React.FC = () => {
+  const [activeSection, setActiveSection] = useState<'libraries' | 'glossary'>('libraries');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<GlossaryCategory | 'all'>('all');
   const [level, setLevel] = useState<SkillLevel | 'all'>('all');
@@ -87,8 +91,51 @@ export const GlossaryExplorer: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-[1400px] p-4 sm:p-6 space-y-6">
-      {/* Header & Search */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4 shadow-xl">
+      {/* Top Mode Switcher: Python Libraries Encyclopedia vs. Keywords/Built-ins Glossary */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 p-3 shadow-lg">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSection('libraries')}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition-all cursor-pointer',
+              activeSection === 'libraries'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                : 'bg-slate-950 text-slate-300 border border-slate-800 hover:border-slate-700 hover:text-white'
+            )}
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            <span>
+              📚 Cẩm nang Thư viện Chuẩn & Thực chiến ({PYTHON_LIBRARIES_CATALOG.length} Nhóm Thư viện)
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSection('glossary')}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition-all cursor-pointer',
+              activeSection === 'glossary'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-950 text-slate-300 border border-slate-800 hover:border-slate-700 hover:text-white'
+            )}
+          >
+            <BookMarked className="h-4 w-4 shrink-0" />
+            <span>
+              🔤 Từ điển Từ khóa, Hàm Tích hợp & Dunder ({ALL_GLOSSARY_TERMS.length} mục)
+            </span>
+          </button>
+        </div>
+        <span className="text-[11px] text-slate-400">
+          Tra cứu thư viện tiêu chuẩn, thư viện hay dùng thực tế, cách dùng, tips/tricks & thư viện thay thế
+        </span>
+      </div>
+
+      {activeSection === 'libraries' ? (
+        <PythonLibrariesEncyclopedia />
+      ) : (
+        <>
+          {/* Header & Search */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fuchsia-500/20 text-fuchsia-300">
@@ -410,6 +457,8 @@ export const GlossaryExplorer: React.FC = () => {
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 };

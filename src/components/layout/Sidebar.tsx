@@ -168,6 +168,19 @@ export const Sidebar: React.FC = () => {
           </div>
           <button
             type="button"
+            onClick={() => selectLesson('s0-stdlib-and-third-party-ecosystem')}
+            className={cn(
+              'w-full inline-flex items-center justify-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] font-bold transition-colors cursor-pointer',
+              selectedLessonId === 's0-stdlib-and-third-party-ecosystem'
+                ? 'border-violet-500/60 bg-violet-500/25 text-violet-300'
+                : 'border-violet-500/35 bg-violet-500/10 text-violet-200 hover:border-violet-500/60'
+            )}
+          >
+            <BookOpen className="h-3 w-3 text-violet-400 shrink-0" />
+            <span>1.0C: Bản đồ Thư viện Chuẩn & Thực chiến</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setSetupGuideOpen(true)}
             className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-[11px] font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer"
           >

@@ -864,7 +864,247 @@ print("Đã sẵn sàng cấu hình .vscode/settings.json chuẩn chuyên nghi�
       },
     ],
     relatedTermIds: ['eco-uv', 'concept-gil', 'kw-def'],
-    relatedLessonIds: ['s0-install-setup-uv-pyenv-ide', 's0-python-overview-engine', 's0-versions-install-switch-run'],
+    relatedLessonIds: ['s0-install-setup-uv-pyenv-ide', 's0-stdlib-and-third-party-ecosystem', 's0-python-overview-engine', 's0-versions-install-switch-run'],
+    relatedExerciseIds: ['ex-s0-version-cli-check'],
+  },
+  {
+    id: 's0-stdlib-and-third-party-ecosystem',
+    stageId: 'stage-1',
+    level: 'fundamental',
+    order: 0.8,
+    title: '1.0C. Bản đồ Thư viện Python: Thư viện Tiêu chuẩn (Standard Library) & Thư viện Thực chiến Hay Dùng (Cách dùng, Tips/Tricks & Thay thế)',
+    shortDescription:
+      'Cẩm nang toàn diện về các thư viện có sẵn trong Python (pathlib, collections, itertools, functools, datetime, json, dataclasses, subprocess...) và các thư viện thực tế phổ biến nhất (httpx, requests, Pydantic, FastAPI, SQLAlchemy, Polars/Pandas, pytest, Rich/Typer): giải quyết bài toán gì, cách dùng, mẹo tối ưu và thư viện thay thế.',
+    estimatedMinutes: 55,
+    theoryParagraphs: [
+      '**Triết lý "Batteries Included" (Pin đi kèm máy) của Python là gì?** Nếu bạn đi từ JavaScript / Node.js sang, bạn sẽ quen với việc cài hàng chục gói `npm` nhỏ lẻ cho những tác vụ cơ bản (`lodash`, `mkdirp`, `glob`, `csv-parse`, `dotenv`...). Ngược lại, ngay khi cài Python xong, bạn đã có sẵn một kho **Thư viện Tiêu chuẩn (Python Standard Library)** cực kỳ đồ sộ đi kèm trình thông dịch: từ thao tác đường dẫn file (`pathlib`), cấu trúc dữ liệu hiệu năng cao (`collections`), lập trình hàm & caching (`itertools`, `functools`), ngày giờ múi giờ (`datetime`, `zoneinfo`), đọc ghi `json`/`csv`/`tomllib`, định nghĩa dữ liệu (`dataclasses`, `typing`, `enum`) cho tới gọi lệnh hệ điều hành (`subprocess`, `shutil`) và bảo mật (`secrets`, `hashlib`). Bạn chỉ cần gõ `import ...` là dùng ngay, không cần cài bất cứ gói nào!',
+      '**Khi nào dùng Thư viện Tiêu chuẩn (Stdlib), khi nào cài Thư viện Ngoài (Third-Party trên PyPI)?** Quy tắc vàng của lập trình viên Python chuyên nghiệp: **(1) Ưu tiên Thư viện Tiêu chuẩn** cho các tác vụ cốt lõi về file, đường dẫn (`pathlib`), gom nhóm đếm phần tử (`collections.Counter`, `defaultdict`), bộ nhớ đệm (`functools.lru_cache`), ngày giờ chuẩn múi giờ (`zoneinfo`) để giảm phụ thuộc bên ngoài; **(2) Dùng Thư viện Thực chiến (Third-Party)** khi bài toán đòi hỏi giao thức mạng hiện đại, hiệu năng lõi C/Rust hoặc kiến trúc lớn: gọi HTTP/API (`httpx` hoặc `requests`), kiểm증 dữ liệu & biến môi trường (`pydantic`, `pydantic-settings`), xây dựng Web API (`FastAPI` / `Django`), truy vấn Database (`SQLAlchemy 2.0` + `Alembic`), xử lý dữ liệu lớn (`Polars` / `Pandas`), kiểm thử (`pytest`), và làm CLI/Logging đẹp mắt (`Rich`, `Typer`, `Loguru`).',
+      '**Các cặp Thư viện "Đi cùng nhau" trong dự án thực tế**: Trong một dự án Python chuẩn Production, các thư viện hiếm khi đứng đơn lẻ mà thường kết hợp thành bộ đôi hoàn hảo: `FastAPI` + `Pydantic` + `Uvicorn` (Web API), `SQLAlchemy 2.0` + `Alembic` + `asyncpg` (Database & Migration), `httpx` + `tenacity` (Gọi API bất đồng bộ kèm cơ chế tự động thử lại khi lỗi mạng Exponential Backoff), `Typer` + `Rich` (Xây dựng công cụ dòng lệnh CLI có bảng màu và thanh tiến trình), `pytest` + `pytest-asyncio` + `pytest-cov` (Kiểm thử tự động).',
+      '**Mẹo tra cứu nhanh trong ứng dụng**: Ngoài bài học tổng quan này, bạn có thể bấm vào tab **"Từ điển & Thư viện Python"** trên thanh menu trên cùng hoặc mở **"Cẩm nang Cài đặt & Quản lý Dự án" $\\rightarrow$ Tab "📚 Thư viện Chuẩn & Thực chiến"** để lọc theo từng nhóm bài toán, tìm kiếm hàm, copy lệnh cài đặt (`uv add` / `pip install`) và bật/tắt đối chiếu tương đương với Node.js/JS/TS.',
+    ],
+    analogy: {
+      title: 'Bản đồ Chọn Thư viện Python theo Bài toán Thực tế',
+      realWorldScenario:
+        'Giống như người thợ có Hộp đồ nghề theo máy (Standard Library) và Các máy móc chuyên dụng mua thêm (Third-Party PyPI), biết chọn đúng thư viện giúp bạn tiết kiệm 80% thời gian viết code:',
+      mappingPoints: [
+        {
+          realWorld: 'Đường dẫn File, Thư mục & Hệ điều hành (Không cần cài thêm)',
+          pythonEquivalent: '`pathlib`, `shutil`, `subprocess`, `os`, `sys`',
+          explanation: 'Dùng toán tử `/` của `Path` để nối đường dẫn đa nền tảng, `Path.rglob()` quét file, `shutil.copytree()` sao chép thư mục và `subprocess.run()` gọi lệnh hệ thống an toàn.',
+        },
+        {
+          realWorld: 'Cấu trúc Dữ liệu, Bộ nhớ đệm (Cache) & Xử lý Dòng chảy (Không cần cài thêm)',
+          pythonEquivalent: '`collections` (`Counter`, `defaultdict`, `deque`), `itertools`, `functools` (`@lru_cache`)',
+          explanation: 'Giải quyết các bài toán đếm tần suất, gom nhóm không sợ lỗi `KeyError`, hàng đợi 2 đầu $O(1)$ và tự động cache kết quả hàm đệ quy/tính toán nặng.',
+        },
+        {
+          realWorld: 'Gọi API (HTTP Client) & Kiểm chứng Dữ liệu (Validation / Env Config)',
+          pythonEquivalent: '`httpx` (hoặc `requests`) + `pydantic` & `pydantic-settings`',
+          explanation: '`httpx` hỗ trợ cả Sync lẫn Async (`async/await`) kèm Connection Pool; `Pydantic v2` (lõi Rust) ép kiểu và kiểm tra JSON/biến môi trường `.env` chặt chẽ.',
+        },
+        {
+          realWorld: 'Xây dựng Web Backend, Database ORM, Xử lý Dữ liệu & Kiểm thử',
+          pythonEquivalent: '`FastAPI` + `SQLAlchemy 2.0` + `Polars` / `Pandas` + `pytest`',
+          explanation: 'Bộ tứ trụ cột của các hệ thống Python hiện đại: API tốc độ cao tự sinh Swagger, ORM an toàn kiểu, xử lý bảng dữ liệu triệu dòng và bộ test ngắn gọn.',
+        },
+      ],
+      mentalModelTip:
+        'Luôn tự hỏi: "Thư viện Tiêu chuẩn (Standard Library) của Python đã có sẵn công cụ cho việc này chưa?" Nếu là đường dẫn (pathlib), đếm/gom nhóm (collections), cache (functools) hay đọc JSON/TOML/CSV thì dùng ngay Stdlib. Nếu là gọi HTTP (httpx/requests), validate dữ liệu (Pydantic), làm Web API (FastAPI) hay xử lý bảng lớn (Polars/Pandas) thì dùng thư viện Third-Party đầu ngành!',
+    },
+    codeExamples: [
+      {
+        id: 'ex-s0c-stdlib-powerhouse',
+        title: 'Nhóm 1: Tinh hoa Thư viện Tiêu chuẩn (Standard Library) — Dùng ngay không cần cài đặt',
+        description: 'Kết hợp pathlib, collections (Counter, defaultdict), functools (lru_cache), dataclasses và datetime/zoneinfo trong thực tế.',
+        code: `from pathlib import Path
+from collections import Counter, defaultdict
+from functools import lru_cache
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+import json
+
+# ============================================================================
+# 1. PATHLIB: Quản lý đường dẫn và đọc/ghi file thanh lịch bằng toán tử '/'
+# ============================================================================
+# Thay vì nối chuỗi thủ công dễ lỗi dấu '/' và '\\' giữa macOS/Linux và Windows:
+base_dir = Path("data") / "reports" / "2026"
+# base_dir.mkdir(parents=True, exist_ok=True)  # Tạo toàn bộ cây thư mục nếu chưa có
+sample_path = base_dir / "summary.json"
+print("File tên:", sample_path.name, "| Đuôi:", sample_path.suffix, "| Gốc:", sample_path.stem)
+
+# ============================================================================
+# 2. COLLECTIONS: Counter (đếm tần suất) & defaultdict (gom nhóm tự khởi tạo)
+# ============================================================================
+orders = [
+    ("laptop", "electronics"),
+    ("mouse", "electronics"),
+    ("coffee", "grocery"),
+    ("laptop", "electronics"),
+]
+
+# Đếm sản phẩm bán chạy nhất chỉ với 1 dòng:
+product_counts = Counter(item for item, _ in orders)
+print("Top sản phẩm:", product_counts.most_common(1))
+
+# Gom nhóm sản phẩm theo danh mục mà KHÔNG bao giờ bị lỗi KeyError:
+by_category: dict[str, list[str]] = defaultdict(list)
+for product, category in orders:
+    by_category[category].append(product)
+print("Gom nhóm:", dict(by_category))
+
+# ============================================================================
+# 3. FUNCTOOLS (@lru_cache) & DATACLASSES: Cache kết quả & tạo Model dữ liệu
+# ============================================================================
+@lru_cache(maxsize=256)
+def heavy_tax_calculation(amount: int, region: str) -> float:
+    # Nếu gọi lại với cùng (amount, region), Python trả kết quả ngay từ RAM!
+    rate = 0.1 if region == "VN" else 0.08
+    return round(amount * (1 + rate), 2)
+
+@dataclass(slots=True)
+class Invoice:
+    invoice_id: str
+    total_vnd: int
+    tags: list[str] = field(default_factory=list)  # Luôn dùng default_factory cho list/dict!
+    created_at_vn: str = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+        .astimezone(ZoneInfo("Asia/Ho_Chi_Minh"))
+        .isoformat()
+    )
+
+inv = Invoice(invoice_id="INV-001", total_vnd=15_000_000, tags=["vip", "paid"])
+print("Invoice:", inv)
+print("Sau thuế:", heavy_tax_calculation(inv.total_vnd, "VN"))`,
+        output: `File tên: summary.json | Đuôi: .json | Gốc: summary\nTop sản phẩm: [('laptop', 2)]\nGom nhóm: {'electronics': ['laptop', 'mouse', 'laptop'], 'grocery': ['coffee']}\nInvoice: Invoice(invoice_id='INV-001', total_vnd=15000000, tags=['vip', 'paid'], created_at_vn='2026-11-08T14:20:00+07:00')\nSau thuế: 16500000.0`,
+        annotations: [
+          { line: 13, explanation: 'Toán tử `/` của `Path` tự động dùng dấu `/` trên macOS/Linux và `\\` trên Windows. Thuộc tính `.name`, `.stem`, `.suffix` lấy tên file và phần mở rộng cực nhanh.' },
+          { line: 27, explanation: '`Counter` nhận một iterable bất kỳ và trả về bảng băm đếm số lần xuất hiện, hỗ trợ `.most_common(n)` để lấy Top $N$ phần tử.' },
+          { line: 31, explanation: '`defaultdict(list)` tự động tạo một `[]` rỗng mỗi khi bạn truy cập vào một key chưa tồn tại, giúp bỏ hẳn các đoạn `if key not in d:` rườm rà.' },
+          { line: 39, explanation: '`@lru_cache` tự động nhớ kết quả trả về theo bộ tham số đầu vào (Memoization). Có thể kiểm tra tỷ lệ trúng cache bằng `heavy_tax_calculation.cache_info()`.' },
+          { line: 46, explanation: '`@dataclass(slots=True)` tự sinh `__init__`, `__repr__`, `__eq__` và bật `__slots__` giúp giảm ~40% bộ nhớ RAM cho mỗi object.' },
+        ],
+      },
+      {
+        id: 'ex-s0c-third-party-ecosystem',
+        title: 'Nhóm 2: Thư viện Thực chiến (Third-Party) — httpx, Pydantic v2, FastAPI, Polars & pytest',
+        description: 'Cách các thư viện bên thứ 3 phổ biến nhất phối hợp với nhau trong một ứng dụng Python hiện đại (kèm giải thích Tips & Thay thế).',
+        code: `# ============================================================================
+# CÀI ĐẶT NHANH:
+# - Dùng uv:   $ uv add httpx pydantic pydantic-settings fastapi polars rich
+# - Dùng pip:  $ pip install httpx pydantic pydantic-settings fastapi polars rich
+# ============================================================================
+
+# 1. PYDANTIC V2: Kiểm chứng dữ liệu đầu vào (Validation) & Đọc file .env
+from pydantic import BaseModel, Field, EmailStr
+
+class CreateOrderRequest(BaseModel):
+    customer_email: str
+    quantity: int = Field(ge=1, le=100, description="Số lượng từ 1 đến 100")
+    unit_price: float = Field(gt=0)
+
+    @property
+    def subtotal(self) -> float:
+        return round(self.quantity * self.unit_price, 2)
+
+# Pydantic tự động ép kiểu hợp lệ ("5" -> 5) hoặc báo lỗi ValidationError chi tiết:
+order = CreateOrderRequest(customer_email="dev@company.vn", quantity=3, unit_price=250.0)
+print("Dữ liệu hợp lệ:", order.model_dump(), "| Tổng:", order.subtotal)
+
+# ----------------------------------------------------------------------------
+# 2. HTTPX (hoặc REQUESTS): Gọi HTTP API an toàn với Context Manager & Timeout
+# ----------------------------------------------------------------------------
+# 💡 TIP QUAN TRỌNG:
+# - Luôn truyền timeout=... để tránh treo chương trình vô thời hạn khi mạng đứt.
+# - Tái sử dụng httpx.Client() (hoặc AsyncClient) để tận dụng Connection Pool!
+#
+# import httpx
+# with httpx.Client(base_url="https://api.example.com", timeout=5.0) as client:
+#     resp = client.get("/orders/123")
+#     resp.raise_for_status()        # Ném lỗi ngay nếu HTTP 4xx / 5xx
+#     data = resp.json()
+#
+# 🔄 Thư viện thay thế:
+# - requests: Phổ biến nhất cho code đồng bộ (Sync), dùng requests.Session().
+# - aiohttp: Chuyên cho hệ thống bất đồng bộ (Async) tải cao hoặc WebSockets.
+
+# ----------------------------------------------------------------------------
+# 3. POLARS (hoặc PANDAS): Phân tích & Biến đổi dữ liệu bảng tốc độ cao
+# ----------------------------------------------------------------------------
+# 💡 TIP: Polars viết bằng Rust, chạy đa nhân CPU và hỗ trợ Lazy Evaluation
+# (pl.scan_parquet / pl.scan_csv) tối ưu truy vấn trước khi nạp RAM.
+# 🔄 Thay thế: pandas (hệ sinh thái lâu đời), DuckDB (chạy SQL trực tiếp trên file).`,
+        output: `Dữ liệu hợp lệ: {'customer_email': 'dev@company.vn', 'quantity': 3, 'unit_price': 250.0} | Tổng: 750.0`,
+        annotations: [
+          { line: 10, explanation: '`BaseModel` của Pydantic v2 sử dụng lõi `pydantic-core` bằng Rust. Dùng `.model_validate()` để parse dict, `.model_validate_json()` để parse chuỗi JSON và `.model_dump()` để xuất ra dict.' },
+          { line: 26, explanation: 'Khi gọi API bằng `httpx` hoặc `requests`, luôn đặt `timeout` rõ ràng và dùng `resp.raise_for_status()` để bắt lỗi HTTP 4xx/5xx sớm.' },
+          { line: 41, explanation: '`Polars` và `DuckDB` là 2 lựa chọn hiện đại cực nhanh bên cạnh `Pandas` truyền thống khi xử lý dữ liệu bảng từ vài trăm nghìn đến hàng chục triệu dòng.' },
+        ],
+      },
+    ],
+    useCases: [
+      {
+        title: 'Chọn đúng bộ thư viện (Tech Stack) khi khởi tạo dự án Python mới',
+        scenario: 'Bạn chuẩn bị xây dựng một dịch vụ Backend API, một công cụ CLI tự động hóa hoặc một pipeline xử lý dữ liệu lớn.',
+        whyPythonFits: 'Kết hợp hài hòa giữa Thư viện Tiêu chuẩn (`pathlib`, `collections`, `functools`, `zoneinfo`) và các thư viện Third-Party chuẩn công nghiệp (`FastAPI`, `Pydantic v2`, `SQLAlchemy 2.0`, `httpx`, `Polars`, `Rich`/`Typer`, `pytest`) giúp dự án gọn nhẹ, tốc độ cao và dễ bảo trì.',
+      },
+    ],
+    tipsAndBestPractices: [
+      'Luôn ưu tiên **Thư viện Tiêu chuẩn (Standard Library)** trước khi cài gói ngoài cho các tác vụ cơ bản: dùng `pathlib.Path` thay cho `os.path`, `collections.Counter` / `defaultdict` thay cho vòng lặp đếm thủ công, `functools.lru_cache` cho bộ nhớ đệm, và `tomllib` để đọc file `.toml`.',
+      'Khi gọi API qua mạng bằng `httpx` hoặc `requests`, luôn khởi tạo **Client / Session** (`with httpx.Client(timeout=10.0) as client:`) để tái sử dụng kết nối TCP (Connection Pooling) và bắt buộc truyền `timeout` để tránh treo ứng dụng.',
+      'Dùng `pydantic` và `pydantic-settings` ở ngay ranh giới đầu vào của ứng dụng (API Request, Webhook, File `.env`) để phát hiện lỗi dữ liệu ngay lập tức thay vì viết hàng chục câu lệnh `if/else` kiểm tra thủ công.',
+      'Mở mục **"Từ điển & Thư viện Python"** trên thanh điều hướng để tra cứu chi tiết 16 nhóm thư viện kèm cách dùng, tips/tricks, các thư viện thay thế và so sánh tương đương với Node.js/JS/TS.',
+    ],
+    commonIssues: [
+      {
+        id: 'issue-s0c-requests-no-session-timeout',
+        title: 'Gọi `requests.get()` hoặc `httpx.get()` trực tiếp trong vòng lặp mà không dùng Client/Session và quên `timeout`',
+        severity: 'critical',
+        symptom: 'Chương trình chạy rất chậm khi gọi hàng trăm API liên tiếp (do phải bắt tay TCP/TLS lại từ đầu mỗi lần) hoặc bị treo cứng mãi mãi khi server đối tác không phản hồi.',
+        whyItHappens:
+          'Mỗi lệnh `httpx.get()` / `requests.get()` rời rạc sẽ tạo một kết nối mạng mới rồi đóng ngay. Ngoài ra `requests` mặc định không giới hạn thời gian chờ (`timeout=None`).',
+        wrongCode: `import requests\nfor url in urls:\n    # NGUY HIỂM: Không có timeout (dễ treo vĩnh viễn) và không tái sử dụng kết nối TCP!\n    r = requests.get(url)`,
+        rightCode: `import httpx\n# CHUẨN: Dùng Client (hoặc requests.Session) để giữ Connection Pool và luôn có timeout\nwith httpx.Client(timeout=10.0) as client:\n    for url in urls:\n        r = client.get(url)\n        r.raise_for_status()`,
+        fixExplanation: 'Sử dụng `with httpx.Client(timeout=10.0) as client:` (hoặc `with requests.Session() as s:`) giúp tái sử dụng kết nối TCP Keep-Alive, tăng tốc độ gọi API lên gấp nhiều lần và không bao giờ bị treo cứng.',
+      },
+      {
+        id: 'issue-s0c-naive-datetime',
+        title: 'Dùng `datetime.now()` hoặc `datetime.utcnow()` không có múi giờ (Naive Datetime) gây lệch giờ hệ thống',
+        severity: 'warning',
+        symptom: 'Thời gian lưu xuống Database bị lệch 7 tiếng khi deploy từ máy cá nhân (giờ Việt Nam `+07:00`) lên máy chủ Cloud (giờ `UTC`).',
+        whyItHappens:
+          '`datetime.now()` không truyền tham số sẽ lấy giờ cục bộ của máy đang chạy mà không đính kèm thông tin múi giờ (`tzinfo=None`), còn `datetime.utcnow()` đã bị ngừng khuyến khích (deprecated) từ Python 3.12.',
+        wrongCode: `from datetime import datetime\nnow = datetime.now()       # Naive datetime (không biết của múi giờ nào!)\nutc = datetime.utcnow()    # Deprecated trong Python 3.12+`,
+        rightCode: `from datetime import datetime, timezone\nfrom zoneinfo import ZoneInfo\n\nnow_utc = datetime.now(timezone.utc)  # Luôn lưu giờ chuẩn UTC có gắn múi giờ!\nnow_vn = now_utc.astimezone(ZoneInfo("Asia/Ho_Chi_Minh"))`,
+        fixExplanation: 'Luôn dùng `datetime.now(timezone.utc)` ở tầng Backend/Database và chỉ chuyển sang múi giờ địa phương bằng `ZoneInfo("Asia/Ho_Chi_Minh")` khi hiển thị cho người dùng.',
+      },
+    ],
+    jsComparison: [
+      {
+        concept: 'Hệ sinh thái Thư viện: Python vs. Node.js / TypeScript',
+        jsTsWay: 'node:path + node:fs | fetch / axios | Zod | Express / Fastify / NestJS | Prisma / Drizzle | Vitest / Jest',
+        pythonWay: 'pathlib + shutil | httpx / requests | Pydantic v2 | FastAPI / Django | SQLAlchemy 2.0 + Alembic | pytest',
+        jsCode: `// TypeScript + Zod + fetch\nimport { z } from "zod";\nconst UserSchema = z.object({ id: z.number(), email: z.string().email() });\nconst res = await fetch("https://api.example.com/users/1");\nconst user = UserSchema.parse(await res.json());`,
+        pythonCode: `# Python + Pydantic v2 + httpx\nimport httpx\nfrom pydantic import BaseModel, EmailStr\n\nclass UserSchema(BaseModel):\n    id: int\n    email: EmailStr\n\nwith httpx.Client(timeout=5.0) as client:\n    res = client.get("https://api.example.com/users/1")\n    user = UserSchema.model_validate(res.json())`,
+        keyDifference: 'Bạn có thể mở mục "Từ điển & Thư viện Python" trên thanh điều hướng để xem bảng tra cứu chi tiết từng thư viện kèm nút Ẩn/Hiện so sánh Node.js/JS/TS.',
+      },
+    ],
+    externalReferences: [
+      {
+        title: 'Python Standard Library — Official Documentation',
+        url: 'https://docs.python.org/3/library/index.html',
+        sourceType: 'Official Docs',
+        description: 'Tài liệu chính thức toàn bộ Thư viện Tiêu chuẩn đi kèm sẵn với Python 3.',
+      },
+      {
+        title: 'Awesome Python — Curated List of Python Frameworks, Libraries & Software',
+        url: 'https://awesome-python.com/',
+        sourceType: 'Deep Dive',
+        description: 'Danh mục tổng hợp các thư viện Python thực chiến tốt nhất theo từng lĩnh vực.',
+      },
+    ],
+    relatedTermIds: ['eco-uv', 'concept-gil', 'kw-import'],
+    relatedLessonIds: ['s0-install-setup-uv-pyenv-ide', 's0-workflow-pyenv-venv-poetry-pipenv', 's0-python-overview-engine'],
     relatedExerciseIds: ['ex-s0-version-cli-check'],
   },
   {

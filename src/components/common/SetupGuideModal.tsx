@@ -24,6 +24,7 @@ import {
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { SampleProject } from '@/types/sample.types';
+import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
 import { cn } from '@/utils/cn';
 
 export interface SetupGuideModalProps {
@@ -37,6 +38,7 @@ type GuideTab =
   | 'zero-anatomy'
   | 'uv-workflow'
   | 'non-uv-workflow'
+  | 'libraries'
   | 'ide'
   | 'troubleshoot'
   | 'project';
@@ -281,6 +283,16 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             </button>
             <button
               type="button"
+              onClick={() =>
+                handleOpenLesson('s0-stdlib-and-third-party-ecosystem')
+              }
+              className="inline-flex items-center gap-1 rounded-xl bg-violet-500/15 border border-violet-500/40 px-2.5 py-1.5 text-xs font-bold text-violet-300 hover:bg-violet-500/25 transition-colors cursor-pointer"
+            >
+              <Package className="h-3.5 w-3.5" />
+              <span>Bài 1.0C (Thư viện)</span>
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               aria-label="Đóng hướng dẫn"
               className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer"
@@ -346,6 +358,19 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             >
               <Layers className="h-3.5 w-3.5" />
               <span>Cách 2: Không dùng `uv` (pyenv / pip / Poetry / Pipenv)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('libraries')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                activeTab === 'libraries'
+                  ? 'bg-violet-400 text-slate-950 shadow-sm'
+                  : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+              )}
+            >
+              <Package className="h-3.5 w-3.5" />
+              <span>📚 Thư viện Chuẩn & Thực chiến (Stdlib & Third-Party)</span>
             </button>
             <button
               type="button"
@@ -1439,6 +1464,9 @@ code --install-extension tamasfe.even-better-toml`}
               ))}
             </div>
           )}
+
+          {/* TAB: LIBRARIES ENCYCLOPEDIA */}
+          {activeTab === 'libraries' && <PythonLibrariesEncyclopedia />}
         </div>
       </div>
     </div>

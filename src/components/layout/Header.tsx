@@ -61,7 +61,7 @@ const NAV_TABS: {
   },
   {
     id: 'glossary',
-    label: 'Từ điển Python',
+    label: 'Từ điển & Thư viện Python',
     shortcut: '⌘6',
     icon: <BookMarked className="h-4 w-4" aria-hidden="true" />,
   },
