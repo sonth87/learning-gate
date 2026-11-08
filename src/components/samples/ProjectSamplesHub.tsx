@@ -114,6 +114,9 @@ export const ProjectSamplesHub: React.FC = () => {
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isLocalSetupOpen, setIsLocalSetupOpen] = useState(false);
   const [toolingStack, setToolingStack] = useState<ProjectToolingStack>('uv');
+  const [mobilePane, setMobilePane] = useState<'split' | 'tree' | 'code'>(
+    'split'
+  );
 
   // Interactive Terminal & API/cURL State
   const [activeCommandId, setActiveCommandId] = useState<string>(
@@ -268,7 +271,12 @@ export const ProjectSamplesHub: React.FC = () => {
             <button
               key={file.path}
               type="button"
-              onClick={() => setActiveFilePath(file.path)}
+              onClick={() => {
+                setActiveFilePath(file.path);
+                if (mobilePane === 'tree') {
+                  setMobilePane('code');
+                }
+              }}
               style={{ paddingLeft: `${depth * 14 + 10}px` }}
               className={cn(
                 'w-full flex items-center gap-1.5 rounded-lg py-1.5 pr-2 text-left font-mono text-xs transition-all cursor-pointer',
@@ -350,15 +358,18 @@ export const ProjectSamplesHub: React.FC = () => {
           </div>
 
           {/* Right: Setup Guide + Open 16-Project Catalog Button */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               type="button"
               onClick={() => setIsLocalSetupOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
               title="Xem hướng dẫn cài đặt Python, uv / pyenv, tạo .venv và chạy dự án mẫu này trên máy thật"
             >
               <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-              <span>Cài đặt Python (uv/pyenv) & Chạy trên Máy thật</span>
+              <span className="sm:hidden">Cẩm nang Chạy trên Máy</span>
+              <span className="hidden sm:inline">
+                Cài đặt Python (uv/pyenv) & Chạy trên Máy thật
+              </span>
             </button>
 
             <span className="hidden xl:inline-flex items-center gap-1.5 rounded-xl bg-slate-950 border border-slate-800 px-2.5 py-1.5 font-mono text-xs text-slate-300">
@@ -369,14 +380,14 @@ export const ProjectSamplesHub: React.FC = () => {
             <button
               onClick={() => setIsProjectPickerOpen((v) => !v)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+                'flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer',
                 isProjectPickerOpen
                   ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300'
                   : 'border-slate-800 bg-slate-950/90 text-slate-300 hover:bg-slate-800'
               )}
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span>Danh sách {ALL_SAMPLE_PROJECTS.length} Project Mẫu</span>
+              <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+              <span>Danh sách {ALL_SAMPLE_PROJECTS.length} Project</span>
             </button>
           </div>
         </div>
@@ -461,10 +472,55 @@ export const ProjectSamplesHub: React.FC = () => {
         )}
       </div>
 
+      {/* Mobile & Tablet Mode Switcher (< lg): Quickly jump between File Explorer/Architecture and Code IDE/Terminal */}
+      <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-1 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobilePane('split')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            mobilePane === 'split'
+              ? 'bg-emerald-500 text-slate-950 font-bold'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Xem cả 2
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('tree')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            mobilePane === 'tree'
+              ? 'bg-emerald-500 text-slate-950 font-bold'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Thư mục & Kiến trúc
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobilePane('code')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors cursor-pointer',
+            mobilePane === 'code'
+              ? 'bg-emerald-500 text-slate-950 font-bold'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Code IDE & Terminal
+        </button>
+      </div>
+
       {/* Main 12-Column IDE Layout: Left Explorer & Architecture (4 cols) + Right Code Editor & Interactive Terminal (8 cols) */}
       <div className="grid gap-4 lg:grid-cols-12 items-start">
         {/* LEFT PANE: Directory Tree Explorer + Architecture Standards */}
-        <div className="lg:col-span-4 space-y-3.5 min-w-0">
+        <div
+          className={cn(
+            'lg:col-span-4 space-y-3.5 min-w-0',
+            mobilePane === 'code' && 'hidden lg:block'
+          )}
+        >
           {/* File Explorer Card */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-lg">
             <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/90 px-3.5 py-2.5">
@@ -529,7 +585,12 @@ export const ProjectSamplesHub: React.FC = () => {
         </div>
 
         {/* RIGHT PANE: Multi-Tab IDE Code Viewer + Interactive Terminal / cURL Playground */}
-        <div className="lg:col-span-8 space-y-4 min-w-0">
+        <div
+          className={cn(
+            'lg:col-span-8 space-y-4 min-w-0',
+            mobilePane === 'tree' && 'hidden lg:block'
+          )}
+        >
           {/* IDE Code Viewer Window */}
           <div
             className="rounded-2xl border overflow-hidden shadow-xl transition-colors"
@@ -564,7 +625,12 @@ export const ProjectSamplesHub: React.FC = () => {
                   return (
                     <button
                       key={file.path}
-                      onClick={() => setActiveFilePath(file.path)}
+                      onClick={() => {
+                setActiveFilePath(file.path);
+                if (mobilePane === 'tree') {
+                  setMobilePane('code');
+                }
+              }}
                       title={file.path}
                       style={
                         isActive

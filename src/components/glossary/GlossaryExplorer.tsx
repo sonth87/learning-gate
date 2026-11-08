@@ -289,6 +289,7 @@ export const GlossaryExplorer: React.FC = () => {
   const [selectedTermId, setSelectedTermId] = useState<string>(
     ALL_GLOSSARY_TERMS[0]?.id || ''
   );
+  const [isMobileListOpen, setIsMobileListOpen] = useState(false);
 
   const { openNotesDrawer, showTermPopover } = useNavigationStore();
   const { showJsTsComparison, toggleJsTsComparison } = useSettingsStore();
@@ -383,12 +384,12 @@ export const GlossaryExplorer: React.FC = () => {
           </div>
 
           {/* Section Switcher Pills */}
-          <div className="inline-flex flex-wrap rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 w-full lg:w-auto shrink-0">
             <button
               type="button"
               onClick={() => setActiveSection('libraries')}
               className={cn(
-                'inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
                 activeSection === 'libraries'
                   ? 'bg-emerald-500 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -403,7 +404,7 @@ export const GlossaryExplorer: React.FC = () => {
               type="button"
               onClick={() => setActiveSection('glossary')}
               className={cn(
-                'inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
                 activeSection === 'glossary'
                   ? 'bg-amber-400 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -423,9 +424,75 @@ export const GlossaryExplorer: React.FC = () => {
         <PythonLibrariesEncyclopedia />
       ) : (
         /* SECTION 2: PYTHON KEYWORDS, BUILT-INS & DUNDER GLOSSARY STUDIO */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          {/* LEFT PANE (4 cols): Search, Filters & Term Directory */}
-          <aside className="lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/85 p-4 space-y-4 shadow-lg">
+        <div className="space-y-4">
+          {/* Mobile & Tablet Quick Term Selector & Filter Toggle Bar (< lg) */}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800/90 bg-slate-900/90 px-3.5 py-2.5 lg:hidden">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {filtered.length > 1 && layoutMode === 'studio' && (
+                <div className="flex items-center rounded-xl border border-slate-800 bg-slate-950 p-0.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prevIdx =
+                        (activeIndex - 1 + filtered.length) % filtered.length;
+                      setSelectedTermId(filtered[prevIdx].id);
+                    }}
+                    aria-label="Mục trước"
+                    className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <span className="px-1.5 font-mono text-[11px] font-bold text-amber-300">
+                    {activeIndex + 1}/{filtered.length}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nextIdx = (activeIndex + 1) % filtered.length;
+                      setSelectedTermId(filtered[nextIdx].id);
+                    }}
+                    aria-label="Mục tiếp theo"
+                    className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              <span className="font-mono text-xs sm:text-sm font-extrabold text-amber-300 truncate">
+                {activeTerm ? activeTerm.term : 'Từ điển Python'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileListOpen((v) => !v)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-all cursor-pointer shrink-0',
+                isMobileListOpen ||
+                  category !== 'all' ||
+                  level !== 'all' ||
+                  search.trim() !== ''
+                  ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
+                  : 'border-slate-700 bg-slate-800 text-slate-200'
+              )}
+            >
+              <Filter className="h-3.5 w-3.5" />
+              <span>
+                {isMobileListOpen
+                  ? 'Đóng Danh mục'
+                  : `Tra cứu & Lọc (${filtered.length})`}
+              </span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* LEFT PANE (4 cols on desktop, collapsible on mobile/tablet): Search, Filters & Term Directory */}
+            <aside
+              className={cn(
+                'lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/85 p-4 space-y-4 shadow-lg',
+                !isMobileListOpen && 'hidden lg:block'
+              )}
+            >
             {/* Search & Layout Mode Switcher */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -588,6 +655,7 @@ export const GlossaryExplorer: React.FC = () => {
                       type="button"
                       onClick={() => {
                         setSelectedTermId(item.id);
+                        setIsMobileListOpen(false);
                         if (layoutMode === 'grid') {
                           setLayoutMode('studio');
                         }
@@ -715,6 +783,7 @@ export const GlossaryExplorer: React.FC = () => {
               )
             )}
           </section>
+          </div>
         </div>
       )}
     </div>

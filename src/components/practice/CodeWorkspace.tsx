@@ -356,10 +356,56 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
     Math.max(cursorPos.line * 24 + 14, 40),
     editorHeightPx - 190
   );
-  const popupLeftPx = Math.min(
-    Math.max((cursorPos.col - 1) * 7.8 + 16, 16),
-    280
-  );
+  const isSmallViewport =
+    typeof window !== 'undefined' && window.innerWidth < 640;
+  const popupLeftPx = isSmallViewport
+    ? 8
+    : Math.min(Math.max((cursorPos.col - 1) * 7.8 + 16, 16), 240);
+
+  const handleInsertTouchText = (snippet: string, cursorBackOffset = 0) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart || 0;
+    const end = el.selectionEnd || 0;
+    const nextValue = code.slice(0, start) + snippet + code.slice(end);
+    setCode(nextValue);
+    requestAnimationFrame(() => {
+      el.focus();
+      const nextPos = start + snippet.length - cursorBackOffset;
+      el.selectionStart = el.selectionEnd = nextPos;
+      updateCursorMetrics(el);
+      updateAutocomplete(nextValue, nextPos);
+    });
+  };
+
+  const handleTouchUnindent = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const selectionStart = el.selectionStart || 0;
+    const lineStart = code.lastIndexOf('\n', selectionStart - 1) + 1;
+    const linePrefix = code.slice(lineStart, selectionStart);
+    const removeCount = linePrefix.match(/^ {1,4}/)?.[0].length || 0;
+    if (removeCount > 0) {
+      const nextValue =
+        code.slice(0, lineStart) + code.slice(lineStart + removeCount);
+      setCode(nextValue);
+      requestAnimationFrame(() => {
+        el.focus();
+        el.selectionStart = el.selectionEnd = Math.max(
+          lineStart,
+          selectionStart - removeCount
+        );
+        updateCursorMetrics(el);
+      });
+    }
+  };
+
+  const handleTouchTriggerSuggest = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.focus();
+    updateAutocomplete(code, el.selectionStart || 0);
+  };
 
   return (
     <div className="space-y-4">
@@ -581,7 +627,7 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                   borderColor: activeIdeTheme.popupBorder,
                   color: activeIdeTheme.popupText,
                 }}
-                className="absolute z-30 w-80 sm:w-96 rounded-xl border shadow-2xl overflow-hidden animate-in fade-in duration-100"
+                className="absolute z-30 w-[calc(100%-16px)] max-w-80 sm:w-96 sm:max-w-96 rounded-xl border shadow-2xl overflow-hidden animate-in fade-in duration-100"
               >
                 <div
                   style={{
@@ -654,6 +700,88 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               </div>
             )}
           </div>
+        </div>
+
+        {/* Mobile & Tablet Quick Touch Coding Bar (< lg): Tab, Unindent, Suggest & Python Symbols */}
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto no-scrollbar border-t px-3 py-1.5 font-mono text-xs lg:hidden"
+          style={{
+            backgroundColor: activeIdeTheme.gutterBg,
+            borderColor: activeIdeTheme.barBorder,
+            color: activeIdeTheme.barText,
+          }}
+        >
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleInsertTouchText('    ');
+            }}
+            style={{
+              backgroundColor: activeIdeTheme.btnBg,
+              borderColor: activeIdeTheme.barBorder,
+              color: activeIdeTheme.barText,
+            }}
+            className="rounded-lg border px-2.5 py-1 text-[11px] font-bold shrink-0 active:scale-95"
+          >
+            ⇥ Tab (4sp)
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleTouchUnindent();
+            }}
+            style={{
+              backgroundColor: activeIdeTheme.btnBg,
+              borderColor: activeIdeTheme.barBorder,
+              color: activeIdeTheme.barText,
+            }}
+            className="rounded-lg border px-2 py-1 text-[11px] font-semibold shrink-0 active:scale-95"
+          >
+            ⇤ Lùi
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleTouchTriggerSuggest();
+            }}
+            style={{
+              backgroundColor: activeIdeTheme.popupActiveBg,
+              borderColor: activeIdeTheme.popupActiveAccent,
+              color: activeIdeTheme.popupActiveText,
+            }}
+            className="rounded-lg border px-2.5 py-1 text-[11px] font-bold shrink-0 active:scale-95"
+          >
+            💡 Gợi ý
+          </button>
+          {[
+            { label: ':', text: ':', back: 0 },
+            { label: '=', text: ' = ', back: 0 },
+            { label: '_', text: '_', back: 0 },
+            { label: '( )', text: '()', back: 1 },
+            { label: '[ ]', text: '[]', back: 1 },
+            { label: '" "', text: '""', back: 1 },
+            { label: '->', text: ' -> ', back: 0 },
+          ].map((sym) => (
+            <button
+              key={sym.label}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleInsertTouchText(sym.text, sym.back);
+              }}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="rounded-lg border px-2.5 py-1 text-[11px] font-bold shrink-0 active:scale-95"
+            >
+              {sym.label}
+            </button>
+          ))}
         </div>
 
         {/* IDE Bottom Status Bar + Bottom-Right Theme Switcher Icon */}

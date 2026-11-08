@@ -220,55 +220,66 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[92vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden"
+        className="flex h-[94dvh] sm:h-auto sm:max-h-[92vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden"
       >
         {/* Top Modal Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-900/90 px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-              <Wrench className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm sm:text-base font-extrabold text-white truncate">
-                  Cẩm nang Cài đặt, Giải phẫu Dự án & Quản lý Python từ Zero
-                </h2>
-                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
-                  Dành cho Lập trình viên Mới sang Python
-                </span>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-slate-800 bg-slate-900/90 px-3.5 py-2.5 sm:px-6 sm:py-3 shrink-0">
+          <div className="flex items-center justify-between gap-2 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <p className="text-xs text-slate-400 truncate">
-                Giải thích từ gốc pyproject.toml, .venv, Entrypoint và 2 phương pháp quản lý dự án (Dùng uv & Không dùng uv)
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xs sm:text-base font-extrabold text-white truncate">
+                    Cẩm nang Cài đặt, Giải phẫu Dự án & Quản lý Python từ Zero
+                  </h2>
+                  <span className="hidden md:inline-flex rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+                    Dành cho Lập trình viên Mới sang Python
+                  </span>
+                </div>
+                <p className="hidden sm:block text-xs text-slate-400 truncate">
+                  Giải thích từ gốc pyproject.toml, .venv, Entrypoint và 2 phương pháp quản lý dự án (Dùng uv & Không dùng uv)
+                </p>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng hướng dẫn"
+              className="lg:hidden rounded-xl border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:text-white shrink-0 cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
             {/* JS/TS Comparison Toggle right inside the Modal Header */}
             <button
               type="button"
               onClick={toggleJsTsComparison}
               aria-pressed={showJsTsComparison}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer',
                 showJsTsComparison
                   ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
                   : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200'
               )}
               title="Ẩn / Hiện phần so sánh tương đương với Node.js (JS/TS)"
             >
-              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" />
               <span>
-                So sánh Node.js/JS: {showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}
+                So sánh JS/TS: {showJsTsComparison ? 'BẬT' : 'TẮT'}
               </span>
             </button>
 
             <button
               type="button"
               onClick={() => handleOpenLesson('s0-install-setup-uv-pyenv-ide')}
-              className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
-              <BookOpen className="h-3.5 w-3.5" />
+              <BookOpen className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0A (uv)</span>
             </button>
             <button
@@ -276,9 +287,9 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               onClick={() =>
                 handleOpenLesson('s0-workflow-pyenv-venv-poetry-pipenv')
               }
-              className="inline-flex items-center gap-1 rounded-xl bg-sky-500/15 border border-sky-500/40 px-2.5 py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-sky-500/15 border border-sky-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-sky-300 hover:bg-sky-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
-              <BookOpen className="h-3.5 w-3.5" />
+              <BookOpen className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0B (pyenv/Poetry)</span>
             </button>
             <button
@@ -286,16 +297,16 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               onClick={() =>
                 handleOpenLesson('s0-stdlib-and-third-party-ecosystem')
               }
-              className="inline-flex items-center gap-1 rounded-xl bg-violet-500/15 border border-violet-500/40 px-2.5 py-1.5 text-xs font-bold text-violet-300 hover:bg-violet-500/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-violet-500/15 border border-violet-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-violet-300 hover:bg-violet-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
-              <Package className="h-3.5 w-3.5" />
+              <Package className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0C (Thư viện)</span>
             </button>
             <button
               type="button"
               onClick={onClose}
               aria-label="Đóng hướng dẫn"
-              className="rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer"
+              className="hidden lg:inline-flex rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer shrink-0"
             >
               <X className="h-4 w-4" />
             </button>

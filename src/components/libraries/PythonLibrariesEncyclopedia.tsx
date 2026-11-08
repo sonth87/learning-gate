@@ -338,6 +338,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
     PYTHON_LIBRARIES_CATALOG[0]?.id || ''
   );
   const [viewAllMode, setViewAllMode] = useState(false);
+  const [isMobileCatalogOpen, setIsMobileCatalogOpen] = useState(false);
 
   const filteredLibraries = useMemo(() => {
     return PYTHON_LIBRARIES_CATALOG.filter((lib) => {
@@ -378,9 +379,76 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
   ).length;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-      {/* LEFT SIDEBAR (4 cols): Library Catalog & Filters */}
-      <aside className="lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/85 p-4 space-y-4 shadow-lg">
+    <div className="space-y-4">
+      {/* Mobile & Tablet Quick Library Selector Bar (< lg) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800/90 bg-slate-900/90 px-3.5 py-2.5 lg:hidden">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {filteredLibraries.length > 1 && !viewAllMode && (
+            <div className="flex items-center rounded-xl border border-slate-800 bg-slate-950 p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const prevIdx =
+                    (activeIndex - 1 + filteredLibraries.length) %
+                    filteredLibraries.length;
+                  setSelectedLibId(filteredLibraries[prevIdx].id);
+                }}
+                aria-label="Thư viện trước"
+                className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="px-1.5 font-mono text-[11px] font-bold text-emerald-400">
+                {activeIndex + 1}/{filteredLibraries.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextIdx = (activeIndex + 1) % filteredLibraries.length;
+                  setSelectedLibId(filteredLibraries[nextIdx].id);
+                }}
+                aria-label="Thư viện tiếp theo"
+                className="rounded-lg p-1 text-slate-300 hover:bg-slate-800"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <span className="font-mono text-xs font-extrabold text-amber-300 truncate">
+            {activeLibrary ? activeLibrary.name : 'Danh mục Thư viện'}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsMobileCatalogOpen((v) => !v)}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-all cursor-pointer shrink-0',
+            isMobileCatalogOpen ||
+              kindFilter !== 'all' ||
+              domainFilter !== 'all' ||
+              searchQuery.trim() !== ''
+              ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+              : 'border-slate-700 bg-slate-800 text-slate-200'
+          )}
+        >
+          <Package className="h-3.5 w-3.5" />
+          <span>
+            {isMobileCatalogOpen
+              ? 'Đóng Danh mục'
+              : `Chọn & Lọc (${filteredLibraries.length})`}
+          </span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* LEFT SIDEBAR (4 cols on desktop, collapsible on mobile/tablet): Library Catalog & Filters */}
+        <aside
+          className={cn(
+            'lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/85 p-4 space-y-4 shadow-lg',
+            !isMobileCatalogOpen && 'hidden lg:block'
+          )}
+        >
         {/* Search Input */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -512,6 +580,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setSelectedLibId(lib.id);
+                  setIsMobileCatalogOpen(false);
                   if (viewAllMode) setViewAllMode(false);
                 }}
                 className={cn(
@@ -603,6 +672,7 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
           )
         )}
       </section>
+      </div>
     </div>
   );
 };

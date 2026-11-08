@@ -62,6 +62,7 @@ export const FlashcardDeck: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [copiedCardId, setCopiedCardId] = useState<string | null>(null);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const now = Date.now();
 
@@ -409,10 +410,45 @@ export const FlashcardDeck: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile & Tablet Quick Filter & Playlist Toggle Bar (< lg) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800/90 bg-slate-900/90 px-3.5 py-2.5 lg:hidden">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 font-mono text-xs font-extrabold text-emerald-300 shrink-0">
+            #{safeIdx + 1}/{cards.length}
+          </span>
+          <span className="text-xs font-bold text-slate-200 truncate">
+            {currentCard.category}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsMobileFilterOpen((v) => !v)}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-extrabold transition-all cursor-pointer',
+            isMobileFilterOpen || hasActiveFilters
+              ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+              : 'border-slate-700 bg-slate-800 text-slate-200'
+          )}
+        >
+          <Filter className="h-3.5 w-3.5" />
+          <span>
+            {isMobileFilterOpen
+              ? 'Đóng Bộ lọc & Danh sách'
+              : `Bộ lọc & Danh sách (${cards.length} thẻ)`}
+          </span>
+        </button>
+      </div>
+
       {/* Main 2-Pane Studio Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* LEFT PANE (4 cols on desktop): Filters & Scrollable Card Navigator */}
-        <aside className="lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-4 space-y-4 shadow-lg">
+        {/* LEFT PANE (4 cols on desktop, collapsible on mobile/tablet): Filters & Scrollable Card Navigator */}
+        <aside
+          className={cn(
+            'lg:col-span-4 rounded-2xl border border-slate-800/90 bg-slate-900/80 p-4 space-y-4 shadow-lg',
+            !isMobileFilterOpen && 'hidden lg:block'
+          )}
+        >
           {/* Search Input */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -584,6 +620,7 @@ export const FlashcardDeck: React.FC = () => {
                     type="button"
                     onClick={() => {
                       handleSelectCard(idx);
+                      setIsMobileFilterOpen(false);
                       if (deckViewMode === 'grid') {
                         setDeckViewMode('study');
                       }
@@ -1022,38 +1059,37 @@ export const FlashcardDeck: React.FC = () => {
                   )}
 
                   {/* Card Bottom Dock: Navigation & SRS Rating Bar */}
-                  <div className="border-t border-slate-800/90 bg-slate-950/80 px-5 py-4 space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
+                  <div className="border-t border-slate-800/90 bg-slate-950/80 px-3.5 sm:px-5 py-3.5 sm:py-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={handlePrev}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
                         >
-                          <ChevronLeft className="h-4 w-4" />
+                          <ChevronLeft className="h-4 w-4 shrink-0" />
                           <span>Thẻ trước</span>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setIsFlipped((f) => !f)}
-                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 shadow-md shadow-emerald-500/15 transition-all cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-2.5 sm:px-5 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 shadow-md shadow-emerald-500/15 transition-all cursor-pointer"
                         >
-                          <RotateCw className="h-3.5 w-3.5" />
+                          <RotateCw className="h-3.5 w-3.5 shrink-0" />
                           <span>
-                            {isFlipped
-                              ? 'Úp lại Câu hỏi (Space)'
-                              : 'Lật xem Đáp án (Space)'}
+                            {isFlipped ? 'Úp lại' : 'Lật Đáp án'}
+                            <span className="hidden sm:inline"> (Space)</span>
                           </span>
                         </button>
 
                         <button
                           type="button"
                           onClick={handleNext}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
+                          className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3.5 py-2 text-xs font-bold text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer"
                         >
                           <span>Thẻ tiếp</span>
-                          <ChevronRight className="h-4 w-4" />
+                          <ChevronRight className="h-4 w-4 shrink-0" />
                         </button>
                       </div>
 
