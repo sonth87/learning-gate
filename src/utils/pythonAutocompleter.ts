@@ -140,7 +140,126 @@ const STATIC_COMPLETIONS: CompletionItem[] = [
   { label: '__call__', insertText: '__call__(self, *args, **kwargs):', kind: 'dunder', detail: 'Cho phép gọi instance như một hàm obj()' },
   { label: '__post_init__', insertText: '__post_init__(self):', kind: 'dunder', detail: 'Hook kiểm tra hợp lệ ngay sau @dataclass __init__' },
   { label: '__slots__', insertText: '__slots__ = (', kind: 'dunder', detail: 'Cố định thuộc tính, triệt tiêu __dict__ tiết kiệm RAM' },
+
+  // Standard Library & Popular Third-Party Modules
+  { label: 'math', insertText: 'math', kind: 'type', detail: 'Stdlib: Toán học (sqrt, pi, ceil, floor, gcd, factorial)' },
+  { label: 'json', insertText: 'json', kind: 'type', detail: 'Stdlib: Đọc/ghi JSON (dumps, loads)' },
+  { label: 'datetime', insertText: 'datetime', kind: 'type', detail: 'Stdlib: Ngày giờ & Múi giờ (datetime, date, timedelta, timezone)' },
+  { label: 'decimal', insertText: 'decimal', kind: 'type', detail: 'Stdlib: Số thập phân tài chính (Decimal, ROUND_HALF_UP)' },
+  { label: 'collections', insertText: 'collections', kind: 'type', detail: 'Stdlib: Cấu trúc dữ liệu (Counter, defaultdict, deque, namedtuple)' },
+  { label: 'itertools', insertText: 'itertools', kind: 'type', detail: 'Stdlib: Tổ hợp & Iterator (chain, groupby, product, combinations)' },
+  { label: 'functools', insertText: 'functools', kind: 'type', detail: 'Stdlib: Hàm bậc cao (lru_cache, partial, reduce, wraps)' },
+  { label: 'pathlib', insertText: 'pathlib', kind: 'type', detail: 'Stdlib: Đường dẫn hướng đối tượng (Path)' },
+  { label: 're', insertText: 're', kind: 'type', detail: 'Stdlib: Biểu thức chính quy Regex (findall, search, sub, compile)' },
+  { label: 'random', insertText: 'random', kind: 'type', detail: 'Stdlib: Sinh số ngẫu nhiên (randint, choice, sample, shuffle)' },
+  { label: 'statistics', insertText: 'statistics', kind: 'type', detail: 'Stdlib: Thống kê (mean, median, stdev, mode)' },
+  { label: 'dataclasses', insertText: 'dataclasses', kind: 'type', detail: 'Stdlib: Tạo Data Class nhanh (dataclass, field, asdict)' },
+  { label: 'typing', insertText: 'typing', kind: 'type', detail: 'Stdlib: Type Hints (Any, Optional, Callable, Literal, TypedDict)' },
+  { label: 'uuid', insertText: 'uuid', kind: 'type', detail: 'Stdlib: Định danh duy nhất UUID (uuid4)' },
+  { label: 'hashlib', insertText: 'hashlib', kind: 'type', detail: 'Stdlib: Băm mật mã học (sha256, md5)' },
+  { label: 'asyncio', insertText: 'asyncio', kind: 'type', detail: 'Stdlib: Lập trình bất đồng bộ (run, gather, sleep, create_task)' },
+  { label: 'logging', insertText: 'logging', kind: 'type', detail: 'Stdlib: Ghi log hệ thống (info, warning, error, basicConfig)' },
+  { label: 'os', insertText: 'os', kind: 'type', detail: 'Stdlib: Giao tiếp hệ điều hành & Biến môi trường (getenv, listdir)' },
+  { label: 'sys', insertText: 'sys', kind: 'type', detail: 'Stdlib: Thông tin trình thông dịch Python (version, argv, path)' },
+  { label: 'time', insertText: 'time', kind: 'type', detail: 'Stdlib: Đo thời gian (perf_counter, sleep, time)' },
+  { label: 'pydantic', insertText: 'pydantic', kind: 'type', detail: 'Package: Kiểm duyệt dữ liệu chuẩn Production (BaseModel, Field)' },
+  { label: 'httpx', insertText: 'httpx', kind: 'type', detail: 'Package: HTTP Client hiện đại hỗ trợ Sync & Async (get, post, AsyncClient)' },
+  { label: 'requests', insertText: 'requests', kind: 'type', detail: 'Package: Thư viện gọi HTTP API phổ biến (get, post)' },
+  { label: 'fastapi', insertText: 'fastapi', kind: 'type', detail: 'Package: Web API Framework hiệu năng cao (FastAPI, HTTPException)' },
+  { label: 'pytest', insertText: 'pytest', kind: 'type', detail: 'Package: Framework kiểm thử tự động (fixture, raises, mark)' },
+  { label: 'rich', insertText: 'rich', kind: 'type', detail: 'Package: In bảng & màu sắc Terminal đẹp mắt (print, Console, Table)' },
+
+  // Ready-to-use Import Snippets
+  { label: 'from decimal import Decimal, ROUND_HALF_UP', insertText: 'from decimal import Decimal, ROUND_HALF_UP', kind: 'snippet', detail: 'Import bộ công cụ tính tiền tệ chuẩn xác' },
+  { label: 'from collections import Counter, defaultdict, deque', insertText: 'from collections import Counter, defaultdict, deque', kind: 'snippet', detail: 'Import bộ 3 cấu trúc dữ liệu hiệu năng cao' },
+  { label: 'from dataclasses import dataclass, field, asdict', insertText: 'from dataclasses import dataclass, field, asdict', kind: 'snippet', detail: 'Import bộ công cụ tạo class dữ liệu tự động' },
+  { label: 'from datetime import datetime, date, timedelta, timezone', insertText: 'from datetime import datetime, date, timedelta, timezone', kind: 'snippet', detail: 'Import bộ xử lý thời gian & múi giờ' },
+  { label: 'from pathlib import Path', insertText: 'from pathlib import Path', kind: 'snippet', detail: 'Import đối tượng xử lý đường dẫn file hiện đại' },
+  { label: 'from pydantic import BaseModel, Field', insertText: 'from pydantic import BaseModel, Field', kind: 'snippet', detail: 'Import Pydantic v2 Schema Validation' },
 ];
+
+const MODULE_MEMBER_COMPLETIONS: Record<string, CompletionItem[]> = {
+  math: [
+    { label: 'sqrt', insertText: 'sqrt(', kind: 'method', detail: 'math.sqrt(x) -> Căn bậc hai' },
+    { label: 'pi', insertText: 'pi', kind: 'variable', detail: 'math.pi -> 3.141592653589793' },
+    { label: 'ceil', insertText: 'ceil(', kind: 'method', detail: 'math.ceil(x) -> Làm tròn lên số nguyên' },
+    { label: 'floor', insertText: 'floor(', kind: 'method', detail: 'math.floor(x) -> Làm tròn xuống số nguyên' },
+    { label: 'gcd', insertText: 'gcd(', kind: 'method', detail: 'math.gcd(a, b) -> Ước chung lớn nhất' },
+    { label: 'factorial', insertText: 'factorial(', kind: 'method', detail: 'math.factorial(n) -> Tính n!' },
+    { label: 'isclose', insertText: 'isclose(', kind: 'method', detail: 'math.isclose(a, b) -> So sánh 2 số float an toàn' },
+    { label: ' prod', insertText: 'prod(', kind: 'method', detail: 'math.prod(iterable) -> Tích các phần tử' },
+  ],
+  json: [
+    { label: 'dumps', insertText: 'dumps(', kind: 'method', detail: 'json.dumps(obj, indent=2, ensure_ascii=False) -> Chuỗi JSON' },
+    { label: 'loads', insertText: 'loads(', kind: 'method', detail: 'json.loads(json_str) -> Parse chuỗi JSON sang Dict/List' },
+    { label: 'dump', insertText: 'dump(', kind: 'method', detail: 'json.dump(obj, file) -> Ghi JSON vào file' },
+    { label: 'load', insertText: 'load(', kind: 'method', detail: 'json.load(file) -> Đọc JSON từ file' },
+  ],
+  re: [
+    { label: 'findall', insertText: 'findall(r"', kind: 'method', detail: 're.findall(pattern, text) -> List tất cả chuỗi khớp' },
+    { label: 'search', insertText: 'search(r"', kind: 'method', detail: 're.search(pattern, text) -> Tìm vị trí khớp đầu tiên' },
+    { label: 'sub', insertText: 'sub(r"', kind: 'method', detail: 're.sub(pattern, repl, text) -> Thay thế chuỗi bằng Regex' },
+    { label: 'split', insertText: 'split(r"', kind: 'method', detail: 're.split(pattern, text) -> Tách chuỗi theo Regex' },
+    { label: 'compile', insertText: 'compile(r"', kind: 'method', detail: 're.compile(pattern) -> Biên dịch Regex dùng lại nhiều lần' },
+  ],
+  random: [
+    { label: 'randint', insertText: 'randint(', kind: 'method', detail: 'random.randint(a, b) -> Số nguyên ngẫu nhiên trong [a, b]' },
+    { label: 'choice', insertText: 'choice(', kind: 'method', detail: 'random.choice(seq) -> Chọn ngẫu nhiên 1 phần tử' },
+    { label: 'sample', insertText: 'sample(', kind: 'method', detail: 'random.sample(seq, k) -> Chọn k phần tử không trùng' },
+    { label: 'shuffle', insertText: 'shuffle(', kind: 'method', detail: 'random.shuffle(list) -> Xáo trộn list tại chỗ' },
+    { label: 'uniform', insertText: 'uniform(', kind: 'method', detail: 'random.uniform(a, b) -> Số thực ngẫu nhiên' },
+  ],
+  statistics: [
+    { label: 'mean', insertText: 'mean(', kind: 'method', detail: 'statistics.mean(data) -> Giá trị trung bình cộng' },
+    { label: 'median', insertText: 'median(', kind: 'method', detail: 'statistics.median(data) -> Số trung vị' },
+    { label: 'stdev', insertText: 'stdev(', kind: 'method', detail: 'statistics.stdev(data) -> Độ lệch chuẩn mẫu' },
+    { label: 'mode', insertText: 'mode(', kind: 'method', detail: 'statistics.mode(data) -> Giá trị xuất hiện nhiều nhất' },
+  ],
+  datetime: [
+    { label: 'now', insertText: 'now(timezone.utc)', kind: 'method', detail: 'datetime.now(timezone.utc) -> Thời điểm hiện tại chuẩn UTC' },
+    { label: 'fromisoformat', insertText: 'fromisoformat(', kind: 'method', detail: 'datetime.fromisoformat(str) -> Parse chuỗi ISO 8601' },
+    { label: 'strftime', insertText: 'strftime("%Y-%m-%d %H:%M:%S")', kind: 'method', detail: 'Định dạng ngày giờ sang chuỗi' },
+    { label: 'isoformat', insertText: 'isoformat()', kind: 'method', detail: 'Xuất chuỗi chuẩn ISO 8601' },
+  ],
+  itertools: [
+    { label: 'chain', insertText: 'chain(', kind: 'method', detail: 'itertools.chain(*iterables) -> Nối nhiều iterable O(1) RAM' },
+    { label: 'groupby', insertText: 'groupby(', kind: 'method', detail: 'itertools.groupby(iterable, key=...) -> Gom nhóm liên tiếp' },
+    { label: 'product', insertText: 'product(', kind: 'method', detail: 'itertools.product(*iterables) -> Tích Đề-các' },
+    { label: 'combinations', insertText: 'combinations(', kind: 'method', detail: 'itertools.combinations(iterable, r) -> Tổ hợp chập r' },
+    { label: 'islice', insertText: 'islice(', kind: 'method', detail: 'itertools.islice(iterable, stop) -> Cắt lát iterator lười' },
+  ],
+  collections: [
+    { label: 'Counter', insertText: 'Counter(', kind: 'type', detail: 'Đếm tần suất phần tử O(N)' },
+    { label: 'defaultdict', insertText: 'defaultdict(list)', kind: 'type', detail: 'Dict tự khởi tạo giá trị mặc định' },
+    { label: 'deque', insertText: 'deque(', kind: 'type', detail: 'Hàng đợi 2 đầu O(1)' },
+    { label: 'namedtuple', insertText: 'namedtuple(', kind: 'type', detail: 'Tuple có tên trường' },
+  ],
+  uuid: [
+    { label: 'uuid4', insertText: 'uuid4()', kind: 'method', detail: 'uuid.uuid4() -> Sinh UUID ngẫu nhiên chuẩn v4' },
+  ],
+  hashlib: [
+    { label: 'sha256', insertText: 'sha256(', kind: 'method', detail: 'hashlib.sha256(bytes).hexdigest() -> Băm SHA-256' },
+    { label: 'md5', insertText: 'md5(', kind: 'method', detail: 'hashlib.md5(bytes).hexdigest() -> Băm MD5' },
+  ],
+  asyncio: [
+    { label: 'run', insertText: 'run(', kind: 'method', detail: 'asyncio.run(main()) -> Khởi chạy Event Loop' },
+    { label: 'gather', insertText: 'gather(', kind: 'method', detail: 'asyncio.gather(*coros) -> Chạy song song nhiều Coroutine' },
+    { label: 'sleep', insertText: 'sleep(', kind: 'method', detail: 'await asyncio.sleep(seconds) -> Tạm dừng bất đồng bộ' },
+  ],
+  logging: [
+    { label: 'basicConfig', insertText: 'basicConfig(level=logging.INFO)', kind: 'method', detail: 'Cấu hình mức log mặc định' },
+    { label: 'info', insertText: 'info(', kind: 'method', detail: 'logging.info(msg) -> Ghi log thông tin' },
+    { label: 'warning', insertText: 'warning(', kind: 'method', detail: 'logging.warning(msg) -> Ghi log cảnh báo' },
+    { label: 'error', insertText: 'error(', kind: 'method', detail: 'logging.error(msg) -> Ghi log lỗi' },
+  ],
+  Path: [
+    { label: 'cwd', insertText: 'cwd()', kind: 'method', detail: 'Path.cwd() -> Thư mục làm việc hiện tại' },
+    { label: 'read_text', insertText: 'read_text(encoding="utf-8")', kind: 'method', detail: 'Đọc toàn bộ nội dung file văn bản' },
+    { label: 'write_text', insertText: 'write_text(', kind: 'method', detail: 'Ghi chuỗi vào file' },
+    { label: 'exists', insertText: 'exists()', kind: 'method', detail: 'Kiểm tra file/thư mục tồn tại' },
+    { label: 'glob', insertText: 'glob("*.py")', kind: 'method', detail: 'Tìm file theo mẫu' },
+  ],
+};
 
 /**
  * Extracts active word prefix before the cursor and returns ranked Python IntelliSense suggestions.
@@ -156,6 +275,57 @@ export function getPythonCompletions(
   suggestions: CompletionItem[];
 } {
   const beforeCursor = code.slice(0, cursorIndex);
+  const lineStart = beforeCursor.lastIndexOf('\n') + 1;
+  const currentLineBefore = beforeCursor.slice(lineStart);
+  if (currentLineBefore.includes('#')) {
+    return { prefix: '', replaceStart: cursorIndex, isAfterDot: false, suggestions: [] };
+  }
+
+  // Case 1: Module dot-access e.g. `math.` or `math.sq` or `json.`
+  const moduleDotMatch = currentLineBefore.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)\.([a-zA-Z0-9_]*)$/);
+  if (moduleDotMatch) {
+    const objName = moduleDotMatch[1];
+    const memberPrefix = moduleDotMatch[2] || '';
+    const replaceStart = cursorIndex - memberPrefix.length;
+    const moduleMembers = MODULE_MEMBER_COMPLETIONS[objName];
+    if (moduleMembers) {
+      const lowerMember = memberPrefix.toLowerCase();
+      const filteredMembers = moduleMembers
+        .filter((m) => !lowerMember || m.label.trim().toLowerCase().startsWith(lowerMember))
+        .slice(0, 8);
+      if (filteredMembers.length > 0) {
+        return {
+          prefix: memberPrefix,
+          replaceStart,
+          isAfterDot: true,
+          suggestions: filteredMembers,
+        };
+      }
+    }
+  }
+
+  // Case 2: Right after `import ` or `from `
+  const importLineMatch = currentLineBefore.match(/^\s*(?:import|from)\s+([a-zA-Z0-9_]*)$/);
+  if (importLineMatch) {
+    const modPrefix = importLineMatch[1] || '';
+    const replaceStart = cursorIndex - modPrefix.length;
+    const lowerMod = modPrefix.toLowerCase();
+    const moduleSuggestions = STATIC_COMPLETIONS.filter(
+      (c) =>
+        (c.detail.startsWith('Stdlib:') || c.detail.startsWith('Package:')) &&
+        (!lowerMod || c.label.toLowerCase().startsWith(lowerMod)) &&
+        c.label.toLowerCase() !== lowerMod
+    ).slice(0, 8);
+    if (moduleSuggestions.length > 0) {
+      return {
+        prefix: modPrefix,
+        replaceStart,
+        isAfterDot: false,
+        suggestions: moduleSuggestions,
+      };
+    }
+  }
+
   const match = beforeCursor.match(/(\.?@[a-zA-Z_][a-zA-Z0-9_]*|\.?[a-zA-Z_][a-zA-Z0-9_]*)$/);
 
   if (!match) {
@@ -168,13 +338,6 @@ export function getPythonCompletions(
   const replaceStart = cursorIndex - prefix.length;
 
   if (prefix.length < 1) {
-    return { prefix: '', replaceStart: cursorIndex, isAfterDot, suggestions: [] };
-  }
-
-  // Do not trigger autocomplete inside comments
-  const lineStart = beforeCursor.lastIndexOf('\n') + 1;
-  const currentLineBefore = beforeCursor.slice(lineStart);
-  if (currentLineBefore.includes('#')) {
     return { prefix: '', replaceStart: cursorIndex, isAfterDot, suggestions: [] };
   }
 

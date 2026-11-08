@@ -12,6 +12,7 @@ import {
   BookOpen,
   Wrench,
   Zap,
+  Terminal,
 } from 'lucide-react';
 import { CURRICULUM_STAGES, STAGE_MAP } from '@/constants/stages';
 import { SKILL_LEVELS } from '@/constants/levels';
@@ -191,17 +192,30 @@ export const Sidebar: React.FC = () => {
             <BookOpen className="h-3 w-3 text-violet-400 shrink-0" />
             <span>1.0C: Bản đồ Thư viện Chuẩn & Thực chiến</span>
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('glossary');
-              setMobileSidebarOpen(false);
-            }}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2.5 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
-          >
-            <Zap className="h-3 w-3 text-amber-400 shrink-0" />
-            <span>⚡ Khai báo & Cú pháp Nhanh (Quick & Easy)</span>
-          </button>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('playground');
+                setMobileSidebarOpen(false);
+              }}
+              className="inline-flex items-center justify-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2 py-1.5 text-[11px] font-bold text-cyan-300 hover:bg-cyan-500/25 transition-colors cursor-pointer"
+            >
+              <Terminal className="h-3 w-3 text-cyan-400 shrink-0" />
+              <span>Playground IDE</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('glossary');
+                setMobileSidebarOpen(false);
+              }}
+              className="inline-flex items-center justify-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/15 px-2 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
+            >
+              <Zap className="h-3 w-3 text-amber-400 shrink-0" />
+              <span>Cú pháp Nhanh</span>
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setSetupGuideOpen(true)}

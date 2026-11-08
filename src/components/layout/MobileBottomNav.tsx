@@ -7,6 +7,7 @@ import {
   GraduationCap,
   BookMarked,
   Compass,
+  Terminal,
 } from 'lucide-react';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { cn } from '@/utils/cn';
@@ -20,6 +21,11 @@ const MOBILE_NAV_ITEMS: {
     id: 'curriculum',
     label: 'Lộ trình',
     icon: <BookOpen className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
+    id: 'playground',
+    label: 'Playground',
+    icon: <Terminal className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'practice',
@@ -61,7 +67,7 @@ export const MobileBottomNav: React.FC = () => {
       aria-label="Điều hướng di động"
       className="shrink-0 z-40 border-t border-slate-800/90 bg-slate-950/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <div className="mx-auto grid max-w-xl grid-cols-7 px-1 py-1">
+      <div className="mx-auto grid max-w-2xl grid-cols-8 px-1 py-1">
         {MOBILE_NAV_ITEMS.map((item) => {
           const active = activeTab === item.id;
           return (

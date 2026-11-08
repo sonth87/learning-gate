@@ -4,6 +4,7 @@ import { TargetEntityType } from '@/types/user.types';
 
 export type MainTab =
   | 'curriculum'
+  | 'playground'
   | 'practice'
   | 'samples'
   | 'flashcards'

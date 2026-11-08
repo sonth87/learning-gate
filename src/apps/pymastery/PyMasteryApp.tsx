@@ -8,6 +8,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { LessonView } from '@/components/curriculum/LessonView';
+import { PythonPlaygroundIDE } from '@/components/playground/PythonPlaygroundIDE';
 import { PracticeHub } from '@/components/practice/PracticeHub';
 import { ProjectSamplesHub } from '@/components/samples/ProjectSamplesHub';
 import { FlashcardDeck } from '@/components/assessment/FlashcardDeck';
@@ -97,6 +98,12 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
           <div className="flex h-full w-full flex-row overflow-hidden">
             <Sidebar />
             <LessonView />
+          </div>
+        )}
+
+        {activeTab === 'playground' && (
+          <div className="h-full overflow-y-auto">
+            <PythonPlaygroundIDE />
           </div>
         )}
 

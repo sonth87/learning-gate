@@ -15,6 +15,7 @@ import {
   Moon,
   Monitor,
   Wrench,
+  Terminal,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
@@ -36,39 +37,45 @@ const NAV_TABS: {
     icon: <BookOpen className="h-4 w-4" aria-hidden="true" />,
   },
   {
+    id: 'playground',
+    label: 'Playground & Studio IDE',
+    shortcut: '⌘2',
+    icon: <Terminal className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
     id: 'practice',
     label: 'Thực hành Code',
-    shortcut: '⌘2',
+    shortcut: '⌘3',
     icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'samples',
     label: 'Dự án Mẫu (16 Projects IDE)',
-    shortcut: '⌘3',
+    shortcut: '⌘4',
     icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'flashcards',
     label: 'Flashcards (SRS)',
-    shortcut: '⌘4',
+    shortcut: '⌘5',
     icon: <Layers className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'exams',
     label: 'Thi Sát hạch',
-    shortcut: '⌘5',
+    shortcut: '⌘6',
     icon: <GraduationCap className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'glossary',
     label: 'Từ điển & Thư viện Python',
-    shortcut: '⌘6',
+    shortcut: '⌘7',
     icon: <BookMarked className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'reference',
     label: 'Chuyên đề PDF',
-    shortcut: '⌘7',
+    shortcut: '⌘8',
     icon: <Compass className="h-4 w-4" aria-hidden="true" />,
   },
 ];
