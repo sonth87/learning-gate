@@ -60,6 +60,9 @@ export default defineConfig({
           if (id.includes('/src/data/practice/')) {
             return 'data-practice';
           }
+          if (id.includes('/src/data/samples/')) {
+            return 'data-samples';
+          }
           if (
             id.includes('/src/data/flashcards/') ||
             id.includes('/src/data/exams/')

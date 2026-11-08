@@ -2,6 +2,7 @@ import React from 'react';
 import {
   BookOpen,
   Code2,
+  FolderGit2,
   Layers,
   GraduationCap,
   BookMarked,
@@ -24,6 +25,11 @@ const MOBILE_NAV_ITEMS: {
     id: 'practice',
     label: 'Thực hành',
     icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
+    id: 'samples',
+    label: 'Dự án Mẫu',
+    icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'flashcards',
@@ -55,7 +61,7 @@ export const MobileBottomNav: React.FC = () => {
       aria-label="Điều hướng di động"
       className="shrink-0 z-40 border-t border-slate-800/90 bg-slate-950/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <div className="mx-auto grid max-w-lg grid-cols-6 px-1 py-1">
+      <div className="mx-auto grid max-w-xl grid-cols-7 px-1 py-1">
         {MOBILE_NAV_ITEMS.map((item) => {
           const active = activeTab === item.id;
           return (

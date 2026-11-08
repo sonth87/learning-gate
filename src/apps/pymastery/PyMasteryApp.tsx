@@ -9,6 +9,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { LessonView } from '@/components/curriculum/LessonView';
 import { PracticeHub } from '@/components/practice/PracticeHub';
+import { ProjectSamplesHub } from '@/components/samples/ProjectSamplesHub';
 import { FlashcardDeck } from '@/components/assessment/FlashcardDeck';
 import { ExamCenter } from '@/components/assessment/ExamCenter';
 import { GlossaryExplorer } from '@/components/glossary/GlossaryExplorer';
@@ -99,6 +100,11 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
         {activeTab === 'practice' && (
           <div className="h-full overflow-y-auto">
             <PracticeHub />
+          </div>
+        )}
+        {activeTab === 'samples' && (
+          <div className="h-full overflow-y-auto">
+            <ProjectSamplesHub />
           </div>
         )}
         {activeTab === 'flashcards' && (

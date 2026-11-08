@@ -2,6 +2,7 @@ import React from 'react';
 import {
   BookOpen,
   Code2,
+  FolderGit2,
   Layers,
   GraduationCap,
   BookMarked,
@@ -40,27 +41,33 @@ const NAV_TABS: {
     icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
   },
   {
+    id: 'samples',
+    label: 'Dự án Mẫu (10 Projects IDE)',
+    shortcut: '⌘3',
+    icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" />,
+  },
+  {
     id: 'flashcards',
     label: 'Flashcards (SRS)',
-    shortcut: '⌘3',
+    shortcut: '⌘4',
     icon: <Layers className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'exams',
     label: 'Thi Sát hạch',
-    shortcut: '⌘4',
+    shortcut: '⌘5',
     icon: <GraduationCap className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'glossary',
     label: 'Từ điển Python',
-    shortcut: '⌘5',
+    shortcut: '⌘6',
     icon: <BookMarked className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'reference',
     label: 'Chuyên đề PDF',
-    shortcut: '⌘6',
+    shortcut: '⌘7',
     icon: <Compass className="h-4 w-4" aria-hidden="true" />,
   },
 ];
