@@ -64,10 +64,10 @@ export const MobileBottomNav: React.FC = () => {
 
   return (
     <nav
-      aria-label="Điều hướng di động"
+      aria-label="Điều hướng di động và máy tính bảng"
       className="shrink-0 z-40 border-t border-slate-800/90 bg-slate-950/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <div className="mx-auto grid max-w-2xl grid-cols-8 px-1 py-1">
+      <div className="mx-auto flex items-center overflow-x-auto no-scrollbar sm:grid sm:max-w-3xl sm:grid-cols-8 gap-0.5 px-1.5 py-1">
         {MOBILE_NAV_ITEMS.map((item) => {
           const active = activeTab === item.id;
           return (
@@ -76,14 +76,14 @@ export const MobileBottomNav: React.FC = () => {
               onClick={() => setActiveTab(item.id)}
               aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-1.5 transition-colors',
+                'flex min-h-[48px] min-w-[66px] sm:min-w-0 shrink-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-1.5 transition-all active:scale-95 cursor-pointer',
                 active
-                  ? 'text-emerald-400 bg-emerald-500/10 font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 font-bold shadow-2xs'
+                  : 'text-slate-400 hover:text-slate-200 border border-transparent'
               )}
             >
               {item.icon}
-              <span className="text-[10px] leading-none tracking-tight truncate max-w-full">
+              <span className="text-[10px] leading-none tracking-tight whitespace-nowrap truncate max-w-full">
                 {item.label}
               </span>
             </button>

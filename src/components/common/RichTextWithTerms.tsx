@@ -59,6 +59,7 @@ export const InteractiveTermTrigger: React.FC<InteractiveTermTriggerProps> = ({
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLSpanElement>) => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
     const rect = e.currentTarget.getBoundingClientRect();
     showTermPopover(
       term.id,
@@ -73,6 +74,7 @@ export const InteractiveTermTrigger: React.FC<InteractiveTermTriggerProps> = ({
   };
 
   const handleMouseLeave = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
     hideTermPopover(false);
   };
 

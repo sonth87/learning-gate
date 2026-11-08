@@ -38,7 +38,7 @@ export const TermPopover: React.FC = () => {
 
   const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
   const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const isMobile = viewportWidth < 640;
+  const isTouchOrTablet = viewportWidth < 1024;
 
   const cardWidth = Math.min(440, viewportWidth - 24);
   const left = Math.min(
@@ -59,7 +59,7 @@ export const TermPopover: React.FC = () => {
           <div className="flex flex-wrap items-center gap-1.5 mb-1">
             <CategoryBadge category={term.category} />
             <LevelBadge level={term.level} />
-            {activePopover.pinned && !isMobile && (
+            {activePopover.pinned && !isTouchOrTablet && (
               <span className="inline-flex items-center gap-1 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium text-amber-300">
                 <Pin className="h-2.5 w-2.5" aria-hidden="true" /> Đã ghim
               </span>
@@ -185,17 +185,18 @@ export const TermPopover: React.FC = () => {
     </>
   );
 
-  // Mobile Bottom Sheet (< 640px)
-  if (isMobile) {
+  // Mobile & Tablet Bottom Sheet (< 1024px)
+  if (isTouchOrTablet) {
     return (
       <div
         onClick={() => hideTermPopover(true)}
-        className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-xs sm:hidden"
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-xs lg:hidden"
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full rounded-t-2xl border-t border-slate-700 bg-slate-900 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+          className="w-full max-w-xl rounded-t-2xl border-t border-slate-700 bg-slate-900 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
         >
+          <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-slate-700" />
           {renderCardContent()}
         </div>
       </div>

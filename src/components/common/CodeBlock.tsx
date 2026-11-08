@@ -66,6 +66,8 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
               <span
                 key={i}
                 onMouseEnter={(e) => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024)
+                    return;
                   const r = e.currentTarget.getBoundingClientRect();
                   showTermPopover(
                     term.id,
@@ -78,7 +80,11 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                     false
                   );
                 }}
-                onMouseLeave={() => hideTermPopover(false)}
+                onMouseLeave={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 1024)
+                    return;
+                  hideTermPopover(false);
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   const r = e.currentTarget.getBoundingClientRect();

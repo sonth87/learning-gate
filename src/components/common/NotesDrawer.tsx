@@ -39,10 +39,16 @@ export const NotesDrawer: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs">
-      <div className="flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl">
+    <div
+      onClick={closeNotesDrawer}
+      className="fixed inset-0 z-50 flex justify-end bg-black/65 backdrop-blur-xs"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl pb-[env(safe-area-inset-bottom)]"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-800 px-4 sm:px-5 py-3.5 sm:py-4">
           <div className="flex items-center gap-2">
             <StickyNote className="h-5 w-5 text-amber-400" />
             <div>

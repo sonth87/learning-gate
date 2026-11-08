@@ -35,9 +35,22 @@ const ASCII_TREE = `my-python-backend/
 export const CleanArchExplorer: React.FC = () => {
   const [selectedPath, setSelectedPath] = useState(CLEAN_ARCH_FILES[3].path);
   const showJsTsComparison = useSettingsStore((s) => s.showJsTsComparison);
+  const codePanelRef = React.useRef<HTMLDivElement | null>(null);
 
   const activeFile =
     CLEAN_ARCH_FILES.find((f) => f.path === selectedPath) || CLEAN_ARCH_FILES[0];
+
+  const handleSelectFile = (path: string) => {
+    setSelectedPath(path);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setTimeout(() => {
+        codePanelRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        });
+      }, 60);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6 space-y-5">
@@ -76,7 +89,7 @@ export const CleanArchExplorer: React.FC = () => {
               return (
                 <button
                   key={file.path}
-                  onClick={() => setSelectedPath(file.path)}
+                  onClick={() => handleSelectFile(file.path)}
                   className={cn(
                     'w-full flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 text-left transition-all',
                     active
@@ -105,7 +118,10 @@ export const CleanArchExplorer: React.FC = () => {
         </div>
 
         {/* Right: Selected File Code & Layer Explanation */}
-        <div className="lg:col-span-7 min-w-0 space-y-4">
+        <div
+          ref={codePanelRef}
+          className="lg:col-span-7 min-w-0 space-y-4 scroll-mt-16"
+        >
           <div className="rounded-xl border border-sky-500/30 bg-sky-950/15 p-4 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="rounded-md bg-sky-500/20 px-2.5 py-0.5 text-xs font-bold text-sky-300">
