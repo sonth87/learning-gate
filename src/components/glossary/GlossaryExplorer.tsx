@@ -368,38 +368,39 @@ export const GlossaryExplorer: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-[1440px] p-4 sm:p-6 space-y-5">
+    <div className="mx-auto max-w-[1440px] p-3 sm:p-6 space-y-3.5 sm:space-y-5">
       {/* Top Studio Header & Section Switcher */}
-      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-4 sm:p-5 shadow-lg space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-fuchsia-500/25 to-amber-500/15 border border-fuchsia-500/40 text-fuchsia-300 shadow-inner">
-              <BookMarked className="h-6 w-6" />
+      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3 sm:p-5 shadow-lg space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-fuchsia-500/25 to-amber-500/15 border border-fuchsia-500/40 text-fuchsia-300 shadow-inner">
+              <BookMarked className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
-            <div className="space-y-1">
-              <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight">
-                Cú pháp & Khai báo Nhanh, Bách khoa Thư viện & Từ điển Python
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <h1 className="text-xs sm:text-xl font-extrabold text-white tracking-tight">
+                Cú pháp & Khai báo Nhanh, Thư viện & Từ điển Python
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="hidden sm:block text-xs text-slate-400">
                 Xem nhanh <strong>{QUICK_SYNTAX_DECLARATIONS.length} mẫu Khai báo & Cú pháp Quick & Easy (python.org)</strong>, tra cứu <strong>{PYTHON_LIBRARIES_CATALOG.length} nhóm Thư viện Chuẩn & Thực chiến</strong> cùng <strong>{ALL_GLOSSARY_TERMS.length} Từ khóa, Built-ins & Dunder</strong>.
               </p>
             </div>
           </div>
 
-          {/* Section Switcher Pills */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 w-full lg:w-auto shrink-0">
+          {/* Section Switcher Pills (3 compact columns on mobile instead of 3 tall stacked rows!) */}
+          <div className="grid grid-cols-3 lg:inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 w-full lg:w-auto shrink-0">
             <button
               type="button"
               onClick={() => setActiveSection('quick-syntax')}
               className={cn(
-                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 sm:px-3 py-2 text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer truncate',
                 activeSection === 'quick-syntax'
                   ? 'bg-amber-400 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
               )}
             >
-              <Zap className="h-4 w-4 shrink-0" />
-              <span>
+              <Zap className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">Cú pháp ({QUICK_SYNTAX_DECLARATIONS.length})</span>
+              <span className="hidden sm:inline">
                 Khai báo & Cú pháp Nhanh ({QUICK_SYNTAX_DECLARATIONS.length})
               </span>
             </button>
@@ -407,14 +408,15 @@ export const GlossaryExplorer: React.FC = () => {
               type="button"
               onClick={() => setActiveSection('libraries')}
               className={cn(
-                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 sm:px-3 py-2 text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer truncate',
                 activeSection === 'libraries'
                   ? 'bg-emerald-500 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
               )}
             >
-              <Package className="h-4 w-4 shrink-0" />
-              <span>
+              <Package className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">Thư viện ({PYTHON_LIBRARIES_CATALOG.length})</span>
+              <span className="hidden sm:inline">
                 Thư viện Chuẩn & Thực chiến ({PYTHON_LIBRARIES_CATALOG.length})
               </span>
             </button>
@@ -422,14 +424,15 @@ export const GlossaryExplorer: React.FC = () => {
               type="button"
               onClick={() => setActiveSection('glossary')}
               className={cn(
-                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 sm:px-3 py-2 text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer truncate',
                 activeSection === 'glossary'
                   ? 'bg-sky-400 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
               )}
             >
-              <BookMarked className="h-4 w-4 shrink-0" />
-              <span>
+              <BookMarked className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">Từ điển ({ALL_GLOSSARY_TERMS.length})</span>
+              <span className="hidden sm:inline">
                 Từ điển Từ khóa & Built-ins ({ALL_GLOSSARY_TERMS.length})
               </span>
             </button>

@@ -146,9 +146,9 @@ export const Header: React.FC = () => {
 
   return (
     <header className="shrink-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-12 max-w-[1680px] items-center justify-between gap-2 px-3 sm:px-4">
+      <div className="mx-auto flex h-11 sm:h-12 max-w-[1680px] items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-4">
         {/* Left: Brand & Compact Progress Pill */}
-        <div className="flex items-center gap-2.5 min-w-0 shrink-0">
+        <div className="flex items-center gap-2 min-w-0 shrink-0">
           <HeaderTooltip
             label={`Tiến độ hoàn thành: ${completedLessonIds.length}/${ALL_LESSONS.length} bài (${progressPercent}%)`}
             align="left"
@@ -157,11 +157,11 @@ export const Header: React.FC = () => {
               onClick={() => setActiveTab('curriculum')}
               className="group flex items-center gap-2 text-left focus-visible:outline-none min-w-0"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
                 <img
                   src="/favicon.svg"
                   alt="Learning Gate"
-                  className="h-6 w-6 object-contain"
+                  className="h-5 w-5 sm:h-6 sm:w-6 object-contain"
                 />
               </div>
               <div className="flex flex-col min-w-0">
@@ -174,7 +174,7 @@ export const Header: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <div className="h-1 w-12 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="h-1 w-10 sm:w-12 rounded-full bg-slate-800 overflow-hidden">
                     <div
                       style={{ width: `${progressPercent}%` }}
                       className="h-full bg-emerald-500 transition-all duration-300"
@@ -189,10 +189,10 @@ export const Header: React.FC = () => {
           </HeaderTooltip>
         </div>
 
-        {/* Center: Icon-Only Module Navigation with Hover Tooltips (md+ Tablet/Desktop; Mobile uses MobileBottomNav) */}
+        {/* Center: Icon-Only Module Navigation with Hover Tooltips (lg+ Desktop; Mobile & Tablet use MobileBottomNav) */}
         <nav
           aria-label="Điều hướng phân hệ chính"
-          className="hidden md:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
+          className="hidden lg:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
         >
           {NAV_TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -221,7 +221,7 @@ export const Header: React.FC = () => {
         </nav>
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Quick Setup Guide Button (Python / uv / pyenv / VS Code) */}
           <HeaderTooltip
             label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
@@ -230,7 +230,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setSetupGuideOpen(true)}
               aria-label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2 sm:px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
             >
               <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
               <span className="hidden xl:inline whitespace-nowrap">

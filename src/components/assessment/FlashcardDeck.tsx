@@ -263,111 +263,116 @@ export const FlashcardDeck: React.FC = () => {
     shuffledIds !== null;
 
   return (
-    <div className="mx-auto max-w-[1440px] p-4 sm:p-6 space-y-5">
+    <div className="mx-auto max-w-[1440px] p-3 sm:p-6 space-y-3.5 sm:space-y-5">
       {/* Top Studio Banner: Title, 4 SRS Metric Cards & View Switcher */}
-      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-4 sm:p-5 shadow-lg space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/15 border border-emerald-500/40 text-emerald-400 shadow-inner">
-              <Layers className="h-6 w-6" />
+      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/80 p-3 sm:p-5 shadow-lg space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/15 border border-emerald-500/40 text-emerald-400 shadow-inner">
+              <Layers className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h1 className="text-xs sm:text-xl font-extrabold text-white tracking-tight">
                   Flashcards Studio & Ôn tập Ngắt quãng (SRS)
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
-                  {ALL_FLASHCARDS.length} Thẻ Toàn diện
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-emerald-300">
+                  {ALL_FLASHCARDS.length} Thẻ
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="hidden sm:block text-xs text-slate-400">
                 Bao phủ từ Zero (Cài đặt <code className="text-emerald-300">uv</code>,{' '}
                 <code className="text-sky-300">.venv</code>, <code className="text-amber-300">pyproject.toml</code>, Cú pháp, Thư viện Chuẩn) đến CPython Internals, AsyncIO, FastAPI & AI Production.
               </p>
             </div>
           </div>
 
-          {/* Right Controls: Study Mode vs Grid Mode + Shuffle */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1">
+          {/* Right Controls: Study Mode vs Grid Mode + Shuffle (Single row on mobile!) */}
+          <div className="flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 shrink-0">
+            <div className="grid grid-cols-2 sm:inline-flex flex-1 sm:flex-initial rounded-xl border border-slate-800 bg-slate-950 p-1 gap-0.5">
               <button
                 type="button"
                 onClick={() => setDeckViewMode('study')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                  'inline-flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate',
                   deckViewMode === 'study'
                     ? 'bg-emerald-500 text-[#020617] shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
-                <CreditCard className="h-3.5 w-3.5" />
-                <span>Chế độ Lật thẻ (SRS)</span>
+                <CreditCard className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Lật thẻ (SRS)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setDeckViewMode('grid')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                  'inline-flex items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate',
                   deckViewMode === 'grid'
                     ? 'bg-emerald-500 text-[#020617] shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span>Đọc lướt ({cards.length} thẻ)</span>
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Đọc lướt ({cards.length})</span>
               </button>
             </div>
 
             <button
               type="button"
               onClick={handleShuffle}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-200 hover:border-emerald-500/50 hover:text-emerald-300 transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 sm:px-3 py-2 text-[11px] sm:text-xs font-bold text-slate-200 hover:border-emerald-500/50 hover:text-emerald-300 transition-colors cursor-pointer shrink-0"
               title="Trộn ngẫu nhiên thứ tự thẻ"
             >
-              <Shuffle className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Trộn ngẫu nhiên</span>
+              <Shuffle className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">Trộn ngẫu nhiên</span>
+              <span className="sm:hidden">Trộn</span>
             </button>
           </div>
         </div>
 
-        {/* 4 Interactive SRS Status Filter Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+        {/* 4 Interactive SRS Status Filter Cards (4 compact columns on mobile!) */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5 pt-0.5">
           {[
             {
               id: 'all' as SrsFilterMode,
               label: 'Tổng số thẻ',
+              shortLabel: 'Tổng thẻ',
               count: srsStats.total,
               sub: 'Toàn bộ 7 Giai đoạn',
               activeBorder: 'border-sky-500/60 bg-sky-500/10',
               badgeColor: 'text-sky-300',
-              icon: <Layers className="h-4 w-4 text-sky-400" />,
+              icon: <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-sky-400 shrink-0" />,
             },
             {
               id: 'due' as SrsFilterMode,
               label: 'Cần ôn hôm nay',
+              shortLabel: 'Cần ôn',
               count: srsStats.due,
               sub: 'Đến hạn + Thẻ mới',
               activeBorder: 'border-amber-500/60 bg-amber-500/10',
               badgeColor: 'text-amber-300',
-              icon: <Flame className="h-4 w-4 text-amber-400" />,
+              icon: <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-400 shrink-0" />,
             },
             {
               id: 'new' as SrsFilterMode,
               label: 'Chưa từng lật',
+              shortLabel: 'Thẻ mới',
               count: srsStats.unseen,
               sub: `Đã học ${srsStats.reviewed} thẻ`,
               activeBorder: 'border-indigo-500/60 bg-indigo-500/10',
               badgeColor: 'text-indigo-300',
-              icon: <Sparkles className="h-4 w-4 text-indigo-400" />,
+              icon: <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-400 shrink-0" />,
             },
             {
               id: 'mastered' as SrsFilterMode,
               label: 'Đã thuộc lòng',
+              shortLabel: 'Đã thuộc',
               count: srsStats.mastered,
               sub: 'Đạt Hộp SRS 3–5',
               activeBorder: 'border-emerald-500/60 bg-emerald-500/10',
               badgeColor: 'text-emerald-300',
-              icon: <CheckCircle2 className="h-4 w-4 text-emerald-400" />,
+              icon: <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-400 shrink-0" />,
             },
           ].map((stat) => {
             const active = srsMode === stat.id;
@@ -381,24 +386,25 @@ export const FlashcardDeck: React.FC = () => {
                   setIsFlipped(false);
                 }}
                 className={cn(
-                  'flex items-center justify-between rounded-xl border p-3 text-left transition-all cursor-pointer',
+                  'flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border p-2 sm:p-3 text-center sm:text-left transition-all cursor-pointer',
                   active
                     ? stat.activeBorder
                     : 'border-slate-800/90 bg-slate-950/60 hover:border-slate-700'
                 )}
               >
                 <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+                  <div className="flex items-center justify-center sm:justify-start gap-1 text-[10px] sm:text-xs font-bold text-slate-300">
                     {stat.icon}
-                    <span className="truncate">{stat.label}</span>
+                    <span className="truncate sm:hidden">{stat.shortLabel}</span>
+                    <span className="hidden sm:inline truncate">{stat.label}</span>
                   </div>
-                  <div className="text-[11px] text-slate-400 truncate">
+                  <div className="hidden sm:block text-[11px] text-slate-400 truncate">
                     {stat.sub}
                   </div>
                 </div>
                 <span
                   className={cn(
-                    'font-mono text-lg sm:text-xl font-extrabold shrink-0 ml-2',
+                    'font-mono text-sm sm:text-xl font-extrabold shrink-0 sm:ml-2 mt-0.5 sm:mt-0',
                     stat.badgeColor
                   )}
                 >

@@ -337,158 +337,163 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
         </div>
 
         {/* OS Selector + Main Workflow Tabs Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-800/80 bg-slate-900/40 px-4 py-2.5 sm:px-6">
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-900/40 px-3 py-2 sm:px-6">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 sm:overflow-x-auto no-scrollbar py-0.5">
             {sampleProject && (
               <button
                 type="button"
                 onClick={() => setActiveTab('project')}
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                  'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                   activeTab === 'project'
                     ? 'bg-emerald-500 text-slate-950 shadow-sm'
                     : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                 )}
               >
-                <FolderGit2 className="h-3.5 w-3.5" />
-                <span>Chạy Dự án #{sampleProject.number}</span>
+                <FolderGit2 className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Chạy Dự án #{sampleProject.number}</span>
               </button>
             )}
             <button
               type="button"
               onClick={() => setActiveTab('zero-anatomy')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'zero-anatomy'
                   ? 'bg-amber-400 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Compass className="h-3.5 w-3.5" />
-              <span>0. Giải phẫu Dự án từ Zero (Cần biết trước tiên!)</span>
+              <Compass className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">0. Giải phẫu Dự án</span>
+              <span className="hidden sm:inline">0. Giải phẫu Dự án từ Zero (Cần biết trước tiên!)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('quick-syntax')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'quick-syntax'
                   ? 'bg-amber-400 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-amber-200 border border-amber-500/35 hover:border-amber-500/60'
               )}
             >
-              <Zap className="h-3.5 w-3.5" />
-              <span>⚡ Khai báo & Cú pháp Nhanh (Quick & Easy)</span>
+              <Zap className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">⚡ Cú pháp Nhanh</span>
+              <span className="hidden sm:inline">⚡ Khai báo & Cú pháp Nhanh (Quick & Easy)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('uv-workflow')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'uv-workflow'
                   ? 'bg-emerald-500 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Cách 1: Quản lý Dự án bằng `uv`</span>
+              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">Cách 1: Dùng `uv`</span>
+              <span className="hidden sm:inline">Cách 1: Quản lý Dự án bằng `uv`</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('non-uv-workflow')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'non-uv-workflow'
                   ? 'bg-sky-400 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Layers className="h-3.5 w-3.5" />
-              <span>Cách 2: Không dùng `uv` (pyenv / pip / Poetry / Pipenv)</span>
+              <Layers className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">Cách 2: pyenv / Poetry</span>
+              <span className="hidden sm:inline">Cách 2: Không dùng `uv` (pyenv / pip / Poetry / Pipenv)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('libraries')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'libraries'
                   ? 'bg-violet-400 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Package className="h-3.5 w-3.5" />
-              <span>📚 Thư viện Chuẩn & Thực chiến (Stdlib & Third-Party)</span>
+              <Package className="h-3.5 w-3.5 shrink-0" />
+              <span className="sm:hidden truncate">📚 Thư viện Python</span>
+              <span className="hidden sm:inline">📚 Thư viện Chuẩn & Thực chiến (Stdlib & Third-Party)</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('ide')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'ide'
                   ? 'bg-emerald-500 text-slate-950 shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <Code2 className="h-3.5 w-3.5" />
-              <span>VS Code / Cursor</span>
+              <Code2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">VS Code / Cursor</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('troubleshoot')}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap transition-all cursor-pointer truncate',
                 activeTab === 'troubleshoot'
                   ? 'bg-rose-500 text-white shadow-sm'
                   : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
               )}
             >
-              <AlertTriangle className="h-3.5 w-3.5" />
-              <span>Sửa Lỗi</span>
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Sửa Lỗi</span>
             </button>
           </div>
 
           {/* OS Selector Pills */}
-          <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1 shrink-0">
-            <span className="px-2 text-[11px] font-semibold text-slate-400">
+          <div className="grid grid-cols-4 sm:flex sm:items-center gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1 shrink-0">
+            <span className="flex items-center justify-center px-1.5 text-[11px] font-semibold text-slate-400">
               OS:
             </span>
             <button
               type="button"
               onClick={() => setSelectedOs('macos')}
               className={cn(
-                'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
                 selectedOs === 'macos'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              <Laptop className="h-3.5 w-3.5" />
+              <Laptop className="h-3.5 w-3.5 shrink-0" />
               <span>macOS</span>
             </button>
             <button
               type="button"
               onClick={() => setSelectedOs('windows')}
               className={cn(
-                'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
                 selectedOs === 'windows'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              <Monitor className="h-3.5 w-3.5" />
+              <Monitor className="h-3.5 w-3.5 shrink-0" />
               <span>Windows</span>
             </button>
             <button
               type="button"
               onClick={() => setSelectedOs('linux')}
               className={cn(
-                'inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition-all cursor-pointer',
                 selectedOs === 'linux'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              <Server className="h-3.5 w-3.5" />
+              <Server className="h-3.5 w-3.5 shrink-0" />
               <span>Linux</span>
             </button>
           </div>

@@ -675,44 +675,44 @@ export const PythonPlaygroundIDE: React.FC = () => {
   return (
     <div className="mx-auto max-w-[1600px] p-3 sm:p-5 space-y-4">
       {/* Top Playground Studio Header & Template Picker */}
-      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/85 p-3.5 sm:p-5 shadow-lg space-y-3.5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="flex items-start sm:items-center gap-3 min-w-0">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/25 via-cyan-500/15 to-indigo-500/20 border border-emerald-500/40 text-emerald-300 shadow-inner">
-              <Terminal className="h-5 w-5" />
+      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/85 p-3 sm:p-5 shadow-lg space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500/25 via-cyan-500/15 to-indigo-500/20 border border-emerald-500/40 text-emerald-300 shadow-inner">
+              <Terminal className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0 space-y-0.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-sm sm:text-lg font-extrabold text-white tracking-tight">
-                  Python 3.12 Playground & Multi-File Studio IDE
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h1 className="text-xs sm:text-lg font-extrabold text-white tracking-tight">
+                  Python 3.12 Playground & Studio IDE
                 </h1>
-                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
-                  IntelliSense + Import + Terminal REPL
+                <span className="rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
+                  IntelliSense + REPL
                 </span>
               </div>
-              <p className="text-xs text-slate-400 line-clamp-1 sm:line-clamp-none">
+              <p className="hidden sm:block text-xs text-slate-400">
                 Viết code, tự động gợi ý hàm/module, import thư viện, chia tách đa file (`.py`), xem Output, Logs, Biến bộ nhớ & gõ lệnh trực tiếp trên cả Desktop và Mobile/Tablet.
               </p>
             </div>
           </div>
 
           {/* Right Controls: Engine Mode + Package Manager Button + Run Button */}
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setPreferPyodide((v) => !v)}
               title="Chuyển đổi giữa Instant Engine (chạy tức thì 0ms) và CPython 3.12 WebAssembly (Pyodide)"
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate',
                 preferPyodide
                   ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
                   : 'border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-600'
               )}
             >
               <Cpu className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-              <span>
+              <span className="truncate">
                 {preferPyodide
-                  ? 'Engine: CPython 3.12 Wasm'
+                  ? 'CPython 3.12 Wasm'
                   : 'Engine: Instant (0ms)'}
               </span>
             </button>
@@ -728,74 +728,96 @@ export const PythonPlaygroundIDE: React.FC = () => {
                 }
               }}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer truncate',
                 showPackageDrawer || mobileView === 'packages'
                   ? 'border-violet-500/60 bg-violet-500/20 text-violet-200'
                   : 'border-slate-700 bg-slate-950 text-slate-200 hover:border-violet-500/40'
               )}
             >
               <Package className="h-3.5 w-3.5 text-violet-400 shrink-0" />
-              <span>Thư viện & Import ({installedPackages.length})</span>
+              <span className="truncate">Thư viện & Import ({installedPackages.length})</span>
             </button>
 
-            <button
-              type="button"
-              onClick={handleResetWorkspace}
-              title="Khôi phục mẫu code ban đầu"
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-600 transition-colors cursor-pointer"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
+            <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleResetWorkspace}
+                title="Khôi phục mẫu code ban đầu"
+                className="inline-flex items-center justify-center gap-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:border-slate-600 transition-colors cursor-pointer shrink-0"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={handleRunCode}
-              disabled={isRunning}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 disabled:opacity-60 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              <span>{isRunning ? 'Đang chạy...' : 'Chạy Code'}</span>
-              <kbd className="hidden md:inline-block rounded bg-emerald-950/30 px-1.5 py-0.2 font-mono text-[10px] text-emerald-950">
-                ⌘↵
-              </kbd>
-            </button>
+              <button
+                type="button"
+                onClick={handleRunCode}
+                disabled={isRunning}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-[#020617] hover:bg-emerald-400 disabled:opacity-60 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+              >
+                <Play className="h-3.5 w-3.5 fill-current shrink-0" />
+                <span>{isRunning ? 'Đang chạy...' : 'Chạy Code'}</span>
+                <kbd className="hidden md:inline-block rounded bg-emerald-950/30 px-1.5 py-0.2 font-mono text-[10px] text-emerald-950">
+                  ⌘↵
+                </kbd>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Horizontal Scrollable Template Selector Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 shrink-0">
-            Mẫu Playground:
-          </span>
-          {PLAYGROUND_TEMPLATES.map((tpl) => {
-            const active = tpl.id === selectedTemplateId;
-            return (
-              <button
-                key={tpl.id}
-                type="button"
-                onClick={() => handleSelectTemplate(tpl.id)}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer',
-                  active
-                    ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-xs'
-                    : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:text-white'
-                )}
-              >
-                <span>{tpl.title}</span>
-                <span
+        {/* Template Selector: Compact Select Dropdown on Mobile (< sm) + Horizontal Pills on sm+ */}
+        <div className="pt-1 border-t border-slate-800/70">
+          <div className="flex flex-col sm:hidden gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Chọn Mẫu Playground ({PLAYGROUND_TEMPLATES.length} mẫu thực hành):
+            </label>
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => handleSelectTemplate(e.target.value)}
+              aria-label="Chọn mẫu Playground"
+              className="w-full rounded-xl border border-emerald-500/40 bg-slate-950 px-3 py-2 text-xs font-bold text-emerald-300 focus:border-emerald-500 focus:outline-none"
+            >
+              {PLAYGROUND_TEMPLATES.map((tpl) => (
+                <option key={tpl.id} value={tpl.id}>
+                  {tpl.title} ({tpl.badge})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 shrink-0">
+              Mẫu Playground:
+            </span>
+            {PLAYGROUND_TEMPLATES.map((tpl) => {
+              const active = tpl.id === selectedTemplateId;
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => handleSelectTemplate(tpl.id)}
                   className={cn(
-                    'rounded-md px-1.5 py-0.2 text-[10px] font-mono',
+                    'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer',
                     active
-                      ? 'bg-emerald-500/25 text-emerald-200'
-                      : 'bg-slate-800 text-slate-400'
+                      ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-xs'
+                      : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:text-white'
                   )}
                 >
-                  {tpl.badge}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{tpl.title}</span>
+                  <span
+                    className={cn(
+                      'rounded-md px-1.5 py-0.2 text-[10px] font-mono',
+                      active
+                        ? 'bg-emerald-500/25 text-emerald-200'
+                        : 'bg-slate-800 text-slate-400'
+                    )}
+                  >
+                    {tpl.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -961,15 +983,15 @@ export const PythonPlaygroundIDE: React.FC = () => {
           >
             {/* IDE Top File Tabs & Action Bar */}
             <div
-              className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 transition-colors"
+              className="flex items-center justify-between gap-2 border-b px-2.5 sm:px-3 py-2 transition-colors min-w-0"
               style={{
                 backgroundColor: activeIdeTheme.barBg,
                 borderColor: activeIdeTheme.barBorder,
                 color: activeIdeTheme.barText,
               }}
             >
-              {/* File Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full">
+              {/* File Tabs (flex-1 min-w-0 so it scrolls horizontally without wrapping Copy/Run to a new row) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-1 min-w-0">
                 <div className="hidden sm:flex items-center gap-1.5 mr-1.5 shrink-0">
                   <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />

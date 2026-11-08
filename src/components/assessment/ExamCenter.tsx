@@ -1057,24 +1057,24 @@ export const ExamCenter: React.FC = () => {
   }, [tagStats, tagSearchQuery, showAllTags]);
 
   return (
-    <div ref={examTopRef} className="mx-auto max-w-[1440px] p-3 sm:p-6 space-y-5">
+    <div ref={examTopRef} className="mx-auto max-w-[1440px] p-3 sm:p-6 space-y-3.5 sm:space-y-5">
       {/* Top Studio Banner & Navigation Tabs */}
-      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/85 p-4 sm:p-6 shadow-lg space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/25 to-indigo-500/20 border border-emerald-500/40 text-emerald-400 shadow-inner">
-              <ClipboardCheck className="h-6 w-6" />
+      <div className="rounded-2xl border border-slate-800/90 bg-slate-900/85 p-3 sm:p-6 shadow-lg space-y-3 sm:space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-4">
+          <div className="flex items-start sm:items-center gap-2.5 sm:gap-3.5">
+            <div className="flex h-9 w-9 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500/25 to-indigo-500/20 border border-emerald-500/40 text-emerald-400 shadow-inner">
+              <ClipboardCheck className="h-4 w-4 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-base sm:text-xl font-extrabold text-slate-100 tracking-tight">
-                  Trung tâm Thi Sát Hạch & Ngân Hàng Câu Hỏi Python
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <h1 className="text-xs sm:text-xl font-extrabold text-slate-100 tracking-tight">
+                  Trung tâm Thi Sát Hạch & Ngân Hàng Câu Hỏi
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 px-2 py-0.5 font-mono text-[10px] sm:text-xs font-bold text-emerald-300">
                   {allQuestionsBank.length} Câu Hỏi
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
+              <p className="hidden sm:block text-xs sm:text-sm text-slate-400 mt-1 max-w-3xl leading-relaxed">
                 Hệ thống kiểm tra kiến thức toàn diện phân tầng theo{' '}
                 <strong className="text-slate-200">5 Level</strong> (Fundamental → Master),{' '}
                 <strong className="text-slate-200">{categoryStats.length} Chuyên đề</strong> và{' '}
@@ -1085,25 +1085,25 @@ export const ExamCenter: React.FC = () => {
           </div>
 
           {/* Quick Stats Pills */}
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center sm:gap-3 shrink-0">
-            <div className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <div className="text-lg sm:text-xl font-black text-emerald-400">
+          <div className="grid grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-3 shrink-0">
+            <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <div className="text-sm sm:text-xl font-black text-emerald-400 leading-tight">
                 {allQuestionsBank.length}
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
                 Câu hỏi
               </div>
             </div>
-            <div className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <div className="text-lg sm:text-xl font-black text-indigo-300">
+            <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <div className="text-sm sm:text-xl font-black text-indigo-300 leading-tight">
                 {enrichedExamSets.length}
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
                 Bộ đề chuẩn
               </div>
             </div>
-            <div className="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
-              <div className="text-lg sm:text-xl font-black text-amber-300">
+            <div className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-slate-950 border border-slate-800 text-center">
+              <div className="text-sm sm:text-xl font-black text-amber-300 leading-tight">
                 {categoryStats.length}
               </div>
               <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium">
@@ -1113,29 +1113,29 @@ export const ExamCenter: React.FC = () => {
           </div>
         </div>
 
-        {/* Studio Navigation Tabs */}
-        <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
+        {/* Studio Navigation Tabs (Compact Grid on Mobile so they don't stack 3 rows tall!) */}
+        <div className="pt-2.5 border-t border-slate-800/80 grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2">
           <button
             type="button"
             onClick={() => setStudioTab('active-exam')}
             className={cn(
-              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all',
+              'inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-sm font-bold transition-all truncate',
               studioTab === 'active-exam'
                 ? 'bg-emerald-500 text-[#020617] shadow-sm'
                 : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800'
             )}
           >
-            <Play className="w-4 h-4" />
-            <span>Phòng Thi Hiện Tại</span>
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">Phòng Thi</span>
             <span
               className={cn(
-                'px-2 py-0.5 rounded-full text-[11px] font-mono font-extrabold',
+                'px-1.5 py-0.5 rounded-full text-[10px] font-mono font-extrabold shrink-0',
                 studioTab === 'active-exam'
                   ? 'bg-[#020617]/20 text-[#020617]'
                   : 'bg-indigo-500/20 text-indigo-300'
               )}
             >
-              {activeExam.questions.length} câu
+              {activeExam.questions.length}
             </span>
           </button>
 
@@ -1143,28 +1143,30 @@ export const ExamCenter: React.FC = () => {
             type="button"
             onClick={() => setStudioTab('custom-builder')}
             className={cn(
-              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all',
+              'inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-sm font-bold transition-all truncate',
               studioTab === 'custom-builder'
                 ? 'bg-emerald-500 text-[#020617] shadow-sm'
                 : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800'
             )}
           >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Tạo Đề Theo Level / Category / Tag</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="sm:hidden truncate">Tạo Đề Tự Chọn</span>
+            <span className="hidden sm:inline">Tạo Đề Theo Level / Category / Tag</span>
           </button>
 
           <button
             type="button"
             onClick={() => setStudioTab('curated-sets')}
             className={cn(
-              'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all',
+              'inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-sm font-bold transition-all truncate',
               studioTab === 'curated-sets'
                 ? 'bg-emerald-500 text-[#020617] shadow-sm'
-                : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800'
+                : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800',
+              pastAttempts.length === 0 && 'col-span-2 sm:col-span-1'
             )}
           >
-            <BookOpen className="w-4 h-4" />
-            <span>Bộ Đề Chuyên Đề ({enrichedExamSets.length})</span>
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="truncate">Bộ Đề Chuẩn ({enrichedExamSets.length})</span>
           </button>
 
           {pastAttempts.length > 0 && (
@@ -1172,14 +1174,14 @@ export const ExamCenter: React.FC = () => {
               type="button"
               onClick={() => setStudioTab('history')}
               className={cn(
-                'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all',
+                'inline-flex items-center justify-center sm:justify-start gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-sm font-bold transition-all truncate',
                 studioTab === 'history'
                   ? 'bg-emerald-500 text-[#020617] shadow-sm'
                   : 'bg-slate-950 text-slate-300 border border-slate-800 hover:bg-slate-800'
               )}
             >
-              <History className="w-4 h-4" />
-              <span>Lịch sử thi ({pastAttempts.length})</span>
+              <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">Lịch sử ({pastAttempts.length})</span>
             </button>
           )}
         </div>
@@ -2077,8 +2079,14 @@ export const ExamCenter: React.FC = () => {
 
           {/* MOBILE SLIDE-UP QUESTION PALETTE DRAWER */}
           {mobilePaletteOpen && (
-            <div className="lg:hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-end">
-              <div className="w-full bg-slate-900 border-t border-slate-800 rounded-t-3xl p-5 space-y-4 max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div
+              onClick={() => setMobilePaletteOpen(false)}
+              className="lg:hidden absolute inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-end"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full bg-slate-900 border-t border-slate-800 rounded-t-3xl p-4 sm:p-5 space-y-4 max-h-[82%] overflow-y-auto shadow-2xl"
+              >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                   <div>
                     <h4 className="text-sm font-extrabold text-slate-100">
