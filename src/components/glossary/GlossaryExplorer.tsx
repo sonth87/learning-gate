@@ -17,10 +17,13 @@ import {
   X,
   Code2,
   Filter,
+  Zap,
 } from 'lucide-react';
 import { ALL_GLOSSARY_TERMS, GLOSSARY_BY_ID } from '@/data/glossary';
 import { PYTHON_LIBRARIES_CATALOG } from '@/data/libraries/pythonLibrariesCatalog';
+import { QUICK_SYNTAX_DECLARATIONS } from '@/data/glossary/quickSyntaxDeclarationsData';
 import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
+import { PythonQuickSyntaxGuide } from '@/components/glossary/PythonQuickSyntaxGuide';
 import { GlossaryCategory, GlossaryTerm } from '@/types/glossary.types';
 import { SkillLevel } from '@/types/curriculum.types';
 import { SKILL_LEVELS } from '@/constants/levels';
@@ -279,9 +282,9 @@ const GlossaryDetailCard: React.FC<{
 };
 
 export const GlossaryExplorer: React.FC = () => {
-  const [activeSection, setActiveSection] = useState<'libraries' | 'glossary'>(
-    'libraries'
-  );
+  const [activeSection, setActiveSection] = useState<
+    'quick-syntax' | 'libraries' | 'glossary'
+  >('quick-syntax');
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<GlossaryCategory | 'all'>('all');
   const [level, setLevel] = useState<SkillLevel | 'all'>('all');
@@ -375,21 +378,36 @@ export const GlossaryExplorer: React.FC = () => {
             </div>
             <div className="space-y-1">
               <h1 className="text-base sm:text-xl font-extrabold text-white tracking-tight">
-                Bách khoa Thư viện & Từ điển Cú pháp Python Toàn diện
+                Cú pháp & Khai báo Nhanh, Bách khoa Thư viện & Từ điển Python
               </h1>
               <p className="text-xs text-slate-400">
-                Tra cứu tức thì <strong>{PYTHON_LIBRARIES_CATALOG.length} nhóm Thư viện Chuẩn & Thực chiến</strong> cùng <strong>{ALL_GLOSSARY_TERMS.length} Từ khóa, Built-ins, Dunder & Cơ chế lõi</strong> (kèm code mẫu và cạm bẫy).
+                Xem nhanh <strong>{QUICK_SYNTAX_DECLARATIONS.length} mẫu Khai báo & Cú pháp Quick & Easy (python.org)</strong>, tra cứu <strong>{PYTHON_LIBRARIES_CATALOG.length} nhóm Thư viện Chuẩn & Thực chiến</strong> cùng <strong>{ALL_GLOSSARY_TERMS.length} Từ khóa, Built-ins & Dunder</strong>.
               </p>
             </div>
           </div>
 
           {/* Section Switcher Pills */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 w-full lg:w-auto shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:inline-flex rounded-xl border border-slate-800 bg-slate-950 p-1 gap-1 w-full lg:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveSection('quick-syntax')}
+              className={cn(
+                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                activeSection === 'quick-syntax'
+                  ? 'bg-amber-400 text-[#020617] shadow-sm'
+                  : 'text-slate-300 hover:text-white'
+              )}
+            >
+              <Zap className="h-4 w-4 shrink-0" />
+              <span>
+                Khai báo & Cú pháp Nhanh ({QUICK_SYNTAX_DECLARATIONS.length})
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => setActiveSection('libraries')}
               className={cn(
-                'inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
                 activeSection === 'libraries'
                   ? 'bg-emerald-500 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
@@ -404,23 +422,26 @@ export const GlossaryExplorer: React.FC = () => {
               type="button"
               onClick={() => setActiveSection('glossary')}
               className={cn(
-                'inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-xs font-extrabold transition-all cursor-pointer',
+                'inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-extrabold transition-all cursor-pointer',
                 activeSection === 'glossary'
-                  ? 'bg-amber-400 text-[#020617] shadow-sm'
+                  ? 'bg-sky-400 text-[#020617] shadow-sm'
                   : 'text-slate-300 hover:text-white'
               )}
             >
               <BookMarked className="h-4 w-4 shrink-0" />
               <span>
-                Từ điển Từ khóa, Built-ins & Dunder ({ALL_GLOSSARY_TERMS.length})
+                Từ điển Từ khóa & Built-ins ({ALL_GLOSSARY_TERMS.length})
               </span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* SECTION 1: PYTHON LIBRARIES ENCYCLOPEDIA */}
-      {activeSection === 'libraries' ? (
+      {/* SECTION 0: QUICK & EASY TO LEARN + SYNTAX & DECLARATIONS GUIDE */}
+      {activeSection === 'quick-syntax' ? (
+        <PythonQuickSyntaxGuide />
+      ) : activeSection === 'libraries' ? (
+        /* SECTION 1: PYTHON LIBRARIES ENCYCLOPEDIA */
         <PythonLibrariesEncyclopedia />
       ) : (
         /* SECTION 2: PYTHON KEYWORDS, BUILT-INS & DUNDER GLOSSARY STUDIO */

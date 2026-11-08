@@ -20,11 +20,13 @@ import {
   Compass,
   FileCode2,
   Play,
+  Zap,
 } from 'lucide-react';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { SampleProject } from '@/types/sample.types';
 import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
+import { PythonQuickSyntaxGuide } from '@/components/glossary/PythonQuickSyntaxGuide';
 import { cn } from '@/utils/cn';
 
 export interface SetupGuideModalProps {
@@ -36,6 +38,7 @@ export interface SetupGuideModalProps {
 type OsType = 'macos' | 'windows' | 'linux';
 type GuideTab =
   | 'zero-anatomy'
+  | 'quick-syntax'
   | 'uv-workflow'
   | 'non-uv-workflow'
   | 'libraries'
@@ -343,6 +346,19 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             >
               <Compass className="h-3.5 w-3.5" />
               <span>0. Giải phẫu Dự án từ Zero (Cần biết trước tiên!)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('quick-syntax')}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-all cursor-pointer',
+                activeTab === 'quick-syntax'
+                  ? 'bg-amber-400 text-slate-950 shadow-sm'
+                  : 'bg-slate-900 text-amber-200 border border-amber-500/35 hover:border-amber-500/60'
+              )}
+            >
+              <Zap className="h-3.5 w-3.5" />
+              <span>⚡ Khai báo & Cú pháp Nhanh (Quick & Easy)</span>
             </button>
             <button
               type="button"
@@ -1478,6 +1494,9 @@ code --install-extension tamasfe.even-better-toml`}
 
           {/* TAB: LIBRARIES ENCYCLOPEDIA */}
           {activeTab === 'libraries' && <PythonLibrariesEncyclopedia />}
+
+          {/* TAB: QUICK & EASY SYNTAX AND DECLARATIONS */}
+          {activeTab === 'quick-syntax' && <PythonQuickSyntaxGuide />}
         </div>
       </div>
     </div>
