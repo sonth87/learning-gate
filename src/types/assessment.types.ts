@@ -35,6 +35,8 @@ export interface ExamQuestion {
   id: string;
   stageId: StageId;
   level: SkillLevel;
+  category?: string;
+  tags?: string[];
   question: string;
   codeSnippet?: string;
   options: ExamOption[];
