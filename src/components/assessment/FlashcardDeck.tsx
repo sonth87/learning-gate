@@ -29,6 +29,7 @@ export const FlashcardDeck: React.FC = () => {
   const { srsStates, rateFlashcard } = useUserDataStore();
   const [selectedLevel, setSelectedLevel] = useState<SkillLevel | 'all'>('all');
   const [selectedStage, setSelectedStage] = useState<StageId | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [srsMode, setSrsMode] = useState<SrsFilterMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [shuffledIds, setShuffledIds] = useState<string[] | null>(null);
@@ -36,6 +37,24 @@ export const FlashcardDeck: React.FC = () => {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const now = Date.now();
+
+  const levelCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: ALL_FLASHCARDS.length };
+    for (const c of ALL_FLASHCARDS) {
+      counts[c.level] = (counts[c.level] || 0) + 1;
+    }
+    return counts;
+  }, []);
+
+  const categoryOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of ALL_FLASHCARDS) {
+      if (selectedLevel !== 'all' && c.level !== selectedLevel) continue;
+      if (selectedStage !== 'all' && c.stageId !== selectedStage) continue;
+      map.set(c.category, (map.get(c.category) || 0) + 1);
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [selectedLevel, selectedStage]);
 
   const dueCount = useMemo(
     () =>
@@ -51,6 +70,7 @@ export const FlashcardDeck: React.FC = () => {
     const filtered = ALL_FLASHCARDS.filter((c) => {
       if (selectedLevel !== 'all' && c.level !== selectedLevel) return false;
       if (selectedStage !== 'all' && c.stageId !== selectedStage) return false;
+      if (selectedCategory !== 'all' && c.category !== selectedCategory) return false;
       const st = srsStates[c.id];
       if (srsMode === 'due' && st && st.nextReviewAt > now) return false;
       if (srsMode === 'new' && st) return false;
@@ -59,7 +79,8 @@ export const FlashcardDeck: React.FC = () => {
         const mFront = c.frontQuestion.toLowerCase().includes(q);
         const mBack = c.backAnswer.toLowerCase().includes(q);
         const mCat = c.category.toLowerCase().includes(q);
-        if (!mFront && !mBack && !mCat) return false;
+        const mCode = c.codeSnippet ? c.codeSnippet.toLowerCase().includes(q) : false;
+        if (!mFront && !mBack && !mCat && !mCode) return false;
       }
       return true;
     });
@@ -74,6 +95,7 @@ export const FlashcardDeck: React.FC = () => {
   }, [
     selectedLevel,
     selectedStage,
+    selectedCategory,
     srsMode,
     searchQuery,
     srsStates,
@@ -247,6 +269,7 @@ export const FlashcardDeck: React.FC = () => {
               value={selectedStage}
               onChange={(e) => {
                 setSelectedStage(e.target.value as StageId | 'all');
+                setSelectedCategory('all');
                 setCurrentIndex(0);
                 setIsFlipped(false);
               }}
@@ -261,37 +284,57 @@ export const FlashcardDeck: React.FC = () => {
               ))}
             </select>
 
+            <select
+              value={selectedCategory}
+              onChange={(e) => {
+                setSelectedCategory(e.target.value);
+                setCurrentIndex(0);
+                setIsFlipped(false);
+              }}
+              aria-label="Lọc theo Chủ đề"
+              className="max-w-[220px] rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 shrink-0 focus:outline-none"
+            >
+              <option value="all">Mọi Chủ đề ({categoryOptions.length} nhóm)</option>
+              {categoryOptions.map(([cat, count]) => (
+                <option key={cat} value={cat}>
+                  {cat} ({count})
+                </option>
+              ))}
+            </select>
+
             <button
               onClick={() => {
                 setSelectedLevel('all');
+                setSelectedCategory('all');
                 setCurrentIndex(0);
                 setIsFlipped(false);
               }}
               className={cn(
-                'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0',
+                'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer',
                 selectedLevel === 'all'
                   ? 'bg-amber-500 text-slate-950'
                   : 'bg-slate-800 text-slate-300'
               )}
             >
-              Mọi cấp
+              Mọi cấp ({levelCounts.all})
             </button>
             {SKILL_LEVELS.map((lvl) => (
               <button
                 key={lvl.id}
                 onClick={() => {
                   setSelectedLevel(lvl.id);
+                  setSelectedCategory('all');
                   setCurrentIndex(0);
                   setIsFlipped(false);
                 }}
                 className={cn(
-                  'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0',
+                  'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer',
                   selectedLevel === lvl.id
                     ? 'bg-amber-500 text-slate-950'
                     : 'bg-slate-800 text-slate-300'
                 )}
               >
-                {lvl.label}
+                {lvl.label} ({levelCounts[lvl.id] || 0})
               </button>
             ))}
           </div>
@@ -307,6 +350,7 @@ export const FlashcardDeck: React.FC = () => {
             onClick={() => {
               setSelectedLevel('all');
               setSelectedStage('all');
+              setSelectedCategory('all');
               setSrsMode('all');
               setSearchQuery('');
             }}
@@ -453,6 +497,57 @@ export const FlashcardDeck: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Jump Card Index Strip */}
+      {cards.length > 0 && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-bold text-slate-300">
+              Danh mục nhanh ({cards.length} thẻ đang lọc — bấm để nhảy tới thẻ bất kỳ):
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Đang xem: <strong className="text-amber-300">#{safeIdx + 1}</strong> ({currentCard.category})
+            </span>
+          </div>
+          <div className="max-h-52 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-1.5 pr-1">
+            {cards.map((c, idx) => {
+              const isCurrent = idx === safeIdx;
+              const st = srsStates[c.id];
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setCurrentIndex(idx);
+                    setIsFlipped(false);
+                  }}
+                  className={cn(
+                    'flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left text-xs transition-all cursor-pointer',
+                    isCurrent
+                      ? 'border-amber-500/60 bg-amber-500/15 text-amber-200 font-bold'
+                      : 'border-slate-800/90 bg-slate-950/70 text-slate-300 hover:border-slate-700 hover:text-white'
+                  )}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                      #{idx + 1}
+                    </span>
+                    <span className="truncate">{c.frontQuestion}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {st && (
+                      <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9px] text-emerald-300">
+                        B{st.box}
+                      </span>
+                    )}
+                    <LevelBadge level={c.level} />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
