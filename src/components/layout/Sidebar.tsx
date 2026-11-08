@@ -17,7 +17,10 @@ import { SKILL_LEVELS } from '@/constants/levels';
 import { getLessonsByLevel, getLessonsByStage } from '@/data/curriculum';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
-import { useUserDataStore } from '@/stores/useUserDataStore';
+import {
+  useUserDataStore,
+  REQUIRED_LESSON_STUDY_SECONDS,
+} from '@/stores/useUserDataStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { cn } from '@/utils/cn';
 
@@ -30,7 +33,14 @@ export const Sidebar: React.FC = () => {
     setMobileSidebarOpen,
   } = useNavigationStore();
   const { organizationMode, setOrganizationMode } = useSettingsStore();
-  const { completedLessonIds } = useUserDataStore();
+  const { completedLessonIds, lessonStudySeconds } = useUserDataStore();
+
+  const isLessonCompleted = (lessonId: string) =>
+    completedLessonIds.includes(lessonId) ||
+    (lessonStudySeconds[lessonId] || 0) >= REQUIRED_LESSON_STUDY_SECONDS;
+
+  const getLessonSeconds = (lessonId: string) =>
+    lessonStudySeconds[lessonId] || 0;
 
   const [filterQuery, setFilterQuery] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
@@ -199,8 +209,20 @@ export const Sidebar: React.FC = () => {
             if (lessons.length === 0) return null;
 
             const completedInStage = allStageLessons.filter((l) =>
-              completedLessonIds.includes(l.id)
+              isLessonCompleted(l.id)
             ).length;
+            const visitedInStage = allStageLessons.filter(
+              (l) => isLessonCompleted(l.id) || getLessonSeconds(l.id) > 0
+            ).length;
+            const isStageAllCompleted =
+              allStageLessons.length > 0 &&
+              completedInStage === allStageLessons.length;
+            const hasStageCompletedSome = completedInStage > 0;
+            const hasStageVisitedSome = visitedInStage > 0;
+            const stagePct = Math.round(
+              (completedInStage / Math.max(1, allStageLessons.length)) * 100
+            );
+
             const hasSelected = allStageLessons.some(
               (l) => l.id === selectedLessonId
             );
@@ -210,16 +232,39 @@ export const Sidebar: React.FC = () => {
             return (
               <div
                 key={stage.id}
-                className="rounded-xl border border-slate-800/70 bg-slate-900/30 overflow-hidden"
+                className={cn(
+                  'rounded-xl border overflow-hidden transition-colors',
+                  isStageAllCompleted
+                    ? 'border-emerald-500/50 bg-emerald-500/12'
+                    : hasStageCompletedSome
+                      ? 'border-emerald-500/35 bg-emerald-500/[0.06]'
+                      : hasStageVisitedSome
+                        ? 'border-amber-500/30 bg-amber-500/[0.04]'
+                        : 'border-slate-800/70 bg-slate-900/30'
+                )}
               >
                 <button
                   onClick={() => toggleGroup(stage.id)}
                   aria-expanded={!isCollapsed}
-                  className="w-full flex flex-col gap-1 px-3 py-2.5 text-left hover:bg-slate-900/70 transition-colors"
+                  className={cn(
+                    'w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors',
+                    isStageAllCompleted || hasStageCompletedSome
+                      ? 'hover:bg-emerald-500/10'
+                      : hasStageVisitedSome
+                        ? 'hover:bg-amber-500/10'
+                        : 'hover:bg-slate-900/70'
+                  )}
                 >
                   <div className="w-full flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
-                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-sky-400 whitespace-nowrap">
+                      <span
+                        className={cn(
+                          'font-mono text-[10px] font-bold uppercase tracking-wider whitespace-nowrap',
+                          isStageAllCompleted || hasStageCompletedSome
+                            ? 'text-emerald-400'
+                            : 'text-sky-400'
+                        )}
+                      >
                         Giai đoạn {stage.number}
                       </span>
                       <span className="text-[10px] text-slate-500 whitespace-nowrap">
@@ -228,9 +273,24 @@ export const Sidebar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
-                        {completedInStage}/{allStageLessons.length}
-                      </span>
+                      {isStageAllCompleted ? (
+                        <span className="inline-flex items-center gap-1 rounded border border-emerald-500/45 bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300 whitespace-nowrap">
+                          <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" />
+                          Đã học ({completedInStage}/{allStageLessons.length})
+                        </span>
+                      ) : hasStageCompletedSome ? (
+                        <span className="inline-flex items-center gap-1 rounded border border-emerald-500/35 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-300 whitespace-nowrap">
+                          Đã học {completedInStage}/{allStageLessons.length}
+                        </span>
+                      ) : hasStageVisitedSome ? (
+                        <span className="rounded border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[10px] font-medium text-amber-300 whitespace-nowrap">
+                          Đã xem • {completedInStage}/{allStageLessons.length}
+                        </span>
+                      ) : (
+                        <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                          {completedInStage}/{allStageLessons.length}
+                        </span>
+                      )}
                       {isCollapsed ? (
                         <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                       ) : (
@@ -242,13 +302,30 @@ export const Sidebar: React.FC = () => {
                   <h3 className="w-full text-xs font-semibold text-slate-200 truncate">
                     {stage.title.replace(/^Giai đoạn \d+:\s*/, '')}
                   </h3>
+
+                  {(hasStageCompletedSome || hasStageVisitedSome) && (
+                    <div className="h-1 w-full overflow-hidden rounded-full bg-slate-800/80">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all duration-300',
+                          hasStageCompletedSome ? 'bg-emerald-400' : 'bg-amber-400/70'
+                        )}
+                        style={{
+                          width: `${hasStageCompletedSome ? stagePct : Math.max(8, Math.round((visitedInStage / Math.max(1, allStageLessons.length)) * 40))}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </button>
 
                 {!isCollapsed && (
-                  <div className="border-t border-slate-800/60 p-1.5 space-y-0.5">
+                  <div className="border-t border-slate-800/60 p-1.5 space-y-1">
                     {lessons.map((lesson) => {
                       const isSelected = selectedLessonId === lesson.id;
-                      const isCompleted = completedLessonIds.includes(lesson.id);
+                      const isCompleted = isLessonCompleted(lesson.id);
+                      const sec = getLessonSeconds(lesson.id);
+                      const isVisited = !isCompleted && sec > 0;
+                      const studiedMin = Math.floor(sec / 60);
 
                       return (
                         <button
@@ -256,15 +333,26 @@ export const Sidebar: React.FC = () => {
                           onClick={() => selectLesson(lesson.id)}
                           className={cn(
                             'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-all border-l-2',
-                            isSelected
-                              ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
-                              : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
+                            isSelected && isCompleted
+                              ? 'border-l-emerald-400 bg-emerald-500/22 ring-1 ring-emerald-500/40 text-white shadow-xs'
+                              : isSelected
+                                ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
+                                : isCompleted
+                                  ? 'border-l-emerald-400/80 bg-emerald-500/12 text-slate-100 hover:bg-emerald-500/18'
+                                  : isVisited
+                                    ? 'border-l-amber-400/70 bg-amber-500/[0.07] text-slate-200 hover:bg-amber-500/12'
+                                    : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
                           )}
                         >
                           <div className="mt-0.5 shrink-0">
                             {isCompleted ? (
                               <CheckCircle2
                                 className="h-3.5 w-3.5 text-emerald-400"
+                                aria-hidden="true"
+                              />
+                            ) : isVisited ? (
+                              <Clock
+                                className="h-3.5 w-3.5 text-amber-400"
                                 aria-hidden="true"
                               />
                             ) : (
@@ -281,17 +369,29 @@ export const Sidebar: React.FC = () => {
                             <p
                               className={cn(
                                 'text-xs leading-snug line-clamp-2',
-                                isSelected ? 'font-semibold text-white' : 'font-medium'
+                                isSelected || isCompleted
+                                  ? 'font-semibold text-white'
+                                  : 'font-medium'
                               )}
                             >
                               {lesson.title}
                             </p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <LevelBadge level={lesson.level} />
                               <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-slate-500">
                                 <Clock className="h-2.5 w-2.5" aria-hidden="true" />
                                 {lesson.estimatedMinutes}p
                               </span>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-0.5 rounded border border-emerald-500/40 bg-emerald-500/20 px-1.5 py-0.2 font-mono text-[9px] font-bold text-emerald-300">
+                                  ✓ Đã học
+                                </span>
+                              )}
+                              {isVisited && (
+                                <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.2 font-mono text-[9px] font-semibold text-amber-300">
+                                  Đang học {studiedMin}/10p
+                                </span>
+                              )}
                             </div>
                           </div>
                         </button>
@@ -313,8 +413,20 @@ export const Sidebar: React.FC = () => {
             if (lessons.length === 0) return null;
 
             const completedInLevel = allLevelLessons.filter((l) =>
-              completedLessonIds.includes(l.id)
+              isLessonCompleted(l.id)
             ).length;
+            const visitedInLevel = allLevelLessons.filter(
+              (l) => isLessonCompleted(l.id) || getLessonSeconds(l.id) > 0
+            ).length;
+            const isLevelAllCompleted =
+              allLevelLessons.length > 0 &&
+              completedInLevel === allLevelLessons.length;
+            const hasLevelCompletedSome = completedInLevel > 0;
+            const hasLevelVisitedSome = visitedInLevel > 0;
+            const levelPct = Math.round(
+              (completedInLevel / Math.max(1, allLevelLessons.length)) * 100
+            );
+
             const hasSelected = allLevelLessons.some(
               (l) => l.id === selectedLessonId
             );
@@ -324,12 +436,28 @@ export const Sidebar: React.FC = () => {
             return (
               <div
                 key={lvl.id}
-                className="rounded-xl border border-slate-800/70 bg-slate-900/30 overflow-hidden"
+                className={cn(
+                  'rounded-xl border overflow-hidden transition-colors',
+                  isLevelAllCompleted
+                    ? 'border-emerald-500/50 bg-emerald-500/12'
+                    : hasLevelCompletedSome
+                      ? 'border-emerald-500/35 bg-emerald-500/[0.06]'
+                      : hasLevelVisitedSome
+                        ? 'border-amber-500/30 bg-amber-500/[0.04]'
+                        : 'border-slate-800/70 bg-slate-900/30'
+                )}
               >
                 <button
                   onClick={() => toggleGroup(lvl.id)}
                   aria-expanded={!isCollapsed}
-                  className="w-full flex flex-col gap-1.5 px-3 py-2.5 text-left hover:bg-slate-900/70 transition-colors"
+                  className={cn(
+                    'w-full flex flex-col gap-1.5 px-3 py-2.5 text-left transition-colors',
+                    isLevelAllCompleted || hasLevelCompletedSome
+                      ? 'hover:bg-emerald-500/10'
+                      : hasLevelVisitedSome
+                        ? 'hover:bg-amber-500/10'
+                        : 'hover:bg-slate-900/70'
+                  )}
                 >
                   <div className="w-full flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -340,9 +468,24 @@ export const Sidebar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
-                        {completedInLevel}/{allLevelLessons.length}
-                      </span>
+                      {isLevelAllCompleted ? (
+                        <span className="inline-flex items-center gap-1 rounded border border-emerald-500/45 bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-300 whitespace-nowrap">
+                          <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" />
+                          Đã học ({completedInLevel}/{allLevelLessons.length})
+                        </span>
+                      ) : hasLevelCompletedSome ? (
+                        <span className="inline-flex items-center gap-1 rounded border border-emerald-500/35 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-300 whitespace-nowrap">
+                          Đã học {completedInLevel}/{allLevelLessons.length}
+                        </span>
+                      ) : hasLevelVisitedSome ? (
+                        <span className="rounded border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[10px] font-medium text-amber-300 whitespace-nowrap">
+                          Đã xem • {completedInLevel}/{allLevelLessons.length}
+                        </span>
+                      ) : (
+                        <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                          {completedInLevel}/{allLevelLessons.length}
+                        </span>
+                      )}
                       {isCollapsed ? (
                         <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
                       ) : (
@@ -354,13 +497,30 @@ export const Sidebar: React.FC = () => {
                   <p className="w-full text-[11px] text-slate-400 truncate">
                     {lvl.tagline}
                   </p>
+
+                  {(hasLevelCompletedSome || hasLevelVisitedSome) && (
+                    <div className="h-1 w-full overflow-hidden rounded-full bg-slate-800/80">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all duration-300',
+                          hasLevelCompletedSome ? 'bg-emerald-400' : 'bg-amber-400/70'
+                        )}
+                        style={{
+                          width: `${hasLevelCompletedSome ? levelPct : Math.max(8, Math.round((visitedInLevel / Math.max(1, allLevelLessons.length)) * 40))}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </button>
 
                 {!isCollapsed && (
-                  <div className="border-t border-slate-800/60 p-1.5 space-y-0.5">
+                  <div className="border-t border-slate-800/60 p-1.5 space-y-1">
                     {lessons.map((lesson) => {
                       const isSelected = selectedLessonId === lesson.id;
-                      const isCompleted = completedLessonIds.includes(lesson.id);
+                      const isCompleted = isLessonCompleted(lesson.id);
+                      const sec = getLessonSeconds(lesson.id);
+                      const isVisited = !isCompleted && sec > 0;
+                      const studiedMin = Math.floor(sec / 60);
                       const stageInfo = STAGE_MAP[lesson.stageId];
 
                       return (
@@ -369,15 +529,26 @@ export const Sidebar: React.FC = () => {
                           onClick={() => selectLesson(lesson.id)}
                           className={cn(
                             'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-all border-l-2',
-                            isSelected
-                              ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
-                              : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
+                            isSelected && isCompleted
+                              ? 'border-l-emerald-400 bg-emerald-500/22 ring-1 ring-emerald-500/40 text-white shadow-xs'
+                              : isSelected
+                                ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
+                                : isCompleted
+                                  ? 'border-l-emerald-400/80 bg-emerald-500/12 text-slate-100 hover:bg-emerald-500/18'
+                                  : isVisited
+                                    ? 'border-l-amber-400/70 bg-amber-500/[0.07] text-slate-200 hover:bg-amber-500/12'
+                                    : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
                           )}
                         >
                           <div className="mt-0.5 shrink-0">
                             {isCompleted ? (
                               <CheckCircle2
                                 className="h-3.5 w-3.5 text-emerald-400"
+                                aria-hidden="true"
+                              />
+                            ) : isVisited ? (
+                              <Clock
+                                className="h-3.5 w-3.5 text-amber-400"
                                 aria-hidden="true"
                               />
                             ) : (
@@ -390,18 +561,32 @@ export const Sidebar: React.FC = () => {
                               />
                             )}
                           </div>
-                          <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="min-w-0 flex-1 space-y-1">
                             <p
                               className={cn(
                                 'text-xs leading-snug line-clamp-2',
-                                isSelected ? 'font-semibold text-white' : 'font-medium'
+                                isSelected || isCompleted
+                                  ? 'font-semibold text-white'
+                                  : 'font-medium'
                               )}
                             >
                               {lesson.title}
                             </p>
-                            <div className="flex items-center justify-between font-mono text-[10px] text-slate-500">
-                              <span>GĐ {stageInfo.number}</span>
-                              <span>{lesson.estimatedMinutes}p</span>
+                            <div className="flex flex-wrap items-center justify-between gap-1 font-mono text-[10px] text-slate-500">
+                              <div className="flex items-center gap-1.5">
+                                <span>GĐ {stageInfo.number}</span>
+                                <span>• {lesson.estimatedMinutes}p</span>
+                              </div>
+                              {isCompleted && (
+                                <span className="inline-flex items-center gap-0.5 rounded border border-emerald-500/40 bg-emerald-500/20 px-1.5 py-0.2 font-mono text-[9px] font-bold text-emerald-300">
+                                  ✓ Đã học
+                                </span>
+                              )}
+                              {isVisited && (
+                                <span className="inline-flex items-center gap-0.5 rounded border border-amber-500/35 bg-amber-500/15 px-1.5 py-0.2 font-mono text-[9px] font-semibold text-amber-300">
+                                  Đang học {studiedMin}/10p
+                                </span>
+                              )}
                             </div>
                           </div>
                         </button>

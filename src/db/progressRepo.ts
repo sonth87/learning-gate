@@ -25,6 +25,19 @@ export const progressRepo = {
     }
   },
 
+  async setLessonCompleted(lessonId: string, completed: boolean): Promise<boolean> {
+    const db = await getDb();
+    if (!completed) {
+      await db.delete('completed_lessons', lessonId);
+      return false;
+    }
+    const existing = await db.get('completed_lessons', lessonId);
+    if (!existing) {
+      await db.put('completed_lessons', { lessonId, completedAt: Date.now() });
+    }
+    return true;
+  },
+
   async getAllBookmarks(): Promise<UserBookmark[]> {
     const db = await getDb();
     const list = await db.getAll('bookmarks');

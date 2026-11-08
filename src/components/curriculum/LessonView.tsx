@@ -20,7 +20,10 @@ import { ALL_LESSONS, LESSON_BY_ID } from '@/data/curriculum';
 import { LessonTopic } from '@/types/curriculum.types';
 import { STAGE_MAP } from '@/constants/stages';
 import { useNavigationStore } from '@/stores/useNavigationStore';
-import { useUserDataStore } from '@/stores/useUserDataStore';
+import {
+  useUserDataStore,
+  REQUIRED_LESSON_STUDY_SECONDS,
+} from '@/stores/useUserDataStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
 import { CodeBlock } from '@/components/common/CodeBlock';
@@ -107,7 +110,9 @@ export const LessonView: React.FC = () => {
   } = useNavigationStore();
   const {
     completedLessonIds,
+    lessonStudySeconds,
     toggleLessonComplete,
+    addLessonStudyTime,
     bookmarks,
     toggleBookmark,
     notes,
@@ -222,7 +227,34 @@ export const LessonView: React.FC = () => {
   const lesson = LESSON_BY_ID[selectedLessonId] || ALL_LESSONS[0];
   const stage = STAGE_MAP[lesson.stageId];
 
-  const isCompleted = completedLessonIds.includes(lesson.id);
+  const studySeconds = lessonStudySeconds[lesson.id] || 0;
+  const isCompleted =
+    completedLessonIds.includes(lesson.id) ||
+    studySeconds >= REQUIRED_LESSON_STUDY_SECONDS;
+  const studyProgressPct = Math.min(
+    100,
+    Math.round((studySeconds / REQUIRED_LESSON_STUDY_SECONDS) * 100)
+  );
+  const formatMinutesSeconds = (totalSec: number) => {
+    const clamped = Math.min(totalSec, REQUIRED_LESSON_STUDY_SECONDS);
+    const m = Math.floor(clamped / 60);
+    const s = clamped % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  // Active 10-minute study timer: records entry & increments every 1s while viewing the lesson
+  useEffect(() => {
+    // Immediately mark lesson as entered (>= 1s) when opened if not yet visited
+    if ((useUserDataStore.getState().lessonStudySeconds[lesson.id] || 0) === 0) {
+      void addLessonStudyTime(lesson.id, 1);
+    }
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      void addLessonStudyTime(lesson.id, 1);
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [lesson.id, addLessonStudyTime]);
+
   const isBookmarked = bookmarks.some(
     (b) => b.targetType === 'lesson' && b.targetId === lesson.id
   );
@@ -312,7 +344,14 @@ export const LessonView: React.FC = () => {
 
         <article className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
           {/* Hero / Lesson Header Card */}
-          <header className="rounded-2xl border border-slate-800/90 bg-slate-900/50 p-4 sm:p-6 space-y-4">
+          <header
+            className={cn(
+              'rounded-2xl border p-4 sm:p-6 space-y-4 transition-colors',
+              isCompleted
+                ? 'border-emerald-500/45 bg-emerald-500/[0.07]'
+                : 'border-slate-800/90 bg-slate-900/50'
+            )}
+          >
           {/* Top Meta & Actions */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -324,6 +363,12 @@ export const LessonView: React.FC = () => {
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                 {lesson.estimatedMinutes}p
               </span>
+              {isCompleted && (
+                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/45 bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-emerald-300">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-400" aria-hidden="true" />
+                  Đã học (≥ 10 phút)
+                </span>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -368,6 +413,11 @@ export const LessonView: React.FC = () => {
               <button
                 onClick={() => toggleLessonComplete(lesson.id)}
                 aria-pressed={isCompleted}
+                title={
+                  isCompleted
+                    ? 'Bài học đã đạt trạng thái Đã học (Bấm nếu muốn học lại từ đầu)'
+                    : 'Đánh dấu Đã học ngay hoặc học đủ 10 phút sẽ tự động hoàn thành'
+                }
                 className={cn(
                   'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 sm:px-3 text-xs font-semibold transition-all',
                   isCompleted
@@ -376,8 +426,58 @@ export const LessonView: React.FC = () => {
                 )}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>{isCompleted ? 'Đã xong' : 'Hoàn thành'}</span>
+                <span>{isCompleted ? 'Đã học ✓' : 'Đánh dấu Đã học'}</span>
               </button>
+            </div>
+          </div>
+
+          {/* 10-Minute Auto-Completion Study Progress Banner */}
+          <div
+            className={cn(
+              'rounded-xl border px-3.5 py-2.5 space-y-1.5 transition-colors',
+              isCompleted
+                ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-200'
+                : 'border-amber-500/30 bg-amber-500/[0.07] text-slate-200'
+            )}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs">
+              <div className="flex items-center gap-1.5 font-medium">
+                {isCompleted ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    <span className="text-emerald-300 font-semibold">
+                      Đã qua bài học này!
+                    </span>
+                    <span className="text-slate-300">
+                      (Đã hoàn thành tối thiểu 10 phút đọc lý thuyết & ví dụ)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <span className="text-amber-300 font-semibold">
+                      Tiến độ đọc bài (Tự động đánh dấu Đã học sau 10 phút):
+                    </span>
+                  </>
+                )}
+              </div>
+              <span
+                className={cn(
+                  'font-mono text-[11px] font-bold',
+                  isCompleted ? 'text-emerald-300' : 'text-amber-300'
+                )}
+              >
+                {formatMinutesSeconds(studySeconds)} / 10:00 phút ({studyProgressPct}%)
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800/90">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  isCompleted ? 'bg-emerald-400' : 'bg-amber-400'
+                )}
+                style={{ width: `${studyProgressPct}%` }}
+              />
             </div>
           </div>
 
