@@ -86,12 +86,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
   const gutterRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const existing = submissions[exercise.id];
+    const existing = useUserDataStore.getState().submissions[exercise.id];
     setCode(existing?.code || exercise.starterCode);
     setResult(null);
     setCursorPos({ line: 1, col: 1 });
     setCompletions([]);
-  }, [exercise.id, exercise.starterCode, submissions]);
+  }, [exercise.id, exercise.starterCode]);
 
   const handleRunTests = async () => {
     setCompletions([]);
@@ -713,12 +713,13 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
           </div>
           {result ? (
             <span
-              className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+              className={`rounded-full px-3 py-1 text-xs font-bold ${
                 result.allPassed
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                   : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
               }`}
             >
+              {result.allPassed ? '✓ Thành công: ' : '✕ Báo lỗi: '}
               Đạt {result.passedCount}/{result.totalCount} Test Cases
             </span>
           ) : (
@@ -727,6 +728,50 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             </span>
           )}
         </div>
+
+        {/* Prominent Console Output Terminal right at top when Run is clicked */}
+        {result && (
+          <div
+            className={cn(
+              'rounded-xl border p-3.5 transition-all',
+              !activeIdeTheme.isLight && 'ide-dark-surface',
+              result.allPassed
+                ? 'ring-1 ring-emerald-500/40'
+                : 'ring-1 ring-rose-500/40'
+            )}
+            style={{
+              backgroundColor: activeIdeTheme.editorBg,
+              borderColor: result.allPassed ? '#10b98166' : '#f43f5e66',
+            }}
+          >
+            <div
+              className="flex items-center justify-between text-[11px] font-mono font-semibold mb-2 pb-1.5 border-b"
+              style={{
+                color: activeIdeTheme.gutterText,
+                borderColor: activeIdeTheme.barBorder,
+              }}
+            >
+              <span>$ python3 solution.py — Console Output</span>
+              <span
+                className={
+                  result.allPassed
+                    ? 'text-emerald-400 font-bold'
+                    : 'text-rose-400 font-bold'
+                }
+              >
+                Exit code: {result.allPassed ? '0 (OK)' : '1 (FAILED)'}
+              </span>
+            </div>
+            <pre className="font-mono text-xs leading-5 whitespace-pre-wrap">
+              <code>
+                {renderHighlightedPython(
+                  result.simulatedStdout,
+                  activeIdeTheme.isLight
+                )}
+              </code>
+            </pre>
+          </div>
+        )}
 
         <div className="grid gap-2.5">
           {(result ? result.results : exercise.testCases).map((tc, idx) => {
@@ -801,10 +846,13 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
 
                 {isVerified && (
                   <div
-                    className={`text-xs pt-0.5 font-medium ${
-                      passed ? 'text-emerald-300' : 'text-rose-300'
+                    className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+                      passed
+                        ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                        : 'border-rose-500/30 bg-rose-500/10 text-rose-300'
                     }`}
                   >
+                    {passed ? '✓ ' : '✕ Lỗi: '}
                     {tc.message}
                   </div>
                 )}
@@ -812,41 +860,6 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             );
           })}
         </div>
-
-        {result && (
-          <div
-            className={cn(
-              'rounded-xl border p-3.5',
-              !activeIdeTheme.isLight && 'ide-dark-surface'
-            )}
-            style={{
-              backgroundColor: activeIdeTheme.editorBg,
-              borderColor: activeIdeTheme.barBorder,
-            }}
-          >
-            <div
-              className="flex items-center justify-between text-[11px] font-mono font-semibold mb-1.5"
-              style={{ color: activeIdeTheme.gutterText }}
-            >
-              <span>$ python3 solution.py — Console Output</span>
-              <span
-                className={
-                  result.allPassed ? 'text-emerald-500' : 'text-rose-500'
-                }
-              >
-                Exit code: {result.allPassed ? '0' : '1'}
-              </span>
-            </div>
-            <pre className="font-mono text-xs leading-5 whitespace-pre-wrap">
-              <code>
-                {renderHighlightedPython(
-                  result.simulatedStdout,
-                  activeIdeTheme.isLight
-                )}
-              </code>
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
