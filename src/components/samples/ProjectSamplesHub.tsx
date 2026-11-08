@@ -274,7 +274,7 @@ export const ProjectSamplesHub: React.FC = () => {
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <span className="px-2 font-mono text-xs font-bold text-emerald-400 select-none">
-                #{currentProject.number}/10
+                #{currentProject.number}/{ALL_SAMPLE_PROJECTS.length}
               </span>
               <button
                 onClick={handleNextProject}
@@ -293,7 +293,7 @@ export const ProjectSamplesHub: React.FC = () => {
                   ? 'border-emerald-500/60 bg-emerald-500/10 text-white'
                   : 'border-slate-800 bg-slate-950/80 text-slate-100 hover:border-slate-700 hover:bg-slate-900'
               )}
-              title="Bấm để chọn trong 10 Dự án Mẫu từ Đơn giản đến Production"
+              title={`Bấm để chọn trong ${ALL_SAMPLE_PROJECTS.length} Dự án Mẫu từ Đơn giản đến Production`}
             >
               <FolderOpen className="h-4 w-4 text-amber-400 shrink-0" />
               <span className="font-mono text-xs text-emerald-400 font-bold shrink-0 hidden sm:inline">
@@ -315,7 +315,7 @@ export const ProjectSamplesHub: React.FC = () => {
             </button>
           </div>
 
-          {/* Right: Open 10-Project Catalog Button */}
+          {/* Right: Open 16-Project Catalog Button */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="hidden xl:inline-flex items-center gap-1.5 rounded-xl bg-slate-950 border border-slate-800 px-2.5 py-1.5 font-mono text-xs text-slate-300">
               <Layers className="h-3.5 w-3.5 text-sky-400" />
@@ -332,17 +332,17 @@ export const ProjectSamplesHub: React.FC = () => {
               )}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              <span>Danh sách 10 Project Mẫu</span>
+              <span>Danh sách {ALL_SAMPLE_PROJECTS.length} Project Mẫu</span>
             </button>
           </div>
         </div>
 
-        {/* Collapsible 10-Project Selector Drawer */}
+        {/* Collapsible Project Selector Drawer */}
         {isProjectPickerOpen && (
           <div className="mt-3 pt-3 border-t border-slate-800/90 space-y-3 animate-in fade-in duration-150">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-semibold text-slate-300">
-                Chọn Dự án Mẫu theo cấp độ phức tạp (Từ Hello World đến AI RAG Microservice):
+                Chọn Dự án Mẫu theo cấp độ phức tạp ({ALL_SAMPLE_PROJECTS.length} dự án từ Hello World đến Enterprise CQRS/Saga):
               </span>
               <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
                 <button
@@ -354,22 +354,27 @@ export const ProjectSamplesHub: React.FC = () => {
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                   )}
                 >
-                  Tất cả (10)
+                  Tất cả ({ALL_SAMPLE_PROJECTS.length})
                 </button>
-                {SKILL_LEVELS.map((lvl) => (
-                  <button
-                    key={lvl.id}
-                    onClick={() => setSelectedLevel(lvl.id)}
-                    className={cn(
-                      'rounded-lg px-2.5 py-1 text-xs font-semibold cursor-pointer',
-                      selectedLevel === lvl.id
-                        ? 'bg-emerald-500 text-slate-950'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                    )}
-                  >
-                    {lvl.label}
-                  </button>
-                ))}
+                {SKILL_LEVELS.map((lvl) => {
+                  const count = ALL_SAMPLE_PROJECTS.filter(
+                    (p) => p.complexity === lvl.id
+                  ).length;
+                  return (
+                    <button
+                      key={lvl.id}
+                      onClick={() => setSelectedLevel(lvl.id)}
+                      className={cn(
+                        'rounded-lg px-2.5 py-1 text-xs font-semibold cursor-pointer whitespace-nowrap',
+                        selectedLevel === lvl.id
+                          ? 'bg-emerald-500 text-slate-950'
+                          : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                      )}
+                    >
+                      {lvl.label} ({count})
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -489,21 +494,26 @@ export const ProjectSamplesHub: React.FC = () => {
               backgroundColor: activeIdeTheme.editorBg,
             }}
           >
-            {/* IDE Open File Tabs Bar */}
+            {/* IDE Open File Tabs Bar: Left Traffic Lights (Fixed) | Middle Scrollable File Tabs | Right Copy Button (Fixed) */}
             <div
-              className="flex items-center justify-between gap-2 border-b px-3 py-1.5 overflow-x-auto no-scrollbar"
+              className="flex items-center justify-between border-b px-3 py-2"
               style={{
                 backgroundColor: activeIdeTheme.barBg,
                 borderColor: activeIdeTheme.barBorder,
               }}
             >
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="flex items-center gap-1.5 mr-2 shrink-0">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                </div>
+              {/* Left Pinned Window Dots */}
+              <div
+                className="hidden sm:flex items-center gap-1.5 pr-3 border-r shrink-0"
+                style={{ borderColor: activeIdeTheme.barBorder }}
+              >
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
+              </div>
 
+              {/* Middle Scrollable File Tabs with Clean Margin & Spacing */}
+              <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto no-scrollbar px-2 sm:px-3">
                 {currentProject.files.map((file) => {
                   const fileName = file.path.split('/').pop() || file.path;
                   const isActive = file.path === activeFile.path;
@@ -511,17 +521,36 @@ export const ProjectSamplesHub: React.FC = () => {
                     <button
                       key={file.path}
                       onClick={() => setActiveFilePath(file.path)}
+                      title={file.path}
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-xs transition-all shrink-0 cursor-pointer',
                         isActive
-                          ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 font-bold'
-                          : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                          ? activeIdeTheme.isLight
+                            ? 'border-emerald-600/60 bg-emerald-500/15 text-emerald-800 font-bold shadow-2xs'
+                            : 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300 font-bold shadow-2xs'
+                          : activeIdeTheme.isLight
+                          ? 'border-slate-300/80 bg-white/60 text-slate-700 hover:bg-white hover:text-slate-950'
+                          : 'border-slate-800/80 bg-slate-900/40 text-slate-300 hover:text-white hover:bg-slate-800/70'
                       )}
                     >
                       {file.language === 'python' ? (
-                        <FileCode2 className="h-3.5 w-3.5 text-sky-400" />
+                        <FileCode2
+                          className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            activeIdeTheme.isLight
+                              ? 'text-blue-600'
+                              : 'text-sky-400'
+                          )}
+                        />
                       ) : (
-                        <FileText className="h-3.5 w-3.5 text-amber-400" />
+                        <FileText
+                          className={cn(
+                            'h-3.5 w-3.5 shrink-0',
+                            activeIdeTheme.isLight
+                              ? 'text-amber-600'
+                              : 'text-amber-400'
+                          )}
+                        />
                       )}
                       <span>{fileName}</span>
                     </button>
@@ -529,27 +558,33 @@ export const ProjectSamplesHub: React.FC = () => {
                 })}
               </div>
 
-              <button
-                onClick={handleCopyFileCode}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium shrink-0 transition-colors cursor-pointer',
-                  activeIdeTheme.isLight
-                    ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                    : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-                )}
+              {/* Right Pinned Copy Button (Never scrolls or overlaps file tabs) */}
+              <div
+                className="pl-2.5 border-l shrink-0 flex items-center"
+                style={{ borderColor: activeIdeTheme.barBorder }}
               >
-                {copiedFile ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-emerald-500">Đã chép</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy file</span>
-                  </>
-                )}
-              </button>
+                <button
+                  onClick={handleCopyFileCode}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-colors cursor-pointer',
+                    activeIdeTheme.isLight
+                      ? 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100 shadow-2xs'
+                      : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 shadow-2xs'
+                  )}
+                >
+                  {copiedFile ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      <span className="text-emerald-500">Đã chép</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy file</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* File Path Breadcrumb & Architectural Role Explanation Banner */}

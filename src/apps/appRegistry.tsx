@@ -18,7 +18,7 @@ export const PYMASTERY_CONFIG: AppConfig = {
     { key: 'sep1', label: '', action: '', separator: true },
     { key: 'curriculum', label: 'Lộ trình & Lý thuyết', action: 'tab:curriculum' },
     { key: 'practice', label: 'Thực hành Code', action: 'tab:practice' },
-    { key: 'samples', label: 'Dự án Mẫu (10 Projects IDE)', action: 'tab:samples' },
+    { key: 'samples', label: 'Dự án Mẫu (16 Projects IDE)', action: 'tab:samples' },
     { key: 'glossary', label: 'Từ điển Python', action: 'tab:glossary' },
   ],
   menuBarMenus: [
@@ -49,7 +49,7 @@ export const PYMASTERY_CONFIG: AppConfig = {
       items: [
         { key: 'curriculum', label: 'Lộ trình & Lý thuyết', shortcut: '⌘1', action: 'tab:curriculum' },
         { key: 'practice', label: 'Thực hành Code', shortcut: '⌘2', action: 'tab:practice' },
-        { key: 'samples', label: 'Dự án Mẫu (10 Projects IDE)', shortcut: '⌘3', action: 'tab:samples' },
+        { key: 'samples', label: 'Dự án Mẫu (16 Projects IDE)', shortcut: '⌘3', action: 'tab:samples' },
         { key: 'flashcards', label: 'Flashcards (SRS)', shortcut: '⌘4', action: 'tab:flashcards' },
         { key: 'exams', label: 'Thi Sát hạch', shortcut: '⌘5', action: 'tab:exams' },
         { key: 'glossary', label: 'Từ điển Python', shortcut: '⌘6', action: 'tab:glossary' },

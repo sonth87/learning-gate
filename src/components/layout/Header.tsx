@@ -42,7 +42,7 @@ const NAV_TABS: {
   },
   {
     id: 'samples',
-    label: 'Dự án Mẫu (10 Projects IDE)',
+    label: 'Dự án Mẫu (16 Projects IDE)',
     shortcut: '⌘3',
     icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" />,
   },
