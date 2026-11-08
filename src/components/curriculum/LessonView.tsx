@@ -13,6 +13,8 @@ import {
   Layers,
   ShieldAlert,
   FlaskConical,
+  PanelLeftOpen,
+  ListTree,
 } from 'lucide-react';
 import { ALL_LESSONS, LESSON_BY_ID } from '@/data/curriculum';
 import { LessonTopic } from '@/types/curriculum.types';
@@ -268,6 +270,46 @@ export const LessonView: React.FC = () => {
         onScroll={handleScroll}
         className="flex-1 min-w-0 h-full overflow-y-auto"
       >
+        {/* Mobile & Tablet Sticky Sub-Toolbar (< xl) */}
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-800/90 bg-slate-950/90 px-3 sm:px-6 py-2 backdrop-blur-md xl:hidden">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="inline-flex lg:hidden items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 active:scale-95 transition-all"
+            >
+              <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Danh mục ({currentIdx + 1}/{ALL_LESSONS.length})</span>
+            </button>
+
+            <button
+              onClick={() => setMobileTocOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+            >
+              <ListTree className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+              <span>Mục lục & Từ khóa</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => prevLesson && selectLesson(prevLesson.id)}
+              disabled={!prevLesson}
+              aria-label="Bài trước"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 disabled:opacity-35"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => nextLesson && selectLesson(nextLesson.id)}
+              disabled={!nextLesson}
+              aria-label="Bài tiếp theo"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 disabled:opacity-35"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
         <article className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
           {/* Hero / Lesson Header Card */}
           <header className="rounded-2xl border border-slate-800/90 bg-slate-900/50 p-4 sm:p-6 space-y-4">
@@ -364,8 +406,8 @@ export const LessonView: React.FC = () => {
           </div>
 
           {/* Section Filter Pills & Term Hint */}
-          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-slate-800/80">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-800/80">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 sm:flex-wrap">
               {FILTER_ITEMS.map((f) => {
                 const isSelected = sectionFilter === f.id;
                 let count: number | undefined;
@@ -388,7 +430,7 @@ export const LessonView: React.FC = () => {
                       });
                     }}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all',
+                      'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 sm:py-1 text-xs font-medium whitespace-nowrap shrink-0 transition-all',
                       isSelected
                         ? f.activeColor
                         : 'bg-slate-950/60 text-slate-400 border border-slate-800/80 hover:bg-slate-800 hover:text-slate-200'

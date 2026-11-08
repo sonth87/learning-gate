@@ -179,7 +179,7 @@ export const ExamCenter: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x pb-1 sm:pb-0 sm:grid sm:grid-cols-2 lg:grid-cols-4">
           {ALL_EXAMS.map((exam) => {
             const active = !customExam && exam.id === currentExam.id;
             return (
@@ -187,7 +187,7 @@ export const ExamCenter: React.FC = () => {
                 key={exam.id}
                 onClick={() => handleSelectExam(exam.id)}
                 className={cn(
-                  'rounded-xl border p-3.5 text-left transition-all space-y-1.5 cursor-pointer flex flex-col justify-between',
+                  'w-[260px] sm:w-auto shrink-0 snap-start rounded-xl border p-3.5 text-left transition-all space-y-1.5 cursor-pointer flex flex-col justify-between',
                   active
                     ? 'border-violet-500/60 bg-violet-500/15 shadow-md'
                     : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'

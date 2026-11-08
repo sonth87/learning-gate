@@ -97,6 +97,9 @@ export const PracticeHub: React.FC = () => {
     'all'
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobilePane, setMobilePane] = useState<'split' | 'guide' | 'editor'>(
+    'split'
+  );
 
   const filteredExercises = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -201,15 +204,15 @@ export const PracticeHub: React.FC = () => {
           </div>
 
           {/* Search & Random Challenge Action */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm bài tập, từ khóa..."
-                className="w-48 sm:w-56 rounded-xl border border-slate-800 bg-slate-950/90 pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full sm:w-56 rounded-xl border border-slate-800 bg-slate-950/90 pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
               />
               {searchQuery && (
                 <button
@@ -223,7 +226,7 @@ export const PracticeHub: React.FC = () => {
 
             <button
               onClick={handleRandomChallenge}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer shrink-0"
               title="Chọn ngẫu nhiên 1 bài tập chưa giải trong bộ lọc hiện tại"
             >
               <Shuffle className="h-3.5 w-3.5" />
@@ -233,8 +236,8 @@ export const PracticeHub: React.FC = () => {
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/70">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pt-2 border-t border-slate-800/70">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-wrap">
             {CATEGORY_META.map((cat) => {
               const count =
                 cat.id === 'all'
@@ -248,7 +251,7 @@ export const PracticeHub: React.FC = () => {
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-medium transition-all cursor-pointer',
+                    'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 sm:py-1 text-xs font-medium whitespace-nowrap shrink-0 transition-all cursor-pointer',
                     active
                       ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300 font-bold shadow-xs'
                       : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-800/80'
@@ -265,16 +268,16 @@ export const PracticeHub: React.FC = () => {
           </div>
 
           {/* Stage, Level & Status Filters */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-wrap">
             <select
               value={selectedStage}
               onChange={(e) =>
                 setSelectedStage(e.target.value as StageId | 'all')
               }
               aria-label="Lọc theo Giai đoạn"
-              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50"
+              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 shrink-0 focus:outline-none focus:border-emerald-500/50"
             >
-              <option value="all">Mọi Giai đoạn (GĐ 1–7)</option>
+              <option value="all">Mọi Giai đoạn (1–7)</option>
               {CURRICULUM_STAGES.map((st) => (
                 <option key={st.id} value={st.id}>
                   GĐ {st.number}: {st.title.replace(/^Giai đoạn \d+:\s*/, '')}
@@ -290,31 +293,31 @@ export const PracticeHub: React.FC = () => {
                 )
               }
               aria-label="Lọc theo Trạng thái"
-              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50"
+              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 shrink-0 focus:outline-none focus:border-emerald-500/50"
             >
               <option value="all">Mọi trạng thái</option>
               <option value="unsolved">Chưa giải</option>
               <option value="solved">Đã vượt qua ✓</option>
             </select>
 
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setFilterLevel('all')}
                 className={cn(
-                  'rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+                  'rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors',
                   filterLevel === 'all'
                     ? 'bg-emerald-500 text-slate-950 font-semibold'
                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
                 )}
               >
-                Mọi cấp độ
+                Mọi cấp
               </button>
               {SKILL_LEVELS.map((lvl) => (
                 <button
                   key={lvl.id}
                   onClick={() => setFilterLevel(lvl.id)}
                   className={cn(
-                    'rounded-lg px-2 py-1 text-xs font-medium transition-colors',
+                    'rounded-lg px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors',
                     filterLevel === lvl.id
                       ? 'bg-emerald-500 text-slate-950 font-semibold'
                       : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
@@ -438,12 +441,59 @@ export const PracticeHub: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile & Tablet Mode Switcher (< lg): Quickly jump between Problem Guide and Code Editor */}
+      <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-slate-800 bg-slate-900/80 p-1 lg:hidden">
+        <button
+          onClick={() => setMobilePane('split')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors',
+            mobilePane === 'split'
+              ? 'bg-emerald-500 text-slate-950'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Xem cả 2
+        </button>
+        <button
+          onClick={() => setMobilePane('guide')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors',
+            mobilePane === 'guide'
+              ? 'bg-emerald-500 text-slate-950'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Đề bài & Gợi ý
+        </button>
+        <button
+          onClick={() => setMobilePane('editor')}
+          className={cn(
+            'rounded-lg py-1.5 text-xs font-semibold transition-colors',
+            mobilePane === 'editor'
+              ? 'bg-emerald-500 text-slate-950'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          Code & Chấm bài
+        </button>
+      </div>
+
       {/* 2-Column Split IDE Workspace: Tabbed Guide Left, Editor & Test Runner Right */}
       <div className="grid gap-5 lg:grid-cols-12 items-start">
-        <div className="lg:col-span-5 min-w-0">
+        <div
+          className={cn(
+            'lg:col-span-5 min-w-0',
+            mobilePane === 'editor' && 'hidden lg:block'
+          )}
+        >
           <ExerciseGuidePanel exercise={currentExercise} />
         </div>
-        <div className="lg:col-span-7 min-w-0">
+        <div
+          className={cn(
+            'lg:col-span-7 min-w-0',
+            mobilePane === 'guide' && 'hidden lg:block'
+          )}
+        >
           <CodeWorkspace exercise={currentExercise} />
         </div>
       </div>

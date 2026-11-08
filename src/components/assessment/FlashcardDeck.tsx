@@ -168,8 +168,8 @@ export const FlashcardDeck: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-initial">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
               <input
                 type="text"
@@ -180,7 +180,7 @@ export const FlashcardDeck: React.FC = () => {
                   setIsFlipped(false);
                 }}
                 placeholder="Tìm khái niệm, từ khóa..."
-                className="w-44 sm:w-52 rounded-xl border border-slate-800 bg-slate-950/90 pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-amber-500/50 focus:outline-none"
+                className="w-full sm:w-52 rounded-xl border border-slate-800 bg-slate-950/90 pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-500 focus:border-amber-500/50 focus:outline-none"
               />
               {searchQuery && (
                 <button
@@ -197,7 +197,7 @@ export const FlashcardDeck: React.FC = () => {
 
             <button
               onClick={handleShuffle}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer shrink-0"
               title="Trộn ngẫu nhiên thứ tự thẻ"
             >
               <Shuffle className="h-3.5 w-3.5" />
@@ -207,9 +207,9 @@ export const FlashcardDeck: React.FC = () => {
         </div>
 
         {/* Filter Bar: SRS Mode, Stage, and Level */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800/80">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pt-3 border-t border-slate-800/80">
           {/* SRS Mode Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
             {(
               [
                 { id: 'all', label: `Tất cả (${ALL_FLASHCARDS.length})` },
@@ -229,7 +229,7 @@ export const FlashcardDeck: React.FC = () => {
                   setIsFlipped(false);
                 }}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer',
+                  'inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0 transition-colors cursor-pointer',
                   srsMode === m.id
                     ? 'bg-emerald-500 text-slate-950'
                     : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
@@ -241,7 +241,7 @@ export const FlashcardDeck: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0">
             <select
               value={selectedStage}
               onChange={(e) => {
@@ -250,7 +250,7 @@ export const FlashcardDeck: React.FC = () => {
                 setIsFlipped(false);
               }}
               aria-label="Lọc theo Giai đoạn"
-              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 focus:outline-none"
+              className="rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs text-slate-200 shrink-0 focus:outline-none"
             >
               <option value="all">Mọi Giai đoạn (1–7)</option>
               {CURRICULUM_STAGES.map((st) => (
@@ -267,7 +267,7 @@ export const FlashcardDeck: React.FC = () => {
                 setIsFlipped(false);
               }}
               className={cn(
-                'rounded-lg px-2.5 py-1 text-xs font-semibold',
+                'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0',
                 selectedLevel === 'all'
                   ? 'bg-amber-500 text-slate-950'
                   : 'bg-slate-800 text-slate-300'
@@ -284,7 +284,7 @@ export const FlashcardDeck: React.FC = () => {
                   setIsFlipped(false);
                 }}
                 className={cn(
-                  'rounded-lg px-2.5 py-1 text-xs font-semibold',
+                  'rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0',
                   selectedLevel === lvl.id
                     ? 'bg-amber-500 text-slate-950'
                     : 'bg-slate-800 text-slate-300'
@@ -422,31 +422,31 @@ export const FlashcardDeck: React.FC = () => {
 
             {/* SRS Grading Buttons */}
             {isFlipped && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] text-slate-400 mr-1">
+              <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 pt-2 sm:pt-0">
+                <span className="col-span-2 sm:col-span-1 text-[11px] text-slate-400 mr-1">
                   Đánh giá mức độ nhớ (SRS):
                 </span>
                 <button
                   onClick={() => handleRate('again')}
-                  className="rounded-lg bg-rose-500/20 border border-rose-500/40 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/30"
+                  className="rounded-lg bg-rose-500/20 border border-rose-500/40 px-3 py-2 sm:py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/30"
                 >
                   [1] Quên (10p)
                 </button>
                 <button
                   onClick={() => handleRate('hard')}
-                  className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/30"
+                  className="rounded-lg bg-amber-500/20 border border-amber-500/40 px-3 py-2 sm:py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/30"
                 >
                   [2] Khó (1 ngày)
                 </button>
                 <button
                   onClick={() => handleRate('good')}
-                  className="rounded-lg bg-sky-500/20 border border-sky-500/40 px-3 py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-500/30"
+                  className="rounded-lg bg-sky-500/20 border border-sky-500/40 px-3 py-2 sm:py-1.5 text-xs font-bold text-sky-300 hover:bg-sky-500/30"
                 >
                   [3] Tốt (2+ ngày)
                 </button>
                 <button
                   onClick={() => handleRate('easy')}
-                  className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30"
+                  className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-3 py-2 sm:py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/30"
                 >
                   [4] Rất dễ (4+ ngày)
                 </button>

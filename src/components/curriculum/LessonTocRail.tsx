@@ -230,11 +230,45 @@ export const LessonTocRail: React.FC<LessonTocRailProps> = ({
   );
 
   return (
-    <aside
-      aria-label="Mục lục bài học hiện tại"
-      className="flex w-64 lg:w-72 xl:w-76 shrink-0 flex-col gap-4 border-l border-slate-800/80 bg-slate-950/40 p-3.5 xl:p-4 h-full overflow-y-auto"
-    >
-      {renderTocBody()}
-    </aside>
+    <>
+      {/* Wide Desktop Right TOC Rail (xl+) */}
+      <aside
+        aria-label="Mục lục bài học hiện tại"
+        className="hidden xl:flex xl:w-72 shrink-0 flex-col gap-4 border-l border-slate-800/80 bg-slate-950/40 p-3.5 xl:p-4 h-full overflow-y-auto"
+      >
+        {renderTocBody()}
+      </aside>
+
+      {/* Mobile & Tablet Bottom Sheet / Right Drawer (< xl) */}
+      {isMobileTocOpen && (
+        <div
+          onClick={() => setMobileTocOpen(false)}
+          className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end xl:hidden bg-black/75 backdrop-blur-xs"
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Mục lục bài học di động"
+            className="w-full max-h-[82vh] sm:max-h-full sm:h-full sm:w-80 rounded-t-2xl sm:rounded-none border-t sm:border-t-0 sm:border-l border-slate-800 bg-slate-950 flex flex-col overflow-hidden shadow-2xl pb-[env(safe-area-inset-bottom)]"
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-900/90 shrink-0">
+              <div className="flex items-center gap-2">
+                <ListTree className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                <span className="font-mono text-xs font-bold text-white">
+                  Mục lục Bài học & Từ khóa
+                </span>
+              </div>
+              <button
+                onClick={() => setMobileTocOpen(false)}
+                aria-label="Đóng mục lục"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">{renderTocBody()}</div>
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

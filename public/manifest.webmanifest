@@ -1,0 +1,23 @@
+{
+  "name": "Learning Gate — PyMastery (Zero to Hero Python)",
+  "short_name": "Learning Gate",
+  "description": "Nền tảng Học, Thực hành Code Gym, Giải đố & Ôn tập SRS Python Toàn diện cho Lập trình viên.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}

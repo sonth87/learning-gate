@@ -13,7 +13,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  Terminal,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
@@ -142,8 +141,12 @@ export const Header: React.FC = () => {
               onClick={() => setActiveTab('curriculum')}
               className="group flex items-center gap-2 text-left focus-visible:outline-none min-w-0"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-slate-950 shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105">
-                <Terminal className="h-4 w-4 stroke-[2.5]" aria-hidden="true" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
+                <img
+                  src="/favicon.svg"
+                  alt="Learning Gate"
+                  className="h-6 w-6 object-contain"
+                />
               </div>
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -151,7 +154,7 @@ export const Header: React.FC = () => {
                     PyMastery
                   </span>
                   <span className="hidden sm:inline-block rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-emerald-400">
-                    3.13+
+                    Learning Gate
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
@@ -170,10 +173,10 @@ export const Header: React.FC = () => {
           </HeaderTooltip>
         </div>
 
-        {/* Center: Icon-Only Module Navigation with Hover Tooltips */}
+        {/* Center: Icon-Only Module Navigation with Hover Tooltips (md+ Tablet/Desktop; Mobile uses MobileBottomNav) */}
         <nav
           aria-label="Điều hướng phân hệ chính"
-          className="flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
+          className="hidden md:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
         >
           {NAV_TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -262,7 +265,22 @@ export const Header: React.FC = () => {
             </button>
           </HeaderTooltip>
 
-          {/* Theme Switcher: Icons Only */}
+          {/* Mobile Quick Theme Toggle (< sm) */}
+          <button
+            onClick={() =>
+              handleSelectTheme(activeThemeMode === 'light' ? 'dark' : 'light')
+            }
+            aria-label="Đổi giao diện Sáng / Tối"
+            className="inline-flex sm:hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-amber-400 hover:bg-slate-800 transition-colors"
+          >
+            {activeThemeMode === 'light' ? (
+              <Sun className="h-3.5 w-3.5" aria-hidden="true" />
+            ) : (
+              <Moon className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
+            )}
+          </button>
+
+          {/* Theme Switcher: Icons Only (sm+) */}
           <div
             role="group"
             aria-label="Chế độ giao diện Sáng / Tối / Tự động"

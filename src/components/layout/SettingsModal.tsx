@@ -259,7 +259,7 @@ export const SettingsModal: React.FC = () => {
           </label>
 
           {settings.enableAutoHighlight && (
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
               <label className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-xs text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"

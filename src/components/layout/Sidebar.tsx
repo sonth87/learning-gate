@@ -340,11 +340,45 @@ export const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside
-      aria-label="Danh mục bài học"
-      className="flex w-72 lg:w-80 xl:w-84 shrink-0 border-r border-slate-800/80 bg-slate-950/60 h-full flex-col overflow-hidden"
-    >
-      {renderSidebarContent()}
-    </aside>
+    <>
+      {/* Desktop Fixed Sidebar (lg+) */}
+      <aside
+        aria-label="Danh mục bài học"
+        className="hidden lg:flex lg:w-72 xl:w-80 shrink-0 border-r border-slate-800/80 bg-slate-950/60 h-full flex-col overflow-hidden"
+      >
+        {renderSidebarContent()}
+      </aside>
+
+      {/* Mobile & Tablet Slide-over Drawer (< lg) */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 z-50 flex lg:hidden bg-black/75 backdrop-blur-xs"
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Danh mục bài học di động"
+            className="flex h-full w-[min(86vw,340px)] flex-col border-r border-slate-800 bg-slate-950 shadow-2xl pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+          >
+            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-900/90">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+                <span className="font-mono text-xs font-bold text-white">
+                  Lộ trình 7 Giai đoạn Python
+                </span>
+              </div>
+              <button
+                onClick={() => setMobileSidebarOpen(false)}
+                aria-label="Đóng danh mục"
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {renderSidebarContent()}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

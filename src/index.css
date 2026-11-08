@@ -129,3 +129,18 @@
 .pylearn-root.pylearn-dark {
   color-scheme: dark;
 }
+
+/* Mobile & Tablet Touch and Scrollbar Utilities */
+.pylearn-root {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

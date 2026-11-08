@@ -120,14 +120,14 @@ export const GlossaryExplorer: React.FC = () => {
         </div>
 
         {/* Category & Level Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-800/80">
-          <div className="flex flex-wrap gap-1.5 pt-2">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 pt-2 border-t border-slate-800/80">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-wrap">
             {CATEGORY_FILTERS.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setCategory(c.id)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-semibold transition-all',
+                  'rounded-lg px-3 py-1.5 text-xs font-semibold whitespace-nowrap shrink-0 transition-all',
                   category === c.id
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -138,11 +138,11 @@ export const GlossaryExplorer: React.FC = () => {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-1.5 pt-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 lg:pb-0 lg:flex-wrap">
             <button
               onClick={() => setLevel('all')}
               className={cn(
-                'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
+                'rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 transition-colors',
                 level === 'all'
                   ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
@@ -155,7 +155,7 @@ export const GlossaryExplorer: React.FC = () => {
                 key={l.id}
                 onClick={() => setLevel(l.id)}
                 className={cn(
-                  'rounded-lg px-2.5 py-1 text-xs font-medium transition-colors',
+                  'rounded-lg px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 transition-colors',
                   level === l.id
                     ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
                     : 'bg-slate-800 text-slate-400 hover:text-white'
