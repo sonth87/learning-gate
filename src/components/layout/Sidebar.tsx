@@ -642,12 +642,12 @@ export const Sidebar: React.FC = () => {
       {isMobileSidebarOpen && (
         <div
           onClick={() => setMobileSidebarOpen(false)}
-          className="fixed inset-0 z-50 flex lg:hidden bg-black/75 backdrop-blur-xs"
+          className="absolute inset-0 z-50 flex lg:hidden bg-black/75 backdrop-blur-xs"
         >
           <aside
             onClick={(e) => e.stopPropagation()}
             aria-label="Danh mục bài học di động"
-            className="flex h-full w-[min(86vw,340px)] flex-col border-r border-slate-800 bg-slate-950 shadow-2xl pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
+            className="flex h-full w-[min(86vw,340px)] flex-col border-r border-slate-800 bg-slate-950 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 bg-slate-900/90">
               <div className="flex items-center gap-2">

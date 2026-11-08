@@ -243,7 +243,7 @@ export const LessonTocRail: React.FC<LessonTocRailProps> = ({
       {isMobileTocOpen && (
         <div
           onClick={() => setMobileTocOpen(false)}
-          className="fixed inset-0 z-50 flex items-end sm:items-stretch sm:justify-end xl:hidden bg-black/75 backdrop-blur-xs"
+          className="absolute inset-0 z-50 flex items-end sm:items-stretch sm:justify-end xl:hidden bg-black/75 backdrop-blur-xs"
         >
           <aside
             onClick={(e) => e.stopPropagation()}

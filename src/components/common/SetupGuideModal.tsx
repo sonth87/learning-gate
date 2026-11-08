@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
+  ArrowLeft,
   Terminal,
   Copy,
   Check,
@@ -205,6 +206,18 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
   );
   const [nonUvStack, setNonUvStack] = useState<NonUvStack>('pyenv-venv-pip');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setActiveTab(sampleProject ? 'project' : 'zero-anatomy');
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, sampleProject]);
+
   if (!isOpen) return null;
 
   const handleOpenLesson = (lessonId: string) => {
@@ -218,53 +231,68 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-2 sm:p-4 backdrop-blur-md"
+      className="absolute inset-0 z-[100] flex flex-col bg-slate-950 lg:bg-slate-950/85 lg:items-center lg:justify-center lg:p-4 lg:backdrop-blur-md"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[94dvh] sm:h-auto sm:max-h-[92vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden"
+        className="flex h-full w-full flex-col bg-slate-950 overflow-hidden lg:h-auto lg:max-h-[92%] lg:max-w-6xl lg:rounded-2xl lg:border lg:border-slate-700/80 lg:shadow-2xl"
       >
-        {/* Top Modal Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 border-b border-slate-800 bg-slate-900/90 px-3.5 py-2.5 sm:px-6 sm:py-3 shrink-0">
+        {/* Top Header: Full-screen Mobile Navigation Bar (< lg) & Desktop Modal Header (lg+) */}
+        <div className="flex flex-col gap-2 border-b border-slate-800 bg-slate-900/95 px-3 py-2.5 sm:px-5 sm:py-3 shrink-0">
+          {/* Row 1: Back/Close + Title + Desktop Actions + Always-Visible Close Button */}
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                <Wrench className="h-4 w-4 sm:h-5 sm:w-5" />
+            {/* Mobile & Tablet Back Button (< lg) */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Quay lại"
+              className="inline-flex lg:hidden items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1.5 text-xs font-extrabold text-slate-100 active:scale-95 shrink-0 cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>Quay lại</span>
+            </button>
+
+            {/* Title Area (properly constrained with flex-1 min-w-0 so it NEVER pushes Close button off-screen) */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="hidden sm:flex h-9 w-9 lg:h-10 lg:w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                <Wrench className="h-4 w-4 lg:h-5 lg:w-5" />
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xs sm:text-base font-extrabold text-white truncate">
-                    Cẩm nang Cài đặt, Giải phẫu Dự án & Quản lý Python từ Zero
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h2 className="text-xs sm:text-sm lg:text-base font-extrabold text-white truncate">
+                    Cẩm nang Cài đặt & Quản lý Dự án Python
                   </h2>
-                  <span className="hidden md:inline-flex rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
-                    Dành cho Lập trình viên Mới sang Python
+                  <span className="hidden xl:inline-flex rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300 shrink-0">
+                    Từ Zero đến Production
                   </span>
                 </div>
-                <p className="hidden sm:block text-xs text-slate-400 truncate">
+                <p className="hidden md:block text-xs text-slate-400 truncate">
                   Giải thích từ gốc pyproject.toml, .venv, Entrypoint và 2 phương pháp quản lý dự án (Dùng uv & Không dùng uv)
                 </p>
               </div>
             </div>
 
+            {/* Always-Visible Close Button (Mobile, Tablet & Desktop) */}
             <button
               type="button"
               onClick={onClose}
-              aria-label="Đóng hướng dẫn"
-              className="lg:hidden rounded-xl border border-slate-800 bg-slate-900 p-1.5 text-slate-400 hover:text-white shrink-0 cursor-pointer"
+              aria-label="Đóng cẩm nang"
+              className="inline-flex items-center gap-1 rounded-xl border border-rose-500/40 bg-rose-500/15 px-2.5 py-1.5 text-xs font-extrabold text-rose-200 hover:bg-rose-500/25 hover:text-white active:scale-95 transition-colors shrink-0 cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 text-rose-400 shrink-0" />
+              <span>Đóng</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
-            {/* JS/TS Comparison Toggle right inside the Modal Header */}
+          {/* Row 2: Quick Lesson Shortcuts & JS/TS Toggle (Scrollable horizontally without pushing layout) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
             <button
               type="button"
               onClick={toggleJsTsComparison}
               aria-pressed={showJsTsComparison}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-[11px] sm:text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer',
+                'inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[11px] font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer',
                 showJsTsComparison
                   ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
                   : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-slate-200'
@@ -280,7 +308,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
             <button
               type="button"
               onClick={() => handleOpenLesson('s0-install-setup-uv-pyenv-ide')}
-              className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 px-2.5 py-1 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
               <BookOpen className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0A (uv)</span>
@@ -290,7 +318,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               onClick={() =>
                 handleOpenLesson('s0-workflow-pyenv-venv-poetry-pipenv')
               }
-              className="inline-flex items-center gap-1 rounded-xl bg-sky-500/15 border border-sky-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-sky-300 hover:bg-sky-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-sky-500/15 border border-sky-500/40 px-2.5 py-1 text-[11px] font-bold text-sky-300 hover:bg-sky-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
               <BookOpen className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0B (pyenv/Poetry)</span>
@@ -300,18 +328,10 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               onClick={() =>
                 handleOpenLesson('s0-stdlib-and-third-party-ecosystem')
               }
-              className="inline-flex items-center gap-1 rounded-xl bg-violet-500/15 border border-violet-500/40 px-2.5 py-1.5 text-[11px] sm:text-xs font-bold text-violet-300 hover:bg-violet-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-xl bg-violet-500/15 border border-violet-500/40 px-2.5 py-1 text-[11px] font-bold text-violet-300 hover:bg-violet-500/25 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
             >
               <Package className="h-3.5 w-3.5 shrink-0" />
               <span>Bài 1.0C (Thư viện)</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Đóng hướng dẫn"
-              className="hidden lg:inline-flex rounded-xl border border-slate-800 bg-slate-900 p-2 text-slate-400 hover:text-white hover:border-slate-700 transition-colors cursor-pointer shrink-0"
-            >
-              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -1497,6 +1517,32 @@ code --install-extension tamasfe.even-better-toml`}
 
           {/* TAB: QUICK & EASY SYNTAX AND DECLARATIONS */}
           {activeTab === 'quick-syntax' && <PythonQuickSyntaxGuide />}
+        </div>
+
+        {/* Sticky Bottom Bar on Mobile & Tablet (< lg) so user can always close effortlessly with thumb */}
+        <div className="flex lg:hidden items-center justify-between gap-2 border-t border-slate-800 bg-slate-900/95 px-3.5 py-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom))] shrink-0">
+          <button
+            type="button"
+            onClick={toggleJsTsComparison}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-colors cursor-pointer',
+              showJsTsComparison
+                ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
+                : 'border-slate-700 bg-slate-950 text-slate-400'
+            )}
+          >
+            <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" />
+            <span>JS/TS: {showJsTsComparison ? 'BẬT' : 'TẮT'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-extrabold text-slate-950 hover:bg-emerald-400 active:scale-98 transition-all shadow-md cursor-pointer"
+          >
+            <X className="h-4 w-4 shrink-0" />
+            <span>Đóng Cẩm nang & Quay lại</span>
+          </button>
         </div>
       </div>
     </div>

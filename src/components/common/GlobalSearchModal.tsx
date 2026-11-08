@@ -152,15 +152,15 @@ export const GlobalSearchModal: React.FC = () => {
   return (
     <div
       onClick={() => setSearchOpen(false)}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-4"
+      className="absolute inset-0 z-[100] flex flex-col sm:items-center sm:justify-center bg-slate-950 sm:bg-black/80 sm:backdrop-blur-xs p-0 sm:p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
-        className="w-full max-h-[min(82vh,660px)] sm:max-w-2xl rounded-2xl border border-slate-700/80 bg-slate-900 shadow-2xl flex flex-col overflow-hidden text-slate-100"
+        className="w-full h-full sm:h-auto sm:max-h-[min(86%,660px)] sm:max-w-2xl rounded-none sm:rounded-2xl border-0 sm:border border-slate-700/80 bg-slate-900 shadow-2xl flex flex-col overflow-hidden text-slate-100"
       >
         {/* Search Input Bar */}
-        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5 shrink-0 bg-slate-900/95 pt-[calc(0.75rem+env(safe-area-inset-top))] sm:pt-3.5">
+        <div className="flex items-center gap-3 border-b border-slate-800 px-4 py-3.5 shrink-0 bg-slate-900/95">
           <Search className="h-5 w-5 text-amber-400 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}

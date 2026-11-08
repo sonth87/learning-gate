@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { SkillLevel, StageId } from '@/types/curriculum.types';
 import { TargetEntityType } from '@/types/user.types';
+import { SampleProject } from '@/types/sample.types';
 
 export type MainTab =
   | 'curriculum'
@@ -28,6 +29,7 @@ interface NavigationState {
   isSearchOpen: boolean;
   isSettingsOpen: boolean;
   isSetupGuideOpen: boolean;
+  setupGuideProject?: SampleProject;
   isMobileSidebarOpen: boolean;
   isMobileTocOpen: boolean;
   notesDrawerTarget: {
@@ -46,7 +48,7 @@ interface NavigationState {
   setFilterStage: (stage: StageId | 'all') => void;
   setSearchOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
-  setSetupGuideOpen: (open: boolean) => void;
+  setSetupGuideOpen: (open: boolean, project?: SampleProject) => void;
   setMobileSidebarOpen: (open: boolean) => void;
   setMobileTocOpen: (open: boolean) => void;
   openNotesDrawer: (
@@ -77,6 +79,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
   isSearchOpen: false,
   isSettingsOpen: false,
   isSetupGuideOpen: false,
+  setupGuideProject: undefined,
   isMobileSidebarOpen: false,
   isMobileTocOpen: false,
   notesDrawerTarget: {
@@ -122,7 +125,11 @@ export const useNavigationStore = create<NavigationState>((set) => ({
   setFilterStage: (filterStage) => set({ filterStage }),
   setSearchOpen: (isSearchOpen) => set({ isSearchOpen }),
   setSettingsOpen: (isSettingsOpen) => set({ isSettingsOpen }),
-  setSetupGuideOpen: (isSetupGuideOpen) => set({ isSetupGuideOpen }),
+  setSetupGuideOpen: (isSetupGuideOpen, setupGuideProject) =>
+    set({
+      isSetupGuideOpen,
+      setupGuideProject: isSetupGuideOpen ? setupGuideProject : undefined,
+    }),
   setMobileSidebarOpen: (isMobileSidebarOpen) => set({ isMobileSidebarOpen }),
   setMobileTocOpen: (isMobileTocOpen) => set({ isMobileTocOpen }),
   openNotesDrawer: (targetType, targetId, targetTitle) =>

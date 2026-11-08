@@ -22,7 +22,6 @@ import {
   Wrench,
   ArrowRightLeft,
 } from 'lucide-react';
-import { SetupGuideModal } from '@/components/common/SetupGuideModal';
 import { ALL_SAMPLE_PROJECTS } from '@/data/samples/samplesData';
 import {
   SampleProject,
@@ -33,6 +32,7 @@ import { SkillLevel } from '@/types/curriculum.types';
 import { SKILL_LEVELS } from '@/constants/levels';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useNavigationStore } from '@/stores/useNavigationStore';
 import { IDE_THEMES, getIdeThemeConfig } from '@/utils/ideThemes';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
@@ -97,6 +97,7 @@ export const ProjectSamplesHub: React.FC = () => {
     showJsTsComparison,
     toggleJsTsComparison,
   } = useSettingsStore();
+  const { setSetupGuideOpen } = useNavigationStore();
   const activeIdeTheme = getIdeThemeConfig(ideTheme);
 
   const [selectedLevel, setSelectedLevel] = useState<SkillLevel | 'all'>('all');
@@ -112,7 +113,6 @@ export const ProjectSamplesHub: React.FC = () => {
   >({});
   const [copiedFile, setCopiedFile] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-  const [isLocalSetupOpen, setIsLocalSetupOpen] = useState(false);
   const [toolingStack, setToolingStack] = useState<ProjectToolingStack>('uv');
   const [mobilePane, setMobilePane] = useState<'split' | 'tree' | 'code'>(
     'split'
@@ -361,7 +361,7 @@ export const ProjectSamplesHub: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
             <button
               type="button"
-              onClick={() => setIsLocalSetupOpen(true)}
+              onClick={() => setSetupGuideOpen(true, currentProject)}
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
               title="Xem hướng dẫn cài đặt Python, uv / pyenv, tạo .venv và chạy dự án mẫu này trên máy thật"
             >
@@ -1308,13 +1308,6 @@ export const ProjectSamplesHub: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Step-by-Step Local Environment & Project Setup Modal */}
-      <SetupGuideModal
-        isOpen={isLocalSetupOpen}
-        onClose={() => setIsLocalSetupOpen(false)}
-        sampleProject={currentProject}
-      />
     </div>
   );
 };

@@ -34,6 +34,7 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
     setSearchOpen,
     setSettingsOpen,
     isSetupGuideOpen,
+    setupGuideProject,
     setSetupGuideOpen,
     openNotesDrawer,
     selectedLessonId,
@@ -83,7 +84,7 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
     <div
       onClick={() => hideTermPopover(false)}
       className={cn(
-        'pylearn-root @container/app w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
+        'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
         isLight ? 'pylearn-light' : 'pylearn-dark',
         fontSize === 'sm' && 'text-sm',
         fontSize === 'base' && 'text-base',
@@ -150,6 +151,7 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
       <SetupGuideModal
         isOpen={isSetupGuideOpen}
         onClose={() => setSetupGuideOpen(false)}
+        sampleProject={setupGuideProject}
       />
     </div>
   );

@@ -75,11 +75,11 @@ export const SettingsModal: React.FC = () => {
   return (
     <div
       onClick={() => setSettingsOpen(false)}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-0 sm:p-4 backdrop-blur-xs"
+      className="absolute inset-0 z-[100] flex items-center justify-center bg-black/75 p-0 sm:p-4 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-xl rounded-none sm:rounded-2xl border-0 sm:border border-slate-700 bg-slate-900 shadow-2xl flex flex-col overflow-hidden"
+        className="w-full h-full sm:h-auto sm:max-h-[90%] sm:max-w-xl rounded-none sm:rounded-2xl border-0 sm:border border-slate-700 bg-slate-900 shadow-2xl flex flex-col overflow-hidden"
       >
         {/* Header - Fixed top with close */}
         <div className="flex items-center justify-between border-b border-slate-800 p-4 sm:px-6 sm:py-4 shrink-0 bg-slate-900/95">

@@ -41,7 +41,7 @@ export const NotesDrawer: React.FC = () => {
   return (
     <div
       onClick={closeNotesDrawer}
-      className="fixed inset-0 z-50 flex justify-end bg-black/65 backdrop-blur-xs"
+      className="absolute inset-0 z-[100] flex justify-end bg-black/65 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
