@@ -4,6 +4,26 @@ import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
 
 export const App: React.FC = () => {
   useEffect(() => {
+    const syncResponsiveDeviceTheme = () => {
+      try {
+        const store = useStore.getState();
+        const w = window.innerWidth;
+        const ua = navigator.userAgent || '';
+        const isAndroid = /Android/i.test(ua);
+        const isIPad = /iPad/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+        const isMobilePhone = w <= 768 || /iPhone|iPod|Android.*Mobile|Windows Phone/i.test(ua);
+        const isTablet = (!isMobilePhone && w > 768 && w <= 1024) || isIPad;
+
+        if (isMobilePhone && (store.osTheme === 'macos' || store.osTheme === 'windows' || store.osTheme === 'ipad')) {
+          store.setOSTheme(isAndroid ? 'android' : 'iphone');
+        } else if (isTablet && (store.osTheme === 'macos' || store.osTheme === 'windows')) {
+          store.setOSTheme('ipad');
+        }
+      } catch (err) {
+        console.error('Failed to sync responsive OS theme:', err);
+      }
+    };
+
     const timer = setTimeout(() => {
       try {
         const store = useStore.getState();
@@ -19,12 +39,17 @@ export const App: React.FC = () => {
           ])
         );
         useStore.setState({ dockAppIds: nextDock });
+        syncResponsiveDeviceTheme();
       } catch (err) {
         console.error('Failed to sync dock apps:', err);
       }
-    }, 100);
+    }, 80);
 
-    return () => clearTimeout(timer);
+    window.addEventListener('resize', syncResponsiveDeviceTheme);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', syncResponsiveDeviceTheme);
+    };
   }, []);
 
   return (

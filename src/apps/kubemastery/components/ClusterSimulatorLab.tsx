@@ -94,6 +94,9 @@ export const ClusterSimulatorLab: React.FC = () => {
   const [previousVersion, setPreviousVersion] = useState<string>('v1.1.0');
   const [hpaActive, setHpaActive] = useState<boolean>(false);
   const [isRollingUpdating, setIsRollingUpdating] = useState<boolean>(false);
+  const [mobileClusterTab, setMobileClusterTab] = useState<
+    'nodes' | 'control' | 'terminal'
+  >('nodes');
   const [controlLoopEvent, setControlLoopEvent] = useState<string>(
     'Control Loop 24/7: Trạng thái thực tế (3/3 Pods) khớp 100% với Sổ cái etcd.'
   );
@@ -608,10 +611,60 @@ export const ClusterSimulatorLab: React.FC = () => {
         </div>
       </div>
 
+      {/* Mobile Cluster View Switcher (< lg) */}
+      <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-slate-800 bg-slate-900/90 p-1 lg:hidden sticky top-0 z-20 backdrop-blur-md">
+        <button
+          onClick={() => setMobileClusterTab('nodes')}
+          className={cn(
+            'flex items-center justify-center gap-1 rounded-lg py-2 px-1.5 text-[11px] font-bold transition-all cursor-pointer',
+            mobileClusterTab === 'nodes'
+              ? 'bg-emerald-500 text-slate-950 shadow-xs'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          <Server className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">3 Nodes ({pods.length} Pod)</span>
+        </button>
+        <button
+          onClick={() => setMobileClusterTab('control')}
+          className={cn(
+            'flex items-center justify-center gap-1 rounded-lg py-2 px-1.5 text-[11px] font-bold transition-all cursor-pointer',
+            mobileClusterTab === 'control'
+              ? 'bg-sky-500 text-slate-950 shadow-xs'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          <Layers className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Control & Mạng</span>
+        </button>
+        <button
+          onClick={() => setMobileClusterTab('terminal')}
+          className={cn(
+            'flex items-center justify-center gap-1 rounded-lg py-2 px-1.5 text-[11px] font-bold transition-all cursor-pointer',
+            mobileClusterTab === 'terminal'
+              ? 'bg-amber-500 text-slate-950 shadow-xs'
+              : 'text-slate-300 hover:text-white'
+          )}
+        >
+          <Terminal className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Terminal CLI</span>
+        </button>
+      </div>
+
       {/* Live Cluster Topology Visual Map: Control Plane + Ingress/Service + 3 Worker Nodes */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div
+        className={cn(
+          'grid grid-cols-1 lg:grid-cols-12 gap-5',
+          mobileClusterTab === 'terminal' && 'hidden lg:grid'
+        )}
+      >
         {/* Left 4 Cols: Control Plane & Ingress/Service Routing */}
-        <div className="lg:col-span-4 space-y-4">
+        <div
+          className={cn(
+            'lg:col-span-4 space-y-4',
+            mobileClusterTab !== 'control' && 'hidden lg:block'
+          )}
+        >
           {/* Control Plane Box */}
           <div className="rounded-2xl border border-sky-500/35 bg-slate-900/80 p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
@@ -696,7 +749,12 @@ export const ClusterSimulatorLab: React.FC = () => {
         </div>
 
         {/* Right 8 Cols: 3 Worker Nodes & Live Running Pods */}
-        <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div
+          className={cn(
+            'lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-4',
+            mobileClusterTab !== 'nodes' && 'hidden lg:grid'
+          )}
+        >
           {nodes.map((node) => {
             const nodePods = pods.filter((p) => p.nodeName === node.name);
             const usedCpu = nodePods.reduce((acc, p) => acc + p.cpuMillicores, 0);
@@ -834,17 +892,22 @@ export const ClusterSimulatorLab: React.FC = () => {
       </div>
 
       {/* Interactive kubectl & docker Live Terminal */}
-      <div className="ide-dark-surface rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-4 py-2.5">
-          <div className="flex items-center gap-2">
-            <Terminal className="h-4 w-4 text-emerald-400" />
+      <div
+        className={cn(
+          'ide-dark-surface rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl',
+          mobileClusterTab !== 'terminal' && 'hidden lg:block'
+        )}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/90 px-3.5 sm:px-4 py-2.5">
+          <div className="flex items-center gap-2 shrink-0">
+            <Terminal className="h-4 w-4 text-emerald-400 shrink-0" />
             <span className="font-mono text-xs font-bold text-white">
               Terminal Thực Thi Trực Tiếp (kubectl & docker CLI)
             </span>
           </div>
 
-          {/* Quick Command Chips */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          {/* Quick Command Chips (Horizontal scroll on mobile) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 max-w-full">
             {[
               'kubectl get pods -o wide',
               'kubectl get nodes',
@@ -857,7 +920,7 @@ export const ClusterSimulatorLab: React.FC = () => {
               <button
                 key={qCmd}
                 onClick={() => executeCommand(qCmd)}
-                className="rounded-md border border-slate-700 bg-slate-950 px-2 py-0.5 font-mono text-[10px] text-sky-300 hover:border-sky-500/50 hover:bg-slate-800 transition-colors"
+                className="shrink-0 whitespace-nowrap rounded-md border border-slate-700 bg-slate-950 px-2 py-1 font-mono text-[10px] text-sky-300 hover:border-sky-500/50 hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 {qCmd}
               </button>

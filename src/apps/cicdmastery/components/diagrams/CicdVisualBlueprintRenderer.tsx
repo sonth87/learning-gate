@@ -22,32 +22,33 @@ export const CicdVisualBlueprintRenderer: React.FC<BlueprintProps> = ({
 }) => {
   const [animateFlow, setAnimateFlow] = useState(true);
   const [activeSubMode, setActiveSubMode] = useState<'modeA' | 'modeB'>('modeA');
+  const [fitMobileScreen, setFitMobileScreen] = useState(false);
 
   return (
-    <div className="ide-dark-surface rounded-2xl border border-cyan-500/30 bg-slate-950 p-4 sm:p-5 space-y-4 shadow-xl">
+    <div className="ide-dark-surface rounded-2xl border border-cyan-500/30 bg-slate-950 p-3 sm:p-5 space-y-3 sm:space-y-4 shadow-xl">
       {/* Top Blueprint Control Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/90 pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-800/90 pb-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
             <Workflow className="h-4 w-4" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-400">
-                Interactive SVG Architecture & Flow Blueprint
+                Sơ đồ Kiến trúc & Luồng Động
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 font-mono text-[9px] text-emerald-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live Flow
+                Live SVG
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-[11px] sm:text-xs text-slate-400 hidden sm:block">
               Sơ đồ kiến trúc trực quan mô phỏng luồng dữ liệu, tín hiệu và ranh giới hệ thống
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {(blueprintType === 'svg-bluegreen-vs-canary' ||
             blueprintType === 'svg-gitops-pull-vs-push' ||
             blueprintType === 'svg-zero-downtime-sigterm') && (
@@ -55,53 +56,76 @@ export const CicdVisualBlueprintRenderer: React.FC<BlueprintProps> = ({
               <button
                 onClick={() => setActiveSubMode('modeA')}
                 className={cn(
-                  'rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold transition-all',
+                  'rounded-md px-2 py-1 font-mono text-[10px] sm:text-[11px] font-semibold transition-all',
                   activeSubMode === 'modeA'
                     ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
-                {blueprintType === 'svg-bluegreen-vs-canary' && '1. Blue-Green (100%)'}
-                {blueprintType === 'svg-gitops-pull-vs-push' && 'GitOps Pull (ArgoCD)'}
-                {blueprintType === 'svg-zero-downtime-sigterm' && 'Chuẩn Zero-Downtime (0% Lỗi)'}
+                {blueprintType === 'svg-bluegreen-vs-canary' && '1. Blue-Green'}
+                {blueprintType === 'svg-gitops-pull-vs-push' && 'GitOps Pull'}
+                {blueprintType === 'svg-zero-downtime-sigterm' && 'Zero-Downtime'}
               </button>
               <button
                 onClick={() => setActiveSubMode('modeB')}
                 className={cn(
-                  'rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold transition-all',
+                  'rounded-md px-2 py-1 font-mono text-[10px] sm:text-[11px] font-semibold transition-all',
                   activeSubMode === 'modeB'
                     ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
-                {blueprintType === 'svg-bluegreen-vs-canary' && '2. Canary (5% → 100%)'}
-                {blueprintType === 'svg-gitops-pull-vs-push' && 'Push-based Cũ (Rủi ro)'}
-                {blueprintType === 'svg-zero-downtime-sigterm' && 'Thiếu preStop (Lỗi 502!)'}
+                {blueprintType === 'svg-bluegreen-vs-canary' && '2. Canary'}
+                {blueprintType === 'svg-gitops-pull-vs-push' && 'Push-based'}
+                {blueprintType === 'svg-zero-downtime-sigterm' && 'Lỗi 502!'}
               </button>
             </div>
           )}
 
+          {/* Mobile Zoom / Fit Toggle (< md) */}
+          <button
+            onClick={() => setFitMobileScreen((v) => !v)}
+            className="md:hidden inline-flex items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2 py-1 text-[11px] font-bold text-cyan-300"
+          >
+            <span>
+              {fitMobileScreen ? '🔍 Phóng to chữ' : '↔ Thu vừa màn hình'}
+            </span>
+          </button>
+
           <button
             onClick={() => setAnimateFlow((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:border-cyan-500/50"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-200 hover:border-cyan-500/50"
           >
             {animateFlow ? (
               <>
-                <Pause className="h-3.5 w-3.5 text-amber-400" />
-                <span>Tạm dừng Luồng</span>
+                <Pause className="h-3 w-3 text-amber-400" />
+                <span>Dừng</span>
               </>
             ) : (
               <>
-                <Play className="h-3.5 w-3.5 text-emerald-400" />
-                <span>Chạy Luồng Động</span>
+                <Play className="h-3 w-3 text-emerald-400" />
+                <span>Chạy</span>
               </>
             )}
           </button>
         </div>
       </div>
 
+      {/* Mobile Swipe Hint Banner when zoomed for readability */}
+      {!fitMobileScreen && (
+        <div className="md:hidden flex items-center justify-between rounded-lg border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-mono text-cyan-200">
+          <span>↔ Vuốt ngang trên sơ đồ để đọc rõ từng chi tiết kỹ thuật</span>
+          <span className="text-cyan-400 font-bold">Touch Pan</span>
+        </div>
+      )}
+
       {/* SVG Canvas Container */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-[#050b16] p-3">
+      <div
+        className={cn(
+          'w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-800/80 bg-[#050b16] p-2 sm:p-3',
+          fitMobileScreen && '[&_svg]:!min-w-0'
+        )}
+      >
         {/* 1. SIX PILLARS OVERVIEW */}
         {blueprintType === 'svg-six-pillars' && (
           <svg viewBox="0 0 920 280" className="w-full min-w-[680px] h-auto">

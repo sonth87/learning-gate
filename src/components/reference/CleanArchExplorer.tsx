@@ -3,6 +3,7 @@ import { FolderTree, FileCode2, ArrowRightLeft } from 'lucide-react';
 import { CLEAN_ARCH_FILES } from '@/data/reference/pdfDeepDivesData';
 import { CodeBlock } from '@/components/common/CodeBlock';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { getAppContainerWidth } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
 const ASCII_TREE = `my-python-backend/
@@ -42,7 +43,7 @@ export const CleanArchExplorer: React.FC = () => {
 
   const handleSelectFile = (path: string) => {
     setSelectedPath(path);
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+    if (getAppContainerWidth() < 1024) {
       setTimeout(() => {
         codePanelRef.current?.scrollIntoView({
           behavior: 'smooth',

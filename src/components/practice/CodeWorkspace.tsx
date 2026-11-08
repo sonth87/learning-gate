@@ -22,6 +22,7 @@ import {
   CompletionItem,
   CompletionKind,
 } from '@/utils/pythonAutocompleter';
+import { getAppContainerWidth } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
 const KIND_BADGE_MAP: Record<
@@ -356,8 +357,7 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
     Math.max(cursorPos.line * 24 + 14, 40),
     editorHeightPx - 190
   );
-  const isSmallViewport =
-    typeof window !== 'undefined' && window.innerWidth < 640;
+  const isSmallViewport = getAppContainerWidth() < 640;
   const popupLeftPx = isSmallViewport
     ? 8
     : Math.min(Math.max((cursorPos.col - 1) * 7.8 + 16, 16), 240);

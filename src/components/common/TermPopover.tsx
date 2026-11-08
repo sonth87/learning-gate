@@ -14,6 +14,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { CategoryBadge, LevelBadge } from './LevelBadge';
+import { getAppContainerWidth, getAppContainerHeight } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
 export const TermPopover: React.FC = () => {
@@ -36,8 +37,8 @@ export const TermPopover: React.FC = () => {
     (b) => b.targetType === 'glossary' && b.targetId === term.id
   );
 
-  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-  const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const viewportWidth = getAppContainerWidth();
+  const viewportHeight = getAppContainerHeight();
   const isTouchOrTablet = viewportWidth < 1024;
 
   const cardWidth = Math.min(440, viewportWidth - 24);

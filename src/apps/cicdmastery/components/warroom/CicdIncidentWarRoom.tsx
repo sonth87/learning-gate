@@ -136,23 +136,23 @@ export const CicdIncidentWarRoom: React.FC = () => {
   ];
 
   return (
-    <div className="mx-auto max-w-[1400px] px-3 sm:px-6 py-4 sm:py-6 space-y-6">
+    <div className="mx-auto max-w-[1400px] px-2.5 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6 pb-16">
       {/* Banner */}
-      <div className="rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-slate-900 to-amber-500/10 p-5 sm:p-6 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-rose-400">
-          <Flame className="h-4 w-4" />
-          <span>Phòng Mô phỏng Tình huống Thực chiến & Xử lý Sự cố Vận hành (Phần II — Trang 16–21)</span>
+      <div className="rounded-2xl border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-slate-900 to-amber-500/10 p-4 sm:p-6 space-y-1.5 sm:space-y-2">
+        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-rose-400">
+          <Flame className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+          <span>Phòng Mô phỏng Tình huống Thực chiến & Sự cố (Phần II — Trang 16–21)</span>
         </div>
-        <h1 className="text-lg sm:text-2xl font-extrabold text-white">
+        <h1 className="text-base sm:text-2xl font-extrabold text-white leading-snug">
           Incident War-Room: Chẩn đoán & Giải quyết 10 Tình huống Kiến trúc & Sự cố CI/CD
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl">
-          Chọn từng tình huống sự cố thực tế (A1–A3 & B1–B7) bên dưới để trực tiếp bật/tắt cấu hình tối ưu, kiểm tra nguyên nhân gốc rễ và thực hành quy trình ứng cứu chuẩn công nghiệp.
+          Vuốt ngang chọn tình huống (A1–A3 & B1–B7) bên dưới để bật/tắt cấu hình tối ưu và xem Code thay đổi trực tiếp.
         </p>
       </div>
 
-      {/* Mission Selector Tabs */}
-      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Mission Selector Tabs (Touch Horizontal Carousel on Mobile, Grid on sm+) */}
+      <div className="flex sm:grid gap-2.5 overflow-x-auto no-scrollbar snap-x pb-1 sm:grid-cols-2 lg:grid-cols-3">
         {WARROOM_MISSIONS.map((m) => {
           const active = selectedWarRoomId === m.id;
           return (
@@ -160,7 +160,7 @@ export const CicdIncidentWarRoom: React.FC = () => {
               key={m.id}
               onClick={() => selectWarRoom(m.id)}
               className={cn(
-                'rounded-xl border p-3.5 text-left transition-all flex flex-col justify-between gap-2',
+                'w-[265px] sm:w-auto shrink-0 snap-start rounded-xl border p-3 sm:p-3.5 text-left transition-all flex flex-col justify-between gap-2',
                 active
                   ? 'border-cyan-400 bg-cyan-500/15 text-white ring-2 ring-cyan-400/50 shadow-md'
                   : 'border-slate-800 bg-slate-900/70 text-slate-300 hover:border-slate-700'
@@ -294,19 +294,65 @@ export const CicdIncidentWarRoom: React.FC = () => {
               </div>
             </div>
 
-            <div className="ide-dark-surface rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-2 font-mono text-xs">
-              <div className="text-cyan-400 font-bold">
-                # Cấu trúc Dockerfile Tối ưu Layer Cache (Bước 2 & 3):
+            <div className="ide-dark-surface rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3 font-mono text-xs">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="text-cyan-400 font-bold">
+                  # Code .gitlab-ci.yml & Dockerfile Biến đổi Trực tiếp Theo 6 Công tắc Bạn Chọn:
+                </span>
+                <span className="text-[10px] text-emerald-300">
+                  Live Code Diff
+                </span>
               </div>
-              <pre className="text-slate-200 overflow-x-auto leading-relaxed">
-{`FROM node:20-alpine AS builder
+              <pre className="text-slate-200 overflow-x-auto leading-relaxed max-h-80">
+{`# === 1. CẤU HÌNH PIPELINE (.gitlab-ci.yml) ===
+${
+  b1Opts.failFastLinter
+    ? `# ✅ [Bước 5: Fail-Fast 15s] Chặn ngay từ đầu nếu sai cú pháp:
+lint_fast_gate:
+  stage: validate
+  script: [npm run lint, npm run typecheck]`
+    : `# ❌ [Chưa bật Bước 5] Không có chốt chặn Linter sớm -> Lỗi cú pháp vẫn khởi tạo DB nặng nề!`
+}
+
+unit_and_integration_test:
+  stage: test
+${
+  b1Opts.dagAndSharding6x
+    ? `  needs: []          # ✅ [Bước 4: Đồ thị DAG] Chạy ngay lập tức, không chờ tuần tự!
+  parallel: 6        # ✅ [Bước 4: Test Sharding] Chia 6 luồng chạy song song (--shard=1/6..6/6)`
+    : `  # ❌ [Chưa bật Bước 4] Chạy tuần tự trên 1 máy duy nhất (Tốn 18 phút!)`
+}
+${
+  b1Opts.nvmeAndRegistryMirror
+    ? `  tags: [self-hosted-nvme, vpc-registry-mirror] # ✅ [Bước 6] Ổ NVMe + Mirror nội bộ`
+    : `  tags: [shared-hdd-runner]                     # ❌ [Chưa bật Bước 6] Ổ đĩa chậm, kéo mạng ngoài`
+}
+${
+  b1Opts.cachePullOnly
+    ? `  cache:
+    key: { files: [package-lock.json] }
+    paths: [.npm/]
+    policy: pull     # ✅ [Bước 1] Chỉ kéo Cache về dùng, KHÔNG tốn 4 phút nén đẩy lại!`
+    : `  # ❌ [Chưa bật Bước 1] Tải mới toàn bộ node_modules từ Internet hoặc nén lại Cache thừa!`
+}
+
+# === 2. CẤU HÌNH DOCKERFILE (Bước 2 & Bước 3) ===
+${
+  b1Opts.multistageDockerignore
+    ? `FROM node:20-alpine AS builder  # ✅ [Bước 3] Multi-stage + .dockerignore (Image ~95MB)`
+    : `FROM node:20                    # ❌ [Chưa bật Bước 3] Single-stage phình to 1.2GB!`
+}
 WORKDIR /app
-# 1. Ít thay đổi nhất đặt lên trên -> Tái sử dụng 100% Cache!
+${
+  b1Opts.dockerfileLayerOrder
+    ? `# ✅ [Bước 2] Copy lockfile trước -> Tái sử dụng 100% Layer Cache npm ci (0 giây):
 COPY package.json package-lock.json ./
 RUN npm ci
-# 2. Thường xuyên thay đổi đặt xuống dưới
-COPY src/ ./src/
-RUN npm run build && npm prune --omit=dev`}
+COPY src/ ./src/`
+    : `# ❌ [Chưa bật Bước 2] Đặt COPY . . lên đầu -> Sửa 1 dòng code cũng làm vỡ sạch Cache!
+COPY . .
+RUN npm ci`
+}`}
               </pre>
             </div>
           </div>

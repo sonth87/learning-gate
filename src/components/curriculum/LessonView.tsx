@@ -303,26 +303,27 @@ export const LessonView: React.FC = () => {
         className="flex-1 min-w-0 h-full overflow-y-auto"
       >
         {/* Mobile & Tablet Sticky Sub-Toolbar (< xl) */}
-        <div className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-slate-800/90 bg-slate-950/90 px-3 sm:px-6 py-2 backdrop-blur-md xl:hidden">
-          <div className="flex items-center gap-2">
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-1.5 border-b border-slate-800/90 bg-slate-950/90 px-2.5 sm:px-6 py-2 backdrop-blur-md xl:hidden">
+          <div className="flex items-center gap-1.5 min-w-0">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="inline-flex lg:hidden items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 active:scale-95 transition-all"
+              className="inline-flex lg:hidden items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-emerald-300 active:scale-95 transition-all shrink-0"
             >
-              <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden="true" />
+              <PanelLeftOpen className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>Danh mục ({currentIdx + 1}/{ALL_LESSONS.length})</span>
             </button>
 
             <button
               onClick={() => setMobileTocOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 active:scale-95 transition-all shrink-0"
             >
-              <ListTree className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
-              <span>Mục lục & Từ khóa</span>
+              <ListTree className="h-3.5 w-3.5 text-amber-400 shrink-0" aria-hidden="true" />
+              <span className="sm:hidden">Mục lục</span>
+              <span className="hidden sm:inline">Mục lục & Từ khóa</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => prevLesson && selectLesson(prevLesson.id)}
               disabled={!prevLesson}

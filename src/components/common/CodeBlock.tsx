@@ -8,6 +8,7 @@ import {
   getTokenColorClass,
 } from '@/utils/pythonHighlighter';
 import { RichTextWithTerms } from './RichTextWithTerms';
+import { getAppContainerWidth } from '@/utils/viewport';
 
 interface CodeBlockProps {
   title?: string;
@@ -66,7 +67,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
               <span
                 key={i}
                 onMouseEnter={(e) => {
-                  if (typeof window !== 'undefined' && window.innerWidth < 1024)
+                  if (getAppContainerWidth() < 1024)
                     return;
                   const r = e.currentTarget.getBoundingClientRect();
                   showTermPopover(
@@ -81,7 +82,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                   );
                 }}
                 onMouseLeave={() => {
-                  if (typeof window !== 'undefined' && window.innerWidth < 1024)
+                  if (getAppContainerWidth() < 1024)
                     return;
                   hideTermPopover(false);
                 }}

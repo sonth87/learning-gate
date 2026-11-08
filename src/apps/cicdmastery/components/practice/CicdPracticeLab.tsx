@@ -27,6 +27,9 @@ export const CicdPracticeLab: React.FC = () => {
   const [code, setCode] = useState(exercise.starterCode);
   const [showHints, setShowHints] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  const [mobilePracticeTab, setMobilePracticeTab] = useState<
+    'all' | 'prompt' | 'editor'
+  >('all');
   const [checkResult, setCheckResult] = useState<{
     checked: boolean;
     allPassed: boolean;
@@ -68,9 +71,9 @@ export const CicdPracticeLab: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-[1400px] px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-      {/* Exercise Selector Pills */}
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="mx-auto max-w-[1400px] px-2.5 sm:px-6 py-3 sm:py-6 space-y-4 sm:space-y-6 pb-16">
+      {/* Exercise Selector Pills (Touch Scrollable on Mobile) */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
         {CICD_PRACTICE_EXERCISES.map((ex, idx) => {
           const active = ex.id === exercise.id;
           const solved = submissions[ex.id]?.passed;
@@ -79,26 +82,57 @@ export const CicdPracticeLab: React.FC = () => {
               key={ex.id}
               onClick={() => selectExercise(ex.id)}
               className={cn(
-                'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all',
+                'inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all whitespace-nowrap shrink-0',
                 active
                   ? 'border-cyan-400 bg-cyan-500/20 text-white shadow-sm'
                   : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
               )}
             >
               {solved ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
               ) : (
-                <FileCode2 className="h-4 w-4 text-cyan-400" />
+                <FileCode2 className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
               )}
-              <span>Bài {idx + 1}: {ex.category.toUpperCase()}</span>
+              <span>
+                Bài {idx + 1}: {ex.category.toUpperCase()}
+              </span>
             </button>
           );
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12 items-start">
+      {/* Mobile Quick View Switcher (< lg) */}
+      <div className="lg:hidden grid grid-cols-3 gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1 text-xs">
+        {(
+          [
+            { id: 'all', label: '👁️ Tất cả' },
+            { id: 'prompt', label: '📝 Đề bài' },
+            { id: 'editor', label: '💻 Viết Code' },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setMobilePracticeTab(tab.id)}
+            className={cn(
+              'rounded-lg py-1.5 font-bold transition-all',
+              mobilePracticeTab === tab.id
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                : 'text-slate-400'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-12 items-start">
         {/* Left: Scenario & Checklist (5 cols) */}
-        <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+        <div
+          className={cn(
+            'lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4',
+            mobilePracticeTab === 'editor' && 'hidden lg:block'
+          )}
+        >
           <div className="flex items-center justify-between gap-2">
             <span className="rounded bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
               📄 {exercise.pdfRef}
@@ -166,30 +200,35 @@ export const CicdPracticeLab: React.FC = () => {
         </div>
 
         {/* Right: Code Editor & Verification Result (7 cols) */}
-        <div className="lg:col-span-7 space-y-4">
+        <div
+          className={cn(
+            'lg:col-span-7 space-y-4',
+            mobilePracticeTab === 'prompt' && 'hidden lg:block'
+          )}
+        >
           <div className="ide-dark-surface rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-4 py-2.5">
-              <div className="flex items-center gap-2 font-mono text-xs font-bold text-cyan-300">
-                <Code2 className="h-4 w-4" />
-                <span>CI/CD Configuration Studio ({exercise.language.toUpperCase()})</span>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-900 px-3 sm:px-4 py-2.5">
+              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-cyan-300">
+                <Code2 className="h-4 w-4 shrink-0" />
+                <span>CI/CD Studio ({exercise.language.toUpperCase()})</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => {
                     setCode(exercise.starterCode);
                     setCheckResult(null);
                   }}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-xs text-slate-300 hover:text-white"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-300 hover:text-white"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>Reset</span>
                 </button>
                 <button
                   onClick={handleVerifyConfig}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-1.5 text-xs font-extrabold text-slate-950 hover:bg-emerald-400"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-extrabold text-slate-950 hover:bg-emerald-400"
                 >
                   <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>Kiểm tra & Chạy Thử Cấu hình</span>
+                  <span>Chấm điểm Cấu hình</span>
                 </button>
               </div>
             </div>

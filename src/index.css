@@ -2,6 +2,24 @@
 @custom-variant dark (&:is(.dark, .dark *));
 
 /*
+ * Bind responsive variants (sm, md, lg, xl, 2xl) to the `.pylearn-root` `@container/app`
+ * inline-size so that mobile/tablet layouts work identically on:
+ * 1) Real mobile & tablet devices
+ * 2) @sonth87/device-layout iPhone / Android / iPad frames on desktop monitors
+ * 3) Resized narrow/medium desktop windows
+ */
+@custom-variant sm (@container app (width >= 40rem));
+@custom-variant md (@container app (width >= 48rem));
+@custom-variant lg (@container app (width >= 64rem));
+@custom-variant xl (@container app (width >= 80rem));
+@custom-variant 2xl (@container app (width >= 96rem));
+@custom-variant sm (@container app (width >= 40rem));
+@custom-variant md (@container app (width >= 48rem));
+@custom-variant lg (@container app (width >= 64rem));
+@custom-variant xl (@container app (width >= 80rem));
+@custom-variant 2xl (@container app (width >= 96rem));
+
+/*
  * Scope all PyMastery typography, design system tokens, and light/dark palette
  * remapping strictly to `.pylearn-root` so @sonth87/device-layout retains its
  * exact native macOS/Windows/iPadOS styling, fonts, and CSS variables (--color-white, etc.).
@@ -168,4 +186,19 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/*
+ * Reclaim wasted 72px dock spacer at the bottom of @sonth87/device-layout's MobileAppViewer
+ * when an app is open (since the home screen dock is hidden while an app is active).
+ */
+[data-os-theme="iphone"] .z-\[500\] > div[style*="height: 92px"],
+[data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"] {
+  height: 16px !important;
+  background-color: #020617;
+}
+
+html:not(.dark) [data-os-theme="iphone"] .z-\[500\] > div[style*="height: 92px"],
+html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"] {
+  background-color: #f8fafc;
 }

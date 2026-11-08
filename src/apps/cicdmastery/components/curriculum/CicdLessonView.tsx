@@ -136,48 +136,51 @@ export const CicdLessonView: React.FC = () => {
   return (
     <div
       ref={scrollContainerRef}
-      className="flex-1 h-full overflow-y-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6"
+      className="flex-1 h-full overflow-y-auto px-2.5 sm:px-6 lg:px-8 py-3 sm:py-6"
     >
-      <div className="mx-auto max-w-5xl space-y-6 pb-16">
-        {/* Top Mobile Bar & Filter Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/80 p-2.5 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-2">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6 pb-16">
+        {/* Top Mobile Bar & Filter Bar (Single-Row Compact on Mobile) */}
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 rounded-xl border border-slate-800 bg-slate-900/90 px-2.5 py-2 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setMobileSidebarOpen(true)}
-              className="inline-flex lg:hidden items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-slate-200"
+              className="inline-flex lg:hidden shrink-0 items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2 py-1 text-xs font-bold text-cyan-300"
             >
-              <PanelLeftOpen className="h-4 w-4 text-cyan-400" />
-              <span>Mục lục</span>
+              <PanelLeftOpen className="h-3.5 w-3.5 text-cyan-400" />
+              <span>
+                Bài {currentIdx + 1}/{ALL_CICD_LESSONS.length}
+              </span>
             </button>
 
-            <div className="flex flex-wrap items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {(
                 [
-                  { id: 'all', label: 'Tất cả', icon: <Layers className="h-3.5 w-3.5" /> },
-                  { id: 'theory-flow', label: 'Lý thuyết & Sơ đồ Luồng', icon: <Workflow className="h-3.5 w-3.5" /> },
-                  { id: 'code-compare', label: 'YAML, Code & Đối chiếu', icon: <Code2 className="h-3.5 w-3.5" /> },
-                  { id: 'gotchas-dora', label: 'Bẫy & Chỉ số Thực tế', icon: <ShieldAlert className="h-3.5 w-3.5" /> },
+                  { id: 'all', label: 'Tất cả', short: 'Tất cả', icon: <Layers className="h-3.5 w-3.5" /> },
+                  { id: 'theory-flow', label: 'Lý thuyết & Sơ đồ Luồng', short: 'Sơ đồ', icon: <Workflow className="h-3.5 w-3.5" /> },
+                  { id: 'code-compare', label: 'YAML, Code & Đối chiếu', short: 'Code', icon: <Code2 className="h-3.5 w-3.5" /> },
+                  { id: 'gotchas-dora', label: 'Bẫy & Chỉ số Thực tế', short: 'Bẫy', icon: <ShieldAlert className="h-3.5 w-3.5" /> },
                 ] as const
               ).map((f) => (
                 <button
                   key={f.id}
                   onClick={() => setSectionFilter(f.id)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition-all',
+                    'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition-all whitespace-nowrap',
                     sectionFilter === f.id
                       ? 'border-cyan-500/50 bg-cyan-500/20 text-cyan-300 font-semibold'
                       : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                   )}
                 >
                   {f.icon}
-                  <span className="hidden sm:inline">{f.label}</span>
+                  <span className="hidden md:inline">{f.label}</span>
+                  <span className="md:hidden text-[11px]">{f.short}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 font-mono text-xs text-slate-300">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 font-mono text-xs text-slate-300">
               <Clock className="h-3.5 w-3.5 text-cyan-400" />
               <span>{formatTimer(studiedSeconds)}</span>
             </span>
@@ -191,8 +194,9 @@ export const CicdLessonView: React.FC = () => {
                   level: lesson.level,
                 })
               }
+              title="Đánh dấu bài học"
               className={cn(
-                'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all',
+                'inline-flex items-center justify-center rounded-lg border p-1.5 sm:px-2.5 sm:py-1 text-xs font-medium transition-all',
                 isBookmarked
                   ? 'border-amber-500/50 bg-amber-500/20 text-amber-300'
                   : 'border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700'
@@ -205,28 +209,38 @@ export const CicdLessonView: React.FC = () => {
               onClick={() =>
                 openNotesDrawer('lesson', lesson.id, `CI/CD: ${lesson.shortTitle}`)
               }
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 hover:border-cyan-500/40"
+              title="Ghi chú bài học"
+              className="relative inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1.5 sm:px-2.5 sm:py-1 text-xs font-medium text-slate-300 hover:border-cyan-500/40"
             >
               <MessageSquarePlus className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Ghi chú ({lessonNotesCount})</span>
+              <span className="hidden sm:inline">Ghi chú ({lessonNotesCount})</span>
+              {lessonNotesCount > 0 && (
+                <span className="sm:hidden font-mono text-[10px] font-bold text-cyan-300">
+                  {lessonNotesCount}
+                </span>
+              )}
             </button>
 
             <button
               onClick={() => toggleLessonComplete(lesson.id)}
+              title="Đánh dấu hoàn thành bài học"
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-bold transition-all',
+                'inline-flex items-center gap-1 rounded-lg border px-2 sm:px-3 py-1 text-xs font-bold transition-all',
                 isCompleted
                   ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
                   : 'border-cyan-500/50 bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30'
               )}
             >
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">
                 {isCompleted
                   ? 'Đã hoàn thành'
                   : studiedSeconds >= REQUIRED_LESSON_STUDY_SECONDS
                   ? 'Đánh dấu xong'
                   : 'Hoàn thành'}
+              </span>
+              <span className="sm:hidden text-[11px]">
+                {isCompleted ? 'Xong' : 'Đánh dấu'}
               </span>
             </button>
           </div>

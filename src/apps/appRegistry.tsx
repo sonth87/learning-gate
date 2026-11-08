@@ -18,8 +18,9 @@ export const PYMASTERY_CONFIG: AppConfig = {
   render: PyMasteryApp,
   defaultMaximized: false,
   defaultFullscreen: true,
+  mobileFullscreen: true,
   defaultSize: { width: 1280, height: 820 },
-  minSize: { width: 640, height: 480 },
+  minSize: { width: 320, height: 420 },
   hasMenuBar: true,
   launchMode: 'single',
   contextMenu: [
@@ -100,8 +101,9 @@ export const KUBEMASTERY_CONFIG: AppConfig = {
   render: KubeMasteryApp,
   defaultMaximized: false,
   defaultFullscreen: true,
+  mobileFullscreen: true,
   defaultSize: { width: 1280, height: 820 },
-  minSize: { width: 640, height: 480 },
+  minSize: { width: 320, height: 420 },
   hasMenuBar: true,
   launchMode: 'single',
   contextMenu: [
@@ -168,8 +170,9 @@ export const CICD_MASTERY_CONFIG: AppConfig = {
   render: CicdMasteryApp,
   defaultMaximized: false,
   defaultFullscreen: true,
+  mobileFullscreen: true,
   defaultSize: { width: 1280, height: 820 },
-  minSize: { width: 640, height: 480 },
+  minSize: { width: 320, height: 420 },
   hasMenuBar: true,
   launchMode: 'single',
   contextMenu: [

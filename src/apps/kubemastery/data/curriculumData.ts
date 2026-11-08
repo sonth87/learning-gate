@@ -290,6 +290,7 @@ docker history node:20-alpine`,
       },
     ],
     relatedIncidentId: 'incident-4-oomkilled',
+    relatedPracticeId: 'prac-2-dockerignore-health',
   },
 
   {
@@ -546,7 +547,7 @@ networks:
         rightApproach: 'DB_HOST=postgres-db (Dùng đúng tên service khai báo trong docker-compose.yml)',
       },
     ],
-    relatedPracticeId: 'prac-2-compose',
+    relatedPracticeId: 'prac-3-compose',
   },
 
   {
@@ -663,6 +664,7 @@ kubectl describe node worker-node-1`,
       },
     ],
     relatedIncidentId: 'incident-5-pending',
+    relatedPracticeId: 'prac-6-ingress-tls',
   },
 
   {
@@ -815,7 +817,7 @@ spec:
       },
     ],
     relatedIncidentId: 'incident-7-network-selector',
-    relatedPracticeId: 'prac-3-k8s-deployment',
+    relatedPracticeId: 'prac-4-k8s-deployment',
   },
 
   {
@@ -951,6 +953,7 @@ spec:
       },
     ],
     relatedIncidentId: 'incident-5-pending',
+    relatedPracticeId: 'prac-6-ingress-tls',
   },
 
   {
@@ -1080,7 +1083,7 @@ spec:
       },
     ],
     relatedIncidentId: 'incident-3-crashloop',
-    relatedPracticeId: 'prac-4-probes-hpa',
+    relatedPracticeId: 'prac-8-probes-hpa',
   },
 
   {
@@ -1181,6 +1184,7 @@ spec:
         rightApproach: 'Luôn gắn tag bất biến theo phiên bản hoặc Git SHA (ví dụ image: myregistry.io/shop-web:v1.2.4-a8f9c2)',
       },
     ],
+    relatedPracticeId: 'prac-9-rbac-netpol',
   },
 
   {
@@ -1326,5 +1330,6 @@ kubectl rollout undo deployment/web-app-deployment -n production`,
       },
     ],
     relatedIncidentId: 'incident-7-network-selector',
+    relatedPracticeId: 'prac-10-cicd-gitops',
   },
 ];

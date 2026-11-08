@@ -3,6 +3,7 @@ import { findGlossaryTerm, ALL_GLOSSARY_TERMS } from '@/data/glossary';
 import { GlossaryCategory, GlossaryTerm } from '@/types/glossary.types';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { getAppContainerWidth } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
 const CATEGORY_HIGHLIGHT_STYLE: Record<GlossaryCategory, string> = {
@@ -59,7 +60,7 @@ export const InteractiveTermTrigger: React.FC<InteractiveTermTriggerProps> = ({
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLSpanElement>) => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    if (getAppContainerWidth() < 1024) return;
     const rect = e.currentTarget.getBoundingClientRect();
     showTermPopover(
       term.id,
@@ -74,7 +75,7 @@ export const InteractiveTermTrigger: React.FC<InteractiveTermTriggerProps> = ({
   };
 
   const handleMouseLeave = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) return;
+    if (getAppContainerWidth() < 1024) return;
     hideTermPopover(false);
   };
 

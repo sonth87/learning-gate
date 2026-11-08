@@ -3,6 +3,7 @@ import { useStore, useMenuAction, useContextAction } from '@sonth87/device-layou
 import { useKubeStore } from './store/useKubeStore';
 import { KubeTab } from './types/kube.types';
 import { KubeHeader } from './components/KubeHeader';
+import { KubeMobileBottomNav } from './components/KubeMobileBottomNav';
 import { CurriculumView } from './components/CurriculumView';
 import { FlowStudioHub } from './components/FlowStudioHub';
 import { ClusterSimulatorLab } from './components/ClusterSimulatorLab';
@@ -82,6 +83,8 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
           </div>
         )}
       </main>
+
+      <KubeMobileBottomNav />
     </div>
   );
 };

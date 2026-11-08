@@ -41,30 +41,31 @@ export const NotesDrawer: React.FC = () => {
   return (
     <div
       onClick={closeNotesDrawer}
-      className="absolute inset-0 z-[100] flex justify-end bg-black/65 backdrop-blur-xs"
+      className="fixed inset-0 z-[120] flex justify-end bg-black/75 backdrop-blur-xs"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl pb-[env(safe-area-inset-bottom)]"
+        className="flex h-full w-full lg:max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl pb-[env(safe-area-inset-bottom)]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 sm:px-5 py-3.5 sm:py-4">
-          <div className="flex items-center gap-2">
-            <StickyNote className="h-5 w-5 text-amber-400" />
-            <div>
-              <h3 className="text-sm font-bold text-white">
+        <div className="flex items-center justify-between border-b border-slate-800 px-3.5 sm:px-5 py-3 sm:py-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <StickyNote className="h-5 w-5 text-amber-400 shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-white truncate">
                 Ghi chú & Đánh dấu (IndexedDB)
               </h3>
-              <p className="text-xs text-slate-400 truncate max-w-[260px]">
+              <p className="text-xs text-slate-400 truncate max-w-[220px] sm:max-w-[260px]">
                 {notesDrawerTarget.targetTitle}
               </p>
             </div>
           </div>
           <button
             onClick={closeNotesDrawer}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="inline-flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-rose-500/20 hover:text-rose-200 hover:border-rose-500/40 shrink-0"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
+            <span>Đóng</span>
           </button>
         </div>
 

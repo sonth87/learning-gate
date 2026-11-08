@@ -53,12 +53,17 @@ export const FlowStudioHub: React.FC = () => {
         </p>
       </div>
 
-      {/* Flow Selector Pills */}
+      {/* Flow Selector Pills (Horizontal touch scroller on mobile, 4-col grid on desktop) */}
       <div className="space-y-2">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-          Chọn Sơ đồ Động để Quan sát Chi tiết ({ANIMATED_FLOW_LIST.length} Luồng Cốt lõi):
+        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+          <span>
+            Chọn Sơ đồ Động ({ANIMATED_FLOW_LIST.length} Luồng Cốt lõi):
+          </span>
+          <span className="lg:hidden font-mono text-[10px] text-sky-400 normal-case">
+            Vuốt ngang để chọn →
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="flex lg:grid lg:grid-cols-4 gap-2.5 overflow-x-auto no-scrollbar pb-1">
           {ANIMATED_FLOW_LIST.map((flow, idx) => {
             const active = flow.id === selectedFlowId;
             return (
@@ -66,7 +71,7 @@ export const FlowStudioHub: React.FC = () => {
                 key={flow.id}
                 onClick={() => openFlowInStudio(flow.id)}
                 className={cn(
-                  'rounded-xl border p-3 text-left transition-all flex flex-col justify-between space-y-1.5',
+                  'w-64 sm:w-72 lg:w-auto shrink-0 rounded-xl border p-3 text-left transition-all flex flex-col justify-between space-y-1.5 cursor-pointer',
                   active
                     ? 'border-sky-400 bg-sky-500/15 ring-2 ring-sky-400/50 shadow-md'
                     : 'border-slate-800 bg-slate-900/70 hover:border-slate-700 hover:bg-slate-800/70'

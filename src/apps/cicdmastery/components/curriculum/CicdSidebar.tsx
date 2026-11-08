@@ -5,9 +5,7 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
-  Layers,
   Workflow,
-  Sparkles,
   X,
 } from 'lucide-react';
 import { ALL_CICD_LESSONS } from '../../data/cicdCurriculumIndex';
@@ -29,7 +27,9 @@ export const CicdSidebar: React.FC = () => {
   const completedLessonIds = useUserDataStore((s) => s.completedLessonIds);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [collapsedStages, setCollapsedStages] = useState<Record<string, boolean>>({});
+  const [collapsedStages, setCollapsedStages] = useState<
+    Record<string, boolean>
+  >({});
 
   const toggleStage = (stageId: string) => {
     setCollapsedStages((prev) => ({ ...prev, [stageId]: !prev[stageId] }));
@@ -57,20 +57,31 @@ export const CicdSidebar: React.FC = () => {
     [completedLessonIds]
   );
 
-  const sidebarContent = (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-r border-slate-800 bg-slate-950 select-none">
+  const renderSidebarBody = (isMobileDrawer = false) => (
+    <div className="flex h-full w-full flex-col bg-slate-950 select-none overflow-hidden">
       {/* Progress & Filter Header */}
-      <div className="border-b border-slate-800/80 p-3.5 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Workflow className="h-4 w-4 text-cyan-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+      <div className="border-b border-slate-800/80 p-3 sm:p-3.5 space-y-2.5 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Workflow className="h-4 w-4 text-cyan-400 shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-200 truncate">
               Lộ trình CI/CD (21 Trang PDF)
             </span>
           </div>
-          <span className="rounded-full bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
-            {completedCicdCount}/{ALL_CICD_LESSONS.length} Bài
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="rounded-full bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 font-mono text-[11px] font-bold text-cyan-300">
+              {completedCicdCount}/{ALL_CICD_LESSONS.length} Bài
+            </span>
+            {isMobileDrawer && (
+              <button
+                onClick={() => setMobileSidebarOpen(false)}
+                aria-label="Đóng mục lục"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 text-slate-300 hover:bg-slate-800 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Search input */}
@@ -94,7 +105,7 @@ export const CicdSidebar: React.FC = () => {
         </div>
 
         {/* Level Filter Pills */}
-        <div className="flex flex-wrap gap-1">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
           {(
             [
               { id: 'all', label: 'Tất cả' },
@@ -109,7 +120,7 @@ export const CicdSidebar: React.FC = () => {
               key={lv.id}
               onClick={() => setFilterLevel(lv.id)}
               className={cn(
-                'rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-all',
+                'rounded-md border px-2 py-0.5 text-[10px] font-semibold transition-all whitespace-nowrap shrink-0',
                 filterLevel === lv.id
                   ? 'border-cyan-500/50 bg-cyan-500/20 text-cyan-300'
                   : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
@@ -193,8 +204,8 @@ export const CicdSidebar: React.FC = () => {
                             {lesson.shortTitle}
                           </div>
                           <div className="flex items-center justify-between gap-1">
-                            <LevelBadge level={lesson.level} size="sm" />
-                            <span className="font-mono text-[10px] text-slate-400">
+                            <LevelBadge level={lesson.level} size="xs" />
+                            <span className="font-mono text-[10px] text-slate-400 truncate">
                               {lesson.pdfRef.split('—')[0]}
                             </span>
                           </div>
@@ -208,24 +219,32 @@ export const CicdSidebar: React.FC = () => {
           );
         })}
       </div>
-    </aside>
+    </div>
   );
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block h-full">{sidebarContent}</div>
+      {/* Desktop Fixed Sidebar (lg+) */}
+      <aside
+        aria-label="Danh mục bài học CI/CD"
+        className="hidden lg:flex lg:w-76 xl:w-80 shrink-0 border-r border-slate-800 bg-slate-950 h-full flex-col overflow-hidden"
+      >
+        {renderSidebarBody(false)}
+      </aside>
 
-      {/* Mobile Drawer Overlay */}
+      {/* Mobile & Tablet Slide-over Drawer (< lg) */}
       {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={() => setMobileSidebarOpen(false)}
-          />
-          <div className="relative z-10 flex h-full w-80 max-w-[85vw]">
-            {sidebarContent}
-          </div>
+        <div
+          onClick={() => setMobileSidebarOpen(false)}
+          className="absolute inset-0 z-50 flex lg:hidden bg-black/75 backdrop-blur-xs"
+        >
+          <aside
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Danh mục bài học CI/CD trên di động"
+            className="flex h-full w-[min(88vw,340px)] flex-col border-r border-slate-800 bg-slate-950 shadow-2xl"
+          >
+            {renderSidebarBody(true)}
+          </aside>
         </div>
       )}
     </>

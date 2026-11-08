@@ -232,7 +232,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => switchLearningApp('cicdmastery')}
               aria-label="Mở App học CI/CD Architecture"
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 px-2 sm:px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 hover:border-cyan-500/60 transition-all cursor-pointer shadow-xs"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto shrink-0 items-center justify-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 sm:px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 hover:border-cyan-500/60 transition-all cursor-pointer shadow-xs"
             >
               <CicdMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden md:inline whitespace-nowrap">
@@ -249,7 +249,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => switchLearningApp('kubemastery')}
               aria-label="Mở App học Docker & Kubernetes"
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-500/45 bg-sky-500/15 px-2 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 hover:border-sky-500/60 transition-all cursor-pointer shadow-xs"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-500/45 bg-sky-500/15 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 hover:border-sky-500/60 transition-all cursor-pointer shadow-xs"
             >
               <KubeMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
               <span className="hidden md:inline whitespace-nowrap">
@@ -266,7 +266,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setSetupGuideOpen(true)}
               aria-label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2 sm:px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 sm:px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
             >
               <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
               <span className="hidden xl:inline whitespace-nowrap">
@@ -280,7 +280,7 @@ export const Header: React.FC = () => {
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Tìm kiếm nhanh (Cmd+K)"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-amber-400 hover:border-slate-700 hover:bg-slate-800/80 hover:text-amber-300 transition-all cursor-pointer shadow-xs"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-amber-400 hover:border-slate-700 hover:bg-slate-800/80 hover:text-amber-300 transition-all cursor-pointer shadow-xs"
             >
               <Search className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -296,7 +296,7 @@ export const Header: React.FC = () => {
               aria-label="Bật/Tắt chế độ đối chiếu JS/TS"
               aria-pressed={showJsTsComparison}
               className={cn(
-                'relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors',
+                'relative inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-colors',
                 showJsTsComparison
                   ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300'
                   : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -323,7 +323,7 @@ export const Header: React.FC = () => {
                 )
               }
               aria-label="Mở ngăn Ghi chú & Đánh dấu"
-              className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
+              className="relative inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
             >
               <StickyNote className="h-3.5 w-3.5" aria-hidden="true" />
               {totalNotesAndBookmarks > 0 && (
@@ -334,22 +334,7 @@ export const Header: React.FC = () => {
             </button>
           </HeaderTooltip>
 
-          {/* Mobile Quick Theme Toggle (< sm) */}
-          <button
-            onClick={() =>
-              handleSelectTheme(activeThemeMode === 'light' ? 'dark' : 'light')
-            }
-            aria-label="Đổi giao diện Sáng / Tối"
-            className="inline-flex sm:hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-amber-400 hover:bg-slate-800 transition-colors"
-          >
-            {activeThemeMode === 'light' ? (
-              <Sun className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <Moon className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
-            )}
-          </button>
-
-          {/* Theme Switcher: Icons Only (sm+) */}
+          {/* Theme Switcher: Icons Only (sm+; on < sm, accessible inside SettingsModal) */}
           <div
             role="group"
             aria-label="Chế độ giao diện Sáng / Tối / Tự động"
@@ -403,11 +388,11 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Settings & JSON Backup (Icon Only) */}
-          <HeaderTooltip label="Cài đặt & Sao lưu dữ liệu" shortcut="⌘," align="right">
+          <HeaderTooltip label="Cài đặt & Giao diện" shortcut="⌘," align="right">
             <button
               onClick={() => setSettingsOpen(true)}
               aria-label="Cài đặt & Sao lưu dữ liệu"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
             >
               <Settings className="h-3.5 w-3.5" aria-hidden="true" />
             </button>

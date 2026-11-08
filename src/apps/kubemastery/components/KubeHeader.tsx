@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
+  Container,
   BookOpen,
   Workflow,
   Server,
   GitBranch,
-  Stethoscope,
+  ShieldAlert,
   Code2,
   BookMarked,
   GraduationCap,
@@ -12,84 +13,76 @@ import {
   Sun,
   Moon,
   Monitor,
+  Boxes,
+  Terminal,
   X,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { switchLearningApp } from '@/apps/appRegistry';
-import {
-  PyMasteryLogo,
-  KubeMasteryLogo,
-  CicdMasteryLogo,
-} from '@/components/common/AppLogos';
-import { KUBE_LESSONS } from '../data/curriculumData';
-import { INCIDENT_SCENARIOS } from '../data/incidentsData';
-import { ANIMATED_FLOW_LIST } from '../data/animatedFlowsData';
+import { KubeMasteryLogo } from '@/components/common/AppLogos';
 import { useKubeStore } from '../store/useKubeStore';
 import { KubeTab } from '../types/kube.types';
+import { KUBE_LESSONS } from '../data/curriculumData';
+import { INCIDENT_SCENARIOS } from '../data/incidentsData';
 import { cn } from '@/utils/cn';
 
-export const KUBE_NAV_TABS: {
+const NAV_TABS: {
   id: KubeTab;
   label: string;
   shortLabel: string;
-  shortcut: string;
-  icon: React.ReactNode;
+  icon: React.FC<{ className?: string }>;
+  badge?: string;
 }[] = [
   {
     id: 'curriculum',
-    label: 'Lộ trình & Lý thuyết',
-    shortLabel: 'Lý thuyết',
-    shortcut: '⌘1',
-    icon: <BookOpen className="h-4 w-4" />,
+    label: 'Giáo trình 4 Giai đoạn',
+    shortLabel: 'Giáo trình',
+    icon: BookOpen,
   },
   {
     id: 'flow-studio',
-    label: 'Sơ đồ Động (Animated Flows)',
+    label: 'Sơ đồ Động & Luồng',
     shortLabel: 'Sơ đồ Động',
-    shortcut: '⌘2',
-    icon: <Workflow className="h-4 w-4" />,
+    icon: Workflow,
+    badge: 'LIVE',
   },
   {
     id: 'cluster-sim',
-    label: 'Mô phỏng Cụm K8s & Terminal',
+    label: 'Mô phỏng Cụm K8s',
     shortLabel: 'Cụm K8s',
-    shortcut: '⌘3',
-    icon: <Server className="h-4 w-4" />,
+    icon: Server,
+    badge: 'SIM',
   },
   {
     id: 'cicd-sim',
     label: 'Giả lập CI/CD & GitOps',
-    shortLabel: 'CI/CD',
-    shortcut: '⌘4',
-    icon: <GitBranch className="h-4 w-4" />,
+    shortLabel: 'CI/CD Lab',
+    icon: GitBranch,
   },
   {
     id: 'incidents',
-    label: '8 Tình huống Sự cố (War-Room)',
-    shortLabel: 'Xử lý Lỗi',
-    shortcut: '⌘5',
-    icon: <Stethoscope className="h-4 w-4" />,
+    label: 'Cứu hộ 8 Sự cố',
+    shortLabel: '8 Sự cố',
+    icon: ShieldAlert,
+    badge: '8 CA',
   },
   {
     id: 'practice',
-    label: 'Luyện tập Viết YAML/Dockerfile',
-    shortLabel: 'Luyện tập',
-    shortcut: '⌘6',
-    icon: <Code2 className="h-4 w-4" />,
+    label: 'Thực hành Viết YAML',
+    shortLabel: 'Thực hành',
+    icon: Code2,
   },
   {
     id: 'glossary',
-    label: 'Từ điển Liên tưởng & Cheatsheet',
-    shortLabel: 'Từ điển/Lệnh',
-    shortcut: '⌘7',
-    icon: <BookMarked className="h-4 w-4" />,
+    label: 'Từ điển & Bảng lệnh',
+    shortLabel: 'Từ điển',
+    icon: BookMarked,
   },
   {
     id: 'exams',
-    label: 'Flashcards & Thi Sát hạch',
+    label: 'Flashcard & Sát hạch',
     shortLabel: 'Sát hạch',
-    shortcut: '⌘8',
-    icon: <GraduationCap className="h-4 w-4" />,
+    icon: GraduationCap,
   },
 ];
 
@@ -101,178 +94,181 @@ export const KubeHeader: React.FC = () => {
     solvedIncidentIds,
     isSearchOpen,
     setSearchOpen,
-    selectLesson,
-    openFlowInStudio,
-    openIncidentInWarRoom,
   } = useKubeStore();
 
-  const [query, setQuery] = useState('');
+  const colorScheme = useStore((s) => s.colorScheme);
+  const resolvedScheme = useStore((s) => s.resolvedColorScheme);
+  const setColorScheme = useStore((s) => s.setColorScheme);
 
-  const deviceColorScheme = useStore((s) => s.colorScheme);
-  const setDeviceColorScheme = useStore((s) => s.setColorScheme);
-  const activeThemeMode =
-    deviceColorScheme === 'auto' ? 'system' : deviceColorScheme;
-
-  const progressPct = Math.round(
-    (completedLessonIds.length / KUBE_LESSONS.length) * 100
-  );
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [setSearchOpen]);
-
-  const q = query.trim().toLowerCase();
-  const matchedLessons = KUBE_LESSONS.filter(
-    (l) =>
-      !q ||
-      l.title.toLowerCase().includes(q) ||
-      l.shortDescription.toLowerCase().includes(q)
-  );
-  const matchedFlows = ANIMATED_FLOW_LIST.filter(
-    (f) =>
-      !q ||
-      f.title.toLowerCase().includes(q) ||
-      f.subtitle.toLowerCase().includes(q)
-  );
-  const matchedIncidents = INCIDENT_SCENARIOS.filter(
-    (inc) =>
-      !q ||
-      inc.title.toLowerCase().includes(q) ||
-      inc.statusBadge.toLowerCase().includes(q)
-  );
+  const cycleMobileTheme = () => {
+    const next = resolvedScheme === 'light' ? 'dark' : 'light';
+    setColorScheme(next);
+  };
 
   return (
     <>
-      <header className="shrink-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-12 max-w-[1680px] items-center justify-between gap-2 px-3 sm:px-4">
-          {/* Brand Logo */}
-          <button
-            onClick={() => setActiveTab('curriculum')}
-            className="group flex items-center gap-2.5 text-left min-w-0 shrink-0"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm shadow-sky-500/20 overflow-hidden transition-transform duration-200 group-hover:scale-105">
-              <KubeMasteryLogo className="h-full w-full" />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs sm:text-sm font-extrabold text-white truncate">
-                  KubeMastery
-                </span>
-                <span className="hidden sm:inline-block rounded bg-sky-500/15 border border-sky-500/35 px-1.5 py-0.2 font-mono text-[10px] font-bold text-sky-300">
-                  Docker & K8s Lab
-                </span>
+      <header className="sticky top-0 z-40 h-11 sm:h-12 shrink-0 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md">
+        <div className="flex h-full items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-4">
+          {/* Brand Logo + Progress */}
+          <div className="flex items-center gap-2 min-w-0 shrink-0">
+            <button
+              onClick={() => setActiveTab('curriculum')}
+              className="flex items-center gap-2 text-left group cursor-pointer"
+            >
+              <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
+                <KubeMasteryLogo size={32} className="h-full w-full" />
               </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                <div className="h-1 w-12 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    style={{ width: `${progressPct}%` }}
-                    className="h-full bg-sky-400 transition-all duration-300"
-                  />
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono text-xs sm:text-sm font-extrabold tracking-tight text-white truncate">
+                    KubeMastery
+                  </span>
+                  <span className="hidden md:inline-block rounded-full border border-sky-500/35 bg-sky-500/15 px-1.5 py-0.5 font-mono text-[9px] font-bold text-sky-300">
+                    DOCKER & K8S
+                  </span>
                 </div>
-                <span className="font-mono">
-                  {completedLessonIds.length}/{KUBE_LESSONS.length} bài •{' '}
-                  {solvedIncidentIds.length}/8 sự cố
-                </span>
+                <div className="hidden sm:flex items-center gap-2 text-[10px] text-slate-400">
+                  <span>
+                    {completedLessonIds.length}/{KUBE_LESSONS.length} bài
+                  </span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-medium">
+                    {solvedIncidentIds.length}/{INCIDENT_SCENARIOS.length} sự cố
+                  </span>
+                </div>
               </div>
-            </div>
-          </button>
+            </button>
+          </div>
 
-          {/* Desktop Navigation Tabs (xl+) */}
+          {/* Desktop Center Navigation Pills (lg+) */}
           <nav
-            aria-label="Điều hướng phân hệ Docker & K8s"
-            className="hidden xl:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1"
+            aria-label="Điều hướng học phần"
+            className="hidden lg:flex items-center gap-0.5 rounded-xl border border-slate-800/90 bg-slate-900/70 p-0.5 overflow-x-auto no-scrollbar"
           >
-            {KUBE_NAV_TABS.map((tab) => {
-              const active = activeTab === tab.id;
+            {NAV_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  title={`${tab.label} (${tab.shortcut})`}
                   className={cn(
-                    'inline-flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition-all',
-                    active
-                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/45 shadow-xs'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                    'flex items-center gap-1.5 rounded-lg px-2 xl:px-2.5 py-1 text-[11px] font-semibold transition-all whitespace-nowrap cursor-pointer',
+                    isActive
+                      ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-xs'
+                      : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200 border border-transparent'
                   )}
                 >
-                  {tab.icon}
-                  <span>{tab.shortLabel}</span>
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="hidden 2xl:inline">{tab.label}</span>
+                  <span className="2xl:hidden">{tab.shortLabel}</span>
+                  {tab.badge && (
+                    <span
+                      className={cn(
+                        'hidden xl:inline-block rounded px-1 py-0.2 font-mono text-[9px] font-bold',
+                        isActive
+                          ? 'bg-sky-400 text-slate-950'
+                          : 'bg-slate-800 text-sky-400'
+                      )}
+                    >
+                      {tab.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </nav>
 
-          {/* Right Utilities */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Right Action Cluster */}
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Switch to CI/CD Mastery */}
             <button
               onClick={() => switchLearningApp('cicdmastery')}
-              title="Chuyển sang App học CI/CD Architecture (CI/CD Mastery)"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 transition-all"
+              title="Mở ứng dụng CI/CD & DevOps Mastery"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-amber-500/35 bg-amber-500/10 sm:px-2 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
             >
-              <CicdMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
-              <span className="hidden sm:inline">CI/CD App</span>
+              <Boxes className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden md:inline">CI/CD</span>
             </button>
 
+            {/* Switch to Python Mastery */}
             <button
               onClick={() => switchLearningApp('pymastery')}
-              title="Chuyển sang App học Python (PyMastery)"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/45 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all"
+              title="Mở ứng dụng Python Mastery"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 sm:px-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
             >
-              <PyMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
-              <span className="hidden sm:inline">Python App</span>
+              <Terminal className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden md:inline">Python</span>
             </button>
 
+            {/* Quick Search Modal Button */}
             <button
               onClick={() => setSearchOpen(true)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs text-slate-300 hover:border-slate-700 hover:bg-slate-800"
+              aria-label="Tìm kiếm nhanh bài học và sự cố"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900/90 sm:px-2.5 text-xs text-slate-300 hover:border-sky-500/40 hover:text-white transition-colors cursor-pointer"
             >
-              <Search className="h-3.5 w-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Tìm nhanh</span>
-              <kbd className="hidden md:inline rounded bg-slate-800 px-1 font-mono text-[10px] text-sky-300">
-                ⌘K
-              </kbd>
+              <Search className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+              <span className="hidden xl:inline text-[11px]">Tìm nhanh...</span>
             </button>
 
-            <div className="hidden sm:flex items-center rounded-lg border border-slate-800 bg-slate-900 p-0.5">
+            {/* Mobile Single-Tap Theme Toggle (< sm) */}
+            <button
+              onClick={cycleMobileTheme}
+              aria-label={
+                resolvedScheme === 'light'
+                  ? 'Chuyển sang giao diện Tối'
+                  : 'Chuyển sang giao diện Sáng'
+              }
+              title={
+                resolvedScheme === 'light'
+                  ? 'Đang ở chế độ Sáng (Bấm để chuyển sang Tối)'
+                  : 'Đang ở chế độ Tối (Bấm để chuyển sang Sáng)'
+              }
+              className="sm:hidden inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-colors cursor-pointer"
+            >
+              {resolvedScheme === 'light' ? (
+                <Sun className="h-3.5 w-3.5 text-amber-400" />
+              ) : (
+                <Moon className="h-3.5 w-3.5 text-sky-400" />
+              )}
+            </button>
+
+            {/* Desktop/Tablet 3-Button Theme Switcher (sm+) */}
+            <div className="hidden sm:flex items-center rounded-lg border border-slate-800 bg-slate-900/90 p-0.5">
               <button
-                onClick={() => setDeviceColorScheme('light')}
+                onClick={() => setColorScheme('light')}
                 title="Giao diện Sáng"
+                aria-label="Giao diện Sáng"
                 className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md',
-                  activeThemeMode === 'light'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                  'rounded-md p-1 transition-colors cursor-pointer',
+                  colorScheme === 'light'
+                    ? 'bg-sky-500/20 text-sky-400'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
                 <Sun className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setDeviceColorScheme('dark')}
+                onClick={() => setColorScheme('dark')}
                 title="Giao diện Tối"
+                aria-label="Giao diện Tối"
                 className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md',
-                  activeThemeMode === 'dark'
-                    ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
+                  'rounded-md p-1 transition-colors cursor-pointer',
+                  colorScheme === 'dark'
+                    ? 'bg-sky-500/20 text-sky-400'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
                 <Moon className="h-3.5 w-3.5" />
               </button>
               <button
-                onClick={() => setDeviceColorScheme('auto')}
-                title="Tự động"
+                onClick={() => setColorScheme('auto')}
+                title="Theo hệ thống"
+                aria-label="Theo hệ thống"
                 className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md',
-                  activeThemeMode === 'system'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                  'rounded-md p-1 transition-colors cursor-pointer',
+                  colorScheme === 'auto'
+                    ? 'bg-sky-500/20 text-sky-400'
                     : 'text-slate-400 hover:text-slate-200'
                 )}
               >
@@ -281,123 +277,123 @@ export const KubeHeader: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Tablet/Mobile Horizontal Scrollable Tab Strip (< xl) */}
-        <div className="flex xl:hidden items-center gap-1 overflow-x-auto no-scrollbar border-t border-slate-800/70 bg-slate-950 px-3 py-1.5">
-          {KUBE_NAV_TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold whitespace-nowrap shrink-0',
-                  active
-                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                {tab.icon}
-                <span>{tab.shortLabel}</span>
-              </button>
-            );
-          })}
-        </div>
       </header>
 
-      {/* Quick Search Modal (⌘K) */}
+      {/* Quick Search Modal */}
       {isSearchOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4">
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs"
-            onClick={() => setSearchOpen(false)}
+        <KubeQuickSearchModal onClose={() => setSearchOpen(false)} />
+      )}
+    </>
+  );
+};
+
+const KubeQuickSearchModal: React.FC<{ onClose: () => void }> = ({
+  onClose,
+}) => {
+  const [query, setQuery] = React.useState('');
+  const { selectLesson, openIncidentInWarRoom } = useKubeStore();
+
+  const q = query.trim().toLowerCase();
+  const matchedLessons = KUBE_LESSONS.filter(
+    (l) =>
+      !q ||
+      l.title.toLowerCase().includes(q) ||
+      l.shortDescription.toLowerCase().includes(q)
+  );
+  const matchedIncidents = INCIDENT_SCENARIOS.filter(
+    (inc) =>
+      !q ||
+      inc.title.toLowerCase().includes(q) ||
+      inc.statusBadge.toLowerCase().includes(q) ||
+      inc.alertMessage.toLowerCase().includes(q)
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-start justify-center bg-black/75 p-0 lg:p-4 lg:pt-16 backdrop-blur-xs"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-full w-full flex-col lg:h-auto lg:max-h-[80vh] lg:max-w-2xl lg:rounded-2xl border-0 lg:border border-slate-700 bg-slate-900 p-3.5 sm:p-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-3 shrink-0">
+          <Search className="h-4 w-4 text-sky-400 shrink-0" />
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Tìm bài học, lệnh kubectl, CrashLoopBackOff..."
+            className="w-full bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none"
           />
-          <div className="relative z-10 w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-3">
-              <Search className="h-4 w-4 text-sky-400" />
-              <input
-                type="text"
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Tìm kiếm bài học, sơ đồ động, sự cố OOMKilled, ImagePullBackOff, lệnh kubectl..."
-                className="flex-1 bg-transparent text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none"
-              />
-              <button
-                onClick={() => setSearchOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          <button
+            onClick={onClose}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 text-xs font-bold text-slate-200 hover:bg-slate-700 shrink-0 cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5" />
+            <span>Đóng</span>
+          </button>
+        </div>
+
+        <div className="mt-3 flex-1 overflow-y-auto space-y-4 pr-1">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-sky-400 mb-1.5">
+              Bài học trong Giáo trình ({matchedLessons.length})
             </div>
+            <div className="space-y-1">
+              {matchedLessons.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    selectLesson(l.id);
+                    onClose();
+                  }}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-xs hover:bg-slate-800/80 transition-colors"
+                >
+                  <div>
+                    <div className="font-semibold text-white">{l.title}</div>
+                    <div className="text-[11px] text-slate-400 line-clamp-1">
+                      {l.shortDescription}
+                    </div>
+                  </div>
+                  <span className="font-mono text-[10px] text-sky-400 shrink-0 ml-2">
+                    Bài {l.order}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
 
-            <div className="max-h-96 overflow-y-auto p-4 space-y-4 text-xs">
-              <div>
-                <div className="font-mono text-[10px] font-bold uppercase text-sky-400 mb-1.5">
-                  Bài học Lý thuyết ({matchedLessons.length})
-                </div>
-                <div className="space-y-1">
-                  {matchedLessons.slice(0, 4).map((l) => (
-                    <button
-                      key={l.id}
-                      onClick={() => {
-                        selectLesson(l.id);
-                        setSearchOpen(false);
-                      }}
-                      className="w-full rounded-xl border border-slate-800/80 bg-slate-900/60 px-3 py-2 text-left hover:bg-slate-800"
-                    >
-                      <div className="font-bold text-white">{l.title}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-1">
-                        {l.shortDescription}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="font-mono text-[10px] font-bold uppercase text-emerald-400 mb-1.5">
-                  Sơ đồ Động Tương tác ({matchedFlows.length})
-                </div>
-                <div className="space-y-1">
-                  {matchedFlows.slice(0, 3).map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => {
-                        openFlowInStudio(f.id);
-                        setSearchOpen(false);
-                      }}
-                      className="w-full rounded-xl border border-slate-800/80 bg-slate-900/60 px-3 py-2 text-left hover:bg-slate-800"
-                    >
-                      <div className="font-bold text-white">{f.title}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="font-mono text-[10px] font-bold uppercase text-rose-400 mb-1.5">
-                  Tình huống Sự cố Thực chiến ({matchedIncidents.length})
-                </div>
-                <div className="space-y-1">
-                  {matchedIncidents.slice(0, 4).map((inc) => (
-                    <button
-                      key={inc.id}
-                      onClick={() => {
-                        openIncidentInWarRoom(inc.id);
-                        setSearchOpen(false);
-                      }}
-                      className="w-full rounded-xl border border-slate-800/80 bg-slate-900/60 px-3 py-2 text-left hover:bg-slate-800"
-                    >
-                      <div className="font-bold text-white">{inc.title}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-rose-400 mb-1.5">
+              Tình huống Cứu hộ Sự cố ({matchedIncidents.length})
+            </div>
+            <div className="space-y-1">
+              {matchedIncidents.map((inc) => (
+                <button
+                  key={inc.id}
+                  onClick={() => {
+                    openIncidentInWarRoom(inc.id);
+                    onClose();
+                  }}
+                  className="w-full flex items-center justify-between rounded-xl px-3 py-2 text-left text-xs hover:bg-slate-800/80 transition-colors"
+                >
+                  <div>
+                    <div className="font-semibold text-white">{inc.title}</div>
+                    <div className="text-[11px] text-slate-400 line-clamp-1">
+                      {inc.alertMessage}
+                    </div>
+                  </div>
+                  <span className="rounded bg-rose-500/20 px-1.5 py-0.5 font-mono text-[10px] text-rose-300 shrink-0 ml-2">
+                    {inc.statusBadge}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 };

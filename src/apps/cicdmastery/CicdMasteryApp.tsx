@@ -9,6 +9,7 @@ import { useCicdNavigationStore } from './stores/useCicdNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { CicdHeader } from './components/layout/CicdHeader';
+import { CicdMobileBottomNav } from './components/layout/CicdMobileBottomNav';
 import { CicdSidebar } from './components/curriculum/CicdSidebar';
 import { CicdLessonView } from './components/curriculum/CicdLessonView';
 import { CicdLivePipelineSimulator } from './components/simulator/CicdLivePipelineSimulator';
@@ -60,6 +61,7 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
     >
       <CicdHeader />
 
+      {/* Main Content Area: CicdHeader and CicdMobileBottomNav stay pinned */}
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
         {activeTab === 'curriculum' && (
           <div className="flex h-full w-full flex-row overflow-hidden">
@@ -110,6 +112,9 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
           </div>
         )}
       </main>
+
+      {/* Mobile & Tablet Bottom Navigation Bar (< lg) */}
+      <CicdMobileBottomNav />
 
       <NotesDrawer />
     </div>

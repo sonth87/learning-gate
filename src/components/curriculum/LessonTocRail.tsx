@@ -18,6 +18,7 @@ import { LessonTopic } from '@/types/curriculum.types';
 import { ALL_EXERCISES } from '@/data/practice/exercisesData';
 import { GLOSSARY_BY_ID } from '@/data/glossary';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { getAppContainerWidth } from '@/utils/viewport';
 import { cn } from '@/utils/cn';
 
 interface LessonTocRailProps {
@@ -170,7 +171,7 @@ export const LessonTocRail: React.FC<LessonTocRailProps> = ({
                 <button
                   key={tId}
                   onMouseEnter={(e) => {
-                    if (window.innerWidth >= 640) {
+                    if (getAppContainerWidth() >= 1024) {
                       const r = e.currentTarget.getBoundingClientRect();
                       showTermPopover(
                         term.id,

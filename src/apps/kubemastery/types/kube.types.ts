@@ -151,6 +151,19 @@ export interface IncidentScenario {
   verificationSuccessLog: string;
 }
 
+export interface PracticeStepGuide {
+  stepNumber: number;
+  stepTitle: string;
+  explanation: string;
+  codeSnippet: string;
+}
+
+export interface PracticeCliCheck {
+  command: string;
+  purpose: string;
+  expectedOutput: string;
+}
+
 export interface PracticeExercise {
   id: string;
   stageId: KubeStageId;
@@ -163,6 +176,17 @@ export interface PracticeExercise {
   starterCode: string;
   solutionCode: string;
   hints: string[];
+  architectureGuide: {
+    whyItMatters: string;
+    realWorldAnalogy: string;
+    commonPitfall: string;
+  };
+  stepByStepGuide: PracticeStepGuide[];
+  cliVerificationChecks: PracticeCliCheck[];
+  solutionAnnotations: {
+    section: string;
+    explanation: string;
+  }[];
   validationRules: {
     id: string;
     description: string;
