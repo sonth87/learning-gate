@@ -20,6 +20,7 @@ import {
   Send,
   SlidersHorizontal,
   Wrench,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { SetupGuideModal } from '@/components/common/SetupGuideModal';
 import { ALL_SAMPLE_PROJECTS } from '@/data/samples/samplesData';
@@ -90,7 +91,12 @@ function formatCommandForStack(
 }
 
 export const ProjectSamplesHub: React.FC = () => {
-  const { ideTheme, setIdeTheme } = useSettingsStore();
+  const {
+    ideTheme,
+    setIdeTheme,
+    showJsTsComparison,
+    toggleJsTsComparison,
+  } = useSettingsStore();
   const activeIdeTheme = getIdeThemeConfig(ideTheme);
 
   const [selectedLevel, setSelectedLevel] = useState<SkillLevel | 'all'>('all');
@@ -852,50 +858,214 @@ export const ProjectSamplesHub: React.FC = () => {
                 </div>
               </div>
 
-              {/* 3-Step Lifecycle Strip for the Selected Tooling Stack */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-[11px]">
-                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
-                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    1. Version & Môi trường (.venv)
+              {/* Detailed 3-Step Guided Cards with Explanations + Python Old + Node.js Comparison */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+                <div className="flex items-center gap-2 text-xs text-slate-300">
+                  <span className="font-semibold text-amber-300">
+                    🎯 Đầu vào (Entrypoint) của dự án này:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveFilePath(currentProject.defaultFilePath)
+                    }
+                    className="rounded-md bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                    title="Bấm để mở ngay file đầu vào (Entrypoint) của dự án này"
+                  >
+                    {currentProject.defaultFilePath}
+                  </button>
+                  <span className="hidden lg:inline text-[11px] text-slate-400">
+                    (File chứa hàm khởi chạy chính • Cấu hình thư viện nằm ở{' '}
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilePath('pyproject.toml')}
+                      className="text-amber-300 underline hover:text-amber-200 cursor-pointer font-mono"
+                    >
+                      pyproject.toml
+                    </button>
+                    )
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={toggleJsTsComparison}
+                  aria-pressed={showJsTsComparison}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer',
+                    showJsTsComparison
+                      ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
+                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+                  )}
+                >
+                  <ArrowRightLeft className="h-3 w-3" />
+                  <span>
+                    So sánh Node.js / JS-TS:{' '}
+                    {showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}
+                  </span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+                {/* STEP 1 CARD */}
+                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-emerald-300">
+                        Bước 1 • Khởi tạo Dự án & Version
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        .python-version + .venv
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {toolingStack === 'uv' &&
+                        'Thay vì tự tạo thư mục, môi trường ảo .venv và file cấu hình thủ công, bạn chỉ cần chạy uv init và ghim Python 3.12:'}
+                      {toolingStack === 'pyenv-pip' &&
+                        'Tạo thư mục dự án, dùng pyenv chọn Python 3.12.7, tạo thư mục môi trường ảo .venv và kích hoạt (activate) nó lên:'}
+                      {toolingStack === 'poetry' &&
+                        'Khởi tạo dự án với Poetry (bật chế độ đặt .venv ngay trong dự án) và chọn phiên bản Python 3.12:'}
+                      {toolingStack === 'pipenv' &&
+                        'Tạo thư mục dự án, đặt biến lưu .venv trong dự án và khởi tạo Pipenv với Python 3.12:'}
+                    </p>
+                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-emerald-300 overflow-x-auto">
+                      {toolingStack === 'uv' &&
+                        `uv init ${currentProject.slug}\ncd ${currentProject.slug} && uv python pin 3.12`}
+                      {toolingStack === 'pyenv-pip' &&
+                        `mkdir ${currentProject.slug} && cd ${currentProject.slug}\npython -m venv .venv && source .venv/bin/activate`}
+                      {toolingStack === 'poetry' &&
+                        `poetry new --src ${currentProject.slug} && cd ${currentProject.slug}\npoetry config virtualenvs.in-project true && poetry env use 3.12`}
+                      {toolingStack === 'pipenv' &&
+                        `mkdir ${currentProject.slug} && cd ${currentProject.slug}\nexport PIPENV_VENV_IN_PROJECT=1 && pipenv --python 3.12`}
+                    </pre>
                   </div>
-                  <div className="mt-1 text-emerald-300 truncate">
-                    {toolingStack === 'uv' &&
-                      'uv python pin 3.12 && uv venv'}
-                    {toolingStack === 'pyenv-pip' &&
-                      'pyenv local 3.12.7 && python -m venv .venv && source .venv/bin/activate'}
-                    {toolingStack === 'poetry' &&
-                      'pyenv local 3.12.7 && poetry env use 3.12'}
-                    {toolingStack === 'pipenv' &&
-                      'pyenv local 3.12.7 && pipenv --python 3.12'}
+
+                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
+                    <div className="text-slate-400">
+                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
+                      <code className="font-mono text-slate-200">
+                        {toolingStack === 'uv'
+                          ? 'mkdir app && cd app && python -m venv .venv'
+                          : 'uv init ' + currentProject.slug}
+                      </code>
+                    </div>
+                    {showJsTsComparison && (
+                      <div className="text-cyan-300/90">
+                        <strong>• Tương ứng Node.js:</strong>{' '}
+                        <code className="font-mono text-cyan-200">
+                          mkdir {currentProject.slug} && cd {currentProject.slug}{' '}
+                          && npm init -y
+                        </code>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
-                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    2. Quản lý Dependency & Lockfile
+
+                {/* STEP 2 CARD */}
+                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded bg-sky-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-sky-300">
+                        Bước 2 • Thêm & Đồng bộ Thư viện
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        pyproject.toml ≈ package.json
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {toolingStack === 'uv' &&
+                        'uv tự động tạo thư mục .venv (tương đương node_modules), tải thư viện siêu tốc, ghi vào pyproject.toml và khóa vào uv.lock:'}
+                      {toolingStack === 'pyenv-pip' &&
+                        'Khi đã đứng trong (.venv), dùng pip để cài đặt thư viện cùng source code dự án (-e .) và lưu danh sách ra requirements.txt:'}
+                      {toolingStack === 'poetry' &&
+                        'Poetry tự động tải thư viện vào .venv, ghi nhận vào pyproject.toml và khóa chặt phiên bản vào file poetry.lock:'}
+                      {toolingStack === 'pipenv' &&
+                        'Pipenv cài đặt thư viện vào .venv, ghi nhận vào Pipfile và khóa mã băm SHA256 vào Pipfile.lock:'}
+                    </p>
+                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-sky-300 overflow-x-auto">
+                      {toolingStack === 'uv' &&
+                        `# Đồng bộ từ pyproject.toml (hoặc thêm mới: uv add <gói>):\nuv sync\nuv add --dev pytest ruff`}
+                      {toolingStack === 'pyenv-pip' &&
+                        `# Cài package dự án (-e .) + công cụ test:\npip install -e . pytest ruff\npip freeze > requirements.txt`}
+                      {toolingStack === 'poetry' &&
+                        `# Cài từ pyproject.toml (hoặc: poetry add <gói>):\npoetry install\npoetry add --group dev pytest ruff`}
+                      {toolingStack === 'pipenv' &&
+                        `# Cài vào Pipfile & khóa Pipfile.lock:\npipenv install -e .\npipenv install --dev pytest ruff`}
+                    </pre>
                   </div>
-                  <div className="mt-1 text-sky-300 truncate">
-                    {toolingStack === 'uv' &&
-                      'uv sync  (Thêm gói: uv add <pkg>)'}
-                    {toolingStack === 'pyenv-pip' &&
-                      'pip install -e . pytest ruff  (pip-sync)'}
-                    {toolingStack === 'poetry' &&
-                      'poetry install  (Thêm gói: poetry add <pkg>)'}
-                    {toolingStack === 'pipenv' &&
-                      'pipenv install -e . --dev  (pipenv sync)'}
+
+                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
+                    <div className="text-slate-400">
+                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
+                      <code className="font-mono text-slate-200">
+                        {toolingStack === 'uv'
+                          ? 'pip install <gói> && pip freeze > requirements.txt'
+                          : 'uv add <gói> / uv sync'}
+                      </code>
+                    </div>
+                    {showJsTsComparison && (
+                      <div className="text-cyan-300/90">
+                        <strong>• Tương ứng Node.js:</strong>{' '}
+                        <code className="font-mono text-cyan-200">
+                          npm install &lt;gói&gt; / pnpm install
+                        </code>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="rounded-lg border border-slate-800/90 bg-slate-900/90 px-3 py-2">
-                  <div className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    3. Tiền tố Chạy Ứng dụng & Test
+
+                {/* STEP 3 CARD */}
+                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-300">
+                        Bước 3 • Chạy Đầu vào & Kiểm thử
+                      </span>
+                      <span className="font-mono text-[10px] text-slate-400">
+                        Entrypoint Runner
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      {toolingStack === 'uv' &&
+                        'Lệnh uv run đảm bảo code luôn chạy bên trong môi trường ảo .venv của dự án mà bạn không cần bận tâm việc activate thủ công:'}
+                      {toolingStack === 'pyenv-pip' &&
+                        'Khi môi trường (.venv) đang được kích hoạt (activate), bạn gọi trực tiếp lệnh python và pytest để chạy điểm đầu vào của dự án:'}
+                      {toolingStack === 'poetry' &&
+                        'Dùng lệnh poetry run để thực thi điểm đầu vào của dự án và chạy bộ kiểm thử bên trong môi trường ảo của Poetry:'}
+                      {toolingStack === 'pipenv' &&
+                        'Dùng lệnh pipenv run để chạy điểm đầu vào của dự án bên trong môi trường ảo đã khóa của Pipenv:'}
+                    </p>
+                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-amber-300 overflow-x-auto">
+                      {`${formatCommandForStack(
+                        currentProject.interactiveCommands[0]?.command ||
+                          'uv run python main.py',
+                        toolingStack
+                      )}\n${formatCommandForStack('uv run pytest -v', toolingStack)}`}
+                    </pre>
                   </div>
-                  <div className="mt-1 text-amber-300 truncate">
-                    {toolingStack === 'uv' && 'uv run python ... | uv run pytest'}
-                    {toolingStack === 'pyenv-pip' &&
-                      '(.venv) $ python ... | pytest'}
-                    {toolingStack === 'poetry' &&
-                      'poetry run python ... | poetry run pytest'}
-                    {toolingStack === 'pipenv' &&
-                      'pipenv run python ... | pipenv run pytest'}
+
+                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
+                    <div className="text-slate-400">
+                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
+                      <code className="font-mono text-slate-200">
+                        {toolingStack === 'uv'
+                          ? 'source .venv/bin/activate && ' +
+                            formatCommandForStack(
+                              currentProject.interactiveCommands[0]?.command ||
+                                'uv run python main.py',
+                              'pyenv-pip'
+                            )
+                          : currentProject.interactiveCommands[0]?.command}
+                      </code>
+                    </div>
+                    {showJsTsComparison && (
+                      <div className="text-cyan-300/90">
+                        <strong>• Tương ứng Node.js:</strong>{' '}
+                        <code className="font-mono text-cyan-200">
+                          node index.js / npm start &amp;&amp; npm test
+                        </code>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
