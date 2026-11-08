@@ -17,6 +17,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
+import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
 
 export const ExamCenter: React.FC = () => {
@@ -302,8 +303,8 @@ export const ExamCenter: React.FC = () => {
               </h3>
 
               {q.codeSnippet && (
-                <pre className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-sky-200 leading-5">
-                  <code>{q.codeSnippet}</code>
+                <pre className="ide-dark-surface overflow-x-auto rounded-xl border border-slate-800 bg-[#090d16] p-3.5 font-mono text-xs leading-5">
+                  <code>{renderHighlightedPython(q.codeSnippet)}</code>
                 </pre>
               )}
 

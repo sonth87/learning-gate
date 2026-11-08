@@ -3,6 +3,10 @@ import { Check, Copy, Terminal, MessageSquareCode } from 'lucide-react';
 import { CodeLineAnnotation } from '@/types/curriculum.types';
 import { findGlossaryTerm } from '@/data/glossary';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import {
+  tokenizePythonCode,
+  getTokenColorClass,
+} from '@/utils/pythonHighlighter';
 import { RichTextWithTerms } from './RichTextWithTerms';
 
 interface CodeBlockProps {
@@ -38,19 +42,25 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
     setTimeout(() => setCopied(false), 1800);
   };
 
-  // Tokenize a line of Python code so keywords/builtins/dunders are hoverable!
+  // Tokenize a line of Python/TS code with full IDE syntax highlighting + glossary hover!
   const renderCodeLineWithHover = (lineText: string) => {
-    const commentIdx = lineText.indexOf('#');
-    const codePart = commentIdx >= 0 ? lineText.slice(0, commentIdx) : lineText;
-    const commentPart = commentIdx >= 0 ? lineText.slice(commentIdx) : '';
-
-    const tokens = codePart.split(/([a-zA-Z_][a-zA-Z0-9_]*|@[a-zA-Z_][a-zA-Z0-9_.]*)/g);
+    const tokens = tokenizePythonCode(lineText);
 
     return (
       <>
         {tokens.map((tok, i) => {
-          const cleanTok = tok.startsWith('@') ? tok.slice(1) : tok;
-          const term = findGlossaryTerm( tok ) || findGlossaryTerm(cleanTok);
+          if (tok.type === 'whitespace') {
+            return <span key={i}>{tok.value}</span>;
+          }
+          const colorCls = getTokenColorClass(tok.type);
+          const cleanTok = tok.value.startsWith('@')
+            ? tok.value.slice(1)
+            : tok.value;
+          const term =
+            tok.type !== 'comment' && tok.type !== 'string'
+              ? findGlossaryTerm(tok.value) || findGlossaryTerm(cleanTok)
+              : undefined;
+
           if (term) {
             return (
               <span
@@ -59,7 +69,12 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                   const r = e.currentTarget.getBoundingClientRect();
                   showTermPopover(
                     term.id,
-                    { top: r.top, left: r.left, bottom: r.bottom, width: r.width },
+                    {
+                      top: r.top,
+                      left: r.left,
+                      bottom: r.bottom,
+                      width: r.width,
+                    },
                     false
                   );
                 }}
@@ -69,21 +84,28 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
                   const r = e.currentTarget.getBoundingClientRect();
                   showTermPopover(
                     term.id,
-                    { top: r.top, left: r.left, bottom: r.bottom, width: r.width },
+                    {
+                      top: r.top,
+                      left: r.left,
+                      bottom: r.bottom,
+                      width: r.width,
+                    },
                     true
                   );
                 }}
-                className="cursor-help text-amber-300 underline decoration-amber-500/40 decoration-dotted underline-offset-4 hover:bg-amber-500/20 rounded px-0.5 transition-colors"
+                className={`cursor-help ${colorCls} underline decoration-amber-500/40 decoration-dotted underline-offset-4 hover:bg-amber-500/20 rounded px-0.5 transition-colors`}
               >
-                {tok}
+                {tok.value}
               </span>
             );
           }
-          return <span key={i}>{tok}</span>;
+
+          return (
+            <span key={i} className={colorCls}>
+              {tok.value}
+            </span>
+          );
         })}
-        {commentPart && (
-          <span className="text-emerald-400/80 italic">{commentPart}</span>
-        )}
       </>
     );
   };

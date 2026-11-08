@@ -130,6 +130,31 @@
   color-scheme: dark;
 }
 
+/* Preserve crisp dark IDE syntax colors inside .ide-dark-surface even when Light Mode is active */
+.pylearn-root.pylearn-light .ide-dark-surface {
+  color-scheme: dark;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-amber-300: #fcd34d;
+  --color-yellow-300: #fde047;
+  --color-sky-200: #bae6fd;
+  --color-sky-300: #7dd3fc;
+  --color-cyan-300: #67e8f9;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-indigo-300: #a5b4fc;
+  --color-purple-400: #c084fc;
+  --color-fuchsia-400: #e879f9;
+  --color-pink-400: #f472b6;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-rose-400: #fb7185;
+}
+
 /* Mobile & Tablet Touch and Scrollbar Utilities */
 .pylearn-root {
   -webkit-tap-highlight-color: transparent;

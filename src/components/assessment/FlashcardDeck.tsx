@@ -20,6 +20,7 @@ import { SkillLevel, StageId } from '@/types/curriculum.types';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { LevelBadge } from '@/components/common/LevelBadge';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
+import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
 
 type SrsFilterMode = 'all' | 'due' | 'new' | 'mastered';
@@ -381,8 +382,8 @@ export const FlashcardDeck: React.FC = () => {
               </div>
 
               {currentCard.codeSnippet && (
-                <pre className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-sky-200">
-                  <code>{currentCard.codeSnippet}</code>
+                <pre className="ide-dark-surface overflow-x-auto rounded-xl border border-slate-800 bg-[#090d16] p-3.5 font-mono text-xs leading-5">
+                  <code>{renderHighlightedPython(currentCard.codeSnippet)}</code>
                 </pre>
               )}
             </div>

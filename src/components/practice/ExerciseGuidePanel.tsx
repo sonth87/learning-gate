@@ -12,6 +12,7 @@ import {
 import { PracticeExercise } from '@/types/practice.types';
 import { RichTextWithTerms } from '@/components/common/RichTextWithTerms';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
 
 type GuideTab = 'problem' | 'hints' | 'mistakes' | 'solution';
@@ -234,8 +235,8 @@ export const ExerciseGuidePanel: React.FC<{ exercise: PracticeExercise }> = ({
                   <div className="text-xs font-bold text-indigo-300">
                     {step.stepTitle}
                   </div>
-                  <pre className="overflow-x-auto rounded-lg border border-slate-800/80 bg-slate-900 p-2.5 font-mono text-xs text-sky-200">
-                    <code>{step.codeSnippet}</code>
+                  <pre className="overflow-x-auto rounded-lg border border-slate-800/80 bg-[#090d16] p-3 font-mono text-xs leading-5">
+                    <code>{renderHighlightedPython(step.codeSnippet)}</code>
                   </pre>
                   <p className="text-xs text-slate-300 leading-relaxed">
                     <RichTextWithTerms text={step.explanation} />
