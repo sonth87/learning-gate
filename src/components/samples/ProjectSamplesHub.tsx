@@ -566,15 +566,22 @@ export const ProjectSamplesHub: React.FC = () => {
                       key={file.path}
                       onClick={() => setActiveFilePath(file.path)}
                       title={file.path}
+                      style={
+                        isActive
+                          ? {
+                              backgroundColor: activeIdeTheme.popupActiveBg,
+                              borderColor: activeIdeTheme.popupActiveAccent,
+                              color: activeIdeTheme.popupActiveText,
+                            }
+                          : {
+                              backgroundColor: activeIdeTheme.btnBg,
+                              borderColor: activeIdeTheme.barBorder,
+                              color: activeIdeTheme.barText,
+                            }
+                      }
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-xs transition-all shrink-0 cursor-pointer',
-                        isActive
-                          ? activeIdeTheme.isLight
-                            ? 'border-emerald-600/60 bg-emerald-500/15 text-emerald-800 font-bold shadow-2xs'
-                            : 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300 font-bold shadow-2xs'
-                          : activeIdeTheme.isLight
-                          ? 'border-slate-300/80 bg-white/60 text-slate-700 hover:bg-white hover:text-slate-950'
-                          : 'border-slate-800/80 bg-slate-900/40 text-slate-300 hover:text-white hover:bg-slate-800/70'
+                        isActive ? 'font-bold shadow-2xs' : 'opacity-80 hover:opacity-100'
                       )}
                     >
                       {file.language === 'python' ? (
@@ -609,12 +616,12 @@ export const ProjectSamplesHub: React.FC = () => {
               >
                 <button
                   onClick={handleCopyFileCode}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-colors cursor-pointer',
-                    activeIdeTheme.isLight
-                      ? 'border-slate-300 bg-white text-slate-800 hover:bg-slate-100 shadow-2xs'
-                      : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 shadow-2xs'
-                  )}
+                  style={{
+                    backgroundColor: activeIdeTheme.btnBg,
+                    borderColor: activeIdeTheme.barBorder,
+                    color: activeIdeTheme.barText,
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
                 >
                   {copiedFile ? (
                     <>
@@ -716,14 +723,17 @@ export const ProjectSamplesHub: React.FC = () => {
                   type="button"
                   onClick={() => setIsThemeMenuOpen((v) => !v)}
                   title="Đổi màu nền & giao diện IDE (Tự động lưu)"
-                  className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer',
-                    activeIdeTheme.isLight
-                      ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                      : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700'
-                  )}
+                  style={{
+                    backgroundColor: activeIdeTheme.btnBg,
+                    borderColor: activeIdeTheme.barBorder,
+                    color: activeIdeTheme.barText,
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
                 >
-                  <Palette className="h-3.5 w-3.5 text-emerald-400" />
+                  <Palette
+                    className="h-3.5 w-3.5"
+                    style={{ color: activeIdeTheme.popupActiveAccent }}
+                  />
                   <span className="flex items-center gap-0.5">
                     {activeIdeTheme.swatchColors.map((hex, i) => (
                       <span
@@ -733,7 +743,7 @@ export const ProjectSamplesHub: React.FC = () => {
                       />
                     ))}
                   </span>
-                  <span className="text-[10px]">
+                  <span className="text-[10px] font-semibold">
                     {activeIdeTheme.name.split(' (')[0]}
                   </span>
                 </button>
@@ -744,8 +754,21 @@ export const ProjectSamplesHub: React.FC = () => {
                       className="fixed inset-0 z-30"
                       onClick={() => setIsThemeMenuOpen(false)}
                     />
-                    <div className="absolute right-0 bottom-8 z-40 w-64 rounded-2xl border border-slate-700 bg-slate-900 p-2 text-slate-100 shadow-2xl space-y-1">
-                      <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <div
+                      style={{
+                        backgroundColor: activeIdeTheme.popupBg,
+                        borderColor: activeIdeTheme.popupBorder,
+                        color: activeIdeTheme.popupText,
+                      }}
+                      className="absolute right-0 bottom-8 z-40 w-64 rounded-2xl border p-2 shadow-2xl space-y-1"
+                    >
+                      <div
+                        style={{
+                          borderColor: activeIdeTheme.popupBorder,
+                          color: activeIdeTheme.popupMutedText,
+                        }}
+                        className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border-b"
+                      >
                         Chọn Màu Giao Diện IDE (Tự lưu)
                       </div>
                       {IDE_THEMES.map((t) => {
@@ -758,17 +781,26 @@ export const ProjectSamplesHub: React.FC = () => {
                               setIdeTheme(t.id);
                               setIsThemeMenuOpen(false);
                             }}
-                            className={cn(
-                              'w-full flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-colors cursor-pointer',
-                              active
-                                ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40'
-                                : 'hover:bg-slate-800 text-slate-200'
-                            )}
+                            style={{
+                              backgroundColor: active
+                                ? activeIdeTheme.popupActiveBg
+                                : 'transparent',
+                              color: active
+                                ? activeIdeTheme.popupActiveText
+                                : activeIdeTheme.popupText,
+                              borderColor: active
+                                ? activeIdeTheme.popupActiveAccent
+                                : 'transparent',
+                            }}
+                            className="w-full flex items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left text-xs transition-colors cursor-pointer font-semibold"
                           >
                             <div className="flex items-center gap-2 min-w-0">
                               <span
-                                className="flex items-center gap-0.5 rounded-md border border-slate-700 p-1 shrink-0"
-                                style={{ backgroundColor: t.editorBg }}
+                                className="flex items-center gap-0.5 rounded-md border p-1 shrink-0"
+                                style={{
+                                  backgroundColor: t.editorBg,
+                                  borderColor: t.barBorder,
+                                }}
                               >
                                 {t.swatchColors.map((hex, i) => (
                                   <span
@@ -783,7 +815,10 @@ export const ProjectSamplesHub: React.FC = () => {
                               </span>
                             </div>
                             {active && (
-                              <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                              <Check
+                                className="h-3.5 w-3.5 shrink-0"
+                                style={{ color: activeIdeTheme.popupActiveAccent }}
+                              />
                             )}
                           </button>
                         );

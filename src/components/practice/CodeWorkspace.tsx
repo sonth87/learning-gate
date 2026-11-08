@@ -26,35 +26,102 @@ import { cn } from '@/utils/cn';
 
 const KIND_BADGE_MAP: Record<
   CompletionKind,
-  { label: string; className: string }
+  {
+    label: string;
+    darkStyle: React.CSSProperties;
+    lightStyle: React.CSSProperties;
+  }
 > = {
   variable: {
     label: 'VAR',
-    className: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(14, 165, 233, 0.18)',
+      color: '#38bdf8',
+      borderColor: 'rgba(56, 189, 248, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(2, 132, 199, 0.12)',
+      color: '#0369a1',
+      borderColor: 'rgba(2, 132, 199, 0.3)',
+    },
   },
   keyword: {
     label: 'KW',
-    className: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(168, 85, 247, 0.18)',
+      color: '#c084fc',
+      borderColor: 'rgba(192, 132, 252, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(126, 34, 206, 0.12)',
+      color: '#7e22ce',
+      borderColor: 'rgba(126, 34, 206, 0.3)',
+    },
   },
   builtin: {
     label: 'FN',
-    className: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(6, 182, 212, 0.18)',
+      color: '#22d3ee',
+      borderColor: 'rgba(34, 211, 238, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(14, 116, 144, 0.12)',
+      color: '#0e7490',
+      borderColor: 'rgba(14, 116, 144, 0.3)',
+    },
   },
   method: {
     label: 'METH',
-    className: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(245, 158, 11, 0.18)',
+      color: '#fbbf24',
+      borderColor: 'rgba(251, 191, 36, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(180, 83, 9, 0.12)',
+      color: '#b45309',
+      borderColor: 'rgba(180, 83, 9, 0.3)',
+    },
   },
   type: {
     label: 'TYPE',
-    className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(16, 185, 129, 0.18)',
+      color: '#34d399',
+      borderColor: 'rgba(52, 211, 153, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(4, 120, 87, 0.12)',
+      color: '#047857',
+      borderColor: 'rgba(4, 120, 87, 0.3)',
+    },
   },
   dunder: {
     label: 'DUND',
-    className: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(99, 102, 241, 0.18)',
+      color: '#818cf8',
+      borderColor: 'rgba(129, 140, 248, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(67, 56, 202, 0.12)',
+      color: '#4338ca',
+      borderColor: 'rgba(67, 56, 202, 0.3)',
+    },
   },
   snippet: {
     label: 'SNIP',
-    className: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+    darkStyle: {
+      backgroundColor: 'rgba(244, 63, 94, 0.18)',
+      color: '#fb7185',
+      borderColor: 'rgba(251, 113, 133, 0.35)',
+    },
+    lightStyle: {
+      backgroundColor: 'rgba(190, 18, 60, 0.12)',
+      color: '#be123c',
+      borderColor: 'rgba(190, 18, 60, 0.3)',
+    },
   },
 };
 
@@ -343,12 +410,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleCopyCode}
               title="Sao chép code"
-              className={cn(
-                'inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-colors cursor-pointer',
-                activeIdeTheme.isLight
-                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                  : 'border-slate-700/80 bg-slate-800/80 text-slate-300 hover:bg-slate-700'
-              )}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition-opacity hover:opacity-85 cursor-pointer"
             >
               {copied ? (
                 <>
@@ -366,12 +433,12 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleReset}
               title="Khôi phục code khởi tạo ban đầu"
-              className={cn(
-                'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                activeIdeTheme.isLight
-                  ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
-                  : 'border-slate-700/80 bg-slate-800/80 text-slate-300 hover:bg-slate-700'
-              )}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-opacity hover:opacity-85 cursor-pointer"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               <span>Reset</span>
@@ -380,12 +447,16 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleFillSolution}
               title="Điền lời giải chuẩn Pythonic vào trình soạn thảo"
-              className={cn(
-                'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer',
-                activeIdeTheme.isLight
-                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
-                  : 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25'
-              )}
+              style={{
+                backgroundColor: activeIdeTheme.isLight
+                  ? 'rgba(79, 70, 229, 0.10)'
+                  : 'rgba(99, 102, 241, 0.18)',
+                borderColor: activeIdeTheme.isLight
+                  ? 'rgba(79, 70, 229, 0.30)'
+                  : 'rgba(129, 140, 248, 0.40)',
+                color: activeIdeTheme.isLight ? '#4338ca' : '#a5b4fc',
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-opacity hover:opacity-85 cursor-pointer"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span>Lời giải mẫu</span>
@@ -394,7 +465,7 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <button
               onClick={handleRunTests}
               title="Chạy kiểm thử (Ctrl/Cmd + Enter)"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors shadow-md shadow-emerald-500/20 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1 text-xs font-bold text-[#020617] hover:bg-emerald-400 transition-colors shadow-md shadow-emerald-500/20 cursor-pointer"
             >
               <Play className="h-3.5 w-3.5 fill-current" />
               <span>Chạy & Chấm bài</span>
@@ -500,33 +571,31 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               )}
             />
 
-            {/* Floating Python IntelliSense Auto-Complete Popup */}
+            {/* Floating Python IntelliSense Auto-Complete Popup (Matches Active IDE Theme) */}
             {completions.length > 0 && (
               <div
                 style={{
                   top: `${popupTopPx}px`,
                   left: `${popupLeftPx}px`,
+                  backgroundColor: activeIdeTheme.popupBg,
+                  borderColor: activeIdeTheme.popupBorder,
+                  color: activeIdeTheme.popupText,
                 }}
-                className={cn(
-                  'absolute z-30 w-80 sm:w-96 rounded-xl border shadow-2xl overflow-hidden animate-in fade-in duration-100',
-                  activeIdeTheme.isLight
-                    ? 'border-slate-300 bg-white text-slate-800'
-                    : 'border-slate-700 bg-slate-900/98 text-slate-100'
-                )}
+                className="absolute z-30 w-80 sm:w-96 rounded-xl border shadow-2xl overflow-hidden animate-in fade-in duration-100"
               >
                 <div
-                  className={cn(
-                    'flex items-center justify-between px-2.5 py-1 border-b text-[10px] font-mono',
-                    activeIdeTheme.isLight
-                      ? 'border-slate-200 bg-slate-100 text-slate-500'
-                      : 'border-slate-800 bg-slate-950/90 text-slate-400'
-                  )}
+                  style={{
+                    backgroundColor: activeIdeTheme.popupHeaderBg,
+                    borderColor: activeIdeTheme.popupBorder,
+                    color: activeIdeTheme.popupMutedText,
+                  }}
+                  className="flex items-center justify-between gap-2 px-3 py-1.5 border-b text-[10px] font-mono whitespace-nowrap"
                 >
-                  <span>Gợi ý Python (IntelliSense)</span>
-                  <span>↑↓ chọn • Tab/Enter chèn • Esc đóng</span>
+                  <span className="font-bold">Gợi ý Python (IntelliSense)</span>
+                  <span className="opacity-90">↑↓ chọn • Tab/Enter chèn • Esc</span>
                 </div>
 
-                <div className="max-h-52 overflow-y-auto divide-y divide-slate-800/30">
+                <div className="max-h-52 overflow-y-auto">
                   {completions.map((item, idx) => {
                     const isSelected = idx === selectedCompletionIdx;
                     const badge = KIND_BADGE_MAP[item.kind];
@@ -535,27 +604,36 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                       <button
                         key={`${item.kind}-${item.label}`}
                         type="button"
+                        onMouseEnter={() => setSelectedCompletionIdx(idx)}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           applyCompletion(item);
                         }}
-                        className={cn(
-                          'w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-xs transition-colors cursor-pointer',
-                          isSelected
-                            ? activeIdeTheme.isLight
-                              ? 'bg-blue-50 text-blue-900'
-                              : 'bg-emerald-500/20 text-white'
-                            : activeIdeTheme.isLight
-                            ? 'hover:bg-slate-100 text-slate-800'
-                            : 'hover:bg-slate-800/70 text-slate-300'
-                        )}
+                        style={{
+                          backgroundColor: isSelected
+                            ? activeIdeTheme.popupActiveBg
+                            : 'transparent',
+                          color: isSelected
+                            ? activeIdeTheme.popupActiveText
+                            : activeIdeTheme.popupText,
+                          borderBottom:
+                            idx < completions.length - 1
+                              ? `1px solid ${activeIdeTheme.popupBorder}55`
+                              : 'none',
+                          borderLeft: isSelected
+                            ? `3px solid ${activeIdeTheme.popupActiveAccent}`
+                            : '3px solid transparent',
+                        }}
+                        className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 text-left font-mono text-xs transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span
-                            className={cn(
-                              'rounded border px-1 py-0.2 text-[9px] font-bold shrink-0',
-                              badge.className
-                            )}
+                            style={
+                              activeIdeTheme.isLight
+                                ? badge.lightStyle
+                                : badge.darkStyle
+                            }
+                            className="rounded border px-1.5 py-0.2 text-[9px] font-bold shrink-0"
                           >
                             {badge.label}
                           </span>
@@ -564,12 +642,8 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                           </span>
                         </div>
                         <span
-                          className={cn(
-                            'text-[10px] font-sans truncate max-w-[180px]',
-                            activeIdeTheme.isLight
-                              ? 'text-slate-500'
-                              : 'text-slate-400'
-                          )}
+                          style={{ color: activeIdeTheme.popupMutedText }}
+                          className="text-[10px] font-sans truncate max-w-[175px]"
                         >
                           {item.detail}
                         </span>
@@ -624,14 +698,17 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                 type="button"
                 onClick={() => setIsThemeMenuOpen((v) => !v)}
                 title="Đổi màu nền & giao diện IDE (Tự động lưu)"
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer',
-                  activeIdeTheme.isLight
-                    ? 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 shadow-2xs'
-                    : 'border-slate-700 bg-slate-800/90 text-slate-200 hover:bg-slate-700'
-                )}
+                style={{
+                  backgroundColor: activeIdeTheme.btnBg,
+                  borderColor: activeIdeTheme.barBorder,
+                  color: activeIdeTheme.barText,
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[11px] font-medium transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
               >
-                <Palette className="h-3.5 w-3.5 text-emerald-400" />
+                <Palette
+                  className="h-3.5 w-3.5"
+                  style={{ color: activeIdeTheme.popupActiveAccent }}
+                />
                 <span className="flex items-center gap-0.5">
                   {activeIdeTheme.swatchColors.map((hex, i) => (
                     <span
@@ -641,7 +718,7 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                     />
                   ))}
                 </span>
-                <span className="hidden sm:inline text-[10px]">
+                <span className="hidden sm:inline text-[10px] font-semibold">
                   {activeIdeTheme.name.split(' (')[0]}
                 </span>
               </button>
@@ -652,8 +729,21 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                     className="fixed inset-0 z-30"
                     onClick={() => setIsThemeMenuOpen(false)}
                   />
-                  <div className="absolute right-0 bottom-8 z-40 w-64 rounded-2xl border border-slate-700 bg-slate-900 p-2 text-slate-100 shadow-2xl space-y-1">
-                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                  <div
+                    style={{
+                      backgroundColor: activeIdeTheme.popupBg,
+                      borderColor: activeIdeTheme.popupBorder,
+                      color: activeIdeTheme.popupText,
+                    }}
+                    className="absolute right-0 bottom-8 z-40 w-64 rounded-2xl border p-2 shadow-2xl space-y-1"
+                  >
+                    <div
+                      style={{
+                        borderColor: activeIdeTheme.popupBorder,
+                        color: activeIdeTheme.popupMutedText,
+                      }}
+                      className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border-b"
+                    >
                       Chọn Màu Giao Diện IDE (Tự lưu)
                     </div>
                     {IDE_THEMES.map((t) => {
@@ -666,17 +756,26 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                             setIdeTheme(t.id);
                             setIsThemeMenuOpen(false);
                           }}
-                          className={cn(
-                            'w-full flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-left text-xs transition-colors cursor-pointer',
-                            active
-                              ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40'
-                              : 'hover:bg-slate-800 text-slate-200'
-                          )}
+                          style={{
+                            backgroundColor: active
+                              ? activeIdeTheme.popupActiveBg
+                              : 'transparent',
+                            color: active
+                              ? activeIdeTheme.popupActiveText
+                              : activeIdeTheme.popupText,
+                            borderColor: active
+                              ? activeIdeTheme.popupActiveAccent
+                              : 'transparent',
+                          }}
+                          className="w-full flex items-center justify-between gap-2 rounded-xl border px-2.5 py-2 text-left text-xs transition-colors cursor-pointer font-semibold"
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <span
-                              className="flex items-center gap-0.5 rounded-md border border-slate-700 p-1 shrink-0"
-                              style={{ backgroundColor: t.editorBg }}
+                              className="flex items-center gap-0.5 rounded-md border p-1 shrink-0"
+                              style={{
+                                backgroundColor: t.editorBg,
+                                borderColor: t.barBorder,
+                              }}
                             >
                               {t.swatchColors.map((hex, i) => (
                                 <span
@@ -689,7 +788,10 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
                             <span className="truncate font-sans">{t.name}</span>
                           </div>
                           {active && (
-                            <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                            <Check
+                              className="h-3.5 w-3.5 shrink-0"
+                              style={{ color: activeIdeTheme.popupActiveAccent }}
+                            />
                           )}
                         </button>
                       );
