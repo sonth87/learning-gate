@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { DeviceLayout, useStore } from '@sonth87/device-layout';
-import { ALL_LEARNING_APPS, PYMASTERY_CONFIG } from '@/apps/appRegistry';
+import {
+  ALL_LEARNING_APPS,
+  CICD_MASTERY_CONFIG,
+  KUBEMASTERY_CONFIG,
+  PYMASTERY_CONFIG,
+} from '@/apps/appRegistry';
 
 export const App: React.FC = () => {
   const autoLaunchedRef = useRef(false);
@@ -13,27 +18,55 @@ export const App: React.FC = () => {
       try {
         const store = useStore.getState();
 
-        // Keep Python Mastery pinned in the Dock so it remains visible even if closed
-        if (!store.dockAppIds.includes('pymastery')) {
-          useStore.setState({ dockAppIds: ['pymastery'] });
-        }
+        // Keep Python Mastery, Docker & K8s Mastery, and CI/CD Mastery pinned in the Dock
+        const nextDock = Array.from(
+          new Set([
+            ...store.dockAppIds,
+            'pymastery',
+            'kubemastery',
+            'cicdmastery',
+          ])
+        );
+        useStore.setState({ dockAppIds: nextDock });
 
-        const existing = Object.values(store.windows).find(
+        const existingCicd = Object.values(store.windows).find(
+          (w) => w.appId === 'cicdmastery'
+        );
+        const existingKube = Object.values(store.windows).find(
+          (w) => w.appId === 'kubemastery'
+        );
+        const existingPy = Object.values(store.windows).find(
           (w) => w.appId === 'pymastery'
         );
 
-        if (!existing && store.launchApp) {
-          // Open as a normal centered window first so prevRect is preserved when exiting Full Screen
-          const winId = store.launchApp(PYMASTERY_CONFIG, {
+        if (!existingCicd && !existingKube && !existingPy && store.launchApp) {
+          // Launch apps in the workspace and focus CI/CD Mastery
+          store.launchApp(PYMASTERY_CONFIG, {
             isFullScreen: false,
             isMaximized: false,
           });
-          if (winId && store.enterFullScreen) {
-            store.enterFullScreen(winId);
+          store.launchApp(KUBEMASTERY_CONFIG, {
+            isFullScreen: false,
+            isMaximized: false,
+          });
+          const cicdWinId = store.launchApp(CICD_MASTERY_CONFIG, {
+            isFullScreen: false,
+            isMaximized: false,
+          });
+          if (cicdWinId && store.enterFullScreen) {
+            store.enterFullScreen(cicdWinId);
+          }
+        } else if (!existingCicd && store.launchApp) {
+          const cicdWinId = store.launchApp(CICD_MASTERY_CONFIG, {
+            isFullScreen: false,
+            isMaximized: false,
+          });
+          if (cicdWinId && store.enterFullScreen) {
+            store.enterFullScreen(cicdWinId);
           }
         }
       } catch (err) {
-        console.error('Failed to auto-launch PyMastery:', err);
+        console.error('Failed to auto-launch learning apps:', err);
       }
     }, 100);
 
@@ -45,7 +78,7 @@ export const App: React.FC = () => {
       <DeviceLayout
         apps={ALL_LEARNING_APPS}
         builtInApps={false}
-        fallbackMenuBarAppId="pymastery"
+        fallbackMenuBarAppId="cicdmastery"
       />
     </div>
   );

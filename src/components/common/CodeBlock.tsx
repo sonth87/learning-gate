@@ -15,7 +15,7 @@ interface CodeBlockProps {
   code: string;
   output?: string;
   annotations?: CodeLineAnnotation[];
-  language?: 'python' | 'typescript';
+  language?: 'python' | 'typescript' | 'dockerfile' | 'yaml' | 'bash' | 'sql' | string;
 }
 
 export const CodeBlock: React.FC<CodeBlockProps> = ({

@@ -16,8 +16,11 @@ import {
   Monitor,
   Wrench,
   Terminal,
+  Container,
+  Workflow,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
+import { switchLearningApp } from '@/apps/appRegistry';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
@@ -222,6 +225,40 @@ export const Header: React.FC = () => {
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Switch to CI/CD Mastery App Button */}
+          <HeaderTooltip
+            label="Mở App học CI/CD Architecture (CI/CD Mastery)"
+            align="right"
+          >
+            <button
+              onClick={() => switchLearningApp('cicdmastery')}
+              aria-label="Mở App học CI/CD Architecture"
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-cyan-500/45 bg-cyan-500/15 px-2 sm:px-2.5 text-xs font-bold text-cyan-300 hover:bg-cyan-500/25 hover:border-cyan-500/60 transition-all cursor-pointer shadow-xs"
+            >
+              <Workflow className="h-3.5 w-3.5 text-cyan-400 shrink-0" aria-hidden="true" />
+              <span className="hidden md:inline whitespace-nowrap">
+                CI/CD App
+              </span>
+            </button>
+          </HeaderTooltip>
+
+          {/* Switch to Docker & K8s Mastery App Button */}
+          <HeaderTooltip
+            label="Mở App học Docker & Kubernetes (KubeMastery)"
+            align="right"
+          >
+            <button
+              onClick={() => switchLearningApp('kubemastery')}
+              aria-label="Mở App học Docker & Kubernetes"
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-500/45 bg-sky-500/15 px-2 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 hover:border-sky-500/60 transition-all cursor-pointer shadow-xs"
+            >
+              <Container className="h-3.5 w-3.5 text-sky-400 shrink-0" aria-hidden="true" />
+              <span className="hidden md:inline whitespace-nowrap">
+                Docker & K8s App
+              </span>
+            </button>
+          </HeaderTooltip>
+
           {/* Quick Setup Guide Button (Python / uv / pyenv / VS Code) */}
           <HeaderTooltip
             label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
