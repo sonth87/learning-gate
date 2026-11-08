@@ -1,0 +1,350 @@
+import React, { useState } from 'react';
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  FolderKanban,
+  Award,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  X,
+  BookOpen,
+} from 'lucide-react';
+import { CURRICULUM_STAGES, STAGE_MAP } from '@/constants/stages';
+import { SKILL_LEVELS } from '@/constants/levels';
+import { getLessonsByLevel, getLessonsByStage } from '@/data/curriculum';
+import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useUserDataStore } from '@/stores/useUserDataStore';
+import { LevelBadge } from '@/components/common/LevelBadge';
+import { cn } from '@/utils/cn';
+
+export const Sidebar: React.FC = () => {
+  const {
+    selectedLessonId,
+    selectLesson,
+    isMobileSidebarOpen,
+    setMobileSidebarOpen,
+  } = useNavigationStore();
+  const { organizationMode, setOrganizationMode } = useSettingsStore();
+  const { completedLessonIds } = useUserDataStore();
+
+  const [filterQuery, setFilterQuery] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
+
+  const matchesQuery = (title: string, desc: string) => {
+    if (!filterQuery.trim()) return true;
+    const q = filterQuery.trim().toLowerCase();
+    return title.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
+  };
+
+  const renderSidebarContent = () => (
+    <>
+      {/* Top Sticky Controls: Grouping Mode + Quick Filter */}
+      <div className="p-3.5 border-b border-slate-800/80 space-y-2.5 bg-slate-950/90 backdrop-blur-md">
+        {/* Grouping Mode Segmented Switcher */}
+        <div
+          role="group"
+          aria-label="Chế độ phân nhóm lộ trình"
+          className="grid grid-cols-2 rounded-lg border border-slate-800 bg-slate-900 p-0.5 text-xs"
+        >
+          <button
+            onClick={() => setOrganizationMode('by-stage')}
+            aria-pressed={organizationMode === 'by-stage'}
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 font-medium transition-all',
+              organizationMode === 'by-stage'
+                ? 'bg-slate-800 text-white shadow-xs border border-slate-700/80'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <FolderKanban className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
+            <span>7 Giai đoạn</span>
+          </button>
+          <button
+            onClick={() => setOrganizationMode('by-level')}
+            aria-pressed={organizationMode === 'by-level'}
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 rounded-md py-1.5 font-medium transition-all',
+              organizationMode === 'by-level'
+                ? 'bg-slate-800 text-white shadow-xs border border-slate-700/80'
+                : 'text-slate-400 hover:text-slate-200'
+            )}
+          >
+            <Award className="h-3.5 w-3.5 text-amber-400" aria-hidden="true" />
+            <span>5 Cấp độ</span>
+          </button>
+        </div>
+
+        {/* Quick Filter Input */}
+        <div className="relative">
+          <Search
+            className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500"
+            aria-hidden="true"
+          />
+          <input
+            type="text"
+            value={filterQuery}
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Lọc nhanh bài học..."
+            aria-label="Lọc nhanh bài học"
+            className="w-full rounded-lg border border-slate-800 bg-slate-900/90 pl-8 pr-7 py-2 text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500/60 focus:outline-none transition-colors"
+          />
+          {filterQuery && (
+            <button
+              onClick={() => setFilterQuery('')}
+              aria-label="Xóa bộ lọc"
+              className="absolute right-2 top-2 text-slate-500 hover:text-slate-300 p-0.5"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Scrollable Curriculum Tree */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* View 1: Grouped by 7 Stages */}
+        {organizationMode === 'by-stage' &&
+          CURRICULUM_STAGES.map((stage) => {
+            const allStageLessons = getLessonsByStage(stage.id);
+            const lessons = allStageLessons.filter((l) =>
+              matchesQuery(l.title, l.shortDescription)
+            );
+            if (lessons.length === 0) return null;
+
+            const completedInStage = allStageLessons.filter((l) =>
+              completedLessonIds.includes(l.id)
+            ).length;
+            const hasSelected = allStageLessons.some(
+              (l) => l.id === selectedLessonId
+            );
+            const isCollapsed =
+              !filterQuery && collapsedGroups[stage.id] && !hasSelected;
+
+            return (
+              <div
+                key={stage.id}
+                className="rounded-xl border border-slate-800/70 bg-slate-900/30 overflow-hidden"
+              >
+                <button
+                  onClick={() => toggleGroup(stage.id)}
+                  aria-expanded={!isCollapsed}
+                  className="w-full flex flex-col gap-1 px-3 py-2.5 text-left hover:bg-slate-900/70 transition-colors"
+                >
+                  <div className="w-full flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap min-w-0">
+                      <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-sky-400 whitespace-nowrap">
+                        Giai đoạn {stage.number}
+                      </span>
+                      <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                        • {stage.durationWeeks}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                        {completedInStage}/{allStageLessons.length}
+                      </span>
+                      {isCollapsed ? (
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      )}
+                    </div>
+                  </div>
+
+                  <h3 className="w-full text-xs font-semibold text-slate-200 truncate">
+                    {stage.title.replace(/^Giai đoạn \d+:\s*/, '')}
+                  </h3>
+                </button>
+
+                {!isCollapsed && (
+                  <div className="border-t border-slate-800/60 p-1.5 space-y-0.5">
+                    {lessons.map((lesson) => {
+                      const isSelected = selectedLessonId === lesson.id;
+                      const isCompleted = completedLessonIds.includes(lesson.id);
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => selectLesson(lesson.id)}
+                          className={cn(
+                            'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-all border-l-2',
+                            isSelected
+                              ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
+                              : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
+                          )}
+                        >
+                          <div className="mt-0.5 shrink-0">
+                            {isCompleted ? (
+                              <CheckCircle2
+                                className="h-3.5 w-3.5 text-emerald-400"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Circle
+                                className={cn(
+                                  'h-3.5 w-3.5',
+                                  isSelected ? 'text-emerald-400' : 'text-slate-600'
+                                )}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p
+                              className={cn(
+                                'text-xs leading-snug line-clamp-2',
+                                isSelected ? 'font-semibold text-white' : 'font-medium'
+                              )}
+                            >
+                              {lesson.title}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <LevelBadge level={lesson.level} />
+                              <span className="inline-flex items-center gap-0.5 font-mono text-[10px] text-slate-500">
+                                <Clock className="h-2.5 w-2.5" aria-hidden="true" />
+                                {lesson.estimatedMinutes}p
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+        {/* View 2: Grouped by 5 Levels */}
+        {organizationMode === 'by-level' &&
+          SKILL_LEVELS.map((lvl) => {
+            const allLevelLessons = getLessonsByLevel(lvl.id);
+            const lessons = allLevelLessons.filter((l) =>
+              matchesQuery(l.title, l.shortDescription)
+            );
+            if (lessons.length === 0) return null;
+
+            const completedInLevel = allLevelLessons.filter((l) =>
+              completedLessonIds.includes(l.id)
+            ).length;
+            const hasSelected = allLevelLessons.some(
+              (l) => l.id === selectedLessonId
+            );
+            const isCollapsed =
+              !filterQuery && collapsedGroups[lvl.id] && !hasSelected;
+
+            return (
+              <div
+                key={lvl.id}
+                className="rounded-xl border border-slate-800/70 bg-slate-900/30 overflow-hidden"
+              >
+                <button
+                  onClick={() => toggleGroup(lvl.id)}
+                  aria-expanded={!isCollapsed}
+                  className="w-full flex flex-col gap-1.5 px-3 py-2.5 text-left hover:bg-slate-900/70 transition-colors"
+                >
+                  <div className="w-full flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <LevelBadge level={lvl.id} />
+                      <span className="text-xs font-semibold text-slate-200 truncate">
+                        {lvl.viLabel}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                        {completedInLevel}/{allLevelLessons.length}
+                      </span>
+                      {isCollapsed ? (
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="w-full text-[11px] text-slate-400 truncate">
+                    {lvl.tagline}
+                  </p>
+                </button>
+
+                {!isCollapsed && (
+                  <div className="border-t border-slate-800/60 p-1.5 space-y-0.5">
+                    {lessons.map((lesson) => {
+                      const isSelected = selectedLessonId === lesson.id;
+                      const isCompleted = completedLessonIds.includes(lesson.id);
+                      const stageInfo = STAGE_MAP[lesson.stageId];
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => selectLesson(lesson.id)}
+                          className={cn(
+                            'w-full flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-all border-l-2',
+                            isSelected
+                              ? 'border-l-emerald-400 bg-slate-800/90 text-white shadow-xs'
+                              : 'border-l-transparent text-slate-300 hover:bg-slate-900/80 hover:text-white'
+                          )}
+                        >
+                          <div className="mt-0.5 shrink-0">
+                            {isCompleted ? (
+                              <CheckCircle2
+                                className="h-3.5 w-3.5 text-emerald-400"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Circle
+                                className={cn(
+                                  'h-3.5 w-3.5',
+                                  isSelected ? 'text-emerald-400' : 'text-slate-600'
+                                )}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <p
+                              className={cn(
+                                'text-xs leading-snug line-clamp-2',
+                                isSelected ? 'font-semibold text-white' : 'font-medium'
+                              )}
+                            >
+                              {lesson.title}
+                            </p>
+                            <div className="flex items-center justify-between font-mono text-[10px] text-slate-500">
+                              <span>GĐ {stageInfo.number}</span>
+                              <span>{lesson.estimatedMinutes}p</span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+      </div>
+    </>
+  );
+
+  return (
+    <aside
+      aria-label="Danh mục bài học"
+      className="flex w-72 lg:w-80 xl:w-84 shrink-0 border-r border-slate-800/80 bg-slate-950/60 h-full flex-col overflow-hidden"
+    >
+      {renderSidebarContent()}
+    </aside>
+  );
+};

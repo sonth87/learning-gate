@@ -1,0 +1,131 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark, .dark *));
+
+/*
+ * Scope all PyMastery typography, design system tokens, and light/dark palette
+ * remapping strictly to `.pylearn-root` so @sonth87/device-layout retains its
+ * exact native macOS/Windows/iPadOS styling, fonts, and CSS variables (--color-white, etc.).
+ */
+.pylearn-root {
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  font-family: var(--font-sans);
+  line-height: 1.6;
+
+  /* UI/UX Pro Max Design System Tokens (Dark Default) */
+  --color-primary: #0f172a;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1e293b;
+  --color-on-secondary: #ffffff;
+  --color-accent: #22c55e;
+  --color-on-accent: #0f172a;
+  --color-background: #020617;
+  --color-foreground: #f8fafc;
+  --color-card: #0b1120;
+  --color-card-foreground: #f8fafc;
+  --color-muted: #151e32;
+  --color-muted-foreground: #94a3b8;
+  --color-border: #1e293b;
+}
+
+.pylearn-root code,
+.pylearn-root pre,
+.pylearn-root .font-mono {
+  font-family: var(--font-mono);
+}
+
+.pylearn-root button,
+.pylearn-root [role="button"],
+.pylearn-root a {
+  cursor: pointer;
+}
+
+.pylearn-root button:focus-visible,
+.pylearn-root a:focus-visible,
+.pylearn-root input:focus-visible,
+.pylearn-root textarea:focus-visible {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+/* Scoped Light Mode palette remapping ONLY inside .pylearn-root.pylearn-light */
+.pylearn-root.pylearn-light {
+  color-scheme: light;
+
+  --color-primary: #f8fafc;
+  --color-on-primary: #0f172a;
+  --color-secondary: #f1f5f9;
+  --color-on-secondary: #0f172a;
+  --color-accent: #16a34a;
+  --color-on-accent: #ffffff;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #475569;
+  --color-border: #e2e8f0;
+
+  /* Invert Slate scale cleanly for Light surfaces inside PyMastery */
+  --color-slate-950: #f8fafc;
+  --color-slate-900: #ffffff;
+  --color-slate-800: #e2e8f0;
+  --color-slate-700: #cbd5e1;
+  --color-slate-600: #64748b;
+  --color-slate-500: #475569;
+  --color-slate-400: #475569;
+  --color-slate-300: #334155;
+  --color-slate-200: #1e293b;
+  --color-slate-100: #0f172a;
+  --color-white: #0f172a;
+
+  /* Deepen semantic accent text shades for 4.5:1 contrast on light cards */
+  --color-amber-100: #78350f;
+  --color-amber-200: #92400e;
+  --color-amber-300: #b45309;
+  --color-amber-400: #d97706;
+  --color-amber-950: #fffbeb;
+
+  --color-yellow-200: #854d0e;
+  --color-yellow-300: #a16207;
+
+  --color-sky-100: #0c4a6e;
+  --color-sky-200: #075985;
+  --color-sky-300: #0369a1;
+  --color-sky-400: #0284c7;
+  --color-sky-950: #f0f9ff;
+
+  --color-cyan-100: #164e63;
+  --color-cyan-200: #155e75;
+  --color-cyan-300: #0e7490;
+  --color-cyan-400: #0891b2;
+  --color-cyan-950: #ecfeff;
+
+  --color-emerald-100: #064e3b;
+  --color-emerald-200: #065f46;
+  --color-emerald-300: #047857;
+  --color-emerald-400: #059669;
+  --color-emerald-950: #ecfdf5;
+
+  --color-indigo-200: #3730a3;
+  --color-indigo-300: #4338ca;
+  --color-indigo-400: #4f46e5;
+  --color-indigo-950: #eef2ff;
+
+  --color-violet-300: #6d28d9;
+  --color-violet-400: #7c3aed;
+
+  --color-fuchsia-300: #a21caf;
+  --color-fuchsia-400: #c026d3;
+
+  --color-rose-100: #881337;
+  --color-rose-200: #9f1239;
+  --color-rose-300: #be123c;
+  --color-rose-400: #e11d48;
+  --color-rose-950: #fff1f2;
+}
+
+.pylearn-root.pylearn-dark {
+  color-scheme: dark;
+}
