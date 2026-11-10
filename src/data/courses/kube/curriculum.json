@@ -1,0 +1,111 @@
+{
+  "courseId": "kube",
+  "generatedAt": "2026-04-01T00:00:00.000Z",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Nhập môn Container (từ Node.js sang Docker)",
+    "1": "Đóng gói chuẩn Production (Dockerfile & Compose v2)",
+    "2": "Bước sang Kubernetes (Kiến trúc, Pod & Deployment)",
+    "3": "Mạng & Cấu hình trong K8s (Service, Ingress, Secret)",
+    "4": "Lưu trữ, Sức khoẻ & Tự động co giãn (PVC, Probes, HPA)",
+    "5": "Bảo mật, Phân quyền & Đóng gói (RBAC, NetworkPolicy, Helm)",
+    "6": "Khám bệnh & Xử lý sự cố cụm thực chiến (Troubleshooting)"
+  },
+  "modules": [
+    {
+      "id": "K00",
+      "slug": "K00-why-containers",
+      "level": 0,
+      "order": 1,
+      "title": "Vì sao code chạy trên máy bạn nhưng lỗi trên server?",
+      "summary": "Hiểu bản chất Image vs Container qua góc nhìn package-lock.json và tiến trình Node.js cô lập.",
+      "tags": [
+        "docker",
+        "container",
+        "image",
+        "beginner"
+      ],
+      "lesson": "# Vì sao code chạy trên máy bạn nhưng lỗi trên server?\n\nNếu bạn đã quen viết ứng dụng **Node.js**, chắc hẳn bạn từng gặp cảnh: ở máy cá nhân gõ `npm start` chạy mượt mà, nhưng khi đẩy code lên máy chủ (hoặc máy đồng nghiệp) thì ứng dụng sập ngay lập tức vì lệch phiên bản Node (`v18` vs `v22`), thiếu thư viện C++ ngầm của hệ điều hành (`sharp`, `bcrypt`), hoặc khác biến môi trường.\n\n## 1. Ánh xạ từ thế giới Node.js / npm sang Container\n\n| Khái niệm quen thuộc ở Node.js | Tương đương trong Docker | Vai trò cốt lõi |\n| --- | --- | --- |\n| `package.json` + kịch bản cài đặt | `Dockerfile` | Công thức khai báo cách đóng gói môi trường và mã nguồn |\n| `package-lock.json` + gói `.tgz` bất biến | **Container Image** | Bản chụp đóng băng **chỉ đọc (read-only)** gồm OS tối giản + Node runtime + `node_modules` + code |\n| Tiến trình đang chạy khi gõ `node server.js` | **Container** | Một tiến trình sống được khởi tạo từ Image, có lớp ghi tạm riêng |\n| npm Registry (`registry.npmjs.org`) | **Container Registry** (Docker Hub, GHCR) | Kho lưu trữ để `docker pull` / `docker push` các Image |\n\n> ** Hiểu đúng bản chất:** Container **không phải** là một máy ảo (Virtual Machine) nặng nề chứa cả nhân hệ điều hành riêng. Container thực chất chỉ là một tiến trình Linux bình thường nhưng được bao bọc bởi tường ngăn cô lập.\n\n## 2. Vòng đời cơ bản của một Container\n\nKhi bạn chạy lệnh dưới đây:\n\n```bash\ndocker run -d --name demo-web nginx:1.27-alpine\n```\n\nDocker Engine sẽ thực hiện tuần tự:\n1. Kiểm tra xem máy đã có sẵn bản chụp `nginx:1.27-alpine` chưa; nếu chưa thì tải (`pull`) từ Registry về.\n2. Tạo một không gian chạy cô lập tên `demo-web` dựa trên các lớp chỉ đọc của Image đó.\n3. Chạy tiến trình chính bên trong dưới chế độ chạy ngầm (`-d` / detached).\n\nĐể quan sát và dọn dẹp vòng đời container:\n- `docker ps`: chỉ liệt kê các container **đang chạy** (`running`).\n- `docker ps -a`: liệt kê **tất cả** container, kể cả những container đã dừng (`exited`).\n- `docker stop <tên>`: gửi tín hiệu dừng lịch sự cho tiến trình bên trong.\n- `docker rm <tên>`: xoá hẳn container đã dừng (hoặc `docker rm -f <tên>` để vừa dừng vừa xoá).",
+      "sources": [
+        {
+          "title": "Docker Overview & Architecture",
+          "url": "https://docs.docker.com/get-started/docker-overview/",
+          "version": "Docker Engine v27+"
+        }
+      ],
+      "relatedTools": [],
+      "exercises": [
+        {
+          "id": "kube-ex-k00-1",
+          "code": "K00.1",
+          "title": "Chạy container đầu tiên ở chế độ ngầm",
+          "difficulty": 1,
+          "tags": [
+            "docker-run",
+            "beginner"
+          ],
+          "kind": "cli",
+          "language": "shell",
+          "filename": "terminal.sh",
+          "prompt": "Hãy chạy một container chạy ngầm (`-d`) đặt tên là `hello-nginx` từ image `nginx:1.27-alpine`.",
+          "starter": "# Gõ lệnh docker run bên dưới\n",
+          "solution": "docker run -d --name hello-nginx nginx:1.27-alpine\n",
+          "hints": [
+            "Dùng cờ `-d` để container chạy ngầm và `--name hello-nginx` để đặt tên.",
+            "Cú pháp đầy đủ: `docker run -d --name hello-nginx nginx:1.27-alpine`"
+          ],
+          "ref": "docker/node-api/Dockerfile.bad-root",
+          "spec": {
+            "kind": "cli",
+            "initialState": {},
+            "rules": [
+              {
+                "id": "nginx-running",
+                "doc": "Container `hello-nginx` đang ở trạng thái `running` từ image `nginx:1.27-alpine`",
+                "target": "docker-container",
+                "name": "hello-nginx",
+                "image": "nginx:1.27-alpine",
+                "status": "running"
+              }
+            ]
+          },
+          "module": "K00",
+          "webGrade": true
+        }
+      ],
+      "quiz": [
+        {
+          "id": "K00-Q1",
+          "type": "mc",
+          "q": "So sánh với hệ sinh thái Node.js, **Container Image** tương đương gần nhất với thứ gì?",
+          "choices": [
+            "Tiến trình đang chạy khi bạn gõ `node server.js`",
+            "Bản đóng gói bất biến (giống gói `.tgz` + `package-lock.json` đã đóng băng cả runtime lẫn thư viện)",
+            "Một máy ảo VirtualBox cài đầy đủ giao diện đồ hoạ",
+            "Biến môi trường trong file `.env`"
+          ],
+          "answer": 1,
+          "explain": "Image là bản chụp chỉ đọc (read-only) đóng băng toàn bộ runtime + thư viện + mã nguồn; còn Container mới là tiến trình đang chạy từ Image đó."
+        }
+      ],
+      "cards": [
+        {
+          "id": "K00-FC1",
+          "front": "Sự khác biệt cốt lõi giữa **Docker Image** và **Docker Container** là gì?",
+          "back": "**Image** là khuôn mẫu chỉ đọc (read-only snapshot) nằm trên ổ cứng; **Container** là tiến trình đang thực thi được khởi tạo từ Image kèm một lớp ghi tạm (writable layer)."
+        }
+      ],
+      "drills": [],
+      "readings": [
+        {
+          "path": "docker/node-api/Dockerfile.bad-root",
+          "kind": "bug",
+          "note": "Một Dockerfile viết vội thường gặp ở dự án Node.js mới.",
+          "task": "Hãy chỉ ra ít nhất 3 điểm yếu trong Dockerfile này (tag image, lệnh cài đặt gói, user mặc định).",
+          "answer": "1) `FROM node:latest` không ghim phiên bản nên hôm nay chạy Node 22 nhưng sang năm có thể tự nhảy lên Node 24 gây vỡ app; 2) `COPY . .` đặt trước `RUN npm install` làm mất tác dụng Layer Cache và `npm install` có thể sửa lockfile thay vì dùng `npm ci`; 3) Chạy mặc định dưới quyền `root` và dùng Shell form `CMD node server.js`.",
+          "catalogN": 1
+        }
+      ]
+    }
+  ]
+}

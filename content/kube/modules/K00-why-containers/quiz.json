@@ -1,0 +1,15 @@
+[
+  {
+    "id": "K00-Q1",
+    "type": "mc",
+    "q": "So sánh với hệ sinh thái Node.js, **Container Image** tương đương gần nhất với thứ gì?",
+    "choices": [
+      "Tiến trình đang chạy khi bạn gõ `node server.js`",
+      "Bản đóng gói bất biến (giống gói `.tgz` + `package-lock.json` đã đóng băng cả runtime lẫn thư viện)",
+      "Một máy ảo VirtualBox cài đầy đủ giao diện đồ hoạ",
+      "Biến môi trường trong file `.env`"
+    ],
+    "answer": 1,
+    "explain": "Image là bản chụp chỉ đọc (read-only) đóng băng toàn bộ runtime + thư viện + mã nguồn; còn Container mới là tiến trình đang chạy từ Image đó."
+  }
+]

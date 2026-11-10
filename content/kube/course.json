@@ -1,0 +1,13 @@
+{
+  "courseId": "kube",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Nhập môn Container (từ Node.js sang Docker)",
+    "1": "Đóng gói chuẩn Production (Dockerfile & Compose v2)",
+    "2": "Bước sang Kubernetes (Kiến trúc, Pod & Deployment)",
+    "3": "Mạng & Cấu hình trong K8s (Service, Ingress, Secret)",
+    "4": "Lưu trữ, Sức khoẻ & Tự động co giãn (PVC, Probes, HPA)",
+    "5": "Bảo mật, Phân quyền & Đóng gói (RBAC, NetworkPolicy, Helm)",
+    "6": "Khám bệnh & Xử lý sự cố cụm thực chiến (Troubleshooting)"
+  }
+}

@@ -1,0 +1,3 @@
+{
+  "docker/node-api/Dockerfile.bad-root": "# Mẫu Dockerfile chứa các lỗi kinh điển của người mới học Docker\nFROM node:latest\nWORKDIR /app\nCOPY . .\nRUN npm install\nEXPOSE 3000\nCMD node server.js\n"
+}

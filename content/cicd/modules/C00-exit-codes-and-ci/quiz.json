@@ -1,0 +1,15 @@
+[
+  {
+    "id": "C00-Q1",
+    "type": "mc",
+    "q": "Runner của GitHub Actions / GitLab CI dựa vào dấu hiệu nào để kết luận một bước (`step`) bị thất bại (màu đỏ)?",
+    "choices": [
+      "Đếm xem trong log có chữ `error` hay `exception` không",
+      "Mã thoát (**Exit Code**) của tiến trình khác `0`",
+      "Thời gian chạy vượt quá 10 giây",
+      "Dung lượng log lớn hơn 1MB"
+    ],
+    "answer": 1,
+    "explain": "Mọi hệ thống CI/CD chuẩn POSIX đều dựa vào Exit Code của tiến trình: `0` là thành công, khác `0` là thất bại."
+  }
+]

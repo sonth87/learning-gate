@@ -1,0 +1,7 @@
+# Mẫu Dockerfile chứa các lỗi kinh điển của người mới học Docker
+FROM node:latest
+WORKDIR /app
+COPY . .
+RUN npm install
+EXPOSE 3000
+CMD node server.js

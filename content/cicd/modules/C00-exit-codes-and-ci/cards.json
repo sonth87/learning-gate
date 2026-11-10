@@ -1,0 +1,7 @@
+[
+  {
+    "id": "C00-FC1",
+    "front": "Mã thoát **Exit Code `137`** trên CI Runner có ý nghĩa gì?",
+    "back": "`137 = 128 + 9` (`SIGKILL`): tiến trình bị nhân Linux giết tức khắc, thường gặp nhất là do vượt quá giới hạn bộ nhớ RAM (**Out Of Memory — OOM**)."
+  }
+]

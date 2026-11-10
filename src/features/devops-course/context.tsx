@@ -1,0 +1,58 @@
+import React, { createContext, useContext } from 'react';
+import type { DevOpsAccent, DevOpsCourseId, RelatedToolLink } from './types';
+
+export interface CourseMeta {
+  courseId: DevOpsCourseId;
+  accent: DevOpsAccent;
+  appTitle: string;
+  welcomeTitle: string;
+  readingsTitle: string;
+  readingsSubtitle: string;
+  stepSteps: [string, string, string, string, string];
+  onOpenRelatedTool?: (link: RelatedToolLink) => void;
+}
+
+export const COURSE_META: Record<DevOpsCourseId, Omit<CourseMeta, 'onOpenRelatedTool'>> = {
+  kube: {
+    courseId: 'kube',
+    accent: 'sky',
+    appTitle: 'Docker & K8s Mastery',
+    welcomeTitle: 'Chào mừng đến với Docker & K8s Mastery 👋',
+    readingsTitle: 'Đọc cấu hình thật: Dockerfile, Compose & K8s Manifests',
+    readingsSubtitle:
+      'Tuyển tập cấu hình thực tế (mẫu chuẩn, cấu hình lỗi, so sánh, API cũ & lỗ hổng bảo mật) kèm nhiệm vụ phân tích.',
+    stepSteps: [
+      'Đọc lesson (ánh xạ từ Node.js/npm)',
+      'Làm quiz (cần ≥ 70%)',
+      'Làm bài thực hành — chấm bằng AST / Terminal thật',
+      'Đọc cấu hình thật & tìm lỗi',
+      'Ôn flashcard SRS & câu sai mỗi ngày',
+    ],
+  },
+  cicd: {
+    courseId: 'cicd',
+    accent: 'cyan',
+    appTitle: 'CI/CD Architecture',
+    welcomeTitle: 'Chào mừng đến với CI/CD Architecture 👋',
+    readingsTitle: 'Đọc cấu hình thật: GitHub Actions, GitLab CI & GitOps',
+    readingsSubtitle:
+      'Kho workflow và cấu hình đường ống thực tế (chuẩn mực, bẫy race condition, lỗi bảo mật & cú pháp cũ) kèm câu hỏi nhiệm vụ.',
+    stepSteps: [
+      'Đọc lesson (ánh xạ từ npm scripts)',
+      'Làm quiz (cần ≥ 70%)',
+      'Làm bài thực hành — chấm cấu trúc YAML / trạng thái thật',
+      'Đọc workflow thật & phân tích',
+      'Ôn flashcard SRS & câu sai mỗi ngày',
+    ],
+  },
+};
+
+const Ctx = createContext<CourseMeta>({
+  ...COURSE_META.kube,
+});
+
+export const CourseProvider: React.FC<{ value: CourseMeta; children: React.ReactNode }> = ({ value, children }) => (
+  <Ctx.Provider value={value}>{children}</Ctx.Provider>
+);
+
+export const useCourseMeta = () => useContext(Ctx);

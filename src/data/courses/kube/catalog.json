@@ -1,0 +1,45 @@
+{
+  "categories": {
+    "dockerfile": "Dockerfile & .dockerignore",
+    "compose": "Docker Compose v2",
+    "k8s-workload": "Kubernetes Workloads (Pod, Deployment, StatefulSet)",
+    "k8s-network": "Kubernetes Networking & Config (Service, Ingress, Secret)",
+    "k8s-security": "Bảo mật, RBAC, NetworkPolicy & Cấu hình lịch sử"
+  },
+  "flagLabels": {
+    "production-ready": "Chuẩn Production",
+    "outdated": "Cú pháp / API đã cũ",
+    "security-risk": "Lỗ hổng bảo mật cố ý",
+    "buggy": "Chứa lỗi để tìm bug"
+  },
+  "items": [
+    {
+      "n": 1,
+      "id": "kube-cfg-1",
+      "path": "docker/node-api/Dockerfile.bad-root",
+      "language": "dockerfile",
+      "loc": 7,
+      "category": "dockerfile",
+      "topic": "Dockerfile Node.js lỗi cơ bản",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 4,
+      "tags": [
+        "node",
+        "anti-pattern",
+        "layer-cache"
+      ],
+      "flags": [
+        "buggy",
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/best-practices/",
+      "curated": [
+        {
+          "module": "K00",
+          "kind": "bug"
+        }
+      ]
+    }
+  ]
+}

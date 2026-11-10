@@ -1,0 +1,44 @@
+{
+  "categories": {
+    "github-actions": "GitHub Actions Workflows",
+    "gitlab-ci": "GitLab CI Pipelines",
+    "devsecops": "DevSecOps, OIDC & Security Gate",
+    "gitops": "GitOps, ArgoCD & Deployment",
+    "governance": "CODEOWNERS, Monorepo & AI Gate"
+  },
+  "flagLabels": {
+    "production-ready": "Chuẩn Production",
+    "outdated": "Cú pháp đã ngừng hỗ trợ",
+    "security-risk": "Lỗ hổng bảo mật cố ý",
+    "buggy": "Chứa lỗi để tìm bug"
+  },
+  "items": [
+    {
+      "n": 1,
+      "id": "cicd-cfg-1",
+      "path": "github/node-ci-minimal.yml",
+      "language": "yaml",
+      "loc": 18,
+      "category": "github-actions",
+      "topic": "Workflow CI tối giản cho Node.js",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "github-actions",
+        "node",
+        "npm-ci"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs",
+      "curated": [
+        {
+          "module": "C00",
+          "kind": "good"
+        }
+      ]
+    }
+  ]
+}

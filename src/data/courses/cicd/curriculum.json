@@ -1,0 +1,119 @@
+{
+  "courseId": "cicd",
+  "generatedAt": "2026-04-01T00:00:00.000Z",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Tư duy Tự động hoá & Đường ống (từ npm scripts sang CI)",
+    "1": "Viết Workflow đầu tiên (GitHub Actions cơ bản & thực dụng)",
+    "2": "Tốc độ, Cache, Artifact & So sánh GitLab CI",
+    "3": "DevSecOps & Xác thực không khoá (Least Privilege, Trivy, OIDC)",
+    "4": "Chiến lược Triển khai Không gián đoạn & GitOps (Canary, ArgoCD)",
+    "5": "Kiến trúc Đường ống lớn & Chữa cháy Sự cố (DB Migration, Monorepo, DORA)"
+  },
+  "modules": [
+    {
+      "id": "C00",
+      "slug": "C00-exit-codes-and-ci",
+      "level": 0,
+      "order": 1,
+      "title": "Từ npm scripts sang Đường ống tự động: Exit Code & Fail-Fast",
+      "summary": "Vì sao CI biết một bước bị đỏ? Mã thoát (exit code), set -e và sự khác nhau giữa CI, CD.",
+      "tags": [
+        "exit-code",
+        "ci",
+        "npm-scripts",
+        "beginner"
+      ],
+      "lesson": "# Từ npm scripts sang Đường ống tự động: Exit Code & Fail-Fast\n\nKhi lập trình Node.js hằng ngày, bạn đã quen gõ `npm run lint`, `npm test`, `npm run build` trong mục `\"scripts\"` của `package.json`. Một đường ống **CI/CD (Continuous Integration / Continuous Delivery)** không phải phép thuật cao siêu — nó chính là một máy chủ sạch sẽ tự động gõ các lệnh đó thay bạn mỗi khi có commit mới, nhưng dựa trên một quy tắc sắt đá: **Mã thoát (Exit Code)**.\n\n## 1. Máy chủ CI phân biệt \"Xanh\" hay \"Đỏ\" bằng cách nào?\n\nMáy chủ CI **không đọc hiểu tiếng Anh** trên màn hình console. Dù ứng dụng của bạn in ra dòng chữ `ERROR: Database failed!` to tướng nhưng kết thúc bằng `process.exit(0)`, CI vẫn báo **Xanh (Pass)**!\n\n- **Exit Code `0`**: Thành công mỹ mãn → chuyển sang bước kế tiếp.\n- **Exit Code khác `0` (`1..255`)**: Thất bại → dừng ngay lập tức (**Fail-Fast**) và chặn không cho gộp Pull Request hay deploy code hỏng lên Production.\n\n| Mã thoát thường gặp | Ý nghĩa thực tế trên Runner CI |\n| --- | --- |\n| `0` | Lệnh chạy thành công |\n| `1` | Lỗi chung (unit test sai, lỗi biên dịch TypeScript, `eslint` bắt lỗi) |\n| `127` | Không tìm thấy lệnh (quên cài công cụ hoặc gõ sai tên binary) |\n| `137` | Tiến trình bị hệ điều hành giết cứng (`SIGKILL` = `128 + 9`), phổ biến nhất là tràn RAM (**OOMKilled**) |\n\n## 2. CI vs Continuous Delivery vs Continuous Deployment\n\n- **Continuous Integration (CI)**: Gộp code thường xuyên, tự động chạy lint + test + build để phát hiện lỗi sớm trong vài phút.\n- **Continuous Delivery**: Sau khi qua CI, tạo sẵn bản đóng gói (Artifact / Container Image) sẵn sàng lên Production bất cứ lúc nào, nhưng bước bấm nút phát hành cuối cùng có cổng duyệt thủ công (**Manual Approval**).\n- **Continuous Deployment**: Hoàn toàn tự động từ lúc gộp vào `main` cho tới khi bản mới phục vụ người dùng thật mà không cần con người bấm duyệt.",
+      "sources": [
+        {
+          "title": "About Continuous Integration with GitHub Actions",
+          "url": "https://docs.github.com/en/actions/about-github-actions/about-continuous-integration-with-github-actions",
+          "version": "GitHub Actions 2026"
+        }
+      ],
+      "relatedTools": [],
+      "exercises": [
+        {
+          "id": "cicd-ex-c00-1",
+          "code": "C00.1",
+          "title": "Sửa bước kiểm tra để báo lỗi đúng Exit Code",
+          "difficulty": 1,
+          "tags": [
+            "exit-code",
+            "github-actions"
+          ],
+          "kind": "yaml",
+          "language": "yaml",
+          "filename": ".github/workflows/smoke.yml",
+          "prompt": "Bước `Health check` đang gọi `curl http://localhost:3000/health` mà thiếu cờ `--fail` (hoặc `-f`), khiến khi API trả mã lỗi HTTP `500` thì `curl` vẫn thoát với mã `0` (CI báo xanh giả!). Hãy thêm cờ `--fail` vào lệnh `curl` và đổi lệnh cài đặt gói sang `npm ci`.",
+          "starter": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm install\n      - name: Health check\n        run: curl http://localhost:3000/health\n",
+          "solution": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm ci\n      - name: Health check\n        run: curl --fail http://localhost:3000/health\n",
+          "hints": [
+            "Đổi `npm install` thành `npm ci` ở bước cài đặt.",
+            "Thêm `--fail` vào lệnh `curl`: `curl --fail http://localhost:3000/health`."
+          ],
+          "ref": "github/node-ci-minimal.yml",
+          "spec": {
+            "kind": "yaml",
+            "rules": [
+              {
+                "id": "use-npm-ci",
+                "doc": "Bước cài đặt dùng `npm ci` thay vì `npm install`",
+                "kind": "path",
+                "path": "jobs.verify.steps[1].run",
+                "match": {
+                  "regex": "^npm\\s+ci\\b"
+                }
+              },
+              {
+                "id": "curl-fail",
+                "doc": "Lệnh `curl` có cờ `--fail` (hoặc `-f`) để trả mã thoát khác 0 khi gặp HTTP 4xx/5xx",
+                "kind": "path",
+                "path": "jobs.verify.steps[2].run",
+                "match": {
+                  "regex": "curl\\s+(?:.*\\s+)?(?:--fail|-f[a-zA-Z]*)\\b"
+                }
+              }
+            ]
+          },
+          "module": "C00",
+          "webGrade": true
+        }
+      ],
+      "quiz": [
+        {
+          "id": "C00-Q1",
+          "type": "mc",
+          "q": "Runner của GitHub Actions / GitLab CI dựa vào dấu hiệu nào để kết luận một bước (`step`) bị thất bại (màu đỏ)?",
+          "choices": [
+            "Đếm xem trong log có chữ `error` hay `exception` không",
+            "Mã thoát (**Exit Code**) của tiến trình khác `0`",
+            "Thời gian chạy vượt quá 10 giây",
+            "Dung lượng log lớn hơn 1MB"
+          ],
+          "answer": 1,
+          "explain": "Mọi hệ thống CI/CD chuẩn POSIX đều dựa vào Exit Code của tiến trình: `0` là thành công, khác `0` là thất bại."
+        }
+      ],
+      "cards": [
+        {
+          "id": "C00-FC1",
+          "front": "Mã thoát **Exit Code `137`** trên CI Runner có ý nghĩa gì?",
+          "back": "`137 = 128 + 9` (`SIGKILL`): tiến trình bị nhân Linux giết tức khắc, thường gặp nhất là do vượt quá giới hạn bộ nhớ RAM (**Out Of Memory — OOM**)."
+        }
+      ],
+      "drills": [],
+      "readings": [
+        {
+          "path": "github/node-ci-minimal.yml",
+          "kind": "good",
+          "note": "Một file GitHub Actions ngắn gọn chạy test tự động mỗi khi push hoặc mở Pull Request.",
+          "task": "Vì sao workflow này dùng `npm ci` thay vì `npm install`?",
+          "answer": "`npm ci` cài chính xác từng phiên bản trong `package-lock.json`, xoá sạch `node_modules` cũ và lập tức báo lỗi (exit code != 0) nếu `package.json` lệch với `package-lock.json`.",
+          "catalogN": 1
+        }
+      ]
+    }
+  ]
+}

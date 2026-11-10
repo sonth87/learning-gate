@@ -1,0 +1,25 @@
+{
+  "id": "C00",
+  "slug": "C00-exit-codes-and-ci",
+  "level": 0,
+  "order": 1,
+  "title": "Từ npm scripts sang Đường ống tự động: Exit Code & Fail-Fast",
+  "summary": "Vì sao CI biết một bước bị đỏ? Mã thoát (exit code), set -e và sự khác nhau giữa CI, CD.",
+  "tags": ["exit-code", "ci", "npm-scripts", "beginner"],
+  "sources": [
+    {
+      "title": "About Continuous Integration with GitHub Actions",
+      "url": "https://docs.github.com/en/actions/about-github-actions/about-continuous-integration-with-github-actions",
+      "version": "GitHub Actions 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/node-ci-minimal.yml",
+      "kind": "good",
+      "note": "Một file GitHub Actions ngắn gọn chạy test tự động mỗi khi push hoặc mở Pull Request.",
+      "task": "Vì sao workflow này dùng `npm ci` thay vì `npm install`?",
+      "answer": "`npm ci` cài chính xác từng phiên bản trong `package-lock.json`, xoá sạch `node_modules` cũ và lập tức báo lỗi (exit code != 0) nếu `package.json` lệch với `package-lock.json`."
+    }
+  ]
+}

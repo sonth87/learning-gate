@@ -1,0 +1,39 @@
+[
+  {
+    "id": "cicd-ex-c00-1",
+    "code": "C00.1",
+    "title": "Sửa bước kiểm tra để báo lỗi đúng Exit Code",
+    "difficulty": 1,
+    "tags": ["exit-code", "github-actions"],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/smoke.yml",
+    "prompt": "Bước `Health check` đang gọi `curl http://localhost:3000/health` mà thiếu cờ `--fail` (hoặc `-f`), khiến khi API trả mã lỗi HTTP `500` thì `curl` vẫn thoát với mã `0` (CI báo xanh giả!). Hãy thêm cờ `--fail` vào lệnh `curl` và đổi lệnh cài đặt gói sang `npm ci`.",
+    "starter": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm install\n      - name: Health check\n        run: curl http://localhost:3000/health\n",
+    "solution": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm ci\n      - name: Health check\n        run: curl --fail http://localhost:3000/health\n",
+    "hints": [
+      "Đổi `npm install` thành `npm ci` ở bước cài đặt.",
+      "Thêm `--fail` vào lệnh `curl`: `curl --fail http://localhost:3000/health`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "use-npm-ci",
+          "doc": "Bước cài đặt dùng `npm ci` thay vì `npm install`",
+          "kind": "path",
+          "path": "jobs.verify.steps[1].run",
+          "match": { "regex": "^npm\\s+ci\\b" }
+        },
+        {
+          "id": "curl-fail",
+          "doc": "Lệnh `curl` có cờ `--fail` (hoặc `-f`) để trả mã thoát khác 0 khi gặp HTTP 4xx/5xx",
+          "kind": "path",
+          "path": "jobs.verify.steps[2].run",
+          "match": { "regex": "curl\\s+(?:.*\\s+)?(?:--fail|-f[a-zA-Z]*)\\b" }
+        }
+      ]
+    }
+  }
+]

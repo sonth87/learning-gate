@@ -1,0 +1,12 @@
+{
+  "courseId": "cicd",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Tư duy Tự động hoá & Đường ống (từ npm scripts sang CI)",
+    "1": "Viết Workflow đầu tiên (GitHub Actions cơ bản & thực dụng)",
+    "2": "Tốc độ, Cache, Artifact & So sánh GitLab CI",
+    "3": "DevSecOps & Xác thực không khoá (Least Privilege, Trivy, OIDC)",
+    "4": "Chiến lược Triển khai Không gián đoạn & GitOps (Canary, ArgoCD)",
+    "5": "Kiến trúc Đường ống lớn & Chữa cháy Sự cố (DB Migration, Monorepo, DORA)"
+  }
+}

@@ -1,8 +1,8 @@
 export type KubeTab =
+  | 'learn'
   | 'curriculum'
   | 'flow-studio'
   | 'cluster-sim'
-  | 'cicd-sim'
   | 'incidents'
   | 'practice'
   | 'glossary'

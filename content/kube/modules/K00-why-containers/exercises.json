@@ -1,0 +1,34 @@
+[
+  {
+    "id": "kube-ex-k00-1",
+    "code": "K00.1",
+    "title": "Chạy container đầu tiên ở chế độ ngầm",
+    "difficulty": 1,
+    "tags": ["docker-run", "beginner"],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy chạy một container chạy ngầm (`-d`) đặt tên là `hello-nginx` từ image `nginx:1.27-alpine`.",
+    "starter": "# Gõ lệnh docker run bên dưới\n",
+    "solution": "docker run -d --name hello-nginx nginx:1.27-alpine\n",
+    "hints": [
+      "Dùng cờ `-d` để container chạy ngầm và `--name hello-nginx` để đặt tên.",
+      "Cú pháp đầy đủ: `docker run -d --name hello-nginx nginx:1.27-alpine`"
+    ],
+    "ref": "docker/node-api/Dockerfile.bad-root",
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "nginx-running",
+          "doc": "Container `hello-nginx` đang ở trạng thái `running` từ image `nginx:1.27-alpine`",
+          "target": "docker-container",
+          "name": "hello-nginx",
+          "image": "nginx:1.27-alpine",
+          "status": "running"
+        }
+      ]
+    }
+  }
+]

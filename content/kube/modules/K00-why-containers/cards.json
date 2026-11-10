@@ -1,0 +1,7 @@
+[
+  {
+    "id": "K00-FC1",
+    "front": "Sự khác biệt cốt lõi giữa **Docker Image** và **Docker Container** là gì?",
+    "back": "**Image** là khuôn mẫu chỉ đọc (read-only snapshot) nằm trên ổ cứng; **Container** là tiến trình đang thực thi được khởi tạo từ Image kèm một lớp ghi tạm (writable layer)."
+  }
+]

@@ -29,7 +29,7 @@ interface CicdNavigationState {
 }
 
 export const useCicdNavigationStore = create<CicdNavigationState>((set) => ({
-  activeTab: 'curriculum',
+  activeTab: 'learn',
   selectedLessonId: 'cicd-L0-six-pillars-overview',
   selectedExerciseId: 'cicd-ex-1-lean-github-actions',
   selectedBlueprintId: 'full-flow-1-lean-github-actions',

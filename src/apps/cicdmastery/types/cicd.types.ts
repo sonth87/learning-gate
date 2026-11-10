@@ -1,6 +1,7 @@
 import { SkillLevel } from '@/types/curriculum.types';
 
 export type CicdMainTab =
+  | 'learn'
   | 'curriculum'
   | 'simulator'
   | 'warroom'

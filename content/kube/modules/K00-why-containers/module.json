@@ -1,0 +1,25 @@
+{
+  "id": "K00",
+  "slug": "K00-why-containers",
+  "level": 0,
+  "order": 1,
+  "title": "Vì sao code chạy trên máy bạn nhưng lỗi trên server?",
+  "summary": "Hiểu bản chất Image vs Container qua góc nhìn package-lock.json và tiến trình Node.js cô lập.",
+  "tags": ["docker", "container", "image", "beginner"],
+  "sources": [
+    {
+      "title": "Docker Overview & Architecture",
+      "url": "https://docs.docker.com/get-started/docker-overview/",
+      "version": "Docker Engine v27+"
+    }
+  ],
+  "readings": [
+    {
+      "path": "docker/node-api/Dockerfile.bad-root",
+      "kind": "bug",
+      "note": "Một Dockerfile viết vội thường gặp ở dự án Node.js mới.",
+      "task": "Hãy chỉ ra ít nhất 3 điểm yếu trong Dockerfile này (tag image, lệnh cài đặt gói, user mặc định).",
+      "answer": "1) `FROM node:latest` không ghim phiên bản nên hôm nay chạy Node 22 nhưng sang năm có thể tự nhảy lên Node 24 gây vỡ app; 2) `COPY . .` đặt trước `RUN npm install` làm mất tác dụng Layer Cache và `npm install` có thể sửa lockfile thay vì dùng `npm ci`; 3) Chạy mặc định dưới quyền `root` và dùng Shell form `CMD node server.js`."
+    }
+  ]
+}
