@@ -4,6 +4,7 @@ import { useCurriculum } from '../data';
 import { similarity } from '../logic';
 import { useWpNav, useWpProgress } from '../store';
 import { CodeView } from '../components/Markdown';
+import { PyCodeEditor } from '../components/PyCodeEditor';
 import { Bar, Btn, Callout, PageHeader, Pill, Spinner } from '../components/ui';
 import { cn } from '@/utils/cn';
 
@@ -66,25 +67,22 @@ export const DrillView: React.FC<{ moduleId: string }> = ({ moduleId }) => {
                 {best && <Pill tone="ok">tốt nhất {Math.round(best.bestAcc * 100)}% · {best.bestWpm} WPM</Pill>}
               </h2>
               <div className="grid gap-4 md:grid-cols-2">
-                <CodeView code={d.code} className="!my-0" />
+                <CodeView code={d.code} numbered className="!my-0" />
                 <div>
-                  <textarea
+                  <PyCodeEditor
                     value={typed[d.id] ?? ''}
-                    onChange={(e) => {
+                    onChange={(v) => {
                       startedAt.current[d.id] ??= performance.now();
-                      setTyped({ ...typed, [d.id]: e.target.value });
+                      setTyped({ ...typed, [d.id]: v });
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Tab') {
-                        e.preventDefault();
-                        document.execCommand('insertText', false, '    ');
-                      }
-                    }}
-                    spellCheck={false}
-                    autoCapitalize="off"
+                    suggest={false}
                     placeholder="Gõ lại đoạn code ở đây…"
-                    className="h-56 w-full resize-y rounded-xl border border-slate-700 bg-slate-950 p-3 font-mono text-[13.5px] leading-relaxed text-slate-100 outline-none focus:border-emerald-500/70"
+                    height="clamp(200px, 36vh, 380px)"
+                    ariaLabel={`Gõ lại: ${d.title}`}
                   />
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Trình soạn thảo như IDE (tô màu, tự thụt lề, tự đóng ngoặc) nhưng <b>không gợi ý code</b>. Sau dấu <code className="rounded bg-slate-800 px-1">:</code> chỉ cần Enter, đừng gõ dấu cách thụt lề.
+                  </p>
                   <div className="mt-2 flex gap-2">
                     <Btn variant="primary" onClick={() => finish(d.id, d.code)}>
                       Chấm
