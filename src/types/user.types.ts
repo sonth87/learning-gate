@@ -1,5 +1,6 @@
 import { SkillLevel } from './curriculum.types';
 import { ExamAttemptRecord, FlashcardSrsState } from './assessment.types';
+import type { WpState } from '@/features/workpath/types';
 
 export type TargetEntityType = 'lesson' | 'exercise' | 'glossary' | 'deepdive';
 
@@ -63,4 +64,6 @@ export interface FullBackupPayload {
   submissions: ExerciseSubmissionRecord[];
   srsStates: FlashcardSrsState[];
   examHistory: ExamAttemptRecord[];
+  /** Tiến độ đường học WorkPath (tuỳ chọn để tương thích bản sao lưu cũ) */
+  workpath?: WpState;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
   Code2,
@@ -16,6 +16,9 @@ import {
   Monitor,
   Wrench,
   Terminal,
+  ChevronDown,
+  Library,
+  GraduationCap as LearnIcon,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { switchLearningApp } from '@/apps/appRegistry';
@@ -27,63 +30,43 @@ import {
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
-import { ALL_LESSONS } from '@/data/curriculum';
+import { useCurriculum } from '@/features/workpath/data';
+import { moduleDone } from '@/features/workpath/logic';
+import { useWpProgress } from '@/features/workpath/store';
 import { cn } from '@/utils/cn';
 
-const NAV_TABS: {
-  id: MainTab;
-  label: string;
-  shortcut: string;
-  icon: React.ReactNode;
-}[] = [
+type NavTab = { id: MainTab; label: string; shortcut: string; icon: React.ReactNode };
+
+/** Đường học chính (nội dung và cách chấm bài từ WorkPath) + công cụ dùng hằng ngày */
+const PRIMARY_TABS: NavTab[] = [
   {
-    id: 'curriculum',
-    label: 'Lộ trình & Lý thuyết',
+    id: 'learn',
+    label: 'Học — lộ trình, bài tập, quiz, đọc code thật',
     shortcut: '⌘1',
-    icon: <BookOpen className="h-4 w-4" aria-hidden="true" />,
+    icon: <LearnIcon className="h-4 w-4" aria-hidden="true" />,
   },
   {
     id: 'playground',
-    label: 'Playground & Studio IDE',
+    label: 'Sân chơi & Studio IDE',
     shortcut: '⌘2',
     icon: <Terminal className="h-4 w-4" aria-hidden="true" />,
   },
   {
-    id: 'practice',
-    label: 'Thực hành Code',
-    shortcut: '⌘3',
-    icon: <Code2 className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'samples',
-    label: 'Dự án Mẫu (16 Projects IDE)',
-    shortcut: '⌘4',
-    icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'flashcards',
-    label: 'Flashcards (SRS)',
-    shortcut: '⌘5',
-    icon: <Layers className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'exams',
-    label: 'Thi Sát hạch',
-    shortcut: '⌘6',
-    icon: <GraduationCap className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
     id: 'glossary',
     label: 'Từ điển & Thư viện Python',
-    shortcut: '⌘7',
+    shortcut: '⌘3',
     icon: <BookMarked className="h-4 w-4" aria-hidden="true" />,
   },
-  {
-    id: 'reference',
-    label: 'Chuyên đề PDF',
-    shortcut: '⌘8',
-    icon: <Compass className="h-4 w-4" aria-hidden="true" />,
-  },
+];
+
+/** Tài liệu tra cứu bổ sung (giáo trình cũ, ôn tập, dự án mẫu...) — không còn là đường học song song */
+const MORE_TABS: { id: MainTab; label: string; icon: React.ReactNode }[] = [
+  { id: 'curriculum', label: 'Giáo trình cũ (7 giai đoạn)', icon: <BookOpen className="h-4 w-4" aria-hidden="true" /> },
+  { id: 'practice', label: 'Bài thực hành cũ', icon: <Code2 className="h-4 w-4" aria-hidden="true" /> },
+  { id: 'samples', label: 'Dự án mẫu (16 Projects IDE)', icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" /> },
+  { id: 'flashcards', label: 'Flashcards cũ', icon: <Layers className="h-4 w-4" aria-hidden="true" /> },
+  { id: 'exams', label: 'Thi sát hạch', icon: <GraduationCap className="h-4 w-4" aria-hidden="true" /> },
+  { id: 'reference', label: 'Chuyên đề PDF', icon: <Compass className="h-4 w-4" aria-hidden="true" /> },
 ];
 
 const HeaderTooltip: React.FC<{
@@ -114,6 +97,64 @@ const HeaderTooltip: React.FC<{
   </div>
 );
 
+const MoreMenu: React.FC = () => {
+  const { activeTab, setActiveTab } = useNavigationStore();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const active = MORE_TABS.some((t) => t.id === activeTab);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={cn(
+          'inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-all duration-150',
+          active ? 'bg-slate-800 text-emerald-400 border-slate-700/80' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border-transparent'
+        )}
+      >
+        <Library className="h-4 w-4" aria-hidden="true" />
+        <span>Tra cứu</span>
+        <ChevronDown className="h-3 w-3" aria-hidden="true" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-xl border border-slate-700 bg-slate-900/98 p-1.5 shadow-2xl backdrop-blur-md">
+          <div className="px-2.5 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tài liệu tra cứu bổ sung</div>
+          {MORE_TABS.map((t) => (
+            <button
+              key={t.id}
+              role="menuitem"
+              onClick={() => {
+                setActiveTab(t.id);
+                setOpen(false);
+              }}
+              className={cn('flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm', activeTab === t.id ? 'bg-slate-800 text-emerald-400' : 'text-slate-300 hover:bg-slate-800/70')}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const Header: React.FC = () => {
   const {
     activeTab,
@@ -142,11 +183,14 @@ export const Header: React.FC = () => {
     setDeviceColorScheme(mode === 'system' ? 'auto' : mode);
   };
 
-  const { completedLessonIds, notes, bookmarks } = useUserDataStore();
+  const { notes, bookmarks } = useUserDataStore();
 
-  const progressPercent = Math.round(
-    (completedLessonIds.length / ALL_LESSONS.length) * 100
-  );
+  // Tiến độ tổng: số module WorkPath đã hoàn thành (lesson + quiz đạt + mọi bài tập)
+  const { data: wpCur } = useCurriculum();
+  const wpState = useWpProgress((st) => st.state);
+  const wpDone = wpCur ? wpCur.modules.filter((m) => moduleDone(wpState, m, wpCur.passQuiz)).length : 0;
+  const wpTotal = wpCur?.modules.length ?? 0;
+  const progressPercent = wpTotal ? Math.round((wpDone / wpTotal) * 100) : 0;
 
   const totalNotesAndBookmarks = notes.length + bookmarks.length;
 
@@ -156,11 +200,11 @@ export const Header: React.FC = () => {
         {/* Left: Brand & Compact Progress Pill */}
         <div className="flex items-center gap-2 min-w-0 shrink-0">
           <HeaderTooltip
-            label={`Tiến độ hoàn thành: ${completedLessonIds.length}/${ALL_LESSONS.length} bài (${progressPercent}%)`}
+            label={`Tiến độ: ${wpDone}/${wpTotal} module hoàn thành (${progressPercent}%) · ${wpState.xp} XP`}
             align="left"
           >
             <button
-              onClick={() => setActiveTab('curriculum')}
+              onClick={() => setActiveTab('learn')}
               className="group flex items-center gap-2 text-left focus-visible:outline-none min-w-0"
             >
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
@@ -183,7 +227,7 @@ export const Header: React.FC = () => {
                     />
                   </div>
                   <span className="font-mono">
-                    {completedLessonIds.length}/{ALL_LESSONS.length}
+                    {wpDone}/{wpTotal}
                   </span>
                 </div>
               </div>
@@ -196,7 +240,7 @@ export const Header: React.FC = () => {
           aria-label="Điều hướng phân hệ chính"
           className="hidden lg:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
         >
-          {NAV_TABS.map((tab) => {
+          {PRIMARY_TABS.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <HeaderTooltip
@@ -220,6 +264,7 @@ export const Header: React.FC = () => {
               </HeaderTooltip>
             );
           })}
+          <MoreMenu />
         </nav>
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}

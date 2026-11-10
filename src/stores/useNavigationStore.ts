@@ -4,6 +4,7 @@ import { TargetEntityType } from '@/types/user.types';
 import { SampleProject } from '@/types/sample.types';
 
 export type MainTab =
+  | 'learn'
   | 'curriculum'
   | 'playground'
   | 'practice'
@@ -70,7 +71,7 @@ let popoverShowTimeout: ReturnType<typeof setTimeout> | null = null;
 let popoverHideTimeout: ReturnType<typeof setTimeout> | null = null;
 
 export const useNavigationStore = create<NavigationState>((set) => ({
-  activeTab: 'curriculum',
+  activeTab: 'learn',
   selectedLessonId: 's0-install-setup-uv-pyenv-ide',
   selectedExerciseId: 'ex-s0-version-cli-check',
   selectedExamId: 'exam-fundamental-basic',
