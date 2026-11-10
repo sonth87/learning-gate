@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c05-1",
+    "front": "Phép ẩn dụ JavaScript gần gũi nhất với mô hình Fan-Out / Fan-In dùng `needs: [lint, unit-test]` là gì?",
+    "back": "Giống hệt `await Promise.all([lint(), unitTest()]); await build();` — chạy song song các tác vụ độc lập trước rồi hội tụ khi tất cả cùng hoàn tất."
+  },
+  {
+    "id": "cicd-card-c05-2",
+    "front": "DAG (Directed Acyclic Graph) trong CI/CD có nghĩa là gì?",
+    "back": "Đồ thị có hướng không chu trình: các Job nối với nhau theo chiều mũi tên phụ thuộc `needs:`, cho phép rẽ nhánh song song và hội tụ nhưng tuyệt đối cấm phụ thuộc vòng tròn."
+  },
+  {
+    "id": "cicd-card-c05-3",
+    "front": "Tác dụng của `strategy.fail-fast: false` khi chạy Matrix Node `[20, 22]` là gì?",
+    "back": "Ngăn GitHub huỷ ngang Job Node 22 khi Job Node 20 gặp lỗi, giúp lập trình viên thu được kết quả kiểm thử trọn vẹn trên mọi phiên bản trong một lần chạy duy nhất."
+  },
+  {
+    "id": "cicd-card-c05-4",
+    "front": "Nêu đủ 3 mắt xích bắt buộc để truyền biến `version` từ Job `build` sang Job `deploy`.",
+    "back": "1) Step trong `build` có `id: pkg` ghi vào `\"$GITHUB_OUTPUT\"`; 2) `jobs.build.outputs.version: ${{ steps.pkg.outputs.version }}`; 3) `jobs.deploy` khai báo `needs: build` và đọc `${{ needs.build.outputs.version }}`."
+  },
+  {
+    "id": "cicd-card-c05-5",
+    "front": "Làm sao để Job `deploy-staging` vừa chờ Job `build` hoàn tất trên mọi PR/push, nhưng CHỈ thực thi triển khai khi nhánh là `main`?",
+    "back": "Kết hợp cả hai thuộc tính trên `deploy-staging`: `needs: build` và `if: github.ref == 'refs/heads/main'`."
+  },
+  {
+    "id": "cicd-card-c05-6",
+    "front": "Biểu thức nào dùng để truyền động hệ điều hành và phiên bản Node từ `strategy.matrix` vào cấu hình Job?",
+    "back": "`runs-on: ${{ matrix.os }}` ở cấp Job và `node-version: ${{ matrix.node }}` bên trong `actions/setup-node@v4`."
+  }
+]

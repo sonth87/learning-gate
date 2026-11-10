@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C14-C1",
+    "front": "Công thức đặt thẻ Docker Image bất biến (Immutable Tag) chuẩn trong GitHub Actions là gì?",
+    "back": "Gắn mã băm commit Git: `ghcr.io/<org>/<app>:sha-${{ github.sha }}` (tuyệt đối không chỉ đẩy đè lên `:latest`)."
+  },
+  {
+    "id": "C14-C2",
+    "front": "Ba thuộc tính cốt lõi trong `spec.strategy.blueGreen` của Argo Rollouts là gì?",
+    "back": "1) `activeService`: dịch vụ nhận traffic thật.\n2) `previewService`: dịch vụ kiểm thử bản mới trước khi gạt cầu dao.\n3) `autoPromotionEnabled: false`: giữ chốt duyệt trước khi chuyển sang Active."
+  },
+  {
+    "id": "C14-C3",
+    "front": "Cấu trúc mảng `steps` của chiến lược `canary` trong Argo Rollouts gồm hai lệnh cơ bản nào?",
+    "back": "`- setWeight: <phần_trăm>` (ví dụ 5, 25, 100) xen kẽ với `- pause: { duration: \"2m\" }` để quan sát chỉ số lỗi trước khi tăng tiếp."
+  },
+  {
+    "id": "C14-C4",
+    "front": "Bộ cờ chuẩn mực cho lệnh `curl` trong bước Post-Deploy Smoke Test là gì?",
+    "back": "`curl --fail --silent --show-error --retry 5 --retry-delay 3 https://.../readyz`\n(`--fail` cực kỳ quan trọng để HTTP >= 400 trả về exit code khác 0)."
+  },
+  {
+    "id": "C14-C5",
+    "front": "Làm sao cấu hình một job `rollback` tự động chạy ngay khi `deploy-prod` hoặc `smoke-test` bị đỏ trong GitHub Actions?",
+    "back": "Khai báo `needs: [deploy-prod, smoke-test]` kết hợp điều kiện `if: failure()`."
+  },
+  {
+    "id": "C14-C6",
+    "front": "Giữa `/healthz` (Liveness) và `/readyz` (Readiness), điểm cuối nào phản ánh chính xác nhất việc dịch vụ sẵn sàng nhận traffic trong Smoke Test?",
+    "back": "`/readyz` — vì nó kiểm tra cả kết nối tới Database/Cache phụ thuộc, đảm bảo ứng dụng thực sự xử lý được request của khách hàng."
+  }
+]

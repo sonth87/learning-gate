@@ -1,0 +1,276 @@
+[
+  {
+    "id": "kube-ex-k08-1",
+    "code": "K08.1",
+    "title": "Viết Pod shop-web ghim phiên bản Image và khai báo containerPort",
+    "difficulty": 1,
+    "tags": [
+      "pod",
+      "yaml",
+      "image-pinning",
+      "ports"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "pod.yaml",
+    "prompt": "Hoàn thiện Manifest `Pod` tên `shop-web` sao cho:\n1. Không dùng `:latest` — ghim rõ `image: nginx:1.27-alpine` cho container đầu tiên.\n2. Khai báo cổng mở bên trong `spec.containers[0].ports[0].containerPort: 80`.",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-web\nspec:\n  containers:\n    - name: nginx\n      image: nginx:latest\n      # Thêm mảng ports với containerPort: 80\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-web\nspec:\n  containers:\n    - name: nginx\n      image: nginx:1.27-alpine\n      ports:\n        - containerPort: 80\n",
+    "hints": [
+      "Đổi `image: nginx:latest` thành `image: nginx:1.27-alpine`.",
+      "Ngay dưới dòng `image:`, thêm:\n```yaml\n      ports:\n        - containerPort: 80\n```"
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "shop-web-name",
+          "doc": "Pod mang tên `shop-web`",
+          "kind": "path",
+          "path": "metadata.name",
+          "match": {
+            "eq": "shop-web"
+          }
+        },
+        {
+          "id": "shop-web-pinned-tag",
+          "doc": "Image được ghim phiên bản cụ thể (`nginx:1.27-alpine`), không dùng `:latest`",
+          "kind": "image-tag-pinned",
+          "path": "spec.containers[0].image"
+        },
+        {
+          "id": "shop-web-exact-img",
+          "doc": "Sử dụng đúng `nginx:1.27-alpine`",
+          "kind": "path",
+          "path": "spec.containers[0].image",
+          "match": {
+            "eq": "nginx:1.27-alpine"
+          }
+        },
+        {
+          "id": "shop-web-port-80",
+          "doc": "Khai báo `containerPort: 80` (kiểu số nguyên)",
+          "kind": "path",
+          "path": "spec.containers[0].ports[0].containerPort",
+          "match": {
+            "eq": 80
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k08-2",
+    "code": "K08.2",
+    "title": "Gắn bộ nhãn phân loại chuẩn (app, tier, env) lên metadata.labels",
+    "difficulty": 1,
+    "tags": [
+      "labels",
+      "pod",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "pod-labeled.yaml",
+    "prompt": "Để `Service` và `NetworkPolicy` nhận diện được Pod `shop-api-pod`, hãy bổ sung khối `metadata.labels` chứa đủ 3 nhãn chuẩn:\n- `app: shop-api`\n- `tier: backend`\n- `env: staging`",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-api-pod\n  # Bổ sung khối labels gồm app, tier, env\nspec:\n  containers:\n    - name: api\n      image: ghcr.io/acme/shop-api:1.4.2\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-api-pod\n  labels:\n    app: shop-api\n    tier: backend\n    env: staging\nspec:\n  containers:\n    - name: api\n      image: ghcr.io/acme/shop-api:1.4.2\n",
+    "hints": [
+      "`labels:` nằm bên trong `metadata:`, thụt vào 2 dấu cách ngang hàng với `name:`.",
+      "Bên trong `labels:`, thụt vào 4 dấu cách cho `app: shop-api`, `tier: backend`, `env: staging`."
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "label-app",
+          "doc": "Nhãn `metadata.labels.app` bằng `\"shop-api\"`",
+          "kind": "path",
+          "path": "metadata.labels.app",
+          "match": {
+            "eq": "shop-api"
+          }
+        },
+        {
+          "id": "label-tier",
+          "doc": "Nhãn `metadata.labels.tier` bằng `\"backend\"`",
+          "kind": "path",
+          "path": "metadata.labels.tier",
+          "match": {
+            "eq": "backend"
+          }
+        },
+        {
+          "id": "label-env",
+          "doc": "Nhãn `metadata.labels.env` bằng `\"staging\"`",
+          "kind": "path",
+          "path": "metadata.labels.env",
+          "match": {
+            "eq": "staging"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k08-3",
+    "code": "K08.3",
+    "title": "Khai báo Multi-Document YAML: Tạo Namespace staging và đặt Pod vào trong",
+    "difficulty": 2,
+    "tags": [
+      "namespace",
+      "multi-doc",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "staging-pod.yaml",
+    "prompt": "Sử dụng dấu phân tách `---` trong cùng một tệp YAML để khai báo đồng thời 2 tài nguyên:\n1. Một `Namespace` (`apiVersion: v1`, `kind: Namespace`) có `metadata.name: staging`.\n2. Một `Pod` tên `worker-pod` đặt bên trong không gian tên `metadata.namespace: staging`, chạy image `node:22-alpine`.",
+    "starter": "# Tài nguyên 1: Namespace staging\n\n---\n# Tài nguyên 2: Pod worker-pod nằm trong namespace staging\napiVersion: v1\nkind: Pod\nmetadata:\n  name: worker-pod\nspec:\n  containers:\n    - name: worker\n      image: node:22-alpine\n",
+    "solution": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: staging\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: worker-pod\n  namespace: staging\nspec:\n  containers:\n    - name: worker\n      image: node:22-alpine\n",
+    "hints": [
+      "Tài nguyên `Namespace` không cần trường `spec:`, chỉ cần `apiVersion: v1`, `kind: Namespace` và `metadata: { name: staging }`.",
+      "Ở tài nguyên `Pod` bên dưới dấu `---`, đừng quên thêm dòng `namespace: staging` bên trong `metadata:`!"
+    ],
+    "ref": "k8s/security/pod-restricted-psa.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ns-staging-defined",
+          "doc": "Đã khai báo tài nguyên `Namespace` tên `staging`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Namespace",
+            "name": "staging"
+          },
+          "path": "metadata.name",
+          "match": {
+            "eq": "staging"
+          }
+        },
+        {
+          "id": "pod-in-staging-ns",
+          "doc": "Pod `worker-pod` được đặt trong `metadata.namespace: staging`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Pod",
+            "name": "worker-pod"
+          },
+          "path": "metadata.namespace",
+          "match": {
+            "eq": "staging"
+          }
+        },
+        {
+          "id": "pod-worker-image",
+          "doc": "Pod `worker-pod` chạy `node:22-alpine`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Pod",
+            "name": "worker-pod"
+          },
+          "path": "spec.containers[0].image",
+          "match": {
+            "eq": "node:22-alpine"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k08-4",
+    "code": "K08.4",
+    "title": "Tạo Namespace payments và khởi chạy Pod bằng kubectl CLI",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "namespace",
+      "pod"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Bằng hai câu lệnh `kubectl` trên Terminal:\n1. Tạo một Namespace mới tên là `payments`.\n2. Khởi chạy một Pod tên `fraud-check` từ image `node:22-alpine` nằm bên trong namespace `payments` (`-n payments`).",
+    "starter": "# Bước 1: Tạo namespace payments\n# Bước 2: Chạy pod fraud-check (--image=node:22-alpine) trong -n payments\n",
+    "solution": "kubectl create ns payments\nkubectl run fraud-check --image=node:22-alpine -n payments\n",
+    "hints": [
+      "Tạo namespace bằng `kubectl create ns payments` (hoặc `kubectl create namespace payments`).",
+      "Tạo Pod bằng `kubectl run fraud-check --image=node:22-alpine -n payments`."
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "ns-payments-exists",
+          "doc": "Namespace `payments` đã được khởi tạo trên cụm",
+          "target": "k8s-namespace",
+          "name": "payments"
+        },
+        {
+          "id": "pod-fraud-check-running",
+          "doc": "Pod `fraud-check` (`node:22-alpine`) đang `Running` bên trong namespace `payments`",
+          "target": "k8s-pod",
+          "name": "fraud-check",
+          "namespace": "payments",
+          "image": "node:22-alpine",
+          "status": "Running"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k08-5",
+    "code": "K08.5",
+    "title": "Đính kèm imagePullSecrets để kéo Image từ Private Registry",
+    "difficulty": 2,
+    "tags": [
+      "imagepullsecrets",
+      "private-registry",
+      "pod"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "private-pod.yaml",
+    "prompt": "Trên cụm đã tạo sẵn một Secret xác thực Registry tên là `regcred`. Tuy nhiên Pod `shop-private-api` bên dưới kéo image nội bộ `private.registry.local/shop/api:1.4.2` đang bị lỗi `ImagePullBackOff` vì quên gắn Secret đó. Hãy thêm `spec.imagePullSecrets` tham chiếu tới `name: regcred`.",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-private-api\nspec:\n  # Đính kèm imagePullSecrets với name: regcred\n  containers:\n    - name: api\n      image: private.registry.local/shop/api:1.4.2\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-private-api\nspec:\n  imagePullSecrets:\n    - name: regcred\n  containers:\n    - name: api\n      image: private.registry.local/shop/api:1.4.2\n",
+    "hints": [
+      "`imagePullSecrets` là một mảng nằm trực tiếp dưới `spec:` (ngang hàng với `containers:`).",
+      "Cú pháp:\n```yaml\n  imagePullSecrets:\n    - name: regcred\n```"
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "has-regcred-pull-secret",
+          "doc": "Đính kèm `spec.imagePullSecrets[0].name: regcred`",
+          "kind": "path",
+          "path": "spec.imagePullSecrets[0].name",
+          "match": {
+            "eq": "regcred"
+          }
+        },
+        {
+          "id": "keeps-private-image",
+          "doc": "Giữ nguyên image nội bộ `private.registry.local/shop/api:1.4.2`",
+          "kind": "path",
+          "path": "spec.containers[0].image",
+          "match": {
+            "eq": "private.registry.local/shop/api:1.4.2"
+          }
+        }
+      ]
+    }
+  }
+]

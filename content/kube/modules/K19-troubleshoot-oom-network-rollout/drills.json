@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K19-D1",
+    "title": "Kiểm tra cầu nối Endpoints và nhãn Pod khi điều tra lỗi 502 Bad Gateway",
+    "code": "kubectl get endpoints checkout-svc\nkubectl get pods --show-labels\nkubectl describe svc checkout-svc"
+  },
+  {
+    "id": "K19-D2",
+    "title": "Xem lịch sử phát hành và Rollback khẩn cấp trên namespace production",
+    "code": "kubectl rollout status deployment/frontend -n production\nkubectl rollout history deployment/frontend -n production\nkubectl rollout undo deployment/frontend -n production"
+  }
+]

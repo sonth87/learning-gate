@@ -1,0 +1,25 @@
+# Chuẩn đóng gói dịch vụ JavaScript thuần (không cần bước biên dịch TypeScript)
+# Ghim rõ phiên bản Node 22 LTS trên nền Alpine Linux siêu nhẹ
+FROM node:22-alpine
+
+ENV NODE_ENV=production
+WORKDIR /app
+
+# BƯỚC QUAN TRỌNG NHẤT CHO TỐC ĐỘ BUILD:
+# Chỉ copy package.json và package-lock.json trước để tận dụng Docker Layer Cache.
+# Chừng nào 2 file này không đổi, Docker sẽ tái sử dụng 100% layer "npm ci" trong 0.1 giây!
+COPY package.json package-lock.json ./
+
+# Cài đặt gói phụ thuộc đúng từng byte như trong package-lock.json, bỏ qua devDependencies
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy phần mã nguồn ứng dụng sau cùng (thay đổi thường xuyên nhất)
+COPY --chown=node:node src ./src
+
+# Hạ quyền từ root (UID 0) xuống tài khoản có sẵn "node" (UID 1000)
+USER node
+
+EXPOSE 3000
+
+# Dùng JSON Exec form để tiến trình "node" trực tiếp làm PID 1 và nhận SIGTERM chuẩn xác
+CMD ["node", "src/server.js"]

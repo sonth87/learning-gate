@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K09-FC1",
+    "front": "Mối quan hệ 3 tầng `Deployment` → `ReplicaSet` → `Pod` vận hành thế nào?",
+    "back": "**`Deployment`** quản lý nâng cấp/rollback giữa các phiên bản bằng cách điều phối nhiều **`ReplicaSet`**; mỗi **`ReplicaSet`** canh gác đủ quân số **`Pod`** cho phiên bản đó."
+  },
+  {
+    "id": "K09-FC2",
+    "front": "Điều kiện bắt buộc giữa `spec.selector.matchLabels` và `spec.template.metadata.labels`?",
+    "back": "Mọi cặp nhãn trong `spec.selector.matchLabels` **bắt buộc phải khớp chính xác** bên trong `spec.template.metadata.labels`."
+  },
+  {
+    "id": "K09-FC3",
+    "front": "Ý nghĩa của cặp `maxUnavailable: 0` và `maxSurge: 1` trong `RollingUpdate`?",
+    "back": "- `maxUnavailable: 0`: Không bao giờ làm giảm số Pod sẵn sàng xuống dưới `replicas`.\n- `maxSurge: 1`: Bật thêm 1 Pod mới khoẻ mạnh trước rồi mới tắt 1 Pod cũ."
+  },
+  {
+    "id": "K09-FC4",
+    "front": "Câu lệnh tăng/giảm nóng số lượng bản sao của `deployment/shop-api` lên 5 Pod?",
+    "back": "**`kubectl scale deployment/shop-api --replicas=5`**"
+  },
+  {
+    "id": "K09-FC5",
+    "front": "Câu lệnh cứu hoả quay ngược `deployment/checkout` về bản ổn định trước đó?",
+    "back": "**`kubectl rollout undo deployment/checkout`**"
+  },
+  {
+    "id": "K09-FC6",
+    "front": "Làm sao xem danh sách các phiên bản (Revisions) đã từng cập nhật của một Deployment?",
+    "back": "**`kubectl rollout history deployment/<tên>`**"
+  }
+]

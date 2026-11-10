@@ -1,0 +1,30 @@
+# Chặn thư mục phụ thuộc cục bộ (nặng hàng trăm MB & chứa binary khác hệ điều hành)
+node_modules
+npm-debug.log*
+yarn-error.log*
+.pnpm-store
+
+# Chặn lịch sử Git và metadata IDE khỏi Build Context
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# BẢO MẬT: Tuyệt đối không cho file biến môi trường và khoá bí mật lọt vào Image layer!
+.env
+.env.*
+*.pem
+*.key
+
+# Chặn sản phẩm build cũ & báo cáo test ở máy cá nhân
+dist
+build
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+
+# Chặn toàn bộ tài liệu Markdown, NHƯNG giữ lại README.md cho gói phát hành
+*.md
+!README.md

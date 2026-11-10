@@ -1,18 +1,37 @@
-name: Node CI Minimal
+# Chuẩn CI tối giản năm 2026 cho dự án Node.js 22
+# Ánh xạ tư duy: thay vì gõ tay `npm ci && npm run lint && npm test` trên laptop trước khi merge,
+# GitHub cấp một máy ảo Ubuntu sạch tinh để chạy hộ bạn trên mọi lần push hoặc mở Pull Request.
+name: Node.js Minimal CI
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  verify:
+    name: Lint & Unit Test (Node 22)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Tải mã nguồn về máy chạy (Runner)
+        uses: actions/checkout@v4
+
+      - name: Cài đặt Node.js 22 và khôi phục bộ đệm ~/.npm
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm test
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Cài đặt gói phụ thuộc bất biến từ package-lock.json
+        run: npm ci
+
+      - name: Kiểm tra quy chuẩn mã nguồn (ESLint)
+        run: npm run lint
+
+      - name: Chạy bộ kiểm thử đơn vị (Unit Tests)
+        run: npm test

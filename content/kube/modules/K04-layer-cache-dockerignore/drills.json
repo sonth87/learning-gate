@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K04-D1",
+    "title": "Tệp .dockerignore chuẩn bảo mật kèm ngoại lệ !README.md",
+    "code": "node_modules\n.git\n.env\n.env.*\ndist\ncoverage\n*.md\n!README.md"
+  },
+  {
+    "id": "K04-D2",
+    "title": "Kết hợp ARG sang ENV và cài gói Alpine không lưu cache",
+    "code": "FROM node:22-alpine\nRUN apk add --no-cache curl\nWORKDIR /app\nARG APP_VERSION=1.0.0\nENV APP_VERSION=$APP_VERSION"
+  }
+]

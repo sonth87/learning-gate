@@ -1,0 +1,44 @@
+# Chiến lược Cache chuẩn mực trong GitLab CI:
+# - Chỉ duy nhất 1 job đầu tiên (warm_cache) giữ quyền ghi `policy: pull-push`
+# - Hàng loạt job kiểm thử phía sau chỉ tải về đọc `policy: pull` -> tiết kiệm hàng phút nén ZIP cuối job!
+stages:
+  - setup
+  - test
+
+default:
+  image: node:22-alpine
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+    # Mặc định toàn bộ các job chỉ ĐỌC cache
+    policy: pull
+
+warm_cache:
+  stage: setup
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+    # Riêng job mồi này được phép cập nhật cache mới khi package-lock.json thay đổi
+    policy: pull-push
+  script:
+    - npm ci --cache .npm --prefer-offline
+
+eslint_check:
+  stage: test
+  needs: [warm_cache]
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+
+vitest_suite:
+  stage: test
+  needs: [warm_cache]
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm test

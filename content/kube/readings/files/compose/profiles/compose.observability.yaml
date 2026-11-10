@@ -1,0 +1,28 @@
+# Mặc định gõ "docker compose up -d" chỉ chạy "api" (tiết kiệm RAM cho laptop).
+# Khi cần đo hiệu năng, gõ: "docker compose --profile debug up -d" để bật thêm Prometheus & Grafana!
+services:
+  api:
+    image: shop-api:1.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      METRICS_ENABLED: "true"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    profiles: ["debug"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    profiles: ["debug"]
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: local-grafana-placeholder
+    depends_on:
+      - prometheus

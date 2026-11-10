@@ -1,0 +1,68 @@
+{
+  "id": "C14",
+  "slug": "C14-zero-downtime-canary-rollback",
+  "level": 4,
+  "order": 14,
+  "title": "Zero-Downtime, Canary, Blue-Green & Rollback Tự động",
+  "summary": "Đóng gói thẻ Image bất biến theo Git SHA, điều phối lưu lượng không gián đoạn với Argo Rollouts (Blue-Green / Canary), hậu kiểm Smoke Test và tự động quay lui khi sự cố xảy ra.",
+  "tags": [
+    "zero-downtime",
+    "canary",
+    "blue-green",
+    "argo-rollouts",
+    "rollback",
+    "smoke-test"
+  ],
+  "sources": [
+    {
+      "title": "Argo Rollouts Documentation — Progressive Delivery Strategies",
+      "url": "https://argo-rollouts.readthedocs.io/en/stable/features/canary/",
+      "version": "Argo Rollouts v1.7+"
+    },
+    {
+      "title": "GitHub Docs — Evaluating expressions (failure() status check function)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/evaluate-expressions-in-workflows-and-actions",
+      "version": "GitHub Actions 2026"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Giả lập Điều phối Lưu lượng Canary / Blue-Green",
+      "kind": "simulator-preset",
+      "targetId": "traffic"
+    },
+    {
+      "label": "Blueprint #3: Zero-Downtime Suite",
+      "kind": "blueprint",
+      "targetId": "full-flow-3-zero-downtime-suite"
+    },
+    {
+      "label": "Sang App Docker & K8s (Probes & preStop)",
+      "kind": "cross-app",
+      "targetId": "kubemastery"
+    }
+  ],
+  "readings": [
+    {
+      "path": "gitops/argo-rollouts-canary.yaml",
+      "kind": "good",
+      "note": "Kịch bản phát hành Canary nhiều chặng (5% -> 25% -> 50% -> 100%) giới hạn bán kính ảnh hưởng trên Production.",
+      "task": "Trong tệp argo-rollouts-canary.yaml, điều gì diễn ra ở bước pause: { duration: 2m } ngay sau setWeight: 5?",
+      "answer": "Argo Rollouts giữ đúng 5% lưu lượng vào phiên bản mới trong suốt 2 phút để hệ thống giám sát (Prometheus/Datadog) thu thập tỷ lệ lỗi HTTP 5xx và độ trễ trước khi quyết định có mở rộng lên 25% hay tự động huỷ bỏ."
+    },
+    {
+      "path": "gitops/blue-green-preview.yaml",
+      "kind": "good",
+      "note": "Chiến lược Blue-Green với cổng previewService nội bộ tách rời hoàn toàn khỏi activeService của khách hàng.",
+      "task": "Cờ autoPromotionEnabled: false mang lại lợi ích gì cho đội QA và E2E Automation?",
+      "answer": "Nó giữ phiên bản mới (Green) ở trạng thái chờ trên previewService để bộ kiểm thử E2E hoặc QA kiểm tra thực tế trên hạ tầng Production mà chưa một khách hàng thật nào bị chuyển luồng sang."
+    },
+    {
+      "path": "gitops/smoke-test-rollback.yml",
+      "kind": "good",
+      "note": "Kết hợp curl --fail --retry cho bước hậu kiểm Smoke Test và job rollback tự động chạy khi if: failure().",
+      "task": "Điều gì xảy ra nếu bạn quên cờ --fail trong câu lệnh curl kiểm tra /healthz và máy chủ trả về mã HTTP 503?",
+      "answer": "Mặc định curl vẫn in nội dung trang lỗi 503 ra màn hình và thoát với exit code 0! Pipeline sẽ báo xanh giả (False Green) và job rollback sẽ không bao giờ được kích hoạt."
+    }
+  ]
+}

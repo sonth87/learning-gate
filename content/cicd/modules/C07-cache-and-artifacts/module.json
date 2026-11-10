@@ -1,0 +1,50 @@
+{
+  "id": "C07",
+  "slug": "C07-cache-and-artifacts",
+  "level": 2,
+  "order": 7,
+  "title": "Tăng tốc Đường ống: Phân biệt Cache vs Artifact, Khóa băm Lockfile & Mô hình Cache Read-Only",
+  "summary": "Phân biệt bản chất Cache (tăng tốc cài lại ~/.npm theo hashFiles lockfile) và Artifact (truyền sản phẩm dist/ bất biến giữa các Job), áp dụng Read-Only Cache an toàn.",
+  "tags": [
+    "cache",
+    "artifacts",
+    "hashfiles",
+    "upload-artifact-v4",
+    "read-only-cache"
+  ],
+  "sources": [
+    {
+      "title": "Caching Dependencies to Speed Up Workflows",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows",
+      "version": "GitHub Actions (actions/cache@v4)"
+    },
+    {
+      "title": "Storing and Sharing Data from a Workflow (Artifacts v4)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-and-sharing-data-from-a-workflow",
+      "version": "GitHub Actions (upload-artifact@v4)"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Giả lập Pipeline: Cache Hit vs Miss",
+      "kind": "simulator-preset",
+      "targetId": "pipeline"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/cache-readonly-pattern.yml",
+      "kind": "good",
+      "note": "Mô hình chuẩn năm 2026: chỉ nhánh main được ghi cập nhật bộ đệm, còn các nhánh Pull Request và Job song song chỉ dùng actions/cache/restore@v4 để đọc.",
+      "task": "Giải thích tại sao việc cho các Job kiểm tra trên PR dùng actions/cache/restore@v4 lại vừa nhanh hơn vừa an toàn hơn so với dùng actions/cache@v4 đầy đủ.",
+      "answer": "Dùng cache/restore@v4 bỏ qua hoàn toàn bước Post-job nén và tải ngược bộ đệm lên máy chủ (tiết kiệm 20–40 giây cuối mỗi Job), tránh xung đột ghi đè khi nhiều Job chạy song song và ngăn nhánh PR không tin cậy làm bẩn kho cache chung."
+    },
+    {
+      "path": "github/ephemeral-runner-bug.yml",
+      "kind": "bug",
+      "note": "Lỗi kinh điển khi tách Job build và Job deploy trên hai Ephemeral Runner độc lập nhưng quên truyền thư mục dist/ qua Artifact.",
+      "task": "Chỉ ra tại sao Job deploy báo lỗi không tìm thấy thư mục dist/ dù Job build ngay trước đó đã chạy thành công xanh mướt.",
+      "answer": "Mỗi Job chạy trên một máy ảo Runner mới tinh tách biệt hoàn toàn. Khi Job build kết thúc, máy ảo chứa thư mục dist/ bị xoá sổ; cần dùng actions/upload-artifact@v4 ở build và actions/download-artifact@v4 ở deploy."
+    }
+  ]
+}

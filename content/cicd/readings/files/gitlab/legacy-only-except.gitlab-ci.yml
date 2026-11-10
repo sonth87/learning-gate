@@ -1,0 +1,26 @@
+# CÚ PHÁP ĐÃ LỖI THỜI (OUTDATED): Từ khoá `only:` và `except:` trong GitLab CI
+# GitLab đã ngừng phát triển tính năng cho only/except và khuyến nghị chuyển hẳn sang `rules:`.
+stages:
+  - test
+  - deploy
+
+test_legacy:
+  stage: test
+  image: node:22-alpine
+  # CŨ: Khó kết hợp biểu thức biến môi trường phức tạp và dễ gây chạy kép pipeline
+  only:
+    - merge_requests
+    - main
+  except:
+    - tags
+  script:
+    - npm ci
+    - npm test
+
+deploy_legacy:
+  stage: deploy
+  image: alpine:3.20
+  only:
+    - main
+  script:
+    - echo "Legacy deploy job using deprecated only keyword"

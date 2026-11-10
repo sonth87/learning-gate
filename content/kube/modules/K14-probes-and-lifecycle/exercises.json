@@ -1,0 +1,302 @@
+[
+  {
+    "id": "kube-ex-k14-1",
+    "code": "K14.1",
+    "module": "K14",
+    "title": "Thêm readinessProbe ngăn đẩy lưu lượng vào Pod chưa sẵn sàng",
+    "difficulty": 1,
+    "tags": [
+      "readinessprobe",
+      "deployment",
+      "zero-downtime"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "api-readiness.yaml",
+    "prompt": "Ứng dụng `shop-api` mất khoảng 4 giây đầu để khởi tạo kết nối cơ sở dữ liệu, hoàn tất xong nó mới trả mã HTTP 200 tại đường dẫn `/readyz` trên cổng `3000`.\n\nHãy bổ sung `readinessProbe` vào container `api` của `Deployment` với:\n- `httpGet.path: /readyz`\n- `httpGet.port: 3000`\n- `periodSeconds: 5`",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          # Bổ sung readinessProbe kiểm tra GET /readyz ở cổng 3000 mỗi 5 giây\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: 3000\n            periodSeconds: 5\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ready-path",
+          "doc": "Kiểm tra đường dẫn httpGet.path: /readyz",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.path",
+          "match": {
+            "eq": "/readyz"
+          }
+        },
+        {
+          "id": "ready-port",
+          "doc": "Kiểm tra cổng httpGet.port: 3000",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.port",
+          "match": {
+            "eq": 3000
+          }
+        },
+        {
+          "id": "ready-period",
+          "doc": "Chu kỳ thăm dò periodSeconds: 5",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].readinessProbe.periodSeconds",
+          "match": {
+            "eq": 5
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`readinessProbe:` nằm trực tiếp bên trong phần tử container `- name: api` (ngang hàng với `image`, `ports`).",
+      "Chú ý `port: 3000` là kiểu số nguyên (không bọc dấu nháy kép)."
+    ],
+    "ref": "k8s/workloads/probes-graceful-node.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k14-2",
+    "code": "K14.2",
+    "module": "K14",
+    "title": "Thêm livenessProbe tự động khởi động lại tiến trình treo cứng",
+    "difficulty": 1,
+    "tags": [
+      "livenessprobe",
+      "self-healing",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "api-liveness.yaml",
+    "prompt": "Bổ sung cảm biến `livenessProbe` cho container `api` để nếu Event Loop của Node.js bị treo đơ, `kubelet` sẽ tự động khởi động lại nó:\n\n- `httpGet.path: /healthz`\n- `httpGet.port: 3000`\n- `periodSeconds: 10`\n- `failureThreshold: 3`",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          # Thêm livenessProbe gọi /healthz:3000 (periodSeconds: 10, failureThreshold: 3)\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n            periodSeconds: 10\n            failureThreshold: 3\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "live-path",
+          "doc": "livenessProbe gọi đúng đường dẫn nhẹ /healthz",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.httpGet.path",
+          "match": {
+            "eq": "/healthz"
+          }
+        },
+        {
+          "id": "live-port",
+          "doc": "livenessProbe gọi cổng 3000",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.httpGet.port",
+          "match": {
+            "eq": 3000
+          }
+        },
+        {
+          "id": "live-period",
+          "doc": "Đặt chu kỳ kiểm tra periodSeconds: 10",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.periodSeconds",
+          "match": {
+            "eq": 10
+          }
+        },
+        {
+          "id": "live-threshold",
+          "doc": "Ngưỡng thất bại liên tiếp failureThreshold: 3",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.failureThreshold",
+          "match": {
+            "eq": 3
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Cấu trúc của `livenessProbe` giống hệt `readinessProbe`, gồm khối con `httpGet` và các thông số thời gian ngang hàng với `httpGet`."
+    ],
+    "ref": "k8s/workloads/probes-graceful-node.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k14-3",
+    "code": "K14.3",
+    "module": "K14",
+    "title": "Bảo vệ ứng dụng khởi động chậm bằng startupProbe (quỹ 60 giây)",
+    "difficulty": 2,
+    "tags": [
+      "startupprobe",
+      "slow-boot",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "recommend-startup.yaml",
+    "prompt": "Dịch vụ gợi ý sản phẩm `reco-engine` phải nạp chỉ mục dữ liệu vào bộ nhớ mất tới **45 giây** lúc mới bật, khiến `livenessProbe` cứ giết nhầm nó trước khi kịp chạy xong!\n\nHãy giữ nguyên `livenessProbe` nhạy bén và bổ sung thêm **`startupProbe`** vào container `reco`:\n- `httpGet.path: /healthz`, `httpGet.port: 3000`\n- `periodSeconds: 5`\n- `failureThreshold: 12` *(tạo quỹ an toàn `5 * 12 = 60 giây`)*",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reco-engine\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: reco-engine\n  template:\n    metadata:\n      labels:\n        app: reco-engine\n    spec:\n      containers:\n        - name: reco\n          image: ghcr.io/acme/reco-engine:2.1.0\n          ports:\n            - containerPort: 3000\n          # Thêm startupProbe tạo quỹ khởi động 60 giây (periodSeconds: 5, failureThreshold: 12)\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n            periodSeconds: 10\n            failureThreshold: 3\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: reco-engine\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: reco-engine\n  template:\n    metadata:\n      labels:\n        app: reco-engine\n    spec:\n      containers:\n        - name: reco\n          image: ghcr.io/acme/reco-engine:2.1.0\n          ports:\n            - containerPort: 3000\n          startupProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n            periodSeconds: 5\n            failureThreshold: 12\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n            periodSeconds: 10\n            failureThreshold: 3\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "startup-path",
+          "doc": "startupProbe kiểm tra httpGet.path: /healthz",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].startupProbe.httpGet.path",
+          "match": {
+            "eq": "/healthz"
+          }
+        },
+        {
+          "id": "startup-port",
+          "doc": "startupProbe kiểm tra cổng 3000",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].startupProbe.httpGet.port",
+          "match": {
+            "eq": 3000
+          }
+        },
+        {
+          "id": "startup-period",
+          "doc": "startupProbe đặt periodSeconds: 5",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].startupProbe.periodSeconds",
+          "match": {
+            "eq": 5
+          }
+        },
+        {
+          "id": "startup-threshold",
+          "doc": "startupProbe đặt failureThreshold >= 12 (tổng quỹ >= 60s)",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].startupProbe.failureThreshold",
+          "match": {
+            "gte": 12
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đặt khối `startupProbe:` ngang hàng với `livenessProbe:` bên trong container `- name: reco`."
+    ],
+    "ref": "k8s/workloads/probes-graceful-node.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k14-4",
+    "code": "K14.4",
+    "module": "K14",
+    "title": "Khắc phục bẫy sập dây chuyền do kiểm tra Database trong livenessProbe",
+    "difficulty": 2,
+    "tags": [
+      "probes",
+      "anti-pattern",
+      "cascading-failure"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "fix-liveness-trap.yaml",
+    "prompt": "Cấu hình dưới đây đang mắc lỗi kiến trúc nghiêm trọng: `livenessProbe` gọi vào `/readyz?check_db=true` với `timeoutSeconds: 1`, lại còn thiếu `readinessProbe`! Hễ PostgreSQL chậm hơn 1 giây là toàn bộ dàn API bị giết đồng loạt.\n\nHãy sửa lại cho đúng chuẩn Production:\n1. Đổi `livenessProbe.httpGet.path` về endpoint nội tại nhẹ **`/healthz`** (không chứa `check_db`) và tăng `livenessProbe.timeoutSeconds` lên tối thiểu `3`.\n2. Thêm mới khối **`readinessProbe`** kiểm tra `httpGet.path: /readyz` trên `port: 3000` (`periodSeconds: 5`).",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: order-api\n  template:\n    metadata:\n      labels:\n        app: order-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/order-api:1.8.0\n          ports:\n            - containerPort: 3000\n          livenessProbe:\n            httpGet:\n              path: /readyz?check_db=true\n              port: 3000\n            periodSeconds: 10\n            timeoutSeconds: 1\n            failureThreshold: 3\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: order-api\n  template:\n    metadata:\n      labels:\n        app: order-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/order-api:1.8.0\n          ports:\n            - containerPort: 3000\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: 3000\n            periodSeconds: 5\n          livenessProbe:\n            httpGet:\n              path: /healthz\n              port: 3000\n            periodSeconds: 10\n            timeoutSeconds: 3\n            failureThreshold: 3\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "live-lightweight",
+          "doc": "livenessProbe chuyển sang đường dẫn nội tại /healthz",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.httpGet.path",
+          "match": {
+            "eq": "/healthz"
+          }
+        },
+        {
+          "id": "live-timeout-safe",
+          "doc": "Tăng livenessProbe.timeoutSeconds >= 3 giây",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].livenessProbe.timeoutSeconds",
+          "match": {
+            "gte": 3
+          }
+        },
+        {
+          "id": "ready-separated",
+          "doc": "Tách kiểm tra sẵn sàng sang readinessProbe.httpGet.path: /readyz",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.path",
+          "match": {
+            "eq": "/readyz"
+          }
+        },
+        {
+          "id": "ready-port-3000",
+          "doc": "readinessProbe kiểm tra cổng 3000",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.port",
+          "match": {
+            "eq": 3000
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa `livenessProbe.httpGet.path` thành `/healthz` và đổi `timeoutSeconds: 1` thành `3`.",
+      "Bổ sung khối `readinessProbe` với `httpGet.path: /readyz` và `port: 3000`."
+    ],
+    "ref": "k8s/workloads/probes-liveness-trap.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k14-5",
+    "code": "K14.5",
+    "module": "K14",
+    "title": "Cấu hình tắt Pod êm ái với preStop Hook và terminationGracePeriodSeconds",
+    "difficulty": 2,
+    "tags": [
+      "prestop",
+      "graceful-shutdown",
+      "sigterm"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "graceful-checkout.yaml",
+    "prompt": "Mỗi lần deploy bản mới cho `checkout-api`, khách hàng bị dính vài lỗi `502 Bad Gateway` do Pod đóng cổng nhanh hơn tốc độ cập nhật của Ingress.\n\nHãy cấu hình quy trình dừng êm ái cho `Deployment`:\n1. Ở cấp Pod (`spec.template.spec`): đặt `terminationGracePeriodSeconds: 30`.\n2. Ở cấp Container (`spec.template.spec.containers[0]`): thêm `lifecycle.preStop.exec.command` là mảng `[\"sh\", \"-c\", \"sleep 5\"]`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: checkout-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: checkout-api\n  template:\n    metadata:\n      labels:\n        app: checkout-api\n    spec:\n      # 1) Đặt terminationGracePeriodSeconds: 30 ở cấp Pod\n      containers:\n        - name: api\n          image: ghcr.io/acme/checkout-api:2.0.0\n          ports:\n            - containerPort: 3000\n          # 2) Thêm lifecycle.preStop.exec.command: [\"sh\", \"-c\", \"sleep 5\"]\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: checkout-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: checkout-api\n  template:\n    metadata:\n      labels:\n        app: checkout-api\n    spec:\n      terminationGracePeriodSeconds: 30\n      containers:\n        - name: api\n          image: ghcr.io/acme/checkout-api:2.0.0\n          ports:\n            - containerPort: 3000\n          lifecycle:\n            preStop:\n              exec:\n                command:\n                  - sh\n                  - -c\n                  - sleep 5\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "grace-period",
+          "doc": "Đặt spec.template.spec.terminationGracePeriodSeconds: 30",
+          "kind": "path",
+          "path": "spec.template.spec.terminationGracePeriodSeconds",
+          "match": {
+            "gte": 30
+          }
+        },
+        {
+          "id": "prestop-cmd",
+          "doc": "Cấu hình lifecycle.preStop.exec.command chạy sleep 5",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].lifecycle.preStop.exec.command",
+          "match": {
+            "eq": [
+              "sh",
+              "-c",
+              "sleep 5"
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Lưu ý vị trí thụt lề: `terminationGracePeriodSeconds: 30` nằm ở `spec.template.spec` (ngang hàng với `containers:`).",
+      "Trong khi đó, `lifecycle:` nằm bên trong phần tử container `- name: api`. Bạn có thể viết `command: [\"sh\", \"-c\", \"sleep 5\"]` trên một dòng cho gọn!"
+    ],
+    "ref": "k8s/workloads/probes-graceful-node.yaml",
+    "webGrade": true
+  }
+]

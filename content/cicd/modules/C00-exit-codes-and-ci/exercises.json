@@ -2,36 +2,239 @@
   {
     "id": "cicd-ex-c00-1",
     "code": "C00.1",
-    "title": "Sửa bước kiểm tra để báo lỗi đúng Exit Code",
+    "title": "Chặn HTTP 500 lọt lưới bằng cờ curl --fail",
     "difficulty": 1,
-    "tags": ["exit-code", "github-actions"],
+    "tags": [
+      "exit-code",
+      "curl",
+      "smoke-test",
+      "false-green"
+    ],
     "kind": "yaml",
     "language": "yaml",
     "filename": ".github/workflows/smoke.yml",
-    "prompt": "Bước `Health check` đang gọi `curl http://localhost:3000/health` mà thiếu cờ `--fail` (hoặc `-f`), khiến khi API trả mã lỗi HTTP `500` thì `curl` vẫn thoát với mã `0` (CI báo xanh giả!). Hãy thêm cờ `--fail` vào lệnh `curl` và đổi lệnh cài đặt gói sang `npm ci`.",
-    "starter": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm install\n      - name: Health check\n        run: curl http://localhost:3000/health\n",
-    "solution": "name: Smoke Check\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Install dependencies\n        run: npm ci\n      - name: Health check\n        run: curl --fail http://localhost:3000/health\n",
+    "prompt": "Job `smoke` đang kiểm tra sức khoẻ API sau khi khởi chạy bằng lệnh `curl http://localhost:3000/healthz`. Vì thiếu cờ báo lỗi HTTP, ngay cả khi server trả về `500 Internal Server Error`, bước kiểm tra vẫn xanh giả (`Exit Code 0`). Hãy thêm cờ `--fail` (hoặc `-f`) vào lệnh `curl` ở `jobs.smoke.steps[0].run`.",
+    "starter": "name: API Smoke Gate\non: [push]\njobs:\n  smoke:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Check health endpoint\n        run: curl http://localhost:3000/healthz\n",
+    "solution": "name: API Smoke Gate\non: [push]\njobs:\n  smoke:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Check health endpoint\n        run: curl --fail http://localhost:3000/healthz\n",
     "hints": [
-      "Đổi `npm install` thành `npm ci` ở bước cài đặt.",
-      "Thêm `--fail` vào lệnh `curl`: `curl --fail http://localhost:3000/health`."
+      "Mặc định `curl` chỉ trả mã lỗi khác 0 khi rớt mạng TCP/DNS, không bắt lỗi HTTP 4xx/5xx.",
+      "Sửa dòng `run:` của step đầu tiên thành `curl --fail http://localhost:3000/healthz` (hoặc dùng `-fsSL`)."
+    ],
+    "ref": "github/false-green-exitcode.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "curl-has-fail-flag",
+          "doc": "Lệnh curl trong jobs.smoke.steps[0].run phải có cờ --fail (hoặc -f) để bắt lỗi HTTP 4xx/5xx",
+          "kind": "path",
+          "path": "jobs.smoke.steps[0].run",
+          "match": {
+            "regex": "--fail|\\s-[a-zA-Z]*f"
+          }
+        },
+        {
+          "id": "curl-keeps-healthz-url",
+          "doc": "Giữ nguyên URL kiểm tra http://localhost:3000/healthz",
+          "kind": "path",
+          "path": "jobs.smoke.steps[0].run",
+          "match": {
+            "contains": "http://localhost:3000/healthz"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c00-2",
+    "code": "C00.2",
+    "title": "Dẹp bỏ bẫy nuốt lỗi || true và continue-on-error",
+    "difficulty": 1,
+    "tags": [
+      "exit-code",
+      "false-green",
+      "continue-on-error"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/unit-test.yml",
+    "prompt": "Một thành viên trong nhóm từng thêm cả `continue-on-error: true` lẫn `|| true` vào bước chạy `npm test` (step thứ 3 — `steps[2]`) để lách qua kỳ deadline tuần trước, khiến hàng chục bug lọt thẳng vào nhánh `main`. Hãy gỡ bỏ hoàn toàn thuộc tính `continue-on-error` và xoá đuôi `|| true` để `npm test` thực sự chặn cổng khi có test đỏ.",
+    "starter": "name: Unit Test Gate\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Run unit tests\n        continue-on-error: true\n        run: npm test || true\n",
+    "solution": "name: Unit Test Gate\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Run unit tests\n        run: npm test\n",
+    "hints": [
+      "Xoá hẳn dòng `continue-on-error: true` khỏi bước `Run unit tests` (`jobs.test.steps[2]`).",
+      "Sửa `run: npm test || true` thành `run: npm test` để giữ nguyên mã thoát của bộ test."
+    ],
+    "ref": "github/false-green-exitcode.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-continue-on-error",
+          "doc": "Bước Run unit tests không được bật continue-on-error",
+          "kind": "path",
+          "path": "jobs.test.steps[2].continue-on-error",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "no-or-true",
+          "doc": "Lệnh run không được chứa || true làm mất Exit Code",
+          "kind": "path",
+          "path": "jobs.test.steps[2].run",
+          "match": {
+            "notContains": "|| true"
+          }
+        },
+        {
+          "id": "runs-npm-test",
+          "doc": "Bước kiểm thử vẫn thực thi lệnh npm test",
+          "kind": "path",
+          "path": "jobs.test.steps[2].run",
+          "match": {
+            "contains": "npm test"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c00-3",
+    "code": "C00.3",
+    "title": "Gia cố kịch bản nhiều dòng với set -euo pipefail",
+    "difficulty": 2,
+    "tags": [
+      "bash",
+      "pipefail",
+      "fail-fast"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/verify-script.yml",
+    "prompt": "Step `Verify and log` (`jobs.verify.steps[2]`) chạy một script nhiều dòng có dùng dấu ống `|` (`npm run lint | tee lint.log` rồi `npm run build` và `echo \"Done\"`), đồng thời được cấu hình `shell: bash --noprofile --norc {0}` nên Bash không tự bật chế độ bắt lỗi ống. Hãy thêm dòng `set -euo pipefail` ngay đầu khối `run:` để bất kỳ lỗi lint hoặc build nào đều dừng ngay lập tức trước khi tới dòng `echo \"Done\"`.",
+    "starter": "name: Strict Shell Verification\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Verify and log\n        shell: bash --noprofile --norc {0}\n        run: |\n          npm run lint | tee lint.log\n          npm run build\n          echo \"Done\"\n",
+    "solution": "name: Strict Shell Verification\non: [push]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Verify and log\n        shell: bash --noprofile --norc {0}\n        run: |\n          set -euo pipefail\n          npm run lint | tee lint.log\n          npm run build\n          echo \"Done\"\n",
+    "hints": [
+      "Đặt `set -euo pipefail` làm dòng lệnh đầu tiên bên dưới `run: |` (thụt lề 10 dấu cách thẳng hàng với `npm run lint`).",
+      "Giữ nguyên các lệnh `npm run lint | tee lint.log`, `npm run build` và `echo \"Done\"` phía dưới."
+    ],
+    "ref": "github/false-green-exitcode.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "has-strict-pipefail",
+          "doc": "Khối run bắt đầu bằng set -euo pipefail trước khi chạy lint/build",
+          "kind": "path",
+          "path": "jobs.verify.steps[2].run",
+          "match": {
+            "regex": "^\\s*set\\s+-euo\\s+pipefail\\b[\\s\\S]*npm\\s+run\\s+lint"
+          }
+        },
+        {
+          "id": "keeps-build-and-done",
+          "doc": "Giữ nguyên lệnh npm run build phía sau bước lint",
+          "kind": "path",
+          "path": "jobs.verify.steps[2].run",
+          "match": {
+            "contains": "npm run build"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c00-4",
+    "code": "C00.4",
+    "title": "Khoá chặt gói phụ thuộc bất biến bằng npm ci",
+    "difficulty": 1,
+    "tags": [
+      "npm-ci",
+      "lockfile",
+      "deterministic-build"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/ci.yml",
+    "prompt": "Workflow hiện tại đang dùng `npm install` ở bước cài đặt thư viện (`jobs.build.steps[2]`), khiến sáng nay một bản vá phụ mới trên npm registry làm vỡ build trên CI dù trên máy đồng nghiệp vẫn xanh. Hãy thay thế `npm install` bằng lệnh cài đặt tất định `npm ci`.",
+    "starter": "name: Deterministic Install\non: [push, pull_request]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - name: Install dependencies\n        run: npm install\n      - name: Run test suite\n        run: npm test\n",
+    "solution": "name: Deterministic Install\non: [push, pull_request]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - name: Install dependencies\n        run: npm ci\n      - name: Run test suite\n        run: npm test\n",
+    "hints": [
+      "Tìm bước `Install dependencies` (`jobs.build.steps[2].run`).",
+      "Đổi `npm install` thành `npm ci` để bám chặt vào `package-lock.json`."
     ],
     "ref": "github/node-ci-minimal.yml",
     "spec": {
       "kind": "yaml",
       "rules": [
         {
-          "id": "use-npm-ci",
-          "doc": "Bước cài đặt dùng `npm ci` thay vì `npm install`",
+          "id": "no-npm-install",
+          "doc": "Không dùng npm install trên đường ống CI",
           "kind": "path",
-          "path": "jobs.verify.steps[1].run",
-          "match": { "regex": "^npm\\s+ci\\b" }
+          "path": "jobs.build.steps[2].run",
+          "match": {
+            "notRegex": "npm\\s+install"
+          }
         },
         {
-          "id": "curl-fail",
-          "doc": "Lệnh `curl` có cờ `--fail` (hoặc `-f`) để trả mã thoát khác 0 khi gặp HTTP 4xx/5xx",
+          "id": "uses-npm-ci",
+          "doc": "Sử dụng npm ci để cài đặt chính xác theo package-lock.json",
           "kind": "path",
-          "path": "jobs.verify.steps[2].run",
-          "match": { "regex": "curl\\s+(?:.*\\s+)?(?:--fail|-f[a-zA-Z]*)\\b" }
+          "path": "jobs.build.steps[2].run",
+          "match": {
+            "regex": "npm\\s+ci\\b"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c00-5",
+    "code": "C00.5",
+    "title": "Thiết lập cổng duyệt Continuous Delivery cho Production",
+    "difficulty": 2,
+    "tags": [
+      "continuous-delivery",
+      "environment",
+      "needs"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/release.yml",
+    "prompt": "Hiện tại Job `deploy-prod` chạy song song ngay cùng lúc với Job `test` và đẩy thẳng ra máy chủ thật mà không có cổng bảo vệ nào! Hãy chuyển workflow sang mô hình **Continuous Delivery** an toàn bằng 2 chỉnh sửa trên `jobs.deploy-prod`: (1) khai báo `needs: test` để bắt buộc chờ `test` xanh mới được chạy, và (2) gắn `environment: production` để kích hoạt cổng chờ con người bấm Approve.",
+    "starter": "name: Release Pipeline\non:\n  push:\n    branches: [main]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n\n  deploy-prod:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Deploy release\n        run: echo \"Rolling out verified build to production\"\n",
+    "solution": "name: Release Pipeline\non:\n  push:\n    branches: [main]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n\n  deploy-prod:\n    needs: test\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - name: Deploy release\n        run: echo \"Rolling out verified build to production\"\n",
+    "hints": [
+      "Bên dưới `deploy-prod:`, thêm `needs: test` (hoặc `needs: [test]`) cùng cấp thụt lề với `runs-on`.",
+      "Thêm tiếp `environment: production` vào `deploy-prod` để gắn GitHub Deployment Protection Gate."
+    ],
+    "ref": "gitops/github-environments-gate.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "deploy-needs-test",
+          "doc": "Job deploy-prod phải phụ thuộc vào Job test qua khoá needs",
+          "kind": "path",
+          "path": "jobs.deploy-prod.needs",
+          "match": {
+            "oneOf": [
+              "test",
+              [
+                "test"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "deploy-environment-prod",
+          "doc": "Job deploy-prod phải gắn environment: production để kích hoạt cổng phê duyệt",
+          "kind": "path",
+          "path": "jobs.deploy-prod.environment",
+          "match": {
+            "eq": "production"
+          }
         }
       ]
     }

@@ -1,0 +1,295 @@
+[
+  {
+    "id": "cicd-ex-c10-1",
+    "code": "C10.1",
+    "module": "C10",
+    "title": "Thu hồi quyền tràn lan write-all về chế độ tối thiểu contents: read",
+    "difficulty": 1,
+    "tags": [
+      "permissions",
+      "github-token",
+      "least-privilege"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/least-privilege.yml",
+    "prompt": "Tệp Workflow dưới đây đang mở toang `permissions: write-all` cực kỳ nguy hiểm cho một công việc chỉ chạy kiểm thử đơn thuần!\n\nHãy thay thế `permissions: write-all` ở cấp gốc bằng cấu trúc đối tượng chỉ cấp duy nhất quyền đọc mã nguồn:\n`permissions: { contents: read }`",
+    "starter": "name: CI Test\non: [pull_request]\n\npermissions: write-all\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n",
+    "solution": "name: CI Test\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-write-all",
+          "doc": "Xoá hoàn toàn chuỗi nguy hiểm write-all",
+          "kind": "path",
+          "path": "permissions",
+          "match": {
+            "neq": "write-all"
+          }
+        },
+        {
+          "id": "contents-read-only",
+          "doc": "Thiết lập permissions.contents: read ở cấp gốc Workflow",
+          "kind": "path",
+          "path": "permissions.contents",
+          "match": {
+            "eq": "read"
+          }
+        },
+        {
+          "id": "exact-minimal-perms",
+          "doc": "Không cấp thêm bất kỳ quyền thừa nào khác ngoài contents: read",
+          "kind": "path",
+          "path": "permissions",
+          "match": {
+            "eq": {
+              "contents": "read"
+            }
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa dòng `permissions: write-all` thành khối 2 dòng:\\n`permissions:`\\n`  contents: read`"
+    ],
+    "ref": "security/permissions-write-all.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c10-2",
+    "code": "C10.2",
+    "module": "C10",
+    "title": "Phân tách quyền hạn cấp Job: giữ test chỉ đọc và chỉ mở packages: write cho push-image",
+    "difficulty": 2,
+    "tags": [
+      "permissions",
+      "ghcr",
+      "job-scoping"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/scoped-permissions.yml",
+    "prompt": "Workflow gồm hai Job: `test` (chạy mã kiểm thử cộng đồng) và `push-image` (đẩy ảnh lên GitHub Container Registry `ghcr.io`).\n\nHãy phân tách quyền hạn an toàn:\n1. Ở cấp gốc Workflow: đặt `permissions: { contents: read }` (để Job `test` hoàn toàn không có quyền ghi gói).\n2. Ở riêng bên trong Job `push-image`: khai báo `permissions` cấp `contents: read` và **`packages: write`**.",
+    "starter": "name: Test and Push GHCR\non:\n  push:\n    branches: [main]\n\n# 1) Khoá mặc định toàn cục chỉ đọc mã nguồn\npermissions:\n  contents: write\n  packages: write\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  push-image:\n    needs: test\n    runs-on: ubuntu-latest\n    # 2) Chỉ mở quyền packages: write (kèm contents: read) riêng cho Job này\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Pushing image to ghcr.io...\"\n",
+    "solution": "name: Test and Push GHCR\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  push-image:\n    needs: test\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      packages: write\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Pushing image to ghcr.io...\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "root-readonly",
+          "doc": "Cấp gốc Workflow chỉ giữ duy nhất permissions: { contents: read }",
+          "kind": "path",
+          "path": "permissions",
+          "match": {
+            "eq": {
+              "contents": "read"
+            }
+          }
+        },
+        {
+          "id": "test-no-write",
+          "doc": "Job test không được cấp quyền ghi riêng",
+          "kind": "path",
+          "path": "jobs.test.permissions",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "push-packages-write",
+          "doc": "Job push-image có quyền permissions.packages: write",
+          "kind": "path",
+          "path": "jobs.push-image.permissions.packages",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "push-contents-read",
+          "doc": "Job push-image giữ permissions.contents: read để checkout code",
+          "kind": "path",
+          "path": "jobs.push-image.permissions.contents",
+          "match": {
+            "eq": "read"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Lưu ý: khi bạn ghi đè `permissions:` ở cấp một Job, GitHub xoá các quyền kế thừa từ cấp gốc của Job đó, nên trong `push-image` cần ghi đủ cả `contents: read` và `packages: write`!"
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c10-3",
+    "code": "C10.3",
+    "module": "C10",
+    "title": "Vá lỗ hổng thực thi mã từ xa GitHub Actions Script Injection",
+    "difficulty": 2,
+    "tags": [
+      "script-injection",
+      "rce",
+      "env"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/pr-title-lint.yml",
+    "prompt": "Bước `Check Conventional PR Title` bên dưới đang dính lỗ hổng bảo mật nghiêm trọng **Script Injection** vì nối trực tiếp `${{ github.event.pull_request.title }}` vào câu lệnh bash!\n\nHãy vá lỗ hổng này đúng chuẩn:\n1. Khai báo biến môi trường `env.PR_TITLE: ${{ github.event.pull_request.title }}` ngay trên bước kiểm tra.\n2. Trong khối `run:`, thay thế biểu thức `${{ ... }}` bằng biến shell được bọc trong dấu nháy kép **`\"$PR_TITLE\"`**.",
+    "starter": "name: PR Title Check\non:\n  pull_request:\n    types: [opened, edited, synchronize]\n\npermissions:\n  contents: read\n\njobs:\n  lint-title:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Check Conventional PR Title\n        run: |\n          echo \"Validating title: ${{ github.event.pull_request.title }}\"\n          echo \"${{ github.event.pull_request.title }}\" | grep -E \"^(feat|fix|chore|docs): \"\n",
+    "solution": "name: PR Title Check\non:\n  pull_request:\n    types: [opened, edited, synchronize]\n\npermissions:\n  contents: read\n\njobs:\n  lint-title:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Check Conventional PR Title\n        env:\n          PR_TITLE: ${{ github.event.pull_request.title }}\n        run: |\n          echo \"Validating title: $PR_TITLE\"\n          echo \"$PR_TITLE\" | grep -E \"^(feat|fix|chore|docs): \"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-script-injection",
+          "doc": "Không còn bất kỳ biểu thức ${{ github.event... }} nào nằm trực tiếp trong run:",
+          "kind": "gha-no-script-injection",
+          "jobId": "lint-title"
+        },
+        {
+          "id": "env-pr-title",
+          "doc": "Truyền tiêu đề PR an toàn vào env.PR_TITLE của bước kiểm tra",
+          "kind": "path",
+          "path": "jobs.lint-title.steps[0].env.PR_TITLE",
+          "match": {
+            "contains": "github.event.pull_request.title"
+          }
+        },
+        {
+          "id": "uses-shell-var",
+          "doc": "Câu lệnh run: đọc dữ liệu từ biến môi trường $PR_TITLE",
+          "kind": "path",
+          "path": "jobs.lint-title.steps[0].run",
+          "match": {
+            "contains": "$PR_TITLE"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đảm bảo xoá sạch CẢ HAI chỗ `${{ github.event.pull_request.title }}` bên trong `run:` và thay bằng `$PR_TITLE`!"
+    ],
+    "ref": "security/gha-script-injection-safe.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c10-4",
+    "code": "C10.4",
+    "module": "C10",
+    "title": "Triệt tiêu lỗ hổng Pwn Request trên Workflow kiểm thử nhánh Fork",
+    "difficulty": 2,
+    "tags": [
+      "pwn-request",
+      "pull-request-target",
+      "fork-security"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/fork-ci-safe.yml",
+    "prompt": "Báo động đỏ từ đội Red Team: tệp Workflow dưới đây dùng sự kiện `pull_request_target` rồi lại checkout mã nguồn từ PR của người lạ để chạy `npm ci` và `npm test` — cho phép bất kỳ ai mở PR cũng lấy cắp được trọn bộ `secrets`!\n\nHãy sửa lại ngay:\n1. Đổi sự kiện kích hoạt từ `on.pull_request_target` sang sự kiện an toàn **`on.pull_request`** (`branches: [main]`).\n2. Đặt `permissions: { contents: read }`.\n3. Ở bước `actions/checkout@v4`, xoá bỏ phần `with.ref` nguy hiểm để GitHub tự động checkout commit merge thử nghiệm an toàn của PR.",
+    "starter": "name: Unsafe Fork PR Check\non:\n  pull_request_target:\n    branches: [main]\n\npermissions:\n  contents: write\n  pull-requests: write\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          ref: ${{ github.event.pull_request.head.sha }}\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Safe Fork PR Check\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "removed-prt",
+          "doc": "Xoá bỏ hoàn toàn sự kiện nguy hiểm on.pull_request_target",
+          "kind": "path",
+          "path": "on.pull_request_target",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "uses-safe-pr",
+          "doc": "Sử dụng sự kiện an toàn on.pull_request",
+          "kind": "path",
+          "path": "on.pull_request.branches",
+          "match": {
+            "contains": "main"
+          }
+        },
+        {
+          "id": "locked-perms",
+          "doc": "Hạ quyền xuống permissions: { contents: read }",
+          "kind": "path",
+          "path": "permissions",
+          "match": {
+            "eq": {
+              "contents": "read"
+            }
+          }
+        },
+        {
+          "id": "clean-checkout",
+          "doc": "Bước checkout@v4 không còn trỏ tay vào head.sha nguy hiểm",
+          "kind": "path",
+          "path": "jobs.test.steps[0].with.ref",
+          "match": {
+            "exists": false
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đổi `pull_request_target:` thành `pull_request:`, xoá `pull-requests: write` và sửa `contents: write` thành `contents: read`, đồng thời xoá khối `with:` dưới `actions/checkout@v4`."
+    ],
+    "ref": "security/pull-request-target-pwn.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c10-5",
+    "code": "C10.5",
+    "module": "C10",
+    "title": "Ghim cứng Action bên thứ ba bằng mã băm Commit SHA 40 ký tự chống chiếm thẻ",
+    "difficulty": 1,
+    "tags": [
+      "supply-chain",
+      "sha-pinning",
+      "trivy"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/pinned-third-party.yml",
+    "prompt": "Tệp Workflow dưới đây đang gọi Action bên thứ ba `aquasecurity/trivy-action@master` theo nhánh trôi nổi — nếu kho đó bị tấn công trỏ lại nhánh, toàn bộ Runner của công ty sẽ dính mã độc!\n\nHãy ghim cứng `aquasecurity/trivy-action` vào đúng mã băm Commit SHA 40 ký tự đã kiểm định:\n`18f2510ee396bbf400402917b394f2dd8c87dbb0` *(tương ứng bản v0.28.0)*, đồng thời nâng `actions/checkout@v2` lên `actions/checkout@v4`.",
+    "starter": "name: Container Scan\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  scan:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v2\n      - name: Run Trivy vulnerability scanner\n        uses: aquasecurity/trivy-action@master\n        with:\n          scan-type: fs\n          severity: CRITICAL\n",
+    "solution": "name: Container Scan\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  scan:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run Trivy vulnerability scanner\n        uses: aquasecurity/trivy-action@18f2510ee396bbf400402917b394f2dd8c87dbb0 # v0.28.0\n        with:\n          scan-type: fs\n          severity: CRITICAL\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "checkout-v4",
+          "doc": "Nâng cấp lên actions/checkout@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "scan",
+          "actionPrefix": "actions/checkout",
+          "minMajor": 4
+        },
+        {
+          "id": "trivy-pinned-rule",
+          "doc": "Ghim cứng aquasecurity/trivy-action bằng mã SHA 40 ký tự",
+          "kind": "gha-uses-pinned",
+          "jobId": "scan",
+          "actionPrefix": "aquasecurity/trivy-action"
+        },
+        {
+          "id": "trivy-exact-40-sha",
+          "doc": "Chuỗi sau dấu @ là mã băm thập lục phân đủ 40 ký tự (không dùng @master)",
+          "kind": "path",
+          "path": "jobs.scan.steps[1].uses",
+          "match": {
+            "regex": "^aquasecurity/trivy-action@[0-9a-f]{40}$"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa dòng `uses:` thứ hai thành `uses: aquasecurity/trivy-action@18f2510ee396bbf400402917b394f2dd8c87dbb0` và dòng đầu thành `uses: actions/checkout@v4`."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  }
+]

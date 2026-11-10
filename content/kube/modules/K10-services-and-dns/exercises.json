@@ -1,0 +1,318 @@
+[
+  {
+    "id": "kube-ex-k10-1",
+    "code": "K10.1",
+    "title": "Viết ClusterIP Service định tuyến cổng 80 vào cổng 3000 của Pod",
+    "difficulty": 1,
+    "tags": [
+      "service",
+      "clusterip",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "service.yaml",
+    "prompt": "Viết Manifest `Service` (`apiVersion: v1`) tên `shop-api-svc` kiểu `ClusterIP` sao cho:\n1. Chọn đúng các Pod mang nhãn `app: shop-api`.\n2. Mở cổng dịch vụ `port: 80` và chuyển tiếp lưu lượng vào cổng `targetPort: 3000` nơi Express đang lắng nghe.",
+    "starter": "apiVersion: v1\nkind: Service\nmetadata:\n  name: shop-api-svc\nspec:\n  type: ClusterIP\n  selector:\n    # Khai báo nhãn chọn Pod app: shop-api\n  ports:\n    - port: 80\n      # Khai báo targetPort: 3000\n",
+    "solution": "apiVersion: v1\nkind: Service\nmetadata:\n  name: shop-api-svc\nspec:\n  type: ClusterIP\n  selector:\n    app: shop-api\n  ports:\n    - port: 80\n      targetPort: 3000\n",
+    "hints": [
+      "Dưới `selector:`, thêm `app: shop-api` (thụt 4 dấu cách).",
+      "Trong phần tử đầu tiên của `ports:`, thêm `targetPort: 3000` ngang hàng với `port: 80`."
+    ],
+    "ref": "k8s/network/service-clusterip.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "svc-name-check",
+          "doc": "Service mang tên `shop-api-svc`",
+          "kind": "path",
+          "path": "metadata.name",
+          "match": {
+            "eq": "shop-api-svc"
+          }
+        },
+        {
+          "id": "svc-selector-shop-api",
+          "doc": "`spec.selector.app` khớp `\"shop-api\"`",
+          "kind": "path",
+          "path": "spec.selector.app",
+          "match": {
+            "eq": "shop-api"
+          }
+        },
+        {
+          "id": "svc-port-80",
+          "doc": "Mở `spec.ports[0].port: 80`",
+          "kind": "path",
+          "path": "spec.ports[0].port",
+          "match": {
+            "eq": 80
+          }
+        },
+        {
+          "id": "svc-target-port-3000",
+          "doc": "Chuyển tiếp vào `spec.ports[0].targetPort: 3000`",
+          "kind": "path",
+          "path": "spec.ports[0].targetPort",
+          "match": {
+            "eq": 3000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k10-2",
+    "code": "K10.2",
+    "title": "Cấu hình NodePort Service mở cổng 30080 trên Worker Node",
+    "difficulty": 1,
+    "tags": [
+      "service",
+      "nodeport",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "service-nodeport.yaml",
+    "prompt": "Trên cụm thử nghiệm nội bộ không có Cloud LoadBalancer, hãy chuyển `Service` `preview-web` bên dưới sang kiểu `type: NodePort`, giữ `port: 80`, `targetPort: 3000` và ghim cổng cố định trên Node là `nodePort: 30080`.",
+    "starter": "apiVersion: v1\nkind: Service\nmetadata:\n  name: preview-web\nspec:\n  type: ClusterIP\n  selector:\n    app: preview-web\n  ports:\n    - port: 80\n      targetPort: 3000\n      # Thêm nodePort: 30080\n",
+    "solution": "apiVersion: v1\nkind: Service\nmetadata:\n  name: preview-web\nspec:\n  type: NodePort\n  selector:\n    app: preview-web\n  ports:\n    - port: 80\n      targetPort: 3000\n      nodePort: 30080\n",
+    "hints": [
+      "Đổi `type: ClusterIP` thành `type: NodePort`.",
+      "Thêm `nodePort: 30080` (nằm trong dải hợp lệ 30000–32767) ngay dưới `targetPort: 3000`."
+    ],
+    "ref": "k8s/network/service-clusterip.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "type-is-nodeport",
+          "doc": "`spec.type` được đặt là `NodePort`",
+          "kind": "path",
+          "path": "spec.type",
+          "match": {
+            "eq": "NodePort"
+          }
+        },
+        {
+          "id": "nodeport-30080",
+          "doc": "`spec.ports[0].nodePort` đặt là `30080`",
+          "kind": "path",
+          "path": "spec.ports[0].nodePort",
+          "match": {
+            "eq": 30080
+          }
+        },
+        {
+          "id": "targetport-3000",
+          "doc": "Giữ nguyên `targetPort: 3000`",
+          "kind": "path",
+          "path": "spec.ports[0].targetPort",
+          "match": {
+            "eq": 3000
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k10-3",
+    "code": "K10.3",
+    "title": "Khớp nối hoàn chỉnh cặp Deployment + Service trong Multi-doc YAML",
+    "difficulty": 2,
+    "tags": [
+      "service",
+      "deployment",
+      "selector-match",
+      "port-match"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "app-stack.yaml",
+    "prompt": "Tệp YAML hai tài nguyên bên dưới đang bị đứt mạng ở **cả hai chốt chặn**: `Service` tìm sai nhãn (`app: order-backend` thay vì `app: order-api`) và bắn nhầm cổng (`targetPort: 8080` trong khi container mở `containerPort: 4000`). Hãy sửa lại phần `Service` để khớp 100% cả nhãn lẫn cổng với `Deployment`!",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: order-api\n  template:\n    metadata:\n      labels:\n        app: order-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/order-api:1.1.0\n          ports:\n            - containerPort: 4000\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: order-api-svc\nspec:\n  selector:\n    app: order-backend\n  ports:\n    - port: 80\n      targetPort: 8080\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: order-api\n  template:\n    metadata:\n      labels:\n        app: order-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/order-api:1.1.0\n          ports:\n            - containerPort: 4000\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: order-api-svc\nspec:\n  selector:\n    app: order-api\n  ports:\n    - port: 80\n      targetPort: 4000\n",
+    "hints": [
+      "Trong tài nguyên `Service` ở nửa dưới: sửa `app: order-backend` thành `app: order-api`.",
+      "Đồng thời sửa `targetPort: 8080` thành `targetPort: 4000` để trùng với `containerPort: 4000` của Deployment."
+    ],
+    "ref": "k8s/network/service-broken-502.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "svc-selector-matches-dep",
+          "doc": "`Service.spec.selector` khớp chính xác với nhãn Pod của `Deployment/order-api`",
+          "kind": "k8s-selector-match",
+          "sourceKind": "Service",
+          "sourceName": "order-api-svc",
+          "targetKind": "Deployment",
+          "targetName": "order-api"
+        },
+        {
+          "id": "svc-targetport-matches-containerport",
+          "doc": "`Service.spec.ports[0].targetPort` khớp với `containerPort: 4000` của Deployment",
+          "kind": "k8s-service-port-match",
+          "serviceName": "order-api-svc",
+          "targetKind": "Deployment",
+          "targetName": "order-api"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k10-4",
+    "code": "K10.4",
+    "title": "Xuất bản Deployment đang chạy thành Service bằng kubectl expose",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "expose",
+      "endpoints"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Trên cụm đang có sẵn `deployment/catalog` gồm 2 Pod khoẻ mạnh lắng nghe ở cổng nội bộ `4000`. Hãy dùng lệnh `kubectl expose` để tạo một `Service` tên `catalog-svc` lắng nghe ở `--port=80` và chuyển tiếp vào `--target-port=4000`.",
+    "starter": "# Xuất bản deployment catalog thành service catalog-svc (--port=80 --target-port=4000)\n",
+    "solution": "kubectl expose deployment catalog --name=catalog-svc --port=80 --target-port=4000\n",
+    "hints": [
+      "Cú pháp đầy đủ: `kubectl expose deployment catalog --name=catalog-svc --port=80 --target-port=4000`.",
+      "Sau khi expose, Service sẽ tự động nhận đủ 2 Ready Endpoints từ 2 Pod của `catalog`."
+    ],
+    "ref": "k8s/network/service-clusterip.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "catalog-10001",
+              "namespace": "default",
+              "labels": {
+                "app": "catalog"
+              },
+              "image": "ghcr.io/acme/catalog:1.0.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                4000
+              ],
+              "logs": [
+                "Catalog ready on 4000"
+              ],
+              "events": []
+            },
+            {
+              "name": "catalog-10002",
+              "namespace": "default",
+              "labels": {
+                "app": "catalog"
+              },
+              "image": "ghcr.io/acme/catalog:1.0.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-2",
+              "ports": [
+                4000
+              ],
+              "logs": [
+                "Catalog ready on 4000"
+              ],
+              "events": []
+            }
+          ],
+          "deployments": [
+            {
+              "name": "catalog",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "catalog"
+              },
+              "podLabels": {
+                "app": "catalog"
+              },
+              "image": "ghcr.io/acme/catalog:1.0.0",
+              "revision": 1,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "ghcr.io/acme/catalog:1.0.0"
+                }
+              ],
+              "containerPort": 4000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "catalog-svc-has-2-endpoints",
+          "doc": "`Service/catalog-svc` lắng nghe cổng `80` và ghép nối thành công >= 2 Ready Endpoints",
+          "target": "k8s-service-endpoints",
+          "name": "catalog-svc",
+          "minReadyEndpoints": 2,
+          "port": 80
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k10-5",
+    "code": "K10.5",
+    "title": "Viết địa chỉ CoreDNS FQDN gọi Database xuyên qua Namespace khác",
+    "difficulty": 2,
+    "tags": [
+      "coredns",
+      "fqdn",
+      "cross-namespace"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "configmap-dns.yaml",
+    "prompt": "Ứng dụng của bạn chạy ở namespace `storefront`, trong khi cơ sở dữ liệu PostgreSQL lại được đặt ở một Service tên `postgres-svc` nằm bên trong namespace `database` (cổng `5432`). Vì khác namespace, ghi ngắn gọn `postgres-svc:5432` sẽ báo lỗi `ENOTFOUND`! Hãy sửa khoá `DB_ADDRESS` trong `ConfigMap` sang tên miền đầy đủ chuẩn CoreDNS (`<svc>.<ns>.svc.cluster.local:5432`).",
+    "starter": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: storefront-db-cfg\n  namespace: storefront\ndata:\n  DB_ADDRESS: \"postgres-svc:5432\"\n",
+    "solution": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: storefront-db-cfg\n  namespace: storefront\ndata:\n  DB_ADDRESS: \"postgres-svc.database.svc.cluster.local:5432\"\n",
+    "hints": [
+      "Cấu trúc tên miền đầy đủ (FQDN) trong K8s là `<tên-service>.<tên-namespace>.svc.cluster.local`.",
+      "Đổi thành `\"postgres-svc.database.svc.cluster.local:5432\"`."
+    ],
+    "ref": "k8s/network/coredns-cross-namespace.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "fqdn-cross-ns-exact",
+          "doc": "`data.DB_ADDRESS` dùng đúng CoreDNS FQDN `postgres-svc.database.svc.cluster.local:5432`",
+          "kind": "path",
+          "path": "data.DB_ADDRESS",
+          "match": {
+            "eq": "postgres-svc.database.svc.cluster.local:5432"
+          }
+        }
+      ]
+    }
+  }
+]

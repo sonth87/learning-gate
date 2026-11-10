@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K01-FC1",
+    "front": "Thứ tự hai con số trong cờ `-p 8080:3000` được đọc như thế nào?",
+    "back": "**`HOST_PORT:CONTAINER_PORT`** — cổng `8080` mở trên máy chủ bên ngoài chuyển tiếp vào cổng `3000` nơi ứng dụng lắng nghe bên trong container."
+  },
+  {
+    "id": "K01-FC2",
+    "front": "Vì sao server Node.js chạy trong Docker phải lắng nghe trên `0.0.0.0` thay vì `127.0.0.1`?",
+    "back": "Vì `127.0.0.1` bên trong container chỉ nhận kết nối phát sinh từ chính container đó; lưu lượng đi qua cầu nối `-p` vào từ card mạng ảo `eth0` nên cần `0.0.0.0`."
+  },
+  {
+    "id": "K01-FC3",
+    "front": "Thông báo lỗi `Bind for 0.0.0.0:8080 failed: port is already allocated` có nghĩa là gì?",
+    "back": "Cổng `8080` trên máy chủ đang bị một container đang chạy khác (hoặc một ứng dụng trên máy host) chiếm giữ."
+  },
+  {
+    "id": "K01-FC4",
+    "front": "Cờ nào trong `docker run` dùng để bơm biến môi trường vào `process.env` của Node.js?",
+    "back": "Cờ **`-e KEY=VALUE`** (hoặc `--env KEY=VALUE`, hoặc nạp cả tệp bằng `--env-file`)."
+  },
+  {
+    "id": "K01-FC5",
+    "front": "Khi container vừa bật lên đã tắt ngay (`Exited (1)`), dùng `docker exec` hay `docker logs` để tìm nguyên nhân?",
+    "back": "Phải dùng **`docker logs <tên>`** (vì `docker exec` chỉ hoạt động khi container đang ở trạng thái `running`)."
+  },
+  {
+    "id": "K01-FC6",
+    "front": "Trên các image nền Alpine (`node:22-alpine`), lệnh mở shell tương tác qua `docker exec -it` nên gọi `sh` hay `bash`?",
+    "back": "Gọi **`sh`** (`docker exec -it <tên> sh`), vì Alpine Linux tối giản không cài sẵn `bash` mặc định."
+  }
+]

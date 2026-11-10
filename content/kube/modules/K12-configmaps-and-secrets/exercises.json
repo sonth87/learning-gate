@@ -1,0 +1,268 @@
+[
+  {
+    "id": "kube-ex-k12-1",
+    "code": "K12.1",
+    "title": "Tạo ConfigMap api-config lưu cấu hình không nhạy cảm",
+    "difficulty": 1,
+    "tags": [
+      "configmap",
+      "yaml",
+      "12-factor"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "configmap.yaml",
+    "prompt": "Viết một Manifest `ConfigMap` (`apiVersion: v1`, `kind: ConfigMap`) đặt tên `metadata.name: api-config` chứa hai khoá cấu hình trong mục `data:`:\n- `LOG_LEVEL: \"info\"`\n- `CORS_ORIGIN: \"https://shop.example.com\"`",
+    "starter": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: api-config\ndata:\n  # Thêm LOG_LEVEL và CORS_ORIGIN bên dưới\n",
+    "solution": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: api-config\ndata:\n  LOG_LEVEL: \"info\"\n  CORS_ORIGIN: \"https://shop.example.com\"\n",
+    "hints": [
+      "Chú ý `ConfigMap` dùng trường gốc `data:` (chứ không dùng `spec:`)! Mọi giá trị trong `data:` đều nên bọc dấu nháy kép chuỗi.",
+      "Điền `LOG_LEVEL: \"info\"` và `CORS_ORIGIN: \"https://shop.example.com\"` thụt 2 dấu cách dưới `data:`."
+    ],
+    "ref": "k8s/network/configmap-secret-env.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "cm-kind-and-name",
+          "doc": "Khai báo `kind: ConfigMap` với tên `api-config`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "ConfigMap",
+            "name": "api-config"
+          },
+          "path": "metadata.name",
+          "match": {
+            "eq": "api-config"
+          }
+        },
+        {
+          "id": "cm-log-level",
+          "doc": "`data.LOG_LEVEL` đặt là `\"info\"`",
+          "kind": "path",
+          "path": "data.LOG_LEVEL",
+          "match": {
+            "eq": "info"
+          }
+        },
+        {
+          "id": "cm-cors-origin",
+          "doc": "`data.CORS_ORIGIN` đặt là `\"https://shop.example.com\"`",
+          "kind": "path",
+          "path": "data.CORS_ORIGIN",
+          "match": {
+            "eq": "https://shop.example.com"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k12-2",
+    "code": "K12.2",
+    "title": "Nạp toàn bộ ConfigMap vào Deployment qua envFrom",
+    "difficulty": 1,
+    "tags": [
+      "configmap",
+      "envfrom",
+      "deployment"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "deployment-envfrom.yaml",
+    "prompt": "Trên cụm đã có sẵn `ConfigMap` tên `api-config`. Hãy bổ sung mục `envFrom` vào container `api` của `Deployment` bên dưới để bơm toàn bộ các khoá của `api-config` vào `process.env` thông qua `configMapRef.name: api-config`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.5.0\n          # Thêm envFrom tham chiếu configMapRef tới api-config\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.5.0\n          envFrom:\n            - configMapRef:\n                name: api-config\n",
+    "hints": [
+      "`envFrom:` nằm bên trong phần tử container `- name: api` (ngang hàng với `image:`).",
+      "Bên trong `envFrom:`, khai báo phần tử mảng `- configMapRef:` với `name: api-config`."
+    ],
+    "ref": "k8s/network/configmap-secret-env.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "container-envfrom-cm",
+          "doc": "Container nạp `envFrom[0].configMapRef.name: api-config`",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].envFrom[0].configMapRef.name",
+          "match": {
+            "eq": "api-config"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k12-3",
+    "code": "K12.3",
+    "title": "Tạo Secret Opaque và trích xuất khoá qua valueFrom.secretKeyRef",
+    "difficulty": 2,
+    "tags": [
+      "secret",
+      "secretkeyref",
+      "multi-doc"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "secret-pod.yaml",
+    "prompt": "Hoàn thiện tệp YAML hai tài nguyên dưới đây:\n1. Ở tài nguyên `Secret` tên `db-credentials` (`type: Opaque`), khai báo `stringData.DB_PASSWORD: \"placeholder-change-me\"`.\n2. Ở tài nguyên `Pod` tên `db-migrator`, nạp biến môi trường tên `DATABASE_PASSWORD` lấy giá trị từ `valueFrom.secretKeyRef` trỏ đúng vào `name: db-credentials` và `key: DB_PASSWORD`.",
+    "starter": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\ntype: Opaque\nstringData:\n  DB_PASSWORD: \"placeholder-change-me\"\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: db-migrator\nspec:\n  containers:\n    - name: migrator\n      image: ghcr.io/acme/db-migrator:1.0.0\n      env:\n        - name: DATABASE_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              # Điền name và key khớp với Secret ở trên\n",
+    "solution": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\ntype: Opaque\nstringData:\n  DB_PASSWORD: \"placeholder-change-me\"\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: db-migrator\nspec:\n  containers:\n    - name: migrator\n      image: ghcr.io/acme/db-migrator:1.0.0\n      env:\n        - name: DATABASE_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: db-credentials\n              key: DB_PASSWORD\n",
+    "hints": [
+      "Kiểm tra kỹ chính tả: tên Secret là `db-credentials`, còn tên khoá bên trong `stringData` là `DB_PASSWORD`.",
+      "Dưới `secretKeyRef:`, thêm hai dòng `name: db-credentials` và `key: DB_PASSWORD`."
+    ],
+    "ref": "k8s/network/secret-missing-key-bug.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "secret-has-placeholder",
+          "doc": "`Secret/db-credentials` có `stringData.DB_PASSWORD` hợp lệ",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Secret",
+            "name": "db-credentials"
+          },
+          "path": "stringData.DB_PASSWORD",
+          "match": {
+            "nonEmpty": true
+          }
+        },
+        {
+          "id": "pod-env-secret-name",
+          "doc": "`secretKeyRef.name` trỏ tới `\"db-credentials\"`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Pod",
+            "name": "db-migrator"
+          },
+          "path": "spec.containers[0].env[name=DATABASE_PASSWORD].valueFrom.secretKeyRef.name",
+          "match": {
+            "eq": "db-credentials"
+          }
+        },
+        {
+          "id": "pod-env-secret-key",
+          "doc": "`secretKeyRef.key` khớp chính xác `\"DB_PASSWORD\"`",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Pod",
+            "name": "db-migrator"
+          },
+          "path": "spec.containers[0].env[name=DATABASE_PASSWORD].valueFrom.secretKeyRef.key",
+          "match": {
+            "eq": "DB_PASSWORD"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k12-4",
+    "code": "K12.4",
+    "title": "Gắn ConfigMap nginx-conf làm Volume chỉ đọc (readOnly: true)",
+    "difficulty": 2,
+    "tags": [
+      "configmap",
+      "volumes",
+      "readonly"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "pod-cm-volume.yaml",
+    "prompt": "Để truyền tệp cấu hình tuỳ chỉnh vào Nginx mà không cần build lại Image, hãy hoàn thiện `Pod` `custom-gateway`:\n1. Dưới `spec.volumes`, khai báo volume đầu tiên có `name: conf-vol` lấy từ `configMap.name: nginx-conf`.\n2. Dưới `spec.containers[0].volumeMounts`, gắn `name: conf-vol` vào `mountPath: /etc/nginx/conf.d` kèm cờ bảo vệ `readOnly: true`.",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: custom-gateway\nspec:\n  containers:\n    - name: nginx\n      image: nginx:1.27-alpine\n      volumeMounts:\n        - name: conf-vol\n          # Thêm mountPath: /etc/nginx/conf.d và readOnly: true\n  volumes:\n    - name: conf-vol\n      # Tham chiếu configMap có name: nginx-conf\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: custom-gateway\nspec:\n  containers:\n    - name: nginx\n      image: nginx:1.27-alpine\n      volumeMounts:\n        - name: conf-vol\n          mountPath: /etc/nginx/conf.d\n          readOnly: true\n  volumes:\n    - name: conf-vol\n      configMap:\n        name: nginx-conf\n",
+    "hints": [
+      "Trong `volumeMounts[0]`, thêm `mountPath: /etc/nginx/conf.d` và `readOnly: true`.",
+      "Trong `volumes[0]`, thêm khối `configMap:` chứa `name: nginx-conf`."
+    ],
+    "ref": "k8s/network/configmap-secret-env.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "vol-from-cm-nginx-conf",
+          "doc": "`spec.volumes[0].configMap.name` trỏ tới `\"nginx-conf\"`",
+          "kind": "path",
+          "path": "spec.volumes[0].configMap.name",
+          "match": {
+            "eq": "nginx-conf"
+          }
+        },
+        {
+          "id": "mount-path-etc-nginx",
+          "doc": "Gắn vào đường dẫn `mountPath: /etc/nginx/conf.d`",
+          "kind": "path",
+          "path": "spec.containers[0].volumeMounts[0].mountPath",
+          "match": {
+            "eq": "/etc/nginx/conf.d"
+          }
+        },
+        {
+          "id": "mount-readonly-true",
+          "doc": "Bật chế độ chỉ đọc an toàn `readOnly: true`",
+          "kind": "path",
+          "path": "spec.containers[0].volumeMounts[0].readOnly",
+          "match": {
+            "eq": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k12-5",
+    "code": "K12.5",
+    "title": "Khởi tạo trực tiếp ConfigMap và Secret bằng kubectl create",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "configmap",
+      "secret",
+      "cli"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Thực thi hai câu lệnh `kubectl create` trên Terminal trong namespace mặc định:\n1. Tạo một `ConfigMap` tên `app-cfg` chứa cặp khoá `--from-literal=PORT=3000`.\n2. Tạo một `Secret` kiểu `generic` tên `jwt-sec` chứa cặp khoá `--from-literal=JWT_PUBLIC_KID=kid-2026`.",
+    "starter": "# Bước 1: Tạo configmap app-cfg với PORT=3000\n# Bước 2: Tạo secret generic jwt-sec với JWT_PUBLIC_KID=kid-2026\n",
+    "solution": "kubectl create configmap app-cfg --from-literal=PORT=3000\nkubectl create secret generic jwt-sec --from-literal=JWT_PUBLIC_KID=kid-2026\n",
+    "hints": [
+      "Chú ý sự khác biệt nhỏ giữa hai lệnh: `create configmap <tên>` không có từ loại phụ, còn `create secret generic <tên>` có từ `generic` đứng trước tên Secret!",
+      "Gõ đủ hai dòng:\n`kubectl create configmap app-cfg --from-literal=PORT=3000`\n`kubectl create secret generic jwt-sec --from-literal=JWT_PUBLIC_KID=kid-2026`"
+    ],
+    "ref": "k8s/network/configmap-secret-env.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "cm-app-cfg-created",
+          "doc": "`ConfigMap/app-cfg` đã được tạo với khoá `PORT`",
+          "target": "k8s-configmap",
+          "name": "app-cfg",
+          "hasKeys": [
+            "PORT"
+          ]
+        },
+        {
+          "id": "sec-jwt-sec-created",
+          "doc": "`Secret/jwt-sec` đã được tạo với khoá `JWT_PUBLIC_KID`",
+          "target": "k8s-secret",
+          "name": "jwt-sec",
+          "hasKeys": [
+            "JWT_PUBLIC_KID"
+          ]
+        }
+      ]
+    }
+  }
+]

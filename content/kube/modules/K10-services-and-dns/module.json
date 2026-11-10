@@ -1,0 +1,57 @@
+{
+  "id": "K10",
+  "slug": "K10-services-and-dns",
+  "level": 3,
+  "order": 10,
+  "title": "Kubernetes Service, Phân giải tên miền CoreDNS & Kết nối đa tầng",
+  "summary": "Đặt IP ảo ổn định (ClusterIP, NodePort, LoadBalancer) trước các Pod ngắn hạn, phân biệt port vs targetPort và gọi dịch vụ xuyên Namespace qua FQDN.",
+  "tags": [
+    "service",
+    "clusterip",
+    "nodeport",
+    "coredns",
+    "endpoints"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes Services & EndpointSlices",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "DNS for Services and Pods (CoreDNS)",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Đường đi gói tin qua Service & Ingress",
+      "kind": "flow",
+      "targetId": "k8s-network-traffic",
+      "description": "Theo dõi gói tin từ Ingress -> Service VIP -> EndpointSlice -> Pod"
+    },
+    {
+      "label": "War Room: Lỗi lệch Selector gây 502 (#7)",
+      "kind": "incident",
+      "targetId": "incident-7-network-selector",
+      "description": "Thực chiến chẩn đoán hiện tượng Endpoints = <none>"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/network/service-clusterip.yaml",
+      "kind": "good",
+      "note": "Cặp bài trùng Deployment + Service chuẩn mực sử dụng Named Port.",
+      "task": "Trong tệp này, `targetPort` không ghi số `3000` mà lại ghi chữ `http`. Kubernetes làm thế nào để biết `http` là cổng bao nhiêu?",
+      "answer": "Kubernetes đối chiếu chuỗi `http` với trường `ports[].name: http` bên trong container của Pod (nơi gán `containerPort: 3000`). Cách dùng Named Port giúp tách rời cấu hình mạng khỏi số cổng nội bộ của code."
+    },
+    {
+      "path": "k8s/network/service-broken-502.yaml",
+      "kind": "bug",
+      "note": "Hai lỗi cấu hình kinh điển làm đứt gãy hoàn toàn kết nối tới Pod dù Pod vẫn Running.",
+      "task": "Tìm đủ cả 2 lỗi trong `shop-api-svc` khiến lưu lượng không thể chạm tới ứng dụng Express ở cổng 3000.",
+      "answer": "1) `spec.selector.app: shop-backend` lệch với nhãn `app: shop-api` của Pod làm `Endpoints = <none>`; 2) `targetPort: 8080` trỏ sai cổng (container thực tế nghe ở `3000`)."
+    }
+  ]
+}

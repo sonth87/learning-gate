@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K18-C1",
+    "front": "Quy trình 3 bước chuẩn để chẩn đoán bất kỳ Pod nào gặp sự cố trong K8s?",
+    "back": "1) `kubectl get pods` (nhận diện trạng thái), 2) `kubectl describe pod <name>` (đọc mục `Events` cuối trang), 3) `kubectl logs <name> --previous` (nếu ứng dụng đã chạy rồi sập)."
+  },
+  {
+    "id": "K18-C2",
+    "front": "Hai nhóm nguyên nhân chính khiến Pod đứng mãi ở trạng thái `Pending`?",
+    "back": "1) Không Node nào còn đủ CPU/RAM thoả mãn `resources.requests` (hoặc vướng Taint/NodeSelector), 2) `PVC` gắn vào Pod đang kẹt chưa `Bound` được ổ đĩa."
+  },
+  {
+    "id": "K18-C3",
+    "front": "Ba nguyên nhân hàng đầu gây ra lỗi `ErrImagePull` / `ImagePullBackOff`?",
+    "back": "1) Gõ sai tên repository hoặc sai thẻ phiên bản (`tag`), 2) Chưa đẩy (push) image lên Registry, 3) Kho riêng tư nhưng thiếu hoặc sai `imagePullSecrets`."
+  },
+  {
+    "id": "K18-C4",
+    "front": "Khi nào Pod bị chặn ở trạng thái `CreateContainerConfigError`?",
+    "back": "Khi container tham chiếu tới một `Secret` hoặc `ConfigMap` chưa tồn tại trong cùng Namespace, hoặc khoá `key` chỉ định trong `secretKeyRef`/`configMapKeyRef` không có mặt."
+  },
+  {
+    "id": "K18-C5",
+    "front": "Tại sao cờ `--previous` lại sống còn khi gỡ lỗi `CrashLoopBackOff`?",
+    "back": "Vì container mới có thể vừa được tạo chưa kịp ghi log hoặc đang trong thời gian chờ Backoff; `--previous` đọc lại nguyên vẹn Stack Trace của lần vừa sập ngay trước đó."
+  },
+  {
+    "id": "K18-C6",
+    "front": "Cách phân biệt nhanh lỗi thuộc về Hạ tầng K8s hay thuộc về Mã nguồn Node.js chỉ qua cột `STATUS`?",
+    "back": "`Pending`, `ImagePullBackOff`, `CreateContainerConfigError` = tắc ở tầng Hạ tầng/Cấu hình K8s; `CrashLoopBackOff` / `Error` = tiến trình Mã nguồn (hoặc lệnh `CMD`) thoát lỗi."
+  }
+]

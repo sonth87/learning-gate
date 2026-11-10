@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K08-D1",
+    "title": "Tạo Namespace và khởi chạy Pod bên trong Namespace đó bằng CLI",
+    "code": "kubectl create ns payments\nkubectl run fraud-check --image=node:22-alpine -n payments\nkubectl get pods -n payments --show-labels"
+  },
+  {
+    "id": "K08-D2",
+    "title": "Gắn nhãn tổ chức chuẩn cho Pod Manifest",
+    "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: shop-api\n  labels:\n    app: shop-api\n    tier: backend"
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C11-Q1",
+    "type": "mc",
+    "q": "Nếu bạn chạy lệnh `trivy image ghcr.io/acme/shop-api:1.0` với các cờ mặc định mà **quên truyền `--exit-code 1`**, điều gì xảy ra khi Trivy phát hiện 12 lỗ hổng mức `CRITICAL`?",
+    "code": "",
+    "choices": [
+      "Đường ống tự động dừng lại và gửi cảnh báo đỏ ngay lập tức",
+      "Trivy in bảng danh sách 12 lỗ hổng ra màn hình log nhưng vẫn trả về mã thoát `0`, khiến đường ống báo XANH và đẩy thẳng ảnh đầy lỗ hổng lên Production!",
+      "Trivy tự động sửa mã nguồn Dockerfile và đóng gói lại",
+      "GitHub tự động xoá kho lưu trữ để bảo vệ an toàn"
+    ],
+    "answer": 1,
+    "explain": "Mặc định `trivy` có `--exit-code 0` (chế độ chỉ báo cáo thông tin)! Muốn biến Trivy thành cổng chặn bảo mật thực sự (Security Gate), bắt buộc phải có `--exit-code 1`."
+  },
+  {
+    "id": "C11-Q2",
+    "type": "tf",
+    "q": "Tham số `--ignore-unfixed` trên lệnh `trivy image` giúp giảm nhiễu thực tế bằng cách chỉ chặn đường ống đối với những lỗ hổng ĐÃ CÓ bản vá chính thức từ nhà phát hành hệ điều hành/thư viện.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Chặn lập trình viên vì một CVE chưa có bản vá trên toàn cầu chỉ khiến đội ngũ bất lực đi bật `continue-on-error: true`. Kết hợp `--severity CRITICAL --ignore-unfixed` giúp mọi cảnh báo đỏ đều có hướng nâng cấp rõ ràng."
+  },
+  {
+    "id": "C11-Q3",
+    "type": "output",
+    "q": "Giá trị số nào cần đặt cho thuộc tính `fetch-depth` của `actions/checkout@v4` để công cụ `gitleaks` tải đầy đủ toàn bộ lịch sử các commit nhằm bắt các khoá bí mật bị xoá nửa vời?",
+    "code": "- uses: actions/checkout@v4\n  with:\n    fetch-depth: ____",
+    "choices": [],
+    "answer": "0",
+    "explain": "`fetch-depth: 0` tải đầy đủ toàn bộ lịch sử nhánh và thẻ (thay vì mặc định `1` chỉ tải ảnh chụp nông của commit cuối)."
+  },
+  {
+    "id": "C11-Q4",
+    "type": "mc",
+    "q": "Sự khác biệt về mục tiêu kiểm tra giữa **SAST** (như `Semgrep`) và **SCA** (như `npm audit`) là gì?",
+    "code": "",
+    "choices": [
+      "SAST quét các dòng mã nguồn do chính đội bạn viết (tìm lỗi logic bảo mật như SQLi, XSS), còn SCA kiểm tra danh sách các gói thư viện bên thứ ba trong `package-lock.json` đối chiếu với cơ sở dữ liệu lỗ hổng CVE đã công bố",
+      "SAST chỉ chạy trên máy Mac còn SCA chỉ chạy trên Linux",
+      "SAST dùng để đo tốc độ phản hồi HTTP còn SCA dùng để nén ảnh PNG",
+      "Hai thuật ngữ hoàn toàn giống hệt nhau 100%"
+    ],
+    "answer": 0,
+    "explain": "SAST = Static Application Security Testing (mã nhà trồng); SCA = Software Composition Analysis (nguyên liệu thư viện mở nhập về trong node_modules)."
+  },
+  {
+    "id": "C11-Q5",
+    "type": "mc",
+    "q": "Hồ sơ **SBOM (Software Bill of Materials)** xuất ra ở định dạng chuẩn `CycloneDX` hoặc `SPDX` giải quyết bài toán vận hành nào hiệu quả nhất?",
+    "code": "",
+    "choices": [
+      "Giúp tăng gấp đôi tốc độ xử lý JSON của V8 Engine",
+      "Lưu lại danh mục kiểm kê chính xác mọi gói và phiên bản nằm trong từng bản phát hành để khi có lỗ hổng Zero-day mới bùng phát, tổ chức tra cứu biết ngay dịch vụ nào bị ảnh hưởng trong vài giây",
+      "Thay thế hoàn toàn cho tệp Dockerfile",
+      "Tự động viết Unit Test cho ứng dụng Express"
+    ],
+    "answer": 1,
+    "explain": "SBOM giống danh mục linh kiện xuất xưởng của từng chiếc máy bay: khi nhà cung cấp thông báo lô ốc vít X bị lỗi, bạn tra danh sách SBOM biết ngay những chiếc nào cần vá khẩn cấp!"
+  },
+  {
+    "id": "C11-Q6",
+    "type": "tf",
+    "q": "Sử dụng dịch vụ `docker:dind` kèm cờ `privileged: true` trên cụm GitLab Runner dùng chung cho phép mã nguồn trong Job leo thang thoát khỏi container ra máy chủ vật lý.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Container có `privileged: true` có toàn quyền truy cập thiết bị phần cứng và nhân của máy chủ Runner. Giải pháp an toàn là dùng Kaniko hoặc BuildKit rootless."
+  },
+  {
+    "id": "C11-Q7",
+    "type": "output",
+    "q": "Cờ dòng lệnh nào của `npm audit` giúp chỉ kiểm toán các thư viện chạy trên Production (`dependencies`) và bỏ qua các công cụ phát triển (`devDependencies`)?",
+    "code": "npm audit ____ --audit-level=high",
+    "choices": [],
+    "answer": "--omit=dev",
+    "explain": "Chuẩn npm hiện đại (Node 18/20/22+) dùng `--omit=dev` (thay cho cờ cũ `--production` đã ngừng khuyến nghị)."
+  }
+]

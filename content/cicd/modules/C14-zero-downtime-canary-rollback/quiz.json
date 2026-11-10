@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C14-Q1",
+    "type": "mc",
+    "q": "Tại sao việc đẩy đè thẻ Docker Image `:latest` trong pipeline Production lại gây nguy hiểm nghiêm trọng cho khả năng Rollback?",
+    "code": "docker push ghcr.io/acme/shop-api:latest",
+    "choices": [
+      "Vì Docker Engine v27 không còn hỗ trợ kéo thẻ :latest nữa",
+      "Vì `:latest` là thẻ khả biến (mutable): bản ổn định cũ bị ghi đè mất dấu tham chiếu và các Node K8s có thể kéo phiên bản lệch nhau gây hỗn loạn",
+      "Vì thẻ `:latest` làm dung lượng Image phình to gấp đôi",
+      "Vì GitHub Container Registry tính phí gấp 3 lần cho thẻ `:latest`"
+    ],
+    "answer": 1,
+    "explain": "Thẻ bất biến như `sha-${{ github.sha }}` đảm bảo mỗi bản build là duy nhất, cho phép trỏ ngược về bất kỳ phiên bản ổn định nào trong tích tắc."
+  },
+  {
+    "id": "C14-Q2",
+    "type": "mc",
+    "q": "Sự khác biệt cốt lõi nhất giữa chiến lược Blue-Green và Canary là gì?",
+    "code": "",
+    "choices": [
+      "Blue-Green chỉ chạy được trên máy ảo, còn Canary chỉ chạy được trên Kubernetes",
+      "Blue-Green dựng song song toàn bộ cụm mới (tốn ~2x tài nguyên) rồi gạt 100% lưu lượng một lần sau khi kiểm tra Preview; còn Canary chuyển dần từng phần trăm nhỏ lưu lượng (5% -> 25% -> 100%)",
+      "Canary bắt buộc phải tắt dịch vụ 5 phút, còn Blue-Green không tắt dịch vụ",
+      "Blue-Green không thể Rollback về bản cũ được"
+    ],
+    "answer": 1,
+    "explain": "Blue-Green tối ưu cho việc kiểm thử trên cổng Preview và chuyển mạch tức thì (đánh đổi chi phí gấp đôi cụm trong lúc chuyển giao), còn Canary tối ưu cho việc phơi nhiễm rủi ro nhỏ giọt với người dùng thật."
+  },
+  {
+    "id": "C14-Q3",
+    "type": "output",
+    "q": "Cờ dòng lệnh dài (long flag, bắt đầu bằng --) nào của `curl` bắt buộc phải có trong bước Smoke Test để mã phản hồi HTTP 500/502/503 biến thành mã thoát khác 0?",
+    "code": "curl ??? --silent --show-error --retry 5 https://api.shop.example.com/readyz",
+    "choices": [],
+    "answer": "--fail",
+    "explain": "Thiếu `--fail` (hoặc `--fail-with-body`), `curl` coi việc nhận được phản hồi HTTP 500 từ server là \"giao tiếp mạng thành công\" và trả về exit code 0!"
+  },
+  {
+    "id": "C14-Q4",
+    "type": "tf",
+    "q": "Trong GitHub Actions, một job hậu thuẫn có `needs: [deploy-prod, smoke-test]` sẽ mặc định bị BỎ QUA (skipped) nếu `smoke-test` thất bại — trừ khi khai báo tường minh hàm kiểm tra trạng thái như `if: failure()`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Mặc định mọi job có `needs` ngầm định `if: success()`. Để job `rollback` thức dậy khi bước trước bị gãy, bắt buộc phải viết `if: failure()`."
+  },
+  {
+    "id": "C14-Q5",
+    "type": "mc",
+    "q": "Trong đối tượng `Rollout` của Argo Rollouts (`argoproj.io/v1alpha1`), cặp trường nào dưới `spec.strategy.blueGreen` dùng để tách biệt lưu lượng khách hàng thật và cổng kiểm thử nội bộ?",
+    "code": "",
+    "choices": [
+      "publicPort và privatePort",
+      "activeService và previewService",
+      "prodIngress và testIngress",
+      "primaryPod và secondaryPod"
+    ],
+    "answer": 1,
+    "explain": "`activeService` phục vụ lưu lượng khách hàng hiện hành, còn `previewService` trỏ thẳng vào ReplicaSet phiên bản mới đang chờ duyệt."
+  },
+  {
+    "id": "C14-Q6",
+    "type": "tf",
+    "q": "Trong cấu hình Canary của Argo Rollouts, bước `- pause: {}` (không ghi `duration`) sẽ tạm dừng tiến trình nâng tỷ lệ lưu lượng vô thời hạn cho tới khi người vận hành hoặc pipeline gọi lệnh promote.",
+    "code": "steps:\n  - setWeight: 10\n  - pause: {}",
+    "choices": [],
+    "answer": true,
+    "explain": "`pause: { duration: \"2m\" }` tự động đi tiếp sau 2 phút, còn `pause: {}` rỗng hoạt động như một chốt chặn chờ lệnh xác nhận tường minh (`kubectl argo rollouts promote`)."
+  },
+  {
+    "id": "C14-Q7",
+    "type": "mc",
+    "q": "Tại sao bước Smoke Test ngay sau khi deploy nên thêm `--retry 5 --retry-delay 3` thay vì chỉ gọi `curl --fail` duy nhất 1 lần?",
+    "code": "",
+    "choices": [
+      "Để làm giảm tải CPU cho máy chủ cơ sở dữ liệu",
+      "Để tránh báo động giả (flaky rollback) trong vài giây đầu khi Ingress / Load Balancer đang cập nhật bảng định tuyến EndpointSlice mới",
+      "Vì curl bắt buộc phải có --retry mới dùng được HTTPS",
+      "Để tự động biên dịch lại mã nguồn TypeScript nếu gặp lỗi"
+    ],
+    "answer": 1,
+    "explain": "Trong hệ thống phân tán, có độ trễ vài giây để Load Balancer nhận diện Pod mới; thử lại có kiểm soát giúp phân biệt rõ \"đang đồng bộ mạng\" với \"ứng dụng thực sự chết\"."
+  }
+]

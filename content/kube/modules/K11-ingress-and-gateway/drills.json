@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K11-D1",
+    "title": "Khai báo Ingress networking.k8s.io/v1 chuẩn với ingressClassName",
+    "code": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx"
+  },
+  {
+    "id": "K11-D2",
+    "title": "Khối cấu hình chứng chỉ HTTPS TLS trong Ingress",
+    "code": "spec:\n  ingressClassName: nginx\n  tls:\n    - hosts:\n        - shop.example.com\n      secretName: shop-tls-cert"
+  }
+]

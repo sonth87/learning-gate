@@ -1,0 +1,28 @@
+# Bảo vệ máy chủ khỏi tình trạng 1 tiến trình rò rỉ bộ nhớ (memory leak) ăn sạch RAM toàn máy
+services:
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "--max-old-space-size=192", "dist/server.js"]
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+
+  image-worker:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "dist/worker.js"]
+    restart: on-failure:5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M

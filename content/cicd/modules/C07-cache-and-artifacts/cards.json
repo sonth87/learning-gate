@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C07-C1",
+    "front": "Khi nào dùng `Cache`, khi nào dùng `Artifact` trong CI/CD?",
+    "back": "Dùng `Cache` cho thư mục tải thư viện lặp lại giữa các lượt chạy (`~/.npm`, `.pnpm-store`); dùng `Artifact` cho sản phẩm biên dịch của chính commit hiện tại (`dist/`, báo cáo HTML, `sbom.json`)."
+  },
+  {
+    "id": "C07-C2",
+    "front": "Cấu trúc khoá `key` chuẩn mực cho `actions/cache@v4` với Node.js?",
+    "back": "`${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}` kèm `restore-keys: ${{ runner.os }}-npm-` để dự phòng khi lockfile đổi."
+  },
+  {
+    "id": "C07-C3",
+    "front": "Tại sao truyền `node_modules` qua `upload-artifact` lại là phản mẫu nghiêm trọng?",
+    "back": "Vì 40.000+ tệp nhỏ tốn 4–6 phút nén/giải nén I/O và dễ làm gãy quyền thực thi symlink trong `node_modules/.bin/`."
+  },
+  {
+    "id": "C07-C4",
+    "front": "Sự khác nhau giữa `actions/cache@v4` và `actions/cache/restore@v4`?",
+    "back": "`actions/cache@v4` vừa đọc đầu Job vừa lưu mới cuối Job; `actions/cache/restore@v4` chỉ đọc (Read-only), lý tưởng cho các Job chạy song song và nhánh PR."
+  },
+  {
+    "id": "C07-C5",
+    "front": "Điểm cải tiến lớn nhất của `actions/upload-artifact@v4` so với bản v3 cũ?",
+    "back": "Tốc độ tải lên/tải xuống nhanh hơn tới 90% và gói Artifact trở thành bất biến ngay sau khi bước upload hoàn tất."
+  },
+  {
+    "id": "C07-C6",
+    "front": "Mặc định một bộ đệm GitHub Actions Cache sẽ bị tự động thu hồi khi nào?",
+    "back": "Khi không được truy cập trong vòng 7 ngày liên tiếp, hoặc khi tổng dung lượng Cache của kho vượt ngưỡng 10GB (xoá bản cũ nhất theo LRU)."
+  }
+]

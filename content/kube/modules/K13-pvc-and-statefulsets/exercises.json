@@ -1,0 +1,352 @@
+[
+  {
+    "id": "kube-ex-k13-1",
+    "code": "K13.1",
+    "module": "K13",
+    "title": "Viết PersistentVolumeClaim xin cấp ổ đĩa SSD 10Gi",
+    "difficulty": 1,
+    "tags": [
+      "pvc",
+      "storageclass",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "upload-pvc.yaml",
+    "prompt": "Dịch vụ xử lý ảnh cần một ổ đĩa bền vững tên là `upload-pvc` để không mất tệp khi Pod khởi động lại.\n\nHãy hoàn thiện tệp `PersistentVolumeClaim` (`apiVersion: v1`):\n1. `metadata.name: upload-pvc`\n2. `spec.storageClassName: gp3`\n3. `spec.accessModes` chứa `\"ReadWriteOnce\"`\n4. `spec.resources.requests.storage: 10Gi`",
+    "starter": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: upload-pvc\nspec:\n  # Khai báo storageClassName, accessModes và resources.requests.storage: 10Gi\n  storageClassName: ____\n",
+    "solution": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: upload-pvc\nspec:\n  storageClassName: gp3\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 10Gi\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "kind-pvc",
+          "doc": "Tài nguyên là PersistentVolumeClaim tên upload-pvc (apiVersion: v1)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "PersistentVolumeClaim",
+            "name": "upload-pvc"
+          },
+          "path": "apiVersion",
+          "match": {
+            "eq": "v1"
+          }
+        },
+        {
+          "id": "storage-class",
+          "doc": "Sử dụng hạng lưu trữ storageClassName: gp3",
+          "kind": "path",
+          "path": "spec.storageClassName",
+          "match": {
+            "eq": "gp3"
+          }
+        },
+        {
+          "id": "access-mode",
+          "doc": "Chế độ truy cập accessModes chứa ReadWriteOnce",
+          "kind": "path",
+          "path": "spec.accessModes",
+          "match": {
+            "contains": "ReadWriteOnce"
+          }
+        },
+        {
+          "id": "storage-10gi",
+          "doc": "Dung lượng yêu cầu tối thiểu 10Gi (10240Mi)",
+          "kind": "path",
+          "path": "spec.resources.requests.storage",
+          "match": {
+            "k8sMemMinMi": 10240
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Chú ý `accessModes` là một mảng danh sách YAML (`- ReadWriteOnce`).",
+      "Đường dẫn dung lượng chuẩn của PVC là `spec.resources.requests.storage: 10Gi`."
+    ],
+    "ref": "k8s/workloads/pvc-wrong-storageclass.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k13-2",
+    "code": "K13.2",
+    "module": "K13",
+    "title": "Gắn PersistentVolumeClaim vào Deployment tại /app/uploads",
+    "difficulty": 2,
+    "tags": [
+      "pvc",
+      "volumemounts",
+      "deployment"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "media-deployment.yaml",
+    "prompt": "Đã có sẵn chiếc PVC `upload-pvc` trên cụm. Bây giờ hãy gắn nó vào `Deployment` `media-api` để ứng dụng Node.js lưu ảnh tải lên vào thư mục `/app/uploads`:\n\n1. Ở `spec.template.spec.volumes[0]`: đặt `name: upload-vol` tham chiếu tới `persistentVolumeClaim.claimName: upload-pvc`.\n2. Ở `spec.template.spec.containers[0].volumeMounts[0]`: gắn `name: upload-vol` vào đường dẫn `mountPath: /app/uploads`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: media-api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: media-api\n  template:\n    metadata:\n      labels:\n        app: media-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/media-api:1.2.0\n          ports:\n            - containerPort: 3000\n          # Thêm volumeMounts gắn vào /app/uploads\n      # Thêm volumes tham chiếu tới persistentVolumeClaim upload-pvc\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: media-api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: media-api\n  template:\n    metadata:\n      labels:\n        app: media-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/media-api:1.2.0\n          ports:\n            - containerPort: 3000\n          volumeMounts:\n            - name: upload-vol\n              mountPath: /app/uploads\n      volumes:\n        - name: upload-vol\n          persistentVolumeClaim:\n            claimName: upload-pvc\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "vol-claim",
+          "doc": "Khai báo volumes[0].persistentVolumeClaim.claimName: upload-pvc",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "media-api"
+          },
+          "path": "spec.template.spec.volumes[0].persistentVolumeClaim.claimName",
+          "match": {
+            "eq": "upload-pvc"
+          }
+        },
+        {
+          "id": "mount-path",
+          "doc": "Gắn volumeMounts[0].mountPath tại /app/uploads",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "media-api"
+          },
+          "path": "spec.template.spec.containers[0].volumeMounts[0].mountPath",
+          "match": {
+            "eq": "/app/uploads"
+          }
+        },
+        {
+          "id": "vol-name-nonempty",
+          "doc": "Đặt tên kết nối volumeMounts[0].name hợp lệ",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "media-api"
+          },
+          "path": "spec.template.spec.containers[0].volumeMounts[0].name",
+          "match": {
+            "nonEmpty": true
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`volumes:` nằm ngang hàng với `containers:` bên trong `spec.template.spec`.",
+      "Còn `volumeMounts:` nằm bên trong phần tử container `- name: api`. Đảm bảo trường `name:` ở cả hai nơi trùng khớp nhau."
+    ],
+    "ref": "k8s/workloads/statefulset-postgres.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k13-3",
+    "code": "K13.3",
+    "module": "K13",
+    "title": "Tạo Headless Service cho cụm PostgreSQL StatefulSet",
+    "difficulty": 2,
+    "tags": [
+      "headless-service",
+      "statefulset",
+      "dns"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "postgres-headless.yaml",
+    "prompt": "Trước khi triển khai cơ sở dữ liệu `StatefulSet`, ta cần một **Headless Service** để cấp bản ghi DNS riêng cho từng Pod (`postgres-0`, `postgres-1`).\n\nHãy viết `Service` (`apiVersion: v1`) với:\n- `metadata.name: postgres-headless`\n- `spec.clusterIP: None` (tắt IP ảo cân bằng tải)\n- `spec.selector.app: postgres`\n- `spec.ports[0]` mở `port: 5432` và `targetPort: 5432`",
+    "starter": "apiVersion: v1\nkind: Service\nmetadata:\n  name: postgres-headless\nspec:\n  # Biến Service này thành Headless Service và mở cổng 5432 cho nhãn app: postgres\n  selector:\n    app: postgres\n",
+    "solution": "apiVersion: v1\nkind: Service\nmetadata:\n  name: postgres-headless\nspec:\n  clusterIP: None\n  selector:\n    app: postgres\n  ports:\n    - name: tcp-postgres\n      port: 5432\n      targetPort: 5432\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "svc-headless",
+          "doc": "Đặt spec.clusterIP: None cho Service postgres-headless",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "postgres-headless"
+          },
+          "path": "spec.clusterIP",
+          "match": {
+            "eq": "None"
+          }
+        },
+        {
+          "id": "svc-selector",
+          "doc": "Chọn các Pod mang nhãn app: postgres",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "postgres-headless"
+          },
+          "path": "spec.selector.app",
+          "match": {
+            "eq": "postgres"
+          }
+        },
+        {
+          "id": "svc-port-5432",
+          "doc": "Khai báo cổng port: 5432 trên Service",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "postgres-headless"
+          },
+          "path": "spec.ports[0].port",
+          "match": {
+            "eq": 5432
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Giá trị `None` trong `clusterIP: None` viết hoa chữ cái đầu `N`.",
+      "Đừng quên khai báo mảng `ports:` với `- port: 5432`."
+    ],
+    "ref": "k8s/workloads/statefulset-postgres.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k13-4",
+    "code": "K13.4",
+    "module": "K13",
+    "title": "Viết StatefulSet PostgreSQL kèm volumeClaimTemplates 20Gi",
+    "difficulty": 3,
+    "tags": [
+      "statefulset",
+      "volumeclaimtemplates",
+      "postgres"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "postgres-statefulset.yaml",
+    "prompt": "Hoàn thiện `StatefulSet` (`apiVersion: apps/v1`) tên là `postgres` gồm 2 bản sao có ổ đĩa riêng:\n\n1. `spec.serviceName: postgres-headless` và `spec.replicas: 2`.\n2. `spec.selector.matchLabels` khớp với `spec.template.metadata.labels` (`app: postgres`).\n3. Container dùng image cố định `postgres:16-alpine`, gắn `volumeMounts[0]` (`name: pgdata`, `mountPath: /var/lib/postgresql/data`).\n4. Thêm khuôn mẫu `spec.volumeClaimTemplates[0]` có `metadata.name: pgdata`, `spec.accessModes: [\"ReadWriteOnce\"]`, `spec.storageClassName: gp3` và dung lượng `spec.resources.requests.storage: 20Gi`.",
+    "starter": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: postgres\nspec:\n  serviceName: ____\n  replicas: 1\n  selector:\n    matchLabels:\n      app: postgres\n  template:\n    metadata:\n      labels:\n        app: postgres\n    spec:\n      containers:\n        - name: postgres\n          image: postgres:16-alpine\n          ports:\n            - containerPort: 5432\n          volumeMounts:\n            - name: pgdata\n              mountPath: /var/lib/postgresql/data\n  # Khai báo volumeClaimTemplates tạo ổ đĩa pgdata 20Gi cho mỗi bản sao\n",
+    "solution": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: postgres\nspec:\n  serviceName: postgres-headless\n  replicas: 2\n  selector:\n    matchLabels:\n      app: postgres\n  template:\n    metadata:\n      labels:\n        app: postgres\n    spec:\n      containers:\n        - name: postgres\n          image: postgres:16-alpine\n          ports:\n            - containerPort: 5432\n          volumeMounts:\n            - name: pgdata\n              mountPath: /var/lib/postgresql/data\n  volumeClaimTemplates:\n    - metadata:\n        name: pgdata\n      spec:\n        storageClassName: gp3\n        accessModes:\n          - ReadWriteOnce\n        resources:\n          requests:\n            storage: 20Gi\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "sts-service-name",
+          "doc": "Gắn spec.serviceName: postgres-headless",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "postgres"
+          },
+          "path": "spec.serviceName",
+          "match": {
+            "eq": "postgres-headless"
+          }
+        },
+        {
+          "id": "sts-replicas",
+          "doc": "Chạy đủ replicas: 2 bản sao",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "postgres"
+          },
+          "path": "spec.replicas",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "sts-selector-match",
+          "doc": "Nhãn selector.matchLabels khớp với template.metadata.labels",
+          "kind": "k8s-selector-match",
+          "sourceKind": "StatefulSet",
+          "sourceName": "postgres"
+        },
+        {
+          "id": "vct-name",
+          "doc": "Khuôn mẫu volumeClaimTemplates[0].metadata.name là pgdata",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "postgres"
+          },
+          "path": "spec.volumeClaimTemplates[0].metadata.name",
+          "match": {
+            "eq": "pgdata"
+          }
+        },
+        {
+          "id": "vct-20gi",
+          "doc": "Mỗi bản sao xin cấp 20Gi lưu trữ (20480Mi)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "postgres"
+          },
+          "path": "spec.volumeClaimTemplates[0].spec.resources.requests.storage",
+          "match": {
+            "k8sMemMinMi": 20480
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`volumeClaimTemplates:` nằm trực tiếp dưới `spec:` của `StatefulSet` (ngang hàng với `serviceName`, `replicas`, `template`).",
+      "Đừng quên tăng `replicas: 1` lên `replicas: 2` và điền `serviceName: postgres-headless`."
+    ],
+    "ref": "k8s/workloads/statefulset-postgres.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k13-5",
+    "code": "K13.5",
+    "module": "K13",
+    "title": "Sửa lỗi PVC kẹt Pending do sai StorageClass và AccessMode",
+    "difficulty": 2,
+    "tags": [
+      "pvc",
+      "pending",
+      "bugfix"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "fix-pending-pvc.yaml",
+    "prompt": "Một đồng nghiệp khai báo PVC `cache-disk` nhưng Pod cứ đứng mãi ở trạng thái `Pending`. Cụm AWS EKS của chúng ta chỉ hỗ trợ ổ khối `storageClassName: gp3` với chế độ truy cập `ReadWriteOnce`.\n\nHãy sửa lại hai trường cấu hình bị viết sai trong tệp PVC dưới đây.",
+    "starter": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: cache-disk\nspec:\n  storageClassName: ssd-nonexistent\n  accessModes:\n    - ReadWriteMany\n  resources:\n    requests:\n      storage: 8Gi\n",
+    "solution": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: cache-disk\nspec:\n  storageClassName: gp3\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 8Gi\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "fix-sc",
+          "doc": "Đổi storageClassName sang hạng hợp lệ gp3",
+          "kind": "path",
+          "docSelect": {
+            "kind": "PersistentVolumeClaim",
+            "name": "cache-disk"
+          },
+          "path": "spec.storageClassName",
+          "match": {
+            "eq": "gp3"
+          }
+        },
+        {
+          "id": "fix-am",
+          "doc": "Chuyển accessModes về ReadWriteOnce phù hợp với ổ đĩa khối EBS",
+          "kind": "path",
+          "docSelect": {
+            "kind": "PersistentVolumeClaim",
+            "name": "cache-disk"
+          },
+          "path": "spec.accessModes",
+          "match": {
+            "eq": [
+              "ReadWriteOnce"
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Ổ đĩa khối AWS EBS (`gp3`) không hỗ trợ `ReadWriteMany` mặc định; hãy đổi sang `ReadWriteOnce`.",
+      "Sửa `storageClassName: ssd-nonexistent` thành `storageClassName: gp3`."
+    ],
+    "ref": "k8s/workloads/pvc-wrong-storageclass.yaml",
+    "webGrade": true
+  }
+]

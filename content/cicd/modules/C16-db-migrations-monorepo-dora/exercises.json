@@ -1,0 +1,253 @@
+[
+  {
+    "id": "cicd-ex-c16-1",
+    "code": "C16.1",
+    "module": "C16",
+    "title": "Bảo vệ DB Migration (Expand-and-Contract) & Thứ tự Triển khai",
+    "difficulty": 2,
+    "tags": [
+      "expand-and-contract",
+      "sql-migration",
+      "dag"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/expand-migration.yml",
+    "prompt": "Workflow phát hành dưới đây đang mắc 2 lỗi kiến trúc nguy hiểm: (1) Cho phép chạy thẳng mọi file SQL kể cả lệnh phá huỷ `DROP COLUMN` / `RENAME COLUMN`, và (2) Job `deploy-app` chạy song song cùng lúc với `migrate`!\nHãy khắc phục:\n1. Ở bước đầu tiên sau `checkout` trong job `migrate`, dùng `grep -E -i \"DROP COLUMN|RENAME COLUMN\" db/migrations/*.sql` để chặn và `exit 1` nếu phát hiện câu lệnh phá huỷ tương thích ngược, trước khi chạy bước `npm run migrate:deploy`.\n2. Ở job `deploy-app`, thêm `needs: [migrate]` để chỉ cuộn Pod mới sau khi pha Expand trên DB đã hoàn tất.",
+    "starter": "name: Safe Expand Migration & App Rollout\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  migrate:\n    runs-on: ubuntu-latest\n    environment: production\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Block destructive SQL in Expand phase\n        # TODO: Dùng grep -E -i \"DROP COLUMN|RENAME COLUMN\" kiểm tra db/migrations/*.sql và exit 1 nếu khớp\n        run: echo \"TODO check destructive SQL\"\n\n      - name: Apply backward-compatible migrations\n        env:\n          DATABASE_URL: ${{ secrets.DATABASE_URL }}\n        run: npm run migrate:deploy\n\n  deploy-app:\n    # TODO: Bắt buộc đợi job migrate hoàn tất thành công trước khi nâng cấp ứng dụng!\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/rollout-app.sh\n",
+    "solution": "name: Safe Expand Migration & App Rollout\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  migrate:\n    runs-on: ubuntu-latest\n    environment: production\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Block destructive SQL in Expand phase\n        run: |\n          if grep -E -i \"DROP COLUMN|RENAME COLUMN\" db/migrations/*.sql; then\n            echo \"::error::Destructive SQL detected! Split into Phase 3 Contract release.\"\n            exit 1\n          fi\n\n      - name: Apply backward-compatible migrations\n        env:\n          DATABASE_URL: ${{ secrets.DATABASE_URL }}\n        run: npm run migrate:deploy\n\n  deploy-app:\n    needs: [migrate]\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/rollout-app.sh\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "sql-guard-grep",
+          "doc": "Bước kiểm tra SQL quét từ khoá DROP COLUMN và RENAME COLUMN",
+          "kind": "path",
+          "path": "jobs.migrate.steps[1].run",
+          "match": {
+            "regex": "(?=.*DROP COLUMN)(?=.*RENAME COLUMN)",
+            "flags": "is"
+          }
+        },
+        {
+          "id": "sql-guard-exit-1",
+          "doc": "Bước kiểm tra SQL dừng pipeline với exit 1 khi phát hiện lệnh phá huỷ",
+          "kind": "path",
+          "path": "jobs.migrate.steps[1].run",
+          "match": {
+            "contains": "exit 1"
+          }
+        },
+        {
+          "id": "migrate-deploy-cmd",
+          "doc": "Bước thực thi chạy lệnh npm run migrate:deploy",
+          "kind": "path",
+          "path": "jobs.migrate.steps[2].run",
+          "match": {
+            "contains": "npm run migrate:deploy"
+          }
+        },
+        {
+          "id": "deploy-needs-migrate",
+          "doc": "Job deploy-app khai báo phụ thuộc needs vào migrate",
+          "kind": "path",
+          "path": "jobs.deploy-app.needs",
+          "match": {
+            "oneOf": [
+              "migrate",
+              [
+                "migrate"
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong bước `Block destructive SQL in Expand phase`, dùng câu lệnh `if grep -E -i \"DROP COLUMN|RENAME COLUMN\" db/migrations/*.sql; then exit 1; fi`.",
+      "Thêm `needs: [migrate]` ngay dưới `deploy-app:`."
+    ],
+    "ref": "governance/migration-expand-safe.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c16-2",
+    "code": "C16.2",
+    "module": "C16",
+    "title": "Thực thi có chọn lọc trên Monorepo bằng dorny/paths-filter",
+    "difficulty": 2,
+    "tags": [
+      "monorepo",
+      "paths-filter",
+      "outputs"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/monorepo-paths.yml",
+    "prompt": "Kho Monorepo có hai dịch vụ độc lập `apps/payment` và `apps/web`. Job `filters` đã dùng `dorny/paths-filter@v3` để phát hiện thay đổi, nhưng quên xuất `outputs` cấp job và `test-payment` vẫn đang chạy mù quáng ở mọi PR!\nHãy hoàn thiện:\n1. Khai báo `jobs.filters.outputs.payment: ${{ steps.filter.outputs.payment }}`.\n2. Ở job `test-payment`, thêm `needs: filters` và điều kiện `if: needs.filters.outputs.payment == 'true'`.",
+    "starter": "name: Monorepo Selective CI\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  filters:\n    runs-on: ubuntu-latest\n    # TODO: Xuất outputs.payment từ steps.filter.outputs.payment\n    steps:\n      - uses: actions/checkout@v4\n      - uses: dorny/paths-filter@v3\n        id: filter\n        with:\n          filters: |\n            payment:\n              - 'apps/payment/**'\n              - 'packages/shared/**'\n\n  test-payment:\n    # TODO: Phụ thuộc needs: filters và chỉ chạy khi needs.filters.outputs.payment == 'true'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm --workspace=apps/payment test\n",
+    "solution": "name: Monorepo Selective CI\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  filters:\n    runs-on: ubuntu-latest\n    outputs:\n      payment: ${{ steps.filter.outputs.payment }}\n    steps:\n      - uses: actions/checkout@v4\n      - uses: dorny/paths-filter@v3\n        id: filter\n        with:\n          filters: |\n            payment:\n              - 'apps/payment/**'\n              - 'packages/shared/**'\n\n  test-payment:\n    needs: filters\n    if: needs.filters.outputs.payment == 'true'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm --workspace=apps/payment test\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "filters-job-output",
+          "doc": "Job filters xuất outputs.payment từ steps.filter.outputs.payment",
+          "kind": "path",
+          "path": "jobs.filters.outputs.payment",
+          "match": {
+            "contains": "steps.filter.outputs.payment"
+          }
+        },
+        {
+          "id": "payment-needs-filters",
+          "doc": "Job test-payment khai báo needs: filters",
+          "kind": "path",
+          "path": "jobs.test-payment.needs",
+          "match": {
+            "oneOf": [
+              "filters",
+              [
+                "filters"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "payment-if-changed",
+          "doc": "Job test-payment kiểm tra điều kiện needs.filters.outputs.payment == 'true'",
+          "kind": "path",
+          "path": "jobs.test-payment.if",
+          "match": {
+            "regex": "needs\\.filters\\.outputs\\.payment\\s*==\\s*['\"]true['\"]"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm khối `outputs:\\n  payment: ${{ steps.filter.outputs.payment }}` bên trong job `filters`.",
+      "Ở `test-payment`, khai báo `needs: filters` và `if: needs.filters.outputs.payment == 'true'`."
+    ],
+    "ref": "governance/monorepo-turborepo-affected.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c16-3",
+    "code": "C16.3",
+    "module": "C16",
+    "title": "Tối ưu Đồ thị Phụ thuộc Monorepo với Turborepo Affected Filter",
+    "difficulty": 2,
+    "tags": [
+      "monorepo",
+      "turborepo",
+      "fetch-depth"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/turborepo-affected.yml",
+    "prompt": "Workflow Monorepo dùng Turborepo hiện đang gặp 2 lỗi: (1) `actions/checkout@v4` không có `fetch-depth: 0` nên thiếu lịch sử nhánh `origin/main`, và (2) đang chạy `npx turbo run lint test build` cho toàn bộ 25 package thay vì chỉ các package bị ảnh hưởng!\nHãy sửa lại:\n1. Thêm `with: { fetch-depth: 0 }` vào bước `actions/checkout@v4`.\n2. Cập nhật câu lệnh thực thi ở bước cuối thành `npx turbo run lint test build --filter=...[origin/main]`.",
+    "starter": "name: Turborepo Affected Graph CI\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  affected-ci:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n        # TODO: Tải đầy đủ lịch sử Git (fetch-depth: 0) để đối chiếu với origin/main\n\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n\n      - run: npm ci\n\n      - name: Run affected packages and their dependents\n        # TODO: Thêm cờ --filter=...[origin/main]\n        run: npx turbo run lint test build\n",
+    "solution": "name: Turborepo Affected Graph CI\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  affected-ci:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n\n      - run: npm ci\n\n      - name: Run affected packages and their dependents\n        run: npx turbo run lint test build --filter=...[origin/main]\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "checkout-full-history",
+          "doc": "Bước actions/checkout@v4 khai báo with.fetch-depth: 0",
+          "kind": "path",
+          "path": "jobs.affected-ci.steps[0].with.fetch-depth",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "turbo-affected-filter",
+          "doc": "Câu lệnh turbo có sử dụng bộ lọc đồ thị --filter=...[origin/main]",
+          "kind": "path",
+          "path": "jobs.affected-ci.steps[3].run",
+          "match": {
+            "contains": "--filter=...[origin/main]"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm `with:\\n  fetch-depth: 0` (số 0, không nháy kép) ngay dưới `uses: actions/checkout@v4`.",
+      "Sửa dòng `run:` cuối cùng thành `npx turbo run lint test build --filter=...[origin/main]`."
+    ],
+    "ref": "governance/monorepo-turborepo-affected.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c16-4",
+    "code": "C16.4",
+    "module": "C16",
+    "title": "Ghi nhận Sự kiện Phát hành phục vụ Bộ 4 Chỉ số DORA",
+    "difficulty": 2,
+    "tags": [
+      "dora-metrics",
+      "telemetry",
+      "lead-time"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/dora-telemetry.yml",
+    "prompt": "Để đo lường tự động **Deployment Frequency** và **Lead Time for Changes**, hãy hoàn thiện job `dora-metrics` chạy nối tiếp ngay sau khi `deploy-prod` thành công:\n1. Khai báo `needs: [deploy-prod]` và điều kiện tường minh `if: success()`.\n2. Trong bước `Emit DORA deployment event`, ghi ra payload / log có chứa đầy đủ 3 thông tin chuẩn: khoá `commit_sha` gắn với `${{ github.sha }}`, dấu thời gian `deployed_at`, và `\"environment\": \"production\"`.",
+    "starter": "name: Production Release & DORA Telemetry\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-prod:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy-prod.sh\n\n  dora-metrics:\n    # TODO: Chạy sau deploy-prod (needs: [deploy-prod]) khi thành công (if: success())\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - name: Emit DORA deployment event\n        # TODO: Xuất thông tin gồm commit_sha (${{ github.sha }}), deployed_at và \"environment\": \"production\"\n        run: echo \"TODO emit dora event\"\n",
+    "solution": "name: Production Release & DORA Telemetry\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-prod:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy-prod.sh\n\n  dora-metrics:\n    needs: [deploy-prod]\n    if: success()\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - name: Emit DORA deployment event\n        run: |\n          DEPLOYED_AT=$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\n          cat <<EOF > dora-deployment.json\n          {\n            \"environment\": \"production\",\n            \"commit_sha\": \"${{ github.sha }}\",\n            \"deployed_at\": \"${DEPLOYED_AT}\"\n          }\n          EOF\n          cat dora-deployment.json\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "dora-needs-deploy",
+          "doc": "Job dora-metrics khai báo phụ thuộc needs vào deploy-prod",
+          "kind": "path",
+          "path": "jobs.dora-metrics.needs",
+          "match": {
+            "oneOf": [
+              "deploy-prod",
+              [
+                "deploy-prod"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "dora-if-success",
+          "doc": "Job dora-metrics chỉ chạy khi deploy-prod thành công (if: success())",
+          "kind": "path",
+          "path": "jobs.dora-metrics.if",
+          "match": {
+            "contains": "success()"
+          }
+        },
+        {
+          "id": "dora-commit-sha",
+          "doc": "Payload ghi nhận commit_sha kèm ${{ github.sha }}",
+          "kind": "path",
+          "path": "jobs.dora-metrics.steps[0].run",
+          "match": {
+            "regex": "(?=.*commit_sha)(?=.*github\\.sha)",
+            "flags": "s"
+          }
+        },
+        {
+          "id": "dora-deployed-at-env",
+          "doc": "Payload ghi nhận deployed_at và environment: production",
+          "kind": "path",
+          "path": "jobs.dora-metrics.steps[0].run",
+          "match": {
+            "regex": "(?=.*deployed_at)(?=.*production)",
+            "flags": "s"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm `needs: [deploy-prod]` và `if: success()` vào job `dora-metrics`.",
+      "Trong khối `run:`, tạo JSON hoặc chuỗi in ra đủ `commit_sha` (`${{ github.sha }}`), `deployed_at` và `\"environment\": \"production\"`."
+    ],
+    "ref": "governance/dora-release-metrics.yml",
+    "webGrade": true
+  }
+]

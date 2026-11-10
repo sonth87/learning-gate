@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K10-FC1",
+    "front": "Ba loại `Service` phổ biến nhất (`ClusterIP`, `NodePort`, `LoadBalancer`) khác nhau thế nào?",
+    "back": "- **`ClusterIP`:** Chỉ nội bộ trong cụm (mặc định).\n- **`NodePort`:** Mở cổng `30000–32767` trên các Worker Node.\n- **`LoadBalancer`:** Thuê bộ cân bằng tải IP Public từ nhà cung cấp Cloud."
+  },
+  {
+    "id": "K10-FC2",
+    "front": "Phân biệt `port`, `targetPort` và `nodePort` trong `Service`?",
+    "back": "- **`port`:** Cổng trên Virtual IP của Service.\n- **`targetPort`:** Cổng ứng dụng lắng nghe bên trong Pod.\n- **`nodePort`:** Cổng tĩnh mở ngoài Worker Node (`30000–32767`)."
+  },
+  {
+    "id": "K10-FC3",
+    "front": "Mẫu tên miền đầy đủ (FQDN) của một Service trong CoreDNS là gì?",
+    "back": "**`<tên-service>.<tên-namespace>.svc.cluster.local`**"
+  },
+  {
+    "id": "K10-FC4",
+    "front": "Khi thấy `kubectl get endpoints <svc>` trả về `<none>`, bạn cần kiểm tra ngay điều gì?",
+    "back": "Đối chiếu **`spec.selector`** của Service với **`kubectl get pods --show-labels`** (và kiểm tra xem Pod đã `Ready 1/1` chưa)."
+  },
+  {
+    "id": "K10-FC5",
+    "front": "Một Pod đang `Running` nhưng bị trượt `readinessProbe` (`0/1 Ready`) có được nhận lưu lượng từ `Service` không?",
+    "back": "**KHÔNG!** Kubernetes lập tức rút IP của Pod chưa `Ready` ra khỏi `Endpoints` để khách hàng không gặp lỗi."
+  },
+  {
+    "id": "K10-FC6",
+    "front": "Câu lệnh tạo nhanh Service `catalog-svc` cổng `80 -> 4000` cho `deployment/catalog`?",
+    "back": "**`kubectl expose deployment catalog --name=catalog-svc --port=80 --target-port=4000`**"
+  }
+]

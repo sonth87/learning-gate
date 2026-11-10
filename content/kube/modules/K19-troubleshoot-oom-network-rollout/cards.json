@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K19-C1",
+    "front": "Ý nghĩa của dòng `Reason: OOMKilled, Exit Code: 137` trong `kubectl describe pod`?",
+    "back": "Container đã tiêu thụ RAM vượt trần `resources.limits.memory` và bị nhân Linux kết liễu bằng tín hiệu `SIGKILL (9)` (`128 + 9 = 137`)."
+  },
+  {
+    "id": "K19-C2",
+    "front": "Hai lệnh kiểm tra đầu tiên khi Pod vẫn `Running` nhưng Service/Ingress trả lỗi `502 Bad Gateway`?",
+    "back": "`kubectl get endpoints <svc-name>` và `kubectl get pods --show-labels` để đối chiếu xem `Service.spec.selector` và `targetPort` có khớp với Pod hay không."
+  },
+  {
+    "id": "K19-C3",
+    "front": "Lệnh xem lịch sử phát hành và quay lui khẩn cấp một Deployment trên namespace `production`?",
+    "back": "Xem lịch sử: `kubectl rollout history deployment/<name> -n production`; Quay lui: `kubectl rollout undo deployment/<name> -n production`."
+  },
+  {
+    "id": "K19-C4",
+    "front": "Bộ ba cấu hình bắt buộc để đạt Zero-Downtime Rolling Update 100% cho API Node.js?",
+    "back": "1) `rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }`, 2) `readinessProbe` chuẩn xác, 3) `lifecycle.preStop: sleep 5` + xử lý `SIGTERM` trong code."
+  },
+  {
+    "id": "K19-C5",
+    "front": "Nguyên tắc SRE \"Mitigate first, investigate later\" (Cầm máu trước, điều tra sau) áp dụng thế nào trên K8s?",
+    "back": "Khi bản deploy mới gây lỗi trên Production, lập tức `rollout undo` về bản tốt trong vài giây để khôi phục dịch vụ cho khách hàng, sau đó mới thu thập log sửa lỗi ở môi trường phát triển."
+  },
+  {
+    "id": "K19-C6",
+    "front": "Nếu `kubectl get endpoints <svc>` hoàn toàn trống (`<none>`) dù nhãn `selector` đã viết đúng y hệt Pod, còn khả năng nào khác?",
+    "back": "Tất cả các Pod đều đang trượt bài kiểm tra `readinessProbe` (`READY 0/1`), nên Kubernetes tạm rút chúng khỏi danh sách `Endpoints`!"
+  }
+]

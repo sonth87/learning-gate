@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C15-Q1",
+    "type": "mc",
+    "q": "Điểm khác biệt kiến trúc quan trọng nhất của Pull-Based GitOps (ArgoCD) so với Push-Based CD (`kubectl apply` trong GitHub Actions) là gì?",
+    "code": "",
+    "choices": [
+      "ArgoCD viết lại mã nguồn Node.js sang ngôn ngữ Go",
+      "Tác nhân triển khai (ArgoCD) nằm ngay BÊN TRONG cụm Kubernetes và chủ động kéo trạng thái từ Git về đối chiếu, do đó CI bên ngoài không bao giờ cần giữ khoá quản trị cụm K8s",
+      "Pull-Based GitOps không cần dùng Container Registry nữa",
+      "Pull-Based GitOps cho phép sửa tay trực tiếp trên server mà không cần lưu vào Git"
+    ],
+    "answer": 1,
+    "explain": "Giữ quyền quản trị bên trong cụm và chỉ coi Git là nguồn sự thật duy nhất (Single Source of Truth) giúp đóng kín bề mặt tấn công từ đường ống CI bên ngoài."
+  },
+  {
+    "id": "C15-Q2",
+    "type": "mc",
+    "q": "Trong `syncPolicy.automated` của ArgoCD `Application`, chuyện gì xảy ra nếu bạn bật `selfHeal: true` nhưng lại để `prune: false`?",
+    "code": "syncPolicy:\n  automated:\n    prune: false\n    selfHeal: true",
+    "choices": [
+      "ArgoCD không thể tạo mới Deployment nào",
+      "Khi bạn xoá một file YAML tài nguyên cũ trên kho Git, tài nguyên đó vẫn tồn tại dai dẳng trên cụm Kubernetes thay vì được dọn dẹp tự động",
+      "ArgoCD sẽ xoá toàn bộ Namespace mỗi đêm",
+      "Helm Chart sẽ không đọc được tệp values-prod.yaml"
+    ],
+    "answer": 1,
+    "explain": "`selfHeal` sửa sai lệch trên các tài nguyên đang được quản lý, còn `prune: true` chịu trách nhiệm dọn bỏ các tài nguyên trên cụm khi file định nghĩa của chúng đã bị xoá khỏi Git."
+  },
+  {
+    "id": "C15-Q3",
+    "type": "output",
+    "q": "Hãy điền tên annotation của ArgoCD (gồm cả prefix tên miền) dùng để chỉ định thứ tự sóng đồng bộ (ví dụ chạy Job migrate ở bước \"-1\" trước Deployment ở bước \"0\"):",
+    "code": "metadata:\n  annotations:\n    ???: \"-1\"",
+    "choices": [],
+    "answer": "argocd.argoproj.io/sync-wave",
+    "explain": "Annotation `argocd.argoproj.io/sync-wave` nhận chuỗi số nguyên (âm chạy trước, dương chạy sau; mặc định là \"0\") để dàn dựng thứ tự triển khai có điều kiện."
+  },
+  {
+    "id": "C15-Q4",
+    "type": "tf",
+    "q": "Khi sử dụng Sync Waves, ArgoCD mặc định đợi tất cả tài nguyên ở Wave nhỏ hơn (ví dụ Job ở wave \"-1\") đạt trạng thái Healthy / Succeeded rồi mới bắt đầu áp dụng tài nguyên ở Wave lớn hơn (ví dụ Deployment ở wave \"0\").",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đây chính là lý do Sync Waves cực kỳ an toàn cho kịch bản nâng cấp cơ sở dữ liệu trước khi khởi chạy ứng dụng mới."
+  },
+  {
+    "id": "C15-Q5",
+    "type": "mc",
+    "q": "Trong đối tượng ArgoCD `Application`, nếu `spec.source.path` trỏ tới một thư mục chứa Helm Chart (`charts/shop-api`), trường nào dùng để chỉ định tệp cấu hình ghi đè cho môi trường Production?",
+    "code": "",
+    "choices": [
+      "spec.source.kustomize.patches",
+      "spec.source.helm.valueFiles",
+      "spec.destination.values",
+      "metadata.labels.helmValues"
+    ],
+    "answer": 1,
+    "explain": "`spec.source.helm.valueFiles` nhận danh sách các tệp values (ví dụ `[\"values-prod.yaml\"]`) tương tự cờ `-f values-prod.yaml` của Helm CLI."
+  },
+  {
+    "id": "C15-Q6",
+    "type": "tf",
+    "q": "Để Rollback một bản phát hành lỗi trong mô hình GitOps có bật `automated` sync, thao tác chuẩn mực nhất là chạy `kubectl set image` trực tiếp vào cụm Production và để nguyên Git như cũ.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nếu sửa tay bằng `kubectl` trên cụm đang bật `selfHeal: true`, ArgoCD sẽ lập tức ghi đè quay lại bản lỗi trên Git! Cách Rollback chuẩn GitOps là `git revert` commit cập nhật thẻ image trên kho GitOps."
+  },
+  {
+    "id": "C15-Q7",
+    "type": "mc",
+    "q": "Tuỳ chọn nào trong mảng `spec.syncPolicy.syncOptions` cho phép ArgoCD tự động khởi tạo Namespace đích (ví dụ `production`) nếu trên cụm chưa có sẵn?",
+    "code": "",
+    "choices": [
+      "AutoNamespace=enabled",
+      "CreateNamespace=true",
+      "MakeNamespace=yes",
+      "InitTargetNamespace=1"
+    ],
+    "answer": 1,
+    "explain": "Thêm `\"CreateNamespace=true\"` vào `syncOptions` giúp ArgoCD tự tạo `spec.destination.namespace` trong lần đồng bộ đầu tiên."
+  }
+]

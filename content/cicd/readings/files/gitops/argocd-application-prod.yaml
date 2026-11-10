@@ -1,0 +1,34 @@
+# Cấu hình Argo CD Application chuẩn Production theo triết lý GitOps:
+# Cụm Kubernetes chủ động kéo (Pull) trạng thái mong muốn từ kho Git và tự chữa lành (selfHeal) nếu ai đó sửa tay!
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: shop-api-production
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: production-core
+  source:
+    repoURL: https://github.com/acme-corp/shop-gitops.git
+    targetRevision: main
+    path: apps/shop-api/overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: shop-prod
+  syncPolicy:
+    automated:
+      # Xoá các tài nguyên dư thừa trên cụm khi chúng đã bị xoá khỏi kho Git
+      prune: true
+      # Tự động khôi phục cấu hình chuẩn từ Git nếu có người lỡ gõ `kubectl edit` trực tiếp trên cụm
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

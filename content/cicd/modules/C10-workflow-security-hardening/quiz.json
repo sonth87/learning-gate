@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C10-Q1",
+    "type": "mc",
+    "q": "Tại sao câu lệnh `run: echo \"PR: ${{ github.event.pull_request.title }}\"` lại tạo ra lỗ hổng thực thi lệnh từ xa (**Script Injection**)?",
+    "code": "",
+    "choices": [
+      "Vì lệnh echo không được phép dùng trong GitHub Actions",
+      "Vì GitHub thay thế trực tiếp văn bản của biểu thức `${{ ... }}` vào kịch bản TRƯỚC KHI trình thông dịch shell phân tích cú pháp, cho phép tiêu đề PR chứa `\"; <lệnh-độc>` thoát ra thành câu lệnh mới",
+      "Vì tiêu đề Pull Request tối đa chỉ dài 10 ký tự",
+      "Vì biến github.event chỉ hoạt động trên hệ điều hành Windows"
+    ],
+    "answer": 1,
+    "explain": "Cơ chế nội suy chuỗi `${{ ... }}` diễn ra trước khi chạy bash. Luôn gán dữ liệu đầu vào của người dùng vào khối `env:` trung gian rồi tham chiếu bằng `\"$PR_TITLE\"` trong bash!"
+  },
+  {
+    "id": "C10-Q2",
+    "type": "tf",
+    "q": "Đối với một Workflow kiểm tra `lint` và `unit-test` thông thường cho các Pull Request từ cộng đồng bên ngoài (Fork), bạn nên dùng sự kiện `on: pull_request` thay vì `on: pull_request_target`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `on: pull_request` tự động hạ `GITHUB_TOKEN` về chỉ đọc (`read-only`) và ẩn toàn bộ `secrets` đối với các PR từ kho Fork, ngăn chặn tuyệt đối nguy cơ Pwn Request."
+  },
+  {
+    "id": "C10-Q3",
+    "type": "output",
+    "q": "Một mã băm Commit SHA đầy đủ trong Git dùng để ghim cứng phiên bản Action bên thứ ba (`uses: owner/repo@<SHA>`) có độ dài chính xác bao nhiêu ký tự thập lục phân? (Chỉ ghi con số)",
+    "code": "uses: aquasecurity/trivy-action@18f2510ee396bbf400402917b394f2dd8c87dbb0",
+    "choices": [],
+    "answer": "40",
+    "explain": "Chuẩn mã băm Git SHA-1 đầy đủ gồm đúng 40 ký tự hex (`0-9`, `a-f`) — đây là định danh duy nhất không thể bị chủ kho sửa trỏ sang mã độc như tag `@v1` hay `@main`."
+  },
+  {
+    "id": "C10-Q4",
+    "type": "mc",
+    "q": "Cách thiết lập quyền hạn `permissions:` cho `GITHUB_TOKEN` tuân thủ đúng nguyên lý **Đặc quyền tối thiểu (Least Privilege)** trong một Workflow có nhiều Job là gì?",
+    "code": "",
+    "choices": [
+      "Đặt `permissions: write-all` ở đầu tệp để không bao giờ gặp lỗi thiếu quyền",
+      "Đặt `permissions: { contents: read }` ở cấp gốc đầu tệp Workflow, sau đó chỉ mở thêm quyền ghi cụ thể (như `packages: write`) ở riêng đúng Job cần đẩy gói",
+      "Xoá hoàn toàn từ khoá permissions khỏi tệp YAML",
+      "Lưu mật khẩu cá nhân của CEO vào biến môi trường toàn cục"
+    ],
+    "answer": 1,
+    "explain": "Khoá mặc định `contents: read` ở cấp Workflow đảm bảo mọi Job kiểm thử đều không có quyền sửa kho, chỉ riêng Job phát hành mới được cấp đúng quyền tối thiểu nó cần."
+  },
+  {
+    "id": "C10-Q5",
+    "type": "mc",
+    "q": "Sự cố tấn công chuỗi cung ứng vào Action bên thứ ba (như vụ `tj-actions/changed-files` năm 2025) khai thác điểm yếu kỹ thuật nào khi người dùng viết `uses: org/action@v4`?",
+    "code": "",
+    "choices": [
+      "Thẻ Git (`@v4`, `@v4.1.0`) là con trỏ khả biến (mutable tag): khi tài khoản chủ kho bị chiếm, kẻ tấn công có thể trỏ lại thẻ `@v4` sang một commit mới chứa mã độc đánh cắp bộ nhớ Runner",
+      "GitHub không hỗ trợ tải các Action viết bằng TypeScript",
+      "Phiên bản v4 chạy chậm hơn phiên bản v1",
+      "Lệnh git clone không hoạt động qua giao thức HTTPS"
+    ],
+    "answer": 0,
+    "explain": "Git tag có thể bị force-push đổi đích bất cứ lúc nào. Chỉ khi ghim cứng bằng mã băm Commit SHA 40 ký tự, GitHub mới từ chối tải nếu nội dung mã nguồn thay đổi dù chỉ 1 bit."
+  },
+  {
+    "id": "C10-Q6",
+    "type": "tf",
+    "q": "Ngoài `pull_request.title` và `pull_request.body`, ngay cả tên nhánh nguồn `github.event.pull_request.head.ref` cũng là dữ liệu do người mở PR kiểm soát hoàn toàn và có thể dùng để tấn công Script Injection nếu nối thẳng vào `run:`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Kẻ tấn công trên kho Fork có thể đặt tên nhánh chứa ký tự điều khiển shell đặc biệt; do đó tuyệt đối không viết trực tiếp `${{ github.event.pull_request.head.ref }}` bên trong khối `run:`."
+  },
+  {
+    "id": "C10-Q7",
+    "type": "output",
+    "q": "Để khoá toàn bộ Workflow mặc định chỉ có quyền đọc mã nguồn kho lưu trữ, giá trị cần điền sau `contents:` trong khối `permissions:` là gì?",
+    "code": "permissions:\n  contents: ____",
+    "choices": [],
+    "answer": "read",
+    "explain": "`permissions: { contents: read }` thu hồi mọi quyền ghi mặc định trên Issues, PRs, Packages, Releases và chỉ giữ lại quyền đọc mã nguồn để checkout."
+  }
+]

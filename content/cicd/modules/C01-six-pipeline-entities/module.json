@@ -1,0 +1,48 @@
+{
+  "id": "C01",
+  "slug": "C01-six-pipeline-entities",
+  "level": 0,
+  "order": 1,
+  "title": "Giải phẫu 6 thực thể đường ống: Trigger, Workflow, Job, Step & Ephemeral Runner",
+  "summary": "Nắm vững cấu trúc phân cấp Trigger -> Workflow -> Job -> Step -> Action, hiểu bản chất máy ảo dùng một lần (Ephemeral Runner) và cấu hình working-directory cho repo nhiều thư mục.",
+  "tags": [
+    "pipeline-anatomy",
+    "ephemeral-runner",
+    "jobs-vs-steps",
+    "working-directory",
+    "github-actions"
+  ],
+  "sources": [
+    {
+      "title": "Understanding GitHub Actions — Components of GitHub Actions",
+      "url": "https://docs.github.com/en/actions/about-github-actions/understanding-github-actions",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "About GitHub-hosted runners (Ephemeral Virtual Machines)",
+      "url": "https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Workflow syntax — defaults.run.working-directory",
+      "url": "https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrun",
+      "version": "GitHub Actions Docs 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/node-ci-minimal.yml",
+      "kind": "good",
+      "note": " Quan sát đầy đủ 6 thực thể chuẩn mực: Trigger (`on`), Workflow (`name`), Runner (`runs-on: ubuntu-latest`), Job (`verify`), 5 Steps tuần tự và 2 Actions (`checkout@v4`, `setup-node@v4`).",
+      "task": "Trong file này có mấy Job và mấy Step? Vì sao Step `npm test` ở dòng 37 đọc được thư mục `node_modules` do Step `npm ci` ở dòng 31 tạo ra?",
+      "answer": "File có 1 Job (`verify`) chứa 5 Steps. Vì toàn bộ các Step trong cùng 1 Job chạy tuần tự trên cùng một máy ảo Runner (`ubuntu-latest`) và dùng chung một thư mục workspace trên ổ đĩa."
+    },
+    {
+      "path": "github/ephemeral-runner-bug.yml",
+      "kind": "bug",
+      "note": "Tình huống thực tế kinh điển: Job `build` biên dịch xong `dist/`, nhưng sang Job `deploy` lệnh `ls -la dist/` nổ lỗi `No such file or directory`.",
+      "task": "Dù Job `deploy` đã khai báo `needs: build` để chạy sau `build`, vì sao ổ cứng của Job `deploy` vẫn không hề có thư mục `dist/` lẫn mã nguồn?",
+      "answer": "Vì mỗi Job chạy trên một Ephemeral Runner (máy ảo dùng một lần) hoàn toàn tách biệt. Khi Job `build` kết thúc, máy ảo của nó cùng thư mục `dist/` bị xoá sổ; `needs: build` chỉ điều phối thứ tự thời gian chứ không nối chung ổ cứng giữa hai máy ảo."
+    }
+  ]
+}

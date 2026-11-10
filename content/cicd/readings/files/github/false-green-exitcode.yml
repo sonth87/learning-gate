@@ -1,0 +1,31 @@
+# CẢNH BÁO BUG: Đường ống "Xanh vỏ đỏ lòng" (False-Green Pipeline)
+# Có tới 3 lỗi nuốt mã thoát (Exit Code != 0) khiến code hỏng vẫn hiện dấu tích xanh trên PR!
+name: Buggy False-Green Verification
+
+on:
+  pull_request:
+
+jobs:
+  broken-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm ci
+
+      # LỖI 1: Cờ continue-on-error: true biến mọi lỗi biên dịch TypeScript thành trạng thái "thành công"
+      - name: Typecheck
+        continue-on-error: true
+        run: npm run typecheck
+
+      # LỖI 2: Toán tử `|| true` nuốt sạch mã thoát khác 0 của Vitest/Jest (luôn trả về exit code 0)
+      - name: Run Unit Tests
+        run: npm test || true
+
+      # LỖI 3: curl mặc định trả exit code 0 ngay cả khi máy chủ trả HTTP 500 Internal Server Error!
+      # Phải có cờ `--fail` (hoặc `-f`) thì HTTP 4xx/5xx mới sinh ra exit code 22.
+      - name: Smoke check staging health
+        run: curl https://staging.example.com/health

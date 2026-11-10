@@ -1,0 +1,320 @@
+[
+  {
+    "id": "cicd-ex-c17-1",
+    "code": "C17.1",
+    "module": "C17",
+    "title": "Case B1 — Cấp cứu Đường ống \"Rùa bò\" 42 phút xuống dưới 5 phút",
+    "difficulty": 3,
+    "tags": [
+      "war-room",
+      "sharding",
+      "cache"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": ".github/workflows/pr-ci-incident-b1.yml",
+    "prompt": "**Tình huống sự cố:** Đội phát triển đang bị tê liệt: mỗi Pull Request phải xếp hàng chờ **42 phút**! Kiểm tra tệp workflow hiện tại phát hiện 4 căn bệnh trầmkha: dùng `npm install` không có bộ nhớ đệm, gộp chung `lint` và toàn bộ `test` vào 1 luồng tuần tự duy nhất, chèn `sleep 45` vô nghĩa và không hề giới hạn `timeout-minutes`.\n\nHãy tái cấu trúc toàn diện tệp workflow sự cố bên dưới:\n1. Tách thành 2 job chạy song song: `lint` và `test` (cả hai đều đặt `timeout-minutes: 10` hoặc `<= 15`).\n2. Ở cả 2 job, sử dụng `actions/setup-node@v4` với `node-version: \"22\"` và `cache: \"npm\"`, cài đặt bằng `npm ci` (xoá bỏ `npm install`).\n3. Ở job `test`, bật chia mảnh song song `strategy.matrix.shard: [1, 2, 3, 4]`, chạy `npm test -- --shard=${{ matrix.shard }}/4`, và **xoá bỏ hoàn toàn** lệnh `sleep 45`.",
+    "starter": "name: PR Verification Pipeline\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  monolith-slow-check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm install\n      - run: sleep 45\n      - run: npm run lint\n      - run: npm test\n",
+    "solution": "name: PR Verification Pipeline\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    strategy:\n      matrix:\n        shard: [1, 2, 3, 4]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test -- --shard=${{ matrix.shard }}/4\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "initialState": {},
+      "patchFormat": "yaml",
+      "yamlRules": [
+        {
+          "id": "remove-monolith-job",
+          "doc": "Xoá bỏ job tuần tự chậm chạp monolith-slow-check",
+          "kind": "path",
+          "path": "jobs.monolith-slow-check",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "lint-timeout-set",
+          "doc": "Job lint có khai báo timeout-minutes <= 15",
+          "kind": "path",
+          "path": "jobs.lint.timeout-minutes",
+          "match": {
+            "lte": 15
+          }
+        },
+        {
+          "id": "lint-npm-cache",
+          "doc": "Job lint bật cache: \"npm\" trên actions/setup-node@v4",
+          "kind": "path",
+          "path": "jobs.lint.steps[1].with.cache",
+          "match": {
+            "eq": "npm"
+          }
+        },
+        {
+          "id": "lint-parallel-no-needs",
+          "doc": "Job test không bị chặn bởi lint (chạy song song)",
+          "kind": "path",
+          "path": "jobs.test.needs",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "test-timeout-set",
+          "doc": "Job test có khai báo timeout-minutes <= 15",
+          "kind": "path",
+          "path": "jobs.test.timeout-minutes",
+          "match": {
+            "lte": 15
+          }
+        },
+        {
+          "id": "test-matrix-shards",
+          "doc": "Job test chia 4 mảnh bằng strategy.matrix.shard: [1, 2, 3, 4]",
+          "kind": "path",
+          "path": "jobs.test.strategy.matrix.shard",
+          "match": {
+            "eq": [
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "id": "test-npm-ci",
+          "doc": "Job test cài đặt phụ thuộc bằng npm ci",
+          "kind": "path",
+          "path": "jobs.test.steps[2].run",
+          "match": {
+            "eq": "npm ci"
+          }
+        },
+        {
+          "id": "no-sleep-45",
+          "doc": "Bước chạy test sử dụng --shard và không còn lệnh sleep 45",
+          "kind": "path",
+          "path": "jobs.test.steps[3].run",
+          "match": {
+            "regex": "^(?!.*sleep).*--shard=",
+            "flags": "s"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Tách `monolith-slow-check` thành hai job ngang hàng `lint:` và `test:` (không đặt `needs` giữa chúng).",
+      "Trong cả hai job, thêm `cache: \"npm\"` dưới `with:` của `actions/setup-node@v4` và dùng `run: npm ci`.",
+      "Trong `test:`, khai báo `strategy.matrix.shard: [1, 2, 3, 4]` và chạy `npm test -- --shard=${{ matrix.shard }}/4`."
+    ],
+    "ref": "github/sharded-playwright-e2e.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c17-2",
+    "code": "C17.2",
+    "module": "C17",
+    "title": "Case B2 — Khắc phục Tai nạn Race Condition trên Production",
+    "difficulty": 2,
+    "tags": [
+      "war-room",
+      "concurrency",
+      "race-condition"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": ".github/workflows/prod-deploy-incident-b2.yml",
+    "prompt": "**Tình huống sự cố:** Lúc 15:10 chiều nay, hai Pull Request liên tiếp được merge vào `main`. Đợt triển khai thứ hai đã **giết ngang xương** đợt triển khai thứ nhất ngay khi đang áp dụng thay đổi lên Production vì cấu hình `cancel-in-progress: true`, để lại hệ thống trong trạng thái lỗi nửa vời!\n\nHãy vá khẩn cấp job `deploy-production`:\n1. Gắn job vào môi trường bảo vệ `environment: production`.\n2. Đặt tên nhóm khoá đồng thời cố định `concurrency.group: \"production-deploy\"`.\n3. Sửa `concurrency.cancel-in-progress: false` để các đợt phát hành kế tiếp xếp hàng chờ tuần tự thay vì huỷ ngang bản đang chạy.",
+    "starter": "name: Production Continuous Deployment\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-production:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    # SỰ CỐ B2: Nhóm concurrency sai và cancel-in-progress: true làm huỷ ngang đợt deploy đang chạy!\n    concurrency:\n      group: deploy-${{ github.sha }}\n      cancel-in-progress: true\n    steps:\n      - uses: actions/checkout@v4\n      - name: Apply infrastructure and rollout release\n        run: ./scripts/deploy-production.sh\n",
+    "solution": "name: Production Continuous Deployment\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-production:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    environment: production\n    concurrency:\n      group: production-deploy\n      cancel-in-progress: false\n    steps:\n      - uses: actions/checkout@v4\n      - name: Apply infrastructure and rollout release\n        run: ./scripts/deploy-production.sh\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "initialState": {},
+      "patchFormat": "yaml",
+      "yamlRules": [
+        {
+          "id": "prod-environment-bound",
+          "doc": "Job deploy-production gắn vào environment: production",
+          "kind": "path",
+          "path": "jobs.deploy-production.environment",
+          "match": {
+            "oneOf": [
+              "production",
+              {
+                "name": "production"
+              }
+            ]
+          }
+        },
+        {
+          "id": "static-concurrency-group",
+          "doc": "Đặt concurrency.group cố định là \"production-deploy\" (không chứa github.sha)",
+          "kind": "path",
+          "path": "jobs.deploy-production.concurrency.group",
+          "match": {
+            "eq": "production-deploy"
+          }
+        },
+        {
+          "id": "disable-cancel-in-progress",
+          "doc": "Đặt concurrency.cancel-in-progress: false để xếp hàng an toàn",
+          "kind": "path",
+          "path": "jobs.deploy-production.concurrency.cancel-in-progress",
+          "match": {
+            "eq": false
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Nếu `group` chứa `${{ github.sha }}`, mỗi commit lại tạo ra một nhóm riêng nên chúng vẫn chạy đè lên nhau! Hãy đổi thành chuỗi tĩnh `production-deploy`.",
+      "Đổi `cancel-in-progress` sang `false` và thêm `environment: production`."
+    ],
+    "ref": "github/concurrency-pr-vs-prod.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c17-3",
+    "code": "C17.3",
+    "module": "C17",
+    "title": "Case B3 — Ứng cứu Lộ Khóa Bí mật & Dựng Cổng Gitleaks",
+    "difficulty": 3,
+    "tags": [
+      "war-room",
+      "secret-leak",
+      "gitleaks"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": ".github/workflows/payment-ci-incident-b3.yml",
+    "prompt": "**Tình huống sự cố:** Hệ thống cảnh báo bảo mật báo động đỏ: trong tệp workflow tích hợp thanh toán xuất hiện chuỗi khoá viết cứng `STRIPE_API_KEY: \"sk_test_placeholder_leaked_in_yaml\"`! Bên cạnh việc đã thu hồi khoá trên cổng quản trị Stripe, bạn cần làm sạch file YAML và dựng cổng quét tự động ngăn tái phạm.\n\nHãy khắc phục triệt để sự cố B3 trên job `integration-check`:\n1. Cập nhật bước `actions/checkout@v4` đầu tiên để có `with: { fetch-depth: 0 }` (tải đủ lịch sử commit).\n2. Chèn ngay sau bước checkout một bước quét rò rỉ khoá bí mật bằng lệnh `gitleaks detect --source . --verbose` trước khi cài đặt & chạy test.\n3. Ở bước chạy test cuối cùng, thay giá trị cứng của `env.STRIPE_API_KEY` bằng tham chiếu an toàn `${{ secrets.STRIPE_API_KEY }}`.",
+    "starter": "name: Payment Integration Verification\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  integration-check:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n\n      # TODO: Thêm bước quét gitleaks detect --source . --verbose ngay sau checkout (nhớ bật fetch-depth: 0 ở trên!)\n\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n\n      - run: npm ci\n\n      - name: Run payment gateway integration suite\n        env:\n          # SỰ CỐ B3: Khoá bí mật bị gõ cứng trực tiếp trong file YAML!\n          STRIPE_API_KEY: \"sk_test_placeholder_leaked_in_yaml\"\n        run: npm run test:integration\n",
+    "solution": "name: Payment Integration Verification\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  integration-check:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n\n      - name: Scan git history for leaked secrets\n        run: gitleaks detect --source . --verbose\n\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n\n      - run: npm ci\n\n      - name: Run payment gateway integration suite\n        env:\n          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}\n        run: npm run test:integration\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "initialState": {},
+      "patchFormat": "yaml",
+      "yamlRules": [
+        {
+          "id": "checkout-fetch-depth-zero",
+          "doc": "Bước checkout đầu tiên khai báo with.fetch-depth: 0 để quét toàn bộ lịch sử commit",
+          "kind": "path",
+          "path": "jobs.integration-check.steps[0].with.fetch-depth",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "gitleaks-gate-before-build",
+          "doc": "Bước thứ hai (steps[1]) thực thi gitleaks detect trước khi chạy setup-node / build",
+          "kind": "path",
+          "path": "jobs.integration-check.steps[1].run",
+          "match": {
+            "contains": "gitleaks detect"
+          }
+        },
+        {
+          "id": "no-hardcoded-placeholder",
+          "doc": "Xoá bỏ hoàn toàn chuỗi khoá viết cứng sk_test_placeholder_leaked_in_yaml",
+          "kind": "path",
+          "path": "jobs.integration-check.steps[4].env.STRIPE_API_KEY",
+          "match": {
+            "notContains": "sk_test_placeholder_leaked_in_yaml"
+          }
+        },
+        {
+          "id": "use-github-secrets-ref",
+          "doc": "Tham chiếu an toàn qua ${{ secrets.STRIPE_API_KEY }}",
+          "kind": "path",
+          "path": "jobs.integration-check.steps[4].env.STRIPE_API_KEY",
+          "match": {
+            "regex": "^\\$\\{\\{\\s*secrets\\.STRIPE_API_KEY\\s*\\}\\}$"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sau khi chèn thêm bước Gitleaks vào vị trí `steps[1]`, mảng `steps` sẽ có tổng cộng 5 phần tử (0: checkout, 1: gitleaks, 2: setup-node, 3: npm ci, 4: test:integration).",
+      "Đổi `STRIPE_API_KEY` thành `${{ secrets.STRIPE_API_KEY }}`."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c17-4",
+    "code": "C17.4",
+    "module": "C17",
+    "title": "Case B6 — Diệt tận gốc Đường ống \"Xanh vỏ đỏ lòng\" (False-Green)",
+    "difficulty": 3,
+    "tags": [
+      "war-room",
+      "false-green",
+      "exit-code"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": ".github/workflows/release-gate-incident-b6.yml",
+    "prompt": "**Tình huống sự cố:** Một bản phát hành nghiêm trọng mang theo 12 lỗi Unit Test, 2 lỗ hổng bảo mật CRITICAL và điểm cuối `/healthz` trả mã HTTP `500` vừa đi thẳng lên Production với... **100% dấu tích màu xanh**! Hãy truy quét toàn bộ các chốt bị vô hiệu hoá trong tệp workflow này.\n\nHãy khôi phục tính nghiêm minh của các cổng chất lượng trong job `release-gate`:\n1. Xoá `continue-on-error: true` khỏi bước `unit-test` VÀ xoá toán tử `|| true` khỏi câu lệnh `npm test`.\n2. Xoá `continue-on-error: true` khỏi bước `trivy-scan` để lỗ hổng CRITICAL/HIGH chặn đứng pipeline.\n3. Thêm cờ `--fail` (kèm `--silent --show-error`) vào câu lệnh `curl https://api.shop.example.com/healthz` ở bước cuối cùng.",
+    "starter": "name: Release Quality Gate\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  release-gate:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n\n      - name: unit-test\n        continue-on-error: true\n        run: npm test || true\n\n      - name: trivy-scan\n        continue-on-error: true\n        run: trivy fs --exit-code 1 --severity HIGH,CRITICAL .\n\n      - name: smoke-healthcheck\n        run: curl https://api.shop.example.com/healthz\n",
+    "solution": "name: Release Quality Gate\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  release-gate:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n\n      - name: unit-test\n        run: npm test\n\n      - name: trivy-scan\n        run: trivy fs --exit-code 1 --severity HIGH,CRITICAL .\n\n      - name: smoke-healthcheck\n        run: curl --fail --silent --show-error https://api.shop.example.com/healthz\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "initialState": {},
+      "patchFormat": "yaml",
+      "yamlRules": [
+        {
+          "id": "unit-test-no-continue-on-error",
+          "doc": "Xoá bỏ continue-on-error trên bước unit-test",
+          "kind": "path",
+          "path": "jobs.release-gate.steps[3].continue-on-error",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "unit-test-no-or-true",
+          "doc": "Câu lệnh npm test không còn nối đuôi || true",
+          "kind": "path",
+          "path": "jobs.release-gate.steps[3].run",
+          "match": {
+            "eq": "npm test"
+          }
+        },
+        {
+          "id": "trivy-no-continue-on-error",
+          "doc": "Xoá bỏ continue-on-error trên bước trivy-scan",
+          "kind": "path",
+          "path": "jobs.release-gate.steps[4].continue-on-error",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "trivy-exit-code-1",
+          "doc": "Giữ nguyên cờ --exit-code 1 cho lệnh trivy fs",
+          "kind": "path",
+          "path": "jobs.release-gate.steps[4].run",
+          "match": {
+            "contains": "--exit-code 1"
+          }
+        },
+        {
+          "id": "smoke-curl-fail-flag",
+          "doc": "Bước smoke-healthcheck gọi curl tới https://api.shop.example.com/healthz có cờ --fail",
+          "kind": "path",
+          "path": "jobs.release-gate.steps[5].run",
+          "match": {
+            "regex": "(?=.*curl)(?=.*--fail)(?=.*https://api\\.shop\\.example\\.com/healthz)",
+            "flags": "s"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Xoá hẳn hai dòng `continue-on-error: true` ở bước `unit-test` (`steps[3]`) và `trivy-scan` (`steps[4]`).",
+      "Sửa `npm test || true` thành `npm test` gọn sạch.",
+      "Sửa bước cuối thành `curl --fail --silent --show-error https://api.shop.example.com/healthz`."
+    ],
+    "ref": "github/false-green-exitcode.yml",
+    "webGrade": true
+  }
+]

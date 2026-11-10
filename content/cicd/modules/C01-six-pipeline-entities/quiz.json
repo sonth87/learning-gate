@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c01-1",
+    "type": "mc",
+    "q": "Phát biểu nào sau đây mô tả ĐÚNG NHẤT sự khác biệt về môi trường thực thi giữa các `Step` trong cùng một Job và các `Job` khác nhau trong cùng một Workflow?",
+    "code": "",
+    "choices": [
+      "Các Step chạy song song trên nhiều máy ảo; các Job chạy tuần tự trên cùng một máy ảo",
+      "Các Step chạy tuần tự trên cùng một Runner và chia sẻ ổ đĩa workspace; mỗi Job chạy trên một máy ảo Runner mới tinh, độc lập hoàn toàn",
+      "Cả Step lẫn Job đều dùng chung ổ cứng `/home/runner` mặc định mà không cần cấu hình gì thêm",
+      "Mỗi Step tự khởi động lại một máy ảo Ubuntu mới từ đầu"
+    ],
+    "answer": 1,
+    "explain": "Trong cùng 1 Job, các Step chạy nối tiếp trên cùng 1 máy ảo nên chia sẻ hệ thống file. Giữa 2 Job khác nhau là 2 máy ảo Ephemeral VM riêng biệt, không chia sẻ ổ đĩa hay bộ nhớ RAM."
+  },
+  {
+    "id": "cicd-q-c01-2",
+    "type": "tf",
+    "q": "Khi một GitHub-hosted Runner (`ubuntu-latest`) vừa khởi tạo cho một Job, mã nguồn Git của repository đã nằm sẵn trong thư mục làm việc nên bạn có thể gọi ngay `run: npm ci` mà không cần `actions/checkout@v4`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Máy ảo Runner mới khởi tạo có thư mục workspace hoàn toàn trống rỗng. Bạn bắt buộc phải gọi `uses: actions/checkout@v4` để kéo mã nguồn của commit/PR hiện tại về đĩa trước khi chạy `npm ci`."
+  },
+  {
+    "id": "cicd-q-c01-3",
+    "type": "mc",
+    "q": "Trong một phần tử của danh sách `steps:`, khi nào ta dùng từ khoá `uses:` thay vì từ khoá `run:`?",
+    "code": "",
+    "choices": [
+      "Dùng `uses:` khi muốn gõ lệnh Bash nhiều dòng, còn `run:` chỉ chạy được lệnh 1 dòng",
+      "Dùng `uses:` để gọi một Action đóng gói sẵn (như `actions/setup-node@v4`), còn `run:` để thực thi câu lệnh dòng lệnh trong Shell",
+      "Dùng `uses:` cho dự án TypeScript, còn `run:` cho dự án JavaScript thuần",
+      "Hai từ khoá hoàn toàn giống nhau và có thể viết chung trên cùng một Step"
+    ],
+    "answer": 1,
+    "explain": "`uses:` nạp và chạy một GitHub Action tái sử dụng (kèm tham số `with:`), còn `run:` mở Shell (mặc định là `bash`) để chạy trực tiếp các câu lệnh CLI như `npm ci`, `npm test`. Một Step không thể chứa đồng thời cả `uses` và `run`."
+  },
+  {
+    "id": "cicd-q-c01-4",
+    "type": "output",
+    "q": "Cho cấu hình dưới đây (chỉ có 2 Step nối tiếp trong cùng 1 Job). Lệnh ở Step thứ hai sẽ in ra tên thư mục cuối cùng (`basename $PWD`) là gì?",
+    "code": "jobs:\n  demo:\n    runs-on: ubuntu-latest\n    steps:\n      - run: mkdir sub && cd sub\n      - run: basename \"$PWD\"",
+    "choices": [],
+    "answer": "repo",
+    "explain": "Mỗi Step `run:` khởi chạy trong một tiến trình subshell mới bắt đầu lại từ thư mục gốc workspace của repo (ví dụ `/home/runner/work/repo/repo`), nên lệnh `cd sub` ở Step 1 không giữ hiệu lực sang Step 2! Muốn đổi thư mục cho mọi Step, hãy dùng `defaults.run.working-directory` (nếu repo tên `repo`, `basename \"$PWD\"` vẫn là tên thư mục gốc `repo`)."
+  },
+  {
+    "id": "cicd-q-c01-5",
+    "type": "mc",
+    "q": "Mã nguồn dịch vụ API có file `package.json` nằm tại `apps/backend/package.json`. Cách cấu hình nào sạch và ít lặp code nhất để mọi bước `npm ci`, `npm run lint`, `npm test` trong Job đều chạy đúng tại `apps/backend`?",
+    "code": "",
+    "choices": [
+      "Thêm một Step đầu tiên chỉ ghi `run: cd apps/backend`",
+      "Khai báo `defaults.run.working-directory: apps/backend` ở cấp Job hoặc Workflow",
+      "Đổi `runs-on: ubuntu-latest` thành `runs-on: apps/backend`",
+      "Bắt buộc phải dời toàn bộ file ra thư mục gốc vì GitHub Actions không hỗ trợ thư mục con"
+    ],
+    "answer": 1,
+    "explain": "`defaults.run.working-directory: apps/backend` tự động đặt thư mục làm việc mặc định cho toàn bộ các bước `run:` thuộc phạm vi đó mà không cần viết lặp `cd apps/backend && ...` ở từng Step."
+  },
+  {
+    "id": "cicd-q-c01-6",
+    "type": "mc",
+    "q": "Mặc định nếu bạn khai báo 2 Job `lint` và `test` ngang hàng trong khối `jobs:` mà KHÔNG dùng từ khoá `needs:`, GitHub Actions sẽ điều phối chúng ra sao?",
+    "code": "",
+    "choices": [
+      "Chạy tuần tự từ trên xuống theo đúng thứ tự dòng trong file YAML",
+      "Chỉ chạy Job đầu tiên và bỏ qua Job thứ hai",
+      "Cấp phát 2 máy ảo Runner riêng biệt và chạy cả 2 Job song song cùng lúc",
+      "Báo lỗi cú pháp YAML vì thiếu thứ tự ưu tiên"
+    ],
+    "answer": 2,
+    "explain": "Mặc định mọi Job không có ràng buộc `needs` đều khởi chạy đồng thời (song song) trên các máy ảo độc lập để rút ngắn tổng thời gian chờ đợi phản hồi của lập trình viên."
+  },
+  {
+    "id": "cicd-q-c01-7",
+    "type": "tf",
+    "q": "Tính chất Ephemeral (dùng một lần rồi huỷ) của Hosted Runner giúp ngăn ngừa rác cấu hình tích tụ giữa các lần build và giảm rủi ro mã độc cài cắm dai dẳng từ lần chạy trước sang lần chạy sau.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Chính xác! Việc cấp VM sạch cho mỗi Job vừa đảm bảo môi trường kiểm thử nhất quán 100%, vừa triệt tiêu nguy cơ lộ dữ liệu hoặc nhiễm mã độc tồn lưu trên ổ cứng từ Job trước."
+  }
+]

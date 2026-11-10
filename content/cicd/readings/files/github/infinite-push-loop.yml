@@ -1,0 +1,27 @@
+# CẢNH BÁO BUG: Vòng Lặp Vô Tận Đốt Cháy Hoá Đơn Phút Chạy (Infinite Push Loop)
+# Kịch bản tai hại: Sự kiện `on: push` kích hoạt Job tạo CHANGELOG rồi lại `git push` ngược về nhánh đó
+# bằng Personal Access Token -> phát sinh sự kiện push mới -> gọi lại chính workflow này mãi mãi!
+name: Buggy Auto Changelog Loop
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Dùng PAT cá nhân thay vì GITHUB_TOKEN mặc định sẽ KÍCH HOẠT tiếp các workflow on: push!
+          token: ${{ secrets.RELEASE_BOT_PAT_PLACEHOLDER }}
+
+      - name: Append build timestamp & push back without guard
+        # LỖI: Không kiểm tra github.actor != 'release-bot' và cũng không chèn [skip ci] vào commit message!
+        run: |
+          date -u +"Built at %Y-%m-%dT%H:%M:%SZ" >> BUILD_LOG.txt
+          git config user.name "release-bot"
+          git config user.email "bot@example.invalid"
+          git add BUILD_LOG.txt
+          git commit -m "chore: update build log"
+          git push origin main

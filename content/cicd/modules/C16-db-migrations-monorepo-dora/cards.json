@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C16-C1",
+    "front": "Ba pha của quy trình di trú cơ sở dữ liệu không gián đoạn **Expand-and-Contract** là gì?",
+    "back": "1) **Expand**: Thêm cột/bảng mới tương thích ngược (`NULL` hoặc có default), Dual-Write + Backfill.\n2) **Switch**: Đổi code đọc hoàn toàn từ cột mới.\n3) **Contract**: Xoá cột cũ (`DROP COLUMN`) ở một đợt release riêng sau khi không còn Pod cũ nào chạy."
+  },
+  {
+    "id": "C16-C2",
+    "front": "Những câu lệnh SQL nào cần bị chặn tự động trong CI Linter của luồng phát hành thông thường?",
+    "back": "`DROP COLUMN`, `DROP TABLE`, `RENAME COLUMN` (hoặc `ALTER COLUMN ... SET NOT NULL` trên bảng lớn chưa có giá trị mặc định an toàn)."
+  },
+  {
+    "id": "C16-C3",
+    "front": "Cặp bài trùng cấu hình để chạy đúng các gói bị ảnh hưởng trên Monorepo bằng Turborepo trong GitHub Actions là gì?",
+    "back": "1) `actions/checkout@v4` với `with: { fetch-depth: 0 }`.\n2) `npx turbo run lint test build --filter=...[origin/main]`."
+  },
+  {
+    "id": "C16-C4",
+    "front": "2 chỉ số đo Tốc độ (Throughput) trong bộ 4 chỉ số DORA là gì?",
+    "back": "1) **Deployment Frequency**: Tần suất phát hành thành công lên Production.\n2) **Lead Time for Changes**: Thời gian từ lúc code được commit tới lúc chạy trên Production."
+  },
+  {
+    "id": "C16-C5",
+    "front": "2 chỉ số đo Tính ổn định (Stability) trong bộ 4 chỉ số DORA là gì?",
+    "back": "1) **Change Failure Rate (CFR)**: Tỷ lệ % bản phát hành gây lỗi cần rollback/hotfix.\n2) **Mean Time to Restore (MTTR)**: Thời gian trung bình để khôi phục dịch vụ sau sự cố."
+  },
+  {
+    "id": "C16-C6",
+    "front": "Làm sao để job `test-payment` chỉ chạy khi job `filters` báo thư mục `payment` có thay đổi?",
+    "back": "Khai báo `needs: filters` và điều kiện `if: needs.filters.outputs.payment == 'true'`."
+  }
+]

@@ -1,0 +1,282 @@
+[
+  {
+    "id": "cicd-ex-c04-1",
+    "code": "C04.1",
+    "title": "Khai báo biến môi trường phân cấp ở tầng Workflow và tầng Step",
+    "difficulty": 1,
+    "tags": [
+      "env",
+      "scope",
+      "node-env"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/env-scopes.yml",
+    "prompt": "Cấu hình biến môi trường đúng phạm vi cho đường ống kiểm thử: (1) khai báo ở cấp Workflow (gốc file YAML) biến `env.NODE_ENV: \"test\"` dùng chung cho toàn bộ các Job, và (2) tại bước chạy kiểm thử API (`jobs.verify.steps[3]`), khai báo biến cục bộ cấp Step `env.API_URL: \"http://localhost:3000\"`.",
+    "starter": "name: Scoped Environment Variables\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run API smoke tests\n        run: npm test\n",
+    "solution": "name: Scoped Environment Variables\non: [push, pull_request]\nenv:\n  NODE_ENV: \"test\"\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run API smoke tests\n        env:\n          API_URL: \"http://localhost:3000\"\n        run: npm test\n",
+    "hints": [
+      "Ở cấp gốc file (cùng cột với `name`, `on`, `jobs`), thêm khối `env:\\n  NODE_ENV: \"test\"`.",
+      "Trong bước thứ 4 (`Run API smoke tests` — `jobs.verify.steps[3]`), thêm khối `env:\\n  API_URL: \"http://localhost:3000\"` ngang hàng với `name` và `run`."
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "workflow-env-node-env",
+          "doc": "Khai báo env.NODE_ENV ở cấp Workflow là \"test\"",
+          "kind": "path",
+          "path": "env.NODE_ENV",
+          "match": {
+            "eq": "test"
+          }
+        },
+        {
+          "id": "step-env-api-url",
+          "doc": "Khai báo env.API_URL ở bước kiểm thử (steps[3]) là \"http://localhost:3000\"",
+          "kind": "path",
+          "path": "jobs.verify.steps[3].env.API_URL",
+          "match": {
+            "eq": "http://localhost:3000"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c04-2",
+    "code": "C04.2",
+    "title": "Di trú lệnh ::set-output lỗi thời sang chuẩn $GITHUB_OUTPUT",
+    "difficulty": 2,
+    "tags": [
+      "github-output",
+      "migration",
+      "security"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/output-migration.yml",
+    "prompt": "Step `Compute short SHA` (`jobs.build.steps[1]`, có `id: meta`) đang dùng lệnh `echo \"::set-output name=sha::${GITHUB_SHA::7}\"` vốn đã bị GitHub vô hiệu hoá vì lỗi bảo mật Injection. Hãy nâng cấp dòng `run:` của Step `id: meta` sang chuẩn `echo \"sha=${GITHUB_SHA::7}\" >> \"$GITHUB_OUTPUT\"`.",
+    "starter": "name: Migrate Set-Output\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Compute short SHA\n        id: meta\n        run: echo \"::set-output name=sha::${GITHUB_SHA::7}\"\n      - name: Show tag\n        run: echo \"Building tag app:${{ steps.meta.outputs.sha }}\"\n",
+    "solution": "name: Migrate Set-Output\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Compute short SHA\n        id: meta\n        run: echo \"sha=${GITHUB_SHA::7}\" >> \"$GITHUB_OUTPUT\"\n      - name: Show tag\n        run: echo \"Building tag app:${{ steps.meta.outputs.sha }}\"\n",
+    "hints": [
+      "Giữ nguyên `id: meta` ở `jobs.build.steps[1]` để bước sau vẫn đọc được `${{ steps.meta.outputs.sha }}`.",
+      "Thay thế lệnh cũ bằng `echo \"sha=${GITHUB_SHA::7}\" >> \"$GITHUB_OUTPUT\"`."
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "step-keeps-id-meta",
+          "doc": "Step xuất dữ liệu giữ nguyên id: meta",
+          "kind": "path",
+          "path": "jobs.build.steps[1].id",
+          "match": {
+            "eq": "meta"
+          }
+        },
+        {
+          "id": "no-deprecated-set-output",
+          "doc": "Không còn chứa cú pháp lỗi thời ::set-output",
+          "kind": "path",
+          "path": "jobs.build.steps[1].run",
+          "match": {
+            "notContains": "::set-output"
+          }
+        },
+        {
+          "id": "writes-to-github-output",
+          "doc": "Ghi khoá sha=... nối vào file môi trường $GITHUB_OUTPUT",
+          "kind": "path",
+          "path": "jobs.build.steps[1].run",
+          "match": {
+            "regex": "sha=.*>>\\s*\"?\\$GITHUB_OUTPUT\"?"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c04-3",
+    "code": "C04.3",
+    "title": "Khoá chốt bước Publish Package chỉ chạy khi push vào nhánh main",
+    "difficulty": 2,
+    "tags": [
+      "if-condition",
+      "github-ref",
+      "publish-guard"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/publish-guard.yml",
+    "prompt": "Workflow này lắng nghe cả `pull_request` lẫn `push`, nhưng bước cuối cùng `Publish Package` (`jobs.release.steps[4]`) lại chưa có điều kiện chặn — khiến ai mở PR nháp cũng vô tình chạy lệnh xuất bản gói lên Registry! Hãy gắn thuộc tính `if:` cho bước `Publish Package` sao cho nó kiểm tra đồng thời `github.ref == 'refs/heads/main'` và `github.event_name == 'push'`.",
+    "starter": "name: Conditional Package Publish\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  release:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n      - name: Publish Package\n        run: npm publish --dry-run\n",
+    "solution": "name: Conditional Package Publish\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  release:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n      - name: Publish Package\n        if: github.ref == 'refs/heads/main' && github.event_name == 'push'\n        run: npm publish --dry-run\n",
+    "hints": [
+      "Tìm bước thứ 5 (`Publish Package` — `jobs.release.steps[4]`).",
+      "Thêm dòng `if: github.ref == 'refs/heads/main' && github.event_name == 'push'` ngay dưới `name: Publish Package`."
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "publish-checks-main-ref",
+          "doc": "Điều kiện if của bước Publish Package kiểm tra github.ref == 'refs/heads/main'",
+          "kind": "path",
+          "path": "jobs.release.steps[4].if",
+          "match": {
+            "contains": "github.ref == 'refs/heads/main'"
+          }
+        },
+        {
+          "id": "publish-checks-push-event",
+          "doc": "Điều kiện if của bước Publish Package kiểm tra github.event_name == 'push'",
+          "kind": "path",
+          "path": "jobs.release.steps[4].if",
+          "match": {
+            "contains": "github.event_name == 'push'"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c04-4",
+    "code": "C04.4",
+    "title": "Tự động tải lên nhật ký lỗi khi Test thất bại bằng if: failure()",
+    "difficulty": 1,
+    "tags": [
+      "if-failure",
+      "upload-artifact",
+      "debugging"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/failure-logs.yml",
+    "prompt": "Khi bước `npm test` (`steps[3]`) bị đỏ, cơ chế mặc định lập tức huỷ bỏ bước `Upload debug logs` (`steps[4]`) phía dưới nên kỹ sư không lấy được file `reports/` để điều tra; ngược lại nếu `npm test` xanh thì bước đó lại tải log thừa thãi! Hãy gắn điều kiện `if: failure()` vào `jobs.test.steps[4]` để nó CHỈ chạy khi có bước phía trên bị lỗi.",
+    "starter": "name: Smart Debug Artifacts\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n      - name: Upload debug logs\n        uses: actions/upload-artifact@v4\n        with:\n          name: failure-reports\n          path: reports/\n",
+    "solution": "name: Smart Debug Artifacts\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n      - name: Upload debug logs\n        if: failure()\n        uses: actions/upload-artifact@v4\n        with:\n          name: failure-reports\n          path: reports/\n",
+    "hints": [
+      "Tìm bước `Upload debug logs` (`jobs.test.steps[4]`).",
+      "Thêm dòng `if: failure()` (hoặc `if: ${{ failure() }}`) cùng cấp thụt lề với `uses:`."
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "upload-only-on-failure",
+          "doc": "Bước Upload debug logs được bảo vệ bởi điều kiện if: failure()",
+          "kind": "path",
+          "path": "jobs.test.steps[4].if",
+          "match": {
+            "regex": "failure\\(\\)"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c04-5",
+    "code": "C04.5",
+    "title": "Tiết kiệm phút chạy CI bằng bộ lọc on.push.paths-ignore cho tài liệu",
+    "difficulty": 1,
+    "tags": [
+      "paths-ignore",
+      "cost-optimization",
+      "docs"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/skip-docs.yml",
+    "prompt": "Mỗi lần đội Technical Writer sửa lỗi chính tả trong `README.md` hoặc cập nhật tài liệu trong thư mục `docs/`, cả dàn test nặng nề lại chạy mất 8 phút vô ích. Hãy thêm danh sách `paths-ignore` bên dưới `on.push` chứa cả hai mẫu `\"**.md\"` và `\"docs/**\"`.",
+    "starter": "name: Code-Only CI\non:\n  push:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Code-Only CI\non:\n  push:\n    branches: [main]\n    paths-ignore:\n      - \"**.md\"\n      - \"docs/**\"\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Bên dưới `on.push` (ngang hàng với `branches: [main]`), thêm khoá `paths-ignore:`.",
+      "Đặt nhớ dấu nháy kép quanh `\"**.md\"` vì dấu `*` ở đầu trong YAML nếu không bọc nháy sẽ bị hiểu nhầm là alias!"
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ignores-markdown-glob",
+          "doc": "on.push.paths-ignore có chứa mẫu \"**.md\"",
+          "kind": "path",
+          "path": "on.push.paths-ignore",
+          "match": {
+            "contains": "**.md"
+          }
+        },
+        {
+          "id": "ignores-docs-folder",
+          "doc": "on.push.paths-ignore có chứa mẫu \"docs/**\"",
+          "kind": "path",
+          "path": "on.push.paths-ignore",
+          "match": {
+            "contains": "docs/**"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c04-6",
+    "code": "C04.6",
+    "title": "Lọc đường dẫn Monorepo apps/api/** và chặn vòng lặp Infinite Push Loop",
+    "difficulty": 2,
+    "tags": [
+      "paths",
+      "infinite-loop",
+      "skip-ci",
+      "monorepo"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/api-and-changelog.yml",
+    "prompt": "Workflow này cần 2 chốt an toàn cùng lúc: (1) trên sự kiện `on.pull_request`, thêm bộ lọc `paths` chứa `\"apps/api/**\"` để chỉ chạy khi dịch vụ API có thay đổi; và (2) trong Job `sync-changelog` chạy khi push vào `main`, lập trình viên cũ quên đánh dấu commit tự động khiến bot kích hoạt lặp vô tận — hãy thêm chuỗi `[skip ci]` vào lệnh `git commit -m \"...\"` ở `jobs.sync-changelog.steps[1].run` VÀ thêm điều kiện `if: github.actor != 'release-bot'` vào `jobs.sync-changelog`.",
+    "starter": "name: API Gate & Safe Changelog\non:\n  pull_request:\n    branches: [main]\n  push:\n    branches: [main]\njobs:\n  api-test:\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: apps/api\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  sync-changelog:\n    if: github.event_name == 'push'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Commit generated changelog\n        run: |\n          git commit --allow-empty -m \"chore: update api changelog\"\n",
+    "solution": "name: API Gate & Safe Changelog\non:\n  pull_request:\n    branches: [main]\n    paths:\n      - \"apps/api/**\"\n  push:\n    branches: [main]\njobs:\n  api-test:\n    runs-on: ubuntu-latest\n    defaults:\n      run:\n        working-directory: apps/api\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  sync-changelog:\n    if: github.event_name == 'push' && github.actor != 'release-bot'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Commit generated changelog\n        run: |\n          git commit --allow-empty -m \"chore: update api changelog [skip ci]\"\n",
+    "hints": [
+      "Dưới `on.pull_request`, thêm `paths: [\"apps/api/**\"]`.",
+      "Ở `jobs.sync-changelog.if`, kiểm tra thêm `github.actor != 'release-bot'`, đồng thời thêm `[skip ci]` vào thông điệp `git commit` tại `jobs.sync-changelog.steps[1].run`."
+    ],
+    "ref": "github/infinite-push-loop.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pr-paths-apps-api",
+          "doc": "on.pull_request.paths có lọc đường dẫn \"apps/api/**\"",
+          "kind": "path",
+          "path": "on.pull_request.paths",
+          "match": {
+            "contains": "apps/api/**"
+          }
+        },
+        {
+          "id": "changelog-guards-actor",
+          "doc": "Job sync-changelog chặn vòng lặp bằng điều kiện github.actor != 'release-bot'",
+          "kind": "path",
+          "path": "jobs.sync-changelog.if",
+          "match": {
+            "contains": "github.actor != 'release-bot'"
+          }
+        },
+        {
+          "id": "commit-has-skip-ci",
+          "doc": "Thông điệp git commit tự động có hậu tố [skip ci]",
+          "kind": "path",
+          "path": "jobs.sync-changelog.steps[1].run",
+          "match": {
+            "contains": "[skip ci]"
+          }
+        }
+      ]
+    }
+  }
+]

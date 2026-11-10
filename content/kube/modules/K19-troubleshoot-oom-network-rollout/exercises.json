@@ -1,0 +1,635 @@
+[
+  {
+    "id": "kube-ex-k19-1",
+    "code": "K19.1",
+    "module": "K19",
+    "title": "Ca trực #5 — Khắc phục sự cố OOMKilled (Exit Code 137) cho pdf-exporter",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "oomkilled",
+      "exit-137",
+      "memory"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "pdf-exporter-deployment.yaml",
+    "prompt": "Dịch vụ xuất hoá đơn `pdf-exporter` liên tục bị sập ngang mỗi khi khách hàng tải tệp PDF!\n\nHãy thực hiện đủ **2 bước**:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Gõ lệnh `kubectl describe pod pdf-exporter-10001` vào ô **Terminal Chẩn đoán** bên trên để xác nhận trạng thái `OOMKilled` (`Exit Code: 137`) và mức trần RAM chật hẹp hiện tại.\n- **Bước 2:** Nâng `resources.requests.memory` lên `\"128Mi\"` và `resources.limits.memory` lên tối thiểu **`\"256Mi\"`** trong tệp `Deployment` bên dưới để các Pod chạy ổn định ở trạng thái **`Running`**!",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pdf-exporter\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: pdf-exporter\n  template:\n    metadata:\n      labels:\n        app: pdf-exporter\n    spec:\n      containers:\n        - name: exporter\n          image: ghcr.io/acme/pdf-exporter:1.3.0\n          ports:\n            - containerPort: 3000\n          resources:\n            requests:\n              cpu: \"100m\"\n              memory: \"32Mi\"\n            limits:\n              cpu: \"500m\"\n              memory: \"32Mi\"\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: pdf-exporter\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: pdf-exporter\n  template:\n    metadata:\n      labels:\n        app: pdf-exporter\n    spec:\n      containers:\n        - name: exporter\n          image: ghcr.io/acme/pdf-exporter:1.3.0\n          ports:\n            - containerPort: 3000\n          resources:\n            requests:\n              cpu: \"100m\"\n              memory: \"128Mi\"\n            limits:\n              cpu: \"500m\"\n              memory: \"256Mi\"\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl describe pod pdf-exporter-10001"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "pdf-exporter-10001",
+              "namespace": "default",
+              "labels": {
+                "app": "pdf-exporter"
+              },
+              "image": "ghcr.io/acme/pdf-exporter:1.3.0",
+              "status": "OOMKilled",
+              "ready": false,
+              "restarts": 4,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "memoryLimitMi": 32,
+              "logs": [
+                "Rendering invoice #98412... FATAL: V8 allocation failed"
+              ],
+              "events": [
+                "Warning  OOMKilling  Memory cgroup out of memory: Killed process 1 (node) — limit 32Mi"
+              ]
+            },
+            {
+              "name": "pdf-exporter-10002",
+              "namespace": "default",
+              "labels": {
+                "app": "pdf-exporter"
+              },
+              "image": "ghcr.io/acme/pdf-exporter:1.3.0",
+              "status": "OOMKilled",
+              "ready": false,
+              "restarts": 3,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "memoryLimitMi": 32,
+              "logs": [
+                "Rendering invoice #98415..."
+              ],
+              "events": [
+                "Warning  OOMKilling  Memory cgroup out of memory: Killed process 1 (node) — limit 32Mi"
+              ]
+            }
+          ],
+          "deployments": [
+            {
+              "name": "pdf-exporter",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "pdf-exporter"
+              },
+              "podLabels": {
+                "app": "pdf-exporter"
+              },
+              "image": "ghcr.io/acme/pdf-exporter:1.3.0",
+              "revision": 1,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "ghcr.io/acme/pdf-exporter:1.3.0"
+                }
+              ],
+              "containerPort": 3000,
+              "memoryLimitMi": 32
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "mem-req-128",
+          "doc": "Nâng resources.requests.memory lên tối thiểu 128Mi",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "pdf-exporter"
+          },
+          "path": "spec.template.spec.containers[0].resources.requests.memory",
+          "match": {
+            "k8sMemMinMi": 128
+          }
+        },
+        {
+          "id": "mem-lim-256",
+          "doc": "Nâng resources.limits.memory lên tối thiểu 256Mi",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "pdf-exporter"
+          },
+          "path": "spec.template.spec.containers[0].resources.limits.memory",
+          "match": {
+            "k8sMemMinMi": 256
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "inspected-oom",
+          "doc": "Đã kiểm tra thông tin OOMKilled bằng lệnh kubectl describe pod trên Terminal Chẩn đoán",
+          "target": "stdout-inspected",
+          "contains": "OOMKilled"
+        },
+        {
+          "id": "pdf-pods-running",
+          "doc": "Cả 2 Pod pdf-exporter hết bị giết tràn RAM và chạy Running ổn định",
+          "target": "k8s-pod",
+          "labelMatch": {
+            "app": "pdf-exporter"
+          },
+          "status": "Running",
+          "ready": true,
+          "minCount": 2
+        }
+      ]
+    },
+    "hints": [
+      "Hãy chạy `kubectl describe pod pdf-exporter-10001` ở khung Terminal Chẩn đoán trước.",
+      "Sau đó sửa `requests.memory: \"128Mi\"` và `limits.memory: \"256Mi\"` trong tệp YAML."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k19-2",
+    "code": "K19.2",
+    "module": "K19",
+    "title": "Ca trực #6 — Sửa lỗi 502 Bad Gateway (Endpoints: <none>) trên checkout-svc",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "502",
+      "service",
+      "endpoints"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "checkout-service.yaml",
+    "prompt": "Báo động đỏ từ trang Giỏ hàng: khách bấm Thanh toán toàn bị **`502 Bad Gateway`**, mặc dù gõ `kubectl get pods` thấy cả 2 Pod đều đang `1/1 Running` khoẻ mạnh!\n\n- Hãy gõ `kubectl get endpoints checkout-svc`, `kubectl get pods --show-labels` và `kubectl describe pod checkout-api-1` vào **Terminal Chẩn đoán** để kiểm tra nhãn thật và cổng thật của các Pod.\n- **Nhiệm vụ:** Sửa cả 2 lỗi cấu hình (`spec.selector` và `targetPort`) trong tệp `Service` `checkout-svc` bên dưới sao cho `checkout-svc` nối thông cả **2 Ready Endpoints**!",
+    "starter": "apiVersion: v1\nkind: Service\nmetadata:\n  name: checkout-svc\nspec:\n  type: ClusterIP\n  selector:\n    app: checkout-backend\n  ports:\n    - name: http\n      port: 80\n      targetPort: 8080\n",
+    "solution": "apiVersion: v1\nkind: Service\nmetadata:\n  name: checkout-svc\nspec:\n  type: ClusterIP\n  selector:\n    app: checkout-api\n  ports:\n    - name: http\n      port: 80\n      targetPort: 3000\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl get endpoints checkout-svc",
+        "kubectl get pods --show-labels",
+        "kubectl describe pod checkout-api-1"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "checkout-api-1",
+              "namespace": "default",
+              "labels": {
+                "app": "checkout-api",
+                "tier": "backend"
+              },
+              "image": "ghcr.io/acme/checkout-api:2.1.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Checkout HTTP server listening on 0.0.0.0:3000"
+              ],
+              "events": []
+            },
+            {
+              "name": "checkout-api-2",
+              "namespace": "default",
+              "labels": {
+                "app": "checkout-api",
+                "tier": "backend"
+              },
+              "image": "ghcr.io/acme/checkout-api:2.1.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Checkout HTTP server listening on 0.0.0.0:3000"
+              ],
+              "events": []
+            }
+          ],
+          "deployments": [],
+          "services": [
+            {
+              "name": "checkout-svc",
+              "namespace": "default",
+              "type": "ClusterIP",
+              "selector": {
+                "app": "checkout-backend"
+              },
+              "port": 80,
+              "targetPort": 8080
+            }
+          ],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "svc-selector-fixed",
+          "doc": "Chỉnh spec.selector.app khớp với nhãn Pod checkout-api",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "checkout-svc"
+          },
+          "path": "spec.selector.app",
+          "match": {
+            "eq": "checkout-api"
+          }
+        },
+        {
+          "id": "svc-targetport-3000",
+          "doc": "Chỉnh targetPort về đúng cổng 3000 mà Pod đang lắng nghe",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "checkout-svc"
+          },
+          "path": "spec.ports[0].targetPort",
+          "match": {
+            "eq": 3000
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "checkout-endpoints-ready",
+          "doc": "Service checkout-svc nhận đủ 2 Ready Endpoints trên cổng 80",
+          "target": "k8s-service-endpoints",
+          "name": "checkout-svc",
+          "port": 80,
+          "minReadyEndpoints": 2
+        }
+      ]
+    },
+    "hints": [
+      "`kubectl get pods --show-labels` cho thấy các Pod mang nhãn `app=checkout-api` (không phải `checkout-backend`).",
+      "`kubectl describe pod checkout-api-1` cho thấy `Ports: 3000` → đổi `targetPort: 3000`."
+    ],
+    "ref": "k8s/network/service-broken-502.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k19-3",
+    "code": "K19.3",
+    "module": "K19",
+    "title": "Ca trực #7 — Cứu hộ khẩn cấp bằng Rollback CLI trên namespace production",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "rollback",
+      "rollout-undo",
+      "cli"
+    ],
+    "kind": "troubleshoot",
+    "language": "shell",
+    "filename": "emergency-rollback.sh",
+    "prompt": "Khẩn cấp lúc 21:00 tối! Bản phát hành Revision 3 (`acme/frontend:3.0.0-crash`) vừa đẩy lên namespace **`production`** làm toàn bộ 3 Pod của `deployment/frontend` rơi vào `CrashLoopBackOff`!\n\n- Bạn có thể kiểm tra lịch sử phát hành bằng `kubectl rollout history deployment/frontend -n production`.\n- **Nhiệm vụ:** Viết câu lệnh `kubectl rollout undo` vào khung kịch bản Shell bên dưới để quay lui ngay lập tức `deployment/frontend` trong namespace **`production`** về bản ổn định trước đó (`acme/frontend:2.8.1`)!",
+    "starter": "# Thực thi lệnh quay lui khẩn cấp cho deployment/frontend trong namespace production\n",
+    "solution": "kubectl rollout undo deployment/frontend -n production\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "cli",
+      "diagnosticSampleCommands": [
+        "kubectl get pods -n production",
+        "kubectl rollout history deployment/frontend -n production"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system",
+            "production"
+          ],
+          "pods": [
+            {
+              "name": "frontend-30001",
+              "namespace": "production",
+              "labels": {
+                "app": "frontend"
+              },
+              "image": "acme/frontend:3.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 3,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "ReferenceError: window is not defined during SSR"
+              ],
+              "events": [
+                "Warning  BackOff  Back-off restarting failed container"
+              ]
+            },
+            {
+              "name": "frontend-30002",
+              "namespace": "production",
+              "labels": {
+                "app": "frontend"
+              },
+              "image": "acme/frontend:3.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 3,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "ReferenceError: window is not defined during SSR"
+              ],
+              "events": [
+                "Warning  BackOff  Back-off restarting failed container"
+              ]
+            },
+            {
+              "name": "frontend-30003",
+              "namespace": "production",
+              "labels": {
+                "app": "frontend"
+              },
+              "image": "acme/frontend:3.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 3,
+              "node": "worker-node-3",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "ReferenceError: window is not defined during SSR"
+              ],
+              "events": [
+                "Warning  BackOff  Back-off restarting failed container"
+              ]
+            }
+          ],
+          "deployments": [
+            {
+              "name": "frontend",
+              "namespace": "production",
+              "replicas": 3,
+              "selector": {
+                "app": "frontend"
+              },
+              "podLabels": {
+                "app": "frontend"
+              },
+              "image": "acme/frontend:3.0.0-crash",
+              "revision": 3,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "acme/frontend:2.7.0"
+                },
+                {
+                  "revision": 2,
+                  "image": "acme/frontend:2.8.1"
+                },
+                {
+                  "revision": 3,
+                  "image": "acme/frontend:3.0.0-crash"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "cliRules": [
+        {
+          "id": "dep-reverted-281",
+          "doc": "Deployment frontend (namespace production) đã quay về image acme/frontend:2.8.1",
+          "target": "k8s-deployment",
+          "name": "frontend",
+          "namespace": "production",
+          "image": "acme/frontend:2.8.1"
+        },
+        {
+          "id": "frontend-pods-running",
+          "doc": "Toàn bộ 3 Pod frontend trong namespace production đã phục hồi Running",
+          "target": "k8s-pod",
+          "namespace": "production",
+          "labelMatch": {
+            "app": "frontend"
+          },
+          "status": "Running",
+          "ready": true,
+          "minCount": 3
+        }
+      ]
+    },
+    "hints": [
+      "Đừng quên cờ chỉ định namespace `-n production`! Nếu thiếu cờ này, `kubectl` sẽ tìm trong namespace `default` và báo NotFound.",
+      "Cú pháp đầy đủ: `kubectl rollout undo deployment/frontend -n production`."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k19-4",
+    "code": "K19.4",
+    "module": "K19",
+    "title": "Ca trực #8 — Gia cố toàn diện Zero-Downtime Rolling Update cho gateway-api",
+    "difficulty": 3,
+    "tags": [
+      "troubleshoot",
+      "zero-downtime",
+      "readinessprobe",
+      "prestop"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "gateway-zero-downtime.yaml",
+    "prompt": "Bài tổng kết khoá học! Mỗi lần đội phát triển deploy bản mới cho `Deployment/gateway-api`, hệ thống giám sát lại ghi nhận khoảng 150 request của khách hàng bị rớt lỗi `502` do 3 lỗ hổng cấu hình cùng lúc:\n- `maxUnavailable` đang để tận `50%` (giết 2/4 Pod cũ ngay lập tức!)\n- Thiếu hoàn toàn `readinessProbe`\n- Thiếu hoàn toàn móc tắt êm `lifecycle.preStop`\n\nHãy gia cố lại bản `Deployment` đạt chuẩn **Zero-Downtime 100%**:\n1. Đặt `spec.strategy.rollingUpdate.maxUnavailable: 0` và `maxSurge: 1`.\n2. Thêm `readinessProbe` (`httpGet.path: /readyz`, `httpGet.port: 3000`, `periodSeconds: 5`).\n3. Thêm `lifecycle.preStop.exec.command: [\"sh\", \"-c\", \"sleep 5\"]` và đặt `spec.template.spec.terminationGracePeriodSeconds: 30`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-api\nspec:\n  replicas: 4\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 50%\n      maxSurge: 1\n  selector:\n    matchLabels:\n      app: gateway-api\n  template:\n    metadata:\n      labels:\n        app: gateway-api\n    spec:\n      # Đặt terminationGracePeriodSeconds: 30\n      containers:\n        - name: api\n          image: ghcr.io/acme/gateway-api:2.4.0\n          ports:\n            - containerPort: 3000\n          # Bổ sung readinessProbe (/readyz:3000) và lifecycle.preStop (sleep 5)\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: gateway-api\nspec:\n  replicas: 4\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0\n      maxSurge: 1\n  selector:\n    matchLabels:\n      app: gateway-api\n  template:\n    metadata:\n      labels:\n        app: gateway-api\n    spec:\n      terminationGracePeriodSeconds: 30\n      containers:\n        - name: api\n          image: ghcr.io/acme/gateway-api:2.4.0\n          ports:\n            - containerPort: 3000\n          readinessProbe:\n            httpGet:\n              path: /readyz\n              port: 3000\n            periodSeconds: 5\n          lifecycle:\n            preStop:\n              exec:\n                command: [\"sh\", \"-c\", \"sleep 5\"]\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl get pods"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [],
+          "deployments": [
+            {
+              "name": "gateway-api",
+              "namespace": "default",
+              "replicas": 4,
+              "selector": {
+                "app": "gateway-api"
+              },
+              "podLabels": {
+                "app": "gateway-api"
+              },
+              "image": "ghcr.io/acme/gateway-api:2.4.0",
+              "revision": 1,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "ghcr.io/acme/gateway-api:2.4.0"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [
+            {
+              "name": "gateway-svc",
+              "namespace": "default",
+              "type": "ClusterIP",
+              "selector": {
+                "app": "gateway-api"
+              },
+              "port": 80,
+              "targetPort": 3000
+            }
+          ],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "zd-max-unavail-0",
+          "doc": "Đặt rollingUpdate.maxUnavailable: 0 (không giết Pod cũ trước khi Pod mới sẵn sàng)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.strategy.rollingUpdate.maxUnavailable",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "zd-max-surge-1",
+          "doc": "Giữ rollingUpdate.maxSurge: 1",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.strategy.rollingUpdate.maxSurge",
+          "match": {
+            "eq": 1
+          }
+        },
+        {
+          "id": "zd-readiness-path",
+          "doc": "Trang bị readinessProbe.httpGet.path: /readyz trên cổng 3000",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.path",
+          "match": {
+            "eq": "/readyz"
+          }
+        },
+        {
+          "id": "zd-readiness-port",
+          "doc": "readinessProbe kiểm tra cổng 3000",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.template.spec.containers[0].readinessProbe.httpGet.port",
+          "match": {
+            "eq": 3000
+          }
+        },
+        {
+          "id": "zd-prestop-hook",
+          "doc": "Thêm móc lifecycle.preStop.exec.command: [\"sh\", \"-c\", \"sleep 5\"]",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.template.spec.containers[0].lifecycle.preStop.exec.command",
+          "match": {
+            "eq": [
+              "sh",
+              "-c",
+              "sleep 5"
+            ]
+          }
+        },
+        {
+          "id": "zd-grace-period",
+          "doc": "Đặt terminationGracePeriodSeconds >= 30 ở cấp Pod",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "gateway-api"
+          },
+          "path": "spec.template.spec.terminationGracePeriodSeconds",
+          "match": {
+            "gte": 30
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "zd-gateway-endpoints",
+          "doc": "Service gateway-svc duy trì đủ 4 Ready Endpoints",
+          "target": "k8s-service-endpoints",
+          "name": "gateway-svc",
+          "minReadyEndpoints": 4
+        }
+      ]
+    },
+    "hints": [
+      "Đổi `maxUnavailable: 50%` thành con số nguyên `0`.",
+      "Thêm `terminationGracePeriodSeconds: 30` dưới `spec.template.spec` (ngang hàng với `containers:`).",
+      "Thêm cả `readinessProbe` (`/readyz`, `port: 3000`, `periodSeconds: 5`) và `lifecycle.preStop.exec.command: [\"sh\", \"-c\", \"sleep 5\"]` bên trong container `- name: api`."
+    ],
+    "ref": "k8s/workloads/probes-graceful-node.yaml",
+    "webGrade": true
+  }
+]

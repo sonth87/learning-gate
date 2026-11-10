@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-api
+  namespace: shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-api
+  template:
+    metadata:
+      labels:
+        app: catalog-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/catalog-api:1.2.0
+          ports:
+            # Đặt tên cổng là "http" để nếu sau này đổi từ 3000 sang 8080 thì không cần sửa file Service!
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-api
+  namespace: shop
+spec:
+  type: ClusterIP
+  selector:
+    app: catalog-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

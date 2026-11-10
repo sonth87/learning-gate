@@ -1,0 +1,22 @@
+# TÀI LIỆU LỊCH SỬ (ĐÃ BỊ GỠ BỎ TỪ KUBERNETES 1.22):
+# Nếu bạn copy mẫu Ingress cũ này từ tài liệu trước năm 2021, cụm K8s sẽ từ chối ngay!
+# Bốn điểm đã thay đổi khi lên networking.k8s.io/v1:
+#   1) apiVersion đổi thành networking.k8s.io/v1
+#   2) annotation "kubernetes.io/ingress.class" chuyển thành trường spec.ingressClassName
+#   3) Mọi path bắt buộc phải khai báo "pathType: Prefix" (hoặc Exact)
+#   4) backend.serviceName / servicePort đổi cấu trúc thành backend.service.name & backend.service.port.number
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: legacy-shop-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+    - host: shop.example.com
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: shop-frontend
+              servicePort: 80

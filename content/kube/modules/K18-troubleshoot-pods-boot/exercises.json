@@ -1,0 +1,517 @@
+[
+  {
+    "id": "kube-ex-k18-1",
+    "code": "K18.1",
+    "module": "K18",
+    "title": "Ca trực #1 — Giải cứu Pod upload-worker kẹt ở trạng thái Pending",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "pending",
+      "pvc",
+      "storageclass"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "upload-claim.yaml",
+    "prompt": "Pod `upload-worker` triển khai từ sáng tới giờ vẫn đứng im ở trạng thái **`Pending`**!\n\n- **Gợi ý chẩn đoán:** Hãy thử gõ `kubectl describe pod upload-worker` và `kubectl get pvc` vào ô **Terminal Chẩn đoán** để tìm nguyên nhân.\n- Cụm hiện hỗ trợ hai hạng lưu trữ hợp lệ là `standard` và **`gp3`**.\n- **Nhiệm vụ:** Sửa lại tệp cấu hình `PersistentVolumeClaim` `upload-claim` bên dưới dùng hạng SSD **`gp3`** để ổ đĩa được `Bound` và Pod `upload-worker` chuyển sang trạng thái **`Running`**!",
+    "starter": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: upload-claim\nspec:\n  storageClassName: fast-ssd-typo\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 10Gi\n",
+    "solution": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: upload-claim\nspec:\n  storageClassName: gp3\n  accessModes:\n    - ReadWriteOnce\n  resources:\n    requests:\n      storage: 10Gi\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl describe pod upload-worker",
+        "kubectl get pvc"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ],
+          "pods": [
+            {
+              "name": "upload-worker",
+              "namespace": "default",
+              "labels": {
+                "app": "upload-worker"
+              },
+              "image": "ghcr.io/acme/upload-worker:1.2.0",
+              "status": "Pending",
+              "ready": false,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "pvcClaims": [
+                "upload-claim"
+              ],
+              "logs": [],
+              "events": [
+                "Warning  FailedScheduling  pod has unbound immediate PersistentVolumeClaims (\"upload-claim\": storageClass \"fast-ssd-typo\" not found)"
+              ]
+            }
+          ],
+          "deployments": [],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [
+            {
+              "name": "upload-claim",
+              "namespace": "default",
+              "storage": "10Gi",
+              "storageClass": "fast-ssd-typo",
+              "bound": false
+            }
+          ]
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "pvc-sc-gp3",
+          "doc": "Sửa spec.storageClassName của upload-claim thành gp3",
+          "kind": "path",
+          "docSelect": {
+            "kind": "PersistentVolumeClaim",
+            "name": "upload-claim"
+          },
+          "path": "spec.storageClassName",
+          "match": {
+            "eq": "gp3"
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "worker-running",
+          "doc": "Pod upload-worker được cấp đĩa thành công và chuyển sang Running (Ready)",
+          "target": "k8s-pod",
+          "name": "upload-worker",
+          "status": "Running",
+          "ready": true
+        }
+      ]
+    },
+    "hints": [
+      "Trong Terminal Chẩn đoán, `kubectl describe pod upload-worker` chỉ rõ `storageClass \"fast-ssd-typo\" not found`.",
+      "Sửa `storageClassName: fast-ssd-typo` thành `storageClassName: gp3` ở tệp YAML bên dưới."
+    ],
+    "ref": "k8s/workloads/pvc-wrong-storageclass.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k18-2",
+    "code": "K18.2",
+    "module": "K18",
+    "title": "Ca trực #2 — Sửa lỗi ImagePullBackOff trên Deployment payment-api",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "imagepullbackoff",
+      "deployment"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "payment-deployment.yaml",
+    "prompt": "Sau đợt phát hành vừa rồi, cả 2 Pod của `Deployment/payment-api` đều báo lỗi đỏ **`ImagePullBackOff`**!\n\n- Hãy gõ `kubectl get pods` và `kubectl describe pod payment-api` vào **Terminal Chẩn đoán** để đọc thông báo từ Container Registry.\n- Kho ảnh nội bộ xác nhận phiên bản hợp lệ vừa phát hành là **`ghcr.io/acme/payment-api:1.4.0`**.\n- **Nhiệm vụ:** Chỉnh lại tên thẻ Image trong tệp `Deployment` bên dưới để toàn bộ 2 Pod chuyển sang **`Running`**!",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payment-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payment-api\n  template:\n    metadata:\n      labels:\n        app: payment-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/payment-api:1.4.0-typo\n          ports:\n            - containerPort: 3000\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: payment-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: payment-api\n  template:\n    metadata:\n      labels:\n        app: payment-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/payment-api:1.4.0\n          ports:\n            - containerPort: 3000\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl get pods",
+        "kubectl describe pod payment-api-10001"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "registryImages": [
+            "ghcr.io/acme/payment-api:1.4.0"
+          ],
+          "pods": [
+            {
+              "name": "payment-api-10001",
+              "namespace": "default",
+              "labels": {
+                "app": "payment-api"
+              },
+              "image": "ghcr.io/acme/payment-api:1.4.0-typo",
+              "status": "ImagePullBackOff",
+              "ready": false,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [],
+              "events": [
+                "Warning  Failed   Failed to pull image \"ghcr.io/acme/payment-api:1.4.0-typo\": manifest unknown (available tag: 1.4.0)",
+                "Warning  BackOff  Back-off pulling image \"ghcr.io/acme/payment-api:1.4.0-typo\""
+              ]
+            },
+            {
+              "name": "payment-api-10002",
+              "namespace": "default",
+              "labels": {
+                "app": "payment-api"
+              },
+              "image": "ghcr.io/acme/payment-api:1.4.0-typo",
+              "status": "ImagePullBackOff",
+              "ready": false,
+              "restarts": 0,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [],
+              "events": [
+                "Warning  BackOff  Back-off pulling image \"ghcr.io/acme/payment-api:1.4.0-typo\""
+              ]
+            }
+          ],
+          "deployments": [
+            {
+              "name": "payment-api",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "payment-api"
+              },
+              "podLabels": {
+                "app": "payment-api"
+              },
+              "image": "ghcr.io/acme/payment-api:1.4.0-typo",
+              "revision": 1,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "ghcr.io/acme/payment-api:1.4.0-typo"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "fixed-image-tag",
+          "doc": "Cập nhật image chuẩn ghcr.io/acme/payment-api:1.4.0 trong Deployment",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "payment-api"
+          },
+          "path": "spec.template.spec.containers[0].image",
+          "match": {
+            "eq": "ghcr.io/acme/payment-api:1.4.0"
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "payment-pods-running",
+          "doc": "Cả 2 Pod của payment-api kéo ảnh thành công và đạt Running",
+          "target": "k8s-pod",
+          "labelMatch": {
+            "app": "payment-api"
+          },
+          "status": "Running",
+          "ready": true,
+          "minCount": 2
+        }
+      ]
+    },
+    "hints": [
+      "Bỏ đuôi gõ nhầm `-typo` trên trường `image:` để thành `ghcr.io/acme/payment-api:1.4.0`."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k18-3",
+    "code": "K18.3",
+    "module": "K18",
+    "title": "Ca trực #3 — Xử lý lỗi CreateContainerConfigError do thiếu Secret",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "createcontainerconfigerror",
+      "secret"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "auth-jwt-secret.yaml",
+    "prompt": "Pod `auth-api` bị chặn đứng ngay trước vạch xuất phát với lỗi **`CreateContainerConfigError`**!\n\n- Hãy gõ `kubectl describe pod auth-api` và `kubectl get secrets` vào **Terminal Chẩn đoán** để kiểm tra xem Pod đang đòi hỏi chiếc Secret mang tên chính xác là gì.\n- **Nhiệm vụ:** Tệp `Secret` bên dưới đang bị đặt lệch tên (`auth-secret-wrong`) và thiếu khoá `JWT_PUBLIC_KID`. Hãy sửa lại `metadata.name` đúng tên mà Pod `auth-api` yêu cầu, kèm `stringData.JWT_PUBLIC_KID: \"kid-prod-2026\"` để Pod khởi chạy thành công!",
+    "starter": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: auth-secret-wrong\ntype: Opaque\nstringData:\n  # Điền khoá JWT_PUBLIC_KID với giá trị an toàn \"kid-prod-2026\"\n  TEMP_KEY: \"placeholder\"\n",
+    "solution": "apiVersion: v1\nkind: Secret\nmetadata:\n  name: auth-jwt-secret\ntype: Opaque\nstringData:\n  JWT_PUBLIC_KID: \"kid-prod-2026\"\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl describe pod auth-api",
+        "kubectl get secrets"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "auth-api",
+              "namespace": "default",
+              "labels": {
+                "app": "auth-api"
+              },
+              "image": "ghcr.io/acme/auth-api:1.1.0",
+              "status": "CreateContainerConfigError",
+              "ready": false,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "envFromSecrets": [
+                "auth-jwt-secret"
+              ],
+              "logs": [],
+              "events": [
+                "Warning  Failed  Error: secret \"auth-jwt-secret\" not found"
+              ]
+            }
+          ],
+          "deployments": [],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "sec-correct-name",
+          "doc": "Đặt đúng metadata.name: auth-jwt-secret",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Secret",
+            "name": "auth-jwt-secret"
+          },
+          "path": "metadata.name",
+          "match": {
+            "eq": "auth-jwt-secret"
+          }
+        },
+        {
+          "id": "sec-kid-key",
+          "doc": "Cung cấp khoá stringData.JWT_PUBLIC_KID",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Secret",
+            "name": "auth-jwt-secret"
+          },
+          "path": "stringData.JWT_PUBLIC_KID",
+          "match": {
+            "nonEmpty": true
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "secret-created-in-k8s",
+          "doc": "Secret auth-jwt-secret có mặt trên cụm với khoá JWT_PUBLIC_KID",
+          "target": "k8s-secret",
+          "name": "auth-jwt-secret",
+          "hasKeys": [
+            "JWT_PUBLIC_KID"
+          ]
+        },
+        {
+          "id": "auth-pod-running",
+          "doc": "Pod auth-api hết lỗi cấu hình và chuyển sang Running",
+          "target": "k8s-pod",
+          "name": "auth-api",
+          "status": "Running",
+          "ready": true
+        }
+      ]
+    },
+    "hints": [
+      "`kubectl describe pod auth-api` báo rõ: `Error: secret \"auth-jwt-secret\" not found`.",
+      "Sửa `metadata.name: auth-jwt-secret` và đặt `JWT_PUBLIC_KID: \"kid-prod-2026\"` dưới mục `stringData:`."
+    ],
+    "ref": "k8s/network/secret-missing-key-bug.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k18-4",
+    "code": "K18.4",
+    "module": "K18",
+    "title": "Ca trực #4 — Đọc logs --previous bắt bệnh CrashLoopBackOff cho order-worker",
+    "difficulty": 3,
+    "tags": [
+      "troubleshoot",
+      "crashloopbackoff",
+      "logs-previous"
+    ],
+    "kind": "troubleshoot",
+    "language": "yaml",
+    "filename": "order-worker-deployment.yaml",
+    "prompt": "Pod `order-worker-10001` thuộc `Deployment/order-worker` đang khởi động lại liên tục ở trạng thái **`CrashLoopBackOff`** (đã sập 5 lần)!\n\nHãy thực hiện đúng **2 bước bắt buộc** sau:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Gõ lệnh `kubectl logs order-worker-10001 --previous` vào ô **Terminal Chẩn đoán** bên trên để đọc Stack Trace của lần sập trước và tìm ra số hiệu phiên bản ổn định cuối cùng!\n- **Bước 2:** Sửa lại trường `image` trong tệp `Deployment` bên dưới về đúng phiên bản ổn định tìm được ở Bước 1 (`acme/order-worker:<phiên-bản>`) rồi bấm Chấm bài!",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-worker\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: order-worker\n  template:\n    metadata:\n      labels:\n        app: order-worker\n    spec:\n      containers:\n        - name: worker\n          image: acme/order-worker:2.0.0-crash\n          ports:\n            - containerPort: 3000\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-worker\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: order-worker\n  template:\n    metadata:\n      labels:\n        app: order-worker\n    spec:\n      containers:\n        - name: worker\n          image: acme/order-worker:1.9.4\n          ports:\n            - containerPort: 3000\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "yaml",
+      "diagnosticSampleCommands": [
+        "kubectl logs order-worker-10001 --previous"
+      ],
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "order-worker-10001",
+              "namespace": "default",
+              "labels": {
+                "app": "order-worker"
+              },
+              "image": "acme/order-worker:2.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 5,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Booting order-worker v2.0.0-crash..."
+              ],
+              "previousLogs": [
+                "TypeError: Cannot read properties of undefined (reading \"REDIS_CLUSTER_DSN\")",
+                "    at startConsumer (/app/dist/worker.js:42:19)",
+                "FATAL: Release 2.0.0-crash failed on boot — last verified stable tag is 1.9.4"
+              ],
+              "events": [
+                "Warning  BackOff  Back-off restarting failed container worker in pod order-worker-10001"
+              ]
+            },
+            {
+              "name": "order-worker-10002",
+              "namespace": "default",
+              "labels": {
+                "app": "order-worker"
+              },
+              "image": "acme/order-worker:2.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 5,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Booting order-worker v2.0.0-crash..."
+              ],
+              "previousLogs": [
+                "FATAL: Release 2.0.0-crash failed on boot — last verified stable tag is 1.9.4"
+              ],
+              "events": [
+                "Warning  BackOff  Back-off restarting failed container worker in pod order-worker-10002"
+              ]
+            }
+          ],
+          "deployments": [
+            {
+              "name": "order-worker",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "order-worker"
+              },
+              "podLabels": {
+                "app": "order-worker"
+              },
+              "image": "acme/order-worker:2.0.0-crash",
+              "revision": 2,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "acme/order-worker:1.9.4"
+                },
+                {
+                  "revision": 2,
+                  "image": "acme/order-worker:2.0.0-crash"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": []
+        }
+      },
+      "yamlRules": [
+        {
+          "id": "worker-stable-image",
+          "doc": "Hạ cấp image trong Deployment về bản ổn định acme/order-worker:1.9.4",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "order-worker"
+          },
+          "path": "spec.template.spec.containers[0].image",
+          "match": {
+            "eq": "acme/order-worker:1.9.4"
+          }
+        }
+      ],
+      "cliRules": [
+        {
+          "id": "inspected-previous-logs",
+          "doc": "Đã chạy lệnh kubectl logs order-worker-10001 --previous trên Terminal Chẩn đoán",
+          "target": "stdout-inspected",
+          "contains": "1.9.4"
+        },
+        {
+          "id": "worker-pods-healthy",
+          "doc": "Cả 2 Pod order-worker phục hồi sang trạng thái Running (Ready)",
+          "target": "k8s-pod",
+          "labelMatch": {
+            "app": "order-worker"
+          },
+          "status": "Running",
+          "ready": true,
+          "minCount": 2
+        }
+      ]
+    },
+    "hints": [
+      "Đừng quên gõ lệnh `kubectl logs order-worker-10001 --previous` vào ô Terminal Chẩn đoán trước khi bấm Chấm bài nhé!",
+      "Nhật ký lần sập trước cho biết thẻ ổn định là `1.9.4` → sửa `image: acme/order-worker:1.9.4`."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true
+  }
+]

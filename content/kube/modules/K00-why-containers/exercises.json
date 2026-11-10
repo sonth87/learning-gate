@@ -2,31 +2,310 @@
   {
     "id": "kube-ex-k00-1",
     "code": "K00.1",
-    "title": "Chạy container đầu tiên ở chế độ ngầm",
+    "title": "Tải Image ghim phiên bản từ Registry",
     "difficulty": 1,
-    "tags": ["docker-run", "beginner"],
+    "tags": [
+      "docker-pull",
+      "image",
+      "tag"
+    ],
     "kind": "cli",
     "language": "shell",
     "filename": "terminal.sh",
-    "prompt": "Hãy chạy một container chạy ngầm (`-d`) đặt tên là `hello-nginx` từ image `nginx:1.27-alpine`.",
-    "starter": "# Gõ lệnh docker run bên dưới\n",
-    "solution": "docker run -d --name hello-nginx nginx:1.27-alpine\n",
+    "prompt": "Máy chủ hiện tại chỉ mới có sẵn image `alpine:3.20`. Hãy dùng lệnh `docker pull` để tải chính xác image `redis:7-alpine` về bộ nhớ đệm cục bộ (tránh dùng tag `:latest`).",
+    "starter": "# Gõ lệnh tải image redis:7-alpine bên dưới\n",
+    "solution": "docker pull redis:7-alpine\n",
     "hints": [
-      "Dùng cờ `-d` để container chạy ngầm và `--name hello-nginx` để đặt tên.",
-      "Cú pháp đầy đủ: `docker run -d --name hello-nginx nginx:1.27-alpine`"
+      "Cú pháp tải một image kèm tag cụ thể là `docker pull <repository>:<tag>`.",
+      "Gõ chính xác: `docker pull redis:7-alpine`"
     ],
-    "ref": "docker/node-api/Dockerfile.bad-root",
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "alpine",
+              "tag": "3.20",
+              "sizeMB": 8
+            }
+          ],
+          "containers": [],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "redis-image-pulled",
+          "doc": "Image `redis:7-alpine` đã có mặt trong danh sách `docker images` cục bộ",
+          "target": "docker-image",
+          "repo": "redis",
+          "tag": "7-alpine"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k00-2",
+    "code": "K00.2",
+    "title": "Khởi chạy container ở chế độ ngầm (Detached)",
+    "difficulty": 1,
+    "tags": [
+      "docker-run",
+      "detached",
+      "naming"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy khởi chạy một container chạy ngầm (`-d`) đặt tên là `hello-web` từ image `nginx:1.27-alpine`.",
+    "starter": "# Khởi chạy container hello-web ở chế độ chạy ngầm (-d)\n",
+    "solution": "docker run -d --name hello-web nginx:1.27-alpine\n",
+    "hints": [
+      "Kết hợp cờ `-d` (detached) và `--name hello-web` đứng TRƯỚC tên image `nginx:1.27-alpine`.",
+      "Lệnh đầy đủ: `docker run -d --name hello-web nginx:1.27-alpine`"
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
     "spec": {
       "kind": "cli",
       "initialState": {},
       "rules": [
         {
-          "id": "nginx-running",
-          "doc": "Container `hello-nginx` đang ở trạng thái `running` từ image `nginx:1.27-alpine`",
+          "id": "hello-web-running",
+          "doc": "Container `hello-web` đang chạy (`running`) từ image `nginx:1.27-alpine`",
           "target": "docker-container",
-          "name": "hello-nginx",
+          "name": "hello-web",
           "image": "nginx:1.27-alpine",
           "status": "running"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k00-3",
+    "code": "K00.3",
+    "title": "Tìm container đã dừng bị ẩn khỏi docker ps",
+    "difficulty": 1,
+    "tags": [
+      "docker-ps",
+      "exited",
+      "inspection"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Đồng nghiệp báo rằng vừa chạy xong một tác vụ di trú DB mang tên `old-migration`, nhưng khi gõ `docker ps` thì chỉ thấy mỗi `api` đang chạy. Hãy sửa câu lệnh bên dưới để liệt kê **tất cả** container (bao gồm cả các container đã dừng `exited`) nhằm làm hiện diện `old-migration` trên màn hình.",
+    "starter": "docker ps\n",
+    "solution": "docker ps -a\n",
+    "hints": [
+      "`docker ps` mặc định ẩn các container ở trạng thái `exited`.",
+      "Thêm cờ `-a` (hoặc `--all`): `docker ps -a`"
+    ],
+    "ref": "docker/node-api/Dockerfile.bad-root",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "a10293847561",
+              "name": "api",
+              "image": "node:22-alpine",
+              "status": "running",
+              "exitCode": 0,
+              "ports": [
+                {
+                  "host": 3000,
+                  "container": 3000
+                }
+              ],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "API listening on 3000"
+              ]
+            },
+            {
+              "id": "f98172635400",
+              "name": "old-migration",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 0,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Applied 12 SQL migrations successfully."
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "found-old-migration",
+          "doc": "Kết quả đầu ra hiển thị container đã dừng `old-migration`",
+          "target": "stdout-inspected",
+          "contains": "old-migration"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k00-4",
+    "code": "K00.4",
+    "title": "Dừng êm ái container đang chạy bằng SIGTERM",
+    "difficulty": 1,
+    "tags": [
+      "docker-stop",
+      "sigterm",
+      "lifecycle"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Trên máy chủ đang có tiến trình nền `legacy-worker` cần tạm dừng để bảo trì nhưng vẫn giữ lại container để kiểm tra log sau. Hãy dùng lệnh dừng lịch sự (`docker stop`) cho `legacy-worker` (không xoá container).",
+    "starter": "# Dừng êm ái container legacy-worker (giữ lại xác container ở trạng thái exited)\n",
+    "solution": "docker stop legacy-worker\n",
+    "hints": [
+      "Dùng `docker stop <tên-container>` để chuyển trạng thái từ `running` sang `exited` với mã thoát `0`.",
+      "Gõ lệnh: `docker stop legacy-worker`"
+    ],
+    "ref": "docker/node-api/Dockerfile.shell-trap",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "b22334455667",
+              "name": "legacy-worker",
+              "image": "node:22-alpine",
+              "status": "running",
+              "exitCode": 0,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Worker polling jobs..."
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "worker-stopped-cleanly",
+          "doc": "Container `legacy-worker` đã chuyển sang trạng thái `exited` (không bị xoá mất)",
+          "target": "docker-container",
+          "name": "legacy-worker",
+          "status": "exited"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k00-5",
+    "code": "K00.5",
+    "title": "Xoá sạch container tạm đã kết thúc",
+    "difficulty": 1,
+    "tags": [
+      "docker-rm",
+      "cleanup"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Container tạo dữ liệu mẫu `temp-seed` đã chạy xong và đang nằm ở trạng thái `exited`. Hãy xoá hoàn toàn container `temp-seed` để giải phóng cái tên này cho lần chạy tiếp theo.",
+    "starter": "# Xoá hẳn container đã dừng temp-seed\n",
+    "solution": "docker rm temp-seed\n",
+    "hints": [
+      "Vì `temp-seed` đã ở trạng thái `exited`, bạn chỉ cần gọi `docker rm <tên>`.",
+      "Gõ lệnh: `docker rm temp-seed`"
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "d77889900112",
+              "name": "temp-seed",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 0,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Seeded 50 demo products."
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "temp-seed-removed",
+          "doc": "Container `temp-seed` đã được xoá hoàn toàn khỏi hệ thống",
+          "target": "docker-container",
+          "name": "temp-seed",
+          "status": "absent"
         }
       ]
     }

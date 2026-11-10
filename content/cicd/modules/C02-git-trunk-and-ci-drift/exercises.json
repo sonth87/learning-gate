@@ -1,0 +1,234 @@
+[
+  {
+    "id": "cicd-ex-c02-1",
+    "code": "C02.1",
+    "title": "Thực hành chu trình nhánh ngắn Trunk-Based Git và gắn thẻ v1.0.0",
+    "difficulty": 1,
+    "tags": [
+      "git",
+      "trunk-based",
+      "cli",
+      "release-tag"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "trunk-flow.sh",
+    "prompt": "Kho Git hiện đang đứng ở nhánh `main` với 1 commit khởi tạo và file `src/healthz.ts` vừa sửa chưa được lưu. Hãy thực hiện trọn vẹn chu trình **Trunk-Based Development**: (1) tạo và chuyển sang nhánh ngắn hạn `feat/healthz` (`git switch -c feat/healthz`), (2) đưa file vào staging (`git add .`) và tạo commit (`git commit -m \"feat: add healthz\"`), (3) chuyển về lại nhánh `main` (`git switch main`), gộp nhánh `feat/healthz` vào `main` (`git merge feat/healthz`), và (4) gắn thẻ phát hành `v1.0.0` (`git tag v1.0.0`).",
+    "starter": "# Kiểm tra trạng thái hiện tại rồi viết tiếp các lệnh Git bên dưới\ngit status\n",
+    "solution": "git switch -c feat/healthz\ngit add .\ngit commit -m \"feat: add healthz\"\ngit switch main\ngit merge feat/healthz\ngit tag v1.0.0\n",
+    "hints": [
+      "Dùng `git switch -c feat/healthz`, tiếp theo `git add .` và `git commit -m \"feat: add healthz\"`.",
+      "Quay lại nhánh chính bằng `git switch main`, gộp code bằng `git merge feat/healthz`, cuối cùng đánh dấu mốc `git tag v1.0.0`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "git": {
+          "currentBranch": "main",
+          "branches": [
+            "main"
+          ],
+          "commits": [
+            {
+              "sha": "a1b2c3d",
+              "branch": "main",
+              "message": "chore: initial project skeleton"
+            }
+          ],
+          "tags": {},
+          "files": {
+            "package.json": "{\"name\":\"shop-api\",\"version\":\"1.0.0\"}",
+            "src/healthz.ts": "export const healthz = () => ({ ok: true });"
+          },
+          "staged": []
+        }
+      },
+      "rules": [
+        {
+          "id": "git-trunk-merged-and-tagged",
+          "doc": "Đã tạo nhánh feat/healthz, gộp tối thiểu 2 commit lên main, đứng tại main và gắn tag v1.0.0",
+          "target": "git-state",
+          "currentBranch": "main",
+          "hasBranch": "feat/healthz",
+          "hasTag": "v1.0.0",
+          "minCommitsOnBranch": {
+            "branch": "main",
+            "count": 2
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c02-2",
+    "code": "C02.2",
+    "title": "Ghim cứng phiên bản Node.js 22 LTS thay thế tag trôi nổi latest",
+    "difficulty": 1,
+    "tags": [
+      "node-version",
+      "drift",
+      "setup-node"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/pin-node.yml",
+    "prompt": "Workflow đang đặt `node-version: latest` trong bước `actions/setup-node@v4` (`jobs.test.steps[1]`), khiến sáng nay bản Node mới vừa ra mắt làm vỡ thư viện mã hoá trên CI dù máy dev đang dùng Node 22 LTS vẫn chạy tốt. Hãy khoá `node-version` về phiên bản `\"22\"` (hoặc `22`, `\"22.x\"`).",
+    "starter": "name: Pin Node Version\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: latest\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Pin Node Version\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Tìm đường dẫn `jobs.test.steps[1].with.node-version`.",
+      "Thay `latest` bằng `\"22\"` để khớp với bản Node.js 22 LTS của dự án."
+    ],
+    "ref": "github/local-vs-ci-drift.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "node-version-pinned-22",
+          "doc": "Thuộc tính node-version trong setup-node@v4 được khoá ở phiên bản 22 LTS",
+          "kind": "path",
+          "path": "jobs.test.steps[1].with.node-version",
+          "match": {
+            "oneOf": [
+              22,
+              "22",
+              "22.x"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c02-3",
+    "code": "C02.3",
+    "title": "Chữa bệnh treo cứng đường ống vì Vitest chạy ở chế độ Watch Mode",
+    "difficulty": 2,
+    "tags": [
+      "watch-mode",
+      "vitest",
+      "ci-env",
+      "hang"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/no-watch.yml",
+    "prompt": "Job `unit` đang bị kẹt cứng hàng tiếng đồng hồ ở bước cuối cùng (`steps[3]`) vì người viết đặt `env.CI: false` và gọi `npx vitest` không có cờ `run`, khiến Vitest bật chế độ Watch ngồi chờ bàn phím! Hãy: (1) đổi `jobs.unit.env.CI` thành `true`, và (2) đổi câu lệnh ở `jobs.unit.steps[3].run` thành `npx vitest run`.",
+    "starter": "name: Headless Test Runner\non: [pull_request]\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    env:\n      CI: false\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Execute Vitest suite\n        run: npx vitest\n",
+    "solution": "name: Headless Test Runner\non: [pull_request]\njobs:\n  unit:\n    runs-on: ubuntu-latest\n    env:\n      CI: true\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Execute Vitest suite\n        run: npx vitest run\n",
+    "hints": [
+      "Đổi `CI: false` dưới `jobs.unit.env` thành `CI: true`.",
+      "Sửa dòng `run: npx vitest` ở bước cuối thành `run: npx vitest run` để chạy một lần rồi thoát ngay với Exit Code chuẩn."
+    ],
+    "ref": "github/local-vs-ci-drift.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "job-env-ci-true",
+          "doc": "Biến môi trường jobs.unit.env.CI được bật thành true",
+          "kind": "path",
+          "path": "jobs.unit.env.CI",
+          "match": {
+            "oneOf": [
+              true,
+              "true"
+            ]
+          }
+        },
+        {
+          "id": "vitest-single-run",
+          "doc": "Bước kiểm thử gọi tường minh npx vitest run thay vì chế độ watch",
+          "kind": "path",
+          "path": "jobs.unit.steps[3].run",
+          "match": {
+            "regex": "^npx\\s+vitest\\s+run\\b"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c02-4",
+    "code": "C02.4",
+    "title": "Đồng bộ múi giờ TZ=UTC chấm dứt lỗi vỡ Date Snapshot",
+    "difficulty": 1,
+    "tags": [
+      "timezone",
+      "utc",
+      "snapshot-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/timezone.yml",
+    "prompt": "Các bài Snapshot Test kiểm tra hoá đơn thanh toán chạy đúng trên máy lập trình viên ở TP.HCM (`Asia/Ho_Chi_Minh`) nhưng lên CI bị lệch ngày tạo đơn. Đội ngũ đã thống nhất chuẩn hoá toàn bộ bài test về giờ quốc tế `UTC`. Hãy đặt biến môi trường `jobs.test.env.TZ` thành `\"UTC\"`.",
+    "starter": "name: Deterministic Timezone CI\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      TZ: Asia/Ho_Chi_Minh\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Deterministic Timezone CI\non: [push, pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      TZ: UTC\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Tìm khoá `TZ` bên trong `jobs.test.env`.",
+      "Đổi `Asia/Ho_Chi_Minh` thành `UTC` (hoặc `\"UTC\"`)."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "tz-pinned-utc",
+          "doc": "Biến môi trường jobs.test.env.TZ được ghim cố định là UTC",
+          "kind": "path",
+          "path": "jobs.test.env.TZ",
+          "match": {
+            "eq": "UTC"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c02-5",
+    "code": "C02.5",
+    "title": "Khắc phục lỗi tràn RAM Worker OOM (Exit Code 137) trên Runner 2-vCPU",
+    "difficulty": 2,
+    "tags": [
+      "oom-137",
+      "node-options",
+      "max-workers",
+      "memory"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/jest-memory.yml",
+    "prompt": "Bộ kiểm thử lớn của dự án đang gọi `npx jest --maxWorkers=16` và đặt giới hạn bộ nhớ chỉ `256` MB, khiến tiến trình liên tục chết giữa chừng với `Exit Code 137` (OOM) hoặc tràn V8 Heap trên máy chạy 2-vCPU. Hãy sửa `jobs.test` bằng cách: (1) đặt `jobs.test.env.NODE_OPTIONS` thành `\"--max-old-space-size=4096\"`, và (2) chỉnh tham số ở `jobs.test.steps[3].run` về `--maxWorkers=2`.",
+    "starter": "name: Memory Safe Test Suite\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      CI: true\n      NODE_OPTIONS: \"--max-old-space-size=256\"\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run Jest workers\n        run: npx jest --ci --maxWorkers=16\n",
+    "solution": "name: Memory Safe Test Suite\non: [pull_request]\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      CI: true\n      NODE_OPTIONS: \"--max-old-space-size=4096\"\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run Jest workers\n        run: npx jest --ci --maxWorkers=2\n",
+    "hints": [
+      "Cập nhật `jobs.test.env.NODE_OPTIONS` thành `\"--max-old-space-size=4096\"`.",
+      "Đổi `--maxWorkers=16` ở `jobs.test.steps[3].run` thành `--maxWorkers=2` cho vừa khít máy ảo 2 vCPU."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "node-options-4096",
+          "doc": "Cấu hình NODE_OPTIONS cấp trần --max-old-space-size=4096",
+          "kind": "path",
+          "path": "jobs.test.env.NODE_OPTIONS",
+          "match": {
+            "contains": "--max-old-space-size=4096"
+          }
+        },
+        {
+          "id": "jest-max-workers-2",
+          "doc": "Giới hạn số lượng Jest worker ở mức --maxWorkers=2",
+          "kind": "path",
+          "path": "jobs.test.steps[3].run",
+          "match": {
+            "contains": "--maxWorkers=2"
+          }
+        }
+      ]
+    }
+  }
+]

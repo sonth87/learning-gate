@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C09-Q1",
+    "type": "mc",
+    "q": "Trong `.gitlab-ci.yml`, nếu bạn muốn một Job ở stage `test` xuất phát **ngay lập tức ở giây thứ 0** mà không cần chờ các Job ở stage `install` chạy xong, bạn khai báo thuộc tính nào?",
+    "code": "",
+    "choices": [
+      "fast_start: true",
+      "needs: []",
+      "stage: immediate",
+      "parallel: 0"
+    ],
+    "answer": 1,
+    "explain": "Mảng rỗng `needs: []` báo cho bộ điều phối DAG của GitLab rằng Job này không có bất kỳ điều kiện tiên quyết nào và có thể chạy ngay khi Pipeline khởi tạo."
+  },
+  {
+    "id": "C09-Q2",
+    "type": "output",
+    "q": "Trong GitLab CI, khi bạn khai báo `parallel: 4` trên một Job kiểm thử, biến môi trường tích hợp sẵn nào cho biết **chỉ số mảnh hiện tại** (`1..4`) của container đang chạy? (Bao gồm dấu `$` ở đầu)",
+    "code": "script:\n  - npx vitest run --shard=____/$CI_NODE_TOTAL",
+    "choices": [],
+    "answer": "$CI_NODE_INDEX",
+    "explain": "GitLab tự động cấp cặp biến `$CI_NODE_INDEX` (1, 2, 3, 4) và `$CI_NODE_TOTAL` (4) cho mọi Job sử dụng từ khoá `parallel: 4`."
+  },
+  {
+    "id": "C09-Q3",
+    "type": "tf",
+    "q": "Trên GitLab CI, từ khoá cũ `only:` và `except:` đã ngừng được khuyến nghị phát triển và nên được thay thế hoàn toàn bằng khối `rules:` hiện đại.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Tài liệu chính thức của GitLab đánh dấu `only/except` không còn được phát triển thêm và khuyến nghị dùng `rules:` cho mọi dự án mới."
+  },
+  {
+    "id": "C09-Q4",
+    "type": "mc",
+    "q": "Để các Job kiểm thử hạ nguồn trên GitLab CI chỉ tải bộ đệm `.npm/` về dùng mà **không tốn thời gian nén và đẩy ngược cache lên cuối Job**, bạn cấu hình thuộc tính nào trong khối `cache:`?",
+    "code": "",
+    "choices": [
+      "policy: pull",
+      "policy: push",
+      "policy: pull-push",
+      "readonly: yes"
+    ],
+    "answer": 0,
+    "explain": "`policy: pull` tương đương với Read-Only Cache: chỉ tải cache lúc bắt đầu Job, bỏ qua hoàn toàn bước nén đẩy lên khi Job kết thúc."
+  },
+  {
+    "id": "C09-Q5",
+    "type": "mc",
+    "q": "Sự khác biệt mặc định khi truyền `artifacts` giữa hai Job nối tiếp nhau trên GitLab CI so với GitHub Actions là gì?",
+    "code": "",
+    "choices": [
+      "GitLab CI không hỗ trợ lưu thư mục dist/ làm artifact",
+      "Trên GitLab CI, các Job thuộc stage sau tự động tải xuống toàn bộ artifacts của các stage trước mà không cần viết bước download-artifact thủ công",
+      "GitLab CI xoá sạch artifacts ngay trong cùng 1 giây sau khi tạo",
+      "GitLab CI bắt buộc gửi artifacts qua email cho quản trị viên"
+    ],
+    "answer": 1,
+    "explain": "Trong GitLab CI, chỉ cần Job `build_app` khai báo `artifacts: { paths: [\"dist/\"] }`, sang stage `deploy` thư mục `dist/` tự động xuất hiện sẵn trong thư mục làm việc!"
+  },
+  {
+    "id": "C09-Q6",
+    "type": "tf",
+    "q": "Trong GitLab CI, khi một quy tắc trong `rules:` có `when: manual` nhưng bạn KHÔNG ghi rõ `allow_failure: false`, mặc định GitLab coi bước duyệt tay đó là tuỳ chọn (`allow_failure: true`) và không chặn trạng thái thành công chung của Pipeline.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đây là chi tiết rất dễ nhầm trên GitLab CI: muốn tạo cổng chặn thực sự bắt buộc phải bấm duyệt (Blocking Manual Gate), luôn nhớ ghi kèm `allow_failure: false` cạnh `when: manual`."
+  },
+  {
+    "id": "C09-Q7",
+    "type": "output",
+    "q": "Từ khoá gốc nào ở đầu tệp `.gitlab-ci.yml` dùng để thiết lập `image: node:22-alpine` chung cho toàn bộ các Job không khai báo image riêng?",
+    "code": "____:\n  image: node:22-alpine",
+    "choices": [],
+    "answer": "default",
+    "explain": "Khối `default:` là chuẩn hiện đại trong `.gitlab-ci.yml` để khai báo `image`, `cache`, `before_script`, `timeout` mặc định cho mọi Job (thay cho kiểu khai báo `image:` trôi nổi ở cấp gốc ngày xưa)."
+  }
+]

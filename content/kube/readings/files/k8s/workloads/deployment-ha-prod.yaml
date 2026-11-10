@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-api
+  namespace: production
+  labels:
+    app: shop-api
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  # Đảm bảo Zero-Downtime khi cập nhật: luôn bật thêm Pod mới khoẻ mạnh trước khi tắt Pod cũ
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+        version: "2.1.0"
+    spec:
+      # Trải đều 3 Pod sang các Node / Availability Zone khác nhau để chịu lỗi phần cứng
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: shop-api
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/shop-api:2.1.0
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"

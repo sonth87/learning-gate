@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C15-C1",
+    "front": "Tại sao không nên lưu `KUBE_CONFIG_ADMIN` trong GitHub Actions của kho mã nguồn ứng dụng?",
+    "back": "Vì nếu lộ CI hoặc dính gói npm độc hại, kẻ tấn công chiếm toàn quyền cụm K8s; ngoài ra sửa trực tiếp từ CI không có khả năng phát hiện và tự chữa lệch cấu hình (Drift)."
+  },
+  {
+    "id": "C15-C2",
+    "front": "Vai trò của CI trong mô hình Pull-Based GitOps dừng lại ở bước nào?",
+    "back": "Chạy Test/Scan -> Build & Push Image gắn thẻ bất biến (`sha-...`) -> Commit cập nhật thẻ Image sang kho GitOps (`kustomize edit set image` + `git push`). Phần áp dụng vào K8s do ArgoCD đảm nhận."
+  },
+  {
+    "id": "C15-C3",
+    "front": "Ý nghĩa bộ đôi `prune: true` và `selfHeal: true` trong ArgoCD `Application` là gì?",
+    "back": "- `prune: true`: tự xoá tài nguyên thừa trên K8s khi file YAML bị xoá khỏi Git.\n- `selfHeal: true`: tự khôi phục trạng thái chuẩn từ Git nếu ai đó sửa tay trực tiếp trên cụm."
+  },
+  {
+    "id": "C15-C4",
+    "front": "Thứ tự chạy của `argocd.argoproj.io/sync-wave` diễn ra như thế nào?",
+    "back": "Từ số nguyên nhỏ nhất tới lớn nhất (`\"-2\"` -> `\"-1\"` -> `\"0\"` -> `\"1\"`), và chỉ sang wave kế tiếp khi mọi tài nguyên ở wave hiện tại đã Healthy."
+  },
+  {
+    "id": "C15-C5",
+    "front": "Làm sao để chỉ định tệp `values-prod.yaml` khi triển khai Helm Chart bằng ArgoCD `Application`?",
+    "back": "Khai báo `spec.source.helm.valueFiles: [\"values-prod.yaml\"]`."
+  },
+  {
+    "id": "C15-C6",
+    "front": "Cách Rollback chuẩn nhất trong quy trình GitOps là gì?",
+    "back": "Thực hiện `git revert` commit nâng cấp phiên bản trên kho GitOps rồi push lên `main` — vừa kích hoạt ArgoCD quay lui tự động, vừa lưu lại đầy đủ lịch sử kiểm toán trên Git."
+  }
+]

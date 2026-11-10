@@ -1,0 +1,269 @@
+[
+  {
+    "id": "kube-ex-k02-1",
+    "code": "K02.1",
+    "title": "Khoá trần bộ nhớ RAM cho container bằng cgroups",
+    "difficulty": 1,
+    "tags": [
+      "cgroups",
+      "memory-limit",
+      "docker-run"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Để ngăn một tiến trình xử lý nền bị rò rỉ bộ nhớ làm treo toàn bộ máy chủ, hãy chạy ngầm (`-d`) container tên `worker-safe` từ image `node:22-alpine` với giới hạn RAM cứng là `256m` (`--memory=256m`).",
+    "starter": "# Khởi chạy ngầm worker-safe (node:22-alpine) với giới hạn RAM --memory=256m\n",
+    "solution": "docker run -d --name worker-safe --memory=256m node:22-alpine\n",
+    "hints": [
+      "Truyền cờ `--memory=256m` (hoặc `-m 256m`) trước tên image `node:22-alpine`.",
+      "Lệnh đầy đủ: `docker run -d --name worker-safe --memory=256m node:22-alpine`"
+    ],
+    "ref": "compose/limits/compose.resources.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "worker-safe-mem-capped",
+          "doc": "Container `worker-safe` đang chạy từ `node:22-alpine` với `memoryLimit = 256m`",
+          "target": "docker-container",
+          "name": "worker-safe",
+          "image": "node:22-alpine",
+          "status": "running",
+          "memoryLimit": "256m"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k02-2",
+    "code": "K02.2",
+    "title": "Khắc phục sự cố container chết OOM (Exit Code 137)",
+    "difficulty": 2,
+    "tags": [
+      "oom-137",
+      "troubleshooting",
+      "memory-limit"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Container xuất báo cáo `report-gen` (`node:22-alpine`) vừa bị sập với mã thoát `Exited (137)` do ai đó cấu hình trần RAM quá thấp (`16m`). Hãy xoá container `report-gen` cũ bị lỗi rồi khởi chạy lại ngầm (`-d`) container mới cùng tên `report-gen` từ `node:22-alpine` với mức RAM hợp lý `--memory=512m`.",
+    "starter": "docker ps -a\n",
+    "solution": "docker rm report-gen\ndocker run -d --name report-gen --memory=512m node:22-alpine\n",
+    "hints": [
+      "Container cũ đang ở trạng thái `exited` vẫn giữ tên `report-gen`, nên bạn cần `docker rm report-gen` trước khi tạo lại.",
+      "Sau khi xoá, chạy: `docker run -d --name report-gen --memory=512m node:22-alpine`"
+    ],
+    "ref": "compose/limits/compose.resources.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "oom137dead01",
+              "name": "report-gen",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 137,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "memoryLimit": "16m",
+              "logs": [
+                "Generating monthly PDF...",
+                "Killed (OOM - Exit Code 137)"
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "report-gen-healthy-512m",
+          "doc": "Container `report-gen` đã chạy lại ổn định (`running`) với hạn mức RAM `512m`",
+          "target": "docker-container",
+          "name": "report-gen",
+          "image": "node:22-alpine",
+          "status": "running",
+          "memoryLimit": "512m"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k02-3",
+    "code": "K02.3",
+    "title": "Tạo mạng Bridge riêng có DNS tự động cho dịch vụ",
+    "difficulty": 2,
+    "tags": [
+      "docker-network",
+      "dns",
+      "redis"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy tạo một mạng bridge tuỳ chỉnh tên là `shop-net`, sau đó chạy ngầm (`-d`) container `redis-session` từ image `redis:7-alpine` gắn vào mạng `--network shop-net` để các API cùng mạng có thể gọi thẳng qua tên miền `redis-session`.",
+    "starter": "# Bước 1: Tạo mạng shop-net\n# Bước 2: Chạy ngầm redis-session gắn vào --network shop-net\n",
+    "solution": "docker network create shop-net\ndocker run -d --name redis-session --network shop-net redis:7-alpine\n",
+    "hints": [
+      "Tạo mạng trước bằng `docker network create shop-net` (nếu chạy container trước khi tạo mạng, Docker sẽ báo `network shop-net not found`).",
+      "Sau đó chạy: `docker run -d --name redis-session --network shop-net redis:7-alpine`"
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "shop-net-created",
+          "doc": "Mạng bridge tuỳ chỉnh `shop-net` đã tồn tại",
+          "target": "docker-network",
+          "name": "shop-net"
+        },
+        {
+          "id": "redis-attached-shop-net",
+          "doc": "Container `redis-session` đang chạy và kết nối vào mạng `shop-net`",
+          "target": "docker-container",
+          "name": "redis-session",
+          "image": "redis:7-alpine",
+          "status": "running",
+          "network": "shop-net"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k02-4",
+    "code": "K02.4",
+    "title": "Gắn Named Volume bảo vệ dữ liệu PostgreSQL",
+    "difficulty": 2,
+    "tags": [
+      "docker-volume",
+      "postgres",
+      "persistence"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy tạo một Named Volume tên `pg-data`, sau đó khởi chạy ngầm (`-d`) container `shop-db` từ image `postgres:16-alpine` với biến môi trường `POSTGRES_PASSWORD=dev-only-placeholder` và gắn volume `pg-data` vào đường dẫn `/var/lib/postgresql/data`.",
+    "starter": "# Bước 1: Tạo volume pg-data\n# Bước 2: Chạy shop-db (postgres:16-alpine) gắn pg-data:/var/lib/postgresql/data\n",
+    "solution": "docker volume create pg-data\ndocker run -d --name shop-db -e POSTGRES_PASSWORD=dev-only-placeholder -v pg-data:/var/lib/postgresql/data postgres:16-alpine\n",
+    "hints": [
+      "Dùng `docker volume create pg-data` để khởi tạo volume.",
+      "Khi chạy Postgres, dùng cờ `-v pg-data:/var/lib/postgresql/data` và đừng quên `-e POSTGRES_PASSWORD=dev-only-placeholder`."
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "pg-data-volume-exists",
+          "doc": "Named volume `pg-data` đã được tạo",
+          "target": "docker-volume",
+          "name": "pg-data"
+        },
+        {
+          "id": "shop-db-mounted-pg-data",
+          "doc": "Container `shop-db` chạy `postgres:16-alpine` gắn Named Volume `pg-data` vào `/var/lib/postgresql/data`",
+          "target": "docker-container",
+          "name": "shop-db",
+          "image": "postgres:16-alpine",
+          "status": "running",
+          "volumeSource": "pg-data",
+          "volumeTarget": "/var/lib/postgresql/data",
+          "volumeType": "volume",
+          "envEquals": {
+            "POSTGRES_PASSWORD": "dev-only-placeholder"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k02-5",
+    "code": "K02.5",
+    "title": "Khai báo hạn mức RAM, CPU và chính sách tự bật lại trong compose.yaml",
+    "difficulty": 2,
+    "tags": [
+      "compose",
+      "resources",
+      "yaml",
+      "cgroups"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Hoàn thiện tệp `compose.yaml` bên dưới cho dịch vụ `api` sao cho:\n1. Tự động khởi động lại khi gặp sự cố bằng `restart: unless-stopped`.\n2. Khoá trần tài nguyên tại `deploy.resources.limits` với `cpus: \"0.50\"` và `memory: 256M`.",
+    "starter": "services:\n  api:\n    image: node:22-alpine\n    ports:\n      - \"3000:3000\"\n    # Thêm restart và deploy.resources.limits bên dưới\n",
+    "solution": "services:\n  api:\n    image: node:22-alpine\n    restart: unless-stopped\n    ports:\n      - \"3000:3000\"\n    deploy:\n      resources:\n        limits:\n          cpus: \"0.50\"\n          memory: 256M\n",
+    "hints": [
+      "Chú ý thụt lề YAML bằng 2 dấu cách (không dùng phím Tab): `restart` và `deploy` nằm cùng cấp với `image` và `ports`.",
+      "Bên trong `deploy:` -> `resources:` -> `limits:`, khai báo `cpus: \"0.50\"` và `memory: 256M`."
+    ],
+    "ref": "compose/limits/compose.resources.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "api-restart-policy",
+          "doc": "Dịch vụ `api` đặt `restart: unless-stopped`",
+          "kind": "path",
+          "path": "services.api.restart",
+          "match": {
+            "eq": "unless-stopped"
+          }
+        },
+        {
+          "id": "api-cpu-limit",
+          "doc": "Giới hạn CPU `services.api.deploy.resources.limits.cpus` đặt là `\"0.50\"` (0.5 core)",
+          "kind": "path",
+          "path": "services.api.deploy.resources.limits.cpus",
+          "match": {
+            "oneOf": [
+              "0.50",
+              "0.5",
+              0.5
+            ]
+          }
+        },
+        {
+          "id": "api-memory-limit",
+          "doc": "Giới hạn RAM `services.api.deploy.resources.limits.memory` đặt là `256M`",
+          "kind": "path",
+          "path": "services.api.deploy.resources.limits.memory",
+          "match": {
+            "oneOf": [
+              "256M",
+              "256m",
+              "256Mi"
+            ]
+          }
+        }
+      ]
+    }
+  }
+]

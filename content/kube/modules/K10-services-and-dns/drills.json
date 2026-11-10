@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K10-D1",
+    "title": "Khai báo ClusterIP Service nối cổng 80 vào cổng 3000 của Pod",
+    "code": "apiVersion: v1\nkind: Service\nmetadata:\n  name: shop-api-svc\nspec:\n  selector: { app: shop-api }\n  ports:\n    - { port: 80, targetPort: 3000 }"
+  },
+  {
+    "id": "K10-D2",
+    "title": "Xuất bản Deployment thành Service và kiểm tra bảng Endpoints",
+    "code": "kubectl expose deployment catalog --name=catalog-svc --port=80 --target-port=4000\nkubectl get svc catalog-svc\nkubectl get endpoints catalog-svc"
+  }
+]

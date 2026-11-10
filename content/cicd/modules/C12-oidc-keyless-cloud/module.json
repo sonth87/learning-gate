@@ -1,0 +1,63 @@
+{
+  "id": "C12",
+  "slug": "C12-oidc-keyless-cloud",
+  "level": 3,
+  "order": 12,
+  "title": "Xác thực Đám mây Không Khoá Tĩnh (Keyless OIDC), Chính sách Tin cậy IAM & Chứng thực Nguồn gốc Bản dựng",
+  "summary": "Xoá bỏ vĩnh viễn AWS_ACCESS_KEY_ID dài hạn bằng liên kết danh tính OpenID Connect (id-token: write), khoá chặt điều kiện sub trong IAM Trust Policy và ký chứng thực SLSA Provenance.",
+  "tags": [
+    "oidc",
+    "keyless",
+    "aws-sts",
+    "iam-trust-policy",
+    "provenance",
+    "slsa"
+  ],
+  "sources": [
+    {
+      "title": "Configuring OpenID Connect in Amazon Web Services",
+      "url": "https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services",
+      "version": "GitHub OIDC 2026"
+    },
+    {
+      "title": "Using Artifact Attestations to Establish Provenance for Builds",
+      "url": "https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds",
+      "version": "actions/attest-build-provenance@v2"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room B3: Ứng cứu lộ Secret & Chuyển sang OIDC",
+      "kind": "warroom",
+      "targetId": "warroom-b3-secret-leak"
+    },
+    {
+      "label": "Tra cứu Thuật ngữ OIDC & SLSA",
+      "kind": "tab",
+      "targetId": "glossary"
+    }
+  ],
+  "readings": [
+    {
+      "path": "security/aws-oidc-deploy.yml",
+      "kind": "good",
+      "note": "Mẫu triển khai lên đám mây AWS không lưu bất kỳ mật khẩu tĩnh nào trong GitHub Secrets nhờ cơ chế trao đổi thẻ JWT ngắn hạn OIDC.",
+      "task": "Điều gì xảy ra nếu bạn quên khai báo dòng `id-token: write` trong khối permissions của Job này?",
+      "answer": "Action `aws-actions/configure-aws-credentials@v4` sẽ thất bại ngay lập tức với lỗi `Unable to get ACTIONS_ID_TOKEN_REQUEST_URL` vì GitHub từ chối cấp thẻ JWT danh tính cho Job không được uỷ quyền `id-token: write`."
+    },
+    {
+      "path": "security/aws-iam-trust-policy.yaml",
+      "kind": "good",
+      "note": "Chính sách tin cậy AWS IAM Role khoá cứng điều kiện StringEquals đối với cả hai trường aud và sub của thẻ OIDC.",
+      "task": "Giải thích hậu quả thảm khốc nếu người quản trị viết `StringLike` với giá trị `\"repo:*:ref:refs/heads/main\"` cho trường `sub`.",
+      "answer": "Dấu `*` ở phần tổ chức/kho cho phép BẤT KỲ người lạ nào trên toàn thế giới tạo một kho GitHub cá nhân có nhánh `main` rồi mượn thẳng IAM Role của công ty bạn để chiếm quyền điều khiển hạ tầng AWS!"
+    },
+    {
+      "path": "security/cosign-provenance.yml",
+      "kind": "good",
+      "note": "Đóng dấu chứng thực nguồn gốc bản dựng SLSA và ký chữ ký số container không khoá (Keyless Cosign) gắn liền với danh tính OIDC của Workflow.",
+      "task": "Chứng thực Build Provenance giúp cụm Kubernetes chống lại kịch bản tấn công nội gián nào?",
+      "answer": "Nó ngăn chặn kẻ tấn công (hoặc máy tính cá nhân bị nhiễm mã độc của kỹ sư có quyền push Registry) tự build một ảnh container gắn cửa hậu bên ngoài luồng CI chính thống rồi đẩy lên giả danh bản phát hành hợp lệ."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# CẢNH BÁO BẢO MẬT (SECURITY RISK): Vi phạm nguyên tắc Quyền Tối Thiểu & Chuỗi Cung Ứng
+# 1. `permissions: write-all` trao chìa khoá vạn năng cho GITHUB_TOKEN (xoá release, đẩy code thẳng vào repo).
+# 2. Gọi Action bên thứ ba qua nhánh trôi nổi `@main` khiến nếu tài khoản tác giả bị chiếm, mã độc chảy thẳng vào CI của bạn!
+name: Over-Privileged Supply Chain Risk
+
+on: [push]
+
+# LỖI 1: Trao toàn quyền ghi trên mọi tài nguyên của kho mã nguồn
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # LỖI 2: Không khoá commit SHA 40 ký tự cho Action cộng đồng mà dùng nhánh động @main
+      - name: Third-party unpinned action
+        uses: some-community-org/markdown-linter-example@main
+
+      - run: npm ci && npm test

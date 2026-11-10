@@ -1,0 +1,278 @@
+[
+  {
+    "id": "kube-ex-k17-1",
+    "code": "K17.1",
+    "module": "K17",
+    "title": "Thiết lập tường lửa Default-Deny Ingress cho toàn bộ Namespace",
+    "difficulty": 1,
+    "tags": [
+      "networkpolicy",
+      "default-deny",
+      "zero-trust"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "default-deny-ingress.yaml",
+    "prompt": "Bước đầu tiên của kiến trúc mạng Zero-Trust là khoá mặc định mọi kết nối chiều vào cho tất cả các Pod trong Namespace hiện tại.\n\nHãy viết `NetworkPolicy` (`apiVersion: networking.k8s.io/v1`) tên là `default-deny-ingress` với:\n1. `spec.podSelector: {}` (áp dụng cho toàn bộ Pod).\n2. `spec.policyTypes` chứa `\"Ingress\"`.\n3. Không khai báo trường `spec.ingress` (xoá bỏ luật mở toang hiện có nếu có).",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: default-deny-ingress\nspec:\n  # Áp dụng cho mọi Pod ({}) và khoá chiều Ingress (không khai báo mục ingress:)\n  podSelector:\n    matchLabels:\n      app: temp\n  ingress:\n    - {}\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: default-deny-ingress\nspec:\n  podSelector: {}\n  policyTypes:\n    - Ingress\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "np-api",
+          "doc": "Dùng chuẩn networking.k8s.io/v1 NetworkPolicy tên default-deny-ingress",
+          "kind": "path",
+          "docSelect": {
+            "kind": "NetworkPolicy",
+            "name": "default-deny-ingress"
+          },
+          "path": "apiVersion",
+          "match": {
+            "eq": "networking.k8s.io/v1"
+          }
+        },
+        {
+          "id": "np-all-pods",
+          "doc": "Chọn toàn bộ Pod trong Namespace bằng podSelector: {}",
+          "kind": "path",
+          "docSelect": {
+            "kind": "NetworkPolicy",
+            "name": "default-deny-ingress"
+          },
+          "path": "spec.podSelector",
+          "match": {
+            "eq": {}
+          }
+        },
+        {
+          "id": "np-policy-ingress",
+          "doc": "Khai báo policyTypes chứa \"Ingress\"",
+          "kind": "path",
+          "docSelect": {
+            "kind": "NetworkPolicy",
+            "name": "default-deny-ingress"
+          },
+          "path": "spec.policyTypes",
+          "match": {
+            "contains": "Ingress"
+          }
+        },
+        {
+          "id": "np-no-ingress-allow",
+          "doc": "Không khai báo danh sách cho phép spec.ingress (từ chối tất cả)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "NetworkPolicy",
+            "name": "default-deny-ingress"
+          },
+          "path": "spec.ingress",
+          "match": {
+            "exists": false
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Xoá hẳn mục `ingress:` ở cuối file starter và sửa `podSelector:` thành `podSelector: {}`.",
+      "Thêm `policyTypes: [\"Ingress\"]` ngay dưới `podSelector: {}`."
+    ],
+    "ref": "k8s/security/netpol-default-deny.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k17-2",
+    "code": "K17.2",
+    "module": "K17",
+    "title": "Viết NetworkPolicy chỉ cho phép shop-api kết nối vào PostgreSQL cổng 5432",
+    "difficulty": 2,
+    "tags": [
+      "networkpolicy",
+      "postgres",
+      "micro-segmentation"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "allow-api-to-postgres.yaml",
+    "prompt": "Sau khi khoá Default-Deny, hãy mở một đường kết nối duy nhất cho phép tầng Backend gọi vào cơ sở dữ liệu bằng `NetworkPolicy` tên là `allow-api-to-postgres` (`networking.k8s.io/v1`):\n\n1. Bảo vệ các Pod Database: `spec.podSelector.matchLabels` là `{ app: postgres }`.\n2. `spec.policyTypes: [\"Ingress\"]`.\n3. Trong `spec.ingress[0]`: chỉ cho phép nguồn `from[0].podSelector.matchLabels: { app: shop-api }` đi vào cổng `ports[0].port: 5432` (`protocol: TCP`).",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-api-to-postgres\nspec:\n  podSelector:\n    matchLabels:\n      app: ____\n  policyTypes:\n    - Ingress\n  # Khai báo ingress cho phép podSelector app: shop-api gọi vào cổng TCP 5432\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-api-to-postgres\nspec:\n  podSelector:\n    matchLabels:\n      app: postgres\n  policyTypes:\n    - Ingress\n  ingress:\n    - from:\n        - podSelector:\n            matchLabels:\n              app: shop-api\n      ports:\n        - protocol: TCP\n          port: 5432\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "target-postgres",
+          "doc": "Áp dụng chính sách bảo vệ cho các Pod có nhãn app: postgres",
+          "kind": "path",
+          "docSelect": {
+            "kind": "NetworkPolicy",
+            "name": "allow-api-to-postgres"
+          },
+          "path": "spec.podSelector.matchLabels.app",
+          "match": {
+            "eq": "postgres"
+          }
+        },
+        {
+          "id": "allow-api-5432",
+          "doc": "Cho phép Ingress trên cổng 5432 từ Pod có nhãn app: shop-api",
+          "kind": "network-policy-rule",
+          "policyName": "allow-api-to-postgres",
+          "direction": "Ingress",
+          "expectedPort": 5432,
+          "expectedPodLabel": {
+            "app": "shop-api"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`spec.podSelector` ở ngoài cùng chọn đích cần bảo vệ (`app: postgres`), còn `from[0].podSelector` bên trong `ingress` chọn nguồn được phép gọi tới (`app: shop-api`)."
+    ],
+    "ref": "k8s/security/netpol-api-to-db.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k17-3",
+    "code": "K17.3",
+    "module": "K17",
+    "title": "Cấu hình tệp values.yaml để kết xuất Helm Chart cho dịch vụ shop-api",
+    "difficulty": 2,
+    "tags": [
+      "helm",
+      "values",
+      "templating"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "values.yaml",
+    "prompt": "Đội Platform đã đóng gói sẵn một Helm Chart chuẩn cho toàn công ty. Bạn chỉ cần chỉnh sửa tệp **`values.yaml`** (không viết Deployment thủ công!) để khi Helm kết xuất template sẽ tạo ra đúng cấu hình mong muốn:\n\n1. `replicaCount: 3`\n2. `image.repository: ghcr.io/acme/shop-api`\n3. `image.tag: \"2.1.0\"`\n4. `service.port: 80`",
+    "starter": "# Tệp values.yaml truyền vào Helm Chart\nreplicaCount: 1\nimage:\n  repository: nginx\n  tag: \"latest\"\nservice:\n  port: 8080\n",
+    "solution": "replicaCount: 3\nimage:\n  repository: ghcr.io/acme/shop-api\n  tag: \"2.1.0\"\nservice:\n  port: 80\n",
+    "spec": {
+      "kind": "yaml",
+      "helmTemplate": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ .Release.Name }}-api\nspec:\n  replicas: {{ .Values.replicaCount | default 1 }}\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}\n          ports:\n            - containerPort: 3000\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: {{ .Release.Name }}-svc\nspec:\n  selector:\n    app: shop-api\n  ports:\n    - port: {{ .Values.service.port | default 8080 }}\n      targetPort: 3000",
+      "rules": [
+        {
+          "id": "rendered-replicas",
+          "doc": "Deployment sinh ra từ Helm có spec.replicas: 3",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.replicas",
+          "match": {
+            "eq": 3
+          }
+        },
+        {
+          "id": "rendered-image",
+          "doc": "Deployment sinh ra dùng đúng image ghcr.io/acme/shop-api:2.1.0",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.template.spec.containers[0].image",
+          "match": {
+            "eq": "ghcr.io/acme/shop-api:2.1.0"
+          }
+        },
+        {
+          "id": "rendered-svc-port",
+          "doc": "Service sinh ra từ Helm mở đúng spec.ports[0].port: 80",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service"
+          },
+          "path": "spec.ports[0].port",
+          "match": {
+            "eq": 80
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bấm nút Chạy thử (Dry Run) để xem trực tiếp 2 tài nguyên `Deployment` và `Service` được bộ máy Helm tự động kết xuất từ tệp `values.yaml` của bạn!"
+    ],
+    "ref": "k8s/security/helm-values-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k17-4",
+    "code": "K17.4",
+    "module": "K17",
+    "title": "Ghi đè thông số Tài nguyên & Bảo mật trong tệp values-prod.yaml",
+    "difficulty": 2,
+    "tags": [
+      "helm",
+      "production",
+      "resources",
+      "security"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "values-prod.yaml",
+    "prompt": "Để triển khai bản phát hành lên môi trường Production (`helm upgrade --install shop ./chart -f values-prod.yaml`), hãy hoàn thiện tệp ghi đè **`values-prod.yaml`** đáp ứng các tiêu chuẩn vận hành:\n\n1. `replicaCount: 4`\n2. `resources.requests.cpu: \"250m\"` và `resources.requests.memory: \"256Mi\"`\n3. `resources.limits.memory: \"512Mi\"`\n4. `securityContext.runAsNonRoot: true`",
+    "starter": "# Ghi đè cấu hình dành riêng cho môi trường Production\nreplicaCount: 2\nresources:\n  requests:\n    cpu: \"100m\"\n    memory: \"128Mi\"\n  limits:\n    memory: \"128Mi\"\nsecurityContext:\n  runAsNonRoot: false\n",
+    "solution": "replicaCount: 4\nresources:\n  requests:\n    cpu: \"250m\"\n    memory: \"256Mi\"\n  limits:\n    memory: \"512Mi\"\nsecurityContext:\n  runAsNonRoot: true\n",
+    "spec": {
+      "kind": "yaml",
+      "helmTemplate": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: {{ .Release.Name }}-api\nspec:\n  replicas: {{ .Values.replicaCount | default 2 }}\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      securityContext:\n        runAsNonRoot: {{ .Values.securityContext.runAsNonRoot | default false }}\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:2.1.0\n          resources:\n            requests:\n              cpu: {{ .Values.resources.requests.cpu | default \"100m\" }}\n              memory: {{ .Values.resources.requests.memory | default \"128Mi\" }}\n            limits:\n              memory: {{ .Values.resources.limits.memory | default \"128Mi\" }}",
+      "rules": [
+        {
+          "id": "prod-replicas",
+          "doc": "Deployment kết xuất có replicas: 4",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.replicas",
+          "match": {
+            "eq": 4
+          }
+        },
+        {
+          "id": "prod-req-cpu",
+          "doc": "Deployment kết xuất có requests.cpu >= 250m",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.template.spec.containers[0].resources.requests.cpu",
+          "match": {
+            "k8sCpuMinMillicores": 250
+          }
+        },
+        {
+          "id": "prod-lim-mem",
+          "doc": "Deployment kết xuất có limits.memory >= 512Mi",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.template.spec.containers[0].resources.limits.memory",
+          "match": {
+            "k8sMemMinMi": 512
+          }
+        },
+        {
+          "id": "prod-nonroot",
+          "doc": "Deployment kết xuất bật securityContext.runAsNonRoot: true",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment"
+          },
+          "path": "spec.template.spec.securityContext.runAsNonRoot",
+          "match": {
+            "eq": true
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Cập nhật cả 4 thông số trong `values-prod.yaml`: `replicaCount: 4`, `cpu: \"250m\"`, `limits.memory: \"512Mi\"`, và `runAsNonRoot: true`."
+    ],
+    "ref": "k8s/security/helm-values-prod.yaml",
+    "webGrade": true
+  }
+]

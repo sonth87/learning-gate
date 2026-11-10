@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C15-D1",
+    "title": "Bật Automated Sync kèm Prune và Self-Heal cho ArgoCD",
+    "code": "syncPolicy:\n  automated:\n    prune: true\n    selfHeal: true\n  syncOptions:\n    - CreateNamespace=true"
+  },
+  {
+    "id": "C15-D2",
+    "title": "Gắn Sync Wave -1 cho Job chạy trước Deployment",
+    "code": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate\n  annotations:\n    argocd.argoproj.io/sync-wave: \"-1\""
+  }
+]

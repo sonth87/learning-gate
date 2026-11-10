@@ -1,0 +1,32 @@
+# CẢNH BÁO BUG: Bẫy Máy Chạy Dùng Một Lần (Ephemeral Runner Trap)
+# Người mới hay tưởng các Job trong cùng 1 file YAML dùng chung ổ cứng như các bước trên laptop.
+# Thực tế: mỗi Job khởi tạo trên một máy ảo VM mới tinh, độc lập hoàn toàn!
+name: Buggy Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      # Lệnh này sinh ra thư mục dist/ trên ổ đĩa của máy ảo Job "build"...
+      - run: npm run build
+      # NHƯNG KHÔNG GỌI actions/upload-artifact@v4! Khi Job kết thúc, máy ảo bị huỷ cùng thư mục dist/.
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Máy ảo mới toanh này hoàn toàn trống rỗng — chưa có dist/ và thậm chí chưa tải artifact về!
+      - name: Upload static bundle to CDN
+        run: |
+          ls -la dist/
+          echo "Deploying dist/index.js..."

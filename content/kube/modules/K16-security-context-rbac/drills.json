@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K16-D1",
+    "title": "Gia cố securityContext cấp Container chống leo thang đặc quyền",
+    "code": "securityContext:\n  allowPrivilegeEscalation: false\n  readOnlyRootFilesystem: true\n  capabilities:\n    drop:\n      - ALL"
+  },
+  {
+    "id": "K16-D2",
+    "title": "Gắn nhãn Pod Security Admission mức restricted cho Namespace",
+    "code": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: payments\n  labels:\n    pod-security.kubernetes.io/enforce: restricted"
+  }
+]

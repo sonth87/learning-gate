@@ -1,0 +1,51 @@
+{
+  "id": "C11",
+  "slug": "C11-five-layer-devsecops",
+  "level": 3,
+  "order": 11,
+  "title": "Phòng tuyến DevSecOps 5 Lớp: Quét Secret, SAST, SCA, Cổng chặn CVE Container, SBOM & Đóng gói Không Đặc quyền",
+  "summary": "Thiết lập phễu bảo mật Shift-Left 5 lớp (Gitleaks, Semgrep, npm audit, Trivy image CRITICAL, CycloneDX SBOM) và thay thế privileged Docker-in-Docker bằng Kaniko rootless.",
+  "tags": [
+    "devsecops",
+    "gitleaks",
+    "semgrep",
+    "trivy",
+    "sbom",
+    "kaniko"
+  ],
+  "sources": [
+    {
+      "title": "Trivy Container Image Scanning & CycloneDX SBOM in CI",
+      "url": "https://aquasecurity.github.io/trivy/latest/tutorials/integrations/github-actions/",
+      "version": "Trivy v0.58+"
+    },
+    {
+      "title": "Using Kaniko to Build Docker Images Rootless in GitLab CI",
+      "url": "https://docs.gitlab.com/ee/ci/docker/using_kaniko.html",
+      "version": "GitLab 17.x+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Blueprint #2: 5 Lớp Bảo mật DevSecOps",
+      "kind": "blueprint",
+      "targetId": "full-flow-2-gitlab-devsecops"
+    }
+  ],
+  "readings": [
+    {
+      "path": "security/five-layer-devsecops.yml",
+      "kind": "good",
+      "note": "Đường ống DevSecOps 5 lớp hoàn chỉnh từ quét lịch sử khoá rò rỉ tới xuất bản hồ sơ nguyên liệu phần mềm SBOM chuẩn CycloneDX.",
+      "task": "Tại sao bước checkout cho công cụ Gitleaks lại bắt buộc phải có tham số fetch-depth: 0 thay vì để mặc định?",
+      "answer": "Mặc định actions/checkout@v4 chỉ tải commit cuối cùng (fetch-depth: 1). Nếu lập trình viên lỡ commit mật khẩu ở commit trước rồi xoá ở commit sau trong cùng PR, mật khẩu vẫn nằm nguyên trong lịch sử nhánh — chỉ fetch-depth: 0 mới giúp Gitleaks rà soát toàn bộ lịch sử commit!"
+    },
+    {
+      "path": "gitlab/dind-tls-trap.gitlab-ci.yml",
+      "kind": "security",
+      "note": "Phân tích nguy cơ leo thang chiếm máy chủ vật lý khi chạy dịch vụ docker:dind với cờ privileged: true và cách chuyển sang Kaniko.",
+      "task": "Giải thích cơ chế giúp Kaniko đóng gói được Dockerfile thành ảnh Container hoàn chỉnh mà không cần chạy tiến trình nền dockerd.",
+      "answer": "Kaniko giải nén ảnh gốc (base image) và thực thi từng chỉ thị Dockerfile ngay trong không gian người dùng (userspace) bên trong một container đơn lẻ, chụp nhanh hệ thống tệp sau mỗi bước rồi đẩy các lớp ảnh thẳng lên Registry qua HTTPS API."
+    }
+  ]
+}

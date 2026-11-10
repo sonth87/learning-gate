@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K18-D1",
+    "title": "Bộ ba câu lệnh chẩn đoán nhanh một Pod kẹt khởi động",
+    "code": "kubectl get pods\nkubectl describe pod upload-worker\nkubectl get pvc"
+  },
+  {
+    "id": "K18-D2",
+    "title": "Truy xuất nhật ký lỗi của lần sập trước trên Pod bị CrashLoopBackOff",
+    "code": "kubectl get pods\nkubectl describe pod order-worker-10001\nkubectl logs order-worker-10001 --previous"
+  }
+]

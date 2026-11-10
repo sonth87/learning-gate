@@ -1,0 +1,263 @@
+[
+  {
+    "id": "cicd-ex-c01-1",
+    "code": "C01.1",
+    "title": "Khai báo tên Workflow và bộ đôi sự kiện kích hoạt push & pull_request",
+    "difficulty": 1,
+    "tags": [
+      "trigger",
+      "workflow",
+      "push",
+      "pull-request"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/ci.yml",
+    "prompt": "File workflow khởi đầu đang đặt tên giữ chỗ `____` và chỉ lắng nghe sự kiện `workflow_dispatch` (bấm tay), khiến lập trình viên push code hay mở Pull Request mà cổng CI đứng im không chạy! Hãy: (1) đặt `name` rõ nghĩa khác rỗng (ví dụ `Backend CI`), và (2) cấu hình khối `on:` kích hoạt tự động trên cả hai sự kiện `push` và `pull_request`.",
+    "starter": "name: ____\non:\n  workflow_dispatch:\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Backend CI\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Đổi `name: ____` thành một tên rõ ràng như `name: Backend CI`.",
+      "Dưới `on:`, khai báo `push:` (ví dụ kèm `branches: [main]` hoặc `{}`) và `pull_request:` (hoặc dùng mảng `on: [push, pull_request]`). Lưu ý nếu viết dạng map hãy có giá trị con như `branches: [main]` hoặc `{}`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "workflow-has-name",
+          "doc": "Workflow có thuộc tính name khác rỗng (xoá dấu giữ chỗ ____)",
+          "kind": "path",
+          "path": "name",
+          "match": {
+            "nonEmpty": true
+          }
+        },
+        {
+          "id": "trigger-has-push",
+          "doc": "Khối on kích hoạt khi có sự kiện push",
+          "kind": "path",
+          "path": "on",
+          "match": {
+            "contains": "push"
+          }
+        },
+        {
+          "id": "trigger-has-pr",
+          "doc": "Khối on kích hoạt khi có sự kiện pull_request",
+          "kind": "path",
+          "path": "on",
+          "match": {
+            "contains": "pull_request"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c01-2",
+    "code": "C01.2",
+    "title": "Chỉ định máy ảo thực thi chuẩn ubuntu-latest cho Job",
+    "difficulty": 1,
+    "tags": [
+      "runner",
+      "runs-on",
+      "ubuntu-latest"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/runner.yml",
+    "prompt": "Job `verify` đang khai báo nhãn máy chạy sai (`runs-on: my-laptop-local`), khiến Job bị kẹt mãi ở trạng thái `Queued — Waiting for a runner to pick up this job` vì GitHub không tìm thấy máy nào mang nhãn đó. Hãy đổi `jobs.verify.runs-on` sang máy ảo Linux tiêu chuẩn `ubuntu-latest`.",
+    "starter": "name: Runner Selection\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: my-laptop-local\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Runner Selection\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Tìm dòng `runs-on:` bên trong `jobs.verify`.",
+      "Thay `my-laptop-local` bằng `ubuntu-latest`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "verify-runs-on-ubuntu",
+          "doc": "Job verify chạy trên GitHub-hosted Runner ubuntu-latest",
+          "kind": "path",
+          "path": "jobs.verify.runs-on",
+          "match": {
+            "eq": "ubuntu-latest"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c01-3",
+    "code": "C01.3",
+    "title": "Sắp xếp đúng trình tự 4 Step kiểm định mã nguồn trong Job",
+    "difficulty": 1,
+    "tags": [
+      "steps",
+      "checkout",
+      "npm-ci",
+      "lint"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/steps-order.yml",
+    "prompt": "Hoàn thiện danh sách đúng 4 bước tuần tự trong `jobs.verify.steps` (`steps[0]` đến `steps[3]`) theo chuẩn dây chuyền kiểm định: (0) kéo mã nguồn bằng `uses: actions/checkout@v4`, (1) cài gói phụ thuộc bằng `run: npm ci`, (2) kiểm tra quy chuẩn code bằng `run: npm run lint`, và (3) chạy kiểm thử bằng `run: npm test`.",
+    "starter": "name: Four-Step Pipeline\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Placeholder step\n        run: echo \"TODO\"\n",
+    "solution": "name: Four-Step Pipeline\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@v4\n      - name: Clean install dependencies\n        run: npm ci\n      - name: Run ESLint\n        run: npm run lint\n      - name: Run unit tests\n        run: npm test\n",
+    "hints": [
+      "Step đầu tiên (`steps[0]`) dùng `uses: actions/checkout@v4` (lưu ý không viết chung `uses` và `run` trong 1 step).",
+      "Ba Step tiếp theo (`steps[1]`, `steps[2]`, `steps[3]`) lần lượt dùng `run: npm ci`, `run: npm run lint`, và `run: npm test`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "step-0-checkout-v4",
+          "doc": "Step 0 gọi actions/checkout@v4 để kéo code về Runner",
+          "kind": "path",
+          "path": "jobs.verify.steps[0].uses",
+          "match": {
+            "eq": "actions/checkout@v4"
+          }
+        },
+        {
+          "id": "step-1-npm-ci",
+          "doc": "Step 1 chạy npm ci",
+          "kind": "path",
+          "path": "jobs.verify.steps[1].run",
+          "match": {
+            "regex": "^npm\\s+ci\\b"
+          }
+        },
+        {
+          "id": "step-2-npm-lint",
+          "doc": "Step 2 chạy npm run lint",
+          "kind": "path",
+          "path": "jobs.verify.steps[2].run",
+          "match": {
+            "regex": "^npm\\s+run\\s+lint\\b"
+          }
+        },
+        {
+          "id": "step-3-npm-test",
+          "doc": "Step 3 chạy npm test",
+          "kind": "path",
+          "path": "jobs.verify.steps[3].run",
+          "match": {
+            "regex": "^npm\\s+test\\b"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c01-4",
+    "code": "C01.4",
+    "title": "Khắc phục bẫy Ephemeral Runner: làm Job test tự chủ hoàn toàn",
+    "difficulty": 2,
+    "tags": [
+      "ephemeral-runner",
+      "jobs-isolation",
+      "setup-node"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/isolated-jobs.yml",
+    "prompt": "Người viết cũ tách `install` và `test` thành 2 Job riêng vì ngỡ rằng `jobs.test` sẽ thấy sẵn code và `node_modules` từ `jobs.install`! Kết quả là `jobs.test` chạy trên một máy ảo mới tinh trống rỗng và nổ lỗi ngay dòng `npm test`. Hãy biến `jobs.test` thành một Job tự chủ hoàn chỉnh với 4 bước theo thứ tự: (0) `actions/checkout@v4`, (1) `actions/setup-node@v4` với `node-version: \"22\"`, (2) `run: npm ci`, và (3) `run: npm test`.",
+    "starter": "name: Ephemeral Isolation Fix\non: [push, pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Run tests assuming disk is shared\n        run: npm test\n",
+    "solution": "name: Ephemeral Isolation Fix\non: [push, pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Nhìn sang `jobs.lint` làm mẫu: mỗi Job chạy trên VM mới nên `jobs.test` cũng cần tự checkout code, cài Node 22 và chạy `npm ci` trước `npm test`.",
+      "Đảm bảo `jobs.test.steps` có đủ 4 phần tử: `actions/checkout@v4` -> `actions/setup-node@v4` (`node-version: \"22\"`) -> `npm ci` -> `npm test`."
+    ],
+    "ref": "github/ephemeral-runner-bug.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "test-checkout-v4",
+          "doc": "Job test có gọi actions/checkout@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "test",
+          "actionPrefix": "actions/checkout",
+          "minMajor": 4
+        },
+        {
+          "id": "test-setup-node-v4",
+          "doc": "Job test có gọi actions/setup-node@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "test",
+          "actionPrefix": "actions/setup-node",
+          "minMajor": 4
+        },
+        {
+          "id": "test-step-npm-ci",
+          "doc": "Step 2 của Job test chạy npm ci để dựng lại node_modules trên VM mới",
+          "kind": "path",
+          "path": "jobs.test.steps[2].run",
+          "match": {
+            "regex": "npm\\s+ci\\b"
+          }
+        },
+        {
+          "id": "test-step-npm-test",
+          "doc": "Step 3 của Job test thực thi npm test",
+          "kind": "path",
+          "path": "jobs.test.steps[3].run",
+          "match": {
+            "regex": "npm\\s+test\\b"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c01-5",
+    "code": "C01.5",
+    "title": "Cấu hình defaults.run.working-directory cho dự án con apps/backend",
+    "difficulty": 2,
+    "tags": [
+      "working-directory",
+      "defaults",
+      "monorepo-folder"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/backend.yml",
+    "prompt": "Trong repository này, mã nguồn API và file `package.json` nằm bên trong thư mục con `apps/backend` chứ không nằm ở gốc repo. Người viết cũ cố thêm một Step `- run: cd apps/backend` nhưng bị vô tác dụng vì mỗi Step mở lại subshell mới! Hãy xoá Step `cd` thừa đó và khai báo `defaults.run.working-directory: apps/backend` ở cấp Workflow (gốc file YAML) để mọi lệnh `run:` tự động thực thi tại `apps/backend`.",
+    "starter": "name: Backend Subfolder CI\non: [push, pull_request]\njobs:\n  api:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - name: Wrong cd attempt\n        run: cd apps/backend\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Backend Subfolder CI\non: [push, pull_request]\ndefaults:\n  run:\n    working-directory: apps/backend\njobs:\n  api:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Thêm khối `defaults:` ở cấp gốc file YAML (ngang hàng với `name`, `on`, `jobs`): bên trong là `run:` -> `working-directory: apps/backend`.",
+      "Xoá Step `Wrong cd attempt` (`run: cd apps/backend`) để danh sách `steps` gọn sạch."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "workflow-working-dir",
+          "doc": "Khai báo defaults.run.working-directory bằng apps/backend ở cấp Workflow",
+          "kind": "path",
+          "path": "defaults.run.working-directory",
+          "match": {
+            "eq": "apps/backend"
+          }
+        },
+        {
+          "id": "removed-useless-cd-step",
+          "doc": "Step 2 chạy thẳng npm ci sau khi đã xoá bước cd thừa",
+          "kind": "path",
+          "path": "jobs.api.steps[2].run",
+          "match": {
+            "regex": "^npm\\s+ci\\b"
+          }
+        }
+      ]
+    }
+  }
+]

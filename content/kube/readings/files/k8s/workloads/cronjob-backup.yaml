@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-order-reconcile
+  namespace: production
+spec:
+  # Chạy vào 02:15 sáng hàng ngày theo múi giờ Việt Nam
+  schedule: "15 2 * * *"
+  timeZone: "Asia/Ho_Chi_Minh"
+  # Forbid: Nếu phiên chạy hôm qua bị treo chưa xong thì KHÔNG đẻ chồng phiên mới gây đụng độ khoá DB!
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 300
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 1800
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: reconciler
+              image: ghcr.io/acme-corp/order-reconciler:1.3.0
+              command: ["node", "dist/jobs/reconcile.js"]
+              envFrom:
+                - secretRef:
+                    name: reconciler-db-secret
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "512Mi"

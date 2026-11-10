@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c01-1",
+    "title": "Khung xương Job tự thân vận động trên Ephemeral Runner",
+    "code": "jobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm test"
+  },
+  {
+    "id": "cicd-drill-c01-2",
+    "title": "Đặt thư mục làm việc mặc định cho dịch vụ Backend",
+    "code": "defaults:\n  run:\n    working-directory: apps/backend"
+  }
+]

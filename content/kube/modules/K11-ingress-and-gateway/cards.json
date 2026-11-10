@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K11-FC1",
+    "front": "Sự khác biệt giữa **Ingress Resource** và **Ingress Controller**?",
+    "back": "- **Ingress Resource:** Tệp YAML khai báo luật định tuyến (`host`, `path` -> `Service`).\n- **Ingress Controller:** Hệ thống reverse proxy thực tế (Nginx, Traefik, Envoy) chạy trong cụm để thực thi các luật đó."
+  },
+  {
+    "id": "K11-FC2",
+    "front": "Sự khác nhau giữa `pathType: Prefix` và `pathType: Exact` trong Ingress?",
+    "back": "- **`Prefix`:** Khớp mọi đường dẫn bắt đầu bằng tiền tố phân đoạn `/api` (`/api`, `/api/users`).\n- **`Exact`:** Chỉ khớp đúng từng ký tự đường dẫn đó, không khớp đường dẫn con."
+  },
+  {
+    "id": "K11-FC3",
+    "front": "Cấu trúc chỉ định Service đích trong `networking.k8s.io/v1` Ingress viết như thế nào?",
+    "back": "```yaml\nbackend:\n  service:\n    name: api-svc\n    port:\n      number: 80\n```"
+  },
+  {
+    "id": "K11-FC4",
+    "front": "**TLS Termination** tại Ingress giúp giảm tải gì cho ứng dụng Node.js bên trong?",
+    "back": "Ingress đứng ra giải mã HTTPS ở cửa ngõ bằng chứng chỉ trong Secret; lưu lượng đi tiếp vào Pod Node.js là HTTP nội bộ nhẹ nhàng, không cần từng app tự quản lý file chứng chỉ SSL."
+  },
+  {
+    "id": "K11-FC5",
+    "front": "Hai ưu điểm lớn nhất của **Gateway API (`HTTPRoute`)** so với `Ingress` truyền thống?",
+    "back": "1) Tách vai trò quản trị Hạ tầng (`Gateway`) và Dev (`HTTPRoute`);\n2) Hỗ trợ chuẩn hoá chia tải Canary (`weight`), sửa Header mà không phụ thuộc annotation riêng của từng hãng."
+  },
+  {
+    "id": "K11-FC6",
+    "front": "Công cụ mã nguồn mở phổ biến nhất trên K8s dùng để tự động xin và gia hạn chứng chỉ HTTPS Let's Encrypt cho Ingress?",
+    "back": "**`cert-manager`**"
+  }
+]

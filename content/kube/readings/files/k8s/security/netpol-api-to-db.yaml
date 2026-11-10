@@ -1,0 +1,22 @@
+# Tường lửa mức Pod (Micro-segmentation):
+# Dù Pod giao diện "shop-frontend" có bị hack, kẻ tấn công cũng KHÔNG THỂ mở kết nối TCP tới cổng 5432 của Postgres!
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-only-shop-api-to-postgres
+  namespace: production
+spec:
+  # Áp dụng lá chắn lên các Pod cơ sở dữ liệu mang nhãn app: postgres
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: shop-api
+      ports:
+        - protocol: TCP
+          port: 5432

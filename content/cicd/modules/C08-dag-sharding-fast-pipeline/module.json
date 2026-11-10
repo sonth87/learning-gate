@@ -1,0 +1,55 @@
+{
+  "id": "C08",
+  "slug": "C08-dag-sharding-fast-pipeline",
+  "level": 2,
+  "order": 8,
+  "title": "Tối ưu Tốc độ Đường ống: Đồ thị DAG, Chia mảnh Sharding, Cache Docker Buildx & Xoá bỏ Sleep Mù quáng",
+  "summary": "Cắt giảm thời gian chờ CI từ 42 phút xuống dưới 5 phút nhờ đồ thị quạt rộng Fan-out/Fan-in, chia tải E2E Sharding, lưu tầng Buildx GHA và thăm dò cổng thông minh.",
+  "tags": [
+    "dag",
+    "sharding",
+    "playwright",
+    "buildx-cache",
+    "flaky-tests"
+  ],
+  "sources": [
+    {
+      "title": "Using Jobs in a Workflow & Defining Prerequisite Jobs (needs)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-jobs-in-a-workflow",
+      "version": "GitHub Actions 2026"
+    },
+    {
+      "title": "Docker Buildx GitHub Actions Cache Backend (type=gha)",
+      "url": "https://docs.docker.com/build/ci/github-actions/cache/",
+      "version": "docker/build-push-action@v6"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room B1: Tối ưu Pipeline 42 phút xuống < 6 phút",
+      "kind": "warroom",
+      "targetId": "warroom-b1-42min-pipeline"
+    },
+    {
+      "label": "War Room B4: Trị dứt điểm Flaky Tests",
+      "kind": "warroom",
+      "targetId": "warroom-b4-flaky-tests"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/sharded-playwright-e2e.yml",
+      "kind": "good",
+      "note": "Bản thiết kế chuẩn công nghiệp chia bộ kiểm thử trình duyệt Playwright làm 4 mảnh song song và đảm bảo tải báo cáo HTML lên ngay cả khi bài test bị lỗi.",
+      "task": "Tìm hai dòng cấu hình phối hợp nhau giúp khi mảnh số 2 bị lỗi thì mảnh 1, 3, 4 vẫn chạy nốt và cả 4 báo cáo đều có mặt để kỹ sư tải về.",
+      "answer": "Đó là `strategy.fail-fast: false` (ngăn việc huỷ ngang 3 mảnh đang chạy dở khi 1 mảnh báo đỏ) kết hợp với `if: ${{ !cancelled() }}` trên bước `upload-artifact@v4` (bắt buộc chạy bước tải báo cáo ngay cả khi bước test trước đó trả mã lỗi)."
+    },
+    {
+      "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
+      "kind": "bug",
+      "note": "Hồ sơ pháp y kinh điển của một đường ống chậm 42 phút: cài lại npm install không cache ở mọi bước, xếp nối đuôi tuần tự và ngủ mù quáng sleep 45.",
+      "task": "Tính nhẩm xem nếu chuyển 3 bước lint (3p), typecheck (4p), unit_test (8p) sang chạy song song và chia 4 mảnh cho e2e_test (20p -> 5p), tổng Đường găng giảm đi bao nhiêu phút?",
+      "answer": "Cụm kiểm tra đầu giảm từ 3+4+8 = 15 phút xuống max(3,4,8) = 8 phút (hoặc chạy song song luôn với E2E 5 phút), tiết kiệm hơn 30 phút chờ đợi mỗi lần đẩy code!"
+    }
+  ]
+}

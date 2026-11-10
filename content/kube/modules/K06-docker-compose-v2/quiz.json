@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K06-Q1",
+    "type": "mc",
+    "q": "Theo chuẩn **Docker Compose v2** hiện đại năm 2026, cách đặt tên tệp, khai báo đầu tệp và gọi lệnh CLI nào dưới đây là đúng chuẩn nhất?",
+    "code": "",
+    "choices": [
+      "Tệp `docker-compose.yml`, bắt đầu bằng `version: \"3.8\"` và chạy lệnh `docker-compose up -d`",
+      "Tệp `compose.yaml`, **không cần khoá `version:`** ở đầu tệp và chạy lệnh `docker compose up -d` (không có dấu gạch ngang)",
+      "Tệp `Composefile.json` và chạy lệnh `npm run compose`",
+      "Bắt buộc phải cài Python `pip install docker-compose` mới chạy được"
+    ],
+    "answer": 1,
+    "explain": "Trong Compose v2 (tích hợp sẵn bằng Go trong Docker CLI), lệnh là `docker compose` (cách nhau bởi dấu cách), tên tệp ưu tiên là `compose.yaml` và khoá `version:` đã chính thức bị loại bỏ (obsolete)."
+  },
+  {
+    "id": "K06-Q2",
+    "type": "mc",
+    "q": "Trong tệp `compose.yaml` có hai dịch vụ `api` và `postgres`. Bên trong biến môi trường của `api`, nếu bạn đặt `DB_HOST=localhost` thì chuyện gì xảy ra khi chạy ứng dụng?",
+    "code": "",
+    "choices": [
+      "Kết nối thành công tới `postgres` vì cả hai chạy trên cùng máy tính của bạn",
+      "Bị lỗi `ECONNREFUSED 127.0.0.1:5432` vì `localhost` bên trong container `api` chỉ trỏ về chính container `api` — phải đổi thành `DB_HOST=postgres`",
+      "Docker tự động sửa `localhost` thành địa chỉ IP của `postgres`",
+      "Chỉ hoạt động được trên Windows nhưng lỗi trên Linux"
+    ],
+    "answer": 1,
+    "explain": "Giữa các container trong cùng mạng Compose, hãy luôn dùng **tên dịch vụ (`postgres`)** làm hostname DNS!"
+  },
+  {
+    "id": "K06-Q3",
+    "type": "tf",
+    "q": "Khi bạn gõ `docker compose down` (KHÔNG truyền cờ `-v`), Docker Compose sẽ tắt và xoá các container nhưng vẫn giữ an toàn dữ liệu nằm trong các Named Volume như `pgdata`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Các Named Volume chỉ bị xoá khi bạn cố tình truyền thêm cờ `-v` (`docker compose down -v` / `--volumes`)."
+  },
+  {
+    "id": "K06-Q4",
+    "type": "mc",
+    "q": "Tại sao khai báo ngắn gọn `depends_on: [postgres]` (không kèm `healthcheck`) vẫn thường khiến dịch vụ `api` Node.js bị sập lúc vừa khởi động cùng lúc?",
+    "code": "",
+    "choices": [
+      "Vì `depends_on` làm đảo ngược thứ tự khởi động (chạy `api` trước `postgres`)",
+      "Vì `depends_on` mặc định chỉ chờ container `postgres` vừa bật tiến trình (`service_started`), chưa chờ PostgreSQL khởi tạo xong và mở cổng `5432` nhận kết nối (`service_healthy`)",
+      "Vì `depends_on` chỉ hỗ trợ Redis chứ không hỗ trợ PostgreSQL",
+      "Vì Compose v2 đã xoá bỏ hoàn toàn từ khoá `depends_on`"
+    ],
+    "answer": 1,
+    "explain": "Muốn `api` chỉ khởi chạy sau khi PostgreSQL thực sự sẵn sàng nhận truy vấn SQL, phải kết hợp `healthcheck` (`pg_isready`) trên `postgres` với `depends_on.postgres.condition: service_healthy` trên `api`."
+  },
+  {
+    "id": "K06-Q5",
+    "type": "output",
+    "q": "Trong tệp `compose.yaml` dưới đây, dịch vụ `worker` muốn kết nối tới Redis ở cổng `6379`. Giá trị hostname đúng cần điền vào `REDIS_HOST: ____` là gì?",
+    "code": "services:\n  cache-redis:\n    image: redis:7-alpine\n  worker:\n    image: node:22-alpine\n    environment:\n      REDIS_HOST: ____",
+    "choices": [],
+    "answer": "cache-redis",
+    "explain": "Hostname DNS nội bộ trong mạng Compose chính là tên khoá khai báo dưới mục `services:` — ở đây là `cache-redis`."
+  },
+  {
+    "id": "K06-Q6",
+    "type": "mc",
+    "q": "Tính năng `profiles: [\"debug\"]` gắn vào dịch vụ `prometheus` và `grafana` trong `compose.yaml` giúp ích gì cho lập trình viên?",
+    "code": "",
+    "choices": [
+      "Tự động đẩy Prometheus lên đám mây AWS",
+      "Mặc định gõ `docker compose up -d` sẽ bỏ qua không chạy chúng cho nhẹ RAM laptop; chỉ khi nào cần đo đạc mới bật bằng `docker compose --profile debug up -d`",
+      "Bật chế độ gỡ lỗi từng dòng cho mã nguồn Go của Prometheus",
+      "Giới hạn RAM của Grafana xuống còn 10MB"
+    ],
+    "answer": 1,
+    "explain": "Compose Profiles giúp giữ một tệp `compose.yaml` đầy đủ công cụ phụ trợ mà không bắt máy tính của mọi dev lúc nào cũng phải gánh hết mọi dịch vụ."
+  },
+  {
+    "id": "K06-Q7",
+    "type": "output",
+    "q": "Tiện ích dòng lệnh có sẵn bên trong image `postgres:16-alpine` thường được gọi trong `healthcheck.test` để kiểm tra xem máy chủ PostgreSQL đã sẵn sàng nhận kết nối chưa có tên là gì?",
+    "code": "healthcheck:\n  test: [\"CMD-SHELL\", \"____ -U shop -d shop_db\"]",
+    "choices": [],
+    "answer": "pg_isready",
+    "explain": "`pg_isready` là công cụ chuẩn đi kèm PostgreSQL để kiểm tra trạng thái sẵn sàng nhận kết nối mà không cần mở phiên truy vấn nặng nề."
+  }
+]

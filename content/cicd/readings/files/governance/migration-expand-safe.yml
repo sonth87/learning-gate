@@ -1,0 +1,31 @@
+# PHA 1 (EXPAND) TRONG MÔ HÌNH DI TRÚ DỮ LIỆU KHÔNG GIÁN ĐOẠN (EXPAND-AND-CONTRACT):
+# Trong lúc Rolling Update trên K8s, cả Pod mã cũ (v1) và Pod mã mới (v2) CÙNG ĐỌC/GHI chung một cơ sở dữ liệu!
+# Vì vậy bước Migration chạy trước khi nâng Pod CHỈ ĐƯỢC PHÉP mở rộng tương thích ngược (vd: thêm cột cho phép NULL).
+name: Safe DB Migration (Phase 1 - Expand)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-apply-expand-migration:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Chặn tự động các câu lệnh SQL phá huỷ tương thích ngược
+        run: |
+          if grep -Eiq "DROP[[:space:]]+(COLUMN|TABLE)|RENAME[[:space:]]+COLUMN" db/migrations/*.sql; then
+            echo "::error::Phát hiện lệnh SQL phá huỷ! Hãy tách sang Pha 3 (Contract) sau khi toàn bộ Pod v1 đã tắt hẳn."
+            exit 1
+          fi
+
+      - name: Thực thi kịch bản mở rộng an toàn (ADD COLUMN phone_number TEXT NULL)
+        run: |
+          echo "Applying backward-compatible Expand migration with lock_timeout=3s..."
+          echo "SET lock_timeout = '3s'; ALTER TABLE users ADD COLUMN phone_number TEXT NULL;"

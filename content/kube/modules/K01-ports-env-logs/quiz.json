@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K01-Q1",
+    "type": "mc",
+    "q": "Trong câu lệnh `docker run -d -p 8080:3000 shop-api:1.0.0`, cặp số `8080:3000` có ý nghĩa chính xác là gì?",
+    "code": "",
+    "choices": [
+      "Ứng dụng bên trong container phải lắng nghe cổng `8080`, còn người dùng bên ngoài gọi vào `localhost:3000`",
+      "Mở cổng `8080` trên máy chủ (Host) và chuyển tiếp lưu lượng vào cổng `3000` nơi ứng dụng đang lắng nghe bên trong Container",
+      "Mở dải toàn bộ các cổng từ `3000` đến `8080` cho container",
+      "Giới hạn tối đa `8080` kết nối trong `3000` giây"
+    ],
+    "answer": 1,
+    "explain": "Quy tắc luôn là `-p HOST_PORT:CONTAINER_PORT`: khách bên ngoài gọi vào cổng `8080` của máy chủ, Docker chuyển tiếp gói tin vào cổng `3000` bên trong container."
+  },
+  {
+    "id": "K01-Q2",
+    "type": "mc",
+    "q": "Bên trong container, một ứng dụng Fastify được viết `app.listen({ port: 3000, host: \"127.0.0.1\" })`. Dù đã chạy `docker run -p 3000:3000`, gọi từ trình duyệt máy chủ vẫn thất bại. Nguyên nhân vì sao?",
+    "code": "",
+    "choices": [
+      "Vì Fastify không tương thích với Docker Engine v27",
+      "Vì lắng nghe trên `127.0.0.1` bên trong container chỉ chấp nhận kết nối nội bộ từ chính container đó; muốn nhận lưu lượng qua cầu nối `-p`, server phải lắng nghe trên `0.0.0.0`",
+      "Vì cổng `3000` là cổng đặc quyền của hệ điều hành Linux",
+      "Vì thiếu cờ `-it` lúc khởi chạy container"
+    ],
+    "answer": 1,
+    "explain": "Lưu lượng được chuyển tiếp từ Host qua card mạng ảo `eth0` của container, không đi qua loopback `127.0.0.1` nội bộ. Do đó server trong container phải bind `0.0.0.0`."
+  },
+  {
+    "id": "K01-Q3",
+    "type": "tf",
+    "q": "Nếu một container bị lỗi cấu hình thiếu biến môi trường và đã thoát (`Exited (1)`), bạn vẫn có thể dùng `docker logs <tên-container>` để đọc thông báo lỗi mà nó vừa in ra `stderr` trước khi chết.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Chừng nào bạn chưa xoá container bằng `docker rm`, toàn bộ lịch sử `stdout`/`stderr` vẫn được Docker lưu giữ để `docker logs` truy xuất."
+  },
+  {
+    "id": "K01-Q4",
+    "type": "mc",
+    "q": "Khi container `worker` đang ở trạng thái `Exited (1)`, bạn chạy lệnh `docker exec -it worker sh` để vào kiểm tra thì điều gì xảy ra?",
+    "code": "",
+    "choices": [
+      "Docker tự động khởi động lại `worker` rồi mở cửa sổ shell cho bạn",
+      "Lệnh báo lỗi vì `docker exec` chỉ có thể tạo tiến trình phụ bên trong một container **đang chạy (`running`)**",
+      "Docker mở được shell vào bên trong bản gốc Image của `worker`",
+      "Lệnh xoá sạch log cũ của `worker`"
+    ],
+    "answer": 1,
+    "explain": "`docker exec` bơm một tiến trình mới vào không gian Namespaces đang hoạt động của container. Nếu container đã `Exited`, không gian đó không chạy nên phải xem bằng `docker logs` hoặc `docker inspect`."
+  },
+  {
+    "id": "K01-Q5",
+    "type": "mc",
+    "q": "Khi khởi chạy container bằng `docker run -d -e NODE_ENV=production -e PORT=4000 app:1.0`, mã nguồn Node.js bên trong đọc hai giá trị này bằng cách nào tự nhiên nhất?",
+    "code": "",
+    "choices": [
+      "Đọc trực tiếp từ `process.env.NODE_ENV` và `process.env.PORT`",
+      "Bắt buộc phải cài gói `dotenv` và gọi `fs.readFileSync(\".env\")`",
+      "Gọi API nội bộ của Docker socket `/var/run/docker.sock`",
+      "Truyền qua tham số dòng lệnh `process.argv[2]`"
+    ],
+    "answer": 0,
+    "explain": "Docker nạp thẳng các cặp `KEY=VALUE` của cờ `-e` vào bảng biến môi trường của tiến trình Linux, tức là `process.env` trong Node.js có sẵn ngay lập tức."
+  },
+  {
+    "id": "K01-Q6",
+    "type": "output",
+    "q": "Container `web-ui` được khởi chạy bằng lệnh dưới đây (Nginx bên trong lắng nghe cổng `80`). Trên trình duyệt máy tính cá nhân của bạn, bạn phải truy cập vào số cổng `http://localhost:____` nào?",
+    "code": "docker run -d --name web-ui -p 9090:80 nginx:1.27-alpine",
+    "choices": [],
+    "answer": "9090",
+    "explain": "Số đứng trước dấu hai chấm (`9090`) là Host Port mở trên máy của bạn; số đứng sau (`80`) là cổng nội bộ bên trong container."
+  },
+  {
+    "id": "K01-Q7",
+    "type": "tf",
+    "q": "Hai container khác nhau đang chạy đồng thời trên cùng một máy chủ hoàn toàn có thể cùng lắng nghe cổng `3000` ở bên trong container, miễn là Host Port bên trái dấu `:` khác nhau (ví dụ `-p 3001:3000` và `-p 3002:3000`).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mỗi container có Network Namespace riêng nên cổng `3000` bên trong không hề đụng nhau; chỉ có cổng trên máy chủ (Host Port `3001` vs `3002`) là dùng chung nên phải khác nhau."
+  }
+]

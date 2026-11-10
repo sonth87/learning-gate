@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K15-C1",
+    "front": "Phân biệt vai trò của `resources.requests` và `resources.limits`?",
+    "back": "`requests` được `kube-scheduler` dùng để tìm Node đủ chỗ đặt Pod; `limits` được nhân Linux (`cgroups`) trên Node cưỡng chế (hãm tốc nếu lố CPU, giết `OOMKilled 137` nếu lố RAM)."
+  },
+  {
+    "id": "K15-C2",
+    "front": "Thứ tự ưu tiên bị trục xuất (Eviction) của 3 hạng QoS khi Node cạn kiệt RAM?",
+    "back": "`BestEffort` (không đặt requests/limits) bị đuổi đầu tiên → `Burstable` (`requests < limits`) → `Guaranteed` (`requests === limits` cho cả CPU & RAM) được bảo vệ đến cùng."
+  },
+  {
+    "id": "K15-C3",
+    "front": "Đơn vị quy đổi chuẩn của CPU và Memory trong Kubernetes?",
+    "back": "CPU: `1` = `1000m` (1000 millicores, `250m` = 0.25 vCPU). Memory: ưu tiên hệ nhị phân `Mi` / `Gi` (`1Gi = 1024Mi`)."
+  },
+  {
+    "id": "K15-C4",
+    "front": "Phiên bản API chuẩn hiện hành của `HorizontalPodAutoscaler` và điều kiện tiên quyết trên Deployment?",
+    "back": "`apiVersion: autoscaling/v2` (hỗ trợ đa chỉ số CPU, Memory, Custom Metrics). Yêu cầu cụm có `metrics-server` và Deployment bắt buộc có khai báo `resources.requests`."
+  },
+  {
+    "id": "K15-C5",
+    "front": "Khi nào dùng `Job` và trường `backoffLimit` có nghĩa là gì?",
+    "back": "Dùng `batch/v1` `Job` cho tác vụ chạy 1 lần đến khi hoàn tất (như DB migration). `backoffLimit` quy định số lần thử lại tối đa trước khi đánh dấu Job thất bại hẳn."
+  },
+  {
+    "id": "K15-C6",
+    "front": "Ý nghĩa của 3 lựa chọn `concurrencyPolicy` trong `CronJob` (`Allow`, `Forbid`, `Replace`)?",
+    "back": "`Allow`: cho phép chạy chồng nhau; `Forbid`: bỏ qua kỳ mới nếu kỳ cũ chưa xong; `Replace`: huỷ ngang Job cũ đang chạy để nhường chỗ cho Job kỳ mới."
+  }
+]

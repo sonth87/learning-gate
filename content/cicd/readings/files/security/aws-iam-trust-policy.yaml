@@ -1,0 +1,25 @@
+# Mẫu AWS CloudFormation khai báo IAM Role tin cậy nhà cung cấp OIDC của GitHub Actions.
+# LƯU Ý SỐNG CÒN: Điều kiện `token.actions.githubusercontent.com:sub` PHẢI khoá chặt vào đúng tổ chức,
+# đúng tên kho (`acme-corp/shop-api`) và đúng nhánh (`refs/heads/main`). Nếu để dấu `*`, bất kỳ repo nào trên thế giới cũng mượn được Role của bạn!
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Least-Privilege IAM Role for GitHub Actions OIDC Deployment
+
+Resources:
+  GitHubActionsDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: github-oidc-shop-api-prod
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowGitHubActionsMainBranchOnly
+            Effect: Allow
+            Principal:
+              Federated: arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                # Khoá cứng: chỉ chấp nhận lượt chạy xuất phát từ nhánh main của kho acme-corp/shop-api
+                token.actions.githubusercontent.com:sub: repo:acme-corp/shop-api:ref:refs/heads/main

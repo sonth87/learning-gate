@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c04-1",
+    "type": "output",
+    "q": "Cho cấu hình biến môi trường phân cấp ở cả 3 tầng dưới đây. Lệnh `echo` trong Step sẽ in ra chuỗi giá trị nào?",
+    "code": "env:\n  STAGE: \"global\"\njobs:\n  check:\n    runs-on: ubuntu-latest\n    env:\n      STAGE: \"job-level\"\n    steps:\n      - env:\n          STAGE: \"step-level\"\n        run: echo \"$STAGE\"",
+    "choices": [],
+    "answer": "step-level",
+    "explain": "Theo quy tắc phạm vi từ hẹp đến rộng trong GitHub Actions: `step.env` có độ ưu tiên cao nhất, ghi đè lên `job.env` và `workflow.env`, nên `$STAGE` mang giá trị `step-level`."
+  },
+  {
+    "id": "cicd-q-c04-2",
+    "type": "mc",
+    "q": "Cú pháp nào là chuẩn mực năm 2026 để một Step có `id: build_meta` xuất ra biến đầu ra tên `image_tag` cho các Step đứng sau đọc qua `${{ steps.build_meta.outputs.image_tag }}`?",
+    "code": "",
+    "choices": [
+      "`echo \"::set-output name=image_tag::v1.2.0\"`",
+      "`export image_tag=\"v1.2.0\"`",
+      "`echo \"image_tag=v1.2.0\" >> \"$GITHUB_OUTPUT\"`",
+      "`return { image_tag: \"v1.2.0\" }`"
+    ],
+    "answer": 2,
+    "explain": "Ghi nối `key=value` vào file môi trường `\"$GITHUB_OUTPUT\"` là chuẩn duy nhất được hỗ trợ chính thức thay thế cho lệnh `::set-output` đã bị gỡ bỏ."
+  },
+  {
+    "id": "cicd-q-c04-3",
+    "type": "mc",
+    "q": "Bạn muốn bước `Upload Playwright Screenshots` CHỈ kích hoạt khi bước kiểm thử E2E phía trên bị thất bại (để lấy ảnh khám nghiệm lỗi). Biểu thức điều kiện nào cần gắn vào bước upload?",
+    "code": "",
+    "choices": [
+      "`if: success()`",
+      "`if: failure()`",
+      "`if: cancelled()`",
+      "`if: false`"
+    ],
+    "answer": 1,
+    "explain": "Hàm `failure()` trả về `true` khi bất kỳ bước trước đó trong Job thất bại, vượt qua cơ chế bỏ qua mặc định để thu thập log/ảnh chụp lỗi kịp thời."
+  },
+  {
+    "id": "cicd-q-c04-4",
+    "type": "tf",
+    "q": "Nếu bạn cần một bước dọn dẹp tài nguyên tạm (ví dụ xoá môi trường test trên đám mây) LUÔN LUÔN chạy bất kể các bước trước xanh, đỏ hay bị người dùng bấm Cancel, bạn nên dùng `if: always()`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `if: always()` đảm bảo bước dọn dẹp vẫn được thực thi kể cả khi Job thất bại hay bị huỷ ngang (trừ trường hợp máy chủ vật lý mất kết nối hoàn toàn)."
+  },
+  {
+    "id": "cicd-q-c04-5",
+    "type": "mc",
+    "q": "Cấu hình nào giúp Workflow KHÔNG chạy tốn phút CI khi một commit chỉ chỉnh sửa `README.md` hoặc các file hướng dẫn bên trong thư mục `docs/`?",
+    "code": "",
+    "choices": [
+      "Dùng `branches-ignore: [\"**.md\", \"docs/**\"]`",
+      "Dùng `paths-ignore: [\"**.md\", \"docs/**\"]` bên dưới sự kiện `push` / `pull_request`",
+      "Đặt `env: IGNORE_DOCS: true`",
+      "Xoá `actions/checkout@v4` khỏi Job"
+    ],
+    "answer": 1,
+    "explain": "`paths-ignore` kiểm tra danh sách đường dẫn file thay đổi của commit/PR: nếu MỌI file thay đổi đều khớp mẫu loại trừ (`**.md`, `docs/**`), toàn bộ workflow sẽ được bỏ qua ngay từ đầu."
+  },
+  {
+    "id": "cicd-q-c04-6",
+    "type": "tf",
+    "q": "Trong cùng một sự kiện `on.push`, bạn có thể viết đồng thời cả hai khoá `paths:` và `paths-ignore:` song song với nhau.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! GitHub Actions quy định không được dùng đồng thời cả `paths` và `paths-ignore` trên cùng một sự kiện. Nếu muốn vừa bao gồm vừa loại trừ trong cùng sự kiện, hãy dùng `paths:` kèm ký tự phủ định `!` (ví dụ `[\"apps/api/**\", \"!apps/api/**.md\"]`)."
+  },
+  {
+    "id": "cicd-q-c04-7",
+    "type": "mc",
+    "q": "Đâu là nguyên nhân gốc rễ tạo ra sự cố \"Infinite Push Loop\" (vòng lặp chạy CI vô tận) khi tự động cập nhật file phiên bản trong Job?",
+    "code": "",
+    "choices": [
+      "Do bật `cache: \"npm\"` trong `setup-node@v4`",
+      "Do Job chạy trên `on: push` lại thực hiện `git commit` và `git push` bằng Personal Access Token (PAT) mà không có `[skip ci]` hay điều kiện chặn bot",
+      "Do dùng `npm ci` thay vì `npm install`",
+      "Do đặt `timeout-minutes: 10`"
+    ],
+    "answer": 1,
+    "explain": "Push bằng PAT được GitHub coi như hành động của người dùng thật nên tiếp tục bắn sự kiện `push` mới. Thiếu `[skip ci]`, `paths-ignore` hoặc điều kiện lọc `github.actor` sẽ tạo vòng lặp đệ quy vô tận."
+  }
+]

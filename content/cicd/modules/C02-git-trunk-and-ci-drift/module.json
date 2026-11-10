@@ -1,0 +1,60 @@
+{
+  "id": "C02",
+  "slug": "C02-git-trunk-and-ci-drift",
+  "level": 0,
+  "order": 2,
+  "title": "Chiến lược nhánh Git & 5 thủ phạm 'Chạy được trên máy em nhưng đỏ trên CI'",
+  "summary": "Thực hành luồng nhánh ngắn Trunk-Based Git và triệt tiêu 5 nguyên nhân gây lệch môi trường giữa Laptop cá nhân với CI Runner (Node latest, Watch mode, Timezone, Case-sensitivity, Worker OOM 137).",
+  "tags": [
+    "trunk-based",
+    "git-flow",
+    "environment-drift",
+    "timezone-utc",
+    "oom-137"
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room B5: Local chạy được nhưng CI đỏ",
+      "kind": "warroom",
+      "targetId": "warroom-b5-local-vs-ci"
+    },
+    {
+      "label": "War Room B4: Trị Flaky Tests",
+      "kind": "warroom",
+      "targetId": "warroom-b4-flaky-tests"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Building and testing Node.js with GitHub Actions",
+      "url": "https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Specs for GitHub-hosted standard Linux runners (2 vCPU, 7 GB RAM)",
+      "url": "https://docs.github.com/en/actions/using-github-hosted-runners/using-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Node.js CLI Options — --max-old-space-size",
+      "url": "https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib",
+      "version": "Node.js 22 LTS Docs"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/local-vs-ci-drift.yml",
+      "kind": "bug",
+      "note": "Một file workflow hội tụ đủ 4 cái bẫy khiến dự án chạy mượt trên MacBook của dev nhưng lên CI vừa chạy lệch phiên bản vừa bị treo cứng.",
+      "task": "Hãy điểm mặt cả 4 lỗi cấu hình được đánh dấu trong file `github/local-vs-ci-drift.yml` và nêu cách sửa từng lỗi.",
+      "answer": "1) Thiếu `timeout-minutes` (treo tốn 360 phút) -> thêm `timeout-minutes: 10`; 2) `node-version: latest` trôi nổi -> ghim cứng `node-version: \"22\"`; 3) Dùng `npm install` lỏng lẻo -> đổi sang `npm ci`; 4) Đặt `CI: false` và gọi `npx vitest` gây treo ở watch mode -> đặt `CI: true` và gọi `npx vitest run`."
+    },
+    {
+      "path": "github/node-ci-minimal.yml",
+      "kind": "good",
+      "note": "Đối chiếu lại bản chuẩn mực: có `timeout-minutes: 10`, ghim `node-version: \"22\"`, bật `cache: \"npm\"` và cài bất biến với `npm ci`.",
+      "task": "Nếu bộ Unit Test của bạn có xử lý ngày tháng (`new Date().toLocaleDateString()`), bạn nên bổ sung thêm biến môi trường nào vào Job `verify` để kết quả trên laptop GMT+7 và Runner luôn đồng nhất?",
+      "answer": "Nên bổ sung `env: { TZ: \"UTC\" }` vào Job (và cả script test trên local) để mọi phép tính ngày giờ đều quy chuẩn về múi giờ quốc tế UTC."
+    }
+  ]
+}

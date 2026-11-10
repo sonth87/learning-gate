@@ -1,0 +1,45 @@
+# Quy trình Hậu Kiểm Tự Động (Post-Deploy Smoke Verification & Auto-Rollback):
+# Triển khai xong chưa phải là hết việc! Phải gõ cửa điểm cuối /healthz có bật --fail và --retry;
+# nếu dịch vụ trả HTTP 500 thì tự động kích hoạt bước lùi phiên bản (Rollback) ngay trong đêm.
+name: Deploy with Smoke Test & Automated Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Mã thẻ Image cần phát hành'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Kích hoạt phát hành phiên bản ${{ inputs.release_tag }}
+        run: echo "Promoting image tag ${{ inputs.release_tag }}..."
+
+      # Cờ --fail bắt buộc phải có để mã HTTP 502/503 biến thành mã thoát khác 0!
+      - name: Hậu kiểm Smoke Test với cơ chế thử lại (Retry)
+        run: |
+          curl --fail --silent --show-error --retry 5 \
+            --retry-delay 5 --retry-connrefused \
+            https://api.shop.example.invalid/healthz
+
+  rollback:
+    needs: deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tự động quay lui (Rollback) về bản ổn định liền trước khi Smoke Test đỏ
+        run: |
+          echo "::error::Smoke test thất bại! Đang kích hoạt lệnh Rollback khẩn cấp..."
+          ./scripts/rollback-release.sh

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C17-D1",
+    "title": "Khoá Concurrency tuần tự chống Race Condition trên Production",
+    "code": "deploy-production:\n  runs-on: ubuntu-latest\n  environment: production\n  concurrency:\n    group: production-deploy\n    cancel-in-progress: false"
+  },
+  {
+    "id": "C17-D2",
+    "title": "Quét lịch sử rò rỉ khoá bí mật bằng Gitleaks",
+    "code": "steps:\n  - uses: actions/checkout@v4\n    with:\n      fetch-depth: 0\n  - name: Scan git history for leaked secrets\n    run: gitleaks detect --source . --verbose"
+  }
+]

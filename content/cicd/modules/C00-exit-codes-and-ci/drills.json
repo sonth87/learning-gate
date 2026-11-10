@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c00-1",
+    "title": "Kịch bản kiểm tra nghiêm ngặt với set -euo pipefail và curl --fail",
+    "code": "set -euo pipefail\nnpm ci\nnpm test | tee test-output.log\ncurl --fail --silent http://localhost:3000/healthz"
+  },
+  {
+    "id": "cicd-drill-c00-2",
+    "title": "Cổng phê duyệt Continuous Delivery cho môi trường Production",
+    "code": "deploy-prod:\n  needs: test\n  runs-on: ubuntu-latest\n  environment: production\n  steps:\n    - run: echo \"Deploying verified release to production\""
+  }
+]

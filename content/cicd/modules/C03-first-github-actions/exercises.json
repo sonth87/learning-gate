@@ -1,0 +1,295 @@
+[
+  {
+    "id": "cicd-ex-c03-1",
+    "code": "C03.1",
+    "title": "Khởi tạo khung xương tối thiểu cho .github/workflows/ci.yml",
+    "difficulty": 1,
+    "tags": [
+      "github-actions",
+      "workflow-skeleton",
+      "ubuntu-latest"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/ci.yml",
+    "prompt": "Hoàn thiện bộ khung tối thiểu hợp lệ cho file `.github/workflows/ci.yml` đầu tiên của dự án: (1) khai báo `name` khác rỗng (xoá dấu `____`), (2) kích hoạt khi có sự kiện `push` trong khối `on`, và (3) cấu hình `jobs.ci.runs-on` thành `ubuntu-latest`.",
+    "starter": "name: ____\non: []\njobs:\n  ci:\n    runs-on: ____\n    steps:\n      - uses: actions/checkout@v4\n",
+    "solution": "name: Node CI\non:\n  push:\n    branches: [main]\njobs:\n  ci:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n",
+    "hints": [
+      "Đặt `name: Node CI` và đổi `on: []` thành `on: [push]` (hoặc `on:\\n  push:\\n    branches: [main]`).",
+      "Đổi `runs-on: ____` dưới `jobs.ci` thành `runs-on: ubuntu-latest`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ci-workflow-name",
+          "doc": "Workflow có thuộc tính name hợp lệ khác rỗng",
+          "kind": "path",
+          "path": "name",
+          "match": {
+            "nonEmpty": true
+          }
+        },
+        {
+          "id": "ci-on-push",
+          "doc": "Khối on có lắng nghe sự kiện push",
+          "kind": "path",
+          "path": "on",
+          "match": {
+            "contains": "push"
+          }
+        },
+        {
+          "id": "ci-runs-on-ubuntu",
+          "doc": "Job ci chạy trên ubuntu-latest",
+          "kind": "path",
+          "path": "jobs.ci.runs-on",
+          "match": {
+            "eq": "ubuntu-latest"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c03-2",
+    "code": "C03.2",
+    "title": "Lọc nhánh main cho cả push và pull_request chống chạy trùng gấp đôi",
+    "difficulty": 1,
+    "tags": [
+      "branches-filter",
+      "push",
+      "pull-request"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/branches.yml",
+    "prompt": "Hiện tại `on: [push, pull_request]` đang làm mỗi commit trên nhánh đang mở PR bị chạy lặp 2 lần tốn gấp đôi số phút CI. Hãy cấu trúc lại khối `on:` thành dạng đối tượng để cả `on.push.branches` và `on.pull_request.branches` đều chỉ định mảng `[\"main\"]`.",
+    "starter": "name: Branch Filtered CI\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Branch Filtered CI\non:\n  push:\n    branches: [\"main\"]\n  pull_request:\n    branches: [\"main\"]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Thay dòng `on: [push, pull_request]` bằng khối `on:` có 2 khoá con `push:` và `pull_request:`.",
+      "Bên dưới mỗi khoá con, khai báo `branches: [\"main\"]` (thụt lề 4 dấu cách)."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "push-branches-main",
+          "doc": "on.push.branches được lọc chỉ cho nhánh [\"main\"]",
+          "kind": "path",
+          "path": "on.push.branches",
+          "match": {
+            "eq": [
+              "main"
+            ]
+          }
+        },
+        {
+          "id": "pr-branches-main",
+          "doc": "on.pull_request.branches được lọc cho nhánh đích [\"main\"]",
+          "kind": "path",
+          "path": "on.pull_request.branches",
+          "match": {
+            "eq": [
+              "main"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c03-3",
+    "code": "C03.3",
+    "title": "Nâng cấp di sản actions/checkout@v2 lên chuẩn @v4",
+    "difficulty": 1,
+    "tags": [
+      "upgrade",
+      "checkout-v4",
+      "deprecation"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/upgrade-checkout.yml",
+    "prompt": "Bạn vừa tiếp nhận một dịch vụ cũ viết từ năm 2021 vẫn đang gọi `actions/checkout@v2` (chạy trên runtime Node 12 đã bị ngừng hỗ trợ trên GitHub-hosted Runners). Hãy nâng cấp bước checkout trong `jobs.verify` lên phiên bản `actions/checkout@v4`.",
+    "starter": "name: Legacy Checkout Migration\non:\n  push:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout source code\n        uses: actions/checkout@v2\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Legacy Checkout Migration\non:\n  push:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout source code\n        uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Tìm dòng `uses: actions/checkout@v2` ở Step đầu tiên của `jobs.verify`.",
+      "Đổi `@v2` thành `@v4`."
+    ],
+    "ref": "github/legacy-v2-set-output.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "checkout-upgraded-v4",
+          "doc": "Sử dụng actions/checkout từ bản major @v4 trở lên",
+          "kind": "gha-uses-pinned",
+          "jobId": "verify",
+          "actionPrefix": "actions/checkout",
+          "minMajor": 4
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c03-4",
+    "code": "C03.4",
+    "title": "Cấu hình actions/setup-node@v4 với Node 22 và bộ đệm cache npm",
+    "difficulty": 1,
+    "tags": [
+      "setup-node-v4",
+      "node-22",
+      "npm-cache"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/setup-node.yml",
+    "prompt": "Nâng cấp và hoàn thiện bước cài đặt Node.js ở `jobs.verify.steps[1]`: (1) nâng `actions/setup-node@v3` lên `actions/setup-node@v4`, (2) đặt `with.node-version` thành `\"22\"`, và (3) bật bộ đệm tích hợp `with.cache: \"npm\"` để tăng tốc cho `npm ci`.",
+    "starter": "name: Setup Node 22 with Cache\non:\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Setup Node runtime\n        uses: actions/setup-node@v3\n        with:\n          node-version: \"18\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Setup Node 22 with Cache\non:\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Setup Node runtime\n        uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Đổi `uses: actions/setup-node@v3` thành `uses: actions/setup-node@v4`.",
+      "Trong khối `with:` của step đó, đặt `node-version: \"22\"` và thêm dòng `cache: \"npm\"`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "setup-node-pinned-v4",
+          "doc": "Sử dụng actions/setup-node phiên bản @v4 trở lên",
+          "kind": "gha-uses-pinned",
+          "jobId": "verify",
+          "actionPrefix": "actions/setup-node",
+          "minMajor": 4
+        },
+        {
+          "id": "setup-node-version-22",
+          "doc": "Khai báo with.node-version là 22",
+          "kind": "path",
+          "path": "jobs.verify.steps[1].with.node-version",
+          "match": {
+            "oneOf": [
+              22,
+              "22"
+            ]
+          }
+        },
+        {
+          "id": "setup-node-cache-npm",
+          "doc": "Bật bộ đệm with.cache là \"npm\"",
+          "kind": "path",
+          "path": "jobs.verify.steps[1].with.cache",
+          "match": {
+            "eq": "npm"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c03-5",
+    "code": "C03.5",
+    "title": "Hoàn thiện 3 bước xác minh npm ci, npm run build và npm test",
+    "difficulty": 1,
+    "tags": [
+      "npm-ci",
+      "npm-build",
+      "npm-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/full-ci.yml",
+    "prompt": "Workflow đã chuẩn bị sẵn `checkout@v4` (`steps[0]`) và `setup-node@v4` (`steps[1]`). Hãy viết tiếp đúng 3 bước thực thi lệnh Shell tiếp theo (`steps[2]`, `steps[3]`, `steps[4]`) theo thứ tự: `npm ci`, tiếp theo `npm run build`, và cuối cùng `npm test`.",
+    "starter": "name: Full Node Verification\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      # Viết thêm 3 bước cài đặt, biên dịch và kiểm thử ngay bên dưới\n",
+    "solution": "name: Full Node Verification\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - name: Install dependencies\n        run: npm ci\n      - name: Build TypeScript bundle\n        run: npm run build\n      - name: Run unit tests\n        run: npm test\n",
+    "hints": [
+      "Thêm 3 mục `- run:` nối tiếp vào danh sách `jobs.verify.steps` (thụt lề 6 dấu cách thẳng hàng với `- uses:`).",
+      "Đúng thứ tự: `steps[2]` chạy `npm ci`, `steps[3]` chạy `npm run build`, `steps[4]` chạy `npm test`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "step-2-install-ci",
+          "doc": "Step 2 chạy npm ci",
+          "kind": "path",
+          "path": "jobs.verify.steps[2].run",
+          "match": {
+            "regex": "^npm\\s+ci\\b"
+          }
+        },
+        {
+          "id": "step-3-build",
+          "doc": "Step 3 chạy npm run build",
+          "kind": "path",
+          "path": "jobs.verify.steps[3].run",
+          "match": {
+            "regex": "^npm\\s+run\\s+build\\b"
+          }
+        },
+        {
+          "id": "step-4-test",
+          "doc": "Step 4 chạy npm test",
+          "kind": "path",
+          "path": "jobs.verify.steps[4].run",
+          "match": {
+            "regex": "^npm\\s+test\\b"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c03-6",
+    "code": "C03.6",
+    "title": "Thêm nút kích hoạt thủ công workflow_dispatch với tham số target_env",
+    "difficulty": 2,
+    "tags": [
+      "workflow-dispatch",
+      "inputs",
+      "manual-trigger"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/manual-smoke.yml",
+    "prompt": "Đội QA muốn có nút bấm **Run workflow** trên giao diện GitHub để chủ động bắn bài kiểm tra khói vào môi trường mong muốn bất cứ lúc nào. Hãy cấu hình `on.workflow_dispatch.inputs.target_env` với `default: \"staging\"` và `required: true`.",
+    "starter": "name: On-Demand Smoke Test\non:\n  push:\n    branches: [main]\njobs:\n  smoke:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run smoke check against selected environment\n        run: echo \"Checking environment ${{ inputs.target_env }}\"\n",
+    "solution": "name: On-Demand Smoke Test\non:\n  push:\n    branches: [main]\n  workflow_dispatch:\n    inputs:\n      target_env:\n        description: \"Môi trường cần kiểm tra\"\n        required: true\n        default: \"staging\"\njobs:\n  smoke:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run smoke check against selected environment\n        run: echo \"Checking environment ${{ inputs.target_env }}\"\n",
+    "hints": [
+      "Bên dưới `on:` (cùng cấp với `push:`), thêm khoá `workflow_dispatch:`.",
+      "Lồng bên trong: `inputs:` -> `target_env:` -> khai báo `required: true` và `default: \"staging\"`."
+    ],
+    "ref": "github/node-ci-minimal.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "dispatch-target-env-default",
+          "doc": "Tham số on.workflow_dispatch.inputs.target_env.default có giá trị \"staging\"",
+          "kind": "path",
+          "path": "on.workflow_dispatch.inputs.target_env.default",
+          "match": {
+            "eq": "staging"
+          }
+        },
+        {
+          "id": "dispatch-target-env-required",
+          "doc": "Tham số on.workflow_dispatch.inputs.target_env.required được bật true",
+          "kind": "path",
+          "path": "on.workflow_dispatch.inputs.target_env.required",
+          "match": {
+            "eq": true
+          }
+        }
+      ]
+    }
+  }
+]

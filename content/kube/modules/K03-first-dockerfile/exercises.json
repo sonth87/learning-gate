@@ -1,0 +1,248 @@
+[
+  {
+    "id": "kube-ex-k03-1",
+    "code": "K03.1",
+    "title": "Ghim cố định Base Image node:22-alpine thay cho :latest",
+    "difficulty": 1,
+    "tags": [
+      "dockerfile",
+      "from",
+      "base-image"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Tệp `Dockerfile` khởi đầu đang dùng `FROM node:latest` rất rủi ro vì có thể tự nhảy phiên bản Node bất ngờ và kéo bản Debian nặng hơn 1GB. Hãy đổi dòng đầu tiên sang nền tảng gọn nhẹ ghim rõ phiên bản `FROM node:22-alpine`.",
+    "starter": "FROM node:latest\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"index.js\"]\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"index.js\"]\n",
+    "hints": [
+      "Sửa dòng 1 từ `FROM node:latest` thành `FROM node:22-alpine`.",
+      "Giữ nguyên các dòng `WORKDIR`, `COPY` và `CMD` phía dưới."
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "pinned-node-22-alpine",
+          "doc": "Chỉ thị `FROM` ghim phiên bản `node:22-alpine` (không dùng `:latest`)",
+          "kind": "base-image",
+          "stage": "first",
+          "imagePrefix": "node:",
+          "notLatest": true,
+          "variantContains": "22-alpine"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k03-2",
+    "code": "K03.2",
+    "title": "Thiết lập thư mục làm việc WORKDIR /app trước khi chép code",
+    "difficulty": 1,
+    "tags": [
+      "dockerfile",
+      "workdir",
+      "copy"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Dockerfile bên dưới đang thiếu `WORKDIR` nên lệnh `COPY . .` đổ bừa toàn bộ mã nguồn thẳng vào thư mục gốc `/` của hệ điều hành Linux! Hãy thêm chỉ thị `WORKDIR /app` đặt **trước** dòng `COPY . .`.",
+    "starter": "FROM node:22-alpine\n# Thêm WORKDIR /app tại đây\nCOPY . .\nCMD [\"node\", \"src/index.js\"]\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"src/index.js\"]\n",
+    "hints": [
+      "`WORKDIR /app` sẽ tự tạo thư mục `/app` và chuyển vào đó trước khi `COPY . .` thực thi.",
+      "Đặt `WORKDIR /app` ngay dưới dòng `FROM node:22-alpine`."
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "has-workdir-app",
+          "doc": "Khai báo `WORKDIR /app` hợp lệ",
+          "kind": "instruction",
+          "instruction": "WORKDIR",
+          "argsRegex": "^/app$"
+        },
+        {
+          "id": "workdir-before-copy",
+          "doc": "`WORKDIR /app` được đặt TRƯỚC lệnh `COPY`",
+          "kind": "order",
+          "before": {
+            "instruction": "WORKDIR",
+            "argsRegex": "^/app$"
+          },
+          "after": {
+            "instruction": "COPY",
+            "argsRegex": "."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k03-3",
+    "code": "K03.3",
+    "title": "Khai báo ENV NODE_ENV=production và cổng EXPOSE 3000",
+    "difficulty": 1,
+    "tags": [
+      "dockerfile",
+      "env",
+      "expose"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Bổ sung vào `Dockerfile` hai khai báo chuẩn cho dịch vụ web:\n1. Thiết lập biến môi trường `ENV NODE_ENV=production`.\n2. Khai báo cổng lắng nghe `EXPOSE 3000`.",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\nCOPY . .\n# Thêm ENV NODE_ENV=production và EXPOSE 3000\nCMD [\"node\", \"src/index.js\"]\n",
+    "solution": "FROM node:22-alpine\nENV NODE_ENV=production\nWORKDIR /app\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"src/index.js\"]\n",
+    "hints": [
+      "Dùng cú pháp `ENV NODE_ENV=production` để có hiệu lực suốt quá trình chạy.",
+      "Thêm dòng `EXPOSE 3000` ngay trước `CMD`."
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "env-node-production",
+          "doc": "Thiết lập biến môi trường `ENV NODE_ENV=production`",
+          "kind": "instruction",
+          "instruction": "ENV",
+          "argsRegex": "^NODE_ENV(?:=|\\s+)[\"']?production[\"']?$"
+        },
+        {
+          "id": "expose-port-3000",
+          "doc": "Khai báo cổng nội bộ `EXPOSE 3000`",
+          "kind": "instruction",
+          "instruction": "EXPOSE",
+          "argsRegex": "^3000(?:/tcp)?$"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k03-4",
+    "code": "K03.4",
+    "title": "Thay thế npm install bằng npm ci tất định",
+    "difficulty": 1,
+    "tags": [
+      "dockerfile",
+      "npm-ci",
+      "reproducibility"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Đổi bước cài đặt phụ thuộc thiếu tất định `RUN npm install` trong `Dockerfile` bên dưới sang câu lệnh chuẩn `RUN npm ci` để đảm bảo tôn trọng tuyệt đối `package-lock.json`.",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm install\nCOPY src ./src\nCMD [\"node\", \"src/index.js\"]\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY src ./src\nCMD [\"node\", \"src/index.js\"]\n",
+    "hints": [
+      "Tìm dòng `RUN npm install` và thay bằng `RUN npm ci` (hoặc `RUN npm ci --omit=dev`).",
+      "Đảm bảo không còn lệnh `npm install` nào trong Dockerfile."
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "uses-npm-ci",
+          "doc": "Sử dụng `RUN npm ci` để cài đặt phụ thuộc từ lockfile",
+          "kind": "instruction",
+          "instruction": "RUN",
+          "argsRegex": "\\bnpm\\s+ci\\b"
+        },
+        {
+          "id": "no-npm-install",
+          "doc": "Không còn sử dụng `RUN npm install`",
+          "kind": "instruction",
+          "instruction": "RUN",
+          "argsRegex": "\\bnpm\\s+install\\b",
+          "exists": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k03-5",
+    "code": "K03.5",
+    "title": "Chuyển CMD từ Shell Form sang JSON Exec Form chuẩn PID 1",
+    "difficulty": 1,
+    "tags": [
+      "dockerfile",
+      "cmd",
+      "exec-form",
+      "sigterm"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Dòng cuối của `Dockerfile` đang viết dạng Shell Form `CMD node src/index.js` làm `/bin/sh -c` cướp mất PID 1 và nuốt tín hiệu `SIGTERM`. Hãy viết lại dòng `CMD` sang dạng **JSON Exec Form** chạy trực tiếp `node` với tham số `src/index.js`.",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY src ./src\nCMD node src/index.js\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY src ./src\nCMD [\"node\", \"src/index.js\"]\n",
+    "hints": [
+      "JSON Exec Form bắt buộc dùng dấu ngoặc vuông `[...]` và dấu nháy kép `\"...\"` hợp lệ.",
+      "Sửa dòng cuối thành: `CMD [\"node\", \"src/index.js\"]`"
+    ],
+    "ref": "docker/node-api/Dockerfile.shell-trap",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "cmd-exec-form-json",
+          "doc": "Dùng JSON Exec Form `CMD [\"node\", \"src/index.js\"]`",
+          "kind": "instruction",
+          "instruction": "CMD",
+          "execForm": true,
+          "jsonEquals": [
+            "node",
+            "src/index.js"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k03-6",
+    "code": "K03.6",
+    "title": "Đóng gói và gắn thẻ phiên bản Image bằng docker build",
+    "difficulty": 1,
+    "tags": [
+      "docker-build",
+      "tagging",
+      "cli"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Tại thư mục hiện tại (`.`) đã có sẵn tệp `Dockerfile` hoàn chỉnh. Hãy chạy lệnh `docker build` để đóng gói thành Image mang tên và phiên bản chính xác là `shop-api:1.0.0`.",
+    "starter": "# Đóng gói Dockerfile ở thư mục hiện tại (.) thành image shop-api:1.0.0\n",
+    "solution": "docker build -t shop-api:1.0.0 .\n",
+    "hints": [
+      "Dùng cờ `-t shop-api:1.0.0` để gắn thẻ tên:phiên_bản và đừng quên dấu chấm `.` ở cuối lệnh làm Build Context!",
+      "Gõ chính xác: `docker build -t shop-api:1.0.0 .`"
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "built-shop-api-1-0-0",
+          "doc": "Image `shop-api:1.0.0` đã được build thành công vào kho cục bộ",
+          "target": "docker-image",
+          "repo": "shop-api",
+          "tag": "1.0.0"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C12-D1",
+    "title": "Cấu hình xác thực AWS không khoá tĩnh bằng OIDC role-to-assume",
+    "code": "permissions:\n  id-token: write\n  contents: read\nsteps:\n  - uses: aws-actions/configure-aws-credentials@v4\n    with:\n      role-to-assume: arn:aws:iam::123456789012:role/shop-deploy\n      aws-region: ap-southeast-1"
+  },
+  {
+    "id": "C12-D2",
+    "title": "Khoá chặt điều kiện sub và aud trong AWS IAM Trust Policy",
+    "code": "Condition:\n  StringEquals:\n    token.actions.githubusercontent.com:aud: sts.amazonaws.com\n    token.actions.githubusercontent.com:sub: repo:acme-corp/shop-api:ref:refs/heads/main"
+  }
+]

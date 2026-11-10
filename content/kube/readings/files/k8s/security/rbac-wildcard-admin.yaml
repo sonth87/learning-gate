@@ -1,0 +1,27 @@
+# THẢM HOẠ BẢO MẬT: Đừng bao giờ "chữa cháy" lỗi 403 Forbidden bằng cách gán cluster-admin!
+# Trong cấu hình dưới đây:
+#   1) ClusterRole dùng ký tự đại diện "*" cho phép đọc/xoá MỌI Secret của mọi Namespace và tạo Pod privileged!
+#   2) Tệ hơn nữa, ClusterRoleBinding lại gắn quyền này vào ServiceAccount "default" —
+#      nghĩa là BẤT KỲ Pod nào tạo mới trong namespace "default" mà không chỉ định serviceAccountName
+#      đều nghiễm nhiên nắm chìa khoá tối cao xoá sạch cả cụm Kubernetes!
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: reckless-super-role
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: default-sa-is-god-antipattern
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin

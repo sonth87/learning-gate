@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c03-1",
+    "title": "Cài đặt Node.js 22 kèm bộ đệm npm bằng setup-node@v4",
+    "code": "- name: Setup Node.js 22\n  uses: actions/setup-node@v4\n  with:\n    node-version: \"22\"\n    cache: \"npm\""
+  },
+  {
+    "id": "cicd-drill-c03-2",
+    "title": "Khai báo nút bấm tay workflow_dispatch với tham số target_env",
+    "code": "on:\n  workflow_dispatch:\n    inputs:\n      target_env:\n        description: \"Target environment\"\n        required: true\n        default: \"staging\""
+  }
+]

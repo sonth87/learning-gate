@@ -1,0 +1,41 @@
+{
+  "id": "C05",
+  "slug": "C05-dag-needs-and-matrix",
+  "level": 1,
+  "order": 5,
+  "title": "Đồ thị phụ thuộc Job (DAG needs) & Ma trận kiểm thử (Strategy Matrix)",
+  "summary": "Tăng tốc phản hồi bằng mô hình song song Fan-out / Fan-in (needs), kiểm thử đa phiên bản Node & OS với strategy.matrix (fail-fast: false) và truyền outputs xuyên qua hai Job.",
+  "tags": [
+    "dag",
+    "needs",
+    "matrix",
+    "fail-fast",
+    "job-outputs"
+  ],
+  "sources": [
+    {
+      "title": "Using jobs in a workflow — Defining prerequisite jobs (needs)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/using-jobs-in-a-workflow#defining-prerequisite-jobs",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Running variations of jobs in a workflow (Matrix strategies & fail-fast)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Passing information between jobs (jobs.<job_id>.outputs & needs context)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/passing-information-between-jobs",
+      "version": "GitHub Actions Docs 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/dag-matrix-fanin.yml",
+      "kind": "good",
+      "note": "Kiến trúc DAG thực chiến: chạy song song 3 mũi `lint`, `typecheck` và `unit-test` (ma trận Node 20 & 22 với `fail-fast: false`), sau đó hội tụ tại cổng `build`.",
+      "task": "Tổng cộng có bao nhiêu máy ảo Runner được khởi tạo cho 1 lần chạy của file `dag-matrix-fanin.yml` (giả sử mọi kiểm tra đều xanh)? Job `build` phải đợi bao nhiêu máy ảo phía trước hoàn tất mới bắt đầu chạy?",
+      "answer": "Tổng cộng 5 máy ảo Runner: 1 cho `lint` + 1 cho `typecheck` + 2 cho ma trận `unit-test` (Node 20 và Node 22) chạy song song ở đợt đầu, và sau khi cả 4 máy ảo đó đều XANH thì máy ảo thứ 5 của Job `build` (`needs: [lint, typecheck, unit-test]`) mới khởi chạy."
+    }
+  ]
+}

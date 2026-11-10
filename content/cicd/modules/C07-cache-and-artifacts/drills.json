@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C07-D1",
+    "title": "Cấu hình actions/cache@v4 theo mã băm package-lock.json",
+    "code": "- uses: actions/cache@v4\n  with:\n    path: ~/.npm\n    key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}\n    restore-keys: |\n      ${{ runner.os }}-npm-"
+  },
+  {
+    "id": "C07-D2",
+    "title": "Đóng gói thư mục dist/ làm Artifact giữ trong 7 ngày",
+    "code": "- uses: actions/upload-artifact@v4\n  with:\n    name: web-dist\n    path: dist/\n    retention-days: 7"
+  }
+]

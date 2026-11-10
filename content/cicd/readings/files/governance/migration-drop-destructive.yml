@@ -1,0 +1,21 @@
+# CẢNH BÁO SỰ CỐ SẬP HỆ THỐNG (BUGGY): Đổi tên cột trực tiếp ngay trước khi Rolling Update!
+# Giây thứ 01: CI chạy lệnh `ALTER TABLE users RENAME COLUMN name TO full_name;` xong trong 50ms.
+# Giây thứ 02..90: Hàng chục Pod phiên bản cũ (v1) đang chạy lệnh `SELECT id, name FROM users` đồng loạt nổ lỗi 500
+# vì cột `name` vừa biến mất trước khi Pod mới (v2) kịp khởi động thay thế!
+name: Buggy Destructive Migration Outage
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  outage-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # LỖI KIẾN TRÚC NGHIÊM TRỌNG: Phá vỡ hợp đồng lược đồ của các Pod v1 đang phục vụ lưu lượng thực tế!
+      - name: Rename column directly on live database
+        run: |
+          echo "Running destructive SQL while v1 pods are still serving live traffic..."
+          echo "ALTER TABLE users RENAME COLUMN name TO full_name;"

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C08-D1",
+    "title": "Chia tải 4 mảnh kiểm thử Playwright song song với Matrix Sharding",
+    "code": "strategy:\n  fail-fast: false\n  matrix:\n    shard: [1, 2, 3, 4]\nsteps:\n  - run: npx playwright test --shard=${{ matrix.shard }}/4"
+  },
+  {
+    "id": "C08-D2",
+    "title": "Thăm dò cổng sẵn sàng thay thế lệnh sleep cảm tính",
+    "code": "- name: Wait for API readiness\n  run: |\n    npm start &\n    curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://localhost:3000/healthz"
+  }
+]

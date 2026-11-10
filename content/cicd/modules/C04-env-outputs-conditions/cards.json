@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c04-1",
+    "front": "Thứ tự ưu tiên từ cao xuống thấp của 3 tầng biến môi trường `env:` trong GitHub Actions là gì?",
+    "back": "`Step env` (cao nhất) -> `Job env` -> `Workflow env` (thấp nhất). Biến ở phạm vi hẹp hơn sẽ ghi đè biến trùng tên ở phạm vi rộng hơn."
+  },
+  {
+    "id": "cicd-card-c04-2",
+    "front": "Làm thế nào để truyền một giá trị động từ Step A sang Step B trong cùng một Job chuẩn năm 2026?",
+    "back": "Gắn `id: step_a` cho Step A, chạy `echo \"key=val\" >> \"$GITHUB_OUTPUT\"`, rồi ở Step B đọc lại bằng `${{ steps.step_a.outputs.key }}`."
+  },
+  {
+    "id": "cicd-card-c04-3",
+    "front": "Sự khác biệt giữa 3 hàm trạng thái `success()`, `failure()` và `always()` trong biểu thức `if:` là gì?",
+    "back": "`success()` (mặc định): chỉ chạy khi mọi bước trước xanh; `failure()`: chỉ chạy khi có bước trước đỏ; `always()`: chạy trong mọi trường hợp (xanh, đỏ, bị huỷ)."
+  },
+  {
+    "id": "cicd-card-c04-4",
+    "front": "Biểu thức `if:` nào đảm bảo một Step phát hành chỉ thực thi khi code được đẩy trực tiếp vào nhánh `main` (chứ không chạy trên Pull Request)?",
+    "back": "`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`."
+  },
+  {
+    "id": "cicd-card-c04-5",
+    "front": "Khi nào dùng `paths-ignore` và khi nào dùng `paths` trên sự kiện `push` / `pull_request`?",
+    "back": "Dùng `paths-ignore` (vd `**.md`, `docs/**`) cho repo đơn lẻ muốn bỏ qua file tài liệu; dùng `paths` (vd `apps/api/**`) cho Monorepo muốn chỉ chạy workflow của đúng dịch vụ có code thay đổi."
+  },
+  {
+    "id": "cicd-card-c04-6",
+    "front": "Nêu 2 chốt chặn đơn giản nhất để ngăn một Job tự `git push` kích hoạt lại chính nó vô tận.",
+    "back": "1) Chèn `[skip ci]` vào thông điệp commit tự động (`git commit -m \"chore: release [skip ci]\"`); 2) Dùng `GITHUB_TOKEN` mặc định hoặc lọc `paths-ignore` / `if: github.actor != ...`."
+  }
+]

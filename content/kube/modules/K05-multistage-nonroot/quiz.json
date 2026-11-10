@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K05-Q1",
+    "type": "mc",
+    "q": "Lợi ích lớn nhất của **Multi-stage Build** (`FROM ... AS builder` rồi `FROM ... AS runner`) đối với một ứng dụng TypeScript là gì?",
+    "code": "",
+    "choices": [
+      "Giúp ứng dụng tự động chia tải ra 2 máy chủ vật lý khác nhau",
+      "Cho phép cài đầy đủ `typescript` và công cụ nặng ở stage `builder` để biên dịch ra `dist/`, nhưng Image xuất xưởng cuối cùng (`runner`) chỉ nhận thành phẩm gọn sạch mà không gánh theo công cụ thừa",
+      "Giúp bỏ qua không cần viết tệp `package.json`",
+      "Cho phép chạy hai hệ điều hành Windows và Linux trong cùng 1 tiến trình"
+    ],
+    "answer": 1,
+    "explain": "Multi-stage tách bạch môi trường biên dịch (cần nhiều công cụ dev) và môi trường chạy thực tế (chỉ cần runtime + mã đã biên dịch), giảm mạnh dung lượng và bề mặt tấn công."
+  },
+  {
+    "id": "K05-Q2",
+    "type": "mc",
+    "q": "Trên Node.js 22 (npm 10+), câu lệnh chuẩn hiện đại để loại bỏ toàn bộ `devDependencies` khỏi `node_modules` sau khi đã chạy `npm run build` là câu lệnh nào?",
+    "code": "",
+    "choices": [
+      "`npm prune --production` (cờ cũ đã bị deprecated)",
+      "`npm prune --omit=dev`",
+      "`rm -rf node_modules`",
+      "`npm uninstall typescript`"
+    ],
+    "answer": 1,
+    "explain": "Từ npm v8.x trở đi đến năm 2026, `--omit=dev` là cú pháp chuẩn thay thế hoàn toàn cho cờ `--production` cũ kỹ."
+  },
+  {
+    "id": "K05-Q3",
+    "type": "tf",
+    "q": "Nếu bạn không khai báo chỉ thị `USER` bên trong `Dockerfile`, tiến trình bên trong container mặc định sẽ chạy dưới quyền tối cao `root` (`UID 0`).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mặc định Docker chạy với `UID 0` (`root`). Trên các Image Node chính thức, hãy luôn chuyển sang `USER node` (`UID 1000`) ở stage cuối cùng."
+  },
+  {
+    "id": "K05-Q4",
+    "type": "mc",
+    "q": "Để chép thư mục `/app/dist` từ stage đầu tiên (`AS builder`) sang thư mục `./dist` của stage thứ hai (`AS runner`), ta dùng cú pháp nào?",
+    "code": "",
+    "choices": [
+      "`COPY /app/dist ./dist`",
+      "`COPY --from=builder /app/dist ./dist`",
+      "`ADD builder:/app/dist ./dist`",
+      "`MOVE --stage=builder /app/dist ./dist`"
+    ],
+    "answer": 1,
+    "explain": "Cờ `--from=<tên-stage>` chỉ định cho `COPY` lấy tệp từ hệ thống tệp của stage trước đó thay vì lấy từ Build Context bên ngoài."
+  },
+  {
+    "id": "K05-Q5",
+    "type": "mc",
+    "q": "Khi chuyển sang chạy dưới quyền phi đặc quyền (`USER node`, UID 1000), cổng mạng nào dưới đây sẽ bị nhân Linux từ chối lỗi `EACCES: permission denied` nếu ứng dụng cố mở trực tiếp?",
+    "code": "",
+    "choices": [
+      "Cổng `3000`",
+      "Cổng `8080`",
+      "Cổng `80` (thuộc dải cổng đặc quyền `< 1024`)",
+      "Cổng `5000`"
+    ],
+    "answer": 2,
+    "explain": "Trên Linux, các cổng nhỏ hơn `1024` (như `80`, `443`) là privileged ports dành cho tiến trình có quyền đặc biệt. Tài khoản non-root nên lắng nghe ở cổng `>= 1024` như `3000` hoặc `8080`."
+  },
+  {
+    "id": "K05-Q6",
+    "type": "output",
+    "q": "Trong image chính thức `node:22-alpine`, tài khoản người dùng phi đặc quyền (non-root, UID 1000) được tạo sẵn có tên là gì (`USER ____`)?",
+    "code": "FROM node:22-alpine AS runner\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nUSER ____\nCMD [\"node\", \"dist/main.js\"]",
+    "choices": [],
+    "answer": "node",
+    "explain": "Mọi biến thể của official `node` image đều tạo sẵn nhóm `node` và tài khoản `node` (`UID 1000`) để bạn dùng ngay `USER node`."
+  },
+  {
+    "id": "K05-Q7",
+    "type": "tf",
+    "q": "Trong câu lệnh kiểm tra của `HEALTHCHECK`, nếu tiến trình kiểm tra kết thúc với mã thoát `0` (`exit 0`) thì Docker đánh giá container đang khoẻ mạnh (`healthy`), còn thoát với `1` (`exit 1`) là không khoẻ (`unhealthy`).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Quy ước của `HEALTHCHECK` là `0` = healthy (thành công) và `1` = unhealthy (gặp sự cố)."
+  }
+]

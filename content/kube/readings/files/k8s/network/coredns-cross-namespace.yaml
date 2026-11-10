@@ -1,0 +1,19 @@
+# Minh hoạ quy tắc phân giải tên miền CoreDNS giữa 2 Namespace khác nhau:
+# - Cùng namespace ("storefront"): chỉ cần gọi ngắn gọn "http://cart-api:80"
+# - Khác namespace ("storefront" gọi sang "database" hoặc "shared-auth"):
+#   BẮT BUỘC ghi kèm tên namespace: "<service>.<namespace>.svc.cluster.local"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storefront-endpoints
+  namespace: storefront
+data:
+  # Cùng nằm trong namespace "storefront"
+  CART_SERVICE_URL: "http://cart-api:80"
+
+  # Khác namespace -> gọi sang Service "token-verifier" ở namespace "shared-auth"
+  AUTH_VERIFIER_URL: "http://token-verifier.shared-auth.svc.cluster.local:8080"
+
+  # Khác namespace -> kết nối tới Service "postgres-primary" ở namespace "database"
+  DB_HOST: "postgres-primary.database.svc.cluster.local"
+  DB_PORT: "5432"

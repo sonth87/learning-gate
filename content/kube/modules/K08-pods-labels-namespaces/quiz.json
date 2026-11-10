@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K08-Q1",
+    "type": "mc",
+    "q": "Nếu một `Pod` chứa 2 container (container chính `api` nghe ở cổng `3000` và container phụ Sidecar `log-shipper`), hai container này giao tiếp mạng với nhau bằng cách nào?",
+    "code": "",
+    "choices": [
+      "Bắt buộc phải đi vòng ra ngoài Internet qua Ingress",
+      "Chia sẻ chung một Network Namespace nên có cùng địa chỉ IP và gọi nhau trực tiếp qua `localhost:3000`",
+      "Không bao giờ được phép giao tiếp với nhau",
+      "Phải tạo 2 LoadBalancer riêng biệt trên đám mây"
+    ],
+    "answer": 1,
+    "explain": "Mọi container trong cùng một Pod dùng chung không gian mạng (IP + loopback `127.0.0.1`), do đó chúng gọi nhau qua `localhost` và không được mở trùng một số cổng."
+  },
+  {
+    "id": "K08-Q2",
+    "type": "mc",
+    "q": "Vai trò cốt lõi nhất của `metadata.labels` trên một Pod trong Kubernetes là gì?",
+    "code": "",
+    "choices": [
+      "Chỉ để hiển thị màu sắc trang trí trên giao diện Dashboard",
+      "Làm thẻ định danh khoá-giá trị để `Service`, `Deployment` và `NetworkPolicy` truy vấn và gom nhóm động các Pod thuộc về mình",
+      "Dùng để lưu trữ mật khẩu Database đã mã hoá",
+      "Quyết định dung lượng RAM tối đa của Pod"
+    ],
+    "answer": 1,
+    "explain": "Labels + Selectors là cơ chế kết nối lỏng trung tâm của K8s: Service tìm Pod nhận traffic qua labels, Deployment đếm bản sao qua labels."
+  },
+  {
+    "id": "K08-Q3",
+    "type": "tf",
+    "q": "Hai đội dự án khác nhau hoàn toàn có thể cùng tạo một `Service` trùng tên `api-svc` trên cùng một cụm Kubernetes, miễn là đặt chúng ở hai `Namespace` khác nhau (ví dụ `team-a` và `team-b`).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Tên của hầu hết tài nguyên (`Pod`, `Deployment`, `Service`, `ConfigMap`, `Secret`) chỉ cần duy nhất trong phạm vi một `Namespace`."
+  },
+  {
+    "id": "K08-Q4",
+    "type": "output",
+    "q": "Khi gộp nhiều tài nguyên Kubernetes (ví dụ 1 `Namespace` và 1 `Pod`) vào trong **cùng một tệp YAML**, ta dùng chuỗi 3 ký tự nào trên một dòng riêng để ngăn cách giữa các document?",
+    "code": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: staging\n____\napiVersion: v1\nkind: Pod",
+    "choices": [],
+    "answer": "---",
+    "explain": "Ba dấu gạch ngang `---` là dấu phân tách tài liệu chuẩn của đặc tả YAML (multi-document YAML stream)."
+  },
+  {
+    "id": "K08-Q5",
+    "type": "mc",
+    "q": "Một Pod cần kéo Image nội bộ `private.registry.local/shop/api:1.4.2` nhưng không khai báo thông tin xác thực Registry. Trạng thái lỗi nào sẽ xuất hiện trên cột `STATUS` khi gõ `kubectl get pods`?",
+    "code": "",
+    "choices": [
+      "`OOMKilled`",
+      "`ErrImagePull` / `ImagePullBackOff`",
+      "`Completed`",
+      "`Terminating`"
+    ],
+    "answer": 1,
+    "explain": "Khi `kubelet` bị kho chứa từ chối quyền tải Image (hoặc sai tag), Pod chuyển sang `ErrImagePull` rồi giãn cách thử lại với trạng thái `ImagePullBackOff`."
+  },
+  {
+    "id": "K08-Q6",
+    "type": "mc",
+    "q": "Trường nào trong `Pod` spec dùng để đính kèm Secret chứa thông tin đăng nhập kho chứa Image riêng tư?",
+    "code": "",
+    "choices": [
+      "`spec.envFrom`",
+      "`spec.imagePullSecrets`",
+      "`metadata.annotations`",
+      "`spec.volumes`"
+    ],
+    "answer": 1,
+    "explain": "`spec.imagePullSecrets: [{ name: \"regcred\" }]` cấp thông tin xác thực (`kubernetes.io/dockerconfigjson`) cho `kubelet` ngay ở bước kéo Image trước khi tạo container."
+  },
+  {
+    "id": "K08-Q7",
+    "type": "tf",
+    "q": "Hai container chạy chung trong **cùng một Pod** có thể cùng mở và lắng nghe cổng `3000` trên `0.0.0.0` cùng một lúc mà không bị đụng cổng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Vì các container trong cùng một Pod chia sẻ chung Network Namespace (chung IP và bảng cổng), hai tiến trình không thể cùng bind cổng `3000` trong cùng một Pod."
+  }
+]

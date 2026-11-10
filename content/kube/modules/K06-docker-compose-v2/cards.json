@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K06-FC1",
+    "front": "Ba điểm khác biệt dễ nhận biết nhất của **Docker Compose v2** so với v1 cũ?",
+    "back": "1) Lệnh gõ có dấu cách: **`docker compose`** (không phải `docker-compose`);\n2) Tên tệp chuẩn: **`compose.yaml`**;\n3) **Không viết khoá `version:`** ở đầu tệp."
+  },
+  {
+    "id": "K06-FC2",
+    "front": "Trong mạng của Docker Compose, container `api` gọi sang container `postgres` qua địa chỉ nào?",
+    "back": "Gọi trực tiếp qua **tên dịch vụ**: `postgres:5432` (tuyệt đối không dùng `localhost:5432`)."
+  },
+  {
+    "id": "K06-FC3",
+    "front": "Sự khác nhau giữa `docker compose down` và `docker compose down -v`?",
+    "back": "- `docker compose down`: Xoá container & mạng, **giữ nguyên** dữ liệu Named Volume.\n- `docker compose down -v`: **Xoá sạch cả Named Volume** (mất toàn bộ dữ liệu DB local!)."
+  },
+  {
+    "id": "K06-FC4",
+    "front": "Cấu hình nào đảm bảo `api` chỉ bật lên sau khi `postgres` đã thực sự mở cổng nhận kết nối?",
+    "back": "Thêm `healthcheck` (`pg_isready`) vào `postgres`, và ở `api` khai báo:\n```yaml\ndepends_on:\n  postgres:\n    condition: service_healthy\n```"
+  },
+  {
+    "id": "K06-FC5",
+    "front": "Hai vị trí bắt buộc phải khai báo để dùng một Named Volume `pgdata` trong `compose.yaml`?",
+    "back": "1) Bên trong dịch vụ: `services.postgres.volumes: [\"pgdata:/var/lib/postgresql/data\"]`\n2) Ở cấp gốc cuối tệp: `volumes: { pgdata: }`"
+  },
+  {
+    "id": "K06-FC6",
+    "front": "`docker compose watch` giải quyết bài toán khó chịu nào của Bind Mount đối với dự án Node.js?",
+    "back": "Đồng bộ nóng riêng mã nguồn `./src` vào container mà **không đè hỏng `/app/node_modules`** chuẩn Linux, đồng thời tự `rebuild` khi `package.json` thay đổi."
+  }
+]

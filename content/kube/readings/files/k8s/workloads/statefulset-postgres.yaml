@@ -1,0 +1,72 @@
+# Headless Service (clusterIP: None) cấp DNS riêng cho từng Pod: postgres-0.postgres-hl.database.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-hl
+  namespace: database
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: tcp-pg
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: database
+spec:
+  serviceName: postgres-hl
+  replicas: 2
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: tcp-pg
+          env:
+            - name: POSTGRES_DB
+              value: "orders"
+            - name: POSTGRES_USER
+              value: "order_svc"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+  # Mỗi replica (postgres-0, postgres-1) được cấp 1 ổ đĩa PVC độc lập, giữ nguyên dữ liệu khi Pod khởi động lại!
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: gp3
+        resources:
+          requests:
+            storage: 20Gi

@@ -1,0 +1,26 @@
+# PHẢN MẪU NGUY HIỂM (SECURITY RISK & BUGGY): Push-Based CI dùng chìa khoá tối cao Cluster-Admin
+# 1. Nếu kho GitHub bị lộ Secret, kẻ tấn công chiếm trọn quyền điều khiển toàn bộ cụm K8s Production.
+# 2. Dùng tag `:latest` làm mất hoàn toàn khả năng truy vết phiên bản và khiến K8s không biết có thay đổi để kéo image mới!
+name: Anti-Pattern Direct Kubectl Admin Push
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  reckless-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # LỖI 1: Đóng gói đè lên nhãn :latest thay vì dùng Git SHA bất biến
+      - run: docker build -t registry.example.invalid/shop-api:latest .
+
+      # LỖI 2: Ghi chứng chỉ quản trị tối cao (cluster-admin) ra đĩa máy chạy CI và bắn thẳng vào API Server nội bộ!
+      - name: Mutate production cluster imperative way
+        env:
+          KUBE_CONFIG_ADMIN: ${{ secrets.KUBE_CONFIG_ADMIN }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG_ADMIN" | base64 -d > ~/.kube/config
+          kubectl set image deployment/shop-api shop-api=registry.example.invalid/shop-api:latest -n production

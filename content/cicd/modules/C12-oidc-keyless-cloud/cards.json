@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C12-C1",
+    "front": "Tại sao Keyless OIDC lại loại bỏ triệt để rủi ro rò rỉ khoá đám mây dài hạn trong CI/CD?",
+    "back": "Vì không có bất kỳ khoá tĩnh (`AWS_ACCESS_KEY_ID` / `GCP_SA_KEY`) nào tồn tại trong GitHub Secrets; mỗi Job tự đổi thẻ OIDC JWT lấy phiên tạm thời tự huỷ sau 15–60 phút."
+  },
+  {
+    "id": "C12-C2",
+    "front": "Hai yêu cầu cấu hình bắt buộc phía tệp GitHub Actions Workflow để dùng AWS OIDC?",
+    "back": "1) Cấp `permissions: { id-token: write, contents: read }`, 2) Gọi `aws-actions/configure-aws-credentials@v4` với `role-to-assume: arn:aws:iam::...` và `aws-region`."
+  },
+  {
+    "id": "C12-C3",
+    "front": "Hai điều kiện `Condition.StringEquals` bắt buộc trong AWS IAM Trust Policy cho GitHub OIDC?",
+    "back": "1) `token.actions.githubusercontent.com:aud: \"sts.amazonaws.com\"`, 2) `token.actions.githubusercontent.com:sub: \"repo:<org>/<repo>:ref:refs/heads/main\"` (hoặc `:environment:production`)."
+  },
+  {
+    "id": "C12-C4",
+    "front": "Lỗ hổng nghiêm trọng nào xảy ra nếu quên kiểm tra `token.actions.githubusercontent.com:sub` trên đám mây?",
+    "back": "Cross-tenant Impersonation: bất kỳ người dùng GitHub nào biết ARN Role cũng có thể tạo Workflow riêng của họ và chiếm toàn quyền điều khiển tài khoản đám mây của bạn!"
+  },
+  {
+    "id": "C12-C5",
+    "front": "Hai quyền hạn cần khai báo trong `permissions:` khi dùng `actions/attest-build-provenance@v2`?",
+    "back": "`id-token: write` (để ký chứng chỉ định danh OIDC ngắn hạn qua Sigstore Fulcio) và `attestations: write` (để lưu trữ bản chứng thực)."
+  },
+  {
+    "id": "C12-C6",
+    "front": "SLSA Build Provenance bảo vệ tổ chức khỏi mối đe doạ nào?",
+    "back": "Chống giả mạo gói phần mềm (Artifact Tampering): đảm bảo ảnh Container trên cụm Production chắc chắn 100% được biên dịch bởi máy chủ CI từ mã nguồn đã duyệt, không phải ảnh build lậu bên ngoài."
+  }
+]

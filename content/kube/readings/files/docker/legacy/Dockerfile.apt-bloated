@@ -1,0 +1,18 @@
+# ANTI-PATTERN: Image phình to > 1.2GB và hay lỗi 404 Not Found khi cài gói mới!
+FROM node:22
+
+# LỖI 1: Tách riêng "apt-get update" ra một dòng RUN độc lập.
+# Docker sẽ cache vĩnh viễn layer danh sách gói cũ từ nhiều tháng trước.
+# Khi hôm sau bạn sửa dòng dưới để cài thêm "jq", Docker KHÔNG chạy lại apt-get update
+# dẫn tới lỗi "404 Not Found" vì mirror Debian đã xoá bản gói cũ!
+RUN apt-get update
+
+# LỖI 2: Không có "--no-install-recommends" nên kéo theo hàng trăm gói phụ không cần thiết.
+# LỖI 3: Không dọn "/var/lib/apt/lists/*" ngay trong CÙNG một lệnh RUN!
+# (Dù bạn có thêm "RUN rm -rf /var/lib/apt/lists/*" ở dòng tiếp theo, dữ liệu vẫn nằm nguyên ở layer trên!)
+RUN apt-get install -y curl git python3 build-essential
+
+WORKDIR /app
+COPY . .
+RUN npm ci
+CMD ["node", "index.js"]

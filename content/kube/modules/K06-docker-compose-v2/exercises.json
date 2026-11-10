@@ -1,0 +1,249 @@
+[
+  {
+    "id": "kube-ex-k06-1",
+    "code": "K06.1",
+    "title": "Nâng cấp lên compose.yaml chuẩn v2 (bỏ version:, khai báo api & redis)",
+    "difficulty": 1,
+    "tags": [
+      "compose-v2",
+      "yaml",
+      "modernization"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Tệp `compose.yaml` bên dưới đang dùng khoá `version: \"3.8\"` đã lỗi thời và thiếu dịch vụ cache. Hãy chỉnh sửa để:\n1. **Xoá hoàn toàn** khoá `version` ở đầu tệp.\n2. Khai báo dịch vụ `api` dùng image `node:22-alpine`, mở cổng `\"3000:3000\"`.\n3. Thêm dịch vụ `redis` dùng image `redis:7-alpine`.",
+    "starter": "version: \"3.8\"\n\nservices:\n  api:\n    image: node:latest\n    ports:\n      - \"3000:3000\"\n  # Thêm dịch vụ redis (redis:7-alpine) bên dưới\n",
+    "solution": "services:\n  api:\n    image: node:22-alpine\n    ports:\n      - \"3000:3000\"\n  redis:\n    image: redis:7-alpine\n",
+    "hints": [
+      "Xoá dòng `version: \"3.8\"` ở trên cùng.",
+      "Đổi image của `api` thành `node:22-alpine` và thêm khối `redis:` cùng cấp thụt lề với `api:` với `image: redis:7-alpine`."
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-obsolete-version",
+          "doc": "Không còn khai báo khoá `version` lỗi thời ở đầu tệp",
+          "kind": "path",
+          "path": "version",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "api-image-node22",
+          "doc": "Dịch vụ `api` dùng `image: node:22-alpine`",
+          "kind": "path",
+          "path": "services.api.image",
+          "match": {
+            "eq": "node:22-alpine"
+          }
+        },
+        {
+          "id": "api-port-3000",
+          "doc": "Dịch vụ `api` xuất bản cổng `\"3000:3000\"`",
+          "kind": "path",
+          "path": "services.api.ports",
+          "match": {
+            "contains": "3000:3000"
+          }
+        },
+        {
+          "id": "redis-service-defined",
+          "doc": "Dịch vụ `redis` dùng `image: redis:7-alpine`",
+          "kind": "path",
+          "path": "services.redis.image",
+          "match": {
+            "eq": "redis:7-alpine"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k06-2",
+    "code": "K06.2",
+    "title": "Sửa lỗi ECONNREFUSED do gọi nhầm localhost giữa các container",
+    "difficulty": 1,
+    "tags": [
+      "compose",
+      "dns",
+      "localhost-bug",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Ứng dụng `api` đang liên tục sập với lỗi `connect ECONNREFUSED 127.0.0.1:5432` và `127.0.0.1:6379` vì cấu hình biến môi trường trỏ vào `localhost` và `127.0.0.1`. Hãy sửa `DB_HOST` và `REDIS_HOST` trong `services.api.environment` sang đúng tên DNS nội bộ của hai dịch vụ tương ứng.",
+    "starter": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_PASSWORD: dev-only-placeholder\n\n  redis:\n    image: redis:7-alpine\n\n  api:\n    image: node:22-alpine\n    ports:\n      - \"3000:3000\"\n    environment:\n      DB_HOST: localhost\n      DB_PORT: \"5432\"\n      REDIS_HOST: 127.0.0.1\n",
+    "solution": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_PASSWORD: dev-only-placeholder\n\n  redis:\n    image: redis:7-alpine\n\n  api:\n    image: node:22-alpine\n    ports:\n      - \"3000:3000\"\n    environment:\n      DB_HOST: postgres\n      DB_PORT: \"5432\"\n      REDIS_HOST: redis\n",
+    "hints": [
+      "Trong mạng Compose, mỗi dịch vụ được phân giải tự động theo chính tên khoá của nó dưới `services:`.",
+      "Đổi `DB_HOST: postgres` và `REDIS_HOST: redis`."
+    ],
+    "ref": "compose/bugs/compose.localhost-bug.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "db-host-is-postgres",
+          "doc": "`services.api.environment.DB_HOST` trỏ đúng vào tên dịch vụ `postgres`",
+          "kind": "path",
+          "path": "services.api.environment.DB_HOST",
+          "match": {
+            "eq": "postgres"
+          }
+        },
+        {
+          "id": "redis-host-is-redis",
+          "doc": "`services.api.environment.REDIS_HOST` trỏ đúng vào tên dịch vụ `redis`",
+          "kind": "path",
+          "path": "services.api.environment.REDIS_HOST",
+          "match": {
+            "eq": "redis"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k06-3",
+    "code": "K06.3",
+    "title": "Gắn Named Volume pgdata giữ bền vững dữ liệu PostgreSQL",
+    "difficulty": 2,
+    "tags": [
+      "compose",
+      "volumes",
+      "postgres",
+      "persistence"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Mỗi khi thành viên trong nhóm gõ `docker compose down`, toàn bộ bảng dữ liệu trong `postgres` bị xoá trắng! Hãy bảo vệ dữ liệu bằng cách:\n1. Khai báo một Named Volume tên `pgdata` ở khối `volumes:` cấp cao nhất (cuối tệp).\n2. Gắn `pgdata:/var/lib/postgresql/data` vào mục `volumes:` của dịch vụ `postgres`.",
+    "starter": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_USER: shop\n      POSTGRES_PASSWORD: dev-only-placeholder\n      POSTGRES_DB: shop_db\n    # Gắn pgdata vào /var/lib/postgresql/data\n\n# Khai báo khối volumes cấp cao nhất bên dưới\n",
+    "solution": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_USER: shop\n      POSTGRES_PASSWORD: dev-only-placeholder\n      POSTGRES_DB: shop_db\n    volumes:\n      - pgdata:/var/lib/postgresql/data\n\nvolumes:\n  pgdata:\n",
+    "hints": [
+      "Bên trong `postgres:`, thêm mục `volumes:` chứa phần tử `- pgdata:/var/lib/postgresql/data`.",
+      "Ở sát lề trái cuối tệp (cùng cấp với `services:`), thêm:\n```yaml\nvolumes:\n  pgdata:\n```"
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "top-level-pgdata-volume",
+          "doc": "Khối `volumes:` cấp cao nhất có khai báo `pgdata`",
+          "kind": "path",
+          "path": "volumes",
+          "match": {
+            "contains": "pgdata"
+          }
+        },
+        {
+          "id": "postgres-mounts-pgdata",
+          "doc": "Dịch vụ `postgres` gắn `pgdata:/var/lib/postgresql/data`",
+          "kind": "path",
+          "path": "services.postgres.volumes",
+          "match": {
+            "contains": "pgdata:/var/lib/postgresql/data"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k06-4",
+    "code": "K06.4",
+    "title": "Phối hợp healthcheck pg_isready và depends_on service_healthy",
+    "difficulty": 2,
+    "tags": [
+      "compose",
+      "healthcheck",
+      "depends_on",
+      "service_healthy"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Nâng cấp tệp `compose.yaml` bên dưới để `api` không bao giờ khởi chạy trước khi PostgreSQL mở cổng nhận truy vấn:\n1. Thêm khối `healthcheck` vào dịch vụ `postgres` sử dụng lệnh kiểm tra `pg_isready -U shop -d shop_db` (ví dụ `test: [\"CMD-SHELL\", \"pg_isready -U shop -d shop_db\"]`).\n2. Đổi `depends_on` của `api` sang dạng đối tượng yêu cầu điều kiện `condition: service_healthy` trên `postgres`.",
+    "starter": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_USER: shop\n      POSTGRES_PASSWORD: dev-only-placeholder\n      POSTGRES_DB: shop_db\n    # Thêm healthcheck dùng pg_isready\n\n  api:\n    image: node:22-alpine\n    environment:\n      DATABASE_URL: postgres://shop:dev-only-placeholder@postgres:5432/shop_db\n    depends_on:\n      - postgres\n",
+    "solution": "services:\n  postgres:\n    image: postgres:16-alpine\n    environment:\n      POSTGRES_USER: shop\n      POSTGRES_PASSWORD: dev-only-placeholder\n      POSTGRES_DB: shop_db\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U shop -d shop_db\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5\n\n  api:\n    image: node:22-alpine\n    environment:\n      DATABASE_URL: postgres://shop:dev-only-placeholder@postgres:5432/shop_db\n    depends_on:\n      postgres:\n        condition: service_healthy\n",
+    "hints": [
+      "Ở `postgres`, thêm `healthcheck:` với `test: [\"CMD-SHELL\", \"pg_isready -U shop -d shop_db\"]`, `interval: 5s`, `timeout: 3s`, `retries: 5`.",
+      "Ở `api`, sửa `depends_on:` từ mảng `- postgres` thành:\n```yaml\ndepends_on:\n  postgres:\n    condition: service_healthy\n```"
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "postgres-healthcheck-pg-isready",
+          "doc": "`services.postgres.healthcheck.test` kiểm tra bằng `pg_isready`",
+          "kind": "path",
+          "path": "services.postgres.healthcheck.test",
+          "match": {
+            "regex": "pg_isready"
+          }
+        },
+        {
+          "id": "api-waits-service-healthy",
+          "doc": "`services.api.depends_on.postgres.condition` đặt là `service_healthy`",
+          "kind": "path",
+          "path": "services.api.depends_on.postgres.condition",
+          "match": {
+            "eq": "service_healthy"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k06-5",
+    "code": "K06.5",
+    "title": "Khởi chạy toàn bộ Stack ở chế độ ngầm bằng CLI Compose v2",
+    "difficulty": 1,
+    "tags": [
+      "compose-v2",
+      "cli",
+      "up"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Tệp `compose.yaml` đã sẵn sàng trong thư mục dự án. Thay vì câu lệnh v1 cũ có dấu gạch ngang đã ngưng hỗ trợ, hãy gõ lệnh **Docker Compose v2** để khởi chạy toàn bộ cụm dịch vụ ở chế độ chạy ngầm (`-d`).",
+    "starter": "# Thay thế câu lệnh v1 cũ (docker-compose up) bằng lệnh Compose v2 chạy ngầm (-d)\n",
+    "solution": "docker compose up -d\n",
+    "hints": [
+      "Trong Compose v2, `compose` là lệnh con của `docker` (cách nhau bằng dấu cách, không có dấu gạch ngang `-`).",
+      "Gõ chính xác: `docker compose up -d`"
+    ],
+    "ref": "compose/fullstack-v2/compose.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "compose-api-started",
+          "doc": "Cụm dịch vụ Compose (`compose-api`) đã khởi chạy (`running`)",
+          "target": "docker-container",
+          "name": "compose-api",
+          "status": "running"
+        },
+        {
+          "id": "compose-ran-detached",
+          "doc": "Khởi chạy ở chế độ chạy ngầm với cờ `-d` (`--detach`)",
+          "target": "stdout-inspected",
+          "contains": "(detached)"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C12-Q1",
+    "type": "output",
+    "q": "Quyền hạn bắt buộc nào trong khối `permissions:` của Job GitHub Actions cho phép Runner yêu cầu máy chủ OIDC của GitHub phát hành thẻ JWT xác thực với đám mây? (Ghi tên khoá trước dấu `: write`)",
+    "code": "permissions:\n  ____: write\n  contents: read",
+    "choices": [],
+    "answer": "id-token",
+    "explain": "`id-token: write` là quyền chuyên biệt cho phép Job gọi tới OIDC Token Endpoint của GitHub để lấy thẻ JWT ngắn hạn."
+  },
+  {
+    "id": "C12-Q2",
+    "type": "mc",
+    "q": "Trong luồng xác thực **Keyless OIDC** giữa GitHub Actions và AWS, thứ gì thực sự được truyền từ Runner sang dịch vụ AWS STS (`AssumeRoleWithWebIdentity`)?",
+    "code": "",
+    "choices": [
+      "Cặp khoá tĩnh AWS_ACCESS_KEY_ID và AWS_SECRET_ACCESS_KEY lưu sẵn từ năm ngoái",
+      "Một thẻ OIDC JSON Web Token (JWT) có chữ ký mật mã của GitHub chứa các thông tin danh tính (`repo`, `ref`, `environment`, `sha`) và tự hết hạn sau vài phút",
+      "Mật khẩu đăng nhập tài khoản cá nhân của quản trị viên AWS",
+      "Tệp khóa riêng tư SSH `~/.ssh/id_rsa`"
+    ],
+    "answer": 1,
+    "explain": "GitHub ký số lên thẻ JWT bằng khoá riêng của GitHub; AWS STS dùng khoá công khai của GitHub để xác minh chữ ký và đối chiếu các trường `aud`, `sub` trước khi đổi sang phiên làm việc tạm thời."
+  },
+  {
+    "id": "C12-Q3",
+    "type": "tf",
+    "q": "Khi cấu hình IAM Role Trust Policy trên AWS cho GitHub OIDC, bạn chỉ cần kiểm tra đúng nhà phát hành `token.actions.githubusercontent.com` là đã đủ an toàn tuyệt đối, không cần kiểm tra trường `sub`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai cực kỳ nguy hiểm! Hàng triệu kho GitHub của mọi người trên thế giới đều có cùng nhà phát hành `token.actions.githubusercontent.com`. Nếu không khoá trường `sub` vào đúng `repo:ten-cong-ty/ten-kho:...`, bất kỳ ai trên GitHub cũng chiếm được Role AWS của bạn!"
+  },
+  {
+    "id": "C12-Q4",
+    "type": "mc",
+    "q": "Khi chuyển sang OIDC trên `aws-actions/configure-aws-credentials@v4`, hai tham số cũ nào được **xoá bỏ hoàn toàn** và thay thế bằng tham số nào?",
+    "code": "",
+    "choices": [
+      "Xoá `aws-region`, thay bằng `aws-zone`",
+      "Xoá `aws-access-key-id` và `aws-secret-access-key`, thay bằng `role-to-assume` (chứa ARN của IAM Role)",
+      "Xoá `uses`, thay bằng `run: aws login`",
+      "Xoá `node-version`, thay bằng `python-version`"
+    ],
+    "answer": 1,
+    "explain": "Không còn bất kỳ Access Key hay Secret Key nào xuất hiện trong YAML lẫn GitHub Secrets nữa — chỉ cần truyền chuỗi định danh không nhạy cảm `role-to-assume: arn:aws:iam::...:role/...`!"
+  },
+  {
+    "id": "C12-Q5",
+    "type": "output",
+    "q": "Giá trị chuẩn của trường đối tượng nhận (`aud` — Audience) khi xác thực GitHub Actions OIDC với dịch vụ AWS Security Token Service là tên miền nào?",
+    "code": "token.actions.githubusercontent.com:aud: \"____\"",
+    "choices": [],
+    "answer": "sts.amazonaws.com",
+    "explain": "Đối với AWS chính thức, giá trị Audience chuẩn mà `aws-actions/configure-aws-credentials` yêu cầu và IAM Trust Policy kiểm tra luôn là `sts.amazonaws.com`."
+  },
+  {
+    "id": "C12-Q6",
+    "type": "tf",
+    "q": "Chứng thực nguồn gốc bản dựng (**Artifact Build Provenance** theo khung SLSA) tạo ra bằng chứng mật mã không thể chối bỏ về việc gói phần mềm được sinh ra từ đúng kho Git, đúng mã Commit và đúng tệp Workflow nào.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `actions/attest-build-provenance@v2` ký số lên siêu dữ liệu quá trình build bằng chứng chỉ ngắn hạn gắn với OIDC, cho phép xác minh minh bạch ở khâu triển khai."
+  },
+  {
+    "id": "C12-Q7",
+    "type": "mc",
+    "q": "Chuỗi định danh `sub` (Subject) nào dưới đây khoá quyền đảm nhận AWS IAM Role chặt chẽ nhất chỉ cho phép các lượt chạy từ nhánh `main` của kho `acme-corp/shop-api`?",
+    "code": "",
+    "choices": [
+      "repo:*",
+      "repo:acme-corp/*:ref:*",
+      "repo:acme-corp/shop-api:ref:refs/heads/main",
+      "github.com/acme-corp"
+    ],
+    "answer": 2,
+    "explain": "`repo:acme-corp/shop-api:ref:refs/heads/main` khoá chính xác cả tên tổ chức (`acme-corp`), tên kho (`shop-api`) và nhánh chính thức (`refs/heads/main`), từ chối mọi nhánh thử nghiệm hay PR."
+  }
+]

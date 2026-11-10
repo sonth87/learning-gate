@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K02-Q1",
+    "type": "mc",
+    "q": "Trong kiến trúc Linux Container, hai thành phần **Namespaces** và **cgroups** phân chia vai trò như thế nào?",
+    "code": "",
+    "choices": [
+      "Namespaces mã hoá mật khẩu mạng, còn cgroups nén dung lượng Image",
+      "Namespaces cô lập tầm nhìn (PID, mạng, thư mục gốc), còn cgroups đo lường và giới hạn mức tiêu thụ tài nguyên phần cứng (CPU, RAM)",
+      "cgroups tạo địa chỉ IP cho container, còn Namespaces giới hạn dung lượng ổ cứng",
+      "Cả hai đều chỉ có mặt trên Kubernetes chứ Docker không sử dụng"
+    ],
+    "answer": 1,
+    "explain": "Namespaces quyết định tiến trình được *nhìn thấy* gì (cô lập không gian), còn Control Groups (`cgroups`) quyết định tiến trình được *dùng tối đa* bao nhiêu CPU/RAM/IO."
+  },
+  {
+    "id": "K02-Q2",
+    "type": "output",
+    "q": "Một container xử lý dữ liệu bị vượt trần RAM `--memory` và bị Linux Kernel bắn tín hiệu `SIGKILL` (`9`). Mã thoát (`Exit Code`) hiển thị trong `docker ps -a` là con số nào?",
+    "code": "$ docker ps -a\nCONTAINER ID   IMAGE          STATUS\n7bc1029384ef   node:22-alpine Exited (???) 10 seconds ago",
+    "choices": [],
+    "answer": "137",
+    "explain": "Theo chuẩn POSIX: `128 + 9 (SIGKILL) = 137` — con số kinh điển báo hiệu sự cố Out-Of-Memory (`OOMKilled`) hoặc bị ép dừng tức khắc."
+  },
+  {
+    "id": "K02-Q3",
+    "type": "mc",
+    "q": "Vì sao chúng ta nên tạo mạng riêng (`docker network create shop-net`) thay vì để các container nằm chung trên mạng `bridge` mặc định?",
+    "code": "",
+    "choices": [
+      "Vì mạng `bridge` mặc định không cho phép xuất bản cổng `-p` ra máy chủ",
+      "Vì mạng Bridge tự tạo có tích hợp sẵn DNS tự động giúp các container gọi nhau trực tiếp bằng **tên container** (ví dụ `redis-session:6379`) thay vì địa chỉ IP dễ đổi",
+      "Vì mạng `bridge` mặc định tự động xoá container sau 1 giờ",
+      "Vì chỉ mạng tự tạo mới chạy được Alpine Linux"
+    ],
+    "answer": 1,
+    "explain": "User-defined bridge network cung cấp Embedded DNS phân giải tên container/service tự động và cô lập nhóm dịch vụ của dự án này khỏi dự án khác trên cùng máy."
+  },
+  {
+    "id": "K02-Q4",
+    "type": "tf",
+    "q": "Nếu bạn lưu dữ liệu PostgreSQL vào một **Named Volume** (`-v pg-data:/var/lib/postgresql/data`), thì ngay cả khi xoá bỏ container bằng `docker rm -f shop-db`, dữ liệu trong volume `pg-data` vẫn được giữ an toàn trên máy chủ.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Named Volume có vòng đời độc lập hoàn toàn với container; nó chỉ bị xoá khi bạn chủ động gọi `docker volume rm pg-data` hoặc `docker compose down -v`."
+  },
+  {
+    "id": "K02-Q5",
+    "type": "mc",
+    "q": "Chuyện gì xảy ra nếu trên máy Mac bạn vừa `git clone` dự án (chưa chạy `npm install` ở máy ngoài) rồi khởi chạy container bằng Bind Mount `-v $(pwd):/app` đè lên thư mục `/app` của Image?",
+    "code": "",
+    "choices": [
+      "Docker tự động trộn chung hai thư mục `/app` của máy chủ và của Image",
+      "Thư mục gốc của máy chủ che khuất hoàn toàn `/app` bên trong container (làm biến mất `/app/node_modules` đã cài sẵn trong Image) khiến Node.js báo `Cannot find module`",
+      "Container tự động chạy `npm ci` lại từ đầu mỗi mili-giây",
+      "Không có ảnh hưởng gì vì `node_modules` nằm trong RAM"
+    ],
+    "answer": 1,
+    "explain": "Trong Linux mount, gắn một thư mục bên ngoài lên `/app` sẽ che khuất toàn bộ nội dung sẵn có tại `/app` của Image — đây là lỗi kinh điển nhất khi lạm dụng Bind Mount."
+  },
+  {
+    "id": "K02-Q6",
+    "type": "mc",
+    "q": "Khi đặt giới hạn RAM container Node.js là `--memory=512m`, cấu hình biến môi trường nào giúp V8 chủ động thu gom rác (GC) trước khi bị Kernel OOM Killer giết ở vạch 512MB?",
+    "code": "",
+    "choices": [
+      "`NODE_ENV=development`",
+      "`NODE_OPTIONS=\"--max-old-space-size=384\"`",
+      "`NPM_CONFIG_LOGLEVEL=silent`",
+      "`PORT=512`"
+    ],
+    "answer": 1,
+    "explain": "Đặt `--max-old-space-size` khoảng 70%–75% trần bộ nhớ container chừa chỗ cho Stack/Buffers và buộc V8 chạy Garbage Collector kịp thời trước khi vượt trần cgroup."
+  },
+  {
+    "id": "K02-Q7",
+    "type": "tf",
+    "q": "Mặc định khi chạy `docker run` không kèm cờ `--memory`, Docker tự động khoá cứng mỗi container chỉ được dùng tối đa `128MB` RAM.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Mặc định container không có trần giới hạn RAM cứng (`no limit`) và có thể ăn hết bộ nhớ khả dụng của máy chủ nếu xảy ra memory leak."
+  }
+]

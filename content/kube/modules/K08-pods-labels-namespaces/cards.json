@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K08-FC1",
+    "front": "Các container nằm chung trong **cùng một Pod** chia sẻ những gì với nhau?",
+    "back": "Chia sẻ chung **Network Namespace** (cùng địa chỉ IP, gọi nhau qua `localhost`) và có thể gắn chung các ổ đĩa Volume (`emptyDir`, `PVC`)."
+  },
+  {
+    "id": "K08-FC2",
+    "front": "Cú pháp lọc danh sách Pod theo nhãn `env=staging` trên `kubectl`?",
+    "back": "**`kubectl get pods -l env=staging`** (hoặc `--selector=env=staging`)."
+  },
+  {
+    "id": "K08-FC3",
+    "front": "Ký hiệu phân tách nhiều tài nguyên Kubernetes trong cùng một tệp `.yaml` là gì?",
+    "back": "Một dòng chứa ba dấu gạch ngang **`---`**."
+  },
+  {
+    "id": "K08-FC4",
+    "front": "Namespace `kube-system` chứa những gì và có nên triển khai app của mình vào đó không?",
+    "back": "Chứa các thành phần lõi của cụm (`coredns`, `kube-proxy`, CNI...). **Tuyệt đối không** đặt ứng dụng người dùng vào `kube-system`."
+  },
+  {
+    "id": "K08-FC5",
+    "front": "Làm sao để Pod kéo được Image từ Private Registry (GHCR, ECR, Harbor)?",
+    "back": "Tạo Secret kiểu `kubernetes.io/dockerconfigjson` rồi tham chiếu trong Pod tại **`spec.imagePullSecrets: [{ name: \"<tên-secret>\" }]`**."
+  },
+  {
+    "id": "K08-FC6",
+    "front": "Câu lệnh tạo nhanh một Namespace tên `payments` trên CLI?",
+    "back": "**`kubectl create namespace payments`** (hoặc viết tắt `kubectl create ns payments`)."
+  }
+]

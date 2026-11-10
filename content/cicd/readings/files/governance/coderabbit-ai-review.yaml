@@ -1,0 +1,30 @@
+# Cấu hình .coderabbit.yaml — Trợ lý AI rà soát Pull Request thông minh có kiểm soát nhiễu (Low-Noise AI Gate)
+# AI làm nhiệm vụ rà lỗi bảo mật & logic sơ cấp trong 60 giây đầu; con người giữ quyền quyết định kiến trúc cuối cùng.
+language: "vi-VN"
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  # Loại bỏ các tệp sinh tự động & lockfile để không làm ngập PR bằng bình luận vô bổ
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/dist/**"
+    - "!**/*.snap"
+    - "!**/*.gen.ts"
+
+  # Hướng dẫn chuyên biệt theo từng vùng mã nguồn nhạy cảm
+  path_instructions:
+    - path: ".github/workflows/**/*.yml"
+      instructions: |
+        Kiểm tra gắt gao nguy cơ Script Injection (${{ github.event... }} trong khối run:),
+        quyền hạn GITHUB_TOKEN dư thừa, thiếu timeout-minutes hoặc lạm dụng pull_request_target.
+    - path: "db/migrations/**/*.sql"
+      instructions: |
+        Cảnh báo đỏ nếu phát hiện lệnh DROP COLUMN, RENAME COLUMN, hoặc ALTER COLUMN SET NOT NULL
+        không tuân theo quy trình Expand-and-Contract không gián đoạn dịch vụ.

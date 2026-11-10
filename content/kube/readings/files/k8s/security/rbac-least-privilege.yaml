@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: feature-watcher-sa
+  namespace: shop
+# Mặc định tắt tự gắn token; chỉ Pod nào thực sự cần gọi K8s API mới bật ở Pod spec
+automountServiceAccountToken: false
+---
+# Dùng Role (phạm vi 1 namespace "shop") thay vì ClusterRole toàn cụm
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: configmap-reader-role
+  namespace: shop
+rules:
+  - apiGroups: [""]
+    # TUYỆT ĐỐI KHÔNG cho đọc "secrets" nếu dịch vụ chỉ cần theo dõi ConfigMap!
+    resources: ["configmaps", "pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: feature-watcher-read-cm
+  namespace: shop
+subjects:
+  - kind: ServiceAccount
+    name: feature-watcher-sa
+    namespace: shop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: configmap-reader-role

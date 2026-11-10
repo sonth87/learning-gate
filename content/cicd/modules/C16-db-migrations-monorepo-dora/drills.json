@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C16-D1",
+    "title": "Chạy Turborepo chỉ cho các package bị ảnh hưởng so với origin/main",
+    "code": "steps:\n  - uses: actions/checkout@v4\n    with:\n      fetch-depth: 0\n  - run: npx turbo run lint test build --filter=...[origin/main]"
+  },
+  {
+    "id": "C16-D2",
+    "title": "Ràng buộc job test-payment theo đầu ra của paths-filter",
+    "code": "test-payment:\n  needs: filters\n  if: needs.filters.outputs.payment == 'true'\n  runs-on: ubuntu-latest\n  steps:\n    - run: npm --workspace=apps/payment test"
+  }
+]

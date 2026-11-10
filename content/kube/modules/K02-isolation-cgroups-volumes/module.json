@@ -1,0 +1,51 @@
+{
+  "id": "K02",
+  "slug": "K02-isolation-cgroups-volumes",
+  "level": 0,
+  "order": 2,
+  "title": "Cô lập Kernel, Khoá trần RAM (OOM 137), Mạng riêng & Lưu trữ bền vững",
+  "summary": "Hiểu hai trụ cột Namespaces & cgroups của Linux Kernel, giải mã Exit Code 137, tạo Bridge Network có DNS tự động và giữ dữ liệu DB bằng Named Volume.",
+  "tags": [
+    "namespaces",
+    "cgroups",
+    "oom-137",
+    "volumes",
+    "networks"
+  ],
+  "sources": [
+    {
+      "title": "Docker Runtime Options — Memory & CPU Resource Constraints",
+      "url": "https://docs.docker.com/engine/containers/resource_constraints/",
+      "version": "Docker Engine v27+"
+    },
+    {
+      "title": "Docker Storage — Volumes vs Bind Mounts",
+      "url": "https://docs.docker.com/engine/storage/volumes/",
+      "version": "Docker Engine v27+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Cô lập Namespaces & Cgroups",
+      "kind": "flow",
+      "targetId": "linux-kernel-isolation",
+      "description": "Mô phỏng Kernel tách PID, Network và khoá trần RAM"
+    }
+  ],
+  "readings": [
+    {
+      "path": "compose/limits/compose.resources.yaml",
+      "kind": "good",
+      "note": "Mẫu cấu hình khoá chặt hạn mức CPU/RAM và cơ chế tự khởi động lại cho dịch vụ Node.js.",
+      "task": "Quan sát dòng `command` của `api` và phần `limits.memory: 256M`. Vì sao kỹ sư viết file này lại đặt `--max-old-space-size=192` nhỏ hơn `256M`?",
+      "answer": "V8 Heap của Node.js chỉ là một phần RAM của tiến trình (ngoài ra còn Stack, C++ Buffers, mã thực thi). Đặt trần V8 Heap ở `192MB` buộc Garbage Collector dọn rác tích cực TRƯỚC khi tổng RAM tiến trình chạm vạch `256MB` và bị Linux OOM Killer giết đột ngột (`Exit Code 137`)."
+    },
+    {
+      "path": "compose/bugs/compose.ephemeral-db.yaml",
+      "kind": "bug",
+      "note": "Hai tai nạn dữ liệu thực tế: bay sạch bảng Postgres sau lệnh down và mất trắng node_modules vì Bind Mount.",
+      "task": "Hãy giải thích vì sao gắn `- .:/app` từ máy chủ cá nhân lại có thể làm ứng dụng trong container báo lỗi `Cannot find module 'express'`?",
+      "answer": "Bind mount `- .:/app` lấy thư mục hiện tại của máy chủ đè trực tiếp lên `/app` bên trong container, che khuất hoàn toàn thư mục `/app/node_modules` đã cài sẵn lúc `docker build`. Nếu máy chủ chưa chạy `npm install` (hoặc chứa binary khác hệ điều hành), ứng dụng sẽ không tìm thấy thư viện."
+    }
+  ]
+}

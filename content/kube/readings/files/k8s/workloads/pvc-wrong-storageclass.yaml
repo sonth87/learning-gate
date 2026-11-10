@@ -1,0 +1,34 @@
+# TÌNH HUỐNG SỰ CỐ: Pod "report-exporter" đứng mãi ở trạng thái Pending!
+# Chạy "kubectl describe pvc export-cache-pvc" thấy cảnh báo:
+# Warning  ProvisioningFailed  storageclass.storage.k8s.io "fast-nvme-typo" not found
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: export-cache-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # LỖI: Cụm chỉ có StorageClass "gp3" hoặc "standard" (kiểm tra bằng "kubectl get sc"),
+  # nhưng dev gõ nhầm tên "fast-nvme-typo" khiến Dynamic Provisioner không tạo được ổ đĩa!
+  storageClassName: fast-nvme-typo
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: report-exporter
+  namespace: default
+spec:
+  containers:
+    - name: exporter
+      image: ghcr.io/acme-corp/report-exporter:1.1.0
+      volumeMounts:
+        - name: cache-vol
+          mountPath: /var/cache/exports
+  volumes:
+    - name: cache-vol
+      persistentVolumeClaim:
+        claimName: export-cache-pvc

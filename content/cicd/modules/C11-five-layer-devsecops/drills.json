@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C11-D1",
+    "title": "Quét rò rỉ khoá bí mật trong toàn bộ lịch sử Git với Gitleaks",
+    "code": "- uses: actions/checkout@v4\n  with:\n    fetch-depth: 0\n- name: Secret scan\n  run: gitleaks detect --source . --no-banner --redact"
+  },
+  {
+    "id": "C11-D2",
+    "title": "Chặn ảnh Container dính CVE mức CRITICAL đã có bản vá bằng Trivy",
+    "code": "- name: Scan container image for critical CVEs\n  run: |\n    trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ghcr.io/acme/shop-api:${{ github.sha }}"
+  }
+]

@@ -1,0 +1,293 @@
+[
+  {
+    "id": "cicd-ex-c07-1",
+    "code": "C07.1",
+    "module": "C07",
+    "title": "Cấu hình actions/cache@v4 lưu đệm ~/.npm theo mã băm lockfile",
+    "difficulty": 1,
+    "tags": [
+      "cache",
+      "hashfiles",
+      "npm"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/ci-cache.yml",
+    "prompt": "Để tăng tốc lệnh `npm ci`, hãy cấu hình bước bộ đệm với `actions/cache@v4` ngay trước bước cài đặt thư viện trong Job `build`:\n\n1. `uses: actions/cache@v4`\n2. `with.path: ~/.npm`\n3. `with.key` kết hợp hệ điều hành `${{ runner.os }}` và hàm băm `hashFiles('**/package-lock.json')`.\n4. `with.restore-keys` chứa tiền tố dự phòng `${{ runner.os }}-npm-`.",
+    "starter": "name: CI Cache\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - name: Cache npm tarball store\n        uses: actions/cache@v4\n        with:\n          path: ____\n          key: ____\n      - run: npm ci\n",
+    "solution": "name: CI Cache\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - name: Cache npm tarball store\n        uses: actions/cache@v4\n        with:\n          path: ~/.npm\n          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}\n          restore-keys: |\n            ${{ runner.os }}-npm-\n      - run: npm ci\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "uses-cache-v4",
+          "doc": "Sử dụng actions/cache@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "build",
+          "actionPrefix": "actions/cache",
+          "minMajor": 4
+        },
+        {
+          "id": "cache-path-npm",
+          "doc": "Đặt đường dẫn đệm with.path: ~/.npm",
+          "kind": "path",
+          "path": "jobs.build.steps[2].with.path",
+          "match": {
+            "eq": "~/.npm"
+          }
+        },
+        {
+          "id": "cache-key-hashfiles",
+          "doc": "Khoá key chứa runner.os và hashFiles package-lock.json",
+          "kind": "path",
+          "path": "jobs.build.steps[2].with.key",
+          "match": {
+            "regex": "runner\\.os.*hashFiles\\(.*package-lock\\.json"
+          }
+        },
+        {
+          "id": "cache-restore-keys",
+          "doc": "Khai báo lưới đỡ restore-keys chứa runner.os",
+          "kind": "path",
+          "path": "jobs.build.steps[2].with.restore-keys",
+          "match": {
+            "contains": "runner.os"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Điền `path: ~/.npm` và `key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}`.",
+      "Thêm `restore-keys: ${{ runner.os }}-npm-` bên dưới `key`."
+    ],
+    "ref": "github/cache-readonly-pattern.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c07-2",
+    "code": "C07.2",
+    "module": "C07",
+    "title": "Áp dụng Read-Only Cache với actions/cache/restore@v4 cho Job song song",
+    "difficulty": 2,
+    "tags": [
+      "cache-restore",
+      "read-only",
+      "parallel"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/pr-lint.yml",
+    "prompt": "Job `lint` chạy trên các nhánh Pull Request không nên ghi ngược lên kho Cache chung. Hãy đổi bước bộ đệm trong Job `lint` sang chế độ **Chỉ Đọc (Read-Only)**:\n\n1. Đổi `uses:` thành **`actions/cache/restore@v4`**.\n2. Đặt `with.path: ~/.npm` và `with.key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}`.",
+    "starter": "name: PR Lint Read-Only Cache\non: [pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - name: Restore npm cache read-only\n        uses: actions/cache@v4\n        with:\n          path: ~/.npm\n          key: static-bad-key\n      - run: npm ci\n      - run: npm run lint\n",
+    "solution": "name: PR Lint Read-Only Cache\non: [pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - name: Restore npm cache read-only\n        uses: actions/cache/restore@v4\n        with:\n          path: ~/.npm\n          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}\n      - run: npm ci\n      - run: npm run lint\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "uses-cache-restore-v4",
+          "doc": "Dùng đúng action chỉ đọc actions/cache/restore@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "lint",
+          "actionPrefix": "actions/cache/restore",
+          "minMajor": 4
+        },
+        {
+          "id": "restore-key-lockfile",
+          "doc": "Khoá key dùng runner.os và hashFiles package-lock.json",
+          "kind": "path",
+          "path": "jobs.lint.steps[2].with.key",
+          "match": {
+            "regex": "runner\\.os.*hashFiles\\(.*package-lock\\.json"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Action con chỉ đọc nằm sẵn trong cùng kho: `uses: actions/cache/restore@v4`."
+    ],
+    "ref": "github/cache-readonly-pattern.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c07-3",
+    "code": "C07.3",
+    "module": "C07",
+    "title": "Tải gói biên dịch dist/ lên bằng actions/upload-artifact@v4",
+    "difficulty": 1,
+    "tags": [
+      "artifacts",
+      "upload-artifact",
+      "retention-days"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/build-artifact.yml",
+    "prompt": "Sau khi chạy `npm run build`, hãy thêm bước cuối cùng vào Job `build` để đóng gói thư mục `dist/` làm Artifact truyền cho các bước triển khai sau:\n\n1. `uses: actions/upload-artifact@v4`\n2. `with.name: web-dist`\n3. `with.path: dist/`\n4. `with.retention-days: 7`",
+    "starter": "name: Build Bundle\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run build\n      # Thêm bước actions/upload-artifact@v4 lưu web-dist (dist/, retention-days: 7)\n",
+    "solution": "name: Build Bundle\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run build\n      - name: Upload production bundle\n        uses: actions/upload-artifact@v4\n        with:\n          name: web-dist\n          path: dist/\n          retention-days: 7\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "upload-v4",
+          "doc": "Dùng actions/upload-artifact@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "build",
+          "actionPrefix": "actions/upload-artifact",
+          "minMajor": 4
+        },
+        {
+          "id": "artifact-name",
+          "doc": "Đặt tên gói with.name: web-dist",
+          "kind": "path",
+          "path": "jobs.build.steps[4].with.name",
+          "match": {
+            "eq": "web-dist"
+          }
+        },
+        {
+          "id": "artifact-path",
+          "doc": "Đóng gói đúng thư mục dist/",
+          "kind": "path",
+          "path": "jobs.build.steps[4].with.path",
+          "match": {
+            "regex": "^dist/?$"
+          }
+        },
+        {
+          "id": "artifact-retention",
+          "doc": "Thiết lập thời hạn tự dọn retention-days: 7",
+          "kind": "path",
+          "path": "jobs.build.steps[4].with.retention-days",
+          "match": {
+            "eq": 7
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bước `upload-artifact@v4` là phần tử thứ 5 trong mảng `steps` (chỉ số `[4]`). Nhớ đặt `retention-days: 7` kiểu số nguyên."
+    ],
+    "ref": "github/sharded-playwright-e2e.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c07-4",
+    "code": "C07.4",
+    "module": "C07",
+    "title": "Tải lại gói web-dist ở Job deploy bằng actions/download-artifact@v4",
+    "difficulty": 2,
+    "tags": [
+      "artifacts",
+      "download-artifact",
+      "build-once"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/deploy-artifact.yml",
+    "prompt": "Áp dụng triết lý **Build Once, Deploy Anywhere**: Job `build` đã tải lên gói `web-dist`. Hãy hoàn thiện Job `deploy` ở phía dưới để:\n\n1. Khai báo phụ thuộc `needs: build` để chờ `build` chạy xong.\n2. Bước đầu tiên dùng `actions/download-artifact@v4` với `with.name: web-dist` và giải nén vào `with.path: dist/` (tuyệt đối không chạy lại `npm run build`!).",
+    "starter": "name: Build and Deploy\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: web-dist\n          path: dist/\n\n  deploy:\n    # Khai báo needs: build và dùng actions/download-artifact@v4 tải web-dist về dist/\n    runs-on: ubuntu-latest\n    steps:\n      - run: ls -la dist/\n",
+    "solution": "name: Build and Deploy\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: web-dist\n          path: dist/\n\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/download-artifact@v4\n        with:\n          name: web-dist\n          path: dist/\n      - run: ls -la dist/\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "deploy-needs-build",
+          "doc": "Job deploy có khai báo needs: build",
+          "kind": "path",
+          "path": "jobs.deploy.needs",
+          "match": {
+            "contains": "build"
+          }
+        },
+        {
+          "id": "uses-download-v4",
+          "doc": "Sử dụng actions/download-artifact@v4 trong Job deploy",
+          "kind": "gha-uses-pinned",
+          "jobId": "deploy",
+          "actionPrefix": "actions/download-artifact",
+          "minMajor": 4
+        },
+        {
+          "id": "download-name",
+          "doc": "Tải đúng gói Artifact có name: web-dist",
+          "kind": "path",
+          "path": "jobs.deploy.steps[0].with.name",
+          "match": {
+            "eq": "web-dist"
+          }
+        },
+        {
+          "id": "download-path",
+          "doc": "Giải nén vào thư mục path: dist/",
+          "kind": "path",
+          "path": "jobs.deploy.steps[0].with.path",
+          "match": {
+            "regex": "^dist/?$"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`needs: build` có thể viết chuỗi đơn hoặc mảng `[build]`.",
+      "Đặt bước `- uses: actions/download-artifact@v4` ở đầu mảng `steps:` của `deploy` (trước `run: ls -la dist/`)."
+    ],
+    "ref": "github/ephemeral-runner-bug.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c07-5",
+    "code": "C07.5",
+    "module": "C07",
+    "title": "Loại bỏ phản mẫu nén node_modules 50.000 tệp vào upload-artifact",
+    "difficulty": 2,
+    "tags": [
+      "anti-pattern",
+      "node-modules",
+      "setup-node"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/fix-artifact-bloat.yml",
+    "prompt": "Workflow dưới đây mất tới **8 phút** vô ích vì lập trình viên đã nhét cả thư mục khổng lồ `node_modules` vào `upload-artifact@v4`, trong khi lại quên bật bộ đệm npm trên `setup-node@v4`!\n\nHãy tối ưu lại đúng chuẩn:\n1. Bật `cache: \"npm\"` bên trong `with:` của bước `actions/setup-node@v4`.\n2. Ở bước `actions/upload-artifact@v4`, sửa `with.path` chỉ giữ lại duy nhất **`dist/`** (loại bỏ hoàn toàn `node_modules`).",
+    "starter": "name: Bloated Artifact Anti-Pattern\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: app-bundle\n          path: |\n            node_modules/\n            dist/\n",
+    "solution": "name: Bloated Artifact Anti-Pattern\non: [push]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: app-bundle\n          path: dist/\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "setup-node-cache-npm",
+          "doc": "Bật cache: \"npm\" trên actions/setup-node@v4",
+          "kind": "path",
+          "path": "jobs.build.steps[1].with.cache",
+          "match": {
+            "eq": "npm"
+          }
+        },
+        {
+          "id": "no-node-modules-artifact",
+          "doc": "Loại bỏ hoàn toàn node_modules khỏi đường dẫn upload-artifact",
+          "kind": "path",
+          "path": "jobs.build.steps[4].with.path",
+          "match": {
+            "notContains": "node_modules"
+          }
+        },
+        {
+          "id": "only-dist-artifact",
+          "doc": "Chỉ đóng gói thư mục biên dịch dist/",
+          "kind": "path",
+          "path": "jobs.build.steps[4].with.path",
+          "match": {
+            "regex": "^dist/?$"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm `cache: \"npm\"` ngay dưới `node-version: \"22\"`, và rút gọn `path:` của `upload-artifact@v4` thành `path: dist/`."
+    ],
+    "ref": "github/cache-readonly-pattern.yml",
+    "webGrade": true
+  }
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c05-1",
+    "title": "Ma trận kiểm thử Node 20 & 22 với fail-fast: false",
+    "code": "strategy:\n  fail-fast: false\n  matrix:\n    node: [20, 22]\nsteps:\n  - uses: actions/checkout@v4\n  - uses: actions/setup-node@v4\n    with:\n      node-version: ${{ matrix.node }}"
+  },
+  {
+    "id": "cicd-drill-c05-2",
+    "title": "Xuất và đọc biến version xuyên qua ranh giới hai Job",
+    "code": "build:\n  runs-on: ubuntu-latest\n  outputs:\n    version: ${{ steps.pkg.outputs.version }}\n  steps:\n    - id: pkg\n      run: echo \"version=1.0.0\" >> \"$GITHUB_OUTPUT\""
+  }
+]

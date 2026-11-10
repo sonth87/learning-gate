@@ -1,0 +1,51 @@
+{
+  "id": "K12",
+  "slug": "K12-configmaps-and-secrets",
+  "level": 3,
+  "order": 12,
+  "title": "Quản lý Cấu hình & Bí mật: ConfigMap, Secret & Bảo mật thực chiến",
+  "summary": "Tách cấu hình 12-Factor khỏi Image bằng ConfigMap & Secret, nạp qua envFrom / secretKeyRef / Volume chỉ đọc và hiểu rõ sự thật về Base64.",
+  "tags": [
+    "configmap",
+    "secret",
+    "12-factor",
+    "envfrom",
+    "security"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes ConfigMaps",
+      "url": "https://kubernetes.io/docs/concepts/configuration/configmap/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Kubernetes Secrets & Good Practices",
+      "url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Lỗi CreateContainerConfigError (#6)",
+      "kind": "incident",
+      "targetId": "incident-6-config-error",
+      "description": "Thực hành gỡ lỗi Pod bị chặn khởi chạy do tham chiếu thiếu Secret/ConfigMap"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/network/configmap-secret-env.yaml",
+      "kind": "good",
+      "note": "Kết hợp cả 2 kỹ thuật: nạp hàng loạt biến qua envFrom và gắn tệp JSON cấu hình qua Volume chỉ đọc.",
+      "task": "Tại sao trong `volumeMounts` của `flags-vol` tác giả lại bật thêm cờ `readOnly: true`?",
+      "answer": "Đặt `readOnly: true` ngăn chặn mã nguồn ứng dụng (hoặc kẻ tấn công khi khai thác lỗi ghi tệp) chỉnh sửa trái phép tệp cấu hình bên trong container, giữ đúng nguyên tắc bất biến."
+    },
+    {
+      "path": "k8s/network/secret-missing-key-bug.yaml",
+      "kind": "bug",
+      "note": "Nguyên nhân trực tiếp dẫn tới trạng thái lỗi CreateContainerConfigError.",
+      "task": "So sánh tên khoá trong `Secret/billing-db-secret` với `secretKeyRef` trong `Pod/billing-worker` để chỉ ra chỗ lệch.",
+      "answer": "Trong Secret đặt tên khoá là `DATABASE_PASSWORD`, nhưng trong Pod lại viết `key: DB_PASS`. Khi Kubelet lắp ghép biến môi trường trước lúc bật container không tìm thấy `DB_PASS`, nó dừng lại ở `CreateContainerConfigError`."
+    }
+  ]
+}

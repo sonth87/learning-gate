@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K14-C1",
+    "front": "Sự khác nhau quyết định giữa `readinessProbe` và `livenessProbe` khi thất bại?",
+    "back": "`readinessProbe` thất bại chỉ rút Pod khỏi danh sách nhận khách của `Service` (không giết Pod); `livenessProbe` thất bại sẽ giết và khởi động lại container."
+  },
+  {
+    "id": "K14-C2",
+    "front": "Khi nào cần dùng `startupProbe` thay vì tăng `initialDelaySeconds` của `livenessProbe`?",
+    "back": "Khi ứng dụng khởi động lần đầu chậm (30–90s) nhưng một khi đã chạy thì cần phát hiện treo nhanh (mỗi 10s). Công thức quỹ khởi động: `periodSeconds * failureThreshold`."
+  },
+  {
+    "id": "K14-C3",
+    "front": "Tại sao CẤM kiểm tra kết nối Database bên trong `livenessProbe`?",
+    "back": "Vì một cơn nghẽn DB thoáng qua sẽ làm `livenessProbe` giết hàng loạt tất cả các Pod API cùng lúc, gây bão kết nối (Thundering Herd) và sập dây chuyền khi chúng đồng loạt khởi động lại."
+  },
+  {
+    "id": "K14-C4",
+    "front": "Trình tự diễn ra khi Kubernetes xoá một Pod (Graceful Termination)?",
+    "back": "1) Đánh dấu `Terminating` & gỡ IP khỏi `Endpoints` (song song), 2) Chạy `lifecycle.preStop`, 3) Gửi `SIGTERM` cho PID 1, 4) Hết `terminationGracePeriodSeconds` mà chưa tắt thì bắn `SIGKILL`."
+  },
+  {
+    "id": "K14-C5",
+    "front": "Vai trò của `preStop: sleep 5` đối với ứng dụng Node.js sau Ingress?",
+    "back": "Tạo khoảng đệm 5 giây để `kube-proxy` và `Ingress Controller` kịp cập nhật danh sách Pod mới trên toàn cụm trước khi Express/Fastify đóng cổng TCP, triệt tiêu lỗi `502` lúc deploy."
+  },
+  {
+    "id": "K14-C6",
+    "front": "Ba phương thức kiểm tra mà một Probe Kubernetes hỗ trợ?",
+    "back": "1) `httpGet` (mã HTTP `200..399` là đạt), 2) `tcpSocket` (mở kết nối cổng TCP thành công), 3) `exec` (chạy lệnh bên trong container trả về exit code `0`) — cùng `grpc` cho dịch vụ gRPC."
+  }
+]

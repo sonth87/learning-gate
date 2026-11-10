@@ -1,0 +1,35 @@
+# Yêu cầu: Deployment "shop-api" bắt buộc đã khai báo resources.requests.cpu để HPA tính được % tải!
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: shop-api-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: shop-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    # Khi khách tăng đột biến (Flash Sale): cho phép nhân đôi số Pod nhanh trong 60s
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    # Khi lưu lượng giảm: chờ ổn định 5 phút (300s) mới thu hẹp dần để tránh bật/tắt liên tục (flapping)
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

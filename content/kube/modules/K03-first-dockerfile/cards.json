@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K03-FC1",
+    "front": "Sự khác biệt thời điểm thực thi giữa chỉ thị **`RUN`** và **`CMD`** trong Dockerfile?",
+    "back": "- **`RUN`** chạy một lần **lúc đóng gói (`docker build`)** để tạo ra layer mới (ví dụ cài `npm ci`).\n- **`CMD`** chỉ định lệnh mặc định chạy **lúc khởi tạo container (`docker run`)**."
+  },
+  {
+    "id": "K03-FC2",
+    "front": "Vì sao phải viết `CMD [\"node\", \"src/index.js\"]` (Exec Form) thay vì `CMD node src/index.js` (Shell Form)?",
+    "back": "Để tiến trình `node` trực tiếp nắm giữ **PID 1** và nhận được tín hiệu **`SIGTERM`** khi dừng container, thay vì bị `/bin/sh -c` đứng chắn làm mất Graceful Shutdown."
+  },
+  {
+    "id": "K03-FC3",
+    "front": "Tại sao `WORKDIR /app` luôn nên khai báo trước các lệnh `COPY` và `RUN`?",
+    "back": "Nó tự động tạo thư mục `/app` (nếu chưa có) và đặt làm thư mục hiện hành cho mọi lệnh phía sau, tránh làm rối loạn thư mục gốc `/` của hệ điều hành."
+  },
+  {
+    "id": "K03-FC4",
+    "front": "Ba ưu điểm cốt lõi của biến thể nền `node:22-alpine` so với `node:22` đầy đủ?",
+    "back": "1) Nhẹ hơn ~8 lần (~135MB so với ~1.1GB);\n2) Tải/kéo trên CI và Kubernetes cực nhanh;\n3) Ít gói thừa nên giảm mạnh số lỗ hổng bảo mật (CVE)."
+  },
+  {
+    "id": "K03-FC5",
+    "front": "Dấu chấm `.` ở cuối lệnh `docker build -t shop-api:1.0.0 .` có vai trò gì?",
+    "back": "Xác định đường dẫn **Build Context** — thư mục gốc mà Docker đọc tệp gửi vào bộ máy BuildKit cho các chỉ thị `COPY`."
+  },
+  {
+    "id": "K03-FC6",
+    "front": "Đặt `ENV NODE_ENV=production` trong Dockerfile mang lại lợi ích gì cho ứng dụng Node.js?",
+    "back": "Giúp Express/Fastify/React bật tối ưu hiệu năng bộ nhớ, ẩn chi tiết stack trace nhạy cảm khỏi phản hồi lỗi HTTP và đồng bộ hành vi thư viện ở chế độ sản xuất."
+  }
+]

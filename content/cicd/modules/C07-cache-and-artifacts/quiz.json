@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C07-Q1",
+    "type": "mc",
+    "q": "Điểm khác biệt cốt lõi nhất giữa **Cache** (`actions/cache@v4`) và **Artifact** (`actions/upload-artifact@v4`) trong GitHub Actions là gì?",
+    "code": "",
+    "choices": [
+      "Cache chỉ lưu được tệp văn bản .txt còn Artifact mới lưu được tệp nhị phân",
+      "Cache dùng để tái sử dụng gói phụ thuộc trung gian xuyên các lượt chạy (best-effort), còn Artifact lưu giữ sản phẩm đầu ra bất biến (`dist/`, báo cáo test) của đúng lượt chạy đó để truyền giữa các Job hoặc tải về",
+      "Artifact hoàn toàn miễn phí không giới hạn dung lượng còn Cache bị tính phí theo từng giây",
+      "Cache tự động triển khai code lên Kubernetes còn Artifact thì không"
+    ],
+    "answer": 1,
+    "explain": "Nếu xoá sạch Cache, pipeline chỉ chạy chậm hơn do tải lại từ npm nhưng vẫn phải thành công; ngược lại Artifact là dữ liệu đầu ra bắt buộc của chính commit hiện tại (như gói build `dist/`)."
+  },
+  {
+    "id": "C07-Q2",
+    "type": "tf",
+    "q": "Đóng gói toàn bộ thư mục `node_modules` (gồm 50.000 tệp nhỏ) bằng `actions/upload-artifact@v4` để truyền sang các Job sau là cách nhanh nhất và được khuyến nghị cho dự án Node.js.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai hoàn toàn! Nén và giải nén hàng chục ngàn tệp nhỏ trong `node_modules` qua Artifact tốn 4–6 phút và dễ làm hỏng symlink thực thi trong `.bin/`. Chuẩn mực là đệm `~/.npm` qua Cache + `npm ci`, chỉ truyền `dist/` qua Artifact!"
+  },
+  {
+    "id": "C07-Q3",
+    "type": "output",
+    "q": "Hàm biểu thức tích hợp sẵn nào của GitHub Actions được dùng để tính mã băm SHA-256 của tệp `package-lock.json` làm khoá Cache?",
+    "code": "key: ${{ runner.os }}-npm-${{ ____('**/package-lock.json') }}",
+    "choices": [],
+    "answer": "hashFiles",
+    "explain": "Hàm `hashFiles('**/package-lock.json')` tạo chuỗi băm duy nhất thay đổi khi và chỉ khi nội dung tệp lockfile thay đổi."
+  },
+  {
+    "id": "C07-Q4",
+    "type": "mc",
+    "q": "Khi bạn có 4 Job chạy song song (`lint`, `typecheck`, `unit-test`, `build`) cùng cần đọc bộ đệm `~/.npm` đã có sẵn mà không muốn chúng tranh nhau ghi đè bộ đệm lúc kết thúc, bạn nên dùng Action nào trong các Job đó?",
+    "code": "",
+    "choices": [
+      "actions/cache/save@v4",
+      "actions/cache/restore@v4",
+      "actions/upload-artifact@v4",
+      "actions/checkout@v4"
+    ],
+    "answer": 1,
+    "explain": "`actions/cache/restore@v4` chỉ thực hiện bước khôi phục (Read-only), hoàn toàn không chạy bước Post-job nén đẩy lên lại."
+  },
+  {
+    "id": "C07-Q5",
+    "type": "mc",
+    "q": "Vai trò của thuộc tính `restore-keys` trong `actions/cache@v4` khi khoá chính `key` không khớp (Cache Miss do vừa cập nhật thêm 1 gói npm mới) là gì?",
+    "code": "",
+    "choices": [
+      "Huỷ bỏ toàn bộ lượt chạy Workflow ngay lập tức",
+      "Tìm bản bộ đệm cũ gần nhất có cùng tiền tố (ví dụ `Linux-npm-`) làm nền tảng để chỉ phải tải bổ sung gói mới thay vì tải lại từ con số 0",
+      "Tự động xoá tệp package-lock.json trong nhánh hiện tại",
+      "Mã hoá bộ đệm bằng mật khẩu hai lớp"
+    ],
+    "answer": 1,
+    "explain": "restore-keys hoạt động như lưới đỡ tìm kiếm tiền tố theo thứ tự ưu tiên từ mới nhất, giúp tận dụng lại 95–99% các gói đã tải ở bản trước."
+  },
+  {
+    "id": "C07-Q6",
+    "type": "tf",
+    "q": "Thuộc tính `retention-days: 7` trên `actions/upload-artifact@v4` giúp tự động dọn dẹp các gói build tạm sau 7 ngày, tránh lãng phí hạn mức lưu trữ Artifact của tổ chức.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mặc định GitHub lưu Artifact tới 90 ngày; với các gói `dist/` trung gian hoặc báo cáo kiểm thử PR, đặt `retention-days: 7` tiết kiệm tới 90% dung lượng lưu trữ."
+  },
+  {
+    "id": "C07-Q7",
+    "type": "output",
+    "q": "Trên `actions/setup-node@v4`, giá trị chuỗi ngắn gọn nào cần điền vào thuộc tính `cache:` để tự động bật bộ đệm thư mục tải gói cho dự án dùng `package-lock.json`?",
+    "code": "- uses: actions/setup-node@v4\n  with:\n    node-version: \"22\"\n    cache: \"____\"",
+    "choices": [],
+    "answer": "npm",
+    "explain": "Thuộc tính `cache: \"npm\"` trên `actions/setup-node@v4` tự động băm `package-lock.json` và đệm thư mục `~/.npm` chuẩn xác mà không cần viết bước `actions/cache` dài dòng."
+  }
+]

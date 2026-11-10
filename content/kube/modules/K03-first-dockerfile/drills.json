@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K03-D1",
+    "title": "Khung Dockerfile Node 22 chuẩn mực dùng npm ci và Exec Form CMD",
+    "code": "FROM node:22-alpine\nENV NODE_ENV=production\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY src ./src\nCMD [\"node\", \"src/index.js\"]"
+  },
+  {
+    "id": "K03-D2",
+    "title": "Đóng gói Image gắn tag Semantic Version và kiểm tra danh sách Image",
+    "code": "docker build -t shop-api:1.0.0 .\ndocker images\ndocker run -d --name api -p 3000:3000 shop-api:1.0.0"
+  }
+]

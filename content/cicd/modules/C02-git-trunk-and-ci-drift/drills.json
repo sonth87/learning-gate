@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c02-1",
+    "title": "Chu trình nhánh ngắn Trunk-Based Git từ tạo nhánh đến gắn Tag phát hành",
+    "code": "git switch -c feat/healthz\ngit add .\ngit commit -m \"feat: add healthz\"\ngit switch main\ngit merge feat/healthz\ngit tag v1.0.0"
+  },
+  {
+    "id": "cicd-drill-c02-2",
+    "title": "Khoá chặt môi trường chạy Test chống treo và chống OOM 137",
+    "code": "env:\n  CI: true\n  TZ: UTC\n  NODE_OPTIONS: \"--max-old-space-size=4096\"\nrun: npx vitest run --maxWorkers=2"
+  }
+]

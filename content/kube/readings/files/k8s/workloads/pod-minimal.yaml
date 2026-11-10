@@ -1,0 +1,30 @@
+# Đơn vị nhỏ nhất trong Kubernetes: Pod bọc 1 (hoặc vài) container chia sẻ chung IP và localhost
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shop-api-canary
+  namespace: default
+  labels:
+    app.kubernetes.io/name: shop-api
+    app.kubernetes.io/instance: canary
+    tier: backend
+spec:
+  containers:
+    - name: api
+      # Luôn ghim rõ phiên bản (không dùng :latest)
+      image: ghcr.io/acme-corp/shop-api:1.4.2
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+      env:
+        - name: NODE_ENV
+          value: "production"
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"

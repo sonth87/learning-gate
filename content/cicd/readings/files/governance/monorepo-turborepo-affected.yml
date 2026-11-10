@@ -1,0 +1,52 @@
+# TỐI ƯU ĐƯỜNG ỐNG MONOREPO QUY MÔ LỚN (Turborepo + dorny/paths-filter):
+# Nếu PR chỉ sửa giao diện ở `apps/web-portal`, tuyệt đối không lãng phí máy chủ biên dịch lại `services/billing-go`!
+# Riêng thư viện dùng chung `packages/shared` nếu đổi thì Turborepo tự tính đồ thị phụ thuộc để kiểm tra mọi gói con bị ảnh hưởng.
+name: Monorepo Affected-Only Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      js_workspace: ${{ steps.filter.outputs.js_workspace }}
+      infra_k8s: ${{ steps.filter.outputs.infra_k8s }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            js_workspace:
+              - 'apps/**'
+              - 'packages/**'
+              - 'package-lock.json'
+              - 'turbo.json'
+            infra_k8s:
+              - 'deploy/k8s/**'
+
+  turbo-affected:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.js_workspace == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Cần lịch sử nhánh gốc để Turborepo đối chiếu commit thay đổi `...[origin/main]`
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Chỉ chạy lint, test và build cho các gói thực sự bị ảnh hưởng bởi PR
+        run: npx turbo run lint test build --filter=...[origin/main]

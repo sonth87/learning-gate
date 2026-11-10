@@ -1,0 +1,43 @@
+# SO SÁNH HAI CHIẾN LƯỢC CONCURRENCY TRÁI NGƯỢC NHAU (Hồ sơ sự cố B2 - Race Condition):
+# 1. Ở nhánh PR: BẬT cancel-in-progress: true để huỷ ngay lần chạy cũ khi lập trình viên vừa push sửa lỗi.
+# 2. Ở Production: TẮT cancel-in-progress: false để xếp hàng tuần tự, tuyệt đối không rút phích cắm ngang hông lúc đang deploy!
+name: Concurrency Strategy Comparison
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-fast-feedback:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    # Nhóm theo số PR: đẩy commit mới lên PR #42 sẽ lập tức huỷ bản chạy commit cũ của PR #42
+    concurrency:
+      group: pr-ci-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+
+  production-safe-rollout:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    # Khoá cứng theo môi trường: chỉ cho phép 1 đợt triển khai chạy tại 1 thời điểm, bản sau XẾP HÀNG chờ bản trước xong!
+    concurrency:
+      group: deploy-production-lock
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rollout to Production safely without mid-flight cancellation
+        run: echo "Deploying commit ${{ github.sha }} sequentially..."

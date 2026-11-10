@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K16-C1",
+    "front": "Bốn thuộc tính `securityContext` cốt lõi để Pod đạt chuẩn bảo mật `restricted`?",
+    "back": "1) `runAsNonRoot: true`, 2) `allowPrivilegeEscalation: false`, 3) `capabilities.drop: [\"ALL\"]`, 4) `seccompProfile.type: RuntimeDefault`."
+  },
+  {
+    "id": "K16-C2",
+    "front": "Cách bật `readOnlyRootFilesystem: true` mà không làm lỗi ứng dụng Node.js cần ghi file tạm?",
+    "back": "Khai báo `volumes: [{ name: tmp, emptyDir: {} }]` ở Pod và gắn `volumeMounts: [{ name: tmp, mountPath: /tmp }]` vào container."
+  },
+  {
+    "id": "K16-C3",
+    "front": "Pod Security Admission (PSA) hoạt động như thế nào để thay thế PodSecurityPolicy cũ?",
+    "back": "Gắn nhãn trực tiếp lên `Namespace`, ví dụ `pod-security.kubernetes.io/enforce: restricted` để API Server tự động chặn mọi Pod vi phạm chuẩn."
+  },
+  {
+    "id": "K16-C4",
+    "front": "Ba mảnh ghép tạo nên một phân quyền RBAC hoàn chỉnh cho Pod trong một Namespace?",
+    "back": "1) `ServiceAccount` (danh tính của Pod), 2) `Role` (danh sách `verbs` trên `resources`), 3) `RoleBinding` (nối `ServiceAccount` với `Role`)."
+  },
+  {
+    "id": "K16-C5",
+    "front": "Tại sao nên đặt `automountServiceAccountToken: false` cho phần lớn Web/API Pods?",
+    "back": "Ngăn K8s tự động gắn tệp JWT token vào trong container; nếu ứng dụng bị lỗ hổng đọc tệp tuỳ ý (LFI/RCE), kẻ tấn công cũng không lấy được token để dò quét API Server."
+  },
+  {
+    "id": "K16-C6",
+    "front": "Ba cấu hình \"cấm kỵ\" trên Pod ứng dụng vì cho phép thoát khỏi container ra máy chủ vật lý?",
+    "back": "`privileged: true`, `hostNetwork: true` / `hostPID: true`, và gắn ổ đĩa `hostPath` nhạy cảm (đặc biệt là `/var/run/docker.sock` hoặc `/etc`)."
+  }
+]

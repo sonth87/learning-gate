@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C14-D1",
+    "title": "Khai báo các nấc lưu lượng Canary trong Argo Rollouts",
+    "code": "strategy:\n  canary:\n    steps:\n      - setWeight: 5\n      - pause: { duration: \"2m\" }\n      - setWeight: 25\n      - setWeight: 100"
+  },
+  {
+    "id": "C14-D2",
+    "title": "Job Rollback tự động khi Smoke Test thất bại",
+    "code": "rollback:\n  needs: [deploy-prod, smoke-test]\n  if: failure()\n  runs-on: ubuntu-latest\n  steps:\n    - run: ./scripts/rollback.sh"
+  }
+]

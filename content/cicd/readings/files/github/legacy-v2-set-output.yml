@@ -1,0 +1,27 @@
+# CÚ PHÁP ĐÃ NGỪNG HỖ TRỢ (OUTDATED - KHÔNG DÙNG CHO DỰ ÁN MỚI!)
+# File mẫu lịch sử giai đoạn 2020-2022 để bạn nhận diện và nâng cấp khi bảo trì repo cũ.
+name: Legacy Actions v2 Workflow
+
+on: [push]
+
+jobs:
+  legacy-build:
+    runs-on: ubuntu-latest
+    steps:
+      # CŨ: @v2 chạy trên runtime Node 12/16 đã bị GitHub khai tử trên Hosted Runners
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+
+      - run: npm ci
+
+      # CŨ & NGUY HIỂM: Lệnh workflow command `::set-output` đã bị vô hiệu hoá vì lỗi bảo mật Injection.
+      # Cách mới chuẩn 2026: `echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"`
+      - name: Extract short SHA (Deprecated)
+        id: vars
+        run: echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+
+      - name: Print version
+        run: echo "Built commit ${{ steps.vars.outputs.short_sha }}"

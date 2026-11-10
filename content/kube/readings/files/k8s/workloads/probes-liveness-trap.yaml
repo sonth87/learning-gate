@@ -1,0 +1,36 @@
+# BẪY SẬP HỆ THỐNG DÂY CHUYỀN (CASCADING FAILURE):
+# Chỉ vì Database bận chạy câu query nặng 1.5 giây mà toàn bộ 20 Pod Node.js đồng loạt bị giết!
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/order-service:3.0.1
+          ports:
+            - containerPort: 3000
+          # LỖI 1: Thiếu startupProbe cho ứng dụng cần 25s load cache ban đầu!
+          # LỖI 2: Đưa endpoint "/health/deep-db" (có SELECT 1 xuống Postgres) vào livenessProbe
+          # kèm timeoutSeconds: 1 và failureThreshold: 2!
+          # Khi DB hơi chậm >1s, Kubelet tưởng ứng dụng Node.js bị treo (deadlock) nên giết tất cả Pod,
+          # hàng loạt Pod bật lại cùng lúc mở hàng trăm kết nối mới dập sập hẳn Database!
+          # NGUYÊN TẮC VÀNG: livenessProbe chỉ kiểm tra bản thân tiến trình còn phản hồi Event Loop không;
+          # kiểm tra phụ thuộc ngoài (DB/Redis tạm nghẽn) thuộc về readinessProbe (chỉ ngắt traffic tạm thời, không giết Pod).
+          livenessProbe:
+            httpGet:
+              path: /health/deep-db
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 1
+            failureThreshold: 2

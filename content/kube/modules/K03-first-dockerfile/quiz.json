@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K03-Q1",
+    "type": "mc",
+    "q": "Trong `Dockerfile` của một dịch vụ Node.js, vì sao `RUN npm ci` luôn được ưu tiên hơn `RUN npm install`?",
+    "code": "",
+    "choices": [
+      "Vì `npm install` không thể cài được gói `express` bên trong Linux",
+      "Vì `npm ci` đọc nghiêm ngặt `package-lock.json`, đảm bảo mọi lần build ra đúng phiên bản y hệt nhau và báo lỗi ngay nếu `package.json` lệch với lockfile",
+      "Vì `npm ci` tự động biên dịch TypeScript sang C++",
+      "Vì `npm ci` không cần tệp `package-lock.json`"
+    ],
+    "answer": 1,
+    "explain": "`npm ci` (Clean Install) thiết kế chuyên biệt cho môi trường tự động/Docker: tốc độ nhanh, không tự ý sửa đổi lockfile và đảm bảo tính tất định 100%."
+  },
+  {
+    "id": "K03-Q2",
+    "type": "mc",
+    "q": "Điều gì thực sự diễn ra khi bạn viết `CMD node src/index.js` (Shell Form) thay vì `CMD [\"node\", \"src/index.js\"]` (Exec Form)?",
+    "code": "",
+    "choices": [
+      "Không có bất kỳ sự khác biệt nào lúc container vận hành",
+      "Docker bọc lệnh thành `/bin/sh -c \"node src/index.js\"`, khiến `/bin/sh` giữ PID 1 và không chuyển tiếp tín hiệu `SIGTERM` xuống tiến trình `node` khi dừng container",
+      "Exec Form chạy chậm hơn gấp đôi vì phải parse JSON",
+      "Shell Form tự động bật chế độ cluster đa nhân cho Node.js"
+    ],
+    "answer": 1,
+    "explain": "Với JSON Exec Form `[\"node\", \"src/index.js\"]`, chính tiến trình `node` giữ PID 1 nên nhận trực tiếp `SIGTERM` để thực hiện Graceful Shutdown."
+  },
+  {
+    "id": "K03-Q3",
+    "type": "tf",
+    "q": "Chỉ thị `EXPOSE 3000` bên trong `Dockerfile` sẽ tự động mở cổng `3000` ra card mạng ngoài của máy chủ mà không cần truyền cờ `-p` lúc chạy `docker run`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `EXPOSE 3000` chỉ mang tính khai báo siêu dữ liệu (documentation metadata) rằng ứng dụng bên trong nghe ở cổng `3000`. Muốn mở ra máy chủ vẫn phải dùng `-p 3000:3000` lúc `docker run`."
+  },
+  {
+    "id": "K03-Q4",
+    "type": "mc",
+    "q": "Trong cú pháp Exec Form của `CMD` hoặc `ENTRYPOINT`, dòng nào dưới đây là hợp lệ không bị lỗi cú pháp?",
+    "code": "",
+    "choices": [
+      "`CMD ['node', 'src/index.js']` (dùng dấu nháy đơn)",
+      "`CMD [\"node\", \"src/index.js\"]` (dùng mảng JSON chuẩn với dấu nháy kép)",
+      "`CMD [node, src/index.js]` (không cần dấu nháy)",
+      "`CMD (\"node\", \"src/index.js\")` (dùng ngoặc tròn)"
+    ],
+    "answer": 1,
+    "explain": "Exec Form được bộ phân tích Dockerfile đọc như một mảng JSON nghiêm ngặt, do đó bắt buộc dùng ngoặc vuông `[...]` và dấu nháy kép `\"...\"`."
+  },
+  {
+    "id": "K03-Q5",
+    "type": "mc",
+    "q": "Giữa hai chỉ thị `COPY` và `ADD` trong `Dockerfile`, hướng dẫn chính thức của Docker khuyến nghị điều gì cho việc chép mã nguồn thông thường?",
+    "code": "",
+    "choices": [
+      "Luôn dùng `ADD` vì tên ngắn hơn 1 ký tự",
+      "Luôn ưu tiên `COPY` vì hành vi minh bạch, dễ đoán (chỉ sao chép tệp cục bộ); `ADD` có tính năng ngầm tự giải nén `.tar` và tải URL dễ gây rủi ro ngoài ý muốn",
+      "`COPY` đã bị gỡ bỏ từ Docker v27",
+      "`COPY` chỉ chép được 1 tệp mỗi lần, còn `ADD` mới chép được thư mục"
+    ],
+    "answer": 1,
+    "explain": "Best Practices của Docker nêu rõ: luôn dùng `COPY` làm mặc định; chỉ dùng `ADD` khi bạn thực sự chủ đích cần giải nén tự động tệp nén cục bộ."
+  },
+  {
+    "id": "K03-Q6",
+    "type": "output",
+    "q": "Trong câu lệnh đóng gói Image dưới đây, ký tự cuối cùng bị khuyết `____` đại diện cho thư mục hiện tại làm **Build Context** là ký tự gì?",
+    "code": "docker build -t shop-api:1.0.0 ____",
+    "choices": [],
+    "answer": ".",
+    "explain": "Dấu chấm `.` truyền thư mục làm việc hiện tại làm Build Context để Docker tìm tệp `Dockerfile` và các tệp nguồn cho lệnh `COPY`."
+  },
+  {
+    "id": "K03-Q7",
+    "type": "output",
+    "q": "Một container được đóng gói với dòng `CMD [\"node\", \"src/index.js\"]`. Bên trong container đó, tiến trình `node` sẽ mang mã số định danh tiến trình `PID` bằng mấy?",
+    "code": "FROM node:22-alpine\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"src/index.js\"]",
+    "choices": [],
+    "answer": "1",
+    "explain": "Nhờ dùng JSON Exec Form và không qua shell trung gian, tiến trình `node` trở thành tiến trình gốc đầu tiên trong PID Namespace với `PID 1`."
+  }
+]

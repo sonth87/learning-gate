@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K17-D1",
+    "title": "Viết NetworkPolicy Default-Deny khoá toàn bộ chiều vào Namespace",
+    "code": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: default-deny-ingress\nspec:\n  podSelector: {}\n  policyTypes:\n    - Ingress"
+  },
+  {
+    "id": "K17-D2",
+    "title": "Tùy biến tệp values.yaml cho Helm Chart của dịch vụ Node.js",
+    "code": "replicaCount: 3\nimage:\n  repository: ghcr.io/acme/shop-api\n  tag: \"2.1.0\"\nservice:\n  port: 80"
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C09-C1",
+    "front": "Bốn từ khoá khung xương cơ bản nhất của một tệp `.gitlab-ci.yml`?",
+    "back": "`stages:` (thứ tự giai đoạn), `default:` (`image: node:22-alpine`), tên từng Job kèm `stage:` và mảng câu lệnh `script:`."
+  },
+  {
+    "id": "C09-C2",
+    "front": "Tác dụng của từ khoá `needs:` trong GitLab CI?",
+    "back": "Chuyển đường ống từ chờ đợi cứng theo từng Stage sang Đồ thị DAG: Job chạy ngay khi các Job trong `needs` hoàn tất (hoặc chạy ngay lập tức từ giây 0 nếu `needs: []`)."
+  },
+  {
+    "id": "C09-C3",
+    "front": "Phân biệt `cache.policy: pull-push` và `cache.policy: pull` trong GitLab CI?",
+    "back": "`pull-push` tải cache đầu Job và ghi cập nhật cuối Job (dành cho Job cài đặt gốc); `pull` chỉ tải về đọc mà không ghi lên (dành cho các Job test song song)."
+  },
+  {
+    "id": "C09-C4",
+    "front": "Làm thế nào để chia 4 luồng kiểm thử song song trong GitLab CI?",
+    "back": "Thêm `parallel: 4` vào Job và truyền `--shard=$CI_NODE_INDEX/$CI_NODE_TOTAL` vào câu lệnh kiểm thử."
+  },
+  {
+    "id": "C09-C5",
+    "front": "Cách viết cổng duyệt tay chặn triển khai Production trên nhánh `main` bằng `rules:` của GitLab?",
+    "back": "`rules: [{ if: '$CI_COMMIT_BRANCH == \"main\"', when: manual, allow_failure: false }]`."
+  },
+  {
+    "id": "C09-C6",
+    "front": "Ràng buộc đường dẫn quan trọng cần nhớ khi khai báo `cache.paths` trên GitLab Runner?",
+    "back": "Mọi đường dẫn trong `cache.paths` bắt buộc phải nằm bên trong thư mục dự án `$CI_PROJECT_DIR` (ví dụ `.npm/` thay vì `~/.npm`)."
+  }
+]

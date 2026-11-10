@@ -1,0 +1,284 @@
+[
+  {
+    "id": "kube-ex-k07-1",
+    "code": "K07.1",
+    "title": "Hoàn thiện 4 trường gốc của Manifest Pod đầu tiên",
+    "difficulty": 1,
+    "tags": [
+      "yaml",
+      "pod",
+      "root-fields"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "pod.yaml",
+    "prompt": "Hoàn thiện bản khai báo YAML đầu tiên của bạn trên Kubernetes tạo một `Pod` có:\n1. `apiVersion: v1` và `kind: Pod`.\n2. `metadata.name: hello-k8s`.\n3. Bên trong `spec.containers`, khai báo phần tử đầu tiên có `name: web` và `image: nginx:1.27-alpine`.",
+    "starter": "# Bổ sung đủ apiVersion, kind, metadata.name và spec.containers\napiVersion: ____\nkind: ____\nmetadata:\n  name: ____\nspec:\n  containers:\n    - name: web\n      image: nginx:1.27-alpine\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: hello-k8s\nspec:\n  containers:\n    - name: web\n      image: nginx:1.27-alpine\n",
+    "hints": [
+      "Tài nguyên `Pod` thuộc nhóm cốt lõi nên dùng `apiVersion: v1` và `kind: Pod` (chữ `P` viết hoa!).",
+      "Điền `name: hello-k8s` dưới `metadata:` và dùng dấu cách để thụt lề."
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pod-apiversion-v1",
+          "doc": "Khai báo `apiVersion: v1`",
+          "kind": "path",
+          "path": "apiVersion",
+          "match": {
+            "eq": "v1"
+          }
+        },
+        {
+          "id": "pod-kind",
+          "doc": "Khai báo đúng `kind: Pod` (phân biệt chữ hoa/thường)",
+          "kind": "path",
+          "path": "kind",
+          "match": {
+            "eq": "Pod"
+          }
+        },
+        {
+          "id": "pod-meta-name",
+          "doc": "Đặt tên `metadata.name: hello-k8s`",
+          "kind": "path",
+          "path": "metadata.name",
+          "match": {
+            "eq": "hello-k8s"
+          }
+        },
+        {
+          "id": "pod-container-image",
+          "doc": "Container đầu tiên dùng `image: nginx:1.27-alpine`",
+          "kind": "path",
+          "path": "spec.containers[0].image",
+          "match": {
+            "eq": "nginx:1.27-alpine"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k07-2",
+    "code": "K07.2",
+    "title": "Kiểm tra toàn bộ Pod trên mọi Namespace bằng kubectl",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "namespaces",
+      "inspection"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Câu lệnh `kubectl get pods` hiện tại báo không có Pod nào trong `default`, nhưng trên cụm đang chạy `coredns-7db6d8ff4d` (ở `kube-system`) và `shop-api-1` (ở `staging`). Hãy sửa lệnh để liệt kê tất cả Pod trên **mọi namespace** cùng lúc.",
+    "starter": "kubectl get pods\n",
+    "solution": "kubectl get pods -A\n",
+    "hints": [
+      "Thêm cờ `-A` (hoặc `--all-namespaces`) vào lệnh `kubectl get pods`.",
+      "Gõ chính xác: `kubectl get pods -A`"
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system",
+            "staging"
+          ],
+          "pods": [
+            {
+              "name": "coredns-7db6d8ff4d",
+              "namespace": "kube-system",
+              "labels": {
+                "k8s-app": "kube-dns"
+              },
+              "image": "registry.k8s.io/coredns/coredns:v1.11.3",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "control-plane-1",
+              "ports": [
+                53
+              ],
+              "logs": [
+                "CoreDNS-1.11.3"
+              ],
+              "events": []
+            },
+            {
+              "name": "shop-api-1",
+              "namespace": "staging",
+              "labels": {
+                "app": "shop-api"
+              },
+              "image": "ghcr.io/acme/shop-api:1.2.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Listening on 3000"
+              ],
+              "events": []
+            }
+          ],
+          "deployments": [],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "saw-coredns",
+          "doc": "Kết quả hiển thị Pod hệ thống `coredns-7db6d8ff4d` ở `kube-system`",
+          "target": "stdout-inspected",
+          "contains": "coredns-7db6d8ff4d"
+        },
+        {
+          "id": "saw-staging-pod",
+          "doc": "Kết quả hiển thị `staging/shop-api-1`",
+          "target": "stdout-inspected",
+          "contains": "staging/shop-api-1"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k07-3",
+    "code": "K07.3",
+    "title": "Khám chi tiết Node xếp chỗ và Events của Pod bằng kubectl describe",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "describe",
+      "events"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Pod `payment-pod` đang chạy trong namespace `default`, nhưng bạn cần biết chính xác `kube-scheduler` đã xếp nó vào Worker Node nào và đọc lịch sử `Events:` của nó. Hãy dùng lệnh `kubectl describe` cho Pod `payment-pod`.",
+    "starter": "# Xem hồ sơ chi tiết và Events của pod payment-pod\n",
+    "solution": "kubectl describe pod payment-pod\n",
+    "hints": [
+      "Cú pháp chuẩn là `kubectl describe pod <tên-pod>`.",
+      "Gõ lệnh: `kubectl describe pod payment-pod`"
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "payment-pod",
+              "namespace": "default",
+              "labels": {
+                "app": "payment"
+              },
+              "image": "ghcr.io/acme/payment:1.0.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Payment service ready"
+              ],
+              "events": [
+                "Normal  Scheduled  Successfully assigned default/payment-pod to worker-node-2",
+                "Normal  Pulled     Container image \"ghcr.io/acme/payment:1.0.0\" already present on machine"
+              ]
+            }
+          ],
+          "deployments": [],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "described-node-placement",
+          "doc": "Đã xuất thông tin xếp chỗ trên `worker-node-2` và mục `Events:` của `payment-pod`",
+          "target": "stdout-inspected",
+          "contains": "Successfully assigned default/payment-pod to worker-node-2"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k07-4",
+    "code": "K07.4",
+    "title": "Nâng cấp Deployment từ extensions/v1beta1 cũ lên chuẩn apps/v1",
+    "difficulty": 2,
+    "tags": [
+      "yaml",
+      "deployment",
+      "apiversion",
+      "migration"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "deployment.yaml",
+    "prompt": "Bạn vừa tìm thấy một tệp Manifest cũ viết từ năm 2018 dùng `apiVersion: extensions/v1beta1` và thiếu `spec.selector`, khiến cụm K8s 1.31 từ chối thẳng! Hãy nâng cấp tệp này lên chuẩn hiện đại:\n1. Đổi `apiVersion` thành `apps/v1`.\n2. Bổ sung `spec.selector.matchLabels` khớp với nhãn `app: legacy-web` của `spec.template.metadata.labels`.",
+    "starter": "apiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n  name: legacy-web\nspec:\n  replicas: 2\n  # Thêm selector.matchLabels khớp với template.metadata.labels\n  template:\n    metadata:\n      labels:\n        app: legacy-web\n    spec:\n      containers:\n        - name: web\n          image: nginx:1.27-alpine\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: legacy-web\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: legacy-web\n  template:\n    metadata:\n      labels:\n        app: legacy-web\n    spec:\n      containers:\n        - name: web\n          image: nginx:1.27-alpine\n",
+    "hints": [
+      "Đổi dòng 1 thành `apiVersion: apps/v1`.",
+      "Ngay dưới `replicas: 2`, thêm:\n```yaml\n  selector:\n    matchLabels:\n      app: legacy-web\n```"
+    ],
+    "ref": "k8s/workloads/deployment-legacy-v1beta1.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "modern-apps-v1",
+          "doc": "Sử dụng `apiVersion: apps/v1` chuẩn hiện đại",
+          "kind": "path",
+          "path": "apiVersion",
+          "match": {
+            "eq": "apps/v1"
+          }
+        },
+        {
+          "id": "selector-matches-template",
+          "doc": "`spec.selector.matchLabels` tồn tại và khớp với `spec.template.metadata.labels`",
+          "kind": "k8s-selector-match",
+          "sourceKind": "Deployment",
+          "sourceName": "legacy-web"
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,21 @@
+# HAI LỖI LƯU TRỮ PHỔ BIẾN NHẤT KHI DÙNG DOCKER COMPOSE Ở MÁY CÁ NHÂN:
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: devpass-placeholder
+      POSTGRES_DB: shop
+    # LỖI 1: Không gắn Named Volume vào /var/lib/postgresql/data!
+    # Chỉ cần đồng nghiệp gõ "docker compose down" (dù KHÔNG có cờ -v),
+    # container bị xoá kéo theo dữ liệu bảng vừa test bay sạch!
+
+  api:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # LỖI 2: Bind mount nguyên thư mục gốc ".:/app" từ máy chủ đè lên "/app" trong container!
+      # Nếu máy host vừa clone repo chưa chạy npm install (hoặc cài bản binary macOS arm64),
+      # nó sẽ che khuất hoàn toàn thư mục /app/node_modules chuẩn Linux đã cài lúc docker build!
+      # -> Báo lỗi ngay lập tức: Error: Cannot find module 'express'
+      - .:/app

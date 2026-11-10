@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K02-FC1",
+    "front": "Hai cơ chế nhân Linux tạo nên Container là gì và vai trò từng cái?",
+    "back": "- **Namespaces:** Cô lập tầm nhìn (PID, Network, Mount, User).\n- **cgroups (Control Groups):** Đo lường và khoá trần tài nguyên phần cứng (CPU, RAM, I/O)."
+  },
+  {
+    "id": "K02-FC2",
+    "front": "Mã thoát **`Exit Code 137`** của container có ý nghĩa gì và tính từ đâu?",
+    "back": "`128 + 9 (SIGKILL) = 137`: Tiến trình bị giết cưỡng bức, phổ biến nhất là do vượt trần RAM `--memory` khiến **Linux OOM Killer** can thiệp (`OOMKilled`)."
+  },
+  {
+    "id": "K02-FC3",
+    "front": "Ưu điểm lớn nhất của mạng tự tạo (`docker network create`) so với mạng `bridge` mặc định?",
+    "back": "Có sẵn **DNS nội bộ tự động**, cho phép các container gọi nhau bằng chính **tên container** thay vì địa chỉ IP dễ thay đổi."
+  },
+  {
+    "id": "K02-FC4",
+    "front": "Khi nào chọn **Named Volume** thay vì **Bind Mount**?",
+    "back": "Chọn **Named Volume** cho dữ liệu bền vững cần hiệu năng I/O cao và độc lập cấu trúc thư mục máy chủ như **PostgreSQL, MySQL, Redis**."
+  },
+  {
+    "id": "K02-FC5",
+    "front": "Trong `compose.yaml`, giới hạn RAM và CPU của một service được khai báo tại đường dẫn khoá nào?",
+    "back": "Tại **`services.<tên>.deploy.resources.limits`** (`cpus` và `memory`)."
+  },
+  {
+    "id": "K02-FC6",
+    "front": "Vì sao gắn Bind Mount `- .:/app` dễ làm hỏng ứng dụng Node.js trong container?",
+    "back": "Vì thư mục máy chủ đè khuất `/app/node_modules` đã build chuẩn Linux bên trong Image (hoặc đưa nhầm binary biên dịch cho macOS/Windows vào Linux)."
+  }
+]

@@ -1,0 +1,29 @@
+# Mặc định trong K8s, mọi Pod ở mọi Namespace đều gọi thông sang nhau (flat network).
+# Đặt chính sách nền tảng Zero-Trust cho namespace "production": chặn toàn bộ trừ khi được mở tường minh,
+# nhưng NHỚ mở cổng 53 UDP/TCP tới kube-system để ứng dụng vẫn phân giải được DNS!
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-except-dns
+  namespace: production
+spec:
+  # podSelector rỗng {} = áp dụng cho TẤT CẢ Pod trong namespace "production"
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  # Không khai báo mảng "ingress:" -> chặn 100% kết nối đi vào từ bên ngoài
+  egress:
+    # Chỉ cho phép hỏi tên miền tới CoreDNS trong namespace kube-system
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

@@ -1,0 +1,409 @@
+[
+  {
+    "id": "kube-ex-k09-1",
+    "code": "K09.1",
+    "title": "Viết Deployment shop-api duy trì 3 bản sao tự chữa lành",
+    "difficulty": 1,
+    "tags": [
+      "deployment",
+      "replicas",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "deployment.yaml",
+    "prompt": "Hoàn thiện Manifest `Deployment` (`apiVersion: apps/v1`) tên `shop-api` sao cho:\n1. Duy trì `spec.replicas: 3` bản sao.\n2. Khớp nhãn `app: shop-api` ở cả `selector.matchLabels` và `template.metadata.labels`.\n3. Container đầu tiên dùng image ghim rõ phiên bản `shop-api:1.2.0` và mở `containerPort: 3000`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: shop-api:latest\n          ports:\n            - containerPort: 3000\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: shop-api:1.2.0\n          ports:\n            - containerPort: 3000\n",
+    "hints": [
+      "Sửa `replicas: 1` thành `replicas: 3`.",
+      "Đổi `image: shop-api:latest` thành `image: shop-api:1.2.0`."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "dep-replicas-3",
+          "doc": "Duy trì `spec.replicas: 3`",
+          "kind": "path",
+          "path": "spec.replicas",
+          "match": {
+            "eq": 3
+          }
+        },
+        {
+          "id": "dep-selector-valid",
+          "doc": "`selector.matchLabels` khớp với `template.metadata.labels`",
+          "kind": "k8s-selector-match",
+          "sourceKind": "Deployment",
+          "sourceName": "shop-api"
+        },
+        {
+          "id": "dep-image-1-2-0",
+          "doc": "Container dùng đúng image `shop-api:1.2.0`",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].image",
+          "match": {
+            "eq": "shop-api:1.2.0"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k09-2",
+    "code": "K09.2",
+    "title": "Sửa lỗi lệch nhãn giữa selector.matchLabels và Pod Template",
+    "difficulty": 1,
+    "tags": [
+      "deployment",
+      "selector",
+      "troubleshooting"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "deployment-fix.yaml",
+    "prompt": "Khi chạy `kubectl apply`, tệp `Deployment` bên dưới bị từ chối với lỗi `'selector' does not match template 'labels'` vì `matchLabels` đang tìm `app: api-v1` trong khi Pod sinh ra mang nhãn `app: shop-api`. Hãy đồng bộ cả hai về cùng nhãn chuẩn `app: shop-api`.",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: api-v1\n  template:\n    metadata:\n      labels:\n        app: shop-api\n        version: \"1.2.0\"\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.2.0\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n        version: \"1.2.0\"\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.2.0\n",
+    "hints": [
+      "Nhìn vào dòng `spec.selector.matchLabels.app`: hiện đang là `api-v1`.",
+      "Đổi `app: api-v1` thành `app: shop-api` để khớp với `template.metadata.labels` (nhãn phụ `version: \"1.2.0\"` ở dưới vẫn giữ được bình thường)."
+    ],
+    "ref": "k8s/workloads/deployment-selector-mismatch.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "match-labels-shop-api",
+          "doc": "`spec.selector.matchLabels.app` đặt là `\"shop-api\"`",
+          "kind": "path",
+          "path": "spec.selector.matchLabels.app",
+          "match": {
+            "eq": "shop-api"
+          }
+        },
+        {
+          "id": "selector-subset-of-template",
+          "doc": "`selector.matchLabels` khớp hợp lệ với `template.metadata.labels`",
+          "kind": "k8s-selector-match",
+          "sourceKind": "Deployment",
+          "sourceName": "shop-api"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k09-3",
+    "code": "K09.3",
+    "title": "Cấu hình chiến lược RollingUpdate Zero-Downtime (maxUnavailable: 0)",
+    "difficulty": 2,
+    "tags": [
+      "rolling-update",
+      "zero-downtime",
+      "deployment"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "deployment-ha.yaml",
+    "prompt": "Để trong suốt quá trình phát hành phiên bản mới không bao giờ bị hụt số lượng Pod phục vụ khách hàng dưới mức `3`, hãy bổ sung khối `spec.strategy` cho `Deployment` bên dưới với:\n- `type: RollingUpdate`\n- `rollingUpdate.maxUnavailable: 0`\n- `rollingUpdate.maxSurge: 1`",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 3\n  # Bổ sung khối strategy RollingUpdate bên dưới\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:2.1.0\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 3\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0\n      maxSurge: 1\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:2.1.0\n",
+    "hints": [
+      "Khối `strategy:` nằm bên trong `spec:` (ngang hàng với `replicas:` và `selector:`).",
+      "Chú ý `maxUnavailable: 0` và `maxSurge: 1` viết dạng số nguyên (không bọc dấu nháy)."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "strategy-type-rolling",
+          "doc": "`spec.strategy.type` đặt là `RollingUpdate`",
+          "kind": "path",
+          "path": "spec.strategy.type",
+          "match": {
+            "eq": "RollingUpdate"
+          }
+        },
+        {
+          "id": "max-unavailable-zero",
+          "doc": "`spec.strategy.rollingUpdate.maxUnavailable` bằng `0`",
+          "kind": "path",
+          "path": "spec.strategy.rollingUpdate.maxUnavailable",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "max-surge-one",
+          "doc": "`spec.strategy.rollingUpdate.maxSurge` bằng `1`",
+          "kind": "path",
+          "path": "spec.strategy.rollingUpdate.maxSurge",
+          "match": {
+            "eq": 1
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k09-4",
+    "code": "K09.4",
+    "title": "Co giãn nóng Deployment từ 2 lên 5 bản sao bằng kubectl scale",
+    "difficulty": 1,
+    "tags": [
+      "kubectl",
+      "scale",
+      "replicas"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Lưu lượng truy cập tăng cao lúc 12h trưa! Hiện tại `deployment/shop-api` chỉ đang chạy `2` bản sao. Hãy dùng lệnh `kubectl scale` để nâng số lượng bản sao của `deployment/shop-api` lên `5`.",
+    "starter": "# Co giãn deployment/shop-api lên 5 replicas\n",
+    "solution": "kubectl scale deployment/shop-api --replicas=5\n",
+    "hints": [
+      "Cú pháp chuẩn là `kubectl scale deployment/<tên> --replicas=<số>`.",
+      "Gõ chính xác: `kubectl scale deployment/shop-api --replicas=5`"
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "shop-api-10001",
+              "namespace": "default",
+              "labels": {
+                "app": "shop-api"
+              },
+              "image": "ghcr.io/acme/shop-api:1.2.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Ready"
+              ],
+              "events": []
+            },
+            {
+              "name": "shop-api-10002",
+              "namespace": "default",
+              "labels": {
+                "app": "shop-api"
+              },
+              "image": "ghcr.io/acme/shop-api:1.2.0",
+              "status": "Running",
+              "ready": true,
+              "restarts": 0,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Ready"
+              ],
+              "events": []
+            }
+          ],
+          "deployments": [
+            {
+              "name": "shop-api",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "shop-api"
+              },
+              "podLabels": {
+                "app": "shop-api"
+              },
+              "image": "ghcr.io/acme/shop-api:1.2.0",
+              "revision": 1,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "ghcr.io/acme/shop-api:1.2.0"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "dep-scaled-to-5",
+          "doc": "`Deployment/shop-api` đã cập nhật `replicas = 5`",
+          "target": "k8s-deployment",
+          "name": "shop-api",
+          "replicas": 5
+        },
+        {
+          "id": "five-pods-running",
+          "doc": "Có đủ 5 Pod `shop-api` ở trạng thái `Running`",
+          "target": "k8s-pod",
+          "labelMatch": {
+            "app": "shop-api"
+          },
+          "status": "Running",
+          "minCount": 5
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k09-5",
+    "code": "K09.5",
+    "title": "Rollback tức thì bản phát hành lỗi bằng kubectl rollout undo",
+    "difficulty": 2,
+    "tags": [
+      "rollout-undo",
+      "rollback",
+      "crashloopbackoff"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Bản phát hành Revision 2 (`shop/checkout:2.0.0-crash`) của `deployment/checkout` vừa được đẩy lên đã khiến toàn bộ Pod sập vào `CrashLoopBackOff`! Trước đó Revision 1 (`shop/checkout:1.9.0`) đang chạy hoàn toàn ổn định. Hãy chạy lệnh `kubectl rollout undo` để quay ngược `deployment/checkout` về bản `1.9.0` ngay lập tức.",
+    "starter": "kubectl rollout history deployment/checkout\n# Gõ lệnh quay ngược (undo) cho deployment/checkout bên dưới\n",
+    "solution": "kubectl rollout history deployment/checkout\nkubectl rollout undo deployment/checkout\n",
+    "hints": [
+      "Bấm Chạy thử trước để xem lịch sử 2 Revision từ lệnh `rollout history`.",
+      "Thêm dòng `kubectl rollout undo deployment/checkout` để tự động khôi phục Revision 1."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "k8s": {
+          "namespaces": [
+            "default",
+            "kube-system"
+          ],
+          "pods": [
+            {
+              "name": "checkout-20001",
+              "namespace": "default",
+              "labels": {
+                "app": "checkout"
+              },
+              "image": "shop/checkout:2.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 4,
+              "node": "worker-node-1",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Error: Cannot connect to payment gateway"
+              ],
+              "events": [
+                "Warning BackOff Back-off restarting failed container"
+              ]
+            },
+            {
+              "name": "checkout-20002",
+              "namespace": "default",
+              "labels": {
+                "app": "checkout"
+              },
+              "image": "shop/checkout:2.0.0-crash",
+              "status": "CrashLoopBackOff",
+              "ready": false,
+              "restarts": 4,
+              "node": "worker-node-2",
+              "ports": [
+                3000
+              ],
+              "logs": [
+                "Error: Cannot connect to payment gateway"
+              ],
+              "events": [
+                "Warning BackOff Back-off restarting failed container"
+              ]
+            }
+          ],
+          "deployments": [
+            {
+              "name": "checkout",
+              "namespace": "default",
+              "replicas": 2,
+              "selector": {
+                "app": "checkout"
+              },
+              "podLabels": {
+                "app": "checkout"
+              },
+              "image": "shop/checkout:2.0.0-crash",
+              "revision": 2,
+              "history": [
+                {
+                  "revision": 1,
+                  "image": "shop/checkout:1.9.0"
+                },
+                {
+                  "revision": 2,
+                  "image": "shop/checkout:2.0.0-crash"
+                }
+              ],
+              "containerPort": 3000
+            }
+          ],
+          "services": [],
+          "configMaps": [],
+          "secrets": [],
+          "pvcs": [],
+          "availableStorageClasses": [
+            "standard",
+            "gp3"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "checkout-reverted-1-9-0",
+          "doc": "`Deployment/checkout` đã khôi phục về image ổn định `shop/checkout:1.9.0`",
+          "target": "k8s-deployment",
+          "name": "checkout",
+          "image": "shop/checkout:1.9.0"
+        },
+        {
+          "id": "checkout-pods-healthy",
+          "doc": "Các Pod `checkout` đã quay trở lại trạng thái `Running` khoẻ mạnh",
+          "target": "k8s-pod",
+          "labelMatch": {
+            "app": "checkout"
+          },
+          "status": "Running",
+          "image": "shop/checkout:1.9.0",
+          "minCount": 2
+        }
+      ]
+    }
+  }
+]

@@ -1,7 +1,32 @@
 [
   {
-    "id": "C00-FC1",
-    "front": "Mã thoát **Exit Code `137`** trên CI Runner có ý nghĩa gì?",
-    "back": "`137 = 128 + 9` (`SIGKILL`): tiến trình bị nhân Linux giết tức khắc, thường gặp nhất là do vượt quá giới hạn bộ nhớ RAM (**Out Of Memory — OOM**)."
+    "id": "cicd-card-c00-1",
+    "front": "Quy ước Exit Code trên hệ thống POSIX / CI Runner hoạt động như thế nào?",
+    "back": "`0` nghĩa là thành công (bước CI xanh). Mọi giá trị từ `1` đến `255` đều là thất bại (bước CI đỏ và kích hoạt Fail-Fast dừng các bước kế tiếp)."
+  },
+  {
+    "id": "cicd-card-c00-2",
+    "front": "Vì sao gọi `curl http://localhost:3000/health` không có cờ `--fail` trong bước Smoke Test lại nguy hiểm?",
+    "back": "Vì mặc định `curl` vẫn trả về `Exit Code = 0` ngay cả khi API sập trả về HTTP `404` hoặc `500`, tạo ra False-Green Pipeline. Phải dùng `curl --fail` (hoặc `-f`) để trả mã lỗi `22`."
+  },
+  {
+    "id": "cicd-card-c00-3",
+    "front": "Ý nghĩa của bộ ba cờ `set -euo pipefail` trong Bash script trên CI là gì?",
+    "back": "`-e`: dừng ngay khi lệnh bất kỳ lỗi; `-u`: báo lỗi nếu dùng biến chưa khai báo; `-o pipefail`: bắt lỗi của bất kỳ lệnh nào bị hỏng bên trong chuỗi pipe `|`."
+  },
+  {
+    "id": "cicd-card-c00-4",
+    "front": "`npm ci` khác `npm install` ở 3 điểm cốt lõi nào khi chạy trong Pipeline?",
+    "back": "1) Xoá sạch `node_modules` cũ trước khi cài; 2) Cài cứng đúng phiên bản trong `package-lock.json` (không bao giờ tự ghi đè lockfile); 3) Báo lỗi ngay nếu `package.json` lệch với `package-lock.json`."
+  },
+  {
+    "id": "cicd-card-c00-5",
+    "front": "Exit Code `137` và `143` trên CI Runner lần lượt báo hiệu sự cố gì?",
+    "back": "`137` (`128 + 9` SIGKILL): tiến trình bị buộc diệt tức khắc, thường do tràn RAM (OOM Killer). `143` (`128 + 15` SIGTERM): tiến trình nhận lệnh dừng êm ái do chạm ngưỡng timeout hoặc bị huỷ Job."
+  },
+  {
+    "id": "cicd-card-c00-6",
+    "front": "Điểm khác nhau duy nhất giữa Continuous Delivery và Continuous Deployment là gì?",
+    "back": "Continuous Delivery có cổng phê duyệt thủ công (Manual Approval Gate, vd `environment: production`) trước khi lên Production, còn Continuous Deployment đẩy tự động hoàn toàn ra Production ngay khi vượt qua mọi bài test."
   }
 ]

@@ -1,0 +1,58 @@
+{
+  "id": "C15",
+  "slug": "C15-gitops-and-argocd",
+  "level": 4,
+  "order": 15,
+  "title": "GitOps Thực chiến với ArgoCD (Pull-Based CD)",
+  "summary": "Loại bỏ phản mẫu cấp quyền Admin K8s cho CI, chuyển sang kiến trúc Pull-Based GitOps với ArgoCD Application, tự động chống trôi cấu hình (selfHeal/prune), Helm valueFiles và điều phối thứ tự bằng Sync Waves.",
+  "tags": [
+    "gitops",
+    "argocd",
+    "kustomize",
+    "helm",
+    "sync-waves",
+    "pull-based-cd"
+  ],
+  "sources": [
+    {
+      "title": "Argo CD Documentation — Declarative Setup & Automated Sync",
+      "url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/",
+      "version": "Argo CD v2.13+"
+    },
+    {
+      "title": "Argo CD Documentation — Sync Phases and Waves",
+      "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/",
+      "version": "Argo CD v2.13+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Sang App Docker & K8s (Helm & K8s Workloads)",
+      "kind": "cross-app",
+      "targetId": "kubemastery"
+    }
+  ],
+  "readings": [
+    {
+      "path": "gitops/argocd-application-prod.yaml",
+      "kind": "good",
+      "note": "Khai báo chuẩn đối tượng ArgoCD Application cho môi trường Production bật đủ prune và selfHeal.",
+      "task": "Nếu một kỹ sư vận hành lỡ tay gõ kubectl edit deployment trên cụm Production, cờ nào trong argocd-application-prod.yaml sẽ tự động khôi phục lại trạng thái chuẩn trên Git?",
+      "answer": "Cờ syncPolicy.automated.selfHeal: true giúp ArgoCD phát hiện sai lệch (Drift) giữa cụm thực tế và Git rồi tự động đồng bộ đè lại theo đúng bản khai báo trong kho GitOps."
+    },
+    {
+      "path": "gitops/ci-update-gitops-repo.yml",
+      "kind": "good",
+      "note": "Quy trình CI của kho mã nguồn ứng dụng chỉ đóng gói Image và mở commit cập nhật thẻ mới sang kho GitOps.",
+      "task": "Tại sao kho cấu hình hạ tầng (shop-gitops) nên tách rời khỏi kho mã nguồn ứng dụng (shop-api)?",
+      "answer": "Tách riêng giúp commit cập nhật thẻ image từ CI Bot không kích hoạt vòng lặp chạy lại bài test/build của ứng dụng, đồng thời tách biệt rạch ròi quyền merge code và quyền thay đổi hạ tầng Production."
+    },
+    {
+      "path": "gitops/anti-pattern-kubectl-admin.yml",
+      "kind": "security",
+      "note": "Phản mẫu bảo mật nguy hiểm: nhét cluster-admin kubeconfig vào biến bí mật của CI để đẩy thẳng lệnh kubectl từ bên ngoài.",
+      "task": "Điều gì xảy ra nếu một dependency npm bị nhiễm mã độc trong lúc chạy build trên runner có chứa KUBE_CONFIG_ADMIN?",
+      "answer": "Nếu bước cài đặt hoặc build có quyền đọc KUBE_CONFIG_ADMIN và API Server mở cổng ra ngoài, kẻ tấn công chiếm trọn quyền quản trị tối cao toàn bộ cụm Kubernetes Production!"
+    }
+  ]
+}

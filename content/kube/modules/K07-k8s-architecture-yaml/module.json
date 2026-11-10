@@ -1,0 +1,57 @@
+{
+  "id": "K07",
+  "slug": "K07-k8s-architecture-yaml",
+  "level": 2,
+  "order": 7,
+  "title": "Kiến trúc Kubernetes, Vòng lặp Điều khiển & Giải phẫu Manifest YAML",
+  "summary": "Phân biệt Control Plane (apiserver, etcd, scheduler, controller-manager) và Worker Node (kubelet, kube-proxy), hiểu Control Loop và 4 trường gốc YAML.",
+  "tags": [
+    "k8s-architecture",
+    "control-plane",
+    "declarative",
+    "yaml",
+    "kubectl"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes Components & Architecture",
+      "url": "https://kubernetes.io/docs/concepts/overview/components/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Understanding Kubernetes Objects & YAML Spec",
+      "url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Vòng lặp Điều khiển K8s (Control Loop)",
+      "kind": "flow",
+      "targetId": "k8s-control-loop",
+      "description": "Xem trực quan luồng từ kubectl apply -> apiserver -> etcd -> scheduler -> kubelet"
+    },
+    {
+      "label": "Mở Mô phỏng Cụm K8s",
+      "kind": "tab",
+      "targetId": "cluster-sim",
+      "description": "Thử nghiệm tương tác trực tiếp trên mô phỏng cụm Control Plane & Worker Nodes"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/workloads/pod-minimal.yaml",
+      "kind": "good",
+      "note": "Quan sát 4 trường gốc bắt buộc (apiVersion, kind, metadata, spec) trong một Manifest Pod chuẩn mực.",
+      "task": "Xác định giá trị của `apiVersion` và `kind` trong tệp này, và giải thích vì sao `metadata.labels` được tách riêng khỏi `spec`?",
+      "answer": "Tệp dùng `apiVersion: v1` và `kind: Pod`. `metadata` chứa thông tin định danh và phân loại đối tượng (như `name`, `namespace`, `labels`), còn `spec` mô tả trạng thái vận hành mong muốn của tài nguyên đó (như container image, cổng, giới hạn CPU/RAM)."
+    },
+    {
+      "path": "k8s/workloads/deployment-legacy-v1beta1.yaml",
+      "kind": "outdated",
+      "note": "Nhận diện lỗi dùng API nháp cũ extensions/v1beta1 đã bị xoá khỏi Kubernetes hiện đại.",
+      "task": "Nếu nộp nguyên tệp này lên cụm Kubernetes 1.30+, lỗi gì xảy ra và cần sửa 2 điểm nào để hợp lệ?",
+      "answer": "API Server báo lỗi `no matches for kind \"Deployment\" in version \"extensions/v1beta1\"`. Cần đổi `apiVersion` thành `apps/v1` và thêm trường bắt buộc `spec.selector.matchLabels` khớp với `spec.template.metadata.labels`."
+    }
+  ]
+}

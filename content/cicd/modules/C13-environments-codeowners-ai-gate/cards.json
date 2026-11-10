@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C13-C1",
+    "front": "GitHub Environments giải quyết 2 bài toán quản trị cốt lõi nào so với Repository Secrets thông thường?",
+    "back": "1) Cô lập Secrets riêng cho từng môi trường (staging vs production).\n2) Áp đặt Protection Rules như Required Reviewers (duyệt tay), Wait Timer và giới hạn nhánh được phép deploy."
+  },
+  {
+    "id": "C13-C2",
+    "front": "Cú pháp environment có kèm đường dẫn hiển thị trên UI GitHub Actions viết như thế nào?",
+    "back": "environment:\n  name: production\n  url: https://shop.example.com"
+  },
+  {
+    "id": "C13-C3",
+    "front": "Quy tắc ưu tiên khớp đường dẫn trong tệp .github/CODEOWNERS hoạt động ra sao?",
+    "back": "Đọc từ trên xuống dưới, dòng khớp CUỐI CÙNG sẽ thắng (last match wins). Do đó quy tắc mặc định `*` đặt ở đầu file và các thư mục nhạy cảm (`/.github/workflows/`, `/db/migrations/`) đặt ở cuối file."
+  },
+  {
+    "id": "C13-C4",
+    "front": "Cần cấu hình gì trong .coderabbit.yaml để AI PR Reviewer không bình luận lan man vào lockfile và thư mục build?",
+    "back": "Khai báo `reviews.path_filters` với tiền tố phủ định `!`, ví dụ: `[\"!**/*.lock\", \"!**/package-lock.json\", \"!**/dist/**\"]`."
+  },
+  {
+    "id": "C13-C5",
+    "front": "Làm sao để bảo vệ workflow AI PR Review khỏi việc lộ API Key hoặc lạm dụng quyền từ nhánh Fork bên ngoài?",
+    "back": "Dùng `on: pull_request` (không dùng `pull_request_target` chạy code lạ), cấp quyền tối thiểu `contents: read` + `pull-requests: write`, và kiểm tra `github.event.pull_request.head.repo.full_name == github.repository`."
+  },
+  {
+    "id": "C13-C6",
+    "front": "Vì sao nên chèn job smoke-staging ở giữa deploy-staging và deploy-production?",
+    "back": "Để kiểm chứng tự động rằng bản build hoạt động sống khoẻ trên hạ tầng thật (Staging) trước khi gửi yêu cầu phê duyệt tay lên Production cho Tech Lead."
+  }
+]

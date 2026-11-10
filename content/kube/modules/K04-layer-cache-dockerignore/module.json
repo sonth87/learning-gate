@@ -1,0 +1,64 @@
+{
+  "id": "K04",
+  "slug": "K04-layer-cache-dockerignore",
+  "level": 1,
+  "order": 4,
+  "title": "Tối ưu tốc độ Build gấp 20 lần với Layer Cache & .dockerignore",
+  "summary": "Sắp xếp thứ tự COPY/RUN giữ nguyên cache npm ci, viết .dockerignore kèm ngoại lệ !README.md, kết hợp ARG + ENV và giữ sạch cache gói hệ thống.",
+  "tags": [
+    "layer-cache",
+    "dockerignore",
+    "arg",
+    "apk",
+    "optimization"
+  ],
+  "sources": [
+    {
+      "title": "Docker Build Cache Invalidation & Best Practices",
+      "url": "https://docs.docker.com/build/cache/invalidation/",
+      "version": "Docker BuildKit / Engine v27+"
+    },
+    {
+      "title": "Build Context & .dockerignore Files",
+      "url": "https://docs.docker.com/build/concepts/context/#dockerignore-files",
+      "version": "Docker BuildKit / Engine v27+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Cơ chế Layer Cache Dockerfile",
+      "kind": "flow",
+      "targetId": "dockerfile-layer-cache",
+      "description": "Trực quan hoá cách thay đổi 1 file làm vỡ dây chuyền các layer bên dưới"
+    },
+    {
+      "label": "War Room: Sự cố Docker Local (#1)",
+      "kind": "incident",
+      "targetId": "incident-1-local-docker",
+      "description": "Thực hành chẩn đoán sự cố build Docker chậm và xung đột môi trường local"
+    }
+  ],
+  "readings": [
+    {
+      "path": "docker/node-api/.dockerignore.prod",
+      "kind": "good",
+      "note": "Mẫu tệp .dockerignore chuẩn thực tế cho mọi dịch vụ Node.js / TypeScript.",
+      "task": "Quan sát hai dòng cuối `*.md` và `!README.md`. Nếu đảo ngược thứ tự viết `!README.md` lên trên rồi mới viết `*.md` ở dưới thì điều gì xảy ra?",
+      "answer": "Trong `.dockerignore`, quy tắc đứng sau sẽ ghi đè quy tắc đứng trước. Nếu viết `!README.md` trước rồi `*.md` sau, dòng `*.md` sẽ chặn đè lại khiến `README.md` vẫn bị loại khỏi Build Context!"
+    },
+    {
+      "path": "docker/node-api/.dockerignore.leaky",
+      "kind": "security",
+      "note": "Tệp .dockerignore viết cẩu thả vừa để lọt tệp .env vừa chặn nhầm cấu hình ứng dụng.",
+      "task": "Chỉ ra 2 lỗi chí mạng trong file này và cách sửa từng lỗi.",
+      "answer": "1) Thiếu chặn `.env`, `.env.*` và `.git` gây lộ mật khẩu local vào Image layer; 2) Chặn `*.json` diện rộng làm mất luôn `package.json`, `tsconfig.json` và `src/config/*.json` — phải xoá dòng `*.json` đó đi."
+    },
+    {
+      "path": "docker/legacy/Dockerfile.apt-bloated",
+      "kind": "bug",
+      "note": "Bài học kinh điển về việc tách rời lệnh cập nhật gói làm phình dung lượng Image.",
+      "task": "Vì sao thêm một dòng riêng `RUN rm -rf /var/lib/apt/lists/*` ở phía dưới cũng KHÔNG làm giảm dung lượng Image đã phình to ở dòng trên?",
+      "answer": "Mỗi chỉ thị `RUN` tạo một layer bất biến chỉ đọc. Tệp đã ghi xuống ở layer 2 vẫn nằm vĩnh viễn trong layer 2; xoá ở layer 3 chỉ đánh dấu ẩn (whiteout) chứ không thu hồi được dung lượng của layer trước đó. Phải gộp chung vào 1 dòng `RUN` duy nhất!"
+    }
+  ]
+}

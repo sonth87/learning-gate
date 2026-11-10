@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C08-C1",
+    "front": "Critical Path (Đường găng) của một Pipeline CI/CD là gì?",
+    "back": "Là chuỗi các Job phụ thuộc nối tiếp dài nhất quyết định tổng thời gian chờ từ lúc đẩy code tới khi xong Pipeline. Muốn giảm thời gian tổng, bắt buộc phải rút ngắn hoặc chẻ song song Đường găng!"
+  },
+  {
+    "id": "C08-C2",
+    "front": "Mô hình Fan-out / Fan-in trong GitHub Actions được viết như thế nào?",
+    "back": "Các Job độc lập (`lint`, `typecheck`, `test`) bỏ trống `needs` để bung ra chạy song song (Fan-out), sau đó một Job cổng (`gate` / `deploy`) đặt `needs: [lint, typecheck, test]` để hội tụ lại (Fan-in)."
+  },
+  {
+    "id": "C08-C3",
+    "front": "Công thức cấu hình Test Sharding 4 luồng cho Playwright / Vitest trên GitHub Actions?",
+    "back": "`strategy: { fail-fast: false, matrix: { shard: [1, 2, 3, 4] } }` kết hợp lệnh chạy `--shard=${{ matrix.shard }}/4`."
+  },
+  {
+    "id": "C08-C4",
+    "front": "Tại sao dùng `if: ${{ !cancelled() }}` tốt hơn `if: always()` ở bước tải báo cáo kiểm thử lên?",
+    "back": "Cả hai đều chạy khi test đỏ, nhưng nếu chính lập trình viên chủ động bấm nút Cancel huỷ lượt chạy thừa, `!cancelled()` sẽ dừng gọn ngay lập tức thay vì cố tải báo cáo dở dang như `always()`."
+  },
+  {
+    "id": "C08-C5",
+    "front": "Cặp thuộc tính bật bộ đệm tầng Docker Buildx gốc trên GitHub Actions?",
+    "back": "`cache-from: type=gha` và `cache-to: type=gha,mode=max` trên `docker/build-push-action@v6` (cần `docker/setup-buildx-action@v3` phía trước)."
+  },
+  {
+    "id": "C08-C6",
+    "front": "Câu lệnh chuẩn thay thế `sleep 30` để đợi máy chủ HTTP sẵn sàng trước khi chạy E2E?",
+    "back": "`curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://localhost:3000/healthz`."
+  }
+]

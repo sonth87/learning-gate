@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C09-D1",
+    "title": "Khai báo khung sườn stages và default image cho .gitlab-ci.yml",
+    "code": "stages:\n  - install\n  - test\n  - build\n  - deploy\ndefault:\n  image: node:22-alpine"
+  },
+  {
+    "id": "C09-D2",
+    "title": "Viết cổng phê duyệt thủ công cho nhánh main bằng khối rules",
+    "code": "deploy_prod:\n  stage: deploy\n  script:\n    - ./scripts/deploy.sh prod\n  rules:\n    - if: '$CI_COMMIT_BRANCH == \"main\"'\n      when: manual\n      allow_failure: false"
+  }
+]

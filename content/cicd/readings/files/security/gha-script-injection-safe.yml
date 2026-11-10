@@ -1,0 +1,25 @@
+# CHUẨN PHÒNG VỆ SCRIPT INJECTION: Đưa dữ liệu không tin cậy vào biến môi trường `env:`
+# Khi nằm trong biến môi trường của tiến trình hệ điều hành, chuỗi ký tự lạ chỉ được Bash coi là văn bản thuần,
+# không bao giờ bị phân tích thành dấu chấm phẩy ngắt lệnh hay subshell `$(...)`!
+name: Safe PR Title Validator
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kiểm tra định dạng Conventional Commits an toàn
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "Đang kiểm tra tiêu đề PR một cách an toàn: $PR_TITLE"
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|chore|docs|refactor|test|ci)(\(.+\))?:.+ ]]; then
+            echo "::error::Tiêu đề PR phải tuân thủ chuẩn Conventional Commits (vd: feat: add login)"
+            exit 1
+          fi

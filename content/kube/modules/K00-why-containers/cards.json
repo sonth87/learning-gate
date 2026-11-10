@@ -1,7 +1,32 @@
 [
   {
     "id": "K00-FC1",
-    "front": "Sự khác biệt cốt lõi giữa **Docker Image** và **Docker Container** là gì?",
-    "back": "**Image** là khuôn mẫu chỉ đọc (read-only snapshot) nằm trên ổ cứng; **Container** là tiến trình đang thực thi được khởi tạo từ Image kèm một lớp ghi tạm (writable layer)."
+    "front": "Sự khác biệt cốt lõi giữa **Container Image** và **Container** là gì?",
+    "back": "**Image** là khuôn mẫu nhị phân chỉ đọc (read-only layers) nằm trên đĩa; **Container** là tiến trình sống được khởi tạo từ Image đó kèm một lớp ghi tạm (writable layer) ở trên cùng."
+  },
+  {
+    "id": "K00-FC2",
+    "front": "Vì sao Container khởi động nhanh hơn Máy ảo (VM) hàng trăm lần?",
+    "back": "Vì Container **chia sẻ trực tiếp nhân hệ điều hành (Host Kernel)** và chỉ dùng Linux Namespaces + cgroups để cô lập tiến trình, không phải khởi động lại cả một Guest OS riêng như VM."
+  },
+  {
+    "id": "K00-FC3",
+    "front": "Cờ `-d` (`--detach`) trong `docker run -d` giải quyết vấn đề gì?",
+    "back": "Giúp container chạy ngầm ở hậu cảnh (background) và trả lại quyền điều khiển Terminal ngay lập tức thay vì giữ chặt màn hình theo dõi luồng đầu ra."
+  },
+  {
+    "id": "K00-FC4",
+    "front": "Khi nào bắt buộc phải dùng `docker ps -a` thay cho `docker ps`?",
+    "back": "Khi cần kiểm tra các container **đã dừng (`Exited`)** do chạy xong tác vụ hoặc bị sập lỗi lúc khởi động (những container này bị ẩn khỏi `docker ps` mặc định)."
+  },
+  {
+    "id": "K00-FC5",
+    "front": "Tín hiệu hệ điều hành nào được `docker stop` gửi tới tiến trình PID 1 đầu tiên?",
+    "back": "Tín hiệu **`SIGTERM`** (cho phép ứng dụng Node.js bắt `process.on(\"SIGTERM\")` để đóng kết nối DB êm ái trước khi hết thời gian ân hạn và bị `SIGKILL`)."
+  },
+  {
+    "id": "K00-FC6",
+    "front": "Vì sao không nên dùng tag `:latest` (ví dụ `node:latest`) trên môi trường Production?",
+    "back": "Vì `:latest` là nhãn động thay đổi theo thời gian — lần build sau có thể tự động kéo phiên bản major mới gây gãy tương thích và làm mất tính tái lập (reproducibility)."
   }
 ]

@@ -1,0 +1,53 @@
+# Chuẩn Docker Compose Specification hiện đại (Compose v2):
+# KHÔNG CÒN khai báo khoá "version: '3.8'" đã lỗi thời ở đầu file!
+name: shop-fullstack
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: shop_app
+      POSTGRES_PASSWORD: dev-local-placeholder-pass
+      POSTGRES_DB: shop_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop_app -d shop_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: shop-api:dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      # Dùng đúng tên service "postgres" và "redis" làm DNS hostname nội bộ!
+      DATABASE_URL: postgres://shop_app:dev-local-placeholder-pass@postgres:5432/shop_db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
