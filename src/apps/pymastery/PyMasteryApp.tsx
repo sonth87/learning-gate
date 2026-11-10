@@ -19,6 +19,8 @@ import { TermPopover } from '@/components/common/TermPopover';
 import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { GlobalSearchModal } from '@/components/common/GlobalSearchModal';
 import { SetupGuideModal } from '@/components/common/SetupGuideModal';
+import { WpApp } from '@/features/workpath/WpApp';
+import { useWpProgress } from '@/features/workpath/store';
 import { cn } from '@/utils/cn';
 
 export interface PyMasteryAppProps {
@@ -40,6 +42,7 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
     selectedLessonId,
   } = useNavigationStore();
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
+  const hydrateWp = useWpProgress((s) => s.hydrate);
   const fontSize = useSettingsStore((s) => s.fontSize);
   const toggleJsTsComparison = useSettingsStore((s) => s.toggleJsTsComparison);
 
@@ -50,7 +53,8 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
 
   useEffect(() => {
     hydrateAll();
-  }, [hydrateAll]);
+    hydrateWp();
+  }, [hydrateAll, hydrateWp]);
 
   // When user changes theme from DeviceLayout Control Center, sync back to useSettingsStore
   useEffect(() => {
@@ -95,6 +99,8 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
 
       {/* Main Content Area: Header and MobileBottomNav stay pinned, only main content area scrolls */}
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
+        {activeTab === 'learn' && <WpApp />}
+
         {activeTab === 'curriculum' && (
           <div className="flex h-full w-full flex-row overflow-hidden">
             <Sidebar />

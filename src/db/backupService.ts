@@ -4,7 +4,7 @@ import { FullBackupPayload, UserSettings } from '@/types/user.types';
 export const backupService = {
   async exportBackup(currentSettings: UserSettings): Promise<FullBackupPayload> {
     const db = await getDb();
-    const [completedLessons, notes, bookmarks, submissions, srsStates, examHistory] =
+    const [completedLessons, notes, bookmarks, submissions, srsStates, examHistory, wp] =
       await Promise.all([
         db.getAll('completed_lessons'),
         db.getAll('notes'),
@@ -12,6 +12,7 @@ export const backupService = {
         db.getAll('submissions'),
         db.getAll('srs_states'),
         db.getAll('exam_history'),
+        db.get('wp_state', 'main'),
       ]);
 
     return {
@@ -24,6 +25,7 @@ export const backupService = {
       submissions,
       srsStates,
       examHistory,
+      workpath: wp?.state,
     };
   },
 
@@ -38,6 +40,7 @@ export const backupService = {
         'submissions',
         'srs_states',
         'exam_history',
+        'wp_state',
       ],
       'readwrite'
     );
@@ -49,6 +52,7 @@ export const backupService = {
       tx.objectStore('submissions').clear(),
       tx.objectStore('srs_states').clear(),
       tx.objectStore('exam_history').clear(),
+      tx.objectStore('wp_state').clear(),
     ]);
 
     for (const lessonId of payload.completedLessonIds || []) {
@@ -71,6 +75,9 @@ export const backupService = {
     }
     for (const exam of payload.examHistory || []) {
       await tx.objectStore('exam_history').put(exam);
+    }
+    if (payload.workpath) {
+      await tx.objectStore('wp_state').put({ key: 'main', state: payload.workpath });
     }
 
     await tx.done;

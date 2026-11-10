@@ -5,6 +5,7 @@ import {
   UserNote,
 } from '@/types/user.types';
 import { ExamAttemptRecord, FlashcardSrsState } from '@/types/assessment.types';
+import type { WpState } from '@/features/workpath/types';
 
 export interface PyLearnDBSchema extends DBSchema {
   notes: {
@@ -34,10 +35,15 @@ export interface PyLearnDBSchema extends DBSchema {
     value: ExamAttemptRecord;
     indexes: { 'by-exam': string };
   };
+  /** Tiến độ đường học WorkPath: một bản ghi duy nhất, khoá 'main' */
+  wp_state: {
+    key: string;
+    value: { key: string; state: WpState };
+  };
 }
 
 const DB_NAME = 'pylearn_mastery_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<PyLearnDBSchema>> | null = null;
 
@@ -65,6 +71,9 @@ export function getDb(): Promise<IDBPDatabase<PyLearnDBSchema>> {
         if (!db.objectStoreNames.contains('exam_history')) {
           const examStore = db.createObjectStore('exam_history', { keyPath: 'id' });
           examStore.createIndex('by-exam', 'examId');
+        }
+        if (!db.objectStoreNames.contains('wp_state')) {
+          db.createObjectStore('wp_state', { keyPath: 'key' });
         }
       },
     });
