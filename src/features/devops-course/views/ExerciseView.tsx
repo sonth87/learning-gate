@@ -137,23 +137,25 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
   return (
     <div className="mx-auto max-w-[1500px] p-4 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <CourseBtn accent={accent} onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
-        </CourseBtn>
-        <div className="min-w-0 flex-1">
+      <div className="mb-4 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CourseBtn accent={accent} onClick={back}>
+            <ArrowLeft className="h-4 w-4" /> Quay lại
+          </CourseBtn>
+          <div className="flex items-center gap-2">
+            <Stars n={ex.difficulty} />
+            <Pill tone={status === 'passed' ? 'ok' : status === 'started' ? 'warn' : 'neutral'}>
+              {status === 'passed' ? 'đã đạt' : status === 'started' ? 'đang làm' : 'chưa làm'}
+            </Pill>
+          </div>
+        </div>
+        <div className="min-w-0">
           <div className="text-xs text-slate-500">
             {mod.id} · {mod.title}
           </div>
-          <h1 className="text-xl font-bold text-white sm:text-2xl">
+          <h1 className="break-words text-xl font-bold text-white sm:text-2xl">
             <span className={cn('font-mono', codeTone)}>{ex.code}</span> · {ex.title}
           </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Stars n={ex.difficulty} />
-          <Pill tone={status === 'passed' ? 'ok' : status === 'started' ? 'warn' : 'neutral'}>
-            {status === 'passed' ? 'đã đạt' : status === 'started' ? 'đang làm' : 'chưa làm'}
-          </Pill>
         </div>
       </div>
 
@@ -170,16 +172,16 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
               </div>
             )}
             {refItem && (
-              <p className="mt-3 text-sm text-slate-400">
-                📖 Cấu hình thực tế liên quan:{' '}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-sm text-slate-400">
+                <span>📖 Cấu hình thực tế liên quan:</span>
                 <button
                   type="button"
-                  className="text-sky-400 underline underline-offset-2 cursor-pointer"
+                  className="inline-flex min-h-[44px] items-center rounded-lg px-2 text-sky-400 underline underline-offset-2 hover:bg-slate-800/60 cursor-pointer"
                   onClick={() => go({ name: 'read', n: refItem.n })}
                 >
                   {ex.ref}
                 </button>
-              </p>
+              </div>
             )}
           </div>
 

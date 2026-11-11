@@ -84,7 +84,7 @@ export const CourseRunOutput: React.FC<{
               Kiểm tra thụt lề <b>2 dấu cách</b> (không dùng phím Tab cứng trong YAML), dấu <code>:</code> phải có khoảng trắng theo sau (<code>key: value</code>).
             </span>
             {lineNo && onGoto && (
-              <CourseBtn accent={accent} onClick={() => onGoto(lineNo)} className="ml-auto !min-h-0 !px-2.5 !py-1 text-xs">
+              <CourseBtn accent={accent} onClick={() => onGoto(lineNo)} className="ml-auto min-h-[44px] sm:min-h-0 !px-2.5 sm:!py-1 text-xs">
                 Đi tới dòng {lineNo}
               </CourseBtn>
             )}
@@ -111,7 +111,7 @@ export const CourseGradeOutput: React.FC<{
         <div className="flex flex-wrap items-center justify-between gap-2">
           <b>Cấu hình / lệnh bị lỗi cú pháp nên chưa thể kiểm tra:</b>
           {lineNo && onGoto && (
-            <CourseBtn accent={accent} onClick={() => onGoto(lineNo)} className="!min-h-0 !px-2.5 !py-1 text-xs">
+            <CourseBtn accent={accent} onClick={() => onGoto(lineNo)} className="min-h-[44px] sm:min-h-0 !px-2.5 sm:!py-1 text-xs">
               Đi tới dòng {lineNo}
             </CourseBtn>
           )}
@@ -144,7 +144,7 @@ export const CourseGradeOutput: React.FC<{
                 </span>
               </div>
               {t.line && onGoto && (
-                <CourseBtn accent={accent} onClick={() => onGoto(t.line!)} className="!min-h-0 !px-2 !py-0.5 text-xs">
+                <CourseBtn accent={accent} onClick={() => onGoto(t.line!)} className="min-h-[44px] sm:min-h-0 !px-2.5 sm:!py-0.5 text-xs">
                   Đi tới dòng {t.line}
                 </CourseBtn>
               )}

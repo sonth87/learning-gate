@@ -40,10 +40,12 @@ export const ReadView: React.FC<{ n: number }> = ({ n }) => {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 p-4 sm:p-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <CourseBtn accent={accent} onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
-        </CourseBtn>
+      <div className="space-y-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:space-y-0">
+        <div>
+          <CourseBtn accent={accent} onClick={back}>
+            <ArrowLeft className="h-4 w-4" /> Quay lại
+          </CourseBtn>
+        </div>
         <div className="min-w-0 flex-1">
           <h1 className="break-all font-mono text-lg font-bold text-white sm:text-xl">
             <span className="text-slate-500">#{it.n}</span> {it.path}
@@ -122,7 +124,7 @@ export const ReadView: React.FC<{ n: number }> = ({ n }) => {
               <button
                 type="button"
                 onClick={() => go({ name: 'module', id: r.module.id })}
-                className="font-semibold text-sky-400 underline underline-offset-2 cursor-pointer"
+                className="inline-flex min-h-[44px] items-center rounded-lg px-2 font-semibold text-sky-400 underline underline-offset-2 hover:bg-slate-800/60 cursor-pointer"
               >
                 {r.module.id} · {r.module.title}
               </button>
