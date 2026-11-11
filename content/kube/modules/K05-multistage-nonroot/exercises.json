@@ -1,0 +1,250 @@
+[
+  {
+    "id": "kube-ex-k05-1",
+    "code": "K05.1",
+    "title": "Khai báo cấu trúc 2-stage Dockerfile (builder và runner)",
+    "difficulty": 2,
+    "tags": [
+      "multi-stage",
+      "dockerfile",
+      "from"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Tách tệp `Dockerfile` đơn lẻ bên dưới thành kiến trúc **2 giai đoạn (Multi-stage)** cùng dùng nền `node:22-alpine`:\n- Stage 1 đặt bí danh là `AS builder` (chứa bước cài đặt và `RUN npm run build`).\n- Stage 2 đặt bí danh là `AS runner` (đặt `WORKDIR /app` và lệnh chạy `CMD [\"node\", \"dist/main.js\"]`).",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\nCMD [\"node\", \"dist/main.js\"]\n",
+    "solution": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-alpine AS runner\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCMD [\"node\", \"dist/main.js\"]\n",
+    "hints": [
+      "Đổi dòng đầu thành `FROM node:22-alpine AS builder`.",
+      "Sau dòng `RUN npm run build`, mở stage thứ hai bằng `FROM node:22-alpine AS runner`, thêm `WORKDIR /app` và giữ `CMD [\"node\", \"dist/main.js\"]` ở cuối."
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "two-stages-exact",
+          "doc": "Dockerfile có đúng 2 stage (Multi-stage)",
+          "kind": "stage-count",
+          "eq": 2
+        },
+        {
+          "id": "stage-0-builder",
+          "doc": "Stage 1 dùng `FROM node:22-alpine AS builder`",
+          "kind": "base-image",
+          "stage": 0,
+          "imagePrefix": "node:",
+          "notLatest": true,
+          "variantContains": "22-alpine",
+          "alias": "builder"
+        },
+        {
+          "id": "stage-1-runner",
+          "doc": "Stage 2 dùng `FROM node:22-alpine AS runner`",
+          "kind": "base-image",
+          "stage": 1,
+          "imagePrefix": "node:",
+          "notLatest": true,
+          "variantContains": "22-alpine",
+          "alias": "runner"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k05-2",
+    "code": "K05.2",
+    "title": "Sao chép thư mục biên dịch xuyên stage bằng COPY --from=builder",
+    "difficulty": 2,
+    "tags": [
+      "multi-stage",
+      "copy-from",
+      "dockerfile"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Ở stage `runner` bên dưới, nếu viết `COPY /app/dist ./dist` không có cờ `--from` thì Docker lại đi tìm trên máy ngoài thay vì lấy từ stage `builder`! Hãy hoàn thiện hai dòng `COPY --from=builder` ở stage `runner` để gắp `/app/node_modules` vào `./node_modules` và `/app/dist` vào `./dist`.",
+    "starter": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build\n\nFROM node:22-alpine AS runner\nWORKDIR /app\n# Sao chép /app/node_modules và /app/dist từ stage builder sang đây\nCMD [\"node\", \"dist/main.js\"]\n",
+    "solution": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build\n\nFROM node:22-alpine AS runner\nWORKDIR /app\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/dist ./dist\nCMD [\"node\", \"dist/main.js\"]\n",
+    "hints": [
+      "Sử dụng cờ `--from=builder` ngay sau chữ `COPY`.",
+      "Thêm hai dòng vào stage `runner`:\n`COPY --from=builder /app/node_modules ./node_modules`\n`COPY --from=builder /app/dist ./dist`"
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "copy-dist-from-builder",
+          "doc": "Stage `runner` sao chép `/app/dist` sang `./dist` bằng cờ `--from=builder`",
+          "kind": "instruction",
+          "stage": "runner",
+          "instruction": "COPY",
+          "hasFlag": "--from=builder",
+          "argsRegex": "/app/dist\\s+\\./dist"
+        },
+        {
+          "id": "copy-modules-from-builder",
+          "doc": "Stage `runner` sao chép `/app/node_modules` sang `./node_modules` bằng `--from=builder`",
+          "kind": "instruction",
+          "stage": "runner",
+          "instruction": "COPY",
+          "hasFlag": "--from=builder",
+          "argsRegex": "/app/node_modules\\s+\\./node_modules"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k05-3",
+    "code": "K05.3",
+    "title": "Gọt bỏ devDependencies bằng npm prune --omit=dev",
+    "difficulty": 2,
+    "tags": [
+      "npm-prune",
+      "omit-dev",
+      "multi-stage"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Hiện tại stage `builder` cài toàn bộ gói phát triển (`typescript`, `@types/node`, `vitest`) rồi chép nguyên xi cả đống đó sang `runner` làm Image nặng thêm 280MB! Hãy thêm bước dọn bỏ `devDependencies` bằng cú pháp hiện đại `RUN npm prune --omit=dev` đặt **ngay sau** `RUN npm run build` ở stage `builder` (lưu ý KHÔNG dùng cờ cũ `--production`).",
+    "starter": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build\n# Thêm bước lọc bỏ devDependencies tại đây\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/dist ./dist\nCMD [\"node\", \"dist/main.js\"]\n",
+    "solution": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build\nRUN npm prune --omit=dev\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/dist ./dist\nCMD [\"node\", \"dist/main.js\"]\n",
+    "hints": [
+      "Phải biên dịch `RUN npm run build` xong xuôi rồi mới được xoá `typescript` bằng `npm prune --omit=dev`!",
+      "Đặt dòng `RUN npm prune --omit=dev` ngay bên dưới `RUN npm run build` trong stage `builder`."
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "has-npm-prune-omit-dev",
+          "doc": "Stage `builder` gọi `RUN npm prune --omit=dev`",
+          "kind": "instruction",
+          "stage": "builder",
+          "instruction": "RUN",
+          "argsRegex": "npm\\s+prune\\s+--omit=dev"
+        },
+        {
+          "id": "build-before-prune",
+          "doc": "`RUN npm run build` thực thi TRƯỚC `RUN npm prune --omit=dev`",
+          "kind": "order",
+          "stage": "builder",
+          "before": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+run\\s+build"
+          },
+          "after": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+prune\\s+--omit=dev"
+          }
+        },
+        {
+          "id": "no-deprecated-production-flag",
+          "doc": "Không dùng cờ lỗi thời `--production`",
+          "kind": "instruction",
+          "instruction": "RUN",
+          "argsRegex": "--production",
+          "exists": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k05-4",
+    "code": "K05.4",
+    "title": "Hạ quyền khỏi root bằng chỉ thị USER node ở stage cuối",
+    "difficulty": 1,
+    "tags": [
+      "security",
+      "non-root",
+      "user"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Cụm Kubernetes bật chính sách bảo mật `restricted` vừa từ chối triển khai Image bên dưới vì stage cuối cùng vẫn đang chạy mặc định dưới quyền `root` (`UID 0`). Hãy chuyển sang tài khoản phi đặc quyền có sẵn `USER node` ở stage `runner` trước dòng `CMD`.",
+    "starter": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build && npm prune --omit=dev\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder --chown=node:node /app/node_modules ./node_modules\nCOPY --from=builder --chown=node:node /app/dist ./dist\nEXPOSE 3000\n# Hạ quyền xuống tài khoản non-root tại đây\nCMD [\"node\", \"dist/main.js\"]\n",
+    "solution": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build && npm prune --omit=dev\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder --chown=node:node /app/node_modules ./node_modules\nCOPY --from=builder --chown=node:node /app/dist ./dist\nUSER node\nEXPOSE 3000\nCMD [\"node\", \"dist/main.js\"]\n",
+    "hints": [
+      "Image `node:22-alpine` đã tạo sẵn tài khoản `node` (UID 1000).",
+      "Thêm dòng `USER node` vào trong stage `runner` trước `CMD`."
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "runner-uses-user-node",
+          "doc": "Stage cuối cùng hạ quyền an toàn xuống `USER node`",
+          "kind": "non-root-user",
+          "stage": "last",
+          "expectedUser": "node"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k05-5",
+    "code": "K05.5",
+    "title": "Hoàn thiện HEALTHCHECK và Exec Form CMD cho Production Image",
+    "difficulty": 2,
+    "tags": [
+      "healthcheck",
+      "production",
+      "dockerfile"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Hoàn thiện mảnh ghép cuối cùng cho Image Production ở stage `runner`:\n1. Thêm chỉ thị `HEALTHCHECK` gọi lệnh kiểm tra endpoint `http://127.0.0.1:3000/healthz` bằng chính `node -e`.\n2. Đổi dòng `CMD` ở cuối sang JSON Exec Form `CMD [\"node\", \"dist/main.js\"]` (giữ nguyên `USER node`).",
+    "starter": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build && npm prune --omit=dev\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder --chown=node:node /app/node_modules ./node_modules\nCOPY --from=builder --chown=node:node /app/dist ./dist\nUSER node\nEXPOSE 3000\n# Thêm HEALTHCHECK và sửa CMD sang JSON Exec Form\nCMD node dist/main.js\n",
+    "solution": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build && npm prune --omit=dev\n\nFROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder --chown=node:node /app/node_modules ./node_modules\nCOPY --from=builder --chown=node:node /app/dist ./dist\nUSER node\nEXPOSE 3000\nHEALTHCHECK --interval=30s --timeout=3s CMD [\"node\", \"-e\", \"fetch('http://127.0.0.1:3000/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"]\nCMD [\"node\", \"dist/main.js\"]\n",
+    "hints": [
+      "Một chỉ thị `HEALTHCHECK` hợp lệ có dạng: `HEALTHCHECK --interval=30s --timeout=3s CMD node -e \"fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\"`",
+      "Và đừng quên đổi dòng cuối thành `CMD [\"node\", \"dist/main.js\"]`."
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "has-healthcheck-cmd",
+          "doc": "Stage cuối khai báo chỉ thị `HEALTHCHECK ... CMD ...` kiểm tra `/healthz`",
+          "kind": "instruction",
+          "stage": "last",
+          "instruction": "HEALTHCHECK",
+          "argsRegex": "CMD\\s+.*healthz"
+        },
+        {
+          "id": "keeps-non-root-node",
+          "doc": "Giữ nguyên quyền phi đặc quyền `USER node`",
+          "kind": "non-root-user",
+          "stage": "last",
+          "expectedUser": "node"
+        },
+        {
+          "id": "exec-form-dist-main",
+          "doc": "Khởi chạy bằng JSON Exec Form `CMD [\"node\", \"dist/main.js\"]`",
+          "kind": "instruction",
+          "stage": "last",
+          "instruction": "CMD",
+          "execForm": true,
+          "jsonEquals": [
+            "node",
+            "dist/main.js"
+          ]
+        }
+      ]
+    }
+  }
+]

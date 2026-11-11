@@ -1,0 +1,60 @@
+{
+  "id": "K19",
+  "slug": "K19-troubleshoot-oom-network-rollout",
+  "level": 6,
+  "order": 19,
+  "title": "Khám bệnh K8s Thực chiến (Phần 2): Xử lý OOMKilled (137), Mất mạng 502 & Cứu hộ Rollout",
+  "summary": "Xử lý trực diện 4 sự cố vận hành căng thẳng nhất trên Production: tràn RAM OOMKilled 137, rỗng Endpoints gây 502, Rollback khẩn cấp bằng CLI và gia cố Zero-Downtime.",
+  "tags": [
+    "oomkilled",
+    "502-bad-gateway",
+    "endpoints",
+    "rollback",
+    "zero-downtime"
+  ],
+  "sources": [
+    {
+      "title": "Debug Services & Missing Endpoints",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Deployments — Rolling Back & Proportional Scaling",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Lỗi OOMKilled (#4)",
+      "kind": "incident",
+      "targetId": "incident-4-oomkilled"
+    },
+    {
+      "label": "War Room: Lỗi 502 lệch Selector (#7)",
+      "kind": "incident",
+      "targetId": "incident-7-network-selector"
+    },
+    {
+      "label": "War Room: Pod kẹt Terminating (#8)",
+      "kind": "incident",
+      "targetId": "incident-8-terminating-stuck"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/network/service-broken-502.yaml",
+      "kind": "bug",
+      "note": "Ca bệnh kinh điển đánh lừa mọi kỹ sư: Pod vẫn báo Running 1/1 bình thường nhưng toàn bộ người dùng ngoài Ingress nhận lỗi 502 Bad Gateway.",
+      "task": "Tìm đồng thời cả 2 chỗ lệch giữa Deployment và Service trong tệp này.",
+      "answer": "1) Service đặt selector `app: shop-backend` lệch với nhãn Pod `app: shop-api` khiến danh sách Endpoints trống rỗng (<none>); 2) Service chuyển tiếp vào `targetPort: 8080` trong khi container chỉ lắng nghe ở cổng `3000`."
+    },
+    {
+      "path": "k8s/workloads/probes-graceful-node.yaml",
+      "kind": "good",
+      "note": "Bản thiết kế hoàn chỉnh chống rớt gói tin tuyệt đối trong lúc Rolling Update cho ứng dụng Node.js có lưu lượng truy cập cao.",
+      "task": " Liệt kê bộ 3 cơ chế phối hợp nhau trong tệp này để đảm bảo khách hàng không gặp bất kỳ lỗi 502 nào lúc phát hành phiên bản mới.",
+      "answer": "1) RollingUpdate với maxUnavailable: 0 & maxSurge: 1, 2) readinessProbe kiểm tra /readyz trước khi cho phép nhận khách, và 3) lifecycle.preStop sleep 5 giây kèm terminationGracePeriodSeconds: 30 trước khi đóng cổng TCP."
+    }
+  ]
+}

@@ -1,0 +1,242 @@
+[
+  {
+    "id": "cicd-ex-c12-1",
+    "code": "C12.1",
+    "module": "C12",
+    "title": "Cấp quyền tối thiểu id-token: write để đúc thẻ xác thực OIDC",
+    "difficulty": 1,
+    "tags": [
+      "oidc",
+      "id-token",
+      "permissions"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/oidc-permissions.yml",
+    "prompt": "Job `deploy-cloud` đang thất bại ở bước lấy thẻ OIDC với thông báo lỗi `Unable to get ACTIONS_ID_TOKEN_REQUEST_URL` vì thiếu quyền đúc thẻ!\n\nHãy bổ sung khối `permissions` ngay bên trong Job `deploy-cloud` với đúng 2 quyền tối thiểu:\n- `id-token: write`\n- `contents: read`",
+    "starter": "name: Cloud OIDC Deploy\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-cloud:\n    runs-on: ubuntu-latest\n    # Cấp quyền id-token: write và contents: read cho Job này\n    steps:\n      - uses: actions/checkout@v4\n      - uses: aws-actions/configure-aws-credentials@v4\n        with:\n          role-to-assume: arn:aws:iam::123456789012:role/github-oidc-prod\n          aws-region: ap-southeast-1\n",
+    "solution": "name: Cloud OIDC Deploy\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-cloud:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n      contents: read\n    steps:\n      - uses: actions/checkout@v4\n      - uses: aws-actions/configure-aws-credentials@v4\n        with:\n          role-to-assume: arn:aws:iam::123456789012:role/github-oidc-prod\n          aws-region: ap-southeast-1\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "job-id-token-write",
+          "doc": "Job deploy-cloud có quyền permissions.id-token: write",
+          "kind": "path",
+          "path": "jobs.deploy-cloud.permissions.id-token",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "job-contents-read",
+          "doc": "Job deploy-cloud giữ quyền permissions.contents: read",
+          "kind": "path",
+          "path": "jobs.deploy-cloud.permissions.contents",
+          "match": {
+            "eq": "read"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm khối `permissions:` ngay dưới `runs-on: ubuntu-latest` bên trong `deploy-cloud`."
+    ],
+    "ref": "security/aws-oidc-deploy.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c12-2",
+    "code": "C12.2",
+    "module": "C12",
+    "title": "Di chuyển từ cặp khoá AWS tĩnh sang xác thực không khoá OIDC role-to-assume",
+    "difficulty": 2,
+    "tags": [
+      "oidc",
+      "aws",
+      "migration"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/migrate-to-oidc.yml",
+    "prompt": "Tệp triển khai cũ đang dùng cặp khoá tĩnh dài hạn `aws-access-key-id` và `aws-secret-access-key`. Đội Hạ tầng đã tạo sẵn Role OIDC có ARN là `arn:aws:iam::123456789012:role/shop-api-oidc-deploy` tại vùng `ap-southeast-1`.\n\nHãy nâng cấp Job `deploy` sang **Keyless OIDC**:\n1. Thêm `permissions: { id-token: write, contents: read }` vào Job `deploy`.\n2. Nâng `aws-actions/configure-aws-credentials` lên `@v4`.\n3. Xoá hoàn toàn `aws-access-key-id` và `aws-secret-access-key`, thay bằng `role-to-assume: arn:aws:iam::123456789012:role/shop-api-oidc-deploy` (giữ `aws-region: ap-southeast-1`).",
+    "starter": "name: Deploy to AWS\non:\n  push:\n    branches: [main]\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: aws-actions/configure-aws-credentials@v2\n        with:\n          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}\n          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}\n          aws-region: ap-southeast-1\n      - run: aws eks update-kubeconfig --name shop-prod\n",
+    "solution": "name: Deploy to AWS\non:\n  push:\n    branches: [main]\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n      contents: read\n    steps:\n      - uses: actions/checkout@v4\n      - uses: aws-actions/configure-aws-credentials@v4\n        with:\n          role-to-assume: arn:aws:iam::123456789012:role/shop-api-oidc-deploy\n          aws-region: ap-southeast-1\n      - run: aws eks update-kubeconfig --name shop-prod\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "oidc-perm-enabled",
+          "doc": "Bật permissions.id-token: write trên Job deploy",
+          "kind": "path",
+          "path": "jobs.deploy.permissions.id-token",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "aws-creds-v4",
+          "doc": "Nâng cấp lên aws-actions/configure-aws-credentials@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "deploy",
+          "actionPrefix": "aws-actions/configure-aws-credentials",
+          "minMajor": 4
+        },
+        {
+          "id": "no-static-key-id",
+          "doc": "Xoá bỏ hoàn toàn khoá tĩnh aws-access-key-id",
+          "kind": "path",
+          "path": "jobs.deploy.steps[1].with.aws-access-key-id",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "no-static-secret-key",
+          "doc": "Xoá bỏ hoàn toàn khoá tĩnh aws-secret-access-key",
+          "kind": "path",
+          "path": "jobs.deploy.steps[1].with.aws-secret-access-key",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "role-arn-configured",
+          "doc": "Khai báo role-to-assume: arn:aws:iam::123456789012:role/shop-api-oidc-deploy",
+          "kind": "path",
+          "path": "jobs.deploy.steps[1].with.role-to-assume",
+          "match": {
+            "eq": "arn:aws:iam::123456789012:role/shop-api-oidc-deploy"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Kiểm tra kỹ cả 3 chỗ: thêm `permissions:` ở cấp Job, nâng `@v2` lên `@v4`, và thay 2 dòng khoá tĩnh bằng 1 dòng `role-to-assume`."
+    ],
+    "ref": "security/aws-oidc-deploy.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c12-3",
+    "code": "C12.3",
+    "module": "C12",
+    "title": "Khoá chặt điều kiện sub và aud trong AWS IAM Role Trust Policy",
+    "difficulty": 3,
+    "tags": [
+      "oidc",
+      "iam-trust-policy",
+      "sub-claim"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "iam-trust-policy.yaml",
+    "prompt": "Chính sách tin cậy IAM Role dưới đây đang mở toang không có `Condition`, khiến bất kỳ tài khoản GitHub nào trên thế giới cũng có thể mượn Role của công ty!\n\nHãy thêm khối `Condition.StringEquals` vào phần tử `Statement[0]` để khoá cứng cả hai trường:\n- `token.actions.githubusercontent.com:aud: sts.amazonaws.com`\n- `token.actions.githubusercontent.com:sub: repo:acme-corp/shop-api:ref:refs/heads/main`",
+    "starter": "Version: \"2012-10-17\"\nStatement:\n  - Effect: Allow\n    Principal:\n      Federated: arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com\n    Action: sts:AssumeRoleWithWebIdentity\n    # Bổ sung khối Condition.StringEquals khoá chặt aud và sub\n",
+    "solution": "Version: \"2012-10-17\"\nStatement:\n  - Effect: Allow\n    Principal:\n      Federated: arn:aws:iam::123456789012:oidc-provider/token.actions.githubusercontent.com\n    Action: sts:AssumeRoleWithWebIdentity\n    Condition:\n      StringEquals:\n        token.actions.githubusercontent.com:aud: sts.amazonaws.com\n        token.actions.githubusercontent.com:sub: repo:acme-corp/shop-api:ref:refs/heads/main\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "has-aud-key",
+          "doc": "Có điều kiện kiểm tra token.actions.githubusercontent.com:aud",
+          "kind": "path",
+          "path": "Statement[0].Condition.StringEquals",
+          "match": {
+            "contains": "token.actions.githubusercontent.com:aud"
+          }
+        },
+        {
+          "id": "has-sub-key",
+          "doc": "Có điều kiện kiểm tra token.actions.githubusercontent.com:sub",
+          "kind": "path",
+          "path": "Statement[0].Condition.StringEquals",
+          "match": {
+            "contains": "token.actions.githubusercontent.com:sub"
+          }
+        },
+        {
+          "id": "exact-trust-claims",
+          "doc": "Khoá chính xác aud=\"sts.amazonaws.com\" và sub=\"repo:acme-corp/shop-api:ref:refs/heads/main\"",
+          "kind": "path",
+          "path": "Statement[0].Condition.StringEquals",
+          "match": {
+            "eq": {
+              "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+              "token.actions.githubusercontent.com:sub": "repo:acme-corp/shop-api:ref:refs/heads/main"
+            }
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`Condition:` nằm bên trong phần tử `- Effect: Allow` (thụt lề ngang hàng với `Effect`, `Principal`, `Action`).",
+      "Kiểm tra chính xác từng ký tự của `repo:acme-corp/shop-api:ref:refs/heads/main`."
+    ],
+    "ref": "security/aws-iam-trust-policy.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c12-4",
+    "code": "C12.4",
+    "module": "C12",
+    "title": "Ký chứng thực nguồn gốc bản dựng SLSA với actions/attest-build-provenance@v2",
+    "difficulty": 2,
+    "tags": [
+      "slsa",
+      "provenance",
+      "attestation"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/attest-provenance.yml",
+    "prompt": "Hoàn thiện Job `release-bundle` để đóng dấu chứng thực nguồn gốc mật mã (SLSA Build Provenance) cho tệp sản phẩm `dist/app.tgz`:\n\n1. Trong `jobs.release-bundle.permissions`: cấp đủ `contents: read`, **`id-token: write`** và **`attestations: write`**.\n2. Thêm bước cuối cùng gọi `actions/attest-build-provenance@v2` với `with.subject-path: dist/app.tgz`.",
+    "starter": "name: Release with Provenance\non:\n  push:\n    branches: [main]\n\njobs:\n  release-bundle:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      # Thêm quyền id-token: write và attestations: write\n    steps:\n      - uses: actions/checkout@v4\n      - run: mkdir -p dist && tar -czf dist/app.tgz package.json\n      # Thêm bước actions/attest-build-provenance@v2 cho subject-path: dist/app.tgz\n",
+    "solution": "name: Release with Provenance\non:\n  push:\n    branches: [main]\n\njobs:\n  release-bundle:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      id-token: write\n      attestations: write\n    steps:\n      - uses: actions/checkout@v4\n      - run: mkdir -p dist && tar -czf dist/app.tgz package.json\n      - name: Attest build provenance\n        uses: actions/attest-build-provenance@v2\n        with:\n          subject-path: dist/app.tgz\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "perm-id-token",
+          "doc": "Cấp quyền permissions.id-token: write",
+          "kind": "path",
+          "path": "jobs.release-bundle.permissions.id-token",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "perm-attestations",
+          "doc": "Cấp quyền permissions.attestations: write",
+          "kind": "path",
+          "path": "jobs.release-bundle.permissions.attestations",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "uses-attest-v2",
+          "doc": "Gọi action actions/attest-build-provenance@v2",
+          "kind": "gha-uses-pinned",
+          "jobId": "release-bundle",
+          "actionPrefix": "actions/attest-build-provenance",
+          "minMajor": 2
+        },
+        {
+          "id": "attest-subject-path",
+          "doc": "Chỉ định with.subject-path: dist/app.tgz",
+          "kind": "path",
+          "path": "jobs.release-bundle.steps[2].with.subject-path",
+          "match": {
+            "eq": "dist/app.tgz"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bổ sung hai dòng `id-token: write` và `attestations: write` dưới `permissions:`, rồi thêm bước `- uses: actions/attest-build-provenance@v2` ở cuối mảng `steps:`."
+    ],
+    "ref": "security/cosign-provenance.yml",
+    "webGrade": true
+  }
+]

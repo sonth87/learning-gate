@@ -23,6 +23,9 @@ interface Props {
   onRun?: () => void;
   onSubmit?: () => void;
   readOnly?: boolean;
+  /** Bật gợi ý code khi gõ (mặc định bật). Tắt cho bài luyện gõ để tự nhớ cú pháp. */
+  suggest?: boolean;
+  placeholder?: string;
   /** Chiều cao CSS của khung, mặc định co theo màn hình */
   height?: string;
   className?: string;
@@ -41,7 +44,7 @@ const FONT: React.CSSProperties = {
 const lineStartOf = (v: string, i: number) => v.lastIndexOf('\n', i - 1) + 1;
 
 export const PyCodeEditor = forwardRef<PyCodeEditorHandle, Props>(function PyCodeEditor(
-  { value, onChange, onRun, onSubmit, readOnly, height = 'clamp(240px, 46vh, 540px)', className, ariaLabel = 'Trình soạn thảo mã Python' },
+  { value, onChange, onRun, onSubmit, readOnly, suggest = true, placeholder, height = 'clamp(240px, 46vh, 540px)', className, ariaLabel = 'Trình soạn thảo mã Python' },
   ref
 ) {
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -72,7 +75,7 @@ export const PyCodeEditor = forwardRef<PyCodeEditorHandle, Props>(function PyCod
       ta.focus();
       let ok = false;
       try {
-        ok = document.execCommand('insertText', false, text);
+        ok = text === '' ? document.execCommand('delete') : document.execCommand('insertText', false, text);   // chuỗi rỗng = xoá vùng chọn
       } catch {
         ok = false;
       }
@@ -191,7 +194,12 @@ export const PyCodeEditor = forwardRef<PyCodeEditorHandle, Props>(function PyCod
     }
     if (!PAIRS[ch]) return;
     const isQuote = ch === '"' || ch === "'";
-    if (isQuote && (/\w/.test(prev) || /\w/.test(next))) return;
+    if (isQuote) {
+      // Số nháy cùng loại đã gõ trên dòng: lẻ = đang ở trong chuỗi, nháy này là nháy ĐÓNG → không tự thêm cặp mới
+      const lineBefore = v.slice(lineStartOf(v, s), s);
+      if ((lineBefore.split(ch).length - 1) % 2 === 1) return;
+      if (/\w/.test(prev) || /\w/.test(next)) return;   // tiền tố chuỗi (f"..."), hoặc dấu nháy trong từ (don't)
+    }
     if (!isQuote && next && /\w/.test(next)) return;
     ev.preventDefault();
     insert(ch + PAIRS[ch]);
@@ -340,13 +348,14 @@ export const PyCodeEditor = forwardRef<PyCodeEditorHandle, Props>(function PyCod
           readOnly={readOnly}
           aria-label={ariaLabel}
           spellCheck={false}
+          placeholder={placeholder}
           autoCapitalize="off"
           autoComplete="off"
           autoCorrect="off"
           wrap="off"
           onChange={(e) => {
             onChange(e.target.value);
-            showSuggestions();
+            if (suggest) showSuggestions();
           }}
           onScroll={() => {
             sync();

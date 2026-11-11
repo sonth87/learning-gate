@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K09-D1",
+    "title": "Cấu hình chiến lược RollingUpdate Zero-Downtime cho Deployment",
+    "code": "spec:\n  replicas: 3\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 0\n      maxSurge: 1"
+  },
+  {
+    "id": "K09-D2",
+    "title": "Co giãn bản sao, kiểm tra lịch sử và Rollback Deployment trên CLI",
+    "code": "kubectl scale deployment/shop-api --replicas=5\nkubectl rollout history deployment/checkout\nkubectl rollout undo deployment/checkout"
+  }
+]

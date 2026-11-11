@@ -15,6 +15,8 @@ import {
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
+import { useWpProgress } from '@/features/workpath/store';
+import { useKubeProgress, useCicdProgress } from '@/features/devops-course/store';
 import { backupService } from '@/db/backupService';
 import { FullBackupPayload } from '@/types/user.types';
 import { cn } from '@/utils/cn';
@@ -63,7 +65,12 @@ export const SettingsModal: React.FC = () => {
       if (parsed.settings) {
         settings.replaceAllSettings(parsed.settings);
       }
-      await hydrateAll();
+      await Promise.all([
+        hydrateAll(),
+        parsed.workpath ? useWpProgress.getState().replaceAll(parsed.workpath) : Promise.resolve(),
+        useKubeProgress.getState().hydrate(true),
+        useCicdProgress.getState().hydrate(true),
+      ]);
       setStatusMessage(
         'Khôi phục thành công toàn bộ tiến độ, ghi chú, SRS Flashcard & Cài đặt!'
       );

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C13-D1",
+    "title": "Gắn GitHub Environment kèm URL cho job Production",
+    "code": "deploy-production:\n  needs: smoke-staging\n  if: github.ref == 'refs/heads/main'\n  runs-on: ubuntu-latest\n  environment:\n    name: production\n    url: https://shop.example.com"
+  },
+  {
+    "id": "C13-D2",
+    "title": "Lọc bỏ lockfile và dist trong .coderabbit.yaml",
+    "code": "reviews:\n  profile: assertive\n  path_filters:\n    - \"!**/*.lock\"\n    - \"!**/package-lock.json\"\n    - \"!**/dist/**\""
+  }
+]

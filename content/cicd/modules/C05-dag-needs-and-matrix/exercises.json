@@ -1,0 +1,347 @@
+[
+  {
+    "id": "cicd-ex-c05-1",
+    "code": "C05.1",
+    "title": "Tách Job tuần tự chậm chạp thành 2 Root Jobs chạy song song lint và unit-test",
+    "difficulty": 1,
+    "tags": [
+      "parallel-jobs",
+      "dag",
+      "fan-out"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/parallel-root.yml",
+    "prompt": "Hiện tại toàn bộ lệnh `npm run lint` và `npm test` bị nhồi chung vào một Job `all-in-one` chạy nối đuôi nhau rất chậm. Hãy xoá/tách thành hai Root Jobs chạy song song độc lập là `jobs.lint` và `jobs.unit-test` (cả hai đều dùng `runs-on: ubuntu-latest`, đều KHÔNG khai báo `needs`, mỗi Job tự checkout, cài Node 22, `npm ci` và chạy lệnh tương ứng của mình).",
+    "starter": "name: Parallel Root Jobs\non: [push, pull_request]\njobs:\n  all-in-one:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n      - run: npm test\n",
+    "solution": "name: Parallel Root Jobs\non: [push, pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n\n  unit-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Tạo 2 khoá dưới `jobs:` là `lint:` và `unit-test:` (không để `needs` ở cả hai Job để chúng chạy song song từ giây đầu).",
+      "Nhớ rằng mỗi Job chạy trên Ephemeral Runner riêng nên cả `lint` và `unit-test` đều cần `checkout@v4`, `setup-node@v4` và `npm ci`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "lint-job-ubuntu",
+          "doc": "Job lint chạy trên ubuntu-latest",
+          "kind": "path",
+          "path": "jobs.lint.runs-on",
+          "match": {
+            "eq": "ubuntu-latest"
+          }
+        },
+        {
+          "id": "lint-no-needs",
+          "doc": "Job lint là root job (không có khoá needs)",
+          "kind": "path",
+          "path": "jobs.lint.needs",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "unit-test-job-ubuntu",
+          "doc": "Job unit-test chạy trên ubuntu-latest",
+          "kind": "path",
+          "path": "jobs.unit-test.runs-on",
+          "match": {
+            "eq": "ubuntu-latest"
+          }
+        },
+        {
+          "id": "unit-test-no-needs",
+          "doc": "Job unit-test là root job chạy song song (không có khoá needs)",
+          "kind": "path",
+          "path": "jobs.unit-test.needs",
+          "match": {
+            "exists": false
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c05-2",
+    "code": "C05.2",
+    "title": "Tạo cổng hội tụ Fan-In: Job build chờ cả lint và unit-test đều xanh",
+    "difficulty": 1,
+    "tags": [
+      "fan-in",
+      "needs",
+      "dag"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/fan-in-build.yml",
+    "prompt": "Trong file khởi đầu, Job `build` chưa khai báo phụ thuộc nên chạy song song ngay từ đầu — lỡ `lint` hoặc `unit-test` đỏ mà vẫn tốn máy ảo đóng gói bundle! Hãy cấu hình `jobs.build.needs` thành danh sách chờ cả hai Job `[\"lint\", \"unit-test\"]`.",
+    "starter": "name: Fan-In Build Gate\non: [push, pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run lint\n\n  unit-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run build\n",
+    "solution": "name: Fan-In Build Gate\non: [push, pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run lint\n\n  unit-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  build:\n    needs: [\"lint\", \"unit-test\"]\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run build\n",
+    "hints": [
+      "Bên trong `jobs.build` (cùng cấp thụt lề với `runs-on`), thêm dòng `needs: [\"lint\", \"unit-test\"]`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "build-needs-lint",
+          "doc": "jobs.build.needs có chứa \"lint\"",
+          "kind": "path",
+          "path": "jobs.build.needs",
+          "match": {
+            "contains": "lint"
+          }
+        },
+        {
+          "id": "build-needs-unit-test",
+          "doc": "jobs.build.needs có chứa \"unit-test\"",
+          "kind": "path",
+          "path": "jobs.build.needs",
+          "match": {
+            "contains": "unit-test"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c05-3",
+    "code": "C05.3",
+    "title": "Nối thêm mắt xích deploy-staging phụ thuộc build và chỉ chạy trên nhánh main",
+    "difficulty": 2,
+    "tags": [
+      "deploy-staging",
+      "needs",
+      "if-main"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/staging-chain.yml",
+    "prompt": "Bổ sung thêm Job mới tên `deploy-staging` vào dưới `jobs:` thoả mãn: (1) chạy trên `runs-on: ubuntu-latest`, (2) khai báo `needs: [\"build\"]` (hoặc `needs: build`) để chờ đóng gói xong, (3) đặt điều kiện `if: github.ref == 'refs/heads/main'` để PR không tự đẩy đè lên Staging, và (4) có ít nhất 1 Step `run:` thực thi triển khai.",
+    "starter": "name: Build to Staging DAG\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run build\n",
+    "solution": "name: Build to Staging DAG\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run build\n\n  deploy-staging:\n    needs: [\"build\"]\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    steps:\n      - name: Deploy bundle to Staging\n        run: echo \"Deploying to staging environment\"\n",
+    "hints": [
+      "Thêm khoá `deploy-staging:` dưới `jobs:` (thụt 2 dấu cách giống `build:`).",
+      "Bên trong khai báo `needs: [\"build\"]`, `if: github.ref == 'refs/heads/main'`, `runs-on: ubuntu-latest` và mảng `steps:` có ít nhất 1 lệnh `run:`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "staging-needs-build",
+          "doc": "Job deploy-staging khai báo needs phụ thuộc vào build",
+          "kind": "path",
+          "path": "jobs.deploy-staging.needs",
+          "match": {
+            "oneOf": [
+              "build",
+              [
+                "build"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "staging-if-main-branch",
+          "doc": "Job deploy-staging có điều kiện if kiểm tra github.ref == 'refs/heads/main'",
+          "kind": "path",
+          "path": "jobs.deploy-staging.if",
+          "match": {
+            "contains": "github.ref == 'refs/heads/main'"
+          }
+        },
+        {
+          "id": "staging-runs-on-ubuntu",
+          "doc": "Job deploy-staging chạy trên ubuntu-latest",
+          "kind": "path",
+          "path": "jobs.deploy-staging.runs-on",
+          "match": {
+            "eq": "ubuntu-latest"
+          }
+        },
+        {
+          "id": "staging-has-step",
+          "doc": "Job deploy-staging có danh sách steps không rỗng",
+          "kind": "path",
+          "path": "jobs.deploy-staging.steps",
+          "match": {
+            "nonEmpty": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c05-4",
+    "code": "C05.4",
+    "title": "Thiết lập Strategy Matrix kiểm thử song song trên Node 20 và Node 22",
+    "difficulty": 2,
+    "tags": [
+      "matrix",
+      "node-20",
+      "node-22"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/node-matrix.yml",
+    "prompt": "Thư viện nội bộ của công ty cần đảm bảo tương thích đồng thời với cả Node 20 và Node 22. Hãy cấu hình `jobs.unit-test.strategy.matrix.node` thành `[20, 22]`, sau đó truyền biểu thức động `${{ matrix.node }}` vào `jobs.unit-test.steps[1].with.node-version`.",
+    "starter": "name: Multi-Node Matrix CI\non: [push, pull_request]\njobs:\n  unit-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Multi-Node Matrix CI\non: [push, pull_request]\njobs:\n  unit-test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node: [20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Thêm `strategy:\\n  matrix:\\n    node: [20, 22]` bên dưới `jobs.unit-test`.",
+      "Đổi `node-version: \"22\"` ở `steps[1].with` thành `node-version: ${{ matrix.node }}`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "matrix-node-20-22",
+          "doc": "Khai báo strategy.matrix.node gồm hai phiên bản [20, 22]",
+          "kind": "path",
+          "path": "jobs.unit-test.strategy.matrix.node",
+          "match": {
+            "oneOf": [
+              [
+                20,
+                22
+              ],
+              [
+                "20",
+                "22"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "setup-node-uses-matrix-expr",
+          "doc": "Truyền biểu thức ${{ matrix.node }} vào setup-node@v4",
+          "kind": "path",
+          "path": "jobs.unit-test.steps[1].with.node-version",
+          "match": {
+            "contains": "matrix.node"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c05-5",
+    "code": "C05.5",
+    "title": "Mở rộng ma trận đa hệ điều hành (Ubuntu + macOS) và tắt fail-fast",
+    "difficulty": 2,
+    "tags": [
+      "matrix-os",
+      "fail-fast",
+      "cross-platform"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/cross-os-matrix.yml",
+    "prompt": "Công cụ CLI của bạn cần chạy thử trên cả Linux lẫn macOS mà không bị huỷ ngang hông khi 1 máy gặp lỗi. Trên `jobs.unit-test`, hãy: (1) thêm chiều `strategy.matrix.os: [\"ubuntu-latest\", \"macos-latest\"]`, (2) đổi `runs-on` thành `${{ matrix.os }}`, và (3) bật `strategy.fail-fast: false`.",
+    "starter": "name: Cross-Platform CLI Matrix\non: [pull_request]\njobs:\n  unit-test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        node: [20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "solution": "name: Cross-Platform CLI Matrix\non: [pull_request]\njobs:\n  unit-test:\n    runs-on: ${{ matrix.os }}\n    strategy:\n      fail-fast: false\n      matrix:\n        os: [\"ubuntu-latest\", \"macos-latest\"]\n        node: [20, 22]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ matrix.node }}\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test\n",
+    "hints": [
+      "Đặt `fail-fast: false` bên dưới `strategy:` (ngang hàng với `matrix:`).",
+      "Thêm `os: [\"ubuntu-latest\", \"macos-latest\"]` vào `matrix:` và cập nhật `runs-on: ${{ matrix.os }}`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "strategy-fail-fast-false",
+          "doc": "Đặt strategy.fail-fast bằng false để giữ trọn vẹn báo cáo mọi tổ hợp",
+          "kind": "path",
+          "path": "jobs.unit-test.strategy.fail-fast",
+          "match": {
+            "eq": false
+          }
+        },
+        {
+          "id": "matrix-os-ubuntu-macos",
+          "doc": "Khai báo strategy.matrix.os gồm [\"ubuntu-latest\", \"macos-latest\"]",
+          "kind": "path",
+          "path": "jobs.unit-test.strategy.matrix.os",
+          "match": {
+            "eq": [
+              "ubuntu-latest",
+              "macos-latest"
+            ]
+          }
+        },
+        {
+          "id": "runs-on-matrix-os",
+          "doc": "Thuộc tính runs-on tham chiếu động tới ${{ matrix.os }}",
+          "kind": "path",
+          "path": "jobs.unit-test.runs-on",
+          "match": {
+            "contains": "matrix.os"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c05-6",
+    "code": "C05.6",
+    "title": "Bắc cầu truyền biến outputs.version từ Job build sang Job deploy",
+    "difficulty": 3,
+    "tags": [
+      "job-outputs",
+      "needs-context",
+      "cross-job"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/cross-job-outputs.yml",
+    "prompt": "Step `id: pkg` trong Job `build` đã trích xuất số phiên bản từ `package.json` vào `$GITHUB_OUTPUT`, nhưng sang Job `deploy` dòng lệnh `echo` lại in ra rỗng vì thiếu cầu nối giữa 2 Job! Hãy nối đủ 3 mắt xích: (1) khai báo `jobs.build.outputs.version: \"${{ steps.pkg.outputs.version }}\"`, (2) thêm `needs: build` vào `jobs.deploy`, và (3) truyền `${{ needs.build.outputs.version }}` vào lệnh `run` của `jobs.deploy.steps[0]`.",
+    "starter": "name: Cross-Job Version Handoff\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Read package.json version\n        id: pkg\n        run: echo \"version=$(node -p \"require('./package.json').version\")\" >> \"$GITHUB_OUTPUT\"\n\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Announce deployment version\n        run: echo \"Deploying version TODO\"\n",
+    "solution": "name: Cross-Job Version Handoff\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    outputs:\n      version: \"${{ steps.pkg.outputs.version }}\"\n    steps:\n      - uses: actions/checkout@v4\n      - name: Read package.json version\n        id: pkg\n        run: echo \"version=$(node -p \"require('./package.json').version\")\" >> \"$GITHUB_OUTPUT\"\n\n  deploy:\n    needs: build\n    runs-on: ubuntu-latest\n    steps:\n      - name: Announce deployment version\n        run: echo \"Deploying version ${{ needs.build.outputs.version }}\"\n",
+    "hints": [
+      "Trong `jobs.build`, thêm khối `outputs:\\n  version: \"${{ steps.pkg.outputs.version }}\"` cùng cấp với `runs-on`.",
+      "Trong `jobs.deploy`, thêm `needs: build` và sửa lệnh `run:` ở `steps[0]` để đọc `${{ needs.build.outputs.version }}`."
+    ],
+    "ref": "github/outputs-and-conditions.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "build-exposes-version-output",
+          "doc": "Job build phơi bày outputs.version ánh xạ từ steps.pkg.outputs.version",
+          "kind": "path",
+          "path": "jobs.build.outputs.version",
+          "match": {
+            "contains": "steps.pkg.outputs.version"
+          }
+        },
+        {
+          "id": "deploy-needs-build",
+          "doc": "Job deploy khai báo needs phụ thuộc vào build",
+          "kind": "path",
+          "path": "jobs.deploy.needs",
+          "match": {
+            "oneOf": [
+              "build",
+              [
+                "build"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "deploy-reads-needs-output",
+          "doc": "Step của Job deploy đọc giá trị qua needs.build.outputs.version",
+          "kind": "path",
+          "path": "jobs.deploy.steps[0].run",
+          "match": {
+            "contains": "needs.build.outputs.version"
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c06-1",
+    "front": "Giá trị mặc định của `timeout-minutes` trên GitHub Actions là bao lâu và nên đặt lại thành bao nhiêu cho Job CI thông thường?",
+    "back": "Mặc định tới `360` phút (6 tiếng!). Nên chủ động đặt `timeout-minutes: 10` (hoặc `15`) trên mọi Job để chặn sớm các lỗi treo kết nối hay watch mode."
+  },
+  {
+    "id": "cicd-card-c06-2",
+    "front": "Sự khác nhau cốt lõi về `cancel-in-progress` giữa Concurrency cho PR và Concurrency cho Production Deploy là gì?",
+    "back": "Trên PR bật `cancel-in-progress: true` (nhóm theo `github.ref`) để huỷ bản cũ tiết kiệm phút chạy; trên Production đặt `cancel-in-progress: false` (nhóm khoá cố định) để xếp hàng tuần tự, không bao giờ ngắt ngang lúc đang rollout."
+  },
+  {
+    "id": "cicd-card-c06-3",
+    "front": "Tác dụng của khối `services:` bên trong một Job GitHub Actions là gì?",
+    "back": "Khởi chạy các Docker container phụ trợ (như `postgres:16-alpine`, `redis:7-alpine`) song hành cùng Job để chạy Integration Test thật, rồi tự động dọn sạch khi Job kết thúc."
+  },
+  {
+    "id": "cicd-card-c06-4",
+    "front": "Làm sao chữa dứt điểm lỗi chập chờn `ECONNREFUSED 127.0.0.1:5432` khi kết nối tới `services.postgres` ở đầu Job?",
+    "back": "Thêm cờ Docker healthcheck vào `services.postgres.options`: `--health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10` để Runner đợi Postgres thực sự `healthy`."
+  },
+  {
+    "id": "cicd-card-c06-5",
+    "front": "Chuỗi kết nối `REDIS_URL` và cờ healthcheck chuẩn khi gắn `redis:7-alpine` vào `services:` trên `ubuntu-latest` là gì?",
+    "back": "Ánh xạ `ports: [\"6379:6379\"]`, đặt `--health-cmd \"redis-cli ping\"` trong `options:`, và truyền `REDIS_URL: \"redis://localhost:6379\"` vào `env:`."
+  },
+  {
+    "id": "cicd-card-c06-6",
+    "front": "Nếu trong một nhóm `concurrency` đang có 1 Job chạy (`Running`) và 1 Job chờ (`Pending`), khi có thêm lượt thứ 3 đẩy vào với `cancel-in-progress: false` thì chuyện gì xảy ra?",
+    "back": "Job đang `Running` vẫn chạy tiếp an toàn tới đích; còn Job đang nằm chờ (`Pending`) ở giữa sẽ bị thay thế bởi Job thứ 3 mới nhất — tối đa chỉ giữ 1 bản đang chạy + 1 bản mới nhất xếp hàng."
+  }
+]

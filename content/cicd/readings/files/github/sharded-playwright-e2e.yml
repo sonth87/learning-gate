@@ -1,0 +1,41 @@
+# Chia nhỏ 200 kịch bản kiểm thử trình duyệt Playwright thành 4 mảnh (Shards) chạy đồng thời,
+# kéo thời gian chờ từ 20 phút xuống còn ~5 phút!
+name: Sharded Playwright E2E
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-shards:
+    name: Playwright Shard ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Cài đặt trình duyệt Chromium tối giản kèm thư viện hệ điều hành
+        run: npx playwright install --with-deps chromium
+
+      - name: Thực thi phân mảnh ${{ matrix.shard }}/4
+        run: npx playwright test --shard=${{ matrix.shard }}/4
+
+      # Dùng !cancelled() để tải báo cáo lên cả khi bài test XANH lẫn khi bài test ĐỎ
+      - name: Lưu trữ báo cáo HTML & Trace khi có kết quả
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7

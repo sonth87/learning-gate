@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K12-FC1",
+    "front": "Sự khác nhau giữa nạp `ConfigMap` bằng **`envFrom`** và bằng **`volumes`**?",
+    "back": "- **`envFrom`:** Bơm các khoá thành biến `process.env` (cần restart Pod khi đổi giá trị).\n- **`volumes`:** Gắn thành tệp cấu hình thực sự trên cây thư mục container (ví dụ `/etc/nginx/conf.d`)."
+  },
+  {
+    "id": "K12-FC2",
+    "front": "Tại sao nói **\"Base64 trong Kubernetes Secret KHÔNG PHẢI là mã hoá bảo mật\"**?",
+    "back": "Vì Base64 không có khoá bí mật — bất kỳ ai đọc được YAML đều giải mã ngược ra văn bản gốc ngay lập tức bằng `base64 -d`. Cần bật KMS Encryption at Rest + khoá chặt RBAC."
+  },
+  {
+    "id": "K12-FC3",
+    "front": "Lỗi **`CreateContainerConfigError`** trên Pod thường xuất phát từ nguyên nhân gì?",
+    "back": "Pod tham chiếu tới tên **`ConfigMap` hoặc `Secret` chưa tồn tại** trong cùng namespace, hoặc trỏ vào tên **`key` bị gõ sai** trong `configMapKeyRef` / `secretKeyRef`."
+  },
+  {
+    "id": "K12-FC4",
+    "front": "Trường nào trong Manifest `Secret` giúp viết chuỗi văn bản thường không cần tự mã hoá Base64 tay?",
+    "back": "Trường **`stringData:`**"
+  },
+  {
+    "id": "K12-FC5",
+    "front": "Cú pháp CLI tạo nhanh một Secret kiểu `generic` từ cặp khoá-giá trị trực tiếp?",
+    "back": "**`kubectl create secret generic <tên> --from-literal=KEY=VALUE`**"
+  },
+  {
+    "id": "K12-FC6",
+    "front": "Khi gắn `ConfigMap` hoặc `Secret` làm `volumeMounts` vào container, cờ an toàn nào luôn nên bật?",
+    "back": "**`readOnly: true`**"
+  }
+]

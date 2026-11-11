@@ -1,0 +1,25 @@
+# SỰ CỐ KHI APPLY: Kubernetes API Server lập tức từ chối manifest này với thông báo:
+# The Deployment "checkout-api" is invalid: spec.template.metadata.labels:
+# Invalid value: map[string]string{"app":"checkout-v2"}: 'selector' does not match template 'labels'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      # Deployment đang tìm quản lý các Pod mang nhãn app=checkout-api
+      app: checkout-api
+  template:
+    metadata:
+      labels:
+        # LỖI: Khuôn đúc Pod lại gắn nhãn app=checkout-v2 -> đẻ ra xong không nhận con!
+        # CÁCH SỬA: Giữ nguyên "app: checkout-api" và thêm nhãn phụ "version: v2" nếu muốn.
+        app: checkout-v2
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/checkout-api:2.0.0
+          ports:
+            - containerPort: 3000

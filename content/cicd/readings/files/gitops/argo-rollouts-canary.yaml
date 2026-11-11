@@ -1,0 +1,43 @@
+# Triển khai Chim Hoàng Yến (Canary Progressive Delivery) với Argo Rollouts:
+# Nhỏ giọt 5% lưu lượng thật vào bản mới -> nghỉ 2 phút nghe ngóng -> chạy Analysis đo tỷ lệ lỗi HTTP 5xx -> mới tăng lên 25% và 100%!
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: shop-api
+  namespace: shop-prod
+spec:
+  replicas: 8
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+    spec:
+      containers:
+        - name: shop-api
+          image: ghcr.io/acme-corp/shop-api:sha-9f8e7d6c5b4a
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+  strategy:
+    canary:
+      maxSurge: "25%"
+      maxUnavailable: 0
+      steps:
+        - setWeight: 5
+        - pause: { duration: 2m }
+        - analysis:
+            templates:
+              - templateName: http-error-rate-guard
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 100

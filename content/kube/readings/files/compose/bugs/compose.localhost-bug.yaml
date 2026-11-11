@@ -1,0 +1,26 @@
+# TÌNH HUỐNG SỰ CỐ: Chạy "docker compose up" thì Postgres báo ready ngon lành,
+# nhưng container "api" liên tục văng lỗi: Error: connect ECONNREFUSED 127.0.0.1:5432
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: devpass-placeholder
+      POSTGRES_DB: shop
+    ports:
+      - "5432:5432"
+
+  api:
+    image: node:22-alpine
+    working_dir: /app
+    command: ["node", "src/server.js"]
+    ports:
+      - "3000:3000"
+    environment:
+      # NGUYÊN NHÂN GỐC RỄ:
+      # Mỗi container có Network Namespace riêng — "localhost" (127.0.0.1) bên trong container "api"
+      # chỉ trỏ về CHÍNH container "api", không phải máy Mac/Windows của bạn và càng không phải container "postgres"!
+      # CÁCH SỬA: đổi "@localhost:5432" thành "@postgres:5432" (tên service trong mạng Compose).
+      DATABASE_URL: postgres://app:devpass-placeholder@localhost:5432/shop
+    depends_on:
+      - postgres

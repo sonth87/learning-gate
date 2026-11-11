@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K12-Q1",
+    "type": "mc",
+    "q": "Theo nguyên lý 12-Factor App trên Kubernetes, chúng ta phân chia dữ liệu nào vào `ConfigMap` và dữ liệu nào vào `Secret`?",
+    "code": "",
+    "choices": [
+      "Tất cả đều nhét thẳng vào `Dockerfile` bằng chỉ thị `ENV`",
+      "Các thông số không nhạy cảm (`LOG_LEVEL`, `CORS_ORIGIN`, tệp `nginx.conf`) đặt vào `ConfigMap`; các thông tin nhạy cảm (mật khẩu DB, khoá API, chứng chỉ TLS) đặt vào `Secret`",
+      "`ConfigMap` chỉ chứa số nguyên, còn `Secret` chỉ chứa chuỗi ký tự",
+      "`ConfigMap` dành cho Node.js, còn `Secret` chỉ dành cho Go"
+    ],
+    "answer": 1,
+    "explain": "Tách riêng cấu hình công khai (`ConfigMap`) và dữ liệu nhạy cảm (`Secret`) cho phép áp dụng quyền truy cập RBAC nghiêm ngặt và mã hoá KMS riêng cho `Secret`."
+  },
+  {
+    "id": "K12-Q2",
+    "type": "tf",
+    "q": "Vì trường `data:` của Kubernetes `Secret` hiển thị dạng chuỗi `Base64`, nên dữ liệu đã được mã hoá mật mã học an toàn tuyệt đối và bạn có thể thoải mái đẩy tệp `secret.yaml` đó lên kho Git công khai.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai hoàn toàn! Base64 chỉ là phép **mã hoá biểu diễn ký tự (encoding)** chứ KHÔNG PHẢI mã hoá bảo mật (encryption) — ai cũng giải mã lại văn bản gốc trong tích tắc bằng `base64 -d`! Không bao giờ commit Secret chưa mã hoá lên Git."
+  },
+  {
+    "id": "K12-Q3",
+    "type": "mc",
+    "q": "Khi bạn muốn nạp **toàn bộ tất cả các cặp khoá-giá trị** trong `ConfigMap` tên `api-config` thành biến môi trường `process.env` của container cùng một lúc (thay vì liệt kê lẻ tẻ từng khoá), bạn dùng trường nào?",
+    "code": "",
+    "choices": [
+      "`envFrom: [{ configMapRef: { name: \"api-config\" } }]`",
+      "`imagePullSecrets: [{ name: \"api-config\" }]`",
+      "`ports: [{ name: \"api-config\" }]`",
+      "`selector: { configMap: \"api-config\" }`"
+    ],
+    "answer": 0,
+    "explain": "`envFrom` nạp trọn gói mọi khoá trong `ConfigMap` (qua `configMapRef`) hoặc `Secret` (qua `secretRef`) thẳng vào `process.env`."
+  },
+  {
+    "id": "K12-Q4",
+    "type": "output",
+    "q": "Một Pod tham chiếu tới một `Secret` chưa được tạo trên cụm (hoặc gõ sai tên `key` trong `secretKeyRef`). Trước cả khi container kịp chạy dòng code đầu tiên, cột `STATUS` của Pod sẽ báo tên lỗi dài đặc trưng nào?",
+    "code": "$ kubectl get pods\nNAME             READY   STATUS                       RESTARTS\nbilling-worker   0/1     __________________________   0",
+    "choices": [],
+    "answer": "CreateContainerConfigError",
+    "explain": "`CreateContainerConfigError` là trạng thái báo hiệu Kubelet thất bại ngay ở bước chuẩn bị cấu hình biến môi trường (`ConfigMap` / `Secret` bị thiếu) trước khi khởi chạy container."
+  },
+  {
+    "id": "K12-Q5",
+    "type": "mc",
+    "q": "Trong Manifest YAML của một `Secret`, trường nào cho phép bạn viết giá trị dạng chuỗi văn bản thường (plain string) để API Server tự động chuyển sang Base64 khi lưu?",
+    "code": "",
+    "choices": [
+      "`rawBytes`",
+      "`stringData`",
+      "`plainText`",
+      "`clearData`"
+    ],
+    "answer": 1,
+    "explain": "`stringData` là trường tiện lợi lúc ghi (write-only convenience field): bạn truyền chuỗi đọc được và K8s tự chuyển sang Base64 cất vào `data`."
+  },
+  {
+    "id": "K12-Q6",
+    "type": "mc",
+    "q": "Nếu bạn nạp `ConfigMap` vào Pod thông qua biến môi trường (`env` / `envFrom`), sau đó bạn cập nhật giá trị mới cho `ConfigMap` trên cụm, thì `process.env` bên trong Pod đang chạy có tự động đổi theo ngay lập tức không?",
+    "code": "",
+    "choices": [
+      "Có, `process.env` trong Linux tự động đổi sau 1 mili-giây",
+      "Không! Biến môi trường của tiến trình OS chỉ được nạp lúc khởi tạo container — bạn cần xoay vòng khởi động lại Pod (`kubectl rollout restart deployment/...`) để nhận biến môi trường mới",
+      "Pod sẽ tự động xoá toàn bộ cụm",
+      "Node.js sẽ tự cài lại `npm ci`"
+    ],
+    "answer": 1,
+    "explain": "Khác với Volume mount (có thể tự đồng bộ tệp sau ~1 phút), biến môi trường `process.env` là bất biến suốt vòng đời tiến trình nên cần `rollout restart` Deployment."
+  },
+  {
+    "id": "K12-Q7",
+    "type": "tf",
+    "q": "Trên môi trường Production hiện đại, thay vì lưu mật khẩu thật trong kho Git, các đội ngũ thường dùng **External Secrets Operator** (đồng bộ từ AWS Secrets Manager / HashiCorp Vault) hoặc **Sealed Secrets / SOPS**.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đây là chuẩn vàng bảo mật GitOps năm 2026 để vừa tự động hoá hoàn toàn vừa không bao giờ lộ plain-text Secret trên Git."
+  }
+]

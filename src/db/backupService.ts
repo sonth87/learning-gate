@@ -4,7 +4,7 @@ import { FullBackupPayload, UserSettings } from '@/types/user.types';
 export const backupService = {
   async exportBackup(currentSettings: UserSettings): Promise<FullBackupPayload> {
     const db = await getDb();
-    const [completedLessons, notes, bookmarks, submissions, srsStates, examHistory, wp] =
+    const [completedLessons, notes, bookmarks, submissions, srsStates, examHistory, wp, courseRows] =
       await Promise.all([
         db.getAll('completed_lessons'),
         db.getAll('notes'),
@@ -13,10 +13,16 @@ export const backupService = {
         db.getAll('srs_states'),
         db.getAll('exam_history'),
         db.get('wp_state', 'main'),
+        db.getAll('course_state'),
       ]);
 
+    const courses: Record<string, NonNullable<FullBackupPayload['workpath']>> = {};
+    for (const row of courseRows) {
+      if (row?.courseId && row?.state) courses[row.courseId] = row.state;
+    }
+
     return {
-      version: '1.0.0',
+      version: '1.1.0',
       exportedAt: Date.now(),
       settings: currentSettings,
       completedLessonIds: completedLessons.map((c) => c.lessonId),
@@ -26,6 +32,7 @@ export const backupService = {
       srsStates,
       examHistory,
       workpath: wp?.state,
+      courses,
     };
   },
 
@@ -41,6 +48,7 @@ export const backupService = {
         'srs_states',
         'exam_history',
         'wp_state',
+        'course_state',
       ],
       'readwrite'
     );
@@ -53,6 +61,7 @@ export const backupService = {
       tx.objectStore('srs_states').clear(),
       tx.objectStore('exam_history').clear(),
       tx.objectStore('wp_state').clear(),
+      tx.objectStore('course_state').clear(),
     ]);
 
     for (const lessonId of payload.completedLessonIds || []) {
@@ -78,6 +87,13 @@ export const backupService = {
     }
     if (payload.workpath) {
       await tx.objectStore('wp_state').put({ key: 'main', state: payload.workpath });
+    }
+    if (payload.courses && typeof payload.courses === 'object') {
+      for (const [courseId, state] of Object.entries(payload.courses)) {
+        if (courseId && state) {
+          await tx.objectStore('course_state').put({ courseId, state });
+        }
+      }
     }
 
     await tx.done;

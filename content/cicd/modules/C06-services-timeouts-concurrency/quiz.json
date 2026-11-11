@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c06-1",
+    "type": "output",
+    "q": "Nếu bạn quên khai báo thuộc tính `timeout-minutes` trong một Job GitHub Actions và tiến trình Node.js bị treo kết nối database không chịu thoát, hệ thống sẽ để Job đó chạy tối đa bao nhiêu phút mới tự động huỷ?",
+    "code": "jobs:\n  hang-demo:\n    runs-on: ubuntu-latest\n    # Không khai báo timeout-minutes",
+    "choices": [],
+    "answer": "360",
+    "explain": "Ngưỡng mặc định của GitHub Actions là `360` phút (6 giờ). Luôn khai báo tường minh `timeout-minutes: 10` (hoặc `15`) để bảo vệ quỹ phút CI của nhóm."
+  },
+  {
+    "id": "cicd-q-c06-2",
+    "type": "mc",
+    "q": "Cấu hình `concurrency` nào phù hợp nhất cho workflow kiểm thử Pull Request để tự động huỷ ngay các lần chạy lỗi thời khi lập trình viên đẩy thêm commit sửa lỗi mới lên cùng nhánh?",
+    "code": "",
+    "choices": [
+      "`group: global-lock` và `cancel-in-progress: true` (huỷ luôn PR của tất cả đồng nghiệp khác trong công ty!)",
+      "`group: ci-${{ github.workflow }}-${{ github.ref }}` và `cancel-in-progress: true`",
+      "`group: ci-${{ github.sha }}` và `cancel-in-progress: true`",
+      "`group: ci-${{ github.ref }}` và `cancel-in-progress: false`"
+    ],
+    "answer": 1,
+    "explain": "Nhóm theo `github.workflow` + `github.ref` đảm bảo chỉ các lần chạy của **cùng một nhánh/PR** mới thay thế nhau (`cancel-in-progress: true`), hoàn toàn không làm ảnh hưởng PR của người khác."
+  },
+  {
+    "id": "cicd-q-c06-3",
+    "type": "tf",
+    "q": "Đối với Job triển khai lên môi trường Production (có chạy database migration hoặc cập nhật hạ tầng), bạn nên bật `cancel-in-progress: true` để rút phích cắm bản cũ ngay lập tức khi có bản mới.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai nghiêm trọng! Ngắt ngang một tiến trình đang chạy DB migration hoặc cập nhật trạng thái hạ tầng (Terraform/Helm) dễ làm hỏng khoá trạng thái (state lock) và gây sập Production. Với Production luôn đặt `cancel-in-progress: false` để xếp hàng tuần tự."
+  },
+  {
+    "id": "cicd-q-c06-4",
+    "type": "mc",
+    "q": "Khi các Step của Job chạy trực tiếp trên máy ảo `runs-on: ubuntu-latest` (không bọc `container:`), ứng dụng Node.js cần kết nối tới `services.postgres` qua hostname nào và cần điều kiện cấu hình gì trên service?",
+    "code": "",
+    "choices": [
+      "Kết nối qua `localhost:5432` và bắt buộc khai báo ánh xạ cổng `ports: [\"5432:5432\"]` trong `services.postgres`",
+      "Kết nối qua `postgres.internal.cloud:9999` mà không cần mở cổng",
+      "Bắt buộc cài đặt PostgreSQL thủ công bằng `sudo apt-get install` chứ không dùng được `services:`",
+      "Phải tải thư mục `/var/lib/postgresql` qua `actions/download-artifact@v4`"
+    ],
+    "answer": 0,
+    "explain": "Khi Step chạy trực tiếp trên host VM (`ubuntu-latest`), Docker container của service cần publish cổng ra host (`ports: [\"5432:5432\"]`) để code Node.js gọi tới `localhost:5432`."
+  },
+  {
+    "id": "cicd-q-c06-5",
+    "type": "mc",
+    "q": "Vì sao trong `services.postgres` ta cần truyền `--health-cmd pg_isready` vào trường `options:` thay vì chỉ khai báo `image: postgres:16-alpine`?",
+    "code": "",
+    "choices": [
+      "Để đổi mật khẩu mặc định của PostgreSQL",
+      "Để ép GitHub Runner đợi tới khi tiến trình PostgreSQL khởi tạo xong DB và thực sự sẵn sàng nhận kết nối TCP rồi mới chạy các Step kiểm thử",
+      "Để nén dung lượng Docker image nhỏ đi một nửa",
+      "Để tự động xuất dữ liệu SQL ra file Markdown"
+    ],
+    "answer": 1,
+    "explain": "Không có `--health-cmd`, Runner chỉ chờ container vừa `start` là chạy ngay các Step dưới, dễ đụng lúc Postgres đang `initdb` chưa mở port gây lỗi chập chờn `ECONNREFUSED`."
+  },
+  {
+    "id": "cicd-q-c06-6",
+    "type": "mc",
+    "q": "Câu lệnh kiểm tra sức khoẻ tiêu chuẩn thường đặt trong `--health-cmd` của container `redis:7-alpine` là lệnh nào?",
+    "code": "",
+    "choices": [
+      "`pg_isready`",
+      "`redis-cli ping`",
+      "`npm test`",
+      "`curl http://localhost:6379`"
+    ],
+    "answer": 1,
+    "explain": "`redis-cli ping` gửi gói kiểm tra tới Redis server và nhận về `PONG` (Exit Code `0`) ngay khi Redis đã sẵn sàng phục vụ bộ nhớ đệm."
+  },
+  {
+    "id": "cicd-q-c06-7",
+    "type": "tf",
+    "q": "Mọi dữ liệu ghi vào `services.postgres` và `services.redis` trong lúc chạy Integration Test sẽ tự động bị xoá sạch hoàn toàn ngay khi Job kết thúc.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Service Containers mang tính chất Ephemeral giống hệt Runner: mỗi lần chạy Job là một cơ sở dữ liệu sạch tinh từ con số 0, kết thúc Job là toàn bộ container và dữ liệu tạm bị huỷ sạch."
+  }
+]

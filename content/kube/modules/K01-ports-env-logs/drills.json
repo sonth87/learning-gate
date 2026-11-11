@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K01-D1",
+    "title": "Chạy API Node.js kèm ánh xạ cổng và biến môi trường Production",
+    "code": "docker run -d --name order-api \\\n  -p 3000:3000 \\\n  -e NODE_ENV=production \\\n  -e PORT=3000 \\\n  node:22-alpine"
+  },
+  {
+    "id": "K01-D2",
+    "title": "Đọc log sự cố và kiểm tra tiến trình bên trong container đang sống",
+    "code": "docker logs payment-worker\ndocker exec shop-api ps\ndocker exec shop-api printenv"
+  }
+]

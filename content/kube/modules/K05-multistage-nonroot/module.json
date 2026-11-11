@@ -1,0 +1,58 @@
+{
+  "id": "K05",
+  "slug": "K05-multistage-nonroot",
+  "level": 1,
+  "order": 5,
+  "title": "Multi-stage Build, Non-Root User & HEALTHCHECK chuẩn Production",
+  "summary": "Tách biệt xưởng biên dịch TypeScript (AS builder) khỏi hộp chạy thật (AS runner), gọt bỏ devDependencies bằng npm prune --omit=dev, hạ quyền USER node và tự khám sức khoẻ.",
+  "tags": [
+    "multi-stage",
+    "typescript",
+    "non-root",
+    "healthcheck",
+    "security"
+  ],
+  "sources": [
+    {
+      "title": "Docker Multi-stage Builds",
+      "url": "https://docs.docker.com/build/building/multi-stage/",
+      "version": "Docker BuildKit / Engine v27+"
+    },
+    {
+      "title": "Dockerfile USER & HEALTHCHECK Reference",
+      "url": "https://docs.docker.com/reference/dockerfile/#healthcheck",
+      "version": "Docker Engine v27+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Sang ứng dụng CI/CD Mastery: Tự động Build & Push Image",
+      "kind": "cross-app",
+      "targetId": "cicdmastery",
+      "description": "Xem cách GitHub Actions tự động đóng gói Multi-stage Dockerfile và quét bảo mật Trivy"
+    }
+  ],
+  "readings": [
+    {
+      "path": "docker/node-api/Dockerfile.multistage-prod",
+      "kind": "good",
+      "note": "Bản thiết kế chuẩn vàng 2-stage cho mọi dự án TypeScript / NestJS / Fastify năm 2026.",
+      "task": "Đếm xem trong stage `runner` cuối cùng có chứa thư mục mã nguồn gốc `src/` hay tệp `tsconfig.json` không, và điều đó mang lại lợi ích gì?",
+      "answer": "Hoàn toàn KHÔNG có `src/` hay `tsconfig.json` trong stage `runner` — chỉ có `package.json`, `node_modules` đã `npm prune --omit=dev` và `dist/` đã biên dịch. Nhờ vậy Image siêu nhẹ và không lộ mã nguồn TypeScript hay công cụ phát triển."
+    },
+    {
+      "path": "docker/nextjs/Dockerfile.standalone",
+      "kind": "compare",
+      "note": "Mở rộng lên 3-stage (`deps` -> `builder` -> `runner`) của Next.js App Router Standalone.",
+      "task": "Vì sao Next.js tạo riêng tài khoản `nextjs` với UID `1001` ở stage `runner` thay vì để mặc định?",
+      "answer": "Để tuân thủ nguyên tắc tối thiểu quyền hạn (Least Privilege): tiến trình web chạy dưới UID `1001` không có quyền ghi đè tệp hệ thống, không có shell đăng nhập và vượt qua ngay kiểm tra Pod Security Admission `restricted` trên Kubernetes."
+    },
+    {
+      "path": "docker/go-service/Dockerfile.distroless",
+      "kind": "compare",
+      "note": "Cấp độ bảo mật tối thượng: stage cuối dùng Distroless không có cả `/bin/sh` lẫn trình quản lý gói.",
+      "task": "Tại sao loại bỏ hoàn toàn `/bin/sh` và `apk`/`apt` ở Image cuối cùng lại vô hiệu hoá hiệu quả tấn công Reverse Shell?",
+      "answer": "Khi kẻ tấn công khai thác lỗi thực thi lệnh (RCE) và gọi `child_process.exec(\"/bin/sh -c ...\")`, hệ thống báo lỗi không tồn tại tệp thực thi `/bin/sh` và cũng không có `curl`/`wget` để tải công cụ tấn công về."
+    }
+  ]
+}

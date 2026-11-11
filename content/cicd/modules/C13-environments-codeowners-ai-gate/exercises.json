@@ -1,0 +1,368 @@
+[
+  {
+    "id": "cicd-ex-c13-1",
+    "code": "C13.1",
+    "module": "C13",
+    "title": "Gắn kết môi trường Staging & Production với GitHub Environments",
+    "difficulty": 1,
+    "tags": [
+      "environments",
+      "staging",
+      "production"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/env-promotion.yml",
+    "prompt": "Hoàn thiện cấu hình `environment` cho hai job `deploy-staging` và `deploy-production` trong workflow phát hành:\n1. Ở `jobs.deploy-staging`, cấu hình `environment.name` là `\"staging\"` và `environment.url` là `\"https://staging.shop.example.com\"`.\n2. Ở `jobs.deploy-production`, cấu hình `environment.name` là `\"production\"` và `environment.url` là `\"https://shop.example.com\"`.",
+    "starter": "name: Environment Scoped Deploy\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-staging:\n    runs-on: ubuntu-latest\n    # TODO: Khai báo environment staging kèm url https://staging.shop.example.com\n    environment:\n      name: ____\n      url: ____\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Deploying to staging...\"\n\n  deploy-production:\n    needs: deploy-staging\n    runs-on: ubuntu-latest\n    # TODO: Khai báo environment production kèm url https://shop.example.com\n    environment:\n      name: ____\n      url: ____\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Deploying to production...\"\n",
+    "solution": "name: Environment Scoped Deploy\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-staging:\n    runs-on: ubuntu-latest\n    environment:\n      name: staging\n      url: https://staging.shop.example.com\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Deploying to staging...\"\n\n  deploy-production:\n    needs: deploy-staging\n    runs-on: ubuntu-latest\n    environment:\n      name: production\n      url: https://shop.example.com\n    steps:\n      - uses: actions/checkout@v4\n      - run: echo \"Deploying to production...\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "staging-env-name",
+          "doc": "Job deploy-staging phải gắn vào environment có name: staging",
+          "kind": "path",
+          "path": "jobs.deploy-staging.environment.name",
+          "match": {
+            "eq": "staging"
+          }
+        },
+        {
+          "id": "staging-env-url",
+          "doc": "Job deploy-staging khai báo đúng url https://staging.shop.example.com",
+          "kind": "path",
+          "path": "jobs.deploy-staging.environment.url",
+          "match": {
+            "eq": "https://staging.shop.example.com"
+          }
+        },
+        {
+          "id": "prod-env-name",
+          "doc": "Job deploy-production phải gắn vào environment có name: production",
+          "kind": "path",
+          "path": "jobs.deploy-production.environment.name",
+          "match": {
+            "eq": "production"
+          }
+        },
+        {
+          "id": "prod-env-url",
+          "doc": "Job deploy-production khai báo đúng url https://shop.example.com",
+          "kind": "path",
+          "path": "jobs.deploy-production.environment.url",
+          "match": {
+            "eq": "https://shop.example.com"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Mỗi job sử dụng khối `environment:` dạng object gồm hai trường con `name` và `url`.",
+      "Kiểm tra chính xác tên miền `https://staging.shop.example.com` và `https://shop.example.com` không dư dấu `/` ở cuối."
+    ],
+    "ref": "gitops/github-environments-gate.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c13-2",
+    "code": "C13.2",
+    "module": "C13",
+    "title": "Chuỗi thăng cấp tuần tự Staging -> Smoke Test -> Production",
+    "difficulty": 1,
+    "tags": [
+      "promotion",
+      "needs",
+      "smoke-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/sequential-promotion.yml",
+    "prompt": "Hiện tại cả 3 job `deploy-staging`, `smoke-staging` và `deploy-production` đang chạy song song cùng lúc ngay khi có push — dẫn tới việc Production bị cập nhật trước cả khi Staging chạy xong Smoke Test!\nHãy sửa lại luồng phụ thuộc:\n1. `smoke-staging` phải đợi `deploy-staging` hoàn tất (`needs: deploy-staging`).\n2. `deploy-production` phải đợi `smoke-staging` hoàn tất (`needs: smoke-staging`), gắn `environment: production`, và chỉ chạy khi `if: github.ref == 'refs/heads/main'`.",
+    "starter": "name: Promotion Pipeline\n\non:\n  push:\n    branches: [main, release-candidate]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-staging:\n    runs-on: ubuntu-latest\n    environment: staging\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh staging\n\n  smoke-staging:\n    # TODO: Chỉ chạy sau khi deploy-staging thành công\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm run test:smoke\n\n  deploy-production:\n    # TODO: Đợi smoke-staging, chỉ chạy trên refs/heads/main và gắn environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh production\n",
+    "solution": "name: Promotion Pipeline\n\non:\n  push:\n    branches: [main, release-candidate]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-staging:\n    runs-on: ubuntu-latest\n    environment: staging\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh staging\n\n  smoke-staging:\n    needs: deploy-staging\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm run test:smoke\n\n  deploy-production:\n    needs: smoke-staging\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/deploy.sh production\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "smoke-needs-staging",
+          "doc": "Job smoke-staging phải khai báo needs: deploy-staging",
+          "kind": "path",
+          "path": "jobs.smoke-staging.needs",
+          "match": {
+            "oneOf": [
+              "deploy-staging",
+              [
+                "deploy-staging"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "prod-needs-smoke",
+          "doc": "Job deploy-production phải khai báo needs: smoke-staging",
+          "kind": "path",
+          "path": "jobs.deploy-production.needs",
+          "match": {
+            "oneOf": [
+              "smoke-staging",
+              [
+                "smoke-staging"
+              ]
+            ]
+          }
+        },
+        {
+          "id": "prod-main-guard",
+          "doc": "Job deploy-production chỉ kích hoạt khi github.ref là refs/heads/main",
+          "kind": "path",
+          "path": "jobs.deploy-production.if",
+          "match": {
+            "contains": "refs/heads/main"
+          }
+        },
+        {
+          "id": "prod-env-set",
+          "doc": "Job deploy-production gắn vào environment production",
+          "kind": "path",
+          "path": "jobs.deploy-production.environment",
+          "match": {
+            "oneOf": [
+              "production",
+              {
+                "name": "production"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm `needs: deploy-staging` vào `smoke-staging` và `needs: smoke-staging` vào `deploy-production`.",
+      "Thêm `if: github.ref == 'refs/heads/main'` và `environment: production` vào job `deploy-production`."
+    ],
+    "ref": "gitops/github-environments-gate.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c13-3",
+    "code": "C13.3",
+    "module": "C13",
+    "title": "Cấu hình cổng AI PR Review ít nhiễu (.coderabbit.yaml)",
+    "difficulty": 2,
+    "tags": [
+      "ai-review",
+      "coderabbit",
+      "path-filters"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".coderabbit.yaml",
+    "prompt": "Nhóm của bạn tích hợp trợ lý rà soát PR tự động bằng `.coderabbit.yaml`, nhưng AI đang bình luận tràn lan vào `package-lock.json` và `dist/`, đồng thời thiếu chỉ dẫn kiểm tra bảo mật cho thư mục xác thực `src/auth/**`.\nHãy hoàn thiện tệp cấu hình:\n1. Đặt `reviews.request_changes_workflow: false` và `reviews.high_level_summary: true`.\n2. Trong `reviews.path_filters`, thêm đủ 3 mẫu loại trừ: `\"!**/*.lock\"`, `\"!**/package-lock.json\"`, `\"!**/dist/**\"`.\n3. Trong `reviews.path_instructions`, khai báo phần tử đầu tiên có `path: \"src/auth/**\"` kèm `instructions` nhắc kiểm tra `JWT` và `RBAC`.",
+    "starter": "language: \"vi-VN\"\n\nreviews:\n  profile: \"chill\"\n  request_changes_workflow: true\n  high_level_summary: false\n  # TODO: Lọc bỏ lockfile và thư mục biên dịch dist\n  path_filters: []\n  # TODO: Hướng dẫn AI rà soát bảo mật JWT và RBAC cho src/auth/**\n  path_instructions: []\n",
+    "solution": "language: \"vi-VN\"\n\nreviews:\n  profile: \"chill\"\n  request_changes_workflow: false\n  high_level_summary: true\n  path_filters:\n    - \"!**/*.lock\"\n    - \"!**/package-lock.json\"\n    - \"!**/dist/**\"\n  path_instructions:\n    - path: \"src/auth/**\"\n      instructions: \"Kiểm tra chặt chẽ xác thực JWT, phân quyền RBAC và không in token nhạy cảm ra log.\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-auto-block",
+          "doc": "Đặt reviews.request_changes_workflow: false để con người giữ quyền quyết định cuối",
+          "kind": "path",
+          "path": "reviews.request_changes_workflow",
+          "match": {
+            "eq": false
+          }
+        },
+        {
+          "id": "enable-summary",
+          "doc": "Bật tóm tắt tổng quan PR (reviews.high_level_summary: true)",
+          "kind": "path",
+          "path": "reviews.high_level_summary",
+          "match": {
+            "eq": true
+          }
+        },
+        {
+          "id": "exclude-locks",
+          "doc": "path_filters loại trừ !**/*.lock",
+          "kind": "path",
+          "path": "reviews.path_filters",
+          "match": {
+            "contains": "!**/*.lock"
+          }
+        },
+        {
+          "id": "exclude-pkg-lock",
+          "doc": "path_filters loại trừ !**/package-lock.json",
+          "kind": "path",
+          "path": "reviews.path_filters",
+          "match": {
+            "contains": "!**/package-lock.json"
+          }
+        },
+        {
+          "id": "exclude-dist",
+          "doc": "path_filters loại trừ !**/dist/**",
+          "kind": "path",
+          "path": "reviews.path_filters",
+          "match": {
+            "contains": "!**/dist/**"
+          }
+        },
+        {
+          "id": "auth-instruction-path",
+          "doc": "path_instructions[0].path trỏ tới \"src/auth/**\"",
+          "kind": "path",
+          "path": "reviews.path_instructions[0].path",
+          "match": {
+            "eq": "src/auth/**"
+          }
+        },
+        {
+          "id": "auth-instruction-content",
+          "doc": "path_instructions[0].instructions có đề cập tới JWT và RBAC",
+          "kind": "path",
+          "path": "reviews.path_instructions[0].instructions",
+          "match": {
+            "regex": "(?=.*JWT)(?=.*RBAC)",
+            "flags": "is"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong YAML, chuỗi bắt đầu bằng dấu chấm than `!` bắt buộc phải đặt trong dấu nháy kép `\"!**/dist/**\"` để không bị hiểu nhầm thành YAML tag.",
+      "`path_instructions` là mảng các đối tượng gồm hai khoá `path` và `instructions`."
+    ],
+    "ref": "governance/coderabbit-ai-review.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c13-4",
+    "code": "C13.4",
+    "module": "C13",
+    "title": "Gia cố bảo mật cho Workflow AI PR Reviewer trước nhánh Fork",
+    "difficulty": 2,
+    "tags": [
+      "ai-review",
+      "security",
+      "pull-request"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/ai-pr-review.yml",
+    "prompt": "Workflow AI Review dưới đây đang mắc 3 lỗi bảo mật chí mạng: dùng `pull_request_target` (nguy cơ lộ `AI_REVIEW_API_KEY` khi gặp PR từ Fork), cấp `permissions: write-all`, và chạy cho cả PR từ kho bên ngoài.\nHãy sửa lại an toàn:\n1. Đổi sự kiện kích hoạt từ `pull_request_target` sang `on: pull_request`.\n2. Thu hẹp `permissions` cấp workflow về đúng 2 quyền tối thiểu: `contents: read` và `pull-requests: write`.\n3. Ở job `ai-review`, thêm điều kiện `if: github.event.pull_request.head.repo.full_name == github.repository` để chỉ chạy với PR nội bộ.",
+    "starter": "name: AI Pull Request Gate\n\non:\n  pull_request_target:\n    types: [opened, synchronize]\n\npermissions: write-all\n\njobs:\n  ai-review:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run internal AI diff analyzer\n        env:\n          AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}\n        run: node scripts/ai-pr-review.mjs\n",
+    "solution": "name: AI Pull Request Gate\n\non:\n  pull_request:\n    types: [opened, synchronize]\n\npermissions:\n  contents: read\n  pull-requests: write\n\njobs:\n  ai-review:\n    if: github.event.pull_request.head.repo.full_name == github.repository\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run internal AI diff analyzer\n        env:\n          AI_REVIEW_API_KEY: ${{ secrets.AI_REVIEW_API_KEY }}\n        run: node scripts/ai-pr-review.mjs\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-pr-target",
+          "doc": "Loại bỏ hoàn toàn trigger nguy hiểm pull_request_target",
+          "kind": "path",
+          "path": "on.pull_request_target",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "use-pull-request",
+          "doc": "Sử dụng trigger an toàn on.pull_request",
+          "kind": "path",
+          "path": "on.pull_request",
+          "match": {
+            "exists": true
+          }
+        },
+        {
+          "id": "perm-contents-read",
+          "doc": "Giới hạn quyền đọc mã nguồn: permissions.contents = \"read\"",
+          "kind": "path",
+          "path": "permissions.contents",
+          "match": {
+            "eq": "read"
+          }
+        },
+        {
+          "id": "perm-pr-write",
+          "doc": "Chỉ cấp quyền ghi bình luận PR: permissions.pull-requests = \"write\"",
+          "kind": "path",
+          "path": "permissions.pull-requests",
+          "match": {
+            "eq": "write"
+          }
+        },
+        {
+          "id": "same-repo-guard",
+          "doc": "Chặn PR từ Fork bên ngoài bằng điều kiện so sánh head.repo.full_name == github.repository",
+          "kind": "path",
+          "path": "jobs.ai-review.if",
+          "match": {
+            "regex": "github\\.event\\.pull_request\\.head\\.repo\\.full_name\\s*==\\s*github\\.repository"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thay thế `pull_request_target:` bằng `pull_request:` ở khối `on:`.",
+      "Thay `permissions: write-all` bằng khối map có `contents: read` và `pull-requests: write`.",
+      "Đặt dòng `if: github.event.pull_request.head.repo.full_name == github.repository` ngay bên dưới `ai-review:`."
+    ],
+    "ref": "security/pull-request-target-pwn.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c13-5",
+    "code": "C13.5",
+    "module": "C13",
+    "title": "Job Governance: Kiểm tra CODEOWNERS & Tiêu đề PR an toàn",
+    "difficulty": 2,
+    "tags": [
+      "codeowners",
+      "script-injection",
+      "governance"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/governance-gate.yml",
+    "prompt": "Xây dựng job kiểm tra quản trị bắt buộc (`governance-check`) cho nhánh bảo vệ:\n1. Bước kiểm tra tiêu đề PR hiện đang nối trực tiếp `${{ github.event.pull_request.title }}` vào `run:` gây lỗ hổng **Script Injection**! Hãy chuyển sang truyền qua biến môi trường `env: PR_TITLE: ${{ github.event.pull_request.title }}` và kiểm tra `\"$PR_TITLE\"` trong `run:`.\n2. Thêm bước kiểm tra sự tồn tại của tệp `.github/CODEOWNERS` bằng lệnh `test -f .github/CODEOWNERS` để ngăn việc ai đó xoá nhầm tệp phân quyền.",
+    "starter": "name: PR Governance Gate\n\non:\n  pull_request:\n    types: [opened, edited, synchronize]\n\npermissions:\n  contents: read\n\njobs:\n  governance-check:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Validate Conventional PR Title\n        # LỖ HỔNG: Nối trực tiếp biểu thức github.event vào shell!\n        run: |\n          if ! echo \"${{ github.event.pull_request.title }}\" | grep -Eq \"^(feat|fix|chore|docs|refactor)(\\(.+\\))?: .+\"; then\n            echo \"::error::Tiêu đề PR phải tuân thủ chuẩn Conventional Commits!\"\n            exit 1\n          fi\n\n      # TODO: Thêm bước kiểm tra tệp .github/CODEOWNERS bắt buộc tồn tại (test -f .github/CODEOWNERS)\n",
+    "solution": "name: PR Governance Gate\n\non:\n  pull_request:\n    types: [opened, edited, synchronize]\n\npermissions:\n  contents: read\n\njobs:\n  governance-check:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Validate Conventional PR Title\n        env:\n          PR_TITLE: ${{ github.event.pull_request.title }}\n        run: |\n          if ! printf '%s\\n' \"$PR_TITLE\" | grep -Eq \"^(feat|fix|chore|docs|refactor)(\\(.+\\))?: .+\"; then\n            echo \"::error::Tiêu đề PR phải tuân thủ chuẩn Conventional Commits!\"\n            exit 1\n          fi\n\n      - name: Ensure CODEOWNERS file exists\n        run: test -f .github/CODEOWNERS\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-script-injection",
+          "doc": "Không được nội suy trực tiếp ${{ github.event.pull_request.title }} vào trong khối run:",
+          "kind": "gha-no-script-injection",
+          "jobId": "governance-check"
+        },
+        {
+          "id": "env-pr-title",
+          "doc": "Truyền tiêu đề PR qua biến môi trường PR_TITLE ở bước kiểm tra tiêu đề",
+          "kind": "path",
+          "path": "jobs.governance-check.steps[1].env.PR_TITLE",
+          "match": {
+            "contains": "github.event.pull_request.title"
+          }
+        },
+        {
+          "id": "verify-codeowners-step",
+          "doc": "Có bước kiểm tra sự tồn tại của tệp .github/CODEOWNERS bằng test -f .github/CODEOWNERS",
+          "kind": "path",
+          "path": "jobs.governance-check.steps[2].run",
+          "match": {
+            "contains": "test -f .github/CODEOWNERS"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm khối `env:\\n  PR_TITLE: ${{ github.event.pull_request.title }}` vào bước số 2 (index 1) và thay biểu thức `${{ ... }}` trong `run:` thành `\"$PR_TITLE\"`.",
+      "Thêm bước thứ 3 (index 2) dưới mảng `steps:` với `run: test -f .github/CODEOWNERS`."
+    ],
+    "ref": "governance/CODEOWNERS.example",
+    "webGrade": true
+  }
+]

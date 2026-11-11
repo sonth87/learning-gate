@@ -1,0 +1,47 @@
+# Chuỗi Môi Trường Chuẩn Mực (Staging -> Smoke Test -> Production Approval Gate):
+# Tận dụng tính năng GitHub Environments để gắn URL theo dõi trực quan và bắt buộc Trưởng nhóm duyệt tay trước khi lên Production.
+name: Progressive Environment Promotion
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.shop.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - name: Phát hành bản dựng lên môi trường Staging
+        run: echo "Deployed sha-${{ github.sha }} to Staging"
+
+  smoke-staging:
+    name: Verify Staging E2E Smoke
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kiểm tra luồng thanh toán cốt lõi trên Staging
+        run: |
+          echo "Running critical smoke assertions against staging..."
+
+  deploy-production:
+    name: Deploy to Production (Requires Approval)
+    needs: smoke-staging
+    runs-on: ubuntu-latest
+    # Môi trường 'production' được cài đặt Required Reviewers trong Settings của Repo
+    environment:
+      name: production
+      url: https://shop.example.invalid
+    concurrency:
+      group: prod-rollout
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Phát hành chính thức lên Production sau khi đã qua Staging & được phê duyệt
+        run: echo "Promoted verified sha-${{ github.sha }} to Production!"

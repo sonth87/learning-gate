@@ -1,0 +1,58 @@
+# HỒ SƠ SỰ CỐ B1 (BUGGY & CHẬM CHẠP): Đường ống tuần tự ngốn 42 phút cho mỗi lần sửa 1 dòng CSS!
+# Hãy đếm các điểm nghẽn kinh hoàng đang làm khổ đội phát triển trong file này:
+stages:
+  - install
+  - lint
+  - typecheck
+  - unit_test
+  - e2e_test
+  - docker_build
+
+# LỖI 1: Không khai báo cache, mọi stage chạy nối đuôi nhau 100% tuần tự (không có needs: [])
+install_deps:
+  stage: install
+  image: node:22
+  script:
+    # LỖI 2: Dùng npm install không cache và cũng chẳng lưu lại gì cho bước sau
+    - npm install
+
+lint_serial:
+  stage: lint
+  image: node:22
+  script:
+    # LỖI 3: Lại tốn 3 phút tải mạng từ đầu toàn bộ node_modules chỉ để chạy eslint 10 giây!
+    - npm install
+    - npm run lint
+
+typecheck_serial:
+  stage: typecheck
+  image: node:22
+  script:
+    - npm install
+    - npm run typecheck
+
+unit_serial:
+  stage: unit_test
+  image: node:22
+  script:
+    - npm install
+    - npm test
+
+e2e_serial:
+  stage: e2e_test
+  image: mcr.microsoft.com/playwright:v1.49.0-noble
+  script:
+    - npm install
+    # LỖI 4: Dùng sleep cứng 45 giây chờ server thay vì vòng lặp kiểm tra cổng sẵn sàng!
+    - npm start &
+    - sleep 45
+    - npx playwright test
+
+docker_no_layer_cache:
+  stage: docker_build
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    # LỖI 5: Cờ --no-cache bắt Docker biên dịch lại toàn bộ các tầng từ đầu mỗi lần chạy!
+    - docker build --no-cache -t registry.example.invalid/shop-web:$CI_COMMIT_SHA .

@@ -1,0 +1,58 @@
+{
+  "id": "K17",
+  "slug": "K17-networkpolicy-and-helm",
+  "level": 5,
+  "order": 17,
+  "title": "Tường lửa Mạng Zero-Trust & Đóng gói Ứng dụng: NetworkPolicy & Helm Charts",
+  "summary": "Khoá chặt mạng phẳng mặc định bằng NetworkPolicy (Default Deny & Whitelist) và tái sử dụng cấu hình đa môi trường chuyên nghiệp với Helm values.yaml.",
+  "tags": [
+    "networkpolicy",
+    "zero-trust",
+    "helm",
+    "values-yaml",
+    "gitops"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes Network Policies",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Helm Charts & Values Guide",
+      "url": "https://helm.sh/docs/chart_template_guide/values_files/",
+      "version": "Helm v3.16+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Sang App CI/CD Architecture (GitOps & ArgoCD)",
+      "kind": "cross-app",
+      "targetId": "cicdmastery",
+      "description": "Học cách tự động đồng bộ Helm Chart & K8s Manifest lên cụm bằng GitOps"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/security/netpol-default-deny.yaml",
+      "kind": "good",
+      "note": "Chính sách nền tảng Zero-Trust cho mọi Namespace sản xuất: chặn toàn bộ kết nối đến mặc định và mở cổng UDP/TCP 53 cho phép phân giải DNS CoreDNS.",
+      "task": "Tại sao khi chặn chiều ra (Egress), ta bắt buộc phải nhớ mở ngoại lệ cổng 53 cho giao thức UDP và TCP?",
+      "answer": "Nếu khoá sạch Egress mà quên mở cổng 53 tới CoreDNS (kube-system), ứng dụng Node.js sẽ không thể phân giải bất kỳ tên miền Service hay API nào (lỗi EAI_AGAIN / ENOTFOUND), làm tê liệt toàn bộ giao tiếp mạng!"
+    },
+    {
+      "path": "k8s/security/netpol-api-to-db.yaml",
+      "kind": "good",
+      "note": "Luật tường lửa vi phân đoạn (Micro-segmentation) bảo vệ PostgreSQL: chỉ chấp nhận lưu lượng TCP 5432 xuất phát từ đúng các Pod mang nhãn app: shop-api.",
+      "task": "Điều gì xảy ra nếu một Pod mang nhãn app: marketing-landing cố tình mở kết nối tới cổng 5432 của Postgres?",
+      "answer": "CNI Plugin (như Cilium/Calico) sẽ âm thầm huỷ (drop) các gói tin SYN ngay ở tầng nhân mạng, khiến kết nối từ marketing-landing bị hết thời gian chờ (Connection Timed Out) không thể chạm vào Database."
+    },
+    {
+      "path": "k8s/security/helm-values-prod.yaml",
+      "kind": "good",
+      "note": "Tệp values-prod.yaml chuẩn doanh nghiệp dùng để ghi đè cấu hình sản xuất lên Helm Chart mà không cần sửa đụng tới bất kỳ tệp template YAML gốc nào.",
+      "task": "So sánh cách quản lý 3 môi trường bằng 3 tệp values-dev.yaml, values-staging.yaml, values-prod.yaml so với việc copy-paste 3 thư mục YAML rời rạc.",
+      "answer": "Dùng Helm chỉ duy trì duy nhất 1 bộ khuôn mẫu templates/ chuẩn mực; khi cần thêm trường mới (như startupProbe), ta chỉ sửa template 1 lần và cả 3 môi trường đều thừa hưởng đồng bộ, chỉ khác nhau ở các thông số định lượng trong từng tệp values."
+    }
+  ]
+}

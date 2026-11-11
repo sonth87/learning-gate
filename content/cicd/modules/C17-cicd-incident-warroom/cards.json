@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C17-C1",
+    "front": "Phác đồ 4 điểm để trị dứt điểm sự cố **Pipeline 42 phút (Case B1)** là gì?",
+    "back": "1) `setup-node@v4` (`cache: \"npm\"`) + `npm ci`.\n2) Tách `lint` và `test` chạy song song.\n3) Bật `strategy.matrix.shard: [1, 2, 3, 4]` cho `test`.\n4) Xoá `sleep` cảm tính & thêm `timeout-minutes`."
+  },
+  {
+    "id": "C17-C2",
+    "front": "Phác đồ cấu hình chống **Deployment Race Condition trên Production (Case B2)** là gì?",
+    "back": "Gắn `environment: production` VÀ khai báo:\n`concurrency:`\n`  group: production-deploy`\n`  cancel-in-progress: false`"
+  },
+  {
+    "id": "C17-C3",
+    "front": "Quy trình 2 bước xử lý **Rò rỉ Hardcoded Secret trong YAML (Case B3)** là gì?",
+    "back": "1) Xoá khoá cứng khỏi YAML, thay bằng `${{ secrets.<NAME> }}` (đồng thời xoay vòng khoá ngoài thực tế).\n2) Thêm cổng quét `gitleaks detect` kèm `fetch-depth: 0` để chặn tái phạm trong lịch sử commit."
+  },
+  {
+    "id": "C17-C4",
+    "front": "Ba thủ phạm kinh điển gây bệnh **False-Green Pipeline (Case B6)** là gì?",
+    "back": "1) `continue-on-error: true` trên bước test/scan.\n2) Nối đuôi `|| true` vào câu lệnh kiểm thử.\n3) Gọi `curl <url>` kiểm tra sức khoẻ mà thiếu cờ `--fail`."
+  },
+  {
+    "id": "C17-C5",
+    "front": "Khác biệt giữa `cancel-in-progress` của nhánh PR và nhánh Production là gì?",
+    "back": "- **PR**: `cancel-in-progress: true` (huỷ bản cũ lỗi thời, tiết kiệm phút chạy).\n- **Production**: `cancel-in-progress: false` (xếp hàng tuần tự, bảo toàn tính toàn vẹn hạ tầng)."
+  },
+  {
+    "id": "C17-C6",
+    "front": "Vì sao luôn phải đặt `timeout-minutes` tường minh cho mọi job trong CI/CD?",
+    "back": "Để tránh mức mặc định 360 phút (6 giờ) của GitHub Actions làm tắc nghẽn hàng đợi và đốt sạch ngân sách khi một tiến trình mạng hoặc test bị treo."
+  }
+]

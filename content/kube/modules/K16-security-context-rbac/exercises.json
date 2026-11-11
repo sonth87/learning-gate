@@ -1,0 +1,370 @@
+[
+  {
+    "id": "kube-ex-k16-1",
+    "code": "K16.1",
+    "module": "K16",
+    "title": "Gia cố securityContext chạy Non-Root và tước bỏ Linux Capabilities",
+    "difficulty": 2,
+    "tags": [
+      "securitycontext",
+      "non-root",
+      "capabilities"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "hardened-pod.yaml",
+    "prompt": "Pod `auth-service` hiện đang chạy thả nổi với quyền mặc định nguy hiểm. Hãy gia cố `securityContext` ở cả 2 tầng:\n\n1. Ở cấp Pod (`spec.securityContext`): đặt `runAsNonRoot: true` và `runAsUser: 1000`.\n2. Ở cấp Container (`spec.containers[0].securityContext`): đặt `allowPrivilegeEscalation: false` và `capabilities.drop` chứa `\"ALL\"`.",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: auth-service\nspec:\n  # 1) Thêm spec.securityContext (runAsNonRoot: true, runAsUser: 1000)\n  containers:\n    - name: auth\n      image: ghcr.io/acme/auth-service:1.3.0\n      ports:\n        - containerPort: 3000\n      # 2) Thêm securityContext cấp container khoá leo thang & drop ALL capabilities\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: auth-service\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n    - name: auth\n      image: ghcr.io/acme/auth-service:1.3.0\n      ports:\n        - containerPort: 3000\n      securityContext:\n        allowPrivilegeEscalation: false\n        capabilities:\n          drop:\n            - ALL\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pod-nonroot",
+          "doc": "Đặt spec.securityContext.runAsNonRoot: true",
+          "kind": "path",
+          "path": "spec.securityContext.runAsNonRoot",
+          "match": {
+            "eq": true
+          }
+        },
+        {
+          "id": "pod-uid-1000",
+          "doc": "Đặt spec.securityContext.runAsUser: 1000",
+          "kind": "path",
+          "path": "spec.securityContext.runAsUser",
+          "match": {
+            "eq": 1000
+          }
+        },
+        {
+          "id": "no-priv-esc",
+          "doc": "Khoá allowPrivilegeEscalation: false trên container",
+          "kind": "path",
+          "path": "spec.containers[0].securityContext.allowPrivilegeEscalation",
+          "match": {
+            "eq": false
+          }
+        },
+        {
+          "id": "drop-all-caps",
+          "doc": "Thu hồi toàn bộ capabilities.drop: [\"ALL\"]",
+          "kind": "path",
+          "path": "spec.containers[0].securityContext.capabilities.drop",
+          "match": {
+            "contains": "ALL"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Chú ý có 2 khối `securityContext`: một khối nằm ngay dưới `spec:`, một khối nằm bên trong phần tử `- name: auth` của `containers:`.",
+      "Trong YAML, `true` và `false` là kiểu boolean (không bọc trong dấu nháy kép)."
+    ],
+    "ref": "k8s/security/pod-restricted-psa.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k16-2",
+    "code": "K16.2",
+    "module": "K16",
+    "title": "Khoá hệ thống tệp gốc chỉ đọc kèm ổ đĩa nháp emptyDir tại /tmp",
+    "difficulty": 2,
+    "tags": [
+      "readonlyrootfilesystem",
+      "emptydir",
+      "securitycontext"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "readonly-rootfs.yaml",
+    "prompt": "Để ngăn chặn triệt để việc kẻ tấn công tải mã độc ghi xuống đĩa trong container `invoice-worker`, hãy:\n\n1. Bật `readOnlyRootFilesystem: true` bên trong `spec.containers[0].securityContext`.\n2. Khai báo ổ đĩa tạm `spec.volumes[0]` có `name: tmp-vol` và `emptyDir: {}`.\n3. Gắn `spec.containers[0].volumeMounts[0]` (`name: tmp-vol`) vào đường dẫn `mountPath: /tmp` để thư viện xuất PDF của Node.js vẫn tạo được tệp nháp.",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: invoice-worker\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n    - name: worker\n      image: ghcr.io/acme/invoice-worker:1.1.0\n      securityContext:\n        allowPrivilegeEscalation: false\n        # 1) Bật readOnlyRootFilesystem: true\n      # 3) Gắn volumeMounts tmp-vol vào /tmp\n  # 2) Khai báo volumes tmp-vol kiểu emptyDir: {}\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: invoice-worker\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n    - name: worker\n      image: ghcr.io/acme/invoice-worker:1.1.0\n      securityContext:\n        allowPrivilegeEscalation: false\n        readOnlyRootFilesystem: true\n      volumeMounts:\n        - name: tmp-vol\n          mountPath: /tmp\n  volumes:\n    - name: tmp-vol\n      emptyDir: {}\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ro-rootfs",
+          "doc": "Bật securityContext.readOnlyRootFilesystem: true",
+          "kind": "path",
+          "path": "spec.containers[0].securityContext.readOnlyRootFilesystem",
+          "match": {
+            "eq": true
+          }
+        },
+        {
+          "id": "emptydir-vol",
+          "doc": "Khai báo ổ đĩa tạm volumes[0].emptyDir: {}",
+          "kind": "path",
+          "path": "spec.volumes[0].emptyDir",
+          "match": {
+            "exists": true
+          }
+        },
+        {
+          "id": "mount-tmp",
+          "doc": "Gắn volumeMounts[0].mountPath tại /tmp",
+          "kind": "path",
+          "path": "spec.containers[0].volumeMounts[0].mountPath",
+          "match": {
+            "eq": "/tmp"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Hãy viết rõ dấu ngoặc nhọn `emptyDir: {}` (đối tượng rỗng hợp lệ trong YAML) thay vì bỏ trống sau dấu hai chấm!"
+    ],
+    "ref": "k8s/security/pod-restricted-psa.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k16-3",
+    "code": "K16.3",
+    "module": "K16",
+    "title": "Cưỡng chế Pod Security Admission mức restricted trên Namespace payments",
+    "difficulty": 1,
+    "tags": [
+      "psa",
+      "namespace",
+      "pod-security-standards"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "payments-namespace-psa.yaml",
+    "prompt": "Đội Bảo mật yêu cầu toàn bộ các Pod triển khai vào `Namespace` `payments` phải tự động bị kiểm tra theo chuẩn khắt khe nhất **`restricted`** của **Pod Security Admission**.\n\nHãy hoàn thiện `Namespace` `payments` (`apiVersion: v1`) với hai nhãn trong `metadata.labels`:\n- `pod-security.kubernetes.io/enforce: restricted`\n- `pod-security.kubernetes.io/warn: restricted`",
+    "starter": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: payments\n  labels:\n    # Gắn nhãn enforce và warn ở mức restricted cho Pod Security Admission\n    env: production\n",
+    "solution": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: payments\n  labels:\n    env: production\n    pod-security.kubernetes.io/enforce: restricted\n    pod-security.kubernetes.io/warn: restricted\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ns-payments",
+          "doc": "Tài nguyên là Namespace tên payments",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Namespace",
+            "name": "payments"
+          },
+          "path": "apiVersion",
+          "match": {
+            "eq": "v1"
+          }
+        },
+        {
+          "id": "has-enforce-key",
+          "doc": "Có nhãn pod-security.kubernetes.io/enforce trong metadata.labels",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Namespace",
+            "name": "payments"
+          },
+          "path": "metadata.labels",
+          "match": {
+            "contains": "pod-security.kubernetes.io/enforce"
+          }
+        },
+        {
+          "id": "enforce-restricted",
+          "doc": "Giá trị pod-security.kubernetes.io/enforce đặt là \"restricted\"",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Namespace",
+            "name": "payments"
+          },
+          "path": "metadata.labels",
+          "match": {
+            "regex": "\"pod-security\\.kubernetes\\.io/enforce\":\"restricted\""
+          }
+        },
+        {
+          "id": "warn-restricted",
+          "doc": "Giá trị pod-security.kubernetes.io/warn đặt là \"restricted\"",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Namespace",
+            "name": "payments"
+          },
+          "path": "metadata.labels",
+          "match": {
+            "regex": "\"pod-security\\.kubernetes\\.io/warn\":\"restricted\""
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Kiểm tra chính xác tên tiền tố chuẩn của K8s: `pod-security.kubernetes.io/enforce: restricted` và `pod-security.kubernetes.io/warn: restricted`."
+    ],
+    "ref": "k8s/security/pod-restricted-psa.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k16-4",
+    "code": "K16.4",
+    "module": "K16",
+    "title": "Thu hẹp Role RBAC loại bỏ quyền đại diện Wildcard (*) nguy hiểm",
+    "difficulty": 2,
+    "tags": [
+      "rbac",
+      "role",
+      "least-privilege"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "pod-reader-role.yaml",
+    "prompt": "Một lập trình viên lười biếng đã viết `Role` `pod-reader` trong namespace `backend` dùng ký tự đại diện `\"*\"` cho phép xoá sạch cả Secret lẫn Deployment!\n\nHãy sửa lại `Role` (`apiVersion: rbac.authorization.k8s.io/v1`) theo đúng nguyên lý **Đặc quyền tối thiểu**:\n- `rules[0].apiGroups: [\"\"]` (nhóm Core API)\n- `rules[0].resources: [\"pods\"]` (chỉ đọc tài nguyên `pods`, tuyệt đối không chứa `\"*\"`)\n- `rules[0].verbs: [\"get\", \"list\", \"watch\"]` (chỉ cho phép 3 hành động xem, không chứa `\"*\"` hay `\"delete\"`)",
+    "starter": "apiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: pod-reader\n  namespace: backend\nrules:\n  - apiGroups: [\"*\"]\n    resources: [\"*\"]\n    verbs: [\"*\"]\n",
+    "solution": "apiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: pod-reader\n  namespace: backend\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"pods\"]\n    verbs: [\"get\", \"list\", \"watch\"]\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "role-core-group",
+          "doc": "Nhóm Core API được khai báo bằng chuỗi rỗng [\"\"]",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Role",
+            "name": "pod-reader"
+          },
+          "path": "rules[0].apiGroups",
+          "match": {
+            "eq": [
+              ""
+            ]
+          }
+        },
+        {
+          "id": "role-only-pods",
+          "doc": "Chỉ cấp quyền trên tài nguyên [\"pods\"]",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Role",
+            "name": "pod-reader"
+          },
+          "path": "rules[0].resources",
+          "match": {
+            "eq": [
+              "pods"
+            ]
+          }
+        },
+        {
+          "id": "role-no-wildcard-verbs",
+          "doc": "Loại bỏ hoàn toàn dấu sao \"*\" khỏi danh sách verbs",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Role",
+            "name": "pod-reader"
+          },
+          "path": "rules[0].verbs",
+          "match": {
+            "notContains": "*"
+          }
+        },
+        {
+          "id": "role-read-verbs",
+          "doc": "Cấp đúng 3 quyền chỉ đọc [\"get\", \"list\", \"watch\"]",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Role",
+            "name": "pod-reader"
+          },
+          "path": "rules[0].verbs",
+          "match": {
+            "eq": [
+              "get",
+              "list",
+              "watch"
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong RBAC, tài nguyên gốc như `pods`, `services`, `configmaps` thuộc Core API group nên `apiGroups` viết là `[\"\"]` (mảng chứa một chuỗi rỗng)."
+    ],
+    "ref": "k8s/security/rbac-least-privilege.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k16-5",
+    "code": "K16.5",
+    "module": "K16",
+    "title": "Liên kết ServiceAccount với Role bằng RoleBinding đa tài liệu",
+    "difficulty": 3,
+    "tags": [
+      "rbac",
+      "serviceaccount",
+      "rolebinding"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "job-runner-rbac.yaml",
+    "prompt": "Hoàn thiện tệp YAML đa tài liệu (`---`) trong namespace `backend` để nối danh tính `ServiceAccount` `job-runner` vào `Role` `config-reader`:\n\n1. Tài liệu 1 (`ServiceAccount` tên `job-runner`, `namespace: backend`) và Tài liệu 2 (`Role` tên `config-reader`, `namespace: backend`) đã có sẵn.\n2. Hãy hoàn thiện Tài liệu 3 (`RoleBinding` tên `job-runner-binding`, `namespace: backend`, `apiVersion: rbac.authorization.k8s.io/v1`):\n   - `subjects[0]`: `kind: ServiceAccount`, `name: job-runner`, `namespace: backend`\n   - `roleRef`: `apiGroup: rbac.authorization.k8s.io`, `kind: Role`, `name: config-reader`",
+    "starter": "apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: job-runner\n  namespace: backend\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: config-reader\n  namespace: backend\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"configmaps\"]\n    verbs: [\"get\", \"list\"]\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: job-runner-binding\n  namespace: backend\nsubjects:\n  - kind: ServiceAccount\n    name: ____\n    namespace: backend\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: Role\n  name: ____\n",
+    "solution": "apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: job-runner\n  namespace: backend\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: config-reader\n  namespace: backend\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"configmaps\"]\n    verbs: [\"get\", \"list\"]\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: job-runner-binding\n  namespace: backend\nsubjects:\n  - kind: ServiceAccount\n    name: job-runner\n    namespace: backend\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: Role\n  name: config-reader\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "sa-exists",
+          "doc": "Có ServiceAccount job-runner trong namespace backend",
+          "kind": "path",
+          "docSelect": {
+            "kind": "ServiceAccount",
+            "name": "job-runner"
+          },
+          "path": "metadata.namespace",
+          "match": {
+            "eq": "backend"
+          }
+        },
+        {
+          "id": "rb-subject",
+          "doc": "RoleBinding trỏ subjects[0].name tới ServiceAccount job-runner",
+          "kind": "path",
+          "docSelect": {
+            "kind": "RoleBinding",
+            "name": "job-runner-binding"
+          },
+          "path": "subjects[0].name",
+          "match": {
+            "eq": "job-runner"
+          }
+        },
+        {
+          "id": "rb-roleref-kind",
+          "doc": "roleRef.kind là Role thuộc apiGroup rbac.authorization.k8s.io",
+          "kind": "path",
+          "docSelect": {
+            "kind": "RoleBinding",
+            "name": "job-runner-binding"
+          },
+          "path": "roleRef.kind",
+          "match": {
+            "eq": "Role"
+          }
+        },
+        {
+          "id": "rb-roleref-name",
+          "doc": "roleRef.name tham chiếu chính xác tới config-reader",
+          "kind": "path",
+          "docSelect": {
+            "kind": "RoleBinding",
+            "name": "job-runner-binding"
+          },
+          "path": "roleRef.name",
+          "match": {
+            "eq": "config-reader"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Điền `subjects[0].name: job-runner` (ai được nhận quyền) và `roleRef.name: config-reader` (nhận gói quyền nào)."
+    ],
+    "ref": "k8s/security/rbac-least-privilege.yaml",
+    "webGrade": true
+  }
+]

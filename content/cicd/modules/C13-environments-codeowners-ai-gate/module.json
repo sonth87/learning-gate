@@ -1,0 +1,57 @@
+{
+  "id": "C13",
+  "slug": "C13-environments-codeowners-ai-gate",
+  "level": 4,
+  "order": 13,
+  "title": "Environments, CODEOWNERS & Cổng rà soát AI (Governance)",
+  "summary": "Thiết lập GitHub Environments tách biệt Staging/Production kèm cổng duyệt tay, phân quyền .github/CODEOWNERS và tối ưu AI PR Reviewer ít nhiễu, an toàn trước Fork PR.",
+  "tags": [
+    "github-environments",
+    "codeowners",
+    "ai-review",
+    "governance",
+    "branch-protection"
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs — Using environments for deployment",
+      "url": "https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment",
+      "version": "GitHub Actions 2026"
+    },
+    {
+      "title": "GitHub Docs — About code owners",
+      "url": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
+      "version": "GitHub Enterprise / Free 2026"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Blueprint #4: AI Review & CODEOWNERS Governance",
+      "kind": "blueprint",
+      "targetId": "full-flow-4-ai-review-codeowners"
+    }
+  ],
+  "readings": [
+    {
+      "path": "gitops/github-environments-gate.yml",
+      "kind": "good",
+      "note": "Chuỗi thăng cấp môi trường chuẩn từ Staging -> Smoke Test -> Production có cổng Required Reviewers.",
+      "task": "Quan sát cách job deploy-production sử dụng đồng thời environment và concurrency. Tại sao cancel-in-progress lại đặt là false?",
+      "answer": "Trên môi trường Production, việc huỷ ngang một tiến trình deploy đang chạy dở (cancel-in-progress: true) có thể để lại trạng thái hạ tầng nửa vời; đặt false giúp xếp hàng chờ bản trước hoàn tất an toàn."
+    },
+    {
+      "path": "governance/CODEOWNERS.example",
+      "kind": "good",
+      "note": "Mẫu phân quyền người gác cổng bắt buộc cho đường ống CI/CD, Dockerfile và thư mục SQL migrations.",
+      "task": "Nếu một PR vừa sửa src/index.ts vừa sửa .github/workflows/ci.yml, những nhóm nào bắt buộc phải bấm Approve?",
+      "answer": "Cả nhóm @acme/core-backend-maintainers (khớp quy tắc * cho src/index.ts) lẫn @acme/security-team và @acme/platform-devops (khớp /.github/workflows/) đều phải ký duyệt nếu bật Require review from Code Owners."
+    },
+    {
+      "path": "governance/coderabbit-ai-review.yaml",
+      "kind": "good",
+      "note": "Cấu hình trợ lý AI rà soát PR tập trung vào bảo mật workflow và SQL migration mà không bị nhiễu bởi lockfile.",
+      "task": "Tại sao cần khai báo !**/package-lock.json và !**/dist/** trong path_filters của công cụ rà soát AI?",
+      "answer": "Các tệp lockfile và mã biên dịch chứa hàng chục nghìn dòng sinh tự động; loại trừ chúng giúp tiết kiệm ngữ cảnh LLM và tránh làm loãng PR bằng những bình luận vô nghĩa."
+    }
+  ]
+}

@@ -1,0 +1,259 @@
+[
+  {
+    "id": "cicd-ex-c08-1",
+    "code": "C08.1",
+    "module": "C08",
+    "title": "Tái cấu trúc chuỗi tuần tự thành Đồ thị DAG song song có cổng hội tụ gate",
+    "difficulty": 2,
+    "tags": [
+      "dag",
+      "needs",
+      "fan-in"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/dag-fanin.yml",
+    "prompt": "Ba Job `lint`, `typecheck` và `unit-test` hiện đang bị trói nối đuôi nhau (`typecheck` chờ `lint`, `unit-test` chờ `typecheck`) làm tốn gấp đôi thời gian vô ích!\n\nHãy tái cấu trúc thành đồ thị **Fan-out / Fan-in**:\n1. Xoá bỏ hoàn toàn thuộc tính `needs` trên cả `typecheck` và `unit-test` để cả 3 Job kiểm tra xuất phát song song ngay giây thứ 0.\n2. Thêm Job hội tụ tên là **`gate`** (`runs-on: ubuntu-latest`) đặt `needs: [lint, typecheck, unit-test]` và có một bước `run: echo \"All checks green\"`.",
+    "starter": "name: CI Pipeline\non: [pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run lint\n\n  typecheck:\n    needs: lint\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run typecheck\n\n  unit-test:\n    needs: typecheck\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n  # Thêm Job hội tụ gate chờ cả 3 Job [lint, typecheck, unit-test]\n",
+    "solution": "name: CI Pipeline\non: [pull_request]\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run lint\n\n  typecheck:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm run typecheck\n\n  unit-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n\n  gate:\n    needs: [lint, typecheck, unit-test]\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"All checks green\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "typecheck-parallel",
+          "doc": "Job typecheck không còn bị chặn bởi needs",
+          "kind": "path",
+          "path": "jobs.typecheck.needs",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "unittest-parallel",
+          "doc": "Job unit-test không còn bị chặn bởi needs",
+          "kind": "path",
+          "path": "jobs.unit-test.needs",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "gate-fanin-all",
+          "doc": "Job gate hội tụ đủ cả 3 nhánh [lint, typecheck, unit-test]",
+          "kind": "path",
+          "path": "jobs.gate.needs",
+          "match": {
+            "eq": [
+              "lint",
+              "typecheck",
+              "unit-test"
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Xoá dòng `needs: lint` ở `typecheck` và xoá dòng `needs: typecheck` ở `unit-test`.",
+      "Tạo khối `gate:` dưới `jobs:` với `needs: [lint, typecheck, unit-test]`."
+    ],
+    "ref": "github/dag-matrix-fanin.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c08-2",
+    "code": "C08.2",
+    "module": "C08",
+    "title": "Chia tải bộ kiểm thử Playwright E2E ra 4 máy ảo song song (Sharding)",
+    "difficulty": 2,
+    "tags": [
+      "sharding",
+      "playwright",
+      "matrix"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/e2e-sharded.yml",
+    "prompt": "Job `e2e` chạy đơn luồng mất 16 phút. Hãy cắt thời gian xuống còn **4 phút** bằng kỹ thuật chia mảnh:\n\n1. Thêm `strategy.fail-fast: false` vào Job `e2e`.\n2. Khai báo `strategy.matrix.shard: [1, 2, 3, 4]`.\n3. Sửa bước chạy kiểm thử cuối cùng thành `npx playwright test --shard=${{ matrix.shard }}/4`.",
+    "starter": "name: Playwright E2E\non: [pull_request]\njobs:\n  e2e:\n    runs-on: ubuntu-latest\n    # Khai báo strategy (fail-fast: false và matrix.shard: [1, 2, 3, 4])\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npx playwright test\n",
+    "solution": "name: Playwright E2E\non: [pull_request]\njobs:\n  e2e:\n    runs-on: ubuntu-latest\n    strategy:\n      fail-fast: false\n      matrix:\n        shard: [1, 2, 3, 4]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npx playwright test --shard=${{ matrix.shard }}/4\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-fail-fast",
+          "doc": "Đặt strategy.fail-fast: false để gom đủ kết quả mọi mảnh",
+          "kind": "path",
+          "path": "jobs.e2e.strategy.fail-fast",
+          "match": {
+            "eq": false
+          }
+        },
+        {
+          "id": "shard-matrix-4",
+          "doc": "Khai báo strategy.matrix.shard: [1, 2, 3, 4]",
+          "kind": "path",
+          "path": "jobs.e2e.strategy.matrix.shard",
+          "match": {
+            "eq": [
+              1,
+              2,
+              3,
+              4
+            ]
+          }
+        },
+        {
+          "id": "playwright-shard-flag",
+          "doc": "Truyền cờ --shard=${{ matrix.shard }}/4 cho lệnh playwright test",
+          "kind": "path",
+          "path": "jobs.e2e.steps[3].run",
+          "match": {
+            "contains": "--shard=${{ matrix.shard }}/4"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`strategy:` đặt cùng cấp với `runs-on:` và `steps:` trong Job `e2e`."
+    ],
+    "ref": "github/sharded-playwright-e2e.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c08-3",
+    "code": "C08.3",
+    "module": "C08",
+    "title": "Bật bộ đệm tầng Docker Buildx gốc trên GitHub Actions (type=gha,mode=max)",
+    "difficulty": 2,
+    "tags": [
+      "docker",
+      "buildx",
+      "gha-cache"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/docker-cache.yml",
+    "prompt": "Mỗi lượt chạy CI đều phải biên dịch lại Multi-stage Dockerfile từ con số 0. Hãy bật bộ đệm tầng Buildx trên bước `docker/build-push-action@v6`:\n\n1. Thêm `cache-from: type=gha` vào bên trong `with:`.\n2. Thêm `cache-to: type=gha,mode=max` vào bên trong `with:` để lưu đệm cả stage `builder` trung gian.",
+    "starter": "name: Container Build\non: [push]\njobs:\n  docker:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: docker/setup-buildx-action@v3\n      - name: Build image with Buildx cache\n        uses: docker/build-push-action@v6\n        with:\n          context: .\n          push: false\n          tags: ghcr.io/acme/shop-api:${{ github.sha }}\n          # Bổ sung cache-from và cache-to (type=gha,mode=max)\n",
+    "solution": "name: Container Build\non: [push]\njobs:\n  docker:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: docker/setup-buildx-action@v3\n      - name: Build image with Buildx cache\n        uses: docker/build-push-action@v6\n        with:\n          context: .\n          push: false\n          tags: ghcr.io/acme/shop-api:${{ github.sha }}\n          cache-from: type=gha\n          cache-to: type=gha,mode=max\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "buildx-cache-from",
+          "doc": "Đặt with.cache-from: type=gha",
+          "kind": "path",
+          "path": "jobs.docker.steps[2].with.cache-from",
+          "match": {
+            "eq": "type=gha"
+          }
+        },
+        {
+          "id": "buildx-cache-to-max",
+          "doc": "Đặt with.cache-to: type=gha,mode=max",
+          "kind": "path",
+          "path": "jobs.docker.steps[2].with.cache-to",
+          "match": {
+            "eq": "type=gha,mode=max"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Cả `cache-from` và `cache-to` đều nằm bên trong khối `with:` của `docker/build-push-action@v6`."
+    ],
+    "ref": "gitops/ci-update-gitops-repo.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c08-4",
+    "code": "C08.4",
+    "module": "C08",
+    "title": "Đảm bảo tải báo cáo lỗi Playwright lên ngay cả khi kiểm thử thất bại",
+    "difficulty": 1,
+    "tags": [
+      "artifacts",
+      "conditions",
+      "playwright"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/e2e-report-on-fail.yml",
+    "prompt": "Đội QA than phiền rằng mỗi khi bài kiểm thử Playwright bị đỏ, bước `Upload Playwright HTML report` phía dưới lại bị bỏ qua (`skipped`) khiến không ai tải được ảnh chụp màn hình lỗi!\n\nHãy thêm điều kiện **`if: ${{ !cancelled() }}`** (hoặc `if: always()`) vào bước `actions/upload-artifact@v4` để báo cáo luôn được lưu lại khi test thất bại.",
+    "starter": "name: E2E Report\non: [pull_request]\njobs:\n  e2e:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npx playwright test\n      - name: Upload Playwright HTML report\n        # Thêm điều kiện if để bước này vẫn chạy khi bước test phía trên bị fail!\n        uses: actions/upload-artifact@v4\n        with:\n          name: playwright-report\n          path: playwright-report/\n          retention-days: 7\n",
+    "solution": "name: E2E Report\non: [pull_request]\njobs:\n  e2e:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npx playwright test\n      - name: Upload Playwright HTML report\n        if: ${{ !cancelled() }}\n        uses: actions/upload-artifact@v4\n        with:\n          name: playwright-report\n          path: playwright-report/\n          retention-days: 7\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "upload-runs-on-failure",
+          "doc": "Bước upload-artifact có điều kiện if: !cancelled() hoặc always()",
+          "kind": "path",
+          "path": "jobs.e2e.steps[3].if",
+          "match": {
+            "regex": "(!cancelled\\(\\)|always\\(\\))"
+          }
+        },
+        {
+          "id": "upload-v4-intact",
+          "doc": "Giữ nguyên actions/upload-artifact@v4 cho playwright-report",
+          "kind": "gha-uses-pinned",
+          "jobId": "e2e",
+          "actionPrefix": "actions/upload-artifact",
+          "minMajor": 4
+        }
+      ]
+    },
+    "hints": [
+      "Thêm dòng `if: ${{ !cancelled() }}` ngay dưới dòng `- name: Upload Playwright HTML report`."
+    ],
+    "ref": "github/sharded-playwright-e2e.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c08-5",
+    "code": "C08.5",
+    "module": "C08",
+    "title": "Xoá bỏ sleep 30 mù quáng bằng vòng lặp thăm dò cổng xác định",
+    "difficulty": 2,
+    "tags": [
+      "flaky-tests",
+      "curl-retry",
+      "readiness"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/deterministic-wait.yml",
+    "prompt": "Bước `Wait for server` đang dùng lệnh ngủ cảm tính `sleep 30` vừa tốn thời gian vừa hay bị lỗi chập chờn `ECONNREFUSED` vào giờ cao điểm.\n\nHãy xoá `sleep 30` và thay bằng câu lệnh thăm dò xác định:\n`curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://localhost:3000/healthz`",
+    "starter": "name: Deterministic Readiness Poll\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Start server and wait\n        run: |\n          npm start &\n          sleep 30\n          npm run test:e2e\n",
+    "solution": "name: Deterministic Readiness Poll\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - name: Start server and wait\n        run: |\n          npm start &\n          curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://localhost:3000/healthz\n          npm run test:e2e\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-blind-sleep",
+          "doc": "Xoá hoàn toàn lệnh ngủ mù quáng sleep 30",
+          "kind": "path",
+          "path": "jobs.integration.steps[2].run",
+          "match": {
+            "notRegex": "sleep\\s+\\d+"
+          }
+        },
+        {
+          "id": "curl-fail-flag",
+          "doc": "Sử dụng curl kèm cờ --fail và --retry-connrefused",
+          "kind": "path",
+          "path": "jobs.integration.steps[2].run",
+          "match": {
+            "regex": "curl\\s+.*--fail.*--retry-connrefused.*http://localhost:3000/healthz"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thay thế đúng dòng `sleep 30` bằng `curl --fail --retry 15 --retry-connrefused --retry-delay 2 http://localhost:3000/healthz`, giữ nguyên `npm start &` ở trên và `npm run test:e2e` ở dưới."
+    ],
+    "ref": "gitops/smoke-test-rollback.yml",
+    "webGrade": true
+  }
+]

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K07-Q1",
+    "type": "mc",
+    "q": "Trong Control Plane của Kubernetes, thành phần nào đóng vai trò là cơ sở dữ liệu Key-Value phân tán lưu giữ toàn bộ trạng thái của cụm?",
+    "code": "",
+    "choices": [
+      "`kube-proxy`",
+      "`etcd`",
+      "`kubelet`",
+      "`containerd`"
+    ],
+    "answer": 1,
+    "explain": "`etcd` là kho dữ liệu nguồn sự thật duy nhất (single source of truth) của toàn cụm K8s, và chỉ `kube-apiserver` được phép đọc/ghi trực tiếp vào `etcd`."
+  },
+  {
+    "id": "K07-Q2",
+    "type": "mc",
+    "q": "Trên mỗi máy chủ **Worker Node**, thành phần đại lý (agent) nào nhận chỉ thị từ `kube-apiserver` để yêu cầu Container Runtime kéo Image và khởi chạy các Pod được xếp về Node đó?",
+    "code": "",
+    "choices": [
+      "`kube-scheduler`",
+      "`kubelet`",
+      "`etcd`",
+      "`kube-controller-manager`"
+    ],
+    "answer": 1,
+    "explain": "`kubelet` chạy trên từng Worker Node, liên tục báo cáo sức khoẻ Node/Pod về `kube-apiserver` và điều khiển `containerd` bật/tắt container."
+  },
+  {
+    "id": "K07-Q3",
+    "type": "tf",
+    "q": "Theo mô hình Vòng lặp Điều khiển Khai báo (Declarative Control Loop), nếu bạn khai báo `replicas: 3` và 1 Worker Node bị mất điện làm chết 1 Pod, Kubernetes sẽ tự động tạo bù 1 Pod mới sang Worker Node còn sống để khôi phục đủ 3 Pod.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Controller liên tục đối chiếu Trạng thái Thực tế (`2`) với Trạng thái Mong muốn (`3`) và tự động tạo Pod mới còn `kube-scheduler` xếp nó sang Node khoẻ mạnh."
+  },
+  {
+    "id": "K07-Q4",
+    "type": "mc",
+    "q": "Bốn trường gốc (root fields) bắt buộc phải có mặt trong mọi Manifest YAML tạo tài nguyên chuẩn của Kubernetes là gì?",
+    "code": "",
+    "choices": [
+      "`version`, `services`, `networks`, `volumes`",
+      "`apiVersion`, `kind`, `metadata`, `spec`",
+      "`from`, `workdir`, `copy`, `cmd`",
+      "`name`, `on`, `jobs`, `steps`"
+    ],
+    "answer": 1,
+    "explain": "`version`/`services` là của Docker Compose; `name`/`on`/`jobs` là của GitHub Actions; còn mọi Manifest Kubernetes chuẩn đều xoay quanh bộ tứ `apiVersion`, `kind`, `metadata`, `spec`."
+  },
+  {
+    "id": "K07-Q5",
+    "type": "output",
+    "q": "Trên Kubernetes hiện đại (v1.16 trở đi đến năm 2026), giá trị `apiVersion` chuẩn cho tài nguyên `kind: Deployment` là gì (thay thế cho `extensions/v1beta1` đã bị gỡ bỏ)?",
+    "code": "apiVersion: ____\nkind: Deployment",
+    "choices": [],
+    "answer": "apps/v1",
+    "explain": "Mọi tài nguyên quản lý workload như `Deployment`, `StatefulSet`, `DaemonSet`, `ReplicaSet` đều thuộc nhóm ổn định `apps/v1`."
+  },
+  {
+    "id": "K07-Q6",
+    "type": "mc",
+    "q": "Khi bạn gõ `kubectl get pods` mà không truyền cờ nào thêm, vì sao bạn không nhìn thấy các Pod hệ thống như `coredns`?",
+    "code": "",
+    "choices": [
+      "Vì `coredns` không chạy dưới dạng Pod",
+      "Vì `kubectl get pods` mặc định chỉ liệt kê tài nguyên trong namespace `default`, còn `coredns` nằm ở namespace `kube-system` (cần dùng `-n kube-system` hoặc `-A`)",
+      "Vì phải đăng nhập SSH vào máy Control Plane mới thấy được",
+      "Vì `coredns` chỉ chạy khi có lỗi mạng"
+    ],
+    "answer": 1,
+    "explain": "Mặc định `kubectl` truy vấn namespace `default`. Dùng cờ `-A` (`--all-namespaces`) sẽ hiển thị toàn bộ Pod trên mọi namespace của cụm."
+  },
+  {
+    "id": "K07-Q7",
+    "type": "output",
+    "q": "Cờ viết tắt gồm 1 chữ cái in hoa (kèm dấu gạch ngang) trong lệnh `kubectl get pods ____` để liệt kê Pod trên **tất cả các namespace** là gì?",
+    "code": "kubectl get pods ____",
+    "choices": [],
+    "answer": "-A",
+    "explain": "`-A` là viết tắt của `--all-namespaces`, cực kỳ hữu ích để nắm bắt toàn cảnh cụm trong 1 giây."
+  }
+]

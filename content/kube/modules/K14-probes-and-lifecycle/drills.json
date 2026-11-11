@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K14-D1",
+    "title": "Cấu hình readinessProbe HTTP cho API Node.js cổng 3000",
+    "code": "readinessProbe:\n  httpGet:\n    path: /readyz\n    port: 3000\n  periodSeconds: 5\n  failureThreshold: 3"
+  },
+  {
+    "id": "K14-D2",
+    "title": "Khai báo móc lifecycle preStop ngủ đệm 5 giây chống lỗi 502",
+    "code": "lifecycle:\n  preStop:\n    exec:\n      command: [\"sh\", \"-c\", \"sleep 5\"]"
+  }
+]

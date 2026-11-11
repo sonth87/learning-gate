@@ -1,0 +1,1271 @@
+{
+  "categories": {
+    "dockerfile": "Dockerfile & .dockerignore",
+    "compose": "Docker Compose v2",
+    "k8s-workload": "Kubernetes Workloads (Pod, Deployment, StatefulSet)",
+    "k8s-network": "Kubernetes Networking & Config (Service, Ingress, Secret)",
+    "k8s-security": "Bảo mật, RBAC, NetworkPolicy & Cấu hình lịch sử"
+  },
+  "flagLabels": {
+    "production-ready": "Chuẩn Production",
+    "outdated": "Cú pháp / API đã cũ",
+    "security-risk": "Lỗ hổng bảo mật cố ý",
+    "buggy": "Chứa lỗi để tìm bug"
+  },
+  "items": [
+    {
+      "n": 1,
+      "id": "kube-cfg-1",
+      "path": "docker/node-api/Dockerfile.bad-root",
+      "language": "dockerfile",
+      "loc": 23,
+      "category": "dockerfile",
+      "topic": "Dockerfile Node.js lỗi cơ bản (latest, mất cache, chạy root)",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "node",
+        "anti-pattern",
+        "layer-cache",
+        "root"
+      ],
+      "flags": [
+        "buggy",
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/best-practices/",
+      "curated": [
+        {
+          "module": "K00",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "id": "kube-cfg-2",
+      "path": "docker/node-api/Dockerfile.layer-cached",
+      "language": "dockerfile",
+      "loc": 25,
+      "category": "dockerfile",
+      "topic": "Dockerfile Node.js 22 tối ưu Layer Cache với npm ci",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "node",
+        "alpine",
+        "layer-cache",
+        "npm-ci"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/guides/nodejs/containerize/",
+      "curated": [
+        {
+          "module": "K00",
+          "kind": "good"
+        },
+        {
+          "module": "K03",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "id": "kube-cfg-3",
+      "path": "docker/node-api/Dockerfile.multistage-prod",
+      "language": "dockerfile",
+      "loc": 44,
+      "category": "dockerfile",
+      "topic": "Multi-stage Dockerfile cho TypeScript API (builder -> runner)",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "multi-stage",
+        "typescript",
+        "non-root",
+        "healthcheck"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/multi-stage/",
+      "curated": [
+        {
+          "module": "K05",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 4,
+      "id": "kube-cfg-4",
+      "path": "docker/node-api/Dockerfile.shell-trap",
+      "language": "dockerfile",
+      "loc": 21,
+      "category": "dockerfile",
+      "topic": "Bẫy PID 1 với Shell Form & npm start làm kẹt Graceful Shutdown",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "pid1",
+        "sigterm",
+        "graceful-shutdown",
+        "cmd"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.docker.com/reference/build-checks/json-args-recommended/",
+      "curated": [
+        {
+          "module": "K03",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 5,
+      "id": "kube-cfg-5",
+      "path": "docker/node-api/.dockerignore.prod",
+      "language": "dockerfile",
+      "loc": 30,
+      "category": "dockerfile",
+      "topic": ".dockerignore chuẩn Production chặn rác & bí mật, giữ ngoại lệ !README.md",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "dockerignore",
+        "security",
+        "build-context"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/concepts/context/#dockerignore-files",
+      "curated": [
+        {
+          "module": "K04",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 6,
+      "id": "kube-cfg-6",
+      "path": "docker/node-api/.dockerignore.leaky",
+      "language": "dockerfile",
+      "loc": 14,
+      "category": "dockerfile",
+      "topic": ".dockerignore viết ẩu: rò rỉ .env/.git và chặn nhầm config JSON trong src/",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 1,
+      "tags": [
+        "dockerignore",
+        "buggy",
+        "secret-leak"
+      ],
+      "flags": [
+        "security-risk",
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/concepts/context/#dockerignore-files",
+      "curated": [
+        {
+          "module": "K04",
+          "kind": "security"
+        }
+      ]
+    },
+    {
+      "n": 7,
+      "id": "kube-cfg-7",
+      "path": "docker/nextjs/Dockerfile.standalone",
+      "language": "dockerfile",
+      "loc": 40,
+      "category": "dockerfile",
+      "topic": "Next.js App Router 3-stage Standalone Build (deps -> builder -> runner)",
+      "level": 1,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "nextjs",
+        "standalone",
+        "multi-stage",
+        "non-root"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://nextjs.org/docs/app/api-reference/config/next-config-js/output",
+      "curated": [
+        {
+          "module": "K05",
+          "kind": "compare"
+        }
+      ]
+    },
+    {
+      "n": 8,
+      "id": "kube-cfg-8",
+      "path": "docker/go-service/Dockerfile.distroless",
+      "language": "dockerfile",
+      "loc": 27,
+      "category": "dockerfile",
+      "topic": "Go Microservice Multi-stage sang Distroless Nonroot (<25MB, không có shell)",
+      "level": 1,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "golang",
+        "distroless",
+        "hardening",
+        "multi-stage"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/guides/golang/build-images/",
+      "curated": [
+        {
+          "module": "K05",
+          "kind": "compare"
+        }
+      ]
+    },
+    {
+      "n": 9,
+      "id": "kube-cfg-9",
+      "path": "docker/python-worker/Dockerfile.uv-slim",
+      "language": "dockerfile",
+      "loc": 33,
+      "category": "dockerfile",
+      "topic": "Python 3.12 Worker Multi-stage với virtualenv tách biệt & non-root user",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "python",
+        "multi-stage",
+        "slim",
+        "worker"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/best-practices/",
+      "curated": []
+    },
+    {
+      "n": 10,
+      "id": "kube-cfg-10",
+      "path": "docker/legacy/Dockerfile.apt-bloated",
+      "language": "dockerfile",
+      "loc": 18,
+      "category": "dockerfile",
+      "topic": "Lỗi tách rời apt-get update & không xoá cache gây phình Image 1.2GB",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "apt-get",
+        "layer-bloat",
+        "cache-invalidation"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/best-practices/#apt-get",
+      "curated": [
+        {
+          "module": "K04",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 11,
+      "id": "kube-cfg-11",
+      "path": "docker/security/Dockerfile.build-arg-secret",
+      "language": "dockerfile",
+      "loc": 23,
+      "category": "dockerfile",
+      "topic": "Lỗ hổng truyền NPM_TOKEN qua ARG/ENV để lộ khoá trong docker history",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 1,
+      "tags": [
+        "security",
+        "build-arg",
+        "npm-token",
+        "buildkit-secret"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.docker.com/build/building/secrets/",
+      "curated": [
+        {
+          "module": "K01",
+          "kind": "security"
+        }
+      ]
+    },
+    {
+      "n": 12,
+      "id": "kube-cfg-12",
+      "path": "docker/nginx/Dockerfile.spa-nonroot",
+      "language": "dockerfile",
+      "loc": 23,
+      "category": "dockerfile",
+      "topic": "Đóng gói React/Vite SPA với nginx-unprivileged lắng nghe cổng 8080",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "nginx",
+        "non-root",
+        "vite",
+        "spa"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/guides/reactjs/",
+      "curated": []
+    },
+    {
+      "n": 13,
+      "id": "kube-cfg-13",
+      "path": "compose/fullstack-v2/compose.yaml",
+      "language": "yaml",
+      "loc": 53,
+      "category": "compose",
+      "topic": "Docker Compose v2 chuẩn Production-like (API + Postgres 16 + Redis 7 + Healthcheck)",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "compose-v2",
+        "healthcheck",
+        "depends_on",
+        "named-volume"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/compose/intro/compose-application-model/",
+      "curated": [
+        {
+          "module": "K06",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 14,
+      "id": "kube-cfg-14",
+      "path": "compose/legacy/docker-compose-v1.yml",
+      "language": "yaml",
+      "loc": 22,
+      "category": "compose",
+      "topic": "File docker-compose v1/v2 cũ (version: \"2.4\", links:, depends_on mù)",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "legacy",
+        "compose-v1",
+        "links",
+        "outdated"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://docs.docker.com/compose/releases/migrate/",
+      "curated": [
+        {
+          "module": "K06",
+          "kind": "outdated"
+        }
+      ]
+    },
+    {
+      "n": 15,
+      "id": "kube-cfg-15",
+      "path": "compose/bugs/compose.localhost-bug.yaml",
+      "language": "yaml",
+      "loc": 26,
+      "category": "compose",
+      "topic": "Bug kinh điển: gọi localhost:5432 từ trong container API bị ECONNREFUSED",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "compose",
+        "dns",
+        "localhost",
+        "econnrefused"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.docker.com/compose/how-tos/networking/",
+      "curated": [
+        {
+          "module": "K01",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "id": "kube-cfg-16",
+      "path": "compose/bugs/compose.ephemeral-db.yaml",
+      "language": "yaml",
+      "loc": 21,
+      "category": "compose",
+      "topic": "Hai bẫy dữ liệu Compose: quên Named Volume cho DB & Bind Mount đè mất node_modules",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "volumes",
+        "bind-mount",
+        "node_modules",
+        "data-loss"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.docker.com/engine/storage/volumes/",
+      "curated": [
+        {
+          "module": "K02",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 17,
+      "id": "kube-cfg-17",
+      "path": "compose/dev-watch/compose.watch.yaml",
+      "language": "yaml",
+      "loc": 26,
+      "category": "compose",
+      "topic": "Docker Compose Watch (v2.22+): đồng bộ nóng src/ và tự rebuild khi sửa package.json",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "compose-watch",
+        "dx",
+        "hot-reload",
+        "node"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/compose/how-tos/file-watch/",
+      "curated": [
+        {
+          "module": "K06",
+          "kind": "compare"
+        }
+      ]
+    },
+    {
+      "n": 18,
+      "id": "kube-cfg-18",
+      "path": "compose/profiles/compose.observability.yaml",
+      "language": "yaml",
+      "loc": 28,
+      "category": "compose",
+      "topic": "Dùng Compose Profiles bật/tắt linh hoạt cụm Prometheus & Grafana khi cần debug",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "compose-profiles",
+        "observability",
+        "prometheus",
+        "grafana"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/compose/how-tos/profiles/",
+      "curated": []
+    },
+    {
+      "n": 19,
+      "id": "kube-cfg-19",
+      "path": "compose/limits/compose.resources.yaml",
+      "language": "yaml",
+      "loc": 28,
+      "category": "compose",
+      "topic": "Khoá trần CPU & RAM (cgroups limits) và chính sách tự khởi động lại trong Compose",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "cgroups",
+        "memory-limit",
+        "cpu-limit",
+        "restart-policy"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.docker.com/reference/compose-file/deploy/#resources",
+      "curated": [
+        {
+          "module": "K02",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 20,
+      "id": "kube-cfg-20",
+      "path": "k8s/workloads/pod-minimal.yaml",
+      "language": "yaml",
+      "loc": 30,
+      "category": "k8s-workload",
+      "topic": "Manifest Pod tối giản nhưng chuẩn mực (labels, ghim image tag, requests/limits)",
+      "level": 2,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "pod",
+        "resources",
+        "labels",
+        "k8s-basics"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/workloads/pods/",
+      "curated": [
+        {
+          "module": "K07",
+          "kind": "good"
+        },
+        {
+          "module": "K08",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 21,
+      "id": "kube-cfg-21",
+      "path": "k8s/workloads/deployment-ha-prod.yaml",
+      "language": "yaml",
+      "loc": 58,
+      "category": "k8s-workload",
+      "topic": "Deployment High Availability (3 replicas, RollingUpdate zero-downtime, TopologySpread)",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "deployment",
+        "rolling-update",
+        "ha",
+        "probes",
+        "topology-spread"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "curated": [
+        {
+          "module": "K09",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 22,
+      "id": "kube-cfg-22",
+      "path": "k8s/workloads/deployment-selector-mismatch.yaml",
+      "language": "yaml",
+      "loc": 25,
+      "category": "k8s-workload",
+      "topic": "Lỗi kinh điển Deployment: selector.matchLabels lệch với template.metadata.labels",
+      "level": 2,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "deployment",
+        "selector",
+        "labels",
+        "validation-error"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/",
+      "curated": [
+        {
+          "module": "K09",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 23,
+      "id": "kube-cfg-23",
+      "path": "k8s/workloads/deployment-legacy-v1beta1.yaml",
+      "language": "yaml",
+      "loc": 20,
+      "category": "k8s-workload",
+      "topic": "Manifest lịch sử dùng apiVersion: extensions/v1beta1 đã bị gỡ bỏ từ K8s 1.16",
+      "level": 2,
+      "difficulty": 1,
+      "quality": 1,
+      "tags": [
+        "deprecated-api",
+        "extensions-v1beta1",
+        "migration"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/reference/using-api/deprecation-guide/",
+      "curated": [
+        {
+          "module": "K07",
+          "kind": "outdated"
+        }
+      ]
+    },
+    {
+      "n": 24,
+      "id": "kube-cfg-24",
+      "path": "k8s/workloads/statefulset-postgres.yaml",
+      "language": "yaml",
+      "loc": 72,
+      "category": "k8s-workload",
+      "topic": "Headless Service + StatefulSet Postgres với định danh ổn định & volumeClaimTemplates",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "statefulset",
+        "headless-service",
+        "pvc",
+        "postgres"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
+      "curated": [
+        {
+          "module": "K13",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 25,
+      "id": "kube-cfg-25",
+      "path": "k8s/workloads/pvc-wrong-storageclass.yaml",
+      "language": "yaml",
+      "loc": 34,
+      "category": "k8s-workload",
+      "topic": "Sự cố Pod kẹt Pending vì PVC yêu cầu StorageClass gõ sai tên (unbound PVC)",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "pvc",
+        "storageclass",
+        "pending",
+        "troubleshooting"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/",
+      "curated": [
+        {
+          "module": "K13",
+          "kind": "bug"
+        },
+        {
+          "module": "K18",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 26,
+      "id": "kube-cfg-26",
+      "path": "k8s/workloads/probes-liveness-trap.yaml",
+      "language": "yaml",
+      "loc": 36,
+      "category": "k8s-workload",
+      "topic": "Bẫy Liveness Probe gọi thẳng vào Database gây bão khởi động lại dây chuyền (Cascading Restart)",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 2,
+      "tags": [
+        "probes",
+        "liveness",
+        "crashloopbackoff",
+        "anti-pattern"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "curated": [
+        {
+          "module": "K14",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 27,
+      "id": "kube-cfg-27",
+      "path": "k8s/workloads/probes-graceful-node.yaml",
+      "language": "yaml",
+      "loc": 52,
+      "category": "k8s-workload",
+      "topic": "Bộ ba Startup/Readiness/Liveness Probes + preStop hook tắt êm ái không rớt request 502",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "probes",
+        "graceful-shutdown",
+        "prestop",
+        "zero-downtime"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination",
+      "curated": [
+        {
+          "module": "K14",
+          "kind": "good"
+        },
+        {
+          "module": "K19",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 28,
+      "id": "kube-cfg-28",
+      "path": "k8s/workloads/hpa-v2-api.yaml",
+      "language": "yaml",
+      "loc": 35,
+      "category": "k8s-workload",
+      "topic": "HorizontalPodAutoscaler autoscaling/v2 tự co giãn 2..10 Pod kèm chống nhấp nhô (stabilizationWindow)",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "hpa",
+        "autoscaling-v2",
+        "scaling",
+        "cpu"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/",
+      "curated": [
+        {
+          "module": "K15",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 29,
+      "id": "kube-cfg-29",
+      "path": "k8s/workloads/cronjob-backup.yaml",
+      "language": "yaml",
+      "loc": 35,
+      "category": "k8s-workload",
+      "topic": "CronJob batch/v1 chạy tác vụ đối soát ban đêm với concurrencyPolicy: Forbid",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "cronjob",
+        "batch-v1",
+        "scheduled-task"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/",
+      "curated": [
+        {
+          "module": "K15",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 30,
+      "id": "kube-cfg-30",
+      "path": "k8s/network/service-clusterip.yaml",
+      "language": "yaml",
+      "loc": 38,
+      "category": "k8s-network",
+      "topic": "Cặp Deployment + Service ClusterIP chuẩn dùng Named Port (http -> 3000)",
+      "level": 3,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "service",
+        "clusterip",
+        "named-port",
+        "dns"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "curated": [
+        {
+          "module": "K10",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 31,
+      "id": "kube-cfg-31",
+      "path": "k8s/network/service-broken-502.yaml",
+      "language": "yaml",
+      "loc": 38,
+      "category": "k8s-network",
+      "topic": "Sự cố 502 / Connection Refused: Service lệch cả nhãn selector lẫn targetPort",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "service",
+        "endpoints",
+        "502",
+        "selector-mismatch"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "curated": [
+        {
+          "module": "K10",
+          "kind": "bug"
+        },
+        {
+          "module": "K19",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 32,
+      "id": "kube-cfg-32",
+      "path": "k8s/network/ingress-tls-prod.yaml",
+      "language": "yaml",
+      "loc": 33,
+      "category": "k8s-network",
+      "topic": "Ingress networking.k8s.io/v1 với chứng chỉ HTTPS TLS và định tuyến /api & /",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "ingress",
+        "tls",
+        "nginx-ingress",
+        "routing"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "curated": [
+        {
+          "module": "K11",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 33,
+      "id": "kube-cfg-33",
+      "path": "k8s/network/gateway-api-httproute.yaml",
+      "language": "yaml",
+      "loc": 49,
+      "category": "k8s-network",
+      "topic": "Kubernetes Gateway API v1 (Gateway + HTTPRoute chia 90/10 Canary traffic — thế hệ kế nhiệm Ingress)",
+      "level": 3,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "gateway-api",
+        "httproute",
+        "canary",
+        "2026-standard"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/gateway/",
+      "curated": [
+        {
+          "module": "K11",
+          "kind": "compare"
+        }
+      ]
+    },
+    {
+      "n": 34,
+      "id": "kube-cfg-34",
+      "path": "k8s/network/ingress-legacy-beta.yaml",
+      "language": "yaml",
+      "loc": 22,
+      "category": "k8s-network",
+      "topic": "Ingress networking.k8s.io/v1beta1 cũ (serviceName/servicePort) đã bị xoá từ K8s 1.22",
+      "level": 3,
+      "difficulty": 1,
+      "quality": 1,
+      "tags": [
+        "ingress",
+        "deprecated-api",
+        "v1beta1"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/reference/using-api/deprecation-guide/#ingress-v122",
+      "curated": [
+        {
+          "module": "K11",
+          "kind": "outdated"
+        }
+      ]
+    },
+    {
+      "n": 35,
+      "id": "kube-cfg-35",
+      "path": "k8s/network/configmap-secret-env.yaml",
+      "language": "yaml",
+      "loc": 61,
+      "category": "k8s-network",
+      "topic": "Tách biệt ConfigMap (cấu hình công khai) & Secret (nhạy cảm) nạp qua envFrom và Volume chỉ đọc",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "configmap",
+        "secret",
+        "envfrom",
+        "12-factor"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/configuration/secret/",
+      "curated": [
+        {
+          "module": "K12",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 36,
+      "id": "kube-cfg-36",
+      "path": "k8s/network/secret-missing-key-bug.yaml",
+      "language": "yaml",
+      "loc": 29,
+      "category": "k8s-network",
+      "topic": "Sự cố CreateContainerConfigError vì secretKeyRef tham chiếu sai tên key trong Secret",
+      "level": 3,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "secret",
+        "createcontainerconfigerror",
+        "troubleshooting"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables",
+      "curated": [
+        {
+          "module": "K12",
+          "kind": "bug"
+        },
+        {
+          "module": "K18",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 37,
+      "id": "kube-cfg-37",
+      "path": "k8s/network/coredns-cross-namespace.yaml",
+      "language": "yaml",
+      "loc": 19,
+      "category": "k8s-network",
+      "topic": "Gọi dịch vụ xuyên Namespace qua tên miền đầy đủ CoreDNS (<svc>.<ns>.svc.cluster.local)",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "coredns",
+        "namespace",
+        "fqdn",
+        "service-discovery"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/",
+      "curated": [
+        {
+          "module": "K08",
+          "kind": "compare"
+        }
+      ]
+    },
+    {
+      "n": 38,
+      "id": "kube-cfg-38",
+      "path": "k8s/security/pod-restricted-psa.yaml",
+      "language": "yaml",
+      "loc": 53,
+      "category": "k8s-security",
+      "topic": "Namespace bật Pod Security Admission Restricted + Pod khoá chặt non-root, read-only rootfs, drop ALL capabilities",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "psa",
+        "security-context",
+        "non-root",
+        "readonly-rootfs"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/security/pod-security-admission/",
+      "curated": [
+        {
+          "module": "K16",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 39,
+      "id": "kube-cfg-39",
+      "path": "k8s/security/pod-privileged-escape.yaml",
+      "language": "yaml",
+      "loc": 27,
+      "category": "k8s-security",
+      "topic": "Thảm hoạ bảo mật Container Escape: bật privileged: true, hostNetwork và mount ổ máy chủ",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 1,
+      "tags": [
+        "security-risk",
+        "privileged",
+        "hostpath",
+        "container-escape"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "curated": [
+        {
+          "module": "K16",
+          "kind": "security"
+        }
+      ]
+    },
+    {
+      "n": 40,
+      "id": "kube-cfg-40",
+      "path": "k8s/security/psp-removed.yaml",
+      "language": "yaml",
+      "loc": 23,
+      "category": "k8s-security",
+      "topic": "Tài nguyên lịch sử PodSecurityPolicy (policy/v1beta1) đã bị xoá hoàn toàn từ K8s 1.25",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 1,
+      "tags": [
+        "psp",
+        "deprecated-api",
+        "k8s-1.25",
+        "history"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/tasks/configure-pod-container/migrate-from-psp/",
+      "curated": []
+    },
+    {
+      "n": 41,
+      "id": "kube-cfg-41",
+      "path": "k8s/security/rbac-least-privilege.yaml",
+      "language": "yaml",
+      "loc": 33,
+      "category": "k8s-security",
+      "topic": "RBAC tối thiểu quyền hạn (Least Privilege): ServiceAccount riêng + Role chỉ đọc ConfigMap/Pod trong 1 Namespace",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "rbac",
+        "serviceaccount",
+        "role",
+        "least-privilege"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "curated": [
+        {
+          "module": "K16",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 42,
+      "id": "kube-cfg-42",
+      "path": "k8s/security/rbac-wildcard-admin.yaml",
+      "language": "yaml",
+      "loc": 27,
+      "category": "k8s-security",
+      "topic": "Thảm hoạ phân quyền RBAC: gán quyền tối cao cluster-admin (*/*) cho ServiceAccount default",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 1,
+      "tags": [
+        "rbac",
+        "cluster-admin",
+        "security-risk",
+        "wildcard"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/security/rbac-good-practices/",
+      "curated": []
+    },
+    {
+      "n": 43,
+      "id": "kube-cfg-43",
+      "path": "k8s/security/netpol-default-deny.yaml",
+      "language": "yaml",
+      "loc": 29,
+      "category": "k8s-security",
+      "topic": "NetworkPolicy Zero-Trust: chặn mặc định mọi kết nối vào/ra, chỉ mở cổng 53 cho CoreDNS",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "networkpolicy",
+        "zero-trust",
+        "coredns",
+        "egress"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "curated": [
+        {
+          "module": "K17",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 44,
+      "id": "kube-cfg-44",
+      "path": "k8s/security/netpol-api-to-db.yaml",
+      "language": "yaml",
+      "loc": 22,
+      "category": "k8s-security",
+      "topic": "NetworkPolicy chỉ cho phép duy nhất Pod mang nhãn app: shop-api kết nối vào Postgres cổng 5432",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "networkpolicy",
+        "postgres",
+        "microsegmentation"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "curated": [
+        {
+          "module": "K17",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 45,
+      "id": "kube-cfg-45",
+      "path": "k8s/security/helm-values-prod.yaml",
+      "language": "yaml",
+      "loc": 64,
+      "category": "k8s-security",
+      "topic": "File values-prod.yaml thực tế cho Helm Chart dịch vụ Node.js (ghim tag/digest, HPA, PDB, PSA Restricted)",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "helm",
+        "values",
+        "pdb",
+        "production-checklist"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://helm.sh/docs/chart_best_practices/values/",
+      "curated": [
+        {
+          "module": "K17",
+          "kind": "good"
+        }
+      ]
+    }
+  ]
+}

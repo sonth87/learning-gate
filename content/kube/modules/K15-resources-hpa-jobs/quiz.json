@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K15-Q1",
+    "type": "mc",
+    "q": "Điều gì xảy ra khác biệt khi một container vượt quá `limits.cpu` so với khi vượt quá `limits.memory`?",
+    "code": "",
+    "choices": [
+      "Cả hai trường hợp đều khiến container bị OOMKilled ngay lập tức",
+      "Vượt `limits.cpu` chỉ bị hãm xung nhịp xử lý (CPU Throttling — không chết), còn vượt `limits.memory` sẽ bị nhân Linux giết thẳng tay với lỗi `OOMKilled` (Exit Code 137)",
+      "Vượt `limits.memory` chỉ làm ứng dụng chạy chậm đi đôi chút còn vượt `limits.cpu` mới bị giết",
+      "Kubernetes tự động lấy RAM của Node khác truyền qua mạng sang cho container"
+    ],
+    "answer": 1,
+    "explain": "CPU là tài nguyên nén được (compressible) nên cgroups hãm tốc độ chu kỳ CPU; ngược lại bộ nhớ RAM không thể nén hay thu hồi cưỡng bức mà không làm hỏng vùng nhớ nên OOM Killer buộc phải giết tiến trình (Exit Code 137)."
+  },
+  {
+    "id": "K15-Q2",
+    "type": "output",
+    "q": "Giá trị CPU `500m` tương đương với bao nhiêu vCPU (nhân ảo)? (Ghi số thập phân ngắn gọn, ví dụ `0.25`)",
+    "code": "resources:\n  requests:\n    cpu: \"500m\"",
+    "choices": [],
+    "answer": "0.5",
+    "explain": "1000m (1000 millicores) tương đương với 1 vCPU/Core trọn vẹn, vì vậy 500m chính là 0.5 vCPU."
+  },
+  {
+    "id": "K15-Q3",
+    "type": "mc",
+    "q": "Để một Pod quan trọng được Kubernetes xếp vào hạng ưu tiên bảo vệ cao nhất **`Guaranteed` QoS**, bạn cần khai báo `resources` như thế nào?",
+    "code": "",
+    "choices": [
+      "Bỏ trống hoàn toàn mục resources để Pod được dùng tối đa sức mạnh máy chủ",
+      "Chỉ khai báo requests mà không khai báo limits",
+      "Khai báo cả CPU và Memory cho mọi container trong Pod sao cho requests bằng khít tuyệt đối với limits",
+      "Đặt limits gấp 10 lần requests"
+    ],
+    "answer": 2,
+    "explain": "Khi mọi container trong Pod đều có requests.cpu === limits.cpu VÀ requests.memory === limits.memory, Pod đạt hạng Guaranteed và gần như không bao giờ bị trục xuất khi Node thiếu bộ nhớ."
+  },
+  {
+    "id": "K15-Q4",
+    "type": "tf",
+    "q": "Nếu `Deployment` quên khai báo `resources.requests.cpu`, đối tượng `HorizontalPodAutoscaler` co giãn theo phần trăm CPU (`averageUtilization: 70`) vẫn tự tính toán và nhân bản Pod bình thường.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Mức phần trăm CPU của HPA lấy lượng CPU đang dùng chia cho `resources.requests.cpu`. Nếu thiếu `requests.cpu`, mẫu số bằng 0/không xác định khiến HPA báo `<unknown>/70%` và không thể hoạt động."
+  },
+  {
+    "id": "K15-Q5",
+    "type": "mc",
+    "q": "Trong một đối tượng `batch/v1` `Job`, hai giá trị hợp lệ duy nhất cho trường `spec.template.spec.restartPolicy` là gì?",
+    "code": "",
+    "choices": [
+      "`Always` và `UnlessStopped`",
+      "`Never` và `OnFailure`",
+      "`Always` và `Never`",
+      "`Immediate` và `Delayed`"
+    ],
+    "answer": 1,
+    "explain": "Pod của Job sinh ra để chạy xong rồi dừng lại, nên API Server từ chối thẳng giá trị mặc định `Always`, chỉ chấp nhận `Never` (tạo Pod mới khi lỗi) hoặc `OnFailure` (khởi động lại container tại chỗ khi lỗi)."
+  },
+  {
+    "id": "K15-Q6",
+    "type": "tf",
+    "q": "Trong `CronJob`, cài đặt `concurrencyPolicy: Forbid` đảm bảo rằng nếu lần chạy trước vẫn đang xử lý dở chưa xong khi tới giờ hẹn tiếp theo, Kubernetes sẽ bỏ qua lần chạy mới thay vì bật chồng 2 Job chạy song song.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `concurrencyPolicy: Forbid` cực kỳ hữu ích cho các tác vụ tổng hợp tài chính, đồng bộ kho hàng hay sao lưu để ngăn hai tiến trình đụng độ dữ liệu."
+  },
+  {
+    "id": "K15-Q7",
+    "type": "output",
+    "q": "Thành phần nào của Control Plane đọc thông số `resources.requests` để quyết định chọn Worker Node còn đủ chỗ trống cho Pod mới?",
+    "code": "",
+    "choices": [],
+    "answer": "kube-scheduler",
+    "explain": "kube-scheduler chỉ nhìn vào `resources.requests` (mức đặt cọc) để tính xem Node nào còn đủ tài nguyên chưa cấp phát và xếp Pod vào đó."
+  }
+]

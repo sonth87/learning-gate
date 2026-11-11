@@ -1,0 +1,53 @@
+# Chuẩn bảo mật cao nhất tích hợp sẵn trong Kubernetes hiện đại (Pod Security Standards: Restricted)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments-prod
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault-signer
+  namespace: payments-prod
+  labels:
+    app: vault-signer
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: signer
+      image: ghcr.io/acme-corp/vault-signer:2.0.4
+      ports:
+        - containerPort: 3000
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      # Vì hệ thống file gốc bị khoá chỉ đọc (readOnlyRootFilesystem: true),
+      # gắn một thư mục RAM tạm (emptyDir) vào /tmp cho Node.js/OS ghi file tạm hợp lệ
+      volumeMounts:
+        - name: tmp-dir
+          mountPath: /tmp
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "256Mi"
+  volumes:
+    - name: tmp-dir
+      emptyDir:
+        sizeLimit: 64Mi

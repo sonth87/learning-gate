@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K16-Q1",
+    "type": "mc",
+    "q": "Kể từ Kubernetes v1.25 trở đi (và trong K8s 2026), tài nguyên `PodSecurityPolicy` (`policy/v1beta1`) đã bị gỡ bỏ hoàn toàn và được thay thế chính thức bằng cơ chế tích hợp nào?",
+    "code": "",
+    "choices": [
+      "Docker Daemon TLS Wrapper",
+      "Pod Security Admission (PSA) gắn nhãn chuẩn `privileged` / `baseline` / `restricted` trực tiếp trên Namespace",
+      "NetworkPolicy Ingress v2",
+      "ConfigMap Security Filter"
+    ],
+    "answer": 1,
+    "explain": "PodSecurityPolicy đã bị khai tử từ K8s 1.25. Thay thế chuẩn gốc hiện nay là Pod Security Admission (PSA) bật qua nhãn `pod-security.kubernetes.io/enforce` trên Namespace."
+  },
+  {
+    "id": "K16-Q2",
+    "type": "tf",
+    "q": "Khi bật `readOnlyRootFilesystem: true` cho container Node.js để chống ghi mã độc, bạn có thể gắn thêm một ổ đĩa `emptyDir: {}` vào `/tmp` để ứng dụng vẫn tạo được tệp tạm bình thường.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đây là mẫu thiết kế chuẩn: toàn bộ mã nguồn và hệ điều hành ở `/` bị khoá chỉ đọc bất biến, chỉ riêng thư mục `/tmp` dùng ổ đĩa tạm emptyDir được phép ghi."
+  },
+  {
+    "id": "K16-Q3",
+    "type": "output",
+    "q": "Để tước bỏ toàn bộ các quyền nhân Linux thừa thãi trong `securityContext.capabilities.drop`, từ khoá chuẩn viết hoa toàn bộ cần truyền vào mảng là gì?",
+    "code": "securityContext:\n  allowPrivilegeEscalation: false\n  capabilities:\n    drop:\n      - ____",
+    "choices": [],
+    "answer": "ALL",
+    "explain": "Chuẩn Pod Security Standards mức Restricted yêu cầu bắt buộc `capabilities.drop: [\"ALL\"]` để thu hồi toàn bộ Linux capabilities mặc định."
+  },
+  {
+    "id": "K16-Q4",
+    "type": "mc",
+    "q": "Nếu một Pod Web API bình thường hoàn toàn không cần giao tiếp với Kubernetes API Server, cấu hình nào giúp ngăn chặn việc rò rỉ thẻ xác thực nội bộ của cụm vào bên trong container?",
+    "code": "",
+    "choices": [
+      "Đặt `automountServiceAccountToken: false` trên ServiceAccount hoặc Pod spec",
+      "Đặt `restartPolicy: Never`",
+      "Đổi `Service` sang kiểu `ClusterIP: None`",
+      "Xoá cổng `containerPort` khỏi Deployment"
+    ],
+    "answer": 0,
+    "explain": "Mặc định K8s tự động gắn file token vào `/var/run/secrets/kubernetes.io/serviceaccount/token` của mọi Pod. Đặt `automountServiceAccountToken: false` sẽ tắt hoàn toàn việc gắn thẻ không cần thiết này."
+  },
+  {
+    "id": "K16-Q5",
+    "type": "mc",
+    "q": "Sự khác biệt cốt lõi giữa `Role` và `ClusterRole` trong hệ thống phân quyền RBAC của Kubernetes là gì?",
+    "code": "",
+    "choices": [
+      "`Role` dùng cho con người còn `ClusterRole` chỉ dùng cho máy móc",
+      "`Role` chỉ có hiệu lực trong phạm vi một Namespace cụ thể, còn `ClusterRole` có phạm vi trên toàn cụm (bao gồm cả tài nguyên không thuộc Namespace như Nodes, PersistentVolumes)",
+      "`Role` chỉ cho phép đọc (`get`), còn `ClusterRole` mới cho phép xoá (`delete`)",
+      "`Role` đã bị ngừng hỗ trợ từ K8s 1.28"
+    ],
+    "answer": 1,
+    "explain": "Role là tài nguyên cấp Namespace (Namespaced), trong khi ClusterRole là tài nguyên cấp toàn cụm (Cluster-scoped)."
+  },
+  {
+    "id": "K16-Q6",
+    "type": "tf",
+    "q": "Gắn quyền `verbs: [\"*\"]` và `resources: [\"*\"]` (hoặc `cluster-admin`) cho tài khoản `default` ServiceAccount giúp các microservice chạy trơn tru và là cách cấu hình an toàn được khuyến nghị trên Production.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai nghiêm trọng! Cấp wildcard `*` / `cluster-admin` cho ServiceAccount ứng dụng đồng nghĩa bất kỳ lỗ hổng RCE nào trong code Node.js cũng cho phép tin tặc xoá sạch hoặc đánh cắp toàn bộ Secret của cả cụm K8s!"
+  },
+  {
+    "id": "K16-Q7",
+    "type": "output",
+    "q": "Trong ba mức chuẩn của Pod Security Standards (`privileged`, `baseline`, `restricted`), mức nào nghiêm ngặt nhất và được khuyến nghị áp dụng cho các Namespace chạy ứng dụng thanh toán sản xuất?",
+    "code": "",
+    "choices": [],
+    "answer": "restricted",
+    "explain": "Mức `restricted` thực thi đầy đủ các tiêu chuẩn gia cố bảo mật khắt khe nhất chống leo thang đặc quyền trên Production."
+  }
+]

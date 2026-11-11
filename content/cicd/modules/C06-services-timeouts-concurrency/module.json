@@ -1,0 +1,55 @@
+{
+  "id": "C06",
+  "slug": "C06-services-timeouts-concurrency",
+  "level": 1,
+  "order": 6,
+  "title": "Service Containers (Postgres/Redis), Timeout bảo vệ ví & Concurrency",
+  "summary": "Chạy Integration Test thực thụ với Service Containers Postgres 16 & Redis 7 có healthcheck pg_isready / redis-cli ping, khoá trần timeout-minutes bảo vệ ngân sách và chống đua lệnh bằng concurrency.",
+  "tags": [
+    "services",
+    "postgres",
+    "redis",
+    "timeout-minutes",
+    "concurrency"
+  ],
+  "relatedTools": [
+    {
+      "label": "Giả lập Pipeline: Service Containers & Concurrency",
+      "kind": "simulator-preset",
+      "targetId": "pipeline"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Creating PostgreSQL service containers in GitHub Actions",
+      "url": "https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Creating Redis service containers in GitHub Actions",
+      "url": "https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-redis-service-containers",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Control the concurrency of workflows and jobs",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs",
+      "version": "GitHub Actions Docs 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/postgres-redis-services.yml",
+      "kind": "good",
+      "note": "Cấu hình kiểm thử tích hợp hoàn chỉnh: có `timeout-minutes: 15`, khởi chạy song song `postgres:16-alpine` + `redis:7-alpine` kèm `--health-cmd` trước khi chạy `npm run db:migrate`.",
+      "task": "Nếu xoá khối `options:` chứa `--health-cmd \"pg_isready ...\"` ở dòng 27–31 của `postgres-redis-services.yml`, lỗi chập chờn (flaky error) nào rất dễ nổ ra ở bước `npm run db:migrate`?",
+      "answer": "Lỗi `ECONNREFUSED 127.0.0.1:5432`! Vì không có `--health-cmd`, Runner bắt đầu chạy các Step ngay khi Docker container vừa khởi tạo tiến trình, lúc PostgreSQL vẫn đang chạy script khởi tạo `initdb` nội bộ và chưa sẵn sàng nhận kết nối TCP."
+    },
+    {
+      "path": "github/concurrency-pr-vs-prod.yml",
+      "kind": "compare",
+      "note": "So sánh trực diện hai mẫu `concurrency` trái ngược nhau giữa môi trường Pull Request và môi trường Production.",
+      "task": "Vì sao ở Job `production-safe-rollout` (dòng 37–39) ta bắt buộc đặt `cancel-in-progress: false` và dùng tên nhóm cố định `deploy-production-lock` thay vì gắn `${{ github.sha }}` vào tên nhóm?",
+      "answer": "Nếu gắn `${{ github.sha }}` thì mỗi commit lại rơi vào một nhóm khác nhau khiến 2 bản deploy vẫn chạy đè lên nhau cùng lúc! Dùng nhóm cố định `deploy-production-lock` kèm `cancel-in-progress: false` đảm bảo tại mọi thời điểm chỉ có đúng 1 đợt rollout chạy tới đích hoàn chỉnh, đợt sau tự xếp hàng chờ."
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+[
+  {
+    "id": "cicd-ex-c06-1",
+    "code": "C06.1",
+    "title": "Đặt trần timeout-minutes: 10 thay thế mức mặc định 360 phút nguy hiểm",
+    "difficulty": 1,
+    "tags": [
+      "timeout-minutes",
+      "cost-guard",
+      "integration-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/timeout.yml",
+    "prompt": "Tuần trước một kết nối DB bị rò rỉ trong bài kiểm thử tích hợp đã làm Job `integration` treo suốt 6 tiếng đồng hồ (360 phút mặc định)! Hãy thêm thuộc tính `timeout-minutes: 10` (bắt buộc là số `<= 15` và `>= 5`) vào `jobs.integration` để tự động ngắt sớm nếu tiến trình bị treo.",
+    "starter": "name: Integration Suite\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "solution": "name: Integration Suite\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "hints": [
+      "Bên dưới `jobs.integration` (ngang hàng với `runs-on: ubuntu-latest`), thêm dòng `timeout-minutes: 10`.",
+      "Lưu ý viết giá trị kiểu số `10` (không đặt trong dấu nháy kép)."
+    ],
+    "ref": "github/postgres-redis-services.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "timeout-lte-15",
+          "doc": "jobs.integration.timeout-minutes được giới hạn <= 15 phút",
+          "kind": "path",
+          "path": "jobs.integration.timeout-minutes",
+          "match": {
+            "lte": 15
+          }
+        },
+        {
+          "id": "timeout-gte-5",
+          "doc": "jobs.integration.timeout-minutes >= 5 phút",
+          "kind": "path",
+          "path": "jobs.integration.timeout-minutes",
+          "match": {
+            "gte": 5
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c06-2",
+    "code": "C06.2",
+    "title": "Cấu hình Concurrency tự động huỷ lượt chạy cũ khi đẩy commit mới lên PR",
+    "difficulty": 1,
+    "tags": [
+      "concurrency",
+      "cancel-in-progress",
+      "pull-request"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/pr-concurrency.yml",
+    "prompt": "Khi lập trình viên push liên tục 3 bản sửa lỗi lên cùng một nhánh PR, cả 3 workflow cũ mới đều chạy song song gây nghẽn hàng đợi Runner. Hãy thêm khối `concurrency:` ở cấp gốc của Workflow với `group` chứa `github.ref` (ví dụ `ci-${{ github.workflow }}-${{ github.ref }}`) và bật `cancel-in-progress: true`.",
+    "starter": "name: Fast PR Feedback\non:\n  pull_request:\n    branches: [main]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n",
+    "solution": "name: Fast PR Feedback\non:\n  pull_request:\n    branches: [main]\nconcurrency:\n  group: ci-${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci && npm test\n",
+    "hints": [
+      "Ở cấp gốc file YAML (ngang hàng với `name`, `on`, `jobs`), thêm khối `concurrency:`.",
+      "Bên trong khai báo `group: ci-${{ github.workflow }}-${{ github.ref }}` và `cancel-in-progress: true`."
+    ],
+    "ref": "github/concurrency-pr-vs-prod.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "concurrency-group-by-ref",
+          "doc": "concurrency.group phân nhóm theo nhánh/PR thông qua github.ref",
+          "kind": "path",
+          "path": "concurrency.group",
+          "match": {
+            "contains": "github.ref"
+          }
+        },
+        {
+          "id": "concurrency-cancel-true",
+          "doc": "Bật concurrency.cancel-in-progress: true cho workflow kiểm thử PR",
+          "kind": "path",
+          "path": "concurrency.cancel-in-progress",
+          "match": {
+            "eq": true
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c06-3",
+    "code": "C06.3",
+    "title": "Đính kèm Service Container PostgreSQL 16 vào Job kiểm thử tích hợp",
+    "difficulty": 2,
+    "tags": [
+      "services",
+      "postgres",
+      "integration-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/postgres-service.yml",
+    "prompt": "Job `integration` cần một cơ sở dữ liệu PostgreSQL thật chạy ở `localhost:5432` để thực thi migration và kiểm thử SQL. Hãy khai báo khối `jobs.integration.services.postgres` gồm: (1) `image: \"postgres:16-alpine\"`, (2) biến môi trường `env.POSTGRES_PASSWORD` khác rỗng (ví dụ `\"ci_test_only_pass\"`), và (3) ánh xạ cổng `ports: [\"5432:5432\"]`.",
+    "starter": "name: Postgres Integration Test\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "solution": "name: Postgres Integration Test\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    services:\n      postgres:\n        image: \"postgres:16-alpine\"\n        env:\n          POSTGRES_PASSWORD: \"ci_test_only_pass\"\n        ports:\n          - \"5432:5432\"\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "hints": [
+      "Bên trong `jobs.integration` (ngang hàng với `runs-on`, `timeout-minutes`, `env`), thêm khối `services:` -> `postgres:`.",
+      "Khai báo `image: \"postgres:16-alpine\"`, `env: { POSTGRES_PASSWORD: \"ci_test_only_pass\" }`, và `ports: [\"5432:5432\"]`."
+    ],
+    "ref": "github/postgres-redis-services.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pg-service-image",
+          "doc": "Sử dụng image postgres:16-alpine cho services.postgres",
+          "kind": "path",
+          "path": "jobs.integration.services.postgres.image",
+          "match": {
+            "eq": "postgres:16-alpine"
+          }
+        },
+        {
+          "id": "pg-service-password",
+          "doc": "Khai báo env.POSTGRES_PASSWORD khác rỗng cho container Postgres",
+          "kind": "path",
+          "path": "jobs.integration.services.postgres.env.POSTGRES_PASSWORD",
+          "match": {
+            "nonEmpty": true
+          }
+        },
+        {
+          "id": "pg-service-port-5432",
+          "doc": "Ánh xạ cổng 5432:5432 ra localhost cho Runner",
+          "kind": "path",
+          "path": "jobs.integration.services.postgres.ports",
+          "match": {
+            "contains": "5432:5432"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c06-4",
+    "code": "C06.4",
+    "title": "Chống lỗi ECONNREFUSED bằng cờ --health-cmd pg_isready cho PostgreSQL",
+    "difficulty": 2,
+    "tags": [
+      "healthcheck",
+      "pg-isready",
+      "flaky-fix"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/postgres-health.yml",
+    "prompt": "Container `postgres` đã khởi chạy nhưng thỉnh thoảng bước `npm run db:migrate` vẫn bị lỗi đỏ `ECONNREFUSED 127.0.0.1:5432` vì chạy quá sớm khi Postgres chưa khởi tạo xong DB. Hãy bổ sung thuộc tính `options` vào `jobs.integration.services.postgres` chứa cờ `--health-cmd` gọi lệnh `pg_isready` (kèm `--health-interval 5s --health-timeout 5s --health-retries 10`).",
+    "starter": "name: Healthy Postgres Gate\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    services:\n      postgres:\n        image: \"postgres:16-alpine\"\n        env:\n          POSTGRES_PASSWORD: \"ci_test_only_pass\"\n        ports:\n          - \"5432:5432\"\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run db:migrate\n      - run: npm run test:integration\n",
+    "solution": "name: Healthy Postgres Gate\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    services:\n      postgres:\n        image: \"postgres:16-alpine\"\n        env:\n          POSTGRES_PASSWORD: \"ci_test_only_pass\"\n        ports:\n          - \"5432:5432\"\n        options: >-\n          --health-cmd pg_isready\n          --health-interval 5s\n          --health-timeout 5s\n          --health-retries 10\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run db:migrate\n      - run: npm run test:integration\n",
+    "hints": [
+      "Bên dưới `jobs.integration.services.postgres` (ngang hàng với `image`, `env`, `ports`), thêm trường `options: >-`.",
+      "Truyền chuỗi cờ `--health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10`."
+    ],
+    "ref": "github/postgres-redis-services.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pg-options-has-health-cmd",
+          "doc": "services.postgres.options khai báo cờ --health-cmd",
+          "kind": "path",
+          "path": "jobs.integration.services.postgres.options",
+          "match": {
+            "contains": "--health-cmd"
+          }
+        },
+        {
+          "id": "pg-options-uses-pg-isready",
+          "doc": "Healthcheck gọi công cụ chuẩn pg_isready",
+          "kind": "path",
+          "path": "jobs.integration.services.postgres.options",
+          "match": {
+            "contains": "pg_isready"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "cicd-ex-c06-5",
+    "code": "C06.5",
+    "title": "Bổ sung Service Container Redis 7 kèm healthcheck redis-cli ping và REDIS_URL",
+    "difficulty": 2,
+    "tags": [
+      "redis",
+      "services",
+      "health-cmd",
+      "integration-test"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/full-services.yml",
+    "prompt": "API thanh toán vừa thêm hàng đợi BullMQ nên bài Integration Test cần thêm một máy chủ Redis 7 chạy song hành bên cạnh PostgreSQL. Hãy hoàn thiện `jobs.integration` bằng cách: (1) thêm `services.redis` dùng `image: \"redis:7-alpine\"`, ánh xạ `ports: [\"6379:6379\"]`, và đặt `options` có `--health-cmd \"redis-cli ping\"` (kèm interval/retries), và (2) khai báo biến môi trường `jobs.integration.env.REDIS_URL: \"redis://localhost:6379\"`.",
+    "starter": "name: Full Stack Integration (Postgres + Redis)\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    services:\n      postgres:\n        image: \"postgres:16-alpine\"\n        env:\n          POSTGRES_PASSWORD: \"ci_test_only_pass\"\n        ports:\n          - \"5432:5432\"\n        options: >-\n          --health-cmd pg_isready\n          --health-interval 5s\n          --health-timeout 5s\n          --health-retries 10\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "solution": "name: Full Stack Integration (Postgres + Redis)\non: [pull_request]\njobs:\n  integration:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    services:\n      postgres:\n        image: \"postgres:16-alpine\"\n        env:\n          POSTGRES_PASSWORD: \"ci_test_only_pass\"\n        ports:\n          - \"5432:5432\"\n        options: >-\n          --health-cmd pg_isready\n          --health-interval 5s\n          --health-timeout 5s\n          --health-retries 10\n      redis:\n        image: \"redis:7-alpine\"\n        ports:\n          - \"6379:6379\"\n        options: >-\n          --health-cmd \"redis-cli ping\"\n          --health-interval 5s\n          --health-timeout 3s\n          --health-retries 5\n    env:\n      DATABASE_URL: postgresql://postgres:ci_test_only_pass@localhost:5432/postgres\n      REDIS_URL: \"redis://localhost:6379\"\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run test:integration\n",
+    "hints": [
+      "Bên dưới `services:` (ngang hàng với `postgres:`), thêm khoá `redis:` với `image: \"redis:7-alpine\"`, `ports: [\"6379:6379\"]` và `options` chứa `--health-cmd \"redis-cli ping\"`.",
+      "Bên dưới `jobs.integration.env`, thêm dòng `REDIS_URL: \"redis://localhost:6379\"`."
+    ],
+    "ref": "github/postgres-redis-services.yml",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "redis-service-image",
+          "doc": "Khai báo services.redis.image là redis:7-alpine",
+          "kind": "path",
+          "path": "jobs.integration.services.redis.image",
+          "match": {
+            "eq": "redis:7-alpine"
+          }
+        },
+        {
+          "id": "redis-service-port-6379",
+          "doc": "Ánh xạ cổng 6379:6379 cho container Redis",
+          "kind": "path",
+          "path": "jobs.integration.services.redis.ports",
+          "match": {
+            "contains": "6379:6379"
+          }
+        },
+        {
+          "id": "redis-service-health-ping",
+          "doc": "Cấu hình healthcheck redis-cli ping trong services.redis.options",
+          "kind": "path",
+          "path": "jobs.integration.services.redis.options",
+          "match": {
+            "regex": "--health-cmd[\\s\\S]*redis-cli\\s+ping"
+          }
+        },
+        {
+          "id": "job-env-redis-url",
+          "doc": "Khai báo biến môi trường REDIS_URL trỏ tới redis://localhost:6379",
+          "kind": "path",
+          "path": "jobs.integration.env.REDIS_URL",
+          "match": {
+            "eq": "redis://localhost:6379"
+          }
+        }
+      ]
+    }
+  }
+]

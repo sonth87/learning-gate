@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c05-1",
+    "type": "mc",
+    "q": "Trong một Workflow có 3 Job: `lint` (mất 2 phút, không có `needs`), `unit-test` (mất 5 phút, không có `needs`), và `build` (mất 3 phút, khai báo `needs: [lint, unit-test]`). Giả sử đủ máy chạy rảnh, tổng thời gian thực tế từ lúc kích hoạt đến khi xong `build` xấp xỉ bao lâu?",
+    "code": "",
+    "choices": [
+      "10 phút (2 + 5 + 3 chạy nối đuôi nhau)",
+      "8 phút (`lint` và `unit-test` chạy song song mất max(2, 5) = 5 phút, cộng tiếp 3 phút của `build`)",
+      "5 phút (cả 3 Job chạy song song từ đầu)",
+      "3 phút"
+    ],
+    "answer": 1,
+    "explain": "Hai root jobs `lint` (2p) và `unit-test` (5p) xuất phát đồng thời giống `Promise.all`, hoàn tất sau 5 phút; ngay sau đó cổng hội tụ `build` chạy thêm 3 phút -> tổng cộng chỉ mất 8 phút."
+  },
+  {
+    "id": "cicd-q-c05-2",
+    "type": "output",
+    "q": "Cho cấu hình `strategy.matrix` dưới đây. GitHub Actions sẽ sinh ra tổng cộng bao nhiêu lượt chạy Job song song từ ma trận này?",
+    "code": "strategy:\n  matrix:\n    os: [ubuntu-latest, macos-latest, windows-latest]\n    node: [20, 22]",
+    "choices": [],
+    "answer": "6",
+    "explain": "Ma trận tạo tích Đề-các giữa các chiều: `3 hệ điều hành × 2 phiên bản Node = 6` tổ hợp Job chạy độc lập."
+  },
+  {
+    "id": "cicd-q-c05-3",
+    "type": "tf",
+    "q": "Mặc định trong GitHub Actions, nếu bạn không khai báo `fail-fast`, giá trị mặc định sẽ là `fail-fast: true` — nghĩa là chỉ cần 1 tổ hợp trong Matrix bị lỗi thì toàn bộ các tổ hợp khác đang chạy dở sẽ bị huỷ ngay lập tức.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đó là lý do trong kiểm thử tương thích đa phiên bản ta thường chủ động đặt `fail-fast: false` để xem trọn vẹn bảng kết quả của tất cả các phiên bản Node/OS."
+  },
+  {
+    "id": "cicd-q-c05-4",
+    "type": "mc",
+    "q": "Khi Job `build` muốn xuất giá trị từ Step `id: pkg` sang cho Job `deploy` đọc qua biểu thức `${{ needs.build.outputs.version }}`, khai báo nào bắt buộc phải có mặt trên cấp Job `build`?",
+    "code": "",
+    "choices": [
+      "`exports: { version: \"${{ steps.pkg.version }}\" }`",
+      "`outputs: { version: \"${{ steps.pkg.outputs.version }}\" }`",
+      "`env: { version: \"${{ steps.pkg.outputs.version }}\" }`",
+      "Không cần khai báo gì thêm, mọi Step output tự động lộ ra cho các Job khác"
+    ],
+    "answer": 1,
+    "explain": "Step outputs mặc định đóng kín bên trong phạm vi Job đó. Bạn bắt buộc phải ánh xạ tường minh qua `jobs.build.outputs.version: ${{ steps.pkg.outputs.version }}` thì các Job phụ thuộc (`needs: build`) mới đọc được."
+  },
+  {
+    "id": "cicd-q-c05-5",
+    "type": "mc",
+    "q": "Trong mô hình cổng hội tụ `build` có `needs: [lint, unit-test]`, điều gì xảy ra với Job `build` nếu `lint` thất bại (`Exit Code 1`) còn `unit-test` thành công (`Exit Code 0`)?",
+    "code": "",
+    "choices": [
+      "Job `build` vẫn chạy bình thường vì có ít nhất 1 Job trước đó thành công",
+      "Job `build` tự động bị bỏ qua (`Skipped`) vì mặc định `needs` yêu cầu TẤT CẢ các Job tiên quyết đều phải thành công",
+      "Job `build` chạy nhưng tự xoá thư mục `dist/`",
+      "GitHub tự động chạy lại `lint` 5 lần nữa"
+    ],
+    "answer": 1,
+    "explain": "Cổng `needs: [A, B]` hoạt động như phép `AND` (`Promise.all`): chỉ khi cả `lint` VÀ `unit-test` đều thành công thì `build` mới được phép khởi chạy."
+  },
+  {
+    "id": "cicd-q-c05-6",
+    "type": "tf",
+    "q": "Đồ thị phụ thuộc `needs:` cho phép khai báo vòng tròn (ví dụ Job `A` có `needs: B` và Job `B` đồng thời có `needs: A`) để hai Job kiểm tra chéo lẫn nhau.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Chữ \"Acyclic\" trong DAG nghĩa là **không có chu trình**. Nếu tạo vòng lặp phụ thuộc `A <-> B`, bộ kiểm tra cú pháp của GitHub Actions sẽ từ chối chạy workflow ngay từ giây đầu tiên."
+  },
+  {
+    "id": "cicd-q-c05-7",
+    "type": "mc",
+    "q": "Vì sao chi phí phút chạy khi thêm `macos-latest` vào `strategy.matrix` cần được cân nhắc kỹ hơn so với `ubuntu-latest` trên các kho mã nguồn Private?",
+    "code": "",
+    "choices": [
+      "Vì máy ảo macOS có hệ số nhân tính cước phút chạy cao hơn gấp nhiều lần (thường gấp 10x) so với máy ảo Linux tiêu chuẩn",
+      "Vì macOS không cài được Node.js 22",
+      "Vì `actions/checkout@v4` không hoạt động trên macOS",
+      "Vì macOS bắt buộc chạy tuần tự từng dòng lệnh chậm gấp 20 lần"
+    ],
+    "answer": 0,
+    "explain": "Trên GitHub Actions cho repo Private, phút chạy trên macOS Runner đắt gấp khoảng 10 lần Linux Runner (và Windows đắt gấp 2 lần). Chỉ nên bật matrix `macos-latest` cho các gói CLI/desktop thực sự có xử lý đặc thù hệ điều hành."
+  }
+]

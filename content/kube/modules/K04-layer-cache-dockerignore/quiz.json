@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K04-Q1",
+    "type": "mc",
+    "q": "Trong `Dockerfile`, vì sao ta luôn chép riêng `COPY package.json package-lock.json ./` rồi chạy `RUN npm ci` **TRƯỚC KHI** chạy `COPY . .`?",
+    "code": "",
+    "choices": [
+      "Vì lệnh `COPY . .` không được phép chép các tệp `.json`",
+      "Để tận dụng Layer Cache: khi lập trình viên chỉ sửa code trong `src/` mà không đổi thư viện, bước tốn thời gian nhất `RUN npm ci` được giữ nguyên trong cache (0 giây)",
+      "Vì Node.js bắt buộc phải tạo `node_modules` trước khi có thư mục `src`",
+      "Để mã hoá thư mục `src/` bằng SHA256"
+    ],
+    "answer": 1,
+    "explain": "Sắp xếp các bước ít thay đổi (`package*.json` -> `npm ci`) lên trên và bước hay thay đổi nhất (`COPY . .`) xuống cuối là nguyên lý số 1 tối ưu tốc độ Docker build."
+  },
+  {
+    "id": "K04-Q2",
+    "type": "tf",
+    "q": "Khi một layer ở giữa `Dockerfile` bị mất cache (cache miss), Docker chỉ chạy lại đúng 1 dòng đó rồi tiếp tục dùng lại cache cho các dòng `RUN` đứng phía dưới nó.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Một khi layer thứ `k` đã thay đổi và phải chạy lại, toàn bộ các layer `k+1, k+2...` phụ thuộc lên hệ thống tệp mới nên đều bị mất cache dây chuyền."
+  },
+  {
+    "id": "K04-Q3",
+    "type": "mc",
+    "q": "Điều gì xảy ra nếu bạn quên tạo tệp `.dockerignore` trong dự án Node.js đang phát triển trên máy MacBook M3 (`darwin-arm64`) và chạy `COPY . .`?",
+    "code": "",
+    "choices": [
+      "Docker tự động đọc tệp `.gitignore` thay thế cho `.dockerignore`",
+      "Toàn bộ thư mục `node_modules` cục bộ (chứa binary macOS), `.git` và cả tệp `.env` trên máy Mac đều bị gửi vào Build Context và chép thẳng vào Image Linux!",
+      "Docker từ chối không cho chạy lệnh `docker build`",
+      "Không có vấn đề gì vì Docker tự lọc bỏ mọi tệp ẩn bắt đầu bằng dấu chấm"
+    ],
+    "answer": 1,
+    "explain": "Docker KHÔNG tự động đọc `.gitignore`! Nếu thiếu `.dockerignore`, cả `.env`, `.git` lẫn `node_modules` nặng nề của máy chủ đều lọt vào Image."
+  },
+  {
+    "id": "K04-Q4",
+    "type": "mc",
+    "q": "Sự khác biệt chính xác giữa chỉ thị `ARG` và `ENV` trong `Dockerfile` là gì?",
+    "code": "",
+    "choices": [
+      "`ARG` tồn tại lúc container đang chạy (`process.env`), còn `ENV` chỉ tồn tại lúc `docker build`",
+      "`ARG` chỉ có mặt trong quá trình `docker build` (và biến mất khi container chạy thật), còn `ENV` được lưu vào Image nên tồn tại trong `process.env` lúc chạy container",
+      "`ARG` mã hoá bí mật an toàn tuyệt đối không xuất hiện trong `docker history`, còn `ENV` thì không",
+      "Hai chỉ thị hoàn toàn giống hệt nhau"
+    ],
+    "answer": 1,
+    "explain": "`ARG` dành cho tham số lúc đóng gói (`--build-arg`); muốn ứng dụng Node.js đọc được giá trị đó qua `process.env` lúc chạy, ta gán tiếp `ENV APP_VERSION=$APP_VERSION`. Và nhớ: CẢ HAI đều không dùng để chứa khoá bí mật!"
+  },
+  {
+    "id": "K04-Q5",
+    "type": "mc",
+    "q": "Trên nền Alpine Linux (`node:22-alpine`), cách chuẩn nhất để cài thêm gói `curl` mà không để lại rác chỉ mục làm phình layer là gì?",
+    "code": "",
+    "choices": [
+      "Viết 2 dòng tách biệt: `RUN apk update` rồi xuống dòng `RUN apk add curl`",
+      "Viết gọn trong 1 dòng duy nhất: `RUN apk add --no-cache curl`",
+      "Dùng `RUN apt-get install curl`",
+      "Dùng `RUN npm install -g curl`"
+    ],
+    "answer": 1,
+    "explain": "Alpine sử dụng trình quản lý gói `apk`; cờ `--no-cache` vừa lấy chỉ mục mới nhất vừa không lưu tệp đệm vào `/var/cache/apk/`."
+  },
+  {
+    "id": "K04-Q6",
+    "type": "output",
+    "q": "Trong tệp `.dockerignore`, để tạo ngoại lệ **giữ lại** tệp `README.md` sau khi đã chặn toàn bộ `*.md` ở dòng trên (`____README.md`), ta đặt ký tự đặc biệt nào ở ngay đầu dòng?",
+    "code": "*.md\n____README.md",
+    "choices": [],
+    "answer": "!",
+    "explain": "Dấu chấm than `!` ở đầu mẫu trong `.dockerignore` mang nghĩa phủ định (negation / exception) — đưa tệp khớp mẫu quay trở lại Build Context."
+  },
+  {
+    "id": "K04-Q7",
+    "type": "tf",
+    "q": "Nếu ở layer 2 bạn lỡ `COPY .env ./` vào Image rồi sang layer 3 bạn chạy `RUN rm -f .env`, kẻ xấu có quyền tải Image đó về vẫn có thể khôi phục nguyên vẹn tệp `.env` từ layer 2.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng 100%! Lệnh `rm` ở layer sau chỉ ẩn tệp trên bề mặt cuối cùng, còn nội dung thật của `.env` vẫn nằm nguyên trong gói tar của layer 2 khi bung Image ra kiểm tra."
+  }
+]

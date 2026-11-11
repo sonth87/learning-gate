@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K00-Q1",
+    "type": "mc",
+    "q": "So sánh với hệ sinh thái Node.js, **Container Image** tương đương gần nhất với thành phần nào sau đây?",
+    "code": "",
+    "choices": [
+      "Tiến trình đang chạy thực tế trên RAM khi bạn gõ `node dist/server.js`",
+      "Khuôn mẫu đóng gói bất biến, chỉ đọc (giống bản chụp gộp cả OS tối giản + Node runtime + `node_modules` đã khoá cứng)",
+      "Một máy ảo VirtualBox cài đầy đủ nhân hệ điều hành khách (Guest Kernel) riêng biệt",
+      "Tệp biến môi trường `.env` nằm trên máy cá nhân của lập trình viên"
+    ],
+    "answer": 1,
+    "explain": "Image là bản chụp chỉ đọc (read-only layers) đóng băng toàn bộ môi trường và mã nguồn; còn Container mới là tiến trình sống được khởi chạy từ Image đó."
+  },
+  {
+    "id": "K00-Q2",
+    "type": "tf",
+    "q": "Mỗi Docker Container đều phải khởi động một nhân hệ điều hành (Guest OS Kernel) riêng biệt giống hệt máy ảo truyền thống nên tốn hàng phút để bật lên.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Các container trên cùng máy chủ chia sẻ chung nhân Linux (Host Kernel) và chỉ dùng Namespaces + cgroups để cô lập tiến trình, nên khởi động trong vài chục mili-giây."
+  },
+  {
+    "id": "K00-Q3",
+    "type": "mc",
+    "q": "Bạn vừa chạy một container tên `db-migrate` để tạo bảng xong rồi tiến trình tự thoát với mã `0`. Nếu lúc này bạn gõ `docker ps` (không có cờ nào thêm), chuyện gì xảy ra?",
+    "code": "",
+    "choices": [
+      "Container `db-migrate` vẫn hiện trong danh sách với trạng thái `Exited (0)`",
+      "Không thấy `db-migrate` trong danh sách vì `docker ps` mặc định chỉ hiển thị các container đang chạy (`running`)",
+      "Docker tự động xoá vĩnh viễn mọi container ngay khi tiến trình bên trong kết thúc",
+      "Lệnh `docker ps` báo lỗi cú pháp vì thiếu tên container"
+    ],
+    "answer": 1,
+    "explain": "`docker ps` chỉ liệt kê container đang chạy. Muốn nhìn thấy các container đã dừng (`Exited`) như `db-migrate`, bạn phải thêm cờ `-a` (`docker ps -a`)."
+  },
+  {
+    "id": "K00-Q4",
+    "type": "mc",
+    "q": "Sự khác biệt quan trọng nhất giữa `docker stop api` và `docker kill api` đối với một server Express/Fastify là gì?",
+    "code": "",
+    "choices": [
+      "`docker stop` xoá luôn cả Image trên ổ cứng, còn `docker kill` giữ lại Image",
+      "`docker stop` gửi tín hiệu `SIGTERM` cho phép Node.js đóng kết nối DB êm ái trước khi hết thời gian chờ, còn `docker kill` bắn thẳng `SIGKILL` ngắt tức khắc",
+      "`docker kill` an toàn hơn vì chờ tất cả HTTP request xử lý xong hoàn toàn mới tắt",
+      "Hai câu lệnh hoàn toàn giống nhau ở mức tín hiệu hệ điều hành"
+    ],
+    "answer": 1,
+    "explain": "`docker stop` gửi `SIGTERM` trước (mặc định chờ 10 giây để app chạy Graceful Shutdown rồi mới `SIGKILL`), trong khi `docker kill` gửi thẳng `SIGKILL` không thể bắt bằng `process.on`."
+  },
+  {
+    "id": "K00-Q5",
+    "type": "tf",
+    "q": "Khi bạn chạy lệnh `docker rm hello-web` để xoá container `hello-web`, bản gốc Image `nginx:1.27-alpine` trong máy cũng bị xoá theo và lần chạy sau sẽ phải tải lại từ Internet.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `docker rm` chỉ xoá thực thể Container (lớp ghi tạm của tiến trình đó). Các lớp chỉ đọc của Image `nginx:1.27-alpine` vẫn nằm nguyên trong bộ nhớ đệm cục bộ (`docker images`)."
+  },
+  {
+    "id": "K00-Q6",
+    "type": "output",
+    "q": "Nếu bạn chạy lệnh dưới đây mà không chỉ định phần tag phía sau dấu hai chấm `:`, Docker sẽ tự động gắn tag mặc định tên là gì?",
+    "code": "docker pull node",
+    "choices": [],
+    "answer": "latest",
+    "explain": "Khi bỏ trống phần `:tag`, Docker mặc định tra cứu tag `:latest` (`docker.io/library/node:latest`) — đây là thói quen cần tránh trên Production vì phiên bản có thể tự trôi ngoài ý muốn."
+  },
+  {
+    "id": "K00-Q7",
+    "type": "output",
+    "q": "Một kịch bản di trú dữ liệu trong container chạy hoàn tất thành công không có bất kỳ lỗi nào rồi tự dừng lại. Trong cột `STATUS` của `docker ps -a` (`Exited (N) 5 seconds ago`), con số mã thoát `N` bằng bao nhiêu?",
+    "code": "$ docker ps -a\nCONTAINER ID   IMAGE          STATUS\na91f20b3c1d4   node:22-alpine Exited (???) 5 seconds ago",
+    "choices": [],
+    "answer": "0",
+    "explain": "Giống quy ước chuẩn của POSIX và `process.exit(0)` trong Node.js, mã thoát `0` biểu thị tiến trình đã hoàn thành công việc thành công không có lỗi."
+  }
+]

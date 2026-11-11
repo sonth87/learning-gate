@@ -1,0 +1,25 @@
+# LỖ HỔNG CHÍ MẠNG "PWN REQUEST" (SECURITY RISK — TUYỆT ĐỐI CẤM SAO CHÉP LÊN REPO THẬT!)
+# Sự kiện `pull_request_target` chạy trong ngữ cảnh nhánh đích (có đầy đủ Secrets thật và GITHUB_TOKEN quyền ghi).
+# Nếu bạn dùng nó mà lại tự tay checkout mã nguồn nhánh Fork của người lạ rồi chạy `npm install`,
+# script `postinstall` trong package.json của kẻ tấn công sẽ đọc trộm toàn bộ Secrets ngay lập tức!
+name: Vulnerable Pwn Request Anti-Pattern
+
+on:
+  pull_request_target:
+
+jobs:
+  dangerous-test:
+    runs-on: ubuntu-latest
+    steps:
+      # CỰC KỲ NGUY HIỂM: Tải code chưa được kiểm duyệt từ kho Fork của người lạ vào môi trường chứa Secret!
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # `npm install` sẽ tự động thực thi lifecycle script "preinstall"/"postinstall" do kẻ tấn công cài cắm!
+      - name: Run untrusted code with production secrets
+        env:
+          PROD_DEPLOY_KEY: ${{ secrets.PROD_DEPLOY_KEY_PLACEHOLDER }}
+        run: |
+          npm install
+          npm test

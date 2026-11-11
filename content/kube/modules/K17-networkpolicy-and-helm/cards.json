@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K17-C1",
+    "front": "Cách viết `NetworkPolicy` chặn mặc định toàn bộ lưu lượng chiều vào (Default Deny Ingress) cho một Namespace?",
+    "back": "Đặt `spec.podSelector: {}`, `spec.policyTypes: [\"Ingress\"]` và cố tình KHÔNG khai báo trường `spec.ingress`."
+  },
+  {
+    "id": "K17-C2",
+    "front": "Sự khác nhau giữa viết hai phần tử tách rời vs gộp chung trong mảng `ingress[].from` của NetworkPolicy?",
+    "back": "Hai phần tử `- namespaceSelector` và `- podSelector` riêng rẽ là phép HOẶC (`OR`); viết chung trong cùng 1 phần tử `- namespaceSelector: ... podSelector: ...` là phép VÀ (`AND` — chặt chẽ hơn rất nhiều!)."
+  },
+  {
+    "id": "K17-C3",
+    "front": "Ba thành phần cốt lõi bên trong thư mục một Helm Chart?",
+    "back": "1) `Chart.yaml` (thông tin gói), 2) `values.yaml` (giá trị cấu hình mặc định), 3) `templates/` (các tệp YAML khuôn mẫu chứa `{{ .Values... }}`)."
+  },
+  {
+    "id": "K17-C4",
+    "front": "Làm sao kiểm tra trước kết quả YAML mà Helm sẽ sinh ra trên máy local mà chưa đẩy thật lên cụm K8s?",
+    "back": "Chạy lệnh `helm template shop ./chart -f values-prod.yaml` (hoặc thêm cờ `--dry-run` vào `helm upgrade --install`)."
+  },
+  {
+    "id": "K17-C5",
+    "front": "Rủi ro gì xảy ra nếu bạn tạo `NetworkPolicy` khoá `policyTypes: [\"Egress\"]` mà quên mở cổng 53?",
+    "back": "Pod sẽ mất hoàn toàn khả năng truy vấn CoreDNS (cổng 53 UDP/TCP), không thể phân giải bất kỳ tên miền nội bộ hay bên ngoài nào."
+  },
+  {
+    "id": "K17-C6",
+    "front": "GitOps (với ArgoCD / Flux) kết hợp với Helm như thế nào trong kiến trúc 2026?",
+    "back": "CI build xong image chỉ cập nhật tag mới vào `values-prod.yaml` trên Git; ArgoCD chạy trong cụm K8s tự phát hiện thay đổi trên Git rồi render & đồng bộ Helm Chart vào cụm."
+  }
+]

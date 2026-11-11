@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K12-D1",
+    "title": "Tạo nhanh ConfigMap và Secret từ dòng lệnh kubectl",
+    "code": "kubectl create configmap app-cfg --from-literal=PORT=3000\nkubectl create secret generic jwt-sec --from-literal=JWT_PUBLIC_KID=kid-2026\nkubectl get cm,secrets"
+  },
+  {
+    "id": "K12-D2",
+    "title": "Nạp trọn bộ ConfigMap vào container qua envFrom",
+    "code": "containers:\n  - name: api\n    image: ghcr.io/acme/shop-api:1.4.0\n    envFrom:\n      - configMapRef:\n          name: api-config"
+  }
+]

@@ -1,0 +1,55 @@
+{
+  "id": "K18",
+  "slug": "K18-troubleshoot-pods-boot",
+  "level": 6,
+  "order": 18,
+  "title": "Khám bệnh K8s Thực chiến (Phần 1): Quy trình Triage & 4 Trạng thái Kẹt Khởi động",
+  "summary": "Thực hành chẩn đoán bằng Terminal và vá nóng 4 sự cố khởi động kinh điển trên K8s: Pending, ImagePullBackOff, CreateContainerConfigError và CrashLoopBackOff.",
+  "tags": [
+    "troubleshooting",
+    "pending",
+    "imagepullbackoff",
+    "crashloopbackoff",
+    "triage"
+  ],
+  "sources": [
+    {
+      "title": "Debug Pods and ReplicationControllers",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Determine the Reason for Pod Failure",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/determine-reason-pod-failure/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Sơ đồ Khám bệnh K8s",
+      "kind": "flow",
+      "targetId": "troubleshooting-flowchart"
+    },
+    {
+      "label": "War Room: Lỗi CrashLoopBackOff (#3)",
+      "kind": "incident",
+      "targetId": "incident-3-crashloop"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/workloads/pvc-wrong-storageclass.yaml",
+      "kind": "bug",
+      "note": "Tình huống thực tế khiến Pod kẹt mãi ở trạng thái Pending: không phải do hết CPU/RAM mà do chiếc PVC tham chiếu chưa thể Bound.",
+      "task": "Lệnh nào giúp bạn phân biệt nhanh một Pod bị Pending do thiếu CPU/RAM trên Node hay do kẹt ổ đĩa PVC?",
+      "answer": "Chạy `kubectl describe pod <tên-pod>` và đọc mục Events ở dưới cùng: nếu thiếu tài nguyên Scheduler sẽ báo `Insufficient cpu/memory`, còn nếu kẹt đĩa sẽ báo `pod has unbound immediate PersistentVolumeClaims`."
+    },
+    {
+      "path": "k8s/network/secret-missing-key-bug.yaml",
+      "kind": "bug",
+      "note": "Nguyên nhân phổ biến nhất gây ra trạng thái CreateContainerConfigError trước cả khi dòng code đầu tiên của Node.js được chạy.",
+      "task": "Tại sao chạy `kubectl logs` trên chiếc Pod bị lỗi trong tệp này lại không trả về kết quả hữu ích?",
+      "answer": "Vì kubelet thất bại ngay ở bước lắp ráp biến môi trường từ Secret trước khi khởi tạo container, nên tiến trình Node.js chưa từng chạy! Phải dùng `kubectl describe pod` để thấy tên Secret/khoá bị thiếu."
+    }
+  ]
+}

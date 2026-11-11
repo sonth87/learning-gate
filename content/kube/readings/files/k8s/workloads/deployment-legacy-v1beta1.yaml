@@ -1,0 +1,20 @@
+# TÀI LIỆU LỊCH SỬ (KHÔNG CHẠY ĐƯỢC TRÊN K8S >= 1.16):
+# Rất nhiều bài blog hoặc câu trả lời cũ từ 2017-2019 vẫn viết mẫu này.
+# Khi chạy "kubectl apply", cụm hiện đại (K8s 1.30+) sẽ báo lỗi:
+# error: resource mapping not found for name: "legacy-web" namespace: "" from "...":
+# no matches for kind "Deployment" in version "extensions/v1beta1"
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: legacy-web
+spec:
+  replicas: 2
+  # LỖI THỜI 2: Trong apps/v1 hiện đại, trường "spec.selector" là BẮT BUỘC (không còn tự suy diễn từ template)!
+  template:
+    metadata:
+      labels:
+        app: legacy-web
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27-alpine

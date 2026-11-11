@@ -1,0 +1,30 @@
+# CẢNH BÁO BẢO MẬT & ĐỐI CHIẾU: Docker-in-Docker đặc quyền (privileged) vs Kaniko không cần quyền root
+stages:
+  - build-insecure
+  - build-secure
+
+# CÁCH NGUY HIỂM (SECURITY RISK): Bật cờ privileged + tắt TLS cho phép container thoát ly chiếm quyền máy chủ Runner!
+insecure_dind_build:
+  stage: build-insecure
+  image: docker:27
+  services:
+    - name: docker:27-dind
+      command: ["--tls=false"]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - docker build -t registry.example.invalid/shop-api:$CI_COMMIT_SHORT_SHA .
+
+# CÁCH CHUẨN PRODUCTION: Đóng gói Container Image trong không gian người dùng bằng Kaniko (không cần Docker daemon đặc quyền)
+secure_kaniko_build:
+  stage: build-secure
+  image:
+    name: gcr.io/kaniko-project/executor:v1.23.2-debug
+    entrypoint: [""]
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "registry.example.invalid/shop-api:${CI_COMMIT_SHORT_SHA}"
+      --cache=true

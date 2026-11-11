@@ -1,0 +1,323 @@
+[
+  {
+    "id": "cicd-ex-c14-1",
+    "code": "C14.1",
+    "module": "C14",
+    "title": "Đóng gói Docker Image với thẻ bất biến Git SHA (Immutable Tag)",
+    "difficulty": 1,
+    "tags": [
+      "docker",
+      "immutable-tags",
+      "git-sha"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/build-immutable.yml",
+    "prompt": "Workflow đóng gói Image hiện tại đang dùng thẻ khả biến `ghcr.io/acme/shop-api:latest`, khiến đội vận hành không thể xác định mã nguồn đang chạy hay Rollback chính xác khi gặp lỗi.\nHãy sửa cấu hình `with.tags` của bước `docker/build-push-action@v6` thành thẻ bất biến `ghcr.io/acme/shop-api:sha-${{ github.sha }}` (xoá bỏ hoàn toàn `:latest`).",
+    "starter": "name: Build Immutable Release Image\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n  packages: write\n\njobs:\n  build-image:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Build and push container image\n        uses: docker/build-push-action@v6\n        with:\n          context: .\n          push: true\n          # TODO: Thay :latest bằng thẻ bất biến sha-${{ github.sha }}\n          tags: ghcr.io/acme/shop-api:latest\n",
+    "solution": "name: Build Immutable Release Image\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n  packages: write\n\njobs:\n  build-image:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Build and push container image\n        uses: docker/build-push-action@v6\n        with:\n          context: .\n          push: true\n          tags: ghcr.io/acme/shop-api:sha-${{ github.sha }}\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-latest-tag",
+          "doc": "Tuyệt đối không gắn thẻ khả biến :latest",
+          "kind": "path",
+          "path": "jobs.build-image.steps[1].with.tags",
+          "match": {
+            "notContains": ":latest"
+          }
+        },
+        {
+          "id": "immutable-sha-tag",
+          "doc": "Sử dụng thẻ bất biến ghcr.io/acme/shop-api:sha-${{ github.sha }}",
+          "kind": "path",
+          "path": "jobs.build-image.steps[1].with.tags",
+          "match": {
+            "regex": "ghcr\\.io/acme/shop-api:sha-\\$\\{\\{\\s*github\\.sha\\s*\\}\\}"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa dòng `tags:` thành `ghcr.io/acme/shop-api:sha-${{ github.sha }}`.",
+      "Đảm bảo không còn chuỗi `:latest` trong trường `tags`."
+    ],
+    "ref": "gitops/ci-update-gitops-repo.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c14-2",
+    "code": "C14.2",
+    "module": "C14",
+    "title": "Cấu hình phát hành Blue-Green có cổng Preview (Argo Rollouts)",
+    "difficulty": 2,
+    "tags": [
+      "blue-green",
+      "argo-rollouts",
+      "preview"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "k8s/rollout-blue-green.yaml",
+    "prompt": "Hoàn thiện manifest `Rollout` (`apiVersion: argoproj.io/v1alpha1`, `kind: Rollout`) cho dịch vụ `shop-api` theo chiến lược **Blue-Green**:\n1. Khai báo `spec.strategy.blueGreen.activeService: shop-api-active`.\n2. Khai báo `spec.strategy.blueGreen.previewService: shop-api-preview`.\n3. Đặt `spec.strategy.blueGreen.autoPromotionEnabled: false` để giữ cổng kiểm thử E2E trước khi chuyển lưu lượng thật.",
+    "starter": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: shop-api\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: shop-api\n          image: ghcr.io/acme/shop-api:sha-9f8e7d6\n          ports:\n            - containerPort: 3000\n  strategy:\n    # TODO: Cấu hình chiến lược blueGreen với activeService, previewService và autoPromotionEnabled: false\n    blueGreen:\n      activeService: ____\n",
+    "solution": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: shop-api\nspec:\n  replicas: 4\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: shop-api\n          image: ghcr.io/acme/shop-api:sha-9f8e7d6\n          ports:\n            - containerPort: 3000\n  strategy:\n    blueGreen:\n      activeService: shop-api-active\n      previewService: shop-api-preview\n      autoPromotionEnabled: false\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "rollout-apiversion",
+          "doc": "Giữ nguyên apiVersion: argoproj.io/v1alpha1 và kind: Rollout",
+          "kind": "path",
+          "path": "apiVersion",
+          "match": {
+            "eq": "argoproj.io/v1alpha1"
+          }
+        },
+        {
+          "id": "bg-active-svc",
+          "doc": "activeService trỏ tới shop-api-active",
+          "kind": "path",
+          "path": "spec.strategy.blueGreen.activeService",
+          "match": {
+            "eq": "shop-api-active"
+          }
+        },
+        {
+          "id": "bg-preview-svc",
+          "doc": "previewService trỏ tới shop-api-preview",
+          "kind": "path",
+          "path": "spec.strategy.blueGreen.previewService",
+          "match": {
+            "eq": "shop-api-preview"
+          }
+        },
+        {
+          "id": "bg-manual-promo",
+          "doc": "Tắt tự động thăng cấp (autoPromotionEnabled: false)",
+          "kind": "path",
+          "path": "spec.strategy.blueGreen.autoPromotionEnabled",
+          "match": {
+            "eq": false
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bên dưới `spec.strategy.blueGreen:`, khai báo đủ 3 khoá: `activeService`, `previewService` và `autoPromotionEnabled`.",
+      "Lưu ý `false` là kiểu boolean của YAML (không bọc trong dấu nháy kép `\"false\"`)."
+    ],
+    "ref": "gitops/blue-green-preview.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c14-3",
+    "code": "C14.3",
+    "module": "C14",
+    "title": "Cấu hình phát hành nhỏ giọt Canary 4 bước (Argo Rollouts)",
+    "difficulty": 2,
+    "tags": [
+      "canary",
+      "argo-rollouts",
+      "progressive-delivery"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "k8s/rollout-canary.yaml",
+    "prompt": "Thay vì đẩy 100% khách hàng sang bản thanh toán mới cùng lúc, hãy cấu hình chiến lược **Canary** (`spec.strategy.canary.steps`) gồm đúng 4 bước theo thứ tự:\n1. Bước 0: `setWeight: 5` (thử nghiệm với 5% lưu lượng).\n2. Bước 1: `pause: { duration: \"2m\" }` (nghỉ 2 phút theo dõi lỗi HTTP 5xx).\n3. Bước 2: `setWeight: 25` (nâng lên 25% lưu lượng).\n4. Bước 3: `setWeight: 100` (hoàn tất phát hành 100%).",
+    "starter": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: payment-service\nspec:\n  replicas: 8\n  selector:\n    matchLabels:\n      app: payment-service\n  template:\n    metadata:\n      labels:\n        app: payment-service\n    spec:\n      containers:\n        - name: payment-service\n          image: ghcr.io/acme/payment-service:sha-4a2b1c9\n          ports:\n            - containerPort: 8080\n  strategy:\n    canary:\n      # TODO: Khai báo 4 bước: setWeight 5 -> pause duration \"2m\" -> setWeight 25 -> setWeight 100\n      steps: []\n",
+    "solution": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: payment-service\nspec:\n  replicas: 8\n  selector:\n    matchLabels:\n      app: payment-service\n  template:\n    metadata:\n      labels:\n        app: payment-service\n    spec:\n      containers:\n        - name: payment-service\n          image: ghcr.io/acme/payment-service:sha-4a2b1c9\n          ports:\n            - containerPort: 8080\n  strategy:\n    canary:\n      steps:\n        - setWeight: 5\n        - pause:\n            duration: \"2m\"\n        - setWeight: 25\n        - setWeight: 100\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "step-0-weight-5",
+          "doc": "Bước đầu tiên (steps[0]) đặt setWeight: 5",
+          "kind": "path",
+          "path": "spec.strategy.canary.steps[0].setWeight",
+          "match": {
+            "eq": 5
+          }
+        },
+        {
+          "id": "step-1-pause-2m",
+          "doc": "Bước thứ hai (steps[1]) tạm dừng với pause.duration: \"2m\"",
+          "kind": "path",
+          "path": "spec.strategy.canary.steps[1].pause.duration",
+          "match": {
+            "eq": "2m"
+          }
+        },
+        {
+          "id": "step-2-weight-25",
+          "doc": "Bước thứ ba (steps[2]) nâng lưu lượng lên setWeight: 25",
+          "kind": "path",
+          "path": "spec.strategy.canary.steps[2].setWeight",
+          "match": {
+            "eq": 25
+          }
+        },
+        {
+          "id": "step-3-weight-100",
+          "doc": "Bước thứ tư (steps[3]) hoàn tất lưu lượng setWeight: 100",
+          "kind": "path",
+          "path": "spec.strategy.canary.steps[3].setWeight",
+          "match": {
+            "eq": 100
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Mỗi phần tử trong mảng `steps:` bắt đầu bằng dấu gạch ngang `- `.",
+      "Các giá trị `setWeight` (`5`, `25`, `100`) là kiểu số nguyên, còn `duration: \"2m\"` là chuỗi có đơn vị phút."
+    ],
+    "ref": "gitops/argo-rollouts-canary.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c14-4",
+    "code": "C14.4",
+    "module": "C14",
+    "title": "Viết bước Hậu kiểm Smoke Test chống lỗi False Green",
+    "difficulty": 1,
+    "tags": [
+      "smoke-test",
+      "curl",
+      "exit-code"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/smoke-test.yml",
+    "prompt": "Bước `Smoke Test` dưới đây chỉ gọi `curl https://api.shop.example.com/readyz` trơn — khi dịch vụ bị lỗi trả về mã HTTP `503 Service Unavailable`, `curl` vẫn trả exit code `0` làm pipeline báo xanh giả!\nHãy sửa lại câu lệnh `run` ở bước thứ hai của job `smoke-test` để gọi `curl` tới `https://api.shop.example.com/readyz` kèm đủ các cờ: `--fail`, `--silent`, `--show-error` và `--retry 5`.",
+    "starter": "name: Post-Deploy Verification\n\non:\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\njobs:\n  smoke-test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - uses: actions/checkout@v4\n      - name: Verify API Readiness Endpoint\n        # LỖI: Thiếu --fail, --silent, --show-error và --retry 5\n        run: curl https://api.shop.example.com/readyz\n",
+    "solution": "name: Post-Deploy Verification\n\non:\n  workflow_dispatch:\n\npermissions:\n  contents: read\n\njobs:\n  smoke-test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 5\n    steps:\n      - uses: actions/checkout@v4\n      - name: Verify API Readiness Endpoint\n        run: curl --fail --silent --show-error --retry 5 https://api.shop.example.com/readyz\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "curl-fail-flag",
+          "doc": "Bắt buộc có cờ --fail để mã HTTP >= 400 làm bước chạy trả về exit code khác 0",
+          "kind": "path",
+          "path": "jobs.smoke-test.steps[1].run",
+          "match": {
+            "contains": "--fail"
+          }
+        },
+        {
+          "id": "curl-silent-show-error",
+          "doc": "Bật --silent và --show-error để log gọn sạch nhưng vẫn báo lỗi mạng rõ ràng",
+          "kind": "path",
+          "path": "jobs.smoke-test.steps[1].run",
+          "match": {
+            "regex": "(?=.*--silent)(?=.*--show-error)",
+            "flags": "s"
+          }
+        },
+        {
+          "id": "curl-retry-5",
+          "doc": "Có cơ chế thử lại --retry 5",
+          "kind": "path",
+          "path": "jobs.smoke-test.steps[1].run",
+          "match": {
+            "contains": "--retry 5"
+          }
+        },
+        {
+          "id": "curl-readyz-url",
+          "doc": "Kiểm tra đúng điểm cuối https://api.shop.example.com/readyz",
+          "kind": "path",
+          "path": "jobs.smoke-test.steps[1].run",
+          "match": {
+            "contains": "https://api.shop.example.com/readyz"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Viết đầy đủ các cờ dạng dài: `curl --fail --silent --show-error --retry 5 https://api.shop.example.com/readyz`."
+    ],
+    "ref": "gitops/smoke-test-rollback.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c14-5",
+    "code": "C14.5",
+    "module": "C14",
+    "title": "Tự động Rollback & Cảnh báo khi Phát hành hoặc Smoke Test thất bại",
+    "difficulty": 2,
+    "tags": [
+      "rollback",
+      "failure",
+      "incident-recovery"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/auto-rollback.yml",
+    "prompt": "Hoàn thiện job `rollback` ở cuối quy trình phát hành để tự động cứu hộ hệ thống ngay khi có sự cố:\n1. Khai báo `needs: [deploy-prod, smoke-test]` để theo dõi cả hai bước phát hành và hậu kiểm.\n2. Đặt điều kiện `if: failure()` để job chỉ kích hoạt khi một trong các bước trước bị thất bại.\n3. Gắn `environment: production` và gọi kịch bản `./scripts/rollback-release.sh` kèm thông báo cảnh báo trong bước `run:`.",
+    "starter": "name: Production Release with Auto-Rollback\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-prod:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/promote-release.sh\n\n  smoke-test:\n    needs: deploy-prod\n    runs-on: ubuntu-latest\n    steps:\n      - run: curl --fail --silent --show-error --retry 5 https://api.shop.example.com/readyz\n\n  rollback:\n    # TODO: Theo dõi [deploy-prod, smoke-test], chỉ kích hoạt khi failure() trên environment: production\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Revert release and notify on-call\n        env:\n          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}\n        run: echo \"TODO\"\n",
+    "solution": "name: Production Release with Auto-Rollback\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  deploy-prod:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - run: ./scripts/promote-release.sh\n\n  smoke-test:\n    needs: deploy-prod\n    runs-on: ubuntu-latest\n    steps:\n      - run: curl --fail --silent --show-error --retry 5 https://api.shop.example.com/readyz\n\n  rollback:\n    needs: [deploy-prod, smoke-test]\n    if: failure()\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: actions/checkout@v4\n      - name: Revert release and notify on-call\n        env:\n          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}\n        run: |\n          ./scripts/rollback-release.sh\n          echo \"::error::Auto-rollback executed — alerting on-call channel\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "rollback-needs-deploy",
+          "doc": "Job rollback phải có deploy-prod trong danh sách needs",
+          "kind": "path",
+          "path": "jobs.rollback.needs",
+          "match": {
+            "contains": "deploy-prod"
+          }
+        },
+        {
+          "id": "rollback-needs-smoke",
+          "doc": "Job rollback phải có smoke-test trong danh sách needs",
+          "kind": "path",
+          "path": "jobs.rollback.needs",
+          "match": {
+            "contains": "smoke-test"
+          }
+        },
+        {
+          "id": "rollback-if-failure",
+          "doc": "Job rollback khai báo điều kiện if: failure()",
+          "kind": "path",
+          "path": "jobs.rollback.if",
+          "match": {
+            "contains": "failure()"
+          }
+        },
+        {
+          "id": "rollback-prod-env",
+          "doc": "Job rollback chạy trong environment: production",
+          "kind": "path",
+          "path": "jobs.rollback.environment",
+          "match": {
+            "oneOf": [
+              "production",
+              {
+                "name": "production"
+              }
+            ]
+          }
+        },
+        {
+          "id": "rollback-exec-script",
+          "doc": "Bước xử lý chạy kịch bản ./scripts/rollback-release.sh",
+          "kind": "path",
+          "path": "jobs.rollback.steps[1].run",
+          "match": {
+            "contains": "./scripts/rollback-release.sh"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sử dụng mảng `needs: [deploy-prod, smoke-test]` và `if: failure()` trên job `rollback`.",
+      "Đừng quên thêm `environment: production` để job `rollback` có quyền truy cập thông tin môi trường cần khôi phục."
+    ],
+    "ref": "gitops/smoke-test-rollback.yml",
+    "webGrade": true
+  }
+]

@@ -1,0 +1,28 @@
+# CẢNH BÁO BUG: "Sao máy em chạy ngon mà lên CI cứ treo rồi đỏ?!"
+# Tập hợp 4 nguyên nhân gây lệch môi trường kinh điển giữa Laptop cá nhân và CI Runner.
+name: Drift Between Laptop and CI
+
+on: [push, pull_request]
+
+jobs:
+  flaky-ci:
+    runs-on: ubuntu-latest
+    # LỖI 1: Không đặt timeout-minutes -> khi treo prompt sẽ ngốn trọn 360 phút (6 tiếng) mặc định!
+    steps:
+      - uses: actions/checkout@v4
+
+      # LỖI 2: Dùng tag trôi nổi 'latest' thay vì khoá đúng phiên bản Node 22 như file .nvmrc ở dự án
+      - uses: actions/setup-node@v4
+        with:
+          node-version: latest
+
+      # LỖI 3: Dùng `npm install` thay vì `npm ci`, tự động kéo bản minor/patch mới hơn laptop của dev
+      - name: Install packages loosely
+        run: npm install
+
+      # LỖI 4: Gọi `npx vitest` ở chế độ watch/interactive mà thiếu cờ `run` hoặc biến CI=true,
+      # khiến tiến trình ngồi chờ người dùng nhấn phím 'q' mãi mãi trên máy chủ không màn hình!
+      - name: Run tests interactively
+        env:
+          CI: false
+        run: npx vitest

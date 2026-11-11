@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K15-D1",
+    "title": "Thiết lập định mức tài nguyên CPU và RAM cho container Node.js",
+    "code": "resources:\n  requests:\n    cpu: \"250m\"\n    memory: \"256Mi\"\n  limits:\n    cpu: \"500m\"\n    memory: \"512Mi\""
+  },
+  {
+    "id": "K15-D2",
+    "title": "Khai báo CronJob chạy lúc 02:00 sáng hàng ngày chống chạy chồng",
+    "code": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: nightly-report\nspec:\n  schedule: \"0 2 * * *\"\n  concurrencyPolicy: Forbid"
+  }
+]

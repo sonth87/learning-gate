@@ -1,0 +1,21 @@
+# BẪY KINH ĐIỂN: Container mất đúng 10 giây mới chịu dừng và bị ép giết bằng SIGKILL (137)!
+FROM node:22-alpine
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+COPY src ./src
+
+USER node
+EXPOSE 3000
+
+# VẤN ĐỀ 1: Viết CMD ở dạng chuỗi thường (Shell Form) thay vì mảng JSON.
+# Docker tự động bọc lệnh thành: /bin/sh -c "npm start"
+# Khi chạy "docker stop" hoặc khi Kubernetes xoay vòng Pod:
+#   - Kernel gửi tín hiệu SIGTERM tới PID 1 (tức /bin/sh).
+#   - /bin/sh trên Alpine KHÔNG chuyển tiếp (forward) SIGTERM xuống tiến trình con "npm" hay "node"!
+# VẤN ĐỀ 2: Kể cả dùng ["npm", "start"], bản thân npm CLI thêm một lớp tiến trình trung gian không cần thiết.
+# Hậu quả: hàm process.on('SIGTERM', ...) trong code Express/Fastify KHÔNG BAO GIỜ chạy,
+# sau 10s hết kiên nhẫn Docker bắn SIGKILL cắt đứt ngang các kết nối DB đang dở!
+# CÁCH SỬA: CMD ["node", "src/server.js"]
+CMD npm start

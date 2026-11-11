@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K13-C1",
+    "front": "Phân biệt vai trò của `StorageClass`, `PersistentVolumeClaim (PVC)` và `PersistentVolume (PV)`?",
+    "back": "`StorageClass` định nghĩa hạng ổ đĩa (như `gp3`), `PVC` là phiếu xin cấp dung lượng của ứng dụng, còn `PV` là chiếc ổ đĩa thật được CSI Driver tự động cắt ra và Bind 1:1 với `PVC`."
+  },
+  {
+    "id": "K13-C2",
+    "front": "Sự khác biệt cốt lõi giữa `ReadWriteOnce (RWO)` và `ReadWriteMany (RWX)`?",
+    "back": "`RWO` chỉ cho phép gắn đọc-ghi trên 1 Worker Node duy nhất (ổ khối EBS/PD); `RWX` cho phép nhiều Pod trên nhiều Node khác nhau cùng đọc-ghi đồng thời (ổ mạng EFS/NFS/CephFS)."
+  },
+  {
+    "id": "K13-C3",
+    "front": "Ba đặc tính giúp `StatefulSet` khác biệt hoàn toàn với `Deployment`?",
+    "back": "1) Tên Pod đánh số cố định (`0, 1, 2...`), 2) Khởi tạo/thu hồi tuần tự nghiêm ngặt, 3) Khuôn `volumeClaimTemplates` tự đẻ PVC độc lập đi theo từng Pod."
+  },
+  {
+    "id": "K13-C4",
+    "front": "Headless Service là gì và viết như thế nào trong YAML?",
+    "back": "Là `Service` đặt `spec.clusterIP: None`, không dùng IP ảo cân bằng tải mà tạo tên miền DNS trỏ thẳng tới từng Pod của `StatefulSet` (`<pod-name>.<svc-name>.<ns>.svc.cluster.local`)."
+  },
+  {
+    "id": "K13-C5",
+    "front": "Nguyên nhân phổ biến nhất khiến một `PVC` bị kẹt ở trạng thái `Pending`?",
+    "back": "Trường `storageClassName` trỏ tới tên hạng lưu trữ không tồn tại trên cụm, chưa cài CSI Driver tương ứng, hoặc hết hạn mức dung lượng ổ đĩa đám mây."
+  },
+  {
+    "id": "K13-C6",
+    "front": "Điều gì xảy ra với dữ liệu trong PVC khi xoá `StatefulSet`?",
+    "back": "Các `PVC` được giữ nguyên vẹn (không tự động bị xoá) để bảo vệ dữ liệu; khi tạo lại `StatefulSet` cùng tên, `postgres-0` sẽ tự động gắn lại đúng ổ đĩa cũ `postgres-0` của nó."
+  }
+]

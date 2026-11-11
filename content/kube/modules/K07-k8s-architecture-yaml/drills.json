@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K07-D1",
+    "title": "Khung 4 trường gốc của một Pod Manifest chuẩn",
+    "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: hello-k8s\nspec:\n  containers:\n    - name: web\n      image: nginx:1.27-alpine"
+  },
+  {
+    "id": "K07-D2",
+    "title": "Quan sát toàn cụm trên mọi Namespace và xem Events chi tiết",
+    "code": "kubectl get namespaces\nkubectl get pods -A\nkubectl describe pod payment-pod"
+  }
+]

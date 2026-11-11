@@ -1,0 +1,27 @@
+# CẢNH BÁO ĐỎ: Cấu hình này phá vỡ hoàn toàn ranh giới cô lập của Container!
+# Nếu ứng dụng Node.js bên trong bị lỗi RCE (Remote Code Execution), kẻ tấn công chiếm trọn máy chủ vật lý (Worker Node) trong 5 giây!
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debug-escape-antipattern
+spec:
+  # NGUY HIỂM 1: Nhìn thấy và nghe lén toàn bộ card mạng của máy chủ Node
+  hostNetwork: true
+  hostPID: true
+  containers:
+    - name: app
+      image: node:22-alpine
+      command: ["node", "server.js"]
+      securityContext:
+        # NGUY HIỂM 2: Cấp toàn bộ Linux Capabilities ngang quyền root thật trên máy chủ
+        privileged: true
+        allowPrivilegeEscalation: true
+      volumeMounts:
+        # NGUY HIỂM 3: Gắn thẳng socket runtime hoặc ổ cứng gốc "/" của máy chủ vào trong Pod!
+        - name: host-root
+          mountPath: /host-fs
+  volumes:
+    - name: host-root
+      hostPath:
+        path: /
+        type: Directory

@@ -1,0 +1,14 @@
+# Tệp .github/CODEOWNERS — Hàng rào quản trị bắt buộc khi bật Branch Protection "Require review from Code Owners"
+# Không một lập trình viên đơn lẻ nào có thể tự ý sửa đường ống CI/CD hoặc kịch bản xoá bảng DB mà không có chữ ký chuyên trách!
+
+# Mặc định mọi thay đổi mã nguồn ứng dụng cần nhóm nền tảng cốt lõi xem xét
+*                               @acme/core-backend-maintainers
+
+# BẢO VỆ ĐƯỜNG ỐNG CI/CD & HẠ TẦNG: Mọi chỉnh sửa workflow bắt buộc nhóm Bảo mật & DevOps ký duyệt
+/.github/workflows/             @acme/security-team @acme/platform-devops
+/Dockerfile                     @acme/platform-devops
+/compose.yaml                   @acme/platform-devops
+
+# BẢO VỆ CƠ SỞ DỮ LIỆU: Mọi tệp di trú lược đồ SQL phải qua mắt kỹ sư quản trị dữ liệu (DBA)
+/db/migrations/                 @acme/dba-team
+/prisma/migrations/             @acme/dba-team

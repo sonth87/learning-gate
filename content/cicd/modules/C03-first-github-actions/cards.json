@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c03-1",
+    "front": "Cấu hình `on` tiêu chuẩn để tránh chạy trùng 2 lần khi vừa push nhánh con vừa mở PR vào `main` là gì?",
+    "back": "Đặt `on.push.branches: [main]` và `on.pull_request.branches: [main]` — PR chỉ chạy 1 lần mỗi khi cập nhật, và `push` chỉ chạy khi đã gộp vào `main`."
+  },
+  {
+    "id": "cicd-card-c03-2",
+    "front": "Bộ đôi Action chính chủ chuẩn 2026 để kéo code và cài đặt Node.js 22 kèm bộ đệm trên GitHub Actions là gì?",
+    "back": "`actions/checkout@v4` và `actions/setup-node@v4` (với `with: { node-version: \"22\", cache: \"npm\" }`)."
+  },
+  {
+    "id": "cicd-card-c03-3",
+    "front": "Điều kiện tiên quyết trong Git repo để `cache: \"npm\"` của `actions/setup-node@v4` hoạt động không báo lỗi là gì?",
+    "back": "Phải commit file khoá `package-lock.json` vào Git repository để Action tính mã băm cache key."
+  },
+  {
+    "id": "cicd-card-c03-4",
+    "front": "Sự kiện kích hoạt nào tạo ra nút bấm **Run workflow** kèm biểu mẫu nhập tham số trên giao diện Web của GitHub?",
+    "back": "`on.workflow_dispatch` (khai báo các trường nhập liệu bên dưới `inputs:`)."
+  },
+  {
+    "id": "cicd-card-c03-5",
+    "front": "Vì sao trong dự án TypeScript ta nên xếp bước `npm run build` đi kèm với `npm test` trên CI?",
+    "back": "Nhiều trình chạy test hiện đại (như Vitest/SWC) chuyển mã TS siêu tốc mà bỏ qua kiểm tra kiểu nghiêm ngặt (`tsc`); chạy `npm run build` đảm bảo cả TypeScript typecheck lẫn gói bundle `dist/` đều không lỗi."
+  },
+  {
+    "id": "cicd-card-c03-6",
+    "front": "Khi nào bạn cần truyền `fetch-depth: 0` vào `actions/checkout@v4`?",
+    "back": "Khi bước phía sau cần đọc toàn bộ lịch sử Git hoặc các nhánh gốc (ví dụ `git diff origin/main`, công cụ tính changelog tự động hoặc quét lịch sử commit), vì mặc định `checkout@v4` chỉ tải nông `fetch-depth: 1`."
+  }
+]

@@ -1,0 +1,73 @@
+# Mô hình Đồ thị Không Chu Trình (DAG): Chạy song song 3 mũi kiểm tra + Matrix đa phiên bản,
+# sau đó hội tụ (Fan-in) tại cổng đóng gói Build.
+name: Parallel DAG & Matrix Fan-In
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ESLint & Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: TypeScript Compiler
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run typecheck
+
+  unit-test:
+    name: Unit Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Giữ cho Node 22 chạy hết bài test để thu đủ báo cáo ngay cả khi Node 20 vừa gặp lỗi
+      fail-fast: false
+      matrix:
+        node-version: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+
+  # Cổng hội tụ (Fan-in): Chỉ khởi chạy khi CẢ BA nhánh kiểm tra song song đều XANH
+  build:
+    name: Production Bundle
+    needs: [lint, typecheck, unit-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7

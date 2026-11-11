@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K04-FC1",
+    "front": "Thứ tự 3 bước vàng trong `Dockerfile` để giữ cache `npm ci` cho dự án Node.js?",
+    "back": "1) `COPY package.json package-lock.json ./`\n2) `RUN npm ci`\n3) `COPY . .` (đặt mã nguồn hay sửa đổi ở cuối cùng)."
+  },
+  {
+    "id": "K04-FC2",
+    "front": "Ba mục tiêu quan trọng nhất của tệp **`.dockerignore`** là gì?",
+    "back": "1) Ngăn lộ bí mật (`.env`, `*.pem`, `.git`);\n2) Tránh chép đè `node_modules` khác hệ điều hành từ máy host;\n3) Thu nhỏ Build Context và giữ ổn định Layer Cache."
+  },
+  {
+    "id": "K04-FC3",
+    "front": "Làm sao chặn mọi tệp Markdown nhưng vẫn giữ lại `README.md` trong `.dockerignore`?",
+    "back": "Viết theo đúng thứ tự từ trên xuống:\n```\n*.md\n!README.md\n```"
+  },
+  {
+    "id": "K04-FC4",
+    "front": "Làm cách nào truyền phiên bản lúc `docker build --build-arg` sang cho `process.env` đọc được lúc chạy?",
+    "back": "Kết hợp cả hai chỉ thị:\n```dockerfile\nARG APP_VERSION=1.0.0\nENV APP_VERSION=$APP_VERSION\n```"
+  },
+  {
+    "id": "K04-FC5",
+    "front": "Vì sao không được truyền `NPM_TOKEN` riêng tư qua `ARG` trong `Dockerfile`?",
+    "back": "Vì giá trị của `ARG` bị ghi rõ vào siêu dữ liệu lịch sử của Image — bất kỳ ai chạy `docker history --no-trunc` đều đọc được (phải dùng BuildKit `--mount=type=secret`)."
+  },
+  {
+    "id": "K04-FC6",
+    "front": "Cú pháp cài gói gọn sạch không lưu rác cache trên Alpine Linux (`apk`)?",
+    "back": "**`RUN apk add --no-cache <tên-gói>`** (không tách dòng `RUN apk update` riêng)."
+  }
+]

@@ -1,0 +1,289 @@
+[
+  {
+    "id": "cicd-ex-c11-1",
+    "code": "C11.1",
+    "module": "C11",
+    "title": "Thiết lập Lớp 1 DevSecOps: Quét toàn bộ lịch sử Git bằng Gitleaks",
+    "difficulty": 1,
+    "tags": [
+      "gitleaks",
+      "secret-scanning",
+      "fetch-depth"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/secret-scan.yml",
+    "prompt": "Thiết lập chốt chặn đầu tiên ngăn lập trình viên vô tình đẩy khoá API vào lịch sử nhánh:\n\n1. Ở bước `actions/checkout@v4`: thêm `with.fetch-depth: 0` để tải toàn bộ lịch sử commit.\n2. Thêm bước chạy lệnh `gitleaks detect --source . --no-banner --redact`.",
+    "starter": "name: Layer 1 Secret Scan\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  gitleaks:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        # Thêm fetch-depth: 0 để quét xuyên suốt lịch sử commit\n      - name: Run Gitleaks\n        run: echo \"TODO\"\n",
+    "solution": "name: Layer 1 Secret Scan\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  gitleaks:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Run Gitleaks\n        run: gitleaks detect --source . --no-banner --redact\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "full-git-history",
+          "doc": "Đặt with.fetch-depth: 0 cho bước actions/checkout@v4",
+          "kind": "path",
+          "path": "jobs.gitleaks.steps[0].with.fetch-depth",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "gitleaks-redact-cmd",
+          "doc": "Chạy gitleaks detect kèm cờ che mật khẩu --redact",
+          "kind": "path",
+          "path": "jobs.gitleaks.steps[1].run",
+          "match": {
+            "regex": "gitleaks\\s+detect.*--redact"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`fetch-depth: 0` là con số `0` kiểu nguyên (không bọc dấu nháy)."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c11-2",
+    "code": "C11.2",
+    "module": "C11",
+    "title": "Thiết lập Lớp 2 & 3: Kiểm toán SCA (npm audit --omit=dev) và SAST (semgrep)",
+    "difficulty": 2,
+    "tags": [
+      "sca",
+      "sast",
+      "npm-audit",
+      "semgrep"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/sast-sca.yml",
+    "prompt": "Hoàn thiện Job `code-security` thực hiện nghiêm túc cả hai bài kiểm tra SCA và SAST (không được bật `continue-on-error` làm cảnh giả tạo!):\n\n1. Xoá dòng `continue-on-error: true` đang nuốt lỗi trên bước kiểm toán thư viện, và dùng lệnh chuẩn hiện đại `npm audit --omit=dev --audit-level=high`.\n2. Thêm bước cuối cùng chạy phân tích mã tĩnh với lệnh `semgrep ci`.",
+    "starter": "name: SAST and SCA Gate\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  code-security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci --ignore-scripts\n      - name: SCA Dependency Audit\n        continue-on-error: true\n        run: npm audit --audit-level=low\n      # Thêm bước SAST chạy lệnh semgrep ci\n",
+    "solution": "name: SAST and SCA Gate\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  code-security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci --ignore-scripts\n      - name: SCA Dependency Audit\n        run: npm audit --omit=dev --audit-level=high\n      - name: SAST Static Analysis\n        run: semgrep ci\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-continue-on-error",
+          "doc": "Xoá bỏ continue-on-error khỏi bước SCA Dependency Audit",
+          "kind": "path",
+          "path": "jobs.code-security.steps[3].continue-on-error",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "npm-audit-omit-dev",
+          "doc": "Chạy npm audit --omit=dev --audit-level=high",
+          "kind": "path",
+          "path": "jobs.code-security.steps[3].run",
+          "match": {
+            "regex": "npm\\s+audit\\s+.*--omit=dev.*--audit-level=high"
+          }
+        },
+        {
+          "id": "semgrep-step",
+          "doc": "Thêm bước phân tích mã tĩnh chạy semgrep ci",
+          "kind": "path",
+          "path": "jobs.code-security.steps[4].run",
+          "match": {
+            "contains": "semgrep ci"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Tuyệt đối dùng `--omit=dev` (chuẩn Node 22), không dùng cờ cũ `--production`."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c11-3",
+    "code": "C11.3",
+    "module": "C11",
+    "title": "Thiết lập Lớp 4: Cổng chặn lỗ hổng Container Image bằng Trivy",
+    "difficulty": 2,
+    "tags": [
+      "trivy",
+      "container-security",
+      "cve-gate"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/trivy-gate.yml",
+    "prompt": "Bước quét ảnh `Scan Docker image` dưới đây đang chạy `trivy image` thiếu cờ mã thoát khiến ảnh dính lỗ hổng nghiêm trọng vẫn lọt qua cổng xanh mướt!\n\nHãy sửa lại câu lệnh `trivy image` đủ cả 3 tham số bắt buộc:\n`trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ghcr.io/acme/shop-api:${{ github.sha }}`",
+    "starter": "name: Container CVE Gate\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  image-scan:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t ghcr.io/acme/shop-api:${{ github.sha }} .\n      - name: Scan Docker image\n        run: trivy image ghcr.io/acme/shop-api:${{ github.sha }}\n",
+    "solution": "name: Container CVE Gate\non: [pull_request]\n\npermissions:\n  contents: read\n\njobs:\n  image-scan:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t ghcr.io/acme/shop-api:${{ github.sha }} .\n      - name: Scan Docker image\n        run: trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed ghcr.io/acme/shop-api:${{ github.sha }}\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "trivy-exit-1",
+          "doc": "Bật cờ chặn đường ống --exit-code 1",
+          "kind": "path",
+          "path": "jobs.image-scan.steps[2].run",
+          "match": {
+            "contains": "--exit-code 1"
+          }
+        },
+        {
+          "id": "trivy-critical",
+          "doc": "Lọc mức độ nghiêm trọng --severity CRITICAL",
+          "kind": "path",
+          "path": "jobs.image-scan.steps[2].run",
+          "match": {
+            "contains": "--severity CRITICAL"
+          }
+        },
+        {
+          "id": "trivy-ignore-unfixed",
+          "doc": "Chỉ chặn lỗi đã có bản vá với --ignore-unfixed",
+          "kind": "path",
+          "path": "jobs.image-scan.steps[2].run",
+          "match": {
+            "contains": "--ignore-unfixed"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bổ sung đủ 3 cờ `--exit-code 1 --severity CRITICAL --ignore-unfixed` vào trước tên image trong lệnh `trivy image`."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c11-4",
+    "code": "C11.4",
+    "module": "C11",
+    "title": "Thiết lập Lớp 5: Xuất bản hồ sơ nguyên liệu CycloneDX SBOM làm Artifact",
+    "difficulty": 2,
+    "tags": [
+      "sbom",
+      "cyclonedx",
+      "artifacts"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/sbom-export.yml",
+    "prompt": "Để đáp ứng yêu cầu kiểm toán an toàn chuỗi cung ứng, sau khi đóng gói ảnh `ghcr.io/acme/shop-api:${{ github.sha }}`, hãy:\n\n1. Chạy lệnh tạo hồ sơ SBOM chuẩn CycloneDX ra tệp `sbom.cdx.json`:\n   `trivy image --format cyclonedx --output sbom.cdx.json ghcr.io/acme/shop-api:${{ github.sha }}`\n2. Dùng `actions/upload-artifact@v4` tải tệp `sbom.cdx.json` lên với `name: sbom-cyclonedx` và `retention-days: 30`.",
+    "starter": "name: Generate CycloneDX SBOM\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  sbom:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t ghcr.io/acme/shop-api:${{ github.sha }} .\n      - name: Generate SBOM\n        run: echo \"TODO\"\n      # Tải tệp sbom.cdx.json lên bằng actions/upload-artifact@v4 (name: sbom-cyclonedx, retention-days: 30)\n",
+    "solution": "name: Generate CycloneDX SBOM\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  sbom:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: docker build -t ghcr.io/acme/shop-api:${{ github.sha }} .\n      - name: Generate SBOM\n        run: trivy image --format cyclonedx --output sbom.cdx.json ghcr.io/acme/shop-api:${{ github.sha }}\n      - name: Archive SBOM artifact\n        uses: actions/upload-artifact@v4\n        with:\n          name: sbom-cyclonedx\n          path: sbom.cdx.json\n          retention-days: 30\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "sbom-cyclonedx-cmd",
+          "doc": "Sinh tệp SBOM bằng --format cyclonedx --output sbom.cdx.json",
+          "kind": "path",
+          "path": "jobs.sbom.steps[2].run",
+          "match": {
+            "regex": "trivy\\s+image.*--format\\s+cyclonedx.*--output\\s+sbom\\.cdx\\.json"
+          }
+        },
+        {
+          "id": "sbom-upload-v4",
+          "doc": "Lưu trữ hồ sơ SBOM bằng actions/upload-artifact@v4",
+          "kind": "gha-uses-pinned",
+          "jobId": "sbom",
+          "actionPrefix": "actions/upload-artifact",
+          "minMajor": 4
+        },
+        {
+          "id": "sbom-artifact-path",
+          "doc": "Đặt with.path: sbom.cdx.json và retention-days: 30",
+          "kind": "path",
+          "path": "jobs.sbom.steps[3].with.path",
+          "match": {
+            "eq": "sbom.cdx.json"
+          }
+        },
+        {
+          "id": "sbom-retention-30",
+          "doc": "Lưu hồ sơ kiểm toán trong 30 ngày",
+          "kind": "path",
+          "path": "jobs.sbom.steps[3].with.retention-days",
+          "match": {
+            "eq": 30
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Kiểm tra đúng tên tệp đầu ra `sbom.cdx.json` khớp ở cả cờ `--output` lẫn `with.path` của `upload-artifact@v4`."
+    ],
+    "ref": "security/five-layer-devsecops.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c11-5",
+    "code": "C11.5",
+    "module": "C11",
+    "title": "Thay thế Docker-in-Docker (privileged dind) nguy hiểm bằng Kaniko Rootless trên GitLab CI",
+    "difficulty": 3,
+    "tags": [
+      "gitlab-ci",
+      "kaniko",
+      "dind",
+      "container-security"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Tệp `.gitlab-ci.yml` dưới đây đang dùng dịch vụ `docker:27-dind` chạy ở chế độ đặc quyền mở toang cửa thoát khỏi container trên cụm Runner dùng chung!\n\nHãy chuyển đổi Job `build_image` sang trình đóng gói không đặc quyền **Kaniko**:\n1. Xoá hoàn toàn trường `services:` (`docker:27-dind`).\n2. Đổi `build_image.image` thành đối tượng `{ name: \"gcr.io/kaniko-project/executor:debug\", entrypoint: [\"\"] }`.\n3. Trong `script:`, gọi `/kaniko/executor --context \"$CI_PROJECT_DIR\" --dockerfile \"$CI_PROJECT_DIR/Dockerfile\" --destination \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA\"`.",
+    "starter": "stages: [build]\n\nbuild_image:\n  stage: build\n  image: docker:27\n  services:\n    - docker:27-dind\n  script:\n    - docker build -t \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA\" .\n    - docker push \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA\"\n",
+    "solution": "stages: [build]\n\nbuild_image:\n  stage: build\n  image:\n    name: gcr.io/kaniko-project/executor:debug\n    entrypoint: [\"\"]\n  script:\n    - /kaniko/executor --context \"$CI_PROJECT_DIR\" --dockerfile \"$CI_PROJECT_DIR/Dockerfile\" --destination \"$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "removed-dind-service",
+          "doc": "Xoá bỏ hoàn toàn dịch vụ đặc quyền services (docker:dind)",
+          "kind": "path",
+          "path": "build_image.services",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "kaniko-executor-image",
+          "doc": "Sử dụng image gcr.io/kaniko-project/executor:debug",
+          "kind": "path",
+          "path": "build_image.image.name",
+          "match": {
+            "eq": "gcr.io/kaniko-project/executor:debug"
+          }
+        },
+        {
+          "id": "kaniko-empty-entrypoint",
+          "doc": "Ghi đè entrypoint: [\"\"] để GitLab Runner mở được shell cho Kaniko debug",
+          "kind": "path",
+          "path": "build_image.image.entrypoint",
+          "match": {
+            "eq": [
+              ""
+            ]
+          }
+        },
+        {
+          "id": "kaniko-exec-cmd",
+          "doc": "Chạy /kaniko/executor kèm --context, --dockerfile và --destination",
+          "kind": "path",
+          "path": "build_image.script[0]",
+          "match": {
+            "regex": "/kaniko/executor\\s+.*--context.*--destination"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trên GitLab CI, ảnh `kaniko-project/executor:debug` bắt buộc ghi đè `entrypoint: [\"\"]` trong khối `image:` để GitLab có thể nạp kịch bản `script:` vào shell BusyBox."
+    ],
+    "ref": "gitlab/dind-tls-trap.gitlab-ci.yml",
+    "webGrade": true
+  }
+]

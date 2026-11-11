@@ -1,0 +1,55 @@
+{
+  "id": "K15",
+  "slug": "K15-resources-hpa-jobs",
+  "level": 4,
+  "order": 15,
+  "title": "Quản trị Tài nguyên, Hạng ưu tiên QoS, Tự động co giãn HPA & Tác vụ nền Job/CronJob",
+  "summary": "Thiết lập định mức requests/limits chuẩn chỉnh, phân hạng QoS, co giãn tự động với autoscaling/v2 HPA và chạy migration/báo cáo định kỳ qua Job & CronJob.",
+  "tags": [
+    "resources",
+    "qos",
+    "hpa",
+    "job",
+    "cronjob"
+  ],
+  "sources": [
+    {
+      "title": "Resource Management for Pods and Containers",
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Horizontal Pod Autoscaling (autoscaling/v2)",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Rolling Update & HPA",
+      "kind": "flow",
+      "targetId": "rolling-update-hpa"
+    },
+    {
+      "label": "War Room: Sự cố OOMKilled (#4)",
+      "kind": "incident",
+      "targetId": "incident-4-oomkilled"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/workloads/hpa-v2-api.yaml",
+      "kind": "good",
+      "note": "Cấu hình HorizontalPodAutoscaler chuẩn autoscaling/v2 kèm chính sách behavior.scaleDown chống co giật (flapping) khi lưu lượng biến động đột ngột.",
+      "task": "Tìm trường stabilizationWindowSeconds trong phần scaleDown và giải thích tác dụng thực tế của nó.",
+      "answer": "stabilizationWindowSeconds: 300 yêu cầu HPA quan sát mức tải thấp ổn định liên tục trong 5 phút (300 giây) trước khi thu nhỏ số Pod, tránh việc vừa xoá bớt Pod xong thì lưu lượng lại vọt lên ngay gây thiếu hụt tài nguyên."
+    },
+    {
+      "path": "k8s/workloads/cronjob-backup.yaml",
+      "kind": "good",
+      "note": "Mẫu CronJob chạy sao lưu định kỳ ban đêm an toàn với concurrencyPolicy: Forbid và giới hạn lưu lịch sử Job cũ.",
+      "task": "Giải thích vai trò của successfulJobsHistoryLimit và failedJobsHistoryLimit trong tệp cấu hình này.",
+      "answer": "Chúng giới hạn số lượng đối tượng Job/Pod đã chạy xong được giữ lại trên cụm (ví dụ giữ 3 bản thành công gần nhất và 2 bản lỗi để đọc log), tránh làm rác bộ nhớ etcd sau nhiều tháng chạy hàng đêm."
+    }
+  ]
+}

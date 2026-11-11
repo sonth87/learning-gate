@@ -1,0 +1,26 @@
+# Giải pháp hiện đại thay thế Bind Mount truyền thống từ Docker Compose v2.22+:
+# Chạy bằng lệnh: docker compose watch
+# Không còn nỗi lo lệch kiến trúc binary (macOS Darwin vs Linux Alpine) trong node_modules!
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+    command: ["node", "--watch", "src/server.js"]
+    develop:
+      watch:
+        # 1) Khi sửa code trong ./src -> chép thẳng file đổi vào /app/src (nhanh tính bằng mili-giây)
+        - action: sync
+          path: ./src
+          target: /app/src
+          ignore:
+            - "**/*.test.js"
+        # 2) Khi thêm/xoá thư viện trong package.json -> tự động build lại Image & khởi tạo lại container!
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./package-lock.json

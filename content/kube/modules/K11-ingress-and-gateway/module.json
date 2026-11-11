@@ -1,0 +1,58 @@
+{
+  "id": "K11",
+  "slug": "K11-ingress-and-gateway",
+  "level": 3,
+  "order": 11,
+  "title": "Đưa ứng dụng ra Internet với Ingress, TLS HTTPS & Gateway API",
+  "summary": "Định tuyến HTTP/HTTPS tầng 7 tiết kiệm chi phí bằng networking.k8s.io/v1 Ingress, cấu hình chứng chỉ TLS và cập nhật góc nhìn Gateway API 2026.",
+  "tags": [
+    "ingress",
+    "tls",
+    "https",
+    "gateway-api",
+    "routing"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes Ingress (networking.k8s.io/v1)",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Kubernetes Gateway API Concepts (HTTPRoute)",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/gateway/",
+      "version": "Gateway API v1.1+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Đường đi gói tin qua Service & Ingress",
+      "kind": "flow",
+      "targetId": "k8s-network-traffic",
+      "description": "Quan sát cách Ingress Controller phân luồng /api và / vào từng ClusterIP Service"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/network/ingress-tls-prod.yaml",
+      "kind": "good",
+      "note": "Manifest Ingress chuẩn Production kết hợp cert-manager cấp chứng chỉ HTTPS tự động.",
+      "task": "Tìm annotation của `cert-manager` và khối `spec.tls`: khoá riêng HTTPS thực chất được lưu ở loại tài nguyên nào?",
+      "answer": "Annotation `cert-manager.io/cluster-issuer: \"letsencrypt-prod\"` hướng dẫn cert-manager tự xin chứng chỉ từ Let's Encrypt và lưu cặp `tls.crt` + `tls.key` vào một Kubernetes `Secret` có tên `shop-tls-cert` được khai báo ở `spec.tls[0].secretName`."
+    },
+    {
+      "path": "k8s/network/gateway-api-httproute.yaml",
+      "kind": "compare",
+      "note": "So sánh Ingress truyền thống với kiến trúc thế hệ mới Gateway + HTTPRoute.",
+      "task": "Trong tệp `HTTPRoute`, làm thế nào để chia 90% lưu lượng vào bản ổn định và 10% vào bản Canary mà không cần dùng bất kỳ annotation nào?",
+      "answer": "Gateway API tích hợp sẵn trường chuẩn `weight: 90` và `weight: 10` ngay trên từng phần tử trong mảng `backendRefs` của `HTTPRoute`."
+    },
+    {
+      "path": "k8s/network/ingress-legacy-beta.yaml",
+      "kind": "outdated",
+      "note": "Mẫu Ingress v1beta1 cũ hay gặp trong tài liệu trước năm 2021 để bạn biết cách chuyển đổi.",
+      "task": "Chỉ ra 3 trường cú pháp trong `ingress-legacy-beta.yaml` không còn tồn tại trong `networking.k8s.io/v1`.",
+      "answer": "1) `apiVersion: networking.k8s.io/v1beta1`; 2) Annotation `kubernetes.io/ingress.class` (nay là `spec.ingressClassName`); 3) Cặp `backend.serviceName` & `backend.servicePort` và thiếu trường bắt buộc `pathType`."
+    }
+  ]
+}

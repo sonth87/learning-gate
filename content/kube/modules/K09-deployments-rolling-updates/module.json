@@ -1,0 +1,57 @@
+{
+  "id": "K09",
+  "slug": "K09-deployments-rolling-updates",
+  "level": 2,
+  "order": 9,
+  "title": "Deployment, Tự chữa lành, Rolling Update không gián đoạn & Rollback",
+  "summary": "Quản lý vòng đời Pod bất tử qua Deployment & ReplicaSet, khớp nối selector.matchLabels, cấu hình RollingUpdate Zero-Downtime và cứu hoả bằng rollout undo.",
+  "tags": [
+    "deployment",
+    "replicaset",
+    "rolling-update",
+    "rollback",
+    "scaling"
+  ],
+  "sources": [
+    {
+      "title": "Kubernetes Deployments — Updating & Rolling Back",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "kubectl rollout & scale Reference",
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Rolling Update & HPA",
+      "kind": "flow",
+      "targetId": "rolling-update-hpa",
+      "description": "Xem hoạt ảnh chuyển dịch từng Pod từ ReplicaSet cũ sang ReplicaSet mới không rớt request"
+    },
+    {
+      "label": "Thực nghiệm trên Mô phỏng Cụm",
+      "kind": "tab",
+      "targetId": "cluster-sim",
+      "description": "Thử nghiệm giết Pod bất kỳ để xem Deployment tự chữa lành tức khắc"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/workloads/deployment-ha-prod.yaml",
+      "kind": "good",
+      "note": "Bản thiết kế Deployment High Availability chuẩn Production với 3 bản sao trải đều đa Node.",
+      "task": "Tìm cặp thông số dưới `spec.strategy.rollingUpdate` và giải thích tại sao cặp số đó đảm bảo không bao giờ bị hụt năng lực xử lý lúc đang deploy?",
+      "answer": "`maxUnavailable: 0` cấm tắt bớt Pod cũ khi chưa có Pod mới thay thế (luôn giữ tối thiểu đủ 3 Pod sống), kết hợp `maxSurge: 1` cho phép bật dư thêm 1 Pod mới trước, đợi nó `Ready` rồi mới rút 1 Pod cũ."
+    },
+    {
+      "path": "k8s/workloads/deployment-selector-mismatch.yaml",
+      "kind": "bug",
+      "note": "Lỗi cú pháp lô-gic phổ biến nhất khiến API Server từ chối tạo Deployment ngay từ vòng gửi xe.",
+      "task": "Đối chiếu `spec.selector.matchLabels` và `spec.template.metadata.labels` trong file này: nếu muốn thêm thông tin phiên bản `v2` mà không làm gãy Deployment, ta nên sửa như thế nào?",
+      "answer": "Phải giữ nguyên nhãn gốc `app: checkout-api` giống hệt nhau ở cả hai nơi, và chỉ thêm nhãn phụ `version: v2` vào `spec.template.metadata.labels` (vì `matchLabels` chỉ yêu cầu là tập con của nhãn trên Pod template)."
+    }
+  ]
+}

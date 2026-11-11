@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c06-1",
+    "title": "Bảo vệ ngân sách CI bằng timeout-minutes và PR Concurrency",
+    "code": "concurrency:\n  group: ci-${{ github.workflow }}-${{ github.ref }}\n  cancel-in-progress: true\njobs:\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10"
+  },
+  {
+    "id": "cicd-drill-c06-2",
+    "title": "Khai báo Service Container Redis 7 kèm Healthcheck chuẩn",
+    "code": "services:\n  redis:\n    image: redis:7-alpine\n    ports:\n      - \"6379:6379\"\n    options: >-\n      --health-cmd \"redis-cli ping\"\n      --health-interval 5s\n      --health-retries 5"
+  }
+]

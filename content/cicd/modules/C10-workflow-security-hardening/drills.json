@@ -1,0 +1,12 @@
+[
+  {
+    "id": "C10-D1",
+    "title": "Truyền tiêu đề PR qua biến môi trường env chống Script Injection",
+    "code": "- name: Validate PR title safely\n  env:\n    PR_TITLE: ${{ github.event.pull_request.title }}\n  run: |\n    echo \"Checking PR title: $PR_TITLE\""
+  },
+  {
+    "id": "C10-D2",
+    "title": "Khoá quyền mặc định chỉ đọc toàn cục và cấp quyền ghi gói riêng cho Job",
+    "code": "permissions:\n  contents: read\njobs:\n  publish:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      packages: write"
+  }
+]

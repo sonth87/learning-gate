@@ -1,0 +1,367 @@
+[
+  {
+    "id": "kube-ex-k04-1",
+    "code": "K04.1",
+    "title": "Sắp xếp lại thứ tự COPY và RUN để kích hoạt Layer Cache",
+    "difficulty": 2,
+    "tags": [
+      "layer-cache",
+      "dockerfile",
+      "npm-ci"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Tệp `Dockerfile` bên dưới đang đặt `COPY . .` trước `RUN npm ci`, khiến mỗi lần sửa 1 dòng code trong `src/` đều làm vỡ cache và phải cài lại toàn bộ thư viện. Hãy sắp xếp lại sao cho:\n1. Chép riêng `COPY package.json package-lock.json ./` trước.\n2. Chạy `RUN npm ci`.\n3. Sau đó mới chép phần mã nguồn còn lại bằng `COPY . .`.",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\nCOPY . .\nRUN npm ci\nCMD [\"node\", \"src/server.js\"]\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nCMD [\"node\", \"src/server.js\"]\n",
+    "hints": [
+      "Tách bước copy thành 2 lần: lần 1 chỉ lấy `package.json package-lock.json ./`, chạy `RUN npm ci`, rồi lần 2 mới `COPY . .`.",
+      "Thứ tự đúng: `COPY package.json package-lock.json ./` -> `RUN npm ci` -> `COPY . .`."
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "copy-pkg-before-npm-ci",
+          "doc": "`COPY package.json package-lock.json ./` đứng TRƯỚC `RUN npm ci`",
+          "kind": "order",
+          "before": {
+            "instruction": "COPY",
+            "argsRegex": "package"
+          },
+          "after": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+ci"
+          }
+        },
+        {
+          "id": "npm-ci-before-copy-all",
+          "doc": "`RUN npm ci` đứng TRƯỚC `COPY . .` (chép toàn bộ mã nguồn)",
+          "kind": "order",
+          "before": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+ci"
+          },
+          "after": {
+            "instruction": "COPY",
+            "argsRegex": "^\\.\\s+\\."
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k04-2",
+    "code": "K04.2",
+    "title": "Viết .dockerignore chặn node_modules, .git và .env",
+    "difficulty": 1,
+    "tags": [
+      "dockerignore",
+      "security",
+      "build-context"
+    ],
+    "kind": "dockerignore",
+    "language": "dockerfile",
+    "filename": ".dockerignore",
+    "prompt": "Tạo tệp `.dockerignore` chặn không cho thư mục `node_modules`, thư mục `.git` và tệp bí mật `.env` lọt vào Build Context, nhưng vẫn đảm bảo giữ lại `package.json` và mã nguồn trong `src/server.ts`.",
+    "starter": "# Liệt kê mỗi mẫu cần chặn trên 1 dòng\n",
+    "solution": "node_modules\n.git\n.env\n",
+    "hints": [
+      "Mỗi dòng trong `.dockerignore` là một tên thư mục hoặc mẫu glob giống `.gitignore`.",
+      "Thêm 3 dòng: `node_modules`, `.git`, `.env` (đừng chặn `*.json` hay `src`)."
+    ],
+    "ref": "docker/node-api/.dockerignore.prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerignore",
+      "rules": [
+        {
+          "id": "ignore-node-modules",
+          "doc": "Chặn thư mục `node_modules` (`node_modules/express/index.js`)",
+          "samplePath": "node_modules/express/index.js",
+          "shouldIgnore": true
+        },
+        {
+          "id": "ignore-git-dir",
+          "doc": "Chặn lịch sử `.git` (`.git/HEAD`)",
+          "samplePath": ".git/HEAD",
+          "shouldIgnore": true
+        },
+        {
+          "id": "ignore-dotenv",
+          "doc": "Chặn tệp biến môi trường nhạy cảm `.env`",
+          "samplePath": ".env",
+          "shouldIgnore": true
+        },
+        {
+          "id": "keep-package-json",
+          "doc": "Giữ lại `package.json` cho bước cài đặt thư viện",
+          "samplePath": "package.json",
+          "shouldIgnore": false
+        },
+        {
+          "id": "keep-src-code",
+          "doc": "Giữ lại mã nguồn `src/server.ts`",
+          "samplePath": "src/server.ts",
+          "shouldIgnore": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k04-3",
+    "code": "K04.3",
+    "title": "Dùng quy tắc phủ định ! trong .dockerignore giữ lại README.md",
+    "difficulty": 2,
+    "tags": [
+      "dockerignore",
+      "negation",
+      "glob"
+    ],
+    "kind": "dockerignore",
+    "language": "dockerfile",
+    "filename": ".dockerignore",
+    "prompt": "Bổ sung vào `.dockerignore` để:\n1. Chặn thư mục báo cáo kiểm thử `coverage`.\n2. Chặn toàn bộ các tệp tài liệu `*.md` (như `CHANGELOG.md`, `docs/architecture.md`), **NGOẠI TRỪ** giữ lại duy nhất tệp `README.md` bằng quy tắc phủ định `!README.md`.",
+    "starter": "node_modules\n.git\n.env\n# Chặn coverage, chặn *.md nhưng giữ lại !README.md\n",
+    "solution": "node_modules\n.git\n.env\ncoverage\n*.md\n!README.md\n",
+    "hints": [
+      "Nhớ đặt `*.md` ở dòng trên và `!README.md` ở dòng ngay phía dưới để quy tắc ngoại lệ ghi đè quy tắc chung.",
+      "Đừng quên thêm dòng `coverage` để chặn `coverage/lcov.info`."
+    ],
+    "ref": "docker/node-api/.dockerignore.prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerignore",
+      "rules": [
+        {
+          "id": "ignore-coverage",
+          "doc": "Chặn thư mục báo cáo test `coverage/lcov.info`",
+          "samplePath": "coverage/lcov.info",
+          "shouldIgnore": true
+        },
+        {
+          "id": "ignore-other-md",
+          "doc": "Chặn các tệp Markdown nội bộ (`CHANGELOG.md`, `docs/architecture.md`)",
+          "samplePath": "docs/architecture.md",
+          "shouldIgnore": true
+        },
+        {
+          "id": "keep-readme-exception",
+          "doc": "Giữ lại ngoại lệ `README.md` nhờ `!README.md`",
+          "samplePath": "README.md",
+          "shouldIgnore": false
+        },
+        {
+          "id": "keep-app-entry",
+          "doc": "Giữ lại mã nguồn `src/index.ts`",
+          "samplePath": "src/index.ts",
+          "shouldIgnore": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k04-4",
+    "code": "K04.4",
+    "title": "Nối ARG lúc Build sang ENV lúc Run cho phiên bản ứng dụng",
+    "difficulty": 2,
+    "tags": [
+      "dockerfile",
+      "arg",
+      "env"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Để endpoint `/healthz` của Node.js đọc được `process.env.APP_VERSION` lúc đang chạy nhưng vẫn cho phép CI/CD ghi đè qua `--build-arg`, hãy thêm vào `Dockerfile`:\n1. `ARG APP_VERSION=1.0.0` (giá trị mặc định là `1.0.0`).\n2. Ngay bên dưới, truyền sang biến môi trường `ENV APP_VERSION=$APP_VERSION`.",
+    "starter": "FROM node:22-alpine\nWORKDIR /app\n# Khai báo ARG APP_VERSION=1.0.0 và ENV APP_VERSION=$APP_VERSION\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY src ./src\nCMD [\"node\", \"src/server.js\"]\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nARG APP_VERSION=1.0.0\nENV APP_VERSION=$APP_VERSION\nCOPY package.json package-lock.json ./\nRUN npm ci --omit=dev\nCOPY src ./src\nCMD [\"node\", \"src/server.js\"]\n",
+    "hints": [
+      "`ARG` phải được khai báo TRƯỚC dòng `ENV` tham chiếu tới `$APP_VERSION`.",
+      "Thêm hai dòng:\n`ARG APP_VERSION=1.0.0`\n`ENV APP_VERSION=$APP_VERSION`"
+    ],
+    "ref": "docker/security/Dockerfile.build-arg-secret",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "has-arg-app-version",
+          "doc": "Khai báo `ARG APP_VERSION=1.0.0`",
+          "kind": "instruction",
+          "instruction": "ARG",
+          "argsRegex": "^APP_VERSION=[\"']?1\\.0\\.0[\"']?$"
+        },
+        {
+          "id": "has-env-from-arg",
+          "doc": "Gán sang `ENV APP_VERSION=$APP_VERSION` để tồn tại ở runtime",
+          "kind": "instruction",
+          "instruction": "ENV",
+          "argsRegex": "^APP_VERSION(?:=|\\s+)[\"']?\\$\\{?APP_VERSION\\}?[\"']?$"
+        },
+        {
+          "id": "arg-before-env",
+          "doc": "`ARG APP_VERSION` được khai báo trước `ENV APP_VERSION`",
+          "kind": "order",
+          "before": {
+            "instruction": "ARG",
+            "argsRegex": "APP_VERSION"
+          },
+          "after": {
+            "instruction": "ENV",
+            "argsRegex": "APP_VERSION"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k04-5",
+    "code": "K04.5",
+    "title": "Cài đặt gói trên Alpine gọn sạch trong 1 layer với --no-cache",
+    "difficulty": 2,
+    "tags": [
+      "dockerfile",
+      "alpine",
+      "apk",
+      "layer-size"
+    ],
+    "kind": "dockerfile",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Tệp `Dockerfile` hiện tại đang tách rời hai dòng `RUN apk update` và `RUN apk add curl`, vừa lưu rác chỉ mục vào layer vừa gây rủi ro stale cache. Hãy gộp chúng lại thành **một chỉ thị `RUN` duy nhất** sử dụng `apk add --no-cache curl`.",
+    "starter": "FROM node:22-alpine\nRUN apk update\nRUN apk add curl\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"src/index.js\"]\n",
+    "solution": "FROM node:22-alpine\nRUN apk add --no-cache curl\nWORKDIR /app\nCOPY . .\nCMD [\"node\", \"src/index.js\"]\n",
+    "hints": [
+      "Xoá hẳn dòng `RUN apk update`.",
+      "Sửa dòng cài đặt thành `RUN apk add --no-cache curl`."
+    ],
+    "ref": "docker/legacy/Dockerfile.apt-bloated",
+    "webGrade": true,
+    "spec": {
+      "kind": "dockerfile",
+      "rules": [
+        {
+          "id": "apk-add-no-cache-curl",
+          "doc": "Dùng `RUN apk add --no-cache curl` trong 1 layer duy nhất",
+          "kind": "instruction",
+          "instruction": "RUN",
+          "argsRegex": "^apk\\s+add\\s+(?:--no-cache\\s+curl|curl\\s+--no-cache)$"
+        },
+        {
+          "id": "no-separate-apk-update",
+          "doc": "Đã loại bỏ dòng `RUN apk update` rời rạc",
+          "kind": "instruction",
+          "instruction": "RUN",
+          "argsRegex": "apk\\s+update",
+          "exists": false
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k04-6",
+    "code": "K04.6",
+    "title": "Chẩn đoán & đại tu Dockerfile bị phình 1.18GB và mất sạch cache",
+    "difficulty": 2,
+    "tags": [
+      "troubleshoot",
+      "dockerfile",
+      "layer-cache",
+      "node22"
+    ],
+    "kind": "troubleshoot",
+    "language": "dockerfile",
+    "filename": "Dockerfile",
+    "prompt": "Nhóm phát triển phàn nàn rằng Image `shop-api:latest` trên máy đang nặng tới **1180 MB** và mỗi lần sửa code phải chờ gần 2 phút! Bạn có thể gõ `docker images` ở khung Terminal chẩn đoán phụ để xác nhận, sau đó đại tu lại `Dockerfile` trong trình soạn thảo đạt đủ **4 chuẩn**:\n1. Đổi `FROM` sang `node:22-alpine`.\n2. Tách `COPY package.json package-lock.json ./` đặt trước bước cài đặt.\n3. Đổi `npm install` sang `RUN npm ci` rồi mới `COPY . .`.\n4. Đổi `CMD` sang JSON Exec Form `CMD [\"node\", \"src/server.js\"]`.",
+    "starter": "FROM node:latest\nWORKDIR /app\nCOPY . .\nRUN npm install\nEXPOSE 3000\nCMD node src/server.js\n",
+    "solution": "FROM node:22-alpine\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"src/server.js\"]\n",
+    "hints": [
+      "Lần lượt sửa từng dòng từ trên xuống: `FROM node:22-alpine` -> `WORKDIR /app` -> `COPY package.json package-lock.json ./` -> `RUN npm ci` -> `COPY . .`.",
+      "Ở dòng cuối cùng, đổi `CMD node src/server.js` thành `CMD [\"node\", \"src/server.js\"]`."
+    ],
+    "ref": "docker/node-api/Dockerfile.bad-root",
+    "webGrade": true,
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "dockerfile",
+      "diagnosticSampleCommands": [
+        "docker images"
+      ],
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "shop-api",
+              "tag": "latest",
+              "sizeMB": 1180
+            },
+            {
+              "repo": "node",
+              "tag": "latest",
+              "sizeMB": 1120
+            }
+          ],
+          "containers": [],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "dockerfileRules": [
+        {
+          "id": "fix-base-node-22-alpine",
+          "doc": "Đổi Base Image sang `node:22-alpine` gọn nhẹ, ghim rõ phiên bản",
+          "kind": "base-image",
+          "stage": "first",
+          "imagePrefix": "node:",
+          "notLatest": true,
+          "variantContains": "22-alpine"
+        },
+        {
+          "id": "fix-copy-pkg-before-ci",
+          "doc": "Chép `package.json package-lock.json` TRƯỚC `RUN npm ci`",
+          "kind": "order",
+          "before": {
+            "instruction": "COPY",
+            "argsRegex": "package"
+          },
+          "after": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+ci"
+          }
+        },
+        {
+          "id": "fix-ci-before-copy-src",
+          "doc": "Chạy `RUN npm ci` TRƯỚC `COPY . .` (và không còn dùng `npm install`)",
+          "kind": "order",
+          "before": {
+            "instruction": "RUN",
+            "argsRegex": "npm\\s+ci"
+          },
+          "after": {
+            "instruction": "COPY",
+            "argsRegex": "^\\.\\s+\\."
+          }
+        },
+        {
+          "id": "fix-exec-cmd",
+          "doc": "Chuyển `CMD` sang JSON Exec Form `[\"node\", \"src/server.js\"]`",
+          "kind": "instruction",
+          "instruction": "CMD",
+          "execForm": true,
+          "jsonEquals": [
+            "node",
+            "src/server.js"
+          ]
+        }
+      ]
+    }
+  }
+]

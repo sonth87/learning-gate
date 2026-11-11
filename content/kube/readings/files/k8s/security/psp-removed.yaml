@@ -1,0 +1,23 @@
+# TÀI LIỆU LỊCH SỬ (ĐÃ BỊ GỠ BỎ HOÀN TOÀN TỪ KUBERNETES 1.25):
+# Trước đây Kubernetes dùng PodSecurityPolicy (PSP) nhưng cơ chế phân quyền quá dễ gây lỗi ngầm.
+# Ngày nay (2026), bạn KHÔNG viết kind: PodSecurityPolicy nữa mà thay bằng:
+#   1) Nhãn Pod Security Admission gắn thẳng lên Namespace (xem file pod-restricted-psa.yaml), HOẶC
+#   2) Policy-as-Code chuyên dụng như Kyverno / OPA Gatekeeper.
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: legacy-restricted-psp
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  runAsUser:
+    rule: MustRunAsNonRoot
+  seLinux:
+    rule: RunAsAny
+  fsGroup:
+    rule: RunAsAny
+  volumes:
+    - configMap
+    - emptyDir
+    - secret
+    - persistentVolumeClaim

@@ -1,0 +1,64 @@
+# Cấu hình ghi đè dành riêng cho môi trường Production:
+# Triển khai bằng lệnh: helm upgrade --install shop-api ./charts/node-service -n production -f values-prod.yaml
+replicaCount: 3
+
+image:
+  repository: ghcr.io/acme-corp/shop-api
+  pullPolicy: IfNotPresent
+  # Luôn ghim rõ phiên bản phát hành từ CI/CD (không bao giờ để "latest")
+  tag: "2.4.1"
+
+serviceAccount:
+  create: true
+  automount: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: api.shop.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: api-shop-tls
+      hosts:
+        - api.shop.example.com
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 12
+  targetCPUUtilizationPercentage: 70
+
+# PodDisruptionBudget: Khi Admin bảo trì rút Node (kubectl drain), đảm bảo luôn còn ít nhất 2 Pod sống!
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

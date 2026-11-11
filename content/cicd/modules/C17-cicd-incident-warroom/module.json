@@ -1,0 +1,68 @@
+{
+  "id": "C17",
+  "slug": "C17-cicd-incident-warroom",
+  "level": 5,
+  "order": 17,
+  "title": "Phòng Chiến Sự CI/CD (Incident War Room)",
+  "summary": "Trực tiếp chẩn đoán và vá nóng 4 sự cố CI/CD nghiêm trọng ngoài thực tế: Pipeline nghẽn 42 phút (B1), Race Condition triển khai Production (B2), Rò rỉ khoá bí mật trong YAML (B3) và Pipeline xanh giả nuốt mã lỗi (B6).",
+  "tags": [
+    "incident-response",
+    "troubleshooting",
+    "war-room",
+    "concurrency",
+    "false-green",
+    "secret-leak"
+  ],
+  "sources": [
+    {
+      "title": "GitHub Docs — Control the concurrency of workflows and jobs",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs",
+      "version": "GitHub Actions 2026"
+    },
+    {
+      "title": "GitHub Docs — Security hardening & Secret scanning in CI",
+      "url": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions",
+      "version": "GitHub Actions 2026"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room B1: Tối ưu Pipeline 42 phút",
+      "kind": "warroom",
+      "targetId": "warroom-b1-42min-pipeline"
+    },
+    {
+      "label": "War Room B2: Chống Race Condition Deploy",
+      "kind": "warroom",
+      "targetId": "warroom-b2-race-condition"
+    },
+    {
+      "label": "War Room B3: Ứng cứu lộ Secret",
+      "kind": "warroom",
+      "targetId": "warroom-b3-secret-leak"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/concurrency-pr-vs-prod.yml",
+      "kind": "compare",
+      "note": "Đối chiếu trực diện cấu hình cancel-in-progress giữa nhánh PR (true) và triển khai Production (false).",
+      "task": "Tại sao cùng một tính năng concurrency nhưng trên PR lại dùng group theo số PR còn trên Production lại dùng một chuỗi cố định?",
+      "answer": "Trên PR, mỗi PR độc lập cần nhóm riêng (pr-ci-42) để PR của người này không huỷ PR của người khác. Trên Production chỉ có duy nhất một môi trường thật nên phải gom chung vào một khoá cố định để xếp hàng tuần tự."
+    },
+    {
+      "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
+      "kind": "bug",
+      "note": "Hồ sơ điển hình của một đường ống tuần tự không cache, chạy npm install lặp lại và ngủ đông bằng sleep.",
+      "task": "Liệt kê 3 nguyên nhân lớn nhất khiến đường ống trong tệp này kéo dài tới hơn 40 phút.",
+      "answer": "1) Dùng npm install không có cache phụ thuộc ở mọi job; 2) Xếp nối đuôi tuần tự tất cả các bước lint, test, e2e trên một luồng đơn; 3) Chạy toàn bộ bộ test nặng trên 1 runner duy nhất thay vì chia mảnh (sharding)."
+    },
+    {
+      "path": "github/false-green-exitcode.yml",
+      "kind": "bug",
+      "note": "Ba cái bẫy kinh điển biến lỗi biên dịch, lỗi test và lỗi HTTP 500 thành dấu tích xanh giả tạo.",
+      "task": "Nếu xoá continue-on-error: true nhưng vẫn giữ nguyên dòng run: npm test || true thì khi Jest báo lỗi job có dừng lại không?",
+      "answer": "KHÔNG! Toán tử || true trong Bash làm tổng thể câu lệnh luôn trả về mã thoát 0, nên GitHub Actions vẫn hiểu nhầm là bài kiểm thử đã vượt qua hoàn toàn."
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "C08-Q1",
+    "type": "output",
+    "q": "Ba Job `lint` (2 phút), `typecheck` (3 phút) và `unit-test` (5 phút) được cấu hình chạy song song không phụ thuộc nhau, sau đó hội tụ vào Job `gate` (`needs: [lint, typecheck, unit-test]`, chạy mất 1 phút). Tổng thời gian Đường găng (Critical Path) của cả quy trình là bao nhiêu phút? (Chỉ ghi con số)",
+    "code": "",
+    "choices": [],
+    "answer": "6",
+    "explain": "Ba Job đầu xuất phát cùng lúc nên cụm song song kết thúc khi nhánh dài nhất (`unit-test` = 5 phút) xong, cộng thêm 1 phút của `gate` = 6 phút (thay vì 2+3+5+1 = 11 phút nếu nối tiếp!)."
+  },
+  {
+    "id": "C08-Q2",
+    "type": "mc",
+    "q": "Tại sao khi chia mảnh kiểm thử E2E bằng `strategy.matrix.shard: [1, 2, 3, 4]`, chúng ta nên đặt `fail-fast: false`?",
+    "code": "",
+    "choices": [
+      "Để bắt buộc cả 4 máy ảo không bao giờ báo lỗi đỏ dù bài test sai",
+      "Để khi 1 mảnh gặp lỗi sớm, 3 mảnh còn lại vẫn tiếp tục chạy hết nhằm thu thập trọn vẹn danh sách tất cả các bài test lỗi trong một lượt chạy duy nhất",
+      "Để giảm một nửa dung lượng RAM tiêu thụ của trình duyệt Chromium",
+      "Vì Playwright không chạy được nếu thiếu cờ fail-fast: false"
+    ],
+    "answer": 1,
+    "explain": "Mặc định GitHub Actions đặt `fail-fast: true`: mảnh 1 vừa lỗi là nó giết ngang mảnh 2, 3, 4 khiến bạn sửa xong lỗi ở mảnh 1 đẩy lên lại mới phát hiện mảnh 4 cũng đang lỗi!"
+  },
+  {
+    "id": "C08-Q3",
+    "type": "tf",
+    "q": "Nếu không khai báo điều kiện `if:` đặc biệt, bước `actions/upload-artifact@v4` đặt phía sau bước `npx playwright test` sẽ tự động bị bỏ qua (skipped) đúng vào lúc có bài kiểm thử thất bại!",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mặc định mọi step có điều kiện ngầm là `if: success()`. Phải ghi rõ `if: ${{ !cancelled() }}` hoặc `if: always()` trên bước upload báo cáo lỗi để nó vẫn chạy khi bước test phía trên trả mã thoát khác 0."
+  },
+  {
+    "id": "C08-Q4",
+    "type": "mc",
+    "q": "Khi cấu hình `docker/build-push-action@v6` với `cache-to: type=gha,mode=max`, tham số `mode=max` mang lại lợi ích gì vượt trội so với `mode=min` mặc định đối với Multi-stage Dockerfile?",
+    "code": "",
+    "choices": [
+      "Nó nén ảnh Docker nhỏ hơn 80%",
+      "Nó lưu bộ đệm cho TẤT CẢ các stage trung gian (bao gồm cả stage `builder` cài đặt và biên dịch TypeScript), chứ không chỉ lưu các lớp nằm trong stage `runner` cuối cùng",
+      "Nó tự động xoá các lỗ hổng bảo mật CVE trong ảnh cơ sở Alpine",
+      "Nó cho phép bỏ qua bước đăng nhập Container Registry"
+    ],
+    "answer": 1,
+    "explain": "Với Multi-stage Dockerfile, phần nặng nhất (`npm ci` và `npm run build`) nằm ở stage `builder` vốn bị loại bỏ ở ảnh cuối. `mode=min` không lưu `builder`, chỉ có `mode=max` mới lưu trọn vẹn mọi lớp trung gian!"
+  },
+  {
+    "id": "C08-Q5",
+    "type": "mc",
+    "q": "Lý do chính khiến câu lệnh `sleep 30` đặt trước bước kiểm thử E2E bị coi là nguồn gốc gây Flaky Pipeline là gì?",
+    "code": "",
+    "choices": [
+      "Lệnh sleep không tồn tại trên hệ điều hành Ubuntu 24.04",
+      "Nó vừa lãng phí thời gian cố định ở 95% lượt chạy nhanh, vừa gây lỗi kết nối giả (`ECONNREFUSED`) ở 5% lượt chạy khi máy chủ đám mây bận khởi động mất 32 giây",
+      "Lệnh sleep tiêu tốn 100% CPU của Runner",
+      "GitHub tính phí gấp đôi cho các câu lệnh sleep"
+    ],
+    "answer": 1,
+    "explain": "Thay vì ngủ mù quáng, dùng vòng lặp thăm dò cổng `/healthz` với `curl --retry --retry-connrefused` giúp đi tiếp ngay giây ứng dụng sẵn sàng và chịu đựng tốt độ trễ hạ tầng."
+  },
+  {
+    "id": "C08-Q6",
+    "type": "output",
+    "q": "Khi chạy Playwright ở mảnh thứ 3 trên tổng số 4 mảnh, giá trị truyền vào cờ `--shard=` là chuỗi gì?",
+    "code": "npx playwright test --shard=____",
+    "choices": [],
+    "answer": "3/4",
+    "explain": "Cú pháp chuẩn của Playwright (và Vitest) là `--shard=<chỉ-số-mảnh>/<tổng-số-mảnh>`, tức `3/4`."
+  },
+  {
+    "id": "C08-Q7",
+    "type": "tf",
+    "q": "Gom nhiều Job kiểm tra song song về một Job hội tụ nhẹ `gate` (`needs: [lint, typecheck, unit-test]`) giúp bạn chỉ cần khai báo duy nhất `gate` trong Branch Protection Rules mà vẫn khoá chặt được toàn bộ các nhánh kiểm tra.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đây là mẫu thiết kế \"All-Green Aggregator Gate\" cực kỳ thực dụng khi kết hợp với Matrix/Sharding hoặc khi thêm bớt Job kiểm tra mà không cần sửa cài đặt kho GitHub."
+  }
+]

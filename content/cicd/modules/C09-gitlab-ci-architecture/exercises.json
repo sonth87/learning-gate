@@ -1,0 +1,274 @@
+[
+  {
+    "id": "cicd-ex-c09-1",
+    "code": "C09.1",
+    "module": "C09",
+    "title": "Khởi tạo khung sườn stages và default.image chuẩn cho .gitlab-ci.yml",
+    "difficulty": 1,
+    "tags": [
+      "gitlab-ci",
+      "stages",
+      "node-22"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Hãy thiết lập phần đầu cho tệp `.gitlab-ci.yml` của dịch vụ Node.js:\n\n1. Khai báo mảng `stages` theo đúng thứ tự 4 giai đoạn: `[\"install\", \"test\", \"build\", \"deploy\"]`.\n2. Khai báo khối `default` với `image: node:22-alpine`.",
+    "starter": "# Khai báo stages [install, test, build, deploy] và default.image: node:22-alpine\nstages:\n  - test\n\nunit_test:\n  stage: test\n  script:\n    - npm ci\n    - npm test\n",
+    "solution": "stages:\n  - install\n  - test\n  - build\n  - deploy\n\ndefault:\n  image: node:22-alpine\n\nunit_test:\n  stage: test\n  script:\n    - npm ci\n    - npm test\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "gl-stages-4",
+          "doc": "Khai báo đủ 4 giai đoạn [install, test, build, deploy] theo đúng thứ tự",
+          "kind": "path",
+          "path": "stages",
+          "match": {
+            "eq": [
+              "install",
+              "test",
+              "build",
+              "deploy"
+            ]
+          }
+        },
+        {
+          "id": "gl-default-image",
+          "doc": "Thiết lập default.image: node:22-alpine",
+          "kind": "path",
+          "path": "default.image",
+          "match": {
+            "eq": "node:22-alpine"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bổ sung đủ 4 phần tử vào danh sách `stages:` và thêm khối `default:\\n  image: node:22-alpine` ở cấp gốc."
+    ],
+    "ref": "gitlab/node-dag-pipeline.gitlab-ci.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c09-2",
+    "code": "C09.2",
+    "module": "C09",
+    "title": "Phân tách quyền ghi Cache pull-push và chỉ đọc pull trong GitLab CI",
+    "difficulty": 2,
+    "tags": [
+      "gitlab-ci",
+      "cache",
+      "pull-push"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Tối ưu bộ đệm `.npm/` theo khoá tệp `package-lock.json` trên `.gitlab-ci.yml`:\n\n1. Trên Job `install_deps`: cấu hình `cache.key.files: [\"package-lock.json\"]`, `cache.paths: [\".npm/\"]` và `cache.policy: pull-push`.\n2. Trên Job `unit_test`: cấu hình `cache.key.files: [\"package-lock.json\"]`, `cache.paths: [\".npm/\"]` và chế độ chỉ đọc **`cache.policy: pull`**.",
+    "starter": "stages: [install, test]\ndefault:\n  image: node:22-alpine\n\ninstall_deps:\n  stage: install\n  cache:\n    key:\n      files: [\"package-lock.json\"]\n    paths: [\".npm/\"]\n    policy: ____\n  script:\n    - npm ci --cache .npm --prefer-offline\n\nunit_test:\n  stage: test\n  cache:\n    key:\n      files: [\"package-lock.json\"]\n    paths: [\".npm/\"]\n    policy: ____\n  script:\n    - npm ci --cache .npm --prefer-offline\n    - npm test\n",
+    "solution": "stages: [install, test]\ndefault:\n  image: node:22-alpine\n\ninstall_deps:\n  stage: install\n  cache:\n    key:\n      files: [\"package-lock.json\"]\n    paths: [\".npm/\"]\n    policy: pull-push\n  script:\n    - npm ci --cache .npm --prefer-offline\n\nunit_test:\n  stage: test\n  cache:\n    key:\n      files: [\"package-lock.json\"]\n    paths: [\".npm/\"]\n    policy: pull\n  script:\n    - npm ci --cache .npm --prefer-offline\n    - npm test\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "install-pull-push",
+          "doc": "Job install_deps sử dụng cache.policy: pull-push để cập nhật cache",
+          "kind": "path",
+          "path": "install_deps.cache.policy",
+          "match": {
+            "eq": "pull-push"
+          }
+        },
+        {
+          "id": "test-pull-only",
+          "doc": "Job unit_test sử dụng cache.policy: pull (chỉ đọc)",
+          "kind": "path",
+          "path": "unit_test.cache.policy",
+          "match": {
+            "eq": "pull"
+          }
+        },
+        {
+          "id": "lockfile-key",
+          "doc": "Khoá cache gắn với tệp package-lock.json",
+          "kind": "path",
+          "path": "unit_test.cache.key.files",
+          "match": {
+            "contains": "package-lock.json"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Điền `pull-push` cho `install_deps` và `pull` cho `unit_test`."
+    ],
+    "ref": "gitlab/cache-pull-push.gitlab-ci.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c09-3",
+    "code": "C09.3",
+    "module": "C09",
+    "title": "Bật đồ thị DAG needs: [] chạy sớm và xuất bản artifacts có hạn expire_in",
+    "difficulty": 2,
+    "tags": [
+      "gitlab-ci",
+      "dag",
+      "artifacts"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Tăng tốc và dọn dẹp lưu trữ cho tệp `.gitlab-ci.yml`:\n\n1. Cho phép Job `lint_docs` (ở stage `test`) chạy ngay từ giây thứ 0 không cần chờ stage `install` bằng cách thêm `needs: []`.\n2. Trên Job `build_app` (ở stage `build`), thêm khối `artifacts` lưu `paths: [\"dist/\"]` kèm hạn tự xoá `expire_in: \"7 days\"`.",
+    "starter": "stages: [install, test, build]\ndefault:\n  image: node:22-alpine\n\ninstall_deps:\n  stage: install\n  script:\n    - npm ci\n\nlint_docs:\n  stage: test\n  # Cho phép chạy ngay giây thứ 0 bằng needs: []\n  script:\n    - npx markdownlint README.md\n\nbuild_app:\n  stage: build\n  script:\n    - npm ci\n    - npm run build\n  # Xuất bản artifacts cho thư mục dist/ với expire_in: \"7 days\"\n",
+    "solution": "stages: [install, test, build]\ndefault:\n  image: node:22-alpine\n\ninstall_deps:\n  stage: install\n  script:\n    - npm ci\n\nlint_docs:\n  stage: test\n  needs: []\n  script:\n    - npx markdownlint README.md\n\nbuild_app:\n  stage: build\n  script:\n    - npm ci\n    - npm run build\n  artifacts:\n    paths:\n      - dist/\n    expire_in: \"7 days\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "dag-empty-needs",
+          "doc": "Job lint_docs khai báo mảng rỗng needs: [] để vượt rào stage",
+          "kind": "path",
+          "path": "lint_docs.needs",
+          "match": {
+            "eq": []
+          }
+        },
+        {
+          "id": "build-artifact-dist",
+          "doc": "Job build_app lưu artifacts.paths chứa \"dist/\"",
+          "kind": "path",
+          "path": "build_app.artifacts.paths",
+          "match": {
+            "contains": "dist/"
+          }
+        },
+        {
+          "id": "build-expire-7d",
+          "doc": "Thiết lập hạn lưu trữ artifacts.expire_in: \"7 days\"",
+          "kind": "path",
+          "path": "build_app.artifacts.expire_in",
+          "match": {
+            "eq": "7 days"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`needs: []` đặt ngay bên dưới `stage: test` của `lint_docs`.",
+      "Trong `build_app`, thêm `artifacts:\\n    paths: [\"dist/\"]\\n    expire_in: \"7 days\"`."
+    ],
+    "ref": "gitlab/node-dag-pipeline.gitlab-ci.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c09-4",
+    "code": "C09.4",
+    "module": "C09",
+    "title": "Chia 4 mảnh kiểm thử Vitest song song với từ khoá parallel trên GitLab CI",
+    "difficulty": 2,
+    "tags": [
+      "gitlab-ci",
+      "parallel",
+      "sharding"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Chia tải bộ kiểm thử `vitest_suite` thành **4 container chạy song song** trên GitLab CI:\n\n1. Thêm thuộc tính `parallel: 4` vào Job `vitest_suite`.\n2. Sửa câu lệnh trong `script` chạy `npx vitest run --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL`.",
+    "starter": "stages: [test]\ndefault:\n  image: node:22-alpine\n\nvitest_suite:\n  stage: test\n  # Bật 4 luồng song song bằng từ khoá parallel\n  script:\n    - npm ci\n    - npx vitest run\n",
+    "solution": "stages: [test]\ndefault:\n  image: node:22-alpine\n\nvitest_suite:\n  stage: test\n  parallel: 4\n  script:\n    - npm ci\n    - npx vitest run --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "gl-parallel-4",
+          "doc": "Đặt vitest_suite.parallel: 4",
+          "kind": "path",
+          "path": "vitest_suite.parallel",
+          "match": {
+            "eq": 4
+          }
+        },
+        {
+          "id": "gl-shard-vars",
+          "doc": "Truyền --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL vào lệnh vitest",
+          "kind": "path",
+          "path": "vitest_suite.script[1]",
+          "match": {
+            "contains": "--shard=$CI_NODE_INDEX/$CI_NODE_TOTAL"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "GitLab cung cấp sẵn hai biến `$CI_NODE_INDEX` và `$CI_NODE_TOTAL` khi bạn bật `parallel: 4`."
+    ],
+    "ref": "gitlab/parallel-sharding.gitlab-ci.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c09-5",
+    "code": "C09.5",
+    "module": "C09",
+    "title": "Nâng cấp cú pháp cũ only: [main] sang cổng duyệt tay rules: hiện đại",
+    "difficulty": 2,
+    "tags": [
+      "gitlab-ci",
+      "rules",
+      "manual-gate"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".gitlab-ci.yml",
+    "prompt": "Job `deploy_prod` đang dùng cú pháp di sản `only: [main]` đã lỗi thời. Hãy nâng cấp sang khối **`rules:`** chuẩn hiện đại kèm cổng phê duyệt tay chặn đường ống:\n\n1. Xoá hoàn toàn trường `only:` (và `when:` ở cấp ngoài nếu có).\n2. Thêm mảng `rules:` có phần tử đầu tiên kiểm tra:\n   - `if: '$CI_COMMIT_BRANCH == \"main\"'`\n   - `when: manual`\n   - `allow_failure: false`",
+    "starter": "stages: [deploy]\ndefault:\n  image: alpine:3.20\n\ndeploy_prod:\n  stage: deploy\n  script:\n    - ./scripts/deploy-prod.sh\n  only:\n    - main\n",
+    "solution": "stages: [deploy]\ndefault:\n  image: alpine:3.20\n\ndeploy_prod:\n  stage: deploy\n  script:\n    - ./scripts/deploy-prod.sh\n  rules:\n    - if: '$CI_COMMIT_BRANCH == \"main\"'\n      when: manual\n      allow_failure: false\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-legacy-only",
+          "doc": "Xoá hoàn toàn từ khoá lỗi thời only:",
+          "kind": "path",
+          "path": "deploy_prod.only",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "rules-if-main",
+          "doc": "Điều kiện rules[0].if kiểm tra $CI_COMMIT_BRANCH == \"main\"",
+          "kind": "path",
+          "path": "deploy_prod.rules[0].if",
+          "match": {
+            "regex": "\\$CI_COMMIT_BRANCH\\s*==\\s*[\"']main[\"']"
+          }
+        },
+        {
+          "id": "rules-manual",
+          "doc": "Thiết lập cổng bấm tay rules[0].when: manual",
+          "kind": "path",
+          "path": "deploy_prod.rules[0].when",
+          "match": {
+            "eq": "manual"
+          }
+        },
+        {
+          "id": "rules-blocking",
+          "doc": "Bắt buộc chặn đường ống với rules[0].allow_failure: false",
+          "kind": "path",
+          "path": "deploy_prod.rules[0].allow_failure",
+          "match": {
+            "eq": false
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bọc biểu thức điều kiện trong dấu nháy đơn để YAML không bị nhầm với dấu nháy kép bên trong: `if: '$CI_COMMIT_BRANCH == \"main\"'`."
+    ],
+    "ref": "gitlab/rules-mr-and-manual.gitlab-ci.yml",
+    "webGrade": true
+  }
+]

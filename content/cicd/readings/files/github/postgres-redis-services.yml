@@ -1,0 +1,58 @@
+# Kiểm thử tích hợp (Integration Test) thực thụ với cơ sở dữ liệu thật trong Container phụ trợ.
+# Không cần mock SQL giả tạo — kết thúc Job là Postgres & Redis tự huỷ sạch sẽ.
+name: Integration Tests with Postgres & Redis
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app_user
+          POSTGRES_PASSWORD: ci_ephemeral_password_only
+          POSTGRES_DB: shop_test
+        ports:
+          - 5432:5432
+        # Cực kỳ quan trọng: Ép Runner chờ tới khi Postgres thực sự nhận kết nối mới chạy các step dưới!
+        options: >-
+          --health-cmd "pg_isready -U app_user -d shop_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://app_user:ci_ephemeral_password_only@localhost:5432/shop_test
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Chạy DB Migration trên Postgres 16 mới tinh
+        run: npm run db:migrate
+      - name: Chạy bộ kiểm thử tích hợp API
+        run: npm run test:integration

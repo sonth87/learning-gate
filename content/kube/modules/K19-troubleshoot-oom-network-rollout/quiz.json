@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K19-Q1",
+    "type": "output",
+    "q": "Khi một container Node.js cấp phát RAM vượt quá `resources.limits.memory` và bị nhân Linux bắn tín hiệu `SIGKILL (9)` (`OOMKilled`), mã thoát (`Exit Code`) hiển thị trong `kubectl describe pod` là con số bao nhiêu?",
+    "code": "Last State: Terminated (Reason: OOMKilled, Exit Code: ____)",
+    "choices": [],
+    "answer": "137",
+    "explain": "Theo chuẩn Unix/Linux, mã thoát do tín hiệu N kết liễu bằng 128 + N = 128 + 9 (SIGKILL) = 137."
+  },
+  {
+    "id": "K19-Q2",
+    "type": "mc",
+    "q": "Bạn thấy cả 3 Pod của `checkout-api` đều đang `1/1 Running`, nhưng khi chạy `kubectl get endpoints checkout-svc` thì cột `ENDPOINTS` lại hiện `<none>`. Nguyên nhân hợp lý nhất là gì?",
+    "code": "",
+    "choices": [
+      "Ổ cứng của Worker Node đã bị đầy",
+      "Trường `spec.selector` của `Service/checkout-svc` đang gõ lệch không khớp với bộ nhãn `labels` thực tế trên các Pod",
+      "Chưa cài đặt HorizontalPodAutoscaler cho cụm",
+      "Docker Hub đang bảo trì định kỳ"
+    ],
+    "answer": 1,
+    "explain": "Nếu Pod đã `1/1` (tức `Ready=true`) mà `Endpoints` của Service vẫn là `<none>`, chắc chắn 100% nhãn `spec.selector` của Service không khớp với `metadata.labels` của các Pod (hoặc tạo nhầm ở hai Namespace khác nhau)!"
+  },
+  {
+    "id": "K19-Q3",
+    "type": "tf",
+    "q": "Khi bản phát hành mới gây lỗi nghiêm trọng trên `production` vào giờ cao điểm, phản ứng chuẩn SRE là chạy ngay `kubectl rollout undo` để khôi phục dịch vụ trong vài giây trước rồi mới bình tĩnh phân tích sửa code sau.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Ưu tiên tối thượng khi xảy ra sự cố sản xuất là giảm thiểu thời gian gián đoạn (MTTR) bằng thao tác Rollback tức thì, tuyệt đối không để khách hàng chờ bạn ngồi debug sửa code trực tiếp."
+  },
+  {
+    "id": "K19-Q4",
+    "type": "mc",
+    "q": "Điều gì xảy ra nếu `Service` có `selector` khớp đúng với Pod, danh sách `Endpoints` đã có địa chỉ IP, nhưng `targetPort` trên Service ghi `8080` trong khi ứng dụng Express thực tế gọi `app.listen(3000)`?",
+    "code": "",
+    "choices": [
+      "Kubernetes tự động đổi cổng ứng dụng Express sang 8080 mà không cần sửa code",
+      "Gói tin đi tới đúng Pod nhưng đập vào cổng 8080 không có ai lắng nghe, gây lỗi `Connection Refused` / `502 Bad Gateway`",
+      "Pod lập tức bị OOMKilled",
+      "Deployment tự động thu nhỏ replicas về 0"
+    ],
+    "answer": 1,
+    "explain": "kube-proxy chuyển hướng lưu lượng vào `PodIP:8080`, nhưng cổng 8080 trong Network Namespace của Pod đóng kín (vì Node.js mở cổng 3000), nên nhân Linux trả cờ TCP RST (`Connection Refused`) khiến Ingress báo `502 Bad Gateway`."
+  },
+  {
+    "id": "K19-Q5",
+    "type": "output",
+    "q": "Hoàn thiện câu lệnh CLI để quay lui khẩn cấp `deployment/frontend` nằm trong namespace `production` về phiên bản ổn định liền trước:",
+    "code": "kubectl rollout ____ deployment/frontend -n production",
+    "choices": [],
+    "answer": "undo",
+    "explain": "`kubectl rollout undo deployment/<tên> -n <namespace>` lập tức khôi phục Pod Template về bản Revision ổn định liền kề trước đó."
+  },
+  {
+    "id": "K19-Q6",
+    "type": "tf",
+    "q": "Nếu một `Deployment` để `maxUnavailable: 50%` và không có `readinessProbe`, trong quá trình Rolling Update một nửa số Pod cũ bị giết ngay lập tức trong khi các Pod mới chưa khởi động xong Node.js đã bị đẩy lưu lượng khách hàng vào.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đó chính là lý do gây sụt giảm năng lực chịu tải và rớt hàng loạt request trong lúc deploy. Cần đặt `maxUnavailable: 0` kết hợp `readinessProbe` và `preStop`."
+  },
+  {
+    "id": "K19-Q7",
+    "type": "mc",
+    "q": "Bên cạnh việc nâng `limits.memory` trong YAML, giải pháp kỹ thuật cốt lõi nào trong mã nguồn Node.js giúp xử lý tệp CSV/PDF hàng trăm MB mà không gây `OOMKilled`?",
+    "code": "",
+    "choices": [
+      "Dùng `fs.readFileSync` nạp toàn bộ tệp vào một chuỗi String duy nhất",
+      "Sử dụng Node.js `Streams` (`fs.createReadStream` kết hợp `stream.pipeline`) để xử lý từng khối nhỏ (chunk) với mức RAM cố định vài MB",
+      "Tắt hoàn toàn trình dọn rác Garbage Collector của V8",
+      "Đổi cổng lắng nghe từ 3000 sang 80"
+    ],
+    "answer": 1,
+    "explain": "Xử lý theo luồng (Streaming) với cơ chế điều tiết áp lực ngược (backpressure) của `stream.pipeline` giữ mức tiêu thụ RAM phẳng chỉ vài chục MB bất kể tệp đầu vào nặng 50MB hay 5GB!"
+  }
+]

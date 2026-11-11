@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C13-Q1",
+    "type": "mc",
+    "q": "Lợi ích bảo mật lớn nhất của việc lưu AWS_ROLE_ARN trong Environment Secret \"production\" thay vì Repository Secret là gì?",
+    "code": "",
+    "choices": [
+      "Giúp tốc độ tải biến môi trường nhanh gấp đôi trên runner",
+      "Biến bí mật chỉ được cấp cho job khai báo đúng environment: production VÀ vượt qua các quy tắc bảo vệ như Required Reviewers / nhánh cho phép",
+      "Cho phép tự động chia sẻ Secret đó cho mọi nhánh Fork bên ngoài",
+      "Giúp in giá trị Secret ra log mà không bị che bằng dấu ***"
+    ],
+    "answer": 1,
+    "explain": "Environment Secret bị khoá sau hàng rào Protection Rules (chỉ nhánh main/tag hợp lệ + người duyệt bấm Approve mới giải mã được), ngăn chặn job từ nhánh tính năng tự ý truy cập Production."
+  },
+  {
+    "id": "C13-Q2",
+    "type": "tf",
+    "q": "Trong tệp .github/CODEOWNERS, nếu một đường dẫn tệp khớp với nhiều dòng quy tắc khác nhau thì dòng khớp CUỐI CÙNG (tính từ trên xuống dưới) sẽ quyết định chủ sở hữu của tệp đó.",
+    "code": "* @acme/devs\n/src/auth/ @acme/security-team",
+    "choices": [],
+    "answer": true,
+    "explain": "Giống như .gitignore, CODEOWNERS đọc từ trên xuống dưới và quy tắc cụ thể nằm sau cùng (last match wins) sẽ ghi đè quy tắc tổng quát * ở phía trên."
+  },
+  {
+    "id": "C13-Q3",
+    "type": "mc",
+    "q": "Tại sao workflow chạy công cụ AI PR Review có sử dụng OPENAI_API_KEY tuyệt đối KHÔNG nên dùng trigger pull_request_target kèm bước actions/checkout code của PR?",
+    "code": "",
+    "choices": [
+      "Vì pull_request_target không hỗ trợ Node.js 22",
+      "Vì kẻ tấn công từ kho Fork có thể mở PR sửa script/package.json để đánh cắp OPENAI_API_KEY và GITHUB_TOKEN quyền ghi ngay trong ngữ cảnh repo gốc",
+      "Vì GitHub cấm gọi API bên thứ ba trong pull_request_target",
+      "Vì pull_request_target không đọc được nội dung tiêu đề PR"
+    ],
+    "answer": 1,
+    "explain": "pull_request_target chạy trong ngữ cảnh tin cậy của repo gốc (có nạp Secrets và token quyền rộng). Checkout và chạy mã nguồn từ Fork chưa kiểm duyệt sẽ dẫn tới lỗ hổng Pwn Request nghiêm trọng."
+  },
+  {
+    "id": "C13-Q4",
+    "type": "output",
+    "q": "Trong khai báo job GitHub Actions dưới đây, khoá cấu hình nào bên trong đối tượng environment giúp hiển thị nút bấm liên kết thẳng tới trang web vừa triển khai ngay trên sơ đồ Pipeline?",
+    "code": "environment:\n  name: staging\n  ???: https://staging.shop.example.com",
+    "choices": [],
+    "answer": "url",
+    "explain": "Thuộc tính environment.url gắn trực tiếp đường dẫn môi trường đích vào giao diện sơ đồ workflow và mục Deployments của GitHub."
+  },
+  {
+    "id": "C13-Q5",
+    "type": "mc",
+    "q": "Trong cấu hình .coderabbit.yaml, mục nào dùng để ra chỉ thị kiểm tra chuyên biệt (ví dụ yêu cầu soi kỹ JWT và phân quyền RBAC) riêng cho thư mục src/auth/**?",
+    "code": "",
+    "choices": [
+      "reviews.path_filters",
+      "reviews.path_instructions",
+      "reviews.ignore_keywords",
+      "reviews.auto_merge"
+    ],
+    "answer": 1,
+    "explain": "path_filters chỉ dùng để bao gồm/loại trừ tệp cần đọc (glob !...), còn path_instructions cho phép truyền prompt hướng dẫn chuyên sâu cho từng vùng mã nguồn cụ thể."
+  },
+  {
+    "id": "C13-Q6",
+    "type": "tf",
+    "q": "Chỉ cần tạo tệp .github/CODEOWNERS đẩy lên nhánh main là GitHub tự động chặn mọi thao tác Merge nếu chủ sở hữu chưa duyệt, kể cả khi chưa bật Branch Protection / Rulesets.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nếu chưa bật Branch Protection hoặc Repository Ruleset kèm tuỳ chọn \"Require review from Code Owners\", tệp CODEOWNERS chỉ tự động gắn người review gợi ý chứ KHÔNG chặn nút Merge!"
+  },
+  {
+    "id": "C13-Q7",
+    "type": "mc",
+    "q": "Cách kiểm tra tiêu đề Pull Request theo chuẩn Conventional Commits nào dưới đây AN TOÀN trước lỗi Script Injection trong GitHub Actions?",
+    "code": "",
+    "choices": [
+      "run: echo \"${{ github.event.pull_request.title }}\" | grep -E \"^(feat|fix|chore):\"",
+      "Gán env: PR_TITLE: ${{ github.event.pull_request.title }} rồi kiểm tra biến \"$PR_TITLE\" bên trong khối run:",
+      "Truyền thẳng ${{ github.event.pull_request.title }} vào đối số dòng lệnh sh -c",
+      "Dùng continue-on-error: true cho bước kiểm tra tiêu đề"
+    ],
+    "answer": 1,
+    "explain": "Truyền qua biến môi trường env: giúp shell coi toàn bộ tiêu đề PR (kể cả ký tự $(...) hay dấu nháy kép) là dữ liệu chuỗi thuần tuý thay vì mã lệnh thực thi."
+  }
+]

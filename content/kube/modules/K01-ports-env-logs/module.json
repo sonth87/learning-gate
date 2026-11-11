@@ -1,0 +1,51 @@
+{
+  "id": "K01",
+  "slug": "K01-ports-env-logs",
+  "level": 0,
+  "order": 1,
+  "title": "Ánh xạ cổng, Biến môi trường, Đọc Log & Khám bên trong Container",
+  "summary": "Nối cổng mạng -p HOST:CONTAINER, xử lý đụng cổng, truyền cấu hình qua -e như process.env và chẩn đoán bằng docker logs / exec.",
+  "tags": [
+    "ports",
+    "env",
+    "logs",
+    "exec",
+    "debugging"
+  ],
+  "sources": [
+    {
+      "title": "Docker Networking — Published Ports",
+      "url": "https://docs.docker.com/engine/network/#published-ports",
+      "version": "Docker Engine v27+"
+    },
+    {
+      "title": "Docker CLI — logs & exec Reference",
+      "url": "https://docs.docker.com/reference/cli/docker/container/logs/",
+      "version": "Docker Engine v27+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Tra cứu nhanh: Bảng lệnh Docker & K8s Cheatsheet",
+      "kind": "tab",
+      "targetId": "glossary",
+      "description": "Ôn nhanh các cờ -p, -e, logs, exec thường dùng khi vận hành"
+    }
+  ],
+  "readings": [
+    {
+      "path": "compose/bugs/compose.localhost-bug.yaml",
+      "kind": "bug",
+      "note": "Hiểu sâu vì sao mỗi container có không gian mạng riêng chứ không dùng chung localhost với máy chủ.",
+      "task": "Đọc phần cấu hình `DATABASE_URL` của dịch vụ `api` và giải thích vì sao gọi tới `localhost:5432` lại bị từ chối kết nối (`ECONNREFUSED`).",
+      "answer": "Mỗi container sở hữu giao diện loopback `127.0.0.1` (`localhost`) riêng biệt. Từ bên trong container `api`, `localhost:5432` quay ngược lại chính `api` (nơi chỉ có Node.js nghe ở cổng 3000) chứ không phải máy chủ hay container `postgres`."
+    },
+    {
+      "path": "docker/security/Dockerfile.build-arg-secret",
+      "kind": "security",
+      "note": "Phân biệt cấu hình truyền lúc chạy (`docker run -e`) với rủi ro đóng cứng khoá bí mật lúc build Image.",
+      "task": "Vì sao không được đóng gói khoá bí mật cố định vào trong Image mà phải truyền lúc khởi chạy (runtime) hoặc qua Secret Mount?",
+      "answer": "Mọi dữ liệu đặt trong `ARG` hoặc `ENV` lúc build đều bị lưu cứng vào metadata của Image (`docker history --no-trunc`). Tách biến nhạy cảm sang runtime (`-e` / `--env-file` / K8s Secret) giúp dùng chung một Image an toàn cho cả Dev, Staging và Production."
+    }
+  ]
+}

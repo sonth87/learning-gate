@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K14-Q1",
+    "type": "mc",
+    "q": "Hành động chính xác của Kubernetes là gì khi `readinessProbe` của một Pod báo thất bại liên tiếp vượt ngưỡng `failureThreshold`?",
+    "code": "",
+    "choices": [
+      "Giết ngay container bằng tín hiệu SIGKILL và tăng cột RESTARTS lên 1",
+      "Xoá vĩnh viễn Deployment chứa chiếc Pod đó",
+      "Giữ nguyên Pod đang chạy nhưng tạm thời rút IP của Pod khỏi danh sách Endpoints của Service để ngừng gửi khách mới vào",
+      "Tự động nhân đôi giới hạn bộ nhớ RAM cho Pod"
+    ],
+    "answer": 2,
+    "explain": "readinessProbe KHÔNG bao giờ giết Pod! Nó chỉ đánh dấu Pod Ready=false và rút IP khỏi Service Endpoints cho tới khi ứng dụng hồi phục và vượt qua bài kiểm tra trở lại."
+  },
+  {
+    "id": "K14-Q2",
+    "type": "tf",
+    "q": "Thực hành tốt nhất cho ứng dụng Node.js là trỏ `livenessProbe` vào một endpoint thực hiện truy vấn kiểm tra tất cả các phụ thuộc bên ngoài (PostgreSQL, Redis, cổng thanh toán bên thứ ba) để biết chắc hệ thống hoàn toàn khoẻ mạnh.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai hoàn toàn! Đặt kiểm tra DB/API ngoài vào livenessProbe là nguyên nhân gây sập dây chuyền (Cascading Failure): chỉ cần đối tác hoặc DB chập chờn vài giây, K8s sẽ tự tay giết sạch toàn bộ dàn API của bạn! Phụ thuộc ngoài chỉ được kiểm tra ở readinessProbe."
+  },
+  {
+    "id": "K14-Q3",
+    "type": "output",
+    "q": "Với cấu hình `startupProbe` dưới đây, ứng dụng có tổng quỹ thời gian tối đa bao nhiêu giây để hoàn tất khởi động lần đầu trước khi bị `kubelet` coi là thất bại? (Chỉ ghi con số nguyên)",
+    "code": "startupProbe:\n  httpGet:\n    path: /healthz\n    port: 3000\n  periodSeconds: 5\n  failureThreshold: 12",
+    "choices": [],
+    "answer": "60",
+    "explain": "Tổng quỹ thời gian khởi động tối đa của startupProbe được tính bằng periodSeconds * failureThreshold = 5 * 12 = 60 giây."
+  },
+  {
+    "id": "K14-Q4",
+    "type": "mc",
+    "q": "Khi `startupProbe` đang trong giai đoạn kiểm tra lúc mới bật container (chưa báo thành công lần đầu), trạng thái của `livenessProbe` và `readinessProbe` ra sao?",
+    "code": "",
+    "choices": [
+      "Cả ba chạy song song cùng một lúc ngay từ giây thứ 0",
+      "livenessProbe và readinessProbe bị tạm vô hiệu hoá hoàn toàn cho tới khi startupProbe thành công lần đầu tiên",
+      "livenessProbe bị xoá bỏ vĩnh viễn khỏi Pod",
+      "readinessProbe tự động chuyển thành trạng thái Ready=true ngay lập tức"
+    ],
+    "answer": 1,
+    "explain": "startupProbe sinh ra để bảo vệ ứng dụng khởi động chậm: chừng nào nó chưa pass lần đầu, kubelet tạm khoá không chạy livenessProbe để tránh giết oan ứng dụng đang nạp dữ liệu."
+  },
+  {
+    "id": "K14-Q5",
+    "type": "mc",
+    "q": "Tại sao ta nên cấu hình móc `lifecycle.preStop` chạy `[\"sh\", \"-c\", \"sleep 5\"]` trên các Pod API sản xuất?",
+    "code": "",
+    "choices": [
+      "Để làm đẹp log trước khi container tắt",
+      "Để chờ bảng định tuyến của Service/Ingress trên các Node kịp gỡ IP của Pod ra hoàn toàn trước khi tiến trình Node.js nhận SIGTERM đóng cổng lắng nghe",
+      "Để tiết kiệm 5% chi phí CPU trên hoá đơn đám mây",
+      "Vì Node.js không hỗ trợ bắt tín hiệu SIGTERM"
+    ],
+    "answer": 1,
+    "explain": "Việc gỡ Endpoint trên mạng cụm diễn ra song song bất đồng bộ với lệnh tắt Pod trên Node. Ngủ đệm 5s ở preStop giúp tránh hoàn toàn các gói tin khách hàng bay tới muộn bị lỗi 502."
+  },
+  {
+    "id": "K14-Q6",
+    "type": "tf",
+    "q": "Thời gian chạy của móc `lifecycle.preStop` được tính gộp chung vào bên trong tổng hạn mức `terminationGracePeriodSeconds` (mặc định 30 giây), chứ không phải được cộng thêm ra ngoài.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Nếu terminationGracePeriodSeconds là 30s mà preStop ngủ mất 25s, thì sau khi nhận SIGTERM ứng dụng chỉ còn đúng 5s cuối cùng để đóng kết nối trước khi ăn đòn SIGKILL."
+  },
+  {
+    "id": "K14-Q7",
+    "type": "output",
+    "q": "Khi một Pod hết hạn `terminationGracePeriodSeconds` mà tiến trình vẫn ngoan cố chưa chịu thoát sau tín hiệu `SIGTERM`, nhân Linux/kubelet sẽ gửi tín hiệu cưỡng bức tên là gì để kết liễu tiến trình?",
+    "code": "",
+    "choices": [],
+    "answer": "SIGKILL",
+    "explain": "Sau khi hết thời gian ân hạn mà tiến trình chưa dừng sau SIGTERM, hệ thống gửi SIGKILL (tín hiệu số 9 không thể bắt hay phớt lờ) để giải phóng tài nguyên ngay lập tức."
+  }
+]

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c03-1",
+    "type": "mc",
+    "q": "Đường dẫn thư mục nào trong kho Git là nơi bắt buộc để GitHub tự động nhận diện và thực thi các file cấu hình GitHub Actions Workflow?",
+    "code": "",
+    "choices": [
+      "`.github/actions/*.yml`",
+      "`.github/workflows/*.yml` (hoặc `*.yaml`)",
+      "`ci/pipelines/*.yml`",
+      "`workflows/github/*.json`"
+    ],
+    "answer": 1,
+    "explain": "Mọi file workflow của GitHub Actions bắt buộc phải đặt trực tiếp trong thư mục `.github/workflows/` với phần mở rộng `.yml` hoặc `.yaml`."
+  },
+  {
+    "id": "cicd-q-c03-2",
+    "type": "mc",
+    "q": "Khi bạn khai báo bộ lọc `on.pull_request.branches: [main]`, nếu một đồng nghiệp mở Pull Request từ nhánh `feat/payment-qr` xin gộp vào nhánh đích `main`, điều gì sẽ xảy ra?",
+    "code": "on:\n  pull_request:\n    branches: [main]",
+    "choices": [
+      "Workflow KHÔNG chạy vì tên nhánh của đồng nghiệp là `feat/payment-qr` chứ không phải `main`",
+      "Workflow TỰ ĐỘNG CHẠY vì `pull_request.branches` lọc theo nhánh đích (base branch) là `main`",
+      "Workflow chỉ chạy sau khi PR đã được bấm Merge xong xuôi",
+      "GitHub báo lỗi vì không được dùng cùng tên nhánh `main` ở `pull_request`"
+    ],
+    "answer": 1,
+    "explain": "Trong sự kiện `pull_request`, bộ lọc `branches:` áp dụng lên nhánh đích (base branch). Mọi PR từ bất kỳ nhánh `feat/*`, `fix/*` nào nhắm vào `main` đều sẽ được kiểm tra tự động!"
+  },
+  {
+    "id": "cicd-q-c03-3",
+    "type": "tf",
+    "q": "Viết chung `on: [push, pull_request]` không kèm bộ lọc nhánh sẽ khiến mỗi lần đẩy commit lên nhánh đang mở PR bị chạy trùng lặp 2 workflow giống hệt nhau, gây tốn gấp đôi số phút CI.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Giới hạn `push: branches: [main]` kết hợp `pull_request: branches: [main]` giúp PR chỉ chạy 1 luồng kiểm tra duy nhất cho mỗi lần cập nhật code."
+  },
+  {
+    "id": "cicd-q-c03-4",
+    "type": "mc",
+    "q": "Vì sao năm 2026 ta phải nâng cấp `actions/checkout@v2` và `actions/setup-node@v3` lên `@v4`?",
+    "code": "",
+    "choices": [
+      "Vì `@v2`/`@v3` dùng cú pháp JSON thay vì YAML",
+      "Vì các bản cũ chạy trên runtime Node 12/16 đã hết vòng đời hỗ trợ (EOL) trên GitHub-hosted Runners, còn `@v4` chạy trên runtime hiện đại nhanh và an toàn hơn",
+      "Vì `@v4` tự động viết hộ Unit Test cho dự án",
+      "Vì `@v2` chỉ chạy được trên hệ điều hành Windows"
+    ],
+    "answer": 1,
+    "explain": "GitHub đã ngừng hỗ trợ runtime Node 12 và Node 16 cho JavaScript Actions trên Hosted Runners; `@v4` cập nhật lên runtime mới, vá bảo mật và tối ưu tốc độ tải."
+  },
+  {
+    "id": "cicd-q-c03-5",
+    "type": "mc",
+    "q": "Khi bật `cache: \"npm\"` bên trong `actions/setup-node@v4`, Action này dựa vào file nào trong kho mã nguồn để tạo khoá băm (cache key) mặc định?",
+    "code": "- uses: actions/setup-node@v4\n  with:\n    node-version: \"22\"\n    cache: \"npm\"",
+    "choices": [
+      "`README.md`",
+      "`tsconfig.json`",
+      "`package-lock.json` (hoặc `npm-shrinkwrap.json`)",
+      "`.gitignore`"
+    ],
+    "answer": 2,
+    "explain": "`setup-node@v4` tự động băm nội dung `package-lock.json` để làm cache key cho thư mục `~/.npm`. Nếu bạn quên commit `package-lock.json` lên Git, tính năng `cache: \"npm\"` sẽ báo lỗi!"
+  },
+  {
+    "id": "cicd-q-c03-6",
+    "type": "output",
+    "q": "Cho cấu hình `workflow_dispatch` dưới đây. Nếu kỹ sư bấm nút **Run workflow** trên giao diện GitHub và giữ nguyên giá trị mặc định không sửa gì, bước `run` sẽ in ra chuỗi gì?",
+    "code": "on:\n  workflow_dispatch:\n    inputs:\n      target_env:\n        default: \"staging\"\n        required: true\njobs:\n  ping:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo \"Target=${{ inputs.target_env }}\"",
+    "choices": [],
+    "answer": "Target=staging",
+    "explain": "Khi kích hoạt thủ công bằng `workflow_dispatch` mà không đổi ô nhập liệu, `inputs.target_env` nhận giá trị `default: \"staging\"`, nên lệnh `echo` in ra `Target=staging`."
+  },
+  {
+    "id": "cicd-q-c03-7",
+    "type": "tf",
+    "q": "Mặc định `actions/checkout@v4` chỉ tải về đúng 1 commit mới nhất (`fetch-depth: 1` — shallow clone) thay vì toàn bộ lịch sử hàng nghìn commit của dự án để tiết kiệm băng thông và thời gian khởi động Job.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Chính xác! Mặc định `fetch-depth: 1` giúp bước checkout hoàn thành chỉ trong 1–2 giây. Chỉ khi nào dùng công cụ cần so sánh lịch sử Git (như SonarQube, semantic-release hay Turborepo affected) ta mới truyền `with: { fetch-depth: 0 }`."
+  }
+]

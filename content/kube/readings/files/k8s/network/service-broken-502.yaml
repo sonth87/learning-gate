@@ -1,0 +1,38 @@
+# SỰ CỐ MẠNG PHỔ BIẾN NHẤT TRÊN KUBERNETES:
+# Tất cả Pod đều "1/1 Running" xanh mượt, nhưng gọi vào Service lại thất bại hoàn toàn!
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/shop-api:1.0.0
+          ports:
+            # Ứng dụng Express lắng nghe trên cổng 3000
+            - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-api-svc
+spec:
+  type: ClusterIP
+  selector:
+    # LỖI 1: Tìm nhãn "app: shop-backend" trong khi Pod mang nhãn "app: shop-api"
+    # -> Chạy "kubectl get endpoints shop-api-svc" sẽ thấy ENDPOINTS = <none>!
+    app: shop-backend
+  ports:
+    - port: 80
+      # LỖI 2: Kể cả sửa đúng selector, targetPort đang trỏ nhầm vào cổng 8080 (container nghe ở 3000)
+      # -> Sẽ gây lỗi Connection Refused / 502 Bad Gateway từ Ingress!
+      targetPort: 8080

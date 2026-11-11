@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C11-C1",
+    "front": "Kể tên đúng thứ tự 5 lớp trong Phễu lọc DevSecOps chuẩn doanh nghiệp?",
+    "back": "1) Quét lộ Secret (`Gitleaks`), 2) Phân tích mã tĩnh SAST (`Semgrep`), 3) Kiểm toán thư viện SCA (`npm audit --omit=dev`), 4) Cổng CVE ảnh Container (`Trivy image`), 5) Xuất hồ sơ `SBOM` (`CycloneDX`)."
+  },
+  {
+    "id": "C11-C2",
+    "front": "Hai cờ quan trọng nhất cần nhớ khi chạy `gitleaks detect` trên CI?",
+    "back": "Cấu hình `fetch-depth: 0` ở bước `checkout` phía trước để lấy trọn lịch sử Git, và truyền `--redact` vào `gitleaks` để che chuỗi bí mật không in lộ ra log."
+  },
+  {
+    "id": "C11-C3",
+    "front": "Câu lệnh cổng chặn `trivy image` chuẩn thực dụng không gây báo động giả?",
+    "back": "`trivy image --exit-code 1 --severity CRITICAL --ignore-unfixed <tên-image>`."
+  },
+  {
+    "id": "C11-C4",
+    "front": "SBOM là gì và hai chuẩn định dạng tệp SBOM phổ biến nhất thế giới năm 2026?",
+    "back": "Software Bill of Materials (Danh mục thành phần phần mềm). Hai chuẩn định dạng chuẩn quốc tế là **CycloneDX** (`cyclonedx`) và **SPDX** (`spdx-json`)."
+  },
+  {
+    "id": "C11-C5",
+    "front": "Tại sao Kaniko an toàn vượt trội so với `docker:dind` trên GitLab / Kubernetes Runner?",
+    "back": "Kaniko đóng gói ảnh hoàn toàn trong không gian người dùng mà không cần Docker Daemon hay cờ `privileged: true`, triệt tiêu nguy cơ leo thang chiếm quyền máy chủ Runner."
+  },
+  {
+    "id": "C11-C6",
+    "front": "Tại sao nên thêm `--ignore-scripts` khi chạy `npm ci` trong bước kiểm toán bảo mật PR?",
+    "back": "Ngăn các kịch bản `preinstall`/`postinstall` độc hại ẩn trong gói thư viện lạ tự động thực thi mã bất hợp pháp ngay lúc cài đặt."
+  }
+]

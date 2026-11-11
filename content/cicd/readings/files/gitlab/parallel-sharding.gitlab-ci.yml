@@ -1,0 +1,16 @@
+# Tăng tốc bộ kiểm thử lớn gấp 4 lần trong GitLab CI cực gọn với từ khoá `parallel: 4`
+# GitLab tự động cấp sẵn 2 biến $CI_NODE_INDEX (1..4) và $CI_NODE_TOTAL (4) cho từng container.
+stages:
+  - test
+
+default:
+  image: node:22-alpine
+
+vitest_sharded:
+  stage: test
+  parallel: 4
+  timeout: 15m
+  script:
+    - npm ci --prefer-offline
+    - echo "Đang chạy mảnh kiểm thử số $CI_NODE_INDEX trên tổng $CI_NODE_TOTAL mảnh..."
+    - npx vitest run --shard="${CI_NODE_INDEX}/${CI_NODE_TOTAL}"

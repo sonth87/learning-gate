@@ -1,0 +1,51 @@
+{
+  "id": "K03",
+  "slug": "K03-first-dockerfile",
+  "level": 1,
+  "order": 3,
+  "title": "Viết Dockerfile đầu tiên chuẩn mực cho ứng dụng Node.js 22",
+  "summary": "Nắm vững FROM ghim phiên bản, WORKDIR, ENV, RUN npm ci tất định, JSON Exec Form CMD bảo toàn tín hiệu SIGTERM và docker build -t.",
+  "tags": [
+    "dockerfile",
+    "node22",
+    "npm-ci",
+    "exec-form",
+    "docker-build"
+  ],
+  "sources": [
+    {
+      "title": "Dockerfile Reference",
+      "url": "https://docs.docker.com/reference/dockerfile/",
+      "version": "Docker BuildKit / Engine v27+"
+    },
+    {
+      "title": "Containerize a Node.js Application",
+      "url": "https://docs.docker.com/guides/nodejs/containerize/",
+      "version": "Node.js 22 LTS"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Hành trình Code lên Container & K8s",
+      "kind": "flow",
+      "targetId": "code-to-k8s-pipeline",
+      "description": "Theo dõi bước docker build đóng gói Dockerfile thành Image"
+    }
+  ],
+  "readings": [
+    {
+      "path": "docker/node-api/Dockerfile.shell-trap",
+      "kind": "bug",
+      "note": "Bẫy PID 1 làm vô hiệu hoá hoàn toàn Graceful Shutdown của Express/Fastify.",
+      "task": "Giải thích vì sao `CMD npm start` khiến container mất đúng 10 giây mới dừng và bị giết thô bạo bằng `SIGKILL` thay vì đóng kết nối êm ái?",
+      "answer": "Viết `CMD npm start` (Shell Form) làm Docker chạy `/bin/sh -c \"npm start\"` ở PID 1. Khi nhận `SIGTERM` từ `docker stop`, `/bin/sh` trên Alpine không chuyển tiếp tín hiệu xuống `node`, nên hàm `process.on(\"SIGTERM\")` không bao giờ được gọi; hết 10s chờ Docker bắn `SIGKILL` (137). Cách sửa: `CMD [\"node\", \"src/server.js\"]`."
+    },
+    {
+      "path": "docker/node-api/Dockerfile.layer-cached",
+      "kind": "good",
+      "note": "Hình mẫu Dockerfile 1-stage gọn sạch cho dịch vụ JavaScript thuần trên Node 22 Alpine.",
+      "task": "Tìm trong file 3 quyết định kỹ thuật giúp bản đóng gói này có tính tất định (deterministic) và an toàn khi chạy lâu dài.",
+      "answer": "1) Ghim nền tảng `FROM node:22-alpine` thay vì `:latest`; 2) Cài đặt bằng `RUN npm ci --omit=dev` bám sát tuyệt đối `package-lock.json`; 3) Hạ quyền `USER node` và chạy trực tiếp `CMD [\"node\", \"src/server.js\"]` ở dạng mảng JSON."
+    }
+  ]
+}

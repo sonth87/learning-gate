@@ -1,0 +1,346 @@
+[
+  {
+    "id": "kube-ex-k15-1",
+    "code": "K15.1",
+    "module": "K15",
+    "title": "Khai báo định mức resources.requests và resources.limits cho API",
+    "difficulty": 1,
+    "tags": [
+      "resources",
+      "requests",
+      "limits"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "api-resources.yaml",
+    "prompt": "Đừng bao giờ đưa một Deployment trắng trơn (`BestEffort`) lên Production! Hãy thiết lập định mức tài nguyên cho container `api` của `shop-api`:\n\n1. `resources.requests`: `cpu: \"250m\"`, `memory: \"256Mi\"`\n2. `resources.limits`: `cpu: \"500m\"`, `memory: \"512Mi\"`",
+    "starter": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          # Thêm mục resources với requests (250m, 256Mi) và limits (500m, 512Mi)\n",
+    "solution": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: api\n          image: ghcr.io/acme/shop-api:1.4.0\n          ports:\n            - containerPort: 3000\n          resources:\n            requests:\n              cpu: \"250m\"\n              memory: \"256Mi\"\n            limits:\n              cpu: \"500m\"\n              memory: \"512Mi\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "req-cpu",
+          "doc": "requests.cpu tối thiểu 250m",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].resources.requests.cpu",
+          "match": {
+            "k8sCpuMinMillicores": 250
+          }
+        },
+        {
+          "id": "req-mem",
+          "doc": "requests.memory tối thiểu 256Mi",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].resources.requests.memory",
+          "match": {
+            "k8sMemMinMi": 256
+          }
+        },
+        {
+          "id": "lim-cpu",
+          "doc": "limits.cpu đặt đúng 500m",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].resources.limits.cpu",
+          "match": {
+            "k8sCpuMinMillicores": 500
+          }
+        },
+        {
+          "id": "lim-mem",
+          "doc": "limits.memory đặt đúng 512Mi",
+          "kind": "path",
+          "path": "spec.template.spec.containers[0].resources.limits.memory",
+          "match": {
+            "k8sMemMinMi": 512
+          }
+        }
+      ]
+    },
+    "hints": [
+      "`resources:` là thuộc tính nằm bên trong container `- name: api` (ngang hàng với `image` và `ports`)."
+    ],
+    "ref": "k8s/workloads/deployment-ha-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k15-2",
+    "code": "K15.2",
+    "module": "K15",
+    "title": "Cấu hình hạng bảo vệ cao nhất Guaranteed QoS cho Pod thanh toán",
+    "difficulty": 2,
+    "tags": [
+      "qos",
+      "guaranteed",
+      "resources"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "payment-guaranteed.yaml",
+    "prompt": "Pod xử lý lõi giao dịch `payment-core` cần đạt hạng **`Guaranteed` QoS** để không bị trục xuất khi Worker Node chịu áp lực bộ nhớ.\n\nHãy chỉnh sửa `resources` của container sao cho cả `requests` lẫn `limits` đều khớp tuyệt đối ở mức:\n- `cpu: \"500m\"`\n- `memory: \"512Mi\"`",
+    "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: payment-core\nspec:\n  containers:\n    - name: payment\n      image: ghcr.io/acme/payment-core:3.0.1\n      resources:\n        requests:\n          cpu: \"200m\"\n          memory: \"256Mi\"\n        # Chỉnh lại requests và thêm limits bằng khít nhau (500m CPU, 512Mi RAM)\n",
+    "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: payment-core\nspec:\n  containers:\n    - name: payment\n      image: ghcr.io/acme/payment-core:3.0.1\n      resources:\n        requests:\n          cpu: \"500m\"\n          memory: \"512Mi\"\n        limits:\n          cpu: \"500m\"\n          memory: \"512Mi\"\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "g-req-cpu",
+          "doc": "requests.cpu đặt \"500m\"",
+          "kind": "path",
+          "path": "spec.containers[0].resources.requests.cpu",
+          "match": {
+            "eq": "500m"
+          }
+        },
+        {
+          "id": "g-lim-cpu",
+          "doc": "limits.cpu bằng khít requests.cpu (\"500m\")",
+          "kind": "path",
+          "path": "spec.containers[0].resources.limits.cpu",
+          "match": {
+            "eq": "500m"
+          }
+        },
+        {
+          "id": "g-req-mem",
+          "doc": "requests.memory đặt \"512Mi\"",
+          "kind": "path",
+          "path": "spec.containers[0].resources.requests.memory",
+          "match": {
+            "eq": "512Mi"
+          }
+        },
+        {
+          "id": "g-lim-mem",
+          "doc": "limits.memory bằng khít requests.memory (\"512Mi\")",
+          "kind": "path",
+          "path": "spec.containers[0].resources.limits.memory",
+          "match": {
+            "eq": "512Mi"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Hạng `Guaranteed` yêu cầu cả 4 con số (`requests.cpu`, `limits.cpu` đều là `\"500m\"`, và `requests.memory`, `limits.memory` đều là `\"512Mi\"`)."
+    ],
+    "ref": "k8s/workloads/pod-minimal.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k15-3",
+    "code": "K15.3",
+    "module": "K15",
+    "title": "Viết HorizontalPodAutoscaler (autoscaling/v2) co giãn từ 2 đến 10 Pod",
+    "difficulty": 2,
+    "tags": [
+      "hpa",
+      "autoscaling",
+      "cpu"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "shop-api-hpa.yaml",
+    "prompt": "Thiết lập bộ tự động co giãn `HorizontalPodAutoscaler` (`apiVersion: autoscaling/v2`) tên là `shop-api-hpa` với:\n\n1. `spec.scaleTargetRef` nhắm tới `apiVersion: apps/v1`, `kind: Deployment`, `name: shop-api`.\n2. `minReplicas: 2` và `maxReplicas: 10`.\n3. `metrics[0]` theo dõi `type: Resource`, `resource.name: cpu` với mục tiêu `target.type: Utilization` và `target.averageUtilization: 70`.",
+    "starter": "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: shop-api-hpa\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: ____\n  minReplicas: 1\n  maxReplicas: 1\n  # Khai báo metrics theo dõi cpu Utilization ở ngưỡng averageUtilization: 70\n",
+    "solution": "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: shop-api-hpa\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: shop-api\n  minReplicas: 2\n  maxReplicas: 10\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: 70\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "hpa-api",
+          "doc": "Dùng chuẩn apiVersion: autoscaling/v2",
+          "kind": "path",
+          "docSelect": {
+            "kind": "HorizontalPodAutoscaler",
+            "name": "shop-api-hpa"
+          },
+          "path": "apiVersion",
+          "match": {
+            "eq": "autoscaling/v2"
+          }
+        },
+        {
+          "id": "hpa-target",
+          "doc": "Nhắm mục tiêu vào Deployment shop-api",
+          "kind": "path",
+          "path": "spec.scaleTargetRef.name",
+          "match": {
+            "eq": "shop-api"
+          }
+        },
+        {
+          "id": "hpa-min-max",
+          "doc": "Giới hạn minReplicas: 2 và maxReplicas: 10",
+          "kind": "path",
+          "path": "spec.maxReplicas",
+          "match": {
+            "eq": 10
+          }
+        },
+        {
+          "id": "hpa-min",
+          "doc": "Số bản sao tối thiểu minReplicas: 2",
+          "kind": "path",
+          "path": "spec.minReplicas",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "hpa-cpu-70",
+          "doc": "Đặt ngưỡng CPU averageUtilization: 70",
+          "kind": "path",
+          "path": "spec.metrics[0].resource.target.averageUtilization",
+          "match": {
+            "eq": 70
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Cấu trúc chuẩn của `autoscaling/v2` cho CPU là: `metrics: [{ type: Resource, resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } } }]`."
+    ],
+    "ref": "k8s/workloads/hpa-v2-api.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k15-4",
+    "code": "K15.4",
+    "module": "K15",
+    "title": "Viết batch/v1 Job chạy kịch bản Database Migration một lần",
+    "difficulty": 2,
+    "tags": [
+      "job",
+      "migration",
+      "batch"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "db-migrate-job.yaml",
+    "prompt": "Trước khi nâng cấp code mới, ta cần chạy lệnh Prisma/Knex migration đúng một lần bằng đối tượng `Job` (`apiVersion: batch/v1`) tên là `db-migrate`:\n\n1. `spec.backoffLimit: 3`\n2. `spec.template.spec.restartPolicy: Never`\n3. Container `migrate` dùng image `ghcr.io/acme/shop-api:1.5.0` và chạy `command: [\"npm\", \"run\", \"migrate:deploy\"]`.",
+    "starter": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate\nspec:\n  backoffLimit: ____\n  template:\n    spec:\n      restartPolicy: Always\n      containers:\n        - name: migrate\n          image: ghcr.io/acme/shop-api:1.5.0\n          # Khai báo command chạy [\"npm\", \"run\", \"migrate:deploy\"]\n",
+    "solution": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate\nspec:\n  backoffLimit: 3\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n        - name: migrate\n          image: ghcr.io/acme/shop-api:1.5.0\n          command: [\"npm\", \"run\", \"migrate:deploy\"]\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "job-backoff",
+          "doc": "Giới hạn số lần thử lại spec.backoffLimit: 3",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Job",
+            "name": "db-migrate"
+          },
+          "path": "spec.backoffLimit",
+          "match": {
+            "eq": 3
+          }
+        },
+        {
+          "id": "job-restart-never",
+          "doc": "Đổi restartPolicy sang Never (Job không cho phép Always)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Job",
+            "name": "db-migrate"
+          },
+          "path": "spec.template.spec.restartPolicy",
+          "match": {
+            "eq": "Never"
+          }
+        },
+        {
+          "id": "job-cmd",
+          "doc": "Chạy đúng mảng lệnh [\"npm\", \"run\", \"migrate:deploy\"]",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Job",
+            "name": "db-migrate"
+          },
+          "path": "spec.template.spec.containers[0].command",
+          "match": {
+            "eq": [
+              "npm",
+              "run",
+              "migrate:deploy"
+            ]
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Nhớ sửa `restartPolicy: Always` thành `restartPolicy: Never` — nếu để `Always`, Kubernetes API Server sẽ từ chối tạo Job!"
+    ],
+    "ref": "k8s/workloads/cronjob-backup.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "kube-ex-k15-5",
+    "code": "K15.5",
+    "module": "K15",
+    "title": "Viết CronJob xuất báo cáo lúc 02:00 sáng hàng ngày chống chạy đè",
+    "difficulty": 3,
+    "tags": [
+      "cronjob",
+      "schedule",
+      "batch"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "nightly-report-cronjob.yaml",
+    "prompt": "Hoàn thiện `CronJob` (`apiVersion: batch/v1`) tên là `nightly-report` tự động tổng hợp doanh thu mỗi đêm:\n\n1. `spec.schedule: \"0 2 * * *\"` (02:00 sáng mỗi ngày).\n2. `spec.concurrencyPolicy: Forbid` (ngăn chạy chồng 2 kỳ báo cáo cùng lúc).\n3. Bên trong `spec.jobTemplate.spec.template.spec`: đặt `restartPolicy: OnFailure` và giữ container `reporter` chạy `[\"node\", \"dist/jobs/report.js\"]`.",
+    "starter": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: nightly-report\nspec:\n  schedule: \"____\"\n  concurrencyPolicy: Allow\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          restartPolicy: ____\n          containers:\n            - name: reporter\n              image: ghcr.io/acme/shop-worker:1.5.0\n              command: [\"node\", \"dist/jobs/report.js\"]\n",
+    "solution": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: nightly-report\nspec:\n  schedule: \"0 2 * * *\"\n  concurrencyPolicy: Forbid\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          restartPolicy: OnFailure\n          containers:\n            - name: reporter\n              image: ghcr.io/acme/shop-worker:1.5.0\n              command: [\"node\", \"dist/jobs/report.js\"]\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "cron-schedule",
+          "doc": "Lịch chạy chuẩn \"0 2 * * *\" (02:00 hàng ngày)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "CronJob",
+            "name": "nightly-report"
+          },
+          "path": "spec.schedule",
+          "match": {
+            "eq": "0 2 * * *"
+          }
+        },
+        {
+          "id": "cron-forbid",
+          "doc": "Chống chạy đè với concurrencyPolicy: Forbid",
+          "kind": "path",
+          "docSelect": {
+            "kind": "CronJob",
+            "name": "nightly-report"
+          },
+          "path": "spec.concurrencyPolicy",
+          "match": {
+            "eq": "Forbid"
+          }
+        },
+        {
+          "id": "cron-restart",
+          "doc": "Đặt restartPolicy: OnFailure trong jobTemplate",
+          "kind": "path",
+          "docSelect": {
+            "kind": "CronJob",
+            "name": "nightly-report"
+          },
+          "path": "spec.jobTemplate.spec.template.spec.restartPolicy",
+          "match": {
+            "eq": "OnFailure"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Luôn đặt chuỗi lịch Cron trong dấu nháy kép `\"0 2 * * *\"` vì dấu `*` đứng đầu trong YAML không có nháy sẽ bị hiểu nhầm là cú pháp alias!",
+      "Đổi `concurrencyPolicy: Allow` sang `Forbid` và điền `restartPolicy: OnFailure`."
+    ],
+    "ref": "k8s/workloads/cronjob-backup.yaml",
+    "webGrade": true
+  }
+]

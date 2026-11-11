@@ -1,0 +1,55 @@
+{
+  "id": "K13",
+  "slug": "K13-pvc-and-statefulsets",
+  "level": 4,
+  "order": 13,
+  "title": "Lưu trữ bền vững trong K8s: PersistentVolumeClaim, StorageClass & StatefulSet",
+  "summary": "Cấp phát ổ đĩa động qua PVC & StorageClass, phân biệt ReadWriteOnce vs ReadWriteMany, và vận hành Database với StatefulSet + Headless Service.",
+  "tags": [
+    "pvc",
+    "storageclass",
+    "statefulset",
+    "headless-service",
+    "database"
+  ],
+  "sources": [
+    {
+      "title": "Persistent Volumes & Dynamic Provisioning",
+      "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "StatefulSets Workload Documentation",
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Cấp phát ổ đĩa động PVC & StorageClass",
+      "kind": "flow",
+      "targetId": "pvc-storage-dynamic"
+    },
+    {
+      "label": "War Room: Pod kẹt Pending do PVC (#5)",
+      "kind": "incident",
+      "targetId": "incident-5-pending"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/workloads/statefulset-postgres.yaml",
+      "kind": "good",
+      "note": "Kiến trúc chuẩn triển khai PostgreSQL trên K8s: kết hợp Headless Service (clusterIP: None) và StatefulSet có volumeClaimTemplates riêng cho từng bản sao.",
+      "task": "Quan sát phần volumeClaimTemplates và giải thích điều gì xảy ra với các ổ đĩa dữ liệu nếu bạn chạy lệnh xoá StatefulSet này.",
+      "answer": "Mỗi Pod (postgres-0, postgres-1) được tạo tự động một PVC riêng biệt từ khuôn mẫu volumeClaimTemplates. Khi xoá StatefulSet hoặc giảm số lượng replicas, Kubernetes CỐ TÌNH giữ nguyên các PVC đó (không tự động xoá) để bảo vệ an toàn dữ liệu Database."
+    },
+    {
+      "path": "k8s/workloads/pvc-wrong-storageclass.yaml",
+      "kind": "bug",
+      "note": "Lỗi thực tế khiến cả PVC lẫn Pod đứng chờ ở trạng thái Pending do gõ sai tên StorageClass không có trên cụm.",
+      "task": "Tìm dòng cấu hình sai trong PVC khiến CSI Provisioner không thể cắt ổ đĩa cho ứng dụng.",
+      "answer": "Trường storageClassName đang điền \"fast-nvme-typo\" không tồn tại trong danh sách StorageClass của cụm. Cần kiểm tra bằng kubectl get storageclass và đổi về hạng chuẩn như gp3 hoặc standard."
+    }
+  ]
+}

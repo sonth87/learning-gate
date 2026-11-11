@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c02-1",
+    "front": "Trunk-Based Development giải quyết cơn ác mộng \"Merge Hell\" bằng nguyên tắc nào?",
+    "back": "Mọi lập trình viên tạo nhánh ngắn hạn (`short-lived branch` < 1–2 ngày) từ `main`, kiểm định tự động qua PR nhỏ và merge về `main` hàng ngày (kết hợp Feature Flag cho tính năng dài ngày)."
+  },
+  {
+    "id": "cicd-card-c02-2",
+    "front": "Kể tên 5 thủ phạm phổ biến nhất gây lỗi \"Chạy được trên máy em nhưng đỏ trên CI\".",
+    "back": "1) Trôi phiên bản Node/npm (`latest`, `npm install`); 2) Treo Watch/Interactive prompt (`CI` chưa bật); 3) Phân biệt hoa/thường file trên Linux; 4) Lệch múi giờ (`TZ`); 5) Đẻ quá nhiều test worker gây tràn RAM (`OOM 137`)."
+  },
+  {
+    "id": "cicd-card-c02-3",
+    "front": "Biến môi trường `CI: true` tác động thế nào tới các công cụ Node.js như Vitest, Jest, Playwright, npm?",
+    "back": "Báo hiệu môi trường tự động không người ngồi trực: tự tắt Watch Mode, tự từ chối hộp thoại hỏi Y/n tương tác, và tắt hiệu ứng thanh tiến trình động gây rác log."
+  },
+  {
+    "id": "cicd-card-c02-4",
+    "front": "Cấu hình phần cứng mặc định của một GitHub-hosted Runner `ubuntu-latest` tiêu chuẩn cần nhớ khi tối ưu worker Node.js là bao nhiêu?",
+    "back": "Khoảng 2–4 vCPU và 7–16 GB RAM tuỳ thế hệ image (phổ biến 2 vCPU / 7 GB RAM trên gói tiêu chuẩn), nên việc để Jest/Vitest đẻ 8–16 worker song song rất dễ chạm ngưỡng OOM 137."
+  },
+  {
+    "id": "cicd-card-c02-5",
+    "front": "Làm sao ngăn lỗi Snapshot ngày giờ lệch nhau giữa laptop Việt Nam (`Asia/Ho_Chi_Minh`) và máy chủ CI?",
+    "back": "Đặt biến môi trường `TZ: \"UTC\"` thống nhất trong cấu hình Job CI và trong script chạy test."
+  },
+  {
+    "id": "cicd-card-c02-6",
+    "front": "Lệnh Git hiện đại nào thay thế `git checkout -b <nhánh>` để tạo và chuyển sang nhánh tính năng mới rõ nghĩa hơn?",
+    "back": "`git switch -c <nhánh>` (ví dụ `git switch -c feat/healthz`), và dùng `git switch main` để quay về nhánh chính."
+  }
+]

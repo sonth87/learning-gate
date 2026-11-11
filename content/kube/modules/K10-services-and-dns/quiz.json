@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K10-Q1",
+    "type": "mc",
+    "q": "Vì sao các microservice trong Kubernetes không bao giờ kết nối trực tiếp bằng địa chỉ IP của từng Pod mà luôn gọi thông qua một **`Service`**?",
+    "code": "",
+    "choices": [
+      "Vì Pod không hề có địa chỉ IP",
+      "Vì Pod có vòng đời ngắn hạn và mỗi lần khởi tạo lại sẽ nhận một IP mới; `Service` cung cấp một IP ảo cố định (VIP) và tên miền DNS ổn định kèm cân bằng tải tự động tới các Pod khoẻ mạnh",
+      "Vì `Service` giúp tự động biên dịch TypeScript nhanh hơn",
+      "Vì chỉ có `Service` mới lưu được tệp lên ổ cứng"
+    ],
+    "answer": 1,
+    "explain": "Pod IP mang tính tạm thời (ephemeral); `Service` giữ nguyên tên DNS và Virtual IP bất biến, tự động cập nhật danh sách Pod đích thông qua `EndpointSlice`."
+  },
+  {
+    "id": "K10-Q2",
+    "type": "mc",
+    "q": "Nếu bạn khai báo một `Service` mà không ghi trường `spec.type`, Kubernetes mặc định chọn loại Service nào?",
+    "code": "",
+    "choices": [
+      "`LoadBalancer`",
+      "`NodePort`",
+      "`ClusterIP` (chỉ truy cập nội bộ trong cụm)",
+      "`ExternalName`"
+    ],
+    "answer": 2,
+    "explain": "`ClusterIP` là kiểu mặc định và an toàn nhất — chỉ mở kết nối cho các thành phần bên trong cụm Kubernetes."
+  },
+  {
+    "id": "K10-Q3",
+    "type": "mc",
+    "q": "Trong khai báo `ports: [{ port: 80, targetPort: 3000 }]` của một `Service`, hai con số `80` và `3000` đóng vai trò gì?",
+    "code": "",
+    "choices": [
+      "`80` là cổng tiến trình Node.js lắng nghe trong Pod, còn `3000` là cổng trên Service",
+      "`port: 80` là cổng trên chính chiếc Service (khách gọi `http://my-svc:80`), còn `targetPort: 3000` là cổng thực tế tiến trình Node.js đang lắng nghe bên trong Pod (`app.listen(3000)`)",
+      "Cả hai đều là cổng mở trên máy tính cá nhân của lập trình viên",
+      "`3000` là số lượng kết nối tối đa trong `80` giây"
+    ],
+    "answer": 1,
+    "explain": "`port` là mặt tiền của Service; `targetPort` là đích đến bên trong container của Pod."
+  },
+  {
+    "id": "K10-Q4",
+    "type": "output",
+    "q": "Ứng dụng Web ở namespace `frontend` cần kết nối tới Service tên `redis-master` nằm ở namespace `cache`. Tên miền đầy đủ (FQDN) chuẩn CoreDNS có dạng `redis-master.____.svc.cluster.local` — từ còn thiếu là gì?",
+    "code": "REDIS_HOST: redis-master.____.svc.cluster.local",
+    "choices": [],
+    "answer": "cache",
+    "explain": "Cấu trúc FQDN của CoreDNS luôn là `<service-name>.<namespace-name>.svc.cluster.local`."
+  },
+  {
+    "id": "K10-Q5",
+    "type": "tf",
+    "q": "Khi tạo một `Service` kiểu `NodePort`, giá trị `nodePort` hợp lệ mặc định trong Kubernetes phải nằm trong dải cổng từ `30000` đến `32767`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Kubernetes dành riêng dải `30000–32767` trên các Worker Node cho `NodePort` để tránh xung đột với các cổng dịch vụ hệ thống."
+  },
+  {
+    "id": "K10-Q6",
+    "type": "mc",
+    "q": "Bạn chạy `kubectl get endpoints shop-api-svc` và thấy cột `ENDPOINTS` hiển thị `<none>` dù các Pod của `shop-api` đều đang `1/1 Running`. Nguyên nhân khả dĩ nhất là gì?",
+    "code": "",
+    "choices": [
+      "Ổ cứng của Control Plane bị đầy",
+      "Nhãn trong `spec.selector` của `Service` viết sai không khớp với nhãn `metadata.labels` trên các Pod",
+      "Chưa cài đặt Helm trên máy cá nhân",
+      "Image dùng nền Alpine thay vì Debian"
+    ],
+    "answer": 1,
+    "explain": "`ENDPOINTS = <none>` báo hiệu Service không tìm thấy bất kỳ Pod `Ready` nào khớp với bộ lọc nhãn `spec.selector` của nó."
+  },
+  {
+    "id": "K10-Q7",
+    "type": "output",
+    "q": "Trong câu lệnh Imperative dưới đây để tạo nhanh một Service từ `deployment/catalog`, từ khoá lệnh con đứng ngay sau `kubectl ____` là gì?",
+    "code": "kubectl ____ deployment catalog --name=catalog-svc --port=80 --target-port=4000",
+    "choices": [],
+    "answer": "expose",
+    "explain": "`kubectl expose` tự động lấy bộ nhãn selector của Deployment để tạo ra một Service định tuyến vào đúng các Pod đó."
+  }
+]

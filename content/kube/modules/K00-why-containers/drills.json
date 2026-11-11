@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K00-D1",
+    "title": "Tải Image ghim phiên bản và chạy ngầm container đặt tên rõ ràng",
+    "code": "docker pull nginx:1.27-alpine\ndocker run -d --name gateway-web nginx:1.27-alpine\ndocker ps"
+  },
+  {
+    "id": "K00-D2",
+    "title": "Kiểm tra cả container đã dừng, tắt êm ái và dọn sạch container cũ",
+    "code": "docker ps -a\ndocker stop legacy-worker\ndocker rm legacy-worker"
+  }
+]

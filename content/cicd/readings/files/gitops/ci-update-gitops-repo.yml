@@ -1,0 +1,42 @@
+# MÔ HÌNH PULL-BASED GITOPS CHUẨN:
+# Kho mã ứng dụng (App Repo) KHÔNG HỀ giữ kubeconfig của cụm Kubernetes Production!
+# CI chỉ đóng gói Image mang thẻ bất biến `sha-...`, sau đó mở commit cập nhật tệp kustomization.yaml bên kho GitOps.
+name: Build Immutable Image & Update GitOps Repo
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-bump-manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tính toán thẻ Image bất biến
+        id: vars
+        run: echo "image_tag=sha-$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Đóng gói & đẩy Image lên GHCR (bỏ qua chi tiết login mẫu)
+        run: echo "Pushing ghcr.io/acme-corp/shop-api:${{ steps.vars.outputs.image_tag }}"
+
+      - name: Tải kho cấu hình hạ tầng shop-gitops riêng biệt
+        uses: actions/checkout@v4
+        with:
+          repository: acme-corp/shop-gitops
+          token: ${{ secrets.GITOPS_REPO_WRITE_TOKEN_PLACEHOLDER }}
+          path: gitops-repo
+
+      - name: Cập nhật thẻ Image mới trong Kustomize overlay Production
+        working-directory: gitops-repo/apps/shop-api/overlays/production
+        run: |
+          kustomize edit set image ghcr.io/acme-corp/shop-api=ghcr.io/acme-corp/shop-api:${{ steps.vars.outputs.image_tag }}
+          git config user.name "ci-gitops-bot"
+          git config user.email "ci-bot@example.invalid"
+          git commit -am "deploy(shop-api): promote ${{ steps.vars.outputs.image_tag }} to production"
+          git push origin main

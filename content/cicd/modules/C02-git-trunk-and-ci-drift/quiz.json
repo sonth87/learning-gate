@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c02-1",
+    "type": "mc",
+    "q": "Triết lý cốt lõi của mô hình phân nhánh Trunk-Based Development khi kết hợp với CI/CD hiện đại là gì?",
+    "code": "",
+    "choices": [
+      "Mỗi lập trình viên giữ một nhánh riêng dài 2–3 tháng rồi cuối quý mới gộp một lần lớn",
+      "Tách các nhánh tính năng ngắn hạn (vài giờ đến 1–2 ngày), kiểm định tự động qua PR và gộp liên tục về nhánh thân chính `main`",
+      "Xoá bỏ hoàn toàn nhánh `main` và đẩy code trực tiếp từ laptop lên máy chủ Production qua FTP",
+      "Tạo riêng một nhánh Git cho từng khách hàng sử dụng phần mềm"
+    ],
+    "answer": 1,
+    "explain": "Trunk-Based Development giảm thiểu kích thước thay đổi ở mỗi lần merge, giúp CI chạy nhanh, dễ review và triệt tiêu tình trạng Merge Hell của các nhánh sống quá lâu."
+  },
+  {
+    "id": "cicd-q-c02-2",
+    "type": "mc",
+    "q": "Trên MacBook cá nhân câu lệnh `import Card from \"./UserCard\"` chạy bình thường dù tên file thật trên ổ đĩa là `userCard.tsx`, nhưng khi đẩy lên runner `ubuntu-latest` bước `npm run build` lập tức báo lỗi `Cannot find module \"./UserCard\"`. Nguyên nhân do đâu?",
+    "code": "",
+    "choices": [
+      "Do Ubuntu không hỗ trợ đuôi file `.tsx` của React",
+      "Do hệ thống file mặc định của macOS (APFS) không phân biệt chữ hoa/thường (case-insensitive), còn hệ thống file ext4 của Linux phân biệt tuyệt đối `UserCard` với `userCard`",
+      "Do `actions/checkout@v4` tự động đổi toàn bộ tên file sang chữ in hoa",
+      "Do thiếu biến môi trường `TZ: UTC`"
+    ],
+    "answer": 1,
+    "explain": "Linux `ext4` phân biệt chữ hoa chữ thường nghiêm ngặt (`UserCard.tsx` != `userCard.tsx`), trong khi macOS/Windows mặc định không phân biệt. Bật `forceConsistentCasingInFileNames: true` trong `tsconfig.json` giúp phát hiện lỗi này ngay trên máy dev."
+  },
+  {
+    "id": "cicd-q-c02-3",
+    "type": "tf",
+    "q": "Khai báo `node-version: latest` trong `actions/setup-node@v4` là thực hành tốt nhất cho Production vì luôn giúp dự án tự động lên đời bản Node.js mới nhất ngay ngày phát hành.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Dùng `latest` khiến một sáng đẹp trời khi Node phát hành bản Major mới có breaking change, toàn bộ Pull Request của công ty đồng loạt gãy dù không ai sửa dòng code nào. Luôn ghim phiên bản LTS cụ thể như `\"22\"`."
+  },
+  {
+    "id": "cicd-q-c02-4",
+    "type": "mc",
+    "q": "Vì sao bước chạy `npx vitest` kèm `CI: false` trên máy chạy tự động lại làm Job bị treo cứng không bao giờ kết thúc?",
+    "code": "env:\n  CI: false\nrun: npx vitest",
+    "choices": [
+      "Vì Vitest tự động bật chế độ Watch Mode tương tác, ngồi chờ người dùng nhấn phím trên terminal vô thời hạn",
+      "Vì Vitest phải tải trình duyệt Chrome nặng 50 GB",
+      "Vì GitHub chặn từ khoá `npx` trên hệ điều hành Ubuntu",
+      "Vì `CI: false` làm tắt card mạng của máy ảo"
+    ],
+    "answer": 0,
+    "explain": "Khi không có cờ `run` và `CI` không phải `true`, `vitest` mặc định vào chế độ theo dõi file (watch mode) chờ bàn phím tương tác — thứ không tồn tại trên headless CI runner."
+  },
+  {
+    "id": "cicd-q-c02-5",
+    "type": "output",
+    "q": "Khi đặt biến môi trường `TZ=UTC`, biểu thức Node.js sau đây sẽ in ra con số giờ (`getHours()`) là bao nhiêu?",
+    "code": "TZ=UTC node -e \"console.log(new Date('2026-05-01T08:30:00Z').getHours())\"",
+    "choices": [],
+    "answer": "8",
+    "explain": "Chuỗi ISO kết thúc bằng `Z` biểu thị 08:30 theo chuẩn UTC. Khi `TZ=UTC`, hàm `getHours()` trả về đúng `8` trên mọi máy tính toàn cầu (thay vì trả về `15` trên laptop đặt múi giờ Việt Nam GMT+7)."
+  },
+  {
+    "id": "cicd-q-c02-6",
+    "type": "mc",
+    "q": "Bộ test Jest chạy mượt trên laptop 32 GB RAM nhưng liên tục sập với `Exit Code 137` trên GitHub-hosted Runner tiêu chuẩn (2 vCPU, 7 GB RAM). Cặp cấu hình nào giải quyết trực tiếp tận gốc vấn đề này?",
+    "code": "",
+    "choices": [
+      "Thêm `|| true` vào sau lệnh `jest` để bỏ qua mã 137",
+      "Giới hạn số tiến trình con `--maxWorkers=2` kết hợp cấp ngưỡng V8 heap hợp lý qua `NODE_OPTIONS: \"--max-old-space-size=4096\"`",
+      "Đổi `npm ci` ngược về `npm install --force`",
+      "Tắt kiểm tra kiểu dữ liệu TypeScript hoàn toàn"
+    ],
+    "answer": 1,
+    "explain": "Giới hạn `--maxWorkers=2` ngăn Jest đẻ quá nhiều worker ngốn cạn 7 GB RAM của máy 2 nhân, đồng thời `--max-old-space-size=4096` kiểm soát trần bộ nhớ V8 rõ ràng để tránh bị Linux OOM Killer bắn `SIGKILL` (137)."
+  },
+  {
+    "id": "cicd-q-c02-7",
+    "type": "tf",
+    "q": "Khi phát triển một tính năng lớn cần 2 tuần mới hoàn thiện giao diện, đội áp dụng Trunk-Based Development có thể giấu tính năng chưa xong sau Feature Flag để vẫn merge code nhỏ hàng ngày vào `main` một cách an toàn.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Feature Flags tách rời việc \"tích hợp mã nguồn\" (merge hàng ngày) khỏi việc \"bật tính năng cho khách hàng\" (release), giúp nhánh `main` luôn xanh và tránh nhánh tồn tại nhiều tuần."
+  }
+]

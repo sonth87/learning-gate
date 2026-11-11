@@ -1,0 +1,57 @@
+{
+  "id": "C09",
+  "slug": "C09-gitlab-ci-architecture",
+  "level": 2,
+  "order": 9,
+  "title": "Kiến trúc GitLab CI/CD Thực chiến: Chuyển đổi Tư duy từ GitHub Actions sang .gitlab-ci.yml",
+  "summary": "Làm chủ ngữ pháp .gitlab-ci.yml hiện đại: stages, default.image, vượt rào với DAG needs, quản lý cache policy pull-push vs pull, parallel sharding và rules.",
+  "tags": [
+    "gitlab-ci",
+    "stages",
+    "needs",
+    "cache-policy",
+    "rules"
+  ],
+  "sources": [
+    {
+      "title": "GitLab CI/CD YAML Syntax Reference",
+      "url": "https://docs.gitlab.com/ee/ci/yaml/",
+      "version": "GitLab 17.x+"
+    },
+    {
+      "title": "Directed Acyclic Graph (DAG) Pipelines & Cache Policies",
+      "url": "https://docs.gitlab.com/ee/ci/directed_acyclic_graph/",
+      "version": "GitLab 17.x+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Blueprint #2: GitLab CI DevSecOps DAG",
+      "kind": "blueprint",
+      "targetId": "full-flow-2-gitlab-devsecops"
+    }
+  ],
+  "readings": [
+    {
+      "path": "gitlab/node-dag-pipeline.gitlab-ci.yml",
+      "kind": "good",
+      "note": "Bản mẫu .gitlab-ci.yml chuẩn Node.js 22 sử dụng default.image, đồ thị needs vượt rào cản stage tuần tự và artifacts có hạn sử dụng expire_in.",
+      "task": "Giải thích tại sao trong GitLab CI, các Job ở stage deploy tự động có sẵn thư mục dist/ từ stage build mà không cần viết lệnh download-artifact thủ công như GitHub Actions.",
+      "answer": "Trong GitLab CI, mọi artifacts sinh ra ở stage trước mặc định được tự động tải xuống tất cả các Job ở các stage sau (hoặc tải có chọn lọc từ đúng các Job được liệt kê trong mảng `needs:`)."
+    },
+    {
+      "path": "gitlab/cache-pull-push.gitlab-ci.yml",
+      "kind": "good",
+      "note": "Cách thiết lập bộ đệm .npm/ chuẩn mực trong thư mục dự án GitLab với khóa băm package-lock.json và phân tách quyền ghi pull-push / chỉ đọc pull.",
+      "task": "Tại sao trên GitLab CI ta phải đặt thư mục đệm tại .npm/ bên trong dự án thay vì ~/.npm (/root/.npm) như trên GitHub Actions?",
+      "answer": "GitLab Runner chỉ có quyền đóng gói lưu đệm các tệp/thư mục nằm bên trong thư mục làm việc của dự án ($CI_PROJECT_DIR); mọi đường dẫn bên ngoài như /root/.npm sẽ bị bỏ qua không lưu được."
+    },
+    {
+      "path": "gitlab/legacy-only-except.gitlab-ci.yml",
+      "kind": "outdated",
+      "note": "Tệp cấu hình di sản dùng từ khóa cũ only: và except: đã bị GitLab ngừng phát triển và khuyến nghị chuyển sang khối rules:.",
+      "task": "So sánh sự rõ ràng khi kết hợp điều kiện nhánh main kèm cổng bấm duyệt tay giữa kiểu cũ và khối rules: mới.",
+      "answer": "Với `rules:`, toàn bộ logic điều kiện nhánh (`if: $CI_COMMIT_BRANCH == \"main\"`), chế độ kích hoạt (`when: manual`) và tính năng chặn đường ống (`allow_failure: false`) gom gọn trong một khối duy nhất rất dễ đọc và không gây lỗi nhân đôi Pipeline."
+    }
+  ]
+}

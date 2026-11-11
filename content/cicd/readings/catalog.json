@@ -1,0 +1,774 @@
+{
+  "categories": {
+    "github-actions": "GitHub Actions Workflows",
+    "gitlab-ci": "GitLab CI Pipelines",
+    "devsecops": "DevSecOps, OIDC & Security Gate",
+    "gitops": "GitOps, ArgoCD & Deployment",
+    "governance": "CODEOWNERS, Monorepo & AI Gate"
+  },
+  "flagLabels": {
+    "production-ready": "Chuẩn Production",
+    "outdated": "Cú pháp đã ngừng hỗ trợ",
+    "security-risk": "Lỗ hổng bảo mật cố ý",
+    "buggy": "Chứa lỗi để tìm bug"
+  },
+  "items": [
+    {
+      "path": "github/node-ci-minimal.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Workflow CI tối giản chuẩn Node.js 22",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "github-actions",
+        "node-22",
+        "npm-ci",
+        "checkout-v4"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs"
+    },
+    {
+      "path": "github/false-green-exitcode.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Bẫy False-Green: nuốt Exit Code bằng || true và curl thiếu --fail",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "exit-code",
+        "false-green",
+        "curl",
+        "continue-on-error"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idstepscontinue-on-error"
+    },
+    {
+      "path": "github/ephemeral-runner-bug.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Bẫy Ephemeral Runner: quên truyền dist/ giữa hai Job độc lập",
+      "level": 0,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "ephemeral-runner",
+        "artifacts",
+        "jobs-isolation"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-and-sharing-data-from-a-workflow"
+    },
+    {
+      "path": "github/local-vs-ci-drift.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Lệch môi trường Local vs CI: node latest, npm install và treo CLI prompt",
+      "level": 0,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "drift",
+        "npm-install",
+        "interactive-prompt",
+        "node-version"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs"
+    },
+    {
+      "path": "github/legacy-v2-set-output.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Workflow di sản lỗi thời: checkout@v2 và lệnh ::set-output đã bị gỡ bỏ",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 4,
+      "tags": [
+        "legacy",
+        "set-output",
+        "deprecated",
+        "node-16"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-an-output-parameter"
+    },
+    {
+      "path": "github/outputs-and-conditions.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Truyền biến với $GITHUB_OUTPUT, điều kiện if: failure() và paths-ignore",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "github-output",
+        "conditions",
+        "paths-ignore",
+        "failure-logs"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/passing-information-between-jobs"
+    },
+    {
+      "path": "github/dag-matrix-fanin.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Đồ thị DAG song song kết hợp Matrix Node 20/22 và cổng hội tụ Fan-in",
+      "level": 1,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "dag",
+        "needs",
+        "matrix",
+        "fail-fast"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/running-variations-of-jobs-in-a-workflow"
+    },
+    {
+      "path": "github/postgres-redis-services.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Integration Test với Service Containers Postgres 16 + Redis 7 có Healthcheck",
+      "level": 1,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "services",
+        "postgres",
+        "redis",
+        "health-cmd",
+        "timeout-minutes"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/use-cases-and-examples/using-containerized-services/creating-postgresql-service-containers"
+    },
+    {
+      "path": "github/cache-readonly-pattern.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Mô hình Cache Read-Only an toàn: nhánh main ghi cache, PR chỉ đọc",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "cache",
+        "cache-restore",
+        "security",
+        "speed"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/caching-dependencies-to-speed-up-workflows"
+    },
+    {
+      "path": "github/sharded-playwright-e2e.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Chia tải 4 mảnh (Sharding) cho Playwright E2E và thu thập HTML Report",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "playwright",
+        "sharding",
+        "e2e",
+        "upload-artifact-v4"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/storing-and-sharing-data-from-a-workflow"
+    },
+    {
+      "path": "github/concurrency-pr-vs-prod.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Đối chiếu Concurrency: PR huỷ bản cũ (true) vs Production xếp hàng tuần tự (false)",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "concurrency",
+        "race-condition",
+        "cancel-in-progress",
+        "production"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs"
+    },
+    {
+      "path": "github/infinite-push-loop.yml",
+      "language": "yaml",
+      "category": "github-actions",
+      "topic": "Vòng lặp vô tận: Job tự commit changelog rồi git push kích hoạt lại chính nó",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "infinite-loop",
+        "git-push",
+        "skip-ci",
+        "bug"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow"
+    },
+    {
+      "path": "gitlab/node-dag-pipeline.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "GitLab CI chuẩn Node 22 với Directed Acyclic Graph (needs) và expire_in",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "dag",
+        "needs",
+        "artifacts"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/yaml/#needs"
+    },
+    {
+      "path": "gitlab/cache-pull-push.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "Tối ưu Cache GitLab CI bằng khóa package-lock.json và policy pull-push vs pull",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "cache",
+        "pull-push",
+        "npm-cache"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/caching/#use-a-variable-to-control-a-jobs-cache-policy"
+    },
+    {
+      "path": "gitlab/parallel-sharding.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "Chạy test song song trên GitLab CI với từ khóa parallel: 4 và CI_NODE_INDEX",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "parallel",
+        "sharding",
+        "vitest"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/jobs/job_control.html#parallelize-large-jobs"
+    },
+    {
+      "path": "gitlab/rules-mr-and-manual.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "Điều hướng Merge Request Pipeline và cổng duyệt tay Production bằng rules:",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "rules",
+        "merge-request",
+        "manual-gate"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/yaml/#rules"
+    },
+    {
+      "path": "gitlab/legacy-only-except.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "Cú pháp cũ only: / except: đã ngừng khuyến nghị trong GitLab CI hiện đại",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 4,
+      "tags": [
+        "gitlab-ci",
+        "only-except",
+        "deprecated"
+      ],
+      "flags": [
+        "outdated"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/yaml/deprecated_keywords.html"
+    },
+    {
+      "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "Hồ sơ sự cố B1: Đường ống tuần tự 42 phút cài lại npm install ở mọi stage",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "slow-pipeline",
+        "serial",
+        "anti-pattern"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/pipelines/pipeline_efficiency.html"
+    },
+    {
+      "path": "gitlab/dind-tls-trap.gitlab-ci.yml",
+      "language": "yaml",
+      "category": "gitlab-ci",
+      "topic": "So sánh rủi ro đặc quyền Docker-in-Docker (privileged dind) với Kaniko rootless",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "gitlab-ci",
+        "dind",
+        "kaniko",
+        "container-security"
+      ],
+      "flags": [
+        "security-risk",
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/ci/docker/using_kaniko.html"
+    },
+    {
+      "path": "security/gha-script-injection-vuln.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Lỗ hổng Script Injection (RCE): nối trực tiếp tiêu đề PR vào khối lệnh shell run:",
+      "level": 3,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "script-injection",
+        "rce",
+        "github-actions",
+        "security"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections"
+    },
+    {
+      "path": "security/gha-script-injection-safe.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Khắc phục Script Injection: truyền dữ liệu không tin cậy qua biến môi trường env:",
+      "level": 3,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "script-injection",
+        "env-sanitization",
+        "hardening"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions#good-practices-for-mitigating-script-injection-attacks"
+    },
+    {
+      "path": "security/pull-request-target-pwn.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Lỗ hổng kinh điển Pwn Request: pull_request_target checkout code từ nhánh Fork và chạy npm install",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "pwn-request",
+        "pull-request-target",
+        "secret-exfiltration"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_target"
+    },
+    {
+      "path": "security/permissions-write-all.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Phản mẫu cấp quyền tràn lan permissions: write-all kèm Action bên thứ ba trôi nổi @main",
+      "level": 3,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "least-privilege",
+        "supply-chain",
+        "unpinned-action"
+      ],
+      "flags": [
+        "security-risk"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#modifying-the-permissions-for-the-github_token"
+    },
+    {
+      "path": "security/five-layer-devsecops.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Phòng tuyến DevSecOps 5 lớp: SHA pinning, Gitleaks, Semgrep, npm audit, Trivy & SBOM",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "devsecops",
+        "trivy",
+        "gitleaks",
+        "semgrep",
+        "sbom"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://aquasecurity.github.io/trivy/latest/tutorials/integrations/github-actions/"
+    },
+    {
+      "path": "security/aws-oidc-deploy.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Triển khai lên AWS không cần khoá tĩnh (Keyless OIDC) với id-token: write",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "oidc",
+        "aws",
+        "keyless",
+        "id-token"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services"
+    },
+    {
+      "path": "security/aws-iam-trust-policy.yaml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Chính sách tin cậy AWS IAM Role khoá chặt subject OIDC vào đúng repo và nhánh main",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "oidc",
+        "iam-trust-policy",
+        "cloudformation",
+        "sub-claim"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services#configuring-the-role-and-trust-policy"
+    },
+    {
+      "path": "security/cosign-provenance.yml",
+      "language": "yaml",
+      "category": "devsecops",
+      "topic": "Chứng thực nguồn gốc Artifact (Build Provenance) và ký chữ ký số container bằng Cosign keyless",
+      "level": 3,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "slsa",
+        "provenance",
+        "cosign",
+        "ghcr"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/security-for-github-actions/using-artifact-attestations/using-artifact-attestations-to-establish-provenance-for-builds"
+    },
+    {
+      "path": "gitops/argocd-application-prod.yaml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Argo CD Application chuẩn Production với selfHeal, prune và retry backoff",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "argocd",
+        "gitops",
+        "self-heal",
+        "prune"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/"
+    },
+    {
+      "path": "gitops/ci-update-gitops-repo.yml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Chu trình Pull-based GitOps: App CI đóng gói image sha-... rồi mở commit sang kho GitOps",
+      "level": 4,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "gitops",
+        "kustomize",
+        "immutable-tag",
+        "pull-based"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://argo-cd.readthedocs.io/en/stable/user-guide/best_practices/"
+    },
+    {
+      "path": "gitops/anti-pattern-kubectl-admin.yml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Phản mẫu Push-based nguy hiểm: nhét cluster-admin kubeconfig vào CI để gọi kubectl :latest",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "push-ci",
+        "kubeconfig",
+        "latest-tag",
+        "anti-pattern"
+      ],
+      "flags": [
+        "security-risk",
+        "buggy"
+      ],
+      "sourceUrl": "https://argo-cd.readthedocs.io/en/stable/user-guide/best_practices/"
+    },
+    {
+      "path": "gitops/argo-rollouts-canary.yaml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Triển khai Canary tiệm tiến (5% -> 25% -> 100%) kèm bước đo lường tự động với Argo Rollouts",
+      "level": 4,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "canary",
+        "argo-rollouts",
+        "progressive-delivery"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://argo-rollouts.readthedocs.io/en/stable/features/canary/"
+    },
+    {
+      "path": "gitops/blue-green-preview.yaml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Triển khai Blue-Green có cổng kiểm thử nội bộ previewService trước khi tráo lưu lượng thật",
+      "level": 4,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "blue-green",
+        "argo-rollouts",
+        "zero-downtime"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/"
+    },
+    {
+      "path": "gitops/smoke-test-rollback.yml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Hậu kiểm Smoke Test tự động sau triển khai và kích hoạt Rollback tức thì khi thất bại",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "smoke-test",
+        "rollback",
+        "healthcheck",
+        "curl-retry"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/evaluate-expressions-in-workflows-and-actions#status-check-functions"
+    },
+    {
+      "path": "gitops/github-environments-gate.yml",
+      "language": "yaml",
+      "category": "gitops",
+      "topic": "Chuỗi môi trường Staging -> Smoke Test -> Production với GitHub Deployment Protection Rules",
+      "level": 4,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "environments",
+        "approval-gate",
+        "staging",
+        "production"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/managing-workflow-runs-and-deployments/managing-deployments/managing-environments-for-deployment"
+    },
+    {
+      "path": "governance/CODEOWNERS.example",
+      "language": "shell",
+      "category": "governance",
+      "topic": "Phân quyền phê duyệt bắt buộc CODEOWNERS cho thư mục workflows và DB migrations",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "codeowners",
+        "governance",
+        "security-review",
+        "dba"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners"
+    },
+    {
+      "path": "governance/coderabbit-ai-review.yaml",
+      "language": "yaml",
+      "category": "governance",
+      "topic": "Cấu hình trợ lý AI Code Review tập trung soi bảo mật, bỏ qua lockfile để giảm nhiễu",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "ai-review",
+        "coderabbit",
+        "pr-hygiene",
+        "governance"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/about-pull-request-reviews"
+    },
+    {
+      "path": "governance/migration-expand-safe.yml",
+      "language": "yaml",
+      "category": "governance",
+      "topic": "Zero-Downtime DB Migration (Pha Expand): chỉ thêm cột nullable an toàn trước khi nâng cấp Pod",
+      "level": 5,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "db-migration",
+        "expand-contract",
+        "zero-downtime",
+        "postgres"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/development/database/avoiding_downtime_in_migrations.html"
+    },
+    {
+      "path": "governance/migration-drop-destructive.yml",
+      "language": "yaml",
+      "category": "governance",
+      "topic": "Thảm hoạ đổi tên cột trực tiếp (RENAME COLUMN) khi các Pod bản cũ v1 vẫn đang phục vụ khách",
+      "level": 5,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "db-migration",
+        "outage",
+        "breaking-change",
+        "bug"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/development/database/avoiding_downtime_in_migrations.html"
+    },
+    {
+      "path": "governance/monorepo-turborepo-affected.yml",
+      "language": "yaml",
+      "category": "governance",
+      "topic": "Tối ưu Monorepo với paths-filter và Turborepo --filter=...[origin/main] chỉ build gói bị ảnh hưởng",
+      "level": 5,
+      "difficulty": 4,
+      "quality": 5,
+      "tags": [
+        "monorepo",
+        "turborepo",
+        "affected-graph",
+        "paths-filter"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-nodejs"
+    },
+    {
+      "path": "governance/dora-release-metrics.yml",
+      "language": "yaml",
+      "category": "governance",
+      "topic": "Đo lường 4 chỉ số DORA (Deployment Frequency, Lead Time, CFR, MTTR) ngay trên đường ống phát hành",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "dora-metrics",
+        "lead-time",
+        "cfr",
+        "mttr"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://docs.gitlab.com/ee/user/analytics/dora_metrics.html"
+    }
+  ]
+}

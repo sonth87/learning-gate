@@ -1,0 +1,342 @@
+[
+  {
+    "id": "cicd-ex-c15-1",
+    "code": "C15.1",
+    "module": "C15",
+    "title": "Loại bỏ kubectl Admin khỏi CI — Chuyển sang cập nhật kho GitOps",
+    "difficulty": 2,
+    "tags": [
+      "gitops",
+      "kustomize",
+      "least-privilege"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": ".github/workflows/update-gitops.yml",
+    "prompt": "Workflow dưới đây đang mắc phản mẫu bảo mật nghiêm trọng: nạp `KUBE_CONFIG_ADMIN` và chạy `kubectl apply` thẳng từ CI của kho ứng dụng!\nHãy chuyển đổi job `update-gitops` sang mô hình **Pull-Based GitOps**:\n1. Xoá hoàn toàn biến `KUBE_CONFIG_ADMIN` và lệnh `kubectl`.\n2. Giữ bước checkout kho `acme/shop-gitops` vào thư mục `gitops-repo`.\n3. Ở bước cập nhật manifest (có `working-directory: gitops-repo/overlays/prod`), chạy lệnh `kustomize edit set image ghcr.io/acme/shop-api=ghcr.io/acme/shop-api:sha-${{ github.sha }}`, sau đó `git commit` và `git push`.",
+    "starter": "name: Promote Image via GitOps\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  update-gitops:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - name: Checkout GitOps config repository\n        uses: actions/checkout@v4\n        with:\n          repository: acme/shop-gitops\n          token: ${{ secrets.GITOPS_BOT_TOKEN }}\n          path: gitops-repo\n\n      - name: Direct cluster apply (ANTI-PATTERN!)\n        env:\n          KUBE_CONFIG_ADMIN: ${{ secrets.KUBE_CONFIG_ADMIN }}\n        run: |\n          echo \"$KUBE_CONFIG_ADMIN\" > kubeconfig\n          kubectl --kubeconfig=kubeconfig set image deployment/shop-api shop-api=ghcr.io/acme/shop-api:sha-${{ github.sha }}\n",
+    "solution": "name: Promote Image via GitOps\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  update-gitops:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - name: Checkout GitOps config repository\n        uses: actions/checkout@v4\n        with:\n          repository: acme/shop-gitops\n          token: ${{ secrets.GITOPS_BOT_TOKEN }}\n          path: gitops-repo\n\n      - name: Bump image tag in overlays/prod and push\n        working-directory: gitops-repo/overlays/prod\n        run: |\n          kustomize edit set image ghcr.io/acme/shop-api=ghcr.io/acme/shop-api:sha-${{ github.sha }}\n          git config user.name \"gitops-bot\"\n          git config user.email \"gitops-bot@example.invalid\"\n          git commit -am \"chore(prod): promote sha-${{ github.sha }}\"\n          git push origin main\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-kube-admin-secret",
+          "doc": "Xoá bỏ hoàn toàn biến môi trường KUBE_CONFIG_ADMIN khỏi bước chạy",
+          "kind": "path",
+          "path": "jobs.update-gitops.steps[1].env.KUBE_CONFIG_ADMIN",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "no-kubectl-in-ci",
+          "doc": "Không gọi trực tiếp lệnh kubectl trong bước cập nhật của CI",
+          "kind": "path",
+          "path": "jobs.update-gitops.steps[1].run",
+          "match": {
+            "notContains": "kubectl"
+          }
+        },
+        {
+          "id": "overlay-prod-workdir",
+          "doc": "Đặt working-directory là gitops-repo/overlays/prod",
+          "kind": "path",
+          "path": "jobs.update-gitops.steps[1].working-directory",
+          "match": {
+            "eq": "gitops-repo/overlays/prod"
+          }
+        },
+        {
+          "id": "kustomize-set-image",
+          "doc": "Dùng kustomize edit set image để cập nhật thẻ sha-${{ github.sha }}",
+          "kind": "path",
+          "path": "jobs.update-gitops.steps[1].run",
+          "match": {
+            "contains": "kustomize edit set image"
+          }
+        },
+        {
+          "id": "git-commit-and-push",
+          "doc": "Thực hiện git commit và git push thay đổi lên kho GitOps",
+          "kind": "path",
+          "path": "jobs.update-gitops.steps[1].run",
+          "match": {
+            "regex": "(?=.*git commit)(?=.*git push)",
+            "flags": "s"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Xoá khối `env:` chứa `KUBE_CONFIG_ADMIN` ở bước thứ 2 và thêm `working-directory: gitops-repo/overlays/prod`.",
+      "Trong `run:`, gọi `kustomize edit set image ...`, cấu hình `git config`, rồi `git commit -am \"...\"` và `git push origin main`."
+    ],
+    "ref": "gitops/ci-update-gitops-repo.yml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c15-2",
+    "code": "C15.2",
+    "module": "C15",
+    "title": "Viết đối tượng ArgoCD Application cho môi trường Production",
+    "difficulty": 1,
+    "tags": [
+      "argocd",
+      "application",
+      "declarative"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "argocd/application-prod.yaml",
+    "prompt": "Hoàn thiện tài nguyên ArgoCD `Application` (`apiVersion: argoproj.io/v1alpha1`, `kind: Application`) có tên `shop-api-prod` trong namespace `argocd`:\n1. Nguồn (`spec.source`): `repoURL: https://github.com/acme/shop-gitops.git`, `targetRevision: main`, `path: overlays/prod`.\n2. Đích (`spec.destination`): `server: https://kubernetes.default.svc` và `namespace: production`.",
+    "starter": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: shop-api-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    # TODO: Khai báo repoURL, targetRevision (main) và path (overlays/prod)\n    repoURL: ____\n    targetRevision: ____\n    path: ____\n  destination:\n    server: https://kubernetes.default.svc\n    # TODO: Đặt namespace đích là production\n    namespace: ____\n",
+    "solution": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: shop-api-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/acme/shop-gitops.git\n    targetRevision: main\n    path: overlays/prod\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "app-kind-name",
+          "doc": "Tài nguyên kind: Application tên shop-api-prod",
+          "kind": "path",
+          "path": "metadata.name",
+          "match": {
+            "eq": "shop-api-prod"
+          }
+        },
+        {
+          "id": "source-repo-url",
+          "doc": "spec.source.repoURL trỏ tới https://github.com/acme/shop-gitops.git",
+          "kind": "path",
+          "path": "spec.source.repoURL",
+          "match": {
+            "eq": "https://github.com/acme/shop-gitops.git"
+          }
+        },
+        {
+          "id": "source-target-rev",
+          "doc": "spec.source.targetRevision là main",
+          "kind": "path",
+          "path": "spec.source.targetRevision",
+          "match": {
+            "eq": "main"
+          }
+        },
+        {
+          "id": "source-path",
+          "doc": "spec.source.path là overlays/prod",
+          "kind": "path",
+          "path": "spec.source.path",
+          "match": {
+            "eq": "overlays/prod"
+          }
+        },
+        {
+          "id": "dest-namespace",
+          "doc": "spec.destination.namespace là production",
+          "kind": "path",
+          "path": "spec.destination.namespace",
+          "match": {
+            "eq": "production"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Điền chính xác 3 trường bên dưới `spec.source` và `namespace: production` bên dưới `spec.destination`."
+    ],
+    "ref": "gitops/argocd-application-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c15-3",
+    "code": "C15.3",
+    "module": "C15",
+    "title": "Bật Tự động Đồng bộ, Dọn rác (Prune) & Tự chữa lành (Self-Heal)",
+    "difficulty": 1,
+    "tags": [
+      "argocd",
+      "self-heal",
+      "prune"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "argocd/application-autosync.yaml",
+    "prompt": "Ứng dụng `shop-api-prod` đã kết nối tới Git, nhưng đang thiếu chính sách đồng bộ tự động khiến SRE phải bấm nút Sync bằng tay và không tự khôi phục khi ai đó gõ `kubectl edit` trái phép.\nHãy bổ sung khối `spec.syncPolicy`:\n1. Bật `automated.prune: true` và `automated.selfHeal: true`.\n2. Thêm `\"CreateNamespace=true\"` vào mảng `syncOptions`.",
+    "starter": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: shop-api-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/acme/shop-gitops.git\n    targetRevision: main\n    path: overlays/prod\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  # TODO: Khai báo syncPolicy với automated (prune: true, selfHeal: true) và syncOptions chứa CreateNamespace=true\n",
+    "solution": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: shop-api-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/acme/shop-gitops.git\n    targetRevision: main\n    path: overlays/prod\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n    syncOptions:\n      - CreateNamespace=true\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "auto-prune",
+          "doc": "Bật tự động xoá tài nguyên dư thừa: spec.syncPolicy.automated.prune = true",
+          "kind": "path",
+          "path": "spec.syncPolicy.automated.prune",
+          "match": {
+            "eq": true
+          }
+        },
+        {
+          "id": "auto-self-heal",
+          "doc": "Bật tự động chống trôi cấu hình: spec.syncPolicy.automated.selfHeal = true",
+          "kind": "path",
+          "path": "spec.syncPolicy.automated.selfHeal",
+          "match": {
+            "eq": true
+          }
+        },
+        {
+          "id": "sync-create-ns",
+          "doc": "Mảng spec.syncPolicy.syncOptions có chứa \"CreateNamespace=true\"",
+          "kind": "path",
+          "path": "spec.syncPolicy.syncOptions",
+          "match": {
+            "contains": "CreateNamespace=true"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đặt `syncPolicy:` ngang hàng với `source:` và `destination:` bên trong `spec:`.",
+      "`syncOptions:` là một mảng YAML (`- CreateNamespace=true`)."
+    ],
+    "ref": "gitops/argocd-application-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c15-4",
+    "code": "C15.4",
+    "module": "C15",
+    "title": "Tích hợp Helm Chart với values-prod.yaml trong ArgoCD Application",
+    "difficulty": 2,
+    "tags": [
+      "argocd",
+      "helm",
+      "values"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "argocd/application-helm.yaml",
+    "prompt": "Đội thanh toán đóng gói dịch vụ bằng **Helm Chart** nằm tại thư mục `charts/payment-service` của kho GitOps. Nếu không khai báo tệp ghi đè, ArgoCD chỉ đọc `values.yaml` mặc định (cấu hình cho môi trường dev)!\nHãy cấu hình `spec.source.path: charts/payment-service` và chỉ định `spec.source.helm.valueFiles` là mảng chứa `\"values-prod.yaml\"`.",
+    "starter": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: payment-service-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/acme/shop-gitops.git\n    targetRevision: main\n    # TODO: Trỏ path tới charts/payment-service và khai báo helm.valueFiles chứa values-prod.yaml\n    path: ____\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n",
+    "solution": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: payment-service-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/acme/shop-gitops.git\n    targetRevision: main\n    path: charts/payment-service\n    helm:\n      valueFiles:\n        - values-prod.yaml\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "helm-chart-path",
+          "doc": "spec.source.path trỏ tới charts/payment-service",
+          "kind": "path",
+          "path": "spec.source.path",
+          "match": {
+            "eq": "charts/payment-service"
+          }
+        },
+        {
+          "id": "helm-value-files-type",
+          "doc": "spec.source.helm.valueFiles là một mảng",
+          "kind": "path",
+          "path": "spec.source.helm.valueFiles",
+          "match": {
+            "type": "array"
+          }
+        },
+        {
+          "id": "helm-values-prod",
+          "doc": "spec.source.helm.valueFiles chứa phần tử \"values-prod.yaml\"",
+          "kind": "path",
+          "path": "spec.source.helm.valueFiles",
+          "match": {
+            "contains": "values-prod.yaml"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bên trong `spec.source:`, thêm khối `helm:` và bên dưới nó là mảng `valueFiles:` có phần tử `- values-prod.yaml`."
+    ],
+    "ref": "gitops/argocd-application-prod.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "cicd-ex-c15-5",
+    "code": "C15.5",
+    "module": "C15",
+    "title": "Điều phối thứ tự Job DB Migrate trước Deployment bằng Sync Waves",
+    "difficulty": 3,
+    "tags": [
+      "argocd",
+      "sync-wave",
+      "db-migration"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "k8s/sync-waves-migrate.yaml",
+    "prompt": "Tệp YAML đa tài nguyên (`---`) dưới đây gồm một Kubernetes `Job` (`db-migrate`) và một `Deployment` (`shop-api`). Hiện cả hai đang chạy đồng thời khiến Pod `shop-api` mới khởi động khi cột SQL mới chưa kịp tạo xong!\nHãy gắn annotation `argocd.argoproj.io/sync-wave` vào `metadata.annotations` của cả hai tài nguyên:\n1. Trên `Job` `db-migrate`: đặt `\"argocd.argoproj.io/sync-wave\": \"-1\"` để chạy và hoàn tất trước.\n2. Trên `Deployment` `shop-api`: đặt `\"argocd.argoproj.io/sync-wave\": \"0\"` để chỉ cuộn Pod mới sau khi Job ở wave `-1` đã thành công.",
+    "starter": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate\n  # TODO: Gắn annotation argocd.argoproj.io/sync-wave: \"-1\"\nspec:\n  backoffLimit: 1\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n        - name: migrate\n          image: ghcr.io/acme/shop-api:sha-8b3d1e2\n          command: [\"npm\", \"run\", \"migrate:deploy\"]\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\n  # TODO: Gắn annotation argocd.argoproj.io/sync-wave: \"0\"\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: shop-api\n          image: ghcr.io/acme/shop-api:sha-8b3d1e2\n          ports:\n            - containerPort: 3000\n",
+    "solution": "apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate\n  annotations:\n    argocd.argoproj.io/sync-wave: \"-1\"\nspec:\n  backoffLimit: 1\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n        - name: migrate\n          image: ghcr.io/acme/shop-api:sha-8b3d1e2\n          command: [\"npm\", \"run\", \"migrate:deploy\"]\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: shop-api\n  annotations:\n    argocd.argoproj.io/sync-wave: \"0\"\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: shop-api\n  template:\n    metadata:\n      labels:\n        app: shop-api\n    spec:\n      containers:\n        - name: shop-api\n          image: ghcr.io/acme/shop-api:sha-8b3d1e2\n          ports:\n            - containerPort: 3000\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "job-sync-wave-key",
+          "doc": "Job db-migrate có khai báo metadata.annotations chứa khoá argocd.argoproj.io/sync-wave",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Job",
+            "name": "db-migrate"
+          },
+          "path": "metadata.annotations",
+          "match": {
+            "contains": "argocd.argoproj.io/sync-wave"
+          }
+        },
+        {
+          "id": "job-sync-wave-minus-one",
+          "doc": "Job db-migrate đặt giá trị sync-wave là chuỗi \"-1\"",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Job",
+            "name": "db-migrate"
+          },
+          "path": "metadata.annotations",
+          "match": {
+            "regex": "\"argocd\\.argoproj\\.io/sync-wave\"\\s*:\\s*\"-1\""
+          }
+        },
+        {
+          "id": "deploy-sync-wave-key",
+          "doc": "Deployment shop-api có khai báo metadata.annotations chứa khoá argocd.argoproj.io/sync-wave",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "shop-api"
+          },
+          "path": "metadata.annotations",
+          "match": {
+            "contains": "argocd.argoproj.io/sync-wave"
+          }
+        },
+        {
+          "id": "deploy-sync-wave-zero",
+          "doc": "Deployment shop-api đặt giá trị sync-wave là chuỗi \"0\"",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Deployment",
+            "name": "shop-api"
+          },
+          "path": "metadata.annotations",
+          "match": {
+            "regex": "\"argocd\\.argoproj\\.io/sync-wave\"\\s*:\\s*\"0\""
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Giá trị trong `metadata.annotations` của Kubernetes bắt buộc phải là chuỗi ký tự (bọc trong dấu nháy kép `\"-1\"` và `\"0\"`), nếu để số nguyên không nháy K8s API sẽ từ chối!",
+      "Kiểm tra tên khoá chính xác: `argocd.argoproj.io/sync-wave`."
+    ],
+    "ref": "gitops/argocd-application-prod.yaml",
+    "webGrade": true
+  }
+]

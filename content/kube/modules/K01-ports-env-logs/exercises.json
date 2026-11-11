@@ -1,0 +1,425 @@
+[
+  {
+    "id": "kube-ex-k01-1",
+    "code": "K01.1",
+    "title": "Xuất bản cổng máy chủ vào container Nginx",
+    "difficulty": 1,
+    "tags": [
+      "ports",
+      "docker-run",
+      "nginx"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy khởi chạy ngầm (`-d`) một container tên `shop-nginx` từ image `nginx:1.27-alpine`, mở cổng `8080` trên máy chủ ánh xạ vào cổng `80` bên trong container.",
+    "starter": "# Chạy ngầm shop-nginx và nối cổng 8080 (host) -> 80 (container)\n",
+    "solution": "docker run -d --name shop-nginx -p 8080:80 nginx:1.27-alpine\n",
+    "hints": [
+      "Cú pháp nối cổng là `-p HOST_PORT:CONTAINER_PORT`, tức `-p 8080:80`.",
+      "Lệnh đầy đủ: `docker run -d --name shop-nginx -p 8080:80 nginx:1.27-alpine`"
+    ],
+    "ref": "docker/nginx/Dockerfile.spa-nonroot",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "shop-nginx-port-mapped",
+          "doc": "Container `shop-nginx` đang chạy và nối cổng `8080` (host) -> `80` (container)",
+          "target": "docker-container",
+          "name": "shop-nginx",
+          "image": "nginx:1.27-alpine",
+          "status": "running",
+          "hostPort": 8080,
+          "containerPort": 80
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k01-2",
+    "code": "K01.2",
+    "title": "Xử lý sự cố đụng cổng (port is already allocated)",
+    "difficulty": 2,
+    "tags": [
+      "ports",
+      "troubleshooting",
+      "conflict"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Câu lệnh có sẵn bên dưới đang cố khởi chạy `new-proxy` (`nginx:1.27-alpine`) trên cổng `8080:80`, nhưng nếu bấm Chạy ngay bạn sẽ gặp lỗi `port is already allocated` do container cũ `old-proxy` đang chiếm cổng `8080`. Hãy xoá (hoặc dừng) `old-proxy` trước rồi khởi chạy `new-proxy` trên cổng `8080:80`.",
+    "starter": "docker run -d --name new-proxy -p 8080:80 nginx:1.27-alpine\n",
+    "solution": "docker rm -f old-proxy\ndocker run -d --name new-proxy -p 8080:80 nginx:1.27-alpine\n",
+    "hints": [
+      "Bấm Chạy thử trên code khởi đầu để thấy rõ thông báo lỗi đụng cổng từ Docker daemon.",
+      "Thêm dòng `docker rm -f old-proxy` lên dòng trên cùng trước lệnh `docker run`."
+    ],
+    "ref": "compose/bugs/compose.localhost-bug.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "nginx",
+              "tag": "1.27-alpine",
+              "sizeMB": 43
+            }
+          ],
+          "containers": [
+            {
+              "id": "old8080proxy",
+              "name": "old-proxy",
+              "image": "nginx:1.27-alpine",
+              "status": "running",
+              "exitCode": 0,
+              "ports": [
+                {
+                  "host": 8080,
+                  "container": 80
+                }
+              ],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Old nginx proxy listening on 80"
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "new-proxy-running-8080",
+          "doc": "Container `new-proxy` đã chiếm thành công cổng `8080:80` và đang `running`",
+          "target": "docker-container",
+          "name": "new-proxy",
+          "image": "nginx:1.27-alpine",
+          "status": "running",
+          "hostPort": 8080,
+          "containerPort": 80
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k01-3",
+    "code": "K01.3",
+    "title": "Bơm biến môi trường NODE_ENV và PORT lúc khởi chạy",
+    "difficulty": 1,
+    "tags": [
+      "env",
+      "node",
+      "docker-run"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy chạy ngầm (`-d`) container tên `order-api` từ image `node:22-alpine`, xuất bản cổng `3000:3000` và truyền hai biến môi trường `NODE_ENV=production` cùng `PORT=3000`.",
+    "starter": "# Khởi chạy order-api kèm -p 3000:3000 và 2 cờ -e cho NODE_ENV, PORT\n",
+    "solution": "docker run -d --name order-api -p 3000:3000 -e NODE_ENV=production -e PORT=3000 node:22-alpine\n",
+    "hints": [
+      "Mỗi biến môi trường dùng một cờ `-e KEY=VALUE` riêng biệt.",
+      "Ví dụ: `docker run -d --name order-api -p 3000:3000 -e NODE_ENV=production -e PORT=3000 node:22-alpine`"
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "order-api-env-ports",
+          "doc": "Container `order-api` đang chạy trên cổng `3000:3000` với `NODE_ENV=production` và `PORT=3000`",
+          "target": "docker-container",
+          "name": "order-api",
+          "image": "node:22-alpine",
+          "status": "running",
+          "hostPort": 3000,
+          "containerPort": 3000,
+          "envEquals": {
+            "NODE_ENV": "production",
+            "PORT": "3000"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k01-4",
+    "code": "K01.4",
+    "title": "Đọc log chẩn đoán container vừa sập (Exited 1)",
+    "difficulty": 1,
+    "tags": [
+      "docker-logs",
+      "troubleshooting"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Container `payment-worker` vừa bật lên đã thoát ngay với mã lỗi `Exited (1)`. Hãy chạy lệnh đọc toàn bộ log của `payment-worker` để tìm xem biến môi trường nào đang bị thiếu.",
+    "starter": "# Xem log của container payment-worker\n",
+    "solution": "docker logs payment-worker\n",
+    "hints": [
+      "Dù container đã `exited`, `docker logs <tên>` vẫn đọc được toàn bộ thông báo lỗi cuối cùng.",
+      "Gõ lệnh: `docker logs payment-worker`"
+    ],
+    "ref": "docker/security/Dockerfile.build-arg-secret",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "pay991122334",
+              "name": "payment-worker",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 1,
+              "ports": [],
+              "env": {
+                "NODE_ENV": "production"
+              },
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "[2026-04-01T09:15:00Z] Booting payment consumer v1.4.0...",
+                "ERROR: Missing STRIPE_WEBHOOK_SECRET in environment variables. Exiting."
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "inspected-missing-secret-log",
+          "doc": "Đã xuất log hiển thị nguyên nhân lỗi `Missing STRIPE_WEBHOOK_SECRET`",
+          "target": "stdout-inspected",
+          "contains": "Missing STRIPE_WEBHOOK_SECRET"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k01-5",
+    "code": "K01.5",
+    "title": "Kiểm tra tiến trình PID 1 đang chạy bên trong bằng docker exec",
+    "difficulty": 1,
+    "tags": [
+      "docker-exec",
+      "pid1",
+      "inspection"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Container `shop-api` đang hoạt động bình thường. Hãy dùng `docker exec` chạy lệnh `ps` bên trong `shop-api` để xác nhận tiến trình PID 1 đang chạy dưới user nào và câu lệnh gốc là gì.",
+    "starter": "# Thực thi lệnh ps bên trong container shop-api đang chạy\n",
+    "solution": "docker exec shop-api ps\n",
+    "hints": [
+      "Cú pháp chạy một lệnh bên trong container đang sống là `docker exec <tên-container> <lệnh>`.",
+      "Gõ chính xác: `docker exec shop-api ps`"
+    ],
+    "ref": "docker/node-api/Dockerfile.multistage-prod",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            }
+          ],
+          "containers": [
+            {
+              "id": "api556677889",
+              "name": "shop-api",
+              "image": "node:22-alpine",
+              "status": "running",
+              "exitCode": 0,
+              "ports": [
+                {
+                  "host": 3000,
+                  "container": 3000
+                }
+              ],
+              "env": {
+                "NODE_ENV": "production"
+              },
+              "volumes": [],
+              "network": "bridge",
+              "user": "node",
+              "cmd": "node dist/server.js",
+              "logs": [
+                "Server listening on :3000"
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "exec-ps-inspected",
+          "doc": "Đã chạy `ps` bên trong `shop-api` và thấy tiến trình `node dist/server.js`",
+          "target": "stdout-inspected",
+          "contains": "node dist/server.js"
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k01-6",
+    "code": "K01.6",
+    "title": "Dọn dẹp có chọn lọc các container batch đã dừng",
+    "difficulty": 1,
+    "tags": [
+      "docker-rm",
+      "cleanup",
+      "multi-container"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hệ thống đang có 3 container: hai tác vụ chạy một lần `job-1` và `job-2` đã kết thúc (`exited`), cùng dịch vụ `redis-cache` đang chạy (`running`). Hãy xoá sạch cả `job-1` và `job-2` nhưng **giữ nguyên** `redis-cache` tiếp tục chạy.",
+    "starter": "# Xoá job-1 và job-2, giữ nguyên redis-cache\n",
+    "solution": "docker rm job-1 job-2\n",
+    "hints": [
+      "`docker rm` cho phép truyền nhiều tên container cách nhau bởi khoảng trắng trong cùng một câu lệnh.",
+      "Gõ lệnh: `docker rm job-1 job-2`"
+    ],
+    "ref": "docker/node-api/Dockerfile.layer-cached",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {
+        "docker": {
+          "images": [
+            {
+              "repo": "node",
+              "tag": "22-alpine",
+              "sizeMB": 138
+            },
+            {
+              "repo": "redis",
+              "tag": "7-alpine",
+              "sizeMB": 34
+            }
+          ],
+          "containers": [
+            {
+              "id": "jb0000000001",
+              "name": "job-1",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 0,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Job 1 done"
+              ]
+            },
+            {
+              "id": "jb0000000002",
+              "name": "job-2",
+              "image": "node:22-alpine",
+              "status": "exited",
+              "exitCode": 0,
+              "ports": [],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Job 2 done"
+              ]
+            },
+            {
+              "id": "rd9999999999",
+              "name": "redis-cache",
+              "image": "redis:7-alpine",
+              "status": "running",
+              "exitCode": 0,
+              "ports": [
+                {
+                  "host": 6379,
+                  "container": 6379
+                }
+              ],
+              "env": {},
+              "volumes": [],
+              "network": "bridge",
+              "logs": [
+                "Ready to accept connections"
+              ]
+            }
+          ],
+          "volumes": [],
+          "networks": [
+            "bridge",
+            "host",
+            "none"
+          ]
+        }
+      },
+      "rules": [
+        {
+          "id": "job-1-absent",
+          "doc": "Container `job-1` đã được xoá bỏ",
+          "target": "docker-container",
+          "name": "job-1",
+          "status": "absent"
+        },
+        {
+          "id": "job-2-absent",
+          "doc": "Container `job-2` đã được xoá bỏ",
+          "target": "docker-container",
+          "name": "job-2",
+          "status": "absent"
+        },
+        {
+          "id": "redis-still-running",
+          "doc": "Container `redis-cache` vẫn đang chạy an toàn (`running`)",
+          "target": "docker-container",
+          "name": "redis-cache",
+          "status": "running"
+        }
+      ]
+    }
+  }
+]

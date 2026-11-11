@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K17-Q1",
+    "type": "mc",
+    "q": "Theo hành vi mặc định của Kubernetes khi bạn CHƯA tạo bất kỳ `NetworkPolicy` nào, các Pod giao tiếp với nhau như thế nào?",
+    "code": "",
+    "choices": [
+      "Mọi Pod bị chặn hoàn toàn, không thể gọi nhau ngay cả trong cùng một Namespace",
+      "Chỉ các Pod trong cùng một Namespace mới gọi được nhau, khác Namespace tự động bị chặn",
+      "Mạng phẳng hoàn toàn: mọi Pod ở bất kỳ Namespace nào cũng có thể kết nối trực tiếp tới mọi Pod khác trên toàn cụm",
+      "Chỉ có Service kiểu LoadBalancer mới được phép gửi gói tin nội bộ"
+    ],
+    "answer": 2,
+    "explain": "Mặc định mạng K8s là \"Allow All\" xuyên suốt toàn bộ các Namespace. Muốn cô lập giữa các tầng hoặc các môi trường, bạn bắt buộc phải áp dụng NetworkPolicy (kèm CNI hỗ trợ như Calico/Cilium)."
+  },
+  {
+    "id": "K17-Q2",
+    "type": "output",
+    "q": "Trong `NetworkPolicy`, cách viết `podSelector` nào dưới đây có ý nghĩa là **\"Áp dụng chính sách này cho TẤT CẢ mọi Pod trong Namespace hiện tại\"**?",
+    "code": "spec:\n  podSelector: ____\n  policyTypes:\n    - Ingress",
+    "choices": [],
+    "answer": "{}",
+    "explain": "Đối tượng rỗng `podSelector: {}` khớp với tất cả các Pod trong Namespace (trong khi bỏ trống không có khoá podSelector lại là lỗi cú pháp thiếu trường bắt buộc)."
+  },
+  {
+    "id": "K17-Q3",
+    "type": "tf",
+    "q": "Bản thân Kubernetes tự thực thi `NetworkPolicy` mà không phụ thuộc vào plugin mạng CNI: dù cụm dùng mạng cơ bản không hỗ trợ như `flannel` thuần tuý thì luật chặn cổng vẫn có tác dụng ngay lập tức.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Đối tượng NetworkPolicy chỉ là bản thiết kế luật; việc chặn gói tin thực tế do CNI Plugin (như Cilium, Calico, Antrea, Weave Net) đảm nhiệm. Nếu CNI không hỗ trợ, luật sẽ bị phớt lờ âm thầm!"
+  },
+  {
+    "id": "K17-Q4",
+    "type": "mc",
+    "q": "Trong cấu trúc một **Helm Chart** chuẩn, tệp tin nào đóng vai trò tương đương với `package.json` trong Node.js (khai báo tên Chart, phiên bản `version`, `appVersion` và `dependencies`)?",
+    "code": "",
+    "choices": [
+      "Chart.yaml",
+      "values.yaml",
+      "helmfile.lock",
+      "package-chart.json"
+    ],
+    "answer": 0,
+    "explain": "Chart.yaml chứa siêu dữ liệu định danh và phụ thuộc của gói Helm Chart, còn values.yaml chứa các biến cấu hình mặc định."
+  },
+  {
+    "id": "K17-Q5",
+    "type": "output",
+    "q": "Khi kết xuất biểu thức khuôn mẫu Helm `replicas: {{ .Values.replicaCount | default 2 }}` với tệp `values.yaml` có `replicaCount: 5`, kết quả dòng YAML sinh ra sẽ có giá trị số bằng bao nhiêu?",
+    "code": "# values.yaml\nreplicaCount: 5",
+    "choices": [],
+    "answer": "5",
+    "explain": "Hàm đường ống `| default 2` chỉ dùng số 2 khi `.Values.replicaCount` bị bỏ trống/không tồn tại; vì values.yaml truyền vào 5 nên kết quả là 5."
+  },
+  {
+    "id": "K17-Q6",
+    "type": "tf",
+    "q": "Khi có nhiều `NetworkPolicy` cùng nhắm tới một Pod Database, hiệu lực của các quy tắc cho phép (`ingress`/`egress`) mang tính cộng gộp (hợp của tất cả các nguồn được cho phép).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! NetworkPolicy trong K8s không có khái niệm thứ tự ưu tiên Deny đè Allow như firewall truyền thống: một khi Pod đã nằm trong diện bị quản lý, gói tin được đi qua nếu thoả mãn ÍT NHẤT MỘT luật cho phép."
+  },
+  {
+    "id": "K17-Q7",
+    "type": "mc",
+    "q": "Lệnh Helm nào vừa cài đặt mới bản phát hành nếu chưa tồn tại, vừa nâng cấp mượt mà nếu đã tồn tại kèm tệp ghi đè `values-prod.yaml`?",
+    "code": "",
+    "choices": [
+      "helm init shop ./chart --prod",
+      "helm upgrade --install shop ./chart -f values-prod.yaml",
+      "helm push shop ./chart --values values-prod.yaml",
+      "kubectl helm apply -f values-prod.yaml"
+    ],
+    "answer": 1,
+    "explain": "`helm upgrade --install <release> <chart> -f values-prod.yaml` là câu lệnh idempotent chuẩn mực dùng trong cả thực tế lẫn các đường ống CI/CD."
+  }
+]

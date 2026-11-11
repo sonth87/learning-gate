@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K13-D1",
+    "title": "Khai báo phiếu yêu cầu ổ đĩa PersistentVolumeClaim 10Gi hạng gp3",
+    "code": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: upload-pvc\nspec:\n  storageClassName: gp3\n  accessModes: [\"ReadWriteOnce\"]\n  resources: { requests: { storage: 10Gi } }"
+  },
+  {
+    "id": "K13-D2",
+    "title": "Tạo Headless Service cho cụm cơ sở dữ liệu StatefulSet",
+    "code": "apiVersion: v1\nkind: Service\nmetadata:\n  name: postgres-headless\nspec:\n  clusterIP: None\n  selector:\n    app: postgres"
+  }
+]

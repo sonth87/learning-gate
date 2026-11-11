@@ -1,0 +1,31 @@
+# Triển khai Xanh-Lam / Xanh-Lục (Blue-Green Deployment) với Argo Rollouts:
+# Dựng song song dàn Pod bản mới (Green) gắn vào dịch vụ nội bộ `shop-api-preview` để QA kiểm tra trước,
+# chỉ khi bấm duyệt promote thì công tắc `shop-api-active` mới chuyển 100% lưu lượng sang tức thì không gián đoạn!
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: shop-api
+  namespace: shop-prod
+spec:
+  replicas: 4
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+    spec:
+      containers:
+        - name: shop-api
+          image: ghcr.io/acme-corp/shop-api:sha-4a3b2c1d0e9f
+          ports:
+            - containerPort: 3000
+  strategy:
+    blueGreen:
+      activeService: shop-api-active
+      previewService: shop-api-preview
+      # Giữ ở trạng thái chờ QA kiểm tra cổng preview, không tự động lật công tắc lưu lượng thật
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 60

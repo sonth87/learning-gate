@@ -219,7 +219,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         analogyLabel: 'Nhà xưởng chứa đầy cờ lê, máy hàn',
         category: 'source',
         color: 'amber',
-        details: 'Sau khi thư viện đã nằm trong Cache, mới copy toàn bộ mã nguồn vào và chạy npm run build && npm prune --production để tạo ra thư mục thành phẩm ./dist.',
+        details: 'Sau khi thư viện đã nằm trong Cache, mới copy toàn bộ mã nguồn vào và chạy npm run build && npm prune --omit=dev để tạo ra thư mục thành phẩm ./dist.',
       },
       {
         id: 'stage-runner',
@@ -246,7 +246,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         stepNumber: 2,
         title: 'Biên dịch Mã nguồn tại Nhà xưởng (Stage 1: Builder)',
         actor: 'Stage 1 (AS builder)',
-        commandOrEvent: 'COPY . . → RUN npm run build && npm prune --production',
+        commandOrEvent: 'COPY . . → RUN npm run build && npm prune --omit=dev',
         description: 'Chỉ có tầng chứa mã nguồn mới vừa sửa phải chạy lại để biên dịch TypeScript sang bộ file chạy cuối cùng trong thư mục /usr/src/app/dist.',
         activeNodeIds: ['layer-deps', 'stage-builder'],
         packetPath: { from: 'layer-deps', to: 'stage-builder', label: 'Compile TS → dist/', color: '#f59e0b' },

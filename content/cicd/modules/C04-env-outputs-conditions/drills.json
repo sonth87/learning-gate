@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cicd-drill-c04-1",
+    "title": "Xuất mã băm commit rút gọn qua file môi trường $GITHUB_OUTPUT",
+    "code": "- name: Extract short SHA\n  id: meta\n  run: echo \"sha=${GITHUB_SHA::7}\" >> \"$GITHUB_OUTPUT\""
+  },
+  {
+    "id": "cicd-drill-c04-2",
+    "title": "Thu thập nhật ký lỗi tự động chỉ khi kiểm thử thất bại",
+    "code": "- name: Upload debug logs on failure\n  if: failure()\n  uses: actions/upload-artifact@v4\n  with:\n    name: debug-logs\n    path: logs/"
+  }
+]

@@ -1,0 +1,27 @@
+# Stage 1: Biên dịch tĩnh binary Go trên Alpine
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /src
+
+# Cache tải thư viện Go module trước khi copy mã nguồn
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# CGO_ENABLED=0 tạo file thực thi tĩnh hoàn toàn, không phụ thuộc thư viện C (glibc/musl)
+# -ldflags="-s -w" loại bỏ bảng ký hiệu debug để giảm dung lượng binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/payment-svc ./cmd/server
+
+# Stage 2: Distroless không có /bin/sh, không có apk/apt -> vô hiệu hoá tấn công Reverse Shell!
+FROM gcr.io/distroless/static-debian12:nonroot
+
+WORKDIR /app
+COPY --from=builder /out/payment-svc /app/payment-svc
+
+# Tag :nonroot đã mặc định chạy dưới UID 65532:65532
+USER nonroot:nonroot
+EXPOSE 8080
+
+ENTRYPOINT ["/app/payment-svc"]

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C16-Q1",
+    "type": "mc",
+    "q": "Tại sao chạy câu lệnh `ALTER TABLE orders RENAME COLUMN total TO grand_total;` ngay trước bước Rolling Update trên Kubernetes lại gây gián đoạn dịch vụ?",
+    "code": "",
+    "choices": [
+      "Vì PostgreSQL không hỗ trợ lệnh RENAME COLUMN trong container",
+      "Vì trong suốt quá trình Rolling Update, các Pod phiên bản cũ (v1) vẫn đang chạy song song và truy vấn cột `total` cũ, dẫn tới hàng loạt lỗi SQL 500 và không thể Rollback về v1",
+      "Vì Kubernetes tự động xoá bảng dữ liệu khi thấy lệnh ALTER TABLE",
+      "Vì lệnh RENAME COLUMN làm đầy ổ cứng của GitHub Runner"
+    ],
+    "answer": 1,
+    "explain": "Trong môi trường Zero-Downtime, tại thời điểm chuyển giao luôn tồn tại đồng thời cả code v1 và code v2 cùng nói chuyện với 1 Database duy nhất — do đó lược đồ DB bắt buộc phải tương thích với cả hai!"
+  },
+  {
+    "id": "C16-Q2",
+    "type": "mc",
+    "q": "Trong mô hình di trú dữ liệu **Expand-and-Contract** để đổi tên cột `full_name` sang `display_name`, thao tác `DROP COLUMN full_name` chỉ được phép thực hiện ở giai đoạn nào?",
+    "code": "",
+    "choices": [
+      "Ngay ở Pha 1 trước khi triển khai bất kỳ code mới nào",
+      "Ở Pha 3 (Contract), chỉ sau khi dữ liệu đã được backfill đầy đủ VÀ 100% Pod trên Production đã chuyển sang đọc/ghi cột `display_name` ổn định (không còn tiến trình nào chạm tới `full_name`)",
+      "Chạy song song cùng lúc với câu lệnh ADD COLUMN bằng một transaction lớn",
+      "Chạy thủ công trực tiếp trên máy local của lập trình viên"
+    ],
+    "answer": 1,
+    "explain": "Tách rời pha Mở rộng (Expand) và pha Thu hẹp (Contract) sang các đợt release độc lập đảm bảo tính tương thích ngược xuyên suốt và cho phép Rollback an toàn ở mọi bước."
+  },
+  {
+    "id": "C16-Q3",
+    "type": "output",
+    "q": "Khi dùng `actions/checkout@v4` cho câu lệnh `npx turbo run test --filter=...[origin/main]`, cần đặt tham số `fetch-depth` bằng số mấy để tải đầy đủ lịch sử Git phục vụ so sánh nhánh?",
+    "code": "- uses: actions/checkout@v4\n  with:\n    fetch-depth: ???",
+    "choices": [],
+    "answer": "0",
+    "explain": "`fetch-depth: 0` tải đầy đủ lịch sử commit và các tham chiếu nhánh thay vì shallow clone 1 commit mặc định (`fetch-depth: 1`)."
+  },
+  {
+    "id": "C16-Q4",
+    "type": "mc",
+    "q": "Trong Turborepo, cú pháp `--filter=...[origin/main]` (có dấu ba chấm `...` ở phía trước) khác gì so với `--filter=[origin/main]`?",
+    "code": "npx turbo run lint test build --filter=...[origin/main]",
+    "choices": [
+      "Nó chỉ chạy các tệp Markdown đã thay đổi",
+      "Nó chọn các package trực tiếp thay đổi so với `origin/main` CỘNG THÊM toàn bộ các package phụ thuộc ngược (dependents) vào những package đó trong đồ thị workspace",
+      "Nó bỏ qua bước kiểm tra kiểu dữ liệu TypeScript",
+      "Nó xoá bộ nhớ đệm trước khi chạy"
+    ],
+    "answer": 1,
+    "explain": "Nếu `packages/shared-utils` thay đổi, dấu `...` phía trước đảm bảo `apps/payment-api` và `apps/web` (vốn import `shared-utils`) cũng được kiểm thử lại để tránh gãy tích hợp!"
+  },
+  {
+    "id": "C16-Q5",
+    "type": "mc",
+    "q": "Đâu là danh sách chính xác của **Bộ 4 Chỉ số DORA (Four Keys)** chuẩn đo lường hiệu năng giao nhận phần mềm?",
+    "code": "",
+    "choices": [
+      "Số dòng code (LOC), Số lượng PR mỗi tuần, Độ phủ Unit Test (%), Số giờ họp Sprint",
+      "Deployment Frequency, Lead Time for Changes, Change Failure Rate (CFR), và Mean Time to Restore / Failed Deployment Recovery Time (MTTR)",
+      "CPU Usage, RAM Usage, Disk IOPS, và Network Bandwidth",
+      "Số sao GitHub, Số lượng nhánh Git, Dung lượng Docker Image, và Số phút chạy CI"
+    ],
+    "answer": 1,
+    "explain": "Hai chỉ số đầu (Deployment Frequency, Lead Time) đo lường Tốc độ (Throughput), còn hai chỉ số sau (Change Failure Rate, MTTR) đo lường Tính ổn định (Stability)."
+  },
+  {
+    "id": "C16-Q6",
+    "type": "tf",
+    "q": "Khi sử dụng `dorny/paths-filter@v3` để phát hiện thay đổi thư mục trong job `filters`, các giá trị đầu ra `needs.filters.outputs.<tên>` trong biểu thức `if:` của GitHub Actions luôn là kiểu chuỗi (`'true'` hoặc `'false'`).",
+    "code": "if: needs.filters.outputs.payment == 'true'",
+    "choices": [],
+    "answer": true,
+    "explain": "Mọi job output trong GitHub Actions đều được truyền dưới dạng chuỗi ký tự (string), do đó so sánh chính xác nhất là `== 'true'`."
+  },
+  {
+    "id": "C16-Q7",
+    "type": "tf",
+    "q": "Để tiết kiệm thời gian chờ đợi, nên cho job `migrate` (thêm cột mới vào DB) và job `deploy-app` (khởi chạy Pod đọc cột mới đó) chạy song song không có `needs` ràng buộc.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nếu chạy song song và `deploy-app` xong trước khi `migrate` kịp thêm cột mới, ứng dụng mới sẽ truy vấn vào cột chưa tồn tại và sập ngay lập tức! Bắt buộc `deploy-app` phải có `needs: [migrate]`."
+  }
+]

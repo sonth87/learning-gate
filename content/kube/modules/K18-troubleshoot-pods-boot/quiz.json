@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K18-Q1",
+    "type": "mc",
+    "q": "Khi gõ `kubectl get pods` và thấy một Pod dừng ở trạng thái `ImagePullBackOff`, lệnh tiếp theo chính xác nhất để tìm ra lý do cụ thể là gì?",
+    "code": "",
+    "choices": [
+      "kubectl logs <pod-name> --previous",
+      "kubectl describe pod <pod-name> (để đọc thông báo chi tiết ở phần Events cuối trang)",
+      "kubectl exec -it <pod-name> -- sh",
+      "kubectl top pod <pod-name>"
+    ],
+    "answer": 1,
+    "explain": "Ở trạng thái ImagePullBackOff, container chưa từng được tạo và chạy nên cả `logs` lẫn `exec` đều vô tác dụng. Mọi chi tiết (sai tag, thiếu quyền registry) đều nằm trong mục Events của `kubectl describe pod`."
+  },
+  {
+    "id": "K18-Q2",
+    "type": "tf",
+    "q": "Trạng thái `CreateContainerConfigError` cho biết tiến trình Node.js đã chạy được 5 giây rồi văng ngoại lệ cú pháp JavaScript.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `CreateContainerConfigError` xảy ra TRƯỚC KHI container chạy, do kubelet không tìm thấy `ConfigMap` hoặc `Secret` (hoặc khoá cụ thể) mà Pod yêu cầu nạp vào."
+  },
+  {
+    "id": "K18-Q3",
+    "type": "output",
+    "q": "Cờ dòng lệnh đầy đủ nào của `kubectl logs` giúp bạn xem được nhật ký lỗi (Stack Trace) của phiên bản container vừa mới bị sập ngay trước đó trong vòng lặp `CrashLoopBackOff`?",
+    "code": "kubectl logs order-worker-10001 ____",
+    "choices": [],
+    "answer": "--previous",
+    "explain": "Cờ `--previous` (hoặc viết tắt `-p`) truy xuất đầu ra stdout/stderr của lần chạy container vừa kết thúc lỗi trước khi kubelet tạo lại container mới."
+  },
+  {
+    "id": "K18-Q4",
+    "type": "mc",
+    "q": "Bạn chạy `kubectl describe pod upload-worker` và thấy sự kiện: `Warning FailedScheduling: pod has unbound immediate PersistentVolumeClaims`. Bạn nên kiểm tra tiếp đối tượng nào?",
+    "code": "",
+    "choices": [
+      "Kiểm tra `kubectl get pvc` và `kubectl get storageclass` xem chiếc PVC có bị sai tên `storageClassName` hay không",
+      "Kiểm tra chứng chỉ TLS của Ingress",
+      "Kiểm tra lịch chạy của CronJob",
+      "Tăng gấp đôi `replicas` của Deployment"
+    ],
+    "answer": 0,
+    "explain": "Thông báo này chỉ đích danh thủ phạm là chiếc PVC mà Pod đang gắn chưa được gán (Bound) ổ đĩa thật, thường do sai tên `storageClassName` hoặc sai `accessModes`."
+  },
+  {
+    "id": "K18-Q5",
+    "type": "mc",
+    "q": "Thời gian chờ khởi động lại (Back-off delay) giữa các lần sập liên tiếp của `CrashLoopBackOff` trong Kubernetes tăng dần theo quy luật nào?",
+    "code": "",
+    "choices": [
+      "Cố định đúng 1 giây mãi mãi",
+      "Tăng luỹ thừa nhân đôi (`10s → 20s → 40s → 80s...`) và chạm trần tối đa ở mức 5 phút (`300s`)",
+      "Chờ đúng 24 giờ sau mỗi lần sập",
+      "Tự động xoá vĩnh viễn Pod sau lần sập thứ 3"
+    ],
+    "answer": 1,
+    "explain": "kubelet áp dụng thuật toán Exponential Backoff nhân đôi thời gian nghỉ lên tối đa 5 phút để tránh đốt cháy 100% CPU của Worker Node bởi một container lỗi liên tục."
+  },
+  {
+    "id": "K18-Q6",
+    "type": "tf",
+    "q": "Nếu Pod kéo ảnh từ kho riêng tư (như `private.registry.local/shop/api:1.0.0`) mà quên gắn `imagePullSecrets`, Pod sẽ rơi vào trạng thái `ErrImagePull` / `ImagePullBackOff`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! containerd trên Worker Node bị máy chủ Registry từ chối xác thực (401/403 Unauthorized) nên không thể tải các lớp Image về, dẫn đến `ErrImagePull` rồi chuyển sang `ImagePullBackOff`."
+  },
+  {
+    "id": "K18-Q7",
+    "type": "output",
+    "q": "Trong 4 trạng thái lỗi `Pending`, `ImagePullBackOff`, `CreateContainerConfigError`, `CrashLoopBackOff`, trạng thái DUY NHẤT nào chứng tỏ container ứng dụng đã thực sự được khởi chạy?",
+    "code": "",
+    "choices": [],
+    "answer": "CrashLoopBackOff",
+    "explain": "Chỉ có `CrashLoopBackOff` là Image đã tải xong, cấu hình đã gắn đủ, tiến trình bên trong container đã chạy rồi thoát lỗi liên tục!"
+  }
+]

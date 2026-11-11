@@ -31,7 +31,7 @@ interface KubeStoreState {
 export const useKubeStore = create<KubeStoreState>()(
   persist(
     (set) => ({
-      activeTab: 'curriculum',
+      activeTab: 'learn',
       selectedLessonId: 'lesson-1-1-essence-oci-cri',
       selectedFlowId: 'code-to-k8s-pipeline',
       selectedIncidentId: 'incident-1-local-docker',
@@ -83,7 +83,7 @@ export const useKubeStore = create<KubeStoreState>()(
       setSearchOpen: (open) => set({ isSearchOpen: open }),
     }),
     {
-      name: 'kubemastery-learning-store-v1',
+      name: 'kubemastery-learning-store-v2',
     }
   )
 );

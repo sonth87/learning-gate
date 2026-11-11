@@ -1,0 +1,85 @@
+[
+  {
+    "id": "cicd-q-c00-1",
+    "type": "mc",
+    "q": "Khi một bước `run: npm test` trên GitHub Actions có 2 test case thất bại, tiến trình kiểm thử sẽ báo hiệu cho CI Runner bằng cách nào để chặn Pull Request?",
+    "code": "",
+    "choices": [
+      "In chữ \"ERROR\" màu đỏ ra stdout để AI của GitHub đọc hiểu",
+      "Kết thúc tiến trình với mã thoát khác không (Exit Code != 0, thường là 1)",
+      "Gửi một HTTP webhook riêng về máy chủ của lập trình viên",
+      "Tự động xoá nhánh Git vừa push lên"
+    ],
+    "answer": 1,
+    "explain": "CI Runner không đoán chữ trên màn hình console mà dựa hoàn toàn vào Exit Code của tiến trình hệ điều hành: `0` là thành công (xanh), khác `0` là thất bại (đỏ)."
+  },
+  {
+    "id": "cicd-q-c00-2",
+    "type": "output",
+    "q": "Dự đoán mã thoát (`$?`) in ra ở dòng cuối cùng khi chạy đoạn lệnh Bash sau (biết rằng `false` luôn trả về mã lỗi `1`, còn `true` luôn trả về `0`):",
+    "code": "false || true\necho $?",
+    "choices": [],
+    "answer": "0",
+    "explain": "Toán tử `||` thực thi vế phải (`true`) khi vế trái (`false`) thất bại. Vì `true` trả về `0`, toàn bộ biểu thức `false || true` kết thúc với Exit Code `0` — đây chính là nguyên nhân gây bẫy False-Green khi viết `npm test || true`."
+  },
+  {
+    "id": "cicd-q-c00-3",
+    "type": "tf",
+    "q": "Mặc định khi gọi `curl https://api.example.com/health` mà máy chủ phản hồi mã lỗi `HTTP 500 Internal Server Error`, lệnh `curl` vẫn kết thúc với Exit Code bằng `0`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mặc định `curl` coi việc kết nối mạng và nhận xong gói phản hồi HTTP (dù là 404 hay 500) là hoàn thành nhiệm vụ (`exit 0`). Bạn bắt buộc phải thêm `--fail` (hoặc `-f`) để `curl` trả mã lỗi `22` khi gặp HTTP >= 400."
+  },
+  {
+    "id": "cicd-q-c00-4",
+    "type": "mc",
+    "q": "Trong kịch bản Bash nhiều dòng có đường ống `npm test | tee report.txt`, tuỳ chọn nào trong `set -euo pipefail` đảm bảo lệnh không bị xanh giả khi `npm test` lỗi nhưng `tee` vẫn ghi file thành công?",
+    "code": "set -euo pipefail\nnpm test | tee report.txt",
+    "choices": [
+      "-e (errexit)",
+      "-u (nounset)",
+      "-o pipefail",
+      "Không cần cờ nào vì dấu | tự động lấy lỗi đầu tiên"
+    ],
+    "answer": 2,
+    "explain": "Mặc định Bash lấy mã thoát của lệnh cuối cùng trong đường ống (`tee`, vốn trả về `0`). Tuỳ chọn `-o pipefail` buộc đường ống trả về mã thoát khác 0 của lệnh thất bại gần nhất bên trong ống (`npm test`)."
+  },
+  {
+    "id": "cicd-q-c00-5",
+    "type": "mc",
+    "q": "Điều gì xảy ra khi chạy `npm ci` trên đường ống CI nhưng lập trình viên vừa nâng phiên bản thư viện trong `package.json` mà quên cập nhật `package-lock.json`?",
+    "code": "",
+    "choices": [
+      "npm ci tự động sửa lại package-lock.json rồi chạy tiếp bình thường",
+      "npm ci bỏ qua package-lock.json và kéo bản mới nhất trên npm registry",
+      "npm ci lập tức dừng lại và báo lỗi (Exit Code != 0) vì hai file lệch nhau",
+      "npm ci chỉ cài các gói trong dependencies và bỏ qua devDependencies"
+    ],
+    "answer": 2,
+    "explain": "`npm ci` đảm bảo tính tái lập tuyệt đối (reproducible builds): nếu `package.json` và `package-lock.json` không khớp nhau, nó lập tức báo lỗi và thoát khác 0 thay vì âm thầm tự sửa file khoá."
+  },
+  {
+    "id": "cicd-q-c00-6",
+    "type": "mc",
+    "q": "Đội phát triển của bạn tự động hoá toàn bộ bước test, đóng gói image và đẩy lên Staging, nhưng trước khi lên Production thì Job tạm dừng ở `environment: production` chờ Tech Lead bấm nút Approve. Mô hình này gọi là gì?",
+    "code": "",
+    "choices": [
+      "Continuous Integration (Tích hợp liên tục)",
+      "Continuous Delivery (Chuyển giao liên tục)",
+      "Continuous Deployment (Triển khai liên tục)",
+      "Manual Ops truyền thống"
+    ],
+    "answer": 1,
+    "explain": "Continuous Delivery tự động hoá đến sát ngưỡng sẵn sàng phát hành kèm cổng duyệt chủ động (Manual Gate) cho Production; còn Continuous Deployment tự động đẩy thẳng lên Production không cần người bấm duyệt."
+  },
+  {
+    "id": "cicd-q-c00-7",
+    "type": "tf",
+    "q": "Khi một container hoặc tiến trình kiểm thử trên Linux CI Runner đột ngột dừng với `Exit Code 137`, nguyên nhân phổ biến nhất là tiến trình bị nhận tín hiệu `SIGKILL` (thường do tràn bộ nhớ RAM — OOM Killer).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Theo quy ước Linux, tiến trình chết bởi tín hiệu `N` có mã thoát `128 + N`. Với `SIGKILL` (`9`), mã thoát là `128 + 9 = 137`, dấu hiệu kinh điển của Out-Of-Memory (OOM)."
+  }
+]

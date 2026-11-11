@@ -1,0 +1,58 @@
+{
+  "id": "K06",
+  "slug": "K06-docker-compose-v2",
+  "level": 1,
+  "order": 6,
+  "title": "Điều phối đa dịch vụ tại máy cá nhân với Docker Compose v2",
+  "summary": "Viết compose.yaml hiện đại không còn khoá version:, nối mạng qua tên dịch vụ, bảo toàn dữ liệu Postgres bằng Named Volume và chờ DB sẵn sàng với service_healthy.",
+  "tags": [
+    "compose-v2",
+    "yaml",
+    "postgres",
+    "healthcheck",
+    "depends_on"
+  ],
+  "sources": [
+    {
+      "title": "Compose Specification & Application Model",
+      "url": "https://docs.docker.com/compose/intro/compose-application-model/",
+      "version": "Docker Compose v2.29+"
+    },
+    {
+      "title": "Control Startup Order in Compose (service_healthy)",
+      "url": "https://docs.docker.com/compose/how-tos/startup-order/",
+      "version": "Docker Compose v2.29+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Named Volume vs Bind Mount",
+      "kind": "flow",
+      "targetId": "docker-volume-vs-bind",
+      "description": "Hiểu trực quan cách Compose giữ bền vững dữ liệu Postgres qua các lần down/up"
+    }
+  ],
+  "readings": [
+    {
+      "path": "compose/fullstack-v2/compose.yaml",
+      "kind": "good",
+      "note": "Bản mẫu Fullstack Compose v2 chuẩn mực kết hợp Node.js API + PostgreSQL 16 + Redis 7.",
+      "task": "Kiểm tra cách `api` kết nối tới Postgres/Redis trong mục `environment` và cách nó đảm bảo không khởi chạy trước khi DB mở cổng.",
+      "answer": "`api` gọi qua tên dịch vụ `@postgres:5432` và `redis://redis:6379` (không dùng `localhost`), đồng thời dùng `depends_on` kèm `condition: service_healthy` kết hợp `pg_isready` và `redis-cli ping`."
+    },
+    {
+      "path": "compose/legacy/docker-compose-v1.yml",
+      "kind": "outdated",
+      "note": "Nhận diện các mẫu cấu hình cũ từ thời Compose v1 để không sao chép nhầm từ bài viết cũ.",
+      "task": "Chỉ ra 3 chi tiết đã lỗi thời trong tệp `docker-compose-v1.yml` này.",
+      "answer": "1) Khai báo `version: \"2.4\"` ở đầu tệp (đã bị bỏ trong Compose Spec hiện đại); 2) Dùng `links:` thủ công (nay mạng Compose tự phân giải DNS theo tên dịch vụ); 3) Dùng `depends_on: [db]` dạng danh sách mù không chờ `service_healthy`."
+    },
+    {
+      "path": "compose/dev-watch/compose.watch.yaml",
+      "kind": "compare",
+      "note": "Quy trình phát triển mới `docker compose watch` thay thế Bind Mount cổ điển.",
+      "task": "Khi nào Compose Watch dùng hành động `sync` và khi nào nó tự động kích hoạt `rebuild`?",
+      "answer": "Khi sửa code trong `./src` nó chỉ `sync` tệp đổi sang `/app/src` cực nhanh; còn khi `package.json` hoặc `package-lock.json` thay đổi, nó tự động `rebuild` lại Image để cài gói mới chuẩn Linux."
+    }
+  ]
+}

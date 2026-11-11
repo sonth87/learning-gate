@@ -1,9 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   useStore,
   useMenuAction,
   useContextAction,
 } from '@sonth87/device-layout';
+import { switchLearningApp } from '@/apps/appRegistry';
+import { SettingsModal } from '@/components/layout/SettingsModal';
+import { useNavigationStore } from '@/stores/useNavigationStore';
+import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
+import { useCicdProgress } from '@/features/devops-course/store';
+import type { RelatedToolLink } from '@/features/devops-course/types';
 import { CicdMainTab } from './types/cicd.types';
 import { useCicdNavigationStore } from './stores/useCicdNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
@@ -28,8 +34,10 @@ export interface CicdMasteryAppProps {
 }
 
 export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
-  const { activeTab, setActiveTab } = useCicdNavigationStore();
+  const { activeTab, setActiveTab, selectWarRoom, selectBlueprint, setSimulatorMode } = useCicdNavigationStore();
+  const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
+  const hydrateCicd = useCicdProgress((s) => s.hydrate);
   const fontSize = useSettingsStore((s) => s.fontSize);
 
   const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
@@ -37,10 +45,13 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
   useEffect(() => {
     hydrateAll();
-  }, [hydrateAll]);
+    hydrateCicd();
+  }, [hydrateAll, hydrateCicd]);
 
   const handleAction = (action: string) => {
-    if (action.startsWith('tab:')) {
+    if (action === 'openSettings') {
+      setSettingsOpen(true);
+    } else if (action.startsWith('tab:')) {
       const tab = action.replace('tab:', '') as CicdMainTab;
       setActiveTab(tab);
     }
@@ -48,6 +59,23 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
   useMenuAction('cicdmastery', handleAction, windowId);
   useContextAction('cicdmastery', handleAction);
+
+  const handleRelatedTool = useCallback(
+    (link: RelatedToolLink) => {
+      if (link.kind === 'warroom') {
+        selectWarRoom(link.targetId);
+      } else if (link.kind === 'blueprint') {
+        selectBlueprint(link.targetId);
+      } else if (link.kind === 'simulator-preset') {
+        setSimulatorMode(link.targetId === 'traffic' ? 'traffic' : 'pipeline');
+      } else if (link.kind === 'tab') {
+        setActiveTab(link.targetId as CicdMainTab);
+      } else if (link.kind === 'cross-app') {
+        switchLearningApp(link.targetId as 'pymastery' | 'kubemastery' | 'cicdmastery');
+      }
+    },
+    [selectBlueprint, selectWarRoom, setActiveTab, setSimulatorMode]
+  );
 
   return (
     <div
@@ -61,8 +89,9 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
     >
       <CicdHeader />
 
-      {/* Main Content Area: CicdHeader and CicdMobileBottomNav stay pinned */}
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
+        {activeTab === 'learn' && <DevOpsCourseApp courseId="cicd" onOpenRelatedTool={handleRelatedTool} />}
+
         {activeTab === 'curriculum' && (
           <div className="flex h-full w-full flex-row overflow-hidden">
             <CicdSidebar />
@@ -113,10 +142,10 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
         )}
       </main>
 
-      {/* Mobile & Tablet Bottom Navigation Bar (< lg) */}
       <CicdMobileBottomNav />
 
       <NotesDrawer />
+      <SettingsModal />
     </div>
   );
 };

@@ -1,0 +1,53 @@
+# Chuẩn truyền dữ liệu giữa các Job bằng $GITHUB_OUTPUT và xử lý sự cố với if: failure()
+name: Outputs and Conditional Steps
+
+on:
+  push:
+    branches: [main]
+    # Bỏ qua không tốn phút chạy CI nếu commit chỉ sửa tài liệu Markdown
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-meta:
+    runs-on: ubuntu-latest
+    # Khai báo tường minh đầu ra của Job để các Job đứng sau (needs) đọc được
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tính toán mã phiên bản bất biến từ Git SHA
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "release_tag=v2026.04-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+
+  test-and-package:
+    needs: prepare-meta
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      RELEASE_TAG: ${{ needs.prepare-meta.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test -- --reporter=junit --outputFile=reports/junit.xml
+
+      # Chỉ kích hoạt bước gom log khám nghiệm khi một bước phía trên bị ĐỎ!
+      - name: Thu thập nhật ký lỗi khi Test thất bại
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs-${{ github.run_id }}
+          path: |
+            reports/
+            npm-debug.log*
+          retention-days: 5

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "C17-Q1",
+    "type": "mc",
+    "q": "[Sự cố B1] Khi tiếp nhận một workflow PR mất 42 phút vì chạy nối đuôi `npm install` -> `npm run lint` -> `npm test` -> `sleep 45`, tổ hợp cải tiến nào rút ngắn Critical Path mạnh mẽ và an toàn nhất?",
+    "code": "",
+    "choices": [
+      "Thêm continue-on-error: true vào tất cả các bước và xoá bớt 50% bài test",
+      "Dùng `actions/setup-node@v4` (`cache: \"npm\"`) + `npm ci`, tách `lint` và `test` thành 2 job song song, chia mảnh `test` bằng `strategy.matrix.shard: [1, 2, 3, 4]`, bỏ `sleep 45` và đặt `timeout-minutes`",
+      "Đổi `ubuntu-latest` sang chạy thủ công trên máy cá nhân của trưởng nhóm",
+      "Gộp toàn bộ lệnh vào một dòng Bash duy nhất ngăn cách bằng dấu chấm phẩy"
+    ],
+    "answer": 1,
+    "explain": "Kết hợp Cache npm + `npm ci` + tách DAG song song + Sharding 4 luồng xử lý trực diện cả thời gian cài đặt lẫn nút thắt cổ chai của bộ kiểm thử."
+  },
+  {
+    "id": "C17-Q2",
+    "type": "mc",
+    "q": "[Sự cố B2] Chuyện gì xảy ra trên thực tế nếu job `deploy-production` đặt `concurrency: { group: \"production-deploy\", cancel-in-progress: true }` khi có 2 commit được merge vào `main` cách nhau 40 giây?",
+    "code": "concurrency:\n  group: production-deploy\n  cancel-in-progress: true",
+    "choices": [
+      "GitHub tự động gộp 2 commit lại và chờ đợt đầu chạy xong xuôi mới chạy đợt hai",
+      "Đợt triển khai thứ nhất bị gửi tín hiệu huỷ ngang xương ngay giữa lúc đang cập nhật hạ tầng/migration, gây hỏng trạng thái (partial deploy / corrupted lock) trên Production!",
+      "Commit thứ hai bị từ chối không cho merge vào main",
+      "Không có tác dụng gì vì concurrency không hoạt động trên nhánh main"
+    ],
+    "answer": 1,
+    "explain": "Trên Production bắt buộc phải đặt `cancel-in-progress: false` để đợt phát hành mới xếp hàng (`Pending`) chờ đợt đang chạy kết thúc an toàn."
+  },
+  {
+    "id": "C17-Q3",
+    "type": "tf",
+    "q": "[Sự cố B3] Khi phát hiện một khoá API thật bị gõ cứng trong file `.github/workflows/ci.yml` và đã push lên GitHub, chỉ cần tạo commit mới thay chuỗi đó bằng `${{ secrets.STRIPE_API_KEY }}` là khoá cũ hoàn toàn an toàn, không cần thu hồi (revoke/rotate).",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Commit mới chỉ xoá chuỗi khoá ở phiên bản HEAD hiện tại, còn khoá bị lộ vẫn nằm nguyên vẹn trong lịch sử `git log` (và có thể đã bị bot quét thu thập)! Bắt buộc phải Revoke/Rotate khoá ngay lập tức VÀ thêm cổng quét Gitleaks."
+  },
+  {
+    "id": "C17-Q4",
+    "type": "output",
+    "q": "[Sự cố B6] Trong câu lệnh `npm test || true`, toán tử 2 ký tự nào phía trước từ khoá `true` đã nuốt mất mã thoát lỗi khác 0 của trình chạy test?",
+    "code": "run: npm test || true",
+    "choices": [],
+    "answer": "||",
+    "explain": "Toán tử OR logic `||` trong shell chạy lệnh vế phải (`true`, luôn trả exit code 0) khi lệnh vế trái thất bại, biến toàn bộ dòng lệnh thành exit code 0!"
+  },
+  {
+    "id": "C17-Q5",
+    "type": "mc",
+    "q": "[Sự cố B6] Trong một pipeline kiểm định bảo mật, đặt `continue-on-error: true` trên job hoặc step `trivy-scan` gây ra hậu quả gì?",
+    "code": "- name: Trivy Vulnerability Scan\n  continue-on-error: true",
+    "choices": [
+      "Làm Trivy quét sâu hơn cả các thư viện devDependencies",
+      "Dù Trivy phát hiện lỗ hổng CRITICAL và trả về exit code 1, pipeline vẫn báo XANH và cho phép bản build chứa lỗ hổng đi thẳng lên Production",
+      "Tự động nâng cấp phiên bản gói npm bị lỗi bảo mật",
+      "Gửi báo cáo bảo mật sang tab Security của GitHub"
+    ],
+    "answer": 1,
+    "explain": "`continue-on-error: true` biến cổng chặn bảo mật (Hard Gate) thành cảnh báo vô hại bị lờ đi hoàn toàn."
+  },
+  {
+    "id": "C17-Q6",
+    "type": "mc",
+    "q": "[Sự cố B3] Tại sao bước quét rò rỉ khoá bí mật bằng `gitleaks detect` trong CI nên đi kèm `fetch-depth: 0` ở bước `actions/checkout@v4`?",
+    "code": "",
+    "choices": [
+      "Vì Gitleaks viết bằng ngôn ngữ Rust cần đọc tệp .git/config",
+      "Để Gitleaks quét xuyên suốt toàn bộ lịch sử các commit trong PR (phát hiện cả trường hợp lập trình viên lỡ commit lộ khoá ở commit thứ 1 rồi xoá đi ở commit thứ 2!)",
+      "Để giảm dung lượng tải mã nguồn xuống mức thấp nhất",
+      "Vì GitHub cấm chạy Gitleaks nếu không có fetch-depth: 0"
+    ],
+    "answer": 1,
+    "explain": "Nếu chỉ quét ảnh chụp tệp cuối cùng (`fetch-depth: 1`), kẻ gian hoặc lập trình viên sơ ý commit lộ khoá ở commit giữa rồi xoá ở commit cuối vẫn sẽ để lọt khoá nằm trong lịch sử Git khi merge!"
+  },
+  {
+    "id": "C17-Q7",
+    "type": "tf",
+    "q": "Trong GitHub Actions, nếu bạn không khai báo `timeout-minutes` cho job, một tiến trình kiểm thử bị treo deadlock sẽ ngốn tài nguyên suốt **360 phút (6 tiếng)** mặc định trước khi bị hệ thống tự huỷ.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Mặc định 360 phút của GitHub Actions là nguyên nhân hàng đầu làm cạn sạch hạn mức phút chạy CI hàng tháng chỉ sau vài PR bị treo kết nối."
+  }
+]

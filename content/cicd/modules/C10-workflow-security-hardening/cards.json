@@ -1,0 +1,32 @@
+[
+  {
+    "id": "C10-C1",
+    "front": "Cách phòng chống tuyệt đối lỗ hổng GitHub Actions Script Injection khi xử lý dữ liệu PR/Issue?",
+    "back": "Không bao giờ viết `${{ github.event... }}` trực tiếp trong `run:`. Luôn gán qua khối `env:` của bước đó (ví dụ `PR_TITLE: ${{ github.event.pull_request.title }}`) rồi gọi `\"$PR_TITLE\"` trong shell."
+  },
+  {
+    "id": "C10-C2",
+    "front": "Tại sao kết hợp `on: pull_request_target` với `actions/checkout` mã nguồn của PR lại gây thảm hoạ Pwn Request?",
+    "back": "Vì `pull_request_target` chạy với đầy đủ `secrets` và `GITHUB_TOKEN` quyền ghi của kho gốc; khi tải và chạy mã chưa duyệt từ Fork (`npm ci`, `build`), tin tặc đọc sạch toàn bộ bí mật dự án!"
+  },
+  {
+    "id": "C10-C3",
+    "front": "Quy tắc ghim phiên bản an toàn cho các GitHub Actions bên thứ ba (Third-party Actions)?",
+    "back": "Ghim cứng vào Commit SHA đầy đủ 40 ký tự thập lục phân kèm comment phiên bản dễ đọc, ví dụ: `uses: aquasecurity/trivy-action@18f2510ee396bbf400402917b394f2dd8c87dbb0 # v0.28.0`."
+  },
+  {
+    "id": "C10-C4",
+    "front": "Mẫu thiết kế phân quyền `GITHUB_TOKEN` chuẩn Least Privilege trong tệp Workflow?",
+    "back": "Khai báo `permissions: { contents: read }` ở cấp cao nhất của tệp, và chỉ ghi đè mở rộng quyền tối thiểu ngay bên trong từng Job cụ thể cần quyền ghi."
+  },
+  {
+    "id": "C10-C5",
+    "front": "Bốn biến ngữ cảnh phổ biến nhất do người ngoài kiểm soát không bao giờ được nối thẳng vào `run:`?",
+    "back": "`github.event.pull_request.title`, `pull_request.body`, `pull_request.head.ref`, `github.event.issue.title` / `comment.body` (và `commits[].message`)."
+  },
+  {
+    "id": "C10-C6",
+    "front": "Nếu GitHub phát hiện một chuỗi khớp giá trị trong `secrets` bị in ra màn hình log, tính năng che dấu `***` có bảo vệ bạn tuyệt đối 100% không?",
+    "back": "Không! Tin tặc chỉ cần mã hoá Base64 (`echo \"$SECRET\" | base64`) hoặc chèn khoảng trắng giữa các ký tự là vượt qua bộ lọc che dấu văn bản thuần của log ngay lập tức!"
+  }
+]

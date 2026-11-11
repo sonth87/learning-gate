@@ -1,0 +1,56 @@
+{
+  "id": "C00",
+  "slug": "C00-exit-codes-and-ci",
+  "level": 0,
+  "order": 0,
+  "title": "Từ npm scripts đến CI Gate: Sức mạnh của Exit Code",
+  "summary": "Hiểu cơ chế Exit Code chặn cổng lỗi, diệt bẫy False-Green (curl --fail, || true, set -euo pipefail), chuẩn npm ci và ranh giới CI vs Continuous Delivery vs Deployment.",
+  "tags": [
+    "exit-code",
+    "npm-ci",
+    "fail-fast",
+    "false-green",
+    "ci-cd-basics"
+  ],
+  "relatedTools": [
+    {
+      "label": "Giả lập Pipeline Trực quan",
+      "kind": "simulator-preset",
+      "targetId": "pipeline",
+      "description": "Bấm chạy thử một Pipeline để thấy cách Exit Code chặn cổng lỗi"
+    }
+  ],
+  "sources": [
+    {
+      "title": "About Continuous Integration with GitHub Actions",
+      "url": "https://docs.github.com/en/actions/about-github-actions/about-continuous-integration-with-github-actions",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Workflow syntax for GitHub Actions — exit codes & continue-on-error",
+      "url": "https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#jobsjob_idstepscontinue-on-error",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "npm-ci — Clean install a project",
+      "url": "https://docs.npmjs.com/cli/v10/commands/npm-ci",
+      "version": "npm CLI Docs"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/node-ci-minimal.yml",
+      "kind": "good",
+      "note": "Bản mẫu CI tối giản chuẩn 2026 cho ứng dụng Node.js 22: khoá quyền đọc, dùng checkout@v4, setup-node@v4 và chạy tuần tự npm ci -> lint -> test.",
+      "task": "Quan sát các bước từ dòng 30 đến 38: nếu `npm run lint` ở dòng 34 phát hiện 1 lỗi ESLint và thoát với mã `1`, bước `npm test` ở dòng 37 có được thực thi tiếp không? Vì sao?",
+      "answer": "Không! Khi `npm run lint` trả về `Exit Code = 1` (khác 0), cơ chế Fail-Fast mặc định của GitHub Actions lập tức đánh dấu Step đó thất bại, huỷ bỏ các Step đứng sau (`npm test`) và chặn cổng PR."
+    },
+    {
+      "path": "github/false-green-exitcode.yml",
+      "kind": "bug",
+      "note": "Hồ sơ bẫy \"Xanh vỏ đỏ lòng\" (False-Green): cả TypeScript, Unit Test lẫn API Staging đều hỏng nhưng workflow vẫn báo tích xanh.",
+      "task": "Hãy chỉ ra chính xác 3 cơ chế đang nuốt mất Exit Code ở các bước `Typecheck`, `Run Unit Tests` và `Smoke check staging health`.",
+      "answer": "1) Bước `Typecheck` bật `continue-on-error: true` khiến lỗi biên dịch vẫn tính là pass; 2) Bước `Run Unit Tests` nối `|| true` ép mã thoát luôn về `0`; 3) Bước `Smoke check` gọi `curl` thiếu cờ `--fail` (hoặc `-f`) nên HTTP 500 vẫn trả về exit code `0`."
+    }
+  ]
+}

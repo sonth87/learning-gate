@@ -1,0 +1,62 @@
+{
+  "id": "K16",
+  "slug": "K16-security-context-rbac",
+  "level": 5,
+  "order": 16,
+  "title": "Bảo mật Pod & Phân quyền truy cập: SecurityContext, Pod Security Admission & RBAC",
+  "summary": "Gia cố container chạy non-root với hệ thống tệp chỉ đọc, áp dụng chuẩn Pod Security Admission restricted thay thế PSP cũ, và phân quyền RBAC tối thiểu.",
+  "tags": [
+    "securitycontext",
+    "psa",
+    "rbac",
+    "serviceaccount",
+    "hardening"
+  ],
+  "sources": [
+    {
+      "title": "Pod Security Standards & Admission",
+      "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "version": "Kubernetes v1.31+"
+    },
+    {
+      "title": "Using RBAC Authorization",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "version": "Kubernetes v1.31+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Cô lập Namespaces & Cgroups",
+      "kind": "flow",
+      "targetId": "linux-kernel-isolation"
+    },
+    {
+      "label": "Tra cứu Thuật ngữ Bảo mật K8s",
+      "kind": "tab",
+      "targetId": "glossary"
+    }
+  ],
+  "readings": [
+    {
+      "path": "k8s/security/pod-restricted-psa.yaml",
+      "kind": "good",
+      "note": "Cấu hình mẫu đạt chuẩn bảo mật cao nhất Restricted của Pod Security Standards trên K8s v1.30+, kèm ổ đĩa tạm emptyDir tại /tmp.",
+      "task": "Tìm tất cả các thuộc tính bên trong hai khối securityContext (cấp Pod và cấp Container) giúp Pod vượt qua bộ lọc Restricted.",
+      "answer": "Cấp Pod đặt runAsNonRoot: true, runAsUser: 1000, seccompProfile.type: RuntimeDefault; cấp Container đặt allowPrivilegeEscalation: false, capabilities.drop: [\"ALL\"] và readOnlyRootFilesystem: true."
+    },
+    {
+      "path": "k8s/security/pod-privileged-escape.yaml",
+      "kind": "security",
+      "note": "Tệp YAML cực kỳ nguy hiểm mở toang cánh cửa thoát khỏi container (Container Escape) chiếm quyền điều khiển máy chủ vật lý.",
+      "task": "Chỉ ra 3 cấu hình tử huyệt trong tệp này biến container thành root của toàn bộ Worker Node.",
+      "answer": "1) privileged: true (gỡ bỏ mọi rào cản cgroups/capabilities), 2) hostNetwork: true (nghe lén lưu lượng mạng của Node), và 3) gắn hostPath /var/run/docker.sock (cho phép tạo container quyền tối cao trực tiếp trên máy chủ)."
+    },
+    {
+      "path": "k8s/security/rbac-least-privilege.yaml",
+      "kind": "good",
+      "note": "Phân quyền RBAC chuẩn Least Privilege: tắt tự động gắn token mặc định và chỉ cấp đúng quyền đọc cần thiết trong phạm vi một Namespace.",
+      "task": "Giải thích tại sao RoleBinding lại an toàn hơn ClusterRoleBinding khi cấp quyền cho một microservice đơn lẻ.",
+      "answer": "RoleBinding giới hạn phạm vi quyền hạn nằm gọn bên trong đúng 1 Namespace chỉ định (ví dụ backend). Nếu Pod bị tấn công, tin tặc cũng không thể đọc sang tài nguyên của các Namespace khác như payments hay kube-system."
+    }
+  ]
+}

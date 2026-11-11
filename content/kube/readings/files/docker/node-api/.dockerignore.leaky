@@ -1,0 +1,14 @@
+# CẢNH BÁO: File .dockerignore có 2 lỗi nghiêm trọng!
+node_modules
+dist
+coverage
+
+# LỖI BẢO MẬT 1: Quên chặn ".env", ".env.*" và ".git"!
+# Khi Dockerfile gọi "COPY . .", toàn bộ file .env chứa mật khẩu DB local và lịch sử .git
+# sẽ nằm vĩnh viễn trong Image — bất kỳ ai có quyền pull image đều đọc được!
+
+# LỖI LOGIC 2: Dùng mẫu "*.json" quá rộng mà không khoanh vùng!
+# Quy tắc này vô tình chặn luôn cả:
+#   - package.json, package-lock.json, tsconfig.json (làm gãy bước npm ci / tsc)
+#   - src/config/regions.json (làm ứng dụng báo lỗi MODULE_NOT_FOUND lúc khởi chạy)
+*.json

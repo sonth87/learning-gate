@@ -1,0 +1,33 @@
+# XÁC THỰC KHÔNG KHOÁ TĨNH (KEYLESS OIDC) VỚI AMAZON WEB SERVICES:
+# Không lưu bất kỳ AWS_ACCESS_KEY_ID hay AWS_SECRET_ACCESS_KEY dài hạn nào trong GitHub Secrets!
+# GitHub cấp một thẻ căn cước JWT ngắn hạn (id-token: write) để đổi lấy quyền tạm thời 15 phút từ AWS STS.
+name: Keyless AWS Deploy via OIDC
+
+on:
+  push:
+    branches: [main]
+
+# Bắt buộc phải bật id-token: write để Runner xin cấp mã thông báo OIDC JWT
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-ecr:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Đổi thẻ OIDC lấy chứng chỉ AWS STS tạm thời (tự hết hạn sau Job)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-oidc-shop-api-prod
+          role-session-name: gha-shop-api-${{ github.run_id }}
+          aws-region: ap-southeast-1
+
+      - name: Đăng nhập Amazon ECR và đẩy Image mang mã định danh SHA bất biến
+        run: |
+          aws sts get-caller-identity
+          echo "Authenticated via OIDC without any long-lived AWS keys!"

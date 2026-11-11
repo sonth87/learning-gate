@@ -1,0 +1,45 @@
+# Chiến lược Cache phân tầng bảo mật & tốc độ:
+# - Nhánh chuẩn (main): được quyền đọc VÀ ghi mới cache (actions/cache@v4)
+# - Nhánh Pull Request: chỉ đọc cache từ main sang (actions/cache/restore@v4), tránh PR rác làm bẩn cache chung
+name: Read-Only Cache Pattern for PRs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-with-smart-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Khi chạy trên main: vừa restore vừa tự động save cache cuối Job
+      - name: Warm & Save npm cache on main
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      # Khi chạy trên Pull Request: chỉ tải cache (Read-Only), tiết kiệm thời gian nén tải lên cuối Job
+      - name: Restore npm cache read-only on PR
+        if: github.ref != 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - run: npm ci --prefer-offline
+      - run: npm test

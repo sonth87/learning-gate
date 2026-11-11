@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K06-D1",
+    "title": "Cấu hình compose.yaml hiện đại không có khoá version",
+    "code": "services:\n  redis:\n    image: redis:7-alpine\n  api:\n    image: node:22-alpine\n    environment:\n      REDIS_HOST: redis"
+  },
+  {
+    "id": "K06-D2",
+    "title": "Vận hành vòng đời cụm dịch vụ bằng lệnh Docker Compose v2",
+    "code": "docker compose up -d\ndocker compose ps\ndocker compose down"
+  }
+]

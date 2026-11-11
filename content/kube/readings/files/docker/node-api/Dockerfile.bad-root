@@ -1,0 +1,23 @@
+# CẢNH BÁO: Dockerfile minh hoạ nhiều anti-pattern phổ biến ở dự án Node.js mới
+# Đừng copy nguyên mẫu này lên môi trường Production!
+
+# LỖI 1: Không ghim phiên bản (floating tag :latest)
+# Hôm nay là Node 22, nhưng sang năm có thể tự nhảy lên Node 24 làm gãy native addon
+FROM node:latest
+
+WORKDIR /usr/src/app
+
+# LỖI 2: Copy toàn bộ mã nguồn TRƯỚC khi cài đặt thư viện
+# Chỉ sửa 1 dòng comment trong src/server.js cũng làm vỡ cache của bước npm install!
+# Ngoài ra nếu quên .dockerignore, cả thư mục node_modules của máy Mac/Windows sẽ đè vào Linux container
+COPY . .
+
+# LỖI 3: Dùng "npm install" thay vì "npm ci"
+# Có thể tự ý cập nhật minor/patch khác với package-lock.json trên máy dev
+RUN npm install
+
+EXPOSE 3000
+
+# LỖI 4: Không chuyển sang USER node -> tiến trình chạy dưới quyền UID 0 (root)
+# LỖI 5: Dùng Shell form thay vì JSON Exec form -> /bin/sh -c chiếm PID 1, nuốt tín hiệu SIGTERM
+CMD node server.js

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K07-FC1",
+    "front": "Bốn thành phần chính nằm trên **Control Plane** của Kubernetes là gì?",
+    "back": "1) **`kube-apiserver`** (cổng API trung tâm);\n2) **`etcd`** (CSDL lưu trạng thái cụm);\n3) **`kube-scheduler`** (xếp chỗ Pod vào Node);\n4) **`kube-controller-manager`** (duy trì vòng lặp điều khiển)."
+  },
+  {
+    "id": "K07-FC2",
+    "front": "Ba thành phần chính chạy trên mỗi **Worker Node** là gì?",
+    "back": "1) **`kubelet`** (quản đốc điều khiển Pod trên Node);\n2) **Container Runtime** (`containerd`);\n3) **`kube-proxy`** (định tuyến mạng cho Service)."
+  },
+  {
+    "id": "K07-FC3",
+    "front": "Bốn trường gốc bắt buộc trong một Manifest YAML của Kubernetes?",
+    "back": "**`apiVersion`**, **`kind`**, **`metadata`**, **`spec`**."
+  },
+  {
+    "id": "K07-FC4",
+    "front": "Ý nghĩa cốt lõi của **Reconciliation / Control Loop** trong Kubernetes?",
+    "back": "Liên tục quan sát **Actual State** (trạng thái thực tế), so sánh với **Desired State** (trạng thái khai báo trong YAML) và tự động thực thi hành động bù trừ để hai vế luôn bằng nhau."
+  },
+  {
+    "id": "K07-FC5",
+    "front": "Sự khác nhau giữa lệnh `kubectl get pod X` và `kubectl describe pod X`?",
+    "back": "- `get`: Hiển thị bảng tóm tắt trạng thái 1 dòng.\n- `describe`: Hiển thị hồ sơ chi tiết gồm Node được xếp, IP, Volumes và đặc biệt là bảng lịch sử **`Events:`** ở cuối để tìm nguyên nhân lỗi."
+  },
+  {
+    "id": "K07-FC6",
+    "front": "`apiVersion` chuẩn của `Pod`/`Service`/`ConfigMap`/`Secret` so với `Deployment`/`StatefulSet`?",
+    "back": "- `Pod`, `Service`, `ConfigMap`, `Secret`, `Namespace`: **`v1`**\n- `Deployment`, `StatefulSet`, `DaemonSet`: **`apps/v1`**"
+  }
+]

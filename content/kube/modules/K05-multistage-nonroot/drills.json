@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K05-D1",
+    "title": "Biên dịch TypeScript và gọt bỏ devDependencies ở stage builder",
+    "code": "FROM node:22-alpine AS builder\nWORKDIR /app\nCOPY package.json package-lock.json ./\nRUN npm ci\nCOPY tsconfig.json ./\nCOPY src ./src\nRUN npm run build && npm prune --omit=dev"
+  },
+  {
+    "id": "K05-D2",
+    "title": "Stage runner gọn sạch chạy dưới quyền USER node",
+    "code": "FROM node:22-alpine AS runner\nENV NODE_ENV=production\nWORKDIR /app\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/dist ./dist\nUSER node\nCMD [\"node\", \"dist/main.js\"]"
+  }
+]

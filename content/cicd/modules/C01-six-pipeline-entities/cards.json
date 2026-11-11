@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cicd-card-c01-1",
+    "front": "Kể tên 6 thực thể cốt lõi cấu thành một đường ống GitHub Actions từ ngoài vào trong.",
+    "back": "1) Event/Trigger (`on`) -> 2) Workflow (file `.yml`) -> 3) Job (`jobs.<id>`) -> 4) Runner (`runs-on`) -> 5) Step (`steps`) -> 6) Action (`uses`) / Shell command (`run`)."
+  },
+  {
+    "id": "cicd-card-c01-2",
+    "front": "Ephemeral Runner là gì và nó ảnh hưởng thế nào tới `node_modules` hay `dist/` giữa 2 Job?",
+    "back": "Là máy ảo sạch chỉ sống trong thời gian chạy 1 Job rồi bị xoá sổ hoàn toàn. Vì vậy Job đứng sau KHÔNG nhìn thấy `node_modules` hay `dist/` trên ổ đĩa của Job đứng trước trừ khi tự cài lại hoặc truyền qua Artifact/Cache."
+  },
+  {
+    "id": "cicd-card-c01-3",
+    "front": "Vì sao gần như mọi Job kiểm thử mã nguồn đều phải mở đầu bằng `uses: actions/checkout@v4`?",
+    "back": "Vì máy ảo Runner mới khởi tạo hoàn toàn trống rỗng, chưa có mã nguồn Git của dự án. `actions/checkout@v4` làm nhiệm vụ tải đúng commit/nhánh kích hoạt sự kiện về thư mục workspace."
+  },
+  {
+    "id": "cicd-card-c01-4",
+    "front": "Vì sao viết một Step riêng `- run: cd apps/backend` không làm Step kế tiếp đứng ở `apps/backend`?",
+    "back": "Vì mỗi Step `run:` thực thi trong một subshell độc lập và luôn reset thư mục hiện hành về gốc `$GITHUB_WORKSPACE`. Hãy dùng `defaults.run.working-directory: apps/backend`."
+  },
+  {
+    "id": "cicd-card-c01-5",
+    "front": "Sự khác nhau giữa khối `with:` và khối `env:` khi gọi một Action bằng `uses:` là gì?",
+    "back": "`with:` truyền các tham số đầu vào chính thức được định nghĩa trong `action.yml` của Action đó (ví dụ `node-version: \"22\"`), còn `env:` thiết lập biến môi trường hệ điều hành cho tiến trình."
+  },
+  {
+    "id": "cicd-card-c01-6",
+    "front": "Nhãn `runs-on: ubuntu-latest` trong một Job có ý nghĩa gì?",
+    "back": "Yêu cầu nền tảng CI cấp phát một máy ảo Linux chạy bản Ubuntu LTS ổn định mới nhất do GitHub quản lý sẵn (GitHub-hosted Runner) để thực thi toàn bộ các Step của Job đó."
+  }
+]

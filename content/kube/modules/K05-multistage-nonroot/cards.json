@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K05-FC1",
+    "front": "Cú pháp sao chép thành phẩm từ stage `builder` sang stage `runner` trong Multi-stage Dockerfile?",
+    "back": "**`COPY --from=builder /app/dist ./dist`** (có thể kèm `--chown=node:node`)."
+  },
+  {
+    "id": "K05-FC2",
+    "front": "Câu lệnh chuẩn năm 2026 để lọc bỏ `devDependencies` sau khi đã `npm run build` ở stage `builder`?",
+    "back": "**`RUN npm prune --omit=dev`** (tuyệt đối không dùng cờ cũ `--production`)."
+  },
+  {
+    "id": "K05-FC3",
+    "front": "Vì sao phải thêm `USER node` ở cuối `Dockerfile` trước khi đưa lên Kubernetes Production?",
+    "back": "Ngăn tiến trình chạy dưới quyền `root` (`UID 0`), giảm thiệt hại nếu ứng dụng bị RCE và đáp ứng tiêu chuẩn bắt buộc `runAsNonRoot: true` của K8s Pod Security Admission."
+  },
+  {
+    "id": "K05-FC4",
+    "front": "Tại sao trên `node:22-alpine` ta viết `HEALTHCHECK` bằng `node -e \"fetch(...)\"` thay vì cài `curl`?",
+    "back": "Node 22 đã tích hợp sẵn `fetch()` toàn cục nên không cần cài thêm gói `curl`, giữ cho Image nhỏ gọn và không chứa công cụ tải tệp cho kẻ tấn công lợi dụng."
+  },
+  {
+    "id": "K05-FC5",
+    "front": "Khi chạy dưới tài khoản non-root (`UID >= 1000`), ứng dụng nên mở cổng trong dải nào?",
+    "back": "Mở cổng **`>= 1024`** (như `3000` hoặc `8080`), vì cổng `< 1024` (như `80`) là cổng đặc quyền trên Linux."
+  },
+  {
+    "id": "K05-FC6",
+    "front": "Trong một Multi-stage Dockerfile có 3 chỉ thị `FROM`, mặc định `docker build` xuất ra Image từ stage nào?",
+    "back": "Từ **stage cuối cùng** (trừ khi bạn chỉ định tường minh cờ `--target <tên-stage>`)."
+  }
+]

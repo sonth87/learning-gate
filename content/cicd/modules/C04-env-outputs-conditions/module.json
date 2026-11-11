@@ -1,0 +1,55 @@
+{
+  "id": "C04",
+  "slug": "C04-env-outputs-conditions",
+  "level": 1,
+  "order": 4,
+  "title": "Biến môi trường, $GITHUB_OUTPUT, Điều kiện if & Bộ lọc đường dẫn",
+  "summary": "Làm chủ 3 tầng biến môi trường env, truyền kết quả qua $GITHUB_OUTPUT, điều hướng luồng bằng if: failure() / github.ref, lọc đường dẫn paths-ignore và ngăn chặn vòng lặp push vô tận.",
+  "tags": [
+    "env",
+    "github-output",
+    "if-conditions",
+    "paths-ignore",
+    "infinite-loop"
+  ],
+  "sources": [
+    {
+      "title": "Store information in variables — Environment variables in GitHub Actions",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Workflow commands — Setting an output parameter ($GITHUB_OUTPUT)",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#setting-an-output-parameter",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "Evaluate expressions in workflows and actions — Status check functions",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/evaluate-expressions-in-workflows-and-actions#status-check-functions",
+      "version": "GitHub Actions Docs 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/outputs-and-conditions.yml",
+      "kind": "good",
+      "note": "Workflow mẫu mực kết hợp cả 4 kỹ thuật: `paths-ignore` bỏ qua file Markdown, ghi `$GITHUB_OUTPUT` truyền tag giữa 2 Job, và gom log lỗi tự động bằng `if: failure()`.",
+      "task": "Trong Job `test-and-package`, nếu tất cả Unit Test ở dòng 42 đều chạy XANH (`Exit Code 0`), bước `Thu thập nhật ký lỗi` ở dòng 45 có chạy không? Vì sao điều này giúp tiết kiệm dung lượng lưu trữ Artifact?",
+      "answer": "Không chạy! Vì `if: failure()` chỉ trả về `true` khi có ít nhất một bước trước đó trong Job bị thất bại. Khi test xanh hoàn toàn, bước upload được bỏ qua (`Skipped`), giúp không tốn dung lượng lưu trữ Artifact vô ích."
+    },
+    {
+      "path": "github/legacy-v2-set-output.yml",
+      "kind": "outdated",
+      "note": "Đối chiếu trực quan lệnh `echo \"::set-output name=short_sha::...\"` đã bị GitHub vô hiệu hoá vì lỗ hổng bảo mật.",
+      "task": "Hãy viết lại chính xác dòng `run:` ở Step `id: vars` (dòng 24) theo chuẩn `$GITHUB_OUTPUT` năm 2026 mà vẫn giữ nguyên biểu thức đọc `${{ steps.vars.outputs.short_sha }}` ở dòng 27.",
+      "answer": "Thay bằng `run: echo \"short_sha=$(git rev-parse --short HEAD)\" >> \"$GITHUB_OUTPUT\"` — giữ nguyên `id: vars` và tên khoá `short_sha` nên Step phía sau đọc lại không cần sửa chữ nào."
+    },
+    {
+      "path": "github/infinite-push-loop.yml",
+      "kind": "bug",
+      "note": "Hồ sơ tai nạn đốt sạch hoá đơn phút chạy CI chỉ trong 1 đêm vì Job tự commit rồi push ngược về nhánh `main` bằng PAT.",
+      "task": "Vì sao khi thay `token: ${{ secrets.RELEASE_BOT_PAT_PLACEHOLDER }}` về `GITHUB_TOKEN` mặc định hoặc thêm `[skip ci]` vào commit message ở dòng 26 lại cắt đứt được vòng lặp vô tận?",
+      "answer": "Theo cơ chế chống lặp của GitHub, các sự kiện phát sinh bởi `GITHUB_TOKEN` mặc định sẽ không kích hoạt workflow `on: push` mới; đồng thời chuỗi `[skip ci]` trong commit message báo thẳng cho bộ lập lịch GitHub bỏ qua không tạo lượt chạy CI cho commit tự động đó."
+    }
+  ]
+}

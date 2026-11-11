@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K09-Q1",
+    "type": "mc",
+    "q": "Vì sao trên môi trường Production ta luôn triển khai ứng dụng web thông qua `Deployment` thay vì tạo trực tiếp một `Pod` đơn lẻ?",
+    "code": "",
+    "choices": [
+      "Vì `Pod` đơn lẻ không thể chạy được ngôn ngữ JavaScript",
+      "Vì `Pod` trần không có bộ điều khiển giám hộ (nếu Node sập là mất vĩnh viễn), còn `Deployment` (qua `ReplicaSet`) tự động tạo bù Pod chết, co giãn nhiều bản sao và hỗ trợ Rolling Update / Rollback",
+      "Vì `Deployment` miễn phí RAM trên AWS còn `Pod` mất phí",
+      "Vì chỉ có `Deployment` mới đọc được biến môi trường"
+    ],
+    "answer": 1,
+    "explain": "`Deployment` cung cấp Self-Healing (tự hồi sinh khi Node lỗi), Horizontal Scaling (`replicas`) và cập nhật phiên bản Zero-Downtime."
+  },
+  {
+    "id": "K09-Q2",
+    "type": "mc",
+    "q": "Khi nộp một `Deployment` có `spec.selector.matchLabels: { app: \"web\" }` nhưng `spec.template.metadata.labels` lại ghi `{ app: \"frontend\" }`, chuyện gì sẽ xảy ra?",
+    "code": "",
+    "choices": [
+      "Kubernetes tự động đổi cả hai thành `{ app: \"default\" }`",
+      "Kubernetes API Server từ chối ngay lập tức với lỗi Validation: `'selector' does not match template 'labels'`",
+      "Deployment vẫn tạo được nhưng chạy gấp đôi số lượng Pod",
+      "Cụm tự động khởi động lại Control Plane"
+    ],
+    "answer": 1,
+    "explain": "Để tránh tình trạng Deployment đẻ ra Pod mà chính nó không nhận diện quản lý được, API Server bắt buộc mọi nhãn trong `selector.matchLabels` phải khớp trong `template.metadata.labels`."
+  },
+  {
+    "id": "K09-Q3",
+    "type": "mc",
+    "q": "Với một `Deployment` có `replicas: 4`, cấu hình `maxUnavailable: 0` và `maxSurge: 1` trong `rollingUpdate` có nghĩa là gì khi nâng cấp phiên bản mới?",
+    "code": "",
+    "choices": [
+      "Tắt hết cả 4 Pod cũ cùng lúc rồi mới bật 4 Pod mới",
+      "Luôn giữ tối thiểu **4 Pod sẵn sàng** phục vụ và cho phép cụm bật vọt lên tối đa **5 Pod** tạm thời trong lúc xoay vòng từng bản sao",
+      "Chỉ cho phép tối đa 1 người dùng truy cập trong lúc nâng cấp",
+      "Không cho phép nâng cấp Image nữa"
+    ],
+    "answer": 1,
+    "explain": "Số Pod sẵn sàng tối thiểu = `4 - 0 = 4`; tổng số Pod tối đa cùng tồn tại lúc chuyển giao = `4 + 1 = 5`."
+  },
+  {
+    "id": "K09-Q4",
+    "type": "tf",
+    "q": "Khi bạn thực hiện Rolling Update từ phiên bản `1.0` lên `2.0`, `Deployment` giữ lại `ReplicaSet` cũ (với số bản sao hạ về `0`) trong lịch sử để sẵn sàng quay ngược tức thì khi bạn chạy `kubectl rollout undo`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Số lượng `ReplicaSet` lịch sử được giữ lại do trường `spec.revisionHistoryLimit` (mặc định là `10`) quyết định."
+  },
+  {
+    "id": "K09-Q5",
+    "type": "output",
+    "q": "Để quay ngược khẩn cấp `deployment/checkout` về phiên bản ổn định ngay liền trước đó khi bản mới vừa deploy bị lỗi, từ khoá lệnh con đứng sau `kubectl rollout ____` là gì?",
+    "code": "kubectl rollout ____ deployment/checkout",
+    "choices": [],
+    "answer": "undo",
+    "explain": "`kubectl rollout undo deployment/<tên>` lập tức khôi phục Pod template về Revision liền trước (hoặc chỉ định cụ thể qua `--to-revision=N`)."
+  },
+  {
+    "id": "K09-Q6",
+    "type": "mc",
+    "q": "Tài nguyên trung gian nào được `Deployment` tự động tạo ra ở phía dưới để trực tiếp đếm và duy trì số lượng `Pod` của từng phiên bản?",
+    "code": "",
+    "choices": [
+      "`StatefulSet`",
+      "`ReplicaSet`",
+      "`CronJob`",
+      "`Ingress`"
+    ],
+    "answer": 1,
+    "explain": "Chuỗi uỷ quyền chuẩn là `Deployment` quản lý các `ReplicaSet`, còn `ReplicaSet` quản lý số lượng `Pod`."
+  },
+  {
+    "id": "K09-Q7",
+    "type": "output",
+    "q": "Bạn chạy lệnh co giãn dưới đây cho `deployment/shop-api`. Sau khi vòng lặp điều khiển hội tụ xong, có bao nhiêu Pod của `shop-api` đang chạy?",
+    "code": "kubectl scale deployment/shop-api --replicas=5",
+    "choices": [],
+    "answer": "5",
+    "explain": "`--replicas=5` cập nhật trạng thái mong muốn lên 5 bản sao; `ReplicaSet` lập tức bù hoặc cắt bớt để có đúng 5 Pod."
+  }
+]

@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-api
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payment-api
+  template:
+    metadata:
+      labels:
+        app: payment-api
+    spec:
+      # Cho phép tối đa 30 giây để Node.js đóng hết HTTP request đang dở và trả kết nối Postgres
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: api
+          image: ghcr.io/acme-corp/payment-api:4.2.0
+          ports:
+            - name: http
+              containerPort: 3000
+          # 1. startupProbe: Cho phép tối đa 30 * 2s = 60s lúc mới khởi động (warm-up Prisma/JIT)
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 2
+          # 2. readinessProbe: Nếu Redis/DB nghẽn tạm thời -> rút Pod khỏi danh sách nhận traffic của Service
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+          # 3. livenessProbe: Chỉ kiểm tra Event Loop của Node.js không bị treo cứng
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # 4. lifecycle.preStop: Chờ 5s để kube-proxy / Ingress kịp cập nhật rút IP của Pod xong
+          # rồi mới gửi SIGTERM vào tiến trình Node.js -> triệt tiêu lỗi 502 Bad Gateway lúc deploy!
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

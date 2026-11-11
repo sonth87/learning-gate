@@ -1,0 +1,57 @@
+{
+  "id": "C16",
+  "slug": "C16-db-migrations-monorepo-dora",
+  "level": 5,
+  "order": 16,
+  "title": "DB Migrations (Expand-and-Contract), Monorepo CI & DORA",
+  "summary": "Thiết kế luồng di trú cơ sở dữ liệu không gián đoạn (Expand-and-Contract), tối ưu Monorepo chỉ chạy các gói bị ảnh hưởng bằng Paths Filter / Turborepo và đo lường bộ 4 chỉ số DORA.",
+  "tags": [
+    "expand-and-contract",
+    "database-migration",
+    "monorepo",
+    "turborepo",
+    "dora-metrics"
+  ],
+  "sources": [
+    {
+      "title": "Turborepo Documentation — Using Turborepo with GitHub Actions",
+      "url": "https://turbo.build/repo/docs/guides/ci-vendors/github-actions",
+      "version": "Turborepo v2.3+"
+    },
+    {
+      "title": "DORA — Accelerate State of DevOps & Four Key Metrics",
+      "url": "https://dora.dev/guides/dora-metrics-four-keys/",
+      "version": "DORA 2026"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room Kiến trúc A1–A3 (Monorepo & DB Migration)",
+      "kind": "warroom",
+      "targetId": "warroom-a1-a3-b6-arch"
+    }
+  ],
+  "readings": [
+    {
+      "path": "governance/migration-expand-safe.yml",
+      "kind": "good",
+      "note": "Chốt chặn tự động phát hiện và từ chối câu lệnh SQL phá huỷ tương thích ngược trong Pha 1 (Expand).",
+      "task": "Tại sao câu lệnh ALTER TABLE users ADD COLUMN phone_number TEXT NULL lại an toàn tuyệt đối cho các Pod v1 đang chạy song song?",
+      "answer": "Cột mới cho phép NULL nên các câu lệnh INSERT/SELECT hiện hữu của Pod v1 không nhắc tới phone_number vẫn thực thi hoàn toàn bình thường mà không phát sinh lỗi ràng buộc."
+    },
+    {
+      "path": "governance/migration-drop-destructive.yml",
+      "kind": "bug",
+      "note": "Kịch bản thảm hoạ: chạy RENAME/DROP COLUMN ngay trước khi cuộn Pod mới khiến toàn bộ Pod cũ nổ lỗi 500.",
+      "task": "Ngoài việc làm sập Pod v1 trong lúc Rolling Update, việc chạy DROP COLUMN ngay lập tức còn phá hỏng khả năng cứu hộ nào?",
+      "answer": "Nó phá hỏng khả năng Rollback! Nếu code v2 bị lỗi logic nghiêm trọng cần quay lui khẩn cấp về v1, cột dữ liệu cũ đã bị xoá mất khiến v1 không thể khởi chạy lại được nữa."
+    },
+    {
+      "path": "governance/monorepo-turborepo-affected.yml",
+      "kind": "good",
+      "note": "Tối ưu đường ống Monorepo kết hợp fetch-depth: 0 và bộ lọc đồ thị phụ thuộc của Turborepo.",
+      "task": "Điều gì xảy ra nếu bỏ dòng fetch-depth: 0 khỏi bước actions/checkout@v4 khi chạy turbo --filter=...[origin/main]?",
+      "answer": "Mặc định actions/checkout@v4 chỉ tải nông 1 commit cuối (fetch-depth: 1), Git không có thông tin lịch sử nhánh origin/main nên Turborepo không tính được diff hoặc buộc phải chạy lại toàn bộ kho!"
+    }
+  ]
+}

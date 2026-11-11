@@ -1,0 +1,55 @@
+{
+  "id": "C03",
+  "slug": "C03-first-github-actions",
+  "level": 1,
+  "order": 3,
+  "title": "Viết GitHub Actions Workflow đầu tiên chuẩn 2026",
+  "summary": "Tự tay xây dựng .github/workflows/ci.yml hoàn chỉnh: lọc nhánh push/PR thông minh, nâng cấp checkout@v4 & setup-node@v4 kèm npm cache, chạy chuỗi npm ci/build/test và tạo nút bấm tay workflow_dispatch.",
+  "tags": [
+    "github-actions",
+    "checkout-v4",
+    "setup-node-v4",
+    "npm-cache",
+    "workflow-dispatch"
+  ],
+  "relatedTools": [
+    {
+      "label": "Blueprint #1: Lean GitHub Actions",
+      "kind": "blueprint",
+      "targetId": "full-flow-1-lean-github-actions"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Quickstart for GitHub Actions",
+      "url": "https://docs.github.com/en/actions/writing-workflows/quickstart",
+      "version": "GitHub Actions Docs 2026"
+    },
+    {
+      "title": "actions/setup-node@v4 — Caching npm dependencies",
+      "url": "https://github.com/actions/setup-node#caching-global-packages-data",
+      "version": "v4"
+    },
+    {
+      "title": "Events that trigger workflows — workflow_dispatch",
+      "url": "https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#workflow_dispatch",
+      "version": "GitHub Actions Docs 2026"
+    }
+  ],
+  "readings": [
+    {
+      "path": "github/node-ci-minimal.yml",
+      "kind": "good",
+      "note": "Bản thiết kế chuẩn mực cho `.github/workflows/ci.yml` năm 2026: lọc nhánh `main`, cấp quyền tối thiểu `contents: read`, dùng bộ đôi `@v4` và bật `cache: \"npm\"`.",
+      "task": "Khi cấu hình `cache: \"npm\"` trong `actions/setup-node@v4`, thư mục nào thực sự được lưu vào bộ đệm: `node_modules/` của dự án hay thư mục cache toàn cục `~/.npm`?",
+      "answer": "Thư mục cache toàn cục `~/.npm` (chứa các gói nén `.tgz` của npm) được lưu dựa trên mã băm của `package-lock.json`, nhờ đó bước `npm ci` vẫn giải nén sạch sẽ và kiểm tra tính toàn vẹn cực nhanh mà không lo lỗi binary lệch kiến trúc."
+    },
+    {
+      "path": "github/legacy-v2-set-output.yml",
+      "kind": "outdated",
+      "note": "Mẫu workflow di sản từ giai đoạn 2020–2022 thường gặp trong các repo cũ chưa nâng cấp.",
+      "task": "Nếu đem nguyên file `legacy-v2-set-output.yml` chạy trên GitHub-hosted Runner năm 2026, những dòng nào đã ngừng hỗ trợ và phải nâng cấp lên phiên bản nào?",
+      "answer": "`actions/checkout@v2` và `actions/setup-node@v2` (chạy trên runtime Node 12/16 cũ) phải nâng lên `@v4`; `node-version: \"16\"` (đã EOL) phải nâng lên `\"22\"`; và lệnh `::set-output` ở dòng 24 đã bị vô hiệu hoá nên phải chuyển sang ghi vào file `\"$GITHUB_OUTPUT\"`."
+    }
+  ]
+}

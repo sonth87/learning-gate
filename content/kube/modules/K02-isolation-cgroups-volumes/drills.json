@@ -1,0 +1,12 @@
+[
+  {
+    "id": "K02-D1",
+    "title": "Tạo mạng riêng và chạy Redis kèm trần RAM an toàn",
+    "code": "docker network create shop-net\ndocker run -d --name redis-session \\\n  --network shop-net \\\n  --memory=256m \\\n  redis:7-alpine"
+  },
+  {
+    "id": "K02-D2",
+    "title": "Tạo Named Volume giữ dữ liệu bền vững cho PostgreSQL 16",
+    "code": "docker volume create pg-data\ndocker run -d --name shop-db \\\n  -e POSTGRES_PASSWORD=dev-only-placeholder \\\n  -v pg-data:/var/lib/postgresql/data \\\n  postgres:16-alpine"
+  }
+]

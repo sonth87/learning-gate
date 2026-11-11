@@ -1,0 +1,80 @@
+[
+  {
+    "id": "K13-Q1",
+    "type": "mc",
+    "q": "Chế độ truy cập `ReadWriteOnce` (`RWO`) trong `PersistentVolumeClaim` có ý nghĩa chính xác là gì?",
+    "code": "",
+    "choices": [
+      "Ổ đĩa chỉ cho phép ghi dữ liệu đúng 1 lần duy nhất rồi chuyển sang chỉ đọc mãi mãi",
+      "Ổ đĩa có thể được gắn ở chế độ đọc-ghi bởi các Pod nằm trên CÙNG một Worker Node duy nhất tại một thời điểm",
+      "Ổ đĩa cho phép mọi Pod trên 10 Worker Node khác nhau cùng ghi dữ liệu đồng thời",
+      "Ổ đĩa tự động xoá sạch dữ liệu ngay sau khi Pod khởi động lại lần đầu tiên"
+    ],
+    "answer": 1,
+    "explain": "ReadWriteOnce (RWO) là chế độ gắn ổ đĩa khối (như AWS EBS gp3) cho 1 Worker Node đọc-ghi tại một thời điểm. Nếu cần nhiều Node cùng đọc-ghi đồng thời phải dùng ReadWriteMany (RWX) trên hệ thống tệp mạng như EFS/NFS."
+  },
+  {
+    "id": "K13-Q2",
+    "type": "tf",
+    "q": "Khi bạn xoá một `StatefulSet` bằng lệnh `kubectl delete statefulset postgres`, Kubernetes sẽ tự động xoá sạch luôn toàn bộ các `PersistentVolumeClaim` sinh ra từ `volumeClaimTemplates` để giải phóng dung lượng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Theo mặc định, Kubernetes giữ lại toàn bộ các PVC của StatefulSet kể cả khi StatefulSet bị xoá hoặc thu nhỏ (scale down), nhằm ngăn ngừa mất mát dữ liệu cơ sở dữ liệu nghiêm trọng."
+  },
+  {
+    "id": "K13-Q3",
+    "type": "output",
+    "q": "Với `StatefulSet` tên là `postgres` có `replicas: 2`, chiếc Pod đầu tiên được khởi tạo sẽ mang tên chính xác là gì?",
+    "code": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: postgres\nspec:\n  serviceName: postgres-headless\n  replicas: 2",
+    "choices": [],
+    "answer": "postgres-0",
+    "explain": "Khác với Deployment dùng hậu tố ngẫu nhiên, StatefulSet đánh số thứ tự cố định bắt đầu từ 0: postgres-0, sau đó khi postgres-0 Ready mới tạo tiếp postgres-1."
+  },
+  {
+    "id": "K13-Q4",
+    "type": "mc",
+    "q": "Để tạo một **Headless Service** phục vụ định danh DNS riêng lẻ cho từng Pod của `StatefulSet`, trường nào trong `Service` cần cấu hình đặc biệt?",
+    "code": "",
+    "choices": [
+      "spec.type: NodePort",
+      "spec.clusterIP: None",
+      "spec.headless: true",
+      "metadata.labels.headless: \"yes\""
+    ],
+    "answer": 1,
+    "explain": "Đặt spec.clusterIP: None biến Service thành Headless Service: K8s không cấp Virtual IP cân bằng tải chung mà trả bản ghi DNS A trực tiếp cho từng Pod (ví dụ postgres-0.postgres-headless...)."
+  },
+  {
+    "id": "K13-Q5",
+    "type": "mc",
+    "q": "Tại sao cụm cơ sở dữ liệu như PostgreSQL Primary-Replica không nên dùng `Deployment` gắn chung một `PVC` duy nhất?",
+    "code": "",
+    "choices": [
+      "Vì Deployment không hỗ trợ gắn biến môi trường Secret",
+      "Vì nhiều tiến trình Database cùng ghi đè lên chung một thư mục tệp nhị phân sẽ làm hỏng dữ liệu (corruption), và Database cần danh tính mạng cố định cho từng nút",
+      "Vì Deployment chỉ chạy được tối đa 1 replica",
+      "Vì Deployment không hỗ trợ cổng TCP 5432"
+    ],
+    "answer": 1,
+    "explain": "Mỗi nút Database cần một ổ đĩa dữ liệu độc lập (qua volumeClaimTemplates) và định danh thứ tự ổn định (postgres-0 làm Primary, postgres-1 làm Replica) — điều chỉ StatefulSet đáp ứng được."
+  },
+  {
+    "id": "K13-Q6",
+    "type": "tf",
+    "q": "Nếu một Pod khai báo gắn `PersistentVolumeClaim` nhưng `PVC` đó đang kẹt ở trạng thái `Pending` (chưa `Bound` được vào `PV`), bản thân chiếc Pod cũng sẽ bị giữ ở trạng thái `Pending` chưa thể chạy.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Scheduler và kubelet không thể khởi chạy container khi ổ đĩa lưu trữ bắt buộc của nó chưa được cấp phát và gắn thành công."
+  },
+  {
+    "id": "K13-Q7",
+    "type": "output",
+    "q": "Trong cấu hình dưới đây, ứng dụng Node.js bên trong container sẽ đọc/ghi tệp tải lên tại đường dẫn thư mục tuyệt đối nào?",
+    "code": "containers:\n  - name: api\n    image: ghcr.io/acme/api:1.0.0\n    volumeMounts:\n      - name: uploads\n        mountPath: /app/uploads",
+    "choices": [],
+    "answer": "/app/uploads",
+    "explain": "Trường volumeMounts[].mountPath chỉ định đường dẫn thư mục bên trong hệ thống tệp của container được nối ra chiếc PVC bên ngoài."
+  }
+]

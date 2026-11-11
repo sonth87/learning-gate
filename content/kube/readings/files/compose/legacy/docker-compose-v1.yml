@@ -1,0 +1,22 @@
+# TÀI LIỆU LỊCH SỬ (ĐÃ LỖI THỜI): Cấu hình kiểu cũ từ thời docker-compose v1 (Python)
+# Khi chạy trên Docker Compose v2 mới, bạn sẽ nhận cảnh báo:
+# WARN[0000] the attribute 'version' is obsolete, it will be ignored!
+version: "2.4"
+
+services:
+  db:
+    image: postgres:12
+    environment:
+      - POSTGRES_PASSWORD=legacy-dev-only
+
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    # LỖI THỜI 1: "links" đã được thay hoàn toàn bằng DNS tự động trên mạng bridge của Compose
+    links:
+      - db:database
+    # LỖI THỜI 2: depends_on dạng danh sách chỉ chờ container db "vừa bật tiến trình",
+    # CHƯA chờ Postgres mở cổng 5432 xong -> Node.js khởi chạy sớm sẽ crash vì ECONNREFUSED!
+    depends_on:
+      - db

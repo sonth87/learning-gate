@@ -1,0 +1,85 @@
+[
+  {
+    "id": "K11-Q1",
+    "type": "mc",
+    "q": "Lợi ích kinh tế và kiến trúc lớn nhất của việc dùng **1 Ingress Controller** đứng trước 20 `ClusterIP Service` so với việc tạo 20 `Service` kiểu `LoadBalancer` riêng biệt là gì?",
+    "code": "",
+    "choices": [
+      "Giúp bỏ qua không cần dùng tên miền DNS",
+      "Chỉ tốn chi phí thuê **1 bộ cân bằng tải đám mây (LoadBalancer) duy nhất**, gom toàn bộ chứng chỉ TLS HTTPS về một đầu mối và định tuyến thông minh ở tầng 7 theo Hostname / URL Path (`/api`, `/`)",
+      "Tăng gấp 20 lần dung lượng ổ cứng của mỗi Pod",
+      "Không cần chạy `kube-apiserver` nữa"
+    ],
+    "answer": 1,
+    "explain": "Ingress hoạt động như một Reverse Proxy tầng 7 tập trung, tiết kiệm hàng trăm USD phí Cloud LoadBalancer mỗi tháng và đơn giản hoá quản trị HTTPS."
+  },
+  {
+    "id": "K11-Q2",
+    "type": "tf",
+    "q": "Nếu trên cụm Kubernetes (ví dụ cụm `kind` hoặc `kubeadm` mới tinh) chưa cài đặt bất kỳ **Ingress Controller** nào (như `ingress-nginx` hay `Traefik`), thì việc chạy `kubectl apply -f ingress.yaml` vẫn tự động mở cổng nhận lưu lượng từ Internet.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Đối tượng `Ingress` chỉ là bản dữ liệu khai báo luật; bắt buộc phải có một Pod **Ingress Controller** đang chạy trên cụm để đọc luật đó và thực sự mở cổng định tuyến."
+  },
+  {
+    "id": "K11-Q3",
+    "type": "output",
+    "q": "Trong chuẩn ổn định hiện đại, giá trị `apiVersion` của tài nguyên `kind: Ingress` là gì?",
+    "code": "apiVersion: ____\nkind: Ingress",
+    "choices": [],
+    "answer": "networking.k8s.io/v1",
+    "explain": "`networking.k8s.io/v1` là phiên bản chuẩn duy nhất cho `Ingress` kể từ K8s 1.19+ (các bản `extensions/v1beta1` và `networking.k8s.io/v1beta1` đều đã bị gỡ bỏ)."
+  },
+  {
+    "id": "K11-Q4",
+    "type": "mc",
+    "q": "Trong mỗi mục đường dẫn `paths[]` của `networking.k8s.io/v1` Ingress, trường nào sau đây là **bắt buộc** để xác định cách so khớp URL?",
+    "code": "",
+    "choices": [
+      "`regexMode: true`",
+      "`pathType` (với giá trị phổ biến như `Prefix` hoặc `Exact`)",
+      "`method: GET`",
+      "`containerPort: 3000`"
+    ],
+    "answer": 1,
+    "explain": "Nếu thiếu `pathType: Prefix` (hoặc `Exact` / `ImplementationSpecific`), Kubernetes API Server sẽ báo lỗi thiếu trường bắt buộc."
+  },
+  {
+    "id": "K11-Q5",
+    "type": "mc",
+    "q": "Khi cấu hình giải mã HTTPS (TLS Termination) trên `Ingress` tại mục `spec.tls`, trường `secretName` trỏ tới đâu?",
+    "code": "",
+    "choices": [
+      "Trỏ tới một tệp `.pem` nằm trên máy tính cá nhân của bạn",
+      "Trỏ tới một Kubernetes `Secret` (cùng namespace với Ingress) chứa cặp chứng chỉ `tls.crt` và khoá riêng `tls.key`",
+      "Trỏ tới mật khẩu đăng nhập PostgreSQL",
+      "Trỏ tới tài khoản Docker Hub"
+    ],
+    "answer": 1,
+    "explain": "Ingress Controller đọc chứng chỉ số từ Kubernetes Secret kiểu `kubernetes.io/tls` cùng namespace để bắt tay HTTPS với trình duyệt khách hàng."
+  },
+  {
+    "id": "K11-Q6",
+    "type": "mc",
+    "q": "Trong thế hệ kế nhiệm **Kubernetes Gateway API** (`gateway.networking.k8s.io/v1`), tài nguyên nào được đội phát triển ứng dụng viết để định nghĩa luật định tuyến đường dẫn HTTP và chia trọng số Canary?",
+    "code": "",
+    "choices": [
+      "`PodSecurityPolicy`",
+      "`HTTPRoute`",
+      "`StatefulSet`",
+      "`ReplicaSet`"
+    ],
+    "answer": 1,
+    "explain": "Gateway API tách hạ tầng cổng lắng nghe sang `Gateway` và luật định tuyến HTTP của từng ứng dụng sang `HTTPRoute`."
+  },
+  {
+    "id": "K11-Q7",
+    "type": "output",
+    "q": "Trong `networking.k8s.io/v1` Ingress, trường chuẩn đặt trực tiếp dưới `spec:` để chỉ định lớp bộ điều khiển (ví dụ `nginx`) thay cho annotation cũ là `spec.____`?",
+    "code": "spec:\n  ____: nginx\n  rules:",
+    "choices": [],
+    "answer": "ingressClassName",
+    "explain": "`spec.ingressClassName: nginx` là trường chính thức thay thế cho annotation `kubernetes.io/ingress.class` thời K8s cũ."
+  }
+]

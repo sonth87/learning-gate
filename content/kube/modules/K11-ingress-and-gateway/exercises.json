@@ -1,0 +1,218 @@
+[
+  {
+    "id": "kube-ex-k11-1",
+    "code": "K11.1",
+    "title": "Viết Ingress đầu tiên định tuyến tên miền shop.example.com vào web-svc",
+    "difficulty": 2,
+    "tags": [
+      "ingress",
+      "yaml",
+      "routing"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "ingress.yaml",
+    "prompt": "Hoàn thiện Manifest `Ingress` (`apiVersion: networking.k8s.io/v1`) tên `shop-ingress` sử dụng `ingressClassName: nginx` để định tuyến tên miền `shop.example.com` tại đường dẫn `/` (`pathType: Prefix`) vào dịch vụ `web-svc` ở cổng số `80`.",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                # Điền tên service web-svc và port.number: 80\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web-svc\n                port:\n                  number: 80\n",
+    "hints": [
+      "Bên dưới `service:`, khai báo `name: web-svc` và khối `port:` chứa `number: 80`.",
+      "Kiểm tra kỹ mức thụt lề 2 dấu cách ở từng cấp `backend` -> `service` -> `port` -> `number`."
+    ],
+    "ref": "k8s/network/ingress-tls-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "ing-apiversion-v1",
+          "doc": "Dùng chuẩn `apiVersion: networking.k8s.io/v1`",
+          "kind": "path",
+          "path": "apiVersion",
+          "match": {
+            "eq": "networking.k8s.io/v1"
+          }
+        },
+        {
+          "id": "ing-class-nginx",
+          "doc": "Chỉ định `spec.ingressClassName: nginx`",
+          "kind": "path",
+          "path": "spec.ingressClassName",
+          "match": {
+            "eq": "nginx"
+          }
+        },
+        {
+          "id": "ing-backend-web-svc",
+          "doc": "Định tuyến `shop.example.com` đường dẫn `/` tới `web-svc:80`",
+          "kind": "k8s-ingress-backend-match",
+          "ingressName": "shop-ingress",
+          "host": "shop.example.com",
+          "path": "/",
+          "expectedService": "web-svc",
+          "expectedPort": 80
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k11-2",
+    "code": "K11.2",
+    "title": "Phân luồng Path-based Routing (/api sang Backend, / sang Frontend)",
+    "difficulty": 2,
+    "tags": [
+      "ingress",
+      "path-routing",
+      "microservices"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "ingress-paths.yaml",
+    "prompt": "Mở rộng `Ingress` `shop-ingress` trên tên miền `shop.example.com` để phân luồng vào 2 dịch vụ khác nhau trên cùng một tên miền:\n1. Đường dẫn `/api` (`pathType: Prefix`) chuyển vào `api-svc` cổng `3000`.\n2. Đường dẫn `/` (`pathType: Prefix`) chuyển vào `web-svc` cổng `80`.",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          # Thêm mục path: /api -> api-svc:3000 bên trên mục /\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web-svc\n                port:\n                  number: 80\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /api\n            pathType: Prefix\n            backend:\n              service:\n                name: api-svc\n                port:\n                  number: 3000\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web-svc\n                port:\n                  number: 80\n",
+    "hints": [
+      "Sao chép cấu trúc của phần tử `- path: /` để tạo thêm một phần tử `- path: /api` nằm chung trong mảng `paths:`.",
+      "Trong mục `/api`, đặt `service.name: api-svc` và `service.port.number: 3000`."
+    ],
+    "ref": "k8s/network/ingress-tls-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "route-api-to-3000",
+          "doc": "Đường dẫn `/api` trên `shop.example.com` trỏ tới `api-svc:3000`",
+          "kind": "k8s-ingress-backend-match",
+          "ingressName": "shop-ingress",
+          "host": "shop.example.com",
+          "path": "/api",
+          "expectedService": "api-svc",
+          "expectedPort": 3000
+        },
+        {
+          "id": "route-root-to-80",
+          "doc": "Đường dẫn `/` trên `shop.example.com` trỏ tới `web-svc:80`",
+          "kind": "k8s-ingress-backend-match",
+          "ingressName": "shop-ingress",
+          "host": "shop.example.com",
+          "path": "/",
+          "expectedService": "web-svc",
+          "expectedPort": 80
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k11-3",
+    "code": "K11.3",
+    "title": "Bật giải mã HTTPS TLS trên Ingress bằng Secret chứng chỉ số",
+    "difficulty": 2,
+    "tags": [
+      "ingress",
+      "tls",
+      "https",
+      "security"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "ingress-tls.yaml",
+    "prompt": "Công cụ `cert-manager` đã cấp sẵn chứng chỉ HTTPS vào một Secret tên là `shop-tls-cert`. Hãy bổ sung khối `spec.tls` vào `Ingress` bên dưới để bật HTTPS cho tên miền `shop.example.com` sử dụng `secretName: shop-tls-cert`.",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  # Bổ sung khối tls cho host shop.example.com với secretName: shop-tls-cert\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web-svc\n                port:\n                  number: 80\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: shop-ingress\nspec:\n  ingressClassName: nginx\n  tls:\n    - hosts:\n        - shop.example.com\n      secretName: shop-tls-cert\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web-svc\n                port:\n                  number: 80\n",
+    "hints": [
+      "`tls:` là một mảng nằm trực tiếp dưới `spec:` (ngang hàng với `ingressClassName:` và `rules:`).",
+      "Mỗi phần tử trong `tls:` gồm mảng `hosts: [\"shop.example.com\"]` và `secretName: shop-tls-cert`."
+    ],
+    "ref": "k8s/network/ingress-tls-prod.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "tls-hosts-has-domain",
+          "doc": "`spec.tls[0].hosts` chứa tên miền `\"shop.example.com\"`",
+          "kind": "path",
+          "path": "spec.tls[0].hosts",
+          "match": {
+            "contains": "shop.example.com"
+          }
+        },
+        {
+          "id": "tls-secret-name",
+          "doc": "`spec.tls[0].secretName` trỏ tới `\"shop-tls-cert\"`",
+          "kind": "path",
+          "path": "spec.tls[0].secretName",
+          "match": {
+            "eq": "shop-tls-cert"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "kube-ex-k11-4",
+    "code": "K11.4",
+    "title": "Di trú Ingress từ v1beta1 lỗi thời lên chuẩn networking.k8s.io/v1",
+    "difficulty": 2,
+    "tags": [
+      "ingress",
+      "migration",
+      "v1beta1"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "ingress-migrated.yaml",
+    "prompt": "Chuyển đổi bản khai báo `Ingress` cũ từ thời K8s 1.18 (`networking.k8s.io/v1beta1`) bên dưới sang chuẩn hiện đại `networking.k8s.io/v1` với đủ 4 thay đổi:\n1. Đổi `apiVersion` thành `networking.k8s.io/v1`.\n2. Chuyển annotation lớp điều khiển sang trường `spec.ingressClassName: nginx`.\n3. Thêm `pathType: Prefix` cho đường dẫn `/`.\n4. Viết lại `serviceName` / `servicePort` sang cấu trúc `backend.service.name: shop-frontend` và `backend.service.port.number: 80`.",
+    "starter": "apiVersion: networking.k8s.io/v1beta1\nkind: Ingress\nmetadata:\n  name: legacy-shop-ingress\n  annotations:\n    kubernetes.io/ingress.class: \"nginx\"\nspec:\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            backend:\n              serviceName: shop-frontend\n              servicePort: 80\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: legacy-shop-ingress\nspec:\n  ingressClassName: nginx\n  rules:\n    - host: shop.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: shop-frontend\n                port:\n                  number: 80\n",
+    "hints": [
+      "Xem tệp tham chiếu `k8s/network/ingress-tls-prod.yaml` để đối chiếu cấu trúc `backend.service` mới.",
+      "Đừng quên thêm cả `ingressClassName: nginx` dưới `spec:` và `pathType: Prefix` dưới `- path: /`."
+    ],
+    "ref": "k8s/network/ingress-legacy-beta.yaml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "migrated-apiversion",
+          "doc": "Đã nâng cấp lên `apiVersion: networking.k8s.io/v1`",
+          "kind": "path",
+          "path": "apiVersion",
+          "match": {
+            "eq": "networking.k8s.io/v1"
+          }
+        },
+        {
+          "id": "migrated-classname",
+          "doc": "Khai báo `spec.ingressClassName: nginx`",
+          "kind": "path",
+          "path": "spec.ingressClassName",
+          "match": {
+            "eq": "nginx"
+          }
+        },
+        {
+          "id": "migrated-pathtype",
+          "doc": "Khai báo `pathType: Prefix` cho đường dẫn `/`",
+          "kind": "path",
+          "path": "spec.rules[0].http.paths[0].pathType",
+          "match": {
+            "eq": "Prefix"
+          }
+        },
+        {
+          "id": "migrated-backend-match",
+          "doc": "Cấu trúc `backend.service` mới trỏ đúng `shop-frontend:80`",
+          "kind": "k8s-ingress-backend-match",
+          "ingressName": "legacy-shop-ingress",
+          "host": "shop.example.com",
+          "path": "/",
+          "expectedService": "shop-frontend",
+          "expectedPort": 80
+        }
+      ]
+    }
+  }
+]
