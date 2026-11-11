@@ -372,7 +372,7 @@ RUN npm ci
 
 # Sau khi tầng thư viện đã được khóa vào Cache, mới copy toàn bộ mã nguồn vào để biên dịch
 COPY . .
-RUN npm run build && npm prune --production
+RUN npm run build && npm prune --omit=dev
 
 # =====================================================================
 # GIAI ĐOẠN 2 (STAGE 2): PHÒNG TRƯNG BÀY CHẠY THỰC TẾ (PRODUCTION RUNNER)

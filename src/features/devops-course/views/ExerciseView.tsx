@@ -197,7 +197,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                       setDiagLogs([]);
                     }
                   }}
-                  className="text-xs text-slate-400 underline hover:text-slate-200 cursor-pointer"
+                  className="inline-flex min-h-[44px] sm:min-h-0 items-center px-2 text-xs text-slate-400 underline hover:text-slate-200 cursor-pointer"
                 >
                   Đặt lại cụm
                 </button>
@@ -209,7 +209,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                       key={sc}
                       type="button"
                       onClick={() => runDiag(sc)}
-                      className="min-h-[36px] rounded-md border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-xs text-sky-300 hover:bg-slate-800 cursor-pointer"
+                      className="min-h-[44px] sm:min-h-[36px] rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1 font-mono text-xs text-sky-300 hover:bg-slate-800 cursor-pointer"
                     >
                       $ {sc}
                     </button>

@@ -164,15 +164,15 @@ export const CicdHeader: React.FC = () => {
 
   return (
     <header className="shrink-0 z-40 border-b border-slate-800/90 bg-slate-950/95 backdrop-blur-md select-none">
-      <div className="mx-auto flex h-11 sm:h-12 max-w-[1680px] items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-4">
+      <div className="mx-auto flex h-13 sm:h-12 max-w-[1680px] items-center justify-between gap-1 sm:gap-2 px-2 sm:px-4">
         {/* Left: Mobile Drawer Trigger (only on legacy Curriculum tab) + Brand Identity */}
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 shrink">
           {activeTab === 'curriculum' && (
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
               aria-label="Mở mục lục bài học CI/CD"
-              className="inline-flex lg:hidden h-7 sm:h-8 items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2 text-xs font-bold text-cyan-300 active:scale-95 transition-all cursor-pointer"
+              className="inline-flex lg:hidden min-h-[44px] sm:min-h-0 sm:h-8 items-center gap-1 rounded-lg border border-cyan-500/40 bg-cyan-500/15 px-2 text-xs font-bold text-cyan-300 active:scale-95 transition-all cursor-pointer"
             >
               <PanelLeftOpen className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
               <span className="hidden sm:inline text-[11px]">Mục lục</span>
@@ -182,7 +182,7 @@ export const CicdHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('learn')}
-            className="flex items-center gap-2 text-left min-w-0 group cursor-pointer"
+            className="flex min-h-[44px] sm:min-h-0 items-center gap-1.5 sm:gap-2 text-left min-w-0 group cursor-pointer"
           >
             <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-sm group-hover:scale-105 transition-transform">
               <CicdMasteryLogo size={32} className="h-full w-full" />
@@ -241,12 +241,12 @@ export const CicdHeader: React.FC = () => {
         </nav>
 
         {/* Right Actions & Quick App Switcher */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => switchLearningApp('kubemastery')}
             title="Chuyển nhanh sang ứng dụng Docker & K8s Mastery"
-            className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-sky-500/40 bg-sky-500/15 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-all cursor-pointer"
+            className="inline-flex h-11 w-11 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-sky-500/40 bg-sky-500/15 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-all cursor-pointer"
           >
             <Container className="h-3.5 w-3.5 text-sky-400 shrink-0" />
             <span className="hidden md:inline">Docker & K8s</span>
@@ -257,7 +257,7 @@ export const CicdHeader: React.FC = () => {
             type="button"
             onClick={() => switchLearningApp('pymastery')}
             title="Chuyển nhanh sang ứng dụng Python Mastery"
-            className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/15 sm:px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all cursor-pointer"
+            className="hidden sm:inline-flex h-8 w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all cursor-pointer"
           >
             <Terminal className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
             <span className="hidden md:inline">Python</span>
@@ -267,7 +267,7 @@ export const CicdHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => openNotesDrawer('lesson', selectedLessonId, `CI/CD: ${selectedLessonId}`)}
-            className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
+            className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
             title="Sổ tay Ghi chú"
             aria-label="Sổ tay Ghi chú"
           >
@@ -277,7 +277,7 @@ export const CicdHeader: React.FC = () => {
           <button
             type="button"
             onClick={cycleTheme}
-            className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
+            className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
             title="Đổi giao diện Sáng / Tối / Hệ thống"
             aria-label="Đổi giao diện Sáng / Tối / Hệ thống"
           >
@@ -295,7 +295,7 @@ export const CicdHeader: React.FC = () => {
             onClick={() => setSettingsOpen(true)}
             aria-label="Cài đặt & Sao lưu dữ liệu"
             title="Cài đặt & Sao lưu dữ liệu"
-            className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
+            className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
           >
             <Settings className="h-3.5 w-3.5" aria-hidden="true" />
           </button>

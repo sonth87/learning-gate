@@ -55,7 +55,7 @@ RUN npm ci
 
 # Bước 2: Copy toàn bộ mã nguồn và biên dịch TypeScript -> JavaScript
 COPY . .
-RUN npm run build && npm prune --production
+RUN npm run build && npm prune --omit=dev
 
 # =====================================================================
 # GIAI ĐOẠN 2: PHÒNG TRƯNG BÀY SẢN XUẤT (PRODUCTION RUNNER STAGE)
@@ -100,9 +100,9 @@ RUN npm ci`,
         stepNumber: 2,
         stepTitle: 'Copy mã nguồn và biên dịch ra thư mục dist (TODO 2)',
         explanation:
-          'Sau khi đã có thư viện, copy toàn bộ code nguồn vào và chạy lệnh biên dịch `npm run build` cùng `npm prune --production` để loại bỏ các thư viện chỉ dùng lúc dev (devDependencies).',
+          'Sau khi đã có thư viện, copy toàn bộ code nguồn vào và chạy lệnh biên dịch `npm run build` cùng `npm prune --omit=dev` để loại bỏ các thư viện chỉ dùng lúc dev (devDependencies).',
         codeSnippet: `COPY . .
-RUN npm run build && npm prune --production`,
+RUN npm run build && npm prune --omit=dev`,
       },
       {
         stepNumber: 3,

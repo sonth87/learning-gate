@@ -165,14 +165,14 @@ export const KubeHeader: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 h-11 sm:h-12 shrink-0 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md">
-        <div className="mx-auto flex h-full max-w-[1680px] items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-4">
+      <header className="sticky top-0 z-40 h-13 sm:h-12 shrink-0 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md">
+        <div className="mx-auto flex h-full max-w-[1680px] items-center justify-between gap-1 sm:gap-2 px-2 sm:px-4">
           {/* Brand Logo + Course Progress */}
-          <div className="flex items-center gap-2 min-w-0 shrink-0">
+          <div className="flex items-center gap-2 min-w-0 shrink">
             <button
               type="button"
               onClick={() => setActiveTab('learn')}
-              className="flex items-center gap-2 text-left group cursor-pointer"
+              className="flex min-h-[44px] sm:min-h-0 items-center gap-1.5 sm:gap-2 text-left min-w-0 group cursor-pointer"
             >
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
                 <KubeMasteryLogo size={32} className="h-full w-full" />
@@ -237,7 +237,7 @@ export const KubeHeader: React.FC = () => {
               type="button"
               onClick={() => switchLearningApp('cicdmastery')}
               title="Mở ứng dụng CI/CD Architecture"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-cyan-500/35 bg-cyan-500/10 sm:px-2 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer"
+              className="inline-flex h-11 w-11 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-cyan-500/35 bg-cyan-500/10 sm:px-2 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-colors cursor-pointer"
             >
               <Boxes className="h-3.5 w-3.5 shrink-0" />
               <span className="hidden md:inline">CI/CD</span>
@@ -247,7 +247,7 @@ export const KubeHeader: React.FC = () => {
               type="button"
               onClick={() => switchLearningApp('pymastery')}
               title="Mở ứng dụng Python Mastery"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 sm:px-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex h-8 w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
             >
               <Terminal className="h-3.5 w-3.5 shrink-0" />
               <span className="hidden md:inline">Python</span>
@@ -257,7 +257,7 @@ export const KubeHeader: React.FC = () => {
               type="button"
               onClick={() => setSearchOpen(true)}
               aria-label="Tìm kiếm nhanh module và sự cố"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-sky-400 hover:border-sky-500/40 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-sky-400 hover:border-sky-500/40 hover:text-white transition-colors cursor-pointer"
             >
               <Search className="h-3.5 w-3.5 shrink-0" />
             </button>
@@ -266,7 +266,7 @@ export const KubeHeader: React.FC = () => {
               type="button"
               onClick={cycleMobileTheme}
               aria-label={resolvedScheme === 'light' ? 'Chuyển sang giao diện Tối' : 'Chuyển sang giao diện Sáng'}
-              className="sm:hidden inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="sm:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
               {resolvedScheme === 'light' ? (
                 <Sun className="h-3.5 w-3.5 text-amber-400" />
@@ -319,7 +319,7 @@ export const KubeHeader: React.FC = () => {
               onClick={() => setSettingsOpen(true)}
               aria-label="Cài đặt & Sao lưu dữ liệu"
               title="Cài đặt & Sao lưu dữ liệu"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
             >
               <Settings className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
