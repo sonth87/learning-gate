@@ -20,6 +20,17 @@
 @custom-variant 2xl (@container app (width >= 96rem));
 
 /*
+ * The whole UI is a fixed-size app shell: stop the page itself from
+ * rubber-banding / pull-to-refresh when the user swipes on mobile.
+ */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/*
  * Scope all PyMastery typography, design system tokens, and light/dark palette
  * remapping strictly to `.pylearn-root` so @sonth87/device-layout retains its
  * exact native macOS/Windows/iPadOS styling, fonts, and CSS variables (--color-white, etc.).

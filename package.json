@@ -13,7 +13,7 @@
     "course:test": "node scripts/run-engine-tests.mjs"
   },
   "dependencies": {
-    "@sonth87/device-layout": "^0.5.39",
+    "@sonth87/device-layout": "^0.5.40",
     "@tailwindcss/vite": "^4.1.0",
     "clsx": "^2.1.1",
     "idb": "^8.0.2",

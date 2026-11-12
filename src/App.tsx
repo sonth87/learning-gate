@@ -52,8 +52,11 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  // `fixed inset-0` tracks the visible viewport on mobile browsers. `h-screen`
+  // (100vh) is the *large* viewport on iOS Safari and pushed the bottom of the
+  // UI (e.g. PyMastery's bottom nav) underneath the browser toolbar.
   return (
-    <div className="w-screen h-screen h-[100dvh] overflow-hidden">
+    <div className="fixed inset-0 overflow-hidden">
       <DeviceLayout
         apps={ALL_LEARNING_APPS}
         builtInApps={false}
