@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, Check, SkipForward, Undo2, X } from 'lucide-react';
 import { useCurriculum } from '../data';
-import { allQuestions, gradeQuestion, type QuestionResult } from '../logic';
+import { allQuestions, gradeQuestion, isQuizSkipped, quizBest, type QuestionResult } from '../logic';
 import { useWpNav, useWpProgress } from '../store';
 import type { WpCurriculum, WpQuestion } from '../types';
 import { CodeView, Inline } from '../components/Markdown';
@@ -29,6 +29,7 @@ export const QuizView: React.FC<Props> = (props) => {
 const QuizRound: React.FC<Props & { cur: WpCurriculum; onRestart: () => void }> = ({ mode, moduleId, cur, onRestart }) => {
   const s = useWpProgress((x) => x.state);
   const record = useWpProgress((x) => x.recordQuiz);
+  const toggleSkipQuiz = useWpProgress((x) => x.toggleSkipQuiz);
   const { go, back } = useWpNav();
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<{ items: Map<string, QuestionResult>; correct: number; total: number; xp: number; recordNew: boolean } | null>(null);
@@ -75,14 +76,34 @@ const QuizRound: React.FC<Props & { cur: WpCurriculum; onRestart: () => void }> 
 
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Btn onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
-        </Btn>
-        <div>
-          <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
-          <p className="text-sm text-slate-400">{questions.length} câu · trắc nghiệm, đúng/sai và đoán output</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Btn onClick={back}>
+            <ArrowLeft className="h-4 w-4" /> Quay lại
+          </Btn>
+          <div>
+            <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
+            <p className="text-sm text-slate-400">{questions.length} câu · trắc nghiệm, đúng/sai và đoán output</p>
+          </div>
         </div>
+        {mode === 'module' && moduleId && quizBest(s, moduleId) < cur.passQuiz && (
+          <Btn
+            onClick={() => {
+              const skipped = toggleSkipQuiz(moduleId);
+              if (skipped) go({ name: 'module', id: moduleId });
+            }}
+          >
+            {isQuizSkipped(s, moduleId) ? (
+              <>
+                <Undo2 className="h-4 w-4" /> Hoàn tác bỏ qua Quiz
+              </>
+            ) : (
+              <>
+                <SkipForward className="h-4 w-4" /> Đã nắm vững — Bỏ qua Quiz
+              </>
+            )}
+          </Btn>
+        )}
       </div>
 
       <div className="space-y-4">

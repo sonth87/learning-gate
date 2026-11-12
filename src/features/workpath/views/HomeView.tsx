@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowRight, BookOpen, Code2, Flame, Library, Star, Trophy } from 'lucide-react';
+import { ArrowRight, BookOpen, Code2, Flame, Library, SkipForward, Star, Trophy } from 'lucide-react';
 import { useCatalog, useCurriculum } from '../data';
 import { activeDays, addDays, catalogStatus, currentLevel, dueCards, exStatus, moduleDone, nextSteps, rankOf, streak, todayStr } from '../logic';
 import { useWpNav, useWpProgress } from '../store';
@@ -20,6 +20,7 @@ export const HomeView: React.FC = () => {
   const { data: cur } = useCurriculum();
   const { data: cat } = useCatalog();
   const s = useWpProgress((x) => x.state);
+  const applySkipTarget = useWpProgress((x) => x.applySkipTarget);
   const go = useWpNav((x) => x.go);
 
   const heat = useMemo(() => {
@@ -63,18 +64,34 @@ export const HomeView: React.FC = () => {
         </h2>
         <div className="space-y-2">
           {steps.map((st, i) => (
-            <button
+            <div
               key={i}
-              onClick={() => go(st.view)}
               className={cn(
-                'group flex w-full items-center gap-3 rounded-xl border bg-slate-900/70 px-4 py-3 text-left transition-colors hover:bg-slate-800',
+                'flex w-full items-center gap-2 rounded-xl border bg-slate-900/70 px-3 sm:px-4 py-2.5 transition-colors hover:bg-slate-800/85',
                 i === 0 ? 'border-emerald-500/60 ring-1 ring-emerald-500/30' : 'border-slate-800'
               )}
             >
-              <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold', i === 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300')}>{i + 1}</span>
-              <span className="min-w-0 flex-1 text-slate-100">{st.text}</span>
-              <ArrowRight className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-400" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                onClick={() => go(st.view)}
+                className="group flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
+              >
+                <span className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold', i === 0 ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300')}>{i + 1}</span>
+                <span className="min-w-0 flex-1 text-slate-100">{st.text}</span>
+                <ArrowRight className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-emerald-400" aria-hidden="true" />
+              </button>
+              {st.skipTarget && (
+                <button
+                  type="button"
+                  onClick={() => applySkipTarget(st.skipTarget!)}
+                  title="Đã làm rồi / đã biết — Bỏ qua bước này để sang phần kế tiếp"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
+                >
+                  <SkipForward className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Bỏ qua</span>
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </section>

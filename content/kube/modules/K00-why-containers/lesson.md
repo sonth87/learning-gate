@@ -1,87 +1,236 @@
-# Vì sao code chạy trên máy bạn nhưng sập trên server?
+# Vì sao code chạy trên máy bạn nhưng sập ngay trên server?
 
-Nếu bạn xuất phát từ hệ sinh thái **Node.js / TypeScript**, chắc chắn bạn đã ít nhất một lần nếm trải cơn ác mộng kinh điển mang tên *"Trên máy em vẫn chạy ngon mà!"*:
+Nếu bạn xuất phát từ hệ sinh thái **Node.js / TypeScript**, chắc chắn bạn đã từng gặp kịch bản kinh điển *"Trên máy em vẫn chạy ngon mà!"*:
 
-- Ở máy Mac cá nhân, bạn dùng **Node v22.12**, chạy `npm run dev` mượt mà không một cảnh báo.
-- Khi đẩy code lên máy chủ Ubuntu sản xuất (hoặc gửi cho đồng nghiệp dùng Windows), ứng dụng sập ngay lúc khởi động với lỗi `ERR_DLOPEN_FAILED` ở gói `sharp` / `bcrypt`, lệch múi giờ `UTC` so với `Asia/Ho_Chi_Minh`, thiếu thư viện hệ thống `libvips` / `openssl`, hoặc máy chủ vẫn đang kẹt ở **Node v18** cũ kỹ.
+- [>] Ở máy Mac cá nhân, bạn dùng **Node v22.12**, gõ `npm run dev` mượt mà không một cảnh báo.
+- [!] Đẩy code lên máy chủ Ubuntu (hoặc gửi cho đồng nghiệp dùng Windows), ứng dụng sập ngay lúc khởi động vì `ERR_DLOPEN_FAILED` ở gói `sharp` / `bcrypt`, lệch múi giờ `UTC` vs `Asia/Ho_Chi_Minh`, thiếu thư viện C `libvips` / `openssl`, hoặc server vẫn kẹt ở **Node v18**.
 
-`package-lock.json` chỉ giúp bạn khoá phiên bản các gói JavaScript trong thư mục `node_modules`, nhưng nó **hoàn toàn bất lực** trước sự khác biệt của hệ điều hành bên dưới, phiên bản Node runtime, các thư viện C/C++ biên dịch theo kiến trúc CPU (`arm64` trên Apple Silicon vs `x86_64` trên Linux server), hay quyền hạn thư mục. **Container** ra đời để đóng băng toàn bộ phần còn thiếu đó thành một khối duy nhất, bất biến và chạy giống hệt nhau ở mọi nơi.
+`package-lock.json` chỉ khoá phiên bản các gói JS trong `node_modules`, nhưng **hoàn toàn bất lực** trước hệ điều hành bên dưới, kiến trúc CPU (`arm64` vs `x86_64`) hay thư viện hệ thống. **Container** ra đời để đóng băng toàn bộ ứng dụng + runtime + hệ thống tệp thành một đơn vị duy nhất: {sky:siêu nhẹ}, {amber:dễ di chuyển} và ==bất biến ở mọi nơi==.
 
----
+```visual
+kind: flow
+title: Luồng Cốt Lõi Của Docker — Build Một Lần, Chạy Mọi Nơi
+subtitle: Ba thực thể nền tảng biến mã nguồn trên máy dev thành tiến trình chạy đồng nhất trên Production
+steps:
+  - icon: file-code
+    badge: Bước 1 · Công thức
+    title: Dockerfile
+    desc: Tệp văn bản mô tả từng bước chọn OS, cài Node runtime và chép code
+    code: Dockerfile
+    tone: sky
+    edge: docker build
+  - icon: package
+    badge: Bước 2 · Bản mẫu chỉ đọc
+    title: Container Image
+    desc: Khuôn mẫu nhị phân bất biến xếp chồng từ nhiều lớp (read-only layers)
+    code: shop-api:1.4.2
+    tone: violet
+    edge: docker pull / push
+  - icon: cloud
+    badge: Kho trung tâm
+    title: Container Registry
+    desc: Kho lưu trữ và phân phối Image theo tên & tag (Docker Hub, GHCR, ECR)
+    code: ghcr.io/acme/shop-api
+    tone: amber
+    edge: docker run
+  - icon: play
+    badge: Bước 3 · Tiến trình sống
+    title: Running Container
+    desc: Tiến trình Linux cô lập đang chạy thực tế trên RAM + 1 lớp ghi tạm mỏng
+    code: Up / PID 1
+    tone: emerald
+```
 
-## 1. Bản đồ tư duy: Từ Node.js / npm sang Docker
+## 1. Bản đồ tư duy: Từ Node.js / npm sang Docker & Khác biệt với Máy ảo (VM)
 
-Để không bị choáng ngợp bởi thuật ngữ DevOps, hãy ánh xạ trực tiếp sang công việc làm web hàng ngày của bạn:
+> [!ANALOGY] Hãy hình dung như sau (Ánh xạ từ Node.js quen thuộc)
+> Nếu **Container Image** giống như một **bản thiết kế + gói `.tgz` đã đóng băng cả Node lẫn Linux**, thì **Container** chính là **tiến trình sống** khi bạn bấm chạy bản thiết kế đó. Bạn có thể bật 10 Container độc lập từ cùng 1 Image trong tích tắc mà không tốn thêm dung lượng nhân bản lớp nền!
 
-| Khái niệm quen thuộc ở Node.js | Khái niệm trong Docker | Vai trò thực chất |
+| Quen thuộc ở Node.js | Khái niệm trong Docker | Vai trò thực chất |
 | --- | --- | --- |
-| `package.json` + hướng dẫn cài đặt `README.md` | **`Dockerfile`** | Bản công thức văn bản mô tả từng bước chuẩn bị hệ điều hành, cài runtime, chép code |
-| Gói nén `.tgz` + `package-lock.json` đã đóng băng cả Node lẫn OS | **Container Image** | Khuôn mẫu nhị phân **chỉ đọc (read-only)** xếp chồng từ nhiều lớp (layers) bất biến |
-| Tiến trình sống khi bạn gõ `node dist/server.js` | **Container** | Một tiến trình Linux đang thực thi được sinh ra từ Image, gắn thêm một lớp ghi tạm mỏng ở trên cùng |
-| Kho `registry.npmjs.org` (`npm publish` / `npm install`) | **Container Registry** (Docker Hub, GHCR, ECR) | Kho lưu trữ trung tâm để tải (`docker pull`) hoặc đẩy (`docker push`) các Image theo tên và tag |
+| `package.json` + hướng dẫn cài `README.md` | **`Dockerfile`** | Bản công thức văn bản mô tả từng bước chuẩn bị OS, runtime, chép code |
+| Gói nén `.tgz` + `package-lock.json` đóng băng cả OS | **Container Image** | Khuôn mẫu ==chỉ đọc (read-only)== xếp chồng từ các lớp (layers) bất biến |
+| Tiến trình sống khi gõ `node dist/server.js` | **Container** | Tiến trình Linux thực thi từ Image, gắn thêm **1 lớp ghi tạm mỏng** ở trên cùng |
+| Kho `registry.npmjs.org` (`npm publish` / `install`) | **Container Registry** | Kho trung tâm (Docker Hub, GHCR, ECR) để `docker pull` / `docker push` |
 
-> **Hiểu đúng bản chất cốt lõi:** Container **KHÔNG PHẢI** là một máy ảo (Virtual Machine — VM) nặng hàng chục GB. Một VM phải cõng thêm cả một nhân hệ điều hành khách (Guest OS Kernel) riêng biệt, tốn hàng phút để khởi động. Ngược lại, **Container chỉ là một tiến trình bình thường** dùng chung nhân Linux với máy chủ, nhưng bị nhân Linux che mắt bằng **Namespaces** (chỉ thấy file, mạng, PID của riêng nó) và khoá hạn mức tài nguyên bằng **cgroups**. Nhờ vậy, một container `nginx:1.27-alpine` hay `redis:7-alpine` bật lên chỉ trong **vài chục mili-giây**!
-
----
+```visual
+kind: layers
+title: Tại Sao Container Khởi Động Trong Vài Chục Mili-Giây? (VM vs Container)
+subtitle: Container KHÔNG PHẢI máy ảo — nó không cõng nhân hệ điều hành khách (Guest OS Kernel) riêng biệt
+columns:
+  - title: Virtual Machine (Máy ảo truyền thống)
+    badge: Nặng hàng chục GB · Bật mất hàng phút
+    tone: rose
+    layers:
+      - label: Ứng dụng + Thư viện (App & Bins/Libs)
+        note: Mã nguồn dịch vụ
+        tone: violet
+      - label: Guest OS Kernel riêng biệt (Full Ubuntu/Windows)
+        sub: Mỗi VM phải khởi động lại toàn bộ nhân hệ điều hành từ đầu
+        note: Ngốn RAM & CPU thừa!
+        tone: rose
+      - label: Hypervisor (VMware / KVM / VirtualBox)
+        note: Giả lập phần cứng ảo
+        tone: amber
+      - label: Host OS & Máy chủ vật lý (Server)
+        note: Hạ tầng vật lý gốc
+        tone: slate
+    footer: Phù hợp khi cần cô lập hoàn toàn khác hệ điều hành (ví dụ chạy Windows trên Linux)
+  - title: Docker Container (Chuẩn Cloud-Native)
+    badge: Siêu nhẹ (~MB) · Bật trong vài chục ms
+    tone: emerald
+    layers:
+      - label: Tiến trình Ứng dụng + Bins/Libs (Node 22 + Alpine)
+        sub: Che mắt tầm nhìn bằng Linux Namespaces · Khoá hạn mức bằng cgroups
+        note: Cô lập gọn nhẹ
+        tone: sky
+      - label: Container Runtime (Docker Engine / containerd)
+        note: Không có Guest OS!
+        tone: emerald
+      - label: Dùng chung Host Linux Kernel
+        sub: Mọi container gọi thẳng syscall vào nhân Linux sẵn có của máy chủ
+        note: Tốc độ tiệm cận Native
+        tone: cyan
+      - label: Máy chủ vật lý / Cloud VM
+        note: Hạ tầng vật lý gốc
+        tone: slate
+    footer: Tiết kiệm tài nguyên tối đa · Chạy hàng trăm microservice trên cùng 1 node
+```
 
 ## 2. Giải phẫu định danh của một Container Image
 
-Khi bạn thấy chuỗi `ghcr.io/acme/shop-api:1.4.2` hoặc `redis:7-alpine`, cấu trúc của nó giống hệt cách đặt tên scoped package kèm version trong npm:
+Khi bạn gặp chuỗi `ghcr.io/acme/shop-api:1.4.2` hoặc `redis:7-alpine`, cấu trúc của nó giống hệt scoped package kèm version trong npm:
 
-```text
-[registry-host]/[namespace]/[repository]:[tag]
-   docker.io   /  library  /   redis    : 7-alpine
+```visual
+kind: groups
+title: "4 Thành Phần Trong Tên Đầy Đủ Của Image — [registry]/[namespace]/[repo]:[tag]"
+subtitle: "Ví dụ chuẩn: ghcr.io/acme/shop-api:1.4.2 hoặc viết gọn redis:7-alpine (= docker.io/library/redis:7-alpine)"
+columns: 2
+items:
+  - num: 1
+    title: Registry Host & Namespace
+    badge: Kho lưu trữ
+    tone: sky
+    bullets:
+      - "`ghcr.io/acme` chỉ định kho GitHub Container Registry của tổ chức `acme`"
+      - "Nếu viết gọn `redis:7-alpine`, Docker tự hiểu ngầm là **`docker.io/library/redis:7-alpine`** (Docker Hub chính thức)"
+  - num: 2
+    title: Tag Phiên Bản & Biến Thể -alpine
+    badge: Bắt buộc ghim rõ
+    tone: amber
+    bullets:
+      - "Nếu **bỏ trống `:tag`** (chỉ gõ `docker pull node`), Docker tự gắn nhãn mặc định ==`:latest`== — **cấm kỵ trên Production** vì mất tính tái lập!"
+      - "Đuôi **`-alpine`** dùng Alpine Linux (~5MB, thư viện `musl` + `apk`), kéo giảm Image Node từ **~1.1 GB** xuống chỉ còn **~135 MB**"
 ```
 
-- Nếu bạn viết ngắn gọn `redis:7-alpine`, Docker ngầm hiểu kho mặc định là Docker Hub (`docker.io/library/redis:7-alpine`).
-- Nếu bạn **bỏ quên phần tag** (chỉ gõ `docker pull node`), Docker sẽ tự động gắn nhãn mặc định `:latest`. Trong môi trường thực tế năm 2026, dùng `:latest` bị coi là lỗi cấu hình nghiêm trọng vì bạn đánh mất tính tái lập (reproducibility) — hôm nay build ra Node 22 nhưng vài tháng sau CI tự tải Node 24 làm sập hệ thống.
-- Đuôi `-alpine` chỉ biến thể dùng **Alpine Linux** siêu gọn (~5MB nền tảng, dùng thư viện `musl` và trình quản lý gói `apk`), giúp giảm kích thước Image Node.js từ hơn **1.1 GB** xuống còn khoảng **135 MB**.
+## 3. Vòng đời 5 bước của Container & Bảng lệnh cốt lõi
 
----
-
-## 3. Vòng đời 5 bước của một Container trên CLI
-
-Làm việc với Docker hàng ngày xoay quanh 5 thao tác điều khiển vòng đời tiến trình rất trực quan:
-
-### Bước 1: Tải khuôn mẫu về máy (`docker pull`)
-```bash
-docker pull redis:7-alpine
-docker images
+```visual
+kind: flow
+title: Vòng Đời Tiến Trình Container Trên Dòng Lệnh (CLI Lifecycle)
+steps:
+  - icon: upload
+    badge: 1. Tải khuôn
+    title: Pull
+    code: docker pull redis:7-alpine
+    tone: sky
+    edge: tạo + bật
+  - icon: play
+    badge: 2. Chạy ngầm
+    title: Run (Up)
+    code: docker run -d --name cache
+    tone: emerald
+    edge: SIGTERM (10s)
+  - icon: shield
+    badge: 3. Dừng êm
+    title: Stop (Exited)
+    code: docker stop cache
+    tone: amber
+    edge: giải phóng tên
+  - icon: trash
+    badge: 4. Xoá xác
+    title: Remove
+    code: docker rm cache
+    tone: rose
 ```
-Các lớp (layers) của Image được tải về và lưu vào bộ nhớ đệm cục bộ. Nếu sau đó bạn tải một Image khác dùng chung nền Alpine 3.20, Docker thông minh bỏ qua lớp nền đã có sẵn, tiết kiệm băng thông tối đa.
 
-### Bước 2: Khởi tạo và chạy tiến trình (`docker run`)
-```bash
-docker run -d --name cache-dev redis:7-alpine
+```visual
+kind: groups
+title: Bảng Lệnh Điều Khiển Vòng Đời Hàng Ngày [!badge:emerald:Cheat Sheet]
+columns: 2
+items:
+  - num: 1
+    title: Tải & Chạy Container Mới
+    badge: Pull & Run
+    tone: emerald
+    bullets:
+      - "**`-d` (`--detach`):** Chạy ngầm ở hậu cảnh (background), trả lại dấu nhắc Terminal ngay"
+      - "**`--name`:** Đặt tên cố định dễ gọi script (tránh tên ngẫu nhiên kiểu `sleepy_euler`)"
+    code: |
+      docker pull redis:7-alpine                # Tải các layer vào cache máy
+      docker images                             # Xem danh sách Image đang có
+      docker run -d --name cache-dev redis:7-alpine
+    codeLang: shell
+  - num: 2
+    title: Quan Sát Trạng Thái Sống & Đã Tắt
+    badge: Inspect Status
+    tone: sky
+    bullets:
+      - "`docker ps` **chỉ hiện container ĐANG CHẠY** (`Up`)"
+      - "Muốn thấy cả container **đã dừng (`Exited`)** bắt buộc thêm cờ ==`-a`=="
+      - "`Exited (0)` = hoàn tất bình thường · `Exited (1)` / `(137)` = sập do lỗi hoặc hết RAM"
+    code: |
+      docker ps      # Chỉ hiện container đang chạy (running)
+      docker ps -a   # Hiện TẤT CẢ (gồm cả Exited đã tắt)
+    codeLang: shell
+  - num: 3
+    title: Dừng Lịch Sự (SIGTERM) vs Rút Phích (SIGKILL)
+    badge: Graceful Shutdown
+    tone: amber
+    bullets:
+      - "**`docker stop`** gửi ==`SIGTERM`== vào PID 1, cho ứng dụng tối đa 10 giây đóng kết nối DB êm ái trước khi thoát"
+      - "**`docker kill`** bắn thẳng ==`SIGKILL`== ngắt điện tức khắc — chỉ dùng khi tiến trình treo cứng"
+    code: |
+      docker stop cache-dev   # Gửi SIGTERM -> chờ 10s -> Graceful Shutdown
+      docker kill cache-dev   # Bắn thẳng SIGKILL rút điện ngay lập tức
+    codeLang: shell
+  - num: 4
+    title: Dọn Dẹp Container (Giữ Nguyên Image)
+    badge: Cleanup
+    tone: rose
+    bullets:
+      - "`docker rm` **chỉ xoá Container** (lớp ghi tạm), còn bản gốc **Image vẫn nằm nguyên** trong `docker images` để lần sau bật tức thì!"
+      - "Thêm `-f` để vừa ép dừng vừa xoá gọn trong 1 lệnh ở máy dev"
+    code: |
+      docker rm cache-dev      # Xoá container đã dừng (giải phóng tên)
+      docker rm -f cache-dev   # Ép dừng + xoá ngay lập tức
+    codeLang: shell
 ```
-- **`-d` (`--detach`):** Chạy ngầm ở hậu cảnh (background) và trả lại dấu nhắc Terminal ngay lập tức — tương tự việc quản lý dịch vụ qua PM2 thay vì treo cứng cửa sổ dòng lệnh.
-- **`--name cache-dev`:** Đặt tên định danh dễ nhớ. Nếu bỏ qua cờ này, Docker sẽ tự sinh tên ngẫu nhiên kiểu `sleepy_euler` rất khó viết script tự động.
 
-### Bước 3: Quan sát tiến trình đang sống và đã tắt (`docker ps`)
-```bash
-docker ps       # Chỉ hiện container ĐANG CHẠY (status = Up / running)
-docker ps -a    # Hiện TẤT CẢ container, bao gồm cả container ĐÃ DỪNG (Exited)
+## 4. Bẫy thường gặp & Tư duy thực chiến chuẩn 2026
+
+```visual
+kind: troubleshoot
+title: Khắc Phục Nhanh Lỗi Kinh Điển Của Người Mới Học Docker
+items:
+  - symptom: 'Conflict. The container name "/api" is already in use'
+    badge: Bẫy số 1
+    tone: amber
+    cause: Container cũ bị lỗi thoát sau 0.1s nên không hiện trong `docker ps`, nhưng xác `Exited` của nó vẫn đang giữ tên `api`.
+    fix: Liệt kê toàn bộ bằng `docker ps -a` để xem mã thoát, sau đó xoá xác cũ trước khi chạy lại.
+    cmd: docker ps -a && docker rm -f api
+  - symptom: Bản build hôm nay tự nhiên lỗi dù không sửa dòng code nào
+    badge: Reproducibility
+    tone: rose
+    cause: Dùng `node` hoặc `node:latest` khiến CI tự kéo phiên bản Major mới vừa phát hành trên Docker Hub.
+    fix: Luôn ghim phiên bản cụ thể kèm biến thể nhẹ (ví dụ `node:22.12-alpine` hoặc `redis:7.4-alpine`).
 ```
-Đây là bẫy số 1 của người mới: bạn chạy một container bị lỗi cấu hình khiến tiến trình Node.js thoát ngay sau 0.1 giây. Khi gõ `docker ps` thấy trống trơn, bạn tưởng container "chưa từng được tạo", bèn gõ lại `docker run --name api ...` và lập tức ăn lỗi:
-`Conflict. The container name "/api" is already in use`.
-Thực tế, xác container cũ vẫn nằm ở trạng thái **Exited** — chỉ khi gõ `docker ps -a` bạn mới nhìn thấy nó cùng mã thoát (`Exited (0)` là hoàn tất bình thường, khác `0` như `Exited (1)` hay `Exited (137)` là gặp sự cố).
 
-### Bước 4: Dừng tiến trình lịch sự (`docker stop`)
-```bash
-docker stop cache-dev
-```
-`docker stop` gửi tín hiệu **`SIGTERM`** vào tiến trình gốc (PID 1) để ứng dụng có tối đa 10 giây đóng kết nối Database, xả nốt các HTTP request đang xử lý dở (Graceful Shutdown) trước khi thoát. Ngược lại, `docker kill` bắn thẳng **`SIGKILL`** rút phích điện tức khắc — chỉ dùng khi tiến trình bị treo cứng không phản hồi.
+> [!TIP] Mẹo thực chiến chuẩn Docker Engine v27+ (2026)
+> - [x] **Cú pháp phân nhóm tường minh:** `docker container ls` và `docker image ls` hoạt động song song với bí danh kinh điển `docker ps` và `docker images` — bạn sẽ gặp cả hai trong pipeline CI/CD.
+> - [x] **Tư duy Hạ tầng Bất biến (*Immutable Infrastructure*):** Tuyệt đối không `exec` vào container đang sống để sửa tay code/config. Khi cần nâng cấp, hãy **build Image mới → xoá container cũ → bật container mới**!
 
-### Bước 5: Dọn dẹp hoàn toàn (`docker rm`)
-```bash
-docker rm cache-dev      # Xoá hẳn container đã dừng (giải phóng tên "cache-dev")
-docker rm -f cache-dev   # Vừa ép dừng vừa xoá ngay trong 1 lệnh (rất tiện ở môi trường dev)
-```
-Lưu ý quan trọng: `docker rm` chỉ xoá **Container** (lớp ghi tạm và siêu dữ liệu tiến trình), còn bản gốc **Container Image** (`redis:7-alpine`) vẫn nằm nguyên trong `docker images` để lần sau `docker run` bật lên tức thì không cần tải lại mạng!
-
----
-
-## 4. Ghi chú thực chiến chuẩn 2026
-
-- **Docker Engine v27+ / Docker Desktop 4.34+:** Các câu lệnh phân nhóm tường minh như `docker container ls`, `docker image ls` hoạt động song song với các bí danh kinh điển `docker ps`, `docker images`. Khi đọc tài liệu hoặc script CI/CD, bạn sẽ gặp cả hai cách viết này.
-- **Tư duy Bất biến (Immutable Infrastructure):** Khác với máy chủ truyền thống nơi bạn SSH vào sửa tay file cấu hình, một Container được thiết kế như "thực thể dùng một lần": khi cần nâng cấp code hay đổi cấu hình, ta xoá container cũ và tạo container mới từ Image mới thay vì chỉnh sửa chắp vá bên trong container đang sống.
+> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> - **Image** = Khuôn mẫu **chỉ đọc** (Read-only layers) · **Container** = Tiến trình sống + 1 lớp ghi tạm.
+> - Container **chia sẻ chung Host Linux Kernel** (cô lập bằng `Namespaces` + `cgroups`), không cõng Guest OS như VM.
+> - Bỏ trống `:tag` = tự gắn `:latest` · Thoát thành công không lỗi = `Exited (0)` · `docker rm` không làm mất Image gốc!

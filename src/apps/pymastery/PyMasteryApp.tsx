@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useStore, useMenuAction, useContextAction } from '@sonth87/device-layout';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
@@ -64,20 +64,23 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
     }
   }, [deviceColorScheme, setTheme]);
 
-  const handleAction = (action: string) => {
-    if (action === 'quickSearch') {
-      setSearchOpen(true);
-    } else if (action === 'openNotes') {
-      openNotesDrawer('lesson', selectedLessonId, `Bài học: ${selectedLessonId}`);
-    } else if (action === 'openSettings') {
-      setSettingsOpen(true);
-    } else if (action === 'toggleJsTs') {
-      toggleJsTsComparison();
-    } else if (action.startsWith('tab:')) {
-      const tab = action.replace('tab:', '') as MainTab;
-      setActiveTab(tab);
-    }
-  };
+  const handleAction = useCallback(
+    (action: string) => {
+      if (action === 'quickSearch') {
+        setSearchOpen(true);
+      } else if (action === 'openNotes') {
+        openNotesDrawer('lesson', selectedLessonId, `Bài học: ${selectedLessonId}`);
+      } else if (action === 'openSettings') {
+        setSettingsOpen(true);
+      } else if (action === 'toggleJsTs') {
+        toggleJsTsComparison();
+      } else if (action.startsWith('tab:')) {
+        const tab = action.replace('tab:', '') as MainTab;
+        setActiveTab(tab);
+      }
+    },
+    [openNotesDrawer, selectedLessonId, setActiveTab, setSearchOpen, setSettingsOpen, toggleJsTsComparison]
+  );
 
   useMenuAction('pymastery', handleAction, windowId);
   useContextAction('pymastery', handleAction);

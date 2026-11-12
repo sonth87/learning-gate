@@ -3,6 +3,10 @@ import { gradeYamlSpec, parseK8sCpuMillicores, parseK8sMemoryMi, renderSimpleHel
 import { gradeDockerfileSpec, gradeDockerignoreSpec, parseDockerfile } from '../dockerfileGrader';
 import { executeDiagnosticCommand, gradeCliSpec, gradeTroubleshootSpec } from '../cliSimEngine';
 import { dryRunExercise, gradeDevOpsExercise } from '../gradeEngine';
+import { mergeWpStates } from '@/db/durableProgressStorage';
+import { emptyState } from '@/features/workpath/logic';
+import { courseCurrentLevel, courseModuleDone, courseModuleProgress, courseNextSteps } from '../../logic';
+import type { DevOpsCurriculum } from '../../types';
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -395,6 +399,130 @@ test('CLI & Troubleshoot State Machine (K8s): tự động khôi phục Pod và 
   assert.equal(dry.exitCode, 0);
   const full = gradeDevOpsExercise(cmYaml, patchSpec, diag.stdout);
   assert.ok(full.tests.every((t) => t.status === 'pass'));
+});
+
+test('Durable Progress Merge: tự phục hồi khi IndexedDB bị xoá/evict và chống tab cũ ghi đè tiến độ mới', () => {
+  const savedInLocal = {
+    ...emptyState(),
+    updatedAt: 1_700_000_500_000,
+    xp: 50,
+    lessons: { K00: 1_700_000_100_000 },
+    exercises: {
+      'K00-E1': { status: 'passed' as const, attempts: 2, hints: 0, passedAt: 1_700_000_200_000, code: 'docker run ...' },
+      'K00-E2': { status: 'skipped' as const, attempts: 0, hints: 0, skippedAt: 1_700_000_300_000 },
+    },
+    skippedModules: { K01: 1_700_000_400_000 },
+    log: [
+      { t: 1_700_000_100_000, event: 'lesson:K00', xp: 20 },
+      { t: 1_700_000_200_000, event: 'pass:K00-E1', xp: 30 },
+    ],
+  };
+
+  // Trường hợp 1: IndexedDB bị rỗng / mất sau 1 đêm -> khôi phục trọn vẹn từ LocalStorage
+  const recovered = mergeWpStates(null, savedInLocal);
+  assert.equal(recovered.xp, 50);
+  assert.ok('K00' in recovered.lessons);
+  assert.equal(recovered.exercises['K00-E1']?.status, 'passed');
+  assert.equal(recovered.exercises['K00-E2']?.status, 'skipped');
+  assert.ok(recovered.skippedModules?.K01);
+
+  // Trường hợp 2: Tab cũ để qua đêm (updatedAt = 0, rỗng) hợp nhất với LocalStorage mới -> không bao giờ làm mất dữ liệu
+  const staleTabMerged = mergeWpStates(emptyState(), savedInLocal);
+  assert.equal(staleTabMerged.xp, 50);
+  assert.equal(staleTabMerged.exercises['K00-E1']?.status, 'passed');
+
+  // Trường hợp 3: Người dùng chủ động Hoàn tác bỏ qua (unskip K01) ở bản mới hơn -> cờ bỏ qua được gỡ nhưng bài passed vẫn giữ nguyên
+  const unskippedNewer = {
+    ...savedInLocal,
+    updatedAt: 1_700_000_900_000,
+    skippedModules: {},
+    exercises: {
+      ...savedInLocal.exercises,
+      'K00-E2': { status: 'todo' as const, attempts: 0, hints: 0 },
+    },
+  };
+  const afterUnskip = mergeWpStates(savedInLocal, unskippedNewer);
+  assert.equal(afterUnskip.skippedModules?.K01, undefined);
+  assert.equal(afterUnskip.exercises['K00-E2']?.status, 'todo');
+  assert.equal(afterUnskip.exercises['K00-E1']?.status, 'passed');
+});
+
+test('Skip Progression: bỏ qua bài lẻ hoặc cả module tự động chuyển cấp & cập nhật Việc nên làm tiếp', () => {
+  const miniCur: DevOpsCurriculum = {
+    courseId: 'kube',
+    generatedAt: '2026-01-01',
+    passQuiz: 0.7,
+    levels: { '0': 'Nền tảng', '1': 'Nâng cao' },
+    modules: [
+      {
+        id: 'K00',
+        slug: 'why',
+        level: 0,
+        order: 1,
+        title: 'Why Containers',
+        summary: '',
+        tags: [],
+        lesson: '# K00',
+        sources: [],
+        quiz: [{ id: 'q1', type: 'tf', q: 'OK?', code: '', choices: [], answer: true, explain: '' }],
+        cards: [],
+        drills: [],
+        readings: [],
+        exercises: [
+          {
+            id: 'K00-E1',
+            code: 'K00.1',
+            module: 'K00',
+            title: 'Ex 1',
+            difficulty: 1,
+            tags: [],
+            kind: 'cli',
+            language: 'shell',
+            filename: 'run.sh',
+            prompt: '',
+            starter: '',
+            solution: '',
+            hints: [],
+            ref: '',
+            webGrade: true,
+            spec: { kind: 'cli', initialState: {}, rules: [] },
+          },
+        ],
+      },
+      {
+        id: 'K07',
+        slug: 'k8s',
+        level: 1,
+        order: 1,
+        title: 'K8s Intro',
+        summary: '',
+        tags: [],
+        lesson: '# K07',
+        sources: [],
+        quiz: [],
+        cards: [],
+        drills: [],
+        readings: [],
+        exercises: [],
+      },
+    ],
+  };
+
+  const s = emptyState();
+  assert.equal(courseCurrentLevel(s, miniCur), 0);
+  assert.equal(courseNextSteps(s, miniCur, null, 'Kube')[0]?.skipTarget?.kind, 'lesson');
+
+  // Bỏ qua từng phần của K00 (lesson -> quiz -> exercise) -> hoàn thành K00 (0 XP) và nhảy lên Cấp 1 (K07)
+  s.skippedLessons = { K00: 1 };
+  assert.equal(courseNextSteps(s, miniCur, null, 'Kube')[0]?.skipTarget?.kind, 'quiz');
+  s.skippedQuizzes = { K00: 1 };
+  assert.equal(courseNextSteps(s, miniCur, null, 'Kube')[0]?.skipTarget?.kind, 'exercise');
+  s.exercises['K00-E1'] = { status: 'skipped', attempts: 0, hints: 0 };
+
+  assert.deepEqual(courseModuleProgress(s, miniCur.modules[0], 0.7), [3, 3]);
+  assert.equal(courseModuleDone(s, miniCur.modules[0], 0.7), true);
+  assert.equal(courseCurrentLevel(s, miniCur), 1);
+  assert.ok(courseNextSteps(s, miniCur, null, 'Kube')[0]?.text.includes('K07'));
 });
 
 console.log(`\n🎉 TẤT CẢ ${passed} BÀI TEST ENGINE ĐỀU XANH!`);

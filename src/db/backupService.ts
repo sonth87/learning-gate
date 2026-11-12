@@ -1,4 +1,10 @@
 import { getDb } from './indexedDbClient';
+import {
+  mergeWpStates,
+  normalizeWpState,
+  readLocalProgressMirror,
+  writeLocalProgressMirror,
+} from './durableProgressStorage';
 import { FullBackupPayload, UserSettings } from '@/types/user.types';
 
 export const backupService = {
@@ -20,9 +26,18 @@ export const backupService = {
     for (const row of courseRows) {
       if (row?.courseId && row?.state) courses[row.courseId] = row.state;
     }
+    for (const slot of ['kube', 'cicd'] as const) {
+      const localCourse = readLocalProgressMirror(slot);
+      if (localCourse || courses[slot]) {
+        courses[slot] = mergeWpStates(courses[slot], localCourse);
+      }
+    }
+
+    const localWp = readLocalProgressMirror('wp');
+    const mergedWp = wp?.state || localWp ? mergeWpStates(wp?.state, localWp) : undefined;
 
     return {
-      version: '1.1.0',
+      version: '1.2.0',
       exportedAt: Date.now(),
       settings: currentSettings,
       completedLessonIds: completedLessons.map((c) => c.lessonId),
@@ -31,7 +46,7 @@ export const backupService = {
       submissions,
       srsStates,
       examHistory,
-      workpath: wp?.state,
+      workpath: mergedWp,
       courses,
     };
   },
@@ -86,12 +101,18 @@ export const backupService = {
       await tx.objectStore('exam_history').put(exam);
     }
     if (payload.workpath) {
-      await tx.objectStore('wp_state').put({ key: 'main', state: payload.workpath });
+      const normWp = normalizeWpState({ ...payload.workpath, updatedAt: Date.now() });
+      await tx.objectStore('wp_state').put({ key: 'main', state: normWp });
+      writeLocalProgressMirror('wp', normWp);
     }
     if (payload.courses && typeof payload.courses === 'object') {
       for (const [courseId, state] of Object.entries(payload.courses)) {
         if (courseId && state) {
-          await tx.objectStore('course_state').put({ courseId, state });
+          const normCourse = normalizeWpState({ ...state, updatedAt: Date.now() });
+          await tx.objectStore('course_state').put({ courseId, state: normCourse });
+          if (courseId === 'kube' || courseId === 'cicd') {
+            writeLocalProgressMirror(courseId, normCourse);
+          }
         }
       }
     }

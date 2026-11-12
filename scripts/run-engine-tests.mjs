@@ -17,6 +17,7 @@ async function main() {
     platform: 'node',
     format: 'esm',
     packages: 'external',
+    alias: { '@': path.join(ROOT, 'src') },
     outfile: tmpFile,
     tsconfig: path.join(ROOT, 'tsconfig.json'),
   });

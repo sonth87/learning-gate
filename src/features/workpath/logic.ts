@@ -55,8 +55,12 @@ export function emptyState(): WpState {
   return {
     v: 1,
     started: todayStr(),
+    updatedAt: 0,
     xp: 0,
     lessons: {},
+    skippedModules: {},
+    skippedLessons: {},
+    skippedQuizzes: {},
     quiz: {},
     quizWrong: [],
     exercises: {},
@@ -86,16 +90,30 @@ export const lessonRead = (s: WpState, moduleId: string): boolean => moduleId in
 export const quizBest = (s: WpState, moduleId: string): number => s.quiz[moduleId]?.best ?? 0;
 export const catalogStatus = (s: WpState, id: string): CatalogStatus => s.catalog[id]?.status ?? 'todo';
 
-/** (số mục đã xong, tổng số mục) của một module: lesson + quiz đạt + mọi bài tập */
+export const isModuleSkipped = (s: WpState, moduleId: string): boolean => Boolean(s.skippedModules?.[moduleId]);
+export const isLessonSkipped = (s: WpState, moduleId: string): boolean => Boolean(s.skippedLessons?.[moduleId]);
+export const isQuizSkipped = (s: WpState, moduleId: string): boolean => Boolean(s.skippedQuizzes?.[moduleId]);
+
+export const lessonSatisfied = (s: WpState, moduleId: string): boolean =>
+  lessonRead(s, moduleId) || isLessonSkipped(s, moduleId) || isModuleSkipped(s, moduleId);
+
+export const quizSatisfied = (s: WpState, moduleId: string, passQuiz: number): boolean =>
+  quizBest(s, moduleId) >= passQuiz || isQuizSkipped(s, moduleId) || isModuleSkipped(s, moduleId);
+
+export const exSatisfied = (s: WpState, id: string, moduleId?: string): boolean => {
+  const st = exStatus(s, id);
+  return st === 'passed' || st === 'skipped' || (moduleId ? isModuleSkipped(s, moduleId) : false);
+};
+
+/** (số mục đã xong/bỏ qua, tổng số mục) của một module: lesson + quiz đạt + mọi bài tập */
 export function moduleProgress(s: WpState, m: WpModule, passQuiz: number): [number, number] {
-  let done = Number(lessonRead(s, m.id));
-  let total = 1;
+  const total = 1 + (m.quiz.length ? 1 : 0) + m.exercises.length;
+  if (isModuleSkipped(s, m.id)) return [total, total];
+  let done = Number(lessonSatisfied(s, m.id));
   if (m.quiz.length) {
-    total += 1;
-    done += Number(quizBest(s, m.id) >= passQuiz);
+    done += Number(quizSatisfied(s, m.id, passQuiz));
   }
-  total += m.exercises.length;
-  done += m.exercises.filter((e) => exStatus(s, e.id) === 'passed').length;
+  done += m.exercises.filter((e) => exSatisfied(s, e.id)).length;
   return [done, total];
 }
 
@@ -161,9 +179,17 @@ export function allQuestions(c: WpCurriculum): Map<string, WpQuestion> {
   return map;
 }
 
+export type NextStepSkipTarget =
+  | { kind: 'lesson'; id: string }
+  | { kind: 'quiz'; id: string }
+  | { kind: 'exercise'; id: string }
+  | { kind: 'module'; id: string }
+  | { kind: 'reading'; id: string };
+
 export interface NextStep {
   text: string;
   view: WpView;
+  skipTarget?: NextStepSkipTarget;
 }
 
 /** Gợi ý "việc nên làm tiếp" — giống `./learn next` */
@@ -173,16 +199,35 @@ export function nextSteps(s: WpState, c: WpCurriculum, catalog: WpCatalog | null
   for (const m of c.modules) {
     if (moduleDone(s, m, c.passQuiz)) continue;
     current = m;
-    if (!lessonRead(s, m.id)) {
-      steps.push({ text: `Đọc lý thuyết ${m.id} · ${m.title}`, view: { name: 'module', id: m.id } });
-    } else if (m.quiz.length && quizBest(s, m.id) < c.passQuiz) {
-      steps.push({ text: `Làm quiz ${m.id} (cần ≥ ${Math.round(c.passQuiz * 100)}%)`, view: { name: 'quiz', mode: 'module', moduleId: m.id } });
+    if (!lessonSatisfied(s, m.id)) {
+      steps.push({
+        text: `Đọc lý thuyết ${m.id} · ${m.title}`,
+        view: { name: 'module', id: m.id },
+        skipTarget: { kind: 'lesson', id: m.id },
+      });
+    } else if (m.quiz.length && !quizSatisfied(s, m.id, c.passQuiz)) {
+      steps.push({
+        text: `Làm quiz ${m.id} (cần ≥ ${Math.round(c.passQuiz * 100)}%)`,
+        view: { name: 'quiz', mode: 'module', moduleId: m.id },
+        skipTarget: { kind: 'quiz', id: m.id },
+      });
     }
     for (const ex of m.exercises) {
       const st = exStatus(s, ex.id);
-      if (st === 'passed') continue;
-      if (st === 'started') steps.push({ text: `Hoàn thành bài ${ex.code} · ${ex.title}`, view: { name: 'exercise', code: ex.code } });
-      else if (lessonRead(s, m.id)) steps.push({ text: `Nhận bài ${ex.code} · ${ex.title}`, view: { name: 'exercise', code: ex.code } });
+      if (st === 'passed' || st === 'skipped') continue;
+      if (st === 'started') {
+        steps.push({
+          text: `Hoàn thành bài ${ex.code} · ${ex.title}`,
+          view: { name: 'exercise', code: ex.code },
+          skipTarget: { kind: 'exercise', id: ex.id },
+        });
+      } else if (lessonSatisfied(s, m.id)) {
+        steps.push({
+          text: `Nhận bài ${ex.code} · ${ex.title}`,
+          view: { name: 'exercise', code: ex.code },
+          skipTarget: { kind: 'exercise', id: ex.id },
+        });
+      }
       break;
     }
     break;
@@ -190,11 +235,15 @@ export function nextSteps(s: WpState, c: WpCurriculum, catalog: WpCatalog | null
   const due = dueCards(s, c).length;
   if (due) steps.push({ text: `Ôn ${due} flashcard đến hạn`, view: { name: 'flash' } });
   if (s.quizWrong.length) steps.push({ text: `Ôn lại ${s.quizWrong.length} câu quiz từng sai`, view: { name: 'quiz', mode: 'review' } });
-  if (current && catalog && lessonRead(s, current.id)) {
+  if (current && catalog && lessonSatisfied(s, current.id)) {
     for (const r of current.readings) {
       const item = r.catalogN ? catalog.items.find((i) => i.n === r.catalogN) : undefined;
       if (item && ['todo', 'reading'].includes(catalogStatus(s, item.id))) {
-        steps.push({ text: `Đọc code thực tế: ${r.path}`, view: { name: 'read', n: item.n } });
+        steps.push({
+          text: `Đọc code thực tế: ${r.path}`,
+          view: { name: 'read', n: item.n },
+          skipTarget: { kind: 'reading', id: item.id },
+        });
         break;
       }
     }

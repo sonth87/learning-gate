@@ -1,6 +1,24 @@
 import { create } from 'zustand';
-import { getDb } from '@/db/indexedDbClient';
-import { BOX_DAYS, XP, addDays, emptyState, gradeQuestion, todayStr, type QuestionResult } from './logic';
+import {
+  clearDurableProgress,
+  getLocalMirrorKey,
+  loadDurableProgress,
+  mergeWpStates,
+  normalizeWpState,
+  readLocalProgressMirror,
+  saveDurableProgress,
+  type StorageSyncMeta,
+} from '@/db/durableProgressStorage';
+import {
+  BOX_DAYS,
+  XP,
+  addDays,
+  emptyState,
+  gradeQuestion,
+  todayStr,
+  type NextStepSkipTarget,
+  type QuestionResult,
+} from './logic';
 import type { CatalogStatus, ExerciseRecord, WpState, WpView } from './types';
 
 /* ------------------------------------------------------------ điều hướng */
@@ -28,7 +46,8 @@ export const useWpNav = create<NavState>((set, get) => ({
 interface ProgressStore {
   state: WpState;
   hydrated: boolean;
-  hydrate: () => Promise<void>;
+  syncMeta: StorageSyncMeta;
+  hydrate: (force?: boolean) => Promise<void>;
   /** Thay toàn bộ (dùng khi nhập bản sao lưu) */
   replaceAll: (s: WpState) => Promise<void>;
   reset: () => Promise<void>;
@@ -43,17 +62,14 @@ interface ProgressStore {
   rateCard: (cardId: string, ok: boolean) => void;
   recordDrill: (drillId: string, accuracy: number, wpm: number) => number;
   setCatalogStatus: (itemId: string, status: CatalogStatus) => number;
-}
 
-let saveTimer: ReturnType<typeof setTimeout> | null = null;
-
-function persist(state: WpState): void {
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    getDb()
-      .then((db) => db.put('wp_state', { key: 'main', state }))
-      .catch((e) => console.error('Không lưu được tiến độ WorkPath:', e));
-  }, 250);
+  /** Bỏ qua / khôi phục cho phần người học đã làm rồi hoặc đã nắm vững */
+  toggleSkipModule: (moduleId: string, forceSkip?: boolean) => boolean;
+  skipModulesBatch: (moduleIds: string[], skip: boolean) => void;
+  toggleSkipLesson: (moduleId: string, forceSkip?: boolean) => boolean;
+  toggleSkipQuiz: (moduleId: string, forceSkip?: boolean) => boolean;
+  toggleSkipExercise: (exId: string, forceSkip?: boolean) => boolean;
+  applySkipTarget: (target: NextStepSkipTarget) => void;
 }
 
 function logXp(s: WpState, event: string, xp: number): void {
@@ -65,47 +81,68 @@ function logXp(s: WpState, event: string, xp: number): void {
 const exRec = (s: WpState, id: string): ExerciseRecord =>
   (s.exercises[id] ??= { status: 'todo', attempts: 0, hints: 0 });
 
+const initialWpMirror = readLocalProgressMirror('wp');
+
 export const useWpProgress = create<ProgressStore>((set, get) => {
-  /** Sao chép state, áp dụng thay đổi, lưu lại */
+  const updateMeta = (patch: Partial<StorageSyncMeta>) =>
+    set((cur) => ({ syncMeta: { ...cur.syncMeta, ...patch } }));
+
+  /** Hợp nhất tab khác (nếu có), sao chép state, áp dụng thay đổi, lưu kép LocalStorage + IndexedDB */
   const mutate = <T,>(fn: (s: WpState) => T): T => {
-    const next = structuredClone(get().state);
+    const latestMirror = readLocalProgressMirror('wp');
+    const baseState =
+      latestMirror && (latestMirror.updatedAt ?? 0) > (get().state.updatedAt ?? 0)
+        ? mergeWpStates(get().state, latestMirror)
+        : get().state;
+
+    const next = structuredClone(baseState);
     const out = fn(next);
+    next.updatedAt = Date.now();
+    delete next.resetAt;
     set({ state: next });
-    persist(next);
+    void saveDurableProgress('wp', next, updateMeta);
     return out;
   };
 
   return {
-    state: emptyState(),
+    state: initialWpMirror ?? emptyState(),
     hydrated: false,
+    syncMeta: {
+      status: initialWpMirror ? 'local-only' : 'idle',
+      localOk: initialWpMirror !== null,
+      idbOk: false,
+      persistedGranted: null,
+      lastSavedAt: initialWpMirror?.updatedAt && initialWpMirror.updatedAt > 0 ? initialWpMirror.updatedAt : null,
+    },
 
-    hydrate: async () => {
-      if (get().hydrated) return;
-      try {
-        const db = await getDb();
-        const rec = await db.get('wp_state', 'main');
-        if (rec?.state) set({ state: { ...emptyState(), ...rec.state }, hydrated: true });
-        else set({ hydrated: true });
-      } catch (e) {
-        console.error('Không đọc được tiến độ WorkPath:', e);
-        set({ hydrated: true });
-      }
+    hydrate: async (force = false) => {
+      if (get().hydrated && !force) return;
+      const { state, meta } = await loadDurableProgress('wp', get().state);
+      set({ state, hydrated: true, syncMeta: meta });
     },
 
     replaceAll: async (s) => {
-      set({ state: { ...emptyState(), ...s }, hydrated: true });
-      persist(get().state);
+      const next = normalizeWpState({ ...s, updatedAt: Date.now() });
+      set({ state: next, hydrated: true });
+      await saveDurableProgress('wp', next, updateMeta);
     },
 
     reset: async () => {
-      const fresh = emptyState();
-      set({ state: fresh });
-      const db = await getDb();
-      await db.delete('wp_state', 'main');
+      const fresh = await clearDurableProgress('wp');
+      set({
+        state: fresh,
+        hydrated: true,
+        syncMeta: {
+          ...get().syncMeta,
+          status: 'synced',
+          lastSavedAt: fresh.updatedAt ?? Date.now(),
+        },
+      });
     },
 
     markLessonRead: (moduleId) =>
       mutate((s) => {
+        if (s.skippedLessons) delete s.skippedLessons[moduleId];
         if (moduleId in s.lessons) return 0;
         s.lessons[moduleId] = Date.now();
         logXp(s, `lesson:${moduleId}`, XP.lesson);
@@ -128,6 +165,9 @@ export const useWpProgress = create<ProgressStore>((set, get) => {
             rec.bestCorrect = correct;
             rec.best = Math.round((correct / total) * 1000) / 1000;
             record = true;
+          }
+          if (rec.best >= 0.7 && s.skippedQuizzes) {
+            delete s.skippedQuizzes[moduleId];
           }
         }
         logXp(s, `quiz:${moduleId ?? 'mix'}:${correct}/${results.length}`, xp);
@@ -152,13 +192,17 @@ export const useWpProgress = create<ProgressStore>((set, get) => {
         if (ok) {
           first = r.status !== 'passed';
           r.status = 'passed';
+          delete r.skippedAt;
           r.passedAt ??= Date.now();
           if (first) {
             xp = r.solutionViewed ? XP.exerciseAfterSolution : XP.exercise;
             logXp(s, `pass:${exId}`, xp);
           }
         } else {
-          if (r.status === 'todo') r.status = 'started';
+          if (r.status === 'todo' || r.status === 'skipped') {
+            r.status = 'started';
+            delete r.skippedAt;
+          }
           logXp(s, `fail:${exId}`, 0);
         }
         return { xp, first, attempts: r.attempts };
@@ -181,6 +225,7 @@ export const useWpProgress = create<ProgressStore>((set, get) => {
       mutate((s) => {
         const r = exRec(s, exId);
         delete r.code;
+        delete r.skippedAt;
         r.status = r.status === 'passed' ? 'passed' : 'todo';
       }),
 
@@ -220,8 +265,102 @@ export const useWpProgress = create<ProgressStore>((set, get) => {
         logXp(s, `catalog:${status}:${itemId}`, 0);
         return 0;
       }),
+
+    toggleSkipModule: (moduleId, forceSkip) =>
+      mutate((s) => {
+        const map = (s.skippedModules ??= {});
+        const shouldSkip = forceSkip ?? !(moduleId in map);
+        if (shouldSkip) map[moduleId] = Date.now();
+        else delete map[moduleId];
+        return shouldSkip;
+      }),
+
+    skipModulesBatch: (moduleIds, skip) =>
+      mutate((s) => {
+        const map = (s.skippedModules ??= {});
+        const now = Date.now();
+        for (const id of moduleIds) {
+          if (skip) map[id] = now;
+          else delete map[id];
+        }
+      }),
+
+    toggleSkipLesson: (moduleId, forceSkip) =>
+      mutate((s) => {
+        const map = (s.skippedLessons ??= {});
+        const shouldSkip = forceSkip ?? !(moduleId in map);
+        if (shouldSkip) map[moduleId] = Date.now();
+        else delete map[moduleId];
+        return shouldSkip;
+      }),
+
+    toggleSkipQuiz: (moduleId, forceSkip) =>
+      mutate((s) => {
+        const map = (s.skippedQuizzes ??= {});
+        const shouldSkip = forceSkip ?? !(moduleId in map);
+        if (shouldSkip) map[moduleId] = Date.now();
+        else delete map[moduleId];
+        return shouldSkip;
+      }),
+
+    toggleSkipExercise: (exId, forceSkip) =>
+      mutate((s) => {
+        const r = exRec(s, exId);
+        if (r.status === 'passed') return false;
+        const shouldSkip = forceSkip ?? r.status !== 'skipped';
+        if (shouldSkip) {
+          r.status = 'skipped';
+          r.skippedAt = Date.now();
+        } else {
+          r.status = r.code ? 'started' : 'todo';
+          delete r.skippedAt;
+        }
+        return shouldSkip;
+      }),
+
+    applySkipTarget: (target) => {
+      switch (target.kind) {
+        case 'module':
+          get().toggleSkipModule(target.id, true);
+          break;
+        case 'lesson':
+          get().toggleSkipLesson(target.id, true);
+          break;
+        case 'quiz':
+          get().toggleSkipQuiz(target.id, true);
+          break;
+        case 'exercise':
+          get().toggleSkipExercise(target.id, true);
+          break;
+        case 'reading':
+          get().setCatalogStatus(target.id, 'skip');
+          break;
+      }
+    },
   };
 });
+
+if (typeof window !== 'undefined') {
+  const mirrorKey = getLocalMirrorKey('wp');
+  window.addEventListener('storage', (ev) => {
+    if (ev.key === mirrorKey && ev.newValue) {
+      const incoming = readLocalProgressMirror('wp');
+      if (incoming) {
+        const merged = mergeWpStates(useWpProgress.getState().state, incoming);
+        useWpProgress.setState({ state: merged });
+      }
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const incoming = readLocalProgressMirror('wp');
+      if (incoming && (incoming.updatedAt ?? 0) > (useWpProgress.getState().state.updatedAt ?? 0)) {
+        const merged = mergeWpStates(useWpProgress.getState().state, incoming);
+        useWpProgress.setState({ state: merged });
+      }
+    }
+  });
+}
 
 /** Chấm một bộ câu hỏi quiz và trả về kết quả từng câu */
 export function gradeQuiz(

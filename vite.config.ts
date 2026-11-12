@@ -1,30 +1,37 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import fs from 'fs';
 import path from 'path';
+
+const ROLLDOWN_CJS_TARGET =
+  'function(e) {\n\tif (typeof require < "u") return require.apply(this, arguments);\n\tthrow Error("Calling `require` for \\"" + e + "\\"';
+const ROLLDOWN_CJS_REPLACEMENT =
+  'function(mod) {\n\tif (mod === "react") return e;\n\tif (mod === "react-dom") return a;\n\tif (typeof require < "u") return require.apply(this, arguments);\n\tthrow Error("Calling `require` for \\"" + mod + "\\"';
+
+function patchRolldownRequireSource(code: string): string | null {
+  if (
+    code.includes('rolldown.rs/in-depth/bundling-cjs#require-external-modules') &&
+    code.includes(ROLLDOWN_CJS_TARGET)
+  ) {
+    return code.replace(ROLLDOWN_CJS_TARGET, ROLLDOWN_CJS_REPLACEMENT);
+  }
+  return null;
+}
 
 /**
  * Fixes pre-bundled Rolldown CJS `require("react")` calls inside `@sonth87/device-layout`
- * by resolving `"react"` and `"react-dom"` to the module's existing ESM imports.
+ * in both Rollup production builds (`vite build`) and `esbuild` dev pre-bundling (`localhost`).
  */
 function fixRolldownCjsRequire(): Plugin {
   return {
     name: 'fix-rolldown-cjs-require',
     enforce: 'pre',
     transform(code, id) {
-      if (
-        id.includes('@sonth87/device-layout') &&
-        code.includes('rolldown.rs/in-depth/bundling-cjs#require-external-modules')
-      ) {
-        const target =
-          'function(e) {\n\tif (typeof require < "u") return require.apply(this, arguments);\n\tthrow Error("Calling `require` for \\"" + e + "\\"';
-        const replacement =
-          'function(mod) {\n\tif (mod === "react") return e;\n\tif (mod === "react-dom") return a;\n\tif (typeof require < "u") return require.apply(this, arguments);\n\tthrow Error("Calling `require` for \\"" + mod + "\\"';
-        if (code.includes(target)) {
-          return {
-            code: code.replace(target, replacement),
-            map: null,
-          };
+      if (id.includes('@sonth87/device-layout')) {
+        const patched = patchRolldownRequireSource(code);
+        if (patched) {
+          return { code: patched, map: null };
         }
       }
       return null;
@@ -34,6 +41,25 @@ function fixRolldownCjsRequire(): Plugin {
 
 export default defineConfig({
   plugins: [fixRolldownCjsRequire(), react(), tailwindcss()],
+  optimizeDeps: {
+    esbuildOptions: {
+      plugins: [
+        {
+          name: 'fix-rolldown-cjs-require-esbuild',
+          setup(build) {
+            build.onLoad({ filter: /@sonth87[\\/]device-layout[\\/].*\.js$/ }, async (args) => {
+              const source = await fs.promises.readFile(args.path, 'utf8');
+              const patched = patchRolldownRequireSource(source);
+              if (patched) {
+                return { contents: patched, loader: 'js' };
+              }
+              return undefined;
+            });
+          },
+        },
+      ],
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

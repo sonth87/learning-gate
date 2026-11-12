@@ -106,7 +106,7 @@ export interface WpCatalog {
 }
 
 export type CatalogStatus = 'todo' | 'reading' | 'done' | 'rewritten' | 'skip';
-export type ExerciseStatus = 'todo' | 'started' | 'passed';
+export type ExerciseStatus = 'todo' | 'started' | 'passed' | 'skipped';
 
 export interface ExerciseRecord {
   status: ExerciseStatus;
@@ -115,6 +115,7 @@ export interface ExerciseRecord {
   solutionViewed?: boolean;
   lastScore?: string;
   passedAt?: number;
+  skippedAt?: number;
   /** Code người học đang viết (tự lưu) */
   code?: string;
 }
@@ -143,12 +144,22 @@ export interface LogEntry {
   xp: number;
 }
 
-/** Toàn bộ tiến độ học — lưu một bản ghi duy nhất trong IndexedDB (store `wp_state`). */
+/** Toàn bộ tiến độ học — lưu song song trong LocalStorage + IndexedDB (`wp_state` / `course_state`). */
 export interface WpState {
   v: 1;
   started: string;
+  /** Mốc cập nhật cuối (ms) để hợp nhất an toàn giữa các tab / LocalStorage / IndexedDB */
+  updatedAt?: number;
+  /** Mốc đặt lại toàn bộ tiến độ (ms) nếu người học chủ động reset */
+  resetAt?: number;
   xp: number;
   lessons: Record<string, number>;
+  /** Các module được đánh dấu bỏ qua toàn bộ (vì đã nắm vững) */
+  skippedModules?: Record<string, number>;
+  /** Các bài lý thuyết được đánh dấu bỏ qua */
+  skippedLessons?: Record<string, number>;
+  /** Các bài quiz module được đánh dấu bỏ qua */
+  skippedQuizzes?: Record<string, number>;
   quiz: Record<string, QuizRecord>;
   quizWrong: string[];
   exercises: Record<string, ExerciseRecord>;

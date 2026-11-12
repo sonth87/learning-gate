@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft, Check, SkipForward, Undo2, X } from 'lucide-react';
 import { useCourseCurriculum } from '../data';
-import { courseAllQuestions, gradeQuestion, type QuestionResult } from '../logic';
+import { courseAllQuestions, gradeQuestion, isQuizSkipped, quizBest, type QuestionResult } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
 import type { DevOpsCurriculum, EditorLanguage, WpQuestion } from '../types';
@@ -52,6 +52,7 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
   const { courseId, accent } = useCourseMeta();
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
   const record = COURSE_PROGRESS_STORES[courseId]((x) => x.recordQuiz);
+  const toggleSkipQuiz = COURSE_PROGRESS_STORES[courseId]((x) => x.toggleSkipQuiz);
   const { go, back } = COURSE_NAV_STORES[courseId]();
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [result, setResult] = useState<{
@@ -112,14 +113,35 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
 
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <CourseBtn accent={accent} onClick={back}>
-          <ArrowLeft className="h-4 w-4" /> Quay lại
-        </CourseBtn>
-        <div>
-          <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
-          <p className="text-sm text-slate-400">{questions.length} câu · trắc nghiệm, đúng/sai và dự đoán kết quả</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <CourseBtn accent={accent} onClick={back}>
+            <ArrowLeft className="h-4 w-4" /> Quay lại
+          </CourseBtn>
+          <div>
+            <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
+            <p className="text-sm text-slate-400">{questions.length} câu · trắc nghiệm, đúng/sai và dự đoán kết quả</p>
+          </div>
         </div>
+        {mode === 'module' && moduleId && quizBest(s, moduleId) < cur.passQuiz && (
+          <CourseBtn
+            accent={accent}
+            onClick={() => {
+              const skipped = toggleSkipQuiz(moduleId);
+              if (skipped) go({ name: 'module', id: moduleId });
+            }}
+          >
+            {isQuizSkipped(s, moduleId) ? (
+              <>
+                <Undo2 className="h-4 w-4" /> Hoàn tác bỏ qua Quiz
+              </>
+            ) : (
+              <>
+                <SkipForward className="h-4 w-4" /> Đã nắm vững — Bỏ qua Quiz
+              </>
+            )}
+          </CourseBtn>
+        )}
       </div>
 
       <div className="space-y-4">

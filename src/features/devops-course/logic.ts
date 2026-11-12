@@ -5,16 +5,23 @@ import {
   activeDays,
   addDays,
   catalogStatus,
+  exSatisfied,
   exStatus,
   gradeQuestion,
+  isLessonSkipped,
+  isModuleSkipped,
+  isQuizSkipped,
   lessonRead,
+  lessonSatisfied,
   normalizeOutput,
   quizBest,
+  quizSatisfied,
   similarity,
   streak,
   todayStr,
   type BrowseFilter,
   type NextStep,
+  type NextStepSkipTarget,
   type QuestionResult,
 } from '@/features/workpath/logic';
 import type { WpState } from '@/features/workpath/types';
@@ -33,16 +40,22 @@ export {
   activeDays,
   addDays,
   catalogStatus,
+  exSatisfied,
   exStatus,
   gradeQuestion,
+  isLessonSkipped,
+  isModuleSkipped,
+  isQuizSkipped,
   lessonRead,
+  lessonSatisfied,
   normalizeOutput,
   quizBest,
+  quizSatisfied,
   similarity,
   streak,
   todayStr,
 };
-export type { BrowseFilter, NextStep, QuestionResult };
+export type { BrowseFilter, NextStep, NextStepSkipTarget, QuestionResult };
 
 export const DEVOPS_KIND_LABEL: Record<string, { label: string; cls: string }> = {
   good: { label: 'ĐỌC MẪU', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
@@ -89,14 +102,13 @@ export function sortedModules(c: DevOpsCurriculum): DevOpsModule[] {
 }
 
 export function courseModuleProgress(s: WpState, m: DevOpsModule, passQuiz: number): [number, number] {
-  let done = Number(lessonRead(s, m.id));
-  let total = 1;
+  const total = 1 + (m.quiz.length ? 1 : 0) + m.exercises.length;
+  if (isModuleSkipped(s, m.id)) return [total, total];
+  let done = Number(lessonSatisfied(s, m.id));
   if (m.quiz.length) {
-    total += 1;
-    done += Number(quizBest(s, m.id) >= passQuiz);
+    done += Number(quizSatisfied(s, m.id, passQuiz));
   }
-  total += m.exercises.length;
-  done += m.exercises.filter((e) => exStatus(s, e.id) === 'passed').length;
+  done += m.exercises.filter((e) => exSatisfied(s, e.id)).length;
   return [done, total];
 }
 
@@ -142,21 +154,34 @@ export function courseNextSteps(
   for (const m of sortedModules(c)) {
     if (courseModuleDone(s, m, c.passQuiz)) continue;
     current = m;
-    if (!lessonRead(s, m.id)) {
-      steps.push({ text: `Đọc lý thuyết ${m.id} · ${m.title}`, view: { name: 'module', id: m.id } });
-    } else if (m.quiz.length && quizBest(s, m.id) < c.passQuiz) {
+    if (!lessonSatisfied(s, m.id)) {
+      steps.push({
+        text: `Đọc lý thuyết ${m.id} · ${m.title}`,
+        view: { name: 'module', id: m.id },
+        skipTarget: { kind: 'lesson', id: m.id },
+      });
+    } else if (m.quiz.length && !quizSatisfied(s, m.id, c.passQuiz)) {
       steps.push({
         text: `Làm quiz ${m.id} (cần ≥ ${Math.round(c.passQuiz * 100)}%)`,
         view: { name: 'quiz', mode: 'module', moduleId: m.id },
+        skipTarget: { kind: 'quiz', id: m.id },
       });
     }
     for (const ex of m.exercises) {
       const st = exStatus(s, ex.id);
-      if (st === 'passed') continue;
+      if (st === 'passed' || st === 'skipped') continue;
       if (st === 'started') {
-        steps.push({ text: `Hoàn thành bài ${ex.code} · ${ex.title}`, view: { name: 'exercise', code: ex.code } });
-      } else if (lessonRead(s, m.id)) {
-        steps.push({ text: `Nhận bài ${ex.code} · ${ex.title}`, view: { name: 'exercise', code: ex.code } });
+        steps.push({
+          text: `Hoàn thành bài ${ex.code} · ${ex.title}`,
+          view: { name: 'exercise', code: ex.code },
+          skipTarget: { kind: 'exercise', id: ex.id },
+        });
+      } else if (lessonSatisfied(s, m.id)) {
+        steps.push({
+          text: `Nhận bài ${ex.code} · ${ex.title}`,
+          view: { name: 'exercise', code: ex.code },
+          skipTarget: { kind: 'exercise', id: ex.id },
+        });
       }
       break;
     }
@@ -165,11 +190,15 @@ export function courseNextSteps(
   const due = courseDueCards(s, c).length;
   if (due) steps.push({ text: `Ôn ${due} flashcard đến hạn`, view: { name: 'flash' } });
   if (s.quizWrong.length) steps.push({ text: `Ôn lại ${s.quizWrong.length} câu quiz từng sai`, view: { name: 'quiz', mode: 'review' } });
-  if (current && catalog && lessonRead(s, current.id)) {
+  if (current && catalog && lessonSatisfied(s, current.id)) {
     for (const r of current.readings) {
       const item = r.catalogN ? catalog.items.find((i) => i.n === r.catalogN) : undefined;
       if (item && ['todo', 'reading'].includes(catalogStatus(s, item.id))) {
-        steps.push({ text: `Đọc cấu hình thật: ${r.path}`, view: { name: 'read', n: item.n } });
+        steps.push({
+          text: `Đọc cấu hình thật: ${r.path}`,
+          view: { name: 'read', n: item.n },
+          skipTarget: { kind: 'reading', id: item.id },
+        });
         break;
       }
     }
