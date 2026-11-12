@@ -25,6 +25,12 @@ export const SettingsModal: React.FC = () => {
   const { isSettingsOpen, setSettingsOpen } = useNavigationStore();
   const settings = useSettingsStore();
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
+  const wpState = useWpProgress((s) => s.state);
+  const wpMeta = useWpProgress((s) => s.syncMeta);
+  const kubeState = useKubeProgress((s) => s.state);
+  const kubeMeta = useKubeProgress((s) => s.syncMeta);
+  const cicdState = useCicdProgress((s) => s.state);
+  const cicdMeta = useCicdProgress((s) => s.syncMeta);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -319,11 +325,57 @@ export const SettingsModal: React.FC = () => {
         <div className="space-y-3 border-t border-slate-800 pt-4">
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
             <Database className="h-3.5 w-3.5 text-emerald-400" />
-            <span>3. Sao lưu & Khôi phục Dữ liệu Học tập (JSON Backup)</span>
+            <span>3. Trạng thái Lưu trữ Kép (LocalStorage + IndexedDB) & Sao lưu JSON</span>
           </div>
-          <p className="text-xs text-slate-400">
-            Xuất hoặc nhập toàn bộ dữ liệu từ IndexedDB & LocalStorage (Tiến độ bài học, Code đã làm, Ghi chú, Bookmark, Lịch ôn Flashcard SRS, Lịch sử thi & Cài đặt).
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Mọi thao tác học tập được <b>ghi đồng bộ tức thì vào LocalStorage</b> và <b>đồng bộ song song vào IndexedDB</b> trên địa chỉ hiện tại (
+            <code className="rounded bg-slate-800 px-1 py-0.5 font-mono text-[11px] text-emerald-300">
+              {typeof window !== 'undefined' ? window.location.origin : 'localhost'}
+            </code>
+            ). Nếu bạn đổi trình duyệt hoặc đổi cổng chạy (ví dụ <code>:5173</code> sang <code>:5174</code>), hãy dùng nút Export/Import JSON bên dưới để mang tiến trình theo.
           </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { label: 'Python Mastery', st: wpState, meta: wpMeta },
+              { label: 'Docker & K8s', st: kubeState, meta: kubeMeta },
+              { label: 'CI/CD Architecture', st: cicdState, meta: cicdMeta },
+            ].map((item) => {
+              const passedEx = Object.values(item.st.exercises ?? {}).filter((e) => e.status === 'passed').length;
+              const skippedCount =
+                Object.keys(item.st.skippedModules ?? {}).length +
+                Object.values(item.st.exercises ?? {}).filter((e) => e.status === 'skipped').length;
+              return (
+                <div
+                  key={item.label}
+                  className="rounded-xl border border-slate-800 bg-slate-950/70 p-2.5 text-xs"
+                >
+                  <div className="flex items-center justify-between gap-1 font-semibold text-white">
+                    <span className="truncate">{item.label}</span>
+                    <span
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-full',
+                        item.meta.localOk && item.meta.idbOk
+                          ? 'bg-emerald-400'
+                          : item.meta.localOk
+                            ? 'bg-amber-400'
+                            : 'bg-slate-600'
+                      )}
+                      title={
+                        item.meta.localOk && item.meta.idbOk
+                          ? 'Đã lưu cả LocalStorage + IndexedDB'
+                          : 'Đã lưu LocalStorage'
+                      }
+                    />
+                  </div>
+                  <div className="mt-1 font-mono text-[11px] text-slate-400">
+                    {item.st.xp} XP · {Object.keys(item.st.lessons ?? {}).length} bài · {passedEx} đạt
+                    {skippedCount > 0 ? ` · ${skippedCount} bỏ qua` : ''}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button

@@ -1,80 +1,162 @@
 # Service Containers (Postgres/Redis), Timeout bảo vệ ví & Concurrency
 
-Unit Test với dữ liệu giả lập (`vi.mock('pg')`) chạy rất nhanh nhưng có một điểm mù chết người: câu lệnh SQL bạn viết sai tên cột hay migration Prisma/Drizzle bị vấp khoá ngoại vẫn có thể… báo xanh mượt mà! Trên laptop, bạn gõ `docker compose up -d postgres redis` để test thật. Vậy khi đẩy code lên GitHub Actions, làm sao dựng ngay một cụm **PostgreSQL 16** và **Redis 7** sống cùng vòng đời với Job kiểm thử tích hợp, đồng thời bảo vệ hoá đơn thẻ tín dụng của công ty khỏi các tiến trình treo 6 tiếng hay những cú push dồn dập đè lên nhau?
+Unit Test với dữ liệu giả lập (`vi.mock('pg')`) chạy rất nhanh nhưng mang một điểm mù nguy hiểm: câu lệnh SQL gõ sai tên cột hay migration Prisma/Drizzle vấp khoá ngoại vẫn có thể… báo xanh mượt mà! Trên laptop, bạn gõ `docker compose up -d postgres redis` để kiểm thử thật. Khi đưa lên GitHub Actions, bạn cần kết hợp **3 tấm khiên vận hành thực chiến**: dựng cụm **PostgreSQL 16 + Redis 7** sống cùng vòng đời Job, khoá trần **`timeout-minutes`** chống đốt ví 6 tiếng, và điều phối **`concurrency`** thông minh giữa Pull Request với Production!
 
----
+```visual
+kind: groups
+title: "Bộ Ba Lá Chắn Sống Còn Cho Đường Ống Kiểm Thử & Triển Khai [!badge:emerald:Production Grade]"
+columns: 3
+items:
+  - num: 1
+    icon: shield-alert
+    title: "timeout-minutes"
+    badge: "Chống bẫy 360 phút"
+    tone: rose
+    desc: "Cắt đứt ngay các tiến trình treo kết nối thay vì để cháy túi suốt 6 giờ."
+    bullets:
+      - "Mặc định nếu bỏ trống, GitHub cho Job chạy tới ==**360 phút (6 tiếng)**== mới tự huỷ!"
+      - "Luôn khai báo rõ `timeout-minutes: 10` (hoặc `15`) ở mọi Job CI"
+  - num: 2
+    icon: layers
+    title: "concurrency"
+    badge: "Chống đua tranh & Lãng phí"
+    tone: amber
+    desc: "Kiểm soát các lượt chạy trùng nhánh trên PR hoặc xếp hàng an toàn trên Production."
+    bullets:
+      - "Trên PR: `cancel-in-progress: true` để huỷ ngay bản chạy cũ lỗi thời"
+      - "Trên Production: `cancel-in-progress: false` để xếp hàng tuần tự, bảo vệ DB migration"
+  - num: 3
+    icon: database
+    title: "services:"
+    badge: "Postgres 16 & Redis 7"
+    tone: sky
+    desc: "Đính kèm container cơ sở dữ liệu thật dùng một lần ngay bên cạnh Job kiểm thử."
+    bullets:
+      - "Tự động bật trước Step đầu tiên và **xoá sạch dữ liệu** khi Job khép lại"
+      - "Kết hợp `--health-cmd` để loại bỏ hoàn toàn lỗi `ECONNREFUSED`"
+```
 
 ## 1. Cái bẫy 360 phút mặc định và kỷ luật `timeout-minutes`
 
-Ít ai đọc kỹ dòng chữ nhỏ trong tài liệu GitHub Actions: **nếu bạn không khai báo `timeout-minutes`, một Job bị treo sẽ tiếp tục chạy và tính tiền suốt 360 phút (6 tiếng đồng hồ!)** trước khi bị hệ thống cưỡng chế tắt. Chỉ cần một kết nối database trong bài test quên gọi `await pool.end()` khiến tiến trình Node.js không chịu thoát, 10 Pull Request trong ngày sẽ nướng sạch **3.600 phút CI**!
+Ít người để ý dòng quy định mặc định của GitHub Actions: **nếu bạn quên viết `timeout-minutes`, một Job bị treo sẽ tiếp tục chạy và trừ tiền suốt ==360 phút (6 giờ đồng hồ)==** trước khi bị hệ thống cưỡng chế dừng! Chỉ cần một bài kiểm thử tích hợp quên đóng kết nối database khiến tiến trình Node.js đứng im, 10 Pull Request trong ngày sẽ thiêu rụi **3.600 phút CI** của cả đội.
 
-Quy tắc bắt buộc ở mọi dự án chuyên nghiệp: luôn đặt trần thời gian hợp lý ở cấp Job (thường là **`timeout-minutes: 10`** hoặc **`15`** cho CI tiêu chuẩn):
+```yaml
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10   # Bắt buộc khai báo trần hợp lý (10–15 phút)!
+```
+
+## 2. Kiểm soát tranh chấp với `concurrency`: Khi nào Huỷ, khi nào Xếp hàng?
+
+Khi lập trình viên phát hiện lỗi chính tả rồi `git push` dồn dập 4 commit trong 2 phút lên cùng một nhánh PR, để cả 4 workflow chạy song song là sự lãng phí vô nghĩa. Nhưng ngược lại, trên nhánh `main` đang chạy **Production deployment** kèm cập nhật schema cơ sở dữ liệu, nếu rút phích cắm ngang hông bản đang chạy thì hệ thống sẽ hỏng khoá trạng thái (*state lock*) và sập ngay lập tức!
+
+```visual
+kind: compare
+title: "Hai Chiến Lược Đối Lập Của concurrency: Pull Request vs Production"
+subtitle: "Cùng một từ khoá nhưng đảo ngược cờ cancel-in-progress theo đúng mức độ rủi ro của môi trường"
+left:
+  badge: "KIỂM THỬ NHÁNH / PR · Huỷ bản cũ"
+  title: "Tiết kiệm tài nguyên cho commit mới nhất"
+  tone: sky
+  code: |
+    concurrency:
+      group: ci-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+  lang: yaml
+  bullets:
+    - "Nhóm theo `github.workflow` + `github.ref` để **cô lập riêng từng nhánh/PR** (tuyệt đối không dùng khoá toàn cục làm huỷ nhầm PR của đồng nghiệp khác!)"
+    - "**`cancel-in-progress: true`**: Vừa đẩy commit sửa lỗi mới lên nhánh -> huỷ tức khắc lượt chạy cũ đang dở dang"
+right:
+  badge: "TRIỂN KHAI PRODUCTION · Xếp hàng tuần tự"
+  title: "Bảo vệ an toàn tuyệt đối cho DB Migration & Terraform"
+  tone: emerald
+  code: |
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+  lang: yaml
+  bullets:
+    - "Đặt tên nhóm cố định theo môi trường đích (`deploy-production`)"
+    - "**`cancel-in-progress: false`**: Tuyệt đối không ngắt ngang bản đang chạy! Đợt deploy mới nhất được giữ ở trạng thái chờ (**`Pending`**) cho tới khi bản trước hoàn tất trọn vẹn"
+```
+
+## 3. Service Containers: Thay thế `compose.yaml` kèm Healthcheck chuẩn xác
+
+Khối ==`services:`== cho phép đính kèm `postgres:16-alpine` và `redis:7-alpine` chạy song hành cùng Job. Tuy nhiên, có một cái bẫy kinh điển: Docker báo container `Running` ngay mili-giây tiến trình PID 1 vừa bật, nhưng bên trong PostgreSQL còn mất thêm 2–4 giây chạy `initdb` mới mở cổng TCP `5432`. Nếu Step `npm run db:migrate` nổ súng quá sớm, bạn sẽ dính lỗi đỏ chót ==`ECONNREFUSED 127.0.0.1:5432`==!
+
+```visual
+kind: flow
+title: "Vòng Đời Khởi Động Service Containers Chống Lỗi ECONNREFUSED"
+steps:
+  - icon: container
+    badge: "1. Khởi tạo Container"
+    title: "Pull & Map Ports"
+    desc: "Bật postgres:16-alpine (5432:5432) & redis:7-alpine (6379:6379)"
+    code: "ports: [\"5432:5432\"]"
+    tone: sky
+    edge: "kiểm tra sức khoẻ"
+  - icon: doctor
+    badge: "2. Chốt chặn Healthcheck"
+    title: "Đợi trạng thái healthy"
+    desc: "Runner kiên nhẫn chờ pg_isready và redis-cli ping trả mã 0"
+    code: "--health-cmd pg_isready"
+    tone: amber
+    edge: "DB sẵn sàng 100%"
+  - icon: play
+    badge: "3. Thực thi Step"
+    title: "Migrate & Test Thật"
+    desc: "Node.js trên host VM gọi thẳng localhost:5432 và localhost:6379"
+    code: "localhost:5432"
+    tone: emerald
+    edge: "Job kết thúc"
+  - icon: trash
+    badge: "4. Dọn sạch Ephemeral"
+    title: "Huỷ Container & Dữ Liệu"
+    desc: "Xoá sổ toàn bộ DB tạm ngay lập tức, lần chạy sau lại sạch tinh"
+    code: "Auto Destroy"
+    tone: rose
+```
+
+Thay vì đoán mò `sleep 10`, hãy cấu hình cờ Docker Healthcheck chuẩn mực trong `options:`:
 
 ```yaml
 jobs:
   integration:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: test_ephemeral_password
+          POSTGRES_DB: app_test
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U app -d app_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - "6379:6379"
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
 ```
 
----
+## 4. Hai lưu ý vàng cho lập trình viên Node.js: Mạng `localhost` & Đóng Pool `afterAll()`
 
-## 2. Kiểm soát tranh chấp với `concurrency`: Khi nào Huỷ, khi nào Xếp hàng?
+- [x] **Kết nối qua `localhost` (nhờ `ports:`) khi chạy trực tiếp trên VM:** Khi các Step chạy thẳng trên máy chủ `runs-on: ubuntu-latest` (không bọc `container:`), tiến trình Node.js nằm ở mạng máy chủ bên ngoài Docker network. Do đó bạn **bắt buộc ánh xạ `ports: ["5432:5432"]` và kết nối qua `localhost:5432` / `localhost:6379`** (`postgresql://app:test_ephemeral_password@localhost:5432/app_test`). *(Chỉ khi nào cả Job bọc trong `container: node:22-alpine` thì mới gọi qua tên dịch vụ `postgres:5432`).*
+- [!] **Đóng sạch Connection Pool trong hook `afterAll()`:** Các thư viện như `pg.Pool`, `PrismaClient` hay `ioredis` giữ TCP socket mở ngầm trong Event Loop. Nếu quên gọi `await prisma.$disconnect()`, `await pool.end()` và `await redis.quit()` trong `afterAll()`, bộ test dù chạy xanh 100% vẫn sẽ treo đứng im cho tới lúc đụng trần `timeout-minutes: 10`!
 
-Khi lập trình viên phát hiện gõ nhầm chính tả, họ sửa rồi `git push` liên tiếp 4 commit trong vòng 2 phút lên cùng một nhánh Pull Request. Nếu không cấu hình `concurrency`, cả 4 workflow chạy song song chiếm hết máy chạy, trong khi kết quả của 3 commit cũ hoàn toàn vô giá trị! Nhưng ngược lại, trên nhánh `main` đang triển khai lên **Production**, nếu huỷ ngang một đợt deploy đang chạy dở database migration thì hệ thống sẽ rơi vào trạng thái nửa sống nửa chết!
-
-Vì vậy, `concurrency` có **hai chiến lược đối lập nhau** tuỳ môi trường:
-
-| Ngữ cảnh | Giá trị `group:` | `cancel-in-progress` | Hành vi điều phối |
-| :--- | :--- | :--- | :--- |
-| **Kiểm thử nhánh / PR** | `ci-${{ github.workflow }}-${{ github.ref }}` | **`true`** | Vừa có commit mới trên cùng nhánh/PR -> **huỷ ngay lập tức** lượt chạy cũ để tiết kiệm phút CI |
-| **Triển khai Production** | `deploy-production` (cố định theo môi trường) | **`false`** | Giữ bản đang chạy hoàn tất an toàn; bản mới được giữ ở hàng đợi (`Pending`) chờ đến lượt |
-
----
-
-## 3. Service Containers: Thay thế `compose.yaml` ngay bên trong Job
-
-Khối `services:` của GitHub Actions cho phép đính kèm các container phụ trợ (như `postgres:16-alpine`, `redis:7-alpine`) khởi chạy ngay trước các Step của Job và tự động tiêu huỷ sạch sẽ khi Job khép lại. Khi các Step chạy trực tiếp trên máy chủ `ubuntu-latest`, bạn cần ánh xạ cổng (`ports: ["5432:5432"]`) để ứng dụng Node.js kết nối tới `localhost:5432` và `localhost:6379`.
-
-### Bẫy kinh điển: Container `Up` chưa chắc Database đã sẵn sàng nhận kết nối!
-Docker đánh dấu container Postgres là `Running` ngay mili-giây tiến trình PID 1 vừa khởi chạy, nhưng bên trong Postgres còn mất thêm 2–4 giây để khởi tạo thư mục dữ liệu `initdb` rồi mới mở socket lắng nghe cổng `5432`. Nếu Step `npm run db:migrate` chạy ngay lập tức, bạn sẽ ăn lỗi đỏ chót **`ECONNREFUSED 127.0.0.1:5432`**!
-
-Cách giải quyết chuẩn mực không phải là đoán mò `sleep 10`, mà là truyền cờ Docker Healthcheck vào trường `options:`:
-
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    env:
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: test_ephemeral_password
-      POSTGRES_DB: app_test
-    ports:
-      - "5432:5432"
-    options: >-
-      --health-cmd "pg_isready -U app -d app_test"
-      --health-interval 5s
-      --health-timeout 5s
-      --health-retries 10
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    options: >-
-      --health-cmd "redis-cli ping"
-      --health-interval 5s
-      --health-timeout 3s
-      --health-retries 5
-```
-
-Khi có `--health-cmd`, GitHub Runner sẽ kiên nhẫn đứng đợi cho tới khi `pg_isready` và `redis-cli ping` báo trạng thái **`healthy`** mới bắt đầu chạy Step đầu tiên! Sau đó trong `env:` của Job, ứng dụng Node.js chỉ việc đọc `DATABASE_URL: postgresql://app:test_ephemeral_password@localhost:5432/app_test` và `REDIS_URL: redis://localhost:6379` để chạy migration thật, truy vấn SQL thật với độ tin cậy 100%.
-
----
-
-## 4. Lưu ý vàng cho Node.js Dev: Mạng `localhost` và Đóng kết nối cuối bài Test
-
-Có hai chi tiết thực tế giúp bạn tiết kiệm hàng giờ gỡ lỗi khi dùng Service Containers với Node.js:
-
-1. **`localhost` vs Tên dịch vụ (`postgres` / `redis`)**: Khi các Step của bạn chạy trực tiếp trên máy ảo `runs-on: ubuntu-latest` (cách phổ biến nhất), tiến trình Node.js nằm ngoài Docker network nên **bắt buộc kết nối qua `localhost:5432` và `localhost:6379`** (nhờ cấu hình `ports:` đã ánh xạ cổng ra máy chủ). Ngược lại, chỉ khi nào cả Job của bạn bọc trong `container: node:22-alpine` thì mới gọi qua hostname `postgres:5432`.
-2. **Đóng sạch Connection Pool trong `afterAll()`**: Các thư viện như `pg.Pool`, `PrismaClient` hay `ioredis` giữ TCP socket mở ngầm trong Event Loop của Node.js. Nếu quên gọi `await prisma.$disconnect()` và `await redis.quit()` trong hook `afterAll` của Vitest/Jest, bộ test dù chạy xanh 100% vẫn sẽ đứng im không thoát cho tới khi chạm trần `timeout-minutes: 10`! Kết hợp đóng kết nối gọn gàng trong code và đặt `timeout-minutes` trên YAML chính là lá chắn kép hoàn hảo.
+> [!REMEMBER] Ghi nhớ bỏ túi
+> - Không đặt `timeout-minutes` = mặc định chạy tối đa **360 phút** -> luôn khai báo `timeout-minutes: 10` (hoặc `15`).
+> - `concurrency`: Dùng `ci-${{ github.workflow }}-${{ github.ref }}` kèm **`cancel-in-progress: true` cho PR**, nhưng bắt buộc **`cancel-in-progress: false` cho Production**.
+> - `services:` mang tính **Ephemeral** (tự xoá sạch khi xong Job): nhớ mở `ports:` để gọi qua **`localhost`**, thêm `--health-cmd` (**`pg_isready`** cho Postgres, **`redis-cli ping`** cho Redis), và đóng kết nối DB trong `afterAll()`.

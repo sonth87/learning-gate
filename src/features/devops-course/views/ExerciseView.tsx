@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Eye,
   Lightbulb,
   Play,
   RotateCcw,
+  SkipForward,
   Terminal as TerminalIcon,
+  Undo2,
 } from 'lucide-react';
 import { useCourseCatalog, useCourseCurriculum } from '../data';
 import { exStatus } from '../logic';
@@ -57,11 +60,14 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
   const editor = useRef<ConfigCodeEditorHandle>(null);
   const loadedFor = useRef<string | null>(null);
+  const latestDraftRef = useRef<{ exId: string; text: string; starter: string } | null>(null);
 
   useEffect(() => {
     if (!ex || loadedFor.current === ex.id) return;
     loadedFor.current = ex.id;
-    setText(progressStore.getState().state.exercises[ex.id]?.code ?? ex.starter);
+    const initialText = progressStore.getState().state.exercises[ex.id]?.code ?? ex.starter;
+    setText(initialText);
+    latestDraftRef.current = { exId: ex.id, text: initialText, starter: ex.starter };
     setErrorLine(null);
     setOut(null);
     setSolution('hidden');
@@ -76,11 +82,29 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
   useEffect(() => {
     if (!ex || loadedFor.current !== ex.id) return;
+    latestDraftRef.current = { exId: ex.id, text, starter: ex.starter };
     const saved = progressStore.getState().state.exercises[ex.id]?.code ?? ex.starter;
     if (text === saved) return;
-    const t = setTimeout(() => progressStore.getState().saveCode(ex.id, text), 700);
+    const t = setTimeout(() => progressStore.getState().saveCode(ex.id, text), 250);
     return () => clearTimeout(t);
   }, [text, ex, progressStore]);
+
+  // Đảm bảo gõ xong rồi rời trang / đóng tab ngay lập tức vẫn lưu kịp bản nháp
+  useEffect(() => {
+    const flushDraft = () => {
+      const snap = latestDraftRef.current;
+      if (!snap) return;
+      const saved = progressStore.getState().state.exercises[snap.exId]?.code ?? snap.starter;
+      if (snap.text !== saved) {
+        progressStore.getState().saveCode(snap.exId, snap.text);
+      }
+    };
+    window.addEventListener('pagehide', flushDraft);
+    return () => {
+      window.removeEventListener('pagehide', flushDraft);
+      flushDraft();
+    };
+  }, [progressStore]);
 
   if (!cur) return <Spinner />;
   if (!ex) return <div className="p-6 text-slate-400">Không tìm thấy bài thực hành {exCode}.</div>;
@@ -142,11 +166,48 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
           <CourseBtn accent={accent} onClick={back}>
             <ArrowLeft className="h-4 w-4" /> Quay lại
           </CourseBtn>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Stars n={ex.difficulty} />
-            <Pill tone={status === 'passed' ? 'ok' : status === 'started' ? 'warn' : 'neutral'}>
-              {status === 'passed' ? 'đã đạt' : status === 'started' ? 'đang làm' : 'chưa làm'}
+            <Pill
+              tone={
+                status === 'passed'
+                  ? 'ok'
+                  : status === 'skipped'
+                    ? 'info'
+                    : status === 'started'
+                      ? 'warn'
+                      : 'neutral'
+              }
+            >
+              {status === 'passed'
+                ? 'đã đạt'
+                : status === 'skipped'
+                  ? 'đã bỏ qua'
+                  : status === 'started'
+                    ? 'đang làm'
+                    : 'chưa làm'}
             </Pill>
+            {status !== 'passed' && (
+              <CourseBtn
+                accent={accent}
+                onClick={() => progressStore.getState().toggleSkipExercise(ex.id)}
+                title={
+                  status === 'skipped'
+                    ? 'Khôi phục bài thực hành này về trạng thái chưa hoàn thành'
+                    : 'Đánh dấu bỏ qua nếu bạn đã làm hoặc đã nắm vững phần này'
+                }
+              >
+                {status === 'skipped' ? (
+                  <>
+                    <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua
+                  </>
+                ) : (
+                  <>
+                    <SkipForward className="h-3.5 w-3.5" /> Bỏ qua bài này
+                  </>
+                )}
+              </CourseBtn>
+            )}
           </div>
         </div>
         <div className="min-w-0">
@@ -280,6 +341,25 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
         {/* ------- Trình soạn cấu hình / lệnh ------- */}
         <div className="min-w-0 space-y-3 lg:sticky lg:top-3">
+          {status === 'skipped' && (
+            <Callout tone="info" className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {nextEx ? (
+                  <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'exercise', code: nextEx.code })}>
+                    Sang bài tiếp: {nextEx.code} <ArrowRight className="h-3.5 w-3.5" />
+                  </CourseBtn>
+                ) : (
+                  <CourseBtn variant="primary" accent={accent} onClick={() => go({ name: 'module', id: mod.id })}>
+                    Về module {mod.id}
+                  </CourseBtn>
+                )}
+              </div>
+            </Callout>
+          )}
+
           <ConfigCodeEditor
             ref={editor}
             value={text}

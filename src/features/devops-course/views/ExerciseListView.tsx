@@ -1,4 +1,5 @@
 import React from 'react';
+import { SkipForward, Undo2 } from 'lucide-react';
 import { useCourseCurriculum } from '../data';
 import { exStatus, sortedModules } from '../logic';
 import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
@@ -12,6 +13,7 @@ const FILTERS: { id: ExerciseStatus | undefined; label: string }[] = [
   { id: 'started', label: 'Đang làm' },
   { id: 'todo', label: 'Chưa làm' },
   { id: 'passed', label: 'Đã đạt' },
+  { id: 'skipped', label: 'Đã bỏ qua' },
 ];
 
 const KIND_SHORT: Record<string, string> = {
@@ -26,6 +28,7 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
   const { courseId, accent } = useCourseMeta();
   const { data: cur } = useCourseCurriculum(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
+  const toggleSkipEx = COURSE_PROGRESS_STORES[courseId]((x) => x.toggleSkipExercise);
   const go = COURSE_NAV_STORES[courseId]((x) => x.go);
 
   if (!cur) return <Spinner />;
@@ -35,6 +38,7 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
     .flatMap((m) => m.exercises.map((e) => ({ e, m })));
   const rows = status ? all.filter(({ e }) => exStatus(s, e.id) === status) : all;
   const passed = all.filter(({ e }) => exStatus(s, e.id) === 'passed').length;
+  const skippedCount = all.filter(({ e }) => exStatus(s, e.id) === 'skipped').length;
 
   const activeCls =
     accent === 'cyan'
@@ -46,7 +50,7 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
     <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <PageHeader
         title="Bài thực hành"
-        sub={`${passed}/${all.length} bài đã đạt${moduleId ? ` · module ${moduleId}` : ''}. Mọi bài đều chấm xác định (AST / trạng thái mô phỏng) ngay trong trình duyệt.`}
+        sub={`${passed}/${all.length} bài đã đạt${skippedCount ? ` · ${skippedCount} bài bỏ qua` : ''}${moduleId ? ` · module ${moduleId}` : ''}. Mọi bài đều chấm xác định (AST / trạng thái mô phỏng) ngay trong trình duyệt.`}
       />
       <div className="mb-3 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
@@ -104,9 +108,50 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
                   </td>
                   <td className="hidden px-3 py-2.5 text-xs text-slate-500 md:table-cell">{e.tags.slice(0, 3).join(', ')}</td>
                   <td className="px-3 py-2.5">
-                    <Pill tone={st === 'passed' ? 'ok' : st === 'started' ? 'warn' : 'neutral'}>
-                      {st === 'passed' ? 'đạt' : st === 'started' ? 'đang làm' : 'chưa làm'}
-                    </Pill>
+                    <div className="flex items-center justify-between gap-2">
+                      <Pill
+                        tone={
+                          st === 'passed'
+                            ? 'ok'
+                            : st === 'skipped'
+                              ? 'info'
+                              : st === 'started'
+                                ? 'warn'
+                                : 'neutral'
+                        }
+                      >
+                        {st === 'passed'
+                          ? 'đạt'
+                          : st === 'skipped'
+                            ? 'đã bỏ qua'
+                            : st === 'started'
+                              ? 'đang làm'
+                              : 'chưa làm'}
+                      </Pill>
+                      {st !== 'passed' && (
+                        <button
+                          type="button"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            toggleSkipEx(e.id);
+                          }}
+                          title={st === 'skipped' ? 'Hoàn tác bỏ qua' : 'Đã làm — Bỏ qua bài này'}
+                          className="inline-flex items-center gap-1 rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-300 hover:border-slate-500 hover:text-white cursor-pointer"
+                        >
+                          {st === 'skipped' ? (
+                            <>
+                              <Undo2 className="h-3 w-3" />
+                              <span className="hidden lg:inline">Hoàn tác</span>
+                            </>
+                          ) : (
+                            <>
+                              <SkipForward className="h-3 w-3" />
+                              <span className="hidden lg:inline">Bỏ qua</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

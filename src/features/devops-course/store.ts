@@ -1,6 +1,23 @@
 import { create } from 'zustand';
-import { getDb } from '@/db/indexedDbClient';
-import { BOX_DAYS, XP, addDays, emptyState, todayStr, type QuestionResult } from '@/features/workpath/logic';
+import {
+  clearDurableProgress,
+  getLocalMirrorKey,
+  loadDurableProgress,
+  mergeWpStates,
+  normalizeWpState,
+  readLocalProgressMirror,
+  saveDurableProgress,
+  type StorageSyncMeta,
+} from '@/db/durableProgressStorage';
+import {
+  BOX_DAYS,
+  XP,
+  addDays,
+  emptyState,
+  todayStr,
+  type NextStepSkipTarget,
+  type QuestionResult,
+} from '@/features/workpath/logic';
 import type { CatalogStatus, ExerciseRecord, WpState, WpView } from '@/features/workpath/types';
 import type { DevOpsCourseId } from './types';
 
@@ -14,6 +31,7 @@ export interface CourseNavState {
 export interface CourseProgressState {
   state: WpState;
   hydrated: boolean;
+  syncMeta: StorageSyncMeta;
   hydrate: (force?: boolean) => Promise<void>;
   replaceAll: (s: WpState) => Promise<void>;
   reset: () => Promise<void>;
@@ -28,6 +46,14 @@ export interface CourseProgressState {
   rateCard: (cardId: string, ok: boolean) => void;
   recordDrill: (drillId: string, accuracy: number, wpm: number) => number;
   setCatalogStatus: (itemId: string, status: CatalogStatus) => number;
+
+  /** Bỏ qua / khôi phục cho phần người học đã làm rồi hoặc đã nắm vững */
+  toggleSkipModule: (moduleId: string, forceSkip?: boolean) => boolean;
+  skipModulesBatch: (moduleIds: string[], skip: boolean) => void;
+  toggleSkipLesson: (moduleId: string, forceSkip?: boolean) => boolean;
+  toggleSkipQuiz: (moduleId: string, forceSkip?: boolean) => boolean;
+  toggleSkipExercise: (exId: string, forceSkip?: boolean) => boolean;
+  applySkipTarget: (target: NextStepSkipTarget) => void;
 }
 
 function createCourseNavStore() {
@@ -53,57 +79,68 @@ const exRec = (s: WpState, id: string): ExerciseRecord =>
   (s.exercises[id] ??= { status: 'todo', attempts: 0, hints: 0 });
 
 function createCourseProgressStore(courseId: DevOpsCourseId) {
-  let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  const initialMirror = readLocalProgressMirror(courseId);
 
-  const persist = (state: WpState) => {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      getDb()
-        .then((db) => db.put('course_state', { courseId, state }))
-        .catch((e) => console.error(`Không lưu được tiến độ khoá ${courseId}:`, e));
-    }, 250);
-  };
+  const store = create<CourseProgressState>((set, get) => {
+    const updateMeta = (patch: Partial<StorageSyncMeta>) =>
+      set((cur) => ({ syncMeta: { ...cur.syncMeta, ...patch } }));
 
-  return create<CourseProgressState>((set, get) => {
     const mutate = <T,>(fn: (s: WpState) => T): T => {
-      const next = structuredClone(get().state);
+      // Nếu tab khác vừa lưu bản mới hơn trong LocalStorage, hợp nhất trước khi ghi để không ghi đè mất dữ liệu
+      const latestMirror = readLocalProgressMirror(courseId);
+      const baseState =
+        latestMirror && (latestMirror.updatedAt ?? 0) > (get().state.updatedAt ?? 0)
+          ? mergeWpStates(get().state, latestMirror)
+          : get().state;
+
+      const next = structuredClone(baseState);
       const out = fn(next);
+      next.updatedAt = Date.now();
+      delete next.resetAt;
       set({ state: next });
-      persist(next);
+      void saveDurableProgress(courseId, next, updateMeta);
       return out;
     };
 
     return {
-      state: emptyState(),
+      state: initialMirror ?? emptyState(),
       hydrated: false,
+      syncMeta: {
+        status: initialMirror ? 'local-only' : 'idle',
+        localOk: initialMirror !== null,
+        idbOk: false,
+        persistedGranted: null,
+        lastSavedAt: initialMirror?.updatedAt && initialMirror.updatedAt > 0 ? initialMirror.updatedAt : null,
+      },
 
       hydrate: async (force = false) => {
         if (get().hydrated && !force) return;
-        try {
-          const db = await getDb();
-          const rec = await db.get('course_state', courseId);
-          if (rec?.state) set({ state: { ...emptyState(), ...rec.state }, hydrated: true });
-          else set({ state: emptyState(), hydrated: true });
-        } catch (e) {
-          console.error(`Không đọc được tiến độ khoá ${courseId}:`, e);
-          set({ hydrated: true });
-        }
+        const { state, meta } = await loadDurableProgress(courseId, get().state);
+        set({ state, hydrated: true, syncMeta: meta });
       },
 
       replaceAll: async (s) => {
-        set({ state: { ...emptyState(), ...s }, hydrated: true });
-        persist(get().state);
+        const next = normalizeWpState({ ...s, updatedAt: Date.now() });
+        set({ state: next, hydrated: true });
+        await saveDurableProgress(courseId, next, updateMeta);
       },
 
       reset: async () => {
-        const fresh = emptyState();
-        set({ state: fresh });
-        const db = await getDb();
-        await db.delete('course_state', courseId);
+        const fresh = await clearDurableProgress(courseId);
+        set({
+          state: fresh,
+          hydrated: true,
+          syncMeta: {
+            ...get().syncMeta,
+            status: 'synced',
+            lastSavedAt: fresh.updatedAt ?? Date.now(),
+          },
+        });
       },
 
       markLessonRead: (moduleId) =>
         mutate((s) => {
+          if (s.skippedLessons) delete s.skippedLessons[moduleId];
           if (moduleId in s.lessons) return 0;
           s.lessons[moduleId] = Date.now();
           logXp(s, `lesson:${moduleId}`, XP.lesson);
@@ -126,6 +163,9 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
               rec.bestCorrect = correct;
               rec.best = Math.round((correct / total) * 1000) / 1000;
               record = true;
+            }
+            if (rec.best >= 0.7 && s.skippedQuizzes) {
+              delete s.skippedQuizzes[moduleId];
             }
           }
           logXp(s, `quiz:${moduleId ?? 'mix'}:${correct}/${results.length}`, xp);
@@ -150,13 +190,17 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
           if (ok) {
             first = r.status !== 'passed';
             r.status = 'passed';
+            delete r.skippedAt;
             r.passedAt ??= Date.now();
             if (first) {
               xp = r.solutionViewed ? XP.exerciseAfterSolution : XP.exercise;
               logXp(s, `pass:${exId}`, xp);
             }
           } else {
-            if (r.status === 'todo') r.status = 'started';
+            if (r.status === 'todo' || r.status === 'skipped') {
+              r.status = 'started';
+              delete r.skippedAt;
+            }
             logXp(s, `fail:${exId}`, 0);
           }
           return { xp, first, attempts: r.attempts };
@@ -179,6 +223,7 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
         mutate((s) => {
           const r = exRec(s, exId);
           delete r.code;
+          delete r.skippedAt;
           r.status = r.status === 'passed' ? 'passed' : 'todo';
         }),
 
@@ -218,8 +263,105 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
           logXp(s, `catalog:${status}:${itemId}`, 0);
           return 0;
         }),
+
+      toggleSkipModule: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedModules ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      skipModulesBatch: (moduleIds, skip) =>
+        mutate((s) => {
+          const map = (s.skippedModules ??= {});
+          const now = Date.now();
+          for (const id of moduleIds) {
+            if (skip) map[id] = now;
+            else delete map[id];
+          }
+        }),
+
+      toggleSkipLesson: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedLessons ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      toggleSkipQuiz: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedQuizzes ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      toggleSkipExercise: (exId, forceSkip) =>
+        mutate((s) => {
+          const r = exRec(s, exId);
+          if (r.status === 'passed') return false;
+          const shouldSkip = forceSkip ?? r.status !== 'skipped';
+          if (shouldSkip) {
+            r.status = 'skipped';
+            r.skippedAt = Date.now();
+          } else {
+            r.status = r.code ? 'started' : 'todo';
+            delete r.skippedAt;
+          }
+          return shouldSkip;
+        }),
+
+      applySkipTarget: (target) => {
+        switch (target.kind) {
+          case 'module':
+            get().toggleSkipModule(target.id, true);
+            break;
+          case 'lesson':
+            get().toggleSkipLesson(target.id, true);
+            break;
+          case 'quiz':
+            get().toggleSkipQuiz(target.id, true);
+            break;
+          case 'exercise':
+            get().toggleSkipExercise(target.id, true);
+            break;
+          case 'reading':
+            get().setCatalogStatus(target.id, 'skip');
+            break;
+        }
+      },
     };
   });
+
+  // Đồng bộ tự động khi người dùng mở nhiều tab hoặc quay lại tab cũ vào hôm sau
+  if (typeof window !== 'undefined') {
+    const mirrorKey = getLocalMirrorKey(courseId);
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === mirrorKey && ev.newValue) {
+        const incoming = readLocalProgressMirror(courseId);
+        if (incoming) {
+          const merged = mergeWpStates(store.getState().state, incoming);
+          store.setState({ state: merged });
+        }
+      }
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        const incoming = readLocalProgressMirror(courseId);
+        if (incoming && (incoming.updatedAt ?? 0) > (store.getState().state.updatedAt ?? 0)) {
+          const merged = mergeWpStates(store.getState().state, incoming);
+          store.setState({ state: merged });
+        }
+      }
+    });
+  }
+
+  return store;
 }
 
 export const COURSE_NAV_STORES = {

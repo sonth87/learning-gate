@@ -14,6 +14,7 @@ import { DrillView } from './views/DrillView';
 import { BrowseView } from './views/BrowseView';
 import { ReadView } from './views/ReadView';
 import { Spinner } from '@/features/workpath/components/ui';
+import { ProgressSyncBadge } from '@/components/common/ProgressSyncBadge';
 import { cn } from '@/utils/cn';
 
 const SUB_TABS: { label: string; short: string; icon: React.ReactNode; go: WpView; match: WpView['name'][] }[] = [
@@ -62,6 +63,7 @@ export const DevOpsCourseApp: React.FC<DevOpsCourseAppProps> = ({ courseId, onOp
   const go = navStore((x) => x.go);
   const hydrated = progressStore((x) => x.hydrated);
   const hydrate = progressStore((x) => x.hydrate);
+  const syncMeta = progressStore((x) => x.syncMeta);
 
   const meta = useMemo(
     () => ({
@@ -93,26 +95,29 @@ export const DevOpsCourseApp: React.FC<DevOpsCourseAppProps> = ({ courseId, onOp
           aria-label="Các phần của đường học"
           className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-2 sm:px-4"
         >
-          <div className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto py-1.5">
-            {SUB_TABS.map((t) => {
-              const active = t.match.includes(view.name);
-              return (
-                <button
-                  key={t.label}
-                  type="button"
-                  onClick={() => go(t.go)}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'inline-flex min-h-[44px] sm:min-h-[34px] shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer',
-                    active ? activePill : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-                  )}
-                >
-                  {t.icon}
-                  <span className="hidden sm:inline">{t.label}</span>
-                  <span className="sm:hidden">{t.short}</span>
-                </button>
-              );
-            })}
+          <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-2 py-1.5">
+            <div className="flex gap-1 overflow-x-auto">
+              {SUB_TABS.map((t) => {
+                const active = t.match.includes(view.name);
+                return (
+                  <button
+                    key={t.label}
+                    type="button"
+                    onClick={() => go(t.go)}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'inline-flex min-h-[44px] sm:min-h-[34px] shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                      active ? activePill : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                    )}
+                  >
+                    {t.icon}
+                    <span className="hidden sm:inline">{t.label}</span>
+                    <span className="sm:hidden">{t.short}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <ProgressSyncBadge meta={syncMeta} />
           </div>
         </nav>
         <div className="min-h-0 flex-1 overflow-y-auto" id={scrollId}>

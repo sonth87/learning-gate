@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import esbuild from 'esbuild';
+import YAML from 'yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -140,6 +141,33 @@ async function main() {
       }
       if (!mod.lesson || mod.lesson.length < 200) {
         errors.push(`[${courseId}:${mod.id}] Lesson quá ngắn hoặc rỗng (${mod.lesson?.length ?? 0} ký tự).`);
+      } else {
+        const visualRe = /^```visual(?::[a-z0-9_-]+)?\s*\n([\s\S]*?)^```/gm;
+        let vMatch;
+        let vIdx = 0;
+        while ((vMatch = visualRe.exec(mod.lesson)) !== null) {
+          vIdx++;
+          try {
+            const vDoc = YAML.parse(vMatch[1]);
+            const validKinds = new Set(['flow', 'layers', 'groups', 'anatomy', 'compare', 'troubleshoot']);
+            if (!vDoc || typeof vDoc !== 'object' || !validKinds.has(vDoc.kind)) {
+              errors.push(`[${courseId}:${mod.id}] Khối visual #${vIdx} thiếu hoặc sai kind (${vDoc?.kind}).`);
+            } else if (vDoc.kind === 'flow' && (!Array.isArray(vDoc.steps) || vDoc.steps.length === 0)) {
+              errors.push(`[${courseId}:${mod.id}] Khối visual:flow #${vIdx} thiếu mảng steps.`);
+            } else if (vDoc.kind === 'layers' && (!Array.isArray(vDoc.columns) || vDoc.columns.length === 0)) {
+              errors.push(`[${courseId}:${mod.id}] Khối visual:layers #${vIdx} thiếu mảng columns.`);
+            } else if (
+              (vDoc.kind === 'groups' || vDoc.kind === 'anatomy' || vDoc.kind === 'troubleshoot') &&
+              (!Array.isArray(vDoc.items) || vDoc.items.length === 0)
+            ) {
+              errors.push(`[${courseId}:${mod.id}] Khối visual:${vDoc.kind} #${vIdx} thiếu mảng items.`);
+            } else if (vDoc.kind === 'compare' && (!vDoc.left || !vDoc.right)) {
+              errors.push(`[${courseId}:${mod.id}] Khối visual:compare #${vIdx} thiếu left hoặc right.`);
+            }
+          } catch (err) {
+            errors.push(`[${courseId}:${mod.id}] Lỗi cú pháp YAML trong khối visual #${vIdx}: ${err.message}`);
+          }
+        }
       }
       if (!Array.isArray(mod.sources) || mod.sources.length === 0) {
         errors.push(`[${courseId}:${mod.id}] Thiếu mục "sources" (URL tài liệu chính thức).`);

@@ -48,14 +48,17 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
     hydrateCicd();
   }, [hydrateAll, hydrateCicd]);
 
-  const handleAction = (action: string) => {
-    if (action === 'openSettings') {
-      setSettingsOpen(true);
-    } else if (action.startsWith('tab:')) {
-      const tab = action.replace('tab:', '') as CicdMainTab;
-      setActiveTab(tab);
-    }
-  };
+  const handleAction = useCallback(
+    (action: string) => {
+      if (action === 'openSettings') {
+        setSettingsOpen(true);
+      } else if (action.startsWith('tab:')) {
+        const tab = action.replace('tab:', '') as CicdMainTab;
+        setActiveTab(tab);
+      }
+    },
+    [setActiveTab, setSettingsOpen]
+  );
 
   useMenuAction('cicdmastery', handleAction, windowId);
   useContextAction('cicdmastery', handleAction);

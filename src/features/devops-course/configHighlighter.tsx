@@ -75,7 +75,7 @@ function colorClass(type: CfgTokenType, isLight: boolean): string {
   if (isLight) {
     switch (type) {
       case 'comment':
-        return 'text-[#6e7781] italic';
+        return 'text-[#116329] italic';
       case 'key':
         return 'text-[#0550ae]';
       case 'instruction':
@@ -100,7 +100,7 @@ function colorClass(type: CfgTokenType, isLight: boolean): string {
   }
   switch (type) {
     case 'comment':
-      return 'text-slate-500 italic';
+      return 'text-emerald-400/85 italic';
     case 'key':
       return 'text-sky-300';
     case 'instruction':

@@ -83,7 +83,12 @@ const KubeMoreMenu: React.FC = () => {
     const onDoc = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -337,6 +342,17 @@ const KubeQuickSearchModal: React.FC<{ onClose: () => void }> = ({ onClose }) =>
   const { setActiveTab, openIncidentInWarRoom } = useKubeStore();
   const goKube = useKubeNav((s) => s.go);
   const { data: cur } = useCourseCurriculum('kube');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const q = query.trim().toLowerCase();
   const matchedModules = (cur?.modules ?? []).filter(

@@ -1,22 +1,40 @@
 import React from 'react';
-import { ArrowLeft, CheckCircle2, Keyboard, Layers, ListChecks } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Keyboard, Layers, ListChecks, SkipForward, Undo2 } from 'lucide-react';
 import { useCatalog, useCurriculum } from '../data';
-import { CATALOG_STATUS_LABEL, KIND_LABEL, catalogStatus, exStatus, lessonRead, moduleProgress, quizBest } from '../logic';
+import {
+  CATALOG_STATUS_LABEL,
+  KIND_LABEL,
+  catalogStatus,
+  exStatus,
+  isLessonSkipped,
+  isModuleSkipped,
+  isQuizSkipped,
+  lessonRead,
+  moduleProgress,
+  quizBest,
+} from '../logic';
 import { useWpNav, useWpProgress } from '../store';
 import { Markdown, Inline } from '../components/Markdown';
-import { Bar, Btn, Card, Pill, Spinner, Stars } from '../components/ui';
+import { Bar, Btn, Callout, Card, Pill, Spinner, Stars } from '../components/ui';
 
 export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
   const { data: cur } = useCurriculum();
   const { data: cat } = useCatalog();
   const s = useWpProgress((x) => x.state);
   const markRead = useWpProgress((x) => x.markLessonRead);
+  const toggleSkipModule = useWpProgress((x) => x.toggleSkipModule);
+  const toggleSkipLesson = useWpProgress((x) => x.toggleSkipLesson);
+  const toggleSkipQuiz = useWpProgress((x) => x.toggleSkipQuiz);
+  const toggleSkipExercise = useWpProgress((x) => x.toggleSkipExercise);
   const { go, back } = useWpNav();
   if (!cur) return <Spinner />;
   const m = cur.modules.find((x) => x.id === id);
   if (!m) return <div className="p-6 text-slate-400">Không có module {id}.</div>;
   const [d, t] = moduleProgress(s, m, cur.passQuiz);
   const read = lessonRead(s, m.id);
+  const modSkipped = isModuleSkipped(s, m.id);
+  const lesSkipped = isLessonSkipped(s, m.id);
+  const qzSkipped = isQuizSkipped(s, m.id);
   const best = quizBest(s, m.id);
 
   return (
@@ -33,24 +51,63 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
             <span className="font-mono text-emerald-400">{m.id}</span> · {m.title}
           </h1>
         </div>
-        <div className="ml-auto w-40">
-          <Bar value={d / t} />
-          <div className="mt-1 text-right text-xs text-slate-500">
-            {d}/{t} mục
+        <div className="ml-auto flex flex-wrap items-center gap-2.5">
+          <Btn onClick={() => toggleSkipModule(m.id)}>
+            {modSkipped ? (
+              <>
+                <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua module
+              </>
+            ) : (
+              <>
+                <SkipForward className="h-3.5 w-3.5" /> Bỏ qua module này
+              </>
+            )}
+          </Btn>
+          <div className="w-36">
+            <Bar value={d / t} />
+            <div className="mt-1 text-right text-xs text-slate-500">
+              {modSkipped ? 'Đã bỏ qua' : `${d}/${t} mục`}
+            </div>
           </div>
         </div>
       </div>
 
+      {modSkipped && (
+        <Callout tone="info" className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Module <b>{m.id}</b> đang được đánh dấu <b>bỏ qua</b> (đã biết). Bạn vẫn có thể đọc bài hoặc làm bài tập bất kỳ lúc nào.
+          </span>
+          <Btn onClick={() => toggleSkipModule(m.id, false)}>
+            <Undo2 className="h-3.5 w-3.5" /> Hoàn tác
+          </Btn>
+        </Callout>
+      )}
+
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <article className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6">
           <Markdown source={m.lesson} />
-          <div className="mt-6 border-t border-slate-800 pt-4">
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-4">
             {read ? (
               <Pill tone="ok">✔ Bạn đã đọc lesson này</Pill>
+            ) : lesSkipped ? (
+              <>
+                <Pill tone="info">Đã bỏ qua lesson này</Pill>
+                <Btn onClick={() => markRead(m.id)}>
+                  <CheckCircle2 className="h-4 w-4" /> Đánh dấu đã đọc (+20 XP)
+                </Btn>
+                <Btn onClick={() => toggleSkipLesson(m.id, false)}>
+                  <Undo2 className="h-3.5 w-3.5" /> Hoàn tác
+                </Btn>
+              </>
             ) : (
-              <Btn variant="primary" onClick={() => markRead(m.id)}>
-                <CheckCircle2 className="h-4 w-4" /> Tôi đã đọc xong lesson này (+20 XP)
-              </Btn>
+              <>
+                <Btn variant="primary" onClick={() => markRead(m.id)}>
+                  <CheckCircle2 className="h-4 w-4" /> Tôi đã đọc xong lesson này (+20 XP)
+                </Btn>
+                <Btn onClick={() => toggleSkipLesson(m.id, true)}>
+                  <SkipForward className="h-4 w-4" /> Đã biết — Bỏ qua lesson
+                </Btn>
+              </>
             )}
           </div>
         </article>
@@ -70,9 +127,22 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                   <Keyboard className="h-4 w-4" /> Luyện gõ
                 </Btn>
               )}
+              {m.quiz.length > 0 && best < cur.passQuiz && (
+                <Btn onClick={() => toggleSkipQuiz(m.id)}>
+                  {qzSkipped ? (
+                    <>
+                      <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua Quiz
+                    </>
+                  ) : (
+                    <>
+                      <SkipForward className="h-3.5 w-3.5" /> Bỏ qua Quiz
+                    </>
+                  )}
+                </Btn>
+              )}
             </div>
             <p className="mt-2 text-xs text-slate-500">
-              Quiz tốt nhất: {best ? `${Math.round(best * 100)}%` : 'chưa làm'} · cần ≥ {Math.round(cur.passQuiz * 100)}% để qua
+              Quiz tốt nhất: {best ? `${Math.round(best * 100)}%` : qzSkipped ? 'đã bỏ qua' : 'chưa làm'} · cần ≥ {Math.round(cur.passQuiz * 100)}% để qua
             </p>
           </Card>
 
@@ -82,19 +152,33 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
               {m.exercises.map((e) => {
                 const st = exStatus(s, e.id);
                 return (
-                  <button key={e.id} onClick={() => go({ name: 'exercise', code: e.code })} className="block w-full rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-left transition-colors hover:border-emerald-500/60">
-                    <div className="flex items-center justify-between gap-2">
+                  <div key={e.id} className="flex items-stretch justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/70 p-3 transition-colors hover:border-emerald-500/60">
+                    <button type="button" onClick={() => go({ name: 'exercise', code: e.code })} className="min-w-0 flex-1 text-left cursor-pointer">
                       <span className="text-sm font-medium text-slate-100">
                         <span className="mr-1.5 font-mono text-emerald-400">{e.code}</span>
                         {e.title}
                       </span>
-                      <Pill tone={st === 'passed' ? 'ok' : st === 'started' ? 'warn' : 'neutral'}>{st === 'passed' ? 'đạt' : st === 'started' ? 'đang làm' : 'chưa làm'}</Pill>
+                      <div className="mt-1 text-xs">
+                        <Stars n={e.difficulty} />
+                        {!e.webGrade && <span className="ml-2 text-amber-400">chấm bằng WorkPath</span>}
+                      </div>
+                    </button>
+                    <div className="flex shrink-0 flex-col items-end justify-between gap-1.5">
+                      <Pill tone={st === 'passed' ? 'ok' : st === 'skipped' ? 'info' : st === 'started' ? 'warn' : 'neutral'}>
+                        {st === 'passed' ? 'đạt' : st === 'skipped' ? 'đã bỏ qua' : st === 'started' ? 'đang làm' : 'chưa làm'}
+                      </Pill>
+                      {st !== 'passed' && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSkipExercise(e.id)}
+                          className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 hover:border-slate-500 hover:text-white cursor-pointer"
+                        >
+                          {st === 'skipped' ? <Undo2 className="h-2.5 w-2.5" /> : <SkipForward className="h-2.5 w-2.5" />}
+                          <span>{st === 'skipped' ? 'Hoàn tác' : 'Bỏ qua'}</span>
+                        </button>
+                      )}
                     </div>
-                    <div className="mt-1 text-xs">
-                      <Stars n={e.difficulty} />
-                      {!e.webGrade && <span className="ml-2 text-amber-400">chấm bằng WorkPath</span>}
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>

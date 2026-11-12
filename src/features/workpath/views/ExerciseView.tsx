@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Lightbulb, Play, RotateCcw, Eye } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Lightbulb, Play, RotateCcw, Eye, SkipForward, Undo2 } from 'lucide-react';
 import { useCatalog, useCurriculum } from '../data';
 import { exStatus } from '../logic';
 import { useWpNav, useWpProgress } from '../store';
@@ -17,7 +17,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   const { data: cat } = useCatalog();
   const { go, back } = useWpNav();
   const s = useWpProgress((x) => x.state);
-  const { saveCode, recordCheck, revealHint, viewSolution, resetExercise } = useWpProgress.getState();
+  const { saveCode, recordCheck, revealHint, viewSolution, resetExercise, toggleSkipExercise } = useWpProgress.getState();
   const py = usePyStatus();
 
   const ex = useMemo(() => cur?.modules.flatMap((m) => m.exercises).find((e) => e.code === exCode || e.id === exCode), [cur, exCode]);
@@ -31,26 +31,46 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   const [error, setError] = useState<string | null>(null);
   const editor = useRef<PyCodeEditorHandle>(null);
   const loadedFor = useRef<string | null>(null);
+  const latestDraftRef = useRef<{ exId: string; text: string; starter: string } | null>(null);
 
   // Nạp code đã lưu (hoặc code khởi đầu) khi đổi bài
   useEffect(() => {
     if (!ex || loadedFor.current === ex.id) return;
     loadedFor.current = ex.id;
-    setText(useWpProgress.getState().state.exercises[ex.id]?.code ?? ex.starter);
+    const initialText = useWpProgress.getState().state.exercises[ex.id]?.code ?? ex.starter;
+    setText(initialText);
+    latestDraftRef.current = { exId: ex.id, text: initialText, starter: ex.starter };
     setOut(null);
     setSolution('hidden');
     setError(null);
     warmUp();
   }, [ex]);
 
-  // Tự lưu bản nháp sau 700 ms không gõ
+  // Tự lưu bản nháp sau 250 ms không gõ & tự flush khi rời bài / đóng tab
   useEffect(() => {
     if (!ex || loadedFor.current !== ex.id) return;
+    latestDraftRef.current = { exId: ex.id, text, starter: ex.starter };
     const saved = useWpProgress.getState().state.exercises[ex.id]?.code ?? ex.starter;
     if (text === saved) return;
-    const t = setTimeout(() => saveCode(ex.id, text), 700);
+    const t = setTimeout(() => saveCode(ex.id, text), 250);
     return () => clearTimeout(t);
   }, [text, ex, saveCode]);
+
+  useEffect(() => {
+    const flushDraft = () => {
+      const snap = latestDraftRef.current;
+      if (!snap) return;
+      const saved = useWpProgress.getState().state.exercises[snap.exId]?.code ?? snap.starter;
+      if (snap.text !== saved) {
+        useWpProgress.getState().saveCode(snap.exId, snap.text);
+      }
+    };
+    window.addEventListener('pagehide', flushDraft);
+    return () => {
+      window.removeEventListener('pagehide', flushDraft);
+      flushDraft();
+    };
+  }, []);
 
   if (!cur) return <Spinner />;
   if (!ex) return <div className="p-6 text-slate-400">Không tìm thấy bài tập {exCode}.</div>;
@@ -109,9 +129,24 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
             <span className="font-mono text-emerald-400">{ex.code}</span> · {ex.title}
           </h1>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Stars n={ex.difficulty} />
-          <Pill tone={status === 'passed' ? 'ok' : status === 'started' ? 'warn' : 'neutral'}>{status === 'passed' ? 'đã đạt' : status === 'started' ? 'đang làm' : 'chưa làm'}</Pill>
+          <Pill tone={status === 'passed' ? 'ok' : status === 'skipped' ? 'info' : status === 'started' ? 'warn' : 'neutral'}>
+            {status === 'passed' ? 'đã đạt' : status === 'skipped' ? 'đã bỏ qua' : status === 'started' ? 'đang làm' : 'chưa làm'}
+          </Pill>
+          {status !== 'passed' && (
+            <Btn onClick={() => toggleSkipExercise(ex.id)}>
+              {status === 'skipped' ? (
+                <>
+                  <Undo2 className="h-3.5 w-3.5" /> Hoàn tác bỏ qua
+                </>
+              ) : (
+                <>
+                  <SkipForward className="h-3.5 w-3.5" /> Bỏ qua bài này
+                </>
+              )}
+            </Btn>
+          )}
         </div>
       </div>
 
@@ -167,6 +202,22 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
 
         {/* ------- soạn code ------- */}
         <div className="min-w-0 space-y-3 lg:sticky lg:top-3">
+          {status === 'skipped' && (
+            <Callout tone="info" className="flex flex-wrap items-center justify-between gap-2">
+              <span>
+                Bạn đã đánh dấu <b>bỏ qua</b> bài này (vẫn có thể làm và bấm Chấm bài bất kỳ lúc nào để nhận đủ XP).
+              </span>
+              {nextEx ? (
+                <Btn variant="primary" onClick={() => go({ name: 'exercise', code: nextEx.code })}>
+                  Sang bài tiếp: {nextEx.code} <ArrowRight className="h-3.5 w-3.5" />
+                </Btn>
+              ) : (
+                <Btn variant="primary" onClick={() => go({ name: 'module', id: mod.id })}>
+                  Về module {mod.id}
+                </Btn>
+              )}
+            </Callout>
+          )}
           <PyCodeEditor ref={editor} value={text} onChange={setText} onRun={run} onSubmit={ex.webGrade ? check : undefined} />
           <div className="flex flex-wrap gap-2">
             <Btn variant="primary" onClick={check} disabled={!!busy || !ex.webGrade}>

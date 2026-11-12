@@ -35,16 +35,19 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
     hydrateKube();
   }, [hydrateKube]);
 
-  const handleAction = (action: string) => {
-    if (action === 'quickSearch') {
-      setSearchOpen(true);
-    } else if (action === 'openSettings') {
-      setSettingsOpen(true);
-    } else if (action.startsWith('tab:')) {
-      const tab = action.replace('tab:', '') as KubeTab;
-      setActiveTab(tab);
-    }
-  };
+  const handleAction = useCallback(
+    (action: string) => {
+      if (action === 'quickSearch') {
+        setSearchOpen(true);
+      } else if (action === 'openSettings') {
+        setSettingsOpen(true);
+      } else if (action.startsWith('tab:')) {
+        const tab = action.replace('tab:', '') as KubeTab;
+        setActiveTab(tab);
+      }
+    },
+    [setActiveTab, setSearchOpen, setSettingsOpen]
+  );
 
   useMenuAction('kubemastery', handleAction, windowId);
   useContextAction('kubemastery', handleAction);

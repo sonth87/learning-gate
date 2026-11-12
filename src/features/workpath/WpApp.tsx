@@ -13,6 +13,7 @@ import { DrillView } from './views/DrillView';
 import { BrowseView } from './views/BrowseView';
 import { ReadView } from './views/ReadView';
 import { Spinner } from './components/ui';
+import { ProgressSyncBadge } from '@/components/common/ProgressSyncBadge';
 import { cn } from '@/utils/cn';
 
 const TABS: { label: string; short: string; icon: React.ReactNode; go: WpView; match: WpView['name'][] }[] = [
@@ -58,6 +59,7 @@ export const WpApp: React.FC = () => {
   const go = useWpNav((x) => x.go);
   const hydrated = useWpProgress((x) => x.hydrated);
   const hydrate = useWpProgress((x) => x.hydrate);
+  const syncMeta = useWpProgress((x) => x.syncMeta);
 
   useEffect(() => {
     hydrate();
@@ -70,25 +72,29 @@ export const WpApp: React.FC = () => {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <nav aria-label="Các phần của đường học" className="shrink-0 border-b border-slate-800/80 bg-slate-950/80 px-2 sm:px-4">
-        <div className="mx-auto flex max-w-[1500px] gap-1 overflow-x-auto py-1.5">
-          {TABS.map((t) => {
-            const active = t.match.includes(view.name);
-            return (
-              <button
-                key={t.label}
-                onClick={() => go(t.go)}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
-                  active ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
-                )}
-              >
-                {t.icon}
-                <span className="hidden sm:inline">{t.label}</span>
-                <span className="sm:hidden">{t.short}</span>
-              </button>
-            );
-          })}
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-2 py-1.5">
+          <div className="flex gap-1 overflow-x-auto">
+            {TABS.map((t) => {
+              const active = t.match.includes(view.name);
+              return (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => go(t.go)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+                    active ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300' : 'border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
+                  )}
+                >
+                  {t.icon}
+                  <span className="hidden sm:inline">{t.label}</span>
+                  <span className="sm:hidden">{t.short}</span>
+                </button>
+              );
+            })}
+          </div>
+          <ProgressSyncBadge meta={syncMeta} />
         </div>
       </nav>
       <div className="min-h-0 flex-1 overflow-y-auto" id="wp-scroll">

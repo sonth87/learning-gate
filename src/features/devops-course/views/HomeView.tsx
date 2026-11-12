@@ -1,5 +1,20 @@
 import React, { useMemo } from 'react';
-import { ArrowRight, BookOpen, Code2, Flame, Library, Star, Trophy } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Boxes,
+  CheckCircle2,
+  Code2,
+  Container,
+  Flame,
+  Library,
+  ShieldCheck,
+  SkipForward,
+  Sparkles,
+  Star,
+  Trophy,
+  Workflow,
+} from 'lucide-react';
 import { useCourseCatalog, useCourseCurriculum } from '../data';
 import {
   activeDays,
@@ -10,6 +25,8 @@ import {
   courseModuleDone,
   courseNextSteps,
   exStatus,
+  isModuleSkipped,
+  lessonRead,
   rankOfCourse,
   sortedModules,
   streak,
@@ -19,7 +36,7 @@ import { COURSE_NAV_STORES, COURSE_PROGRESS_STORES } from '../store';
 import { useCourseMeta } from '../context';
 import { Card, PageHeader, Spinner } from '@/features/workpath/components/ui';
 import { CourseBar } from '../components/CourseUi';
-import type { DevOpsAccent } from '../types';
+import type { DevOpsAccent, DevOpsModule } from '../types';
 import { cn } from '@/utils/cn';
 
 const Stat: React.FC<{
@@ -45,6 +62,7 @@ export const HomeView: React.FC = () => {
   const { data: cur } = useCourseCurriculum(courseId);
   const { data: cat } = useCourseCatalog(courseId);
   const s = COURSE_PROGRESS_STORES[courseId]((x) => x.state);
+  const applySkipTarget = COURSE_PROGRESS_STORES[courseId]((x) => x.applySkipTarget);
   const go = COURSE_NAV_STORES[courseId]((x) => x.go);
 
   const heat = useMemo(() => {
@@ -76,10 +94,66 @@ export const HomeView: React.FC = () => {
   const stepNumTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
   const hoverArrow = accent === 'cyan' ? 'group-hover:text-cyan-400' : 'group-hover:text-sky-400';
 
+  const domainTracks: {
+    key: string;
+    badge: string;
+    title: string;
+    subtitle: string;
+    borderCls: string;
+    badgeCls: string;
+    icon: React.ReactNode;
+    modules: DevOpsModule[];
+  }[] =
+    courseId === 'kube'
+      ? [
+          {
+            key: 'docker',
+            badge: 'PHẦN 1 · DOCKER (K00 – K06)',
+            title: 'Cẩm Nang Trực Quan Docker Engine, Dockerfile & Compose v2',
+            subtitle: 'Vòng đời Container, Ports/Env/Logs, Namespaces & cgroups, Layer Cache, Multi-stage Non-root & Compose Healthcheck',
+            borderCls: 'border-sky-500/35 bg-sky-500/[0.05]',
+            badgeCls: 'border-sky-500/40 bg-sky-500/15 text-sky-300',
+            icon: <Container className="h-4 w-4 text-sky-400" aria-hidden="true" />,
+            modules: mods.filter((m) => parseInt(m.id.slice(1), 10) <= 6),
+          },
+          {
+            key: 'k8s',
+            badge: 'PHẦN 2 · KUBERNETES (K07 – K19)',
+            title: 'Cẩm Nang Trực Quan Kiến Trúc Cụm, Mạng, Lưu Trữ & Cứu Hộ K8s',
+            subtitle: 'Control Loop, Pod/Deployment, Service/Ingress/Gateway, ConfigMap/Secret, PVC/StatefulSet, Probes, HPA, RBAC & Troubleshoot',
+            borderCls: 'border-indigo-500/35 bg-indigo-500/[0.05]',
+            badgeCls: 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300',
+            icon: <Boxes className="h-4 w-4 text-indigo-400" aria-hidden="true" />,
+            modules: mods.filter((m) => parseInt(m.id.slice(1), 10) >= 7),
+          },
+        ]
+      : [
+          {
+            key: 'ci-core',
+            badge: 'PHẦN 1 · CI PIPELINE & DAG (C00 – C08)',
+            title: 'Cẩm Nang Trực Quan Đường Ống CI, Ephemeral Runner & Tăng Tốc DAG',
+            subtitle: 'Exit Codes, 6 Thực thể Pipeline, Trunk-based Git, GitHub Actions v4, Env/Outputs, Matrix, Services, Cache/Artifact & Sharding',
+            borderCls: 'border-cyan-500/35 bg-cyan-500/[0.05]',
+            badgeCls: 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300',
+            icon: <Workflow className="h-4 w-4 text-cyan-400" aria-hidden="true" />,
+            modules: mods.filter((m) => parseInt(m.id.slice(1), 10) <= 8),
+          },
+          {
+            key: 'devsecops-gitops',
+            badge: 'PHẦN 2 · DEVSECOPS, OIDC & GITOPS (C09 – C17)',
+            title: 'Cẩm Nang Trực Quan GitLab CI, Bảo Mật 5 Lớp, Keyless OIDC & ArgoCD',
+            subtitle: 'GitLab DAG, Chống Script Injection, Gitleaks/Semgrep/Trivy, OIDC JWT, Environments, Canary Rollback, ArgoCD & Expand-Contract DB',
+            borderCls: 'border-emerald-500/35 bg-emerald-500/[0.05]',
+            badgeCls: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
+            icon: <ShieldCheck className="h-4 w-4 text-emerald-400" aria-hidden="true" />,
+            modules: mods.filter((m) => parseInt(m.id.slice(1), 10) >= 9),
+          },
+        ];
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
       <PageHeader
-        title={fresh ? meta.welcomeTitle : 'Chào mừng quay lại 👋'}
+        title={fresh ? meta.welcomeTitle : 'Chào mừng quay lại lộ trình học'}
         sub={`Cấp độ ${level}: ${cur.levels[String(level)] ?? 'Đã hoàn thành toàn bộ lộ trình'}`}
       />
 
@@ -115,35 +189,118 @@ export const HomeView: React.FC = () => {
         />
       </div>
 
+      {/* Quick Visual Study Sheet Domain Tracks */}
+      <section aria-labelledby="visual-tracks">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <h2 id="visual-tracks" className="flex items-center gap-2 text-base font-bold text-white">
+            <Sparkles className="h-4 w-4 text-amber-400" aria-hidden="true" />
+            <span>Bản đồ Cẩm nang Lý thuyết Trực quan (Mở nhanh theo nhóm)</span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => go({ name: 'roadmap' })}
+            className="text-xs font-semibold text-sky-400 hover:text-sky-300 cursor-pointer"
+          >
+            Xem toàn bộ lộ trình →
+          </button>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {domainTracks.map((track) => (
+            <div key={track.key} className={cn('rounded-2xl border p-4 space-y-3', track.borderCls)}>
+              <div className="flex items-center justify-between gap-2">
+                <span className={cn('inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-[10px] font-extrabold', track.badgeCls)}>
+                  {track.icon}
+                  <span>{track.badge}</span>
+                </span>
+                <span className="font-mono text-xs text-slate-400">{track.modules.length} bài</span>
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white leading-snug">{track.title}</h3>
+                <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">{track.subtitle}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {track.modules.map((m) => {
+                  const skipped = isModuleSkipped(s, m.id);
+                  const done = courseModuleDone(s, m, cur.passQuiz);
+                  const read = lessonRead(s, m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => go({ name: 'module', id: m.id })}
+                      title={`${m.id} · ${m.title}${skipped ? ' (đã bỏ qua)' : ''}`}
+                      className={cn(
+                        'inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border px-2.5 py-1 text-left text-xs transition-colors cursor-pointer',
+                        skipped
+                          ? 'border-sky-500/35 bg-sky-500/10 text-sky-300'
+                          : done
+                            ? 'border-emerald-500/45 bg-emerald-500/12 text-emerald-300'
+                            : read
+                              ? 'border-sky-500/40 bg-sky-500/12 text-sky-200'
+                              : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-600 hover:text-white'
+                      )}
+                    >
+                      {skipped ? (
+                        <SkipForward className="h-3 w-3 shrink-0 text-sky-400" aria-hidden="true" />
+                      ) : (
+                        done && <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-400" aria-hidden="true" />
+                      )}
+                      <span className="font-mono font-bold">{m.id}</span>
+                      <span className="max-w-[155px] truncate">{m.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section aria-labelledby="next-steps">
         <h2 id="next-steps" className="mb-2 text-base font-semibold text-white">
           Việc nên làm tiếp
         </h2>
         <div className="space-y-2">
           {steps.map((st, i) => (
-            <button
+            <div
               key={i}
-              type="button"
-              onClick={() => go(st.view)}
               className={cn(
-                'group flex min-h-[48px] w-full items-center gap-3 rounded-xl border bg-slate-900/70 px-4 py-3 text-left transition-colors hover:bg-slate-800 cursor-pointer',
+                'flex min-h-[48px] w-full items-center gap-2 rounded-xl border bg-slate-900/70 px-3 sm:px-4 py-2.5 transition-colors hover:bg-slate-800/85',
                 i === 0 ? firstBorder : 'border-slate-800'
               )}
             >
-              <span
-                className={cn(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                  i === 0 ? firstBadge : 'bg-slate-800 text-slate-300'
-                )}
+              <button
+                type="button"
+                onClick={() => go(st.view)}
+                className="group flex min-w-0 flex-1 items-center gap-3 text-left cursor-pointer"
               >
-                {i + 1}
-              </span>
-              <span className="min-w-0 flex-1 text-slate-100">{st.text}</span>
-              <ArrowRight
-                className={cn('h-4 w-4 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5', hoverArrow)}
-                aria-hidden="true"
-              />
-            </button>
+                <span
+                  className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+                    i === 0 ? firstBadge : 'bg-slate-800 text-slate-300'
+                  )}
+                >
+                  {i + 1}
+                </span>
+                <span className="min-w-0 flex-1 text-slate-100">{st.text}</span>
+                <ArrowRight
+                  className={cn('h-4 w-4 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5', hoverArrow)}
+                  aria-hidden="true"
+                />
+              </button>
+              {st.skipTarget && (
+                <button
+                  type="button"
+                  onClick={() => applySkipTarget(st.skipTarget!)}
+                  title="Đã làm rồi / đã biết — Bỏ qua bước này để sang phần kế tiếp"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-700 bg-slate-950/80 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
+                >
+                  <SkipForward className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">Bỏ qua</span>
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </section>
@@ -162,8 +319,7 @@ export const HomeView: React.FC = () => {
             ))}
           </ol>
           <p className="mt-3 text-sm text-slate-400">
-            Mọi bài học được giải thích từ góc nhìn <b>lập trình viên Node.js/npm</b>. Thứ tự trong trang <b>Lộ trình</b> (theo{' '}
-            <code>level</code> và <code>order</code>) là thứ tự học chuẩn, và mục <b>"Việc nên làm tiếp"</b> luôn chỉ đúng bước tiếp theo.
+            Mọi bài học được trình bày dạng <b>cẩm nang trực quan (sơ đồ luồng, phân tầng, bảng tra cứu, đối chiếu sai/đúng)</b> từ góc nhìn lập trình viên Node.js/npm.
           </p>
         </Card>
       )}
@@ -205,8 +361,9 @@ export const HomeView: React.FC = () => {
       </section>
 
       {courseDueCards(s, cur).length === 0 && s.log.length > 0 && (
-        <p className="text-sm text-slate-500">
-          Không có thẻ nào đến hạn ôn hôm nay 🎉 (ngày kế tiếp: {addDays(todayStr(), 1)}).
+        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+          <span>Không có thẻ nào đến hạn ôn hôm nay (ngày kế tiếp: {addDays(todayStr(), 1)}).</span>
         </p>
       )}
     </div>
