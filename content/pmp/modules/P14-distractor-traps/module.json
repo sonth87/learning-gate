@@ -1,0 +1,57 @@
+{
+  "id": "P14",
+  "slug": "P14-distractor-traps",
+  "level": 4,
+  "order": 2,
+  "title": "12 Bẫy Đáp Án Nhiễu Kinh Điển & Nghệ Thuật Chọn Giữa 2 Phương Án Đều Đúng",
+  "summary": "Giải mã tâm lý học đằng sau 12 mẫu đáp án nhiễu (Distractors) tinh vi của PMI — từ bẫy cực đoan, đẩy việc lên Sponsor, trì hoãn thụ động tới đánh tráo vai trò Agile — và làm chủ Quy tắc 3 tầng phân thắng bại khi loại trừ xong vẫn còn 2 phương án trông đều hợp lý.",
+  "motto": "Eliminate Extremes · Own Your Authority · Proactive Beats Passive · Root Cause Wins",
+  "provenance": [
+    {
+      "kind": "pma-bridge",
+      "label": "WeaknessTag & Limit Escalation",
+      "detail": "Hệ thống bẫy tâm lý học từ phân tích sai lầm trên PMP Mindmap"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "Principles #4 & #6",
+      "detail": "Accountable Leader & Empowered Team — tự chịu trách nhiệm trong thẩm quyền"
+    },
+    {
+      "kind": "eco2026",
+      "label": "People 33% & Process 41%",
+      "detail": "Xử lý tình huống 50/50 không có đáp án sai rõ ràng"
+    }
+  ],
+  "realWorldTrap": "Loại được 2 câu sai dễ dàng, nhưng đứng trước 2 câu còn lại đều nghe rất 'chuyên nghiệp' thì chọn theo cảm tính quen việc ở công ty (như báo sếp xin chỉ đạo, hoặc chờ hết Sprint xem sao).",
+  "pmiMindsetShift": "Quét sạch các bẫy Đẩy trách nhiệm / Trì hoãn / Nhảy cóc quy trình; khi còn đúng 2 đáp án tốt, dùng 3 thước đo phân định thắng bại: Chủ động thắng Bị động · Giải quyết gốc rễ thắng Chữa triệu chứng · Đánh giá trước thắng Hành động sau!",
+  "tags": [
+    "Distractors",
+    "Exam Traps",
+    "Tie-Breaker",
+    "Escalation Trap",
+    "Agile Roles"
+  ],
+  "evidenceLinkIds": [
+    "core.mindset.escalate",
+    "core.agile.roles",
+    "book.risk.vs-issue",
+    "book.governance.change"
+  ],
+  "practice": {
+    "title": "Thực chiến Bắt bài Bẫy Nhiễu trên Bộ Domain-People hoặc Domain-Process (25–30 câu)",
+    "primaryLinkId": "view.practice",
+    "steps": [
+      "Mở 'Phòng Luyện Tập Tình Huống PMP Mindmap', chọn một chặng 25–30 câu trong bộ 'domain-people' (nếu bạn hay phân vân câu tâm lý/lãnh đạo) hoặc 'domain-process' (nếu bạn hay dính bẫy nhảy cóc quy trình).",
+      "Trong khi làm bài, tập thói quen GẠCH BỎ 2 phương án chứa bẫy rõ trước, rồi áp dụng 'Quy tắc 3 tầng phân thắng bại' cho cặp 50/50 còn lại.",
+      "Sau khi nộp bài, mở bảng thống kê kết quả cuối bài (hoặc nhóm WeaknessTag) để nhận diện chính xác 2 loại bẫy nào bạn đang mắc lặp lại nhiều nhất.",
+      "Ghi lại cặp phương án 50/50 bạn từng chọn nhầm để ôn lại bằng Flashcard trước ngày thi."
+    ],
+    "selfCheck": [
+      "Tôi đã dừng hoàn toàn thói quen chọn đáp án có cụm 'escalate to the project sponsor / HR / PMO' khi sự việc vẫn nằm trong tầm kiểm soát của PM chưa?",
+      "Khi gặp bẫy 'wait until the next Sprint Retrospective / next status meeting' cho một cản trở đang chặn đứng công việc hôm nay, tôi có loại bỏ ngay sự trì hoãn đó không?",
+      "Khi hai đáp án đều đúng hướng, tôi có kiểm tra xem đáp án nào đi TRƯỚC trên trục thời gian và giải quyết TẬN GỐC hơn không?"
+    ]
+  },
+  "decisionBranchId": "stakeholder"
+}

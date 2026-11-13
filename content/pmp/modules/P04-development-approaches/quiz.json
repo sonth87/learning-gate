@@ -1,0 +1,72 @@
+[
+  {
+    "id": "p04-q1",
+    "type": "mc",
+    "q": "Khách hàng thuê nhóm bạn thiết kế thuật toán gợi ý trang phục cá nhân hoá nhưng bản thân họ chưa định nghĩa rõ thế nào là 'gợi ý đẹp'. Họ muốn xem nhiều bản dựng thử nghiệm để góp ý tinh chỉnh độ chính xác của mô hình cho tới khi ưng ý hoàn toàn rồi mới phát hành một lần duy nhất lên cửa hàng trực tuyến. Cách tiếp cận nào mô tả đúng nhất chiến lược này?",
+    "code": "",
+    "choices": [
+      "Predictive (Waterfall)",
+      "Iterative",
+      "Incremental",
+      "Fixed-Scope Sequential"
+    ],
+    "answer": 1,
+    "explain": "Hai dấu hiệu vàng của Iterative: (1) lặp qua các bản dựng/mẫu thử để tinh chỉnh ĐỘ ĐÚNG ĐẮN (correctness) khi yêu cầu còn mơ hồ, và (2) chỉ bàn giao chính thức MỘT LẦN ở cuối khi giải pháp đã hội tụ chuẩn xác."
+  },
+  {
+    "id": "p04-q2",
+    "type": "mc",
+    "q": "Một chuỗi siêu thị cần thay thế hệ thống quản lý bán hàng đã quá cũ. Các quy trình nghiệp vụ thu ngân, kho vận và thẻ thành viên đều đã rất rõ ràng, nhưng ban giám đốc cần đưa phân hệ Thu ngân vào chạy thực tế ngay sau 6 tuần đầu tiên, tiếp theo là Kho vận sau 12 tuần để sớm thu hồi vốn. Phương pháp phát triển nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Incremental",
+      "Predictive bàn giao một lần sau 12 tháng",
+      "Iterative chỉ dựng mockup không chạy thật",
+      "Ad-hoc không cần kế hoạch"
+    ],
+    "answer": 0,
+    "explain": "Yêu cầu tổng thể đã rõ nhưng ưu tiên số 1 là TỐC ĐỘ BÀN GIAO SỚM từng phần chức năng hoàn chỉnh dùng được ngay (usable subset early) theo từng đợt phát hành: đây chính là thế mạnh đặc trưng của Incremental."
+  },
+  {
+    "id": "p04-q3",
+    "type": "mc",
+    "q": "Dự án phát triển máy bay nông nghiệp không người lái gồm 2 mảng lớn: (A) Chế tạo khung thân carbon và xin giấy phép tần số hàng không có quy chuẩn kỹ thuật cố định, chi phí đúc khuôn rất cao; (B) Phát triển ứng dụng điều khiển đường bay thông minh trên máy tính bảng với nhiều tính năng cần thử nghiệm cùng nông dân mỗi 2 tuần. PM nên thiết kế cách tiếp cận nào?",
+    "code": "",
+    "choices": [
+      "Ép cả mảng khung thân vật lý lẫn phần mềm chạy thuần Scrum bàn giao khung máy bay mới mỗi 2 tuần.",
+      "Ép cả dự án chạy Predictive khoá cứng toàn bộ giao diện phần mềm từ ngày đầu tiên.",
+      "Áp dụng mô hình Hybrid: quản lý mảng khung thân & cấp phép bằng Predictive, phát triển phần mềm bằng Agile, và thiết lập các mốc tích hợp đồng bộ (Integration Milestones) giữa hai luồng.",
+      "Tách thành hai công ty riêng biệt không liên lạc với nhau."
+    ],
+    "answer": 2,
+    "explain": "Theo PMBOK 8 §4.2, Hybrid là lựa chọn tối ưu cho các dự án đa hợp phần: hợp phần vật lý/pháp lý chi phí thay đổi cao chạy Predictive; hợp phần phần mềm cần phản hồi linh hoạt chạy Agile; nhiệm vụ sống còn của PM là quản trị phụ thuộc và đồng bộ nhịp tích hợp giữa hai luồng."
+  },
+  {
+    "id": "p04-q4",
+    "type": "mc",
+    "q": "Trong mô hình Adaptive / Agile, mối quan hệ giữa 3 cạnh Phạm vi (Scope), Thời gian (Schedule) và Chi phí (Finance) được kiểm soát theo nguyên lý nào?",
+    "code": "",
+    "choices": [
+      "Cố định cứng 100% Phạm vi từ đầu, còn Thời gian và Chi phí tăng bao nhiêu cũng được.",
+      "Cố định Thời gian (Timebox) và Chi phí/Quy mô nhóm, trong khi Phạm vi được ưu tiên linh hoạt để bàn giao các hạng mục có giá trị cao nhất trước.",
+      "Cả 3 cạnh đều thả nổi tự do không cần bất kỳ ranh giới nào.",
+      "Loại bỏ hoàn toàn việc theo dõi ngân sách và lịch phát hành."
+    ],
+    "answer": 1,
+    "explain": "Agile đảo ngược Tam giác ràng buộc truyền thống: Time (Sprint/Release Timebox) và Cost (nhóm ổn định) được giữ cố định, còn Scope biến thiên thông qua việc sắp xếp lại Product Backlog sao cho luôn tối đa hoá giá trị bàn giao."
+  },
+  {
+    "id": "p04-q5",
+    "type": "mc",
+    "q": "Ban giám đốc một tập đoàn bảo hiểm truyền thống (đã quen quy trình phê duyệt chặt chẽ 20 năm qua) vừa đi dự hội thảo về và yêu cầu PM chuyển một dự án lõi sang '100% Agile thuần tuý không giấy tờ ngay sáng thứ Hai tới'. Các trưởng phòng tỏ ra hoang mang và phản kháng. PM nên khuyến nghị giải pháp nào TỐT NHẤT?",
+    "code": "",
+    "choices": [
+      "Thực thi mệnh lệnh xoá bỏ toàn bộ tài liệu quản trị và báo cáo ngay sáng thứ Hai.",
+      "Từ chối hoàn toàn Agile và giữ nguyên 100% cách làm cũ.",
+      "Đánh giá mức độ sẵn sàng của tổ chức và đề xuất lộ trình chuyển đổi Hybrid từng bước (giữ khung quản trị tuân thủ cần thiết, lồng ghép các vòng lặp ngắn kèm đào tạo & huấn luyện Agile cho nhóm và các bên liên quan).",
+      "Thuê một nhóm lập trình viên mới thay thế toàn bộ nhân sự hiện tại."
+    ],
+    "answer": 2,
+    "explain": "Câu hỏi kinh điển của đề PMP! Khi văn hoá tổ chức chưa sẵn sàng và yêu cầu tuân thủ cao, chuyển đổi đột ngột gây sốc hệ thống. Cách tiếp cận chuẩn PMI là Tailoring lộ trình Hybrid chuyển tiếp kết hợp đào tạo và coaching."
+  }
+]

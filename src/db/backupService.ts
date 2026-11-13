@@ -26,7 +26,7 @@ export const backupService = {
     for (const row of courseRows) {
       if (row?.courseId && row?.state) courses[row.courseId] = row.state;
     }
-    for (const slot of ['kube', 'cicd'] as const) {
+    for (const slot of ['kube', 'cicd', 'pmp'] as const) {
       const localCourse = readLocalProgressMirror(slot);
       if (localCourse || courses[slot]) {
         courses[slot] = mergeWpStates(courses[slot], localCourse);
@@ -110,7 +110,7 @@ export const backupService = {
         if (courseId && state) {
           const normCourse = normalizeWpState({ ...state, updatedAt: Date.now() });
           await tx.objectStore('course_state').put({ courseId, state: normCourse });
-          if (courseId === 'kube' || courseId === 'cicd') {
+          if (courseId === 'kube' || courseId === 'cicd' || courseId === 'pmp') {
             writeLocalProgressMirror(courseId, normCourse);
           }
         }

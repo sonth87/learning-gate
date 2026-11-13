@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p11-q1",
+    "type": "mc",
+    "q": "Một dự án phát triển phần cứng nhúng đang bị trễ 3 tuần trên **Critical Path**. Ban giám đốc yêu cầu giữ nguyên ngày ra mắt thương mại nhưng khẳng định **không thể cấp thêm ngân sách** và **không được cắt bớt tính năng**. Project Manager nên làm gì **BEST**?",
+    "code": "",
+    "choices": [
+      "Thuê thêm 2 kỹ sư kiểm thử thời vụ để rút ngắn giai đoạn test cuối cùng",
+      "Rà soát các tác vụ trên Critical Path có phụ thuộc tuỳ ý (Discretionary) để thực hiện Fast-Tracking và theo dõi chặt rủi ro phải làm lại",
+      "Chuyển nhân sự từ dự án khác sang làm thêm giờ (OT) có tính phí vào cuối tuần",
+      "Cắt ngắn một nửa quy trình kiểm thử tích hợp để kịp ngày bàn giao"
+    ],
+    "answer": 1,
+    "explain": "Khi ngân sách bị khoá cứng ('không cấp thêm tiền') và không được giảm Scope/Quality, **Crashing** (thuê người/OT tốn phí) và cắt giảm kiểm thử (vi phạm Quality) đều bị loại. Phương án chuẩn PMI là rà soát **Critical Path** để áp dụng **Fast-Tracking** trên các phụ thuộc tuỳ ý, đồng thời quản trị chặt rủi ro Rework."
+  },
+  {
+    "id": "p11-q2",
+    "type": "mc",
+    "q": "Báo cáo hiệu suất tháng 4 ghi nhận: `BAC = $500,000`, `PV = $250,000`, `EV = $200,000`, `AC = $250,000`. Chẩn đoán nào sau đây phản ánh **ĐÚNG NHẤT** sức khoẻ hiện tại của dự án?",
+    "code": "",
+    "choices": [
+      "Dự án đang đúng ngân sách vì AC bằng đúng PV ($250,000), nhưng bị chậm tiến độ",
+      "Dự án đang vượt tiến độ nhưng vượt ngân sách nghiêm trọng",
+      "Dự án vừa chậm tiến độ (`SPI = 0.80`) vừa vượt chi phí (`CPI = 0.80`)",
+      "Dự án đang tiết kiệm chi phí (`CPI = 1.25`) nhưng chậm tiến độ (`SPI = 0.80`)"
+    ],
+    "answer": 2,
+    "explain": "Đừng sập bẫy so sánh trực tiếp `AC` với `PV`! Mọi công thức EVM đều lấy `EV` làm chuẩn: `SPI = EV / PV = 200k / 250k = 0.80` (< 1 → chậm tiến độ) và `CPI = EV / AC = 200k / 250k = 0.80` (< 1 → vượt chi phí)."
+  },
+  {
+    "id": "p11-q3",
+    "type": "mc",
+    "q": "Trong quá trình thi công trung tâm dữ liệu, một quy định thuế nhập khẩu linh kiện mới hoàn toàn bất ngờ vừa ban hành khiến chi phí đội thêm `$45,000`. Rủi ro này **chưa từng được nhận diện** trong `Risk Register`. Project Manager nên xử lý nguồn tiền thế nào?",
+    "code": "",
+    "choices": [
+      "Chủ động trích ngay `$45,000` từ Management Reserve vì đây là quỹ dự phòng của dự án",
+      "Lấy tiền từ Contingency Reserve của một gói công việc khác chưa dùng tới để bù đắp âm thầm",
+      "Đánh giá tác động tổng thể và nộp Change Request trình Sponsor/CCB phê duyệt sử dụng Management Reserve, sau đó cập nhật vào Cost Baseline",
+      "Yêu cầu nhà thầu tự chịu toàn bộ khoản thuế phát sinh ngoài dự kiến"
+    ],
+    "answer": 2,
+    "explain": "Biến cố hoàn toàn chưa từng nhận diện trước thuộc nhóm **Unknown-Unknowns**, phải dùng **Management Reserve**. Tuy nhiên Management Reserve nằm NGOÀI `Cost Baseline` và không thuộc thẩm quyền tự chi của PM — PM bắt buộc phải lập **Change Request** trình Sponsor/CCB duyệt chuyển khoản này vào `Cost Baseline`."
+  },
+  {
+    "id": "p11-q4",
+    "type": "tf",
+    "q": "Khi một kỹ sư kiến trúc bị phân bổ trùng lịch 14 giờ/ngày ở hai nhánh công việc khác nhau, nếu PM bắt buộc **không được làm thay đổi ngày kết thúc dự án (không kéo dài Đường găng)** thì nên ưu tiên thử **Resource Smoothing** trước thay vì **Resource Leveling**.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! **Resource Smoothing** chỉ dịch chuyển công việc trong giới hạn `Total/Free Float` sẵn có nên bảo toàn nguyên vẹn Đường găng và ngày kết thúc dự án; trong khi **Resource Leveling** cho phép đẩy lùi cả việc trên Đường găng nên thường làm kéo dài tổng lịch biểu."
+  },
+  {
+    "id": "p11-q5",
+    "type": "mc",
+    "q": "Một công việc **B** nằm trên nhánh phụ có `Total Float = 6 ngày` và `Free Float = 2 ngày`. Do sự cố môi trường thử nghiệm, việc **B** bị hoàn thành trễ mất **4 ngày**. Hậu quả nào sau đây sẽ xảy ra?",
+    "code": "",
+    "choices": [
+      "Ngày kết thúc cuối cùng của toàn dự án bị trễ mất 4 ngày",
+      "Ngày bắt đầu sớm (Early Start) của công việc kế tiếp ngay sau B bị đẩy lùi 2 ngày, nhưng ngày kết thúc toàn dự án vẫn KHÔNG bị ảnh hưởng",
+      "Cả công việc kế tiếp lẫn ngày kết thúc dự án đều không bị ảnh hưởng gì",
+      "Công việc B lập tức biến thành Đường găng mới với Total Float âm (-2 ngày)"
+    ],
+    "answer": 1,
+    "explain": "Vì trễ `4 ngày` vượt quá `Free Float (2 ngày)` nên công việc ngay kế tiếp sau B bị đẩy lùi `4 - 2 = 2 ngày`. Tuy nhiên `4 ngày` vẫn nhỏ hơn `Total Float (6 ngày)` nên chưa ăn hết độ dự trữ toàn cục — ngày kết thúc cuối cùng của dự án vẫn được giữ nguyên!"
+  },
+  {
+    "id": "p11-q6",
+    "type": "mc",
+    "q": "Giữa dự án, một đám cháy nhỏ tại kho vật tư làm hỏng lô cáp trị giá `$20,000` khiến `CPI` hiện tại tụt xuống `0.90`. Qua phân tích, đội dự án xác nhận đây chỉ là **tai nạn cá biệt một lần duy nhất**, mọi định mức thi công cho phần việc còn lại hoàn toàn sát với ước lượng ban đầu. Công thức dự báo `EAC` nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "`EAC = BAC / CPI`",
+      "`EAC = AC + (BAC - EV)`",
+      "`EAC = AC + [(BAC - EV) / (CPI × SPI)]`",
+      "`EAC = BAC - CV`"
+    ],
+    "answer": 1,
+    "explain": "Khi sai lệch trong quá khứ là **bất thường / cá biệt một lần (Atypical variance)** và phần việc còn lại dự kiến sẽ chạy đúng tốc độ chi phí kế hoạch ban đầu, công thức chuẩn là `EAC = AC + (BAC - EV)` (chi phí thực đã bỏ ra cộng với phần khối lượng còn lại tính theo đơn giá gốc)."
+  }
+]

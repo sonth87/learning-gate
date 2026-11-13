@@ -1,0 +1,62 @@
+{
+  "id": "P08",
+  "slug": "P08-stakeholders-communications",
+  "level": 3,
+  "order": 2,
+  "title": "Miền Stakeholders & Communications: Quyền lực, Ma trận SEAM & Đúng kênh giao tiếp",
+  "summary": "Làm chủ Miền hiệu suất #5 Stakeholders của PMBOK 8 (7 quy trình hợp nhất Gắn kết bên liên quan & Truyền thông): phân loại Power/Interest và Salience Model, dịch chuyển thái độ trên ma trận SEAM, chọn đúng 3 phương thức giao tiếp và mẹo tách bẫy Stakeholder Plan vs Communications Plan.",
+  "motto": "Identify Early · Shift Attitude via SEAM · Right Message via Right Channel",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Guide §2.5 · Stakeholders",
+      "detail": "Miền #5 gồm 7 quy trình: hợp nhất trọn vẹn Stakeholder Engagement & Communications"
+    },
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026 · People 33% & Business 26%",
+      "detail": "Xây dựng sự đồng thuận, xử lý kháng cự thay đổi và truyền thông minh bạch đa chiều"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Core SEAM & Book Stakeholder",
+      "detail": "Khớp 100% cấu trúc Book Map 'stakeholder' kèm ngăn câu hỏi thực chiến SEAM"
+    }
+  ],
+  "realWorldTrap": "Thấy lãnh đạo phòng ban phản đối dự án liền né tránh không mời họp hoặc nhờ Sponsor ép xuống; gửi email dài lê thê cho mọi chuyện nhạy cảm; nhầm lẫn giữa cập nhật Stakeholder Engagement Plan và Communications Management Plan.",
+  "pmiMindsetShift": "Stakeholder quyền lực cao càng phản đối (Resistant) thì PM càng phải chủ động gặp trực tiếp 1-1 để lắng nghe nỗi lo gốc rễ và dịch chuyển họ sang Supportive; vấn đề về THÁI ĐỘ/QUAN HỆ → sửa Stakeholder Engagement Plan, vấn đề về ĐỊNH DẠNG/TẦN SUẤT/KÊNH BÁO CÁO → sửa Communications Management Plan.",
+  "tags": [
+    "stakeholders",
+    "communications",
+    "power-interest",
+    "salience-model",
+    "seam",
+    "interactive-push-pull"
+  ],
+  "evidenceLinkIds": [
+    "core.stakeholder.seam",
+    "book.stakeholder.questions",
+    "core.comm.plan",
+    "flow.stakeholder"
+  ],
+  "practice": {
+    "title": "Thực chiến Câu hỏi SEAM & Kéo-Thả Chu trình Nhận diện – Gắn kết Stakeholder",
+    "primaryLinkId": "book.stakeholder.questions",
+    "secondaryLinkIds": [
+      "flow.stakeholder",
+      "view.practice"
+    ],
+    "steps": [
+      "Bấm nút chính để mở thẳng node 'SEAM' kèm Ngăn Câu Hỏi (p=questions) bên PMP Mindmap và làm thử ngay chùm câu gắn trực tiếp với ma trận thái độ.",
+      "Mở 'Flow Tương tác: Chu trình Nhận diện, Phân tích & Gắn kết Stakeholder' (chế độ Reconstruct) để thuộc lòng thứ tự xử lý khi có Stakeholder mới vào giữa chừng.",
+      "Mở 'Phòng Luyện Tập Tình Huống' → chọn Mix chủ đề 'stakeholder' → thiết lập 15 câu hỏi.",
+      "Áp dụng phép thử 3 giây: đề hỏi 'họp hay gửi mail / ai nhận báo cáo gì' → chọn Communications; đề hỏi 'kháng cự / thờ ơ / xây dựng lòng tin' → chọn Stakeholder Engagement."
+    ],
+    "selfCheck": [
+      "Khi một Phó giám đốc mới nhậm chức giữa dự án, 3 bước theo đúng thứ tự chuẩn PMI mà PM phải làm ngay là gì?",
+      "Làm sao phân biệt nhóm 'Keep Satisfied' và nhóm 'Keep Informed' trên lưới Power/Interest?",
+      "Khi nào bạn chọn truyền thông Pull thay vì Push hoặc Interactive?"
+    ]
+  },
+  "decisionBranchId": "stakeholder"
+}

@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowRight,
+  Award,
   Blocks,
   BookOpen,
   Box,
@@ -13,6 +14,7 @@ import {
   CheckCircle2,
   Cloud,
   Code2,
+  Compass,
   Container,
   Copy,
   Cpu,
@@ -27,9 +29,11 @@ import {
   GitMerge,
   GitPullRequest,
   Globe,
+  Handshake,
   HardDrive,
   KeyRound,
   Layers,
+  Lightbulb,
   Lock,
   Network,
   Package,
@@ -37,6 +41,7 @@ import {
   RefreshCw,
   Rocket,
   RotateCcw,
+  Scale,
   Search,
   Server,
   Settings,
@@ -45,8 +50,10 @@ import {
   ShieldCheck,
   Sparkles,
   Stethoscope,
+  Target,
   Terminal,
   Trash2,
+  TrendingUp,
   Upload,
   Users,
   Webhook,
@@ -162,6 +169,7 @@ function getTone(tone?: string, fallback: VisualTone = 'sky'): ToneClasses {
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   activity: Activity,
   alert: AlertTriangle,
+  award: Award,
   blocks: Blocks,
   book: BookOpen,
   box: Box,
@@ -169,6 +177,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   check: CheckCircle2,
   cloud: Cloud,
   code: Code2,
+  compass: Compass,
   container: Container,
   cpu: Cpu,
   database: Database,
@@ -182,10 +191,12 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   'git-merge': GitMerge,
   'git-pr': GitPullRequest,
   globe: Globe,
+  handshake: Handshake,
   disk: HardDrive,
   storage: HardDrive,
   key: KeyRound,
   layers: Layers,
+  lightbulb: Lightbulb,
   lock: Lock,
   network: Network,
   package: Package,
@@ -193,6 +204,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   refresh: RefreshCw,
   rocket: Rocket,
   rollback: RotateCcw,
+  scale: Scale,
   search: Search,
   server: Server,
   settings: Settings,
@@ -201,8 +213,10 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   'shield-check': ShieldCheck,
   sparkles: Sparkles,
   doctor: Stethoscope,
+  target: Target,
   terminal: Terminal,
   trash: Trash2,
+  trend: TrendingUp,
   upload: Upload,
   users: Users,
   webhook: Webhook,
@@ -262,6 +276,10 @@ interface BlockHeaderProps {
   renderInline: (text: string) => React.ReactNode;
 }
 
+function accentFallbackTone(accent: DevOpsAccent): VisualTone {
+  return accent === 'cyan' ? 'cyan' : accent === 'amber' ? 'amber' : 'sky';
+}
+
 const BlockHeader: React.FC<BlockHeaderProps> = ({
   eyebrow,
   title,
@@ -270,7 +288,8 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
   accent,
   renderInline,
 }) => {
-  const eyebrowTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
+  const eyebrowTone =
+    accent === 'cyan' ? 'text-cyan-400' : accent === 'amber' ? 'text-amber-400' : 'text-sky-400';
   return (
     <div className="mb-3.5 flex flex-col gap-0.5 border-b border-slate-800/90 pb-2.5">
       <div className={cn('flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider', eyebrowTone)}>
@@ -307,7 +326,7 @@ const VisualFlowDiagram: React.FC<{
   accent: DevOpsAccent;
   renderInline: (text: string) => React.ReactNode;
 }> = ({ spec, accent, renderInline }) => {
-  const defaultTone: VisualTone = accent === 'cyan' ? 'cyan' : 'sky';
+  const defaultTone: VisualTone = accentFallbackTone(accent);
   const steps = Array.isArray(spec.steps) ? spec.steps : [];
   if (!steps.length) return null;
 
@@ -452,7 +471,7 @@ const VisualLayersDiagram: React.FC<{
   accent: DevOpsAccent;
   renderInline: (text: string) => React.ReactNode;
 }> = ({ spec, accent, renderInline }) => {
-  const defaultTone: VisualTone = accent === 'cyan' ? 'cyan' : 'sky';
+  const defaultTone: VisualTone = accentFallbackTone(accent);
   const cols = Array.isArray(spec.columns) ? spec.columns : [];
   if (!cols.length) return null;
 
@@ -569,7 +588,7 @@ const VisualGroupsGrid: React.FC<{
   accent: DevOpsAccent;
   renderInline: (text: string) => React.ReactNode;
 }> = ({ spec, accent, renderInline }) => {
-  const defaultTone: VisualTone = accent === 'cyan' ? 'cyan' : 'sky';
+  const defaultTone: VisualTone = accentFallbackTone(accent);
   const items = Array.isArray(spec.items) ? spec.items : [];
   if (!items.length) return null;
 
@@ -681,7 +700,7 @@ const VisualAnatomyList: React.FC<{
   accent: DevOpsAccent;
   renderInline: (text: string) => React.ReactNode;
 }> = ({ spec, accent, renderInline }) => {
-  const defaultTone: VisualTone = accent === 'cyan' ? 'cyan' : 'sky';
+  const defaultTone: VisualTone = accentFallbackTone(accent);
   const items = Array.isArray(spec.items) ? spec.items : [];
   if (!items.length) return null;
 

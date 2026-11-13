@@ -9,7 +9,7 @@ import type {
   WpState,
 } from '@/features/workpath/types';
 
-export type ProgressSlotId = 'wp' | 'kube' | 'cicd';
+export type ProgressSlotId = 'wp' | 'kube' | 'cicd' | 'pmp';
 
 export interface StorageSyncMeta {
   status: 'idle' | 'saving' | 'synced' | 'local-only' | 'error';
@@ -23,6 +23,7 @@ const LOCAL_MIRROR_KEYS: Record<ProgressSlotId, string> = {
   wp: 'pylearn_wp_state_mirror_v2',
   kube: 'pylearn_course_state_mirror_v2_kube',
   cicd: 'pylearn_course_state_mirror_v2_cicd',
+  pmp: 'pylearn_course_state_mirror_v2_pmp',
 };
 
 let persistPromise: Promise<boolean | null> | null = null;
@@ -326,6 +327,7 @@ const inflightQueues: Record<
   wp: { running: false, latest: null, listeners: [] },
   kube: { running: false, latest: null, listeners: [] },
   cicd: { running: false, latest: null, listeners: [] },
+  pmp: { running: false, latest: null, listeners: [] },
 };
 
 function enqueueIdbWrite(slot: ProgressSlotId, state: WpState): Promise<boolean> {

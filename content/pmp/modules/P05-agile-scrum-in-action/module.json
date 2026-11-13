@@ -1,0 +1,60 @@
+{
+  "id": "P05",
+  "slug": "P05-agile-scrum-in-action",
+  "level": 2,
+  "order": 2,
+  "title": "Tư duy Vận hành Agile & Scrum Thực Chiến (Roles · Events · Quality Gates)",
+  "summary": "Khắc ghi ranh giới quyền hạn bất khả xâm phạm giữa Product Owner · Developers · Scrum Master / Agile PM, bản chất kiểm tra & thích ứng của 5 sự kiện Scrum, và ba cổng chất lượng sống còn: Definition of Ready (DoR) · Acceptance Criteria (AC) · Definition of Done (DoD).",
+  "motto": "PO quyết Giá trị · Developers quyết Khối lượng & Cách làm · Scrum Master mở đường & giữ nhịp",
+  "provenance": [
+    {
+      "kind": "pma-bridge",
+      "label": "Core Map: agile (Roles & Events)",
+      "detail": "Sơ đồ quyền hạn 3 vai trò Scrum, 5 sự kiện Timebox và tam giác chất lượng DoR · AC · DoD"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §3.8 & Scope / Resources",
+      "detail": "Nhóm tự tổ chức đa chức năng, Backlog thích ứng và nhúng chất lượng qua Definition of Done"
+    },
+    {
+      "kind": "eco2026",
+      "label": "~60% Agile / Hybrid",
+      "detail": "Nhóm câu hỏi tình huống xuất hiện dày đặc nhất trong đề thi PMP: chèn việc giữa Sprint, Daily biến tướng, nhầm DoD/AC"
+    }
+  ],
+  "realWorldTrap": "Biến Daily Standup thành buổi báo cáo tiến độ cho PM chất vấn từng người, để Giám đốc nhắn thẳng cho Dev nhét việc mới vào giữa Sprint, hoặc PM tự sắp xếp lại Product Backlog thay Product Owner.",
+  "pmiMindsetShift": "Tôn trọng tuyệt đối quyền sở hữu trong Scrum: mọi yêu cầu bên ngoài phải đi qua Product Owner; không thay đổi làm nguy hại Sprint Goal; Daily Scrum là 15 phút của Developers tự đồng bộ kế hoạch 24h tới; chỉ Increment đạt trọn Definition of Done mới được trình diễn và phát hành.",
+  "tags": [
+    "scrum-roles",
+    "scrum-events",
+    "dor-ac-dod",
+    "daily-standup",
+    "sprint-protection"
+  ],
+  "evidenceLinkIds": [
+    "core.agile.roles",
+    "core.agile.events",
+    "flow.agile-delivery"
+  ],
+  "practice": {
+    "title": "Ghép vòng lặp Scrum 9 bước & Luyện chuyên sâu Agile (15 câu)",
+    "primaryLinkId": "flow.agile-delivery",
+    "secondaryLinkIds": [
+      "view.practice",
+      "core.agile.roles",
+      "core.agile.events"
+    ],
+    "steps": [
+      "Bấm nút chính mở 'Flow Tương tác: Vòng lặp Vận hành Scrum xuyên một Sprint (9 bước)' ở chế độ Reconstruct, kéo-thả cho đến khi đúng 100% trình tự từ Product Vision đến Sprint Retrospective.",
+      "Mở xem nhanh 2 nhánh Core Map 'core.agile.roles' và 'core.agile.events' để rà lại các câu bẫy vai trò.",
+      "Vào Phòng Luyện Tập PMP Mindmap, chọn chế độ Mix, lọc riêng chủ đề 'agile' với số lượng 15 câu hỏi để đóng đinh phản xạ Scrum thực chiến."
+    ],
+    "selfCheck": [
+      "Khi một Phó Giám đốc đòi chèn tính năng gấp vào ngay giữa Sprint đang chạy, bạn đã nhớ đúng chuỗi hành động bảo vệ nhóm và chuyển hướng sang Product Owner chưa?",
+      "Trong buổi Daily Standup, nếu hai lập trình viên sa đà tranh luận giải pháp kỹ thuật sâu suốt 10 phút hoặc Stakeholder xen ngang hỏi han, Scrum Master xử lý thế nào?",
+      "Bạn đã phân biệt không lẫn 1 giây giữa DoR (đầu vào Sprint), Acceptance Criteria (điều kiện riêng từng Story) và DoD (chuẩn chất lượng chung cho mọi Increment) chưa?"
+    ]
+  },
+  "decisionBranchId": "change"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p10-c1",
+    "front": "Đúng 3 tài liệu nào hợp thành Scope Baseline chuẩn PMI?",
+    "back": "1. Project Scope Statement (gồm mô tả phạm vi, tiêu chí nghiệm thu & Exclusions)\n2. WBS (Cấu trúc phân rã công việc tới Work Package theo quy tắc 100%)\n3. WBS Dictionary (Từ điển giải thích chi tiết từng mục WBS)."
+  },
+  {
+    "id": "p10-c2",
+    "front": "Phân biệt nhanh Scope Creep và Gold Plating!",
+    "back": "• Scope Creep: Phạm vi phình dần do yêu cầu không chính thức từ KHÁCH HÀNG / STAKEHOLDER bên ngoài không qua CCB.\n• Gold Plating: Đội dự án NỘI BỘ tự ý làm thêm tính năng ngoài Scope Baseline để 'lấy lòng khách' mà không qua kiểm soát thay đổi."
+  },
+  {
+    "id": "p10-c3",
+    "front": "Đọc liền mạch chuỗi biến đổi trạng thái của Deliverable từ lúc làm xong tới lúc đóng dự án!",
+    "back": "Direct & Manage Work → [Deliverable] → Control Quality (QC nội bộ) → [Verified Deliverable] → Validate Scope (Khách ký nhận) → [Accepted Deliverable] → Close Project or Phase."
+  },
+  {
+    "id": "p10-c4",
+    "front": "Sự khác biệt cốt lõi giữa Manage Quality (QA) và Control Quality (QC) là gì?",
+    "back": "• Manage Quality (QA): Hướng vào QUY TRÌNH (kiểm toán quy trình, phòng ngừa lỗi từ gốc — Prevention).\n• Control Quality (QC): Hướng vào SẢN PHẨM (đo kiểm kỹ thuật tìm khuyết tật trên Deliverable cụ thể — Inspection)."
+  },
+  {
+    "id": "p10-c5",
+    "front": "Phân biệt Quality (Chất lượng) và Grade (Cấp hạng) trong đề thi PMP!",
+    "back": "• Quality: Mức độ thoả mãn yêu cầu và không có lỗi (Low Quality LUÔN LÀ VẤN ĐỀ).\n• Grade: Cấp độ đặc tính/tính năng kỹ thuật của sản phẩm cùng công năng (Low Grade VẪN CHẤP NHẬN ĐƯỢC nếu chất lượng cao)."
+  },
+  {
+    "id": "p10-c6",
+    "front": "Khi nào trong đề thi bạn phải chọn ngay Requirements Traceability Matrix (RTM)?",
+    "back": "Khi cần truy ngược một yêu cầu tới mục tiêu kinh doanh gốc (Business Case), đánh giá phạm vi ảnh hưởng khi yêu cầu đổi, hoặc kiểm chứng mọi yêu cầu đã có Deliverable và Test Case tương ứng."
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p03-c1",
+    "front": "Phân biệt 'Quality' (Chất lượng) và 'Grade' (Cấp hạng) trong đề thi PMP như thế nào?",
+    "back": "• Quality: Mức độ đáp ứng các yêu cầu đã đặt ra (không lỗi, chạy đúng chuẩn). Low Quality KHÔNG BAO GIỜ chấp nhận được!\n• Grade: Cấp bậc tính năng/tiện nghi kỹ thuật. Low Grade nhưng High Quality (ít tính năng phụ nhưng chạy cực chuẩn) hoàn toàn HỢP LỆ."
+  },
+  {
+    "id": "p03-c2",
+    "front": "Phân biệt sắc bén 3 khái niệm: Manage Quality (QA) · Control Quality (QC) · Validate Scope?",
+    "back": "• Manage Quality (QA): Kiểm toán & cải tiến QUY TRÌNH để phòng ngừa lỗi.\n• Control Quality (QC): Kiểm tra SẢN PHẨM nội bộ → tạo ra Verified Deliverables.\n• Validate Scope: Khách hàng/Sponsor kiểm tra nghiệm thu → tạo ra Accepted Deliverables."
+  },
+  {
+    "id": "p03-c3",
+    "front": "Tư duy 'Cost of Quality (CoQ)' và 'Prevention over Inspection' trong Nguyên tắc #3 PMBOK 8 nghĩa là gì?",
+    "back": "Chi tiền phòng ngừa lỗi ngay trong quy trình (đào tạo, chuẩn hoá, test tự động — Cost of Conformance) luôn rẻ hơn rất nhiều so với chi phí sửa lỗi nội bộ và đặc biệt là lỗi lọt ra tay khách hàng (External Failure — Cost of Nonconformance)."
+  },
+  {
+    "id": "p03-c4",
+    "front": "Khi sếp hoặc khách hàng gây áp lực làm đẹp báo cáo tiến độ/chi phí hoặc lờ đi rủi ro an toàn, Accountable Leader làm gì?",
+    "back": "Tuyệt đối tuân thủ Quy tắc Đạo đức PMI (Honesty & Responsibility): từ chối làm sai lệch dữ liệu, báo tin xấu SỚM và MINH BẠCH kèm phân tích nguyên nhân gốc rễ và các phương án khắc phục."
+  },
+  {
+    "id": "p03-c5",
+    "front": "3 trụ cột để xây dựng 'Empowered Culture' (Nguyên tắc #6 PMBOK 8) trong nhóm dự án là gì?",
+    "back": "1. Để người trực tiếp làm việc tự ước lượng và tự phân chia công việc.\n2. Xây dựng An toàn tâm lý (Psychological Safety) & Blameless Learning (sửa quy trình thay vì đổ lỗi cá nhân).\n3. Nhóm cùng đồng thuận thiết lập Team Charter / Ground Rules."
+  }
+]

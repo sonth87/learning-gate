@@ -1,0 +1,67 @@
+[
+  {
+    "id": "p14-q1",
+    "type": "mc",
+    "q": "Giữa Sprint thứ 4, hai lập trình viên Senior tranh cãi gay gắt về việc chọn kiến trúc lưu trữ đệm (Caching), làm tiến độ của nhóm chững lại suốt 2 ngày nhưng vẫn chưa vi phạm quy tắc đạo đức nào. Cả hai đều quay sang nhờ Project Manager phân xử. PM nên làm gì **BEST**?",
+    "code": "",
+    "choices": [
+      "Báo cáo ngay lên Giám đốc Kỹ thuật (Functional Manager) để ra quyết định kiến trúc bắt buộc cho cả hai tuân theo",
+      "Chờ đến buổi họp Sprint Retrospective vào cuối tuần sau mới đưa chủ đề này ra thảo luận để tránh làm gián đoạn Sprint",
+      "Tạo điều kiện cho một buổi làm việc trực tiếp cùng nhóm kỹ thuật để đánh giá ưu nhược điểm từng phương án dựa trên tiêu chí giá trị/kỹ thuật và để nhóm đồng thuận chọn giải pháp",
+      "Tách hai lập trình viên này sang hai nhóm dự án khác nhau để chấm dứt mâu thuẫn"
+    ],
+    "answer": 2,
+    "explain": "Giải phẫu 3 bẫy kinh điển: **A** là bẫy *Đẩy bóng lên cấp trên (#5)*; **B** là bẫy *Trì hoãn thụ động (#7)* khi sự việc đang làm kẹt Sprint ngay lúc này; **D** là bẫy *Né tránh / Chia tách cực đoan (#2)*. **C** thắng tuyệt đối vì áp dụng *Collaborate / Problem Solve* và tôn trọng quyền tự chủ kỹ thuật của nhóm."
+  },
+  {
+    "id": "p14-q2",
+    "type": "mc",
+    "q": "Trong cuộc họp Sprint Planning, một Stakeholder quyền lực cao bước vào phòng và yêu cầu Scrum Master lập tức đẩy 3 User Story mới của phòng Tiếp thị lên đầu Sprint này, đồng thời giao đích danh cho lập trình viên giỏi nhất làm. Scrum Master nên phản hồi như thế nào?",
+    "code": "",
+    "choices": [
+      "Chấp nhận ngay vì Stakeholder này có quyền lực rất cao và cập nhật lại Sprint Backlog cho nhóm",
+      "Giải thích lịch sự vai trò trong Scrum: mời Stakeholder trao đổi với Product Owner về giá trị và độ ưu tiên trên Product Backlog, còn việc nhận và chia việc trong Sprint thuộc quyền tự tổ chức của Developers",
+      "Yêu cầu Stakeholder điền phiếu Change Request trình lên Change Control Board (CCB) phê duyệt",
+      "Từ chối thẳng thừng và cấm mọi Stakeholder bén mảng tới khu vực làm việc của nhóm trong suốt dự án"
+    ],
+    "answer": 1,
+    "explain": "Câu này giăng bẫy **Lẫn lộn vai trò Agile (#12)**: Scrum Master không có quyền sắp xếp Backlog, và không ai (kể cả PO hay Stakeholder) được chỉ định việc cụ thể cho từng Developer. **A** vi phạm vai trò Scrum; **C** sai bối cảnh vòng đời; **D** là bẫy cực đoan (#1). **B** bảo vệ đúng ranh giới 3 vai trò Scrum một cách chuyên nghiệp, hợp tác."
+  },
+  {
+    "id": "p14-q3",
+    "type": "mc",
+    "q": "Một tính năng tích hợp vận chuyển vừa phát sinh lỗi logic nghiêm trọng ở môi trường kiểm thử nội bộ do tài liệu yêu cầu ban đầu viết mơ hồ. Sau khi loại trừ 2 đáp án sai, bạn còn phân vân giữa 2 phương án đều hợp lý dưới đây để trả lời câu hỏi **What should the PM do BEST to prevent recurrence?**:",
+    "code": "",
+    "choices": [
+      "Yêu cầu lập trình viên sửa ngay dòng code bị lỗi đó và chạy lại kịch bản test của riêng màn hình vận chuyển",
+      "Gửi email nhắc nhở toàn bộ đội kiểm thử phải làm việc cẩn thận hơn ở các đợt sau",
+      "Cùng nhóm phân tích nguyên nhân gốc rễ (Root Cause Analysis), làm rõ lại tiêu chí nghiệm thu (Acceptance Criteria / DoR) cùng Product Owner và cập nhật quy trình kiểm duyệt đầu vào cho mọi tính năng tiếp theo",
+      "Báo cáo sự cố lên PMO để xin mẫu tài liệu đặc tả dài hơn"
+    ],
+    "answer": 2,
+    "explain": "Áp dụng **Bàn cân 3 tầng phân thắng bại** giữa A và C: câu hỏi hỏi **BEST to prevent recurrence** (ngăn tái diễn bền vững). **A** chỉ chữa triệu chứng của 1 lỗi đơn lẻ (*Chữa ngọn*); **B** là giao tiếp thụ động chung chung; **D** là đẩy trách nhiệm sang PMO. **C** giải quyết tận **Root Cause** (yêu cầu đầu vào mơ hồ) và nâng cấp cổng kiểm soát hệ thống (`DoR` / `AC`)."
+  },
+  {
+    "id": "p14-q4",
+    "type": "tf",
+    "q": "Khi dự án bị chậm 5 ngày trên một công việc có `Total Float = 0` nhưng mức trượt này vẫn có thể khắc phục bằng cách điều phối lại nguồn lực nội bộ hoặc Fast-Tracking mà không vượt thẩm quyền ngân sách trong Project Charter, việc chọn đáp án *'Báo cáo ngay lên Project Sponsor để xin lùi ngày kết thúc dự án'* là sập bẫy **Leo thang sớm (Premature Escalation)**.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Theo phản xạ vàng của PMI (`core.mindset.escalate`), PM được trả lương để chủ động phân tích và giải quyết các biến động tiến độ trong phạm vi thẩm quyền của mình (như Fast-Tracking, Crashing trong hạn mức dự phòng). Chỉ leo thang lên Sponsor khi mọi phương án trong thẩm quyền đều bất khả thi!"
+  },
+  {
+    "id": "p14-q5",
+    "type": "mc",
+    "q": "Một thành viên mới gia nhập nhóm Hybrid ở giai đoạn giữa dự án liên tục gửi báo cáo sai định dạng và bỏ lỡ các thông báo quan trọng vì không biết nhóm lưu tài liệu ở đâu. Hai phương án tốt nhất còn lại là gì — hãy chọn phương án **THẮNG CUỘC** chuẩn PMI:",
+    "code": "",
+    "choices": [
+      "Yêu cầu Trưởng phòng nhân sự (HR) tổ chức lại khoá định hướng công ty 1 tuần cho nhân sự mới này",
+      "Phê bình thành viên đó trong buổi họp giao ban toàn dự án để làm gương về kỷ luật truyền thông",
+      "Gặp trực tiếp hỗ trợ thành viên mới nắm rõ Communications Management Plan & Team Charter, đồng thời ghép cặp một thành viên giàu kinh nghiệm kèm cặp (Onboarding/Mentoring) và bổ sung checklist hội nhập vào OPA của nhóm",
+      "Tự tay PM sửa lại mọi báo cáo của thành viên đó mỗi tuần cho đến khi dự án kết thúc"
+    ],
+    "answer": 2,
+    "explain": "**A** đẩy việc dự án sang HR; **B** vi phạm nguyên tắc tôn trọng (khen công khai, góp ý riêng tư); **D** là ôm việc làm thay khiến lỗi lặp lại mãi. **C** hội tụ trọn vẹn tư duy PMI: trực tiếp hỗ trợ + bám sát kế hoạch chuẩn (`Communications Plan` / `Team Charter`) + trao quyền kèm cặp + cải tiến quy trình hội nhập để ngừa tái diễn."
+  }
+]

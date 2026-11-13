@@ -1,0 +1,59 @@
+{
+  "id": "P15",
+  "slug": "P15-business-ai-exam-strategy",
+  "level": 5,
+  "order": 1,
+  "title": "Môi trường Kinh doanh Mới (Compliance · OCM · AI) & Chiến lược Chinh phục 54 Bộ đề",
+  "summary": "Chinh phục cú nhảy vọt Business Environment 26% của ECO 07/2026 và các phụ lục mới nhất của PMBOK 8: ưu tiên tuyệt đối Regulatory Compliance, dẫn dắt Chuyển đổi Tổ chức (OCM/ADKAR), Customer-centric PMO (X2), Quản trị AI có trách nhiệm (X3), cùng chiến thuật phân bổ 240 phút và lộ trình luyện trọn 54 bộ đề thực chiến.",
+  "motto": "Compliance First · Drive Adoption via OCM · Keep Humans in the AI Loop · Pace 80-80-80",
+  "provenance": [
+    {
+      "kind": "eco2026",
+      "label": "Business Environment 26% (ECO 07/2026)",
+      "detail": "Tăng vọt từ 8% lên 26%: Compliance, Value Alignment, OCM, ESG & AI"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Appendix X2 & X3",
+      "detail": "Customer-centric PMO (X2) & Artificial Intelligence in PM (X3)"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "54 Bộ đề & 4.318 Câu hỏi",
+      "detail": "Chiến lược nước rút từ mini-cute đến full-test-1..5"
+    }
+  ],
+  "realWorldTrap": "Xây xong phần mềm đúng hạn bàn giao rồi mặc kệ người dùng cuối không chịu xài (thiếu OCM); hoặc copy thẳng tài liệu mật/dữ liệu khách hàng (PII) dán vào công cụ GenAI công cộng để tóm tắt biên bản họp và tin mù quáng vào dự báo của AI.",
+  "pmiMindsetShift": "Giá trị chỉ thành hiện thực khi người dùng thực sự đón nhận (OCM/ADKAR) và sản phẩm tuân thủ 100% pháp luật (Compliance); AI chỉ là trợ lý tăng tốc — phải bảo vệ dữ liệu mật, kiểm tra thiên kiến (Bias) và giữ con người chịu trách nhiệm cuối cùng (Human-in-the-Loop)!",
+  "tags": [
+    "Business Environment",
+    "Compliance",
+    "OCM",
+    "ADKAR",
+    "AI in PM",
+    "Customer-centric PMO",
+    "Exam Strategy"
+  ],
+  "evidenceLinkIds": [
+    "book.value.compliance",
+    "book.business.eef-opa",
+    "book.business.pmo",
+    "view.panorama"
+  ],
+  "practice": {
+    "title": "Lộ trình Nước rút Chinh phục 54 Bộ đề trên PMP Mindmap (180 Câu / 240 Phút)",
+    "primaryLinkId": "view.practice",
+    "steps": [
+      "Chặng 1 — Khoá miền mới: Vào 'Phòng Luyện Tập Tình Huống PMP Mindmap', hoàn thành bộ 'domain-business' để làm quen mật độ câu hỏi Compliance, Benefits, OCM & EEF/OPA (mục tiêu ≥ 75%).",
+      "Chặng 2 — Khởi động & Chữa điểm mù: Luyện các đề ngắn 'mini-cute' / 'mini-test' kết hợp rà lại các câu sai trong 'domain-people' và 'domain-process'.",
+      "Chặng 3 — Luyện sức bền bán phần: Làm chuỗi 'mock-test' để rèn nhịp độ đọc 60 câu trong đúng 75–80 phút không bị hụt hơi.",
+      "Chặng 4 — Tổng duyệt phòng thi thật: Dành tối thiểu 3 buổi sáng/chiều yên tĩnh làm trọn vẹn 'full-test-1' đến 'full-test-5' (180 câu / 240 phút), áp dụng nghiêm ngặt nhịp 80' - nghỉ 10' - 80' - nghỉ 10' - 80' (khi đã bấm Submit kết thúc 60 câu mỗi chặng là khoá vĩnh viễn không sửa lại được!)."
+    ],
+    "selfCheck": [
+      "Khi luật bảo vệ dữ liệu mới ban hành giữa dự án, tôi có nhớ ưu tiên hạng mục Compliance lên đầu Backlog / Change Control thay vì trì hoãn sang bản phát hành năm sau không?",
+      "Tôi đã nắm chắc 3 lằn ranh đỏ khi ứng dụng AI trong dự án (không đưa PII/tài liệu mật lên AI công cộng, kiểm chứng Hallucination/Bias, và PM chịu trách nhiệm cuối cùng) chưa?",
+      "Trong các bài Full Mock 180 câu, tôi đã đạt ổn định ≥ 75% và luôn còn dư ít nhất 5–8 phút cuối mỗi chặng 60 câu chưa?"
+    ]
+  },
+  "decisionBranchId": "ethics"
+}

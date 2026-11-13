@@ -1,0 +1,60 @@
+{
+  "id": "P02",
+  "slug": "P02-holistic-value-sustainability",
+  "level": 1,
+  "order": 1,
+  "title": "Tư duy Hệ thống, Tập trung Giá trị & Lợi ích Bền vững (PMBOK 8 #1 · #2 · #5)",
+  "summary": "Làm chủ 3 nguyên tắc chiến lược của PMBOK® 8 (Standard §3.3, §3.4, §3.7): đánh giá hiệu ứng dây chuyền toàn cục (Holistic View), phân biệt rạch ròi Output ≠ Outcome ≠ Benefits cùng MVP vs MMF (Focus on Value), và tích hợp tiêu chuẩn bền vững ESG xuyên suốt cả quy trình lẫn vòng đời sản phẩm (Sustainability).",
+  "motto": "Bàn giao đúng kế hoạch mà vô giá trị hoặc hủy hoại dài hạn thì vẫn là dự án thất bại",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §3.3 · §3.4 · §3.7",
+      "detail": "Nguyên tắc #1 Adopt a Holistic View · #2 Focus on Value · #5 Integrate Sustainability (MỚI)"
+    },
+    {
+      "kind": "eco2026",
+      "label": "Business Environment 26%",
+      "detail": "Liên kết chiến lược, Benefits Realization, MVP/MMF và trách nhiệm bền vững ESG"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "Book Map: business & value",
+      "detail": "Đối chiếu chỉ số NPV/IRR/BCR, tam giác ràng buộc mở rộng và dòng chảy ưu tiên giá trị"
+    }
+  ],
+  "realWorldTrap": "Cắm đầu làm đủ 100% đầu việc trong WBS bất chấp thị trường đã đổi (tư duy 'đủ Output là hết trách nhiệm'), hoặc chọn vật tư giá rẻ nhất để đẹp ngân sách ngắn hạn nhưng gây ô nhiễm và đội chi phí vận hành gấp ba.",
+  "pmiMindsetShift": "PM phải nhìn dự án như một hệ thống sống gắn liền với Business Case: một biến số đổi sẽ kéo toàn bộ ràng buộc đổi theo; ưu tiên cắt lát giao giá trị sớm (MVP/MMF); sẵn sàng đề xuất dừng dự án nếu mất giá trị kinh doanh và nhúng tiêu chí bền vững ngay từ đầu.",
+  "tags": [
+    "holistic-view",
+    "focus-on-value",
+    "sustainability",
+    "mvp-vs-mmf",
+    "benefits-realization"
+  ],
+  "evidenceLinkIds": [
+    "book.business.case",
+    "book.value.mvp",
+    "book.intro.constraints",
+    "flow.value-prioritization"
+  ],
+  "practice": {
+    "title": "Ghép luồng Ưu tiên Giá trị & Luyện Mix Business + Value (10 câu)",
+    "primaryLinkId": "flow.value-prioritization",
+    "secondaryLinkIds": [
+      "view.practice",
+      "book.business.case"
+    ],
+    "steps": [
+      "Bấm nút chính để mở 'Flow Tương tác: Quy trình Ưu tiên & Bàn giao Giá trị sớm' ở chế độ Reconstruct, tự kéo-thả sắp xếp đúng 6 bước từ xác lập giá trị đến đo lường lợi ích.",
+      "Mở tiếp Phòng Luyện Tập PMP Mindmap, chọn chế độ Mix (Lọc theo chủ đề), tích chọn 2 chủ đề 'business' và 'value' với độ dài 10 câu.",
+      "Trong mỗi câu hỏi, gạch chân xem đề đang hỏi về Output (sản phẩm bàn giao), Outcome (sự thay đổi hành vi/kết quả sử dụng) hay Benefits (lợi ích chiến lược/tài chính)."
+    ],
+    "selfCheck": [
+      "Bạn đã giải thích được ngay lập tức sự khác nhau giữa MVP (kiểm chứng giả thuyết học hỏi) và MMF (tính năng nhỏ nhất sinh giá trị thương mại) chưa?",
+      "Nếu đối thủ ra mắt sản phẩm miễn phí khiến Business Case của dự án lỗ nặng dù dự án đã chạy được 70%, bạn có nhớ phản xạ chuẩn của PM không?",
+      "Bạn đã phân biệt được 'Sustainability OF the project' và 'Sustainability BY the product' trong Nguyên tắc #5 mới của PMBOK 8 chưa?"
+    ]
+  },
+  "decisionBranchId": "change"
+}

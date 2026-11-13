@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p09-c1",
+    "front": "5 giai đoạn phát triển nhóm của Tuckman và phong cách lãnh đạo phù hợp cho từng giai đoạn là gì?",
+    "back": "1. Forming → Directing (Định hướng)\n2. Storming → Coaching (Huấn luyện & Hoà giải)\n3. Norming → Supporting (Hỗ trợ)\n4. Performing → Delegating (Trao quyền)\n5. Adjourning → Ghi nhận & chuyển tiếp."
+  },
+  {
+    "id": "p09-c2",
+    "front": "Ai là người xây dựng Team Charter (Social Contract / Ground Rules) và vì sao?",
+    "back": "Do CHÍNH CẢ NHÓM DỰ ÁN cùng thảo luận và đồng thuận xây dựng ngay từ đầu (PM đóng vai điều phối), nhằm tạo quyền làm chủ và cam kết tự giác tuân thủ."
+  },
+  {
+    "id": "p09-c3",
+    "front": "Ba trụ cột tạo động lực nội tại bền vững cho người lao động tri thức (theo Daniel Pink) là gì?",
+    "back": "Autonomy (Quyền tự chủ cách làm) · Mastery (Cơ hội rèn giũa tinh thông nghề nghiệp) · Purpose (Thấy rõ ý nghĩa & giá trị công việc mang lại)."
+  },
+  {
+    "id": "p09-c4",
+    "front": "4 thành tố cốt lõi của Trí tuệ Cảm xúc (Emotional Intelligence — EI) gồm những gì?",
+    "back": "1. Self-Awareness (Tự nhận thức cảm xúc)\n2. Self-Management (Tự kiểm soát phản ứng)\n3. Social Awareness / Empathy (Thấu cảm xã hội)\n4. Relationship Management (Quản trị mối quan hệ)."
+  },
+  {
+    "id": "p09-c5",
+    "front": "Khi nào chọn Collaborate/Problem Solve và khi nào mới được chọn Force/Direct trong câu hỏi xung đột?",
+    "back": "• Collaborate (Win-Win): Ưu tiên số 1 cho hầu hết xung đột kỹ thuật/quy trình khi cần giải pháp gốc rễ và cam kết dài hạn.\n• Force (Win-Lose): Chỉ chọn trong tình huống khẩn cấp liên quan an toàn tính mạng, bảo mật hoặc tuân thủ pháp luật!"
+  },
+  {
+    "id": "p09-c6",
+    "front": "Khi một thành viên trong nhóm làm việc chậm hoặc thiếu kỹ năng, thứ tự phản xạ chuẩn PMI là gì?",
+    "back": "Gặp riêng 1-1 lắng nghe nguyên nhân gốc rễ → Tổ chức đào tạo (Training), huấn luyện hoặc ghép cặp làm việc (Mentoring / Pair Programming) — tuyệt đối KHÔNG vội sa thải hay đòi đổi người!"
+  }
+]

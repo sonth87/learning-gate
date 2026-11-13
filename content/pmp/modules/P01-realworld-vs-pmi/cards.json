@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p01-c1",
+    "front": "6 Phản xạ vàng (Golden Reflexes) giúp loại nhanh đáp án bẫy trong đề thi PMP là gì?",
+    "back": "1. Think Before Act (Phân tích & kiểm chứng trước khi hành động)\n2. Limit Escalate (Không đẩy việc trong thẩm quyền lên Sponsor)\n3. Do Not Remove (Huấn luyện/ghép cặp, không sa thải thành viên)\n4. Follow the Process (Tôn trọng Change Control & thẩm quyền vai trò)\n5. Direct Communication (Gặp trực tiếp 1-1 trước)\n6. Confront Problems (Đối diện sớm bằng Collaborate/Problem Solve)"
+  },
+  {
+    "id": "p01-c2",
+    "front": "Vì sao tự ý làm thêm tính năng nhỏ 'miễn phí' để chiều khách (Gold Plating) luôn là đáp án SAI trong PMP?",
+    "back": "Vì mọi dòng code hay hạng mục thêm vào ngoài Scope Baseline đều tiêu tốn công sức kiểm thử, tiềm ẩn rủi ro lỗi mới, tăng chi phí bảo trì và không được thẩm định giá trị chính thức qua Change Control."
+  },
+  {
+    "id": "p01-c3",
+    "front": "Gặp câu hỏi 'What should the PM do FIRST?' khi vừa nghe một thông tin tiêu cực hoặc sự cố mới, bước đầu tiên là gì?",
+    "back": "Dừng lại xác thực thông tin tại nguồn (Verify/Investigate), xem lại kế hoạch/tài liệu hiện hành và đánh giá tác động (Assess impact) cùng nhóm — tuyệt đối chưa vội đổi Baseline hay báo Sponsor."
+  },
+  {
+    "id": "p01-c4",
+    "front": "Khi nào Project Manager MỚI ĐƯỢC PHÉP leo thang (Escalate) vấn đề lên Project Sponsor?",
+    "back": "Khi vấn đề vượt khỏi thẩm quyền Project Charter của PM:\n• Vượt dung sai Baseline / cần giải ngân Management Reserve (khi không có CCB riêng)\n• Business Case mất tính khả thi (cần dừng/đổi hướng dự án)\n• Rủi ro chiến lược ảnh hưởng cấp chương trình/tổ chức.\n(Luôn mang kèm phân tích tác động & khuyến nghị!)."
+  },
+  {
+    "id": "p01-c5",
+    "front": "Khi một thành viên trong nhóm làm việc kém hiệu quả hoặc thiếu kỹ năng, phản xạ chuẩn PMI là gì?",
+    "back": "Gặp trao đổi riêng 1-1 (Direct & Private) để tìm nguyên nhân gốc rễ, sau đó hỗ trợ đào tạo (Training), huấn luyện (Coaching) hoặc ghép cặp (Pairing/Mentoring). Không bao giờ sa thải hay phê bình trước tập thể."
+  },
+  {
+    "id": "p01-c6",
+    "front": "Kỹ thuật giải quyết xung đột nào luôn được PMI ưu tiên cao nhất khi có đủ thời gian và thiện chí hợp tác?",
+    "back": "Collaborate / Problem Solve (Hợp tác / Giải quyết vấn đề): đối thoại trực tiếp, nhìn vào dữ liệu khách quan để tìm giải pháp Win-Win bền vững thay vì né tránh (Withdraw) hay áp đặt (Force)."
+  }
+]

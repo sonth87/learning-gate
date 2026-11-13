@@ -1,0 +1,60 @@
+{
+  "id": "P01",
+  "slug": "P01-realworld-vs-pmi",
+  "level": 0,
+  "order": 2,
+  "title": "Từ 'Kinh nghiệm chữa cháy đời thực' sang 'Thế giới kỷ luật của PMI'",
+  "summary": "Phẫu thuật trực diện 6 thói quen quản lý dự án ngoài đời thực khiến người càng nhiều năm kinh nghiệm càng dễ mất điểm PMP, và cài đặt bộ lọc 6 Phản xạ vàng (Think Before Act · Limit Escalate · Do Not Remove · Follow the Process · Direct Communication · Confront Problems).",
+  "motto": "Tạm gác phản xạ chữa cháy · Đội chiếc mũ PM kỷ luật, chính trực và phân tích tại nguồn",
+  "provenance": [
+    {
+      "kind": "pma-bridge",
+      "label": "6 Phản xạ vàng PMA",
+      "detail": "Bộ quy tắc lọc đáp án nhanh nhất cho câu hỏi FIRST / NEXT / BEST từ Core Mindset"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §2–§3",
+      "detail": "Nền tảng Quản trị (Governance), Lãnh đạo có trách nhiệm và Văn hoá trao quyền"
+    },
+    {
+      "kind": "eco2026",
+      "label": "People 33% & Process 41%",
+      "detail": "Trọng tâm giải quyết xung đột cộng tác, không đẩy trách nhiệm và tuân thủ kiểm soát thay đổi"
+    }
+  ],
+  "realWorldTrap": "Thấy sự cố là nhảy vào sửa ngay cho nhanh, gặp khách khó là chạy lên méc Sponsor, thấy dev làm chậm là đòi đổi người, hoặc âm thầm sửa thêm code chiều lòng khách hàng thân thiết.",
+  "pmiMindsetShift": "Trong thế giới PMI, PM là nhà lãnh đạo tự chủ và có hệ thống: luôn kiểm tra dữ liệu gốc trước khi hành động, giải quyết vấn đề ở cấp thẩm quyền của mình, nói chuyện trực tiếp 1-1, huấn luyện thay vì sa thải và tuyệt đối tôn trọng quy trình.",
+  "tags": [
+    "pmi-mindset",
+    "pma-golden-reflexes",
+    "first-next-best",
+    "escalation",
+    "gold-plating"
+  ],
+  "evidenceLinkIds": [
+    "core.mindset.think",
+    "core.mindset.escalate",
+    "core.mindset.direct",
+    "core.mindset.process"
+  ],
+  "practice": {
+    "title": "Đối chiếu 2 hình mẫu PM trên Core Map & Luyện đề Mini-Cute #2 (10 câu)",
+    "primaryLinkId": "view.practice",
+    "secondaryLinkIds": [
+      "core.mindset.think",
+      "core.mindset.escalate"
+    ],
+    "steps": [
+      "Mở các điểm neo 'core.mindset.*' ở mục Dẫn chứng phía trên để xem sơ đồ đối chiếu trực quan giữa PM phản xạ sai và PM chuẩn PMI.",
+      "Bấm vào Phòng Luyện Tập PMP Mindmap, chọn mục Mini-Cute và làm bộ đề 'mini-cute-2' (10 câu) trong 12 phút.",
+      "Trước khi chốt mỗi đáp án, tự hỏi: Phương án này có đang vi phạm 1 trong 6 điều cấm kỵ (hành động chưa phân tích, leo thang vội, đuổi người, lách quy trình, né xung đột, gửi email dằn mặt) không?"
+    ],
+    "selfCheck": [
+      "So với điểm số ở 'mini-cute-1', bạn đã loại bỏ được nhanh ít nhất 2 đáp án nhiễu mang tính 'chữa cháy cảm tính' trong mỗi câu hỏi chưa?",
+      "Bạn đã thuộc lòng 3 trường hợp hiếm hoi ĐƯỢC PHÉP leo thang lên Project Sponsor chưa?",
+      "Khi thấy hai thành viên tranh cãi gay gắt, phản xạ đầu tiên của bạn đã chuyển từ 'báo trưởng phòng chức năng' sang 'tạo không gian trao đổi trực tiếp / đối chiếu Team Charter' chưa?"
+    ]
+  },
+  "decisionBranchId": "team-conflict"
+}

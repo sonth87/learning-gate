@@ -302,3 +302,89 @@ export const CicdMasteryLogo: React.FC<AppLogoProps> = ({ className }) => (
     <circle cx="90" cy="95" r="4" fill="#34D399" />
   </svg>
 );
+
+/**
+ * 4. PMP Mastery (PmpMastery) Custom Vector Brand Logo
+ * Strategic Amber/Gold Value Compass + People/Process/Business Triad Ring.
+ */
+export const PmpMasteryLogo: React.FC<AppLogoProps> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 120 120"
+    fill="none"
+    aria-hidden="true"
+    className={cn('w-full h-full select-none', className)}
+  >
+    <defs>
+      <linearGradient id="pmpBg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#3B1D06" />
+        <stop offset="50%" stopColor="#1C1917" />
+        <stop offset="100%" stopColor="#090D16" />
+      </linearGradient>
+      <radialGradient id="pmpGlow" cx="60" cy="58" r="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.4" />
+        <stop offset="60%" stopColor="#EA580C" stopOpacity="0.14" />
+        <stop offset="100%" stopColor="#020617" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id="pmpRim" x1="10" y1="8" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FDE68A" stopOpacity="0.85" />
+        <stop offset="50%" stopColor="#F59E0B" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="#FB923C" stopOpacity="0.7" />
+      </linearGradient>
+      <linearGradient id="pmpRing" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FEF3C7" />
+        <stop offset="50%" stopColor="#F59E0B" />
+        <stop offset="100%" stopColor="#D97706" />
+      </linearGradient>
+      <linearGradient id="pmpNorth" x1="60" y1="20" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FEF08A" />
+        <stop offset="100%" stopColor="#F59E0B" />
+      </linearGradient>
+      <linearGradient id="pmpSouth" x1="60" y1="60" x2="60" y2="100" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FB923C" />
+        <stop offset="100%" stopColor="#9A3412" />
+      </linearGradient>
+    </defs>
+
+    <rect width="120" height="120" rx="26" fill="url(#pmpBg)" />
+    <circle cx="60" cy="58" r="54" fill="url(#pmpGlow)" />
+    <rect x="2.5" y="2.5" width="115" height="115" rx="24" stroke="url(#pmpRim)" strokeWidth="2.5" />
+
+    {/* Outer Strategic Compass Ring */}
+    <circle cx="60" cy="60" r="41" stroke="url(#pmpRing)" strokeWidth="3" strokeOpacity="0.65" fill="#0F172A" fillOpacity="0.55" />
+    <circle cx="60" cy="60" r="33" stroke="#FBBF24" strokeWidth="1.4" strokeOpacity="0.32" strokeDasharray="3 3" />
+
+    {/* Cardinal Ticks */}
+    <g stroke="#FDE68A" strokeWidth="2.5" strokeLinecap="round">
+      <line x1="60" y1="14" x2="60" y2="21" />
+      <line x1="60" y1="99" x2="60" y2="106" />
+      <line x1="14" y1="60" x2="21" y2="60" />
+      <line x1="99" y1="60" x2="106" y2="60" />
+    </g>
+
+    {/* Value Delivery Diamond Backdrop */}
+    <polygon
+      points="60,31 89,60 60,89 31,60"
+      fill="#451A03"
+      fillOpacity="0.7"
+      stroke="#F59E0B"
+      strokeOpacity="0.55"
+      strokeWidth="1.8"
+    />
+
+    {/* 4-Point Mindset Compass Star */}
+    <polygon points="60,21 70,60 60,53 50,60" fill="url(#pmpNorth)" />
+    <polygon points="60,99 70,60 60,67 50,60" fill="url(#pmpSouth)" />
+    <polygon points="23,60 60,51 54,60 60,69" fill="#FBBF24" fillOpacity="0.85" />
+    <polygon points="97,60 60,51 66,60 60,69" fill="#F59E0B" fillOpacity="0.85" />
+
+    {/* Center Governance Hub */}
+    <circle cx="60" cy="60" r="9.5" fill="#090D16" stroke="#FDE68A" strokeWidth="2.4" />
+    <circle cx="60" cy="60" r="4" fill="#F59E0B" />
+
+    {/* ECO Triad Corner Nodes (People · Process · Business) */}
+    <circle cx="31" cy="31" r="4" fill="#34D399" stroke="#022C22" strokeWidth="1.2" />
+    <circle cx="89" cy="31" r="4" fill="#38BDF8" stroke="#082F49" strokeWidth="1.2" />
+    <circle cx="89" cy="89" r="4" fill="#FBBF24" stroke="#451A03" strokeWidth="1.2" />
+  </svg>
+);

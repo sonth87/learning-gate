@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p09-q1",
+    "type": "mc",
+    "q": "Đội dự án mới thành lập thường xuyên xảy ra tình trạng thành viên vào họp trễ 15 phút, ngắt lời nhau gay gắt khi thảo luận thiết kế và không thống nhất giờ phản hồi tin nhắn. Để ngăn chặn tận gốc sự lộn xộn này và xây dựng văn hoá tự giác, Project Manager nên làm gì?",
+    "code": "",
+    "choices": [
+      "Tự soạn một bản nội quy kỷ luật nghiêm khắc và gửi email yêu cầu cả nhóm ký cam kết tuân thủ.",
+      "Báo cáo danh sách những người đi trễ cho Giám đốc Nhân sự trừ lương hàng tháng.",
+      "Tổ chức buổi workshop để toàn bộ thành viên cùng nhau thảo luận, thống nhất các quy tắc ứng xử chung (Ground Rules) và đưa vào Team Charter.",
+      "Huỷ bỏ toàn bộ các cuộc họp chung và chuyển sang làm việc qua email cá nhân."
+    ],
+    "answer": 2,
+    "explain": "Theo Nguyên tắc #6 (Empowered Culture) và quy trình Lead the Team, Team Charter / Ground Rules phát huy hiệu lực cao nhất khi do CHÍNH CẢ NHÓM đồng kiến tạo (co-create). Khi tự đặt ra luật chơi, các thành viên sẽ có cam kết nội tại và tự nhắc nhở nhau thực hiện."
+  },
+  {
+    "id": "p09-q2",
+    "type": "mc",
+    "q": "Hai kỹ sư chính trong nhóm tranh luận nảy lửa suốt hai ngày về việc chọn kiến trúc cơ sở dữ liệu quan hệ hay NoSQL, làm đình trệ công việc của Sprint và gây không khí căng thẳng trong phòng họp. Cả hai phương án đều có ưu nhược điểm kỹ thuật riêng. Là Project Manager, bạn nên chọn cách tiếp cận nào?",
+    "code": "",
+    "choices": [
+      "Tự mình quyết định chọn cơ sở dữ liệu quen thuộc hơn để dập tắt tranh cãi ngay lập tức (Force).",
+      "Tách hai kỹ sư sang hai mảng việc khác nhau để họ không phải nói chuyện với nhau nữa (Withdraw).",
+      "Tạo không gian trao đổi riêng và cùng hai kỹ sư đối chiếu dữ liệu hiệu năng, yêu cầu phi chức năng để hợp tác tìm giải pháp tối ưu nhất cho dự án (Collaborate / Problem Solve).",
+      "Leo thang vấn đề lên Project Sponsor để Sponsor chọn hộ kiến trúc cơ sở dữ liệu."
+    ],
+    "answer": 2,
+    "explain": "Đây là xung đột kỹ thuật quan trọng cần sự cam kết lâu dài của cả hai kỹ sư. Collaborate / Problem Solve (Win-Win) dựa trên tiêu chí khách quan và dữ liệu thử nghiệm thực tế luôn là lựa chọn ưu tiên số 1 của PMI."
+  },
+  {
+    "id": "p09-q3",
+    "type": "mc",
+    "q": "Nhóm dự án phần mềm gồm 7 người đã làm việc ăn ý với nhau suốt 8 tháng ở trạng thái hiệu suất đỉnh cao (Performing). Tuần này, dự án được bổ sung thêm 2 chuyên gia bảo mật mới để làm tính năng thanh toán quốc tế. Trên thang Tuckman, nhóm sẽ chuyển sang giai đoạn nào và PM nên làm gì?",
+    "code": "",
+    "choices": [
+      "Vẫn giữ nguyên ở giai đoạn Performing vì 7 người cũ chiếm đa số; PM không cần can thiệp gì.",
+      "Quay trở lại giai đoạn Forming; PM cần hỗ trợ giới thiệu vai trò, định hướng mục tiêu rõ ràng và cùng cả nhóm rà soát cập nhật lại Team Charter.",
+      "Chuyển thẳng sang giai đoạn Adjourning đối với đội hình cũ.",
+      "Tách 2 chuyên gia mới thành một nhóm độc lập để không ảnh hưởng tới đội 7 người."
+    ],
+    "answer": 1,
+    "explain": "Quy luật cốt lõi của mô hình Tuckman: bất kỳ sự thay đổi nào về thành phần nhân sự (thêm người mới hoặc rút người chủ chốt) đều đưa động học của toàn nhóm quay lại giai đoạn Forming để thiết lập lại sự tin cậy và quy ước phối hợp."
+  },
+  {
+    "id": "p09-q4",
+    "type": "mc",
+    "q": "Một chuyên viên kiểm thử vốn rất tận tâm bỗng nhiên hoàn thành công việc chậm trễ và mắc nhiều sai sót sơ đẳng trong 2 tuần gần đây. Là Project Manager có Trí tuệ Cảm xúc (Emotional Intelligence) cao, hành động ĐẦU TIÊN của bạn nên là gì?",
+    "code": "",
+    "choices": [
+      "Nhắc nhở công khai sai sót của chuyên viên đó trong buổi họp Daily Standup để làm gương cho cả đội.",
+      "Gửi yêu cầu cho Trưởng phòng QA đề nghị đổi một nhân sự kiểm thử khác có năng lực tốt hơn.",
+      "Mời chuyên viên đó trò chuyện riêng 1-1 trong không gian tin cậy, lắng nghe thấu cảm để tìm hiểu nguyên nhân gốc rễ và cùng bàn hướng tháo gỡ hoặc hỗ trợ đào tạo.",
+      "Tự tay phân chia lại toàn bộ công việc kiểm thử cho các lập trình viên làm thay."
+    ],
+    "answer": 2,
+    "explain": "Phản xạ vàng của PMI kết hợp EI (Empathy): luôn gặp riêng 1-1 trực tiếp (private, informal conversation) để tìm hiểu nguyên nhân thực sự (cản trở kỹ thuật, quá tải hay biến cố cá nhân) trước khi đưa ra bất kỳ biện pháp hỗ trợ nào; tuyệt đối không bêu tên công khai hay vội đuổi người."
+  },
+  {
+    "id": "p09-q5",
+    "type": "mc",
+    "q": "Tại công trường lắp đặt thiết bị điện cao thế, hai trưởng nhóm thi công đang cãi nhau xem nên ngắt nguồn điện tổng ngay hay chờ làm nốt mối đấu nối cuối cùng trong khi khói khét vừa bốc lên từ tủ điều khiển. Trong khoảnh khắc nguy hiểm tức thời này, PM nên áp dụng phong cách xử lý xung đột nào?",
+    "code": "",
+    "choices": [
+      "Collaborate / Problem Solve — triệu tập cuộc họp 60 phút để phân tích sơ đồ mạch điện.",
+      "Force / Direct — ra lệnh dứt khoát ngắt nguồn điện và sơ tán khu vực ngay lập tức để bảo vệ an toàn tính mạng.",
+      "Withdraw / Avoid — rời khỏi hiện trường để hai trưởng nhóm tự thương lượng.",
+      "Smooth / Accommodate — khen ngợi tinh thần trách nhiệm của cả hai bên trước."
+    ],
+    "answer": 1,
+    "explain": "Đây là ngoại lệ kinh điển trong đề thi PMP! Khi đối mặt với tình huống khẩn cấp đe doạ an toàn tính mạng hoặc vi phạm pháp luật nghiêm trọng không có thời gian bàn bạc, Force / Direct (Quyết đoán chỉ đạo ngay lập tức) là lựa chọn đúng đắn duy nhất."
+  },
+  {
+    "id": "p09-q6",
+    "type": "tf",
+    "q": "Đối với nhóm làm việc phân tán đa quốc gia (Virtual Team), việc chỉ giao tiếp thuần tuý bằng tin nhắn văn bản bất đồng bộ là đủ; tổ chức các phiên họp bật camera định kỳ trong khung giờ giao thoa (overlap hours) là lãng phí thời gian không cần thiết.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Tin nhắn văn bản thuần tuý làm mất tới phần lớn tín hiệu phi ngôn ngữ, dễ gây hiểu lầm văn hoá và cảm giác cô lập. Nhóm phân tán rất cần các khung giờ giao thoa hợp lý và tương tác trực tiếp (video/virtual team-building) để bồi đắp lòng tin và an toàn tâm lý."
+  }
+]

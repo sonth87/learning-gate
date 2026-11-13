@@ -2,10 +2,12 @@ import { useStore, type AppConfig } from '@sonth87/device-layout';
 import { PyMasteryApp } from './pymastery/PyMasteryApp';
 import { KubeMasteryApp } from './kubemastery/KubeMasteryApp';
 import { CicdMasteryApp } from './cicdmastery/CicdMasteryApp';
+import { PmpMasteryApp } from './pmpmastery/PmpMasteryApp';
 import {
   PyMasteryLogo,
   KubeMasteryLogo,
   CicdMasteryLogo,
+  PmpMasteryLogo,
 } from '@/components/common/AppLogos';
 
 export const PYMASTERY_CONFIG: AppConfig = {
@@ -226,19 +228,91 @@ export const CICD_MASTERY_CONFIG: AppConfig = {
   ],
 };
 
+export const PMP_MASTERY_CONFIG: AppConfig = {
+  id: 'pmpmastery',
+  name: 'PMP Mastery',
+  icon: PmpMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
+  iconColor: ['#F59E0B', '#D97706'],
+  render: PmpMasteryApp,
+  defaultMaximized: false,
+  defaultFullscreen: true,
+  mobileFullscreen: true,
+  defaultSize: { width: 1300, height: 840 },
+  minSize: { width: 320, height: 420 },
+  hasMenuBar: true,
+  launchMode: 'single',
+  contextMenu: [
+    { key: 'search', label: 'Tìm kiếm nhanh (⌘K)', action: 'quickSearch' },
+    { key: 'sep1', label: '', action: '', separator: true },
+    { key: 'learn', label: 'Học tư duy — 16 module, quiz, dẫn chứng', action: 'tab:learn' },
+    { key: 'canvas', label: 'PMP Mindset Canvas (1 trang)', action: 'tab:canvas' },
+    { key: 'decision', label: 'Cây quyết định tình huống', action: 'tab:decision' },
+    { key: 'lookup', label: 'Bảng đối chiếu & Kho Deep Link', action: 'tab:lookup' },
+    { key: 'sep2', label: '', action: '', separator: true },
+    { key: 'mindmap', label: 'Mở PMP Mindmap (Tab mới ↗)', action: 'openMindmapExternal' },
+  ],
+  menuBarMenus: [
+    {
+      label: 'File',
+      items: [
+        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+      ],
+    },
+    {
+      label: 'View',
+      items: [
+        { key: 'learn', label: 'Học tư duy — 16 module, quiz, SRS', shortcut: '⌘1', action: 'tab:learn' },
+        { key: 'canvas', label: 'PMP Mindset Canvas (1 trang)', shortcut: '⌘2', action: 'tab:canvas' },
+        { key: 'decision', label: 'Cây quyết định tình huống', shortcut: '⌘3', action: 'tab:decision' },
+        { key: 'lookup', label: 'Bảng đối chiếu & Kho Deep Link', shortcut: '⌘4', action: 'tab:lookup' },
+        { key: 'sepv', label: '', separator: true },
+        { key: 'mindmap', label: 'Mở PMP Mindmap (Tab mới ↗)', action: 'openMindmapExternal' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
+      ],
+    },
+    {
+      label: 'Window',
+      items: [
+        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
+        { key: 'zoom', label: 'Zoom', action: 'zoom' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
+      ],
+    },
+    {
+      label: 'Help',
+      items: [
+        { key: 'canvas-help', label: 'PMP Mindset Canvas (PMBOK 8 & ECO 2026)', action: 'tab:canvas' },
+        { key: 'mindmap-help', label: 'PMP Mindmap Companion App ↗', action: 'openMindmapExternal' },
+      ],
+    },
+  ],
+};
+
+export type LearningAppId = 'pymastery' | 'kubemastery' | 'cicdmastery' | 'pmpmastery';
+
 export const ALL_LEARNING_APPS: AppConfig[] = [
   PYMASTERY_CONFIG,
   CICD_MASTERY_CONFIG,
   KUBEMASTERY_CONFIG,
+  PMP_MASTERY_CONFIG,
 ];
 
 export const switchLearningApp = (
-  targetAppId: 'pymastery' | 'kubemastery' | 'cicdmastery'
+  targetAppId: LearningAppId
 ) => {
   try {
     const store = useStore.getState();
     const targetConfig =
-      targetAppId === 'cicdmastery'
+      targetAppId === 'pmpmastery'
+        ? PMP_MASTERY_CONFIG
+        : targetAppId === 'cicdmastery'
         ? CICD_MASTERY_CONFIG
         : targetAppId === 'kubemastery'
         ? KUBEMASTERY_CONFIG

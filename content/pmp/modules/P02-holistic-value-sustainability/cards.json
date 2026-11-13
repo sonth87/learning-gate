@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p02-c1",
+    "front": "Phân biệt 3 tầng Output · Outcome · Benefits trong Nguyên tắc #2 (Focus on Value) của PMBOK 8?",
+    "back": "• Output (Deliverable): Sản phẩm/tài liệu tạo ra (VD: phần mềm CRM mới).\n• Outcome: Kết quả thay đổi hành vi/năng lực khi đưa vào dùng (VD: nhân viên sales tra cứu lịch sử khách nhanh gấp 3 lần).\n• Benefits: Lợi ích định lượng/chiến lược thu được (VD: tăng 18% tỷ lệ chốt đơn, NPV dương)."
+  },
+  {
+    "id": "p02-c2",
+    "front": "MVP (Minimum Viable Product) khác MMF (Minimum Marketable Feature) ở điểm quyết định nào?",
+    "back": "• MVP: Nhằm HỌC HỎI & KIỂM CHỨNG GIẢ THUYẾT rủi ro cao với chi phí/thời gian tối thiểu.\n• MMF: Nhằm BÀN GIAO GIÁ TRỊ THỰC TẾ / DOANH THU từ tập tính năng hoàn chỉnh nhỏ nhất mà người dùng sẵn sàng sử dụng hoặc trả tiền."
+  },
+  {
+    "id": "p02-c3",
+    "front": "Nguyên tắc #1 (Adopt a Holistic View) của PMBOK 8 yêu cầu PM làm gì khi có 1 biến số dự án thay đổi?",
+    "back": "Luôn đánh giá tác động dây chuyền lên toàn bộ hệ thống: Scope ↔ Schedule ↔ Finance ↔ Quality ↔ Resources ↔ Risk, cũng như sự tương thích với môi trường bên ngoài và bộ phận Vận hành trước khi ra quyết định."
+  },
+  {
+    "id": "p02-c4",
+    "front": "Hai chiều của Nguyên tắc #5 mới 'Integrate Sustainability Within All Project Areas' (PMBOK 8 §3.7) là gì?",
+    "back": "1. Sustainability OF the project: Bền vững trong cách triển khai dự án (mua sắm xanh, đạo đức lao động, an toàn & sức khoẻ nhóm).\n2. Sustainability BY the product: Bền vững suốt vòng đời vận hành và thải bỏ của sản phẩm sau khi đóng dự án (ESG, tiết kiệm tài nguyên, Life-cycle Cost)."
+  },
+  {
+    "id": "p02-c5",
+    "front": "Nếu dự án đã chạy được 80% nhưng bối cảnh thay đổi khiến Business Case không còn mang lại giá trị, PM phải làm gì?",
+    "back": "Không rơi vào bẫy Chi phí chìm (Sunk Cost)! PM phải đánh giá lại Business Case & Benefits Management Plan, rồi báo cáo minh bạch kèm khuyến nghị lên Project Sponsor để xem xét chuyển hướng hoặc dừng dự án có kiểm soát."
+  }
+]

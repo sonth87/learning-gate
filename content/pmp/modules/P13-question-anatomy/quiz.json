@@ -1,0 +1,67 @@
+[
+  {
+    "id": "p13-q1",
+    "type": "mc",
+    "q": "Bạn đang quản lý dự án chuyển đổi lõi ngân hàng kéo dài 18 tháng với Scope Baseline đã khoá. Chiều nay, Trưởng phòng Kinh doanh gửi email yêu cầu bổ sung gấp tính năng định danh sinh trắc học mới. Bạn **đã họp cùng nhóm kỹ thuật phân tích xong toàn bộ tác động** lên lịch biểu, chi phí, rủi ro và lập phương án kỹ thuật khả thi. Bạn nên làm gì **NEXT**?",
+    "code": "",
+    "choices": [
+      "Họp lại với nhóm kỹ thuật lần nữa để phân tích tác động của yêu cầu đối với tiến độ và ngân sách",
+      "Chỉ đạo đội lập trình bắt tay vào viết module sinh trắc học ngay để kịp tiến độ",
+      "Đệ trình chính thức Change Request kèm kết quả đánh giá tác động lên Change Control Board (CCB) theo Change Management Plan",
+      "Yêu cầu Product Owner đưa tính năng này lên đầu Sprint Backlog của tuần tới"
+    ],
+    "answer": 2,
+    "explain": "Đọc kỹ mốc thời gian trong đề: bước *'phân tích toàn bộ tác động'* **ĐÃ LÀM XONG RỒI**! Vì vậy bước **NEXT** trong dự án Predictive không phải là phân tích lặp lại nữa (loại A), càng không được tự code trước khi duyệt (loại B) hay dùng vai trò Agile sai bối cảnh (loại D), mà là **trình Change Request kèm bản đánh giá tác động lên CCB**."
+  },
+  {
+    "id": "p13-q2",
+    "type": "mc",
+    "q": "Tại buổi nghiệm thu giai đoạn cuối của dự án xây dựng cổng dịch vụ công, Giám đốc Sở Tư pháp — người chưa từng được mời tham gia các cuộc họp trước đây — bất ngờ bác bỏ sản phẩm vì thiếu trường lưu trữ chữ ký số theo thông tư ngành. Project Manager **LẼ RA NÊN LÀM GÌ (SHOULD HAVE DONE)** để ngăn chặn tình huống này?",
+    "code": "",
+    "choices": [
+      "Lập tức nộp Change Request để bổ sung trường chữ ký số vào hệ thống",
+      "Ghi nhận vấn đề vào Issue Log và thương lượng xin gia hạn lịch bàn giao thêm 3 tuần",
+      "Thực hiện nhận diện toàn diện các bên liên quan (Identify Stakeholders) và thu thập đầy đủ yêu cầu tuân thủ pháp lý ngay từ giai đoạn khởi tạo và lập kế hoạch",
+      "Báo cáo lên Project Sponsor để can thiệp với Giám đốc Sở Tư pháp"
+    ],
+    "answer": 2,
+    "explain": "Câu chốt hỏi **SHOULD HAVE DONE** (biện pháp phòng ngừa ở quá khứ), không hỏi cách chữa cháy hiện tại! Đáp án A và B là hành động khắc phục sau khi sự cố đã nổ ra; chỉ có C chỉ đúng lỗ hổng gốc rễ ở giai đoạn đầu là bỏ sót Key Stakeholder và yêu cầu pháp lý ngành."
+  },
+  {
+    "id": "p13-q3",
+    "type": "mc",
+    "q": "Trong buổi chạy thử nghiệm dây chuyền lắp ráp pin xe điện mới, một kỹ thuật viên báo cáo phát hiện mùi khét nhẹ và nhiệt độ buồng sạc vượt ngưỡng an toàn cho phép, dù chỉ còn 2 giờ nữa là tới buổi trình diễn quan trọng trước Hội đồng Quản trị. Project Manager nên làm gì **FIRST**?",
+    "code": "",
+    "choices": [
+      "Tiếp tục cho chạy nốt buổi trình diễn trong 2 giờ tới rồi mới tắt máy kiểm tra chi tiết",
+      "Ghi nhận rủi ro vào Risk Register để thảo luận trong cuộc họp tuần tới",
+      "Cho dừng vận hành buồng sạc ngay lập tức theo quy trình an toàn để bảo vệ tính mạng con người và kiểm tra nguyên nhân sự cố",
+      "Gửi email xin phép Hội đồng Quản trị xem có nên dừng buổi trình diễn hay không"
+    ],
+    "answer": 2,
+    "explain": "Đây là ngoại lệ tối thượng của quy tắc 'không hành động vội': khi xuất hiện nguy cơ **mất an toàn tính mạng / cháy nổ / vi phạm pháp luật nghiêm trọng**, tầng #1 của Phễu PMI yêu cầu **DỪNG NGAY LẬP TỨC để đảm bảo an toàn con người** trước mọi lịch trình hay buổi demo!"
+  },
+  {
+    "id": "p13-q4",
+    "type": "mc",
+    "q": "Một nhóm Agile đang phát triển ứng dụng đặt lịch khám bệnh trực tuyến. Khi hỗ trợ nhóm giải quyết tình trạng Velocity sụt giảm trong 2 Sprint gần đây, Project Manager (đóng vai trò Servant Leader) nên thực hiện tất cả các hành động dưới đây, **NGOẠI TRỪ (EXCEPT)**:",
+    "code": "",
+    "choices": [
+      "Tạo không gian an toàn tâm lý trong buổi Sprint Retrospective để nhóm thẳng thắn tìm nguyên nhân gốc rễ",
+      "Chủ động làm việc với bộ phận Hạ tầng để gỡ bỏ điểm nghẽn môi trường test đang làm chậm nhóm",
+      "Áp chỉ tiêu Velocity tối thiểu cho từng cá nhân và công khai bảng xếp hạng Story Points với các nhóm khác để thúc đẩy thi đua",
+      "Cùng nhóm kiểm tra lại giới hạn WIP và mức độ sẵn sàng (DoR) của các User Story đầu vào"
+    ],
+    "answer": 2,
+    "explain": "Chú ý từ khoá đảo ngược **NGOẠI TRỪ (EXCEPT)**! A, B, D đều là chuẩn mực vàng của Servant Leader. Duy nhất **C là hành vi sai nghiêm trọng theo PMI**: biến `Velocity` / `Story Points` thành KPI cá nhân và đem so sánh giữa các nhóm sẽ phá huỷ niềm tin và dẫn tới thổi phồng điểm ước lượng."
+  },
+  {
+    "id": "p13-q5",
+    "type": "tf",
+    "q": "Trong một câu hỏi tình huống dài 6 dòng, nếu 3 dòng đầu mô tả dự án phát triển phần mềm theo **Scrum (Sprint 2 tuần, có Product Owner và Scrum Master)** thì khi khách hàng muốn đổi độ ưu tiên của 2 tính năng chưa làm, đáp án yêu cầu *'Đóng băng Product Backlog và trình Change Control Board (CCB) xét duyệt'* là đáp án sai bối cảnh vòng đời.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Trong Agile/Scrum thuần tuý, `Product Backlog` vốn dĩ là danh sách sống động được cập nhật và sắp xếp lại độ ưu tiên liên tục bởi **Product Owner** để tối đa hoá giá trị — việc đem cơ chế đóng băng và trình `CCB` của Predictive lắp vào Backlog nội bộ là bẫy râu ông nọ cắm cằm bà kia."
+  }
+]

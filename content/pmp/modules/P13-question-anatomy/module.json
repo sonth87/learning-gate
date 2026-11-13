@@ -1,0 +1,56 @@
+{
+  "id": "P13",
+  "slug": "P13-question-anatomy",
+  "level": 4,
+  "order": 1,
+  "title": "Phẫu thuật Câu hỏi Tình huống: Đọc ngược từ khoá FIRST · NEXT · BEST · NOT",
+  "summary": "Làm chủ quy trình 4 bước giải phẫu đề PMP dài 4–6 dòng chỉ trong 65 giây: đọc câu chốt cuối cùng trước để khóa loại hành động (FIRST/NEXT vs BEST vs SHOULD HAVE vs NOT), quét ra-đa vòng đời dự án, tách nhiễu cảm xúc khỏi vấn đề gốc và lọc đáp án qua 4 tầng ưu tiên PMI.",
+  "motto": "Read the Last Sentence First · Detect the Lifecycle · Strip the Noise · Think Before Acting",
+  "provenance": [
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Core Mindset #5 & #4",
+      "detail": "Phân tích trước khi hành động & Tuân thủ quy trình"
+    },
+    {
+      "kind": "eco2026",
+      "label": "180 Câu / 240 Phút (~80s/câu)",
+      "detail": "Tối ưu tốc độ đọc hiểu câu hỏi tình huống dài"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "Tailoring & Governance Flow",
+      "detail": "Khớp đúng bối cảnh Predictive / Agile / Hybrid trước khi chọn"
+    }
+  ],
+  "realWorldTrap": "Đọc tuần tự từ chữ đầu tiên, bị cuốn vào 3 dòng kể lể bối cảnh ngành nghề, rồi vừa thấy một phương án 'giải quyết xong luôn vấn đề' là chọn ngay dù câu hỏi đang hỏi 'nên làm gì ĐẦU TIÊN (FIRST)'.",
+  "pmiMindsetShift": "Đọc câu hỏi chốt cuối cùng TRƯỚC TIÊN để định vị mắt xích trên trục thời gian: hỏi FIRST/NEXT thì tìm bước xác minh/đánh giá/trò chuyện; hỏi BEST thì tìm giải pháp xử lý tận gốc; hỏi SHOULD HAVE DONE thì quay ngược về khâu lập kế hoạch/phòng ngừa!",
+  "tags": [
+    "Exam Technique",
+    "Question Anatomy",
+    "FIRST vs BEST",
+    "Lifecycle Signals",
+    "65-Second Rule"
+  ],
+  "evidenceLinkIds": [
+    "core.mindset.think",
+    "core.mindset.process",
+    "book.governance.wpd"
+  ],
+  "practice": {
+    "title": "Thực chiến Kỹ thuật Đọc câu chốt trước trên Đề Mini-Test-1 (30 câu)",
+    "primaryLinkId": "view.practice",
+    "steps": [
+      "Mở 'Phòng Luyện Tập Tình Huống PMP Mindmap', chọn bộ đề 'mini-test-1' (30 câu tình huống chuẩn cấu trúc thi thật) và bật đồng hồ đếm ngược 38 phút (~75 giây/câu).",
+      "Áp dụng kỷ luật sắt ở cả 30 câu: mắt nhìn xuống câu hỏi cuối cùng TRƯỚC (`do FIRST?`, `do NEXT?`, `BEST action?`, `EXCEPT?`) rồi mới đọc ngược lên thân đề.",
+      "Trong lúc đọc thân đề, nhặt đúng 2 mảnh ghép: (1) Vòng đời gì (Agile/Predictive/Hybrid)? (2) Nút thắt thật sự nằm ở câu áp chót là gì?",
+      "Nộp bài xong, xem lại các câu làm quá 80 giây hoặc chọn nhầm giữa bước 'Đánh giá (FIRST)' và bước 'Thực thi (BEST)'."
+    ],
+    "selfCheck": [
+      "Tôi có duy trì được thói quen nhìn dòng cuối cùng trước tiên ở ít nhất 25/30 câu của mini-test-1 không?",
+      "Với các câu hỏi 'What should the PM do FIRST?', tôi có kiểm tra xem bước phân tích/xác minh đã diễn ra trong đề bài chưa trước khi chọn hành động sửa đổi không?",
+      "Tôi có phát hiện kịp thời từ khoá phủ định 'NOT / EXCEPT / LEAST likely' để không chọn nhầm đáp án đúng chuẩn PMI không?"
+    ]
+  },
+  "decisionBranchId": "risk-issue"
+}

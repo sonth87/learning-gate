@@ -1,0 +1,472 @@
+[
+  {
+    "linkId": "view.panorama",
+    "label": "Panorama 3 Góc nhìn (Vũ trụ 14 chủ đề · Dòng đời PM · Buồng lái PM)",
+    "kind": "panorama",
+    "lang": "vi",
+    "whyRead": "Nhìn toàn cảnh mối liên kết chéo giữa 14 chủ đề PMA trước khi đi sâu vào từng miền hiệu suất."
+  },
+  {
+    "linkId": "view.practice",
+    "label": "Phòng Luyện Tập Tình Huống PMP Mindmap (4.318 câu & 54 bộ đề)",
+    "kind": "practice",
+    "lang": "vi",
+    "whyRead": "Mở trung tâm luyện đề thực chiến (Mini-Cute, Mini-Test, Domain Test, Full Mock & chế độ Mix lọc theo chủ đề)."
+  },
+  {
+    "linkId": "book.intro.project-value",
+    "label": "Book Map: Định nghĩa Dự án & Hệ thống Bàn giao Giá trị (Value Delivery System)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "intro",
+    "nodeId": "intro.value-system",
+    "whyRead": "Xem sơ đồ chi tiết Portfolio → Program → Project → Operations và cách dòng chảy giá trị vận hành trong tổ chức.",
+    "bridgeNote": "Chủ đề 'intro' chỉ có trên ấn bản Book (ed=book); tương ứng PMBOK 8 Standard §1–§2."
+  },
+  {
+    "linkId": "book.intro.constraints",
+    "label": "Book Map: Ràng buộc dự án mở rộng & Tam giác cân bằng",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "intro",
+    "nodeId": "intro.constraints",
+    "whyRead": "Đối chiếu sự thay đổi một ràng buộc (Scope/Time/Cost/Quality/Risk/Resources) kéo theo hiệu ứng dây chuyền thế nào.",
+    "bridgeNote": "Minh hoạ cụ thể cho Nguyên tắc #1 PMBOK 8: Adopt a Holistic View."
+  },
+  {
+    "linkId": "book.intro.stacey",
+    "label": "Book Map: Ma trận Stacey & Lựa chọn Predictive vs Adaptive vs Hybrid",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "intro",
+    "nodeId": "intro.stacey",
+    "whyRead": "Xem biểu đồ trục Bất định yêu cầu × Bất định kỹ thuật và bảng đối chiếu 4 cách tiếp cận phát triển.",
+    "bridgeNote": "Tương ứng PMBOK 8 Standard §4.2 Development Approaches."
+  },
+  {
+    "linkId": "book.intro.hybrid",
+    "label": "Book Map: Các mô hình kết hợp Hybrid thực tế",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "intro",
+    "nodeId": "intro.hybrid",
+    "whyRead": "Xem 4 mẫu kết hợp Agile + Predictive (song song, nối tiếp, Agile rải nhỏ trong khung Predictive...).",
+    "bridgeNote": "Trọng tâm ~60% câu hỏi Agile/Hybrid trong đề PMP hiện hành."
+  },
+  {
+    "linkId": "core.mindset.think",
+    "label": "Core Map: Phản xạ #5 — Nghĩ kỹ & Phân tích trước khi hành động",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.mindset",
+    "nodeId": "core.mindset.think-before-act",
+    "whyRead": "Xem dẫn chứng quy tắc số 1 cho câu hỏi FIRST/NEXT: luôn đánh giá, kiểm tra dữ liệu gốc trước khi ra quyết định.",
+    "bridgeNote": "Nằm trong bản đồ cô đọng core.mindset của PMA."
+  },
+  {
+    "linkId": "core.mindset.escalate",
+    "label": "Core Map: Phản xạ #2 — Hạn chế leo thang lên Sponsor / Cấp trên",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.mindset",
+    "nodeId": "core.mindset.limit-escalate",
+    "whyRead": "Hiểu rõ ranh giới nào PM tự xử lý và trường hợp hiếm hoi nào mới được phép báo cáo lên Sponsor.",
+    "bridgeNote": "Khắc phục thói quen 'xin ý kiến sếp trước' ngoài đời thực."
+  },
+  {
+    "linkId": "core.mindset.direct",
+    "label": "Core Map: Phản xạ #1 & #3 — Giao tiếp trực tiếp & Không đuổi người",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.mindset",
+    "nodeId": "core.mindset.direct",
+    "whyRead": "Xem các ví dụ đối chiếu vì sao gặp mặt trực tiếp, huấn luyện và đào tạo luôn thắng sa thải hoặc gửi email chung chung."
+  },
+  {
+    "linkId": "core.mindset.process",
+    "label": "Core Map: Phản xạ #4 & #6 — Tuân thủ quy trình & Đối mặt trực diện vấn đề",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.mindset",
+    "nodeId": "core.mindset.follow-the-process",
+    "whyRead": "Xem lý do PMI không bao giờ chấp nhận đường tắt bỏ qua Change Control hay che giấu tin xấu với khách hàng."
+  },
+  {
+    "linkId": "book.business.case",
+    "label": "Book Map: Business Case & Quản trị Lợi ích (Benefits Management Plan)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "business",
+    "nodeId": "business.business-case",
+    "whyRead": "Xem các chỉ số tài chính (NPV, IRR, BCR, Payback Period) và cách đối chiếu lợi ích xuyên suốt vòng đời dự án.",
+    "bridgeNote": "Chủ đề 'business' chỉ có ở Book; khớp trực tiếp miền Business Environment (26% ECO 2026)."
+  },
+  {
+    "linkId": "book.business.eef-opa",
+    "label": "Book Map: Phân biệt EEF vs OPA & Các loại hình PMO",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "business",
+    "nodeId": "business.eef-vs-opa",
+    "whyRead": "Xem bảng phân biệt Yếu tố môi trường doanh nghiệp (EEF) vs Tài sản quy trình tổ chức (OPA) và cấu trúc quyền lực phòng ban."
+  },
+  {
+    "linkId": "book.business.pmo",
+    "label": "Book Map: Ba mô hình PMO (Supportive · Controlling · Directive)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "business",
+    "nodeId": "business.pmo",
+    "whyRead": "Đối chiếu mức độ kiểm soát của 3 loại PMO truyền thống với tư duy Value-oriented PMO mới.",
+    "bridgeNote": "Kết hợp đọc cùng PMBOK 8 Appendix X2 (Customer-centric PMO)."
+  },
+  {
+    "linkId": "book.value.mvp",
+    "label": "Book Map: MVP, MMF & Các kỹ thuật ưu tiên theo giá trị (MoSCoW, Kano)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "value",
+    "nodeId": "value.mvp",
+    "whyRead": "Xem sự khác biệt tinh tế giữa MVP (kiểm chứng giả thuyết sớm nhất) và MMF (tính năng nhỏ nhất tạo giá trị thương mại).",
+    "bridgeNote": "Chủ đề 'value' chỉ có trên ấn bản Book; minh hoạ Nguyên tắc #2 Focus on Value."
+  },
+  {
+    "linkId": "book.value.compliance",
+    "label": "Book Map: Tuân thủ Pháp lý & Quy định bắt buộc (Regulatory Compliance)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "value",
+    "nodeId": "value.regulatory-compliance",
+    "whyRead": "Xem cách phân loại rủi ro tuân thủ và ưu tiên hạng mục pháp lý lên đầu Backlog / Change Control.",
+    "bridgeNote": "Trọng tâm cực lớn của miền Business Environment 26% (ECO 07/2026)."
+  },
+  {
+    "linkId": "book.value.kanban",
+    "label": "Book Map: Bảng Kanban, Giới hạn WIP & Lý thuyết Hàng đợi (Little's Law)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "value",
+    "nodeId": "value.wip",
+    "whyRead": "Hiểu cơ chế kéo (Pull system), tại sao giảm WIP lại làm tăng thông lượng (Throughput) và giảm Cycle Time."
+  },
+  {
+    "linkId": "flow.value-prioritization",
+    "label": "Flow Tương tác: Quy trình Ưu tiên & Bàn giao Giá trị sớm",
+    "kind": "flow",
+    "flowId": "flow.value-prioritization",
+    "flowMode": "reconstruct",
+    "whyRead": "Thử tự kéo-thả sắp xếp 6 bước từ xác định giá trị đến đo lường lợi ích thực tế."
+  },
+  {
+    "linkId": "core.agile.servant",
+    "label": "Core Map: Lãnh đạo Phục vụ (Servant Leadership) trong Agile",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.agile",
+    "nodeId": "core.agile.servant-leadership",
+    "whyRead": "Xem 4 nhiệm vụ lá chắn của Servant Leader: gỡ trở ngại, bảo vệ nhóm khỏi nhiễu, huấn luyện và tạo an toàn tâm lý.",
+    "bridgeNote": "Ánh xạ trực tiếp sang Nguyên tắc #4 (Accountable Leader) & #6 (Empowered Culture) của PMBOK 8."
+  },
+  {
+    "linkId": "core.agile.roles",
+    "label": "Core Map: Ba vai trò Scrum (Product Owner · Developers · Scrum Master)",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.agile",
+    "nodeId": "core.agile.roles",
+    "whyRead": " Nắm chắc ranh giới quyền hạn để loại ngay các đáp án sai kiểu 'PM tự sắp lại Backlog' hay 'PO giao việc cho từng người'."
+  },
+  {
+    "linkId": "core.agile.events",
+    "label": "Core Map: 5 Sự kiện Scrum & Phân biệt DoR vs DoD vs Acceptance Criteria",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.agile",
+    "nodeId": "core.agile.dor-dod",
+    "whyRead": "Xem rõ mục đích từng buổi họp Scrum và phân biệt 3 khái niệm kiểm soát chất lượng hay bị đánh tráo nhất."
+  },
+  {
+    "linkId": "flow.servant-leadership",
+    "label": "Flow Tương tác: Phản xạ của Servant Leader khi nhóm gặp trở ngại",
+    "kind": "flow",
+    "flowId": "flow.servant-leadership",
+    "flowMode": "guided",
+    "whyRead": "Đi từng bước qua 5 mắt xích hỗ trợ nhóm tự tổ chức thay vì ra lệnh."
+  },
+  {
+    "linkId": "flow.approach-selection",
+    "label": "Flow Tương tác: Chọn Predictive, Iterative, Incremental, Agile hay Hybrid",
+    "kind": "flow",
+    "flowId": "flow.approach-selection",
+    "flowMode": "reconstruct",
+    "whyRead": "Ghép lại quy trình chẩn đoán đặc thù dự án để chọn đúng vòng đời phát triển."
+  },
+  {
+    "linkId": "flow.agile-delivery",
+    "label": "Flow Tương tác: Vòng lặp Vận hành Scrum xuyên một Sprint (9 bước)",
+    "kind": "flow",
+    "flowId": "flow.agile-delivery",
+    "flowMode": "reconstruct",
+    "whyRead": "Kéo-thả kiểm tra trí nhớ về luồng Vision → Backlog Refinement → Sprint Planning → Daily → Review → Retro."
+  },
+  {
+    "linkId": "core.adaptive.velocity",
+    "label": "Core Map: Story Points, Planning Poker & Quy tắc đọc Velocity",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.adaptive",
+    "nodeId": "core.adaptive.velocity",
+    "whyRead": "Xem dẫn chứng vì sao Velocity chỉ dùng để dự báo nội bộ nhóm, tuyệt đối không dùng làm KPI so sánh hiệu suất giữa 2 nhóm."
+  },
+  {
+    "linkId": "flow.adaptive-tracking",
+    "label": "Flow Tương tác: Theo dõi tiến độ thích ứng (Burndown · Burnup · CFD)",
+    "kind": "flow",
+    "flowId": "flow.adaptive-tracking",
+    "flowMode": "guided",
+    "whyRead": "Đọc đúng tín hiệu biểu đồ Burndown/Burnup khi phạm vi thay đổi hoặc nhóm gặp nghẽn."
+  },
+  {
+    "linkId": "book.governance.charter",
+    "label": "Book Map: Project Charter vs Project Management Plan",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "governance",
+    "nodeId": "governance.charter-vs-pm-plan",
+    "whyRead": "Mở Compare Lab đối chiếu người ký, nội dung và thời điểm hiệu lực của hiến chương dự án so với kế hoạch quản lý dự án.",
+    "bridgeNote": "Chủ đề 'governance' trong Mindmap khớp trực tiếp Miền #1 Governance (9 quy trình) của PMBOK 8!"
+  },
+  {
+    "linkId": "book.governance.change",
+    "label": "Book Map: Quy trình Kiểm soát Thay đổi Tích hợp (PICC) & Vai trò CCB",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "governance",
+    "nodeId": "governance.change-control-flow",
+    "whyRead": "Xem sơ đồ chi tiết các bước xử lý Change Request trước và sau khi Baseline đã khoá."
+  },
+  {
+    "linkId": "book.governance.wpd",
+    "label": "Book Map: Dòng dữ liệu hiệu suất WPD → WPI → WPR",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "governance",
+    "nodeId": "governance.wpd-wpi-wpr",
+    "whyRead": "Phân biệt dữ liệu thô (WPD), thông tin đã phân tích so với kế hoạch (WPI) và báo cáo tổng hợp gửi stakeholder (WPR)."
+  },
+  {
+    "linkId": "book.governance.close",
+    "label": "Book Map: Quy trình Đóng dự án / Giai đoạn ( kể cả khi bị huỷ giữa chừng)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "governance",
+    "nodeId": "governance.close-project",
+    "whyRead": "Nắm đúng thứ tự các việc bắt buộc khi đóng dự án: bàn giao sản phẩm, tổng kết bài học kinh nghiệm, giải phóng nguồn lực."
+  },
+  {
+    "linkId": "flow.change",
+    "label": "Flow Tương tác: 9 Bước Xử lý Yêu cầu Thay đổi (Change Control)",
+    "kind": "flow",
+    "flowId": "flow.change",
+    "flowMode": "reconstruct",
+    "whyRead": "Bài tập kéo-thả bắt buộc phải thuộc lòng để không bao giờ chọn nhầm thứ tự trong câu hỏi quy trình thay đổi."
+  },
+  {
+    "linkId": "flow.follow-the-data",
+    "label": "Flow Tương tác: Hành trình Dữ liệu WPD → WPI → WPR → Change Request (11 bước)",
+    "kind": "flow",
+    "flowId": "flow.follow-the-data",
+    "flowMode": "guided",
+    "whyRead": "Theo dõi đường đi của dữ liệu thực thi qua các quy trình kiểm soát và báo cáo."
+  },
+  {
+    "linkId": "flow.closing",
+    "label": "Flow Tương tác: 8 Bước Đóng Dự Án Chuẩn Xác",
+    "kind": "flow",
+    "flowId": "flow.closing",
+    "flowMode": "reconstruct",
+    "whyRead": "Thực hành sắp xếp đúng trình tự đóng dự án và chuyển giao vào vận hành."
+  },
+  {
+    "linkId": "core.stakeholder.seam",
+    "label": "Core Map: Phân loại Quyền lực/Quan tâm & Ma trận Gắn kết SEAM",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.stakeholder",
+    "nodeId": "core.stakeholder.seam",
+    "whyRead": "Xem 5 mức độ thái độ (Unaware → Resistant → Neutral → Supportive → Leading) và cách dịch chuyển khoảng cách gắn kết.",
+    "bridgeNote": "Trong PMBOK 8, Stakeholder và Communications được gộp chung vào Miền #5 Stakeholders (7 quy trình)."
+  },
+  {
+    "linkId": "book.stakeholder.questions",
+    "label": "Book Map + Ngăn Câu hỏi: Luyện nhanh câu hỏi gắn với SEAM & Giao tiếp",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "stakeholder",
+    "nodeId": "stakeholder.seam",
+    "panel": "questions",
+    "whyRead": "Mở thẳng node SEAM đồng thời bật ngăn bên Questions (p=questions) để xem các câu hỏi tình huống gắn trực tiếp vào chủ đề này."
+  },
+  {
+    "linkId": "core.comm.plan",
+    "label": "Core Map: Ba phương pháp Truyền thông (Interactive · Push · Pull)",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.communication",
+    "nodeId": "core.communication.step1-plan",
+    "whyRead": "Phân biệt rõ lúc nào phải sửa Communications Management Plan (thông tin/kênh) vs lúc nào sửa Stakeholder Engagement Plan (thái độ/mối quan hệ)."
+  },
+  {
+    "linkId": "flow.stakeholder",
+    "label": "Flow Tương tác: Chu trình Nhận diện, Phân tích & Gắn kết Stakeholder",
+    "kind": "flow",
+    "flowId": "flow.stakeholder",
+    "flowMode": "reconstruct",
+    "whyRead": "Ghép lại 8 bước xử lý khi có stakeholder mới xuất hiện hoặc stakeholder quyền lực cao đổi ý."
+  },
+  {
+    "linkId": "book.resource.tuckman",
+    "label": "Book Map: Thang Tuckman 5 Giai đoạn & Phong cách Lãnh đạo tương ứng",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "resource",
+    "nodeId": "resource.tuckman",
+    "whyRead": "Xem cách điều chỉnh phong cách lãnh đạo theo từng chặng Forming → Storming → Norming → Performing → Adjourning.",
+    "bridgeNote": "Trong PMBOK 8, Develop Team & Manage Team gộp thành quy trình 'Lead the Team' thuộc Miền Resources."
+  },
+  {
+    "linkId": "book.resource.conflict",
+    "label": "Book Map: 5 Kỹ thuật Giải quyết Xung đột & Trí tuệ Cảm xúc (EI)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "resource",
+    "nodeId": "resource.conflict-management",
+    "whyRead": "Xem bảng đối chiếu Collaborate/Problem Solve, Compromise, Smooth, Force, Withdraw kèm điều kiện áp dụng từng loại."
+  },
+  {
+    "linkId": "flow.conflict",
+    "label": "Flow Tương tác: Leo thang & Hoà giải Xung đột trong Nhóm (6 bước)",
+    "kind": "flow",
+    "flowId": "flow.conflict",
+    "flowMode": "reconstruct",
+    "whyRead": "Sắp xếp trình tự xử lý xung đột từ để nhóm tự giải quyết theo Team Charter đến can thiệp trực tiếp."
+  },
+  {
+    "linkId": "core.scope.wbs",
+    "label": "Core Map: WBS, Work Package & Scope Baseline (3 thành phần)",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.scope",
+    "nodeId": "core.scope.scope-baseline",
+    "whyRead": "Khắc ghi bộ ba bất biến của Scope Baseline: Project Scope Statement + WBS + WBS Dictionary."
+  },
+  {
+    "linkId": "book.scope.creep",
+    "label": "Book Map: Phân biệt Scope Creep vs Gold Plating",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "scope",
+    "nodeId": "scope.creep-vs-gold-plating",
+    "whyRead": "Mở Compare Lab đối chiếu nguồn gốc phát sinh (từ khách hàng lấn dần vs từ nội bộ tự làm thêm) và cách ngăn chặn."
+  },
+  {
+    "linkId": "core.quality.qc-validate",
+    "label": "Core Map: Phân biệt Manage Quality (QA) · Control Quality (QC) · Validate Scope",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.quality",
+    "nodeId": "core.quality.qc-vs-validate",
+    "whyRead": "Nắm chắc: QA kiểm quy trình, QC kiểm tính đúng đắn kỹ thuật nội bộ (Verified), Validate Scope để khách nghiệm thu (Accepted).",
+    "bridgeNote": "Trong PMBOK 8, Manage QA nằm ở Governance, còn Quality được nhúng xuyên suốt theo Nguyên tắc #3."
+  },
+  {
+    "linkId": "flow.scope-acceptance",
+    "label": "Flow Tương tác: Chuỗi 13 Bước Từ Yêu Cầu Đến Bàn Giao Nghiệm Thu",
+    "kind": "flow",
+    "flowId": "flow.scope-acceptance",
+    "flowMode": "reconstruct",
+    "whyRead": "Bài luyện tối quan trọng nối liền Requirements → WBS → Deliverable → Control Quality → Validate Scope → Close."
+  },
+  {
+    "linkId": "book.schedule.compression",
+    "label": "Book Map: Đường găng (CPM) & Kỹ thuật Nén tiến độ (Crashing vs Fast-Tracking)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "schedule",
+    "nodeId": "schedule.compression",
+    "whyRead": "So sánh đánh đổi giữa Crashing (thêm nguồn lực → tăng chi phí) và Fast-Tracking (làm song song → tăng rủi ro làm lại).",
+    "bridgeNote": "Trong PMBOK 8, Define/Sequence/Estimate Activities được tinh gọn vào quy trình 'Develop Schedule'."
+  },
+  {
+    "linkId": "core.finance.reserves",
+    "label": "Core Map: Contingency Reserve vs Management Reserve & Cấu trúc Cost Baseline",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.finance",
+    "nodeId": "core.finance.reserves",
+    "whyRead": "Xem sơ đồ cộng dồn từ Activity Estimates → Contingency (nằm trong Cost Baseline, PM được dùng) → Management Reserve (cần Change Request).",
+    "bridgeNote": "Cả Handout PMA lẫn PMBOK 8 đều dùng tên miền 'Finance' thay cho 'Cost' cũ!"
+  },
+  {
+    "linkId": "core.finance.evm",
+    "label": "Core Map: Đọc vị EVM (CV, SV, CPI, SPI, EAC, TCPI)",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.finance",
+    "nodeId": "core.finance.variance",
+    "whyRead": "Ôn công thức và quan trọng hơn là ý nghĩa ra quyết định khi CPI < 1 hoặc SPI < 1."
+  },
+  {
+    "linkId": "flow.cost",
+    "label": "Flow Tương tác: Quy trình Lập Ngân sách & Kiểm soát Tài chính (EVM)",
+    "kind": "flow",
+    "flowId": "flow.cost",
+    "flowMode": "guided",
+    "whyRead": "Đi theo dòng chảy hình thành Cost Baseline và kiểm soát sai lệch chi phí."
+  },
+  {
+    "linkId": "book.risk.vs-issue",
+    "label": "Book Map: Ranh giới sống còn Risk (Tương lai) vs Issue (Hiện tại)",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "risk",
+    "nodeId": "risk.risk-vs-issue",
+    "panel": "questions",
+    "whyRead": "Mở bảng so sánh Risk vs Issue kèm ngăn câu hỏi thực hành để không bao giờ chọn nhầm Risk Register với Issue Log."
+  },
+  {
+    "linkId": "core.risk.strategies",
+    "label": "Core Map: 5 Chiến lược đối phó Threat & 5 Chiến lược nắm bắt Opportunity",
+    "kind": "node",
+    "edition": "core",
+    "topicId": "core.risk",
+    "nodeId": "core.risk.strategies",
+    "whyRead": "Phân biệt Escalate, Avoid, Transfer, Mitigate, Accept (và Exploit, Share, Enhance) kèm Secondary Risk & Residual Risk."
+  },
+  {
+    "linkId": "flow.risk",
+    "label": "Flow Tương tác: Chu trình 10 Bước Quản lý Rủi ro đầu-cuối",
+    "kind": "flow",
+    "flowId": "flow.risk",
+    "flowMode": "reconstruct",
+    "whyRead": "Kéo-thả kiểm tra trình tự từ Identify → Qualitative → Quantitative → Plan Responses → Implement → Monitor."
+  },
+  {
+    "linkId": "book.procurement.contracts",
+    "label": "Book Map: Lựa chọn Loại Hợp đồng (FFP, FPIF, FP-EPA, CPFF, CPIF, T&M) & Agile Contracts",
+    "kind": "node",
+    "edition": "book",
+    "topicId": "procurement",
+    "nodeId": "procurement.contract-types",
+    "whyRead": "Xem thang chia sẻ rủi ro giữa Người mua (Buyer) và Nhà thầu (Seller) theo độ rõ ràng của phạm vi.",
+    "bridgeNote": "Chủ đề 'procurement' chỉ có ở Book; trong PMBOK 8 tương ứng 'Plan Sourcing Strategy' (Governance) + Phụ lục X4."
+  },
+  {
+    "linkId": "flow.procurement",
+    "label": "Flow Tương tác: Quản trị Mua sắm & Giải quyết Tranh chấp Hợp đồng (ADR)",
+    "kind": "flow",
+    "flowId": "flow.procurement",
+    "flowMode": "guided",
+    "whyRead": "Xem quy trình từ Make-or-Buy đến kiểm soát nhà thầu và ưu tiên thương lượng trực tiếp trước khi dùng ADR/kiện tụng."
+  }
+]

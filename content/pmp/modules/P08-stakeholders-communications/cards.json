@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p08-c1",
+    "front": "5 mức độ thái độ theo thứ tự trên ma trận SEAM (Stakeholder Engagement Assessment Matrix) là gì?",
+    "back": "Unaware (Chưa biết) → Resistant (Phản đối) → Neutral (Trung lập) → Supportive (Ủng hộ) → Leading (Dẫn dắt)."
+  },
+  {
+    "id": "p08-c2",
+    "front": "4 ô chiến lược trên lưới Power/Interest Grid tương ứng với từng tổ hợp Quyền lực × Quan tâm là gì?",
+    "back": "• High Power + High Interest → Manage Closely\n• High Power + Low Interest → Keep Satisfied\n• Low Power + High Interest → Keep Informed\n• Low Power + Low Interest → Monitor"
+  },
+  {
+    "id": "p08-c3",
+    "front": "Mẹo 1 câu phân biệt lúc nào cập nhật Stakeholder Engagement Plan vs lúc nào cập nhật Communications Management Plan?",
+    "back": "Khúc mắc về THÁI ĐỘ / KHÁNG CỰ / NIỀM TIN → sửa Stakeholder Engagement Plan; Khúc mắc về KÊNH / TẦN SUẤT / ĐỊNH DẠNG / BỎ SÓT BÁO CÁO → sửa Communications Management Plan."
+  },
+  {
+    "id": "p08-c4",
+    "front": "Phân biệt 3 phương thức truyền thông: Interactive · Push · Pull!",
+    "back": "• Interactive: Trao đổi 2 chiều trực tiếp (họp, gọi điện — dùng cho việc phức tạp/nhạy cảm).\n• Push: Gửi 1 chiều tới người nhận xác định (email, báo cáo, memo).\n• Pull: Kho dữ liệu trung tâm để đám đông tự vào tra cứu (Wiki, Intranet, Portal)."
+  },
+  {
+    "id": "p08-c5",
+    "front": "Công thức tính tổng số kênh giao tiếp tiềm năng khi có N bên liên quan (bao gồm cả PM) là gì?",
+    "back": "N × (N − 1) / 2. Ví dụ: 8 người → 8 × 7 / 2 = 28 kênh giao tiếp."
+  },
+  {
+    "id": "p08-c6",
+    "front": "Mô hình Salience Model phân loại bên liên quan dựa trên 3 thuộc tính nào?",
+    "back": "Power (Quyền lực áp đặt ý chí) · Urgency (Độ khẩn cấp cần phản hồi ngay) · Legitimacy (Tính chính danh hợp thức của sự tham gia)."
+  }
+]

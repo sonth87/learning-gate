@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p07-c1",
+    "front": "Tài liệu nào chính thức khai sinh dự án và trao thẩm quyền cho Project Manager sử dụng nguồn lực tổ chức? Ai ký nó?",
+    "back": "Project Charter (Hiến chương dự án) — bắt buộc do Project Sponsor hoặc cấp có thẩm quyền bên ngoài dự án ký ban hành."
+  },
+  {
+    "id": "p07-c2",
+    "front": "Khẩu quyết 5 bước bất biến khi xử lý một yêu cầu thay đổi chạm tới Baseline là gì?",
+    "back": "1. Phân tích tác động cùng nhóm → 2. Lập Change Request & ghi Change Log → 3. Trình CCB xét duyệt → 4. Cập nhật Baseline/PM Plan & Change Log → 5. Truyền thông & thực thi."
+  },
+  {
+    "id": "p07-c3",
+    "front": "Phân biệt nhanh WPD · WPI · WPR trong 10 giây!",
+    "back": "WPD = Số đo thô tại hiện trường (chưa so sánh); WPI = Thông tin đã phân tích sai lệch so với Baseline (ví dụ CPI=0.88); WPR = Báo cáo/Dashboard tổng hợp từ WPI để gửi Stakeholder ra quyết định."
+  },
+  {
+    "id": "p07-c4",
+    "front": "Trong PMBOK® Guide 8, Miền hiệu suất #1 Governance gom những mảng nào từ các bản trước?",
+    "back": "Gom toàn bộ Project Integration Management cũ cộng thêm Manage Quality Assurance (QA) và Plan Sourcing Strategy (chiến lược mua sắm cấp cao) thành 9 quy trình."
+  },
+  {
+    "id": "p07-c5",
+    "front": "Sự khác biệt cốt lõi giữa Explicit Knowledge và Tacit Knowledge trong Manage Project Knowledge là gì?",
+    "back": "Explicit (tri thức hiện) dễ mã hoá thành văn bản, con số, quy trình; Tacit (tri thức ẩn) là kinh nghiệm nghề và bối cảnh ngầm, cần truyền tải qua đối thoại, mentoring và làm việc chung."
+  },
+  {
+    "id": "p07-c6",
+    "front": "Thứ tự việc cuối cùng trong quy trình Close Project or Phase là gì (và có áp dụng khi dự án bị huỷ sớm không)?",
+    "back": "Áp dụng cho CẢ dự án hoàn tất lẫn bị huỷ sớm! Phải bàn giao sản phẩm/tài sản hiện trạng, thanh lý hợp đồng, cập nhật Lessons Learned vào OPA, lập Final Report RỒI MỚI giải phóng nhân sự."
+  }
+]

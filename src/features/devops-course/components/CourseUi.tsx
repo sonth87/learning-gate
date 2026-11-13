@@ -20,7 +20,9 @@ export const CourseBtn: React.FC<
       variant === 'primary' &&
         (accent === 'cyan'
           ? 'border-cyan-500/60 bg-cyan-500 text-slate-950 hover:bg-cyan-400 font-semibold'
-          : 'border-sky-500/60 bg-sky-500 text-slate-950 hover:bg-sky-400 font-semibold'),
+          : accent === 'amber'
+            ? 'border-amber-500/60 bg-amber-500 text-slate-950 hover:bg-amber-400 font-semibold'
+            : 'border-sky-500/60 bg-sky-500 text-slate-950 hover:bg-sky-400 font-semibold'),
       variant === 'ghost' && 'border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800',
       variant === 'danger' && 'border-rose-500/50 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25',
       className
@@ -39,7 +41,9 @@ export const CourseBar: React.FC<{ value: number; accent?: DevOpsAccent; classNa
       ? 'bg-emerald-500'
       : accent === 'cyan'
         ? 'bg-gradient-to-r from-cyan-500 to-emerald-500'
-        : 'bg-gradient-to-r from-sky-500 to-emerald-500';
+        : accent === 'amber'
+          ? 'bg-gradient-to-r from-amber-500 to-emerald-500'
+          : 'bg-gradient-to-r from-sky-500 to-emerald-500';
   return (
     <div
       className={cn('h-2 w-full rounded-full bg-slate-800 overflow-hidden', className)}

@@ -1,0 +1,61 @@
+{
+  "id": "P09",
+  "slug": "P09-resources-team-conflict",
+  "level": 3,
+  "order": 3,
+  "title": "Miền Resources & Team: Thang Tuckman, Trí tuệ Cảm xúc & Hoà giải Xung đột",
+  "summary": "Làm chủ Miền hiệu suất #6 Resources của PMBOK 8 (5 quy trình với trọng tâm 'Lead the Team'): lập Team Charter từ đầu, điều chỉnh phong cách lãnh đạo theo 5 giai đoạn Tuckman, vận dụng Trí tuệ Cảm xúc (EI) & động lực nội tại, gắn kết nhóm phân tán (Virtual Team) và giải quyết xung đột chuẩn PMI.",
+  "motto": "Co-create Team Charter · Adapt Style by Tuckman · Collaborate to Win-Win",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Guide §2.6 · Resources",
+      "detail": "Miền #6 gồm 5 quy trình: gộp Develop Team + Manage Team thành quy trình 'Lead the Team'"
+    },
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026 · People 33%",
+      "detail": "Trọng tâm lớn nhất của miền People: EI, an toàn tâm lý, trao quyền và quản trị xung đột"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Book Resource & Flow Conflict",
+      "detail": "Thang Tuckman, 5 chiến thuật xử lý xung đột và chuỗi 6 bước leo thang hoà giải"
+    }
+  ],
+  "realWorldTrap": "PM tự soạn nội quy áp đặt cho đội; thấy hai kỹ sư cãi nhau liền gửi email cảnh cáo toàn nhóm hoặc đẩy lên HR/Functional Manager; thấy thành viên làm chậm liền đòi đổi người khác thay vì huấn luyện.",
+  "pmiMindsetShift": "Team Charter (Ground Rules) phải do CHÍNH CẢ NHÓM cùng thảo luận và cam kết; khi nảy sinh xung đột lành mạnh, để các thành viên tự giải quyết trước → nếu leo thang, PM gặp riêng lắng nghe rồi dẫn dắt hướng tới Collaborate / Problem Solve (Win-Win) dựa trên dữ liệu khách quan.",
+  "tags": [
+    "resources",
+    "team-charter",
+    "tuckman",
+    "emotional-intelligence",
+    "motivation",
+    "virtual-team",
+    "conflict-resolution"
+  ],
+  "evidenceLinkIds": [
+    "book.resource.tuckman",
+    "book.resource.conflict",
+    "flow.conflict"
+  ],
+  "practice": {
+    "title": "Thực chiến Kéo-Thả 6 Bước Hoà giải Xung đột & 15 Câu Tình Huống People/Resource",
+    "primaryLinkId": "flow.conflict",
+    "secondaryLinkIds": [
+      "view.practice"
+    ],
+    "steps": [
+      "Bấm nút chính mở 'Flow Tương tác: Leo thang & Hoà giải Xung đột trong Nhóm' (chế độ Reconstruct) và sắp xếp đúng thứ tự từ tự quản đến can thiệp trực tiếp.",
+      "Mở 'Phòng Luyện Tập Tình Huống PMP Mindmap' ở nút phụ bên cạnh.",
+      "Chọn chế độ 'Mix theo chủ đề' → Lọc chủ đề 'resource' → Thiết lập 15 câu hỏi.",
+      "Khi đọc đề, gạch bỏ ngay mọi lựa chọn có chữ 'fire/remove team member', 'escalate to HR/Sponsor immediately' hoặc 'avoid the conflict'."
+    ],
+    "selfCheck": [
+      "Nếu một lập trình viên kỳ cựu mới gia nhập vào một nhóm đang ở giai đoạn Performing, nhóm sẽ chuyển về giai đoạn nào trên thang Tuckman?",
+      "Trong trường hợp hiếm hoi nào PMI cho phép dùng Force/Direct thay vì Collaborate/Problem Solve?",
+      "Làm sao giúp một nhóm Virtual Team làm việc lệch 3 múi giờ không bị cô lập và mất niềm tin?"
+    ]
+  },
+  "decisionBranchId": "team-conflict"
+}

@@ -1,0 +1,67 @@
+[
+  {
+    "id": "p00-q1",
+    "type": "mc",
+    "q": "Một Tech Lead có 8 năm kinh nghiệm chuẩn bị ôn thi PMP theo chuẩn ECO 07/2026. Anh ấy định dành 95% thời gian học công thức EVM, đường găng CPM và thuộc lòng ITTO, còn phần Business Environment chỉ đọc lướt 1 buổi vì nghĩ 'chỉ chiếm 8% điểm'. Lời khuyên đúng đắn nhất cho kế hoạch này là gì?",
+    "code": "",
+    "choices": [
+      "Hợp lý, vì Process luôn là miền chiếm 80% câu hỏi tính toán của bài thi PMP.",
+      "Sai lầm nghiêm trọng: Trong ECO 07/2026, Business Environment đã tăng vọt từ 8% lên 26% (8 tasks), đòi hỏi nắm chắc Business Case, Benefits Realization, Compliance, OCM và Sustainability.",
+      "Chỉ cần bỏ hẳn phần Predictive vì đề thi mới đã chuyển sang 100% câu hỏi Scrum thuần tuý.",
+      "Nên tập trung học thuộc định nghĩa từng thuật ngữ vì 70% đề thi là câu hỏi điền từ khuyết thiếu."
+    ],
+    "answer": 1,
+    "explain": "Theo ECO 07/2026, tỷ trọng 3 miền là People 33% (8 tasks) · Process 41% (10 tasks) · Business Environment 26% (8 tasks — tăng hơn 3 lần từ mức 8% của ECO 2021). Hơn 90% đề thi là câu hỏi tình huống ứng dụng xoay quanh ~40% Predictive và ~60% Agile/Hybrid, không phải kiểm tra học vẹt ITTO."
+  },
+  {
+    "id": "p00-q2",
+    "type": "mc",
+    "q": "Khi đọc một câu hỏi tình huống dài 5 dòng trên màn hình thi PMP kết thúc bằng câu 'What should the project manager do FIRST?', chiến thuật xử lý thông minh nhất trong 80 giây là gì?",
+    "code": "",
+    "choices": [
+      "Chọn ngay phương án hành động quyết liệt và giải quyết triệt để vấn đề nhanh nhất.",
+      "Chọn phương án báo cáo ngay lên Project Sponsor để thể hiện sự minh bạch.",
+      "Đọc câu hỏi chốt trước để nhận diện từ khoá FIRST, định vị bối cảnh (Predictive/Agile/Hybrid) và ưu tiên bước kiểm tra sự thật / đánh giá tác động trước khi ra quyết định.",
+      "Tìm phương án nào có chứa nhiều thuật ngữ phức tạp nhất trong sách PMBOK để chọn."
+    ],
+    "answer": 2,
+    "explain": "Trong đề PMP, từ khoá FIRST / NEXT kiểm tra trình tự tư duy quản trị chuẩn. Cả 4 phương án có thể đều là việc tốt, nhưng bước ĐẦU TIÊN (FIRST) hầu như luôn là xác thực dữ liệu gốc, phân tích tác động hoặc trao đổi trực tiếp để hiểu rõ căn nguyên trước khi hành động."
+  },
+  {
+    "id": "p00-q3",
+    "type": "mc",
+    "q": "Trong cấu trúc 7 Performance Domains (40 quy trình) của PMBOK® Guide 8th Edition (2025), các nội dung về Quản trị Tích hợp (Integration), Đảm bảo Chất lượng quy trình (Manage QA) và Chiến lược Mua sắm (Plan Sourcing Strategy) được quy tụ vào miền nào?",
+    "code": "",
+    "choices": [
+      "Finance Performance Domain",
+      "Governance Performance Domain",
+      "Resources Performance Domain",
+      "Stakeholders Performance Domain"
+    ],
+    "answer": 1,
+    "explain": "PMBOK 8 tái cấu trúc thành 7 Performance Domains. Trong đó Miền #1 Governance (9 quy trình) đóng vai trò khung điều phối tổng thể, hợp nhất Integration cũ cùng Manage Quality Assurance và Plan Sourcing Strategy. Khi tra cứu chi tiết hợp đồng hay công cụ chất lượng bên PMP Mindmap, bạn xem kết hợp 'governance', 'procurement' và 'quality' trên Book Map."
+  },
+  {
+    "id": "p00-q4",
+    "type": "mc",
+    "q": "Bạn muốn mở PMP Mindmap để xem sơ đồ chi tiết về 'Business Case, NPV/IRR' và 'Regulatory Compliance'. Bạn cần chọn ấn bản (edition) nào để thấy đầy đủ các chủ đề này?",
+    "code": "",
+    "choices": [
+      "Ấn bản Core (ed=core), vì mọi chủ đề đều nằm trọn trong 10 bản đồ Core.",
+      "Ấn bản Book (ed=book), vì 5 chủ đề mở rộng gồm 'intro', 'business', 'value', 'governance' và 'procurement' được trình bày chuyên sâu trên Book Map.",
+      "Chỉ xem được trong chế độ Flashcard, không có trên sơ đồ Mindmap.",
+      "Ấn bản nào cũng có số lượng chủ đề giống hệt nhau là 14."
+    ],
+    "answer": 1,
+    "explain": "Trên PMP Mindmap, ấn bản Core cô đọng 10 bản đồ trọng tâm nhất (core.*), còn ấn bản Book (ed=book) mở rộng đầy đủ cả 14 chủ đề bao gồm intro, business, value, governance và procurement. Các nút dẫn chứng trong PMP Mastery đã gắn sẵn đúng tham số ed=book cho bạn."
+  },
+  {
+    "id": "p00-q5",
+    "type": "tf",
+    "q": "Theo PMBOK® Guide 8th Edition, 5 Focus Areas (Initiating, Planning, Executing, Monitoring & Controlling, Closing) chỉ tồn tại trong dự án Predictive (Waterfall) và hoàn toàn bị loại bỏ khi làm Agile.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! PMBOK 8 khẳng định 5 Focus Areas hiện diện trong MỌI cách tiếp cận phát triển. Điểm khác biệt là ở Predictive chúng diễn ra tuần tự theo giai đoạn lớn, còn ở Agile/Adaptive chúng lặp lại liên tục ở quy mô nhỏ trong từng Release và từng Sprint."
+  }
+]

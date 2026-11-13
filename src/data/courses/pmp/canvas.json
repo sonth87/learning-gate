@@ -1,0 +1,536 @@
+{
+  "eco2026": {
+    "effectiveDate": "09/07/2026",
+    "domains": [
+      {
+        "id": "people",
+        "name": "People (Con người & Lãnh đạo)",
+        "weight2026": 33,
+        "weight2021": 42,
+        "tasks2026": 8,
+        "shiftSummary": "Cô đọng từ 14 còn 8 tasks: nhấn mạnh Trí tuệ cảm xúc (EI), An toàn tâm lý, Servant Leadership và giải quyết xung đột cộng tác."
+      },
+      {
+        "id": "process",
+        "name": "Process (Quy trình & Phương pháp)",
+        "weight2026": 41,
+        "weight2021": 50,
+        "tasks2026": 10,
+        "shiftSummary": "Tinh gọn từ 17 còn 10 tasks: tập trung Tailoring Predictive/Agile/Hybrid, tích hợp 7 miền hiệu suất PMBOK 8 và kiểm soát giá trị."
+      },
+      {
+        "id": "business",
+        "name": "Business Environment (Môi trường Kinh doanh)",
+        "weight2026": 26,
+        "weight2021": 8,
+        "tasks2026": 8,
+        "shiftSummary": "Tăng vọt từ 8% lên 26% (8 tasks): liên kết chiến lược, Benefits Realization, Tuân thủ (Compliance), OCM, Bền vững (Sustainability) & AI."
+      }
+    ]
+  },
+  "principles": [
+    {
+      "id": "prin-1",
+      "code": "NGUYÊN TẮC #1 · PMBOK 8 §3.3",
+      "title": "Adopt a Holistic View (Tư duy Toàn diện / Hệ thống)",
+      "subtitle": "Nhìn dự án như một hệ thống liên kết chặt với chiến lược tổ chức và môi trường bên ngoài.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Theo PMBOK 8 §3.3",
+      "tone": "amber",
+      "essence": [
+        "Mọi thay đổi ở một biến số (Scope, Schedule, Finance, Risk, Quality, Resources) đều tạo sóng lan truyền sang các biến số còn lại.",
+        "Hợp nhất Systems Thinking và Navigate Complexity của PMBOK 7: luôn đánh giá tác động toàn cục trước khi chọn giải pháp cục bộ.",
+        "Liên tục rà soát các thay đổi từ môi trường bên ngoài (thị trường, pháp lý, công nghệ) ảnh hưởng tới tính khả thi của dự án."
+      ],
+      "realWorldTrap": "Thấy khách xin sửa 'một tính năng nhỏ không tốn tiền' liền gật đầu làm luôn mà quên đánh giá rủi ro bảo mật, lịch kiểm thử tích hợp và tài liệu vận hành.",
+      "moduleId": "P02",
+      "evidenceLinkIds": [
+        "book.intro.constraints",
+        "flow.change"
+      ]
+    },
+    {
+      "id": "prin-2",
+      "code": "NGUYÊN TẮC #2 · PMBOK 8 §3.4",
+      "title": "Focus on Value (Tập trung vào Giá trị & Kết quả)",
+      "subtitle": "Thành công đo bằng Outcome & Lợi ích thực tế, không chỉ bằng việc bàn giao đúng Output.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Theo PMBOK 8 §3.4",
+      "tone": "emerald",
+      "essence": [
+        "Output (sản phẩm bàn giao) chỉ là phương tiện để tạo ra Outcome (kết quả sử dụng) và Benefits (lợi ích định lượng/định tính trong Business Case).",
+        "Ưu tiên bàn giao sớm phần có giá trị cao nhất (MVP / MMF) để thu phản hồi thật và thích ứng sớm.",
+        "Nếu bối cảnh kinh doanh đổi khiến dự án không còn mang lại giá trị chiến lược, PM phải minh bạch báo cáo Sponsor xem xét điều chỉnh hoặc dừng dự án có kiểm soát."
+      ],
+      "realWorldTrap": "Cố sống cố chết chạy hết 100% tính năng theo kế hoạch cũ dù thị trường đã đổi và khách hàng xác nhận tính năng đó không còn dùng tới.",
+      "moduleId": "P02",
+      "evidenceLinkIds": [
+        "book.business.case",
+        "book.value.mvp",
+        "flow.value-prioritization"
+      ]
+    },
+    {
+      "id": "prin-3",
+      "code": "NGUYÊN TẮC #3 · PMBOK 8 §3.5",
+      "title": "Embed Quality Into Processes & Deliverables (Nhúng Chất lượng vào Nội tại)",
+      "subtitle": "Phòng ngừa sai lỗi trong quy trình rẻ hơn gấp nhiều lần so với dò lỗi ở cuối chặng.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Theo PMBOK 8 §3.5",
+      "tone": "sky",
+      "essence": [
+        "Prevention over Inspection: thiết kế quy trình chuẩn (QA, Definition of Done, CI/CD tự động) để không sinh lỗi ngay từ đầu.",
+        "Phân biệt rõ Quality (mức độ đáp ứng yêu cầu — không bao giờ được thấp!) và Grade (cấp hạng tính năng — có thể thấp nhưng vẫn hợp lệ).",
+        "Cải tiến liên tục qua Lessons Learned và Sprint Retrospective ở cuối mỗi vòng lặp, không đợi cuối dự án mới ghi chép hình thức."
+      ],
+      "realWorldTrap": "Khi dự án trễ tiến độ liền cắt bớt bước kiểm thử (Control Quality) hoặc hạ tiêu chuẩn Definition of Done để kịp ngày bàn giao.",
+      "moduleId": "P03",
+      "evidenceLinkIds": [
+        "core.quality.qc-validate",
+        "flow.scope-acceptance"
+      ]
+    },
+    {
+      "id": "prin-4",
+      "code": "NGUYÊN TẮC #4 · PMBOK 8 §3.6",
+      "title": "Be an Accountable Leader (Lãnh đạo Có Trách nhiệm & Chính trực)",
+      "subtitle": "Kết hợp Stewardship (quản gia chính trực) và Servant Leadership thích ứng theo tình huống.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Theo PMBOK 8 §3.6",
+      "tone": "violet",
+      "essence": [
+        "Chịu trách nhiệm giải trình (Accountability) về kết quả, sử dụng nguồn lực minh bạch và tuyệt đối tuân thủ Quy tắc Đạo đức PMI.",
+        "Báo tin xấu sớm và trung thực dựa trên dữ liệu khách quan — không bao giờ làm đẹp báo cáo hay giấu rủi ro.",
+        "Điều chỉnh phong cách lãnh đạo (chỉ dẫn khi nhóm mới Forming, huấn luyện/trao quyền khi nhóm đã trưởng thành)."
+      ],
+      "realWorldTrap": "Sợ mất lòng Sponsor hoặc khách hàng nên trì hoãn báo cáo SPI/CPI xấu với hy vọng tuần sau nhóm làm bù sẽ kéo lại kịp.",
+      "moduleId": "P03",
+      "evidenceLinkIds": [
+        "core.agile.servant",
+        "flow.servant-leadership"
+      ]
+    },
+    {
+      "id": "prin-5",
+      "code": "NGUYÊN TẮC #5 · PMBOK 8 §3.7 (MỚI)",
+      "title": "Integrate Sustainability Within All Project Areas (Tích hợp Bền vững)",
+      "subtitle": "Cân bằng tác động dài hạn về Môi trường, Xã hội và Kinh tế trong cả cách làm lẫn vòng đời sản phẩm.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Mới trong PMBOK 8 §3.7",
+      "tone": "cyan",
+      "essence": [
+        "Xét tác động bền vững ở cả 2 chiều: Sustainability OF the project (nguồn lực, mua sắm, chuỗi cung ứng) và Sustainability BY the product (vận hành, tiêu thụ năng lượng, thải bỏ sau dự án).",
+        "Đưa tiêu chí ESG, an toàn lao động và tuân thủ môi trường vào ngay khâu Elicit Requirements, Risk Register và lựa chọn nhà thầu.",
+        "Tư duy dài hạn vượt khỏi ngày nghiệm thu đóng dự án (Long-term Triple Bottom Line: People · Planet · Prosperity)."
+      ],
+      "realWorldTrap": "Chọn nhà thầu giá rẻ nhất để tiết kiệm ngân sách dự án ngắn hạn nhưng vi phạm tiêu chuẩn khí thải hoặc làm tăng gấp đôi chi phí bảo trì vận hành.",
+      "moduleId": "P02",
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "book.business.case"
+      ]
+    },
+    {
+      "id": "prin-6",
+      "code": "NGUYÊN TẮC #6 · PMBOK 8 §3.8",
+      "title": "Build an Empowered Culture (Xây dựng Văn hoá Trao quyền)",
+      "subtitle": "An toàn tâm lý, quyền tự quyết của nhóm chuyên môn và trách nhiệm chung.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Theo PMBOK 8 §3.8",
+      "tone": "rose",
+      "essence": [
+        "Người trực tiếp làm việc là người ước lượng chính xác nhất: để nhóm tự ước lượng và tự phân chia công việc thay vì PM áp đặt.",
+        "Xây dựng Team Charter / Ground Rules do chính cả nhóm cùng thống nhất để tự điều chỉnh hành vi.",
+        "Biến sai sót thành cơ hội học hỏi hệ thống (blameless learning), đầu tư mentoring/training thay vì trừng phạt hay thay người."
+      ],
+      "realWorldTrap": "Thấy một thành viên mới làm chậm liền đòi trưởng phòng chức năng đổi người khác hoặc tự tay chia lại đầu việc từng giờ cho cả nhóm.",
+      "moduleId": "P03",
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "book.resource.tuckman"
+      ]
+    }
+  ],
+  "pmaGoldenReflexes": [
+    {
+      "id": "ref-think",
+      "title": "1. Nghĩ & Phân tích trước khi hành động",
+      "viRule": "Gặp câu hỏi FIRST / NEXT: ưu tiên Kiểm tra dữ liệu · Đánh giá tác động · Họp phân tích gốc rễ trước khi hành động.",
+      "trap": "Sửa ngay, ban hành lệnh ngay hoặc đổi kế hoạch khi chưa đánh giá.",
+      "linkId": "core.mindset.think",
+      "moduleId": "P01"
+    },
+    {
+      "id": "ref-escalate",
+      "title": "2. Hạn chế tối đa leo thang lên Sponsor",
+      "viRule": "PM phải tự giải quyết mọi việc trong thẩm quyền; chỉ báo Sponsor khi vượt ngưỡng ngân sách/thời gian hoặc dừng dự án.",
+      "trap": "Đẩy xung đột nhóm, rủi ro thông thường sang cho Sponsor/PMO quyết hộ.",
+      "linkId": "core.mindset.escalate",
+      "moduleId": "P01"
+    },
+    {
+      "id": "ref-direct",
+      "title": "3. Giao tiếp trực tiếp & Nói chuyện riêng trước",
+      "viRule": "Ưu tiên gặp mặt/gọi trực tiếp (Interactive) và trao đổi riêng 1-1 với cá nhân liên quan trước khi đưa ra tập thể.",
+      "trap": "Gửi email khiển trách toàn nhóm hoặc phàn nàn sau lưng với sếp chức năng.",
+      "linkId": "core.mindset.direct",
+      "moduleId": "P01"
+    },
+    {
+      "id": "ref-noremove",
+      "title": "4. Không sa thải · Không xin thêm tiền dễ dãi",
+      "viRule": "Thành viên yếu → đào tạo/ghép cặp; thiếu nguồn lực → tối ưu lại lịch/ưu tiên giá trị trước khi xin thêm tiền.",
+      "trap": "Đuổi việc thành viên, cắt giảm chất lượng (QC) hoặc bắt OT vô thời hạn.",
+      "linkId": "core.mindset.direct",
+      "moduleId": "P09"
+    },
+    {
+      "id": "ref-process",
+      "title": "5. Tôn trọng Quy trình & Thẩm quyền vai trò",
+      "viRule": "Chạm Baseline → qua Change Control (CCB); chạm thứ tự Backlog → qua Product Owner; chạm ước lượng Sprint → do Developers.",
+      "trap": "Gold plating (làm thêm không xin phép) hoặc lách CCB vì 'khách hàng thân'.",
+      "linkId": "core.mindset.process",
+      "moduleId": "P07"
+    },
+    {
+      "id": "ref-confront",
+      "title": "6. Đối mặt trực diện · Minh bạch sớm",
+      "viRule": "Xung đột phải giải quyết bằng Collaborate/Problem Solve; rủi ro và sự cố phải ghi vào Log và đối diện ngay.",
+      "trap": "Làm ngơ hy vọng vấn đề tự biến mất (Withdraw/Avoidance trong xung đột).",
+      "linkId": "core.mindset.process",
+      "moduleId": "P09"
+    }
+  ],
+  "roles": [
+    {
+      "id": "role-pm",
+      "code": "PROJECT MANAGER / AGILE LEAD",
+      "title": "Người Tích Hợp & Lãnh Đạo Phục Vụ",
+      "subtitle": "Chịu trách nhiệm kết nối toàn cục, gỡ trở ngại, quản trị rủi ro và truyền thông.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Governance & Resources",
+      "tone": "amber",
+      "essence": [
+        "Trong Predictive: chủ trì tích hợp các kế hoạch con, kiểm soát thực thi, đánh giá tác động thay đổi và sử dụng Contingency Reserve hợp lệ.",
+        "Trong Agile/Hybrid: đóng vai Servant Leader — bảo vệ nhóm khỏi can thiệp bên ngoài, huấn luyện quy trình và tháo gỡ Impediments.",
+        "KHÔNG tự ý duyệt thay đổi Baseline (trừ trường hợp khẩn cấp đã được uỷ quyền rõ trong Plan) và KHÔNG sắp xếp thứ tự Product Backlog thay PO."
+      ],
+      "realWorldTrap": "Vừa làm PM vừa kiêm luôn việc áp đặt ước lượng giờ công cho Developer và tự tay duyệt yêu cầu đổi phạm vi của khách hàng.",
+      "moduleId": "P07",
+      "evidenceLinkIds": [
+        "book.governance.charter",
+        "core.agile.servant"
+      ]
+    },
+    {
+      "id": "role-po",
+      "code": "PRODUCT OWNER (PO)",
+      "title": "Chủ Sở Hữu Tối Đa Hoá Giá Trị Sản Phẩm",
+      "subtitle": "Một tiếng nói duy nhất về thứ tự ưu tiên trên Product Backlog.",
+      "provenance": "pma-bridge",
+      "provenanceLabel": "Agile & Value Domain",
+      "tone": "emerald",
+      "essence": [
+        "Chịu trách nhiệm định nghĩa tầm nhìn sản phẩm, quản lý và sắp xếp thứ tự Product Backlog dựa trên Giá trị kinh doanh / Rủi ro / Chi phí.",
+        "Mọi Stakeholder muốn thêm/đổi yêu cầu trong Agile đều phải làm việc thông qua PO.",
+        "Là người duy nhất có quyền huỷ một Sprint nếu Sprint Goal trở nên lỗi thời."
+      ],
+      "realWorldTrap": "Để Giám đốc Kinh doanh nhắn tin trực tiếp cho Developer chèn việc mới vào giữa Sprint đang chạy.",
+      "moduleId": "P05",
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "flow.value-prioritization"
+      ]
+    },
+    {
+      "id": "role-dev",
+      "code": "DEVELOPERS / PROJECT TEAM",
+      "title": "Nhóm Chuyên Môn Đa Chức Năng (Cross-Functional)",
+      "subtitle": "Sở hữu 'LÀM NHƯ THẾ NÀO' (How) và 'KHỐI LƯỢNG BAO NHIÊU' trong Sprint.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Principle #6 · Empowered",
+      "tone": "sky",
+      "essence": [
+        "Tự tổ chức (Self-organizing), tự ước lượng nỗ lực công việc (Story Points / Ideal Hours) và cam kết Sprint Backlog.",
+        "Đa kỹ năng (T-shaped / I-shaped kết hợp) để hoàn tất Increment đạt chuẩn Definition of Done mà không phụ thuộc bên ngoài.",
+        "Sở hữu Sprint Backlog: không ai bên ngoài được tự ý nhét thêm việc vào Sprint khi chưa có sự đồng thuận của nhóm và PO."
+      ],
+      "realWorldTrap": "Scrum Master hoặc Tech Lead ước lượng sẵn Story Points rồi ép cả nhóm chạy theo con số đó.",
+      "moduleId": "P05",
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "core.adaptive.velocity"
+      ]
+    },
+    {
+      "id": "role-sponsor-ccb",
+      "code": "SPONSOR & CCB",
+      "title": "Nhà Tài Trợ & Hội Đồng Kiểm Soát Thay Đổi",
+      "subtitle": "Cấp thẩm quyền chiến lược, Project Charter, Management Reserve & Baseline.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "Governance §2.1",
+      "tone": "violet",
+      "essence": [
+        "Sponsor ký ban hành Project Charter (trao thẩm quyền chính thức cho PM), bảo vệ dự án ở cấp lãnh đạo cao và quyết định đóng/huỷ dự án.",
+        "CCB (Change Control Board) xét duyệt hoặc từ chối các Change Request làm thay đổi Scope / Schedule / Cost Baseline hoặc dùng tới Management Reserve.",
+        "PM chỉ mang tới Sponsor/CCB bản phân tích tác động kèm các phương án khuyến nghị — không bao giờ mang 'câu hỏi trống không' lên hỏi."
+      ],
+      "realWorldTrap": "Chưa có Project Charter được ký nhưng PM đã cho nhóm bắt đầu thiết kế, mua sắm và tiêu ngân sách chính thức.",
+      "moduleId": "P07",
+      "evidenceLinkIds": [
+        "book.governance.charter",
+        "book.governance.change"
+      ]
+    }
+  ],
+  "approaches": [
+    {
+      "id": "app-pred",
+      "code": "PREDICTIVE (WATERFALL)",
+      "title": "Định hướng Kế hoạch (Plan-Driven)",
+      "subtitle": "Yêu cầu rõ ngay từ đầu · Rủi ro sửa đổi cao · Bàn giao 1 lần cuối.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "PMBOK 8 §4.2",
+      "tone": "sky",
+      "essence": [
+        "Cố định Phạm vi (Scope) sớm, từ đó ước lượng Chi phí (Finance) và Tiến độ (Schedule); khoá chặt 3 Baselines.",
+        "Thay đổi được kiểm soát nghiêm ngặt qua quy trình Perform Integrated Change Control và CCB.",
+        "Phù hợp xây dựng hạ tầng, phần cứng, quy định an toàn nghiêm ngặt nơi công nghệ và yêu cầu đã rất ổn định."
+      ],
+      "realWorldTrap": "Áp dụng Predictive cứng nhắc cho sản phẩm AI/R&D mới tinh khiến dự án tê liệt vì giấy tờ Change Request liên miên.",
+      "moduleId": "P04",
+      "evidenceLinkIds": [
+        "book.intro.stacey",
+        "flow.approach-selection"
+      ]
+    },
+    {
+      "id": "app-iter-inc",
+      "code": "ITERATIVE & INCREMENTAL",
+      "title": "Lặp để Làm Đúng vs Tăng trưởng để Giao Nhanh",
+      "subtitle": "Iterative tinh chỉnh độ đúng đắn qua Prototype; Incremental cắt lát bàn giao dùng được ngay.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "PMBOK 8 §4.2",
+      "tone": "cyan",
+      "essence": [
+        "Iterative (Lặp): Yêu cầu còn mờ → dựng Prototype/Mockup lặp nhiều vòng nhận phản hồi để chốt thiết kế đúng trước khi bàn giao cuối.",
+        "Incremental (Tăng trưởng): Cần tốc độ ra thị trường → chia sản phẩm thành các mảnh hoàn chỉnh dùng được ngay ở mỗi đợt phát hành.",
+        "Đề thi rất hay hỏi phân biệt: muốn 'làm rõ yêu cầu phức tạp qua phản hồi mẫu thử' → chọn Iterative; muốn 'khách dùng sớm từng module' → chọn Incremental."
+      ],
+      "realWorldTrap": "Đánh đồng mọi từ 'lặp lại' là Scrum mà không phân biệt mục tiêu là thử nghiệm độ đúng (Iterative) hay giao phần dùng được sớm (Incremental).",
+      "moduleId": "P04",
+      "evidenceLinkIds": [
+        "book.intro.stacey",
+        "flow.approach-selection"
+      ]
+    },
+    {
+      "id": "app-agile",
+      "code": "ADAPTIVE / AGILE",
+      "title": "Thích ứng Đảo Ngược Tam Giác Ràng Buộc",
+      "subtitle": "Kết hợp cả Iterative + Incremental · Timebox ngắn 1–4 tuần · Đón nhận thay đổi.",
+      "provenance": "pmbok8",
+      "provenanceLabel": "PMBOK 8 §4.2",
+      "tone": "emerald",
+      "essence": [
+        "Cố định Thời gian (Sprint Timebox) và Nguồn lực/Chi phí, để Phạm vi (Scope) linh hoạt theo thứ tự giá trị trên Product Backlog.",
+        "Phản hồi khách hàng liên tục ở cuối mỗi Iteration (Sprint Review) và cải tiến cách làm của nhóm ở Sprint Retrospective.",
+        "Kiểm soát rủi ro bằng cách đưa các hạng mục rủi ro cao + giá trị cao lên làm ngay từ những Sprint đầu tiên."
+      ],
+      "realWorldTrap": "Chuyển sang Agile nhưng vẫn bắt nhóm ký cam kết cứng 100% tính năng cho cả 12 tháng ngay từ ngày khởi động.",
+      "moduleId": "P05",
+      "evidenceLinkIds": [
+        "flow.agile-delivery",
+        "core.agile.events"
+      ]
+    },
+    {
+      "id": "app-hybrid",
+      "code": "HYBRID & TAILORING",
+      "title": "Lai Ghép Có Chủ Đích Theo Ngữ Cảnh",
+      "subtitle": "Không rập khuôn: chọn công cụ phù hợp cho từng hợp phần hoặc giai đoạn chuyển đổi.",
+      "provenance": "eco2026",
+      "provenanceLabel": "Trọng tâm số 1 đề PMP",
+      "tone": "amber",
+      "essence": [
+        "Ví dụ kinh điển: Phần cứng / Pháp lý / Hạ tầng chạy theo mốc Predictive; Phần mềm / Giao diện người dùng chạy theo Sprint Agile.",
+        "Khi một tổ chức truyền thống chuyển sang Agile: áp dụng chuyển đổi dần dần (Hybrid) kèm đào tạo & huấn luyện thay vì 'đập đi xây lại sau một đêm'.",
+        "PM phải đóng vai cầu nối đồng bộ nhịp tích hợp (Milestone đồng bộ, Dependency Board) giữa luồng Predictive và luồng Agile."
+      ],
+      "realWorldTrap": "Ép đội phần cứng nhà máy phải bàn giao sản phẩm vật lý mới mỗi 2 tuần y hệt đội làm web.",
+      "moduleId": "P06",
+      "evidenceLinkIds": [
+        "book.intro.hybrid",
+        "flow.adaptive-tracking"
+      ]
+    }
+  ],
+  "focusAreas": [
+    {
+      "id": "fa-init",
+      "name": "Initiating",
+      "viName": "Khởi tạo",
+      "coreQuestion": "Tại sao làm dự án này & Ai trao thẩm quyền?",
+      "predictiveNote": "Xác nhận Business Case, ký Project Charter, nhận diện Stakeholder ban đầu.",
+      "adaptiveNote": "Xác lập Product Vision, Agile Charter, thành lập nhóm cross-functional và Backlog hạt giống."
+    },
+    {
+      "id": "fa-plan",
+      "name": "Planning",
+      "viName": "Lập kế hoạch",
+      "coreQuestion": "Định hướng cách đạt kết quả mong muốn thế nào?",
+      "predictiveNote": "Lập kế hoạch tổng thể chi tiết đầu kỳ, phân rã WBS và khoá Scope/Schedule/Cost Baselines.",
+      "adaptiveNote": "Lập kế hoạch thích ứng nhiều tầng: Roadmap → Release Planning → Backlog Refinement → Sprint Planning."
+    },
+    {
+      "id": "fa-exec",
+      "name": "Executing",
+      "viName": "Thực thi",
+      "coreQuestion": "Phối hợp con người & quy trình tạo giá trị ra sao?",
+      "predictiveNote": "Chỉ đạo thực hiện công việc theo PM Plan, Manage Quality, gắn kết Stakeholder và phát triển nhóm.",
+      "adaptiveNote": "Nhóm tự tổ chức hoàn thành Increment trong Timebox, cộng tác hàng ngày (Daily Standup) và gỡ trở ngại."
+    },
+    {
+      "id": "fa-mc",
+      "name": "Monitoring & Controlling",
+      "viName": "Giám sát & Kiểm soát",
+      "coreQuestion": "Đang lệch kế hoạch/giá trị ở đâu & cần điều chỉnh gì?",
+      "predictiveNote": "Đo lường EVM (CPI/SPI), Control Quality, Validate Scope và duyệt thay đổi qua CCB.",
+      "adaptiveNote": "Hiển thị minh bạch trên Kanban/Burndown, kiểm soát WIP, nghiệm thu liên tục tại Sprint Review và thích ứng Backlog."
+    },
+    {
+      "id": "fa-close",
+      "name": "Closing",
+      "viName": "Đóng dự án / Giai đoạn",
+      "coreQuestion": "Đã bàn giao trọn vẹn giá trị & lưu giữ tri thức chưa?",
+      "predictiveNote": "Nghiệm thu cuối, thanh lý hợp đồng, chuyển giao vận hành, cập nhật Lessons Learned Repository và giải phóng nhóm.",
+      "adaptiveNote": "Đóng từng Release/Dự án, xác nhận chuyển giao lợi ích và tổng kết cải tiến cho toàn tổ chức."
+    }
+  ],
+  "decisionCycle": [
+    {
+      "step": 1,
+      "title": "Dừng lại & Xác thực sự thật tại nguồn",
+      "action": "Đọc kỹ câu chốt (FIRST / NEXT / BEST). Phân biệt đây là thông tin đồn đoán, Rủi ro tương lai (Risk) hay Sự cố đã xảy ra (Issue).",
+      "neverDo": "Hành động mù quáng dựa trên tin đồn hành lang hoặc cảm tính cá nhân."
+    },
+    {
+      "step": 2,
+      "title": "Định vị Ngữ cảnh (Predictive · Agile · Hybrid) & Vai trò",
+      "action": "Xác định dự án đang chạy theo cách tiếp cận nào, ở giai đoạn nào và bạn đang đóng vai PM, Scrum Master hay làm việc với PO/Vendor.",
+      "neverDo": "Đem phiếu Change Request/CCB cứng nhắc ép vào nội bộ Product Backlog của Scrum (hoặc ngược lại)."
+    },
+    {
+      "step": 3,
+      "title": "Phân tích tác động toàn diện (Holistic Impact Assessment)",
+      "action": "Cùng nhóm chuyên môn đánh giá ảnh hưởng lên Giá trị, Phạm vi, Tiến độ, Tài chính, Chất lượng, Rủi ro và Bền vững.",
+      "neverDo": "Sửa thẳng vào sản phẩm hoặc cập nhật Baseline trước khi phân tích tác động."
+    },
+    {
+      "step": 4,
+      "title": "Giải quyết ở cấp thẩm quyền gần nhất & Đúng quy trình",
+      "action": "Trao đổi trực tiếp, hợp tác cùng tìm giải pháp (Collaborate). Nếu chạm Baseline/Hợp đồng → đi đúng quy trình Change Control / Hợp đồng.",
+      "neverDo": "Leo thang vội lên Sponsor, sa thải thành viên hoặc thoả hiệp hạ chất lượng."
+    },
+    {
+      "step": 5,
+      "title": "Cập nhật Tài liệu sống & Phòng ngừa tái diễn",
+      "action": "Ghi nhận vào đúng sổ (Issue Log / Risk Register / Lessons Learned / Backlog) và theo dõi hiệu quả của hành động khắc phục.",
+      "neverDo": "Chữa cháy xong rồi bỏ qua không cập nhật tri thức khiến lỗi lặp lại ở giai đoạn sau."
+    }
+  ],
+  "domainBridge": [
+    {
+      "pmbok8Domain": "1. Governance",
+      "pmbok8ProcessesCount": 9,
+      "pmbok8KeyFocus": "Khởi tạo, tích hợp kế hoạch, chiến lược mua sắm (Plan Sourcing Strategy), QA, quản trị tri thức, kiểm soát thay đổi (PICC) & đóng dự án.",
+      "mindmapTopics": [
+        "governance",
+        "intro",
+        "procurement",
+        "quality"
+      ],
+      "bridgeExplanation": "PMBOK 8 gom Integration + Manage QA + Sourcing Strategy về chung Governance. Khi xem chi tiết ITTO mua sắm/chất lượng bên Mindmap, mở thêm chủ đề 'procurement' và 'quality'.",
+      "moduleId": "P07",
+      "linkId": "book.governance.change"
+    },
+    {
+      "pmbok8Domain": "2. Scope",
+      "pmbok8ProcessesCount": 6,
+      "pmbok8KeyFocus": "Thu thập & phân tích yêu cầu, định nghĩa phạm vi, cấu trúc WBS / Backlog, kiểm soát và nghiệm thu phạm vi (Validate Scope).",
+      "mindmapTopics": [
+        "scope",
+        "core.scope",
+        "value",
+        "adaptive"
+      ],
+      "bridgeExplanation": "PMBOK 8 đổi 'Create WBS' thành 'Develop Scope Structure' để bao hàm cả WBS lẫn Product Backlog phân cấp.",
+      "moduleId": "P10",
+      "linkId": "flow.scope-acceptance"
+    },
+    {
+      "pmbok8Domain": "3. Schedule",
+      "pmbok8ProcessesCount": 3,
+      "pmbok8KeyFocus": "Lập kế hoạch quản lý tiến độ, phát triển tiến độ (Develop Schedule) và kiểm soát tiến độ (CPM, Float, Velocity, Burndown).",
+      "mindmapTopics": [
+        "schedule",
+        "core.schedule",
+        "core.adaptive"
+      ],
+      "bridgeExplanation": "PMBOK 8 gộp gọn Define/Sequence/Estimate Activity Durations vào trong 'Develop Schedule'; bên Mindmap tách chi tiết từng bước để dễ học công thức CPM/PERT.",
+      "moduleId": "P11",
+      "linkId": "book.schedule.compression"
+    },
+    {
+      "pmbok8Domain": "4. Finance",
+      "pmbok8ProcessesCount": 4,
+      "pmbok8KeyFocus": "Lập kế hoạch tài chính, ước lượng chi phí, lập ngân sách (Cost Baseline & Reserves) và kiểm soát tài chính (EVM, dòng tiền, ROI).",
+      "mindmapTopics": [
+        "finance",
+        "core.finance",
+        "business"
+      ],
+      "bridgeExplanation": "Khớp tên gọi 100%! Cả Handout PMA/Mindmap lẫn PMBOK 8 đều nâng cấp từ 'Cost' thành 'Finance' để bao quát cả giá trị đầu tư (NPV/IRR).",
+      "moduleId": "P11",
+      "linkId": "core.finance.reserves"
+    },
+    {
+      "pmbok8Domain": "5. Stakeholders",
+      "pmbok8ProcessesCount": 7,
+      "pmbok8KeyFocus": "Nhận diện, lập kế hoạch, quản lý và giám sát đồng bộ cả sự gắn kết bên liên quan (Engagement) lẫn truyền thông (Communications).",
+      "mindmapTopics": [
+        "stakeholder",
+        "core.stakeholder",
+        "core.communication"
+      ],
+      "bridgeExplanation": "Khớp 100% với Book Map 'stakeholder' (đã gộp Stakeholder + Communication)! Trên Core Map của Mindmap tách thành 2 bản đồ nhỏ để dễ nhìn.",
+      "moduleId": "P08",
+      "linkId": "core.stakeholder.seam"
+    },
+    {
+      "pmbok8Domain": "6. Resources",
+      "pmbok8ProcessesCount": 5,
+      "pmbok8KeyFocus": "Lập kế hoạch, ước lượng, huy động nguồn lực (nhân sự + vật lực), dẫn dắt nhóm (Lead the Team) và kiểm soát nguồn lực.",
+      "mindmapTopics": [
+        "resource",
+        "core.resource",
+        "core.agile"
+      ],
+      "bridgeExplanation": "PMBOK 8 hợp nhất 'Develop Team' và 'Manage Team' thành một quy trình hiện đại duy nhất là 'Lead the Team'.",
+      "moduleId": "P09",
+      "linkId": "book.resource.tuckman"
+    },
+    {
+      "pmbok8Domain": "7. Risk",
+      "pmbok8ProcessesCount": 6,
+      "pmbok8KeyFocus": "Lập kế hoạch, nhận diện, phân tích rủi ro (định tính + định lượng), lập kế hoạch ứng phó, thực thi ứng phó và giám sát rủi ro (Threat & Opportunity).",
+      "mindmapTopics": [
+        "risk",
+        "core.risk"
+      ],
+      "bridgeExplanation": "PMBOK 8 gộp Qualitative và Quantitative thành 'Perform Risk Analysis'. Mindmap có đủ cả ma trận P×I, EMV và phân biệt Risk vs Issue.",
+      "moduleId": "P12",
+      "linkId": "book.risk.vs-issue"
+    }
+  ]
+}

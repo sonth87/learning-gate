@@ -1,0 +1,65 @@
+{
+  "id": "P07",
+  "slug": "P07-governance-change-data",
+  "level": 3,
+  "order": 1,
+  "title": "Miền Governance: Thẩm quyền Charter, Kiểm soát Thay đổi (PICC) & Dòng dữ liệu",
+  "summary": "Nắm trọn Miền hiệu suất #1 Governance của PMBOK 8 (9 quy trình): mốc trao thẩm quyền chính thức qua Project Charter, chuỗi bất biến xử lý Change Request qua CCB, hành trình biến dữ liệu thô thành báo cáo (WPD → WPI → WPR), quản trị tri thức và quy trình đóng dự án chuẩn mực.",
+  "motto": "Charter Grants Authority · Assess Before CCB · Follow WPD → WPI → WPR",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Guide §2.1 · Governance",
+      "detail": "Miền #1 gồm 9 quy trình: gộp Integration cũ + Manage QA + Plan Sourcing Strategy"
+    },
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026 · Process & Business",
+      "detail": "Kiểm soát thay đổi tích hợp, chuyển giao tri thức và đóng dự án có kiểm soát"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Book Governance & Flows",
+      "detail": "Khớp trực tiếp chủ đề 'governance' cùng 3 dòng chảy Change, Follow-the-Data và Closing"
+    }
+  ],
+  "realWorldTrap": "Chưa có Project Charter ký duyệt đã cho đội bắt tay vào làm; thấy khách xin đổi tính năng liền cập nhật thẳng Baseline hoặc chạy ngay lên CCB khi chưa phân tích tác động; dự án bị huỷ giữa chừng liền giải tán nhóm luôn không làm thủ tục đóng.",
+  "pmiMindsetShift": "Project Charter do Sponsor ký là giấy khai sinh duy nhất trao quyền cho PM; sau khi khoá Baseline, mọi thay đổi phải theo trật tự 'Ghi nhận → Phân tích tác động → Trình CCB → Cập nhật Plan & Truyền thông'; ngay cả dự án bị huỷ sớm vẫn bắt buộc qua Close Project để lưu Lessons Learned và thanh lý hợp đồng.",
+  "tags": [
+    "governance",
+    "project-charter",
+    "picc",
+    "ccb",
+    "wpd-wpi-wpr",
+    "knowledge",
+    "closing"
+  ],
+  "evidenceLinkIds": [
+    "book.governance.charter",
+    "book.governance.change",
+    "book.governance.wpd",
+    "book.governance.close",
+    "flow.change"
+  ],
+  "practice": {
+    "title": "Thực chiến Kéo-Thả 9 Bước Change Control, Dòng Dữ Liệu & Đóng Dự Án",
+    "primaryLinkId": "flow.change",
+    "secondaryLinkIds": [
+      "flow.follow-the-data",
+      "flow.closing",
+      "view.practice"
+    ],
+    "steps": [
+      "Bấm nút chính để mở 'Flow Tương tác: 9 Bước Xử lý Yêu cầu Thay đổi' ở chế độ Reconstruct — tự tay kéo thả đúng 100% thứ tự trước và sau CCB.",
+      "Mở tiếp 2 Flow phụ: 'Hành trình Dữ liệu WPD → WPI → WPR' và '8 Bước Đóng Dự Án Chuẩn Xác'.",
+      "Vào 'Phòng Luyện Tập Tình Huống PMP Mindmap' → chọn Mix chủ đề 'governance' → làm 15 câu hỏi tình huống.",
+      "Ở mỗi câu hỏi về thay đổi, luôn kiểm tra xem dự án ĐÃ KHOÁ Baseline chưa và PM ĐÃ ĐÁNH GIÁ tác động chưa."
+    ],
+    "selfCheck": [
+      "Trước khi Baseline được phê duyệt lần đầu, PM có cần trình CCB mỗi khi chỉnh sửa bản nháp kế hoạch không?",
+      "Đọc một con số trong đề bài, làm sao bạn phân biệt ngay đó là WPD (thô), WPI (đã so kế hoạch) hay WPR (bản tổng hợp gửi lãnh đạo)?",
+      "Khi khách hàng tuyên bố chấm dứt dự án ở tháng thứ 4 vì hết vốn, PM phải làm gì trước khi trả nhân sự về các phòng ban?"
+    ]
+  },
+  "decisionBranchId": "change"
+}

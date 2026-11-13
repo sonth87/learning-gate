@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p05-c1",
+    "front": "Tóm tắt ranh giới quyền hạn của 3 vai trò Scrum (PO · Developers · Scrum Master) trong 3 dòng?",
+    "back": "• Product Owner (PO): Sở hữu Product Backlog, tối đa hoá GIÁ TRỊ (Why/What), người duy nhất có quyền huỷ Sprint.\n• Developers: Tự ước lượng (How much), quyết cách làm (How), sở hữu Sprint Backlog.\n• Scrum Master: Servant Leader huấn luyện quy trình, gỡ Impediments và bảo vệ nhóm khỏi nhiễu bên ngoài."
+  },
+  {
+    "id": "p05-c2",
+    "front": "Phân biệt rõ mục đích của 'Sprint Review' và 'Sprint Retrospective'?",
+    "back": "• Sprint Review = Thanh tra SẢN PHẨM (Demo Increment đạt DoD cho Stakeholders lấy phản hồi cập nhật Product Backlog).\n• Sprint Retrospective = Thanh tra QUY TRÌNH & CON NGƯỜI nội bộ nhóm (chọn 1–2 cải tiến cách làm đưa ngay vào Sprint sau)."
+  },
+  {
+    "id": "p05-c3",
+    "front": "Phân biệt 3 cổng chất lượng: DoR · Acceptance Criteria (AC) · DoD?",
+    "back": "• DoR (Definition of Ready): Điều kiện ĐẦU VÀO để Story đủ rõ/nhỏ trước khi kéo vào Sprint Planning.\n• AC (Acceptance Criteria): Điều kiện nghiệp vụ RIÊNG để chấp nhận từng User Story cụ thể.\n• DoD (Definition of Done): Chuẩn chất lượng CHUNG bắt buộc cho MỌI Increment để được xem là hoàn thành & có thể phát hành."
+  },
+  {
+    "id": "p05-c4",
+    "front": "Khi Stakeholder đòi nhét thêm tính năng gấp vào ngay giữa Sprint đang chạy, phản xạ chuẩn PMI là gì?",
+    "back": "Scrum Master / Agile PM bảo vệ sự tập trung của nhóm, giải thích quy tắc không phá vỡ Sprint Goal và hướng dẫn Stakeholder làm việc trực tiếp với Product Owner để đánh giá giá trị, sắp xếp vào Product Backlog cho Sprint tiếp theo."
+  },
+  {
+    "id": "p05-c5",
+    "front": "Chuyện gì xảy ra với một User Story mới xong 90% (chưa đạt trọn vẹn Definition of Done) khi Sprint kết thúc?",
+    "back": "• KHÔNG mang ra demo như tính năng đã hoàn thành tại Sprint Review.\n• KHÔNG tính bất kỳ Story Point nào vào Velocity của Sprint đó.\n• Đưa trở lại Product Backlog để Product Owner đánh giá lại độ ưu tiên và ước lượng phần việc còn lại cho Sprint sau."
+  },
+  {
+    "id": "p05-c6",
+    "front": "Quy tắc vàng của buổi họp Daily Scrum (Daily Standup) trong đề thi PMP là gì?",
+    "back": "Timebox cứng 15 phút, dành cho Developers tự kiểm tra tiến độ hướng tới Sprint Goal và lập kế hoạch phối hợp 24 giờ tới. KHÔNG biến thành buổi báo cáo cho PM và KHÔNG bàn sâu giải pháp kỹ thuật (đưa ra Parking Lot họp riêng sau đó)."
+  }
+]

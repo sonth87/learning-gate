@@ -1,0 +1,57 @@
+{
+  "id": "P00",
+  "slug": "P00-orientation",
+  "level": 0,
+  "order": 1,
+  "title": "Giải mã bài thi PMP & Bản đồ quy chiếu PMBOK 8 ↔ PMA",
+  "summary": "Nắm trọn cấu trúc đề thi PMP mới nhất theo ECO 07/2026 (Business Environment tăng vọt lên 26%) và bản đồ đối chiếu xuyên suốt giữa 6 Nguyên tắc · 5 Focus Areas · 7 Performance Domains của PMBOK® Guide 8th Edition (2025) sang 14 chủ đề thực chiến của PMP Mindmap.",
+  "motto": "Hiểu luật chơi đề tình huống · Nối liền chuẩn mực PMBOK 8 với phản xạ thực chiến PMA",
+  "provenance": [
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026",
+      "detail": "180 câu / 240 phút · People 33% (8 tasks) · Process 41% (10 tasks) · Business Environment 26% (8 tasks)"
+    },
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §1–§4",
+      "detail": "6 Nguyên tắc hành động · 5 Focus Areas · 7 Performance Domains (40 quy trình)"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "14 Chủ đề PMA",
+      "detail": "Quy chiếu toàn bộ kiến trúc PMBOK 8 sang 14 bản đồ tư duy trong PMP Mindmap"
+    }
+  ],
+  "realWorldTrap": "Học vẹt thuộc lòng danh sách ITTO hoặc công thức rời rạc như thi đại học, đồng thời xem nhẹ miền Business Environment vì tưởng chỉ chiếm 8% như đề cũ.",
+  "pmiMindsetShift": "Hơn 90% đề PMP là câu hỏi tình huống hỏi bước đi ĐẦU TIÊN / TIẾP THEO / TỐT NHẤT của người lãnh đạo dự án xoay quanh Giá trị kinh doanh, Tuân thủ, Con người và Quy trình thích ứng.",
+  "tags": [
+    "eco-2026",
+    "pmbok-8",
+    "exam-structure",
+    "domain-mapping",
+    "agile-hybrid"
+  ],
+  "evidenceLinkIds": [
+    "view.panorama",
+    "book.intro.project-value",
+    "book.intro.constraints"
+  ],
+  "practice": {
+    "title": "Đo phản xạ ban đầu với đề khởi động Mini-Cute #1 (10 câu)",
+    "primaryLinkId": "view.practice",
+    "secondaryLinkIds": [
+      "view.panorama"
+    ],
+    "steps": [
+      "Bấm mở Phòng Luyện Tập PMP Mindmap ở tab mới, chọn mục Mini-Cute và mở bộ đề 'mini-cute-1' (10 câu tình huống ngắn).",
+      "Làm liền mạch trong 12 phút hoàn toàn KHÔNG tra cứu tài liệu để đo đúng phản xạ quản lý dự án tự nhiên hiện tại của bạn.",
+      "Đọc kỹ lời giải từng câu sai và ghi chú xem bạn mất điểm vì chọn hành động vội vàng hay vì nhầm vai trò Agile/Predictive."
+    ],
+    "selfCheck": [
+      "Bạn đã nhớ rõ tỷ trọng 3 miền ECO 07/2026 (People 33% · Process 41% · Business Environment 26%) và lý do Business Environment tăng gấp hơn 3 lần chưa?",
+      "Khi gặp câu hỏi có từ khoá FIRST / NEXT, bạn đã tạo thói quen đọc câu hỏi chốt cuối cùng trước khi đọc đoạn văn bối cảnh dài chưa?",
+      "Bạn đã phân biệt được lúc nào cần tra cứu Core Map (cô đọng cốt lõi) và lúc nào cần mở Book Map (đầy đủ 14 chủ đề) bên PMP Mindmap chưa?"
+    ]
+  }
+}

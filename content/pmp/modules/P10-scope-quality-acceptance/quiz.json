@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p10-q1",
+    "type": "mc",
+    "q": "Trong cuộc họp kiểm tra tiến độ, một lập trình viên hào hứng khoe rằng anh vừa hoàn thành gói công việc sớm hơn dự kiến 2 ngày nên đã chủ động viết thêm tính năng xuất báo cáo đồ hoạ 3D 'tặng miễn phí cho khách hàng bất ngờ' dù tính năng này không hề có trong WBS. Là Project Manager, bạn nên phản ứng thế nào?",
+    "code": "",
+    "choices": [
+      "Tuyên dương sự sáng tạo của lập trình viên trước toàn nhóm và đưa ngay tính năng 3D lên bản phát hành.",
+      "Yêu cầu dừng tích hợp tính năng tự phát đó (Gold Plating), giải thích rủi ro phát sinh lỗi/bảo trì ngoài phạm vi và hướng dẫn rằng mọi bổ sung nếu thực sự mang lại giá trị đều phải đi qua quy trình Change Control chính thức.",
+      "Tính thêm chi phí tính năng 3D vào hoá đơn gửi cho khách hàng vào cuối tháng.",
+      "Im lặng giữ lại tính năng đó như một món quà dự phòng nếu sau này dự án bị trễ tiến độ."
+    ],
+    "answer": 1,
+    "explain": "Hành vi nội bộ tự ý thêm tính năng ngoài Scope Baseline dù không xin thêm tiền được gọi là Gold Plating. PMI nghiêm cấm Gold Plating vì làm tăng rủi ro lỗi, tốn công kiểm thử và chi phí bảo trì không được phê duyệt. Nếu ý tưởng thực sự tốt, phải đánh giá và trình qua quy trình Change Request."
+  },
+  {
+    "id": "p10-q2",
+    "type": "mc",
+    "q": "Đội kỹ sư vừa lắp đặt xong hệ thống cảm biến tự động hoá nhà máy. Một thành viên đề xuất mời ngay đại diện Chủ đầu tư xuống ký biên bản nghiệm thu phạm vi (Validate Scope) vào sáng mai cho kịp mốc thanh toán. Tuy nhiên, đội kiểm định nội bộ vẫn chưa chạy bài đo kiểm chất lượng của gói công việc này. Bạn nên làm gì?",
+    "code": "",
+    "choices": [
+      "Đồng ý mời Chủ đầu tư xuống kiểm tra luôn một thể để tiết kiệm thời gian cho cả hai bên.",
+      "Thực hiện quy trình Control Quality nội bộ trước để xác minh sản phẩm đạt đúng đặc tả kỹ thuật (tạo ra Verified Deliverables), sau đó mới tổ chức Validate Scope với Chủ đầu tư.",
+      "Chuyển thẳng sang quy trình Close Project or Phase rồi bổ sung biên bản đo kiểm sau.",
+      "Gửi email xin Chủ đầu tư ký nghiệm thu tạm trên giấy tờ trước khi kiểm tra thực tế."
+    ],
+    "answer": 1,
+    "explain": "Trình tự bắt buộc là Deliverable → Control Quality (ra Verified Deliverable) → Validate Scope (ra Accepted Deliverable). Không bao giờ đẩy trách nhiệm tìm lỗi kỹ thuật nội bộ sang cho khách hàng tại buổi nghiệm thu!"
+  },
+  {
+    "id": "p10-q3",
+    "type": "mc",
+    "q": "Giám đốc Chất lượng nhận thấy ba gói công việc liên tiếp đều bị trả lại ở khâu kiểm thử với những lỗi cấu hình giống hệt nhau. Bạn muốn kiểm tra xem đội dự án có đang tuân thủ đúng các quy trình, chính sách chuẩn của tổ chức hay không và tìm lỗ hổng quy trình để phòng ngừa lỗi tái diễn. Hoạt động này thuộc quy trình nào?",
+    "code": "",
+    "choices": [
+      "Control Quality (Kiểm soát chất lượng)",
+      "Validate Scope (Xác nhận phạm vi)",
+      "Manage Quality / Quality Assurance (Quản lý & Đảm bảo chất lượng qua Quality Audit và phân tích quy trình)",
+      "Control Scope (Kiểm soát phạm vi)"
+    ],
+    "answer": 2,
+    "explain": "Control Quality tập trung kiểm tra sản phẩm cụ thể tìm lỗi; còn kiểm toán sự tuân thủ quy trình (Quality Audit) và cải tiến quy trình để ngăn lỗi từ gốc thuộc về Manage Quality (QA — nằm ở miền Governance trong PMBOK 8)."
+  },
+  {
+    "id": "p10-q4",
+    "type": "mc",
+    "q": "Khi rà soát danh sách 120 yêu cầu phức tạp của dự án ngân hàng số, Sponsor hỏi bạn làm thế nào để chứng minh rằng một yêu cầu nhỏ ở tầng giao diện thực sự đóng góp cho mục tiêu kinh doanh ban đầu và đã có kịch bản kiểm thử tương ứng bảo vệ. Bạn nên mở tài liệu nào?",
+    "code": "",
+    "choices": [
+      "Work Breakdown Structure (WBS)",
+      "Requirements Traceability Matrix (RTM — Ma trận truy vết yêu cầu)",
+      "Project Charter",
+      "Stakeholder Engagement Plan"
+    ],
+    "answer": 1,
+    "explain": "Requirements Traceability Matrix (RTM) là bảng lưới liên kết hai chiều từ Mục tiêu kinh doanh → Yêu cầu chi tiết → Nút WBS / Thiết kế → Kịch bản kiểm thử (Test Cases), giúp đảm bảo mọi yêu cầu đều có lý do tồn tại và được kiểm chứng đầy đủ."
+  },
+  {
+    "id": "p10-q5",
+    "type": "mc",
+    "q": "Công ty bạn phát triển một ứng dụng ghi chú tối giản dành cho sinh viên: chỉ có đúng 3 tính năng cơ bản, không hỗ trợ đồng bộ đám mây nâng cao hay nhận diện giọng nói, nhưng ứng dụng chạy cực mượt, không hề có lỗi văng app và phản hồi tức thì. Theo thuật ngữ chất lượng của PMI, sản phẩm này được mô tả như thế nào?",
+    "code": "",
+    "choices": [
+      "Low Quality, High Grade (Chất lượng thấp, Cấp hạng cao)",
+      "Low Grade, High Quality (Cấp hạng thấp nhưng Chất lượng cao — hoàn toàn chấp nhận được!)",
+      "Low Quality, Low Grade (Cả chất lượng lẫn cấp hạng đều thấp)",
+      "Gold Plated Product (Sản phẩm bị mạ vàng)"
+    ],
+    "answer": 1,
+    "explain": "Grade (cấp hạng) phản ánh số lượng đặc tính kỹ thuật/tính năng sang trọng; Quality (chất lượng) phản ánh mức độ đáp ứng yêu cầu và không có khuyết tật. Ít tính năng nâng cao nhưng chạy ổn định không lỗi chính là Low Grade + High Quality — hoàn toàn hợp lệ với phân khúc mục tiêu!"
+  },
+  {
+    "id": "p10-q6",
+    "type": "tf",
+    "q": "Bộ ba cấu thành nên Scope Baseline chuẩn của PMI bao gồm: Project Charter, Requirements Traceability Matrix (RTM) và Work Breakdown Structure (WBS).",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Đây là bẫy học thuộc rất phổ biến. Bộ ba chính xác tạo nên Scope Baseline là: (1) Project Scope Statement + (2) WBS + (3) WBS Dictionary. Project Charter và RTM là các tài liệu dự án độc lập, không nằm trong Scope Baseline."
+  }
+]

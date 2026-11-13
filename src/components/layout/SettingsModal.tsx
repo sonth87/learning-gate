@@ -17,6 +17,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useWpProgress } from '@/features/workpath/store';
 import { useKubeProgress, useCicdProgress } from '@/features/devops-course/store';
+import { usePmpProgress } from '@/features/pmp-course/store';
 import { backupService } from '@/db/backupService';
 import { FullBackupPayload } from '@/types/user.types';
 import { cn } from '@/utils/cn';
@@ -31,6 +32,8 @@ export const SettingsModal: React.FC = () => {
   const kubeMeta = useKubeProgress((s) => s.syncMeta);
   const cicdState = useCicdProgress((s) => s.state);
   const cicdMeta = useCicdProgress((s) => s.syncMeta);
+  const pmpState = usePmpProgress((s) => s.state);
+  const pmpMeta = usePmpProgress((s) => s.syncMeta);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -76,6 +79,7 @@ export const SettingsModal: React.FC = () => {
         parsed.workpath ? useWpProgress.getState().replaceAll(parsed.workpath) : Promise.resolve(),
         useKubeProgress.getState().hydrate(true),
         useCicdProgress.getState().hydrate(true),
+        usePmpProgress.getState().hydrate(true),
       ]);
       setStatusMessage(
         'Khôi phục thành công toàn bộ tiến độ, ghi chú, SRS Flashcard & Cài đặt!'
@@ -335,11 +339,12 @@ export const SettingsModal: React.FC = () => {
             ). Nếu bạn đổi trình duyệt hoặc đổi cổng chạy (ví dụ <code>:5173</code> sang <code>:5174</code>), hãy dùng nút Export/Import JSON bên dưới để mang tiến trình theo.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
               { label: 'Python Mastery', st: wpState, meta: wpMeta },
               { label: 'Docker & K8s', st: kubeState, meta: kubeMeta },
               { label: 'CI/CD Architecture', st: cicdState, meta: cicdMeta },
+              { label: 'PMP Mastery', st: pmpState, meta: pmpMeta },
             ].map((item) => {
               const passedEx = Object.values(item.st.exercises ?? {}).filter((e) => e.status === 'passed').length;
               const skippedCount =

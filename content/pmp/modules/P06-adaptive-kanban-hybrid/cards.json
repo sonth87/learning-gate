@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p06-c1",
+    "front": "Vì sao tuyệt đối KHÔNG dùng Velocity để so sánh năng suất giữa hai nhóm Agile?",
+    "back": "Vì Story Points là ước lượng tương đối theo hệ quy chiếu riêng của từng nhóm. So sánh Velocity giữa hai nhóm làm méo mó dữ liệu, gây lạm phát điểm ảo và phá vỡ sự minh bạch dự báo."
+  },
+  {
+    "id": "p06-c2",
+    "front": "Mục đích cốt lõi của việc đặt giới hạn WIP (Work in Progress Limit) trên bảng Kanban là gì?",
+    "back": "Giảm lãng phí chuyển ngữ cảnh (context switching), rút ngắn Cycle Time theo Định luật Little và làm lộ rõ điểm nghẽn (bottleneck) để cả nhóm hợp sức giải phóng hàng đợi."
+  },
+  {
+    "id": "p06-c3",
+    "front": "Biểu đồ Burnup có ưu thế gì vượt trội hơn Burndown khi báo cáo tiến độ Release?",
+    "back": "Burnup tách riêng đường 'Tổng phạm vi (Total Scope)' và đường 'Công việc đã hoàn thành', giúp nhìn rõ ngay việc trễ mốc là do nhóm chậm hay do phạm vi mới được thêm vào."
+  },
+  {
+    "id": "p06-c4",
+    "front": "Nhìn biểu đồ Cumulative Flow Diagram (CFD), dấu hiệu nào cho biết một bước quy trình đang bị cổ chai (bottleneck)?",
+    "back": "Dải màu của trạng thái đó phình rộng theo chiều dọc (WIP ùn ứ tăng cao) trong khi đường biên dưới đi thoải hoặc đi ngang (đầu ra thoát chậm)."
+  },
+  {
+    "id": "p06-c5",
+    "front": "Khi một tổ chức quen làm Predictive lâu năm muốn chuyển sang Agile nhưng gặp tâm lý kháng cự, PM nên chọn hướng đi nào?",
+    "back": "Áp dụng chuyển đổi từng bước qua mô hình Hybrid (giữ khung Governance quen thuộc cho lãnh đạo, đưa thực hành Agile/Kanban dần vào nhóm) đi kèm đào tạo và huấn luyện (Coaching)."
+  },
+  {
+    "id": "p06-c6",
+    "front": "User Story xong 90% khi hết giờ Timebox của Sprint thì được tính bao nhiêu điểm vào Velocity?",
+    "back": "0 điểm! Agile chỉ ghi nhận Velocity cho các hạng mục đạt trọn vẹn 100% Definition of Done; phần chưa xong đưa về lại Product Backlog để PO sắp xếp ưu tiên."
+  }
+]

@@ -33,7 +33,7 @@ export const App: React.FC = () => {
         const store = useStore.getState();
         const formFactor = detectHardwareFormFactor();
 
-        // Keep Python Mastery, Docker & K8s Mastery, and CI/CD Mastery pinned in the Dock
+        // Keep Python Mastery, Docker & K8s Mastery, CI/CD Mastery, and PMP Mastery pinned in the Dock
         // without auto-launching any window by default (DeviceLayout handles URL-based opening).
         const nextDock = Array.from(
           new Set([
@@ -41,6 +41,7 @@ export const App: React.FC = () => {
             'pymastery',
             'kubemastery',
             'cicdmastery',
+            'pmpmastery',
           ])
         );
 
