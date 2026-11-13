@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "course:build": "node scripts/build-course.mjs",
     "course:doctor": "node scripts/course-doctor.mjs",
-    "course:test": "node scripts/run-engine-tests.mjs"
+    "course:test": "node scripts/run-engine-tests.mjs",
+    "pmp:build": "node scripts/build-pmp.mjs",
+    "pmp:doctor": "node scripts/pmp-doctor.mjs"
   },
   "dependencies": {
     "@sonth87/device-layout": "^0.5.40",

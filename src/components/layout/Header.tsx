@@ -26,6 +26,7 @@ import {
   PyMasteryLogo,
   KubeMasteryLogo,
   CicdMasteryLogo,
+  PmpMasteryLogo,
 } from '@/components/common/AppLogos';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -269,6 +270,23 @@ export const Header: React.FC = () => {
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Switch to PMP Mastery App Button */}
+          <HeaderTooltip
+            label="Mở App học Tư duy PMP (PMP Mastery)"
+            align="right"
+          >
+            <button
+              onClick={() => switchLearningApp('pmpmastery')}
+              aria-label="Mở App học Tư duy PMP"
+              className="hidden sm:inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-amber-500/45 bg-amber-500/15 px-2.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 hover:border-amber-500/60 transition-all cursor-pointer shadow-xs"
+            >
+              <PmpMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
+              <span className="hidden lg:inline whitespace-nowrap">
+                PMP App
+              </span>
+            </button>
+          </HeaderTooltip>
+
           {/* Switch to CI/CD Mastery App Button */}
           <HeaderTooltip
             label="Mở App học CI/CD Architecture (CI/CD Mastery)"

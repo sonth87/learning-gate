@@ -33,7 +33,7 @@ export type {
 };
 
 export type DevOpsCourseId = 'kube' | 'cicd';
-export type DevOpsAccent = 'sky' | 'cyan';
+export type DevOpsAccent = 'sky' | 'cyan' | 'amber';
 
 export type ExerciseKind = 'yaml' | 'dockerfile' | 'dockerignore' | 'cli' | 'troubleshoot';
 export type EditorLanguage = 'yaml' | 'dockerfile' | 'shell';

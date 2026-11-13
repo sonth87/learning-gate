@@ -126,7 +126,8 @@ const INLINE_BADGE_CLS: Record<string, string> = {
 
 export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): React.ReactNode[] {
   const out: React.ReactNode[] = [];
-  const codeTone = accent === 'cyan' ? 'text-cyan-300' : 'text-sky-300';
+  const codeTone =
+    accent === 'cyan' ? 'text-cyan-300' : accent === 'amber' ? 'text-amber-300' : 'text-sky-300';
   const re =
     /`([^`]+)`|<kbd>(.*?)<\/kbd>|==(.+?)==|\[!badge:(?:(sky|cyan|emerald|amber|rose|violet):)?([^\]]+)\]|\{(sky|cyan|emerald|amber|rose|violet):([^}]+)\}|\*\*(.+?)\*\*|(?<![*\w])\*([^*\s][^*]*?)\*(?![*\w])|\[([^\]]+)\]\((https?:[^)\s]+)\)|\[([^\]]+)\]\([^)]*\)/g;
   let last = 0;
@@ -165,7 +166,7 @@ export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): R
         </mark>
       );
     } else if (m[5] !== undefined) {
-      const badgeTone = m[4] ?? (accent === 'cyan' ? 'cyan' : 'sky');
+      const badgeTone = m[4] ?? (accent === 'cyan' ? 'cyan' : accent === 'amber' ? 'amber' : 'sky');
       out.push(
         <span
           key={k()}
@@ -332,16 +333,22 @@ function resolveCalloutTag(tag: string): CalloutKind {
 function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
   const lines = src.replace(/\r/g, '').split('\n');
   const out: React.ReactNode[] = [];
-  const h3Tone = accent === 'cyan' ? 'text-cyan-300' : 'text-sky-300';
+  const h3Tone =
+    accent === 'cyan' ? 'text-cyan-300' : accent === 'amber' ? 'text-amber-300' : 'text-sky-300';
   const stepBadgeCls =
     accent === 'cyan'
       ? 'border-cyan-500/45 bg-cyan-500/15 text-cyan-300'
-      : 'border-sky-500/45 bg-sky-500/15 text-sky-300';
+      : accent === 'amber'
+        ? 'border-amber-500/45 bg-amber-500/15 text-amber-300'
+        : 'border-sky-500/45 bg-sky-500/15 text-sky-300';
   const h2RuleCls =
     accent === 'cyan'
       ? 'from-cyan-500/70 via-cyan-500/20 to-transparent'
-      : 'from-sky-500/70 via-sky-500/20 to-transparent';
-  const arrowTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
+      : accent === 'amber'
+        ? 'from-amber-500/70 via-amber-500/20 to-transparent'
+        : 'from-sky-500/70 via-sky-500/20 to-transparent';
+  const arrowTone =
+    accent === 'cyan' ? 'text-cyan-400' : accent === 'amber' ? 'text-amber-400' : 'text-sky-400';
 
   let h2Index = 0;
   let i = 0;
@@ -488,7 +495,12 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
           </aside>
         );
       } else {
-        const quoteBorder = accent === 'cyan' ? 'border-cyan-500/70' : 'border-sky-500/70';
+        const quoteBorder =
+          accent === 'cyan'
+            ? 'border-cyan-500/70'
+            : accent === 'amber'
+              ? 'border-amber-500/70'
+              : 'border-sky-500/70';
         out.push(
           <blockquote
             key={k()}

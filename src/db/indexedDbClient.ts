@@ -40,7 +40,7 @@ export interface PyLearnDBSchema extends DBSchema {
     key: string;
     value: { key: string; state: WpState };
   };
-  /** Tiến độ các khoá học khác theo courseId ('kube' | 'cicd') */
+  /** Tiến độ các khoá học khác theo courseId ('kube' | 'cicd' | 'pmp') */
   course_state: {
     key: string;
     value: { courseId: string; state: WpState };
@@ -48,7 +48,7 @@ export interface PyLearnDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'pylearn_mastery_db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbPromise: Promise<IDBPDatabase<PyLearnDBSchema>> | null = null;
 
