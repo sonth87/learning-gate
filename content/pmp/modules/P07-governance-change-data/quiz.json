@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p07-q1",
+    "type": "mc",
+    "q": "Ban giám đốc vừa phê duyệt Business Case cho dự án nâng cấp ERP. Một trưởng phòng tài chính thúc giục bạn — người vừa được nhắm làm Project Manager — điều ngay ba kỹ sư sang khảo sát cấu hình máy chủ trong tuần này. Hiện tại Project Charter vẫn đang nằm trên bàn của Sponsor chờ ký. Bạn nên làm gì ĐẦU TIÊN?",
+    "code": "",
+    "choices": [
+      "Điều ngay ba kỹ sư đi làm để giữ thiện chí với trưởng phòng tài chính trong khi chờ chữ ký.",
+      "Bắt tay vào lập Project Management Plan và phân rã WBS chi tiết ngay lập tức.",
+      "Giải thích rằng dự án chưa được cấp thẩm quyền chính thức và làm việc với Sponsor để hoàn tất ký ban hành Project Charter trước khi huy động nguồn lực thực thi.",
+      "Yêu cầu trưởng phòng tài chính gửi phiếu Change Request lên CCB để mượn kỹ sư."
+    ],
+    "answer": 2,
+    "explain": "Project Charter do Sponsor ký ban hành là văn bản duy nhất khai sinh dự án và trao thẩm quyền chính thức cho PM sử dụng nguồn lực tổ chức. Khi chưa có Charter được ký, PM không được tự ý điều động nguồn lực thực thi dự án."
+  },
+  {
+    "id": "p07-q2",
+    "type": "mc",
+    "q": "Dự án xây dựng trung tâm dữ liệu đang ở tháng thứ 5 (đã khoá cả 3 Baselines). Một khách hàng chủ chốt gửi email đề nghị nâng chuẩn hệ thống làm mát lên cấp độ cao hơn để đón đầu máy chủ AI. Là Project Manager, hành động TIẾP THEO của bạn là gì?",
+    "code": "",
+    "choices": [
+      "Chuyển thẳng email đó cho Hội đồng Kiểm soát Thay đổi (CCB) để họ bỏ phiếu quyết định.",
+      "Cập nhật ngay Scope Baseline và Cost Baseline để phản ánh yêu cầu hợp lý của khách hàng.",
+      "Cùng nhóm dự án phân tích tác động toàn diện của đề xuất này lên phạm vi, tiến độ, chi phí, rủi ro và chất lượng trước khi lập Change Request trình CCB.",
+      "Từ chối thẳng yêu cầu vì dự án Predictive không cho phép thay đổi sau khi khoá Baseline."
+    ],
+    "answer": 2,
+    "explain": "Chuỗi chuẩn PMI luôn là: Đánh giá tác động cùng đội ngũ trước → Ghi nhận Change Request chính thức → Trình CCB kèm phương án phân tích. Trình CCB khi chưa có số liệu tác động hoặc tự ý sửa Baseline đều sai quy trình."
+  },
+  {
+    "id": "p07-q3",
+    "type": "mc",
+    "q": "Trong báo cáo gửi Ban chỉ đạo hàng tháng, bạn đính kèm một bảng Dashboard tổng hợp tình trạng Sức khoẻ dự án (RAG status), biểu đồ xu hướng Earned Value kèm các khuyến nghị hành động khắc phục. Theo thuật ngữ dòng dữ liệu PMI, tài liệu bạn đang gửi đi được gọi là gì?",
+    "code": "",
+    "choices": [
+      "Work Performance Data (WPD)",
+      "Work Performance Information (WPI)",
+      "Work Performance Reports (WPR)",
+      "Project Charter Updates"
+    ],
+    "answer": 2,
+    "explain": "WPD là số thô thu thập khi thực thi; WPI là kết quả phân tích sai lệch so với Baseline tại từng quy trình kiểm soát riêng lẻ; còn WPR (Work Performance Reports) là tài liệu/dashboard tổng hợp đóng gói các WPI để truyền thông và hỗ trợ ra quyết định cho Stakeholder/CCB."
+  },
+  {
+    "id": "p07-q4",
+    "type": "mc",
+    "q": "Một kiến trúc sư trưởng sắp nghỉ hưu sau 20 năm gắn bó và nắm giữ rất nhiều kinh nghiệm xử lý sự cố ngầm mà chưa sách vở nào ghi lại được. Để giữ lại nguồn tri thức ẩn (Tacit Knowledge) quý giá này cho dự án và tổ chức, cách làm nào HIỆU QUẢ NHẤT?",
+    "code": "",
+    "choices": [
+      "Yêu cầu kiến trúc sư đó tự ngồi gõ một cuốn cẩm nang 300 trang trong tuần làm việc cuối cùng.",
+      "Tổ chức các buổi làm việc cặp đôi (shadowing/mentoring), hội thảo chia sẻ tình huống thực tế và trao đổi trực tiếp với các kỹ sư kế cận kết hợp ghi chú điểm chính.",
+      "Gửi bộ câu hỏi khảo sát trắc nghiệm qua email cho kiến trúc sư điền trước khi bàn giao máy tính.",
+      "Lưu trữ toàn bộ mã nguồn cũ của kiến trúc sư lên thư mục dùng chung mà không cần trao đổi thêm."
+    ],
+    "answer": 1,
+    "explain": "Tacit Knowledge (tri thức ẩn: trực giác, kinh nghiệm xử lý ngữ cảnh phức tạp) rất khó diễn đạt trọn vẹn chỉ bằng văn bản khô khan; cách chuyển giao tốt nhất là tương tác xã hội trực tiếp như shadowing, mentoring, storytelling và cộng tác thực chiến."
+  },
+  {
+    "id": "p07-q5",
+    "type": "mc",
+    "q": "Do biến động tỷ giá và thay đổi chiến lược sáp nhập, Sponsor thông báo bằng văn bản quyết định chấm dứt dự án ngay khi đang đi được nửa chừng. Bạn nên làm gì với đội ngũ và hồ sơ dự án?",
+    "code": "",
+    "choices": [
+      "Giải phóng toàn bộ nhân sự về phòng ban ngay trong chiều nay để tiết kiệm ngân sách tối đa cho công ty.",
+      "Thực hiện quy trình Close Project or Phase: xác nhận và bàn giao các sản phẩm đã hoàn thành tới thời điểm hiện tại, ghi nhận lý do dừng, lưu trữ Lessons Learned vào OPA, thanh lý hợp đồng rồi mới giải phóng nhóm.",
+      "Tiếp tục chạy dự án bằng quỹ dự phòng cho tới khi hoàn thành thêm ít nhất một giai đoạn nữa.",
+      "Xoá bỏ các tài liệu dở dang vì dự án không đi tới đích cuối cùng."
+    ],
+    "answer": 1,
+    "explain": "Khi dự án bị huỷ sớm (terminated early), PM vẫn BẮT BUỘC thực hiện thủ tục đóng chính thức để điều tra/ghi nhận lý do chấm dứt, chuyển giao tài sản dở dang hợp lệ, đóng hợp đồng nhà thầu, cất giữ bài học kinh nghiệm vào OPA trước khi giải tán đội ngũ."
+  },
+  {
+    "id": "p07-q6",
+    "type": "tf",
+    "q": "Khi Hội đồng Kiểm soát Thay đổi (CCB) ra quyết định TỪ CHỐI (Reject) một Change Request, Project Manager không cần ghi lại yêu cầu đó vào Change Log để tránh làm rối hồ sơ dự án.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Mọi Change Request dù đang chờ xét, được phê duyệt, bị hoãn hay bị TỪ CHỐI đều bắt buộc phải cập nhật trạng thái và lý do vào Change Log để đảm bảo tính minh bạch và tránh việc cùng một đề xuất bị lặp lại nhiều lần."
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "id": "p02-q1",
+    "type": "mc",
+    "q": "Dự án phát triển cổng thanh toán nội bộ đã hoàn thành 75% khối lượng và đang đi đúng tiến độ, đúng ngân sách. Đột nhiên Ngân hàng Nhà nước ban hành chuẩn kết nối liên thông miễn phí mới khiến giải pháp riêng của dự án mất sạch lợi thế cạnh tranh và chi phí vận hành sẽ cao hơn doanh thu mang lại. PM nên làm gì TIẾP THEO?",
+    "code": "",
+    "choices": [
+      "Cho nhóm đẩy nhanh tiến độ hoàn tất 25% còn lại để ghi nhận thành tích dự án hoàn thành đúng hạn và đúng ngân sách.",
+      "Cùng các bên liên quan đánh giá lại Business Case & Benefits Management Plan, sau đó trình bày dữ liệu và các phương án (chuyển đổi mục tiêu hoặc đóng sớm dự án) lên Project Sponsor.",
+      "Giấu thông tin thị trường để tránh làm giảm tinh thần làm việc của các lập trình viên.",
+      "Tự ý giải tán nhóm dự án ngay trong ngày hôm đó để tiết kiệm 25% ngân sách còn lại."
+    ],
+    "answer": 1,
+    "explain": "Theo Nguyên tắc #2 (Focus on Value): 75% chi phí đã bỏ ra là Sunk Cost (chi phí chìm). Tiếp tục đốt thêm 25% ngân sách cho một sản phẩm không còn tạo ra Outcome/Benefits dương là gây lãng phí cho tổ chức. Tuy nhiên PM không có thẩm quyền tự huỷ dự án, mà phải phân tích lại Business Case và trình khuyến nghị lên Sponsor."
+  },
+  {
+    "id": "p02-q2",
+    "type": "mc",
+    "q": "Một công ty khởi nghiệp chưa chắc chắn liệu khách hàng doanh nghiệp có sẵn sàng trả tiền cho tính năng 'Trợ lý tóm tắt hợp đồng tự động' hay không. Họ muốn dựng một bản chạy thử tinh gọn nhất trong 2 tuần để đo tỷ lệ người dùng bấm đăng ký thực tế và thu thập phản hồi trước khi đầu tư lớn. Công cụ này được gọi chính xác là gì?",
+    "code": "",
+    "choices": [
+      "Work Breakdown Structure (WBS)",
+      "Minimum Viable Product (MVP)",
+      "Minimum Marketable Feature (MMF)",
+      "Gold Plating Prototype"
+    ],
+    "answer": 1,
+    "explain": "Từ khoá then chốt là 'chưa chắc chắn giả thuyết thị trường → làm bản tinh gọn nhất để kiểm chứng và học hỏi từ phản hồi thật': đó chính là định nghĩa chuẩn xác của MVP (Minimum Viable Product). Khi giả thuyết đã được chứng minh và cần tung từng cụm tính năng hoàn chỉnh ra kinh doanh, ta dùng MMF."
+  },
+  {
+    "id": "p02-q3",
+    "type": "mc",
+    "q": "Khi xét thầu xây dựng trung tâm dữ liệu mới, Nhà thầu A chào giá thấp hơn 12% giúp dự án dư ngân sách, nhưng thiết bị làm mát của họ tiêu tốn điện năng gấp đôi và dùng môi chất lạnh sắp bị hạn chế theo tiêu chuẩn môi trường 3 năm tới. Nhà thầu B có giá nằm trong ngân sách dự toán và đạt chuẩn tiết kiệm năng lượng dài hạn. Theo Nguyên tắc #5 của PMBOK 8, PM nên khuyến nghị hướng nào?",
+    "code": "",
+    "choices": [
+      "Chọn Nhà thầu A vì trách nhiệm của PM kết thúc ngay ngày ký biên bản nghiệm thu bàn giao trung tâm dữ liệu, chi phí điện năng thuộc về bộ phận Vận hành.",
+      "Đánh giá chi phí toàn bộ vòng đời (Life-cycle Costing) và rủi ro tuân thủ bền vững (Sustainability BY the product), từ đó khuyến nghị chọn Nhà thầu B.",
+      "Chọn Nhà thầu A rồi cắt giảm bước kiểm thử an toàn để tiết kiệm thêm chi phí.",
+      "Chia đôi hợp đồng cho cả hai nhà thầu lắp lẫn lộn vào cùng một phòng máy."
+    ],
+    "answer": 1,
+    "explain": "Nguyên tắc #5 mới trong PMBOK 8 (Integrate Sustainability Within All Project Areas) kết hợp Holistic View yêu cầu PM xét tác động kinh tế - môi trường - xã hội xuyên suốt vòng đời sản phẩm (Total Cost of Ownership / Life-cycle Cost), không tối ưu cục bộ ngân sách ngắn hạn để đẩy gánh nặng sang giai đoạn vận hành."
+  },
+  {
+    "id": "p02-q4",
+    "type": "mc",
+    "q": "Giám đốc Marketing đề nghị đẩy sớm ngày ra mắt ứng dụng thêm 3 tuần để kịp hội chợ triển lãm thương mại, đồng thời khẳng định phạm vi tính năng vẫn phải giữ nguyên 100%. Phản xạ nào của PM thể hiện đúng Nguyên tắc #1 (Adopt a Holistic View)?",
+    "code": "",
+    "choices": [
+      "Cập nhật ngay Schedule Baseline rút ngắn 3 tuần như yêu cầu của Giám đốc Marketing.",
+      "Phân tích toàn diện tác động dây chuyền của việc nén lịch lên Chi phí, Nguồn lực, Rủi ro lỗi hệ thống, Chất lượng kiểm thử và khả năng sẵn sàng của đội Vận hành trước khi trình các phương án đánh đổi.",
+      "Bắt toàn bộ đội phát triển làm việc 14 tiếng mỗi ngày trong 1 tháng liên tục.",
+      "Từ chối thẳng thừng mà không cần xem xét giá trị kinh doanh của hội chợ triển lãm."
+    ],
+    "answer": 1,
+    "explain": "Adopt a Holistic View (Tư duy Hệ thống): Thay đổi Schedule trong khi giữ cứng Scope tất yếu sẽ tác động mạnh lên Finance (Crashing), Risk/Rework (Fast-tracking), Quality và sức khoẻ Resources. Đồng thời hội chợ có thể mang lại Value lớn nên không từ chối mù quáng mà phải phân tích tổng thể các phương án đánh đổi."
+  },
+  {
+    "id": "p02-q5",
+    "type": "tf",
+    "q": "Một dự án bàn giao đầy đủ 100% Deliverables đúng đặc tả kỹ thuật (Outputs), đúng hạn và trong ngân sách luôn được PMI xem là thành công trọn vẹn ngay cả khi khách hàng không sử dụng sản phẩm và không tạo ra lợi ích kinh doanh nào.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Trong PMBOK 8 (§3.4 Focus on Value), Deliverables (Outputs) chỉ là phương tiện. Thành công thực sự của dự án phải được đo bằng việc hiện thực hoá Outcomes mong muốn và các Benefits chiến lược đã đề ra trong Business Case & Benefits Management Plan."
+  }
+]

@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p15-q1",
+    "type": "mc",
+    "q": "Một dự án ví điện tử đang ở giữa lộ trình Agile thì Ngân hàng Nhà nước ban hành thông tư mới về xác thực sinh trắc học bắt buộc, có hiệu lực chính thức sau **6 tuần nữa** (nếu không đáp ứng sẽ bị đình chỉ giao dịch). Tuy nhiên Product Backlog trong 3 Sprint tới đã kín các tính năng khuyến mãi mùa lễ hội. Project Manager nên làm gì **BEST**?",
+    "code": "",
+    "choices": [
+      "Giữ nguyên kế hoạch 3 Sprint lễ hội để đạt doanh thu trước, còn yêu cầu pháp lý dời sang quý sau rồi nộp phạt hành chính nếu cần",
+      "Phối hợp ngay với bộ phận Pháp chế/Compliance để đánh giá phạm vi kỹ thuật bắt buộc và làm việc với Product Owner đẩy các hạng mục tuân thủ lên đầu Product Backlog để hoàn thành trước hạn hiệu lực",
+      "Đóng băng toàn bộ dự án trong 2 tháng chờ xem các đối thủ cạnh tranh xử lý thông tư này ra sao",
+      "Tự ý giao ngầm cho 2 lập trình viên làm thêm giờ ban đêm mà không cần đưa vào Product Backlog"
+    ],
+    "answer": 1,
+    "explain": "**Regulatory Compliance** là ràng buộc pháp lý sống còn (không tuân thủ thì toàn bộ sản phẩm không được phép vận hành = Value bằng 0!). Trong môi trường Agile, PM phối hợp đánh giá yêu cầu tuân thủ cùng chuyên gia pháp chế rồi làm việc với **Product Owner** để tái ưu tiên (`Reprioritize`) đưa hạng mục bắt buộc này lên đầu `Product Backlog`."
+  },
+  {
+    "id": "p15-q2",
+    "type": "mc",
+    "q": "Đội dự án vừa bàn giao hệ thống CRM đám mây hoàn toàn đúng tiến độ, ngân sách và vượt qua mọi bài kiểm thử QC. Thế nhưng 1 tháng sau go-live, khảo sát cho thấy **70% nhân viên kinh doanh vẫn lén nhập liệu trên file bảng tính cá nhân cũ** và phàn nàn hệ thống mới rắc rối. Nguyên nhân gốc rễ khả dĩ nhất là gì và PM nên làm gì?",
+    "code": "",
+    "choices": [
+      "Do nhân viên kinh doanh thiếu kỷ luật; cần kiến nghị Giám đốc Nhân sự trừ thưởng những ai không đăng nhập CRM",
+      "Dự án đã đóng thành công về mặt kỹ thuật nên trách nhiệm của PM đã hết hoàn toàn, để mặc bộ phận vận hành tự xoay xở",
+      "Thiếu hoạt động Quản trị Thay đổi Tổ chức (OCM / ADKAR) để xây dựng nhận thức và sự đồng thuận; cần lắng nghe điểm vướng thực tế của người dùng, huy động Change Champions tại phòng kinh doanh cùng huấn luyện thực hành và tinh chỉnh trải nghiệm",
+      "Xoá toàn bộ ổ đĩa lưu file bảng tính cũ trên máy nhân viên mà không báo trước"
+    ],
+    "answer": 2,
+    "explain": "Theo tư duy tập trung vào **Outcome & Benefits** của PMBOK 8 và ECO 2026, sản phẩm đúng đặc tả kỹ thuật (Output) chưa đủ tạo ra Giá trị nếu tổ chức không chấp nhận sử dụng (**Adoption**). Thay vì cưỡng ép trừng phạt (A, D), cần áp dụng **OCM / ADKAR**: tìm hiểu lý do kháng cự, đồng hành cùng **Change Champions**, đào tạo sát thực tế và củng cố thói quen mới."
+  },
+  {
+    "id": "p15-q3",
+    "type": "mc",
+    "q": "Để tiết kiệm thời gian tổng hợp biên bản họp và phân tích rủi ro hợp đồng, một thành viên trong nhóm đề xuất dán toàn bộ bản dự thảo hợp đồng nhà thầu kèm danh sách thông tin cá nhân khách hàng (`PII`) lên một công cụ **Generative AI miễn phí ngoài công cộng**. Project Manager nên hành xử thế nào?",
+    "code": "",
+    "choices": [
+      "Khuyến khích cả nhóm áp dụng ngay vì AI giúp tăng năng suất tổng hợp lên gấp 5 lần",
+      "Cho phép dán lên nhưng dặn thành viên xoá lịch sử trò chuyện sau khi chép kết quả xong",
+      "Ngăn chặn việc tải dữ liệu mật/PII lên công cụ AI công cộng chưa được phê duyệt; rà soát chính sách quản trị dữ liệu & AI của tổ chức, chỉ dùng công cụ nội bộ đạt chuẩn bảo mật kèm bước kiểm chứng đầu ra bởi con người (Human-in-the-Loop)",
+      "Cấm vĩnh viễn mọi hình thức tự động hoá và công cụ AI trong toàn công ty"
+    ],
+    "answer": 2,
+    "explain": "Theo **PMBOK 8 Appendix X3 (AI in Project Management)** và chuẩn đạo đức bảo mật dữ liệu của PMI: tuyệt đối không đưa thông tin mật / `PII` lên nền tảng AI công cộng bên ngoài (kể cả xoá lịch sử vẫn có rủi ro lưu log huấn luyện). Phải tuân thủ **AI Governance** của tổ chức, ẩn danh dữ liệu nếu cần, dùng môi trường được phê duyệt và luôn giữ **Human-in-the-Loop** kiểm chứng kết quả."
+  },
+  {
+    "id": "p15-q4",
+    "type": "mc",
+    "q": "Công ty bạn vừa tái cấu trúc Văn phòng Quản lý Dự án theo hướng **Customer-centric / Value-oriented PMO** (`PMBOK 8 Appendix X2`). Khi một dự án R&D thử nghiệm sản phẩm mới gặp vướng mắc vì bộ biểu mẫu báo cáo 40 trang truyền thống quá nặng nề, PMO theo tư duy mới này sẽ hỗ trợ như thế nào?",
+    "code": "",
+    "choices": [
+      "Đình chỉ dự án và lập biên bản kỷ luật PM vì không điền đủ 40 trang biểu mẫu chuẩn",
+      "Hợp tác cùng PM như một đối tác tư vấn để may đo (Tailor) khung quản trị gọn nhẹ phù hợp tốc độ thử nghiệm, đồng thời hỗ trợ kết nối liên phòng ban nhằm tối ưu dòng chảy giá trị cho khách hàng",
+      "Giải thể toàn bộ cơ chế báo cáo và không cần bất kỳ quy chuẩn quản trị nào nữa",
+      "Tự cử Giám đốc PMO xuống thay thế PM điều hành trực tiếp từng công việc hàng ngày"
+    ],
+    "answer": 1,
+    "explain": "**Customer-centric PMO** (`PMBOK 8 Appendix X2`) chuyển dịch từ tư duy kiểm soát hành chính máy móc sang **lấy giá trị khách hàng làm trung tâm**: hỗ trợ **Tailoring** quy trình vừa vặn với bối cảnh dự án, gỡ bỏ rào cản tổ chức và đo lường kết quả thực chất thay vì đếm số trang giấy tờ."
+  },
+  {
+    "id": "p15-q5",
+    "type": "tf",
+    "q": "Trong bài thi PMP thực tế gồm 180 câu chia làm 3 chặng (60 câu/chặng), sau khi bạn bấm xác nhận hoàn tất Chặng 1 (câu 1–60) để bước ra nghỉ giải lao 10 phút, khi quay trở lại làm Chặng 2 và còn dư thời gian ở cuối giờ, bạn **vẫn có thể mở lại câu 15 của Chặng 1 để sửa đáp án**.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai hoàn toàn! Đây là luật phòng thi cực kỳ quan trọng: ngay khi bạn xác nhận kết thúc phần rà soát của một chặng 60 câu (để nghỉ giải lao hoặc sang chặng kế tiếp), **toàn bộ 60 câu của chặng đó bị KHOÁ VĨNH VIỄN** và không bao giờ mở lại được nữa. Hãy kiểm tra dứt điểm các câu gắn cờ (Flag) trong phạm vi ~80 phút của từng chặng!"
+  },
+  {
+    "id": "p15-q6",
+    "type": "mc",
+    "q": "Một mô hình AI phân tích lịch sử dữ liệu nhân sự của công ty đưa ra cảnh báo rằng các lập trình viên làm việc từ xa (Remote) ở múi giờ khác có hiệu suất thấp hơn và khuyến nghị PM loại họ khỏi danh sách tham gia dự án mới. Project Manager nên phản ứng thế nào **FIRST**?",
+    "code": "",
+    "choices": [
+      "Chấp nhận ngay kết luận của thuật toán vì AI luôn khách quan hơn cảm tính con người",
+      "Đánh giá thấu đáo nguồn dữ liệu lịch sử và tiêu chí đo lường để kiểm tra khả năng thiên kiến thuật toán (Algorithmic Bias), đồng thời xem xét năng lực thực tế từng cá nhân trước khi quyết định",
+      "Gửi báo cáo của AI cho toàn bộ nhân sự làm việc từ xa để cảnh cáo họ",
+      "Xoá bỏ toàn bộ dữ liệu lịch sử của tổ chức (OPA)"
+    ],
+    "answer": 1,
+    "explain": "Mô hình AI rất dễ kế thừa **thiên kiến lịch sử (Historical/Algorithmic Bias)** nếu dữ liệu quá khứ bị lệch (ví dụ: trước đây công cụ cộng tác từ xa kém hoặc tiêu chí đánh giá thiên vị người ngồi tại văn phòng). Nguyên tắc **Human-in-the-Loop** đòi hỏi PM phải kiểm tra tính công bằng, bối cảnh dữ liệu và tự chịu trách nhiệm công tâm khi ra quyết định về con người."
+  }
+]

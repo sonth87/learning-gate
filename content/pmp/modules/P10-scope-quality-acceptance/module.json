@@ -1,0 +1,62 @@
+{
+  "id": "P10",
+  "slug": "P10-scope-quality-acceptance",
+  "level": 3,
+  "order": 4,
+  "title": "Miền Scope & Quality: WBS, Chống trượt phạm vi & Chuỗi Nghiệm thu Bàn giao",
+  "summary": "Kết hợp Miền hiệu suất #2 Scope của PMBOK 8 với Nguyên tắc #3 Embed Quality: khắc ghi bộ ba Scope Baseline và ma trận truy vết RTM, tách rạch ròi Scope Creep với Gold Plating, phân biệt Manage Quality (QA) vs Control Quality (QC) và thuộc nằm lòng dòng chảy nghiệm thu Deliverable → Verified → Accepted → Close.",
+  "motto": "100% Rule in WBS · Zero Gold Plating · QC Before Validate Scope",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Scope §2.2 & Principle #3",
+      "detail": "Miền #2 Scope (6 quy trình) kết hợp nhúng chất lượng nội tại & Manage QA ở Governance"
+    },
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026 · Process 41%",
+      "detail": "Kiểm soát cấu trúc phạm vi, phòng ngừa sai lỗi quy trình và xác nhận bàn giao giá trị"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Core Scope/Quality & 13-Step Flow",
+      "detail": "Compare Lab Creep vs Gold Plating và dòng chảy 13 bước từ Requirements tới Close"
+    }
+  ],
+  "realWorldTrap": "Lập trình viên rảnh tay tự code thêm tính năng 'tặng khách cho bất ngờ' (Gold Plating); mang sản phẩm chưa qua kiểm thử nội bộ (QC) đem thẳng sang mời khách hàng nghiệm thu; nhầm lẫn giữa kiểm toán quy trình (QA) và kiểm tra sản phẩm (QC).",
+  "pmiMindsetShift": "Chỉ làm ĐÚNG VÀ ĐỦ những gì nằm trong Scope Baseline (Quy tắc 100% của WBS) — mọi thứ thêm vào dù miễn phí hay từ khách hàng lấn dần đều phải chặn lại và đưa qua Change Control; bắt buộc hoàn tất Control Quality (ra Verified Deliverable) TRƯỚC KHI họp Validate Scope với khách hàng (ra Accepted Deliverable).",
+  "tags": [
+    "scope-baseline",
+    "wbs",
+    "rtm",
+    "scope-creep",
+    "gold-plating",
+    "qa-vs-qc",
+    "validate-scope"
+  ],
+  "evidenceLinkIds": [
+    "core.scope.wbs",
+    "book.scope.creep",
+    "core.quality.qc-validate",
+    "flow.scope-acceptance"
+  ],
+  "practice": {
+    "title": "Thực chiến Kéo-Thả 13 Bước Từ Yêu Cầu Đến Nghiệm Thu & Mix Scope + Quality",
+    "primaryLinkId": "flow.scope-acceptance",
+    "secondaryLinkIds": [
+      "view.practice"
+    ],
+    "steps": [
+      "Bấm nút chính mở 'Flow Tương tác: Chuỗi 13 Bước Từ Yêu Cầu Đến Bàn Giao Nghiệm Thu' (chế độ Reconstruct) — ghép liền mạch từ Requirements/RTM → WBS → Deliverable → QC → Validate Scope → Close.",
+      "Mở 'Phòng Luyện Tập Tình Huống PMP Mindmap' ở nút phụ bên cạnh.",
+      "Chọn chế độ 'Mix theo chủ đề' → Tích chọn đồng thời 2 chủ đề 'scope' và 'quality' → Thiết lập 15 câu hỏi.",
+      "Chú ý đối tượng hành động trong đề bài: Nội bộ tự kiểm lỗi kỹ thuật → Control Quality; Khách hàng ký nhận → Validate Scope; Kiểm toán quy trình làm việc → Manage Quality (QA)."
+    ],
+    "selfCheck": [
+      "Ba văn bản nào hợp thành Scope Baseline và thiếu một trong ba có được gọi là Scope Baseline không?",
+      "Nếu khách hàng từ chối nghiệm thu sản phẩm tại buổi Validate Scope vì thiếu một yêu cầu ban đầu, PM phải tra cứu tài liệu nào để kiểm chứng nguồn gốc yêu cầu đó?",
+      "Phân biệt Quality (Chất lượng) và Grade (Cấp hạng) bằng một ví dụ thực tế trong 15 giây!"
+    ]
+  },
+  "decisionBranchId": "change"
+}

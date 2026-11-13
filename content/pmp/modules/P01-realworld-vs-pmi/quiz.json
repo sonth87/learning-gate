@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p01-q1",
+    "type": "mc",
+    "q": "Giữa dự án Predictive, một khách hàng lâu năm gọi điện riêng cho Senior Developer nhờ thêm 'một bộ lọc xuất báo cáo rất nhỏ, chỉ mất 3 giờ code và không làm trễ lịch hay tốn thêm tiền'. Senior Developer hào hứng báo với bạn (PM) rằng anh ấy sẽ làm tặng luôn chiều nay để giữ quan hệ tốt. Bạn nên làm gì?",
+    "code": "",
+    "choices": [
+      "Đồng ý ngay vì thay đổi không tốn chi phí lại làm tăng sự hài lòng của khách hàng.",
+      "Cảm ơn thiện chí của Developer nhưng yêu cầu dừng việc tự ý thêm tính năng, giải thích rủi ro Gold Plating và hướng dẫn đưa đề xuất này qua quy trình đánh giá tác động & Perform Integrated Change Control.",
+      "Gửi email cảnh cáo toàn nhóm phát triển và yêu cầu Functional Manager kỷ luật Senior Developer.",
+      "Báo cáo ngay cho Project Sponsor để Sponsor gọi điện chấn chỉnh khách hàng."
+    ],
+    "answer": 1,
+    "explain": "Đây là bẫy kinh điển 'Gold Plating' ngoài đời thực! Trong chuẩn PMI (Follow the Process & Holistic View), không có thay đổi nào là 'miễn phí vô hại' — thêm 3 giờ code vẫn sinh ra rủi ro lỗi hồi quy, tốn công kiểm thử QC và bảo trì. Mọi thay đổi chạm Scope Baseline đều phải đánh giá tác động và đi qua quy trình kiểm soát thay đổi chính thức."
+  },
+  {
+    "id": "p01-q2",
+    "type": "mc",
+    "q": "Trong bữa ăn trưa, bạn tình cờ nghe một chuyên viên phân tích nói rằng nhà cung cấp linh kiện chính sắp ngừng sản xuất mẫu chip mà dự án đang dùng, khiến tiến độ có nguy cơ trễ 2 tháng. Bạn nên làm gì ĐẦU TIÊN (FIRST)?",
+    "code": "",
+    "choices": [
+      "Lập tức huỷ hợp đồng hiện tại và ký hợp đồng khẩn cấp với nhà cung cấp thay thế.",
+      "Báo cáo ngay cho Project Sponsor xin lùi mốc hoàn thành dự án thêm 2 tháng.",
+      "Xác minh tính xác thực của thông tin với đầu mối nhà cung cấp và cùng nhóm đánh giá tác động thực tế lên dự án.",
+      "Nộp ngay Change Request lên CCB để sửa lại Schedule Baseline."
+    ],
+    "answer": 2,
+    "explain": "Phản xạ vàng số 1 (Think Before Act): Không bao giờ hành động quyết liệt hay leo thang dựa trên tin đồn hành lang chưa kiểm chứng! Bước ĐẦU TIÊN luôn là xác thực sự thật tại nguồn và phân tích mức độ ảnh hưởng."
+  },
+  {
+    "id": "p01-q3",
+    "type": "mc",
+    "q": "Một thành viên mới gia nhập nhóm dự án được 3 tuần nhưng liên tục hoàn thành công việc chậm hơn ước lượng và làm sai chuẩn mã nguồn nội bộ. Phản ứng nào dưới đây thể hiện đúng tư duy PM chuẩn PMI?",
+    "code": "",
+    "choices": [
+      "Yêu cầu trưởng phòng chức năng lập tức đổi một nhân sự giàu kinh nghiệm hơn để bảo vệ tiến độ.",
+      "Trao đổi riêng 1-1 với thành viên đó để tìm hiểu nguyên nhân gốc rễ, sau đó sắp xếp đào tạo bổ sung hoặc ghép cặp (mentoring/pairing) với một thành viên kỳ cựu.",
+      "Rút toàn bộ đầu việc khó của người đó giao sang cho Tech Lead làm tăng ca.",
+      "Đưa tên thành viên đó ra phê bình công khai trong cuộc họp trạng thái hàng tuần để làm gương."
+    ],
+    "answer": 1,
+    "explain": "Kết hợp 2 phản xạ vàng: Direct Communication (trao đổi riêng 1-1 để hiểu nguyên nhân gốc rễ) và Do Not Remove (đào tạo, huấn luyện, ghép cặp thay vì đuổi người hay bêu tên công khai)."
+  },
+  {
+    "id": "p01-q4",
+    "type": "mc",
+    "q": "Trong trường hợp nào sau đây, việc Project Manager leo thang (Escalate) vấn đề lên Project Sponsor là ĐÚNG ĐẮN theo chuẩn PMI?",
+    "code": "",
+    "choices": [
+      "Hai kỹ sư trưởng trong nhóm bất đồng quan điểm về việc chọn kiến trúc cơ sở dữ liệu.",
+      "Một bên liên quan phàn nàn rằng báo cáo tuần quá dài và khó đọc.",
+      "Một quy định pháp luật mới vừa ban hành buộc dự án phải tăng thêm 35% ngân sách, vượt quá toàn bộ Contingency Reserve và thẩm quyền phê duyệt của PM.",
+      "Một thành viên trong nhóm đi họp Daily Standup muộn 2 lần trong tuần."
+    ],
+    "answer": 2,
+    "explain": "Quy tắc Limit Escalate: Xung đột kỹ thuật nội bộ, định dạng truyền thông hay kỷ luật họp nhóm đều nằm hoàn toàn trong thẩm quyền xử lý của PM và nhóm. Chỉ khi biến cố vượt ngưỡng Baseline / Contingency Reserve và chạm tới ngân sách chiến lược (Management Reserve / Business Case), PM mới đệ trình phương án đã phân tích lên Sponsor/CCB."
+  },
+  {
+    "id": "p01-q5",
+    "type": "mc",
+    "q": "Hai thành viên chủ chốt tranh luận gay gắt trong nhiều ngày về giải pháp kiểm thử tự động khiến không khí nhóm căng thẳng và tiến độ chững lại. PM nên tiếp cận vấn đề này như thế nào?",
+    "code": "",
+    "choices": [
+      "Tạm lờ đi vì chuyện chuyên môn để kỹ sư tự giải quyết theo thời gian (Withdraw).",
+      "PM dùng quyền lực ép cả hai làm theo phương án của người lớn tuổi hơn cho nhanh (Force).",
+      "Tổ chức buổi làm việc trực tiếp với hai thành viên, đối chiếu Ground Rules trong Team Charter và điều phối cùng phân tích dữ liệu ưu/nhược điểm để tìm giải pháp tối ưu (Collaborate / Problem Solve).",
+      "Tách hai người sang hai dự án khác nhau để không còn gặp mặt."
+    ],
+    "answer": 2,
+    "explain": "Confront Problems & Direct Communication: PM không bao giờ né tránh xung đột làm hại dự án. Kỹ thuật ưu tiên số 1 của PMI luôn là Collaborate / Problem Solve (hợp tác giải quyết vấn đề dựa trên sự kiện khách quan và Team Charter)."
+  },
+  {
+    "id": "p01-q6",
+    "type": "tf",
+    "q": "Khi cần trình bày một vấn đề vượt thẩm quyền lên Project Sponsor, PM nên báo cáo ngay lập tức tình trạng sự cố thô và chờ Sponsor nghĩ ra các phương án giải quyết.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Ngay cả khi việc leo thang lên Sponsor là hợp lệ, PM chuẩn PMI phải hoàn thành phân tích tác động trước và mang lên các phương án lựa chọn (options) kèm theo đề xuất khuyến nghị (recommendation) rõ ràng."
+  }
+]

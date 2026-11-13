@@ -1,0 +1,62 @@
+{
+  "id": "P11",
+  "slug": "P11-schedule-finance-evm",
+  "level": 3,
+  "order": 5,
+  "title": "Miền Schedule & Finance: Đường găng, Quỹ dự phòng & Đọc vị sức khoẻ dự án qua EVM",
+  "summary": "Nắm chắc nghệ thuật nén tiến độ trên Đường găng (Crashing vs Fast-Tracking), cân bằng nguồn lực (Leveling vs Smoothing), phân định thẩm quyền túi tiền (Contingency vs Management Reserve) và đọc nhanh bảng mạch EVM để ra quyết định cứu lịch, cứu vốn chuẩn PMI.",
+  "motto": "Compress the Critical Path · Respect Reserve Authority · Let EVM Guide Action",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 Guide §2.3 & §2.4",
+      "detail": "Miền Schedule & Miền Finance (đổi tên từ Cost cũ)"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "CPM · Reserves · EVM",
+      "detail": "Ánh xạ sang schedule.compression & core.finance"
+    },
+    {
+      "kind": "eco2026",
+      "label": "Process Domain 41%",
+      "detail": "Quản trị ngân sách, lịch biểu và kiểm soát sai lệch"
+    }
+  ],
+  "realWorldTrap": "Thấy trễ lịch là ép cả đội OT tràn lan kể cả việc không nằm trên Đường găng; hoặc thấy thiếu tiền là tự rút quỹ Management Reserve ra xài trước rồi báo cáo Sponsor sau.",
+  "pmiMindsetShift": "Chỉ nén các tác vụ nằm trên Critical Path (ưu tiên đánh giá rủi ro/chi phí giữa Fast-Tracking và Crashing); PM chỉ được tự quyết Contingency Reserve cho Known-Unknowns, còn đụng tới Management Reserve bắt buộc phải trình Change Request qua CCB/Sponsor.",
+  "tags": [
+    "Schedule",
+    "Finance",
+    "Critical Path",
+    "Crashing",
+    "Fast-Tracking",
+    "Reserves",
+    "EVM"
+  ],
+  "evidenceLinkIds": [
+    "book.schedule.compression",
+    "core.finance.reserves",
+    "core.finance.evm",
+    "flow.cost"
+  ],
+  "practice": {
+    "title": "Thực chiến Dòng chảy Tài chính (EVM) & Bộ câu hỏi Mix Schedule + Finance",
+    "primaryLinkId": "flow.cost",
+    "secondaryLinkIds": [
+      "view.practice"
+    ],
+    "steps": [
+      "Mở 'Flow Tương tác: Quy trình Lập Ngân sách & Kiểm soát Tài chính (EVM)' để nắm trọn luồng cộng dồn từ Activity Cost Estimates → Cost Baseline → Project Budget.",
+      "Chuyển sang 'Phòng Luyện Tập Tình Huống PMP Mindmap', chọn chế độ Mix theo chủ đề.",
+      "Tick lọc 2 chủ đề 'schedule' và 'finance' (hoặc 'cost'), chọn gói 15 câu tình huống và bấm giờ tối đa 18 phút.",
+      "Với mỗi câu có chỉ số CPI/SPI, hãy xác định dự án đang gặp vấn đề ở Tiến độ hay Chi phí trước khi đọc 4 đáp án."
+    ],
+    "selfCheck": [
+      "Khi đề bài báo 'hết sạch ngân sách nâng thêm' nhưng bắt buộc rút ngắn lịch, tôi có loại ngay Crashing để xét Fast-Tracking không?",
+      "Tôi đã phân biệt rạch ròi Resource Smoothing (không làm đổi Đường găng, dùng trong giới hạn Float) với Resource Leveling (có thể kéo dài Đường găng) chưa?",
+      "Gặp biến cố hoàn toàn chưa từng có trong Risk Register (Unknown-Unknown), tôi có nhớ phải nộp Change Request xin dùng Management Reserve không?"
+    ]
+  },
+  "decisionBranchId": "schedule-cost"
+}

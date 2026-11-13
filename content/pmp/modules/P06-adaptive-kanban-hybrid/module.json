@@ -1,0 +1,61 @@
+{
+  "id": "P06",
+  "slug": "P06-adaptive-kanban-hybrid",
+  "level": 2,
+  "order": 3,
+  "title": "Lập kế hoạch Thích ứng, Giới hạn WIP trong Kanban & Chuyển đổi Hybrid",
+  "summary": "Làm chủ nhịp lập kế hoạch cuốn chiếu (Progressive Elaboration & Rolling Wave), bảo vệ sự minh bạch của Story Points & Velocity, khai thông luồng kéo Kanban bằng giới hạn WIP và điều phối mượt mà dự án Hybrid hoặc chuyển đổi tổ chức sang Agile.",
+  "motto": "Forecast with Velocity · Limit WIP to Flow · Tailor Hybrid by Context",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §4.2 & Schedule §2.3",
+      "detail": "Lập kế hoạch thích ứng nhiều tầng, tối ưu dòng chảy Kanban và tùy biến mô hình Hybrid"
+    },
+    {
+      "kind": "eco2026",
+      "label": "ECO 07/2026 · Process 41%",
+      "detail": "Trọng tâm số 1 đề thi: lai ghép Predictive + Agile và quản trị chuyển đổi cách làm việc"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "PMA Core Adaptive & Book Value",
+      "detail": "Quy tắc đọc Velocity, biểu đồ Burndown/Burnup/CFD và lý thuyết hàng đợi Little's Law"
+    }
+  ],
+  "realWorldTrap": "Lấy Velocity của Nhóm A đem so KPI với Nhóm B, ép Developer tăng Velocity mỗi Sprint, hoặc 'đập bỏ Waterfall sau một đêm' bắt cả khối phần cứng lẫn pháp lý chạy Sprint 2 tuần.",
+  "pmiMindsetShift": "Velocity chỉ là thước đo dự báo dung lượng nội bộ của RIÊNG một nhóm; muốn làm xong nhanh hơn trong Kanban phải GIẢM giới hạn WIP (Stop starting, start finishing); chuyển đổi sang Agile phải tiến hành dần dần qua mô hình Hybrid kèm đào tạo và huấn luyện.",
+  "tags": [
+    "rolling-wave",
+    "story-points",
+    "velocity",
+    "kanban",
+    "wip-limit",
+    "hybrid",
+    "cfd"
+  ],
+  "evidenceLinkIds": [
+    "core.adaptive.velocity",
+    "book.value.kanban",
+    "book.intro.hybrid",
+    "flow.adaptive-tracking"
+  ],
+  "practice": {
+    "title": "Thực chiến Đọc Biểu đồ Thích ứng & Xử lý Tình huống Hybrid / Kanban",
+    "primaryLinkId": "flow.adaptive-tracking",
+    "secondaryLinkIds": [
+      "view.practice"
+    ],
+    "steps": [
+      "Bấm nút xanh để mở 'Flow Tương tác: Theo dõi tiến độ thích ứng (Burndown · Burnup · CFD)' và đi hết các bước chẩn đoán điểm nghẽn.",
+      "Mở 'Phòng Luyện Tập Tình Huống PMP Mindmap' ở nút phụ bên cạnh.",
+      "Chọn chế độ 'Mix theo chủ đề' → Tích chọn đồng thời 2 chủ đề 'adaptive' và 'value' → Thiết lập số lượng 15 câu hỏi.",
+      "Khi làm bài, gạch chân ngay các từ khoá 'compare velocity', 'WIP limit', 'transitioning to Agile', 'hardware + software' để nhận diện bẫy."
+    ],
+    "selfCheck": [
+      "Vì sao khi một cột trên bảng Kanban bị ùn ứ, nhóm phải sang phụ giải phóng điểm nghẽn thay vì kéo thêm thẻ mới vào cột trước?",
+      "Nhìn biểu đồ Burnup thấy đường Tổng phạm vi (Total Scope) nhảy vọt lên còn đường Hoàn thành vẫn đi đều — bạn kết luận điều gì?",
+      "Khi hợp phần phần cứng chạy Predictive kết hợp phần mềm chạy Scrum, PM cần thiết lập cơ chế gì để hai luồng không lệch pha tích hợp?"
+    ]
+  }
+}

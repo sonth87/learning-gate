@@ -1,0 +1,72 @@
+[
+  {
+    "id": "p03-q1",
+    "type": "mc",
+    "q": "Dự án phát triển thiết bị y tế cầm tay đang có nguy cơ vượt ngân sách 15%. Trong cuộc họp khẩn, một thành viên đề xuất hai cách tiết kiệm tiền: (Cách 1) Cắt bỏ 50% số bài kiểm thử độ chính xác cảm biến; (Cách 2) Giữ nguyên toàn bộ kiểm thử độ chính xác an toàn nhưng lược bỏ màn hình màu cảm ứng trang trí, quay về màn hình đơn sắc tiêu chuẩn nếu khách hàng đồng ý. Theo Nguyên tắc #3 của PMBOK 8, PM nên làm gì?",
+    "code": "",
+    "choices": [
+      "Chọn Cách 1 vì người dùng thích giao diện màn hình màu đẹp mắt hơn là các bài kiểm thử hậu trường.",
+      "Bác bỏ ngay Cách 1 (vì cắt giảm Quality là không thể chấp nhận) và cùng khách hàng/CCB đánh giá Cách 2 (điều chỉnh giảm Grade/Scope phụ nhưng giữ trọn Quality cốt lõi).",
+      "Áp dụng cả Cách 1 lẫn Cách 2 mà không cần thông báo cho khách hàng.",
+      "Yêu cầu nhóm tự bỏ tiền túi mua linh kiện để giữ cả màn hình màu lẫn kiểm thử."
+    ],
+    "answer": 1,
+    "explain": "Điểm phân biệt vàng trong PMBOK 8 §3.5: Low Grade (màn hình đơn sắc ít tính năng trang trí nhưng bền bỉ, đúng chuẩn y tế) có thể là lựa chọn thiết kế hợp lệ khi được duyệt qua Change Control; nhưng Low Quality (cắt kiểm thử gây sai lệch cảm biến y tế) là điều CẤM KỴ tuyệt đối."
+  },
+  {
+    "id": "p03-q2",
+    "type": "mc",
+    "q": "Trước buổi họp đánh giá giai đoạn với khách hàng, Giám đốc bộ phận (cấp trên trực tiếp của bạn) nhắn riêng: 'Chỉ số CPI thực tế đang là 0.82 nhưng tuần này cứ sửa báo cáo thành 0.98 cho khách khỏi làm căng, tháng sau ta tính cách bù sau'. Là một Accountable Leader theo chuẩn PMI, bạn phải làm gì?",
+    "code": "",
+    "choices": [
+      "Làm theo lời Giám đốc bộ phận vì cấp trên chịu trách nhiệm cuối cùng trước công ty.",
+      "Từ chối làm sai lệch dữ liệu một cách chuyên nghiệp, giải thích nghĩa vụ trung thực và báo cáo đúng chỉ số CPI 0.82 kèm phân tích nguyên nhân gốc rễ cùng kế hoạch hành động khắc phục.",
+      "Tạm huỷ buổi họp với khách hàng vô thời hạn để không phải gửi báo cáo.",
+      "Gửi báo cáo trống không có bất kỳ con số tài chính nào."
+    ],
+    "answer": 1,
+    "explain": "Nguyên tắc #4 (Be an Accountable Leader) & Giá trị Honesty trong Quy tắc Đạo đức PMI: Làm giả báo cáo là hành vi vi phạm đạo đức nghiêm trọng. PM phải từ chối yêu cầu sai trái một cách chuyên nghiệp và trình bày sự thật khách quan đi kèm giải pháp khắc phục."
+  },
+  {
+    "id": "p03-q3",
+    "type": "mc",
+    "q": "Khi bắt đầu một dự án Agile mới, một Project Manager chuyển từ môi trường truyền thống sang đã tự ngồi lập bảng ước lượng chi tiết số giờ làm việc cho từng User Story rồi gửi cho các Developers thực hiện. Hậu quả là nhóm im lặng, thiếu cam kết và liên tục trễ Sprint. Sai lầm cốt lõi của PM nằm ở đâu?",
+    "code": "",
+    "choices": [
+      "PM ước lượng chưa đủ chi tiết đến từng phút.",
+      "PM vi phạm Nguyên tắc #6 (Build an Empowered Culture): không để chính nhóm Developers trực tiếp làm việc tự ước lượng và tự tổ chức kế hoạch Sprint của họ.",
+      "PM quên không phạt tiền những thành viên làm chậm hơn bảng ước lượng.",
+      "Trong Agile không bao giờ được phép ước lượng bất kỳ công việc nào."
+    ],
+    "answer": 1,
+    "explain": "Theo Nguyên tắc #6 (Empowered Culture) và khung Scrum, những người trực tiếp thực thi công việc (Developers) phải là người tự ước lượng nỗ lực (ví dụ qua Planning Poker) và sở hữu kế hoạch thực hiện trong Sprint. Sự áp đặt từ bên ngoài triệt tiêu tính cam kết và độ chính xác thực tế."
+  },
+  {
+    "id": "p03-q4",
+    "type": "mc",
+    "q": "Nhóm dự án vừa hoàn tất kiểm thử nội bộ cho một module phần mềm, xác nhận sản phẩm thoả mãn 100% tiêu chuẩn kỹ thuật (Verified Deliverable). Tuy nhiên, trong hai tuần gần đây nhóm nhận thấy quy trình bàn giao môi trường test giữa Dev và QA rất lộn xộn làm mất nhiều giờ chờ đợi vô ích. Hoạt động xem xét và tối ưu lại quy trình phối hợp này thuộc về đâu?",
+    "code": "",
+    "choices": [
+      "Validate Scope",
+      "Control Quality (QC)",
+      "Manage Quality / Quality Assurance (QA) kết hợp cải tiến quy trình trong Retrospective / Lessons Learned",
+      "Close Project"
+    ],
+    "answer": 2,
+    "explain": "Control Quality (QC) kiểm tra tính đúng đắn của SẢN PHẨM cụ thể; Validate Scope là nghiệm thu với KHÁCH HÀNG; còn việc đánh giá và cải tiến QUY TRÌNH làm việc để ngăn ngừa lãng phí/sai lỗi thuộc về Manage Quality / QA (nằm trong Governance của PMBOK 8) và cải tiến liên tục."
+  },
+  {
+    "id": "p03-q5",
+    "type": "mc",
+    "q": "Trong một buổi Sprint Retrospective, một lập trình viên trẻ rụt rè thừa nhận mình đã chạy nhầm kịch bản cấu hình làm sập môi trường Staging mất 4 giờ. Phản ứng nào của PM / Scrum Master giúp củng cố An toàn tâm lý (Psychological Safety) và chất lượng dài hạn?",
+    "code": "",
+    "choices": [
+      "Ghi biên bản cảnh cáo cá nhân lập trình viên đó và tước quyền truy cập hệ thống vĩnh viễn.",
+      "Cảm ơn sự trung thực, giữ tinh thần không đổ lỗi (blameless) và dẫn dắt cả nhóm tìm cách bổ sung cơ chế kiểm tra tự động / xác nhận 2 bước để không ai còn bấm nhầm được nữa.",
+      "Yêu cầu lập trình viên đó làm bù cuối tuần một mình để chuộc lỗi.",
+      "Báo cáo tên người gây lỗi lên Project Sponsor."
+    ],
+    "answer": 1,
+    "explain": "Kết hợp hoàn hảo cả 3 nguyên tắc #3 (Prevention over Inspection — thêm chốt chặn tự động vào quy trình), #4 (Accountable Leader) và #6 (Empowered Culture — an toàn tâm lý, biến sai sót thành bài học nâng cấp hệ thống thay vì trừng phạt cá nhân)."
+  }
+]

@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p12-q1",
+    "type": "mc",
+    "q": "Sáng thứ Hai, nhà cung cấp linh kiện duy nhất gửi thông báo chính thức rằng nhà máy của họ **đã bị đóng cửa vô thời hạn** do sự cố môi trường, khiến lô cảm biến giao tuần tới chắc chắn bị huỷ. Rủi ro này **chưa từng có** trong `Risk Register`. Project Manager nên làm gì **FIRST**?",
+    "code": "",
+    "choices": [
+      "Cập nhật ngay sự kiện này vào Risk Register và chạy phân tích xác suất × tác động (Qualitative Risk Analysis)",
+      "Ghi nhận sự việc vào Issue Log, gán người phụ trách và họp nhóm tìm giải pháp ứng biến tức thời (Workaround)",
+      "Gửi đơn khởi kiện nhà cung cấp ra toà án thương mại để đòi bồi thường thiệt hại",
+      "Tự động rút quỹ Contingency Reserve để đặt mua gấp linh kiện từ chợ đen"
+    ],
+    "answer": 1,
+    "explain": "Nhà máy **đã bị đóng cửa** — xác suất bằng `100%`, tức sự việc đã trở thành **Issue** hiện hữu chứ không còn là Risk tương lai nữa! Bước ĐẦU TIÊN chuẩn PMI là ghi vào **Issue Log** và xây dựng **Workaround** (vì sự kiện này chưa từng có kế hoạch dự phòng trước trong Risk Register)."
+  },
+  {
+    "id": "p12-q2",
+    "type": "mc",
+    "q": "Để tránh nguy cơ trễ hạn phát triển cổng thanh toán nội địa (chiến lược `Transfer`), dự án quyết định thuê một Fintech bên thứ ba tích hợp trọn gói. Tuy nhiên, việc mở API kết nối với đối tác này lại làm phát sinh nguy cơ mới là **rò rỉ nhật ký giao dịch khách hàng**. Nguy cơ rò rỉ dữ liệu mới này được gọi là gì?",
+    "code": "",
+    "choices": [
+      "Residual Risk (Rủi ro tàn dư)",
+      "Secondary Risk (Rủi ro thứ cấp)",
+      "Unknown-Unknown Risk (Rủi ro bất định hoàn toàn)",
+      "Workaround Trigger (Tín hiệu ứng biến)"
+    ],
+    "answer": 1,
+    "explain": "**Secondary Risk** là rủi ro mới phát sinh **trực tiếp do việc thực thi một chiến lược ứng phó rủi ro khác** (ở đây là thuê đối tác thứ ba). Nó cũng cần được đưa vào `Risk Register` và lập phương án kiểm soát bảo mật."
+  },
+  {
+    "id": "p12-q3",
+    "type": "mc",
+    "q": "Hợp đồng phần mềm quy định nếu bàn giao sớm trước ngày 15/11, đội dự án sẽ nhận khoản thưởng `$80,000`. Project Manager quyết định điều chuyển 2 kỹ sư Senior xuất sắc nhất từ nhánh phụ sang hỗ trợ và mua sẵn cụm máy chủ build tốc độ cao để **chắc chắn 100% đạt mốc 15/11**. PM đang áp dụng chiến lược nào?",
+    "code": "",
+    "choices": [
+      "Enhance (Tăng cường cơ hội)",
+      "Share (Chia sẻ cơ hội)",
+      "Exploit (Khai thác triệt để cơ hội)",
+      "Mitigate (Giảm thiểu rủi ro)"
+    ],
+    "answer": 2,
+    "explain": "Khoản thưởng bàn giao sớm là một **Opportunity** (rủi ro tích cực). Khi PM loại bỏ mọi sự bất định để đẩy xác suất xảy ra cơ hội lên **chắc chắn 100%** (cử người giỏi nhất + trang bị hạ tầng tối đa), đó chính là chiến lược **Exploit** (nếu chỉ tăng xác suất lên 70–80% thì mới là *Enhance*)."
+  },
+  {
+    "id": "p12-q4",
+    "type": "mc",
+    "q": "Công ty bạn cần thuê một đơn vị tư vấn AI bên ngoài để thử nghiệm mô hình nhận diện giọng nói chuyên ngành y khoa. Yêu cầu bài toán **còn rất mờ, phạm vi chắc chắn sẽ thay đổi liên tục** sau mỗi vòng thử nghiệm 2 tuần, nhưng Giám đốc Tài chính muốn tránh rủi ro bị tính phí vô hạn. Cấu trúc hợp đồng nào phù hợp **NHẤT**?",
+    "code": "",
+    "choices": [
+      "Firm Fixed Price (FFP — Giá cố định trọn gói cứng ngay từ ngày đầu)",
+      "Cost Plus Percentage of Cost (CPPC — Hoàn trả chi phí cộng phần trăm chi phí)",
+      "Hợp đồng khung kết hợp các đợt gia tăng linh hoạt theo Sprint hoặc Time & Materials (T&M) có gắn trần chi phí tối đa (Not-To-Exceed)",
+      "Fixed Price with Economic Price Adjustment (FP-EPA) kéo dài 5 năm"
+    ],
+    "answer": 2,
+    "explain": "Khi phạm vi mờ và biến động cao, dùng `FFP` sẽ khiến Vendor cộng phí phòng thủ khổng lồ hoặc liên tục nảy sinh tranh chấp Change Order; còn `CPPC` không khuyến khích tiết kiệm chi phí. Kết hợp **Agile/Dynamic Scope Contract** theo từng Sprint hoặc **T&M kèm trần NTE (Not-To-Exceed)** vừa giữ được sự linh hoạt khám phá, vừa khoá được mức trần ngân sách cho CFO."
+  },
+  {
+    "id": "p12-q5",
+    "type": "mc",
+    "q": "Một nhà thầu phụ bàn giao module báo cáo thiếu mất 2 biểu đồ lọc dữ liệu. Nhà thầu khăng khăng rằng đặc tả công việc (`SOW`) ban đầu không hề yêu cầu 2 biểu đồ đó, trong khi Tech Lead nội bộ khẳng định đã nhắc miệng trong một buổi họp tuần. Project Manager nên làm gì **FIRST** rồi xử lý thế nào?",
+    "code": "",
+    "choices": [
+      "Giữ lại toàn bộ khoản thanh toán đợt này và chuyển ngay hồ sơ sang bộ phận Pháp chế để khởi kiện",
+      "Rà soát lại hợp đồng đã ký và SOW để xác minh phạm vi pháp lý, sau đó ngồi đàm phán trực tiếp (Negotiation) với nhà thầu (hoặc lập Contract Change Request nếu đúng là chưa có trong SOW)",
+      "Báo cáo lên Project Sponsor yêu cầu chấm dứt hợp đồng và tìm nhà thầu mới ngay lập tức",
+      "Yêu cầu lập trình viên nội bộ tự viết bù 2 biểu đồ đó để khỏi mất lòng nhà thầu"
+    ],
+    "answer": 1,
+    "explain": "Lời nói miệng của Tech Lead không có giá trị thay đổi hợp đồng! Phản xạ chuẩn PMI: **(1)** Kiểm tra lại văn bản pháp lý (`Contract` & `SOW` + `Contract Change Control`), **(2)** Ưu tiên **đàm phán trực tiếp (Direct Negotiation)** giữa hai bên; nếu SOW thực sự chưa có mà dự án cần 2 biểu đồ đó thì phải đi qua quy trình thay đổi hợp đồng chính thức."
+  },
+  {
+    "id": "p12-q6",
+    "type": "tf",
+    "q": "Trong giải quyết tranh chấp hợp đồng mua sắm theo chuẩn PMI, khi hai bên không thể tự đạt thoả thuận qua đàm phán trực tiếp (**Negotiation**), phương thức ưu tiên tiếp theo là **ADR (Alternative Dispute Resolution — Hoà giải/Trọng tài)** trước khi tính đến chuyện kiện tụng ra toà (**Litigation**).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Thang giải quyết tranh chấp hợp đồng luôn đi từ: **Đàm phán trực tiếp (Negotiation — tốt nhất) → ADR (Mediation / Arbitration) → Litigation (Kiện tụng ra toà — giải pháp cuối cùng)**."
+  }
+]

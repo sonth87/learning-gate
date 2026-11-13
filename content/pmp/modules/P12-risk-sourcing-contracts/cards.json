@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p12-c1",
+    "front": "Làm sao phân biệt **Risk** và **Issue** chỉ trong 3 giây khi đọc đề PMP, và mỗi loại ghi vào tài liệu nào đầu tiên?",
+    "back": "• **Risk:** sự kiện ở **tương lai** (`0% < P < 100%`, từ khoá *might, could, risk of*) → ghi vào **Risk Register**.\n• **Issue:** sự kiện **đã xảy ra ở hiện tại** (`P = 100%`, từ khoá *has failed, resigned, delayed*) → ghi vào **Issue Log** và dùng Contingency Plan (nếu đã lường trước) hoặc **Workaround** (nếu bất ngờ)."
+  },
+  {
+    "id": "p12-c2",
+    "front": "Kể tên 5 chiến lược ứng phó **Threat** và 5 chiến lược ứng phó **Opportunity** đối xứng nhau?",
+    "back": "• **Threat (Tiêu cực):** Escalate · Avoid (`P → 0%`) · Transfer · Mitigate (giảm `P/I`) · Accept (Active/Passive).\n• **Opportunity (Tích cực):** Escalate · Exploit (`P → 100%`) · Share · Enhance (tăng `P/I`) · Accept."
+  },
+  {
+    "id": "p12-c3",
+    "front": "Phân biệt **Residual Risk** và **Secondary Risk**?",
+    "back": "• **Residual Risk (Rủi ro tàn dư):** phần rủi ro gốc **vẫn còn sót lại** sau khi đã thực hiện biện pháp ứng phó.\n• **Secondary Risk (Rủi ro thứ cấp):** rủi ro **mới tinh nảy sinh trực tiếp** từ việc thực thi giải pháp ứng phó rủi ro."
+  },
+  {
+    "id": "p12-c4",
+    "front": "Quy tắc chọn loại hợp đồng mua sắm (`FFP`, `CPIF/CPFF`, `T&M`, `Agile Contract`) theo độ rõ ràng của phạm vi?",
+    "back": "• Phạm vi **rất rõ, ổn định** → **FFP** (Seller chịu rủi ro chi phí).\n• Phạm vi **R&D phức tạp, biến động cao** → **CPIF / CPFF** (Buyer chịu rủi ro chi phí).\n• Thuê chuyên gia ngắn hạn khi khối lượng chưa chốt → **T&M kèm trần NTE (Not-To-Exceed)**.\n• Phát triển thích ứng theo giá trị → **Agile Multi-tiered / Dynamic Scope Contract**."
+  },
+  {
+    "id": "p12-c5",
+    "front": "Trình tự 4 bước chuẩn PMI khi xảy ra tranh chấp hoặc bất đồng nghiệm thu với Nhà thầu (Vendor)?",
+    "back": "1. **Rà soát Hợp đồng & SOW** (kiểm tra điều khoản gốc).\n2. **Negotiation** (thương lượng trực tiếp — luôn là lựa chọn tốt nhất).\n3. **ADR** (Mediation / Arbitration — hoà giải hoặc trọng tài thương mại).\n4. **Litigation** (kiện tụng ra toà — bước đường cùng)."
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p13-c1",
+    "front": "Quy trình 4 bước giải phẫu một câu hỏi tình huống PMP dài trong **65 giây** diễn ra theo thứ tự nào?",
+    "back": "1. **Đọc câu hỏi chốt cuối cùng TRƯỚC** (`FIRST/NEXT`, `BEST`, `SHOULD HAVE`, `EXCEPT`).\n2. **Quét ra-đa vòng đời** (`Agile` vs `Predictive` vs `Hybrid`).\n3. **Tách nhiễu bối cảnh**, khoanh vùng sự kiện nút thắt ở câu áp chót & những bước PM đã làm xong.\n4. **Lọc đáp án qua Phễu 4 tầng PMI** (An toàn/Pháp lý → Minh bạch → Phân tích trước → Hợp tác)."
+  },
+  {
+    "id": "p13-c2",
+    "front": "Sự khác biệt quyết định khi chọn đáp án cho câu hỏi **do FIRST / NEXT** so với **do BEST** là gì?",
+    "back": "• **FIRST / NEXT:** tìm **bước khởi đầu ngay kế tiếp** trên dòng thời gian (nếu chưa rõ nguyên nhân/tác động → luôn chọn xác minh, lắng nghe, phân tích trước).\n• **BEST:** tìm **giải pháp căn cơ và bền vững nhất** giải quyết tận gốc rễ vấn đề (Root Cause) thay vì chỉ bước mở đầu hay chữa triệu chứng."
+  },
+  {
+    "id": "p13-c3",
+    "front": "Khi nào câu hỏi hỏi **do NEXT** nhưng bạn **KHÔNG ĐƯỢC** chọn phương án *'Phân tích tác động / Tìm nguyên nhân gốc rễ'*?",
+    "back": "Khi ngay trong thân đề bài đã ghi rõ PM và đội dự án **đã hoàn thành xong bước phân tích nguyên nhân / đánh giá tác động rồi** — lúc đó `NEXT` phải tiến sang bước tiếp theo của quy trình (ví dụ: trình Change Request lên CCB hoặc thực thi giải pháp)."
+  },
+  {
+    "id": "p13-c4",
+    "front": "Câu hỏi có cụm **What SHOULD the PM HAVE DONE to prevent this?** yêu cầu bạn tìm loại đáp án nào?",
+    "back": "Quay ngược thời gian về giai đoạn **Initiating / Planning** để chọn **hành động phòng ngừa chủ động** (ví dụ: nhận diện đủ Stakeholder sớm, thiết lập Team Charter, định nghĩa rõ DoD/Communications Plan), tuyệt đối không chọn hành động chữa cháy ở hiện tại."
+  },
+  {
+    "id": "p13-c5",
+    "front": "Trường hợp ngoại lệ duy nhất nào buộc PM phải **HÀNH ĐỘNG DỪNG NGAY LẬP TỨC** mà không được ngồi họp phân tích từ từ?",
+    "back": "Khi phát hiện nguy cơ **đe doạ trực tiếp an toàn tính mạng, sức khoẻ con người** hoặc **hành vi vi phạm pháp luật nghiêm trọng** — phải cho dừng công việc nguy hiểm ngay để bảo vệ con người trước tiên."
+  }
+]

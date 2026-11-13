@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p04-c1",
+    "front": "2 trục cốt lõi của Ma trận Stacey dùng để chọn phương pháp phát triển dự án là gì?",
+    "back": "1. Độ bất định về Yêu cầu (Requirements Uncertainty — Làm cái gì / What?)\n2. Độ bất định về Kỹ thuật / Công nghệ (Technical Uncertainty — Làm thế nào / How?)\n• Cả hai đều rõ & ổn định → Predictive.\n• Bất định tăng cao (vùng Complex) → Iterative / Incremental / Agile."
+  },
+  {
+    "id": "p04-c2",
+    "front": "Mẹo bắt từ khoá phân biệt 'Iterative' vs 'Incremental' trong 10 giây khi thi PMP?",
+    "back": "• Iterative = Lặp Prototype/Mockup để tối ưu ĐỘ ĐÚNG ĐẮN (Correctness / làm rõ yêu cầu mờ), bàn giao cuối 1 lần.\n• Incremental = Chia mảnh hoàn chỉnh để tối ưu TỐC ĐỘ BÀN GIAO (Speed / khách dùng ngay từng phần sớm)."
+  },
+  {
+    "id": "p04-c3",
+    "front": "Tam giác ràng buộc (Scope · Schedule · Finance) đảo chiều thế nào khi chuyển từ Predictive sang Agile?",
+    "back": "• Predictive: Cố định Scope trước → ước lượng Schedule & Finance.\n• Agile (Adaptive): Cố định Schedule (Timebox) & Finance (quy mô nhóm ổn định) → linh hoạt tối ưu Scope theo thứ tự giá trị cao nhất."
+  },
+  {
+    "id": "p04-c4",
+    "front": "Khi nào Hybrid là đáp án TỐT NHẤT trong bài thi PMP?",
+    "back": "1. Dự án có nhiều hợp phần mang bản chất khác nhau (VD: Phần cứng/xây dựng/pháp lý ổn định + Phần mềm/AI biến động).\n2. Tổ chức truyền thống đang bắt đầu chuyển đổi sang Agile cần bước đệm chuyển tiếp an toàn kèm huấn luyện."
+  },
+  {
+    "id": "p04-c5",
+    "front": "Nhóm trọng tâm 'Planning' (trong 5 Focus Areas của PMBOK 8) khác nhau thế nào giữa Predictive và Agile?",
+    "back": "• Predictive: Lập kế hoạch tổng thể chi tiết ngay đầu dự án (Upfront Planning) và khoá Baselines.\n• Agile: Lập kế hoạch thích ứng liên tục nhiều tầng (Progressive / Rolling-wave) từ Vision → Roadmap → Release → Backlog Refinement → Sprint Planning."
+  }
+]

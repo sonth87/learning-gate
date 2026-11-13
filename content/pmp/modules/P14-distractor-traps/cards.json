@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p14-c1",
+    "front": "4 nhóm bẫy đáp án nhiễu (**12 Distractor Traps**) cần quét sạch trong 20 giây đầu là gì?",
+    "back": "1. **Cực đoan & Trừng phạt:** từ tuyệt đối (*luôn luôn/không bao giờ*), sa thải/đổi người, ép OT.\n2. **Đẩy bóng trách nhiệm:** leo thang sớm lên Sponsor, đùn cho HR/PMO/Khách hàng.\n3. **Thụ động & Đường tắt:** ngồi chờ Sprint sau khi đang bị chặn, gửi mass email, cắt giảm chất lượng/Gold Plating.\n4. **Nhảy cóc & Tráo vai trò:** sửa Baseline trước khi đánh giá/duyệt, nhầm Risk ↔ Issue, làm thay việc của PO/Developers."
+  },
+  {
+    "id": "p14-c2",
+    "front": "Ba trường hợp hiếm hoi nào PM **ĐƯỢC PHÉP Escalate** lên Project Sponsor?",
+    "back": "1. Vượt quá thẩm quyền/ngân sách ghi trong `Project Charter` (ví dụ: xin dùng `Management Reserve` hoặc lệch `Business Case`).\n2. Rủi ro tầm chương trình/chiến lược áp dụng chiến lược `Escalate`.\n3. Khi dự án không còn khả thi về mặt lợi ích kinh doanh và cần quyết định tạm dừng/đóng dự án sớm."
+  },
+  {
+    "id": "p14-c3",
+    "front": "**Quy tắc 3 tầng phân thắng bại** khi loại trừ xong vẫn còn 2 đáp án trông đều hợp lý (50/50) là gì?",
+    "back": "1. **Chủ động > Bị động:** Cùng nhóm hành động/đối thoại trực tiếp thắng chỉ ghi sổ theo dõi thụ động.\n2. **Giải quyết gốc rễ > Chữa triệu chứng:** Xử lý *Root Cause* & nâng cấp chuẩn chung (`DoD/QA/Charter`) thắng sửa chắp vá 1 điểm lẻ.\n3. **Đánh giá trước > Hành động sau:** Trong câu hỏi `FIRST`, bước phân tích/thu thập dữ liệu thắng bước ra quyết định cuối cùng."
+  },
+  {
+    "id": "p14-c4",
+    "front": "Làm sao nhận diện ngay bẫy **Lẫn lộn vai trò trong Scrum/Agile** ở các phương án nhiễu?",
+    "back": "Gạch bỏ ngay các đáp án mô tả:\n• PM / Scrum Master **tự sắp xếp độ ưu tiên Product Backlog** (quyền duy nhất của **PO**).\n• PO hoặc PM **giao việc chỉ định cho từng cá nhân** hoặc **áp đặt điểm ước lượng** (quyền tự tổ chức và ước lượng thuộc về **Developers**)."
+  },
+  {
+    "id": "p14-c5",
+    "front": "Khi một trở ngại (**Impediment / Blocker**) đang chặn đứng tiến độ hôm nay, vì sao đáp án *'Đưa vào bàn ở buổi Sprint Retrospective tới'* lại là bẫy sai?",
+    "back": "Vì `Sprint Retrospective` diễn ra ở **cuối Sprint** để cải tiến quy trình dài hạn; còn rào cản đang chặn công việc ngay lúc này đòi hỏi **Servant Leader phải chủ động tháo gỡ NGAY TRONG NGÀY** để bảo vệ `Sprint Goal`."
+  }
+]

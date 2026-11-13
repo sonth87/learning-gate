@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p06-q1",
+    "type": "mc",
+    "q": "Giám đốc PMO nhận thấy Nhóm Alpha hoàn thành trung bình 65 Story Points mỗi Sprint, trong khi Nhóm Beta làm dự án tương tự chỉ đạt 32 Story Points. Giám đốc yêu cầu bạn — Agile Project Manager — nhắc nhở Nhóm Beta nâng Velocity lên ngang bằng Nhóm Alpha. Bạn nên phản hồi thế nào?",
+    "code": "",
+    "choices": [
+      "Tổ chức buổi họp yêu cầu Nhóm Beta cam kết tăng ít nhất 10 Story Points mỗi Sprint cho đến khi bằng Nhóm Alpha.",
+      "Giải thích cho Giám đốc hiểu rằng Story Points và Velocity mang tính tương đối nội bộ của từng nhóm nên không thể dùng để so sánh hiệu suất giữa hai nhóm khác nhau.",
+      "Yêu cầu Scrum Master của hai nhóm quy đổi toàn bộ Story Points sang giờ công chuẩn (man-hours) để so sánh công bằng.",
+      "Chuyển bớt hai lập trình viên giỏi từ Nhóm Alpha sang Nhóm Beta để cân bằng điểm Velocity."
+    ],
+    "answer": 1,
+    "explain": "Theo chuẩn PMI Agile, mỗi nhóm tự định nghĩa thang tham chiếu Story Points của riêng mình. Velocity chỉ dùng để dự báo dung lượng công việc nội bộ của chính nhóm đó qua các Sprint, tuyệt đối không dùng làm KPI so sánh hai nhóm hay quy đổi cứng sang giờ công cá nhân."
+  },
+  {
+    "id": "p06-q2",
+    "type": "mc",
+    "q": "Đội phát triển vận hành theo bảng Kanban. Gần đây, thời gian hoàn tất trung bình một tính năng (Cycle Time) tăng gấp đôi. Trên biểu đồ Cumulative Flow Diagram (CFD), dải màu của cột 'Kiểm thử Tích hợp' phình rộng liên tục và đã chạm giới hạn WIP tối đa, trong khi các lập trình viên vẫn tiếp tục kéo thêm thẻ mới vào cột 'Đang lập trình'. Bạn nên hướng dẫn nhóm làm gì TIẾP THEO?",
+    "code": "",
+    "choices": [
+      "Tăng gấp đôi giới hạn WIP của cột Kiểm thử Tích hợp để các lập trình viên không bị chặn khi đẩy việc sang.",
+      "Tạm dừng kéo thẻ mới vào cột Đang lập trình và huy động cả nhóm cùng tập trung tháo gỡ điểm nghẽn tại khâu Kiểm thử Tích hợp.",
+      "Yêu cầu bộ phận nhân sự tuyển thêm nhân viên kiểm thử thời vụ ngay trong tuần này.",
+      "Bỏ bớt một số bước kiểm thử hồi quy không quan trọng để giải phóng hàng đợi nhanh hơn."
+    ],
+    "answer": 1,
+    "explain": "Trong hệ thống kéo Kanban, giới hạn WIP sinh ra để làm lộ điểm nghẽn (bottleneck). Tăng WIP Limit chỉ làm hàng đợi phình to hơn và Cycle Time tệ hơn; hạ chất lượng vi phạm Nguyên tắc #3. Phản xạ đúng là 'Stop starting, start finishing' — cả nhóm hợp sức (swarming) giải tỏa cổ chai trước khi kéo việc mới."
+  },
+  {
+    "id": "p06-q3",
+    "type": "mc",
+    "q": "Bạn điều hành một dự án thiết bị y tế thông minh: phần vỏ cơ khí và chứng nhận an toàn bắt buộc phải thiết kế cố định theo cổng phê duyệt tuần tự, trong khi ứng dụng phân tích dữ liệu trên điện thoại cần thử nghiệm liên tục với bác sĩ hai tuần một lần. Cách tiếp cận quản lý nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Thuần Predictive cho toàn bộ dự án vì lĩnh vực y tế có quy định pháp lý nghiêm ngặt.",
+      "Thuần Scrum 2 tuần cho cả đội cơ khí lẫn đội phần mềm để đồng nhất cách làm việc.",
+      "Mô hình Hybrid: quản lý phần cứng và tuân thủ pháp lý theo mốc Predictive, phát triển ứng dụng phần mềm theo các vòng lặp Agile có đồng bộ tại các cột mốc tích hợp chung.",
+      "Tách thành hai dự án hoàn toàn độc lập không liên lạc với nhau cho tới ngày ra mắt sản phẩm."
+    ],
+    "answer": 2,
+    "explain": "Đây là tình huống điển hình của Tailoring & Hybrid trong PMBOK 8: chọn phương pháp phù hợp cho từng hợp phần dựa trên mức độ bất định yêu cầu và ràng buộc tuân thủ, đồng thời PM giữ vai trò cầu nối đồng bộ các mốc tích hợp liên nhóm."
+  },
+  {
+    "id": "p06-q4",
+    "type": "mc",
+    "q": "Khi kết thúc Sprint 4, một User Story ước lượng 8 Story Points đã hoàn thành 95% khối lượng code nhưng vẫn còn một tiêu chí trong Definition of Done (kiểm thử bảo mật tự động) chưa kịp chạy xong. Nhóm nên xử lý điểm Velocity của Sprint 4 như thế nào?",
+    "code": "",
+    "choices": [
+      "Cộng 7 Story Points vào Velocity của Sprint 4 và để dành 1 điểm còn lại cho Sprint 5.",
+      "Tính 0 điểm cho User Story này trong Velocity của Sprint 4, đưa hạng mục quay lại Product Backlog để Product Owner xem xét ưu tiên cho Sprint kế tiếp.",
+      "Kéo dài Sprint 4 thêm 1 ngày để chạy nốt kiểm thử bảo mật rồi tính trọn 8 điểm.",
+      "Xin Product Owner tạm ký nghiệm thu có điều kiện để giữ đẹp biểu đồ Velocity."
+    ],
+    "answer": 1,
+    "explain": "Agile áp dụng quy tắc hoàn thành nhị phân: chưa thoả mãn 100% Definition of Done thì chưa tạo ra Increment dùng được an toàn, do đó tính 0 Story Points vào Velocity của Sprint hiện tại và không bao giờ kéo dài Timebox của Sprint."
+  },
+  {
+    "id": "p06-q5",
+    "type": "mc",
+    "q": "Một tập đoàn tài chính quen làm Waterfall suốt 15 năm muốn chuyển đổi sang Agile. Ở dự án đầu tiên, cả đội dự án lẫn các trưởng phòng chức năng đều bối rối, kháng cự vì cảm thấy mất kiểm soát khi không còn kế hoạch Gantt chi tiết cả năm. Là Project Manager dẫn dắt dự án này, chiến lược TỐT NHẤT là gì?",
+    "code": "",
+    "choices": [
+      "Ban hành quy định bắt buộc bỏ ngay mọi tài liệu kế hoạch cũ và xử phạt những ai không tuân thủ Scrum.",
+      "Quay trở lại làm Waterfall 100% vì văn hoá tập đoàn tài chính không bao giờ hợp với Agile.",
+      "Áp dụng lộ trình chuyển đổi dần dần qua mô hình Hybrid kết hợp tổ chức đào tạo, huấn luyện tư duy Agile cho cả đội ngũ lẫn các bên liên quan.",
+      "Leo thang lên Ban Tổng giám đốc yêu cầu thay thế các trưởng phòng chức năng bảo thủ."
+    ],
+    "answer": 2,
+    "explain": "Chuyển đổi tổ chức sang Agile là một quá trình quản trị thay đổi văn hoá (OCM). PMI luôn ưu tiên bước đệm Hybrid kết hợp coaching/training để tạo cảm giác an toàn và thích nghi từng bước thay vì cưỡng ép đột ngột hoặc bỏ cuộc."
+  },
+  {
+    "id": "p06-q6",
+    "type": "tf",
+    "q": "Trong kỹ thuật Rolling Wave Planning (Lập kế hoạch cuốn chiếu), các gói công việc sắp triển khai trong tương lai gần được lập kế hoạch chi tiết, còn các phần việc ở giai đoạn xa hơn được giữ ở mức khái quát cao (Planning Packages) cho tới khi có thêm thông tin rõ ràng.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Chính xác! Rolling Wave Planning là một dạng cụ thể của Progressive Elaboration, giúp tránh lãng phí thời gian đoán mò chi tiết quá sớm cho những công việc còn cách xa nhiều tháng."
+  }
+]

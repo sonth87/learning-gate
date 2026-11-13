@@ -1,0 +1,32 @@
+[
+  {
+    "id": "p11-c1",
+    "front": "Sự đánh đổi cốt lõi giữa **Crashing** và **Fast-Tracking** khi nén tiến độ trên Critical Path là gì?",
+    "back": "• **Crashing** (thêm nguồn lực/OT): làm **tăng chi phí (Cost)**.\n• **Fast-Tracking** (xếp việc tuần tự chạy song song trên phụ thuộc tuỳ ý): làm **tăng rủi ro phải làm lại (Rework Risk)**.\nCả hai chỉ có tác dụng rút ngắn dự án khi tác động vào **Critical Path**."
+  },
+  {
+    "id": "p11-c2",
+    "front": "Phân biệt **Resource Leveling** và **Resource Smoothing** về tác động lên Đường găng?",
+    "back": "• **Resource Leveling:** xử lý quá tải nguồn lực triệt để nhưng **thường làm kéo dài Critical Path**.\n• **Resource Smoothing:** chỉ điều chỉnh trong phạm vi Float có sẵn nên **KHÔNG làm thay đổi Critical Path** (nhưng có thể không giải quyết hết 100% quá tải)."
+  },
+  {
+    "id": "p11-c3",
+    "front": "**Contingency Reserve** khác **Management Reserve** ở loại rủi ro, vị trí trong `Cost Baseline` và thẩm quyền giải ngân thế nào?",
+    "back": "• **Contingency Reserve:** cho *Known-Unknowns*, nằm **TRONG Cost Baseline**, **PM được chủ động dùng** khi rủi ro xảy ra.\n• **Management Reserve:** cho *Unknown-Unknowns*, nằm **NGOÀI Cost Baseline** (cộng vào thành Project Budget), **bắt buộc trình Change Request** để Sponsor/CCB duyệt."
+  },
+  {
+    "id": "p11-c4",
+    "front": "Đọc nhanh tín hiệu EVM: Khi nào dự án bị trễ lịch, vượt chi phí, và khi nào chỉ số `TCPI` báo động đỏ?",
+    "back": "• `SPI = EV / PV < 1.0` → **Chậm tiến độ**.\n• `CPI = EV / AC < 1.0` → **Vượt ngân sách**.\n• `TCPI = (BAC - EV) / (BAC - AC) > 1.0` → Phần việc còn lại phải làm với hiệu suất chi phí khắt khe hơn mới giữ được mức trần `BAC`."
+  },
+  {
+    "id": "p11-c5",
+    "front": "Khi nào dùng `EAC = BAC / CPI` và khi nào dùng `EAC = AC + (BAC - EV)`?",
+    "back": "• `EAC = BAC / CPI`: khi sai lệch chi phí hiện tại là **điển hình (Typical)** và sẽ tiếp diễn tới cuối dự án.\n• `EAC = AC + (BAC - EV)`: khi sai lệch vừa qua chỉ là **sự cố cá biệt một lần (Atypical)**, phần việc còn lại sẽ quay về đúng định mức kế hoạch gốc."
+  },
+  {
+    "id": "p11-c6",
+    "front": "Phân biệt **Total Float** và **Free Float**?",
+    "back": "• **Total Float:** thời gian một tác vụ có thể trễ mà **không làm trễ ngày kết thúc cuối cùng của dự án** (`Total Float = 0` trên Critical Path chuẩn).\n• **Free Float:** thời gian một tác vụ có thể trễ mà **không làm trễ ngày bắt đầu sớm (Early Start) của tác vụ ngay kế tiếp**."
+  }
+]

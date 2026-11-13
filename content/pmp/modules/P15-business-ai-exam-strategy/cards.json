@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p15-c1",
+    "front": "Khi một quy định **Pháp lý / Tuân thủ mới (Regulatory Compliance)** có hiệu lực giữa chừng dự án, PM xử lý khác nhau thế nào trong **Agile** vs **Predictive**?",
+    "back": "• **Agile:** Đánh giá yêu cầu cùng bộ phận Pháp chế rồi phối hợp với **Product Owner** đẩy hạng mục tuân thủ lên **ưu tiên hàng đầu của Product Backlog** để kịp hạn luật định.\n• **Predictive:** Phân tích tác động tích hợp và đệ trình **Change Request bắt buộc** lên CCB để cập nhật Baselines."
+  },
+  {
+    "id": "p15-c2",
+    "front": "5 bước của mô hình **ADKAR** trong Quản trị Thay đổi Tổ chức (**OCM**) dùng để vượt qua sức ỳ của người dùng cuối là gì?",
+    "back": "1. **A**wareness: Nhận thức rõ *vì sao* cần thay đổi.\n2. **D**esire: Mong muốn tham gia (nhờ gắn kết & Change Champions).\n3. **K**nowledge: Được đào tạo kiến thức *làm thế nào*.\n4. **A**bility: Đủ kỹ năng thực hành trôi chảy trong công việc.\n5. **R**einforcement: Củng cố, ghi nhận để không quay lại thói quen cũ."
+  },
+  {
+    "id": "p15-c3",
+    "front": "Ba nguyên tắc sống còn khi ứng dụng **Trí tuệ Nhân tạo (AI)** trong quản lý dự án theo `PMBOK 8 Appendix X3` là gì?",
+    "back": "1. **Bảo mật & Quyền riêng tư:** Không bao giờ nạp dữ liệu mật, mã nguồn độc quyền hoặc `PII` vào AI công cộng chưa được tổ chức phê duyệt.\n2. **Chống Bias & Hallucination:** Luôn kiểm chứng độ tin cậy đầu ra và thiên kiến trong dữ liệu huấn luyện.\n3. **Human-in-the-Loop:** Con người/PM giữ quyền phán đoán đạo đức và **chịu trách nhiệm giải trình cuối cùng**."
+  },
+  {
+    "id": "p15-c4",
+    "front": "Tư duy **Customer-centric PMO** (`PMBOK 8 Appendix X2`) khác gì so với PMO hành chính kiểu cũ?",
+    "back": "Thay vì làm 'cảnh sát biểu mẫu' ép mọi dự án tuân theo giấy tờ cứng nhắc, **Customer-centric PMO** đóng vai trò **đối tác trao giá trị**: hỗ trợ *Tailoring* quy trình phù hợp đặc thù dự án, tháo gỡ rào cản liên phòng ban và đo lường thành công bằng kết quả khách hàng thực nhận."
+  },
+  {
+    "id": "p15-c5",
+    "front": "Chiến thuật phân bổ **240 phút / 180 câu** và quy tắc khoá câu hỏi giữa 3 chặng trong phòng thi PMP?",
+    "back": "• Chia đều nhịp **`80 phút (Câu 1–60) → Nghỉ 10' → 80 phút (Câu 61–120) → Nghỉ 10' → 80 phút (Câu 121–180)`**.\n• Khi kết thúc một chặng 60 câu, toàn bộ 60 câu đó **bị KHOÁ VĨNH VIỄN không thể quay lại sửa**.\n• Không bao giờ bỏ trống câu nào vì PMP không trừ điểm câu trả lời sai."
+  }
+]

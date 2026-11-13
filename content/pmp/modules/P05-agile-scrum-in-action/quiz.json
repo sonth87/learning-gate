@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p05-q1",
+    "type": "mc",
+    "q": "Nhóm Scrum đang ở ngày thứ 5 của Sprint kéo dài 2 tuần. Giám đốc Kinh doanh đi thẳng tới bàn của một Senior Developer và yêu cầu bổ sung gấp một biểu đồ thống kê mới ngay trong Sprint này để tuần sau đi gặp đối tác. Senior Developer bối rối báo lại với bạn (Scrum Master / Agile PM). Bạn nên làm gì?",
+    "code": "",
+    "choices": [
+      "Yêu cầu Senior Developer tăng ca buổi tối làm thêm biểu đồ đó để vừa lòng Giám đốc Kinh doanh.",
+      "Tự tay xoá một User Story khác trong Sprint Backlog để nhường chỗ cho biểu đồ mới.",
+      "Bảo vệ nhóm không tự ý nhận việc ngoài luồng, đồng thời trao đổi trực tiếp với Giám đốc Kinh doanh để hướng dẫn ông ấy làm việc với Product Owner nhằm đánh giá giá trị và sắp xếp độ ưu tiên trên Product Backlog.",
+      "Huỷ ngay Sprint hiện tại để lập kế hoạch lại từ đầu."
+    ],
+    "answer": 2,
+    "explain": "Chuẩn mực vàng của Scrum: (1) Không ai bên ngoài được tự ý nhét việc làm gián đoạn Developers giữa Sprint; (2) Scrum Master đóng vai lá chắn bảo vệ nhóm; (3) Mọi yêu cầu mới phải đi qua cổng duy nhất là Product Owner để cân nhắc giá trị trên Product Backlog (chỉ PO mới có quyền huỷ Sprint nếu mục tiêu hoàn toàn lỗi thời)."
+  },
+  {
+    "id": "p05-q2",
+    "type": "mc",
+    "q": "Bạn vừa tiếp nhận vai trò Scrum Master của một nhóm và nhận thấy buổi họp Daily Standup ngày nào cũng kéo dài tới 45 phút: hai lập trình viên thường xuyên tranh cãi chi tiết cách viết truy vấn SQL tối ưu, trong khi một đại diện phòng Pháp chế tham dự liên tục ngắt lời hỏi xin báo cáo tiến độ tuần. Bạn nên xử lý thế nào?",
+    "code": "",
+    "choices": [
+      "Tăng thời lượng Daily Standup chính thức lên 60 phút để mọi người nói cho hết ý.",
+      "Huấn luyện lại nhóm về mục tiêu của Daily Scrum (15 phút dành riêng cho Developers kiểm tra tiến độ hướng tới Sprint Goal), chuyển các thảo luận kỹ thuật sâu sang buổi gặp riêng sau cuộc họp, và thống nhất với đại diện Pháp chế không làm gián đoạn cuộc họp (chỉ nhận thông tin qua Sprint Review / Information Radiator).",
+      "Huỷ bỏ hoàn toàn Daily Standup và chuyển sang gửi báo cáo email mỗi tối cho PM.",
+      "Cấm hai lập trình viên không được nói chuyện với nhau trong suốt Sprint."
+    ],
+    "answer": 1,
+    "explain": "Daily Scrum là sự kiện Timebox 15 phút CỦA Developers và VÌ Developers để đồng bộ kế hoạch 24 giờ tới. Thảo luận giải pháp kỹ thuật dài dòng phải đưa ra 'Parking Lot' (họp riêng nhóm liên quan ngay sau Standup), và Stakeholders bên ngoài không được biến Daily thành buổi chất vấn trạng thái."
+  },
+  {
+    "id": "p05-q3",
+    "type": "mc",
+    "q": "Cuối Sprint, một User Story đã thoả mãn toàn bộ các kịch bản nghiệp vụ mà khách hàng mong đợi cho tính năng đặt vé (ví dụ: chọn ghế, áp mã giảm giá, gửi vé qua email). Tuy nhiên, phần mã nguồn này chưa qua bước kiểm thử bảo mật tự động và chưa có tài liệu API như quy định chung của toàn sản phẩm. Nhóm nên phân loại và xử lý User Story này như thế nào?",
+    "code": "",
+    "choices": [
+      "Tính đủ Story Points vào Velocity của Sprint này và đem ra demo bình thường vì đã pass Acceptance Criteria.",
+      "User Story mới chỉ đạt Acceptance Criteria riêng lẻ nhưng CHƯA đạt Definition of Done (DoD) chung, vì vậy KHÔNG được tính là hoàn thành, không đem ra demo như sản phẩm xong và đưa phần việc về lại Product Backlog để PO ưu tiên cho Sprint kế tiếp.",
+      "Hạ thấp tiêu chuẩn Definition of Done ngay trong chiều cuối Sprint để kịp báo cáo hoàn thành 100%.",
+      "Giao cho Product Owner tự viết tài liệu API và chạy kiểm thử bảo mật."
+    ],
+    "answer": 1,
+    "explain": "Câu phân biệt đỉnh cao giữa Acceptance Criteria (điều kiện nghiệp vụ riêng của 1 Story) và Definition of Done (chuẩn chất lượng minh bạch chung của mọi Increment). Chưa thoả mãn 100% DoD thì chưa tạo ra Increment đạt chuẩn chất lượng: không ghi nhận Velocity ảo, không demo hàng lỗi/dang dở!"
+  },
+  {
+    "id": "p05-q4",
+    "type": "mc",
+    "q": "Trong buổi Sprint Planning, nhóm Developers liên tục mất 3–4 giờ đồng hồ hoang mang vì các User Stories nằm ở đầu Product Backlog quá lớn, mơ hồ và chưa rõ các phụ thuộc kỹ thuật. Giải pháp gốc rễ nào giúp khắc phục triệt để tình trạng này cho các Sprint sau?",
+    "code": "",
+    "choices": [
+      "Yêu cầu Scrum Master tự ngồi viết toàn bộ User Stories và ước lượng sẵn trước buổi họp.",
+      "Thiết lập lịch Backlog Refinement định kỳ cùng Product Owner và áp dụng tiêu chuẩn Definition of Ready (DoR / INVEST) để làm mịn, chia nhỏ các hạng mục ưu tiên cao trước khi bước vào Sprint Planning.",
+      "Bỏ hẳn buổi Sprint Planning và cứ lấy đại bất kỳ việc nào dễ làm trước.",
+      "Kéo dài buổi Sprint Planning lên thành 3 ngày liên tiếp."
+    ],
+    "answer": 1,
+    "explain": "Triệu chứng 'Sprint Planning bế tắc vì Story quá to và mờ' là dấu hiệu điển hình của việc thiếu Backlog Refinement và thiếu cổng kiểm tra đầu vào Definition of Ready (DoR)."
+  },
+  {
+    "id": "p05-q5",
+    "type": "mc",
+    "q": "Giữa Sprint 4, công ty bất ngờ thông báo ngừng kinh doanh hoàn toàn dòng sản phẩm mà Sprint Goal hiện tại đang xây dựng do thay đổi chiến lược cấp tập đoàn. Ai là người có thẩm quyền chính thức quyết định huỷ (cancel) Sprint đang chạy này?",
+    "code": "",
+    "choices": [
+      "Scrum Master",
+      "Trưởng nhóm Kiểm thử (QA Lead)",
+      "Product Owner",
+      "Bất kỳ lập trình viên nào trong nhóm"
+    ],
+    "answer": 2,
+    "explain": "Theo Scrum Guide và chuẩn đề thi PMP, chỉ DUY NHẤT Product Owner mới có thẩm quyền huỷ một Sprint khi Sprint Goal trở nên lỗi thời (dù PO có thể lắng nghe tư vấn từ Stakeholders, Developers hoặc Scrum Master)."
+  },
+  {
+    "id": "p05-q6",
+    "type": "tf",
+    "q": "Trong dự án Agile, buổi Sprint Review là dịp để nhóm nhìn lại cách phối hợp nội bộ, tâm lý làm việc và cải tiến quy trình kiểm thử của nhóm cho Sprint tới.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Sprint Review tập trung vào SẢN PHẨM (kiểm tra Working Increment cùng Stakeholders và thích ứng Product Backlog). Còn buổi nhìn lại CON NGƯỜI, MỐI QUAN HỆ và QUY TRÌNH làm việc nội bộ của nhóm là Sprint Retrospective."
+  }
+]

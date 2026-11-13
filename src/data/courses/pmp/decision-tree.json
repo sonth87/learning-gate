@@ -1,0 +1,1054 @@
+{
+  "rootPrompt": "Đề bài đang đặt bạn trước loại tín hiệu tình huống nào?",
+  "branches": [
+    {
+      "id": "change",
+      "title": "1. Yêu cầu thay đổi phạm vi / tiến độ / chi phí",
+      "subtitle": "Khách hàng, Sponsor hoặc thành viên đề xuất thêm/sửa tính năng hoặc thay đổi ràng buộc pháp lý.",
+      "icon": "git-branch",
+      "tone": "amber",
+      "entryNodeId": "chg.q1"
+    },
+    {
+      "id": "risk-issue",
+      "title": "2. Sự cố đã nổ ra vs Rủi ro chưa xảy ra",
+      "subtitle": "Phân biệt sự kiện tương lai ('có thể', 'lo ngại') với sự kiện hiện tại ('đã lỗi', 'vừa nghỉ việc').",
+      "icon": "alert",
+      "tone": "rose",
+      "entryNodeId": "ri.q1"
+    },
+    {
+      "id": "team-conflict",
+      "title": "3. Xung đột nhóm · Hiệu suất giảm · Thiếu kỹ năng",
+      "subtitle": "Tranh cãi gay gắt giữa các thành viên, làm việc chậm hoặc thành viên mới chưa quen công nghệ.",
+      "icon": "users",
+      "tone": "emerald",
+      "entryNodeId": "tc.q1"
+    },
+    {
+      "id": "stakeholder",
+      "title": "4. Stakeholder vào trễ · Phản đối ngầm · Bác bỏ nghiệm thu",
+      "subtitle": "Lãnh đạo mới xuất hiện giữa dự án, phàn nàn không nhận được tin tức hoặc từ chối ký nhận sản phẩm.",
+      "icon": "handshake",
+      "tone": "sky",
+      "entryNodeId": "stk.q1"
+    },
+    {
+      "id": "schedule-cost",
+      "title": "5. Trễ tiến độ hoặc Vượt chi phí (SPI < 1 · CPI < 1)",
+      "subtitle": "Đường găng bị trượt, CPI tụt dốc hoặc cần rút ngắn lịch bàn giao theo mốc cứng.",
+      "icon": "trend",
+      "tone": "cyan",
+      "entryNodeId": "sc.q1"
+    },
+    {
+      "id": "vendor",
+      "title": "6. Nhà thầu giao trễ / Lỗi chất lượng / Tranh chấp hợp đồng",
+      "subtitle": "Vendor đòi tăng phí ngoài dự kiến, bàn giao sai đặc tả hoặc xin gia hạn lịch cung ứng.",
+      "icon": "scale",
+      "tone": "violet",
+      "entryNodeId": "ven.q1"
+    },
+    {
+      "id": "ethics",
+      "title": "7. Đạo đức · Xung đột lợi ích · Áp lực làm đẹp báo cáo",
+      "subtitle": "Quà biếu từ nhà thầu, vi phạm an toàn/bản quyền, lạm dụng AI làm lộ dữ liệu mật hoặc sếp ép giấu số liệu xấu.",
+      "icon": "shield",
+      "tone": "rose",
+      "entryNodeId": "eth.q1"
+    }
+  ],
+  "nodes": {
+    "chg.q1": {
+      "id": "chg.q1",
+      "kind": "question",
+      "branchId": "change",
+      "prompt": "Dự án (hoặc hợp phần đang xét) vận hành theo cách tiếp cận nào?",
+      "contextTip": "Tìm các từ khoá như 'Baseline / WBS / CCB' (Predictive) hoặc 'Sprint / Product Backlog / Product Owner' (Agile).",
+      "options": [
+        {
+          "label": "Predictive (Waterfall) — Đã khoá Scope / Schedule / Cost Baseline",
+          "hint": "Mọi thay đổi chạm vào Baseline phải đi qua quy trình kiểm soát thay đổi tích hợp.",
+          "nextNodeId": "chg.pred.q2"
+        },
+        {
+          "label": "Agile / Scrum — Đang chạy theo các Sprint ngắn và Product Backlog",
+          "hint": "Phạm vi linh hoạt theo giá trị do Product Owner sắp xếp.",
+          "nextNodeId": "chg.agile.q2"
+        },
+        {
+          "label": "Thay đổi do Luật pháp / Quy định an toàn bắt buộc mới ban hành (Regulatory Compliance)",
+          "hint": "Áp dụng cho mọi loại dự án: không được phép phớt lờ pháp luật.",
+          "nextNodeId": "chg.leaf.compliance"
+        }
+      ]
+    },
+    "chg.pred.q2": {
+      "id": "chg.pred.q2",
+      "kind": "question",
+      "branchId": "change",
+      "prompt": "Trong dự án Predictive này, yêu cầu thay đổi đang ở bước nào?",
+      "options": [
+        {
+          "label": "Stakeholder / Khách hàng vừa mới đề xuất miệng hoặc gửi email xin đổi",
+          "hint": "Chưa có đánh giá tác động và chưa nộp phiếu chính thức.",
+          "nextNodeId": "chg.leaf.pred-assess"
+        },
+        {
+          "label": "CCB ĐÃ PHÊ DUYỆT chính thức Change Request",
+          "hint": "Quyết định đã có hiệu lực, cần triển khai đồng bộ.",
+          "nextNodeId": "chg.leaf.pred-approved"
+        },
+        {
+          "label": "Developer trong nhóm tự ý muốn làm thêm tính năng 'tặng miễn phí' cho khách",
+          "hint": "Không có yêu cầu từ khách hàng và không qua kiểm soát thay đổi.",
+          "nextNodeId": "chg.leaf.gold-plating"
+        }
+      ]
+    },
+    "chg.agile.q2": {
+      "id": "chg.agile.q2",
+      "kind": "question",
+      "branchId": "change",
+      "prompt": "Yêu cầu thay đổi trong dự án Agile/Scrum này tác động vào đâu?",
+      "options": [
+        {
+          "label": "Stakeholder đòi chèn thẳng việc mới vào giữa Sprint đang chạy (phá vỡ Sprint Goal)",
+          "nextNodeId": "chg.leaf.agile-mid-sprint"
+        },
+        {
+          "label": "Thêm tính năng mới hoặc đổi độ ưu tiên cho các Sprint sắp tới",
+          "nextNodeId": "chg.leaf.agile-backlog"
+        }
+      ]
+    },
+    "chg.leaf.pred-assess": {
+      "id": "chg.leaf.pred-assess",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Đánh giá tác động toàn diện trước → Ghi Change Request → Trình CCB",
+      "provenanceLabel": "Governance §2.1 · PICC",
+      "firstAction": [
+        "Lắng nghe để hiểu rõ nhu cầu thực sự (Outcome) đằng sau đề xuất thay đổi.",
+        "Cùng nhóm dự án phân tích tác động toàn diện lên Scope, Schedule, Cost/Finance, Quality và Risk.",
+        "Ghi nhận chính thức thành Change Request cập nhật vào Change Log và trình CCB (hoặc thẩm quyền theo Change Management Plan) phê duyệt."
+      ],
+      "neverDo": [
+        "Ra lệnh cho nhóm bắt tay sửa sản phẩm ngay trước khi CCB phê duyệt.",
+        "Từ chối thẳng thừng yêu cầu của khách mà chưa phân tích tác động.",
+        "Tự ý cập nhật Scope/Cost Baseline không qua CCB."
+      ],
+      "artifactsToCheck": [
+        "Change Management Plan",
+        "Change Log",
+        "Project Management Plan"
+      ],
+      "moduleId": "P07",
+      "evidenceLinkIds": [
+        "book.governance.change",
+        "flow.change"
+      ]
+    },
+    "chg.leaf.pred-approved": {
+      "id": "chg.leaf.pred-approved",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Cập nhật Baselines & Change Log → Truyền thông → Thực thi thay đổi",
+      "provenanceLabel": "Governance §2.1",
+      "firstAction": [
+        "Cập nhật trạng thái phê duyệt trong Change Log và cập nhật các Baselines / Kế hoạch liên quan trong Project Management Plan.",
+        "Thông báo cho các Stakeholder bị ảnh hưởng theo đúng Communications Management Plan.",
+        "Chỉ đạo nhóm thực thi thay đổi đã duyệt (Manage Project Execution) và kiểm tra lại trong Control Quality."
+      ],
+      "neverDo": [
+        "Thực thi ngầm mà quên cập nhật lại Baseline khiến báo cáo EVM sau đó bị sai lệch.",
+        "Họp lại từ đầu để tranh cãi quyết định đã được CCB thông qua."
+      ],
+      "artifactsToCheck": [
+        "Change Log",
+        "Scope/Schedule/Cost Baselines",
+        "Communications Management Plan"
+      ],
+      "moduleId": "P07",
+      "evidenceLinkIds": [
+        "flow.change",
+        "book.governance.wpd"
+      ]
+    },
+    "chg.leaf.gold-plating": {
+      "id": "chg.leaf.gold-plating",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Chặn đứng Gold Plating — Chỉ làm đúng phạm vi đã cam kết",
+      "provenanceLabel": "Scope §2.2 & Principle #3",
+      "firstAction": [
+        "Giải thích rõ cho thành viên về rủi ro của Gold Plating (tốn nguồn lực, sinh lỗi ngầm không có kịch bản test, khách hàng không yêu cầu nhưng phải gánh chi phí bảo trì).",
+        "Yêu cầu dừng phần làm thêm tự phát; nếu ý tưởng thực sự mang lại giá trị lớn, hãy ghi nhận chính thức và đưa qua quy trình Change Request / Product Owner đánh giá."
+      ],
+      "neverDo": [
+        "Khen thưởng việc tự ý thêm tính năng ngoài luồng.",
+        "Giữ im lặng để tạo 'bất ngờ' cho khách hàng ở buổi nghiệm thu."
+      ],
+      "artifactsToCheck": [
+        "Scope Baseline / WBS Dictionary",
+        "Change Management Plan"
+      ],
+      "moduleId": "P10",
+      "evidenceLinkIds": [
+        "book.scope.creep",
+        "core.scope.wbs"
+      ]
+    },
+    "chg.leaf.agile-mid-sprint": {
+      "id": "chg.leaf.agile-mid-sprint",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Bảo vệ Sprint hiện tại & Điều hướng Stakeholder làm việc với Product Owner",
+      "provenanceLabel": "Scrum Guide & Principle #6",
+      "firstAction": [
+        "Bảo vệ sự tập trung của Developers đối với Sprint Goal đã cam kết trong Sprint hiện tại.",
+        "Hướng dẫn Stakeholder trao đổi trực tiếp với Product Owner để đưa hạng mục mới vào Product Backlog, làm rõ giá trị (Refinement) và xếp ưu tiên cho Sprint kế tiếp.",
+        "Chỉ trong trường hợp cực đoan mục tiêu Sprint hiện tại hoàn toàn vô nghĩa, duy nhất Product Owner mới có quyền huỷ Sprint."
+      ],
+      "neverDo": [
+        "Ép nhóm làm thêm giờ (OT) để nhồi thêm Story vào Sprint đang chạy.",
+        "Yêu cầu nộp phiếu CCB hành chính rườm rà trong nội bộ nhóm Scrum."
+      ],
+      "artifactsToCheck": [
+        "Sprint Backlog",
+        "Product Backlog",
+        "Agile Team Charter"
+      ],
+      "moduleId": "P05",
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "flow.agile-delivery"
+      ]
+    },
+    "chg.leaf.agile-backlog": {
+      "id": "chg.leaf.agile-backlog",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Đưa vào Product Backlog để Product Owner sắp xếp lại theo Giá trị",
+      "provenanceLabel": "PMBOK 8 Principle #2 · Focus on Value",
+      "firstAction": [
+        "Đón nhận thay đổi như lợi thế cạnh tranh: cùng Product Owner đánh giá giá trị kinh doanh, rủi ro và nỗ lực ước lượng sơ bộ của mục mới.",
+        "Sắp xếp lại thứ tự ưu tiên trên Product Backlog trong buổi Backlog Refinement; nếu ngân sách/thời gian cố định, hoán đổi mục mới lấy mục có giá trị thấp hơn ở đáy Backlog."
+      ],
+      "neverDo": [
+        "Từ chối cập nhật Product Backlog vì 'đã chốt kế hoạch Release từ quý trước'.",
+        "Để PM tự ý xếp lại thứ tự Backlog mà không thông qua Product Owner."
+      ],
+      "artifactsToCheck": [
+        "Product Backlog",
+        "Definition of Ready (DoR)"
+      ],
+      "moduleId": "P05",
+      "evidenceLinkIds": [
+        "book.value.mvp",
+        "flow.value-prioritization"
+      ]
+    },
+    "chg.leaf.compliance": {
+      "id": "chg.leaf.compliance",
+      "kind": "outcome",
+      "branchId": "change",
+      "title": "Tuân thủ Pháp lý là Bắt buộc — Đánh giá tác động & Ưu tiên cao nhất",
+      "provenanceLabel": "ECO 07/2026 Business (26%)",
+      "firstAction": [
+        "Phối hợp bộ phận Pháp chế / Compliance xác minh phạm vi điều khoản luật mới và ngày có hiệu lực bắt buộc.",
+        "Đánh giá tác động lên kiến trúc, lịch trình và ngân sách:",
+        "• Với Predictive: lập Change Request bắt buộc trình CCB/Sponsor điều chỉnh Baseline.",
+        "• Với Agile: làm việc với Product Owner đẩy các User Story tuân thủ pháp lý lên đỉnh Product Backlog cho Sprint gần nhất."
+      ],
+      "neverDo": [
+        "Phát hành sản phẩm vi phạm pháp luật để 'kịp ngày Go-live rồi bản sau tính tiếp'.",
+        "Tự ý dừng toàn bộ dự án khi chưa phân tích tác động và báo cáo Sponsor."
+      ],
+      "artifactsToCheck": [
+        "Regulatory Compliance Requirements",
+        "Change Log / Product Backlog",
+        "Risk Register"
+      ],
+      "moduleId": "P15",
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "flow.change"
+      ]
+    },
+    "ri.q1": {
+      "id": "ri.q1",
+      "kind": "question",
+      "branchId": "risk-issue",
+      "prompt": "Sự kiện trong đề bài ĐÃ XẢY RA chưa hay vẫn còn là khả năng trong tương lai?",
+      "contextTip": "Đây là câu phân loại kinh điển chiếm hàng chục câu trong đề PMP!",
+      "options": [
+        {
+          "label": "CHƯA XẢY RA — Mới là khả năng, nguy cơ hoặc cơ hội ('có thể trễ', 'nguy cơ bão', 'nếu thư viện đổi API')",
+          "nextNodeId": "ri.risk.q2"
+        },
+        {
+          "label": "ĐÃ XẢY RA RỒI — Sự thật hiện hữu ('server đã sập', 'kỹ sư chính vừa nộp đơn nghỉ', 'lỗi đã lọt ra môi trường test')",
+          "nextNodeId": "ri.issue.q2"
+        }
+      ]
+    },
+    "ri.risk.q2": {
+      "id": "ri.risk.q2",
+      "kind": "question",
+      "branchId": "risk-issue",
+      "prompt": "Rủi ro tương lai này vừa mới được phát hiện hay đã có sẵn phương án trong Risk Register?",
+      "options": [
+        {
+          "label": "Rủi ro MỚI vừa được thành viên hoặc stakeholder nêu ra",
+          "nextNodeId": "ri.leaf.new-risk"
+        },
+        {
+          "label": "Dấu hiệu cảnh báo sớm (Trigger) của rủi ro ĐÃ CÓ trong Risk Register vừa xuất hiện",
+          "nextNodeId": "ri.leaf.known-risk"
+        }
+      ]
+    },
+    "ri.issue.q2": {
+      "id": "ri.issue.q2",
+      "kind": "question",
+      "branchId": "risk-issue",
+      "prompt": "Sự cố ĐÃ XẢY RA này đã được dự phòng trước trong Risk Register chưa?",
+      "options": [
+        {
+          "label": "Đã có kế hoạch ứng phó dự phòng (Contingency / Fallback Plan) từ trước",
+          "nextNodeId": "ri.leaf.issue-planned"
+        },
+        {
+          "label": "Sự cố hoàn toàn bất ngờ chưa từng lường trước (Unknown-Unknown)",
+          "nextNodeId": "ri.leaf.issue-workaround"
+        }
+      ]
+    },
+    "ri.leaf.new-risk": {
+      "id": "ri.leaf.new-risk",
+      "kind": "outcome",
+      "branchId": "risk-issue",
+      "title": "Ghi vào Risk Register → Phân tích Xác suất × Tác động → Lập kế hoạch ứng phó",
+      "provenanceLabel": "Risk Domain §2.7",
+      "firstAction": [
+        "Ghi nhận ngay rủi ro mới vào Risk Register và chỉ định Risk Owner sơ bộ.",
+        "Thực hiện phân tích rủi ro định tính (Probability × Impact, mức độ khẩn cấp) và định lượng nếu cần.",
+        "Lập chiến lược ứng phó phù hợp (Avoid, Mitigate, Transfer, Escalate hoặc Accept) trước khi rủi ro kịp xảy ra."
+      ],
+      "neverDo": [
+        "Ghi nhầm rủi ro tương lai vào Issue Log.",
+        "Xin giải ngân Management Reserve ngay cho một rủi ro mới nhận diện.",
+        "Chạy đi thực thi biện pháp tốn kém khi chưa đánh giá xác suất & mức độ tác động."
+      ],
+      "artifactsToCheck": [
+        "Risk Register",
+        "Risk Management Plan"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "flow.risk"
+      ]
+    },
+    "ri.leaf.known-risk": {
+      "id": "ri.leaf.known-risk",
+      "kind": "outcome",
+      "branchId": "risk-issue",
+      "title": "Kích hoạt Kế hoạch Ứng phó đã duyệt (Implement Risk Responses)",
+      "provenanceLabel": "Risk Domain §2.7",
+      "firstAction": [
+        "Risk Owner kích hoạt ngay phương án ứng phó / Contingency Plan đã được thống nhất sẵn trong Risk Register (sử dụng Contingency Reserve nếu đã phân bổ).",
+        "Theo dõi sát xem phương án có phát sinh Rủi ro thứ cấp (Secondary Risk) hay Rủi ro còn lại (Residual Risk) hay không."
+      ],
+      "neverDo": [
+        "Tổ chức họp lại từ đầu để bàn xem nên làm gì trong khi phương án đã viết sẵn.",
+        "Đợi sự cố gây thiệt hại nặng rồi mới mở Risk Register ra xem."
+      ],
+      "artifactsToCheck": [
+        "Risk Register",
+        "Contingency Reserve"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "core.risk.strategies",
+        "flow.risk"
+      ]
+    },
+    "ri.leaf.issue-planned": {
+      "id": "ri.leaf.issue-planned",
+      "kind": "outcome",
+      "branchId": "risk-issue",
+      "title": "Ghi Issue Log & Thực thi ngay Contingency Plan đã chuẩn bị",
+      "provenanceLabel": "Risk & Governance",
+      "firstAction": [
+        "Cập nhật trạng thái rủi ro đã chuyển hoá thành sự cố thực tế vào Issue Log.",
+        "Thực thi ngay Contingency Plan đã duyệt; nếu phương án chính không hiệu quả thì chuyển sang Fallback Plan."
+      ],
+      "neverDo": [
+        "Ngồi phân tích lại xác suất xảy ra của một việc ĐÃ XẢY RA 100%.",
+        "Đổ lỗi cho cá nhân thay vì tập trung khắc phục."
+      ],
+      "artifactsToCheck": [
+        "Issue Log",
+        "Risk Register",
+        "Lessons Learned Register"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "core.risk.strategies"
+      ]
+    },
+    "ri.leaf.issue-workaround": {
+      "id": "ri.leaf.issue-workaround",
+      "kind": "outcome",
+      "branchId": "risk-issue",
+      "title": "Ghi vào Issue Log → Đánh giá tác động → Thiết kế Workaround",
+      "provenanceLabel": "Governance & Risk",
+      "firstAction": [
+        "Ghi nhận ngay sự cố vào Issue Log kèm người chịu trách nhiệm xử lý (Issue Owner) và hạn chót.",
+        "Họp nhanh với nhóm chuyên môn đánh giá mức độ ảnh hưởng và xây dựng giải pháp ứng biến tạm thời (Workaround).",
+        "Nếu Workaround đòi hỏi thay đổi Baseline hoặc xin cấp Management Reserve (cho Unknown-Unknowns), lập Change Request trình CCB/Sponsor."
+      ],
+      "neverDo": [
+        "Tự ý rút Management Reserve ra tiêu mà không qua phê duyệt Change Request.",
+        "Giấu sự cố khỏi báo cáo tiến độ tuần."
+      ],
+      "artifactsToCheck": [
+        "Issue Log",
+        "Change Request (nếu chạm Baseline / Management Reserve)"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "core.finance.reserves"
+      ]
+    },
+    "tc.q1": {
+      "id": "tc.q1",
+      "kind": "question",
+      "branchId": "team-conflict",
+      "prompt": "Vấn đề con người đang diễn ra thuộc tình huống nào?",
+      "options": [
+        {
+          "label": "Hai thành viên tranh cãi về giải pháp kỹ thuật hoặc quy ước làm việc",
+          "nextNodeId": "tc.conflict.q2"
+        },
+        {
+          "label": "Một thành viên vốn làm tốt bỗng nhiên giảm hiệu suất, hay đi trễ hoặc cáu gắt",
+          "nextNodeId": "tc.leaf.private-ei"
+        },
+        {
+          "label": "Thành viên thiếu kỹ năng công nghệ mới làm chậm tiến độ chung",
+          "nextNodeId": "tc.leaf.coaching"
+        }
+      ]
+    },
+    "tc.conflict.q2": {
+      "id": "tc.conflict.q2",
+      "kind": "question",
+      "branchId": "team-conflict",
+      "prompt": "Mức độ leo thang hiện tại của cuộc tranh cãi ra sao?",
+      "options": [
+        {
+          "label": "Mới bất đồng quan điểm chuyên môn, chưa vi phạm chuẩn mực hay bế tắc",
+          "nextNodeId": "tc.leaf.team-self-resolve"
+        },
+        {
+          "label": "Đã căng thẳng kéo dài, nhóm không tự gỡ được và bắt đầu ảnh hưởng tiến độ",
+          "nextNodeId": "tc.leaf.collaborate"
+        }
+      ]
+    },
+    "tc.leaf.team-self-resolve": {
+      "id": "tc.leaf.team-self-resolve",
+      "kind": "outcome",
+      "branchId": "team-conflict",
+      "title": "Chiếu theo Team Charter / Ground Rules để nhóm tự giải quyết trước",
+      "provenanceLabel": "Resources §2.6 · Empowered Culture",
+      "firstAction": [
+        "Tôn trọng tính tự tổ chức: để hai thành viên tự trao đổi dựa trên các nguyên tắc ứng xử đã thống nhất trong Team Charter (Ground Rules) và dữ liệu kỹ thuật khách quan.",
+        "PM / Scrum Master quan sát hỗ trợ, chỉ can thiệp trực tiếp khi xung đột vượt ngưỡng lành mạnh."
+      ],
+      "neverDo": [
+        "Nhảy vào áp đặt ngay giải pháp kỹ thuật theo ý chủ quan của PM (Forcing).",
+        "Báo cáo ngay lên Giám đốc nhân sự hoặc Functional Manager."
+      ],
+      "artifactsToCheck": [
+        "Team Charter (Ground Rules)"
+      ],
+      "moduleId": "P09",
+      "evidenceLinkIds": [
+        "book.resource.conflict",
+        "flow.conflict"
+      ]
+    },
+    "tc.leaf.collaborate": {
+      "id": "tc.leaf.collaborate",
+      "kind": "outcome",
+      "branchId": "team-conflict",
+      "title": "Can thiệp bằng Collaborate / Problem Solve (Cùng tìm giải pháp Win-Win)",
+      "provenanceLabel": "People Domain (33%)",
+      "firstAction": [
+        "Mời các bên liên quan ngồi lại trực tiếp (Interactive communication), lắng nghe tích cực để tách cảm xúc cá nhân khỏi gốc rễ vấn đề.",
+        "Điều phối theo hướng Collaborate / Problem Solve: đặt lợi ích dự án lên trên, phân tích dữ liệu thực nghiệm của từng phương án để đạt đồng thuận Win-Win."
+      ],
+      "neverDo": [
+        "Lảng tránh dời sang tuần sau (Withdraw/Avoid).",
+        "Chia đôi kiểu dĩ hoà vi quý làm hỏng kiến trúc kỹ thuật khi vẫn còn đủ thời gian hợp tác tìm giải pháp tối ưu."
+      ],
+      "artifactsToCheck": [
+        "Team Charter",
+        "Issue Log"
+      ],
+      "moduleId": "P09",
+      "evidenceLinkIds": [
+        "book.resource.conflict",
+        "flow.conflict"
+      ]
+    },
+    "tc.leaf.private-ei": {
+      "id": "tc.leaf.private-ei",
+      "kind": "outcome",
+      "branchId": "team-conflict",
+      "title": "Gặp riêng 1-1 kín đáo bằng Trí tuệ Cảm xúc (Empathy) để tìm nguyên nhân gốc",
+      "provenanceLabel": "PMBOK 8 Principle #4 & #6",
+      "firstAction": [
+        "Mời thành viên trao đổi riêng 1-1 trong không gian an toàn, không phán xét (Private & Confidential).",
+        "Dùng Active Listening & Empathy hỏi thăm để hiểu nguyên nhân thực sự (quá tải ngầm, cản trở kỹ thuật hay biến cố cá nhân) rồi cùng thống nhất hướng tháo gỡ."
+      ],
+      "neverDo": [
+        "Phê bình công khai trước mặt cả nhóm trong buổi Daily Standup.",
+        "Lập tức gửi văn bản kỷ luật hoặc yêu cầu trả người về phòng chức năng."
+      ],
+      "artifactsToCheck": [
+        "Resource Management Plan",
+        "Team Performance Assessments"
+      ],
+      "moduleId": "P09",
+      "evidenceLinkIds": [
+        "core.mindset.direct",
+        "book.resource.tuckman"
+      ]
+    },
+    "tc.leaf.coaching": {
+      "id": "tc.leaf.coaching",
+      "kind": "outcome",
+      "branchId": "team-conflict",
+      "title": "Đào tạo, Mentoring & Pair-working — Tuyệt đối không đuổi người",
+      "provenanceLabel": "PMA Reflex #3 & Resources",
+      "firstAction": [
+        "Tổ chức đào tạo mục tiêu (Training), ghép cặp làm việc chung (Pair programming / Shadowing) với thành viên giàu kinh nghiệm để truyền đạt kỹ năng.",
+        "Cập nhật nhu cầu đào tạo vào Resource Management Plan và theo dõi sự tiến bộ."
+      ],
+      "neverDo": [
+        "Sa thải hoặc đòi đổi nhân sự ngay khi chưa hỗ trợ đào tạo.",
+        "Tự PM nhảy vào viết code/làm thay toàn bộ phần việc của thành viên."
+      ],
+      "artifactsToCheck": [
+        "Resource Management Plan",
+        "Lessons Learned Register"
+      ],
+      "moduleId": "P09",
+      "evidenceLinkIds": [
+        "core.mindset.direct",
+        "book.resource.tuckman"
+      ]
+    },
+    "stk.q1": {
+      "id": "stk.q1",
+      "kind": "question",
+      "branchId": "stakeholder",
+      "prompt": "Tình huống với Stakeholder đang xảy ra ở khía cạnh nào?",
+      "options": [
+        {
+          "label": "Một Stakeholder mới (hoặc lãnh đạo mới nhậm chức) vừa xuất hiện giữa chừng dự án",
+          "nextNodeId": "stk.leaf.new-stakeholder"
+        },
+        {
+          "label": "Stakeholder phàn nàn 'không nắm được tình hình' hoặc nhận báo cáo quá rối rắm",
+          "nextNodeId": "stk.leaf.comm-plan"
+        },
+        {
+          "label": "Stakeholder quyền lực cao phản đối ngầm hoặc bác bỏ sản phẩm ở buổi nghiệm thu",
+          "nextNodeId": "stk.leaf.engagement-seam"
+        }
+      ]
+    },
+    "stk.leaf.new-stakeholder": {
+      "id": "stk.leaf.new-stakeholder",
+      "kind": "outcome",
+      "branchId": "stakeholder",
+      "title": "Cập nhật Stakeholder Register → Phân tích Quyền lực/Mối quan tâm → Cập nhật Kế hoạch",
+      "provenanceLabel": "Stakeholders Domain §2.5",
+      "firstAction": [
+        "Ghi nhận ngay vào Stakeholder Register và phân tích quyền lực, mức độ ảnh hưởng, kỳ vọng cũng như thái độ hiện tại.",
+        "Gặp trực tiếp để lắng nghe mối quan tâm của họ và chia sẻ bối cảnh/mục tiêu dự án.",
+        "Cập nhật Stakeholder Engagement Plan và Communications Management Plan cho phù hợp."
+      ],
+      "neverDo": [
+        "Lập tức sửa Scope Baseline theo lời người mới khi chưa qua quy trình Change Control.",
+        "Phớt lờ vì 'danh sách Stakeholder đã chốt từ đầu dự án'."
+      ],
+      "artifactsToCheck": [
+        "Stakeholder Register",
+        "Stakeholder Engagement Plan",
+        "Communications Management Plan"
+      ],
+      "moduleId": "P08",
+      "evidenceLinkIds": [
+        "core.stakeholder.seam",
+        "flow.stakeholder"
+      ]
+    },
+    "stk.leaf.comm-plan": {
+      "id": "stk.leaf.comm-plan",
+      "kind": "outcome",
+      "branchId": "stakeholder",
+      "title": "Rà soát & Tinh chỉnh Communications Management Plan (Đúng tin · Đúng kênh · Đúng tần suất)",
+      "provenanceLabel": "Stakeholders & Comm §2.5",
+      "firstAction": [
+        "Kiểm tra lại Communications Management Plan hiện hành đối chiếu với nhu cầu thông tin thực tế của Stakeholder đó.",
+        "Điều chỉnh định dạng (ví dụ tóm tắt Executive Summary 1 trang thay vì bảng log kỹ thuật dài), tần suất và kênh truyền thông (Interactive / Push / Pull)."
+      ],
+      "neverDo": [
+        "Nhầm lẫn sang sửa Scope Baseline khi gốc rễ chỉ là sai kênh/định dạng báo cáo.",
+        "Trách Stakeholder 'đã gửi email rồi mà không chịu đọc'."
+      ],
+      "artifactsToCheck": [
+        "Communications Management Plan",
+        "Work Performance Reports (WPR)"
+      ],
+      "moduleId": "P08",
+      "evidenceLinkIds": [
+        "core.comm.plan",
+        "book.governance.wpd"
+      ]
+    },
+    "stk.leaf.engagement-seam": {
+      "id": "stk.leaf.engagement-seam",
+      "kind": "outcome",
+      "branchId": "stakeholder",
+      "title": "Gặp trực tiếp tìm hiểu lý do phản đối & Điều chỉnh Chiến lược Gắn kết (SEAM)",
+      "provenanceLabel": "Stakeholders Domain §2.5",
+      "firstAction": [
+        "Chủ động gặp riêng để lắng nghe nguyên nhân gốc khiến họ phản đối hoặc từ chối nghiệm thu (do hiểu sai yêu cầu, xung đột lợi ích phòng ban hay lỗi chất lượng thật).",
+        "Cập nhật ma trận SEAM (từ Resistant → Neutral/Supportive) trong Stakeholder Engagement Plan và mời họ tham gia sớm vào các buổi Review/Refinement định kỳ."
+      ],
+      "neverDo": [
+        "Dùng quyền của Sponsor ép họ phải ký nghiệm thu khi chưa làm rõ khúc mắc.",
+        "Loại họ ra khỏi danh sách mời họp để 'đỡ bị phản đối'."
+      ],
+      "artifactsToCheck": [
+        "Stakeholder Engagement Assessment Matrix (SEAM)",
+        "Requirements Traceability Matrix"
+      ],
+      "moduleId": "P08",
+      "evidenceLinkIds": [
+        "book.stakeholder.questions",
+        "flow.scope-acceptance"
+      ]
+    },
+    "sc.q1": {
+      "id": "sc.q1",
+      "kind": "question",
+      "branchId": "schedule-cost",
+      "prompt": "Tình trạng lệch tiến độ / chi phí cụ thể trong đề bài là gì?",
+      "options": [
+        {
+          "label": "Trễ tiến độ trên Đường găng (SPI < 1), ngân sách vẫn còn dư địa (CPI ≥ 1)",
+          "nextNodeId": "sc.leaf.crashing"
+        },
+        {
+          "label": "Trễ tiến độ (SPI < 1) nhưng TUYỆT ĐỐI KHÔNG được tăng chi phí",
+          "nextNodeId": "sc.leaf.fast-tracking"
+        },
+        {
+          "label": "Vượt ngân sách nghiêm trọng (CPI < 1) hoặc ước tính cũ không còn thực tế",
+          "nextNodeId": "sc.leaf.cost-recovery"
+        }
+      ]
+    },
+    "sc.leaf.crashing": {
+      "id": "sc.leaf.crashing",
+      "kind": "outcome",
+      "branchId": "schedule-cost",
+      "title": "Phân tích Đường găng & Cân nhắc Crashing (Tối ưu chi phí tăng thêm thấp nhất)",
+      "provenanceLabel": "Schedule Domain §2.3",
+      "firstAction": [
+        "Xác nhận tác vụ bị trễ thực sự nằm trên Critical Path (Float = 0 hoặc âm); nếu tác vụ còn Total Float dương thì chưa cần tốn tiền nén lịch.",
+        "Áp dụng Crashing: bổ sung nguồn lực tối ưu vào đúng các tác vụ trên Đường găng có chi phí nén trên mỗi ngày thấp nhất (hoặc điều chuyển nguồn lực từ nhánh có Float dư sang)."
+      ],
+      "neverDo": [
+        "Bơm thêm người vào các tác vụ KHÔNG nằm trên Đường găng (vừa tốn tiền vừa không rút ngắn được 1 ngày nào).",
+        "Cắt bỏ khâu kiểm thử chất lượng để lấy lại lịch."
+      ],
+      "artifactsToCheck": [
+        "Schedule Baseline",
+        "Schedule Network Diagram (Critical Path)"
+      ],
+      "moduleId": "P11",
+      "evidenceLinkIds": [
+        "book.schedule.compression",
+        "flow.cost"
+      ]
+    },
+    "sc.leaf.fast-tracking": {
+      "id": "sc.leaf.fast-tracking",
+      "kind": "outcome",
+      "branchId": "schedule-cost",
+      "title": "Xem xét Fast-Tracking các tác vụ phụ thuộc tuỳ ý & Giám sát chặt Rủi ro làm lại",
+      "provenanceLabel": "Schedule Domain §2.3",
+      "firstAction": [
+        "Rà soát các mối quan hệ phụ thuộc tuỳ ý (Discretionary / Soft Logic) trên Đường găng để chuyển từ làm tuần tự sang gối đầu song song (Fast-Tracking).",
+        "Cập nhật ngay rủi ro phải làm lại (Rework Risk) vào Risk Register và tăng cường phối hợp giao tiếp giữa các nhóm chạy song song."
+      ],
+      "neverDo": [
+        "Chạy song song các tác vụ có phụ thuộc vật lý/pháp lý bắt buộc (Mandatory / Hard Logic).",
+        "Xin thêm ngân sách trong khi đề bài đã khoá cứng chi phí."
+      ],
+      "artifactsToCheck": [
+        "Schedule Network Diagram",
+        "Risk Register"
+      ],
+      "moduleId": "P11",
+      "evidenceLinkIds": [
+        "book.schedule.compression",
+        "core.risk.strategies"
+      ]
+    },
+    "sc.leaf.cost-recovery": {
+      "id": "sc.leaf.cost-recovery",
+      "kind": "outcome",
+      "branchId": "schedule-cost",
+      "title": "Phân tích Nguyên nhân Gốc (Variance Analysis), Dự báo EAC/TCPI & Trình Phương án",
+      "provenanceLabel": "Finance Domain §2.4",
+      "firstAction": [
+        "Thực hiện Variance Analysis tìm nguyên nhân gốc khiến CPI < 1 và tính toán EAC / TCPI để biết hiệu suất cần đạt cho phần việc còn lại có khả thi không.",
+        "Tìm giải pháp tối ưu chi phí (loại bỏ lãng phí, tối ưu nguồn lực) mà không xâm phạm chất lượng.",
+        "Chỉ khi giả định ban đầu đã sai lệch hoàn toàn hoặc vượt ngưỡng chịu đựng, lập Change Request kèm các phương án đánh đổi trình CCB/Sponsor xem xét Re-baseline."
+      ],
+      "neverDo": [
+        "Tự ý sửa lại Cost Baseline để làm CPI trông đẹp hơn.",
+        "Lặng lẽ cắt giảm tính năng đã cam kết mà không qua CCB / Product Owner."
+      ],
+      "artifactsToCheck": [
+        "Cost Baseline",
+        "Work Performance Information (EVM)",
+        "Change Request"
+      ],
+      "moduleId": "P11",
+      "evidenceLinkIds": [
+        "core.finance.evm",
+        "core.finance.reserves"
+      ]
+    },
+    "ven.q1": {
+      "id": "ven.q1",
+      "kind": "question",
+      "branchId": "vendor",
+      "prompt": "Vấn đề phát sinh với Nhà thầu (Vendor / Seller) là gì?",
+      "options": [
+        {
+          "label": "Nhà thầu báo khả năng giao hàng trễ hoặc sản phẩm bàn giao không đạt chuẩn chất lượng",
+          "nextNodeId": "ven.leaf.review-contract"
+        },
+        {
+          "label": "Hai bên bất đồng gay gắt về việc một hạng mục nằm trong hay ngoài phạm vi hợp đồng",
+          "nextNodeId": "ven.leaf.negotiate-adr"
+        }
+      ]
+    },
+    "ven.leaf.review-contract": {
+      "id": "ven.leaf.review-contract",
+      "kind": "outcome",
+      "branchId": "vendor",
+      "title": "Kiểm tra Hợp đồng / SOW → Làm việc trực tiếp với Vendor đánh giá tác động",
+      "provenanceLabel": "Governance Sourcing & Appendix X4",
+      "firstAction": [
+        "Đọc kỹ các điều khoản trong Hợp đồng đã ký (Procurement Agreement) và Statement of Work (SOW) về tiêu chuẩn nghiệm thu, mốc phạt và quy trình khắc phục.",
+        "Họp trực tiếp với đại diện Vendor để xác minh nguyên nhân gốc, yêu cầu kế hoạch khắc phục (Corrective Action) và đánh giá tác động lên Đường găng của dự án."
+      ],
+      "neverDo": [
+        "Đơn phương huỷ hợp đồng và kiện ra toà ngay lập tức khi chưa đối chiếu điều khoản và đàm phán.",
+        "Tự cho nhân sự nội bộ nhảy vào sửa hàng của Vendor làm mất hiệu lực bảo hành hợp đồng."
+      ],
+      "artifactsToCheck": [
+        "Procurement Agreement",
+        "Procurement SOW",
+        "Issue Log"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "book.procurement.contracts",
+        "flow.procurement"
+      ]
+    },
+    "ven.leaf.negotiate-adr": {
+      "id": "ven.leaf.negotiate-adr",
+      "kind": "outcome",
+      "branchId": "vendor",
+      "title": "Thương lượng trực tiếp (Negotiation) → ADR (Hoà giải/Trọng tài) → Kiện tụng là cuối cùng",
+      "provenanceLabel": "PMI Claims Administration Rule",
+      "firstAction": [
+        "Đối chiếu phạm vi chi tiết trong SOW và lịch sử thay đổi hợp đồng.",
+        "Ưu tiên số 1: Đàm phán trực tiếp (Direct Negotiation) trên tinh thần hợp tác để đạt thoả thuận.",
+        "Nếu đàm phán bế tắc: đi theo quy trình giải quyết tranh chấp thay thế (ADR — Mediation / Arbitration) ghi trong hợp đồng cùng bộ phận Pháp chế/Mua sắm; kiện tụng (Litigation) luôn là lựa chọn cuối cùng bất đắc dĩ nhất."
+      ],
+      "neverDo": [
+        "Đưa thẳng ra toà án (Litigation) làm bước đầu tiên.",
+        "Thoả thuận miệng trả thêm tiền cho Vendor ngoài luồng hợp đồng."
+      ],
+      "artifactsToCheck": [
+        "Procurement Agreement (Claims Clause)",
+        "Contested Changes Log"
+      ],
+      "moduleId": "P12",
+      "evidenceLinkIds": [
+        "flow.procurement",
+        "book.procurement.contracts"
+      ]
+    },
+    "eth.q1": {
+      "id": "eth.q1",
+      "kind": "question",
+      "branchId": "ethics",
+      "prompt": "Tình huống nhạy cảm thuộc nhóm nào?",
+      "options": [
+        {
+          "label": "Sếp / Sponsor gây áp lực làm đẹp số liệu báo cáo hoặc giấu lỗi an toàn sản phẩm",
+          "nextNodeId": "eth.leaf.integrity"
+        },
+        {
+          "label": "Thành viên đưa dữ liệu mật / PII khách hàng lên công cụ AI công cộng chưa được phê duyệt",
+          "nextNodeId": "eth.leaf.ai-governance"
+        }
+      ]
+    },
+    "eth.leaf.integrity": {
+      "id": "eth.leaf.integrity",
+      "kind": "outcome",
+      "branchId": "ethics",
+      "title": "Không thoả hiệp Đạo đức & Trung thực — Giữ nguyên dữ liệu thật và Báo cáo đúng kênh",
+      "provenanceLabel": "PMI Code of Ethics & Principle #4",
+      "firstAction": [
+        "Kiên quyết từ chối làm sai lệch số liệu hoặc bàn giao sản phẩm gây nguy hại an toàn/vi phạm pháp luật.",
+        "Trình bày trung thực bằng chứng dữ liệu khách quan kèm các phương án khắc phục rủi ro cho cấp quản lý; nếu vẫn bị ép vi phạm pháp luật/đạo đức, báo cáo lên kênh tuân thủ/đạo đức chính thức của tổ chức."
+      ],
+      "neverDo": [
+        "Sửa báo cáo màu Đỏ thành màu Xanh để chiều lòng cấp trên.",
+        "Nhận quà tặng có giá trị lớn hoặc ưu đãi cá nhân từ nhà thầu đang dự thầu."
+      ],
+      "artifactsToCheck": [
+        "PMI Code of Ethics and Professional Conduct",
+        "Work Performance Reports"
+      ],
+      "moduleId": "P03",
+      "evidenceLinkIds": [
+        "core.mindset.process",
+        "book.value.compliance"
+      ]
+    },
+    "eth.leaf.ai-governance": {
+      "id": "eth.leaf.ai-governance",
+      "kind": "outcome",
+      "branchId": "ethics",
+      "title": "Ngăn chặn rò rỉ dữ liệu, Thiết lập Quy tắc Quản trị AI & Giám sát Con người (Human-in-the-Loop)",
+      "provenanceLabel": "PMBOK 8 Appendix X3 · AI in Projects",
+      "firstAction": [
+        "Yêu cầu ngừng ngay việc tải dữ liệu nhạy cảm/bản quyền/PII lên công cụ GenAI công cộng và phối hợp bộ phận Bảo mật đánh giá mức độ lộ lọt theo chính sách tổ chức.",
+        "Cập nhật quy tắc sử dụng AI vào Team Charter / Governance: chỉ dùng môi trường AI doanh nghiệp được phê duyệt, ẩn danh dữ liệu và bắt buộc có chuyên gia kiểm chứng đầu ra của AI (Human-in-the-Loop)."
+      ],
+      "neverDo": [
+        "Cấm cực đoan mọi công cụ hỗ trợ hợp lệ hoặc ngược lại phó mặc 100% quyết định dự án cho AI không kiểm chứng.",
+        "Che giấu sự cố bảo mật dữ liệu."
+      ],
+      "artifactsToCheck": [
+        "Organizational Data Security Policy",
+        "Team Charter (AI Usage Guidelines)",
+        "Risk Register"
+      ],
+      "moduleId": "P15",
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "book.business.eef-opa"
+      ]
+    }
+  },
+  "challenges": [
+    {
+      "id": "case-01",
+      "code": "CA 01",
+      "title": "Khách VIP nhắn riêng Developer giữa Sprint",
+      "scenario": "Dự án phát triển ứng dụng ngân hàng theo Scrum (Sprint 2 tuần). Ngày thứ 6 của Sprint 4, Giám đốc Kinh doanh nhắn trực tiếp cho một Senior Developer nhờ thêm gấp nút xuất file PDF vì khách hàng lớn rất thích.",
+      "question": "Với vai trò Agile Project Manager / Scrum Master, bạn định hướng xử lý thế nào?",
+      "branchId": "change",
+      "expectedLeafId": "chg.leaf.agile-mid-sprint",
+      "expectedPathLabels": [
+        "1. Yêu cầu thay đổi phạm vi / tiến độ / chi phí",
+        "Agile / Scrum — Đang chạy theo các Sprint ngắn và Product Backlog",
+        "Stakeholder đòi chèn thẳng việc mới vào giữa Sprint đang chạy (phá vỡ Sprint Goal)"
+      ],
+      "takeaway": "Trong Scrum, không ai được xé lẻ sự tập trung của nhóm giữa Sprint; mọi yêu cầu mới phải đi qua Product Owner để xếp hạng trên Product Backlog."
+    },
+    {
+      "id": "case-02",
+      "code": "CA 02",
+      "title": "Món quà 'miễn phí' từ lập trình viên nhiệt tình",
+      "scenario": "Trong dự án Predictive đã khoá Scope Baseline, một lập trình viên khoe rằng anh ấy vừa viết thêm bộ lọc màu tối tự động ngoài đặc tả mà không tốn thêm giờ công nào để làm khách hàng bất ngờ.",
+      "question": "Hành động chuẩn PMI của PM là gì?",
+      "branchId": "change",
+      "expectedLeafId": "chg.leaf.gold-plating",
+      "expectedPathLabels": [
+        "1. Yêu cầu thay đổi phạm vi / tiến độ / chi phí",
+        "Predictive (Waterfall) — Đã khoá Scope / Schedule / Cost Baseline",
+        "Developer trong nhóm tự ý muốn làm thêm tính năng 'tặng miễn phí' cho khách"
+      ],
+      "takeaway": "Tự ý thêm tính năng không nằm trong Scope Baseline là Gold Plating — mang lại rủi ro lỗi ngầm và chi phí bảo trì không được duyệt."
+    },
+    {
+      "id": "case-03",
+      "code": "CA 03",
+      "title": "Tin đồn nhà cung cấp chip sắp đình công",
+      "scenario": "Trong cuộc họp tuần, kỹ sư phần cứng báo cáo có thông tin công đoàn tại nhà máy cung cấp linh kiện ở nước ngoài có thể đình công vào tháng tới, có nguy cơ làm chậm lô hàng mẫu 3 tuần.",
+      "question": "PM nên làm gì ĐẦU TIÊN?",
+      "branchId": "risk-issue",
+      "expectedLeafId": "ri.leaf.new-risk",
+      "expectedPathLabels": [
+        "2. Sự cố đã nổ ra vs Rủi ro chưa xảy ra",
+        "CHƯA XẢY RA — Mới là khả năng, nguy cơ hoặc cơ hội ('có thể trễ', 'nguy cơ bão', 'nếu thư viện đổi API')",
+        "Rủi ro MỚI vừa được thành viên hoặc stakeholder nêu ra"
+      ],
+      "takeaway": "Đình công 'có thể xảy ra vào tháng tới' là Rủi ro (Risk) mới — phải ghi vào Risk Register, phân tích P×I và lập phương án ứng phó dự phòng."
+    },
+    {
+      "id": "case-04",
+      "code": "CA 04",
+      "title": "Máy chủ môi trường kiểm thử sập bất ngờ",
+      "scenario": "Sáng thứ Hai, môi trường Staging đột ngột hỏng ổ cứng khiến toàn bộ nhóm kiểm thử bị kẹt không chạy test được. Rủi ro phần cứng này chưa từng được liệt kê trong Risk Register.",
+      "question": "PM cần xử lý theo nhánh nào?",
+      "branchId": "risk-issue",
+      "expectedLeafId": "ri.leaf.issue-workaround",
+      "expectedPathLabels": [
+        "2. Sự cố đã nổ ra vs Rủi ro chưa xảy ra",
+        "ĐÃ XẢY RA RỒI — Sự thật hiện hữu ('server đã sập', 'kỹ sư chính vừa nộp đơn nghỉ', 'lỗi đã lọt ra môi trường test')",
+        "Sự cố hoàn toàn bất ngờ chưa từng lường trước (Unknown-Unknown)"
+      ],
+      "takeaway": "Sự kiện đã xảy ra là Issue → ghi vào Issue Log và cùng nhóm tìm Workaround ngay lập tức."
+    },
+    {
+      "id": "case-05",
+      "code": "CA 05",
+      "title": "Ngôi sao của nhóm đột ngột sa sút phong độ",
+      "scenario": "Một kiến trúc sư phần mềm vốn rất tận tuỵ trong 3 tháng đầu bỗng nhiên trễ hạn 2 đầu việc liên tiếp và trả lời cộc lốc trong nhóm chat.",
+      "question": "Bước đi đầu tiên thể hiện Accountable Leader chuẩn PMI là gì?",
+      "branchId": "team-conflict",
+      "expectedLeafId": "tc.leaf.private-ei",
+      "expectedPathLabels": [
+        "3. Xung đột nhóm · Hiệu suất giảm · Thiếu kỹ năng",
+        "Một thành viên vốn làm tốt bỗng nhiên giảm hiệu suất, hay đi trễ hoặc cáu gắt"
+      ],
+      "takeaway": "Luôn dùng Trí tuệ cảm xúc (EI) gặp riêng 1-1 kín đáo để tìm nguyên nhân gốc trước khi phán xét."
+    },
+    {
+      "id": "case-06",
+      "code": "CA 06",
+      "title": "Hai Senior cãi nhau nảy lửa làm đình trệ thiết kế",
+      "scenario": "Hai kỹ sư chính tranh luận gay gắt suốt 3 ngày về việc dùng REST hay gRPC, không ai chịu nhượng bộ khiến việc thiết kế API bị đình trệ và không khí nhóm rất nặng nề.",
+      "question": "PM cần can thiệp bằng phương pháp nào?",
+      "branchId": "team-conflict",
+      "expectedLeafId": "tc.leaf.collaborate",
+      "expectedPathLabels": [
+        "3. Xung đột nhóm · Hiệu suất giảm · Thiếu kỹ năng",
+        "Hai thành viên tranh cãi về giải pháp kỹ thuật hoặc quy ước làm việc",
+        "Đã căng thẳng kéo dài, nhóm không tự gỡ được và bắt đầu ảnh hưởng tiến độ"
+      ],
+      "takeaway": "Khi xung đột vượt ngưỡng tự giải quyết, PM điều phối trực tiếp bằng Collaborate / Problem Solve dựa trên dữ liệu khách quan."
+    },
+    {
+      "id": "case-07",
+      "code": "CA 07",
+      "title": "Giám đốc Vận hành mới nhậm chức giữa dự án",
+      "scenario": "Dự án ERP đã đi được 50% chặng đường thì công ty bổ nhiệm một Giám đốc Vận hành mới — người sẽ tiếp nhận hệ thống sau khi bàn giao.",
+      "question": "PM phải làm gì ĐẦU TIÊN?",
+      "branchId": "stakeholder",
+      "expectedLeafId": "stk.leaf.new-stakeholder",
+      "expectedPathLabels": [
+        "4. Stakeholder vào trễ · Phản đối ngầm · Bác bỏ nghiệm thu",
+        "Một Stakeholder mới (hoặc lãnh đạo mới nhậm chức) vừa xuất hiện giữa chừng dự án"
+      ],
+      "takeaway": "Nhận diện Stakeholder là quy trình liên tục: cập nhật Stakeholder Register, phân tích quyền lực/quan tâm rồi gặp trực tiếp để gắn kết."
+    },
+    {
+      "id": "case-08",
+      "code": "CA 08",
+      "title": "Lãnh đạo tài chính than phiền không hiểu báo cáo tuần",
+      "scenario": "CFO gửi email phàn nàn rằng báo cáo hàng tuần của dự án toàn thuật ngữ kỹ thuật dài 15 trang nên bà không nắm được tình hình giải ngân và rủi ro chính.",
+      "question": "Tài liệu nào cần được rà soát và cập nhật ngay?",
+      "branchId": "stakeholder",
+      "expectedLeafId": "stk.leaf.comm-plan",
+      "expectedPathLabels": [
+        "4. Stakeholder vào trễ · Phản đối ngầm · Bác bỏ nghiệm thu",
+        "Stakeholder phàn nàn 'không nắm được tình hình' hoặc nhận báo cáo quá rối rắm"
+      ],
+      "takeaway": "Vấn đề định dạng, mức độ chi tiết và kênh thông tin thuộc về Communications Management Plan."
+    },
+    {
+      "id": "case-09",
+      "code": "CA 09",
+      "title": "Trễ Đường găng khi ngân sách không được tăng một đồng",
+      "scenario": "Chỉ số hiện tại của dự án là SPI = 0.84 và CPI = 1.01. Khách hàng yêu cầu giữ nguyên ngày ra mắt hội chợ thương mại và Sponsor khẳng định không cấp thêm bất kỳ ngân sách nào.",
+      "question": "Kỹ thuật nén tiến độ nào phù hợp nhất để xem xét?",
+      "branchId": "schedule-cost",
+      "expectedLeafId": "sc.leaf.fast-tracking",
+      "expectedPathLabels": [
+        "5. Trễ tiến độ hoặc Vượt chi phí (SPI < 1 · CPI < 1)",
+        "Trễ tiến độ (SPI < 1) nhưng TUYỆT ĐỐI KHÔNG được tăng chi phí"
+      ],
+      "takeaway": "Không được tăng chi phí → không thể Crashing bằng nguồn lực trả phí; hãy xem xét Fast-Tracking các tác vụ có phụ thuộc tuỳ ý trên Đường găng và quản trị chặt rủi ro làm lại."
+    },
+    {
+      "id": "case-10",
+      "code": "CA 10",
+      "title": "Luật bảo vệ dữ liệu cá nhân mới ban hành",
+      "scenario": "Khi dự án thương mại điện tử còn 2 tháng nữa là Go-live, cơ quan nhà nước ban hành nghị định mới yêu cầu mã hoá dữ liệu định danh công dân có hiệu lực ngay tháng sau.",
+      "question": "PM xử lý thay đổi pháp lý này như thế nào?",
+      "branchId": "change",
+      "expectedLeafId": "chg.leaf.compliance",
+      "expectedPathLabels": [
+        "1. Yêu cầu thay đổi phạm vi / tiến độ / chi phí",
+        "Thay đổi do Luật pháp / Quy định an toàn bắt buộc mới ban hành (Regulatory Compliance)"
+      ],
+      "takeaway": "Tuân thủ pháp luật (Regulatory Compliance) là bắt buộc — phải đánh giá tác động ngay và ưu tiên đưa vào Change Request / đỉnh Product Backlog."
+    },
+    {
+      "id": "case-11",
+      "code": "CA 11",
+      "title": "Tranh chấp phạm vi gay gắt với nhà thầu phụ",
+      "scenario": "Nhà thầu lắp đặt cảm biến từ chối thực hiện khâu hiệu chuẩn phần mềm vì cho rằng điều đó không nằm trong hợp đồng trọn gói, trong khi đội dự án khẳng định đã bao gồm.",
+      "question": "Trình tự giải quyết tranh chấp hợp đồng chuẩn PMI là gì?",
+      "branchId": "vendor",
+      "expectedLeafId": "ven.leaf.negotiate-adr",
+      "expectedPathLabels": [
+        "6. Nhà thầu giao trễ / Lỗi chất lượng / Tranh chấp hợp đồng",
+        "Hai bên bất đồng gay gắt về việc một hạng mục nằm trong hay ngoài phạm vi hợp đồng"
+      ],
+      "takeaway": "Đối chiếu hợp đồng/SOW → Đàm phán trực tiếp (Negotiation) → ADR (Hoà giải/Trọng tài) → Kiện tụng luôn là bước cuối cùng."
+    },
+    {
+      "id": "case-12",
+      "code": "CA 12",
+      "title": "Dán log khách hàng thật vào chatbot AI công cộng",
+      "scenario": "Để tìm lỗi nhanh hơn, một kỹ sư QA đã sao chép toàn bộ tệp log giao dịch chứa họ tên, số điện thoại và số thẻ của khách hàng dán vào một công cụ GenAI miễn phí trên web.",
+      "question": "Hành động chuẩn mực theo PMBOK 8 Appendix X3 & Đạo đức PMI là gì?",
+      "branchId": "ethics",
+      "expectedLeafId": "eth.leaf.ai-governance",
+      "expectedPathLabels": [
+        "7. Đạo đức · Xung đột lợi ích · Áp lực làm đẹp báo cáo",
+        "Thành viên đưa dữ liệu mật / PII khách hàng lên công cụ AI công cộng chưa được phê duyệt"
+      ],
+      "takeaway": "Áp dụng AI phải đi đôi với bảo mật dữ liệu (Data Privacy), công cụ được phê duyệt và Human-in-the-Loop kiểm chứng kết quả."
+    }
+  ]
+}

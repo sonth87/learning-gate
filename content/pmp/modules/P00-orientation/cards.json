@@ -1,0 +1,27 @@
+[
+  {
+    "id": "p00-c1",
+    "front": "Tỷ trọng điểm và số lượng Tasks của 3 miền trong đề thi PMP theo ECO 07/2026 là bao nhiêu?",
+    "back": "• People: 33% (8 tasks)\n• Process: 41% (10 tasks)\n• Business Environment: 26% (8 tasks — tăng vọt từ mức 8% cũ!)\nTổng cộng 180 câu / 240 phút (~80 giây/câu), ~60% bối cảnh Agile & Hybrid."
+  },
+  {
+    "id": "p00-c2",
+    "front": "Vì sao miền Business Environment trong ECO 07/2026 lại tăng vọt lên 26%?",
+    "back": "PMI yêu cầu PM hiện đại không chỉ 'chạy tiến độ' mà phải gắn dự án với chiến lược tổ chức: thẩm định Business Case, hiện thực hoá lợi ích (Benefits Realization), tuân thủ pháp lý (Compliance), quản trị thay đổi tổ chức (OCM), bền vững (Sustainability) và ứng dụng AI có trách nhiệm."
+  },
+  {
+    "id": "p00-c3",
+    "front": "7 Performance Domains (40 quy trình) của PMBOK® Guide 8th Edition gồm những miền nào?",
+    "back": "1. Governance (9 quy trình)\n2. Scope (6 quy trình)\n3. Schedule (3 quy trình)\n4. Finance (4 quy trình — thay tên Cost cũ)\n5. Stakeholders (7 quy trình — gộp cả Communications)\n6. Resources (5 quy trình — có Lead the Team)\n7. Risk (6 quy trình)"
+  },
+  {
+    "id": "p00-c4",
+    "front": "Chiến thuật đọc câu hỏi tình huống PMP có từ khoá FIRST / NEXT / BEST là gì?",
+    "back": "1. Đọc câu hỏi chốt cuối cùng trước (FIRST/NEXT hay BEST).\n2. Xác định ngữ cảnh (Predictive, Agile hay Hybrid) và giai đoạn dự án.\n3. Với FIRST/NEXT: luôn ưu tiên xác thực dữ liệu gốc & đánh giá tác động trước khi hành động."
+  },
+  {
+    "id": "p00-c5",
+    "front": "5 chủ đề nào trên PMP Mindmap chỉ nằm trên ấn bản Book (ed=book) để đối chiếu đầy đủ với PMBOK 8?",
+    "back": "intro, business, value, governance và procurement.\n(Ấn bản Core cô đọng 10 bản đồ thực chiến core.*, còn ấn bản Book mở rộng trọn vẹn 14 chủ đề)."
+  }
+]

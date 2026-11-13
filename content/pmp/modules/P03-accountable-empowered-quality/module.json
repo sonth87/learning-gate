@@ -1,0 +1,59 @@
+{
+  "id": "P03",
+  "slug": "P03-accountable-empowered-quality",
+  "level": 1,
+  "order": 2,
+  "title": "Lãnh đạo Trách nhiệm, Văn hoá Trao quyền & Chất lượng Nội tại (PMBOK 8 #3 · #4 · #6)",
+  "summary": "Thấu suốt 3 nguyên tắc con người & chất lượng của PMBOK® 8 (Standard §3.5, §3.6, §3.8): nhúng chất lượng vào quy trình thay vì chờ dò lỗi cuối kỳ (Embed Quality), lãnh đạo chính trực dám báo tin xấu sớm (Accountable Leader), và kiến tạo văn hoá an toàn tâm lý để nhóm tự tổ chức (Empowered Culture).",
+  "motto": "Chất lượng không được phép thoả hiệp · Tin xấu phải báo sớm · Nhóm mạnh nhờ được tin tưởng trao quyền",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §3.5 · §3.6 · §3.8",
+      "detail": "Nguyên tắc #3 Embed Quality · #4 Be an Accountable Leader · #6 Build an Empowered Culture"
+    },
+    {
+      "kind": "eco2026",
+      "label": "People 33% & Ethics",
+      "detail": "Servant Leadership, An toàn tâm lý, Quy tắc Đạo đức PMI và trách nhiệm giải trình dữ liệu"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "Core Map: agile & quality",
+      "detail": "Đối chiếu QA vs QC vs Validate Scope, Cost of Quality và 4 nhiệm vụ lá chắn của Servant Leader"
+    }
+  ],
+  "realWorldTrap": "Khi gấp tiến độ liền cắt bớt kiểm thử (QC), sợ sếp mắng nên giấu chỉ số trễ hạn thêm 1–2 tuần chờ nhóm làm bù, hoặc tự tay ước lượng rồi ép nhóm phải gật đầu theo con số của PM.",
+  "pmiMindsetShift": "Phòng ngừa lỗi trong quy trình (Prevention) luôn rẻ hơn sửa lỗi bên ngoài; Low Grade có thể chấp nhận nhưng Low Quality là cấm kỵ; lãnh đạo có trách nhiệm phải trung thực tuyệt đối với dữ liệu và trao quyền ước lượng cho người trực tiếp làm việc.",
+  "tags": [
+    "embed-quality",
+    "accountable-leader",
+    "empowered-culture",
+    "psychological-safety",
+    "cost-of-quality"
+  ],
+  "evidenceLinkIds": [
+    "core.agile.servant",
+    "core.quality.qc-validate",
+    "flow.servant-leadership"
+  ],
+  "practice": {
+    "title": "Thực hành Phản xạ Servant Leader & Luyện Mix Agile + Quality (10 câu)",
+    "primaryLinkId": "flow.servant-leadership",
+    "secondaryLinkIds": [
+      "view.practice",
+      "core.quality.qc-validate"
+    ],
+    "steps": [
+      "Bấm mở 'Flow Tương tác: Phản xạ của Servant Leader khi nhóm gặp trở ngại' để đi xuyên qua 5 mắt xích hỗ trợ nhóm tự tổ chức thay vì ra lệnh.",
+      "Mở tiếp sơ đồ 'core.quality.qc-validate' trên Core Map để khắc sâu ranh giới giữa Manage Quality (QA), Control Quality (QC) và Validate Scope.",
+      "Vào Phòng Luyện Tập PMP Mindmap, chọn chế độ Mix (Lọc theo chủ đề), tích 'agile' và 'quality' (10 câu) để rèn phản xạ xử lý lỗi chất lượng và lãnh đạo nhóm."
+    ],
+    "selfCheck": [
+      "Khi gặp câu hỏi khách hàng muốn giảm ngân sách nên đề nghị 'bỏ bước kiểm thử tích hợp' hoặc 'làm phiên bản ít tính năng hơn', bạn biết chọn phương án nào ngay lập tức chưa?",
+      "Bạn đã phân biệt sắc bén 3 khái niệm: Manage Quality (kiểm quy trình), Control Quality (kiểm sản phẩm nội bộ → Verified) và Validate Scope (khách nghiệm thu → Accepted) chưa?",
+      "Nếu sếp trực tiếp gợi ý 'tạm chỉnh số liệu SPI trên báo cáo tuần này lên 1.0 để khách yên tâm', phản xạ đạo đức PMI của bạn là gì?"
+    ]
+  },
+  "decisionBranchId": "ethics"
+}

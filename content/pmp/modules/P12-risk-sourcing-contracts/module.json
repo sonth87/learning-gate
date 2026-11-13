@@ -1,0 +1,64 @@
+{
+  "id": "P12",
+  "slug": "P12-risk-sourcing-contracts",
+  "level": 3,
+  "order": 6,
+  "title": "Miền Risk & Sourcing: Rủi ro vs Sự cố, Chiến lược ứng phó & Quản trị Hợp đồng",
+  "summary": "Khoá chặt lằn ranh sinh tử giữa Risk (tương lai → Risk Register) và Issue (hiện tại → Issue Log), nắm vững 10 chiến lược đối phó Threat/Opportunity kèm Residual vs Secondary Risk, chọn đúng loại hợp đồng theo độ rõ phạm vi và xử lý tranh chấp Vendor chuẩn thứ bậc ADR.",
+  "motto": "Future is Risk · Present is Issue · Match Contract to Uncertainty · Negotiate First",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §2.7 & Appendix X4",
+      "detail": "Miền Risk + Plan Sourcing Strategy (Governance §2.1)"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "Risk vs Issue · Contracts · ADR",
+      "detail": "Ánh xạ sang risk.risk-vs-issue & procurement.contract-types"
+    },
+    {
+      "kind": "eco2026",
+      "label": "Process 41% & Business 26%",
+      "detail": "Quản trị bất định, chuỗi cung ứng và cam kết pháp lý nhà thầu"
+    }
+  ],
+  "realWorldTrap": "Sự cố đã nổ ra trên Production nhưng vẫn chọn 'Cập nhật Risk Register và tính xác suất'; hoặc hễ Vendor giao hàng lỗi là doạ chấm dứt hợp đồng và đưa ra toà ngay lập tức.",
+  "pmiMindsetShift": "Phân định thì thời gian trong 3 giây đầu: chưa xảy ra là Risk, đã xảy ra (100%) là Issue (ghi Issue Log + chạy Contingency Plan hoặc Workaround); với Vendor, luôn mở SOW/Hợp đồng đối chiếu điều khoản rồi ưu tiên thương lượng trực tiếp (Negotiation) trước khi dùng ADR.",
+  "tags": [
+    "Risk",
+    "Issue Log",
+    "Risk Strategies",
+    "Sourcing",
+    "Procurement",
+    "Contracts",
+    "ADR"
+  ],
+  "evidenceLinkIds": [
+    "book.risk.vs-issue",
+    "core.risk.strategies",
+    "flow.risk",
+    "book.procurement.contracts",
+    "flow.procurement"
+  ],
+  "practice": {
+    "title": "Kéo-thả Chu trình 10 Bước Rủi ro & Luyện 15 câu Mix Risk + Procurement",
+    "primaryLinkId": "flow.risk",
+    "secondaryLinkIds": [
+      "flow.procurement",
+      "view.practice"
+    ],
+    "steps": [
+      "Mở 'Flow Tương tác: Chu trình 10 Bước Quản lý Rủi ro đầu-cuối' ở chế độ Reconstruct, tự kéo-thả đúng thứ tự từ Identify → Qualitative → Quantitative → Plan Responses → Implement → Monitor.",
+      "Xem tiếp 'Flow Tương tác: Quản trị Mua sắm & Giải quyết Tranh chấp Hợp đồng (ADR)' để khóa thang leo thang tranh chấp nhà thầu.",
+      "Vào 'Phòng Luyện Tập Tình Huống PMP Mindmap', bật chế độ Mix chủ đề 'risk' + 'procurement' với gói 15 câu.",
+      "Ở mỗi câu hỏi đầu bài, gạch chân ngay động từ chỉ thời gian ('might/could' vs 'has failed/just resigned') để khoá cứng Risk Register hay Issue Log."
+    ],
+    "selfCheck": [
+      "Tôi có lập tức gạch bỏ mọi đáp án 'cập nhật Risk Register' khi đề bài mô tả sự việc ĐÃ XẢY RA rồi không?",
+      "Tôi có phân biệt được Residual Risk (rủi ro tàn dư còn sót lại) với Secondary Risk (rủi ro mới nảy sinh trực tiếp do giải pháp ứng phó) không?",
+      "Khi phạm vi rất mờ nhưng cần thuê chuyên gia làm ngay, tôi có nhớ dùng T&M kèm mức trần Not-To-Exceed (NTE) hoặc Agile Contract thay vì FFP không?"
+    ]
+  },
+  "decisionBranchId": "risk-issue"
+}

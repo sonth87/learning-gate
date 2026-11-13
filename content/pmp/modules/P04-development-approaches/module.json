@@ -1,0 +1,58 @@
+{
+  "id": "P04",
+  "slug": "P04-development-approaches",
+  "level": 2,
+  "order": 1,
+  "title": "Phổ Phát Triển: Khi nào chọn Predictive, Iterative, Incremental, Agile hay Hybrid?",
+  "summary": "Nắm vững khung chẩn đoán và lựa chọn phương pháp phát triển theo PMBOK® 8 (Standard §4.2–4.3) và Ma trận Stacey: phân biệt sắc bén Iterative (lặp mẫu thử để làm ĐÚNG) với Incremental (cắt lát để giao NHANH), cách Agile hợp nhất cả hai trong Timebox ngắn, cùng sự vận hành của 5 Focus Areas xuyên suốt mọi vòng đời.",
+  "motto": "Không có phương pháp vạn năng — Độ bất định của Yêu cầu và Kỹ thuật quyết định cách đi",
+  "provenance": [
+    {
+      "kind": "pmbok8",
+      "label": "PMBOK 8 §4.2–§4.3",
+      "detail": "Development Approaches Spectrum (Predictive · Iterative · Incremental · Adaptive · Hybrid) & 5 Focus Areas"
+    },
+    {
+      "kind": "eco2026",
+      "label": "Process 41% · Tailoring",
+      "detail": "Chẩn đoán ngữ cảnh dự án để chọn và lai ghép phương pháp phát triển phù hợp cho từng hợp phần"
+    },
+    {
+      "kind": "pma-bridge",
+      "label": "Book Map: intro (Stacey & Hybrid)",
+      "detail": "Trục Bất định Yêu cầu × Bất định Kỹ thuật và 4 mẫu kết hợp Hybrid phổ biến nhất"
+    }
+  ],
+  "realWorldTrap": "Thấy từ 'Agile' là chọn bừa trong mọi câu hỏi, hoặc đánh đồng hoàn toàn Iterative với Incremental khiến mất điểm oan ở các câu hỏi chọn vòng đời theo mục tiêu kinh doanh.",
+  "pmiMindsetShift": "Chọn phương pháp dựa trên 3 yếu tố: độ rõ ràng yêu cầu, độ ổn định kỹ thuật và nhu cầu bàn giao sớm — cần kiểm chứng độ đúng qua phản hồi mẫu thử thì chọn Iterative; cần cắt lát dùng ngay thì chọn Incremental; biến động kép thì chọn Agile; đa hợp phần khác tính chất thì chọn Hybrid.",
+  "tags": [
+    "development-approaches",
+    "stacey-matrix",
+    "iterative-vs-incremental",
+    "predictive-agile-hybrid",
+    "focus-areas"
+  ],
+  "evidenceLinkIds": [
+    "book.intro.stacey",
+    "book.intro.hybrid",
+    "flow.approach-selection"
+  ],
+  "practice": {
+    "title": "Kéo-thả Quy trình Chọn Cách Tiếp Cận & Luyện Mix Intro (10 câu)",
+    "primaryLinkId": "flow.approach-selection",
+    "secondaryLinkIds": [
+      "view.practice",
+      "book.intro.stacey"
+    ],
+    "steps": [
+      "Mở 'Flow Tương tác: Chọn Predictive, Iterative, Incremental, Agile hay Hybrid' ở chế độ Reconstruct, ghép lại trình tự chẩn đoán đặc thù sản phẩm và tổ chức.",
+      "Mở sơ đồ 'book.intro.stacey' và 'book.intro.hybrid' trên Book Map để xem trực quan 4 vùng Stacey và 4 mẫu lai ghép Hybrid.",
+      "Vào Phòng Luyện Tập PMP Mindmap, chọn chế độ Mix, lọc chủ đề 'intro' với 10 câu hỏi để rèn mắt bắt từ khoá phân biệt 5 cách tiếp cận."
+    ],
+    "selfCheck": [
+      "Khi đề bài nêu 'khách hàng chưa hình dung rõ giao diện nên muốn xem nhiều vòng Prototype trước khi xây dựng bản chính thức cuối cùng', bạn chọn Iterative hay Incremental?",
+      "Khi đề bài nêu 'xây dựng phần vỏ trạm biến áp theo bản vẽ chuẩn quốc gia song song với phát triển phần mềm điều khiển AI chưa rõ thuật toán', bạn chọn phương pháp nào?",
+      "Bạn đã nhớ sự đảo ngược của Tam giác ràng buộc giữa Predictive (cố định Scope) và Adaptive/Agile (cố định Time & Cost, linh hoạt Scope) chưa?"
+    ]
+  }
+}

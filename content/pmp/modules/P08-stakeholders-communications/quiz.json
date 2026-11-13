@@ -1,0 +1,81 @@
+[
+  {
+    "id": "p08-q1",
+    "type": "mc",
+    "q": "Giữa giai đoạn thực thi, công ty bổ nhiệm một Giám đốc An ninh mạng mới có quyền phủ quyết mọi đợt triển khai sản phẩm lên môi trường Production. Vị Giám đốc này chưa từng có tên trong danh sách bên liên quan trước đó. Là Project Manager, bạn nên làm gì ĐẦU TIÊN?",
+    "code": "",
+    "choices": [
+      "Gửi ngay toàn bộ 50 biên bản cuộc họp từ đầu dự án tới nay qua email cho vị Giám đốc tự đọc.",
+      "Cập nhật vị Giám đốc mới vào Stakeholder Register, phân tích quyền lực, mối quan tâm và kỳ vọng của họ trước khi điều chỉnh kế hoạch gắn kết và chủ động đặt lịch gặp mặt.",
+      "Nhờ Project Sponsor nói chuyện riêng để yêu cầu Giám đốc An ninh mạng không can thiệp vào tiến độ dự án.",
+      "Nộp Change Request lên CCB xin lùi ngày phát hành thêm 1 tháng phòng trường hợp bị kiểm tra bảo mật."
+    ],
+    "answer": 1,
+    "explain": "Khi xuất hiện Stakeholder mới ở bất kỳ thời điểm nào, quy trình chuẩn luôn bắt đầu từ Identify Stakeholders: ghi nhận vào Stakeholder Register và phân tích đặc điểm/quyền lực/mối quan tâm (Power/Interest) để có cơ sở cập nhật kế hoạch gắn kết & truyền thông phù hợp."
+  },
+  {
+    "id": "p08-q2",
+    "type": "mc",
+    "q": "Một Trưởng phòng Kho vận (có quyền lực cao đối với việc áp dụng hệ thống mới) luôn nhận đầy đủ báo cáo tiến độ hàng tuần nhưng liên tục từ chối cử nhân viên tham gia thử nghiệm và buông lời tiêu cực rằng phần mềm mới sẽ làm rối quy trình kho. Bạn nên rà soát và điều chỉnh tài liệu nào để xử lý gốc rễ vấn đề này?",
+    "code": "",
+    "choices": [
+      "Communications Management Plan — tăng tần suất gửi email báo cáo từ 1 lần/tuần lên mỗi ngày.",
+      "Stakeholder Engagement Plan — gặp trực tiếp để thấu hiểu nguyên nhân kháng cự và thiết kế chiến lược dịch chuyển thái độ từ Resistant sang Supportive.",
+      "Scope Baseline — cắt bỏ phân hệ Kho vận ra khỏi phạm vi dự án để tránh va chạm.",
+      "Resource Management Plan — thuê nhân sự bên ngoài làm thay nhân viên kho vận."
+    ],
+    "answer": 1,
+    "explain": "Trưởng phòng vẫn nhận đủ thông tin (không phải lỗi kênh báo cáo), mà gốc rễ là THÁI ĐỘ kháng cự (Resistant trên ma trận SEAM). Do đó gửi thêm email không giải quyết được gì; PM phải gặp trực tiếp lắng nghe nỗi lo và cập nhật chiến lược trong Stakeholder Engagement Plan."
+  },
+  {
+    "id": "p08-q3",
+    "type": "mc",
+    "q": "Trong buổi họp đánh giá quý, Phó Tổng giám đốc Tài chính phàn nàn rằng các báo cáo tuần dài 25 trang kỹ thuật của đội dự án khiến bà không thể tìm thấy nhanh các chỉ số giải ngân và dự báo dòng tiền mà bà cần để ra quyết định. Hành động TỐT NHẤT của Project Manager là gì?",
+    "code": "",
+    "choices": [
+      "Rà soát và cập nhật Communications Management Plan để điều chỉnh nội dung, định dạng tóm tắt (Executive Summary) phù hợp với nhu cầu thông tin của lãnh đạo tài chính.",
+      "Cập nhật Stakeholder Engagement Assessment Matrix vì Phó Tổng giám đốc đang chống đối dự án.",
+      "Ngừng gửi báo cáo cho Phó Tổng giám đốc Tài chính để tránh làm phiền.",
+      "Yêu cầu kế toán trưởng đọc hộ 25 trang báo cáo mỗi tuần rồi tóm tắt miệng lại cho bà."
+    ],
+    "answer": 0,
+    "explain": "Vấn đề nằm ở ĐỊNH DẠNG và MỨC ĐỘ CHI TIẾT của thông tin không khớp với nhu cầu người nhận (Information needs & format), hoàn toàn thuộc phạm vi của Communications Management Plan."
+  },
+  {
+    "id": "p08-q4",
+    "type": "mc",
+    "q": "Đội dự án ban đầu gồm 6 người nhưng vừa bổ sung thêm 4 chuyên gia tích hợp, nâng tổng số người liên lạc trực tiếp trong đội lên 10 người. Số lượng kênh giao tiếp tiềm năng $N(N-1)/2$ trong đội đã tăng thêm bao nhiêu kênh?",
+    "code": "",
+    "choices": [
+      "Tăng thêm 4 kênh (từ 6 lên 10).",
+      "Tăng thêm 30 kênh (từ 15 kênh lên 45 kênh).",
+      "Tăng thêm 45 kênh (từ 15 kênh lên 60 kênh).",
+      "Tăng thêm 15 kênh (từ 30 kênh lên 45 kênh)."
+    ],
+    "answer": 1,
+    "explain": "Với 6 người: 6 × 5 / 2 = 15 kênh. Khi tăng lên 10 người: 10 × 9 / 2 = 45 kênh. Vậy số kênh giao tiếp tăng thêm là 45 − 15 = 30 kênh (gấp ba lần ban đầu, đòi hỏi kế hoạch truyền thông chặt chẽ hơn nhiều!)."
+  },
+  {
+    "id": "p08-q5",
+    "type": "mc",
+    "q": "Dự án chuyển đổi số của bạn chuẩn bị phát hành bộ cẩm nang hướng dẫn tra cứu quy trình tự phục vụ dày 400 trang kèm kho video minh hoạ cho 3.500 nhân viên chi nhánh trên toàn quốc tham khảo bất cứ khi nào họ gặp nghiệp vụ tương ứng. Phương thức truyền thông nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Interactive Communication — tổ chức họp trực tuyến bắt buộc 1-1 cho từng nhân viên.",
+      "Push Communication — đính kèm tệp nén 2GB gửi qua email cá nhân cho cả 3.500 người.",
+      "Pull Communication — đăng tải lên cổng tri thức nội bộ (Intranet / Knowledge Portal) có thanh tìm kiếm và thông báo đường dẫn truy cập.",
+      "Truyền miệng qua các trưởng nhóm trong giờ ăn trưa."
+    ],
+    "answer": 2,
+    "explain": "Khi khối lượng thông tin lớn và đối tượng thụ hưởng rất đông (3.500 người) cần tự tra cứu theo thời điểm phát sinh nhu cầu, Pull Communication (kho tri thức/Intranet/E-learning) là phương thức chuẩn xác nhất."
+  },
+  {
+    "id": "p08-q6",
+    "type": "tf",
+    "q": "Trên lưới Power/Interest, đối với nhóm bên liên quan có Quyền lực cao nhưng Mức độ quan tâm chi tiết thấp (High Power, Low Interest), chiến lược chuẩn là 'Keep Satisfied' — giữ họ hài lòng ở các mốc quan trọng mà không làm ngập họ bằng những chi tiết vụn vặt hàng ngày.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Nhóm High Power / Low Interest (ví dụ lãnh đạo khối pháp chế hoặc tài chính cấp cao) có khả năng chặn dự án nếu không hài lòng, nên cần Keep Satisfied bằng thông tin cấp cao đúng trọng tâm."
+  }
+]

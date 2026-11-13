@@ -1,0 +1,257 @@
+[
+  {
+    "id": "cmp-approaches",
+    "title": "1. Predictive vs Iterative vs Incremental vs Agile vs Hybrid",
+    "subtitle": "Đọc đúng tín hiệu đề bài (độ bất định yêu cầu × nhu cầu bàn giao sớm) để chọn vòng đời chuẩn xác.",
+    "category": "approach",
+    "provenanceLabel": "Theo PMBOK 8 Standard §4.2",
+    "headers": ["Tiêu chí nhận diện", "Predictive (Waterfall)", "Iterative vs Incremental", "Adaptive (Agile) & Hybrid"],
+    "rows": [
+      [
+        "Mức độ rõ ràng của Yêu cầu",
+        "Rất rõ ngay từ đầu, ít biến động, chi phí sửa đổi muộn cực cao.",
+        "Iterative: yêu cầu mờ, cần thử sai để làm ĐÚNG. Incremental: yêu cầu khá rõ nhưng cần cắt lát giao NHANH.",
+        "Agile: yêu cầu tiến hoá liên tục trong môi trường biến động. Hybrid: pha trộn hợp phần cố định + hợp phần biến động."
+      ],
+      [
+        "Tần suất Bàn giao (Delivery)",
+        "1 lần lớn ở cuối dự án (hoặc cuối mỗi giai đoạn cổng kiểm soát).",
+        "Iterative: 1 lần bàn giao cuối sau nhiều vòng Prototype. Incremental: nhiều đợt bàn giao mảnh hoàn chỉnh dùng được ngay.",
+        "Agile: bàn giao Increment dùng được sau mỗi Timebox 1–4 tuần để thu phản hồi thật."
+      ],
+      [
+        "Cách kiểm soát Thay đổi",
+        "Khoá chặt 3 Baselines; mọi thay đổi phải qua Change Request & CCB.",
+        "Iterative đón nhận phản hồi chỉnh sửa thiết kế; Incremental điều chỉnh phạm vi các đợt sau.",
+        "Agile: cố định Time & Cost, linh hoạt Scope trên Product Backlog do PO sắp xếp."
+      ]
+    ],
+    "examTip": "Thấy từ khoá 'Prototype lặp lại để tìm giải pháp đúng trước khi build cuối' → chọn Iterative. Thấy 'khách muốn dùng sớm từng phần tính năng hoàn chỉnh' → chọn Incremental. Thấy cả hai trong vòng lặp ngắn 2 tuần → chọn Agile!",
+    "moduleId": "P04",
+    "evidenceLinkIds": ["book.intro.stacey", "flow.approach-selection"]
+  },
+  {
+    "id": "cmp-pmbok8-bridge",
+    "title": "2. Đối chiếu PMBOK® Guide 8 (2025) & ECO 07/2026 ↔ PMBOK 6/7 & Handout PMA",
+    "subtitle": "Hiểu sự tiến hoá để đọc bất kỳ tài liệu nào cũng không bị rối thuật ngữ.",
+    "category": "pmbok8-bridge",
+    "provenanceLabel": "PMBOK 8 Appendix X5 & Table 2-1",
+    "headers": ["Trục kiến trúc", "PMBOK 6 / Handout PMA (Mindmap)", "PMBOK 7 (2021)", "PMBOK 8 (2025) & ECO 07/2026"],
+    "rows": [
+      [
+        "Nguyên tắc dẫn dắt (Principles)",
+        "PMA rút gọn 6 phản xạ phòng thi thực chiến (core.mindset).",
+        "12 Nguyên tắc quản lý dự án (Stewardship, Team, Value, Systems...).",
+        "Cô đọng thành 6 Nguyên tắc hành động sắc gọn + bổ sung mới Nguyên tắc #5 Sustainability (Bền vững)."
+      ],
+      [
+        "Nhóm quy trình / Vùng trọng tâm",
+        "5 Process Groups truyền thống (nặng màu sắc Predictive).",
+        "Tách sang cuốn Process Groups Practice Guide riêng.",
+        "Đưa trở lại thành 5 Focus Areas (Initiating → Closing) áp dụng chung cho cả Predictive, Agile & Hybrid."
+      ],
+      [
+        "Miền chuyên môn & Quy trình",
+        "14 Chủ đề PMA (49 quy trình / 46 bảng ITTO); đã dùng tên Finance, Governance & gộp Stakeholder+Comm.",
+        "8 Performance Domains khái quát, bỏ danh sách quy trình & ITTO.",
+        "7 Performance Domains nhúng sẵn 40 quy trình không áp đặt (gộp QA & Sourcing vào Governance; Comm vào Stakeholders)."
+      ],
+      [
+        "Trọng số Đề thi PMP (ECO)",
+        "ECO 01/2021: People 42% · Process 50% · Business 8% (35 tasks).",
+        "Dùng chung ECO 01/2021.",
+        "ECO 09/07/2026: People 33% (8 tasks) · Process 41% (10 tasks) · Business Environment 26% (8 tasks, có AI & ESG)."
+      ]
+    ],
+    "examTip": "Đề thi PMP KHÔNG hỏi thuộc lòng tên bảng ITTO hay đánh đố số phiên bản sách; đề thi kiểm tra cách bạn ra quyết định dựa trên Giá trị, Governance, Trao quyền và Môi trường kinh doanh!",
+    "moduleId": "P00",
+    "evidenceLinkIds": ["view.panorama", "book.intro.project-value"]
+  },
+  {
+    "id": "cmp-risk-issue",
+    "title": "3. Risk (Rủi ro tương lai) vs Issue (Sự cố hiện tại)",
+    "subtitle": "Cặp khái niệm làm mất điểm oan nhiều nhất trong các câu hỏi tình huống PMP.",
+    "category": "execution",
+    "provenanceLabel": "Risk Domain §2.7 & Governance",
+    "headers": ["Đặc điểm", "Risk (Rủi ro — Threat hoặc Opportunity)", "Issue (Sự cố / Vấn đề hiện hữu)"],
+    "rows": [
+      [
+        "Thì thời gian & Độ chắc chắn",
+        "TƯƠNG LAI — Xác suất xảy ra nằm trong khoảng (0%, 100%). Từ khoá: 'có thể', 'nguy cơ', 'lo ngại nếu...'.",
+        "HIỆN TẠI / ĐÃ XẢY RA — Xác suất = 100%. Từ khoá: 'vừa xảy ra', 'đã nghỉ việc', 'đang bị chặn', 'phát hiện lỗi'."
+      ],
+      [
+        "Sổ ghi chép đầu tiên",
+        "Risk Register (Sổ đăng ký rủi ro).",
+        "Issue Log (Nhật ký sự cố)."
+      ],
+      [
+        "Hành động chuẩn PMI tiếp theo",
+        "Phân tích Xác suất × Tác động (P×I) → Lập chiến lược ứng phó chủ động (Avoid, Mitigate, Transfer, Accept / Exploit...).",
+        "Chỉ định Issue Owner → Đánh giá mức độ ảnh hưởng → Thực thi Contingency Plan (nếu đã lường trước) hoặc Workaround (nếu bất ngờ)."
+      ]
+    ],
+    "examTip": "Đọc đề thấy sự việc ĐÃ NỔ RA RỒI thì gạch bỏ ngay lập tức mọi đáp án bắt đầu bằng 'Cập nhật Risk Register và phân tích xác suất' — phải mở Issue Log trước!",
+    "moduleId": "P12",
+    "evidenceLinkIds": ["book.risk.vs-issue", "flow.risk"]
+  },
+  {
+    "id": "cmp-qa-qc-validate",
+    "title": "4. Manage Quality (QA) vs Control Quality (QC) vs Validate Scope",
+    "subtitle": "Ba chốt chặn chất lượng & nghiệm thu theo dòng chảy Deliverable → Verified → Accepted.",
+    "category": "execution",
+    "provenanceLabel": "PMBOK 8 Governance §2.1 & Scope §2.2",
+    "headers": ["Tiêu chí", "Manage Quality (QA)", "Control Quality (QC)", "Validate Scope"],
+    "rows": [
+      [
+        "Đối tượng & Mục tiêu cốt lõi",
+        "Kiểm toán QUY TRÌNH (Process) để phòng ngừa lỗi, xây dựng niềm tin rằng sản phẩm đầu ra sẽ đạt chuẩn.",
+        "Kiểm tra SẢN PHẨM (Deliverable) xem có đúng đặc tả kỹ thuật, không còn lỗi (Correctness) hay không.",
+        "Nghiệm thu chính thức với KHÁCH HÀNG / SPONSOR về mức độ chấp nhận sử dụng (Acceptance)."
+      ],
+      [
+        "Ai thực hiện & Ở vùng nào?",
+        "Đội dự án / Bộ phận QA · Vùng Executing (trong PMBOK 8 thuộc miền Governance).",
+        "Nhóm kiểm thử / Đội dự án nội bộ · Vùng Monitoring & Controlling (làm TRƯỚC Validate Scope).",
+        "Khách hàng / Sponsor cùng PM · Vùng Monitoring & Controlling (hoặc Sprint Review trong Agile)."
+      ],
+      [
+        "Đầu ra quyết định",
+        "Quality Reports, cải tiến quy trình, cập nhật chuẩn làm việc.",
+        "Verified Deliverables (Sản phẩm đã xác minh nội bộ).",
+        "Accepted Deliverables (Sản phẩm đã nghiệm thu chính thức → đầu vào cho Close Project)."
+      ]
+    ],
+    "examTip": "Nhớ khẩu quyết: 'QC tìm bug nội bộ ra Verified → Khách ký Validate Scope ra Accepted → Đóng dự án ở Close'. Khách hàng phát hiện bug ở buổi Demo nghĩa là khâu QC / Definition of Done nội bộ đang hổng!",
+    "moduleId": "P10",
+    "evidenceLinkIds": ["core.quality.qc-validate", "flow.scope-acceptance"]
+  },
+  {
+    "id": "cmp-reserves-evm",
+    "title": "5. Contingency Reserve vs Management Reserve & Tín hiệu EVM",
+    "subtitle": "Ranh giới thẩm quyền túi tiền của PM so với Sponsor/CCB.",
+    "category": "execution",
+    "provenanceLabel": "Finance Domain §2.4",
+    "headers": ["Tiêu chí", "Contingency Reserve (Dự phòng rủi ro đã biết)", "Management Reserve (Dự phòng quản lý)"],
+    "rows": [
+      [
+        "Dùng cho loại bất định nào?",
+        "Known-Unknowns: Các rủi ro ĐÃ nhận diện trong Risk Register và đã tính toán định lượng/EMV.",
+        "Unknown-Unknowns: Các biến cố hoàn toàn bất ngờ chưa từng được nhận diện trước đó."
+      ],
+      [
+        "Có nằm trong Cost Baseline không?",
+        "CÓ — Nằm TRONG Cost Baseline (Cost Baseline = Work Estimates + Contingency Reserve).",
+        "KHÔNG — Cộng thêm bên ngoài Cost Baseline để tạo thành tổng Project Budget."
+      ],
+      [
+        "Ai có thẩm quyền giải ngân?",
+        "Project Manager được chủ động sử dụng khi rủi ro tương ứng xảy ra (không cần qua CCB).",
+        "Sponsor / CCB — PM bắt buộc phải nộp Change Request phê duyệt chuyển phần tiền này vào Cost Baseline trước khi tiêu."
+      ]
+    ],
+    "examTip": "CPI < 1 = vượt chi phí; SPI < 1 = chậm tiến độ; TCPI > 1 = phần việc còn lại phải thắt lưng buộc bụng làm hiệu quả hơn mới kịp ngân sách BAC!",
+    "moduleId": "P11",
+    "evidenceLinkIds": ["core.finance.reserves", "core.finance.evm"]
+  },
+  {
+    "id": "cmp-charter-plan",
+    "title": "6. Project Charter vs Project Management Plan vs Team Charter",
+    "subtitle": "Ba bản hiến chương/kế hoạch định hình thẩm quyền, cách điều hành và văn hoá nhóm.",
+    "category": "governance",
+    "provenanceLabel": "Governance §2.1 & Resources §2.6",
+    "headers": ["Đặc điểm", "Project Charter", "Project Management Plan", "Team Charter (Social Contract)"],
+    "rows": [
+      [
+        "Ai ban hành / Ai làm chủ?",
+        "Do Project Sponsor (hoặc thực thể ngoài dự án) ký ban hành.",
+        "Do Project Manager tích hợp cùng nhóm dự án và các Stakeholder chủ chốt.",
+        "Do CHÍNH CẢ NHÓM DỰ ÁN cùng thảo luận và đồng thuận xây dựng."
+      ],
+      [
+        "Ý nghĩa cốt lõi",
+        "Khai sinh dự án chính thức, trao thẩm quyền cho PM sử dụng nguồn lực tổ chức; ghi mục tiêu & rủi ro cấp cao.",
+        "Kế hoạch tổng thể hướng dẫn CÁCH thực thi, giám sát, kiểm soát thay đổi và đóng dự án (chứa các Baselines).",
+        "Quy tắc ứng xử nội bộ (Ground Rules): giờ họp, cách ra quyết định, cách giải quyết bất đồng và quy ước truyền thông nhóm."
+      ],
+      [
+        "Khi nào cần sửa đổi?",
+        "Rất hiếm khi sửa; chỉ Sponsor mới có quyền sửa khi mục tiêu kinh doanh cốt lõi thay đổi.",
+        "Sau khi khoá Baseline, mọi cập nhật vào Baselines phải có Change Request được CCB phê duyệt.",
+        "Nhóm chủ động rà soát, cập nhật định kỳ (ví dụ ở Sprint Retrospective hoặc khi có thành viên mới gia nhập)."
+      ]
+    ],
+    "examTip": "Chưa có Project Charter được ký → dự án chưa chính thức tồn tại! Nhóm hay đi họp trễ hoặc cãi vã thiếu tôn trọng → mở/lập ngay Team Charter (Ground Rules)!",
+    "moduleId": "P07",
+    "evidenceLinkIds": ["book.governance.charter", "book.resource.tuckman"]
+  },
+  {
+    "id": "cmp-agile-quality-gates",
+    "title": "7. Definition of Ready (DoR) vs Acceptance Criteria (AC) vs Definition of Done (DoD)",
+    "subtitle": "Ba cổng kiểm soát đầu vào, tính năng riêng lẻ và chất lượng tổng thể trong Agile/Scrum.",
+    "category": "approach",
+    "provenanceLabel": "Agile & Quality Integration",
+    "headers": ["Tiêu chí", "Definition of Ready (DoR)", "Acceptance Criteria (AC)", "Definition of Done (DoD)"],
+    "rows": [
+      [
+        "Áp dụng ở thời điểm nào?",
+        "TRƯỚC Sprint Planning — kiểm tra xem User Story đã đủ rõ, đủ nhỏ (INVEST) để nhóm kéo vào Sprint chưa.",
+        "TRONG & CUỐI việc làm từng User Story — kiểm tra đúng hành vi nghiệp vụ của RIÊNG Story đó.",
+        "CUỐI công việc & Sprint — tiêu chuẩn chất lượng chung bắt buộc cho MỌI Increment trước khi được coi là hoàn thành."
+      ],
+      [
+        "Ví dụ thực tế",
+        "Story đã rõ giá trị người dùng, đã gỡ phụ thuộc chặn cứng, đã được nhóm ước lượng sơ bộ.",
+        "'Khi nhập sai mật khẩu 5 lần liên tiếp, hệ thống khoá tài khoản 15 phút và gửi cảnh báo email.'",
+        "Code đã qua Peer Review, Unit Test ≥ 85%, quét bảo mật SAST sạch lỗi cao, tài liệu API đã cập nhật, chạy mượt trên Staging."
+      ],
+      [
+        "Hệ quả nếu chưa đạt",
+        "Tiếp tục làm rõ ở Backlog Refinement (nhưng lưu ý DoR là hướng dẫn hỗ trợ, không biến thành cổng quan liêu chặn cứng cực đoan).",
+        "Product Owner từ chối nghiệm thu User Story đó.",
+        "Tuyệt đối KHÔNG được đem ra trình diễn nghiệm thu ở Sprint Review và KHÔNG tính vào Velocity của Sprint!"
+      ]
+    ],
+    "examTip": "Story chưa thoả mãn Definition of Done khi hết Sprint → trả về Product Backlog để PO xem xét ưu tiên cho Sprint sau, KHÔNG kéo dài thêm ngày của Sprint!",
+    "moduleId": "P05",
+    "evidenceLinkIds": ["core.agile.events", "flow.agile-delivery"]
+  },
+  {
+    "id": "cmp-contracts-conflict",
+    "title": "8. Ma trận Chọn Hợp đồng (Contracts) & 5 Phong cách Xung đột",
+    "subtitle": " tra nhanh loại hợp đồng theo độ rõ phạm vi và chiến thuật hoà giải xung đột.",
+    "category": "people",
+    "provenanceLabel": "PMBOK 8 Appendix X4 & Resources §2.6",
+    "headers": ["Tình huống / Ngữ cảnh", "Lựa chọn Chuẩn PMI", "Lý do & Rủi ro đi kèm"],
+    "rows": [
+      [
+        "Phạm vi mua sắm cực kỳ rõ ràng, thiết kế đã chốt 100%",
+        "Fixed-Price (FFP / FPIF / FP-EPA nếu kéo dài nhiều năm lạm phát)",
+        "Nhà thầu (Seller) chịu phần lớn rủi ro vượt chi phí; người mua (Buyer) biết chắc ngân sách nhưng phải viết SOW cực chuẩn."
+      ],
+      [
+        "Phạm vi R&D mờ nhạt, biến động liên tục cần linh hoạt cao",
+        "Cost-Reimbursable (CPFF / CPIF) hoặc Agile Multi-tiered / Dynamic Scope Contract",
+        "Người mua (Buyer) chịu rủi ro chi phí nên cần giám sát chặt hoá đơn thực chi của nhà thầu."
+      ],
+      [
+        "Cần thuê gấp chuyên gia bên ngoài bổ sung ngắn hạn theo ngày công",
+        "Time & Material (T&M) KÈM trần ngân sách tối đa (Not-to-Exceed / Ceiling limit)",
+        "Nhanh gọn để khởi động ngay nhưng nếu thiếu trần giới hạn (NTE) thì người mua sẽ gánh rủi ro đội chi phí vô hạn."
+      ],
+      [
+        "Xung đột chuyên môn quan trọng, còn thời gian thảo luận",
+        "Collaborate / Problem Solve (Hợp tác giải quyết vấn đề — Win-Win)",
+        "Lựa chọn ưu tiên số 1 của PMI: đi vào dữ liệu gốc rễ và tạo cam kết cao nhất từ tất cả các bên."
+      ],
+      [
+        "Tình huống khẩn cấp an toàn tính mạng / pháp luật không thể chờ",
+        "Force / Direct (Quyết đoán chỉ đạo — Win-Lose)",
+        "Trường hợp ngoại lệ hợp lệ hiếm hoi được dùng Force để ngăn thiệt hại tức thời."
+      ]
+    ],
+    "examTip": "Trong câu hỏi T&M Contract, luôn ưu tiên đáp án có gắn điều khoản 'Not-to-Exceed (NTE) / giới hạn thời gian & ngân sách trần' để bảo vệ dự án!",
+    "moduleId": "P12",
+    "evidenceLinkIds": ["book.procurement.contracts", "book.resource.conflict"]
+  }
+]
