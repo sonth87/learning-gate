@@ -48,43 +48,113 @@ export interface PyLearnDBSchema extends DBSchema {
 }
 
 const DB_NAME = 'pylearn_mastery_db';
-const DB_VERSION = 4;
+const DB_VERSION = 3;
+const IDB_OPEN_TIMEOUT_MS = 1800;
 
 let dbPromise: Promise<IDBPDatabase<PyLearnDBSchema>> | null = null;
 
+function ensureSchema(db: IDBPDatabase<PyLearnDBSchema>): void {
+  if (!db.objectStoreNames.contains('notes')) {
+    const noteStore = db.createObjectStore('notes', { keyPath: 'id' });
+    noteStore.createIndex('by-target', 'targetId');
+  }
+  if (!db.objectStoreNames.contains('bookmarks')) {
+    const bmStore = db.createObjectStore('bookmarks', { keyPath: 'id' });
+    bmStore.createIndex('by-target', 'targetId');
+  }
+  if (!db.objectStoreNames.contains('completed_lessons')) {
+    db.createObjectStore('completed_lessons', { keyPath: 'lessonId' });
+  }
+  if (!db.objectStoreNames.contains('submissions')) {
+    db.createObjectStore('submissions', { keyPath: 'exerciseId' });
+  }
+  if (!db.objectStoreNames.contains('srs_states')) {
+    db.createObjectStore('srs_states', { keyPath: 'cardId' });
+  }
+  if (!db.objectStoreNames.contains('exam_history')) {
+    const examStore = db.createObjectStore('exam_history', { keyPath: 'id' });
+    examStore.createIndex('by-exam', 'examId');
+  }
+  if (!db.objectStoreNames.contains('wp_state')) {
+    db.createObjectStore('wp_state', { keyPath: 'key' });
+  }
+  if (!db.objectStoreNames.contains('course_state')) {
+    db.createObjectStore('course_state', { keyPath: 'courseId' });
+  }
+}
+
+function openAtVersion(version?: number): Promise<IDBPDatabase<PyLearnDBSchema>> {
+  return new Promise<IDBPDatabase<PyLearnDBSchema>>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      dbPromise = null;
+      reject(new Error(`IndexedDB "${DB_NAME}" open timed out after ${IDB_OPEN_TIMEOUT_MS}ms.`));
+    }, IDB_OPEN_TIMEOUT_MS);
+
+    openDB<PyLearnDBSchema>(DB_NAME, version, {
+      upgrade(db) {
+        ensureSchema(db);
+      },
+      blocked() {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        dbPromise = null;
+        reject(new Error(`IndexedDB "${DB_NAME}" upgrade is blocked by another open tab.`));
+      },
+      blocking(_currentVersion, _blockedVersion, event) {
+        const targetDb = event.target as IDBDatabase | null;
+        try {
+          targetDb?.close();
+        } catch {
+          // ignore
+        }
+        dbPromise = null;
+      },
+      terminated() {
+        dbPromise = null;
+      },
+    })
+      .then((db) => {
+        if (settled) {
+          try {
+            db.close();
+          } catch {
+            // ignore
+          }
+          return;
+        }
+        settled = true;
+        clearTimeout(timer);
+        resolve(db);
+      })
+      .catch((err) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        dbPromise = null;
+        reject(err);
+      });
+  });
+}
+
+async function openDbWithGuard(): Promise<IDBPDatabase<PyLearnDBSchema>> {
+  try {
+    return await openAtVersion(DB_VERSION);
+  } catch (err) {
+    // Nếu trình duyệt từng nâng cấp lên version > DB_VERSION (VersionError), mở theo version hiện có của trình duyệt
+    if (err && typeof err === 'object' && (err as { name?: string }).name === 'VersionError') {
+      return await openAtVersion(undefined);
+    }
+    throw err;
+  }
+}
+
 export function getDb(): Promise<IDBPDatabase<PyLearnDBSchema>> {
   if (!dbPromise) {
-    dbPromise = openDB<PyLearnDBSchema>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('notes')) {
-          const noteStore = db.createObjectStore('notes', { keyPath: 'id' });
-          noteStore.createIndex('by-target', 'targetId');
-        }
-        if (!db.objectStoreNames.contains('bookmarks')) {
-          const bmStore = db.createObjectStore('bookmarks', { keyPath: 'id' });
-          bmStore.createIndex('by-target', 'targetId');
-        }
-        if (!db.objectStoreNames.contains('completed_lessons')) {
-          db.createObjectStore('completed_lessons', { keyPath: 'lessonId' });
-        }
-        if (!db.objectStoreNames.contains('submissions')) {
-          db.createObjectStore('submissions', { keyPath: 'exerciseId' });
-        }
-        if (!db.objectStoreNames.contains('srs_states')) {
-          db.createObjectStore('srs_states', { keyPath: 'cardId' });
-        }
-        if (!db.objectStoreNames.contains('exam_history')) {
-          const examStore = db.createObjectStore('exam_history', { keyPath: 'id' });
-          examStore.createIndex('by-exam', 'examId');
-        }
-        if (!db.objectStoreNames.contains('wp_state')) {
-          db.createObjectStore('wp_state', { keyPath: 'key' });
-        }
-        if (!db.objectStoreNames.contains('course_state')) {
-          db.createObjectStore('course_state', { keyPath: 'courseId' });
-        }
-      },
-    });
+    dbPromise = openDbWithGuard();
   }
   return dbPromise;
 }

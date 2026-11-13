@@ -115,8 +115,20 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
 
       hydrate: async (force = false) => {
         if (get().hydrated && !force) return;
-        const { state, meta } = await loadDurableProgress(courseId, get().state);
-        set({ state, hydrated: true, syncMeta: meta });
+        try {
+          const { state, meta } = await loadDurableProgress(courseId, get().state);
+          set({ state, hydrated: true, syncMeta: meta });
+        } catch (err) {
+          console.warn(`[useCourseProgress:${courseId}] Không thể tải IndexedDB, dùng bản LocalStorage/RAM:`, err);
+          set({
+            hydrated: true,
+            syncMeta: {
+              ...get().syncMeta,
+              status: get().syncMeta.localOk ? 'local-only' : 'error',
+              idbOk: false,
+            },
+          });
+        }
       },
 
       replaceAll: async (s) => {

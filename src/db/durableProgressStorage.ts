@@ -37,20 +37,23 @@ export function requestBrowserPersistentStorage(): Promise<boolean | null> {
     return Promise.resolve(null);
   }
   if (!persistPromise) {
-    persistPromise = (async () => {
-      try {
-        if (typeof navigator.storage.persisted === 'function') {
-          const already = await navigator.storage.persisted();
-          if (already) return true;
+    persistPromise = Promise.race<boolean | null>([
+      (async () => {
+        try {
+          if (typeof navigator.storage.persisted === 'function') {
+            const already = await navigator.storage.persisted();
+            if (already) return true;
+          }
+          if (typeof navigator.storage.persist === 'function') {
+            return await navigator.storage.persist();
+          }
+        } catch {
+          // Ignore browser permission errors
         }
-        if (typeof navigator.storage.persist === 'function') {
-          return await navigator.storage.persist();
-        }
-      } catch {
-        // Ignore browser permission errors
-      }
-      return null;
-    })();
+        return null;
+      })(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 900)),
+    ]);
   }
   return persistPromise;
 }
