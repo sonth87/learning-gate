@@ -1,0 +1,314 @@
+[
+  {
+    "id": "redis-ex-r00-1",
+    "code": "R00.1",
+    "title": "Kiểm tra nhịp sống & chẩn đoán RAM của Redis 8",
+    "difficulty": 1,
+    "tags": [
+      "ping",
+      "echo",
+      "info",
+      "diagnostics"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "healthcheck.redis",
+    "prompt": "Bạn vừa kết nối vào một máy chủ Redis 8 mới khởi tạo. Hãy viết kịch bản `redis-cli` thực hiện lần lượt 3 việc: (1) gửi lệnh `PING` để nhận `PONG`, (2) gọi `ECHO \"ready-redis-8\"`, và (3) xuất riêng phân vùng bộ nhớ bằng lệnh `INFO memory` (tránh gọi `INFO` toàn bộ gây nhiễu).",
+    "starter": "# 1. Kiểm tra kết nối bằng PING\n# 2. Phản hồi chuỗi \"ready-redis-8\" bằng ECHO\n# 3. Xem riêng thống kê bộ nhớ bằng INFO memory\n",
+    "solution": "PING\nECHO \"ready-redis-8\"\nINFO memory\n",
+    "hints": [
+      "Mỗi câu lệnh viết trên 1 dòng riêng: `PING`, sau đó `ECHO \"ready-redis-8\"`.",
+      "Để lọc riêng thông số bộ nhớ, truyền tên phân vùng vào sau `INFO`: `INFO memory`."
+    ],
+    "ref": "conf/redis-dev-minimal.conf",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "ping-pong",
+          "doc": "Đã gọi `PING` và nhận phản hồi `PONG` từ Event Loop",
+          "target": "stdout-contains",
+          "contains": "PONG"
+        },
+        {
+          "id": "echo-ready",
+          "doc": "Đã kiểm tra đường truyền chuỗi `\"ready-redis-8\"` bằng `ECHO`",
+          "target": "stdout-contains",
+          "contains": "\"ready-redis-8\""
+        },
+        {
+          "id": "info-memory-used",
+          "doc": "Sử dụng đúng lệnh `INFO memory` để xuất chỉ số `used_memory_human:`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*INFO\\s+memory\\b"
+        },
+        {
+          "id": "memory-metrics-shown",
+          "doc": "Kết quả đầu ra có chứa thông số `used_memory_human:`",
+          "target": "stdout-contains",
+          "contains": "used_memory_human:"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r00-2",
+    "code": "R00.2",
+    "title": "Khoá chặt cấu hình mạng tối thiểu trong redis.conf",
+    "difficulty": 1,
+    "tags": [
+      "redis-conf",
+      "security",
+      "bind",
+      "protected-mode"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis.conf",
+    "prompt": "Tệp `redis.conf` dưới đây đang mở toang `bind 0.0.0.0`, tắt `protected-mode no` và để `loglevel debug` làm đầy ổ cứng. Hãy sửa lại chuẩn an toàn cho môi trường phát triển cục bộ: khoá `bind 127.0.0.1 -::1`, đặt `port 6379`, bật `protected-mode yes`, hạ `loglevel notice` và giữ `tcp-keepalive 300`.",
+    "starter": "# Cấu hình đang mất an toàn — hãy sửa lại các chỉ thị bên dưới!\nbind 0.0.0.0\nport 6379\nprotected-mode no\nloglevel debug\ntcp-keepalive 0\n",
+    "solution": "bind 127.0.0.1 -::1\nport 6379\nprotected-mode yes\nloglevel notice\ntcp-keepalive 300\n",
+    "hints": [
+      "Thay `bind 0.0.0.0` bằng `bind 127.0.0.1 -::1` để chỉ lắng nghe loopback IPv4/IPv6.",
+      "Đổi `protected-mode yes`, `loglevel notice` và `tcp-keepalive 300`."
+    ],
+    "ref": "conf/redis-bad-exposed-root.conf",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "bind-loopback-only",
+          "doc": "Chỉ thị `bind` chỉ lắng nghe nội bộ (`127.0.0.1`) và không mở `0.0.0.0`",
+          "kind": "directive",
+          "directive": "bind",
+          "match": {
+            "regex": "^127\\.0\\.0\\.1(\\s+-?::1)?$"
+          }
+        },
+        {
+          "id": "port-6379",
+          "doc": "Cổng TCP lắng nghe tiêu chuẩn `port 6379`",
+          "kind": "directive",
+          "directive": "port",
+          "match": {
+            "eq": 6379
+          }
+        },
+        {
+          "id": "protected-mode-on",
+          "doc": "Khiên bảo vệ `protected-mode yes` được bật",
+          "kind": "directive",
+          "directive": "protected-mode",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "loglevel-notice",
+          "doc": "Mức ghi log chuẩn vận hành `loglevel notice`",
+          "kind": "directive",
+          "directive": "loglevel",
+          "match": {
+            "eq": "notice"
+          }
+        },
+        {
+          "id": "tcp-keepalive-300",
+          "doc": "Duy trì kết nối TCP ổn định `tcp-keepalive 300`",
+          "kind": "directive",
+          "directive": "tcp-keepalive",
+          "match": {
+            "eq": 300
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r00-3",
+    "code": "R00.3",
+    "title": "Khởi chạy container Redis 8 kèm Volume bền vững",
+    "difficulty": 1,
+    "tags": [
+      "docker-run",
+      "redis-8",
+      "volume",
+      "port"
+    ],
+    "kind": "cli",
+    "language": "shell",
+    "filename": "terminal.sh",
+    "prompt": "Hãy dùng `docker run` khởi chạy ngầm (`-d`) một container đặt tên `cache-local` từ image ghim phiên bản `redis:8-alpine`, ánh xạ cổng `6379:6379` và gắn Named Volume `redis-data` vào thư mục `/data` bên trong container.",
+    "starter": "# Khởi chạy ngầm container cache-local từ image redis:8-alpine\n",
+    "solution": "docker run -d --name cache-local -p 6379:6379 -v redis-data:/data redis:8-alpine\n",
+    "hints": [
+      "Kết hợp các cờ `-d`, `--name cache-local`, `-p 6379:6379` và `-v redis-data:/data` trước tên image.",
+      "Lệnh đầy đủ: `docker run -d --name cache-local -p 6379:6379 -v redis-data:/data redis:8-alpine`"
+    ],
+    "ref": "compose/docker-compose.redis-stack-local.yml",
+    "webGrade": true,
+    "spec": {
+      "kind": "cli",
+      "initialState": {},
+      "rules": [
+        {
+          "id": "redis-container-up",
+          "doc": "Container `cache-local` đang chạy từ image `redis:8-alpine`, mở cổng `6379->6379` và gắn volume `redis-data:/data`",
+          "target": "docker-container",
+          "name": "cache-local",
+          "image": "redis:8-alpine",
+          "status": "running",
+          "hostPort": 6379,
+          "containerPort": 6379,
+          "volumeSource": "redis-data",
+          "volumeTarget": "/data",
+          "volumeType": "volume"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r00-4",
+    "code": "R00.4",
+    "title": "Chuẩn hoá dịch vụ Redis 8 trong Docker Compose v2",
+    "difficulty": 2,
+    "tags": [
+      "docker-compose",
+      "yaml",
+      "healthcheck",
+      "redis-8"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Tệp `compose.yaml` bên dưới đang dùng thẻ lỗi thời `version: '3.8'`, gắn floating tag `redis:latest`, thiếu lưu trữ `/data` và chưa có `healthcheck`. Hãy sửa lại theo chuẩn Compose Spec hiện đại: xoá trường `version`, ghim image `redis:8.0-alpine`, xuất cổng `\"6379:6379\"`, gắn volume `redis_data:/data` (khai báo cả `volumes:` cấp cao nhất) và thêm `healthcheck.test` dùng `redis-cli` để kiểm tra `ping`.",
+    "starter": "version: '3.8'\nservices:\n  redis:\n    image: redis:latest\n    ports:\n      - \"6379:6379\"\n",
+    "solution": "services:\n  redis:\n    image: redis:8.0-alpine\n    ports:\n      - \"6379:6379\"\n    volumes:\n      - redis_data:/data\n    healthcheck:\n      test: [\"CMD\", \"redis-cli\", \"ping\"]\n      interval: 5s\n      timeout: 3s\n      retries: 5\n\nvolumes:\n  redis_data: {}\n",
+    "hints": [
+      "Xoá hẳn dòng `version: '3.8'` ở đầu tệp vì Docker Compose v2 không còn dùng trường này.",
+      "Đổi `image: redis:8.0-alpine`, thêm `volumes: [\"redis_data:/data\"]`, khai báo `healthcheck.test: [\"CMD\", \"redis-cli\", \"ping\"]` và thêm mục `volumes:\\n  redis_data: {}` ở cuối tệp."
+    ],
+    "ref": "compose/docker-compose.redis-stack-local.yml",
+    "webGrade": true,
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "no-legacy-version",
+          "doc": "Không dùng trường `version:` lỗi thời của Compose v1",
+          "kind": "path",
+          "path": "version",
+          "match": {
+            "exists": false
+          }
+        },
+        {
+          "id": "pinned-redis8-image",
+          "doc": "Ghim rõ phiên bản image `redis:8.0-alpine` (không dùng `:latest`)",
+          "kind": "image-tag-pinned",
+          "path": "services.redis.image"
+        },
+        {
+          "id": "redis-port-6379",
+          "doc": "Ánh xạ cổng `6379:6379` cho dịch vụ `redis`",
+          "kind": "path",
+          "path": "services.redis.ports",
+          "match": {
+            "contains": "6379:6379"
+          }
+        },
+        {
+          "id": "redis-data-volume",
+          "doc": "Gắn volume `redis_data:/data` để giữ dữ liệu khi khởi động lại container",
+          "kind": "path",
+          "path": "services.redis.volumes",
+          "match": {
+            "contains": "redis_data:/data"
+          }
+        },
+        {
+          "id": "top-level-volume-declared",
+          "doc": "Khai báo `redis_data` ở mục `volumes` cấp gốc",
+          "kind": "path",
+          "path": "volumes",
+          "match": {
+            "contains": "redis_data"
+          }
+        },
+        {
+          "id": "redis-healthcheck",
+          "doc": "Thiết lập `healthcheck.test` gọi `redis-cli` kiểm tra sức khoẻ",
+          "kind": "path",
+          "path": "services.redis.healthcheck.test",
+          "match": {
+            "contains": "redis-cli"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r00-5",
+    "code": "R00.5",
+    "title": "Siết ngưỡng Slowlog trên nóng & truy vết lệnh chặn Event Loop",
+    "difficulty": 2,
+    "tags": [
+      "config-set",
+      "slowlog",
+      "latency",
+      "event-loop"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "slowlog-audit.redis",
+    "prompt": "Hệ thống cảnh báo độ trễ p99 tăng vọt do có câu lệnh làm nghẽn Event Loop. Hãy dùng `CONFIG SET` chỉnh nóng ngưỡng `slowlog-log-slower-than` xuống `5000` micro-giây (`5ms`), nâng độ dài bộ đệm `slowlog-max-len` lên `256`, sau đó chạy `SLOWLOG GET 5` để lôi thủ phạm ra ánh sáng!",
+    "starter": "# Kiểm tra ngưỡng hiện tại (mặc định 10000 micro-giây = 10ms)\nCONFIG GET slowlog-log-slower-than\n# Hãy hạ slowlog-log-slower-than xuống 5000, nâng slowlog-max-len lên 256 và gọi SLOWLOG GET 5\n",
+    "solution": "CONFIG GET slowlog-log-slower-than\nCONFIG SET slowlog-log-slower-than 5000\nCONFIG SET slowlog-max-len 256\nSLOWLOG GET 5\n",
+    "hints": [
+      "Nhớ đơn vị của `slowlog-log-slower-than` là micro-giây (`5ms` = `5000`): `CONFIG SET slowlog-log-slower-than 5000`.",
+      "Tăng kích thước danh sách lưu bằng `CONFIG SET slowlog-max-len 256`, rồi truy xuất `SLOWLOG GET 5`."
+    ],
+    "ref": "conf/redis-dev-minimal.conf",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "config": {
+          "slowlog-log-slower-than": "10000",
+          "slowlog-max-len": "128"
+        },
+        "slowlog": [
+          {
+            "id": 14,
+            "durationMicros": 148500,
+            "cmd": "KEYS session:*"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "slowlog-threshold-5ms",
+          "doc": "Đã hạ `slowlog-log-slower-than` xuống `5000` micro-giây (5ms)",
+          "target": "config-param",
+          "param": "slowlog-log-slower-than",
+          "expected": "5000"
+        },
+        {
+          "id": "slowlog-maxlen-256",
+          "doc": "Đã nâng `slowlog-max-len` lên `256` bản ghi",
+          "target": "config-param",
+          "param": "slowlog-max-len",
+          "expected": "256"
+        },
+        {
+          "id": "slowlog-culprit-found",
+          "doc": "Đã chạy `SLOWLOG GET` và hiển thị thủ phạm `KEYS session:*` trên kết quả đầu ra",
+          "target": "stdout-contains",
+          "contains": "KEYS session:*"
+        }
+      ]
+    }
+  }
+]

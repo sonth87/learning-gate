@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R09-D1",
+    "title": "Nạp Cache-Aside nguyên tử kèm TTL và xoá bất đồng bộ với UNLINK",
+    "code": "SET cache:product:108 '{\"id\":108,\"price\":4290000}' EX 600\nGET cache:product:108\nUNLINK cache:product:108"
+  },
+  {
+    "id": "R09-D2",
+    "title": "Xoay vòng Versioned Cache Key cho danh mục trang chủ",
+    "code": "INCR meta:catalog:ver\nSET cache:catalog:v4:featured '[\"sku-101\",\"sku-205\"]' EX 900\nUNLINK cache:catalog:v3:featured"
+  },
+  {
+    "id": "R09-D3",
+    "title": "Ghi Write-Through nguyên tử cho Hash kèm TTL và Negative Caching ngắn hạn",
+    "code": "MULTI\nHSET wallet:summary:u900 balance 1500000 tier gold\nEXPIRE wallet:summary:u900 1800\nEXEC\nSET cache:coupon:GHOST2026 \"__NULL__\" EX 45"
+  }
+]

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
-const COURSES = ['kube', 'cicd'];
+const COURSES = ['kube', 'cicd', 'redis'];
 
 function readJson(filePath) {
   const raw = fs.readFileSync(filePath, 'utf8');
@@ -156,5 +156,7 @@ function buildCourse(courseId) {
 }
 
 for (const c of COURSES) {
-  buildCourse(c);
+  if (fs.existsSync(path.join(ROOT, 'content', c, 'course.json'))) {
+    buildCourse(c);
+  }
 }

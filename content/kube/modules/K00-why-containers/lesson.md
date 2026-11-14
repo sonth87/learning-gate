@@ -43,6 +43,29 @@ steps:
 
 ## 1. Bản đồ tư duy: Từ Node.js / npm sang Docker & Khác biệt với Máy ảo (VM)
 
+```visual
+kind: illustration
+diagram: "kube:k00"
+src: "/illustrations/kube/docker-vm-vs-container.jpg"
+alt: "So sánh kiến trúc Máy ảo Hypervisor với Container chia sẻ Host Kernel và các lớp ảnh chỉ đọc OverlayFS"
+title: "Giải Phẫu Kỹ Thuật: Máy Ảo (VM) vs Container Dùng Chung Nhân Linux & Lớp Ảnh Chỉ Đọc"
+subtitle: "Loại bỏ hoàn toàn nhân hệ điều hành khách (Guest OS) để bật tiến trình cô lập trong vài chục mili-giây"
+caption: "Đối chiếu ngăn xếp Hypervisor/Guest OS của VM với Docker Container dùng chung Host Kernel và cơ chế xếp chồng Read-Only Image Layers"
+callouts:
+  - num: 1
+    label: "Ngăn xếp Máy ảo (VM) cồng kềnh"
+    desc: "Mỗi VM phải gánh riêng một nhân Guest OS đầy đủ bên trên tầng Hypervisor giả lập phần cứng, tiêu tốn hàng GB RAM."
+    tone: rose
+  - num: 2
+    label: "Container dùng chung Host Linux Kernel"
+    desc: "Mọi tiến trình container gọi thẳng syscall vào nhân Linux sẵn có của máy chủ, cô lập gọn nhẹ bằng Namespaces và cgroups."
+    tone: emerald
+  - num: 3
+    label: "Các lớp Image bất biến & Lớp ghi tạm"
+    desc: "Hàng chục container có thể dùng chung các Read-Only Layers bên dưới và chỉ gắn thêm 1 lớp R/W mỏng ở trên cùng."
+    tone: sky
+```
+
 > [!ANALOGY] Hãy hình dung như sau (Ánh xạ từ Node.js quen thuộc)
 > Nếu **Container Image** giống như một **bản thiết kế + gói `.tgz` đã đóng băng cả Node lẫn Linux**, thì **Container** chính là **tiến trình sống** khi bạn bấm chạy bản thiết kế đó. Bạn có thể bật 10 Container độc lập từ cùng 1 Image trong tích tắc mà không tốn thêm dung lượng nhân bản lớp nền!
 

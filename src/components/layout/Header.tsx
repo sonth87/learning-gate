@@ -27,6 +27,7 @@ import {
   KubeMasteryLogo,
   CicdMasteryLogo,
   PmpMasteryLogo,
+  RedisMasteryLogo,
 } from '@/components/common/AppLogos';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
@@ -270,6 +271,23 @@ export const Header: React.FC = () => {
 
         {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Switch to Redis Mastery App Button */}
+          <HeaderTooltip
+            label="Mở App học Redis 8 & In-Memory Architecture (Redis Mastery)"
+            align="right"
+          >
+            <button
+              onClick={() => switchLearningApp('redismastery')}
+              aria-label="Mở App học Redis Mastery"
+              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto shrink-0 items-center justify-center gap-1.5 rounded-lg border border-rose-500/45 bg-rose-500/15 sm:px-2.5 text-xs font-bold text-rose-300 hover:bg-rose-500/25 hover:border-rose-500/60 transition-all cursor-pointer shadow-xs"
+            >
+              <RedisMasteryLogo className="h-4 w-4 shrink-0 rounded-sm" />
+              <span className="hidden lg:inline whitespace-nowrap">
+                Redis App
+              </span>
+            </button>
+          </HeaderTooltip>
+
           {/* Switch to PMP Mastery App Button */}
           <HeaderTooltip
             label="Mở App học Tư duy PMP (PMP Mastery)"

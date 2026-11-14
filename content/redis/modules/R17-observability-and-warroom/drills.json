@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R17-D1",
+    "title": "Bộ lệnh khám sức khoẻ nhanh 30 giây đầu ca trực SRE",
+    "code": "INFO memory\nINFO stats\nSLOWLOG GET 5\nLATENCY DOCTOR"
+  },
+  {
+    "id": "R17-D2",
+    "title": "Kiểm tra dung lượng Bigkey và dọn dẹp bất đồng bộ kèm Lazyfree",
+    "code": "MEMORY USAGE temp:export:2025\nUNLINK temp:export:2025\nCONFIG SET lazyfree-lazy-expire yes\nCONFIG REWRITE"
+  },
+  {
+    "id": "R17-D3",
+    "title": "Truy vết tin nhắn kẹt trong PEL và thu hồi tự động bằng XAUTOCLAIM",
+    "code": "XPENDING orders:stream payment-cg - + 10\nXAUTOCLAIM orders:stream payment-cg worker-rescue 60000 0-0\nXACK orders:stream payment-cg 1700000000000-0"
+  }
+]

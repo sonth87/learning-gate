@@ -2,6 +2,28 @@
 
 Sau khi nắm vững Exit Code, Ephemeral Runner và kỷ luật đồng bộ môi trường, giờ là lúc bạn tự tay viết hoàn chỉnh một tệp **GitHub Actions Workflow chuẩn công nghiệp năm 2026** từ con số 0. Trên mạng hiện nay vẫn tràn ngập các bài hướng dẫn cũ từ 2020–2022 khuyên dùng `actions/checkout@v2` hay `node-version: 16` — nếu sao chép nguyên xi vào dự án hôm nay, đường ống sẽ lập tức báo lỗi đỏ vì runtime Node 12/16 trên Hosted Runner đã chính thức ngừng hỗ trợ (EOL)!
 
+```visual
+kind: illustration
+diagram: "cicd:c03"
+alt: "Giải phẫu cấu trúc tệp YAML GitHub Actions chuẩn v4 gồm bộ lọc sự kiện on, permissions tối thiểu, checkout@v4, setup-node@v4 và npm ci"
+title: "Giải Phẫu Tệp Workflow GitHub Actions Chuẩn Công Nghiệp Năm 2026"
+subtitle: "Ba khối cấu trúc chuẩn mực biến tệp .github/workflows/ci.yml thành trạm kiểm định tự động tốc độ cao cho Node.js 22"
+caption: "Sơ đồ giải phẫu từ bộ lọc sự kiện & quyền hạn đầu tệp, khởi tạo máy ảo với Action thế hệ v4 tới chuỗi lệnh kiểm định bất biến npm ci"
+callouts:
+  - num: 1
+    label: "Bộ lọc sự kiện on: & Quyền tối thiểu permissions:"
+    desc: "Ghim rõ nhánh main cho push/pull_request kèm workflow_dispatch thủ công và khoá chặt quyền mặc định ở mức contents: read."
+    tone: amber
+  - num: 2
+    label: "Runner sạch kết hợp cặp Action chuẩn @v4"
+    desc: "Dùng checkout@v4 tải nông (fetch-depth: 1) siêu nhanh và setup-node@v4 ghim Node 22 kèm bộ đệm tự động cache: npm."
+    tone: sky
+  - num: 3
+    label: "Chuỗi xác minh tất định từ npm ci đến Build"
+    desc: "Giải nén thư viện khớp tuyệt đối với lockfile rồi chạy tuần tự lint, test, build để báo cáo trạng thái bắt buộc lên PR."
+    tone: emerald
+```
+
 ## 1. Giải phẫu tệp `.github/workflows/ci.yml` và quy tắc vàng YAML
 
 GitHub chỉ tự động quét các tệp mang phần mở rộng `.yml` hoặc `.yaml` đặt trực tiếp bên trong đúng đường dẫn thư mục ==`.github/workflows/`==. Chỉ cần gõ thiếu chữ `s` thành `.github/workflow/ci.yml` hoặc thụt lề bằng ký tự **Tab cứng (`\t`)**, tệp cấu hình sẽ bị bỏ qua hoặc báo lỗi cú pháp ngay lập tức (luôn dùng **2 dấu cách — 2 spaces** cho mỗi cấp thụt lề).

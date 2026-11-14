@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R09-FC1",
+    "front": "Luồng hoạt động chuẩn của mô hình Cache-Aside (Lazy Loading) khi đọc và khi ghi?",
+    "back": "**Khi đọc:** Kiểm tra Redis trước -> Hit thì trả ngay, Miss thì đọc DB rồi `SET key val EX ttl`.\n**Khi ghi:** Cập nhật và Commit DB trước -> gọi `UNLINK key` để xoá bản cũ khỏi Redis."
+  },
+  {
+    "id": "R09-FC2",
+    "front": "Vì sao sau khi cập nhật DB ta nên `UNLINK` khoá cache thay vì tự tính toán và `SET` đè giá trị mới?",
+    "back": "1) Tránh **Dual-Write Race Condition** (2 luồng ghi đồng thời đến DB và Redis ngược thứ tự làm giữ mãi dữ liệu cũ).\n2) **Lazy Evaluation**: Không tốn CPU dựng JSON và tốn RAM cho bản ghi vừa sửa nhưng chẳng ai đọc."
+  },
+  {
+    "id": "R09-FC3",
+    "front": "Sự khác biệt cốt lõi giữa Write-Through và Write-Behind (Write-Back)?",
+    "back": "**Write-Through:** Ghi đồng bộ vào cả Cache và DB trước khi báo thành công (an toàn, độ trễ ghi cao hơn).\n**Write-Behind:** Chỉ ghi vào Redis trả kết quả ngay, Worker nền gom lô (Batch) đẩy xuống DB sau (siêu nhanh nhưng có rủi ro mất dữ liệu chưa kịp flush)."
+  },
+  {
+    "id": "R09-FC4",
+    "front": "Zombie Key trong Caching là gì và cách phòng tránh tuyệt đối?",
+    "back": "Là khoá cache mang `TTL = -1` (sống vĩnh viễn ăn mòn RAM) do tách rời lệnh `SET` và `EXPIRE` rồi ứng dụng sập ở giữa. Phòng tránh bằng cách luôn gộp nguyên tử `SET key val EX <seconds>`."
+  },
+  {
+    "id": "R09-FC5",
+    "front": "Negative Caching giải quyết bài toán gì và quy tắc đặt TTL cho nó?",
+    "back": "Lưu giá trị đánh dấu đặc biệt (như `\"__NULL__\"`) khi DB trả về rỗng để chặn truy vấn lặp vào ID không tồn tại. Luôn đặt **TTL ngắn (`30–60s`)** để dữ liệu mới tạo sớm có hiệu lực."
+  },
+  {
+    "id": "R09-FC6",
+    "front": "Kỹ thuật Versioned Cache Key (`cache:catalog:v2:...`) mang lại 2 lợi ích lớn nào khi vận hành?",
+    "back": "1) Cho phép Pod code cũ và Pod code mới chạy song song lúc **Rolling Update** mà không đụng độ định dạng JSON.\n2) Làm mất hiệu lực cả một nhánh dữ liệu tức thì ở chi phí `O(1)` bằng cách tăng con trỏ phiên bản."
+  }
+]

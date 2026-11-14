@@ -41,6 +41,28 @@ items:
 
 ## 1. Hồ sơ B1: Đường ống "Rùa bò" 42 phút — Giải phẫu Nút thắt Cổ chai (Critical Path)
 
+```visual
+kind: illustration
+diagram: "cicd:c17"
+alt: "Bản đồ tác chiến phòng chiến sự CI/CD xử lý 4 khủng hoảng gồm nghẽn 42 phút & treo 360 phút, đua tranh deploy Production, lộ khoá Git và lỗi False-Green"
+title: "Bản Đồ Phòng Chiến Sự CI/CD: Phác Đồ Cấp Cứu 4 Sự Cố Nghiêm Trọng"
+subtitle: "Quy trình phản ứng chuẩn Senior Platform Engineer khi đường ống tắc nghẽn, hỏng khoá hạ tầng, lộ bí mật hoặc báo xanh giả"
+caption: "Tóm lược triệu chứng hiện trường và đòn quyết định xử lý cho 4 hồ sơ sự cố: Nén đường găng, Xếp hàng Concurrency, Xoay vòng Secret và Chặn False-Green"
+callouts:
+  - num: 1
+    label: "Cắt đứt nghẽn cổ chai 42 phút & Treo máy 360 phút"
+    desc: "Áp trần timeout-minutes: 15 ngay lập tức, thay sleep mù quáng bằng thăm dò /healthz và chia 4 mảnh kiểm thử song song xuống dưới 5 phút."
+    tone: amber
+  - num: 2
+    label: "Chặn đua tranh Production & Nhiễm độc bộ đệm"
+    desc: "Đổi concurrency trên Production sang cancel-in-progress: false để xếp hàng tuần tự và khoá quyền chỉ đọc cache đối với các nhánh PR."
+    tone: rose
+  - num: 3
+    label: "Ứng cứu lộ khoá Git & Triệt tiêu False-Green"
+    desc: "Thu hồi và xoay vòng khoá ngay lập tức (xoá dòng bằng commit mới không xoá được git log!), chuyển sang OIDC và cấm tuyệt đối || true."
+    tone: rose
+```
+
 **Triệu chứng thực tế:** Mỗi lần lập trình viên đẩy 1 commit sửa lỗi chính tả trên PR, cả đội phải ngồi chờ **42 phút**. Thỉnh thoảng một bài tích hợp treo kết nối khiến runner kẹt cứng suốt ==360 phút (6 tiếng)== mặc định của GitHub Actions, đốt sạch hạn mức phút chạy cả tháng!
 
 ```visual

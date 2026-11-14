@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R02-D1",
+    "title": "Tạo hồ sơ người dùng bằng HSET, tăng điểm HINCRBY và đọc gọn bằng HMGET",
+    "code": "HSET user:profile:2048 name \"Minh Tran\" tier \"gold\" credits \"150\"\nHINCRBY user:profile:2048 credits 50\nHMGET user:profile:2048 name credits"
+  },
+  {
+    "id": "R02-D2",
+    "title": "Đặt TTL riêng cho mã khuyến mãi trong giỏ hàng bằng Redis 8 HEXPIRE & HTTL",
+    "code": "HSET cart:u:777 sku:mouse \"1\" promo:flash15 \"SAVE15\"\nHEXPIRE cart:u:777 900 FIELDS 1 promo:flash15\nHTTL cart:u:777 FIELDS 2 sku:mouse promo:flash15"
+  },
+  {
+    "id": "R02-D3",
+    "title": "Kiểm tra biểu diễn nén listpack và lượng RAM thực tế của một Hash",
+    "code": "OBJECT ENCODING user:profile:2048\nMEMORY USAGE user:profile:2048"
+  }
+]

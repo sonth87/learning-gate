@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R14-Q1",
+    "type": "mc",
+    "q": "Vì sao trong môi trường Production có thông lượng ghi cao, việc giữ nguyên giá trị mặc định `repl-backlog-size 1mb` lại tiềm ẩn nguy cơ gây sập dây chuyền khi mạng chập chờn vài giây?",
+    "code": "",
+    "choices": [
+      "Vì bộ đệm 1MB làm biến đổi kiểu dữ liệu Hash sang kiểu List",
+      "Vì bộ đệm vòng 1MB bị ghi tràn chỉ sau chưa đầy 1 giây chập chờn mạng, khiến Replica khi nối lại không thể chạy Partial Resync (PSYNC2) mà buộc Master phải fork() chạy Full Resync tốn gấp đôi RAM Copy-on-Write và băng thông mạng",
+      "Vì Redis tự động tắt cổng 6379 khi backlog đầy",
+      "Vì Sentinel từ chối giám sát mọi Master có backlog nhỏ hơn 10GB"
+    ],
+    "answer": 1,
+    "explain": "`repl-backlog-size` là cửa sổ nhớ tạm giúp Replica bù lại phần lệnh bị trễ (`PSYNC2`). Đặt lên `64mb–256mb` giúp các sự cố gián đoạn mạng ngắn hạn luôn hồi phục êm ái không cần gửi lại cả file RDB."
+  },
+  {
+    "id": "R14-Q2",
+    "type": "tf",
+    "q": "Trong cụm 5 tiến trình Sentinel cấu hình `sentinel monitor mymaster 10.0.1.10 6379 2`, chỉ cần 2 Sentinel còn sống (3 Sentinel kia đã tắt máy) là cụm vẫn tự động thực hiện Failover thành công.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `quorum = 2` chỉ đủ để đánh dấu trạng thái `ODOWN` (Objective Down). Để thực sự bầu ra một Sentinel Leader đứng lên chạy lệnh Failover, thuật toán đồng thuận luôn đòi hỏi **đa số quá bán trên tổng số Sentinel đã biết** (`majority = 5/2 + 1 = 3` phiếu)!"
+  },
+  {
+    "id": "R14-Q3",
+    "type": "output",
+    "q": "Câu lệnh chuẩn từ Redis 5+ dùng để gỡ bỏ sự phụ thuộc của một Replica khỏi Master cũ và thăng cấp nó lên làm Master độc lập là gì?",
+    "code": "____ NO ONE",
+    "choices": [],
+    "answer": "REPLICAOF",
+    "explain": "`REPLICAOF NO ONE` ngắt luồng sao chép hiện tại và chuyển vai trò của nút từ `replica` sang `master` chấp nhận lệnh ghi mới."
+  },
+  {
+    "id": "R14-Q4",
+    "type": "mc",
+    "q": "Cặp cấu hình `min-replicas-to-write 1` và `min-replicas-max-lag 10` trên Master giải quyết bài toán nguy hiểm nào trong hệ phân tán?",
+    "code": "",
+    "choices": [
+      "Tự động nén dữ liệu JSON giảm 50% dung lượng",
+      "Giảm thiểu mất dữ liệu do Split-Brain: nếu Master cũ bị đứt cáp cô lập khỏi mọi Replica quá 10 giây (trong lúc phía bên kia Sentinel đang thăng cấp Master mới), Master cũ sẽ tự động từ chối nhận lệnh ghi mới từ các Pod bị kẹt cùng phía",
+      "Tăng gấp đôi tốc độ câu lệnh KEYS *",
+      "Cho phép ứng dụng ghi trực tiếp lên mọi Replica"
+    ],
+    "answer": 1,
+    "explain": "Nhờ khoá van ghi sau 10 giây mất liên lạc với các Replica, khoảng thời gian một Master bị cô lập có thể nhận nhầm dữ liệu \"mồ côi\" được giới hạn chặt trong tối đa ~10 giây."
+  },
+  {
+    "id": "R14-Q5",
+    "type": "mc",
+    "q": "Khi Sentinel Leader chọn một Replica trong số nhiều Replica khoẻ mạnh để thăng cấp lên làm Master mới, tiêu chí đầu tiên được xét tới (sau khi lọc các nút có `replica-priority > 0` bằng nhau) là gì?",
+    "code": "",
+    "choices": [
+      "Chọn nút có địa chỉ IP lớn nhất",
+      "Chọn Replica có chỉ số `replication offset` lớn nhất (tức đã nhận được nhiều dữ liệu mới nhất từ Master cũ)",
+      "Chọn nút có ít RAM nhất",
+      "Chọn ngẫu nhiên bằng tung đồng xu"
+    ],
+    "answer": 1,
+    "explain": "Thứ tự ưu tiên bầu chọn của Sentinel: 1) `replica-priority` nhỏ hơn khác 0 được ưu tiên trước -> 2) Nếu bằng nhau, chọn nút có **`replication offset` cao nhất** (ít mất dữ liệu nhất) -> 3) Nếu vẫn hoà, chọn theo `runid` từ điển nhỏ nhất."
+  },
+  {
+    "id": "R14-Q6",
+    "type": "tf",
+    "q": "Khi máy chủ Master cũ gặp sự cố mất nguồn rồi được bật sống trở lại sau khi Sentinel đã hoàn tất Failover sang Master mới, Sentinel sẽ tự động cấu hình máy chủ cũ đó trở thành một Replica đi theo Master mới.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Sentinel liên tục giám sát cả địa chỉ Master cũ; ngay khi nó hồi sinh, Sentinel gửi lệnh `REPLICAOF <new-master>` để giáng cấp nó về làm bản sao an toàn, không tranh giành quyền Master."
+  },
+  {
+    "id": "R14-Q7",
+    "type": "output",
+    "q": "Cổng TCP mặc định tiêu chuẩn mà tiến trình **Redis Sentinel** lắng nghe để giao tiếp với nhau và trả thông tin Master cho Client SDK là cổng số mấy?",
+    "code": "port ____",
+    "choices": [],
+    "answer": "26379",
+    "explain": "Redis Server mặc định dùng cổng `6379`, còn Redis Sentinel mặc định dùng cổng `26379` (cộng thêm `20000`)."
+  }
+]

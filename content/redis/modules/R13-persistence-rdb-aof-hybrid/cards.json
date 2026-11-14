@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R13-FC1",
+    "front": "So sánh nhanh ưu/nhược điểm cốt lõi giữa RDB và AOF?",
+    "back": "- **RDB:** Ảnh chụp nhị phân nhỏ gọn, nạp lúc boot cực nhanh, lý tưởng để backup từ xa — nhưng mất dữ liệu giữa 2 kỳ chụp (vài phút).\n- **AOF:** Ghi nhật ký từng lệnh thay đổi, an toàn cao (`RPO <= 1s` với `everysec`) — nhưng tệp lớn hơn và cần `BGREWRITEAOF` định kỳ."
+  },
+  {
+    "id": "R13-FC2",
+    "front": "Tại sao tuyệt đối cấm gõ `SAVE` mà luôn phải dùng `BGSAVE` trên Production?",
+    "back": "`SAVE` ghi đĩa đồng bộ ngay trên Event Loop đơn luồng làm đóng băng toàn bộ khách hàng suốt thời gian ghi. `BGSAVE` gọi `fork()` để tiến trình con lưu dưới nền nhờ cơ chế Copy-on-Write."
+  },
+  {
+    "id": "R13-FC3",
+    "front": "Cấu hình tắt hoàn toàn Persistence cho nút Redis chuyên làm Pure Cache?",
+    "back": "Phải đặt đồng thời cả hai dòng:\n`save \"\"` (xoá hết lịch RDB mặc định)\n`appendonly no` (tắt AOF)."
+  },
+  {
+    "id": "R13-FC4",
+    "front": "Ba chế độ `appendfsync` của AOF khác nhau ra sao?",
+    "back": "- **`always`**: `fsync` sau từng lệnh (cực chậm, nghẽn IOPS đĩa).\n- **`everysec`**: `fsync` mỗi giây ở luồng nền (**Chuẩn Production**, nhanh gần RAM thuần, mất tối đa 1s khi cúp điện).\n- **`no`**: Để OS tự xả đệm (~30s/lần, nhanh nhất nhưng rủi ro mất dữ liệu lớn)."
+  },
+  {
+    "id": "R13-FC5",
+    "front": "Kiến trúc Multi-Part AOF trên Redis 7+/8 gồm 3 thành phần nào trong `appendonlydir`?",
+    "back": "1) **Base file** (`.base.rdb` — ảnh nền nén nhị phân RDB Preamble).\n2) **Incremental files** (`.incr.aof` — dòng lệnh mới phát sinh).\n3) **Manifest file** (`.manifest` — theo dõi phiên bản tệp nguyên tử)."
+  },
+  {
+    "id": "R13-FC6",
+    "front": "Hai thiết lập nhân Linux bắt buộc trên Host chạy Redis có bật BGSAVE / AOF Rewrite?",
+    "back": "1) `sysctl vm.overcommit_memory=1` (tránh lỗi `fork: Cannot allocate memory`).\n2) Tắt **Transparent Huge Pages (`never`)** (tránh copy trang khổng lồ 2MB làm vọt độ trễ và RAM khi COW)."
+  }
+]

@@ -1,0 +1,22 @@
+# ============================================================================
+# Bảng Xếp Hạng Thời Gian Thực (Realtime Leaderboard) với Sorted Set (ZSet)
+# Kết hợp Hash Dict O(1) tra điểm và SkipList O(log N) lấy Top N tức thì
+# ============================================================================
+
+# 1. Ghi điểm khởi tạo (cờ GT chỉ cập nhật nếu điểm kỷ lục mới lớn hơn điểm cũ)
+ZADD lb:season_12 GT 1850 "player:linh" 2100 "player:minh" 1640 "player:an" 2100 "player:bao"
+
+# 2. Cộng điểm thưởng trực tiếp sau trận thắng bằng ZINCRBY O(log N)
+ZINCRBY lb:season_12 420 "player:linh"
+
+# 3. Lấy Top 10 cao thủ dẫn đầu từ cao xuống thấp (cú pháp ZRANGE chuẩn mới hợp nhất REV)
+ZRANGE lb:season_12 0 9 REV WITHSCORES
+
+# 4. Tra cứu thứ hạng (0-based) VÀ điểm số hiện tại của 1 người chơi chỉ trong 1 lệnh (Redis 7.2+)
+ZREVRANK lb:season_12 "player:linh" WITHSCORE
+
+# 5. Đếm số lượng người chơi đạt bậc Kim Cương (từ 2000 đến 3000 điểm) trong O(log N)
+ZCOUNT lb:season_12 2000 3000
+
+# 6. Mẹo xử lý đồng điểm theo thời gian đạt được sớm hơn (Tie-breaker):
+# score_kép = diem_chinh + (1 - unix_ts / 10000000000) hoặc ghép vào phần thập phân IEEE-754!

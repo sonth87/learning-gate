@@ -17,11 +17,13 @@ const promises: Record<
 > = {
   kube: {},
   cicd: {},
+  redis: {},
 };
 
 const cache: Record<DevOpsCourseId, CourseCache> = {
   kube: {},
   cicd: {},
+  redis: {},
 };
 
 export function loadCourseCurriculum(courseId: DevOpsCourseId): Promise<DevOpsCurriculum> {
@@ -29,7 +31,9 @@ export function loadCourseCurriculum(courseId: DevOpsCourseId): Promise<DevOpsCu
     promises[courseId].curriculum = (
       courseId === 'kube'
         ? import('@/data/courses/kube/curriculum.json')
-        : import('@/data/courses/cicd/curriculum.json')
+        : courseId === 'cicd'
+          ? import('@/data/courses/cicd/curriculum.json')
+          : import('@/data/courses/redis/curriculum.json')
     ).then((m) => (cache[courseId].curriculum = m.default as unknown as DevOpsCurriculum));
   }
   return promises[courseId].curriculum!;
@@ -40,7 +44,9 @@ export function loadCourseCatalog(courseId: DevOpsCourseId): Promise<DevOpsCatal
     promises[courseId].catalog = (
       courseId === 'kube'
         ? import('@/data/courses/kube/catalog.json')
-        : import('@/data/courses/cicd/catalog.json')
+        : courseId === 'cicd'
+          ? import('@/data/courses/cicd/catalog.json')
+          : import('@/data/courses/redis/catalog.json')
     ).then((m) => (cache[courseId].catalog = m.default as unknown as DevOpsCatalog));
   }
   return promises[courseId].catalog!;
@@ -51,7 +57,9 @@ export function loadCourseReadings(courseId: DevOpsCourseId): Promise<Record<str
     promises[courseId].readings = (
       courseId === 'kube'
         ? import('@/data/courses/kube/readings.json')
-        : import('@/data/courses/cicd/readings.json')
+        : courseId === 'cicd'
+          ? import('@/data/courses/cicd/readings.json')
+          : import('@/data/courses/redis/readings.json')
     ).then((m) => (cache[courseId].readings = m.default as unknown as Record<string, string>));
   }
   return promises[courseId].readings!;

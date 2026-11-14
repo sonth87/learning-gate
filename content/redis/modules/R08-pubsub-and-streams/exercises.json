@@ -1,0 +1,360 @@
+[
+  {
+    "id": "redis-ex-r08-1",
+    "code": "R08.1",
+    "title": "Ghi nhật ký sự kiện giới hạn dung lượng bằng XADD MAXLEN ~ và truy vấn XRANGE",
+    "difficulty": 1,
+    "tags": [
+      "streams",
+      "xadd",
+      "maxlen",
+      "xrange"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "stream-maxlen-cap.redis",
+    "prompt": "Kịch bản khởi đầu đang gọi `XADD` mà **không giới hạn dung lượng**, về lâu dài sẽ làm phình RAM vô hạn! Hãy ghi liên tiếp **4 sự kiện** (`evt-1`, `evt-2`, `evt-3`, `evt-4`) vào Stream `events:checkout` sử dụng cờ cắt ngọn xấp xỉ **`MAXLEN ~ 3`** và ID tự sinh **`*`** (với cặp trường `event <mã>` và `step \"paid\"`). Sau đó chạy **`XLEN events:checkout`** (kỳ vọng giữ lại đúng `3` bản ghi mới nhất) và **`XRANGE events:checkout - +`** để liệt kê toàn bộ các mục còn lại.",
+    "starter": "# LỖI VẬN HÀNH: XADD thiếu MAXLEN ~ sẽ tích tụ bản ghi vô hạn trên RAM!\nXADD events:checkout * event \"evt-1\" step \"paid\"\n",
+    "solution": "XADD events:checkout MAXLEN ~ 3 * event \"evt-1\" step \"paid\"\nXADD events:checkout MAXLEN ~ 3 * event \"evt-2\" step \"paid\"\nXADD events:checkout MAXLEN ~ 3 * event \"evt-3\" step \"paid\"\nXADD events:checkout MAXLEN ~ 3 * event \"evt-4\" step \"paid\"\nXLEN events:checkout\nXRANGE events:checkout - +\n",
+    "hints": [
+      "Cú pháp chuẩn: `XADD events:checkout MAXLEN ~ 3 * event \"evt-1\" step \"paid\"` (lặp lại cho `evt-1` đến `evt-4`).",
+      "Cuối kịch bản gọi `XLEN events:checkout` rồi `XRANGE events:checkout - +` để kiểm chứng `evt-1` đã được cắt bỏ và còn lại 3 bản ghi."
+    ],
+    "ref": "streams/orders-consumer-group-pel.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "used-maxlen-tilde",
+          "doc": "Sử dụng `XADD events:checkout MAXLEN ~ 3 * ...` để giới hạn kích thước Stream",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XADD\\s+events:checkout\\s+MAXLEN\\s+~\\s+3\\s+\\*"
+        },
+        {
+          "id": "stream-capped-at-3",
+          "doc": "Stream `events:checkout` tồn tại và `XLEN` trả về `(integer) 3` sau khi ghi 4 sự kiện",
+          "target": "stdout-contains",
+          "contains": "(integer) 3"
+        },
+        {
+          "id": "xrange-shows-evt4",
+          "doc": "Truy vấn `XRANGE events:checkout - +` hiển thị sự kiện mới nhất `evt-4`",
+          "target": "stdout-contains",
+          "contains": "evt-4"
+        },
+        {
+          "id": "stream-state-ok",
+          "doc": "Khoá `events:checkout` là kiểu Stream hợp lệ có ít nhất 3 phần tử",
+          "target": "stream-state",
+          "key": "events:checkout",
+          "minLength": 3
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r08-2",
+    "code": "R08.2",
+    "title": "Khởi tạo Consumer Group an toàn bằng MKSTREAM và phát hành đơn hàng mới",
+    "difficulty": 1,
+    "tags": [
+      "streams",
+      "xgroup",
+      "mkstream",
+      "consumer-group"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "xgroup-mkstream.redis",
+    "prompt": "Khi triển khai microservice, pod Worker thường khởi động **trước** khi có đơn hàng đầu tiên nên khoá `orders:stream` chưa tồn tại — khiến câu lệnh `XGROUP CREATE` ở starter báo lỗi ngay lập tức! Hãy:\n1) Sửa lệnh tạo nhóm **`payment-cg`** trên khoá **`orders:stream`** từ mốc **`$`** kèm tuỳ chọn **`MKSTREAM`** để tự động tạo Stream rỗng nếu chưa có.\n2) Ghi tiếp **2 đơn hàng mới** (`ord-101` và `ord-102`) vào `orders:stream` bằng `XADD orders:stream MAXLEN ~ 1000 * orderId <mã> amount <tiền>`.",
+    "starter": "# LỖI KHỞI ĐỘNG: Khoá orders:stream chưa tồn tại nên thiếu MKSTREAM sẽ gãy ngay!\nXGROUP CREATE orders:stream payment-cg $\n",
+    "solution": "XGROUP CREATE orders:stream payment-cg $ MKSTREAM\nXADD orders:stream MAXLEN ~ 1000 * orderId \"ord-101\" amount \"350000\"\nXADD orders:stream MAXLEN ~ 1000 * orderId \"ord-102\" amount \"520000\"\n",
+    "hints": [
+      "Thêm từ khoá `MKSTREAM` vào cuối lệnh: `XGROUP CREATE orders:stream payment-cg $ MKSTREAM`.",
+      "Tiếp theo gọi 2 lệnh `XADD orders:stream MAXLEN ~ 1000 * orderId \"ord-101\" amount \"350000\"` và tương tự cho `\"ord-102\"`."
+    ],
+    "ref": "streams/orders-consumer-group-pel.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "used-mkstream",
+          "doc": "Khởi tạo nhóm bằng `XGROUP CREATE orders:stream payment-cg $ MKSTREAM` không phát sinh lỗi",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XGROUP\\s+CREATE\\s+orders:stream\\s+payment-cg\\s+\\$\\s+MKSTREAM\\b"
+        },
+        {
+          "id": "stream-and-group-ready",
+          "doc": "Stream `orders:stream` có Consumer Group `payment-cg` và chứa ít nhất 2 đơn hàng",
+          "target": "stream-state",
+          "key": "orders:stream",
+          "minLength": 2,
+          "hasGroup": "payment-cg"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r08-3",
+    "code": "R08.3",
+    "title": "Tiêu thụ đơn hàng bằng XREADGROUP và đóng dấu XACK chống rò rỉ bộ nhớ PEL",
+    "difficulty": 2,
+    "tags": [
+      "streams",
+      "xreadgroup",
+      "xack",
+      "pel"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "xreadgroup-xack.redis",
+    "prompt": "Trên `orders:stream` đang có sẵn 2 đơn hàng chờ xử lý (`1700000000100-0` và `1700000000200-0`) cho nhóm `orders-cg`. Đoạn mã starter đã kéo 2 bản tin này về cho `worker-1` bằng `XREADGROUP ... >`, nhưng **quên gọi `XACK`** khiến cả 2 bản tin bị giam vĩnh viễn trong bảng **PEL** (`Pending Entries List`)! Hãy bổ sung câu lệnh **`XACK`** xác nhận hoàn tất cả 2 ID trên cho nhóm `orders-cg`, sau đó gọi lại `XPENDING orders:stream orders-cg` để xác minh số tin tồn đọng về `0`.",
+    "starter": "# Worker đọc 2 đơn hàng mới nhưng QUÊN XACK -> gây rò rỉ bộ nhớ PEL!\nXREADGROUP GROUP orders-cg worker-1 COUNT 2 STREAMS orders:stream >\nXPENDING orders:stream orders-cg\n",
+    "solution": "XREADGROUP GROUP orders-cg worker-1 COUNT 2 STREAMS orders:stream >\nXACK orders:stream orders-cg 1700000000100-0 1700000000200-0\nXPENDING orders:stream orders-cg\n",
+    "hints": [
+      "`XACK` cho phép truyền nhiều ID trên cùng một dòng: `XACK orders:stream orders-cg 1700000000100-0 1700000000200-0`.",
+      "Giữ nguyên lệnh `XREADGROUP` ở đầu để `worker-1` nhận 2 đơn hàng `ord-501`, `ord-502` trước khi `XACK`."
+    ],
+    "ref": "streams/bad-stream-missing-xack-maxlen.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "orders:stream",
+            "type": "stream",
+            "value": {
+              "entries": [
+                {
+                  "id": "1700000000100-0",
+                  "fields": {
+                    "orderId": "ord-501",
+                    "amount": "199000"
+                  }
+                },
+                {
+                  "id": "1700000000200-0",
+                  "fields": {
+                    "orderId": "ord-502",
+                    "amount": "450000"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "name": "orders-cg",
+                  "lastDeliveredIdx": -1,
+                  "pel": []
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "read-via-xreadgroup",
+          "doc": "Đọc bản tin mới qua `XREADGROUP GROUP orders-cg worker-1 ... >`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XREADGROUP\\s+GROUP\\s+orders-cg\\s+worker-1\\b"
+        },
+        {
+          "id": "acked-entries",
+          "doc": "Sử dụng `XACK orders:stream orders-cg ...` để giải phóng PEL",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XACK\\s+orders:stream\\s+orders-cg\\b"
+        },
+        {
+          "id": "read-payload-verified",
+          "doc": "Kết quả thực thi chứa dữ liệu đơn hàng `ord-501` đã được đọc ra",
+          "target": "stdout-contains",
+          "contains": "ord-501"
+        },
+        {
+          "id": "pel-drained-to-zero",
+          "doc": "Bảng PEL của nhóm `orders-cg` được dọn sạch hoàn toàn (`PEL = 0`)",
+          "target": "stream-state",
+          "key": "orders:stream",
+          "hasGroup": "orders-cg",
+          "maxPelCount": {
+            "group": "orders-cg",
+            "max": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r08-4",
+    "code": "R08.4",
+    "title": "Giải cứu đơn hàng bị kẹt từ Worker sập nguồn bằng XPENDING, XAUTOCLAIM và XACK",
+    "difficulty": 3,
+    "tags": [
+      "streams",
+      "xpending",
+      "xautoclaim",
+      "crash-recovery"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "xautoclaim-rescue.redis",
+    "prompt": "Sự cố Production: tiến trình `worker-crashed` vừa bị `OOMKilled` khi đang giữ đơn hàng `1700000000100-0` (`ord-999`) trong bảng PEL của nhóm `orders-cg` trên `orders:stream` suốt hơn **120 giây** (`120000ms`)! Hãy viết quy trình cứu hộ chuẩn trên tiến trình mới **`worker-rescue`**:\n1) Giữ lệnh `XPENDING orders:stream orders-cg - + 10` để kiểm tra chi tiết bản tin đang bị treo.\n2) Dùng **`XAUTOCLAIM`** trên `orders:stream` cho nhóm `orders-cg`, chuyển quyền sở hữu các tin đã treo tối thiểu **`60000`** ms (quét từ mốc **`0-0`**, `COUNT 10`) sang **`worker-rescue`**.\n3) Sau khi thu hồi và xử lý xong, gọi **`XACK`** cho ID `1700000000100-0` để đưa PEL của `orders-cg` về `0`!",
+    "starter": "# Bước 1: Soi danh sách các bản tin đang bị treo trong PEL của nhóm orders-cg\nXPENDING orders:stream orders-cg - + 10\n# Bước 2: Dùng XAUTOCLAIM thu hồi tin treo >= 60000ms từ mốc 0-0 về cho worker-rescue\n\n# Bước 3: Gọi XACK đóng dấu hoàn tất cho bản tin vừa giải cứu\n",
+    "solution": "XPENDING orders:stream orders-cg - + 10\nXAUTOCLAIM orders:stream orders-cg worker-rescue 60000 0-0 COUNT 10\nXACK orders:stream orders-cg 1700000000100-0\n",
+    "hints": [
+      "Cú pháp thu hồi tự động: `XAUTOCLAIM orders:stream orders-cg worker-rescue 60000 0-0 COUNT 10`.",
+      "Lưu ý: `XAUTOCLAIM` mới chỉ chuyển quyền sở hữu trong PEL từ `worker-crashed` sang `worker-rescue`; bạn vẫn bắt buộc phải gọi `XACK orders:stream orders-cg 1700000000100-0` để xoá hẳn khỏi PEL!"
+    ],
+    "ref": "streams/node-xreadgroup-xautoclaim-worker.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "orders:stream",
+            "type": "stream",
+            "value": {
+              "entries": [
+                {
+                  "id": "1700000000100-0",
+                  "fields": {
+                    "orderId": "ord-999",
+                    "amount": "890000"
+                  }
+                }
+              ],
+              "groups": [
+                {
+                  "name": "orders-cg",
+                  "lastDeliveredIdx": 0,
+                  "pel": [
+                    {
+                      "id": "1700000000100-0",
+                      "consumer": "worker-crashed",
+                      "deliveredAtMs": 1699999880000,
+                      "deliveryCount": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "used-xautoclaim",
+          "doc": "Sử dụng `XAUTOCLAIM orders:stream orders-cg worker-rescue 60000 0-0 ...` để thu hồi tin mồ côi",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XAUTOCLAIM\\s+orders:stream\\s+orders-cg\\s+worker-rescue\\s+60000\\s+0-0\\b"
+        },
+        {
+          "id": "claimed-ord-999",
+          "doc": "Thu hồi thành công nội dung đơn hàng bị treo `ord-999`",
+          "target": "stdout-contains",
+          "contains": "ord-999"
+        },
+        {
+          "id": "pel-cleared-after-rescue",
+          "doc": "Đã gọi `XACK` sau khi cứu hộ để đưa `PEL(orders-cg)` về `0`",
+          "target": "stream-state",
+          "key": "orders:stream",
+          "hasGroup": "orders-cg",
+          "maxPelCount": {
+            "group": "orders-cg",
+            "max": 0
+          }
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r08-5",
+    "code": "R08.5",
+    "title": "Phối hợp PUBLISH tức thời và phát lại toàn bộ lịch sử Stream (Historical Replay từ mốc 0)",
+    "difficulty": 2,
+    "tags": [
+      "pubsub",
+      "publish",
+      "streams",
+      "replay"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "pubsub-and-stream-replay.redis",
+    "prompt": "Khoá `audit:stream` đang lưu sẵn 2 sự kiện bảo mật lịch sử (`1700000000010-0` và `1700000000020-0`). Đội Kiểm toán vừa triển khai thêm dịch vụ mới **`compliance-cg`** cần đọc lại **toàn bộ lịch sử từ đầu**, nhưng starter lại đặt nhầm mốc khởi tạo là **`$`** (khiến `XREADGROUP` trả về `(nil)` và bỏ sót sạch dữ liệu cũ!). Hãy:\n1) Phát một thông báo tức thời qua Pub/Sub tới kênh **`ws:alerts`** với nội dung `\"audit-replay-start\"` bằng lệnh **`PUBLISH`**.\n2) Sửa lệnh `XGROUP CREATE` của nhóm **`compliance-cg`** trên `audit:stream` bắt đầu từ mốc **`0`** (thay vì `$`).\n3) Kéo cả 2 bản ghi lịch sử bằng `XREADGROUP GROUP compliance-cg auditor-1 COUNT 2 STREAMS audit:stream >` và đóng dấu **`XACK`** cho cả 2 ID (`1700000000010-0` và `1700000000020-0`).",
+    "starter": "# LỖI CẤU HÌNH: Dùng mốc '$' khiến nhóm mới bỏ qua toàn bộ lịch sử đang có sẵn trong audit:stream!\nXGROUP CREATE audit:stream compliance-cg $\nXREADGROUP GROUP compliance-cg auditor-1 COUNT 2 STREAMS audit:stream >\n",
+    "solution": "PUBLISH ws:alerts \"audit-replay-start\"\nXGROUP CREATE audit:stream compliance-cg 0\nXREADGROUP GROUP compliance-cg auditor-1 COUNT 2 STREAMS audit:stream >\nXACK audit:stream compliance-cg 1700000000010-0 1700000000020-0\n",
+    "hints": [
+      "Bắn thông báo trực tiếp bằng `PUBLISH ws:alerts \"audit-replay-start\"`.",
+      "Đổi `$` thành `0` trong `XGROUP CREATE audit:stream compliance-cg 0` để đọc lại từ đầu lịch sử, rồi gọi `XACK audit:stream compliance-cg 1700000000010-0 1700000000020-0`."
+    ],
+    "ref": "streams/orders-consumer-group-pel.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "audit:stream",
+            "type": "stream",
+            "value": {
+              "entries": [
+                {
+                  "id": "1700000000010-0",
+                  "fields": {
+                    "action": "evt-login-admin",
+                    "actor": "root"
+                  }
+                },
+                {
+                  "id": "1700000000020-0",
+                  "fields": {
+                    "action": "evt-role-grant",
+                    "actor": "secops"
+                  }
+                }
+              ],
+              "groups": []
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "published-ws-alert",
+          "doc": "Phát thông báo tức thời lên kênh Pub/Sub `ws:alerts` bằng `PUBLISH`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*PUBLISH\\s+ws:alerts\\b"
+        },
+        {
+          "id": "created-group-from-zero",
+          "doc": "Khởi tạo nhóm `compliance-cg` từ mốc lịch sử `0` thay vì `$`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*XGROUP\\s+CREATE\\s+audit:stream\\s+compliance-cg\\s+0(?:-0)?(?:\\s+MKSTREAM)?\\s*$"
+        },
+        {
+          "id": "replayed-historical-event",
+          "doc": "Đọc thành công sự kiện lịch sử `evt-login-admin` từ đầu Stream",
+          "target": "stdout-contains",
+          "contains": "evt-login-admin"
+        },
+        {
+          "id": "audit-pel-clean",
+          "doc": "Đã xác nhận `XACK` toàn bộ sự kiện lịch sử (`PEL(compliance-cg) = 0`)",
+          "target": "stream-state",
+          "key": "audit:stream",
+          "hasGroup": "compliance-cg",
+          "maxPelCount": {
+            "group": "compliance-cg",
+            "max": 0
+          }
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R03-FC1",
+    "front": "Vì sao **`LPUSH` + `LTRIM key 0 (N-1)`** được xem là cặp bài trùng bắt buộc cho bảng tin hoạt động (Activity Feed)?",
+    "back": "Giúp vừa đẩy sự kiện mới nhất lên đầu trong `O(1)`, vừa khoá cứng độ dài danh sách ở đúng `N` mục gần nhất (Ring Buffer), ngăn chặn List phình to vô hạn thành BigKey làm cạn RAM."
+  },
+  {
+    "id": "R03-FC2",
+    "front": "Lệnh hiện đại nào trong Redis 6.2+ / Redis 8 thay thế hoàn toàn cặp `RPOPLPUSH` / `BRPOPLPUSH` đã cũ?",
+    "back": "**`LMOVE`** (và phiên bản chặn chờ **`BLMOVE`**) — cho phép chọn tự do đầu lấy (`LEFT`|`RIGHT`) ở danh sách nguồn và đầu đặt (`LEFT`|`RIGHT`) ở danh sách đích một cách nguyên tử."
+  },
+  {
+    "id": "R03-FC3",
+    "front": "Độ phức tạp của `SISMEMBER`, `SMISMEMBER` và `SCARD` trên Redis Set là bao nhiêu?",
+    "back": "- `SISMEMBER` và `SCARD`: **`O(1)`**\n- `SMISMEMBER` (kiểm tra `K` phần tử): **`O(K)`**\nKhông phụ thuộc vào việc Set có 100 hay 10 triệu thành viên!"
+  },
+  {
+    "id": "R03-FC4",
+    "front": "Khi nào một Redis Set tự động kích hoạt biểu diễn nén **`intset`**?",
+    "back": "Khi **tất cả các phần tử** trong Set đều là chuỗi số nguyên có dấu 64-bit hợp lệ và tổng số phần tử không vượt quá `set-max-intset-entries` (mặc định `512`)."
+  },
+  {
+    "id": "R03-FC5",
+    "front": "Sự khác nhau giữa `SINTER`, `SUNION` và `SDIFF` (cùng hậu tố `...STORE`) là gì?",
+    "back": "- **`SINTER`**: Phần giao (có mặt ở TẤT CẢ các Set)\n- **`SUNION`**: Phần hợp (gộp mọi phần tử duy nhất)\n- **`SDIFF A B`**: Phần hiệu (có trong `A` nhưng KHÔNG có trong `B`)\nThêm `STORE` để lưu thẳng kết quả vào khoá đích ngay trên RAM."
+  },
+  {
+    "id": "R03-FC6",
+    "front": "Nếu chỉ cần biết **số lượng** phần tử chung giữa 2 Set mà không cần lấy danh sách tên về mạng, Redis 7/8 cung cấp lệnh tối ưu nào?",
+    "back": "**`SINTERCARD numkeys key1 key2 [LIMIT limit]`** — đếm trực tiếp trên máy chủ và có thể dừng tính toán ngay khi chạm ngưỡng `LIMIT`!"
+  }
+]

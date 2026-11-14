@@ -38,6 +38,28 @@ steps:
 
 ## 1. Bản đồ 6 thực thể cốt lõi (kèm phép ẩn dụ Node.js)
 
+```visual
+kind: illustration
+diagram: "cicd:c01"
+alt: "Sơ đồ phân cấp 6 thực thể CI/CD từ Event Trigger, Workflow, Job trên máy ảo Ephemeral Runner đến chuỗi Step và Action"
+title: "Giải Phẫu 6 Thực Thể Đường Ống & Ranh Giới Cô Lập Máy Ảo Ephemeral Runner"
+subtitle: "Vì sao các Step trong cùng một Job chia sẻ chung ổ đĩa nhưng hai Job khác nhau lại tách biệt hoàn toàn về vật lý"
+caption: "Cấu trúc lồng nhau từ sự kiện kích hoạt (Trigger) -> Workflow -> các Job chạy trên máy ảo dùng một lần riêng biệt -> chuỗi Step và Action"
+callouts:
+  - num: 1
+    label: "1. Event Trigger & 2. Workflow điều phối tổng"
+    desc: "Sự kiện push hoặc pull_request đánh thức tệp Workflow YAML để phân bổ các Job độc lập chạy song song mặc định."
+    tone: amber
+  - num: 2
+    label: "3. Job, 4. Runner VM, 5. Step & 6. Action"
+    desc: "Mỗi Job được cấp 1 máy ảo Ubuntu mới tinh; các Step bên trong chạy nối tiếp trên cùng ổ đĩa rồi máy ảo bị huỷ sạch khi xong việc."
+    tone: violet
+  - num: 3
+    label: "Ranh giới ổ đĩa giữa hai Job khác nhau"
+    desc: "Job B chạy trên một máy ảo hoàn toàn khác nên không thấy thư mục dist/ của Job A nếu không truyền qua cơ chế Artifact."
+    tone: rose
+```
+
 > [!ANALOGY] Hãy hình dung như sau (Ánh xạ sang kiến trúc Backend Node.js)
 > Nếu **Trigger (`on:`)** giống như một HTTP Webhook đánh thức hệ thống, **Workflow** là hàm điều phối tổng, thì mỗi **Job** là một máy chủ Worker tách biệt hoàn toàn về vật lý, còn các **Step** là từng dòng lệnh chạy nối tiếp bên trong cùng một hàm trên máy Worker đó!
 

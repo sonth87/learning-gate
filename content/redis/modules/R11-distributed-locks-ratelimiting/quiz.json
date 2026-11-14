@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R11-Q1",
+    "type": "mc",
+    "q": "Vì sao khi sử dụng Khoá phân tán (Distributed Lock) trên Redis, giá trị lưu vào khoá bắt buộc phải là một chuỗi định danh ngẫu nhiên duy nhất cho từng lần chiếm khoá (ví dụ UUID) thay vì hằng số `\"1\"`?",
+    "code": "",
+    "choices": [
+      "Vì Redis từ chối lưu chuỗi có độ dài ngắn hơn 8 ký tự khi có cờ NX",
+      "Để khi giải phóng khoá bằng kịch bản Lua, tiến trình có thể xác minh khoá đó vẫn thuộc về chính mình chứ chưa bị hết hạn và chuyển sang tay tiến trình khác",
+      "Để mã hoá đường truyền TCP giữa ứng dụng và Redis",
+      "Để tăng tốc độ hàm băm CRC16 gấp 4 lần"
+    ],
+    "answer": 1,
+    "explain": "Nếu Pod A bị treo GC Pause lâu hơn thời gian thuê `PX`, khoá tự hết hạn và Pod B hợp lệ chiếm được khoá. Khi Pod A tỉnh dậy, nhờ đối chiếu UUID trong kịch bản Lua không khớp với UUID của Pod B, Pod A không xoá nhầm khoá đang giữ của Pod B."
+  },
+  {
+    "id": "R11-Q2",
+    "type": "tf",
+    "q": "Đoạn code ứng dụng `if (await redis.get(lockKey) === myUuid) { await redis.del(lockKey); }` an toàn tuyệt đối 100% giống hệt việc chạy kịch bản Lua Compare-And-Delete.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Giữa hai lời gọi mạng `redis.get()` và `redis.del()` có độ trễ mạng/CPU: ngay sau khi `get` trả về `true`, khoá có thể vừa chạm mốc hết hạn `PX` và bị Pod khác chiếm mất, khiến lệnh `del` bay tới sau vẫn xoá nhầm khoá mới! Phải gom vào `EVAL` Lua để chạy nguyên tử."
+  },
+  {
+    "id": "R11-Q3",
+    "type": "output",
+    "q": "Trong bộ giới hạn tốc độ Fixed Window trên Redis 7+/8, cờ nào gắn thêm vào cuối lệnh `EXPIRE rl:login:ip 60 ____` đảm bảo thời gian sống chỉ được đặt ở lần tạo đầu tiên chứ KHÔNG bị gia hạn lại ở các request tiếp theo?",
+    "code": "INCR rl:login:ip\nEXPIRE rl:login:ip 60 ____",
+    "choices": [],
+    "answer": "NX",
+    "explain": "`EXPIRE key seconds NX` chỉ đặt thời gian hết hạn khi khoá hiện chưa có thời hạn sống (`TTL == -1`), giữ cố định biên cửa sổ đầu tiên."
+  },
+  {
+    "id": "R11-Q4",
+    "type": "mc",
+    "q": "Điểm yếu lớn nhất của thuật toán **Fixed Window Counter** khiến nhiều hệ thống API chuyển sang dùng **Sliding Window** hoặc **Token Bucket** là gì?",
+    "code": "",
+    "choices": [
+      "Không thể chạy trên hệ điều hành Linux",
+      "Hiệu ứng Boundary Burst (Vọt gấp đôi ở mép cửa sổ): người dùng gửi tối đa N request ở giây thứ 59 của phút trước và N request ở giây thứ 01 của phút sau, tạo ra 2N request trong 2 giây",
+      "Tốn gấp 1.000 lần dung lượng RAM so với Sorted Set",
+      "Làm xoá sạch dữ liệu RDB mỗi khi cửa sổ kết thúc"
+    ],
+    "answer": 1,
+    "explain": "Tại ranh giới chuyển giao giữa hai cửa sổ cố định, hạn mức được đặt lại từ đầu nên lưu lượng thực tế trong khoảng thời gian ngắn vắt qua ranh giới có thể vọt lên gấp đôi ngưỡng thiết kế."
+  },
+  {
+    "id": "R11-Q5",
+    "type": "mc",
+    "q": "Theo phân tích nổi tiếng của Martin Kleppmann về khoá phân tán, khi cần bảo vệ tính đúng đắn tuyệt đối ở tầng lưu trữ đích (như chống ghi đè file/số dư khi tiến trình bị GC Pause dài), cơ chế nào cần được kết hợp thêm cùng khoá phân tán?",
+    "code": "",
+    "choices": [
+      "Fencing Token (mã số thứ tự tăng đơn điệu cấp cho mỗi lần giữ khoá để Database/Storage từ chối các thao tác mang số hiệu cũ hơn)",
+      "Giảm TTL của khoá xuống còn 1 mili-giây",
+      "Chạy lệnh FLUSHDB sau mỗi lần nhả khoá",
+      "Tắt tính năng TCP Keepalive"
+    ],
+    "answer": 0,
+    "explain": "Fencing Token chuyển bước kiểm chứng cuối cùng xuống chính tài nguyên lưu trữ đích: nếu Pod A cầm token `33` bị treo rồi tỉnh dậy ghi trễ sau khi Pod B cầm token `34` đã ghi, Storage thấy `33 < 34` sẽ lập tức bác bỏ thao tác cũ."
+  },
+  {
+    "id": "R11-Q6",
+    "type": "tf",
+    "q": "Khi viết kịch bản Lua cho Redis (`EVAL` / `EVALSHA`), mọi tên khoá mà kịch bản chạm tới đều nên được truyền tường minh qua mảng `KEYS[...]` thay vì ghép chuỗi động bên trong mã Lua để tương thích với Redis Cluster.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Redis Cluster kiểm tra mảng `KEYS` trước khi thực thi kịch bản để xác định Hash Slot đích và đảm bảo tất cả các khoá nằm trên cùng một shard."
+  },
+  {
+    "id": "R11-Q7",
+    "type": "mc",
+    "q": "Thuật toán Rate Limiting nào mô phỏng một chiếc xô chứa tối đa `B` thẻ bài được châm thêm đều đặn `R` thẻ mỗi giây — vừa cho phép người dùng bùng nổ lưu lượng ngắn hạn hợp lệ (Burst) vừa giữ tốc độ trung bình dài hạn ổn định?",
+    "code": "",
+    "choices": [
+      "Fixed Window Counter",
+      "Token Bucket (Xô thẻ bài)",
+      "HyperLogLog",
+      "GeoHash"
+    ],
+    "answer": 1,
+    "explain": "Token Bucket là thuật toán tiêu chuẩn trên các API Gateway hiện đại (Kong, Envoy, AWS API Gateway) nhờ khả năng tách biệt rõ ngưỡng Burst tức thời (`capacity B`) và tốc độ nạp bền vững (`refill rate R`)."
+  }
+]

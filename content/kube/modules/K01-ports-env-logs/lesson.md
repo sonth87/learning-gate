@@ -34,6 +34,28 @@ steps:
 
 ## 1. Bắc cầu mạng với `-p HOST_PORT:CONTAINER_PORT`
 
+```visual
+kind: illustration
+diagram: "kube:k01"
+alt: "Sơ đồ ánh xạ cổng NAT -p 8080:3000, tiêm biến môi trường -e vào process.env và luồng thu gom log stdout/stderr"
+title: "Giải Phẫu Giao Tiếp Container: Cầu Nối Mạng (-p), Tiêm Biến (-e) & Dòng Chảy Log"
+subtitle: "Ba kênh tương tác chuẩn 12-Factor giữa máy chủ bên ngoài và không gian mạng cô lập của Container"
+caption: "Cơ chế chuyển tiếp gói tin từ cổng máy chủ qua eth0 vào 0.0.0.0:3000, nạp cấu hình động vào process.env và thu gom luồng stdout/stderr"
+callouts:
+  - num: 1
+    label: "Ánh xạ cổng -p 8080:3000 từ ngoài vào trong"
+    desc: "Vế trái là cổng mở trên máy chủ (duy nhất), chuyển tiếp NAT qua card mạng ảo eth0 vào cổng nội bộ ở vế phải."
+    tone: sky
+  - num: 2
+    label: "Lắng nghe 0.0.0.0 & Nhận cấu hình qua process.env"
+    desc: "Ứng dụng Node.js phải bind trên 0.0.0.0 để đón lưu lượng từ eth0 (tránh bẫy 127.0.0.1) và đọc biến động truyền từ cờ -e."
+    tone: violet
+  - num: 3
+    label: "Luồng xuất chuẩn stdout/stderr ra Docker Logs"
+    desc: "Mọi dòng console.log và console.error trên tiến trình chính được Docker Log Driver thu thẳng vào bộ đệm để đọc qua docker logs."
+    tone: amber
+```
+
 Hãy luôn đọc cờ `-p` (`--publish`) xuôi theo chiều request đi **từ ngoài máy chủ vào trong container**:
 
 ```bash

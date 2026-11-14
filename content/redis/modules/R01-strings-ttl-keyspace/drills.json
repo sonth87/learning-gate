@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R01-D1",
+    "title": "Đặt cổng Idempotency nguyên tử bằng SET NX EX và kiểm tra TTL",
+    "code": "SET pay:idem:ord-9001 \"processing\" NX EX 300\nTTL pay:idem:ord-9001\nGET pay:idem:ord-9001"
+  },
+  {
+    "id": "R01-D2",
+    "title": "Gom lô cấu hình dịch vụ bằng MSET / MGET và đếm nguyên tử INCRBY",
+    "code": "MSET billing:plan:free \"100\" billing:plan:pro \"5000\"\nMGET billing:plan:free billing:plan:pro\nINCRBY stats:api:hits 10"
+  },
+  {
+    "id": "R01-D3",
+    "title": "Duyệt khoá an toàn bằng con trỏ SCAN kết hợp giải phóng nền UNLINK",
+    "code": "SCAN 0 MATCH sess:stale:* COUNT 100\nUNLINK sess:stale:101 sess:stale:102"
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "id": "R04",
+  "slug": "R04-sorted-sets-skiplist",
+  "level": 1,
+  "order": 2,
+  "title": "Sorted Sets (ZSet) & Đường cao tốc nhiều tầng Skip List O(log N)",
+  "summary": "Giải phẫu cấu trúc kép Hash Table + Skip List làm nên ngôi vương của Redis ZSet trong Leaderboard triệu người chơi, Sliding Window Rate Limiter và Delayed Queue.",
+  "tags": [
+    "sorted-sets",
+    "zset",
+    "skiplist",
+    "leaderboard",
+    "delayed-queue",
+    "zrange"
+  ],
+  "sources": [
+    {
+      "title": "Redis Data Types — Sorted Sets (ZSet) Architecture & Use Cases",
+      "url": "https://redis.io/docs/latest/develop/data-types/sorted-sets/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Commands — Unified ZRANGE (REV, BYSCORE, LIMIT)",
+      "url": "https://redis.io/docs/latest/commands/zrange/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Single-Thread Event Loop & Tốc độ O(log N)",
+      "kind": "flow",
+      "targetId": "event-loop-pipeline",
+      "description": "Hiểu vì sao cập nhật hạng giữa 10 triệu người chơi bằng ZINCRBY chỉ cần ~24 bước nhảy trên RAM"
+    },
+    {
+      "label": "Simulator: Mô phỏng Bộ nhớ listpack vs skiplist",
+      "kind": "simulator-preset",
+      "targetId": "memory",
+      "description": "Khảo sát chi phí bộ nhớ của cấu trúc kép Hash Table + Skip List khi ZSet tăng kích thước"
+    }
+  ],
+  "readings": [
+    {
+      "path": "patterns/zset-realtime-leaderboard.redis",
+      "kind": "good",
+      "note": "Thiết kế bảng xếp hạng game thời gian thực kết hợp ZADD GT/ZINCRBY và xử lý đồng điểm (tie-breaking).",
+      "task": "Vì sao truy vấn Top 10 người dẫn đầu trong 5 triệu game thủ bằng PostgreSQL `ORDER BY score DESC LIMIT 10` dễ tắc nghẽn khi điểm nhảy liên tục, còn ZSet lại nhẹ nhàng?",
+      "answer": "Trong RDBMS, mỗi lần cộng điểm phải cập nhật trang đĩa + tái cân bằng chỉ mục B-Tree kèm khoá dòng (row lock); trong khi ZSet duy trì thứ tự sẵn trên RAM bằng Skip List (`O(log N)` cập nhật) kết hợp Hash Table (`O(1)` đọc điểm cá nhân `ZSCORE`) không cần bất kỳ khoá dòng nào."
+    },
+    {
+      "path": "patterns/zset-delayed-job-scheduler.ts",
+      "kind": "good",
+      "note": "Bộ lập lịch tác vụ trễ (Delayed Job Scheduler) viết bằng TypeScript sử dụng Unix Timestamp làm score của ZSet.",
+      "task": "Quan sát cách worker lấy các job đã đến giờ chạy (`score <= Date.now()`) mà không để 2 worker cùng chạy trùng 1 job.",
+      "answer": "Tác vụ hẹn giờ được đẩy vào bằng `ZADD delayed_jobs <runAtMs> <jobId>`; định kỳ worker kiểm tra hoặc dùng kịch bản nguyên tử kết hợp `ZRANGE ... BYSCORE LIMIT` / `ZPOPMIN` để bốc đúng các phần tử có `score <= now` ra xử lý duy nhất một lần."
+    }
+  ]
+}

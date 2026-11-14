@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R08-Q1",
+    "type": "mc",
+    "q": "Điều gì xảy ra khi bạn phát một bản tin bằng lệnh **`PUBLISH orders:paid \"ord-101\"`** đúng vào lúc toàn bộ các dịch vụ Subscriber đang khởi động lại (mất kết nối trong 3 giây)?",
+    "code": "",
+    "choices": [
+      "Redis tự động xếp hàng bản tin vào tệp tạm trên ổ cứng và gửi bù ngay khi Subscriber kết nối lại",
+      "Bản tin đó **bốc hơi vĩnh viễn** vì Pub/Sub hoạt động theo cơ chế *Fire-and-Forget* (chỉ đẩy tới các socket đang lắng nghe ngay thời điểm phát, không lưu trữ trong RAM)",
+      "Lệnh `PUBLISH` sẽ bị treo (block) cho tới khi có ít nhất 1 Subscriber quay trở lại",
+      "Redis tự động chuyển đổi kênh Pub/Sub thành kiểu dữ liệu Stream"
+    ],
+    "answer": 1,
+    "explain": "Pub/Sub không có bộ nhớ lưu trữ lịch sử hay sổ theo dõi xác nhận. Nếu cần đảm bảo không mất sự kiện khi Worker khởi động lại hay rớt mạng, bắt buộc phải dùng **Redis Streams**."
+  },
+  {
+    "id": "R08-Q2",
+    "type": "mc",
+    "q": "Trong câu lệnh **`XREADGROUP GROUP payment-cg worker-1 COUNT 10 STREAMS orders:stream >`**, ký hiệu đặc biệt **`>`** ở cuối mang ý nghĩa gì?",
+    "code": "",
+    "choices": [
+      "Yêu cầu Redis sắp xếp bản tin theo thứ tự giảm dần từ mới nhất về cũ nhất",
+      "Chỉ giao các bản tin **mới tinh chưa từng được giao cho bất kỳ consumer nào** trong nhóm `payment-cg` (và đồng thời ghi chúng vào bảng PEL)",
+      "Xoá sạch toàn bộ các bản tin cũ hơn sau khi đọc xong",
+      "Chỉ đọc lại các bản tin đang bị kẹt trong PEL của riêng `worker-1`"
+    ],
+    "answer": 1,
+    "explain": "Ký hiệu `>` yêu cầu các bản tin mới vượt qua mốc `last-delivered-id` của Consumer Group; ngược lại nếu truyền ID `0` vào `XREADGROUP`, Redis sẽ trả lại các bản tin đang nằm chờ chưa `XACK` trong PEL của chính consumer đó."
+  },
+  {
+    "id": "R08-Q3",
+    "type": "tf",
+    "q": "Khi một Worker gọi lệnh **`XACK orders:stream payment-cg 1700000000100-0`**, Redis sẽ xoá bản ghi đó khỏi bảng theo dõi **PEL** của nhóm `payment-cg`, nhưng **bản tin gốc vẫn còn nằm trong `orders:stream`** cho tới khi bị cắt bởi `MAXLEN` / `MINID` hoặc `XDEL`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Chính xác! Một Stream có thể phục vụ nhiều Consumer Group độc lập (ví dụ `payment-cg`, `email-cg`, `analytics-cg`), nên `XACK` chỉ xoá mục tạm giữ trong PEL của nhóm gọi lệnh. Để giới hạn RAM cho Stream gốc, bạn phải kết hợp `MAXLEN ~ <count>` khi `XADD`."
+  },
+  {
+    "id": "R08-Q4",
+    "type": "mc",
+    "q": "Vì sao trong môi trường Production luôn được khuyến nghị viết **`XADD events MAXLEN ~ 50000 * ...`** (có dấu ngã `~`) thay vì cắt chính xác tuyệt đối `MAXLEN = 50000`?",
+    "code": "",
+    "choices": [
+      "Vì dấu `=` đã bị xoá bỏ hoàn toàn khỏi cú pháp Redis 8",
+      "Dấu `~` cho phép Redis chỉ cắt khi giải phóng trọn vẹn **nguyên một nút cụm `listpack`** ở đầu Radix Tree với độ phức tạp **O(1)** siêu nhanh, tránh phải dời từng phần tử lẻ tốn CPU",
+      "Dấu `~` tự động nén văn bản JSON bằng thuật toán Gzip",
+      "Dấu `~` tự động gọi `XACK` giùm cho mọi Consumer Group"
+    ],
+    "answer": 1,
+    "explain": "Redis Streams lưu nhiều bản ghi liền nhau vào các node `listpack`. Cắt xấp xỉ (`~`) giúp Redis đợi tới khi cả node đầu tiên vượt ngưỡng mới tháo bỏ nguyên node chỉ trong O(1), giữ thông lượng ghi ở mức hàng trăm nghìn ops/giây."
+  },
+  {
+    "id": "R08-Q5",
+    "type": "mc",
+    "q": "Khi `worker-1` bất ngờ bị sập nguồn (`SIGKILL`) lúc đang xử lý dở 3 đơn hàng, lệnh nào trên Redis 6.2+ / Redis 8 giúp `worker-2` **tự động quét và thu hồi** các bản tin đã nằm bất động quá 60 giây trong đúng 1 vòng mạng?",
+    "code": "",
+    "choices": [
+      "`XAUTOCLAIM orders:stream payment-cg worker-2 60000 0-0 COUNT 10`",
+      "`XRANGE orders:stream - + COUNT 10`",
+      "`BLPOP orders:stream 60`",
+      "`SPUBLISH orders:stream \"reclaim\"`"
+    ],
+    "answer": 0,
+    "explain": "`XAUTOCLAIM` gộp cả bước dò tìm tin vượt ngưỡng `min-idle-time` (`60000ms`) trong PEL lẫn bước chuyển quyền sở hữu sang `worker-2` và trả về nội dung bản tin ngay lập tức."
+  },
+  {
+    "id": "R08-Q6",
+    "type": "tf",
+    "q": "Trên cụm **Redis Cluster**, cặp lệnh **Sharded Pub/Sub (`SSUBSCRIBE` / `SPUBLISH`)** mở rộng tốt hơn `SUBSCRIBE` / `PUBLISH` cổ điển vì lưu lượng kênh chỉ định tuyến trong phạm vi các node phụ trách Hash Slot của kênh đó thay vì phát tán (broadcast) tới mọi node toàn cụm.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Trong Pub/Sub cổ điển trên Cluster, mỗi lệnh `PUBLISH` bị nhân bản gửi tới tất cả các node gây bão băng thông nội bộ khi tăng quy mô cụm; Sharded Pub/Sub (ra mắt từ Redis 7.0+) giải quyết triệt để nút thắt này."
+  },
+  {
+    "id": "R08-Q7",
+    "type": "output",
+    "q": "Điền **tuỳ chọn từ khoá** còn thiếu ở cuối câu lệnh `XGROUP CREATE` dưới đây để Redis tự động khởi tạo Stream rỗng nếu khoá `orders:stream` chưa tồn tại:",
+    "code": "XGROUP CREATE orders:stream billing-cg $ ???",
+    "choices": [],
+    "answer": "MKSTREAM",
+    "explain": "Tuỳ chọn `MKSTREAM` giúp khởi tạo đồng thời cả Stream rỗng lẫn Consumer Group một cách an toàn khi dịch vụ Worker chạy lên trước Producer."
+  }
+]

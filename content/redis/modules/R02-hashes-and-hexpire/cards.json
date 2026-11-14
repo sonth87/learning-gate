@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R02-FC1",
+    "front": "Khi nào nên lưu đối tượng bằng **Redis Hash** thay vì **JSON String**?",
+    "back": "Khi đối tượng có cấu trúc phẳng, thường xuyên **đọc một vài trường chọn lọc (`HMGET`)** hoặc **cập nhật/tăng giảm nguyên tử từng trường (`HSET`, `HINCRBY`)** mà không muốn tải và ghi đè toàn bộ chuỗi JSON."
+  },
+  {
+    "id": "R02-FC2",
+    "front": "Hai thông số cấu hình nào quyết định việc một Redis Hash còn giữ được biểu diễn nén **`listpack`**?",
+    "back": "`hash-max-listpack-entries` (số lượng trường tối đa) và `hash-max-listpack-value` (kích thước byte tối đa của tên/giá trị một trường)."
+  },
+  {
+    "id": "R02-FC3",
+    "front": "Lệnh `HEXPIRE` trên Redis 7.4+ / Redis 8 giải quyết bài toán kiến trúc nào trước đây rất phức tạp?",
+    "back": "Cho phép gắn **TTL riêng biệt cho từng trường (field)** ngay bên trong một Hash (như mã giảm giá tạm thời trong giỏ hàng, token phụ trong session) mà không phải tách ra hàng loạt String key rời rạc bên ngoài."
+  },
+  {
+    "id": "R02-FC4",
+    "front": "Giá trị trả về của `HSET key f1 v1 f2 v2` thể hiện con số gì?",
+    "back": "Số lượng trường **được tạo mới** trong lệnh đó (những trường đã tồn tại từ trước và chỉ được cập nhật giá trị mới sẽ không cộng vào số đếm trả về)."
+  },
+  {
+    "id": "R02-FC5",
+    "front": "Làm sao giảm giá trị số nguyên của một trường trong Hash đi `5` đơn vị khi Redis không có lệnh `HDECRBY`?",
+    "back": "Truyền số nguyên âm vào lệnh `HINCRBY`: `HINCRBY <key> <field> -5`."
+  },
+  {
+    "id": "R02-FC6",
+    "front": "Thay thế `HGETALL` bằng gì khi cần đọc dữ liệu từ một Hash có thể chứa hàng chục ngàn trường?",
+    "back": "Dùng **`HMGET`** nếu đã biết tên các trường cần lấy, hoặc lặp bằng con trỏ **`HSCAN <key> 0 MATCH ... COUNT ...`** nếu cần duyệt tuần tự không chặn Event Loop."
+  }
+]

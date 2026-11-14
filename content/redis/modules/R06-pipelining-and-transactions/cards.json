@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R06-FC1",
+    "front": "Sự khác biệt bản chất giữa **TCP Pipelining** và **`MULTI / EXEC`** là gì?",
+    "back": "- **Pipelining**: Kỹ thuật phía mạng gom nhiều lệnh gửi 1 lần (**1 RTT**), **không** đảm bảo cô lập nguyên tử.\n- **`MULTI / EXEC`**: Cơ chế phía máy chủ xếp hàng lệnh (`QUEUED`) để chạy liền một mạch không cho client khác chen ngang."
+  },
+  {
+    "id": "R06-FC2",
+    "front": "Redis xử lý khác nhau thế nào giữa **Lỗi cú pháp lúc xếp hàng** vs **Lỗi kiểu dữ liệu lúc chạy (`EXEC`)** trong Transaction?",
+    "back": "- **Lỗi cú pháp trước `EXEC`**: Redis đánh dấu lỗi và từ chối chạy toàn bộ giao dịch (`EXECABORT`).\n- **Lỗi runtime lúc `EXEC`** (như `WRONGTYPE`): Chỉ lệnh lỗi thất bại, các lệnh hợp lệ trước và sau nó **vẫn thực thi bình thường — KHÔNG Rollback**!"
+  },
+  {
+    "id": "R06-FC3",
+    "front": "Vì sao không thể viết logic `if (await redis.get(k) > 0)` ở **bên trong** một khối `MULTI ... EXEC`?",
+    "back": "Vì bên trong `MULTI`, mọi câu lệnh kể cả `GET` đều chưa thực thi mà chỉ trả về chuỗi **`QUEUED`** — bạn chỉ nhận được giá trị thực tế sau khi gọi `EXEC`!"
+  },
+  {
+    "id": "R06-FC4",
+    "front": "Quy trình 4 bước của **Optimistic Locking với `WATCH`** diễn ra theo thứ tự nào?",
+    "back": "1) `WATCH key` (trước `MULTI`)\n2) Đọc `GET`/`HGET` và kiểm tra điều kiện ở ứng dụng\n3) `MULTI` + xếp hàng các lệnh ghi\n4) `EXEC` (nếu trả về `(nil)` nghĩa là khoá đã bị ai đó sửa -> thử lại)."
+  },
+  {
+    "id": "R06-FC5",
+    "front": "Chi tiết mặc định nào của `r.pipeline()` trong thư viện Python **`redis-py`** khác với `redis.pipeline()` của Node.js **`ioredis`**?",
+    "back": "Trong `redis-py`, `r.pipeline()` mặc định bật `transaction=True` (tự động kẹp thêm `MULTI/EXEC`). Muốn chạy thuần Pipeline nhẹ nhất như `ioredis`, phải truyền `r.pipeline(transaction=False)`."
+  },
+  {
+    "id": "R06-FC6",
+    "front": "Tại sao phải dùng **`UNLINK`** kèm cấu hình `lazyfree-lazy-expire yes` thay vì chỉ dùng `DEL`?",
+    "back": "`DEL` giải phóng toàn bộ bộ nhớ của BigKey ngay trên luồng Event Loop chính gây đứng hình; `UNLINK` và `lazyfree` chỉ tách con trỏ `O(1)` rồi giao việc thu hồi bộ nhớ nặng nhọc cho luồng nền BIO."
+  }
+]

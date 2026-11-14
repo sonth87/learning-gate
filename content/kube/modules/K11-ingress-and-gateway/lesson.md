@@ -7,6 +7,28 @@
 
 Giải pháp chuẩn công nghiệp là đặt ==một cổng gác HTTP/HTTPS thông minh duy nhất ở tầng 7 (Layer 7)== đứng đầu cụm: chỉ thuê **đúng 1 Cloud LoadBalancer duy nhất**, gom toàn bộ chứng chỉ TLS HTTPS về một đầu mối rồi phân luồng vào từng `ClusterIP Service` nội bộ theo Hostname và URL Path (`/api`, `/`). Đó chính là vai trò của **`Ingress`** (cùng thế hệ kế nhiệm **Gateway API**).
 
+```visual
+kind: illustration
+diagram: "kube:k11"
+alt: "Cơ chế Ingress và Gateway API tầng 7 giải mã TLS HTTPS tại 1 Cloud LoadBalancer duy nhất rồi rẽ nhánh Host và Path vào ClusterIP nội bộ"
+title: "Giải Phẫu Cửa Ngõ Tầng 7: Ingress / Gateway API, Giải Mã TLS & Rẽ Nhánh Đường Dẫn"
+subtitle: "Dùng chung 1 địa chỉ IP công cộng duy nhất cho hàng chục Microservices để tiết kiệm tối đa chi phí Cloud LoadBalancer"
+caption: "Luồng lưu lượng HTTPS từ Internet đi qua 1 Cloud LoadBalancer vào Ingress/Gateway Controller để giải mã TLS rồi phân luồng theo Hostname và URL Path"
+callouts:
+  - num: 1
+    label: "1 Cloud LoadBalancer công cộng duy nhất"
+    desc: "Thay vì thuê 20 bộ cân bằng tải đắt đỏ cho 20 dịch vụ, toàn bộ lưu lượng HTTPS hội tụ về một địa chỉ IP cửa ngõ duy nhất."
+    tone: sky
+  - num: 2
+    label: "Giải mã TLS & Định tuyến thông minh Layer 7"
+    desc: "Ingress Controller (Nginx/Envoy) đọc chứng chỉ từ Secret để giải mã HTTPS rồi đọc luật Host và Path (/api, /) để rẽ nhánh."
+    tone: violet
+  - num: 3
+    label: "Chuyển tiếp an toàn vào các ClusterIP nội bộ"
+    desc: "Các microservice phía sau nằm kín trong mạng nội bộ dưới dạng ClusterIP và hỗ trợ chia phần trăm Canary mượt mà với Gateway API."
+    tone: emerald
+```
+
 ## 1. Phân biệt Ingress Resource (Bản luật) và Ingress Controller (Người gác cổng)
 
 > [!WARNING] Bẫy số 1 khi mới học Ingress: Tờ giấy luật vs Người gác cổng thực thi!

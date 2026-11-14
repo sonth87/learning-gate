@@ -1,0 +1,58 @@
+{
+  "id": "R00",
+  "slug": "R00-why-redis-event-loop",
+  "level": 0,
+  "order": 0,
+  "title": "Vì sao 1 luồng Event Loop trên RAM của Redis gánh >100,000 ops/sec?",
+  "summary": "Giải mã chênh lệch tốc độ 1,000 lần giữa RAM và SSD, kiến trúc Single-Threaded Event Loop (epoll/kqueue), giao thức khung dây RESP3 và cách chạy Redis 8 an toàn bằng Docker.",
+  "tags": [
+    "redis-8",
+    "in-memory",
+    "event-loop",
+    "epoll",
+    "resp3",
+    "docker"
+  ],
+  "sources": [
+    {
+      "title": "Redis 8 Introduction & In-Memory Architecture",
+      "url": "https://redis.io/docs/latest/get-started/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Serialization Protocol (RESP2 / RESP3) Specification",
+      "url": "https://redis.io/docs/latest/develop/reference/protocol-spec/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Single-Threaded Event Loop & Pipelining",
+      "kind": "flow",
+      "targetId": "event-loop-pipeline",
+      "description": "Xem trực quan cách epoll/kqueue & Main Event Loop xử lý hàng nghìn kết nối TCP mà không cần Mutex Lock"
+    },
+    {
+      "label": "Sandbox: Live redis-cli REPL & Keyspace Inspector",
+      "kind": "simulator-preset",
+      "targetId": "repl",
+      "description": "Thực hành gõ trực tiếp PING, INFO, SET, HSET ngay trên trình giả lập Redis 8 trong trình duyệt"
+    }
+  ],
+  "readings": [
+    {
+      "path": "conf/redis-bad-exposed-root.conf",
+      "kind": "bug",
+      "note": "Một tệp redis.conf bất cẩn từng khiến hàng chục nghìn máy chủ Redis trên Internet bị bot tự động xóa sạch dữ liệu hoặc cài mã độc đào tiền ảo.",
+      "task": "Hãy chỉ ra 2 dòng cấu hình nguy hiểm nhất trong tệp này khiến bất kỳ ai biết địa chỉ IP cũng gõ được lệnh FLUSHALL.",
+      "answer": "1) `bind 0.0.0.0` mở lắng nghe trên toàn bộ card mạng công cộng; 2) `protected-mode no` tắt lớp khiên tự vệ cuối cùng trong khi không hề khai báo mật khẩu (`requirepass` hoặc `ACL user`), cho phép mọi kết nối ẩn danh từ Internet thực thi toàn quyền quản trị."
+    },
+    {
+      "path": "conf/redis-dev-minimal.conf",
+      "kind": "good",
+      "note": "Bản cấu hình nền tảng chuẩn mực cho Redis 8 khi khởi chạy cục bộ hoặc trong mạng nội bộ cô lập.",
+      "task": "Đối chiếu với bản lỗi ở trên, các chỉ thị `bind`, `protected-mode`, `tcp-keepalive` và `loglevel` đã được thiết lập như thế nào?",
+      "answer": "Bản chuẩn khoá chặt `bind 127.0.0.1 -::1` (chỉ nhận kết nối cục bộ), bật `protected-mode yes`, đặt `tcp-keepalive 300` để dọn kết nối zombie rớt mạng và giữ `loglevel notice` vừa đủ chẩn đoán mà không làm nổ dung lượng ổ đĩa."
+    }
+  ]
+}

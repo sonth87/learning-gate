@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R04-Q1",
+    "type": "mc",
+    "q": "Khi vượt ngưỡng kích thước nhỏ (`listpack`), một Sorted Set (`ZSet`) trong Redis kết hợp **hai cấu trúc dữ liệu nội bộ** nào để vừa tra cứu điểm cá nhân cực nhanh vừa duy trì thứ tự sắp xếp?",
+    "code": "",
+    "choices": [
+      "Một mảng tĩnh một chiều và một hàng đợi FIFO",
+      "Một **Hash Table** (`member -> score` cho `ZSCORE` `O(1)`) chạy song song với một **Skip List** (`O(log N)` cho chèn, xoá, xếp hạng và quét dải)",
+      "Hai bảng băm lồng nhau không có liên kết thứ tự",
+      "Một cây B+Tree lưu trên đĩa cứng giống PostgreSQL"
+    ],
+    "answer": 1,
+    "explain": "Sự kết hợp song hành giữa `dict` (Hash Table) và `zskiplist` (Skip List nhiều tầng có lưu khoảng cách `span`) giúp ZSet đạt cả hai mục tiêu tưởng như mâu thuẫn: đọc điểm theo tên trong `O(1)` và truy vấn thứ hạng/khoảng điểm trong `O(log N)`."
+  },
+  {
+    "id": "R04-Q2",
+    "type": "mc",
+    "q": "Nhờ mỗi cung nhảy trên **Skip List** của Redis lưu kèm thuộc tính độ dài bước nhảy (`span`), độ phức tạp để tìm thứ hạng chính xác của 1 người chơi bất kỳ bằng `ZREVRANK` giữa 10 triệu người chơi là bao nhiêu?",
+    "code": "",
+    "choices": [
+      "`O(N)` — phải đếm tuần tự từ người đứng đầu xuống cho tới khi gặp người chơi đó",
+      "`O(log N)` — cộng dồn các giá trị `span` dọc theo đường nhảy từ tầng cao xuống tầng thấp (~23–24 bước so sánh)",
+      "`O(N log N)` — phải sắp xếp lại toàn bộ danh sách mỗi lần hỏi thứ hạng",
+      "`O(1)` — đọc trực tiếp từ một biến toàn cục không phụ thuộc việc điểm của người khác thay đổi"
+    ],
+    "answer": 1,
+    "explain": "Nếu không có `span`, tìm thứ hạng sẽ tốn `O(N)`. Nhờ cộng dồn `span` của các mũi tên nhảy qua ở tầng cao, `ZRANK` và `ZREVRANK` tính ra ngay vị trí thứ hạng trong `O(log N)`."
+  },
+  {
+    "id": "R04-Q3",
+    "type": "tf",
+    "q": "Khi hai thành viên khác nhau trong cùng một Sorted Set có **điểm số `score` hoàn toàn bằng nhau**, Redis sẽ sắp xếp hai thành viên đó theo thứ tự từ điển nhị phân (`lexicographical`) của chuỗi tên `member`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Trong Skip List của Redis, khoá sắp xếp là cặp `(score, member)`: khi `score` bằng nhau, chuỗi `member` được so sánh theo thứ tự byte từ điển (`memcmp`), đảm bảo thứ tự luôn xác định 100%."
+  },
+  {
+    "id": "R04-Q4",
+    "type": "mc",
+    "q": "Trên Redis 6.2+ và Redis 8, câu lệnh chuẩn hiện đại nào dùng để lấy **Top 10 phần tử có điểm cao nhất** từ cao xuống thấp kèm theo điểm số (thay thế cho `ZREVRANGE` cũ)?",
+    "code": "",
+    "choices": [
+      "`ZRANGE leaderboard 0 9 DESC SHOWSCORES`",
+      "`ZRANGE leaderboard 0 9 REV WITHSCORES`",
+      "`ZGETTOP leaderboard 10 WITHSCORES`",
+      "`ZRANGE leaderboard 1 10 BYSCORE`"
+    ],
+    "answer": 1,
+    "explain": "Lệnh `ZRANGE` hợp nhất sử dụng chỉ số 0-based `0 9` (10 phần tử đầu), cờ `REV` để đảo chiều từ lớn xuống nhỏ và `WITHSCORES` để đính kèm điểm số."
+  },
+  {
+    "id": "R04-Q5",
+    "type": "tf",
+    "q": "Điểm `score` của ZSet là kiểu số nguyên `int128` nên có thể lưu chính xác tuyệt đối mọi mã số nguyên dài 19 chữ số (như Snowflake ID 64-bit đầy đủ) mà không bao giờ bị làm tròn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `score` trong ZSet là số thực dấu phẩy động chuẩn IEEE 754 **64-bit `double`**, nên chỉ biểu diễn chính xác tuyệt đối các số nguyên trong đoạn `[-2^53, 2^53]` (`~9 * 10^15`, 16 chữ số). Số nguyên 64-bit lớn hơn `2^53` sẽ bị mất độ chính xác ở các chữ số hàng đơn vị!"
+  },
+  {
+    "id": "R04-Q6",
+    "type": "output",
+    "q": "Dự đoán con số thứ hạng mà lệnh `ZREVRANK` ở dòng cuối trả về (lưu ý thứ hạng trong Redis bắt đầu đếm từ `0` cho người cao điểm nhất):",
+    "code": "ZADD race 100 \"car:a\" 300 \"car:b\" 200 \"car:c\"\nZREVRANK race \"car:b\"",
+    "choices": [],
+    "answer": "0",
+    "explain": "`car:b` có điểm cao nhất (`300`), nên khi xếp từ cao xuống thấp bằng `ZREVRANK`, vị trí dẫn đầu có chỉ số bằng `0`."
+  },
+  {
+    "id": "R04-Q7",
+    "type": "output",
+    "q": "Trong câu lệnh `ZCOUNT` dưới đây, ký hiệu ngoặc đơn `(100` biểu thị khoảng mở lớn hơn hẳn `100` (`score > 100`). Hãy dự đoán số lượng phần tử được đếm:",
+    "code": "ZADD scores 100 \"m1\" 150 \"m2\" 200 \"m3\"\nZCOUNT scores (100 200",
+    "choices": [],
+    "answer": "2",
+    "explain": "Vì cận dưới là `(100` (không lấy dấu bằng, tức `score > 100`) và cận trên là `200` (`score <= 200`), chỉ có `m2` (`150`) và `m3` (`200`) thoả mãn — kết quả là `2`."
+  }
+]

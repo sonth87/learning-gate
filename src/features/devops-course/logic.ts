@@ -83,6 +83,14 @@ export const COURSE_RANKS: Record<DevOpsCourseId, [number, string][]> = {
     [2200, 'DevSecOps Specialist'],
     [3500, 'Principal CI/CD Architect'],
   ],
+  redis: [
+    [0, 'Tập sự Key-Value'],
+    [150, 'Người mới In-Memory'],
+    [500, 'Data Structure Crafter'],
+    [1200, 'Cache & Stream Engineer'],
+    [2200, 'Distributed Systems Specialist'],
+    [3500, 'Principal Redis Architect'],
+  ],
 };
 
 export function rankOfCourse(courseId: DevOpsCourseId, xp: number): { name: string; toNext: number | null } {

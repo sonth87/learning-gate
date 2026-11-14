@@ -67,6 +67,146 @@ const SHELL_CMDS = new Set([
   'semgrep',
   'yq',
   'jq',
+  'redis-cli',
+]);
+
+const REDIS_COMMANDS = new Set([
+  'PING',
+  'ECHO',
+  'SET',
+  'GET',
+  'MSET',
+  'MGET',
+  'SETNX',
+  'SETEX',
+  'PSETEX',
+  'GETDEL',
+  'APPEND',
+  'STRLEN',
+  'INCR',
+  'INCRBY',
+  'INCRBYFLOAT',
+  'DECR',
+  'DECRBY',
+  'DEL',
+  'UNLINK',
+  'EXISTS',
+  'TYPE',
+  'OBJECT',
+  'EXPIRE',
+  'PEXPIRE',
+  'TTL',
+  'PTTL',
+  'PERSIST',
+  'RENAME',
+  'SCAN',
+  'KEYS',
+  'DBSIZE',
+  'FLUSHDB',
+  'FLUSHALL',
+  'HSET',
+  'HMSET',
+  'HSETNX',
+  'HGET',
+  'HMGET',
+  'HGETALL',
+  'HDEL',
+  'HEXISTS',
+  'HLEN',
+  'HKEYS',
+  'HVALS',
+  'HINCRBY',
+  'HINCRBYFLOAT',
+  'HEXPIRE',
+  'HPEXPIRE',
+  'HTTL',
+  'HPTTL',
+  'LPUSH',
+  'RPUSH',
+  'LPOP',
+  'RPOP',
+  'BLPOP',
+  'BRPOP',
+  'LMOVE',
+  'LLEN',
+  'LRANGE',
+  'LTRIM',
+  'LINDEX',
+  'SADD',
+  'SREM',
+  'SISMEMBER',
+  'SMISMEMBER',
+  'SMEMBERS',
+  'SCARD',
+  'SINTER',
+  'SUNION',
+  'SDIFF',
+  'SINTERSTORE',
+  'SUNIONSTORE',
+  'SDIFFSTORE',
+  'ZADD',
+  'ZREM',
+  'ZSCORE',
+  'ZINCRBY',
+  'ZCARD',
+  'ZCOUNT',
+  'ZRANK',
+  'ZREVRANK',
+  'ZRANGE',
+  'ZREVRANGE',
+  'ZRANGEBYSCORE',
+  'ZREVRANGEBYSCORE',
+  'ZREMRANGEBYSCORE',
+  'ZPOPMIN',
+  'ZPOPMAX',
+  'SETBIT',
+  'GETBIT',
+  'BITCOUNT',
+  'BITOP',
+  'PFADD',
+  'PFCOUNT',
+  'PFMERGE',
+  'BF.RESERVE',
+  'BF.ADD',
+  'BF.MADD',
+  'BF.EXISTS',
+  'BF.MEXISTS',
+  'GEOADD',
+  'GEODIST',
+  'GEOSEARCH',
+  'MULTI',
+  'EXEC',
+  'DISCARD',
+  'WATCH',
+  'EVAL',
+  'EVALSHA',
+  'PUBLISH',
+  'SUBSCRIBE',
+  'XADD',
+  'XLEN',
+  'XRANGE',
+  'XREVRANGE',
+  'XREAD',
+  'XGROUP',
+  'XREADGROUP',
+  'XPENDING',
+  'XACK',
+  'XCLAIM',
+  'XAUTOCLAIM',
+  'CONFIG',
+  'ACL',
+  'INFO',
+  'MEMORY',
+  'SLOWLOG',
+  'LATENCY',
+  'CLUSTER',
+  'ROLE',
+  'REPLICAOF',
+  'BGSAVE',
+  'BGREWRITEAOF',
+  'SAVE',
+  'WAIT',
+  'ADVANCE_TIME',
 ]);
 
 const YAML_CONSTANTS = new Set(['true', 'false', 'null', 'True', 'False', 'Null', 'NULL']);
@@ -216,6 +356,37 @@ function tokenizeLine(line: string, lang: EditorLanguage): CfgToken[] {
     return tokens;
   }
 
+  if (lang === 'redis') {
+    if (/^\s*--/.test(line)) return [{ type: 'comment', value: line }];
+    const [body, comment] = splitInlineComment(line);
+    const tokens: CfgToken[] = [];
+    const cmdMatch = body.match(/^(\s*(?:127\.0\.0\.1:6379>\s+|\$\s+)?)([A-Za-z0-9._-]+)(.*)$/);
+    if (cmdMatch && (REDIS_COMMANDS.has(cmdMatch[2].toUpperCase()) || cmdMatch[2].toLowerCase() === 'redis-cli')) {
+      if (cmdMatch[1]) tokens.push({ type: 'operator', value: cmdMatch[1] });
+      tokens.push({ type: 'instruction', value: cmdMatch[2] });
+      tokens.push(...tokenizeValueChunk(cmdMatch[3]));
+    } else {
+      tokens.push(...tokenizeValueChunk(body));
+    }
+    if (comment) tokens.push({ type: 'comment', value: comment });
+    return tokens;
+  }
+
+  if (lang === 'redis-conf') {
+    const [body, comment] = splitInlineComment(line);
+    const tokens: CfgToken[] = [];
+    const dirMatch = body.match(/^(\s*)([a-zA-Z0-9_-]+)(\s+.*|$)/);
+    if (dirMatch) {
+      if (dirMatch[1]) tokens.push({ type: 'plain', value: dirMatch[1] });
+      tokens.push({ type: 'key', value: dirMatch[2] });
+      if (dirMatch[3]) tokens.push(...tokenizeValueChunk(dirMatch[3]));
+    } else {
+      tokens.push(...tokenizeValueChunk(body));
+    }
+    if (comment) tokens.push({ type: 'comment', value: comment });
+    return tokens;
+  }
+
   // shell / cli
   const [body, comment] = splitInlineComment(line);
   const tokens: CfgToken[] = [];
@@ -234,6 +405,8 @@ function tokenizeLine(line: string, lang: EditorLanguage): CfgToken[] {
 export function detectLanguageFromFence(info: string, fallback: EditorLanguage = 'yaml'): EditorLanguage {
   const s = info.trim().toLowerCase();
   if (s === 'dockerfile' || s === 'docker' || s === 'dockerignore') return 'dockerfile';
+  if (s === 'redis' || s === 'redis-cli' || s === 'lua') return 'redis';
+  if (s === 'redis-conf' || s === 'conf' || s === 'ini') return 'redis-conf';
   if (s === 'sh' || s === 'bash' || s === 'zsh' || s === 'shell' || s === 'cli' || s === 'console') return 'shell';
   if (s === 'yaml' || s === 'yml') return 'yaml';
   return fallback;

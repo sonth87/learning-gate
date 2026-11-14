@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R06-D1",
+    "title": "Thực thi giao dịch chuyển điểm cô lập bằng MULTI / EXEC",
+    "code": "MULTI\nDECRBY wallet:u:101 150\nINCRBY wallet:u:202 150\nHSET tx:log:9001 from \"101\" to \"202\" amount \"150\"\nEXEC"
+  },
+  {
+    "id": "R06-D2",
+    "title": "Khoá lạc quan Check-And-Set trên phiên đấu giá bằng WATCH + MULTI / EXEC",
+    "code": "WATCH auction:item:88:bid\nGET auction:item:88:bid\nMULTI\nSET auction:item:88:bid \"350\"\nEXEC"
+  },
+  {
+    "id": "R06-D3",
+    "title": "Thu hồi BigKey bất đồng bộ bằng UNLINK và bật thu hồi nền lazyfree",
+    "code": "UNLINK bigkey:report:2025 bigkey:feed:archive\nCONFIG SET lazyfree-lazy-eviction yes\nCONFIG SET lazyfree-lazy-expire yes"
+  }
+]

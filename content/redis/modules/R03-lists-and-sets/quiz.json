@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R03-Q1",
+    "type": "mc",
+    "q": "Cấu trúc biểu diễn nội bộ **`quicklist`** của Redis List giải quyết nhược điểm bộ nhớ của Doubly-Linked List truyền thống bằng cách nào?",
+    "code": "",
+    "choices": [
+      "Lưu toàn bộ hàng triệu phần tử vào đúng 1 mảng tĩnh cố định kích thước không thể mở rộng",
+      "Liên kết hai chiều giữa các nút mà mỗi nút là một khối mảng byte nén **`listpack`** chứa nhiều phần tử liên tiếp, giảm mạnh chi phí con trỏ `prev`/`next` trên từng phần tử lẻ",
+      "Nén toàn bộ danh sách thành tệp `.zip` lưu trên ổ cứng rồi giải nén mỗi lần gọi `LPOP`",
+      "Chuyển toàn bộ danh sách thành cây nhị phân tìm kiếm theo bảng chữ cái"
+    ],
+    "answer": 1,
+    "explain": "`quicklist` kết hợp cái hay nhất của cả hai thế giới: đầu/đuôi thêm xoá `O(1)` như Linked List, còn bên trong mỗi mắt xích là một khối `listpack` liền mạch thân thiện với CPU cache và tiết kiệm con trỏ."
+  },
+  {
+    "id": "R03-Q2",
+    "type": "mc",
+    "q": "Tại sao trong kiến trúc hàng đợi đơn giản trên List, lệnh **`LMOVE pending processing RIGHT LEFT`** lại an toàn hơn nhiều so với chỉ gọi **`RPOP pending`**?",
+    "code": "",
+    "choices": [
+      "Vì `RPOP` có độ phức tạp `O(N)` còn `LMOVE` có độ phức tạp `O(1)`",
+      "Vì nếu worker vừa `RPOP` lấy việc khỏi Redis rồi bị mất điện/OOM trước khi xử lý xong thì tác vụ đó mất trắng; còn `LMOVE` giữ bản sao tác vụ trong danh sách `processing` một cách nguyên tử cho tới khi hoàn tất",
+      "Vì `RPOP` xoá luôn toàn bộ các phần tử còn lại trong danh sách `pending`",
+      "Vì `LMOVE` tự động gửi lại email nếu máy chủ SMTP từ chối kết nối"
+    ],
+    "answer": 1,
+    "explain": "`LMOVE` thực hiện *pop-and-push* nguyên tử ngay bên trong Redis: ngay cả khi tiến trình worker sập ngay sau đó, tác vụ vẫn nằm nguyên trong `processing` để tiến trình giám sát cứu hộ."
+  },
+  {
+    "id": "R03-Q3",
+    "type": "tf",
+    "q": "Truy xuất phần tử ở chính giữa một Redis List dài 2 triệu mục bằng `LINDEX biglist 1000000` có độ phức tạp `O(1)` giống hệt mảng trong C.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! List trong Redis dựa trên danh sách liên kết các khối `quicklist`, nên `LINDEX` chỉ đạt `O(1)` ở sát hai đầu (`0` hoặc `-1`) và tốn **`O(N)`** khi phải nhảy qua hàng vạn nút để tới khúc giữa."
+  },
+  {
+    "id": "R03-Q4",
+    "type": "mc",
+    "q": "Khi lưu tập hợp 300 mã người dùng VIP vào Redis Set, cách lưu nào dưới đây giúp kích hoạt biểu diễn siêu nén **`intset`** tiết kiệm tới ~75–80% bộ nhớ?",
+    "code": "",
+    "choices": [
+      "`SADD vip:users \"user_101\" \"user_102\" \"user_103\"`",
+      "`SADD vip:users 101 102 103` (chỉ truyền các chuỗi biểu diễn số nguyên 64-bit thuần tuý, không kèm ký tự chữ)",
+      "`SADD vip:users \"{\"id\":101}\" \"{\"id\":102}\"`",
+      "`LPUSH vip:users 101 102 103`"
+    ],
+    "answer": 1,
+    "explain": "Redis chỉ duy trì `intset` khi **tất cả** thành viên của Set đều parse được thành số nguyên có dấu 64-bit và tổng số phần tử không vượt quá `set-max-intset-entries` (mặc định 512)."
+  },
+  {
+    "id": "R03-Q5",
+    "type": "tf",
+    "q": "Để kiểm tra xem người dùng `u:882` đã bấm Like bài viết `post:55:likes` (đang có 400,000 người Like) hay chưa, cách tối ưu nhất là gọi `SMEMBERS post:55:likes` lấy mảng về Node.js rồi kiểm tra `arr.includes('u:882')`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai nghiêm trọng! `SMEMBERS` tốn `O(N)` truyền 400,000 chuỗi qua mạng cho mỗi lượt xem bài viết. Phải dùng **`SISMEMBER post:55:likes u:882`** (hoặc `SMISMEMBER` cho nhiều mục) với chi phí đúng **`O(1)`** trả về `1` byte!"
+  },
+  {
+    "id": "R03-Q6",
+    "type": "output",
+    "q": "Chú ý thứ tự đẩy từng phần tử của `LPUSH`: sau khi chạy 2 dòng lệnh bên dưới, phần tử nằm ở chỉ số đầu tiên (`LINDEX q 0`) là chuỗi nào (không cần gõ dấu nháy kép)?",
+    "code": "LPUSH q \"a\" \"b\" \"c\"\nLINDEX q 0",
+    "choices": [],
+    "answer": "c",
+    "explain": "`LPUSH q \"a\" \"b\" \"c\"` đẩy lần lượt `\"a\"` vào đầu -> `[a]`, đẩy tiếp `\"b\"` vào đầu -> `[b, a]`, rồi đẩy `\"c\"` vào đầu -> `[c, b, a]`. Vậy phần tử ở vị trí `0` là `c`."
+  },
+  {
+    "id": "R03-Q7",
+    "type": "output",
+    "q": "Dự đoán con số nguyên mà lệnh `SCARD` cuối cùng trả về:",
+    "code": "SADD tags \"go\" \"rust\" \"go\" \"zig\"\nSREM tags \"rust\"\nSCARD tags",
+    "choices": [],
+    "answer": "2",
+    "explain": "Set tự động loại bỏ bản trùng của `\"go\"` nên sau `SADD` có 3 phần tử (`go`, `rust`, `zig`). Sau khi `SREM` xoá `\"rust\"`, lực lượng tập hợp `SCARD` còn chính xác `2`."
+  }
+]

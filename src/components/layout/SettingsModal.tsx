@@ -16,7 +16,7 @@ import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useWpProgress } from '@/features/workpath/store';
-import { useKubeProgress, useCicdProgress } from '@/features/devops-course/store';
+import { useKubeProgress, useCicdProgress, useRedisProgress } from '@/features/devops-course/store';
 import { usePmpProgress } from '@/features/pmp-course/store';
 import { backupService } from '@/db/backupService';
 import { FullBackupPayload } from '@/types/user.types';
@@ -32,6 +32,8 @@ export const SettingsModal: React.FC = () => {
   const kubeMeta = useKubeProgress((s) => s.syncMeta);
   const cicdState = useCicdProgress((s) => s.state);
   const cicdMeta = useCicdProgress((s) => s.syncMeta);
+  const redisState = useRedisProgress((s) => s.state);
+  const redisMeta = useRedisProgress((s) => s.syncMeta);
   const pmpState = usePmpProgress((s) => s.state);
   const pmpMeta = usePmpProgress((s) => s.syncMeta);
 
@@ -79,6 +81,7 @@ export const SettingsModal: React.FC = () => {
         parsed.workpath ? useWpProgress.getState().replaceAll(parsed.workpath) : Promise.resolve(),
         useKubeProgress.getState().hydrate(true),
         useCicdProgress.getState().hydrate(true),
+        useRedisProgress.getState().hydrate(true),
         usePmpProgress.getState().hydrate(true),
       ]);
       setStatusMessage(
@@ -344,6 +347,7 @@ export const SettingsModal: React.FC = () => {
               { label: 'Python Mastery', st: wpState, meta: wpMeta },
               { label: 'Docker & K8s', st: kubeState, meta: kubeMeta },
               { label: 'CI/CD Architecture', st: cicdState, meta: cicdMeta },
+              { label: 'Redis Mastery', st: redisState, meta: redisMeta },
               { label: 'PMP Mastery', st: pmpState, meta: pmpMeta },
             ].map((item) => {
               const passedEx = Object.values(item.st.exercises ?? {}).filter((e) => e.status === 'passed').length;

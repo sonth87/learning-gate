@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R05-FC1",
+    "front": "Sự khác biệt cốt lõi giữa **Bitmap** và **HyperLogLog** khi đếm người dùng hoạt động là gì?",
+    "back": "- **Bitmap (`SETBIT`/`BITCOUNT`)**: Chính xác 100%, kiểm tra được từng ID (`GETBIT`) và tính giao nhiều ngày (`BITOP AND`), yêu cầu ID dạng số nguyên liên tiếp (`~12MB` cho 100M user).\n- **HyperLogLog (`PFADD`/`PFCOUNT`)**: Nhận chuỗi bất kỳ (IP, UUID), cố định tối đa **`12 KB`**, sai số ~`0.81%`, không kiểm tra lại từng cá nhân được."
+  },
+  {
+    "id": "R05-FC2",
+    "front": "Tại sao **Bloom Filter** (`BF.EXISTS`) chặn được hoàn toàn **Cache Penetration**?",
+    "back": "Vì Bloom Filter đảm bảo **0% Âm tính giả (No False Negatives)**: mọi ID không tồn tại khi tra qua `BF.EXISTS` trả về `0` sẽ bị từ chối ngay trên RAM mà không tốn bất kỳ truy vấn nào xuống Database gốc."
+  },
+  {
+    "id": "R05-FC3",
+    "front": "Hai tham số số học trong lệnh `BF.RESERVE <key> <error_rate> <capacity>` điều khiển đánh đổi gì?",
+    "back": "- `error_rate` (ví dụ `0.01` = 1%): Tỷ lệ dương tính giả mong muốn — càng nhỏ càng cần nhiều hàm băm và nhiều bit RAM hơn.\n- `capacity`: Số lượng phần tử dự kiến nạp vào trước khi bộ lọc phải mở rộng sub-filter."
+  },
+  {
+    "id": "R05-FC4",
+    "front": "Cái bẫy bộ nhớ nào xảy ra nếu truyền trực tiếp số nguyên lớn (như `offset = 4,000,000,000`) vào lệnh `SETBIT`?",
+    "back": "Redis phải cấp phát một chuỗi liên tục đủ chứa tới vị trí bit đó (`4 tỷ bits ≈ 500 MB` RAM toàn byte `0`) ngay trong 1 lệnh! Phải trừ đi `BASE_ID` hoặc chia mảnh khoá theo lô triệu ID."
+  },
+  {
+    "id": "R05-FC5",
+    "front": "Thứ tự kinh độ/vĩ độ trong `GEOADD` và câu lệnh tìm kiếm bán kính chuẩn trên Redis 8 là gì?",
+    "back": "Luôn truyền **`longitude` (kinh độ) trước, `latitude` (vĩ độ) sau**; dùng câu lệnh chuẩn **`GEOSEARCH ... FROMLONLAT ... BYRADIUS ...`** thay cho `GEORADIUS` đã cũ."
+  },
+  {
+    "id": "R05-FC6",
+    "front": "Làm sao xoá một tài xế vừa ngoại tuyến khỏi khoá Geospatial `drivers:online`?",
+    "back": "Dùng lệnh **`ZREM drivers:online <driver_id>`** (vì chỉ mục Geospatial của Redis thực chất là một Sorted Set lưu mã Geohash 52-bit ở trường `score`)."
+  }
+]

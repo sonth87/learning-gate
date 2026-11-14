@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R03-D1",
+    "title": "Đẩy thông báo mới vào đầu List và cắt gọn giữ 50 mục gần nhất",
+    "code": "LPUSH feed:u:101 \"order:paid:901\" \"order:shipped:901\"\nLTRIM feed:u:101 0 49\nLRANGE feed:u:101 0 4"
+  },
+  {
+    "id": "R03-D2",
+    "title": "Chuyển giao tác vụ hàng đợi nguyên tử bằng LMOVE RIGHT LEFT",
+    "code": "LPUSH queue:email:pending \"job-101\" \"job-102\"\nLMOVE queue:email:pending queue:email:processing RIGHT LEFT"
+  },
+  {
+    "id": "R03-D3",
+    "title": "Kiểm tra thành viên O(1) và tính bạn chung bằng SINTERSTORE & SDIFF",
+    "code": "SADD follow:u:an \"u:10\" \"u:20\" \"u:30\"\nSISMEMBER follow:u:an \"u:20\"\nSINTERSTORE mutual:an:binh follow:u:an follow:u:binh"
+  }
+]

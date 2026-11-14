@@ -388,3 +388,117 @@ export const PmpMasteryLogo: React.FC<AppLogoProps> = ({ className }) => (
     <circle cx="89" cy="89" r="4" fill="#FBBF24" stroke="#451A03" strokeWidth="1.2" />
   </svg>
 );
+
+/**
+ * 5. Redis Mastery (RedisMastery) Custom Vector Brand Logo
+ * Stacked 3D crimson/rose isometric in-memory RAM prism layers with golden sub-ms lightning bolt & 16384 hash ring.
+ */
+export const RedisMasteryLogo: React.FC<AppLogoProps> = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 120 120"
+    fill="none"
+    aria-hidden="true"
+    className={cn('w-full h-full select-none', className)}
+  >
+    <defs>
+      <linearGradient id="redisBg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#3B0718" />
+        <stop offset="50%" stopColor="#1A0812" />
+        <stop offset="100%" stopColor="#090D16" />
+      </linearGradient>
+      <radialGradient id="redisGlow" cx="60" cy="58" r="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#F43F5E" stopOpacity="0.42" />
+        <stop offset="58%" stopColor="#E11D48" stopOpacity="0.15" />
+        <stop offset="100%" stopColor="#020617" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id="redisRim" x1="10" y1="8" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FDA4AF" stopOpacity="0.85" />
+        <stop offset="50%" stopColor="#E11D48" stopOpacity="0.5" />
+        <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.7" />
+      </linearGradient>
+      <linearGradient id="redisLayerTop" x1="26" y1="26" x2="94" y2="58" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFE4E6" />
+        <stop offset="45%" stopColor="#FB7185" />
+        <stop offset="100%" stopColor="#E11D48" />
+      </linearGradient>
+      <linearGradient id="redisLayerMid" x1="24" y1="48" x2="96" y2="78" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FB7185" />
+        <stop offset="55%" stopColor="#E11D48" />
+        <stop offset="100%" stopColor="#9F1239" />
+      </linearGradient>
+      <linearGradient id="redisLayerBot" x1="24" y1="66" x2="96" y2="98" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#E11D48" />
+        <stop offset="60%" stopColor="#BE123C" />
+        <stop offset="100%" stopColor="#881337" />
+      </linearGradient>
+      <linearGradient id="redisBolt" x1="50" y1="22" x2="72" y2="66" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FEF08A" />
+        <stop offset="55%" stopColor="#FBBF24" />
+        <stop offset="100%" stopColor="#F97316" />
+      </linearGradient>
+    </defs>
+
+    <rect width="120" height="120" rx="26" fill="url(#redisBg)" />
+    <circle cx="60" cy="58" r="54" fill="url(#redisGlow)" />
+    <rect x="2.5" y="2.5" width="115" height="115" rx="24" stroke="url(#redisRim)" strokeWidth="2.5" />
+
+    {/* Outer 16384 Hash Slot Orbit */}
+    <circle
+      cx="60"
+      cy="60"
+      r="46"
+      stroke="#FB7185"
+      strokeOpacity="0.26"
+      strokeWidth="1.5"
+      strokeDasharray="4 4"
+    />
+
+    {/* Bottom In-Memory Prism Layer */}
+    <polygon points="60,64 96,80 60,97 24,80" fill="url(#redisLayerBot)" />
+    <path
+      d="M24 80L60 97L96 80"
+      stroke="#FDA4AF"
+      strokeOpacity="0.65"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+
+    {/* Middle In-Memory Prism Layer */}
+    <polygon points="60,46 96,62 60,79 24,62" fill="url(#redisLayerMid)" />
+    <path
+      d="M24 62L60 79L96 62"
+      stroke="#FECDD3"
+      strokeOpacity="0.8"
+      strokeWidth="2"
+      strokeLinejoin="round"
+    />
+
+    {/* Top In-Memory Prism Layer */}
+    <polygon
+      points="60,26 96,43 60,60 24,43"
+      fill="url(#redisLayerTop)"
+      stroke="#FFE4E6"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+
+    {/* Sub-millisecond Key-Value Emblems on Top Slab */}
+    <circle cx="43" cy="43" r="3.4" fill="#4C0519" stroke="#FFE4E6" strokeWidth="1.3" />
+    <polygon points="77,39 81,43 77,47 73,43" fill="#4C0519" stroke="#FFE4E6" strokeWidth="1.3" />
+
+    {/* Golden Sub-ms Lightning Bolt Badge */}
+    <polygon
+      points="64,19 49,44 60,44 55,65 73,38 62,38"
+      fill="url(#redisBolt)"
+      stroke="#451A03"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+    />
+
+    {/* Cluster Node Pins */}
+    <circle cx="20" cy="36" r="3.2" fill="#FB7185" />
+    <circle cx="100" cy="36" r="3.2" fill="#FBBF24" />
+    <circle cx="60" cy="105" r="3.2" fill="#34D399" />
+  </svg>
+);

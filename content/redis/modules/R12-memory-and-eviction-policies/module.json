@@ -1,0 +1,56 @@
+{
+  "id": "R12",
+  "slug": "R12-memory-and-eviction-policies",
+  "level": 4,
+  "order": 0,
+  "title": "Giải phẫu Bộ nhớ jemalloc, 8 Chính sách Eviction (LRU vs LFU) & Quy tắc 65% Headroom trên K8s",
+  "summary": "Thấu hiểu cấu trúc redisObject 24-bit, bộ đếm xác suất Morris Counter của LFU, cơ chế thu hồi nền bio_lazy_free và cách tính giới hạn RAM tránh án tử OOMKilled 137.",
+  "tags": [
+    "memory",
+    "jemalloc",
+    "eviction",
+    "allkeys-lfu",
+    "lazyfree",
+    "oomkilled"
+  ],
+  "sources": [
+    {
+      "title": "Redis Key Eviction Policies & Approximated LRU/LFU",
+      "url": "https://redis.io/docs/latest/develop/reference/eviction/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Memory Optimization & jemalloc Defragmentation",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/memory-optimization/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Simulator: Mô phỏng Bộ nhớ & Eviction",
+      "kind": "simulator-preset",
+      "targetId": "memory"
+    },
+    {
+      "label": "War Room: Lỗi OOM command not allowed",
+      "kind": "incident",
+      "targetId": "inc-noeviction-oom"
+    }
+  ],
+  "readings": [
+    {
+      "path": "conf/redis-pure-cache-lfu.conf",
+      "kind": "good",
+      "note": "Bản cấu hình chuẩn Production cho nút Redis chuyên làm Pure Cache: giới hạn trần RAM rõ ràng, ưu tiên giữ khoá nóng bằng allkeys-lfu và thu hồi bộ nhớ bất đồng bộ.",
+      "task": "Vì sao trong tệp này cả ba chỉ thị `lazyfree-lazy-eviction`, `lazyfree-lazy-expire` và `lazyfree-lazy-server-del` đều được bật thành `yes`?",
+      "answer": "Mặc định Redis thu hồi bộ nhớ của khoá bị trục xuất, hết hạn hoặc ghi đè ngay trên luồng chính! Nếu gặp trúng một Hash/Set hàng trăm ngàn phần tử, luồng chính sẽ đứng hình hàng chục mili-giây. Bật cả 3 cờ `lazyfree` đẩy toàn bộ việc `free()` nặng sang luồng nền `bio_lazy_free`."
+    },
+    {
+      "path": "conf/redis-bad-noeviction-save-trap.conf",
+      "kind": "bug",
+      "note": "Cấu hình mặc định gây sập dịch vụ đêm cao điểm: quên đặt trần `maxmemory` kèm giữ nguyên `noeviction` cho cụm Cache.",
+      "task": "Hai hậu quả khác nhau nào sẽ xảy ra khi `maxmemory 0` (không giới hạn) trên máy chủ Linux/K8s so với khi có đặt `maxmemory 2gb` nhưng để `maxmemory-policy noeviction`?",
+      "answer": "Nếu `maxmemory 0` trên K8s, Redis ăn tràn qua `resources.limits.memory` của Pod và bị Linux Kernel OOMKiller bắn hạ tức tưởi (Exit Code `137`, mất sạch dữ liệu trên RAM). Nếu có `maxmemory 2gb` kèm `noeviction`, tiến trình không chết nhưng từ chối toàn bộ lệnh ghi mới với lỗi `OOM command not allowed when used memory > 'maxmemory'`!"
+    }
+  ]
+}

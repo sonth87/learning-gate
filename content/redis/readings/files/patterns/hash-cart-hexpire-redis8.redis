@@ -1,0 +1,24 @@
+# ============================================================================
+# Giỏ Hàng Thương Mại Điện Tử với Hash Compact (listpack) & HEXPIRE trên Redis 8
+# Tiết kiệm tới ~60% RAM so với tách lẻ hàng chục khóa String rời rạc
+# ============================================================================
+
+# 1. Khởi tạo giỏ hàng cho user 8821 (<= 128 trường tự động nén trong vùng nhớ listpack liền kề)
+HSET cart:u8821 sku:kb_mech_01 1 sku:mouse_pro_09 2 promo:flash_vip "FLASH15"
+
+# 2. Kiểm tra mã hóa vật lý bên dưới (kết quả mong đợi: "listpack")
+OBJECT ENCODING cart:u8821
+
+# 3. Cộng giảm số lượng mặt hàng nguyên tử ngay trên máy chủ, không cần đọc-sửa-ghi ở App
+HINCRBY cart:u8821 sku:kb_mech_01 1
+
+# 4. Tính năng đột phá Redis 7.4 / 8.0: Đặt TTL riêng cho TỪNG TRƯỜNG bên trong Hash!
+# Mã giảm giá flash_vip tự động bốc hơi sau 15 phút (900s), trong khi sản phẩm giữ nguyên 7 ngày
+HEXPIRE cart:u8821 900 NX FIELDS 1 promo:flash_vip
+EXPIRE cart:u8821 604800 NX
+
+# 5. Kiểm tra thời gian sống còn lại của trường khuyến mãi (giây)
+HTTL cart:u8821 FIELDS 1 promo:flash_vip
+
+# 6. Chỉ lấy các trường cần thiết ở bước thanh toán bằng HMGET (tránh HGETALL trên Hash lớn)
+HMGET cart:u8821 sku:kb_mech_01 sku:mouse_pro_09 promo:flash_vip

@@ -7,6 +7,29 @@ Khi đóng gói dự án **TypeScript, NestJS, Next.js hoặc Vite**, bạn luô
 
 Nhét tất cả vào một Image đơn lẻ vừa làm chậm gấp 5 lần tốc độ kéo Image khi Kubernetes mở rộng Pod, vừa dâng sẵn trình biên dịch và công cụ dò quét cho kẻ tấn công! ==Multi-stage Build== ({emerald:nhẹ gấp 6 lần}), {amber:hạ quyền `USER node`} và {sky:tự khám `HEALTHCHECK`} chính là bộ ba tiêu chuẩn vàng cho mọi Image Production năm 2026.
 
+```visual
+kind: illustration
+diagram: "kube:k05"
+src: "/illustrations/kube/docker-multistage-distillery.jpg"
+alt: "Xưởng chưng cất Multi-stage Dockerfile từ builder 1.1GB sang runner Alpine 140MB chạy quyền non-root UID 1000"
+title: "Xưởng Chưng Cất Multi-Stage: Từ Builder Nặng 1.1 GB Sang Runner Tinh Gọn 140 MB"
+subtitle: "Giữ lại toàn bộ trình biên dịch ở xưởng tạm và chỉ gắp đúng thành phẩm sang Image Production hạ quyền Non-Root"
+caption: "Quy trình chưng cất 2 giai đoạn giúp giảm gần 90% dung lượng Image, xoá bỏ công cụ build dư thừa và khoá chặt quyền USER node (UID 1000)"
+callouts:
+  - num: 1
+    label: "Stage 1 (builder) — Xưởng biên dịch tự huỷ"
+    desc: "Chứa đầy đủ TypeScript, devDependencies và công cụ biên dịch để tạo thư mục dist/, sau đó tự động bị vứt bỏ hoàn toàn."
+    tone: amber
+  - num: 2
+    label: "Cầu nối chọn lọc COPY --from=builder"
+    desc: "Chỉ gắp sang đúng thư mục thành phẩm dist/ và gói chạy thật đã gọt sạch bằng npm prune --omit=dev kèm quyền --chown=node:node."
+    tone: sky
+  - num: 3
+    label: "Stage 2 (runner) — Tinh gọn & Hạ quyền UID 1000"
+    desc: "Image cuối chỉ nặng ~140 MB trên nền Alpine, chạy dưới quyền USER node (không phải root) và tích hợp sẵn cảm biến HEALTHCHECK."
+    tone: emerald
+```
+
 ## 1. Tư duy nhà máy lắp ráp: Multi-stage Dockerfile (`builder` -> `runner`)
 
 > [!ANALOGY] Xưởng chế tạo & Hộp thành phẩm xuất xưởng

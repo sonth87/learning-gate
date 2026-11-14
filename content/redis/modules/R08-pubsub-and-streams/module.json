@@ -1,0 +1,59 @@
+{
+  "id": "R08",
+  "slug": "R08-pubsub-and-streams",
+  "level": 2,
+  "order": 2,
+  "title": "Pub/Sub vs Redis Streams: Từ Loa Phát Thanh Tức Thời Đến Nhật Ký Sự Kiện Bất Tử (PEL & XAUTOCLAIM)",
+  "summary": "Phân biệt rạch ròi Pub/Sub bắn-rồi-quên (Fire-and-Forget) với kiến trúc Append-Only Log của Redis Streams: làm chủ XADD MAXLEN ~, Consumer Group, bảng theo dõi PEL, XACK và cứu hộ tiến trình sập bằng XAUTOCLAIM.",
+  "tags": [
+    "pubsub",
+    "streams",
+    "xadd",
+    "consumer-group",
+    "pel",
+    "xack",
+    "xautoclaim"
+  ],
+  "sources": [
+    {
+      "title": "Redis Streams — Append-Only Log, Consumer Groups & PEL",
+      "url": "https://redis.io/docs/latest/develop/data-types/streams/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Pub/Sub & Sharded Pub/Sub (SSUBSCRIBE / SPUBLISH)",
+      "url": "https://redis.io/docs/latest/develop/interact/pubsub/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Vòng đời Redis Streams, PEL & XACK",
+      "kind": "flow",
+      "targetId": "streams-pel-xack",
+      "description": "Mô phỏng trực quan dòng tin đi từ XADD qua XREADGROUP vào danh sách chờ PEL và giải phóng bằng XACK"
+    },
+    {
+      "label": "War Room: Sự cố rò rỉ bộ nhớ PEL làm tràn RAM trên Redis Streams",
+      "kind": "incident",
+      "targetId": "inc-streams-pel-leak",
+      "description": "Điều tra ca tràn RAM kinh điển khi Worker quên XACK và thiếu MAXLEN ~ trên Stream đơn hàng"
+    }
+  ],
+  "readings": [
+    {
+      "path": "streams/bad-stream-missing-xack-maxlen.ts",
+      "kind": "bug",
+      "note": "Worker xử lý đơn hàng viết bằng TypeScript mắc liền 2 lỗi chí mạng: bắn `XADD` không giới hạn `MAXLEN ~` và tiêu thụ bằng `XREADGROUP` nhưng quên gọi `XACK`.",
+      "task": "Điều gì sẽ xảy ra với dung lượng RAM của Redis và danh sách `PEL` sau 1 tuần chạy liên tục ở tải 500 đơn/giây?",
+      "answer": "Không có `MAXLEN ~`, danh sách bản ghi gốc phình to vô hạn cho tới khi chạm `maxmemory` gây lỗi `OOM`. Nghiêm trọng không kém, mọi tin đọc qua `XREADGROUP ... >` mà không `XACK` đều nằm vĩnh viễn trong bảng `PEL` (Pending Entries List) của Consumer Group — tạo ra rò rỉ bộ nhớ ngầm ngay cả khi sau đó bạn có cắt ngắn Stream!"
+    },
+    {
+      "path": "streams/node-xreadgroup-xautoclaim-worker.ts",
+      "kind": "good",
+      "note": "Mẫu Worker chuẩn Production trên Node.js kết hợp vòng lặp `XREADGROUP BLOCK`, xác nhận `XACK` sau khi ghi DB thành công và chu kỳ quét `XAUTOCLAIM` thu hồi tin mồ côi.",
+      "task": "Tại sao hàm xử lý bên trong Worker bắt buộc phải có tính **Idempotent** (chạy lặp 2 lần không gây nhân đôi dữ liệu) ngay cả khi đã dùng `XACK`?",
+      "answer": "Redis Streams đảm bảo ngữ nghĩa **At-Least-Once Delivery** (giao ít nhất một lần): nếu Worker A vừa trừ tiền/lưu DB xong nhưng sập nguồn đúng 1ms trước khi kịp gửi `XACK` về Redis, sau ngưỡng `min-idle-time` Worker B sẽ dùng `XAUTOCLAIM` nhận lại đúng tin nhắn đó lần thứ 2. Do đó, tầng nghiệp vụ luôn phải kiểm tra khoá chống trùng (`orderId`) trước khi thực thi!"
+    }
+  ]
+}

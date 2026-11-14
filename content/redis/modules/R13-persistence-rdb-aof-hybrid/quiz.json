@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R13-Q1",
+    "type": "mc",
+    "q": "Nhờ cơ chế nào của nhân hệ điều hành Linux mà lệnh `BGSAVE` có thể kết xuất ảnh chụp 20GB dữ liệu ra đĩa cứng mà KHÔNG cần nhân đôi ngay lập tức 20GB RAM vật lý và không khoá đứng luồng chính?",
+    "code": "",
+    "choices": [
+      "Cơ chế Đa luồng Khoá bảng (Table-level Mutex Locking)",
+      "Lời gọi hệ thống `fork()` kết hợp cơ chế Copy-on-Write (COW) chia sẻ chung các trang bộ nhớ chỉ đọc, chỉ nhân bản những trang 4KB nào thực sự bị ghi đè mới",
+      "Nén toàn bộ RAM lên card đồ hoạ GPU",
+      "Tạm thời ngắt toàn bộ kết nối TCP của khách hàng trong lúc lưu"
+    ],
+    "answer": 1,
+    "explain": "Khi `fork()`, tiến trình con thừa kế bảng trang bộ nhớ ảo trỏ tới cùng các trang RAM vật lý với tiến trình cha. Chỉ những trang nhớ nào bị lệnh ghi mới sửa đổi trong lúc đang lưu RDB mới được nhân Linux sao chép riêng ra (Copy-on-Write)."
+  },
+  {
+    "id": "R13-Q2",
+    "type": "tf",
+    "q": "Nếu bạn không viết bất kỳ dòng `save` hay `appendonly` nào trong tệp `redis.conf`, mặc định Redis hoàn toàn tắt mọi tính năng ghi đĩa và chỉ chạy thuần trên RAM.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Mặc định Redis BẬT SẴN cơ chế chụp ảnh RDB tự động (`save 3600 1 300 100 60 10000`). Nếu muốn chạy Pure Cache thuần RAM không chạm đĩa, bạn bắt buộc phải khai báo tường minh `save \"\"` và `appendonly no`."
+  },
+  {
+    "id": "R13-Q3",
+    "type": "output",
+    "q": "Chế độ `appendfsync` chuẩn mực nào của AOF đồng bộ dữ liệu xuống đĩa vật lý ở luồng nền mỗi giây một lần — mang lại thông lượng gần ngang RAM thuần nhưng giới hạn lượng dữ liệu có thể mất khi cúp điện ở mức tối đa 1 giây?",
+    "code": "appendonly yes\nappendfsync ____",
+    "choices": [],
+    "answer": "everysec",
+    "explain": "`appendfsync everysec` là cấu hình mặc định và được khuyên dùng cho hầu hết môi trường Production có bật AOF."
+  },
+  {
+    "id": "R13-Q4",
+    "type": "mc",
+    "q": "Tính năng **Hybrid Persistence** (`aof-use-rdb-preamble yes`) giải quyết bài toán cốt lõi nào khi vận hành AOF trên tập dữ liệu lớn?",
+    "code": "",
+    "choices": [
+      "Giúp tệp AOF tự động đồng bộ trực tiếp sang cơ sở dữ liệu MySQL",
+      "Khi nén lại AOF (`BGREWRITEAOF`), phần dữ liệu nền được ghi dưới dạng nhị phân RDB siêu gọn kèm phần đuôi lệnh AOF mới phát sinh — giúp thời gian đọc nạp lại dữ liệu khi khởi động nhanh gấp nhiều lần so với diễn lại hàng triệu câu lệnh văn bản",
+      "Cho phép tắt hoàn toàn RAM và đọc trực tiếp mọi lệnh GET từ ổ cứng",
+      "Tự động mã hoá mật khẩu người dùng bằng RSA-4096"
+    ],
+    "answer": 1,
+    "explain": "AOF thuần văn bản chứa hàng chục triệu câu lệnh khiến lúc khởi động lại Redis phải thực thi tuần tự rất lâu. RDB Preamble kết hợp tốc độ nạp nhị phân tức thời của RDB với độ an toàn từng giây của phần đuôi AOF."
+  },
+  {
+    "id": "R13-Q5",
+    "type": "mc",
+    "q": "Khi máy chủ Linux có `32GB` RAM, tiến trình Redis đang giữ `20GB` dữ liệu, lệnh `BGSAVE` đột ngột thất bại với nhật ký lỗi: `Can't save in background: fork: Cannot allocate memory`. Tham số Kernel nào cần được bật trên Host để khắc phục triệt để?",
+    "code": "",
+    "choices": [
+      "sysctl vm.overcommit_memory=1",
+      "sysctl net.ipv4.ip_forward=0",
+      "Bật Transparent Huge Pages sang always",
+      "Giảm ulimit -n xuống 64"
+    ],
+    "answer": 0,
+    "explain": "Với `vm.overcommit_memory=0` mặc định, nhân Linux ước tính bi quan rằng tiến trình con sau `fork()` có thể cần thêm trọn vẹn `20GB` nữa (`20+20 > 32GB`) nên từ chối cấp phát. Đặt `vm.overcommit_memory=1` cho phép `fork()` thành công dựa trên thực tế Copy-on-Write."
+  },
+  {
+    "id": "R13-Q6",
+    "type": "tf",
+    "q": "Trên máy chủ Linux chạy Redis Production có sử dụng RDB hoặc AOF Rewrite, quản trị viên nên TẮT tính năng Transparent Huge Pages (`echo never > .../transparent_hugepage/enabled`) để tránh gai độ trễ và phình RAM khi Copy-on-Write.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Khi bật Huge Pages (`2MB`), chỉ cần 1 lệnh `SET` sửa vài byte trên trang đó trong lúc `BGSAVE` đang chạy là Linux phải sao chép cả trang khổng lồ `2MB` thay vì trang chuẩn `4KB` (nặng gấp 512 lần)."
+  },
+  {
+    "id": "R13-Q7",
+    "type": "mc",
+    "q": "Nếu vừa bật `save 900 1` (RDB) vừa bật `appendonly yes` (AOF) trên cùng một nút Redis, khi khởi động lại tiến trình `redis-server`, Redis sẽ ưu tiên nạp dữ liệu từ nguồn nào?",
+    "code": "",
+    "choices": [
+      "Luôn nạp từ tệp dump.rdb vì tệp nhỏ hơn",
+      "Luôn ưu tiên nạp từ AOF (`appendonlydir`) vì AOF chứa trạng thái dữ liệu đầy đủ và mới nhất hơn so với bản chụp RDB định kỳ",
+      "Xoá cả hai tệp và khởi động trống để tránh xung đột",
+      "Nạp ngẫu nhiên một trong hai tệp theo đồng hồ chẵn lẻ"
+    ],
+    "answer": 1,
+    "explain": "Khi `appendonly yes` được bật, lúc boot Redis luôn đọc từ AOF (vốn đã tích hợp sẵn RDB base + AOF incr trong kiến trúc Multi-Part AOF của Redis 7+/8) vì nó có độ hoàn chỉnh dữ liệu cao hơn bản chụp RDB rời."
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "id": "R13",
+  "slug": "R13-persistence-rdb-aof-hybrid",
+  "level": 4,
+  "order": 1,
+  "title": "Lưu trữ Bền vững: RDB Snapshot, Copy-on-Write, Multi-Part AOF & Hybrid Preamble",
+  "summary": "Giải phẫu cơ chế fork() Copy-on-Write của BGSAVE, đánh đổi RPO/Latency giữa 3 chế độ appendfsync, kiến trúc Multi-Part AOF trên Redis 8 và tinh chỉnh nhân Linux chống sập khi chụp ảnh.",
+  "tags": [
+    "persistence",
+    "rdb",
+    "aof",
+    "copy-on-write",
+    "bgsave",
+    "hybrid-aof"
+  ],
+  "sources": [
+    {
+      "title": "Redis Persistence: RDB, AOF & Hybrid Approach",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Administration: Linux Overcommit Memory & THP",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/admin/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Cơ chế BGSAVE Copy-on-Write & AOF",
+      "kind": "flow",
+      "targetId": "bgsave-cow-aof"
+    },
+    {
+      "label": "Simulator: Mô phỏng Đỉnh RAM lúc Fork",
+      "kind": "simulator-preset",
+      "targetId": "memory"
+    }
+  ],
+  "readings": [
+    {
+      "path": "conf/redis-durable-hybrid-aof.conf",
+      "kind": "good",
+      "note": "Cấu hình chuẩn mực cho nút Redis lưu trạng thái bền vững: kết hợp AOF fsync mỗi giây với phần mở đầu RDB nhị phân nén chặt để vừa mất dưới 1s dữ liệu vừa khởi động siêu tốc.",
+      "task": "Tại sao `appendfsync everysec` lại được coi là điểm cân bằng vàng (Sweet Spot) thay vì dùng `appendfsync always`?",
+      "answer": "`appendfsync always` ép nhân HĐH đồng bộ vật lý xuống đĩa cứng ngay sau TỪNG lệnh ghi trước khi trả lời client, kéo thông lượng từ hàng chục ngàn ops/s tụt xuống vài trăm IOPS của ổ đĩa. `everysec` đẩy lệnh `fsync()` sang luồng nền mỗi 1 giây một lần: tốc độ ghi gần ngang RAM thuần nhưng rủi ro mất dữ liệu (RPO) tối đa chỉ vỏn vẹn 1 giây!"
+    },
+    {
+      "path": "conf/redis-bad-noeviction-save-trap.conf",
+      "kind": "bug",
+      "note": "Bẫy hiệu năng kép khi dùng cấu hình RDB/AOF bừa bãi hoặc lỡ tay gõ lệnh `SAVE` đồng bộ trên môi trường Production.",
+      "task": "Điều gì xảy ra với hàng ngàn kết nối khách hàng nếu quản trị viên gõ `SAVE` thay vì `BGSAVE` trên nút Redis đang giữ 12GB dữ liệu?",
+      "answer": "Lệnh `SAVE` thực hiện tuần tự việc kết xuất toàn bộ 12GB RAM xuống đĩa ngay trên luồng Event Loop chính duy nhất! Suốt hàng chục giây ghi đĩa đó, Redis đóng băng 100%, không trả lời bất kỳ lệnh `PING`, `GET`, `SET` nào và thậm chí khiến Sentinel hiểu lầm Master đã chết để kích hoạt Failover giả!"
+    }
+  ]
+}

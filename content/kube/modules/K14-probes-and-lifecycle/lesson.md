@@ -9,6 +9,29 @@ Một trong những ngộ nhận phổ biến nhất của lập trình viên m�
 
 Để Kubernetes thực sự hiểu được "nhịp tim" bên trong ứng dụng, chúng ta trang bị **3 cảm biến thăm dò sức khoẻ ({sky:`startupProbe`}, {emerald:`readinessProbe`}, {rose:`livenessProbe`})** kết hợp cùng quy trình ==Graceful Shutdown (`preStop` + `SIGTERM`)==.
 
+```visual
+kind: illustration
+diagram: "kube:k14"
+src: "/illustrations/kube/k8s-probes-health-gates.jpg"
+alt: "Ba cổng kiểm tra sức khoẻ Pod (startupProbe, readinessProbe, livenessProbe) và trình tự dừng êm ái preStop kết hợp SIGTERM"
+title: "Giải Phẫu 3 Cổng Thăm Dò Sức Khoẻ & Kịch Bản Dừng Êm Ái (Zero-502 Shutdown)"
+subtitle: "Phân tách rạch ròi giữa điều tiết lưu lượng khách hàng, tự khởi động lại khi treo cứng và rút êm kết nối lúc tắt Pod"
+caption: "Máy trạng thái 3 cảm biến của kubelet (startup -> readiness cắt lưu lượng vs liveness khởi động lại) và chuỗi tắt êm preStop + SIGTERM"
+callouts:
+  - num: 1
+    label: "startupProbe — Lá chắn bảo vệ giai đoạn khởi động"
+    desc: "Tạm khoá hai cảm biến còn lại trong lúc ứng dụng đang nạp cấu hình nặng lúc mới bật, tránh bị giết oan khi chưa khởi tạo xong."
+    tone: sky
+  - num: 2
+    label: "readinessProbe (Cắt khách) vs livenessProbe (Khởi động lại)"
+    desc: "Trượt readiness chỉ tạm rút IP Pod khỏi Service VIP mà không giết tiến trình; tuyệt đối không gắn kiểm tra Database vào liveness!"
+    tone: emerald
+  - num: 3
+    label: "Chuỗi tắt êm preStop + SIGTERM triệt tiêu lỗi 502"
+    desc: "Chờ vài giây ở preStop để bảng mạng cụm kịp xoá IP Pod rồi mới gửi SIGTERM cho Node.js xử lý nốt các request đang dở dang."
+    tone: amber
+```
+
 ## 1. Phân biệt rõ nhiệm vụ của 3 loại Probe: `startupProbe` vs `readinessProbe` vs `livenessProbe`
 
 > [!ANALOGY] Ba trạm kiểm tra y tế với hậu quả xử lý khác biệt hoàn toàn

@@ -1,0 +1,59 @@
+{
+  "id": "R17",
+  "slug": "R17-observability-and-warroom",
+  "level": 5,
+  "order": 2,
+  "title": "Observability, Metrics & Phòng Chiến Sự cố Redis (SRE War-Room)",
+  "summary": "Tổng hợp toàn bộ tư duy vận hành Redis Production thành phản xạ chẩn đoán sự cố trong 120 giây: giải mã INFO stats/memory, cạm bẫy thời gian của SLOWLOG GET, LATENCY DOCTOR, Prometheus redis_exporter và thực chiến xử lý 5 ca trực PagerDuty kinh điển.",
+  "tags": [
+    "observability",
+    "war-room",
+    "slowlog",
+    "latency-doctor",
+    "prometheus",
+    "troubleshooting",
+    "sre"
+  ],
+  "sources": [
+    {
+      "title": "Diagnosing Latency Issues in Redis — Official SRE Guide",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/latency/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis SLOWLOG & Runtime Telemetry Reference",
+      "url": "https://redis.io/docs/latest/commands/slowlog-get/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "kind": "incident",
+      "targetId": "inc-keys-star-freeze",
+      "label": "War-Room #1: Đóng băng Event Loop do lệnh KEYS *",
+      "hint": "Tái hiện gai độ trễ p99 vọt lên 450ms và cách bắt tận tay thủ phạm bằng SLOWLOG GET."
+    },
+    {
+      "kind": "incident",
+      "targetId": "inc-streams-pel-leak",
+      "label": "War-Room #2: Rò rỉ bộ nhớ PEL trên Redis Streams",
+      "hint": "Truy vết worker chết ngầm giữ tin nhắn treo trong XPENDING và giải cứu bằng XAUTOCLAIM."
+    }
+  ],
+  "readings": [
+    {
+      "path": "ops/redis-sre-diagnostic-playbook.sh",
+      "kind": "good",
+      "note": "Kịch bản khám bệnh nhanh 60 giây đầu ca trực: thu thập INFO, SLOWLOG, LATENCY DOCTOR và quét mẫu bộ nhớ an toàn không chặn luồng chính.",
+      "task": "Vì sao khi tìm Bigkey trên Production lúc cao điểm, sổ tay SRE luôn khuyên chạy `--bigkeys -i 0.05` trên bản sao Replica thay vì quét thẳng vào Master?",
+      "answer": "Vì `--bigkeys` phát hàng loạt lệnh `SCAN` + `MEMORY USAGE`/`DEBUG` liên hoàn; thêm cờ nghỉ `-i 0.05` (ngủ 50ms mỗi 100 lệnh) và chạy trên Replica giúp Master không gánh thêm bất kỳ xung tải CPU nào."
+    },
+    {
+      "path": "ops/prometheus-redis-exporter-alerts.yaml",
+      "kind": "good",
+      "note": "Bộ quy tắc cảnh báo Prometheus Alertmanager thực chiến cho tỷ lệ Hit Ratio, tràn bộ nhớ Eviction/OOM, độ trễ Replication và rò rỉ kết nối.",
+      "task": "Tìm công thức PromQL tính chính xác Tỷ lệ Trúng bộ nhớ đệm (Cache Hit Ratio) trong cửa sổ 5 phút gần nhất thay vì lấy tổng tích luỹ từ ngày khởi động máy.",
+      "answer": "Phải dùng đạo hàm `rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))`; nếu lấy số tổng không có `rate()`, sự cố rớt cache hiện tại sẽ bị che lấp bởi hàng tỷ lượt hit của tháng trước!"
+    }
+  ]
+}

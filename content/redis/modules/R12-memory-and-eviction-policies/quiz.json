@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R12-Q1",
+    "type": "mc",
+    "q": "Khi chạy lệnh `INFO memory` trên một nút Redis và thấy chỉ số `mem_fragmentation_ratio: 0.72` (nhỏ hơn `1.0`), điều nguy hiểm nào đang thực sự xảy ra trên máy chủ?",
+    "code": "",
+    "choices": [
+      "Redis đã tự động nén dữ liệu tiết kiệm được 28% bộ nhớ nhờ thuật toán AI",
+      "Máy chủ đã cạn RAM vật lý nên Linux Kernel đang đẩy một phần trang bộ nhớ của Redis xuống ổ cứng Swap, làm độ trễ tăng vọt hàng trăm lần",
+      "Tất cả khoá trong Redis đều là số nguyên 64-bit",
+      "Chế độ TLS đang hoạt động ổn định"
+    ],
+    "answer": 1,
+    "explain": "`mem_fragmentation_ratio = used_memory_rss / used_memory`. Khi `used_memory_rss` (lượng trang RAM vật lý thực giữ) nhỏ hơn lượng byte logic Redis đã cấp phát, nghĩa là hệ điều hành đã đá bớt trang nhớ của Redis ra vùng Swap trên đĩa cứng — tử huyệt hiệu năng của cơ sở dữ liệu In-Memory!"
+  },
+  {
+    "id": "R12-Q2",
+    "type": "tf",
+    "q": "Để cài đặt thuật toán LRU/LFU, Redis gắn thêm hai con trỏ danh sách liên kết đôi (`prev` và `next`, tốn thêm 16 bytes trên máy 64-bit) cho từng khoá một để sắp xếp chính xác toàn cục.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Để tiết kiệm từng byte RAM khi chứa hàng trăm triệu khoá, Redis KHÔNG dùng danh sách liên kết đôi mà tận dụng đúng 24 bit có sẵn trong `redisObject` kết hợp thuật toán **Lấy mẫu ngẫu nhiên xấp xỉ** (`maxmemory-samples`, mặc định 5, khuyên đặt 10)."
+  },
+  {
+    "id": "R12-Q3",
+    "type": "output",
+    "q": "Tên chính sách `maxmemory-policy` nào được khuyên dùng hàng đầu cho cụm **Pure Cache** hiện đại để ưu tiên giữ các khoá có tần suất truy cập cao nhất (chống ô nhiễm bộ nhớ đệm khi có tác vụ quét lô một lần)?",
+    "code": "maxmemory-policy ____",
+    "choices": [],
+    "answer": "allkeys-lfu",
+    "explain": "`allkeys-lfu` (Least Frequently Used trên toàn bộ không gian khoá) dùng bộ đếm logarit Morris Counter + thời gian phân rã để giữ lại các khoá thực sự nóng, vượt trội hơn `allkeys-lru` trước hiện tượng Cache Pollution."
+  },
+  {
+    "id": "R12-Q4",
+    "type": "mc",
+    "q": "Tại sao trên Kubernetes, nếu bạn cấp cho Pod Redis `resources.limits.memory: 4Gi` thì chỉ nên đặt `maxmemory` của Redis ở mức khoảng `2.6GB – 2.8GB` (65%–70%) thay vì đặt kịch trần `4GB`?",
+    "code": "",
+    "choices": [
+      "Vì Kubernetes thu phí bản quyền 30% dung lượng RAM của mọi Pod",
+      "Để chừa khoảng thở an toàn (Headroom) cho các trang Copy-on-Write lúc `fork()` chạy BGSAVE/AOF Rewrite, bộ đệm đầu ra Client/Replication và độ hao hụt phân mảnh của jemalloc — tránh bị Linux OOMKiller giết với Exit Code 137",
+      "Vì Redis 8 không thể đánh địa chỉ quá 3GB RAM trên kiến trúc 64-bit",
+      "Để dành 1.3GB RAM cài trình duyệt Chrome bên trong cùng container Redis"
+    ],
+    "answer": 1,
+    "explain": "`maxmemory` chỉ giới hạn vùng dữ liệu khoá (`dataset`), chưa tính các vùng đệm kết nối động, phân mảnh `jemalloc` và đặc biệt là các trang nhớ nhân đôi khi `fork()` ghi bền vững xuống đĩa."
+  },
+  {
+    "id": "R12-Q5",
+    "type": "mc",
+    "q": "Nếu một cụm Redis chuyên dùng làm hàng đợi **Streams thanh toán** và **Distributed Lock** chạm ngưỡng `maxmemory`, chính sách `maxmemory-policy` nào giữ an toàn dữ liệu nhất?",
+    "code": "",
+    "choices": [
+      "allkeys-random",
+      "allkeys-lru",
+      "noeviction",
+      "volatile-ttl"
+    ],
+    "answer": 2,
+    "explain": "Với hàng đợi thông điệp chưa xử lý và khoá điều phối phân tán, việc âm thầm xoá bớt khoá gây mất đơn hàng hoặc phá vỡ Mutual Exclusion. `noeviction` từ chối ghi tường minh (báo động ngay cho hệ thống giám sát) nhưng bảo toàn 100% dữ liệu đang giữ."
+  },
+  {
+    "id": "R12-Q6",
+    "type": "tf",
+    "q": "Khi đặt `maxmemory-policy volatile-lru`, nếu toàn bộ các khoá trong Redis đều KHÔNG được gắn TTL (`TTL = -1`), Redis sẽ từ chối lệnh ghi mới và trả lỗi OOM giống hệt `noeviction`.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Các chính sách `volatile-*` chỉ được phép chọn ứng viên xoá trong tập các khoá có đặt thời hạn hết hạn (`expires`). Nếu tập này rỗng, Redis không xoá khoá nào và trả lỗi OOM."
+  },
+  {
+    "id": "R12-Q7",
+    "type": "output",
+    "q": "Câu lệnh con nào đi sau từ khoá `OBJECT` giúp bạn đọc giá trị bộ đếm tần suất truy cập LFU (`0..255`) của một khoá cụ thể?",
+    "code": "OBJECT ____ cache:item:hot",
+    "choices": [],
+    "answer": "FREQ",
+    "explain": "`OBJECT FREQ <key>` trả về giá trị bộ đếm logarit Morris Counter hiện tại của khoá (trong khi `OBJECT IDLETIME <key>` trả về số giây nhàn rỗi dùng cho LRU)."
+  }
+]

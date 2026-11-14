@@ -49,6 +49,28 @@ columns:
 
 Bài học này giúp bạn dựng lên trọn vẹn **3 lớp phòng thủ chiều sâu (*Defense in Depth*)** chuẩn Kubernetes hiện đại năm 2026 (K8s v1.30+).
 
+```visual
+kind: illustration
+diagram: "kube:k16"
+alt: "Ba lớp phòng thủ chiều sâu gồm securityContext (Non-Root, Read-Only RootFS, drop ALL), Pod Security Admission và phân quyền tối thiểu RBAC"
+title: "Giải Phẫu Phòng Thủ Chiều Sâu: Hardened SecurityContext, PSA Restricted & RBAC"
+subtitle: "Nhốt chặt mọi nguy cơ tấn công RCE trong chiếc hộp phi đặc quyền, khoá ghi ổ đĩa gốc và thu hồi quyền gọi K8s API"
+caption: "Kiến trúc gia cố securityContext cấp nhân Linux, cổng kiểm duyệt Pod Security Admission trên Namespace và chuỗi phân quyền RBAC tối thiểu"
+callouts:
+  - num: 1
+    label: "securityContext — Non-Root, Read-Only / & Drop ALL"
+    desc: "Ép chạy uid=1000, khoá chỉ đọc cây thư mục gốc (chỉ gắn emptyDir ở /tmp) và thu hồi sạch mọi Linux Capabilities thừa."
+    tone: emerald
+  - num: 2
+    label: "Pod Security Admission (PSA) & Seccomp"
+    desc: "Gắn nhãn chuẩn restricted ngay trên Namespace để API Server tự động chặn đứng mọi Pod cấu hình cẩu thả ngay từ cửa."
+    tone: violet
+  - num: 3
+    label: "RBAC Least Privilege — ServiceAccount -> RoleBinding -> Role"
+    desc: "Tắt tự động gắn token nếu không cần gọi API cụm, hoặc chỉ cấp đúng quyền đọc tối thiểu trên từng Namespace thay vì cluster-admin."
+    tone: amber
+```
+
 ## 1. Lớp giáp thứ nhất: Gia cố `securityContext` ở cấp Pod & Container
 
 Ở bài `K05`, bạn đã quen với dòng `USER node` trong Dockerfile. Tuy nhiên, Kubernetes không mù quáng tin tưởng Dockerfile (vì ai đó có thể vô tình đẩy một bản image quên `USER node` lên cụm). Ta khoá chặt ngay trên YAML qua trường **`securityContext`** ở hai tầng:

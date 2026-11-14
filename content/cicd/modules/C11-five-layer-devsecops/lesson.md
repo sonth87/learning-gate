@@ -42,6 +42,29 @@ steps:
 
 ## 1. Kiến trúc Phòng thủ Đa tầng ("Lát Phô mai Thuỵ Sĩ") trên CI
 
+```visual
+kind: illustration
+diagram: "cicd:c11"
+src: "/illustrations/cicd/cicd-devsecops-five-shields.jpg"
+alt: "Phòng tuyến DevSecOps 5 lớp tự động gồm Gitleaks quét Secret, Semgrep SAST, npm audit SCA, Trivy quét CVE Container và hồ sơ SBOM/Cosign"
+title: "Giải Phẫu Phòng Tuyến DevSecOps 5 Lớp: Dịch Chuyển Bảo Mật Sang Trái (Shift-Left)"
+subtitle: "Phối hợp 5 trạm soi chiếu chuyên biệt cùng đóng gói Rootless để bắt gọn lỗ hổng ngay trong vài phút đầu của mỗi Pull Request"
+caption: "Mô hình Lát Phô mai Thuỵ Sĩ từ quét khoá lịch sử Git, phân tích mã tĩnh SAST, kiểm toán gói phụ thuộc SCA, quét ảnh Trivy tới xuất hồ sơ SBOM & DAST"
+callouts:
+  - num: 1
+    label: "Lớp 1-3: Quét Secret (Gitleaks), SAST & SCA trước khi gói"
+    desc: "Soi toàn bộ lịch sử commit (fetch-depth: 0) bắt khoá rò rỉ, rà lỗi bảo mật trong mã tự viết bằng Semgrep và kiểm tra gói chạy thật với npm audit."
+    tone: amber
+  - num: 2
+    label: "Lớp 4: Cổng chặn CVE hệ điều hành Container (Trivy)"
+    desc: "Quét sâu các thư viện C dưới đáy Alpine/Debian của ảnh vừa đóng gói (không gắn docker.sock của Host) và trả mã lỗi 1 nếu dính CVE nghiêm trọng."
+    tone: rose
+  - num: 3
+    label: "Lớp 5: Xuất danh mục nguyên liệu SBOM, Ký số & DAST"
+    desc: "Sinh tệp CycloneDX JSON để truy vết tức thì khi có Zero-Day mới công bố, ký xác thực ảnh với Cosign và quét động điểm cuối Staging."
+    tone: emerald
+```
+
 Tại sao không dùng 1 công cụ duy nhất mà phải phối hợp đủ **5 lớp**? Bởi một ứng dụng Node.js hiện đại được ghép từ nhiều tầng vật liệu khác nhau — code TypeScript của bạn sạch không có nghĩa là gói npm bên thứ ba hay thư viện C `openssl` dưới đáy Docker Image cũng sạch!
 
 ```visual

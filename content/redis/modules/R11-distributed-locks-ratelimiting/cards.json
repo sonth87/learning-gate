@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R11-FC1",
+    "front": "Cú pháp chuẩn công nghiệp để chiếm và nhả một Distributed Lock trên Redis?",
+    "back": "- **Chiếm khoá:** `SET lock:<res> <unique_uuid> NX PX <lease_ms>`\n- **Nhả khoá:** Chạy `EVAL` Lua kiểm tra `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end`."
+  },
+  {
+    "id": "R11-FC2",
+    "front": "Kịch bản tai nạn nào xảy ra nếu nhả khoá phân tán bằng lệnh `DEL` trần trụi không kiểm tra chủ sở hữu?",
+    "back": "Pod A gặp GC Pause hoặc nghẽn I/O lâu hơn `PX` -> khoá tự hết hạn -> Pod B chiếm khoá hợp lệ -> Pod A tỉnh dậy gọi `DEL` xoá mất khoá của Pod B -> Pod C nhảy vào chạy song song với Pod B!"
+  },
+  {
+    "id": "R11-FC3",
+    "front": "Fencing Token là gì và giải quyết lỗ hổng nào của Distributed Lock?",
+    "back": "Là số nguyên tăng đơn điệu (`33, 34, 35...`) cấp kèm mỗi lượt thuê khoá. Nếu Pod cầm token `33` bị treo rồi ghi trễ sau Pod cầm token `34`, tầng Database đối chiếu `33 < 34` và từ chối ghi đè."
+  },
+  {
+    "id": "R11-FC4",
+    "front": "4 lệnh cốt lõi tạo nên một Sliding Window Rate Limiter bằng Sorted Set?",
+    "back": "1) `ZREMRANGEBYSCORE` xoá dấu thời gian cũ ngoài cửa sổ.\n2) `ZADD` ghi dấu thời gian hiện tại kèm `requestId` duy nhất.\n3) `ZCARD` đếm tổng request trong cửa sổ.\n4) `PEXPIRE` tự huỷ khoá khi user ngưng gọi."
+  },
+  {
+    "id": "R11-FC5",
+    "front": "Khi nào chọn Token Bucket thay vì Sliding Window Log?",
+    "back": "Khi cần tiết kiệm RAM tối đa (chỉ 2 trường số thay vì lưu mọi request vào ZSet) và muốn cho phép khách hàng gửi **Burst ngắn hạn** hợp lệ miễn là tốc độ trung bình không vượt ngưỡng."
+  },
+  {
+    "id": "R11-FC6",
+    "front": "Hai quy tắc vàng khi viết kịch bản Lua chạy trên cụm Redis Production?",
+    "back": "1) Luôn truyền mọi tên khoá qua `KEYS[...]` (không ghép tên khoá động trong code Lua để tránh lỗi `CROSSSLOT` trên Cluster).\n2) Kịch bản phải chạy cực nhanh (`< 1ms`), không chứa vòng lặp lớn vì Lua chặn đứng Event Loop đơn luồng."
+  }
+]

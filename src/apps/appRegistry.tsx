@@ -3,11 +3,13 @@ import { PyMasteryApp } from './pymastery/PyMasteryApp';
 import { KubeMasteryApp } from './kubemastery/KubeMasteryApp';
 import { CicdMasteryApp } from './cicdmastery/CicdMasteryApp';
 import { PmpMasteryApp } from './pmpmastery/PmpMasteryApp';
+import { RedisMasteryApp } from './redismastery/RedisMasteryApp';
 import {
   PyMasteryLogo,
   KubeMasteryLogo,
   CicdMasteryLogo,
   PmpMasteryLogo,
+  RedisMasteryLogo,
 } from '@/components/common/AppLogos';
 
 export const PYMASTERY_CONFIG: AppConfig = {
@@ -295,12 +297,83 @@ export const PMP_MASTERY_CONFIG: AppConfig = {
   ],
 };
 
-export type LearningAppId = 'pymastery' | 'kubemastery' | 'cicdmastery' | 'pmpmastery';
+export const REDIS_MASTERY_CONFIG: AppConfig = {
+  id: 'redismastery',
+  name: 'Redis Mastery',
+  icon: RedisMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
+  iconColor: ['#E11D48', '#DC2626'],
+  render: RedisMasteryApp,
+  defaultMaximized: false,
+  defaultFullscreen: true,
+  mobileFullscreen: true,
+  defaultSize: { width: 1280, height: 820 },
+  minSize: { width: 320, height: 420 },
+  hasMenuBar: true,
+  launchMode: 'single',
+  contextMenu: [
+    { key: 'search', label: 'Tìm kiếm nhanh (⌘K)', action: 'quickSearch' },
+    { key: 'sep1', label: '', action: '', separator: true },
+    { key: 'learn', label: 'Học — 18 module, bài thực hành, quiz', action: 'tab:learn' },
+    { key: 'simulator', label: 'Mô phỏng RAM Eviction & 16384 Hash Slots', action: 'tab:simulator' },
+    { key: 'flow-studio', label: 'Sơ đồ Động 6 Luồng Kiến trúc', action: 'tab:flow-studio' },
+    { key: 'incidents', label: 'War-Room 8 Sự cố Production', action: 'tab:incidents' },
+    { key: 'glossary', label: 'Từ điển Lệnh, Big-O & Node/Python SDK', action: 'tab:glossary' },
+  ],
+  menuBarMenus: [
+    {
+      label: 'File',
+      items: [
+        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+      ],
+    },
+    {
+      label: 'View',
+      items: [
+        { key: 'learn', label: 'Học — 18 module, bài thực hành, quiz', shortcut: '⌘1', action: 'tab:learn' },
+        { key: 'simulator', label: 'Mô phỏng RAM Eviction & Cluster', shortcut: '⌘2', action: 'tab:simulator' },
+        { key: 'flow-studio', label: 'Sơ đồ Động 6 Luồng Kiến trúc', shortcut: '⌘3', action: 'tab:flow-studio' },
+        { key: 'incidents', label: 'War-Room 8 Sự cố Production', shortcut: '⌘4', action: 'tab:incidents' },
+        { key: 'glossary', label: 'Từ điển Lệnh, Big-O & SDK', shortcut: '⌘5', action: 'tab:glossary' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
+      ],
+    },
+    {
+      label: 'Window',
+      items: [
+        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
+        { key: 'zoom', label: 'Zoom', action: 'zoom' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
+      ],
+    },
+    {
+      label: 'Help',
+      items: [
+        { key: 'glossary-help', label: 'Redis 8 Command & Big-O Reference', action: 'tab:glossary' },
+        { key: 'warroom-help', label: '8 Production Redis Incident War-Room', action: 'tab:incidents' },
+      ],
+    },
+  ],
+};
+
+export type LearningAppId =
+  | 'pymastery'
+  | 'kubemastery'
+  | 'cicdmastery'
+  | 'pmpmastery'
+  | 'redismastery';
 
 export const ALL_LEARNING_APPS: AppConfig[] = [
   PYMASTERY_CONFIG,
-  CICD_MASTERY_CONFIG,
+  REDIS_MASTERY_CONFIG,
   KUBEMASTERY_CONFIG,
+  CICD_MASTERY_CONFIG,
   PMP_MASTERY_CONFIG,
 ];
 
@@ -310,7 +383,9 @@ export const switchLearningApp = (
   try {
     const store = useStore.getState();
     const targetConfig =
-      targetAppId === 'pmpmastery'
+      targetAppId === 'redismastery'
+        ? REDIS_MASTERY_CONFIG
+        : targetAppId === 'pmpmastery'
         ? PMP_MASTERY_CONFIG
         : targetAppId === 'cicdmastery'
         ? CICD_MASTERY_CONFIG

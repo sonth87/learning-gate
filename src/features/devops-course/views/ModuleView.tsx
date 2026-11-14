@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Container,
+  Database,
   ExternalLink,
   Keyboard,
   Layers,
@@ -18,6 +19,7 @@ import {
   Undo2,
   Workflow,
   Wrench,
+  Zap,
 } from 'lucide-react';
 import { useCourseCatalog, useCourseCurriculum } from '../data';
 import {
@@ -49,6 +51,8 @@ const KIND_BADGE: Record<string, string> = {
   dockerfile: 'Dockerfile AST',
   dockerignore: '.dockerignore',
   cli: 'Terminal CLI',
+  'redis-cli': 'Redis 8 VM',
+  'redis-conf': 'redis.conf AST',
   troubleshoot: 'Khám bệnh & Vá lỗi',
 };
 
@@ -78,6 +82,24 @@ function getModuleDomainBrand(moduleId: string): DomainBrand {
       badgeCls: 'border-indigo-500/45 bg-indigo-500/15 text-indigo-300',
       heroGrad: 'from-indigo-500/12 via-slate-900/90 to-slate-900/90 border-indigo-500/30',
       icon: <Boxes className="h-3.5 w-3.5" aria-hidden="true" />,
+    };
+  }
+  if (moduleId.startsWith('R')) {
+    if (num <= 8) {
+      return {
+        label: 'REDIS 8 DATA STRUCTURES & STREAMS',
+        motto: 'Sub-Millisecond · Atomic · Pipelined · Event-Driven',
+        badgeCls: 'border-rose-500/45 bg-rose-500/15 text-rose-300',
+        heroGrad: 'from-rose-500/12 via-slate-900/90 to-slate-900/90 border-rose-500/30',
+        icon: <Zap className="h-3.5 w-3.5" aria-hidden="true" />,
+      };
+    }
+    return {
+      label: 'CACHING ARCHITECTURE, PERSISTENCE & CLUSTER',
+      motto: 'Shield · Persist · Failover · Shard 16384',
+      badgeCls: 'border-amber-500/45 bg-amber-500/15 text-amber-300',
+      heroGrad: 'from-amber-500/12 via-slate-900/90 to-slate-900/90 border-amber-500/30',
+      icon: <Database className="h-3.5 w-3.5" aria-hidden="true" />,
     };
   }
   if (num <= 9) {
@@ -129,8 +151,9 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
   const qzSkipped = isQuizSkipped(s, m.id);
   const best = quizBest(s, m.id);
   const brand = getModuleDomainBrand(m.id);
-  const codeTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
-  const hoverBorder = accent === 'cyan' ? 'hover:border-cyan-500/60' : 'hover:border-sky-500/60';
+  const codeTone = accent === 'cyan' ? 'text-cyan-400' : accent === 'rose' ? 'text-rose-400' : 'text-sky-400';
+  const hoverBorder =
+    accent === 'cyan' ? 'hover:border-cyan-500/60' : accent === 'rose' ? 'hover:border-rose-500/60' : 'hover:border-sky-500/60';
 
   const jumpToSection = (secId: string) => {
     const el = document.getElementById(secId);

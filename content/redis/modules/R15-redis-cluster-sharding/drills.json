@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R15-D1",
+    "title": "Cấu hình kích hoạt nút Redis Cluster chuẩn Production",
+    "code": "cluster-enabled yes\ncluster-config-file nodes.conf\ncluster-node-timeout 5000\ncluster-require-full-coverage no"
+  },
+  {
+    "id": "R15-D2",
+    "title": "Kiểm tra sức khoẻ cụm và đối chiếu Hash Slot với CLUSTER KEYSLOT",
+    "code": "CLUSTER INFO\nCLUSTER NODES\nCLUSTER KEYSLOT user:{u42}:profile\nCLUSTER KEYSLOT user:{u42}:cart"
+  },
+  {
+    "id": "R15-D3",
+    "title": "Ghi và đọc đa khoá đồng thời không bị lỗi CROSSSLOT bằng {HashTag}",
+    "code": "MSET user:{u42}:profile \"VIP\" user:{u42}:cart \"3\"\nMGET user:{u42}:profile user:{u42}:cart"
+  }
+]

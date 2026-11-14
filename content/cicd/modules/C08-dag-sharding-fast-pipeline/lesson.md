@@ -44,6 +44,28 @@ right:
 
 ## 1. Phân tích Đường găng (Critical Path) & Mẫu cổng hội tụ `gate`
 
+```visual
+kind: illustration
+diagram: "cicd:c08"
+alt: "Nén đường găng Critical Path từ 42 phút tuần tự xuống 5 phút nhờ DAG song song, chia mảnh Playwright 4 Shards, Buildx Cache và cổng hội tụ Gate"
+title: "Giải Phẫu Nén Đường Găng: Ép Đường Ống 42 Phút Xuống Dưới 5 Phút!"
+subtitle: "Phá vỡ nút thắt tuần tự bằng chia mảnh E2E Sharding, bộ đệm lớp Docker Buildx và một cổng tổng hợp duy nhất"
+caption: "So sánh trực diện đường ống nối đuôi 42 phút với kiến trúc quạt rộng song song kết hợp chia 4 mảnh kiểm thử và cổng hội tụ All-Green Gate"
+callouts:
+  - num: 1
+    label: "Phá bỏ sleep mù quáng & Bật Buildx Layer Cache"
+    desc: "Thay sleep 45 bằng vòng lặp thăm dò /healthz chính xác từng giây và bật cache-to: type=gha,mode=max rút ngắn đóng gói Docker còn ~1.8 phút."
+    tone: emerald
+  - num: 2
+    label: "Chia mảnh kiểm thử E2E Sharding (1/4 .. 4/4)"
+    desc: "Chẻ nhỏ 400 bài Playwright đều cho 4 máy ảo chạy song song với --shard=i/4, ép nhánh dài nhất từ 16 phút xuống chỉ còn 4 phút."
+    tone: violet
+  - num: 3
+    label: "Mẫu cổng tổng hợp duy nhất (Aggregator Gate)"
+    desc: "Gom toàn bộ kết quả nhánh song song về 1 Job nhẹ ci-gate (if: always()) để chỉ cần khai báo duy nhất 1 tên cổng trong Branch Protection."
+    tone: emerald
+```
+
 Giả sử bạn có 3 Job độc lập: `lint` (2 phút), `typecheck` (3 phút), `unit-test` (5 phút), rồi gom về một Job tổng hợp nhẹ `gate` (1 phút, khai báo `needs: [lint, typecheck, unit-test]`):
 
 ```visual

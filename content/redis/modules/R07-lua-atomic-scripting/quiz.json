@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R07-Q1",
+    "type": "mc",
+    "q": "Điểm vượt trội cốt lõi nhất của **Lua Script (`EVAL` / `EVALSHA`)** so với khối giao dịch **`MULTI / EXEC`** trong Redis là gì?",
+    "code": "",
+    "choices": [
+      "Lua Script chạy trên một luồng phụ riêng biệt nên có thể chạy mất 10 phút mà không ảnh hưởng tới các lệnh `GET`/`SET` khác",
+      "Cho phép **đọc giá trị hiện tại, tính toán và rẽ nhánh `if / else` ngay bên trong 1 lần thực thi nguyên tử** với đúng 1 vòng mạng (1 RTT)",
+      "Tự động kết nối sang PostgreSQL bên ngoài để đồng bộ dữ liệu hai chiều",
+      "Tự động Rollback lại toàn bộ lệnh trước đó nếu giữa chừng script gặp lỗi `redis.call`"
+    ],
+    "answer": 1,
+    "explain": "Trong `MULTI / EXEC`, kết quả đọc chưa có mặt cho tới khi `EXEC` chạy xong nên không thể rẽ nhánh điều kiện; ngược lại Lua chạy trực tiếp trên RAM nên có thể `GET`, so sánh điều kiện rồi quyết định `DECRBY` hay từ chối trong cùng một khối nguyên tử."
+  },
+  {
+    "id": "R07-Q2",
+    "type": "mc",
+    "q": "Tại sao mọi khoá dữ liệu mà kịch bản Lua truy cập **bắt buộc phải được truyền tường minh qua mảng `KEYS[]`** thay vì nối chuỗi tên khoá cứng bên trong code Lua?",
+    "code": "",
+    "choices": [
+      "Vì ngôn ngữ Lua không hỗ trợ phép nối hai chuỗi ký tự lại với nhau",
+      "Để Redis (đặc biệt là **Redis Cluster**) có thể phân tích trước các khoá cần chạm tới, xác minh tất cả thuộc cùng một Hash Slot và định tuyến đúng node trước khi thực thi",
+      "Vì mảng `ARGV[]` chỉ chấp nhận số nguyên chứ không chấp nhận chuỗi văn bản",
+      "Để tự động xoá tất cả các khoá trong `KEYS[]` sau khi kịch bản kết thúc"
+    ],
+    "answer": 1,
+    "explain": "Redis Cluster định tuyến lệnh dựa trên danh sách khoá khai báo trong `numkeys` (`KEYS[1..N]`). Nếu lén ghép tên khoá động bên trong Lua rơi sang slot của máy chủ khác, kịch bản sẽ gãy với lỗi `CROSSSLOT` hoặc vi phạm quy tắc phân mảnh!"
+  },
+  {
+    "id": "R07-Q3",
+    "type": "tf",
+    "q": "Trong kịch bản Lua của Redis, nếu bạn quên dùng `tonumber()` và viết thẳng `if redis.call('GET', KEYS[1]) >= ARGV[1]`, phép so sánh giữa chuỗi `\"9\"` và chuỗi `\"10\"` sẽ đánh giá `\"9\" >= \"10\"` là **ĐÚNG (`true`)**!",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `GET` và `ARGV[1]` đều là kiểu `string`; so sánh hai chuỗi theo bảng mã ASCII sẽ so ký tự đầu tiên `'9'` (`57`) với `'1'` (`49`) -> `'9' > '1'` là `true`, làm thủng hoàn toàn logic kiểm tra tồn kho! Luôn dùng `tonumber(...)`."
+  },
+  {
+    "id": "R07-Q4",
+    "type": "mc",
+    "q": "Trong bài toán **Distributed Lock**, điều gì có thể xảy ra nếu Worker A mở khoá bằng lệnh `DEL lock:payment` trần trụi thay vì dùng kịch bản Lua kiểm tra `GET == my_token`?",
+    "code": "",
+    "choices": [
+      "Lệnh `DEL` không thể xoá được khoá được tạo bởi `SET ... NX EX`",
+      "Nếu Worker A bị treo tạm thời (GC pause) quá hạn TTL khiến khoá tự hết hạn và Worker B đã chiếm khoá mới, lệnh `DEL` muộn màng của A sẽ **xoá mất khoá đang hợp lệ của Worker B**, cho phép Worker C nhảy vào chạy trùng!",
+      "Redis sẽ tự động gia hạn khoá thêm 60 giây mỗi khi gọi `DEL`",
+      "Không có bất kỳ rủi ro nào vì chỉ người tạo khoá mới gọi được `DEL`"
+    ],
+    "answer": 1,
+    "explain": "Redis không tự gắn quyền sở hữu kết nối lên khoá String. Vì vậy mỗi tiến trình phải lưu một `owner_token` ngẫu nhiên duy nhất (UUID) vào giá trị khoá và chỉ xoá bằng Lua khi `redis.call('GET', KEYS[1]) == ARGV[1]`."
+  },
+  {
+    "id": "R07-Q5",
+    "type": "tf",
+    "q": "Lệnh `EVALSHA` giúp ứng dụng gửi mã băm SHA1 dài 40 ký tự thay cho toàn bộ văn bản mã nguồn Lua, tiết kiệm đáng kể băng thông mạng trên các đường gọi tần suất cao.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Máy chủ Redis lưu bộ nhớ đệm kịch bản theo mã SHA1; ứng dụng chỉ cần gửi `EVALSHA <sha1> ...` và chỉ gửi lại `EVAL` đầy đủ nếu nhận lỗi `NOSCRIPT` (khi máy chủ vừa khởi động lại)."
+  },
+  {
+    "id": "R07-Q6",
+    "type": "output",
+    "q": "Trong ngôn ngữ Lua nhúng của Redis, phần tử đầu tiên của bảng `KEYS` được truy cập ở chỉ số số mấy (`KEYS[???]`)?",
+    "code": "EVAL \"return KEYS[???]\" 1 user:profile:10",
+    "choices": [],
+    "answer": "1",
+    "explain": "Khác với JavaScript, Python hay C (0-indexed), bảng (table/array) trong ngôn ngữ Lua bắt đầu đếm từ chỉ số **`1`** (`KEYS[1]`, `ARGV[1]`)."
+  },
+  {
+    "id": "R07-Q7",
+    "type": "output",
+    "q": "Dự đoán con số nguyên mà câu lệnh `EVAL` dưới đây trả về khi khoá `stock:item` đang có giá trị `\"4\"`:",
+    "code": "SET stock:item \"4\"\nEVAL \"local c = tonumber(redis.call('GET', KEYS[1])); if c >= tonumber(ARGV[1]) then return redis.call('DECRBY', KEYS[1], ARGV[1]) else return -1 end\" 1 stock:item 6",
+    "choices": [],
+    "answer": "-1",
+    "explain": "Tồn kho hiện tại `c = 4` nhỏ hơn số lượng yêu cầu `ARGV[1] = 6`, nên điều kiện `c >= 6` sai và kịch bản rẽ sang nhánh `else` trả về `-1` (giữ nguyên khoá ở mức `4`)."
+  }
+]

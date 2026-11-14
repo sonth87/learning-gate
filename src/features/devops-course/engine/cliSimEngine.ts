@@ -12,6 +12,14 @@ import type {
 } from '../types';
 import { gradeYamlSpec, parseK8sMemoryMi } from './yamlGrader';
 import { gradeDockerfileSpec } from './dockerfileGrader';
+import {
+  createRedisRuntime,
+  evaluateRedisCliRules,
+  executeRedisCommand,
+  gradeRedisCliSpec,
+  stripRedisCliWrapper,
+} from './redisCliEngine';
+import { gradeRedisConfSpec } from './redisConfGrader';
 
 function cloneWorld(state: SimWorldState): SimWorldState {
   return JSON.parse(JSON.stringify(state)) as SimWorldState;
@@ -1369,6 +1377,21 @@ function executeSingleCommand(cmd: string, world: SimWorldState): ExecStepResult
   if (bin === 'docker') return runDockerCommand(args, world);
   if (bin === 'kubectl' || bin === 'k') return runKubectlCommand(args, world);
   if (bin === 'git') return runGitCommand(args, world);
+  if (bin === 'redis-cli' || (world.redis !== undefined && !['echo', 'true', 'false', 'help', 'docker-compose'].includes(bin))) {
+    const redisArgs = bin === 'redis-cli' ? stripRedisCliWrapper(tokens) : tokens;
+    if (!redisArgs.length) return { stdout: '127.0.0.1:6379> (gõ lệnh Redis kèm theo, vd: INFO memory, SLOWLOG GET 5)', stderr: '', exitCode: 0 };
+    const rt = createRedisRuntime(world.redis);
+    const out = executeRedisCommand(rt, redisArgs);
+    world.redis = {
+      ...(world.redis ?? {}),
+      config: { ...rt.config },
+      slowlog: rt.slowlog.map((s) => ({ ...s })),
+      clusterRole: rt.clusterRole,
+      clusterSlotsAssigned: rt.clusterSlotsAssigned,
+      replicationOffset: rt.replicationOffset,
+    };
+    return out;
+  }
   if (bin === 'docker-compose') {
     return {
       stdout: '',
@@ -1381,7 +1404,7 @@ function executeSingleCommand(cmd: string, world: SimWorldState): ExecStepResult
   if (bin === 'false') return { stdout: '', stderr: 'Command exited with code 1', exitCode: 1 };
   if (bin === 'help') {
     return {
-      stdout: 'Các công cụ có sẵn trong terminal mô phỏng:\n  • docker (pull, build, run, ps, stop, start, rm, logs, inspect, exec, volume, network, compose)\n  • kubectl (get, describe, logs, create, run, expose, scale, set image, rollout, label, delete)\n  • git (init, status, branch, switch/checkout, add, commit, merge, tag, log)',
+      stdout: 'Các công cụ có sẵn trong terminal mô phỏng:\n  • docker (pull, build, run, ps, stop, start, rm, logs, inspect, exec, volume, network, compose)\n  • kubectl (get, describe, logs, create, run, expose, scale, set image, rollout, label, delete)\n  • git (init, status, branch, switch/checkout, add, commit, merge, tag, log)\n  • redis-cli (INFO, CONFIG GET/SET, SLOWLOG GET, ACL LIST/SETUSER, SCAN, UNLINK, XPENDING, CLUSTER INFO...)',
       stderr: '',
       exitCode: 0,
     };
@@ -1389,7 +1412,7 @@ function executeSingleCommand(cmd: string, world: SimWorldState): ExecStepResult
 
   return {
     stdout: '',
-    stderr: `Không tìm thấy lệnh "${bin}". Nhập "help" để xem danh sách lệnh hỗ trợ (docker, kubectl, git).`,
+    stderr: `Không tìm thấy lệnh "${bin}". Nhập "help" để xem danh sách lệnh hỗ trợ (docker, kubectl, git, redis-cli).`,
     exitCode: 127,
   };
 }
@@ -1776,6 +1799,26 @@ export function gradeTroubleshootSpec(
 
   if (spec.patchFormat === 'dockerfile') {
     return gradeDockerfileSpec(code, spec.dockerfileRules ?? []);
+  }
+
+  if (spec.patchFormat === 'redis-cli') {
+    const rRes = gradeRedisCliSpec(code, spec.initialState.redis, spec.redisCliRules ?? [], diagnosticHistoryOutput);
+    if (rRes.import_error) return rRes;
+    const extraCli = spec.cliRules ? evaluateCliStateRules(cloneWorld(spec.initialState), spec.cliRules, diagnosticHistoryOutput) : [];
+    return { ...rRes, tests: [...rRes.tests, ...extraCli] };
+  }
+
+  if (spec.patchFormat === 'redis-conf') {
+    const cRes = gradeRedisConfSpec(code, spec.redisConfRules ?? []);
+    if (cRes.import_error) return cRes;
+    const rt = createRedisRuntime(spec.initialState.redis);
+    const rTests = spec.redisCliRules ? evaluateRedisCliRules(rt, spec.redisCliRules, diagnosticHistoryOutput) : [];
+    const extraCli = spec.cliRules ? evaluateCliStateRules(cloneWorld(spec.initialState), spec.cliRules, diagnosticHistoryOutput) : [];
+    return {
+      import_error: null,
+      tests: [...cRes.tests, ...rTests, ...extraCli],
+      errorLine: cRes.errorLine,
+    };
   }
 
   // patchFormat === 'yaml': vừa kiểm tra cấu trúc YAML, vừa apply vào trạng thái K8s (nếu có cliRules)

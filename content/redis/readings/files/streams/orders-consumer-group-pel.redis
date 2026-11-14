@@ -1,0 +1,25 @@
+# ============================================================================
+# Vòng Đời Redis Streams Thực Chiến: XADD -> Consumer Group -> PEL -> XACK / XAUTOCLAIM
+# Đảm bảo ngữ nghĩa At-Least-Once không mất đơn hàng kể cả khi Worker bị sập nguồn!
+# ============================================================================
+
+# 1. Tạo Consumer Group đọc từ cuối luồng ($), cờ MKSTREAM tự khởi tạo luồng nếu chưa có
+XGROUP CREATE stream:orders cg_payment $ MKSTREAM
+
+# 2. Producer đẩy sự kiện đơn hàng kèm ngưỡng cắt xấp xỉ (~) giữ khoảng 100,000 bản ghi gần nhất
+# Toán tử '~' cho phép Redis cắt nguyên cả nút Radix Tree/listpack thay vì dịch từng phần tử!
+XADD stream:orders MAXLEN ~ 100000 * order_id "ORD-9001" amount "450000" currency "VND"
+XADD stream:orders MAXLEN ~ 100000 * order_id "ORD-9002" amount "890000" currency "VND"
+
+# 3. Worker-1 đọc tối đa 10 thông điệp CHƯA TỪNG GIAO CHO AI ('>') với chế độ chờ BLOCK 2000ms
+XREADGROUP GROUP cg_payment worker_1 COUNT 10 BLOCK 2000 STREAMS stream:orders >
+
+# 4. Quan sát danh sách Pending Entries List (PEL) — nơi giữ các bản ghi đã giao nhưng chưa ACK
+XPENDING stream:orders cg_payment - + 10
+
+# 5. Sau khi ghi DB thành công, Worker-1 xác nhận hoàn tất để giải phóng mục khỏi PEL
+# (Thay <entry_id> bằng ID thực tế nhận được ở bước 3, ví dụ 1731543000123-0)
+XACK stream:orders cg_payment 1731543000123-0
+
+# 6. Cứu hộ tự động: Thu hồi mọi bản ghi bị treo > 60,000ms từ worker chết sang cho worker_2
+XAUTOCLAIM stream:orders cg_payment worker_2 60000 0-0 COUNT 20

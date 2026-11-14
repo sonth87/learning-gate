@@ -4,7 +4,7 @@ import {
   useMenuAction,
   useContextAction,
 } from '@sonth87/device-layout';
-import { switchLearningApp } from '@/apps/appRegistry';
+import { switchLearningApp, type LearningAppId } from '@/apps/appRegistry';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
@@ -74,7 +74,7 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
       } else if (link.kind === 'tab') {
         setActiveTab(link.targetId as CicdMainTab);
       } else if (link.kind === 'cross-app') {
-        switchLearningApp(link.targetId as 'pymastery' | 'kubemastery' | 'cicdmastery');
+        switchLearningApp(link.targetId as LearningAppId);
       }
     },
     [selectBlueprint, selectWarRoom, setActiveTab, setSimulatorMode]

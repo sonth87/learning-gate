@@ -1,0 +1,61 @@
+# ============================================================================
+# Chính Sách Mạng Zero-Trust (Kubernetes NetworkPolicy) Bảo Vệ Tầng Dữ Liệu Redis
+# Mặc định chặn 100% lưu lượng nội bộ; chỉ mở đúng cổng cho App được cấp phép & Prometheus
+# ============================================================================
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-cluster-zero-trust
+  namespace: data-tier
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis-cluster
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # 1. Chỉ cho phép các Pod microservice mang nhãn 'redis-access: allowed' gọi vào cổng 6379
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: prod-apps
+          podSelector:
+            matchLabels:
+              redis-access: "allowed"
+      ports:
+        - protocol: TCP
+          port: 6379
+    # 2. Cho phép các nút Redis Cluster trao đổi Gossip & đồng bộ Replica với nhau (6379 + 16379)
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis-cluster
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 16379
+    # 3. Cho phép Prometheus thu thập chỉ số từ sidecar redis_exporter trên cổng 9121
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9121
+  egress:
+    # Chỉ cho phép các nút Redis kết nối nội bộ với nhau và phân giải CoreDNS cổng 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis-cluster
+      ports:
+        - protocol: TCP
+          port: 6379
+        - protocol: TCP
+          port: 16379
+    - ports:
+        - protocol: UDP
+          port: 53

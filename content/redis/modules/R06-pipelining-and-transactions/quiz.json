@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R06-Q1",
+    "type": "mc",
+    "q": "Lợi ích lớn nhất mà **TCP Pipelining** mang lại khi gửi 200 câu lệnh Redis liên tiếp từ ứng dụng Node.js/Python là gì?",
+    "code": "",
+    "choices": [
+      "Giúp Redis tự động chạy 200 câu lệnh đó song song trên 200 nhân CPU khác nhau",
+      "Triệt tiêu 199 vòng chờ khứ hồi mạng (**RTT**) và giảm số lần chuyển ngữ cảnh syscall `read()`/`write()` ở nhân hệ điều hành",
+      "Tự động Rollback toàn bộ 200 câu lệnh nếu lệnh thứ 199 gặp lỗi kiểu dữ liệu",
+      "Mã hoá tự động toàn bộ dữ liệu trong RAM bằng chuẩn AES-256"
+    ],
+    "answer": 1,
+    "explain": "Pipelining gom nhiều lệnh vào một luồng ghi TCP liên tục và đọc toàn bộ phản hồi về trong một lượt, loại bỏ nút thắt cổ chai lớn nhất là thời gian chờ sóng mạng khứ hồi (RTT) và chi phí syscall I/O."
+  },
+  {
+    "id": "R06-Q2",
+    "type": "mc",
+    "q": "Giả sử khoá `profile` đang là kiểu **Hash**. Điều gì xảy ra khi thực thi khối giao dịch `MULTI / EXEC` gồm 3 lệnh hợp lệ về mặt cú pháp dưới đây?",
+    "code": "MULTI\nSET counter 10\nINCR profile\nINCR counter\nEXEC",
+    "choices": [
+      "Toàn bộ 3 lệnh đều bị Rollback, khoá `counter` không được tạo ra giống như PostgreSQL",
+      "Lệnh 1 (`SET counter 10`) và Lệnh 3 (`INCR counter` -> `11`) **vẫn thực thi thành công và được giữ nguyên**; chỉ riêng Lệnh 2 trả về lỗi `WRONGTYPE` vì Redis **không Rollback lỗi runtime**!",
+      "Redis tự động xoá khoá `profile` cũ để ép lệnh `INCR profile` chạy thành công",
+      "Tiến trình Redis dừng khẩn cấp để bảo vệ tính toàn vẹn dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Đây là câu hỏi kinh điển khi phỏng vấn Redis! Lỗi kiểu dữ liệu (`WRONGTYPE`) chỉ xuất hiện lúc thực thi (`EXEC`); Redis báo lỗi cho riêng phần tử thứ 2 trong mảng kết quả và vẫn thực hiện bình thường các lệnh hợp lệ còn lại mà KHÔNG Rollback."
+  },
+  {
+    "id": "R06-Q3",
+    "type": "tf",
+    "q": "Chỉ sử dụng thuần **TCP Pipelining** (không kèm `MULTI / EXEC` hay Lua Script) đã đủ đảm bảo không có câu lệnh của client nào khác có thể chen ngang vào giữa các lệnh trong Pipeline của bạn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Pipelining thuần chỉ là kỹ thuật truyền tải trên tầng mạng — máy chủ Redis đọc được lệnh nào từ các socket khác nhau vẫn có thể xử lý xen kẽ. Muốn chạy liền mạch cô lập không bị chen ngang, phải dùng `MULTI/EXEC` hoặc Lua Script."
+  },
+  {
+    "id": "R06-Q4",
+    "type": "mc",
+    "q": "Trong cơ chế khoá lạc quan (**Optimistic Locking**), nếu sau khi bạn gọi `WATCH balance` có một client khác vừa sửa giá trị của `balance` trước khi bạn kịp gọi `EXEC`, lệnh `EXEC` sẽ phản hồi thế nào?",
+    "code": "",
+    "choices": [
+      "Tự động cộng gộp thay đổi của cả hai client lại với nhau",
+      "Huỷ bỏ toàn bộ hàng đợi giao dịch và trả về **`(nil)`** (`Null reply`) để báo cho ứng dụng biết xung đột và thực hiện thử lại (retry)",
+      "Khoá chặt client kia chờ cho tới khi bạn gọi `EXEC` xong mới cho sửa",
+      "Ghi đè giá trị của bạn đè lên thay đổi của client kia"
+    ],
+    "answer": 1,
+    "explain": "`WATCH` hoạt động theo cơ chế Check-And-Set (CAS) lạc quan không khoá: phát hiện khoá bị chạm vào bởi kết nối khác trước thời điểm `EXEC`, Redis lập tức huỷ giao dịch và trả về `(nil)`."
+  },
+  {
+    "id": "R06-Q5",
+    "type": "tf",
+    "q": "Lệnh `UNLINK big_hash` gỡ tên khoá khỏi không gian Keyspace ngay lập tức trong `O(1)` trên luồng chính, còn công việc giải phóng hàng triệu nút nhớ bên trong được bàn giao cho luồng nền BIO thực hiện bất đồng bộ.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Đó chính là lý do trên Production ta luôn dùng `UNLINK` thay cho `DEL` đối với các tập hợp lớn nhằm bảo vệ Event Loop khỏi gai độ trễ."
+  },
+  {
+    "id": "R06-Q6",
+    "type": "output",
+    "q": "Khi đang đứng ở bên trong chế độ giao dịch sau lệnh `MULTI`, mỗi câu lệnh hợp lệ bạn gửi lên (trước khi gõ `EXEC`) sẽ nhận được từ khoá phản hồi in hoa nào từ Redis?",
+    "code": "127.0.0.1:6379> MULTI\nOK\n127.0.0.1:6379> INCR visits\n???",
+    "choices": [],
+    "answer": "QUEUED",
+    "explain": "Giữa `MULTI` và `EXEC`, Redis chưa thực thi lệnh ngay mà xếp vào hàng đợi giao dịch `txQueue` và phản hồi chuỗi trạng thái `QUEUED`."
+  },
+  {
+    "id": "R06-Q7",
+    "type": "output",
+    "q": "Nếu bạn đã gõ `MULTI` và xếp hàng vài câu lệnh, nhưng phát hiện truyền nhầm tham số nên muốn **huỷ bỏ hoàn toàn giao dịch này** mà không thực thi bất kỳ lệnh nào, bạn phải gõ lệnh gì?",
+    "code": "MULTI\nSET price \"0\"\n???",
+    "choices": [],
+    "answer": "DISCARD",
+    "explain": "Lệnh `DISCARD` xoá sạch hàng đợi các câu lệnh đã `QUEUED`, tự động gỡ cả `WATCH` hiện hành và thoát khỏi trạng thái `MULTI` an toàn."
+  }
+]

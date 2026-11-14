@@ -1,0 +1,20 @@
+# ============================================================================
+# Định Vị Không Gian Địa Lý (GeoHash 52-bit trên nền ZSet): Tìm Tài Xế Quanh Đây
+# Lưu ý thứ tự tọa độ chuẩn trong Redis luôn là: KINH ĐỘ (Longitude) trước, VĨ ĐỘ (Latitude) sau!
+# ============================================================================
+
+# 1. Cập nhật vị trí GPS của các tài xế quanh khu vực Quận 1, TP.HCM
+GEOADD drivers:hcm:active 106.70098 10.77689 "driver:901" 106.69522 10.77211 "driver:902" 106.71845 10.79120 "driver:903"
+
+# 2. Tính khoảng cách đường chim bay (km) giữa 2 tài xế theo công thức Haversine
+GEODIST drivers:hcm:active "driver:901" "driver:902" KM
+
+# 3. Tìm tối đa 5 tài xế gần khách hàng nhất trong bán kính 2.5 km (thay thế GEORADIUS đã cũ)
+GEOSEARCH drivers:hcm:active FROMLONLAT 106.69831 10.77512 BYRADIUS 2.5 KM ASC COUNT 5 WITHDIST WITHCOORD
+
+# 4. Tìm tài xế nằm trong khung hình chữ nhật bản đồ (Bounding Box 4km x 3km)
+GEOSEARCH drivers:hcm:active FROMLONLAT 106.70000 10.77500 BYBOX 4 3 KM ASC COUNT 10
+
+# 5. Vì cấu trúc vật lý của GEO chính là ZSet, khi tài xế offline ta xóa bằng ZREM!
+TYPE drivers:hcm:active
+ZREM drivers:hcm:active "driver:903"

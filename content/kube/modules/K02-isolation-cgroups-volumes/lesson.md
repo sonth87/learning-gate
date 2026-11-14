@@ -2,6 +2,28 @@
 
 Nhiều người lầm tưởng Docker là một "chiếc hộp ảo hoá phép thuật", nhưng thực chất toàn bộ sức mạnh của Container được xây dựng trên hai cơ chế nguyên bản có sẵn trong nhân hệ điều hành **Linux Kernel**: ==Namespaces== ({sky:cô lập tầm nhìn}) và ==Control Groups (`cgroups`)== ({amber:khoá trần tài nguyên}). Hiểu thấu hai trụ cột này, bạn không chỉ làm chủ Docker mà còn nắm trọn gốc rễ cách **Kubernetes** điều phối hàng nghìn Pod sau này!
 
+```visual
+kind: illustration
+diagram: "kube:k02"
+alt: "Giải phẫu Linux Namespaces, cgroups v2 khoá trần RAM/CPU (OOM Exit 137) và Named Volume so với Bind Mount"
+title: "Giải Phẫu Nhân Linux: Namespaces Cô Lập, cgroups v2 Khoá Tải & Lưu Trữ Bền Vững"
+subtitle: "Ba cơ chế cấp nhân biến một tiến trình Linux thông thường thành đơn vị vận hành an toàn và giữ dữ liệu lâu dài"
+caption: "Tường ngăn tầm nhìn Namespaces, bộ giới hạn phần cứng cgroups v2 (CPU Throttling vs OOMKilled 137) và cách gắn ổ đĩa vượt thoát lớp ghi tạm"
+callouts:
+  - num: 1
+    label: "Linux Namespaces — Rèm che tầm nhìn"
+    desc: "Tách biệt không gian PID, mạng (eth0), cây thư mục gốc (/) và hostname để tiến trình tưởng mình đang sở hữu máy riêng."
+    tone: sky
+  - num: 2
+    label: "cgroups v2 — Trần cứng CPU & Bộ nhớ RAM"
+    desc: "Vượt hạn mức CPU chỉ bị hãm xung (Throttling), nhưng vượt trần --memory sẽ bị nhân Linux bắn SIGKILL (9) gây mã thoát 137."
+    tone: amber
+  - num: 3
+    label: "Named Volume (Production) vs Bind Mount (Dev)"
+    desc: "Đưa dữ liệu Database ra khỏi lớp ghi tạm mỏng manh để tồn tại nguyên vẹn ngay cả khi xoá bỏ container cũ."
+    tone: emerald
+```
+
 ## 1. Hai trụ cột của Container: Namespaces vs `cgroups`
 
 > [!ANALOGY] Hãy hình dung một khu chung cư cao cấp

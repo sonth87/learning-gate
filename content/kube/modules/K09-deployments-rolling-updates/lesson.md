@@ -4,6 +4,28 @@
 
 Để biến những chiếc Pod mỏng manh thành một dịch vụ bất tử có khả năng {emerald:tự hồi sinh}, {sky:co giãn nhiều bản sao} và {violet:nâng cấp không gián đoạn (Zero-Downtime)}, chúng ta trao quyền giám hộ cho **`Deployment`** (`apiVersion: apps/v1`).
 
+```visual
+kind: illustration
+diagram: "kube:k09"
+alt: "Cơ chế Deployment điều phối Rolling Update giữa ReplicaSet v1 giảm dần và ReplicaSet v2 tăng dần cùng lệnh rollout undo"
+title: "Giải Phẫu Deployment: Cuộn Phiên Bản Không Gián Đoạn & Rollback Tức Thì"
+subtitle: "Cách Deployment điều khiển đồng thời hai ReplicaSet cũ-mới qua cặp thông số maxSurge và maxUnavailable"
+caption: "Quá trình chuyển giao lưu lượng cuốn chiếu từ ReplicaSet v1 sang ReplicaSet v2 đảm bảo 0% gián đoạn và lưu lịch sử Revision để quay lui trong 2 giây"
+callouts:
+  - num: 1
+    label: "Deployment kiểm soát nhịp độ maxSurge / maxUnavailable"
+    desc: "Đặt maxSurge: 1 và maxUnavailable: 0 ép Kubernetes phải bật Pod mới sẵn sàng xong xuôi rồi mới được tắt bớt Pod cũ."
+    tone: violet
+  - num: 2
+    label: "Chuyển giao cuốn chiếu ReplicaSet v1 -> ReplicaSet v2"
+    desc: "ReplicaSet v2 tăng dần số Pod khoẻ mạnh từ 0 lên 3 song song với việc ReplicaSet v1 rút êm từ 3 về 0."
+    tone: emerald
+  - num: 3
+    label: "Giữ lịch sử Revision phục vụ Rollback 2 giây"
+    desc: "ReplicaSet cũ được giữ lại ở mức replicas: 0 giúp lệnh kubectl rollout undo khôi phục phiên bản ổn định trước đó gần như tức khắc."
+    tone: amber
+```
+
 ## 1. Chuỗi phân cấp quyền lực: `Deployment` → `ReplicaSet` → `Pod`
 
 ```visual

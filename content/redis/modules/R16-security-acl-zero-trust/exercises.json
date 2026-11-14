@@ -1,0 +1,328 @@
+[
+  {
+    "id": "redis-ex-r16-1",
+    "code": "R16.1",
+    "module": "R16",
+    "title": "Khoá cứng cổng mạng Nội bộ & Bật mã hoá bắt buộc mTLS (port 0)",
+    "difficulty": 2,
+    "tags": [
+      "redis-conf",
+      "security",
+      "tls",
+      "mtls"
+    ],
+    "kind": "redis-conf",
+    "language": "ini",
+    "filename": "redis-tls-mtls-prod.conf",
+    "prompt": "Kiểm toán an ninh phát hiện một nút Redis đang cấu hình `bind 0.0.0.0`, tắt `protected-mode no` và vẫn mở cổng văn bản thuần `port 6379` truyền dữ liệu thẻ thanh toán không mã hoá!\n\nHãy siết chặt tệp `redis-tls-mtls-prod.conf` đạt chuẩn Zero-Trust:\n1. Giới hạn giao diện mạng lắng nghe chỉ gồm loopback và IP Private VPC: `bind 127.0.0.1 10.0.1.15` (tuyệt đối xoá bỏ `0.0.0.0`).\n2. Bật `protected-mode yes`.\n3. Tắt hoàn toàn cổng TCP không mã hoá bằng `port 0`.\n4. Mở cổng mã hoá `tls-port 6379` và bắt buộc xác thực chứng chỉ hai chiều `tls-auth-clients yes`.",
+    "starter": "# CẤU HÌNH MẤT AN TOÀN NGHIÊM TRỌNG:\nbind 0.0.0.0\nprotected-mode no\nport 6379\n\ntls-cert-file /etc/redis/certs/redis.crt\ntls-key-file /etc/redis/certs/redis.key\ntls-ca-cert-file /etc/redis/certs/ca.crt\n",
+    "solution": "bind 127.0.0.1 10.0.1.15\nprotected-mode yes\nport 0\ntls-port 6379\ntls-auth-clients yes\n\ntls-cert-file /etc/redis/certs/redis.crt\ntls-key-file /etc/redis/certs/redis.key\ntls-ca-cert-file /etc/redis/certs/ca.crt\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "bind-private-ip-only",
+          "doc": "Chỉ lắng nghe trên 127.0.0.1 và IP nội bộ 10.0.1.15 (không dùng 0.0.0.0)",
+          "kind": "directive",
+          "directive": "bind",
+          "match": {
+            "eq": "127.0.0.1 10.0.1.15"
+          }
+        },
+        {
+          "id": "protected-mode-enabled",
+          "doc": "Đã kích hoạt chế độ bảo vệ protected-mode yes",
+          "kind": "directive",
+          "directive": "protected-mode",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "plaintext-port-disabled",
+          "doc": "Đã tắt hoàn toàn cổng TCP văn bản thuần bằng port 0",
+          "kind": "directive",
+          "directive": "port",
+          "match": {
+            "eq": 0
+          }
+        },
+        {
+          "id": "tls-port-6379",
+          "doc": "Đã mở cổng mã hoá tls-port 6379",
+          "kind": "directive",
+          "directive": "tls-port",
+          "match": {
+            "eq": 6379
+          }
+        },
+        {
+          "id": "mtls-client-auth",
+          "doc": "Bắt buộc xác thực chứng chỉ Client hai chiều tls-auth-clients yes",
+          "kind": "directive",
+          "directive": "tls-auth-clients",
+          "match": {
+            "eq": "yes"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thay `bind 0.0.0.0` bằng `bind 127.0.0.1 10.0.1.15` và đổi `protected-mode` sang `yes`.",
+      "Đặt `port 0`, sau đó thêm hai dòng `tls-port 6379` và `tls-auth-clients yes`."
+    ],
+    "ref": "security/redis-tls-mtls-prod.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r16-2",
+    "code": "R16.2",
+    "module": "R16",
+    "title": "Cấp quyền ACL đặc quyền tối thiểu cho Microservice Thanh toán",
+    "difficulty": 2,
+    "tags": [
+      "acl",
+      "least-privilege",
+      "redis-cli"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "provision-checkout-acl.redis",
+    "prompt": "Microservice `checkout-svc` chuẩn bị kết nối vào cụm Redis Production. Bạn cần tạo tài khoản ACL riêng biệt đảm bảo nếu Pod này có bị xâm nhập thì kẻ tấn công cũng không thể đọc dữ liệu của dịch vụ khác hoặc chạy các lệnh quản trị nguy hiểm.\n\nHãy viết kịch bản `redis-cli` thực hiện:\n1. Dùng `ACL SETUSER` tạo và bật tài khoản `checkout-svc` (`on`) với:\n   - Mật khẩu mạnh: `>CheckoutStrong2026`\n   - Phạm vi khoá chỉ giới hạn trong nhánh: `~checkout:*`\n   - Cho phép các lệnh thao tác dữ liệu nhưng **chặn nhóm lệnh nguy hiểm** ở cuối dòng: `+@all -@dangerous`\n2. Gọi lệnh `ACL LIST` để kiểm tra lại cấu hình quyền vừa sinh ra.",
+    "starter": "# TODO: Dùng ACL SETUSER khởi tạo tài khoản checkout-svc giới hạn ~checkout:* và chặn -@dangerous\nACL WHOAMI\n",
+    "solution": "ACL SETUSER checkout-svc on >CheckoutStrong2026 ~checkout:* +@all -@dangerous\nACL LIST\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "checkout-acl-provisioned",
+          "doc": "Tài khoản checkout-svc đã bật (on), giới hạn khoá ~checkout:* và chặn -@dangerous",
+          "target": "acl-user",
+          "username": "checkout-svc",
+          "enabled": true,
+          "hasKeyPattern": "checkout:*",
+          "deniesDangerous": true
+        },
+        {
+          "id": "acl-list-verified",
+          "doc": "Đã gọi ACL LIST xác nhận mật khẩu được băm #sha256 và danh sách quyền",
+          "target": "stdout-contains",
+          "contains": "user checkout-svc on #sha256"
+        }
+      ]
+    },
+    "hints": [
+      "Lưu ý thứ tự quy tắc ACL: phải viết `+@all` TRƯỚC và `-@dangerous` Ở CUỐI dòng!",
+      "Cú pháp đầy đủ: `ACL SETUSER checkout-svc on >CheckoutStrong2026 ~checkout:* +@all -@dangerous` rồi gõ `ACL LIST`."
+    ],
+    "ref": "security/users-zero-trust.acl",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r16-3",
+    "code": "R16.3",
+    "module": "R16",
+    "title": "Tắt user default, tạo user Chỉ-Đọc & Tháo kíp nổ FLUSHALL/FLUSHDB",
+    "difficulty": 3,
+    "tags": [
+      "redis-conf",
+      "acl",
+      "dangerous-commands"
+    ],
+    "kind": "redis-conf",
+    "language": "ini",
+    "filename": "redis-acl-hardening.conf",
+    "prompt": "Tệp cấu hình hiện tại đang để mở toang `user default on nopass ~* +@all` — bất kỳ ai kết nối vào cũng có toàn quyền gọi `FLUSHALL` xoá sạch toàn bộ cơ sở dữ liệu trong 1 mili-giây!\n\nHãy viết lại cấu hình phân quyền bảo vệ kép trong `redis-acl-hardening.conf`:\n1. Vô hiệu hoá hoàn toàn tài khoản mặc định bằng `user default off`.\n2. Khai báo tài khoản chỉ đọc cho đội phân tích dữ liệu: `user analytics-ro on >ReadOnlyPass2026 ~metrics:* -@all +@read`.\n3. Vô hiệu hoá hoàn toàn hai lệnh xoá trắng dữ liệu ở cấp cấu hình bằng `rename-command FLUSHALL \"\"` và `rename-command FLUSHDB \"\"`.",
+    "starter": "port 6379\nbind 127.0.0.1 10.0.1.20\nprotected-mode yes\n\n# LỖ HỔNG NGHIÊM TRỌNG: Tài khoản default không mật khẩu có toàn quyền +@all!\nuser default on nopass ~* +@all\n",
+    "solution": "port 6379\nbind 127.0.0.1 10.0.1.20\nprotected-mode yes\n\nuser default off\nuser analytics-ro on >ReadOnlyPass2026 ~metrics:* -@all +@read\n\nrename-command FLUSHALL \"\"\nrename-command FLUSHDB \"\"\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "default-user-disabled",
+          "doc": "Đã tắt hoàn toàn tài khoản mặc định (user default off)",
+          "kind": "acl-rule",
+          "username": "default",
+          "enabled": false
+        },
+        {
+          "id": "analytics-readonly-user",
+          "doc": "Tài khoản analytics-ro có mật khẩu, giới hạn ~metrics:*, chỉ cấp +@read và chặn nhóm nguy hiểm",
+          "kind": "acl-rule",
+          "username": "analytics-ro",
+          "enabled": true,
+          "requirePassword": true,
+          "keyPattern": "metrics:*",
+          "requireCategory": "read",
+          "forbidCategory": "dangerous"
+        },
+        {
+          "id": "flushall-neutralized",
+          "doc": "Lệnh huỷ diệt FLUSHALL đã bị vô hiệu hoá hoàn toàn",
+          "kind": "rename-or-disable",
+          "dangerousCommand": "FLUSHALL"
+        },
+        {
+          "id": "flushdb-neutralized",
+          "doc": "Lệnh huỷ diệt FLUSHDB đã bị vô hiệu hoá hoàn toàn",
+          "kind": "rename-or-disable",
+          "dangerousCommand": "FLUSHDB"
+        },
+        {
+          "id": "explicit-rename-command",
+          "doc": "Đã khai báo tường minh chỉ thị rename-command thành chuỗi rỗng",
+          "kind": "directive",
+          "directive": "rename-command",
+          "match": {
+            "contains": "FLUSH"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thay dòng `user default ...` bằng `user default off`.",
+      "Thêm dòng `user analytics-ro on >ReadOnlyPass2026 ~metrics:* -@all +@read` cùng 2 dòng `rename-command FLUSHALL \"\"` và `rename-command FLUSHDB \"\"`."
+    ],
+    "ref": "security/users-zero-trust.acl",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r16-4",
+    "code": "R16.4",
+    "module": "R16",
+    "title": "Cô lập cổng 6379 trên Kubernetes bằng NetworkPolicy Zero-Trust",
+    "difficulty": 2,
+    "tags": [
+      "kubernetes",
+      "networkpolicy",
+      "zero-trust",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "redis-networkpolicy.yaml",
+    "prompt": "Trên cụm Kubernetes `production`, mặc định mọi Pod (kể cả các Pod xử lý tệp tải lên từ người dùng lạ) đều có thể chạm tới cổng `6379` của các Pod Redis mang nhãn `app: redis`.\n\nHãy hoàn thiện manifest `NetworkPolicy` tên `redis-zero-trust` để khoá chặt lưu lượng đầu vào (`Ingress`):\n1. Áp dụng chính sách lên các Pod mục tiêu có `spec.podSelector.matchLabels.app: redis`.\n2. Bật `policyTypes: [\"Ingress\"]`.\n3. Trong `spec.ingress`, **CHỈ cho phép** kết nối tới cổng TCP `6379` xuất phát từ các Pod mang nhãn `podSelector.matchLabels.app: api-backend` (xoá bỏ quy tắc mở toang `{}` hiện tại!).",
+    "starter": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: redis-zero-trust\n  namespace: production\nspec:\n  podSelector:\n    matchLabels:\n      app: redis\n  policyTypes:\n    - Ingress\n  ingress:\n    # LỖ HỔNG: podSelector rỗng {} cho phép MỌI Pod trong namespace kết nối vào cổng 80!\n    - from:\n        - podSelector: {}\n      ports:\n        - protocol: TCP\n          port: 80\n",
+    "solution": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: redis-zero-trust\n  namespace: production\nspec:\n  podSelector:\n    matchLabels:\n      app: redis\n  policyTypes:\n    - Ingress\n  ingress:\n    - from:\n        - podSelector:\n            matchLabels:\n              app: api-backend\n      ports:\n        - protocol: TCP\n          port: 6379\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "target-redis-pods",
+          "doc": "NetworkPolicy bảo vệ đúng nhóm Pod mang nhãn app: redis",
+          "kind": "path",
+          "docSelector": {
+            "kind": "NetworkPolicy",
+            "name": "redis-zero-trust"
+          },
+          "path": "spec.podSelector.matchLabels.app",
+          "match": {
+            "eq": "redis"
+          }
+        },
+        {
+          "id": "ingress-only-api-backend-6379",
+          "doc": "Chính sách Ingress chỉ mở cổng 6379 cho các Pod có nhãn app: api-backend",
+          "kind": "network-policy-rule",
+          "policyName": "redis-zero-trust",
+          "direction": "Ingress",
+          "expectedPort": 6379,
+          "expectedPodLabel": {
+            "app": "api-backend"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Bên dưới `from[0].podSelector`, khai báo `matchLabels:` và thụt lề `app: api-backend`.",
+      "Đổi cổng `port: 80` thành `port: 6379`."
+    ],
+    "ref": "k8s/redis-networkpolicy-zero-trust.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r16-5",
+    "code": "R16.5",
+    "module": "R16",
+    "title": "Ứng cứu khẩn cấp nút Redis bị phơi cổng 0.0.0.0 không mật khẩu",
+    "difficulty": 3,
+    "tags": [
+      "troubleshoot",
+      "security",
+      "incident-response"
+    ],
+    "kind": "troubleshoot",
+    "language": "ini",
+    "filename": "emergency-lockdown.conf",
+    "prompt": "Hệ thống cảnh báo bảo mật Cloud CSPM vừa báo động Đỏ: một máy chủ Redis mới dựng đang bị quét từ Internet do mở `bind 0.0.0.0`, tắt `protected-mode` và giữ nguyên tài khoản mặc định không mật khẩu!\n\nHãy thực hiện quy trình ứng cứu khẩn cấp 2 bước:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy lệnh `redis-cli ACL LIST` trên ô **Terminal Chẩn đoán** để thu thập bằng chứng lỗ hổng `nopass` của tài khoản `default`.\n- **Bước 2 (Vá tệp cấu hình bên dưới):**\n  1. Đổi `bind` sang chỉ lắng nghe ở `127.0.0.1 10.0.2.20`.\n  2. Bật `protected-mode yes`.\n  3. Khoá tài khoản mặc định `user default off` và cấp tài khoản ứng dụng `user order-svc on >OrderSafe2026 ~order:* +@all -@dangerous`.",
+    "starter": "# Bước 1: Chạy `redis-cli ACL LIST` ở Terminal Chẩn đoán phía trên trước!\n# Bước 2: Khoá lại bind, protected-mode, tắt user default và tạo user order-svc\nbind 0.0.0.0\nprotected-mode no\nport 6379\nuser default on nopass ~* +@all\n",
+    "solution": "bind 127.0.0.1 10.0.2.20\nprotected-mode yes\nport 6379\nuser default off\nuser order-svc on >OrderSafe2026 ~order:* +@all -@dangerous\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-conf",
+      "diagnosticSampleCommands": [
+        "redis-cli ACL LIST",
+        "redis-cli CONFIG GET protected-mode"
+      ],
+      "initialState": {
+        "redis": {
+          "config": {
+            "protected-mode": "no"
+          },
+          "initialKeys": []
+        }
+      },
+      "cliRules": [
+        {
+          "id": "audited-exposed-acl",
+          "doc": "Đã chạy redis-cli ACL LIST trên Terminal Chẩn đoán để xác nhận lỗ hổng nopass",
+          "target": "stdout-inspected",
+          "contains": "nopass"
+        }
+      ],
+      "redisConfRules": [
+        {
+          "id": "locked-bind-address",
+          "doc": "Đã khoá địa chỉ lắng nghe về 127.0.0.1 10.0.2.20",
+          "kind": "directive",
+          "directive": "bind",
+          "match": {
+            "eq": "127.0.0.1 10.0.2.20"
+          }
+        },
+        {
+          "id": "enabled-protected-mode",
+          "doc": "Đã bật lại protected-mode yes",
+          "kind": "directive",
+          "directive": "protected-mode",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "disabled-default-nopass",
+          "doc": "Đã tắt hoàn toàn user default off",
+          "kind": "acl-rule",
+          "username": "default",
+          "enabled": false
+        },
+        {
+          "id": "created-scoped-order-svc",
+          "doc": "Tài khoản order-svc có mật khẩu, giới hạn ~order:* và chặn -@dangerous",
+          "kind": "acl-rule",
+          "username": "order-svc",
+          "enabled": true,
+          "requirePassword": true,
+          "keyPattern": "order:*",
+          "forbidCategory": "dangerous"
+        }
+      ]
+    },
+    "hints": [
+      "Đừng quên chạy `redis-cli ACL LIST` trên ô Terminal Chẩn đoán phía trên trước khi bấm Chấm bài!",
+      "Trong tệp cấu hình bên dưới, sửa `bind 127.0.0.1 10.0.2.20`, `protected-mode yes`, `user default off` và thêm `user order-svc on >OrderSafe2026 ~order:* +@all -@dangerous`."
+    ],
+    "ref": "security/users-zero-trust.acl",
+    "webGrade": true
+  }
+]

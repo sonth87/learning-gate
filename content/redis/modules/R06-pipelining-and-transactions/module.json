@@ -1,0 +1,59 @@
+{
+  "id": "R06",
+  "slug": "R06-pipelining-and-transactions",
+  "level": 2,
+  "order": 0,
+  "title": "Pipelining, MULTI/EXEC/WATCH & Sự thật phũ phàng: Redis KHÔNG Rollback!",
+  "summary": "Nhân thông lượng gấp 10 lần bằng TCP Pipelining, phân biệt rạch ròi Pipeline vs Transaction MULTI/EXEC, khoá lạc quan WATCH và dọn BigKey bằng UNLINK.",
+  "tags": [
+    "pipelining",
+    "transactions",
+    "multi-exec",
+    "watch",
+    "no-rollback",
+    "unlink",
+    "rtt"
+  ],
+  "sources": [
+    {
+      "title": "Redis Pipelining — Optimizing Network Round-Trip Time (RTT)",
+      "url": "https://redis.io/docs/latest/develop/use/pipelining/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Transactions — MULTI, EXEC, DISCARD & WATCH",
+      "url": "https://redis.io/docs/latest/develop/interact/transactions/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Single-Thread Event Loop & TCP Pipeline",
+      "kind": "flow",
+      "targetId": "event-loop-pipeline",
+      "description": "Xem trực quan cách gom 100 lệnh vào 1 chuyến tàu TCP triệt tiêu 99 lần chờ khứ hồi mạng"
+    },
+    {
+      "label": "War Room: Cú giật DEL trên BigKey triệu phần tử",
+      "kind": "incident",
+      "targetId": "inc-bigkey-del-spike",
+      "description": "So sánh hiện trường xoá đồng bộ DEL với thu hồi bất đồng bộ trên luồng nền UNLINK + lazyfree"
+    }
+  ],
+  "readings": [
+    {
+      "path": "clients/node/ioredis-singleton-pool.ts",
+      "kind": "good",
+      "note": "Cách sử dụng `redis.pipeline()` và `redis.multi()` chuẩn xác trong ứng dụng Node.js / TypeScript.",
+      "task": "Khi nào trong code TypeScript bạn nên gọi `redis.pipeline()` thay vì `redis.multi()`?",
+      "answer": "Dùng `redis.pipeline()` khi chỉ muốn gửi hàng loạt câu lệnh độc lập trong 1 vòng mạng RTT để tăng tốc tối đa mà không bắt Redis tốn bộ nhớ xếp hàng giao dịch hay chặn xen kẽ; chỉ dùng `redis.multi()` khi bắt buộc toàn bộ chuỗi lệnh phải thực thi liền một mạch cô lập không có client nào chen vào giữa."
+    },
+    {
+      "path": "clients/python/redis-py-connection-pool.py",
+      "kind": "good",
+      "note": "Mẫu quản lý Connection Pool và `pipe = r.pipeline(transaction=False)` trong hệ sinh thái Python `redis-py`.",
+      "task": "Chú ý một chi tiết cực dễ nhầm trong `redis-py`: gọi `r.pipeline()` mặc định có bật `MULTI/EXEC` không?",
+      "answer": "Có! Trong thư viện Python `redis-py`, `r.pipeline()` mặc định đặt `transaction=True` (tự động bọc thêm `MULTI` và `EXEC`). Nếu chỉ muốn thuần TCP Pipelining nhẹ nhất mà không khoá cô lập, bạn phải truyền rõ `r.pipeline(transaction=False)`."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+# ============================================================================
+# Cấu Trúc Siêu Tiết Kiệm Bộ Nhớ Ở Quy Mô 100 Triệu User: Bitmap · HLL · Bloom
+# Redis 8 tích hợp sẵn Bloom Filter bản địa mà không cần cài module rời!
+# ============================================================================
+
+# --- PHẦN 1: BITMAP — Điểm danh chính xác từng User ID (100 triệu user = 12.5 MB) ---
+SETBIT dau:2026-11-13 1042 1
+SETBIT dau:2026-11-13 8891 1
+SETBIT dau:2026-11-14 1042 1
+
+# Đếm tổng DAU hôm nay và tính Retention 2 ngày liên tiếp bằng phép AND bit siêu tốc
+BITCOUNT dau:2026-11-14
+BITOP AND retention:2d:13_14 dau:2026-11-13 dau:2026-11-14
+BITCOUNT retention:2d:13_14
+
+# --- PHẦN 2: HYPERLOGLOG — Đếm lượt khách truy cập duy nhất (Tối đa đúng 12 KB RAM!) ---
+PFADD uv:landing:2026-11-14 "203.113.10.1" "203.113.10.2" "203.113.10.1"
+PFADD uv:blog:2026-11-14 "203.113.10.2" "118.69.55.9"
+# Gộp lượt xem duy nhất toàn trang (sai số chuẩn chỉ ~0.81%)
+PFMERGE uv:total:2026-11-14 uv:landing:2026-11-14 uv:blog:2026-11-14
+PFCOUNT uv:total:2026-11-14
+
+# --- PHẦN 3: BLOOM FILTER (Redis 8 Native) — Chặn đứng truy vấn ID rác (Penetration) ---
+# Khởi tạo bộ lọc sai số 0.5% (0.005) với sức chứa dự kiến 1,000,000 mã sản phẩm
+BF.RESERVE bf:valid_skus 0.005 1000000
+BF.MADD bf:valid_skus "SKU-1001" "SKU-1002" "SKU-9988"
+BF.MEXISTS bf:valid_skus "SKU-1001" "SKU-FAKE-999999"
+# -> Trả về [1, 0]: Số 0 khẳng định 100% mã rác không tồn tại, chặn ngay trước khi chạm SQL!

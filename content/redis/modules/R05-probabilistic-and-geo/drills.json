@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R05-D1",
+    "title": "Tính Retention 2 ngày liên tiếp bằng phép giao Bitmap BITOP AND & BITCOUNT",
+    "code": "SETBIT dau:2026-11-14 412 1\nBITOP AND retention:2d dau:2026-11-13 dau:2026-11-14\nBITCOUNT retention:2d"
+  },
+  {
+    "id": "R05-D2",
+    "title": "Khởi tạo Bloom Filter trên Redis 8 và kiểm tra mã sản phẩm bằng BF.MEXISTS",
+    "code": "BF.RESERVE bf:catalog:skus 0.01 10000\nBF.MADD bf:catalog:skus \"sku:101\" \"sku:102\"\nBF.MEXISTS bf:catalog:skus \"sku:101\" \"sku:fake-999\""
+  },
+  {
+    "id": "R05-D3",
+    "title": "Đăng ký toạ độ tài xế và quét bán kính 3km gần nhất bằng GEOSEARCH",
+    "code": "GEOADD drivers:hcm 106.6980 10.7725 \"driver:minh\" 106.7009 10.7769 \"driver:tuan\"\nGEOSEARCH drivers:hcm FROMLONLAT 106.6960 10.7720 BYRADIUS 3 km ASC COUNT 5"
+  }
+]

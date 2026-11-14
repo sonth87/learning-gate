@@ -308,8 +308,18 @@ export const ConfigCodeEditor = forwardRef<ConfigCodeEditorHandle, Props>(functi
     },
   }));
 
-  const focusBorder = accent === 'cyan' ? 'focus-within:border-cyan-500/70' : 'focus-within:border-sky-500/70';
-  const caretCls = accent === 'cyan' ? 'caret-cyan-400 selection:bg-cyan-500/30' : 'caret-sky-400 selection:bg-sky-500/30';
+  const focusBorder =
+    accent === 'cyan'
+      ? 'focus-within:border-cyan-500/70'
+      : accent === 'rose'
+        ? 'focus-within:border-rose-500/70'
+        : 'focus-within:border-sky-500/70';
+  const caretCls =
+    accent === 'cyan'
+      ? 'caret-cyan-400 selection:bg-cyan-500/30'
+      : accent === 'rose'
+        ? 'caret-rose-400 selection:bg-rose-500/30'
+        : 'caret-sky-400 selection:bg-sky-500/30';
 
   return (
     <div className="w-full">
@@ -317,7 +327,15 @@ export const ConfigCodeEditor = forwardRef<ConfigCodeEditorHandle, Props>(functi
         <div className="flex items-center justify-between rounded-t-xl border border-b-0 border-slate-700 bg-slate-900/90 px-3 py-1.5 text-xs">
           <span className="font-mono font-semibold text-slate-200">{filename}</span>
           <span className="font-mono uppercase text-[10px] text-slate-500">
-            {language === 'yaml' ? 'YAML · 2 spaces' : language === 'dockerfile' ? 'Dockerfile' : 'Shell / CLI'}
+            {language === 'yaml'
+              ? 'YAML · 2 spaces'
+              : language === 'dockerfile'
+                ? 'Dockerfile'
+                : language === 'redis'
+                  ? 'Redis 8 CLI / Lua'
+                  : language === 'redis-conf'
+                    ? 'redis.conf AST'
+                    : 'Shell / CLI'}
           </span>
         </div>
       )}

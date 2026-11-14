@@ -24,7 +24,7 @@ import { CicdMainTab } from '../../types/cicd.types';
 import { useCicdNavigationStore } from '../../stores/useCicdNavigationStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { switchLearningApp } from '@/apps/appRegistry';
-import { CicdMasteryLogo } from '@/components/common/AppLogos';
+import { CicdMasteryLogo, RedisMasteryLogo } from '@/components/common/AppLogos';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { courseModuleDone } from '@/features/devops-course/logic';
 import { useCicdProgress } from '@/features/devops-course/store';
@@ -242,6 +242,16 @@ export const CicdHeader: React.FC = () => {
 
         {/* Right Actions & Quick App Switcher */}
         <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => switchLearningApp('redismastery')}
+            title="Chuyển nhanh sang ứng dụng Redis Mastery"
+            className="hidden sm:inline-flex h-8 w-auto items-center justify-center gap-1 rounded-lg border border-rose-500/40 bg-rose-500/15 px-2.5 text-xs font-bold text-rose-300 hover:bg-rose-500/25 transition-all cursor-pointer"
+          >
+            <RedisMasteryLogo className="h-3.5 w-3.5 shrink-0 rounded-xs" />
+            <span className="hidden md:inline">Redis</span>
+          </button>
+
           <button
             type="button"
             onClick={() => switchLearningApp('kubemastery')}

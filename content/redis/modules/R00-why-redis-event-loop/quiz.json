@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R00-Q1",
+    "type": "mc",
+    "q": "Vì sao Redis chọn thực thi các câu lệnh thao tác dữ liệu trên **một luồng chính duy nhất (Single-Threaded Event Loop)** mà vẫn đạt thông lượng hàng trăm ngàn lệnh/giây?",
+    "code": "",
+    "choices": [
+      "Vì ngôn ngữ C không hỗ trợ tạo nhiều luồng (multi-threading) trên hệ điều hành Linux",
+      "Vì toàn bộ dữ liệu nằm trên RAM cực nhanh, kết hợp I/O Multiplexing (`epoll`/`kqueue`) và loại bỏ hoàn toàn chi phí tranh chấp khoá `Mutex` cũng như chuyển ngữ cảnh CPU",
+      "Vì Redis tự động biên dịch mọi câu lệnh thành truy vấn SQL chạy ngầm trên ổ cứng SSD",
+      "Vì Redis chỉ cho phép tối đa 1 kết nối TCP từ ứng dụng tại một thời điểm"
+    ],
+    "answer": 1,
+    "explain": "Dữ liệu trên RAM chỉ mất ~100ns truy cập; nhờ I/O Multiplexing gom hàng vạn socket và chạy tuần tự trên 1 luồng thực thi, Redis không mất chi phí Mutex Lock hay Context Switching mà vẫn đảm bảo từng lệnh là nguyên tử."
+  },
+  {
+    "id": "R00-Q2",
+    "type": "tf",
+    "q": "Trong Redis 8, hoàn toàn KHÔNG có bất kỳ luồng phụ (background/I/O thread) nào khác ngoài luồng Event Loop duy nhất.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Luồng thực thi lệnh dữ liệu là đơn luồng, nhưng Redis 6–8 sử dụng thêm **Threaded I/O** để đọc/ghi buffer socket mạng và các **BIO Worker Threads** để giải phóng bộ nhớ ngầm (`UNLINK`), ghi đĩa AOF (`fsync`) mà không làm nghẽn luồng chính."
+  },
+  {
+    "id": "R00-Q3",
+    "type": "mc",
+    "q": "Chuyện gì xảy ra trên một máy chủ Redis 8 core khi có 1 microservice vô tình chạy lệnh `KEYS *` mất `300ms` trên tập 10 triệu khoá?",
+    "code": "",
+    "choices": [
+      "7 core còn lại tự động chia sẻ tải nên các lệnh `GET`/`SET` khác vẫn phản hồi dưới `1ms`",
+      "Toàn bộ các lệnh `GET`/`SET` từ mọi client khác đều bị xếp hàng chờ cứng `300ms` (Head-of-Line Blocking) dù tổng CPU toàn máy chỉ báo khoảng ~12.5%",
+      "Redis tự động huỷ lệnh `KEYS *` sau `10ms` để bảo vệ các kết nối khác",
+      "Chỉ riêng kết nối gửi lệnh `KEYS *` bị chậm, các kết nối trong Connection Pool khác không bị ảnh hưởng"
+    ],
+    "answer": 1,
+    "explain": "Do mọi câu lệnh truy xuất dữ liệu đều đi qua 1 luồng Event Loop tuần tự, một lệnh `O(N)` chiếm luồng chính `300ms` sẽ chặn đứng tất cả lệnh đứng sau nó trong hàng đợi."
+  },
+  {
+    "id": "R00-Q4",
+    "type": "mc",
+    "q": "Thời gian thực thi được ghi nhận trong `SLOWLOG GET` đo lường chính xác giai đoạn nào của một câu lệnh Redis?",
+    "code": "",
+    "choices": [
+      "Tổng thời gian từ lúc ứng dụng Node.js gọi hàm cho tới khi nhận xong JSON trả về (gồm cả mạng LAN/WAN)",
+      "Chỉ riêng thời gian luồng chính của Redis thực thi câu lệnh đó trên RAM (không tính độ trễ mạng hay thời gian chờ I/O socket)",
+      "Thời gian hệ điều hành ghi bản sao RDB xuống ổ cứng vật lý",
+      "Thời gian chờ lấy kết nối rảnh trong Connection Pool của phía client"
+    ],
+    "answer": 1,
+    "explain": "`SLOWLOG` chỉ đo thời gian thực thi thuần tuý của lệnh bên trong luồng chính Redis. Nếu app báo chậm `200ms` mà `SLOWLOG` trống trơn, nguyên nhân thường nằm ở mạng, DNS, Connection Pool hoặc nghẽn Event Loop phía Node.js/Python!"
+  },
+  {
+    "id": "R00-Q5",
+    "type": "tf",
+    "q": "Cấu hình `bind 0.0.0.0` kèm `protected-mode no` trong `redis.conf` trên một VPS có IP công cộng là cách làm an toàn để các container kết nối nhanh hơn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai nghiêm trọng! Mở `0.0.0.0` và tắt `protected-mode` mà không có ACL/mật khẩu và tường lửa nội bộ sẽ phơi toàn quyền điều khiển bộ nhớ ra Internet — bot tự động có thể xoá dữ liệu hoặc chiếm quyền máy chủ trong vài phút."
+  },
+  {
+    "id": "R00-Q6",
+    "type": "output",
+    "q": "Để ghi nhận mọi câu lệnh chạy chậm hơn **5 mili-giây (`5ms`)** vào Slowlog, bạn phải truyền con số nguyên nào vào cuối câu lệnh `CONFIG SET` dưới đây?",
+    "code": "CONFIG SET slowlog-log-slower-than ???",
+    "choices": [],
+    "answer": "5000",
+    "explain": "Tham số `slowlog-log-slower-than` sử dụng đơn vị **micro-giây (`µs`)**. Vì `1ms = 1000µs`, ngưỡng `5ms` tương ứng chính xác với giá trị `5000`."
+  },
+  {
+    "id": "R00-Q7",
+    "type": "output",
+    "q": "Khi bạn gửi lệnh kiểm tra kết nối không kèm tham số nào như bên dưới, máy chủ Redis sẽ trả về chuỗi phản hồi tiêu chuẩn nào?",
+    "code": "127.0.0.1:6379> PING",
+    "choices": [],
+    "answer": "PONG",
+    "explain": "Khi gọi `PING` không kèm đối số, Redis phản hồi ngay Simple String `PONG` qua giao thức RESP (`+PONG\\r\\n`), chứng tỏ Event Loop đang sống và sẵn sàng xử lý lệnh."
+  }
+]

@@ -22,7 +22,13 @@ function shuffle<T>(arr: T[]): T[] {
 function guessSnippetLang(code: string): EditorLanguage {
   const trimmed = code.trim();
   if (/^(FROM|WORKDIR|COPY|RUN|CMD|ENTRYPOINT|USER|EXPOSE)\b/m.test(trimmed)) return 'dockerfile';
-  if (/^(\$ |docker |kubectl |git |npm |curl |set -e)/m.test(trimmed)) return 'shell';
+  if (/^(\$ |docker |kubectl |git |npm |curl |set -e|redis-cli )/m.test(trimmed)) return 'shell';
+  if (/^(SET|GET|MSET|HSET|HGET|HEXPIRE|LPUSH|RPUSH|SADD|ZADD|ZRANGE|XADD|XGROUP|XREADGROUP|XPENDING|XACK|MULTI|EXEC|EVAL|SCAN|KEYS|UNLINK|CONFIG|ACL|INFO|SLOWLOG|CLUSTER|PFADD|SETBIT|GEOADD|BF\.)\b/im.test(trimmed)) {
+    return 'redis';
+  }
+  if (/^(maxmemory|maxmemory-policy|appendonly|appendfsync|save|bind|protected-mode|rename-command|user )\b/m.test(trimmed)) {
+    return 'redis-conf';
+  }
   return 'yaml';
 }
 
@@ -109,7 +115,11 @@ const QuizRound: React.FC<Props & { cur: DevOpsCurriculum; onRestart: () => void
   const passed = result ? result.correct / result.total >= cur.passQuiz : null;
   const wrongNums = result ? questions.map((q, i) => (result.items.get(q.id)?.ok ? 0 : i + 1)).filter(Boolean) : [];
   const chosenBorder =
-    accent === 'cyan' ? 'border-cyan-500 bg-cyan-500/10' : 'border-sky-500 bg-sky-500/10';
+    accent === 'cyan'
+      ? 'border-cyan-500 bg-cyan-500/10'
+      : accent === 'rose'
+        ? 'border-rose-500 bg-rose-500/10'
+        : 'border-sky-500 bg-sky-500/10';
 
   return (
     <div className="mx-auto max-w-4xl p-4 sm:p-6">

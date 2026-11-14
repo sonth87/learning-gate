@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Code2,
   Container,
+  Database,
   Flame,
   Library,
   ShieldCheck,
@@ -14,6 +15,7 @@ import {
   Star,
   Trophy,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import { useCourseCatalog, useCourseCurriculum } from '../data';
 import {
@@ -89,10 +91,20 @@ export const HomeView: React.FC = () => {
   const steps = courseNextSteps(s, cur, cat, meta.appTitle);
   const fresh = s.xp === 0 && Object.keys(s.lessons).length === 0;
 
-  const firstBorder = accent === 'cyan' ? 'border-cyan-500/60 ring-1 ring-cyan-500/30' : 'border-sky-500/60 ring-1 ring-sky-500/30';
-  const firstBadge = accent === 'cyan' ? 'bg-cyan-500 text-slate-950' : 'bg-sky-500 text-slate-950';
-  const stepNumTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
-  const hoverArrow = accent === 'cyan' ? 'group-hover:text-cyan-400' : 'group-hover:text-sky-400';
+  const firstBorder =
+    accent === 'cyan'
+      ? 'border-cyan-500/60 ring-1 ring-cyan-500/30'
+      : accent === 'rose'
+        ? 'border-rose-500/60 ring-1 ring-rose-500/30'
+        : 'border-sky-500/60 ring-1 ring-sky-500/30';
+  const firstBadge =
+    accent === 'cyan'
+      ? 'bg-cyan-500 text-slate-950'
+      : accent === 'rose'
+        ? 'bg-rose-600 text-white'
+        : 'bg-sky-500 text-slate-950';
+  const stepNumTone = accent === 'cyan' ? 'text-cyan-400' : accent === 'rose' ? 'text-rose-400' : 'text-sky-400';
+  const hoverArrow = accent === 'cyan' ? 'group-hover:text-cyan-400' : accent === 'rose' ? 'group-hover:text-rose-400' : 'group-hover:text-sky-400';
 
   const domainTracks: {
     key: string;
@@ -127,7 +139,30 @@ export const HomeView: React.FC = () => {
             modules: mods.filter((m) => parseInt(m.id.slice(1), 10) >= 7),
           },
         ]
-      : [
+      : courseId === 'redis'
+        ? [
+            {
+              key: 'redis-core',
+              badge: 'PHẦN 1 · CORE STRUCTURES, LUA & STREAMS (R00 – R08)',
+              title: 'Cẩm Nang Trực Quan Single-Thread Event Loop, SkipList, Lua & Streams',
+              subtitle: 'RESP3, String/TTL, Hash HEXPIRE, List/Set, ZSet SkipList, Bitmap/HLL/Bloom/Geo, Pipelining, Lua EVAL & Consumer Groups PEL',
+              borderCls: 'border-rose-500/35 bg-rose-500/[0.05]',
+              badgeCls: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
+              icon: <Zap className="h-4 w-4 text-rose-400" aria-hidden="true" />,
+              modules: mods.filter((m) => parseInt(m.id.slice(1), 10) <= 8),
+            },
+            {
+              key: 'redis-scale',
+              badge: 'PHẦN 2 · CACHING, PERSISTENCE, SENTINEL & CLUSTER (R09 – R17)',
+              title: 'Cẩm Nang Trực Quan Chống Stampede, RDB/AOF, 16384 Hash Slots & War Room',
+              subtitle: 'Cache-Aside, Stampede/Penetration/Avalanche, Distributed Locks, Rate Limiting, Eviction LFU, RDB/AOF COW, Sentinel, Cluster & ACL',
+              borderCls: 'border-amber-500/35 bg-amber-500/[0.05]',
+              badgeCls: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
+              icon: <Database className="h-4 w-4 text-amber-400" aria-hidden="true" />,
+              modules: mods.filter((m) => parseInt(m.id.slice(1), 10) >= 9),
+            },
+          ]
+        : [
           {
             key: 'ci-core',
             badge: 'PHẦN 1 · CI PIPELINE & DAG (C00 – C08)',
@@ -346,7 +381,15 @@ export const HomeView: React.FC = () => {
                           : c.v < 100
                             ? 'bg-cyan-500'
                             : 'bg-cyan-300'
-                      : c.v < 15
+                      : accent === 'rose'
+                        ? c.v < 15
+                          ? 'bg-rose-900'
+                          : c.v < 50
+                            ? 'bg-rose-700'
+                            : c.v < 100
+                              ? 'bg-rose-500'
+                              : 'bg-rose-300'
+                        : c.v < 15
                         ? 'bg-sky-900'
                         : c.v < 50
                           ? 'bg-sky-700'

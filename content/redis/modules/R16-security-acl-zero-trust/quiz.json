@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R16-Q1",
+    "type": "mc",
+    "q": "Vì sao một tiến trình Redis chạy dưới quyền `root` bị phơi cổng `6379` không mật khẩu ra Internet có thể dẫn tới việc tin tặc chiếm trọn quyền điều khiển máy chủ Linux (Remote Code Execution) chỉ trong vài giây?",
+    "code": "",
+    "choices": [
+      "Vì Redis tích hợp sẵn trình biên dịch C++ mở cho người lạ",
+      "Vì kẻ tấn công có thể gọi `CONFIG SET dir` + `CONFIG SET dbfilename` + `BGSAVE` để ghi tệp lịch trình `/var/spool/cron/root` hoặc ghi đè `/root/.ssh/authorized_keys` (hoặc ép `REPLICAOF` nạp Module độc hại)",
+      "Vì giao thức RESP tự động mở cổng SSH 22",
+      "Vì Redis tự động gửi mật khẩu root của Linux trong lệnh INFO"
+    ],
+    "answer": 1,
+    "explain": "Khả năng đổi thư mục xuất RDB (`CONFIG SET dir`) kết hợp chạy tiến trình dưới quyền `root` biến tính năng lưu trữ của Redis thành công cụ ghi tệp tuỳ ý lên hệ điều hành!"
+  },
+  {
+    "id": "R16-Q2",
+    "type": "mc",
+    "q": "Điều gì xảy ra nếu bạn viết câu lệnh phân quyền ACL theo thứ tự `ACL SETUSER app1 on >Secret123 ~app1:* -@dangerous +@all`?",
+    "code": "",
+    "choices": [
+      "Tài khoản `app1` bị cấm hoàn toàn nhóm lệnh `@dangerous` đúng như mong muốn",
+      "Redis báo lỗi cú pháp và từ chối tạo tài khoản",
+      "Quy tắc `+@all` nằm ở cuối dòng sẽ GHI ĐÈ lên `-@dangerous` phía trước, khiến `app1` vô tình được cấp lại toàn bộ lệnh nguy hiểm như `FLUSHALL` và `KEYS *`!",
+      "Tài khoản `app1` tự động chuyển sang chế độ chỉ đọc"
+    ],
+    "answer": 2,
+    "explain": "Redis đánh giá quy tắc ACL tuần tự từ trái sang phải! Luôn phải viết `+@all -@dangerous` (đặt các quy tắc cấm ở cuối cùng) để lệnh cấm có hiệu lực sau cùng."
+  },
+  {
+    "id": "R16-Q3",
+    "type": "output",
+    "q": "Để tắt hoàn toàn cổng TCP văn bản thuần (plaintext) và chỉ cho phép kết nối mã hoá qua `tls-port 6379`, bạn phải đặt chỉ thị `port` bằng giá trị nào trong `redis.conf`?",
+    "code": "port ____\ntls-port 6379",
+    "choices": [],
+    "answer": "0",
+    "explain": "`port 0` ra lệnh cho Redis không mở bất kỳ socket TCP không mã hoá nào; toàn bộ lưu lượng bắt buộc đi qua `tls-port`."
+  },
+  {
+    "id": "R16-Q4",
+    "type": "tf",
+    "q": "Khi cấu hình `user default off` trong tệp ACL của Redis, mọi kết nối mới bắt buộc phải xác thực bằng câu lệnh `AUTH <username> <password>` của một tài khoản đang `on` trước khi được phép gọi bất kỳ lệnh dữ liệu nào.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Mặc định kết nối mới vào Redis được gán tạm tư cách `default`. Khi `user default off`, kết nối ở trạng thái chưa xác thực (`NOAUTH Authentication required`) cho tới khi `AUTH <user> <pass>` thành công."
+  },
+  {
+    "id": "R16-Q5",
+    "type": "mc",
+    "q": "So với cơ chế mật khẩu đơn `requirepass` truyền thống, hệ thống Redis ACL mang lại lợi thế vận hành vượt trội nào cho kiến trúc Microservices?",
+    "code": "",
+    "choices": [
+      "Giúp dữ liệu nén nhỏ hơn 4 lần",
+      "Cho phép mỗi microservice sở hữu tài khoản & mật khẩu riêng (xoay vòng hoặc khoá `off` độc lập từng dịch vụ mà không làm gián đoạn 49 dịch vụ khác) đồng thời giới hạn chặt phạm vi tiền tố khoá `~service:*` và nhóm lệnh được phép gọi",
+      "Giúp không cần dùng Firewall hay VPC nữa",
+      "Tự động biến Redis đơn lẻ thành Redis Cluster"
+    ],
+    "answer": 1,
+    "explain": "Redis ACL giải quyết đồng thời bài toán Blast Radius (cô lập thiệt hại theo nhánh khoá & nhóm lệnh) lẫn bài toán Secret Rotation (đổi/thu hồi mật khẩu từng dịch vụ không gây downtime toàn cục)."
+  },
+  {
+    "id": "R16-Q6",
+    "type": "tf",
+    "q": "Trên một cụm Kubernetes mặc định chưa khai báo bất kỳ `NetworkPolicy` nào, các Pod nằm ở Namespace khác hoàn toàn bị chặn không thể kết nối vào cổng `6379` của Pod Redis.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Mô hình mạng phẳng mặc định của Kubernetes là **Allow-All** giữa mọi Pod trên toàn cụm (kể cả khác Namespace). Bắt buộc phải áp dụng `NetworkPolicy` để khoá `Ingress` cổng `6379`!"
+  },
+  {
+    "id": "R16-Q7",
+    "type": "output",
+    "q": "Điền tên chỉ thị trong `redis.conf` dùng để đổi tên hoặc vô hiệu hoá hoàn toàn một lệnh nguy hiểm thành chuỗi rỗng `\"\"` (ví dụ chặn lệnh `FLUSHALL`):",
+    "code": "____ FLUSHALL \"\"",
+    "choices": [],
+    "answer": "rename-command",
+    "explain": "`rename-command FLUSHALL \"\"` xoá bỏ hoàn toàn lệnh `FLUSHALL` khỏi bảng lệnh khởi tạo của máy chủ Redis."
+  }
+]

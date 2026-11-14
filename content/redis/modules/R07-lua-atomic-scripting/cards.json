@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R07-FC1",
+    "front": "Lỗi **TOCTOU (Time-of-Check to Time-of-Use)** khi dùng Redis từ ứng dụng là gì và giải pháp triệt để nhất?",
+    "back": "Là lỗi đọc trạng thái bằng `GET` về ứng dụng kiểm tra điều kiện rồi mới gửi lệnh ghi lại, tạo khe hở cho request khác chen ngang sửa dữ liệu. Giải pháp triệt để nhất là gói trọn Đọc + Kiểm tra + Ghi vào **1 kịch bản Lua (`EVAL`/`EVALSHA`)**."
+  },
+  {
+    "id": "R07-FC2",
+    "front": "Kịch bản Lua 4 dòng chuẩn mực để **nhả Distributed Lock an toàn** viết như thế nào?",
+    "back": "`if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end`\n(`KEYS[1]` là tên khoá lock, `ARGV[1]` là mã `owner_token` UUID duy nhất của tiến trình giữ khoá)."
+  },
+  {
+    "id": "R07-FC3",
+    "front": "Sự khác nhau giữa **`redis.call()`** và **`redis.pcall()`** bên trong Lua là gì?",
+    "back": "- **`redis.call()`**: Nếu lệnh Redis bên trong báo lỗi, toàn bộ kịch bản dừng ngay lập tức và ném lỗi đó ra ngoài cho client.\n- **`redis.pcall()`** (*protected call*): Bắt lại lỗi dưới dạng bảng Lua `{ err = '...' }` để kịch bản có thể tự xử lý và chạy tiếp."
+  },
+  {
+    "id": "R07-FC4",
+    "front": "Ba điểm khác biệt cú pháp của **Lua** mà lập trình viên JS/Python hay mắc lỗi nhất là gì?",
+    "back": "1) Mảng bắt đầu từ **`1`** (`KEYS[1]`, `ARGV[1]`)\n2) Toán tử khác nhau là **`~=`** (không phải `!=`)\n3) Giá trị số **`0`** và chuỗi rỗng **`\"\"`** đều được tính là **`true`** trong câu lệnh `if` (chỉ `false` và `nil` mới là sai)!"
+  },
+  {
+    "id": "R07-FC5",
+    "front": "Cơ chế phối hợp **`EVALSHA`** + **`NOSCRIPT`** của các thư viện như `ioredis` hoạt động ra sao?",
+    "back": "Thư viện tính sẵn mã băm SHA1 của script và luôn ưu tiên gửi `EVALSHA <sha1>` siêu nhẹ; nếu Redis trả lỗi `NOSCRIPT` (do chưa có trong cache), thư viện tự động fallback gọi `EVAL` 1 lần để nạp script rồi dùng `EVALSHA` cho mọi lần sau."
+  },
+  {
+    "id": "R07-FC6",
+    "front": "**Redis Functions (`FUNCTION LOAD` / `FCALL`)** trên Redis 7 & Redis 8 cải tiến điểm gì so với `EVALSHA` truyền thống?",
+    "back": "Quản lý hàm có đặt tên theo thư viện tập trung trên máy chủ và **tự động lưu bền vững vào tệp AOF/RDB cũng như nhân bản sang Replica**, không còn phụ thuộc phía ứng dụng phải giữ mã nguồn nạp lại khi khởi động."
+  }
+]

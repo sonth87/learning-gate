@@ -379,14 +379,18 @@ function createCourseProgressStore(courseId: DevOpsCourseId) {
 export const COURSE_NAV_STORES = {
   kube: createCourseNavStore(),
   cicd: createCourseNavStore(),
+  redis: createCourseNavStore(),
 } as const;
 
 export const COURSE_PROGRESS_STORES = {
   kube: createCourseProgressStore('kube'),
   cicd: createCourseProgressStore('cicd'),
+  redis: createCourseProgressStore('redis'),
 } as const;
 
 export const useKubeNav = COURSE_NAV_STORES.kube;
 export const useCicdNav = COURSE_NAV_STORES.cicd;
+export const useRedisNav = COURSE_NAV_STORES.redis;
 export const useKubeProgress = COURSE_PROGRESS_STORES.kube;
 export const useCicdProgress = COURSE_PROGRESS_STORES.cicd;
+export const useRedisProgress = COURSE_PROGRESS_STORES.redis;

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R15-Q1",
+    "type": "mc",
+    "q": "Redis Cluster phân chia toàn bộ không gian khoá thành bao nhiêu khe băm (Hash Slots) và sử dụng hàm băm nào?",
+    "code": "",
+    "choices": [
+      "1.024 khe băm bằng hàm MD5",
+      "16.384 khe băm theo công thức `CRC16(key) mod 16384`",
+      "65.536 khe băm bằng hàm SHA-256",
+      "4.294.967.296 điểm trên vòng Consistent Hashing"
+    ],
+    "answer": 1,
+    "explain": "Redis Cluster cố định đúng `16.384` (`2^14`) Hash Slots dùng `CRC16(key) mod 16384`, giúp bản đồ bitmap Slot trong mỗi gói tin Gossip chỉ nặng vỏn vẹn `2 KB`."
+  },
+  {
+    "id": "R15-Q2",
+    "type": "mc",
+    "q": "Nếu một nút Redis Cluster cấu hình cổng dữ liệu chính là `port 6379`, bạn bắt buộc phải mở thêm cổng TCP nào trên Firewall giữa các nút để giao thức Cluster Gossip Bus hoạt động?",
+    "code": "",
+    "choices": [
+      "Cổng `26379`",
+      "Cổng `16379` (quy tắc `port + 10000`)",
+      "Cổng `6380`",
+      "Cổng `8080`"
+    ],
+    "answer": 1,
+    "explain": "Mỗi nút Redis Cluster mở cổng Cluster Bus nhị phân ở địa chỉ mặc định `port + 10000` (`6379 + 10000 = 16379`) để trao đổi nhịp tim `PING/PONG`, phát hiện lỗi và bầu cử Failover."
+  },
+  {
+    "id": "R15-Q3",
+    "type": "tf",
+    "q": "Hai khoá `order:{}:status` (cặp ngoặc nhọn rỗng) và `order:{}:items` sẽ luôn được Redis Cluster gom vào chung một Hash Slot.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Theo đặc tả Redis Cluster, nếu giữa cặp `{}` đầu tiên **rỗng không có ký tự nào**, Redis sẽ **bỏ qua cặp ngoặc** và đem toàn bộ chuỗi khoá đi băm `CRC16`, dẫn tới 2 khoá trên rơi vào 2 Slot khác nhau!"
+  },
+  {
+    "id": "R15-Q4",
+    "type": "mc",
+    "q": "Sự khác biệt cốt lõi giữa hai thông báo điều hướng `-MOVED` và `-ASK` mà nút Redis Cluster trả về cho Smart Client là gì?",
+    "code": "",
+    "choices": [
+      "`-MOVED` dùng cho lệnh đọc, còn `-ASK` dùng cho lệnh ghi",
+      "`-MOVED` báo rằng toàn bộ Slot đã chuyển hẳn sang nút mới (Client phải cập nhật lại bảng Slot Map trong RAM); còn `-ASK` báo rằng Slot đang di dời dở dang (Client chỉ chuyển hướng tạm 1 lần kèm lệnh `ASKING` mà không ghi đè bảng Slot Map)",
+      "`-ASK` nghĩa là cụm đã sập hoàn toàn",
+      "Hai mã này hoàn toàn giống hệt nhau"
+    ],
+    "answer": 1,
+    "explain": "`-MOVED` là chuyển nhượng vĩnh viễn đã hoàn tất, trong khi `-ASK` phục vụ trạng thái quá độ `MIGRATING`/`IMPORTING` khi Live Resharding đang bốc từng khoá sang nút đích."
+  },
+  {
+    "id": "R15-Q5",
+    "type": "output",
+    "q": "Điền tên chỉ thị trong `redis.conf` cần đặt thành `no` để ngăn thảm hoạ một phân mảnh mất cả Master lẫn Replica kéo sập luôn các phân mảnh lành lặn còn lại với lỗi `CLUSTERDOWN`:",
+    "code": "____ no",
+    "choices": [],
+    "answer": "cluster-require-full-coverage",
+    "explain": "Mặc định `cluster-require-full-coverage` là `yes`. Đổi sang `no` giúp các phân mảnh còn sống vẫn phục vụ lưu lượng bình thường thay vì tự khoá toàn cụm."
+  },
+  {
+    "id": "R15-Q6",
+    "type": "mc",
+    "q": "Chuyện gì xảy ra nếu đội phát triển gắn tiền tố `{global}` cho toàn bộ 50 triệu khoá trong cụm Redis Cluster 10 Master để tránh lỗi `CROSSSLOT`?",
+    "code": "",
+    "choices": [
+      "Tốc độ truy vấn tăng gấp 10 lần nhờ nén bộ nhớ",
+      "Toàn bộ 50 triệu khoá cùng băm chuỗi `\"global\"` và dồn 100% vào duy nhất 1 Hash Slot trên 1 máy Master gây quá tải OOM/CPU (Hot-Slot), trong khi 9 Master còn lại hoàn toàn trống rỗng",
+      "Redis tự động chia `{global}` ra đều 10 máy",
+      "Redis từ chối khởi động"
+    ],
+    "answer": 1,
+    "explain": "Đây là phản mẫu Hot-Slot / Jumbo-Slot kinh điển! `{HashTag}` chỉ được phép gắn theo định danh thực thể hạt mịn như `{userId}` hoặc `{orderId}`."
+  },
+  {
+    "id": "R15-Q7",
+    "type": "tf",
+    "q": "Một cụm Redis Cluster chuẩn Production có khả năng tự phát hiện Master chết và tự bầu cử thăng cấp Replica lên thay thế thông qua giao thức Gossip của các Master còn lại mà KHÔNG cần triển khai cụm Redis Sentinel riêng.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Redis Cluster tích hợp sẵn cơ chế phát hiện lỗi và bầu cử Failover nội tại qua Cluster Bus (`16379`), hoàn toàn không dùng tới tiến trình Sentinel (vốn dành cho mô hình không phân mảnh)."
+  }
+]

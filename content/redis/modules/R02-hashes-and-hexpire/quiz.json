@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R02-Q1",
+    "type": "mc",
+    "q": "So với việc lưu đối tượng người dùng dưới dạng một chuỗi `JSON.stringify` trong Redis String, **Redis Hash** mang lại lợi thế vượt trội nào khi ứng dụng cần cộng trừ liên tục trường `credits`?",
+    "code": "",
+    "choices": [
+      "Redis Hash tự động đồng bộ trường `credits` xuống PostgreSQL mà không cần viết code backend",
+      "Cho phép cập nhật nguyên tử ngay tại chỗ trên đúng 1 trường bằng `HINCRBY` mà không phải tải cả chuỗi JSON về mạng, parse rồi ghi đè gây Race Condition",
+      "Redis Hash hỗ trợ truy vấn `JOIN` trực tiếp giữa hai Hash khác nhau như bảng SQL",
+      "Redis Hash không bao giờ tốn bộ nhớ RAM vì lưu hoàn toàn trên đĩa cứng"
+    ],
+    "answer": 1,
+    "explain": "`HINCRBY` sửa trực tiếp trường `credits` ngay bên trong bộ nhớ Redis trong 1 thao tác nguyên tử `O(1)`, vừa tiết kiệm băng thông mạng vừa loại bỏ lỗi Lost Update khi nhiều request chạy đồng thời."
+  },
+  {
+    "id": "R02-Q2",
+    "type": "mc",
+    "q": "Trong Redis 7 và Redis 8, cấu trúc biểu diễn nội bộ siêu tiết kiệm bộ nhớ nào được dùng mặc định cho các Hash nhỏ (thay thế cho `ziplist` cũ)?",
+    "code": "",
+    "choices": [
+      "`listpack` — mảng byte liền khối không tốn con trỏ phụ và loại bỏ lỗi cascade update",
+      "`skiplist` — danh sách liên kết nhảy nhiều tầng",
+      "`red-black-tree` — cây nhị phân tự cân bằng",
+      "`b-plus-tree` — cây phân trang giống InnoDB của MySQL"
+    ],
+    "answer": 0,
+    "explain": "Từ Redis 7.0 trở đi, `listpack` đã thay thế hoàn toàn `ziplist` để lưu các Hash, List node và ZSet nhỏ trên một vùng byte liên tiếp thân thiện với CPU cache."
+  },
+  {
+    "id": "R02-Q3",
+    "type": "tf",
+    "q": "Khi một Redis Hash vượt quá ngưỡng `hash-max-listpack-entries` và chuyển sang biểu diễn `hashtable`, nếu sau đó bạn dùng `HDEL` xoá bớt các trường xuống chỉ còn 2 trường thì Redis sẽ tự động hạ cấp ngược lại về `listpack` ngay lập tức.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Quá trình nâng cấp từ `listpack` lên `hashtable` là **một chiều** nhằm tránh chi phí CPU cấp phát và chép lại vùng nhớ liên tục khi số phần tử dao động quanh ngưỡng."
+  },
+  {
+    "id": "R02-Q4",
+    "type": "mc",
+    "q": "Cú pháp nào dưới đây là **ĐÚNG chuẩn Redis 8** để đặt thời gian hết hạn `300` giây cho riêng 2 trường `otp` và `magic_link` bên trong Hash `auth:u:100`?",
+    "code": "",
+    "choices": [
+      "`EXPIRE auth:u:100 otp magic_link 300`",
+      "`HEXPIRE auth:u:100 300 FIELDS 2 otp magic_link`",
+      "`HSET auth:u:100 otp EX 300 magic_link EX 300`",
+      "`HEXPIRE auth:u:100 otp 300 magic_link 300`"
+    ],
+    "answer": 1,
+    "explain": "Cú pháp chuẩn của `HEXPIRE` bắt buộc từ khoá `FIELDS` đi kèm số lượng trường `numfields` đứng trước danh sách tên trường: `HEXPIRE key seconds [NX|XX|GT|LT] FIELDS numfields field [field ...]`."
+  },
+  {
+    "id": "R02-Q5",
+    "type": "tf",
+    "q": "Gọi lệnh `HGETALL` trên một BigKey Hash chứa 500,000 trường giữa giờ cao điểm là hoàn toàn an toàn vì mọi lệnh đọc của Hash đều có độ phức tạp `O(1)`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `HGET` và `HMGET` mới là `O(1)` / `O(K)`, còn `HGETALL` có độ phức tạp **`O(N)`** theo tổng số trường trong Hash — chạy trên 500,000 trường sẽ làm nghẽn cứng Event Loop và bão hoà băng thông mạng. Hãy dùng `HMGET` hoặc `HSCAN`!"
+  },
+  {
+    "id": "R02-Q6",
+    "type": "output",
+    "q": "Dự đoán con số nguyên mà lệnh `HSET` ở dòng thứ hai trả về (lưu ý: `tier` là trường đã có sẵn bị ghi đè, còn `city` là trường hoàn toàn mới):",
+    "code": "HSET u:1 name \"Lan\" tier \"silver\"\nHSET u:1 tier \"gold\" city \"Hanoi\"",
+    "choices": [],
+    "answer": "1",
+    "explain": "`HSET` trả về số lượng trường **được thêm mới hoàn toàn** vào Hash (không đếm các trường cũ được cập nhật đè). Ở dòng 2, `tier` là cập nhật đè còn `city` là trường mới, nên kết quả trả về là `1`."
+  },
+  {
+    "id": "R02-Q7",
+    "type": "output",
+    "q": "Nếu một Hash chỉ còn duy nhất 1 trường `temp_token`, và trường đó vừa bị xoá bằng `HDEL` (hoặc vừa hết hạn `HEXPIRE`), lệnh `EXISTS` kiểm tra khoá Hash mẹ ngay sau đó sẽ trả về số mấy?",
+    "code": "HSET otp:box temp_token \"998811\"\nHDEL otp:box temp_token\nEXISTS otp:box",
+    "choices": [],
+    "answer": "0",
+    "explain": "Trong Redis, các cấu trúc tập hợp (Hash, List, Set, ZSet) không tồn tại ở trạng thái rỗng — ngay khi phần tử cuối cùng bị xoá hoặc hết hạn, Redis tự động thu hồi luôn khoá mẹ khỏi Keyspace (`EXISTS` trả về `0`)."
+  }
+]

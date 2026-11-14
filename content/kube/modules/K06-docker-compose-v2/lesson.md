@@ -4,6 +4,28 @@ Một hệ thống thực tế hiếm khi chạy lẻ loi một mình: API Node.
 
 **Docker Compose v2** gói trọn toàn bộ kiến trúc đa container ({sky:dịch vụ}, {emerald:mạng DNS nội bộ}, {amber:ổ đĩa bền vững}, {violet:thứ tự sẵn sàng}) vào một tệp YAML khai báo duy nhất tên là ==`compose.yaml`== — bước đệm tư duy hoàn hảo trước khi bạn tiến lên Kubernetes Manifest YAML ở Cấp độ 2!
 
+```visual
+kind: illustration
+diagram: "kube:k06"
+alt: "Kiến trúc mạng cầu nối nội bộ Docker Compose v2 với DNS theo tên dịch vụ, depends_on service_healthy và Named Volume"
+title: "Giải Phẫu Docker Compose v2: Mạng Bridge DNS Nội Bộ, Healthcheck & Ổ Đĩa Bền Vững"
+subtitle: "Điều phối trọn bộ API Node.js, PostgreSQL và Redis giao tiếp mượt mà chỉ qua một tệp khai báo compose.yaml"
+caption: "Sơ đồ phân giải DNS nội bộ theo tên dịch vụ (postgres:5432, redis:6379), chốt chặn khởi động service_healthy và lưu trữ dữ liệu qua Named Volume"
+callouts:
+  - num: 1
+    label: "Mạng Bridge tự động & DNS theo tên dịch vụ"
+    desc: "Compose v2 tự dựng mạng nội bộ riêng, cho phép container api gọi thẳng hostname postgres:5432 mà không cần mở cổng DB ra Host."
+    tone: cyan
+  - num: 2
+    label: "Đợi sẵn sàng thật sự với service_healthy"
+    desc: "Kết hợp healthcheck (pg_isready) và condition: service_healthy để đảm bảo API chỉ bật sau khi PostgreSQL đã sẵn sàng nhận truy vấn SQL."
+    tone: amber
+  - num: 3
+    label: "Named Volume bảo toàn dữ liệu qua các lần tắt/bật"
+    desc: "Ổ đĩa pgdata giữ nguyên dữ liệu Database khi gõ docker compose down; chỉ xoá sạch khi bạn chủ động truyền thêm cờ -v."
+    tone: emerald
+```
+
 ## 1. Chuẩn Docker Compose v2 năm 2026: Tạm biệt những di sản cũ!
 
 Khi đọc các bài hướng dẫn cũ giai đoạn 2018–2021 trên mạng, bạn sẽ gặp rất nhiều cú pháp của Compose v1 đã chính thức bị khai tử. Hãy cập nhật ngay sang chuẩn **Compose v2** hiện đại:

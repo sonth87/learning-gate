@@ -1,0 +1,59 @@
+{
+  "id": "R01",
+  "slug": "R01-strings-ttl-keyspace",
+  "level": 0,
+  "order": 1,
+  "title": "Strings (SDS), vòng đời TTL & kỷ luật Keyspace không làm đóng băng Server",
+  "summary": "Nắm vững cấu trúc chuỗi động SDS, cổng nguyên tử SET NX EX, bộ đếm INCR/DECRBY, cơ chế hết hạn Lazy + Active TTL và lý do phải thay KEYS * bằng SCAN.",
+  "tags": [
+    "strings",
+    "sds",
+    "ttl",
+    "set-nx-ex",
+    "incr",
+    "scan",
+    "keyspace"
+  ],
+  "sources": [
+    {
+      "title": "Redis Data Types — Strings & Atomic Counters",
+      "url": "https://redis.io/docs/latest/develop/data-types/strings/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Commands — SCAN & Key Expiration (EXPIRE / TTL)",
+      "url": "https://redis.io/docs/latest/commands/scan/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Sự cố KEYS * làm đóng băng toàn cụm",
+      "kind": "incident",
+      "targetId": "inc-keys-star-freeze",
+      "description": "Trực tiếp khám nghiệm hiện trường một cronjob gọi KEYS * giữa giờ cao điểm và cách cứu hệ thống"
+    },
+    {
+      "label": "Flow: Cache-Aside & Singleflight chống sập DB",
+      "kind": "flow",
+      "targetId": "cache-aside-singleflight",
+      "description": "Xem cách String + TTL + SET NX phối hợp bảo vệ PostgreSQL khỏi bão truy vấn"
+    }
+  ],
+  "readings": [
+    {
+      "path": "patterns/bad-keys-star-cron.sh",
+      "kind": "bug",
+      "note": "Một script bash dọn cache chạy định kỳ mỗi 5 phút từng đánh sập API thanh toán lúc 12h trưa.",
+      "task": "Tìm ra 2 điểm chí mạng trong script này khi số lượng khoá trong Redis vượt mốc 10 triệu.",
+      "answer": "1) Gọi `KEYS temp:export:*` có độ phức tạp `O(N)` quét toàn bộ bảng băm trên luồng chính duy nhất, treo cứng mọi request khác trong hàng trăm mili-giây đến vài giây; 2) Xoá đồng bộ bằng `DEL` từng khoá một không gom lô và không dùng `UNLINK` giải phóng bất đồng bộ."
+    },
+    {
+      "path": "patterns/scan-cursor-batch-cleanup.py",
+      "kind": "good",
+      "note": "Kịch bản Python chuẩn Production quét dọn hàng triệu khoá êm ái không gây gai độ trễ (latency spike).",
+      "task": "Giải thích cách vòng lặp `cursor` của `SCAN` kết hợp với `UNLINK` theo lô (batch) bảo vệ Event Loop như thế nào.",
+      "answer": "Kịch bản lặp `SCAN` từng bước nhỏ (`COUNT 200`) trả quyền điều khiển Event Loop cho các lệnh đọc/ghi khác xen kẽ giữa mỗi nhịp, chỉ dừng khi `cursor == 0`, đồng thời gom danh sách khoá vào `UNLINK` để đẩy việc thu hồi bộ nhớ sang luồng BIO nền."
+    }
+  ]
+}

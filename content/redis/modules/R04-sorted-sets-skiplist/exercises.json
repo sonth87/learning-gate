@@ -1,0 +1,335 @@
+[
+  {
+    "id": "redis-ex-r04-1",
+    "code": "R04.1",
+    "title": "Cập nhật bảng xếp hạng thời gian thực bằng ZADD & ZINCRBY",
+    "difficulty": 1,
+    "tags": [
+      "zadd",
+      "zincrby",
+      "leaderboard",
+      "zset"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "arena-leaderboard.redis",
+    "prompt": "Bảng xếp hạng giải đấu `lb:arena:s1` đang có 3 tuyển thủ: `player:nam` (`1450`), `player:khoa` (`1380`), và `player:vy` (`1200`). Hãy:\n1) Dùng `ZADD` đăng ký tuyển thủ mới `\"player:linh\"` với số điểm ban đầu `1400`.\n2) Tuyển thủ `\"player:vy\"` vừa thắng chuỗi trận lớn được thưởng thêm `300` điểm — hãy dùng `ZINCRBY` cộng `300` điểm cho `\"player:vy\"` để đưa Vy vọt lên dẫn đầu bảng (`1500` điểm)!",
+    "starter": "# 1. Thêm player:linh với điểm 1400 vào lb:arena:s1 bằng ZADD\n# 2. Cộng thêm 300 điểm cho player:vy bằng ZINCRBY\n",
+    "solution": "ZADD lb:arena:s1 1400 \"player:linh\"\nZINCRBY lb:arena:s1 300 \"player:vy\"\n",
+    "hints": [
+      "Nhớ trong ZSet, điểm số luôn đứng TRƯỚC tên thành viên: `ZADD lb:arena:s1 1400 \"player:linh\"`.",
+      "Cộng điểm nguyên tử bằng `ZINCRBY lb:arena:s1 300 \"player:vy\"`."
+    ],
+    "ref": "patterns/zset-realtime-leaderboard.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "lb:arena:s1",
+            "type": "zset",
+            "value": {
+              "player:vy": 1200,
+              "player:nam": 1450,
+              "player:khoa": 1380
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "leaderboard-order-and-score",
+          "doc": "Thứ tự Top 4 giảm dần là `vy (1500) -> nam (1450) -> linh (1400) -> khoa (1380)`",
+          "target": "zset-ranking",
+          "key": "lb:arena:s1",
+          "topDesc": [
+            "player:vy",
+            "player:nam",
+            "player:linh",
+            "player:khoa"
+          ],
+          "memberScore": {
+            "member": "player:vy",
+            "score": 1500
+          },
+          "cardinalityEq": 4
+        },
+        {
+          "id": "used-zincrby",
+          "doc": "Cộng dồn điểm cho `player:vy` bằng `ZINCRBY` (không ghi đè tĩnh bằng `ZADD 1500`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*ZINCRBY\\s+lb:arena:s1\\s+300\\s+player:vy\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r04-2",
+    "code": "R04.2",
+    "title": "Lấy Top 3 điểm cao nhất chuẩn Redis 8 bằng ZRANGE REV & ZREVRANK",
+    "difficulty": 1,
+    "tags": [
+      "zrange",
+      "rev",
+      "withscores",
+      "zrevrank"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "top3-query.redis",
+    "prompt": "Trên bảng điểm `lb:arena:s1` đang có 5 người chơi. Thay vì dùng lệnh cũ `ZREVRANGE` đã ngừng khuyến khích, hãy sử dụng cú pháp hợp nhất chuẩn Redis 8:\n1) Dùng `ZRANGE lb:arena:s1 0 2 REV WITHSCORES` để lấy Top 3 người dẫn đầu kèm theo điểm số.\n2) Dùng `ZREVRANK lb:arena:s1 \"player:linh\"` để tra cứu thứ hạng từ cao xuống thấp của Linh (tính từ `0`).",
+    "starter": "# 1. Lấy Top 3 giảm dần kèm điểm bằng ZRANGE ... REV WITHSCORES (KHÔNG dùng ZREVRANGE)\n# 2. Xem hạng giảm dần của \"player:linh\" bằng ZREVRANK\n",
+    "solution": "ZRANGE lb:arena:s1 0 2 REV WITHSCORES\nZREVRANK lb:arena:s1 \"player:linh\"\n",
+    "hints": [
+      "Đặt cờ `REV` và `WITHSCORES` sau cặp chỉ số `0 2`: `ZRANGE lb:arena:s1 0 2 REV WITHSCORES`.",
+      "Tra thứ hạng từ đỉnh bảng xuống bằng `ZREVRANK lb:arena:s1 \"player:linh\"`."
+    ],
+    "ref": "patterns/zset-realtime-leaderboard.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "lb:arena:s1",
+            "type": "zset",
+            "value": {
+              "player:vy": 1500,
+              "player:nam": 1450,
+              "player:linh": 1400,
+              "player:khoa": 1380,
+              "player:minh": 980
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "unified-zrange-rev-used",
+          "doc": "Sử dụng cú pháp mới `ZRANGE ... REV WITHSCORES` và `ZREVRANK` (không dùng `ZREVRANGE` cũ)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*ZRANGE\\s+lb:arena:s1\\s+0\\s+2\\s+REV\\s+WITHSCORES\\b[\\s\\S]*^\\s*ZREVRANK\\s+lb:arena:s1\\s+player:linh\\b",
+          "forbidRegex": "^\\s*ZREVRANGE\\b"
+        },
+        {
+          "id": "top-score-output",
+          "doc": "Kết quả đầu ra hiển thị điểm dẫn đầu `\"1500\"`",
+          "target": "stdout-contains",
+          "contains": "\"1500\""
+        },
+        {
+          "id": "linh-rank-2",
+          "doc": "Thứ hạng `ZREVRANK` của `player:linh` trả về chính xác `(integer) 2` (hạng 3 tính từ 0)",
+          "target": "stdout-contains",
+          "contains": "(integer) 2"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r04-3",
+    "code": "R04.3",
+    "title": "Bảo vệ kỷ lục điểm cao nhất bằng cờ điều kiện ZADD GT & NX",
+    "difficulty": 2,
+    "tags": [
+      "zadd-gt",
+      "zadd-nx",
+      "high-score"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "highscore-guard.redis",
+    "prompt": "Bảng kỷ lục cá nhân `lb:highscore:boss1` đang lưu `u:an = 850` và `u:binh = 920`. Luật của game là **chỉ cập nhật điểm nếu ván mới phá kỷ lục cũ (`GT`)** để không làm tụt điểm người chơi! Hãy thực hiện:\n1) Gọi `ZADD lb:highscore:boss1 GT 700 \"u:an\"` (lượt chơi thấp hơn kỷ lục cũ -> Redis phải tự bỏ qua, giữ nguyên `850`).\n2) Gọi `ZADD lb:highscore:boss1 GT 990 \"u:binh\"` (phá kỷ lục -> nâng lên `990`).\n3) Gọi `ZADD lb:highscore:boss1 NX 800 \"u:chi\"` để khởi tạo người chơi mới `\"u:chi\"`.",
+    "starter": "# 1. Thử cập nhật u:an với điểm 700 kèm cờ GT\n# 2. Cập nhật u:binh lên 990 kèm cờ GT\n# 3. Thêm mới u:chi điểm 800 kèm cờ NX\n",
+    "solution": "ZADD lb:highscore:boss1 GT 700 \"u:an\"\nZADD lb:highscore:boss1 GT 990 \"u:binh\"\nZADD lb:highscore:boss1 NX 800 \"u:chi\"\n",
+    "hints": [
+      "Các cờ `GT`, `LT`, `NX`, `XX` được đặt ngay sau tên khoá và trước điểm số: `ZADD <key> GT <score> <member>`.",
+      "Nhờ cờ `GT`, lệnh đầu tiên với điểm `700` tự động không ghi đè điểm `850` của `u:an` mà không cần đọc ra kiểm tra ở phía app!"
+    ],
+    "ref": "patterns/zset-realtime-leaderboard.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "lb:highscore:boss1",
+            "type": "zset",
+            "value": {
+              "u:an": 850,
+              "u:binh": 920
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "an-score-protected",
+          "doc": "Điểm kỷ lục của `u:an` vẫn được bảo vệ ở mức `850` (không bị tụt xuống `700`)",
+          "target": "zset-ranking",
+          "key": "lb:highscore:boss1",
+          "memberScore": {
+            "member": "u:an",
+            "score": 850
+          }
+        },
+        {
+          "id": "binh-and-chi-updated",
+          "doc": "Bảng kỷ lục xếp đúng thứ tự `u:binh (990) -> u:an (850) -> u:chi (800)`",
+          "target": "zset-ranking",
+          "key": "lb:highscore:boss1",
+          "topDesc": [
+            "u:binh",
+            "u:an",
+            "u:chi"
+          ],
+          "memberScore": {
+            "member": "u:binh",
+            "score": 990
+          },
+          "cardinalityEq": 3
+        },
+        {
+          "id": "used-zadd-gt-and-nx",
+          "doc": "Sử dụng đúng cờ `ZADD ... GT 700 u:an` và `ZADD ... NX`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*ZADD\\s+lb:highscore:boss1\\s+GT\\s+700\\s+u:an\\b[\\s\\S]*^\\s*ZADD\\s+lb:highscore:boss1\\s+NX\\s+800\\s+u:chi\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r04-4",
+    "code": "R04.4",
+    "title": "Dọn tác vụ quá hạn & bốc việc tới giờ trong ZSet Delayed Queue",
+    "difficulty": 2,
+    "tags": [
+      "zremrangebyscore",
+      "byscore",
+      "delayed-queue",
+      "scheduler"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "delayed-scheduler.redis",
+    "prompt": "Hàng đợi hẹn giờ `jobs:delayed` dùng `score` làm mốc Unix Timestamp thực thi. Đồng hồ hệ thống hiện đang ở mốc **`1700000600`**:\n1) Các tác vụ cũ có timestamp từ `-inf` tới `1700000300` đã hết hiệu lực — hãy xoá sạch chúng bằng `ZREMRANGEBYSCORE jobs:delayed -inf 1700000300`.\n2) Sau khi dọn xong, hãy dùng `ZRANGE jobs:delayed -inf 1700000600 BYSCORE` để lấy danh sách các tác vụ đã đến hạn cần chạy ngay lúc này (kỳ vọng xuất ra `\"job:ready-3\"`, trong khi `\"job:future-4\"` hẹn lúc `1700000900` vẫn chờ lại trong ZSet).",
+    "starter": "# 1. Xoá các job có score từ -inf đến 1700000300 bằng ZREMRANGEBYSCORE\n# 2. Truy vấn các job đến hạn (-inf đến 1700000600) bằng ZRANGE ... BYSCORE\n",
+    "solution": "ZREMRANGEBYSCORE jobs:delayed -inf 1700000300\nZRANGE jobs:delayed -inf 1700000600 BYSCORE\n",
+    "hints": [
+      "Dọn dẹp miền điểm bằng `ZREMRANGEBYSCORE jobs:delayed -inf 1700000300`.",
+      "Lọc theo khoảng điểm bằng cú pháp chuẩn `ZRANGE jobs:delayed -inf 1700000600 BYSCORE`."
+    ],
+    "ref": "patterns/zset-delayed-job-scheduler.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "jobs:delayed",
+            "type": "zset",
+            "value": {
+              "job:stale-1": 1700000100,
+              "job:stale-2": 1700000250,
+              "job:ready-3": 1700000500,
+              "job:future-4": 1700000900
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "stale-jobs-pruned",
+          "doc": "Đã dọn sạch 2 job quá hạn cũ, `jobs:delayed` chỉ còn `job:future-4` và `job:ready-3`",
+          "target": "zset-ranking",
+          "key": "jobs:delayed",
+          "topDesc": [
+            "job:future-4",
+            "job:ready-3"
+          ],
+          "cardinalityEq": 2
+        },
+        {
+          "id": "ready-job-queried",
+          "doc": "Truy vấn `BYSCORE` trả về chính xác tác vụ đến hạn `\"job:ready-3\"`",
+          "target": "stdout-contains",
+          "contains": "\"job:ready-3\""
+        },
+        {
+          "id": "used-zremrangebyscore",
+          "doc": "Sử dụng `ZREMRANGEBYSCORE` theo khoảng điểm (không `ZREM` thủ công tên từng job)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*ZREMRANGEBYSCORE\\s+jobs:delayed\\s+-inf\\s+1700000300\\b",
+          "forbidRegex": "^\\s*ZREM\\s+"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r04-5",
+    "code": "R04.5",
+    "title": "Đếm phân khúc khẩn cấp bằng ZCOUNT & bốc việc ưu tiên cao nhất bằng ZPOPMAX",
+    "difficulty": 2,
+    "tags": [
+      "zcount",
+      "zpopmax",
+      "priority-queue"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "priority-ticket-queue.redis",
+    "prompt": "Hàng đợi ưu tiên `tickets:vip:queue` chấm điểm mức độ khẩn cấp từ `1` đến `100` (`tkt-101: 10`, `tkt-102: 55`, `tkt-103: 95`, `tkt-104: 80`). Hãy:\n1) Dùng `ZCOUNT tickets:vip:queue 50 100` đếm nhanh số lượng phiếu ưu tiên cao nằm trong đoạn điểm `[50, 100]` (`O(log N)`).\n2) Dùng `ZPOPMAX tickets:vip:queue 1` lấy ra và xoá nguyên tử 1 phiếu có độ ưu tiên cao nhất (`\"tkt-103\"`) để giao cho kỹ sư trực ca!",
+    "starter": "# 1. Đếm số phiếu có điểm trong đoạn [50, 100] bằng ZCOUNT\n# 2. Bốc nguyên tử 1 phiếu điểm cao nhất ra khỏi hàng đợi bằng ZPOPMAX\n",
+    "solution": "ZCOUNT tickets:vip:queue 50 100\nZPOPMAX tickets:vip:queue 1\n",
+    "hints": [
+      "`ZCOUNT tickets:vip:queue 50 100` trả về `(integer) 3` phiếu có điểm từ 50 đến 100.",
+      "`ZPOPMAX tickets:vip:queue 1` rút nguyên tử phần tử có điểm lớn nhất (`tkt-103`, điểm `95`)."
+    ],
+    "ref": "patterns/zset-delayed-job-scheduler.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "tickets:vip:queue",
+            "type": "zset",
+            "value": {
+              "tkt-101": 10,
+              "tkt-102": 55,
+              "tkt-103": 95,
+              "tkt-104": 80
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "top-ticket-popped",
+          "doc": "Phiếu khẩn cấp nhất `tkt-103` đã được bốc ra, hàng đợi còn đúng 3 phiếu `tkt-104 -> tkt-102 -> tkt-101`",
+          "target": "zset-ranking",
+          "key": "tickets:vip:queue",
+          "topDesc": [
+            "tkt-104",
+            "tkt-102",
+            "tkt-101"
+          ],
+          "cardinalityEq": 3
+        },
+        {
+          "id": "zcount-output-3",
+          "doc": "Lệnh `ZCOUNT` xuất ra chính xác `(integer) 3` phiếu trong phân khúc `[50, 100]`",
+          "target": "stdout-contains",
+          "contains": "(integer) 3"
+        },
+        {
+          "id": "used-zcount-and-zpopmax",
+          "doc": "Sử dụng đúng `ZCOUNT` và `ZPOPMAX`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*ZCOUNT\\s+tickets:vip:queue\\s+50\\s+100\\b[\\s\\S]*^\\s*ZPOPMAX\\s+tickets:vip:queue\\b"
+        }
+      ]
+    }
+  }
+]

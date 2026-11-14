@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R01-Q1",
+    "type": "mc",
+    "q": "Nhờ cấu trúc chuỗi động **SDS (Simple Dynamic String)** lưu sẵn độ dài byte trong phần header, độ phức tạp thời gian của lệnh `STRLEN <key>` trong Redis là bao nhiêu (ngay cả khi chuỗi dài `100MB`)?",
+    "code": "",
+    "choices": [
+      "`O(N)` — phải duyệt từng ký tự cho đến khi gặp byte kết thúc `\\0` như chuỗi C truyền thống",
+      "`O(1)` — đọc trực tiếp trường độ dài trong header mà không cần quét nội dung chuỗi",
+      "`O(log N)` — tìm kiếm nhị phân trên cây phân đoạn chuỗi",
+      "`O(N log N)` — giải nén chuỗi trước khi đếm số ký tự UTF-8"
+    ],
+    "answer": 1,
+    "explain": "SDS lưu trữ tường minh thuộc tính độ dài (`len`) ngay trong header cấu trúc dữ liệu, nên `STRLEN` chỉ cần đọc biến nguyên này với chi phí hằng số `O(1)`."
+  },
+  {
+    "id": "R01-Q2",
+    "type": "mc",
+    "q": "Vì sao viết 2 câu lệnh rời nhau `SETNX lock:job 1` rồi mới gọi `EXPIRE lock:job 30` lại là một lỗi thiết kế nguy hiểm (anti-pattern) trong hệ thống phân tán?",
+    "code": "",
+    "choices": [
+      "Vì Redis 8 đã xoá bỏ hoàn toàn câu lệnh `EXPIRE` khỏi bộ lệnh chuẩn",
+      "Vì nếu tiến trình ứng dụng bị sập hoặc mất mạng ngay giữa 2 lệnh, khoá `lock:job` sẽ tồn tại vĩnh viễn (`TTL = -1`) gây Deadlock toàn hệ thống",
+      "Vì `SETNX` luôn tự động xoá khoá sau 1 mili-giây trước khi `EXPIRE` kịp chạy",
+      "Vì `EXPIRE` chỉ hoạt động trên kiểu Hash chứ không hoạt động trên kiểu String"
+    ],
+    "answer": 1,
+    "explain": "Hai lệnh rời rạc không tạo thành một đơn vị nguyên tử khi client gặp sự cố giữa chừng. Luôn gộp thành 1 lệnh nguyên tử duy nhất: `SET lock:job <owner_token> NX EX 30`."
+  },
+  {
+    "id": "R01-Q3",
+    "type": "tf",
+    "q": "Nếu một khoá chưa từng tồn tại trong Redis và bạn gọi ngay lệnh `INCR page:views`, Redis sẽ báo lỗi `ERR no such key` thay vì thực hiện phép cộng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Khi khoá chưa tồn tại, các lệnh bộ đếm như `INCR`, `INCRBY`, `DECR` sẽ tự động khởi tạo khoá đó ở mức `0` trước khi thực hiện phép cộng/trừ (vậy `INCR page:views` lần đầu trả về `(integer) 1`)."
+  },
+  {
+    "id": "R01-Q4",
+    "type": "mc",
+    "q": "Cờ `KEEPTTL` trong câu lệnh `SET session:u99 \"updated-payload\" KEEPTTL` giải quyết bài toán thực tế nào?",
+    "code": "",
+    "choices": [
+      "Nhân đôi thời gian sống hiện tại của khoá mỗi lần ghi đè",
+      "Cập nhật giá trị String mới nhưng **giữ nguyên thời hạn hết hạn (TTL) còn lại** thay vì vô tình xoá mất TTL về `-1` như lệnh `SET` mặc định",
+      "Đóng băng khoá không cho bất kỳ lệnh `DEL` hay `UNLINK` nào xoá được",
+      "Chuyển đổi khoá từ bộ nhớ RAM xuống lưu trữ vĩnh viễn trên ổ cứng"
+    ],
+    "answer": 1,
+    "explain": "Mặc định lệnh `SET key new_val` không kèm `EX`/`PX` sẽ xoá sạch TTL đang đếm ngược của khoá cũ (biến thành `TTL = -1`). Thêm `KEEPTTL` giúp giữ nguyên mốc hết hạn ban đầu khi chỉ cần sửa nội dung."
+  },
+  {
+    "id": "R01-Q5",
+    "type": "tf",
+    "q": "Trong vòng lặp `SCAN cursor MATCH user:* COUNT 100`, nếu một bước gọi trả về mảng khoá rỗng `[]` nhưng con trỏ `cursor` trả về khác `\"0\"` (ví dụ `\"4096\"`), điều đó chứng tỏ đã quét hết toàn bộ dữ liệu khớp mẫu và có thể dừng vòng lặp ngay.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! `COUNT 100` là số slot bảng băm Redis ghé thăm ở bước đó rồi mới lọc theo `MATCH` — hoàn toàn có thể 100 slot đó không chứa khoá `user:*` nào. Bạn BẮT BUỘC phải lặp tiếp cho tới khi con trỏ trả về bằng `\"0\"`!"
+  },
+  {
+    "id": "R01-Q6",
+    "type": "output",
+    "q": "Khoá `cfg:feature:darkmode` đang tồn tại trong Redis và chưa bao giờ được đặt thời gian hết hạn. Khi gõ lệnh dưới đây, con số nguyên nào sẽ được trả về?",
+    "code": "SET cfg:feature:darkmode \"on\"\nTTL cfg:feature:darkmode",
+    "choices": [],
+    "answer": "-1",
+    "explain": "`TTL` trả về `-1` khi khoá tồn tại nhưng không có hạn tự huỷ (persistent), trong khi trả về `-2` nếu khoá hoàn toàn không tồn tại hoặc đã hết hạn."
+  },
+  {
+    "id": "R01-Q7",
+    "type": "output",
+    "q": "Dự đoán giá trị số nguyên trả về ở dòng lệnh `STRLEN` cuối cùng trong kịch bản dưới đây:",
+    "code": "SET greet \"hi\"\nAPPEND greet \"-redis\"\nSTRLEN greet",
+    "choices": [],
+    "answer": "8",
+    "explain": "Chuỗi ban đầu `\"hi\"` (2 byte) nối thêm `\"-redis\"` (6 byte) bằng `APPEND` tạo thành `\"hi-redis\"` dài chính xác `8` byte."
+  }
+]

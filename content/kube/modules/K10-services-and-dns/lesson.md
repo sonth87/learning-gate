@@ -7,6 +7,29 @@
 
 Tài nguyên **`Service`** (`apiVersion: v1`) giải quyết triệt để bài toán này bằng cách đặt một ==địa chỉ IP ảo cố định (Virtual IP — ClusterIP)== kèm một {sky:tên miền DNS bất biến} đứng chắn phía trước và tự động cân bằng tải tới các Pod khoẻ mạnh.
 
+```visual
+kind: illustration
+diagram: "kube:k10"
+src: "/illustrations/kube/k8s-service-ingress-routing.jpg"
+alt: "So sánh 3 kiểu Service (ClusterIP, NodePort, LoadBalancer), phân giải CoreDNS và định tuyến EndpointSlice tới các Pod khoẻ mạnh"
+title: "Giải Phẫu Kubernetes Service: Địa Chỉ Ảo ClusterIP, CoreDNS & EndpointSlice"
+subtitle: "Neo giữ điểm truy cập mạng bất biến phía trước hàng chục địa chỉ IP Pod sinh diệt liên tục"
+caption: "Ba lớp kiểu Service lồng nhau, cơ chế phân giải tên miền nội bộ qua CoreDNS và cách kube-proxy chỉ chia tải vào các Pod đạt Ready=true"
+callouts:
+  - num: 1
+    label: "Ba kiểu Service: ClusterIP, NodePort & LoadBalancer"
+    desc: "ClusterIP phục vụ 90% giao tiếp nội bộ; NodePort mở cổng 30000-32767 trên Node; LoadBalancer thuê thêm IP công cộng từ đám mây."
+    tone: sky
+  - num: 2
+    label: "CoreDNS phân giải tên miền svc.cluster.local"
+    desc: "Các dịch vụ trong cùng Namespace gọi nhau gọn nhẹ qua http://shop-api-svc mà không cần quan tâm IP thực tế của từng Pod."
+    tone: violet
+  - num: 3
+    label: "EndpointSlice tự động lọc các Pod Ready=true"
+    desc: "Mọi Pod đang lỗi hoặc chưa vượt qua kiểm tra sẵn sàng sẽ tự động bị rút khỏi danh sách nhận lưu lượng của Service VIP."
+    tone: emerald
+```
+
 ## 1. Ba loại Service cốt lõi: `ClusterIP` vs `NodePort` vs `LoadBalancer`
 
 ```visual

@@ -1,0 +1,59 @@
+{
+  "id": "R15",
+  "slug": "R15-redis-cluster-sharding",
+  "level": 5,
+  "order": 0,
+  "title": "Redis Cluster & Phân mảnh 16.384 Hash Slots",
+  "summary": "Vượt trần RAM và CPU của 1 máy chủ đơn lẻ bằng kiến trúc Sharding phi tập trung: giải phẫu công thức CRC16(key) mod 16384, giao thức Gossip cổng +10000, định tuyến MOVED/ASK, triệt tiêu lỗi CROSSSLOT bằng {HashTag} và phòng tránh phản mẫu Hot-Slot.",
+  "tags": [
+    "cluster",
+    "sharding",
+    "hash-slots",
+    "crc16",
+    "hashtag",
+    "crossslot",
+    "gossip"
+  ],
+  "sources": [
+    {
+      "title": "Scale with Redis Cluster — Official Specification",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Cluster Specification (16384 Hash Slots & Redirections)",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "kind": "simulator-preset",
+      "targetId": "cluster",
+      "label": "Mô phỏng phân bổ 16.384 Hash Slots trên Redis Cluster",
+      "hint": "Quan sát khoá được băm CRC16 rơi vào đúng phân mảnh Master và hiệu ứng gom cụm bằng {HashTag}."
+    },
+    {
+      "kind": "incident",
+      "targetId": "inc-cluster-crossslot",
+      "label": "War-Room: Sự cố gãy giao dịch CROSSSLOT khi lên Cluster",
+      "hint": "Tái hiện lỗi MGET/Lua sập hàng loạt khi di cư từ Standalone lên Redis Cluster và cách sửa bằng {HashTag}."
+    }
+  ],
+  "readings": [
+    {
+      "path": "cluster/redis-cluster-node.conf",
+      "kind": "good",
+      "note": "Cấu hình chuẩn Production cho một nút Redis Cluster bật Gossip Bus, timeout hợp lý và tắt yêu cầu phủ kín 100% slot để cô lập sự cố.",
+      "task": "Tìm chỉ thị quyết định liệu 2 phân mảnh còn sống có tiếp tục phục vụ khách hàng khi phân mảnh thứ 3 mất cả Master lẫn Replica hay không.",
+      "answer": "Chỉ thị `cluster-require-full-coverage no`: nếu để mặc định `yes`, chỉ cần 1/16384 slot vô chủ là toàn bộ cụm tự khoá ngừng nhận truy vấn (`CLUSTERDOWN`)."
+    },
+    {
+      "path": "cluster/hashtag-colocation-vs-crossslot.redis",
+      "kind": "good",
+      "note": "Đối chiếu trực tiếp các câu lệnh đa khoá bị từ chối bởi lỗi CROSSSLOT và cách thiết kế {HashTag} cấp thực thể (user/order) an toàn.",
+      "task": "Vì sao đặt chung một nhãn `{all}` cho mọi khoá trong hệ thống để né lỗi CROSSSLOT lại biến cụm 12 máy chủ thành 1 máy chủ nghẽn cổ chai?",
+      "answer": "Vì Redis chỉ tính `CRC16(\"all\") % 16384 = 5798` cho mọi khoá mang `{all}`, dồn 100% RAM và CPU về duy nhất 1 Master trong khi các Master còn lại ngồi chơi rỗng không (Jumbo/Hot-Slot)."
+    }
+  ]
+}
