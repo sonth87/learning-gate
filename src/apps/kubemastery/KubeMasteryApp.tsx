@@ -74,7 +74,7 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
         isLight ? 'pylearn-light' : 'pylearn-dark'
       )}
     >
-      <KubeHeader />
+      <KubeHeader windowId={windowId} />
 
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
         {activeTab === 'learn' && <DevOpsCourseApp courseId="kube" onOpenRelatedTool={handleRelatedTool} />}

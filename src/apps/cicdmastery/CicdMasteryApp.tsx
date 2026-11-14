@@ -90,7 +90,7 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
         fontSize === 'lg' && 'text-lg'
       )}
     >
-      <CicdHeader />
+      <CicdHeader windowId={windowId} />
 
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
         {activeTab === 'learn' && <DevOpsCourseApp courseId="cicd" onOpenRelatedTool={handleRelatedTool} />}

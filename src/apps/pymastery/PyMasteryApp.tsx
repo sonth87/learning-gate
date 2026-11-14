@@ -98,7 +98,7 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
         fontSize === 'lg' && 'text-lg'
       )}
     >
-      <Header />
+      <Header windowId={windowId} />
 
       {/* Main Content Area: Header and MobileBottomNav stay pinned, only main content area scrolls */}
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">

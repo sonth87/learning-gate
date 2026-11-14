@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Boxes,
   Compass,
   ExternalLink,
   GitBranch,
@@ -12,11 +11,10 @@ import {
   Settings,
   Sun,
   Monitor,
-  Terminal,
   X,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
-import { switchLearningApp } from '@/apps/appRegistry';
+import { closeLearningApp } from '@/apps/appRegistry';
 import { PmpMasteryLogo } from '@/components/common/AppLogos';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { usePmpCurriculum, usePmpLinks } from '@/features/pmp-course/data';
@@ -63,7 +61,7 @@ const PRIMARY_TABS: {
   },
 ];
 
-export const PmpHeader: React.FC = () => {
+export const PmpHeader: React.FC<{ windowId?: string }> = ({ windowId }) => {
   const { activeTab, setActiveTab, isSearchOpen, setSearchOpen } = usePmpAppStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
 
@@ -164,26 +162,6 @@ export const PmpHeader: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => switchLearningApp('kubemastery')}
-              title="Mở ứng dụng Docker & K8s Mastery"
-              className="hidden md:inline-flex h-8 items-center gap-1 rounded-lg border border-sky-500/35 bg-sky-500/10 px-2 text-[11px] font-semibold text-sky-300 hover:bg-sky-500/20 transition-colors cursor-pointer"
-            >
-              <Boxes className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden xl:inline">K8s</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => switchLearningApp('pymastery')}
-              title="Mở ứng dụng Python Mastery"
-              className="hidden md:inline-flex h-8 items-center gap-1 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-colors cursor-pointer"
-            >
-              <Terminal className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden xl:inline">Python</span>
-            </button>
-
-            <button
-              type="button"
               onClick={() => setSearchOpen(true)}
               aria-label="Tìm kiếm nhanh module và dẫn chứng PMP"
               className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-amber-400 hover:border-amber-500/40 hover:text-white transition-colors cursor-pointer"
@@ -248,9 +226,22 @@ export const PmpHeader: React.FC = () => {
               onClick={() => setSettingsOpen(true)}
               aria-label="Cài đặt & Sao lưu dữ liệu"
               title="Cài đặt & Sao lưu dữ liệu"
-              className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex h-10 w-10 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
             >
               <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+
+            <span className="h-5 w-px bg-slate-800 shrink-0 mx-0.5" aria-hidden="true" />
+
+            <button
+              type="button"
+              onClick={() => closeLearningApp('pmpmastery', windowId)}
+              aria-label="Đóng ứng dụng về màn hình chính"
+              title="Đóng ứng dụng về màn hình chính"
+              className="inline-flex h-10 w-10 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-slate-700/90 bg-slate-900/90 sm:px-2.5 text-xs font-semibold text-slate-300 hover:border-rose-500/50 hover:bg-rose-500/15 hover:text-rose-300 active:bg-rose-500/25 active:scale-95 transition-all cursor-pointer"
+            >
+              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" aria-hidden="true" />
+              <span className="hidden sm:inline">Đóng</span>
             </button>
           </div>
         </div>

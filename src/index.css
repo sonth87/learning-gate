@@ -257,3 +257,12 @@ html:not(.dark) [data-os-theme="iphone"] .z-\[500\] > div[style*="height: 92px"]
 html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"] {
   background-color: #f8fafc;
 }
+
+/*
+ * On tablet (`ipad` theme), ensure open fullscreen learning apps sit cleanly above
+ * IPadTheme's decorative status bar (z-40) and non-interactive bottom bar (z-40)
+ * so app headers, close buttons, and bottom navigation bars are never obscured.
+ */
+[data-os-theme="ipad"] .z-20:has([id^="window-"].pointer-events-auto .pylearn-root) {
+  z-index: 45;
+}

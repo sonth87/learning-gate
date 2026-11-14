@@ -20,7 +20,9 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
   const isIPadUA =
     /iPad/i.test(ua) ||
     (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1 && hasCoarsePrimaryPointer);
-  const isAndroidTabletUA = /Android/i.test(ua) && !/Mobile/i.test(ua);
+  const isAndroidTabletUA =
+    (/Android/i.test(ua) && !/Mobile/i.test(ua)) ||
+    (/Linux/i.test(ua) && !/Android/i.test(ua) && navigator.maxTouchPoints > 1 && hasCoarsePrimaryPointer);
 
   if (isIPadUA || isAndroidTabletUA) return 'tablet';
   return 'desktop';
