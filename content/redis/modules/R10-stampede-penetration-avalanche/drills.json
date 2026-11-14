@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R10-D1",
+    "title": "Chiếm Mutex dựng lại Hot Key chống bão Cache Stampede",
+    "code": "SET lock:rebuild:flashsale:99 \"worker-01\" NX PX 3000\nSET cache:flashsale:99 '{\"id\":99,\"stock\":500}' EX 335"
+  },
+  {
+    "id": "R10-D2",
+    "title": "Khởi tạo và kiểm tra lá chắn Bloom Filter chống Penetration",
+    "code": "BF.RESERVE bf:valid_skus 0.01 10000\nBF.MADD bf:valid_skus sku-101 sku-102 sku-103\nBF.EXISTS bf:valid_skus sku-hacker-999"
+  },
+  {
+    "id": "R10-D3",
+    "title": "Thiết lập Logical Expiration (SWR) trên Hash cho khoá siêu nóng",
+    "code": "HSET hot:hero:home payload '{\"campaign\":\"MegaSale\"}' logical_exp 1700000300\nEXPIRE hot:hero:home 3600"
+  }
+]

@@ -7,6 +7,29 @@ Khi bạn chạy 2–3 container trên một máy chủ đơn lẻ, **Docker Com
 
 **Kubernetes (K8s)** ra đời để đóng vai trò như ==Hệ điều hành của cả trung tâm dữ liệu==: bạn không còn ra lệnh thủ công cho từng máy lẻ nữa, mà giao cho K8s một {sky:bản thiết kế trạng thái mong muốn} để nó {emerald:tự động duy trì suốt ngày đêm}.
 
+```visual
+kind: illustration
+diagram: "kube:k07"
+src: "/illustrations/kube/k8s-control-plane-brain.jpg"
+alt: "Kiến trúc tổng thể cụm Kubernetes gồm Control Plane (API Server, etcd, Scheduler, Controller) và Worker Node (kubelet, containerd, kube-proxy)"
+title: "Bản Đồ Giải Phẫu Cụm Kubernetes: Bộ Não Control Plane & Xưởng Thực Thi Worker Node"
+subtitle: "Luồng phối hợp giữa cổng trung tâm kube-apiserver, sổ cái etcd, các đại lý trên Node và vòng lặp đối chiếu trạng thái 24/7"
+caption: "Kiến trúc phân tách giữa Control Plane ra quyết định với các Worker Node chạy Pod qua containerd và vòng lặp tự chữa lành Reconciliation Loop"
+callouts:
+  - num: 1
+    label: "Control Plane — Bộ não quản trị & Sổ cái etcd"
+    desc: "Mọi thao tác đều đi qua cổng HTTPS duy nhất là kube-apiserver; chỉ thành phần này được phép đọc/ghi trực tiếp vào kho dữ liệu etcd."
+    tone: violet
+  - num: 2
+    label: "Worker Node — Bộ ba kubelet, containerd & kube-proxy"
+    desc: "kubelet nhận chỉ thị từ API Server để ra lệnh cho containerd bật Pod, trong khi kube-proxy duy trì bảng định tuyến mạng trên Node."
+    tone: emerald
+  - num: 3
+    label: "Vòng lặp Đối chiếu (Reconciliation Loop) 24/7"
+    desc: "Controller Manager liên tục so sánh trạng thái thực tế với YAML mong muốn để tự động đẻ bù Pod mới ngay khi có máy chủ gặp sự cố."
+    tone: cyan
+```
+
 ## 1. Bức tranh toàn cảnh: Control Plane vs Worker Nodes
 
 > [!ANALOGY] Hãy hình dung như sau

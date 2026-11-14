@@ -1,0 +1,296 @@
+[
+  {
+    "id": "redis-ex-r02-1",
+    "code": "R02.1",
+    "title": "Lưu hồ sơ phẳng bằng HSET & đọc chọn lọc bằng HMGET",
+    "difficulty": 1,
+    "tags": [
+      "hset",
+      "hmget",
+      "hash",
+      "projection"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "user-profile-hash.redis",
+    "prompt": "Hãy dùng **1 lệnh `HSET`** tạo hồ sơ `user:profile:2048` gồm 4 trường: `name` = `\"Minh Tran\"`, `tier` = `\"gold\"`, `credits` = `\"150\"`, và `avatar` = `\"minh.webp\"`. Sau đó, thanh điều hướng chỉ cần hiển thị tên và hạng thành viên — hãy dùng **`HMGET`** lấy đúng 2 trường `name` và `tier` (tuyệt đối KHÔNG gọi `HGETALL`).",
+    "starter": "# 1. Dùng HSET tạo user:profile:2048 với 4 trường name, tier, credits, avatar\n# 2. Dùng HMGET đọc đúng 2 trường name và tier\n",
+    "solution": "HSET user:profile:2048 name \"Minh Tran\" tier \"gold\" credits \"150\" avatar \"minh.webp\"\nHMGET user:profile:2048 name tier\n",
+    "hints": [
+      "`HSET` nhận danh sách các cặp trường-giá trị liên tiếp: `HSET user:profile:2048 name \"Minh Tran\" tier \"gold\" credits \"150\" avatar \"minh.webp\"`.",
+      "Đọc chọn lọc bằng `HMGET user:profile:2048 name tier` (không dùng `HGETALL`)."
+    ],
+    "ref": "clients/node/ioredis-singleton-pool.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "profile-fields-stored",
+          "doc": "Hash `user:profile:2048` lưu đầy đủ 4 trường `name`, `tier`, `credits`, `avatar`",
+          "target": "hash-fields",
+          "key": "user:profile:2048",
+          "expected": {
+            "name": "Minh Tran",
+            "tier": "gold",
+            "credits": "150",
+            "avatar": "minh.webp"
+          }
+        },
+        {
+          "id": "selective-hmget-no-hgetall",
+          "doc": "Sử dụng `HMGET user:profile:2048 name tier` và không lạm dụng `HGETALL`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*HMGET\\s+user:profile:2048\\s+name\\s+tier\\b",
+          "forbidRegex": "^\\s*(HGETALL|HMSET)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r02-2",
+    "code": "R02.2",
+    "title": "Cập nhật số lượng giỏ hàng nguyên tử bằng HINCRBY & HSETNX",
+    "difficulty": 1,
+    "tags": [
+      "hincrby",
+      "hsetnx",
+      "shopping-cart"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "cart-atomic-qty.redis",
+    "prompt": "Giỏ hàng `cart:u:501` đang có sẵn `sku:mech-kb = 1` và `sku:keycap = 2`. Khách hàng vừa: (1) bấm cộng thêm `2` chiếc `sku:mech-kb` (lên `3`), (2) bấm giảm `1` bộ `sku:keycap` (xuống `1`), và (3) hệ thống tặng kèm `gift:sticker = \"1\"` chỉ khi trong giỏ chưa có sẵn trường `gift:sticker`. Hãy thực hiện bằng `HINCRBY` và `HSETNX`.",
+    "starter": "# 1. Tăng sku:mech-kb thêm 2 bằng HINCRBY\n# 2. Giảm sku:keycap đi 1 bằng HINCRBY (số âm -1)\n# 3. Gán mặc định gift:sticker = \"1\" bằng HSETNX\n",
+    "solution": "HINCRBY cart:u:501 sku:mech-kb 2\nHINCRBY cart:u:501 sku:keycap -1\nHSETNX cart:u:501 gift:sticker \"1\"\n",
+    "hints": [
+      "Redis không cần lệnh `HDECRBY` riêng — để giảm số lượng, truyền số âm vào `HINCRBY cart:u:501 sku:keycap -1`.",
+      "Dùng `HSETNX cart:u:501 gift:sticker \"1\"` để chỉ ghi khi trường chưa tồn tại."
+    ],
+    "ref": "patterns/hash-cart-hexpire-redis8.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "cart:u:501",
+            "type": "hash",
+            "value": {
+              "sku:mech-kb": "1",
+              "sku:keycap": "2"
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "cart-quantities-updated",
+          "doc": "Giỏ hàng `cart:u:501` có `sku:mech-kb = 3`, `sku:keycap = 1`, `gift:sticker = 1`",
+          "target": "hash-fields",
+          "key": "cart:u:501",
+          "expected": {
+            "sku:mech-kb": "3",
+            "sku:keycap": "1",
+            "gift:sticker": "1"
+          }
+        },
+        {
+          "id": "used-hincrby-and-hsetnx",
+          "doc": "Sử dụng đúng `HINCRBY` và `HSETNX` (không ghi đè thủ công bằng `HSET`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*HINCRBY\\b[\\s\\S]*^\\s*HSETNX\\b",
+          "forbidRegex": "^\\s*HSET\\s+"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r02-3",
+    "code": "R02.3",
+    "title": "Kiểm tra & dọn dẹp trường tạm trong Hash bằng HEXISTS, HDEL, HLEN",
+    "difficulty": 1,
+    "tags": [
+      "hexists",
+      "hdel",
+      "hlen",
+      "session"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "hash-field-cleanup.redis",
+    "prompt": "Phiên đăng nhập `session:u:889` hiện có 4 trường: `device`, `ip`, `temp_csrf` và `debug_trace`. Hãy: (1) kiểm tra sự tồn tại của `temp_csrf` bằng `HEXISTS`, (2) xoá đồng thời cả 2 trường tạm `temp_csrf` và `debug_trace` bằng **1 lệnh `HDEL`**, và (3) đếm số trường còn lại trong `session:u:889` bằng `HLEN`.",
+    "starter": "# 1. Kiểm tra trường temp_csrf bằng HEXISTS\n# 2. Xoá cả temp_csrf lẫn debug_trace trong 1 lệnh HDEL\n# 3. Xuất tổng số trường còn lại bằng HLEN\n",
+    "solution": "HEXISTS session:u:889 temp_csrf\nHDEL session:u:889 temp_csrf debug_trace\nHLEN session:u:889\n",
+    "hints": [
+      "`HDEL` nhận nhiều tên trường cùng lúc: `HDEL session:u:889 temp_csrf debug_trace`.",
+      "Gọi `HLEN session:u:889` ở cuối để xác nhận chỉ còn `(integer) 2` trường chính."
+    ],
+    "ref": "patterns/hash-cart-hexpire-redis8.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "session:u:889",
+            "type": "hash",
+            "value": {
+              "device": "ios",
+              "ip": "10.0.1.5",
+              "temp_csrf": "tok-old",
+              "debug_trace": "verbose"
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "core-session-fields-kept",
+          "doc": "Hai trường cốt lõi `device` và `ip` vẫn được giữ nguyên",
+          "target": "hash-fields",
+          "key": "session:u:889",
+          "expected": {
+            "device": "ios",
+            "ip": "10.0.1.5"
+          }
+        },
+        {
+          "id": "used-hexists-hdel-hlen",
+          "doc": "Thực hiện đầy đủ `HEXISTS`, `HDEL` nhiều trường và `HLEN`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*HEXISTS\\b[\\s\\S]*^\\s*HDEL\\s+session:u:889\\s+temp_csrf\\s+debug_trace\\b[\\s\\S]*^\\s*HLEN\\b"
+        },
+        {
+          "id": "hlen-is-2",
+          "doc": "Kết quả `HLEN` xác nhận chính xác còn `(integer) 2` trường (2 trường tạm đã xoá)",
+          "target": "stdout-contains",
+          "contains": "(integer) 2"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r02-4",
+    "code": "R02.4",
+    "title": "Hẹn giờ tự huỷ mã khuyến mãi riêng lẻ bằng Redis 8 HEXPIRE",
+    "difficulty": 2,
+    "tags": [
+      "hexpire",
+      "httl",
+      "redis-8",
+      "field-ttl"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "cart-hexpire-redis8.redis",
+    "prompt": "Giỏ hàng `cart:u:777` đang có 3 trường: `sku:mouse = 1`, `sku:pad = 1`, và mã giảm giá chớp nhoáng `promo:flash15 = SAVE15`. Hãy dùng tính năng mới của Redis 8:\n1) Dùng `HEXPIRE` đặt thời gian sống `60` giây cho **duy nhất 1 trường** `promo:flash15` (`FIELDS 1 promo:flash15`).\n2) Kiểm tra thời gian đếm ngược của trường này bằng `HTTL cart:u:777 FIELDS 1 promo:flash15`.\n3) Tua đồng hồ ảo `65000` ms (`ADVANCE_TIME 65000`), rồi gọi `HGET cart:u:777 promo:flash15` và `HLEN cart:u:777` để chứng minh mã khuyến mãi đã tự bốc hơi `(nil)` trong khi 2 món hàng trong giỏ vẫn còn nguyên `(integer) 2`!",
+    "starter": "# 1. Đặt HEXPIRE 60 giây cho trường promo:flash15 trong cart:u:777\n# 2. Xem HTTL của trường promo:flash15\n# 3. Tua đồng hồ ADVANCE_TIME 65000, sau đó gọi HGET cart:u:777 promo:flash15 và HLEN cart:u:777\n",
+    "solution": "HEXPIRE cart:u:777 60 FIELDS 1 promo:flash15\nHTTL cart:u:777 FIELDS 1 promo:flash15\nADVANCE_TIME 65000\nHGET cart:u:777 promo:flash15\nHLEN cart:u:777\n",
+    "hints": [
+      "Chú ý cú pháp chuẩn Redis 8: `HEXPIRE cart:u:777 60 FIELDS 1 promo:flash15` (nhớ con số `1` sau `FIELDS`).",
+      "Sau dòng `ADVANCE_TIME 65000`, gọi `HGET cart:u:777 promo:flash15` (sẽ ra `(nil)`) và `HLEN cart:u:777` (sẽ ra `(integer) 2`)."
+    ],
+    "ref": "patterns/hash-cart-hexpire-redis8.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "cart:u:777",
+            "type": "hash",
+            "value": {
+              "sku:mouse": "1",
+              "sku:pad": "1",
+              "promo:flash15": "SAVE15"
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "main-cart-survived",
+          "doc": "Hash mẹ `cart:u:777` cùng 2 sản phẩm `sku:mouse` và `sku:pad` vẫn nguyên vẹn sau 65 giây",
+          "target": "hash-fields",
+          "key": "cart:u:777",
+          "expected": {
+            "sku:mouse": "1",
+            "sku:pad": "1"
+          }
+        },
+        {
+          "id": "used-hexpire-and-httl",
+          "doc": "Sử dụng đúng `HEXPIRE ... FIELDS 1 promo:flash15` và `HTTL` (không xoá thủ công bằng `HDEL`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*HEXPIRE\\s+cart:u:777\\s+60\\s+FIELDS\\s+1\\s+promo:flash15\\b[\\s\\S]*^\\s*HTTL\\b",
+          "forbidRegex": "^\\s*(HDEL|DEL|UNLINK)\\b"
+        },
+        {
+          "id": "promo-expired-nil",
+          "doc": "Trường `promo:flash15` đã tự hết hạn trả về `(nil)` và `HLEN` chỉ còn `(integer) 2`",
+          "target": "stdout-contains",
+          "contains": "(nil)"
+        },
+        {
+          "id": "remaining-len-2",
+          "doc": "Số trường còn lại của `cart:u:777` sau khi mã khuyến mãi bốc hơi là `(integer) 2`",
+          "target": "stdout-contains",
+          "contains": "(integer) 2"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r02-5",
+    "code": "R02.5",
+    "title": "Kiểm chứng nén bộ nhớ listpack bằng OBJECT ENCODING & MEMORY USAGE",
+    "difficulty": 2,
+    "tags": [
+      "object-encoding",
+      "listpack",
+      "memory-usage",
+      "internals"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "hash-listpack-check.redis",
+    "prompt": "Để tận mắt xác nhận Redis 8 lưu trữ các Hash nhỏ dưới dạng mảng byte nén `listpack` thay vì bảng băm tốn con trỏ: hãy tạo Hash `product:meta:901` bằng `HSET` với 3 trường gọn nhẹ `sku` = `\"MBP-M4\"`, `price` = `\"49990000\"`, `currency` = `\"VND\"`. Sau đó chạy `OBJECT ENCODING product:meta:901` và `MEMORY USAGE product:meta:901` để đọc cấu trúc mã hoá nội bộ và số byte RAM tiêu thụ.",
+    "starter": "# 1. Tạo Hash product:meta:901 với sku=\"MBP-M4\", price=\"49990000\", currency=\"VND\"\n# 2. Kiểm tra kiểu biểu diễn nội bộ bằng OBJECT ENCODING\n# 3. Đo dung lượng bộ nhớ bằng MEMORY USAGE\n",
+    "solution": "HSET product:meta:901 sku \"MBP-M4\" price \"49990000\" currency \"VND\"\nOBJECT ENCODING product:meta:901\nMEMORY USAGE product:meta:901\n",
+    "hints": [
+      "Tạo Hash bằng `HSET product:meta:901 sku \"MBP-M4\" price \"49990000\" currency \"VND\"`.",
+      "Tiếp theo gõ `OBJECT ENCODING product:meta:901` rồi `MEMORY USAGE product:meta:901`."
+    ],
+    "ref": "patterns/hash-cart-hexpire-redis8.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "product-meta-fields",
+          "doc": "Hash `product:meta:901` chứa đúng 3 trường `sku`, `price`, `currency`",
+          "target": "hash-fields",
+          "key": "product:meta:901",
+          "expected": {
+            "sku": "MBP-M4",
+            "price": "49990000",
+            "currency": "VND"
+          }
+        },
+        {
+          "id": "encoding-is-listpack",
+          "doc": "Lệnh `OBJECT ENCODING` xác nhận biểu diễn nội bộ là `\"listpack\"`",
+          "target": "stdout-contains",
+          "contains": "\"listpack\""
+        },
+        {
+          "id": "checked-memory-usage",
+          "doc": "Đã gọi `MEMORY USAGE product:meta:901` để đo byte tiêu thụ thực tế",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*MEMORY\\s+USAGE\\s+product:meta:901\\b"
+        }
+      ]
+    }
+  }
+]

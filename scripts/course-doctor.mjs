@@ -28,6 +28,28 @@ async function loadGradeEngine() {
   }
 }
 
+async function loadDiagramIds() {
+  const entry = path.join(ROOT, 'src/components/illustrations/diagramRegistry.tsx');
+  const tmpFile = path.join(ROOT, 'node_modules/.cache/agy-diagrams.mjs');
+  fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
+  await esbuild.build({
+    entryPoints: [entry],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    jsx: 'automatic',
+    packages: 'external',
+    outfile: tmpFile,
+    tsconfig: path.join(ROOT, 'tsconfig.json'),
+  });
+  try {
+    const mod = await import(pathToFileURL(tmpFile).href);
+    return new Set(mod.getTechnicalDiagramIds());
+  } finally {
+    fs.rmSync(tmpFile, { force: true });
+  }
+}
+
 // Quét bí mật thực tế (token, webhook, private key) để tránh lộ thông tin và tránh bị GitHub Push Protection chặn
 const SECRET_PATTERNS = [
   { name: 'Slack Webhook', re: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/ },
@@ -65,6 +87,7 @@ async function main() {
   const errors = [];
   const warnings = [];
   const { gradeDevOpsExercise, executeDiagnosticCommand } = await loadGradeEngine();
+  const diagramIds = await loadDiagramIds();
 
   // 1. Quét bí mật trên content/, scripts/, src/features/devops-course/, src/apps/
   const scanTargets = [
@@ -87,7 +110,10 @@ async function main() {
   }
 
   // 2. Kiểm tra từng khoá học đã biên dịch
-  for (const courseId of ['kube', 'cicd']) {
+  const activeCourses = ['kube', 'cicd', 'redis'].filter(
+    (id) => id !== 'redis' || fs.existsSync(path.join(ROOT, 'content', 'redis', 'course.json'))
+  );
+  for (const courseId of activeCourses) {
     const dataDir = path.join(ROOT, 'src', 'data', 'courses', courseId);
     const curPath = path.join(dataDir, 'curriculum.json');
     const catPath = path.join(dataDir, 'catalog.json');
@@ -149,9 +175,22 @@ async function main() {
           vIdx++;
           try {
             const vDoc = YAML.parse(vMatch[1]);
-            const validKinds = new Set(['flow', 'layers', 'groups', 'anatomy', 'compare', 'troubleshoot']);
+            const validKinds = new Set(['flow', 'layers', 'groups', 'anatomy', 'compare', 'troubleshoot', 'illustration']);
             if (!vDoc || typeof vDoc !== 'object' || !validKinds.has(vDoc.kind)) {
               errors.push(`[${courseId}:${mod.id}] Khối visual #${vIdx} thiếu hoặc sai kind (${vDoc?.kind}).`);
+            } else if (vDoc.kind === 'illustration') {
+              if (!vDoc.diagram && !vDoc.src) {
+                errors.push(`[${courseId}:${mod.id}] Khối visual:illustration #${vIdx} phải có "diagram" hoặc "src".`);
+              }
+              if (vDoc.diagram && !diagramIds.has(vDoc.diagram)) {
+                errors.push(`[${courseId}:${mod.id}] Khối visual:illustration #${vIdx} tham chiếu diagram="${vDoc.diagram}" chưa đăng ký trong src/components/illustrations/.`);
+              }
+              if (vDoc.src) {
+                const pubFile = path.join(ROOT, 'public', String(vDoc.src).replace(/^\//, ''));
+                if (!fs.existsSync(pubFile)) {
+                  errors.push(`[${courseId}:${mod.id}] Khối visual:illustration #${vIdx} thiếu file ảnh tại public/${String(vDoc.src).replace(/^\//, '')}.`);
+                }
+              }
             } else if (vDoc.kind === 'flow' && (!Array.isArray(vDoc.steps) || vDoc.steps.length === 0)) {
               errors.push(`[${courseId}:${mod.id}] Khối visual:flow #${vIdx} thiếu mảng steps.`);
             } else if (vDoc.kind === 'layers' && (!Array.isArray(vDoc.columns) || vDoc.columns.length === 0)) {
@@ -294,6 +333,46 @@ async function main() {
     console.log(
       `✔ [doctor:${courseId}] ${cur.modules.length} modules · ${passedExCount} bài thực hành đã verify (starter FAIL & solution PASS 100%) · ${quizIds.size} quizzes · ${cardIds.size} flashcards · ${cat.items.length} real configs`
     );
+  }
+
+  // 3. Kiểm tra khối visual/illustration trong Python Mastery (src/data/workpath/curriculum.json)
+  const pyCurPath = path.join(ROOT, 'src/data/workpath/curriculum.json');
+  if (fs.existsSync(pyCurPath)) {
+    const pyCur = JSON.parse(fs.readFileSync(pyCurPath, 'utf8'));
+    let pyVisualCount = 0;
+    for (const mod of pyCur.modules ?? []) {
+      const lesson = String(mod.lesson ?? '');
+      const visualRe = /^```visual(?::[a-z0-9_-]+)?\s*\n([\s\S]*?)^```/gm;
+      let vMatch;
+      let vIdx = 0;
+      while ((vMatch = visualRe.exec(lesson)) !== null) {
+        vIdx++;
+        pyVisualCount++;
+        try {
+          const vDoc = YAML.parse(vMatch[1]);
+          const validKinds = new Set(['flow', 'layers', 'groups', 'anatomy', 'compare', 'troubleshoot', 'illustration']);
+          if (!vDoc || typeof vDoc !== 'object' || !validKinds.has(vDoc.kind)) {
+            errors.push(`[python:${mod.id}] Khối visual #${vIdx} sai kind (${vDoc?.kind}).`);
+          } else if (vDoc.kind === 'illustration') {
+            if (!vDoc.diagram && !vDoc.src) {
+              errors.push(`[python:${mod.id}] Khối visual:illustration #${vIdx} thiếu diagram/src.`);
+            }
+            if (vDoc.diagram && !diagramIds.has(vDoc.diagram)) {
+              errors.push(`[python:${mod.id}] Diagram "${vDoc.diagram}" chưa đăng ký trong PythonDiagrams.tsx.`);
+            }
+            if (vDoc.src) {
+              const pubFile = path.join(ROOT, 'public', String(vDoc.src).replace(/^\//, ''));
+              if (!fs.existsSync(pubFile)) {
+                errors.push(`[python:${mod.id}] Thiếu file ảnh tại public/${String(vDoc.src).replace(/^\//, '')}.`);
+              }
+            }
+          }
+        } catch (err) {
+          errors.push(`[python:${mod.id}] Lỗi YAML trong khối visual #${vIdx}: ${err.message}`);
+        }
+      }
+    }
+    console.log(`✔ [doctor:python] ${pyCur.modules?.length ?? 0} modules · ${pyVisualCount} khối visual hợp lệ.`);
   }
 
   console.log(`✔ [doctor:secrets] Đã quét sạch bí mật trên ${scannedFiles} file nguồn.`);

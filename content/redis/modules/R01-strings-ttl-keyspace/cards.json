@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R01-FC1",
+    "front": "Ba mã kết quả của lệnh `TTL <key>` (`>= 0`, `-1`, `-2`) mang ý nghĩa gì?",
+    "back": "**`>= 0`**: Số giây còn lại trước khi hết hạn; **`-1`**: Khoá đang tồn tại vĩnh viễn (chưa đặt TTL); **`-2`**: Khoá không tồn tại (hoặc đã hết hạn và bị thu hồi)."
+  },
+  {
+    "id": "R01-FC2",
+    "front": "Ba kiểu mã hoá nội bộ (`OBJECT ENCODING`) của Redis String là gì?",
+    "back": "**`int`** (số nguyên có dấu 64-bit), **`embstr`** (chuỗi ngắn `<= 44 bytes` cấp phát liền khối trên 1 dòng CPU cache), và **`raw`** (chuỗi dài `> 44 bytes` hoặc chuỗi đã chỉnh sửa động)."
+  },
+  {
+    "id": "R01-FC3",
+    "front": "Redis kết hợp 2 cơ chế nào để thu hồi các khoá hết hạn TTL mà không làm đơ CPU?",
+    "back": "**Lazy Expiration** (kiểm tra & xoá ngay khi client truy cập trúng khoá quá hạn) kết hợp **Active Expiration** (mỗi 100ms bốc mẫu ngẫu nhiên các khoá có TTL và xoá tiếp nếu >25% mẫu đã quá hạn)."
+  },
+  {
+    "id": "R01-FC4",
+    "front": "Điều gì xảy ra với TTL đang đếm ngược của một khoá nếu bạn gọi `SET key new_value` mà quên thêm cờ `KEEPTTL` hoặc `EX`?",
+    "back": "Lệnh `SET` mặc định **xoá bỏ hoàn toàn TTL cũ** (đưa khoá về trạng thái sống vĩnh viễn `TTL = -1`), dễ gây rò rỉ bộ nhớ ngầm!"
+  },
+  {
+    "id": "R01-FC5",
+    "front": "Khi nào vòng lặp duyệt khoá bằng `SCAN` thực sự hoàn tất?",
+    "back": "Chỉ khi giá trị con trỏ đầu tiên trả về bằng **`\"0\"`** (ngay cả khi ở một bước trung gian mảng khoá trả về rỗng, vẫn phải tiếp tục truyền con trỏ mới vào lần gọi kế tiếp)."
+  },
+  {
+    "id": "R01-FC6",
+    "front": "Hiện tượng **Cache Avalanche** do đặt cứng cùng một TTL là gì và cách phòng tránh đơn giản nhất?",
+    "back": "Là tình trạng hàng vạn khoá cache hết hạn cùng đúng một thời điểm khiến toàn bộ truy vấn dồn dập đánh sập DB gốc. Khắc phục bằng cách cộng thêm **TTL Jitter** (độ lệch ngẫu nhiên vài chục đến vài trăm giây cho mỗi khoá)."
+  }
+]

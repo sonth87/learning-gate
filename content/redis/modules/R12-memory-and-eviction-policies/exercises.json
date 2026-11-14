@@ -1,0 +1,322 @@
+[
+  {
+    "id": "redis-ex-r12-1",
+    "code": "R12.1",
+    "module": "R12",
+    "title": "Cấu hình redis.conf chuẩn Pure Cache với allkeys-lfu và lấy mẫu chính xác cao",
+    "difficulty": 1,
+    "tags": [
+      "redis-conf",
+      "maxmemory",
+      "allkeys-lfu"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-pure-cache.conf",
+    "prompt": "Bạn đang thiết lập tệp `redis.conf` cho cụm bộ nhớ đệm sản phẩm chạy trên máy ảo 3GB RAM. Tệp cấu hình mặc định bên dưới đang để `maxmemory 0` (không giới hạn) và `noeviction`!\n\n- **Nhiệm vụ:** Chỉnh sửa tệp `redis.conf` thoả mãn đủ 3 tiêu chuẩn Pure Cache:\n  1. Giới hạn trần dữ liệu **`maxmemory 2gb`** (`2 GiB`).\n  2. Đặt chính sách trục xuất **`maxmemory-policy allkeys-lfu`** để giữ lại các khoá có tần suất đọc cao nhất.\n  3. Nâng kích thước tập lấy mẫu xấp xỉ **`maxmemory-samples 10`** (thay vì mặc định `5`) để độ chính xác LFU tiệm cận tuyệt đối.",
+    "starter": "# Cấu hình mặc định chưa an toàn cho Pure Cache\nport 6379\nmaxmemory 0\nmaxmemory-policy noeviction\nmaxmemory-samples 5\n",
+    "solution": "port 6379\nmaxmemory 2gb\nmaxmemory-policy allkeys-lfu\nmaxmemory-samples 10\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "maxmem-2gb",
+          "doc": "Thiết lập trần bộ nhớ maxmemory 2gb",
+          "kind": "memory-bytes",
+          "directive": "maxmemory",
+          "minBytes": 2000000000,
+          "maxBytes": 2147483648
+        },
+        {
+          "id": "policy-allkeys-lfu",
+          "doc": "Chính sách trục xuất đặt là allkeys-lfu",
+          "kind": "directive",
+          "directive": "maxmemory-policy",
+          "match": {
+            "eq": "allkeys-lfu"
+          }
+        },
+        {
+          "id": "samples-10",
+          "doc": "Tăng maxmemory-samples lên >= 10 để lấy mẫu LFU chính xác cao",
+          "kind": "directive",
+          "directive": "maxmemory-samples",
+          "match": {
+            "gte": 10
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa `maxmemory 0` thành `maxmemory 2gb`.",
+      "Đổi `maxmemory-policy noeviction` thành `maxmemory-policy allkeys-lfu` và `maxmemory-samples 10`."
+    ],
+    "ref": "conf/redis-pure-cache-lfu.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r12-2",
+    "code": "R12.2",
+    "module": "R12",
+    "title": "Bảo vệ cụm Redis Message Broker / Lock bằng chính sách noeviction",
+    "difficulty": 1,
+    "tags": [
+      "redis-conf",
+      "noeviction",
+      "broker"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-broker-durable.conf",
+    "prompt": "Khác với cụm Cache, cụm Redis này chuyên lưu **Redis Streams sự kiện thanh toán** và **Khoá phân tán (`lock:*`)**. Một đồng nghiệp vừa copy nhầm cấu hình `allkeys-lru` từ cụm Cache sang — nếu đầy RAM, Redis sẽ **âm thầm xoá mất các sự kiện thanh toán chưa xử lý**!\n\n- **Nhiệm vụ:** Chỉnh lại `redis.conf` cho cụm Broker chạy trên máy chủ 6GB RAM:\n  1. Khai báo trần bộ nhớ rõ ràng **`maxmemory 4gb`** (tránh bị OS OOMKiller giết đột ngột).\n  2. Đặt chính sách **`maxmemory-policy noeviction`** để tuyệt đối không bao giờ tự ý xoá khoá dữ liệu quan trọng (trả lỗi tường minh để kích hoạt cảnh báo mở rộng RAM).",
+    "starter": "# NGUY HIỂM: Đang dùng allkeys-lru cho cụm chứa Streams thanh toán!\nport 6379\nmaxmemory 512mb\nmaxmemory-policy allkeys-lru\n",
+    "solution": "port 6379\nmaxmemory 4gb\nmaxmemory-policy noeviction\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "broker-maxmem-4gb",
+          "doc": "Thiết lập trần bộ nhớ maxmemory 4gb cho cụm Broker",
+          "kind": "memory-bytes",
+          "directive": "maxmemory",
+          "minBytes": 4000000000,
+          "maxBytes": 4294967296
+        },
+        {
+          "id": "broker-noeviction",
+          "doc": "Đặt maxmemory-policy noeviction để bảo toàn 100% thông điệp và khoá phân tán",
+          "kind": "directive",
+          "directive": "maxmemory-policy",
+          "match": {
+            "eq": "noeviction"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đặt `maxmemory 4gb` và sửa `maxmemory-policy` về `noeviction`.",
+      "Trong thực tế, bạn luôn tách riêng cụm Pure Cache (`allkeys-lfu`) và cụm Broker/State (`noeviction`) thành 2 instance độc lập."
+    ],
+    "ref": "conf/redis-durable-hybrid-aof.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r12-3",
+    "code": "R12.3",
+    "module": "R12",
+    "title": "Bật bộ ba Lazyfree & Active Defrag triệt tiêu gai độ trễ P99",
+    "difficulty": 2,
+    "tags": [
+      "redis-conf",
+      "lazyfree",
+      "activedefrag",
+      "latency"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-lazyfree-defrag.conf",
+    "prompt": "Biểu đồ độ trễ P99 của cụm Redis thỉnh thoảng dựng vọt lên `85ms` mỗi khi các khoá Set/Hash lớn hết hạn TTL hoặc bị ghi đè, kèm tỷ lệ phân mảnh `mem_fragmentation_ratio` neo ở mức `1.78`.\n\n- **Nhiệm vụ:** Hoàn thiện tệp `redis.conf` bằng cách bật sang **`yes`** cho cả 4 cơ chế tối ưu bộ nhớ nền:\n  1. `lazyfree-lazy-eviction yes`\n  2. `lazyfree-lazy-expire yes`\n  3. `lazyfree-lazy-server-del yes`\n  4. `activedefrag yes`",
+    "starter": "maxmemory 2gb\nmaxmemory-policy allkeys-lfu\n\n# Đang tắt thu hồi nền và chống phân mảnh chủ động\nlazyfree-lazy-eviction no\nlazyfree-lazy-expire no\nlazyfree-lazy-server-del no\nactivedefrag no\n",
+    "solution": "maxmemory 2gb\nmaxmemory-policy allkeys-lfu\nlazyfree-lazy-eviction yes\nlazyfree-lazy-expire yes\nlazyfree-lazy-server-del yes\nactivedefrag yes\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "lazy-eviction-on",
+          "doc": "Bật lazyfree-lazy-eviction yes",
+          "kind": "directive",
+          "directive": "lazyfree-lazy-eviction",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "lazy-expire-on",
+          "doc": "Bật lazyfree-lazy-expire yes",
+          "kind": "directive",
+          "directive": "lazyfree-lazy-expire",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "lazy-server-del-on",
+          "doc": "Bật lazyfree-lazy-server-del yes",
+          "kind": "directive",
+          "directive": "lazyfree-lazy-server-del",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "activedefrag-on",
+          "doc": "Bật chống phân mảnh trực tuyến activedefrag yes",
+          "kind": "directive",
+          "directive": "activedefrag",
+          "match": {
+            "eq": "yes"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đổi giá trị từ `no` sang `yes` cho cả 4 dòng `lazyfree-lazy-eviction`, `lazyfree-lazy-expire`, `lazyfree-lazy-server-del` và `activedefrag`."
+    ],
+    "ref": "conf/redis-pure-cache-lfu.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r12-4",
+    "code": "R12.4",
+    "module": "R12",
+    "title": "Soi chỉ số Morris Counter (OBJECT FREQ) và chỉnh nóng Eviction không cần Restart",
+    "difficulty": 2,
+    "tags": [
+      "config-set",
+      "object-freq",
+      "live-tuning"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "live-memory-tuning.redis",
+    "prompt": "Một nút Redis Cache đang chạy trực tuyến chưa thể khởi động lại ngay, nhưng lại đang cấu hình nhầm `maxmemory-policy` là `noeviction` và tắt `lazyfree-lazy-eviction`.\n\n- **Nhiệm vụ:**\n  1. Quan sát tần suất truy cập LFU của khoá nóng bằng `OBJECT FREQ cache:item:hot` và thời gian nhàn rỗi của khoá lạnh bằng `OBJECT IDLETIME cache:item:cold`.\n  2. Chỉnh nóng chính sách trục xuất ngay lập tức bằng `CONFIG SET maxmemory-policy allkeys-lfu`.\n  3. Bật thu hồi bất đồng bộ khi trục xuất bằng `CONFIG SET lazyfree-lazy-eviction yes`.\n  4. Gọi `INFO memory` để xác nhận chính sách mới đã có hiệu lực.",
+    "starter": "# Kiểm tra cấu hình hiện tại\nCONFIG GET maxmemory-policy\n# 1. Chạy OBJECT FREQ cache:item:hot và OBJECT IDLETIME cache:item:cold\n# 2. Chạy CONFIG SET cho maxmemory-policy và lazyfree-lazy-eviction\n",
+    "solution": "OBJECT FREQ cache:item:hot\nOBJECT IDLETIME cache:item:cold\nCONFIG SET maxmemory-policy allkeys-lfu\nCONFIG SET lazyfree-lazy-eviction yes\nINFO memory\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "maxMemoryBytes": 2147483648,
+        "config": {
+          "maxmemory-policy": "noeviction",
+          "lazyfree-lazy-eviction": "no"
+        },
+        "initialKeys": [
+          {
+            "key": "cache:item:hot",
+            "type": "string",
+            "value": "{\"views\":98000}",
+            "freq": 182,
+            "idleSec": 1
+          },
+          {
+            "key": "cache:item:cold",
+            "type": "string",
+            "value": "{\"views\":1}",
+            "freq": 5,
+            "idleSec": 4200
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "live-policy-lfu",
+          "doc": "CONFIG SET đã chuyển maxmemory-policy sang allkeys-lfu",
+          "target": "config-param",
+          "param": "maxmemory-policy",
+          "expected": "allkeys-lfu"
+        },
+        {
+          "id": "live-lazy-evict",
+          "doc": "CONFIG SET đã bật lazyfree-lazy-eviction sang yes",
+          "target": "config-param",
+          "param": "lazyfree-lazy-eviction",
+          "expected": "yes"
+        },
+        {
+          "id": "inspected-object-stats",
+          "doc": "Đã truy vấn OBJECT FREQ và OBJECT IDLETIME trên 2 khoá mẫu",
+          "target": "command-used",
+          "mustUseRegex": "OBJECT\\s+FREQ[\\s\\S]*OBJECT\\s+IDLETIME"
+        }
+      ]
+    },
+    "hints": [
+      "`CONFIG SET` cho phép thay đổi hầu hết các tham số bộ nhớ ngay trên RAM mà không làm gián đoạn kết nối hiện tại (sau đó trên máy thật có thể gọi thêm `CONFIG REWRITE` để lưu xuống đĩa).",
+      "Gõ đúng `CONFIG SET maxmemory-policy allkeys-lfu` và `CONFIG SET lazyfree-lazy-eviction yes`."
+    ],
+    "ref": "ops/redis-sre-diagnostic-playbook.sh",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r12-5",
+    "code": "R12.5",
+    "module": "R12",
+    "title": "Áp dụng Quy tắc 65% Memory Headroom cho StatefulSet Redis trên Kubernetes",
+    "difficulty": 3,
+    "tags": [
+      "kubernetes",
+      "oomkilled",
+      "headroom",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "redis-cache-statefulset.yaml",
+    "prompt": "Pod `redis-cache-0` trên Kubernetes liên tục bị sập với mã **`OOMKilled (Exit Code 137)`** mỗi đêm chạy `BGSAVE` vì kỹ sư cũ đặt giới hạn Container `limits.memory: 2Gi` trong khi truyền cờ `--maxmemory 2048mb` (0% khoảng thở cho Copy-on-Write và Output Buffer)!\n\n- **Nhiệm vụ:** Nâng cấp tệp `StatefulSet` bên dưới tuân thủ **Quy tắc 65%–70% Headroom** và **Guaranteed Memory QoS**:\n  1. Nâng cả `resources.requests.memory` lẫn `resources.limits.memory` của container `redis` lên **`4Gi`** (`4096Mi`).\n  2. Đặt giá trị tham số ngay sau cờ `--maxmemory` trong mảng `args` thành **`\"2688mb\"`** (~65.6% của `4096Mi`, chừa hơn `1.3GiB` đệm an toàn).\n  3. Đổi giá trị sau cờ `--maxmemory-policy` từ `noeviction` sang **`\"allkeys-lfu\"`**.",
+    "starter": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-cache\nspec:\n  serviceName: redis-cache-headless\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis-cache\n  template:\n    metadata:\n      labels:\n        app: redis-cache\n    spec:\n      containers:\n        - name: redis\n          image: redis:8.0-alpine\n          args:\n            - \"--maxmemory\"\n            - \"2048mb\"\n            - \"--maxmemory-policy\"\n            - \"noeviction\"\n          ports:\n            - containerPort: 6379\n          resources:\n            requests:\n              cpu: \"500m\"\n              memory: 2Gi\n            limits:\n              memory: 2Gi\n",
+    "solution": "apiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-cache\nspec:\n  serviceName: redis-cache-headless\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis-cache\n  template:\n    metadata:\n      labels:\n        app: redis-cache\n    spec:\n      containers:\n        - name: redis\n          image: redis:8.0-alpine\n          args:\n            - \"--maxmemory\"\n            - \"2688mb\"\n            - \"--maxmemory-policy\"\n            - \"allkeys-lfu\"\n          ports:\n            - containerPort: 6379\n          resources:\n            requests:\n              cpu: \"500m\"\n              memory: 4Gi\n            limits:\n              memory: 4Gi\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "pod-mem-req-4gi",
+          "doc": "Đặt resources.requests.memory >= 4Gi (4096Mi)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-cache"
+          },
+          "path": "spec.template.spec.containers[0].resources.requests.memory",
+          "match": {
+            "k8sMemMinMi": 4096
+          }
+        },
+        {
+          "id": "pod-mem-limit-4gi",
+          "doc": "Đặt resources.limits.memory = 4Gi (4096Mi)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-cache"
+          },
+          "path": "spec.template.spec.containers[0].resources.limits.memory",
+          "match": {
+            "k8sMemMinMi": 4096
+          }
+        },
+        {
+          "id": "arg-maxmem-headroom",
+          "doc": "Truyền tham số --maxmemory là 2688mb (~65% của 4Gi)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-cache"
+          },
+          "path": "spec.template.spec.containers[0].args[1]",
+          "match": {
+            "eq": "2688mb"
+          }
+        },
+        {
+          "id": "arg-policy-lfu",
+          "doc": "Truyền tham số --maxmemory-policy là allkeys-lfu",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-cache"
+          },
+          "path": "spec.template.spec.containers[0].args[3]",
+          "match": {
+            "eq": "allkeys-lfu"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Sửa `args[1]` từ `\"2048mb\"` thành `\"2688mb\"` và `args[3]` từ `\"noeviction\"` thành `\"allkeys-lfu\"`.",
+      "Đừng quên cập nhật cả hai chỗ `requests.memory: 4Gi` và `limits.memory: 4Gi` ở cuối tệp YAML."
+    ],
+    "ref": "k8s/redis-statefulset-pdb-anti-affinity.yaml",
+    "webGrade": true
+  }
+]

@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R11-D1",
+    "title": "Chiếm và nhả khoá phân tán an toàn bằng SET NX PX và EVAL Lua",
+    "code": "SET lock:payout:txn-772 \"uuid-pod-a91\" NX PX 5000\nEVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:payout:txn-772 \"uuid-pod-a91\""
+  },
+  {
+    "id": "R11-D2",
+    "title": "Bộ đếm Fixed Window không trượt mép với EXPIRE NX",
+    "code": "INCR rl:login:203.0.113.9\nEXPIRE rl:login:203.0.113.9 60 NX\nTTL rl:login:203.0.113.9"
+  },
+  {
+    "id": "R11-D3",
+    "title": "Cửa sổ trượt Sliding Window bằng Sorted Set",
+    "code": "ZREMRANGEBYSCORE rl:api:u42 -inf 1699999940000\nZADD rl:api:u42 1700000000000 \"req-now-5\"\nZCARD rl:api:u42\nPEXPIRE rl:api:u42 60000"
+  }
+]

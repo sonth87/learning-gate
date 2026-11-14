@@ -1,0 +1,306 @@
+[
+  {
+    "id": "redis-ex-r03-1",
+    "code": "R03.1",
+    "title": "Xây bảng tin hoạt động giới hạn (Bounded Feed) bằng LPUSH & LTRIM",
+    "difficulty": 1,
+    "tags": [
+      "lpush",
+      "ltrim",
+      "lrange",
+      "activity-feed"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "bounded-feed.redis",
+    "prompt": "Danh sách hoạt động `feed:u:101` hiện có 4 sự kiện theo thứ tự mới nhất đứng đầu: `[\"act-4\", \"act-3\", \"act-2\", \"act-1\"]`. Người dùng vừa phát sinh liên tiếp `\"act-5\"` rồi tới `\"act-6\"` (mới nhất). Hãy:\n1) Dùng `LPUSH` đẩy `\"act-5\"` và `\"act-6\"` vào đầu trái của `feed:u:101`.\n2) Dùng `LTRIM feed:u:101 0 2` cắt bỏ đuôi cũ để danh sách **chỉ giữ đúng 3 sự kiện mới nhất** (`act-6`, `act-5`, `act-4`).\n3) Gọi `LRANGE feed:u:101 0 -1` để kiểm tra danh sách sau khi cắt.",
+    "starter": "# 1. Đẩy \"act-5\" rồi \"act-6\" vào đầu trái feed:u:101 bằng LPUSH\n# 2. Cắt gọn chỉ giữ chỉ số 0..2 bằng LTRIM\n# 3. Xem kết quả bằng LRANGE feed:u:101 0 -1\n",
+    "solution": "LPUSH feed:u:101 \"act-5\" \"act-6\"\nLTRIM feed:u:101 0 2\nLRANGE feed:u:101 0 -1\n",
+    "hints": [
+      "Khi gọi `LPUSH feed:u:101 \"act-5\" \"act-6\"`, Redis đẩy lần lượt `act-5` rồi `act-6` vào đầu trái, nên `act-6` sẽ nằm ở vị trí `0`.",
+      "Gọi ngay `LTRIM feed:u:101 0 2` để khoá kích thước danh sách ở đúng 3 phần tử đầu tiên."
+    ],
+    "ref": "patterns/quicklist-bounded-activity-feed.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "feed:u:101",
+            "type": "list",
+            "value": [
+              "act-4",
+              "act-3",
+              "act-2",
+              "act-1"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "feed-trimmed-top-3",
+          "doc": "Danh sách `feed:u:101` giữ chính xác 3 sự kiện mới nhất `[\"act-6\", \"act-5\", \"act-4\"]`",
+          "target": "list-items",
+          "key": "feed:u:101",
+          "expected": [
+            "act-6",
+            "act-5",
+            "act-4"
+          ],
+          "lengthEq": 3
+        },
+        {
+          "id": "used-ltrim",
+          "doc": "Sử dụng đúng lệnh cắt ngọn `LTRIM feed:u:101 0 2` (không `RPOP` thủ công từng phần tử)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*LTRIM\\s+feed:u:101\\s+0\\s+2\\b",
+          "forbidRegex": "^\\s*RPOP\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r03-2",
+    "code": "R03.2",
+    "title": "Bàn giao tác vụ hàng đợi nguyên tử không lo rớt việc bằng LMOVE",
+    "difficulty": 2,
+    "tags": [
+      "lmove",
+      "reliable-queue",
+      "list"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "reliable-queue.redis",
+    "prompt": "Hàng đợi gửi thư `queue:email:pending` nhận việc mới từ đầu trái (`LPUSH`), nên công việc xếp hàng lâu nhất `\"job-101\"` đang nằm ở **đuôi phải (`RIGHT`)**. Thay vì dùng `RPOP` dễ làm mất `\"job-101\"` nếu worker sập giữa chừng, hãy dùng **1 lệnh `LMOVE`** chuyển nguyên tử phần tử ở `RIGHT` của `queue:email:pending` sang `LEFT` của danh sách theo dõi `queue:email:processing`.",
+    "starter": "# Chuyển nguyên tử 1 việc từ RIGHT của queue:email:pending sang LEFT của queue:email:processing bằng LMOVE\n",
+    "solution": "LMOVE queue:email:pending queue:email:processing RIGHT LEFT\n",
+    "hints": [
+      "Cú pháp chuẩn của Redis 6.2+ / Redis 8: `LMOVE <source> <destination> <LEFT|RIGHT> <LEFT|RIGHT>`.",
+      "Gõ chính xác: `LMOVE queue:email:pending queue:email:processing RIGHT LEFT`"
+    ],
+    "ref": "patterns/quicklist-bounded-activity-feed.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "queue:email:pending",
+            "type": "list",
+            "value": [
+              "job-103",
+              "job-102",
+              "job-101"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "pending-remaining-jobs",
+          "doc": "Hàng đợi `queue:email:pending` còn lại `[\"job-103\", \"job-102\"]`",
+          "target": "list-items",
+          "key": "queue:email:pending",
+          "expected": [
+            "job-103",
+            "job-102"
+          ]
+        },
+        {
+          "id": "processing-holds-job101",
+          "doc": "Danh sách `queue:email:processing` đang giữ an toàn tác vụ `\"job-101\"`",
+          "target": "list-items",
+          "key": "queue:email:processing",
+          "expected": [
+            "job-101"
+          ]
+        },
+        {
+          "id": "atomic-lmove-used",
+          "doc": "Thực hiện bàn giao nguyên tử bằng `LMOVE` (không dùng `RPOP` rời rạc)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*LMOVE\\s+queue:email:pending\\s+queue:email:processing\\s+RIGHT\\s+LEFT\\b",
+          "forbidRegex": "^\\s*(RPOP|LPOP|RPOPLPUSH)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r03-3",
+    "code": "R03.3",
+    "title": "Quản lý nhãn duy nhất bằng SADD, SREM, SISMEMBER & SCARD",
+    "difficulty": 1,
+    "tags": [
+      "sadd",
+      "srem",
+      "sismember",
+      "scard"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "unique-tags-set.redis",
+    "prompt": "Hãy quản lý tập hợp kỹ năng không trùng lặp `skills:dev:linh` bằng Redis Set:\n1) Dùng `SADD` thêm 4 nhãn `\"typescript\"`, `\"redis\"`, `\"docker\"`, `\"legacy-svn\"`.\n2) Dùng `SREM` gỡ bỏ nhãn cũ `\"legacy-svn\"`.\n3) Kiểm tra nhanh nhãn `\"redis\"` có trong tập hợp không bằng `SISMEMBER` (`O(1)`) và lấy tổng số nhãn bằng `SCARD` (`O(1)`) — tuyệt đối **không gọi `SMEMBERS`**.",
+    "starter": "# 1. Thêm 4 nhãn vào skills:dev:linh bằng SADD\n# 2. Xoá \"legacy-svn\" bằng SREM\n# 3. Kiểm tra \"redis\" bằng SISMEMBER và đếm tổng bằng SCARD (không gọi SMEMBERS)\n",
+    "solution": "SADD skills:dev:linh \"typescript\" \"redis\" \"docker\" \"legacy-svn\"\nSREM skills:dev:linh \"legacy-svn\"\nSISMEMBER skills:dev:linh \"redis\"\nSCARD skills:dev:linh\n",
+    "hints": [
+      "`SADD skills:dev:linh \"typescript\" \"redis\" \"docker\" \"legacy-svn\"` thêm nhiều phần tử trong 1 lệnh.",
+      "Gỡ bằng `SREM skills:dev:linh \"legacy-svn\"`, sau đó gọi `SISMEMBER skills:dev:linh \"redis\"` và `SCARD skills:dev:linh`."
+    ],
+    "ref": "patterns/set-mutual-tags-sinter.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "skills-final-members",
+          "doc": "Tập hợp `skills:dev:linh` chứa đúng 3 kỹ năng `docker`, `redis`, `typescript`",
+          "target": "set-members",
+          "key": "skills:dev:linh",
+          "expectedMembers": [
+            "docker",
+            "redis",
+            "typescript"
+          ],
+          "cardinalityEq": 3
+        },
+        {
+          "id": "o1-checks-no-smembers",
+          "doc": "Dùng `SISMEMBER` và `SCARD` độ phức tạp `O(1)`, không lạm dụng `SMEMBERS`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SISMEMBER\\s+skills:dev:linh\\s+redis\\b[\\s\\S]*^\\s*SCARD\\s+skills:dev:linh\\b",
+          "forbidRegex": "^\\s*SMEMBERS\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r03-4",
+    "code": "R03.4",
+    "title": "Tìm bạn chung & gợi ý theo dõi bằng SINTERSTORE & SDIFF",
+    "difficulty": 2,
+    "tags": [
+      "sinterstore",
+      "sdiff",
+      "social-graph",
+      "set-ops"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "mutual-friends.redis",
+    "prompt": "Trên RAM đang lưu danh sách theo dõi của An (`follow:u:an` = `u:10, u:20, u:30, u:40`) và Bình (`follow:u:binh` = `u:20, u:30, u:50`). Hãy thực hiện 2 phép toán tập hợp trực tiếp trên Redis:\n1) Dùng `SINTERSTORE` tính phần giao (những tài khoản **cả An và Bình cùng theo dõi**) và lưu thẳng kết quả vào khoá `mutual:an:binh`.\n2) Dùng `SDIFF` tìm những tài khoản mà **Bình đang theo dõi nhưng An chưa theo dõi** (lưu ý thứ tự khoá: `follow:u:binh` đứng trước `follow:u:an`!).",
+    "starter": "# 1. Lưu tập giao của follow:u:an và follow:u:binh vào khoá mutual:an:binh bằng SINTERSTORE\n# 2. Tìm phần tử có trong follow:u:binh nhưng chưa có trong follow:u:an bằng SDIFF\n",
+    "solution": "SINTERSTORE mutual:an:binh follow:u:an follow:u:binh\nSDIFF follow:u:binh follow:u:an\n",
+    "hints": [
+      "Trong `SINTERSTORE <destination> <key1> <key2>`, tham số đầu tiên là tên khoá đích `mutual:an:binh`.",
+      "Phép hiệu `A \\ B` không có tính giao hoán: đặt `SDIFF follow:u:binh follow:u:an` để trả ra `\"u:50\"`."
+    ],
+    "ref": "patterns/set-mutual-tags-sinter.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "follow:u:an",
+            "type": "set",
+            "value": [
+              "u:10",
+              "u:20",
+              "u:30",
+              "u:40"
+            ]
+          },
+          {
+            "key": "follow:u:binh",
+            "type": "set",
+            "value": [
+              "u:20",
+              "u:30",
+              "u:50"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "mutual-stored-correctly",
+          "doc": "Khoá `mutual:an:binh` lưu đúng 2 tài khoản chung `[\"u:20\", \"u:30\"]`",
+          "target": "set-members",
+          "key": "mutual:an:binh",
+          "expectedMembers": [
+            "u:20",
+            "u:30"
+          ]
+        },
+        {
+          "id": "sdiff-suggests-u50",
+          "doc": "Lệnh `SDIFF follow:u:binh follow:u:an` xuất ra gợi ý chính xác `\"u:50\"`",
+          "target": "stdout-contains",
+          "contains": "\"u:50\""
+        },
+        {
+          "id": "used-sinterstore-and-sdiff",
+          "doc": "Sử dụng đúng `SINTERSTORE` và `SDIFF` với thứ tự khoá chuẩn",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SINTERSTORE\\s+mutual:an:binh\\b[\\s\\S]*^\\s*SDIFF\\s+follow:u:binh\\s+follow:u:an\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r03-5",
+    "code": "R03.5",
+    "title": "Tối ưu RAM bằng Set số nguyên intset & kiểm tra lô SMISMEMBER",
+    "difficulty": 2,
+    "tags": [
+      "intset",
+      "object-encoding",
+      "smismember",
+      "memory"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "intset-whitelist.redis",
+    "prompt": "Khi lưu danh sách ID người dùng được mở tính năng thử nghiệm, bỏ tiền tố chữ giúp Redis kích hoạt nén mảng số nguyên **`intset`** cực nhẹ! Hãy:\n1) Dùng `SADD` tạo khoá `beta:whitelist:uids` gồm 4 số nguyên thuần tuý: `1001`, `1005`, `1009`, `2048`.\n2) Gọi `OBJECT ENCODING beta:whitelist:uids` để chứng minh Redis dùng `\"intset\"`.\n3) Dùng `SMISMEMBER beta:whitelist:uids 1005 9999` kiểm tra quyền truy cập của cả 2 ID trong 1 lần gọi duy nhất.",
+    "starter": "# 1. SADD 4 số nguyên 1001 1005 1009 2048 vào beta:whitelist:uids\n# 2. Kiểm tra OBJECT ENCODING beta:whitelist:uids\n# 3. Kiểm tra lô 2 phần tử 1005 và 9999 bằng SMISMEMBER\n",
+    "solution": "SADD beta:whitelist:uids 1001 1005 1009 2048\nOBJECT ENCODING beta:whitelist:uids\nSMISMEMBER beta:whitelist:uids 1005 9999\n",
+    "hints": [
+      "Truyền các số nguyên không có ký tự chữ: `SADD beta:whitelist:uids 1001 1005 1009 2048`.",
+      "Sau đó gõ `OBJECT ENCODING beta:whitelist:uids` và `SMISMEMBER beta:whitelist:uids 1005 9999`."
+    ],
+    "ref": "patterns/set-mutual-tags-sinter.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "whitelist-members",
+          "doc": "Tập hợp `beta:whitelist:uids` chứa đúng 4 mã số `1001`, `1005`, `1009`, `2048`",
+          "target": "set-members",
+          "key": "beta:whitelist:uids",
+          "expectedMembers": [
+            "1001",
+            "1005",
+            "1009",
+            "2048"
+          ]
+        },
+        {
+          "id": "encoding-is-intset",
+          "doc": "`OBJECT ENCODING` xác nhận cấu trúc nén `\"intset\"`",
+          "target": "stdout-contains",
+          "contains": "\"intset\""
+        },
+        {
+          "id": "smismember-batch-used",
+          "doc": "Kiểm tra nhiều phần tử cùng lúc bằng `SMISMEMBER beta:whitelist:uids 1005 9999`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SMISMEMBER\\s+beta:whitelist:uids\\s+1005\\s+9999\\b"
+        }
+      ]
+    }
+  }
+]

@@ -4,10 +4,12 @@ import {
   CheckCircle2,
   ChevronRight,
   Container,
+  Database,
   ShieldCheck,
   SkipForward,
   Undo2,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import { useCourseCurriculum } from '../data';
 import {
@@ -41,6 +43,20 @@ function getDomainChip(moduleId: string) {
       icon: <Boxes className="h-3 w-3" aria-hidden="true" />,
     };
   }
+  if (moduleId.startsWith('R')) {
+    if (num <= 8) {
+      return {
+        label: 'Data & Streams',
+        cls: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
+        icon: <Zap className="h-3 w-3" aria-hidden="true" />,
+      };
+    }
+    return {
+      label: 'Cache & Cluster',
+      cls: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
+      icon: <Database className="h-3 w-3" aria-hidden="true" />,
+    };
+  }
   if (num <= 9) {
     return {
       label: 'CI Pipeline',
@@ -68,10 +84,16 @@ export const RoadmapView: React.FC = () => {
   const current = courseCurrentLevel(s, cur);
   const levels = [...new Set(ordered.map((m) => m.level))].sort((a, b) => a - b);
 
-  const lvBorder = accent === 'cyan' ? 'border-cyan-500' : 'border-sky-500';
-  const cardActive = accent === 'cyan' ? 'border-cyan-500/40 hover:border-cyan-500/70' : 'border-sky-500/40 hover:border-sky-500/70';
-  const cardHover = accent === 'cyan' ? 'hover:border-cyan-500/60' : 'hover:border-sky-500/60';
-  const codeTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
+  const lvBorder = accent === 'cyan' ? 'border-cyan-500' : accent === 'rose' ? 'border-rose-500' : 'border-sky-500';
+  const cardActive =
+    accent === 'cyan'
+      ? 'border-cyan-500/40 hover:border-cyan-500/70'
+      : accent === 'rose'
+        ? 'border-rose-500/40 hover:border-rose-500/70'
+        : 'border-sky-500/40 hover:border-sky-500/70';
+  const cardHover =
+    accent === 'cyan' ? 'hover:border-cyan-500/60' : accent === 'rose' ? 'hover:border-rose-500/60' : 'hover:border-sky-500/60';
+  const codeTone = accent === 'cyan' ? 'text-cyan-400' : accent === 'rose' ? 'text-rose-400' : 'text-sky-400';
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">

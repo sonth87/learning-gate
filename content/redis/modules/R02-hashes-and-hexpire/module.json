@@ -1,0 +1,58 @@
+{
+  "id": "R02",
+  "slug": "R02-hashes-and-hexpire",
+  "level": 1,
+  "order": 0,
+  "title": "Hashes, nén bộ nhớ listpack & đột phá HEXPIRE trên từng trường (Redis 8)",
+  "summary": "Mô hình hoá Object/Entity siêu gọn bằng Redis Hash, hiểu ngưỡng chuyển đổi listpack -> hashtable, tránh bẫy HGETALL và làm chủ HEXPIRE/HTTL mới nhất.",
+  "tags": [
+    "hashes",
+    "listpack",
+    "hexpire",
+    "httl",
+    "hincrby",
+    "memory-optimization"
+  ],
+  "sources": [
+    {
+      "title": "Redis Data Types — Hashes & Memory Representation",
+      "url": "https://redis.io/docs/latest/develop/data-types/hashes/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Commands — HEXPIRE & Hash Field Expiration",
+      "url": "https://redis.io/docs/latest/commands/hexpire/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Simulator: So sánh RAM giữa JSON String vs Hash listpack",
+      "kind": "simulator-preset",
+      "targetId": "memory",
+      "description": "Quan sát trực quan mức tiết kiệm bộ nhớ khi gom nhiều thuộc tính phẳng vào Hash nhỏ"
+    },
+    {
+      "label": "War Room: Cú giật độ trễ do BigKey Hash triệu trường",
+      "kind": "incident",
+      "targetId": "inc-bigkey-del-spike",
+      "description": "Khám bệnh sự cố gọi HGETALL và DEL trên một Hash phình to không kiểm soát"
+    }
+  ],
+  "readings": [
+    {
+      "path": "patterns/hash-cart-hexpire-redis8.redis",
+      "kind": "good",
+      "note": "Mẫu thiết kế giỏ hàng thương mại điện tử hiện đại tận dụng tính năng Field-level TTL trên Redis 7.4+ / Redis 8.",
+      "task": "Quan sát cách mã khuyến mãi chớp nhoáng (`promo:*`) được gắn hạn tự huỷ riêng mà không làm mất toàn bộ sản phẩm trong giỏ hàng.",
+      "answer": "Thay vì phải tách sang một String key phụ bên ngoài để đặt `EXPIRE`, kịch bản dùng trực tiếp `HEXPIRE cart:u:1001 900 FIELDS 1 promo:flash_voucher` để chỉ riêng trường mã giảm giá tự bốc hơi sau 15 phút, trong khi các trường SKU sản phẩm còn lại trong cùng Hash vẫn sống theo TTL 7 ngày của giỏ hàng."
+    },
+    {
+      "path": "clients/node/ioredis-singleton-pool.ts",
+      "kind": "good",
+      "note": "Cách ứng dụng TypeScript/Node.js đọc ghi một phần thuộc tính đối tượng qua ioredis mà không kéo toàn bộ blob về mạng.",
+      "task": "Vì sao trong hàm đọc thông tin hiển thị Header người dùng, tác giả dùng `redis.hmget(key, 'name', 'avatar', 'tier')` thay vì lưu nguyên cục `JSON.stringify` vào String?",
+      "answer": "Dùng `HMGET` trên Hash chỉ truyền đúng 3 trường nhỏ qua mạng (`O(K)` với `K=3`) và cho phép cập nhật lẻ `HINCRBY` một trường số dư nguyên tử tại chỗ, không phải kéo cả chuỗi JSON vài chục KB về Node.js `JSON.parse` -> sửa -> `JSON.stringify` ghi đè gây Race Condition."
+    }
+  ]
+}

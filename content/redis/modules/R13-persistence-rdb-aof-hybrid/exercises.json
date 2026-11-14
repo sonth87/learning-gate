@@ -1,0 +1,303 @@
+[
+  {
+    "id": "redis-ex-r13-1",
+    "code": "R13.1",
+    "module": "R13",
+    "title": "Vô hiệu hoá hoàn toàn RDB & AOF cho nút Pure Cache thuần RAM",
+    "difficulty": 1,
+    "tags": [
+      "persistence",
+      "pure-cache",
+      "rdb-disable"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-ephemeral-cache.conf",
+    "prompt": "Cụm Redis này chỉ lưu kết quả đệm HTML trang danh mục (dữ liệu gốc 100% nằm trên PostgreSQL). Tuy nhiên cấu hình hiện tại đang bật cả lịch chụp `save 60 1000` lẫn `appendonly yes`, khiến ổ cứng tốn hàng trăm MB I/O mỗi giây và đỉnh RAM vọt cao lúc `fork()`!\n\n- **Nhiệm vụ:** Chỉnh sửa tệp `redis.conf` để tắt sạch mọi cơ chế ghi đĩa:\n  1. Thay thế các dòng lịch chụp RDB bằng chỉ thị **`save \"\"`** (chuỗi rỗng bọc trong ngoặc kép để xoá toàn bộ điểm lưu mặc định).\n  2. Đặt **`appendonly no`** để tắt nhật ký AOF.",
+    "starter": "maxmemory 2gb\nmaxmemory-policy allkeys-lfu\n\n# Đang gây lãng phí I/O đĩa và Copy-on-Write cho cụm Pure Cache!\nsave 900 1\nsave 60 1000\nappendonly yes\n",
+    "solution": "maxmemory 2gb\nmaxmemory-policy allkeys-lfu\nsave \"\"\nappendonly no\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "rdb-disabled-empty-quote",
+          "doc": "Tắt chụp ảnh RDB bằng chỉ thị save \"\"",
+          "kind": "directive",
+          "directive": "save",
+          "match": {
+            "eq": ""
+          }
+        },
+        {
+          "id": "aof-disabled",
+          "doc": "Tắt nhật ký AOF bằng appendonly no",
+          "kind": "directive",
+          "directive": "appendonly",
+          "match": {
+            "eq": "no"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Xoá 2 dòng `save 900 1` và `save 60 1000` đi, thay bằng đúng một dòng `save \"\"`.",
+      "Đổi `appendonly yes` thành `appendonly no`."
+    ],
+    "ref": "conf/redis-pure-cache-lfu.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r13-2",
+    "code": "R13.2",
+    "module": "R13",
+    "title": "Cấu hình Hybrid RDB + AOF bền vững chuẩn Production (RPO <= 1s)",
+    "difficulty": 2,
+    "tags": [
+      "aof",
+      "hybrid-preamble",
+      "everysec",
+      "redis-conf"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-durable-hybrid.conf",
+    "prompt": "Bạn đang cấu hình nút Redis lưu trữ giỏ hàng và phiên thanh toán. Yêu cầu của kiến trúc sư trưởng: mất tối đa không quá **1 giây dữ liệu** khi sập nguồn điện, tự động nén gọn tệp AOF khi tăng gấp đôi dung lượng (tối thiểu từ `64mb`) và sử dụng **Hybrid RDB Preamble** để khởi động lại cực nhanh.\n\n- **Nhiệm vụ:** Chỉnh sửa tệp `redis.conf` với đủ 5 chỉ thị chuẩn:\n  1. `appendonly yes`\n  2. `appendfsync everysec`\n  3. `aof-use-rdb-preamble yes`\n  4. `auto-aof-rewrite-percentage 100`\n  5. `auto-aof-rewrite-min-size 64mb`",
+    "starter": "port 6379\ndir /data\nappendonly no\nappendfsync no\naof-use-rdb-preamble no\nauto-aof-rewrite-percentage 0\nauto-aof-rewrite-min-size 1mb\n",
+    "solution": "port 6379\ndir /data\nappendonly yes\nappendfsync everysec\naof-use-rdb-preamble yes\nauto-aof-rewrite-percentage 100\nauto-aof-rewrite-min-size 64mb\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "aof-on",
+          "doc": "Bật nhật ký AOF (appendonly yes)",
+          "kind": "directive",
+          "directive": "appendonly",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "fsync-everysec",
+          "doc": "Thiết lập đồng bộ đĩa mỗi giây (appendfsync everysec)",
+          "kind": "directive",
+          "directive": "appendfsync",
+          "match": {
+            "eq": "everysec"
+          }
+        },
+        {
+          "id": "hybrid-preamble-on",
+          "doc": "Bật phần mở đầu nhị phân RDB (aof-use-rdb-preamble yes)",
+          "kind": "directive",
+          "directive": "aof-use-rdb-preamble",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "rewrite-pct-100",
+          "doc": "Đặt ngưỡng tự nén lại auto-aof-rewrite-percentage 100",
+          "kind": "directive",
+          "directive": "auto-aof-rewrite-percentage",
+          "match": {
+            "eq": 100
+          }
+        },
+        {
+          "id": "rewrite-min-64mb",
+          "doc": "Đặt kích thước tối thiểu để nén auto-aof-rewrite-min-size >= 64mb",
+          "kind": "memory-bytes",
+          "directive": "auto-aof-rewrite-min-size",
+          "minBytes": 64000000
+        }
+      ]
+    },
+    "hints": [
+      "Cập nhật lần lượt `appendonly yes`, `appendfsync everysec`, và `aof-use-rdb-preamble yes`.",
+      "Đặt `auto-aof-rewrite-percentage 100` (tránh `0` vì `0` sẽ tắt tính năng tự động nén lại AOF!) và `auto-aof-rewrite-min-size 64mb`."
+    ],
+    "ref": "conf/redis-durable-hybrid-aof.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r13-3",
+    "code": "R13.3",
+    "module": "R13",
+    "title": "Kích hoạt sao lưu nền BGSAVE & BGREWRITEAOF không khoá luồng chính",
+    "difficulty": 1,
+    "tags": [
+      "bgsave",
+      "bgrewriteaof",
+      "non-blocking"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "safe-background-backup.redis",
+    "prompt": "Trước khi bảo trì nâng cấp máy chủ, đội vận hành cần chủ động tạo bản chụp RDB mới nhất và nén gọn nhật ký AOF. Script cũ của thực tập sinh đang dùng lệnh **`SAVE`** đồng bộ — nếu chạy trên cụm 15GB RAM sẽ làm treo cứng toàn bộ API suốt 25 giây!\n\n- **Nhiệm vụ:**\n  1. Thay lệnh `SAVE` nguy hiểm bằng lệnh chụp ảnh chạy nền **`BGSAVE`**.\n  2. Kích hoạt nén gọn tệp AOF chạy nền bằng **`BGREWRITEAOF`**.\n  3. Gọi `INFO persistence` để kiểm tra trạng thái lưu trữ.",
+    "starter": "# CẤM CHẠY TRÊN PRODUCTION: Lệnh SAVE đồng bộ khoá cứng Event Loop!\nSAVE\n",
+    "solution": "BGSAVE\nBGREWRITEAOF\nINFO persistence\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "used-bg-commands-no-sync-save",
+          "doc": "Sử dụng BGSAVE và BGREWRITEAOF chạy nền, tuyệt đối KHÔNG gọi SAVE đồng bộ",
+          "target": "command-used",
+          "mustUseRegex": "^BGSAVE\\b[\\s\\S]*^BGREWRITEAOF\\b",
+          "forbidRegex": "^SAVE\\b"
+        },
+        {
+          "id": "stdout-bg-started",
+          "doc": "Tiến trình lưu nền khởi chạy thành công (Background saving started)",
+          "target": "stdout-contains",
+          "contains": "Background saving started"
+        }
+      ]
+    },
+    "hints": [
+      "Xoá hẳn dòng `SAVE` đi rồi viết lần lượt 3 dòng: `BGSAVE`, `BGREWRITEAOF`, `INFO persistence`."
+    ],
+    "ref": "ops/redis-sre-diagnostic-playbook.sh",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r13-4",
+    "code": "R13.4",
+    "module": "R13",
+    "title": "Gắn Named Volume /data bảo toàn dữ liệu AOF trên Docker Compose v2",
+    "difficulty": 2,
+    "tags": [
+      "docker-compose",
+      "volumes",
+      "aof",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose.yaml",
+    "prompt": "Mỗi lần đội DevOps chạy `docker compose up -d` nâng cấp bản vá cho container `redis-state`, toàn bộ dữ liệu giỏ hàng bị mất trắng dù đã bật `--appendonly yes` — nguyên nhân là tệp `compose.yaml` quên khai báo và gắn **Named Volume** vào thư mục `/data`!\n\n- **Nhiệm vụ:** Hoàn thiện tệp `compose.yaml` bên dưới:\n  1. Đổi cờ `--appendonly` từ `\"no\"` sang **`\"yes\"`** và thêm cặp cờ `\"--appendfsync\"`, `\"everysec\"` trong `services.redis-state.command`.\n  2. Gắn volume bền vững **`redis-state-data:/data`** vào mảng `services.redis-state.volumes`.\n  3. Khai báo `redis-state-data: {}` dưới mục `volumes:` cấp cao nhất.",
+    "starter": "services:\n  redis-state:\n    image: redis:8.0-alpine\n    command:\n      - \"redis-server\"\n      - \"--appendonly\"\n      - \"no\"\n    ports:\n      - \"6379:6379\"\n",
+    "solution": "services:\n  redis-state:\n    image: redis:8.0-alpine\n    command:\n      - \"redis-server\"\n      - \"--appendonly\"\n      - \"yes\"\n      - \"--appendfsync\"\n      - \"everysec\"\n    ports:\n      - \"6379:6379\"\n    volumes:\n      - redis-state-data:/data\n\nvolumes:\n  redis-state-data: {}\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "compose-image-pinned",
+          "doc": "Cố định phiên bản image redis:8.0-alpine",
+          "kind": "image-tag-pinned",
+          "path": "services.redis-state.image"
+        },
+        {
+          "id": "compose-aof-yes",
+          "doc": "Mảng command bật --appendonly yes",
+          "kind": "path",
+          "path": "services.redis-state.command[2]",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "compose-mount-data-vol",
+          "doc": "Gắn volume redis-state-data:/data cho dịch vụ redis-state",
+          "kind": "path",
+          "path": "services.redis-state.volumes",
+          "match": {
+            "contains": "redis-state-data:/data"
+          }
+        },
+        {
+          "id": "compose-top-level-vol",
+          "doc": "Khai báo named volume redis-state-data ở mục volumes gốc",
+          "kind": "path",
+          "path": "volumes",
+          "match": {
+            "contains": "redis-state-data"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong image `redis` chính thức trên Docker Hub, `WORKDIR` và `dir` lưu trữ mặc định luôn là `/data`.",
+      "Thêm `volumes:\n      - redis-state-data:/data` bên trong `redis-state` và khối `volumes:\n  redis-state-data: {}` ở sát lề trái cuối file."
+    ],
+    "ref": "compose/docker-compose.redis-sentinel-ha.yml",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r13-5",
+    "code": "R13.5",
+    "module": "R13",
+    "title": "Ca trực #2 — Gỡ nút thắt cổ chai appendfsync always làm sụp thông lượng ghi",
+    "difficulty": 3,
+    "tags": [
+      "troubleshoot",
+      "appendfsync",
+      "disk-io",
+      "redis-conf"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis-conf",
+    "filename": "redis-io-bottleneck.conf",
+    "prompt": "Sau lần thay đổi cấu hình sáng nay, thông lượng ghi của cụm `redis-orders` tụt thê thảm từ `75.000 ops/s` xuống chỉ còn `480 ops/s`, đèn báo I/O Wait trên ổ đĩa SSD sáng đỏ 100%!\n\nHãy thực hiện **2 bước khám bệnh & khắc phục**:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Gõ lệnh `redis-cli CONFIG GET appendfsync` trên **Terminal Chẩn đoán** để bắt tận tay cấu hình đang ép ghi đĩa đồng bộ ở từng lệnh!\n- **Bước 2 (Vá lại tệp `redis.conf` bên dưới):**\n  1. Chuyển `appendfsync always` về chế độ chuẩn **`appendfsync everysec`**.\n  2. Bật **`aof-use-rdb-preamble yes`** để phần đầu tệp AOF được nén nhị phân RDB.\n  3. Bật **`no-appendfsync-on-rewrite yes`** để trong lúc ổ đĩa đang bận nén `BGREWRITEAOF`, luồng chính không bị kẹt chờ `fsync`.",
+    "starter": "port 6379\ndir /data\nappendonly yes\n# THỦ PHẠM: Kiểm tra bằng `redis-cli CONFIG GET appendfsync` trên Terminal Chẩn đoán rồi sửa lại!\nappendfsync always\naof-use-rdb-preamble no\nno-appendfsync-on-rewrite no\n",
+    "solution": "port 6379\ndir /data\nappendonly yes\nappendfsync everysec\naof-use-rdb-preamble yes\nno-appendfsync-on-rewrite yes\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-conf",
+      "diagnosticSampleCommands": [
+        "redis-cli CONFIG GET appendfsync"
+      ],
+      "initialState": {
+        "redis": {
+          "config": {
+            "appendonly": "yes",
+            "appendfsync": "always"
+          }
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-fsync-always",
+          "doc": "Đã kiểm tra CONFIG GET appendfsync trên Terminal Chẩn đoán (phát hiện giá trị always)",
+          "target": "stdout-inspected",
+          "contains": "always"
+        }
+      ],
+      "redisConfRules": [
+        {
+          "id": "fixed-fsync-everysec",
+          "doc": "Hạ appendfsync về everysec để giải phóng thông lượng ghi",
+          "kind": "directive",
+          "directive": "appendfsync",
+          "match": {
+            "eq": "everysec"
+          }
+        },
+        {
+          "id": "enabled-rdb-preamble",
+          "doc": "Bật aof-use-rdb-preamble yes",
+          "kind": "directive",
+          "directive": "aof-use-rdb-preamble",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "enabled-no-fsync-on-rewrite",
+          "doc": "Bật no-appendfsync-on-rewrite yes tránh nghẽn I/O chéo lúc nén AOF",
+          "kind": "directive",
+          "directive": "no-appendfsync-on-rewrite",
+          "match": {
+            "eq": "yes"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Nhớ chạy `redis-cli CONFIG GET appendfsync` ở ô Terminal Chẩn đoán trước khi bấm Chấm bài!",
+      "Trong trình soạn thảo `redis.conf`, sửa `appendfsync everysec`, `aof-use-rdb-preamble yes` và `no-appendfsync-on-rewrite yes`."
+    ],
+    "ref": "conf/redis-durable-hybrid-aof.conf",
+    "webGrade": true
+  }
+]

@@ -7,6 +7,28 @@
 
 Để dữ liệu có thể **"đi theo Pod"** bất chấp Pod trôi dạt sang máy chủ nào, Kubernetes thiết kế kiến trúc lưu trữ tách làm 3 lớp thông minh: {sky:`StorageClass`}, {amber:`PersistentVolumeClaim (PVC)`} và {emerald:`PersistentVolume (PV)`} — kết hợp cùng ==`StatefulSet`== dành riêng cho Cơ sở dữ liệu phân tán.
 
+```visual
+kind: illustration
+diagram: "kube:k13"
+alt: "Quy trình cấp phát ổ đĩa động qua StorageClass, PVC, PV và kiến trúc định danh cố định db-0, db-1 của StatefulSet"
+title: "Giải Phẫu Lưu Trữ Bền Vững: Dynamic Provisioning (PVC/PV) & Định Danh StatefulSet"
+subtitle: "Tự động cắt ổ đĩa đám mây đi theo Pod khắp mọi Node và giữ tên tuổi gắn kết 1-1 cho từng máy chủ Database"
+caption: "Chu trình cấp phát ổ đĩa tự động qua CSI Driver từ StorageClass -> PVC <-> PV và cách StatefulSet kết hợp Headless Service giữ định danh pg-0, pg-1"
+callouts:
+  - num: 1
+    label: "StorageClass — Thực đơn hạng ổ đĩa đám mây"
+    desc: "Kỹ sư hạ tầng định nghĩa sẵn loại đĩa SSD (gp3, pd-ssd) và chính sách giữ dữ liệu Retain để ứng dụng chỉ việc chọn tên hạng đĩa."
+    tone: sky
+  - num: 2
+    label: "Cặp ghép đôi 1:1 giữa phiếu PVC và ổ đĩa thật PV"
+    desc: "Khi nộp phiếu PVC, CSI Driver tự động tạo ổ đĩa đám mây PV và tự tháo-lắp ổ đĩa đó đi theo Pod nếu Node cũ gặp sự cố."
+    tone: emerald
+  - num: 3
+    label: "StatefulSet & Headless Service — Danh tính bất biến"
+    desc: "Mỗi bản sao Database mang số thứ tự cố định (pg-0, pg-1), tên miền DNS riêng và ổ đĩa PVC riêng biệt không bao giờ bị trộn lẫn."
+    tone: violet
+```
+
 ## 1. Mô hình "Phiếu yêu cầu ổ đĩa": `StorageClass` → `PVC` → `PV`
 
 > [!ANALOGY] Tách bạch Hạ tầng đám mây và Nhu cầu ứng dụng

@@ -197,7 +197,7 @@ function selectDoc(
   });
 }
 
-function formatVal(v: unknown): string {
+export function formatVal(v: unknown): string {
   if (v === undefined) return '(chưa khai báo)';
   if (typeof v === 'string') return JSON.stringify(v);
   try {
@@ -207,7 +207,7 @@ function formatVal(v: unknown): string {
   }
 }
 
-function checkValueMatcher(val: unknown, m: ValueMatcher): { ok: boolean; expected: string; got: string } {
+export function checkValueMatcher(val: unknown, m: ValueMatcher): { ok: boolean; expected: string; got: string } {
   const got = formatVal(val);
   if ('exists' in m) {
     const actual = val !== undefined && val !== null;

@@ -1,0 +1,374 @@
+[
+  {
+    "id": "redis-ex-r06-1",
+    "code": "R06.1",
+    "title": "Gom lô câu lệnh đa đối số để cắt giảm số vòng mạng RTT",
+    "difficulty": 1,
+    "tags": [
+      "batching",
+      "mset",
+      "hset",
+      "sadd",
+      "rtt"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "batch-commands.redis",
+    "prompt": "Kịch bản khởi đầu bên dưới đang gọi lắt nhắt 5 câu lệnh `SET` rời rạc cho cấu hình và bỏ dở phần thông tin dịch vụ. Hãy viết lại gọn gàng chỉ bằng **3 câu lệnh gom lô đa đối số** (tuyệt đối không dùng lệnh `SET` đơn lẻ):\n1) Dùng `MSET` gán `cfg:timeout = \"5000\"` và `cfg:retries = \"3\"`.\n2) Dùng `HSET` gán cho Hash `svc:gateway` đủ 3 trường: `host = \"10.0.0.5\"`, `port = \"8080\"`, `tls = \"on\"`.\n3) Dùng `SADD` thêm vào Set `svc:gateway:tags` cả 3 nhãn: `\"edge\"`, `\"public\"`, `\"v2\"`.",
+    "starter": "# Hãy xoá các lệnh SET lẻ tẻ dưới đây và thay bằng đúng 3 lệnh gom lô: MSET, HSET, SADD!\nSET cfg:timeout \"5000\"\nSET cfg:retries \"3\"\n",
+    "solution": "MSET cfg:timeout \"5000\" cfg:retries \"3\"\nHSET svc:gateway host \"10.0.0.5\" port \"8080\" tls \"on\"\nSADD svc:gateway:tags \"edge\" \"public\" \"v2\"\n",
+    "hints": [
+      "Xoá 2 dòng `SET` cũ đi và gộp thành `MSET cfg:timeout \"5000\" cfg:retries \"3\"`.",
+      "Gộp 3 trường vào 1 lệnh `HSET svc:gateway host \"10.0.0.5\" port \"8080\" tls \"on\"` và 3 nhãn vào 1 lệnh `SADD svc:gateway:tags \"edge\" \"public\" \"v2\"`."
+    ],
+    "ref": "clients/node/ioredis-singleton-pool.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "cfg-strings-ok",
+          "doc": "Hai khoá `cfg:timeout` (`5000`) và `cfg:retries` (`3`) được lưu đúng",
+          "target": "string-value",
+          "key": "cfg:timeout",
+          "match": {
+            "eq": 5000
+          }
+        },
+        {
+          "id": "gateway-hash-ok",
+          "doc": "Hash `svc:gateway` lưu đầy đủ `host`, `port`, `tls`",
+          "target": "hash-fields",
+          "key": "svc:gateway",
+          "expected": {
+            "host": "10.0.0.5",
+            "port": "8080",
+            "tls": "on"
+          }
+        },
+        {
+          "id": "gateway-tags-ok",
+          "doc": "Set `svc:gateway:tags` chứa đủ 3 nhãn `edge`, `public`, `v2`",
+          "target": "set-members",
+          "key": "svc:gateway:tags",
+          "expectedMembers": [
+            "edge",
+            "public",
+            "v2"
+          ]
+        },
+        {
+          "id": "batched-no-single-set",
+          "doc": "Sử dụng `MSET`, `HSET`, `SADD` gom lô và không còn câu lệnh `SET` đơn lẻ",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*MSET\\b[\\s\\S]*^\\s*HSET\\b[\\s\\S]*^\\s*SADD\\b",
+          "forbidRegex": "^\\s*SET\\s+"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r06-2",
+    "code": "R06.2",
+    "title": "Chuyển điểm thưởng cô lập tuần tự bằng khối giao dịch MULTI / EXEC",
+    "difficulty": 1,
+    "tags": [
+      "multi",
+      "exec",
+      "transaction",
+      "wallet"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "atomic-point-transfer.redis",
+    "prompt": "Ví `wallet:u:101` đang có `500` điểm và ví `wallet:u:202` đang có `100` điểm. Hãy thực hiện chuyển `150` điểm từ `101` sang `202` bên trong **một khối giao dịch `MULTI` ... `EXEC`** gồm 3 thao tác xếp hàng liên tiếp:\n1) `DECRBY wallet:u:101 150` (còn `350`)\n2) `INCRBY wallet:u:202 150` (lên `250`)\n3) `HSET tx:log:9001 from \"101\" to \"202\" amount \"150\"`\nĐừng quên chốt giao dịch bằng `EXEC` ở dòng cuối!",
+    "starter": "# Mở giao dịch bằng MULTI, xếp hàng DECRBY, INCRBY, HSET rồi thực thi bằng EXEC\n",
+    "solution": "MULTI\nDECRBY wallet:u:101 150\nINCRBY wallet:u:202 150\nHSET tx:log:9001 from \"101\" to \"202\" amount \"150\"\nEXEC\n",
+    "hints": [
+      "Bắt đầu bằng dòng `MULTI`, theo sau là 3 câu lệnh thao tác dữ liệu (mỗi lệnh sẽ phản hồi `QUEUED`).",
+      "Kết thúc bằng dòng `EXEC` để thực thi toàn bộ hàng đợi một cách tuần tự cô lập."
+    ],
+    "ref": "clients/node/ioredis-singleton-pool.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "wallet:u:101",
+            "type": "string",
+            "value": "500"
+          },
+          {
+            "key": "wallet:u:202",
+            "type": "string",
+            "value": "100"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "sender-balance-350",
+          "doc": "Số dư ví gửi `wallet:u:101` giảm xuống chính xác `350`",
+          "target": "string-value",
+          "key": "wallet:u:101",
+          "match": {
+            "eq": 350
+          }
+        },
+        {
+          "id": "receiver-balance-250",
+          "doc": "Số dư ví nhận `wallet:u:202` tăng lên chính xác `250`",
+          "target": "string-value",
+          "key": "wallet:u:202",
+          "match": {
+            "eq": 250
+          }
+        },
+        {
+          "id": "tx-receipt-logged",
+          "doc": "Biên lai `tx:log:9001` lưu đầy đủ `from`, `to`, `amount`",
+          "target": "hash-fields",
+          "key": "tx:log:9001",
+          "expected": {
+            "from": "101",
+            "to": "202",
+            "amount": "150"
+          }
+        },
+        {
+          "id": "wrapped-in-multi-exec",
+          "doc": "Các lệnh được xếp hàng (`QUEUED`) bên trong khối `MULTI` ... `EXEC`",
+          "target": "stdout-contains",
+          "contains": "QUEUED"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r06-3",
+    "code": "R06.3",
+    "title": "Huỷ khẩn cấp hàng đợi giao dịch lỗi bằng DISCARD & chạy lại giao dịch đúng",
+    "difficulty": 2,
+    "tags": [
+      "discard",
+      "multi",
+      "exec",
+      "abort"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "discard-bad-tx.redis",
+    "prompt": "Ngân sách khuyến mãi `promo:budget` đang còn `1000`. Ở 2 dòng đầu tiên của bản nháp, ai đó đã mở `MULTI` và xếp hàng nhầm lệnh `DECRBY promo:budget 9999` (nếu gọi `EXEC` sẽ làm âm sạch ngân sách!). Hãy **giữ nguyên 2 dòng đầu**, sau đó viết tiếp:\n1) Gọi **`DISCARD`** để huỷ bỏ toàn bộ hàng đợi giao dịch đang mở.\n2) Mở lại khối **`MULTI`** mới, xếp hàng `DECRBY promo:budget 200` cùng `INCR promo:claimed_count`, rồi chốt bằng **`EXEC`**.",
+    "starter": "MULTI\nDECRBY promo:budget 9999\n# Hãy gọi DISCARD để huỷ giao dịch nhầm ở trên, rồi mở MULTI mới trừ đúng 200 và tăng promo:claimed_count!\n",
+    "solution": "MULTI\nDECRBY promo:budget 9999\nDISCARD\nMULTI\nDECRBY promo:budget 200\nINCR promo:claimed_count\nEXEC\n",
+    "hints": [
+      "Ngay dưới dòng `DECRBY promo:budget 9999`, gõ `DISCARD` — lệnh trừ 9999 sẽ bị vứt bỏ hoàn toàn mà chưa từng chạm vào dữ liệu.",
+      "Sau đó gõ `MULTI`, `DECRBY promo:budget 200`, `INCR promo:claimed_count` và `EXEC`."
+    ],
+    "ref": "clients/python/redis-py-connection-pool.py",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "promo:budget",
+            "type": "string",
+            "value": "1000"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "budget-is-800",
+          "doc": "Ngân sách `promo:budget` còn đúng `800` (lệnh trừ nhầm `9999` đã bị huỷ bởi `DISCARD`)",
+          "target": "string-value",
+          "key": "promo:budget",
+          "match": {
+            "eq": 800
+          }
+        },
+        {
+          "id": "claimed-count-1",
+          "doc": "Bộ đếm `promo:claimed_count` đạt giá trị `1`",
+          "target": "string-value",
+          "key": "promo:claimed_count",
+          "match": {
+            "eq": 1
+          }
+        },
+        {
+          "id": "discard-then-exec-used",
+          "doc": "Sử dụng đúng `DISCARD` để huỷ hàng đợi đầu tiên trước khi mở `MULTI` ... `EXEC` mới",
+          "target": "command-used",
+          "mustUseRegex": "DECRBY\\s+promo:budget\\s+9999[\\s\\S]*^\\s*DISCARD\\b[\\s\\S]*^\\s*MULTI\\b[\\s\\S]*^\\s*EXEC\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r06-4",
+    "code": "R06.4",
+    "title": "Đấu giá an toàn bằng khoá lạc quan WATCH + GET + MULTI / EXEC",
+    "difficulty": 2,
+    "tags": [
+      "watch",
+      "cas",
+      "optimistic-locking",
+      "auction"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "watch-auction-cas.redis",
+    "prompt": "Vật phẩm đấu giá `auction:item:88:bid` hiện có giá `\"250\"` (người dẫn đầu `auction:item:88:winner = \"u:nam\"`). Để thực hiện thao tác **Check-And-Set (CAS)** chuẩn mực đảm bảo nếu có ai sửa giá xen giữa thì giao dịch tự huỷ:\n1) Đặt giám sát bằng `WATCH auction:item:88:bid` **trước khi** mở `MULTI`.\n2) Đọc giá hiện tại bằng `GET auction:item:88:bid`.\n3) Mở `MULTI`, cập nhật `SET auction:item:88:bid \"320\"` và `SET auction:item:88:winner \"u:linh\"`, rồi chốt bằng `EXEC`.",
+    "starter": "# 1. WATCH khoá auction:item:88:bid\n# 2. GET giá hiện tại (ngoài MULTI)\n# 3. MULTI -> SET giá \"320\" & winner \"u:linh\" -> EXEC\n",
+    "solution": "WATCH auction:item:88:bid\nGET auction:item:88:bid\nMULTI\nSET auction:item:88:bid \"320\"\nSET auction:item:88:winner \"u:linh\"\nEXEC\n",
+    "hints": [
+      "`WATCH` và lệnh đọc `GET` kiểm tra điều kiện luôn phải nằm **TRƯỚC** `MULTI`.",
+      "Bên trong `MULTI` xếp hàng 2 lệnh `SET`, sau đó kết thúc bằng `EXEC`."
+    ],
+    "ref": "clients/python/redis-py-connection-pool.py",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "auction:item:88:bid",
+            "type": "string",
+            "value": "250"
+          },
+          {
+            "key": "auction:item:88:winner",
+            "type": "string",
+            "value": "u:nam"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "bid-updated-320",
+          "doc": "Giá đấu mới `auction:item:88:bid` được cập nhật thành `320`",
+          "target": "string-value",
+          "key": "auction:item:88:bid",
+          "match": {
+            "eq": 320
+          }
+        },
+        {
+          "id": "winner-updated-linh",
+          "doc": "Người dẫn đầu mới `auction:item:88:winner` là `\"u:linh\"`",
+          "target": "string-value",
+          "key": "auction:item:88:winner",
+          "match": {
+            "eq": "u:linh"
+          }
+        },
+        {
+          "id": "watch-before-multi",
+          "doc": "Tuân thủ đúng thứ tự `WATCH` -> `GET` -> `MULTI` -> `SET` -> `EXEC`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*WATCH\\s+auction:item:88:bid\\b[\\s\\S]*^\\s*GET\\s+auction:item:88:bid\\b[\\s\\S]*^\\s*MULTI\\b[\\s\\S]*^\\s*EXEC\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r06-5",
+    "code": "R06.5",
+    "title": "Dọn BigKey không chặn luồng chính bằng UNLINK & bật cờ lazyfree",
+    "difficulty": 2,
+    "tags": [
+      "unlink",
+      "lazyfree",
+      "bigkey",
+      "latency"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "nonblocking-unlink.redis",
+    "prompt": "Bản nháp bên dưới đang dùng lệnh đồng bộ `DEL` xoá BigKey `bigkey:report:2025` (gây đơ Event Loop) và chưa xoá `bigkey:feed:archive`. Hãy:\n1) **Xoá bỏ hoàn toàn lệnh `DEL`**, thay bằng **1 lệnh `UNLINK`** giải phóng bất đồng bộ cả `bigkey:report:2025` lẫn `bigkey:feed:archive` (giữ nguyên `active:config:v1`).\n2) Dùng `CONFIG SET` bật cả `lazyfree-lazy-eviction` lên `yes` và `lazyfree-lazy-expire` lên `yes` để mọi lần thu hồi tự động về sau cũng chạy trên luồng BIO nền!",
+    "starter": "# CẢNH BÁO: Không dùng DEL cho BigKey! Hãy thay bằng UNLINK và bật 2 cờ lazyfree\nDEL bigkey:report:2025\n",
+    "solution": "UNLINK bigkey:report:2025 bigkey:feed:archive\nCONFIG SET lazyfree-lazy-eviction yes\nCONFIG SET lazyfree-lazy-expire yes\n",
+    "hints": [
+      "Thay dòng `DEL ...` bằng `UNLINK bigkey:report:2025 bigkey:feed:archive`.",
+      "Thêm 2 dòng cấu hình: `CONFIG SET lazyfree-lazy-eviction yes` và `CONFIG SET lazyfree-lazy-expire yes`."
+    ],
+    "ref": "patterns/scan-cursor-batch-cleanup.py",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "bigkey:report:2025",
+            "type": "hash",
+            "value": {
+              "jan": "blob-1",
+              "feb": "blob-2"
+            }
+          },
+          {
+            "key": "bigkey:feed:archive",
+            "type": "list",
+            "value": [
+              "old-1",
+              "old-2",
+              "old-3"
+            ]
+          },
+          {
+            "key": "active:config:v1",
+            "type": "string",
+            "value": "live"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "unlink-only-no-del",
+          "doc": "Sử dụng `UNLINK` và loại bỏ hoàn toàn lệnh `DEL` đồng bộ",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*UNLINK\\b",
+          "forbidRegex": "^\\s*DEL\\b"
+        },
+        {
+          "id": "both-bigkeys-removed",
+          "doc": "Cả 2 BigKey `bigkey:report:2025` và `bigkey:feed:archive` đã được gỡ khỏi Keyspace",
+          "target": "key-exists",
+          "key": "bigkey:feed:archive",
+          "exists": false
+        },
+        {
+          "id": "report-bigkey-removed",
+          "doc": "Khoá `bigkey:report:2025` đã được gỡ khỏi Keyspace",
+          "target": "key-exists",
+          "key": "bigkey:report:2025",
+          "exists": false
+        },
+        {
+          "id": "active-key-kept",
+          "doc": "Khoá đang chạy `active:config:v1` không bị xoá nhầm",
+          "target": "key-exists",
+          "key": "active:config:v1",
+          "exists": true
+        },
+        {
+          "id": "lazy-eviction-enabled",
+          "doc": "Đã bật `lazyfree-lazy-eviction = yes`",
+          "target": "config-param",
+          "param": "lazyfree-lazy-eviction",
+          "expected": "yes"
+        },
+        {
+          "id": "lazy-expire-enabled",
+          "doc": "Đã bật `lazyfree-lazy-expire = yes`",
+          "target": "config-param",
+          "param": "lazyfree-lazy-expire",
+          "expected": "yes"
+        }
+      ]
+    }
+  }
+]

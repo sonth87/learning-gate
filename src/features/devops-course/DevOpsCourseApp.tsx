@@ -86,7 +86,9 @@ export const DevOpsCourseApp: React.FC<DevOpsCourseAppProps> = ({ courseId, onOp
   const activePill =
     meta.accent === 'cyan'
       ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
-      : 'border-sky-500/50 bg-sky-500/15 text-sky-300';
+      : meta.accent === 'rose'
+        ? 'border-rose-500/50 bg-rose-500/15 text-rose-300'
+        : 'border-sky-500/50 bg-sky-500/15 text-sky-300';
 
   return (
     <CourseProvider value={meta}>

@@ -34,6 +34,28 @@ steps:
 ## 1. Giải phẫu 7 chỉ thị cốt lõi trong Dockerfile
 
 ```visual
+kind: illustration
+diagram: "kube:k03"
+alt: "Dây chuyền chỉ thị Dockerfile từ FROM đến CMD và sự khác biệt giữa Exec Form với Shell Form đối với tín hiệu PID 1"
+title: "Giải Phẫu Dây Chuyền Dockerfile & Cơ Chế Bắt Tín Hiệu Dừng Của PID 1"
+subtitle: "Phân định rạch ròi các bước đóng gói lúc Build-time với lệnh khởi chạy tiến trình chuẩn Exec Form lúc Run-time"
+caption: "Chuỗi lắp ráp các lớp chỉ thị Dockerfile chuẩn Node 22 LTS và lý do bắt buộc viết CMD dạng mảng JSON để nhận trực tiếp tín hiệu SIGTERM"
+callouts:
+  - num: 1
+    label: "Chuỗi chỉ thị đắp từng lớp lúc Build-time"
+    desc: "FROM, WORKDIR, COPY và RUN npm ci thực thi tuần tự trong lúc đóng gói để tạo ra các lớp ảnh bất biến."
+    tone: sky
+  - num: 2
+    label: "Bẫy Shell Form làm mù tín hiệu dừng"
+    desc: "Viết CMD npm start khiến /bin/sh chiếm ghế PID 1 và nuốt mất tín hiệu SIGTERM, làm container treo 10s rồi bị rút điện SIGKILL."
+    tone: rose
+  - num: 3
+    label: "Chuẩn Exec Form trao thẳng ghế PID 1 cho Node"
+    desc: "Cú pháp mảng JSON CMD [\"node\", \"server.js\"] giúp tiến trình Node nhận trực tiếp SIGTERM để đóng kết nối êm ái không rớt request."
+    tone: emerald
+```
+
+```visual
 kind: anatomy
 title: 7 Chỉ Thị Nền Tảng Mọi Kỹ Sư Backend Phải Thuộc Lòng
 subtitle: Đọc từ trên xuống dưới theo đúng thứ tự xuất hiện chuẩn mực trong một Dockerfile thực tế

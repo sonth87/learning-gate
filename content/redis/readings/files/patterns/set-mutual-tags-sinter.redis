@@ -1,0 +1,22 @@
+# ============================================================================
+# Gợi Ý Kỹ Năng Chung & Lọc Quyền Truy Cập Bằng Phép Toán Tập Hợp (Redis Set)
+# Tận dụng intset (cho ID số nguyên thuần túy) và SINTERCARD có giới hạn dừng sớm
+# ============================================================================
+
+# 1. Khi mọi phần tử đều là số nguyên 64-bit và <= 512 phần tử, Redis tự động nén thành 'intset'
+SADD followers:dev_101 2001 2005 2019 2044 2088
+SADD followers:dev_102 2005 2044 2099 3012
+OBJECT ENCODING followers:dev_101
+
+# 2. Đếm nhanh số người theo dõi chung mà KHÔNG cần truyền toàn bộ danh sách qua mạng
+# Tham số LIMIT 100 giúp dừng sớm ngay khi tìm đủ 100 kết quả trùng (bảo vệ Main Thread!)
+SINTERCARD 2 followers:dev_101 followers:dev_102 LIMIT 100
+
+# 3. Tìm danh sách người theo dõi chung thực tế hoặc tìm gợi ý kết bạn (SDIFF)
+SINTER followers:dev_101 followers:dev_102
+SDIFF followers:dev_101 followers:dev_102
+
+# 4. Kiểm tra đồng thời nhiều quyền hạn RBAC trong 1 lệnh duy nhất với SMISMEMBER (Redis 6.2+)
+SADD roles:user:88 "order:read" "order:write" "refund:request"
+SMISMEMBER roles:user:88 "order:write" "admin:drop_db" "refund:request"
+# -> Trả về mảng [1, 0, 1] trong O(M) cực nhanh!

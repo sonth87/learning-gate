@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R10-Q1",
+    "type": "mc",
+    "q": "Hiện tượng hàng ngàn luồng truy vấn đồng thời ập thẳng xuống Database tại đúng khoảnh khắc MỘT khoá cực nóng (Hot Key) vừa hết hạn TTL được gọi chính xác là gì?",
+    "code": "",
+    "choices": [
+      "Cache Penetration (Xuyên thủng bộ nhớ đệm)",
+      "Cache Stampede / Thundering Herd (Đàn trâu điên / Hot Key Breakdown)",
+      "Memory Fragmentation (Phân mảnh bộ nhớ)",
+      "Split-Brain (Não chia đôi)"
+    ],
+    "answer": 1,
+    "explain": "Cache Stampede xảy ra xoay quanh 1 khoá có tần suất truy cập cực cao vừa hết hạn khiến hàng vạn luồng đọc đồng thời cùng nhận `nil` và đua nhau tự dựng lại dữ liệu từ DB."
+  },
+  {
+    "id": "R10-Q2",
+    "type": "tf",
+    "q": "Khi câu lệnh `BF.EXISTS bf:valid_skus sku-999` trả về `(integer) 0`, vẫn còn khoảng 1% khả năng mã `sku-999` thực chất có tồn tại dưới Database.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Bloom Filter có tính chất toán học **Zero False Negatives** (Không bao giờ âm tính giả): nếu trả về `0`, chắc chắn 100% phần tử đó chưa từng được thêm vào. Sai số 1% chỉ xảy ra ở chiều ngược lại (False Positive khi trả về `1`)."
+  },
+  {
+    "id": "R10-Q3",
+    "type": "output",
+    "q": "Khi gọi `TTL <key>` trên Redis để chẩn đoán sự cố, mã số nguyên nào được trả về nếu khoá đó hoàn toàn KHÔNG tồn tại (đã hết hạn hoặc bị xoá)?",
+    "code": "127.0.0.1:6379> TTL cache:flash:iphone16\n(integer) ____",
+    "choices": [],
+    "answer": "-2",
+    "explain": "Trong Redis, `TTL` trả về `-2` nếu khoá không tồn tại, và trả về `-1` nếu khoá có tồn tại nhưng không được gắn thời hạn hết hạn."
+  },
+  {
+    "id": "R10-Q4",
+    "type": "mc",
+    "q": "Giải pháp nào sau đây xử lý trực diện và hiệu quả nhất hiện tượng **Cache Avalanche** do Cronjob nạp 100.000 sản phẩm lúc nửa đêm với cùng tham số `EX 3600`?",
+    "code": "",
+    "choices": [
+      "Xoá hết chỉ mục (Index) trong PostgreSQL để tăng tốc độ đọc",
+      "Áp dụng TTL Jitter: cộng thêm một khoảng thời gian ngẫu nhiên (ví dụ `3600 + random(60, 600)`) cho từng khoá khi nạp lô",
+      "Đổi toàn bộ 100.000 khoá String sang một khoá List duy nhất",
+      "Chạy lệnh KEYS * mỗi phút một lần để làm nóng bộ nhớ"
+    ],
+    "answer": 1,
+    "explain": "TTL Jitter phá vỡ sự đồng pha khi hết hạn, biến một gai nhọn truy vấn 100.000 câu SQL tại giây 3600 thành luồng làm mới rải đều êm ái suốt 10 phút."
+  },
+  {
+    "id": "R10-Q5",
+    "type": "mc",
+    "q": "Vì sao khi kẻ tấn công quét ngẫu nhiên 20 triệu UUID không tồn tại (Cache Penetration), việc chỉ dùng đơn độc Negative Caching (`SET uuid \"__NULL__\" EX 60`) lại có thể gây hại ngược cho Redis?",
+    "code": "",
+    "choices": [
+      "Vì Redis bị lỗi cú pháp khi lưu chuỗi `__NULL__`",
+      "Vì 20 triệu khoá rác mỗi khoá chỉ dùng 1 lần sẽ bơm tràn `maxmemory` của Redis và ép trục xuất (evict) các khoá dữ liệu thật của người dùng hợp lệ",
+      "Vì lệnh SET EX 60 làm tăng gấp 100 lần băng thông ổ cứng của PostgreSQL",
+      "Vì UUID không thể làm tên khoá trong Redis"
+    ],
+    "answer": 1,
+    "explain": "Negative Caching chỉ hiệu quả khi kẻ tấn công hỏi lặp đi lặp lại *cùng một vài ID giả*. Khi kẻ tấn công xoay vòng hàng triệu ID giả ngẫu nhiên không trùng lặp, Bloom Filter đứng trước mới là vũ khí tiết kiệm bộ nhớ (~1.2 byte/phần tử) để chặn rác không cho ghi vào Redis."
+  },
+  {
+    "id": "R10-Q6",
+    "type": "tf",
+    "q": "Kỹ thuật Singleflight chạy trong bộ nhớ RAM của từng Pod Node.js/Go có thể gom 500 request đồng thời trên cùng Pod đó thành 1 lời gọi tới Redis/DB, nhưng nếu có 40 Pod chạy song song thì vẫn có thể có tối đa 40 truy vấn lọt xuống DB nếu không kết hợp thêm khoá Mutex trên Redis.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! In-process Singleflight chỉ điều phối trong phạm vi một tiến trình OS. Kết hợp In-process Singleflight (giảm tải mạng tới Redis) + Redis Mutex `SET NX PX` (chốt còn đúng 1 Pod xuống DB) là kiến trúc 2 tầng tối ưu nhất."
+  },
+  {
+    "id": "R10-Q7",
+    "type": "output",
+    "q": "Tên lệnh Redis dùng để cấp phát trước dung lượng và tỷ lệ sai số cho một bộ lọc Bloom mới là gì?",
+    "code": "____ bf:valid_skus 0.01 100000",
+    "choices": [],
+    "answer": "BF.RESERVE",
+    "explain": "`BF.RESERVE <key> <error_rate> <capacity>` khởi tạo cấu trúc mảng bit và số hàm băm tối ưu theo đúng ngưỡng sai số và sức chứa dự kiến."
+  }
+]

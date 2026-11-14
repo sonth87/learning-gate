@@ -1,0 +1,339 @@
+[
+  {
+    "id": "redis-ex-r01-1",
+    "code": "R01.1",
+    "title": "Dựng cổng chống thanh toán trùng lặp bằng SET NX EX",
+    "difficulty": 1,
+    "tags": [
+      "set-nx-ex",
+      "idempotency",
+      "atomic",
+      "ttl"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "idempotency-gate.redis",
+    "prompt": "Khi người dùng bấm đúp nút 'Thanh toán', hai HTTP request cùng gửi mã đơn `ord-9001` tới API. Hãy dùng tổ hợp nguyên tử `SET ... NX EX` để: (1) Đăng ký khoá `pay:idem:ord-9001` mang giá trị `\"processing\"` chỉ khi chưa tồn tại (`NX`) với hạn sống `300` giây (`EX 300`); (2) Thử gửi tiếp lệnh thứ hai `SET pay:idem:ord-9001 \"duplicate\" NX EX 300` để chứng minh Redis từ chối ghi đè bằng `(nil)`.",
+    "starter": "# Bước 1: Đặt khoá pay:idem:ord-9001 = \"processing\" nguyên tử với NX và EX 300\n\n# Bước 2: Thử gọi lại SET pay:idem:ord-9001 \"duplicate\" NX EX 300 để kiểm chứng kết quả (nil)\n",
+    "solution": "SET pay:idem:ord-9001 \"processing\" NX EX 300\nSET pay:idem:ord-9001 \"duplicate\" NX EX 300\n",
+    "hints": [
+      "Cú pháp chuẩn nguyên tử: `SET pay:idem:ord-9001 \"processing\" NX EX 300`.",
+      "Dòng thứ hai thử ghi giá trị `\"duplicate\"` với cùng cờ `NX EX 300` sẽ trả về `(nil)` và giữ nguyên `\"processing\"`."
+    ],
+    "ref": "patterns/string-idempotency-gate.sh",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "idem-key-value",
+          "doc": "Khoá `pay:idem:ord-9001` giữ nguyên giá trị gốc `\"processing\"` (không bị ghi đè bởi lần gọi trùng)",
+          "target": "string-value",
+          "key": "pay:idem:ord-9001",
+          "match": {
+            "eq": "processing"
+          }
+        },
+        {
+          "id": "idem-key-ttl",
+          "doc": "Khoá `pay:idem:ord-9001` có gắn hạn tự huỷ `TTL` khoảng 300 giây",
+          "target": "ttl",
+          "key": "pay:idem:ord-9001",
+          "minSeconds": 290,
+          "maxSeconds": 300
+        },
+        {
+          "id": "atomic-set-nx-used",
+          "doc": "Sử dụng tổ hợp nguyên tử `SET ... NX EX` trong 1 lệnh (không tách rời `SETNX` + `EXPIRE`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SET\\s+pay:idem:ord-9001\\b.*\\bNX\\b.*\\bEX\\s+300\\b",
+          "forbidRegex": "^\\s*SETNX\\b"
+        },
+        {
+          "id": "duplicate-rejected-nil",
+          "doc": "Lần gọi trùng thứ hai bị chặn và trả về `(nil)`",
+          "target": "stdout-contains",
+          "contains": "(nil)"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r01-2",
+    "code": "R01.2",
+    "title": "Cập nhật bộ đếm Flash-Sale nguyên tử bằng INCR & DECRBY",
+    "difficulty": 1,
+    "tags": [
+      "incr",
+      "incrby",
+      "decrby",
+      "counter"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "flash-counter.redis",
+    "prompt": "Trên RAM đang có `flash:sku:airpods:sold = 10` và `flash:sku:airpods:stock = 50`. Vừa phát sinh 1 đơn mua sỉ `3` chiếc và 1 đơn mua lẻ `1` chiếc (tổng cộng bán thêm `4` chiếc). Hãy dùng `INCRBY` và `INCR` để nâng `flash:sku:airpods:sold` lên `14`, đồng thời dùng `DECRBY` để trừ `flash:sku:airpods:stock` xuống còn `46`.",
+    "starter": "# Tăng flash:sku:airpods:sold thêm 3 bằng INCRBY, rồi tăng thêm 1 bằng INCR\n# Giảm flash:sku:airpods:stock đi 4 bằng DECRBY\n",
+    "solution": "INCRBY flash:sku:airpods:sold 3\nINCR flash:sku:airpods:sold\nDECRBY flash:sku:airpods:stock 4\n",
+    "hints": [
+      "Gọi `INCRBY flash:sku:airpods:sold 3` và `INCR flash:sku:airpods:sold` để nâng tổng đã bán từ 10 lên 14.",
+      "Gọi `DECRBY flash:sku:airpods:stock 4` để giảm tồn kho từ 50 xuống 46."
+    ],
+    "ref": "patterns/string-idempotency-gate.sh",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "flash:sku:airpods:sold",
+            "type": "string",
+            "value": "10"
+          },
+          {
+            "key": "flash:sku:airpods:stock",
+            "type": "string",
+            "value": "50"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "sold-equals-14",
+          "doc": "Bộ đếm `flash:sku:airpods:sold` đạt chính xác `14`",
+          "target": "string-value",
+          "key": "flash:sku:airpods:sold",
+          "match": {
+            "eq": 14
+          }
+        },
+        {
+          "id": "stock-equals-46",
+          "doc": "Tồn kho `flash:sku:airpods:stock` giảm chính xác xuống `46`",
+          "target": "string-value",
+          "key": "flash:sku:airpods:stock",
+          "match": {
+            "eq": 46
+          }
+        },
+        {
+          "id": "used-decrby",
+          "doc": "Sử dụng lệnh nguyên tử `DECRBY` (không ghi đè tĩnh bằng `SET`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*DECRBY\\b",
+          "forbidRegex": "^\\s*SET\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r01-3",
+    "code": "R01.3",
+    "title": "Đặt tên khoá chuẩn phân cấp & gom lô bằng MSET / MGET",
+    "difficulty": 1,
+    "tags": [
+      "mset",
+      "mget",
+      "key-naming",
+      "batching"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "key-naming-batch.redis",
+    "prompt": "Thay vì bắn 6 câu lệnh lẻ tẻ với tên khoá lộn xộn, hãy tuân thủ quy ước `<service>:<entity>:<id>`: dùng **1 lệnh `MSET`** duy nhất khởi tạo 3 mã cấu hình `billing:plan:free` = `\"100\"`, `billing:plan:pro` = `\"5000\"`, `billing:plan:enterprise` = `\"unlimited\"`, sau đó dùng **1 lệnh `MGET`** đọc ra cùng lúc cả 3 khoá trên.",
+    "starter": "# Dùng 1 lệnh MSET gán cả 3 khoá billing:plan:free, billing:plan:pro, billing:plan:enterprise\n# Dùng 1 lệnh MGET đọc lại cả 3 khoá\n",
+    "solution": "MSET billing:plan:free \"100\" billing:plan:pro \"5000\" billing:plan:enterprise \"unlimited\"\nMGET billing:plan:free billing:plan:pro billing:plan:enterprise\n",
+    "hints": [
+      "Cú pháp `MSET k1 v1 k2 v2 k3 v3` nhận các cặp khoá – giá trị nối tiếp nhau.",
+      "Sau đó gọi `MGET billing:plan:free billing:plan:pro billing:plan:enterprise`."
+    ],
+    "ref": "clients/node/ioredis-singleton-pool.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "plan-free-val",
+          "doc": "Khoá `billing:plan:free` có giá trị `\"100\"`",
+          "target": "string-value",
+          "key": "billing:plan:free",
+          "match": {
+            "eq": "100"
+          }
+        },
+        {
+          "id": "plan-pro-val",
+          "doc": "Khoá `billing:plan:pro` có giá trị `\"5000\"`",
+          "target": "string-value",
+          "key": "billing:plan:pro",
+          "match": {
+            "eq": "5000"
+          }
+        },
+        {
+          "id": "plan-ent-val",
+          "doc": "Khoá `billing:plan:enterprise` có giá trị `\"unlimited\"`",
+          "target": "string-value",
+          "key": "billing:plan:enterprise",
+          "match": {
+            "eq": "unlimited"
+          }
+        },
+        {
+          "id": "used-mset-and-mget",
+          "doc": "Thực hiện gom lô bằng `MSET` và `MGET` (không gọi `SET` rời rạc)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*MSET\\b[\\s\\S]*^\\s*MGET\\b",
+          "forbidRegex": "^\\s*SET\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r01-4",
+    "code": "R01.4",
+    "title": "Kiểm soát hạn sống bằng EXPIRE, PERSIST & đồng hồ ảo ADVANCE_TIME",
+    "difficulty": 2,
+    "tags": [
+      "expire",
+      "persist",
+      "ttl",
+      "advance-time"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "ttl-lifecycle.redis",
+    "prompt": "Hiện tại trong Redis đang có 2 khoá bị cấu hình ngược nhau:\n1) `cache:home:hero` là bộ đệm giao diện nhưng đang sống vĩnh viễn (`TTL = -1`) — hãy gắn hạn `EXPIRE` `30` giây cho nó.\n2) `cfg:payment:gateway` là cấu hình hệ thống quan trọng nhưng bị ai đó gắn nhầm TTL sắp tự xoá sau 10 giây — hãy dùng `PERSIST` gỡ bỏ hạn sống để bảo toàn khoá vĩnh viễn.\n3) Cuối cùng, gọi `ADVANCE_TIME 35000` (tua nhanh 35 giây) để kiểm chứng `cache:home:hero` tự động bốc hơi còn `cfg:payment:gateway` vẫn an toàn!",
+    "starter": "# 1. Đặt EXPIRE 30 giây cho cache:home:hero\n# 2. Gỡ bỏ TTL cho cfg:payment:gateway bằng PERSIST\n# 3. Tua nhanh đồng hồ 35000 ms bằng ADVANCE_TIME 35000\n",
+    "solution": "EXPIRE cache:home:hero 30\nPERSIST cfg:payment:gateway\nADVANCE_TIME 35000\n",
+    "hints": [
+      "Đặt hạn 30 giây bằng `EXPIRE cache:home:hero 30` và biến khoá có hạn thành vĩnh viễn bằng `PERSIST cfg:payment:gateway`.",
+      "Gọi `ADVANCE_TIME 35000` ở dòng cuối để tua 35 giây (35,000 mili-giây)."
+    ],
+    "ref": "patterns/scan-cursor-batch-cleanup.py",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "cache:home:hero",
+            "type": "string",
+            "value": "summer-sale-banner"
+          },
+          {
+            "key": "cfg:payment:gateway",
+            "type": "string",
+            "value": "napas-v3",
+            "ttlMs": 10000
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "cache-hero-expired",
+          "doc": "Khoá `cache:home:hero` đã tự động hết hạn và biến mất sau 35 giây",
+          "target": "key-exists",
+          "key": "cache:home:hero",
+          "exists": false
+        },
+        {
+          "id": "gateway-cfg-persisted",
+          "doc": "Khoá `cfg:payment:gateway` được bảo toàn bền vững (`TTL = -1`) sau khi tua thời gian",
+          "target": "ttl",
+          "key": "cfg:payment:gateway",
+          "persistent": true
+        },
+        {
+          "id": "used-expire-and-persist",
+          "doc": "Sử dụng đúng `EXPIRE` và `PERSIST` (không xoá tay bằng `DEL`/`UNLINK`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*PERSIST\\s+cfg:payment:gateway\\b",
+          "forbidRegex": "^\\s*(DEL|UNLINK)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r01-5",
+    "code": "R01.5",
+    "title": "Thay thế lệnh cấm KEYS * bằng con trỏ SCAN & UNLINK",
+    "difficulty": 2,
+    "tags": [
+      "scan",
+      "unlink",
+      "anti-pattern",
+      "production-safety"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "safe-cleanup.redis",
+    "prompt": "Kịch bản khởi đầu bên dưới đang dùng lệnh nguy hiểm `KEYS sess:stale:*` gây treo Event Loop và chưa hề dọn dẹp dữ liệu rác. Hãy **xoá bỏ hoàn toàn lệnh `KEYS`**, thay bằng lệnh `SCAN 0 MATCH sess:stale:* COUNT 10` để liệt kê an toàn các phiên cũ, sau đó dùng `UNLINK` xoá cả hai khoá `sess:stale:101` và `sess:stale:102` (giữ nguyên các khoá `user:active:*`).",
+    "starter": "# CẢNH BÁO: Lệnh KEYS dưới đây bị cấm trên Production! Hãy thay bằng SCAN và UNLINK\nKEYS sess:stale:*\n",
+    "solution": "SCAN 0 MATCH sess:stale:* COUNT 10\nUNLINK sess:stale:101 sess:stale:102\n",
+    "hints": [
+      "Xoá dòng `KEYS sess:stale:*` đi, thay bằng `SCAN 0 MATCH sess:stale:* COUNT 10`.",
+      "Dùng `UNLINK sess:stale:101 sess:stale:102` để giải phóng bất đồng bộ cả 2 khoá phiên hết hạn."
+    ],
+    "ref": "patterns/scan-cursor-batch-cleanup.py",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "sess:stale:101",
+            "type": "string",
+            "value": "old-token-a"
+          },
+          {
+            "key": "sess:stale:102",
+            "type": "string",
+            "value": "old-token-b"
+          },
+          {
+            "key": "user:active:101",
+            "type": "string",
+            "value": "linh"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "scan-used-no-keys",
+          "doc": "Dùng `SCAN 0 MATCH sess:stale:*` và tuyệt đối KHÔNG còn lệnh `KEYS`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SCAN\\s+0\\s+MATCH\\s+sess:stale:\\*",
+          "forbidRegex": "^\\s*KEYS\\b"
+        },
+        {
+          "id": "unlink-used",
+          "doc": "Sử dụng `UNLINK` để giải phóng khoá bất đồng bộ",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*UNLINK\\b"
+        },
+        {
+          "id": "stale-101-gone",
+          "doc": "Khoá rác `sess:stale:101` đã được dọn sạch",
+          "target": "key-exists",
+          "key": "sess:stale:101",
+          "exists": false
+        },
+        {
+          "id": "stale-102-gone",
+          "doc": "Khoá rác `sess:stale:102` đã được dọn sạch",
+          "target": "key-exists",
+          "key": "sess:stale:102",
+          "exists": false
+        },
+        {
+          "id": "active-user-safe",
+          "doc": "Khoá đang hoạt động `user:active:101` vẫn nguyên vẹn",
+          "target": "key-exists",
+          "key": "user:active:101",
+          "exists": true
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,345 @@
+[
+  {
+    "id": "redis-ex-r14-1",
+    "code": "R14.1",
+    "module": "R14",
+    "title": "Cấu hình nút Replica chuẩn PSYNC2 và rào chắn chống Split-Brain",
+    "difficulty": 2,
+    "tags": [
+      "replication",
+      "replicaof",
+      "split-brain",
+      "redis-conf"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "redis-replica-ha.conf",
+    "prompt": "Bạn đang chuẩn bị tệp `redis.conf` chuẩn cho nút bản sao kết nối tới Master `10.0.1.10:6379` (đồng thời cài sẵn các tham số an toàn nếu sau này nút này được Sentinel thăng cấp lên làm Master).\n\n- **Nhiệm vụ:** Chỉnh sửa tệp cấu hình thoả mãn đủ 5 tiêu chuẩn HA:\n  1. Khai báo **`replicaof 10.0.1.10 6379`**.\n  2. Khoá chỉ đọc trên bản sao bằng **`replica-read-only yes`**.\n  3. Mở rộng bộ đệm đồng bộ một phần **`repl-backlog-size 64mb`** (thay vì `1mb` mặc định).\n  4. Đặt rào chắn chống Split-Brain **`min-replicas-to-write 1`** và **`min-replicas-max-lag 10`**.",
+    "starter": "port 6379\n# Đang cho phép ghi bừa lên Replica và để backlog mặc định 1mb quá nhỏ!\nreplica-read-only no\nrepl-backlog-size 1mb\nmin-replicas-to-write 0\nmin-replicas-max-lag 60\n",
+    "solution": "port 6379\nreplicaof 10.0.1.10 6379\nreplica-read-only yes\nrepl-backlog-size 64mb\nmin-replicas-to-write 1\nmin-replicas-max-lag 10\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "replicaof-master",
+          "doc": "Trỏ bản sao về Master bằng replicaof 10.0.1.10 6379",
+          "kind": "directive",
+          "directive": "replicaof",
+          "match": {
+            "eq": "10.0.1.10 6379"
+          }
+        },
+        {
+          "id": "replica-readonly",
+          "doc": "Bật chế độ chỉ đọc replica-read-only yes",
+          "kind": "directive",
+          "directive": "replica-read-only",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "backlog-64mb",
+          "doc": "Nâng repl-backlog-size >= 64mb chống bão Full Resync",
+          "kind": "memory-bytes",
+          "directive": "repl-backlog-size",
+          "minBytes": 64000000
+        },
+        {
+          "id": "min-replicas-1",
+          "doc": "Đặt min-replicas-to-write 1 chống Split-Brain",
+          "kind": "directive",
+          "directive": "min-replicas-to-write",
+          "match": {
+            "eq": 1
+          }
+        },
+        {
+          "id": "max-lag-10",
+          "doc": "Đặt min-replicas-max-lag 10 giây",
+          "kind": "directive",
+          "directive": "min-replicas-max-lag",
+          "match": {
+            "lte": 10
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Thêm dòng `replicaof 10.0.1.10 6379` và đổi `replica-read-only yes`.",
+      "Cập nhật `repl-backlog-size 64mb`, `min-replicas-to-write 1`, và `min-replicas-max-lag 10`."
+    ],
+    "ref": "ha/sentinel-quorum-3nodes.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r14-2",
+    "code": "R14.2",
+    "module": "R14",
+    "title": "Viết tệp sentinel.conf chuẩn Quorum 2/3 cho hệ thống High Availability",
+    "difficulty": 2,
+    "tags": [
+      "sentinel",
+      "quorum",
+      "failover",
+      "redis-conf"
+    ],
+    "kind": "redis-conf",
+    "language": "redis-conf",
+    "filename": "sentinel.conf",
+    "prompt": "Cụm HA của bạn gồm 3 máy chủ chạy tiến trình Sentinel ở cổng **`26379`** giám sát Master tên `mymaster` tại địa chỉ `10.0.1.10` cổng `6379`.\n\nTệp `sentinel.conf` nháp bên dưới đang đặt `quorum` bằng `1` (chỉ 1 Sentinel chập chờn mạng là kích hoạt Failover nhầm!) và thời gian chờ sập lên tới `60000ms` (`1 phút` chết dịch vụ).\n\n- **Nhiệm vụ:** Sửa tệp `sentinel.conf` đạt chuẩn Production:\n  1. `port 26379`\n  2. `sentinel monitor mymaster 10.0.1.10 6379 2` (yêu cầu đồng thuận **`quorum = 2`** trên 3 nút).\n  3. `sentinel down-after-milliseconds mymaster 5000` (phát hiện `SDOWN` sau `5 giây`).\n  4. `sentinel failover-timeout mymaster 60000`\n  5. `sentinel parallel-syncs mymaster 1` (đồng bộ tuần tự từng Replica sang Master mới để không làm nghẽn mạng).",
+    "starter": "port 26379\n# BẪY: Quorum=1 gây Failover giả, còn down-after=60000ms làm hệ thống treo suốt 1 phút!\nsentinel monitor mymaster 10.0.1.10 6379 1\nsentinel down-after-milliseconds mymaster 60000\nsentinel failover-timeout mymaster 180000\n",
+    "solution": "port 26379\nsentinel monitor mymaster 10.0.1.10 6379 2\nsentinel down-after-milliseconds mymaster 5000\nsentinel failover-timeout mymaster 60000\nsentinel parallel-syncs mymaster 1\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "sentinel-port-26379",
+          "doc": "Chạy Sentinel trên cổng tiêu chuẩn 26379",
+          "kind": "directive",
+          "directive": "port",
+          "match": {
+            "eq": 26379
+          }
+        },
+        {
+          "id": "sentinel-monitor-quorum-2",
+          "doc": "Cấu hình sentinel monitor mymaster 10.0.1.10 6379 2",
+          "kind": "directive",
+          "directive": "sentinel",
+          "match": {
+            "eq": "monitor mymaster 10.0.1.10 6379 2"
+          }
+        },
+        {
+          "id": "sentinel-down-after-5000",
+          "doc": "Cấu hình sentinel down-after-milliseconds mymaster 5000",
+          "kind": "directive",
+          "directive": "sentinel",
+          "match": {
+            "eq": "down-after-milliseconds mymaster 5000"
+          }
+        },
+        {
+          "id": "sentinel-failover-timeout-60000",
+          "doc": "Cấu hình sentinel failover-timeout mymaster 60000",
+          "kind": "directive",
+          "directive": "sentinel",
+          "match": {
+            "eq": "failover-timeout mymaster 60000"
+          }
+        },
+        {
+          "id": "sentinel-parallel-syncs-1",
+          "doc": "Giới hạn sentinel parallel-syncs mymaster 1",
+          "kind": "directive",
+          "directive": "sentinel",
+          "match": {
+            "eq": "parallel-syncs mymaster 1"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đổi số cuối của dòng `sentinel monitor` từ `1` thành `2`.",
+      "Đặt `sentinel down-after-milliseconds mymaster 5000`, `sentinel failover-timeout mymaster 60000` và bổ sung dòng `sentinel parallel-syncs mymaster 1`."
+    ],
+    "ref": "ha/sentinel-quorum-3nodes.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r14-3",
+    "code": "R14.3",
+    "module": "R14",
+    "title": "Dựng kiến trúc Master + Replica + Sentinel bằng Docker Compose v2",
+    "difficulty": 2,
+    "tags": [
+      "docker-compose",
+      "sentinel",
+      "replication",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "compose-redis-ha.yaml",
+    "prompt": "Để đội Backend kiểm thử tính năng tự động chuyển đổi kết nối khi Master sập ngay trên máy cục bộ, hãy hoàn thiện tệp `compose-redis-ha.yaml` gồm 3 dịch vụ:\n\n- **Nhiệm vụ:**\n  1. Giữ `redis-master` dùng image `redis:8.0-alpine`.\n  2. Ở dịch vụ `redis-replica`, sửa mảng `command` thành `[\"redis-server\", \"--replicaof\", \"redis-master\", \"6379\", \"--replica-read-only\", \"yes\"]`.\n  3. Bổ sung dịch vụ thứ ba tên **`redis-sentinel`** dùng image `redis:8.0-alpine`, gắn cổng `\"26379:26379\"` trong `ports`, và khai báo `depends_on` gồm `redis-master` và `redis-replica`.",
+    "starter": "services:\n  redis-master:\n    image: redis:8.0-alpine\n    ports:\n      - \"6379:6379\"\n\n  redis-replica:\n    image: redis:8.0-alpine\n    command:\n      - \"redis-server\"\n    depends_on:\n      - redis-master\n\n  # Bổ sung dịch vụ redis-sentinel (image redis:8.0-alpine, ports \"26379:26379\", depends_on)\n",
+    "solution": "services:\n  redis-master:\n    image: redis:8.0-alpine\n    ports:\n      - \"6379:6379\"\n\n  redis-replica:\n    image: redis:8.0-alpine\n    command:\n      - \"redis-server\"\n      - \"--replicaof\"\n      - \"redis-master\"\n      - \"6379\"\n      - \"--replica-read-only\"\n      - \"yes\"\n    depends_on:\n      - redis-master\n\n  redis-sentinel:\n    image: redis:8.0-alpine\n    ports:\n      - \"26379:26379\"\n    depends_on:\n      - redis-master\n      - redis-replica\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "replica-cmd-flag",
+          "doc": "Dịch vụ redis-replica có tham số --replicaof trỏ tới redis-master",
+          "kind": "path",
+          "path": "services.redis-replica.command",
+          "match": {
+            "contains": "--replicaof"
+          }
+        },
+        {
+          "id": "replica-target-master",
+          "doc": "Dịch vụ redis-replica trỏ đúng hostname redis-master",
+          "kind": "path",
+          "path": "services.redis-replica.command",
+          "match": {
+            "contains": "redis-master"
+          }
+        },
+        {
+          "id": "sentinel-image-pinned",
+          "doc": "Dịch vụ redis-sentinel dùng image gắn tag cụ thể (redis:8.0-alpine)",
+          "kind": "image-tag-pinned",
+          "path": "services.redis-sentinel.image"
+        },
+        {
+          "id": "sentinel-port-exposed",
+          "doc": "Dịch vụ redis-sentinel mở cổng 26379:26379",
+          "kind": "path",
+          "path": "services.redis-sentinel.ports",
+          "match": {
+            "contains": "26379:26379"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong `redis-replica.command`, truyền đủ `[\"redis-server\", \"--replicaof\", \"redis-master\", \"6379\", \"--replica-read-only\", \"yes\"]`.",
+      "Khai báo khối `redis-sentinel:` cùng cấp với `redis-master` và `redis-replica`, mở `ports: [\"26379:26379\"]`."
+    ],
+    "ref": "compose/docker-compose.redis-sentinel-ha.yml",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r14-4",
+    "code": "R14.4",
+    "module": "R14",
+    "title": "Thăng cấp khẩn cấp Replica lên Master độc lập bằng REPLICAOF NO ONE",
+    "difficulty": 2,
+    "tags": [
+      "failover",
+      "replicaof-no-one",
+      "role"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "manual-promote-replica.redis",
+    "prompt": "Trong một cụm cũ chưa kịp cài đặt Sentinel, máy chủ Master vừa hỏng phần cứng ổ nguồn. Bạn đang đăng nhập trực tiếp vào nút bản sao duy nhất còn sống (hiện đang mang vai trò `replica` chỉ đọc).\n\n- **Nhiệm vụ:**\n  1. Kiểm tra vai trò và vị trí offset hiện tại của nút bằng lệnh `ROLE`.\n  2. Cắt đứt quan hệ phụ thuộc vào Master đã chết và **thăng cấp ngay nút này lên làm Master mới** cho phép đọc/ghi bằng câu lệnh **`REPLICAOF NO ONE`**.\n  3. Gọi `INFO replication` để xác nhận dòng `role:master` đã xuất hiện.",
+    "starter": "# Kiểm tra trạng thái hiện tại đang là slave/replica\nROLE\n# Hãy chạy lệnh thăng cấp lên Master rồi gọi INFO replication xác nhận!\n",
+    "solution": "ROLE\nREPLICAOF NO ONE\nINFO replication\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "clusterRole": "replica",
+        "replicationOffset": 918240
+      },
+      "rules": [
+        {
+          "id": "used-replicaof-no-one",
+          "doc": "Thực thi câu lệnh chuẩn REPLICAOF NO ONE (không dùng SLAVEOF cũ)",
+          "target": "command-used",
+          "mustUseRegex": "^REPLICAOF\\s+NO\\s+ONE\\b",
+          "forbidRegex": "^SLAVEOF\\b"
+        },
+        {
+          "id": "promoted-to-master-verified",
+          "doc": "Nút đã chuyển sang role:master trong kết quả INFO replication",
+          "target": "stdout-contains",
+          "contains": "role:master"
+        }
+      ]
+    },
+    "hints": [
+      "Từ Redis 5 trở đi, lệnh chuẩn thay thế `SLAVEOF NO ONE` là `REPLICAOF NO ONE`.",
+      "Nhớ chạy `INFO replication` ở dòng cuối sau khi đã chạy `REPLICAOF NO ONE` để đầu ra hiển thị `role:master`."
+    ],
+    "ref": "ops/redis-sre-diagnostic-playbook.sh",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r14-5",
+    "code": "R14.5",
+    "module": "R14",
+    "title": "Thiết kế StatefulSet & Headless Service định danh ổn định cho Redis HA trên K8s",
+    "difficulty": 3,
+    "tags": [
+      "kubernetes",
+      "statefulset",
+      "headless-service",
+      "yaml"
+    ],
+    "kind": "yaml",
+    "language": "yaml",
+    "filename": "redis-ha-k8s.yaml",
+    "prompt": "Để các Pod Sentinel và Replica trên Kubernetes luôn tìm thấy nhau qua tên miền nội bộ cố định (`redis-ha-0.redis-ha-headless`, `redis-ha-1.redis-ha-headless`, `redis-ha-2.redis-ha-headless`), bạn cần kết hợp một **Headless Service** với một **StatefulSet**.\n\nBản cấu hình hiện tại đang mắc 3 lỗi nghiêm trọng: `Service` chưa đặt `clusterIP: None`, `StatefulSet` chỉ chạy `replicas: 1` và lệch nhãn `selector` với `Service`!\n\n- **Nhiệm vụ:** Chỉnh sửa tệp YAML đa tài nguyên bên dưới:\n  1. Trong `Service/redis-ha-headless`: đặt **`spec.clusterIP: None`**, đồng bộ `spec.selector.app: redis-ha` và khớp cổng `6379`.\n  2. Trong `StatefulSet/redis-ha`: đặt `spec.serviceName: redis-ha-headless` và nâng **`spec.replicas: 3`**.",
+    "starter": "apiVersion: v1\nkind: Service\nmetadata:\n  name: redis-ha-headless\nspec:\n  selector:\n    app: wrong-label\n  ports:\n    - name: redis\n      port: 6379\n      targetPort: 6379\n---\napiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-ha\nspec:\n  serviceName: wrong-service\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis-ha\n  template:\n    metadata:\n      labels:\n        app: redis-ha\n    spec:\n      containers:\n        - name: redis\n          image: redis:8.0-alpine\n          ports:\n            - containerPort: 6379\n",
+    "solution": "apiVersion: v1\nkind: Service\nmetadata:\n  name: redis-ha-headless\nspec:\n  clusterIP: None\n  selector:\n    app: redis-ha\n  ports:\n    - name: redis\n      port: 6379\n      targetPort: 6379\n---\napiVersion: apps/v1\nkind: StatefulSet\nmetadata:\n  name: redis-ha\nspec:\n  serviceName: redis-ha-headless\n  replicas: 3\n  selector:\n    matchLabels:\n      app: redis-ha\n  template:\n    metadata:\n      labels:\n        app: redis-ha\n    spec:\n      containers:\n        - name: redis\n          image: redis:8.0-alpine\n          ports:\n            - containerPort: 6379\n",
+    "spec": {
+      "kind": "yaml",
+      "rules": [
+        {
+          "id": "svc-headless-none",
+          "doc": "Service redis-ha-headless đặt spec.clusterIP: None",
+          "kind": "path",
+          "docSelect": {
+            "kind": "Service",
+            "name": "redis-ha-headless"
+          },
+          "path": "spec.clusterIP",
+          "match": {
+            "eq": "None"
+          }
+        },
+        {
+          "id": "svc-selector-matches-sts",
+          "doc": "Selector của Service khớp với nhãn Pod của StatefulSet (app: redis-ha)",
+          "kind": "k8s-selector-match",
+          "sourceKind": "Service",
+          "sourceName": "redis-ha-headless",
+          "targetKind": "StatefulSet",
+          "targetName": "redis-ha"
+        },
+        {
+          "id": "svc-port-matches-sts",
+          "doc": "targetPort của Service khớp containerPort 6379 của StatefulSet",
+          "kind": "k8s-service-port-match",
+          "serviceName": "redis-ha-headless",
+          "targetKind": "StatefulSet",
+          "targetName": "redis-ha"
+        },
+        {
+          "id": "sts-service-name",
+          "doc": "StatefulSet khai báo đúng spec.serviceName: redis-ha-headless",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-ha"
+          },
+          "path": "spec.serviceName",
+          "match": {
+            "eq": "redis-ha-headless"
+          }
+        },
+        {
+          "id": "sts-replicas-3",
+          "doc": "StatefulSet chạy đủ 3 bản sao (replicas: 3)",
+          "kind": "path",
+          "docSelect": {
+            "kind": "StatefulSet",
+            "name": "redis-ha"
+          },
+          "path": "spec.replicas",
+          "match": {
+            "eq": 3
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Trong tài liệu `Service` đầu tiên, thêm `clusterIP: None` ngay dưới `spec:` và sửa `selector.app: redis-ha`.",
+      "Trong tài liệu `StatefulSet` thứ hai, sửa `serviceName: redis-ha-headless` và `replicas: 3`."
+    ],
+    "ref": "k8s/redis-statefulset-pdb-anti-affinity.yaml",
+    "webGrade": true
+  }
+]

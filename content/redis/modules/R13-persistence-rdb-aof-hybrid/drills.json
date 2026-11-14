@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R13-D1",
+    "title": "Cấu hình Hybrid RDB + AOF bền vững chuẩn Production",
+    "code": "appendonly yes\nappendfsync everysec\naof-use-rdb-preamble yes\nauto-aof-rewrite-percentage 100\nauto-aof-rewrite-min-size 64mb"
+  },
+  {
+    "id": "R13-D2",
+    "title": "Tắt hoàn toàn ghi đĩa cho cụm Pure Cache",
+    "code": "save \"\"\nappendonly no"
+  },
+  {
+    "id": "R13-D3",
+    "title": "Chụp ảnh nền và nén lại AOF an toàn không chặn luồng chính",
+    "code": "BGSAVE\nBGREWRITEAOF\nINFO persistence"
+  }
+]

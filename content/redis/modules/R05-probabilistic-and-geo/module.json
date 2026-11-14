@@ -1,0 +1,58 @@
+{
+  "id": "R05",
+  "slug": "R05-probabilistic-and-geo",
+  "level": 1,
+  "order": 3,
+  "title": "Cấu trúc xác suất & Không gian: Bitmap, HyperLogLog, Bloom Filter & Geo",
+  "summary": "Đánh đổi 0.81% sai số lấy mức giảm 99.9% RAM với HyperLogLog (12KB), chặn Cache Penetration bằng Bloom Filter tích hợp sẵn trong Redis 8 và định vị GEOSEARCH.",
+  "tags": [
+    "bitmap",
+    "hyperloglog",
+    "bloom-filter",
+    "geospatial",
+    "geosearch",
+    "cache-penetration"
+  ],
+  "sources": [
+    {
+      "title": "Redis Data Types — Probabilistic (HyperLogLog, Bloom Filters) & Bitmaps",
+      "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Data Types — Geospatial Indexes & GEOSEARCH",
+      "url": "https://redis.io/docs/latest/develop/data-types/geospatial/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Tấn công xuyên thủng Cache (Cache Penetration)",
+      "kind": "incident",
+      "targetId": "inc-cache-penetration",
+      "description": "Thực chiến dùng Bloom Filter chặn hàng vạn truy vấn ID rác làm gục PostgreSQL"
+    },
+    {
+      "label": "Simulator: Đọ sức RAM giữa Set triệu người và 12KB HyperLogLog",
+      "kind": "simulator-preset",
+      "targetId": "memory",
+      "description": "Kiểm chứng mức tiết kiệm bộ nhớ ngoạn mục của Bitmap, HLL và Bloom Filter"
+    }
+  ],
+  "readings": [
+    {
+      "path": "patterns/probabilistic-hll-bloom-dau.redis",
+      "kind": "good",
+      "note": "Bộ ba công cụ đo lường quy mô lớn: Bitmap theo dõi chuỗi đăng nhập, HyperLogLog đếm UV và Bloom Filter gác cổng DB.",
+      "task": "Tại sao đếm 50 triệu khách truy cập duy nhất bằng `SADD` ngốn hàng GB RAM, trong khi `PFADD` chỉ dừng ở đúng 12 KB?",
+      "answer": "`SADD` phải giữ nguyên vẹn từng chuỗi IP/UUID trên bảng băm nên bộ nhớ tăng tuyến tính `O(N)`; ngược lại HyperLogLog không lưu phần tử gốc mà chỉ quan sát phân phối xác suất các bit `0` đầu tiên sau hàm băm trên 16,384 thanh ghi 6-bit (`16384 * 6 bits = 12 KB`), đổi sai số chuẩn `0.81%` lấy dung lượng hằng số `O(1)`."
+    },
+    {
+      "path": "patterns/geo-nearby-drivers.redis",
+      "kind": "good",
+      "note": "Tìm tài xế/cửa hàng quanh bán kính người dùng theo thời gian thực bằng Geohash 52-bit trên nền ZSet.",
+      "task": "Vì bản chất Redis Geo được lưu trữ bên dưới như một Sorted Set (`ZSet`), bạn sẽ dùng lệnh nào khi muốn xoá một tài xế vừa tắt ứng dụng khỏi bản đồ?",
+      "answer": "Không có lệnh `GEODEL` riêng! Vì khoá Geo thực chất là một `ZSet` (với `score` là mã nguyên Geohash 52-bit đan xen kinh độ – vĩ độ), bạn dùng trực tiếp lệnh `ZREM drivers:online <driverId>` để gỡ tài xế."
+    }
+  ]
+}

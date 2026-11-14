@@ -1,0 +1,307 @@
+[
+  {
+    "id": "redis-ex-r05-1",
+    "code": "R05.1",
+    "title": "Tính lượng người dùng giữ chuỗi 2 ngày liên tiếp bằng Bitmap (SETBIT, BITOP, BITCOUNT)",
+    "difficulty": 2,
+    "tags": [
+      "bitmap",
+      "setbit",
+      "bitop",
+      "bitcount",
+      "dau"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "dau-retention-bitmap.redis",
+    "prompt": "Hệ thống lưu trạng thái online theo ngày bằng Bitmap (mỗi offset là `userId`). Ngày hôm qua `dau:2026-11-13` có các user `[101, 205, 309, 412]` hoạt động; hôm nay `dau:2026-11-14` đã ghi nhận `[101, 309]`. Hãy:\n1) Dùng `SETBIT` bật bit `1` tại offset `412` và offset `888` cho khoá hôm nay `dau:2026-11-14`.\n2) Dùng `BITOP AND retention:2d dau:2026-11-13 dau:2026-11-14` tìm tập user hoạt động **cả 2 ngày liên tiếp**.\n3) Dùng `BITCOUNT retention:2d` đếm tổng số user giữ chuỗi 2 ngày (kỳ vọng `(integer) 3` ứng với `101`, `309`, `412`).",
+    "starter": "# 1. Bật bit 1 cho user 412 và 888 trên khoá dau:2026-11-14 bằng SETBIT\n# 2. Thực hiện phép giao bit BITOP AND lưu vào retention:2d\n# 3. Đếm số bit 1 của retention:2d bằng BITCOUNT\n",
+    "solution": "SETBIT dau:2026-11-14 412 1\nSETBIT dau:2026-11-14 888 1\nBITOP AND retention:2d dau:2026-11-13 dau:2026-11-14\nBITCOUNT retention:2d\n",
+    "hints": [
+      "Cú pháp bật bit: `SETBIT dau:2026-11-14 412 1` và `SETBIT dau:2026-11-14 888 1`.",
+      "Sau đó gọi `BITOP AND retention:2d dau:2026-11-13 dau:2026-11-14` rồi `BITCOUNT retention:2d`."
+    ],
+    "ref": "patterns/probabilistic-hll-bloom-dau.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "dau:2026-11-13",
+            "type": "bitmap",
+            "value": [
+              101,
+              205,
+              309,
+              412
+            ]
+          },
+          {
+            "key": "dau:2026-11-14",
+            "type": "bitmap",
+            "value": [
+              101,
+              309
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "retention-bitmap-created",
+          "doc": "Khoá đích `retention:2d` được tạo đúng kiểu `bitmap`",
+          "target": "key-exists",
+          "key": "retention:2d",
+          "exists": true,
+          "expectedType": "bitmap"
+        },
+        {
+          "id": "used-setbit-bitop-bitcount",
+          "doc": "Thực hiện đúng chuỗi lệnh `SETBIT`, `BITOP AND` và `BITCOUNT`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*SETBIT\\s+dau:2026-11-14\\s+412\\s+1\\b[\\s\\S]*^\\s*BITOP\\s+AND\\s+retention:2d\\b[\\s\\S]*^\\s*BITCOUNT\\s+retention:2d\\b"
+        },
+        {
+          "id": "streak-count-is-3",
+          "doc": "Kết quả `BITCOUNT retention:2d` xuất ra chính xác `(integer) 3` người dùng",
+          "target": "stdout-contains",
+          "contains": "(integer) 3"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r05-2",
+    "code": "R05.2",
+    "title": "Đếm & hợp nhất khách truy cập đa nền tảng bằng HyperLogLog (PFADD, PFMERGE, PFCOUNT)",
+    "difficulty": 1,
+    "tags": [
+      "hyperloglog",
+      "pfadd",
+      "pfmerge",
+      "pfcount"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "unique-visitors-hll.redis",
+    "prompt": "Khoá HyperLogLog của Web `uv:web:d1` đang ghi nhận `[ip:1, ip:2, ip:3, ip:4]`, còn khoá Mobile `uv:mobile:d1` đang có `[ip:3, ip:4, ip:5]`. Hãy:\n1) Dùng `PFADD` ghi nhận thêm `\"ip:6\"` và `\"ip:2\"` vào `uv:mobile:d1`.\n2) Dùng `PFMERGE` gộp cả `uv:web:d1` lẫn `uv:mobile:d1` vào khoá tổng hợp toàn hệ thống `uv:all:d1` (khử trùng lặp khách vào cả Web lẫn App!).\n3) Gọi `PFCOUNT uv:all:d1` để xuất tổng lượng khách duy nhất (`(integer) 6`).",
+    "starter": "# 1. PFADD \"ip:6\" \"ip:2\" vào uv:mobile:d1\n# 2. PFMERGE vào khoá đích uv:all:d1 từ uv:web:d1 và uv:mobile:d1\n# 3. PFCOUNT trên khoá uv:all:d1\n",
+    "solution": "PFADD uv:mobile:d1 \"ip:6\" \"ip:2\"\nPFMERGE uv:all:d1 uv:web:d1 uv:mobile:d1\nPFCOUNT uv:all:d1\n",
+    "hints": [
+      "Trong `PFMERGE <destkey> <sourcekey1> <sourcekey2>`, tham số đầu tiên là khoá đích `uv:all:d1`.",
+      "Cuối cùng gọi `PFCOUNT uv:all:d1` để nhận tổng ước lượng `(integer) 6`."
+    ],
+    "ref": "patterns/probabilistic-hll-bloom-dau.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "uv:web:d1",
+            "type": "hll",
+            "value": [
+              "ip:1",
+              "ip:2",
+              "ip:3",
+              "ip:4"
+            ]
+          },
+          {
+            "key": "uv:mobile:d1",
+            "type": "hll",
+            "value": [
+              "ip:3",
+              "ip:4",
+              "ip:5"
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "merged-hll-exists",
+          "doc": "Khoá tổng hợp `uv:all:d1` tồn tại với kiểu `hll`",
+          "target": "key-exists",
+          "key": "uv:all:d1",
+          "exists": true,
+          "expectedType": "hll"
+        },
+        {
+          "id": "used-pfadd-pfmerge-pfcount",
+          "doc": "Thực hiện đúng `PFADD`, `PFMERGE` và `PFCOUNT`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*PFADD\\s+uv:mobile:d1\\b[\\s\\S]*^\\s*PFMERGE\\s+uv:all:d1\\b[\\s\\S]*^\\s*PFCOUNT\\s+uv:all:d1\\b"
+        },
+        {
+          "id": "unique-count-is-6",
+          "doc": "Tổng lượng khách duy nhất sau hợp nhất đạt `(integer) 6`",
+          "target": "stdout-contains",
+          "contains": "(integer) 6"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r05-3",
+    "code": "R05.3",
+    "title": "Dựng khiên Bloom Filter chống Cache Penetration trên Redis 8",
+    "difficulty": 2,
+    "tags": [
+      "bloom-filter",
+      "bf-reserve",
+      "bf-madd",
+      "cache-penetration"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "bloom-shield.redis",
+    "prompt": "Để chặn các truy vấn mã sản phẩm rác không tồn tại đập thẳng vào PostgreSQL, hãy dựng bộ lọc Bloom của Redis 8:\n1) Khởi tạo khoá `bf:catalog:skus` bằng `BF.RESERVE bf:catalog:skus 0.01 10000` (sai số dương tính giả `0.01` = `1%`, sức chứa `10000` mục).\n2) Nạp lô 3 mã sản phẩm thật bằng `BF.MADD bf:catalog:skus \"sku:101\" \"sku:102\" \"sku:103\"`.\n3) Kiểm tra lô cả mã thật `\"sku:102\"` lẫn mã giả mạo `\"sku:fake-999\"` bằng `BF.MEXISTS bf:catalog:skus \"sku:102\" \"sku:fake-999\"`.",
+    "starter": "# 1. Khởi tạo bf:catalog:skus (error_rate=0.01, capacity=10000) bằng BF.RESERVE\n# 2. Nạp \"sku:101\" \"sku:102\" \"sku:103\" bằng BF.MADD\n# 3. Kiểm tra \"sku:102\" và \"sku:fake-999\" bằng BF.MEXISTS\n",
+    "solution": "BF.RESERVE bf:catalog:skus 0.01 10000\nBF.MADD bf:catalog:skus \"sku:101\" \"sku:102\" \"sku:103\"\nBF.MEXISTS bf:catalog:skus \"sku:102\" \"sku:fake-999\"\n",
+    "hints": [
+      "Gõ đúng dấu chấm trong tên lệnh Bloom Filter của Redis 8: `BF.RESERVE`, `BF.MADD`, `BF.MEXISTS`.",
+      "Ở kết quả `BF.MEXISTS`, mục 1 (`sku:102`) trả về `(integer) 1` còn mục 2 (`sku:fake-999`) trả về `(integer) 0` (100% không tồn tại)."
+    ],
+    "ref": "patterns/probabilistic-hll-bloom-dau.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "bloom-key-created",
+          "doc": "Khoá `bf:catalog:skus` được khởi tạo đúng kiểu `bloom`",
+          "target": "key-exists",
+          "key": "bf:catalog:skus",
+          "exists": true,
+          "expectedType": "bloom"
+        },
+        {
+          "id": "used-bf-commands",
+          "doc": "Sử dụng đầy đủ `BF.RESERVE`, `BF.MADD` và `BF.MEXISTS`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*BF\\.RESERVE\\s+bf:catalog:skus\\s+0\\.01\\s+10000\\b[\\s\\S]*^\\s*BF\\.MADD\\b[\\s\\S]*^\\s*BF\\.MEXISTS\\b"
+        },
+        {
+          "id": "fake-sku-blocked",
+          "doc": "Mã giả mạo `sku:fake-999` bị nhận diện chắc chắn không tồn tại `2) (integer) 0`",
+          "target": "stdout-contains",
+          "contains": "2) (integer) 0"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r05-4",
+    "code": "R05.4",
+    "title": "Đăng ký toạ độ kho vận & đo khoảng cách bằng GEOADD & GEODIST",
+    "difficulty": 1,
+    "tags": [
+      "geoadd",
+      "geodist",
+      "geospatial",
+      "lon-lat"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "hub-distance.redis",
+    "prompt": "Hãy cẩn thận quy tắc toạ độ của Redis: **Kinh độ (`longitude`) luôn đứng trước Vĩ độ (`latitude`)**! Hãy:\n1) Dùng `GEOADD` tạo khoá `vn:hubs` gồm 2 điểm tại TP.HCM:\n   - `\"hub:ben-thanh\"`: kinh độ `106.6980`, vĩ độ `10.7725`\n   - `\"hub:tan-son-nhat\"`: kinh độ `106.6588`, vĩ độ `10.8185`\n2) Dùng `GEODIST vn:hubs \"hub:ben-thanh\" \"hub:tan-son-nhat\" km` để tính khoảng cách đường chim bay theo đơn vị ki-lô-mét (`km`).",
+    "starter": "# 1. GEOADD 2 điểm hub:ben-thanh (106.6980, 10.7725) và hub:tan-son-nhat (106.6588, 10.8185) vào khoá vn:hubs\n# 2. Tính khoảng cách theo đơn vị km bằng GEODIST\n",
+    "solution": "GEOADD vn:hubs 106.6980 10.7725 \"hub:ben-thanh\" 106.6588 10.8185 \"hub:tan-son-nhat\"\nGEODIST vn:hubs \"hub:ben-thanh\" \"hub:tan-son-nhat\" km\n",
+    "hints": [
+      "`GEOADD` có thể nhận nhiều bộ 3 `(longitude latitude member)` liên tiếp trên cùng 1 dòng.",
+      "Đừng quên truyền đơn vị `km` ở cuối lệnh `GEODIST` (mặc định nếu bỏ trống sẽ trả về mét `m`)."
+    ],
+    "ref": "patterns/geo-nearby-drivers.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "geo-hubs-created",
+          "doc": "Chỉ mục không gian `vn:hubs` đã được khởi tạo hợp lệ",
+          "target": "key-exists",
+          "key": "vn:hubs",
+          "exists": true,
+          "expectedType": "geo"
+        },
+        {
+          "id": "used-geoadd-and-geodist-km",
+          "doc": "Truyền đúng thứ tự `longitude latitude` trong `GEOADD` và tính khoảng cách `km` bằng `GEODIST`",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*GEOADD\\s+vn:hubs\\s+106\\.6980?\\s+10\\.7725\\b[\\s\\S]*^\\s*GEODIST\\s+vn:hubs\\b.*\\bkm\\b"
+        },
+        {
+          "id": "distance-around-6km",
+          "doc": "Khoảng cách đường chim bay giữa Chợ Bến Thành và Tân Sơn Nhất xuất ra ~`6.67 km`",
+          "target": "stdout-contains",
+          "contains": "\"6.6"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r05-5",
+    "code": "R05.5",
+    "title": "Tìm 2 tài xế gần khách nhất trong bán kính 3km bằng GEOSEARCH",
+    "difficulty": 2,
+    "tags": [
+      "geosearch",
+      "radius-query",
+      "ride-hailing"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "nearby-drivers.redis",
+    "prompt": "Khoá `drivers:hcm:online` đang lưu vị trí trực tuyến của 3 tài xế (`driver:minh`, `driver:tuan` ở Quận 1 và `driver:hung` ở xa hơn 12km tại Thủ Đức). Khách hàng vừa đặt xe tại toạ độ **`(kinh độ 106.6960, vĩ độ 10.7720)`**. Hãy dùng câu lệnh chuẩn Redis 8 **`GEOSEARCH`** (tuyệt đối không dùng lệnh cũ `GEORADIUS`) để tìm trên `drivers:hcm:online` xuất phát từ tâm `FROMLONLAT 106.6960 10.7720`, quét bán kính `BYRADIUS 3 km`, sắp xếp từ gần tới xa `ASC` và giới hạn tối đa `COUNT 2` tài xế.",
+    "starter": "# Tìm 2 tài xế gần nhất trong bán kính 3 km từ toạ độ (106.6960, 10.7720) bằng GEOSEARCH\n",
+    "solution": "GEOSEARCH drivers:hcm:online FROMLONLAT 106.6960 10.7720 BYRADIUS 3 km ASC COUNT 2\n",
+    "hints": [
+      "Cú pháp chuẩn: `GEOSEARCH <key> FROMLONLAT <lon> <lat> BYRADIUS <radius> <unit> ASC COUNT <n>`.",
+      "Gõ chính xác: `GEOSEARCH drivers:hcm:online FROMLONLAT 106.6960 10.7720 BYRADIUS 3 km ASC COUNT 2`"
+    ],
+    "ref": "patterns/geo-nearby-drivers.redis",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "drivers:hcm:online",
+            "type": "geo",
+            "value": {
+              "driver:tuan": {
+                "lon": 106.7009,
+                "lat": 10.7769
+              },
+              "driver:minh": {
+                "lon": 106.6952,
+                "lat": 10.7715
+              },
+              "driver:hung": {
+                "lon": 106.78,
+                "lat": 10.85
+              }
+            }
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "used-modern-geosearch",
+          "doc": "Sử dụng `GEOSEARCH ... FROMLONLAT ... BYRADIUS 3 km ASC COUNT 2` (không dùng `GEORADIUS` cũ)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*GEOSEARCH\\s+drivers:hcm:online\\s+FROMLONLAT\\s+106\\.6960?\\s+10\\.7720?\\s+BYRADIUS\\s+3\\s+km\\s+ASC\\s+COUNT\\s+2\\b",
+          "forbidRegex": "^\\s*GEORADIUS\\b"
+        },
+        {
+          "id": "closest-driver-first",
+          "doc": "Tài xế gần nhất `driver:minh` (~100m) đứng ở vị trí số 1, kế tiếp là `driver:tuan` (loại bỏ `driver:hung` ở xa >12km)",
+          "target": "stdout-contains",
+          "contains": "1) \"driver:minh\"\n2) \"driver:tuan\""
+        }
+      ]
+    }
+  }
+]

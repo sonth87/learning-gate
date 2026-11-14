@@ -1,0 +1,80 @@
+[
+  {
+    "id": "R05-Q1",
+    "type": "mc",
+    "q": "Dung lượng bộ nhớ tối đa mà một khoá **HyperLogLog** (`PFADD`) tiêu thụ trong Redis để ước lượng số lượng phần tử duy nhất lên tới hàng trăm triệu mục là bao nhiêu?",
+    "code": "",
+    "choices": [
+      "Tăng tuyến tính khoảng `64 bytes` cho mỗi phần tử được thêm vào",
+      "Tối đa chỉ khoảng **`12 KB`** với sai số chuẩn thống kê khoảng **`0.81%`**",
+      "Cố định `512 MB` cho mỗi khoá ngay khi vừa khởi tạo",
+      "Bằng chính xác kích thước của một `Set` chứa cùng số lượng phần tử"
+    ],
+    "answer": 1,
+    "explain": "HyperLogLog của Redis sử dụng 16,384 thanh ghi 6-bit (`16384 * 6 / 8 = 12,288 bytes = 12 KB` cộng vài byte header), không lưu giá trị phần tử gốc mà ước lượng qua phân phối bit băm với sai số chuẩn ~0.81%."
+  },
+  {
+    "id": "R05-Q2",
+    "type": "mc",
+    "q": "Đặc tính xác suất sống còn nào của **Bloom Filter** (`BF.EXISTS`) giúp nó trở thành lá chắn hoàn hảo chống tấn công **Cache Penetration**?",
+    "code": "",
+    "choices": [
+      "Không bao giờ có Dương tính giả (False Positive), nhưng đôi khi có Âm tính giả (False Negative)",
+      "**Không bao giờ có Âm tính giả (Zero False Negatives)**: nếu `BF.EXISTS` trả về `0` thì phần tử đó **chắc chắn 100% chưa từng được nạp** — có thể chặn ngay mà không sợ bỏ sót dữ liệu thật!",
+      "Lưu trữ được toàn bộ nội dung JSON của sản phẩm bên trong các bit băm để trả thẳng về cho người dùng",
+      "Tự động xoá các phần tử ít được truy cập theo thuật toán LRU"
+    ],
+    "answer": 1,
+    "explain": "Bloom Filter đảm bảo 0% False Negative: trả về `0` nghĩa là chắc chắn không có trong tập hợp (chặn truy vấn rác ngay trên RAM); trả về `1` nghĩa là có mặt hoặc xác suất rất nhỏ (~1%) trùng bit băm (cho đi tiếp xuống Cache/DB)."
+  },
+  {
+    "id": "R05-Q3",
+    "type": "tf",
+    "q": "Sau khi đẩy danh sách IP khách truy cập vào một khoá HyperLogLog bằng `PFADD uv:today ...`, bạn có thể gọi `SMEMBERS uv:today` để in lại danh sách toàn bộ các địa chỉ IP đó.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! HyperLogLog là cấu trúc xác suất một chiều chỉ lưu trạng thái thống kê của các bit băm để đếm số lượng (`PFCOUNT`), hoàn toàn không lưu giữ chuỗi IP gốc và không hỗ trợ liệt kê phần tử."
+  },
+  {
+    "id": "R05-Q4",
+    "type": "mc",
+    "q": "Bên dưới hậu trường của Redis, một chỉ mục không gian địa lý tạo bằng `GEOADD` thực chất được lưu trữ bằng cấu trúc dữ liệu nền tảng nào (và dùng lệnh gì để xoá 1 điểm)?",
+    "code": "",
+    "choices": [
+      "Lưu bằng `Hash` và xoá điểm bằng `HDEL`",
+      "Lưu bằng **`Sorted Set (ZSet)`** với `score` là số nguyên **Geohash 52-bit**, nên dùng trực tiếp **`ZREM <key> <member>`** khi cần xoá một điểm!",
+      "Lưu bằng `Stream` và xoá điểm bằng `XDEL`",
+      "Lưu bằng cây `R-Tree` riêng biệt và xoá bằng lệnh `GEODEL`"
+    ],
+    "answer": 1,
+    "explain": "Nếu bạn gọi `TYPE` lên một khoá tạo bởi `GEOADD`, Redis sẽ trả về `zset`! Mọi toạ độ được mã hoá thành Geohash 52-bit làm `score` trên ZSet, vì vậy lệnh xoá chính thức là `ZREM`."
+  },
+  {
+    "id": "R05-Q5",
+    "type": "tf",
+    "q": "Trong câu lệnh `GEOADD key arg1 arg2 member`, thứ tự chuẩn của Redis giống Google Maps là truyền Vĩ độ (`latitude`) trước rồi mới đến Kinh độ (`longitude`).",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Chuẩn của Redis (`GEOADD` và `FROMLONLAT` trong `GEOSEARCH`) tuân theo hệ trục đề-các `(X, Y)`: **Kinh độ (`longitude`: `-180..180`) luôn đứng TRƯỚC Vĩ độ (`latitude`: `-85.05..85.05`)**."
+  },
+  {
+    "id": "R05-Q6",
+    "type": "output",
+    "q": "Dự đoán con số nguyên mà lệnh `BITCOUNT` ở dòng cuối trả về sau khi bật và tắt các bit bên dưới:",
+    "code": "SETBIT attendance:u1 0 1\nSETBIT attendance:u1 3 1\nSETBIT attendance:u1 7 1\nSETBIT attendance:u1 3 0\nBITCOUNT attendance:u1",
+    "choices": [],
+    "answer": "2",
+    "explain": "Ban đầu 3 vị trí bit (`0`, `3`, `7`) được bật lên `1`, sau đó vị trí `3` bị đặt lại về `0`, nên tổng số bit đang mang giá trị `1` (`BITCOUNT`) còn chính xác là `2`."
+  },
+  {
+    "id": "R05-Q7",
+    "type": "output",
+    "q": "Khi bạn gọi lệnh `TYPE` lên một khoá không gian địa lý vừa tạo bằng `GEOADD` như dưới đây, Redis trả về tên kiểu dữ liệu nền tảng nào?",
+    "code": "GEOADD cities 105.8542 21.0285 \"hanoi\"\nTYPE cities",
+    "choices": [],
+    "answer": "zset",
+    "explain": "Chỉ mục Geospatial của Redis được cài đặt trực tiếp bên trên cấu trúc Sorted Set, nên `TYPE cities` luôn trả về chuỗi `zset`."
+  }
+]

@@ -1,0 +1,44 @@
+# ============================================================================
+# Khởi tạo Redis 8 cục bộ bằng Docker Compose v2 chuẩn thực chiến
+# Khởi chạy: docker compose -f compose/docker-compose.redis-stack-local.yml up -d
+# Kiểm tra:  docker compose -f compose/docker-compose.redis-stack-local.yml ps
+# ============================================================================
+
+services:
+  redis-local:
+    image: redis:8.0-alpine
+    container_name: pylearn-redis8-dev
+    restart: unless-stopped
+    # Chỉ ánh xạ cổng về 127.0.0.1 của máy host, không phơi ra mạng Wi-Fi công cộng
+    ports:
+      - "127.0.0.1:6379:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - 512mb
+      - --maxmemory-policy
+      - allkeys-lfu
+      - --loglevel
+      - notice
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    # Giới hạn tài nguyên container rõ ràng để mô phỏng môi trường staging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+
+volumes:
+  redis_dev_data:
+    driver: local

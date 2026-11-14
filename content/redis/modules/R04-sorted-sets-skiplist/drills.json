@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R04-D1",
+    "title": "Cộng điểm trực tiếp bằng ZINCRBY và đọc Top 10 kèm điểm chuẩn Redis 8",
+    "code": "ZINCRBY lb:arena:s1 250 \"player:vy\"\nZRANGE lb:arena:s1 0 9 REV WITHSCORES\nZREVRANK lb:arena:s1 \"player:vy\""
+  },
+  {
+    "id": "R04-D2",
+    "title": "Bảo vệ kỷ lục cá nhân nguyên tử bằng cờ điều kiện ZADD GT",
+    "code": "ZADD lb:highscore:boss1 GT 990 \"u:binh\"\nZSCORE lb:highscore:boss1 \"u:binh\""
+  },
+  {
+    "id": "R04-D3",
+    "title": "Dọn cửa sổ thời gian bằng ZREMRANGEBYSCORE và lấy việc đến hạn BYSCORE",
+    "code": "ZREMRANGEBYSCORE jobs:delayed -inf 1700000300\nZRANGE jobs:delayed -inf 1700000600 BYSCORE LIMIT 0 20"
+  }
+]

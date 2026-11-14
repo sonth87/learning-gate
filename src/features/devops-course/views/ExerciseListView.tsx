@@ -21,6 +21,8 @@ const KIND_SHORT: Record<string, string> = {
   dockerfile: 'Dockerfile',
   dockerignore: '.dockerignore',
   cli: 'CLI',
+  'redis-cli': 'Redis CLI',
+  'redis-conf': 'redis.conf',
   troubleshoot: 'Debug',
 };
 
@@ -43,8 +45,10 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
   const activeCls =
     accent === 'cyan'
       ? 'border-cyan-500 bg-cyan-500/15 text-cyan-300'
-      : 'border-sky-500 bg-sky-500/15 text-sky-300';
-  const codeTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
+      : accent === 'rose'
+        ? 'border-rose-500 bg-rose-500/15 text-rose-300'
+        : 'border-sky-500 bg-sky-500/15 text-sky-300';
+  const codeTone = accent === 'cyan' ? 'text-cyan-400' : accent === 'rose' ? 'text-rose-400' : 'text-sky-400';
 
   return (
     <div className="mx-auto max-w-6xl p-4 sm:p-6">

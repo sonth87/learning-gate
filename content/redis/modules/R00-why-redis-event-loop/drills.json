@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R00-D1",
+    "title": "Khám nhanh sức khoẻ kết nối, thông số máy chủ và bộ nhớ Redis 8",
+    "code": "PING\nINFO server\nINFO memory"
+  },
+  {
+    "id": "R00-D2",
+    "title": "Hạ ngưỡng Slowlog xuống 5ms trên nóng và kiểm tra 10 lệnh chậm nhất",
+    "code": "CONFIG GET slowlog-log-slower-than\nCONFIG SET slowlog-log-slower-than 5000\nSLOWLOG GET 10"
+  },
+  {
+    "id": "R00-D3",
+    "title": "Khởi chạy Redis 8 Alpine kèm Volume bền vững bằng Docker CLI",
+    "code": "docker run -d --name cache-local -p 6379:6379 -v redis-data:/data redis:8-alpine\ndocker ps"
+  }
+]

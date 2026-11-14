@@ -1,0 +1,294 @@
+[
+  {
+    "id": "redis-ex-r09-1",
+    "code": "R09.1",
+    "module": "R09",
+    "title": "Nạp Cache-Aside nguyên tử kèm TTL chống Zombie Key",
+    "difficulty": 1,
+    "tags": [
+      "cache-aside",
+      "set-ex",
+      "ttl"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "cache-aside-populate.redis",
+    "prompt": "Luồng đọc API sản phẩm `id=108` vừa kiểm tra Redis bị **Cache Miss** và đã lấy được bản ghi từ PostgreSQL: `'{\"id\":108,\"name\":\"Keychron Q1\",\"price\":4290000}'`.\n\nĐoạn kịch bản khởi đầu bên dưới đang mắc lỗi kinh điển: gọi `SET` không kèm thời hạn sống khiến khoá trở thành **Zombie Key** tồn tại vĩnh viễn!\n\n- **Nhiệm vụ:**\n  1. Sửa lệnh `SET` cho khoá `cache:product:108` chứa đúng chuỗi JSON `'{\"id\":108,\"name\":\"Keychron Q1\",\"price\":4290000}'` và gắn nguyên tử cờ hết hạn **`EX 600`** (`10 phút`).\n  2. Gọi `GET cache:product:108` và `TTL cache:product:108` để xác nhận dữ liệu cùng thời gian sống.",
+    "starter": "# LỖI: SET thiếu cờ EX khiến khoá sống vĩnh viễn (TTL = -1)\nSET cache:product:108 '{\"id\":108,\"name\":\"Keychron Q1\",\"price\":4290000}'\n",
+    "solution": "SET cache:product:108 '{\"id\":108,\"name\":\"Keychron Q1\",\"price\":4290000}' EX 600\nGET cache:product:108\nTTL cache:product:108\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "product-cached-json",
+          "doc": "Khoá cache:product:108 lưu đúng chuỗi JSON của sản phẩm 108",
+          "target": "string-value",
+          "key": "cache:product:108",
+          "match": {
+            "contains": "4290000"
+          }
+        },
+        {
+          "id": "product-ttl-600",
+          "doc": "Khoá cache:product:108 có TTL nguyên tử 600 giây (không để persistent -1)",
+          "target": "ttl",
+          "key": "cache:product:108",
+          "minSeconds": 595,
+          "maxSeconds": 600
+        }
+      ]
+    },
+    "hints": [
+      "Thêm cờ `EX 600` vào ngay cuối câu lệnh `SET cache:product:108 '...' EX 600`.",
+      "Đừng tách thành hai lệnh rời ngoài thực tế để tránh tiến trình sập giữa chừng làm mất bước đặt TTL."
+    ],
+    "ref": "caching/cache-aside-singleflight-jitter.ts",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r09-2",
+    "code": "R09.2",
+    "module": "R09",
+    "title": "Làm mất hiệu lực Cache bất đồng bộ bằng UNLINK sau khi ghi DB",
+    "difficulty": 2,
+    "tags": [
+      "invalidation",
+      "unlink",
+      "del-blocking"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "async-invalidation.redis",
+    "prompt": "Người dùng `501` vừa đổi địa chỉ giao hàng mặc định và PostgreSQL đã `COMMIT` thành công. Hiện tại trên Redis vẫn đang giữ bản chụp hồ sơ cũ ở hai khoá `cache:user:501:profile` và `cache:user:501:addresses`.\n\n- **Quy tắc vận hành:** Tuyệt đối **KHÔNG dùng lệnh `DEL`** (vì giải phóng bộ nhớ đồng bộ trên luồng chính dễ gây khựng Event Loop khi payload lớn).\n- **Nhiệm vụ:** Sử dụng lệnh **`UNLINK`** để dọn dẹp bất đồng bộ cả hai khoá `cache:user:501:profile` và `cache:user:501:addresses`, sau đó gọi `EXISTS cache:user:501:profile cache:user:501:addresses` kiểm tra.",
+    "starter": "# Kiểm tra dữ liệu cũ đang tồn tại trên Redis\nGET cache:user:501:profile\n# Hãy dùng UNLINK (không dùng DEL) để xoá cả 2 khoá cache của user 501\n",
+    "solution": "UNLINK cache:user:501:profile cache:user:501:addresses\nEXISTS cache:user:501:profile cache:user:501:addresses\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "cache:user:501:profile",
+            "type": "string",
+            "value": "{\"id\":501,\"city\":\"Old City\"}",
+            "ttlMs": 500000
+          },
+          {
+            "key": "cache:user:501:addresses",
+            "type": "list",
+            "value": [
+              "12 Nguyen Hue, Q1",
+              "88 Le Loi, Q1"
+            ],
+            "ttlMs": 500000
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "profile-removed",
+          "doc": "Khoá cache:user:501:profile đã được dọn khỏi không gian khoá",
+          "target": "key-exists",
+          "key": "cache:user:501:profile",
+          "exists": false
+        },
+        {
+          "id": "addresses-removed",
+          "doc": "Khoá cache:user:501:addresses đã được dọn khỏi không gian khoá",
+          "target": "key-exists",
+          "key": "cache:user:501:addresses",
+          "exists": false
+        },
+        {
+          "id": "used-unlink-not-del",
+          "doc": "Sử dụng lệnh UNLINK bất đồng bộ và KHÔNG dùng lệnh DEL đồng bộ",
+          "target": "command-used",
+          "mustUseRegex": "^UNLINK\\b",
+          "forbidRegex": "^DEL\\b"
+        }
+      ]
+    },
+    "hints": [
+      "`UNLINK` nhận nhiều tên khoá cùng lúc giống hệt `DEL`: `UNLINK cache:user:501:profile cache:user:501:addresses`.",
+      "Đảm bảo trong kịch bản không có dòng lệnh nào bắt đầu bằng `DEL`."
+    ],
+    "ref": "caching/cache-aside-singleflight-jitter.ts",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r09-3",
+    "code": "R09.3",
+    "module": "R09",
+    "title": "Xoay vòng Versioned Cache Key khi phát hành Schema v4",
+    "difficulty": 2,
+    "tags": [
+      "versioned-key",
+      "zero-downtime",
+      "incr"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "versioned-cache.redis",
+    "prompt": "Đội Backend vừa triển khai bản phát hành mới thay đổi định dạng danh sách sản phẩm nổi bật trang chủ. Hiện tại con trỏ phiên bản `meta:catalog:ver` đang ở mức **`3`** và khoá cũ là `cache:catalog:v3:featured`.\n\n- **Nhiệm vụ:**\n  1. Tăng nguyên tử bộ đếm phiên bản `meta:catalog:ver` lên **`4`** bằng lệnh `INCR`.\n  2. Nạp danh sách phiên bản mới vào khoá `cache:catalog:v4:featured` với giá trị `'[\"sku-101\",\"sku-205\",\"sku-309\"]'` và thời hạn sống **`EX 900`**.\n  3. Dọn khoá phiên bản cũ `cache:catalog:v3:featured` bằng `UNLINK`.",
+    "starter": "# Kiểm tra phiên bản danh mục hiện tại\nGET meta:catalog:ver\n# 1. Tăng meta:catalog:ver lên 4\n# 2. SET cache:catalog:v4:featured kèm EX 900\n# 3. UNLINK cache:catalog:v3:featured\n",
+    "solution": "INCR meta:catalog:ver\nSET cache:catalog:v4:featured '[\"sku-101\",\"sku-205\",\"sku-309\"]' EX 900\nUNLINK cache:catalog:v3:featured\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "meta:catalog:ver",
+            "type": "string",
+            "value": "3"
+          },
+          {
+            "key": "cache:catalog:v3:featured",
+            "type": "string",
+            "value": "[101,205]",
+            "ttlMs": 300000
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "ver-bumped-to-4",
+          "doc": "Con trỏ phiên bản meta:catalog:ver đạt giá trị 4",
+          "target": "string-value",
+          "key": "meta:catalog:ver",
+          "match": {
+            "eq": 4
+          }
+        },
+        {
+          "id": "v4-key-populated",
+          "doc": "Khoá mới cache:catalog:v4:featured chứa danh sách SKU mới",
+          "target": "string-value",
+          "key": "cache:catalog:v4:featured",
+          "match": {
+            "contains": "sku-309"
+          }
+        },
+        {
+          "id": "v4-key-ttl",
+          "doc": "Khoá cache:catalog:v4:featured có TTL 900 giây",
+          "target": "ttl",
+          "key": "cache:catalog:v4:featured",
+          "minSeconds": 890,
+          "maxSeconds": 900
+        },
+        {
+          "id": "v3-key-cleaned",
+          "doc": "Khoá cũ cache:catalog:v3:featured đã được dọn dẹp",
+          "target": "key-exists",
+          "key": "cache:catalog:v3:featured",
+          "exists": false
+        }
+      ]
+    },
+    "hints": [
+      "Dùng `INCR meta:catalog:ver` để nâng con trỏ từ `3` lên `4`.",
+      "Ghi khoá mới bằng `SET cache:catalog:v4:featured '[\"sku-101\",\"sku-205\",\"sku-309\"]' EX 900` rồi gọi `UNLINK cache:catalog:v3:featured`."
+    ],
+    "ref": "",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r09-4",
+    "code": "R09.4",
+    "module": "R09",
+    "title": "Mô phỏng Write-Through nguyên tử với MULTI / EXEC trên Hash",
+    "difficulty": 2,
+    "tags": [
+      "write-through",
+      "multi-exec",
+      "hash"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "write-through-wallet.redis",
+    "prompt": "Dịch vụ Ví thành viên áp dụng mô hình **Write-Through** cho trang tổng quan tài khoản (tần suất đọc cực cao ngay sau khi nạp tiền). Sau khi giao dịch nạp điểm vào DB hoàn tất, tầng Write-Through cần ghi đồng bộ Hash `wallet:summary:u900` kèm đặt lại TTL trong **cùng một khối nguyên tử `MULTI` / `EXEC`**.\n\n- **Nhiệm vụ:** Mở giao dịch `MULTI` .. `EXEC` thực hiện tuần tự:\n  1. `HSET wallet:summary:u900 balance 1500000 tier gold updated_at 1700000500`\n  2. `EXPIRE wallet:summary:u900 1800` (`30 phút`).",
+    "starter": "# Đang thiếu giao dịch MULTI/EXEC và chưa đặt TTL cho Hash\nHSET wallet:summary:u900 balance 500000 tier silver\n",
+    "solution": "MULTI\nHSET wallet:summary:u900 balance 1500000 tier gold updated_at 1700000500\nEXPIRE wallet:summary:u900 1800\nEXEC\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "wallet-hash-fields",
+          "doc": "Hash wallet:summary:u900 lưu chuẩn balance=1500000, tier=gold, updated_at=1700000500",
+          "target": "hash-fields",
+          "key": "wallet:summary:u900",
+          "expected": {
+            "balance": 1500000,
+            "tier": "gold",
+            "updated_at": 1700000500
+          }
+        },
+        {
+          "id": "wallet-ttl-1800",
+          "doc": "Hash wallet:summary:u900 được gắn TTL 1800 giây",
+          "target": "ttl",
+          "key": "wallet:summary:u900",
+          "minSeconds": 1790,
+          "maxSeconds": 1800
+        },
+        {
+          "id": "used-multi-exec",
+          "doc": "Bọc HSET và EXPIRE bên trong giao dịch MULTI ... EXEC",
+          "target": "command-used",
+          "mustUseRegex": "^MULTI\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Khác với `SET`, lệnh `HSET` không có cờ `EX` trực tiếp cho toàn Hash, nên bọc `HSET` + `EXPIRE` trong `MULTI` ... `EXEC` là thói quen chuẩn mực để không lọt Zombie Hash.",
+      "Đừng quên kết thúc khối bằng lệnh `EXEC` ở dòng cuối!"
+    ],
+    "ref": "caching/python-logical-expire-swr.py",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r09-5",
+    "code": "R09.5",
+    "module": "R09",
+    "title": "Negative Caching ngắn hạn chặn truy vấn mã giảm giá không tồn tại",
+    "difficulty": 2,
+    "tags": [
+      "negative-cache",
+      "short-ttl",
+      "sentinel-null"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "negative-cache-coupon.redis",
+    "prompt": "Hệ thống phát hiện hàng ngàn request mỗi phút thử áp mã giảm giá `GHOST2026` (chưa hề có trong bảng `coupons` của PostgreSQL). Vì truy vấn DB trả về `null`, code ngây thơ không lưu gì vào Redis khiến mọi request tiếp theo lại chọc thẳng xuống PostgreSQL!\n\nBản nháp bên dưới đang đặt nhầm TTL của Negative Cache lên tận `86400` giây (`24 giờ`) — nếu chiều nay Marketing tạo thật mã `GHOST2026` thì khách hàng sẽ bị từ chối oan suốt cả ngày!\n\n- **Nhiệm vụ:** Lưu giá trị đánh dấu rỗng `\"__NULL__\"` vào khoá `cache:coupon:GHOST2026` với thời hạn sống ngắn hạn trong khoảng **`30` đến `60` giây** (ví dụ `EX 45`).",
+    "starter": "# BẪY: Đặt TTL 24 giờ cho Negative Cache làm khoá cứng mã mới tạo!\nSET cache:coupon:GHOST2026 \"__NULL__\" EX 86400\n",
+    "solution": "SET cache:coupon:GHOST2026 \"__NULL__\" EX 45\nGET cache:coupon:GHOST2026\nTTL cache:coupon:GHOST2026\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "sentinel-null-stored",
+          "doc": "Khoá cache:coupon:GHOST2026 lưu giá trị đánh dấu __NULL__",
+          "target": "string-value",
+          "key": "cache:coupon:GHOST2026",
+          "match": {
+            "eq": "__NULL__"
+          }
+        },
+        {
+          "id": "short-negative-ttl",
+          "doc": "TTL của Negative Cache được giới hạn ngắn từ 30 đến 60 giây",
+          "target": "ttl",
+          "key": "cache:coupon:GHOST2026",
+          "minSeconds": 30,
+          "maxSeconds": 60
+        }
+      ]
+    },
+    "hints": [
+      "Hạ giá trị `EX 86400` xuống `EX 45` (nằm gọn trong ngưỡng an toàn 30–60 giây).",
+      "Giá trị chuỗi phải khớp chính xác `\"__NULL__\"` để tầng ứng dụng phân biệt được với Cache Miss (`nil`)."
+    ],
+    "ref": "caching/cache-aside-singleflight-jitter.ts",
+    "webGrade": true
+  }
+]

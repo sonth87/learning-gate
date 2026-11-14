@@ -1,0 +1,285 @@
+[
+  {
+    "id": "redis-ex-r10-1",
+    "code": "R10.1",
+    "module": "R10",
+    "title": "Chặn Cache Stampede bằng khoá Mutex nguyên tử SET NX PX",
+    "difficulty": 2,
+    "tags": [
+      "stampede",
+      "mutex-lock",
+      "set-nx-px"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "stampede-mutex-rebuild.redis",
+    "prompt": "Khoá siêu nóng `cache:flashsale:99` vừa hết hạn đúng giờ cao điểm. Để ngăn 50 Pod API cùng lúc mở 50 kết nối truy vấn PostgreSQL, Pod `worker-01` phải chiếm khoá Mutex dựng lại cache trước khi đọc DB.\n\n- **Nhiệm vụ:**\n  1. Chiếm khoá xây dựng lại bằng lệnh nguyên tử `SET lock:rebuild:flashsale:99 \"worker-01\" NX PX 3000` (chỉ tạo nếu chưa ai giữ `NX`, tự giải phóng sau `3000ms` nếu Pod bị treo).\n  2. Giả lập Pod thứ hai `worker-02` đến muộn thử chiếm cùng khoá `SET lock:rebuild:flashsale:99 \"worker-02\" NX PX 3000` (Redis sẽ trả về `(nil)` và giữ nguyên chủ sở hữu là `worker-01`).\n  3. Nạp lại dữ liệu mới cho khoá `cache:flashsale:99` với giá trị `'{\"id\":99,\"stock\":500}'` kèm **`EX 300`**.",
+    "starter": "# BẪY: SET không có NX và PX sẽ ghi đè lẫn nhau và kẹt khoá vĩnh viễn nếu Pod sập!\nSET lock:rebuild:flashsale:99 \"worker-01\"\n",
+    "solution": "SET lock:rebuild:flashsale:99 \"worker-01\" NX PX 3000\nSET lock:rebuild:flashsale:99 \"worker-02\" NX PX 3000\nSET cache:flashsale:99 '{\"id\":99,\"stock\":500}' EX 300\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "mutex-owned-by-worker01",
+          "doc": "Khoá lock:rebuild:flashsale:99 vẫn thuộc về worker-01 (không bị worker-02 ghi đè nhờ cờ NX)",
+          "target": "string-value",
+          "key": "lock:rebuild:flashsale:99",
+          "match": {
+            "eq": "worker-01"
+          }
+        },
+        {
+          "id": "mutex-has-short-px",
+          "doc": "Khoá Mutex có thời gian tự huỷ an toàn <= 5 giây",
+          "target": "ttl",
+          "key": "lock:rebuild:flashsale:99",
+          "minSeconds": 1,
+          "maxSeconds": 5
+        },
+        {
+          "id": "flashsale-cache-rebuilt",
+          "doc": "Khoá cache:flashsale:99 đã được nạp lại JSON kèm TTL 300s",
+          "target": "ttl",
+          "key": "cache:flashsale:99",
+          "minSeconds": 290,
+          "maxSeconds": 300
+        },
+        {
+          "id": "used-nx-px",
+          "doc": "Sử dụng đúng cờ nguyên tử NX và PX trên lệnh SET",
+          "target": "command-used",
+          "mustUseRegex": "^SET\\s+lock:rebuild:flashsale:99\\s+.*\\bNX\\b.*\\bPX\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Cú pháp chuẩn: `SET lock:rebuild:flashsale:99 \"worker-01\" NX PX 3000`.",
+      "Khi `worker-02` chạy lệnh tương tự với cờ `NX`, lệnh sẽ trả về `(nil)` chứng minh cơ chế loại trừ tương hỗ hoạt động chính xác."
+    ],
+    "ref": "caching/cache-aside-singleflight-jitter.ts",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r10-2",
+    "code": "R10.2",
+    "module": "R10",
+    "title": "Dựng lá chắn Bloom Filter chống tấn công Cache Penetration",
+    "difficulty": 2,
+    "tags": [
+      "bloom-filter",
+      "penetration",
+      "probabilistic"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "bloom-penetration-shield.redis",
+    "prompt": "Botnet đang quét hàng loạt mã sản phẩm ảo kiểu `sku-hacker-999` xuyên thẳng qua Cache xuống PostgreSQL. Hãy khởi tạo bộ lọc **Bloom Filter** trên Redis để chặn đứng các mã không tồn tại ngay tại biên!\n\n- **Nhiệm vụ:**\n  1. Cấp phát bộ lọc `bf:valid_skus` với tỷ lệ dương tính giả **`0.01`** (`1%`) và sức chứa **`10000`** phần tử bằng lệnh `BF.RESERVE`.\n  2. Nạp danh sách 3 mã sản phẩm thật `sku-101`, `sku-102`, `sku-103` vào `bf:valid_skus` (dùng `BF.MADD` hoặc `BF.ADD`).\n  3. Kiểm tra bằng `BF.EXISTS bf:valid_skus sku-101` (trả `1`) và `BF.EXISTS bf:valid_skus sku-hacker-999` (trả `0` — chặn ngay!).",
+    "starter": "# Khởi tạo Bloom Filter bf:valid_skus (error_rate=0.01, capacity=10000)\n# Nạp sku-101, sku-102, sku-103 và kiểm tra BF.EXISTS\nPING\n",
+    "solution": "BF.RESERVE bf:valid_skus 0.01 10000\nBF.MADD bf:valid_skus sku-101 sku-102 sku-103\nBF.EXISTS bf:valid_skus sku-101\nBF.EXISTS bf:valid_skus sku-hacker-999\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "bf-key-created",
+          "doc": "Khoá bf:valid_skus tồn tại đúng kiểu dữ liệu xác suất bloom",
+          "target": "key-exists",
+          "key": "bf:valid_skus",
+          "exists": true,
+          "expectedType": "bloom"
+        },
+        {
+          "id": "bf-reserved-and-checked",
+          "doc": "Đã sử dụng BF.RESERVE và kiểm tra bằng BF.EXISTS",
+          "target": "command-used",
+          "mustUseRegex": "BF\\.RESERVE[\\s\\S]*BF\\.EXISTS"
+        },
+        {
+          "id": "stdout-shows-valid-and-blocked",
+          "doc": "Kết quả kiểm tra trả về (integer) 1 cho mã thật và (integer) 0 cho mã giả",
+          "target": "stdout-contains",
+          "contains": "(integer) 0"
+        }
+      ]
+    },
+    "hints": [
+      "Thứ tự tham số của `BF.RESERVE` là: `BF.RESERVE <key> <error_rate> <capacity>`, tức `BF.RESERVE bf:valid_skus 0.01 10000`.",
+      "Dùng `BF.MADD bf:valid_skus sku-101 sku-102 sku-103` để nạp gọn cả 3 mã trong 1 lệnh."
+    ],
+    "ref": "caching/bloom-shield-penetration-guard.ts",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r10-3",
+    "code": "R10.3",
+    "module": "R10",
+    "title": "Rải ngẫu nhiên TTL Jitter chống Cache Avalanche khi nạp lô",
+    "difficulty": 2,
+    "tags": [
+      "avalanche",
+      "ttl-jitter",
+      "batch-warm"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "ttl-jitter-batch.redis",
+    "prompt": "Tác vụ làm nóng cache (*Cache Warming*) lúc nửa đêm nạp 3 khối giao diện trang chủ: `cache:banner:top`, `cache:banner:mid` và `cache:banner:bot`. Kịch bản hiện tại đang đặt cứng `EX 300` cho cả 3 khoá khiến chúng sẽ **chết đồng loạt tại cùng một tích tắc**!\n\n- **Nhiệm vụ:** Áp dụng kỹ thuật **TTL Jitter** (cộng độ lệch phân tán trên nền `300s`) sao cho 3 khoá hết hạn lệch pha nhau theo 3 khung riêng biệt:\n  1. `cache:banner:top` có TTL trong khoảng **`305` – `320` giây** (ví dụ `EX 312`).\n  2. `cache:banner:mid` có TTL trong khoảng **`321` – `340` giây** (ví dụ `EX 331`).\n  3. `cache:banner:bot` có TTL trong khoảng **`341` – `360` giây** (ví dụ `EX 354`).",
+    "starter": "# BẪY AVALANCHE: Cả 3 khoá cùng hết hạn đúng giây thứ 300!\nSET cache:banner:top '{\"slot\":\"top\"}' EX 300\nSET cache:banner:mid '{\"slot\":\"mid\"}' EX 300\nSET cache:banner:bot '{\"slot\":\"bot\"}' EX 300\n",
+    "solution": "SET cache:banner:top '{\"slot\":\"top\"}' EX 312\nSET cache:banner:mid '{\"slot\":\"mid\"}' EX 331\nSET cache:banner:bot '{\"slot\":\"bot\"}' EX 354\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "jitter-top",
+          "doc": "Khoá cache:banner:top được dịch TTL vào khung 305..320 giây",
+          "target": "ttl",
+          "key": "cache:banner:top",
+          "minSeconds": 305,
+          "maxSeconds": 320
+        },
+        {
+          "id": "jitter-mid",
+          "doc": "Khoá cache:banner:mid được dịch TTL vào khung 321..340 giây",
+          "target": "ttl",
+          "key": "cache:banner:mid",
+          "minSeconds": 321,
+          "maxSeconds": 340
+        },
+        {
+          "id": "jitter-bot",
+          "doc": "Khoá cache:banner:bot được dịch TTL vào khung 341..360 giây",
+          "target": "ttl",
+          "key": "cache:banner:bot",
+          "minSeconds": 341,
+          "maxSeconds": 360
+        }
+      ]
+    },
+    "hints": [
+      "Chỉ cần sửa tham số sau cờ `EX` của 3 dòng `SET` lần lượt thành ví dụ `312`, `331`, và `354`.",
+      "Trong code ứng dụng thực tế, bạn sinh độ lệch này tự động bằng `300 + Math.floor(Math.random() * 60)`."
+    ],
+    "ref": "caching/cache-aside-singleflight-jitter.ts",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r10-4",
+    "code": "R10.4",
+    "module": "R10",
+    "title": "Thiết kế Logical Expiration (SWR) trên Hash cho Hot Key trang chủ",
+    "difficulty": 2,
+    "tags": [
+      "logical-expiration",
+      "swr",
+      "hotkey"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "logical-expire-hotkey.redis",
+    "prompt": "Để đảm bảo cấu hình trang chủ `hot:hero:home` **không bao giờ rơi vào trạng thái trống rỗng** giữa đêm Mega Sale, đội kiến trúc áp dụng mẫu **Logical Expiration (Stale-While-Revalidate)**.\n\n- **Nhiệm vụ:**\n  1. Dùng `HSET` lưu vào khoá `hot:hero:home` hai trường: `payload` mang giá trị `'{\"campaign\":\"MegaSale11.11\"}'` và `logical_exp` mang mốc Unix giây **`1700000300`** (`5 phút` tới).\n  2. Đặt TTL vật lý dự phòng dài gấp 12 lần bằng `EXPIRE hot:hero:home 3600` (`1 giờ`) để ngay cả khi quá mốc `logical_exp`, luồng đọc vẫn có sẵn dữ liệu trả tức thời trong lúc chờ nền làm mới.",
+    "starter": "# Hãy lưu Hash hot:hero:home gồm trường payload và logical_exp=1700000300\n# Sau đó đặt TTL vật lý dự phòng 3600 giây\nHSET hot:hero:home payload '{\"campaign\":\"Draft\"}'\n",
+    "solution": "HSET hot:hero:home payload '{\"campaign\":\"MegaSale11.11\"}' logical_exp 1700000300\nEXPIRE hot:hero:home 3600\nHGETALL hot:hero:home\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "hero-hash-fields",
+          "doc": "Hash hot:hero:home chứa đúng payload MegaSale11.11 và mốc logical_exp=1700000300",
+          "target": "hash-fields",
+          "key": "hot:hero:home",
+          "expected": {
+            "payload": "{\"campaign\":\"MegaSale11.11\"}",
+            "logical_exp": 1700000300
+          }
+        },
+        {
+          "id": "hero-physical-ttl",
+          "doc": "TTL vật lý dự phòng đạt 3600 giây (dài hơn nhiều so với hạn logic 300s)",
+          "target": "ttl",
+          "key": "hot:hero:home",
+          "minSeconds": 3590,
+          "maxSeconds": 3600
+        }
+      ]
+    },
+    "hints": [
+      "Gõ `HSET hot:hero:home payload '{\"campaign\":\"MegaSale11.11\"}' logical_exp 1700000300`.",
+      "Tiếp theo gõ `EXPIRE hot:hero:home 3600` để thiết lập lưới an toàn bộ nhớ."
+    ],
+    "ref": "caching/python-logical-expire-swr.py",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r10-5",
+    "code": "R10.5",
+    "module": "R10",
+    "title": "Ca trực #1 — Khám bệnh và dập bão Cache Stampede cho khoá iPhone 16",
+    "difficulty": 3,
+    "tags": [
+      "troubleshoot",
+      "stampede",
+      "jitter"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis",
+    "filename": "emergency-stampede-patch.redis",
+    "prompt": "Cảnh báo PagerDuty réo vang: CPU của PostgreSQL vừa vọt lên `98%` do khoá siêu nóng `cache:flash:iphone16` đột ngột biến mất khỏi Redis!\n\nHãy thực hiện đúng **2 bước ứng cứu SRE**:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy lệnh `redis-cli TTL cache:flash:iphone16` trên ô **Terminal Chẩn đoán** để xác minh trạng thái khoá (sẽ trả về `-2`, tức khoá đã biến mất hoàn toàn).\n- **Bước 2 (Kịch bản vá nóng bên dưới):**\n  1. Chiếm khoá bảo vệ `SET lock:rebuild:flash:iphone16 \"sre-oncall\" NX PX 3000`.\n  2. Nạp lại khoá `cache:flash:iphone16` với giá trị `'{\"sku\":\"ip16pro\",\"price\":28990000}'` kèm **TTL Jitter** nằm trong khoảng **`315` đến `360` giây** (không dùng số tròn `300`!).",
+    "starter": "# Bước 1: Gõ `redis-cli TTL cache:flash:iphone16` vào Terminal Chẩn đoán phía trên trước!\n# Bước 2: Chiếm lock:rebuild:flash:iphone16 (NX PX 3000) và nạp lại cache:flash:iphone16 kèm TTL 315..360s\nGET cache:flash:iphone16\n",
+    "solution": "SET lock:rebuild:flash:iphone16 \"sre-oncall\" NX PX 3000\nSET cache:flash:iphone16 '{\"sku\":\"ip16pro\",\"price\":28990000}' EX 337\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-cli",
+      "diagnosticSampleCommands": [
+        "redis-cli TTL cache:flash:iphone16"
+      ],
+      "initialState": {
+        "redis": {
+          "maxMemoryBytes": 2147483648,
+          "config": {
+            "maxmemory-policy": "allkeys-lfu"
+          },
+          "initialKeys": []
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-missing-ttl",
+          "doc": "Đã kiểm tra TTL cache:flash:iphone16 trên Terminal Chẩn đoán (xác nhận mã -2)",
+          "target": "stdout-inspected",
+          "contains": "-2"
+        }
+      ],
+      "redisCliRules": [
+        {
+          "id": "rebuild-lock-held",
+          "doc": "Đã tạo khoá Mutex lock:rebuild:flash:iphone16 với NX PX",
+          "target": "key-exists",
+          "key": "lock:rebuild:flash:iphone16",
+          "exists": true
+        },
+        {
+          "id": "iphone-cache-restored",
+          "doc": "Khoá cache:flash:iphone16 đã được khôi phục dữ liệu JSON",
+          "target": "string-value",
+          "key": "cache:flash:iphone16",
+          "match": {
+            "contains": "28990000"
+          }
+        },
+        {
+          "id": "iphone-jittered-ttl",
+          "doc": "Khoá cache:flash:iphone16 sử dụng TTL Jitter trong khoảng 315..360 giây",
+          "target": "ttl",
+          "key": "cache:flash:iphone16",
+          "minSeconds": 315,
+          "maxSeconds": 360
+        }
+      ]
+    },
+    "hints": [
+      "Gõ `redis-cli TTL cache:flash:iphone16` ở khung Terminal Chẩn đoán phía trên trước để hệ thống ghi nhận bước khám bệnh (ra kết quả `(integer) -2`).",
+      "Trong khung soạn thảo bên dưới, gõ `SET lock:rebuild:flash:iphone16 \"sre-oncall\" NX PX 3000` và `SET cache:flash:iphone16 '{\"sku\":\"ip16pro\",\"price\":28990000}' EX 337`."
+    ],
+    "ref": "caching/bad-stampede-naive-cache.ts",
+    "webGrade": true
+  }
+]

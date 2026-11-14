@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { switchLearningApp } from '@/apps/appRegistry';
-import { KubeMasteryLogo } from '@/components/common/AppLogos';
+import { KubeMasteryLogo, RedisMasteryLogo } from '@/components/common/AppLogos';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { courseModuleDone } from '@/features/devops-course/logic';
@@ -238,6 +238,16 @@ export const KubeHeader: React.FC = () => {
 
           {/* Right Action Cluster */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => switchLearningApp('redismastery')}
+              title="Mở ứng dụng Redis Mastery"
+              className="inline-flex h-11 w-11 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-rose-500/35 bg-rose-500/10 sm:px-2 text-[11px] font-semibold text-rose-300 hover:bg-rose-500/20 transition-colors cursor-pointer"
+            >
+              <RedisMasteryLogo className="h-3.5 w-3.5 shrink-0 rounded-xs" />
+              <span className="hidden md:inline">Redis</span>
+            </button>
+
             <button
               type="button"
               onClick={() => switchLearningApp('cicdmastery')}

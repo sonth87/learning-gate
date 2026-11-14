@@ -32,11 +32,18 @@ export type {
   WpView,
 };
 
-export type DevOpsCourseId = 'kube' | 'cicd';
-export type DevOpsAccent = 'sky' | 'cyan' | 'amber';
+export type DevOpsCourseId = 'kube' | 'cicd' | 'redis';
+export type DevOpsAccent = 'sky' | 'cyan' | 'amber' | 'rose' | 'emerald';
 
-export type ExerciseKind = 'yaml' | 'dockerfile' | 'dockerignore' | 'cli' | 'troubleshoot';
-export type EditorLanguage = 'yaml' | 'dockerfile' | 'shell';
+export type ExerciseKind =
+  | 'yaml'
+  | 'dockerfile'
+  | 'dockerignore'
+  | 'cli'
+  | 'redis-cli'
+  | 'redis-conf'
+  | 'troubleshoot';
+export type EditorLanguage = 'yaml' | 'dockerfile' | 'shell' | 'redis' | 'redis-conf';
 
 /** Liên kết nối từ một module sang công cụ có sẵn của app (Simulator, War Room, Flow Studio...) hoặc sang app kia */
 export interface RelatedToolLink {
@@ -301,7 +308,177 @@ export interface SimWorldState {
     files: Record<string, string>;
     staged: string[];
   };
+  redis?: SimRedisWorld;
 }
+
+export interface SimRedisInitialKey {
+  key: string;
+  type: 'string' | 'hash' | 'list' | 'set' | 'zset' | 'hll' | 'bloom' | 'bitmap' | 'geo' | 'stream';
+  value: unknown;
+  ttlMs?: number;
+  freq?: number;
+  idleSec?: number;
+}
+
+export interface SimRedisWorld {
+  config?: Record<string, string>;
+  initialKeys?: SimRedisInitialKey[];
+  aclUsers?: {
+    username: string;
+    enabled: boolean;
+    passwords: string[];
+    keyPatterns: string[];
+    allowedCategories: string[];
+    deniedCategories: string[];
+    allowedCommands?: string[];
+    deniedCommands?: string[];
+  }[];
+  slowlog?: { id: number; durationMicros: number; cmd: string }[];
+  clusterRole?: 'master' | 'replica';
+  clusterSlotsAssigned?: number;
+  replicationOffset?: number;
+  usedMemoryBytes?: number;
+  maxMemoryBytes?: number;
+}
+
+export type RedisCliCheckRule =
+  | {
+      id: string;
+      doc: string;
+      target: 'key-exists';
+      key: string;
+      exists: boolean;
+      expectedType?: 'string' | 'hash' | 'list' | 'set' | 'zset' | 'hll' | 'bloom' | 'bitmap' | 'geo' | 'stream';
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'string-value';
+      key: string;
+      match: ValueMatcher;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'ttl';
+      key: string;
+      minSeconds?: number;
+      maxSeconds?: number;
+      persistent?: boolean;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'hash-fields';
+      key: string;
+      expected: Record<string, string | number>;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'list-items';
+      key: string;
+      expected?: string[];
+      lengthEq?: number;
+      contains?: string;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'set-members';
+      key: string;
+      expectedMembers?: string[];
+      contains?: string;
+      cardinalityEq?: number;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'zset-ranking';
+      key: string;
+      topDesc?: string[];
+      memberScore?: { member: string; score: number };
+      cardinalityEq?: number;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'stream-state';
+      key: string;
+      minLength?: number;
+      hasGroup?: string;
+      maxPelCount?: { group: string; max: number };
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'config-param';
+      param: string;
+      expected: string;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'acl-user';
+      username: string;
+      enabled?: boolean;
+      hasKeyPattern?: string;
+      deniesDangerous?: boolean;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'command-used';
+      mustUseRegex?: string;
+      forbidRegex?: string;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'stdout-contains';
+      contains: string;
+    }
+  | {
+      id: string;
+      doc: string;
+      target: 'same-hash-slot';
+      keys: string[];
+    };
+
+export type RedisConfCheckRule =
+  | {
+      id: string;
+      doc: string;
+      kind: 'directive';
+      directive: string;
+      match: ValueMatcher;
+    }
+  | {
+      id: string;
+      doc: string;
+      kind: 'memory-bytes';
+      directive: string;
+      minBytes?: number;
+      maxBytes?: number;
+      eqBytes?: number;
+    }
+  | {
+      id: string;
+      doc: string;
+      kind: 'acl-rule';
+      username: string;
+      enabled: boolean;
+      requirePassword?: boolean;
+      keyPattern?: string;
+      forbidCategory?: string;
+      requireCategory?: string;
+    }
+  | {
+      id: string;
+      doc: string;
+      kind: 'rename-or-disable';
+      dangerousCommand: string;
+    };
 
 export type CliStateCheckRule =
   | {
@@ -429,14 +606,25 @@ export type ExerciseSpec =
       rules: CliStateCheckRule[];
     }
   | {
+      kind: 'redis-cli';
+      initialState?: SimRedisWorld;
+      rules: RedisCliCheckRule[];
+    }
+  | {
+      kind: 'redis-conf';
+      rules: RedisConfCheckRule[];
+    }
+  | {
       kind: 'troubleshoot';
-      /** Trạng thái cụm/pipeline đang lỗi để người học gõ lệnh chẩn đoán trong khung Terminal phụ */
+      /** Trạng thái cụm/pipeline/redis đang lỗi để người học gõ lệnh chẩn đoán trong khung Terminal phụ */
       initialState: SimWorldState;
-      /** Bản vá cấu hình người học sửa trong editor là YAML, Dockerfile hay lệnh CLI */
-      patchFormat: 'yaml' | 'dockerfile' | 'cli';
+      /** Bản vá cấu hình người học sửa trong editor */
+      patchFormat: 'yaml' | 'dockerfile' | 'cli' | 'redis-cli' | 'redis-conf';
       yamlRules?: YamlCheckRule[];
       dockerfileRules?: DockerfileCheckRule[];
       cliRules?: CliStateCheckRule[];
+      redisCliRules?: RedisCliCheckRule[];
+      redisConfRules?: RedisConfCheckRule[];
       /** Bắt buộc người học đã chạy ít nhất 1 lệnh chẩn đoán khớp mẫu (không đoán mò) — nhưng khi chạy bằng course:doctor thì có diagnosticCommands mẫu */
       diagnosticSampleCommands?: string[];
     };

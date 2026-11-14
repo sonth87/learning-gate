@@ -1,0 +1,460 @@
+[
+  {
+    "id": "redis-ex-r17-1",
+    "code": "R17.1",
+    "module": "R17",
+    "title": "War-Room #1 — Truy tìm thủ phạm đóng băng CPU bằng SLOWLOG & Thay thế bằng SCAN",
+    "difficulty": 2,
+    "tags": [
+      "war-room",
+      "troubleshoot",
+      "slowlog",
+      "scan"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis",
+    "filename": "warroom-01-slowlog-scan.redis",
+    "prompt": "🚨 **Cảnh báo PagerDuty #1:** Độ trễ p99 của toàn bộ hệ thống đăng nhập vừa dựng đứng lên `190ms`, CPU luồng chính của Redis chạm mức `100%`!\n\nHãy thực hiện quy trình SRE 2 bước:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Gõ lệnh `redis-cli SLOWLOG GET 5` trên ô **Terminal Chẩn đoán** để bắt tận tay câu lệnh `O(N)` nào vừa ngốn `185.000 µs` (`185ms`) trên luồng chính.\n- **Bước 2 (Sửa kịch bản bên dưới):** Thay thế câu lệnh tội đồ đang chặn cứng Event Loop bằng con trỏ duyệt phân trang an toàn `SCAN 0 MATCH session:* COUNT 50` (tuyệt đối không còn bất kỳ lệnh `KEYS` nào!).",
+    "starter": "# Bước 1: Chạy `redis-cli SLOWLOG GET 5` trên Terminal Chẩn đoán phía trên trước!\n# Bước 2: Thay thế câu lệnh nguy hiểm dưới đây bằng SCAN không chặn luồng chính\nKEYS session:*\n",
+    "solution": "SCAN 0 MATCH session:* COUNT 50\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-cli",
+      "diagnosticSampleCommands": [
+        "redis-cli SLOWLOG GET 5"
+      ],
+      "initialState": {
+        "redis": {
+          "slowlog": [
+            {
+              "id": 41,
+              "durationMicros": 185000,
+              "cmd": "KEYS session:*"
+            },
+            {
+              "id": 40,
+              "durationMicros": 14200,
+              "cmd": "HGETALL legacy:dump"
+            }
+          ],
+          "initialKeys": [
+            {
+              "key": "session:u1001",
+              "type": "string",
+              "value": "active"
+            },
+            {
+              "key": "session:u1002",
+              "type": "string",
+              "value": "active"
+            }
+          ]
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-slowlog-culprit",
+          "doc": "Đã chạy redis-cli SLOWLOG GET 5 trên Terminal Chẩn đoán và phát hiện lệnh KEYS session:*",
+          "target": "stdout-inspected",
+          "contains": "KEYS session:*"
+        }
+      ],
+      "redisCliRules": [
+        {
+          "id": "replaced-keys-with-scan",
+          "doc": "Đã thay thế bằng lệnh SCAN phân trang và loại bỏ hoàn toàn lệnh KEYS",
+          "target": "command-used",
+          "mustUseRegex": "^SCAN\\b",
+          "forbidRegex": "^KEYS\\b"
+        },
+        {
+          "id": "scan-returned-sessions",
+          "doc": "Kết quả SCAN duyệt qua nhánh khoá session:* thành công",
+          "target": "stdout-contains",
+          "contains": "session:u1001"
+        }
+      ]
+    },
+    "hints": [
+      "Ở khung Terminal Chẩn đoán phía trên, gõ `redis-cli SLOWLOG GET 5` và nhấn chạy trước.",
+      "Ở khung kịch bản bên dưới, xoá dòng `KEYS session:*` và thay bằng `SCAN 0 MATCH session:* COUNT 50`."
+    ],
+    "ref": "ops/redis-sre-diagnostic-playbook.sh",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r17-2",
+    "code": "R17.2",
+    "module": "R17",
+    "title": "War-Room #2 — Dập gai độ trễ xoá Bigkey bằng UNLINK & Lazyfree",
+    "difficulty": 2,
+    "tags": [
+      "war-room",
+      "troubleshoot",
+      "bigkey",
+      "unlink",
+      "lazyfree"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis",
+    "filename": "warroom-02-bigkey-unlink.redis",
+    "prompt": "🚨 **Cảnh báo PagerDuty #2:** Mỗi khi tiến trình xuất báo cáo dọn dẹp khoá tập hợp lớn `temp:export:2025`, toàn bộ các dịch vụ gọi vào Redis đều bị khựng lại hàng trăm mili-giây do lệnh xoá đồng bộ!\n\nHãy thực hiện quy trình ứng cứu 2 bước:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy `redis-cli MEMORY USAGE temp:export:2025` trên ô **Terminal Chẩn đoán** để kiểm tra dung lượng bộ nhớ của khoá này.\n- **Bước 2 (Sửa kịch bản dọn dẹp bên dưới):**\n  1. Thay thế lệnh `DEL temp:export:2025` bằng lệnh thu hồi bộ nhớ bất đồng bộ `UNLINK temp:export:2025` (tuyệt đối không dùng `DEL`).\n  2. Bật luôn cơ chế giải phóng nền tự động cho khoá hết hạn và lệnh ghi đè nội bộ bằng hai lệnh `CONFIG SET lazyfree-lazy-expire yes` và `CONFIG SET lazyfree-lazy-server-del yes`.",
+    "starter": "# Bước 1: Chạy `redis-cli MEMORY USAGE temp:export:2025` ở Terminal Chẩn đoán phía trên!\n# Bước 2: Đổi sang UNLINK bất đồng bộ và bật cấu hình lazyfree động\nDEL temp:export:2025\n",
+    "solution": "UNLINK temp:export:2025\nCONFIG SET lazyfree-lazy-expire yes\nCONFIG SET lazyfree-lazy-server-del yes\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-cli",
+      "diagnosticSampleCommands": [
+        "redis-cli MEMORY USAGE temp:export:2025"
+      ],
+      "initialState": {
+        "redis": {
+          "config": {
+            "lazyfree-lazy-expire": "no",
+            "lazyfree-lazy-server-del": "no"
+          },
+          "initialKeys": [
+            {
+              "key": "temp:export:2025",
+              "type": "set",
+              "value": [
+                "row-1",
+                "row-2",
+                "row-3",
+                "row-4",
+                "row-5",
+                "row-6",
+                "row-7",
+                "row-8"
+              ]
+            }
+          ]
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-bigkey-memory",
+          "doc": "Đã đo dung lượng khoá bằng redis-cli MEMORY USAGE temp:export:2025 trên Terminal Chẩn đoán",
+          "target": "stdout-inspected",
+          "contains": "(integer)"
+        }
+      ],
+      "redisCliRules": [
+        {
+          "id": "bigkey-unlinked",
+          "doc": "Khoá temp:export:2025 đã được gỡ bỏ khỏi không gian khoá",
+          "target": "key-exists",
+          "key": "temp:export:2025",
+          "exists": false
+        },
+        {
+          "id": "used-unlink-not-del",
+          "doc": "Sử dụng UNLINK bất đồng bộ và tuyệt đối không gọi DEL",
+          "target": "command-used",
+          "mustUseRegex": "^UNLINK\\b",
+          "forbidRegex": "^DEL\\b"
+        },
+        {
+          "id": "enabled-lazy-expire",
+          "doc": "Đã bật CONFIG SET lazyfree-lazy-expire yes",
+          "target": "config-param",
+          "param": "lazyfree-lazy-expire",
+          "expected": "yes"
+        },
+        {
+          "id": "enabled-lazy-server-del",
+          "doc": "Đã bật CONFIG SET lazyfree-lazy-server-del yes",
+          "target": "config-param",
+          "param": "lazyfree-lazy-server-del",
+          "expected": "yes"
+        }
+      ]
+    },
+    "hints": [
+      "Chạy `redis-cli MEMORY USAGE temp:export:2025` ở Terminal Chẩn đoán phía trên trước.",
+      "Trong kịch bản bên dưới, thay `DEL` bằng `UNLINK temp:export:2025`, rồi thêm `CONFIG SET lazyfree-lazy-expire yes` và `CONFIG SET lazyfree-lazy-server-del yes`."
+    ],
+    "ref": "ops/redis-sre-diagnostic-playbook.sh",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r17-3",
+    "code": "R17.3",
+    "module": "R17",
+    "title": "War-Room #3 — Giải cứu lỗi tràn RAM OOM trên cụm Cache do sai chính sách Eviction",
+    "difficulty": 2,
+    "tags": [
+      "war-room",
+      "troubleshoot",
+      "oom",
+      "eviction",
+      "lfu"
+    ],
+    "kind": "troubleshoot",
+    "language": "ini",
+    "filename": "warroom-03-cache-oom.conf",
+    "prompt": "🚨 **Cảnh báo PagerDuty #3:** Hàng ngàn giao dịch trang chủ đang nhận lỗi `OOM command not allowed when used memory > 'maxmemory'` từ cụm Redis thuần Cache!\n\nHãy chẩn đoán và vá triệt để tệp cấu hình của cụm Cache:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy `redis-cli INFO memory` trên ô **Terminal Chẩn đoán** để xác nhận chính sách hiện hành đang bị kẹt ở `maxmemory_policy:noeviction`.\n- **Bước 2 (Vá tệp `warroom-03-cache-oom.conf` bên dưới):**\n  1. Giữ giới hạn bộ nhớ `maxmemory 4gb`.\n  2. Đổi chính sách trục xuất sang `maxmemory-policy allkeys-lfu` để giữ lại các khoá nóng theo tần suất truy cập.\n  3. Tăng độ chính xác lấy mẫu lên `maxmemory-samples 10` và bật giải phóng bất đồng bộ `lazyfree-lazy-eviction yes`.",
+    "starter": "# Bước 1: Gõ `redis-cli INFO memory` trên Terminal Chẩn đoán phía trên trước!\n# Bước 2: Chuyển cấu hình cụm Cache từ noeviction sang allkeys-lfu chuẩn Production\nport 6379\nmaxmemory 4gb\nmaxmemory-policy noeviction\nmaxmemory-samples 5\nlazyfree-lazy-eviction no\n",
+    "solution": "port 6379\nmaxmemory 4gb\nmaxmemory-policy allkeys-lfu\nmaxmemory-samples 10\nlazyfree-lazy-eviction yes\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-conf",
+      "diagnosticSampleCommands": [
+        "redis-cli INFO memory"
+      ],
+      "initialState": {
+        "redis": {
+          "maxMemoryBytes": 4294967296,
+          "config": {
+            "maxmemory-policy": "noeviction"
+          },
+          "initialKeys": []
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-oom-policy",
+          "doc": "Đã chạy redis-cli INFO memory trên Terminal Chẩn đoán phát hiện maxmemory_policy:noeviction",
+          "target": "stdout-inspected",
+          "contains": "maxmemory_policy:noeviction"
+        }
+      ],
+      "redisConfRules": [
+        {
+          "id": "maxmemory-4gb",
+          "doc": "Giới hạn bộ nhớ maxmemory đạt đúng 4gb",
+          "kind": "memory-bytes",
+          "directive": "maxmemory",
+          "eqBytes": 4294967296
+        },
+        {
+          "id": "policy-allkeys-lfu",
+          "doc": "Đã chuyển maxmemory-policy sang allkeys-lfu",
+          "kind": "directive",
+          "directive": "maxmemory-policy",
+          "match": {
+            "eq": "allkeys-lfu"
+          }
+        },
+        {
+          "id": "samples-tuned-10",
+          "doc": "Đã nâng độ chính xác lấy mẫu maxmemory-samples lên 10",
+          "kind": "directive",
+          "directive": "maxmemory-samples",
+          "match": {
+            "gte": 10
+          }
+        },
+        {
+          "id": "lazy-eviction-enabled",
+          "doc": "Đã bật giải phóng bất đồng bộ khi trục xuất lazyfree-lazy-eviction yes",
+          "kind": "directive",
+          "directive": "lazyfree-lazy-eviction",
+          "match": {
+            "eq": "yes"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Chạy `redis-cli INFO memory` ở khung Terminal Chẩn đoán phía trên trước.",
+      "Trong tệp cấu hình bên dưới, sửa thành `maxmemory-policy allkeys-lfu`, `maxmemory-samples 10` và `lazyfree-lazy-eviction yes`."
+    ],
+    "ref": "conf/redis-pure-cache-lfu.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r17-4",
+    "code": "R17.4",
+    "module": "R17",
+    "title": "War-Room #4 — Giải cứu đơn hàng kẹt trong Redis Streams PEL bằng XAUTOCLAIM",
+    "difficulty": 3,
+    "tags": [
+      "war-room",
+      "troubleshoot",
+      "streams",
+      "xpending",
+      "xautoclaim"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis",
+    "filename": "warroom-04-streams-pel-rescue.redis",
+    "prompt": "🚨 **Cảnh báo PagerDuty #4:** Prometheus báo động `redis_stream_cgroup_pending_messages > 0` kéo dài trên Stream `orders:stream` (Consumer Group `payment-cg`)! Một Pod xử lý thanh toán đã sập nguồn đột ngột, bỏ rơi 2 đơn hàng treo cứng trong danh sách chờ xác nhận (PEL) suốt hơn `200 giây`.\n\nHãy thực hiện quy trình giải cứu 2 bước:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy lệnh `redis-cli XPENDING orders:stream payment-cg - + 10` trên ô **Terminal Chẩn đoán** để tìm tên Consumer đã chết (`worker-dead-1`) và 2 mã ID đơn hàng bị kẹt (`1700000000000-0` và `1700000001000-0`).\n- **Bước 2 (Kịch bản giải cứu bên dưới):**\n  1. Dùng `XAUTOCLAIM orders:stream payment-cg worker-rescue 60000 0-0` để thu hồi toàn bộ các tin nhắn đã treo quá `60.000ms` sang cho `worker-rescue`.\n  2. Sau khi xử lý xong, gọi `XACK orders:stream payment-cg 1700000000000-0 1700000001000-0` để xoá sạch danh sách PEL về `0`.",
+    "starter": "# Bước 1: Gõ `redis-cli XPENDING orders:stream payment-cg - + 10` ở Terminal Chẩn đoán phía trên!\n# Bước 2: Dùng XAUTOCLAIM thu hồi tin treo > 60000ms về worker-rescue rồi XACK cả 2 ID\nXLEN orders:stream\n",
+    "solution": "XAUTOCLAIM orders:stream payment-cg worker-rescue 60000 0-0\nXACK orders:stream payment-cg 1700000000000-0 1700000001000-0\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-cli",
+      "diagnosticSampleCommands": [
+        "redis-cli XPENDING orders:stream payment-cg - + 10"
+      ],
+      "initialState": {
+        "redis": {
+          "nowMs": 1700000000000,
+          "initialKeys": [
+            {
+              "key": "orders:stream",
+              "type": "stream",
+              "value": {
+                "entries": [
+                  {
+                    "id": "1700000000000-0",
+                    "fields": {
+                      "order_id": "9001",
+                      "amount": "250000"
+                    }
+                  },
+                  {
+                    "id": "1700000001000-0",
+                    "fields": {
+                      "order_id": "9002",
+                      "amount": "490000"
+                    }
+                  }
+                ],
+                "groups": [
+                  {
+                    "name": "payment-cg",
+                    "lastDeliveredIdx": 1,
+                    "pel": [
+                      {
+                        "id": "1700000000000-0",
+                        "consumer": "worker-dead-1",
+                        "deliveredAtMs": 1699999800000,
+                        "deliveryCount": 3
+                      },
+                      {
+                        "id": "1700000001000-0",
+                        "consumer": "worker-dead-1",
+                        "deliveredAtMs": 1699999800000,
+                        "deliveryCount": 2
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-xpending-dead-worker",
+          "doc": "Đã chạy redis-cli XPENDING trên Terminal Chẩn đoán phát hiện worker-dead-1",
+          "target": "stdout-inspected",
+          "contains": "worker-dead-1"
+        }
+      ],
+      "redisCliRules": [
+        {
+          "id": "used-xautoclaim",
+          "doc": "Đã sử dụng lệnh XAUTOCLAIM để thu hồi các tin nhắn bị bỏ rơi",
+          "target": "command-used",
+          "mustUseRegex": "^XAUTOCLAIM\\b"
+        },
+        {
+          "id": "pel-drained-to-zero",
+          "doc": "Danh sách chờ xác nhận PEL của nhóm payment-cg đã được XACK dọn sạch về 0",
+          "target": "stream-state",
+          "key": "orders:stream",
+          "hasGroup": "payment-cg",
+          "maxPelCount": {
+            "group": "payment-cg",
+            "max": 0
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Chạy `redis-cli XPENDING orders:stream payment-cg - + 10` ở Terminal Chẩn đoán phía trên trước.",
+      "Trong kịch bản bên dưới, gõ dòng 1: `XAUTOCLAIM orders:stream payment-cg worker-rescue 60000 0-0`, dòng 2: `XACK orders:stream payment-cg 1700000000000-0 1700000001000-0`."
+    ],
+    "ref": "ops/prometheus-redis-exporter-alerts.yaml",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r17-5",
+    "code": "R17.5",
+    "module": "R17",
+    "title": "War-Room #5 — Chẩn đoán & Khắc phục sự cố gãy giao dịch CROSSSLOT trên Cluster",
+    "difficulty": 3,
+    "tags": [
+      "war-room",
+      "troubleshoot",
+      "cluster",
+      "crossslot",
+      "hashtag"
+    ],
+    "kind": "troubleshoot",
+    "language": "redis",
+    "filename": "warroom-05-cluster-crossslot.redis",
+    "prompt": "🚨 **Cảnh báo PagerDuty #5:** Sau đợt nâng cấp cụm giỏ hàng lên Redis Cluster đêm qua, tính năng cập nhật giỏ hàng đồng thời của khách hàng `user88` liên tục thất bại với lỗi `CROSSSLOT Keys in request don't hash to the same slot`!\n\nHãy khép lại chiến dịch War-Room bằng 2 bước chuẩn xác:\n- **Bước 1 (Bắt buộc trên Terminal Chẩn đoán):** Chạy `redis-cli CLUSTER KEYSLOT cart:user88:items` và `redis-cli CLUSTER KEYSLOT cart:user88:totals` trên ô **Terminal Chẩn đoán** để chứng minh hai khoá cũ đang bị băm sang 2 Slot khác nhau.\n- **Bước 2 (Kịch bản di cư sang `{HashTag}` bên dưới):**\n  1. Dọn dẹp 2 khoá cũ không gắn HashTag bằng `UNLINK cart:user88:items cart:user88:totals`.\n  2. Ghi đồng thời cặp khoá mới gắn nhãn thực thể **`{user88}`** bằng `MSET cart:{user88}:items \"3\" cart:{user88}:totals \"450000\"`.\n  3. Đọc kiểm chứng lại bằng `MGET cart:{user88}:items cart:{user88}:totals`.",
+    "starter": "# Bước 1: Chạy `redis-cli CLUSTER KEYSLOT cart:user88:items` ở Terminal Chẩn đoán phía trên!\n# Bước 2: UNLINK 2 khoá cũ và MSET/MGET cặp khoá mới dùng HashTag {user88}\nMSET cart:user88:items \"3\" cart:user88:totals \"450000\"\n",
+    "solution": "UNLINK cart:user88:items cart:user88:totals\nMSET cart:{user88}:items \"3\" cart:{user88}:totals \"450000\"\nMGET cart:{user88}:items cart:{user88}:totals\n",
+    "spec": {
+      "kind": "troubleshoot",
+      "patchFormat": "redis-cli",
+      "diagnosticSampleCommands": [
+        "redis-cli CLUSTER KEYSLOT cart:user88:items",
+        "redis-cli CLUSTER KEYSLOT cart:user88:totals"
+      ],
+      "initialState": {
+        "redis": {
+          "initialKeys": [
+            {
+              "key": "cart:user88:items",
+              "type": "string",
+              "value": "3"
+            },
+            {
+              "key": "cart:user88:totals",
+              "type": "string",
+              "value": "450000"
+            }
+          ]
+        }
+      },
+      "cliRules": [
+        {
+          "id": "inspected-mismatched-keyslots",
+          "doc": "Đã kiểm tra CLUSTER KEYSLOT trên Terminal Chẩn đoán để xác nhận lệch Slot",
+          "target": "stdout-inspected",
+          "contains": "(integer)"
+        }
+      ],
+      "redisCliRules": [
+        {
+          "id": "unlinked-legacy-cart-keys",
+          "doc": "Khoá cũ không gắn HashTag cart:user88:items đã được UNLINK dọn sạch",
+          "target": "key-exists",
+          "key": "cart:user88:items",
+          "exists": false
+        },
+        {
+          "id": "user88-colocated-slot",
+          "doc": "Cặp khoá mới cart:{user88}:items và cart:{user88}:totals nằm trên cùng một Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "cart:{user88}:items",
+            "cart:{user88}:totals"
+          ]
+        },
+        {
+          "id": "user88-totals-saved",
+          "doc": "Khoá cart:{user88}:totals lưu đúng giá trị 450000",
+          "target": "string-value",
+          "key": "cart:{user88}:totals",
+          "match": {
+            "eq": "450000"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Chạy `redis-cli CLUSTER KEYSLOT cart:user88:items` trên khung Terminal Chẩn đoán phía trên trước.",
+      "Trong khung bên dưới: dòng 1 `UNLINK cart:user88:items cart:user88:totals`, dòng 2 `MSET cart:{user88}:items \"3\" cart:{user88}:totals \"450000\"`, dòng 3 `MGET cart:{user88}:items cart:{user88}:totals`."
+    ],
+    "ref": "cluster/hashtag-colocation-vs-crossslot.redis",
+    "webGrade": true
+  }
+]

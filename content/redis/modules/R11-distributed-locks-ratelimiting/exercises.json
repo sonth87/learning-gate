@@ -1,0 +1,311 @@
+[
+  {
+    "id": "redis-ex-r11-1",
+    "code": "R11.1",
+    "module": "R11",
+    "title": "Chiếm khoá phân tán nguyên tử SET NX PX chống Deadlock",
+    "difficulty": 1,
+    "tags": [
+      "distributed-lock",
+      "set-nx-px",
+      "atomicity"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "acquire-dist-lock.redis",
+    "prompt": "Dịch vụ chi hộ ngân hàng cần đảm bảo giao dịch `txn-772` không bao giờ bị hai Pod xử lý trùng lặp. Bản nháp bên dưới đang dùng cặp lệnh lỗi thời `SETNX` + `EXPIRE` rời rạc và lưu giá trị vô nghĩa `\"1\"`!\n\n- **Nhiệm vụ:** Thay thế hoàn toàn bằng **duy nhất 1 câu lệnh `SET` nguyên tử** trên khoá `lock:payout:txn-772`:\n  1. Lưu mã định danh chủ sở hữu duy nhất `\"uuid-pod-a91\"`.\n  2. Gắn cờ **`NX`** (chỉ chiếm khi chưa ai giữ) và cờ thời gian thuê tự huỷ **`PX 5000`** (`5000 mili-giây`).\n  3. Tuyệt đối **không dùng `SETNX`**.",
+    "starter": "# BẪY CỔ ĐIỂN: Tách rời SETNX và EXPIRE dễ gây Deadlock vĩnh viễn!\nSETNX lock:payout:txn-772 \"1\"\n",
+    "solution": "SET lock:payout:txn-772 \"uuid-pod-a91\" NX PX 5000\nGET lock:payout:txn-772\nPTTL lock:payout:txn-772\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "lock-owner-uuid",
+          "doc": "Khoá lock:payout:txn-772 lưu đúng định danh chủ sở hữu uuid-pod-a91",
+          "target": "string-value",
+          "key": "lock:payout:txn-772",
+          "match": {
+            "eq": "uuid-pod-a91"
+          }
+        },
+        {
+          "id": "lock-lease-ttl",
+          "doc": "Khoá có thời gian thuê tự huỷ 5 giây (PX 5000)",
+          "target": "ttl",
+          "key": "lock:payout:txn-772",
+          "minSeconds": 4,
+          "maxSeconds": 5
+        },
+        {
+          "id": "atomic-set-no-setnx",
+          "doc": "Sử dụng SET ... NX PX nguyên tử và KHÔNG dùng lệnh SETNX rời rạc",
+          "target": "command-used",
+          "mustUseRegex": "^SET\\s+lock:payout:txn-772\\s+.*\\bNX\\b.*\\bPX\\b",
+          "forbidRegex": "^SETNX\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Xoá dòng `SETNX` đi và viết: `SET lock:payout:txn-772 \"uuid-pod-a91\" NX PX 5000`.",
+      "Bạn có thể gõ thêm `PTTL lock:payout:txn-772` để xem thời gian thuê tính bằng mili-giây."
+    ],
+    "ref": "lua/safe-distributed-lock-release.lua",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r11-2",
+    "code": "R11.2",
+    "module": "R11",
+    "title": "Nhả khoá an toàn bằng Lua Compare-And-Delete (Chống xoá nhầm chủ)",
+    "difficulty": 3,
+    "tags": [
+      "lua",
+      "eval",
+      "compare-and-delete",
+      "distributed-lock"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "safe-lua-unlock.redis",
+    "prompt": "Trên Redis đang có 2 khoá giữ chỗ ghế xem phim:\n- `lock:seat:A1` hiện đã chuyển sang thuộc về `\"owner-bob\"` (do phiên của Alice bị GC Pause quá hạn).\n- `lock:seat:B2` hiện đang thuộc hợp lệ về `\"owner-alice\"`.\n\nNếu Alice gọi `DEL` trần trụi trên cả hai khoá, cô ấy sẽ **xoá nhầm mất khoá ghế `A1` của Bob**!\n\n- **Nhiệm vụ:** Viết kịch bản Lua trong lệnh **`EVAL`** kiểm tra `redis.call(\"GET\", KEYS[1]) == ARGV[1]` trước khi gọi `redis.call(\"DEL\", KEYS[1])` (nếu lệch chủ trả về `0`), và chạy lần lượt với tư cách `\"owner-alice\"` trên cả hai khoá:\n  1. Chạy `EVAL` nhả `lock:seat:A1` với `ARGV[1] = \"owner-alice\"` → Phải trả về `(integer) 0` và giữ nguyên khoá của Bob!\n  2. Chạy `EVAL` nhả `lock:seat:B2` với `ARGV[1] = \"owner-alice\"` → Phải trả về `(integer) 1` và xoá thành công `lock:seat:B2`!",
+    "starter": "# BẪY THẢM HOẠ: Dùng DEL trực tiếp sẽ xoá bay khoá hợp lệ của owner-bob trên ghế A1!\n# Hãy thay bằng 2 lệnh EVAL chạy kịch bản Lua Compare-And-Delete cho owner-alice:\nGET lock:seat:A1\nGET lock:seat:B2\n",
+    "solution": "EVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:seat:A1 \"owner-alice\"\nEVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:seat:B2 \"owner-alice\"\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "lock:seat:A1",
+            "type": "string",
+            "value": "owner-bob",
+            "ttlMs": 15000
+          },
+          {
+            "key": "lock:seat:B2",
+            "type": "string",
+            "value": "owner-alice",
+            "ttlMs": 15000
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "bob-lock-preserved",
+          "doc": "Khoá lock:seat:A1 của owner-bob được bảo toàn nguyên vẹn (không bị Alice xoá nhầm)",
+          "target": "string-value",
+          "key": "lock:seat:A1",
+          "match": {
+            "eq": "owner-bob"
+          }
+        },
+        {
+          "id": "alice-lock-released",
+          "doc": "Khoá lock:seat:B2 của chính owner-alice đã được giải phóng",
+          "target": "key-exists",
+          "key": "lock:seat:B2",
+          "exists": false
+        },
+        {
+          "id": "used-lua-eval-not-raw-del",
+          "doc": "Sử dụng EVAL Lua cho cả 2 khoá và không gọi DEL trực tiếp ngoài Lua",
+          "target": "command-used",
+          "mustUseRegex": "^EVAL\\b[\\s\\S]*lock:seat:A1[\\s\\S]*^EVAL\\b[\\s\\S]*lock:seat:B2",
+          "forbidRegex": "^(?:DEL|UNLINK)\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Mẫu lệnh chuẩn: `EVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:seat:A1 \"owner-alice\"`.",
+      "Sao chép thêm dòng thứ hai đổi `lock:seat:A1` thành `lock:seat:B2`."
+    ],
+    "ref": "lua/safe-distributed-lock-release.lua",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r11-3",
+    "code": "R11.3",
+    "module": "R11",
+    "title": "Fixed Window Rate Limiter chống Brute-force với EXPIRE ... NX",
+    "difficulty": 2,
+    "tags": [
+      "rate-limiting",
+      "fixed-window",
+      "expire-nx"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "fixed-window-login.redis",
+    "prompt": "Cổng đăng nhập giới hạn mỗi địa chỉ IP tối đa `5` lần thử mật khẩu trong cửa sổ `60 giây`. Lỗi kinh điển của người mới là gọi `EXPIRE key 60` **không có cờ `NX`** ở mọi request — khiến mỗi lần kẻ tấn công thử tiếp lại vô tình gia hạn thêm 60 giây mới!\n\n- **Nhiệm vụ:** Thực hiện quy trình đếm chuẩn Redis 7+/8 cho IP `203.0.113.9` trên khoá `rl:login:203.0.113.9`:\n  1. Tăng bộ đếm bằng `INCR rl:login:203.0.113.9`.\n  2. Gắn thời hạn 60 giây **chỉ khi khoá chưa có TTL** bằng `EXPIRE rl:login:203.0.113.9 60 NX`.\n  3. Giả lập trôi qua 20 giây bằng `ADVANCE_TIME 20000`, sau đó chạy lại cặp `INCR` + `EXPIRE ... 60 NX` một lần nữa (bộ đếm phải lên `2` và TTL còn lại phải là `40s`, không bị reset về `60s`!).",
+    "starter": "# BẪY: EXPIRE thiếu cờ NX làm cửa sổ bị gia hạn lại về 60s ở lần thử thứ 2!\nINCR rl:login:203.0.113.9\nEXPIRE rl:login:203.0.113.9 60\nADVANCE_TIME 20000\nINCR rl:login:203.0.113.9\nEXPIRE rl:login:203.0.113.9 60\n",
+    "solution": "INCR rl:login:203.0.113.9\nEXPIRE rl:login:203.0.113.9 60 NX\nADVANCE_TIME 20000\nINCR rl:login:203.0.113.9\nEXPIRE rl:login:203.0.113.9 60 NX\nTTL rl:login:203.0.113.9\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "counter-reached-2",
+          "doc": "Bộ đếm rl:login:203.0.113.9 ghi nhận đúng 2 lượt thử",
+          "target": "string-value",
+          "key": "rl:login:203.0.113.9",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "window-not-reset",
+          "doc": "Sau khi trôi 20s, cửa sổ giữ nguyên mốc ban đầu (TTL còn ~40s, không bị reset về 60s)",
+          "target": "ttl",
+          "key": "rl:login:203.0.113.9",
+          "minSeconds": 38,
+          "maxSeconds": 42
+        },
+        {
+          "id": "used-expire-nx",
+          "doc": "Sử dụng cờ NX trong lệnh EXPIRE",
+          "target": "command-used",
+          "mustUseRegex": "^EXPIRE\\s+rl:login:203\\.0\\.113\\.9\\s+60\\s+NX\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Chỉ cần bổ sung cờ `NX` vào cuối cả hai dòng `EXPIRE rl:login:203.0.113.9 60 NX`.",
+      "Nhờ cờ `NX`, lần gọi `EXPIRE` thứ hai trả về `(integer) 0` và bảo toàn nguyên vẹn 40 giây còn lại của cửa sổ đầu tiên."
+    ],
+    "ref": "",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r11-4",
+    "code": "R11.4",
+    "module": "R11",
+    "title": "Sliding Window Rate Limiter chính xác mili-giây bằng Sorted Set",
+    "difficulty": 3,
+    "tags": [
+      "rate-limiting",
+      "sliding-window",
+      "zset"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "sliding-window-zset.redis",
+    "prompt": "Đồng hồ hệ thống hiện đang ở mốc **`1700000000000`** ms. Chúng ta áp dụng giới hạn **Sliding Window `60.000 ms` (`60 giây`)** cho người dùng `u42` trên Sorted Set `rl:api:u42` (tức mọi request cũ có dấu thời gian `<= 1699999940000` đã trượt ra ngoài cửa sổ và cần bị loại bỏ).\n\nTrong `rl:api:u42` hiện đang có 2 request cũ quá hạn và 2 request còn hiệu lực.\n\n- **Nhiệm vụ:** Thực hiện trọn bộ 4 bước Sliding Window cho request mới `\"req-now-5\"`:\n  1. Dọn sạch các request cũ ngoài cửa sổ bằng `ZREMRANGEBYSCORE rl:api:u42 -inf 1699999940000`.\n  2. Ghi nhận request hiện tại bằng `ZADD rl:api:u42 1700000000000 \"req-now-5\"`.\n  3. Đếm tổng số request hợp lệ trong cửa sổ bằng `ZCARD rl:api:u42` (kết quả phải bằng `3`).\n  4. Đặt thời gian tự dọn bộ nhớ cho cả ZSet bằng `PEXPIRE rl:api:u42 60000`.",
+    "starter": "# Kiểm tra các phần tử hiện có trong cửa sổ trượt của u42\nZRANGE rl:api:u42 0 -1 WITHSCORES\n# Thực hiện 4 bước: ZREMRANGEBYSCORE -> ZADD -> ZCARD -> PEXPIRE\n",
+    "solution": "ZREMRANGEBYSCORE rl:api:u42 -inf 1699999940000\nZADD rl:api:u42 1700000000000 \"req-now-5\"\nZCARD rl:api:u42\nPEXPIRE rl:api:u42 60000\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "rl:api:u42",
+            "type": "zset",
+            "value": [
+              {
+                "member": "req-old-1",
+                "score": 1699999910000
+              },
+              {
+                "member": "req-old-2",
+                "score": 1699999935000
+              },
+              {
+                "member": "req-valid-3",
+                "score": 1699999965000
+              },
+              {
+                "member": "req-valid-4",
+                "score": 1699999988000
+              }
+            ]
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "zset-sliding-count-3",
+          "doc": "Sorted Set rl:api:u42 đã xoá 2 bản ghi cũ và thêm req-now-5 (tổng ZCARD = 3)",
+          "target": "zset-ranking",
+          "key": "rl:api:u42",
+          "cardinalityEq": 3,
+          "memberScore": {
+            "member": "req-now-5",
+            "score": 1700000000000
+          }
+        },
+        {
+          "id": "zset-pexpire-60s",
+          "doc": "Khoá rl:api:u42 được đặt tự dọn sau 60 giây (PEXPIRE 60000)",
+          "target": "ttl",
+          "key": "rl:api:u42",
+          "minSeconds": 58,
+          "maxSeconds": 60
+        }
+      ]
+    },
+    "hints": [
+      "`ZREMRANGEBYSCORE rl:api:u42 -inf 1699999940000` sẽ xoá đúng 2 phần tử `req-old-1` và `req-old-2`.",
+      "Tiếp tục thêm `ZADD rl:api:u42 1700000000000 \"req-now-5\"`, `ZCARD rl:api:u42` và `PEXPIRE rl:api:u42 60000`."
+    ],
+    "ref": "lua/sliding-window-ratelimiter.lua",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r11-5",
+    "code": "R11.5",
+    "module": "R11",
+    "title": "Lua Atomic Inventory / Token Guard chống bán lố (Overselling)",
+    "difficulty": 3,
+    "tags": [
+      "lua",
+      "token-bucket",
+      "inventory-guard",
+      "flash-sale"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "lua-inventory-guard.redis",
+    "prompt": "Trong kho Flash Sale chỉ còn đúng **`5`** máy chơi game tại khoá `stock:ps5:limited`. Nếu dùng `DECRBY` không điều kiện, tồn kho sẽ tụt xuống số âm!\n\n- **Nhiệm vụ:** Viết câu lệnh `EVAL` Lua nhận `KEYS[1]` là khoá tồn kho và `ARGV[1]` là số lượng đặt mua:\n  - Nếu `tonumber(redis.call(\"GET\", KEYS[1]) or \"0\") >= tonumber(ARGV[1])` thì gọi `redis.call(\"DECRBY\", KEYS[1], ARGV[1])` và trả về số lượng còn lại.\n  - Ngược lại không trừ mà trả về `-1`.\n- Chạy kiểm thử **2 đơn hàng liên tiếp** bằng chính kịch bản `EVAL` đó:\n  1. Đơn 1 đặt mua **`3`** máy (`ARGV[1] = 3`) → Thành công, tồn kho còn **`2`**.\n  2. Đơn 2 đặt mua **`4`** máy (`ARGV[1] = 4`) → Bị từ chối trả về **`(integer) -1`**, tồn kho được bảo toàn ở mức **`2`** (không bị âm!).",
+    "starter": "# Tồn kho ban đầu: stock:ps5:limited = 5\n# Hãy viết 2 lệnh EVAL kiểm tra & trừ nguyên tử cho đơn 1 (mua 3) và đơn 2 (mua 4):\nGET stock:ps5:limited\n",
+    "solution": "EVAL 'local s = tonumber(redis.call(\"GET\", KEYS[1]) or \"0\"); if s >= tonumber(ARGV[1]) then return redis.call(\"DECRBY\", KEYS[1], ARGV[1]) else return -1 end' 1 stock:ps5:limited 3\nEVAL 'local s = tonumber(redis.call(\"GET\", KEYS[1]) or \"0\"); if s >= tonumber(ARGV[1]) then return redis.call(\"DECRBY\", KEYS[1], ARGV[1]) else return -1 end' 1 stock:ps5:limited 4\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "stock:ps5:limited",
+            "type": "string",
+            "value": "5"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "stock-safely-at-2",
+          "doc": "Tồn kho stock:ps5:limited dừng chính xác ở mức 2 (trừ đơn 3, chặn đơn 4)",
+          "target": "string-value",
+          "key": "stock:ps5:limited",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "rejected-second-order",
+          "doc": "Đơn hàng thứ 2 vượt tồn kho bị từ chối với mã trả về (integer) -1",
+          "target": "stdout-contains",
+          "contains": "(integer) -1"
+        },
+        {
+          "id": "used-lua-eval",
+          "doc": "Thực thi kiểm tra và trừ kho nguyên tử bên trong EVAL Lua",
+          "target": "command-used",
+          "mustUseRegex": "^EVAL\\b",
+          "forbidRegex": "^(?:SET|DECR|DECRBY)\\b"
+        }
+      ]
+    },
+    "hints": [
+      "Trong Lua, kết quả `redis.call(\"GET\", KEYS[1])` là kiểu chuỗi nên hãy bọc `tonumber(...)` trước khi so sánh `>= tonumber(ARGV[1])`.",
+      "Gọi dòng 1 với đối số cuối là `1 stock:ps5:limited 3`, và dòng 2 với đối số cuối là `1 stock:ps5:limited 4`."
+    ],
+    "ref": "lua/token-bucket-ratelimiter.lua",
+    "webGrade": true
+  }
+]

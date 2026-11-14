@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R10-FC1",
+    "front": "Phân biệt nhanh 3 thảm hoạ: Cache Stampede, Cache Penetration và Cache Avalanche?",
+    "back": "- **Stampede:** 1 Hot Key vừa hết hạn -> vạn luồng đâm sầm vào DB cùng lúc.\n- **Penetration:** Truy vấn ID không tồn tại ở cả Redis lẫn DB -> xuyên thủng 100%.\n- **Avalanche:** Hàng vạn khoá hết hạn cùng một giây (hoặc sập cả nút Redis)."
+  },
+  {
+    "id": "R10-FC2",
+    "front": "Hai phương pháp hiệu quả nhất để dập tắt hoàn toàn Cache Stampede trên Hot Key?",
+    "back": "1) **Singleflight + Distributed Mutex** (`SET lock:rebuild:<key> <id> NX PX 3000`) chỉ cho 1 luồng xuống DB.\n2) **Logical Expiration (SWR)**: giữ TTL vật lý dài, nhúng hạn logic vào payload để trả bản cũ tức thời trong khi 1 worker nền làm mới."
+  },
+  {
+    "id": "R10-FC3",
+    "front": "Đặc tính sai số của Bloom Filter (`BF.EXISTS`) giúp chống Cache Penetration như thế nào?",
+    "back": "- Trả về `0`: **Chắc chắn 100% phần tử KHÔNG tồn tại** (Zero False Negatives) -> chặn ngay tại biên!\n- Trả về `1`: Có thể tồn tại (có tỷ lệ nhỏ False Positive, vd `1%`) -> cho phép đi tiếp xuống Cache + Negative Cache."
+  },
+  {
+    "id": "R10-FC4",
+    "front": "Công thức TTL Jitter chống Cache Avalanche khi làm nóng hàng loạt khoá?",
+    "back": "Thay vì đặt cứng `EX 3600`, luôn cộng độ lệch ngẫu nhiên `baseTTL + random(5%..20% baseTTL)` để rải phẳng thời điểm hết hạn của lô khoá theo thời gian."
+  },
+  {
+    "id": "R10-FC5",
+    "front": "Ý nghĩa 2 giá trị âm đặc biệt `-1` và `-2` của lệnh `TTL <key>`?",
+    "back": "- **`-1`**: Khoá đang tồn tại nhưng **không có thời hạn hết hạn** (persistent).\n- **`-2`**: Khoá **không tồn tại** trong không gian khoá."
+  },
+  {
+    "id": "R10-FC6",
+    "front": "Vì sao trong kiến trúc siêu tải người ta kết hợp cả L1 Cache nội bộ trên RAM ứng dụng (TTL 1–2s) đứng trước L2 Redis?",
+    "back": "Để hấp thụ băng thông mạng của các siêu Hot Key (tránh làm nghẽn đơn nhân của 1 shard Redis) và làm phao cứu sinh tạm thời chống Avalanche nếu mạng tới cụm Redis chập chờn."
+  }
+]

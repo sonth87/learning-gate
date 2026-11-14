@@ -4,6 +4,28 @@ Bạn đã viết được `Dockerfile` đầu tiên chạy ngon lành ở bài 
 
 Bài học này giải quyết triệt để cả ba nỗi đau đó bằng cơ chế ==Layer Cache== ({emerald:tăng tốc gấp 20 lần}) của BuildKit, lá chắn ==`.dockerignore`== ({rose:chống rò rỉ bí mật}) và cách phân tách tham số {violet:Build-time `ARG`} / {sky:Run-time `ENV`}.
 
+```visual
+kind: illustration
+diagram: "kube:k04"
+alt: "Cơ chế lá chắn .dockerignore và quy tắc sụp đổ dây chuyền Domino của BuildKit Layer Cache"
+title: "Giải Phẫu Tối Ưu BuildKit: Lá Chắn .dockerignore & Tháp Bộ Đệm Layer Cache"
+subtitle: "Chặn rác ngay từ cửa Build Context và sắp xếp thứ tự chỉ thị thông minh để tái sử dụng 100% lớp cài đặt thư viện"
+caption: "Cách tệp .dockerignore lọc sạch node_modules/.env và sự đối lập tốc độ giữa thứ tự COPY sai lầm (~120s) với thứ tự tách riêng manifest (~0.8s)"
+callouts:
+  - num: 1
+    label: "Lá chắn .dockerignore lọc sạch Build Context"
+    desc: "Loại bỏ node_modules, .git và tệp mật khẩu .env trước khi gửi sang BuildKit, vừa bảo mật vừa chống xung đột binary khác hệ điều hành."
+    tone: amber
+  - num: 2
+    label: "Hiệu ứng Domino khi đặt COPY . . quá sớm"
+    desc: "Chỉ sửa 1 ký tự trong src/ cũng làm đổi mã băm SHA-256, kéo sập toàn bộ cache của bước RUN npm ci nặng nề bên dưới."
+    tone: rose
+  - num: 3
+    label: "Tháp Cache chuẩn: Tách package*.json lên trước"
+    desc: "Đưa bước ít thay đổi (manifest + npm ci) lên trên và đẩy COPY mã nguồn xuống cuối giúp rút thời gian build lại còn chưa tới 1 giây."
+    tone: emerald
+```
+
 ## 1. Quy luật bất biến của Docker Layer Cache (Hiệu ứng Domino)
 
 Mỗi chỉ thị `FROM`, `WORKDIR`, `COPY`, `RUN` trong `Dockerfile` tạo ra một **lớp (layer) chỉ đọc** xếp chồng lên lớp trước đó. Khi bạn gõ `docker build`, bộ máy BuildKit kiểm tra tuần tự từ trên xuống dưới:

@@ -1,0 +1,55 @@
+{
+  "id": "R11",
+  "slug": "R11-distributed-locks-ratelimiting",
+  "level": 3,
+  "order": 2,
+  "title": "Điều phối Phân tán: Distributed Locks chuẩn Lua, Fencing Token & Bộ tứ Rate Limiter",
+  "summary": "Xây dựng khoá phân tán an toàn không bao giờ xoá nhầm khoá người khác, hiểu tranh luận Redlock vs Fencing Token và làm chủ Fixed Window, Sliding Window ZSet, Token Bucket bằng Lua.",
+  "tags": [
+    "distributed-lock",
+    "lua",
+    "fencing-token",
+    "rate-limiting",
+    "token-bucket"
+  ],
+  "sources": [
+    {
+      "title": "Distributed Locks with Redis & Safety Guarantees",
+      "url": "https://redis.io/docs/latest/develop/use/patterns/distributed-locks/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Programmability: Redis Lua Scripting & Atomicity",
+      "url": "https://redis.io/docs/latest/develop/interact/programmability/eval-intro/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Chu trình Distributed Lock & Lua Release",
+      "kind": "flow",
+      "targetId": "dist-lock-lua"
+    },
+    {
+      "label": "War Room: Thảm hoạ Xoá nhầm Khoá (Unsafe DEL)",
+      "kind": "incident",
+      "targetId": "inc-unsafe-lock-del"
+    }
+  ],
+  "readings": [
+    {
+      "path": "lua/safe-distributed-lock-release.lua",
+      "kind": "good",
+      "note": "Kịch bản Lua Compare-And-Delete kinh điển chỉ dài 5 dòng nhưng ngăn chặn triệt để tai nạn Pod A tỉnh dậy sau GC Pause rồi xoá mất khoá của Pod B.",
+      "task": "Tại sao ta KHÔNG THỂ viết logic `if (await redis.get(k) === myToken) await redis.del(k)` ở phía ứng dụng Node.js/Go mà bắt buộc phải đẩy vào `EVAL` Lua?",
+      "answer": "Vì nếu tách thành 2 lệnh mạng `GET` rồi `DEL`, đúng vào mili-giây giữa `GET` (vừa thấy khớp token) và `DEL`, khoá có thể hết hạn `PX` và bị Pod B chiếm mất — lệnh `DEL` bay tới sau vẫn sẽ xoá nhầm khoá của Pod B! Chỉ có `EVAL` Lua chạy đơn luồng nguyên tử trên Redis mới đảm bảo không lệnh nào xen giữa `GET` và `DEL`."
+    },
+    {
+      "path": "lua/sliding-window-ratelimiter.lua",
+      "kind": "good",
+      "note": "Bộ giới hạn tốc độ Cửa sổ trượt (Sliding Window) chính xác tới từng mili-giây bằng Sorted Set đóng gói trọn vẹn trong 1 vòng mạng.",
+      "task": "Vì sao mỗi phần tử thêm vào `ZADD` trong Sliding Window Rate Limiter phải có `member` là chuỗi duy nhất (`requestId` hoặc `timestamp:random`) thay vì dùng lại tên user?",
+      "answer": "Trong Sorted Set, các `member` là duy nhất. Nếu dùng cố định một chuỗi làm `member`, lệnh `ZADD` tiếp theo chỉ cập nhật lại `score` của phần tử cũ thay vì tăng số lượng phần tử (`ZCARD`), làm bộ đếm luôn bằng `1`!"
+    }
+  ]
+}

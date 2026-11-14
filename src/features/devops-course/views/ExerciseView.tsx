@@ -115,7 +115,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
   const idx = mod.exercises.findIndex((e) => e.id === ex.id);
   const nextEx = mod.exercises[idx + 1];
   const hintsShown = rec?.hints ?? 0;
-  const codeTone = accent === 'cyan' ? 'text-cyan-400' : 'text-sky-400';
+  const codeTone = accent === 'cyan' ? 'text-cyan-400' : accent === 'rose' ? 'text-rose-400' : 'text-sky-400';
 
   const run = () => {
     const res = dryRunExercise(text, ex.spec);
@@ -380,7 +380,8 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
               <kbd className="ml-1 hidden rounded bg-black/20 px-1 text-[10px] sm:inline">⌘↵</kbd>
             </CourseBtn>
             <CourseBtn accent={accent} onClick={run}>
-              <Play className="h-4 w-4" /> {ex.language === 'shell' ? 'Chạy thử' : 'Kiểm tra cú pháp'}{' '}
+              <Play className="h-4 w-4" />{' '}
+              {ex.language === 'shell' || ex.language === 'redis' ? 'Chạy thử' : 'Kiểm tra cú pháp'}{' '}
               <kbd className="ml-1 hidden rounded bg-black/30 px-1 text-[10px] sm:inline">⇧↵</kbd>
             </CourseBtn>
             <CourseBtn

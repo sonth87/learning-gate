@@ -1,0 +1,58 @@
+{
+  "id": "R07",
+  "slug": "R07-lua-atomic-scripting",
+  "level": 2,
+  "order": 1,
+  "title": "Lua Scripting & Redis Functions: Triệt tiêu Race Condition trong 1 nhịp nguyên tử",
+  "summary": "Nhúng logic đọc-kiểm-tra-sửa chạy thẳng bên trong bộ nhớ Redis bằng EVAL/EVALSHA, làm chủ trừ tồn kho Flash-Sale, mở khoá phân tán an toàn và kỷ luật KEYS[] vs ARGV[].",
+  "tags": [
+    "lua",
+    "eval",
+    "evalsha",
+    "atomic-scripting",
+    "distributed-lock",
+    "race-condition"
+  ],
+  "sources": [
+    {
+      "title": "Redis Programmability — Scripting with Lua (EVAL / EVALSHA)",
+      "url": "https://redis.io/docs/latest/develop/interact/programmability/eval-intro/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Distributed Locks & Safe Release Pattern",
+      "url": "https://redis.io/docs/latest/develop/use/patterns/distributed-locks/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Distributed Lock & Mở khoá an toàn bằng Lua",
+      "kind": "flow",
+      "targetId": "dist-lock-lua",
+      "description": "Quan sát trực quan vì sao xoá khoá không kiểm tra owner token bằng Lua gây tai nạn kép"
+    },
+    {
+      "label": "War Room: Sự cố DEL nhầm khoá phân tán của Worker khác",
+      "kind": "incident",
+      "targetId": "inc-unsafe-lock-del",
+      "description": "Phân tích dòng thời gian vụ đụng độ thanh toán đúp do thiếu kịch bản Lua 4 dòng"
+    }
+  ],
+  "readings": [
+    {
+      "path": "lua/bad-non-atomic-check-then-set.ts",
+      "kind": "bug",
+      "note": "Đoạn code TypeScript 'trông rất hợp lý' đọc tồn kho bằng `await redis.get()` rồi mới `decrby()` — thủ phạm kinh điển gây bán âm kho lúc Flash-Sale.",
+      "task": "Hãy vẽ ra kịch bản thời gian khi còn đúng `1` chiếc iPhone trong kho mà 2 HTTP request chạy vào hàm này cùng một mili-giây.",
+      "answer": "Tại `t=0ms`, cả Request 1 lẫn Request 2 cùng chạy `await redis.get('stock')` và cả hai đều nhận về `'1'` (`>= 1`). Tại `t=1ms`, cả hai đều vượt qua câu `if` trong Node.js và lần lượt bắn `decrby('stock', 1)` — kết quả kho về `-1` và bạn vừa bán 2 đơn hàng cho 1 sản phẩm duy nhất (TOCTOU Race Condition)!"
+    },
+    {
+      "path": "lua/safe-distributed-lock-release.lua",
+      "kind": "good",
+      "note": "Kịch bản Lua 4 dòng bất hủ trong tài liệu chính thức của Redis dùng để nhả Distributed Lock an toàn tuyệt đối.",
+      "task": "Vì sao không thể tách câu lệnh `GET` kiểm tra `ARGV[1]` và câu lệnh `DEL` ra ngoài tầng ứng dụng?",
+      "answer": "Nếu ứng dụng gọi `GET` thấy đúng token của mình, nhưng đúng micro-giây trước khi gói tin `DEL` kịp tới nơi thì TTL của khoá vừa hết hạn và Worker B đã chiếm được khoá mới, lệnh `DEL` muộn màng của Worker A sẽ xoá bay khoá hợp lệ của Worker B! Nhốt cả `GET == ARGV[1]` lẫn `DEL` trong `EVAL` đảm bảo chúng chạy như 1 câu lệnh nguyên tử không thể chẻ nhỏ."
+    }
+  ]
+}

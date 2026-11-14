@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R08-FC1",
+    "front": "Sự khác biệt cốt lõi nhất giữa **Redis Pub/Sub** và **Redis Streams** về bảo toàn dữ liệu là gì?",
+    "back": "- **Pub/Sub**: *Fire-and-Forget* (At-most-once) — đẩy tức thời tới các client đang kết nối, không lưu RAM, rớt mạng là mất tin.\n- **Redis Streams**: *Append-Only Log* bền vững (At-least-once) — lưu trên RAM + AOF/RDB, hỗ trợ đọc bù lịch sử, chia tải qua Consumer Group và giữ vết trong bảng **PEL** cho tới khi **`XACK`**."
+  },
+  {
+    "id": "R08-FC2",
+    "front": "**PEL (Pending Entries List)** trong Redis Streams là gì và nguyên nhân nào gây rò rỉ RAM trên PEL?",
+    "back": "**PEL** là bảng bộ nhớ bên trong mỗi Consumer Group ghi lại mọi bản tin đã giao qua `XREADGROUP ... >` nhưng **chưa nhận được `XACK`**. Nếu Worker quên gọi `XACK` (hoặc gặp poison message văng lỗi liên tục mà không đẩy sang DLQ + `XACK`), PEL sẽ phình to vô hạn!"
+  },
+  {
+    "id": "R08-FC3",
+    "front": "Phân biệt mốc ID **`$`** và **`0`** khi chạy `XGROUP CREATE <key> <group> <id> MKSTREAM`?",
+    "back": "- **`$`**: Chỉ tiêu thụ các sự kiện **mới phát sinh từ thời điểm tạo nhóm trở đi**.\n- **`0`** (hoặc `0-0`): Phát lại (**replay**) toàn bộ các bản tin lịch sử đang có mặt trong Stream ngay từ đầu."
+  },
+  {
+    "id": "R08-FC4",
+    "front": "Phân biệt đối số **`>`** và **`0`** ở cuối lệnh `XREADGROUP GROUP <g> <c> STREAMS <key> <id>`?",
+    "back": "- **`>`**: Yêu cầu Redis giao các bản tin **mới chưa từng phân phát** cho bất kỳ ai trong nhóm.\n- **`0`**: Đọc lại danh sách các bản tin **đang treo dở trong PEL của chính consumer `<c>`** (hữu ích khi pod khởi động lại giữ nguyên định danh)."
+  },
+  {
+    "id": "R08-FC5",
+    "front": "Quy trình cứu hộ bản tin mồ côi khi một Worker bị sập nguồn bằng **`XAUTOCLAIM`** diễn ra như thế nào?",
+    "back": "Worker còn sống gọi định kỳ `XAUTOCLAIM <stream> <group> <my_name> <min_idle_ms> 0-0 COUNT <n>` để chiếm quyền sở hữu các bản tin đã nằm bất động quá `min_idle_ms`, thực thi logic **Idempotent**, rồi bắt buộc gọi **`XACK`** để xoá khỏi PEL."
+  },
+  {
+    "id": "R08-FC6",
+    "front": "Vì sao xử lý nghiệp vụ phía sau Redis Streams luôn phải thiết kế **Idempotent** (chống trùng lặp)?",
+    "back": "Vì Streams cung cấp ngữ nghĩa **At-Least-Once**: nếu Worker A đã ghi DB/trừ tiền xong nhưng sập nguồn ngay trước dòng lệnh `XACK`, Worker B sẽ `XAUTOCLAIM` và xử lý lại đúng bản tin đó lần thứ 2!"
+  }
+]

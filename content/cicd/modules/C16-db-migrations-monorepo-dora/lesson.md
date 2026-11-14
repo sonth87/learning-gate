@@ -6,6 +6,28 @@ Khi ứng dụng còn ở giai đoạn MVP ít người dùng lúc nửa đêm, 
 - [>] **{violet:Smart Monorepo CI}:** Làm sao chỉ chạy Lint/Test/Build cho đúng dịch vụ bị ảnh hưởng (kể cả phụ thuộc bắc cầu) thay vì đốt tiền CI vô ích?
 - [>] **{emerald:Engineering Telemetry}:** Làm sao đo lường sức khoẻ đường ống khách quan bằng bộ **4 chỉ số chuẩn công nghiệp DORA**?
 
+```visual
+kind: illustration
+diagram: "cicd:c16"
+alt: "Ba trụ cột quy mô lớn gồm di trú cơ sở dữ liệu 3 pha Expand-and-Contract, đồ thị gói bị ảnh hưởng trong Monorepo và 4 chỉ số DORA"
+title: "Giải Phẫu Kiến Trúc Quy Mô Lớn: Di Trú SQL 3 Pha, Đồ Thị Monorepo & Thước Đo DORA"
+subtitle: "Thay đổi lược đồ Database không rớt giao dịch, chỉ kiểm thử đúng gói bị ảnh hưởng và định lượng hiệu suất kỹ thuật khách quan"
+caption: "Quy trình Expand-Switch-Contract bảo vệ các Pod v1 đang chạy, bộ lọc đồ thị phụ thuộc Turborepo/Nx và 4 chỉ số tốc độ/ổn định chuẩn DORA"
+callouts:
+  - num: 1
+    label: "Di trú SQL 3 pha Expand -> Backfill -> Contract"
+    desc: "Thêm cột cho phép NULL và ghi kép trước để Pod v1 cũ không bị sập lúc Rolling Update; chỉ xoá cột cũ ở đợt phát hành sau cùng."
+    tone: sky
+  - num: 2
+    label: "Đồ thị bị ảnh hưởng (Affected Graph) trên Monorepo"
+    desc: "Kết hợp fetch-depth: 0 với Turborepo/Nx để chỉ chạy CI cho gói vừa sửa và các ứng dụng phụ thuộc bắc cầu, bỏ qua các dịch vụ không liên quan."
+    tone: violet
+  - num: 3
+    label: "Bộ 4 chỉ số DORA cân bằng Tốc độ & Sự ổn định"
+    desc: "Đo lường đồng thời Tần suất triển khai, Lead Time (<1h) cùng Tỷ lệ lỗi thay đổi (<5%) và Thời gian phục hồi MTTR để phát triển bền vững."
+    tone: emerald
+```
+
 ---
 
 ## 1. Bẫy "Đổi tên / Xoá cột SQL" và Mô hình Expand-and-Contract 3 Pha

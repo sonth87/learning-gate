@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R00-FC1",
+    "front": "Ba trụ cột kiến trúc nào giúp Redis xử lý trên **100,000 ops/sec** với độ trễ dưới `1ms`?",
+    "back": "1) Dữ liệu lưu trực tiếp trên **RAM (`~100ns`)**; 2) **I/O Multiplexing (`epoll`/`kqueue`)** gom hàng vạn kết nối TCP không tốn thread; 3) **Single-Threaded Event Loop** loại bỏ hoàn toàn Mutex Lock và Context Switching."
+  },
+  {
+    "id": "R00-FC2",
+    "front": "Hiện tượng **Head-of-Line Blocking** trên Redis Event Loop xảy ra khi nào?",
+    "back": "Khi một client gọi lệnh độ phức tạp `O(N)` trên dữ liệu lớn (như `KEYS *`, `HGETALL` hoặc `DEL` BigKey), giữ chặt luồng thực thi chính khiến mọi lệnh `O(1)` phía sau phải xếp hàng chờ."
+  },
+  {
+    "id": "R00-FC3",
+    "front": "Các **luồng phụ (Threaded I/O & BIO)** trong Redis 8 đảm nhiệm những việc gì?",
+    "back": "Đọc/ghi và phân tích cú pháp buffer mạng socket (I/O Threads), giải phóng vùng nhớ lớn bất đồng bộ (`UNLINK`), và đồng bộ đĩa nền (`appendfsync everysec`)."
+  },
+  {
+    "id": "R00-FC4",
+    "front": "Đơn vị đo của chỉ thị `slowlog-log-slower-than` là gì và nó có tính độ trễ mạng không?",
+    "back": "Đơn vị là **micro-giây (`µs`)** (`10000` = `10ms`). Nó **chỉ đo thời gian CPU thực thi lệnh trên luồng chính**, hoàn toàn không tính thời gian gói tin đi trên mạng."
+  },
+  {
+    "id": "R00-FC5",
+    "front": "Vì sao giao thức **RESP (Redis Serialization Protocol)** lại phân tích cú pháp nhanh hơn nhiều so với JSON qua HTTP?",
+    "back": "RESP truyền tiền tố kiểu dữ liệu và độ dài byte chính xác trước nội dung (ví dụ `$5\\r\\nhello\\r\\n`), cho phép bộ đọc C nhảy thẳng theo số byte mà không cần quét tìm dấu đóng ngoặc hay escape chuỗi."
+  },
+  {
+    "id": "R00-FC6",
+    "front": "Hai chỉ thị tối thiểu nào trong `redis.conf` ngăn chặn việc vô tình phơi Redis ra ngoài Internet?",
+    "back": "`bind 127.0.0.1 -::1` (chỉ lắng nghe giao diện nội bộ) kết hợp với `protected-mode yes` (từ chối kết nối từ bên ngoài nếu chưa cấu hình xác thực ACL/mật khẩu)."
+  }
+]

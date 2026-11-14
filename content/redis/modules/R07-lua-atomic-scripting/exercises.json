@@ -1,0 +1,337 @@
+[
+  {
+    "id": "redis-ex-r07-1",
+    "code": "R07.1",
+    "title": "Chuẩn hoá kịch bản Lua tách bạch KEYS[1] & ARGV[1] tương thích Cluster",
+    "difficulty": 1,
+    "tags": [
+      "lua",
+      "eval",
+      "keys-argv",
+      "cluster-ready"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "lua-keys-argv.redis",
+    "prompt": "Kịch bản khởi đầu bên dưới mắc lỗi nghiêm trọng khi truyền `numkeys = 0` và gán cứng tên khoá trực tiếp trong thân Lua (sẽ vỡ ngay khi đưa lên Redis Cluster!). Hãy viết lại lệnh `EVAL` chuẩn mực với **`numkeys = 1`**, truyền khoá `feature:checkout:limit` qua **`KEYS[1]`** và giá trị mặc định `\"50\"` qua **`ARGV[1]`**: kiểm tra nếu `redis.call('EXISTS', KEYS[1]) == 0` thì gọi `redis.call('SET', KEYS[1], ARGV[1])` và `return 1`, ngược lại `return 0`.",
+    "starter": "# LỖI THIẾT KẾ: Đang hardcode tên khoá với numkeys = 0! Hãy sửa thành numkeys = 1 dùng KEYS[1] và ARGV[1]\nEVAL \"return redis.call('PING')\" 0\n",
+    "solution": "EVAL \"if redis.call('EXISTS', KEYS[1]) == 0 then redis.call('SET', KEYS[1], ARGV[1]); return 1 else return 0 end\" 1 feature:checkout:limit \"50\"\n",
+    "hints": [
+      "Thay con số `0` sau chuỗi kịch bản thành `1 feature:checkout:limit \"50\"`.",
+      "Trong thân Lua, tham chiếu khoá bằng `KEYS[1]` và giá trị bằng `ARGV[1]` (nhớ Lua bắt đầu từ chỉ số `1`)."
+    ],
+    "ref": "lua/atomic-inventory-deduct.lua",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "feature-key-initialized",
+          "doc": "Khoá `feature:checkout:limit` đã được khởi tạo mang giá trị `\"50\"`",
+          "target": "string-value",
+          "key": "feature:checkout:limit",
+          "match": {
+            "eq": "50"
+          }
+        },
+        {
+          "id": "proper-keys-and-argv",
+          "doc": "Kịch bản `EVAL` sử dụng chuẩn `KEYS[1]`, `ARGV[1]` với `numkeys = 1` (không gọi `SET` bên ngoài `EVAL`)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*EVAL\\b[\\s\\S]*KEYS\\[1\\][\\s\\S]*ARGV\\[1\\][\\s\\S]*\\b1\\s+feature:checkout:limit\\b",
+          "forbidRegex": "^\\s*SET\\b"
+        },
+        {
+          "id": "returned-1",
+          "doc": "Kịch bản thực thi nhánh khởi tạo mới và trả về `(integer) 1`",
+          "target": "stdout-contains",
+          "contains": "(integer) 1"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r07-2",
+    "code": "R07.2",
+    "title": "Trừ tồn kho nguyên tử chống bán âm (Check-and-Decrement) bằng Lua EVAL",
+    "difficulty": 2,
+    "tags": [
+      "lua",
+      "eval",
+      "inventory",
+      "flash-sale"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "atomic-inventory.redis",
+    "prompt": "Trong kho hiện có `stock:sku:ps5 = 5` và `stock:sku:vr2 = 2`. Hãy dùng kịch bản Lua nguyên tử kiểm tra tồn kho (`local cur = tonumber(redis.call('GET', KEYS[1]) or '0')`, nếu `cur >= tonumber(ARGV[1])` thì `DECRBY` và trả về số dư mới, nếu thiếu hàng thì **giữ nguyên kho** và `return -1`) để xử lý **2 đơn hàng liên tiếp**:\n1) Đơn 1 đặt mua `3` chiếc `stock:sku:ps5` (thành công -> kho còn `2`).\n2) Đơn 2 đặt mua `5` chiếc `stock:sku:vr2` (thiếu hàng -> từ chối trả về `(integer) -1`, tồn kho `stock:sku:vr2` vẫn bảo toàn ở mức `2`!).",
+    "starter": "# Viết 2 lệnh EVAL kiểm tra tồn kho >= số lượng mua trước khi DECRBY:\n# 1. Mua 3 chiếc trên khoá stock:sku:ps5\n# 2. Thử mua 5 chiếc trên khoá stock:sku:vr2 (phải trả về -1 và giữ nguyên tồn kho = 2)\n",
+    "solution": "EVAL \"local cur = tonumber(redis.call('GET', KEYS[1]) or '0'); local qty = tonumber(ARGV[1]); if cur >= qty then return redis.call('DECRBY', KEYS[1], qty) else return -1 end\" 1 stock:sku:ps5 3\nEVAL \"local cur = tonumber(redis.call('GET', KEYS[1]) or '0'); local qty = tonumber(ARGV[1]); if cur >= qty then return redis.call('DECRBY', KEYS[1], qty) else return -1 end\" 1 stock:sku:vr2 5\n",
+    "hints": [
+      "Luôn bọc `tonumber(...)` quanh cả giá trị `GET` lẫn `ARGV[1]` để tránh lỗi so sánh chuỗi trong Lua!",
+      "Dùng cùng 1 mẫu câu lệnh `EVAL \"...\" 1 <tên-khoá> <số-lượng>` cho cả `stock:sku:ps5 3` và `stock:sku:vr2 5`."
+    ],
+    "ref": "lua/atomic-inventory-deduct.lua",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "stock:sku:ps5",
+            "type": "string",
+            "value": "5"
+          },
+          {
+            "key": "stock:sku:vr2",
+            "type": "string",
+            "value": "2"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "ps5-deducted-to-2",
+          "doc": "Tồn kho `stock:sku:ps5` được trừ nguyên tử xuống còn `2`",
+          "target": "string-value",
+          "key": "stock:sku:ps5",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "vr2-protected-at-2",
+          "doc": "Tồn kho `stock:sku:vr2` không bị trừ âm, vẫn bảo toàn ở mức `2`",
+          "target": "string-value",
+          "key": "stock:sku:vr2",
+          "match": {
+            "eq": 2
+          }
+        },
+        {
+          "id": "rejected-order-minus-1",
+          "doc": "Đơn vượt quá tồn kho bị kịch bản Lua chặn lại và trả về `(integer) -1`",
+          "target": "stdout-contains",
+          "contains": "(integer) -1"
+        },
+        {
+          "id": "only-eval-used",
+          "doc": "Thực hiện hoàn toàn qua `EVAL` (không gọi `DECRBY` hoặc `SET` trần bên ngoài)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*EVAL\\b[\\s\\S]*stock:sku:ps5[\\s\\S]*^\\s*EVAL\\b[\\s\\S]*stock:sku:vr2",
+          "forbidRegex": "^\\s*(DECRBY|DECR|SET)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r07-3",
+    "code": "R07.3",
+    "title": "Nhả khoá phân tán an toàn (Safe Distributed Lock Release) bằng Lua",
+    "difficulty": 2,
+    "tags": [
+      "lua",
+      "distributed-lock",
+      "safe-unlock",
+      "eval"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "safe-lock-release.redis",
+    "prompt": "Trên hệ thống đang có 2 khoá phân tán: `lock:order:77` hiện thuộc về `\"owner-worker-B\"` (do khoá cũ của Worker A đã hết hạn), còn `lock:order:88` đang thuộc về `\"owner-worker-A\"`. Worker A vừa chạy xong việc và muốn mở cả 2 khoá với mã định danh của mình là `\"owner-worker-A\"`.\nHãy dùng kịch bản Lua mở khoá an toàn chuẩn Redis (`if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end`) chạy cho:\n1) `lock:order:77` với token `\"owner-worker-A\"` (phải từ chối trả về `0`, bảo vệ khoá của Worker B!).\n2) `lock:order:88` với token `\"owner-worker-A\"` (đúng chủ sở hữu -> xoá khoá trả về `1`!).",
+    "starter": "# Chạy kịch bản EVAL nhả khoá an toàn của Worker A (\"owner-worker-A\") lần lượt trên:\n# 1. lock:order:77\n# 2. lock:order:88\n",
+    "solution": "EVAL \"if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end\" 1 lock:order:77 \"owner-worker-A\"\nEVAL \"if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end\" 1 lock:order:88 \"owner-worker-A\"\n",
+    "hints": [
+      "Mẫu Lua chuẩn: `if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end`.",
+      "Truyền `1 lock:order:77 \"owner-worker-A\"` ở dòng 1 và `1 lock:order:88 \"owner-worker-A\"` ở dòng 2."
+    ],
+    "ref": "lua/safe-distributed-lock-release.lua",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "lock:order:77",
+            "type": "string",
+            "value": "owner-worker-B",
+            "ttlMs": 30000
+          },
+          {
+            "key": "lock:order:88",
+            "type": "string",
+            "value": "owner-worker-A",
+            "ttlMs": 30000
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "worker-b-lock-untouched",
+          "doc": "Khoá `lock:order:77` của `owner-worker-B` được bảo vệ an toàn, không bị Worker A xoá nhầm",
+          "target": "string-value",
+          "key": "lock:order:77",
+          "match": {
+            "eq": "owner-worker-B"
+          }
+        },
+        {
+          "id": "worker-a-lock-released",
+          "doc": "Khoá `lock:order:88` đúng chủ sở hữu `owner-worker-A` đã được giải phóng sạch",
+          "target": "key-exists",
+          "key": "lock:order:88",
+          "exists": false
+        },
+        {
+          "id": "both-eval-outcomes",
+          "doc": "Kết quả thực thi trả về `(integer) 0` cho khoá sai chủ và `(integer) 1` cho khoá đúng chủ",
+          "target": "stdout-contains",
+          "contains": "(integer) 0"
+        },
+        {
+          "id": "no-raw-del",
+          "doc": "Chỉ giải phóng khoá thông qua kịch bản `EVAL` (cấm gọi `DEL`/`UNLINK` trực tiếp)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*EVAL\\b[\\s\\S]*lock:order:77[\\s\\S]*^\\s*EVAL\\b[\\s\\S]*lock:order:88",
+          "forbidRegex": "^\\s*(DEL|UNLINK)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r07-4",
+    "code": "R07.4",
+    "title": "Xây dựng Fixed-Window Rate Limiter nguyên tử (INCR + EXPIRE lần đầu) bằng Lua",
+    "difficulty": 3,
+    "tags": [
+      "lua",
+      "rate-limiter",
+      "incr",
+      "expire"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "lua-rate-limiter.redis",
+    "prompt": "Hãy viết kịch bản Lua cho bộ giới hạn tốc độ cửa sổ `60` giây, tối đa `2` request trên khoá `rl:api:u42`:\n- Nhận `KEYS[1] = rl:api:u42`, `ARGV[1] = 60` (TTL giây), `ARGV[2] = 2` (ngưỡng tối đa).\n- Gọi `local c = redis.call('INCR', KEYS[1])`; nếu `c == 1` thì đặt `redis.call('EXPIRE', KEYS[1], ARGV[1])`.\n- Nếu `c > tonumber(ARGV[2])` thì `return 0` (từ chối), ngược lại `return 1` (cho phép).\nHãy thực thi lệnh `EVAL` này **3 lần liên tiếp** để chứng minh 2 request đầu nhận `1` và request thứ 3 bị chặn với `0`!",
+    "starter": "# Gọi 3 lần liên tiếp cùng 1 câu lệnh EVAL Rate Limiter trên khoá rl:api:u42 với TTL=60 và limit=2\n",
+    "solution": "EVAL \"local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; if c > tonumber(ARGV[2]) then return 0 else return 1 end\" 1 rl:api:u42 60 2\nEVAL \"local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; if c > tonumber(ARGV[2]) then return 0 else return 1 end\" 1 rl:api:u42 60 2\nEVAL \"local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; if c > tonumber(ARGV[2]) then return 0 else return 1 end\" 1 rl:api:u42 60 2\n",
+    "hints": [
+      "Bên trong Lua: `local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; if c > tonumber(ARGV[2]) then return 0 else return 1 end`.",
+      "Nhân bản câu lệnh `EVAL \"...\" 1 rl:api:u42 60 2` thành 3 dòng liên tiếp để mô phỏng 3 lượt gọi API."
+    ],
+    "ref": "lua/bad-non-atomic-check-then-set.ts",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "counter-reached-3",
+          "doc": "Bộ đếm `rl:api:u42` ghi nhận đủ `3` lượt gọi",
+          "target": "string-value",
+          "key": "rl:api:u42",
+          "match": {
+            "eq": 3
+          }
+        },
+        {
+          "id": "window-ttl-attached",
+          "doc": "Khoá `rl:api:u42` được gắn `TTL` cửa sổ 60 giây ngay từ lần tăng đầu tiên",
+          "target": "ttl",
+          "key": "rl:api:u42",
+          "minSeconds": 50,
+          "maxSeconds": 60
+        },
+        {
+          "id": "third-request-throttled",
+          "doc": "Lượt gọi thứ 3 vượt ngưỡng `2` bị chặn lại với mã trả về `(integer) 0`",
+          "target": "stdout-contains",
+          "contains": "(integer) 0"
+        },
+        {
+          "id": "atomic-lua-only",
+          "doc": "Thực hiện hoàn toàn bên trong `EVAL` (không gọi `INCR`/`EXPIRE` rời bên ngoài)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*EVAL\\b",
+          "forbidRegex": "^\\s*(INCR|EXPIRE|SET)\\b"
+        }
+      ]
+    }
+  },
+  {
+    "id": "redis-ex-r07-5",
+    "code": "R07.5",
+    "title": "Chuyển khoản đa khoá có kiểm tra số dư bằng Lua & Hash Tag {bank}",
+    "difficulty": 3,
+    "tags": [
+      "lua",
+      "multi-key",
+      "hash-tag",
+      "transfer"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "lua-cluster-transfer.redis",
+    "prompt": "Tài khoản `acc:{bank}:alice` đang có `300` và `acc:{bank}:bob` đang có `100` (cả hai đều gắn chung Hash Tag `{bank}` để cùng nằm trên 1 Hash Slot khi chạy Cluster!). Hãy viết **1 lệnh `EVAL`** với **`numkeys = 2`** (`KEYS[1] = acc:{bank}:alice`, `KEYS[2] = acc:{bank}:bob`) và số tiền cần chuyển `ARGV[1] = 180`:\n- Kiểm tra nếu số dư của `KEYS[1]` `>= tonumber(ARGV[1])` thì gọi `DECRBY` trên `KEYS[1]`, `INCRBY` trên `KEYS[2]` và `return 1`; ngược lại `return 0`.",
+    "starter": "# Viết lệnh EVAL với numkeys = 2 chuyển 180 đơn vị từ acc:{bank}:alice sang acc:{bank}:bob nếu đủ số dư\n",
+    "solution": "EVAL \"local bal = tonumber(redis.call('GET', KEYS[1]) or '0'); local amt = tonumber(ARGV[1]); if bal >= amt then redis.call('DECRBY', KEYS[1], amt); redis.call('INCRBY', KEYS[2], amt); return 1 else return 0 end\" 2 acc:{bank}:alice acc:{bank}:bob 180\n",
+    "hints": [
+      "Vì kịch bản thao tác trên 2 khoá, tham số `numkeys` phải là `2`: `EVAL \"...\" 2 acc:{bank}:alice acc:{bank}:bob 180`.",
+      "Trong thân Lua, trừ ở `KEYS[1]` và cộng vào `KEYS[2]` bằng `ARGV[1]` (hoặc biến `amt`)."
+    ],
+    "ref": "lua/atomic-inventory-deduct.lua",
+    "webGrade": true,
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "acc:{bank}:alice",
+            "type": "string",
+            "value": "300"
+          },
+          {
+            "key": "acc:{bank}:bob",
+            "type": "string",
+            "value": "100"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "alice-new-balance",
+          "doc": "Tài khoản `acc:{bank}:alice` giảm chính xác xuống `120`",
+          "target": "string-value",
+          "key": "acc:{bank}:alice",
+          "match": {
+            "eq": 120
+          }
+        },
+        {
+          "id": "bob-new-balance",
+          "doc": "Tài khoản `acc:{bank}:bob` tăng chính xác lên `280`",
+          "target": "string-value",
+          "key": "acc:{bank}:bob",
+          "match": {
+            "eq": 280
+          }
+        },
+        {
+          "id": "same-slot-verified",
+          "doc": "Hai khoá `acc:{bank}:alice` và `acc:{bank}:bob` nằm trên cùng 1 Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "acc:{bank}:alice",
+            "acc:{bank}:bob"
+          ]
+        },
+        {
+          "id": "eval-2-keys-used",
+          "doc": "Sử dụng `EVAL` với `numkeys = 2` (không sửa số dư bên ngoài Lua)",
+          "target": "command-used",
+          "mustUseRegex": "^\\s*EVAL\\b[\\s\\S]*\\b2\\s+acc:\\{bank\\}:alice\\s+acc:\\{bank\\}:bob\\s+180\\b",
+          "forbidRegex": "^\\s*(DECRBY|INCRBY|SET|MULTI)\\b"
+        }
+      ]
+    }
+  }
+]

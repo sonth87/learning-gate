@@ -46,6 +46,28 @@ footer: "Quy ước POSIX & Node.js: Exit Code = 0 là thành công · Exit Code
 
 ## 1. Ánh xạ tư duy: Từ `package.json` trên Laptop lên CI Gate
 
+```visual
+kind: illustration
+diagram: "cicd:c00"
+alt: "Đường ống cổng kiểm định CI Fail-Fast dựa trên mã thoát POSIX Exit Code 0 so với 1..255 và cách chống bẫy False-Green"
+title: "Giải Phẫu Cổng Kiểm Định CI: Tín Hiệu POSIX Exit Code & Chốt Chặn Fail-Fast"
+subtitle: "Cách đường ống tự động mở khoá nút Merge khi mọi bước trả 0 và phanh gấp tức thì trước mọi mã lỗi 1..255"
+caption: "Chuỗi cổng kiểm định tuần tự npm ci -> lint -> test -> build, bảng mã lỗi POSIX đặc trưng (1, 22, 127, 137) và cách triệt tiêu bẫy nuốt lỗi False-Green"
+callouts:
+  - num: 1
+    label: "Chuỗi cổng kiểm định yêu cầu Exit Code == 0"
+    desc: "Mỗi tiến trình từ npm ci, eslint, vitest đến build đều phải kết thúc với mã thoát 0 thì nút Merge Pull Request mới được mở khoá."
+    tone: emerald
+  - num: 2
+    label: "Phanh gấp Fail-Fast khi gặp mã thoát 1..255"
+    desc: "Bất kỳ bước nào trả mã khác 0 (1 lỗi test, 22 lỗi HTTP, 137 tràn RAM OOM) sẽ lập tức huỷ các bước sau và chặn gộp code hỏng."
+    tone: rose
+  - num: 3
+    label: "Chống bẫy Xanh vỏ đỏ lòng (False-Green)"
+    desc: "Tuyệt đối cấm dùng || true hoặc continue-on-error ở cổng kiểm thử; luôn bật set -euo pipefail và cờ curl --fail-with-body."
+    tone: amber
+```
+
 > [!ANALOGY] Hãy hình dung như sau
 > Nếu `scripts` trong `package.json` là **danh sách bài kiểm tra**, thì **CI Gate** chính là một **giám thị máy ảo Linux sạch tinh** đứng gác ngay trước cửa nhánh `main` — không bao giờ mệt, không bao giờ quên chạy test chiều thứ Sáu, và không bao giờ dùng nhầm `node_modules` cũ tồn đọng trên máy cá nhân!
 

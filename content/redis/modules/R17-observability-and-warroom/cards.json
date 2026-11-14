@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R17-FC1",
+    "front": "4 Tín hiệu Vàng (Golden Signals) cần cảnh báo liên tục trên cụm Redis Production?",
+    "back": "1. **Saturation:** CPU luồng chính Redis & `used_memory / maxmemory`.\n2. **Latency & Slow Ops:** Thời gian phản hồi p99 & tốc độ tăng `SLOWLOG LEN`.\n3. **Efficiency:** `Cache Hit Ratio` tính bằng `rate(...[5m])` & tốc độ `evicted_keys`.\n4. **Availability/Topology:** `rejected_connections`, `master_link_status`, `cluster_state`."
+  },
+  {
+    "id": "R17-FC2",
+    "front": "Điểm mù lớn nhất của `SLOWLOG GET` mà bạn phải bù đắp bằng `LATENCY DOCTOR` là gì?",
+    "back": "`SLOWLOG` **chỉ đo thời gian CPU thực thi câu lệnh**, không đo thời gian chờ mạng, xếp hàng đợi hay độ trễ hệ điều hành khi `fork()` BGSAVE, `fsync` đĩa AOF và Transparent Huge Pages — những thứ chỉ **`LATENCY DOCTOR`** mới phát hiện được."
+  },
+  {
+    "id": "R17-FC3",
+    "front": "Công thức PromQL đúng chuẩn để giám sát Cache Hit Ratio theo thời gian thực?",
+    "back": "`rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))`\nTuyệt đối không chia hai số tổng tích luỹ không qua `rate()`!"
+  },
+  {
+    "id": "R17-FC4",
+    "front": "Phản xạ 2 bước khi phát hiện Bigkey cần xoá khẩn cấp trên Production?",
+    "back": "1. Đo kiểm chứng bằng `MEMORY USAGE <key>`.\n2. Xoá bất đồng bộ bằng **`UNLINK <key>`** (tuyệt đối không gọi `DEL`) và đảm bảo bật `lazyfree-lazy-expire yes` + `lazyfree-lazy-server-del yes`."
+  },
+  {
+    "id": "R17-FC5",
+    "front": "Phản xạ giải cứu đơn hàng bị treo trong danh sách chờ xác nhận (PEL) của Redis Streams?",
+    "back": "1. Chẩn đoán bằng `XPENDING <stream> <group> - + 10` tìm consumer chết.\n2. Thu hồi tin nhắn quá hạn idle bằng **`XAUTOCLAIM <stream> <group> <new-worker> <min-idle-ms> 0-0`**.\n3. Xử lý hoàn tất và gọi **`XACK`** giải phóng bộ nhớ PEL."
+  },
+  {
+    "id": "R17-FC6",
+    "front": "Vì sao sau khi sửa nóng sự cố bằng `CONFIG SET` luôn phải gọi `CONFIG REWRITE` và cập nhật IaC?",
+    "back": "Vì `CONFIG SET` chỉ có hiệu lực trên RAM của tiến trình hiện tại. Gọi **`CONFIG REWRITE`** (và sửa tệp `redis.conf` / ConfigMap trong Git) giúp cấu hình không bị quay ngược về trạng thái lỗi khi Pod/Server khởi động lại."
+  }
+]

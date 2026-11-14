@@ -2,6 +2,29 @@
 
 Câu nói kinh điển nhất trong mọi phòng họp kỹ thuật là: *"Ủa lạ vậy anh, trên MacBook của em vừa chạy `npm test` xanh mượt mà sao đẩy lên Pull Request nó lại treo cứng rồi đỏ lòm?!"*. Để đường ống CI thực sự trở thành tấm khiên bảo vệ đội ngũ thay vì nỗi ám ảnh mỗi chiều thứ Sáu, bạn cần kết hợp hai mảnh ghép: ==chiến lược phân nhánh ngắn hạn (Trunk-Based Development)== và ==kỷ luật đồng bộ môi trường giữa Laptop với CI Runner==.
 
+```visual
+kind: illustration
+diagram: "cicd:c02"
+src: "/illustrations/cicd/cicd-trunk-vs-gitflow.jpg"
+alt: "Đối chiếu địa ngục xung đột GitFlow nhánh dài hạn với Trunk-Based Development nhánh ngắn hạn và hàng đợi Merge Queue chống lệch ngữ nghĩa"
+title: "Giải Phẫu Chiến Lược Nhánh: Địa Ngục GitFlow vs Trunk-Based & Merge Queue"
+subtitle: "Gộp nhánh nhỏ hàng ngày kết hợp Feature Flags và hàng đợi kiểm thử gộp để giữ nhánh main luôn sẵn sàng phát hành"
+caption: "Sự đối lập giữa nhánh dài hạn nhiều tuần gây nổ xung đột, mô hình Trunk-Based PR ngắn dưới 24 giờ và lớp bảo vệ Merge Queue chống xung đột ngữ nghĩa"
+callouts:
+  - num: 1
+    label: "Nhánh dài hạn gây Địa ngục xung đột (Merge Hell)"
+    desc: "Tách nhánh suốt nhiều tuần khiến mã nguồn trôi dạt hàng nghìn dòng, xanh trên nhánh lẻ nhưng vỡ vụn ngay khi gộp chung."
+    tone: rose
+  - num: 2
+    label: "Trunk-Based PR ngắn hạn & Đồng bộ môi trường"
+    desc: "Gộp các PR nhỏ mỗi ngày kết hợp Feature Flags, khoá phiên bản .nvmrc, múi giờ UTC và kiểm tra chữ hoa/thường tên tệp Linux."
+    tone: emerald
+  - num: 3
+    label: "Merge Queue chặn đứng xung đột ngữ nghĩa chéo"
+    desc: "Tự động tạo nhánh gộp tạm thời để chạy kiểm thử tổ hợp PR #101 + PR #102 cùng nhau trước khi cho phép chạm vào nhánh main."
+    tone: sky
+```
+
 ## 1. Trunk-Based Development vs GitFlow cổ điển: Vì sao CI yêu nhánh ngắn hạn?
 
 ```visual

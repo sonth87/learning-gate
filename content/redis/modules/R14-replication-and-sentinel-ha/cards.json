@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R14-FC1",
+    "front": "Sự khác biệt giữa Full Resynchronization và Partial Resynchronization (`PSYNC2`)?",
+    "back": "- **Full Resync:** Master phải `BGSAVE` truyền toàn bộ RDB qua mạng cho Replica nạp lại từ đầu (rất tốn RAM COW & băng thông).\n- **Partial Resync (`PSYNC2`):** Khi mất mạng ngắn hạn, Master chỉ gửi bù các byte lệnh bị thiếu từ bộ đệm vòng **`repl-backlog-size`** dựa trên `(replid, offset)`."
+  },
+  {
+    "id": "R14-FC2",
+    "front": "Phân biệt trạng thái `SDOWN` và `ODOWN` trong Redis Sentinel?",
+    "back": "- **`SDOWN` (Subjective Down):** Ý kiến cục bộ của 1 Sentinel khi thấy Master không phản hồi `PING` quá `down-after-milliseconds`.\n- **`ODOWN` (Objective Down):** Trạng thái khách quan khi có ít nhất **`quorum`** Sentinel cùng xác nhận Master bị bất tỉnh, mở đường cho bầu cử Failover."
+  },
+  {
+    "id": "R14-FC3",
+    "front": "Tại sao cụm Sentinel luôn phải có tối thiểu 3 nút (số lẻ 3 hoặc 5) trên các máy tách biệt?",
+    "back": "Để chịu được lỗi sập hoàn toàn 1 máy chủ vật lý mà vẫn còn **`2/3` phiếu quá bán (`majority`)** bầu ra Sentinel Leader thực thi Failover tự động không bị bế tắc."
+  },
+  {
+    "id": "R14-FC4",
+    "front": "Cơ chế hoạt động của lệnh `WAIT <numreplicas> <timeout>`?",
+    "back": "Chặn kết nối hiện tại cho tới khi tất cả các lệnh ghi trước đó trên kết nối này được xác nhận đã chuyển tới ít nhất `<numreplicas>` bản sao (hoặc hết `<timeout>` ms) — tăng độ bền đồng bộ cho các giao dịch trọng yếu."
+  },
+  {
+    "id": "R14-FC5",
+    "front": "Cách ngăn chặn thảm hoạ Split-Brain làm mất dữ liệu trên Master bị cô lập mạng?",
+    "back": "Cấu hình trên Master:\n`min-replicas-to-write 1`\n`min-replicas-max-lag 10`\nNếu Master mất liên lạc với toàn bộ Replica quá 10 giây, nó sẽ tự ngừng nhận lệnh ghi mới."
+  },
+  {
+    "id": "R14-FC6",
+    "front": "Vì sao triển khai Redis HA trên Kubernetes phải dùng `StatefulSet` + Headless Service (`clusterIP: None`) thay vì `Deployment`?",
+    "back": "Vì mỗi nút Redis/Sentinel cần **định danh DNS cố định** (`redis-ha-0`, `redis-ha-1`...) và gắn cố định từng ổ đĩa `PVC` riêng biệt qua các lần khởi động lại."
+  }
+]

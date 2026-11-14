@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R12-FC1",
+    "front": "Sự khác biệt giữa `used_memory` và `used_memory_rss` trong `INFO memory`?",
+    "back": "- **`used_memory`**: Tổng số byte logic do bộ cấp phát `jemalloc` bên trong Redis quản lý.\n- **`used_memory_rss`**: Tổng dung lượng trang RAM vật lý thực tế mà nhân Linux đang cấp cho tiến trình (bao gồm cả phân mảnh và overhead)."
+  },
+  {
+    "id": "R12-FC2",
+    "front": "Ba ngưỡng đọc bệnh nhanh của chỉ số `mem_fragmentation_ratio`?",
+    "back": "- **`1.0 – 1.4`**: Khỏe mạnh bình thường.\n- **`> 1.5`**: Phân mảnh bộ nhớ cao -> bật `activedefrag yes`.\n- **`< 1.0`**: Nguy kịch! Tiến trình đang bị đẩy xuống ổ cứng **Swap** làm sập hiệu năng."
+  },
+  {
+    "id": "R12-FC3",
+    "front": "Vì sao `allkeys-lfu` vượt trội hơn `allkeys-lru` cho hầu hết hệ thống Cache?",
+    "back": "LRU chỉ nhìn lần chạm gần nhất nên dễ bị một tác vụ quét lô 1 lần (*Cache Scan Pollution*) đẩy văng các khoá nóng vừa nghỉ vài giây. LFU dùng bộ đếm tần suất Morris Counter nên bảo vệ vững chắc các khoá thực sự phổ biến."
+  },
+  {
+    "id": "R12-FC4",
+    "front": "Quy tắc 65%–70% Headroom khi triển khai Redis trên Docker / Kubernetes?",
+    "back": "Đặt `maxmemory` chỉ bằng **65%–70%** `resources.limits.memory` của Pod (ví dụ `2688mb` trên Pod `4Gi`) để chừa chỗ cho `fork()` Copy-on-Write lúc ghi RDB/AOF, Client/Replication Output Buffers và `jemalloc` — tránh bị cgroup `OOMKilled (137)`."
+  },
+  {
+    "id": "R12-FC5",
+    "front": "Ý nghĩa của bộ 3 chỉ thị `lazyfree-lazy-eviction`, `lazyfree-lazy-expire` và `lazyfree-lazy-server-del`?",
+    "back": "Chuyển việc giải phóng vùng nhớ (`free()`) khi trục xuất khoá đầy RAM, khi khoá tự hết hạn TTL và khi ghi đè khoá cũ sang luồng nền `bio_lazy_free`, giữ cho luồng chính không bị khựng bởi Bigkey."
+  },
+  {
+    "id": "R12-FC6",
+    "front": "Cấu trúc 24 bit trường `lru` trong `redisObject` được chia như thế nào khi chạy chế độ LFU?",
+    "back": "**16 bit cao** lưu dấu thời gian theo phút để giảm dần độ nóng (`lfu-decay-time`), còn **8 bit thấp** (`0..255`) chạy bộ đếm xác suất logarit **Morris Counter** (`lfu-log-factor`)."
+  }
+]

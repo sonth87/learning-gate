@@ -1,0 +1,1153 @@
+{
+  "categories": {
+    "redis-conf": "Cấu hình redis.conf & Client SDK",
+    "data-patterns": "Mẫu Cấu trúc Dữ liệu (String, Hash, ZSet, Bloom, Geo)",
+    "lua-streams": "Kịch bản Nguyên tử Lua & Redis Streams",
+    "caching-locks": "Chiến lược Caching, Distributed Lock & Rate Limit",
+    "cluster-k8s-ops": "Sentinel HA, Redis Cluster, Bảo mật ACL & Giám sát SRE"
+  },
+  "flagLabels": {
+    "production-ready": "Chuẩn Production",
+    "outdated": "Cú pháp / API đã cũ",
+    "security-risk": "Lỗ hổng bảo mật cố ý",
+    "buggy": "Chứa lỗi để tìm bug"
+  },
+  "items": [
+    {
+      "n": 1,
+      "id": "redis-cfg-1",
+      "path": "conf/redis-dev-minimal.conf",
+      "language": "redis-conf",
+      "loc": 39,
+      "category": "redis-conf",
+      "topic": "Cấu hình Redis 8 tối giản, an toàn cho môi trường phát triển cục bộ (loopback, lazyfree, slowlog)",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "redis-conf",
+        "local-dev",
+        "protected-mode",
+        "slowlog",
+        "lazyfree"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://github.com/redis/redis/blob/unstable/redis.conf",
+      "curated": [
+        {
+          "module": "R00",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 2,
+      "id": "redis-cfg-2",
+      "path": "conf/redis-bad-exposed-root.conf",
+      "language": "redis-conf",
+      "loc": 34,
+      "category": "redis-conf",
+      "topic": "Phản mẫu cấu hình mở toang bind 0.0.0.0, tắt protected-mode và không đặt mật khẩu/ACL gây mất quyền máy chủ",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "security-risk",
+        "protected-mode",
+        "bind",
+        "oom"
+      ],
+      "flags": [
+        "buggy",
+        "security-risk"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/",
+      "curated": [
+        {
+          "module": "R00",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 3,
+      "id": "redis-cfg-3",
+      "path": "compose/docker-compose.redis-stack-local.yml",
+      "language": "yaml",
+      "loc": 44,
+      "category": "redis-conf",
+      "topic": "Khởi chạy Redis 8 cục bộ bằng Docker Compose v2 kèm giới hạn RAM, AOF everysec và healthcheck tự động",
+      "level": 0,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "docker-compose",
+        "redis-8",
+        "healthcheck",
+        "local-dev"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/docker/",
+      "curated": []
+    },
+    {
+      "n": 4,
+      "id": "redis-cfg-4",
+      "path": "clients/node/ioredis-singleton-pool.ts",
+      "language": "shell",
+      "loc": 41,
+      "category": "redis-conf",
+      "topic": "Quản lý kết nối Singleton trên Node.js/TypeScript với ioredis, RESP3, Auto-Pipelining và Graceful Shutdown",
+      "level": 0,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "nodejs",
+        "ioredis",
+        "resp3",
+        "auto-pipelining",
+        "connection-pool"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/clients/nodejs/",
+      "curated": [
+        {
+          "module": "R02",
+          "kind": "good"
+        },
+        {
+          "module": "R06",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 5,
+      "id": "redis-cfg-5",
+      "path": "clients/python/redis-py-connection-pool.py",
+      "language": "shell",
+      "loc": 45,
+      "category": "redis-conf",
+      "topic": "Thiết lập Async BlockingConnectionPool chuẩn thực chiến cho FastAPI/Python với redis-py, hiredis và ExponentialBackoff",
+      "level": 0,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "python",
+        "redis-py",
+        "asyncio",
+        "connection-pool",
+        "resp3"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/clients/redis-py/",
+      "curated": [
+        {
+          "module": "R06",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 6,
+      "id": "redis-cfg-6",
+      "path": "patterns/string-idempotency-gate.sh",
+      "language": "redis",
+      "loc": 22,
+      "category": "data-patterns",
+      "topic": "Cổng chống thanh toán trùng lặp (Idempotency Gate) bằng SET NX EX GET và cập nhật trạng thái bảo toàn hạn với KEEPTTL",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "string",
+        "idempotency",
+        "set-nx",
+        "keepttl",
+        "payment"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/set/",
+      "curated": []
+    },
+    {
+      "n": 7,
+      "id": "redis-cfg-7",
+      "path": "patterns/bad-keys-star-cron.sh",
+      "language": "redis",
+      "loc": 21,
+      "category": "data-patterns",
+      "topic": "Phản mẫu cronjob dùng KEYS *, DEL đồng bộ và HGETALL trên tập khóa lớn làm treo cứng Main Thread",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "keys-star",
+        "blocking",
+        "bigkey",
+        "latency-spike"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/keys/",
+      "curated": [
+        {
+          "module": "R01",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 8,
+      "id": "redis-cfg-8",
+      "path": "patterns/scan-cursor-batch-cleanup.py",
+      "language": "shell",
+      "loc": 44,
+      "category": "data-patterns",
+      "topic": "Dọn dẹp hàng triệu khóa cũ an toàn không gây nghẽn bằng con trỏ SCAN kết hợp Pipeline UNLINK bất đồng bộ",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "scan",
+        "unlink",
+        "pipeline",
+        "batch-cleanup",
+        "python"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/scan/",
+      "curated": [
+        {
+          "module": "R01",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 9,
+      "id": "redis-cfg-9",
+      "path": "patterns/hash-cart-hexpire-redis8.redis",
+      "language": "redis",
+      "loc": 24,
+      "category": "data-patterns",
+      "topic": "Thiết kế giỏ hàng thương mại điện tử tối ưu bộ nhớ listpack và đặt TTL riêng cho từng trường với HEXPIRE trên Redis 8",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "hash",
+        "listpack",
+        "hexpire",
+        "redis-8",
+        "shopping-cart"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/hexpire/",
+      "curated": [
+        {
+          "module": "R02",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 10,
+      "id": "redis-cfg-10",
+      "path": "patterns/quicklist-bounded-activity-feed.redis",
+      "language": "redis",
+      "loc": 22,
+      "category": "data-patterns",
+      "topic": "Bảng tin hoạt động giới hạn dung lượng (LPUSH + LTRIM) trên cấu trúc quicklist và chuyển giao việc an toàn bằng BLMOVE",
+      "level": 1,
+      "difficulty": 1,
+      "quality": 5,
+      "tags": [
+        "list",
+        "quicklist",
+        "ltrim",
+        "blmove",
+        "activity-feed"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/lists/",
+      "curated": [
+        {
+          "module": "R03",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 11,
+      "id": "redis-cfg-11",
+      "path": "patterns/set-mutual-tags-sinter.redis",
+      "language": "redis",
+      "loc": 22,
+      "category": "data-patterns",
+      "topic": "Đếm bạn chung tốc độ cao với SINTERCARD có LIMIT dừng sớm, mã hóa intset và kiểm tra quyền hàng loạt bằng SMISMEMBER",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "set",
+        "intset",
+        "sintercard",
+        "smismember",
+        "rbac"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/sets/",
+      "curated": [
+        {
+          "module": "R03",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 12,
+      "id": "redis-cfg-12",
+      "path": "patterns/zset-realtime-leaderboard.redis",
+      "language": "redis",
+      "loc": 22,
+      "category": "data-patterns",
+      "topic": "Bảng xếp hạng game thời gian thực với Sorted Set (ZADD GT, ZINCRBY, ZRANGE REV và ZREVRANK WITHSCORE)",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "zset",
+        "skiplist",
+        "leaderboard",
+        "zrange",
+        "zrevrank"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/sorted-sets/",
+      "curated": [
+        {
+          "module": "R04",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 13,
+      "id": "redis-cfg-13",
+      "path": "patterns/zset-delayed-job-scheduler.ts",
+      "language": "shell",
+      "loc": 40,
+      "category": "data-patterns",
+      "topic": "Bộ lập lịch hủy đơn hàng quá hạn (Delayed Job Queue) dùng Unix timestamp làm score ZSet kết hợp Lua ZRANGE+ZREM nguyên tử",
+      "level": 1,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "zset",
+        "delayed-queue",
+        "lua",
+        "scheduler",
+        "typescript"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/sorted-sets/",
+      "curated": [
+        {
+          "module": "R04",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 14,
+      "id": "redis-cfg-14",
+      "path": "patterns/probabilistic-hll-bloom-dau.redis",
+      "language": "redis",
+      "loc": 28,
+      "category": "data-patterns",
+      "topic": "Thống kê 100 triệu người dùng siêu gọn nhẹ bằng Bitmap (BITOP), HyperLogLog 12KB (PFMERGE) và Bloom Filter bản địa Redis 8",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "bitmap",
+        "hyperloglog",
+        "bloom-filter",
+        "redis-8",
+        "analytics"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/probabilistic/",
+      "curated": [
+        {
+          "module": "R05",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 15,
+      "id": "redis-cfg-15",
+      "path": "patterns/geo-nearby-drivers.redis",
+      "language": "redis",
+      "loc": 20,
+      "category": "data-patterns",
+      "topic": "Tìm kiếm tài xế quanh bán kính thực tế với GeoHash 52-bit (GEOADD, GEODIST và GEOSEARCH FROMLONLAT BYRADIUS)",
+      "level": 1,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "geospatial",
+        "geohash",
+        "geosearch",
+        "location",
+        "zset"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/geospatial/",
+      "curated": [
+        {
+          "module": "R05",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 16,
+      "id": "redis-cfg-16",
+      "path": "lua/bad-non-atomic-check-then-set.ts",
+      "language": "shell",
+      "loc": 31,
+      "category": "lua-streams",
+      "topic": "Phản mẫu tách rời GET và DECRBY ở tầng ứng dụng gây lỗi đua tranh TOCTOU bán âm tồn kho trong đợt Flash Sale",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "toctou",
+        "race-condition",
+        "flash-sale",
+        "overselling"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/interact/programmability/eval-intro/",
+      "curated": [
+        {
+          "module": "R07",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 17,
+      "id": "redis-cfg-17",
+      "path": "lua/atomic-inventory-deduct.lua",
+      "language": "shell",
+      "loc": 35,
+      "category": "lua-streams",
+      "topic": "Kịch bản Lua trừ tồn kho Flash Sale nguyên tử kết hợp kiểm tra chống mua lặp trên mỗi tài khoản trong 1 bước đơn luồng",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "lua",
+        "evalsha",
+        "flash-sale",
+        "atomic",
+        "inventory"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/interact/programmability/eval-intro/",
+      "curated": []
+    },
+    {
+      "n": 18,
+      "id": "redis-cfg-18",
+      "path": "lua/safe-distributed-lock-release.lua",
+      "language": "shell",
+      "loc": 27,
+      "category": "lua-streams",
+      "topic": "Kịch bản Lua đối chiếu mã định danh UUID chủ sở hữu trước khi DEL hoặc PEXPIRE gia hạn khóa phân tán an toàn",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "lua",
+        "distributed-lock",
+        "mutex",
+        "watchdog",
+        "atomic"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/use/patterns/distributed-locks/",
+      "curated": [
+        {
+          "module": "R07",
+          "kind": "good"
+        },
+        {
+          "module": "R11",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 19,
+      "id": "redis-cfg-19",
+      "path": "lua/sliding-window-ratelimiter.lua",
+      "language": "shell",
+      "loc": 37,
+      "category": "lua-streams",
+      "topic": "Bộ giới hạn tốc độ cửa sổ trượt chính xác (Sliding Window Rate Limiter) trên ZSet kèm tính toán thời gian chờ Retry-After",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "lua",
+        "rate-limiting",
+        "sliding-window",
+        "zset",
+        "api-gateway"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/interact/programmability/lua-api/",
+      "curated": [
+        {
+          "module": "R11",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 20,
+      "id": "redis-cfg-20",
+      "path": "lua/token-bucket-ratelimiter.lua",
+      "language": "shell",
+      "loc": 39,
+      "category": "lua-streams",
+      "topic": "Bộ giới hạn tốc độ xô thẻ bài (Token Bucket) tốn đúng O(1) bộ nhớ Hash cho mỗi người dùng, hỗ trợ hấp thụ đỉnh tải ngắn hạn",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "lua",
+        "token-bucket",
+        "rate-limiting",
+        "hash",
+        "burst"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/interact/programmability/lua-api/",
+      "curated": []
+    },
+    {
+      "n": 21,
+      "id": "redis-cfg-21",
+      "path": "streams/orders-consumer-group-pel.redis",
+      "language": "redis",
+      "loc": 25,
+      "category": "lua-streams",
+      "topic": "Vòng đời Redis Streams toàn diện: XADD MAXLEN ~, XGROUP CREATE, XREADGROUP >, theo dõi PEL, XACK và thu hồi XAUTOCLAIM",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "streams",
+        "consumer-group",
+        "pel",
+        "xack",
+        "xautoclaim"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/streams/",
+      "curated": []
+    },
+    {
+      "n": 22,
+      "id": "redis-cfg-22",
+      "path": "streams/node-xreadgroup-xautoclaim-worker.ts",
+      "language": "shell",
+      "loc": 52,
+      "category": "lua-streams",
+      "topic": "Worker Node.js tự động cứu hộ bản ghi treo quá 45 giây bằng XAUTOCLAIM và cách ly thông điệp lỗi lặp (Poison Pill) sang DLQ",
+      "level": 2,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "streams",
+        "xautoclaim",
+        "dlq",
+        "worker",
+        "typescript"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/xautoclaim/",
+      "curated": [
+        {
+          "module": "R08",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 23,
+      "id": "redis-cfg-23",
+      "path": "streams/bad-stream-missing-xack-maxlen.ts",
+      "language": "shell",
+      "loc": 45,
+      "category": "lua-streams",
+      "topic": "Phản mẫu đẩy luồng XADD không chặn ngưỡng MAXLEN và đọc Consumer Group quên gọi XACK gây rò rỉ bộ nhớ PEL nghiêm trọng",
+      "level": 2,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "streams",
+        "memory-leak",
+        "pel",
+        "missing-xack"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/data-types/streams/",
+      "curated": [
+        {
+          "module": "R08",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 24,
+      "id": "redis-cfg-24",
+      "path": "caching/cache-aside-singleflight-jitter.ts",
+      "language": "shell",
+      "loc": 49,
+      "category": "caching-locks",
+      "topic": "Mẫu Cache-Aside chống bão Cache Stampede bằng gộp Promise Singleflight, kết hợp Null Sentinel và cộng nhiễu TTL Jitter",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "cache-aside",
+        "singleflight",
+        "stampede",
+        "ttl-jitter",
+        "typescript"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/use/client-side-caching/",
+      "curated": [
+        {
+          "module": "R09",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 25,
+      "id": "redis-cfg-25",
+      "path": "caching/python-logical-expire-swr.py",
+      "language": "shell",
+      "loc": 51,
+      "category": "caching-locks",
+      "topic": "Chiến lược Logical Expiration (Stale-While-Revalidate) bằng Python asyncio giúp khóa siêu nóng luôn phản hồi 0.2ms không chờ SQL",
+      "level": 3,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "swr",
+        "logical-expiration",
+        "hotkey",
+        "python",
+        "stampede-shield"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/use/patterns/distributed-locks/",
+      "curated": [
+        {
+          "module": "R09",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 26,
+      "id": "redis-cfg-26",
+      "path": "caching/bloom-shield-penetration-guard.ts",
+      "language": "shell",
+      "loc": 43,
+      "category": "caching-locks",
+      "topic": "Lá chắn 2 tầng chống tấn công xuyên thủng Cache (Penetration) kết hợp BF.EXISTS của Redis 8 và khóa đánh dấu rỗng TTL ngắn",
+      "level": 3,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "cache-penetration",
+        "bloom-filter",
+        "null-cache",
+        "security"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/bf.exists/",
+      "curated": [
+        {
+          "module": "R10",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 27,
+      "id": "redis-cfg-27",
+      "path": "caching/bad-stampede-naive-cache.ts",
+      "language": "shell",
+      "loc": 34,
+      "category": "caching-locks",
+      "topic": "Phản mẫu đọc-ghi Cache ngây thơ dính đồng thời cả 3 thảm họa: Cache Stampede, Cache Penetration và Cache Avalanche",
+      "level": 3,
+      "difficulty": 1,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "stampede",
+        "penetration",
+        "avalanche",
+        "db-outage"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/memory-optimization/",
+      "curated": [
+        {
+          "module": "R10",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 28,
+      "id": "redis-cfg-28",
+      "path": "conf/redis-pure-cache-lfu.conf",
+      "language": "redis-conf",
+      "loc": 35,
+      "category": "redis-conf",
+      "topic": "Hồ sơ cấu hình Redis 8 thuần bộ đệm tốc độ cao: giới hạn 70% RAM, thu hồi allkeys-lfu, tắt ghi đĩa RDB/AOF và bật activedefrag",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "maxmemory",
+        "allkeys-lfu",
+        "activedefrag",
+        "pure-cache",
+        "lazyfree"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/develop/reference/eviction/",
+      "curated": [
+        {
+          "module": "R12",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 29,
+      "id": "redis-cfg-29",
+      "path": "conf/redis-durable-hybrid-aof.conf",
+      "language": "redis-conf",
+      "loc": 35,
+      "category": "redis-conf",
+      "topic": "Hồ sơ cấu hình Redis 8 bền vững dữ liệu: Multi-Part Hybrid RDB+AOF (everysec), rào chắn min-replicas-to-write và volatile-lfu",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "persistence",
+        "aof",
+        "rdb-preamble",
+        "durability",
+        "replication"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/",
+      "curated": [
+        {
+          "module": "R13",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 30,
+      "id": "redis-cfg-30",
+      "path": "conf/redis-bad-noeviction-save-trap.conf",
+      "language": "redis-conf",
+      "loc": 30,
+      "category": "redis-conf",
+      "topic": "Phản mẫu cấp 99% RAM không chừa khoảng thở Copy-on-Write, giữ mặc định noeviction cho Cache và bật appendfsync always gây nghẽn đĩa",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 2,
+      "tags": [
+        "anti-pattern",
+        "noeviction",
+        "copy-on-write",
+        "oom-killer",
+        "fsync-always"
+      ],
+      "flags": [
+        "buggy"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/",
+      "curated": [
+        {
+          "module": "R12",
+          "kind": "bug"
+        },
+        {
+          "module": "R13",
+          "kind": "bug"
+        }
+      ]
+    },
+    {
+      "n": 31,
+      "id": "redis-cfg-31",
+      "path": "ha/sentinel-quorum-3nodes.conf",
+      "language": "redis-conf",
+      "loc": 29,
+      "category": "cluster-k8s-ops",
+      "topic": "Cấu hình Redis Sentinel chuẩn 3 nút (quorum = 2) tự động phát hiện SDOWN/ODOWN và thăng cấp Replica có offset mới nhất",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "sentinel",
+        "high-availability",
+        "quorum",
+        "failover",
+        "sdown-odown"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/",
+      "curated": [
+        {
+          "module": "R14",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 32,
+      "id": "redis-cfg-32",
+      "path": "compose/docker-compose.redis-sentinel-ha.yml",
+      "language": "yaml",
+      "loc": 46,
+      "category": "cluster-k8s-ops",
+      "topic": "Mô hình diễn tập tự động chuyển đổi dự phòng (1 Master + 2 Replicas + 3 Sentinels) bằng Docker Compose v2",
+      "level": 4,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "docker-compose",
+        "sentinel",
+        "replication",
+        "failover-drill",
+        "ha"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/",
+      "curated": [
+        {
+          "module": "R14",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 33,
+      "id": "redis-cfg-33",
+      "path": "cluster/redis-cluster-node.conf",
+      "language": "redis-conf",
+      "loc": 34,
+      "category": "cluster-k8s-ops",
+      "topic": "Cấu hình nút Redis Cluster phân mảnh 16384 Hash Slots, mở cổng Gossip +10000, replica migration và tắt full-coverage cứng nhắc",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "redis-cluster",
+        "sharding",
+        "hash-slots",
+        "gossip-bus",
+        "high-availability"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/",
+      "curated": [
+        {
+          "module": "R15",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 34,
+      "id": "redis-cfg-34",
+      "path": "cluster/hashtag-colocation-vs-crossslot.redis",
+      "language": "redis",
+      "loc": 27,
+      "category": "cluster-k8s-ops",
+      "topic": "Kiểm chứng định tuyến CLUSTER KEYSLOT, tái hiện lỗi CROSSSLOT và gom nhóm khóa đa lệnh an toàn bằng {HashTag}",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "redis-cluster",
+        "hashtag",
+        "crossslot",
+        "crc16",
+        "multi-key"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/reference/cluster-spec/",
+      "curated": [
+        {
+          "module": "R15",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 35,
+      "id": "redis-cfg-35",
+      "path": "k8s/redis-statefulset-pdb-anti-affinity.yaml",
+      "language": "yaml",
+      "loc": 73,
+      "category": "cluster-k8s-ops",
+      "topic": "Triển khai Redis Cluster trên Kubernetes với StatefulSet, PodAntiAffinity tách nút vật lý, non-root UID 999 và PodDisruptionBudget",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "kubernetes",
+        "statefulset",
+        "anti-affinity",
+        "pdb",
+        "redis-cluster"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/",
+      "curated": []
+    },
+    {
+      "n": 36,
+      "id": "redis-cfg-36",
+      "path": "k8s/redis-networkpolicy-zero-trust.yaml",
+      "language": "yaml",
+      "loc": 61,
+      "category": "cluster-k8s-ops",
+      "topic": "Cô lập mạng nội bộ Zero-Trust bằng Kubernetes NetworkPolicy: chỉ mở cổng 6379 cho Pod được gắn nhãn, cổng 16379 nội cụm và 9121 cho Prometheus",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "kubernetes",
+        "networkpolicy",
+        "zero-trust",
+        "security",
+        "microsegmentation"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/",
+      "curated": []
+    },
+    {
+      "n": 37,
+      "id": "redis-cfg-37",
+      "path": "security/users-zero-trust.acl",
+      "language": "redis-conf",
+      "loc": 24,
+      "category": "cluster-k8s-ops",
+      "topic": "Thiết kế tệp phân quyền tối thiểu Redis ACL v2: khóa user default, tách Selector đọc/ghi theo tiền tố khóa và cấm lệnh nguy hiểm",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "acl",
+        "zero-trust",
+        "least-privilege",
+        "security",
+        "selectors"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/",
+      "curated": [
+        {
+          "module": "R16",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 38,
+      "id": "redis-cfg-38",
+      "path": "security/redis-tls-mtls-prod.conf",
+      "language": "redis-conf",
+      "loc": 32,
+      "category": "redis-conf",
+      "topic": "Cấu hình mã hóa TLS 1.3 bắt buộc xác thực chứng chỉ hai chiều (mTLS) cho cả Client, luồng Replication và kênh Cluster Bus",
+      "level": 5,
+      "difficulty": 3,
+      "quality": 5,
+      "tags": [
+        "tls",
+        "mtls",
+        "encryption",
+        "security",
+        "zero-trust"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/encryption/",
+      "curated": [
+        {
+          "module": "R16",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 39,
+      "id": "redis-cfg-39",
+      "path": "ops/redis-sre-diagnostic-playbook.sh",
+      "language": "shell",
+      "loc": 33,
+      "category": "cluster-k8s-ops",
+      "topic": "Playbook chẩn đoán nhanh sự cố độ trễ P99 trong 60 giây cho SRE (INFO, SLOWLOG, LATENCY DOCTOR, CLIENT LIST omem và --bigkeys an toàn)",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "sre",
+        "observability",
+        "slowlog",
+        "latency-doctor",
+        "bigkeys"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/latency-monitor/",
+      "curated": [
+        {
+          "module": "R17",
+          "kind": "good"
+        }
+      ]
+    },
+    {
+      "n": 40,
+      "id": "redis-cfg-40",
+      "path": "ops/prometheus-redis-exporter-alerts.yaml",
+      "language": "yaml",
+      "loc": 61,
+      "category": "cluster-k8s-ops",
+      "topic": "Bộ cảnh báo sớm PrometheusRule cho redis_exporter: đầy bộ nhớ 85%, bão eviction, tụt Hit Ratio, đứt Replica và chạm trần maxclients",
+      "level": 5,
+      "difficulty": 2,
+      "quality": 5,
+      "tags": [
+        "prometheus",
+        "alerting",
+        "redis-exporter",
+        "sre",
+        "golden-signals"
+      ],
+      "flags": [
+        "production-ready"
+      ],
+      "sourceUrl": "https://redis.io/docs/latest/commands/info/",
+      "curated": [
+        {
+          "module": "R17",
+          "kind": "good"
+        }
+      ]
+    }
+  ]
+}

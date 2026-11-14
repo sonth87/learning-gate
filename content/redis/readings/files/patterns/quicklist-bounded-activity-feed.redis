@@ -1,0 +1,22 @@
+# ============================================================================
+# Bảng Tin Hoạt Động Giới Hạn Kích Thước (Capped Activity Feed) với Quicklist
+# Đảm bảo RAM cố định cho mỗi người dùng nhờ cặp bài trùng LPUSH + LTRIM
+# ============================================================================
+
+# 1. Đẩy sự kiện mới nhất vào đầu danh sách O(1) và cắt đuôi giữ đúng 50 sự kiện gần nhất
+LPUSH feed:u409 "{\"ts\":1731542100,\"type\":\"DEPLOY\",\"svc\":\"billing-v2\"}"
+LTRIM feed:u409 0 49
+
+LPUSH feed:u409 "{\"ts\":1731542195,\"type\":\"ALERT_RESOLVED\",\"svc\":\"checkout\"}"
+LTRIM feed:u409 0 49
+
+# 2. Kiểm tra mã hóa cấu trúc bên dưới (quicklist = danh sách liên kết kép các nút listpack)
+OBJECT ENCODING feed:u409
+
+# 3. Đọc trang đầu tiên (10 thông báo mới nhất ở đầu Head -> O(1) không cần nhảy qua giữa danh sách)
+LRANGE feed:u409 0 9
+
+# 4. Mẫu hàng đợi di chuyển an toàn giữa 2 danh sách (Atomic Pop-and-Push thay thế RPOPLPUSH cũ)
+# Lấy tác vụ cũ nhất ở đuôi hàng đợi chờ (RIGHT) và ghim vào đầu danh sách đang xử lý (LEFT)
+LPUSH queue:webhook:pending "{\"jobId\":\"wh_901\",\"url\":\"https://partner.example/hook\"}"
+BLMOVE queue:webhook:pending queue:webhook:processing RIGHT LEFT 5

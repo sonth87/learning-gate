@@ -20,12 +20,15 @@ import {
 } from '../configHighlighter';
 import type { DevOpsAccent, EditorLanguage } from '../types';
 import { VisualLessonBlock } from './VisualLessonBlocks';
+import { IllustrationFigure } from '@/components/common/IllustrationLightbox';
 import { cn } from '@/utils/cn';
 
 const LANG_LABEL: Record<EditorLanguage, string> = {
   yaml: 'YAML Manifest',
   dockerfile: 'Dockerfile',
   shell: 'Terminal / CLI',
+  redis: 'Redis CLI',
+  'redis-conf': 'redis.conf',
 };
 
 export const ConfigCodeView: React.FC<{
@@ -127,7 +130,15 @@ const INLINE_BADGE_CLS: Record<string, string> = {
 export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   const codeTone =
-    accent === 'cyan' ? 'text-cyan-300' : accent === 'amber' ? 'text-amber-300' : 'text-sky-300';
+    accent === 'cyan'
+      ? 'text-cyan-300'
+      : accent === 'amber'
+        ? 'text-amber-300'
+        : accent === 'rose'
+          ? 'text-rose-300'
+          : accent === 'emerald'
+            ? 'text-emerald-300'
+            : 'text-sky-300';
   const re =
     /`([^`]+)`|<kbd>(.*?)<\/kbd>|==(.+?)==|\[!badge:(?:(sky|cyan|emerald|amber|rose|violet):)?([^\]]+)\]|\{(sky|cyan|emerald|amber|rose|violet):([^}]+)\}|\*\*(.+?)\*\*|(?<![*\w])\*([^*\s][^*]*?)\*(?![*\w])|\[([^\]]+)\]\((https?:[^)\s]+)\)|\[([^\]]+)\]\([^)]*\)/g;
   let last = 0;
@@ -166,7 +177,17 @@ export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): R
         </mark>
       );
     } else if (m[5] !== undefined) {
-      const badgeTone = m[4] ?? (accent === 'cyan' ? 'cyan' : accent === 'amber' ? 'amber' : 'sky');
+      const badgeTone =
+        m[4] ??
+        (accent === 'cyan'
+          ? 'cyan'
+          : accent === 'amber'
+            ? 'amber'
+            : accent === 'rose'
+              ? 'rose'
+              : accent === 'emerald'
+                ? 'emerald'
+                : 'sky');
       out.push(
         <span
           key={k()}
@@ -325,7 +346,7 @@ function resolveCalloutTag(tag: string): CalloutKind {
   const upper = tag.toUpperCase();
   if (upper === 'ANALOGY' || upper === 'MENTAL') return 'analogy';
   if (upper === 'TIP' || upper === 'PROTIP') return 'tip';
-  if (upper === 'WARNING' || upper === 'CAUTION' || upper === 'DANGER' || upper === 'PITFALL') return 'warning';
+  if (upper === 'WARNING' || upper === 'CAUTION' || upper === 'DANGER' || upper === 'PITFALL' || upper === 'TRAP') return 'warning';
   if (upper === 'REMEMBER' || upper === 'SUMMARY' || upper === 'KEY') return 'remember';
   return 'important';
 }
@@ -334,21 +355,45 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
   const lines = src.replace(/\r/g, '').split('\n');
   const out: React.ReactNode[] = [];
   const h3Tone =
-    accent === 'cyan' ? 'text-cyan-300' : accent === 'amber' ? 'text-amber-300' : 'text-sky-300';
+    accent === 'cyan'
+      ? 'text-cyan-300'
+      : accent === 'amber'
+        ? 'text-amber-300'
+        : accent === 'rose'
+          ? 'text-rose-300'
+          : accent === 'emerald'
+            ? 'text-emerald-300'
+            : 'text-sky-300';
   const stepBadgeCls =
     accent === 'cyan'
       ? 'border-cyan-500/45 bg-cyan-500/15 text-cyan-300'
       : accent === 'amber'
         ? 'border-amber-500/45 bg-amber-500/15 text-amber-300'
-        : 'border-sky-500/45 bg-sky-500/15 text-sky-300';
+        : accent === 'rose'
+          ? 'border-rose-500/45 bg-rose-500/15 text-rose-300'
+          : accent === 'emerald'
+            ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300'
+            : 'border-sky-500/45 bg-sky-500/15 text-sky-300';
   const h2RuleCls =
     accent === 'cyan'
       ? 'from-cyan-500/70 via-cyan-500/20 to-transparent'
       : accent === 'amber'
         ? 'from-amber-500/70 via-amber-500/20 to-transparent'
-        : 'from-sky-500/70 via-sky-500/20 to-transparent';
+        : accent === 'rose'
+          ? 'from-rose-500/70 via-rose-500/20 to-transparent'
+          : accent === 'emerald'
+            ? 'from-emerald-500/70 via-emerald-500/20 to-transparent'
+            : 'from-sky-500/70 via-sky-500/20 to-transparent';
   const arrowTone =
-    accent === 'cyan' ? 'text-cyan-400' : accent === 'amber' ? 'text-amber-400' : 'text-sky-400';
+    accent === 'cyan'
+      ? 'text-cyan-400'
+      : accent === 'amber'
+        ? 'text-amber-400'
+        : accent === 'rose'
+          ? 'text-rose-400'
+          : accent === 'emerald'
+            ? 'text-emerald-400'
+            : 'text-sky-400';
 
   let h2Index = 0;
   let i = 0;
@@ -500,7 +545,11 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
             ? 'border-cyan-500/70'
             : accent === 'amber'
               ? 'border-amber-500/70'
-              : 'border-sky-500/70';
+              : accent === 'rose'
+                ? 'border-rose-500/70'
+                : accent === 'emerald'
+                  ? 'border-emerald-500/70'
+                  : 'border-sky-500/70';
         out.push(
           <blockquote
             key={k()}
@@ -578,6 +627,22 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
     }
 
     if (!l.trim()) {
+      i++;
+      continue;
+    }
+
+    const imgMatch = l.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"([^"]+)")?\)$/);
+    if (imgMatch) {
+      out.push(
+        <IllustrationFigure
+          key={k()}
+          src={imgMatch[2]}
+          alt={imgMatch[1]}
+          title={imgMatch[3] || imgMatch[1]}
+          accent={accent}
+          renderInline={(txt) => renderCourseInline(txt, accent)}
+        />
+      );
       i++;
       continue;
     }

@@ -8,6 +8,29 @@ Nếu một ngày khoá tĩnh đó bị rò rỉ qua một Action bên thứ ba 
 
 Chuẩn mực công nghiệp năm 2026 đã **xoá sổ hoàn toàn {rose:khoá tĩnh dài hạn} trong CI/CD** bằng giao thức liên kết danh tính ==OpenID Connect (OIDC)== ({sky:JWT ngắn hạn}) kết hợp {emerald:Chứng thực Nguồn gốc Bản dựng (Artifact Build Provenance)}.
 
+```visual
+kind: illustration
+diagram: "cicd:c12"
+src: "/illustrations/cicd/cicd-oidc-keyless-bridge.jpg"
+alt: "Cơ chế xác thực đám mây không khoá tĩnh qua cầu nối OIDC JWT từ GitHub Provider sang AWS STS / GCP WIF cấp token tự huỷ ngắn hạn"
+title: "Giải Phẫu Cầu Nối Xác Thực Không Mật Khẩu: GitHub OIDC JWT -> AWS STS / GCP WIF"
+subtitle: "Xoá sổ hoàn toàn cặp khoá tĩnh dài hạn lưu trong GitHub Secrets bằng phiên làm việc tự huỷ sau 15-60 phút"
+caption: "Luồng bắt tay mật mã từ quyền id-token: write, đúc thẻ JWT mang định danh nhánh/kho ở trường sub tới kiểm tra Trust Policy cấp token tạm thời"
+callouts:
+  - num: 1
+    label: "Runner xin thẻ định danh với id-token: write"
+    desc: "Không cần lưu bất kỳ AWS_SECRET_ACCESS_KEY tĩnh nào trong kho; mỗi Job chủ động yêu cầu một thẻ điện tử ký số dùng một lần."
+    tone: sky
+  - num: 2
+    label: "Thẻ OIDC JWT khoá chặt trường sub & aud"
+    desc: "Chứa chính xác tên tổ chức, kho mã nguồn và nhánh Git trong trường sub; tuyệt đối cấm cấu hình ký tự đại diện repo:* lỏng lẻo!"
+    tone: violet
+  - num: 3
+    label: "Đám mây cấp Token ngắn hạn & Chứng thực SLSA"
+    desc: "AWS STS / GCP WIF đối chiếu chữ ký công khai rồi cấp quyền tạm thời tự huỷ sau <= 60 phút, kết hợp ký chứng thực nguồn gốc bản dựng."
+    tone: emerald
+```
+
 ---
 
 ## 1. Cơ chế bắt tay "Không Mật khẩu" của OpenID Connect (OIDC)

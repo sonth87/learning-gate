@@ -4,6 +4,28 @@ Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên
 
 Khi sự cố xảy ra, người mới thường hoảng loạn xoá đại Pod đi tạo lại hoặc sửa mò mẫm tệp YAML theo cảm tính. Ngược lại, kỹ sư giàu kinh nghiệm luôn tuân thủ **Quy trình Chẩn đoán 3 Bước (*3-Step K8s Triage*)** chính xác như bác sĩ đọc phim X-quang.
 
+```visual
+kind: illustration
+diagram: "kube:k18"
+alt: "Cây quyết định chẩn đoán sự cố khởi động Pod từ Pending, ImagePullBackOff, CreateContainerConfigError đến CrashLoopBackOff --previous"
+title: "Cây Quyết Định Khám Bệnh Khởi Động Pod: Đọc Events Hạ Tầng vs Logs Phiên Cũ"
+subtitle: "Rẽ nhánh chính xác ngay từ giây thứ 5 dựa trên việc tiến trình ứng dụng đã từng được chạy hay chưa"
+caption: "Sơ đồ phân nhánh chẩn đoán SRE giữa 3 lỗi kẹt trước vạch xuất phát (xem describe pod) và lỗi sập sau khi chạy (xem logs --previous)"
+callouts:
+  - num: 1
+    label: "Bước 1: Nhìn cột STATUS & RESTARTS trên get pods"
+    desc: "Xác định nhanh tên trạng thái báo lỗi và con số RESTARTS để biết container đã từng thực thi dòng code nào hay chưa."
+    tone: sky
+  - num: 2
+    label: "Nhánh chưa kịp chạy: Pending / ImagePull / ConfigError"
+    desc: "Ứng dụng chưa bật nên log trống trơn; 100% nguyên nhân (thiếu RAM/PVC, sai tag ảnh, thiếu Secret) nằm ở Events của describe pod."
+    tone: amber
+  - num: 3
+    label: "Nhánh chạy rồi sập: CrashLoopBackOff (logs --previous)"
+    desc: "Tiến trình Node.js đã chạy nhưng văng lỗi thoát != 0; dùng cờ --previous để đọc trọn vẹn Stack Trace của phiên vừa sập."
+    tone: rose
+```
+
 ## 1. Quy trình Khám bệnh 3 Bước Bất biến (Không bao giờ đoán mò!)
 
 Mỗi khi một Pod không đạt trạng thái `READY 1/1` và `Running`, hãy gõ tuần tự từ ngoài vào trong và **rẽ nhánh chuẩn xác dựa trên việc container đã từng chạy hay chưa**:

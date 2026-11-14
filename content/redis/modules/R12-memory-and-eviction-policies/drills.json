@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R12-D1",
+    "title": "Cấu hình redis.conf chuẩn Pure Cache với LFU và Lazyfree",
+    "code": "maxmemory 2gb\nmaxmemory-policy allkeys-lfu\nmaxmemory-samples 10\nlazyfree-lazy-eviction yes\nlazyfree-lazy-expire yes"
+  },
+  {
+    "id": "R12-D2",
+    "title": "Kiểm tra tần suất LFU và chỉnh nóng chính sách bộ nhớ qua CLI",
+    "code": "OBJECT FREQ cache:item:hot\nCONFIG SET maxmemory-policy allkeys-lfu\nCONFIG SET lazyfree-lazy-eviction yes\nINFO memory"
+  },
+  {
+    "id": "R12-D3",
+    "title": "Bật chống phân mảnh bộ nhớ trực tuyến trên Redis",
+    "code": "CONFIG SET activedefrag yes\nMEMORY DOCTOR"
+  }
+]

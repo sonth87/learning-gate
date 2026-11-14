@@ -2,6 +2,8 @@ import type { ExerciseSpec, GradeResult, RunResult, SimWorldState } from '../typ
 import { dryRunYaml, gradeYamlSpec } from './yamlGrader';
 import { dryRunDockerfile, gradeDockerfileSpec, gradeDockerignoreSpec } from './dockerfileGrader';
 import { dryRunCli, executeDiagnosticCommand, gradeCliSpec, gradeTroubleshootSpec } from './cliSimEngine';
+import { dryRunRedisCli, gradeRedisCliSpec } from './redisCliEngine';
+import { dryRunRedisConf, gradeRedisConfSpec } from './redisConfGrader';
 
 export { executeDiagnosticCommand };
 
@@ -30,9 +32,17 @@ export function dryRunExercise(code: string, spec: ExerciseSpec): RunResult {
     case 'cli':
       res = dryRunCli(code, spec.initialState);
       break;
+    case 'redis-cli':
+      res = dryRunRedisCli(code, spec.initialState);
+      break;
+    case 'redis-conf':
+      res = dryRunRedisConf(code);
+      break;
     case 'troubleshoot':
       if (spec.patchFormat === 'yaml') res = dryRunYaml(code);
       else if (spec.patchFormat === 'dockerfile') res = dryRunDockerfile(code);
+      else if (spec.patchFormat === 'redis-cli') res = dryRunRedisCli(code, spec.initialState.redis);
+      else if (spec.patchFormat === 'redis-conf') res = dryRunRedisConf(code);
       else res = dryRunCli(code, spec.initialState);
       break;
   }
@@ -53,6 +63,10 @@ export function gradeDevOpsExercise(
       return gradeDockerignoreSpec(code, spec.rules);
     case 'cli':
       return gradeCliSpec(code, spec.initialState, spec.rules);
+    case 'redis-cli':
+      return gradeRedisCliSpec(code, spec.initialState, spec.rules, diagnosticHistoryOutput);
+    case 'redis-conf':
+      return gradeRedisConfSpec(code, spec.rules);
     case 'troubleshoot':
       return gradeTroubleshootSpec(code, spec, diagnosticHistoryOutput);
   }

@@ -19,7 +19,13 @@ interface DrillResult {
 
 function guessDrillLang(code: string): EditorLanguage {
   if (/^(FROM|WORKDIR|COPY|RUN|CMD|ENTRYPOINT|USER|EXPOSE)\b/m.test(code)) return 'dockerfile';
-  if (/^(docker |kubectl |git )/m.test(code)) return 'shell';
+  if (/^(docker |kubectl |git |redis-cli )/m.test(code)) return 'shell';
+  if (/^(SET|GET|MSET|HSET|HGET|HEXPIRE|LPUSH|RPUSH|SADD|ZADD|ZRANGE|XADD|XGROUP|XREADGROUP|XPENDING|XACK|MULTI|EXEC|EVAL|SCAN|KEYS|UNLINK|CONFIG|ACL|INFO|SLOWLOG|CLUSTER|PFADD|SETBIT|GEOADD|BF\.)\b/im.test(code)) {
+    return 'redis';
+  }
+  if (/^(maxmemory|maxmemory-policy|appendonly|appendfsync|save|bind|protected-mode|rename-command|user )\b/m.test(code)) {
+    return 'redis-conf';
+  }
   return 'yaml';
 }
 

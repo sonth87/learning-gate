@@ -5,6 +5,29 @@ Khi dự án Node.js lớn dần, một Job duy nhất chạy nối tiếp `lint
 > [!ANALOGY] Hãy hình dung như sau (Ánh xạ từ `Promise.all` trong JavaScript)
 > Khi ba hàm bất đồng bộ không phụ thuộc vào kết quả của nhau, bạn không viết ba dòng `await` tuần tự mà bọc chúng trong **`await Promise.all([lint(), typecheck(), unitTest()])`** rồi mới gọi `await build()`! Trong CI/CD, kiến trúc tương đương chính xác với `Promise.all` được gọi là ==Directed Acyclic Graph (DAG — Đồ thị có hướng không chu trình)== điều phối bằng từ khoá **`needs:`**.
 
+```visual
+kind: illustration
+diagram: "cicd:c05"
+src: "/illustrations/cicd/cicd-dag-fanout-matrix.jpg"
+alt: "Đồ thị phụ thuộc DAG Fan-Out / Fan-In với từ khoá needs: và ma trận nhân bản kiểm thử đa chiều strategy.matrix kèm fail-fast: false"
+title: "Giải Phẫu Đồ Thị Phụ Thuộc DAG (needs:) & Ma Trận Kiểm Thử Đa Chiều (Matrix)"
+subtitle: "Chạy quạt rộng song song các cổng kiểm tra độc lập như Promise.all và kiểm định chéo đa hệ điều hành không tốn công lặp YAML"
+caption: "Kiến trúc Fan-Out / Fan-In rút ngắn thời gian đồng hồ thực và ma trận tích Đề-các 3 OS x 2 phiên bản Node với chế độ fail-fast: false"
+callouts:
+  - num: 1
+    label: "Fan-Out song song ngay từ giây thứ 0"
+    desc: "Các Root Job không khai báo needs (lint, typecheck, unit-test) xuất phát đồng thời trên các máy ảo riêng để ép ngắn thời gian chờ."
+    tone: sky
+  - num: 2
+    label: "Cổng hội tụ Fan-In với logic AND nghiêm ngặt"
+    desc: "Job build có needs: [lint, typecheck, unit-test] chỉ khởi chạy khi tất cả các nhánh trước đều xanh; 1 nhánh đỏ sẽ tự động bỏ qua build."
+    tone: emerald
+  - num: 3
+    label: "Ma trận strategy.matrix & Cờ fail-fast: false"
+    desc: "Nhân tự động tổ hợp OS x Node; đặt fail-fast: false giúp các tổ hợp còn lại vẫn chạy hết để thu thập trọn vẹn bức tranh lỗi đa nền tảng."
+    tone: violet
+```
+
 ## 1. Kiến trúc Fan-Out / Fan-In với `needs:`
 
 Mặc định mọi Job khai báo dưới `jobs:` đều khởi chạy **song song ngay giây thứ 0** (gọi là các *Root Jobs* — **Fan-Out**). Khi bạn thêm `needs: [lint, unit-test]` vào Job `build`, bạn tạo ra một cổng hội tụ (**Fan-In**):

@@ -6,6 +6,29 @@ Hãy hình dung ứng dụng Node.js của bạn đang xử lý 2.000 đơn hàn
 
 Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi ({emerald:Zero-Downtime})**, giới hạn rủi ro bằng {sky:Canary / Blue-Green} và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây ({rose:Automated Rollback})**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
 
+```visual
+kind: illustration
+diagram: "cicd:c14"
+src: "/illustrations/cicd/cicd-canary-progressive-traffic.jpg"
+alt: "So sánh chuyển mạch tức thì Blue-Green với phát hành thăm dò Canary (5% -> 25% -> 100%) kèm tự động quay lui khi tỷ lệ lỗi vượt ngưỡng"
+title: "Giải Phẫu Phát Hành Lũy Tiến: Chuyển Mạch Blue-Green vs Canary & Tự Động Rollback"
+subtitle: "Thu hẹp bán kính ảnh hưởng sự cố xuống 5% lưu lượng và tự động cắt lui trong dưới 30 giây không cần đợi người trực đêm"
+caption: "Cơ chế gạt công tắc tức thì của Blue-Green trên thẻ ảnh SHA bất biến đối chiếu với nhịp mở lưu lượng Canary giám sát bởi chỉ số Prometheus"
+callouts:
+  - num: 1
+    label: "Thẻ SHA bất biến & Công tắc Blue-Green (<1 giây)"
+    desc: "Gắn cứng thẻ sha-<commit> thay cho :latest; kiểm thử xong trên cụm Green mới gạt toàn bộ lưu lượng qua Service Selector tức thì."
+    tone: cyan
+  - num: 2
+    label: "Nhịp mở lưu lượng Canary (5% -> 25% -> 100%)"
+    desc: "Chỉ cho một phần nhỏ người dùng thật thử nghiệm phiên bản mới trước rồi dừng quan sát chỉ số sức khoẻ trước khi mở rộng toàn cục."
+    tone: emerald
+  - num: 3
+    label: "Tự động phanh gấp & Rollback theo ngưỡng lỗi 5xx"
+    desc: "Nếu tỷ lệ lỗi HTTP 5xx hoặc độ trễ p99 vượt ngưỡng 1%, Argo Rollouts tự động rút Canary về 0% bảo vệ an toàn cho 95% khách còn lại."
+    tone: rose
+```
+
 ---
 
 ## 1. Thẻ Image Bất biến (Immutable Image Tags) — Điều kiện tiên quyết để Rollback

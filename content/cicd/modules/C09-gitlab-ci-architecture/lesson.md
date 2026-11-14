@@ -8,6 +8,28 @@ Nếu GitHub Actions thống lĩnh thế giới mã nguồn mở và các công 
 > [!ANALOGY] Hãy hình dung như sau
 > Nếu **GitHub Actions** mặc định cấp cho bạn một máy ảo Ubuntu trống rồi bạn tự gọi `actions/setup-node@v4` để cài Node.js, thì **GitLab Runner (Docker / Kubernetes Executor)** ném thẳng từng Job vào chạy bên trong **một Docker Container ngay từ giây đầu tiên**! Chỉ cần khai báo `image: node:22-alpine` trong khối `default:` là toàn bộ đường ống có sẵn môi trường Node 22 gọn nhẹ.
 
+```visual
+kind: illustration
+diagram: "cicd:c09"
+alt: "Kiến trúc tệp .gitlab-ci.yml chạy thuần Container trên Docker/Kubernetes Runner với stages, workflow.rules, needs DAG và artifacts:reports"
+title: "Giải Phẫu Kiến Trúc GitLab CI/CD: Thực Thi Thuần Container, Stages & DAG Lai"
+subtitle: "Ánh xạ trọn vẹn tư duy đường ống hiện đại sang cấu trúc tệp đơn .gitlab-ci.yml dùng trong môi trường doanh nghiệp"
+caption: "Mô hình Container-first trên Docker/K8s Executor, đồ thị lai kết hợp stages với needs: [] phá rào chờ đợi và cơ chế tự động truyền Artifacts"
+callouts:
+  - num: 1
+    label: "Container-First Default & Bộ lọc workflow.rules"
+    desc: "Mọi Job khởi chạy thẳng bên trong Docker/K8s Pod từ image: node:22-alpine; dùng workflow.rules chuẩn mực để chống nhân đôi đường ống MR."
+    tone: amber
+  - num: 2
+    label: "Đồ thị lai: Phân tầng stages kết hợp vượt rào needs:"
+    desc: "Các Job xếp theo tầng trực quan nhưng có thể dùng needs: [] để xuất phát ngay giây 0 và chia mảnh kiểm thử chỉ bằng 1 dòng parallel: 4."
+    tone: sky
+  - num: 3
+    label: "Artifacts tích hợp gốc & Báo cáo trực quan trên MR"
+    desc: "Tự động tải xuống thành phẩm ở các stage kế tiếp không cần cài plugin rời, đồng thời hiển thị bảng kết quả JUnit ngay trong Merge Request."
+    tone: emerald
+```
+
 ## 1. Từ điển chuyển ngữ trực diện: GitHub Actions sang GitLab CI
 
 ```visual

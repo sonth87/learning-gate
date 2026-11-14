@@ -45,6 +45,22 @@ export const COURSE_META: Record<DevOpsCourseId, Omit<CourseMeta, 'onOpenRelated
       'Ôn flashcard SRS & câu sai mỗi ngày',
     ],
   },
+  redis: {
+    courseId: 'redis',
+    accent: 'rose',
+    appTitle: 'Redis Mastery',
+    welcomeTitle: 'Chào mừng đến với Redis Mastery',
+    readingsTitle: 'Đọc cấu hình thật: redis.conf, Lua Scripts, Streams & Cluster',
+    readingsSubtitle:
+      'Kho cấu hình production, kịch bản Lua nguyên tử, Docker/K8s StatefulSet và các bẫy sự cố thực chiến (Stampede, Bigkey, OOM, Split-Brain).',
+    stepSteps: [
+      'Đọc lesson trực quan (ánh xạ từ JS Map / Python dict)',
+      'Làm quiz kiểm tra tư duy & độ phức tạp Big-O (≥ 70%)',
+      'Thực hành trên Redis 8 VM & trình chấm AST redis.conf',
+      'Đọc cấu hình thật & chẩn đoán sự cố Production',
+      'Ôn flashcard SRS & luyện gõ lệnh chuẩn mỗi ngày',
+    ],
+  },
 };
 
 const Ctx = createContext<CourseMeta>({

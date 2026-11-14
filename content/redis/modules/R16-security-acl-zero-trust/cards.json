@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R16-FC1",
+    "front": "4 lớp phòng thủ chuẩn Zero-Trust cho cụm Redis Production gồm những gì?",
+    "back": "1. **Cô lập Mạng:** `bind` IP nội bộ + `protected-mode yes` + K8s `NetworkPolicy`.\n2. **Mã hoá Đường truyền:** `port 0` + `tls-port 6379` + `tls-auth-clients yes` (mTLS).\n3. **Định danh & Khoá Hạt mịn:** `user default off` + tài khoản **ACL** riêng từng dịch vụ (`~prefix:*`).\n4. **Chặn Lệnh Huỷ diệt:** `-@dangerous` / `rename-command FLUSHALL \"\"`."
+  },
+  {
+    "id": "R16-FC2",
+    "front": "Cạm bẫy thứ tự quy tắc lệnh trong câu lệnh `ACL SETUSER` là gì?",
+    "back": "Redis áp dụng các quy tắc từ **trái sang phải**.\n- Đúng: `+@all -@dangerous` (cấp hết rồi cắt bỏ nhóm nguy hiểm).\n- Sai: `-@dangerous +@all` (`+@all` phía sau sẽ bật lại toàn bộ lệnh nguy hiểm!)."
+  },
+  {
+    "id": "R16-FC3",
+    "front": "Làm sao cấu hình Redis chỉ nhận kết nối mã hoá TLS và từ chối hoàn toàn kết nối văn bản thuần?",
+    "back": "Đặt **`port 0`** để đóng socket TCP thường, sau đó khai báo **`tls-port 6379`** cùng bộ chứng chỉ `tls-cert-file`, `tls-key-file`, `tls-ca-cert-file`."
+  },
+  {
+    "id": "R16-FC4",
+    "front": "Ý nghĩa của các ký hiệu `>`, `~`, `%R~`, `&`, `+@`, `-@` trong Redis ACL?",
+    "back": "- `>pass`: thêm mật khẩu (tự băm SHA-256)\n- `~pat`: cho phép đọc & ghi khoá khớp mẫu\n- `%R~pat`: chỉ cho phép ĐỌC khoá khớp mẫu (Redis 7+)\n- `&chan`: giới hạn kênh Pub/Sub\n- `+@cat` / `-@cat`: cho phép hoặc cấm nhóm lệnh (`read`, `write`, `dangerous`...)"
+  },
+  {
+    "id": "R16-FC5",
+    "front": "Làm thế nào để bật TLS trên Redis 8 mà không làm nghẽn luồng đơn Event Loop chính?",
+    "back": "Bật đa luồng I/O mạng trong `redis.conf`:\n`io-threads 4`\n`io-threads-do-reads yes`\nCác luồng phụ sẽ gánh phần giải mã/mã hoá TLS thay cho luồng chính."
+  },
+  {
+    "id": "R16-FC6",
+    "front": "Những lệnh nào nằm trong nhóm `@dangerous` mà ứng dụng Web/API tuyệt đối không bao giờ cần gọi?",
+    "back": "`FLUSHALL`, `FLUSHDB`, `KEYS`, `CONFIG`, `SHUTDOWN`, `DEBUG`, `REPLICAOF` / `SLAVEOF`, `BGSAVE`, `BGREWRITEAOF`, `ACL`, `MODULE`."
+  }
+]

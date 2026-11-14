@@ -4,6 +4,28 @@ Khi mới chuyển từ Docker sang Kubernetes, câu hỏi đầu tiên mà hầ
 
 Hiểu thấu đáo thiết kế của ==Pod==, hệ thống gắn thẻ {sky:Labels}, vách ngăn {violet:Namespaces} và chứng chỉ kéo Image {amber:`imagePullSecrets`} sẽ giúp bạn nắm chắc viên gạch nguyên tử của toàn bộ hệ sinh thái Kubernetes.
 
+```visual
+kind: illustration
+diagram: "kube:k08"
+alt: "Không gian mạng chia sẻ localhost bên trong Pod (Main + Sidecar), cơ chế khớp nhãn Labels/Selectors và ranh giới Namespace"
+title: "Giải Phẫu Pod Sandbox, Ma Trận Nhãn Labels/Selectors & Vách Ngăn Namespace"
+subtitle: "Cách các container trong cùng 1 Pod chia sẻ địa chỉ IP/localhost và cách toàn cụm liên kết lỏng qua hệ thống nhãn động"
+caption: "Cấu trúc vỏ kén Pod chia sẻ Network Namespace & ổ đĩa emptyDir, bộ lọc chọn lọc theo nhãn và ranh giới phân tách tài nguyên giữa các Namespace"
+callouts:
+  - num: 1
+    label: "Pod Sandbox — Dùng chung IP & Loopback localhost"
+    desc: "Container chính và Sidecar chia sẻ cùng một Network Namespace nên gọi nhau thẳng qua 127.0.0.1 và dùng chung ổ đĩa tạm emptyDir."
+    tone: emerald
+  - num: 2
+    label: "Labels & Selectors — Sợi dây liên kết lỏng"
+    desc: "Thay vì trỏ vào tên Pod ngẫu nhiên hay đổi, Service và Deployment quét tìm đúng nhóm Pod thông qua các cặp nhãn key: value."
+    tone: sky
+  - num: 3
+    label: "Namespace — Ranh giới phạm vi tên & hạn mức"
+    desc: "Tách biệt môi trường staging và production trên cùng một cụm vật lý; ConfigMap và Secret không tự động chia sẻ xuyên qua Namespace."
+    tone: violet
+```
+
 ## 1. Tại sao đơn vị nhỏ nhất là Pod chứ không phải Container?
 
 > [!ANALOGY] Hãy hình dung như sau

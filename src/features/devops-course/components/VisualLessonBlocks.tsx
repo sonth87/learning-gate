@@ -65,6 +65,10 @@ import {
 import { useStore } from '@sonth87/device-layout';
 import { detectLanguageFromFence, renderHighlightedConfig } from '../configHighlighter';
 import type { DevOpsAccent, EditorLanguage } from '../types';
+import {
+  IllustrationFigure,
+  type IllustrationCalloutItem,
+} from '@/components/common/IllustrationLightbox';
 import { cn } from '@/utils/cn';
 
 export type VisualTone = 'sky' | 'cyan' | 'emerald' | 'amber' | 'rose' | 'violet' | 'slate';
@@ -277,7 +281,11 @@ interface BlockHeaderProps {
 }
 
 function accentFallbackTone(accent: DevOpsAccent): VisualTone {
-  return accent === 'cyan' ? 'cyan' : accent === 'amber' ? 'amber' : 'sky';
+  if (accent === 'cyan') return 'cyan';
+  if (accent === 'amber') return 'amber';
+  if (accent === 'rose') return 'rose';
+  if (accent === 'emerald') return 'emerald';
+  return 'sky';
 }
 
 const BlockHeader: React.FC<BlockHeaderProps> = ({
@@ -289,7 +297,15 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
   renderInline,
 }) => {
   const eyebrowTone =
-    accent === 'cyan' ? 'text-cyan-400' : accent === 'amber' ? 'text-amber-400' : 'text-sky-400';
+    accent === 'cyan'
+      ? 'text-cyan-400'
+      : accent === 'amber'
+        ? 'text-amber-400'
+        : accent === 'rose'
+          ? 'text-rose-400'
+          : accent === 'emerald'
+            ? 'text-emerald-400'
+            : 'text-sky-400';
   return (
     <div className="mb-3.5 flex flex-col gap-0.5 border-b border-slate-800/90 pb-2.5">
       <div className={cn('flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider', eyebrowTone)}>
@@ -940,6 +956,19 @@ const VisualTroubleshootMatrix: React.FC<{
   );
 };
 
+/* ---------- 7. HYBRID VISUAL ILLUSTRATION + LIGHTBOX ---------- */
+interface IllustrationSpec {
+  kind: 'illustration';
+  src?: string;
+  diagram?: string;
+  alt?: string;
+  badge?: string;
+  title?: string;
+  subtitle?: string;
+  caption?: string;
+  callouts?: IllustrationCalloutItem[];
+}
+
 /* ---------- MAIN ENTRY ---------- */
 export const VisualLessonBlock: React.FC<{
   rawYaml: string;
@@ -962,6 +991,23 @@ export const VisualLessonBlock: React.FC<{
   }
 
   switch (parsed.kind) {
+    case 'illustration': {
+      const spec = parsed as unknown as IllustrationSpec;
+      return (
+        <IllustrationFigure
+          src={spec.src}
+          diagram={spec.diagram}
+          alt={spec.alt}
+          badge={spec.badge}
+          title={spec.title}
+          subtitle={spec.subtitle}
+          caption={spec.caption}
+          callouts={spec.callouts}
+          accent={accent}
+          renderInline={renderInline}
+        />
+      );
+    }
     case 'flow':
       return <VisualFlowDiagram spec={parsed as unknown as FlowSpec} accent={accent} renderInline={renderInline} />;
     case 'layers':

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R04-FC1",
+    "front": "Độ phức tạp thời gian của `ZSCORE`, `ZADD`/`ZINCRBY`, `ZREVRANK` và `ZRANGE` trên Sorted Set là gì?",
+    "back": "- `ZSCORE`: **`O(1)`** (nhờ Hash Table)\n- `ZADD`, `ZINCRBY`, `ZRANK`/`ZREVRANK`: **`O(log N)`** (nhờ Skip List + `span`)\n- `ZRANGE` (lấy `M` phần tử): **`O(log N + M)`**"
+  },
+  {
+    "id": "R04-FC2",
+    "front": "Cờ **`GT`** và **`LT`** trong lệnh `ZADD` giúp loại bỏ Race Condition nào ở tầng ứng dụng?",
+    "back": "Giúp cập nhật điểm có điều kiện ngay trên Redis (**`GT`**: chỉ ghi đè khi điểm mới lớn hơn điểm cũ; **`LT`**: chỉ ghi đè khi nhỏ hơn), không cần ứng dụng `ZSCORE` đọc ra rồi mới `ZADD` lại."
+  },
+  {
+    "id": "R04-FC3",
+    "front": "Làm sao biểu diễn khoảng mở (không lấy dấu bằng) và vô cực trong `ZRANGE ... BYSCORE` hoặc `ZCOUNT`?",
+    "back": "Thêm dấu ngoặc đơn `(` ngay trước con số để tạo khoảng mở (ví dụ `(50 (100` tương đương `50 < score < 100`), và dùng `-inf` / `+inf` cho âm/dương vô cực."
+  },
+  {
+    "id": "R04-FC4",
+    "front": "Mẫu thiết kế **Sliding Window Rate Limiter** bằng ZSet hoạt động qua 3 bước nào?",
+    "back": "1) `ZREMRANGEBYSCORE key -inf (now - windowMs)` xoá các lượt gọi ngoài cửa sổ trượt;\n2) `ZADD key now uniqueReqId` ghi nhận lượt hiện tại;\n3) `ZCARD key` đếm tổng số lượt trong cửa sổ để quyết định cho qua hay chặn `429`."
+  },
+  {
+    "id": "R04-FC5",
+    "front": "Giới hạn số nguyên chính xác tối đa của `score` trong ZSet là bao nhiêu và tại sao?",
+    "back": "**`2^53` (`9,007,199,254,740,992`)**, vì `score` được lưu bằng kiểu số thực dấu phẩy động `double` 64-bit IEEE 754 (chỉ có 53 bit phần định trị mantissa)."
+  },
+  {
+    "id": "R04-FC6",
+    "front": "Khi hai phần tử trong ZSet có cùng điểm `score`, muốn người đạt điểm đó **sớm hơn** luôn đứng trên trên bảng xếp hạng thì xử lý thế nào?",
+    "back": "Ghép phần thập phân hoặc phần bù thời gian vào `score`, ví dụ `score = points + (MAX_TS - achievedAtSec) / 1e10` (nằm gọn trong 53-bit chính xác hoặc tách xử lý qua Lua)."
+  }
+]

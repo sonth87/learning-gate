@@ -3,6 +3,8 @@ import { gradeYamlSpec, parseK8sCpuMillicores, parseK8sMemoryMi, renderSimpleHel
 import { gradeDockerfileSpec, gradeDockerignoreSpec, parseDockerfile } from '../dockerfileGrader';
 import { executeDiagnosticCommand, gradeCliSpec, gradeTroubleshootSpec } from '../cliSimEngine';
 import { dryRunExercise, gradeDevOpsExercise } from '../gradeEngine';
+import { crc16RedisSlot, gradeRedisCliSpec } from '../redisCliEngine';
+import { gradeRedisConfSpec, parseRedisMemoryBytes } from '../redisConfGrader';
 import { mergeWpStates } from '@/db/durableProgressStorage';
 import { emptyState } from '@/features/workpath/logic';
 import { courseCurrentLevel, courseModuleDone, courseModuleProgress, courseNextSteps } from '../../logic';
@@ -523,6 +525,91 @@ test('Skip Progression: bỏ qua bài lẻ hoặc cả module tự động chuy�
   assert.equal(courseModuleDone(s, miniCur.modules[0], 0.7), true);
   assert.equal(courseCurrentLevel(s, miniCur), 1);
   assert.ok(courseNextSteps(s, miniCur, null, 'Kube')[0]?.text.includes('K07'));
+});
+
+test('Redis Cluster CRC16 & HashTag: tính đúng chuẩn XMODEM 16384 slots và gom slot bằng {hashtag}', () => {
+  // Chuẩn tài liệu Redis Cluster Specification: CRC16("123456789") = 0x31C3 = 12739
+  assert.equal(crc16RedisSlot('123456789'), 12739);
+  // Hai key khác nhau nhưng chung {hashtag} phải rơi vào cùng 1 slot
+  const s1 = crc16RedisSlot('user:{42}:profile');
+  const s2 = crc16RedisSlot('user:{42}:cart');
+  assert.equal(s1, s2);
+  assert.equal(s1, crc16RedisSlot('42'));
+  // Cặp ngoặc rỗng {} không được coi là hashtag hợp lệ
+  assert.notEqual(crc16RedisSlot('{}abc'), crc16RedisSlot('{}xyz'));
+});
+
+test('Redis 8 CLI Engine: String TTL + ADVANCE_TIME, Hash HEXPIRE, ZSet Leaderboard, Streams PEL/XACK & Lua EVAL', () => {
+  const script = `
+# 1. String kèm EX và kiểm tra tự động hết hạn bằng ADVANCE_TIME
+SET cache:promo "FLASH50" EX 10
+SET session:keep "active" EX 300
+ADVANCE_TIME 15000
+
+# 2. Hash kèm HEXPIRE của Redis 7.4+/8
+HSET user:101 name "Linh" otp "889911"
+HEXPIRE user:101 5 FIELDS 1 otp
+ADVANCE_TIME 6000
+
+# 3. Sorted Set Leaderboard
+ZADD lb:weekly 120 "alice" 450 "bob" 310 "charlie"
+ZINCRBY lb:weekly 200 "alice"
+
+# 4. Streams + Consumer Group + XREADGROUP + XACK (giải phóng PEL)
+XADD orders:stream * orderId "ORD-1" total "99"
+XADD orders:stream * orderId "ORD-2" total "149"
+XGROUP CREATE orders:stream payment-grp 0
+XREADGROUP GROUP payment-grp worker-1 COUNT 2 STREAMS orders:stream >
+XACK orders:stream payment-grp 1700000021000-0 1700000021000-1
+
+# 5. Kịch bản Lua nguyên tử mở khoá phân tán an toàn (Check-and-Del)
+SET lock:checkout "tok-secret-99" PX 30000
+EVAL "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end" 1 lock:checkout "wrong-token"
+EVAL "if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end" 1 lock:checkout "tok-secret-99"
+`;
+
+  const res = gradeRedisCliSpec(script, undefined, [
+    { id: 'promo-expired', doc: 'cache:promo đã hết hạn sau 15s', target: 'key-exists', key: 'cache:promo', exists: false },
+    { id: 'sess-ttl', doc: 'session:keep vẫn còn TTL > 200s', target: 'ttl', key: 'session:keep', minSeconds: 200, maxSeconds: 300 },
+    { id: 'hash-otp-gone', doc: 'Hash user:101 giữ name nhưng otp đã tự hết hạn', target: 'hash-fields', key: 'user:101', expected: { name: 'Linh' } },
+    { id: 'zset-top', doc: 'bob (450) đứng đầu, alice (320) đứng nhì', target: 'zset-ranking', key: 'lb:weekly', topDesc: ['bob', 'alice', 'charlie'] },
+    { id: 'stream-pel-0', doc: 'Stream có group payment-grp và PEL = 0 sau khi XACK', target: 'stream-state', key: 'orders:stream', minLength: 2, hasGroup: 'payment-grp', maxPelCount: { group: 'payment-grp', max: 0 } },
+    { id: 'lua-unlock', doc: 'Lock chỉ bị xoá khi truyền đúng token sở hữu', target: 'key-exists', key: 'lock:checkout', exists: false },
+  ]);
+
+  assert.equal(res.import_error, null);
+  assert.ok(res.tests.every((t) => t.status === 'pass'), JSON.stringify(res.tests, null, 2));
+});
+
+test('Redis.conf AST Grader: quy đổi đơn vị bộ nhớ Redis (mb vs m, gb vs g), chính sách Eviction, ACL & chặn FLUSHALL', () => {
+  assert.equal(parseRedisMemoryBytes('512mb'), 512 * 1024 * 1024);
+  assert.equal(parseRedisMemoryBytes('2gb'), 2 * 1024 * 1024 * 1024);
+  assert.equal(parseRedisMemoryBytes('100m'), 100_000_000);
+
+  const conf = `
+# Cấu hình Redis 8 Production Hardened
+bind 127.0.0.1 10.0.1.15
+protected-mode yes
+maxmemory 2gb
+maxmemory-policy allkeys-lfu
+appendonly yes
+appendfsync everysec
+lazyfree-lazy-eviction yes
+rename-command FLUSHALL ""
+user default off
+user app_svc on >StrongPass2026! ~app:* +@read +@write -@dangerous
+`;
+
+  const graded = gradeRedisConfSpec(conf, [
+    { id: 'mem', doc: 'Giới hạn RAM 2 GiB', kind: 'memory-bytes', directive: 'maxmemory', eqBytes: 2 * 1024 * 1024 * 1024 },
+    { id: 'pol', doc: 'Dùng allkeys-lfu', kind: 'directive', directive: 'maxmemory-policy', match: { eq: 'allkeys-lfu' } },
+    { id: 'aof', doc: 'Bật AOF everysec', kind: 'directive', directive: 'appendfsync', match: { eq: 'everysec' } },
+    { id: 'acl', doc: 'Tạo user app_svc giới hạn key ~app:* và chặn @dangerous', kind: 'acl-rule', username: 'app_svc', enabled: true, requirePassword: true, keyPattern: 'app:*', forbidCategory: 'dangerous' },
+    { id: 'no-flush', doc: 'Vô hiệu hoá FLUSHALL', kind: 'rename-or-disable', dangerousCommand: 'FLUSHALL' },
+  ]);
+
+  assert.equal(graded.import_error, null);
+  assert.ok(graded.tests.every((t) => t.status === 'pass'), JSON.stringify(graded.tests, null, 2));
 });
 
 console.log(`\n🎉 TẤT CẢ ${passed} BÀI TEST ENGINE ĐỀU XANH!`);

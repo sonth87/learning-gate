@@ -4,6 +4,29 @@ Trong các bài trước, khi muốn đưa ứng dụng lên cụm Kubernetes, c
 
 Mô hình Đẩy ({rose:Push-based CD}) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt tử huyệt bảo mật. Đó là lúc kiến trúc ==Pull-based GitOps== với {emerald:ArgoCD} và {sky:Single Source of Truth trên Git} trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
 
+```visual
+kind: illustration
+diagram: "cicd:c15"
+src: "/illustrations/cicd/cicd-gitops-argocd-reconcile.jpg"
+alt: "Kiến trúc Pull-Based GitOps tách kho App CI với kho GitOps Config và vòng lặp đối chiếu tự chữa lành của ArgoCD bên trong cụm Kubernetes"
+title: "Giải Phẫu Kiến Trúc Pull-Based GitOps & Vòng Lặp Tự Chữa Lành Của ArgoCD"
+subtitle: "Xoá sổ hoàn toàn chìa khoá KUBECONFIG trên đường ống CI bên ngoài bằng trình điều phối chủ động kéo trạng thái từ trong cụm"
+caption: "Luồng khép kín từ CI đẩy Image & cập nhật thẻ phiên bản vào kho GitOps Config tới ArgoCD phát hiện sai lệch (Drift) và tự đồng bộ 24/7"
+callouts:
+  - num: 1
+    label: "Đường ống CI không còn giữ chìa khoá KUBECONFIG"
+    desc: "CI chỉ đóng gói Image đẩy lên Registry rồi mở commit cập nhật mã tag mới vào kho cấu hình GitOps — tách biệt hoàn toàn quyền Admin cụm."
+    tone: sky
+  - num: 2
+    label: "Kho GitOps Config — Nguồn sự thật duy nhất"
+    desc: "Tách riêng khỏi kho mã nguồn ứng dụng để tránh vòng lặp kích hoạt CI vô tận; mọi thao tác nâng cấp hay git revert đều lưu vết rõ ràng."
+    tone: violet
+  - num: 3
+    label: "ArgoCD kéo chiều ra & Tự chữa lành (selfHeal: true)"
+    desc: "Nằm kín bên trong cụm K8s không cần mở tường lửa chiều vào, liên tục phát hiện sửa tay trái phép (OutOfSync) để ép cụm về đúng chuẩn Git."
+    tone: emerald
+```
+
 ---
 
 ## 1. Tại sao Push-based `kubectl apply` từ CI là một Phản mẫu Bảo mật?

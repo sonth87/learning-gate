@@ -1,0 +1,61 @@
+# ============================================================================
+# Bộ Quy Tắc Cảnh Báo Sớm Prometheus (PrometheusRule) Cho oliver006/redis_exporter
+# Phát hiện sớm nguy cơ đầy RAM, đứt gãy Replica, tụt Hit Ratio & rò rỉ kết nối
+# ============================================================================
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: redis-production-golden-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: redis.sre.rules
+      interval: 30s
+      rules:
+        - alert: RedisMemorySaturationHigh
+          expr: (redis_memory_used_bytes / redis_memory_max_bytes) > 0.85 and redis_memory_max_bytes > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Redis {{ $labels.instance }} sử dụng trên 85% ngưỡng maxmemory"
+            description: "Kiểm tra khóa BigKey hoặc mở rộng thêm Shard trước khi xảy ra bão thu hồi (eviction storm)."
+
+        - alert: RedisEvictionStormDetected
+          expr: rate(redis_evicted_keys_total[5m]) > 150
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Tốc độ đẩy khóa (evicted_keys) vượt 150 khóa/giây trên {{ $labels.instance }}"
+            description: "Working set thực tế đã vượt quá dung lượng RAM cấp cho tầng Cache."
+
+        - alert: RedisCacheHitRatioDegraded
+          expr: |
+            (rate(redis_keyspace_hits_total[5m]) /
+            clamp_min(rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]), 1)) < 0.80
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Tỷ lệ Cache Hit tụt xuống dưới 80% trên {{ $labels.instance }}"
+            description: "Có thể đang xảy ra Cache Penetration (quét ID rác) hoặc TTL đặt quá ngắn."
+
+        - alert: RedisReplicationBrokenOrLagging
+          expr: redis_master_link_up == 0 or redis_connected_slaves == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Đứt gãy luồng nhân bản Master-Replica tại {{ $labels.instance }}"
+            description: "Nguy cơ mất dữ liệu nếu Master gặp sự cố trước khi Replica đồng bộ lại PSYNC2."
+
+        - alert: RedisRejectedConnectionsSpike
+          expr: increase(redis_rejected_connections_total[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Redis từ chối kết nối TCP mới do chạm trần maxclients"
+            description: "Kiểm tra ngay lỗi quên tái sử dụng Singleton Connection Pool ở phía Microservice!"

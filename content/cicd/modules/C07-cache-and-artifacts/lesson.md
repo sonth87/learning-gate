@@ -6,6 +6,28 @@
 
 Chìa khoá nằm ở việc phân biệt rạch ròi hai công cụ có bản chất hoàn toàn trái ngược nhau: ==`Cache`== và ==`Artifact`==!
 
+```visual
+kind: illustration
+diagram: "cicd:c07"
+alt: "Đối chiếu kiến trúc Dependency Cache băm theo lockfile xuyên lượt chạy với Build Artifacts truyền gói thành phẩm xuyên các Job"
+title: "Giải Phẫu Lưu Trữ Đường Ống: Dependency Cache Xuyên Lượt vs Artifact Xuyên Job"
+subtitle: "Tăng tốc cài đặt thư viện qua mã băm package-lock.json và đảm bảo nguyên tắc Build Một Lần, Triển Khai Mọi Môi Trường"
+caption: "Cơ chế khoá băm hashFiles('**/package-lock.json') của Cache (main ghi, PR đọc) đối lập với quy trình upload/download-artifact bất biến giữa các Job"
+callouts:
+  - num: 1
+    label: "Dependency Cache — Tăng tốc xuyên các lượt chạy"
+    desc: "Đệm kho ~/.npm theo mã băm SHA-256 của package-lock.json; nhánh main ghi chuẩn, các PR kéo về dùng lại trong vài giây (xoá đi vẫn chạy được)."
+    tone: cyan
+  - num: 2
+    label: "Build Artifacts — Chuyển giao thành phẩm giữa các Job"
+    desc: "Đóng gói thư mục dist/, báo cáo Playwright và SBOM gắn chặt với đúng Commit SHA để truyền từ máy ảo build sang các máy ảo sau."
+    tone: violet
+  - num: 3
+    label: "Triển khai đồng nhất & Tối ưu retention-days"
+    desc: "Staging và Production cùng tải đúng 1 gói Artifact duy nhất mà không biên dịch lại; đặt retention-days: 7 giúp tiết kiệm 90% dung lượng."
+    tone: emerald
+```
+
 ## 1. Đối chiếu kiến trúc: `Cache` (`actions/cache@v4`) vs `Artifact` (`upload-artifact@v4`)
 
 ```visual

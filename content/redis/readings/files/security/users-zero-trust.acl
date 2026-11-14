@@ -1,0 +1,24 @@
+# ============================================================================
+# Tệp Phân Quyền Tối Thiểu Redis ACL v2 (Zero-Trust Access Control List)
+# Sinh băm SHA-256 bằng: redis-cli ACL GENPASS 32 | sha256sum (inject qua Vault/Secret)
+# Kiểm tra vi phạm quyền thực tế bằng lệnh: ACL LOG 20
+# ============================================================================
+
+# 1. KHÓA CHẶT user mặc định: Mọi kết nối không gọi AUTH định danh đều bị từ chối ngay!
+user default off sanitize-payload -@all
+
+# 2. Tài khoản dịch vụ Checkout:
+#    - Chỉ được ĐỌC (%R~) không gian khóa catalog:*
+#    - Được ĐỌC & GHI (%RW~) trên order:*, cart:*, lock:order:*
+#    - Cấm tuyệt đối nhóm lệnh nguy hiểm (-@dangerous, -@admin, -keys, -flushdb, -flushall)
+user checkout_svc on resetpass ~order:* ~cart:* ~lock:order:* &events:order:* +@read +@write +@scripting -@dangerous -@admin -keys (%R~catalog:* +@read)
+
+# 3. Tài khoản Worker phân tích báo cáo (Chỉ đọc thuần túy + quét con trỏ HSCAN/SSCAN/SCAN)
+user analytics_ro on resetpass %R~dau:* %R~uv:* %R~lb:* -@all +@read -keys
+
+# 4. Tài khoản Sidecar Prometheus Exporter (Chỉ được phép đọc thông số sức khỏe máy chủ!)
+#    Không được chạm vào bất kỳ khóa dữ liệu người dùng nào (resetkeys)
+user prom_exporter on resetpass resetkeys resetchannels -@all +info +ping +client|list +slowlog|get +slowlog|len +latency|latest +cluster|info +memory|stats
+
+# 5. Tài khoản Quản trị SRE khẩn cấp (Dùng cho bảo trì Failover / Config, cấm chạy tự động từ App)
+user sre_breakglass on resetpass ~* &* +@all -debug

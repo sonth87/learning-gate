@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R16-D1",
+    "title": "Khoá cổng văn bản thuần và bắt buộc kết nối mTLS trên cổng 6379",
+    "code": "bind 127.0.0.1 10.0.1.15\nprotected-mode yes\nport 0\ntls-port 6379\ntls-auth-clients yes"
+  },
+  {
+    "id": "R16-D2",
+    "title": "Khởi tạo tài khoản ACL đặc quyền tối thiểu cho Microservice",
+    "code": "ACL SETUSER checkout-svc on >CheckoutStrong2026 ~checkout:* +@all -@dangerous\nACL LIST"
+  },
+  {
+    "id": "R16-D3",
+    "title": "Tắt tài khoản default và tháo kíp nổ FLUSHALL / FLUSHDB",
+    "code": "user default off\nrename-command FLUSHALL \"\"\nrename-command FLUSHDB \"\""
+  }
+]

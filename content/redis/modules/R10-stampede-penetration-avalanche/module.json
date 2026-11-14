@@ -1,0 +1,55 @@
+{
+  "id": "R10",
+  "slug": "R10-stampede-penetration-avalanche",
+  "level": 3,
+  "order": 1,
+  "title": "Tam đại Thảm hoạ Caching: Chống Stampede, Penetration & Avalanche",
+  "summary": "Nhận diện và dựng lá chắn thực chiến trước 3 kịch bản đánh sập Database kinh điển ở quy mô triệu request: Đàn trâu điên (Stampede), Xuyên thủng (Penetration) và Tuyết lở đồng loạt (Avalanche).",
+  "tags": [
+    "cache-stampede",
+    "cache-penetration",
+    "cache-avalanche",
+    "bloom-filter",
+    "singleflight"
+  ],
+  "sources": [
+    {
+      "title": "Redis Bloom Filter Probabilistic Data Structure",
+      "url": "https://redis.io/docs/latest/develop/data-types/probabilistic/bloom-filter/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis SET Command Atomic NX/PX Options",
+      "url": "https://redis.io/docs/latest/commands/set/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Cơn bão Cache Stampede",
+      "kind": "incident",
+      "targetId": "inc-cache-stampede"
+    },
+    {
+      "label": "War Room: Tấn công Cache Penetration",
+      "kind": "incident",
+      "targetId": "inc-cache-penetration"
+    }
+  ],
+  "readings": [
+    {
+      "path": "caching/bad-stampede-naive-cache.ts",
+      "kind": "bug",
+      "note": "Đoạn code Cache-Aside tưởng chừng vô hại ở môi trường dev nhưng sẽ nướng cháy toàn bộ Connection Pool của PostgreSQL đúng giây khoá Hot Key vừa hết hạn.",
+      "task": "Điều gì xảy ra tại mili-giây `T = 300.001s` khi khoá trang chủ hết hạn và có 5.000 request đồng thời ập tới hàm `getHomepageFeed()` trong tệp này?",
+      "answer": "Cả 5.000 request cùng chạy `redis.get()`, cùng nhận `null` trước khi bất kỳ luồng nào kịp nạp lại cache, dẫn đến 5.000 câu SQL `JOIN` nặng dội thẳng xuống PostgreSQL làm cạn sạch Connection Pool và kéo sập toàn cụm API."
+    },
+    {
+      "path": "caching/bloom-shield-penetration-guard.ts",
+      "kind": "good",
+      "note": "Lá chắn Bloom Filter chặn đứng 99% truy vấn quét ID ngẫu nhiên không tồn tại ngay tại biên Redis trước khi chạm tới tầng Database.",
+      "task": "Nếu `BF.EXISTS` trả về `0` so với trả về `1`, khẳng định nào là chắc chắn 100% và khẳng định nào có xác suất dương tính giả?",
+      "answer": "Khi `BF.EXISTS` trả về `0`, chắc chắn 100% phần tử KHÔNG tồn tại (Zero False Negative) nên có thể trả `404` ngay lập tức. Khi trả về `1`, có xác suất nhỏ dương tính giả (ví dụ `1%`), lúc đó mới đi tiếp xuống kiểm tra Cache và Database (kết hợp Negative Cache ngắn hạn)."
+    }
+  ]
+}

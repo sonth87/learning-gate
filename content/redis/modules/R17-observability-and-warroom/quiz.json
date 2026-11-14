@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R17-Q1",
+    "type": "mc",
+    "q": "Chỉ số thời gian thực thi (tính bằng micro-giây `µs`) hiển thị trong kết quả lệnh `SLOWLOG GET` phản ánh chính xác khoảng thời gian nào?",
+    "code": "",
+    "choices": [
+      "Tổng thời gian từ lúc ứng dụng gửi gói tin TCP qua mạng cho tới lúc nhận về phản hồi",
+      "Chỉ tính thuần tuý thời gian CPU luồng chính thực thi câu lệnh đó (KHÔNG bao gồm thời gian gói tin đi trên mạng hay thời gian nằm chờ trong hàng đợi I/O phía sau một lệnh chậm khác)",
+      "Thời gian hệ điều hành ghi dữ liệu xuống ổ cứng SSD",
+      "Thời gian bắt tay TLS Handshake"
+    ],
+    "answer": 1,
+    "explain": "`SLOWLOG` chỉ bấm giờ lúc Event Loop bắt đầu xử lý lệnh tới lúc trả kết quả vào buffer. Vì vậy một lệnh `GET` nhanh `2 µs` vẫn có thể bị phía ứng dụng đo thành `300ms` nếu đứng xếp hàng sau một lệnh `KEYS *` ngốn `298ms`!"
+  },
+  {
+    "id": "R17-Q2",
+    "type": "mc",
+    "q": "Vì sao trên bảng điều khiển Grafana/Prometheus, bạn bắt buộc phải tính Tỷ lệ Trúng Cache bằng `rate(redis_keyspace_hits_total[5m])` thay vì lấy trực tiếp tổng `keyspace_hits / (keyspace_hits + keyspace_misses)`?",
+    "code": "",
+    "choices": [
+      "Vì Prometheus không hỗ trợ phép cộng hai số nguyên",
+      "Vì `keyspace_hits` là bộ đếm cộng dồn từ lúc bật máy chủ; nếu cụm đã tích luỹ hàng tỷ lượt Hit trong nhiều tháng, một đợt sập Cache hiện tại sẽ bị pha loãng và biểu đồ tổng vẫn báo 99% giả tạo!",
+      "Vì `rate()` tự động xoá dữ liệu cũ trên Redis",
+      "Vì `keyspace_misses` tự đặt lại về 0 mỗi giờ"
+    ],
+    "answer": 1,
+    "explain": "Luôn dùng `rate(...[5m])` (hoặc `irate`) cho các bộ đếm tích luỹ (`Counter`) để phản ánh đúng sức khoẻ hệ thống ngay tại cửa sổ thời gian thực tế hiện tại."
+  },
+  {
+    "id": "R17-Q3",
+    "type": "tf",
+    "q": "Trên một máy chủ vật lý có 32 vCPU, nếu biểu đồ CPU trung bình toàn máy chỉ báo `3.2%` thì chắc chắn 100% rằng tiến trình Redis đang hoàn toàn rảnh rỗi, không thể bị nghẽn CPU.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Luồng thực thi lệnh của Redis là **đơn luồng (1 core)**. Khi 1 nhân đó bão hoà cứng ở mức `100%`, mức sử dụng trung bình chia cho 32 nhân chỉ bằng `100% / 32 = 3.125%`! Phải luôn giám sát CPU riêng của tiến trình/luồng chính Redis."
+  },
+  {
+    "id": "R17-Q4",
+    "type": "output",
+    "q": "Điền tên câu lệnh chẩn đoán tích hợp sẵn trong Redis giúp phân tích tự động các gai độ trễ hệ thống (như thời gian `fork()` Copy-on-Write, `fsync` ổ đĩa hay hết hạn Bigkey) kèm lời khuyên khắc phục bằng tiếng Anh:",
+    "code": "____ DOCTOR",
+    "choices": [],
+    "answer": "LATENCY",
+    "explain": "`LATENCY DOCTOR` tổng hợp lịch sử các sự kiện vượt ngưỡng `latency-monitor-threshold` và chỉ rõ nguyên nhân gốc rễ gây giật cục hệ thống."
+  },
+  {
+    "id": "R17-Q5",
+    "type": "mc",
+    "q": "Khi chạy công cụ `redis-cli --bigkeys` để khảo sát phân bố dung lượng khoá trong giờ hành chính, thực hành vận hành nào dưới đây là AN TOÀN nhất?",
+    "code": "",
+    "choices": [
+      "Chạy trực tiếp trên nút Master không thêm tham số nào để lấy kết quả nhanh nhất",
+      "Chạy trên bản sao **Replica** kết hợp cờ nghỉ nhịp **`-i 0.05`** (tạm nghỉ 50ms sau mỗi 100 lệnh `SCAN`) để tuyệt đối không tạo xung tải lên nút Master đang phục vụ khách hàng",
+      "Tạm dừng toàn bộ ứng dụng rồi chạy lệnh `KEYS *`",
+      "Chạy `BGSAVE` liên tục mỗi giây"
+    ],
+    "answer": 1,
+    "explain": "Đẩy tác vụ quét phân tích sang Replica kèm cờ tiết lưu `-i` (interval) là nguyên tắc vàng để quan sát hệ thống mà không gây hiệu ứng phụ (*Observer Effect*) lên luồng chính của Master."
+  },
+  {
+    "id": "R17-Q6",
+    "type": "mc",
+    "q": "Sau khi ứng cứu khẩn cấp sự cố tràn bộ nhớ bằng lệnh động `CONFIG SET maxmemory-policy allkeys-lfu` trên `redis-cli`, bước bắt buộc tiếp theo bạn phải làm là gì để sự cố không tái diễn sau lần bảo trì khởi động lại máy chủ?",
+    "code": "",
+    "choices": [
+      "Chạy `FLUSHALL` để làm mới bộ nhớ",
+      "Chạy `CONFIG REWRITE` để ghi đè thay đổi xuống tệp `redis.conf` trên đĩa (và đồng bộ vào kho mã nguồn IaC / Helm ConfigMap)",
+      "Đổi cổng Redis sang 6380",
+      "Không cần làm gì vì `CONFIG SET` tự động sửa mọi tệp YAML trên GitHub"
+    ],
+    "answer": 1,
+    "explain": "`CONFIG SET` chỉ thay đổi thông số trong RAM của tiến trình đang chạy! Nếu không gọi `CONFIG REWRITE` và cập nhật IaC/ConfigMap, lần restart tới Redis sẽ đọc lại tệp `redis.conf` cũ chứa lỗi."
+  },
+  {
+    "id": "R17-Q7",
+    "type": "tf",
+    "q": "Nếu chỉ số `evicted_keys` tăng vọt liên tục đi kèm `Cache Hit Ratio` lao dốc mạnh, đó là dấu hiệu cho thấy tập dữ liệu làm việc nóng (Working Set) đã vượt quá dung lượng `maxmemory` cấp phát và cụm Cache cần được mở rộng RAM hoặc phân mảnh Cluster.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! `evicted_keys` tăng nhẹ khi đầy RAM là bình thường với Cache, nhưng khi nó tăng dựng đứng kèm Hit Ratio tụt sâu (*Cache Thrashing*), Redis đang phải vứt bỏ cả những khoá vừa mới nạp vào ngay trước khi chúng kịp được đọc lại!"
+  }
+]

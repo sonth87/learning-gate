@@ -2,6 +2,28 @@
 
 Một tệp workflow tĩnh chỉ chạy một mạch từ đầu tới cuối giống như một hàm JavaScript không có tham số, không có `return` và không có `if/else`. Để biến đường ống CI thành cỗ máy điều phối thông minh — biết truyền mã phiên bản giữa các bước, biết tự thu gom ảnh chụp lỗi khi bài kiểm thử E2E vấp ngã, và biết "ngủ yên" tiết kiệm tiền khi đồng nghiệp chỉ sửa dấu chấm câu trong `README.md` — bạn cần làm chủ 4 công cụ điều khiển luồng cốt lõi của GitHub Actions.
 
+```visual
+kind: illustration
+diagram: "cicd:c04"
+alt: "Tháp ưu tiên 3 tầng biến môi trường env, truyền kết quả xuyên Job qua tệp $GITHUB_OUTPUT và các chốt chặn điều kiện if: failure / always"
+title: "Giải Phẫu Điều Khiển Luồng: Phạm Vi Biến env, Trạm Tiếp Sức $GITHUB_OUTPUT & Cổng if:"
+subtitle: "Truyền dữ liệu an toàn xuyên suốt các bước/Job và điều hướng thông minh khi đường ống gặp sự cố hoặc chỉ sửa tài liệu"
+caption: "Thứ tự ưu tiên ghi đè biến môi trường (Step > Job > Workflow), luồng xuất biến qua $GITHUB_OUTPUT và các hàm điều kiện trạng thái thực thi"
+callouts:
+  - num: 1
+    label: "Tháp phạm vi env: & Mặt nạ che giấu secrets.*"
+    desc: "Biến ở phạm vi hẹp hơn (Step) luôn ghi đè phạm vi rộng (Job, Workflow); biến nhạy cảm đọc từ secrets.* được tự động che dấu *** trên log."
+    tone: sky
+  - num: 2
+    label: "Truyền dữ liệu xuyên Step & Job qua $GITHUB_OUTPUT"
+    desc: "Ghi cặp key=value vào tệp môi trường $GITHUB_OUTPUT (thay cho ::set-output cũ đã khai tử) và khai báo jobs.<id>.outputs để Job sau đọc."
+    tone: violet
+  - num: 3
+    label: "Chốt chặn điều kiện if: & Bộ lọc đường dẫn paths-ignore"
+    desc: "Dùng failure() để thu gom ảnh chụp lỗi E2E, always() & !cancelled() để dọn dẹp hạ tầng và paths-ignore để nghỉ chạy khi chỉ sửa tệp .md."
+    tone: amber
+```
+
 ## 1. Phân cấp 3 tầng Biến môi trường (`env:`) — Phạm vi hẹp thắng phạm vi rộng
 
 Tương tự quy tắc *Lexical Scope* trong JavaScript (biến cục bộ bên trong hàm ghi đè biến toàn cục bên ngoài), GitHub Actions cho phép khai báo khối `env:` ở **3 tầng phân cấp**:

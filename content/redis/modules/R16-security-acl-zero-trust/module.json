@@ -1,0 +1,59 @@
+{
+  "id": "R16",
+  "slug": "R16-security-acl-zero-trust",
+  "level": 5,
+  "order": 1,
+  "title": "Bảo mật Redis Zero-Trust: Mạng Nội bộ, TLS/mTLS & Phân quyền ACL",
+  "summary": "Khoá chặt bề mặt tấn công Redis từ tầng mạng tới tầng lệnh: giải phẫu kịch bản chiếm quyền RCE khi phơi cổng 6379 ra Internet, thiết lập bind/protected-mode, mã hoá TLS/mTLS (`port 0`), phân quyền hạt mịn với Redis ACL (`~prefix:*`, `-@dangerous`) và cô lập bằng Kubernetes NetworkPolicy.",
+  "tags": [
+    "security",
+    "acl",
+    "zero-trust",
+    "tls",
+    "mtls",
+    "networkpolicy",
+    "hardening"
+  ],
+  "sources": [
+    {
+      "title": "Redis Security — Network, Protected Mode & Attack Surface",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis ACL (Access Control List) — Fine-Grained Permissions",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "kind": "incident",
+      "targetId": "inc-keys-star-freeze",
+      "label": "War-Room: Hậu quả khi không chặn nhóm lệnh -@dangerous trong ACL",
+      "hint": "Xem một tài khoản ứng dụng dư quyền gọi KEYS * hoặc FLUSHALL làm tê liệt toàn bộ cụm Production như thế nào."
+    },
+    {
+      "kind": "flow",
+      "targetId": "event-loop-pipeline",
+      "label": "Luồng kiểm chứng xác thực TLS & ACL trước khi vào Event Loop",
+      "hint": "Quan sát chi phí TLS Handshake được đẩy sang I/O Threads trong Redis 8 giúp bật mã hoá mà không nghẽn luồng chính."
+    }
+  ],
+  "readings": [
+    {
+      "path": "security/users-zero-trust.acl",
+      "kind": "good",
+      "note": "Tệp phân quyền ACL mẫu chuẩn Zero-Trust: tắt hoàn toàn tài khoản default và cấp quyền tối thiểu theo tiền tố khoá + nhóm lệnh cho từng microservice.",
+      "task": "Tìm cú pháp giới hạn một tài khoản báo cáo chỉ được phép ĐỌC (`GET`, `HGET`, `ZRANGE`) trên nhánh khoá `metrics:*` mà tuyệt đối không thể ghi đè hay xoá dữ liệu.",
+      "answer": "Dùng tổ hợp `resetkeys ~metrics:* -@all +@read` (hoặc quyền đọc-ghi tách biệt của Redis 7/8 `%R~metrics:*`)."
+    },
+    {
+      "path": "security/redis-tls-mtls-prod.conf",
+      "kind": "good",
+      "note": "Cấu hình khóa cứng cổng văn bản thuần (`port 0`), ép buộc xác thực chứng chỉ hai chiều mTLS (`tls-auth-clients yes`) và vô hiệu hoá lệnh huỷ diệt.",
+      "task": "Vì sao khi bật `tls-port 6379` mà quên thêm dòng `port 0` (hoặc đổi `tls-port` trùng `port`) thì cấu hình bảo mật vẫn thất bại hoặc lỗi khởi động?",
+      "answer": "Vì mặc định `port` vẫn mang giá trị `6379` (không mã hoá). Phải đặt tường minh `port 0` để tắt hoàn toàn socket TCP văn bản thuần rồi mới gán `tls-port 6379`."
+    }
+  ]
+}

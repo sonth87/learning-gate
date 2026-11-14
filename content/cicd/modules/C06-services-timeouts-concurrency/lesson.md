@@ -38,6 +38,28 @@ items:
 
 ## 1. Cái bẫy 360 phút mặc định và kỷ luật `timeout-minutes`
 
+```visual
+kind: illustration
+diagram: "cicd:c06"
+alt: "Ba lá chắn vận hành gồm Service Containers (PostgreSQL 16 + Redis 7 kèm healthcheck), trần thời gian timeout-minutes và điều phối concurrency"
+title: "Giải Phẫu Bộ Ba Vận Hành CI: Service Containers, Trần Timeout & Concurrency"
+subtitle: "Kiểm thử tích hợp trên cơ sở dữ liệu thật dùng một lần, chặn đứng tiến trình treo 6 tiếng và điều tiết tranh chấp luồng"
+caption: "Cụm PostgreSQL/Redis đính kèm vòng đời Job với healthcheck tự động, rào chắn timeout-minutes: 10 và hai chế độ concurrency cho PR vs Production"
+callouts:
+  - num: 1
+    label: "Service Containers kèm cổng gác Healthcheck"
+    desc: "Khởi chạy PostgreSQL 16 và Redis 7 thật ngay cạnh Job; cờ --health-cmd đảm bảo các bước kiểm thử chỉ chạy sau khi DB đã sẵn sàng."
+    tone: sky
+  - num: 2
+    label: "timeout-minutes chặn bẫy đốt tiền 360 phút"
+    desc: "Thay thế mức trần mặc định 6 tiếng nguy hiểm của GitHub bằng ngưỡng 10-15 phút hợp lý để tự cắt ngay các kết nối bị treo."
+    tone: rose
+  - num: 3
+    label: "concurrency đối lập giữa PR và Production"
+    desc: "Bật cancel-in-progress: true trên nhánh PR để huỷ bản cũ lỗi thời, nhưng bắt buộc đặt false trên Production để xếp hàng tuần tự an toàn."
+    tone: amber
+```
+
 Ít người để ý dòng quy định mặc định của GitHub Actions: **nếu bạn quên viết `timeout-minutes`, một Job bị treo sẽ tiếp tục chạy và trừ tiền suốt ==360 phút (6 giờ đồng hồ)==** trước khi bị hệ thống cưỡng chế dừng! Chỉ cần một bài kiểm thử tích hợp quên đóng kết nối database khiến tiến trình Node.js đứng im, 10 Pull Request trong ngày sẽ thiêu rụi **3.600 phút CI** của cả đội.
 
 ```yaml

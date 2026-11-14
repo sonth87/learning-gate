@@ -4,6 +4,29 @@ Trên máy tính cá nhân, một tiến trình Node.js có thể thoải mái c
 
 Trong bài học này, bạn sẽ làm chủ bộ ba trụ cột quản trị năng lực của Kubernetes: định mức **`resources` ({sky:`requests`} vs {amber:`limits`}) & QoS**, tự động nhân bản theo tải thực tế với ==`HorizontalPodAutoscaler` (`autoscaling/v2`)==, và chạy tác vụ một lần / định kỳ với **`Job` & `CronJob` (`batch/v1`)**.
 
+```visual
+kind: illustration
+diagram: "kube:k15"
+src: "/illustrations/kube/k8s-oom-vs-throttling.jpg"
+alt: "So sánh CPU Throttling với Memory OOMKilled (Exit Code 137), cơ chế tự động co giãn HPA v2 và tác vụ định kỳ Job/CronJob"
+title: "Giải Phẫu Quản Trị Năng Lực: CPU Throttling vs OOM 137, Co Giãn HPA & Tác Vụ CronJob"
+subtitle: "Định mức chính xác phần cứng cho từng Pod, tự động nhân bản theo tải thực tế và thực thi tác vụ nền chạy tới khi hoàn tất"
+caption: "Sự khác biệt sinh tử giữa vượt trần CPU (chỉ hãm xung) và vượt trần RAM (bị giết OOM 137), vòng lặp co giãn HPA v2 và lịch trình CronJob"
+callouts:
+  - num: 1
+    label: "requests/limits — Hãm xung CPU vs Bắn hạ OOM 137"
+    desc: "kube-scheduler dựa vào requests để xếp chỗ; lúc chạy nếu vượt limits.cpu chỉ bị chậm đi, nhưng vượt limits.memory sẽ nổ OOMKilled 137!"
+    tone: amber
+  - num: 2
+    label: "HPA (autoscaling/v2) — Tự động co giãn theo tải"
+    desc: "Đọc số liệu thực tế từ Metrics Server để tự động tăng/giảm số bản sao Deployment; bắt buộc Pod phải khai báo trước requests.cpu."
+    tone: emerald
+  - num: 3
+    label: "Job & CronJob — Tác vụ nền chạy tới Exit Code 0"
+    desc: "Khác với Deployment chạy mãi mãi, Job thực thi xong tác vụ là dừng ở trạng thái Completed và ngăn chạy chồng chéo bằng Forbid."
+    tone: violet
+```
+
 ## 1. Phân biệt sống còn: `resources.requests` vs `resources.limits`
 
 Mọi container chuẩn Production đều phải khai báo rõ hai ngưỡng dưới mục `resources:`. Về đơn vị đo lường trong Kubernetes:

@@ -1,0 +1,56 @@
+{
+  "id": "R09",
+  "slug": "R09-caching-topologies",
+  "level": 3,
+  "order": 0,
+  "title": "Kiến trúc Caching Thực chiến: Cache-Aside, Write-Through, Write-Behind & Bẫy Bất nhất",
+  "summary": "Làm chủ 4 mô hình đọc/ghi giữa Ứng dụng, Redis và Cơ sở dữ liệu quan hệ: lựa chọn đúng giữa Cache-Aside, Read/Write-Through và Write-Behind, giải quyết triệt để Race Condition khi xoá cache (`UNLINK` sau DB commit), Versioned Keys và Negative Caching.",
+  "tags": [
+    "caching",
+    "cache-aside",
+    "write-through",
+    "write-behind",
+    "invalidation",
+    "consistency"
+  ],
+  "sources": [
+    {
+      "title": "Redis Client-Side & Application Caching Patterns",
+      "url": "https://redis.io/docs/latest/develop/clients/client-side-caching/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis UNLINK Asynchronous Key Invalidation",
+      "url": "https://redis.io/docs/latest/commands/unlink/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Mô phỏng luồng Cache-Aside & Singleflight",
+      "kind": "flow",
+      "targetId": "cache-aside-singleflight"
+    },
+    {
+      "label": "War Room: Sự cố xoá Bigkey đồng bộ gây đơ luồng",
+      "kind": "incident",
+      "targetId": "inc-bigkey-del-spike"
+    }
+  ],
+  "readings": [
+    {
+      "path": "caching/cache-aside-singleflight-jitter.ts",
+      "kind": "good",
+      "note": "Triển khai mẫu Cache-Aside chuẩn Production trên TypeScript kết hợp làm mất hiệu lực bất đồng bộ UNLINK sau khi giao dịch SQL đã commit thành công.",
+      "task": "Vì sao khi cập nhật hồ sơ người dùng, hàm ghi chọn gọi `redis.unlink(cacheKey)` SAU khi `db.commit()` thay vì gọi `redis.set(cacheKey, newJson)` trực tiếp?",
+      "answer": "Nếu 2 luồng cập nhật đồng thời cùng gọi `SET` lên Redis, luồng chạy SQL xong trước nhưng gói mạng tới Redis trễ hơn sẽ ghi đè dữ liệu cũ lên dữ liệu mới vĩnh viễn cho tới hết TTL. Xoá bất đồng bộ bằng `UNLINK` sau khi `db.commit()` ép lần đọc kế tiếp nạp lại bản chuẩn mới nhất từ DB."
+    },
+    {
+      "path": "caching/python-logical-expire-swr.py",
+      "kind": "good",
+      "note": "Chiến lược Stale-While-Revalidate (SWR) giúp phục vụ dữ liệu tức thời dưới 1ms trong khi âm thầm làm mới nền không bắt người dùng chờ đợi.",
+      "task": "Sự khác biệt giữa TTL vật lý của Redis và trường thời gian hết hạn logic (`logical_exp`) lưu bên trong payload JSON là gì?",
+      "answer": "TTL vật lý làm khoá biến mất hoàn toàn khỏi RAM khi chạm 0; còn `logical_exp` cho phép ứng dụng vẫn đọc được bản ghi cũ để trả ngay cho khách trong vài chục mili-giây mà một worker nền đang truy vấn DB cập nhật lại."
+    }
+  ]
+}

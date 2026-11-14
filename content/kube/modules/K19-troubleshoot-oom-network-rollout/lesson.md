@@ -31,6 +31,28 @@ items:
 
 ## 1. Ca bệnh #5 — Pod đột tử lúc tải nặng: `OOMKilled` (`Exit Code 137`)
 
+```visual
+kind: illustration
+diagram: "kube:k19"
+alt: "Bản đồ cấp cứu sự cố Production gồm OOMKilled (Exit Code 137), đứt mạng 502 do Endpoints rỗng hoặc sai targetPort và cứu hộ Rollout Undo"
+title: "Bản Đồ Trực Chiến Production: Cấp Cứu OOMKilled (137), Lỗi 502 & Quay Lui Rollout"
+subtitle: "Phác đồ xử lý nhanh 3 kịch bản sự cố nóng xảy ra ngay giữa lúc hệ thống đang phục vụ lưu lượng thật"
+caption: "Ba quy trình bắt mạch và khôi phục tức thì cho lỗi tràn RAM (137), đứt cầu nối Service Endpoints (<none> / lệch cổng) và lỗi bản phát hành mới"
+callouts:
+  - num: 1
+    label: "Đột tử OOMKilled (Exit 137 = 128 + SIGKILL 9)"
+    desc: "Bắt bằng chứng trong Last State của describe pod; nâng trần limits.memory trước mắt và chuyển code đọc tệp lớn sang Node.js Streams."
+    tone: rose
+  - num: 2
+    label: "Pod Running nhưng khách ăn 502 (Endpoints: <none>)"
+    desc: "Soi ngay kubectl get endpoints để phát hiện lệch nhãn selector hoặc lệch số cổng targetPort so với cổng app.listen() thực tế."
+    tone: amber
+  - num: 3
+    label: "Cứu hộ bản phát hành lỗi trong 2 giây"
+    desc: "Nhờ maxUnavailable: 0 giữ bản cũ sống sót, chạy kubectl rollout undo để kéo toàn bộ hệ thống về Revision ổn định trước khi mổ xẻ lỗi."
+    tone: emerald
+```
+
 Bình thường dịch vụ xuất hoá đơn `pdf-exporter` vẫn chạy `Running`. Nhưng cứ mỗi khi khách hàng yêu cầu kết xuất tệp báo cáo lớn, kết nối bị ngắt ngang, cột `RESTARTS` tăng vọt hoặc `STATUS` nhấp nháy chữ **`OOMKilled`**. Chạy `kubectl describe pod pdf-exporter-...`, bạn sẽ bắt gặp dòng bằng chứng thép:
 
 ```text

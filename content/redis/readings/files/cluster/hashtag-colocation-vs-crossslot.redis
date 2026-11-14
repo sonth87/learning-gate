@@ -1,0 +1,27 @@
+# ============================================================================
+# Thực Chiến Định Tuyến Hash Slot (CRC16 mod 16384), Lỗi CROSSSLOT & {HashTag}
+# Chạy thử với redis-cli -c (cờ -c tự động nhảy theo phản hồi -MOVED / -ASK)
+# ============================================================================
+
+# 1. Quan sát hai khóa của cùng một người dùng nhưng KHÔNG dùng HashTag:
+CLUSTER KEYSLOT order:u42:items
+# -> Ví dụ rơi vào Slot 11842 (nằm trên Shard 3)
+CLUSTER KEYSLOT order:u42:payment
+# -> Ví dụ rơi vào Slot 3910 (nằm trên Shard 1)
+
+# Thử đọc hoặc chạy giao tác đa khóa trên 2 slot khác nhau -> LẬP TỨC BỊ TỪ CHỐI:
+# MGET order:u42:items order:u42:payment
+# -> (error) CROSSSLOT Keys in request don't hash to the same slot
+
+# 2. Giải pháp chuẩn: Bọc phần định danh chung vào cặp ngoặc nhọn {u42} (HashTag)
+# Redis chỉ băm CRC16 chuỗi nằm giữa cặp '{}' đầu tiên không rỗng!
+CLUSTER KEYSLOT order:{u42}:items
+CLUSTER KEYSLOT order:{u42}:payment
+# -> CẢ HAI ĐỀU TRẢ VỀ ĐÚNG SLOT 10439!
+
+# 3. Giờ đây MSET, MGET, MULTI/EXEC và Lua EVAL đa khóa chạy nguyên tử trên cùng 1 Shard:
+MSET order:{u42}:items "[{\"sku\":\"A1\",\"qty\":2}]" order:{u42}:payment "PENDING"
+MGET order:{u42}:items order:{u42}:payment
+
+# 4. CẢNH BÁO HOT-SHARD SKEW: Tuyệt đối KHÔNG gắn nhãn chung kiểu promo:{global}:* cho hàng triệu khóa,
+# vì toàn bộ tải ghi sẽ dồn cục vào duy nhất 1 Master trong khi các Master khác ngồi chơi!

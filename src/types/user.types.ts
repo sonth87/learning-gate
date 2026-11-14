@@ -66,6 +66,6 @@ export interface FullBackupPayload {
   examHistory: ExamAttemptRecord[];
   /** Tiến độ đường học WorkPath (tuỳ chọn để tương thích bản sao lưu cũ) */
   workpath?: WpState;
-  /** Tiến độ các khoá học bổ sung theo courseId ('kube' | 'cicd' | 'pmp', tuỳ chọn) */
+  /** Tiến độ các khoá học bổ sung theo courseId ('kube' | 'cicd' | 'pmp' | 'redis', tuỳ chọn) */
   courses?: Record<string, WpState>;
 }

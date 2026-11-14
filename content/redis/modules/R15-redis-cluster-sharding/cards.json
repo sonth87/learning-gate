@@ -1,0 +1,32 @@
+[
+  {
+    "id": "R15-FC1",
+    "front": "Công thức ánh xạ một khoá (key) vào Hash Slot trong Redis Cluster?",
+    "back": "`HASH_SLOT = CRC16(effective_key) mod 16384`\nTổng cộng có cố định **16.384 khe băm** (`0` đến `16383`) được chia đều cho các nút Master."
+  },
+  {
+    "id": "R15-FC2",
+    "front": "Quy tắc trích xuất chuỗi băm của `{HashTag}` hoạt động chính xác như thế nào?",
+    "back": "Nếu khoá chứa ký tự `{` và có ký tự `}` nằm sau nó với **ít nhất 1 ký tự ở giữa** (vd `user:{u42}:cart`), Redis chỉ băm đúng chuỗi bên trong cặp `{}` đầu tiên (`u42`). Nếu `{}` rỗng, toàn bộ tên khoá sẽ bị băm."
+  },
+  {
+    "id": "R15-FC3",
+    "front": "Nguyên nhân gốc rễ của lỗi `(error) CROSSSLOT Keys in request don't hash to the same slot`?",
+    "back": "Câu lệnh đa khoá (`MGET`, `MSET`, `SUNION`, `MULTI/EXEC`, `EVAL` Lua) truyền vào các khoá rơi vào **nhiều Hash Slot khác nhau**. Sửa bằng cách thiết kế `{HashTag}` cấp thực thể cho các khoá cần đi chung giao dịch."
+  },
+  {
+    "id": "R15-FC4",
+    "front": "Vì sao mỗi nút Redis Cluster luôn cần mở 2 cổng TCP?",
+    "back": "- **Cổng dữ liệu (`port`, vd `6379`):** Phục vụ kết nối RESP từ ứng dụng.\n- **Cổng Cluster Bus (`port + 10000`, vd `16379`):** Giao tiếp Gossip nhị phân giữa các nút để kiểm tra sức khoẻ, phát tán bản đồ Slot và tự động Failover."
+  },
+  {
+    "id": "R15-FC5",
+    "front": "Phân biệt phản hồi `-MOVED` và `-ASK` trong Redis Cluster?",
+    "back": "- **`-MOVED`:** Slot đã bàn giao hoàn tất sang nút mới → Client cập nhật bảng Slot Map cố định.\n- **`-ASK`:** Slot đang `MIGRATING` dở dang → Client gửi kèm `ASKING` sang nút đích cho duy nhất truy vấn hiện tại, chưa đổi bảng Slot Map."
+  },
+  {
+    "id": "R15-FC6",
+    "front": "Tại sao cấu hình Production luôn nên đặt `cluster-require-full-coverage no`?",
+    "back": "Để khoanh vùng sự cố: nếu 1 phân mảnh mất cả Master lẫn Replica, các phân mảnh lành lặn còn lại vẫn tiếp tục phục vụ phần lớn người dùng thay vì trả lỗi `CLUSTERDOWN` trên toàn bộ hệ thống."
+  }
+]

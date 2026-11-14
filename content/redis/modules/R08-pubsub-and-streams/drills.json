@@ -1,0 +1,17 @@
+[
+  {
+    "id": "R08-D1",
+    "title": "Khởi tạo Consumer Group kèm MKSTREAM và ghi sự kiện có cắt ngọn MAXLEN ~",
+    "code": "XGROUP CREATE orders:stream payment-cg $ MKSTREAM\nXADD orders:stream MAXLEN ~ 10000 * orderId \"ord-101\" amount \"490000\""
+  },
+  {
+    "id": "R08-D2",
+    "title": "Kéo mẻ đơn hàng mới qua XREADGROUP và xác nhận hoàn tất bằng XACK",
+    "code": "XREADGROUP GROUP payment-cg worker-1 COUNT 5 STREAMS orders:stream >\nXACK orders:stream payment-cg 1700000000100-0"
+  },
+  {
+    "id": "R08-D3",
+    "title": "Giải cứu bản tin bị treo quá 60 giây bằng XAUTOCLAIM rồi đóng dấu XACK",
+    "code": "XAUTOCLAIM orders:stream payment-cg worker-2 60000 0-0 COUNT 10\nXACK orders:stream payment-cg 1700000000100-0"
+  }
+]

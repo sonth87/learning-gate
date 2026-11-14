@@ -1,0 +1,350 @@
+[
+  {
+    "id": "redis-ex-r15-1",
+    "code": "R15.1",
+    "module": "R15",
+    "title": "Biên soạn cấu hình Nút Redis Cluster cô lập bán kính sự cố",
+    "difficulty": 2,
+    "tags": [
+      "redis-conf",
+      "cluster",
+      "high-availability"
+    ],
+    "kind": "redis-conf",
+    "language": "ini",
+    "filename": "redis-cluster-node.conf",
+    "prompt": "Đội Hạ tầng đang chuẩn bị dựng cụm Redis Cluster 6 nút (3 Master + 3 Replica). Bản nháp `redis-cluster-node.conf` hiện tại đang tắt chế độ Cluster và giữ nguyên mặc định nguy hiểm khiến toàn cụm bị khoá cứng nếu 1 phân mảnh gặp nạn.\n\nHãy hoàn thiện tệp cấu hình với đầy đủ 4 thông số chuẩn Production:\n1. Bật chế độ phân mảnh bằng `cluster-enabled yes`.\n2. Khai báo tệp trạng thái tự động của cụm `cluster-config-file nodes.conf`.\n3. Đặt ngưỡng phát hiện nút mất kết nối `cluster-node-timeout 5000` (5 giây).\n4. Đặt `cluster-require-full-coverage no` để 2 phân mảnh lành lặn vẫn tiếp tục hoạt động nếu phân mảnh thứ 3 gãy cả Master lẫn Replica.",
+    "starter": "port 6379\nbind 127.0.0.1 10.0.10.11\nprotected-mode yes\n\n# TODO: Bật Redis Cluster, khai báo nodes.conf, timeout 5000ms và tắt full-coverage\ncluster-enabled no\ncluster-require-full-coverage yes\n",
+    "solution": "port 6379\nbind 127.0.0.1 10.0.10.11\nprotected-mode yes\n\ncluster-enabled yes\ncluster-config-file nodes.conf\ncluster-node-timeout 5000\ncluster-require-full-coverage no\n",
+    "spec": {
+      "kind": "redis-conf",
+      "rules": [
+        {
+          "id": "cluster-enabled-on",
+          "doc": "Đã kích hoạt chế độ phân mảnh cluster-enabled yes",
+          "kind": "directive",
+          "directive": "cluster-enabled",
+          "match": {
+            "eq": "yes"
+          }
+        },
+        {
+          "id": "cluster-config-nodes",
+          "doc": "Đã khai báo tệp trạng thái tự sinh cluster-config-file nodes.conf",
+          "kind": "directive",
+          "directive": "cluster-config-file",
+          "match": {
+            "eq": "nodes.conf"
+          }
+        },
+        {
+          "id": "cluster-timeout-5s",
+          "doc": "Đặt ngưỡng phát hiện nút chết cluster-node-timeout 5000",
+          "kind": "directive",
+          "directive": "cluster-node-timeout",
+          "match": {
+            "eq": 5000
+          }
+        },
+        {
+          "id": "cluster-partial-coverage",
+          "doc": "Tắt yêu cầu phủ kín toàn bộ slot (cluster-require-full-coverage no)",
+          "kind": "directive",
+          "directive": "cluster-require-full-coverage",
+          "match": {
+            "eq": "no"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Đổi `cluster-enabled` thành `yes` và thêm hai dòng `cluster-config-file nodes.conf`, `cluster-node-timeout 5000`.",
+      "Đổi `cluster-require-full-coverage` từ `yes` thành `no` để khoanh vùng sự cố."
+    ],
+    "ref": "cluster/redis-cluster-node.conf",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r15-2",
+    "code": "R15.2",
+    "module": "R15",
+    "title": "Khám sức khoẻ cụm Cluster & Kiểm chứng mã băm CLUSTER KEYSLOT",
+    "difficulty": 1,
+    "tags": [
+      "cluster",
+      "keyslot",
+      "diagnostics"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "inspect-cluster-slots.redis",
+    "prompt": "Trước khi triển khai microservice mới lên cụm Redis Cluster, bạn cần kiểm tra trạng thái phủ kín 16.384 Hash Slots và chứng minh thực nghiệm rằng cặp khoá dùng `{HashTag}` rơi vào cùng một khe băm.\n\nHãy viết kịch bản `redis-cli` thực hiện lần lượt:\n1. Chạy `CLUSTER INFO` để xác nhận `cluster_state:ok` và `cluster_slots_assigned:16384`.\n2. Chạy `CLUSTER NODES` để xem sơ đồ phân bổ dải Slot (`0-5460`, `5461-10922`, `10923-16383`) giữa 3 Master và 3 Replica.\n3. Chạy hai lệnh `CLUSTER KEYSLOT user:{u42}:profile` và `CLUSTER KEYSLOT user:{u42}:cart` để kiểm chứng cả hai đều trả về cùng một chỉ số Hash Slot.",
+    "starter": "# TODO: Kiểm tra CLUSTER INFO, CLUSTER NODES và tính KEYSLOT cho cặp khoá của {u42}\nPING\n",
+    "solution": "CLUSTER INFO\nCLUSTER NODES\nCLUSTER KEYSLOT user:{u42}:profile\nCLUSTER KEYSLOT user:{u42}:cart\n",
+    "spec": {
+      "kind": "redis-cli",
+      "rules": [
+        {
+          "id": "checked-cluster-info",
+          "doc": "Đã kiểm tra trạng thái cụm qua CLUSTER INFO (cluster_state:ok)",
+          "target": "stdout-contains",
+          "contains": "cluster_state:ok"
+        },
+        {
+          "id": "checked-cluster-nodes",
+          "doc": "Đã liệt kê danh sách phân mảnh và dải slot qua CLUSTER NODES",
+          "target": "stdout-contains",
+          "contains": "0-5460"
+        },
+        {
+          "id": "verified-u42-same-slot",
+          "doc": "Đã kiểm tra KEYSLOT chứng minh user:{u42}:profile và user:{u42}:cart nằm chung Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "user:{u42}:profile",
+            "user:{u42}:cart"
+          ]
+        }
+      ]
+    },
+    "hints": [
+      "Gõ lần lượt `CLUSTER INFO` và `CLUSTER NODES` trên hai dòng đầu.",
+      "Tiếp tục gõ `CLUSTER KEYSLOT user:{u42}:profile` và `CLUSTER KEYSLOT user:{u42}:cart`."
+    ],
+    "ref": "cluster/hashtag-colocation-vs-crossslot.redis",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r15-3",
+    "code": "R15.3",
+    "module": "R15",
+    "title": "Khắc phục lỗi CROSSSLOT cho MSET/MGET bằng {HashTag} cấp người dùng",
+    "difficulty": 2,
+    "tags": [
+      "cluster",
+      "crossslot",
+      "hashtag",
+      "mset"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "fix-mset-crossslot.redis",
+    "prompt": "Đoạn mã khởi tạo phiên mua sắm dưới đây đang ghi `user:42:profile` và `user:42:cart` trong cùng một lệnh `MSET`. Khi đưa lên Redis Cluster, lệnh này bị chặn đứng bởi lỗi `CROSSSLOT` vì 2 khoá rơi vào 2 máy chủ khác nhau!\n\nHãy thiết kế lại tên khoá sử dụng `{HashTag}` chuẩn thực thể **`{u42}`** để gom chúng về cùng một Hash Slot:\n1. Dùng **một lệnh `MSET` duy nhất** ghi đồng thời:\n   - `user:{u42}:profile` = `'{\"name\":\"Linh\",\"tier\":\"VIP\"}'`\n   - `user:{u42}:cart` = `'{\"items\":3,\"total\":850000}'`\n2. Dùng `MGET user:{u42}:profile user:{u42}:cart` để đọc ra đồng thời cả hai khoá trong 1 RTT.\n3. Dọn bỏ 2 khoá cũ không có HashTag (`UNLINK user:42:profile user:42:cart`) nếu còn tồn đọng.",
+    "starter": "# ĐOẠN LỆNH LỖI TRÊN CLUSTER (2 khoá nằm ở 2 Hash Slot khác nhau):\nMSET user:42:profile '{\"name\":\"Linh\",\"tier\":\"VIP\"}' user:42:cart '{\"items\":3,\"total\":850000}'\nMGET user:42:profile user:42:cart\n",
+    "solution": "UNLINK user:42:profile user:42:cart\nMSET user:{u42}:profile '{\"name\":\"Linh\",\"tier\":\"VIP\"}' user:{u42}:cart '{\"items\":3,\"total\":850000}'\nMGET user:{u42}:profile user:{u42}:cart\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "user:42:profile",
+            "type": "string",
+            "value": "{\"name\":\"Old\"}"
+          },
+          {
+            "key": "user:42:cart",
+            "type": "string",
+            "value": "{\"items\":0}"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "u42-colocated-slot",
+          "doc": "Cặp khoá user:{u42}:profile và user:{u42}:cart nằm trên cùng một Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "user:{u42}:profile",
+            "user:{u42}:cart"
+          ]
+        },
+        {
+          "id": "profile-stored",
+          "doc": "Khoá user:{u42}:profile lưu đúng JSON thông tin VIP",
+          "target": "string-value",
+          "key": "user:{u42}:profile",
+          "match": {
+            "contains": "VIP"
+          }
+        },
+        {
+          "id": "cart-stored",
+          "doc": "Khoá user:{u42}:cart lưu đúng tổng tiền 850000",
+          "target": "string-value",
+          "key": "user:{u42}:cart",
+          "match": {
+            "contains": "850000"
+          }
+        },
+        {
+          "id": "legacy-untagged-removed",
+          "doc": "Khoá cũ không gắn HashTag user:42:profile đã được dọn sạch",
+          "target": "key-exists",
+          "key": "user:42:profile",
+          "exists": false
+        }
+      ]
+    },
+    "hints": [
+      "Dùng `UNLINK user:42:profile user:42:cart` để xoá cặp khoá cũ.",
+      "Đổi tên khoá sang `user:{u42}:profile` và `user:{u42}:cart` trong cả `MSET` và `MGET`."
+    ],
+    "ref": "cluster/hashtag-colocation-vs-crossslot.redis",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r15-4",
+    "code": "R15.4",
+    "module": "R15",
+    "title": "Chạy Lua Script nguyên tử đa khoá an toàn trên Cluster với {order99}",
+    "difficulty": 3,
+    "tags": [
+      "cluster",
+      "lua",
+      "eval",
+      "hashtag"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "cluster-lua-checkout.redis",
+    "prompt": "Trong Redis Cluster, một kịch bản `EVAL` Lua chạm tới `2` khoá `KEYS[1]` và `KEYS[2]` chỉ được phép thực thi khi cả hai khoá cùng ánh xạ về đúng một Hash Slot.\n\nĐơn hàng số `99` cần chốt thanh toán nguyên tử trên 2 khoá co-located bằng nhãn **`{order99}`**:\n- `KEYS[1]` = `order:{order99}:status` (hiện đang có giá trị `\"PENDING\"`)\n- `KEYS[2]` = `order:{order99}:invoice`\n\nHãy viết lệnh `EVAL` với `numkeys = 2`, truyền đúng `order:{order99}:status` làm `KEYS[1]`, `order:{order99}:invoice` làm `KEYS[2]` và mã hoá đơn `\"INV-2026-0099\"` làm `ARGV[1]` sao cho kịch bản Lua kiểm tra nếu `redis.call('GET', KEYS[1]) == 'PENDING'` thì cập nhật `KEYS[1]` thành `'PAID'`, ghi `KEYS[2]` thành `ARGV[1]` và trả về `1`.",
+    "starter": "# TODO: Thực thi EVAL với 2 KEYS cùng mang HashTag {order99} để chuyển trạng thái sang PAID và lưu INV-2026-0099\nGET order:{order99}:status\n",
+    "solution": "EVAL \"if redis.call('GET', KEYS[1]) == 'PENDING' then redis.call('SET', KEYS[1], 'PAID'); redis.call('SET', KEYS[2], ARGV[1]); return 1 end; return 0\" 2 order:{order99}:status order:{order99}:invoice \"INV-2026-0099\"\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "order:{order99}:status",
+            "type": "string",
+            "value": "PENDING"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "used-eval-script",
+          "doc": "Sử dụng EVAL Lua Script để xử lý nguyên tử 2 khoá đơn hàng",
+          "target": "command-used",
+          "mustUseRegex": "^EVAL\\b"
+        },
+        {
+          "id": "order99-same-slot",
+          "doc": "Hai khoá order:{order99}:status và order:{order99}:invoice nằm chung Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "order:{order99}:status",
+            "order:{order99}:invoice"
+          ]
+        },
+        {
+          "id": "order99-paid",
+          "doc": "Trạng thái order:{order99}:status đã chuyển sang PAID",
+          "target": "string-value",
+          "key": "order:{order99}:status",
+          "match": {
+            "eq": "PAID"
+          }
+        },
+        {
+          "id": "order99-invoice-written",
+          "doc": "Khoá order:{order99}:invoice được ghi mã INV-2026-0099",
+          "target": "string-value",
+          "key": "order:{order99}:invoice",
+          "match": {
+            "eq": "INV-2026-0099"
+          }
+        }
+      ]
+    },
+    "hints": [
+      "Cú pháp: `EVAL \"<lua code>\" 2 order:{order99}:status order:{order99}:invoice \"INV-2026-0099\"`.",
+      "Ngăn cách các câu lệnh Lua trên cùng 1 dòng bằng dấu chấm phẩy `;`: `if redis.call('GET', KEYS[1]) == 'PENDING' then redis.call('SET', KEYS[1], 'PAID'); redis.call('SET', KEYS[2], ARGV[1]); return 1 end; return 0`."
+    ],
+    "ref": "cluster/hashtag-colocation-vs-crossslot.redis",
+    "webGrade": true
+  },
+  {
+    "id": "redis-ex-r15-5",
+    "code": "R15.5",
+    "module": "R15",
+    "title": "Xoá sổ phản mẫu Hot-Slot {all} làm lệch tải cụm Cluster",
+    "difficulty": 3,
+    "tags": [
+      "cluster",
+      "hot-slot",
+      "anti-pattern",
+      "refactoring"
+    ],
+    "kind": "redis-cli",
+    "language": "redis",
+    "filename": "eliminate-hotslot-antipattern.redis",
+    "prompt": "Một lập trình viên mới vào nghề đã gán nhãn cứng `{all}` cho mọi khoá người dùng (`cache:{all}:u101`, `cache:{all}:u102`), khiến 100% dữ liệu dồn vào duy nhất Slot `5798` trên Master #2 gây quá tải CPU `99%`!\n\nHãy tái cấu trúc lại thiết kế khoá theo đúng chuẩn phân mảnh hạt mịn:\n1. Xoá bất đồng bộ hai khoá phản mẫu `cache:{all}:u101` và `cache:{all}:u102` bằng `UNLINK`.\n2. Tách dữ liệu của người dùng `u101` về đúng HashTag riêng `{u101}` bằng `MSET user:{u101}:profile \"Alice\" user:{u101}:settings \"dark\"`.\n3. Tách dữ liệu của người dùng `u102` về đúng HashTag riêng `{u102}` bằng `MSET user:{u102}:profile \"Bob\" user:{u102}:settings \"light\"`.\n4. Chạy `CLUSTER KEYSLOT user:{u101}:profile` và `CLUSTER KEYSLOT user:{u102}:profile` để xác minh 2 người dùng nay đã phân tán ra 2 Slot độc lập (tuyệt đối không dùng `{all}` trong bất kỳ lệnh `SET`/`MSET` nào!).",
+    "starter": "# PHẢN MẪU NGUY HIỂM: Gom toàn bộ khách hàng vào chung 1 Slot {all}!\nMSET cache:{all}:u101 \"Alice\" cache:{all}:u102 \"Bob\"\nCLUSTER KEYSLOT cache:{all}:u101\n",
+    "solution": "UNLINK cache:{all}:u101 cache:{all}:u102\nMSET user:{u101}:profile \"Alice\" user:{u101}:settings \"dark\"\nMSET user:{u102}:profile \"Bob\" user:{u102}:settings \"light\"\nCLUSTER KEYSLOT user:{u101}:profile\nCLUSTER KEYSLOT user:{u102}:profile\n",
+    "spec": {
+      "kind": "redis-cli",
+      "initialState": {
+        "initialKeys": [
+          {
+            "key": "cache:{all}:u101",
+            "type": "string",
+            "value": "Alice"
+          },
+          {
+            "key": "cache:{all}:u102",
+            "type": "string",
+            "value": "Bob"
+          }
+        ]
+      },
+      "rules": [
+        {
+          "id": "purged-global-tag-u101",
+          "doc": "Đã UNLINK khoá phản mẫu cache:{all}:u101",
+          "target": "key-exists",
+          "key": "cache:{all}:u101",
+          "exists": false
+        },
+        {
+          "id": "purged-global-tag-u102",
+          "doc": "Đã UNLINK khoá phản mẫu cache:{all}:u102",
+          "target": "key-exists",
+          "key": "cache:{all}:u102",
+          "exists": false
+        },
+        {
+          "id": "u101-entity-colocated",
+          "doc": "Cặp khoá của riêng người dùng {u101} vẫn nằm chung một Hash Slot",
+          "target": "same-hash-slot",
+          "keys": [
+            "user:{u101}:profile",
+            "user:{u101}:settings"
+          ]
+        },
+        {
+          "id": "u102-entity-colocated",
+          "doc": "Cặp khoá của riêng người dùng {u102} nằm chung Hash Slot riêng của u102",
+          "target": "same-hash-slot",
+          "keys": [
+            "user:{u102}:profile",
+            "user:{u102}:settings"
+          ]
+        },
+        {
+          "id": "no-global-all-writes",
+          "doc": "Đã dùng UNLINK và tuyệt đối không ghi mới khoá nào mang nhãn toàn cục {all}",
+          "target": "command-used",
+          "mustUseRegex": "^UNLINK\\b",
+          "forbidRegex": "^M?SET\\b.*\\{all\\}"
+        }
+      ]
+    },
+    "hints": [
+      "Xoá bỏ lệnh `MSET cache:{all}...` ở bản nháp, thay bằng `UNLINK cache:{all}:u101 cache:{all}:u102`.",
+      "Chạy 2 lệnh `MSET` riêng biệt: một lệnh cho cặp khoá `user:{u101}:*` và một lệnh cho cặp khoá `user:{u102}:*`."
+    ],
+    "ref": "cluster/hashtag-colocation-vs-crossslot.redis",
+    "webGrade": true
+  }
+]

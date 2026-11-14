@@ -36,6 +36,28 @@ items:
 
 ## 1. `ConfigMap`: Tách cấu hình không nhạy cảm ra khỏi mã nguồn
 
+```visual
+kind: illustration
+diagram: "kube:k12"
+alt: "Tách cấu hình 12-Factor bằng ConfigMap và Secret nạp vào Pod qua biến môi trường envFrom so với gắn ổ đĩa chỉ đọc tmpfs"
+title: "Giải Phẫu Nạp Cấu Hình & Bí Mật: envFrom Tĩnh vs Ổ Đĩa Tmpfs Tự Đồng Bộ"
+subtitle: "Giữ Container Image bất biến xuyên suốt Dev, Staging và Production bằng cách tiêm cấu hình động từ bên ngoài"
+caption: "Sự khác biệt cốt lõi giữa nạp vào process.env lúc khởi tạo (không tự cập nhật nóng) và gắn thành tệp chỉ đọc trên RAM tmpfs (tự đồng bộ sau ~60s)"
+callouts:
+  - num: 1
+    label: "Tách bạch ConfigMap công khai & Secret nhạy cảm"
+    desc: "ConfigMap lưu tham số rõ ràng; Secret lưu mật khẩu/chứng chỉ và cần bật mã hoá KMS hoặc External Secrets thay vì chỉ tin vào Base64."
+    tone: sky
+  - num: 2
+    label: "Cơ chế env / envFrom — Đóng băng lúc khởi chạy"
+    desc: "Biến nạp vào process.env không tự đổi khi sửa ConfigMap trên cụm; bắt buộc chạy kubectl rollout restart để nhận giá trị mới."
+    tone: violet
+  - num: 3
+    label: "Gắn Volume chỉ đọc trên tmpfs — Tự động đồng bộ"
+    desc: "Secret gắn dạng tệp nằm trên bộ nhớ RAM (tmpfs) không chạm ổ cứng và được kubelet tự động đồng bộ lại sau khoảng 60 giây."
+    tone: emerald
+```
+
 ```yaml Manifest ConfigMap chuẩn chứa các thông số môi trường công khai
 apiVersion: v1
 kind: ConfigMap

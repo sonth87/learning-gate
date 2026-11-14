@@ -7,6 +7,28 @@ Bạn đã đi được một chặng đường rất xa: từ đóng gói conta
 
 Câu trả lời chính là cặp công cụ tiêu chuẩn: {sky:`NetworkPolicy`} và trình quản lý gói ==`Helm`==!
 
+```visual
+kind: illustration
+diagram: "kube:k17"
+alt: "Tường lửa mạng nội bộ Zero-Trust với NetworkPolicy (Default Deny + Whitelist + DNS Egress 53) và bộ máy đóng gói biểu mẫu Helm Chart"
+title: "Giải Phẫu Tường Lửa Mạng Zero-Trust (NetworkPolicy) & Khuôn Đúc Gói Helm v3"
+subtitle: "Khoá chặt lưu lượng ngang Đông-Tây giữa các tầng dịch vụ và tái sử dụng một bộ khuôn mẫu YAML duy nhất cho mọi môi trường"
+caption: "Mô hình tường lửa Pod-to-Pod thực thi bởi Cilium/Calico (nhớ mở cổng 53 cho CoreDNS) và quy trình kết xuất bản phát hành của Helm Chart"
+callouts:
+  - num: 1
+    label: "Zero-Trust NetworkPolicy: Khoá mặc định & Mở chọn lọc"
+    desc: "Áp dụng default-deny (podSelector: {}) chặn 100% kết nối lạ, sau đó chỉ mở đúng luồng hợp lệ từ web -> api -> postgres:5432."
+    tone: emerald
+  - num: 2
+    label: "Lưu ý sống còn khi khoá chiều ra (Egress) — Cổng 53 DNS"
+    desc: "Khi bật kiểm soát Egress, luôn phải mở cổng UDP/TCP 53 sang kube-system để Pod không bị mù phân giải tên miền CoreDNS."
+    tone: cyan
+  - num: 3
+    label: "Helm Chart — Tách khuôn templates/ và thông số values.yaml"
+    desc: "Loại bỏ hoàn toàn cảnh sao chép hàng chục tệp YAML thủ công và hỗ trợ tự động quay lui an toàn với cờ --atomic."
+    tone: violet
+```
+
 ## 1. Sự thật bất ngờ: Mặc định mạng Kubernetes mở toang 100%!
 
 Theo thiết kế mặc định của Kubernetes khi bạn **chưa tạo bất kỳ `NetworkPolicy` nào**, ==mọi Pod ở bất kỳ Namespace nào cũng đều có thể kết nối trực tiếp tới mọi Pod khác trên toàn cụm== (*Allow All*)! Nếu trang Landing Page tiếp thị ở namespace `marketing` bị dính lỗ hổng bảo mật, kẻ tấn công từ đó có thể quét mạng và gõ thẳng vào cổng `5432` của Database thanh toán ở namespace `production`!

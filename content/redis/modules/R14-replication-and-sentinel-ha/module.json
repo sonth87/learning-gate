@@ -1,0 +1,56 @@
+{
+  "id": "R14",
+  "slug": "R14-replication-and-sentinel-ha",
+  "level": 4,
+  "order": 2,
+  "title": "Sao chép Bất đồng bộ (PSYNC2), Chống Split-Brain & Tự động Chuyển đổi Dự phòng với Sentinel HA",
+  "summary": "Làm chủ cơ chế Replication Backlog tránh bão Full Resync, rào chắn min-replicas-to-write chống não chia đôi và quy trình bầu cử SDOWN -> ODOWN -> Failover của cụm 3 Sentinel.",
+  "tags": [
+    "replication",
+    "psync2",
+    "sentinel",
+    "high-availability",
+    "failover",
+    "split-brain"
+  ],
+  "sources": [
+    {
+      "title": "Redis Replication Architecture & PSYNC2",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/replication/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "High Availability with Redis Sentinel",
+      "url": "https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "Flow: Quy trình Bầu cử Quorum & Failover Sentinel",
+      "kind": "flow",
+      "targetId": "sentinel-quorum-failover"
+    },
+    {
+      "label": "Simulator: Mô phỏng Replication Lag & Failover",
+      "kind": "simulator-preset",
+      "targetId": "repl"
+    }
+  ],
+  "readings": [
+    {
+      "path": "ha/sentinel-quorum-3nodes.conf",
+      "kind": "good",
+      "note": "Cấu hình chuẩn 3 nút Sentinel giám sát cụm Master-Replica: ngưỡng phát hiện sập 5 giây, quorum 2/3 và giới hạn đồng bộ tuần tự tránh nghẽn băng thông Master mới.",
+      "task": "Con số `2` ở cuối dòng `sentinel monitor mymaster 10.0.1.10 6379 2` có ý nghĩa chính xác là gì, và nó khác gì với số phiếu bầu Leader thực hiện Failover?",
+      "answer": "`quorum = 2` là số Sentinel tối thiểu cần đồng thuận rằng Master không phản hồi để nâng trạng thái từ `SDOWN` lên `ODOWN` (Objective Down). Tuy nhiên, để thực sự ra lệnh thăng cấp Replica lên Master mới, một Sentinel phải thắng cuộc bầu cử Leader với **đa số quá bán trên tổng số Sentinel** (`majority = N/2 + 1`, ví dụ nếu có 5 Sentinel mà đặt `quorum = 2` thì vẫn phải cần `3/5` phiếu mới Failover được!)."
+    },
+    {
+      "path": "compose/docker-compose.redis-sentinel-ha.yml",
+      "kind": "good",
+      "note": "Bản dựng hoàn chỉnh hệ thống 1 Master + 2 Replicas + 3 Sentinels trên Docker Compose v2 sẵn sàng thử nghiệm rút phích điện chuyển đổi dự phòng tự động.",
+      "task": "Tại sao trong kiến trúc Sentinel HA ta luôn triển khai tối thiểu **3 tiến trình Sentinel** trên 3 máy vật lý/VM tách biệt thay vì đặt 2 Sentinel trên chính 2 máy Master và Replica?",
+      "answer": "Nếu chỉ có 2 nút (Master + Sentinel1 ở Máy A, Replica + Sentinel2 ở Máy B) và Máy A sập nguồn, chỉ còn 1 Sentinel sống trên Máy B — không bao giờ đạt đa số quá bán `2/2` để bầu Leader thực hiện Failover! Đặt số lẻ `3` Sentinel trên 3 nút độc lập đảm bảo mất bất kỳ 1 máy nào cụm vẫn còn `2/3` phiếu để tự cứu trong vài giây."
+    }
+  ]
+}

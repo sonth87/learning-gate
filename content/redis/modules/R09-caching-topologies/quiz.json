@@ -1,0 +1,85 @@
+[
+  {
+    "id": "R09-Q1",
+    "type": "mc",
+    "q": "Trong mô hình Cache-Aside kết hợp PostgreSQL, trình tự nào sau đây khi cập nhật bản ghi giúp giảm thiểu tối đa nguy cơ bất nhất dữ liệu (Race Condition giữ giá trị cũ lâu dài)?",
+    "code": "",
+    "choices": [
+      "Xoá khoá trên Redis trước, sau đó mới chạy câu lệnh UPDATE trên PostgreSQL",
+      "Chạy câu lệnh UPDATE và COMMIT thành công trên PostgreSQL trước, sau đó gọi UNLINK xoá khoá trên Redis",
+      "Cập nhật thẳng giá trị mới lên Redis bằng SET trước, rồi đẩy vào cronjob cập nhật PostgreSQL sau 1 giờ",
+      "Gọi đồng thời cả hai luồng song song `Promise.all([db.update(), redis.set()])` không phân biệt thứ tự"
+    ],
+    "answer": 1,
+    "explain": "Nếu xoá cache trước khi DB commit, một luồng đọc chen ngang sẽ đọc trúng dữ liệu cũ trên DB rồi nạp ngược vào Redis suốt cả chu kỳ TTL. Nếu tự `SET` đồng thời khi có 2 luồng ghi cạnh tranh, luồng ghi DB cũ hơn có thể tới Redis muộn hơn và ghi đè giá cũ. Do đó Commit DB -> `UNLINK` cache là chuẩn mực an toàn nhất."
+  },
+  {
+    "id": "R09-Q2",
+    "type": "tf",
+    "q": "Trong thực tế vận hành, việc tách rời lệnh `SET cache:item:1 data` và `EXPIRE cache:item:1 600` thành hai câu lệnh mạng độc lập hoàn toàn an toàn tương đương lệnh gộp `SET cache:item:1 data EX 600`.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai! Nếu Pod ứng dụng bị OOMKilled, sập nguồn hoặc đứt kết nối mạng ngay sau lệnh `SET` và trước khi kịp gửi `EXPIRE`, khoá đó sẽ mang `TTL = -1` (trở thành Zombie Key tồn tại vĩnh viễn trong RAM)."
+  },
+  {
+    "id": "R09-Q3",
+    "type": "output",
+    "q": "Thay vì dùng `DEL` giải phóng bộ nhớ đồng bộ trên luồng chính dễ gây khựng Event Loop khi payload lớn, lệnh Redis nào giúp gỡ khoá trong `O(1)` và thu hồi bộ nhớ bất đồng bộ ở luồng nền?",
+    "code": "____ cache:user:501:profile",
+    "choices": [],
+    "answer": "UNLINK",
+    "explain": "`UNLINK` chỉ tháo con trỏ khoá khỏi bảng băm không gian khoá trong thời gian `O(1)` trên luồng chính rồi bàn giao vùng nhớ nặng cho luồng nền `bio_lazy_free` dọn dẹp."
+  },
+  {
+    "id": "R09-Q4",
+    "type": "mc",
+    "q": "Mô hình Caching nào cho phép ứng dụng ghi thẳng vào Redis rồi trả kết quả ngay lập tức, sau đó một Worker nền mới định kỳ gom lô (Batch) ghi xuống Database — rất hợp cho bộ đếm lượt xem video nhưng rủi ro nếu dùng cho số dư ngân hàng?",
+    "code": "",
+    "choices": [
+      "Cache-Aside (Lazy Loading)",
+      "Read-Through",
+      "Write-Through",
+      "Write-Behind (Write-Back)"
+    ],
+    "answer": 3,
+    "explain": "Write-Behind (Write-Back) hấp thụ tải ghi đột biến trực tiếp trên RAM và gom batch xuống DB bất đồng bộ, đổi lấy rủi ro mất các bản ghi chưa kịp flush nếu nút Redis gặp sự cố nghiêm trọng."
+  },
+  {
+    "id": "R09-Q5",
+    "type": "mc",
+    "q": "Khi triển khai kỹ thuật Negative Caching (lưu giá trị đánh dấu `\"__NULL__\"` cho ID không tồn tại dưới Database), vì sao ta chỉ nên đặt TTL ngắn khoảng `30–60 giây` thay vì `24 giờ`?",
+    "code": "",
+    "choices": [
+      "Vì Redis không cho phép chuỗi rỗng hoặc chuỗi ngắn có TTL lớn hơn 60 giây",
+      "Để vừa chặn được bão truy vấn lặp tức thời, vừa đảm bảo nếu bản ghi đó được tạo thật ngay sau đó thì người dùng không bị kẹt kết quả rỗng suốt cả ngày",
+      "Vì quá 60 giây Redis sẽ tự động chuyển kiểu String sang kiểu Stream",
+      "Để buộc PostgreSQL phải khởi động lại kết nối mỗi phút một lần"
+    ],
+    "answer": 1,
+    "explain": "TTL ngắn (30–60s) cân bằng hoàn hảo giữa việc gánh 99% truy vấn lặp vô ích cho DB và việc giữ thời gian hồi phục tự nhiên ngắn nếu dữ liệu mới vừa được thêm vào."
+  },
+  {
+    "id": "R09-Q6",
+    "type": "tf",
+    "q": "Trong mô hình Stale-While-Revalidate (SWR / Logical Expiration), thời điểm hết hạn logic được nhúng bên trong payload giúp luồng đọc vẫn trả ngay dữ liệu cũ trong `< 1ms` đồng thời kích hoạt duy nhất một tác vụ nền đi làm mới êm ái.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng! Nhờ khoá chưa bị xoá vật lý ngay lập tức, người dùng không bao giờ phải gánh độ trễ truy vấn Database ở đuôi P99 khi khoá vừa chuyển sang trạng thái cũ."
+  },
+  {
+    "id": "R09-Q7",
+    "type": "mc",
+    "q": "Khi phát hành phiên bản v2 của API làm thay đổi cấu trúc JSON được lưu trong Redis (trong lúc Rolling Update vẫn còn cả Pod v1 và Pod v2 cùng chạy), cách thiết kế tên khoá nào tránh hoàn toàn lỗi parse dữ liệu chéo?",
+    "code": "",
+    "choices": [
+      "Chạy lệnh FLUSHALL xoá sạch toàn bộ Redis mỗi giây trong suốt quá trình deploy",
+      "Nhúng hậu tố phiên bản schema vào tên khoá (Versioned Key, ví dụ đổi từ `cache:product:v1:108` sang `cache:product:v2:108`)",
+      "Tắt hoàn toàn TTL trên mọi khoá của phiên bản v1",
+      "Đổi cổng mặc định của Redis từ 6379 sang 8080"
+    ],
+    "answer": 1,
+    "explain": "Versioned Key cô lập hoàn toàn không gian dữ liệu giữa Pod v1 và Pod v2 trong quá trình Rolling Update; các khoá `v1` cũ sẽ tự động hết hạn êm ái theo TTL mà không cần quét xoá."
+  }
+]

@@ -39,6 +39,7 @@ export const App: React.FC = () => {
           new Set([
             ...store.dockAppIds,
             'pymastery',
+            'redismastery',
             'kubemastery',
             'cicdmastery',
             'pmpmastery',

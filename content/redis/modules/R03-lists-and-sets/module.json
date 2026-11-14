@@ -1,0 +1,59 @@
+{
+  "id": "R03",
+  "slug": "R03-lists-and-sets",
+  "level": 1,
+  "order": 1,
+  "title": "Lists (quicklist) & Sets (intset): Băng chuyền hàng đợi & Phép toán tập hợp",
+  "summary": "Nắm chắc cấu trúc lai quicklist cho Activity Feed giới hạn LTRIM, chuyển giao việc an toàn bằng LMOVE, và khai thác Set O(1) cùng intset, SINTER/SDIFF.",
+  "tags": [
+    "lists",
+    "quicklist",
+    "ltrim",
+    "lmove",
+    "sets",
+    "intset",
+    "sinter"
+  ],
+  "sources": [
+    {
+      "title": "Redis Data Types — Lists & Bounded Queues",
+      "url": "https://redis.io/docs/latest/develop/data-types/lists/",
+      "version": "Redis 8.0+"
+    },
+    {
+      "title": "Redis Data Types — Sets & Set Operations",
+      "url": "https://redis.io/docs/latest/develop/data-types/sets/",
+      "version": "Redis 8.0+"
+    }
+  ],
+  "relatedTools": [
+    {
+      "label": "War Room: Cú giật BigKey do List/Set phình vô hạn",
+      "kind": "incident",
+      "targetId": "inc-bigkey-del-spike",
+      "description": "Xem hậu quả khi LPUSH vào List suốt nhiều tháng mà quên kèm LTRIM giới hạn độ dài"
+    },
+    {
+      "label": "Simulator: Giải phẫu Bộ nhớ quicklist & intset",
+      "kind": "simulator-preset",
+      "targetId": "memory",
+      "description": "So sánh lượng RAM tiêu thụ giữa Set chuỗi bất kỳ và Set toàn số nguyên (intset)"
+    }
+  ],
+  "readings": [
+    {
+      "path": "patterns/quicklist-bounded-activity-feed.redis",
+      "kind": "good",
+      "note": "Mẫu Capped Timeline giữ cố định 100 thông báo mới nhất cho mỗi người dùng trên RAM.",
+      "task": "Tại sao cặp lệnh `LPUSH` + `LTRIM key 0 99` luôn phải đi đôi với nhau trong cùng một luồng ghi sự kiện?",
+      "answer": "Nếu chỉ `LPUSH` mà không `LTRIM`, danh sách sẽ phình to không giới hạn thành BigKey ngốn sạch RAM; đặt `LTRIM key 0 99` ngay sau `LPUSH` biến List thành bộ đệm vòng (Ring Buffer) cố định tối đa 100 mục mới nhất với chi phí gần như `O(1)`."
+    },
+    {
+      "path": "patterns/set-mutual-tags-sinter.redis",
+      "kind": "good",
+      "note": "Tính bạn chung và lọc sản phẩm đa tiêu chí bằng các phép giao/hiệu tập hợp ngay trên RAM.",
+      "task": "Khi nào nên dùng `SISMEMBER` / `SMISMEMBER` thay vì kéo toàn bộ `SMEMBERS` về tầng ứng dụng?",
+      "answer": "`SISMEMBER` kiểm tra 1 phần tử trong `O(1)` và `SMISMEMBER` kiểm tra `K` phần tử trong `O(K)`, trong khi `SMEMBERS` có độ phức tạp `O(N)` quét sạch cả tập hợp — nếu Set chứa 200,000 user ID, gọi `SMEMBERS` sẽ làm nghẽn cả Event Loop lẫn băng thông mạng."
+    }
+  ]
+}

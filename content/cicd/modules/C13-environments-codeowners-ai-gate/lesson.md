@@ -49,6 +49,28 @@ items:
 
 ## 1. GitHub Environments: Tách bạch Bí mật & Cổng duyệt tay (Approval Gate)
 
+```visual
+kind: illustration
+diagram: "cicd:c13"
+alt: "Ba chốt chặn quản trị phát hành doanh nghiệp gồm CODEOWNERS kèm Ruleset, trợ lý rà soát AI ít nhiễu và cổng phê duyệt environment: production"
+title: "Giải Phẫu Quản Trị Phát Hành: CODEOWNERS, Cổng AI Ít Nhiễu & Protected Environment"
+subtitle: "Phối hợp trách nhiệm con người, tự động hoá rà soát mã nguồn và cô lập nghiêm ngặt bí mật Production"
+caption: "Chuỗi 3 trạm kiểm duyệt từ phân quyền sở hữu thư mục nhạy cảm, lọc nhiễu trợ lý AI tới cổng bấm nút Approve mở khoá bí mật Production"
+callouts:
+  - num: 1
+    label: "CODEOWNERS (Khớp cuối thắng) + Branch Ruleset"
+    desc: "Bắt buộc đội Bảo mật/DBA ký duyệt khi PR chạm vào /.github/ hoặc /db/migrations/; chỉ có hiệu lực chặn khi bật kèm Ruleset."
+    tone: sky
+  - num: 2
+    label: "Cổng rà soát AI ít nhiễu & Chắn nhánh Fork"
+    desc: "Loại bỏ tệp lockfile/dist sinh tự động khỏi phạm vi AI review và chặn chạy trên PR từ Fork lạ để bảo vệ tuyệt đối khoá API."
+    tone: violet
+  - num: 3
+    label: "environment: production — Duyệt tay & Mở khoá Secret"
+    desc: "Tạm dừng luồng chạy chờ Tech Lead bấm Approve (lưu vết kiểm toán) và chỉ giải mã biến nhạy cảm cho đúng nhánh main hợp lệ."
+    tone: emerald
+```
+
 Nếu bạn gom toàn bộ biến nhạy cảm vào **Repository Secrets**, bất kỳ job nào trong repo (kể cả job chạy nháp trên nhánh tính năng nếu cấu hình sơ hở) đều có thể đọc cùng một `DATABASE_URL` hoặc `AWS_ROLE_ARN` — chẳng khác nào để chung `.env.development` và `.env.production` không hề có vách ngăn!
 
 **GitHub Environments** (`staging`, `production`) khoá chặt biến bí mật sau hàng rào **Protection Rules**:

@@ -53,6 +53,28 @@ items:
 
 ## 1. Lá chắn #1 — Khoá chặt `GITHUB_TOKEN` theo Nguyên lý Đặc quyền tối thiểu (`permissions:`)
 
+```visual
+kind: illustration
+diagram: "cicd:c10"
+alt: "Ba trụ cột gia cố bảo mật GitHub Actions gồm hạ quyền GITHUB_TOKEN và cô lập Fork, chống tiêm lệnh Script Injection qua biến env và ghim cứng SHA 40 ký tự"
+title: "Giải Phẫu Gia Cố Chuỗi Cung Ứng Workflow: Least-Privilege, Chống RCE & Ghim SHA-40"
+subtitle: "Đóng chặt ba lỗ hổng tấn công nguy hiểm nhất nhắm thẳng vào máy chủ CI/CD Runner từ các Pull Request bên ngoài"
+caption: "Mô hình phòng thủ Zero-Trust cấp Workflow: khoá permissions: contents: read, cô lập dữ liệu người dùng qua biến môi trường env: và ghim mã băm Git 40 ký tự"
+callouts:
+  - num: 1
+    label: "Thu hồi quyền mặc định & Chặn bẫy Pwn Request"
+    desc: "Ép permissions: contents: read ở đầu tệp và tuyệt đối không checkout thực thi code từ nhánh Fork bên trong sự kiện pull_request_target."
+    tone: sky
+  - num: 2
+    label: "Triệt tiêu Script Injection bằng biến trung gian env:"
+    desc: "Không bao giờ nối thẳng biểu thức ${{ github.event... }} vào chuỗi lệnh bash; đưa qua khối env: để Shell đọc dưới dạng chuỗi thuần an toàn."
+    tone: amber
+  - num: 3
+    label: "Ghim cứng mã băm Commit SHA đầy đủ 40 ký tự"
+    desc: "Thay thế thẻ khả biến @v4 bằng mã băm SHA-1 40 ký tự bất biến toán học (kèm Dependabot cập nhật định kỳ) để miễn nhiễm tấn công chiếm thẻ."
+    tone: emerald
+```
+
 Mỗi khi một Workflow khởi chạy, GitHub tự động cấp một thẻ xác thực tạm thời gọi là **`GITHUB_TOKEN`**. Trên các kho lưu trữ hoặc tổ chức chưa siết cấu hình mặc định, chiếc thẻ này mang quyền **`write-all`** — cho phép bất kỳ bước kiểm thử nào bị xâm nhập cũng tự ý đẩy commit thẳng vào nhánh, sửa bản phát hành Release hoặc xoá gói!
 
 Quy chuẩn bảo mật bắt buộc năm 2026 là {emerald:nguyên lý Đặc quyền tối thiểu (Least Privilege)}: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ ({amber:packages: write}) cho riêng Job thực sự cần**:
