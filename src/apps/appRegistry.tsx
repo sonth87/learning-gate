@@ -420,3 +420,21 @@ export const switchLearningApp = (
     console.error('Failed to switch app:', err);
   }
 };
+
+export const closeLearningApp = (
+  appId: LearningAppId,
+  windowId?: string
+) => {
+  try {
+    const store = useStore.getState();
+    if (windowId && store.windows[windowId]) {
+      store.closeWindow(windowId);
+      return;
+    }
+    Object.values(store.windows)
+      .filter((w) => w.appId === appId)
+      .forEach((w) => store.closeWindow(w.id));
+  } catch (err) {
+    console.error('Failed to close app:', err);
+  }
+};

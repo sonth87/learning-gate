@@ -11,20 +11,19 @@ import {
   Sun,
   Moon,
   Monitor,
-  Terminal,
   StickyNote,
-  Container,
   PanelLeftOpen,
   Settings,
   Library,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
 import { CicdMainTab } from '../../types/cicd.types';
 import { useCicdNavigationStore } from '../../stores/useCicdNavigationStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
-import { switchLearningApp } from '@/apps/appRegistry';
-import { CicdMasteryLogo, RedisMasteryLogo } from '@/components/common/AppLogos';
+import { closeLearningApp } from '@/apps/appRegistry';
+import { CicdMasteryLogo } from '@/components/common/AppLogos';
 import { useCourseCurriculum } from '@/features/devops-course/data';
 import { courseModuleDone } from '@/features/devops-course/logic';
 import { useCicdProgress } from '@/features/devops-course/store';
@@ -143,7 +142,7 @@ const CicdMoreMenu: React.FC = () => {
   );
 };
 
-export const CicdHeader: React.FC = () => {
+export const CicdHeader: React.FC<{ windowId?: string }> = ({ windowId }) => {
   const { activeTab, setActiveTab, selectedLessonId, setMobileSidebarOpen } = useCicdNavigationStore();
   const { openNotesDrawer, setSettingsOpen } = useNavigationStore();
 
@@ -240,40 +239,8 @@ export const CicdHeader: React.FC = () => {
           <CicdMoreMenu />
         </nav>
 
-        {/* Right Actions & Quick App Switcher */}
-        <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => switchLearningApp('redismastery')}
-            title="Chuyển nhanh sang ứng dụng Redis Mastery"
-            className="hidden sm:inline-flex h-8 w-auto items-center justify-center gap-1 rounded-lg border border-rose-500/40 bg-rose-500/15 px-2.5 text-xs font-bold text-rose-300 hover:bg-rose-500/25 transition-all cursor-pointer"
-          >
-            <RedisMasteryLogo className="h-3.5 w-3.5 shrink-0 rounded-xs" />
-            <span className="hidden md:inline">Redis</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => switchLearningApp('kubemastery')}
-            title="Chuyển nhanh sang ứng dụng Docker & K8s Mastery"
-            className="inline-flex h-11 w-11 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-sky-500/40 bg-sky-500/15 sm:px-2.5 text-xs font-bold text-sky-300 hover:bg-sky-500/25 transition-all cursor-pointer"
-          >
-            <Container className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-            <span className="hidden md:inline">Docker & K8s</span>
-            <span className="hidden sm:inline md:hidden text-[10px]">K8s</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => switchLearningApp('pymastery')}
-            title="Chuyển nhanh sang ứng dụng Python Mastery"
-            className="hidden sm:inline-flex h-8 w-auto items-center justify-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-all cursor-pointer"
-          >
-            <Terminal className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-            <span className="hidden md:inline">Python</span>
-            <span className="hidden sm:inline md:hidden text-[10px]">Py</span>
-          </button>
-
+        {/* Right Actions */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           <button
             type="button"
             onClick={() => openNotesDrawer('lesson', selectedLessonId, `CI/CD: ${selectedLessonId}`)}
@@ -305,9 +272,22 @@ export const CicdHeader: React.FC = () => {
             onClick={() => setSettingsOpen(true)}
             aria-label="Cài đặt & Sao lưu dữ liệu"
             title="Cài đặt & Sao lưu dữ liệu"
-            className="inline-flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
+            className="inline-flex h-10 w-10 sm:h-8 sm:w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-cyan-500/40 hover:text-white cursor-pointer"
           >
             <Settings className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+
+          <span className="h-5 w-px bg-slate-800 shrink-0 mx-0.5" aria-hidden="true" />
+
+          <button
+            type="button"
+            onClick={() => closeLearningApp('cicdmastery', windowId)}
+            aria-label="Đóng ứng dụng về màn hình chính"
+            title="Đóng ứng dụng về màn hình chính"
+            className="inline-flex h-10 w-10 sm:h-8 sm:w-auto items-center justify-center gap-1 rounded-lg border border-slate-700/90 bg-slate-900/90 sm:px-2.5 text-xs font-semibold text-slate-300 hover:border-rose-500/50 hover:bg-rose-500/15 hover:text-rose-300 active:bg-rose-500/25 active:scale-95 transition-all cursor-pointer"
+          >
+            <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" aria-hidden="true" />
+            <span className="hidden sm:inline">Đóng</span>
           </button>
         </div>
       </div>
