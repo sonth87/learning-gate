@@ -21,7 +21,7 @@ export const GotchasSection: React.FC<{ issues: CommonIssueGotcha[] }> = ({
         {issues.map((issue) => (
           <div
             key={issue.id}
-            className="rounded-2xl border border-rose-500/30 bg-rose-950/15 p-5 space-y-3.5"
+            className="rounded-2xl bg-rose-950/15 p-5 space-y-3.5"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
@@ -30,38 +30,38 @@ export const GotchasSection: React.FC<{ issues: CommonIssueGotcha[] }> = ({
                   {issue.title}
                 </h4>
               </div>
-              <span className="rounded-full bg-rose-500/20 border border-rose-500/40 px-2.5 py-0.5 text-[10px] font-bold uppercase text-rose-300">
+              <span className="rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[10px] font-bold uppercase text-rose-300">
                 Mức độ: {issue.severity === 'critical' ? 'Nghiêm trọng' : 'Cảnh báo'}
               </span>
             </div>
 
             <div className="grid gap-2 text-xs text-slate-300">
               <div>
-                <strong className="text-slate-100">Triệu chứng / Biểu hiện: </strong>
+                <strong className="text-slate-100">Biểu hiện: </strong>
                 <RichTextWithTerms text={issue.symptom} />
               </div>
               <div>
-                <strong className="text-slate-100">Nguyên nhân sâu xa bên dưới: </strong>
+                <strong className="text-slate-100">Nguyên nhân: </strong>
                 <RichTextWithTerms text={issue.whyItHappens} />
               </div>
             </div>
 
             {/* Wrong vs Right Code */}
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-rose-500/40 bg-slate-950 p-3 space-y-1.5">
+              <div className="rounded-xl border-t-2 border-t-rose-500 bg-slate-950/90 p-3 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
                   <XCircle className="h-3.5 w-3.5" />
-                  <span>Cách viết SAI (Dễ sập / Rò rỉ dữ liệu):</span>
+                  <span>Cách viết SAI:</span>
                 </div>
                 <pre className="overflow-x-auto font-mono text-[11px] leading-5 text-rose-200/90">
                   <code>{issue.wrongCode}</code>
                 </pre>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/40 bg-slate-950 p-3 space-y-1.5">
+              <div className="rounded-xl border-t-2 border-t-emerald-500 bg-slate-950/90 p-3 space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                   <CheckCircle2 className="h-3.5 w-3.5" />
-                  <span>Cách viết ĐÚNG (Chuẩn Pythonic):</span>
+                  <span>Cách viết ĐÚNG:</span>
                 </div>
                 <pre className="overflow-x-auto font-mono text-[11px] leading-5 text-emerald-200/90">
                   <code>{issue.rightCode}</code>
@@ -69,8 +69,8 @@ export const GotchasSection: React.FC<{ issues: CommonIssueGotcha[] }> = ({
               </div>
             </div>
 
-            <div className="rounded-xl bg-slate-900/90 border border-slate-800 px-3.5 py-2.5 text-xs text-slate-200">
-              <strong className="text-emerald-400">Giải pháp khắc phục: </strong>
+            <div className="rounded-xl bg-slate-900/75 px-3.5 py-2.5 text-xs text-slate-200">
+              <strong className="text-emerald-400">Khắc phục: </strong>
               <RichTextWithTerms text={issue.fixExplanation} />
             </div>
           </div>

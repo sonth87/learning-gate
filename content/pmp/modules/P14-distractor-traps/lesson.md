@@ -27,7 +27,7 @@ items:
   - num: 3
     title: "Nhóm Thụ động & Đường tắt (7–9)"
     badge: "SAI TƯ DUY PMI"
-    tone: "violet"
+    tone: "cyan"
     bullets:
       - "**#7 Trì hoãn thụ động:** *'Chờ xem tuần sau thế nào'*, *'Đợi đến cuối Sprint mới gỡ Impediment đang chặn nhóm hôm nay'*."
       - "**#8 Giao tiếp gián tiếp lạnh lùng:** Gửi email hàng loạt (mass email) nhắc nhở cả đội thay vì gặp riêng 1-1 trực tiếp."

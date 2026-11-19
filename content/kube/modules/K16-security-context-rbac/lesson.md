@@ -43,7 +43,7 @@ columns:
       - label: "Lớp 3 · RBAC Least Privilege & Tắt Auto-Mount Token"
         sub: "automountServiceAccountToken: false hoặc Role quyền tối thiểu"
         note: Vô hiệu hoá API Server
-        tone: violet
+        tone: cyan
     footer: Tin tặc bị nhốt cứng ở uid=1000, không ghi được đĩa, không gọi được K8s API!
 ```
 
@@ -64,7 +64,7 @@ callouts:
   - num: 2
     label: "Pod Security Admission (PSA) & Seccomp"
     desc: "Gắn nhãn chuẩn restricted ngay trên Namespace để API Server tự động chặn đứng mọi Pod cấu hình cẩu thả ngay từ cửa."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "RBAC Least Privilege — ServiceAccount -> RoleBinding -> Role"
     desc: "Tắt tự động gắn token nếu không cần gọi API cụm, hoặc chỉ cấp đúng quyền đọc tối thiểu trên từng Namespace thay vì cluster-admin."
@@ -109,7 +109,7 @@ spec:
       emptyDir: {}
 ```
 
-> [!WARNING] Ba tử huyệt bảo mật tuyệt đối tránh xa!
+> [!WARNING] Ba điểm yếu nghiêm trọng bảo mật tuyệt đối tránh xa!
 > Trừ khi bạn đang viết phần mềm hạ tầng cấp thấp của hệ thống, **tuyệt đối cấm dùng**: `privileged: true`, `hostNetwork: true`, và gắn ổ đĩa `hostPath: /var/run/docker.sock` — vì bất kỳ container nào nắm giữ chúng đều tương đương quyền `root` trực tiếp trên máy chủ vật lý!
 
 ## 2. Lớp giáp thứ hai: Cưỡng chế tự động bằng **Pod Security Admission (`PSA`)**
@@ -193,7 +193,7 @@ steps:
     title: RoleBinding / ClusterRoleBinding
     desc: Nối danh tính ServiceAccount (subjects) với bộ quyền hạn tương ứng (roleRef)
     code: "kind: RoleBinding"
-    tone: violet
+    tone: cyan
     edge: tham chiếu roleRef
   - icon: lock
     badge: 3. Được làm gì?

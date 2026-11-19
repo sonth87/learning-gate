@@ -17,6 +17,8 @@ import { IncidentWarRoom } from './components/IncidentWarRoom';
 import { PracticeLabsHub } from './components/PracticeLabsHub';
 import { GlossaryAndCheatsheetHub } from './components/GlossaryAndCheatsheetHub';
 import { KubeExamCenter } from './components/KubeExamCenter';
+import { TermPopover } from '@/components/common/TermPopover';
+import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { cn } from '@/utils/cn';
 
 export interface KubeMasteryAppProps {
@@ -27,6 +29,7 @@ export interface KubeMasteryAppProps {
 export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
   const { activeTab, setActiveTab, setSearchOpen, openFlowInStudio, openIncidentInWarRoom } = useKubeStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
+  const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateKube = useKubeProgress((s) => s.hydrate);
   const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
   const isLight = deviceResolvedScheme === 'light';
@@ -69,6 +72,7 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
 
   return (
     <div
+      onClick={() => hideTermPopover(false)}
       className={cn(
         'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
         isLight ? 'pylearn-light' : 'pylearn-dark'
@@ -112,6 +116,8 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
       </main>
 
       <KubeMobileBottomNav />
+      <TermPopover />
+      <NotesDrawer />
       <SettingsModal />
     </div>
   );

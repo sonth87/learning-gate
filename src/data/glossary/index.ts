@@ -6,6 +6,7 @@ import { METHODS_GLOSSARY } from './methodsData';
 import { DUNDERS_GLOSSARY } from './dundersData';
 import { CONCEPTS_GLOSSARY } from './conceptsData';
 import { STDLIB_GLOSSARY } from './stdlibData';
+import { DEVOPS_AND_PMP_GLOSSARY } from './devopsAndPmpData';
 
 export const ALL_GLOSSARY_TERMS: GlossaryTerm[] = [
   ...KEYWORDS_GLOSSARY,
@@ -15,6 +16,7 @@ export const ALL_GLOSSARY_TERMS: GlossaryTerm[] = [
   ...DUNDERS_GLOSSARY,
   ...CONCEPTS_GLOSSARY,
   ...STDLIB_GLOSSARY,
+  ...DEVOPS_AND_PMP_GLOSSARY,
 ];
 
 export const GLOSSARY_BY_ID: Record<string, GlossaryTerm> =
@@ -42,6 +44,12 @@ export function findGlossaryTerm(tokenOrId: string): GlossaryTerm | undefined {
   if (GLOSSARY_BY_SURFACE_TOKEN[normalized]) {
     return GLOSSARY_BY_SURFACE_TOKEN[normalized];
   }
-  const strippedParens = normalized.replace(/\(\)$/, '');
-  return GLOSSARY_BY_SURFACE_TOKEN[strippedParens];
+  const strippedParens = normalized.replace(/\([^)]*\)$/, '').trim();
+  if (GLOSSARY_BY_SURFACE_TOKEN[strippedParens]) {
+    return GLOSSARY_BY_SURFACE_TOKEN[strippedParens];
+  }
+  if (normalized.startsWith('if ') && normalized.includes('is none')) {
+    return GLOSSARY_BY_SURFACE_TOKEN['none'] || GLOSSARY_BY_SURFACE_TOKEN['is'];
+  }
+  return undefined;
 }

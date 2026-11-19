@@ -51,7 +51,7 @@ export const KUBE_FLASHCARDS: KubeFlashcard[] = [
     category: 'Troubleshooting',
     frontQuestion: 'Mã thoát Exit Code 137 (Reason: OOMKilled) trong kubectl describe pod có ý nghĩa gì?',
     analogyHint: 'Liên tưởng: Dùng quá định mức đồng hồ điện nước nên bị sập cầu dao',
-    backAnswer: 'Ứng dụng bên trong Container đã tiêu thụ lượng RAM vượt quá mức trần cho phép (resources.limits.memory). Nhân Linux lập tức kích hoạt OOM Killer bắn hạ tiến trình bằng tín hiệu SIGKILL (128 + 9 = 137).',
+    backAnswer: 'Ứng dụng bên trong Container đã tiêu thụ lượng RAM vượt quá mức trần cho phép (resources.limits.memory). Nhân Linux lập tức kích hoạt OOM Killer dừng tiến trình (kill) tiến trình bằng tín hiệu SIGKILL (128 + 9 = 137).',
     keyCommand: 'kubectl describe pod [TÊN_POD] | grep -A 5 "Last State"',
   },
   {

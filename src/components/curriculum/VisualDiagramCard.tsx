@@ -74,10 +74,10 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
           return (
             <div
               key={diagram.id}
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-4"
+              className="rounded-2xl bg-slate-900/50 p-5 space-y-4"
             >
               {/* Diagram Header */}
-              <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-800/80 pb-3">
+              <div className="flex flex-wrap items-start justify-between gap-2 pb-1">
                 <div>
                   <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-sky-400">
                     {diagram.type === 'pipeline' && 'Sơ đồ Luồng Xử lý (Pipeline Flow)'}
@@ -95,9 +95,9 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                     {diagram.subtitle}
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950/80 px-2.5 py-1 text-[11px] font-medium text-slate-300">
                   <MousePointerClick className="h-3.5 w-3.5 text-emerald-400" aria-hidden="true" />
-                  <span>Chọn từng khối để xem giải thích sâu</span>
+                  <span>Chọn từng khối để xem chi tiết</span>
                 </span>
               </div>
 
@@ -119,8 +119,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                             }))
                           }
                           className={cn(
-                            'flex-1 rounded-xl border p-3.5 text-left transition-all flex flex-col justify-between space-y-2',
-                            color.border,
+                            'flex-1 rounded-xl p-3.5 text-left transition-all flex flex-col justify-between space-y-2',
                             color.bg,
                             isSelected
                               ? 'ring-2 ring-emerald-400/80 shadow-sm'
@@ -131,7 +130,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                             <div className="flex items-center justify-between gap-1">
                               <span
                                 className={cn(
-                                  'rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold',
+                                  'rounded px-1.5 py-0.5 font-mono text-[10px] font-bold',
                                   color.badge
                                 )}
                               >
@@ -185,8 +184,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                           }))
                         }
                         className={cn(
-                          'rounded-xl border p-3.5 text-left transition-all space-y-1.5',
-                          color.border,
+                          'rounded-xl p-3.5 text-left transition-all space-y-1.5',
                           color.bg,
                           isSelected
                             ? 'ring-2 ring-emerald-400/80 shadow-sm'
@@ -196,7 +194,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                         <div className="flex items-center justify-between">
                           <span
                             className={cn(
-                              'inline-flex items-center gap-1 rounded border px-2 py-0.5 font-mono text-[11px] font-bold',
+                              'inline-flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[11px] font-bold',
                               color.badge
                             )}
                           >
@@ -233,19 +231,18 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                           }))
                         }
                         className={cn(
-                          'rounded-xl border p-4 text-left transition-all flex flex-col justify-between space-y-3 cursor-pointer',
-                          color.border,
+                          'rounded-xl p-4 text-left transition-all flex flex-col justify-between space-y-3 cursor-pointer',
                           color.bg,
                           isSelected
                             ? 'ring-2 ring-emerald-400 shadow-md scale-[1.01]'
-                            : 'opacity-85 hover:opacity-100 hover:border-slate-600'
+                            : 'opacity-85 hover:opacity-100'
                         )}
                       >
                         <div className="space-y-2">
                           <div className="flex items-center justify-between gap-1.5">
                             <span
                               className={cn(
-                                'inline-flex items-center rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold',
+                                'inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[10px] font-bold',
                                 color.badge
                               )}
                             >
@@ -287,8 +284,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                           }))
                         }
                         className={cn(
-                          'w-full rounded-xl border p-3.5 text-left transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 cursor-pointer',
-                          color.border,
+                          'w-full rounded-xl p-3.5 text-left transition-all flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 cursor-pointer',
                           color.bg,
                           isSelected
                             ? 'ring-2 ring-emerald-400 shadow-md'
@@ -299,7 +295,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                           <Layers className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
                           <span
                             className={cn(
-                              'shrink-0 rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold',
+                              'shrink-0 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold',
                               color.badge
                             )}
                           >
@@ -320,11 +316,11 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
 
               {/* Active Node Detailed Inspector Panel */}
               {activeNode && (
-                <div className="rounded-xl border border-emerald-500/30 bg-slate-950/90 p-4 space-y-1.5">
+                <div className="rounded-xl border-l-4 border-emerald-500/70 bg-slate-950/85 p-4 space-y-1.5">
                   <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                     <Info className="h-4 w-4 shrink-0" aria-hidden="true" />
                     <span>
-                      Giải thích chi tiết khối [{activeNode.badge || activeNode.title}]:{' '}
+                      Chi tiết khối [{activeNode.badge || activeNode.title}]:{' '}
                       {activeNode.title}
                     </span>
                   </div>
@@ -334,7 +330,7 @@ export const VisualDiagramCard: React.FC<{ diagrams?: LessonDiagram[] }> = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 border-t border-slate-800/70 pt-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pt-1">
                 <BookmarkCheck className="h-3.5 w-3.5 shrink-0 text-sky-400" aria-hidden="true" />
                 <span>
                   <RichTextWithTerms text={diagram.caption} />

@@ -1,6 +1,6 @@
 ## 1. Bốn trụ cột Business Environment 26% ([!badge:violet:ECO 07/2026] & [!badge:amber:PMBOK 8])
 
-Thay đổi chấn động nhất của kỳ thi PMP mới là miền **Business Environment tăng vọt từ 8% lên 26%**! Đề thi không còn coi PM là "thợ giữ tiến độ trong ốc đảo kỹ thuật", mà đòi hỏi bạn kết nối dự án trực tiếp với **Pháp lý, Sự đón nhận của tổ chức, PMO hướng khách hàng và Trí tuệ Nhân tạo (AI)**:
+thay đổi quan trọng nhất của kỳ thi PMP mới là miền **Business Environment tăng vọt từ 8% lên 26%**! Đề thi không còn coi PM là "thợ giữ tiến độ trong ốc đảo kỹ thuật", mà đòi hỏi bạn kết nối dự án trực tiếp với **Pháp lý, Sự đón nhận của tổ chức, PMO hướng khách hàng và Trí tuệ Nhân tạo (AI)**:
 
 ```visual
 kind: groups
@@ -34,7 +34,7 @@ items:
   - icon: "zap"
     title: "4. AI có trách nhiệm trong Dự án (Appendix X3)"
     badge: "HUMAN-IN-THE-LOOP"
-    tone: "violet"
+    tone: "cyan"
     bullets:
       - "**Bảo mật dữ liệu & PII:** Tuyệt đối KHÔNG dán dữ liệu cá nhân, mã nguồn độc quyền hay hợp đồng mật vào công cụ GenAI công cộng ngoài quy chuẩn tổ chức."
       - "**Chống Thiên kiến & Ảo giác (Bias / Hallucination):** Luôn kiểm tra chất lượng dữ liệu huấn luyện và xác minh chéo đầu ra của AI."

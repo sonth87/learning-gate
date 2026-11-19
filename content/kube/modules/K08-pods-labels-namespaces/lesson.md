@@ -2,7 +2,7 @@
 
 Khi mới chuyển từ Docker sang Kubernetes, câu hỏi đầu tiên mà hầu hết lập trình viên Node.js thắc mắc là: *"Tại sao Kubernetes không quản lý trực tiếp từng Container cho gọn, mà lại đẻ thêm khái niệm **Pod** bọc ở bên ngoài?"*
 
-Hiểu thấu đáo thiết kế của ==Pod==, hệ thống gắn thẻ {sky:Labels}, vách ngăn {violet:Namespaces} và chứng chỉ kéo Image {amber:`imagePullSecrets`} sẽ giúp bạn nắm chắc viên gạch nguyên tử của toàn bộ hệ sinh thái Kubernetes.
+Hiểu thấu đáo thiết kế của ==Pod==, hệ thống gắn thẻ **Labels**, vách ngăn **Namespaces** và chứng chỉ kéo Image `imagePullSecrets` sẽ giúp bạn nắm chắc viên gạch nguyên tử của toàn bộ hệ sinh thái Kubernetes.
 
 ```visual
 kind: illustration
@@ -23,7 +23,7 @@ callouts:
   - num: 3
     label: "Namespace — Ranh giới phạm vi tên & hạn mức"
     desc: "Tách biệt môi trường staging và production trên cùng một cụm vật lý; ConfigMap và Secret không tự động chia sẻ xuyên qua Namespace."
-    tone: violet
+    tone: cyan
 ```
 
 ## 1. Tại sao đơn vị nhỏ nhất là Pod chứ không phải Container?
@@ -55,12 +55,12 @@ columns:
     footer: Đơn vị nguyên tử nhỏ nhất được kube-scheduler xếp chỗ lên cùng một Worker Node
   - title: Hai Pod Khác Nhau Trên Cụm
     badge: Khác IP hoàn toàn · Cô lập mạng
-    tone: violet
+    tone: cyan
     layers:
       - label: Pod A (shop-web — IP 10.244.1.12:80)
         sub: Sở hữu Network Namespace riêng, có thể mở cổng 80 hoặc 3000 hoàn toàn độc lập với Pod khác
         note: Vỏ kén độc lập #1
-        tone: violet
+        tone: cyan
       - label: Pod B (payment-api — IP 10.244.2.35:3000)
         sub: Có địa chỉ IP riêng biệt hoàn toàn — không bao giờ gọi sang Pod A qua localhost được
         note: Vỏ kén độc lập #2
@@ -111,7 +111,7 @@ items:
     icon: shield
     title: tier
     badge: Phân tầng kiến trúc
-    tone: violet
+    tone: cyan
     bullets:
       - "Ví dụ giá trị: `frontend`, `backend`, `cache`"
       - "**`NetworkPolicy`** dựa vào đây để khoá tường lửa nội bộ (chỉ cho tầng `backend` gọi vào `cache`)"

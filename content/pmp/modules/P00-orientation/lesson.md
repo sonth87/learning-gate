@@ -1,6 +1,6 @@
 ## 1. Cấu trúc đề thi PMP theo ECO 07/2026: Cuộc dịch chuyển sang Giá trị Kinh doanh
 
-Bài thi PMP hiện đại gồm **180 câu hỏi** (175 câu tính điểm + 5 câu thử nghiệm *pretest* ẩn ngẫu nhiên) trong **240 phút**, chia làm 3 chặng 60 câu với 2 lần nghỉ giải lao 10 phút. Thay đổi chấn động nhất của [!badge:violet:ECO 07/2026] là sự bùng nổ của miền **Business Environment**: tăng vọt từ `8%` lên ==26% tổng điểm==!
+Bài thi PMP hiện đại gồm **180 câu hỏi** (175 câu tính điểm + 5 câu thử nghiệm *pretest* ẩn ngẫu nhiên) trong **240 phút**, chia làm 3 chặng 60 câu với 2 lần nghỉ giải lao 10 phút. thay đổi quan trọng nhất của [!badge:violet:ECO 07/2026] là sự bùng nổ của miền **Business Environment**: tăng vọt từ `8%` lên ==26% tổng điểm==!
 
 ```visual
 kind: groups
@@ -27,7 +27,7 @@ items:
   - num: "26%"
     title: "Business Environment"
     badge: "8 Tasks · Tăng từ 8%"
-    tone: "violet"
+    tone: "cyan"
     desc: "Bước nhảy vọt lớn nhất lịch sử đề PMP: PM phải có tư duy chiến lược."
     bullets:
       - "Business Case, Benefits Realization và liên kết chiến lược tổ chức"
@@ -62,7 +62,7 @@ columns:
       - label: "Business Value, Strategy & Sustainability"
         sub: "Nguyên tắc #1, #2, #5 + Miền Business Environment (26%)"
         note: "Chiến lược"
-        tone: "violet"
+        tone: "cyan"
       - label: "Agile, Hybrid & Tailoring Approaches"
         sub: "Standard §4.2–4.3 · ~60% trọng lượng tình huống đề thi"
         note: "Phương pháp"
@@ -87,7 +87,7 @@ columns:
       - label: "intro · business · value (Book Map)"
         sub: "Value Delivery System, Business Case, MVP/MMF, Compliance, Kanban"
         note: "ed=book"
-        tone: "violet"
+        tone: "cyan"
       - label: "core.mindset · core.agile · core.adaptive"
         sub: "6 Phản xạ vàng PMA, Scrum Roles/Events, Velocity & Burndown"
         note: "ed=core"

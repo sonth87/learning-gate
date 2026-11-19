@@ -2,7 +2,7 @@
 
 Bạn đã viết được `Dockerfile` đầu tiên chạy ngon lành ở bài `K03`. Thế nhưng chỉ vài ngày sau, cả nhóm bắt đầu than trời: *"Mỗi lần em chỉ sửa đúng 1 chữ chính tả trong `src/routes/health.js` mà chạy `docker build` lại phải ngồi chờ tải `npm ci` mất gần 2 phút!"* — chưa kể Image phình lên gần 900 MB và vô tình dính cả tệp `.env` chứa mật khẩu cá nhân!
 
-Bài học này giải quyết triệt để cả ba nỗi đau đó bằng cơ chế ==Layer Cache== ({emerald:tăng tốc gấp 20 lần}) của BuildKit, lá chắn ==`.dockerignore`== ({rose:chống rò rỉ bí mật}) và cách phân tách tham số {violet:Build-time `ARG`} / {sky:Run-time `ENV`}.
+Bài học này giải quyết triệt để cả ba nỗi đau đó bằng cơ chế ==Layer Cache== (**tăng tốc gấp 20 lần**) của BuildKit, lá chắn ==`.dockerignore`== (**chống rò rỉ bí mật**) và cách phân tách tham số **Build-time `ARG`** / **Run-time `ENV`**.
 
 ```visual
 kind: illustration
@@ -156,7 +156,7 @@ subtitle: "Cả ARG lẫn ENV đều KHÔNG PHẢI nơi chứa mật khẩu (l�
 left:
   badge: "CHỈ SỐNG LÚC BUILD · ARG"
   title: "Tham số đóng gói tạm thời"
-  tone: violet
+  tone: cyan
   code: |
     # Truyền từ CLI lúc đóng gói:
     # docker build --build-arg APP_VERSION=1.2.3 .

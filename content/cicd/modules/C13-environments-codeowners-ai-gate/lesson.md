@@ -5,7 +5,7 @@
 - [>] **Ai** chịu trách nhiệm ký duyệt khi một Pull Request âm thầm sửa `.github/workflows/deploy.yml` hoặc thêm câu lệnh SQL thay đổi lược đồ cơ sở dữ liệu?
 - [>] Làm sao tận dụng **AI PR Reviewer** (như CodeRabbit, GitHub Copilot Code Review) bắt lỗi logic sớm mà không biến mỗi PR thành "bãi rác bình luận" hoặc mở toang lỗ hổng lộ `OPENAI_API_KEY` từ nhánh Fork?
 
-Bài học này giải quyết trọn vẹn 3 trụ cột **Quản trị phát hành (Release Governance)**: {emerald:GitHub Environments}, {sky:CODEOWNERS + Branch Protection}, và {violet:Low-Noise AI Review Gate} — đảm bảo ==kiểm soát rủi ro chặt chẽ== mà không làm chậm nhịp phát hành.
+Bài học này giải quyết trọn vẹn 3 trụ cột **Quản trị phát hành (Release Governance)**: **GitHub Environments**, **CODEOWNERS + Branch Protection**, và **Low-Noise AI Review Gate** — đảm bảo ==kiểm soát rủi ro chặt chẽ== mà không làm chậm nhịp phát hành.
 
 ```visual
 kind: groups
@@ -37,7 +37,7 @@ items:
     icon: sparkles
     title: Low-Noise AI PR Gate
     badge: Rà soát AI Thông minh
-    tone: violet
+    tone: cyan
     bullets:
       - "`reviews.path_filters` loại bỏ tệp sinh tự động (`!**/package-lock.json`, `!**/dist/**`)"
       - "`reviews.path_instructions` giao đề bài chuyên sâu cho từng thư mục (`src/auth/**`)"
@@ -64,7 +64,7 @@ callouts:
   - num: 2
     label: "Cổng rà soát AI ít nhiễu & Chắn nhánh Fork"
     desc: "Loại bỏ tệp lockfile/dist sinh tự động khỏi phạm vi AI review và chặn chạy trên PR từ Fork lạ để bảo vệ tuyệt đối khoá API."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "environment: production — Duyệt tay & Mở khoá Secret"
     desc: "Tạm dừng luồng chạy chờ Tech Lead bấm Approve (lưu vết kiểm toán) và chỉ giải mã biến nhạy cảm cho đúng nhánh main hợp lệ."

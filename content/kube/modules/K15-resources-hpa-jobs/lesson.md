@@ -2,7 +2,7 @@
 
 Trên máy tính cá nhân, một tiến trình Node.js có thể thoải mái chiếm bao nhiêu CPU và RAM tuỳ thích. Nhưng trên cụm Kubernetes dùng chung nơi 40 dịch vụ cùng chia sẻ tài nguyên của các Worker Node, một đoạn code xuất báo cáo Excel bị rò rỉ bộ nhớ (*Memory Leak*) hoặc lặp vô hạn tính toán JSON khổng lồ có thể "hút cạn máu" toàn bộ máy chủ, làm chết lây cả các dịch vụ thanh toán quan trọng đang nằm cùng Node!
 
-Trong bài học này, bạn sẽ làm chủ bộ ba trụ cột quản trị năng lực của Kubernetes: định mức **`resources` ({sky:`requests`} vs {amber:`limits`}) & QoS**, tự động nhân bản theo tải thực tế với ==`HorizontalPodAutoscaler` (`autoscaling/v2`)==, và chạy tác vụ một lần / định kỳ với **`Job` & `CronJob` (`batch/v1`)**.
+Trong bài học này, bạn sẽ làm chủ bộ ba trụ cột quản trị năng lực của Kubernetes: định mức **`resources` (`requests` vs `limits`) & QoS**, tự động nhân bản theo tải thực tế với ==`HorizontalPodAutoscaler` (`autoscaling/v2`)==, và chạy tác vụ một lần / định kỳ với **`Job` & `CronJob` (`batch/v1`)**.
 
 ```visual
 kind: illustration
@@ -24,7 +24,7 @@ callouts:
   - num: 3
     label: "Job & CronJob — Tác vụ nền chạy tới Exit Code 0"
     desc: "Khác với Deployment chạy mãi mãi, Job thực thi xong tác vụ là dừng ở trạng thái Completed và ngăn chạy chồng chéo bằng Forbid."
-    tone: violet
+    tone: cyan
 ```
 
 ## 1. Phân biệt sống còn: `resources.requests` vs `resources.limits`
@@ -170,7 +170,7 @@ items:
     icon: refresh
     title: CronJob (batch/v1)
     badge: Unix Cron 5 trường
-    tone: violet
+    tone: cyan
     desc: Tự động đẻ ra các đối tượng Job theo lịch hẹn định kỳ.
     bullets:
       - "Dùng biểu thức Cron 5 trường (`phút giờ ngày tháng thứ`, ví dụ `\"0 2 * * *\"` là 02:00 sáng hàng ngày)"

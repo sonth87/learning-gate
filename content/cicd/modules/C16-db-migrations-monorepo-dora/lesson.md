@@ -2,9 +2,9 @@
 
 Khi ứng dụng còn ở giai đoạn MVP ít người dùng lúc nửa đêm, bạn có thể chạy thẳng lệnh đổi tên cột SQL, chờ toàn bộ 12 package trong kho mã nguồn build lại từ đầu và đo năng suất bằng cảm tính. Nhưng khi bước lên **Kiến trúc Hệ thống Lớn** — phục vụ hàng chục nghìn giao dịch đồng thời với kho Monorepo gồm 8 nhóm phát triển đẩy hàng trăm PR mỗi ngày — ba bài toán hóc búa nhất sẽ xuất hiện:
 
-- [>] **{sky:Zero-Downtime DB Migration}:** Làm sao thay đổi lược đồ SQL mà không đánh sập các Pod phiên bản cũ (`v1`) đang chạy song song cùng Pod mới (`v2`) trong lúc Rolling Update?
-- [>] **{violet:Smart Monorepo CI}:** Làm sao chỉ chạy Lint/Test/Build cho đúng dịch vụ bị ảnh hưởng (kể cả phụ thuộc bắc cầu) thay vì đốt tiền CI vô ích?
-- [>] **{emerald:Engineering Telemetry}:** Làm sao đo lường sức khoẻ đường ống khách quan bằng bộ **4 chỉ số chuẩn công nghiệp DORA**?
+- [>] ****Zero-Downtime DB Migration**:** Làm sao thay đổi lược đồ SQL mà không đánh sập các Pod phiên bản cũ (`v1`) đang chạy song song cùng Pod mới (`v2`) trong lúc Rolling Update?
+- [>] ****Smart Monorepo CI**:** Làm sao chỉ chạy Lint/Test/Build cho đúng dịch vụ bị ảnh hưởng (kể cả phụ thuộc bắc cầu) thay vì đốt tiền CI vô ích?
+- [>] ****Engineering Telemetry**:** Làm sao đo lường sức khoẻ đường ống khách quan bằng bộ **4 chỉ số chuẩn công nghiệp DORA**?
 
 ```visual
 kind: illustration
@@ -21,7 +21,7 @@ callouts:
   - num: 2
     label: "Đồ thị bị ảnh hưởng (Affected Graph) trên Monorepo"
     desc: "Kết hợp fetch-depth: 0 với Turborepo/Nx để chỉ chạy CI cho gói vừa sửa và các ứng dụng phụ thuộc bắc cầu, bỏ qua các dịch vụ không liên quan."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Bộ 4 chỉ số DORA cân bằng Tốc độ & Sự ổn định"
     desc: "Đo lường đồng thời Tần suất triển khai, Lead Time (<1h) cùng Tỷ lệ lỗi thay đổi (<5%) và Thời gian phục hồi MTTR để phát triển bền vững."

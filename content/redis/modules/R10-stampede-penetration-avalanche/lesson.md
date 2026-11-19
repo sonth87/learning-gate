@@ -2,7 +2,7 @@
 
 Một hệ thống chạy êm ru ở mức `20.000 req/s` với tỷ lệ trúng cache (*Cache Hit Ratio*) đạt `99,5%` thực chất đang giấu một quả bom nổ chậm: **PostgreSQL phía sau chỉ được cấp phát cấu hình đủ chịu đựng `200 truy vấn/giây`** (`0,5%` rò rỉ qua cache). Chỉ cần một biến cố nhỏ khiến tỷ lệ Cache Hit tụt từ `99,5%` xuống `80%` trong vỏn vẹn **3 giây**, lượng truy vấn dội xuống Database sẽ vọt lên `4.000 câu SQL/giây` — gấp 20 lần ngưỡng chịu tải, đốt cháy CPU `100%` và đánh sập dây chuyền toàn bộ nền tảng!
 
-Trong lịch sử vận hành SRE quy mô lớn, mọi vụ sập Database xuyên qua tầng Redis đều quy về **Tam đại Thảm hoạ Caching**: {rose:Cache Stampede} (Đàn trâu điên), {amber:Cache Penetration} (Xuyên thủng bộ nhớ đệm) và {violet:Cache Avalanche} (Tuyết lở đồng loạt).
+Trong lịch sử vận hành SRE quy mô lớn, mọi vụ sập Database xuyên qua tầng Redis đều quy về **Tam đại Thảm hoạ Caching**: **Cache Stampede** (Đàn trâu điên), **Cache Penetration** (Xuyên thủng bộ nhớ đệm) và **Cache Avalanche** (Tuyết lở đồng loạt).
 
 > [!ANALOGY] Ẩn dụ Trạm Soát Vé Sân Vận Động Đêm Chung Kết
 > - **Cache Stampede (Hot Key Breakdown):** Đúng 19h00 bảng điện tử khổng lồ trước cổng chính tắt phụt 5 giây để cập nhật sơ đồ ghế → **10.000 khán giả đồng loạt lao vào một quầy lễ tân duy nhất** hỏi cùng một câu!
@@ -101,7 +101,7 @@ items:
     cmd: "BF.RESERVE bf:valid_skus 0.01 100000 && BF.EXISTS bf:valid_skus sku-999999"
   - symptom: "Toàn cụm Redis phản hồi Connection Refused kéo theo DB chết ngạt ngay lập tức"
     badge: "Node Failure Avalanche"
-    tone: violet
+    tone: cyan
     cause: "Chạy Redis đơn lẻ (Single Point of Failure) không có Sentinel/Cluster và ứng dụng không có Circuit Breaker giới hạn tải đổ về DB."
     fix: "Triển khai Redis Sentinel/Cluster HA, bật bộ đệm nội bộ L1 ngắn hạn (in-memory LRU 2 giây trên Pod) và cài Rate Limiter/Circuit Breaker bảo vệ DB."
     cmd: "redis-cli INFO replication && redis-cli INFO memory"

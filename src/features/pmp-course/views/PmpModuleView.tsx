@@ -202,19 +202,19 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
       )}
 
       {/* Visual Study Sheet Hero Header */}
-      <header className={cn('mb-5 rounded-2xl border bg-gradient-to-br p-4 sm:p-6 shadow-sm', brand.heroGrad)}>
+      <header className={cn('mb-5 rounded-2xl bg-gradient-to-br p-4 sm:p-6', brand.heroGrad)}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider',
                 brand.badgeCls
               )}
             >
               {brand.icon}
               <span>{brand.label}</span>
             </span>
-            <span className="rounded-md border border-amber-400/45 bg-amber-400/18 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-200">
+            <span className="rounded-md bg-amber-400/18 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-200">
               {m.id}
             </span>
             <span className="font-mono text-xs text-slate-400">
@@ -244,17 +244,17 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
 
         {/* Quick Real-World Trap vs PMI Shift Strip */}
         <div className="mt-4 grid gap-2.5 md:grid-cols-2">
-          <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-3.5 py-2.5 text-xs">
+          <div className="rounded-xl bg-rose-500/[0.08] px-3.5 py-2.5 text-xs">
             <div className="flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-rose-300">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Bẫy phản xạ đời thực dễ mất điểm</span>
+              <span>Phản xạ thường gặp dễ sai</span>
             </div>
             <p className="mt-1 text-slate-200 leading-relaxed">{m.realWorldTrap}</p>
           </div>
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.06] px-3.5 py-2.5 text-xs">
+          <div className="rounded-xl bg-emerald-500/[0.08] px-3.5 py-2.5 text-xs">
             <div className="flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Dịch chuyển sang Tư duy chuẩn PMI</span>
+              <span>Tư duy chuẩn PMI</span>
             </div>
             <p className="mt-1 text-slate-200 leading-relaxed">{m.pmiMindsetShift}</p>
           </div>
@@ -262,9 +262,9 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
 
         {/* Quick Section Jump Pills */}
         {sections.length > 0 && (
-          <div className="mt-4 border-t border-slate-800/80 pt-3">
+          <div className="mt-4 border-t border-slate-800/60 pt-3">
             <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Bản đồ mục lục nhanh trong bài ({sections.length} phần)
+              Mục lục bài học ({sections.length} phần)
             </div>
             <div className="flex flex-wrap gap-1.5">
               {sections.map((sec) => (
@@ -272,7 +272,7 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
                   key={sec.id}
                   type="button"
                   onClick={() => jumpToSection(sec.id)}
-                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1 text-left text-xs text-slate-300 transition-colors hover:border-amber-500/60 hover:text-white cursor-pointer"
+                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-slate-950/75 px-2.5 py-1 text-left text-xs text-slate-300 transition-colors hover:bg-slate-950 hover:text-white cursor-pointer"
                 >
                   <span className="font-mono text-[11px] font-extrabold text-amber-400">{sec.num}.</span>
                   <span className="line-clamp-1 max-w-[240px]">{sec.title}</span>
@@ -281,10 +281,10 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
               <button
                 type="button"
                 onClick={() => jumpToSection('pmp-evidence-section')}
-                className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-amber-500/35 bg-amber-500/10 px-2.5 py-1 text-left text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/20 cursor-pointer"
+                className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-amber-500/12 px-2.5 py-1 text-left text-xs font-semibold text-amber-300 transition-colors hover:bg-amber-500/20 cursor-pointer"
               >
                 <ExternalLink className="h-3 w-3 shrink-0" />
-                <span>Đi xem dẫn chứng &amp; Luyện tập Mindmap</span>
+                <span>Dẫn chứng &amp; Luyện tập Mindmap</span>
               </button>
             </div>
           </div>
@@ -294,7 +294,7 @@ export const PmpModuleView: React.FC<{ id: string }> = ({ id }) => {
       <div className={cn('grid items-start gap-6', !wideMode && 'xl:grid-cols-[minmax(0,1fr)_390px]')}>
         {/* Main Visual Study Sheet Article + Evidence & Practice Sections */}
         <article className="min-w-0 space-y-6">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/55 p-4 sm:p-6 lg:p-7 shadow-xs">
+          <div className="rounded-2xl bg-slate-900/45 p-4 sm:p-6 lg:p-7">
             <CourseMarkdown source={m.lesson} accent="amber" />
 
             {/* Mark Read / Skip + Quiz CTA */}

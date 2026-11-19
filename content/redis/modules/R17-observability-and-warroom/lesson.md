@@ -76,7 +76,7 @@ items:
     cause: "Gọi lệnh `DEL` đồng bộ lên một Set/Hash/List khổng lồ hàng triệu phần tử khiến luồng chính phải cấp phát thu hồi hàng triệu vùng nhớ `jemalloc` tại chỗ."
     fix: "Đo kích thước bằng `MEMORY USAGE <key>`, thu hồi bất đồng bộ trên luồng nền `bio_lazy_free` bằng `UNLINK <key>` và bật `CONFIG SET lazyfree-lazy-expire yes`."
     cmd: "MEMORY USAGE temp:export:2025 && UNLINK temp:export:2025"
-  - symptom: "Ca #3: Ứng dụng nổ lỗi hàng loạt `OOM command not allowed when used memory > 'maxmemory'`"
+  - symptom: "Ca #3: Ứng dụng phát sinh lỗi hàng loạt `OOM command not allowed when used memory > 'maxmemory'`"
     badge: "Cache Misconfigured noeviction"
     tone: rose
     cause: "Cụm Redis thuần Cache nhưng để quên chính sách mặc định `maxmemory-policy noeviction` nên khi đầy RAM đã từ chối mọi lệnh `SET` mới."
@@ -84,11 +84,11 @@ items:
     cmd: "INFO memory && CONFIG GET maxmemory-policy"
   - symptom: "Ca #4: RAM của Stream tăng không phanh, hàng ngàn đơn hàng treo lơ lửng không được xử lý"
     badge: "Streams PEL Consumer Leak"
-    tone: violet
+    tone: cyan
     cause: "Pod consumer bị OOMKilled giữa chừng sau khi nhận tin qua `XREADGROUP`, bỏ lại các ID nằm kẹt vĩnh viễn trong danh sách chờ `XPENDING` (PEL)."
     fix: "Soi `XPENDING <stream> <group> - + 10` tìm worker chết, dùng `XAUTOCLAIM` thu hồi các tin nhắn treo quá ngưỡng idle về worker mới xử lý rồi gọi `XACK`."
     cmd: "XPENDING orders:stream payment-cg - + 10"
-  - symptom: "Ca #5: Giao dịch MSET/MGET hoặc Lua nổ lỗi `CROSSSLOT Keys in request don't hash to the same slot`"
+  - symptom: "Ca #5: Giao dịch MSET/MGET hoặc Lua phát sinh lỗi `CROSSSLOT Keys in request don't hash to the same slot`"
     badge: "Cluster HashSlot Mismatch"
     tone: cyan
     cause: "Sau khi nâng cấp từ Redis đơn lẻ lên Redis Cluster, các khoá của cùng 1 giỏ hàng (`cart:user88:items` và `cart:user88:totals`) băm ra 2 Slot khác nhau."

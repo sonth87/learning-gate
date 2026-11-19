@@ -93,7 +93,7 @@ items:
   - num: 4
     title: "Bộ 3 Cờ Giải phóng Nền (Lazyfree)"
     badge: "Chống gai Latency P99"
-    tone: violet
+    tone: cyan
     desc: "Chuyển tác vụ thu hồi vùng nhớ từ luồng chính sang luồng nền bio_lazy_free."
     bullets:
       - "`lazyfree-lazy-eviction yes`: Không chặn luồng chính khi trục xuất khoá lúc đầy RAM."

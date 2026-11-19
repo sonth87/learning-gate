@@ -4,8 +4,8 @@ Trong một tiến trình đơn lẻ, lập trình viên Node.js quá quen với
 
 Redis cung cấp **hai cơ chế truyền thông hoàn toàn khác triết lý** mà bạn tuyệt đối không được dùng nhầm:
 
-- [>] **Redis Pub/Sub (`PUBLISH` / `SUBSCRIBE` / `SSUBSCRIBE`)**: Giống chiếc {amber:loa phát thanh FM trực tiếp} — bắn tin tới mọi người đang nghe ngay lập tức, **không lưu vào RAM**, ai mất mạng đúng giây đó coi như mất tin mãi mãi (*Fire-and-Forget*).
-- [+] **Redis Streams (`XADD` / `XREADGROUP` / `XACK`)**: Một {emerald:nhật ký sự kiện chỉ ghi nối đuôi (Append-Only Log)} thu gọn lấy cảm hứng từ Apache Kafka, lưu bền vững trên cấu trúc **Radix Tree + Listpack**, chia tải qua **Consumer Group** và theo dõi sát sao từng bản tin chưa xử lý xong trong bảng **PEL (*Pending Entries List*)**!
+- [>] **Redis Pub/Sub (`PUBLISH` / `SUBSCRIBE` / `SSUBSCRIBE`)**: Giống chiếc **loa phát thanh FM trực tiếp** — bắn tin tới mọi người đang nghe ngay lập tức, **không lưu vào RAM**, ai mất mạng đúng giây đó coi như mất tin mãi mãi (*Fire-and-Forget*).
+- [+] **Redis Streams (`XADD` / `XREADGROUP` / `XACK`)**: Một **nhật ký sự kiện chỉ ghi nối đuôi (Append-Only Log)** thu gọn lấy cảm hứng từ Apache Kafka, lưu bền vững trên cấu trúc **Radix Tree + Listpack**, chia tải qua **Consumer Group** và theo dõi sát sao từng bản tin chưa xử lý xong trong bảng **PEL (*Pending Entries List*)**!
 - [!] Nếu Worker đang xử lý dở mà sập nguồn, lệnh **`XAUTOCLAIM`** cho phép đồng đội tự động giải cứu bản tin bị kẹt về xử lý tiếp — không rơi rớt một xu doanh thu nào!
 
 ```visual

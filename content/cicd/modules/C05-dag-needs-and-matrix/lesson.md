@@ -25,7 +25,7 @@ callouts:
   - num: 3
     label: "Ma trận strategy.matrix & Cờ fail-fast: false"
     desc: "Nhân tự động tổ hợp OS x Node; đặt fail-fast: false giúp các tổ hợp còn lại vẫn chạy hết để thu thập trọn vẹn bức tranh lỗi đa nền tảng."
-    tone: violet
+    tone: cyan
 ```
 
 ## 1. Kiến trúc Fan-Out / Fan-In với `needs:`
@@ -56,7 +56,7 @@ steps:
     title: "Job: build"
     desc: "Chỉ chạy khi TẤT CẢ Job trong needs đều xanh (1 nhánh đỏ -> Skipped!)"
     code: "needs: [lint, unit-test]"
-    tone: violet
+    tone: cyan
     edge: "nhánh main?"
   - icon: rocket
     badge: "Triển khai có điều kiện"

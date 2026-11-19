@@ -5,7 +5,7 @@ Bạn đã đi được một chặng đường rất xa: từ đóng gói conta
 - [!] **Về mạng nội bộ:** Mặc định trong Kubernetes, mạng nội bộ phẳng hoàn toàn — làm sao chặn đứng việc một Pod Frontend bị xâm nhập tự ý kết nối thẳng vào cổng `5432` của PostgreSQL?
 - [!] **Về quản lý cấu hình:** Khi một dịch vụ cần tới 8 tệp YAML (`Deployment`, `Service`, `Ingress`, `HPA`, `ConfigMap`, `ServiceAccount`, `NetworkPolicy`...) nhân lên cho 4 môi trường (`dev`, `qa`, `staging`, `prod`), làm sao thoát khỏi *"địa ngục Copy-Paste 32 tệp YAML"*?
 
-Câu trả lời chính là cặp công cụ tiêu chuẩn: {sky:`NetworkPolicy`} và trình quản lý gói ==`Helm`==!
+Câu trả lời chính là cặp công cụ tiêu chuẩn: `NetworkPolicy` và trình quản lý gói ==`Helm`==!
 
 ```visual
 kind: illustration
@@ -26,7 +26,7 @@ callouts:
   - num: 3
     label: "Helm Chart — Tách khuôn templates/ và thông số values.yaml"
     desc: "Loại bỏ hoàn toàn cảnh sao chép hàng chục tệp YAML thủ công và hỗ trợ tự động quay lui an toàn với cờ --atomic."
-    tone: violet
+    tone: cyan
 ```
 
 ## 1. Sự thật bất ngờ: Mặc định mạng Kubernetes mở toang 100%!
@@ -136,7 +136,7 @@ items:
     icon: code
     title: "templates/*.yaml"
     badge: Khuôn mẫu động
-    tone: violet
+    tone: cyan
     desc: Các tệp YAML chứa biểu thức nội suy Go Template.
     bullets:
       - "Đọc giá trị từ `.Values`, hỗ trợ hàm đường ống như `{{ .Values.replicaCount | default 2 }}` (nếu `values.yaml` truyền `5` thì ra `5`, chỉ dùng `2` khi bị bỏ trống)"
@@ -195,7 +195,7 @@ steps:
     title: Test & Build Image
     desc: Chạy kiểm thử, đóng gói Multi-stage Image và đẩy lên kho GHCR
     code: "shop-api:2.1.0"
-    tone: violet
+    tone: cyan
     edge: cập nhật tag
   - icon: folder-git
     badge: 3. Kho cấu hình

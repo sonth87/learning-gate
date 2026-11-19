@@ -1,6 +1,6 @@
 # Khám bệnh K8s Thực chiến (Phần 1): Quy trình Triage & 4 Trạng thái Kẹt Khởi động
 
-Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên trạng thái `Running` xanh mướt. Nhưng trong công việc thực tế của một kỹ sư DevOps/Backend trực ca vận hành (*On-call*), 80% giá trị chuyên môn của bạn toả sáng vào khoảnh khắc bạn gõ `kubectl get pods` và nhìn thấy hàng chữ báo động: {amber:`Pending`}, {rose:`ImagePullBackOff`}, {violet:`CreateContainerConfigError`} hay ==`CrashLoopBackOff`==!
+Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên trạng thái `Running` xanh mướt. Nhưng trong công việc thực tế của một kỹ sư DevOps/Backend trực ca vận hành (*On-call*), 80% giá trị chuyên môn của bạn toả sáng vào khoảnh khắc bạn gõ `kubectl get pods` và nhìn thấy hàng chữ báo động: `Pending`, `ImagePullBackOff`, `CreateContainerConfigError` hay ==`CrashLoopBackOff`==!
 
 Khi sự cố xảy ra, người mới thường hoảng loạn xoá đại Pod đi tạo lại hoặc sửa mò mẫm tệp YAML theo cảm tính. Ngược lại, kỹ sư giàu kinh nghiệm luôn tuân thủ **Quy trình Chẩn đoán 3 Bước (*3-Step K8s Triage*)** chính xác như bác sĩ đọc phim X-quang.
 
@@ -84,7 +84,7 @@ items:
     cmd: kubectl describe pod <name>
   - symptom: "3. CreateContainerConfigError (Tắc ở khâu Lắp ráp Env/Mount — kubelet)"
     badge: Thiếu ConfigMap / Secret
-    tone: violet
+    tone: cyan
     cause: "Xảy ra TRƯỚC KHI container chạy: Pod tham chiếu tới một `Secret` hoặc `ConfigMap` chưa từng được tạo trong cùng Namespace, hoặc gõ lệch tên khoá trong `secretKeyRef` / `configMapKeyRef`."
     fix: "Xem Events để biết thiếu chính xác tên Secret/ConfigMap hay key nào, rồi đối chiếu danh sách thực tế trong Namespace."
     cmd: kubectl describe pod <name> && kubectl get secrets,cm
@@ -124,7 +124,7 @@ steps:
     title: Chạm Trần 5 Phút
     desc: Thời gian chờ tối đa giữ ở mức 5 phút (300s) giữa mỗi lần thử bật lại
     code: "Max delay: 5m (300s)"
-    tone: violet
+    tone: cyan
     edge: truy xuất xác cũ
   - icon: terminal
     badge: Cờ sống còn --previous

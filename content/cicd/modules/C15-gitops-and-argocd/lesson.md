@@ -2,7 +2,7 @@
 
 Trong các bài trước, khi muốn đưa ứng dụng lên cụm Kubernetes, chúng ta thường tiếp cận theo lối mòn **Push-based CD (Mô hình Đẩy)**: máy chủ GitHub Actions hoặc GitLab Runner cầm chìa khoá quản trị tối cao của cụm K8s (`KUBECONFIG` / Cloud Admin Role), rồi từ bên ngoài gõ thẳng lệnh `kubectl set image` hoặc `helm upgrade` chọc vào cụm Production.
 
-Mô hình Đẩy ({rose:Push-based CD}) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt tử huyệt bảo mật. Đó là lúc kiến trúc ==Pull-based GitOps== với {emerald:ArgoCD} và {sky:Single Source of Truth trên Git} trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
+Mô hình Đẩy (**Push-based CD**) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt điểm yếu nghiêm trọng bảo mật. Đó là lúc kiến trúc ==Pull-based GitOps== với **ArgoCD** và **Single Source of Truth trên Git** trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
 
 ```visual
 kind: illustration
@@ -20,7 +20,7 @@ callouts:
   - num: 2
     label: "Kho GitOps Config — Nguồn sự thật duy nhất"
     desc: "Tách riêng khỏi kho mã nguồn ứng dụng để tránh vòng lặp kích hoạt CI vô tận; mọi thao tác nâng cấp hay git revert đều lưu vết rõ ràng."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "ArgoCD kéo chiều ra & Tự chữa lành (selfHeal: true)"
     desc: "Nằm kín bên trong cụm K8s không cần mở tường lửa chiều vào, liên tục phát hiện sửa tay trái phép (OutOfSync) để ép cụm về đúng chuẩn Git."
@@ -102,7 +102,7 @@ steps:
     title: Container Registry
     desc: Lưu trữ bất biến bức ảnh container kèm chữ ký chứng thực nguồn gốc
     code: "ghcr.io/acme/shop-api"
-    tone: violet
+    tone: cyan
     edge: kustomize edit / yq
   - icon: folder-git
     badge: "Kho 2 · Config Repo"
@@ -199,7 +199,7 @@ items:
     lang: yaml
   - keyword: "argocd.argoproj.io/sync-wave"
     role: Điều phối thứ tự sóng triển khai
-    tone: violet
+    tone: cyan
     summary: Annotation nhận chuỗi số nguyên (mặc định `\"0\"`), thực thi tuần tự từ **số âm nhỏ nhất tăng dần lên số dương**.
     bullets:
       - "ArgoCD **đợi tất cả tài nguyên ở Wave nhỏ hơn đạt `Healthy` / `Succeeded`** rồi mới áp dụng Wave lớn hơn!"

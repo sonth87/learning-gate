@@ -4,7 +4,7 @@ Một câu hỏi PMP điển hình dài 4–6 dòng: 2 dòng đầu thường l�
 
 ```visual
 kind: flow
-title: "Phẫu thuật đề PMP trong 65 giây (4 Bước chuẩn phòng thi)"
+title: "phân tích câu hỏi PMP trong 65 giây (4 Bước chuẩn phòng thi)"
 subtitle: "Giữ nhịp trung bình 65–75 giây/câu để luôn dư 15 phút rà soát các câu gắn cờ (Flag) cuối mỗi chặng!"
 steps:
   - icon: "target"
@@ -57,7 +57,7 @@ items:
       - "Hợp tác giải quyết vấn đề (*Collaborate / Problem Solve*) luôn thắng thoả hiệp nửa vời (*Compromise*)."
   - keyword: "SHOULD HAVE done"
     role: "Quay ngược về quá khứ"
-    tone: "violet"
+    tone: "cyan"
     summary: "Sự cố đã nổ ra rồi; đề hỏi lẽ ra trước đó PM làm gì ở khâu **Initiating / Planning** thì đã **ngăn chặn** được chuyện này."
     bullets:
       - "Stakeholder phàn nàn cuối dự án → lẽ ra phải **nhận diện sớm & gắn kết từ đầu**."

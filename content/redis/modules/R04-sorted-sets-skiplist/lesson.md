@@ -118,7 +118,7 @@ items:
   - num: 3
     title: Delayed Job Scheduler
     badge: Tác vụ hẹn giờ
-    tone: violet
+    tone: cyan
     bullets:
       - "Đặt lịch gửi thông báo sau 15 phút: `ZADD delayed <now + 900s> <jobId>`."
       - "Worker quét các việc có `score <= now` hoặc gọi `ZPOPMIN` kiểm tra mốc thời gian để thực thi đúng hẹn."

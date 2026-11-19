@@ -6,7 +6,7 @@ Hãy thành thật kiểm tra xem tổ chức của bạn có đang vận hành 
 
 Nếu một ngày khoá tĩnh đó bị rò rỉ qua một Action bên thứ ba bị xâm nhập, tin tặc có thể ngồi từ bất kỳ quán cà phê nào trên thế giới dùng cặp khoá ấy đào tiền ảo hoặc xoá sạch cơ sở dữ liệu AWS của bạn suốt nhiều tuần mà không hề bị hết hạn!
 
-Chuẩn mực công nghiệp năm 2026 đã **xoá sổ hoàn toàn {rose:khoá tĩnh dài hạn} trong CI/CD** bằng giao thức liên kết danh tính ==OpenID Connect (OIDC)== ({sky:JWT ngắn hạn}) kết hợp {emerald:Chứng thực Nguồn gốc Bản dựng (Artifact Build Provenance)}.
+Chuẩn mực công nghiệp năm 2026 đã **xoá sổ hoàn toàn **khoá tĩnh dài hạn** trong CI/CD** bằng giao thức liên kết danh tính ==OpenID Connect (OIDC)== (**JWT ngắn hạn**) kết hợp **Chứng thực Nguồn gốc Bản dựng (Artifact Build Provenance)**.
 
 ```visual
 kind: illustration
@@ -24,7 +24,7 @@ callouts:
   - num: 2
     label: "Thẻ OIDC JWT khoá chặt trường sub & aud"
     desc: "Chứa chính xác tên tổ chức, kho mã nguồn và nhánh Git trong trường sub; tuyệt đối cấm cấu hình ký tự đại diện repo:* lỏng lẻo!"
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Đám mây cấp Token ngắn hạn & Chứng thực SLSA"
     desc: "AWS STS / GCP WIF đối chiếu chữ ký công khai rồi cấp quyền tạm thời tự huỷ sau <= 60 phút, kết hợp ký chứng thực nguồn gốc bản dựng."
@@ -55,7 +55,7 @@ steps:
     title: GitHub OIDC Provider
     desc: Phát hành thẻ JWT ngắn hạn chứa danh tính repo, nhánh ref, commit sha
     code: "aud: sts.amazonaws.com"
-    tone: violet
+    tone: cyan
     edge: AssumeRoleWithWebIdentity
   - icon: shield-check
     badge: "Bước 3 · Đối chiếu"
@@ -124,7 +124,7 @@ right:
 
 ---
 
-## 2. Tử huyệt cấu hình đám mây: Khoá chặt trường `sub` trong **AWS IAM Trust Policy**!
+## 2. điểm yếu nghiêm trọng cấu hình đám mây: Khoá chặt trường `sub` trong **AWS IAM Trust Policy**!
 
 > [!WARNING] Cảnh báo đỏ ở phía AWS / GCP / Azure!
 > Hàng triệu người dùng trên khắp thế giới đều dùng chung **cùng một máy chủ phát hành thẻ OIDC** là `https://token.actions.githubusercontent.com`!

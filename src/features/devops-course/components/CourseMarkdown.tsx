@@ -21,6 +21,8 @@ import {
 import type { DevOpsAccent, EditorLanguage } from '../types';
 import { VisualLessonBlock } from './VisualLessonBlocks';
 import { IllustrationFigure } from '@/components/common/IllustrationLightbox';
+import { InteractiveTermTrigger } from '@/components/common/RichTextWithTerms';
+import { findGlossaryTerm } from '@/data/glossary';
 import { cn } from '@/utils/cn';
 
 const LANG_LABEL: Record<EditorLanguage, string> = {
@@ -47,11 +49,11 @@ export const ConfigCodeView: React.FC<{
   return (
     <div
       className={cn(
-        'group relative my-3.5 overflow-hidden rounded-xl border border-slate-800 bg-slate-950 shadow-2xs',
+        'group relative my-3.5 overflow-hidden rounded-xl bg-slate-950',
         className
       )}
     >
-      <div className="flex items-center justify-between border-b border-slate-800/80 bg-slate-900/75 px-3 py-1.5">
+      <div className="flex items-center justify-between border-b border-slate-800/60 bg-slate-900/65 px-3 py-1.5">
         <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
           <Terminal className="h-3 w-3 text-slate-500" aria-hidden="true" />
           <span>{headerLabel}</span>
@@ -64,7 +66,7 @@ export const ConfigCodeView: React.FC<{
             setTimeout(() => setCopied(false), 1500);
           }}
           aria-label="Sao chép cấu hình"
-          className="inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:text-white cursor-pointer"
+          className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 transition-colors hover:bg-slate-800 hover:text-white cursor-pointer"
         >
           {copied ? (
             <>
@@ -110,21 +112,21 @@ let keySeq = 0;
 const k = () => `dk${keySeq++}`;
 
 const INLINE_TONE_CLS: Record<string, string> = {
-  sky: 'font-semibold text-sky-300 underline decoration-sky-500/45 decoration-dotted underline-offset-4',
-  cyan: 'font-semibold text-cyan-300 underline decoration-cyan-500/45 decoration-dotted underline-offset-4',
-  emerald: 'font-semibold text-emerald-300 underline decoration-emerald-500/45 decoration-dotted underline-offset-4',
-  amber: 'font-semibold text-amber-300 underline decoration-amber-500/45 decoration-dotted underline-offset-4',
-  rose: 'font-semibold text-rose-300 underline decoration-rose-500/45 decoration-dotted underline-offset-4',
-  violet: 'font-semibold text-violet-300 underline decoration-violet-500/45 decoration-dotted underline-offset-4',
+  sky: 'font-semibold text-sky-300',
+  cyan: 'font-semibold text-cyan-300',
+  emerald: 'font-semibold text-emerald-300',
+  amber: 'font-semibold text-amber-300',
+  rose: 'font-semibold text-rose-300',
+  violet: 'font-semibold text-violet-300',
 };
 
 const INLINE_BADGE_CLS: Record<string, string> = {
-  sky: 'border-sky-500/40 bg-sky-500/15 text-sky-300',
-  cyan: 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300',
-  emerald: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
-  amber: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
-  rose: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
-  violet: 'border-violet-500/40 bg-violet-500/15 text-violet-300',
+  sky: 'bg-sky-500/15 text-sky-300',
+  cyan: 'bg-cyan-500/15 text-cyan-300',
+  emerald: 'bg-emerald-500/15 text-emerald-300',
+  amber: 'bg-amber-500/15 text-amber-300',
+  rose: 'bg-rose-500/15 text-rose-300',
+  violet: 'bg-violet-500/15 text-violet-300',
 };
 
 export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): React.ReactNode[] {
@@ -146,24 +148,36 @@ export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): R
   while ((m = re.exec(src))) {
     if (m.index > last) out.push(src.slice(last, m.index));
     if (m[1] !== undefined) {
-      out.push(
-        <code
-          key={k()}
-          className={cn(
-            'rounded border border-slate-700/70 bg-slate-800/90 px-1.5 py-0.5 font-mono text-[0.86em]',
-            codeTone
-          )}
-        >
-          {m[1]}
-        </code>
-      );
+      const matched = findGlossaryTerm(m[1]);
+      if (matched) {
+        out.push(
+          <InteractiveTermTrigger
+            key={k()}
+            term={matched}
+            displayText={m[1]}
+            isCode
+          />
+        );
+      } else {
+        out.push(
+          <code
+            key={k()}
+            className={cn(
+              'rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[0.86em]',
+              codeTone
+            )}
+          >
+            {m[1]}
+          </code>
+        );
+      }
     } else if (m[2] !== undefined) {
       const hasMacCmd = m[2].includes('⌘');
       out.push(
         <kbd
           key={k()}
           className={cn(
-            'rounded border border-slate-600 bg-slate-800 px-1.5 font-mono text-[0.8em] text-slate-200',
+            'rounded border border-slate-700 bg-slate-800 px-1.5 font-mono text-[0.8em] text-slate-200',
             hasMacCmd && 'hidden sm:inline-block'
           )}
         >
@@ -192,7 +206,7 @@ export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): R
         <span
           key={k()}
           className={cn(
-            'mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide align-middle',
+            'mx-0.5 inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide align-middle',
             INLINE_BADGE_CLS[badgeTone] ?? INLINE_BADGE_CLS.sky
           )}
         >
@@ -206,11 +220,22 @@ export function renderCourseInline(src: string, accent: DevOpsAccent = 'sky'): R
         </span>
       );
     } else if (m[8] !== undefined) {
-      out.push(
-        <strong key={k()} className="font-semibold text-white">
-          {renderCourseInline(m[8], accent)}
-        </strong>
-      );
+      const matched = findGlossaryTerm(m[8]);
+      if (matched) {
+        out.push(
+          <InteractiveTermTrigger
+            key={k()}
+            term={matched}
+            displayText={m[8]}
+          />
+        );
+      } else {
+        out.push(
+          <strong key={k()} className="font-semibold text-white">
+            {renderCourseInline(m[8], accent)}
+          </strong>
+        );
+      }
     } else if (m[9] !== undefined) {
       out.push(<em key={k()}>{renderCourseInline(m[9], accent)}</em>);
     } else if (m[10] !== undefined) {
@@ -305,38 +330,38 @@ const CALLOUT_STYLES: Record<
   }
 > = {
   analogy: {
-    defaultTitle: 'Hãy hình dung như sau',
-    wrapper: 'border border-indigo-500/40 bg-indigo-500/[0.07] rounded-xl',
-    titleCls: 'text-indigo-300',
+    defaultTitle: 'Mô hình tư duy',
+    wrapper: 'border-l-4 border-sky-500/70 bg-sky-500/[0.07] rounded-r-xl',
+    titleCls: 'text-sky-300',
     icon: Lightbulb,
   },
   tip: {
-    defaultTitle: 'Mẹo thực chiến Production',
-    wrapper: 'border-2 border-dashed border-emerald-500/45 bg-emerald-500/[0.06] rounded-xl',
+    defaultTitle: 'Khuyên dùng (Best Practice)',
+    wrapper: 'border-l-4 border-emerald-500/70 bg-emerald-500/[0.06] rounded-r-xl',
     titleCls: 'text-emerald-300',
     icon: Sparkles,
   },
   warning: {
-    defaultTitle: 'Bẫy cấu hình & cảnh báo quan trọng',
-    wrapper: 'border border-rose-500/45 bg-rose-500/[0.07] rounded-xl',
+    defaultTitle: 'Lỗi thường gặp & Cảnh báo',
+    wrapper: 'border-l-4 border-rose-500/70 bg-rose-500/[0.07] rounded-r-xl',
     titleCls: 'text-rose-300',
     icon: ShieldAlert,
   },
   important: {
-    defaultTitle: 'Nguyên tắc cốt lõi cần nắm',
-    wrapper: 'border border-sky-500/40 bg-sky-500/[0.07] rounded-xl',
+    defaultTitle: 'Nguyên tắc cốt lõi',
+    wrapper: 'border-l-4 border-sky-500/70 bg-sky-500/[0.07] rounded-r-xl',
     titleCls: 'text-sky-300',
     icon: Target,
   },
   remember: {
-    defaultTitle: 'Ghi nhớ bỏ túi',
-    wrapper: 'border border-amber-500/45 bg-amber-500/[0.07] rounded-xl',
+    defaultTitle: 'Lưu ý & Tóm tắt',
+    wrapper: 'border-l-4 border-amber-500/70 bg-amber-500/[0.07] rounded-r-xl',
     titleCls: 'text-amber-300',
     icon: BookmarkCheck,
   },
   quote: {
     defaultTitle: '',
-    wrapper: 'border-l-4 border-sky-500/70 bg-slate-900/80 rounded-r-xl',
+    wrapper: 'border-l-4 border-sky-500/70 bg-slate-900/70 rounded-r-xl',
     titleCls: 'text-sky-300',
     icon: Lightbulb,
   },
@@ -485,14 +510,14 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
       const rows: string[][] = [];
       while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(splitCells(lines[i++]));
       out.push(
-        <div key={k()} className="my-4 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50 shadow-2xs">
+        <div key={k()} className="my-4 overflow-x-auto rounded-xl bg-slate-950/60">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-slate-900/95">
+            <thead className="bg-slate-900/80">
               <tr>
                 {head.map((h, j) => (
                   <th
                     key={j}
-                    className="border-b border-slate-800 px-3.5 py-2.5 text-left font-mono text-xs font-bold uppercase tracking-wide text-slate-200"
+                    className="border-b border-slate-800/70 px-3.5 py-2.5 text-left font-mono text-xs font-bold uppercase tracking-wide text-slate-200"
                   >
                     {renderCourseInline(h, accent)}
                   </th>
@@ -501,7 +526,7 @@ function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
             </thead>
             <tbody>
               {rows.map((r, j) => (
-                <tr key={j} className="border-b border-slate-800/60 transition-colors hover:bg-slate-900/50 last:border-0">
+                <tr key={j} className="border-b border-slate-800/40 transition-colors hover:bg-slate-900/40 last:border-0">
                   {r.map((c, n) => (
                     <td key={n} className="px-3.5 py-2.5 align-top text-slate-300 leading-relaxed">
                       {renderCourseInline(c, accent)}

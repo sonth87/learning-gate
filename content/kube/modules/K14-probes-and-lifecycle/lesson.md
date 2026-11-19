@@ -7,7 +7,7 @@ Một trong những ngộ nhận phổ biến nhất của lập trình viên m�
 - [!] Ứng dụng có thể mất thêm 8 giây đầu để kết nối PostgreSQL, nạp bộ nhớ đệm Redis hoặc khởi tạo Prisma Client — nếu khách hàng bị đẩy vào ngay giây thứ 1, họ sẽ ăn trọn lỗi **`502 Bad Gateway`**!
 - [!] Tệ hơn, sau 3 ngày chạy liên tục, tiến trình Node.js có thể bị treo vòng lặp sự kiện (*Event Loop* nghẽn cứng hoặc *Deadlock* kết nối) khiến mọi HTTP request quay vòng vô tận dù tiến trình chưa hề thoát (`Running` giả tạo)!
 
-Để Kubernetes thực sự hiểu được "nhịp tim" bên trong ứng dụng, chúng ta trang bị **3 cảm biến thăm dò sức khoẻ ({sky:`startupProbe`}, {emerald:`readinessProbe`}, {rose:`livenessProbe`})** kết hợp cùng quy trình ==Graceful Shutdown (`preStop` + `SIGTERM`)==.
+Để Kubernetes thực sự hiểu được "nhịp tim" bên trong ứng dụng, chúng ta trang bị **3 cảm biến thăm dò sức khoẻ (`startupProbe`, `readinessProbe`, `livenessProbe`)** kết hợp cùng quy trình ==Graceful Shutdown (`preStop` + `SIGTERM`)==.
 
 ```visual
 kind: illustration
@@ -75,7 +75,7 @@ items:
     footer: Cấu hình sai sẽ gây bão khởi động lại toàn cụm!
 ```
 
-## 2. Cạm bẫy chết người số 1 trên Production: Gắn kiểm tra Database vào `livenessProbe`!
+## 2. Cạm lỗi nghiêm trọng cần tránh số 1 trên Production: Gắn kiểm tra Database vào `livenessProbe`!
 
 Hãy tưởng tượng kịch bản thảm hoạ từng đánh sập hàng loạt hệ thống lớn khi dùng chung một endpoint `/health` truy vấn `SELECT 1` xuống PostgreSQL cho cả `readinessProbe` lẫn `livenessProbe` (với `timeoutSeconds: 1`):
 
@@ -102,7 +102,7 @@ left:
   lang: yaml
   bullets:
     - "PostgreSQL hoặc cổng thanh toán đối tác chỉ lag nhẹ vài giây cũng làm `livenessProbe` thất bại"
-    - "K8s tự tay bắn hạ toàn bộ dàn API đang sống khoẻ, gây bão kết nối **Thundering Herd** lúc bật lại"
+    - "K8s tự tay dừng tiến trình (kill) toàn bộ dàn API đang sống khoẻ, gây bão kết nối **Thundering Herd** lúc bật lại"
 right:
   badge: "CÁCH CHUẨN · Cô Lập Sự Cố"
   title: "/healthz nội tại nhẹ nhàng · /readyz kiểm tra kết nối"

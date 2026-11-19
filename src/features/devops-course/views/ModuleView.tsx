@@ -233,7 +233,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
       {/* Study Sheet Visual Hero Header */}
       <header
         className={cn(
-          'mb-5 rounded-2xl border bg-gradient-to-br p-4 sm:p-6 shadow-sm',
+          'mb-5 rounded-2xl bg-gradient-to-br p-4 sm:p-6',
           brand.heroGrad
         )}
       >
@@ -241,14 +241,14 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 font-mono text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider',
                 brand.badgeCls
               )}
             >
               {brand.icon}
               <span>{brand.label}</span>
             </span>
-            <span className="rounded-md border border-amber-400/45 bg-amber-400/18 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-200">
+            <span className="rounded-md bg-amber-400/18 px-2 py-0.5 font-mono text-xs font-extrabold text-amber-200">
               {m.id}
             </span>
             <span className="font-mono text-xs text-slate-400">
@@ -276,7 +276,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
             {m.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md border border-slate-700/80 bg-slate-950/70 px-2 py-0.5 font-mono text-[11px] text-slate-300"
+                className="rounded-md bg-slate-950/65 px-2 py-0.5 font-mono text-[11px] text-slate-300"
               >
                 #{tag}
               </span>
@@ -286,9 +286,9 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
 
         {/* Quick Section Jump Pills */}
         {sections.length > 0 && (
-          <div className="mt-4 border-t border-slate-800/80 pt-3">
+          <div className="mt-4 border-t border-slate-800/60 pt-3">
             <div className="mb-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Bản đồ mục lục nhanh trong bài ({sections.length} phần)
+              Mục lục bài học ({sections.length} phần)
             </div>
             <div className="flex flex-wrap gap-1.5">
               {sections.map((sec) => (
@@ -296,10 +296,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                   key={sec.id}
                   type="button"
                   onClick={() => jumpToSection(sec.id)}
-                  className={cn(
-                    'inline-flex min-h-[32px] items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1 text-left text-xs text-slate-300 transition-colors hover:text-white cursor-pointer',
-                    hoverBorder
-                  )}
+                  className="inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-slate-950/75 px-2.5 py-1 text-left text-xs text-slate-300 transition-colors hover:bg-slate-950 hover:text-white cursor-pointer"
                 >
                   <span className={cn('font-mono text-[11px] font-extrabold', codeTone)}>{sec.num}.</span>
                   <span className="line-clamp-1 max-w-[240px]">{sec.title}</span>
@@ -316,13 +313,13 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
           !wideMode && 'xl:grid-cols-[minmax(0,1fr)_380px]'
         )}
       >
-        <article className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/55 p-4 sm:p-6 lg:p-7 shadow-xs">
+        <article className="min-w-0 rounded-2xl bg-slate-900/45 p-4 sm:p-6 lg:p-7">
           <CourseMarkdown source={m.lesson} accent={accent} />
 
           {m.sources.length > 0 && (
-            <div className="mt-7 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 text-xs text-slate-400">
+            <div className="mt-7 rounded-xl bg-slate-950/55 p-3.5 text-xs text-slate-400">
               <div className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Nguồn tài liệu chính thức & phiên bản (2026)
+                Tài liệu tham khảo chính thức
               </div>
               <ul className="space-y-1">
                 {m.sources.map((src) => (
@@ -496,10 +493,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                     key={`${tool.kind}-${tool.targetId}-${i}`}
                     type="button"
                     onClick={() => onOpenRelatedTool(tool)}
-                    className={cn(
-                      'block min-h-[44px] w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-left transition-colors cursor-pointer',
-                      hoverBorder
-                    )}
+                    className="block min-h-[44px] w-full rounded-lg bg-slate-950/65 px-3 py-2 text-left transition-colors hover:bg-slate-950 cursor-pointer"
                   >
                     <div className="flex items-center justify-between gap-2 text-sm font-medium text-slate-100">
                       <span>{tool.label}</span>
@@ -520,10 +514,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                 return (
                   <div
                     key={e.id}
-                    className={cn(
-                      'flex items-stretch justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/70 p-3 transition-colors',
-                      hoverBorder
-                    )}
+                    className="flex items-stretch justify-between gap-2 rounded-xl bg-slate-900/65 p-3 transition-colors hover:bg-slate-900"
                   >
                     <button
                       type="button"
@@ -566,7 +557,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                           type="button"
                           onClick={() => toggleSkipExercise(e.id)}
                           title={st === 'skipped' ? 'Hoàn tác bỏ qua' : 'Bỏ qua bài này'}
-                          className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 hover:border-slate-500 hover:text-white cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 hover:text-white cursor-pointer"
                         >
                           {st === 'skipped' ? <Undo2 className="h-2.5 w-2.5" /> : <SkipForward className="h-2.5 w-2.5" />}
                           <span>{st === 'skipped' ? 'Hoàn tác' : 'Bỏ qua'}</span>
@@ -593,10 +584,10 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                       type="button"
                       disabled={!item}
                       onClick={() => item && go({ name: 'read', n: item.n })}
-                      className="block min-h-[52px] w-full rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-left transition-colors hover:border-sky-500/60 disabled:cursor-default cursor-pointer"
+                      className="block min-h-[52px] w-full rounded-xl bg-slate-900/65 p-3 text-left transition-colors hover:bg-slate-900 disabled:cursor-default cursor-pointer"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${k.cls}`}>{k.label}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${k.cls}`}>{k.label}</span>
                         <span className="break-all text-sm font-medium text-sky-300">{r.path}</span>
                         {st !== 'todo' && <Pill>{CATALOG_STATUS_LABEL[st]}</Pill>}
                       </div>

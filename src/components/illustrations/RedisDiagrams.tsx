@@ -167,12 +167,11 @@ const DiagramShell: React.FC<ShellProps> = ({
         </marker>
       </defs>
 
-      <rect x="1" y="1" width="878" height="398" rx="12" fill={t.bg} stroke={t.border} strokeWidth="1.5" />
-      <rect x="1" y="1" width="878" height="44" rx="12" fill={t.panelAlt} />
-      <rect x="1" y="33" width="878" height="12" fill={t.panelAlt} />
-      <line x1="1" y1="45" x2="879" y2="45" stroke={t.border} strokeWidth="1" />
+      <rect x="0" y="0" width="880" height="400" rx="12" fill={t.bg} />
+      <rect x="0" y="0" width="880" height="44" rx="12" fill={t.panelAlt} />
+      <rect x="0" y="33" width="880" height="12" fill={t.panelAlt} />
 
-      <rect x="14" y="11" width="68" height="22" rx="5" fill={t.redBg} stroke={t.redBorder} strokeWidth="1" />
+      <rect x="14" y="11" width="68" height="22" rx="5" fill={t.redBg} />
       <text x="48" y="26" textAnchor="middle" fontFamily={MONO} fontSize="11" fontWeight="700" fill={t.redInk}>
         {code}
       </text>

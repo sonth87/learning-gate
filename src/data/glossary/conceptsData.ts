@@ -396,4 +396,112 @@ export const CONCEPTS_GLOSSARY: GlossaryTerm[] = [
     jsEquivalent: 'Thư viện decimal.js / big.js trong JS',
     relatedTerms: ['kw-is', 'eco-pydantic'],
   },
+  {
+    id: 'concept-strong-typing',
+    term: 'Strong Typing',
+    aliases: ['Dynamic Typing', 'Type Casting', 'Explicit Conversion'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary: 'Python là ngôn ngữ kiểu động nhưng mạnh (Dynamic & Strong Typing): biến không cố định kiểu, nhưng giá trị không tự động ép kiểu ngầm giữa các kiểu khác bản chất.',
+    detailedExplanation:
+      'Strong Typing nghĩa là Python không tự đổi chuỗi sang số hay ngược lại khi thực hiện phép toán (ví dụ `"5" + 3` báo lỗi `TypeError` ngay lập tức). Muốn chuyển đổi, bạn phải gọi hàm constructor tường minh như `int("5")`, `float("3.5")`, hoặc `str(3)`.',
+    analogy:
+      'Giống như ổ cắm điện có chốt an toàn: phích cắm 3 chân không thể tự ép nhét vào ổ 2 chân mà phải dùng đầu chuyển đổi rõ ràng.',
+    syntaxExample: `age_str = "20"\n# age_str + 1  -> TypeError!\nage = int(age_str) + 1  # 21\nlabel = "Tuổi: " + str(age)`,
+    commonGotcha:
+      '`int("3.5")` sẽ báo lỗi `ValueError` vì chuỗi chứa dấu chấm thập phân. Phải chuyển qua `float("3.5")` trước rồi mới ép sang `int(float("3.5"))`.',
+    jsEquivalent: 'Khác hẳn JavaScript (Weak Typing: "5" + 3 tự thành "53", "5" - 3 tự thành 2)',
+    relatedTerms: ['fn-int', 'fn-str', 'fn-float', 'fn-isinstance'],
+  },
+  {
+    id: 'concept-short-circuit',
+    term: 'Short-Circuit Evaluation',
+    aliases: ['Short-Circuit', 'Truthy', 'Falsy', 'Truthy / Falsy'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary: 'Toán tử `and` và `or` dừng đánh giá ngay khi đã biết chắc kết quả, và trả về chính giá trị quyết định đó (không chỉ trả về True/False).',
+    detailedExplanation:
+      'Trong Python, mọi giá trị đều là Truthy ngoại trừ nhóm Falsy (`False`, `None`, `0`, `0.0`, `""`, `[]`, `{}`, `set()`, `()`). Toán tử `a and b` trả về `a` ngay nếu `a` là Falsy, ngược lại trả về `b`. Toán tử `a or b` trả về `a` ngay nếu `a` là Truthy, ngược lại trả về `b`.',
+    analogy:
+      'Đi qua 2 trạm kiểm soát (`and`): nếu trạm 1 đã đóng cửa (Falsy) thì quay về luôn không cần đi tới trạm 2.',
+    syntaxExample: `# Bảo vệ phép chia cho 0 nhờ Short-Circuit:\nif count > 0 and (total / count) > 5:\n    print("Đạt")\n\n# Giá trị mặc định khi nickname rỗng (""):\ndisplay_name = nickname or "Khách"`,
+    commonGotcha:
+      'Trong Python, list rỗng `[]` và dict rỗng `{}` đều là Falsy! Ngoài ra viết `if x == "a" or "b":` luôn luôn đúng vì `"b"` là chuỗi không rỗng (Truthy) — phải viết `if x in ("a", "b"):`.',
+    jsEquivalent: 'Tương tự && và || trong JS, nhưng trong JS [] và {} lại là Truthy!',
+    relatedTerms: ['kw-and', 'kw-or', 'kw-not', 'fn-bool'],
+  },
+  {
+    id: 'concept-slicing',
+    term: 'Slicing',
+    aliases: ['Slice Notation'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary: 'Cú pháp cắt lát `seq[start:stop:step]` trích xuất một phần của chuỗi, list hoặc tuple trong khoảng `[start, stop)` (dừng trước `stop`).',
+    detailedExplanation:
+      'Python đánh chỉ số 2 chiều: từ trái sang phải (`0 .. n-1`) và từ phải sang trái (`-1 .. -n`). Khi cắt lát `s[start:stop:step]`, nếu bỏ trống `start` sẽ lấy từ đầu, bỏ trống `stop` sẽ lấy đến hết, và `step = -1` (`s[::-1]`) giúp đảo ngược dãy.',
+    analogy:
+      'Đặt hai lưỡi dao tại vạch số `start` và vạch số `stop` trên thước đo để lấy phần nằm giữa hai lưỡi dao.',
+    syntaxExample: `s = "PYTHON"\nprint(s[1:4])   # "YTH" (lấy index 1, 2, 3 - dừng trước 4)\nprint(s[:3])    # "PYT"\nprint(s[-2:])   # "ON"\nprint(s[::-1])  # "NOHTYP" (đảo ngược)`,
+    commonGotcha:
+      'Truy cập đơn lẻ vượt độ dài `s[99]` sẽ báo lỗi `IndexError`, nhưng Slicing vượt độ dài `s[0:99]` hoàn toàn không báo lỗi mà tự cắt đến hết dãy!',
+    jsEquivalent: 'str.slice(start, stop) / arr.slice(start, stop)',
+    relatedTerms: ['fn-slice', 'type-str', 'type-list'],
+  },
+  {
+    id: 'concept-mutable-immutable',
+    term: 'Mutable vs Immutable',
+    aliases: ['Mutable', 'Immutable'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary: 'Phân loại đối tượng có thể sửa đổi nội dung tại chỗ (Mutable: `list`, `dict`, `set`) và đối tượng bất biến sau khi tạo (Immutable: `int`, `float`, `str`, `tuple`).',
+    detailedExplanation:
+      'Với đối tượng Immutable (`str`, `int`, `tuple`), mọi thao tác "sửa" thực chất đều tạo ra một Object mới ở địa chỉ RAM mới. Với đối tượng Mutable (`list`, `dict`, `set`), các phương thức như `.append()` sửa trực tiếp bên trong Object hiện tại nên mọi biến cùng trỏ vào nó đều thấy sự thay đổi.',
+    analogy:
+      'Immutable giống như chữ khắc trên đá (muốn sửa phải đục tấm bia mới); Mutable giống như chữ viết trên bảng trắng (xóa đi viết thêm ngay trên tấm bảng cũ).',
+    syntaxExample: `# str là Immutable:\ns = "hello"\n# s[0] = "H"  -> TypeError!\ns = "H" + s[1:]  # Tạo chuỗi mới\n\n# list là Mutable:\nitems = [1, 2]\nitems.append(3)  # Sửa trực tiếp tại chỗ`,
+    commonGotcha:
+      'Chỉ các đối tượng Immutable (và không chứa phần tử Mutable bên trong) mới có mã băm (`Hashable`) để dùng làm key cho `dict` hoặc phần tử của `set`.',
+    jsEquivalent: 'Primitive values (Immutable) vs Object/Array (Mutable)',
+    relatedTerms: ['concept-pass-by-object-ref', 'fn-hash', 'type-tuple', 'type-list'],
+  },
+  {
+    id: 'concept-legb',
+    term: 'LEGB Scope',
+    aliases: ['LEGB', 'Variable Scope'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-2',
+    shortSummary: 'Thứ tự 4 tầng Python tìm kiếm tên biến từ trong ra ngoài: Local -> Enclosing -> Global -> Built-in.',
+    detailedExplanation:
+      'Khi gặp một tên biến, Python tra cứu theo thứ tự: (L) Local — biến cục bộ trong hàm hiện tại; (E) Enclosing — biến của hàm bao ngoài (Closure); (G) Global — biến ở cấp file/module; (B) Built-in — các hàm/lỗi dựng sẵn của Python (`len`, `print`, `ValueError`).',
+    analogy:
+      'Tìm đồ dùng: tìm trên bàn làm việc của mình trước (Local) -> tìm trong phòng nhóm (Enclosing) -> tìm ở sảnh công ty (Global) -> tìm ở kho tiện ích tòa nhà (Built-in).',
+    syntaxExample: `count = 10  # Global\n\ndef outer():\n    tag = "A"  # Enclosing\n    def inner():\n        x = 1  # Local\n        print(x, tag, count, len)  # L -> E -> G -> B`,
+    commonGotcha:
+      'Nếu trong hàm có bất kỳ dòng nào gán `count = count + 1`, Python tự coi `count` là biến Local của hàm đó và ném lỗi `UnboundLocalError` nếu đọc trước khi gán (trừ khi khai báo `global count` hoặc `nonlocal`).',
+    jsEquivalent: 'Lexical Scope Chain trong JS',
+    relatedTerms: ['kw-global', 'kw-nonlocal', 'concept-closure'],
+  },
+  {
+    id: 'concept-eafp',
+    term: 'EAFP',
+    aliases: ['LBYL', 'EAFP vs LBYL'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-2',
+    shortSummary: 'Phong cách code chuẩn Python (Easier to Ask for Forgiveness than Permission): cứ thực thi trong khối `try`, nếu gặp lỗi thì xử lý ở `except`.',
+    detailedExplanation:
+      'Ngược với LBYL (Look Before You Leap — kiểm tra nhiều điều kiện `if` trước khi làm), phong cách EAFP thực hiện thao tác trực tiếp rồi bắt đúng Exception cụ thể (`KeyError`, `FileNotFoundError`, `ValueError`). Cách này giúp code gọn hơn và tránh lỗi Race Condition khi thao tác file/mạng.',
+    analogy:
+      'Thay vì gọi điện hỏi bảo vệ xem cửa có khóa không rồi mới đi tới (lúc tới nơi cửa có thể đã khóa), bạn cứ bước tới vặn tay nắm cửa (`try`), nếu khóa thì dùng chìa mở (`except`).',
+    syntaxExample: `# Chuẩn EAFP khi mở file hoặc ép kiểu:\ntry:\n    value = int(raw_input)\nexcept ValueError:\n    value = 0`,
+    commonGotcha:
+      'Khi áp dụng EAFP, luôn bắt đích danh lỗi dự kiến (`except ValueError:`), tuyệt đối không dùng `except:` trống vì sẽ nuốt luôn cả lỗi gõ sai tên biến (`NameError`) hay phím `Ctrl+C` (`KeyboardInterrupt`).',
+    jsEquivalent: 'try { JSON.parse(str) } catch (e) {}',
+    relatedTerms: ['kw-try', 'kw-except', 'kw-raise'],
+  },
 ];

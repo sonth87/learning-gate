@@ -5,7 +5,7 @@ Khi phát triển ứng dụng Node.js trên máy cá nhân, bạn thường t�
 - [!] Bạn **không thể** đóng cứng chuỗi kết nối Database hay địa chỉ CORS vào bên trong Container Image bằng `ENV` của Dockerfile (vì mỗi môi trường mỗi khác!).
 - [!] Bạn càng **tuyệt đối không được** nhét mật khẩu cơ sở dữ liệu hay khoá ký JWT vào Dockerfile hay kho Git công khai.
 
-Theo triết lý **12-Factor App**, Kubernetes tách bạch cấu hình thành cặp bài trùng: {sky:`ConfigMap`} cho các thông số công khai thông thường và {amber:`Secret`} cho các dữ liệu nhạy cảm.
+Theo triết lý **12-Factor App**, Kubernetes tách bạch cấu hình thành cặp bài trùng: `ConfigMap` cho các thông số công khai thông thường và `Secret` cho các dữ liệu nhạy cảm.
 
 ```visual
 kind: groups
@@ -51,7 +51,7 @@ callouts:
   - num: 2
     label: "Cơ chế env / envFrom — Đóng băng lúc khởi chạy"
     desc: "Biến nạp vào process.env không tự đổi khi sửa ConfigMap trên cụm; bắt buộc chạy kubectl rollout restart để nhận giá trị mới."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Gắn Volume chỉ đọc trên tmpfs — Tự động đồng bộ"
     desc: "Secret gắn dạng tệp nằm trên bộ nhớ RAM (tmpfs) không chạm ổ cứng và được kubelet tự động đồng bộ lại sau khoảng 60 giây."
@@ -147,7 +147,7 @@ items:
     icon: database
     title: Encryption at Rest cho etcd
     badge: Bảo vệ ổ cứng Control Plane
-    tone: violet
+    tone: cyan
     bullets:
       - "Bật chế độ mã hoá dữ liệu `Secret` trước khi ghi xuống đĩa của `etcd` bằng khoá phần cứng đám mây (**AWS KMS / GCP KMS / Azure Key Vault**)"
   - num: 2

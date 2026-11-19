@@ -11,6 +11,8 @@ import { PmpDecisionTreeView } from '@/features/pmp-course/views/PmpDecisionTree
 import { PmpLookupView } from '@/features/pmp-course/views/PmpLookupView';
 import { PmpHeader } from './components/PmpHeader';
 import { PmpMobileBottomNav } from './components/PmpMobileBottomNav';
+import { TermPopover } from '@/components/common/TermPopover';
+import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { cn } from '@/utils/cn';
 
 export interface PmpMasteryAppProps {
@@ -21,6 +23,7 @@ export interface PmpMasteryAppProps {
 export const PmpMasteryApp: React.FC<PmpMasteryAppProps> = ({ windowId }) => {
   const { activeTab, setActiveTab, setSearchOpen, previewLink, closeQuickPreview } = usePmpAppStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
+  const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydratePmp = usePmpProgress((s) => s.hydrate);
   const markVisited = usePmpProgress((s) => s.markEvidenceVisited);
   const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
@@ -51,6 +54,7 @@ export const PmpMasteryApp: React.FC<PmpMasteryAppProps> = ({ windowId }) => {
 
   return (
     <div
+      onClick={() => hideTermPopover(false)}
       className={cn(
         'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
         isLight ? 'pylearn-light' : 'pylearn-dark'
@@ -83,6 +87,8 @@ export const PmpMasteryApp: React.FC<PmpMasteryAppProps> = ({ windowId }) => {
         onClose={closeQuickPreview}
         onVisited={markVisited}
       />
+      <TermPopover />
+      <NotesDrawer />
       <SettingsModal />
     </div>
   );

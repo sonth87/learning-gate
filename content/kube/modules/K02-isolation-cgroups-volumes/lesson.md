@@ -1,6 +1,6 @@
 # Cô lập Kernel, Khoá trần RAM (OOM 137), Mạng riêng & Lưu trữ bền vững
 
-Nhiều người lầm tưởng Docker là một "chiếc hộp ảo hoá phép thuật", nhưng thực chất toàn bộ sức mạnh của Container được xây dựng trên hai cơ chế nguyên bản có sẵn trong nhân hệ điều hành **Linux Kernel**: ==Namespaces== ({sky:cô lập tầm nhìn}) và ==Control Groups (`cgroups`)== ({amber:khoá trần tài nguyên}). Hiểu thấu hai trụ cột này, bạn không chỉ làm chủ Docker mà còn nắm trọn gốc rễ cách **Kubernetes** điều phối hàng nghìn Pod sau này!
+Nhiều người lầm tưởng Docker là một "chiếc hộp ảo hoá phép thuật", nhưng thực chất toàn bộ sức mạnh của Container được xây dựng trên hai cơ chế nguyên bản có sẵn trong nhân hệ điều hành **Linux Kernel**: ==Namespaces== (**cô lập tầm nhìn**) và ==Control Groups (`cgroups`)== (**khoá trần tài nguyên**). Hiểu thấu hai trụ cột này, bạn không chỉ làm chủ Docker mà còn nắm trọn gốc rễ cách **Kubernetes** điều phối hàng nghìn Pod sau này!
 
 ```visual
 kind: illustration
@@ -66,7 +66,7 @@ columns:
       - label: "Block I/O & PIDs Limit"
         sub: "Ngăn một container đọc/ghi đĩa quá mức hoặc fork bomb làm treo hệ thống"
         note: Bảo vệ Host
-        tone: violet
+        tone: cyan
     footer: "Trả lời câu hỏi: Tiến trình được phép TIÊU THỤ TỐI ĐA bao nhiêu?"
 ```
 
@@ -110,7 +110,7 @@ steps:
     title: SIGKILL (Signal 9)
     desc: Ngắt điện tiến trình tức khắc, không thể bắt hay trì hoãn trong code JS
     code: "SIGKILL = 9"
-    tone: violet
+    tone: cyan
     edge: "128 + 9"
   - icon: alert
     badge: Bước 4 · Dấu vết để lại

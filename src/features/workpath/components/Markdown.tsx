@@ -12,6 +12,8 @@ import {
   Target,
 } from 'lucide-react';
 import { useStore } from '@sonth87/device-layout';
+import { findGlossaryTerm } from '@/data/glossary';
+import { InteractiveTermTrigger } from '@/components/common/RichTextWithTerms';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { VisualLessonBlock } from '@/features/devops-course/components/VisualLessonBlocks';
 import { IllustrationFigure } from '@/components/common/IllustrationLightbox';
@@ -29,9 +31,9 @@ export const CodeView: React.FC<{
   const [copied, setCopied] = useState(false);
   const lines = code.replace(/\n$/, '').split('\n');
   return (
-    <div className={cn('group relative my-3 overflow-hidden rounded-xl border border-slate-800 bg-slate-950', className)}>
+    <div className={cn('group relative my-3 overflow-hidden rounded-xl bg-slate-950', className)}>
       {label && (
-        <div className="border-b border-slate-800/80 bg-slate-900/75 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        <div className="border-b border-slate-800/60 bg-slate-900/60 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
           {label}
         </div>
       )}
@@ -43,7 +45,7 @@ export const CodeView: React.FC<{
           setTimeout(() => setCopied(false), 1500);
         }}
         aria-label="Sao chép code"
-        className="absolute right-2 top-2 z-10 rounded-md border border-slate-700 bg-slate-900/90 p-1 text-slate-400 opacity-0 transition-opacity hover:text-white group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer"
+        className="absolute right-2 top-2 z-10 rounded-md bg-slate-900/90 p-1 text-slate-400 opacity-0 transition-opacity hover:text-white group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer"
       >
         {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
@@ -73,21 +75,21 @@ let keySeq = 0;
 const k = () => `k${keySeq++}`;
 
 const INLINE_TONE_CLS: Record<string, string> = {
-  emerald: 'font-semibold text-emerald-300 underline decoration-emerald-500/45 decoration-dotted underline-offset-4',
-  sky: 'font-semibold text-sky-300 underline decoration-sky-500/45 decoration-dotted underline-offset-4',
-  cyan: 'font-semibold text-cyan-300 underline decoration-cyan-500/45 decoration-dotted underline-offset-4',
-  amber: 'font-semibold text-amber-300 underline decoration-amber-500/45 decoration-dotted underline-offset-4',
-  rose: 'font-semibold text-rose-300 underline decoration-rose-500/45 decoration-dotted underline-offset-4',
-  violet: 'font-semibold text-violet-300 underline decoration-violet-500/45 decoration-dotted underline-offset-4',
+  emerald: 'font-semibold text-emerald-300',
+  sky: 'font-semibold text-sky-300',
+  cyan: 'font-semibold text-cyan-300',
+  amber: 'font-semibold text-amber-300',
+  rose: 'font-semibold text-rose-300',
+  violet: 'font-semibold text-violet-300',
 };
 
 const INLINE_BADGE_CLS: Record<string, string> = {
-  emerald: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
-  sky: 'border-sky-500/40 bg-sky-500/15 text-sky-300',
-  cyan: 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300',
-  amber: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
-  rose: 'border-rose-500/40 bg-rose-500/15 text-rose-300',
-  violet: 'border-violet-500/40 bg-violet-500/15 text-violet-300',
+  emerald: 'bg-emerald-500/15 text-emerald-300',
+  sky: 'bg-sky-500/15 text-sky-300',
+  cyan: 'bg-cyan-500/15 text-cyan-300',
+  amber: 'bg-amber-500/15 text-amber-300',
+  rose: 'bg-rose-500/15 text-rose-300',
+  violet: 'bg-violet-500/15 text-violet-300',
 };
 
 export function renderInline(src: string): React.ReactNode[] {
@@ -99,14 +101,19 @@ export function renderInline(src: string): React.ReactNode[] {
   while ((m = re.exec(src))) {
     if (m.index > last) out.push(src.slice(last, m.index));
     if (m[1] !== undefined) {
-      out.push(
-        <code key={k()} className="rounded border border-slate-700/60 bg-slate-800/90 px-1.5 py-0.5 font-mono text-[0.88em] text-emerald-300">
-          {m[1]}
-        </code>
-      );
+      const matched = findGlossaryTerm(m[1]);
+      if (matched) {
+        out.push(<InteractiveTermTrigger key={k()} term={matched} displayText={m[1]} isCode />);
+      } else {
+        out.push(
+          <code key={k()} className="rounded bg-slate-800/90 px-1.5 py-0.5 font-mono text-[0.88em] text-emerald-300">
+            {m[1]}
+          </code>
+        );
+      }
     } else if (m[2] !== undefined) {
       out.push(
-        <kbd key={k()} className="rounded border border-slate-600 bg-slate-800 px-1.5 font-mono text-[0.8em] text-slate-200">
+        <kbd key={k()} className="rounded border border-slate-700 bg-slate-800 px-1.5 font-mono text-[0.8em] text-slate-200">
           {m[2]}
         </kbd>
       );
@@ -122,7 +129,7 @@ export function renderInline(src: string): React.ReactNode[] {
         <span
           key={k()}
           className={cn(
-            'mx-0.5 inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide align-middle',
+            'mx-0.5 inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide align-middle',
             INLINE_BADGE_CLS[badgeTone] ?? INLINE_BADGE_CLS.emerald
           )}
         >
@@ -136,11 +143,20 @@ export function renderInline(src: string): React.ReactNode[] {
         </span>
       );
     } else if (m[8] !== undefined) {
-      out.push(
-        <strong key={k()} className="font-semibold text-white">
-          {renderInline(m[8])}
-        </strong>
-      );
+      const matched = findGlossaryTerm(m[8]);
+      if (matched) {
+        out.push(
+          <strong key={k()} className="font-semibold">
+            <InteractiveTermTrigger term={matched} displayText={m[8]} />
+          </strong>
+        );
+      } else {
+        out.push(
+          <strong key={k()} className="font-semibold text-white">
+            {renderInline(m[8])}
+          </strong>
+        );
+      }
     } else if (m[9] !== undefined) {
       out.push(<em key={k()}>{renderInline(m[9])}</em>);
     } else if (m[10] !== undefined) {
@@ -183,32 +199,32 @@ const PY_CALLOUT_STYLES: Record<
   }
 > = {
   analogy: {
-    defaultTitle: 'Hãy hình dung như sau',
-    wrapper: 'border border-indigo-500/40 bg-indigo-500/[0.07] rounded-xl',
-    titleCls: 'text-indigo-300',
+    defaultTitle: 'Mô hình tư duy',
+    wrapper: 'border-l-4 border-sky-500/70 bg-sky-500/[0.07] rounded-r-xl',
+    titleCls: 'text-sky-300',
     icon: Lightbulb,
   },
   tip: {
-    defaultTitle: 'Mẹo Pythonic thực chiến',
-    wrapper: 'border-2 border-dashed border-emerald-500/45 bg-emerald-500/[0.06] rounded-xl',
+    defaultTitle: 'Khuyên dùng (Best Practice)',
+    wrapper: 'border-l-4 border-emerald-500/70 bg-emerald-500/[0.06] rounded-r-xl',
     titleCls: 'text-emerald-300',
     icon: Sparkles,
   },
   warning: {
-    defaultTitle: 'Bẫy hay gặp cần tránh',
-    wrapper: 'border border-rose-500/45 bg-rose-500/[0.07] rounded-xl',
+    defaultTitle: 'Lỗi thường gặp cần tránh',
+    wrapper: 'border-l-4 border-rose-500/70 bg-rose-500/[0.07] rounded-r-xl',
     titleCls: 'text-rose-300',
     icon: ShieldAlert,
   },
   important: {
-    defaultTitle: 'Nguyên tắc cốt lõi cần nắm',
-    wrapper: 'border border-emerald-500/40 bg-emerald-500/[0.07] rounded-xl',
+    defaultTitle: 'Nguyên tắc cốt lõi',
+    wrapper: 'border-l-4 border-emerald-500/70 bg-emerald-500/[0.07] rounded-r-xl',
     titleCls: 'text-emerald-300',
     icon: Target,
   },
   remember: {
-    defaultTitle: 'Ghi nhớ bỏ túi',
-    wrapper: 'border border-amber-500/45 bg-amber-500/[0.07] rounded-xl',
+    defaultTitle: 'Lưu ý & Tóm tắt',
+    wrapper: 'border-l-4 border-amber-500/70 bg-amber-500/[0.07] rounded-r-xl',
     titleCls: 'text-amber-300',
     icon: BookmarkCheck,
   },
@@ -291,12 +307,12 @@ function parseBlocks(src: string): React.ReactNode[] {
       const rows: string[][] = [];
       while (i < lines.length && /^\s*\|/.test(lines[i])) rows.push(splitCells(lines[i++]));
       out.push(
-        <div key={k()} className="my-3.5 overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
+        <div key={k()} className="my-3.5 overflow-x-auto rounded-xl bg-slate-950/60">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-slate-900">
+            <thead className="bg-slate-900/80">
               <tr>
                 {head.map((h, j) => (
-                  <th key={j} className="border-b border-slate-800 px-3 py-2 text-left font-semibold text-slate-200">
+                  <th key={j} className="border-b border-slate-800/70 px-3 py-2 text-left font-semibold text-slate-200">
                     {renderInline(h)}
                   </th>
                 ))}
@@ -304,7 +320,7 @@ function parseBlocks(src: string): React.ReactNode[] {
             </thead>
             <tbody>
               {rows.map((r, j) => (
-                <tr key={j} className="border-b border-slate-800/60 last:border-0 hover:bg-slate-900/40">
+                <tr key={j} className="border-b border-slate-800/40 last:border-0 hover:bg-slate-900/40">
                   {r.map((c, n) => (
                     <td key={n} className="px-3 py-2 align-top text-slate-300">
                       {renderInline(c)}

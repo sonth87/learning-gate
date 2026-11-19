@@ -21,7 +21,7 @@ callouts:
   - num: 2
     label: "Build Artifacts — Chuyển giao thành phẩm giữa các Job"
     desc: "Đóng gói thư mục dist/, báo cáo Playwright và SBOM gắn chặt với đúng Commit SHA để truyền từ máy ảo build sang các máy ảo sau."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Triển khai đồng nhất & Tối ưu retention-days"
     desc: "Staging và Production cùng tải đúng 1 gói Artifact duy nhất mà không biên dịch lại; đặt retention-days: 7 giúp tiết kiệm 90% dung lượng."
@@ -54,12 +54,12 @@ columns:
     footer: "Với Node.js chuẩn: bật nhanh qua cache: \"npm\" ngay trên actions/setup-node@v4!"
   - title: "Artifact (upload-artifact@v4 / download-artifact@v4)"
     badge: "Sản phẩm đầu ra bất biến của 1 Commit"
-    tone: violet
+    tone: cyan
     layers:
       - label: "Mục đích: Sản phẩm biên dịch & Hồ sơ kiểm định"
         sub: "Lưu gói dist/, báo cáo lỗi Playwright HTML, Coverage, sbom.json"
         note: "Đầu ra chính thức"
-        tone: violet
+        tone: cyan
       - label: "Cam kết tồn tại: Bắt buộc chính xác 100% theo Commit SHA"
         sub: "Job deploy phụ thuộc sống còn vào đúng bản dist/ vừa đóng gói"
         note: "Bất biến tuyệt đối"
@@ -105,7 +105,7 @@ steps:
     title: "Chỉ tải gói mới & Lưu"
     desc: "Tải bổ sung đúng gói zod rồi đóng gói thành khoá băm mới"
     code: "Post Cache Save"
-    tone: violet
+    tone: cyan
 ```
 
 ```yaml

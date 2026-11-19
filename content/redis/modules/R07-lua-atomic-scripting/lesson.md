@@ -129,7 +129,7 @@ Khi gọi `redis.call()` hoặc `redis.pcall()` bên trong Lua, hãy nhớ 4 quy
 - **`nil` của RESP (`GET` khoá không tồn tại) sang Lua thành `false` boolean:** Trong Lua, chỉ có `false` và `nil` mang tính sai (*falsy*), còn **số `0` và chuỗi rỗng `""` đều là `true` (*truthy*)**! Vì vậy viết `tonumber(redis.call('GET', KEYS[1]) or '0')` hoạt động cực kỳ mượt mà.
 - **`redis.call` vs `redis.pcall`:** `redis.call` gặp lỗi sẽ dừng script ngay và ném lỗi về client; `redis.pcall` bắt lỗi lại thành bảng `{ err = "..." }` để script tự xử lý tiếp.
 
-> [!TRAP] Ba điều CẤM KỴ tuyệt đối bên trong kịch bản Lua của Redis!
+> [!TRAP] Ba điều cần tránh tuyệt đối bên trong kịch bản Lua của Redis!
 > 1. **CẤM gán cứng (hardcode) hoặc tự ghép tên khoá động bên trong Lua:** Mọi khoá mà script chạm tới **bắt buộc phải khai báo tường minh qua `KEYS[1..N]`**. Trên Redis Cluster, máy chủ kiểm tra danh sách `KEYS` trước khi chạy để đảm bảo tất cả nằm cùng 1 Hash Slot (ví dụ dùng Hash Tag `acc:{bank}:alice` và `acc:{bank}:bob`).
 > 2. **CẤM viết vòng lặp nặng hoặc xử lý lâu quá vài mili-giây:** Khi Lua đang chạy, toàn bộ Event Loop bị giữ độc quyền (ngưỡng khẩn cấp mặc định `lua-time-limit` là `5000ms`). Giữ script ngắn gọn dưới 20–30 dòng!
 > 3. **CẤM sinh giá trị ngẫu nhiên không tất định (`math.random`, thời gian hệ thống ngoài):** Mọi tham số như `nowMs` hay `uuid` hãy tạo sẵn ở tầng ứng dụng rồi truyền vào qua **`ARGV[]`** để việc nhân bản sang Replica/AOF hoàn toàn tất định (*deterministic*).

@@ -17,7 +17,7 @@ callouts:
   - num: 2
     label: "Truyền dữ liệu xuyên Step & Job qua $GITHUB_OUTPUT"
     desc: "Ghi cặp key=value vào tệp môi trường $GITHUB_OUTPUT (thay cho ::set-output cũ đã khai tử) và khai báo jobs.<id>.outputs để Job sau đọc."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Chốt chặn điều kiện if: & Bộ lọc đường dẫn paths-ignore"
     desc: "Dùng failure() để thu gom ảnh chụp lỗi E2E, always() & !cancelled() để dọn dẹp hạ tầng và paths-ignore để nghỉ chạy khi chỉ sửa tệp .md."
@@ -91,7 +91,7 @@ steps:
     title: "steps.<id>.outputs"
     desc: "GitHub tách biệt dữ liệu an toàn khỏi luồng log stdout thông thường"
     code: "steps.build_meta.outputs"
-    tone: violet
+    tone: cyan
     edge: "biểu thức ${{ }}"
   - icon: rocket
     badge: "Step nhận phía sau"

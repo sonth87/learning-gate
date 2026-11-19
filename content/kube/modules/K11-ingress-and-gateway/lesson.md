@@ -22,7 +22,7 @@ callouts:
   - num: 2
     label: "Giải mã TLS & Định tuyến thông minh Layer 7"
     desc: "Ingress Controller (Nginx/Envoy) đọc chứng chỉ từ Secret để giải mã HTTPS rồi đọc luật Host và Path (/api, /) để rẽ nhánh."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Chuyển tiếp an toàn vào các ClusterIP nội bộ"
     desc: "Các microservice phía sau nằm kín trong mạng nội bộ dưới dạng ClusterIP và hỗ trợ chia phần trăm Canary mượt mà với Gateway API."
@@ -58,7 +58,7 @@ steps:
     title: Định Tuyến Layer 7
     desc: Khớp Hostname & Path — đường dẫn /api rẽ sang api-svc:3000, còn / rẽ sang web-svc:80
     code: "/api -> api-svc | / -> web-svc"
-    tone: violet
+    tone: cyan
     edge: HTTP nội bộ gọn nhẹ
   - icon: boxes
     badge: 4. Đích nội bộ
@@ -127,7 +127,7 @@ items:
     lang: yaml
   - keyword: backend.service
     role: Cấu trúc đích mới (1.19+)
-    tone: violet
+    tone: cyan
     summary: Tách tường minh tên Service và số cổng (hoặc tên cổng) bên dưới khoá `service:`.
     bullets:
       - "Không còn viết gộp `serviceName` / `servicePort` như bản nháp `v1beta1` ngày xưa nữa!"

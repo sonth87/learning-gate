@@ -37,7 +37,7 @@ callouts:
 Khi Replica kết nối vào Master, có hai con đường đồng bộ:
 - [>] **Full Resynchronization (Rất nặng):** Lần đầu kết nối hoặc khi lệch quá xa, Master phải gọi `BGSAVE` tạo ảnh RDB truyền toàn bộ qua mạng cho Replica nạp lại từ con số 0 (trên mạng 10Gbps truyền trực tiếp không qua đĩa bằng **`repl-diskless-sync yes`**).
 - [>] **Partial Resynchronization (`PSYNC2` — Siêu nhẹ):** Master duy trì một bộ đệm vòng trên RAM gọi là **Replication Backlog** (`repl-backlog-size`). Nếu mạng chập chờn 5 giây rồi nối lại, Replica gửi `(replid, offset)` của nó lên; nếu `offset` đó vẫn còn nằm trong Backlog, Master chỉ bắn bù đúng vài MB lệnh bị thiếu!
-- [!] **Cạm bẫy chết người:** Giá trị mặc định `repl-backlog-size` của Redis chỉ vỏn vẹn **`1mb`**! Với hệ thống ghi `20MB/s`, chỉ đứt mạng `0.1 giây` là tràn bộ đệm `1mb`, ép Replica phải **Full Resync** làm nổ RAM Copy-on-Write trên Master! Trên Production, luôn nâng **`repl-backlog-size 64mb` – `256mb`**.
+- [!] **Cạm lỗi nghiêm trọng cần tránh:** Giá trị mặc định `repl-backlog-size` của Redis chỉ vỏn vẹn **`1mb`**! Với hệ thống ghi `20MB/s`, chỉ đứt mạng `0.1 giây` là tràn bộ đệm `1mb`, ép Replica phải **Full Resync** làm nổ RAM Copy-on-Write trên Master! Trên Production, luôn nâng **`repl-backlog-size 64mb` – `256mb`**.
 
 ## 2. Quy trình 4 Bước Tự động Chuyển đổi Dự phòng (Failover) của Redis Sentinel
 
@@ -68,7 +68,7 @@ steps:
     title: "Chọn Ứng Viên Tốt Nhất"
     desc: "Sentinel Leader (thắng >= N/2+1 phiếu) chấm điểm các Replica theo: replica-priority -> offset mới nhất -> runid."
     code: "+vote-for-leader ..."
-    tone: violet
+    tone: cyan
     edge: "thăng cấp ngôi vương"
   - icon: rocket
     badge: "Bước 4 · Thăng Cấp"

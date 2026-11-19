@@ -4,7 +4,7 @@ Hãy hình dung ứng dụng Node.js của bạn đang xử lý 2.000 đơn hàn
 - [!] Khách hàng nhận hàng loạt lỗi `502 Bad Gateway` trong lúc thay thế container.
 - [!] Hoặc tệ hơn: lỗi `TypeError: Cannot read properties of undefined` lọt qua Unit Test vì dữ liệu thật trên Production có trường `discountCode: null` mà bộ mock ở máy cá nhân chưa từng nghĩ tới!
 
-Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi ({emerald:Zero-Downtime})**, giới hạn rủi ro bằng {sky:Canary / Blue-Green} và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây ({rose:Automated Rollback})**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
+Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi (**Zero-Downtime**)**, giới hạn rủi ro bằng **Canary / Blue-Green** và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây (**Automated Rollback**)**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
 
 ```visual
 kind: illustration
@@ -139,7 +139,7 @@ steps:
     title: Canary / Blue-Green
     desc: Mở thử nghiệm lưu lượng có kiểm soát qua Argo Rollouts
     code: "setWeight: 5 -> pause"
-    tone: violet
+    tone: cyan
     edge: kiểm tra /readyz
   - icon: doctor
     badge: Bước 3 · Hậu kiểm

@@ -114,10 +114,9 @@ const SvgShell: React.FC<{
         ))}
       </defs>
 
-      <rect x="1" y="1" width="878" height="378" rx="14" fill={p.bg} stroke={p.border} strokeWidth="1.5" />
-      <rect x="2" y="42" width="876" height="336" rx="12" fill={`url(#${id}-grid-${isLight ? 'l' : 'd'})`} opacity="0.7" />
-      <rect x="1" y="1" width="878" height="40" rx="14" fill={p.panelAlt} />
-      <line x1="1" y1="41" x2="879" y2="41" stroke={p.border} strokeWidth="1" />
+      <rect x="0" y="0" width="880" height="380" rx="12" fill={p.bg} />
+      <rect x="2" y="42" width="876" height="336" rx="12" fill={`url(#${id}-grid-${isLight ? 'l' : 'd'})`} opacity="0.4" />
+      <rect x="0" y="0" width="880" height="40" rx="12" fill={p.panelAlt} />
 
       <circle cx="20" cy="21" r="4.5" fill={p.tones.rose.stroke} opacity="0.8" />
       <circle cx="34" cy="21" r="4.5" fill={p.tones.amber.stroke} opacity="0.8" />
@@ -126,7 +125,7 @@ const SvgShell: React.FC<{
       <text x="66" y="25" fill={p.ink} fontFamily={SANS} fontSize="12.5" fontWeight="700" letterSpacing="0.2">
         {title}
       </text>
-      <rect x="724" y="10" width="142" height="22" rx="6" fill={p.tones.emerald.bg} stroke={p.tones.emerald.stroke} strokeWidth="1" />
+      <rect x="724" y="10" width="142" height="22" rx="6" fill={p.tones.emerald.bg} />
       <text x="795" y="25" textAnchor="middle" fill={p.tones.emerald.fg} fontFamily={MONO} fontSize="10.5" fontWeight="700">
         {tag}
       </text>
@@ -180,13 +179,13 @@ const BoxCard: React.FC<{
         rx="10"
         fill={p.panel}
         stroke={t.stroke}
-        strokeWidth="1.5"
+        strokeOpacity="0.3"
+        strokeWidth="1"
         strokeDasharray={dashed ? '5 4' : undefined}
       />
       {title && (
         <>
-          <rect x={x + 1} y={y + 1} width={w - 2} height="28" rx="9" fill={t.bg} />
-          <line x1={x + 1} y1={y + 29} x2={x + w - 1} y2={y + 29} stroke={t.stroke} strokeOpacity="0.45" strokeWidth="1" />
+          <rect x={x} y={y} width={w} height="28" rx="9" fill={t.bg} />
           <text x={x + 12} y={y + 19} fill={t.fg} fontFamily={MONO} fontSize="11" fontWeight="700">
             {title}
           </text>
@@ -219,7 +218,7 @@ const Pill: React.FC<{
   const t = p.tones[tone];
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="6" fill={t.bg} stroke={t.stroke} strokeWidth="1.1" />
+      <rect x={x} y={y} width={w} height={h} rx="6" fill={t.bg} />
       {align === 'center' ? (
         <>
           <text

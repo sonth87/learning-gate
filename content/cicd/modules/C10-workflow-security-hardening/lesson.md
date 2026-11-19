@@ -31,7 +31,7 @@ items:
       - "Tham chiếu an toàn bằng dấu nháy kép `\"$PR_TITLE\"` trong bash"
   - num: 3
     icon: shield-alert
-    title: "Chặn Tử Huyệt Pwn Request"
+    title: "Chặn điểm yếu nghiêm trọng Pwn Request"
     badge: Fork Isolation
     tone: rose
     desc: "Phân biệt sống còn giữa `on: pull_request` và `on: pull_request_target` khi nhận PR từ kho Fork."
@@ -77,7 +77,7 @@ callouts:
 
 Mỗi khi một Workflow khởi chạy, GitHub tự động cấp một thẻ xác thực tạm thời gọi là **`GITHUB_TOKEN`**. Trên các kho lưu trữ hoặc tổ chức chưa siết cấu hình mặc định, chiếc thẻ này mang quyền **`write-all`** — cho phép bất kỳ bước kiểm thử nào bị xâm nhập cũng tự ý đẩy commit thẳng vào nhánh, sửa bản phát hành Release hoặc xoá gói!
 
-Quy chuẩn bảo mật bắt buộc năm 2026 là {emerald:nguyên lý Đặc quyền tối thiểu (Least Privilege)}: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ ({amber:packages: write}) cho riêng Job thực sự cần**:
+Quy chuẩn bảo mật bắt buộc năm 2026 là **nguyên lý Đặc quyền tối thiểu (Least Privilege)**: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ (**packages: write**) cho riêng Job thực sự cần**:
 
 ```yaml
 name: Hardened CI
@@ -163,7 +163,7 @@ right:
 
 ---
 
-## 3. Lá chắn #3 — Tránh xa "Tử huyệt Pwn Request": `pull_request` vs `pull_request_target`
+## 3. Lá chắn #3 — Tránh xa "điểm yếu nghiêm trọng Pwn Request": `pull_request` vs `pull_request_target`
 
 Tại sao GitHub lại sinh ra hai sự kiện có cái tên dễ gây nhầm lẫn chết người đến vậy?
 
@@ -172,7 +172,7 @@ kind: compare
 title: "Sự Khác Biệt Sống Còn Đối Với PR Từ Kho Fork: pull_request vs pull_request_target"
 subtitle: "Sai một hậu tố _target là trao toàn bộ kho Secrets Production cho người lạ trên Internet!"
 left:
-  badge: "TỬ HUYỆT PWN REQUEST · Cực kỳ nguy hiểm"
+  badge: "điểm yếu nghiêm trọng PWN REQUEST · Cực kỳ nguy hiểm"
   title: "on: pull_request_target + Checkout code của PR"
   tone: rose
   code: |

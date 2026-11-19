@@ -100,7 +100,7 @@ items:
     lang: redis
   - keyword: SINTER / SUNION / SDIFF
     role: O(N) · Giao / Hợp / Hiệu
-    tone: violet
+    tone: cyan
     summary: Tính bạn chung (`SINTER`), gộp nhóm (`SUNION`), hoặc tìm phần tử có ở tập đầu mà chưa có ở các tập sau (`SDIFF`).
     bullets:
       - "Các biến thể `SINTERSTORE`, `SUNIONSTORE`, `SDIFFSTORE` ghi thẳng kết quả vào khoá đích trên RAM để tái sử dụng làm bộ đệm."

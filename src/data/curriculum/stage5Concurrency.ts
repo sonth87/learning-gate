@@ -178,7 +178,7 @@ print(results)`,
     commonIssues: [
       {
         id: 'issue-s5-blocking-loop',
-        title: 'Cấm kỵ (PDF 4.1): Đặt lệnh đồng bộ (time.sleep, requests.get) trong hàm async def',
+        title: 'cần tránh (PDF 4.1): Đặt lệnh đồng bộ (time.sleep, requests.get) trong hàm async def',
         severity: 'critical',
         symptom: 'Toàn bộ server FastAPI bị đơ, mọi người dùng khác gọi vào bất kỳ API nào cũng phải đứng chờ theo!',
         whyItHappens:

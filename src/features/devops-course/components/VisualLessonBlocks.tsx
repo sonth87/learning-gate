@@ -248,7 +248,7 @@ const MiniCodeSnippet: React.FC<{
   return (
     <div
       className={cn(
-        'group/snippet relative overflow-hidden rounded-lg border border-slate-800 bg-slate-950/95',
+        'group/snippet relative overflow-hidden rounded-lg bg-slate-950/90',
         className
       )}
     >
@@ -260,7 +260,7 @@ const MiniCodeSnippet: React.FC<{
           setTimeout(() => setCopied(false), 1400);
         }}
         aria-label="Sao chép lệnh hoặc cấu hình"
-        className="absolute right-1.5 top-1.5 z-10 rounded-md border border-slate-700/90 bg-slate-900/90 p-1 text-slate-400 opacity-0 transition-opacity hover:text-white group-hover/snippet:opacity-100 focus-visible:opacity-100 cursor-pointer"
+        className="absolute right-1.5 top-1.5 z-10 rounded-md bg-slate-900/90 p-1 text-slate-400 opacity-0 transition-opacity hover:text-white group-hover/snippet:opacity-100 focus-visible:opacity-100 cursor-pointer"
       >
         {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
       </button>
@@ -307,7 +307,7 @@ const BlockHeader: React.FC<BlockHeaderProps> = ({
             ? 'text-emerald-400'
             : 'text-sky-400';
   return (
-    <div className="mb-3.5 flex flex-col gap-0.5 border-b border-slate-800/90 pb-2.5">
+    <div className="mb-3 flex flex-col gap-0.5 pb-1">
       <div className={cn('flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider', eyebrowTone)}>
         {icon}
         <span>{eyebrow}</span>
@@ -347,9 +347,9 @@ const VisualFlowDiagram: React.FC<{
   if (!steps.length) return null;
 
   return (
-    <figure className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <figure className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
-        eyebrow="Sơ đồ luồng trực quan"
+        eyebrow="Luồng xử lý"
         title={spec.title}
         subtitle={spec.subtitle}
         icon={<Workflow className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -364,14 +364,14 @@ const VisualFlowDiagram: React.FC<{
           const isLast = idx === steps.length - 1;
           return (
             <React.Fragment key={idx}>
-              <div className={cn('rounded-xl border p-3 transition-colors', t.cardBorder, t.cardBg)}>
+              <div className={cn('rounded-xl p-3 transition-colors', t.cardBg)}>
                 <div className="flex items-center gap-2.5">
-                  <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border', t.iconBox)}>
+                  <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', t.iconBox)}>
                     {renderVisualIcon(step.icon, 'h-4 w-4')}
                   </span>
                   <div className="min-w-0 flex-1">
                     {step.badge && (
-                      <span className={cn('inline-block rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
+                      <span className={cn('inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
                         {step.badge}
                       </span>
                     )}
@@ -380,7 +380,7 @@ const VisualFlowDiagram: React.FC<{
                 </div>
                 {step.desc && <p className="mt-1.5 text-xs text-slate-300 leading-relaxed">{renderInline(step.desc)}</p>}
                 {step.code && (
-                  <div className="mt-2 rounded-md border border-slate-800 bg-slate-950 px-2 py-1 font-mono text-[11px] text-amber-300 break-all">
+                  <div className="mt-2 rounded-md bg-slate-950/90 px-2 py-1 font-mono text-[11px] text-amber-300 break-all">
                     {step.code}
                   </div>
                 )}
@@ -389,7 +389,7 @@ const VisualFlowDiagram: React.FC<{
                 <div className="my-1.5 flex items-center justify-center gap-1.5 text-slate-400">
                   <ArrowDown className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
                   {step.edge && (
-                    <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300">
+                    <span className="rounded-full bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300">
                       {step.edge}
                     </span>
                   )}
@@ -409,18 +409,17 @@ const VisualFlowDiagram: React.FC<{
             <React.Fragment key={idx}>
               <div
                 className={cn(
-                  'flex min-w-[155px] flex-1 basis-[165px] flex-col justify-between rounded-xl border p-3 transition-colors',
-                  t.cardBorder,
+                  'flex min-w-[155px] flex-1 basis-[165px] flex-col justify-between rounded-xl p-3 transition-colors',
                   t.cardBg
                 )}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border', t.iconBox)}>
+                    <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', t.iconBox)}>
                       {renderVisualIcon(step.icon, 'h-4 w-4')}
                     </span>
                     {step.badge && (
-                      <span className={cn('rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
+                      <span className={cn('rounded px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
                         {step.badge}
                       </span>
                     )}
@@ -429,7 +428,7 @@ const VisualFlowDiagram: React.FC<{
                   {step.desc && <p className="mt-1 text-xs text-slate-300 leading-relaxed">{renderInline(step.desc)}</p>}
                 </div>
                 {step.code && (
-                  <div className="mt-2.5 rounded-md border border-slate-800 bg-slate-950 px-2 py-1 font-mono text-[11px] text-amber-300 break-all">
+                  <div className="mt-2.5 rounded-md bg-slate-950/90 px-2 py-1 font-mono text-[11px] text-amber-300 break-all">
                     {step.code}
                   </div>
                 )}
@@ -438,7 +437,7 @@ const VisualFlowDiagram: React.FC<{
               {!isLast && (
                 <div className="flex shrink-0 flex-col items-center justify-center px-1.5">
                   {step.edge && (
-                    <span className="mb-1 max-w-[110px] text-center rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold leading-tight text-slate-300">
+                    <span className="mb-1 max-w-[110px] text-center rounded-full bg-slate-900 px-2 py-0.5 font-mono text-[10px] font-semibold leading-tight text-slate-300">
                       {step.edge}
                     </span>
                   )}
@@ -451,7 +450,7 @@ const VisualFlowDiagram: React.FC<{
       </div>
 
       {spec.footer && (
-        <figcaption className="mt-3 border-t border-slate-800/80 pt-2 text-xs text-slate-400">
+        <figcaption className="mt-3 pt-1 text-xs text-slate-400">
           {renderInline(spec.footer)}
         </figcaption>
       )}
@@ -492,9 +491,9 @@ const VisualLayersDiagram: React.FC<{
   if (!cols.length) return null;
 
   return (
-    <figure className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <figure className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
-        eyebrow="Kiến trúc phân tầng & xếp lớp"
+        eyebrow="Cấu trúc phân tầng"
         title={spec.title}
         subtitle={spec.subtitle}
         icon={<Layers className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -513,17 +512,13 @@ const VisualLayersDiagram: React.FC<{
           return (
             <div
               key={cIdx}
-              className={cn(
-                'flex flex-col justify-between rounded-xl border border-dashed p-3.5',
-                ct.cardBorder,
-                'bg-slate-900/55'
-              )}
+              className="flex flex-col justify-between rounded-xl bg-slate-900/50 p-3.5"
             >
               <div>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-extrabold text-white">{renderInline(col.title)}</div>
                   {col.badge && (
-                    <span className={cn('rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold', ct.badge)}>
+                    <span className={cn('rounded-md px-2 py-0.5 font-mono text-[10px] font-bold', ct.badge)}>
                       {col.badge}
                     </span>
                   )}
@@ -536,8 +531,8 @@ const VisualLayersDiagram: React.FC<{
                       <div
                         key={lIdx}
                         className={cn(
-                          'flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-colors',
-                          lt.layerBg
+                          'flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 transition-colors',
+                          lt.cardBg
                         )}
                       >
                         <div className="min-w-0 flex-1">
@@ -554,7 +549,7 @@ const VisualLayersDiagram: React.FC<{
                           )}
                         </div>
                         {layer.note && (
-                          <span className={cn('shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold', lt.badge)}>
+                          <span className={cn('shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold', lt.badge)}>
                             {layer.note}
                           </span>
                         )}
@@ -565,7 +560,7 @@ const VisualLayersDiagram: React.FC<{
               </div>
 
               {col.footer && (
-                <div className="mt-3 border-t border-slate-800/80 pt-2 text-xs text-slate-300">
+                <div className="mt-3 pt-2 text-xs text-slate-300">
                   {renderInline(col.footer)}
                 </div>
               )}
@@ -616,9 +611,9 @@ const VisualGroupsGrid: React.FC<{
         : 'md:grid-cols-2';
 
   return (
-    <section className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <section className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
-        eyebrow="Phân nhóm trực quan & bảng tra cứu"
+        eyebrow="Phân nhóm & Bảng tra cứu"
         title={spec.title}
         subtitle={spec.subtitle}
         icon={<Boxes className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -633,8 +628,7 @@ const VisualGroupsGrid: React.FC<{
             <div
               key={idx}
               className={cn(
-                'flex flex-col justify-between rounded-xl border border-t-2 bg-slate-900/70 p-3.5 transition-colors',
-                t.cardBorder,
+                'flex flex-col justify-between rounded-xl border-t-2 bg-slate-900/65 p-3.5 transition-colors',
                 t.cardTopBorder
               )}
             >
@@ -644,21 +638,21 @@ const VisualGroupsGrid: React.FC<{
                     {item.num !== undefined ? (
                       <span
                         className={cn(
-                          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-extrabold',
+                          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-extrabold',
                           t.iconBox
                         )}
                       >
                         {item.num}
                       </span>
                     ) : item.icon ? (
-                      <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md border', t.iconBox)}>
+                      <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-md', t.iconBox)}>
                         {renderVisualIcon(item.icon, 'h-3.5 w-3.5')}
                       </span>
                     ) : null}
                     <h5 className="text-sm font-bold text-white leading-snug">{renderInline(item.title)}</h5>
                   </div>
                   {item.badge && (
-                    <span className={cn('shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
+                    <span className={cn('shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
                       {item.badge}
                     </span>
                   )}
@@ -681,7 +675,7 @@ const VisualGroupsGrid: React.FC<{
               </div>
 
               {item.footer && (
-                <div className="mt-3 rounded-lg border border-slate-800 bg-slate-950/80 px-2.5 py-1.5 text-center font-mono text-[11px] font-medium text-slate-300">
+                <div className="mt-3 rounded-lg bg-slate-950/75 px-2.5 py-1.5 text-center font-mono text-[11px] font-medium text-slate-300">
                   {renderInline(item.footer)}
                 </div>
               )}
@@ -721,9 +715,9 @@ const VisualAnatomyList: React.FC<{
   if (!items.length) return null;
 
   return (
-    <section className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <section className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
-        eyebrow="Giải phẫu từ khoá & chỉ thị cốt lõi"
+        eyebrow="Từ khoá & Chỉ thị cốt lõi"
         title={spec.title}
         subtitle={spec.subtitle}
         icon={<FileCode2 className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -731,7 +725,7 @@ const VisualAnatomyList: React.FC<{
         renderInline={renderInline}
       />
 
-      <div className="divide-y divide-slate-800/80">
+      <div className="divide-y divide-slate-800/60">
         {items.map((item, idx) => {
           const t = getTone(item.tone, defaultTone);
           return (
@@ -743,14 +737,14 @@ const VisualAnatomyList: React.FC<{
               <div className="flex items-center gap-2.5">
                 <span
                   className={cn(
-                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border font-mono text-xs font-extrabold',
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-xs font-extrabold',
                     t.iconBox
                   )}
                 >
                   {idx + 1}
                 </span>
                 <div className="min-w-0">
-                  <span className="inline-block rounded-md border border-amber-400/45 bg-amber-400/18 px-2.5 py-0.5 font-mono text-xs font-extrabold text-amber-200 shadow-2xs">
+                  <span className="inline-block rounded-md bg-amber-400/18 px-2.5 py-0.5 font-mono text-xs font-extrabold text-amber-200">
                     {item.keyword}
                   </span>
                   {item.role && <div className="mt-0.5 font-mono text-[10px] text-slate-400">{item.role}</div>}
@@ -816,7 +810,7 @@ const VisualCompareCards: React.FC<{
   ];
 
   return (
-    <section className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <section className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
         eyebrow="Đối chiếu trực quan"
         title={spec.title}
@@ -836,8 +830,7 @@ const VisualCompareCards: React.FC<{
             <div
               key={idx}
               className={cn(
-                'flex flex-col justify-between rounded-xl border border-t-2 p-3.5',
-                t.cardBorder,
+                'flex flex-col justify-between rounded-xl border-t-2 p-3.5',
                 t.cardTopBorder,
                 t.cardBg
               )}
@@ -845,7 +838,7 @@ const VisualCompareCards: React.FC<{
               <div className="space-y-2.5">
                 <div className="flex flex-wrap items-center gap-2">
                   {side.badge && (
-                    <span className={cn('inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
+                    <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-mono text-[10px] font-bold', t.badge)}>
                       {isBad ? (
                         <XCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
                       ) : isGood ? (
@@ -908,9 +901,9 @@ const VisualTroubleshootMatrix: React.FC<{
   if (!items.length) return null;
 
   return (
-    <section className="my-4 rounded-xl border border-slate-800 bg-slate-950/65 p-3.5 sm:p-4 shadow-xs">
+    <section className="my-4 rounded-xl bg-slate-950/55 p-3.5 sm:p-4">
       <BlockHeader
-        eyebrow="Bảng khám bệnh · Lỗi thường gặp & cách khắc phục"
+        eyebrow="Chẩn đoán lỗi & Cách khắc phục"
         title={spec.title}
         subtitle={spec.subtitle}
         icon={<Stethoscope className="h-3.5 w-3.5" aria-hidden="true" />}
@@ -924,7 +917,7 @@ const VisualTroubleshootMatrix: React.FC<{
           return (
             <div
               key={idx}
-              className="grid gap-2.5 rounded-xl border border-slate-800 bg-slate-900/75 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] md:gap-4"
+              className="grid gap-2.5 rounded-xl bg-slate-900/70 p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)] md:gap-4"
             >
               {/* Symptom & Cause */}
               <div className="space-y-1">
@@ -932,7 +925,7 @@ const VisualTroubleshootMatrix: React.FC<{
                   <AlertTriangle className={cn('h-3.5 w-3.5 shrink-0', t.title)} aria-hidden="true" />
                   <span className="font-mono text-xs sm:text-[13px] font-bold text-white">{item.symptom}</span>
                   {item.badge && (
-                    <span className={cn('rounded border px-1.5 py-0.2 font-mono text-[10px] font-bold', t.badge)}>
+                    <span className={cn('rounded px-1.5 py-0.2 font-mono text-[10px] font-bold', t.badge)}>
                       {item.badge}
                     </span>
                   )}
@@ -941,7 +934,7 @@ const VisualTroubleshootMatrix: React.FC<{
               </div>
 
               {/* Fix & Command */}
-              <div className="space-y-1.5 border-t border-slate-800/80 pt-2 md:border-l md:border-t-0 md:pl-4 md:pt-0">
+              <div className="space-y-1.5 border-t border-slate-800/60 pt-2 md:border-l md:border-t-0 md:pl-4 md:pt-0">
                 <div className="flex items-start gap-1.5 text-xs sm:text-[13px] text-slate-200 leading-snug">
                   <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" aria-hidden="true" />
                   <span className="min-w-0 flex-1">{renderInline(item.fix)}</span>

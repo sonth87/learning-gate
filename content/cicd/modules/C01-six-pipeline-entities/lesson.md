@@ -26,7 +26,7 @@ steps:
     title: "Job Trên Máy Ảo Sạch"
     desc: "Mỗi Job được cấp riêng 1 Ephemeral VM mới tinh, độc lập hoàn toàn"
     code: "runs-on: ubuntu-latest"
-    tone: violet
+    tone: cyan
     edge: "chạy tuần tự"
   - icon: terminal
     badge: "5. Step & 6. Action"
@@ -53,7 +53,7 @@ callouts:
   - num: 2
     label: "3. Job, 4. Runner VM, 5. Step & 6. Action"
     desc: "Mỗi Job được cấp 1 máy ảo Ubuntu mới tinh; các Step bên trong chạy nối tiếp trên cùng ổ đĩa rồi máy ảo bị huỷ sạch khi xong việc."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Ranh giới ổ đĩa giữa hai Job khác nhau"
     desc: "Job B chạy trên một máy ảo hoàn toàn khác nên không thấy thư mục dist/ của Job A nếu không truyền qua cơ chế Artifact."
@@ -98,7 +98,7 @@ items:
     icon: boxes
     title: "Job"
     badge: "jobs.<job_id>:"
-    tone: violet
+    tone: cyan
     desc: "Đơn vị công việc độc lập chạy trên một Runner riêng biệt."
     bullets:
       - "Mặc định không có `needs:` thì các Job chạy **song song cùng lúc**"

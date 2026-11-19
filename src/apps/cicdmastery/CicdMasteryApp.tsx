@@ -25,6 +25,7 @@ import { CicdBlueprintsExplorer } from './components/blueprints/CicdBlueprintsEx
 import { CicdFlashcardDeck } from './components/assessment/CicdFlashcardDeck';
 import { CicdExamCenter } from './components/assessment/CicdExamCenter';
 import { CicdGlossaryAndMatrices } from './components/glossary/CicdGlossaryAndMatrices';
+import { TermPopover } from '@/components/common/TermPopover';
 import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { cn } from '@/utils/cn';
 
@@ -36,6 +37,7 @@ export interface CicdMasteryAppProps {
 export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
   const { activeTab, setActiveTab, selectWarRoom, selectBlueprint, setSimulatorMode } = useCicdNavigationStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
+  const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
   const hydrateCicd = useCicdProgress((s) => s.hydrate);
   const fontSize = useSettingsStore((s) => s.fontSize);
@@ -82,6 +84,7 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
   return (
     <div
+      onClick={() => hideTermPopover(false)}
       className={cn(
         'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
         isLight ? 'pylearn-light' : 'pylearn-dark',
@@ -147,6 +150,7 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
       <CicdMobileBottomNav />
 
+      <TermPopover />
       <NotesDrawer />
       <SettingsModal />
     </div>

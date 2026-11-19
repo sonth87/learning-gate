@@ -5,7 +5,7 @@ Khi đóng gói dự án **TypeScript, NestJS, Next.js hoặc Vite**, bạn luô
 - [>] **Lúc biên dịch (`npm run build`):** Bắt buộc phải có `typescript`, `@types/node`, `esbuild`, `eslint`, mã nguồn `.ts` và đôi khi cả bộ biên dịch C++ `python3 make g++` — tổng dung lượng ngốn từ **700 MB đến 1.2 GB**.
 - [>] **Lúc chạy thật trên Production (`node dist/main.js`):** Node.js chỉ cần đúng thư mục kết quả **`dist/`** vài trăm KB cùng các gói `dependencies` chạy thật (đã gọt sạch `devDependencies`).
 
-Nhét tất cả vào một Image đơn lẻ vừa làm chậm gấp 5 lần tốc độ kéo Image khi Kubernetes mở rộng Pod, vừa dâng sẵn trình biên dịch và công cụ dò quét cho kẻ tấn công! ==Multi-stage Build== ({emerald:nhẹ gấp 6 lần}), {amber:hạ quyền `USER node`} và {sky:tự khám `HEALTHCHECK`} chính là bộ ba tiêu chuẩn vàng cho mọi Image Production năm 2026.
+Nhét tất cả vào một Image đơn lẻ vừa làm chậm gấp 5 lần tốc độ kéo Image khi Kubernetes mở rộng Pod, vừa dâng sẵn trình biên dịch và công cụ dò quét cho kẻ tấn công! ==Multi-stage Build== (**nhẹ gấp 6 lần**), **hạ quyền `USER node`** và **tự khám `HEALTHCHECK`** chính là bộ ba tiêu chuẩn vàng cho mọi Image Production năm 2026.
 
 ```visual
 kind: illustration
@@ -54,7 +54,7 @@ columns:
       - label: "COPY tsconfig.json src/ && RUN npm run build"
         sub: "Biên dịch toàn bộ mã nguồn TypeScript sang JavaScript thuần tại /app/dist"
         note: Sinh ra /app/dist
-        tone: violet
+        tone: cyan
       - label: "RUN npm prune --omit=dev"
         sub: "Chuẩn npm 10+ (Node 22): gọt sạch toàn bộ gói devDependencies ngay tại chỗ!"
         note: Gọt nhẹ gọn

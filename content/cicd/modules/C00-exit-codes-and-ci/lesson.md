@@ -1,6 +1,6 @@
 # Từ `npm scripts` đến CI Gate: Sức mạnh của Exit Code
 
-Nếu bạn đã quen gõ `npm run lint && npm test && npm run build` trên laptop trước khi tạo Pull Request, xin chúc mừng: bạn đã hiểu **80% bản chất của Continuous Integration (CI)**. Một hệ thống CI/CD hiện đại như GitHub Actions hay GitLab CI không hề có phép thuật đọc hiểu mã nguồn bằng mắt thường. Thứ duy nhất giúp đường ống quyết định {emerald:cho phép merge (dấu tích xanh)} hay {rose:chặn đứng Pull Request (dấu chéo đỏ)} là một con số nguyên nhỏ bé do hệ điều hành trả về sau mỗi tiến trình: ==Exit Code (mã thoát)==.
+Nếu bạn đã quen gõ `npm run lint && npm test && npm run build` trên laptop trước khi tạo Pull Request, xin chúc mừng: bạn đã hiểu **80% bản chất của Continuous Integration (CI)**. Một hệ thống CI/CD hiện đại như GitHub Actions hay GitLab CI không hề có phép thuật đọc hiểu mã nguồn bằng mắt thường. Thứ duy nhất giúp đường ống quyết định **cho phép merge (dấu tích xanh)** hay **chặn đứng Pull Request (dấu chéo đỏ)** là một con số nguyên nhỏ bé do hệ điều hành trả về sau mỗi tiến trình: ==Exit Code (mã thoát)==.
 
 ```visual
 kind: flow
@@ -26,7 +26,7 @@ steps:
     title: "Lint & Typecheck"
     desc: "Quét quy tắc ESLint và kiểm tra kiểu dữ liệu TypeScript"
     code: "eslint . && tsc --noEmit"
-    tone: violet
+    tone: cyan
     edge: "exit 0"
   - icon: zap
     badge: "Bước 3 · Thực thi"

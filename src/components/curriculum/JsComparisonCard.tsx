@@ -34,7 +34,7 @@ export const JsComparisonCard: React.FC<{
   return (
     <section
       id="sec-js-bridge"
-      className="scroll-mt-20 rounded-2xl border border-cyan-500/30 bg-cyan-950/15 p-5 space-y-4"
+      className="scroll-mt-20 rounded-2xl bg-cyan-950/15 p-5 space-y-4"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
@@ -43,17 +43,17 @@ export const JsComparisonCard: React.FC<{
           </div>
           <div>
             <h3 className="text-sm font-bold text-white">
-              Đối chiếu Cú pháp & Tư duy: JavaScript / TypeScript ↔ Python Hiện đại
+              Đối chiếu JavaScript / TypeScript ↔ Python
             </h3>
             <p className="text-[11px] text-cyan-200/70">
-              Ánh xạ trực tiếp kinh nghiệm sẵn có để nắm bắt Python nhanh gấp 3 lần
+              Liên hệ với kiến thức JS/TS sẵn có để nắm bắt nhanh hơn
             </p>
           </div>
         </div>
 
         <button
           onClick={toggleJsTsComparison}
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-800"
+          className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] text-slate-300 hover:bg-slate-800"
         >
           <EyeOff className="h-3 w-3" />
           <span>Ẩn JS/TS</span>
@@ -64,12 +64,12 @@ export const JsComparisonCard: React.FC<{
         {comparisons.map((cmp, idx) => (
           <div
             key={idx}
-            className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-3"
+            className="rounded-xl bg-slate-950/75 p-4 space-y-3"
           >
             <div className="text-xs font-bold text-cyan-300">{cmp.concept}</div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-slate-800 bg-slate-900/70 p-3 space-y-1.5">
+              <div className="rounded-lg bg-slate-900/60 p-3 space-y-1.5">
                 <span className="inline-block rounded bg-yellow-500/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-yellow-300">
                   JavaScript / TypeScript
                 </span>
@@ -81,9 +81,9 @@ export const JsComparisonCard: React.FC<{
                 )}
               </div>
 
-              <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-3 space-y-1.5">
+              <div className="rounded-lg bg-sky-500/10 p-3 space-y-1.5">
                 <span className="inline-block rounded bg-sky-500/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-300">
-                  Python 3.11+ Chuẩn
+                  Python 3.11+
                 </span>
                 <p className="text-xs text-slate-200">{cmp.pythonWay}</p>
                 {cmp.pythonCode && (
@@ -94,8 +94,8 @@ export const JsComparisonCard: React.FC<{
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 border-t border-slate-800/80 pt-2">
-              <strong className="text-cyan-300">Khác biệt cốt lõi: </strong>
+            <p className="text-xs text-slate-300 border-t border-slate-800/60 pt-2">
+              <strong className="text-cyan-300">Khác biệt chính: </strong>
               <RichTextWithTerms text={cmp.keyDifference} />
             </p>
           </div>

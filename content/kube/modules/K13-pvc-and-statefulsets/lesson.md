@@ -5,7 +5,7 @@
 - [>] Hôm nay Pod chạy ở `worker-node-1`. Đêm nay `worker-node-1` bảo trì phần cứng, `Scheduler` dời Pod sang `worker-node-8`.
 - [!] Nếu dữ liệu nằm trên ổ cứng cục bộ của `worker-node-1`, Pod mới ở `worker-node-8` sẽ thấy một thư mục trống trơn!
 
-Để dữ liệu có thể **"đi theo Pod"** bất chấp Pod trôi dạt sang máy chủ nào, Kubernetes thiết kế kiến trúc lưu trữ tách làm 3 lớp thông minh: {sky:`StorageClass`}, {amber:`PersistentVolumeClaim (PVC)`} và {emerald:`PersistentVolume (PV)`} — kết hợp cùng ==`StatefulSet`== dành riêng cho Cơ sở dữ liệu phân tán.
+Để dữ liệu có thể **"đi theo Pod"** bất chấp Pod trôi dạt sang máy chủ nào, Kubernetes thiết kế kiến trúc lưu trữ tách làm 3 lớp thông minh: `StorageClass`, `PersistentVolumeClaim (PVC)` và `PersistentVolume (PV)` — kết hợp cùng ==`StatefulSet`== dành riêng cho Cơ sở dữ liệu phân tán.
 
 ```visual
 kind: illustration
@@ -26,7 +26,7 @@ callouts:
   - num: 3
     label: "StatefulSet & Headless Service — Danh tính bất biến"
     desc: "Mỗi bản sao Database mang số thứ tự cố định (pg-0, pg-1), tên miền DNS riêng và ổ đĩa PVC riêng biệt không bao giờ bị trộn lẫn."
-    tone: violet
+    tone: cyan
 ```
 
 ## 1. Mô hình "Phiếu yêu cầu ổ đĩa": `StorageClass` → `PVC` → `PV`
@@ -59,7 +59,7 @@ steps:
     title: PersistentVolume (PV)
     desc: Chiếc ổ đĩa đám mây thật sự (AWS EBS vol-0a1b2c3d) gắn chặt với PVC
     code: "Status: Bound"
-    tone: violet
+    tone: cyan
     edge: volumeMounts
   - icon: container
     badge: Ứng dụng đọc/ghi
@@ -99,7 +99,7 @@ items:
     icon: network
     title: ReadWriteMany (RWX)
     badge: Nhiều Node Đọc-Ghi
-    tone: violet
+    tone: cyan
     desc: Chia sẻ thư mục ghi đồng thời xuyên suốt nhiều máy chủ vật lý.
     bullets:
       - "Nhiều Pod rải rác trên nhiều Worker Node khác nhau **cùng đọc và ghi đồng thời** vào chung một thư mục"
@@ -205,7 +205,7 @@ columns:
       - label: Khuôn đúc volumeClaimTemplates riêng từng Pod
         sub: "Tự đẻ PVC độc lập: data-postgres-0, data-postgres-1"
         note: Chống hỏng dữ liệu
-        tone: violet
+        tone: cyan
       - label: "Headless Service (spec.clusterIP: None)"
         sub: Cấp bản ghi DNS A trỏ đích danh thẳng tới IP riêng từng Pod
         note: Định tuyến chính xác

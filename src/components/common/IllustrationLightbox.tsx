@@ -130,7 +130,7 @@ type LightboxTab = 'diagram' | 'poster';
 export const IllustrationLightbox: React.FC<{
   open: boolean;
   onClose: () => void;
-  portalTarget: HTMLElement | null;
+  rootElement: HTMLElement | null;
   src?: string;
   diagram?: string;
   initialTab: LightboxTab;
@@ -144,7 +144,7 @@ export const IllustrationLightbox: React.FC<{
 }> = ({
   open,
   onClose,
-  portalTarget,
+  rootElement,
   src,
   diagram,
   initialTab,
@@ -196,7 +196,11 @@ export const IllustrationLightbox: React.FC<{
   if (!open || typeof document === 'undefined') return null;
 
   const ui = ACCENT_UI[accent];
-  const target = portalTarget ?? document.body;
+  const target =
+    (rootElement?.closest('.pylearn-root') as HTMLElement | null) ??
+    (document.querySelector('.pylearn-root') as HTMLElement | null) ??
+    document.body;
+  const isScopedContainer = target !== document.body;
 
   return createPortal(
     <div
@@ -206,12 +210,16 @@ export const IllustrationLightbox: React.FC<{
       aria-label={title || alt || 'Xem phóng to hình minh hoạ'}
       tabIndex={-1}
       onClick={onClose}
-      className="fixed inset-0 z-[999] flex flex-col bg-black/85 backdrop-blur-md outline-none select-text"
+      className={cn(
+        isScopedContainer ? 'absolute inset-0 z-[999]' : 'fixed inset-0 z-[9999]',
+        'flex flex-col bg-black/85 backdrop-blur-md outline-none select-text',
+        !isScopedContainer && (isLight ? 'pylearn-root pylearn-light' : 'pylearn-root pylearn-dark')
+      )}
     >
       {/* Top Toolbar */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-950/95 px-3.5 py-2.5 sm:px-5 shrink-0"
+        className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-950/95 px-3.5 py-2.5 sm:px-5 shrink-0"
       >
         <div className="min-w-0 flex-1">
           <div className={cn('font-mono text-[10px] font-bold uppercase tracking-wider', ui.eyebrow)}>
@@ -223,7 +231,7 @@ export const IllustrationLightbox: React.FC<{
         </div>
 
         {hasDiagram && hasPoster && (
-          <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-0.5">
+          <div className="flex items-center gap-1 rounded-lg bg-slate-900 p-0.5">
             <button
               type="button"
               onClick={() => {
@@ -236,7 +244,7 @@ export const IllustrationLightbox: React.FC<{
               )}
             >
               <Cpu className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Giải phẫu Kỹ thuật</span>
+              <span>Sơ đồ Kỹ thuật</span>
             </button>
             <button
               type="button"
@@ -250,10 +258,30 @@ export const IllustrationLightbox: React.FC<{
               )}
             >
               <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>Ẩn dụ Trực quan</span>
+              <span>Hình minh hoạ</span>
             </button>
           </div>
         )}
+
+        {/* Color Legend in Lightbox */}
+        <div className="hidden xl:flex items-center gap-3 rounded-lg bg-slate-900/90 px-2.5 py-1 text-[11px] text-slate-300">
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span>Chuẩn / An toàn</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            <span>Lưu ý</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-rose-400" />
+            <span>Lỗi / Bẫy</span>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-2 w-2 rounded-full bg-sky-400" />
+            <span>Cấu trúc / Luồng</span>
+          </span>
+        </div>
 
         <div className="flex items-center gap-1.5">
           <button
@@ -313,7 +341,7 @@ export const IllustrationLightbox: React.FC<{
             width: zoom === 1 ? 'min(100%, 1180px)' : `${Math.round(1080 * zoom)}px`,
             maxWidth: zoom === 1 ? '1180px' : 'none',
           }}
-          className="rounded-2xl border border-slate-700/90 bg-slate-950 p-3 sm:p-5 shadow-2xl transition-[width] duration-150"
+          className="rounded-2xl bg-slate-950 p-3 sm:p-5 shadow-2xl transition-[width] duration-150"
         >
           {tab === 'diagram' && hasDiagram && diagram ? (
             <TechnicalDiagramCanvas diagramId={diagram} isLight={isLight} className="w-full h-auto" />
@@ -326,16 +354,16 @@ export const IllustrationLightbox: React.FC<{
           ) : null}
 
           {(subtitle || (callouts && callouts.length > 0)) && zoom === 1 && (
-            <div className="mt-4 border-t border-slate-800 pt-3.5 space-y-2.5">
+            <div className="mt-4 border-t border-slate-800/70 pt-3.5 space-y-2.5">
               {subtitle && <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{renderText(subtitle)}</p>}
               {callouts && callouts.length > 0 && (
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                   {callouts.map((c, idx) => {
                     const ct = CALLOUT_TONES[c.tone ?? accent];
                     return (
                       <div
                         key={idx}
-                        className={cn('flex items-start gap-2.5 rounded-xl border p-2.5', ct.border, ct.bg)}
+                        className={cn('flex items-start gap-2.5 rounded-xl p-2.5', ct.bg)}
                       >
                         <span
                           className={cn(
@@ -388,18 +416,17 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
 
   const ui = ACCENT_UI[accent];
   const renderText = (text: string): React.ReactNode => (renderInline ? renderInline(text) : text);
-  const portalTarget = rootRef.current?.closest('.pylearn-root') as HTMLElement | null;
 
   return (
     <figure
       ref={rootRef}
       className={cn(
-        'my-5 overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/75 p-3.5 sm:p-4 shadow-sm',
+        'my-5 overflow-hidden rounded-2xl bg-slate-950/60 p-3.5 sm:p-4',
         className
       )}
     >
       {/* Header */}
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-slate-800/90 pb-2.5">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2 pb-1">
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <span
@@ -409,10 +436,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
               )}
             >
               <Sparkles className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span>Hình minh hoạ trực quan</span>
+              <span>Sơ đồ & Minh hoạ</span>
             </span>
             {badge && (
-              <span className={cn('rounded-md border px-2 py-0.5 font-mono text-[10px] font-bold', ui.badge)}>
+              <span className={cn('rounded-md px-2 py-0.5 font-mono text-[10px] font-bold', ui.badge)}>
                 {badge}
               </span>
             )}
@@ -424,7 +451,7 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
         <button
           type="button"
           onClick={() => setLightboxTab(hasDiagram ? 'diagram' : 'poster')}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-2.5 font-mono text-[11px] font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
+          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-900 px-2.5 font-mono text-[11px] font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
         >
           <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Phóng to</span>
@@ -434,29 +461,26 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
       {/* Hybrid or Single Visual Stage */}
       {hasDiagram && hasPoster && diagram && src ? (
         <div className="grid gap-3.5 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-stretch">
-          {/* Layer 1: AI Visual Metaphor Poster */}
+          {/* Layer 1: Visual Metaphor Poster */}
           <button
             type="button"
             onClick={() => setLightboxTab('poster')}
-            aria-label="Phóng to poster ẩn dụ trực quan"
-            className={cn(
-              'group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70 p-2 text-left transition-all cursor-zoom-in',
-              ui.ring
-            )}
+            aria-label="Phóng to hình minh hoạ trực quan"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-slate-900/60 p-2 text-left transition-all cursor-zoom-in hover:bg-slate-900/90"
           >
             <div className="mb-1.5 flex items-center justify-between px-1">
               <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 <ImageIcon className="h-3 w-3" aria-hidden="true" />
-                <span>Ẩn dụ trực quan</span>
+                <span>Hình minh hoạ</span>
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 group-hover:text-white">
-                <ZoomIn className="h-3 w-3" /> Zoom
+                <ZoomIn className="h-3 w-3" /> Phóng to
               </span>
             </div>
             <div className="flex-1 flex items-center justify-center overflow-hidden rounded-lg bg-slate-950">
               <img
                 src={src}
-                alt={alt || title || 'Poster ẩn dụ trực quan'}
+                alt={alt || title || 'Hình minh hoạ trực quan'}
                 loading="lazy"
                 decoding="async"
                 onError={() => setImgError(true)}
@@ -469,22 +493,19 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           <button
             type="button"
             onClick={() => setLightboxTab('diagram')}
-            aria-label="Phóng to sơ đồ giải phẫu kỹ thuật"
-            className={cn(
-              'group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70 p-2.5 text-left transition-all cursor-zoom-in',
-              ui.ring
-            )}
+            aria-label="Phóng to sơ đồ kỹ thuật"
+            className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-slate-900/60 p-2 text-left transition-all cursor-zoom-in hover:bg-slate-900/90"
           >
             <div className="mb-1.5 flex items-center justify-between px-1">
               <span className="inline-flex items-center gap-1 font-mono text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 <Cpu className="h-3 w-3" aria-hidden="true" />
-                <span>Sơ đồ giải phẫu kỹ thuật (Vector)</span>
+                <span>Sơ đồ kỹ thuật</span>
               </span>
               <span className="inline-flex items-center gap-1 rounded bg-slate-950/80 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 group-hover:text-white">
-                <ZoomIn className="h-3 w-3" /> Zoom
+                <ZoomIn className="h-3 w-3" /> Phóng to
               </span>
             </div>
-            <div className="flex-1 flex items-center justify-center overflow-hidden rounded-lg bg-slate-950/90 p-1.5">
+            <div className="flex-1 flex items-center justify-center overflow-hidden rounded-lg bg-slate-950/90">
               <TechnicalDiagramCanvas diagramId={diagram} isLight={isLight} className="w-full h-auto" />
             </div>
           </button>
@@ -494,12 +515,9 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           type="button"
           onClick={() => setLightboxTab('diagram')}
           aria-label={title ? `Phóng to sơ đồ: ${title}` : 'Phóng to sơ đồ kỹ thuật'}
-          className={cn(
-            'group relative block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/65 p-2 sm:p-3 text-left transition-all cursor-zoom-in',
-            ui.ring
-          )}
+          className="group relative block w-full overflow-hidden rounded-xl text-left transition-all cursor-zoom-in"
         >
-          <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/85 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 opacity-80 transition-opacity group-hover:opacity-100 group-hover:text-white">
+          <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 opacity-85 transition-opacity group-hover:opacity-100 group-hover:text-white shadow-xs">
             <ZoomIn className="h-3 w-3" aria-hidden="true" />
             <span>Bấm để phóng to</span>
           </span>
@@ -510,12 +528,9 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           type="button"
           onClick={() => setLightboxTab('poster')}
           aria-label={alt || title || 'Phóng to hình minh hoạ'}
-          className={cn(
-            'group relative block w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-900/65 p-2 text-left transition-all cursor-zoom-in',
-            ui.ring
-          )}
+          className="group relative block w-full overflow-hidden rounded-xl bg-slate-900/50 p-1.5 text-left transition-all cursor-zoom-in"
         >
-          <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/85 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 opacity-85 transition-opacity group-hover:opacity-100 group-hover:text-white">
+          <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/90 px-2 py-0.5 font-mono text-[10px] font-semibold text-slate-300 opacity-85 transition-opacity group-hover:opacity-100 group-hover:text-white shadow-xs">
             <ZoomIn className="h-3 w-3" aria-hidden="true" />
             <span>Bấm để phóng to</span>
           </span>
@@ -529,6 +544,31 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           />
         </button>
       ) : null}
+
+      {/* Color Convention Legend */}
+      {hasDiagram && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-slate-400">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Quy ước màu:
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            <span>Chuẩn / An toàn</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            <span>Lưu ý / Trường hợp biên</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-rose-400" />
+            <span>Lỗi / Bẫy cần tránh</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-sky-400" />
+            <span>Cấu trúc / Luồng dữ liệu</span>
+          </span>
+        </div>
+      )}
 
       {/* Numbered Callout Cards ① ② ③ */}
       {callouts && callouts.length > 0 && (
@@ -547,7 +587,7 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
             return (
               <div
                 key={idx}
-                className={cn('flex items-start gap-2.5 rounded-xl border p-2.5 sm:p-3', ct.border, ct.bg)}
+                className={cn('flex items-start gap-2.5 rounded-xl p-2.5 sm:p-3', ct.bg)}
               >
                 <span
                   className={cn(
@@ -570,7 +610,7 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
       )}
 
       {caption && (
-        <figcaption className="mt-2.5 border-t border-slate-800/80 pt-2 text-xs text-slate-400">
+        <figcaption className="mt-2.5 pt-1 text-xs text-slate-400">
           {renderText(caption)}
         </figcaption>
       )}
@@ -578,7 +618,7 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
       <IllustrationLightbox
         open={lightboxTab !== null}
         onClose={() => setLightboxTab(null)}
-        portalTarget={portalTarget}
+        rootElement={rootRef.current}
         src={hasPoster ? src : undefined}
         diagram={hasDiagram ? diagram : undefined}
         initialTab={lightboxTab ?? (hasDiagram ? 'diagram' : 'poster')}

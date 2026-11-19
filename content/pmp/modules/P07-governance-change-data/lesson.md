@@ -55,7 +55,7 @@ steps:
     badge: "3. PHÁN QUYẾT"
     title: "CCB Xét duyệt"
     desc: "Trình CCB (hoặc Sponsor theo Change Management Plan) kèm các phương án khuyến nghị."
-    tone: "violet"
+    tone: "cyan"
     edge: "Được duyệt / Bác bỏ"
   - icon: "refresh"
     badge: "4. ĐỒNG BỘ PLAN"
@@ -93,7 +93,7 @@ items:
       - "WPR (Work Performance Reports): Bản tổng hợp trực quan (Dashboard, Status Report) đóng gói từ WPI để gửi Stakeholder/CCB."
   - keyword: "Tacit vs Explicit"
     role: "Manage Project Knowledge"
-    tone: "violet"
+    tone: "cyan"
     summary: "Hai dạng tri thức phải kết hợp song hành xuyên suốt dự án, không đợi cuối kỳ."
     bullets:
       - "Explicit Knowledge (Tri thức hiện): Dễ viết thành chữ, sơ đồ, tài liệu, số liệu trong Lessons Learned Register."

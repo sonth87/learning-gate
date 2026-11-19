@@ -27,14 +27,14 @@ export const ProofAndReferencesSection: React.FC<
     <div id="sec-proofs" className="scroll-mt-20 space-y-6">
       {/* 1. Benchmarks, Bytecode & Technical Proofs */}
       {hasProofs && (
-        <section className="rounded-2xl border border-emerald-500/30 bg-emerald-950/10 p-5 space-y-4">
+        <section className="rounded-2xl bg-emerald-950/10 p-5 space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-300">
               <FlaskConical className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-white">
-                Minh chứng Kỹ thuật, Đo lường Thực tế & Dẫn chứng (Benchmarks & Proofs)
+                Đo lường Thực tế & Dẫn chứng (Benchmarks & Proofs)
               </h3>
               <p className="text-xs text-slate-400">
                 Số liệu đo đạc thực tế về bộ nhớ RAM (`sys.getsizeof`), tốc độ thực thi và Bytecode trong CPython
@@ -46,7 +46,7 @@ export const ProofAndReferencesSection: React.FC<
             {proofs!.map((proof) => (
               <div
                 key={proof.id}
-                className="rounded-xl border border-slate-800 bg-slate-950/90 p-4 space-y-3.5"
+                className="rounded-xl bg-slate-950/75 p-4 space-y-3.5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
@@ -57,11 +57,11 @@ export const ProofAndReferencesSection: React.FC<
                       </h4>
                     </div>
                     <p className="text-xs text-slate-300 mt-1">
-                      <strong className="text-emerald-300">Luận điểm kiểm chứng: </strong>
+                      <strong className="text-emerald-300">Luận điểm: </strong>
                       <RichTextWithTerms text={proof.claim} />
                     </p>
                   </div>
-                  <span className="rounded bg-slate-900 border border-slate-800 px-2.5 py-1 font-mono text-[10px] text-slate-400">
+                  <span className="rounded bg-slate-900 px-2.5 py-1 font-mono text-[10px] text-slate-400">
                     Phương pháp đo: {proof.methodology}
                   </span>
                 </div>
@@ -71,7 +71,7 @@ export const ProofAndReferencesSection: React.FC<
                   {proof.metrics.map((m, idx) => (
                     <div
                       key={idx}
-                      className="rounded-lg border border-slate-800/90 bg-slate-900/60 p-3 space-y-1.5"
+                      className="rounded-lg bg-slate-900/55 p-3 space-y-1.5"
                     >
                       <div className="flex items-center justify-between gap-2 text-xs">
                         <span className="font-semibold text-slate-200 flex items-center gap-1.5">
@@ -84,7 +84,7 @@ export const ProofAndReferencesSection: React.FC<
                           className={cn(
                             'font-mono font-bold px-2 py-0.5 rounded text-[11px]',
                             m.isOptimal
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              ? 'bg-emerald-500/20 text-emerald-300'
                               : 'bg-slate-800 text-amber-300'
                           )}
                         >
@@ -111,8 +111,8 @@ export const ProofAndReferencesSection: React.FC<
                   ))}
                 </div>
 
-                <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/25 px-3.5 py-2 text-xs text-emerald-200">
-                  <strong>Kết luận thực nghiệm: </strong>
+                <div className="rounded-lg bg-emerald-500/10 px-3.5 py-2 text-xs text-emerald-200">
+                  <strong>Kết luận: </strong>
                   <RichTextWithTerms text={proof.takeaway} />
                 </div>
               </div>
@@ -123,15 +123,15 @@ export const ProofAndReferencesSection: React.FC<
 
       {/* 2. Official References & Further Reading */}
       {hasRefs && (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3.5">
+        <section className="rounded-2xl bg-slate-900/50 p-5 space-y-3.5">
           <div className="flex items-center gap-2">
             <BookOpenCheck className="h-5 w-5 text-amber-400" />
             <div>
               <h3 className="text-sm font-bold text-white">
-                Nguồn Tham khảo Chính thống & Tài liệu Đọc thêm (Official Docs & PEPs)
+                Tài liệu Tham khảo Chính thức (Official Docs & PEPs)
               </h3>
               <p className="text-[11px] text-slate-400">
-                Các đặc tả kỹ thuật PEP và tài liệu chính thức từ Python Software Foundation / cộng đồng
+                Các đặc tả kỹ thuật PEP và tài liệu chính thức từ Python Software Foundation
               </p>
             </div>
           </div>
@@ -143,11 +143,11 @@ export const ProofAndReferencesSection: React.FC<
                 href={ref.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 hover:border-amber-500/40 hover:bg-slate-900 transition-all space-y-2"
+                className="group flex flex-col justify-between rounded-xl bg-slate-950/70 p-3.5 hover:bg-slate-900 transition-all space-y-2"
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="rounded bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                    <span className="rounded bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-300">
                       {ref.sourceType}
                     </span>
                     <ExternalLink className="h-3.5 w-3.5 text-slate-500 group-hover:text-amber-300 transition-colors" />

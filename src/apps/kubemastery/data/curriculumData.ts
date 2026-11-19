@@ -1004,7 +1004,7 @@ spec:
         {
           technicalTerm: 'resources.requests vs. limits',
           analogyName: 'Mức lương sàn tối thiểu vs. Mức trần khóa van (cgroups)',
-          explanation: 'Scheduler dựa vào requests để tìm máy chủ xếp chỗ; Kernel dựa vào limits để bắn hạ Pod nếu ngốn quá trần RAM (OOMKilled 137).',
+          explanation: 'Scheduler dựa vào requests để tìm máy chủ xếp chỗ; Kernel dựa vào limits để dừng tiến trình (kill) Pod nếu ngốn quá trần RAM (OOMKilled 137).',
         },
         {
           technicalTerm: 'HPA (Horizontal Pod Autoscaler)',
@@ -1240,7 +1240,7 @@ spec:
           },
           {
             boldPrefix: 'Sự cố 4 (OOMKilled — Exit Code 137):',
-            text: 'Ứng dụng ngốn RAM vượt mức trần resources.limits.memory nên bị nhân Linux bắn hạ tức khắc.',
+            text: 'Ứng dụng ngốn RAM vượt mức trần resources.limits.memory nên bị nhân Linux dừng tiến trình (kill) tức khắc.',
           },
           {
             boldPrefix: 'Sự cố 5 (Pending vô thời hạn):',

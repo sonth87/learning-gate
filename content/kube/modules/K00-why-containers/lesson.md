@@ -5,7 +5,7 @@ Nếu bạn xuất phát từ hệ sinh thái **Node.js / TypeScript**, chắc c
 - [>] Ở máy Mac cá nhân, bạn dùng **Node v22.12**, gõ `npm run dev` mượt mà không một cảnh báo.
 - [!] Đẩy code lên máy chủ Ubuntu (hoặc gửi cho đồng nghiệp dùng Windows), ứng dụng sập ngay lúc khởi động vì `ERR_DLOPEN_FAILED` ở gói `sharp` / `bcrypt`, lệch múi giờ `UTC` vs `Asia/Ho_Chi_Minh`, thiếu thư viện C `libvips` / `openssl`, hoặc server vẫn kẹt ở **Node v18**.
 
-`package-lock.json` chỉ khoá phiên bản các gói JS trong `node_modules`, nhưng **hoàn toàn bất lực** trước hệ điều hành bên dưới, kiến trúc CPU (`arm64` vs `x86_64`) hay thư viện hệ thống. **Container** ra đời để đóng băng toàn bộ ứng dụng + runtime + hệ thống tệp thành một đơn vị duy nhất: {sky:siêu nhẹ}, {amber:dễ di chuyển} và ==bất biến ở mọi nơi==.
+`package-lock.json` chỉ khoá phiên bản các gói JS trong `node_modules`, nhưng **hoàn toàn bất lực** trước hệ điều hành bên dưới, kiến trúc CPU (`arm64` vs `x86_64`) hay thư viện hệ thống. **Container** ra đời để đóng băng toàn bộ ứng dụng + runtime + hệ thống tệp thành một đơn vị duy nhất: **siêu nhẹ**, **dễ di chuyển** và ==bất biến ở mọi nơi==.
 
 ```visual
 kind: flow
@@ -24,7 +24,7 @@ steps:
     title: Container Image
     desc: Khuôn mẫu nhị phân bất biến xếp chồng từ nhiều lớp (read-only layers)
     code: shop-api:1.4.2
-    tone: violet
+    tone: cyan
     edge: docker pull / push
   - icon: cloud
     badge: Kho trung tâm
@@ -87,7 +87,7 @@ columns:
     layers:
       - label: Ứng dụng + Thư viện (App & Bins/Libs)
         note: Mã nguồn dịch vụ
-        tone: violet
+        tone: cyan
       - label: Guest OS Kernel riêng biệt (Full Ubuntu/Windows)
         sub: Mỗi VM phải khởi động lại toàn bộ nhân hệ điều hành từ đầu
         note: Ngốn RAM & CPU thừa!
@@ -142,7 +142,7 @@ items:
     badge: Bắt buộc ghim rõ
     tone: amber
     bullets:
-      - "Nếu **bỏ trống `:tag`** (chỉ gõ `docker pull node`), Docker tự gắn nhãn mặc định ==`:latest`== — **cấm kỵ trên Production** vì mất tính tái lập!"
+      - "Nếu **bỏ trống `:tag`** (chỉ gõ `docker pull node`), Docker tự gắn nhãn mặc định ==`:latest`== — **không dùng trên Production** vì mất tính tái lập!"
       - "Đuôi **`-alpine`** dùng Alpine Linux (~5MB, thư viện `musl` + `apk`), kéo giảm Image Node từ **~1.1 GB** xuống chỉ còn **~135 MB**"
 ```
 
@@ -171,7 +171,7 @@ steps:
     tone: amber
     edge: giải phóng tên
   - icon: trash
-    badge: 4. Xoá xác
+    badge: 4. xoá bỏ
     title: Remove
     code: docker rm cache
     tone: rose
@@ -240,7 +240,7 @@ items:
     badge: Bẫy số 1
     tone: amber
     cause: Container cũ bị lỗi thoát sau 0.1s nên không hiện trong `docker ps`, nhưng xác `Exited` của nó vẫn đang giữ tên `api`.
-    fix: Liệt kê toàn bộ bằng `docker ps -a` để xem mã thoát, sau đó xoá xác cũ trước khi chạy lại.
+    fix: Liệt kê toàn bộ bằng `docker ps -a` để xem mã thoát, sau đó xoá bỏ cũ trước khi chạy lại.
     cmd: docker ps -a && docker rm -f api
   - symptom: Bản build hôm nay tự nhiên lỗi dù không sửa dòng code nào
     badge: Reproducibility

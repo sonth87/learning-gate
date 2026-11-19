@@ -2,7 +2,7 @@
 
 Một hệ thống thực tế hiếm khi chạy lẻ loi một mình: API Node.js của bạn cần **PostgreSQL 16** để lưu đơn hàng, cần **Redis 7** để giữ phiên đăng nhập và hàng đợi BullMQ. Nếu mỗi sáng bật máy đều phải gõ tay 4 câu lệnh `docker network create`, `docker volume create` kèm hàng chục cờ `-e`, `-p`, `-v` rời rạc, cả đội sẽ sớm lệch cấu hình của nhau.
 
-**Docker Compose v2** gói trọn toàn bộ kiến trúc đa container ({sky:dịch vụ}, {emerald:mạng DNS nội bộ}, {amber:ổ đĩa bền vững}, {violet:thứ tự sẵn sàng}) vào một tệp YAML khai báo duy nhất tên là ==`compose.yaml`== — bước đệm tư duy hoàn hảo trước khi bạn tiến lên Kubernetes Manifest YAML ở Cấp độ 2!
+**Docker Compose v2** gói trọn toàn bộ kiến trúc đa container (**dịch vụ**, **mạng DNS nội bộ**, **ổ đĩa bền vững**, **thứ tự sẵn sàng**) vào một tệp YAML khai báo duy nhất tên là ==`compose.yaml`== — bước đệm tư duy hoàn hảo trước khi bạn tiến lên Kubernetes Manifest YAML ở Cấp độ 2!
 
 ```visual
 kind: illustration
@@ -72,7 +72,7 @@ right:
 ## 2. Quy tắc vàng về DNS nội bộ: Quên `localhost` đi, hãy gọi bằng Tên Dịch Vụ!
 
 > [!WARNING] Cái bẫy chiếm 80% lỗi kết nối của người mới viết `compose.yaml`
-> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` chắc chắn sẽ nổ lỗi **`ECONNREFUSED 127.0.0.1:5432`**.
+> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` chắc chắn sẽ phát sinh lỗi **`ECONNREFUSED 127.0.0.1:5432`**.
 
 Khi bạn gõ `docker compose up -d`, Compose tự động tạo một mạng Bridge riêng cho dự án (ví dụ `myshop_default`) và đăng ký **chính tên khoá dưới mục `services:`** vào máy chủ DNS nội bộ:
 
@@ -239,7 +239,7 @@ items:
     icon: layers
     title: 'profiles: ["debug"] (Bật công cụ theo nhu cầu)'
     badge: Tiết kiệm RAM Laptop
-    tone: violet
+    tone: cyan
     bullets:
       - "Gắn nhãn tuỳ chọn cho các dịch vụ phụ trợ nặng như **Prometheus, Grafana, pgAdmin**"
       - "Bình thường gõ `docker compose up -d` sẽ **tự động bỏ qua** chúng cho nhẹ máy"

@@ -87,7 +87,7 @@ steps:
     title: "Merge Về Trunk (main)"
     desc: "Tích hợp vào nhánh thân chính mỗi ngày, tắt mặc định Feature Flag nếu chưa xong UI"
     code: "flags.newQr = false"
-    tone: violet
+    tone: cyan
     edge: "đủ điều kiện"
   - icon: rocket
     badge: "Phát hành · Mở cờ"
@@ -118,9 +118,9 @@ items:
     cause: "Gọi `npx vitest` (thiếu `run`) hoặc đặt `CI: false` khiến công cụ bật chế độ Watch tương tác ngồi chờ người nhấn phím `q` vô thời hạn."
     fix: "Luôn đặt biến `CI: true` trong `env:` và gọi tường minh lệnh chạy một lần `npx vitest run` (hoặc `npx jest --ci`)."
     cmd: "CI=true npx vitest run"
-  - symptom: "Laptop macOS chạy êm, lên Ubuntu nổ lỗi: Cannot find module './UserCard'"
+  - symptom: "Laptop macOS chạy êm, lên Ubuntu phát sinh lỗi: Cannot find module './UserCard'"
     badge: "3. Hoa/thường Linux ext4"
-    tone: violet
+    tone: cyan
     cause: "Ổ đĩa APFS (macOS) / NTFS (Windows) mặc định không phân biệt hoa thường nên import `./UserCard` cho tệp `userCard.tsx` vẫn lọt; còn Linux `ext4` phân biệt tuyệt đối!"
     fix: "Bật cờ kiểm tra nghiêm ngặt tên tệp trong `tsconfig.json` để bắt lỗi ngay lúc gõ code trên máy cá nhân."
     cmd: "\"forceConsistentCasingInFileNames\": true"

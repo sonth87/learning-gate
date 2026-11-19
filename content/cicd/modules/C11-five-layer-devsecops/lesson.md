@@ -2,7 +2,7 @@
 
 Trong mô hình phát triển phần mềm cũ cách đây một thập kỷ, đội Bảo mật chỉ nhảy vào kiểm tra vào... tuần cuối cùng trước ngày ra mắt sản phẩm. Khi họ phát hiện 15 lỗ hổng nghiêm trọng và 1 khoá API nằm phơi trong lịch sử Git, ngày phát hành bị hoãn cả tháng trong sự căng thẳng tột độ giữa Dev và Security!
 
-Triết lý ==DevSecOps ("Shift-Left Security" — Dịch chuyển bảo mật sang bên trái)== thay đổi hoàn toàn cuộc chơi: đưa các chốt kiểm tra tự động ({amber:Gitleaks}, {sky:Semgrep}, {violet:npm audit}, {rose:Trivy}, {emerald:CycloneDX SBOM}) chạy ngay trong **3–5 phút đầu của mỗi Pull Request**, biến việc bắt lỗ hổng nhẹ nhàng như cách `ESLint` hay `TypeScript` báo gạch chân đỏ ngay lúc bạn vừa gõ code xong!
+Triết lý ==DevSecOps ("Shift-Left Security" — Dịch chuyển bảo mật sang bên trái)== thay đổi hoàn toàn cuộc chơi: đưa các chốt kiểm tra tự động (**Gitleaks**, **Semgrep**, **npm audit**, **Trivy**, **CycloneDX SBOM**) chạy ngay trong **3–5 phút đầu của mỗi Pull Request**, biến việc bắt lỗ hổng nhẹ nhàng như cách `ESLint` hay `TypeScript` báo gạch chân đỏ ngay lúc bạn vừa gõ code xong!
 
 ```visual
 kind: flow
@@ -87,7 +87,7 @@ columns:
       - label: "Lớp 3 — SCA: Kiểm toán Thư viện mở (npm audit / Trivy fs)"
         sub: "Đối chiếu cây phụ thuộc bên thứ ba trong package-lock.json với kho CVE"
         note: Bắt gói npm dính CVE high/critical
-        tone: violet
+        tone: cyan
     footer: Phản hồi ngay trên từng dòng code của Pull Request trước khi tốn CPU đóng gói Image
   - title: Các Lớp Kiểm Định Thành Phẩm & Vận Hành (Artifact & Runtime)
     badge: Lớp 4 → Lớp 5 (+ DAST) · Chốt chặn trước Production
@@ -145,7 +145,7 @@ Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối c
 ```
 
 ### 3) Lớp 4 & 5 — Cổng chặn `Trivy` với "Bộ 3 Cờ Vàng" & Xuất `CycloneDX SBOM`
-> [!WARNING] Bẫy chết người số 1 của Trivy: Mặc định `--exit-code` bằng `0`!
+> [!WARNING] Lỗi nghiêm trọng cần tránh số 1 của Trivy: Mặc định `--exit-code` bằng `0`!
 > Nếu bạn chỉ gõ `trivy image ghcr.io/acme/shop-api:1.0` mà **quên truyền `--exit-code 1`**, dù phát hiện **12 lỗ hổng `CRITICAL`** thì Trivy chỉ in bảng cảnh báo cho vui rồi vẫn trả mã thoát `0` — khiến đường ống báo **XANH** và đẩy thẳng ảnh đầy lỗ hổng lên Production!
 
 Luôn kết hợp đồng thời **3 cờ vàng** trên cổng chặn Trivy:

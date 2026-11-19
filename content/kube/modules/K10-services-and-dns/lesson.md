@@ -5,7 +5,7 @@
 - [!] **Mỗi lần Pod được khởi tạo lại, nó nhận một địa chỉ IP nội bộ hoàn toàn mới** (ví dụ Pod cũ là `10.244.1.15`, Pod mới sinh ra ở Node khác lại là `10.244.2.48`)!
 - [>] Nếu Frontend hay microservice khác lưu cứng IP của Pod, chỉ sau một đợt Rolling Update toàn bộ kết nối sẽ đứt gãy sạch.
 
-Tài nguyên **`Service`** (`apiVersion: v1`) giải quyết triệt để bài toán này bằng cách đặt một ==địa chỉ IP ảo cố định (Virtual IP — ClusterIP)== kèm một {sky:tên miền DNS bất biến} đứng chắn phía trước và tự động cân bằng tải tới các Pod khoẻ mạnh.
+Tài nguyên **`Service`** (`apiVersion: v1`) giải quyết triệt để bài toán này bằng cách đặt một ==địa chỉ IP ảo cố định (Virtual IP — ClusterIP)== kèm một **tên miền DNS bất biến** đứng chắn phía trước và tự động cân bằng tải tới các Pod khoẻ mạnh.
 
 ```visual
 kind: illustration
@@ -23,7 +23,7 @@ callouts:
   - num: 2
     label: "CoreDNS phân giải tên miền svc.cluster.local"
     desc: "Các dịch vụ trong cùng Namespace gọi nhau gọn nhẹ qua http://shop-api-svc mà không cần quan tâm IP thực tế của từng Pod."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "EndpointSlice tự động lọc các Pod Ready=true"
     desc: "Mọi Pod đang lỗi hoặc chưa vượt qua kiểm tra sẵn sàng sẽ tự động bị rút khỏi danh sách nhận lưu lượng của Service VIP."
@@ -79,7 +79,7 @@ subtitle: Nhớ quy tắc ngắn gọn — port là mặt tiền của Service, 
 items:
   - keyword: selector
     role: Bộ lọc tìm Pod đích
-    tone: violet
+    tone: cyan
     summary: Quét tìm mọi Pod đang sẵn sàng (Ready = true) mang bộ nhãn khớp với selector này.
     bullets:
       - "Nếu gõ lệch nhãn so với Pod `metadata.labels`, danh sách đích sẽ trống rỗng (`ENDPOINTS = <none>`)"
@@ -147,7 +147,7 @@ steps:
     title: Service (ClusterIP)
     desc: Giữ Virtual IP bất biến, tra bảng định tuyến của kube-proxy
     code: "port: 80"
-    tone: violet
+    tone: cyan
     edge: lọc selector + Ready
   - icon: check
     badge: 3. Danh bạ đích sống

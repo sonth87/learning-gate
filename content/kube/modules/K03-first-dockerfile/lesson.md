@@ -21,7 +21,7 @@ steps:
     title: Lắp Ráp Từng Layer
     desc: Chép manifest, chạy RUN npm ci, thiết lập ENV production
     code: RUN npm ci
-    tone: violet
+    tone: cyan
     edge: docker build -t
   - icon: package
     badge: Artifact bất biến
@@ -96,7 +96,7 @@ items:
     lang: dockerfile
   - keyword: RUN
     role: Thực thi lúc đóng gói
-    tone: violet
+    tone: cyan
     summary: Chạy câu lệnh Linux **ngay trong lúc `docker build`** để cài gói hoặc biên dịch TS, tạo ra một layer mới.
     bullets:
       - Dùng `RUN npm ci` thay cho `npm install` để khóa chặt 100% theo lockfile
@@ -162,7 +162,7 @@ items:
 - [x] **Khóa cứng theo `package-lock.json`:** Nếu `package.json` và `package-lock.json` lệch nhau (do ai đó sửa tay quên cập nhật lock), **`npm ci` báo lỗi dừng build ngay lập tức** thay vì âm thầm cài đại phiên bản mới!
 - [x] **Nhanh và sạch cho CI/Docker:** `npm ci` (*Clean Install*) bỏ qua bước tính toán lại cây phụ thuộc nên cài đặt nhanh và ổn định hơn hẳn `npm install`.
 
-## 4. Bẫy chết người số 1: Shell Form vs JSON Exec Form ở `CMD`
+## 4. Lỗi nghiêm trọng cần tránh số 1: Shell Form vs JSON Exec Form ở `CMD`
 
 ```visual
 kind: compare
@@ -182,7 +182,7 @@ left:
   bullets:
     - "Tiến trình giữ ==PID 1== là `/bin/sh` chứ **không phải** `node`"
     - "Khi `docker stop` hay K8s Rolling Update gửi `SIGTERM` tới PID 1, `/bin/sh` trên Alpine **nuốt luôn tín hiệu**, không chuyển xuống `node`!"
-    - "Hàm `process.on('SIGTERM')` bị vô hiệu hoá; container treo đơ 10s rồi bị bắn hạ bằng **`SIGKILL (137)`** làm rớt request đang xử lý"
+    - "Hàm `process.on('SIGTERM')` bị vô hiệu hoá; container treo đơ 10s rồi bị dừng tiến trình (kill) bằng **`SIGKILL (137)`** làm rớt request đang xử lý"
 right:
   badge: "CÁCH CHUẨN · JSON Exec Form"
   title: Gọi thẳng tiến trình Node làm PID 1

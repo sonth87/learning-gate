@@ -160,12 +160,11 @@ const Shell: React.FC<{
       </defs>
 
       <rect x="0" y="0" width="880" height="380" rx="14" fill={p.bg} />
-      <rect x="0" y="0" width="880" height="380" rx="14" fill={`url(#grid-${id})`} />
-      <rect x="0.75" y="0.75" width="878.5" height="378.5" rx="13.25" fill="none" stroke={p.border} strokeWidth="1.5" />
+      <rect x="0" y="0" width="880" height="380" rx="14" fill={`url(#grid-${id})`} opacity="0.65" />
 
       {/* Header bar */}
-      <rect x="14" y="12" width="852" height="32" rx="8" fill={p.panel} stroke={p.border} />
-      <rect x="22" y="18" width="66" height="20" rx="5" fill={p.cyanBg} stroke={p.cyanBorder} />
+      <rect x="14" y="12" width="852" height="32" rx="8" fill={p.panel} />
+      <rect x="22" y="18" width="66" height="20" rx="5" fill={p.cyanBg} />
       <text x="55" y="32" textAnchor="middle" fill={p.cyan} fontSize="10.5" fontWeight="700" fontFamily={MONO}>
         {badge}
       </text>
@@ -204,7 +203,8 @@ const Panel: React.FC<{
         rx="10"
         fill={p.panel}
         stroke={tone === 'muted' ? p.border : c.border}
-        strokeWidth="1.3"
+        strokeWidth="1"
+        strokeOpacity="0.65"
         strokeDasharray={dashed ? '5 4' : undefined}
       />
       {title && (
@@ -216,14 +216,6 @@ const Panel: React.FC<{
             height="24"
             rx="9"
             fill={tone === 'muted' ? p.bgSubtle : c.bg}
-          />
-          <line
-            x1={x}
-            y1={y + 25}
-            x2={x + w}
-            y2={y + 25}
-            stroke={tone === 'muted' ? p.border : c.border}
-            strokeWidth="1"
           />
           <text x={x + 12} y={y + 17} fill={tone === 'muted' ? p.inkSoft : c.fg} fontSize="11" fontWeight="700">
             {title}
@@ -244,7 +236,7 @@ const Callout: React.FC<{ x: number; y: number; n: 1 | 2 | 3 | 4; tone: Tone; p:
   const c = toneColors(p, tone);
   return (
     <g>
-      <circle cx={x} cy={y} r="11.5" fill={c.bg} stroke={c.fg} strokeWidth="1.6" />
+      <circle cx={x} cy={y} r="11.5" fill={c.bg} stroke={c.fg} strokeWidth="1.4" />
       <text
         x={x}
         y={y + 4.2}
@@ -272,7 +264,7 @@ const CodeBlock: React.FC<{
   const h = lines.length * lineH + 12;
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="7" fill={p.codeBg} stroke={p.border} />
+      <rect x={x} y={y} width={w} height={h} rx="7" fill={p.codeBg} />
       {lines.map((ln, idx) => {
         const fill = ln.tone ? toneColors(p, ln.tone).fg : p.ink;
         return (
@@ -306,7 +298,7 @@ const Pill: React.FC<{
   const c = toneColors(p, tone);
   return (
     <g>
-      <rect x={x} y={y} width={w} height={h} rx="7" fill={c.bg} stroke={c.border} strokeWidth="1.3" />
+      <rect x={x} y={y} width={w} height={h} rx="7" fill={c.bg} stroke={c.border} strokeWidth="1" strokeOpacity="0.7" />
       <text
         x={x + w / 2}
         y={sub ? y + h / 2 - 2 : y + h / 2 + 4}
@@ -370,35 +362,34 @@ const Arrow: React.FC<{
 };
 
 /* ============================================================================
- * M00 — JS V8 vs CPython Pipeline (.py -> .pyc -> PVM) & Indentation vs {}
+ * M00 — CPython Execution Pipeline (.py -> .pyc -> PVM) & Indentation Syntax
  * ========================================================================== */
 const PyM00: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm00';
   return (
-    <Shell id={id} badge="PY:M00" title="Node.js V8 vs CPython Pipeline & Khối Thụt Lề" rightNote="uv · .py -> .pyc -> PVM" isLight={isLight} className={className}>
-      {/* Left: Execution Pipeline Comparison */}
-      <Panel x={14} y={54} w={524} h={312} title="Chu trình thực thi: Node.js V8 JIT vs CPython Bytecode PVM" tone="cyan" p={p} />
+    <Shell id={id} badge="PY:M00" title="Chu Trình Thực Thi CPython (.py -> .pyc -> PVM) & Cấu Trúc Khối Thụt Lề" rightNote="uv · .venv · PVM" isLight={isLight} className={className}>
+      {/* Left: Execution Pipeline */}
+      <Panel x={14} y={54} w={524} h={312} title="Chu trình thực thi CPython 3.x trong môi trường ảo (.venv)" tone="cyan" p={p} />
       <Callout x={518} y={66} n={1} tone="cyan" p={p} />
 
-      {/* JS Row */}
-      <text x={28} y={102} fill={p.inkMuted} fontSize="10.5" fontWeight="700">NODE.JS (V8)</text>
-      <Pill x={28} y={110} w={132} h={38} label="app.js" sub="package.json" tone="amber" p={p} />
-      <Arrow id={id} x1={164} y1={129} x2={206} y2={129} tone="amber" p={p} label="parse" />
-      <Pill x={210} y={110} w={142} h={38} label="AST + Ignition" sub="Bytecode + TurboFan" tone="amber" p={p} />
-      <Arrow id={id} x1={356} y1={129} x2={396} y2={129} tone="amber" p={p} label="JIT" />
-      <Pill x={400} y={110} w={124} h={38} label="Machine Code" sub="node_modules/" tone="muted" p={p} />
+      <text x={28} y={102} fill={p.cyan} fontSize="10.5" fontWeight="700">1. QUẢN LÝ DỰ ÁN &amp; MÔI TRƯỜNG (uv)</text>
+      <Pill x={28} y={112} w={150} h={40} label="pyproject.toml" sub="Khai báo dependencies" tone="cyan" p={p} />
+      <Arrow id={id} x1={182} y1={132} x2={220} y2={132} tone="cyan" p={p} label="uv sync" />
+      <Pill x={224} y={112} w={136} h={40} label="uv.lock" sub="Khoá phiên bản" tone="amber" p={p} />
+      <Arrow id={id} x1={364} y1={132} x2={400} y2={132} tone="emerald" p={p} label="cài vào" />
+      <Pill x={404} y={112} w={120} h={40} label=".venv/" sub="Cô lập thư viện" tone="emerald" p={p} />
 
       {/* Divider */}
-      <line x1={28} y1={164} x2={524} y2={164} stroke={p.border} strokeDasharray="4 4" />
+      <line x1={28} y1={168} x2={524} y2={168} stroke={p.border} strokeDasharray="4 4" />
 
       {/* CPython Row */}
-      <text x={28} y={184} fill={p.cyan} fontSize="10.5" fontWeight="700">CPYTHON 3.x (uv run)</text>
-      <Pill x={28} y={192} w={132} h={44} label="app.py" sub="pyproject.toml" tone="cyan" p={p} />
-      <Arrow id={id} x1={164} y1={214} x2={206} y2={214} tone="cyan" p={p} label="compile" />
-      <Pill x={210} y={192} w={142} h={44} label="__pycache__/" sub="app.cpython-313.pyc" tone="violet" p={p} />
-      <Arrow id={id} x1={356} y1={214} x2={396} y2={214} tone="emerald" p={p} label="eval loop" />
-      <Pill x={400} y={192} w={124} h={44} label="PVM (C Loop)" sub=".venv/ isolated" tone="emerald" p={p} />
+      <text x={28} y={188} fill={p.cyan} fontSize="10.5" fontWeight="700">2. BIÊN DỊCH &amp; CHẠY TRÊN MÁY ẢO PVM ($ uv run python app.py)</text>
+      <Pill x={28} y={196} w={132} h={42} label="app.py" sub="Mã nguồn Python" tone="cyan" p={p} />
+      <Arrow id={id} x1={164} y1={217} x2={206} y2={217} tone="cyan" p={p} label="compile" />
+      <Pill x={210} y={196} w={142} h={42} label="Bytecode (.pyc)" sub="__pycache__/" tone="amber" p={p} />
+      <Arrow id={id} x1={356} y1={217} x2={396} y2={217} tone="emerald" p={p} label="eval loop" />
+      <Pill x={400} y={196} w={124} h={42} label="PVM (CPython)" sub="Thực thi lệnh" tone="emerald" p={p} />
 
       {/* Entry Guard Box */}
       <Callout x={38} y={263} n={3} tone="emerald" p={p} />
@@ -408,42 +399,32 @@ const PyM00: DiagramRenderer = ({ isLight, className }) => {
         w={466}
         p={p}
         lines={[
-          { text: '# Cổng chặn: chỉ chạy khi gọi trực tiếp, KHÔNG chạy khi import', tone: 'muted' },
-          { text: 'if __name__ == "__main__":    # ~= require.main === module', tone: 'emerald' },
-          { text: '    main()                    # an toàn cho pytest / hệ thống chấm', tone: 'cyan' },
+          { text: '# Điểm vào chuẩn: chỉ chạy khi gọi trực tiếp, không chạy khi import', tone: 'muted' },
+          { text: 'if __name__ == "__main__":', tone: 'emerald' },
+          { text: '    main()                    # an toàn khi pytest hoặc file khác import', tone: 'cyan' },
         ]}
       />
 
-      {/* Right: Indentation vs Braces */}
-      <Panel x={550} y={54} w={316} h={312} title="Cú pháp khối lệnh: Thụt lề 4 cách vs { }" tone="violet" p={p} />
-      <Callout x={846} y={66} n={2} tone="violet" p={p} />
+      {/* Right: Indentation */}
+      <Panel x={550} y={54} w={316} h={312} title="Cú pháp khối lệnh: Dấu : và Thụt lề 4 dấu cách" tone="emerald" p={p} />
+      <Callout x={846} y={66} n={2} tone="emerald" p={p} />
 
-      <text x={564} y={98} fill={p.inkMuted} fontSize="10.5" fontWeight="700">JavaScript: ngoặc nhọn quyết định khối</text>
-      <CodeBlock
-        x={564}
-        y={105}
-        w={288}
-        p={p}
-        lines={[
-          { text: 'if (age >= 18) { console.log("OK"); }', tone: 'muted' },
-        ]}
-      />
-
-      <text x={564} y={158} fill={p.violet} fontSize="10.5" fontWeight="700">Python: 4 spaces = cấu trúc ngữ pháp</text>
-      <rect x={564} y={166} width={288} height={96} rx="7" fill={p.codeBg} stroke={p.violetBorder} />
+      <text x={564} y={98} fill={p.emerald} fontSize="10.5" fontWeight="700">Thụt lề 4 spaces xác định phạm vi khối lệnh:</text>
+      <rect x={564} y={108} width={288} height={144} rx="7" fill={p.codeBg} />
       {/* 4-space ruler guide */}
-      <rect x={574} y={190} width={28} height={34} rx="3" fill={p.violetBg} stroke={p.violetBorder} strokeDasharray="2 2" />
-      <text x={588} y={211} textAnchor="middle" fill={p.violet} fontSize="9.5" fontWeight="700" fontFamily={MONO}>4sp</text>
-      <text x={574} y={183} fill={p.cyan} fontSize="11" fontFamily={MONO}>if age &gt;= 18:</text>
-      <text x={606} y={203} fill={p.emerald} fontSize="11" fontFamily={MONO}>print(&quot;Đủ tuổi&quot;)</text>
-      <text x={606} y={220} fill={p.emerald} fontSize="11" fontFamily={MONO}>allow = True</text>
-      <text x={574} y={244} fill={p.inkSoft} fontSize="11" fontFamily={MONO}>print(&quot;Ngoài khối if&quot;)</text>
+      <rect x={574} y={136} width={28} height={52} rx="3" fill={p.cyanBg} stroke={p.cyanBorder} strokeDasharray="2 2" />
+      <text x={588} y={166} textAnchor="middle" fill={p.cyan} fontSize="9.5" fontWeight="700" fontFamily={MONO}>4sp</text>
+      <text x={574} y={128} fill={p.cyan} fontSize="11" fontFamily={MONO}>if age &gt;= 18:</text>
+      <text x={606} y={152} fill={p.emerald} fontSize="11" fontFamily={MONO}>print(&quot;Đủ tuổi&quot;)</text>
+      <text x={606} y={174} fill={p.emerald} fontSize="11" fontFamily={MONO}>allow = True</text>
+      <text x={574} y={208} fill={p.inkSoft} fontSize="11" fontFamily={MONO}>print(&quot;Ngoài khối if (luôn chạy)&quot;)</text>
+      <text x={574} y={236} fill={p.inkMuted} fontSize="10" fontFamily={MONO}># Đặt tên biến/hàm: snake_case</text>
 
       {/* IndentationError warning */}
-      <rect x={564} y={274} width={288} height={78} rx="7" fill={p.roseBg} stroke={p.roseBorder} />
-      <text x={576} y={294} fill={p.rose} fontSize="11" fontWeight="700" fontFamily={MONO}>IndentationError: unexpected indent</text>
-      <text x={576} y={313} fill={p.inkSoft} fontSize="10.5">Thiếu dấu : cuối dòng if/def/for hoặc</text>
-      <text x={576} y={329} fill={p.inkSoft} fontSize="10.5">trộn Tab với Space sẽ dừng ngay lúc parse!</text>
+      <rect x={564} y={268} width={288} height={84} rx="7" fill={p.roseBg} />
+      <text x={576} y={290} fill={p.rose} fontSize="11" fontWeight="700" fontFamily={MONO}>IndentationError / SyntaxError</text>
+      <text x={576} y={310} fill={p.inkSoft} fontSize="10.5">• Quên dấu : ở cuối dòng if / def / for / while</text>
+      <text x={576} y={328} fill={p.inkSoft} fontSize="10.5">• Lệch số dấu cách trong cùng một khối lệnh</text>
     </Shell>
   );
 };
@@ -514,7 +495,7 @@ const PyM25: DiagramRenderer = ({ isLight, className }) => {
       <text x={452} y={235} fill={p.rose} fontSize="11" fontWeight="700" fontFamily={MONO}>ZeroDivisionError: division by zero</text>
 
       <text x={452} y={272} fill={p.emerald} fontSize="10.5" fontFamily={SANS}>Bước 1 (dòng cuối): Loại lỗi + nguyên nhân</text>
-      <text x={452} y={288} fill={p.amber} fontSize="10.5" fontFamily={SANS}>Bước 2 (khung File cuối): Đúng file + số dòng nổ</text>
+      <text x={452} y={288} fill={p.amber} fontSize="10.5" fontFamily={SANS}>Bước 2 (khung File cuối): File và số dòng xảy ra lỗi</text>
 
       {/* Upward arrow */}
       <Arrow id={id} x1={822} y1={242} x2={822} y2={112} tone="rose" p={p} />
@@ -522,7 +503,7 @@ const PyM25: DiagramRenderer = ({ isLight, className }) => {
       <text x={822} y={275} textAnchor="middle" fill={p.rose} fontSize="10" fontWeight="700">LÊN</text>
 
       {/* Bottom quick bar */}
-      <Pill x={438} y={308} w={132} h={42} label="NameError" sub="Biến chưa gán" tone="violet" p={p} />
+      <Pill x={438} y={308} w={132} h={42} label="NameError" sub="Biến chưa khai báo" tone="rose" p={p} />
       <Pill x={578} y={308} w={132} h={42} label="ValueError" sub="int('abc')" tone="amber" p={p} />
       <Pill x={718} y={308} w={132} h={42} label="FileNotFound" sub="Sai pwd / path" tone="cyan" p={p} />
     </Shell>
@@ -599,23 +580,23 @@ const PyM27: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm27';
   return (
-    <Shell id={id} badge="PY:M27" title="4 Phép Toán Đặc Trưng (/, //, %, **) & Số Nguyên Vô Hạn vs Float IEEE-754" rightNote="int vs float · // · %" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M27" title="4 Phép Toán Số Học (/, //, %, **) & Số Nguyên int vs Số Thực float (IEEE-754)" rightNote="int vs float · // · %" isLight={isLight} className={className}>
       {/* Left: 4 Operators Grid */}
-      <Panel x={14} y={54} w={462} h={312} title="Phép chia & Luỹ thừa trong Python (Khác hẳn C / JS)" tone="cyan" p={p} />
+      <Panel x={14} y={54} w={462} h={312} title="4 phép toán số học cốt lõi trong Python" tone="cyan" p={p} />
       <Callout x={456} y={66} n={1} tone="cyan" p={p} />
 
-      <Pill x={28} y={92} w={210} h={56} label="7 / 2  ->  3.5" sub="Chia thực: LUÔN ra float (6/3 -> 2.0)" tone="cyan" p={p} />
-      <Pill x={252} y={92} w={210} h={56} label="7 // 2  ->  3" sub="Chia lấy nguyên (floor xuống -inf)" tone="emerald" p={p} />
-      <Pill x={28} y={160} w={210} h={56} label="7 % 2  ->  1" sub="Chia lấy dư (chẵn/lẻ, xoay vòng)" tone="amber" p={p} />
-      <Pill x={252} y={160} w={210} h={56} label="2 ** 10  ->  1024" sub="Luỹ thừa (** thay cho Math.pow)" tone="violet" p={p} />
+      <Pill x={28} y={92} w={210} h={56} label="7 / 2  ->  3.5" sub="Chia thực (True Division): luôn ra float" tone="cyan" p={p} />
+      <Pill x={252} y={92} w={210} h={56} label="7 // 2  ->  3" sub="Chia lấy nguyên (Floor Division)" tone="emerald" p={p} />
+      <Pill x={28} y={160} w={210} h={56} label="7 % 2  ->  1" sub="Chia lấy dư (Modulo: chẵn/lẻ, chu kỳ)" tone="amber" p={p} />
+      <Pill x={252} y={160} w={210} h={56} label="2 ** 10  ->  1024" sub="Luỹ thừa (Exponentiation)" tone="cyan" p={p} />
 
       {/* Invariant box */}
-      <rect x={28} y={230} width={434} height={54} rx="8" fill={p.codeBg} stroke={p.emeraldBorder} />
+      <rect x={28} y={230} width={434} height={54} rx="8" fill={p.codeBg} />
       <text x={245} y={252} textAnchor="middle" fill={p.emerald} fontSize="11.5" fontWeight="700" fontFamily={MONO}>
-        Bất biến: (a // b) * b + (a % b) == a
+        Hệ thức bảo toàn: (a // b) * b + (a % b) == a
       </text>
       <text x={245} y={272} textAnchor="middle" fill={p.inkMuted} fontSize="10.5" fontFamily={MONO}>
-        Chú ý số âm: -7 // 2 == -4 (làm tròn XUỐNG, không cắt cụt về 0)
+        Lưu ý với số âm: -7 // 2 == -4 (làm tròn xuống -inf, không cắt về 0)
       </text>
 
       <CodeBlock
@@ -624,8 +605,8 @@ const PyM27: DiagramRenderer = ({ isLight, className }) => {
         w={434}
         p={p}
         lines={[
-          { text: 'Ưu tiên: ()  >  **  >  * / // %  >  + -', tone: 'cyan' },
-          { text: '175 // 60 -> 2 phút   |   175 % 60 -> 55 giây', tone: 'amber' },
+          { text: 'Thứ tự ưu tiên: ()  >  **  >  * / // %  >  + -', tone: 'cyan' },
+          { text: '175 // 60 -> 2 phút   |   175 % 60 -> 55 giây', tone: 'emerald' },
         ]}
       />
 
@@ -640,67 +621,67 @@ const PyM27: DiagramRenderer = ({ isLight, className }) => {
         lines={[
           { text: '>>> 2 ** 100', tone: 'cyan' },
           { text: '1267650600228229401496703205376', tone: 'emerald' },
-          { text: 'big = 1_000_000_000  # gạch dưới dễ đọc', tone: 'muted' },
+          { text: 'big = 1_000_000_000  # dấu _ giúp dễ đọc hàng nghìn', tone: 'muted' },
         ]}
       />
-      <text x={502} y={186} fill={p.emerald} fontSize="10.5">Không bao giờ tràn bit (overflow) như int32/int64!</text>
+      <text x={502} y={186} fill={p.emerald} fontSize="10.5">Python tự mở rộng bộ nhớ cho int, không bị tràn số (Integer Overflow).</text>
 
-      <Panel x={488} y={214} w={378} h={152} title="float: IEEE-754 64-bit & Sai số nhị phân" tone="rose" p={p} />
-      <Callout x={846} y={226} n={3} tone="rose" p={p} />
+      <Panel x={488} y={214} w={378} h={152} title="float: IEEE-754 64-bit & Sai số biểu diễn nhị phân" tone="amber" p={p} />
+      <Callout x={846} y={226} n={3} tone="amber" p={p} />
       <CodeBlock
         x={502}
         y={248}
         w={350}
         p={p}
         lines={[
-          { text: '0.1 + 0.2 == 0.3          # False! (0.30000000000000004)', tone: 'rose' },
+          { text: '0.1 + 0.2 == 0.3          # False (0.30000000000000004)', tone: 'rose' },
           { text: 'abs((0.1 + 0.2) - 0.3) < 1e-9   # True', tone: 'emerald' },
-          { text: 'math.isclose(0.1 + 0.2, 0.3)    # True (chuẩn)', tone: 'emerald' },
+          { text: 'math.isclose(0.1 + 0.2, 0.3)    # True (khuyên dùng)', tone: 'emerald' },
         ]}
       />
-      <text x={502} y={350} fill={p.inkMuted} fontSize="10.5">Tiền tệ chính xác tuyệt đối: dùng int (xu/đồng) hoặc Decimal.</text>
+      <text x={502} y={350} fill={p.inkMuted} fontSize="10.5">Tính toán tiền tệ: lưu theo đơn vị nguyên nhỏ nhất hoặc dùng Decimal.</text>
     </Shell>
   );
 };
 
 /* ============================================================================
- * M28 — Explicit Casting vs JS Implicit Coercion & Short-Circuit and/or/not
+ * M28 — Strong Typing, Explicit Type Conversion & Short-Circuit Logic (and/or/not)
  * ========================================================================== */
 const PyM28: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm28';
   return (
-    <Shell id={id} badge="PY:M28" title="Strong Typing (Ép Kiểu Tường Minh) & Đoản Mạch Logic and / or / not" rightNote="Strong Typing · is None" isLight={isLight} className={className}>
-      {/* Left: Strong Typing vs JS Coercion */}
-      <Panel x={14} y={54} w={422} h={312} title="Python Không Tự Đổi Kiểu Ngầm Như JavaScript" tone="cyan" p={p} />
+    <Shell id={id} badge="PY:M28" title="Kiểu Dữ Liệu Mạnh (Strong Typing), Ép Kiểu Tường Minh & Logic and / or / not" rightNote="Strong Typing · Truthy / Falsy" isLight={isLight} className={className}>
+      {/* Left: Strong Typing & Explicit Conversion */}
+      <Panel x={14} y={54} w={422} h={312} title="Strong Typing & Ép Kiểu Tường Minh (Explicit Conversion)" tone="cyan" p={p} />
       <Callout x={416} y={66} n={1} tone="cyan" p={p} />
 
-      <rect x={28} y={90} width={394} height={64} rx="8" fill={p.roseBg} stroke={p.roseBorder} />
-      <text x={40} y={111} fill={p.inkMuted} fontSize="10.5" fontFamily={MONO}>JS:     &quot;5&quot; + 3  -&gt;  &quot;53&quot;   |  &quot;5&quot; - 3  -&gt;  2</text>
-      <text x={40} y={132} fill={p.rose} fontSize="11" fontWeight="700" fontFamily={MONO}>Python: &quot;5&quot; + 3  -&gt;  TypeError! (chặn bug sớm)</text>
-      <text x={40} y={147} fill={p.inkSoft} fontSize="10">Khác kiểu: &quot;5&quot; == 5 là False ngay lập tức (không có ===).</text>
+      <rect x={28} y={90} width={394} height={64} rx="8" fill={p.roseBg} />
+      <text x={40} y={112} fill={p.rose} fontSize="11" fontWeight="700" fontFamily={MONO}>&quot;5&quot; + 3   -&gt;  TypeError: can only concatenate str</text>
+      <text x={40} y={131} fill={p.amber} fontSize="10.5" fontFamily={MONO}>&quot;5&quot; == 5  -&gt;  False (khác kiểu dữ liệu, không tự đổi ngầm)</text>
+      <text x={40} y={147} fill={p.inkSoft} fontSize="10">Python yêu cầu chuyển kiểu rõ ràng trước khi tính toán để tránh lỗi ngầm.</text>
 
-      <text x={28} y={176} fill={p.cyan} fontSize="11" fontWeight="700">Cầu nối ép kiểu chủ động (Explicit Constructors):</text>
-      <Pill x={28} y={186} w={122} h={42} label='int("42")' sub="-> 42 (int)" tone="emerald" p={p} />
-      <Pill x={164} y={186} w={122} h={42} label="str(42)" sub='-> "42" (str)' tone="cyan" p={p} />
-      <Pill x={300} y={186} w={122} h={42} label='float("3.5")' sub="-> 3.5 (float)" tone="violet" p={p} />
+      <text x={28} y={175} fill={p.cyan} fontSize="11" fontWeight="700">Hàm chuyển đổi kiểu dữ liệu (Type Constructors):</text>
+      <Pill x={28} y={185} w={122} h={44} label='int("42")' sub="-> 42 (int)" tone="emerald" p={p} />
+      <Pill x={164} y={185} w={122} h={44} label="str(42)" sub='-> "42" (str)' tone="cyan" p={p} />
+      <Pill x={300} y={185} w={122} h={44} label='float("3.5")' sub="-> 3.5 (float)" tone="emerald" p={p} />
 
-      <Callout x={38} y={254} n={3} tone="violet" p={p} />
+      <Callout x={38} y={254} n={3} tone="cyan" p={p} />
       <CodeBlock
         x={56}
         y={242}
         w={366}
         p={p}
         lines={[
-          { text: '# Kiểm tra kiểu & giá trị rỗng None:', tone: 'muted' },
-          { text: 'isinstance(42, int)      # True (ưa dùng hơn type())', tone: 'cyan' },
-          { text: 'if result is None:       # LUÔN dùng is / is not None', tone: 'violet' },
-          { text: 'int("3.5")               # ValueError! -> int(float("3.5"))', tone: 'amber' },
+          { text: '# Kiểm tra kiểu dữ liệu & giá trị rỗng None:', tone: 'muted' },
+          { text: 'isinstance(42, int)      # True (hỗ trợ cả kế thừa)', tone: 'emerald' },
+          { text: 'if result is None:       # Chuẩn PEP 8: dùng is / is not', tone: 'cyan' },
+          { text: 'int("3.5")               # ValueError -> dùng float("3.5")', tone: 'rose' },
         ]}
       />
 
       {/* Right: Short-Circuit Logic & Truthy/Falsy */}
-      <Panel x={448} y={54} w={418} h={312} title="Logic Đoản Mạch (Short-Circuit) & Bảng Falsy" tone="emerald" p={p} />
+      <Panel x={448} y={54} w={418} h={312} title="Đánh Giá Ngắn Mạch (Short-Circuit) & Truthy / Falsy" tone="emerald" p={p} />
       <Callout x={846} y={66} n={2} tone="emerald" p={p} />
 
       <CodeBlock
@@ -709,33 +690,33 @@ const PyM28: DiagramRenderer = ({ isLight, className }) => {
         w={390}
         p={p}
         lines={[
-          { text: '# Ưu tiên:  not   >   and   >   or', tone: 'muted' },
-          { text: 'count > 0 and (total / count) > 5  # count=0 -> dừng an toàn!', tone: 'emerald' },
-          { text: 'display = nickname or "Khách"      # trả giá trị thật đầu tiên', tone: 'cyan' },
+          { text: '# Thứ tự ưu tiên:  not   >   and   >   or', tone: 'muted' },
+          { text: 'count > 0 and (total / count) > 5  # count=0 -> dừng sớm an toàn', tone: 'emerald' },
+          { text: 'name = user_input or "Khách"       # lấy giá trị Truthy đầu tiên', tone: 'cyan' },
         ]}
       />
 
       {/* Falsy vs Truthy visual */}
-      <rect x={462} y={164} width={188} height={186} rx="8" fill={p.roseBg} stroke={p.roseBorder} />
-      <text x={556} y={184} textAnchor="middle" fill={p.rose} fontSize="11" fontWeight="700">FALSY (Coi như Sai)</text>
+      <rect x={462} y={164} width={188} height={186} rx="8" fill={p.roseBg} />
+      <text x={556} y={184} textAnchor="middle" fill={p.rose} fontSize="11" fontWeight="700">FALSY (bool(x) == False)</text>
       <text x={476} y={206} fill={p.ink} fontSize="11" fontFamily={MONO}>• False, None</text>
-      <text x={476} y={226} fill={p.ink} fontSize="11" fontFamily={MONO}>• 0, 0.0</text>
-      <text x={476} y={246} fill={p.ink} fontSize="11" fontFamily={MONO}>• &quot;&quot; (chuỗi rỗng)</text>
-      <text x={476} y={266} fill={p.rose} fontWeight="700" fontSize="11" fontFamily={MONO}>• [], {}, set(), ()</text>
-      <text x={476} y={292} fill={p.inkSoft} fontSize="10">Khác JS: [] và {`{}`} trong</text>
-      <text x={476} y={307} fill={p.inkSoft} fontSize="10">Python đều là FALSY!</text>
-      <text x={476} y={332} fill={p.rose} fontSize="10" fontFamily={MONO}>bool(&quot;False&quot;) == True!</text>
+      <text x={476} y={226} fill={p.ink} fontSize="11" fontFamily={MONO}>• 0, 0.0, 0j</text>
+      <text x={476} y={246} fill={p.ink} fontSize="11" fontFamily={MONO}>• &quot;&quot;, b&quot;&quot; (chuỗi rỗng)</text>
+      <text x={476} y={266} fill={p.rose} fontWeight="700" fontSize="11" fontFamily={MONO}>• [], {'{}'}, set(), ()</text>
+      <text x={476} y={292} fill={p.inkSoft} fontSize="10">Mọi collection rỗng (len == 0)</text>
+      <text x={476} y={307} fill={p.inkSoft} fontSize="10">trong Python đều là Falsy.</text>
+      <text x={476} y={332} fill={p.amber} fontSize="10" fontFamily={MONO}>Lưu ý: bool(&quot;False&quot;) == True</text>
 
-      <rect x={664} y={164} width={188} height={186} rx="8" fill={p.emeraldBg} stroke={p.emeraldBorder} />
-      <text x={758} y={184} textAnchor="middle" fill={p.emerald} fontSize="11" fontWeight="700">TRUTHY &amp; Bẫy Kinh Điển</text>
+      <rect x={664} y={164} width={188} height={186} rx="8" fill={p.emeraldBg} />
+      <text x={758} y={184} textAnchor="middle" fill={p.emerald} fontSize="11" fontWeight="700">TRUTHY &amp; Lỗi Thường Gặp</text>
       <text x={676} y={206} fill={p.ink} fontSize="11" fontFamily={MONO}>• Số != 0 (-1, 3.14)</text>
-      <text x={676} y={226} fill={p.ink} fontSize="11" fontFamily={MONO}>• Chuỗi khác rỗng &quot;0&quot;</text>
+      <text x={676} y={226} fill={p.ink} fontSize="11" fontFamily={MONO}>• Chuỗi khác rỗng (&quot;0&quot;)</text>
       <text x={676} y={246} fill={p.ink} fontSize="11" fontFamily={MONO}>• [0], {`{"a": 1}`}</text>
       <line x1={674} y1={262} x2={842} y2={262} stroke={p.emeraldBorder} />
       <text x={676} y={281} fill={p.rose} fontSize="10" fontFamily={MONO}>SAI: if x == &quot;a&quot; or &quot;b&quot;:</text>
       <text x={676} y={301} fill={p.emerald} fontSize="10" fontWeight="700" fontFamily={MONO}>ĐÚNG: if x in (&quot;a&quot;, &quot;b&quot;):</text>
-      <text x={676} y={326} fill={p.inkSoft} fontSize="9.5">Vì &quot;b&quot; không rỗng luôn</text>
-      <text x={676} y={340} fill={p.inkSoft} fontSize="9.5">là Truthy!</text>
+      <text x={676} y={324} fill={p.inkSoft} fontSize="9.5">Vì biểu thức sau or là &quot;b&quot;</text>
+      <text x={676} y={338} fill={p.inkSoft} fontSize="9.5">(chuỗi không rỗng -&gt; luôn True)</text>
     </Shell>
   );
 };
@@ -875,7 +856,7 @@ const PyM02: DiagramRenderer = ({ isLight, className }) => {
       <text x={715} y={168} fill={p.amber} fontSize="10.5" fontFamily={MONO}>s[::-1] == &quot;NOHTYP&quot;</text>
 
       {/* Bottom Left: Slicing recipes */}
-      <Panel x={14} y={220} w={422} h={146} title="Vũ khí Slicing s[start : stop : step]" tone="emerald" p={p} />
+      <Panel x={14} y={220} w={422} h={146} title="Cú pháp Slicing s[start : stop : step]" tone="emerald" p={p} />
       <Callout x={416} y={232} n={2} tone="emerald" p={p} />
       <CodeBlock
         x={28}
@@ -885,8 +866,8 @@ const PyM02: DiagramRenderer = ({ isLight, className }) => {
         lines={[
           { text: 's[:3]    -> "PYT"     |  s[3:]   -> "HON"', tone: 'cyan' },
           { text: 's[::2]   -> "PTO"     |  s[::-1] -> đảo ngược chuỗi', tone: 'emerald' },
-          { text: 's[0:999] -> "PYTHON"  # slicing vượt biên KHÔNG lỗi!', tone: 'amber' },
-          { text: '" - ".join(["a", "b"]) -> "a - b"  (ngược với JS)', tone: 'violet' },
+          { text: 's[0:999] -> "PYTHON"  # slicing vượt biên không báo lỗi', tone: 'amber' },
+          { text: '" - ".join(["a", "b"]) -> "a - b"  (ghép list chuỗi O(n))', tone: 'cyan' },
         ]}
       />
 
@@ -902,7 +883,7 @@ const PyM02: DiagramRenderer = ({ isLight, className }) => {
           { text: 's[0] = "J"              # TypeError! Không sửa tại chỗ', tone: 'rose' },
           { text: 's2 = "J" + s[1:]        # Tạo chuỗi mới -> "JYTHON"', tone: 'emerald' },
           { text: 'f"{pi:.2f} | {n:,}"     # "3.14 | 1,000,000"', tone: 'cyan' },
-          { text: 'f"{x=}"                 # "x=42" (debug siêu tốc)', tone: 'amber' },
+          { text: 'f"{x=}"                 # "x=42" (in nhanh tên biến + giá trị)', tone: 'amber' },
         ]}
       />
     </Shell>
@@ -910,15 +891,15 @@ const PyM02: DiagramRenderer = ({ isLight, className }) => {
 };
 
 /* ============================================================================
- * M29 — Decision Branching Waterfall (if / elif / else) & Order Sensitivity
+ * M29 — Decision Branching (if / elif / else) & Order Sensitivity
  * ========================================================================== */
 const PyM29: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm29';
   return (
-    <Shell id={id} badge="PY:M29" title="Thác Rẽ Nhánh if / elif / else: Khớp Đầu Tiên Thắng & Return Sớm" rightNote="First-Match Wins · Guard Clause" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M29" title="Cấu Trúc Rẽ Nhánh if / elif / else: Nhánh Khớp Đầu Tiên & Guard Clause" rightNote="First-Match Wins · Guard Clause" isLight={isLight} className={className}>
       {/* Left: Waterfall Flowchart */}
-      <Panel x={14} y={54} w={468} h={312} title="Thác kiểm tra từ trên xuống (Chỉ chạy ĐÚNG 1 nhánh đầu tiên True)" tone="cyan" p={p} />
+      <Panel x={14} y={54} w={468} h={312} title="Kiểm tra tuần tự từ trên xuống (Chỉ chạy nhánh đầu tiên thỏa điều kiện)" tone="cyan" p={p} />
       <Callout x={462} y={66} n={1} tone="cyan" p={p} />
 
       {/* Input */}
@@ -935,18 +916,18 @@ const PyM29: DiagramRenderer = ({ isLight, className }) => {
       {/* Condition 2 (MATCH!) */}
       <Pill x={32} y={210} w={164} h={40} label="elif score >= 80:" tone="emerald" p={p} />
       <Arrow id={id} x1={196} y1={230} x2={278} y2={230} tone="emerald" p={p} label="True -> CHỌN!" />
-      <Pill x={282} y={210} w={178} h={40} label='return "Giỏi"' sub="Thoát khối if ngay!" tone="emerald" p={p} />
+      <Pill x={282} y={210} w={178} h={40} label='return "Giỏi"' sub="Thoát khối if ngay" tone="emerald" p={p} />
 
-      <Arrow id={id} x1={87} y1={250} x2={87} y2={276} tone="muted" dashed p={p} label="không xét nữa" />
+      <Arrow id={id} x1={87} y1={250} x2={87} y2={276} tone="muted" dashed p={p} label="bỏ qua phần sau" />
 
       {/* Condition 3 & else */}
       <Pill x={32} y={278} w={164} h={32} label="elif score >= 50:" tone="muted" p={p} />
       <Pill x={32} y={320} w={164} h={32} label="else: (mặc định)" tone="muted" p={p} />
-      <text x={212} y={302} fill={p.rose} fontSize="10.5" fontWeight="600">Bẫy thứ tự: nếu đặt score &gt;= 50</text>
-      <text x={212} y={318} fill={p.rose} fontSize="10.5" fontWeight="600">lên đầu, điểm 95 sẽ bị xếp &quot;Đạt&quot;!</text>
+      <text x={212} y={302} fill={p.rose} fontSize="10.5" fontWeight="600">Lưu ý thứ tự: nếu đặt score &gt;= 50</text>
+      <text x={212} y={318} fill={p.rose} fontSize="10.5" fontWeight="600">lên đầu, điểm 95 sẽ rơi vào nhánh &quot;Đạt&quot;!</text>
 
       {/* Right: Chained Comparisons, Guard Clauses & Ternary */}
-      <Panel x={494} y={54} w={372} h={150} title="So sánh kẹp giữa & Guard Clause (Return sớm)" tone="emerald" p={p} />
+      <Panel x={494} y={54} w={372} h={150} title="So sánh chuỗi (Chained Comparison) & Guard Clause" tone="emerald" p={p} />
       <Callout x={846} y={66} n={2} tone="emerald" p={p} />
       <CodeBlock
         x={508}
@@ -954,15 +935,15 @@ const PyM29: DiagramRenderer = ({ isLight, className }) => {
         w={344}
         p={p}
         lines={[
-          { text: '# Python cho phép kẹp toán học tự nhiên:', tone: 'muted' },
-          { text: 'if 18 <= age <= 65:     # thay cho age>=18 and age<=65', tone: 'emerald' },
-          { text: '# Guard clause giảm lồng nhau (phẳng, dễ đọc):', tone: 'muted' },
+          { text: '# So sánh khoảng trực tiếp như ký hiệu toán học:', tone: 'muted' },
+          { text: 'if 18 <= age <= 65:     # tương đương 18 <= age and age <= 65', tone: 'emerald' },
+          { text: '# Guard Clause (return sớm để giảm lồng if):', tone: 'muted' },
           { text: 'if not user: return "Chưa đăng nhập"', tone: 'cyan' },
-          { text: 'if not user.active: return "Bị khoá"', tone: 'cyan' },
+          { text: 'if not user.active: return "Tài khoản bị khoá"', tone: 'cyan' },
         ]}
       />
 
-      <Panel x={494} y={216} w={372} h={150} title="Toán tử 3 ngôi & Cú pháp = vs ==" tone="amber" p={p} />
+      <Panel x={494} y={216} w={372} h={150} title="Biểu thức điều kiện 1 dòng & Phân biệt = vs ==" tone="amber" p={p} />
       <Callout x={846} y={228} n={3} tone="amber" p={p} />
       <CodeBlock
         x={508}
@@ -970,10 +951,10 @@ const PyM29: DiagramRenderer = ({ isLight, className }) => {
         w={344}
         p={p}
         lines={[
-          { text: '# Biểu thức điều kiện 1 dòng (thay ? : của JS):', tone: 'muted' },
-          { text: 'tag = "chẵn" if n % 2 == 0 else "lẻ"', tone: 'amber' },
+          { text: '# Conditional Expression (Toán tử 3 ngôi Python):', tone: 'muted' },
+          { text: 'tag = "chẵn" if n % 2 == 0 else "lẻ"', tone: 'emerald' },
           { text: '', tone: 'muted' },
-          { text: 'if x = 5:   # SyntaxError! (= là gán, == mới là so sánh)', tone: 'rose' },
+          { text: 'if x = 5:   # SyntaxError (= là phép gán, == là so sánh)', tone: 'rose' },
         ]}
       />
     </Shell>
@@ -1068,10 +1049,10 @@ const PyM03: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm03';
   return (
-    <Shell id={id} badge="PY:M03" title="Structural Pattern Matching (match/case), zip/enumerate & Đặc Sản for...else" rightNote="Py 3.10+ match · zip · for-else" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M03" title="Structural Pattern Matching (match/case), zip/enumerate & Mệnh Đề for...else" rightNote="Py 3.10+ match · zip · for-else" isLight={isLight} className={className}>
       {/* Left: Structural match/case */}
-      <Panel x={14} y={54} w={418} h={312} title="match / case: Phân rã cấu trúc + Không bao giờ fall-through" tone="violet" p={p} />
-      <Callout x={412} y={66} n={1} tone="violet" p={p} />
+      <Panel x={14} y={54} w={418} h={312} title="match / case: Đối sánh cấu trúc + Tự dừng sau mỗi nhánh" tone="cyan" p={p} />
+      <Callout x={412} y={66} n={1} tone="cyan" p={p} />
 
       <CodeBlock
         x={28}
@@ -1079,20 +1060,20 @@ const PyM03: DiagramRenderer = ({ isLight, className }) => {
         w={390}
         p={p}
         lines={[
-          { text: 'match command.split():', tone: 'violet' },
+          { text: 'match command.split():', tone: 'cyan' },
           { text: '    case ["quit" | "exit"]:', tone: 'cyan' },
-          { text: '        stop()                 # tự dừng, không cần break!', tone: 'muted' },
+          { text: '        stop()                 # tự dừng, không cần break', tone: 'muted' },
           { text: '    case ["move", x, y] if int(x) >= 0:', tone: 'emerald' },
-          { text: '        go(int(x), int(y))     # bắt biến x, y + guard if', tone: 'emerald' },
+          { text: '        go(int(x), int(y))     # trích xuất biến x, y + guard if', tone: 'emerald' },
           { text: '    case {"status": 200, "data": items}:', tone: 'amber' },
-          { text: '        render(items)          # khớp cả cấu trúc dict!', tone: 'amber' },
+          { text: '        render(items)          # đối sánh cấu trúc dict', tone: 'amber' },
           { text: '    case _:', tone: 'rose' },
-          { text: '        unknown()              # _ là wildcard mặc định', tone: 'muted' },
+          { text: '        unknown()              # _ là nhánh mặc định (wildcard)', tone: 'muted' },
         ]}
       />
-      <text x={28} y={278} fill={p.inkSoft} fontSize="10.5">Mạnh hơn switch(JS): vừa kiểm tra hình dáng tuple/list/dict,</text>
-      <text x={28} y={295} fill={p.inkSoft} fontSize="10.5">vừa gán biến cục bộ ngay trong mẫu khớp.</text>
-      <Pill x={28} y={310} w={390} h={40} label='for...in Python luôn duyệt GIÁ TRỊ (như JS for...of)' sub='Không bao giờ là chỉ số chuỗi như JS for...in!' tone="cyan" mono={false} p={p} />
+      <text x={28} y={278} fill={p.inkSoft} fontSize="10.5">Kiểm tra đồng thời cấu trúc dữ liệu (list, tuple, dict, class)</text>
+      <text x={28} y={295} fill={p.inkSoft} fontSize="10.5">và trích xuất giá trị vào biến cục bộ ngay trong nhánh khớp.</text>
+      <Pill x={28} y={310} w={390} h={40} label='for x in iterable: luôn duyệt trực tiếp từng PHẦN TỬ' sub='Với dict: for k, v in d.items() để lấy cả key và value' tone="cyan" mono={false} p={p} />
 
       {/* Right Top: enumerate + zip */}
       <Panel x={444} y={54} w={422} h={148} title="Duyệt chuẩn Pythonic: enumerate() & zip() song song" tone="cyan" p={p} />
@@ -1103,14 +1084,14 @@ const PyM03: DiagramRenderer = ({ isLight, className }) => {
       <Pill x={460} y={126} w={118} h={28} label="scores = [95, 88]" tone="emerald" p={p} />
       <Arrow id={id} x1={582} y1={104} x2={620} y2={116} tone="cyan" p={p} />
       <Arrow id={id} x1={582} y1={140} x2={620} y2={126} tone="emerald" p={p} />
-      <Pill x={624} y={102} w={226} h={38} label='zip -> ("An",95), ("Bo",88)' sub="Dừng ở dãy ngắn nhất" tone="amber" p={p} />
+      <Pill x={624} y={102} w={226} h={38} label='zip -> ("An",95), ("Bo",88)' sub="Dừng ở dãy ngắn nhất (hoặc strict=True)" tone="amber" p={p} />
 
       <text x={460} y={184} fill={p.ink} fontSize="10.5" fontFamily={MONO}>
-        for i, v in enumerate(seq, start=1):  # thay range(len(seq))
+        for i, v in enumerate(seq, start=1):  # thay cho range(len(seq))
       </text>
 
       {/* Right Bottom: for ... else */}
-      <Panel x={444} y={214} w={422} h={152} title="Đặc sản for ... else: else = Không gặp break!" tone="emerald" p={p} />
+      <Panel x={444} y={214} w={422} h={152} title="Cơ chế for ... else: Khối else chỉ chạy khi KHÔNG gặp break" tone="emerald" p={p} />
       <Callout x={846} y={226} n={3} tone="emerald" p={p} />
 
       <CodeBlock
@@ -1353,17 +1334,17 @@ const PyM06: DiagramRenderer = ({ isLight, className }) => {
       <Pill x={502} y={96} w={172} h={52} label="③ x * 10" sub="Bước 3: Biến đổi (Map)" tone="emerald" p={p} />
       <Arrow id={id} x1={678} y1={122} x2={716} y2={122} tone="emerald" p={p} />
 
-      <Pill x={720} y={96} w={132} h={52} label="[10, 30]" sub="Kết quả gọn 1 dòng" tone="violet" p={p} />
+      <Pill x={720} y={96} w={132} h={52} label="[10, 30]" sub="List kết quả mới" tone="emerald" p={p} />
 
       <text x={28} y={176} fill={p.inkSoft} fontSize="10.5" fontFamily={MONO}>
-        Thay thế gọn cả .filter().map() của JS!   |   Dict comp: {`{k: v for k, v in pairs}`}   |   Set comp: {`{x.lower() for x in words}`}
+        List comp: [f(x) for x in seq]   |   Dict comp: {`{k: v for k, v in pairs}`}   |   Set comp: {`{x.lower() for x in words}`}
       </text>
       <text x={28} y={196} fill={p.amber} fontSize="10" fontFamily={MONO}>
-        Mẹo: Lọc phần tử -&gt; if đặt CUỐI. Đổi giá trị 2 nhánh -&gt; [(&quot;chẵn&quot; if x%2==0 else &quot;lẻ&quot;) for x in nums] đặt TRƯỚC for!
+        Quy tắc vị trí if: Lọc phần tử -&gt; đặt if ở CUỐI. Đổi giá trị 2 nhánh -&gt; đặt if/else ở ĐẦU trước for.
       </text>
 
       {/* Bottom Left: Generator Expression vs List Comp */}
-      <Panel x={14} y={224} w={420} h={142} title="Generator Expression (...) — Không tạo List trung gian" tone="emerald" p={p} />
+      <Panel x={14} y={224} w={420} h={142} title="Generator Expression (...) — Tiết kiệm RAM O(1)" tone="emerald" p={p} />
       <Callout x={414} y={236} n={2} tone="emerald" p={p} />
       <CodeBlock
         x={28}
@@ -1371,7 +1352,7 @@ const PyM06: DiagramRenderer = ({ isLight, className }) => {
         w={392}
         p={p}
         lines={[
-          { text: '# Ngoặc tròn () tính cuốn chiếu từng phần tử (RAM O(1)):', tone: 'muted' },
+          { text: '# Ngoặc tròn () tính từng phần tử theo yêu cầu (Lazy):', tone: 'muted' },
           { text: 'total = sum(x * x for x in range(10_000_000))', tone: 'emerald' },
           { text: 'has_admin = any(u.role == "admin" for u in users)', tone: 'cyan' },
           { text: 'first_hit = next((x for x in items if x > 90), None)', tone: 'amber' },
@@ -1379,18 +1360,18 @@ const PyM06: DiagramRenderer = ({ isLight, className }) => {
       />
 
       {/* Bottom Right: Power Built-ins */}
-      <Panel x={446} y={224} w={420} h={142} title="Hộp đồ nghề Built-ins chuẩn Pythonic" tone="violet" p={p} />
-      <Callout x={846} y={236} n={3} tone="violet" p={p} />
+      <Panel x={446} y={224} w={420} h={142} title="Các hàm Built-in xử lý dãy dữ liệu chuẩn Pythonic" tone="cyan" p={p} />
+      <Callout x={846} y={236} n={3} tone="cyan" p={p} />
       <CodeBlock
         x={460}
         y={256}
         w={392}
         p={p}
         lines={[
-          { text: 'any(conds)  # ~= Array.some   (dừng ngay khi gặp True)', tone: 'cyan' },
-          { text: 'all(conds)  # ~= Array.every  (CHÚ Ý: all([]) == True!)', tone: 'amber' },
+          { text: 'any(conds)  # True nếu có ít nhất 1 phần tử True (dừng sớm)', tone: 'cyan' },
+          { text: 'all(conds)  # True nếu mọi phần tử True (Lưu ý: all([]) == True)', tone: 'amber' },
           { text: 'max(users, key=lambda u: u["score"], default=None)', tone: 'emerald' },
-          { text: 'sorted(words, key=len, reverse=True)', tone: 'violet' },
+          { text: 'sorted(words, key=len, reverse=True)', tone: 'cyan' },
         ]}
       />
     </Shell>
@@ -1593,9 +1574,9 @@ const PyM08: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm08';
   return (
-    <Shell id={id} badge="PY:M08" title="Đệ Quy Ngây Thơ O(2^n) vs Ghi Nhớ @cache Memoization O(n)" rightNote="Base Case · functools.cache" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M08" title="Đệ Quy Cơ Bản O(2^n) vs Ghi Nhớ Kết Quả @cache Memoization O(n)" rightNote="Base Case · functools.cache" isLight={isLight} className={className}>
       {/* Left: Exponential Tree */}
-      <Panel x={14} y={54} w={432} h={312} title="Đệ quy ngây thơ fib(5): Tính trùng lặp bùng nổ O(2^n)" tone="rose" p={p} />
+      <Panel x={14} y={54} w={432} h={312} title="Đệ quy không lưu cache fib(5): Tính lặp lại nhánh con O(2^n)" tone="rose" p={p} />
       <Callout x={426} y={66} n={1} tone="rose" p={p} />
 
       {/* Tree nodes */}
@@ -1988,12 +1969,12 @@ const PyM13: DiagramRenderer = ({ isLight, className }) => {
       <text x={70} y={338} fill={p.inkMuted} fontSize="10">Cài __eq__ để acc1 == acc2 so sánh theo dữ liệu thay vì địa chỉ id().</text>
 
       {/* Right: How self works + __repr__ */}
-      <Panel x={490} y={54} w={376} h={312} title="self không phải phép thuật: Python tự điền đối số đầu!" tone="violet" p={p} />
-      <Callout x={846} y={66} n={2} tone="violet" p={p} />
+      <Panel x={490} y={54} w={376} h={312} title="Cơ chế truyền self tự động khi gọi phương thức" tone="cyan" p={p} />
+      <Callout x={846} y={66} n={2} tone="cyan" p={p} />
 
-      <Pill x={506} y={94} w={344} h={42} label="acc1.deposit(100)" sub="Cách bạn viết ngắn gọn trên object" tone="cyan" p={p} />
-      <Arrow id={id} x1={678} y1={136} x2={678} y2={168} tone="violet" p={p} label="Python dịch thành" />
-      <Pill x={506} y={172} w={344} h={42} label="BankAccount.deposit(acc1, 100)" sub="self chính là acc1 (không bao giờ bị mất ngữ cảnh như this JS!)" tone="violet" p={p} />
+      <Pill x={506} y={94} w={344} h={42} label="acc1.deposit(100)" sub="Lời gọi phương thức trên instance acc1" tone="cyan" p={p} />
+      <Arrow id={id} x1={678} y1={136} x2={678} y2={168} tone="cyan" p={p} label="CPython chuyển thành" />
+      <Pill x={506} y={172} w={344} h={42} label="BankAccount.deposit(acc1, 100)" sub="Tham số đầu tiên (self) luôn nhận chính instance acc1" tone="emerald" p={p} />
 
       <CodeBlock
         x={506}
@@ -2159,10 +2140,10 @@ const PyM16: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm16';
   return (
-    <Shell id={id} badge="PY:M16" title="Củ Hành @decorator (@wraps Bọc Hàm) & Chu Trình Context Manager (with)" rightNote="@wraps · with · contextlib" isLight={isLight} className={className}>
-      {/* Left: Decorator Onion */}
-      <Panel x={14} y={54} w={426} h={312} title="@decorator: Bọc hành vi Trước/Sau quanh hàm gốc mà không sửa ruột" tone="violet" p={p} />
-      <Callout x={420} y={66} n={1} tone="violet" p={p} />
+    <Shell id={id} badge="PY:M16" title="Cơ Chế Bọc Hàm @decorator (@wraps) & Chu Trình Context Manager (with)" rightNote="@wraps · with · contextlib" isLight={isLight} className={className}>
+      {/* Left: Decorator Wrapper */}
+      <Panel x={14} y={54} w={426} h={312} title="@decorator: Bọc logic Trước/Sau quanh hàm gốc mà không sửa mã nguồn hàm" tone="cyan" p={p} />
+      <Callout x={420} y={66} n={1} tone="cyan" p={p} />
 
       {/* Concentric Onion Layers */}
       <rect x={30} y={92} width={394} height={154} rx="12" fill={p.violetBg} stroke={p.violetBorder} strokeWidth="1.6" />
@@ -2665,10 +2646,10 @@ const PyM22: DiagramRenderer = ({ isLight, className }) => {
       <text x={38} y={205} fill={p.violet} fontSize="10" fontWeight="700" fontFamily={MONO}>Task C:         [Gửi] ---await---</text>
       <text x={38} y={222} fill={p.inkMuted} fontSize="9.5">Nhường vòng lặp tại điểm await!</text>
 
-      <rect x={28} y={242} width={246} height={110} rx="7" fill={p.roseBg} stroke={p.roseBorder} />
-      <text x={38} y={262} fill={p.rose} fontSize="10.5" fontWeight="700">BẪY CHẾT NGƯỜI TRONG ASYNC:</text>
+      <rect x={28} y={242} width={246} height={110} rx="7" fill={p.roseBg} />
+      <text x={38} y={262} fill={p.rose} fontSize="10.5" fontWeight="700">LỖI THƯỜNG GẶP TRONG ASYNC:</text>
       <text x={38} y={282} fill={p.ink} fontSize="10" fontFamily={MONO}>SAI: time.sleep(1) / requests.get</text>
-      <text x={38} y={299} fill={p.inkSoft} fontSize="9.5">-&gt; Đóng băng toàn bộ Event Loop!</text>
+      <text x={38} y={299} fill={p.inkSoft} fontSize="9.5">-&gt; Chặn đứng toàn bộ Event Loop!</text>
       <text x={38} y={320} fill={p.emerald} fontSize="10" fontWeight="700" fontFamily={MONO}>ĐÚNG: await asyncio.sleep(1)</text>
       <text x={38} y={338} fill={p.emerald} fontSize="10" fontFamily={MONO}>Dùng Semaphore(10) giới hạn tải.</text>
 

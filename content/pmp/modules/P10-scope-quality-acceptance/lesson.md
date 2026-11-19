@@ -36,7 +36,7 @@ right:
 
 Kết hợp **Nguyên tắc #3 (Embed Quality)** [!badge:amber:PMBOK 8] với chuỗi kiểm soát phạm vi, PMI vạch rõ hai khái niệm đầu tiên: **Quality** (mức độ đáp ứng yêu cầu — **bắt buộc phải cao, không bao giờ thoả hiệp**) khác hẳn **Grade** (cấp hạng nhiều hay ít tính năng cao cấp — *Low Grade* vẫn hoàn toàn hợp lệ nếu nhẹ gọn, không lỗi; còn *Low Quality* luôn là thảm hoạ!).
 
-Đặc biệt, hãy khắc cốt ghi tâm **dòng chảy một chiều của sản phẩm bàn giao** kèm sự phân vai giữa **QA · QC · Validate Scope** [!badge:emerald:Phản xạ vàng]:
+Đặc biệt, hãy cần ghi nhớ **dòng chảy một chiều của sản phẩm bàn giao** kèm sự phân vai giữa **QA · QC · Validate Scope** [!badge:emerald:Phản xạ vàng]:
 
 ```visual
 kind: flow
@@ -65,7 +65,7 @@ steps:
     badge: "CHỐT HỒ SƠ"
     title: "4. Close Project / Phase"
     desc: "Bàn giao sản phẩm đã nghiệm thu sang vận hành, lưu Lessons Learned và giải phóng nguồn lực."
-    tone: "violet"
+    tone: "cyan"
 ```
 
 ```visual
@@ -85,7 +85,7 @@ items:
     fix: "Thực hiện Manage Quality (Quality Audit + Root Cause Analysis / Ishikawa / 5 Whys) để cải tiến lại chính quy trình làm việc."
   - symptom: "Sản phẩm chạy không có bug nào (đạt QC) nhưng khách hàng vẫn từ chối ký Validate Scope"
     badge: "LỆCH KỲ VỌNG YÊU CẦU"
-    tone: "violet"
+    tone: "cyan"
     cause: "Thu thập yêu cầu ban đầu thiếu sót hoặc thiếu xác nhận tiêu chí nghiệm thu (Acceptance Criteria) với Stakeholder."
     fix: "Đối chiếu Project Scope Statement & RTM cùng khách hàng; nếu cần sửa đổi phạm vi thì lập Change Request qua CCB."
 ```

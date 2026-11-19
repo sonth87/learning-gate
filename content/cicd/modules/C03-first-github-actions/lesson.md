@@ -43,7 +43,7 @@ items:
     lang: yaml
   - keyword: "workflow_dispatch"
     role: "Nút bấm chạy thủ công"
-    tone: violet
+    tone: cyan
     summary: "Hiển thị nút 'Run workflow' kèm menu chọn tham số ngay trên giao diện Web của GitHub."
     bullets:
       - "Định nghĩa tham số đầu vào qua `inputs:` (ví dụ `type: choice`, `default: \"staging\"`)"
@@ -150,7 +150,7 @@ steps:
     title: "Clean Install"
     desc: "Dựng node_modules không cần tải lại hàng trăm MB qua mạng"
     code: "npm ci"
-    tone: violet
+    tone: cyan
     edge: "kiểm tra biên dịch"
   - icon: wrench
     badge: "Bước 4 · Build & Test"

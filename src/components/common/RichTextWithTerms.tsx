@@ -8,31 +8,44 @@ import { cn } from '@/utils/cn';
 
 const CATEGORY_HIGHLIGHT_STYLE: Record<GlossaryCategory, string> = {
   keyword:
-    'text-fuchsia-300 bg-fuchsia-500/10 border-b border-dashed border-fuchsia-400/60 hover:bg-fuchsia-500/25',
+    'text-emerald-300 bg-emerald-500/10 border-b border-dotted border-emerald-400/70 hover:bg-emerald-500/20',
   declaration:
-    'text-violet-300 bg-violet-500/10 border-b border-dashed border-violet-400/60 hover:bg-violet-500/25',
+    'text-sky-300 bg-sky-500/10 border-b border-dotted border-sky-400/70 hover:bg-sky-500/20',
   builtin_func:
-    'text-cyan-300 bg-cyan-500/10 border-b border-dashed border-cyan-400/60 hover:bg-cyan-500/25',
+    'text-cyan-300 bg-cyan-500/10 border-b border-dotted border-cyan-400/70 hover:bg-cyan-500/20',
   method:
-    'text-teal-300 bg-teal-500/10 border-b border-dashed border-teal-400/60 hover:bg-teal-500/25',
+    'text-cyan-300 bg-cyan-500/10 border-b border-dotted border-cyan-400/70 hover:bg-cyan-500/20',
   builtin_type:
-    'text-emerald-300 bg-emerald-500/10 border-b border-dashed border-emerald-400/60 hover:bg-emerald-500/25',
+    'text-emerald-300 bg-emerald-500/10 border-b border-dotted border-emerald-400/70 hover:bg-emerald-500/20',
   dunder:
-    'text-amber-300 bg-amber-500/10 border-b border-dashed border-amber-400/60 hover:bg-amber-500/25',
+    'text-amber-300 bg-amber-500/10 border-b border-dotted border-amber-400/70 hover:bg-amber-500/20',
   concept:
-    'text-indigo-300 bg-indigo-500/10 border-b border-dashed border-indigo-400/60 hover:bg-indigo-500/25',
+    'text-sky-300 bg-sky-500/10 border-b border-dotted border-sky-400/70 hover:bg-sky-500/20',
   ecosystem:
-    'text-rose-300 bg-rose-500/10 border-b border-dashed border-rose-400/60 hover:bg-rose-500/25',
+    'text-amber-300 bg-amber-500/10 border-b border-dotted border-amber-400/70 hover:bg-amber-500/20',
   stdlib:
-    'text-emerald-300 bg-emerald-500/10 border-b border-dashed border-emerald-400/60 hover:bg-emerald-500/25',
+    'text-emerald-300 bg-emerald-500/10 border-b border-dotted border-emerald-400/70 hover:bg-emerald-500/20',
 };
 
-// Build sorted surface terms for plain-text matching (longest first)
-const PLAIN_SURFACE_TERMS: string[] = Array.from(
+/**
+ * Để tránh việc tìm kiếm và thay thế tự động nhầm vào các từ tiếng Việt hoặc từ tiếng Anh thông thường
+ * trong câu văn (như "in", "is", "for", "or", "and", "not", "set", "list", "chuỗi", "số nguyên"...),
+ * chỉ nhận diện trong văn bản thường (ngoài cặp dấu backtick `...`) những thuật ngữ chuyên ngành
+ * đa từ hoặc tên riêng đặc trưng. Các từ khoá ngắn (`if`, `in`, `is`, `def`, `int`, `str`...) chỉ được
+ * gắn popup khi tác giả bọc rõ ràng trong cặp dấu code `...` hoặc in đậm **...**.
+ */
+const SAFE_PLAIN_TEXT_TERMS: string[] = Array.from(
   new Set(
-    ALL_GLOSSARY_TERMS.flatMap((t) => [t.term, ...(t.aliases || [])]).filter(
-      (s) => s.length >= 3
+    ALL_GLOSSARY_TERMS.filter(
+      (t) => t.category === 'concept' || t.category === 'ecosystem' || t.category === 'dunder'
     )
+      .flatMap((t) => [t.term, ...(t.aliases || [])])
+      .filter(
+        (s) =>
+          s.length >= 6 &&
+          /^[A-Za-z0-9_.@\s-]+$/.test(s) &&
+          !/^(function|method|object|string|number|boolean|module|package|library)$/i.test(s)
+      )
   )
 ).sort((a, b) => b.length - a.length);
 
@@ -40,10 +53,10 @@ function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-const SURFACE_REGEX = new RegExp(
-  `(${PLAIN_SURFACE_TERMS.map(escapeRegex).join('|')})`,
-  'gi'
-);
+const SURFACE_REGEX =
+  SAFE_PLAIN_TEXT_TERMS.length > 0
+    ? new RegExp(`\\b(${SAFE_PLAIN_TEXT_TERMS.map(escapeRegex).join('|')})\\b`, 'g')
+    : null;
 
 interface InteractiveTermTriggerProps {
   term: GlossaryTerm;
@@ -186,21 +199,17 @@ export const RichTextWithTerms: React.FC<{
           );
         }
 
-        if (!enableAutoHighlight) {
+        if (!enableAutoHighlight || !SURFACE_REGEX) {
           return <React.Fragment key={idx}>{token}</React.Fragment>;
         }
 
-        // Match plain-text technical terms inside normal text segments
+        // Match only multi-word or distinctive technical terms inside normal text segments
         const subParts = token.split(SURFACE_REGEX);
         return (
           <React.Fragment key={idx}>
             {subParts.map((part, sIdx) => {
               const matched = findGlossaryTerm(part);
               if (matched && isCategoryAllowed(matched.category)) {
-                // Ensure word boundary for short words like 'is' or 'def'
-                if (part.length <= 4 && !/^[a-zA-Z_]+$/.test(part)) {
-                  return <React.Fragment key={sIdx}>{part}</React.Fragment>;
-                }
                 return (
                   <InteractiveTermTrigger
                     key={sIdx}

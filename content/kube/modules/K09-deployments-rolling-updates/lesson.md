@@ -2,7 +2,7 @@
 
 Ở bài `K08`, bạn đã biết cách viết một `Pod` đơn lẻ. Nhưng có một quy luật sắt đá trong thực tế: ==trên Production, không bao giờ triển khai ứng dụng bằng Pod trần (naked Pod)!==
 
-Để biến những chiếc Pod mỏng manh thành một dịch vụ bất tử có khả năng {emerald:tự hồi sinh}, {sky:co giãn nhiều bản sao} và {violet:nâng cấp không gián đoạn (Zero-Downtime)}, chúng ta trao quyền giám hộ cho **`Deployment`** (`apiVersion: apps/v1`).
+Để biến những chiếc Pod mỏng manh thành một dịch vụ bất tử có khả năng **tự hồi sinh**, **co giãn nhiều bản sao** và **nâng cấp không gián đoạn (Zero-Downtime)**, chúng ta trao quyền giám hộ cho **`Deployment`** (`apiVersion: apps/v1`).
 
 ```visual
 kind: illustration
@@ -15,7 +15,7 @@ callouts:
   - num: 1
     label: "Deployment kiểm soát nhịp độ maxSurge / maxUnavailable"
     desc: "Đặt maxSurge: 1 và maxUnavailable: 0 ép Kubernetes phải bật Pod mới sẵn sàng xong xuôi rồi mới được tắt bớt Pod cũ."
-    tone: violet
+    tone: cyan
   - num: 2
     label: "Chuyển giao cuốn chiếu ReplicaSet v1 -> ReplicaSet v2"
     desc: "ReplicaSet v2 tăng dần số Pod khoẻ mạnh từ 0 lên 3 song song với việc ReplicaSet v1 rút êm từ 3 về 0."
@@ -30,7 +30,7 @@ callouts:
 
 ```visual
 kind: compare
-title: Tại Sao Cấm Kỵ Chạy Naked Pod Trên Production?
+title: Tại Sao cần tránh Chạy Naked Pod Trên Production?
 subtitle: Sự khác biệt sinh tử khi một Worker Node bất ngờ sập nguồn lúc nửa đêm
 left:
   badge: "NGUY HIỂM · Naked Pod (Pod trần)"
@@ -74,7 +74,7 @@ steps:
     title: Deployment
     desc: Quản lý chiến lược chuyển đổi giữa các phiên bản (Rolling Update) & lưu lịch sử Revision để Rollback
     code: "kubectl apply -f deploy.yaml"
-    tone: violet
+    tone: cyan
     edge: tự tạo & điều phối
   - icon: layers
     badge: Tầng 2 · Trung gian ngầm
@@ -144,7 +144,7 @@ steps:
     title: Bật Thêm 1 Pod Mới
     desc: Tạo ReplicaSet v2 bật trước 1 Pod mới — tổng số Pod tạm vọt lên 4 + 1 = 5 Pod
     code: "v1: 4 Ready | v2: 1 Creating"
-    tone: violet
+    tone: cyan
     edge: chờ Pod mới Ready
   - icon: refresh
     badge: Bước 3 · Xoay Vòng

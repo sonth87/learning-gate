@@ -364,7 +364,7 @@ spec:
     statusBadge: 'OOMKilled (Exit 137)',
     severity: 'P0 - Critical',
     alertMessage: 'Dịch vụ xuất báo cáo PDF/Java (report-worker) cứ chạy được vài phút là đột ngột tắt phụp và khởi động lại mà trong log ứng dụng không hề có dòng báo lỗi nào!',
-    essenceOfProblem: 'Ứng dụng bên trong Container tiêu thụ lượng RAM vượt quá mức trần cho phép (resources.limits.memory: 128Mi) đã ký hợp đồng trong YAML. Để bảo vệ máy chủ Worker, nhân Linux kích hoạt OOM Killer bắn hạ tiến trình ngay tức khắc với mã thoát 137.',
+    essenceOfProblem: 'Ứng dụng bên trong Container tiêu thụ lượng RAM vượt quá mức trần cho phép (resources.limits.memory: 128Mi) đã ký hợp đồng trong YAML. Để bảo vệ máy chủ Worker, nhân Linux kích hoạt OOM Killer dừng tiến trình (kill) tiến trình ngay tức khắc với mã thoát 137.',
     symptoms: [
       'Số lần RESTARTS tăng lên hoặc báo CrashLoopBackOff nhưng đọc kubectl logs không thấy lỗi code.',
       'Khi gõ kubectl describe pod, mục Last State: Terminated ghi rõ Reason: OOMKilled và Exit Code: 137.',
@@ -394,7 +394,7 @@ report-worker-5f7b9c6d4-v82jk    180m         126Mi   # <-- Sát mức trần 12
       Exit Code:    137
       Started:      Sun, 08 Nov 2026 22:10:00 +0700
       Finished:     Sun, 08 Nov 2026 22:13:12 +0700`,
-        clueExplanation: 'Bằng chứng thép: Reason: OOMKilled kèm Exit Code: 137 (128 + 9 SIGKILL). Nhân Linux đã bắn hạ container vì vượt trần RAM!',
+        clueExplanation: 'Bằng chứng thép: Reason: OOMKilled kèm Exit Code: 137 (128 + 9 SIGKILL). Nhân Linux đã dừng tiến trình (kill) container vì vượt trần RAM!',
       },
       {
         stepOrder: 3,

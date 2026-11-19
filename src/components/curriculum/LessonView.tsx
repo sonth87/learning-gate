@@ -347,16 +347,16 @@ export const LessonView: React.FC = () => {
           {/* Hero / Lesson Header Card */}
           <header
             className={cn(
-              'rounded-2xl border p-4 sm:p-6 space-y-4 transition-colors',
+              'rounded-2xl p-4 sm:p-6 space-y-4 transition-colors',
               isCompleted
-                ? 'border-emerald-500/45 bg-emerald-500/[0.07]'
-                : 'border-slate-800/90 bg-slate-900/50'
+                ? 'bg-emerald-500/[0.07]'
+                : 'bg-slate-900/45'
             )}
           >
           {/* Top Meta & Actions */}
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="rounded-md bg-sky-500/15 border border-sky-500/30 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-semibold text-sky-300">
+              <span className="rounded-md bg-sky-500/15 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-semibold text-sky-300">
                 GĐ {stage.number} • {stage.durationWeeks}
               </span>
               <LevelBadge level={lesson.level} showVi size="sm" />
@@ -365,7 +365,7 @@ export const LessonView: React.FC = () => {
                 {lesson.estimatedMinutes}p
               </span>
               {isCompleted && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/45 bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-emerald-300">
+                <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-emerald-300">
                   <CheckCircle2 className="h-3 w-3 text-emerald-400" aria-hidden="true" />
                   Đã học (≥ 10 phút)
                 </span>
@@ -386,10 +386,10 @@ export const LessonView: React.FC = () => {
                 aria-pressed={isBookmarked}
                 title={isBookmarked ? 'Bỏ lưu bài học' : 'Lưu bài học'}
                 className={cn(
-                  'inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors',
+                  'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
                   isBookmarked
-                    ? 'border-amber-500/40 bg-amber-500/15 text-amber-300'
-                    : 'border-slate-800 bg-slate-900 text-slate-300 hover:bg-slate-800'
+                    ? 'bg-amber-500/15 text-amber-300'
+                    : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
                 )}
               >
                 <Bookmark className="h-3.5 w-3.5" aria-hidden="true" />
@@ -401,7 +401,7 @@ export const LessonView: React.FC = () => {
               <button
                 onClick={() => openNotesDrawer('lesson', lesson.id, lesson.title)}
                 title="Mở ghi chú cá nhân cho bài học này"
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-2.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
               >
                 <MessageSquarePlus
                   className="h-3.5 w-3.5 text-amber-400"
@@ -422,7 +422,7 @@ export const LessonView: React.FC = () => {
                 className={cn(
                   'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 sm:px-3 text-xs font-semibold transition-all',
                   isCompleted
-                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                    ? 'bg-emerald-500/20 text-emerald-300'
                     : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-xs'
                 )}
               >
@@ -435,10 +435,10 @@ export const LessonView: React.FC = () => {
           {/* 10-Minute Auto-Completion Study Progress Banner */}
           <div
             className={cn(
-              'rounded-xl border px-3.5 py-2.5 space-y-1.5 transition-colors',
+              'rounded-xl px-3.5 py-2.5 space-y-1.5 transition-colors',
               isCompleted
-                ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-200'
-                : 'border-amber-500/30 bg-amber-500/[0.07] text-slate-200'
+                ? 'bg-emerald-500/12 text-emerald-200'
+                : 'bg-amber-500/[0.08] text-slate-200'
             )}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs">
@@ -493,7 +493,7 @@ export const LessonView: React.FC = () => {
           </div>
 
           {/* Stage Goal Callout */}
-          <div className="flex items-start gap-2.5 rounded-xl bg-slate-950/70 border border-slate-800/80 px-3.5 py-2.5 text-xs text-slate-300">
+          <div className="flex items-start gap-2.5 rounded-xl bg-slate-950/65 px-3.5 py-2.5 text-xs text-slate-300">
             <Target
               className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5"
               aria-hidden="true"
@@ -507,7 +507,7 @@ export const LessonView: React.FC = () => {
           </div>
 
           {/* Section Filter Pills & Term Hint */}
-          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-800/80">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-2.5 pt-3 border-t border-slate-800/60">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 sm:flex-wrap">
               {FILTER_ITEMS.map((f) => {
                 const isSelected = sectionFilter === f.id;
@@ -534,7 +534,7 @@ export const LessonView: React.FC = () => {
                       'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 sm:py-1 text-xs font-medium whitespace-nowrap shrink-0 transition-all',
                       isSelected
                         ? f.activeColor
-                        : 'bg-slate-950/60 text-slate-400 border border-slate-800/80 hover:bg-slate-800 hover:text-slate-200'
+                        : 'bg-slate-950/60 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                     )}
                   >
                     {f.icon}
@@ -551,7 +551,7 @@ export const LessonView: React.FC = () => {
 
             <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-300/90">
               <Sparkles className="h-3.5 w-3.5 text-amber-400 shrink-0" aria-hidden="true" />
-              <span>Chạm vào từ gạch chân để xem giải thích</span>
+              <span>Bấm vào từ gạch chân để xem giải thích</span>
             </span>
           </div>
         </header>
@@ -561,7 +561,7 @@ export const LessonView: React.FC = () => {
           <>
             <section
               id="sec-theory"
-              className="scroll-mt-24 rounded-2xl border border-slate-800/90 bg-slate-900/40 p-4 sm:p-6 space-y-4"
+              className="scroll-mt-24 rounded-2xl bg-slate-900/40 p-4 sm:p-6 space-y-4"
             >
               <div className="flex items-center gap-2 border-b border-slate-800/80 pb-3">
                 <BookOpen className="h-5 w-5 text-sky-400" aria-hidden="true" />

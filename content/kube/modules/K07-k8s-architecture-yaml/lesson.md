@@ -5,7 +5,7 @@ Khi bạn chạy 2–3 container trên một máy chủ đơn lẻ, **Docker Com
 - [!] Một máy chủ vật lý hết sạch RAM hoặc cháy ổ cứng lúc 3 giờ sáng — ai sẽ tự động chuyển 15 container sang máy chủ lành lặn khác trong vài giây mà không cần kỹ sư thức dậy?
 - [>] Làm sao nâng cấp phiên bản API thanh toán trên 12 máy chủ cùng lúc mà không làm rớt bất kỳ giao dịch nào của khách hàng?
 
-**Kubernetes (K8s)** ra đời để đóng vai trò như ==Hệ điều hành của cả trung tâm dữ liệu==: bạn không còn ra lệnh thủ công cho từng máy lẻ nữa, mà giao cho K8s một {sky:bản thiết kế trạng thái mong muốn} để nó {emerald:tự động duy trì suốt ngày đêm}.
+**Kubernetes (K8s)** ra đời để đóng vai trò như ==Hệ điều hành của cả trung tâm dữ liệu==: bạn không còn ra lệnh thủ công cho từng máy lẻ nữa, mà giao cho K8s một **bản thiết kế trạng thái mong muốn** để nó **tự động duy trì suốt ngày đêm**.
 
 ```visual
 kind: illustration
@@ -19,7 +19,7 @@ callouts:
   - num: 1
     label: "Control Plane — Bộ não quản trị & Sổ cái etcd"
     desc: "Mọi thao tác đều đi qua cổng HTTPS duy nhất là kube-apiserver; chỉ thành phần này được phép đọc/ghi trực tiếp vào kho dữ liệu etcd."
-    tone: violet
+    tone: cyan
   - num: 2
     label: "Worker Node — Bộ ba kubelet, containerd & kube-proxy"
     desc: "kubelet nhận chỉ thị từ API Server để ra lệnh cho containerd bật Pod, trong khi kube-proxy duy trì bảng định tuyến mạng trên Node."
@@ -42,7 +42,7 @@ subtitle: Chỉ duy nhất kube-apiserver được phép đọc/ghi trực tiế
 columns:
   - title: Control Plane (Bộ não điều phối)
     badge: Quản trị & Ra quyết định
-    tone: violet
+    tone: cyan
     layers:
       - label: kube-apiserver
         sub: Cổng giao tiếp REST API (HTTPS) duy nhất của toàn cụm — mọi lệnh kubectl đều gửi YAML/JSON tới đây
@@ -55,7 +55,7 @@ columns:
       - label: kube-scheduler
         sub: Quan sát Pod mới chưa có chỗ (Pending), tính toán CPU/RAM trống rồi gán Pod về Worker Node phù hợp
         note: Người xếp chỗ
-        tone: violet
+        tone: cyan
       - label: kube-controller-manager
         sub: Các vòng lặp tuần tra 24/7 — thấy yêu cầu 3 bản sao mà thực tế còn 2 là lập tức yêu cầu tạo bù bản thứ 3
         note: Tuần tra tự động
@@ -138,7 +138,7 @@ steps:
     title: Xếp Chỗ Mới
     desc: kube-scheduler tìm thấy Node #3 còn dư CPU/RAM và gán Pod mới sang đó
     code: "Pending -> Node #3"
-    tone: violet
+    tone: cyan
     edge: kubelet kéo Image
   - icon: shield-check
     badge: 4. Self-Healing
@@ -168,7 +168,7 @@ items:
     lang: yaml
   - keyword: kind
     role: Loại đối tượng
-    tone: violet
+    tone: cyan
     summary: Tên kiểu tài nguyên Kubernetes mà bạn muốn khởi tạo hoặc cập nhật (viết PascalCase).
     bullets:
       - "Ví dụ phổ biến: `Pod`, `Deployment`, `Service`, `Ingress`, `ConfigMap`, `Secret`"

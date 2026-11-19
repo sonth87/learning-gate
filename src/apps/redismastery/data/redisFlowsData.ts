@@ -247,7 +247,7 @@ export const REDIS_FLOW_SCENARIOS: RedisFlowScenario[] = [
     badge: 'R13',
     moduleRef: 'R13',
     summary:
-      'Làm sao Redis chụp ảnh 20 GB RAM xuống đĩa mà không đóng băng Main Thread, và vì sao server 32 GB RAM đặt maxmemory 28 GB vẫn bị Linux OOM Killer bắn hạ lúc BGSAVE?',
+      'Làm sao Redis chụp ảnh 20 GB RAM xuống đĩa mà không đóng băng Main Thread, và vì sao server 32 GB RAM đặt maxmemory 28 GB vẫn bị Linux OOM Killer dừng tiến trình (kill) lúc BGSAVE?',
     nodes: [
       { id: 'parent', label: 'Redis Parent Process', sublabel: 'Tiếp tục phục vụ Read/Write', lane: 'redis', tone: 'rose' },
       { id: 'pagetable', label: 'OS Kernel Page Tables', sublabel: 'Copy-on-Write (4KB Pages)', lane: 'redis', tone: 'amber' },

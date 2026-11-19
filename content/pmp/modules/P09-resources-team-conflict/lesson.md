@@ -38,7 +38,7 @@ steps:
     badge: "5. ADJOURNING"
     title: "Giải tán → Ghi nhận"
     desc: "Khép lại dự án, vinh danh đóng góp, tổng kết bài học và hỗ trợ chuyển tiếp nhân sự."
-    tone: "violet"
+    tone: "cyan"
 ```
 
 ## 2. Trí tuệ Cảm xúc (EI), Động lực Nội tại & Nhóm Phân tán (Virtual Team)
@@ -55,7 +55,7 @@ items:
     icon: "lightbulb"
     title: "Emotional Intelligence (EI)"
     badge: "4 NĂNG LỰC CẢM XÚC"
-    tone: "violet"
+    tone: "cyan"
     desc: "Kiểm soát mình trước khi tác động tới người khác trong tình huống căng thẳng."
     bullets:
       - "Bản thân: Self-Awareness (tự nhận biết cảm xúc) & Self-Management (kiểm soát phản ứng nóng giận)."

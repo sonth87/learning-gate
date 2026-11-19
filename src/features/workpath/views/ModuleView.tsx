@@ -84,9 +84,9 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
       )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <article className="min-w-0 rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-6">
+        <article className="min-w-0 rounded-xl bg-slate-900/45 p-4 sm:p-6">
           <Markdown source={m.lesson} />
-          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800 pt-4">
+          <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-slate-800/70 pt-4">
             {read ? (
               <Pill tone="ok">✔ Bạn đã đọc lesson này</Pill>
             ) : lesSkipped ? (
@@ -152,7 +152,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
               {m.exercises.map((e) => {
                 const st = exStatus(s, e.id);
                 return (
-                  <div key={e.id} className="flex items-stretch justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/70 p-3 transition-colors hover:border-emerald-500/60">
+                  <div key={e.id} className="flex items-stretch justify-between gap-2 rounded-xl bg-slate-900/65 p-3 transition-colors hover:bg-slate-900">
                     <button type="button" onClick={() => go({ name: 'exercise', code: e.code })} className="min-w-0 flex-1 text-left cursor-pointer">
                       <span className="text-sm font-medium text-slate-100">
                         <span className="mr-1.5 font-mono text-emerald-400">{e.code}</span>
@@ -171,7 +171,7 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                         <button
                           type="button"
                           onClick={() => toggleSkipExercise(e.id)}
-                          className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 hover:border-slate-500 hover:text-white cursor-pointer"
+                          className="inline-flex items-center gap-1 rounded bg-slate-950/80 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 hover:text-white cursor-pointer"
                         >
                           {st === 'skipped' ? <Undo2 className="h-2.5 w-2.5" /> : <SkipForward className="h-2.5 w-2.5" />}
                           <span>{st === 'skipped' ? 'Hoàn tác' : 'Bỏ qua'}</span>
@@ -197,10 +197,10 @@ export const ModuleView: React.FC<{ id: string }> = ({ id }) => {
                       key={r.path}
                       disabled={!item}
                       onClick={() => item && go({ name: 'read', n: item.n })}
-                      className="block w-full rounded-xl border border-slate-800 bg-slate-900/70 p-3 text-left transition-colors hover:border-sky-500/60 disabled:cursor-default"
+                      className="block w-full rounded-xl bg-slate-900/65 p-3 text-left transition-colors hover:bg-slate-900 disabled:cursor-default"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold ${k.cls}`}>{k.label}</span>
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${k.cls}`}>{k.label}</span>
                         <span className="break-all text-sm font-medium text-sky-300">{r.path}</span>
                         {st !== 'todo' && <Pill>{CATALOG_STATUS_LABEL[st]}</Pill>}
                       </div>

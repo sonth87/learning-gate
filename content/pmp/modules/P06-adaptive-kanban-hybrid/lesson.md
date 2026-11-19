@@ -97,7 +97,7 @@ steps:
     badge: "BƯỚC 3"
     title: "Đào tạo & Thí điểm (Pilot)"
     desc: "Huấn luyện Agile Mindset cho cả nhóm lẫn lãnh đạo; áp dụng dần từng thực hành (Daily, Retro, Kanban) trên dự án Pilot."
-    tone: "violet"
+    tone: "cyan"
     edge: "Mở rộng bền vững"
   - icon: "award"
     badge: "BƯỚC 4"

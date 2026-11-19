@@ -89,20 +89,20 @@ INFO server
 INFO memory
 ```
 
-> [!TRAP] Bẫy chí mạng số 1 khi vận hành mô hình Đơn luồng (Single-Threaded)
+> [!TRAP] Lỗi nghiêm trọng thường gặp #1 khi vận hành mô hình Đơn luồng (Single-Threaded)
 > Trong Node.js, nếu bạn lỡ chạy một vòng lặp `for (let i = 0; i < 1e9; i++)` đồng bộ, toàn bộ HTTP server đứng hình không trả lời được ai. **Redis cũng y hệt như vậy!**
-> Nếu một lập trình viên vô tình gõ `KEYS *` trên 20 triệu khoá (mất `800ms`), mọi lệnh `GET`/`SET` chỉ tốn `0.001ms` của tất cả khách hàng khác đều phải **xếp hàng đứng đợi đủ 800ms** phía sau nó. Kỷ luật sắt của kỹ sư Redis là **luôn nhìn độ phức tạp Big-O của lệnh trước khi gõ**!
+> Nếu một lập trình viên vô tình gõ `KEYS *` trên 20 triệu khoá (mất `800ms`), mọi lệnh `GET`/`SET` chỉ tốn `0.001ms` của tất cả khách hàng khác đều phải **xếp hàng đứng đợi đủ 800ms** phía sau nó. nguyên tắc cốt lõi của kỹ sư Redis là **luôn nhìn độ phức tạp Big-O của lệnh trước khi gõ**!
 
 ## 3. Ba nguyên tắc An toàn tối thiểu ngay ngày đầu khởi chạy Redis
 
-Trước khi viết dòng code đầu tiên kết nối vào Redis, hãy khắc cốt ghi tâm 3 rào chắn vận hành trong tệp `redis.conf` và Docker Compose:
+Trước khi viết dòng code đầu tiên kết nối vào Redis, hãy cần ghi nhớ 3 rào chắn vận hành trong tệp `redis.conf` và Docker Compose:
 
 ```visual
 kind: compare
 title: "Cấu Hình Khởi Chạy Redis: Mở Toang Nguy Hiểm vs Khoá Chặt Chuẩn Mực"
 subtitle: "Không bao giờ phơi trực tiếp cổng 6379 không mật khẩu ra ngoài mạng công cộng"
 left:
-  badge: "MỒI NGON CHO BOT TẤN CÔNG"
+  badge: "rủi ro bị bot quét tự động TẤN CÔNG"
   title: "Mở 0.0.0.0 & Tắt Protected Mode"
   tone: rose
   lang: redis-conf

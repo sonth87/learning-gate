@@ -1,10 +1,10 @@
 # Phòng Chiến Sự CI/CD (Incident War Room) — 4 Hồ sơ Thực chiến
 
 Chúc mừng bạn đã đi tới chặng cuối cùng của hành trình **CI/CD Mastery**! Kiến thức lý thuyết về YAML chỉ thực sự trở thành bản năng của một Senior DevOps / Platform Engineer khi bạn đứng trước một đường ống đang bốc cháy:
-- [!] Đội sản phẩm xếp hàng chờ {amber:42 phút} chưa merge nổi một bản vá khẩn cấp (**Hồ sơ B1**).
-- [!] Hai đợt deploy {rose:đè ngang xương lên nhau} làm hỏng khoá trạng thái hạ tầng Production (**Hồ sơ B2**).
-- [!] Hệ thống báo động phát hiện {rose:API Key nằm chình ình} trong tệp workflow đã đẩy lên Git (**Hồ sơ B3**).
-- [!] Đáng sợ nhất: toàn bộ dấu tích CI đều {emerald:xanh mướt giả tạo} nhưng khách hàng đang nhận trang trắng lỗi {violet:HTTP 500} (**Hồ sơ B6**)!
+- [!] Đội sản phẩm xếp hàng chờ **42 phút** chưa merge nổi một bản vá khẩn cấp (**Hồ sơ B1**).
+- [!] Hai đợt deploy **ghi đè lên nhau (Race Condition)** làm hỏng khoá trạng thái hạ tầng Production (**Hồ sơ B2**).
+- [!] Hệ thống báo động phát hiện **API Key bị lộ trực tiếp** trong tệp workflow đã đẩy lên Git (**Hồ sơ B3**).
+- [!] Đáng sợ nhất: toàn bộ dấu tích CI đều **báo xanh giả (False Positive)** nhưng khách hàng đang nhận trang trắng lỗi **HTTP 500** (**Hồ sơ B6**)!
 
 ```visual
 kind: troubleshoot
@@ -31,7 +31,7 @@ items:
     cmd: "gitleaks detect --source . --no-banner --redact"
   - symptom: "[Hồ sơ B6] 14 bài Unit Test đỏ rực và server trả HTTP 500 nhưng Pipeline vẫn báo tích XANH"
     badge: Silent False-Green
-    tone: violet
+    tone: cyan
     cause: "Mã thoát lỗi khác 0 bị nuốt mất bởi continue-on-error: true, toán tử shell '|| true', hoặc gọi curl thiếu cờ --fail."
     fix: "Xoá bỏ continue-on-error: true và '|| true' khỏi mọi cổng kiểm định/bảo mật; luôn truyền cờ --fail cho lệnh curl Smoke Test."
     cmd: "npm test && curl --fail --silent --show-error https://api.shop.example.com/healthz"
@@ -223,7 +223,7 @@ items:
     icon: globe
     title: "curl thiếu cờ --fail"
     badge: Mù trước lỗi HTTP 500
-    tone: violet
+    tone: cyan
     bullets:
       - "Không có `--fail` (`-f`), lệnh `curl` nhận phản hồi `HTTP/1.1 500 Internal Server Error` từ server đang sập vẫn báo `exit 0`!"
       - "Luôn bắt buộc truyền `--fail` trong mọi kịch bản Smoke Test hậu triển khai"

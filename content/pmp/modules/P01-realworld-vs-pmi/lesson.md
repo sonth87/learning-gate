@@ -64,7 +64,7 @@ steps:
     badge: "BƯỚC 4 · GOVERN"
     title: "Thực thi đúng quy trình"
     desc: "Nộp Change Request lên CCB / đưa vào Backlog của PO và cập nhật tài liệu sống."
-    tone: "violet"
+    tone: "cyan"
 ```
 
 ## 3. Khi nào PM MỚI ĐƯỢC PHÉP leo thang lên Project Sponsor?
@@ -76,5 +76,5 @@ steps:
 - [x] Rủi ro cấp chiến lược ảnh hưởng sang các dự án/phòng ban khác vượt ngoài phạm vi dự án (*Escalate* threat/opportunity).
 - [!] **Tuyệt đối KHÔNG mang "câu hỏi rỗng" lên Sponsor:** Trước khi báo cáo, PM bắt buộc phải hoàn tất phân tích tác động và mang theo **các phương án giải quyết kèm khuyến nghị rõ ràng**.
 
-> [!REMEMBER] Khắc cốt ghi tâm trước khi sang Cấp độ 1
+> [!REMEMBER] cần ghi nhớ trước khi sang Cấp độ 1
 > Trong bài thi PMP, bạn không phải "thư ký chuyển tin" hay "cảnh sát bắt lỗi". Bạn là một **Servant & Accountable Leader**: bình tĩnh trước biến cố, bảo vệ chất lượng, tôn trọng vai trò chuyên môn và dùng quy trình làm lá chắn cho giá trị dự án.

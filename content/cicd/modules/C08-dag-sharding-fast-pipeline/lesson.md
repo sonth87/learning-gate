@@ -59,7 +59,7 @@ callouts:
   - num: 2
     label: "Chia mảnh kiểm thử E2E Sharding (1/4 .. 4/4)"
     desc: "Chẻ nhỏ 400 bài Playwright đều cho 4 máy ảo chạy song song với --shard=i/4, ép nhánh dài nhất từ 16 phút xuống chỉ còn 4 phút."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Mẫu cổng tổng hợp duy nhất (Aggregator Gate)"
     desc: "Gom toàn bộ kết quả nhánh song song về 1 Job nhẹ ci-gate (if: always()) để chỉ cần khai báo duy nhất 1 tên cổng trong Branch Protection."
@@ -91,7 +91,7 @@ steps:
     title: "Playwright 1/4 .. 4/4"
     desc: "4 Runner gánh mỗi máy 25% số bài test E2E cùng lúc (16p / 4 = 4p)"
     code: "--shard=${{ matrix.shard }}/4"
-    tone: violet
+    tone: cyan
     edge: "Fan-In hội tụ"
   - icon: shield-check
     badge: "Cổng khoá nhánh · +1p"
@@ -167,7 +167,7 @@ items:
     tone: emerald
     desc: "Thay thế thói quen đoán mò thời gian khởi động server bằng vòng lặp kiểm tra cổng /healthz chuẩn xác."
     bullets:
-      - "**Tác hại kép của `sleep 30`:** Hôm máy khoẻ bật xong sau 3s -> vứt phí 27s vô nghĩa; hôm đám mây bận bật mất 32s -> nổ lỗi giả `ECONNREFUSED` tạo ra **Flaky Pipeline**!"
+      - "**Tác hại kép của `sleep 30`:** Hôm máy khoẻ bật xong sau 3s -> vứt phí 27s vô nghĩa; hôm đám mây bận bật mất 32s -> phát sinh lỗi giả `ECONNREFUSED` tạo ra **Flaky Pipeline**!"
       - "Dùng `curl --retry --retry-connrefused` giúp đi tiếp ngay giây thứ 4 khi `/healthz` trả `200 OK`, đồng thời chịu tải bền bỉ tới `15 * 2 = 30s` nếu hạ tầng chậm"
     code: |
       npm start &

@@ -2,7 +2,7 @@
 
 Nếu GitHub Actions thống lĩnh thế giới mã nguồn mở và các công ty khởi nghiệp trên nền đám mây, thì tại các ngân hàng, tập đoàn viễn thông và doanh nghiệp tự vận hành máy chủ nội bộ (*Self-managed / On-premise*), **GitLab CI/CD** lại là ông vua không ngai.
 
-- [x] **90% tư duy nền tảng giữ nguyên bản chất 100%:** {sky:Ephemeral Container}, {amber:Lockfile Cache}, {violet:Artifacts}, đồ thị {cyan:DAG} và {emerald:Sharding} đều hoạt động theo cùng nguyên lý cốt lõi.
+- [x] **90% tư duy nền tảng giữ nguyên bản chất 100%:** **Ephemeral Container**, **Lockfile Cache**, **Artifacts**, đồ thị **DAG** và **Sharding** đều hoạt động theo cùng nguyên lý cốt lõi.
 - [>] **Điểm khác biệt duy nhất nằm ở "ngữ pháp":** Toàn bộ đường ống được định nghĩa trong tệp duy nhất ==`.gitlab-ci.yml`== đặt ngay tại thư mục gốc dự án.
 
 > [!ANALOGY] Hãy hình dung như sau
@@ -52,7 +52,7 @@ columns:
       - label: "Cache & Artifacts: Gọi qua Action rời bên ngoài"
         sub: "Dùng actions/cache@v4 và cặp upload-artifact / download-artifact thủ công"
         note: Plugin-based
-        tone: violet
+        tone: cyan
       - label: "Chia mảnh kiểm thử: Khai báo ma trận thủ công"
         sub: "Viết strategy.matrix.shard: [1, 2, 3, 4] rồi truyền biến ma trận"
         note: Matrix-based
@@ -73,7 +73,7 @@ columns:
       - label: "Cache & Artifacts: Từ khoá tích hợp sẵn trong nhân YAML"
         sub: "cache.policy (pull-push / pull) · artifacts tự động tải xuống ở các stage sau!"
         note: Built-in
-        tone: violet
+        tone: cyan
       - label: "Chia mảnh kiểm thử: Chỉ 1 dòng parallel: 4"
         sub: "Tự động cấp cặp biến $CI_NODE_INDEX (1..4) và $CI_NODE_TOTAL (4)"
         note: Zero-boilerplate
@@ -96,7 +96,7 @@ items:
     lang: yaml
   - keyword: "stages:"
     role: Trục giai đoạn tuần tự
-    tone: violet
+    tone: cyan
     summary: Định nghĩa danh sách thứ tự các chặng lớn của đường ống từ đầu tới cuối.
     bullets:
       - "Mặc định mọi Job ở stage trước phải xong 100% thì stage sau mới bắt đầu"
@@ -180,7 +180,7 @@ steps:
     title: build_app
     desc: Biên dịch TypeScript và đóng gói artifacts dist/ (hạn 7 ngày)
     code: "artifacts: [\"dist/\"]"
-    tone: violet
+    tone: cyan
     edge: "tự tải dist/ + Manual Gate"
   - icon: shield-check
     badge: "Stage: deploy"

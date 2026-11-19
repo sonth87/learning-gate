@@ -65,7 +65,7 @@ items:
     lang: redis
   - keyword: PFADD / PFCOUNT / PFMERGE
     role: HyperLogLog (12 KB max)
-    tone: violet
+    tone: cyan
     summary: Ghi nhận phần tử vào thanh ghi xác suất (`PFADD`), lấy ước lượng lực lượng duy nhất (`PFCOUNT`), và gộp nhiều khoá HLL thành 1 khoá tuần/tháng (`PFMERGE`).
     example: |
       PFADD uv:home:d1 "u1" "u2" "u1"

@@ -730,7 +730,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         analogyLabel: 'Vừa bật lên vài giây là tự sập lặp vòng',
         category: 'pod',
         color: 'rose',
-        details: 'Đã giải nén chạy được nhưng ứng dụng tự chết: (1) Thiếu biến môi trường / đứt kết nối DB lúc khởi động, (2) Tràn RAM bị nhân Linux bắn hạ OOMKilled (Exit Code 137), hoặc (3) Liveness Probe quá gắt.',
+        details: 'Đã giải nén chạy được nhưng ứng dụng tự chết: (1) Thiếu biến môi trường / đứt kết nối DB lúc khởi động, (2) Tràn RAM bị nhân Linux dừng tiến trình (kill) OOMKilled (Exit Code 137), hoặc (3) Liveness Probe quá gắt.',
       },
       {
         id: 'branch-network',

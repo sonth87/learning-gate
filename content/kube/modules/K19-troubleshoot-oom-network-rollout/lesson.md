@@ -23,7 +23,7 @@ items:
     cmd: kubectl get endpoints checkout-svc && kubectl get pods --show-labels
   - symptom: "Ca #6B · Pod 1/1 Running, Endpoints đã có IP nhưng vẫn 502 / Connection Refused"
     badge: Lệch cổng targetPort
-    tone: violet
+    tone: cyan
     cause: "`selector` đã khớp nhưng `Service` cấu hình `targetPort: 8080` trong khi code Express thực tế gọi `app.listen(3000)`. Gói tin bay tới đúng Pod nhưng đập vào cổng 8080 đóng kín (nhân Linux trả TCP RST)."
     fix: "Kiểm tra cổng mở thực tế trên container và chỉnh `spec.ports[].targetPort` của `Service` về đúng `3000`."
     cmd: kubectl describe svc checkout-svc

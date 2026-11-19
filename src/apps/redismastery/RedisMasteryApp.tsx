@@ -14,6 +14,8 @@ import { RedisSimulatorLab } from './components/RedisSimulatorLab';
 import { RedisFlowStudio } from './components/RedisFlowStudio';
 import { RedisIncidentWarRoom } from './components/RedisIncidentWarRoom';
 import { RedisGlossaryHub } from './components/RedisGlossaryHub';
+import { TermPopover } from '@/components/common/TermPopover';
+import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { cn } from '@/utils/cn';
 
 export interface RedisMasteryAppProps {
@@ -31,6 +33,7 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
     setSearchOpen,
   } = useRedisStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
+  const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateRedis = useRedisProgress((s) => s.hydrate);
   const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
   const isLight = deviceResolvedScheme === 'light';
@@ -75,6 +78,7 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
 
   return (
     <div
+      onClick={() => hideTermPopover(false)}
       className={cn(
         'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
         isLight ? 'pylearn-light' : 'pylearn-dark'
@@ -109,6 +113,8 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
       </main>
 
       <RedisMobileBottomNav />
+      <TermPopover />
+      <NotesDrawer />
       <SettingsModal />
     </div>
   );

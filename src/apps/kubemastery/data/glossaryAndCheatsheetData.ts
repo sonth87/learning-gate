@@ -58,7 +58,7 @@ export const GLOSSARY_ANALOGY_ITEMS: GlossaryAnalogyItem[] = [
     category: 'Core & OCI',
     analogyTag: 'Đồng hồ điện nước / Trạm kiểm soát định mức',
     technicalDefinition: 'Cơ chế của nhân Linux khóa chặt giới hạn phần cứng (RAM, CPU) mà mỗi container được phép tiêu thụ.',
-    vividAnalogy: 'Ngăn chặn tình trạng 1 container bị lỗi ngốn sạch 100% RAM làm chết cả máy chủ. Nếu vượt trần RAM sẽ bị OOM Killer bắn hạ (Exit Code 137).',
+    vividAnalogy: 'Ngăn chặn tình trạng 1 container bị lỗi ngốn sạch 100% RAM làm chết cả máy chủ. Nếu vượt trần RAM sẽ bị OOM Killer chấm dứt (kill) (Exit Code 137).',
     exampleCommandOrYaml: 'resources:\n  limits:\n    memory: "512Mi"\n    cpu: "500m"',
   },
   {

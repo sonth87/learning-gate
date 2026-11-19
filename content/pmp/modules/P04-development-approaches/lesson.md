@@ -43,7 +43,7 @@ items:
   - num: "5"
     title: "Hybrid (Lai ghép)"
     badge: "~60% trọng tâm đề PMP"
-    tone: "violet"
+    tone: "cyan"
     desc: "Kết hợp có chủ đích Predictive + Adaptive theo hợp phần hoặc giai đoạn."
     bullets:
       - "Phần cứng/hạ tầng/mua sắm chạy Predictive + Phần mềm/UX chạy Agile"
@@ -86,7 +86,7 @@ columns:
       - label: "4. Monitoring & Controlling + 5. Closing"
         sub: "Đo CPI/SPI, duyệt Change Request qua CCB, nghiệm thu & đóng cuối kỳ"
         note: "Kiểm soát mốc"
-        tone: "violet"
+        tone: "cyan"
   - title: "Trong Adaptive / Agile (Change-Driven)"
     badge: "Lặp Trong Mỗi Sprint"
     tone: "emerald"

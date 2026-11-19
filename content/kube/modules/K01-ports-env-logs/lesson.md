@@ -2,7 +2,7 @@
 
 Ở bài `K00`, bạn đã khởi chạy thành công `nginx:1.27-alpine` ở chế độ ngầm (`Up`). Nhưng nếu mở trình duyệt gõ `http://localhost:80`, bạn sẽ nhận ngay cái gáo nước lạnh **`ERR_CONNECTION_REFUSED`**! Tại sao container rõ ràng đang sống mà bên ngoài lại không gọi vào được?
 
-Câu trả lời nằm ở nguyên lý ==cô lập mặc định==: khi mới sinh ra, mỗi container nằm trong một {sky:Network Namespace} riêng biệt với địa chỉ IP nội bộ riêng, đóng kín mọi cánh cửa với card mạng máy chủ cho đến khi bạn chủ động {emerald:bắc cầu mạng}.
+Câu trả lời nằm ở nguyên lý ==cô lập mặc định==: khi mới sinh ra, mỗi container nằm trong một **Network Namespace** riêng biệt với địa chỉ IP nội bộ riêng, đóng kín mọi cánh cửa với card mạng máy chủ cho đến khi bạn chủ động **bắc cầu mạng**.
 
 ```visual
 kind: flow
@@ -49,7 +49,7 @@ callouts:
   - num: 2
     label: "Lắng nghe 0.0.0.0 & Nhận cấu hình qua process.env"
     desc: "Ứng dụng Node.js phải bind trên 0.0.0.0 để đón lưu lượng từ eth0 (tránh bẫy 127.0.0.1) và đọc biến động truyền từ cờ -e."
-    tone: violet
+    tone: cyan
   - num: 3
     label: "Luồng xuất chuẩn stdout/stderr ra Docker Logs"
     desc: "Mọi dòng console.log và console.error trên tiến trình chính được Docker Log Driver thu thẳng vào bộ đệm để đọc qua docker logs."
@@ -120,7 +120,7 @@ docker run -d --name order-api \
 Trong kiến trúc container chuẩn, ứng dụng **tuyệt đối không tự ghi log ra tệp `logs/app.log` nằm kín trong ổ đĩa tạm** (xoá container là mất sạch dấu vết, hoặc tệp phình to làm tràn ổ cứng máy chủ). Thay vào đó:
 
 - [>] Mọi dòng `console.log(...)` đẩy ra luồng chuẩn **`stdout`** và `console.error(...)` đẩy ra **`stderr`** đều được Docker Engine tự động thu gom.
-- [!] **Vũ khí cứu mạng khi container sập:** ==`docker logs` vẫn đọc được toàn bộ lịch sử lỗi ngay cả khi container đã tắt (`Exited (1)`)==, chừng nào bạn chưa xoá xác container bằng `docker rm`!
+- [!] **Vũ khí cứu mạng khi container sập:** ==`docker logs` vẫn đọc được toàn bộ lịch sử lỗi ngay cả khi container đã tắt (`Exited (1)`)==, chừng nào bạn chưa xoá bỏ container bằng `docker rm`!
 
 ```bash
 docker logs payment-worker                # In toàn bộ lịch sử stdout/stderr từ lúc khởi chạy
@@ -188,7 +188,7 @@ items:
     icon: trash
     title: "Dọn Nhiều Xác Container Cùng Lúc"
     badge: Dùng docker rm
-    tone: violet
+    tone: cyan
     bullets:
       - "`docker rm` nhận danh sách nhiều tên cách nhau bởi dấu cách"
       - "Giúp dọn sạch hàng loạt job tạm đã hoàn thành trong 1 dòng lệnh"

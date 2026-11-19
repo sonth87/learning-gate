@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/utils/cn';
 
 export const Card: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, ...p }) => (
-  <div className={cn('rounded-xl border border-slate-800 bg-slate-900/70 p-4', className)} {...p} />
+  <div className={cn('rounded-xl bg-slate-900/65 p-4', className)} {...p} />
 );
 
 export const Bar: React.FC<{ value: number; className?: string }> = ({ value, className }) => {
