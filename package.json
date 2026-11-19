@@ -15,7 +15,7 @@
     "pmp:doctor": "node scripts/pmp-doctor.mjs"
   },
   "dependencies": {
-    "@sonth87/device-layout": "^0.5.40",
+    "@sonth87/device-layout": "^0.5.41",
     "@tailwindcss/vite": "^4.1.0",
     "clsx": "^2.1.1",
     "idb": "^8.0.2",
