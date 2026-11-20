@@ -240,6 +240,7 @@ function resolvePyCalloutTag(tag: string): PyCalloutKind {
 }
 
 function parseBlocks(src: string): React.ReactNode[] {
+  keySeq = 0;
   const lines = src.replace(/\r/g, '').split('\n');
   const out: React.ReactNode[] = [];
   let i = 0;
@@ -461,6 +462,7 @@ function parseBlocks(src: string): React.ReactNode[] {
   return out;
 }
 
-export const Markdown: React.FC<{ source: string; className?: string }> = ({ source, className }) => (
-  <div className={cn('leading-7 text-[15px]', className)}>{parseBlocks(source)}</div>
-);
+export const Markdown: React.FC<{ source: string; className?: string }> = ({ source, className }) => {
+  const content = React.useMemo(() => parseBlocks(source), [source]);
+  return <div className={cn('leading-7 text-[15px]', className)}>{content}</div>;
+};

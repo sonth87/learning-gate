@@ -377,6 +377,7 @@ function resolveCalloutTag(tag: string): CalloutKind {
 }
 
 function parseBlocks(src: string, accent: DevOpsAccent): React.ReactNode[] {
+  keySeq = 0;
   const lines = src.replace(/\r/g, '').split('\n');
   const out: React.ReactNode[] = [];
   const h3Tone =
@@ -690,4 +691,7 @@ export const CourseMarkdown: React.FC<{ source: string; accent?: DevOpsAccent; c
   source,
   accent = 'sky',
   className,
-}) => <div className={cn('leading-7 text-[15px]', className)}>{parseBlocks(source, accent)}</div>;
+}) => {
+  const content = React.useMemo(() => parseBlocks(source, accent), [source, accent]);
+  return <div className={cn('leading-7 text-[15px]', className)}>{content}</div>;
+};

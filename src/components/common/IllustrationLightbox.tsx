@@ -450,7 +450,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
 
         <button
           type="button"
-          onClick={() => setLightboxTab(hasDiagram ? 'diagram' : 'poster')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightboxTab(hasDiagram ? 'diagram' : 'poster');
+          }}
           className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-900 px-2.5 font-mono text-[11px] font-semibold text-slate-200 transition-colors hover:border-slate-500 hover:text-white cursor-pointer"
         >
           <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -464,7 +467,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           {/* Layer 1: Visual Metaphor Poster */}
           <button
             type="button"
-            onClick={() => setLightboxTab('poster')}
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxTab('poster');
+            }}
             aria-label="Phóng to hình minh hoạ trực quan"
             className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-slate-900/60 p-2 text-left transition-all cursor-zoom-in hover:bg-slate-900/90"
           >
@@ -492,7 +498,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
           {/* Layer 2: Precision Vector Technical Anatomy */}
           <button
             type="button"
-            onClick={() => setLightboxTab('diagram')}
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxTab('diagram');
+            }}
             aria-label="Phóng to sơ đồ kỹ thuật"
             className="group relative flex flex-col justify-between overflow-hidden rounded-xl bg-slate-900/60 p-2 text-left transition-all cursor-zoom-in hover:bg-slate-900/90"
           >
@@ -513,7 +522,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
       ) : hasDiagram && diagram ? (
         <button
           type="button"
-          onClick={() => setLightboxTab('diagram')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightboxTab('diagram');
+          }}
           aria-label={title ? `Phóng to sơ đồ: ${title}` : 'Phóng to sơ đồ kỹ thuật'}
           className="group relative block w-full overflow-hidden rounded-xl text-left transition-all cursor-zoom-in"
         >
@@ -526,7 +538,10 @@ export const IllustrationFigure: React.FC<IllustrationFigureProps> = ({
       ) : hasPoster && src ? (
         <button
           type="button"
-          onClick={() => setLightboxTab('poster')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightboxTab('poster');
+          }}
           aria-label={alt || title || 'Phóng to hình minh hoạ'}
           className="group relative block w-full overflow-hidden rounded-xl bg-slate-900/50 p-1.5 text-left transition-all cursor-zoom-in"
         >

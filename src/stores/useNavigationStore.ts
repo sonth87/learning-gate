@@ -190,7 +190,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
         clearTimeout(popoverHideTimeout);
         popoverHideTimeout = null;
       }
-      set({ activePopover: null });
+      set((s) => (s.activePopover === null ? s : { activePopover: null }));
       return;
     }
 
@@ -201,7 +201,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
     popoverHideTimeout = setTimeout(() => {
       popoverHideTimeout = null;
       set((s) => {
-        if (s.activePopover?.pinned) return s;
+        if (!s.activePopover || s.activePopover.pinned) return s;
         return { activePopover: null };
       });
     }, 180);
