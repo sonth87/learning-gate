@@ -21,7 +21,7 @@
   },
   {
     "id": "R08-FC5",
-    "front": "Quy trình cứu hộ bản tin mồ côi khi một Worker bị sập nguồn bằng **`XAUTOCLAIM`** diễn ra như thế nào?",
+    "front": "Quy trình khôi phục bản tin mồ côi khi một Worker bị sập nguồn bằng **`XAUTOCLAIM`** diễn ra như thế nào?",
     "back": "Worker còn sống gọi định kỳ `XAUTOCLAIM <stream> <group> <my_name> <min_idle_ms> 0-0 COUNT <n>` để chiếm quyền sở hữu các bản tin đã nằm bất động quá `min_idle_ms`, thực thi logic **Idempotent**, rồi bắt buộc gọi **`XACK`** để xoá khỏi PEL."
   },
   {

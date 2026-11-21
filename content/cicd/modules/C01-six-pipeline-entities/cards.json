@@ -1,7 +1,7 @@
 [
   {
     "id": "cicd-card-c01-1",
-    "front": "Kể tên 6 thực thể cốt lõi cấu thành một đường ống GitHub Actions từ ngoài vào trong.",
+    "front": "Kể tên 6 thực thể cốt lõi cấu thành một pipeline GitHub Actions từ ngoài vào trong.",
     "back": "1) Event/Trigger (`on`) -> 2) Workflow (file `.yml`) -> 3) Job (`jobs.<id>`) -> 4) Runner (`runs-on`) -> 5) Step (`steps`) -> 6) Action (`uses`) / Shell command (`run`)."
   },
   {

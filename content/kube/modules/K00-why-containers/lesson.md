@@ -1,35 +1,35 @@
 # Vì sao code chạy trên máy bạn nhưng sập ngay trên server?
 
-Nếu bạn xuất phát từ hệ sinh thái **Node.js / TypeScript**, chắc chắn bạn đã từng gặp kịch bản kinh điển *"Trên máy em vẫn chạy ngon mà!"*:
+Dù bạn xuất phát từ **Python (`FastAPI`, `Django`)**, **Node.js / TypeScript (`Express`, `Next.js`)** hay **Go / Java**, chắc chắn bạn đã từng gặp câu nói kinh điển ám ảnh mọi đội kỹ thuật: *"Ơ lạ nhỉ, trên máy em vẫn chạy ngon mà!"*
 
-- [>] Ở máy Mac cá nhân, bạn dùng **Node v22.12**, gõ `npm run dev` mượt mà không một cảnh báo.
-- [!] Đẩy code lên máy chủ Ubuntu (hoặc gửi cho đồng nghiệp dùng Windows), ứng dụng sập ngay lúc khởi động vì `ERR_DLOPEN_FAILED` ở gói `sharp` / `bcrypt`, lệch múi giờ `UTC` vs `Asia/Ho_Chi_Minh`, thiếu thư viện C `libvips` / `openssl`, hoặc server vẫn kẹt ở **Node v18**.
+- [>] Ở máy cá nhân macOS, bạn chạy **Python 3.12** (hoặc **Node v22.12**), gõ lệnh chạy thử mượt mà không một cảnh báo.
+- [!] Đẩy code lên máy chủ Ubuntu (hoặc gửi cho đồng nghiệp dùng Windows), ứng dụng sập ngay lúc khởi động: bên Python nổ lỗi thiếu thư viện C hệ thống `libpq-dev` khi cài `psycopg` hoặc lệch bản `glibc`; bên Node.js văng `ERR_DLOPEN_FAILED` ở gói xử lý ảnh `sharp`, lệch múi giờ `UTC` vs `Asia/Ho_Chi_Minh`, hoặc server vẫn kẹt ở runtime đời cũ!
 
-`package-lock.json` chỉ khoá phiên bản các gói JS trong `node_modules`, nhưng **hoàn toàn bất lực** trước hệ điều hành bên dưới, kiến trúc CPU (`arm64` vs `x86_64`) hay thư viện hệ thống. **Container** ra đời để đóng băng toàn bộ ứng dụng + runtime + hệ thống tệp thành một đơn vị duy nhất: **siêu nhẹ**, **dễ di chuyển** và ==bất biến ở mọi nơi==.
+Các tệp khóa gói như `uv.lock` / `requirements.txt` (Python) hay `package-lock.json` (Node.js) chỉ khóa phiên bản thư viện ngôn ngữ, nhưng **hoàn toàn bất lực** trước hệ điều hành bên dưới và thư viện C của máy chủ. **Container (theo chuẩn mở OCI)** ra đời để đóng băng trọn gói ứng dụng + runtime + thư viện hệ thống thành một đơn vị duy nhất: **siêu nhẹ**, **khởi động tức thì** và ==chạy đồng nhất 100% ở mọi nơi==.
 
 ```visual
 kind: flow
-title: Luồng Cốt Lõi Của Docker — Build Một Lần, Chạy Mọi Nơi
-subtitle: Ba thực thể nền tảng biến mã nguồn trên máy dev thành tiến trình chạy đồng nhất trên Production
+title: Luồng Cốt Lõi Của Container — Đóng Gói Một Lần, Chạy Đồng Nhất Mọi Nơi
+subtitle: Ba thực thể nền tảng biến mã nguồn (Python, Node.js, Go...) trên máy dev thành tiến trình chạy ổn định trên Production
 steps:
   - icon: file-code
     badge: Bước 1 · Công thức
     title: Dockerfile
-    desc: Tệp văn bản mô tả từng bước chọn OS, cài Node runtime và chép code
+    desc: Tệp văn bản mô tả từng bước chọn OS nền, cài Python/Node runtime và chép code
     code: Dockerfile
     tone: sky
     edge: docker build
   - icon: package
-    badge: Bước 2 · Bản mẫu chỉ đọc
+    badge: Bước 2 · Khuôn bánh chỉ đọc
     title: Container Image
-    desc: Khuôn mẫu nhị phân bất biến xếp chồng từ nhiều lớp (read-only layers)
+    desc: Khuôn mẫu nhị phân bất biến xếp chồng từ nhiều lớp chỉ đọc (read-only layers)
     code: shop-api:1.4.2
     tone: cyan
     edge: docker pull / push
   - icon: cloud
     badge: Kho trung tâm
     title: Container Registry
-    desc: Kho lưu trữ và phân phối Image theo tên & tag (Docker Hub, GHCR, ECR)
+    desc: Kho lưu trữ và phân phối Image theo tên & tag (Docker Hub, GHCR, AWS ECR)
     code: ghcr.io/acme/shop-api
     tone: amber
     edge: docker run
@@ -41,7 +41,17 @@ steps:
     tone: emerald
 ```
 
-## 1. Bản đồ tư duy: Từ Node.js / npm sang Docker & Khác biệt với Máy ảo (VM)
+## 1. Mô hình tư duy từ con số 0: Nhà riêng vs Chung cư (VM vs Container) & Khuôn bánh vs Chiếc bánh (Image vs Container)
+
+Trước khi gõ bất kỳ câu lệnh nào, hãy nắm thật chắc **hai cặp khái niệm cốt lõi nhất** bằng hình ảnh đời thường:
+
+> [!NOTE] Mô hình tư duy #1 — Máy ảo (Virtual Machine) vs Container: Thuê nguyên căn nhà hay Thuê căn hộ chung cư?
+> - **Máy ảo (VM)** giống như **xây nguyên một căn nhà biệt lập**: mỗi ứng dụng phải tự cõng riêng nền móng, hệ thống ống nước và máy phát điện riêng — tức một bản hệ điều hành khách đầy đủ (**Guest OS Kernel** nặng hàng chục GB, bật mất cả phút).
+> - **Container** giống như **căn hộ hiện đại trong cùng một tòa chung cư**: mọi căn hộ vẫn có cửa khóa và phòng ốc riêng tư tuyệt đối, nhưng **dùng chung nền móng và đường điện nước trung tâm** chính là ==nhân Linux có sẵn của máy chủ (Host Linux Kernel)==. Nhờ bỏ hẳn Guest OS dư thừa, container nhẹ chỉ vài chục MB và bật lên trong **~50–80 mili-giây** như mở một tab trình duyệt!
+
+> [!TIP] Mô hình tư duy #2 — Image vs Container: Công thức bánh cấp đông vs Chiếc bánh dọn lên bàn
+> - **Container Image** giống như **bản thiết kế `class` trong lập trình** hoặc **khuôn bánh đã cấp đông cứng**: nó hoàn toàn ==bất biến, chỉ đọc (Read-Only)== và nằm yên trên ổ đĩa.
+> - **Container** là **đối tượng `instance` đang sống trên RAM** (chiếc bánh đã nướng nóng hổi đặt lên bàn, phủ thêm **1 lớp kem ghi tạm mỏng** ở trên cùng). Từ **1 Image duy nhất**, bạn có thể đúc ra **10 hay 100 Container** chạy song song trong tích tắc mà không tốn thêm dung lượng nhân bản lớp nền!
 
 ```visual
 kind: illustration
@@ -53,39 +63,36 @@ subtitle: "Loại bỏ hoàn toàn nhân hệ điều hành khách (Guest OS) đ
 caption: "Đối chiếu ngăn xếp Hypervisor/Guest OS của VM với Docker Container dùng chung Host Kernel và cơ chế xếp chồng Read-Only Image Layers"
 callouts:
   - num: 1
-    label: "Ngăn xếp Máy ảo (VM) cồng kềnh"
+    label: "Ngăn xếp Máy ảo (VM) — Nguyên căn nhà nặng nề"
     desc: "Mỗi VM phải gánh riêng một nhân Guest OS đầy đủ bên trên tầng Hypervisor giả lập phần cứng, tiêu tốn hàng GB RAM."
     tone: rose
   - num: 2
-    label: "Container dùng chung Host Linux Kernel"
+    label: "Container — Căn hộ dùng chung Host Linux Kernel"
     desc: "Mọi tiến trình container gọi thẳng syscall vào nhân Linux sẵn có của máy chủ, cô lập gọn nhẹ bằng Namespaces và cgroups."
     tone: emerald
   - num: 3
-    label: "Các lớp Image bất biến & Lớp ghi tạm"
-    desc: "Hàng chục container có thể dùng chung các Read-Only Layers bên dưới và chỉ gắn thêm 1 lớp R/W mỏng ở trên cùng."
+    label: "Các lớp Image bất biến & Lớp ghi tạm mỏng"
+    desc: "Hàng chục container dùng chung các Read-Only Layers bên dưới và chỉ gắn thêm 1 lớp R/W mỏng ở trên cùng khi chạy."
     tone: sky
 ```
 
-> [!ANALOGY] Hãy hình dung như sau (Ánh xạ từ Node.js quen thuộc)
-> Nếu **Container Image** giống như một **bản thiết kế + gói `.tgz` đã đóng băng cả Node lẫn Linux**, thì **Container** chính là **tiến trình sống** khi bạn bấm chạy bản thiết kế đó. Bạn có thể bật 10 Container độc lập từ cùng 1 Image trong tích tắc mà không tốn thêm dung lượng nhân bản lớp nền!
-
-| Quen thuộc ở Node.js | Khái niệm trong Docker | Vai trò thực chất |
+| Quen thuộc ở Python & Node.js | Khái niệm trong Container | Vai trò thực chất |
 | --- | --- | --- |
-| `package.json` + hướng dẫn cài `README.md` | **`Dockerfile`** | Bản công thức văn bản mô tả từng bước chuẩn bị OS, runtime, chép code |
-| Gói nén `.tgz` + `package-lock.json` đóng băng cả OS | **Container Image** | Khuôn mẫu ==chỉ đọc (read-only)== xếp chồng từ các lớp (layers) bất biến |
-| Tiến trình sống khi gõ `node dist/server.js` | **Container** | Tiến trình Linux thực thi từ Image, gắn thêm **1 lớp ghi tạm mỏng** ở trên cùng |
-| Kho `registry.npmjs.org` (`npm publish` / `install`) | **Container Registry** | Kho trung tâm (Docker Hub, GHCR, ECR) để `docker pull` / `docker push` |
+| `pyproject.toml` / `package.json` + hướng dẫn cài OS | **`Dockerfile`** | Bản công thức văn bản mô tả từng bước chuẩn bị OS, runtime (Python/Node), chép code |
+| Môi trường `.venv` / `node_modules` đóng băng kèm cả Linux | **Container Image** | Khuôn mẫu **chỉ đọc (read-only)** theo chuẩn OCI xếp chồng từ các lớp bất biến |
+| Tiến trình sống `uvicorn main:app` / `node server.js` | **Container** | Tiến trình Linux thực thi từ Image, gắn thêm **1 lớp ghi tạm mỏng** ở trên cùng |
+| Kho `PyPI` (`uv add`) / `npm` (`npm install`) | **Container Registry** | Kho trung tâm (Docker Hub, GHCR, ECR) để `docker pull` / `docker push` |
 
 ```visual
 kind: layers
 title: Tại Sao Container Khởi Động Trong Vài Chục Mili-Giây? (VM vs Container)
-subtitle: Container KHÔNG PHẢI máy ảo — nó không cõng nhân hệ điều hành khách (Guest OS Kernel) riêng biệt
+subtitle: Container KHÔNG PHẢI máy ảo thu nhỏ — nó chính là tiến trình Linux được cô lập khéo léo trên cùng nhân máy chủ
 columns:
   - title: Virtual Machine (Máy ảo truyền thống)
     badge: Nặng hàng chục GB · Bật mất hàng phút
     tone: rose
     layers:
-      - label: Ứng dụng + Thư viện (App & Bins/Libs)
+      - label: Ứng dụng + Thư viện (Python / Node / Java)
         note: Mã nguồn dịch vụ
         tone: cyan
       - label: Guest OS Kernel riêng biệt (Full Ubuntu/Windows)
@@ -98,13 +105,13 @@ columns:
       - label: Host OS & Máy chủ vật lý (Server)
         note: Hạ tầng vật lý gốc
         tone: slate
-    footer: Phù hợp khi cần cô lập hoàn toàn khác hệ điều hành (ví dụ chạy Windows trên Linux)
-  - title: Docker Container (Chuẩn Cloud-Native)
+    footer: Phù hợp khi cần cô lập hoàn toàn khác hệ điều hành (ví dụ chạy Windows trên máy chủ Linux)
+  - title: OCI Container (Docker / containerd / Podman)
     badge: Siêu nhẹ (~MB) · Bật trong vài chục ms
     tone: emerald
     layers:
-      - label: Tiến trình Ứng dụng + Bins/Libs (Node 22 + Alpine)
-        sub: Che mắt tầm nhìn bằng Linux Namespaces · Khoá hạn mức bằng cgroups
+      - label: Tiến trình App + Thư viện (python:3.12-slim / node:22-alpine)
+        sub: Che tầm nhìn bằng Linux Namespaces · Khóa hạn mức RAM/CPU bằng cgroups
         note: Cô lập gọn nhẹ
         tone: sky
       - label: Container Runtime (Docker Engine / containerd)
@@ -117,17 +124,17 @@ columns:
       - label: Máy chủ vật lý / Cloud VM
         note: Hạ tầng vật lý gốc
         tone: slate
-    footer: Tiết kiệm tài nguyên tối đa · Chạy hàng trăm microservice trên cùng 1 node
+    footer: Tiết kiệm tài nguyên tối đa · Chạy hàng trăm microservice đa ngôn ngữ trên cùng 1 node
 ```
 
-## 2. Giải phẫu định danh của một Container Image
+## 2. Giải phẫu định danh Image & Bức tranh công cụ Container năm 2026
 
-Khi bạn gặp chuỗi `ghcr.io/acme/shop-api:1.4.2` hoặc `redis:7-alpine`, cấu trúc của nó giống hệt scoped package kèm version trong npm:
+Khi bạn gặp chuỗi `ghcr.io/acme/shop-api:1.4.2`, `python:3.12-slim` hay `redis:7-alpine`, cấu trúc của nó rất giống tên gói kèm phiên bản mà bạn vẫn dùng hằng ngày:
 
 ```visual
 kind: groups
-title: "4 Thành Phần Trong Tên Đầy Đủ Của Image — [registry]/[namespace]/[repo]:[tag]"
-subtitle: "Ví dụ chuẩn: ghcr.io/acme/shop-api:1.4.2 hoặc viết gọn redis:7-alpine (= docker.io/library/redis:7-alpine)"
+title: "Giải Phẫu Tên Image — [registry]/[namespace]/[repo]:[tag]"
+subtitle: "Ví dụ chuẩn: ghcr.io/acme/shop-api:1.4.2 hoặc viết gọn python:3.12-slim (= docker.io/library/python:3.12-slim)"
 columns: 2
 items:
   - num: 1
@@ -136,17 +143,23 @@ items:
     tone: sky
     bullets:
       - "`ghcr.io/acme` chỉ định kho GitHub Container Registry của tổ chức `acme`"
-      - "Nếu viết gọn `redis:7-alpine`, Docker tự hiểu ngầm là **`docker.io/library/redis:7-alpine`** (Docker Hub chính thức)"
+      - "Nếu viết gọn `redis:7-alpine` hay `python:3.12-slim`, công cụ tự hiểu ngầm là **`docker.io/library/...`** trên Docker Hub chính thức"
   - num: 2
-    title: Tag Phiên Bản & Biến Thể -alpine
+    title: Tag Phiên Bản & Biến Thể (-alpine vs -slim)
     badge: Bắt buộc ghim rõ
     tone: amber
     bullets:
-      - "Nếu **bỏ trống `:tag`** (chỉ gõ `docker pull node`), Docker tự gắn nhãn mặc định ==`:latest`== — **không dùng trên Production** vì mất tính tái lập!"
-      - "Đuôi **`-alpine`** dùng Alpine Linux (~5MB, thư viện `musl` + `apk`), kéo giảm Image Node từ **~1.1 GB** xuống chỉ còn **~135 MB**"
+      - "Nếu **bỏ trống `:tag`** (chỉ gõ `docker pull node` hay `docker pull python`), Docker tự gắn nhãn mặc định ==`:latest`== — **tuyệt đối tránh trên Production** vì hôm sau build lại có thể nhảy phiên bản gây sập app!"
+      - "Với **Node.js / Go / Redis**, đuôi **`-alpine`** (Alpine Linux `musl`, ~5MB nền) rất được ưa chuộng; còn với **Python / AI / FastAPI**, cộng đồng ưu tiên **`python:3.12-slim`** (Debian `glibc` gọn nhẹ) để cài mượt các gói biên dịch C (`numpy`, `pydantic-core`, `psycopg`) không bị chậm!"
 ```
 
-## 3. Vòng đời 5 bước của Container & Bảng lệnh cốt lõi
+> [!NOTE] Hệ sinh thái Container Engine năm 2026: Không chỉ có mỗi Docker Desktop!
+> Vì định dạng Image đã được chuẩn hóa mở (**OCI — Open Container Initiative**), mọi kiến thức và câu lệnh trong khóa học này đều tương thích xuyên suốt 3 bộ máy phổ biến nhất hiện nay:
+> - **Docker Desktop:** Phổ biến nhất trên Windows (WSL2) và macOS, có giao diện GUI trực quan cho người mới bắt đầu.
+> - **OrbStack (Khuyên dùng trên macOS Apple Silicon):** Thay thế trực tiếp Docker Desktop trên máy Mac — khởi động trong **2 giây**, tốn cực ít RAM/pin và mạng tệp tin nhanh vượt trội, giữ nguyên 100% lệnh `docker` và `docker compose`.
+> - **Podman:** Bộ máy chuẩn doanh nghiệp trên Linux/RHEL với kiến trúc **không tiến trình nền (`daemonless`)** và mặc định **không cần quyền tối cao (`rootless`)**, chỉ cần đặt `alias docker=podman` là gõ y hệt câu lệnh Docker!
+
+## 3. Vòng đời 4 bước của Container & Trải nghiệm đa ngôn ngữ đầu tay
 
 ```visual
 kind: flow
@@ -171,10 +184,20 @@ steps:
     tone: amber
     edge: giải phóng tên
   - icon: trash
-    badge: 4. xoá bỏ
+    badge: 4. Xóa bỏ
     title: Remove
     code: docker rm cache
     tone: rose
+```
+
+Điểm kỳ diệu nhất cho người mới là: **máy tính của bạn không cần cài sẵn Python 3.12, Node 22 hay Redis** — chỉ một dòng `docker run` là bạn chạy được mọi ngôn ngữ ngay lập tức trong không gian sạch sẽ:
+
+```bash
+# Chạy thử nhanh câu lệnh Python 3.12 ngay trong container rồi tự dọn sạch (--rm):
+docker run --rm python:3.12-slim python -c "import sys; print('Hello from Python', sys.version.split()[0])"
+
+# Hoặc chạy dịch vụ Redis / Node.js chạy ngầm lâu dài ở hậu cảnh (-d):
+docker run -d --name cache-dev redis:7-alpine
 ```
 
 ```visual
@@ -188,7 +211,7 @@ items:
     tone: emerald
     bullets:
       - "**`-d` (`--detach`):** Chạy ngầm ở hậu cảnh (background), trả lại dấu nhắc Terminal ngay"
-      - "**`--name`:** Đặt tên cố định dễ gọi script (tránh tên ngẫu nhiên kiểu `sleepy_euler`)"
+      - "**`--name`:** Đặt tên cố định dễ nhớ (tránh tên ngẫu nhiên kiểu `sleepy_euler`)"
     code: |
       docker pull redis:7-alpine                # Tải các layer vào cache máy
       docker images                             # Xem danh sách Image đang có
@@ -201,7 +224,7 @@ items:
     bullets:
       - "`docker ps` **chỉ hiện container ĐANG CHẠY** (`Up`)"
       - "Muốn thấy cả container **đã dừng (`Exited`)** bắt buộc thêm cờ ==`-a`=="
-      - "`Exited (0)` = hoàn tất bình thường · `Exited (1)` / `(137)` = sập do lỗi hoặc hết RAM"
+      - "`Exited (0)` = hoàn tất bình thường · `Exited (1)` / `(137)` = sập do lỗi code hoặc tràn RAM"
     code: |
       docker ps      # Chỉ hiện container đang chạy (running)
       docker ps -a   # Hiện TẤT CẢ (gồm cả Exited đã tắt)
@@ -211,8 +234,8 @@ items:
     badge: Graceful Shutdown
     tone: amber
     bullets:
-      - "**`docker stop`** gửi ==`SIGTERM`== vào PID 1, cho ứng dụng tối đa 10 giây đóng kết nối DB êm ái trước khi thoát"
-      - "**`docker kill`** bắn thẳng ==`SIGKILL`== ngắt điện tức khắc — chỉ dùng khi tiến trình treo cứng"
+      - "**`docker stop`** gửi ==`SIGTERM`== vào PID 1, cho FastAPI / Node.js tối đa 10 giây đóng kết nối DB êm ái trước khi thoát"
+      - "**`docker kill`** bắn thẳng `SIGKILL` ngắt điện tức khắc — chỉ dùng khi tiến trình treo cứng"
     code: |
       docker stop cache-dev   # Gửi SIGTERM -> chờ 10s -> Graceful Shutdown
       docker kill cache-dev   # Bắn thẳng SIGKILL rút điện ngay lập tức
@@ -222,38 +245,37 @@ items:
     badge: Cleanup
     tone: rose
     bullets:
-      - "`docker rm` **chỉ xoá Container** (lớp ghi tạm), còn bản gốc **Image vẫn nằm nguyên** trong `docker images` để lần sau bật tức thì!"
-      - "Thêm `-f` để vừa ép dừng vừa xoá gọn trong 1 lệnh ở máy dev"
+      - "`docker rm` **chỉ xóa Container** (chiếc bánh & lớp ghi tạm), còn khuôn gốc **Image vẫn nằm nguyên** trong `docker images` để lần sau bật tức thì!"
+      - "Thêm `-f` để vừa ép dừng vừa xóa gọn trong 1 lệnh ở máy dev"
     code: |
-      docker rm cache-dev      # Xoá container đã dừng (giải phóng tên)
-      docker rm -f cache-dev   # Ép dừng + xoá ngay lập tức
+      docker rm cache-dev      # Xóa container đã dừng (giải phóng tên)
+      docker rm -f cache-dev   # Ép dừng + xóa ngay lập tức
     codeLang: shell
 ```
 
-## 4. Bẫy thường gặp & Tư duy thực chiến chuẩn 2026
+## 4. Bẫy thường gặp & Tư duy Hạ tầng Bất biến chuẩn 2026
 
 ```visual
 kind: troubleshoot
-title: Khắc Phục Nhanh Lỗi Kinh Điển Của Người Mới Học Docker
+title: Khắc Phục Nhanh Lỗi Kinh Điển Của Người Mới Học Container
 items:
   - symptom: 'Conflict. The container name "/api" is already in use'
     badge: Bẫy số 1
     tone: amber
-    cause: Container cũ bị lỗi thoát sau 0.1s nên không hiện trong `docker ps`, nhưng xác `Exited` của nó vẫn đang giữ tên `api`.
-    fix: Liệt kê toàn bộ bằng `docker ps -a` để xem mã thoát, sau đó xoá bỏ cũ trước khi chạy lại.
+    cause: Container cũ bị lỗi thoát sau 0.1s nên không hiện trong `docker ps`, nhưng vỏ `Exited` của nó vẫn đang giữ tên `api`.
+    fix: Liệt kê toàn bộ bằng `docker ps -a` để xem mã thoát, sau đó xóa bản cũ trước khi chạy lại.
     cmd: docker ps -a && docker rm -f api
   - symptom: Bản build hôm nay tự nhiên lỗi dù không sửa dòng code nào
     badge: Reproducibility
     tone: rose
-    cause: Dùng `node` hoặc `node:latest` khiến CI tự kéo phiên bản Major mới vừa phát hành trên Docker Hub.
-    fix: Luôn ghim phiên bản cụ thể kèm biến thể nhẹ (ví dụ `node:22.12-alpine` hoặc `redis:7.4-alpine`).
+    cause: Dùng `python:latest` hoặc `node:latest` khiến CI tự kéo phiên bản Major mới vừa phát hành trên Docker Hub.
+    fix: Luôn ghim phiên bản cụ thể kèm biến thể gọn nhẹ (ví dụ `python:3.12-slim`, `node:22.12-alpine` hoặc `redis:7.4-alpine`).
 ```
 
-> [!TIP] Mẹo thực chiến chuẩn Docker Engine v27+ (2026)
-> - [x] **Cú pháp phân nhóm tường minh:** `docker container ls` và `docker image ls` hoạt động song song với bí danh kinh điển `docker ps` và `docker images` — bạn sẽ gặp cả hai trong pipeline CI/CD.
-> - [x] **Tư duy Hạ tầng Bất biến (*Immutable Infrastructure*):** Tuyệt đối không `exec` vào container đang sống để sửa tay code/config. Khi cần nâng cấp, hãy **build Image mới → xoá container cũ → bật container mới**!
+> [!WARNING] Nguyên tắc vàng của Hạ tầng Bất biến (Immutable Infrastructure)
+> Tuyệt đối không chui vào bên trong một container đang chạy để gõ `pip install`, `npm install` hay sửa tay tệp code trên Production — vì lần tới khi container khởi tạo lại từ Image gốc, mọi chỉnh sửa tay sẽ biến mất sạch! Muốn cập nhật code, hãy luôn đi đúng vòng tuần hoàn: **sửa code → build Image mới (tăng tag version) → thay thế container cũ bằng container mới**.
 
 > [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
-> - **Image** = Khuôn mẫu **chỉ đọc** (Read-only layers) · **Container** = Tiến trình sống + 1 lớp ghi tạm.
-> - Container **chia sẻ chung Host Linux Kernel** (cô lập bằng `Namespaces` + `cgroups`), không cõng Guest OS như VM.
-> - Bỏ trống `:tag` = tự gắn `:latest` · Thoát thành công không lỗi = `Exited (0)` · `docker rm` không làm mất Image gốc!
+> - **VM** = Xây nhà riêng cõng cả **Guest OS** nặng nề · **Container** = Căn hộ dùng chung **Host Linux Kernel**, khởi động trong vài chục mili-giây.
+> - **Image** = Khuôn mẫu **chỉ đọc** (`Read-only layers`) · **Container** = Tiến trình sống + 1 lớp ghi tạm mỏng (`docker rm` xóa Container nhưng không làm mất Image!).
+> - Bỏ trống `:tag` = tự gắn `:latest` · Node/Go chuộng **`-alpine`**, Python/FastAPI chuộng **`-slim`** · Xem cả container đã tắt bằng `docker ps -a`.

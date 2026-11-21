@@ -5,8 +5,8 @@
     "q": "Nếu bạn chạy lệnh `trivy image ghcr.io/acme/shop-api:1.0` với các cờ mặc định mà **quên truyền `--exit-code 1`**, điều gì xảy ra khi Trivy phát hiện 12 lỗ hổng mức `CRITICAL`?",
     "code": "",
     "choices": [
-      "Đường ống tự động dừng lại và gửi cảnh báo đỏ ngay lập tức",
-      "Trivy in bảng danh sách 12 lỗ hổng ra màn hình log nhưng vẫn trả về mã thoát `0`, khiến đường ống báo XANH và đẩy thẳng ảnh đầy lỗ hổng lên Production!",
+      "Pipeline tự động dừng lại và gửi cảnh báo đỏ ngay lập tức",
+      "Trivy in bảng danh sách 12 lỗ hổng ra màn hình log nhưng vẫn trả về mã thoát `0`, khiến pipeline báo XANH và đẩy thẳng ảnh đầy lỗ hổng lên Production!",
       "Trivy tự động sửa mã nguồn Dockerfile và đóng gói lại",
       "GitHub tự động xoá kho lưu trữ để bảo vệ an toàn"
     ],
@@ -16,7 +16,7 @@
   {
     "id": "C11-Q2",
     "type": "tf",
-    "q": "Tham số `--ignore-unfixed` trên lệnh `trivy image` giúp giảm nhiễu thực tế bằng cách chỉ chặn đường ống đối với những lỗ hổng ĐÃ CÓ bản vá chính thức từ nhà phát hành hệ điều hành/thư viện.",
+    "q": "Tham số `--ignore-unfixed` trên lệnh `trivy image` giúp giảm nhiễu thực tế bằng cách chỉ chặn pipeline đối với những lỗ hổng ĐÃ CÓ bản vá chính thức từ nhà phát hành hệ điều hành/thư viện.",
     "code": "",
     "choices": [],
     "answer": true,

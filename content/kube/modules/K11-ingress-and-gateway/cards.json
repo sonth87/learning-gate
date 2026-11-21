@@ -28,5 +28,10 @@
     "id": "K11-FC6",
     "front": "Công cụ mã nguồn mở phổ biến nhất trên K8s dùng để tự động xin và gia hạn chứng chỉ HTTPS Let's Encrypt cho Ingress?",
     "back": "**`cert-manager`**"
+  },
+  {
+    "id": "K11-FC7",
+    "front": "Vì sao năm 2026 ngành công nghiệp dịch chuyển mạnh từ `Ingress NGINX` cộng đồng sang **Kubernetes Gateway API**?",
+    "back": "Dự án `kubernetes/ingress-nginx` cộng đồng bước vào lộ trình nghỉ hưu (retirement); **Gateway API** (`gateway.networking.k8s.io/v1`) trên nền **Envoy Gateway**, **Cilium** hoặc **Traefik** chuẩn hóa định tuyến & Canary mà không cần phụ thuộc vào rừng annotation riêng lẻ."
   }
 ]

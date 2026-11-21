@@ -301,7 +301,7 @@
     "id": "kube-ex-k19-3",
     "code": "K19.3",
     "module": "K19",
-    "title": "Ca trực #7 — Cứu hộ khẩn cấp bằng Rollback CLI trên namespace production",
+    "title": "Ca trực #7 — Khôi phục khẩn cấp bằng Rollback CLI trên namespace production",
     "difficulty": 2,
     "tags": [
       "troubleshoot",

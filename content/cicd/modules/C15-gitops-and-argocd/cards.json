@@ -28,5 +28,10 @@
     "id": "C15-C6",
     "front": "Cách Rollback chuẩn nhất trong quy trình GitOps là gì?",
     "back": "Thực hiện `git revert` commit nâng cấp phiên bản trên kho GitOps rồi push lên `main` — vừa kích hoạt ArgoCD quay lui tự động, vừa lưu lại đầy đủ lịch sử kiểm toán trên Git."
+  },
+  {
+    "id": "C15-C7",
+    "front": "So sánh điểm mạnh cốt lõi giữa hai công cụ GitOps hàng đầu của CNCF: **Argo CD** vs **Flux CD**?",
+    "back": "- **Argo CD**: mạnh về giao diện Web UI trực quan cây tài nguyên, phân quyền SSO đa cụm tập trung và kết hợp *Argo Rollouts*.\n- **Flux CD**: kiến trúc vi dịch vụ thuần Kubernetes CRD siêu nhẹ, không gánh Web UI nặng, tối ưu tự động hoá bằng CLI/Terraform cho hàng trăm cụm biên."
   }
 ]

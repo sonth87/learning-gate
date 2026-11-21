@@ -12,7 +12,7 @@
     "kind": "yaml",
     "language": "yaml",
     "filename": ".github/workflows/env-scopes.yml",
-    "prompt": "Cấu hình biến môi trường đúng phạm vi cho đường ống kiểm thử: (1) khai báo ở cấp Workflow (gốc file YAML) biến `env.NODE_ENV: \"test\"` dùng chung cho toàn bộ các Job, và (2) tại bước chạy kiểm thử API (`jobs.verify.steps[3]`), khai báo biến cục bộ cấp Step `env.API_URL: \"http://localhost:3000\"`.",
+    "prompt": "Cấu hình biến môi trường đúng phạm vi cho pipeline kiểm thử: (1) khai báo ở cấp Workflow (gốc file YAML) biến `env.NODE_ENV: \"test\"` dùng chung cho toàn bộ các Job, và (2) tại bước chạy kiểm thử API (`jobs.verify.steps[3]`), khai báo biến cục bộ cấp Step `env.API_URL: \"http://localhost:3000\"`.",
     "starter": "name: Scoped Environment Variables\non: [push, pull_request]\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run API smoke tests\n        run: npm test\n",
     "solution": "name: Scoped Environment Variables\non: [push, pull_request]\nenv:\n  NODE_ENV: \"test\"\njobs:\n  verify:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm ci\n      - name: Run API smoke tests\n        env:\n          API_URL: \"http://localhost:3000\"\n        run: npm test\n",
     "hints": [

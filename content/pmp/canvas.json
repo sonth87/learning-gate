@@ -44,7 +44,10 @@
       ],
       "realWorldTrap": "Thấy khách xin sửa 'một tính năng nhỏ không tốn tiền' liền gật đầu làm luôn mà quên đánh giá rủi ro bảo mật, lịch kiểm thử tích hợp và tài liệu vận hành.",
       "moduleId": "P02",
-      "evidenceLinkIds": ["book.intro.constraints", "flow.change"]
+      "evidenceLinkIds": [
+        "book.intro.constraints",
+        "flow.change"
+      ]
     },
     {
       "id": "prin-2",
@@ -61,7 +64,11 @@
       ],
       "realWorldTrap": "Cố sống cố chết chạy hết 100% tính năng theo kế hoạch cũ dù thị trường đã đổi và khách hàng xác nhận tính năng đó không còn dùng tới.",
       "moduleId": "P02",
-      "evidenceLinkIds": ["book.business.case", "book.value.mvp", "flow.value-prioritization"]
+      "evidenceLinkIds": [
+        "book.business.case",
+        "book.value.mvp",
+        "flow.value-prioritization"
+      ]
     },
     {
       "id": "prin-3",
@@ -78,7 +85,10 @@
       ],
       "realWorldTrap": "Khi dự án trễ tiến độ liền cắt bớt bước kiểm thử (Control Quality) hoặc hạ tiêu chuẩn Definition of Done để kịp ngày bàn giao.",
       "moduleId": "P03",
-      "evidenceLinkIds": ["core.quality.qc-validate", "flow.scope-acceptance"]
+      "evidenceLinkIds": [
+        "core.quality.qc-validate",
+        "flow.scope-acceptance"
+      ]
     },
     {
       "id": "prin-4",
@@ -95,7 +105,10 @@
       ],
       "realWorldTrap": "Sợ mất lòng Sponsor hoặc khách hàng nên trì hoãn báo cáo SPI/CPI xấu với hy vọng tuần sau nhóm làm bù sẽ kéo lại kịp.",
       "moduleId": "P03",
-      "evidenceLinkIds": ["core.agile.servant", "flow.servant-leadership"]
+      "evidenceLinkIds": [
+        "core.agile.servant",
+        "flow.servant-leadership"
+      ]
     },
     {
       "id": "prin-5",
@@ -112,7 +125,10 @@
       ],
       "realWorldTrap": "Chọn nhà thầu giá rẻ nhất để tiết kiệm ngân sách dự án ngắn hạn nhưng vi phạm tiêu chuẩn khí thải hoặc làm tăng gấp đôi chi phí bảo trì vận hành.",
       "moduleId": "P02",
-      "evidenceLinkIds": ["book.value.compliance", "book.business.case"]
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "book.business.case"
+      ]
     },
     {
       "id": "prin-6",
@@ -129,7 +145,10 @@
       ],
       "realWorldTrap": "Thấy một thành viên mới làm chậm liền đòi trưởng phòng chức năng đổi người khác hoặc tự tay chia lại đầu việc từng giờ cho cả nhóm.",
       "moduleId": "P03",
-      "evidenceLinkIds": ["core.agile.roles", "book.resource.tuckman"]
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "book.resource.tuckman"
+      ]
     }
   ],
   "pmaGoldenReflexes": [
@@ -198,7 +217,10 @@
       ],
       "realWorldTrap": "Vừa làm PM vừa kiêm luôn việc áp đặt ước lượng giờ công cho Developer và tự tay duyệt yêu cầu đổi phạm vi của khách hàng.",
       "moduleId": "P07",
-      "evidenceLinkIds": ["book.governance.charter", "core.agile.servant"]
+      "evidenceLinkIds": [
+        "book.governance.charter",
+        "core.agile.servant"
+      ]
     },
     {
       "id": "role-po",
@@ -215,7 +237,10 @@
       ],
       "realWorldTrap": "Để Giám đốc Kinh doanh nhắn tin trực tiếp cho Developer chèn việc mới vào giữa Sprint đang chạy.",
       "moduleId": "P05",
-      "evidenceLinkIds": ["core.agile.roles", "flow.value-prioritization"]
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "flow.value-prioritization"
+      ]
     },
     {
       "id": "role-dev",
@@ -232,7 +257,10 @@
       ],
       "realWorldTrap": "Scrum Master hoặc Tech Lead ước lượng sẵn Story Points rồi ép cả nhóm chạy theo con số đó.",
       "moduleId": "P05",
-      "evidenceLinkIds": ["core.agile.roles", "core.adaptive.velocity"]
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "core.adaptive.velocity"
+      ]
     },
     {
       "id": "role-sponsor-ccb",
@@ -249,7 +277,10 @@
       ],
       "realWorldTrap": "Chưa có Project Charter được ký nhưng PM đã cho nhóm bắt đầu thiết kế, mua sắm và tiêu ngân sách chính thức.",
       "moduleId": "P07",
-      "evidenceLinkIds": ["book.governance.charter", "book.governance.change"]
+      "evidenceLinkIds": [
+        "book.governance.charter",
+        "book.governance.change"
+      ]
     }
   ],
   "approaches": [
@@ -268,7 +299,10 @@
       ],
       "realWorldTrap": "Áp dụng Predictive cứng nhắc cho sản phẩm AI/R&D mới tinh khiến dự án tê liệt vì giấy tờ Change Request liên miên.",
       "moduleId": "P04",
-      "evidenceLinkIds": ["book.intro.stacey", "flow.approach-selection"]
+      "evidenceLinkIds": [
+        "book.intro.stacey",
+        "flow.approach-selection"
+      ]
     },
     {
       "id": "app-iter-inc",
@@ -285,7 +319,10 @@
       ],
       "realWorldTrap": "Đánh đồng mọi từ 'lặp lại' là Scrum mà không phân biệt mục tiêu là thử nghiệm độ đúng (Iterative) hay giao phần dùng được sớm (Incremental).",
       "moduleId": "P04",
-      "evidenceLinkIds": ["book.intro.stacey", "flow.approach-selection"]
+      "evidenceLinkIds": [
+        "book.intro.stacey",
+        "flow.approach-selection"
+      ]
     },
     {
       "id": "app-agile",
@@ -302,7 +339,10 @@
       ],
       "realWorldTrap": "Chuyển sang Agile nhưng vẫn bắt nhóm ký cam kết cứng 100% tính năng cho cả 12 tháng ngay từ ngày khởi động.",
       "moduleId": "P05",
-      "evidenceLinkIds": ["flow.agile-delivery", "core.agile.events"]
+      "evidenceLinkIds": [
+        "flow.agile-delivery",
+        "core.agile.events"
+      ]
     },
     {
       "id": "app-hybrid",
@@ -319,7 +359,10 @@
       ],
       "realWorldTrap": "Ép đội phần cứng nhà máy phải bàn giao sản phẩm vật lý mới mỗi 2 tuần y hệt đội làm web.",
       "moduleId": "P06",
-      "evidenceLinkIds": ["book.intro.hybrid", "flow.adaptive-tracking"]
+      "evidenceLinkIds": [
+        "book.intro.hybrid",
+        "flow.adaptive-tracking"
+      ]
     }
   ],
   "focusAreas": [
@@ -393,7 +436,7 @@
       "step": 5,
       "title": "Cập nhật Tài liệu sống & Phòng ngừa tái diễn",
       "action": "Ghi nhận vào đúng sổ (Issue Log / Risk Register / Lessons Learned / Backlog) và theo dõi hiệu quả của hành động khắc phục.",
-      "neverDo": "Chữa cháy xong rồi bỏ qua không cập nhật tri thức khiến lỗi lặp lại ở giai đoạn sau."
+      "neverDo": "Xử lý tình thế xong rồi bỏ qua không cập nhật tri thức khiến lỗi lặp lại ở giai đoạn sau."
     }
   ],
   "domainBridge": [
@@ -401,7 +444,12 @@
       "pmbok8Domain": "1. Governance",
       "pmbok8ProcessesCount": 9,
       "pmbok8KeyFocus": "Khởi tạo, tích hợp kế hoạch, chiến lược mua sắm (Plan Sourcing Strategy), QA, quản trị tri thức, kiểm soát thay đổi (PICC) & đóng dự án.",
-      "mindmapTopics": ["governance", "intro", "procurement", "quality"],
+      "mindmapTopics": [
+        "governance",
+        "intro",
+        "procurement",
+        "quality"
+      ],
       "bridgeExplanation": "PMBOK 8 gom Integration + Manage QA + Sourcing Strategy về chung Governance. Khi xem chi tiết ITTO mua sắm/chất lượng bên Mindmap, mở thêm chủ đề 'procurement' và 'quality'.",
       "moduleId": "P07",
       "linkId": "book.governance.change"
@@ -410,7 +458,12 @@
       "pmbok8Domain": "2. Scope",
       "pmbok8ProcessesCount": 6,
       "pmbok8KeyFocus": "Thu thập & phân tích yêu cầu, định nghĩa phạm vi, cấu trúc WBS / Backlog, kiểm soát và nghiệm thu phạm vi (Validate Scope).",
-      "mindmapTopics": ["scope", "core.scope", "value", "adaptive"],
+      "mindmapTopics": [
+        "scope",
+        "core.scope",
+        "value",
+        "adaptive"
+      ],
       "bridgeExplanation": "PMBOK 8 đổi 'Create WBS' thành 'Develop Scope Structure' để bao hàm cả WBS lẫn Product Backlog phân cấp.",
       "moduleId": "P10",
       "linkId": "flow.scope-acceptance"
@@ -419,7 +472,11 @@
       "pmbok8Domain": "3. Schedule",
       "pmbok8ProcessesCount": 3,
       "pmbok8KeyFocus": "Lập kế hoạch quản lý tiến độ, phát triển tiến độ (Develop Schedule) và kiểm soát tiến độ (CPM, Float, Velocity, Burndown).",
-      "mindmapTopics": ["schedule", "core.schedule", "core.adaptive"],
+      "mindmapTopics": [
+        "schedule",
+        "core.schedule",
+        "core.adaptive"
+      ],
       "bridgeExplanation": "PMBOK 8 gộp gọn Define/Sequence/Estimate Activity Durations vào trong 'Develop Schedule'; bên Mindmap tách chi tiết từng bước để dễ học công thức CPM/PERT.",
       "moduleId": "P11",
       "linkId": "book.schedule.compression"
@@ -428,7 +485,11 @@
       "pmbok8Domain": "4. Finance",
       "pmbok8ProcessesCount": 4,
       "pmbok8KeyFocus": "Lập kế hoạch tài chính, ước lượng chi phí, lập ngân sách (Cost Baseline & Reserves) và kiểm soát tài chính (EVM, dòng tiền, ROI).",
-      "mindmapTopics": ["finance", "core.finance", "business"],
+      "mindmapTopics": [
+        "finance",
+        "core.finance",
+        "business"
+      ],
       "bridgeExplanation": "Khớp tên gọi 100%! Cả Handout PMA/Mindmap lẫn PMBOK 8 đều nâng cấp từ 'Cost' thành 'Finance' để bao quát cả giá trị đầu tư (NPV/IRR).",
       "moduleId": "P11",
       "linkId": "core.finance.reserves"
@@ -437,7 +498,11 @@
       "pmbok8Domain": "5. Stakeholders",
       "pmbok8ProcessesCount": 7,
       "pmbok8KeyFocus": "Nhận diện, lập kế hoạch, quản lý và giám sát đồng bộ cả sự gắn kết bên liên quan (Engagement) lẫn truyền thông (Communications).",
-      "mindmapTopics": ["stakeholder", "core.stakeholder", "core.communication"],
+      "mindmapTopics": [
+        "stakeholder",
+        "core.stakeholder",
+        "core.communication"
+      ],
       "bridgeExplanation": "Khớp 100% với Book Map 'stakeholder' (đã gộp Stakeholder + Communication)! Trên Core Map của Mindmap tách thành 2 bản đồ nhỏ để dễ nhìn.",
       "moduleId": "P08",
       "linkId": "core.stakeholder.seam"
@@ -446,7 +511,11 @@
       "pmbok8Domain": "6. Resources",
       "pmbok8ProcessesCount": 5,
       "pmbok8KeyFocus": "Lập kế hoạch, ước lượng, huy động nguồn lực (nhân sự + vật lực), dẫn dắt nhóm (Lead the Team) và kiểm soát nguồn lực.",
-      "mindmapTopics": ["resource", "core.resource", "core.agile"],
+      "mindmapTopics": [
+        "resource",
+        "core.resource",
+        "core.agile"
+      ],
       "bridgeExplanation": "PMBOK 8 hợp nhất 'Develop Team' và 'Manage Team' thành một quy trình hiện đại duy nhất là 'Lead the Team'.",
       "moduleId": "P09",
       "linkId": "book.resource.tuckman"
@@ -455,7 +524,10 @@
       "pmbok8Domain": "7. Risk",
       "pmbok8ProcessesCount": 6,
       "pmbok8KeyFocus": "Lập kế hoạch, nhận diện, phân tích rủi ro (định tính + định lượng), lập kế hoạch ứng phó, thực thi ứng phó và giám sát rủi ro (Threat & Opportunity).",
-      "mindmapTopics": ["risk", "core.risk"],
+      "mindmapTopics": [
+        "risk",
+        "core.risk"
+      ],
       "bridgeExplanation": "PMBOK 8 gộp Qualitative và Quantitative thành 'Perform Risk Analysis'. Mindmap có đủ cả ma trận P×I, EMV và phân biệt Risk vs Issue.",
       "moduleId": "P12",
       "linkId": "book.risk.vs-issue"

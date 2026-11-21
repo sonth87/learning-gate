@@ -3,7 +3,7 @@
   "slug": "C17-cicd-incident-warroom",
   "level": 5,
   "order": 17,
-  "title": "Phòng Chiến Sự CI/CD (Incident War Room)",
+  "title": "Chẩn đoán & Xử lý 4 Sự cố CI/CD Điển hình trên Production",
   "summary": "Trực tiếp chẩn đoán và vá nóng 4 sự cố CI/CD nghiêm trọng ngoài thực tế: Pipeline nghẽn 42 phút (B1), Race Condition triển khai Production (B2), Rò rỉ khoá bí mật trong YAML (B3) và Pipeline xanh giả nuốt mã lỗi (B6).",
   "tags": [
     "incident-response",
@@ -27,17 +27,17 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room B1: Tối ưu Pipeline 42 phút",
+      "label": "Xử lý Sự cố B1: Tối ưu Pipeline 42 phút",
       "kind": "warroom",
       "targetId": "warroom-b1-42min-pipeline"
     },
     {
-      "label": "War Room B2: Chống Race Condition Deploy",
+      "label": "Xử lý Sự cố B2: Chống Race Condition Deploy",
       "kind": "warroom",
       "targetId": "warroom-b2-race-condition"
     },
     {
-      "label": "War Room B3: Ứng cứu lộ Secret",
+      "label": "Xử lý Sự cố B3: Ứng cứu lộ Secret",
       "kind": "warroom",
       "targetId": "warroom-b3-secret-leak"
     }
@@ -53,8 +53,8 @@
     {
       "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
       "kind": "bug",
-      "note": "Hồ sơ điển hình của một đường ống tuần tự không cache, chạy npm install lặp lại và ngủ đông bằng sleep.",
-      "task": "Liệt kê 3 nguyên nhân lớn nhất khiến đường ống trong tệp này kéo dài tới hơn 40 phút.",
+      "note": "Hồ sơ điển hình của một pipeline tuần tự không cache, chạy npm install lặp lại và ngủ đông bằng sleep.",
+      "task": "Liệt kê 3 nguyên nhân lớn nhất khiến pipeline trong tệp này kéo dài tới hơn 40 phút.",
       "answer": "1) Dùng npm install không có cache phụ thuộc ở mọi job; 2) Xếp nối đuôi tuần tự tất cả các bước lint, test, e2e trên một luồng đơn; 3) Chạy toàn bộ bộ test nặng trên 1 runner duy nhất thay vì chia mảnh (sharding)."
     },
     {

@@ -178,7 +178,7 @@
   {
     "id": "kube-ex-k00-4",
     "code": "K00.4",
-    "title": "Dừng êm ái container đang chạy bằng SIGTERM",
+    "title": "dừng an toàn (Graceful Shutdown) container đang chạy bằng SIGTERM",
     "difficulty": 1,
     "tags": [
       "docker-stop",

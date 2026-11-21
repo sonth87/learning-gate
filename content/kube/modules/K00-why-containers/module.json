@@ -3,8 +3,8 @@
   "slug": "K00-why-containers",
   "level": 0,
   "order": 0,
-  "title": "Vì sao code chạy trên máy bạn nhưng sập trên server?",
-  "summary": "Hiểu bản chất Container Image vs Container qua góc nhìn package-lock.json và làm chủ vòng đời pull, run, ps, stop, rm.",
+  "title": "Nền tảng Container: Máy ảo vs Container, Image vs Container & Vòng đời Thực thi",
+  "summary": "Hiểu từ gốc Máy ảo vs Container, khuôn Image chỉ đọc vs tiến trình Container sống, hệ sinh thái Docker/OrbStack/Podman và vòng đời pull, run, ps, stop, rm.",
   "tags": [
     "docker",
     "container",

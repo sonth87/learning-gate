@@ -1,11 +1,64 @@
-# Kiến trúc Kubernetes, Vòng lặp Điều khiển & Giải phẫu Manifest YAML
+# Kiến trúc Kubernetes, Bản đồ Phân cấp & Vòng lặp Đối soát YAML
 
-Khi bạn chạy 2–3 container trên một máy chủ đơn lẻ, **Docker Compose** làm rất tốt nhiệm vụ của nó. Nhưng điều gì xảy ra khi lượng người dùng tăng gấp 50 lần vào đêm Flash Sale?
+Ở 7 bài đầu tiên (`K00`–`K06`), bạn đã thành thạo đóng gói và chạy đa dịch vụ trên **một máy chủ duy nhất** bằng Docker Compose. Nhưng điều gì xảy ra khi sản phẩm tăng trưởng vọt lên hàng trăm nghìn người dùng đồng thời?
 
-- [!] Một máy chủ vật lý hết sạch RAM hoặc cháy ổ cứng lúc 3 giờ sáng — ai sẽ tự động chuyển 15 container sang máy chủ lành lặn khác trong vài giây mà không cần kỹ sư thức dậy?
-- [>] Làm sao nâng cấp phiên bản API thanh toán trên 12 máy chủ cùng lúc mà không làm rớt bất kỳ giao dịch nào của khách hàng?
+- [!] Máy chủ duy nhất cháy ổ cứng hoặc hết sạch RAM lúc 3 giờ sáng — ai sẽ tự động chuyển 15 container sang máy chủ lành lặn khác trong vài giây mà không cần kỹ sư thức dậy?
+- [>] Làm sao nâng cấp phiên bản API thanh toán trên 12 máy chủ cùng lúc mà không làm rớt bất kỳ giao dịch nào?
 
-**Kubernetes (K8s)** ra đời để đóng vai trò như ==Hệ điều hành của cả trung tâm dữ liệu==: bạn không còn ra lệnh thủ công cho từng máy lẻ nữa, mà giao cho K8s một **bản thiết kế trạng thái mong muốn** để nó **tự động duy trì suốt ngày đêm**.
+**Kubernetes (`K8s` — chữ `8` là viết tắt của 8 chữ cái giữa `K` và `s`)** ra đời để làm ==Hệ điều hành của cả cụm nhiều máy chủ==: bạn chỉ cần nộp một **bản thiết kế trạng thái mong muốn**, còn K8s tự động canh gác và chữa lành hệ thống suốt 24/7!
+
+## 1. Khoan đã — Khi nào bạn CHƯA CẦN Kubernetes, và khi nào K8s tỏa sáng?
+
+> [!NOTE] Lời khuyên trung thực năm 2026: Đừng vác đại bác bắn chim sẻ!
+> Không phải dự án nào cũng cần nhảy ngay lên Kubernetes ngày đầu tiên. Hãy chọn đúng công cụ theo quy mô thực tế:
+> - **Chưa cần K8s (1 máy chủ VPS đơn lẻ / Dự án nội bộ nhỏ):** **`Docker Compose v2`** trên 1 máy Linux thừa sức chạy mượt hàng nghìn người dùng với chi phí vận hành gần như bằng 0.
+> - **Chưa cần tự quản lý K8s (Startup MVP / Web & AI API cần co giãn tự động nhanh):** Các nền tảng Serverless Container như **`Google Cloud Run`**, **`AWS App Runner`** hoặc **`Fly.io`** nhận thẳng Docker Image của bạn và tự lo HTTPS + autoscale (thậm chí thu về 0 khi vắng khách).
+> - **Khi Kubernetes thực sự tỏa sáng:** Hệ thống có nhiều dịch vụ đa ngôn ngữ (Node.js, Python FastAPI, Go, Workers), cần **tự chữa lành đa máy chủ (`Self-Healing`)**, định tuyến & tường lửa nội bộ chặt chẽ, kiểm soát chi phí phần cứng ở quy mô lớn và **không bị khóa chặt vào một đám mây duy nhất (`Cloud-Agnostic`)**.
+
+Khi bước vào thế giới K8s, người mới hay choáng ngợp vì có quá nhiều tên gọi (`Pod`, `Deployment`, `Service`, `Ingress`...). Hãy nhìn **Bản đồ 6 Tầng Bọc Ngoài Nhau** dưới đây trước tiên — bạn sẽ thấy mọi mảnh ghép ăn khớp vô cùng tự nhiên:
+
+```visual
+kind: flow
+title: "Bản Đồ 6 Tầng Từ Ruột Ra Ngoài Của Kubernetes (Dành Cho Người Mới)"
+subtitle: "Học thuộc chuỗi 6 mắt xích này, bạn sẽ không bao giờ bị lạc giữa rừng tài nguyên YAML của K8s!"
+steps:
+  - icon: box
+    badge: "Tầng 1 · Nhân lõi"
+    title: "Container"
+    desc: "Tiến trình ứng dụng (FastAPI / Node.js) đóng gói từ Docker Image của bạn"
+    code: "shop-api:1.4.0"
+    tone: slate
+    edge: "bọc vào trong"
+  - icon: package
+    badge: "Tầng 2 · Vỏ kén (K08)"
+    title: "Pod"
+    desc: "Đơn vị nhỏ nhất trên K8s bọc 1+ container dùng chung 1 địa chỉ IP nội bộ"
+    code: "kind: Pod"
+    tone: sky
+    edge: "nhân bản & hồi sinh"
+  - icon: layers
+    badge: "Tầng 3–4 · Quản đốc (K09)"
+    title: "ReplicaSet & Deployment"
+    desc: "Giữ đủ quân số 3 Pod sống và cuộn phiên bản mới không rớt mạng"
+    code: "kind: Deployment"
+    tone: emerald
+    edge: "gắn số tổng đài cố định"
+  - icon: network
+    badge: "Tầng 5 · Tổng đài nội bộ (K10)"
+    title: "Service"
+    desc: "Cấp IP ảo & tên miền DNS bất biến đứng trước các Pod hay đổi IP"
+    code: "kind: Service"
+    tone: cyan
+    edge: "mở cửa đón Internet"
+  - icon: globe
+    badge: "Tầng 6 · Cổng chính HTTPS (K11)"
+    title: "Ingress / Gateway API"
+    desc: "Giải mã chứng chỉ HTTPS ngoài Internet rồi rẽ nhánh /api, /web vào từng Service"
+    code: "Ingress / HTTPRoute"
+    tone: amber
+```
+
+## 2. Giải phẫu Cụm Kubernetes: Bộ não Control Plane vs Xưởng Worker Nodes
 
 ```visual
 kind: illustration
@@ -13,8 +66,8 @@ diagram: "kube:k07"
 src: "/illustrations/kube/k8s-control-plane-brain.jpg"
 alt: "Kiến trúc tổng thể cụm Kubernetes gồm Control Plane (API Server, etcd, Scheduler, Controller) và Worker Node (kubelet, containerd, kube-proxy)"
 title: "Bản Đồ Giải Phẫu Cụm Kubernetes: Bộ Não Control Plane & Xưởng Thực Thi Worker Node"
-subtitle: "Luồng phối hợp giữa cổng trung tâm kube-apiserver, sổ cái etcd, các đại lý trên Node và vòng lặp đối chiếu trạng thái 24/7"
-caption: "Kiến trúc phân tách giữa Control Plane ra quyết định với các Worker Node chạy Pod qua containerd và vòng lặp tự chữa lành Reconciliation Loop"
+subtitle: "Luồng phối hợp giữa cổng trung tâm kube-apiserver, sổ cái etcd, các đại lý trên Node và vòng lặp đối soát trạng thái 24/7"
+caption: "Kiến trúc phân tách giữa Control Plane ra quyết định với các Worker Node chạy Pod qua containerd và vòng lặp tự phục hồi Reconciliation Loop"
 callouts:
   - num: 1
     label: "Control Plane — Bộ não quản trị & Sổ cái etcd"
@@ -25,20 +78,17 @@ callouts:
     desc: "kubelet nhận chỉ thị từ API Server để ra lệnh cho containerd bật Pod, trong khi kube-proxy duy trì bảng định tuyến mạng trên Node."
     tone: emerald
   - num: 3
-    label: "Vòng lặp Đối chiếu (Reconciliation Loop) 24/7"
+    label: "Vòng lặp Đối soát (Reconciliation Loop) 24/7"
     desc: "Controller Manager liên tục so sánh trạng thái thực tế với YAML mong muốn để tự động đẻ bù Pod mới ngay khi có máy chủ gặp sự cố."
     tone: cyan
 ```
 
-## 1. Bức tranh toàn cảnh: Control Plane vs Worker Nodes
-
-> [!ANALOGY] Hãy hình dung như sau
-> Một cụm (**Cluster**) Kubernetes luôn chia thành hai nhóm máy rõ rệt giống như **Ban điều hành trung tâm** (*Control Plane* — chuyên ra quyết định và lưu sổ cái) và **Đội xưởng sản xuất** (*Worker Nodes* — nơi thực sự gánh CPU/RAM chạy container ứng dụng của bạn).
+Một cụm (**Cluster**) Kubernetes luôn chia thành hai nhóm máy rõ rệt giống như **Ban điều hành trung tâm** (*Control Plane* — ra quyết định và giữ sổ cái) và **Đội xưởng sản xuất** (*Worker Nodes* — nơi thực sự gánh CPU/RAM chạy container ứng dụng của bạn):
 
 ```visual
 kind: layers
-title: Kiến Trúc Một Cụm Kubernetes Chuẩn — Control Plane vs Worker Nodes
-subtitle: Chỉ duy nhất kube-apiserver được phép đọc/ghi trực tiếp vào kho dữ liệu etcd
+title: "Kiến Trúc Một Cụm Kubernetes Chuẩn — Control Plane vs Worker Nodes"
+subtitle: "Nguyên tắc bảo mật cốt lõi: Chỉ duy nhất kube-apiserver được phép đọc/ghi trực tiếp vào kho dữ liệu etcd!"
 columns:
   - title: Control Plane (Bộ não điều phối)
     badge: Quản trị & Ra quyết định
@@ -49,7 +99,7 @@ columns:
         note: Cửa ngõ trung tâm
         tone: sky
       - label: etcd
-        sub: Kho cơ sở dữ liệu phân tán dạng Key-Value lưu nguồn sự thật duy nhất (Single Source of Truth) của cụm
+        sub: Cơ sở dữ liệu phân tán dạng Key-Value lưu nguồn sự thật duy nhất (Single Source of Truth) của cụm
         note: Sổ cái trạng thái
         tone: amber
       - label: kube-scheduler
@@ -60,29 +110,31 @@ columns:
         sub: Các vòng lặp tuần tra 24/7 — thấy yêu cầu 3 bản sao mà thực tế còn 2 là lập tức yêu cầu tạo bù bản thứ 3
         note: Tuần tra tự động
         tone: cyan
-    footer: Thường chạy 3 máy Control Plane trở lên trên Production để chống điểm lỗi đơn (HA)
+    footer: Trên Cloud (EKS, GKE, AKS), nhà cung cấp quản lý sẵn toàn bộ Control Plane cho bạn!
   - title: Worker Node (Máy chủ chạy ứng dụng)
     badge: Thực thi Workload
     tone: emerald
     layers:
       - label: kubelet
-        sub: Đại lý (agent) cắm chốt trên từng Worker Node — nhận chỉ thị từ apiserver, báo cáo sức khoẻ Node/Pod
+        sub: Đại lý quản đốc cắm chốt trên từng Worker Node — nhận chỉ thị từ apiserver, báo cáo sức khỏe Node/Pod
         note: Quản đốc tại chỗ
         tone: emerald
       - label: containerd (Container Runtime)
-        sub: Bộ máy cấp thấp chuẩn CRI trực tiếp kéo Image và khởi chạy tiến trình Linux Container (thay Docker shim cũ)
+        sub: Bộ máy chuẩn CRI trực tiếp kéo OCI Image và khởi chạy tiến trình Linux Container
         note: Chạy tiến trình
         tone: sky
-      - label: kube-proxy
-        sub: Duy trì bảng định tuyến mạng (iptables / IPVS / eBPF) trên mỗi Node để dẫn gói tin từ Service tới đúng IP Pod
+      - label: kube-proxy (hoặc Cilium eBPF)
+        sub: Duy trì bảng định tuyến mạng trên mỗi Node để dẫn gói tin từ Service tới đúng IP của Pod khỏe mạnh
         note: Định tuyến mạng
         tone: cyan
-    footer: Có thể co giãn linh hoạt từ vài máy đến hàng nghìn Worker Node theo tải thực tế
+    footer: Có thể co giãn linh hoạt từ 2 máy đến hàng nghìn Worker Node theo tải thực tế
 ```
 
-## 2. Tư duy cốt lõi nhất của K8s: Imperative vs Declarative Control Loop
+## 3. Trái tim của K8s: Vòng lặp Đối soát (`Reconciliation Loop`)
 
-Giống như chiếc điều hoà nhiệt độ đặt ở `24°C`: bạn không tự tay bật/tắt lốc lạnh từng phút, mà bộ cảm biến liên tục đo nhiệt độ phòng thực tế để tự điều chỉnh khớp với con số `24°C` đã khai báo.
+Hãy hình dung chiếc **máy điều hòa nhiệt độ** đặt ở mức **`24°C`**: bạn không ngồi canh bật/tắt lốc lạnh từng phút, mà cảm biến của máy đo nhiệt độ phòng mỗi giây — hễ phòng nóng lên `26°C`, máy tự bật làm mát kéo về đúng `24°C`!
+
+Đó chính là ==Vòng lặp Đối soát (Reconciliation Loop)== theo tư duy **Khai báo (`Declarative`)** của Kubernetes:
 
 ```visual
 kind: compare
@@ -93,36 +145,36 @@ left:
   title: Ra lệnh từng bước thủ công
   tone: amber
   code: |
-    # Bắt máy chủ làm ngay hành động này:
+    # Bắt máy chủ làm ngay hành động này 1 lần:
     docker run -d --name shop-api -p 3000:3000 app:1.0
   lang: bash
   bullets:
     - "Bạn chỉ định **cách làm từng bước**: chạy lệnh xong là CLI kết thúc trách nhiệm"
     - "Nếu 2 giờ sáng ổ cứng máy chủ hỏng làm sập tiến trình, **không ai tự chuyển sang máy khác**"
-    - "Sửa tay lâu ngày dẫn đến lệch cấu hình (*Configuration Drift*), không ai nhớ trạng thái chuẩn ban đầu"
+    - "Sửa tay lâu ngày dẫn đến lệch cấu hình (*Configuration Drift*)"
 right:
   badge: "CHUẨN K8S · Declarative (Khai báo)"
-  title: Giao trạng thái đích cho Vòng lặp Điều khiển
+  title: Giao trạng thái đích cho Vòng lặp Đối soát
   tone: emerald
   code: |
     # Nộp bản thiết kế trạng thái mong muốn:
     kubectl apply -f deployment.yaml   # replicas: 3
   lang: bash
   bullets:
-    - "Bạn chỉ mô tả **kết quả mong muốn** (`Desired State: replicas: 3`) trong tệp YAML lưu trên Git"
-    - "Controller chạy vòng lặp đối chiếu liên tục 24/7 với **trạng thái thực tế** (`Actual State`)"
-    - "Tự động chữa lành (**Self-Healing**): hễ thiếu Pod là tự tạo bù sang Worker Node khoẻ mạnh!"
+    - "Bạn chỉ mô tả **trạng thái mong muốn** (`Desired State: replicas: 3`) trong tệp YAML lưu trên Git"
+    - "Controller chạy vòng lặp đối soát liên tục 24/7 với **trạng thái hiện tại** (`Current State`)"
+    - "Tự động chữa lành (**Self-Healing**): hễ `Current != Desired` là tự tạo bù Pod sang Node khỏe mạnh!"
 ```
 
 ```visual
 kind: flow
-title: Vòng Lặp Điều Khiển Tự Chữa Lành (Reconciliation / Control Loop)
+title: Vòng Lặp Đối Soát Tự Phục Hồi (Reconciliation / Control Loop)
 subtitle: Điều gì diễn ra tự động lúc 3 giờ sáng khi Worker Node #2 bất ngờ mất điện?
 steps:
   - icon: file-code
     badge: 1. Desired State
     title: Khai Báo Đích
-    desc: Bạn nộp YAML yêu cầu duy trì replicas là 3 vào etcd qua apiserver
+    desc: Bạn nộp YAML yêu cầu duy trì replicas là 3 vào etcd qua kube-apiserver
     code: "replicas: 3"
     tone: sky
     edge: quan sát 24/7
@@ -130,7 +182,7 @@ steps:
     badge: 2. Observe & Diff
     title: Phát Hiện Lệch
     desc: Node #2 sập làm chết 1 Pod — Controller thấy thực tế chỉ còn 2 Pod sống
-    code: "Actual (2) != Desired (3)"
+    code: "Current (2) != Desired (3)"
     tone: amber
     edge: tạo bù 1 Pod
   - icon: cpu
@@ -148,14 +200,14 @@ steps:
     tone: emerald
 ```
 
-## 3. Bốn trường gốc bắt buộc trong mọi Manifest YAML của Kubernetes [!badge:sky:Chuẩn K8s 1.30+]
+## 4. Bốn trường gốc bắt buộc trong mọi Manifest YAML của Kubernetes [!badge:sky:Chuẩn K8s 1.30+]
 
-Dù bạn viết một `Pod` nhỏ xíu 12 dòng hay một `Deployment` phức tạp 200 dòng, **100% tài nguyên chuẩn của Kubernetes** đều bắt đầu bằng đúng ==4 trường gốc (`apiVersion`, `kind`, `metadata`, `spec`)== ở sát lề trái:
+Dù bạn viết một `Pod` nhỏ 12 dòng hay một `Deployment` lớn 200 dòng, **100% tài nguyên chuẩn của Kubernetes** đều mở đầu bằng đúng ==4 trường gốc (`apiVersion`, `kind`, `metadata`, `spec`)== ở sát lề trái:
 
 ```visual
 kind: anatomy
 title: Giải Phẫu Bộ Tứ Trường Gốc Trong Mọi Manifest YAML Của Kubernetes
-subtitle: Khác với Docker Compose (version/services) hay GitHub Actions (name/on/jobs), K8s luôn cố định 4 khoá gốc này
+subtitle: Khác với Docker Compose (services/volumes), mọi đối tượng K8s đều tuân thủ khuôn mẫu 4 khóa gốc đồng nhất này
 items:
   - keyword: apiVersion
     role: Nhóm & Phiên bản API
@@ -187,7 +239,7 @@ items:
     tone: emerald
     summary: Mô tả chi tiết trạng thái mong muốn (Desired State) mà bạn giao cho K8s duy trì.
     bullets:
-      - "Cấu trúc bên trong `spec` thay đổi tuỳ theo từng `kind` (ví dụ `containers` cho Pod, `replicas` + `selector` + `template` cho Deployment)"
+      - "Cấu trúc bên trong `spec` thay đổi tùy theo từng `kind` (ví dụ `containers` cho Pod, `replicas` + `selector` + `template` cho Deployment)"
     example: "spec:\n  containers:\n    - name: web\n      image: nginx:1.27-alpine"
     lang: yaml
 ```
@@ -199,7 +251,7 @@ metadata:                   # 3. Định danh: tên (name), không gian tên (na
   name: hello-k8s
   labels:
     app: hello-k8s
-spec:                       # 4. Đặc tả trạng thái mong muốn (cấu trúc bên trong tuỳ thuộc vào kind)
+spec:                       # 4. Đặc tả trạng thái mong muốn (cấu trúc bên trong tùy thuộc vào kind)
   containers:
     - name: web
       image: nginx:1.27-alpine
@@ -208,30 +260,30 @@ spec:                       # 4. Đặc tả trạng thái mong muốn (cấu tr
 ```
 
 > [!WARNING] Cảnh báo bẫy lịch sử API Version (chuẩn K8s >= 1.30 năm 2026)
-> Kubernetes phát triển nghiêm ngặt theo lộ trình `alpha` → `beta` → `v1` (ổn định). Rất nhiều bài viết cũ trên mạng vẫn hướng dẫn `apiVersion: extensions/v1beta1` cho `Deployment` hoặc `Ingress` — nhánh API nháp này ==đã bị gỡ bỏ hoàn toàn từ Kubernetes 1.16 / 1.22==!
-> - [x] Với `Pod`, `Service`, `ConfigMap`, `Secret`, `Namespace`, `PersistentVolumeClaim`: luôn dùng **`apiVersion: v1`**.
-> - [x] Với `Deployment`, `StatefulSet`, `DaemonSet`, `ReplicaSet`: luôn dùng **`apiVersion: apps/v1`** (và bắt buộc khai báo tường minh `spec.selector.matchLabels` khớp với `spec.template.metadata.labels`).
+> Nhiều bài hướng dẫn cũ trước năm 2020 vẫn chỉ viết nhánh nháp `extensions/v1beta1` cũ cho `Deployment` hoặc `Ingress` — nhánh nháp này **đã bị gỡ bỏ hoàn toàn khỏi Kubernetes từ lâu**!
+> - Với `Pod`, `Service`, `ConfigMap`, `Secret`, `Namespace`, `PersistentVolumeClaim`: luôn dùng **`apiVersion: v1`**.
+> - Với `Deployment`, `StatefulSet`, `DaemonSet`, `ReplicaSet`: luôn dùng **`apiVersion: apps/v1`** (và khai báo rõ `spec.selector.matchLabels`).
 
-## 4. Làm quen hai lệnh quan sát nền tảng trên `kubectl`
+## 5. Lệnh `kubectl` đầu tay & Bộ đồ nghề Cụm Local / TUI chuẩn 2026
 
-`kubectl` là công cụ dòng lệnh nói chuyện trực tiếp với `kube-apiserver` qua HTTPS:
+`kubectl` là điều khiển từ xa dòng lệnh nói chuyện trực tiếp với `kube-apiserver` qua HTTPS:
 
 ```bash
-# 1. Liệt kê Pod ở namespace mặc định (default) — chưa thấy các Pod hệ thống như coredns:
+# 1. Liệt kê Pod ở namespace mặc định (default):
 kubectl get pods
 
-# 2. Liệt kê TẤT CẢ Pod trên mọi namespace toàn cụm (gồm cả kube-system nơi coredns đang chạy, staging...):
+# 2. Liệt kê TẤT CẢ Pod trên mọi namespace toàn cụm (gồm cả kube-system nơi coredns đang chạy):
 kubectl get pods -A
 
-# 3. Xem hồ sơ khám sức khoẻ chi tiết (Node được xếp chỗ, IP, trạng thái và bảng Events cuối cùng):
+# 3. Xem hồ sơ khám sức khỏe chi tiết (Node được xếp chỗ, IP và bảng Events ở cuối trang):
 kubectl describe pod payment-pod
 ```
 
-> [!TIP] Phản xạ vàng khi gỡ lỗi trên Kubernetes
-> - **`kubectl get`** (kèm ==`-A`== tức `--all-namespaces` khi cần nhìn toàn cảnh cụm) cho bạn biết **cái gì đang bất thường**.
-> - Bảng **`Events:`** nằm ở cuối lệnh **`kubectl describe`** sẽ chỉ tận tay cho bạn **tại sao nó bất thường** (thiếu RAM không xếp được chỗ, kéo sai tên Image, hay trượt bài kiểm tra sức khoẻ)!
+> [!TIP] Bộ công cụ thực hành K8s hiện đại năm 2026 giúp bạn thao tác nhanh gấp 5 lần!
+> - **Dựng cụm K8s miễn phí ngay trên Laptop:** Dùng **`kind`** (*Kubernetes in Docker* — dựng cụm đa node chỉ trong 20 giây ngay bên trong Docker/OrbStack), **`minikube`**, hoặc **`k3s`** (bản K8s siêu nhẹ của CNCF tốn chưa tới 512MB RAM, cực hợp cho máy chủ nhỏ & Edge).
+> - **Bộ ba trợ thủ Terminal của mọi kỹ sư SRE:** Cài thêm **`k9s`** (giao diện bảng điều khiển TUI trực quan ngay trong Terminal để xem log/describe/shell chỉ bằng 1 phím tắt) cùng cặp **`kubectx`** & **`kubens`** (chuyển đổi tức thì giữa các cụm và các namespace không cần gõ lặp lại `-n` mỏi tay)!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - **Control Plane:** `kube-apiserver` (cổng REST duy nhất) · `etcd` (kho Key-Value nguồn sự thật duy nhất) · `kube-scheduler` (xếp Pod về Node) · `kube-controller-manager` (vòng lặp tự chữa lành).
-> - **Worker Node:** `kubelet` (đại lý quản đốc gọi Runtime) · `containerd` (chạy container) · `kube-proxy` (định tuyến mạng Service).
-> - **4 trường gốc bắt buộc:** `apiVersion`, `kind`, `metadata`, `spec` (`Deployment` chuẩn luôn dùng `apps/v1`, cờ xem mọi namespace là `-A`).
+> - **Khi nào dùng gì:** 1 server nhỏ → `Docker Compose` · Serverless tự co giãn → `Cloud Run / Fly.io` · Hệ thống đa dịch vụ cần tự chữa lành đa máy chủ → **Kubernetes**.
+> - **Chuỗi 6 tầng:** `Container` → `Pod` → `ReplicaSet` → `Deployment` → `Service` → `Ingress / Gateway API`.
+> - **Control Plane:** `kube-apiserver` (cổng duy nhất chạm `etcd`), `etcd`, `kube-scheduler`, `kube-controller-manager` · **4 trường gốc YAML:** ==`apiVersion`, `kind`, `metadata`, `spec`==.

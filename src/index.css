@@ -266,3 +266,228 @@ html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"
 [data-os-theme="ipad"] .z-20:has([id^="window-"].pointer-events-auto .pylearn-root) {
   z-index: 45;
 }
+
+/* ============================================================================
+ * DESIGNED-TO-SCALE TACTILE BLUEPRINT WORKBENCH THEME (.dts-shell)
+ * Scoped strictly inside `.pylearn-root.dts-shell` so DeviceLayout OS chrome
+ * remains untouched. Supports Paper Light (.dts-light) & Espresso Dark (.dts-dark).
+ * ============================================================================ */
+
+.pylearn-root.dts-shell {
+  --dts-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --dts-font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.pylearn-root.dts-shell.dts-light {
+  color-scheme: light;
+  --dts-canvas: #f4ebe0;
+  --dts-panel: #f9f2e8;
+  --dts-stage-bg: #faf3e9;
+  --dts-panel-elevated: #fcf8f2;
+  --dts-panel-muted: #eee4d6;
+  --dts-ink: #1d1b18;
+  --dts-ink-soft: #3f3a34;
+  --dts-ink-muted: #6f6961;
+  --dts-border: #211e1b;
+  --dts-line-strong: #c8bdb0;
+  --dts-border-soft: #dfd5c7;
+  --dts-shadow-color: #211e1b;
+  --dts-grid-stroke: #a8916f;
+
+  --dts-green-bg: #cfe3b2;
+  --dts-green-soft: #e7efd9;
+  --dts-green-ink: #1d2b14;
+
+  --dts-blue-bg: #cde0f5;
+  --dts-blue-soft: #e5effb;
+  --dts-blue-ink: #162c46;
+
+  --dts-rose-bg: #f8ccd0;
+  --dts-rose-soft: #fdebED;
+  --dts-rose-ink: #5a1820;
+
+  --dts-purple-bg: #e5d8f6;
+  --dts-purple-soft: #f3ecfc;
+  --dts-purple-ink: #311d52;
+
+  --dts-amber-bg: #fee6b5;
+  --dts-amber-soft: #fdf3dc;
+  --dts-amber-ink: #4d3208;
+
+  --dts-orange-bg: #fcd4ad;
+  --dts-orange-soft: #fee9d4;
+  --dts-orange-ink: #52270c;
+
+  /* Remap legacy slate utilities inside dts-light so Practice/Quiz/Glossary views blend seamlessly into warm paper */
+  --color-slate-950: #f4ebe0;
+  --color-slate-900: #f9f2e8;
+  --color-slate-800: #e5dac9;
+  --color-slate-700: #cbbda8;
+  --color-slate-600: #6f6961;
+  --color-slate-500: #5c554d;
+  --color-slate-400: #48423b;
+  --color-slate-300: #34302b;
+  --color-slate-200: #25211d;
+  --color-slate-100: #1d1b18;
+  --color-white: #1d1b18;
+}
+
+.pylearn-root.dts-shell.dts-dark {
+  color-scheme: dark;
+  --dts-canvas: #211e1a;
+  --dts-panel: #28241f;
+  --dts-stage-bg: #24201c;
+  --dts-panel-elevated: #2d2822;
+  --dts-panel-muted: #1d1a16;
+  --dts-ink: #efe6d6;
+  --dts-ink-soft: #d5cbb9;
+  --dts-ink-muted: #9e9485;
+  --dts-border: #c6bfb7;
+  --dts-line-strong: #494239;
+  --dts-border-soft: #363029;
+  --dts-shadow-color: #110f0c;
+  --dts-grid-stroke: #85745b;
+
+  --dts-green-bg: #3b4b29;
+  --dts-green-soft: #2c3820;
+  --dts-green-ink: #d4f0b4;
+
+  --dts-blue-bg: #253c56;
+  --dts-blue-soft: #1d2e42;
+  --dts-blue-ink: #c6e0fc;
+
+  --dts-rose-bg: #4f252b;
+  --dts-rose-soft: #3a1c21;
+  --dts-rose-ink: #fcd2d7;
+
+  --dts-purple-bg: #3c2c57;
+  --dts-purple-soft: #2b2040;
+  --dts-purple-ink: #e5d6fc;
+
+  --dts-amber-bg: #4b391a;
+  --dts-amber-soft: #362913;
+  --dts-amber-ink: #fde7b6;
+
+  --dts-orange-bg: #4e2f19;
+  --dts-orange-soft: #382213;
+  --dts-orange-ink: #fed8b5;
+
+  /* Warm espresso remap for secondary tabs in dark mode */
+  --color-slate-950: #211e1a;
+  --color-slate-900: #28241f;
+  --color-slate-800: #352f28;
+  --color-slate-700: #4c443a;
+  --color-slate-600: #9e9485;
+  --color-slate-500: #b2a797;
+  --color-slate-400: #d5cbb9;
+  --color-slate-300: #e3dacb;
+  --color-slate-200: #ece4d7;
+  --color-slate-100: #efe6d6;
+  --color-white: #faf6ef;
+}
+
+.pylearn-root.dts-shell.dts-light .ide-dark-surface {
+  color-scheme: dark;
+  --color-slate-950: #1b1815;
+  --color-slate-900: #23201c;
+  --color-slate-800: #35302a;
+  --color-slate-700: #4c453d;
+  --color-slate-100: #f4ede2;
+  --color-slate-200: #e7dfd2;
+  --color-slate-300: #cfc5b6;
+  --color-slate-400: #9f9484;
+  --color-white: #ffffff;
+}
+
+.dts-panel {
+  background-color: var(--dts-panel);
+  border: 1px solid var(--dts-line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 20px -15px rgba(28, 22, 16, 0.22);
+}
+
+.dts-card-tactile {
+  background-color: var(--dts-panel-elevated);
+  border: 1.4px solid var(--dts-border);
+  box-shadow: 1.5px 2px 0 var(--dts-shadow-color);
+}
+
+.dts-btn-tactile {
+  border: 1.4px solid var(--dts-border);
+  box-shadow: 1.5px 2px 0 var(--dts-shadow-color);
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 150ms ease;
+}
+
+.dts-btn-tactile:hover:not(:disabled) {
+  transform: translate(-0.5px, -0.5px);
+  box-shadow: 2.5px 3px 0 var(--dts-shadow-color);
+}
+
+.dts-btn-tactile:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--dts-shadow-color);
+}
+
+/* ============================================================================
+ * STAGE ENTRANCE & INTERACTION ANIMATIONS (Designed-to-Scale Motion Craft)
+ * ============================================================================ */
+
+@keyframes dts-entity-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.95);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(2.5px) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dts-pill-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dts-line-draw {
+  0% {
+    stroke-dashoffset: var(--line-len, 320);
+    opacity: 0.25;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+.dts-anim-drop {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: dts-entity-drop 480ms cubic-bezier(0.22, 1.26, 0.36, 1) both;
+}
+
+.dts-anim-pill {
+  transform-box: fill-box;
+  transform-origin: center center;
+  animation: dts-pill-in 340ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.dts-anim-line {
+  animation: dts-line-draw 520ms cubic-bezier(0.35, 0, 0.25, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dts-anim-drop,
+  .dts-anim-pill,
+  .dts-anim-line {
+    animation: none !important;
+  }
+}

@@ -3,7 +3,7 @@
   "slug": "K01-ports-env-logs",
   "level": 0,
   "order": 1,
-  "title": "Ánh xạ cổng, Biến môi trường, Đọc Log & Khám bên trong Container",
+  "title": "Ánh xạ Port, Biến môi trường, Quản lý Log & Truy cập Container",
   "summary": "Nối cổng mạng -p HOST:CONTAINER, xử lý đụng cổng, truyền cấu hình qua -e như process.env và chẩn đoán bằng docker logs / exec.",
   "tags": [
     "ports",

@@ -36,7 +36,7 @@ export const COURSE_META: Record<DevOpsCourseId, Omit<CourseMeta, 'onOpenRelated
     welcomeTitle: 'Chào mừng đến với CI/CD Architecture 👋',
     readingsTitle: 'Đọc cấu hình thật: GitHub Actions, GitLab CI & GitOps',
     readingsSubtitle:
-      'Kho workflow và cấu hình đường ống thực tế (chuẩn mực, bẫy race condition, lỗi bảo mật & cú pháp cũ) kèm câu hỏi nhiệm vụ.',
+      'Kho workflow và cấu hình CI/CD Pipeline thực tế (chuẩn mực, tránh race condition, bảo mật & cú pháp mới) kèm câu hỏi nhiệm vụ.',
     stepSteps: [
       'Đọc lesson (ánh xạ từ npm scripts)',
       'Làm quiz (cần ≥ 70%)',

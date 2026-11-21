@@ -5,7 +5,12 @@
     "subtitle": "Đọc đúng tín hiệu đề bài (độ bất định yêu cầu × nhu cầu bàn giao sớm) để chọn vòng đời chuẩn xác.",
     "category": "approach",
     "provenanceLabel": "Theo PMBOK 8 Standard §4.2",
-    "headers": ["Tiêu chí nhận diện", "Predictive (Waterfall)", "Iterative vs Incremental", "Adaptive (Agile) & Hybrid"],
+    "headers": [
+      "Tiêu chí nhận diện",
+      "Predictive (Waterfall)",
+      "Iterative vs Incremental",
+      "Adaptive (Agile) & Hybrid"
+    ],
     "rows": [
       [
         "Mức độ rõ ràng của Yêu cầu",
@@ -28,7 +33,10 @@
     ],
     "examTip": "Thấy từ khoá 'Prototype lặp lại để tìm giải pháp đúng trước khi build cuối' → chọn Iterative. Thấy 'khách muốn dùng sớm từng phần tính năng hoàn chỉnh' → chọn Incremental. Thấy cả hai trong vòng lặp ngắn 2 tuần → chọn Agile!",
     "moduleId": "P04",
-    "evidenceLinkIds": ["book.intro.stacey", "flow.approach-selection"]
+    "evidenceLinkIds": [
+      "book.intro.stacey",
+      "flow.approach-selection"
+    ]
   },
   {
     "id": "cmp-pmbok8-bridge",
@@ -36,7 +44,12 @@
     "subtitle": "Hiểu sự tiến hoá để đọc bất kỳ tài liệu nào cũng không bị rối thuật ngữ.",
     "category": "pmbok8-bridge",
     "provenanceLabel": "PMBOK 8 Appendix X5 & Table 2-1",
-    "headers": ["Trục kiến trúc", "PMBOK 6 / Handout PMA (Mindmap)", "PMBOK 7 (2021)", "PMBOK 8 (2025) & ECO 07/2026"],
+    "headers": [
+      "Trục kiến trúc",
+      "PMBOK 6 / Handout PMA (Mindmap)",
+      "PMBOK 7 (2021)",
+      "PMBOK 8 (2025) & ECO 07/2026"
+    ],
     "rows": [
       [
         "Nguyên tắc dẫn dắt (Principles)",
@@ -65,7 +78,10 @@
     ],
     "examTip": "Đề thi PMP KHÔNG hỏi thuộc lòng tên bảng ITTO hay đánh đố số phiên bản sách; đề thi kiểm tra cách bạn ra quyết định dựa trên Giá trị, Governance, Trao quyền và Môi trường kinh doanh!",
     "moduleId": "P00",
-    "evidenceLinkIds": ["view.panorama", "book.intro.project-value"]
+    "evidenceLinkIds": [
+      "view.panorama",
+      "book.intro.project-value"
+    ]
   },
   {
     "id": "cmp-risk-issue",
@@ -73,7 +89,11 @@
     "subtitle": "Cặp khái niệm làm mất điểm oan nhiều nhất trong các câu hỏi tình huống PMP.",
     "category": "execution",
     "provenanceLabel": "Risk Domain §2.7 & Governance",
-    "headers": ["Đặc điểm", "Risk (Rủi ro — Threat hoặc Opportunity)", "Issue (Sự cố / Vấn đề hiện hữu)"],
+    "headers": [
+      "Đặc điểm",
+      "Risk (Rủi ro — Threat hoặc Opportunity)",
+      "Issue (Sự cố / Vấn đề hiện hữu)"
+    ],
     "rows": [
       [
         "Thì thời gian & Độ chắc chắn",
@@ -93,7 +113,10 @@
     ],
     "examTip": "Đọc đề thấy sự việc ĐÃ NỔ RA RỒI thì gạch bỏ ngay lập tức mọi đáp án bắt đầu bằng 'Cập nhật Risk Register và phân tích xác suất' — phải mở Issue Log trước!",
     "moduleId": "P12",
-    "evidenceLinkIds": ["book.risk.vs-issue", "flow.risk"]
+    "evidenceLinkIds": [
+      "book.risk.vs-issue",
+      "flow.risk"
+    ]
   },
   {
     "id": "cmp-qa-qc-validate",
@@ -101,7 +124,12 @@
     "subtitle": "Ba chốt chặn chất lượng & nghiệm thu theo dòng chảy Deliverable → Verified → Accepted.",
     "category": "execution",
     "provenanceLabel": "PMBOK 8 Governance §2.1 & Scope §2.2",
-    "headers": ["Tiêu chí", "Manage Quality (QA)", "Control Quality (QC)", "Validate Scope"],
+    "headers": [
+      "Tiêu chí",
+      "Manage Quality (QA)",
+      "Control Quality (QC)",
+      "Validate Scope"
+    ],
     "rows": [
       [
         "Đối tượng & Mục tiêu cốt lõi",
@@ -111,7 +139,7 @@
       ],
       [
         "Ai thực hiện & Ở vùng nào?",
-        "Đội dự án / Bộ phận QA · Vùng Executing (trong PMBOK 8 thuộc miền Governance).",
+        "Đội dự án / Bộ phận QA · Vùng Executing (trong PMBOK 8 thuộc Governance Domain).",
         "Nhóm kiểm thử / Đội dự án nội bộ · Vùng Monitoring & Controlling (làm TRƯỚC Validate Scope).",
         "Khách hàng / Sponsor cùng PM · Vùng Monitoring & Controlling (hoặc Sprint Review trong Agile)."
       ],
@@ -122,9 +150,12 @@
         "Accepted Deliverables (Sản phẩm đã nghiệm thu chính thức → đầu vào cho Close Project)."
       ]
     ],
-    "examTip": "Nhớ khẩu quyết: 'QC tìm bug nội bộ ra Verified → Khách ký Validate Scope ra Accepted → Đóng dự án ở Close'. Khách hàng phát hiện bug ở buổi Demo nghĩa là khâu QC / Definition of Done nội bộ đang hổng!",
+    "examTip": "Nhớ nguyên tắc ghi nhớ: 'QC tìm bug nội bộ ra Verified → Khách nghiệm thu Validate Scope ra Accepted → Đóng dự án ở Close'. Khách hàng phát hiện bug ở buổi Demo nghĩa là khâu QC / Definition of Done nội bộ đang hổng!",
     "moduleId": "P10",
-    "evidenceLinkIds": ["core.quality.qc-validate", "flow.scope-acceptance"]
+    "evidenceLinkIds": [
+      "core.quality.qc-validate",
+      "flow.scope-acceptance"
+    ]
   },
   {
     "id": "cmp-reserves-evm",
@@ -132,7 +163,11 @@
     "subtitle": "Ranh giới thẩm quyền túi tiền của PM so với Sponsor/CCB.",
     "category": "execution",
     "provenanceLabel": "Finance Domain §2.4",
-    "headers": ["Tiêu chí", "Contingency Reserve (Dự phòng rủi ro đã biết)", "Management Reserve (Dự phòng quản lý)"],
+    "headers": [
+      "Tiêu chí",
+      "Contingency Reserve (Dự phòng rủi ro đã biết)",
+      "Management Reserve (Dự phòng quản lý)"
+    ],
     "rows": [
       [
         "Dùng cho loại bất định nào?",
@@ -152,7 +187,10 @@
     ],
     "examTip": "CPI < 1 = vượt chi phí; SPI < 1 = chậm tiến độ; TCPI > 1 = phần việc còn lại phải thắt lưng buộc bụng làm hiệu quả hơn mới kịp ngân sách BAC!",
     "moduleId": "P11",
-    "evidenceLinkIds": ["core.finance.reserves", "core.finance.evm"]
+    "evidenceLinkIds": [
+      "core.finance.reserves",
+      "core.finance.evm"
+    ]
   },
   {
     "id": "cmp-charter-plan",
@@ -160,7 +198,12 @@
     "subtitle": "Ba bản hiến chương/kế hoạch định hình thẩm quyền, cách điều hành và văn hoá nhóm.",
     "category": "governance",
     "provenanceLabel": "Governance §2.1 & Resources §2.6",
-    "headers": ["Đặc điểm", "Project Charter", "Project Management Plan", "Team Charter (Social Contract)"],
+    "headers": [
+      "Đặc điểm",
+      "Project Charter",
+      "Project Management Plan",
+      "Team Charter (Social Contract)"
+    ],
     "rows": [
       [
         "Ai ban hành / Ai làm chủ?",
@@ -183,7 +226,10 @@
     ],
     "examTip": "Chưa có Project Charter được ký → dự án chưa chính thức tồn tại! Nhóm hay đi họp trễ hoặc cãi vã thiếu tôn trọng → mở/lập ngay Team Charter (Ground Rules)!",
     "moduleId": "P07",
-    "evidenceLinkIds": ["book.governance.charter", "book.resource.tuckman"]
+    "evidenceLinkIds": [
+      "book.governance.charter",
+      "book.resource.tuckman"
+    ]
   },
   {
     "id": "cmp-agile-quality-gates",
@@ -191,7 +237,12 @@
     "subtitle": "Ba cổng kiểm soát đầu vào, tính năng riêng lẻ và chất lượng tổng thể trong Agile/Scrum.",
     "category": "approach",
     "provenanceLabel": "Agile & Quality Integration",
-    "headers": ["Tiêu chí", "Definition of Ready (DoR)", "Acceptance Criteria (AC)", "Definition of Done (DoD)"],
+    "headers": [
+      "Tiêu chí",
+      "Definition of Ready (DoR)",
+      "Acceptance Criteria (AC)",
+      "Definition of Done (DoD)"
+    ],
     "rows": [
       [
         "Áp dụng ở thời điểm nào?",
@@ -214,7 +265,10 @@
     ],
     "examTip": "Story chưa thoả mãn Definition of Done khi hết Sprint → trả về Product Backlog để PO xem xét ưu tiên cho Sprint sau, KHÔNG kéo dài thêm ngày của Sprint!",
     "moduleId": "P05",
-    "evidenceLinkIds": ["core.agile.events", "flow.agile-delivery"]
+    "evidenceLinkIds": [
+      "core.agile.events",
+      "flow.agile-delivery"
+    ]
   },
   {
     "id": "cmp-contracts-conflict",
@@ -222,7 +276,11 @@
     "subtitle": " tra nhanh loại hợp đồng theo độ rõ phạm vi và chiến thuật hoà giải xung đột.",
     "category": "people",
     "provenanceLabel": "PMBOK 8 Appendix X4 & Resources §2.6",
-    "headers": ["Tình huống / Ngữ cảnh", "Lựa chọn Chuẩn PMI", "Lý do & Rủi ro đi kèm"],
+    "headers": [
+      "Tình huống / Ngữ cảnh",
+      "Lựa chọn Chuẩn PMI",
+      "Lý do & Rủi ro đi kèm"
+    ],
     "rows": [
       [
         "Phạm vi mua sắm cực kỳ rõ ràng, thiết kế đã chốt 100%",
@@ -252,6 +310,9 @@
     ],
     "examTip": "Trong câu hỏi T&M Contract, luôn ưu tiên đáp án có gắn điều khoản 'Not-to-Exceed (NTE) / giới hạn thời gian & ngân sách trần' để bảo vệ dự án!",
     "moduleId": "P12",
-    "evidenceLinkIds": ["book.procurement.contracts", "book.resource.conflict"]
+    "evidenceLinkIds": [
+      "book.procurement.contracts",
+      "book.resource.conflict"
+    ]
   }
 ]

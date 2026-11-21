@@ -1,122 +1,127 @@
-## 1. Team Charter & Điều chỉnh Lãnh đạo theo 5 Giai đoạn Tuckman
+## 1. Giải mã bằng ví dụ đội kỹ thuật: `Team Charter` là gì và khác `Project Charter` ra sao?
 
-Trong **PMBOK® Guide 8 (`§2.6`)**, Miền hiệu suất **Resources** hợp nhất *Develop Team* và *Manage Team* thành quy trình hiện đại **Lead the Team** [!badge:amber:PMBOK 8]. Viên gạch nền móng đầu tiên của một đội ngũ tự chủ là ==Team Charter (Social Contract / Ground Rules)==:
+Khi ghép 4 kỹ sư Backend cũ với 3 lập trình viên Mobile mới tuyển vào cùng một dự án, tuần đầu tiên thường nảy sinh đủ chuyện dở khóc dở cười: người quen thức code lúc 1 giờ sáng rồi ngủ tới trưa làm nhỡ buổi họp Daily, người gửi Pull Request 5 ngày không ai review, lúc góp ý code thì dùng lời lẽ gay gắt chạm tự ái nhau!
 
-- [x] **Ai viết Team Charter?** Do **chính toàn bộ thành viên nhóm cùng thảo luận và đồng thuận xây dựng** (không phải PM viết sẵn rồi bắt ký!). Khi tự tay đặt ra quy tắc (giờ họp cốt lõi, chuẩn tôn trọng khi phản biện, quy trình ra quyết định), nhóm sẽ tự giác tuân thủ và tự nhắc nhở nhau.
-- [!] **Lưu ý động học nhóm**: Bất cứ khi nào **thêm hoặc bớt thành viên**, nhóm đang ở *Performing* cũng sẽ **quay lại từ đầu ở giai đoạn Forming**!
+Trong **PMBOK® Guide 8 (`§2.6` — Miền Resources, quy trình `Lead the Team`)**, công cụ đầu tiên để phòng ngừa hỗn loạn nội bộ chính là **Team Charter** (*còn gọi là Social Contract / Ground Rules — Bản thoả ước làm việc của đội*):
+
+- **Đừng bao giờ nhầm với `Project Charter`:** Nếu `Project Charter` do Sponsor ký để khai sinh dự án và trao quyền cho PM, thì ==Team Charter do chính toàn bộ thành viên trong nhóm cùng ngồi thảo luận và đồng thuận viết ra==!
+- **Nội dung thiết thực bên trong:** Quy ước giờ họp chung không ai vắng mặt (*Core Hours*), chuẩn mực giao tiếp tôn trọng khi tranh luận kỹ thuật, cam kết review code trong vòng 4 giờ, và cách nhóm biểu quyết khi bất đồng ý kiến. Khi chính tay anh em lập ra luật chơi, cả đội sẽ tự giác giữ kỷ luật mà không cần PM đứng canh từng người.
+
+## 2. Năm bậc phát triển nhóm của `Tuckman` & Phong cách lãnh đạo linh hoạt
+
+Nhà tâm lý học Bruce Tuckman chỉ ra rằng mọi đội nhóm đều trải qua **5 giai đoạn tâm lý tự nhiên**. Một PM giỏi không giữ khư khư một kiểu lãnh đạo duy nhất, mà phải ==uyển chuyển đổi phong cách dẫn dắt theo từng nấc trưởng thành của đội==:
+
+- **Forming (*Hình thành*) → Chỉ dẫn rõ (*Directing*):** Ngày đầu tiên 7 thành viên mới ngồi vào bàn, ai cũng lịch sự dè dặt nhìn PM chờ phân việc. Lúc này PM cần nêu mục tiêu dự án thật rõ và tạo không gian để cả đội cùng viết `Team Charter`.
+- **Storming (*Sóng gió*) → Huấn luyện (*Coaching*):** Sang tuần thứ 3, Backend và Mobile bắt đầu cãi nhau gay gắt về chuẩn thiết kế API. Đừng hoảng hốt dập tắt tranh luận — đây là bước chuyển mình tất yếu! PM dùng Trí tuệ cảm xúc lắng nghe và huấn luyện nhóm tranh biện dựa trên số liệu khách観.
+- **Norming (*Ổn định*) → Hỗ trợ (*Supporting*):** Nhóm bắt đầu hiểu ý nhau, tự giác tuân thủ quy ước review code. PM lùi lại một bước để khích lệ sự tin cậy.
+- **Performing (*Bứt phá*) → Trao quyền (*Delegating*):** Nhóm vận hành trơn tru như một cỗ máy tự tổ chức. PM trao quyền tối đa ở tầng kỹ thuật để tập trung tháo gỡ các rào cản chiến lược bên ngoài.
+- **Adjourning (*Giải tán*) → Ghi nhận & Chuyển tiếp:** Khi dự án đóng lại, PM tổ chức vinh danh thành quả và giúp thành viên tự tin bước sang dự án mới.
+
+> [!WARNING]
+> **Bẫy động học nhóm cực hay hỏi trong đề thi:** Giả sử đội của bạn đang chạy cực mượt ở giai đoạn `Performing`, bỗng nhiên khách hàng mở rộng phạm vi nên công ty điều thêm **2 lập trình viên mới tinh** vào nhóm (hoặc rút 1 trụ cột đi). Nhóm sẽ chuyển sang giai đoạn nào? Đáp án bắt buộc là ==quay ngược về giai đoạn Forming== — vì cấu trúc mối quan hệ và quy ước phối hợp phải thiết lập lại từ đầu!
 
 ```visual
 kind: flow
-title: "Thang phát triển nhóm Tuckman & Phong cách Lãnh đạo tương ứng"
-subtitle: "Lãnh đạo giỏi không giữ một kiểu duy nhất — phải dịch chuyển theo độ trưởng thành của nhóm!"
+title: "5 Giai đoạn Phát triển Nhóm Tuckman & Vai trò tương ứng của PM"
+subtitle: "Quy luật động học quan trọng: Thêm hoặc thay thành viên giữa chừng sẽ kéo nhóm lùi về Forming!"
 steps:
   - icon: "compass"
     badge: "1. FORMING"
-    title: "Hình thành → Directing"
-    desc: "Mới gặp, lịch sự dè dặt, chưa rõ vai trò. PM cần định hướng mục tiêu rõ và cùng nhóm lập Team Charter."
+    title: "Hình thành → Chỉ dẫn rõ (Directing)"
+    desc: "Mọi người còn khách sáo, dè dặt, chưa rõ ai làm gì. PM định hướng mục tiêu rõ ràng và xúc tác lập Team Charter."
     tone: "sky"
-    edge: "Va chạm quan điểm"
+    edge: "Bắt đầu cọ xát"
   - icon: "zap"
     badge: "2. STORMING"
-    title: "Sóng gió → Coaching"
-    desc: "Tranh cãi cách làm, đụng độ cái tôi. PM dùng EI lắng nghe, huấn luyện và dẫn dắt giải quyết xung đột."
+    title: "Sóng gió → Huấn luyện (Coaching)"
+    desc: "Tranh cãi kiến trúc code, va chạm cá tính mạnh. PM bình tĩnh lắng nghe, dẫn dắt giải quyết xung đột dựa trên dữ liệu."
     tone: "rose"
-    edge: "Thống nhất nhịp"
+    edge: "Hiểu nhịp nhau"
   - icon: "handshake"
     badge: "3. NORMING"
-    title: "Ổn định → Supporting"
-    desc: "Tin tưởng nhau, quy ước vận hành trơn tru. PM lùi lại hỗ trợ, khích lệ sự gắn kết."
+    title: "Ổn định → Hỗ trợ (Supporting)"
+    desc: "Quy ước vận hành êm ái, đồng đội bắt đầu tin tưởng bọc lót nhau. PM lùi lại khích lệ và củng cố tinh thần."
     tone: "amber"
-    edge: "Tự chủ đỉnh cao"
+    edge: "Vào guồng cao"
   - icon: "award"
     badge: "4. PERFORMING"
-    title: "Hiệu suất cao → Delegating"
-    desc: "Nhóm tự tổ chức mượt mà như một thể thống nhất. PM trao quyền tối đa, tập trung gỡ cản trở tầm xa."
+    title: "Bứt phá → Trao quyền (Delegating)"
+    desc: "Đội tự tổ chức ăn ý, tự xử lý vấn đề kỹ thuật cực nhanh. PM trao quyền tối đa để tập trung gỡ rào cản chiến lược."
     tone: "emerald"
-    edge: "Hoàn thành dự án"
+    edge: "Về đích dự án"
   - icon: "check"
     badge: "5. ADJOURNING"
-    title: "Giải tán → Ghi nhận"
-    desc: "Khép lại dự án, vinh danh đóng góp, tổng kết bài học và hỗ trợ chuyển tiếp nhân sự."
+    title: "Giải tán → Ghi nhận & Chuyển tiếp"
+    desc: "Đóng dự án, tôn vinh đóng góp của tập thể, đúc kết bài học và hỗ trợ anh em yên tâm nhận nhiệm vụ mới."
     tone: "cyan"
 ```
 
-## 2. Trí tuệ Cảm xúc (EI), Động lực Nội tại & Nhóm Phân tán (Virtual Team)
+## 3. Trí tuệ Cảm xúc (`EI`), Động lực Nội tại & Quản trị Nhóm Từ xa (`Virtual Team`)
 
-Miền **People (33% ECO 07/2026)** [!badge:violet:ECO 07/2026] đánh giá rất sâu khả năng thấu cảm và truyền lửa của PM mà không cần dùng quyền lực ép buộc:
+Chiếm tới **33% tổng điểm đề thi**, miền **People** của [!badge:violet:ECO 07/2026] đòi hỏi PM dẫn dắt kỹ sư tri thức bằng sự thấu cảm thay vì mệnh lệnh hành chính:
 
 ```visual
 kind: groups
-title: "Ba Trụ cột Con người giúp Đội ngũ Bứt phá Bền vững"
-subtitle: "Từ tự nhận thức cảm xúc đến nuôi dưỡng động lực và xoá khoảng cách địa lý"
+title: "3 Trụ cột Giữ Lửa & Gắn Kết Đội Ngũ Kỹ Thuật Hiện Đại"
+subtitle: "Hiểu tâm lý con người để giải quyết tận gốc tình trạng chán nản, im lặng hoặc cô lập"
 columns: 3
 items:
   - num: 1
     icon: "lightbulb"
     title: "Emotional Intelligence (EI)"
-    badge: "4 NĂNG LỰC CẢM XÚC"
+    badge: "TRÍ TUỆ CẢM XÚC"
     tone: "cyan"
-    desc: "Kiểm soát mình trước khi tác động tới người khác trong tình huống căng thẳng."
+    desc: "Nhận diện và điều tiết cảm xúc của bản thân trước khi phản ứng với đồng đội."
     bullets:
-      - "Bản thân: Self-Awareness (tự nhận biết cảm xúc) & Self-Management (kiểm soát phản ứng nóng giận)."
-      - "Xã hội: Social Awareness / Empathy (thấu cảm góc nhìn người khác) & Relationship Management."
+      - "Nội tâm: Self-Awareness (nhận biết mình đang bực) & Self-Management (kiềm chế, không nổi nóng)."
+      - "Xã hội: Empathy (đặt mình vào áp lực của người khác) & Relationship Management."
   - num: 2
     icon: "target"
     title: "Động lực Nội tại (Daniel Pink)"
     badge: "AUTONOMY · MASTERY · PURPOSE"
     tone: "emerald"
-    desc: "Đối với lao động tri thức, tiền thưởng ngắn hạn không bền bằng 3 động lực tự thân:"
+    desc: "Với kỹ sư phần mềm, 3 nguồn động lực bền bỉ nhất vượt xa tiền thưởng ngắn hạn là:"
     bullets:
-      - "Autonomy (Tự chủ): được tự quyết cách thực hiện công việc chuyên môn."
-      - "Mastery (Tinh thông): được học hỏi, đào tạo, ghép cặp nâng tầm kỹ năng."
-      - "Purpose (Ý nghĩa): thấy rõ công việc của mình tạo ra giá trị gì cho khách hàng/xã hội."
+      - "Autonomy (Tự chủ): được tin tưởng tự chọn giải pháp thực hiện công việc."
+      - "Mastery (Tinh thông): được học công nghệ mới, được đàn anh kèm cặp nâng tay nghề."
+      - "Purpose (Ý nghĩa): hiểu rõ dòng code của mình giúp ích gì cho hàng triệu người dùng."
   - num: 3
     icon: "users"
-    title: "Quản trị Virtual Team"
-    badge: "XOÁ CÔ LẬP MÚI GIỜ"
-    tone: "cyan"
-    desc: "Nhóm từ xa dễ lệch ngữ cảnh văn hoá, im lặng chịu đựng và thiếu gắn kết."
+    title: "Nhóm Phân tán (Virtual Team)"
+    badge: "VƯỢT LỆCH MÚI GIỜ"
+    tone: "sky"
+    desc: "Làm việc từ xa đa quốc gia dễ sinh hiểu lầm văn hoá và cảm giác bị bỏ rơi."
     bullets:
-      - "Thiết lập khung giờ giao thoa chung (Overlap core hours) tôn trọng múi giờ từng vùng."
-      - "Kết hợp công cụ bảng trực quan dùng chung (Virtual Fishbowl / Kanban) với họp bật camera xây dựng lòng tin."
+      - "Thống nhất khung giờ giao thoa hợp lý (Overlap Hours) công bằng giữa các múi giờ."
+      - "Dùng bảng trực quan chung kết hợp cuộc gọi bật camera định kỳ để xây dựng kết nối con người."
 ```
 
-## 3. Thứ tự Ưu tiên Hoà giải Xung đột Chuẩn PMI
+## 4. Năm chế độ Giải quyết Xung đột & Phản xạ vàng khi nhân sự đuối sức
 
-Đề thi PMP cực kỳ thích đặt bẫy ở các cuộc cãi vã trong nhóm [!badge:rose:Bẫy đề thi]. Bạn phải thuộc lòng cả **thang leo thang can thiệp** lẫn **5 kỹ thuật xử lý xung đột**:
+Khi hai Senior Engineer cãi nhau nảy lửa về việc chọn PostgreSQL hay MongoDB, bạn xử lý thế nào? Hãy khắc cốt ghi tâm **thang can thiệp 3 bước** và **5 chế độ giải quyết xung đột** sau:
 
 ```visual
 kind: anatomy
-title: "Quy tắc Leo thang Can thiệp & 5 Chiến thuật Giải quyết Xung đột"
-subtitle: "Luôn đi từ tự giải quyết nội bộ → nói chuyện riêng 1-1 → hợp tác tìm gốc rễ!"
+title: "Thang Can thiệp 3 Bước & 5 Chế độ Xử lý Xung đột Chuẩn PMI"
+subtitle: "Khoảng 90% câu hỏi xung đột trong đề PMP có đáp án đúng là Collaborate / Problem Solve!"
 items:
-  - keyword: "Thứ tự 3 Bước"
-    role: "Thang can thiệp của PM"
+  - keyword: "Thang can thiệp 3 Bước"
+    role: "Ai giải quyết trước?"
     tone: "amber"
-    summary: "Không nhảy vào làm quan toà quá sớm nhưng cũng không bỏ mặc khi xung đột trở nên độc hại."
-    bullets:
-      - "Bước 1 (Tranh luận chuyên môn lành mạnh): Để các thành viên TỰ GIẢI QUYẾT dựa trên Team Charter."
-      - "Bước 2 (Căng thẳng cá nhân / bế tắc): PM gặp RIÊNG 1-1 từng người (Interactive, private) để lắng nghe gốc rễ."
-      - "Bước 3 (Giải pháp chung): Đưa các bên ngồi lại phân tích dữ liệu khách quan theo hướng Collaborate; chỉ chuyển HR nếu vi phạm đạo đức/quấy rối/pháp luật."
-  - keyword: "Collaborate / Problem Solve"
-    role: "Win–Win (ƯU TIÊN SỐ 1)"
+    summary: "Bước 1: Tranh luận chuyên môn lành mạnh → **để nhóm tự giải quyết** theo Team Charter. Bước 2: Leo thang thành căng thẳng cá nhân → PM **gặp riêng 1-1 kín đáo** tìm nguyên nhân gốc. Bước 3: Đưa các bên ngồi lại phân tích dữ liệu chung (chỉ báo HR khi vi phạm pháp luật/quấy rối/đạo đức!)."
+  - keyword: "1. Collaborate / Problem Solve"
+    role: "Thắng – Thắng (Win–Win · ƯU TIÊN SỐ 1)"
     tone: "emerald"
-    summary: "Đối thoại cởi mở, nhìn thẳng vào sự thật & dữ liệu để tìm giải pháp thoả mãn trọn vẹn mục tiêu dự án."
-    bullets:
-      - "Đáp án đúng trong ~90% câu hỏi PMP khi các bên còn thời gian thảo luận và cần sự cam kết dài hạn."
-  - keyword: "Compromise / Reconcile"
-    role: "Lose–Lose chấp nhận được"
+    summary: "Đối thoại cởi mở, mang số liệu benchmark thực tế ra phân tích để chọn giải pháp tốt nhất cho dự án. ==Tạo sự đồng thuận và cam kết dài hạn cao nhất==."
+  - keyword: "2. Compromise / Reconcile"
+    role: "Mỗi bên lùi một bước (Lose–Lose chấp nhận được)"
     tone: "sky"
-    summary: "Mỗi bên nhượng bộ một phần để có giải pháp tạm ổn khi không thể đạt đồng thuận tuyệt đối."
-  - keyword: "Smooth · Force · Withdraw"
-    role: "Dùng rất hạn chế theo ngữ cảnh"
+    summary: "Dung hoà mỗi bên nhượng bộ một phần để đi tiếp khi thời gian không cho phép tìm phương án hoàn hảo 100%."
+  - keyword: "3. Smooth · 4. Force · 5. Withdraw"
+    role: "Ba chế độ tình thế cần hết sức thận trọng"
     tone: "rose"
-    summary: "Ba phương án dễ trở thành đáp án nhiễu nếu dùng sai lúc!"
-    bullets:
-      - "Smooth/Accommodate (Xoa dịu): Nhấn mạnh điểm chung để hạ nhiệt cảm xúc nhất thời, chưa giải quyết gốc rễ."
-      - "Force/Direct (Áp đặt — Win-Lose): CHỈ chọn khi khẩn cấp cứu nguy an toàn tính mạng, bảo mật hoặc tuân thủ pháp luật!"
-      - "Withdraw/Avoid (Rút lui/Né tránh): Tệ nhất nếu trốn tránh vấn đề; chỉ hợp lệ khi cần 'cooling-off' vài giờ cho bớt nóng giận."
+    summary: "**Smooth** (xoa dịu điểm chung tạm thời); **Force / Direct** (áp đặt Win–Lose — ==CHỈ dùng khi khẩn cấp cứu nguy an toàn, bảo mật hoặc tuân thủ luật==); **Withdraw / Avoid** (né tránh — tệ nhất, trừ khi tạm nghỉ 30 phút cho hạ hoả cơn giận!)."
 ```
 
-> [!REMEMBER] Phản xạ vàng khi thành viên làm việc kém hiệu quả
-> **Tuyệt đối không sa thải hay trả người về phòng chức năng ở bước đầu tiên!** Hãy ==nói chuyện riêng 1-1 một cách thấu cảm để tìm nguyên nhân gốc rễ== → nếu thiếu kỹ năng thì tổ chức **training / mentoring / pair-working**; nếu quá tải hoặc sai sở trường thì điều chỉnh phân bổ hợp lý.
+> [!TIP]
+> **Phản xạ vàng trước nhân sự làm việc kém hiệu quả:** Gặp câu hỏi *"Một lập trình viên liên tục trễ task 2 Sprint gần đây"*, hãy gạch bỏ ngay đáp án đòi sa thải, cắt thưởng hay trả về phòng chức năng! Đáp án chuẩn luôn là: ==Hẹn gặp riêng 1-1 một cách tôn trọng và thấu cảm để tìm nguyên nhân gốc rễ → hỗ trợ đào tạo (Training), kèm cặp (Coaching / Pair Programming) hoặc tái phân bổ công việc phù hợp sở trường==.

@@ -3,8 +3,8 @@
   "slug": "K08-pods-labels-namespaces",
   "level": 2,
   "order": 8,
-  "title": "Pod, Labels, Namespaces & Kéo Image từ Kho riêng tư",
-  "summary": "Hiểu thiết kế vỏ kén Pod chia sẻ localhost, gắn nhãn tổ chức Labels, phân tách môi trường bằng Namespace và xác thực Registry qua imagePullSecrets.",
+  "title": "Kiến trúc Pod, Labels/Selectors, Namespaces & imagePullSecrets",
+  "summary": "Hiểu thiết kế không gian cô lập của Pod chia sẻ localhost, gắn nhãn tổ chức Labels, phân tách môi trường bằng Namespace và xác thực Registry qua imagePullSecrets.",
   "tags": [
     "pod",
     "labels",
@@ -26,7 +26,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Lỗi ImagePullBackOff (#2)",
+      "label": "Xử lý Sự cố: Lỗi ImagePullBackOff (#2)",
       "kind": "incident",
       "targetId": "incident-2-imagepullbackoff",
       "description": "Thực hành xử lý sự cố Pod không kéo được Image từ Private Registry"

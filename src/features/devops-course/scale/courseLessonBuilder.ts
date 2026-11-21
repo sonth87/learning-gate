@@ -1,0 +1,828 @@
+import type {
+  BilingualText,
+  CalloutKind,
+  CodeTraceScene,
+  MemoryScene,
+  ScaleLessonStep,
+  ScaleModuleLesson,
+  StageRenderMode,
+  StageScene,
+  StageTelemetryItem,
+  StepCategory,
+  StepDiffItem,
+} from '@/components/scale-workbench/types';
+import type { DevOpsCourseId, DevOpsCurriculum, DevOpsModule, RunResult } from '../types';
+import type { PmpCurriculum, PmpModule } from '@/features/pmp-course/types';
+import { dryRunCli } from '../engine/cliSimEngine';
+import { dryRunDockerfile } from '../engine/dockerfileGrader';
+import { dryRunRedisCli } from '../engine/redisCliEngine';
+import { dryRunRedisConf } from '../engine/redisConfGrader';
+import { dryRunYaml } from '../engine/yamlGrader';
+
+export interface CuratedStepPayload {
+  telemetry: StageTelemetryItem[];
+  whatChanged: StepDiffItem[];
+  callout?: {
+    kind: CalloutKind;
+    title?: BilingualText;
+    text: BilingualText;
+  };
+  scene?: StageScene | null;
+  memoryScene?: MemoryScene | null;
+  defaultCode?: string;
+}
+
+export interface ModuleCuratedBlueprint {
+  id: string;
+  titleEn: string;
+  subtitleEn: string;
+  durationMin: number;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  primaryMode: StageRenderMode;
+  objectives: BilingualText[];
+  buildStep: (stepIdx: number, totalSteps: number) => CuratedStepPayload;
+}
+
+interface RawSection {
+  heading: string;
+  body: string;
+}
+
+export function stripVisualFences(markdown: string): string {
+  return markdown
+    .replace(/```visual[^\n]*\n[\s\S]*?```\s*/g, '')
+    .replace(/^#\s+[^\n]+\n+/m, '')
+    .trim();
+}
+
+export function splitMarkdownSections(lessonMd: string): RawSection[] {
+  const cleaned = lessonMd.replace(/^#\s+[^\n]+\n+/m, '').trim();
+  const lines = cleaned.split('\n');
+  const sections: RawSection[] = [];
+
+  let currentHeading = '';
+  let buf: string[] = [];
+
+  for (const line of lines) {
+    const h2 = line.match(/^##\s+(.*)$/);
+    if (h2) {
+      if (currentHeading || buf.join('\n').trim()) {
+        sections.push({
+          heading: currentHeading || '1. Tổng quan & Bối cảnh',
+          body: buf.join('\n').trim(),
+        });
+      }
+      currentHeading = h2[1].trim();
+      buf = [];
+    } else {
+      buf.push(line);
+    }
+  }
+
+  if (currentHeading || buf.join('\n').trim()) {
+    sections.push({
+      heading: currentHeading || 'Tóm tắt',
+      body: buf.join('\n').trim(),
+    });
+  }
+
+  if (
+    sections.length > 1 &&
+    sections[0].heading === '1. Tổng quan & Bối cảnh' &&
+    sections[0].body.length < 220 &&
+    !sections[0].body.includes('```')
+  ) {
+    sections[1] = {
+      heading: sections[1].heading,
+      body: `${sections[0].body}\n\n${sections[1].body}`.trim(),
+    };
+    sections.shift();
+  }
+
+  return sections.slice(0, 10);
+}
+
+export function extractFirstCodeBlock(md: string): string | undefined {
+  const regex = /```(?!visual)(?:[a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(md)) !== null) {
+    const snippet = match[1].trim();
+    if (snippet && snippet.length >= 12) {
+      return snippet;
+    }
+  }
+  return undefined;
+}
+
+export function inferStepCategory(
+  heading: string,
+  idx: number,
+  _total: number
+): StepCategory {
+  const lower = heading.toLowerCase();
+  if (
+    lower.includes('tóm tắt') ||
+    lower.includes('recap') ||
+    lower.includes('checklist') ||
+    lower.includes('đúc kết')
+  ) {
+    return 'RECAP';
+  }
+  if (
+    lower.includes('production') ||
+    lower.includes('thực chiến') ||
+    lower.includes('thực tế') ||
+    lower.includes('case study') ||
+    lower.includes('tình huống')
+  ) {
+    return 'REAL_CODE';
+  }
+  if (
+    lower.includes('bẫy') ||
+    lower.includes('lỗi') ||
+    lower.includes('thảm hoạ') ||
+    lower.includes('thảm họa') ||
+    lower.includes('⚠️') ||
+    lower.includes('sự cố') ||
+    lower.includes('tránh')
+  ) {
+    return 'PITFALL';
+  }
+  if (idx === 0) {
+    return 'SETUP';
+  }
+  if (
+    lower.includes('vì sao') ||
+    lower.includes('so sánh') ||
+    lower.includes('khác') ||
+    lower.includes('vấn đề')
+  ) {
+    return 'PROBLEM';
+  }
+  if (idx % 2 === 1) {
+    return 'MECHANISM';
+  }
+  return 'TECHNIQUE';
+}
+
+export function makeShortStepperLabel(
+  heading: string,
+  idx: number,
+  _total: number
+): BilingualText {
+  const stripped = heading
+    .replace(/\[!badge:[^\]]+\]/g, '')
+    .replace(/^\d+[.)]\s*/, '')
+    .replace(/[⚠️`"'[\]]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (/tóm tắt|recap|đúc kết|checklist/i.test(stripped)) {
+    return { vi: 'Đúc kết', en: 'Recap' };
+  }
+
+  const lower = stripped.toLowerCase();
+  let vi = '';
+  if (lower.includes('thuật ngữ') || lower.includes('nhập môn') || lower.includes('đời thường')) vi = 'Giải mã Thuật ngữ';
+  else if (lower.includes('output') && lower.includes('outcome')) vi = 'Output vs Outcome';
+  else if (lower.includes('mvp') && lower.includes('mmf')) vi = 'MVP vs MMF';
+  else if (lower.includes('an toàn tâm lý') || lower.includes('psychological')) vi = 'An toàn Tâm lý';
+  else if (lower.includes('dor') && lower.includes('dod')) vi = 'Cổng DoR/AC/DoD';
+  else if (lower.includes('phản xạ phòng thi') || lower.includes('tình huống thực chiến')) vi = 'Phản xạ Phòng thi';
+  else if (lower.includes('scope creep') && lower.includes('gold plating')) vi = 'Scope Creep vs Gold';
+  else if (lower.includes('scope baseline') || lower.includes('wbs')) vi = 'Scope Baseline & WBS';
+  else if (lower.includes('qa vs qc') || lower.includes('nghiệm thu')) vi = 'QA/QC & Nghiệm thu';
+  else if (lower.includes('critical path') || lower.includes('đường găng')) vi = 'Critical Path';
+  else if (lower.includes('contingency') || lower.includes('reserve')) vi = 'Quỹ Dự phòng';
+  else if (lower.includes('evm')) vi = 'Chỉ số EVM';
+  else if (lower.includes('risk') && lower.includes('issue')) vi = 'Risk vs Issue';
+  else if (lower.includes('sourcing') || lower.includes('hợp đồng')) vi = 'Loại Hợp đồng';
+  else if (lower.includes('first') && lower.includes('next')) vi = 'Từ khóa FIRST/NEXT';
+  else if (lower.includes('distractor') || lower.includes('đáp án nhiễu')) vi = '12 Đáp án Nhiễu';
+  else if (lower.includes('50/50') || lower.includes('2 phương án')) vi = 'Chốt 2 Phương án';
+  else if (lower.includes('240 phút')) vi = 'Chiến thuật 240p';
+  else if (lower.includes('business environment')) vi = 'Business Env 26%';
+  else if (lower.includes('charter')) vi = 'Project Charter';
+  else if (lower.includes('ccb') || lower.includes('picc')) vi = 'Kiểm soát Thay đổi';
+  else if (lower.includes('seam') || lower.includes('stakeholder')) vi = 'Stakeholders & SEAM';
+  else if (lower.includes('tuckman')) vi = 'Mô hình Tuckman';
+  else if (lower.includes('xung đột')) vi = 'Giải quyết Xung đột';
+  else if (lower.includes('kanban') || lower.includes('wip')) vi = 'Kanban & WIP';
+  else if (lower.includes('scrum')) vi = 'Vai trò & Scrum';
+  else if (lower.includes('stacey') || lower.includes('phổ phát triển')) vi = 'Chọn Phương pháp';
+
+  if (!vi) {
+    const firstPart = stripped.split(/[:(—–]/)[0].trim();
+    const tokens = firstPart.split(/\s+/);
+    const dangling = new Set(['từ', 'với', 'bằng', 'của', 'cho', 'trong', 'trên', 'qua', 'cốt', 'rạch', 'sống', 'tự', 'và', 'hoặc']);
+    let count = Math.min(tokens.length, 4);
+    if (count < tokens.length && dangling.has(tokens[count - 1].toLowerCase())) {
+      count = Math.min(tokens.length, 5);
+    }
+    vi = (
+      tokens.length <= count || firstPart.length <= 24
+        ? firstPart
+        : tokens.slice(0, count).join(' ')
+    ).replace(/[,.;:]+$/, '');
+  }
+  let en = `Step ${idx + 1}`;
+  if (lower.includes('event loop') || lower.includes('resp')) en = 'Event Loop';
+  else if (lower.includes('ttl') || lower.includes('expire')) en = 'TTL & Keys';
+  else if (lower.includes('hash') && lower.includes('slot')) en = 'Hash Slots';
+  else if (lower.includes('hash')) en = 'Hashes';
+  else if (lower.includes('zset') || lower.includes('skip')) en = 'ZSet SkipList';
+  else if (lower.includes('bloom') || lower.includes('hyperloglog')) en = 'Probabilistic';
+  else if (lower.includes('pipeline') || lower.includes('multi')) en = 'Pipelining';
+  else if (lower.includes('lua')) en = 'Lua Atomic';
+  else if (lower.includes('stream') || lower.includes('pel')) en = 'Streams & PEL';
+  else if (lower.includes('cache')) en = 'Caching';
+  else if (lower.includes('stampede') || lower.includes('avalanche')) en = 'Stampede Guard';
+  else if (lower.includes('lock') || lower.includes('rate')) en = 'Locks & Rate';
+  else if (lower.includes('eviction') || lower.includes('jemalloc')) en = 'Eviction';
+  else if (lower.includes('rdb') || lower.includes('aof')) en = 'RDB & AOF';
+  else if (lower.includes('sentinel') || lower.includes('replica')) en = 'Sentinel HA';
+  else if (lower.includes('acl') || lower.includes('tls') || lower.includes('rbac')) en = 'Zero-Trust';
+  else if (lower.includes('dockerfile') || lower.includes('multi-stage')) en = 'Dockerfile';
+  else if (lower.includes('layer')) en = 'Layer Cache';
+  else if (lower.includes('compose')) en = 'Compose v2';
+  else if (lower.includes('pod')) en = 'Pods';
+  else if (lower.includes('deployment') || lower.includes('rollout')) en = 'Rollout';
+  else if (lower.includes('service') || lower.includes('dns')) en = 'Service DNS';
+  else if (lower.includes('ingress') || lower.includes('gateway')) en = 'Ingress TLS';
+  else if (lower.includes('configmap') || lower.includes('secret')) en = 'Config & Secret';
+  else if (lower.includes('pvc') || lower.includes('stateful')) en = 'Stateful PVC';
+  else if (lower.includes('probe') || lower.includes('shutdown')) en = 'Probes';
+  else if (lower.includes('hpa') || lower.includes('qos')) en = 'QoS & HPA';
+  else if (lower.includes('helm') || lower.includes('networkpolicy')) en = 'NetPol & Helm';
+  else if (lower.includes('triage') || lower.includes('oom') || lower.includes('502')) en = 'Triage';
+  else if (lower.includes('exit code')) en = 'Exit Codes';
+  else if (lower.includes('runner') || lower.includes('workflow')) en = 'Workflow';
+  else if (lower.includes('dag') || lower.includes('matrix')) en = 'DAG & Matrix';
+  else if (lower.includes('artifact')) en = 'Artifacts';
+  else if (lower.includes('oidc')) en = 'Keyless OIDC';
+  else if (lower.includes('canary') || lower.includes('blue-green')) en = 'Canary / BG';
+  else if (lower.includes('argocd') || lower.includes('gitops')) en = 'ArgoCD GitOps';
+  else if (lower.includes('migration') || lower.includes('dora')) en = 'Migrations';
+  else if (lower.includes('thuật ngữ') || lower.includes('nhập môn') || lower.includes('đời thường')) en = 'Plain Glossary';
+  else if (lower.includes('output') && lower.includes('outcome')) en = 'Value & MVP';
+  else if (lower.includes('dor') && lower.includes('dod')) en = 'DoR · AC · DoD';
+  else if (lower.includes('an toàn tâm lý') || lower.includes('psychological')) en = 'Safety & Quality';
+  else if (lower.includes('phản xạ phòng thi') || lower.includes('tình huống thực chiến')) en = 'Exam Reflex';
+  else if (lower.includes('240 phút')) en = '240m Pacing';
+  else if (lower.includes('50/50') || lower.includes('2 phương án')) en = '50/50 Tie-Break';
+  else if (lower.includes('distractor') || lower.includes('đáp án nhiễu')) en = '12 Distractors';
+  else if (lower.includes('pmbok') || lower.includes('eco')) en = 'PMBOK 8 Map';
+  else if (lower.includes('stacey') || lower.includes('phổ phát triển')) en = 'Lifecycle Pick';
+  else if (lower.includes('agile') || lower.includes('scrum')) en = 'Agile & Scrum';
+  else if (lower.includes('wip') || lower.includes('kanban')) en = 'Kanban WIP';
+  else if (lower.includes('charter') || lower.includes('ccb') || lower.includes('picc')) en = 'PICC & CCB';
+  else if (lower.includes('stakeholder') || lower.includes('seam')) en = 'Stakeholders';
+  else if (lower.includes('tuckman') || lower.includes('xung đột')) en = 'Team & Conflict';
+  else if (lower.includes('wbs') || lower.includes('validate') || lower.includes('scope')) en = 'Scope & QC';
+  else if (lower.includes('evm') || lower.includes('cpi') || lower.includes('đường găng')) en = 'CPM & EVM';
+  else if (lower.includes('risk') || lower.includes('issue') || lower.includes('hợp đồng')) en = 'Risk & Sourcing';
+  else if (lower.includes('first') || lower.includes('next') || lower.includes('best')) en = 'Verb Surgery';
+  else if (lower.includes('compliance') || lower.includes('adkar')) en = 'OCM & AI';
+  else if (idx === 0) en = 'Context';
+
+  return {
+    vi: vi || `Bước ${idx + 1}`,
+    en,
+  };
+}
+
+export function buildCodeTraceFromSection(
+  badgeVi: string,
+  badgeEn: string,
+  stepTitleVi: string,
+  stepTitleEn: string,
+  snippet: string,
+  markdownBody: string
+): CodeTraceScene {
+  const lines = stripVisualFences(markdownBody).split('\n');
+  const rows: CodeTraceScene['rows'] = [];
+
+  // 1) Extract markdown comparison tables first
+  let inTable = false;
+  for (let i = 0; i < lines.length && rows.length < 5; i++) {
+    const l = lines[i].trim();
+    if (l.startsWith('|') && /^\|\s*[-:]+/.test(lines[i + 1]?.trim() ?? '')) {
+      inTable = true;
+      i += 1;
+      continue;
+    }
+    if (inTable && l.startsWith('|')) {
+      const cells = l
+        .replace(/^\||\|$/g, '')
+        .split('|')
+        .map((c) => c.replace(/\*\*|`/g, '').trim());
+      if (cells.length >= 2 && cells[0] && cells[1]) {
+        rows.push({
+          step: cells[0].slice(0, 26),
+          expr: cells.slice(1).join(' · ').slice(0, 110),
+          result: { vi: 'Đối chiếu', en: 'Compare' },
+          tone: 'ok',
+        });
+      }
+    } else if (inTable) {
+      inTable = false;
+    }
+  }
+
+  // 2) Extract bullet takeaways from prose
+  if (rows.length === 0) {
+    for (const l of lines) {
+      if (rows.length >= 5) break;
+      const m = l.match(/^\s*[-*]\s+(.*)$/);
+      if (m) {
+        const clean = m[1].replace(/\*\*|`|==/g, '').trim();
+        if (clean.length > 6) {
+          rows.push({
+            step: `#${rows.length + 1}`,
+            expr: clean.slice(0, 115),
+            result: { vi: 'Điểm chính', en: 'Key Rule' },
+            tone: rows.length === 0 ? 'ok' : 'default',
+          });
+        }
+      }
+    }
+  }
+
+  if (rows.length === 0) {
+    rows.push(
+      {
+        step: '#1',
+        expr: {
+          vi: 'Phân tích cấu hình / câu lệnh bên trái và đối chiếu chỉ số KPI phía trên',
+          en: 'Inspect the manifest / CLI snippet on the left alongside the live KPIs above',
+        },
+        result: { vi: 'Kiểm tra', en: 'Verify' },
+        tone: 'ok',
+      },
+      {
+        step: '#2',
+        expr: {
+          vi: 'Chuyển sang tab Thực hành & Quiz để giải bài tập chấm tự động của bài này',
+          en: 'Open Practice & Quiz to solve auto-graded labs for this module',
+        },
+        result: { vi: 'Thực hành', en: 'Practice' },
+        tone: 'warn',
+      }
+    );
+  }
+
+  return {
+    badge: { vi: badgeVi, en: badgeEn },
+    code: snippet,
+    traceTitle: {
+      vi: `Phân tích trọng tâm · ${stepTitleVi}`,
+      en: `Step Walkthrough · ${stepTitleEn}`,
+    },
+    rows,
+  };
+}
+
+/** Smart in-browser runner for Redis 8 CLI / redis.conf / Dockerfile / K8s & CI YAML / Shell CLI */
+export async function runDevOpsSnippetLive(
+  courseId: DevOpsCourseId,
+  code: string
+): Promise<RunResult> {
+  const t0 = performance.now();
+  const trimmed = code.trim();
+  if (!trimmed) {
+    return { stdout: '', stderr: 'Chưa có nội dung câu lệnh / cấu hình.', exitCode: 1, ms: 1 };
+  }
+
+  let res: Omit<RunResult, 'ms'>;
+  if (courseId === 'redis') {
+    // Distinguish redis.conf directives vs redis-cli commands
+    const looksLikeConf =
+      /^\s*(maxmemory|maxmemory-policy|appendonly|save\s+|user\s+\w+\s+on|bind\s+|protected-mode|tls-port)/im.test(
+        trimmed
+      ) && !/^\s*(CONFIG\s+SET|ACL\s+SETUSER|SET\s+|HSET\s+|ZADD\s+|XADD\s+)/im.test(trimmed);
+    res = looksLikeConf ? dryRunRedisConf(trimmed) : dryRunRedisCli(trimmed);
+  } else if (/^\s*FROM\s+\S+/im.test(trimmed)) {
+    res = dryRunDockerfile(trimmed);
+  } else if (
+    /^\s*(apiVersion:|name:|on:|stages:|services:|version:)/im.test(trimmed) ||
+    trimmed.includes('jobs:') ||
+    trimmed.includes('kind:')
+  ) {
+    res = dryRunYaml(trimmed);
+  } else {
+    res = dryRunCli(trimmed, {});
+  }
+
+  return {
+    ...res,
+    ms: Math.max(1, Math.round(performance.now() - t0)),
+  };
+}
+
+function cleanExtractedLine(raw: string): string {
+  const cleaned = raw
+    .replace(/\[!badge:[^\]]+\]/g, '')
+    .replace(/^\[[xX!>+\s]\]\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (cleaned.length <= 220) {
+    return cleaned;
+  }
+  const plain = cleaned.replace(/==/g, '').replace(/\*\*/g, '').replace(/`/g, '');
+  return `${plain.slice(0, 200).replace(/\s+\S*$/, '')}…`;
+}
+
+function extractMarkdownStepHighlights(markdownBody: string): {
+  headings: string[];
+  bullets: string[];
+} {
+  if (!markdownBody.trim()) {
+    return { headings: [], bullets: [] };
+  }
+  // Remove visual blocks and fenced code blocks so YAML/CLI lines are not treated as prose headings/bullets
+  const proseOnly = stripVisualFences(markdownBody).replace(
+    /```[\s\S]*?```\s*/g,
+    ''
+  );
+  const lines = proseOnly.split('\n');
+  const headings: string[] = [];
+  const bullets: string[] = [];
+
+  let inTable = false;
+  const tableRows: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (!trimmed) {
+      inTable = false;
+      continue;
+    }
+
+    const hMatch = trimmed.match(/^###\s+(.*)$/);
+    if (hMatch && headings.length < 3) {
+      const hClean = cleanExtractedLine(hMatch[1].replace(/^\d+[.)]\s*/, ''));
+      if (hClean.length > 2) {
+        headings.push(hClean);
+      }
+      continue;
+    }
+
+    if (
+      trimmed.startsWith('|') &&
+      /^\|\s*[-:]+/.test(lines[i + 1]?.trim() ?? '')
+    ) {
+      inTable = true;
+      i += 1;
+      continue;
+    }
+    if (inTable && trimmed.startsWith('|')) {
+      const cells = trimmed
+        .replace(/^\||\|$/g, '')
+        .split(/(?<!\\)\|/)
+        .map((c) => cleanExtractedLine(c.replace(/\\\|/g, '|')));
+      if (cells.length >= 2 && cells[0] && cells[1] && tableRows.length < 3) {
+        tableRows.push(`**${cells[0].replace(/\*\*/g, '')}:** ${cells[1]}`);
+      }
+      continue;
+    }
+
+    const bMatch = trimmed.match(/^(?:[-*]|\d+\.)\s+(.*)$/);
+    if (bMatch && bullets.length < 4) {
+      const bClean = cleanExtractedLine(bMatch[1]);
+      if (bClean.length > 8) {
+        bullets.push(bClean);
+      }
+    }
+  }
+
+  const finalBullets =
+    bullets.length > 0 ? bullets : tableRows.slice(0, 3);
+
+  return { headings, bullets: finalBullets };
+}
+
+function buildEnglishNarrative(
+  titleEn: string,
+  subtitleEn: string,
+  objectives: BilingualText[],
+  shortEn: string,
+  category: StepCategory,
+  stepMode: StageRenderMode,
+  snippet: string | undefined,
+  stepIdx: number,
+  totalSteps: number,
+  markdownBody = '',
+  telemetry: StageTelemetryItem[] = []
+): { stepTitleEn: string; summaryEn: string } {
+  const stepTitleEn =
+    category === 'RECAP'
+      ? `Recap & Production Checklist: ${titleEn}`
+      : category === 'REAL_CODE'
+        ? `Real-World Case & Playbook — ${titleEn}`
+        : `${stepIdx + 1}. ${shortEn} — ${titleEn}`;
+
+  const objLine = objectives[stepIdx % Math.max(1, objectives.length)]?.en ?? subtitleEn;
+  let body = `**Step ${stepIdx + 1}/${totalSteps} Focus:** ${objLine}.\n\n`;
+
+  if (stepMode === 'isometric') {
+    body += `Trace the 2.5D system architecture during **${shortEn}** — hover or click any block, connector, or badge on the stage to inspect What / How / Why & real-world pitfalls.\n\n`;
+  } else if (stepMode === 'memory-2d') {
+    body += `Examine the 2D structural layout for **${shortEn}** — click any slot, pointer, or node to inspect its internal mechanism.\n\n`;
+  } else {
+    body += `Review the concrete configuration / situational walkthrough for **${shortEn}** alongside the key rules on the right.\n\n`;
+  }
+
+  if (telemetry.length > 0) {
+    const kpiSummary = telemetry
+      .slice(0, 3)
+      .map((item) => `**${item.label.en}:** \`${item.value.en}\``)
+      .join(' · ');
+    body += `${kpiSummary}\n\n`;
+  }
+
+  const { headings, bullets } = extractMarkdownStepHighlights(markdownBody);
+  if (headings.length > 0 || bullets.length > 0) {
+    body += `### Key Section Takeaways\n`;
+    for (const h of headings) {
+      body += `- **Topic:** ${h}\n`;
+    }
+    for (const b of bullets) {
+      body += `- ${b}\n`;
+    }
+    body += '\n';
+  }
+
+  if (snippet) {
+    body += '```\n' + snippet + '\n```';
+  } else {
+    body += `- Check the live telemetry KPIs above the stage as invariants change across steps.\n- Jump into **Practice & Quiz** below to test your mastery on realistic scenarios.`;
+  }
+
+  return { stepTitleEn, summaryEn: body };
+}
+
+export function buildDevOpsScaleLessons(
+  courseId: DevOpsCourseId,
+  curriculum: DevOpsCurriculum,
+  levelTitles: Record<number, BilingualText>,
+  blueprints: Record<string, ModuleCuratedBlueprint>
+): ScaleModuleLesson[] {
+  const sorted = [...curriculum.modules].sort(
+    (a, b) => a.level - b.level || a.order - b.order
+  );
+
+  const countByLevel = new Map<number, number>();
+  for (const m of sorted) {
+    countByLevel.set(m.level, (countByLevel.get(m.level) ?? 0) + 1);
+  }
+
+  const badgePair =
+    courseId === 'redis'
+      ? { vi: 'Redis 8 · CLI & Cấu hình trực tiếp', en: 'Redis 8 · Live CLI & Config' }
+      : courseId === 'kube'
+        ? { vi: 'Docker & K8s · Manifest & CLI', en: 'Docker & K8s · Manifest & CLI' }
+        : { vi: 'CI/CD & GitOps · Workflow YAML', en: 'CI/CD & GitOps · Workflow YAML' };
+
+  const idxCounter = new Map<number, number>();
+  return sorted.map((mod: DevOpsModule) => {
+    const orderInLevel = (idxCounter.get(mod.level) ?? 0) + 1;
+    idxCounter.set(mod.level, orderInLevel);
+    const totalInLevel = countByLevel.get(mod.level) ?? 1;
+
+    const bp = blueprints[mod.id];
+    const primaryMode: StageRenderMode = bp?.primaryMode ?? 'isometric';
+    const rawSections = splitMarkdownSections(mod.lesson);
+    const totalSteps = rawSections.length;
+    const levelTitle = levelTitles[mod.level] ?? {
+      vi: curriculum.levels[String(mod.level)] ?? `Cấp ${mod.level}`,
+      en: `Stage ${mod.level}`,
+    };
+
+    const steps: ScaleLessonStep[] = rawSections.map((sec, idx) => {
+      const category = inferStepCategory(sec.heading, idx, totalSteps);
+      const shortLabel = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const extracted = extractFirstCodeBlock(sec.body);
+      const curated = bp?.buildStep(idx, totalSteps) ?? {
+        telemetry: [],
+        whatChanged: [],
+      };
+      const fallbackEx = mod.exercises[0]?.solution || mod.exercises[0]?.starter;
+      const effectiveSnippet =
+        extracted ??
+        curated.defaultCode ??
+        fallbackEx ??
+        `# ${mod.id} — ${mod.title}`;
+
+      // Only use code-trace on final step when totalSteps >= 4 (so 2-3 step lessons keep their visual models!)
+      let stepMode: StageRenderMode = primaryMode;
+      if (totalSteps >= 4 && (category === 'RECAP' || category === 'REAL_CODE')) {
+        stepMode = 'code-trace';
+      }
+      if (stepMode === 'isometric' && !curated.scene) {
+        stepMode = curated.memoryScene ? 'memory-2d' : 'code-trace';
+      }
+      if (stepMode === 'memory-2d' && !curated.memoryScene) {
+        stepMode = curated.scene ? 'isometric' : 'code-trace';
+      }
+
+      const cleanHeadingVi = sec.heading
+        .replace(/\[!badge:[^\]]+\]/g, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .replace(/`/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const { stepTitleEn, summaryEn } = buildEnglishNarrative(
+        bp?.titleEn ?? mod.title,
+        bp?.subtitleEn ?? mod.summary,
+        bp?.objectives ?? [],
+        shortLabel.en,
+        category,
+        stepMode,
+        extracted ?? curated.defaultCode,
+        idx,
+        totalSteps,
+        sec.body,
+        curated.telemetry
+      );
+
+      const codeTrace = buildCodeTraceFromSection(
+        `${mod.id} · ${badgePair.vi}`,
+        `${mod.id} · ${badgePair.en}`,
+        cleanHeadingVi,
+        stepTitleEn,
+        effectiveSnippet,
+        sec.body
+      );
+
+      return {
+        index: idx + 1,
+        shortLabel,
+        category,
+        title: { vi: cleanHeadingVi, en: stepTitleEn },
+        summaryVi: sec.body,
+        summaryEn,
+        rawMarkdownVi: sec.body,
+        codeSnippet: effectiveSnippet,
+        callout: curated.callout,
+        whatChanged: curated.whatChanged,
+        telemetry: curated.telemetry,
+        stageMode: stepMode,
+        scene: stepMode === 'isometric' ? (curated.scene ?? undefined) : undefined,
+        memoryScene:
+          stepMode === 'memory-2d' ? (curated.memoryScene ?? undefined) : undefined,
+        codeTrace,
+      };
+    });
+
+    return {
+      moduleId: mod.id,
+      level: mod.level,
+      levelTitle,
+      orderInLevel,
+      totalInLevel,
+      title: { vi: mod.title, en: bp?.titleEn ?? mod.title },
+      subtitle: { vi: mod.summary, en: bp?.subtitleEn ?? mod.summary },
+      durationMin: bp?.durationMin ?? 14,
+      difficulty: bp?.difficulty ?? (mod.level <= 1 ? 'Beginner' : mod.level <= 3 ? 'Intermediate' : 'Advanced'),
+      primaryMode,
+      objectives: bp?.objectives ?? [],
+      steps,
+      quizCount: mod.quiz.length,
+      exerciseCount: mod.exercises.length,
+      cardCount: mod.cards.length,
+      readingCount: mod.readings.length,
+    };
+  });
+}
+
+export function buildPmpScaleLessons(
+  curriculum: PmpCurriculum,
+  levelTitles: Record<number, BilingualText>,
+  blueprints: Record<string, ModuleCuratedBlueprint>
+): ScaleModuleLesson[] {
+  const sorted = [...curriculum.modules].sort(
+    (a, b) => a.level - b.level || a.order - b.order
+  );
+
+  const countByLevel = new Map<number, number>();
+  for (const m of sorted) {
+    countByLevel.set(m.level, (countByLevel.get(m.level) ?? 0) + 1);
+  }
+
+  const idxCounter = new Map<number, number>();
+  return sorted.map((mod: PmpModule) => {
+    const orderInLevel = (idxCounter.get(mod.level) ?? 0) + 1;
+    idxCounter.set(mod.level, orderInLevel);
+    const totalInLevel = countByLevel.get(mod.level) ?? 1;
+
+    const bp = blueprints[mod.id];
+    const primaryMode: StageRenderMode = bp?.primaryMode ?? 'isometric';
+    const rawSections = splitMarkdownSections(mod.lesson);
+    const totalSteps = rawSections.length;
+    const levelTitle = levelTitles[mod.level] ?? {
+      vi: curriculum.levels[String(mod.level)] ?? `Cấp ${mod.level}`,
+      en: `Domain Stage ${mod.level}`,
+    };
+
+    const defaultPmpBrief = [
+      `# ${mod.id} — ${mod.motto}`,
+      ``,
+      `[Cạm bẫy đời thực]:`,
+      `${mod.realWorldTrap}`,
+      ``,
+      `[Chuyển dịch tư duy chuẩn PMI]:`,
+      `${mod.pmiMindsetShift}`,
+    ].join('\n');
+
+    const steps: ScaleLessonStep[] = rawSections.map((sec, idx) => {
+      const category = inferStepCategory(sec.heading, idx, totalSteps);
+      const shortLabel = makeShortStepperLabel(sec.heading, idx, totalSteps);
+      const extracted = extractFirstCodeBlock(sec.body);
+      const curated = bp?.buildStep(idx, totalSteps) ?? {
+        telemetry: [],
+        whatChanged: [],
+      };
+      const effectiveSnippet = extracted ?? curated.defaultCode ?? defaultPmpBrief;
+
+      let stepMode: StageRenderMode = primaryMode;
+      if (category === 'RECAP') {
+        stepMode = 'code-trace';
+      }
+      if (stepMode === 'isometric' && !curated.scene) {
+        stepMode = curated.memoryScene ? 'memory-2d' : 'code-trace';
+      }
+      if (stepMode === 'memory-2d' && !curated.memoryScene) {
+        stepMode = curated.scene ? 'isometric' : 'code-trace';
+      }
+
+      const cleanHeadingVi = sec.heading
+        .replace(/\[!badge:[^\]]+\]/g, '')
+        .replace(/^\d+[.)]\s*/, '')
+        .replace(/`/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const { stepTitleEn, summaryEn } = buildEnglishNarrative(
+        bp?.titleEn ?? mod.title,
+        bp?.subtitleEn ?? mod.summary,
+        bp?.objectives ?? [],
+        shortLabel.en,
+        category,
+        stepMode,
+        extracted ?? curated.defaultCode ?? defaultPmpBrief,
+        idx,
+        totalSteps,
+        sec.body,
+        curated.telemetry
+      );
+
+      const codeTrace = buildCodeTraceFromSection(
+        `${mod.id} · Khung Tư Duy PMI (PMBOK 8 & ECO 2026)`,
+        `${mod.id} · PMI Mindset Playbook`,
+        cleanHeadingVi,
+        stepTitleEn,
+        effectiveSnippet,
+        sec.body
+      );
+
+      return {
+        index: idx + 1,
+        shortLabel,
+        category,
+        title: { vi: cleanHeadingVi, en: stepTitleEn },
+        summaryVi: sec.body,
+        summaryEn,
+        rawMarkdownVi: sec.body,
+        codeSnippet: effectiveSnippet,
+        callout: curated.callout,
+        whatChanged: curated.whatChanged,
+        telemetry: curated.telemetry,
+        stageMode: stepMode,
+        scene: stepMode === 'isometric' ? (curated.scene ?? undefined) : undefined,
+        memoryScene:
+          stepMode === 'memory-2d' ? (curated.memoryScene ?? undefined) : undefined,
+        codeTrace,
+      };
+    });
+
+    return {
+      moduleId: mod.id,
+      level: mod.level,
+      levelTitle,
+      orderInLevel,
+      totalInLevel,
+      title: { vi: mod.title, en: bp?.titleEn ?? mod.title },
+      subtitle: { vi: mod.summary, en: bp?.subtitleEn ?? mod.summary },
+      durationMin: bp?.durationMin ?? 15,
+      difficulty: bp?.difficulty ?? (mod.level <= 1 ? 'Beginner' : mod.level <= 3 ? 'Intermediate' : 'Advanced'),
+      primaryMode,
+      objectives: bp?.objectives ?? [],
+      steps,
+      quizCount: mod.quiz.length,
+      exerciseCount: 0,
+      cardCount: mod.cards.length,
+      readingCount: mod.evidenceLinkIds.length,
+    };
+  });
+}

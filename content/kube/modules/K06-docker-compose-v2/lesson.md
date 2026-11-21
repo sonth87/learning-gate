@@ -1,15 +1,15 @@
 # Điều phối đa dịch vụ tại máy cá nhân với Docker Compose v2
 
-Một hệ thống thực tế hiếm khi chạy lẻ loi một mình: API Node.js của bạn cần **PostgreSQL 16** để lưu đơn hàng, cần **Redis 7** để giữ phiên đăng nhập và hàng đợi BullMQ. Nếu mỗi sáng bật máy đều phải gõ tay 4 câu lệnh `docker network create`, `docker volume create` kèm hàng chục cờ `-e`, `-p`, `-v` rời rạc, cả đội sẽ sớm lệch cấu hình của nhau.
+Một hệ thống thực tế hiếm khi chạy lẻ loi một mình: dịch vụ API của bạn (dù viết bằng **FastAPI**, **Node.js** hay **Go**) cần **PostgreSQL 16** để lưu đơn hàng, cần **Redis 7** để giữ phiên đăng nhập và hàng đợi tác vụ nền (Celery / BullMQ). Nếu mỗi sáng bật máy đều phải gõ tay 4 câu lệnh tạo mạng, tạo ổ đĩa kèm hàng chục cờ `-e`, `-p`, `-v` rời rạc, cả đội sẽ sớm lệch cấu hình của nhau.
 
-**Docker Compose v2** gói trọn toàn bộ kiến trúc đa container (**dịch vụ**, **mạng DNS nội bộ**, **ổ đĩa bền vững**, **thứ tự sẵn sàng**) vào một tệp YAML khai báo duy nhất tên là ==`compose.yaml`== — bước đệm tư duy hoàn hảo trước khi bạn tiến lên Kubernetes Manifest YAML ở Cấp độ 2!
+**Docker Compose v2** gói trọn toàn bộ kiến trúc đa container (**dịch vụ**, **mạng DNS nội bộ**, **ổ đĩa bền vững**, **thứ tự sẵn sàng**) vào một tệp YAML khai báo duy nhất tên là ==`compose.yaml`== — bước đệm tư duy hoàn hảo trước khi bạn tiến lên Kubernetes Manifest YAML ở bài `K07`!
 
 ```visual
 kind: illustration
 diagram: "kube:k06"
 alt: "Kiến trúc mạng cầu nối nội bộ Docker Compose v2 với DNS theo tên dịch vụ, depends_on service_healthy và Named Volume"
 title: "Giải Phẫu Docker Compose v2: Mạng Bridge DNS Nội Bộ, Healthcheck & Ổ Đĩa Bền Vững"
-subtitle: "Điều phối trọn bộ API Node.js, PostgreSQL và Redis giao tiếp mượt mà chỉ qua một tệp khai báo compose.yaml"
+subtitle: "Điều phối trọn bộ Backend API (Node/Python), PostgreSQL và Redis giao tiếp mượt mà chỉ qua một tệp khai báo compose.yaml"
 caption: "Sơ đồ phân giải DNS nội bộ theo tên dịch vụ (postgres:5432, redis:6379), chốt chặn khởi động service_healthy và lưu trữ dữ liệu qua Named Volume"
 callouts:
   - num: 1
@@ -22,21 +22,21 @@ callouts:
     tone: amber
   - num: 3
     label: "Named Volume bảo toàn dữ liệu qua các lần tắt/bật"
-    desc: "Ổ đĩa pgdata giữ nguyên dữ liệu Database khi gõ docker compose down; chỉ xoá sạch khi bạn chủ động truyền thêm cờ -v."
+    desc: "Ổ đĩa pgdata giữ nguyên dữ liệu Database khi gõ docker compose down; chỉ xóa sạch khi bạn chủ động truyền thêm cờ -v."
     tone: emerald
 ```
 
 ## 1. Chuẩn Docker Compose v2 năm 2026: Tạm biệt những di sản cũ!
 
-Khi đọc các bài hướng dẫn cũ giai đoạn 2018–2021 trên mạng, bạn sẽ gặp rất nhiều cú pháp của Compose v1 đã chính thức bị khai tử. Hãy cập nhật ngay sang chuẩn **Compose v2** hiện đại:
+Khi đọc các bài hướng dẫn cũ giai đoạn 2018–2021 trên mạng, bạn sẽ gặp nhiều cú pháp của nhánh v1 cũ đã chính thức ngừng phát triển. Hãy cập nhật ngay sang chuẩn **Compose v2** hiện đại (được tích hợp sẵn trong cả **Docker Desktop**, **OrbStack** lẫn `podman compose`):
 
 ```visual
 kind: compare
 title: "Đối Chiếu Di Sản Cũ (Compose v1) vs Chuẩn Hiện Đại 2026 (Compose v2)"
 subtitle: "Compose v2 được viết lại hoàn toàn bằng Go và tích hợp sẵn làm plugin chính thức bên trong Docker CLI!"
 left:
-  badge: "ĐÃ KHAI TỬ · Compose v1 (2018–2021)"
-  title: "Cú pháp gạch ngang & Khoá version dư thừa"
+  badge: "ĐÃ LOẠI BỎ · Compose v1 (2018–2021)"
+  title: "Binary rời gạch ngang & Khóa version dư thừa"
   tone: rose
   code: |
     # Tên tệp cũ: docker-compose.yml
@@ -45,11 +45,10 @@ left:
       api:
         links:       # <- Thủ công lỗi thời
           - postgres
-    # Lệnh cũ bằng Python: docker-compose up -d
   lang: yaml
   bullets:
-    - "Lệnh rời `docker-compose` (có dấu gạch ngang) đã ngừng phát triển"
-    - "Nếu vẫn cố viết `version: \"3.8\"`, Compose v2 sẽ cảnh báo vàng `the attribute 'version' is obsolete`"
+    - "Công cụ rời `docker-compose` (có dấu gạch ngang của bản v1 cũ) đã ngừng phát triển"
+    - "Nếu vẫn cố viết `version: \"3.8\"` ở đầu tệp, Compose v2 sẽ cảnh báo vàng `the attribute 'version' is obsolete`"
 right:
   badge: "CHUẨN NĂM 2026 · Docker Compose v2"
   title: "Tệp compose.yaml sạch gọn không version:"
@@ -66,17 +65,17 @@ right:
   bullets:
     - "Gọi lệnh ==`docker compose up -d`== (cách nhau bởi dấu cách)"
     - "Tên tệp chuẩn ưu tiên số 1 theo Compose Specification là **`compose.yaml`**"
-    - "**Bỏ hoàn toàn khoá `version:`** ở đầu tệp; tự động tạo mạng chung & DNS theo tên dịch vụ"
+    - "**Bỏ hoàn toàn khóa `version:`** ở đầu tệp; tự động tạo mạng chung & DNS theo tên dịch vụ"
 ```
 
 ## 2. Quy tắc vàng về DNS nội bộ: Quên `localhost` đi, hãy gọi bằng Tên Dịch Vụ!
 
 > [!WARNING] Cái bẫy chiếm 80% lỗi kết nối của người mới viết `compose.yaml`
-> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` chắc chắn sẽ phát sinh lỗi **`ECONNREFUSED 127.0.0.1:5432`**.
+> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính căn hộ container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` (hoặc `postgresql://...@localhost:5432` trong FastAPI/SQLAlchemy) chắc chắn sẽ nổ lỗi **`Connection refused 127.0.0.1:5432`**.
 
-Khi bạn gõ `docker compose up -d`, Compose tự động tạo một mạng Bridge riêng cho dự án (ví dụ `myshop_default`) và đăng ký **chính tên khoá dưới mục `services:`** vào máy chủ DNS nội bộ:
+Khi bạn gõ `docker compose up -d`, Compose tự động tạo một mạng Bridge riêng cho dự án (ví dụ `myshop_default`) và đăng ký **chính tên khóa dưới mục `services:`** vào máy chủ DNS nội bộ:
 
-```yaml compose.yaml — Giao tiếp chuẩn qua Service Name DNS
+```yaml compose.yaml — Giao tiếp chuẩn qua Service Name DNS (Đa ngôn ngữ)
 services:
   postgres:
     image: postgres:16-alpine
@@ -93,16 +92,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # SAI LẦM KINH ĐIỂN: DB_HOST: localhost -> lỗi ECONNREFUSED 127.0.0.1:5432!
-      # ĐÚNG CHUẨN: Dùng chính xác tên khoá dưới "services:" làm hostname DNS!
+      # SAI LẦM KINH ĐIỂN: dùng localhost -> lỗi Connection Refused 127.0.0.1:5432!
+      # ĐÚNG CHUẨN: Dùng chính xác tên khóa dưới "services:" làm hostname DNS!
       DB_HOST: postgres
       DB_PORT: "5432"
       REDIS_HOST: cache-redis
+      # Nếu api là Python FastAPI / SQLAlchemy, chuỗi kết nối cũng dùng đúng tên dịch vụ:
+      DATABASE_URL: "postgresql+psycopg://shop:dev-only-placeholder@postgres:5432/shop_db"
 ```
 
 ## 3. Bảo toàn dữ liệu Database qua các lần `down` / `up` bằng khối `volumes:`
 
-Để dữ liệu PostgreSQL không bốc hơi mỗi khi dọn dẹp môi trường, bạn phải khai báo đủ **2 vị trí** trong `compose.yaml`: gắn volume bên trong dịch vụ `postgres` **VÀ** đăng ký tên volume ở mục **`volumes:` cấp cao nhất (top-level)** cuối tệp!
+Để dữ liệu PostgreSQL không bốc hơi mỗi khi tắt môi trường cuối ngày, bạn phải khai báo đủ **2 vị trí** trong `compose.yaml`: gắn volume bên trong dịch vụ `postgres` **VÀ** đăng ký tên volume ở mục **`volumes:` cấp cao nhất (top-level)** cuối tệp!
 
 ```visual
 kind: groups
@@ -115,7 +116,7 @@ items:
     badge: Dùng localhost + Host Port
     tone: sky
     bullets:
-      - "Khi mở trình duyệt hoặc DBeaver trên Mac/Windows ngoài máy chủ"
+      - "Khi mở trình duyệt hoặc phần mềm DBeaver / TablePlus trên Mac/Windows"
       - "Kết nối qua **`localhost:<HOST_PORT>`** (khi dịch vụ đó có khai báo `ports:`)"
     footer: "Ví dụ: http://localhost:3000"
   - num: 2
@@ -126,28 +127,28 @@ items:
     bullets:
       - "Khi `api` hoặc `worker` gọi sang Database / Redis trong cùng mạng Compose"
       - "Bắt buộc dùng ==tên dịch vụ== làm hostname (`postgres:5432`, `cache-redis:6379`)"
-    footer: "Không phụ thuộc vào việc có mở ports: ra ngoài hay không!"
+    footer: "Không phụ thuộc vào việc DB có mở ports: ra ngoài hay không!"
   - num: 3
     icon: database
     title: "down vs down -v (Cẩn Trọng!)"
     badge: Bảo vệ Named Volume
     tone: amber
     bullets:
-      - "**`docker compose down`:** Xoá container & mạng, nhưng **GIỮ AN TOÀN 100%** dữ liệu trong `pgdata`"
-      - "**`docker compose down -v`:** **XOÁ SẠCH** luôn các Named Volume — chỉ gõ `-v` khi muốn đập đi xây lại DB trắng!"
+      - "**`docker compose down`:** Xóa container & mạng, nhưng **GIỮ AN TOÀN 100%** dữ liệu trong `pgdata`"
+      - "**`docker compose down -v`:** **XÓA SẠCH** luôn các Named Volume — chỉ gõ `-v` khi muốn làm mới DB trắng tinh!"
     footer: "Nhớ khai báo pgdata: ở khối volumes: cuối tệp"
 ```
 
 ## 4. Khởi động đúng trình tự sẵn sàng: `healthcheck` + `service_healthy`
 
-Nếu bạn chỉ viết ngây thơ `depends_on: [postgres]`, Compose mặc định chỉ chờ tiến trình container `postgres` **vừa bật lên (`service_started`)** là lập tức phóng `api` chạy ngay! Trong khi đó, PostgreSQL mất thêm 2–4 giây khởi tạo mới thực sự mở cổng `5432` nhận truy vấn -> Prisma / TypeORM trong `api` lao vào quá sớm và sập tức khắc!
+Nếu bạn chỉ viết ngây thơ `depends_on: [postgres]`, Compose mặc định chỉ chờ tiến trình container `postgres` **vừa bật lên (`service_started`)** là lập tức phóng `api` chạy ngay! Trong khi đó, PostgreSQL mất thêm 2–4 giây khởi tạo tệp hệ thống mới thực sự mở cổng `5432` nhận câu lệnh SQL → SQLAlchemy / Prisma trong `api` lao vào quá sớm và sập tức khắc!
 
 Giải pháp chuẩn Production là kết hợp tiện ích có sẵn ==`pg_isready`== của PostgreSQL với điều kiện ==`condition: service_healthy`==:
 
 ```visual
 kind: flow
 title: "Trình Tự Khởi Động Không Bao Giờ Sập Với pg_isready & service_healthy"
-subtitle: "Đảm bảo API Node.js chỉ kết nối sau khi PostgreSQL đã thực sự sẵn sàng nhận câu lệnh SQL trên cổng 5432"
+subtitle: "Đảm bảo API (Python / Node.js) chỉ kết nối sau khi PostgreSQL đã thực sự sẵn sàng nhận câu lệnh SQL trên cổng 5432"
 steps:
   - icon: database
     badge: Bước 1 · Bật DB trước
@@ -166,14 +167,14 @@ steps:
   - icon: shield-check
     badge: Bước 3 · Đạt chuẩn
     title: Trạng thái (healthy)
-    desc: Docker đánh dấu dịch vụ postgres đã khoẻ mạnh hoàn toàn
+    desc: Docker đánh dấu dịch vụ postgres đã khỏe mạnh hoàn toàn
     code: service_healthy
     tone: emerald
-    edge: mở khoá depends_on
+    edge: mở khóa depends_on
   - icon: rocket
     badge: Bước 4 · Khởi chạy êm ái
     title: Bật dịch vụ api
-    desc: Prisma / TypeORM kết nối postgres:5432 thành công 100% ngay lần đầu!
+    desc: Prisma / SQLAlchemy kết nối postgres:5432 thành công 100% ngay lần đầu!
     code: "DB_HOST: postgres"
     tone: cyan
 ```
@@ -211,6 +212,9 @@ volumes:
 
 ## 5. Vũ khí hiện đại trên Compose v2: `develop.watch` & `profiles`
 
+> [!TIP] Hot-reload mượt mà cho cả FastAPI lẫn Node.js với `docker compose watch`
+> Thay vì dùng Bind Mount `- .:/app` dễ làm mất thư mục `.venv` hoặc `node_modules` bên trong container, tính năng `develop.watch` tự động chép nóng đúng thư mục mã nguồn (`./app` hoặc `./src`) vào container mỗi khi bạn bấm `Ctrl+S`, và chỉ tự `rebuild` Image khi bạn sửa `pyproject.toml` hoặc `package.json`!
+
 ```visual
 kind: groups
 title: "Hai Tính Năng Hiện Đại Thay Đổi Trải Nghiệm Dev Năm 2026 [!badge:sky:Compose v2.22+]"
@@ -222,9 +226,9 @@ items:
     badge: Sync nóng thông minh
     tone: emerald
     bullets:
-      - "Tránh hẳn lỗi mount `- .:/app` đè mất `node_modules` biên dịch riêng cho Linux"
-      - "**`action: sync`:** Tự chép nóng riêng `./src` vào `/app/src` tức thì khi lưu file"
-      - "**`action: rebuild`:** Tự build lại Image chỉ khi `package.json` thay đổi!"
+      - "Tránh hẳn lỗi mount `- .:/app` đè mất `.venv` hoặc `node_modules` biên dịch riêng cho Linux"
+      - "**`action: sync`:** Tự chép nóng riêng `./src` (hoặc `./app`) vào container tức thì khi lưu file"
+      - "**`action: rebuild`:** Tự build lại Image chỉ khi `package.json` / `pyproject.toml` thay đổi!"
     code: |
       # Bật chế độ theo dõi: docker compose watch
       develop:
@@ -241,7 +245,7 @@ items:
     badge: Tiết kiệm RAM Laptop
     tone: cyan
     bullets:
-      - "Gắn nhãn tuỳ chọn cho các dịch vụ phụ trợ nặng như **Prometheus, Grafana, pgAdmin**"
+      - "Gắn nhãn tùy chọn cho các dịch vụ phụ trợ nặng như **Prometheus, Grafana, pgAdmin**"
       - "Bình thường gõ `docker compose up -d` sẽ **tự động bỏ qua** chúng cho nhẹ máy"
       - "Khi cần đo đạc mới gọi tường minh kèm cờ `--profile debug`"
     code: |
@@ -251,6 +255,6 @@ items:
 ```
 
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - Chuẩn **Compose v2 (2026)**: tệp **`compose.yaml`**, **bỏ khoá `version:`**, gọi lệnh **`docker compose up -d`** (không gạch ngang).
+> - Chuẩn **Compose v2 (2026)**: tệp **`compose.yaml`**, **bỏ khóa `version:`**, gọi lệnh **`docker compose up -d`** (cách nhau dấu cách).
 > - Giữa các container trong mạng Compose, **luôn gọi nhau bằng tên dịch vụ** (`postgres`, `cache-redis`), tuyệt đối không dùng `localhost`.
-> - **`docker compose down`** giữ nguyên dữ liệu Named Volume (`down -v` mới xoá) · Dùng **`pg_isready`** + **`condition: service_healthy`** để `api` chờ DB sẵn sàng thực sự · Dùng **`profiles`** để ẩn các công cụ nặng lúc không cần.
+> - **`docker compose down`** giữ nguyên dữ liệu Named Volume (`down -v` mới xóa) · Dùng **`pg_isready`** + **`condition: service_healthy`** để `api` chờ DB sẵn sàng thực sự.

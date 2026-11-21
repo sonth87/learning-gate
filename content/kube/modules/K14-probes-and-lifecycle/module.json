@@ -3,7 +3,7 @@
   "slug": "K14-probes-and-lifecycle",
   "level": 4,
   "order": 14,
-  "title": "Sức khoẻ Pod & Vòng đời dừng êm ái: Startup, Readiness, Liveness Probes & Graceful Shutdown",
+  "title": "Kiểm tra Sức khỏe Pod (Startup / Readiness / Liveness Probes) & Graceful Shutdown",
   "summary": "Phân biệt rạch ròi 3 cảm biến sức khoẻ, tránh thảm hoạ kiểm tra Database trong livenessProbe và cấu hình tắt Pod không rớt kết nối với preStop + SIGTERM.",
   "tags": [
     "probes",
@@ -31,7 +31,7 @@
       "targetId": "rolling-update-hpa"
     },
     {
-      "label": "War Room: Pod kẹt Terminating & Rớt kết nối (#8)",
+      "label": "Xử lý Sự cố: Pod kẹt Terminating & Rớt kết nối (#8)",
       "kind": "incident",
       "targetId": "incident-8-terminating-stuck"
     }

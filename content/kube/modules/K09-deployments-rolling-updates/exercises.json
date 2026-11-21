@@ -2,7 +2,7 @@
   {
     "id": "kube-ex-k09-1",
     "code": "K09.1",
-    "title": "Viết Deployment shop-api duy trì 3 bản sao tự chữa lành",
+    "title": "Viết Deployment shop-api duy trì 3 bản sao tự phục hồi (Self-Healing)",
     "difficulty": 1,
     "tags": [
       "deployment",

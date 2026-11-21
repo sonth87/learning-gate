@@ -3,7 +3,7 @@
   "slug": "C06-services-timeouts-concurrency",
   "level": 1,
   "order": 6,
-  "title": "Service Containers (Postgres/Redis), Timeout bảo vệ ví & Concurrency",
+  "title": "Service Containers (Postgres/Redis), Giới hạn timeout-minutes & Concurrency",
   "summary": "Chạy Integration Test thực thụ với Service Containers Postgres 16 & Redis 7 có healthcheck pg_isready / redis-cli ping, khoá trần timeout-minutes bảo vệ ngân sách và chống đua lệnh bằng concurrency.",
   "tags": [
     "services",

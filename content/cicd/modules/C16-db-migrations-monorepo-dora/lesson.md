@@ -2,9 +2,9 @@
 
 Khi ứng dụng còn ở giai đoạn MVP ít người dùng lúc nửa đêm, bạn có thể chạy thẳng lệnh đổi tên cột SQL, chờ toàn bộ 12 package trong kho mã nguồn build lại từ đầu và đo năng suất bằng cảm tính. Nhưng khi bước lên **Kiến trúc Hệ thống Lớn** — phục vụ hàng chục nghìn giao dịch đồng thời với kho Monorepo gồm 8 nhóm phát triển đẩy hàng trăm PR mỗi ngày — ba bài toán hóc búa nhất sẽ xuất hiện:
 
-- [>] ****Zero-Downtime DB Migration**:** Làm sao thay đổi lược đồ SQL mà không đánh sập các Pod phiên bản cũ (`v1`) đang chạy song song cùng Pod mới (`v2`) trong lúc Rolling Update?
-- [>] ****Smart Monorepo CI**:** Làm sao chỉ chạy Lint/Test/Build cho đúng dịch vụ bị ảnh hưởng (kể cả phụ thuộc bắc cầu) thay vì đốt tiền CI vô ích?
-- [>] ****Engineering Telemetry**:** Làm sao đo lường sức khoẻ đường ống khách quan bằng bộ **4 chỉ số chuẩn công nghiệp DORA**?
+- [>] **Zero-Downtime DB Migration:** Làm sao thay đổi lược đồ SQL mà không đánh sập các Pod phiên bản cũ (`v1`) đang chạy song song cùng Pod mới (`v2`) trong lúc Rolling Update?
+- [>] **Smart Monorepo CI:** Làm sao chỉ chạy Lint/Test/Build cho đúng dịch vụ bị ảnh hưởng (kể cả phụ thuộc bắc cầu) thay vì đốt tiền CI vô ích?
+- [>] **Engineering Telemetry:** Làm sao đo lường sức khoẻ pipeline khách quan bằng bộ **4 chỉ số chuẩn công nghiệp DORA**?
 
 ```visual
 kind: illustration
@@ -73,7 +73,7 @@ right:
     - "Bắt buộc cấu hình ==`needs: [migrate]`== trên `deploy-app` và đặt **SQL Migration Linter** (`grep -E -i \"DROP COLUMN|RENAME COLUMN\"` / `squawk`) chặn lệnh phá huỷ!"
 ```
 
-Giải pháp chuẩn mực duy nhất là tách một thay đổi phá huỷ thành ==3 đợt phát hành độc lập (Expand → Switch Read → Contract)== — giống hệt cách thư viện npm đánh dấu `@deprecated` ở bản `v1.9` trước khi xoá hẳn hàm ở `v2.0`:
+Giải pháp chuẩn mực duy nhất là tách một thay đổi phá huỷ thành ==3 đợt phát hành độc lập (Expand → Switch Read → Contract)== — hãy hình dung như **xây cây cầu mới song song bên cạnh cầu cũ khi xe cộ (`Pod v1`) vẫn đang lưu thông**: phải bắc xong cầu mới, cho toàn bộ đoàn xe chuyển hẳn sang cầu mới êm xuôi 100%, rồi ở đợt cuối cùng mới tháo dỡ cây cầu cũ!
 
 ```visual
 kind: flow
@@ -153,7 +153,7 @@ steps:
 
 ## 3. Đo lường Hiệu năng Kỹ thuật bằng Bộ 4 Chỉ số DORA (Four Keys)
 
-Chương trình nghiên cứu **DORA (*DevOps Research and Assessment*)** đã chứng minh **Tốc độ (*Throughput*)** và **Tính ổn định (*Stability*)** không hề đánh đổi nhau mà củng cố lẫn nhau thông qua ==4 chỉ số chuẩn công nghiệp (Four Keys)==:
+Làm sao biết đội ngũ của bạn đang phát hành nhanh thật sự hay đang "chạy ẩu làm sập hệ thống liên miên"? Chương trình nghiên cứu **DORA (*DevOps Research and Assessment*)** cung cấp bảng đồng hồ buồng lái gồm ==4 chỉ số chuẩn công nghiệp (Four Keys)== — kết hợp hài hoà giữa **2 đồng hồ đo Chân Ga Tốc độ (*Throughput*)** và **2 đồng hồ đo Hệ thống Phanh Ổn định (*Stability*)**:
 
 ```visual
 kind: groups
@@ -178,7 +178,7 @@ items:
     desc: Mất bao lâu tính từ lúc lập trình viên tạo Commit cho tới khi chạy thực tế trên Production?
     bullets:
       - "**Nhóm Elite:** **Dưới 1 giờ**"
-      - "Phản ánh tốc độ đường ống kiểm thử song song, rà soát PR nhanh và không bị tắc nghẽn duyệt tay"
+      - "Phản ánh tốc độ pipeline kiểm thử song song, rà soát PR nhanh và không bị tắc nghẽn duyệt tay"
   - num: 3
     icon: shield-alert
     title: Change Failure Rate (CFR)
@@ -199,7 +199,7 @@ items:
       - "Còn gọi là *Failed Deployment Recovery Time* trong các báo cáo DORA mới nhất"
 ```
 
-Ngay sau job `deploy-prod` thành công (`needs: [deploy-prod]`, `if: success()`), một job nhẹ `dora-metrics` ghi nhận `commit_sha`, dấu thời gian `deployed_at` và `environment: production` sẽ biến chính đường ống CI/CD thành nguồn dữ liệu trung thực nhất để cải tiến kỹ thuật liên tục!
+Ngay sau job `deploy-prod` thành công (`needs: [deploy-prod]`, `if: success()`), một job nhẹ `dora-metrics` ghi nhận `commit_sha`, dấu thời gian `deployed_at` và `environment: production` sẽ biến chính CI/CD Pipeline thành nguồn dữ liệu trung thực nhất để cải tiến kỹ thuật liên tục!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **Expand-and-Contract 3 Pha:** Chỉ được chạy **`DROP COLUMN`** ở **Pha 3 (Contract)** sau khi đã Backfill đủ dữ liệu và 100% Pod chuyển hẳn sang cột mới; job `deploy-app` luôn phải có **`needs: [migrate]`**.

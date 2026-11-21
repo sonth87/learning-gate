@@ -3,8 +3,8 @@
   "slug": "K04-layer-cache-dockerignore",
   "level": 1,
   "order": 4,
-  "title": "Tối ưu tốc độ Build gấp 20 lần với Layer Cache & .dockerignore",
-  "summary": "Sắp xếp thứ tự COPY/RUN giữ nguyên cache npm ci, viết .dockerignore kèm ngoại lệ !README.md, kết hợp ARG + ENV và giữ sạch cache gói hệ thống.",
+  "title": "Tối ưu Tốc độ Build với Docker Layer Cache & .dockerignore",
+  "summary": "Sắp xếp thứ tự COPY/RUN giữ trọn cache thư viện (npm ci / uv sync), viết .dockerignore kèm ngoại lệ !README.md, phân biệt ARG vs ENV và giữ sạch layer gói hệ thống.",
   "tags": [
     "layer-cache",
     "dockerignore",
@@ -32,7 +32,7 @@
       "description": "Trực quan hoá cách thay đổi 1 file làm vỡ dây chuyền các layer bên dưới"
     },
     {
-      "label": "War Room: Sự cố Docker Local (#1)",
+      "label": "Xử lý Sự cố: Sự cố Docker Local (#1)",
       "kind": "incident",
       "targetId": "incident-1-local-docker",
       "description": "Thực hành chẩn đoán sự cố build Docker chậm và xung đột môi trường local"

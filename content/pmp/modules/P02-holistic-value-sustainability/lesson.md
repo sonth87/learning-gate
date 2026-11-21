@@ -1,73 +1,83 @@
-## 1. Nguyên tắc #1 — Adopt a Holistic View (`PMBOK 8 §3.3`): Hiệu ứng cánh bướm của mọi thay đổi
+## 1. Giải mã bằng ví dụ phần mềm: Output khác Outcome và Benefits ở điểm nào?
 
-[!badge:amber:PMBOK 8] hợp nhất *Systems Thinking* và *Navigate Complexity* cũ thành nguyên tắc số 1: **Tư duy Toàn diện / Hệ thống**. Một dự án không bao giờ đứng cô lập — nó là mạng lưới liên kết chặt chẽ giữa các biến số nội tại (`Scope · Schedule · Finance · Quality · Resources · Risk`) với chiến lược tổ chức và môi trường bên ngoài.
+Một lầm tưởng kinh điển của dân kỹ thuật là: *"Đội em code xong đúng 100% tính năng trong tài liệu đặc tả, không trễ một ngày, không lố một đồng ngân sách — vậy dự án chắc chắn thành công mỹ mãn!"* Dưới góc nhìn của [!badge:amber:PMBOK 8], dự án đó vẫn có thể là một **thất bại hoàn toàn** nếu tính năng vừa bàn giao không một khách hàng nào thèm bấm vào dùng!
 
-- [!] [!badge:rose:Bẫy đề thi] Khi đề bài mô tả: *"Rút ngắn lịch 2 tuần"*, *"Đổi một linh kiện nhỏ"* hay *"Chuyển 1 Senior sang dự án khác"*, đừng bao giờ chỉ sửa đúng một tài liệu đơn lẻ!
-- [x] [!badge:emerald:Phản xạ vàng] Luôn thực hiện **Holistic Impact Assessment**: đánh giá hiệu ứng dây chuyền lên **toàn bộ các ràng buộc còn lại** và khả năng tương thích với vận hành thực tế trước khi chốt phương án.
+Để hiểu rõ **Nguyên tắc #2 — Focus on Value** (`PMBOK 8 §3.4`), hãy phân biệt rạch ròi 3 mắt xích qua ví dụ dự án xây dựng **Ứng dụng Đặt lịch Khám bệnh Online** cho bệnh viện:
 
-## 2. Nguyên tắc #2 — Focus on Value (`PMBOK 8 §3.4`): Output ≠ Outcome ≠ Benefits
-
-Hoàn thành đúng hạn và đúng ngân sách một phần mềm **không một ai thèm mở lên dùng** là thất bại hoàn toàn dưới góc nhìn PMI!
+- **Output / Deliverable (*Sản phẩm bàn giao đầu ra*):** Bộ cài ứng dụng iOS/Android và hệ thống API đặt lịch đã kiểm thử xanh mượt, bàn giao đúng ngày. Đây chỉ là **phần xác kỹ thuật**.
+- **Outcome (*Kết quả thay đổi hành vi thực tế*):** 70% bệnh nhân thực sự chuyển từ cảnh xếp hàng lấy số lúc 5 giờ sáng sang thao tác đặt lịch hẹn trên điện thoại tại nhà.
+- **Benefits (*Lợi ích kinh doanh / xã hội thu về*):** Thời gian chờ trung bình giảm từ 90 phút xuống 10 phút, công suất phục vụ của bệnh viện tăng 25%, doanh thu ròng tăng thêm 8 tỷ đồng/năm (thể hiện qua các chỉ số tài chính như **NPV** — *Net Present Value / Giá trị hiện tại ròng dương*, **ROI** — *Tỷ suất hoàn vốn*).
 
 ```visual
 kind: flow
-title: "Chuỗi Chuyển hoá Giá trị (Value Delivery Chain)"
-subtitle: "PM không chỉ dừng ở bước bàn giao Deliverable mà phải hướng tới Outcome và Benefits"
-footer: "Nếu thị trường thay đổi làm gãy mắt xích Outcome/Benefits, PM phải phân tích lại Business Case và báo cáo Sponsor xem xét điều chỉnh hoặc dừng dự án có kiểm soát!"
+title: "Chuỗi Chuyển hoá Giá trị (Output → Outcome → Benefits)"
+subtitle: "Trách nhiệm của PM hiện đại là canh giữ giá trị xuyên suốt thay vì chỉ bàn giao cục code"
 steps:
   - icon: "box"
-    badge: "OUTPUT"
-    title: "Deliverable (Đầu ra)"
-    desc: "Ứng dụng di động đặt lịch khám bệnh vừa được code xong."
+    badge: "1. OUTPUT"
+    title: "Tính năng bàn giao (Deliverable)"
+    desc: "Module phần mềm được lập trình, kiểm thử và triển khai lên Production đúng hạn."
     tone: "slate"
     edge: "Người dùng đón nhận"
   - icon: "users"
-    badge: "OUTCOME"
-    title: "Kết quả sử dụng"
-    desc: "70% bệnh nhân chuyển sang đặt lịch online, giảm cảnh xếp hàng chờ đợi."
+    badge: "2. OUTCOME"
+    title: "Thay đổi hành vi người dùng"
+    desc: "Khách hàng thực sự chuyển sang dùng luồng số hoá mới một cách thuận tiện."
     tone: "sky"
-    edge: "Đo lường định kỳ"
+    edge: "Đo lường lợi ích"
   - icon: "award"
-    badge: "BENEFITS"
-    title: "Lợi ích chiến lược"
-    desc: "Tăng 25% công suất phục vụ (NPV dương) & điểm hài lòng bệnh nhân tăng vọt."
+    badge: "3. BENEFITS"
+    title: "Doanh thu & Tiết kiệm thực tế"
+    desc: "Hiện thực hoá mục tiêu trong Business Case & Benefits Management Plan (NPV > 0)."
     tone: "emerald"
 ```
 
-Để hiện thực hoá giá trị sớm và giảm rủi ro lãng phí, đề thi thường xuyên đặt bẫy giữa hai khái niệm cốt lõi trong [!badge:sky:PMA Bridge]:
+## 2. Phân biệt sắc bén `MVP` vs `MMF` khi chia nhỏ sản phẩm
 
-| Khái niệm | Mục tiêu cốt lõi | Ví dụ nhận diện trong đề PMP |
-| :--- | :--- | :--- |
-| **MVP** *(Minimum Viable Product)* | **Học hỏi & kiểm chứng giả thuyết** thị trường với nỗ lực nhỏ nhất để thu phản hồi thật. | Tung trang đích + luồng đặt hàng cơ bản trong 3 tuần để xem khách có thực sự muốn mua gói dịch vụ mới không. |
-| **MMF** *(Minimum Marketable Feature)* | **Tạo giá trị sử dụng / thương mại thực tế** từ tập tính năng hoàn chỉnh nhỏ nhất có thể phát hành. | Phát hành trọn vẹn module "Thanh toán QR một chạm" để thu phí và phục vụ người dùng ngay lập tức. |
+Khi muốn đưa sản phẩm ra thị trường sớm để tránh rủi ro xây cả năm trời trong phòng kín, đề thi PMP rất hay đặt bẫy giữa hai khái niệm viết tắt gần giống nhau là **MVP** và **MMF**:
 
-## 3. Nguyên tắc #5 (Mới) — Integrate Sustainability Within All Project Areas (`PMBOK 8 §3.7`)
+| Thuật ngữ đầy đủ | Nghĩa đời thường dễ nhớ | Mục tiêu số 1 | Ví dụ thực tế trong dự án App Giao đồ ăn |
+| :--- | :--- | :--- | :--- |
+| **MVP** *(Minimum Viable Product — Sản phẩm khả thi tối thiểu)* | **Bản thử nghiệm nhỏ nhất để HỌC** | ==Kiểm chứng giả thuyết thị trường== với chi phí thấp nhất để xem khách có nhu cầu thật không. | Dựng nhanh 1 trang web đơn giản cho đặt 5 món cơm trưa tại 1 toà nhà văn phòng trong 2 tuần để đo tỷ lệ đặt thật. |
+| **MMF** *(Minimum Marketable Feature — Tính năng thương mại tối thiểu)* | **Tính năng nhỏ nhất đủ BÁN / TẠO GIÁ TRỊ** | ==Thu tiền hoặc giải quyết trọn vẹn 1 nhu cầu== thực tế của người dùng ngay khi phát hành. | Phát hành hoàn chỉnh tính năng "Thanh toán một chạm qua Apple Pay" chạy ổn định để tăng tỷ lệ chốt đơn ngay lập tức. |
 
-Đây là nguyên tắc mới toanh của [!badge:amber:PMBOK 8] và khớp trực tiếp với miền **Business Environment 26%** của [!badge:violet:ECO 07/2026]. PM phải nhúng tư duy phát triển bền vững (*People · Planet · Prosperity / ESG*) ở **cả hai chiều không tách rời**:
+> [!TIP]
+> **Mẹo khoanh đáp án 5 giây:** Thấy đề bài nhắc đến *test a hypothesis, validate customer interest, gather early feedback under high uncertainty* → chọn ngay **MVP**! Thấy nhắc đến *deliver immediate business value, generate early revenue, usable feature set* → chọn ngay **MMF**!
+
+## 3. Tư duy Hệ thống Toàn diện (`Holistic View`) & Bền vững (`Sustainability / ESG`)
+
+Hai nguyên tắc song hành tiếp theo trong [!badge:amber:PMBOK 8] là **Nguyên tắc #1 — Adopt a Holistic View** (`§3.3`) và **Nguyên tắc #5 — Integrate Sustainability** (`§3.7`):
+
+- **Tư duy Hệ thống Toàn diện (*Holistic View*):** Dự án giống như một hệ thống microservices liên thông — hễ bạn chạm vào 1 biến số (ví dụ cắt giảm 2 tuần kiểm thử để kịp ngày ra mắt), hiệu ứng cánh bướm sẽ lập tức đập sang Chất lượng, Rủi ro bảo mật, Uy tín thương hiệu và Chi phí bảo trì sau Go-Live. Vì vậy, mọi thay đổi nhỏ đều phải được ==đánh giá tác động đa chiều (Holistic Impact Assessment)== trước khi quyết định!
+- **Tích hợp tính Bền vững (*Sustainability / ESG*):** Phù hợp với trọng số 26% Business Environment mới, PM phải tính đến tác động môi trường, con người và chi phí vận hành trọn vòng đời ở cả 2 chiều:
 
 ```visual
 kind: groups
-title: "Hai Chiều Bền vững Bắt buộc trong PMBOK® 8 §3.7"
-subtitle: "Không hy sinh môi trường, xã hội và chi phí vòng đời dài hạn để lấy thành tích ngắn hạn"
+title: "Hai Chiều Phát triển Bền vững Bắt buộc trong PMBOK® 8 §3.7"
+subtitle: "Không đánh đổi môi trường, sức khoẻ đội ngũ và chi phí vận hành dài hạn lấy thành tích ngắn hạn"
 columns: 2
 items:
   - icon: "wrench"
     title: "Sustainability OF the Project"
-    badge: "Cách làm dự án"
+    badge: "Bền vững TRONG CÁCH LÀM dự án"
     tone: "cyan"
-    desc: "Tính bền vững ngay trong quá trình triển khai và mua sắm của dự án."
+    desc: "Cách đội dự án tiêu thụ tài nguyên và đối xử với con người trong quá trình xây dựng."
     bullets:
-      - "Lựa chọn nhà thầu tuân thủ an toàn lao động, đạo đức chuỗi cung ứng và tiêu chuẩn khí thải"
-      - "Tối ưu tiêu thụ năng lượng, giảm rác thải vật liệu và bảo vệ sức khoẻ làm việc bền vững của nhóm"
+      - "Duy trì nhịp độ làm việc bền vững (Sustainable Pace), chống kiệt sức (Burnout) cho kỹ sư"
+      - "Chọn nhà cung cấp tuân thủ luật lao động, an toàn thông tin và tiêu chuẩn môi trường"
   - icon: "refresh"
     title: "Sustainability BY the Product"
-    badge: "Vòng đời sản phẩm"
+    badge: "Bền vững TỪ SẢN PHẨM tạo ra"
     tone: "emerald"
-    desc: "Tác động dài hạn của sản phẩm sau khi dự án đã đóng và bàn giao sang vận hành."
+    desc: "Hệ quả lâu dài mà sản phẩm để lại sau khi bàn giao sang bộ phận vận hành (Operations)."
     bullets:
-      - "Thiết kế sản phẩm tiết kiệm điện năng/tài nguyên đám mây, dễ bảo trì và tái chế cuối vòng đời"
-      - "Đưa rủi ro môi trường, xã hội và pháp lý ESG vào ngay Elicit Requirements & Risk Register"
+      - "Kiến trúc phần mềm tối ưu tài nguyên Cloud/điện năng, dễ bảo trì nâng cấp dài hạn"
+      - "Đưa các quy chuẩn ESG và chi phí vòng đời sản phẩm (Life-cycle Cost) vào ngay khâu thiết kế"
 ```
 
-> [!IMPORTANT] Dũng khí dừng dự án (Sunk Cost Fallacy)
-> Chi phí đã tiêu là **chi phí chìm (Sunk Cost)** — không bao giờ dùng lý do *"đã lỡ làm được 80% rồi"* để xin chạy cố một dự án không còn mang lại giá trị hoặc vi phạm chuẩn mực bền vững/pháp lý. Phản xạ đúng: ==Đánh giá lại Business Case & Benefits Management Plan → Báo cáo minh bạch lên Sponsor để tái định hướng hoặc huỷ dự án chính thức==.
+## 4. Tình huống thực chiến: Bẫy "Chi phí chìm" (`Sunk Cost`)
+
+Hãy xét tình huống cực phổ biến trong phòng thi: Công ty bạn đã chi **800.000 USD (80% ngân sách)** để phát triển cổng thanh toán nội bộ suốt 9 tháng. Đột nhiên đối thủ tung ra giải pháp chuẩn quốc tế miễn phí tích hợp trong 1 ngày, khiến sản phẩm của bạn nếu làm tiếp thêm 200.000 USD nữa cũng không còn lợi thế kinh doanh. Một thành viên đề nghị: *"Lỡ tốn 80% tiền rồi, cố làm nốt kẻo phí công!"*
+
+> [!WARNING]
+> **Tuyệt đối không sập bẫy Chi phí chìm (Sunk Cost Fallacy)!** Khoản tiền 800.000 USD đã tiêu thuộc về quá khứ và không thể lấy lại. Đổ thêm tiền tốt vào một dự án đã mất sạch `Outcome / Benefits` chỉ làm tổ chức thiệt hại nặng hơn! Phản xạ chuẩn PMI: ==Rà soát lại Business Case & Benefits Management Plan → Báo cáo minh bạch kèm dữ liệu lên Project Sponsor để xem xét tái định hướng (Pivot) hoặc đóng dự án sớm có kiểm soát==.

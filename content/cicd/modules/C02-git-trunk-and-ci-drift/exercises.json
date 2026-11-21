@@ -103,7 +103,7 @@
   {
     "id": "cicd-ex-c02-3",
     "code": "C02.3",
-    "title": "Chữa bệnh treo cứng đường ống vì Vitest chạy ở chế độ Watch Mode",
+    "title": "Chữa bệnh treo cứng pipeline vì Vitest chạy ở chế độ Watch Mode",
     "difficulty": 2,
     "tags": [
       "watch-mode",

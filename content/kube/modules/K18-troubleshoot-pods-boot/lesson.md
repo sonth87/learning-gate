@@ -1,8 +1,8 @@
-# Khám bệnh K8s Thực chiến (Phần 1): Quy trình Triage & 4 Trạng thái Kẹt Khởi động
+# Chẩn đoán lỗi K8s Thực chiến (Phần 1): Quy trình Triage & 4 Trạng thái Kẹt Khởi động
 
-Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên trạng thái `Running` xanh mướt. Nhưng trong công việc thực tế của một kỹ sư DevOps/Backend trực ca vận hành (*On-call*), 80% giá trị chuyên môn của bạn toả sáng vào khoảnh khắc bạn gõ `kubectl get pods` và nhìn thấy hàng chữ báo động: `Pending`, `ImagePullBackOff`, `CreateContainerConfigError` hay ==`CrashLoopBackOff`==!
+Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên trạng thái `Running` xanh mướt. Nhưng trong công việc thực tế của một kỹ sư Backend/DevOps trực ca vận hành (*On-call*), 80% giá trị chuyên môn của bạn tỏa sáng vào khoảnh khắc bạn gõ `kubectl get pods` và nhìn thấy hàng chữ báo động: `Pending`, `ImagePullBackOff`, `CreateContainerConfigError` hay ==`CrashLoopBackOff`==!
 
-Khi sự cố xảy ra, người mới thường hoảng loạn xoá đại Pod đi tạo lại hoặc sửa mò mẫm tệp YAML theo cảm tính. Ngược lại, kỹ sư giàu kinh nghiệm luôn tuân thủ **Quy trình Chẩn đoán 3 Bước (*3-Step K8s Triage*)** chính xác như bác sĩ đọc phim X-quang.
+Khi sự cố xảy ra, người mới thường hoảng loạn xóa đại Pod đi tạo lại hoặc sửa mò mẫm tệp YAML theo cảm tính. Ngược lại, kỹ sư chuyên nghiệp luôn tuân thủ **Phễu Chẩn đoán 3 Bước (*3-Step K8s Triage*)** chính xác như bác sĩ đọc phim X-quang.
 
 ```visual
 kind: illustration
@@ -22,13 +22,13 @@ callouts:
     tone: amber
   - num: 3
     label: "Nhánh chạy rồi sập: CrashLoopBackOff (logs --previous)"
-    desc: "Tiến trình Node.js đã chạy nhưng văng lỗi thoát != 0; dùng cờ --previous để đọc trọn vẹn Stack Trace của phiên vừa sập."
+    desc: "Tiến trình Python / Node.js đã chạy nhưng văng lỗi thoát != 0; dùng cờ --previous để đọc trọn vẹn Traceback của phiên vừa sập."
     tone: rose
 ```
 
-## 1. Quy trình Khám bệnh 3 Bước Bất biến (Không bao giờ đoán mò!)
+## 1. Quy trình chẩn đoán sự cố Pod 3 bước chuẩn (`get` → `describe` → `logs`)
 
-Mỗi khi một Pod không đạt trạng thái `READY 1/1` và `Running`, hãy gõ tuần tự từ ngoài vào trong và **rẽ nhánh chuẩn xác dựa trên việc container đã từng chạy hay chưa**:
+Mỗi khi một Pod không đạt trạng thái `READY 1/1` và `Running`, hãy gõ tuần tự từ ngoài vào trong và **rẽ nhánh chuẩn xác dựa trên việc container đã từng chạy được dòng code nào hay chưa**:
 
 ```visual
 kind: flow
@@ -52,16 +52,16 @@ steps:
     edge: nếu code ĐÃ chạy rồi sập
   - icon: terminal
     badge: Bước 3 · Nhật ký Code
-    title: Đọc Stack Trace Phiên Cũ
-    desc: Dùng cho CrashLoopBackOff, Error hoặc RESTARTS > 0 để bắt ngoại lệ JS
+    title: Đọc Traceback Phiên Cũ
+    desc: Dùng cho CrashLoopBackOff, Error hoặc RESTARTS > 0 để bắt ngoại lệ Python/JS
     code: "kubectl logs <pod> --previous"
     tone: rose
 ```
 
 > [!WARNING] Quy tắc vàng tiết kiệm 90% thời gian trực chiến!
-> Nếu Pod đang ở trạng thái **`Pending`**, **`ImagePullBackOff`** hoặc **`CreateContainerConfigError`**, container ứng dụng của bạn **chưa từng được bật lên dù chỉ 1 mili-giây**! Vì thế gõ `kubectl logs` hay `kubectl exec` lúc đó hoàn toàn vô tác dụng — câu trả lời 100% nằm ở mục ==`Events:`== cuối lệnh **`kubectl describe pod <tên-pod>`**! Trong 4 trạng thái trên, **chỉ duy nhất ==`CrashLoopBackOff`==** chứng tỏ container ứng dụng đã thực sự được khởi chạy.
+> Nếu Pod đang ở trạng thái **`Pending`**, **`ImagePullBackOff`** hoặc **`CreateContainerConfigError`**, container ứng dụng của bạn **chưa từng được bật lên dù chỉ 1 mili-giây**! Vì thế gõ `kubectl logs` hay `kubectl exec` lúc đó hoàn toàn vô tác dụng — câu trả lời 100% nằm ở mục ==`Events:`== cuối lệnh **`kubectl describe pod <tên-pod>`**! Trong 4 trạng thái trên, **chỉ duy nhất `CrashLoopBackOff`** chứng tỏ container ứng dụng đã thực sự được khởi chạy.
 
-## 2. Giải phẫu chi tiết 4 ca bệnh kẹt khởi động kinh điển
+## 2. Phân tích 4 trạng thái lỗi khởi động phổ biến
 
 Hãy đối chiếu từng trạng thái lỗi với đúng mắt xích bị tắc trong vòng đời khởi tạo Pod để bắt trúng mạch ngay từ giây đầu tiên:
 
@@ -85,47 +85,47 @@ items:
   - symptom: "3. CreateContainerConfigError (Tắc ở khâu Lắp ráp Env/Mount — kubelet)"
     badge: Thiếu ConfigMap / Secret
     tone: cyan
-    cause: "Xảy ra TRƯỚC KHI container chạy: Pod tham chiếu tới một `Secret` hoặc `ConfigMap` chưa từng được tạo trong cùng Namespace, hoặc gõ lệch tên khoá trong `secretKeyRef` / `configMapKeyRef`."
+    cause: "Xảy ra TRƯỚC KHI container chạy: Pod tham chiếu tới một `Secret` hoặc `ConfigMap` chưa từng được tạo trong cùng Namespace, hoặc gõ lệch tên khóa trong `secretKeyRef` / `configMapKeyRef`."
     fix: "Xem Events để biết thiếu chính xác tên Secret/ConfigMap hay key nào, rồi đối chiếu danh sách thực tế trong Namespace."
     cmd: kubectl describe pod <name> && kubectl get secrets,cm
-  - symptom: "4. CrashLoopBackOff (Tắc ở khâu Thực thi mã nguồn — Tiến trình Node.js)"
+  - symptom: "4. CrashLoopBackOff (Tắc ở khâu Thực thi mã nguồn — Tiến trình Python / Node.js)"
     badge: Code chạy lên rồi sập!
     tone: rose
-    cause: "Image đã tải xong, cấu hình đã nạp đủ, container chạy `node dist/server.js` nhưng văng Uncaught Exception thoát mã lỗi `!= 0` ngay lập tức! kubelet khởi động lại theo chu kỳ lùi luỹ thừa."
-    fix: "Đọc bản ghi stdout/stderr kèm dòng Stack Trace của phiên container vừa chết ngay trước đó bằng cờ `--previous` (`-p`)."
+    cause: "Image đã tải xong, cấu hình đã nạp đủ, container chạy `uvicorn` / `node` nhưng văng lỗi thoát mã `!= 0` ngay lập tức (như `ModuleNotFoundError`, `ValidationError` hay `TypeError`)! kubelet khởi động lại theo chu kỳ lùi lũy thừa."
+    fix: "Đọc bản ghi stdout/stderr kèm dòng Traceback của phiên container vừa chết ngay trước đó bằng cờ `--previous` (`-p`)."
     cmd: kubectl logs <name> --previous
 ```
 
-## 3. Giải mã chu kỳ lùi luỹ thừa & Bí quyết cờ `--previous` (`-p`) ở `CrashLoopBackOff`
+## 3. Giải mã chu kỳ lùi lũy thừa & Bí quyết cờ `--previous` (`-p`) ở `CrashLoopBackOff`
 
-Khi một ứng dụng Node.js bị lỗi lúc khởi động (chẳng hạn bản phát hành mới `2.0.0-crash` quên kiểm tra biến `undefined` dẫn tới `TypeError: Cannot read properties of undefined`), container bật lên trong `0.2 giây` rồi chết. Để tránh một container lỗi liên tục đốt cháy 100% CPU của Worker Node, `kubelet` áp dụng thuật toán **Lùi luỹ thừa nhân đôi (*Exponential Backoff*)**:
+Khi ứng dụng bị lỗi lúc khởi động (ví dụ thiếu biến môi trường làm `pydantic-settings` của FastAPI báo lỗi hoặc `TypeError` trong Node.js), container bật lên trong `0.2 giây` rồi chết. Để tránh một container lỗi liên tục đốt cháy 100% CPU của Worker Node, `kubelet` áp dụng thuật toán **Lùi lũy thừa nhân đôi (*Exponential Backoff*)**:
 
 ```visual
 kind: flow
-title: Quy Luật Lùi Luỹ Thừa (Exponential Backoff) & Cách Bắt Trọn Stack Trace
+title: Quy Luật Lùi Lũy Thừa (Exponential Backoff) & Cách Bắt Trọn Stack Trace
 subtitle: "Thời gian chờ khởi động lại nhân đôi liên tiếp và chạm trần tối đa ở 5 phút (300 giây)"
 steps:
   - icon: flame
     badge: 0.2s đầu tiên
     title: Tiến Trình Sập (Exit != 0)
-    desc: Node.js văng ngoại lệ chưa bắt (Uncaught Exception) và thoát lỗi ngay
+    desc: Ứng dụng văng ngoại lệ chưa bắt (Traceback / Uncaught Exception) và thoát lỗi ngay
     code: "Exit Code: 1"
     tone: rose
     edge: kubelet hãm phanh
   - icon: refresh
     badge: Nhân đôi chu kỳ nghỉ
     title: Exponential Backoff
-    desc: Nghỉ tăng dần luỹ thừa 10s -> 20s -> 40s -> 80s -> 160s...
+    desc: Nghỉ tăng dần lũy thừa 10s -> 20s -> 40s -> 80s -> 160s...
     code: "10s -> 20s -> 40s..."
     tone: amber
-    edge: khoá trần tối đa
+    edge: khóa trần tối đa
   - icon: shield
     badge: Trần chờ 300s
     title: Chạm Trần 5 Phút
     desc: Thời gian chờ tối đa giữ ở mức 5 phút (300s) giữa mỗi lần thử bật lại
     code: "Max delay: 5m (300s)"
     tone: cyan
-    edge: truy xuất xác cũ
+    edge: truy xuất phiên cũ
   - icon: terminal
     badge: Cờ sống còn --previous
     title: Bắt Tận Tay Stack Trace
@@ -134,20 +134,24 @@ steps:
     tone: emerald
 ```
 
-Nếu bạn chỉ gõ `kubectl logs <pod>` đúng lúc `kubelet` vừa tạo container mới chưa kịp in lỗi, màn hình có thể trống trơn. Thêm cờ ==`--previous`== (viết tắt `-p`) là chìa khoá bắt buộc:
+Nếu bạn chỉ gõ `kubectl logs <pod>` đúng lúc `kubelet` vừa tạo container mới chưa kịp in lỗi, màn hình có thể trống trơn. Thêm cờ ==`--previous`== (viết tắt `-p`) là chìa khóa bắt buộc:
 
 ```bash
 kubectl logs order-worker-10001 --previous
 ```
 
-## 4. Hướng dẫn làm các bài tập Thực hành Khám bệnh (`Troubleshoot`) ở Module này
+> [!TIP] Tăng tốc khám bệnh gấp 5 lần trên Terminal thực tế với `k9s` & `kubectl debug`
+> - Trong công cụ giao diện TUI **`k9s`**, bạn chỉ cần di vệt sáng vào Pod đang đỏ rồi bấm phím **`d`** (tương đương `describe`), phím **`l`** (xem `logs`) hoặc phím **`p`** (xem ngay `logs --previous`!) trong 0.5 giây!
+> - Nếu gặp container tối giản (như Distroless) không có `/bin/sh` để gõ `exec`, K8s hiện đại cung cấp lệnh **`kubectl debug -it <pod> --image=busybox:1.36`** để gắn tạm một container chẩn đoán vào chung không gian mạng với Pod đó!
+
+## 4. Hướng dẫn thực hành chẩn đoán & khắc phục lỗi (`Troubleshoot`)
 
 Trong 4 ca trực chiến `K18.1` → `K18.4` ngay sau bài học:
 
-- [x] **Bước 1 — Khám bệnh bằng Terminal thật:** Bạn được cung cấp một **Khung Terminal Chẩn đoán** kết nối trực tiếp vào cụm mô phỏng đang gặp sự cố. Hãy gõ lệnh khám bệnh trước (`kubectl get pods`, `kubectl describe pod ...`, `kubectl get pvc`, `kubectl logs ... --previous`) để tự mắt tìm ra bằng chứng lỗi thay vì đoán mò!
+- [x] **Bước 1 — Chẩn đoán lỗi bằng Terminal thật:** Bạn được cung cấp một **Khung Terminal Chẩn đoán** kết nối trực tiếp vào cụm mô phỏng đang gặp sự cố. Hãy gõ lệnh chẩn đoán lỗi trước (`kubectl get pods`, `kubectl describe pod ...`, `kubectl get pvc`, `kubectl logs ... --previous`) để tự mắt tìm ra bằng chứng lỗi thay vì đoán mò!
 - [x] **Bước 2 — Nộp bản vá YAML:** Sau khi xác định đúng thủ phạm gốc rễ, hãy sửa cấu hình YAML ở trình soạn thảo bên dưới và bấm chấm điểm — bộ mô phỏng sẽ tự động `apply` bản vá và kiểm tra các Pod chuyển sang **`Running` (`Ready`)** xanh mướt!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **`Pending`**, **`ImagePullBackOff`**, **`CreateContainerConfigError`** xảy ra **TRƯỚC KHI container chạy** → Bắt buộc dùng **`kubectl describe pod <pod>`** đọc mục **`Events`** (không có `logs`!).
-> - **`CrashLoopBackOff`** là trạng thái duy nhất trong 4 trạng thái trên mà **code đã chạy thật rồi sập** → Nghỉ lùi luỹ thừa **`10s → 20s → 40s...` (tối đa `5m` / `300s`)** → Dùng **`kubectl logs <pod> --previous`**!
+> - **`CrashLoopBackOff`** là trạng thái duy nhất trong 4 trạng thái trên mà **code đã chạy thật rồi sập** → Nghỉ lùi lũy thừa **`10s → 20s → 40s...` (tối đa `5m` / `300s`)** → Dùng **`kubectl logs <pod> --previous`**!
 > - Gặp `pod has unbound immediate PersistentVolumeClaims` → Kiểm tra ngay `kubectl get pvc` và `kubectl get storageclass`.

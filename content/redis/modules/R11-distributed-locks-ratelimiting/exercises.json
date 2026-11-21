@@ -251,7 +251,7 @@
     "id": "redis-ex-r11-5",
     "code": "R11.5",
     "module": "R11",
-    "title": "Lua Atomic Inventory / Token Guard chống bán lố (Overselling)",
+    "title": "Lua Atomic Inventory / Token Guard chống vượt tồn kho (oversell) (Overselling)",
     "difficulty": 3,
     "tags": [
       "lua",

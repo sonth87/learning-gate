@@ -3,7 +3,7 @@
   "slug": "R07-lua-atomic-scripting",
   "level": 2,
   "order": 1,
-  "title": "Lua Scripting & Redis Functions: Triệt tiêu Race Condition trong 1 nhịp nguyên tử",
+  "title": "Lua Scripting & Redis Functions: Thực thi Nguyên tử Chống Race Condition",
   "summary": "Nhúng logic đọc-kiểm-tra-sửa chạy thẳng bên trong bộ nhớ Redis bằng EVAL/EVALSHA, làm chủ trừ tồn kho Flash-Sale, mở khoá phân tán an toàn và kỷ luật KEYS[] vs ARGV[].",
   "tags": [
     "lua",
@@ -33,7 +33,7 @@
       "description": "Quan sát trực quan vì sao xoá khoá không kiểm tra owner token bằng Lua gây tai nạn kép"
     },
     {
-      "label": "War Room: Sự cố DEL nhầm khoá phân tán của Worker khác",
+      "label": "Xử lý Sự cố: Sự cố DEL nhầm khoá phân tán của Worker khác",
       "kind": "incident",
       "targetId": "inc-unsafe-lock-del",
       "description": "Phân tích dòng thời gian vụ đụng độ thanh toán đúp do thiếu kịch bản Lua 4 dòng"

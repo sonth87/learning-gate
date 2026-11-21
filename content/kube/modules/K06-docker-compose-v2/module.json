@@ -3,7 +3,7 @@
   "slug": "K06-docker-compose-v2",
   "level": 1,
   "order": 6,
-  "title": "Điều phối đa dịch vụ tại máy cá nhân với Docker Compose v2",
+  "title": "Điều phối Đa dịch vụ Cục bộ với Docker Compose v2",
   "summary": "Viết compose.yaml hiện đại không còn khoá version:, nối mạng qua tên dịch vụ, bảo toàn dữ liệu Postgres bằng Named Volume và chờ DB sẵn sàng với service_healthy.",
   "tags": [
     "compose-v2",

@@ -2,7 +2,7 @@
   {
     "id": "R16-FC1",
     "front": "4 lớp phòng thủ chuẩn Zero-Trust cho cụm Redis Production gồm những gì?",
-    "back": "1. **Cô lập Mạng:** `bind` IP nội bộ + `protected-mode yes` + K8s `NetworkPolicy`.\n2. **Mã hoá Đường truyền:** `port 0` + `tls-port 6379` + `tls-auth-clients yes` (mTLS).\n3. **Định danh & Khoá Hạt mịn:** `user default off` + tài khoản **ACL** riêng từng dịch vụ (`~prefix:*`).\n4. **Chặn Lệnh Huỷ diệt:** `-@dangerous` / `rename-command FLUSHALL \"\"`."
+    "back": "1. **Cô lập Mạng:** `bind` IP nội bộ + `protected-mode yes` + K8s `NetworkPolicy`.\n2. **Mã hoá Đường truyền:** `port 0` + `tls-port 6379` + `tls-auth-clients yes` (mTLS).\n3. **Định danh & Khoá chi tiết:** `user default off` + tài khoản **ACL** riêng từng dịch vụ (`~prefix:*`).\n4. **Chặn Lệnh Huỷ diệt:** `-@dangerous` / `rename-command FLUSHALL \"\"`."
   },
   {
     "id": "R16-FC2",

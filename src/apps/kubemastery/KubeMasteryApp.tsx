@@ -1,13 +1,18 @@
-import React, { useCallback, useEffect } from 'react';
-import { useStore, useMenuAction, useContextAction } from '@sonth87/device-layout';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useMenuAction, useContextAction } from '@sonth87/device-layout';
 import { switchLearningApp, type LearningAppId } from '@/apps/appRegistry';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
-import { useKubeProgress } from '@/features/devops-course/store';
+import { useCourseCurriculum } from '@/features/devops-course/data';
+import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useKubeNav, useKubeProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
+import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { useKubeStore } from './store/useKubeStore';
 import { AnimatedFlowType, KubeTab } from './types/kube.types';
+import { KUBE_BLUEPRINTS, KUBE_LEVEL_TITLES } from './data/kubeScaleCurator';
 import { KubeHeader } from './components/KubeHeader';
 import { KubeMobileBottomNav } from './components/KubeMobileBottomNav';
 import { CurriculumView } from './components/CurriculumView';
@@ -27,12 +32,25 @@ export interface KubeMasteryAppProps {
 }
 
 export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
-  const { activeTab, setActiveTab, setSearchOpen, openFlowInStudio, openIncidentInWarRoom } = useKubeStore();
+  const { activeTab, setActiveTab, openFlowInStudio, openIncidentInWarRoom } = useKubeStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateKube = useKubeProgress((s) => s.hydrate);
-  const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
-  const isLight = deviceResolvedScheme === 'light';
+  const goKube = useKubeNav((s) => s.go);
+
+  const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const setSearchPaletteOpen = useWorkbenchStore((s) => s.setSearchPaletteOpen);
+  const setCourseCursor = useWorkbenchStore((s) => s.setCourseCursor);
+  const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
+
+  const { data: cur } = useCourseCurriculum('kube');
+  const scaleLessons = useMemo(
+    () =>
+      cur
+        ? buildDevOpsScaleLessons('kube', cur, KUBE_LEVEL_TITLES, KUBE_BLUEPRINTS)
+        : [],
+    [cur]
+  );
 
   useEffect(() => {
     hydrateKube();
@@ -41,15 +59,18 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
   const handleAction = useCallback(
     (action: string) => {
       if (action === 'quickSearch') {
-        setSearchOpen(true);
+        setSearchPaletteOpen(true, 'kubemastery');
       } else if (action === 'openSettings') {
         setSettingsOpen(true);
       } else if (action.startsWith('tab:')) {
         const tab = action.replace('tab:', '') as KubeTab;
         setActiveTab(tab);
+        if (tab === 'learn') {
+          goKube({ name: 'workbench' });
+        }
       }
     },
-    [setActiveTab, setSearchOpen, setSettingsOpen]
+    [goKube, setActiveTab, setSearchPaletteOpen, setSettingsOpen]
   );
 
   useMenuAction('kubemastery', handleAction, windowId);
@@ -70,12 +91,14 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
     [openFlowInStudio, openIncidentInWarRoom, setActiveTab]
   );
 
+  const isLight = workbenchTheme === 'light';
+
   return (
     <div
       onClick={() => hideTermPopover(false)}
       className={cn(
-        'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
-        isLight ? 'pylearn-light' : 'pylearn-dark'
+        'pylearn-root dts-shell @container/app relative w-full h-full min-h-0 min-w-0 bg-[var(--dts-canvas)] text-[var(--dts-ink)] flex flex-col overflow-hidden transition-colors duration-200 select-text',
+        isLight ? 'pylearn-light dts-light' : 'pylearn-dark dts-dark'
       )}
     >
       <KubeHeader windowId={windowId} />
@@ -118,6 +141,33 @@ export const KubeMasteryApp: React.FC<KubeMasteryAppProps> = ({ windowId }) => {
       <KubeMobileBottomNav />
       <TermPopover />
       <NotesDrawer />
+      <ScaleCommandPalette
+        courseId="kubemastery"
+        lessons={scaleLessons}
+        onSelectLessonStep={(moduleId, stepIdx) => {
+          const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+          const stepObj = lesson?.steps[stepIdx];
+          setCourseCursor(
+            'kubemastery',
+            moduleId,
+            stepIdx,
+            lesson && stepObj
+              ? {
+                  moduleTitleVi: lesson.title.vi,
+                  moduleTitleEn: lesson.title.en,
+                  stepTitleVi: stepObj.title.vi,
+                  stepTitleEn: stepObj.title.en,
+                }
+              : undefined
+          );
+          if (lesson) setExpandedLevel('kubemastery', lesson.level);
+          setActiveTab('learn');
+          goKube({ name: 'workbench' });
+        }}
+        onSelectGlossaryTerm={() => {
+          setActiveTab('glossary');
+        }}
+      />
       <SettingsModal />
     </div>
   );

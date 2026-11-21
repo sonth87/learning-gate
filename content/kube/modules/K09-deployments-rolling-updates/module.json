@@ -3,8 +3,8 @@
   "slug": "K09-deployments-rolling-updates",
   "level": 2,
   "order": 9,
-  "title": "Deployment, Tự chữa lành, Rolling Update không gián đoạn & Rollback",
-  "summary": "Quản lý vòng đời Pod bất tử qua Deployment & ReplicaSet, khớp nối selector.matchLabels, cấu hình RollingUpdate Zero-Downtime và cứu hoả bằng rollout undo.",
+  "title": "Deployment, Tự phục hồi (Self-Healing), Rolling Update & Rollback",
+  "summary": "Quản lý vòng đời Pod tự phục hồi (Self-Healing) qua Deployment & ReplicaSet, khớp nối selector.matchLabels, cấu hình RollingUpdate Zero-Downtime và khôi phục khẩn cấp bằng rollout undo.",
   "tags": [
     "deployment",
     "replicaset",
@@ -35,7 +35,7 @@
       "label": "Thực nghiệm trên Mô phỏng Cụm",
       "kind": "tab",
       "targetId": "cluster-sim",
-      "description": "Thử nghiệm giết Pod bất kỳ để xem Deployment tự chữa lành tức khắc"
+      "description": "Thử nghiệm giết Pod bất kỳ để xem Deployment tự phục hồi (Self-Healing) tức khắc"
     }
   ],
   "readings": [

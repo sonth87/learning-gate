@@ -3,8 +3,8 @@
   "slug": "P07-governance-change-data",
   "level": 3,
   "order": 1,
-  "title": "Miền Governance: Thẩm quyền Charter, Kiểm soát Thay đổi (PICC) & Dòng dữ liệu",
-  "summary": "Nắm trọn Miền hiệu suất #1 Governance của PMBOK 8 (9 quy trình): mốc trao thẩm quyền chính thức qua Project Charter, chuỗi bất biến xử lý Change Request qua CCB, hành trình biến dữ liệu thô thành báo cáo (WPD → WPI → WPR), quản trị tri thức và quy trình đóng dự án chuẩn mực.",
+  "title": "Governance Domain: Project Charter, Kiểm soát Thay đổi (CCB) & Luồng Dữ liệu",
+  "summary": "Nắm trọn Performance Domain #1 Governance của PMBOK 8 (9 quy trình): mốc trao thẩm quyền chính thức qua Project Charter, chuỗi bất biến xử lý Change Request qua CCB, hành trình biến dữ liệu thô thành báo cáo (WPD → WPI → WPR), quản trị tri thức và quy trình đóng dự án chuẩn mực.",
   "motto": "Charter Grants Authority · Assess Before CCB · Follow WPD → WPI → WPR",
   "provenance": [
     {

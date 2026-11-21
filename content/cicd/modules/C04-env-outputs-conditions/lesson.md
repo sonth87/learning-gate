@@ -1,13 +1,13 @@
 # Biến môi trường, `$GITHUB_OUTPUT`, Điều kiện `if` & Bộ lọc đường dẫn
 
-Một tệp workflow tĩnh chỉ chạy một mạch từ đầu tới cuối giống như một hàm JavaScript không có tham số, không có `return` và không có `if/else`. Để biến đường ống CI thành cỗ máy điều phối thông minh — biết truyền mã phiên bản giữa các bước, biết tự thu gom ảnh chụp lỗi khi bài kiểm thử E2E vấp ngã, và biết "ngủ yên" tiết kiệm tiền khi đồng nghiệp chỉ sửa dấu chấm câu trong `README.md` — bạn cần làm chủ 4 công cụ điều khiển luồng cốt lõi của GitHub Actions.
+Một tệp workflow tĩnh chỉ chạy một mạch từ đầu tới cuối giống như một hàm JavaScript không có tham số, không có `return` và không có `if/else`. Để biến CI Pipeline thành cỗ máy điều phối thông minh — biết truyền mã phiên bản giữa các bước, biết tự thu gom ảnh chụp lỗi khi bài kiểm thử E2E vấp ngã, và biết "ngủ yên" tiết kiệm tiền khi đồng nghiệp chỉ sửa dấu chấm câu trong `README.md` — bạn cần làm chủ 4 công cụ điều khiển luồng cốt lõi của GitHub Actions.
 
 ```visual
 kind: illustration
 diagram: "cicd:c04"
 alt: "Tháp ưu tiên 3 tầng biến môi trường env, truyền kết quả xuyên Job qua tệp $GITHUB_OUTPUT và các chốt chặn điều kiện if: failure / always"
 title: "Giải Phẫu Điều Khiển Luồng: Phạm Vi Biến env, Trạm Tiếp Sức $GITHUB_OUTPUT & Cổng if:"
-subtitle: "Truyền dữ liệu an toàn xuyên suốt các bước/Job và điều hướng thông minh khi đường ống gặp sự cố hoặc chỉ sửa tài liệu"
+subtitle: "Truyền dữ liệu an toàn xuyên suốt các bước/Job và điều hướng thông minh khi pipeline gặp sự cố hoặc chỉ sửa tài liệu"
 caption: "Thứ tự ưu tiên ghi đè biến môi trường (Step > Job > Workflow), luồng xuất biến qua $GITHUB_OUTPUT và các hàm điều kiện trạng thái thực thi"
 callouts:
   - num: 1
@@ -16,7 +16,7 @@ callouts:
     tone: sky
   - num: 2
     label: "Truyền dữ liệu xuyên Step & Job qua $GITHUB_OUTPUT"
-    desc: "Ghi cặp key=value vào tệp môi trường $GITHUB_OUTPUT (thay cho ::set-output cũ đã khai tử) và khai báo jobs.<id>.outputs để Job sau đọc."
+    desc: "Ghi cặp key=value vào tệp môi trường $GITHUB_OUTPUT (thay cho ::set-output cũ đã loại bỏ) và khai báo jobs.<id>.outputs để Job sau đọc."
     tone: cyan
   - num: 3
     label: "Chốt chặn điều kiện if: & Bộ lọc đường dẫn paths-ignore"
@@ -70,8 +70,8 @@ jobs:
 
 Trong CI, mỗi Step là một tiến trình subshell riêng nên gõ `export SHA=abc` ở Step 1 sẽ biến mất sạch khi sang Step 2!
 
-> [!WARNING] Cảnh báo bảo mật: Khai tử vĩnh viễn lệnh `::set-output` cũ!
-> Trước năm 2023, nhiều tài liệu cũ hướng dẫn in ra màn hình `echo "::set-output name=sha::abc"`. GitHub đã **gỡ bỏ hoàn toàn `::set-output`** do lỗ hổng **Command Injection** (dữ liệu đầu vào chứa ký tự xuống dòng có thể tiêm lệnh giả mạo vào Runner).
+> [!WARNING] Cảnh báo bảo mật: Loại bỏ vĩnh viễn lệnh `::set-output` cũ!
+> Trước năm 2023, nhiều tài liệu cũ hướng dẫn in chuỗi lệnh đặc biệt `::set-output` thẳng ra màn hình `stdout`. GitHub đã **gỡ bỏ hoàn toàn cơ chế cũ đó** do lỗ hổng **Command Injection** (dữ liệu đầu vào chứa ký tự xuống dòng `\n` có thể tiêm lệnh giả mạo vào Runner).
 
 Chuẩn bắt buộc năm 2026 là gắn định danh `id:` cho Step phát dữ liệu và ghi nối (`>>`) cặp `key=value` vào tệp môi trường ==`"$GITHUB_OUTPUT"`== (hoặc ghi vào ==`"$GITHUB_ENV"`== nếu muốn tiêm biến môi trường động cho các Step phía sau trong cùng Job):
 
@@ -113,7 +113,7 @@ steps:
 
 ## 3. Biểu thức điều kiện `if:` và 4 hàm kiểm tra trạng thái sống còn
 
-Mặc định mọi Step mang điều kiện ngầm là `if: success()`. Để kiểm soát các nhánh rẽ như chỉ phát hành khi gộp vào `main` (`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`) hoặc cứu hộ dữ liệu khám nghiệm lỗi, bạn cần nắm chắc **4 hàm trạng thái**:
+Mặc định mọi Step mang điều kiện ngầm là `if: success()`. Để kiểm soát các nhánh rẽ như chỉ phát hành khi gộp vào `main` (`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`) hoặc khôi phục dữ liệu khám nghiệm lỗi, bạn cần nắm chắc **4 hàm trạng thái**:
 
 ```visual
 kind: groups
@@ -122,7 +122,7 @@ columns: 2
 items:
   - num: 1
     icon: check
-    title: "success() (Mặc định ngầm)"
+    title: "success() — Mặc định ngầm"
     badge: "Khi mọi bước trước đều xanh"
     tone: emerald
     bullets:

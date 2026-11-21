@@ -3,7 +3,7 @@
   "slug": "C12-oidc-keyless-cloud",
   "level": 3,
   "order": 12,
-  "title": "Xác thực Đám mây Không Khoá Tĩnh (Keyless OIDC), Chính sách Tin cậy IAM & Chứng thực Nguồn gốc Bản dựng",
+  "title": "Xác thực Cloud với Keyless OIDC, IAM Trust Policy & SLSA Provenance",
   "summary": "Xoá bỏ vĩnh viễn AWS_ACCESS_KEY_ID dài hạn bằng liên kết danh tính OpenID Connect (id-token: write), khoá chặt điều kiện sub trong IAM Trust Policy và ký chứng thực SLSA Provenance.",
   "tags": [
     "oidc",
@@ -27,7 +27,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room B3: Ứng cứu lộ Secret & Chuyển sang OIDC",
+      "label": "Xử lý Sự cố B3: Ứng cứu lộ Secret & Chuyển sang OIDC",
       "kind": "warroom",
       "targetId": "warroom-b3-secret-leak"
     },

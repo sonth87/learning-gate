@@ -1,6 +1,6 @@
 # Viết GitHub Actions Workflow đầu tiên chuẩn 2026
 
-Sau khi nắm vững Exit Code, Ephemeral Runner và kỷ luật đồng bộ môi trường, giờ là lúc bạn tự tay viết hoàn chỉnh một tệp **GitHub Actions Workflow chuẩn công nghiệp năm 2026** từ con số 0. Trên mạng hiện nay vẫn tràn ngập các bài hướng dẫn cũ từ 2020–2022 khuyên dùng `actions/checkout@v2` hay `node-version: 16` — nếu sao chép nguyên xi vào dự án hôm nay, đường ống sẽ lập tức báo lỗi đỏ vì runtime Node 12/16 trên Hosted Runner đã chính thức ngừng hỗ trợ (EOL)!
+Sau khi nắm vững Exit Code, Ephemeral Runner và kỷ luật đồng bộ môi trường, giờ là lúc bạn tự tay viết hoàn chỉnh một tệp **GitHub Actions Workflow chuẩn công nghiệp năm 2026** từ con số 0. Trên mạng hiện nay vẫn tràn ngập các bài hướng dẫn cũ từ 2020–2022 khuyên dùng các thẻ Action đời cũ (`v1`–`v3`) hay `node-version: 16` — nếu sao chép nguyên xi vào dự án hôm nay, pipeline sẽ lập tức báo lỗi đỏ vì runtime Node 12/16 nhúng trên Hosted Runner đã chính thức ngừng hỗ trợ (EOL)!
 
 ```visual
 kind: illustration
@@ -118,8 +118,8 @@ Các JavaScript Actions chạy trực tiếp trên runtime Node.js nhúng của 
 
 | Thành phần | Di sản lỗi thời (2020–2022) | Chuẩn 2026 bắt buộc | Lý do kỹ thuật cốt lõi |
 | :--- | :--- | :--- | :--- |
-| **Tải mã nguồn Git** | `actions/checkout@v2` / `@v3` | **`actions/checkout@v4`** | Chạy trên runtime Node 20+ mới, mặc định shallow clone `fetch-depth: 1` cực nhanh |
-| **Cài đặt Node.js** | `actions/setup-node@v2` / `@v3` | **`actions/setup-node@v4`** | Tương thích mượt Node 22 LTS, tích hợp sẵn bộ đệm `~/.npm` chỉ bằng 1 dòng |
+| **Tải mã nguồn Git** | Thẻ `checkout` đời cũ (`v1`–`v3`) | **`actions/checkout@v4`** | Chạy trên runtime Node 20+ mới, mặc định shallow clone `fetch-depth: 1` cực nhanh |
+| **Cài đặt Node.js** | Thẻ `setup-node` đời cũ (`v1`–`v3`) | **`actions/setup-node@v4`** | Tương thích mượt Node 22 LTS, tích hợp sẵn bộ đệm `~/.npm` chỉ bằng 1 dòng |
 | **Phiên bản Node** | `14`, `16`, `18` (đã EOL) | **`"22"` (Active/Maintenance LTS)** | Vá bảo mật V8 mới nhất, hỗ trợ sẵn native `fetch`, `--env-file` và ESM/CJS |
 
 > [!WARNING] Điều kiện bắt buộc khi bật `cache: "npm"` trên `actions/setup-node@v4`
@@ -194,8 +194,9 @@ jobs:
       - run: npm test
 ```
 
-> [!TIP] Hành vi giá trị mặc định của `workflow_dispatch`
-> Khi kỹ sư mở tab **Actions -> Run workflow** và bấm chạy ngay mà không chỉnh sửa ô chọn, `${{ inputs.target_env }}` tự động nhận giá trị `default: "staging"` (lệnh `echo` phía trên sẽ in ra chính xác `Target=staging`).
+> [!TIP] Hành vi giá trị mặc định của `workflow_dispatch` & Mở rộng sang Python / Go
+> - Khi kỹ sư mở tab **Actions -> Run workflow** và bấm chạy ngay mà không chỉnh sửa ô chọn, `${{ inputs.target_env }}` tự động nhận giá trị `default: "staging"` (lệnh `echo` phía trên sẽ in ra chính xác `Target=staging`).
+> - Nếu ngày mai bạn chuyển sang dự án **Python** hay **Go**, bộ khung YAML phía trên giữ nguyên 95%: chỉ cần thay bước `setup-node@v4` + `npm ci` bằng `astral-sh/setup-uv@v5` (`enable-cache: true`) + `uv sync --frozen && uv run ruff check . && uv run pytest` (cho Python), hoặc `actions/setup-go@v5` + `go test ./...` (cho Go)!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - Đặt tệp tại **`.github/workflows/*.yml`**, thụt lề bằng **2 dấu cách** (không dùng Tab).

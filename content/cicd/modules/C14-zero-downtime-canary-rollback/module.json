@@ -3,7 +3,7 @@
   "slug": "C14-zero-downtime-canary-rollback",
   "level": 4,
   "order": 14,
-  "title": "Zero-Downtime, Canary, Blue-Green & Rollback Tự động",
+  "title": "Triển khai Zero-Downtime: Rolling Update, Blue-Green, Canary & Rollback Tự động",
   "summary": "Đóng gói thẻ Image bất biến theo Git SHA, điều phối lưu lượng không gián đoạn với Argo Rollouts (Blue-Green / Canary), hậu kiểm Smoke Test và tự động quay lui khi sự cố xảy ra.",
   "tags": [
     "zero-downtime",

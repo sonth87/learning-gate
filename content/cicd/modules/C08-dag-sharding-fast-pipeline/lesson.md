@@ -1,12 +1,12 @@
-# Tối ưu Tốc độ Đường ống: Đồ thị DAG, Chia mảnh Sharding, Cache Docker Buildx & Xoá bỏ Sleep Mù quáng
+# Tối ưu Tốc độ Pipeline: Đồ thị DAG, Chia mảnh Sharding, Cache Docker Buildx & Xoá bỏ Sleep Mù quáng
 
-Khi dự án Node.js mới khởi tạo ở tháng đầu tiên, toàn bộ đường ống CI chỉ mất vỏn vẹn 90 giây. Nhưng 12 tháng sau, khi đội ngũ tăng lên 15 kỹ sư với 400 bài kiểm thử E2E Playwright và ảnh Docker đa tầng, đường ống dễ phình to lên tới **42 phút**! Lập trình viên đẩy PR xong bỏ đi pha cà phê, chuyển ngữ cảnh làm việc khác, mỗi lần sửa 1 dòng chính tả lại chờ thêm 42 phút.
+Khi dự án Node.js mới khởi tạo ở tháng đầu tiên, toàn bộ CI Pipeline chỉ mất vỏn vẹn 90 giây. Nhưng 12 tháng sau, khi đội ngũ tăng lên 15 kỹ sư với 400 bài kiểm thử E2E Playwright và ảnh Docker đa tầng, pipeline dễ phình to lên tới **42 phút**! Lập trình viên đẩy PR xong bỏ đi pha cà phê, chuyển ngữ cảnh làm việc khác, mỗi lần sửa 1 dòng chính tả lại chờ thêm 42 phút.
 
-Trong bài tổng kết tốc độ này, chúng ta áp dụng ==Tư duy Đường găng (Critical Path Analysis)== để chẻ nhỏ và ép đường ống 42 phút xuống dưới **6 phút** bằng 4 đòn bẩy thực chiến chuẩn 2026!
+Trong bài tổng kết tốc độ này, chúng ta áp dụng ==Tư duy Đường găng (Critical Path Analysis)== để chẻ nhỏ và ép pipeline 42 phút xuống dưới **6 phút** bằng 4 đòn bẩy thực chiến chuẩn 2026!
 
 ```visual
 kind: compare
-title: "Đối Chiếu Kiến Trúc: Đường Ống Nối Đuôi 42 Phút vs DAG + Sharding Dưới 6 Phút"
+title: "Đối Chiếu Kiến Trúc: Pipeline Nối Đuôi 42 Phút vs DAG + Sharding Dưới 6 Phút"
 subtitle: "Tổng thời gian chờ của lập trình viên không phụ thuộc vào tổng số việc, mà phụ thuộc vào nhánh dài nhất (Critical Path)!"
 left:
   badge: "CHẬM CHẠP · Nối tiếp tuần tự (Serial)"
@@ -48,9 +48,9 @@ right:
 kind: illustration
 diagram: "cicd:c08"
 alt: "Nén đường găng Critical Path từ 42 phút tuần tự xuống 5 phút nhờ DAG song song, chia mảnh Playwright 4 Shards, Buildx Cache và cổng hội tụ Gate"
-title: "Giải Phẫu Nén Đường Găng: Ép Đường Ống 42 Phút Xuống Dưới 5 Phút!"
+title: "Giải Phẫu Nén Đường Găng: Ép Pipeline 42 Phút Xuống Dưới 5 Phút!"
 subtitle: "Phá vỡ nút thắt tuần tự bằng chia mảnh E2E Sharding, bộ đệm lớp Docker Buildx và một cổng tổng hợp duy nhất"
-caption: "So sánh trực diện đường ống nối đuôi 42 phút với kiến trúc quạt rộng song song kết hợp chia 4 mảnh kiểm thử và cổng hội tụ All-Green Gate"
+caption: "So sánh trực diện pipeline nối đuôi 42 phút với kiến trúc quạt rộng song song kết hợp chia 4 mảnh kiểm thử và cổng hội tụ All-Green Gate"
 callouts:
   - num: 1
     label: "Phá bỏ sleep mù quáng & Bật Buildx Layer Cache"
@@ -134,7 +134,7 @@ e2e-playwright:
 > [!WARNING] Quên `if: ${{ !cancelled() }}` là mất trắng báo cáo đúng lúc cần nhất!
 > Mặc định mọi Step mang điều kiện ngầm `if: success()`. Nếu không khai báo rõ ==`if: ${{ !cancelled() }}`== (hoặc `if: always()`) trên bước `actions/upload-artifact@v4`, ngay khi `npx playwright test` phát hiện lỗi và trả mã thoát `1`, bước tải báo cáo phía dưới sẽ bị **bỏ qua (`skipped`)** — khiến bạn mất sạch ảnh chụp màn hình lỗi!
 
-## 3. Bộ đệm Docker Buildx (`type=gha,mode=max`) & Khai tử `sleep 30` mù quáng
+## 3. Docker Buildx Cache (`type=gha,mode=max`) & Thay `sleep` cố định bằng Healthcheck
 
 ```visual
 kind: groups
@@ -163,7 +163,7 @@ items:
   - num: 2
     icon: activity
     title: "Thăm dò Sẵn sàng Xác định (Polling)"
-    badge: "Khai tử lệnh sleep 30"
+    badge: "Loại bỏ lệnh sleep 30"
     tone: emerald
     desc: "Thay thế thói quen đoán mò thời gian khởi động server bằng vòng lặp kiểm tra cổng /healthz chuẩn xác."
     bullets:

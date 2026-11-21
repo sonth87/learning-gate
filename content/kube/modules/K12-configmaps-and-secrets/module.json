@@ -3,7 +3,7 @@
   "slug": "K12-configmaps-and-secrets",
   "level": 3,
   "order": 12,
-  "title": "Quản lý Cấu hình & Bí mật: ConfigMap, Secret & Bảo mật thực chiến",
+  "title": "Quản lý Cấu hình & Dữ liệu nhạy cảm: ConfigMap và Secret",
   "summary": "Tách cấu hình 12-Factor khỏi Image bằng ConfigMap & Secret, nạp qua envFrom / secretKeyRef / Volume chỉ đọc và hiểu rõ sự thật về Base64.",
   "tags": [
     "configmap",
@@ -26,7 +26,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Lỗi CreateContainerConfigError (#6)",
+      "label": "Xử lý Sự cố: Lỗi CreateContainerConfigError (#6)",
       "kind": "incident",
       "targetId": "incident-6-config-error",
       "description": "Thực hành gỡ lỗi Pod bị chặn khởi chạy do tham chiếu thiếu Secret/ConfigMap"

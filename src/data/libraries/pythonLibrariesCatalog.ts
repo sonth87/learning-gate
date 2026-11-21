@@ -1297,4 +1297,423 @@ async def call_partner_webhook(url: str, payload: dict) -> dict:
         '`tenacity` = `p-retry`; `selectolax`/`BeautifulSoup` = `cheerio`; `arq`/`Celery` = `BullMQ`.',
     },
   },
+  {
+    id: 'lib-std-asyncio-uvloop',
+    name: 'asyncio (cùng uvloop, AnyIO & Trio)',
+    title: 'asyncio & uvloop / AnyIO — Lập trình Bất đồng bộ (Event Loop) Xử lý Hàng nghìn I/O Đồng thời',
+    kind: 'stdlib',
+    domain: 'db-orm-cache',
+    domainLabel: 'Database ORM, Queue & Bất đồng bộ',
+    installCmd: {
+      uv: '# asyncio có sẵn! Tăng tốc trên Linux/macOS: uv add uvloop anyio',
+      pip: '# asyncio có sẵn! Tăng tốc trên Linux/macOS: pip install uvloop anyio',
+      poetry: 'poetry add uvloop anyio',
+    },
+    whatItIs:
+      'Thư viện chuẩn cốt lõi của Python cung cấp **Event Loop (Vòng lặp sự kiện)** giúp chạy đồng thời hàng trăm đến hàng nghìn tác vụ chờ mạng/DB (`Coroutine` khai báo bằng `async def` / `await`) ngay trên **một luồng duy nhất (Single-threaded)** mà không tốn RAM tạo hàng nghìn luồng hệ điều hành.',
+    problemSolved:
+      'Giải quyết bài toán nghẽn chờ mạng (I/O-bound): nếu gọi tuần tự 100 API mỗi cái mất 0.5 giây sẽ tốn 50 giây đứng chờ; với `asyncio.gather()` + `Semaphore`, cả 100 API được gửi và chờ chồng lấp lên nhau, hoàn tất chỉ trong ~0.6 giây!',
+    keyApis: [
+      {
+        symbol: 'asyncio.run(main())',
+        description: 'Khởi tạo Event Loop mới, chạy hàm `async def main()` cho tới khi xong rồi đóng vòng lặp gọn gàng.',
+      },
+      {
+        symbol: 'await asyncio.gather(*coros) / asyncio.TaskGroup()',
+        description: 'Chạy đồng thời nhiều Coroutine và gom toàn bộ kết quả trả về (`TaskGroup` từ Python 3.11+ tự động hủy các tác vụ anh em nếu 1 tác vụ lỗi).',
+      },
+      {
+        symbol: 'asyncio.Semaphore(limit)',
+        description: 'Giới hạn tối đa `limit` tác vụ chạy vào vùng nhạy cảm cùng lúc (chống lỗi quá tải 429 Too Many Requests).',
+      },
+      {
+        symbol: 'async with asyncio.timeout(seconds):',
+        description: 'Đặt thời gian chờ tối đa (Python 3.11+), tự ném `TimeoutError` nếu tác vụ treo quá lâu.',
+      },
+      {
+        symbol: 'await asyncio.to_thread(sync_func, *args)',
+        description: 'Đẩy một hàm thư viện đồng bộ cũ (`requests`, `sqlite3`) sang ThreadPool để KHÔNG làm đóng băng Event Loop.',
+      },
+    ],
+    usageCode: `import asyncio
+
+sem = asyncio.Semaphore(5)  # Chỉ cho phép tối đa 5 kết nối chạy cùng lúc
+
+async def tai_trang(ten: str, giay: float) -> str:
+    async with sem:
+        print(f"▶ Bắt đầu {ten}")
+        await asyncio.sleep(giay)  # Nhường quyền điều khiển cho Event Loop (KHÔNG dùng time.sleep!)
+        return f"✔ Xong {ten} ({giay}s)"
+
+async def main():
+    async with asyncio.timeout(5.0):
+        # Chạy đồng thời cả 3 việc: tổng thời gian chỉ mất ~1.5s thay vì 3.5s!
+        ket_qua = await asyncio.gather(
+            tai_trang("API Đơn hàng", 1.5),
+            tai_trang("API Kho vận", 1.0),
+            tai_trang("API Thanh toán", 1.0),
+        )
+        print(ket_qua)
+
+asyncio.run(main())`,
+    tipsAndTricks: [
+      'Cấm kỵ số 1: Tuyệt đối KHÔNG gọi hàm chặn đồng bộ (`time.sleep()`, `requests.get()`, vòng lặp tính toán nặng CPU) trực tiếp bên trong `async def` vì sẽ khóa cứng toàn bộ Event Loop!',
+      'Trên máy chủ Linux / macOS, cài thêm `uvloop` (được `Uvicorn` / `FastAPI` tự động kích hoạt) sẽ thay thế Event Loop mặc định bằng lõi C `libuv`, tăng tốc độ xử lý mạng gấp 2–4 lần!',
+      'Từ Python 3.11+, ưu tiên dùng `async with asyncio.TaskGroup() as tg:` thay cho `gather()` khi bạn muốn quản lý vòng đời tác vụ chặt chẽ (Structured Concurrency).',
+    ],
+    alternatives: [
+      {
+        name: 'uvloop (uv add uvloop — Linux/macOS)',
+        whenToChoose:
+          'Tăng tốc trực tiếp cho chính `asyncio` trong Production (FastAPI / aiohttp) mà không cần sửa code nghiệp vụ.',
+      },
+      {
+        name: 'Trio & AnyIO (uv add trio anyio)',
+        whenToChoose:
+          '`Trio` có thiết kế bất đồng bộ cực kỳ tường minh, an toàn khi hủy tác vụ; `AnyIO` là lớp trung gian chuẩn giúp viết thư viện chạy được trên cả `asyncio` lẫn `Trio`.',
+      },
+      {
+        name: 'Tornado (uv add tornado)',
+        whenToChoose:
+          'Framework web & mạng bất đồng bộ lâu đời của Python (hiện tại thường gặp trong Jupyter Notebook server hoặc hệ thống cũ).',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'Mặc định trong Runtime Node.js (libuv Event Loop + Promise.all + p-limit)',
+      explanation:
+        'Node.js luôn bật sẵn Event Loop mặc định; trong Python bình thường code chạy đồng bộ, khi cần bất đồng bộ bạn chủ động bật bằng `asyncio.run()`.',
+    },
+  },
+  {
+    id: 'lib-std-concurrent-futures',
+    name: 'concurrent.futures (ThreadPool & ProcessPool)',
+    title: 'concurrent.futures — Đa luồng I/O Đồng bộ & Đa tiến trình Tính toán Đa nhân Vượt GIL',
+    kind: 'stdlib',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: '# Có sẵn trong Python! Tăng tốc Data/ML: uv add joblib',
+      pip: '# Có sẵn trong Python! Tăng tốc Data/ML: pip install joblib',
+      poetry: 'poetry add joblib',
+    },
+    whatItIs:
+      'Giao diện cấp cao thống nhất trong thư viện chuẩn giúp bạn chạy song song công việc bằng **Đa luồng (`ThreadPoolExecutor`)** hoặc **Đa tiến trình (`ProcessPoolExecutor`)** chỉ với cùng một cú pháp `.map()` / `.submit()` cực kỳ dễ hiểu.',
+    problemSolved:
+      'Giúp tăng tốc hàng chục lần cho 2 trường hợp mà `asyncio` không giải quyết trực tiếp: (1) Dùng `ThreadPoolExecutor` khi đang có sẵn code thư viện đồng bộ (`requests`, `boto3`, đọc/ghi file); (2) Dùng `ProcessPoolExecutor` để vượt qua khóa `GIL` của CPython, huy động 100% sức mạnh của cả 4–16 nhân CPU cho tính toán nặng!',
+    keyApis: [
+      {
+        symbol: 'ThreadPoolExecutor(max_workers=8)',
+        description: 'Hồ các luồng dùng chung bộ nhớ RAM — lựa chọn số 1 để chạy song song các hàm chờ mạng/đĩa đồng bộ (Blocking I/O).',
+      },
+      {
+        symbol: 'ProcessPoolExecutor(max_workers=None)',
+        description: 'Khởi tạo các tiến trình độc lập trên toàn bộ số nhân CPU của máy — lựa chọn chuẩn để tính toán nặng (xử lý ảnh, băm dữ liệu, giải thuật).',
+      },
+      {
+        symbol: 'pool.map(func, iterable)',
+        description: 'Chia danh sách dữ liệu cho các worker xử lý song song và trả kết quả theo đúng thứ tự ban đầu.',
+      },
+      {
+        symbol: 'pool.submit(func, *args) & as_completed(futures)',
+        description: 'Gửi từng tác vụ lẻ và nhận kết quả ngay khi tác vụ nào xong trước (không phải đợi tác vụ chậm nhất ở đầu hàng).',
+      },
+    ],
+    usageCode: `from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+import math
+
+def dem_uoc_so_nang_cpu(n: int) -> int:
+    return sum(1 for i in range(1, int(math.isqrt(n)) + 1) if n % i == 0)
+
+# BẮT BUỘC đặt ProcessPoolExecutor bên trong cổng __main__ trên Windows & macOS!
+if __name__ == "__main__":
+    danh_sach_so = [999_999_999_989, 999_999_999_961, 999_999_999_959, 999_999_999_937]
+
+    # Chia đều lên tất cả các nhân CPU vật lý (mỗi tiến trình có GIL riêng!)
+    with ProcessPoolExecutor() as pool:
+        ket_qua = list(pool.map(dem_uoc_so_nang_cpu, danh_sach_so))
+    print("Kết quả tính song song đa nhân:", ket_qua)`,
+    tipsAndTricks: [
+      'Quy tắc chọn trong 5 giây: Chờ mạng với thư viện đồng bộ (`requests`) -> `ThreadPoolExecutor`; Tính toán nặng CPU -> `ProcessPoolExecutor`.',
+      'Khi dùng `ProcessPoolExecutor`, hàm `func` phải được định nghĩa ở cấp ngoài cùng của file (không dùng `lambda` hay hàm lồng bên trong hàm khác) để Python có thể đóng gói (`pickle`) gửi sang tiến trình con.',
+    ],
+    alternatives: [
+      {
+        name: 'joblib (uv add joblib)',
+        whenToChoose:
+          'Thư viện cực kỳ được ưa chuộng trong Khoa học dữ liệu & Scikit-learn: chia việc đa nhân gọn bằng 1 dòng `Parallel(n_jobs=-1)(delayed(f)(x) for x in data)` kèm thanh tiến trình và chia sẻ mảng NumPy không tốn RAM copy.',
+      },
+      {
+        name: 'Ray / Dask (uv add ray dask)',
+        whenToChoose:
+          'Khi bài toán vượt quá sức mạnh của 1 máy chủ và bạn cần mở rộng tính toán song song ra cả một cụm nhiều máy chủ (Cluster).',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'node:worker_threads + piscina',
+      explanation:
+        'Tương đương hồ Worker Threads (`piscina`) trong Node.js để tách tác vụ nặng CPU khỏi luồng chính.',
+    },
+  },
+  {
+    id: 'lib-std-sqlite3-drivers',
+    name: 'sqlite3 (cùng psycopg & asyncpg)',
+    title: 'sqlite3 — Cơ sở Dữ liệu Quan hệ SQL Có Sẵn Không Cần Cài Server & Lộ trình Lên PostgreSQL',
+    kind: 'stdlib',
+    domain: 'db-orm-cache',
+    domainLabel: 'Database ORM, Queue & Bất đồng bộ',
+    installCmd: {
+      uv: '# sqlite3 có sẵn! Khi lên PostgreSQL: uv add "psycopg[binary]" asyncpg',
+      pip: '# sqlite3 có sẵn! Khi lên PostgreSQL: pip install "psycopg[binary]" asyncpg',
+      poetry: 'poetry add "psycopg[binary]" asyncpg',
+    },
+    whatItIs:
+      'Thư viện cơ sở dữ liệu SQL chuẩn tích hợp sẵn trong mọi bản cài đặt Python. Toàn bộ bảng biểu, chỉ mục (Index) và giao dịch ACID nằm gọn trong **một tệp `.db` duy nhất** ngay trên ổ đĩa mà không cần cài đặt hay vận hành máy chủ Database riêng.',
+    problemSolved:
+      'Cho phép người mới học SQL, làm ứng dụng CLI/Desktop, lưu bộ nhớ đệm cục bộ hoặc dựng sản phẩm mẫu (MVP) bền vững hơn hẳn việc đọc/ghi file JSON thủ công mà tốn 0 phút cấu hình hạ tầng!',
+    keyApis: [
+      {
+        symbol: 'sqlite3.connect("app.db") & conn.row_factory = sqlite3.Row',
+        description: 'Mở kết nối tới file DB (tự tạo nếu chưa có); gán `sqlite3.Row` giúp truy cập cột theo tên `row["email"]` thay vì nhớ số thứ tự `row[1]`.',
+      },
+      {
+        symbol: 'with conn: conn.execute("... VALUES (?, ?)", (a, b))',
+        description: 'Khối `with conn:` tự động `COMMIT` khi thành công hoặc `ROLLBACK` khi có lỗi; dấu hỏi chấm `?` bảo vệ tuyệt đối khỏi lỗi bảo mật SQL Injection.',
+      },
+      {
+        symbol: 'cur.executemany(sql, rows)',
+        description: 'Chèn hàng nghìn dòng dữ liệu trong 1 giao dịch duy nhất cực nhanh.',
+      },
+    ],
+    usageCode: `import sqlite3
+
+conn = sqlite3.connect(":memory:")  # Dùng ":memory:" để test siêu tốc trên RAM, hoặc "shop.db" lưu file
+conn.row_factory = sqlite3.Row      # Đọc kết quả theo tên cột dễ hiểu
+
+with conn:
+    conn.execute("CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT, price INT)")
+    # LUÔN truyền tham số qua dấu '?' — TUYỆT ĐỐI KHÔNG ghép f-string vào câu SQL!
+    conn.execute("INSERT INTO products (name, price) VALUES (?, ?)", ("Bàn phím cơ", 1_250_000))
+
+rows = conn.execute("SELECT * FROM products WHERE price >= ?", (500_000,)).fetchall()
+for r in rows:
+    print(dict(r))  # {'id': 1, 'name': 'Bàn phím cơ', 'price': 1250000}
+conn.close()`,
+    tipsAndTricks: [
+      'Với ứng dụng Web nhỏ dùng SQLite nhiều luồng đọc/ghi, hãy bật chế độ WAL (`conn.execute("PRAGMA journal_mode=WAL;")`) để việc đọc không chặn việc ghi!',
+      'Khi truyền tuple 1 phần tử vào dấu `?`, đừng quên dấu phẩy cuối: `(500_000,)` — nếu viết `(500_000)` Python hiểu là số nguyên thường và sẽ báo lỗi!',
+    ],
+    alternatives: [
+      {
+        name: 'aiosqlite (uv add aiosqlite)',
+        whenToChoose:
+          'Bản bọc bất đồng bộ (`async/await`) cho `sqlite3` khi dùng bên trong FastAPI / `asyncio`.',
+      },
+      {
+        name: 'psycopg v3 & asyncpg (PostgreSQL Drivers)',
+        whenToChoose:
+          'Khi ứng dụng có nhiều người dùng ghi đồng thời hoặc chạy nhiều container trên Cloud: chuyển sang PostgreSQL với `psycopg` (hỗ trợ cả sync & async) hoặc `asyncpg` (driver async nhanh nhất).',
+      },
+      {
+        name: 'DuckDB (uv add duckdb)',
+        whenToChoose:
+          'Giống "SQLite dành cho Phân tích Dữ liệu (OLAP)" — chạy câu SQL tổng hợp trực tiếp trên file CSV/Parquet hàng chục triệu dòng nhanh gấp hàng chục lần!',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'node:sqlite (Node 22.5+) / better-sqlite3 / pg',
+      explanation:
+        '`sqlite3` có sẵn trong Python từ rất sớm giống `better-sqlite3` trong Node.js; `psycopg`/`asyncpg` tương đương gói `pg`/`postgres`.',
+    },
+  },
+  {
+    id: 'lib-3rd-django-flask',
+    name: 'django & flask (so sánh cùng FastAPI)',
+    title: 'Django & Flask — Hai Trụ cột Web Python Truyền thống (Full-stack Batteries-Included vs Micro-framework)',
+    kind: 'third-party',
+    domain: 'http-web-api',
+    domainLabel: 'Gọi HTTP & Xây dựng Web API',
+    installCmd: {
+      uv: 'uv add django   # Hoặc: uv add flask',
+      pip: 'pip install django   # Hoặc: pip install flask',
+      poetry: 'poetry add django',
+    },
+    whatItIs:
+      'Bên cạnh **FastAPI** (ngôi sao xây dựng API & AI hiện đại), hệ sinh thái Web Python đứng trên 2 trụ cột lớn khác mà mọi lập trình viên Python đều cần nắm rõ: **`Django`** (khung "tất cả trong một" tích hợp sẵn ORM, Migration, Auth, Trang quản trị Admin tự động) và **`Flask`** (khung siêu nhẹ, tối giản, dễ hiểu nhất để nhúng web vào script nhỏ).',
+    problemSolved:
+      'Giúp bạn chọn đúng công cụ theo bài toán: Cần dựng cả hệ thống thương mại điện tử / CMS có sẵn trang Admin quản lý dữ liệu trong 1 cuối tuần -> **Django**; cần viết nhanh 2–3 trang web nội bộ đơn giản -> **Flask**; cần xây dựng REST API tốc độ cao, bất đồng bộ `async`, tự kiểm dữ liệu & sinh tài liệu Swagger -> **FastAPI**.',
+    keyApis: [
+      {
+        symbol: 'Flask(__name__) & @app.get("/")',
+        description: 'Tạo web server Flask chỉ với 5 dòng code đồng bộ cực kỳ trực quan cho người mới bắt đầu.',
+      },
+      {
+        symbol: 'django-admin startproject & Model / Admin',
+        description: 'Khai báo class Model trong Django tự động sinh bảng SQL và dựng sẵn giao diện quản trị CRUD hoàn chỉnh không cần viết HTML!',
+      },
+      {
+        symbol: 'Django Ninja / Django REST Framework (DRF)',
+        description: 'Bộ mở rộng biến dự án Django lớn thành hệ thống REST API chuyên nghiệp (`Django Ninja` mang phong cách Type Hints + Pydantic giống hệt FastAPI vào Django!).',
+      },
+    ],
+    usageCode: `# Ví dụ sự tối giản kinh điển của Flask (chỉ 7 dòng là có ngay Web Server):
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+@app.get("/health")
+def health_check():
+    return jsonify({"status": "ok", "framework": "Flask"})
+
+# Chạy thử: uv run flask --app app run --port 5000`,
+    tipsAndTricks: [
+      'Quy tắc định hướng nghề nghiệp: Học **FastAPI** trước nếu bạn làm Backend API hiện đại, Microservices hoặc tích hợp AI/LLM; học thêm **Django** nếu bạn muốn tự xây sản phẩm SaaS trọn gói từ A–Z hoặc ứng tuyển vào các công ty sản phẩm lớn.',
+      'Khi đưa Flask / Django truyền thống (chuẩn đồng bộ `WSGI`) lên Production, luôn chạy qua **`gunicorn`** thay vì server `app.run()` mặc định (còn FastAPI chuẩn bất đồng bộ `ASGI` thì chạy qua **`uvicorn`**).',
+    ],
+    alternatives: [
+      {
+        name: 'FastAPI (uv add "fastapi[standard]")',
+        whenToChoose:
+          'Lựa chọn mặc định số 1 hiện nay khi xây dựng dịch vụ JSON REST API, Backend cho React/Next.js/Mobile và AI Services.',
+      },
+      {
+        name: 'Litestar (uv add "litestar[standard]")',
+        whenToChoose:
+          'Framework bất đồng bộ hiện đại cùng phân khúc với FastAPI, tích hợp sẵn nhiều tính năng kiến trúc doanh nghiệp (DTO, DI, Caching, ORM plugin).',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'Flask ≈ Express.js · Django ≈ NestJS + Prisma + AdminJS trọn gói',
+      explanation:
+        '`Flask` tự do và tối giản giống hệt `Express`; `Django` quy củ và có sẵn mọi thứ từ DB tới Auth/Admin.',
+    },
+  },
+  {
+    id: 'lib-3rd-numpy',
+    name: 'numpy (cùng scipy)',
+    title: 'NumPy — Nền tảng Tính toán Mảng & Ma trận Tốc độ C (Vượt Rào cản GIL, Tăng tốc 50–100×)',
+    kind: 'third-party',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: 'uv add numpy',
+      pip: 'pip install numpy',
+      poetry: 'poetry add numpy',
+    },
+    whatItIs:
+      'Thư viện nền móng của toàn bộ thế giới Khoa học Dữ liệu, Xử lý Ảnh và Trí tuệ Nhân tạo trên Python (`Pandas`, `Scikit-learn`, `PyTorch`, `OpenCV` đều xây bên trên hoặc tương thích chặt với `NumPy`). Cung cấp cấu trúc mảng đồng nhất `ndarray` nằm liên tục trên RAM và thực thi phép toán bằng mã C/SIMD tối ưu.',
+    problemSolved:
+      'Vòng lặp `for` thuần Python cộng 10 triệu con số rất chậm vì phải kiểm tra kiểu của từng đối tượng một. `NumPy` gom cả 10 triệu số vào một khối bộ nhớ C liên tiếp và thực hiện **Vectorization** (tính cả mảng trong 1 lệnh mà không viết vòng `for`), nhanh gấp **50 đến 100 lần** và tự động nhả khóa `GIL`!',
+    keyApis: [
+      {
+        symbol: 'np.array([...]) / np.zeros() / np.arange() / np.linspace()',
+        description: 'Khởi tạo mảng số học 1 chiều (vector), 2 chiều (ma trận) hoặc N chiều (tensor) với kiểu dữ liệu cố định (`float64`, `int32`).',
+      },
+      {
+        symbol: 'Vectorized Ops: prices * 1.1 - discounts',
+        description: 'Nhân, cộng, lọc điều kiện (`arr[arr > 0]`) trên hàng triệu phần tử cùng lúc không cần vòng lặp `for`.',
+      },
+      {
+        symbol: '.mean() / .std() / .sum(axis=0) / np.dot(A, B) (A @ B)',
+        description: 'Các hàm thống kê theo trục và nhân ma trận đại số tuyến tính siêu tốc.',
+      },
+    ],
+    usageCode: `import numpy as np
+
+# Giả sử có giá của 5 sản phẩm và thuế VAT 8% — KHÔNG CẦN VÒNG LẶP FOR!
+gia_goc = np.array([100_000, 250_000, 80_000, 520_000, 150_000], dtype=np.float64)
+gia_sau_thue = gia_goc * 1.08
+
+# Lọc tức thì các mặt hàng trên 150,000đ (Boolean Masking):
+hang_cao_cap = gia_sau_thue[gia_goc > 150_000]
+print("Giá sau thuế:", gia_sau_thue)
+print("Trung bình:", gia_sau_thue.mean(), "| Lọc cao cấp:", hang_cao_cap)`,
+    tipsAndTricks: [
+      'Nếu bạn thấy mình đang viết vòng lặp `for i in range(len(arr)):` trên mảng `NumPy`, hãy dừng lại — 99% trường hợp có thể viết bằng phép toán mảng (Vectorization / Broadcasting) nhanh gấp 50 lần!',
+      'Chú ý: Cắt lát mảng NumPy (`sub = arr[1:4]`) mặc định tạo một **View dùng chung vùng nhớ** với mảng gốc (sửa `sub[0] = 99` sẽ sửa luôn `arr[1]`) để tiết kiệm RAM! Muốn tách rời hãy gọi `arr[1:4].copy()`.',
+    ],
+    alternatives: [
+      {
+        name: 'PyTorch / JAX (uv add torch / jax)',
+        whenToChoose:
+          'Khi bạn cần chạy phép toán ma trận/tensor trên Card đồ họa (GPU / Apple Silicon Metal) và tính đạo hàm tự động cho Deep Learning.',
+      },
+      {
+        name: 'Polars / Pandas',
+        whenToChoose:
+          'Khi dữ liệu có nhiều cột khác kiểu nhau (chữ, ngày tháng, tiền tệ) giống bảng Excel/SQL thay vì mảng số thuần túy.',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'Float64Array (TypedArrays) + TensorFlow.js',
+      explanation:
+        'JavaScript có `Float64Array` lưu vùng nhớ liên tiếp nhưng không có sẵn hệ sinh thái toán tử ma trận và đại số tuyến tính khổng lồ như `NumPy`.',
+    },
+  },
+  {
+    id: 'lib-3rd-streamlit-gradio',
+    name: 'streamlit & gradio',
+    title: 'Streamlit & Gradio — Biến Script Python thành Web App Tương tác & Giao diện AI trong 5 Phút (Không cần HTML/JS)',
+    kind: 'third-party',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: 'uv add streamlit   # Hoặc làm giao diện AI Chatbot/Image: uv add gradio',
+      pip: 'pip install streamlit gradio',
+      poetry: 'poetry add streamlit',
+    },
+    whatItIs:
+      'Hai thư viện được yêu thích bậc nhất bởi người mới học Python lẫn kỹ sư Dữ liệu / AI: giúp bạn dựng **trang Web Dashboard biểu đồ, công cụ nội bộ hoặc giao diện Chatbot AI** hoàn chỉnh chỉ bằng vài chục dòng Python thuần mà không cần biết HTML, CSS hay React!',
+    problemSolved:
+      'Thay vì giao cho sếp hoặc khách hàng một script dòng lệnh đen trắng khó dùng (hoặc mất cả tuần dựng giao diện `tkinter` cũ kỹ), bạn chỉ mất 10 phút viết `st.slider()`, `st.dataframe()`, `st.line_chart()` là có ngay ứng dụng Web đẹp mắt chia sẻ qua trình duyệt.',
+    keyApis: [
+      {
+        symbol: 'st.title() / st.write() / st.metric() / st.dataframe()',
+        description: 'Hiển thị tiêu đề, Markdown, thẻ chỉ số KPI và bảng dữ liệu tương tác sắp xếp/lọc ngay trên trình duyệt.',
+      },
+      {
+        symbol: 'st.slider() / st.selectbox() / st.file_uploader() / st.chat_input()',
+        description: 'Các thành phần nhập liệu tự động gắn trực tiếp vào biến Python — người dùng kéo thanh trượt là biểu đồ tự cập nhật!',
+      },
+      {
+        symbol: '@st.cache_data & @st.cache_resource',
+        description: 'Lưu đệm dữ liệu CSV/SQL và mô hình AI để không phải nạp lại mỗi khi người dùng bấm nút.',
+      },
+      {
+        symbol: 'gradio.Interface(fn=..., inputs=..., outputs=...) / gr.ChatInterface()',
+        description: 'Tạo giao diện dùng thử mô hình AI (văn bản, giọng nói, hình ảnh) chỉ bằng 3 dòng code, chuẩn mực trên Hugging Face Spaces.',
+      },
+    ],
+    usageCode: `# Lưu thành dashboard.py rồi chạy: uv run streamlit run dashboard.py
+import streamlit as st
+
+st.title("📊 Công cụ Dự tính Lãi kép Đầu tư")
+von_ban_dau = st.number_input("Vốn ban đầu (triệu VNĐ)", min_value=1.0, value=50.0)
+lai_suat = st.slider("Lãi suất kỳ vọng (%/năm)", min_value=1, max_value=25, value=10)
+so_nam = st.slider("Số năm tích lũy", min_value=1, max_value=30, value=10)
+
+lich_su = [round(von_ban_dau * ((1 + lai_suat / 100) ** nam), 2) for nam in range(so_nam + 1)]
+st.metric("Tổng tài sản cuối kỳ", f"{lich_su[-1]:,.2f} triệu VNĐ")
+st.line_chart(lich_su)`,
+    tipsAndTricks: [
+      'Cơ chế cốt lõi cần nhớ của Streamlit: mỗi khi người dùng bấm nút hoặc kéo thanh trượt, Streamlit **chạy lại toàn bộ file `.py` từ dòng đầu đến dòng cuối**! Vì vậy hãy luôn gắn `@st.cache_data` cho hàm đọc file lớn hoặc gọi API chậm.',
+      'Chọn **Gradio** khi muốn demo nhanh mô hình AI / Chatbot; chọn **Streamlit** khi làm Dashboard số liệu và công cụ vận hành nội bộ.',
+    ],
+    alternatives: [
+      {
+        name: 'NiceGUI & Reflex (uv add nicegui / reflex)',
+        whenToChoose:
+          'Khi bạn vẫn muốn viết 100% Python nhưng cần kiểm soát sự kiện nút bấm thời gian thực (Event-driven) không chạy lại cả trang như Streamlit.',
+      },
+      {
+        name: 'Marimo (uv add marimo)',
+        whenToChoose:
+          'Notebook Python thế hệ mới thay thế Jupyter Notebook: lưu dưới dạng file `.py` sạch sẽ cho Git và tự động cập nhật ô phụ thuộc kiêm xuất ra Web App!',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'Observable Framework / Retool (nhưng Streamlit thuần code Python 100%)',
+      explanation:
+        'Đây chính là lợi thế độc quyền khiến hệ sinh thái Python thống trị mảng Data & AI Prototyping.',
+    },
+  },
 ];

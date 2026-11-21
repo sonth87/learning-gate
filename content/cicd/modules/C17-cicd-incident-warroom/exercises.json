@@ -3,7 +3,7 @@
     "id": "cicd-ex-c17-1",
     "code": "C17.1",
     "module": "C17",
-    "title": "Case B1 — Cấp cứu Đường ống \"Rùa bò\" 42 phút xuống dưới 5 phút",
+    "title": "Case B1 — Cấp cứu Pipeline \"chậm\" 42 phút xuống dưới 5 phút",
     "difficulty": 3,
     "tags": [
       "war-room",
@@ -243,7 +243,7 @@
     "id": "cicd-ex-c17-4",
     "code": "C17.4",
     "module": "C17",
-    "title": "Case B6 — Diệt tận gốc Đường ống \"Xanh vỏ đỏ lòng\" (False-Green)",
+    "title": "Case B6 — Diệt tận gốc Pipeline \"báo xanh giả (False-Green)\" (False-Green)",
     "difficulty": 3,
     "tags": [
       "war-room",

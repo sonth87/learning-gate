@@ -1,22 +1,19 @@
 # Giải phẫu Bộ nhớ jemalloc, 8 Chính sách Eviction (LRU vs LFU) & Quy tắc 65% Headroom trên K8s
 
-Trong thế giới cơ sở dữ liệu trên đĩa cứng (PostgreSQL, MySQL), cạn bộ nhớ đệm chỉ làm truy vấn chậm đi đôi chút. Trong thế giới **In-Memory của Redis**, chạm trần bộ nhớ mà cấu hình sai đồng nghĩa với **sập toàn bộ tầng ghi (`OOM command not allowed`)** hoặc bị **Linux Kernel bắn chết ngay lập tức (`OOMKilled - Exit Code 137`)**! Hiểu tường tận cách trình cấp phát **`jemalloc`** vận hành, lý do thuật toán **LFU vượt trội LRU** và công thức **65% Headroom** là ranh giới phân định người chỉ biết gõ `SET/GET` với một Kỹ sư Hạ tầng thực thụ.
-
-> [!ANALOGY] Ẩn dụ Tủ Sách Quán Cà Phê Giới Hạn 100 Cuốn
-> Quán cà phê chỉ có 1 kệ chứa tối đa **100 cuốn sách** (`maxmemory`). Khi có cuốn thứ 101 mới mua về:
-> - **`noeviction`:** Chủ quán lắc đầu từ chối nhận sách mới! (Hợp làm Két sắt giữ đơn hàng/queue, cấm vứt bừa).
-> - **`allkeys-lru` (Least Recently Used):** Vứt cuốn **lâu ngày nhất chưa ai chạm vào** — nhưng nếu hôm qua có một vị khách tò mò lật lướt qua toàn bộ 100 cuốn truyện cổ ít ai đọc (*Cache Pollution*), những cuốn Best-seller vừa nghỉ 5 phút lại bị vứt nhầm!
-> - **`allkeys-lfu` (Least Frequently Used):** Vứt cuốn có **tổng tần suất được đọc thấp nhất** — bảo vệ tuyệt đối những cuốn Best-seller thực sự được khách tìm đọc hàng trăm lần mỗi ngày!
-
-## 1. Kiến trúc Bộ nhớ Bên trong Tiến trình Redis & Chỉ số Phân mảnh
-
-Không phải cứ bạn lưu `2GB` dữ liệu chuỗi là tiến trình `redis-server` chỉ tiêu tốn đúng `2GB` RAM của hệ điều hành! Hãy giải phẫu 4 vùng tiêu thụ bộ nhớ và cơ chế lấy mẫu trục xuất của Redis:
+> [!NOTE] Bối cảnh & Giải nghĩa bình dân
+> Với cơ sở dữ liệu trên ổ cứng (như PostgreSQL), thiếu RAM thì máy chạy chậm đi một chút. Nhưng với **Redis sống hoàn toàn trên RAM**, khi bộ nhớ chạm trần giới hạn (`maxmemory`) mà cấu hình sai, hệ thống sẽ ngay lập tức **từ chối mọi lệnh ghi mới (`OOM command not allowed`)** hoặc bị nhân hệ điều hành Linux **cắt cầu dao giết chết tiến trình (`OOMKilled - Exit Code 137`)**! Để vận hành Redis êm ru suốt nhiều năm, hãy nắm rõ 4 khái niệm cốt lõi sau:
+> - **`jemalloc` (Trình quản lý chia ô nhớ):** Giống người thủ kho thông minh bên dưới Redis, chuyên cắt các dải RAM thành từng khay vừa vặn (`8B`, `16B`, `32B`...) để hạn chế tối đa khoảng trống lãng phí (*phân mảnh bộ nhớ — Memory Fragmentation*).
+> - **`Eviction` (Cơ chế đào thải tự động khi đầy kệ):** Khi tủ sách `maxmemory` chỉ chứa được 100 cuốn mà bạn cất cuốn thứ 101 vào, Redis phải chọn: từ chối nhận thêm (`noeviction`) hay tự động vứt bớt 1 cuốn cũ đi để nhường chỗ?
+> - **`LRU` (*Least Recently Used*) vs `LFU` (*Least Frequently Used*):**
+>   - **`LRU`** vứt cuốn sách **lâu ngày nhất chưa ai chạm tới** — nhược điểm là nếu hôm qua có 1 người tò mò lật lướt qua 100 cuốn sách cũ ít ai đọc, các cuốn Best-seller vừa nghỉ ngơi 5 phút lại bị vứt nhầm!
+>   - **`LFU`** vứt cuốn sách có **tổng tần suất được mượn đọc thấp nhất** — ==bảo vệ tuyệt đối những khóa "nóng" thực sự được khách hàng truy cập hàng trăm lần mỗi ngày==!
+> - **`Headroom` (Khoảng thở RAM dự phòng 30%–35%):** Trên Docker/Kubernetes, nếu container được cấp tối đa `4 GB` RAM, bạn chỉ được đặt `maxmemory` cho dữ liệu Redis khoảng **`2.6 GB` (`65%`)**; `35%` còn lại là phao cứu sinh dành cho bộ đệm kết nối mạng và quá trình chụp ảnh sao lưu nền!
 
 ```visual
 kind: illustration
 diagram: "redis:r12"
 badge: "Memory & Eviction Internals · R12"
-title: "Giải phẫu Không gian RAM jemalloc, 24-bit redisObject & Luồng Trục xuất"
+title: "Giải phẫu Không gian RAM jemalloc, 24-bit redisObject & Luồng Giải phóng (Eviction)"
 subtitle: "Sự chênh lệch giữa used_memory và used_memory_rss cùng thuật toán lấy mẫu xấp xỉ Approximated LFU"
 caption: "Redis không dùng danh sách liên kết đôi tốn 16-24 bytes/khoá cho LRU mà nhúng khéo léo dấu thời gian/tần suất vào đúng 24 bit sẵn có của header redisObject!"
 callouts:
@@ -34,33 +31,33 @@ callouts:
     tone: amber
 ```
 
-### Đọc vị `mem_fragmentation_ratio` trong `INFO memory`
+## 1. Đọc vị sức khỏe RAM qua `INFO memory` & Chỉ số Phân mảnh
 
-Tỷ số `mem_fragmentation_ratio = used_memory_rss / used_memory` là nhịp tim sức khoẻ RAM mà mọi SRE đều cài cảnh báo Prometheus:
+Không phải cứ bạn lưu `2GB` chuỗi dữ liệu là tiến trình `redis-server` chỉ tiêu tốn đúng `2GB` RAM vật lý! Tỷ số **`mem_fragmentation_ratio = used_memory_rss / used_memory`** trong lệnh `INFO memory` là chiếc nhiệt kế sức khỏe RAM mà mọi kỹ sư đều phải biết đọc:
 
-- [>] **`1.0` – `1.4` (Lý tưởng):** `jemalloc` chia ô nhớ khít khao, độ hao hụt tự nhiên thấp.
-- [>] **`> 1.5` (Phân mảnh cao):** Thường xảy ra sau khi bạn vừa xoá hàng vạn khoá kích thước nhỏ xen kẽ các khoá lớn khiến các trang nhớ `jemalloc` lỗ chỗ như phô mai Thuỵ Sĩ không trả về cho OS được. **Thuốc đặc trị:** Bật dọn phân mảnh chủ động trực tuyến **`activedefrag yes`** trên Redis!
-- [!] **`< 1.0` (BÁO ĐỘNG ĐỎ — Đang tràn sang ổ cứng Swap!):** Khi `used_memory_rss` nhỏ hơn cả `used_memory`, nghĩa là máy chủ đã cạn sạch RAM vật lý và Linux đang đẩy từng trang nhớ của Redis xuống ổ cứng **Swap**! Độ trễ từ `0.2ms` sẽ nổ tung lên `500ms` — phải ngắt Swap (`vm.swappiness=0` / tắt swap trên K8s) và mở rộng RAM ngay lập tức!
+- [>] **`1.0` – `1.4` (Khỏe mạnh lý tưởng):** `jemalloc` sắp xếp các ô nhớ khít khao, độ hao hụt tự nhiên thấp.
+- [>] **`> 1.5` (Phân mảnh bộ nhớ cao):** Thường xuất hiện sau khi xóa hàng vạn khóa nhỏ xen kẽ các khóa lớn khiến các trang nhớ lỗ chỗ như miếng phô mai, chưa trả lại cho hệ điều hành được. **Cách xử lý êm ái:** Bật tính năng chống phân mảnh tự động trực tuyến **`activedefrag yes`**!
+- [!] **`< 1.0` (BÁO ĐỘNG ĐỎ — Đang tràn xuống ổ cứng Swap!):** Khi RAM vật lý thực giữ (`rss`) nhỏ hơn cả dữ liệu Redis đang quản lý, nghĩa là máy chủ đã cạn sạch RAM và hệ điều hành đang đẩy bộ nhớ của Redis xuống ổ cứng **Swap**! Độ trễ từ `0.2ms` sẽ vọt lên `500ms` — cần tắt Swap (`vm.swappiness=0`) và bổ sung RAM ngay lập tức!
 
-## 2. Ma trận 8 Chính sách Trục xuất (`maxmemory-policy`) & Lý do LFU lên ngôi
+## 2. So sánh 8 chính sách Đào thải (`maxmemory-policy`): Chọn đúng cho từng vai trò
 
-Khi `used_memory` chạm ngưỡng `maxmemory`, Redis tra cứu chỉ thị `maxmemory-policy` để quyết định số phận câu lệnh ghi tiếp theo:
+Khi `used_memory` chạm ngưỡng `maxmemory`, Redis dựa vào cấu hình `maxmemory-policy` để quyết định xử lý lệnh ghi mới:
 
 ```visual
 kind: groups
 title: "Phân Nhóm 8 Chính Sách maxmemory-policy Trong Redis 8"
-subtitle: "Chọn sai 1 dòng cấu hình có thể làm bay màu giỏ hàng hoặc làm nghẽn cứng cổng thanh toán"
+subtitle: "Chọn sai 1 dòng cấu hình có thể làm bay màu đơn hàng trong hàng đợi hoặc làm nghẽn cứng API!"
 columns: 2
 items:
   - num: 1
-    title: "Nhóm allkeys-* (Quét toàn bộ khoá)"
+    title: "Nhóm allkeys-* (Đào thải trên toàn bộ khoá)"
     badge: "Chuẩn Pure Cache"
     tone: emerald
-    desc: "Cho phép Redis thu hồi bất kỳ khoá nào (kể cả khoá lập trình viên lỡ quên đặt EXPIRE)."
+    desc: "Cho phép Redis thu hồi bất kỳ khoá nào ít giá trị nhất (kể cả khoá lỡ quên đặt EXPIRE)."
     bullets:
-      - "**`allkeys-lfu` (Khuyên dùng số 1 cho Cache):** Giữ lại các khoá có tần suất truy cập thực tế cao nhất, chống ô nhiễm cache khi có luồng quét hàng loạt."
-      - "**`allkeys-lru`:** Thu hồi khoá có thời gian nhàn rỗi (`IDLETIME`) lâu nhất trong tập lấy mẫu."
-      - "**`allkeys-random`:** Xoá ngẫu nhiên khi mọi khoá có xác suất đọc ngang nhau."
+      - "==`allkeys-lfu` (Khuyên dùng số 1 cho Cache)==: Giữ lại các khoá có tần suất truy cập thực tế cao nhất, chống ô nhiễm cache khi có tác vụ quét hàng loạt."
+      - "**`allkeys-lru`:** Đào thải khoá lâu chưa được chạm vào nhất trong tập lấy mẫu."
+      - "**`allkeys-random`:** Xoá ngẫu nhiên khi mọi khoá có tần suất đọc ngang nhau."
     code: |
       maxmemory 2gb
       maxmemory-policy allkeys-lfu
@@ -72,32 +69,31 @@ items:
     tone: rose
     desc: "Mặc định gốc của Redis: bảo toàn 100% dữ liệu, trả lỗi OOM cho lệnh ghi mới khi đầy RAM."
     bullets:
-      - "**Bắt buộc dùng** khi Redis đóng vai trò Message Broker (`Streams`), Distributed Lock, Rate Limiter hoặc Session tiền tệ chưa lưu xuống DB."
-      - "Lệnh đọc (`GET`, `XREADGROUP`) và lệnh xoá (`DEL`, `UNLINK`) vẫn hoạt động bình thường để bạn giải cứu."
+      - "**Bắt buộc dùng** khi Redis đóng vai trò Hàng đợi (`Streams` / `BullMQ` / `Celery`), Khoá phân tán (`Lock`), hoặc trạng thái phiên thanh toán."
+      - "Các lệnh đọc (`GET`, `XREADGROUP`) và lệnh xoá (`DEL`, `UNLINK`) vẫn chạy bình thường để bạn giải phóng chỗ."
     code: |
       maxmemory 4gb
       maxmemory-policy noeviction
     codeLang: redis-conf
   - num: 3
-    title: "Nhóm volatile-* (Chỉ xoá khoá có TTL)"
-    badge: "Hybrid Instance"
+    title: "Nhóm volatile-* (Chỉ xoá khoá có gắn TTL)"
+    badge: "Dùng chung hỗn hợp"
     tone: amber
-    desc: "Chỉ thu hồi các khoá có đặt thời hạn hết hạn (EXPIRE), giữ bất khả xâm phạm các khoá persistent (TTL = -1)."
+    desc: "Chỉ thu hồi các khoá có đặt thời hạn sống (EXPIRE), giữ nguyên các khoá vĩnh viễn (TTL = -1)."
     bullets:
       - "Gồm **`volatile-lfu`**, **`volatile-lru`**, **`volatile-ttl`** (ưu tiên xoá khoá sắp hết hạn nhất) và **`volatile-random`**."
-      - "**Cạm bẫy:** Nếu không còn khoá nào mang TTL để xoá, nhóm `volatile-*` tự động cư xử giống hệt `noeviction` (văng lỗi OOM)!"
+      - "**Lưu ý:** Nếu trong RAM không còn khoá nào có gắn TTL để xoá, nhóm `volatile-*` sẽ báo lỗi OOM y hệt `noeviction`! Tốt nhất nên tách riêng máy chủ Cache và máy chủ Queue."
     code: |
-      # Tách riêng cụm Cache và cụm Durable tốt hơn dùng chung volatile-*!
       maxmemory-policy volatile-lfu
     codeLang: redis-conf
   - num: 4
     title: "Bộ 3 Cờ Giải phóng Nền (Lazyfree)"
-    badge: "Chống gai Latency P99"
+    badge: "Chống giật độ trễ P99"
     tone: cyan
-    desc: "Chuyển tác vụ thu hồi vùng nhớ từ luồng chính sang luồng nền bio_lazy_free."
+    desc: "Chuyển việc thu hồi vùng nhớ nặng nhọc từ luồng chính sang luồng nền bio_lazy_free."
     bullets:
-      - "`lazyfree-lazy-eviction yes`: Không chặn luồng chính khi trục xuất khoá lúc đầy RAM."
-      - "`lazyfree-lazy-expire yes`: Không chặn luồng chính khi khoá lớn tự hết hạn TTL."
+      - "`lazyfree-lazy-eviction yes`: Không chặn luồng chính khi đào thải khoá lúc đầy RAM."
+      - "`lazyfree-lazy-expire yes`: Không chặn luồng chính khi khoá lớn hết hạn TTL."
       - "`lazyfree-lazy-server-del yes`: Không chặn luồng chính khi lệnh `SET` ghi đè lên một khoá cũ khổng lồ!"
     code: |
       lazyfree-lazy-eviction yes
@@ -106,15 +102,15 @@ items:
     codeLang: redis-conf
 ```
 
-> [!TIP] Bí mật kỹ thuật tinh xảo: Làm sao Redis đo tần suất LFU tới hàng triệu lượt chỉ bằng... 8 bit?
-> Mỗi khoá trong Redis đều có cấu trúc đầu mục `redisObject` chứa đúng **24 bit trường `lru`**. Ở chế độ LFU, Salvatore Sanfilippo chia 24 bit này thành: **16 bit cao** lưu dấu thời gian theo phút để giảm dần độ nóng khi khoá ngừng được gọi (`lfu-decay-time`), và **8 bit thấp** (`0..255`) chạy thuật toán **Bộ đếm xác suất logarit Morris Counter** (`lfu-log-factor 10`)! Khoá mới tạo bắt đầu ở mức `freq = 5` (để không bị trục xuất oan ngay mili-giây chào đời). Càng lên cao, xác suất tăng thêm `1` đơn vị càng khó theo hàm mũ — bạn có thể kiểm tra trực tiếp bằng lệnh `OBJECT FREQ <key>` (ở chế độ LFU) hoặc `OBJECT IDLETIME <key>` (ở chế độ LRU)!
+> [!TIP] Bí mật thú vị: Làm sao Redis đếm tần suất LFU tới hàng triệu lượt mà chỉ tốn... 8 bit?
+> Thay vì tốn thêm hàng chục byte cho mỗi khóa, Redis tận dụng khéo léo **24 bit có sẵn** trong đầu mục quản lý mỗi khóa: **16 bit đầu** lưu mốc thời gian theo phút để giảm dần độ "nóng" nếu khóa ngừng được đọc (`lfu-decay-time`), còn **8 bit cuối** (`0..255`) chạy **bộ đếm xác suất logarit (Morris Counter)**! Khóa mới tạo khởi đầu ở mức `5` để không bị đào thải oan ngay lúc vừa sinh ra. Bạn có thể tự soi độ nóng của khóa bằng lệnh `OBJECT FREQ <key>` (khi bật LFU) hoặc thời gian nhàn rỗi bằng `OBJECT IDLETIME <key>` (khi bật LRU)!
 
-## 3. Quy tắc Sống còn trên Kubernetes: Trần `maxmemory` = 65%–70% Pod Memory Limit
+## 3. Quy tắc sống còn trên Docker/Kubernetes: Đặt `maxmemory` = 65%–70% giới hạn Container
 
-Rất nhiều đội DevOps cấu hình Container K8s `resources.limits.memory: 4Gi` rồi hồn nhiên đặt luôn `maxmemory 4gb` trong `redis.conf` — và rồi cứ 3 giờ sáng lúc `BGSAVE` chụp ảnh nền, Pod Redis lại nổ tung với **`OOMKilled (Exit Code 137)`**!
+Một sai lầm rất phổ biến khi triển khai container là cấp cho Pod Kubernetes `limits.memory: 4Gi` rồi đặt luôn `maxmemory 4gb` trong `redis.conf` — dẫn tới cứ đêm khuya lúc Redis chạy sao lưu nền là Pod bị giết đột ngột với lỗi ==`OOMKilled (Exit Code 137)`==!
 
 ```yaml
-# Cấu hình chuẩn Production cho Pod Redis trên Kubernetes (Tuân thủ 65%-70% Headroom)
+# Cấu hình chuẩn Production cho Pod Redis trên Kubernetes (Chừa 35% khoảng thở Headroom)
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -135,7 +131,7 @@ spec:
           image: redis:8.0-alpine
           args:
             - "--maxmemory"
-            - "2688mb"              # ~65% của 4096Mi -> Chừa 1.4GiB đệm an toàn!
+            - "2688mb"              # ~65% của 4096Mi -> Chừa ~1.4GiB đệm an toàn!
             - "--maxmemory-policy"
             - "allkeys-lfu"
             - "--lazyfree-lazy-eviction"
@@ -145,17 +141,17 @@ spec:
           resources:
             requests:
               cpu: "500m"
-              memory: 4Gi           # Guaranteed QoS cho RAM (requests == limits)
+              memory: 4Gi           # Đặt requests == limits để đạt mức ưu tiên Guaranteed QoS!
             limits:
               memory: 4Gi
 ```
 
-**Tại sao bắt buộc phải chừa 30%–35% khoảng thở (*Headroom*) bên trên `maxmemory`?**
-1. **Trang nhớ Copy-on-Write (`fork()`) khi chạy `BGSAVE` / `BGREWRITEAOF`:** Trong lúc tiến trình con ghi RDB ra đĩa, các trang bộ nhớ bị luồng ghi mới sửa đổi sẽ được nhân bản trên RAM vật lý.
-2. **Client & Replication Output Buffers:** Bộ đệm đầu ra chứa dữ liệu trả về cho hàng ngàn kết nối khách hàng và luồng đồng bộ sang Replica (`client-output-buffer-limit`) nằm ngoài hạn ngạch trục xuất khoá hoặc cần biên độ co giãn tức thời.
-3. **Chi phí quản trị & phân mảnh của `jemalloc`:** Độ chênh `used_memory_rss - used_memory` (thường `10%–20%`).
+**Ba lý do bắt buộc phải dành ra 30%–35% khoảng trống RAM bên trên `maxmemory`:**
+1. **Bộ nhớ nhân bản tạm thời (*Copy-on-Write*) khi chụp ảnh đĩa (`BGSAVE`):** Sẽ phân tích chi tiết ở bài `R13` ngay kế tiếp.
+2. **Bộ đệm đầu ra cho khách hàng & bản sao (*Output & Replication Buffers*):** Chứa dữ liệu đang xếp hàng gửi qua mạng cho hàng ngàn kết nối.
+3. **Chi phí quản lý & phân mảnh tự nhiên của `jemalloc`** (`10%–20%`).
 
 > [!REMEMBER] Ghi nhớ cốt lõi từ R12
-> 1. **Tách bạch vai trò:** Cụm **Pure Cache** luôn đặt `maxmemory` rõ ràng kèm **`allkeys-lfu`** + `maxmemory-samples 10`. Cụm **Queue / Stream / Lock** bắt buộc đặt **`noeviction`** và giám sát chặt ngưỡng 80% RAM.
-> 2. **Bật đủ bộ 3 `lazyfree-*` (`eviction`, `expire`, `server-del`)** để việc giải phóng khoá lớn không bao giờ làm đơ Event Loop đơn luồng.
-> 3. **Quy tắc 65%–70% Headroom trên Docker/K8s:** Với Pod giới hạn `4Gi` (`4096Mi`), chỉ cấp `maxmemory` khoảng `2.6GB–2.8GB` và đặt `requests.memory == limits.memory` để bảo vệ Redis khỏi cgroup OOMKiller.
+> 1. **Phân vai rõ ràng:** Cụm **Pure Cache** chọn **`allkeys-lfu`** + `maxmemory-samples 10`; cụm **Queue / Stream / Lock** bắt buộc giữ **`noeviction`**.
+> 2. Luôn bật đủ bộ 3 ==`lazyfree-lazy-eviction`, `lazyfree-lazy-expire`, `lazyfree-lazy-server-del`== để tránh giật cục khi thu hồi khóa lớn.
+> 3. **Quy tắc 65%–70% Headroom:** Với container giới hạn `4Gi`, chỉ đặt `maxmemory` khoảng `2.6GB–2.8GB` và gán `requests.memory == limits.memory`.

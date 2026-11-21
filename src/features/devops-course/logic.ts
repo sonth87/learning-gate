@@ -76,7 +76,7 @@ export const COURSE_RANKS: Record<DevOpsCourseId, [number, string][]> = {
     [3600, 'Senior K8s Architect'],
   ],
   cicd: [
-    [0, 'Tập sự Đường ống'],
+    [0, 'Khởi đầu CI/CD'],
     [150, 'Người mới Workflow'],
     [500, 'Pipeline Builder'],
     [1200, 'Release Engineer'],

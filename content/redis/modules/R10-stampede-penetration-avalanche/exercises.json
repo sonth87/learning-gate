@@ -212,7 +212,7 @@
     "id": "redis-ex-r10-5",
     "code": "R10.5",
     "module": "R10",
-    "title": "Ca trực #1 — Khám bệnh và dập bão Cache Stampede cho khoá iPhone 16",
+    "title": "Ca trực #1 — Chẩn đoán lỗi và dập bão Cache Stampede cho khoá iPhone 16",
     "difficulty": 3,
     "tags": [
       "troubleshoot",

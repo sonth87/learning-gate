@@ -3,8 +3,8 @@
   "slug": "K17-networkpolicy-and-helm",
   "level": 5,
   "order": 17,
-  "title": "Tường lửa Mạng Zero-Trust & Đóng gói Ứng dụng: NetworkPolicy & Helm Charts",
-  "summary": "Khoá chặt mạng phẳng mặc định bằng NetworkPolicy (Default Deny & Whitelist) và tái sử dụng cấu hình đa môi trường chuyên nghiệp với Helm values.yaml.",
+  "title": "Cô lập Mạng với NetworkPolicy & Đóng gói bằng Helm / Kustomize",
+  "summary": "Khóa chặt mạng phẳng mặc định bằng NetworkPolicy (Default Deny & Whitelist) và so sánh quản lý cấu hình đa môi trường giữa Helm Charts và Kustomize (kubectl apply -k).",
   "tags": [
     "networkpolicy",
     "zero-trust",

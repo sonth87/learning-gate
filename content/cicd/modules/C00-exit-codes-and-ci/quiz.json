@@ -34,7 +34,7 @@
   {
     "id": "cicd-q-c00-4",
     "type": "mc",
-    "q": "Trong kịch bản Bash nhiều dòng có đường ống `npm test | tee report.txt`, tuỳ chọn nào trong `set -euo pipefail` đảm bảo lệnh không bị xanh giả khi `npm test` lỗi nhưng `tee` vẫn ghi file thành công?",
+    "q": "Trong kịch bản Bash nhiều dòng có pipeline `npm test | tee report.txt`, tuỳ chọn nào trong `set -euo pipefail` đảm bảo lệnh không bị xanh giả khi `npm test` lỗi nhưng `tee` vẫn ghi file thành công?",
     "code": "set -euo pipefail\nnpm test | tee report.txt",
     "choices": [
       "-e (errexit)",
@@ -43,12 +43,12 @@
       "Không cần cờ nào vì dấu | tự động lấy lỗi đầu tiên"
     ],
     "answer": 2,
-    "explain": "Mặc định Bash lấy mã thoát của lệnh cuối cùng trong đường ống (`tee`, vốn trả về `0`). Tuỳ chọn `-o pipefail` buộc đường ống trả về mã thoát khác 0 của lệnh thất bại gần nhất bên trong ống (`npm test`)."
+    "explain": "Mặc định Bash lấy mã thoát của lệnh cuối cùng trong pipeline (`tee`, vốn trả về `0`). Tuỳ chọn `-o pipefail` buộc pipeline trả về mã thoát khác 0 của lệnh thất bại gần nhất bên trong ống (`npm test`)."
   },
   {
     "id": "cicd-q-c00-5",
     "type": "mc",
-    "q": "Điều gì xảy ra khi chạy `npm ci` trên đường ống CI nhưng lập trình viên vừa nâng phiên bản thư viện trong `package.json` mà quên cập nhật `package-lock.json`?",
+    "q": "Điều gì xảy ra khi chạy `npm ci` trên CI Pipeline nhưng lập trình viên vừa nâng phiên bản thư viện trong `package.json` mà quên cập nhật `package-lock.json`?",
     "code": "",
     "choices": [
       "npm ci tự động sửa lại package-lock.json rồi chạy tiếp bình thường",

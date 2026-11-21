@@ -1,57 +1,60 @@
-## 1. Phân loại Quyền lực & Dịch chuyển Thái độ bằng Ma trận SEAM
+## 1. Giải mã bằng ví dụ phần mềm: Stakeholder là ai và Ma trận ủng hộ `SEAM` dùng thế nào?
 
-Trong **PMBOK® Guide 8 (`§2.5`)**, PMI hợp nhất **Stakeholder Engagement** và **Communications** vào chung một miền duy nhất là **Stakeholders** (7 quy trình) [!badge:amber:PMBOK 8] — bởi giao tiếp chính là phương tiện cốt lõi để gắn kết con người.
+Khi triển khai phần mềm Quản lý Kho mới thay thế sổ sách truyền thống, nhiều PM trẻ chỉ chăm chăm họp với ông Giám đốc ký hợp đồng mà quên bẵng chị Kế toán kho lâu năm. Tới ngày chạy thật, chị Kế toán sợ phần mềm mới làm lộ sai sót tồn kho cũ nên âm thầm xúi nhân viên nhập liệu đối phó, khiến dự án tê liệt!
 
-Việc nhận diện bên liên quan (**Identify Stakeholders**) diễn ra **ngay từ lúc khởi tạo và lặp lại liên tục** suốt dự án. Sau khi ghi vào **Stakeholder Register**, PM phân tích vị thế bằng **Power/Interest Grid** (*High Power + High Interest → Manage Closely*; *High Power + Low Interest → Keep Satisfied*; *Low Power + High Interest → Keep Informed*; *Low + Low → Monitor*) hoặc **Salience Model** (*Power · Urgency · Legitimacy*).
+Trong **PMBOK® Guide 8 (`§2.5`)**, PMI gộp chung **Gắn kết Bên liên quan** và **Truyền thông** vào một miền duy nhất là **Stakeholders** (7 quy trình). Hãy nắm rõ 3 khái niệm mở đường sau bằng ngôn ngữ đời thường:
 
-Tiếp theo, để đo và thu hẹp khoảng cách thái độ giữa trạng thái hiện tại (**C — Current**) và trạng thái kỳ vọng (**D — Desired**), PM dùng **Stakeholder Engagement Assessment Matrix (SEAM)** [!badge:sky:PMA Bridge]:
+- **Stakeholder (*Bên liên quan*):** Bất kỳ cá nhân hay tổ chức nào tác động đến dự án, bị ảnh hưởng bởi dự án, hoặc **tự cảm thấy mình bị ảnh hưởng** (từ Sponsor, đội Dev, bộ phận Pháp chế đến người dùng cuối). Việc nhận diện (`Identify Stakeholders`) phải làm **ngay từ lúc khởi tạo và lặp lại liên tục** khi sang pha mới.
+- **Power / Interest Grid (*Lưới Quyền lực × Mức độ quan tâm*):** Chia các bên vào 4 ô để phân bổ sức lực hợp lý: *Quyền cao + Quan tâm cao → Theo sát chặt chẽ (`Manage Closely`)*; *Quyền cao + Quan tâm thấp → Giữ hài lòng, tránh làm phiền chi tiết (`Keep Satisfied`)*; *Quyền thấp + Quan tâm cao → Cập nhật thông tin đầy đủ (`Keep Informed`)*; *Thấp + Thấp → Theo dõi định kỳ (`Monitor`)*.
+- **SEAM (*Stakeholder Engagement Assessment Matrix* — Ma trận đánh giá mức độ ủng hộ):** Bảng đo thái độ thực tế gồm 5 cột, đánh dấu chữ **`C` (*Current* — Thái độ hiện tại)** và **`D` (*Desired* — Thái độ mong muốn)** để ==chủ động thiết kế hành động kéo C dịch chuyển về đúng D==!
 
 ```visual
 kind: flow
-title: "Thang 5 Nấc Thái độ trên Ma trận Gắn kết SEAM (C → D)"
-subtitle: "Nhiệm vụ của PM là thiết kế chiến lược đưa Stakeholder chủ chốt từ trái sang phải"
+title: "Thang 5 Nấc Thái độ trên Ma trận SEAM (Kéo C dịch chuyển sang D)"
+subtitle: "Không bao giờ phớt lờ người đang ở ô Resistant có ảnh hưởng cao!"
 steps:
   - icon: "eye"
     badge: "1. UNAWARE"
-    title: "Chưa biết gì"
-    desc: "Chưa nắm thông tin về dự án và tác động tới họ → Cần cung cấp bức tranh mục tiêu rõ ràng."
+    title: "Chưa biết thông tin"
+    desc: "Chưa rõ dự án làm gì và ảnh hưởng thế nào tới mình → Truyền thông mục tiêu và phạm vi sớm."
     tone: "slate"
-    edge: "Nếu lo sợ mất quyền lợi"
+    edge: "Nếu lo mất quyền lợi"
   - icon: "alert"
     badge: "2. RESISTANT"
-    title: "Phản đối / Kháng cự"
-    desc: "Ngầm chặn hoặc phản bác thay đổi → Gặp riêng 1-1 lắng nghe nỗi lo gốc rễ, KHÔNG né tránh!"
+    title: "Phản đối / Ngầm chống đối"
+    desc: "Sợ thay đổi làm tăng việc hoặc mất vị thế → Gặp riêng 1-1 lắng nghe nỗi lo gốc rễ!"
     tone: "rose"
-    edge: "Giải toả nghi ngại"
+    edge: "Tháo gỡ nghi ngại"
   - icon: "scale"
     badge: "3. NEUTRAL"
-    title: "Trung lập"
-    desc: "Biết dự án nhưng không ủng hộ cũng không chống → Minh bạch lợi ích thực tế liên quan tới họ."
+    title: "Đứng ngoài trung lập"
+    desc: "Biết về dự án nhưng thờ ơ → Chỉ rõ lợi ích thiết thực mà hệ thống mới mang lại cho họ."
     tone: "amber"
-    edge: "Tạo sự đồng thuận"
+    edge: "Mời tham gia góp ý"
   - icon: "handshake"
     badge: "4. SUPPORTIVE"
-    title: "Ủng hộ (Đích phổ biến)"
-    desc: "Đồng tình và sẵn sàng phối hợp nguồn lực giúp dự án thành công."
+    title: "Đồng hành ủng hộ (Đích chuẩn)"
+    desc: "Tin tưởng mục tiêu dự án và sẵn sàng phối hợp nhân sự, nghiệm thu tích cực."
     tone: "emerald"
-    edge: "Trao vai trò lan toả"
+    edge: "Trao vai trò hạt nhân"
   - icon: "award"
     badge: "5. LEADING"
-    title: "Dẫn dắt / Tiên phong"
-    desc: "Chủ động vận động người khác cùng ủng hộ dự án (thường cần ở Sponsor và Key Champions)."
+    title: "Tiên phong dẫn dắt"
+    desc: "Chủ động vận động đồng nghiệp khác cùng đón nhận dự án (dành cho Sponsor & Champions)."
     tone: "cyan"
 ```
 
-- [!] **Thứ tự chuẩn khi xuất hiện Stakeholder mới giữa dự án**: ==(1) Cập nhật vào Stakeholder Register → (2) Phân tích mức ảnh hưởng, mối quan tâm và thái độ hiện tại → (3) Cập nhật Stakeholder Engagement Plan & Communications Plan → (4) Chủ động gặp gỡ gắn kết==.
+> [!WARNING]
+> **Trình tự chuẩn khi phát hiện một Stakeholder mới giữa chừng dự án:** Tuyệt đối không gửi bừa tài liệu ngay! Hãy đi đúng 4 bước: ==(1) Ghi danh vào Stakeholder Register → (2) Phân tích quyền lực, mối quan tâm và thái độ hiện tại → (3) Cập nhật Stakeholder Engagement Plan & Communications Plan → (4) Chủ động gặp gỡ gắn kết==.
 
-## 2. Ba Phương thức Truyền thông (`Interactive · Push · Pull`)
+## 2. Công thức bùng nổ kênh liên lạc & 3 Phương thức Truyền thông
 
-Truyền thông hiệu quả không phải là spam thật nhiều tài liệu, mà là đưa **đúng thông tin, đúng định dạng, đúng thời điểm** theo công thức kênh liên lạc $N(N-1)/2$:
+Khi quy mô đội dự án và các bên liên quan phình to, độ phức tạp giao tiếp không tăng tuyến tính mà tăng vọt theo công thức **Số kênh liên lạc = `N × (N - 1) / 2`** (trong đó `N` là tổng số người, **nhớ cộng cả PM nếu đề bài chưa tính PM!**). Ví dụ: nhóm 5 người chỉ có `5 × 4 / 2 = 10 kênh`, nhưng khi tăng thêm 5 người lên `N = 10` thì số kênh nhảy vọt lên **`10 × 9 / 2 = 45 kênh`**!
 
 ```visual
 kind: groups
-title: "Chọn đúng Phương thức Giao tiếp theo Tình huống Đề thi"
-subtitle: "Ưu tiên số 1 của PMI cho vấn đề phức tạp/nhạy cảm luôn là Interactive!"
+title: "3 Phương thức Truyền thông Chuẩn PMI theo Ngữ cảnh"
+subtitle: "Vấn đề nhạy cảm, xung đột hoặc hiểu lầm bắt buộc phải ưu tiên Interactive!"
 columns: 3
 items:
   - num: 1
@@ -59,55 +62,61 @@ items:
     title: "Interactive (Tương tác 2 chiều)"
     badge: "NHẠY CẢM · PHỨC TẠP"
     tone: "emerald"
-    desc: "Trao đổi thời gian thực giúp xác nhận sự thấu hiểu và đọc được ngôn ngữ cơ thể ngay lập tức."
+    desc: "Đối thoại trực tiếp thời gian thực giúp kiểm chứng sự thấu hiểu và cảm xúc tức thì."
     bullets:
-      - "Họp mặt trực tiếp, gọi video, workshop giải quyết vấn đề, Daily Standup."
-      - "BẮT BUỘC ưu tiên khi giải quyết xung đột, hiểu lầm, tin xấu hoặc thuyết phục người Resistant."
+      - "Họp mặt đối mặt, gọi video, hội thảo thiết kế (Workshop), Daily Standup."
+      - "Lựa chọn SỐ 1 khi thuyết phục người Resistant, báo tin xấu hoặc gỡ xung đột."
   - num: 2
     icon: "file"
     title: "Push (Đẩy thông tin 1 chiều)"
-    badge: "GHI NHẬN CHÍNH THỨC"
+    badge: "LƯU VẾT CHÍNH THỨC"
     tone: "amber"
-    desc: "Gửi tới danh sách người nhận xác định — đảm bảo ĐÃ GỬI nhưng chưa đảm bảo người nhận ĐÃ HIỂU."
+    desc: "Gửi tới người nhận cụ thể — xác nhận được ĐÃ GỬI nhưng chưa chắc họ ĐÃ ĐỌC HIỂU."
     bullets:
-      - "Email thông báo mốc lịch, biên bản cuộc họp, bản tin trạng thái tuần (Status Report), công văn."
-      - "Phù hợp lưu dấu vết văn bản (audit trail) và cập nhật thông tin một chiều định kỳ."
+      - "Email thông báo lịch, biên bản họp (Meeting Minutes), báo cáo tuần, văn bản pháp lý."
+      - "Dùng để xác nhận cam kết bằng chữ viết sau khi đã trao đổi trực tiếp."
   - num: 3
     icon: "search"
-    title: "Pull (Tự tra cứu theo nhu cầu)"
-    badge: "KHỐI LƯỢNG LỚN · ĐÔNG NGƯỜI"
+    title: "Pull (Tự tra cứu kho chung)"
+    badge: "ĐÔNG NGƯỜI · DỮ LIỆU LỚN"
     tone: "sky"
-    desc: "Đặt thông tin lên kho tập trung để số đông người nhận tự truy cập bất cứ lúc nào cần."
+    desc: "Đặt tài liệu trên cổng tập trung để hàng trăm người tự mở xem khi có nhu cầu."
     bullets:
-      - "Cổng nội bộ Intranet, Confluence Wiki, kho tài liệu kỹ thuật, bảng Radiator công khai, E-learning."
-      - "Lý tưởng cho hàng trăm người dùng cuối hoặc kho dữ liệu tham chiếu đồ sộ."
+      - "Trang Confluence/Wiki, kho tài liệu API, bảng Dashboard công khai, video E-learning."
+      - "Tránh làm ngập hòm thư của các Stakeholder chỉ cần tra cứu định kỳ."
 ```
 
-## 3. Tuyệt chiêu Tách Bẫy: Stakeholder Plan vs Communications Plan
+## 3. Phân biệt sinh tử: `Stakeholder Engagement Plan` vs `Communications Management Plan`
 
-Trong phòng thi, hai lựa chọn *"Update the Stakeholder Engagement Plan"* và *"Update the Communications Management Plan"* luôn đứng cạnh nhau để bẫy bạn [!badge:rose:Bẫy đề thi]. Hãy dùng lăng kính phân tách sắc lẹm sau:
+Đây là cặp đáp án song sinh làm mất điểm nhiều nhất trong phòng thi: cả hai đều nằm cạnh nhau trong lựa chọn B và C! Hãy dùng lăng kính phân tách 3 giây dưới đây:
 
 ```visual
 kind: compare
-title: "Khi nào sửa Stakeholder Engagement Plan vs Communications Management Plan?"
-subtitle: "Mẹo 3 giây nhìn từ khoá triệu chứng để chọn trúng 100%"
+title: "Khi nào mở Stakeholder Engagement Plan vs Communications Management Plan?"
+subtitle: "Một bên sửa ĐƯỜNG ỐNG ĐƯA TIN · Một bên sửa THÁI ĐỘ LÒNG NGƯỜI!"
 left:
-  badge: "CÁI GÌ · KÊNH NÀO · BAO LÂU?"
+  badge: "THÔNG TIN GÌ · ĐỊNH DẠNG NÀO · BAO LÂU?"
   title: "Communications Management Plan"
   tone: "sky"
   bullets:
-    - "Triệu chứng: 'Tôi không nhận được báo cáo tuần', 'Báo cáo dài quá khó đọc', 'Gửi nhầm định dạng hoặc sai ngôn ngữ'."
-    - "Quy định: Ai nhận thông tin gì, tần suất bao lâu, định dạng nào (Dashboard vs PDF), kênh nào (Push/Pull/Interactive) và ai chịu trách nhiệm gửi."
-    - "Từ khoá mở khoá: Information needs, format, frequency, distribution channel, missed reports."
+    - "Triệu chứng đề bài: 'Giám đốc phàn nàn báo cáo quá dài khó đọc', 'Chi nhánh nước ngoài bị sót email lịch bảo trì', 'Sai ngôn ngữ hoặc trễ bản tin tuần'."
+    - "Nội dung quản lý: Ai nhận thông tin gì, tần suất gửi, định dạng (Dashboard tóm tắt hay bảng chi tiết), kênh truyền và người phụ trách gửi."
+    - "Từ khoá nhận diện: Information needs, report format, frequency, distribution channel."
 right:
-  badge: "TẠI SAO HỌ CHỐNG ĐỐI / THỜ Ơ?"
+  badge: "VÌ SAO HỌ PHẢN ĐỐI · LÀM SAO ĐỒNG THUẬN?"
   title: "Stakeholder Engagement Plan"
   tone: "emerald"
   bullets:
-    - "Triệu chứng: 'Trưởng phòng vận hành liên tục vắng họp và chê dự án', 'Khách hàng mất niềm tin, sợ hệ thống mới làm mất việc'."
-    - "Quy định: Chiến lược xây dựng mối quan hệ, tháo gỡ rào cản tâm lý và thu hẹp khoảng cách thái độ trên ma trận SEAM (ví dụ từ Resistant → Supportive)."
-    - "Từ khoá mở khoá: Attitude, resistance, buy-in, influence, expectations, level of engagement."
+    - "Triệu chứng đề bài: 'Trưởng phòng nghiệp vụ cố tình vắng họp liên tiếp', 'Người dùng nghi ngờ hệ thống mới và từ chối hợp tác UAT'."
+    - "Nội dung quản lý: Chiến lược tâm lý và hành động cụ thể để xây dựng lòng tin, tháo gỡ kháng cự và dịch chuyển mức ủng hộ trên bảng SEAM."
+    - "Từ khoá nhận diện: Resistance, attitude, buy-in, expectations, engagement gap."
 ```
 
-> [!TIP] Khẩu quyết bỏ túi trước khi vào phòng thi
-> **Báo cáo vẫn tới đều nhưng lòng người vẫn chống đối** → mở ==Stakeholder Engagement Plan==! **Lòng người rất thiện chí nhưng thông tin bị sót, trễ hoặc rối rắm** → mở ==Communications Management Plan==!
+## 4. Tình huống thực chiến & Phản xạ vàng phòng thi
+
+Giả sử bạn gửi báo cáo tiến độ PDF đều đặn mỗi sáng thứ Hai, nhưng Giám đốc Vận hành vẫn liên tục bác bỏ sản phẩm ở buổi họp cuối tháng vì cho rằng đội dự án không hiểu quy trình kho bãi của ông ấy.
+
+> [!TIP]
+> **Mẹo khoanh đáp án chuẩn 100%:**
+> - Nếu vấn đề là ==báo cáo vẫn gửi đều nhưng người nhận chống đối, lạnh nhạt hoặc lệch kỳ vọng== → Gặp trực tiếp lắng nghe và cập nhật **Stakeholder Engagement Plan**!
+> - Nếu vấn đề là ==họ rất thiện chí ủng hộ nhưng không nắm được tiến độ do báo cáo rối rắm, gửi sai kênh hoặc sót người nhận== → Cập nhật **Communications Management Plan**!

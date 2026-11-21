@@ -26,7 +26,12 @@
   },
   {
     "id": "K00-FC6",
-    "front": "Vì sao không nên dùng tag `:latest` (ví dụ `node:latest`) trên môi trường Production?",
+    "front": "Vì sao không nên dùng tag `:latest` (ví dụ `node:latest` hay `python:latest`) trên môi trường Production?",
     "back": "Vì `:latest` là nhãn động thay đổi theo thời gian — lần build sau có thể tự động kéo phiên bản major mới gây gãy tương thích và làm mất tính tái lập (reproducibility)."
+  },
+  {
+    "id": "K00-FC7",
+    "front": "Ba bộ máy chạy OCI Container phổ biến trên máy phát triển năm 2026 là gì?",
+    "back": "1) **Docker Desktop** (GUI phổ biến trên Windows/macOS);\n2) **OrbStack** (siêu nhẹ, khởi động 2 giây, tiết kiệm RAM/pin trên macOS);\n3) **Podman** (kiến trúc daemonless & rootless mặc định trên Linux)."
   }
 ]

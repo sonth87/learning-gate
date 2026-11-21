@@ -3,7 +3,7 @@
   "slug": "C09-gitlab-ci-architecture",
   "level": 2,
   "order": 9,
-  "title": "Kiến trúc GitLab CI/CD Thực chiến: Chuyển đổi Tư duy từ GitHub Actions sang .gitlab-ci.yml",
+  "title": "GitLab CI/CD Thực tế: Chuyển đổi từ GitHub Actions sang .gitlab-ci.yml",
   "summary": "Làm chủ ngữ pháp .gitlab-ci.yml hiện đại: stages, default.image, vượt rào với DAG needs, quản lý cache policy pull-push vs pull, parallel sharding và rules.",
   "tags": [
     "gitlab-ci",
@@ -42,7 +42,7 @@
     {
       "path": "gitlab/cache-pull-push.gitlab-ci.yml",
       "kind": "good",
-      "note": "Cách thiết lập bộ đệm .npm/ chuẩn mực trong thư mục dự án GitLab với khóa băm package-lock.json và phân tách quyền ghi pull-push / chỉ đọc pull.",
+      "note": "Cách thiết lập bộ đệm .npm/ chuẩn mực trong thư mục dự án GitLab với Cache Key theo mã băm package-lock.json và phân tách quyền ghi pull-push / chỉ đọc pull.",
       "task": "Tại sao trên GitLab CI ta phải đặt thư mục đệm tại .npm/ bên trong dự án thay vì ~/.npm (/root/.npm) như trên GitHub Actions?",
       "answer": "GitLab Runner chỉ có quyền đóng gói lưu đệm các tệp/thư mục nằm bên trong thư mục làm việc của dự án ($CI_PROJECT_DIR); mọi đường dẫn bên ngoài như /root/.npm sẽ bị bỏ qua không lưu được."
     },
@@ -51,7 +51,7 @@
       "kind": "outdated",
       "note": "Tệp cấu hình di sản dùng từ khóa cũ only: và except: đã bị GitLab ngừng phát triển và khuyến nghị chuyển sang khối rules:.",
       "task": "So sánh sự rõ ràng khi kết hợp điều kiện nhánh main kèm cổng bấm duyệt tay giữa kiểu cũ và khối rules: mới.",
-      "answer": "Với `rules:`, toàn bộ logic điều kiện nhánh (`if: $CI_COMMIT_BRANCH == \"main\"`), chế độ kích hoạt (`when: manual`) và tính năng chặn đường ống (`allow_failure: false`) gom gọn trong một khối duy nhất rất dễ đọc và không gây lỗi nhân đôi Pipeline."
+      "answer": "Với `rules:`, toàn bộ logic điều kiện nhánh (`if: $CI_COMMIT_BRANCH == \"main\"`), chế độ kích hoạt (`when: manual`) và tính năng chặn pipeline (`allow_failure: false`) gom gọn trong một khối duy nhất rất dễ đọc và không gây lỗi nhân đôi Pipeline."
     }
   ]
 }

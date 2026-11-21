@@ -3,8 +3,8 @@
   "slug": "K03-first-dockerfile",
   "level": 1,
   "order": 3,
-  "title": "Viết Dockerfile đầu tiên chuẩn mực cho ứng dụng Node.js 22",
-  "summary": "Nắm vững FROM ghim phiên bản, WORKDIR, ENV, RUN npm ci tất định, JSON Exec Form CMD bảo toàn tín hiệu SIGTERM và docker build -t.",
+  "title": "Viết Dockerfile chuẩn Production (Node.js 22 & Python 3.12 + uv)",
+  "summary": "Nắm vững FROM ghim phiên bản, WORKDIR, ENV, khóa chặt phụ thuộc (npm ci / uv sync), JSON Exec Form CMD bảo toàn tín hiệu SIGTERM và docker build -t.",
   "tags": [
     "dockerfile",
     "node22",

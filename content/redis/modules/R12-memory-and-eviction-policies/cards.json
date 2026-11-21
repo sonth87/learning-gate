@@ -22,7 +22,7 @@
   {
     "id": "R12-FC5",
     "front": "Ý nghĩa của bộ 3 chỉ thị `lazyfree-lazy-eviction`, `lazyfree-lazy-expire` và `lazyfree-lazy-server-del`?",
-    "back": "Chuyển việc giải phóng vùng nhớ (`free()`) khi trục xuất khoá đầy RAM, khi khoá tự hết hạn TTL và khi ghi đè khoá cũ sang luồng nền `bio_lazy_free`, giữ cho luồng chính không bị khựng bởi Bigkey."
+    "back": "Chuyển việc giải phóng vùng nhớ (`free()`) khi giải phóng (Eviction) khoá đầy RAM, khi khoá tự hết hạn TTL và khi ghi đè khoá cũ sang luồng nền `bio_lazy_free`, giữ cho luồng chính không bị khựng bởi Bigkey."
   },
   {
     "id": "R12-FC6",

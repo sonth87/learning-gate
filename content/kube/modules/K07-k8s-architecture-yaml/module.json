@@ -3,8 +3,8 @@
   "slug": "K07-k8s-architecture-yaml",
   "level": 2,
   "order": 7,
-  "title": "Kiến trúc Kubernetes, Vòng lặp Điều khiển & Giải phẫu Manifest YAML",
-  "summary": "Phân biệt Control Plane (apiserver, etcd, scheduler, controller-manager) và Worker Node (kubelet, kube-proxy), hiểu Control Loop và 4 trường gốc YAML.",
+  "title": "Kiến trúc Kubernetes, Bản đồ 6 Tầng, Control Loop & Manifest YAML",
+  "summary": "Hiểu khi nào cần K8s, bản đồ phân cấp Container -> Pod -> Deployment -> Service -> Ingress, Control Plane vs Worker Node, Reconciliation Loop và 4 trường gốc YAML.",
   "tags": [
     "k8s-architecture",
     "control-plane",

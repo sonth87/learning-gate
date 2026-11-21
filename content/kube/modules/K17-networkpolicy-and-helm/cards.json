@@ -28,5 +28,10 @@
     "id": "K17-C6",
     "front": "GitOps (với ArgoCD / Flux) kết hợp với Helm như thế nào trong kiến trúc 2026?",
     "back": "CI build xong image chỉ cập nhật tag mới vào `values-prod.yaml` trên Git; ArgoCD chạy trong cụm K8s tự phát hiện thay đổi trên Git rồi render & đồng bộ Helm Chart vào cụm."
+  },
+  {
+    "id": "K17-C7",
+    "front": "Khi nào nên ưu tiên **Kustomize (`kubectl apply -k`)** thay vì **Helm**?",
+    "back": "Khi quản lý các microservice nội bộ và muốn giữ nguyên **100% tệp YAML thuần hợp lệ** ở `base/` rồi đắp lớp phủ (`overlays/staging`, `overlays/prod`) không cần học cú pháp khuôn mẫu `{{ ... }}` của Go Template."
   }
 ]

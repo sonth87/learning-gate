@@ -1,94 +1,101 @@
-## 1. Bộ ba Scope Baseline, Quy tắc 100% WBS & Ma trận Truy vết (RTM)
+## 1. Giải mã bằng ví dụ phần mềm: `WBS` (Quy tắc 100%), `RTM` và `Scope Baseline` là gì?
 
-Trong **PMBOK® Guide 8 (`§2.2`)**, Miền hiệu suất **Scope** (6 quy trình — đổi *Create WBS* thành *Develop Scope Structure* để bao hàm cả WBS lẫn Backlog phân cấp) [!badge:amber:PMBOK 8] định nghĩa ranh giới cực kỳ rạch ròi: **cái gì thuộc dự án và cái gì KHÔNG thuộc dự án**.
+Khi nhận dự án xây dựng **Ứng dụng Ngân hàng Số**, nếu bạn chỉ ghi danh sách việc lặt vặt kiểu *"Tuần 1 họp thiết kế, Tuần 2 viết code, Tuần 3 sửa bug"* thì rất dễ bỏ sót cả một mảng chức năng lớn! Trong **PMBOK® Guide 8 (`§2.2` — Miền Scope)**, PMI sử dụng 3 công cụ cực kỳ chặt chẽ để khóa ranh giới **những gì thuộc dự án và những gì KHÔNG thuộc dự án**:
 
-Hai bảo bối giúp PM không bao giờ để lọt yêu cầu hay làm thừa việc gồm:
-- [x] **Requirements Traceability Matrix (RTM — Ma trận truy vết yêu cầu)**: Bảng nối ngược từng yêu cầu từ lúc khởi phát (**Business Need / Objective**) xuyên qua **WBS Deliverables**, **Thiết kế** cho tới tận **Test Cases**. Cứ thấy đề hỏi *"làm sao biết yêu cầu này gắn với mục tiêu kinh doanh nào hoặc đã có kịch bản test chưa?"* → chọn ngay **RTM**!
-- [x] **Bộ ba bất biến của `Scope Baseline`**: Gồm đúng 3 thành phần ==Project Scope Statement== (mô tả sản phẩm, tiêu chí nghiệm thu & **Project Exclusions** — những thứ loại trừ rõ ràng) + ==WBS== (phân rã theo hướng sản phẩm bàn giao tuân thủ **100% Rule**, tầng thấp nhất là **Work Package**) + ==WBS Dictionary== (mô tả chi tiết kỹ thuật, tài khoản chi phí, tiêu chuẩn chất lượng cho từng nút WBS).
+- **WBS (*Work Breakdown Structure* — Cây phân rã công việc theo sản phẩm bàn giao):** Sơ đồ hình cây chẻ nhỏ sản phẩm lớn thành các cụm kết quả cụ thể (ví dụ: `1.1 Module Định danh eKYC`, `1.2 Module Chuyển khoản 24/7`, `1.3 Cổng đối soát`). Cây WBS bắt buộc tuân thủ ==Quy tắc 100% (100% Rule)==: tổng toàn bộ nhánh con cộng lại phải bằng **đúng 100% nhánh cha** — không thiếu bất kỳ hạng mục nào và không đẻ thừa việc ngoài phạm vi! Tầng lá thấp nhất của WBS dùng để ước lượng thời gian và chi phí gọi là **Work Package (*Gói công việc*)**.
+- **Scope Baseline (*Đường cơ sở phạm vi*):** Bộ ba văn kiện bất biến gồm **(1) Project Scope Statement** (mô tả sản phẩm, tiêu chí nghiệm thu và mục **Exclusions** ghi rõ những gì *loại trừ không làm*) + **(2) WBS** + **(3) WBS Dictionary** (từ điển mô tả chi tiết kỹ thuật, điều kiện chất lượng cho từng gói công việc trên WBS).
+- **RTM (*Requirements Traceability Matrix* — Ma trận truy vết yêu cầu):** Bảng đối chiếu nối liền mạch từng yêu cầu từ gốc **Mục tiêu kinh doanh** → **Nút WBS** → **Thiết kế kỹ thuật** → **Kịch bản kiểm thử (Test Case)**. Hễ cần kiểm tra xem một tính năng có phục vụ mục tiêu đầu tư nào không hay đã được viết test chưa, PM mở ngay `RTM`!
 
-## 2. Chặn đứng Hai Kẻ Thù của Phạm vi: Scope Creep vs Gold Plating
+## 2. Hai kẻ thù thầm lặng phá nát dự án: `Scope Creep` vs `Gold Plating`
 
-Mọi sự phình to phạm vi không đi qua kiểm soát thay đổi chính thức đều bị PMI coi là thất bại quản trị [!badge:rose:Bẫy đề thi], bất kể xuất phát từ thiện chí hay không tốn thêm tiền mặt ngay lúc đó:
+Trong ngành phần mềm, dự án trễ hạn và cháy túi thường không phải do một thay đổi khổng lồ, mà do hàng chục thay đổi nhỏ lọt qua kẽ tay không ai kiểm soát. Hãy phân biệt thật rõ nguồn gốc của 2 căn bệnh này:
 
 ```visual
 kind: compare
 title: "Phân biệt Sống còn: Scope Creep vs Gold Plating"
-subtitle: "Đọc đúng nguồn gốc ai là người tự ý thêm việc để chọn cách chặn chuẩn xác"
+subtitle: "Dù khách hàng nhờ vả hay lập trình viên tự tặng thêm, không qua kiểm soát thay đổi đều là SAI!"
 left:
-  badge: "TỪ PHÍA KHÁCH / STAKEHOLDER"
-  title: "Scope Creep (Trượt phạm vi)"
+  badge: "TỪ PHÍA KHÁCH HÀNG / STAKEHOLDER"
+  title: "Scope Creep (Khách lén nhét thêm việc)"
   tone: "rose"
   bullets:
-    - "Nguồn gốc: Khách hàng hoặc Stakeholder bên ngoài liên tục nhờ vả 'tiện tay sửa thêm chút xíu' trực tiếp với Developer."
-    - "Bản chất: Mở rộng phạm vi từ từ mà KHÔNG đánh giá tác động và KHÔNG đi qua Integrated Change Control (CCB)."
-    - "Cách chặn: Đối chiếu Scope Statement (Exclusions) & RTM, đưa mọi yêu cầu phát sinh vào quy trình Change Request chính thức."
+    - "Tình huống thực tế: Khách hàng đi ăn trưa với Developer rồi nhắn riêng 'Tiện tay thêm giúp anh nút xuất báo cáo ra định dạng biểu đồ động nhé, nhỏ xíu thôi!'."
+    - "Bản chất: Phạm vi bị phình to từng chút một từ bên ngoài mà KHÔNG đánh giá tác động và KHÔNG đi qua CCB (hoặc PO trong Agile)."
+    - "Cách chặn chuẩn PMI: Đối chiếu Project Scope Statement (Exclusions) & RTM, hướng dẫn đưa mọi yêu cầu mới vào quy trình Change Request chính thức."
 right:
   badge: "TỪ NỘI BỘ ĐỘI DỰ ÁN"
-  title: "Gold Plating (Mạ vàng sản phẩm)"
+  title: "Gold Plating (Dev tự ý vẽ thêm tính năng)"
   tone: "amber"
   bullets:
-    - "Nguồn gốc: Thành viên nội bộ hoặc PM tự ý làm thêm tính năng ngoài yêu cầu để 'làm đẹp lòng khách hàng' dù khách không xin."
-    - "Hậu quả ẩn: Tiêu tốn thời gian test, làm phát sinh bug mới, tăng chi phí bảo trì vận hành mà không tạo giá trị khách cần."
-    - "Cách chặn: Dừng ngay lập tức việc làm thêm; nhắc lại nguyên tắc 100% Scope Baseline (nếu thực sự hữu ích, phải đề xuất Change Request!)."
+    - "Tình huống thực tế: Senior Dev thấy còn dư 2 ngày nên tự ý code thêm hiệu ứng chuyển cảnh 3D và bộ lọc giọng nói dù khách hàng không hề yêu cầu để 'gây bất ngờ'."
+    - "Tác hại ngầm: Chiếm mất giờ kiểm thử của Tester, đẻ ra lỗi mới không đáng có và đẩy gánh nặng bảo trì lâu dài lên vai hệ thống."
+    - "Cách chặn chuẩn PMI: Dừng ngay việc làm thêm ngoài Baseline! Nếu ý tưởng thực sự đắt giá, phải lập Change Request trình duyệt đàng hoàng."
 ```
 
-## 3. Nhúng Chất lượng (`QA vs QC`) & Dòng chảy Nghiệm thu Bàn giao
+> [!WARNING]
+> **Bẫy "Miễn phí không tốn tiền" trong đề thi:** Đề bài rất hay gài câu *"Lập trình viên khẳng định tính năng làm thêm này hoàn toàn không tốn thêm chi phí và không làm trễ lịch"*. Đừng mắc lừa! ==Mọi hạng mục nằm ngoài Scope Baseline chưa được phê duyệt đều là Gold Plating và phải từ chối thực hiện trực tiếp==.
 
-Kết hợp **Nguyên tắc #3 (Embed Quality)** [!badge:amber:PMBOK 8] với chuỗi kiểm soát phạm vi, PMI vạch rõ hai khái niệm đầu tiên: **Quality** (mức độ đáp ứng yêu cầu — **bắt buộc phải cao, không bao giờ thoả hiệp**) khác hẳn **Grade** (cấp hạng nhiều hay ít tính năng cao cấp — *Low Grade* vẫn hoàn toàn hợp lệ nếu nhẹ gọn, không lỗi; còn *Low Quality* luôn là thảm hoạ!).
+## 3. Phân biệt rạch ròi bộ ba dễ nhầm nhất: `QA` vs `QC` vs `Validate Scope`
 
-Đặc biệt, hãy cần ghi nhớ **dòng chảy một chiều của sản phẩm bàn giao** kèm sự phân vai giữa **QA · QC · Validate Scope** [!badge:emerald:Phản xạ vàng]:
+Trong một dự án phần mềm thực tế, sản phẩm từ lúc viết dòng code đầu tiên đến lúc khách hàng ký biên bản thanh toán phải đi qua **3 chốt chặn hoàn toàn khác nhau về mục đích**:
+
+- **QA (*Manage Quality / Quality Assurance* — Đảm bảo chất lượng ở QUY TRÌNH):** Diễn ra ngay trong lúc đang làm dự án (*Executing*). QA không đi bắt từng con bug trên màn hình, mà **kiểm toán quy trình làm việc** (*Quality Audit*): *"Đội dự án có thực sự tuân thủ quy trình Peer Code Review và chạy CI/CD tự động như đã cam kết không, hay đang bỏ bước?"* → Mục tiêu là **Phòng ngừa lỗi từ gốc (Prevention)**.
+- **QC (*Control Quality* — Kiểm soát chất lượng SẢN PHẨM nội bộ):** Đội dự án / Tester trực tiếp chạy kiểm thử đo đếm sản phẩm so với đặc tả kỹ thuật để bắt bug (*Inspection / Correctness*). Sản phẩm vượt qua cửa QC nội bộ sẽ mang tên **`Verified Deliverable` (*Sản phẩm đã xác minh kỹ thuật*)**.
+- **Validate Scope (*Khách hàng nghiệm thu phạm vi*):** Đem chính `Verified Deliverable` đó sang cùng Khách hàng / Sponsor chạy nghiệm thu nghiệp vụ (*UAT — Acceptance*). Khi khách hàng gật đầu ký biên bản chấp nhận, sản phẩm chính thức trở thành **`Accepted Deliverable` (*Sản phẩm đã được nghiệm thu*)** đủ điều kiện chuyển sang bước Đóng dự án!
 
 ```visual
 kind: flow
-title: "Dòng chảy Nghiệm thu Bất biến từ Thực thi đến Đóng dự án"
-subtitle: "Tuyệt đối KHÔNG đảo ngược thứ tự giữa Control Quality và Validate Scope!"
+title: "Chuỗi Nghiệm thu Một chiều Bất biến trong Đề thi PMP"
+subtitle: "Luôn chạy Control Quality (nội bộ) TRƯỚC khi họp Validate Scope (khách hàng)!"
 steps:
   - icon: "wrench"
-    badge: "EXECUTING"
-    title: "1. Direct & Manage + QA"
-    desc: "Tạo ra Deliverable đầu tiên; đồng thời Manage Quality (QA) kiểm toán QUY TRÌNH để phòng ngừa lỗi."
+    badge: "1. EXECUTING + QA"
+    title: "Thực thi & Manage Quality"
+    desc: "Đội phát triển tạo ra Deliverable; QA kiểm toán quy trình để ngăn ngừa lỗi hệ thống."
     tone: "sky"
     edge: "Deliverable"
   - icon: "search"
-    badge: "NỘI BỘ KIỂM TRA"
-    title: "2. Control Quality (QC)"
-    desc: "Đội dự án/Tester đo kiểm SẢN PHẨM so với đặc tả kỹ thuật để tìm bug (Correctness)."
+    badge: "2. NỘI BỘ TEST"
+    title: "Control Quality (QC)"
+    desc: "Kiểm tra độ đúng kỹ thuật nội bộ, diệt sạch lỗi trước khi mang ra ngoài."
     tone: "amber"
     edge: "Verified Deliverable"
   - icon: "handshake"
-    badge: "KHÁCH NGHIỆM THU"
-    title: "3. Validate Scope"
-    desc: "Khách hàng / Sponsor kiểm tra và ký chấp nhận chính thức về mặt nghiệp vụ (Acceptance)."
+    badge: "3. KHÁCH DUYỆT UAT"
+    title: "Validate Scope"
+    desc: "Khách hàng / Sponsor kiểm tra tính phù hợp nghiệp vụ và ký nghiệm thu chính thức."
     tone: "emerald"
     edge: "Accepted Deliverable"
   - icon: "lock"
-    badge: "CHỐT HỒ SƠ"
-    title: "4. Close Project / Phase"
-    desc: "Bàn giao sản phẩm đã nghiệm thu sang vận hành, lưu Lessons Learned và giải phóng nguồn lực."
+    badge: "4. KẾT THÚC"
+    title: "Close Project or Phase"
+    desc: "Bàn giao sản phẩm sang vận hành, thanh lý hợp đồng và lưu trữ bài học kinh nghiệm."
     tone: "cyan"
 ```
+
+## 4. Tình huống thực chiến & Bảng bắt bệnh nhanh phòng thi
 
 ```visual
 kind: troubleshoot
-title: "Bảng Bắt bệnh Nhanh Tình huống Chất lượng & Nghiệm thu trong Đề thi"
-subtitle: "Nhìn triệu chứng để biết khâu nào bị thủng và phải sửa ở đâu"
+title: "Chẩn đoán 3 Tình huống Đứt gãy Chất lượng & Nghiệm thu Kinh điển"
+subtitle: "Nhìn vị trí phát hiện vấn đề để khoanh trúng quy trình cần củng cố"
 items:
-  - symptom: "Khách hàng phát hiện đầy lỗi kỹ thuật ngay trong buổi họp nghiệm thu (Validate Scope)"
-    badge: "THỦNG CHỐT QC"
+  - symptom: "Đang họp nghiệm thu UAT (Validate Scope) thì khách hàng bấm đâu cũng văng lỗi kỹ thuật"
+    badge: "LỖ HỔNG Ở CONTROL QUALITY"
     tone: "rose"
-    cause: "Đội dự án đã đốt cháy giai đoạn hoặc làm sơ sài bước Control Quality (trong Agile là lỏng lẻo Definition of Done)."
-    fix: "Rà soát và siết chặt lại quy trình kiểm thử nội bộ (Control Quality / DoD) trước khi đem trình diễn cho khách hàng."
-  - symptom: "Tỷ lệ sản phẩm lỗi lặp đi lặp lại ở nhiều gói công việc dù đội Tester (QC) vẫn bắt lỗi rất chăm"
-    badge: "THIẾU QA PHÒNG NGỪA"
+    cause: "Đội dự án đã bỏ qua hoặc làm qua loa bước kiểm thử nội bộ (QC / Definition of Done)."
+    fix: "Siết chặt lại bước **Control Quality** nội bộ để đảm bảo sản phẩm đạt chuẩn Verified trước khi mời khách hàng nghiệm thu."
+  - symptom: "Dù Tester làm việc hết công suất, cùng một kiểu lỗi bảo mật vẫn lặp đi lặp lại ở mọi module mới"
+    badge: "LỖ HỔNG Ở MANAGE QUALITY (QA)"
     tone: "amber"
-    cause: "Quy trình sản xuất/coding đang có lỗ hổng hệ thống — chỉ đi dò lỗi cuối nguồn (Inspection) chứ chưa phòng ngừa (Prevention)."
-    fix: "Thực hiện Manage Quality (Quality Audit + Root Cause Analysis / Ishikawa / 5 Whys) để cải tiến lại chính quy trình làm việc."
-  - symptom: "Sản phẩm chạy không có bug nào (đạt QC) nhưng khách hàng vẫn từ chối ký Validate Scope"
-    badge: "LỆCH KỲ VỌNG YÊU CẦU"
+    cause: "Quy trình viết code đang thiếu chuẩn phòng ngừa — chỉ lo vớt lỗi ở cuối dòng."
+    fix: "Thực hiện **Manage Quality** (Quality Audit + Phân tích nguyên nhân gốc rễ 5 Whys / Biểu đồ xương cá Ishikawa) để cải tiến lại quy trình."
+  - symptom: "Phần mềm chạy mượt không một con bug (đạt QC), nhưng khách hàng vẫn từ chối ký nghiệm thu"
+    badge: "LỆCH YÊU CẦU / KỲ VỌNG"
     tone: "cyan"
-    cause: "Thu thập yêu cầu ban đầu thiếu sót hoặc thiếu xác nhận tiêu chí nghiệm thu (Acceptance Criteria) với Stakeholder."
-    fix: "Đối chiếu Project Scope Statement & RTM cùng khách hàng; nếu cần sửa đổi phạm vi thì lập Change Request qua CCB."
+    cause: "Khâu thu thập yêu cầu và thống nhất tiêu chí nghiệm thu ban đầu bị hiểu sai ý nghiệp vụ."
+    fix: "Cùng khách hàng rà soát lại **Project Scope Statement & RTM**; nếu cần điều chỉnh tính năng thì thực hiện qua quy trình Change Request."
 ```
 
-> [!REMEMBER] Khẩu quyết 1 dòng cứu điểm tuyệt đối
-> **QA** kiểm **Quy trình** (Executing) · **QC** kiểm **Độ đúng kỹ thuật nội bộ** ra `Verified Deliverables` · **Validate Scope** để **Khách hàng ký nhận** ra `Accepted Deliverables`!
+> [!TIP]
+> **Mẹo nhớ 1 dòng ăn trọn điểm:** ==QA soi QUY TRÌNH== · ==QC soi LỖI NỘI BỘ tạo ra Verified Deliverable== · ==Validate Scope xin CHỮ KÝ KHÁCH HÀNG tạo ra Accepted Deliverable==!

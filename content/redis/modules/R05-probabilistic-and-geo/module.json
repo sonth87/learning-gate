@@ -3,7 +3,7 @@
   "slug": "R05-probabilistic-and-geo",
   "level": 1,
   "order": 3,
-  "title": "Cấu trúc xác suất & Không gian: Bitmap, HyperLogLog, Bloom Filter & Geo",
+  "title": "Cấu trúc Xác suất & Không gian: Bitmap, HyperLogLog, Bloom Filter & Geo",
   "summary": "Đánh đổi 0.81% sai số lấy mức giảm 99.9% RAM với HyperLogLog (12KB), chặn Cache Penetration bằng Bloom Filter tích hợp sẵn trong Redis 8 và định vị GEOSEARCH.",
   "tags": [
     "bitmap",
@@ -27,7 +27,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Tấn công xuyên thủng Cache (Cache Penetration)",
+      "label": "Xử lý Sự cố: Tấn công xuyên thủng Cache (Cache Penetration)",
       "kind": "incident",
       "targetId": "inc-cache-penetration",
       "description": "Thực chiến dùng Bloom Filter chặn hàng vạn truy vấn ID rác làm gục PostgreSQL"

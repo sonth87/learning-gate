@@ -25,7 +25,7 @@
       "Vì `LMOVE` tự động gửi lại email nếu máy chủ SMTP từ chối kết nối"
     ],
     "answer": 1,
-    "explain": "`LMOVE` thực hiện *pop-and-push* nguyên tử ngay bên trong Redis: ngay cả khi tiến trình worker sập ngay sau đó, tác vụ vẫn nằm nguyên trong `processing` để tiến trình giám sát cứu hộ."
+    "explain": "`LMOVE` thực hiện *pop-and-push* nguyên tử ngay bên trong Redis: ngay cả khi tiến trình worker sập ngay sau đó, tác vụ vẫn nằm nguyên trong `processing` để tiến trình giám sát khôi phục."
   },
   {
     "id": "R03-Q3",
@@ -53,7 +53,7 @@
   {
     "id": "R03-Q5",
     "type": "tf",
-    "q": "Để kiểm tra xem người dùng `u:882` đã bấm Like bài viết `post:55:likes` (đang có 400,000 người Like) hay chưa, cách tối ưu nhất là gọi `SMEMBERS post:55:likes` lấy mảng về Node.js rồi kiểm tra `arr.includes('u:882')`.",
+    "q": "Để kiểm tra xem người dùng `u:882` đã bấm Like bài viết `post:55:likes` (đang có 400,000 người Like) hay chưa, cách tối ưu nhất là gọi `SMEMBERS post:55:likes` tải toàn bộ tập hợp về ứng dụng (Python/Node.js/Go) rồi tự kiểm tra trong mảng.",
     "code": "",
     "choices": [],
     "answer": false,

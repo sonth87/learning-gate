@@ -21,7 +21,7 @@
   },
   {
     "id": "cicd-card-c02-5",
-    "front": "Làm sao ngăn lỗi Snapshot ngày giờ lệch nhau giữa laptop Việt Nam (`Asia/Ho_Chi_Minh`) và máy chủ CI?",
+    "front": "Làm sao nggặp lỗi Snapshot ngày giờ lệch nhau giữa laptop Việt Nam (`Asia/Ho_Chi_Minh`) và máy chủ CI?",
     "back": "Đặt biến môi trường `TZ: \"UTC\"` thống nhất trong cấu hình Job CI và trong script chạy test."
   },
   {

@@ -1,4 +1,4 @@
-# Tăng tốc Đường ống: Phân biệt Cache vs Artifact, Khóa băm Lockfile & Mô hình Cache Read-Only
+# Tăng tốc Pipeline: Phân biệt Cache vs Artifact, Cache Key theo mã băm Lockfile & Mô hình Cache Read-Only
 
 Ở các bài trước, bạn đã nắm vững sự thật vật lý của **Ephemeral Runners**: mỗi Job chạy trên một máy ảo Ubuntu mới tinh và bị xoá sổ vĩnh viễn ngay giây phút Job kết thúc! Chính cơ chế "dùng một lần rồi huỷ" này đặt ra hai bài toán thực tế rất tốn thời gian:
 1. Chẳng lẽ mỗi khi có 4 Job chạy song song (`lint`, `typecheck`, `unit-test`, `build`), cả 4 máy ảo đều phải tải lại hàng trăm megabyte gói thư viện từ `registry.npmjs.org`?
@@ -6,13 +6,17 @@
 
 Chìa khoá nằm ở việc phân biệt rạch ròi hai công cụ có bản chất hoàn toàn trái ngược nhau: ==`Cache`== và ==`Artifact`==!
 
+> [!ANALOGY] Hãy hình dung căn bếp nhà hàng: "Tủ nguyên liệu sơ chế" vs "Hộp thành phẩm giao khách"
+> - **`Cache` (Tăng tốc cài thư viện giữa các lần chạy):** Giống như **tủ gia vị và nguyên liệu sơ chế sẵn** (`~/.npm`, `~/.cache/uv`, `~/.m2`) giữ lại từ ca nấu hôm qua sang ca hôm nay để đỡ mất công đi chợ lại từ đầu. Nếu lỡ ai đó dọn sạch tủ Cache, đầu bếp chỉ tốn thêm 2 phút tải lại thư viện từ Internet nhưng **món ăn vẫn nấu thành công 100%**.
+> - **`Artifact` (Sản phẩm đóng gói giữ lại sau khi build):** Giống như **hộp món ăn thành phẩm đã đóng dấu niêm phong** (`dist/`, file `.jar`, báo cáo lỗi Playwright HTML, `sbom.json`) để chuyền từ bàn Bếp (`Job: build`) sang tay Shipper (`Job: deploy`) trong **cùng một đơn hàng**. Nếu làm mất hộp Artifact này, Shipper không có gì để giao và bước Deploy thất bại ngay lập tức!
+
 ```visual
 kind: illustration
 diagram: "cicd:c07"
 alt: "Đối chiếu kiến trúc Dependency Cache băm theo lockfile xuyên lượt chạy với Build Artifacts truyền gói thành phẩm xuyên các Job"
-title: "Giải Phẫu Lưu Trữ Đường Ống: Dependency Cache Xuyên Lượt vs Artifact Xuyên Job"
+title: "Giải Phẫu Lưu Trữ Pipeline: Dependency Cache Xuyên Lượt vs Artifact Xuyên Job"
 subtitle: "Tăng tốc cài đặt thư viện qua mã băm package-lock.json và đảm bảo nguyên tắc Build Một Lần, Triển Khai Mọi Môi Trường"
-caption: "Cơ chế khoá băm hashFiles('**/package-lock.json') của Cache (main ghi, PR đọc) đối lập với quy trình upload/download-artifact bất biến giữa các Job"
+caption: "Cơ chế Cache Key theo mã băm hashFiles('**/package-lock.json') của Cache (main ghi, PR đọc) đối lập với quy trình upload/download-artifact bất biến giữa các Job"
 callouts:
   - num: 1
     label: "Dependency Cache — Tăng tốc xuyên các lượt chạy"
@@ -33,7 +37,7 @@ callouts:
 ```visual
 kind: layers
 title: "Phân Biệt Rạch Ròi Hai Cơ Chế Lưu Trữ: Cache vs Artifact"
-subtitle: "Xoá sạch Cache thì đường ống chỉ chạy chậm hơn nhưng vẫn xanh · Mất Artifact thì bước Deploy dừng ngay lập tức!"
+subtitle: "Xoá sạch Cache thì pipeline chỉ chạy chậm hơn nhưng vẫn xanh · Mất Artifact thì bước Deploy dừng ngay lập tức!"
 columns:
   - title: "Cache (actions/cache@v4)"
     badge: "Tăng tốc phụ thuộc xuyên lượt chạy"
@@ -71,7 +75,7 @@ columns:
     footer: "Dùng upload-artifact@v4 ở Job sản xuất và download-artifact@v4 ở Job tiêu thụ"
 ```
 
-## 2. Cơ chế Khóa băm (`hashFiles`) và Lưới đỡ `restore-keys` của `actions/cache@v4`
+## 2. Cơ chế Cache Key theo `hashFiles` và cơ chế dự phòng `restore-keys`
 
 Khi nào bạn thực sự cần tải gói mới từ npm? Chỉ khi tệp khoá **`package-lock.json`** thay đổi! `actions/cache@v4` mô hình hoá chính xác điều đó qua hàm biểu thức tích hợp ==`hashFiles('**/package-lock.json')`==:
 
@@ -103,7 +107,7 @@ steps:
   - icon: disk
     badge: "Bước cuối · Cập nhật"
     title: "Chỉ tải gói mới & Lưu"
-    desc: "Tải bổ sung đúng gói zod rồi đóng gói thành khoá băm mới"
+    desc: "Tải bổ sung đúng gói zod rồi đóng gói thành Cache Key theo mã băm mới"
     code: "Post Cache Save"
     tone: cyan
 ```

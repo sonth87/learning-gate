@@ -39,7 +39,7 @@
       "Control Scope (Kiểm soát phạm vi)"
     ],
     "answer": 2,
-    "explain": "Control Quality tập trung kiểm tra sản phẩm cụ thể tìm lỗi; còn kiểm toán sự tuân thủ quy trình (Quality Audit) và cải tiến quy trình để ngăn lỗi từ gốc thuộc về Manage Quality (QA — nằm ở miền Governance trong PMBOK 8)."
+    "explain": "Control Quality tập trung kiểm tra sản phẩm cụ thể tìm lỗi; còn kiểm toán sự tuân thủ quy trình (Quality Audit) và cải tiến quy trình để nggặp lỗi từ gốc thuộc về Manage Quality (QA — nằm ở Governance Domain trong PMBOK 8)."
   },
   {
     "id": "p10-q4",

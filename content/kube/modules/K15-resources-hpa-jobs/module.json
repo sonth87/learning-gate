@@ -3,7 +3,7 @@
   "slug": "K15-resources-hpa-jobs",
   "level": 4,
   "order": 15,
-  "title": "Quản trị Tài nguyên, Hạng ưu tiên QoS, Tự động co giãn HPA & Tác vụ nền Job/CronJob",
+  "title": "Quản lý Tài nguyên (Requests/Limits), QoS, HPA & Job/CronJob",
   "summary": "Thiết lập định mức requests/limits chuẩn chỉnh, phân hạng QoS, co giãn tự động với autoscaling/v2 HPA và chạy migration/báo cáo định kỳ qua Job & CronJob.",
   "tags": [
     "resources",
@@ -31,7 +31,7 @@
       "targetId": "rolling-update-hpa"
     },
     {
-      "label": "War Room: Sự cố OOMKilled (#4)",
+      "label": "Xử lý Sự cố: Sự cố OOMKilled (#4)",
       "kind": "incident",
       "targetId": "incident-4-oomkilled"
     }

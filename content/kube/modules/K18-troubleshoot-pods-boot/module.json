@@ -3,7 +3,7 @@
   "slug": "K18-troubleshoot-pods-boot",
   "level": 6,
   "order": 18,
-  "title": "Khám bệnh K8s Thực chiến (Phần 1): Quy trình Triage & 4 Trạng thái Kẹt Khởi động",
+  "title": "Troubleshooting K8s (Phần 1): Pending, ImagePullBackOff & CrashLoopBackOff",
   "summary": "Thực hành chẩn đoán bằng Terminal và vá nóng 4 sự cố khởi động kinh điển trên K8s: Pending, ImagePullBackOff, CreateContainerConfigError và CrashLoopBackOff.",
   "tags": [
     "troubleshooting",
@@ -31,7 +31,7 @@
       "targetId": "troubleshooting-flowchart"
     },
     {
-      "label": "War Room: Lỗi CrashLoopBackOff (#3)",
+      "label": "Xử lý Sự cố: Lỗi CrashLoopBackOff (#3)",
       "kind": "incident",
       "targetId": "incident-3-crashloop"
     }

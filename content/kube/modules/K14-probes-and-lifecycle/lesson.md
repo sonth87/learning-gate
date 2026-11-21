@@ -1,26 +1,26 @@
-# Sức khoẻ Pod & Vòng đời dừng êm ái: Startup, Readiness, Liveness Probes & Graceful Shutdown
+# Kiểm tra Sức khỏe Pod (`Startup` / `Readiness` / `Liveness` Probes) & Graceful Shutdown
 
-Một trong những ngộ nhận phổ biến nhất của lập trình viên mới lên Kubernetes là: *"Hễ `kubectl get pods` báo `STATUS = Running`, nghĩa là ứng dụng Node.js của tôi đã sẵn sàng phục vụ khách hàng!"*
+Một trong những ngộ nhận phổ biến nhất của người mới lên Kubernetes là: *"Hễ `kubectl get pods` báo `STATUS = Running`, nghĩa là ứng dụng Python hay Node.js của tôi đã sẵn sàng phục vụ khách hàng!"*
 
-**Sai hoàn toàn!** Đối với nhân Linux và `kubelet`, trạng thái `Running` chỉ đơn thuần có nghĩa là tiến trình `node dist/server.js` vừa được nạp vào bộ nhớ (PID đã tồn tại). Trong thực tế:
+**Chưa chắc đâu!** Đối với nhân Linux và `kubelet`, chữ `Running` chỉ có nghĩa là tiến trình `uvicorn` hay `node` vừa được nạp vào RAM (PID đã xuất hiện). Trong thực tế:
 
-- [!] Ứng dụng có thể mất thêm 8 giây đầu để kết nối PostgreSQL, nạp bộ nhớ đệm Redis hoặc khởi tạo Prisma Client — nếu khách hàng bị đẩy vào ngay giây thứ 1, họ sẽ ăn trọn lỗi **`502 Bad Gateway`**!
-- [!] Tệ hơn, sau 3 ngày chạy liên tục, tiến trình Node.js có thể bị treo vòng lặp sự kiện (*Event Loop* nghẽn cứng hoặc *Deadlock* kết nối) khiến mọi HTTP request quay vòng vô tận dù tiến trình chưa hề thoát (`Running` giả tạo)!
+- [!] Một dịch vụ FastAPI nạp mô hình AI lên RAM (hoặc Node.js khởi tạo kết nối PostgreSQL / Redis) có thể mất 10–30 giây đầu tiên — nếu đẩy khách hàng vào ngay giây thứ 1, họ sẽ nhận ngay lỗi **`502 Bad Gateway`**!
+- [!] Sau vài ngày chạy liên tục, ứng dụng có thể bị kẹt cứng vòng lặp (*Deadlock*) khiến mọi request quay vòng vô tận dù tiến trình chưa hề thoát (`Running` giả tạo)!
 
-Để Kubernetes thực sự hiểu được "nhịp tim" bên trong ứng dụng, chúng ta trang bị **3 cảm biến thăm dò sức khoẻ (`startupProbe`, `readinessProbe`, `livenessProbe`)** kết hợp cùng quy trình ==Graceful Shutdown (`preStop` + `SIGTERM`)==.
+Để Kubernetes hiểu đúng "nhịp tim" bên trong ứng dụng, chúng ta trang bị **3 cảm biến thăm dò sức khỏe (`startupProbe`, `readinessProbe`, `livenessProbe`)** kết hợp cùng quy trình tắt êm ==Graceful Shutdown (`preStop` + `SIGTERM`)==.
 
 ```visual
 kind: illustration
 diagram: "kube:k14"
 src: "/illustrations/kube/k8s-probes-health-gates.jpg"
-alt: "Ba cổng kiểm tra sức khoẻ Pod (startupProbe, readinessProbe, livenessProbe) và trình tự dừng êm ái preStop kết hợp SIGTERM"
-title: "Giải Phẫu 3 Cổng Thăm Dò Sức Khoẻ & Kịch Bản Dừng Êm Ái (Zero-502 Shutdown)"
+alt: "Ba cổng kiểm tra sức khỏe Pod (startupProbe, readinessProbe, livenessProbe) và trình tự dừng an toàn (Graceful Shutdown) preStop kết hợp SIGTERM"
+title: "Giải Phẫu 3 Cổng Thăm Dò Sức Khỏe & Kịch Bản Dừng An Toàn (Zero-502 Shutdown)"
 subtitle: "Phân tách rạch ròi giữa điều tiết lưu lượng khách hàng, tự khởi động lại khi treo cứng và rút êm kết nối lúc tắt Pod"
 caption: "Máy trạng thái 3 cảm biến của kubelet (startup -> readiness cắt lưu lượng vs liveness khởi động lại) và chuỗi tắt êm preStop + SIGTERM"
 callouts:
   - num: 1
     label: "startupProbe — Lá chắn bảo vệ giai đoạn khởi động"
-    desc: "Tạm khoá hai cảm biến còn lại trong lúc ứng dụng đang nạp cấu hình nặng lúc mới bật, tránh bị giết oan khi chưa khởi tạo xong."
+    desc: "Tạm khóa hai cảm biến còn lại trong lúc ứng dụng đang nạp mô hình/cấu hình nặng lúc mới bật, tránh bị giết oan khi chưa khởi tạo xong."
     tone: sky
   - num: 2
     label: "readinessProbe (Cắt khách) vs livenessProbe (Khởi động lại)"
@@ -28,19 +28,22 @@ callouts:
     tone: emerald
   - num: 3
     label: "Chuỗi tắt êm preStop + SIGTERM triệt tiêu lỗi 502"
-    desc: "Chờ vài giây ở preStop để bảng mạng cụm kịp xoá IP Pod rồi mới gửi SIGTERM cho Node.js xử lý nốt các request đang dở dang."
+    desc: "Chờ vài giây ở preStop để bảng mạng cụm kịp xóa IP Pod rồi mới gửi SIGTERM cho ứng dụng xử lý nốt các request đang dở dang."
     tone: amber
 ```
 
-## 1. Phân biệt rõ nhiệm vụ của 3 loại Probe: `startupProbe` vs `readinessProbe` vs `livenessProbe`
+## 1. Giải thích bình dị 3 loại Probe: `startupProbe` vs `readinessProbe` vs `livenessProbe`
 
-> [!ANALOGY] Ba trạm kiểm tra y tế với hậu quả xử lý khác biệt hoàn toàn
-> Đừng bao giờ nhầm lẫn giữa **"đang bận chưa tiếp khách được"** (`readinessProbe`) và **"đã chết lâm sàng cần sốc điện khởi động lại"** (`livenessProbe`) — chọn sai loại Probe có thể tự tay đánh sập cả hệ thống đang chạy!
+> [!NOTE] Mô hình tư duy "Quán cà phê buổi sáng" — Phân biệt trong 10 giây!
+> Hãy tưởng tượng mỗi chiếc Pod là một quầy pha chế cà phê:
+> 1. **`startupProbe` ("Máy pha đã đun sôi nước lần đầu chưa?"):** Bảo vệ quầy lúc sáng sớm mới bật công tắc (mất 30–60s làm nóng máy hay nạp AI model). Chừng nào `startupProbe` chưa báo xong, K8s kiên nhẫn chờ chứ không phạt!
+> 2. **`readinessProbe` ("Quầy có đang rảnh để nhận thêm đơn mới không?"):** Nếu quầy đang quá tải hoặc chờ nguyên liệu từ kho (Database lag), quầy chỉ **tạm treo biển "Tạm ngưng nhận khách mới"** (rút IP khỏi `Service`), xử lý nốt ly đang pha mà **KHÔNG bị đập bỏ quầy**!
+> 3. **`livenessProbe` ("Người pha chế có bị ngất xỉu hoàn toàn không?"):** Nếu gọi hỏi thăm đơn giản nhất mà cũng không nhúc nhích (*deadlock* cứng), K8s mới dùng biện pháp mạnh nhất: **đóng quầy cũ, thay người mới tinh khởi động lại từ đầu** (`RESTARTS +1`)!
 
 ```visual
 kind: groups
-title: Giải Phẫu 3 Cảm Biến Sức Khoẻ Của Pod [!badge:emerald:Chuẩn Production]
-subtitle: Mỗi loại Probe trả lời một câu hỏi sinh tử khác nhau và dẫn tới hành động hoàn toàn khác nhau của kubelet
+title: Giải Phẫu 3 Cảm Biến Sức Khỏe Của Pod [!badge:emerald:Chuẩn Production]
+subtitle: Mỗi loại Probe trả lời một câu hỏi khác nhau và dẫn tới hành động hoàn toàn khác nhau của kubelet
 columns: 3
 items:
   - num: 1
@@ -50,9 +53,9 @@ items:
     tone: sky
     desc: "\"Ứng dụng đã hoàn tất khởi tạo lần đầu tiên chưa?\""
     bullets:
-      - "Khi đang chạy kiểm tra, nó ==tạm khoá vô hiệu hoá cả `liveness` lẫn `readiness`== cho tới khi thành công lần đầu"
-      - "Quỹ thời gian tối đa = **`periodSeconds * failureThreshold`** (ví dụ `5 * 12 = 60` giây); quá hạn mới giết & bật lại container"
-    footer: Dành cho app nạp AI model, warm cache lớn (30-60s)
+      - "Khi đang chạy kiểm tra, nó ==tạm khóa vô hiệu hóa cả `liveness` lẫn `readiness`== cho tới khi thành công lần đầu"
+      - "Quỹ thời gian tối đa = **`periodSeconds * failureThreshold`** (ví dụ `5 * 12 = 60` giây); quá hạn mới khởi động lại container"
+    footer: Rất cần cho Python nạp AI model, Java Spring hoặc warm cache lớn
   - num: 2
     icon: shield-check
     title: readinessProbe
@@ -61,8 +64,8 @@ items:
     desc: "\"Ngay lúc này Pod có đủ sức nhận request mới không?\""
     bullets:
       - "**TUYỆT ĐỐI KHÔNG giết Pod!**"
-      - "Khi thất bại, chỉ đánh dấu `Ready=false` và ==rút IP của Pod khỏi `Endpoints` của `Service`== để ngưng đẩy khách mới vào; khoẻ lại sẽ nối vào tiếp"
-    footer: Bắt buộc cho MỌI HTTP/API để Rolling Update êm ái
+      - "Khi thất bại, chỉ đánh dấu `Ready=false` và ==rút IP của Pod khỏi `Endpoints` của `Service`== để ngưng đẩy khách mới vào; khỏe lại sẽ nối vào tiếp"
+    footer: Bắt buộc cho MỌI HTTP/gRPC API để Rolling Update êm ái
   - num: 3
     icon: activity
     title: livenessProbe
@@ -70,18 +73,18 @@ items:
     tone: rose
     desc: "\"Tiến trình có bị deadlock không thể tự hồi phục không?\""
     bullets:
-      - "**Trừng phạt nặng nhất:** khi thất bại vượt `failureThreshold`, `kubelet` **GIẾT thẳng container và khởi động lại từ đầu** (`RESTARTS` +1)"
+      - "**Biện pháp mạnh nhất:** khi thất bại vượt `failureThreshold`, `kubelet` **GIẾT thẳng container và khởi động lại từ đầu** (`RESTARTS` +1)"
       - "Chỉ dùng để bắt lỗi treo cứng vòng lặp nội tại dù tiến trình vẫn tồn tại"
     footer: Cấu hình sai sẽ gây bão khởi động lại toàn cụm!
 ```
 
-## 2. Cạm lỗi nghiêm trọng cần tránh số 1 trên Production: Gắn kiểm tra Database vào `livenessProbe`!
+## 2. Thảm họa số 1 cần tránh trên Production: Gắn kiểm tra Database vào `livenessProbe`!
 
-Hãy tưởng tượng kịch bản thảm hoạ từng đánh sập hàng loạt hệ thống lớn khi dùng chung một endpoint `/health` truy vấn `SELECT 1` xuống PostgreSQL cho cả `readinessProbe` lẫn `livenessProbe` (với `timeoutSeconds: 1`):
+Hãy tưởng tượng kịch bản từng đánh sập hàng loạt hệ thống lớn khi lập trình viên dùng chung một đường dẫn `/health` gọi `SELECT 1` xuống PostgreSQL cho cả `readinessProbe` lẫn `livenessProbe` (với `timeoutSeconds: 1`):
 
-1. Giờ cao điểm, PostgreSQL hơi quá tải nên phản hồi `SELECT 1` mất `1.3 giây` (vượt ngưỡng `1s`).
-2. `livenessProbe` báo thất bại 3 lần liên tiếp → Kubernetes tưởng cả 20 Pod API đều chết lâm sàng nên **đồng loạt giết và khởi động lại cả 20 Pod cùng một lúc**!
-3. Khi 20 Pod Node.js bật dậy đồng thời, chúng lập tức mở 200 kết nối TCP mới đập thẳng vào PostgreSQL đang thoi thóp (hiệu ứng **Thundering Herd**), đánh sập hoàn toàn Database và đẩy toàn cụm vào vòng xoáy ==`CrashLoopBackOff` dây chuyền (*Cascading Failure*)==!
+1. Giờ cao điểm, PostgreSQL hơi bận nên trả lời `SELECT 1` mất `1.3 giây` (vượt ngưỡng `1s`).
+2. `livenessProbe` báo trượt 3 lần → Kubernetes tưởng cả 20 Pod API đều chết cứng nên **đồng loạt giết và khởi động lại cả 20 Pod cùng một lúc**!
+3. Khi 20 Pod FastAPI / Node.js bật dậy đồng thời, chúng ập tới mở 200 kết nối TCP mới đập thẳng vào PostgreSQL đang mệt mỏi (hiệu ứng **Thundering Herd**), đánh sập luôn Database và đẩy toàn cụm vào vòng xoáy ==`CrashLoopBackOff` dây chuyền (*Cascading Failure*)==!
 
 ```visual
 kind: compare
@@ -92,7 +95,7 @@ left:
   title: Nhét kiểm tra Database vào livenessProbe
   tone: rose
   code: |
-    # THẢM HOẠ: DB chập chờn 2s -> K8s giết sạch 20 Pod API!
+    # THẢM HỌA: DB chập chờn 2s -> K8s giết sạch 20 Pod API!
     livenessProbe:
       httpGet:
         path: /readyz-with-db-query
@@ -101,8 +104,8 @@ left:
       failureThreshold: 3
   lang: yaml
   bullets:
-    - "PostgreSQL hoặc cổng thanh toán đối tác chỉ lag nhẹ vài giây cũng làm `livenessProbe` thất bại"
-    - "K8s tự tay dừng tiến trình (kill) toàn bộ dàn API đang sống khoẻ, gây bão kết nối **Thundering Herd** lúc bật lại"
+    - "PostgreSQL hoặc cổng thanh toán đối tác chỉ chậm nhẹ vài giây cũng làm `livenessProbe` thất bại"
+    - "K8s tự tay giết toàn bộ dàn API đang sống khỏe, gây bão kết nối **Thundering Herd** lúc bật lại"
 right:
   badge: "CÁCH CHUẨN · Cô Lập Sự Cố"
   title: "/healthz nội tại nhẹ nhàng · /readyz kiểm tra kết nối"
@@ -113,17 +116,17 @@ right:
       periodSeconds: 5
       failureThreshold: 3
     livenessProbe:
-      httpGet: { path: /healthz, port: 3000 } # Chỉ trả 200 { ok: true }!
+      httpGet: { path: /healthz, port: 3000 } # Chỉ trả 200 {"ok": true}!
       periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 3
   lang: yaml
   bullets:
-    - "**`/healthz` (`livenessProbe` & `startupProbe`):** Chỉ kiểm tra Event Loop nội tại (`res.status(200).json({ ok: true })`), **không chạm DB/Redis/API ngoài**, `timeoutSeconds: 3–5s`"
-    - "**`/readyz` (`readinessProbe`):** Kiểm tra Pool DB/Redis; khi DB chập chờn chỉ tạm rút Pod khỏi `Service` (trả 503 an toàn), không giết Pod!"
+    - "**`/healthz` (`livenessProbe` & `startupProbe`):** Chỉ trả về ngay `200 {\"ok\": true}` chứng minh tiến trình chưa bị đơ cứng, **không chạm DB/Redis/API ngoài**"
+    - "**`/readyz` (`readinessProbe`):** Kiểm tra kết nối DB/Redis; khi DB chập chờn chỉ tạm rút Pod khỏi `Service`, không giết Pod!"
 ```
 
-Cấu hình chuẩn mực kết hợp đủ 3 Probe cho dịch vụ Node.js Production:
+Cấu hình chuẩn mực kết hợp đủ 3 Probe trên Production:
 
 ```yaml
 containers:
@@ -145,30 +148,30 @@ containers:
       failureThreshold: 3
     livenessProbe:
       httpGet:
-        path: /healthz        # Nhẹ, tuyệt đối không gọi DB ngoài!
+        path: /healthz        # Nhẹ nhàng, tuyệt đối không gọi DB ngoài!
         port: 3000
       periodSeconds: 10
       timeoutSeconds: 3
       failureThreshold: 3
 ```
 
-## 3. Bí quyết Zero-Downtime thực sự khi tắt Pod: Đua tốc độ lúc `Terminating` & `preStop` Hook
+## 3. Bí quyết Zero-Downtime lúc tắt Pod: Đua tốc độ `Terminating` & `preStop` Hook
 
-Ngay cả khi đã có `readinessProbe`, nhiều đội ngũ vẫn thấy khách hàng thỉnh thoảng bị lỗi `502 Bad Gateway` trong vài giây đầu của mỗi đợt Rolling Update! Nguyên nhân nằm ở **hai luồng chạy song song bất đồng bộ** ngay khoảnh khắc Kubernetes xoá một Pod cũ:
+Ngay cả khi đã có `readinessProbe`, nhiều đội ngũ vẫn thấy khách hàng thỉnh thoảng bị lỗi `502 Bad Gateway` trong vài giây đầu của mỗi đợt Rolling Update! Nguyên nhân nằm ở **hai luồng chạy song song bất đồng bộ** ngay khoảnh khắc Kubernetes xóa một Pod cũ:
 
-- [>] **Luồng A (Mạng cụm):** API Server báo cho `EndpointSlice`, `kube-proxy` và `Ingress Controller` (Nginx/Envoy) gỡ IP của Pod cũ khỏi bảng chia tải. Quá trình đồng bộ mạng qua các máy chủ mất khoảng **1 đến 3 giây**.
-- [!] **Luồng B (`kubelet` trên Node):** Cùng tích tắc đó, `kubelet` gửi tín hiệu **`SIGTERM`** thẳng vào tiến trình Node.js! Nếu code Express vừa thấy `SIGTERM` đã gọi `process.exit(0)` đóng sập cổng `3000` trong `0.01 giây`, các gói tin khách hàng đang bay tới từ Luồng A (trong 2 giây trễ mạng kia) sẽ đâm sầm vào cánh cửa đóng kín → **`502 Bad Gateway`**!
+- [>] **Luồng A (Mạng cụm):** API Server báo cho `EndpointSlice`, `kube-proxy` và `Ingress / Gateway Controller` gỡ IP của Pod cũ khỏi bảng chia tải. Việc truyền tin qua mạng mất khoảng **1 đến 3 giây**.
+- [!] **Luồng B (`kubelet` trên Node):** Cùng tích tắc đó, `kubelet` gửi tín hiệu **`SIGTERM`** thẳng vào tiến trình ứng dụng! Nếu Uvicorn hay Express vừa thấy `SIGTERM` đã đóng sập cổng HTTP ngay trong `0.05 giây`, các gói tin khách hàng còn đang trên đường bay tới từ Luồng A sẽ đâm sầm vào cánh cửa đóng kín → **`502 Bad Gateway`**!
 
 ```visual
 kind: flow
-title: Chu Trình Dừng Êm Ái Không Rớt Mạng (Zero-Downtime Graceful Shutdown)
+title: Chu Trình Dừng An Toàn Không Rớt Mạng (Zero-Downtime Graceful Shutdown)
 subtitle: "Toàn bộ preStop + SIGTERM đều nằm chung bên trong tổng quỹ thời gian terminationGracePeriodSeconds (mặc định 30s)"
-footer: "Nếu preStop ngủ 5s trong quỹ 30s, ứng dụng còn tối đa 25s để xử lý nốt request cũ trước khi bị bắn SIGKILL"
+footer: "Nếu preStop ngủ 5s trong quỹ 30s, ứng dụng (FastAPI lifespan / Node server.close) còn tối đa 25s để xử lý nốt request cũ trước khi bị bắn SIGKILL"
 steps:
   - icon: network
     badge: Giây 0 · Song song
     title: Pod Terminating & Gỡ IP
-    desc: Luồng mạng bắt đầu rút IP của Pod khỏi EndpointSlice và Ingress (mất ~1-3s)
+    desc: Luồng mạng bắt đầu rút IP của Pod khỏi EndpointSlice và Gateway/Ingress (mất ~1-3s)
     code: "Ready -> Terminating"
     tone: sky
     edge: chạy preStop trước
@@ -181,9 +184,9 @@ steps:
     edge: gửi SIGTERM
   - icon: check
     badge: Giây 5+ · Xả giao dịch
-    title: Node.js bắt SIGTERM
-    desc: Gọi server.close(), xử lý êm xuôi nốt các thanh toán đang chạy dở rồi đóng DB
-    code: "process.exit(0)"
+    title: Bắt SIGTERM & Đóng Êm
+    desc: Uvicorn lifespan / Node server.close() hoàn tất nốt giao dịch dở dang rồi đóng DB
+    code: "Exit Code 0"
     tone: emerald
     edge: nếu lố 30s ân hạn
   - icon: flame
@@ -194,10 +197,11 @@ steps:
     tone: rose
 ```
 
-> [!TIP] Quy tắc tính quỹ thời gian `terminationGracePeriodSeconds`
-> Thời gian chạy của móc `lifecycle.preStop` được **tính gộp chung vào bên trong** tổng hạn mức `terminationGracePeriodSeconds: 30` (chứ không được cộng thêm ra ngoài!). Ví dụ: nếu `terminationGracePeriodSeconds` là `30s` và `preStop` chạy `sleep 5`, tiến trình Node.js sau khi nhận `SIGTERM` sẽ còn tối đa `25s` trước khi nhân Linux bắn tín hiệu tối hậu ==`SIGKILL`==.
+> [!TIP] Quy tắc tính quỹ thời gian `terminationGracePeriodSeconds` & lưu ý Distroless
+> - Thời gian chạy của móc `lifecycle.preStop` được **tính gộp chung vào bên trong** tổng hạn mức `terminationGracePeriodSeconds: 30` (ví dụ `preStop` ngủ `5s` thì ứng dụng còn `25s` để xả request sau `SIGTERM` trước khi nhận ==`SIGKILL`==).
+> - Từ Kubernetes v1.30+, ngoài lệnh shell `["sh", "-c", "sleep 5"]`, K8s còn hỗ trợ hành động gốc `preStop: { sleep: { seconds: 5 } }` cực kỳ tiện cho các container siêu tối giản không có `/bin/sh`!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - **`startupProbe`** tạm khoá `liveness` & `readiness` lúc mới khởi động (tổng thời gian tối đa = **`periodSeconds * failureThreshold`**).
+> - **`startupProbe`** tạm khóa `liveness` & `readiness` lúc mới khởi động (tổng thời gian tối đa = **`periodSeconds * failureThreshold`**).
 > - **`readinessProbe`** thất bại **không bao giờ giết Pod**, chỉ rút IP khỏi `Service Endpoints` · **Chỉ kiểm tra DB/API ngoài ở `readinessProbe`**, tuyệt đối không đặt vào `livenessProbe`!
-> - Kết hợp **`lifecycle.preStop` (`["sh", "-c", "sleep 5"]`)** + bắt **`SIGTERM` (`server.close()`)** bên trong quỹ **`terminationGracePeriodSeconds`** (hết hạn sẽ bị kết liễu bằng **`SIGKILL`**).
+> - Kết hợp **`lifecycle.preStop`** + bắt **`SIGTERM`** bên trong quỹ **`terminationGracePeriodSeconds`** (hết hạn sẽ bị dừng bằng **`SIGKILL`**).

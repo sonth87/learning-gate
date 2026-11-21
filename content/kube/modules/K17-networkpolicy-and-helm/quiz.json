@@ -52,7 +52,7 @@
     "code": "# values.yaml\nreplicaCount: 5",
     "choices": [],
     "answer": "5",
-    "explain": "Hàm đường ống `| default 2` chỉ dùng số 2 khi `.Values.replicaCount` bị bỏ trống/không tồn tại; vì values.yaml truyền vào 5 nên kết quả là 5."
+    "explain": "Hàm pipeline `| default 2` chỉ dùng số 2 khi `.Values.replicaCount` bị bỏ trống/không tồn tại; vì values.yaml truyền vào 5 nên kết quả là 5."
   },
   {
     "id": "K17-Q6",
@@ -75,6 +75,6 @@
       "kubectl helm apply -f values-prod.yaml"
     ],
     "answer": 1,
-    "explain": "`helm upgrade --install <release> <chart> -f values-prod.yaml` là câu lệnh idempotent chuẩn mực dùng trong cả thực tế lẫn các đường ống CI/CD."
+    "explain": "`helm upgrade --install <release> <chart> -f values-prod.yaml` là câu lệnh idempotent chuẩn mực dùng trong cả thực tế lẫn các CI/CD Pipeline."
   }
 ]

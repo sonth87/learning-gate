@@ -3,7 +3,7 @@
   "slug": "C05-dag-needs-and-matrix",
   "level": 1,
   "order": 5,
-  "title": "Đồ thị phụ thuộc Job (DAG needs) & Ma trận kiểm thử (Strategy Matrix)",
+  "title": "Đồ thị Phụ thuộc Job (DAG needs:) & Kiểm thử Đa môi trường (Matrix)",
   "summary": "Tăng tốc phản hồi bằng mô hình song song Fan-out / Fan-in (needs), kiểm thử đa phiên bản Node & OS với strategy.matrix (fail-fast: false) và truyền outputs xuyên qua hai Job.",
   "tags": [
     "dag",

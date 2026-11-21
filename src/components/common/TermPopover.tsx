@@ -191,7 +191,7 @@ export const TermPopover: React.FC = () => {
     return (
       <div
         onClick={() => hideTermPopover(true)}
-        className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-xs lg:hidden"
+        className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 backdrop-blur-xs lg:hidden"
       >
         <div
           onClick={(e) => e.stopPropagation()}
@@ -215,7 +215,7 @@ export const TermPopover: React.FC = () => {
           hideTermPopover(false);
         }
       }}
-      className="fixed z-50 rounded-xl border border-slate-700/90 bg-slate-900/95 p-4 shadow-2xl shadow-black/70 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
+      className="fixed z-[90] rounded-xl border border-slate-700/90 bg-slate-900/95 p-4 shadow-2xl shadow-black/70 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150"
     >
       {renderCardContent()}
     </div>

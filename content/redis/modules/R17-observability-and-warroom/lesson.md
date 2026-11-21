@@ -1,22 +1,21 @@
-# Observability, Metrics & Phòng Chiến Sự cố Redis (SRE War-Room)
+# Observability, Metrics & Chẩn đoán Sự cố Production Redis (SRE Playbook)
 
-Chào mừng bạn bước vào **Mô-đun Capstone cuối cùng (`R17`)** của hành trình **Redis Mastery**! Xuyên suốt `17` mô-đun trước, bạn đã nắm vững từ kiến trúc đơn luồng Event Loop, cấu trúc dữ liệu nội tại, mẫu Caching chống Stampede, khoá phân tán Lua, chính sách RAM/Persistence cho tới Sentinel, Cluster `16.384` Slots và Zero-Trust ACL.
-
-Nhưng trong thực tế vận hành lúc **02:30 sáng**, khi chuông PagerDuty réo vang báo động độ trễ API thanh toán vọt từ `2ms` lên `3.500ms`, bạn không có thời gian đọc lại lý thuyết — bạn cần một **Hệ thống Quan sát (*Observability*) sắc bén** và một **Phản xạ Chẩn đoán 120 giây (*SRE Triage Playbook*)** để khoanh vùng đúng gốc bệnh và vá nóng mà không làm rớt thêm giao dịch nào!
-
-> [!ANALOGY] Ẩn dụ Phòng Cấp Cứu Tim Mạch & Máy Điện Tâm Đồ (ECG)
-> Khám một cụm Redis đang nghẽn cũng giống hệt bác sĩ cấp cứu đọc màn hình sinh hiệu bệnh nhân:
-> - **Nhịp tim & Huyết áp (`INFO stats` / `INFO memory`):** Tần số đập `instantaneous_ops_per_sec`, áp lực máu `used_memory / maxmemory`, lượng hồng cầu bị đào thải `evicted_keys` và tỷ lệ hấp thụ oxy `Cache Hit Ratio`.
-> - **Camera nội soi động mạch (`SLOWLOG GET`):** Ghi hình chính xác câu lệnh `O(N)` nào vừa làm tắc nghẽn buồng tim đơn luồng quá `10ms` (`10.000 µs`).
-> - **Hội chẩn tự động (`LATENCY DOCTOR`):** Trợ lý AI tích hợp sẵn trong nhân C của Redis phân tích các gai trễ do `fork()` Copy-on-Write, `fsync` ổ đĩa hay hết hạn khoá khổng lồ (*Bigkey expire*).
+> [!NOTE] Bối cảnh & Giải nghĩa bình dân
+> Chào mừng bạn đến với **Mô-đun Tổng kết (`R17`)** của hành trình **Redis Mastery**! Sau khi đã nắm trọn từ nguyên lý RAM đơn luồng, cấu trúc dữ liệu, mẫu Caching, khóa Lua cho tới Sentinel, Cluster và bảo mật ACL, kỹ năng cuối cùng biến bạn thành người giữ nhịp đáng tin cậy của cả đội ngũ chính là **Quan sát sức khỏe hệ thống (*Observability*) & Phác đồ Chẩn đoán Nhanh trong 120 giây (*SRE Triage*)**.
+>
+> Hãy hình dung việc khám một máy chủ Redis đang chậm bất thường lúc 2 giờ sáng giống hệt **Bác sĩ Cấp cứu đọc màn hình theo dõi bệnh nhân**:
+> - **`INFO stats` & `INFO memory` (Nhịp tim & Huyết áp tổng quát):** Cho biết mỗi giây Redis đang xử lý bao nhiêu lệnh, RAM đã đầy bao nhiêu phần trăm, có khóa nào đang bị vứt bỏ vì thiếu chỗ (`evicted_keys`) hay không.
+> - **`SLOWLOG GET` (Camera ghi hình thủ phạm gây tắc đường):** Tự động chụp lại chính xác câu lệnh chậm nào (mặc định lâu hơn `10 mili-giây`) vừa làm nghẽn hàng đợi đơn luồng.
+> - **`LATENCY DOCTOR` & `MEMORY DOCTOR` (Trợ lý chẩn đoán tích hợp sẵn):** Công cụ có sẵn ngay trong Redis giúp chỉ điểm các nguyên nhân ẩn phía dưới hệ điều hành (như ghi đĩa chậm hay sao lưu nền tốn thời gian) kèm lời khuyên khắc phục bằng tiếng Anh rõ ràng!
+> - **`Bigkeys` (Khóa phình to quá khổ):** Một khóa đơn lẻ phình lên hàng triệu phần tử làm tắc nghẽn mỗi lần đọc hoặc xóa.
 
 ## 1. Bản Đồ Tín Hiệu Vàng & Lưu Đồ Ứng Cứu Sự Cố 120 Giây
 
 ```visual
 kind: illustration
 diagram: "redis:r17"
-alt: "Bảng điều khiển Observability Redis Exporter Prometheus và quy trình chẩn đoán SRE War-Room 5 nhánh sự cố"
-badge: "Capstone War-Room · R17"
+alt: "Bảng điều khiển Observability Redis Exporter Prometheus và quy trình chẩn đoán SRE Playbook 5 nhánh sự cố"
+badge: "Capstone SRE Playbook · R17"
 title: "Trung Tâm Chỉ Huy SRE: 4 Tín Hiệu Vàng & Phác Đồ Chẩn Đoán 120 Giây"
 subtitle: "Kết nối dữ liệu đo lường từ INFO / SLOWLOG / LATENCY DOCTOR sang Prometheus Alertmanager và quy trình khắc phục tức thời"
 caption: "Mọi sự cố Redis phức tạp nhất đều để lại dấu vân tay rõ ràng trên 4 nhóm chỉ số: Latency, Saturation (Memory/CPU), Hit Ratio và Replication/Cluster State."
@@ -31,97 +30,92 @@ callouts:
     tone: amber
   - num: 3
     label: "Vá Nóng Không Gián Đoạn (Zero-Downtime Mitigation)"
-    desc: "Thay KEYS bằng SCAN, xoá Bigkey bằng UNLINK + lazyfree, đổi chính sách trục xuất bằng CONFIG SET, thu hồi PEL bằng XAUTOCLAIM và sửa CROSSSLOT bằng {HashTag}."
+    desc: "Thay KEYS bằng SCAN, xoá Bigkey bằng UNLINK + lazyfree, đổi chính sách Eviction bằng CONFIG SET, thu hồi PEL bằng XAUTOCLAIM và sửa CROSSSLOT bằng {HashTag}."
     tone: emerald
 ```
 
-## 2. Giải Mã Các Cạm Bẫy Đo Lường Mà 90% Kỹ Sư Đọc Sai
+## 2. Ba "Cú lừa đo lường" kinh điển mà 90% kỹ sư từng đọc sai
 
-Trước khi lao vào dập lửa, một SRE lão luyện luôn tránh **3 cú lừa kinh điển** khi đọc số liệu Redis:
+Trước khi bắt tay vào sửa lỗi, hãy nắm chắc 3 sự thật quan trọng để không tìm nhầm thủ phạm:
 
-- [!] **Cú lừa #1 — `SLOWLOG` KHÔNG đo thời gian chờ trên mạng hay hàng đợi!**
-  Chỉ số `duration` (tính bằng micro-giây `µs`) trong `SLOWLOG GET` **chỉ đo thuần tuý thời gian CPU luồng chính thực thi câu lệnh đó**!
-  - Nếu ứng dụng kêu gào *"Lệnh `GET user:1` mất `500ms`!"* nhưng `SLOWLOG` trống trơn hoặc chỉ ghi nhận `1` lệnh `KEYS *` tốn `498.000 µs`: điều đó có nghĩa là `GET user:1` chỉ tốn `2 µs` để chạy, nhưng nó **phải xếp hàng đứng đợi `498ms` phía sau lưng tên tội đồ `KEYS *`**! (Hoặc tiến trình bị chặn bởi `fork()` / Swap OS — những thứ nằm ngoài phạm vi đo của `SLOWLOG`, phải dùng **`LATENCY DOCTOR`** mới thấy!).
-- [!] **Cú lừa #2 — Tính nhầm Cache Hit Ratio bằng tổng tích luỹ từ lúc bật máy:**
-  Trong `INFO stats`, hai bộ đếm `keyspace_hits` và `keyspace_misses` cộng dồn suốt nhiều tháng. Nếu cụm đã chạy 90 ngày tích luỹ `10 tỷ` lượt Hit, thì hôm nay dù Cache bị xuyên thủng 100% suốt 30 phút, phép chia cộng dồn vẫn hiện `99,8%` đẹp lung linh! Trên Prometheus, **bắt buộc dùng hàm tốc độ tức thời `rate(...[5m])`**:
+- [!] **Sự thật #1 — ==`SLOWLOG` chỉ đo thời gian chạy trên CPU của Redis, KHÔNG đo thời gian chờ mạng hay xếp hàng!==**
+  - Giả sử ứng dụng Python/Node.js báo lỗi *"Lệnh `GET user:1` mất tới `500ms`!"*, nhưng bạn mở `SLOWLOG GET 10` chẳng thấy lệnh `GET` đâu mà chỉ thấy 1 lệnh `KEYS *` tốn `498,000 µs` (`498ms`). Điều đó có nghĩa là lệnh `GET` vẫn chạy mất có `0.002ms`, nhưng nó bị **đứng chôn chân chờ `498ms` phía sau lưng tên tội đồ `KEYS *`**! (Còn nếu `SLOWLOG` hoàn toàn trống trơn mà app vẫn chậm, thủ phạm thường nằm ở nghẽn mạng, thiếu kết nối trong Connection Pool của ứng dụng, hoặc hệ điều hành bị Swap ổ cứng — hãy gõ `LATENCY DOCTOR` để kiểm tra!).
+- [!] **Sự thật #2 — Không bao giờ tính tỷ lệ trúng Cache (*Hit Ratio*) bằng con số cộng dồn từ lúc bật máy:**
+  Trong `INFO stats`, `keyspace_hits` cộng dồn suốt nhiều tháng. Nếu máy chủ đã chạy 90 ngày tích lũy 10 tỷ lượt trúng, hôm nay dù Cache bị hỏng suốt 30 phút thì phép chia tổng vẫn báo `99.8%` đẹp lung linh! Trên hệ thống giám sát Prometheus/Grafana, **bắt buộc đo tốc độ tức thời trong 5 phút gần nhất bằng hàm ==`rate(...[5m])`==**:
   ```promql
-  # Cảnh báo khi tỷ lệ trúng Cache thực tế trong 5 phút tụt xuống dưới 85%
+  # Cảnh báo khi tỷ lệ trúng Cache thực tế trong 5 phút qua tụt xuống dưới 85%
   (
     rate(redis_keyspace_hits_total[5m])
     /
     clamp_min(rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]), 1)
   ) < 0.85
   ```
-- [!] **Cú lừa #3 — Nhìn CPU tổng toàn máy chủ 32 nhân chỉ `3%` rồi kết luận Redis còn rảnh!**
-  Vì luồng thực thi lệnh cốt lõi của Redis là **đơn luồng (*Single-threaded*)**, trên máy chủ 32 vCPU, khi luồng chính của Redis bị vắt kiệt `100%` công suất (nghẽn cứng hoàn toàn!), biểu đồ CPU trung bình toàn máy chỉ nhích đúng `1 / 32 = 3,125%`! Hãy luôn giám sát CPU **theo từng tiến trình/luồng (`redis_cpu_user_seconds_total`)** thay vì trung bình toàn host!
+- [!] **Sự thật #3 — Đừng nhìn CPU trung bình toàn máy chủ 32 nhân báo `3%` mà tưởng Redis đang rảnh!**
+  Vì luồng thực thi lệnh dữ liệu của Redis là **đơn luồng**, trên máy chủ 32 nhân CPU, khi 1 nhân chạy luồng chính của Redis đã chạm trần **`100%` (nghẽn cứng hoàn toàn!)**, biểu đồ trung bình cả máy 32 nhân chỉ hiện `1 / 32 = 3.1%`! Luôn theo dõi CPU riêng của tiến trình `redis-server`.
 
-## 3. Sổ Tay Tác Chiến War-Room: 5 Ca Trực PagerDuty Kinh Điển
-
-Mọi bài tập thực hành của mô-đun Capstone này sẽ đặt bạn vào ghế nóng của kỹ sư trực chiến SRE xử lý trực tiếp 5 sự cố thực tế dưới đây:
+## 3. Cẩm nang tác chiến 5 Sự cố Production điển hình
 
 ```visual
 kind: troubleshoot
-title: "Ma Trận Tác Chiến 5 Sự Cố Redis Production Điển Hình [!badge:rose:War-Room Playbook]"
-subtitle: "Quy trình chuẩn 2 bước: Khám nghiệm bằng lệnh Chẩn đoán -> Áp dụng bản vá không gây gián đoạn"
+title: "Ma Trận Tác Chiến 5 Sự Cố Redis Production Điển Hình [!badge:rose:SRE Playbook]"
+subtitle: "Quy trình chuẩn 2 bước: Khám nghiệm bằng lệnh Chẩn đoán -> Áp dụng bản vá trực tuyến không gây gián đoạn"
 items:
   - symptom: "Ca #1: Độ trễ p99 toàn bộ API vọt lên >200ms theo chu kỳ, CPU luồng chính chạm đỉnh 100%"
     badge: "O(N) Command Freeze"
     tone: rose
-    cause: "Một cronjob hoặc API quản trị đang gọi `KEYS session:*` trên hàng triệu khoá, khoá cứng Event Loop suốt hàng trăm mili-giây."
-    fix: "Bắt quả tang qua `SLOWLOG GET 5`, lập tức thay thế `KEYS` bằng con trỏ lặp không chặn `SCAN 0 MATCH session:* COUNT 50` và chặn `-keys` trong ACL."
-    cmd: "SLOWLOG GET 5 && SCAN 0 MATCH session:* COUNT 50"
-  - symptom: "Ca #2: Mỗi lần dọn dẹp khoá báo cáo tạm, toàn cụm khựng lại 800ms"
+    cause: "Một tác vụ định kỳ hoặc trang quản trị đang gọi `KEYS session:*` trên hàng triệu khoá, khoá cứng Event Loop suốt hàng trăm mili-giây."
+    fix: "Bắt quả tang qua `SLOWLOG GET 5`, thay thế `KEYS` bằng con trỏ lặp `SCAN 0 MATCH session:* COUNT 100` và khoá `-keys` trong ACL."
+    cmd: "SLOWLOG GET 5 && SCAN 0 MATCH session:* COUNT 100"
+  - symptom: "Ca #2: Mỗi lần xoá khoá báo cáo tạm, toàn cụm khựng lại 800ms"
     badge: "Bigkey Synchronous DEL"
     tone: amber
-    cause: "Gọi lệnh `DEL` đồng bộ lên một Set/Hash/List khổng lồ hàng triệu phần tử khiến luồng chính phải cấp phát thu hồi hàng triệu vùng nhớ `jemalloc` tại chỗ."
-    fix: "Đo kích thước bằng `MEMORY USAGE <key>`, thu hồi bất đồng bộ trên luồng nền `bio_lazy_free` bằng `UNLINK <key>` và bật `CONFIG SET lazyfree-lazy-expire yes`."
+    cause: "Gọi lệnh `DEL` đồng bộ lên một Set/Hash/ZSet khổng lồ hàng triệu phần tử khiến luồng chính phải dừng lại thu hồi bộ nhớ tại chỗ."
+    fix: "Kiểm tra dung lượng bằng `MEMORY USAGE <key>`, xoá bất đồng bộ ở luồng nền bằng `UNLINK <key>` và bật `CONFIG SET lazyfree-lazy-expire yes`."
     cmd: "MEMORY USAGE temp:export:2025 && UNLINK temp:export:2025"
-  - symptom: "Ca #3: Ứng dụng phát sinh lỗi hàng loạt `OOM command not allowed when used memory > 'maxmemory'`"
+  - symptom: "Ca #3: Ứng dụng văng lỗi hàng loạt `OOM command not allowed when used memory > 'maxmemory'`"
     badge: "Cache Misconfigured noeviction"
     tone: rose
-    cause: "Cụm Redis thuần Cache nhưng để quên chính sách mặc định `maxmemory-policy noeviction` nên khi đầy RAM đã từ chối mọi lệnh `SET` mới."
-    fix: "Kiểm tra `INFO memory` / `CONFIG GET maxmemory-policy`, chuyển sang `allkeys-lfu` kèm `lazyfree-lazy-eviction yes` để tự đào thải khoá ít dùng nhất."
+    cause: "Máy chủ Redis chỉ dùng làm Cache nhưng để quên chính sách mặc định `noeviction` nên khi đầy RAM đã từ chối mọi lệnh ghi mới."
+    fix: "Kiểm tra `CONFIG GET maxmemory-policy`, chuyển nóng sang `allkeys-lfu` kèm `lazyfree-lazy-eviction yes` để tự đào thải khoá ít dùng."
     cmd: "INFO memory && CONFIG GET maxmemory-policy"
   - symptom: "Ca #4: RAM của Stream tăng không phanh, hàng ngàn đơn hàng treo lơ lửng không được xử lý"
     badge: "Streams PEL Consumer Leak"
     tone: cyan
-    cause: "Pod consumer bị OOMKilled giữa chừng sau khi nhận tin qua `XREADGROUP`, bỏ lại các ID nằm kẹt vĩnh viễn trong danh sách chờ `XPENDING` (PEL)."
-    fix: "Soi `XPENDING <stream> <group> - + 10` tìm worker chết, dùng `XAUTOCLAIM` thu hồi các tin nhắn treo quá ngưỡng idle về worker mới xử lý rồi gọi `XACK`."
+    cause: "Worker bị sập giữa chừng sau khi nhận việc qua `XREADGROUP`, để lại các bản tin nằm kẹt mãi trong sổ chờ `XPENDING` (PEL)."
+    fix: "Kiểm tra `XPENDING <stream> <group> - + 10`, dùng `XAUTOCLAIM` thu hồi các tin treo quá 60 giây về worker khoẻ mạnh xử lý rồi gọi `XACK`."
     cmd: "XPENDING orders:stream payment-cg - + 10"
-  - symptom: "Ca #5: Giao dịch MSET/MGET hoặc Lua phát sinh lỗi `CROSSSLOT Keys in request don't hash to the same slot`"
+  - symptom: "Ca #5: Giao dịch đa khoá hoặc Lua báo lỗi `CROSSSLOT Keys in request don't hash to the same slot`"
     badge: "Cluster HashSlot Mismatch"
     tone: cyan
-    cause: "Sau khi nâng cấp từ Redis đơn lẻ lên Redis Cluster, các khoá của cùng 1 giỏ hàng (`cart:user88:items` và `cart:user88:totals`) băm ra 2 Slot khác nhau."
-    fix: "Kiểm chứng bằng `CLUSTER KEYSLOT`, dọn khoá cũ và chuẩn hoá lại tên khoá gắn `{HashTag}` theo thực thể: `cart:{user88}:items` và `cart:{user88}:totals`."
+    cause: "Khi chạy trên Redis Cluster, các khoá của cùng 1 giỏ hàng (`cart:user88:items` và `cart:user88:totals`) băm ra 2 ngăn Slot khác nhau."
+    fix: "Kiểm tra bằng `CLUSTER KEYSLOT` và chuẩn hoá lại tên khoá gắn `{HashTag}` theo đối tượng: `cart:{user88}:items` và `cart:{user88}:totals`."
     cmd: "CLUSTER KEYSLOT cart:{user88}:items"
 ```
 
-## 4. Kịch Bản Khám Bệnh Nhanh 30 Giây Cho Ca Trực Đêm
+## 4. Bộ lệnh Kiểm tra Nhanh 30 Giây (Hoàn toàn an toàn, chỉ đọc)
 
-Khi bước vào bất kỳ máy chủ Redis nào đang gặp biến động mà chưa rõ nguyên nhân, hãy chạy chuỗi lệnh **CHỈ ĐỌC hoàn toàn an toàn** sau đây để thu thập trọn vẹn bức tranh toàn cảnh:
+Khi bước vào bất kỳ máy chủ Redis nào đang có cảnh báo, hãy bình tĩnh chạy chuỗi lệnh an toàn sau (tuyệt đối **không bao giờ chạy lệnh `MONITOR` trên máy chủ Production đang chịu tải cao** vì `MONITOR` nhân bản mọi câu lệnh ra màn hình sẽ làm giảm tới 50% hiệu năng!):
 
 ```bash
-# 1. Kiểm tra vai trò Master/Replica, kết nối và bộ nhớ tổng quan
+# 1. Xem nhanh sức khoẻ tổng quan: bộ nhớ, lưu lượng, tỉ lệ đào thải & trạng thái bản sao
 redis-cli INFO server
 redis-cli INFO memory
 redis-cli INFO stats
 redis-cli INFO replication
 
-# 2. Bắt ngay 10 câu lệnh chậm nhất vừa chạy trên luồng chính (mặc định > 10ms)
+# 2. Bắt ngay 10 câu lệnh chậm nhất vừa chạy trên luồng chính (> 10ms)
 redis-cli SLOWLOG LEN
 redis-cli SLOWLOG GET 10
 
-# 3. Nhờ bác sĩ nội trú phân tích gai độ trễ (fork COW, AOF fsync, transparent huge pages)
+# 3. Nhờ bác sĩ tích hợp phân tích gai độ trễ & vấn đề bộ nhớ
 redis-cli LATENCY DOCTOR
 redis-cli MEMORY DOCTOR
 
-# 4. Quét tìm khoá phình to (chỉ chạy trên Replica kèm độ nghỉ 50ms để tuyệt đối êm ái!)
+# 4. Tìm khoá phình to bất thường (luôn chạy trên nút Replica kèm nghỉ 50ms giữa các nhịp SCAN!)
 redis-cli -h replica-node --bigkeys -i 0.05
 ```
 
-## 5. Bộ Quy Tắc Cảnh Báo Sớm Prometheus Alertmanager Chuẩn SRE
-
-Đừng đợi khách hàng báo lỗi mới mở terminal — hãy gắn 3 quy tắc cảnh báo chủ động này lên `redis_exporter` để phát hiện bất thường trước khi tràn RAM hoặc sập nút:
+## 5. Bộ Quy tắc Cảnh báo Chủ động Prometheus & Kỷ luật Hậu sự cố
 
 ```yaml
 groups:
@@ -133,7 +127,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "RAM của Redis vượt ngưỡng 88% maxmemory (nguy cơ OOM / Eviction ồ ạt)"
+          summary: "RAM của Redis vượt 88% maxmemory (nguy cơ đầy bộ nhớ hoặc đào thải ồ ạt)"
 
       - alert: RedisSlowlogSpike
         expr: increase(redis_slowlog_last_id[2m]) > 15
@@ -141,13 +135,13 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Xuất hiện >15 câu lệnh chậm O(N) trên luồng chính trong 2 phút qua!"
+          summary: "Xuất hiện >15 câu lệnh chậm O(N) làm nghẽn luồng chính trong 2 phút qua!"
 ```
 
-> [!TIP] Quy Tắc Vàng Trước Khi Rời Phòng Chiến Sự Cố (Post-Incident Hygiene)
-> Nếu bạn vừa cứu hoả nóng bằng lệnh động `CONFIG SET maxmemory-policy allkeys-lfu` hoặc `CONFIG SET lazyfree-lazy-expire yes` trên RAM, **đừng quên chạy `CONFIG REWRITE` (hoặc cập nhật GitOps ConfigMap / `redis.conf`)**! Nếu bỏ quên bước này, lần tới khi máy chủ khởi động lại, mọi thông số cũ gây sập hệ thống sẽ lặng lẽ sống dậy lúc bạn không ngờ tới nhất!
+> [!WARNING] Quy tắc vàng trước khi đóng ca trực sự cố: Đừng quên `CONFIG REWRITE`!
+> Nếu bạn vừa chữa cháy trực tiếp trên RAM bằng lệnh ==`CONFIG SET maxmemory-policy allkeys-lfu`==, thay đổi đó **chưa tự lưu vào file cấu hình trên ổ đĩa**! Hãy chạy thêm **`CONFIG REWRITE`** (hoặc cập nhật ngay tệp cấu hình trên Git / Helm / Docker Compose) để lần khởi động lại sau hệ thống không bị quay về cấu hình lỗi cũ.
 
-> [!REMEMBER] Ghi nhớ cốt lõi khép lại khoá học Redis Mastery
-> 1. **Đơn luồng là sức mạnh nhưng cũng là gót chân Achilles:** Mọi thiết kế cấu trúc dữ liệu, xoá khoá (`UNLINK`), duyệt khoá (`SCAN`) và Lua Script ngắn gọn đều xoay quanh mục tiêu giữ cho mỗi thao tác trên Event Loop hoàn tất trong vài micro-giây.
-> 2. **Đọc đúng số liệu:** Dùng `SLOWLOG GET` tìm lệnh tốn CPU, `LATENCY DOCTOR` tìm điểm nghẽn hệ điều hành/`fork()`, và luôn dùng hàm `rate(...[5m])` trên Prometheus để đo **Cache Hit Ratio** theo thời gian thực.
-> 3. **Kiến trúc chuẩn Production không có điểm mù:** Bảo vệ DB bằng **Singleflight + Bloom + Jitter**, chọn đúng **Eviction + Hybrid AOF**, mở rộng ngang bằng **Cluster `{HashTag}`**, khoá chặt bằng **Zero-Trust mTLS + ACL** và sẵn sàng ứng phó mọi ca trực với quy trình SRE chuẩn xác!
+> [!REMEMBER] Đúc kết trọn vẹn hành trình Redis Mastery (R00 → R17)
+> 1. **Tôn trọng luồng đơn siêu tốc:** Giữ mọi câu lệnh và kịch bản Lua gọn nhẹ dưới vài micro-giây; luôn dùng **`SCAN`** thay cho `KEYS` và **`UNLINK` + `lazyfree`** thay cho `DEL` trên khóa lớn.
+> 2. **Đọc đúng bệnh qua số liệu:** Kết hợp **`INFO`**, **`SLOWLOG GET`**, **`LATENCY DOCTOR`** và đo Hit Ratio theo cửa sổ trượt `rate(...[5m])` (tránh gõ `MONITOR` lúc cao điểm!).
+> 3. **Kiến trúc vững vàng từ gốc:** Phòng thủ Database bằng **Singleflight + Bloom Filter + TTL Jitter**, chọn đúng **Eviction (`allkeys-lfu` vs `noeviction`) + Hybrid AOF**, mở rộng bằng **Sentinel / Cluster `{HashTag}`** và khóa chặt với **Zero-Trust TLS + ACL**.

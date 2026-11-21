@@ -22,11 +22,16 @@
   {
     "id": "cicd-card-c00-5",
     "front": "Exit Code `137` và `143` trên CI Runner lần lượt báo hiệu sự cố gì?",
-    "back": "`137` (`128 + 9` SIGKILL): tiến trình bị buộc diệt tức khắc, thường do tràn RAM (OOM Killer). `143` (`128 + 15` SIGTERM): tiến trình nhận lệnh dừng êm ái do chạm ngưỡng timeout hoặc bị huỷ Job."
+    "back": "`137` (`128 + 9` SIGKILL): tiến trình bị buộc diệt tức khắc, thường do tràn RAM (OOM Killer). `143` (`128 + 15` SIGTERM): tiến trình nhận lệnh dừng an toàn (Graceful Shutdown) do chạm ngưỡng timeout hoặc bị huỷ Job."
   },
   {
     "id": "cicd-card-c00-6",
     "front": "Điểm khác nhau duy nhất giữa Continuous Delivery và Continuous Deployment là gì?",
-    "back": "Continuous Delivery có cổng phê duyệt thủ công (Manual Approval Gate, vd `environment: production`) trước khi lên Production, còn Continuous Deployment đẩy tự động hoàn toàn ra Production ngay khi vượt qua mọi bài test."
+    "back": "Continuous Delivery có cổng phê duyệt thủ công (1-click Manual Approval Gate, vd `environment: production`) trước khi lên Production, còn Continuous Deployment đẩy tự động hoàn toàn ra Production ngay khi vượt qua mọi bài test."
+  },
+  {
+    "id": "cicd-card-c00-7",
+    "front": "Lệnh cài đặt khoá cứng phiên bản tương đương `npm ci` (Node.js) trong hệ sinh thái Python hiện đại (`uv`) là gì?",
+    "back": "`uv sync --frozen` (đọc cứng tệp `uv.lock` và lập tức trả `Exit Code != 0` nếu tệp khoá bị lệch, hoạt động đúng theo cùng triết lý bất biến của `npm ci`)."
   }
 ]

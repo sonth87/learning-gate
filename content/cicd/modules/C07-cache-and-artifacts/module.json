@@ -3,7 +3,7 @@
   "slug": "C07-cache-and-artifacts",
   "level": 2,
   "order": 7,
-  "title": "Tăng tốc Đường ống: Phân biệt Cache vs Artifact, Khóa băm Lockfile & Mô hình Cache Read-Only",
+  "title": "Phân biệt Cache vs Artifact, Lockfile Hash Key & Read-Only Cache",
   "summary": "Phân biệt bản chất Cache (tăng tốc cài lại ~/.npm theo hashFiles lockfile) và Artifact (truyền sản phẩm dist/ bất biến giữa các Job), áp dụng Read-Only Cache an toàn.",
   "tags": [
     "cache",

@@ -6,7 +6,7 @@
   },
   {
     "id": "K15-C2",
-    "front": "Thứ tự ưu tiên bị trục xuất (Eviction) của 3 hạng QoS khi Node cạn kiệt RAM?",
+    "front": "Thứ tự ưu tiên bị loại khỏi bộ nhớ (evicted) (Eviction) của 3 hạng QoS khi Node cạn kiệt RAM?",
     "back": "`BestEffort` (không đặt requests/limits) bị đuổi đầu tiên → `Burstable` (`requests < limits`) → `Guaranteed` (`requests === limits` cho cả CPU & RAM) được bảo vệ đến cùng."
   },
   {

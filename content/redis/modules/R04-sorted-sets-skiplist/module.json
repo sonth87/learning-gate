@@ -3,7 +3,7 @@
   "slug": "R04-sorted-sets-skiplist",
   "level": 1,
   "order": 2,
-  "title": "Sorted Sets (ZSet) & Đường cao tốc nhiều tầng Skip List O(log N)",
+  "title": "Sorted Sets (ZSet) & Cấu trúc Skip List O(log N)",
   "summary": "Giải phẫu cấu trúc kép Hash Table + Skip List làm nên ngôi vương của Redis ZSet trong Leaderboard triệu người chơi, Sliding Window Rate Limiter và Delayed Queue.",
   "tags": [
     "sorted-sets",

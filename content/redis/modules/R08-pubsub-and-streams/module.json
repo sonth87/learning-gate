@@ -3,8 +3,8 @@
   "slug": "R08-pubsub-and-streams",
   "level": 2,
   "order": 2,
-  "title": "Pub/Sub vs Redis Streams: Từ Loa Phát Thanh Tức Thời Đến Nhật Ký Sự Kiện Bất Tử (PEL & XAUTOCLAIM)",
-  "summary": "Phân biệt rạch ròi Pub/Sub bắn-rồi-quên (Fire-and-Forget) với kiến trúc Append-Only Log của Redis Streams: làm chủ XADD MAXLEN ~, Consumer Group, bảng theo dõi PEL, XACK và cứu hộ tiến trình sập bằng XAUTOCLAIM.",
+  "title": "Pub/Sub vs Redis Streams: Truyền tin Tức thời & Event Log Bền vững (PEL)",
+  "summary": "Phân biệt rạch ròi Pub/Sub bắn-rồi-quên (Fire-and-Forget) với kiến trúc Append-Only Log của Redis Streams: làm chủ XADD MAXLEN ~, Consumer Group, bảng theo dõi PEL, XACK và khôi phục tiến trình sập bằng XAUTOCLAIM.",
   "tags": [
     "pubsub",
     "streams",
@@ -34,7 +34,7 @@
       "description": "Mô phỏng trực quan dòng tin đi từ XADD qua XREADGROUP vào danh sách chờ PEL và giải phóng bằng XACK"
     },
     {
-      "label": "War Room: Sự cố rò rỉ bộ nhớ PEL làm tràn RAM trên Redis Streams",
+      "label": "Xử lý Sự cố: Sự cố rò rỉ bộ nhớ PEL làm tràn RAM trên Redis Streams",
       "kind": "incident",
       "targetId": "inc-streams-pel-leak",
       "description": "Điều tra ca tràn RAM kinh điển khi Worker quên XACK và thiếu MAXLEN ~ trên Stream đơn hàng"

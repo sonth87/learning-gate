@@ -42,7 +42,7 @@
     "q": "Thời gian thực thi được ghi nhận trong `SLOWLOG GET` đo lường chính xác giai đoạn nào của một câu lệnh Redis?",
     "code": "",
     "choices": [
-      "Tổng thời gian từ lúc ứng dụng Node.js gọi hàm cho tới khi nhận xong JSON trả về (gồm cả mạng LAN/WAN)",
+      "Tổng thời gian từ lúc ứng dụng (Python/Node.js/Go) gọi hàm cho tới khi nhận xong phản hồi trả về (gồm cả mạng LAN/WAN)",
       "Chỉ riêng thời gian luồng chính của Redis thực thi câu lệnh đó trên RAM (không tính độ trễ mạng hay thời gian chờ I/O socket)",
       "Thời gian hệ điều hành ghi bản sao RDB xuống ổ cứng vật lý",
       "Thời gian chờ lấy kết nối rảnh trong Connection Pool của phía client"

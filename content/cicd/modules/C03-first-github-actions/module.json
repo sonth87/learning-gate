@@ -3,7 +3,7 @@
   "slug": "C03-first-github-actions",
   "level": 1,
   "order": 3,
-  "title": "Viết GitHub Actions Workflow đầu tiên chuẩn 2026",
+  "title": "Xây dựng GitHub Actions Workflow chuẩn (.github/workflows/ci.yml)",
   "summary": "Tự tay xây dựng .github/workflows/ci.yml hoàn chỉnh: lọc nhánh push/PR thông minh, nâng cấp checkout@v4 & setup-node@v4 kèm npm cache, chạy chuỗi npm ci/build/test và tạo nút bấm tay workflow_dispatch.",
   "tags": [
     "github-actions",

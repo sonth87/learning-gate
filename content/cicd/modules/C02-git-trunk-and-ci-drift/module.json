@@ -3,7 +3,7 @@
   "slug": "C02-git-trunk-and-ci-drift",
   "level": 0,
   "order": 2,
-  "title": "Chiến lược nhánh Git & 5 thủ phạm 'Chạy được trên máy em nhưng đỏ trên CI'",
+  "title": "Trunk-Based Development & 5 Nguyên nhân Lệch Môi trường Local vs CI",
   "summary": "Thực hành luồng nhánh ngắn Trunk-Based Git và triệt tiêu 5 nguyên nhân gây lệch môi trường giữa Laptop cá nhân với CI Runner (Node latest, Watch mode, Timezone, Case-sensitivity, Worker OOM 137).",
   "tags": [
     "trunk-based",
@@ -14,12 +14,12 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room B5: Local chạy được nhưng CI đỏ",
+      "label": "Xử lý Sự cố B5: Local chạy được nhưng CI đỏ",
       "kind": "warroom",
       "targetId": "warroom-b5-local-vs-ci"
     },
     {
-      "label": "War Room B4: Trị Flaky Tests",
+      "label": "Xử lý Sự cố B4: Trị Flaky Tests",
       "kind": "warroom",
       "targetId": "warroom-b4-flaky-tests"
     }

@@ -1,425 +1,416 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  BookOpen,
-  Code2,
-  FolderGit2,
-  Layers,
-  GraduationCap,
   BookMarked,
+  BookOpen,
+  Check,
+  ChevronDown,
   Compass,
+  FolderGit2,
+  Globe,
+  GraduationCap,
+  LayoutGrid,
+  Moon,
   Search,
   Settings,
   StickyNote,
-  ArrowRightLeft,
   Sun,
-  Moon,
-  Monitor,
-  Wrench,
   Terminal,
-  ChevronDown,
-  Library,
-  GraduationCap as LearnIcon,
+  Wrench,
   X,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@sonth87/device-layout';
 import { closeLearningApp } from '@/apps/appRegistry';
 import { PyMasteryLogo } from '@/components/common/AppLogos';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
-import { useCurriculum } from '@/features/workpath/data';
-import { moduleDone } from '@/features/workpath/logic';
-import { useWpProgress } from '@/features/workpath/store';
+import { useWpNav } from '@/features/workpath/store';
+import { useWorkbenchStore, type WorkbenchLang } from '@/stores/useWorkbenchStore';
+import { WORKBENCH_I18N } from '@/components/scale-workbench/i18n';
 import { cn } from '@/utils/cn';
 
-type NavTab = { id: MainTab; label: string; shortcut: string; icon: React.ReactNode };
-
-/** Đường học chính (nội dung và cách chấm bài từ WorkPath) + công cụ dùng hằng ngày */
-const PRIMARY_TABS: NavTab[] = [
-  {
-    id: 'learn',
-    label: 'Học — lộ trình, bài tập, quiz, đọc code thật',
-    shortcut: '⌘1',
-    icon: <LearnIcon className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'playground',
-    label: 'Sân chơi & Studio IDE',
-    shortcut: '⌘2',
-    icon: <Terminal className="h-4 w-4" aria-hidden="true" />,
-  },
-  {
-    id: 'glossary',
-    label: 'Từ điển & Thư viện Python',
-    shortcut: '⌘3',
-    icon: <BookMarked className="h-4 w-4" aria-hidden="true" />,
-  },
+const LANGUAGES: { code: WorkbenchLang; label: string; native: string }[] = [
+  { code: 'vi', label: 'Vietnamese', native: 'Tiếng Việt' },
+  { code: 'en', label: 'English', native: 'English' },
 ];
-
-/** Tài liệu tra cứu bổ sung (giáo trình cũ, ôn tập, dự án mẫu...) — không còn là đường học song song */
-const MORE_TABS: { id: MainTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'curriculum', label: 'Giáo trình cũ (7 giai đoạn)', icon: <BookOpen className="h-4 w-4" aria-hidden="true" /> },
-  { id: 'practice', label: 'Bài thực hành cũ', icon: <Code2 className="h-4 w-4" aria-hidden="true" /> },
-  { id: 'samples', label: 'Dự án mẫu (16 Projects IDE)', icon: <FolderGit2 className="h-4 w-4" aria-hidden="true" /> },
-  { id: 'flashcards', label: 'Flashcards cũ', icon: <Layers className="h-4 w-4" aria-hidden="true" /> },
-  { id: 'exams', label: 'Thi sát hạch', icon: <GraduationCap className="h-4 w-4" aria-hidden="true" /> },
-  { id: 'reference', label: 'Chuyên đề PDF', icon: <Compass className="h-4 w-4" aria-hidden="true" /> },
-];
-
-const HeaderTooltip: React.FC<{
-  label: string;
-  shortcut?: string;
-  align?: 'center' | 'right' | 'left';
-  children: React.ReactNode;
-}> = ({ label, shortcut, align = 'center', children }) => (
-  <div className="group/tip relative inline-flex">
-    {children}
-    <div
-      role="tooltip"
-      className={cn(
-        'pointer-events-none invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 transition-all duration-150 delay-150',
-        'absolute top-full mt-2 z-50 flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-700/90 bg-slate-900/95 px-2.5 py-1 text-[11px] font-medium text-slate-100 shadow-lg backdrop-blur-md',
-        align === 'center' && 'left-1/2 -translate-x-1/2',
-        align === 'right' && 'right-0',
-        align === 'left' && 'left-0'
-      )}
-    >
-      <span>{label}</span>
-      {shortcut && (
-        <kbd className="rounded bg-slate-800 px-1 py-0.2 font-mono text-[10px] text-emerald-400 border border-slate-700">
-          {shortcut}
-        </kbd>
-      )}
-    </div>
-  </div>
-);
-
-const MoreMenu: React.FC = () => {
-  const { activeTab, setActiveTab } = useNavigationStore();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const active = MORE_TABS.some((t) => t.id === activeTab);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDoc = (e: MouseEvent) => {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    document.addEventListener('mousedown', onDoc);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDoc);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className={cn(
-          'inline-flex h-7 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-all duration-150',
-          active ? 'bg-slate-800 text-emerald-400 border-slate-700/80' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border-transparent'
-        )}
-      >
-        <Library className="h-4 w-4" aria-hidden="true" />
-        <span>Tra cứu</span>
-        <ChevronDown className="h-3 w-3" aria-hidden="true" />
-      </button>
-      {open && (
-        <div role="menu" className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-xl border border-slate-700 bg-slate-900/98 p-1.5 shadow-2xl backdrop-blur-md">
-          <div className="px-2.5 pb-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tài liệu tra cứu bổ sung</div>
-          {MORE_TABS.map((t) => (
-            <button
-              key={t.id}
-              role="menuitem"
-              onClick={() => {
-                setActiveTab(t.id);
-                setOpen(false);
-              }}
-              className={cn('flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm', activeTab === t.id ? 'bg-slate-800 text-emerald-400' : 'text-slate-300 hover:bg-slate-800/70')}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
 
 export const Header: React.FC<{ windowId?: string }> = ({ windowId }) => {
   const {
     activeTab,
     setActiveTab,
-    setSearchOpen,
     setSettingsOpen,
     setSetupGuideOpen,
     openNotesDrawer,
     selectedLessonId,
   } = useNavigationStore();
 
+  const wpView = useWpNav((s) => s.view);
+  const goWp = useWpNav((s) => s.go);
+
   const {
-    setTheme,
-    showJsTsComparison,
-    toggleJsTsComparison,
-  } = useSettingsStore();
+    lang,
+    setLanguage,
+    theme,
+    setWorkbenchTheme,
+    setSearchPaletteOpen,
+  } = useWorkbenchStore(
+    useShallow((s) => ({
+      lang: s.language,
+      setLanguage: s.setLanguage,
+      theme: s.workbenchTheme,
+      setWorkbenchTheme: s.setWorkbenchTheme,
+      setSearchPaletteOpen: s.setSearchPaletteOpen,
+    }))
+  );
 
-  const deviceColorScheme = useStore((s) => s.colorScheme);
+  const setAppTheme = useSettingsStore((s) => s.setTheme);
   const setDeviceColorScheme = useStore((s) => s.setColorScheme);
-
-  const activeThemeMode =
-    deviceColorScheme === 'auto' ? 'system' : deviceColorScheme;
-
-  const handleSelectTheme = (mode: 'light' | 'dark' | 'system') => {
-    setTheme(mode);
-    setDeviceColorScheme(mode === 'system' ? 'auto' : mode);
-  };
-
   const { notes, bookmarks } = useUserDataStore();
 
-  // Tiến độ tổng: số module WorkPath đã hoàn thành (lesson + quiz đạt + mọi bài tập)
-  const { data: wpCur } = useCurriculum();
-  const wpState = useWpProgress((st) => st.state);
-  const wpDone = wpCur ? wpCur.modules.filter((m) => moduleDone(wpState, m, wpCur.passQuiz)).length : 0;
-  const wpTotal = wpCur?.modules.length ?? 0;
-  const progressPercent = wpTotal ? Math.round((wpDone / wpTotal) * 100) : 0;
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const langRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
 
-  const totalNotesAndBookmarks = notes.length + bookmarks.length;
+  const t = WORKBENCH_I18N[lang];
+  const totalNotes = notes.length + bookmarks.length;
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
+
+  const handleToggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setWorkbenchTheme(next);
+    setAppTheme(next);
+    setDeviceColorScheme(next);
+  };
+
+  const isLearnMode = activeTab === 'learn' && wpView.name === 'workbench';
+  const isPracticeMode = activeTab === 'learn' && wpView.name !== 'workbench';
+  const isLabMode = activeTab === 'playground';
+  const isCheatsheetsMode = activeTab === 'glossary';
+  const isMoreActive = ['samples', 'exams', 'reference', 'curriculum', 'practice', 'flashcards'].includes(
+    activeTab
+  );
+
+  const extraItems: {
+    id: MainTab | 'setup' | 'notes';
+    labelVi: string;
+    labelEn: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      id: 'samples',
+      labelVi: '16 Dự án Mẫu (IDE)',
+      labelEn: '16 Sample Projects (IDE)',
+      icon: <FolderGit2 className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'exams',
+      labelVi: 'Trung tâm Thi sát hạch',
+      labelEn: 'Certification Exams',
+      icon: <GraduationCap className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'reference',
+      labelVi: 'Chuyên đề Sâu & Clean Arch',
+      labelEn: 'Deep Dives & Clean Arch',
+      icon: <Compass className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'curriculum',
+      labelVi: 'Giáo trình Tra cứu 7 Giai đoạn',
+      labelEn: '7-Stage Reference Archive',
+      icon: <BookOpen className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'setup',
+      labelVi: 'Hướng dẫn Cài đặt uv / VS Code',
+      labelEn: 'Setup Python / uv / VS Code',
+      icon: <Wrench className="h-3.5 w-3.5" />,
+    },
+    {
+      id: 'notes',
+      labelVi: `Ghi chú & Đánh dấu (${totalNotes})`,
+      labelEn: `Notes & Bookmarks (${totalNotes})`,
+      icon: <StickyNote className="h-3.5 w-3.5" />,
+    },
+  ];
 
   return (
-    <header className="shrink-0 z-40 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-11 sm:h-12 max-w-[1680px] items-center justify-between gap-1.5 sm:gap-2 px-2.5 sm:px-4">
-        {/* Left: Brand & Compact Progress Pill */}
-        <div className="flex items-center gap-2 min-w-0 shrink-0">
-          <HeaderTooltip
-            label={`Tiến độ: ${wpDone}/${wpTotal} module hoàn thành (${progressPercent}%) · ${wpState.xp} XP`}
-            align="left"
+    <header className="@container shrink-0 z-40 border-b-[1.5px] border-[var(--dts-border)] bg-[var(--dts-canvas)] text-[var(--dts-ink)]">
+      <div className="mx-auto flex h-12 max-w-[1920px] items-center justify-between gap-2 px-3 sm:px-4">
+        {/* Left: Brand + Primary 4 Mode Tabs (Container-query adaptive for floating DeviceLayout windows) */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('learn');
+              goWp({ name: 'workbench' });
+            }}
+            className="group flex items-center gap-2 text-left shrink-0"
           >
-            <button
-              onClick={() => setActiveTab('learn')}
-              className="group flex items-center gap-2 text-left focus-visible:outline-none min-w-0"
-            >
-              <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg shadow-sm shadow-emerald-500/20 transition-transform duration-200 group-hover:scale-105 overflow-hidden">
-                <PyMasteryLogo className="h-full w-full" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono text-xs sm:text-sm font-bold tracking-tight text-white truncate">
-                    PyMastery
-                  </span>
-                  <span className="hidden sm:inline-block rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 font-mono text-[10px] font-semibold text-emerald-400">
-                    Learning Gate
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <div className="h-1 w-10 sm:w-12 rounded-full bg-slate-800 overflow-hidden">
-                    <div
-                      style={{ width: `${progressPercent}%` }}
-                      className="h-full bg-emerald-500 transition-all duration-300"
-                    />
-                  </div>
-                  <span className="font-mono">
-                    {wpDone}/{wpTotal}
-                  </span>
-                </div>
-              </div>
-            </button>
-          </HeaderTooltip>
-        </div>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)]">
+              <PyMasteryLogo className="h-full w-full" />
+            </div>
+            <span className="font-mono text-sm font-extrabold tracking-tight text-[var(--dts-ink)]">
+              Python Mastery
+            </span>
+          </button>
 
-        {/* Center: Icon-Only Module Navigation with Hover Tooltips (lg+ Desktop; Mobile & Tablet use MobileBottomNav) */}
-        <nav
-          aria-label="Điều hướng phân hệ chính"
-          className="hidden lg:flex items-center gap-1 rounded-xl border border-slate-800/90 bg-slate-900/80 p-1 shrink-0"
-        >
-          {PRIMARY_TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <HeaderTooltip
-                key={tab.id}
-                label={tab.label}
-                shortcut={tab.shortcut}
-              >
-                <button
-                  onClick={() => setActiveTab(tab.id)}
-                  aria-label={tab.label}
-                  aria-current={active ? 'page' : undefined}
-                  className={cn(
-                    'inline-flex h-7 w-8 items-center justify-center rounded-lg transition-all duration-150',
-                    active
-                      ? 'bg-slate-800 text-emerald-400 shadow-xs border border-slate-700/80'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
-                  )}
-                >
-                  {tab.icon}
-                </button>
-              </HeaderTooltip>
-            );
-          })}
-          <MoreMenu />
-        </nav>
-
-        {/* Right: Icon-Only Utility Cluster with Hover Tooltips */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Quick Setup Guide Button (Python / uv / pyenv / VS Code) */}
-          <HeaderTooltip
-            label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
-            align="right"
+          {/* 4 Primary Mode Tabs (adapts to actual window width via @container) */}
+          <nav
+            aria-label="Primary learning modes"
+            className="hidden @[680px]:flex items-center gap-1 ml-1 shrink-0"
           >
-            <button
-              onClick={() => setSetupGuideOpen(true)}
-              aria-label="Hướng dẫn Cài đặt Python, uv / pyenv, .venv & VS Code"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-auto shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 sm:px-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-500/60 transition-all cursor-pointer shadow-xs"
-            >
-              <Wrench className="h-3.5 w-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
-              <span className="hidden xl:inline whitespace-nowrap">
-                Cài đặt Python / uv / pyenv
-              </span>
-            </button>
-          </HeaderTooltip>
-
-          {/* Quick Search Cmd+K (Icon Only) */}
-          <HeaderTooltip label="Tìm kiếm nhanh" shortcut="⌘K" align="right">
-            <button
-              onClick={() => setSearchOpen(true)}
-              aria-label="Tìm kiếm nhanh (Cmd+K)"
-              className="inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/90 text-amber-400 hover:border-slate-700 hover:bg-slate-800/80 hover:text-amber-300 transition-all cursor-pointer shadow-xs"
-            >
-              <Search className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </HeaderTooltip>
-
-          {/* JS/TS Comparison Mode Toggle (Icon Only) */}
-          <HeaderTooltip
-            label={`Đối chiếu JS/TS (${showJsTsComparison ? 'Đang bật' : 'Đang tắt'})`}
-            align="right"
-          >
-            <button
-              onClick={toggleJsTsComparison}
-              aria-label="Bật/Tắt chế độ đối chiếu JS/TS"
-              aria-pressed={showJsTsComparison}
-              className={cn(
-                'relative inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border transition-colors',
-                showJsTsComparison
-                  ? 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300'
-                  : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-              )}
-            >
-              <ArrowRightLeft className="h-3.5 w-3.5" aria-hidden="true" />
-              <span
-                className={cn(
-                  'absolute top-1 right-1 h-1.5 w-1.5 rounded-full',
-                  showJsTsComparison ? 'bg-cyan-400' : 'bg-slate-600'
-                )}
-              />
-            </button>
-          </HeaderTooltip>
-
-          {/* Notes & Bookmarks Drawer Button (Icon Only) */}
-          <HeaderTooltip label="Ghi chú & Đánh dấu" align="right">
-            <button
-              onClick={() =>
-                openNotesDrawer(
-                  'lesson',
-                  selectedLessonId,
-                  `Bài học: ${selectedLessonId}`
-                )
-              }
-              aria-label="Mở ngăn Ghi chú & Đánh dấu"
-              className="relative inline-flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-              <StickyNote className="h-3.5 w-3.5" aria-hidden="true" />
-              {totalNotesAndBookmarks > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-emerald-500 px-1 font-mono text-[9px] font-bold text-slate-950">
-                  {totalNotesAndBookmarks}
-                </span>
-              )}
-            </button>
-          </HeaderTooltip>
-
-          {/* Theme Switcher: Icons Only (sm+; on < sm, accessible inside SettingsModal) */}
-          <div
-            role="group"
-            aria-label="Chế độ giao diện Sáng / Tối / Tự động"
-            className="hidden sm:flex items-center rounded-lg border border-slate-800 bg-slate-900 p-0.5 shrink-0"
-          >
-            <HeaderTooltip label="Giao diện Sáng (Light)" align="right">
-              <button
-                onClick={() => handleSelectTheme('light')}
-                aria-label="Giao diện Sáng (Light)"
-                aria-pressed={activeThemeMode === 'light'}
-                className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                  activeThemeMode === 'light'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                <Sun className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </HeaderTooltip>
-            <HeaderTooltip label="Giao diện Tối (Dark)" align="right">
-              <button
-                onClick={() => handleSelectTheme('dark')}
-                aria-label="Giao diện Tối (Dark)"
-                aria-pressed={activeThemeMode === 'dark'}
-                className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                  activeThemeMode === 'dark'
-                    ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                <Moon className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </HeaderTooltip>
-            <HeaderTooltip label="Tự động theo hệ thống (Auto)" align="right">
-              <button
-                onClick={() => handleSelectTheme('system')}
-                aria-label="Tự động theo hệ thống (Auto)"
-                aria-pressed={activeThemeMode === 'system'}
-                className={cn(
-                  'inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                  activeThemeMode === 'system'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                <Monitor className="h-3.5 w-3.5" aria-hidden="true" />
-              </button>
-            </HeaderTooltip>
-          </div>
-
-          {/* Settings & JSON Backup (Icon Only) */}
-          <HeaderTooltip label="Cài đặt & Giao diện" shortcut="⌘," align="right">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Cài đặt & Sao lưu dữ liệu"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 hover:bg-slate-800 hover:text-white transition-colors"
-            >
-              <Settings className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
-          </HeaderTooltip>
-
-          <span className="h-5 w-px bg-slate-800 shrink-0 mx-0.5" aria-hidden="true" />
-
-          {/* Close App / Return to Home Screen */}
-          <HeaderTooltip label="Đóng ứng dụng về màn hình chính" align="right">
             <button
               type="button"
-              onClick={() => closeLearningApp('pymastery', windowId)}
-              aria-label="Đóng ứng dụng về màn hình chính"
-              className="inline-flex h-8 w-8 sm:w-auto shrink-0 items-center justify-center gap-1 rounded-lg border border-slate-700/90 bg-slate-900/90 sm:px-2.5 text-xs font-semibold text-slate-300 hover:border-rose-500/50 hover:bg-rose-500/15 hover:text-rose-300 active:bg-rose-500/25 active:scale-95 transition-all cursor-pointer"
+              title={t.tabs.learn}
+              onClick={() => {
+                setActiveTab('learn');
+                goWp({ name: 'workbench' });
+              }}
+              className={cn(
+                'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                isLearnMode
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+              )}
             >
-              <X className="h-4 w-4 sm:h-3.5 sm:w-3.5 shrink-0" aria-hidden="true" />
-              <span className="hidden sm:inline">Đóng</span>
+              <BookOpen className="h-3.5 w-3.5 shrink-0" />
+              <span className={cn(isLearnMode ? 'inline' : 'hidden @[900px]:inline')}>
+                {t.tabs.learn}
+              </span>
             </button>
-          </HeaderTooltip>
+
+            <button
+              type="button"
+              title={t.tabs.practice}
+              onClick={() => {
+                setActiveTab('learn');
+                if (wpView.name === 'workbench') {
+                  goWp({ name: 'exercises' });
+                }
+              }}
+              className={cn(
+                'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                isPracticeMode
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+              )}
+            >
+              <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+              <span className={cn(isPracticeMode ? 'inline' : 'hidden @[900px]:inline')}>
+                {t.tabs.practice}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              title={t.tabs.lab}
+              onClick={() => setActiveTab('playground')}
+              className={cn(
+                'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                isLabMode
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+              )}
+            >
+              <Terminal className="h-3.5 w-3.5 shrink-0" />
+              <span className={cn(isLabMode ? 'inline' : 'hidden @[1020px]:inline')}>
+                {t.tabs.lab}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              title={t.tabs.cheatsheets}
+              onClick={() => setActiveTab('glossary')}
+              className={cn(
+                'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                isCheatsheetsMode
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+              )}
+            >
+              <BookMarked className="h-3.5 w-3.5 shrink-0" />
+              <span className={cn(isCheatsheetsMode ? 'inline' : 'hidden @[1140px]:inline')}>
+                {t.tabs.cheatsheets}
+              </span>
+            </button>
+
+            {/* More Hubs Dropdown */}
+            <div ref={moreRef} className="relative shrink-0">
+              <button
+                type="button"
+                title={t.tabs.more}
+                onClick={() => setMoreMenuOpen((o) => !o)}
+                className={cn(
+                  'inline-flex shrink-0 whitespace-nowrap items-center gap-1 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                  isMoreActive || moreMenuOpen
+                    ? 'dts-card-tactile bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
+                    : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+                )}
+              >
+                <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden @[1180px]:inline">{t.tabs.more}</span>
+                <ChevronDown className="h-3 w-3 shrink-0" />
+              </button>
+
+              {moreMenuOpen && (
+                <div
+                  role="menu"
+                  className="dts-card-tactile absolute left-0 top-full z-50 mt-2 w-64 rounded-2xl bg-[var(--dts-panel)] p-1.5"
+                >
+                  {extraItems.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        if (item.id === 'setup') {
+                          setSetupGuideOpen(true);
+                        } else if (item.id === 'notes') {
+                          openNotesDrawer(
+                            'lesson',
+                            selectedLessonId,
+                            `Lesson: ${selectedLessonId}`
+                          );
+                        } else {
+                          setActiveTab(item.id);
+                        }
+                      }}
+                      className={cn(
+                        'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left font-mono text-xs font-semibold transition-colors',
+                        activeTab === item.id
+                          ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                          : 'text-[var(--dts-ink)] hover:bg-[var(--dts-panel-muted)]'
+                      )}
+                    >
+                      {item.icon}
+                      <span>{lang === 'en' ? item.labelEn : item.labelVi}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </nav>
+        </div>
+
+        {/* Right: Search ⌘K Bar · Language Picker · Paper/Dark Theme Toggle · Settings · Close */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Wide Tactile Search Trigger (adapts to @container width) */}
+          <button
+            type="button"
+            onClick={() => setSearchPaletteOpen(true, 'pymastery')}
+            aria-label={t.searchPlaceholder}
+            title={`${t.searchPlaceholder} (⌘K)`}
+            className="dts-btn-tactile inline-flex h-8 items-center justify-between gap-2.5 rounded-xl bg-[var(--dts-panel-elevated)] px-2.5 @[1160px]:w-56 @[1360px]:w-64 font-mono text-xs text-[var(--dts-ink-muted)]"
+          >
+            <span className="flex items-center gap-1.5 truncate">
+              <Search className="h-3.5 w-3.5 shrink-0 text-[var(--dts-ink)]" />
+              <span className="hidden @[1160px]:inline truncate">{t.searchPlaceholder}</span>
+            </span>
+            <kbd className="hidden @[860px]:inline-block rounded border border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-1.5 py-0.2 font-mono text-[10px] font-bold text-[var(--dts-ink)]">
+              ⌘K
+            </kbd>
+          </button>
+
+          {/* Language Switcher Dropdown (VI / EN) */}
+          <div ref={langRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setLangMenuOpen((o) => !o)}
+              aria-label="Select Language"
+              className="dts-btn-tactile inline-flex h-8 items-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2.5 font-mono text-xs font-extrabold text-[var(--dts-ink)]"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{lang.toUpperCase()}</span>
+              <ChevronDown className="h-3 w-3 opacity-70" />
+            </button>
+
+            {langMenuOpen && (
+              <div
+                role="menu"
+                className="dts-card-tactile absolute right-0 top-full z-50 mt-2 w-44 rounded-2xl bg-[var(--dts-panel)] p-1.5"
+              >
+                {LANGUAGES.map((l) => {
+                  const selected = lang === l.code;
+                  return (
+                    <button
+                      key={l.code}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setLanguage(l.code);
+                        setLangMenuOpen(false);
+                      }}
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-xl px-3 py-1.5 font-mono text-xs font-bold transition-colors',
+                        selected
+                          ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                          : 'text-[var(--dts-ink)] hover:bg-[var(--dts-panel-muted)]'
+                      )}
+                    >
+                      <span>
+                        {l.native}{' '}
+                        <span className="text-[10px] opacity-65">({l.code.toUpperCase()})</span>
+                      </span>
+                      {selected && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Paper Light / Espresso Dark Theme Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleTheme}
+            title={theme === 'light' ? t.themes.dark : t.themes.light}
+            aria-label="Toggle Paper Light / Espresso Dark theme"
+            className="dts-btn-tactile inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]"
+          >
+            {theme === 'light' ? (
+              <Moon className="h-3.5 w-3.5" />
+            ) : (
+              <Sun className="h-3.5 w-3.5 text-amber-300" />
+            )}
+          </button>
+
+          {/* Preferences & Backup */}
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Preferences & Backup"
+            className="dts-btn-tactile hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]"
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Close Window back to DeviceLayout Desktop */}
+          <button
+            type="button"
+            onClick={() => closeLearningApp('pymastery', windowId)}
+            aria-label={t.closeApp}
+            className="dts-btn-tactile inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2.5 font-mono text-xs font-extrabold text-[var(--dts-ink)] hover:bg-[var(--dts-rose-bg)] hover:text-[var(--dts-rose-ink)]"
+          >
+            <X className="h-3.5 w-3.5" />
+            <span className="hidden xl:inline">{t.closeApp}</span>
+          </button>
         </div>
       </div>
     </header>

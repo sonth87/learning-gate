@@ -1,4 +1,4 @@
-# Phòng tuyến DevSecOps 5 Lớp: Quét Secret, SAST, SCA, Cổng chặn CVE Container, SBOM & Đóng gói Không Đặc quyền
+# Phòng tuyến DevSecOps 5 Lớp: Quét Secret, SAST, SCA, Cổng chặn CVE Container, SBOM & Rootless Container Build
 
 Trong mô hình phát triển phần mềm cũ cách đây một thập kỷ, đội Bảo mật chỉ nhảy vào kiểm tra vào... tuần cuối cùng trước ngày ra mắt sản phẩm. Khi họ phát hiện 15 lỗ hổng nghiêm trọng và 1 khoá API nằm phơi trong lịch sử Git, ngày phát hành bị hoãn cả tháng trong sự căng thẳng tột độ giữa Dev và Security!
 
@@ -6,7 +6,7 @@ Triết lý ==DevSecOps ("Shift-Left Security" — Dịch chuyển bảo mật s
 
 ```visual
 kind: flow
-title: Phễu Lọc Bảo Mật DevSecOps 5 Lớp Tự Động Ngay Trên Đường Ống
+title: Phễu Lọc Bảo Mật DevSecOps 5 Lớp Tự Động Ngay Trên Pipeline
 subtitle: Mỗi lớp soi chiếu một bề mặt tấn công độc lập — lọt qua lớp trước sẽ bị chặn đứng ở lớp sau
 steps:
   - icon: key
@@ -65,7 +65,13 @@ callouts:
     tone: emerald
 ```
 
-Tại sao không dùng 1 công cụ duy nhất mà phải phối hợp đủ **5 lớp**? Bởi một ứng dụng Node.js hiện đại được ghép từ nhiều tầng vật liệu khác nhau — code TypeScript của bạn sạch không có nghĩa là gói npm bên thứ ba hay thư viện C `openssl` dưới đáy Docker Image cũng sạch!
+Tại sao không dùng 1 công cụ duy nhất mà phải phối hợp đủ **5 lớp**? Bởi một ứng dụng hiện đại (dù viết bằng Node.js, Python hay Go) được ghép từ nhiều tầng vật liệu khác nhau — code của bạn sạch không có nghĩa là gói thư viện tải về hay nhân Linux dưới đáy Docker Image cũng sạch! Trước khi đi vào cấu hình, hãy giải mã bình dân toàn bộ "rừng từ viết tắt" bảo mật này:
+
+- **`Secret Scanning` (Quét rò rỉ khoá bí mật — vd `Gitleaks`):** Như **cổng dò kim loại ở sân bay**, rà soát toàn bộ lịch sử các commit Git để bắt kịp mật khẩu DB, AWS Key hay Stripe Token lỡ bỏ quên trong code.
+- **`SAST` (*Static Application Security Testing* — Quét lỗi bảo mật trong code bạn tự viết):** Như **chụp phim X-quang mã nguồn** (`src/`), đọc cây cú pháp của chính đội bạn gõ để phát hiện lỗi cộng chuỗi SQL Injection, `eval()`, XSS mà không cần chạy ứng dụng.
+- **`SCA` (*Software Composition Analysis* — Quét lỗ hổng trong thư viện bên thứ ba bạn cài vào):** Tới 80% dung lượng phần mềm hiện đại là thư viện mở cài từ `npm`, `PyPI`, `Go Modules`. `SCA` (`npm audit`, `pip-audit`, `Trivy fs`) đối chiếu tệp lockfile với danh sách lỗ hổng công khai toàn cầu (**CVE — Common Vulnerabilities and Exposures**).
+- **`Container Image Scan` (Quét ảnh Container — vd `Trivy image`):** Mở tung bức ảnh Docker vừa đóng gói để kiểm tra các thư viện hệ điều hành Linux (`Alpine`, `Debian` như `openssl`, `libcrypto`, `curl`) nằm sâu bên dưới runtime ứng dụng.
+- **`SBOM` (*Software Bill of Materials* — "Bảng thành phần nguyên liệu phần mềm"):** Giống hệt **nhãn thành phần dinh dưỡng in trên vỏ hộp sữa**, xuất ra tệp JSON liệt kê đầy đủ từng gói và phiên bản có mặt trong bản phát hành.
 
 ```visual
 kind: layers
@@ -115,7 +121,7 @@ columns:
 
 ## 2. Cấu hình thực dụng từng Lớp (Triệt tiêu bẫy "Cảnh báo ồn ào" — Alert Fatigue!)
 
-Sai lầm khiến nhiều đội ngũ chán ghét công cụ bảo mật rồi lén tắt bỏ là **để ngưỡng báo động quá nhiễu**: ví dụ bắt lỗi cả các gói `devDependencies` chỉ chạy ở máy dev (`eslint`, `vitest`), hoặc chặn đường ống vì một lỗ hổng mức `LOW` trong nhân Debian mà chính nhà phát hành Debian còn chưa tung bản vá!
+Sai lầm khiến nhiều đội ngũ chán ghét công cụ bảo mật rồi lén tắt bỏ là **để ngưỡng báo động quá nhiễu**: ví dụ bắt lỗi cả các gói `devDependencies` chỉ chạy ở máy dev (`eslint`, `vitest`), hoặc chặn pipeline vì một lỗ hổng mức `LOW` trong nhân Debian mà chính nhà phát hành Debian còn chưa tung bản vá!
 
 Hãy áp dụng bộ tham số tinh chỉnh chuẩn công nghiệp sau:
 
@@ -146,11 +152,11 @@ Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối c
 
 ### 3) Lớp 4 & 5 — Cổng chặn `Trivy` với "Bộ 3 Cờ Vàng" & Xuất `CycloneDX SBOM`
 > [!WARNING] Lỗi nghiêm trọng cần tránh số 1 của Trivy: Mặc định `--exit-code` bằng `0`!
-> Nếu bạn chỉ gõ `trivy image ghcr.io/acme/shop-api:1.0` mà **quên truyền `--exit-code 1`**, dù phát hiện **12 lỗ hổng `CRITICAL`** thì Trivy chỉ in bảng cảnh báo cho vui rồi vẫn trả mã thoát `0` — khiến đường ống báo **XANH** và đẩy thẳng ảnh đầy lỗ hổng lên Production!
+> Nếu bạn chỉ gõ `trivy image ghcr.io/acme/shop-api:1.0` mà **quên truyền `--exit-code 1`**, dù phát hiện **12 lỗ hổng `CRITICAL`** thì Trivy chỉ in bảng cảnh báo cho vui rồi vẫn trả mã thoát `0` — khiến pipeline báo **XANH** và đẩy thẳng ảnh đầy lỗ hổng lên Production!
 
 Luôn kết hợp đồng thời **3 cờ vàng** trên cổng chặn Trivy:
-1. ==`--exit-code 1`==: Ép trả mã thoát đỏ (`1`) để chặn cứng đường ống khi phát hiện vi phạm.
-2. **`--severity CRITICAL`**: Chỉ chặn đứng đường ống với các lỗ hổng chí mạng thực sự.
+1. ==`--exit-code 1`==: Ép trả mã thoát đỏ (`1`) để chặn cứng pipeline khi phát hiện vi phạm.
+2. **`--severity CRITICAL`**: Chỉ chặn đứng pipeline với các lỗ hổng chí mạng thực sự.
 3. ==`--ignore-unfixed`==: Chỉ chặn những CVE **đã có bản vá chính thức** từ nhà phát hành hệ điều hành/thư viện — đảm bảo mỗi khi pipeline báo đỏ, lập trình viên luôn có hướng nâng cấp rõ ràng thay vì bất lực đi bật `continue-on-error: true`!
 
 ```yaml

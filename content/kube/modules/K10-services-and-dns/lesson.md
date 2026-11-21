@@ -1,17 +1,18 @@
 # Kubernetes Service, Phân giải tên miền CoreDNS & Kết nối đa tầng
 
-Ở bài `K09`, bạn đã thấy sức mạnh tự chữa lành của `Deployment`: hễ một Pod chết, `ReplicaSet` lập tức tạo ra Pod mới thay thế. Nhưng chính tính chất "sinh diệt liên tục" đó lại đẻ ra một bài toán mạng hóc búa:
+Ở bài `K09`, bạn đã thấy sức mạnh tự phục hồi (Self-Healing) của `Deployment`: hễ một Pod chết, `ReplicaSet` lập tức tạo ra Pod mới thay thế. Nhưng chính tính chất "thay ca liên tục" đó lại đẻ ra một bài toán mạng hóc búa:
 
 - [!] **Mỗi lần Pod được khởi tạo lại, nó nhận một địa chỉ IP nội bộ hoàn toàn mới** (ví dụ Pod cũ là `10.244.1.15`, Pod mới sinh ra ở Node khác lại là `10.244.2.48`)!
-- [>] Nếu Frontend hay microservice khác lưu cứng IP của Pod, chỉ sau một đợt Rolling Update toàn bộ kết nối sẽ đứt gãy sạch.
+- [>] Nếu Frontend hay dịch vụ khác lưu cứng IP của Pod, chỉ sau một đợt Rolling Update toàn bộ kết nối sẽ đứt gãy sạch.
 
-Tài nguyên **`Service`** (`apiVersion: v1`) giải quyết triệt để bài toán này bằng cách đặt một ==địa chỉ IP ảo cố định (Virtual IP — ClusterIP)== kèm một **tên miền DNS bất biến** đứng chắn phía trước và tự động cân bằng tải tới các Pod khoẻ mạnh.
+> [!NOTE] Mô hình tư duy "Số điện thoại tổng đài cố định `1900`" (`Service`)
+> Bạn không bao giờ lưu số điện thoại di động cá nhân của từng nhân viên trực tổng đài (vì họ nghỉ ca liên tục), mà bạn gọi vào **số tổng đài cố định duy nhất** để hệ thống tự động nối máy tới nhân viên nào đang rảnh và khỏe mạnh! Trong Kubernetes, tài nguyên **`Service` (`apiVersion: v1`)** chính là chiếc tổng đài mang ==địa chỉ IP ảo cố định (`ClusterIP`)== kèm **tên miền DNS bất biến** đứng chắn phía trước dàn Pod.
 
 ```visual
 kind: illustration
 diagram: "kube:k10"
 src: "/illustrations/kube/k8s-service-ingress-routing.jpg"
-alt: "So sánh 3 kiểu Service (ClusterIP, NodePort, LoadBalancer), phân giải CoreDNS và định tuyến EndpointSlice tới các Pod khoẻ mạnh"
+alt: "So sánh 3 kiểu Service (ClusterIP, NodePort, LoadBalancer), phân giải CoreDNS và định tuyến EndpointSlice tới các Pod khỏe mạnh"
 title: "Giải Phẫu Kubernetes Service: Địa Chỉ Ảo ClusterIP, CoreDNS & EndpointSlice"
 subtitle: "Neo giữ điểm truy cập mạng bất biến phía trước hàng chục địa chỉ IP Pod sinh diệt liên tục"
 caption: "Ba lớp kiểu Service lồng nhau, cơ chế phân giải tên miền nội bộ qua CoreDNS và cách kube-proxy chỉ chia tải vào các Pod đạt Ready=true"
@@ -30,42 +31,44 @@ callouts:
     tone: emerald
 ```
 
-## 1. Ba loại Service cốt lõi: `ClusterIP` vs `NodePort` vs `LoadBalancer`
+## 1. Giải thích bình dị 3 loại Service: `ClusterIP` vs `NodePort` vs `LoadBalancer`
+
+Người mới rất dễ nhầm lẫn khi nào chọn loại `Service` nào. Hãy phân biệt chúng theo phạm vi mở cửa từ hẹp ra rộng:
 
 ```visual
 kind: groups
 title: So Sánh 3 Kiểu Service Cốt Lõi Trong Kubernetes (spec.type)
-subtitle: Nếu bạn không ghi trường spec.type trong YAML, Kubernetes mặc định chọn kiểu ClusterIP an toàn nhất
+subtitle: Nếu bạn không ghi trường spec.type trong YAML, Kubernetes mặc định chọn kiểu ClusterIP an toàn nhất!
 columns: 3
 items:
   - num: 1
     icon: shield-check
     title: ClusterIP (Mặc định)
-    badge: Chỉ nội bộ trong cụm
+    badge: Chỉ gọi nội bộ cụm
     tone: emerald
     bullets:
-      - "**Phạm vi:** Chỉ các thành phần bên trong cụm K8s mới gọi được (Internet ngoài không thể gọi thẳng)"
+      - "**Là gì:** Số điện thoại nội bộ chỉ gọi được từ bên trong tòa nhà cụm K8s (Internet ngoài hoàn toàn không chạm vào được)"
       - "Kiểu mặc định khi bỏ trống `spec.type`"
-      - "**Ứng dụng:** 90% dịch vụ nội bộ — Order API, Payment Service, PostgreSQL, Redis"
+      - "**Khi nào dùng:** **90% mọi dịch vụ** — FastAPI / Node.js Backend, PostgreSQL, Redis, Queue"
     footer: Mặc định vàng cho giao tiếp Đông-Tây (East-West) nội bộ
   - num: 2
     icon: server
     title: NodePort
-    badge: Dải cổng 30000–32767
+    badge: Cổng 30000–32767 trên Node
     tone: amber
     bullets:
-      - "**Phạm vi:** Mở một cổng tĩnh trong dải ==`30000–32767`== trên card mạng của mọi Worker Node (`<NodeIP>:30080`)"
-      - "**Ứng dụng:** Thử nghiệm cụm local (`kind`, `minikube`), phòng lab nội bộ hoặc đấu nối cân bằng tải phần cứng tại chỗ (on-prem)"
+      - "**Là gì:** Đục thêm một cổng cố định trong dải ==`30000–32767`== trên vỏ mọi máy chủ Worker Node (`<NodeIP>:30080`)"
+      - "**Khi nào dùng:** Thử nghiệm nhanh trên cụm local (`kind`, `minikube`, `k3s`) hoặc đấu nối bộ cân bằng tải phần cứng tại phòng máy riêng (On-Premise)"
     footer: Bao hàm sẵn tính năng của ClusterIP ở bên dưới
   - num: 3
     icon: cloud
     title: LoadBalancer
-    badge: IP Public trên Đám mây
+    badge: Thuê IP Public trên Cloud
     tone: sky
     bullets:
-      - "**Phạm vi:** Gọi API của Cloud (AWS ALB/NLB, GCP, Azure) thuê một bộ cân bằng tải có IP Public thật ngoài Internet"
-      - "**Ứng dụng:** Thường chỉ cấp **1 chiếc duy nhất** cho bộ điều khiển cửa ngõ (Ingress / Gateway Controller) để tiết kiệm chi phí Cloud"
-    footer: Tránh tạo tràn lan cho từng microservice lẻ vì tốn phí hàng tháng
+      - "**Là gì:** Tự động gọi API của AWS / GCP / Azure thuê một bộ cân bằng tải đám mây có địa chỉ IP Public thật ngoài Internet"
+      - "**Khi nào dùng:** Thường chỉ cấp **1 chiếc duy nhất** cho cổng gác biên (Ingress / Gateway Controller) để dùng chung, tránh tốn tiền thuê hàng chục Cloud LB lẻ!"
+    footer: Bao hàm cả NodePort + ClusterIP ở bên dưới
 ```
 
 ## 2. Phân biệt rạch ròi 3 con số cổng: `port`, `targetPort` và `nodePort`
@@ -75,7 +78,7 @@ Rất nhiều sự cố `502 Bad Gateway` hoặc `Connection Refused` bắt ngu�
 ```visual
 kind: anatomy
 title: Giải Phẫu Bộ Lọc Nhãn & 3 Con Số Cổng Trong Manifest Service
-subtitle: Nhớ quy tắc ngắn gọn — port là mặt tiền của Service, còn targetPort là cửa phòng bên trong Pod!
+subtitle: Nhớ quy tắc ngắn gọn — port là cổng quầy lễ tân của Service, còn targetPort là cửa phòng bên trong Pod!
 items:
   - keyword: selector
     role: Bộ lọc tìm Pod đích
@@ -90,15 +93,15 @@ items:
     tone: sky
     summary: Cổng mở trên chính chiếc Virtual IP của Service để các dịch vụ khác gọi vào.
     bullets:
-      - "Ví dụ đặt `port: 80` thì khách nội bộ gọi gọn gàng `http://shop-api-svc` (hoặc `http://shop-api-svc:80`)"
+      - "Ví dụ đặt `port: 80` thì khách nội bộ gọi gọn gàng `http://shop-api-svc` (không cần nhớ cổng lẻ 3000 hay 8000 ở bên trong!)"
     example: "port: 80"
     lang: yaml
   - keyword: targetPort
     role: Cổng thực tế bên trong Pod
     tone: emerald
-    summary: Cổng mà tiến trình ứng dụng Node.js thực sự lắng nghe bên trong container của Pod.
+    summary: Cổng mà tiến trình Python/Node thực sự lắng nghe bên trong container của Pod.
     bullets:
-      - "Phải khớp chính xác với con số trong `app.listen(3000)` của mã nguồn!"
+      - "Phải khớp chính xác với `--port 8000` (Uvicorn/FastAPI) hoặc `app.listen(3000)` (Node.js)!"
     example: "targetPort: 3000"
     lang: yaml
   - keyword: nodePort
@@ -119,17 +122,17 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: shop-api         # Tìm mọi Pod khoẻ mạnh (Ready) đang mang nhãn app=shop-api
+    app: shop-api         # Tìm mọi Pod khỏe mạnh (Ready) đang mang nhãn app=shop-api
   ports:
     - name: http
-      port: 80            # 1) Cổng trên chính chiếc Service này (khách gọi http://shop-api-svc:80)
-      targetPort: 3000    # 2) Cổng mà code Node.js thực sự lắng nghe BÊN TRONG Pod (app.listen(3000))
+      port: 80            # 1) Cổng mặt tiền trên Service (khách gọi http://shop-api-svc)
+      targetPort: 3000    # 2) Cổng mà code thực sự lắng nghe BÊN TRONG Pod (3000 hoặc 8000)
       # nodePort: 30080   # 3) (Chỉ có khi type: NodePort) Cổng mở trên vỏ máy Worker Node (30000-32767)
 ```
 
 ### Cơ chế ghép nối động qua `Endpoints` / `EndpointSlice`
 
-Kubernetes không chuyển gói tin một cách mù quáng! Khi bạn tạo `Service`, K8s liên tục quét các Pod thoả mãn **đồng thời 2 điều kiện**: (1) Khớp toàn bộ nhãn `spec.selector` **VÀ** (2) Đang ở trạng thái **`Ready = true`**, rồi ghi danh sách `IP:targetPort` vào đối tượng **`Endpoints` / `EndpointSlice`**.
+Kubernetes không chuyển gói tin một cách mù quáng! Khi bạn tạo `Service`, K8s liên tục quét các Pod thỏa mãn **đồng thời 2 điều kiện**: (1) Khớp toàn bộ nhãn `spec.selector` **VÀ** (2) Đang ở trạng thái **`Ready = true`**, rồi ghi danh sách `IP:targetPort` sống vào đối tượng **`Endpoints` / `EndpointSlice`**.
 
 ```visual
 kind: flow
@@ -145,7 +148,7 @@ steps:
   - icon: network
     badge: 2. Cổng mặt tiền
     title: Service (ClusterIP)
-    desc: Giữ Virtual IP bất biến, tra bảng định tuyến của kube-proxy
+    desc: Giữ Virtual IP bất biến, tra bảng định tuyến của kube-proxy / Cilium
     code: "port: 80"
     tone: cyan
     edge: lọc selector + Ready
@@ -158,18 +161,18 @@ steps:
     edge: cân bằng tải tới targetPort
   - icon: container
     badge: 4. Cửa phòng trong Pod
-    title: Pod Node.js
-    desc: Tiến trình Node.js nhận gói tin tại cổng thực tế app.listen(3000)
+    title: Backend Pod
+    desc: Tiến trình Node.js / FastAPI nhận gói tin tại cổng thực tế bên trong
     code: "targetPort: 3000"
     tone: emerald
 ```
 
-> [!WARNING] Chẩn đoán nhanh sự cố mất mạng: `ENDPOINTS = <none>`
-> Hãy luôn chạy `kubectl get endpoints shop-api-svc` đầu tiên khi gọi Service bị lỗi! Nếu các Pod vẫn đang `1/1 Running` nhưng cột `ENDPOINTS` hiển thị ==`<none>`==, nguyên nhân số 1 là **nhãn trong `spec.selector` của Service bị gõ lệch không khớp với `metadata.labels` trên các Pod**!
+> [!WARNING] Phản xạ số 1 khi gọi Service mất mạng: Soi ngay `ENDPOINTS = <none>`!
+> Hãy chạy `kubectl get endpoints shop-api-svc` đầu tiên khi gọi Service bị lỗi! Nếu các Pod vẫn đang `1/1 Running` nhưng cột `ENDPOINTS` hiển thị ==`<none>`==, thủ phạm số 1 là **nhãn trong `spec.selector` của Service bị gõ lệch không khớp với `metadata.labels` trên các Pod**!
 
 ## 3. Quy chuẩn tên miền CoreDNS: Cùng Namespace vs Xuyên Namespace
 
-Bên trong mọi cụm Kubernetes đều chạy sẵn máy chủ tên miền **CoreDNS** (ở namespace `kube-system`). Ngay khoảnh khắc bạn tạo một `Service`, tên miền đầy đủ (**FQDN**) của nó lập tức có hiệu lực theo cấu trúc chuẩn:
+Bên trong mọi cụm Kubernetes đều chạy sẵn danh bạ tên miền **CoreDNS** (ở namespace `kube-system`). Ngay khoảnh khắc bạn tạo một `Service`, tên miền đầy đủ (**FQDN**) của nó lập tức có hiệu lực theo cấu trúc 5 phần chuẩn mực:
 ==`<service-name>.<namespace-name>.svc.cluster.local`==
 
 ```visual
@@ -195,17 +198,17 @@ right:
     # Web ở "frontend" gọi Redis ở namespace "cache":
     REDIS_HOST="redis-master.cache.svc.cluster.local"
 
-    # API ở "storefront" gọi Postgres ở namespace "database":
-    DB_URI="postgres://postgres-svc.database.svc.cluster.local:5432"
+    # FastAPI ở "ai-service" gọi Postgres ở namespace "database":
+    DB_URI="postgresql://postgres-svc.database.svc.cluster.local:5432/app"
   lang: bash
   bullets:
     - "Khi gọi sang một Namespace khác, **bắt buộc phải ghi kèm tên Namespace đích**"
-    - "Chuẩn đầy đủ (FQDN) luôn tuân theo 5 thành phần: `<tên-service>.<tên-namespace>.svc.cluster.local`"
+    - "Chuẩn đầy đủ (FQDN) luôn là `<tên-service>.<tên-namespace>.svc.cluster.local`"
 ```
 
-## 4. Tạo nhanh Service từ Deployment bằng `kubectl expose`
+## 4. Tạo nhanh Service bằng `kubectl expose` & Mẹo dùng `Named Ports`
 
-Trong các kỳ thi thực hành (như CKAD) hoặc khi dựng nhanh môi trường thử nghiệm, bạn có thể xuất bản một `Deployment` đang chạy thành `Service` chỉ bằng một dòng lệnh Imperative gọn gàng:
+Trong kỳ thi thực hành CKAD hoặc khi dựng nhanh môi trường thử nghiệm, bạn có thể xuất bản một `Deployment` đang chạy thành `Service` chỉ bằng một dòng lệnh gọn gàng:
 
 ```bash
 kubectl expose deployment catalog \
@@ -214,12 +217,10 @@ kubectl expose deployment catalog \
   --target-port=4000
 ```
 
-Lệnh ==`kubectl expose`== tự động sao chép chính xác bộ nhãn `selector` của `Deployment/catalog` sang cho `Service/catalog-svc`, giúp loại bỏ hoàn toàn rủi ro gõ lệch nhãn bằng tay!
+Lệnh **`kubectl expose`** tự động sao chép chính xác bộ nhãn `selector` của `Deployment/catalog` sang cho `Service/catalog-svc`, loại bỏ hoàn toàn rủi ro gõ lệch nhãn bằng tay!
 
-## 5. Mẹo dùng tên cổng có nghĩa (Named Ports) như biến hằng số trong Node.js
-
-> [!TIP] Đặt tên cổng (`Named Ports`) để không bao giờ dính `502 Bad Gateway` khi đổi cổng
-> Giống như việc gom con số `3000` vào một hằng số `HTTP_PORT` trong dự án TypeScript, Kubernetes cho phép bạn đặt tên cổng ngay trên Container của `Deployment` (`name: http`, `containerPort: 3000`), rồi ở `Service` chỉ cần viết **`targetPort: http`**. Khi đội Backend nâng cấp framework đổi sang cổng `8080`, bạn chỉ cần sửa duy nhất `containerPort: 8080` trong `Deployment` mà `Service` vẫn tự động ăn khớp 100%!
+> [!TIP] Đặt tên cổng (`Named Ports`) để chuyển đổi ngôn ngữ không bao giờ đứt mạng
+> Giả sử bạn viết lại một dịch vụ từ Node.js (`containerPort: 3000`) sang Python FastAPI (`containerPort: 8000`). Nếu trên Container bạn đặt tên cổng `name: http`, và trên `Service` bạn viết **`targetPort: http`** (thay vì ghi cứng con số `3000`), thì khi đổi sang cổng `8000` ở `Deployment`, chiếc `Service` tự động chuyển hướng mượt mà không một giây lỗi `502`!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **3 kiểu Service:** `ClusterIP` (mặc định, chỉ nội bộ cụm) · `NodePort` (cổng tĩnh `30000–32767` trên Node) · `LoadBalancer` (thuê Cloud LB có IP Public).

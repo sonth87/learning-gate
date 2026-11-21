@@ -3,7 +3,7 @@
   "slug": "K19-troubleshoot-oom-network-rollout",
   "level": 6,
   "order": 19,
-  "title": "Khám bệnh K8s Thực chiến (Phần 2): Xử lý OOMKilled (137), Mất mạng 502 & Cứu hộ Rollout",
+  "title": "Troubleshooting K8s (Phần 2): OOMKilled (137), Lỗi 502 Bad Gateway & Rollback",
   "summary": "Xử lý trực diện 4 sự cố vận hành căng thẳng nhất trên Production: tràn RAM OOMKilled 137, rỗng Endpoints gây 502, Rollback khẩn cấp bằng CLI và gia cố Zero-Downtime.",
   "tags": [
     "oomkilled",
@@ -26,17 +26,17 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Lỗi OOMKilled (#4)",
+      "label": "Xử lý Sự cố: Lỗi OOMKilled (#4)",
       "kind": "incident",
       "targetId": "incident-4-oomkilled"
     },
     {
-      "label": "War Room: Lỗi 502 lệch Selector (#7)",
+      "label": "Xử lý Sự cố: Lỗi 502 lệch Selector (#7)",
       "kind": "incident",
       "targetId": "incident-7-network-selector"
     },
     {
-      "label": "War Room: Pod kẹt Terminating (#8)",
+      "label": "Xử lý Sự cố: Pod kẹt Terminating (#8)",
       "kind": "incident",
       "targetId": "incident-8-terminating-stuck"
     }
@@ -45,7 +45,7 @@
     {
       "path": "k8s/network/service-broken-502.yaml",
       "kind": "bug",
-      "note": "Ca bệnh kinh điển đánh lừa mọi kỹ sư: Pod vẫn báo Running 1/1 bình thường nhưng toàn bộ người dùng ngoài Ingress nhận lỗi 502 Bad Gateway.",
+      "note": "Sự cố kinh điển đánh lừa mọi kỹ sư: Pod vẫn báo Running 1/1 bình thường nhưng toàn bộ người dùng ngoài Ingress nhận lỗi 502 Bad Gateway.",
       "task": "Tìm đồng thời cả 2 chỗ lệch giữa Deployment và Service trong tệp này.",
       "answer": "1) Service đặt selector `app: shop-backend` lệch với nhãn Pod `app: shop-api` khiến danh sách Endpoints trống rỗng (<none>); 2) Service chuyển tiếp vào `targetPort: 8080` trong khi container chỉ lắng nghe ở cổng `3000`."
     },

@@ -221,7 +221,7 @@
     "kind": "yaml",
     "language": "yaml",
     "filename": ".gitlab-ci.yml",
-    "prompt": "Job `deploy_prod` đang dùng cú pháp di sản `only: [main]` đã lỗi thời. Hãy nâng cấp sang khối **`rules:`** chuẩn hiện đại kèm cổng phê duyệt tay chặn đường ống:\n\n1. Xoá hoàn toàn trường `only:` (và `when:` ở cấp ngoài nếu có).\n2. Thêm mảng `rules:` có phần tử đầu tiên kiểm tra:\n   - `if: '$CI_COMMIT_BRANCH == \"main\"'`\n   - `when: manual`\n   - `allow_failure: false`",
+    "prompt": "Job `deploy_prod` đang dùng cú pháp di sản `only: [main]` đã lỗi thời. Hãy nâng cấp sang khối **`rules:`** chuẩn hiện đại kèm cổng phê duyệt tay chặn pipeline:\n\n1. Xoá hoàn toàn trường `only:` (và `when:` ở cấp ngoài nếu có).\n2. Thêm mảng `rules:` có phần tử đầu tiên kiểm tra:\n   - `if: '$CI_COMMIT_BRANCH == \"main\"'`\n   - `when: manual`\n   - `allow_failure: false`",
     "starter": "stages: [deploy]\ndefault:\n  image: alpine:3.20\n\ndeploy_prod:\n  stage: deploy\n  script:\n    - ./scripts/deploy-prod.sh\n  only:\n    - main\n",
     "solution": "stages: [deploy]\ndefault:\n  image: alpine:3.20\n\ndeploy_prod:\n  stage: deploy\n  script:\n    - ./scripts/deploy-prod.sh\n  rules:\n    - if: '$CI_COMMIT_BRANCH == \"main\"'\n      when: manual\n      allow_failure: false\n",
     "spec": {

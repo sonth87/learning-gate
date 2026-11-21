@@ -1,11 +1,11 @@
 # Lưu trữ bền vững trong K8s: PersistentVolumeClaim, StorageClass & StatefulSet
 
-Ở Level 0 và Level 1, khi chạy PostgreSQL bằng Docker Compose trên một máy chủ duy nhất, bạn chỉ cần khai báo một `volumes: pgdata` nằm ngay trên ổ cứng của máy đó. Nhưng trên một cụm Kubernetes gồm **15 máy chủ Worker Nodes**, câu chuyện phức tạp hơn gấp bội:
+Ở Level 0 và Level 1, khi chạy PostgreSQL bằng Docker Compose trên một máy chủ duy nhất, bạn chỉ cần khai báo một `volumes: pgdata` nằm ngay trên ổ cứng của máy đó. Nhưng trên một cụm Kubernetes gồm **15 máy chủ Worker Nodes**, câu chuyện thú vị hơn rất nhiều:
 
 - [>] Hôm nay Pod chạy ở `worker-node-1`. Đêm nay `worker-node-1` bảo trì phần cứng, `Scheduler` dời Pod sang `worker-node-8`.
-- [!] Nếu dữ liệu nằm trên ổ cứng cục bộ của `worker-node-1`, Pod mới ở `worker-node-8` sẽ thấy một thư mục trống trơn!
+- [!] Nếu dữ liệu chỉ nằm trên ổ cứng nội bộ của `worker-node-1`, Pod mới ở `worker-node-8` sẽ thấy một thư mục trống trơn!
 
-Để dữ liệu có thể **"đi theo Pod"** bất chấp Pod trôi dạt sang máy chủ nào, Kubernetes thiết kế kiến trúc lưu trữ tách làm 3 lớp thông minh: `StorageClass`, `PersistentVolumeClaim (PVC)` và `PersistentVolume (PV)` — kết hợp cùng ==`StatefulSet`== dành riêng cho Cơ sở dữ liệu phân tán.
+Để dữ liệu có thể **"tự tháo ra và bay theo Pod"** bất chấp Pod dời sang máy chủ nào, Kubernetes tách lưu trữ thành 3 mảnh ghép gọn gàng: `StorageClass`, `PersistentVolumeClaim (PVC)` và `PersistentVolume (PV)` — kết hợp cùng ==`StatefulSet`== dành cho các hệ thống cần danh tính cố định như Cơ sở dữ liệu.
 
 ```visual
 kind: illustration
@@ -29,10 +29,13 @@ callouts:
     tone: cyan
 ```
 
-## 1. Mô hình "Phiếu yêu cầu ổ đĩa": `StorageClass` → `PVC` → `PV`
+## 1. Giải thích bình dị chuỗi cấp phát động: `StorageClass` → `PVC` → `PV`
 
-> [!ANALOGY] Tách bạch Hạ tầng đám mây và Nhu cầu ứng dụng
-> Thay vì bắt lập trình viên Node.js phải biết mã ổ cứng vật lý AWS EBS `vol-0a1b2c3d` hay giao thức mạng lưu trữ CSI phức tạp, Kubernetes biến việc xin cấp ổ đĩa thành quy trình **Dynamic Provisioning** tự động hoá hoàn toàn như gọi món theo thực đơn!
+> [!NOTE] Mô hình tư duy "Đặt tủ khóa hành lý di động theo thực đơn"
+> Thay vì bắt lập trình viên Python hay Node.js phải biết mã ổ cứng vật lý AWS EBS `vol-0a1b2c3d` phức tạp, Kubernetes chia việc xin ổ đĩa thành 3 vai trò cực dễ hiểu:
+> 1. **`StorageClass` (Thực đơn hạng tủ):** Đội Hạ tầng soạn sẵn thực đơn các loại ổ đĩa trên Cloud (ví dụ hạng `gp3` là SSD tốc độ cao, hạng `efs` là ổ mạng dùng chung).
+> 2. **`PersistentVolumeClaim — PVC` (Tờ phiếu đăng ký của bạn):** Ứng dụng của bạn chỉ cần điền phiếu *"Cho tôi xin 10Gi ổ đĩa hạng `gp3`"*.
+> 3. **`PersistentVolume — PV` (Chiếc ổ đĩa thật):** Ngay khi nhận phiếu `PVC`, trình điều khiển lưu trữ (**CSI Driver**) tự động gọi Cloud cắt ra 1 ổ SSD thật `10Gi` và khóa chặt 1-1 (`Bound`) với tờ phiếu của bạn!
 
 ```visual
 kind: flow
@@ -43,7 +46,7 @@ steps:
   - icon: layers
     badge: Hạ tầng / Cloud
     title: StorageClass
-    desc: Thực đơn loại ổ đĩa do kỹ sư hạ tầng định nghĩa sẵn (SSD gp3, standard, EFS)
+    desc: Thực đơn loại ổ đĩa do kỹ sư hạ tầng định nghĩa sẵn (SSD gp3, pd-ssd, EFS)
     code: "storageClassName: gp3"
     tone: sky
     edge: tham chiếu hạng đĩa
@@ -82,7 +85,7 @@ items:
     tone: emerald
     desc: Chuẩn phổ biến số 1 cho ổ đĩa khối đám mây (Block Storage).
     bullets:
-      - "Ổ đĩa chỉ được gắn đọc-ghi bởi các Pod nằm trên ==CÙNG một Worker Node duy nhất== tại một thời điểm"
+      - "Ổ đĩa chỉ được cắm đọc-ghi vào ==CÙNG một Worker Node duy nhất== tại một thời điểm"
       - "Hỗ trợ gốc bởi **AWS EBS (`gp3`)**, **GCP Persistent Disk**, Azure Disk"
     footer: Mặc định cho Database & Pod đơn Node
   - num: 2
@@ -93,7 +96,7 @@ items:
     desc: Chia sẻ dữ liệu tĩnh an toàn cho hàng chục máy chủ cùng lúc.
     bullets:
       - "Cho phép nhiều Worker Node gắn ổ đĩa cùng lúc ở chế độ **chỉ đọc** (không được ghi)"
-      - "Hợp để nạp bộ tài nguyên tĩnh hoặc mô hình ML dùng chung"
+      - "Rất hợp để nạp bộ trọng số mô hình AI/ML lớn cho nhiều Pod Python cùng đọc"
     footer: An toàn chống ghi đè ngoài ý muốn
   - num: 3
     icon: network
@@ -103,16 +106,16 @@ items:
     desc: Chia sẻ thư mục ghi đồng thời xuyên suốt nhiều máy chủ vật lý.
     bullets:
       - "Nhiều Pod rải rác trên nhiều Worker Node khác nhau **cùng đọc và ghi đồng thời** vào chung một thư mục"
-      - "Đòi hỏi hệ thống tệp qua mạng (**AWS EFS**, **Azure Files**, **CephFS** hoặc **NFS**)"
-    footer: Bắt buộc khi nhiều API cùng ghi chung kho upload
+      - "Đòi hỏi hệ thống tệp qua mạng (**AWS EFS**, **GCP Filestore**, **Azure Files**, **CephFS/NFS**)"
+    footer: Bắt buộc khi nhiều bản sao API cùng ghi chung kho tệp tải lên
 ```
 
-> [!WARNING] Cạm bẫy kinh điển khiến Pod kẹt mãi ở `Pending`
-> Nếu trong `PVC` bạn gõ nhầm tên `storageClassName: ssd-nonexistent` (một hạng ổ đĩa không tồn tại trong danh sách `kubectl get storageclass` của cụm), tờ phiếu `PVC` sẽ nằm chờ vô thời hạn ở trạng thái `Pending` (chưa `Bound`), kéo theo **mọi Pod tham chiếu tới `PVC` đó cũng đứng hình ở trạng thái ==`Pending`==** chưa thể khởi chạy!
+> [!WARNING] Cạm bẫy kinh điển khiến Pod đứng hình mãi ở `Pending`
+> Nếu trong `PVC` bạn gõ nhầm tên `storageClassName: ssd-nonexistent` (một hạng ổ đĩa không có trong `kubectl get storageclass` của cụm), tờ phiếu `PVC` sẽ nằm chờ mãi ở trạng thái `Pending` (chưa `Bound`), kéo theo **mọi Pod gắn chiếc `PVC` đó cũng bị kẹt cứng ở trạng thái ==`Pending`==** chưa thể khởi chạy!
 
 ## 2. Gắn `PVC` vào Pod hoặc Deployment (`volumes` + `volumeMounts`)
 
-Sau khi viết `PersistentVolumeClaim`, bạn nối nó vào ứng dụng qua 2 bước quen thuộc: khai báo nguồn `volumes[].persistentVolumeClaim.claimName` ở cấp Pod và gắn đường dẫn `volumeMounts[].mountPath` (nơi code Node.js đọc/ghi tệp thực tế, ví dụ `/app/uploads`) vào bên trong Container:
+Sau khi viết tờ phiếu `PersistentVolumeClaim`, bạn nối nó vào ứng dụng qua 2 bước quen thuộc: khai báo nguồn `volumes[].persistentVolumeClaim.claimName` ở cấp Pod và gắn đường dẫn `volumeMounts[].mountPath` vào bên trong Container:
 
 ```yaml
 apiVersion: v1
@@ -155,29 +158,29 @@ spec:
 
 ## 3. Tại sao Database không dùng `Deployment` mà bắt buộc cần `StatefulSet`?
 
-Đối với ứng dụng Node.js API không lưu trạng thái (*Stateless*), 3 bản sao trong `Deployment` hoàn toàn giống hệt nhau như những hạt cát vô danh (`shop-api-7f8d9`, `shop-api-2x9k1`) — bản nào khởi động trước, tắt trước cũng được.
+Với Web API không lưu trạng thái (*Stateless*), 3 bản sao trong `Deployment` giống hệt những nhân viên thời vụ vô danh (`shop-api-7f8d9`, `shop-api-2x9k1`) — ai bật trước, tắt trước cũng được.
 
-Nhưng với một cụm cơ sở dữ liệu **PostgreSQL Primary – Replica** hoặc **Redis Cluster / Kafka**, `Deployment` sụp đổ ngay vì 2 lý do sống còn:
+Nhưng với cụm cơ sở dữ liệu **PostgreSQL Primary – Replica**, **Redis Cluster** hay **Kafka**, `Deployment` không thể đáp ứng vì 2 lý do sống còn:
 
-- [!] **Không thể dùng chung 1 ổ cứng dữ liệu:** Nếu 2 tiến trình PostgreSQL trên 2 máy cùng mở và ghi đè vào chung 1 thư mục tệp nhị phân, cơ sở dữ liệu sẽ **hỏng (data corruption)** ngay lập tức! Mỗi bản sao Database bắt buộc phải có **một chiếc `PVC` độc lập riêng biệt** đi theo nó suốt đời.
-- [!] **Cần danh tính và tên miền cố định (*Sticky Identity*):** Bản sao `postgres-0` đóng vai trò Primary (nhận ghi), còn `postgres-1` là Replica (sao chép luồng WAL từ đúng địa chỉ `postgres-0`). Nếu `postgres-0` khởi động lại, nó **bắt buộc phải lấy lại đúng cái tên ==`postgres-0`== và gắn lại đúng ổ đĩa cũ `pgdata-postgres-0`**!
+- [!] **Không thể dùng chung 1 ổ đĩa nhị phân:** Nếu 2 tiến trình PostgreSQL trên 2 máy cùng ghi đè vào chung 1 thư mục tệp dữ liệu, Database sẽ **hỏng dữ liệu (`data corruption`)** ngay lập tức! Mỗi bản sao Database bắt buộc phải có **một chiếc `PVC` riêng biệt** đi theo nó suốt đời.
+- [!] **Cần danh tính và số thứ tự cố định (*Sticky Identity*):** Máy chính `postgres-0` đóng vai trò Primary (nhận ghi), còn `postgres-1` là Replica (sao chép dữ liệu từ đúng địa chỉ `postgres-0`). Nếu `postgres-0` khởi động lại, nó **bắt buộc phải lấy lại đúng cái tên ==`postgres-0`== và cắm lại đúng chiếc ổ đĩa cũ `data-postgres-0`**!
 
-Đó chính là lý do **`StatefulSet` (`apiVersion: apps/v1`)** ra đời với những đặc quyền khác biệt hoàn toàn so với `Deployment`:
+Đó chính là lý do **`StatefulSet` (`apiVersion: apps/v1`)** ra đời:
 
 ```visual
 kind: layers
 title: So Sánh Kiến Trúc Deployment (Stateless) vs StatefulSet (Stateful)
-subtitle: Sự khác biệt từ định danh Pod, thứ tự vòng đời cho tới khuôn đúc ổ đĩa riêng biệt
+subtitle: Sự khác biệt từ bảng tên định danh Pod, thứ tự vòng đời cho tới khuôn đúc ổ đĩa riêng biệt
 columns:
-  - title: Deployment (Stateless Web / API)
-    badge: Bản sao vô danh · Thay thế tuỳ ý
+  - title: Deployment (Stateless Web / AI / REST API)
+    badge: Bản sao vô danh · Thay thế tùy ý
     tone: sky
     layers:
       - label: "Tên Pod ngẫu nhiên (api-6d8f9b-x7k2p)"
-        sub: Xoá đi tạo lại sẽ mang hậu tố hash hoàn toàn mới
+        sub: Xóa đi tạo lại sẽ mang hậu tố mã băm hoàn toàn mới
         note: Không cố định
         tone: sky
-      - label: Khởi tạo & Xoá song song hàng loạt
+      - label: Khởi tạo & Xóa song song hàng loạt
         sub: Bật/tắt 5 replica cùng một lúc không phân biệt trước sau
         note: Tốc độ cao
         tone: cyan
@@ -189,7 +192,7 @@ columns:
         sub: Cân bằng tải ngẫu nhiên tới bất kỳ Pod nào đang Ready
         note: 1 IP ảo chung
         tone: slate
-    footer: Lý tưởng cho Express / Fastify / Next.js API không lưu trạng thái
+    footer: Lý tưởng cho FastAPI / Express / Next.js API không lưu trạng thái trên đĩa
   - title: StatefulSet (Database, Queue, Cache cụm)
     badge: Định danh bất biến · Ổ đĩa độc lập
     tone: emerald
@@ -203,24 +206,26 @@ columns:
         note: An toàn cụm DB
         tone: cyan
       - label: Khuôn đúc volumeClaimTemplates riêng từng Pod
-        sub: "Tự đẻ PVC độc lập: data-postgres-0, data-postgres-1"
+        sub: "Tự sinh PVC độc lập: data-postgres-0, data-postgres-1"
         note: Chống hỏng dữ liệu
         tone: cyan
       - label: "Headless Service (spec.clusterIP: None)"
         sub: Cấp bản ghi DNS A trỏ đích danh thẳng tới IP riêng từng Pod
         note: Định tuyến chính xác
         tone: sky
-    footer: Bắt buộc cho PostgreSQL HA, MongoDB ReplicaSet, Redis Cluster, Kafka
+    footer: Nền tảng cho PostgreSQL HA, MongoDB ReplicaSet, Redis Cluster, Kafka
 ```
 
-## 4. Cặp bài trùng bất khả phân ly: Headless Service (`clusterIP: None`) + `StatefulSet`
+## 4. Headless Service (`clusterIP: None`) & Lời khuyên thực tế năm 2026
 
-Mọi `StatefulSet` đều yêu cầu trường `spec.serviceName` (ví dụ `serviceName: postgres-headless`) trỏ tới một **Headless Service** — tức là một `Service` đặc biệt cấu hình ==`spec.clusterIP: None`==.
+Mọi `StatefulSet` đều yêu cầu trường `spec.serviceName` trỏ tới một **Headless Service** — tức là một `Service` đặc biệt đặt ==`spec.clusterIP: None`==. Khi thấy `clusterIP: None`, CoreDNS không gộp chung sau 1 IP ảo nữa mà cấp tên miền riêng trỏ thẳng vào từng bản sao:
 
-Khi thấy `clusterIP: None`, Kubernetes không cấp Virtual IP cân bằng tải ngẫu nhiên nữa, mà lập tức tạo bản ghi DNS A trả thẳng về IP riêng của từng chiếc Pod theo đúng số thứ tự:
+- [x] `postgres-0.postgres-headless.default.svc.cluster.local` → Trỏ thẳng đích danh vào máy chủ chính **`postgres-0`** (nhận lệnh `INSERT/UPDATE`)!
+- [x] `postgres-1.postgres-headless.default.svc.cluster.local` → Trỏ thẳng đích danh vào máy chủ phụ **`postgres-1`** (chuyên phục vụ truy vấn `SELECT` đọc báo cáo)!
 
-- [x] `postgres-0.postgres-headless.default.svc.cluster.local` → Trỏ thẳng đích danh vào máy chủ chính **`postgres-0`** (Primary nhận ghi)!
-- [x] `postgres-1.postgres-headless.default.svc.cluster.local` → Trỏ thẳng đích danh vào máy chủ đọc phụ **`postgres-1`** (Replica đọc dữ liệu)!
+> [!TIP] Góc nhìn kiến trúc thực tế năm 2026: Managed DB hay tự chạy DB trên K8s?
+> - Nếu chạy trên AWS/GCP/Azure và đội ngũ nhỏ, việc dùng dịch vụ CSDL quản lý sẵn (**AWS RDS**, **Cloud SQL**, **Neon**) bên ngoài cụm K8s vẫn là cách nhàn nhất để có sao lưu tự động.
+> - Nếu chạy tự chủ trên Kubernetes (On-Premise hoặc tối ưu chi phí Cloud), thay vì viết tay `StatefulSet` trần cho Postgres, các đội ngũ năm 2026 ưu tiên dùng Kubernetes Operator chuyên dụng như **`CloudNativePG`** để tự động hóa cả failover Primary-Replica và backup WAL lên S3!
 
 ```visual
 kind: troubleshoot
@@ -235,12 +240,12 @@ items:
   - symptom: "Đã chạy kubectl delete statefulset postgres nhưng các PVC vẫn còn nguyên"
     badge: Cơ chế bảo vệ dữ liệu
     tone: emerald
-    cause: "KHÔNG PHẢI LỖI! Khi xoá hoặc scale down `StatefulSet`, Kubernetes cố tình giữ lại toàn bộ `PVC` sinh từ `volumeClaimTemplates` để ngăn thảm hoạ bấm nhầm bay màu Database sản xuất."
-    fix: "Nếu thực sự muốn dọn sạch ổ đĩa ở môi trường thử nghiệm, bạn phải xoá tường minh từng PVC sau khi đã sao lưu."
+    cause: "KHÔNG PHẢI LỖI! Khi xóa hoặc scale down `StatefulSet`, Kubernetes cố tình giữ lại toàn bộ `PVC` sinh từ `volumeClaimTemplates` để ngăn thảm họa bấm nhầm xóa mất Database sản xuất."
+    fix: "Nếu thực sự muốn dọn sạch ổ đĩa ở môi trường thử nghiệm, bạn phải xóa tường minh từng PVC sau khi đã sao lưu."
     cmd: kubectl get pvc && kubectl delete pvc data-postgres-0
 ```
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **`ReadWriteOnce` (`RWO`)** = gắn đọc-ghi cho các Pod trên **cùng 1 Worker Node** (AWS EBS `gp3`) · **`ReadWriteMany` (`RWX`)** = nhiều Node cùng đọc-ghi qua mạng (EFS/NFS).
 > - Nếu `PVC` kẹt ở `Pending` (chưa `Bound`), chiếc Pod gắn nó cũng sẽ bị giữ ở **`Pending`**.
-> - **`StatefulSet`** đánh số Pod bắt đầu từ **`0`** (`postgres-0`), tạo `PVC` riêng qua **`volumeClaimTemplates`**, đi kèm **Headless Service (`spec.clusterIP: None`)**, và **không tự động xoá `PVC`** khi xoá `StatefulSet`!
+> - **`StatefulSet`** đánh số Pod bắt đầu từ **`0`** (`postgres-0`), tạo `PVC` riêng qua **`volumeClaimTemplates`**, đi kèm **Headless Service (`spec.clusterIP: None`)**, và **không tự động xóa `PVC`** khi xóa `StatefulSet`!

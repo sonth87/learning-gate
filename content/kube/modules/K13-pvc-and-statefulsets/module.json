@@ -3,7 +3,7 @@
   "slug": "K13-pvc-and-statefulsets",
   "level": 4,
   "order": 13,
-  "title": "Lưu trữ bền vững trong K8s: PersistentVolumeClaim, StorageClass & StatefulSet",
+  "title": "Lưu trữ Bền vững: StorageClass, PersistentVolumeClaim & StatefulSet",
   "summary": "Cấp phát ổ đĩa động qua PVC & StorageClass, phân biệt ReadWriteOnce vs ReadWriteMany, và vận hành Database với StatefulSet + Headless Service.",
   "tags": [
     "pvc",
@@ -31,7 +31,7 @@
       "targetId": "pvc-storage-dynamic"
     },
     {
-      "label": "War Room: Pod kẹt Pending do PVC (#5)",
+      "label": "Xử lý Sự cố: Pod kẹt Pending do PVC (#5)",
       "kind": "incident",
       "targetId": "incident-5-pending"
     }

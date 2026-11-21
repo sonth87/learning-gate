@@ -4,7 +4,7 @@ Unit Test với dữ liệu giả lập (`vi.mock('pg')`) chạy rất nhanh nh�
 
 ```visual
 kind: groups
-title: "Bộ Ba Lá Chắn Sống Còn Cho Đường Ống Kiểm Thử & Triển Khai [!badge:emerald:Production Grade]"
+title: "Bộ Ba Lá Chắn Sống Còn Cho Pipeline Kiểm Thử & Triển Khai [!badge:emerald:Production Grade]"
 columns: 3
 items:
   - num: 1

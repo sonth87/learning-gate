@@ -28,5 +28,10 @@
     "id": "K03-FC6",
     "front": "Đặt `ENV NODE_ENV=production` trong Dockerfile mang lại lợi ích gì cho ứng dụng Node.js?",
     "back": "Giúp Express/Fastify/React bật tối ưu hiệu năng bộ nhớ, ẩn chi tiết stack trace nhạy cảm khỏi phản hồi lỗi HTTP và đồng bộ hành vi thư viện ở chế độ sản xuất."
+  },
+  {
+    "id": "K03-FC7",
+    "front": "Vì sao khi đóng gói **Python / FastAPI** năm 2026, cộng đồng ưu tiên `python:3.12-slim` + `uv` thay vì nền `-alpine`?",
+    "back": "Vì `python:3.12-slim` dùng thư viện C chuẩn **`glibc`**, tải thẳng các gói nhị phân `manylinux` wheel (`pydantic-core`, `numpy`, `psycopg`) cực nhanh qua `uv sync --frozen --no-dev` mà không phải biên dịch lại từ mã C như trên `musl` của Alpine."
   }
 ]

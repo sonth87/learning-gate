@@ -3,7 +3,7 @@
   "slug": "C04-env-outputs-conditions",
   "level": 1,
   "order": 4,
-  "title": "Biến môi trường, $GITHUB_OUTPUT, Điều kiện if & Bộ lọc đường dẫn",
+  "title": "Biến môi trường (env), $GITHUB_OUTPUT, Điều kiện if: & Lọc đường dẫn",
   "summary": "Làm chủ 3 tầng biến môi trường env, truyền kết quả qua $GITHUB_OUTPUT, điều hướng luồng bằng if: failure() / github.ref, lọc đường dẫn paths-ignore và ngăn chặn vòng lặp push vô tận.",
   "tags": [
     "env",

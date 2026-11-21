@@ -11,7 +11,7 @@
       "ConfigMap Security Filter"
     ],
     "answer": 1,
-    "explain": "PodSecurityPolicy đã bị khai tử từ K8s 1.25. Thay thế chuẩn gốc hiện nay là Pod Security Admission (PSA) bật qua nhãn `pod-security.kubernetes.io/enforce` trên Namespace."
+    "explain": "PodSecurityPolicy đã bị loại bỏ từ K8s 1.25. Thay thế chuẩn gốc hiện nay là Pod Security Admission (PSA) bật qua nhãn `pod-security.kubernetes.io/enforce` trên Namespace."
   },
   {
     "id": "K16-Q2",

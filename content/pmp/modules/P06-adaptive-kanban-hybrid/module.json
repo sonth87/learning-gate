@@ -3,7 +3,7 @@
   "slug": "P06-adaptive-kanban-hybrid",
   "level": 2,
   "order": 3,
-  "title": "Lập kế hoạch Thích ứng, Giới hạn WIP trong Kanban & Chuyển đổi Hybrid",
+  "title": "Lập kế hoạch Thích ứng, Kanban WIP Limit & Điều phối Dự án Hybrid",
   "summary": "Làm chủ nhịp lập kế hoạch cuốn chiếu (Progressive Elaboration & Rolling Wave), bảo vệ sự minh bạch của Story Points & Velocity, khai thông luồng kéo Kanban bằng giới hạn WIP và điều phối mượt mà dự án Hybrid hoặc chuyển đổi tổ chức sang Agile.",
   "motto": "Forecast with Velocity · Limit WIP to Flow · Tailor Hybrid by Context",
   "provenance": [

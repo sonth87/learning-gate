@@ -4,7 +4,7 @@ Hãy hình dung ứng dụng Node.js của bạn đang xử lý 2.000 đơn hàn
 - [!] Khách hàng nhận hàng loạt lỗi `502 Bad Gateway` trong lúc thay thế container.
 - [!] Hoặc tệ hơn: lỗi `TypeError: Cannot read properties of undefined` lọt qua Unit Test vì dữ liệu thật trên Production có trường `discountCode: null` mà bộ mock ở máy cá nhân chưa từng nghĩ tới!
 
-Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi (**Zero-Downtime**)**, giới hạn rủi ro bằng **Canary / Blue-Green** và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây (**Automated Rollback**)**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
+Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi (Zero-Downtime)**, thu hẹp bán kính rủi ro bằng **Canary / Blue-Green**, và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây (Automated Rollback)**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
 
 ```visual
 kind: illustration
@@ -44,6 +44,11 @@ Sai lầm kinh điển nhất của người mới dùng Docker trong CI/CD là 
 ---
 
 ## 2. So sánh 3 Chiến lược Phát hành: Rolling Update vs Blue-Green vs Canary
+
+> [!ANALOGY] Hình dung đời thực về 3 chiến lược nâng cấp không sập dịch vụ
+> - **Rolling Update (Cập nhật cuốn chiếu):** Giống như **thay mới lần lượt từng chiếc xe buýt** trên tuyến đường đang chạy — không bao giờ ngừng tuyến và không tốn tiền thuê gấp đôi bãi xe, nhưng trong vài phút giao thời sẽ có cả xe đời cũ (`v1`) lẫn xe đời mới (`v2`) cùng đón khách.
+> - **Blue-Green (Hai cụm song song gạt công tắc):** Giống như **dựng sẵn sân khấu Green hoàn chỉnh bên cạnh sân khấu Blue đang biểu diễn**; đội QA vào sân khấu Green kiểm tra âm thanh ánh sáng êm xuôi 100% rồi mới **gạt cầu dao chuyển toàn bộ khán giả sang trong chưa đầy 1 giây** (đổi lại tốn gấp đôi tiền thuê hạ tầng lúc chuyển giao).
+> - **Canary ("Chim hoàng yến dò khí độc"):** Ngày xưa thợ mỏ mang chim hoàng yến xuống hầm để phát hiện khí độc sớm; trên Cloud, bạn chỉ **mở hé 5% khách hàng thật** vào bản mới trước, đứng canh biểu đồ lỗi HTTP `5xx` và độ trễ `p99` — nếu êm mới mở tiếp `25% -> 100%`, còn nếu chim ngất (lỗi vượt `1%`) thì rút về `0%` ngay lập tức, cứu an toàn cho 95% khách hàng còn lại!
 
 Thay vì tắt sạch Pod cũ rồi mới bật Pod mới (*Recreate* gây chết dịch vụ), Kubernetes và **Argo Rollouts** (`argoproj.io/v1alpha1`) cung cấp 3 chiến lược điều phối lưu lượng thông minh:
 
@@ -159,7 +164,7 @@ steps:
 ```visual
 kind: compare
 title: "Chốt Chặn Smoke Test & Job Rollback: Hai Cái Bẫy Khiến Hệ Thống Mất Phanh!"
-subtitle: "Thiếu cờ --fail trên curl hoặc quên if: failure() trên job rollback sẽ vô hiệu hoá hoàn toàn cơ chế tự cứu hộ"
+subtitle: "Thiếu cờ --fail trên curl hoặc quên if: failure() trên job rollback sẽ vô hiệu hoá hoàn toàn cơ chế tự khôi phục"
 left:
   badge: "PHẢN MẪU MẤT PHANH · False-Green & Skipped"
   title: "curl thiếu --fail & Job rollback bị bỏ qua"

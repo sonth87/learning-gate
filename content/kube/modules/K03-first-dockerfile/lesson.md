@@ -1,37 +1,37 @@
-# Viết Dockerfile đầu tiên chuẩn mực cho ứng dụng Node.js 22
+# Viết Dockerfile đầu tiên chuẩn Production (Node.js 22 & Python 3.12 + uv)
 
-Nếu `docker run` giúp bạn mượn sẵn Image cộng đồng như Nginx, Redis hay PostgreSQL, thì **`Dockerfile`** chính là nơi bạn tự viết **"bản công thức tự động"** biến mã nguồn Express, Fastify, NestJS hoặc Next.js thành một **Container Image bất biến** chạy đồng nhất từ laptop lên Kubernetes.
+Nếu `docker run` giúp bạn mượn sẵn Image cộng đồng như Nginx, Redis hay PostgreSQL, thì **`Dockerfile`** chính là nơi bạn tự viết **"bản công thức tự động"** biến mã nguồn **Node.js (`Express`, `NestJS`)** hay **Python (`FastAPI`, `Django`)** của chính bạn thành một **Container Image bất biến** chạy đồng nhất từ laptop lên Kubernetes.
 
-> [!ANALOGY] Hãy hình dung như sau
-> Hãy coi `Dockerfile` như kịch bản lắp ráp máy chủ sạch từ con số 0: mỗi dòng chỉ thị viết hoa (`FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD`) đắp thêm **một lớp (layer) xác định** lên hệ thống tệp của Image.
+> [!NOTE] Mô hình tư duy dây chuyền lắp ráp từng lớp (Layers)
+> Hãy coi `Dockerfile` như kịch bản cài đặt một căn phòng sạch từ con số 0: mỗi dòng chỉ thị viết hoa (`FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD`) đắp thêm **một lớp (layer) chỉ đọc xác định** chồng lên hệ thống tệp của Image. Quy luật này giống hệt nhau dù bạn viết bằng Node.js, Python hay Go!
 
 ```visual
 kind: flow
-title: Hành Trình Đóng Gói Ứng Dụng Node.js Từ Mã Nguồn Thành Image
+title: Hành Trình Đóng Gói Ứng Dụng Từ Mã Nguồn Thành Image Chuẩn OCI
 steps:
   - icon: folder-git
     badge: Thư mục dự án
     title: Build Context (.)
-    desc: Mã nguồn + package-lock.json + Dockerfile gửi sang BuildKit
+    desc: Mã nguồn + tệp lockfile (package-lock.json / uv.lock) + Dockerfile gửi sang BuildKit
     code: "."
     tone: sky
     edge: FROM -> WORKDIR
   - icon: layers
     badge: Build-time
     title: Lắp Ráp Từng Layer
-    desc: Chép manifest, chạy RUN npm ci, thiết lập ENV production
-    code: RUN npm ci
+    desc: Chép lockfile, khóa chặt cài đặt bằng npm ci hoặc uv sync --frozen
+    code: RUN npm ci / uv sync
     tone: cyan
     edge: docker build -t
   - icon: package
     badge: Artifact bất biến
     title: Image Gắn Tag Rõ Ràng
-    desc: Sẵn sàng chạy với tiến trình Node giữ trực tiếp PID 1
+    desc: Sẵn sàng chạy với tiến trình chính giữ trực tiếp ghế PID 1 (Exec Form)
     code: shop-api:1.0.0
     tone: emerald
 ```
 
-## 1. Giải phẫu 7 chỉ thị cốt lõi trong Dockerfile
+## 1. Giải phẫu 7 chỉ thị cốt lõi trong mọi Dockerfile
 
 ```visual
 kind: illustration
@@ -39,34 +39,34 @@ diagram: "kube:k03"
 alt: "Dây chuyền chỉ thị Dockerfile từ FROM đến CMD và sự khác biệt giữa Exec Form với Shell Form đối với tín hiệu PID 1"
 title: "Giải Phẫu Dây Chuyền Dockerfile & Cơ Chế Bắt Tín Hiệu Dừng Của PID 1"
 subtitle: "Phân định rạch ròi các bước đóng gói lúc Build-time với lệnh khởi chạy tiến trình chuẩn Exec Form lúc Run-time"
-caption: "Chuỗi lắp ráp các lớp chỉ thị Dockerfile chuẩn Node 22 LTS và lý do bắt buộc viết CMD dạng mảng JSON để nhận trực tiếp tín hiệu SIGTERM"
+caption: "Chuỗi lắp ráp các lớp chỉ thị Dockerfile chuẩn mực và lý do bắt buộc viết CMD dạng mảng JSON để nhận trực tiếp tín hiệu SIGTERM"
 callouts:
   - num: 1
     label: "Chuỗi chỉ thị đắp từng lớp lúc Build-time"
-    desc: "FROM, WORKDIR, COPY và RUN npm ci thực thi tuần tự trong lúc đóng gói để tạo ra các lớp ảnh bất biến."
+    desc: "FROM, WORKDIR, COPY và RUN thực thi tuần tự trong lúc đóng gói để tạo ra các lớp ảnh bất biến."
     tone: sky
   - num: 2
     label: "Bẫy Shell Form làm mù tín hiệu dừng"
-    desc: "Viết CMD npm start khiến /bin/sh chiếm ghế PID 1 và nuốt mất tín hiệu SIGTERM, làm container treo 10s rồi bị rút điện SIGKILL."
+    desc: "Viết CMD dạng chuỗi khiến /bin/sh chiếm ghế PID 1 và nuốt mất tín hiệu SIGTERM, làm container treo 10s rồi bị rút điện SIGKILL."
     tone: rose
   - num: 3
-    label: "Chuẩn Exec Form trao thẳng ghế PID 1 cho Node"
-    desc: "Cú pháp mảng JSON CMD [\"node\", \"server.js\"] giúp tiến trình Node nhận trực tiếp SIGTERM để đóng kết nối êm ái không rớt request."
+    label: "Chuẩn Exec Form trao thẳng ghế PID 1 cho App"
+    desc: "Cú pháp mảng JSON CMD [\"node\", ...] hoặc [\"uvicorn\", ...] giúp ứng dụng nhận trực tiếp SIGTERM để đóng kết nối êm ái."
     tone: emerald
 ```
 
 ```visual
 kind: anatomy
-title: 7 Chỉ Thị Nền Tảng Mọi Kỹ Sư Backend Phải Thuộc Lòng
+title: 7 Chỉ Thị Nền Tảng Mọi Kỹ Sư Backend & AI Phải Thuộc Lòng
 subtitle: Đọc từ trên xuống dưới theo đúng thứ tự xuất hiện chuẩn mực trong một Dockerfile thực tế
 items:
   - keyword: FROM
     role: Lớp nền khởi đầu
     tone: amber
-    summary: Chọn hệ điều hành gốc và phiên bản Node runtime cài sẵn.
+    summary: Chọn hệ điều hành gốc và phiên bản runtime cài sẵn (Node 22, Python 3.12...).
     bullets:
       - Luôn là chỉ thị mở đầu (trừ khi khai báo biến `ARG` trước đó)
-      - Luôn ghim rõ phiên bản, **tuyệt đối tránh `FROM node:latest`**!
+      - Luôn ghim rõ phiên bản cụ thể, ==tuyệt đối tránh `FROM ...:latest`==!
     example: FROM node:22-alpine
     lang: dockerfile
   - keyword: WORKDIR
@@ -81,9 +81,9 @@ items:
   - keyword: ENV
     role: Biến môi trường bền vững
     tone: cyan
-    summary: Gắn biến cố định vào `process.env` tồn tại cả lúc build lẫn lúc chạy container.
+    summary: Gắn biến cố định tồn tại cả lúc build lẫn lúc chạy container.
     bullets:
-      - Luôn bật `NODE_ENV=production` để framework tối ưu bộ nhớ và tốc độ
+      - Với Node.js bật `NODE_ENV=production`; với Python bật `PYTHONUNBUFFERED=1` và `PYTHONDONTWRITEBYTECODE=1`
     example: ENV NODE_ENV=production
     lang: dockerfile
   - keyword: COPY
@@ -91,23 +91,23 @@ items:
     tone: emerald
     summary: Sao chép tệp/thư mục từ **Build Context** bên ngoài vào bên trong Image.
     bullets:
-      - "**Ưu tiên tuyệt đối `COPY` thay vì `ADD`** (`ADD` tự giải nén `.tar` và tải URL ngầm dễ gây rủi ro bảo mật)"
+      - "**Ưu tiên tuyệt đối `COPY` thay vì `ADD`** (`ADD` tự giải nén `.tar` và tải URL ngầm dễ gây bất ngờ bảo mật)"
     example: COPY package*.json ./
     lang: dockerfile
   - keyword: RUN
     role: Thực thi lúc đóng gói
     tone: cyan
-    summary: Chạy câu lệnh Linux **ngay trong lúc `docker build`** để cài gói hoặc biên dịch TS, tạo ra một layer mới.
+    summary: Chạy câu lệnh Linux **ngay trong lúc `docker build`** để cài thư viện hoặc biên dịch, đắp thêm một layer mới.
     bullets:
-      - Dùng `RUN npm ci` thay cho `npm install` để khóa chặt 100% theo lockfile
+      - Luôn cài đặt bám sát 100% tệp khóa phiên bản (`RUN npm ci --omit=dev` hoặc `RUN uv sync --frozen --no-dev`)
     example: RUN npm ci --omit=dev
     lang: dockerfile
   - keyword: EXPOSE
-    role: Tài liệu hoá cổng
+    role: Tài liệu hóa cổng
     tone: sky
     summary: Khai báo siêu dữ liệu (metadata) rằng dịch vụ bên trong lắng nghe ở cổng nào.
     bullets:
-      - "**KHÔNG tự động mở cổng ra ngoài máy chủ** — lúc chạy thật vẫn phải truyền cờ `-p 3000:3000`"
+      - "**KHÔNG tự động mở cổng ra ngoài máy chủ** — lúc chạy thật vẫn phải truyền cờ `-p 3000:3000` (hoặc `-p 8000:8000`)"
     example: EXPOSE 3000
     lang: dockerfile
   - keyword: CMD
@@ -115,59 +115,59 @@ items:
     tone: emerald
     summary: Câu lệnh thực thi khi container khởi động lúc gõ **`docker run`**.
     bullets:
-      - "**Bắt buộc viết dạng mảng JSON Exec Form** với dấu nháy kép `\"...\"` để `node` giữ **PID 1**"
+      - "**Bắt buộc viết dạng mảng JSON Exec Form** với dấu nháy kép `\"...\"` để ứng dụng giữ trực tiếp **PID 1**"
     example: CMD ["node", "src/index.js"]
     lang: dockerfile
 ```
 
-## 2. Chọn Base Image nào cho Node.js 22: Full vs `slim` vs `alpine`?
+## 2. Chọn Base Image chuẩn năm 2026: Khi nào chọn `-alpine`, khi nào chọn `-slim`?
 
 ```visual
 kind: groups
-title: So Sánh 3 Biến Thể Image Chính Thức Của Node 22 LTS
+title: Chiến Lược Chọn Base Image Theo Từng Hệ Sinh Thái Ngôn Ngữ
 columns: 3
 items:
   - num: 1
-    title: node:22 (Debian Full)
-    badge: ~1.1 GB · Tránh dùng Prod
+    title: Full Image (node:22 / python:3.12)
+    badge: ~1.0–1.1 GB · Tránh dùng Prod
     tone: rose
     bullets:
-      - Cài sẵn Python, Git, trình biên dịch C++, ImageMagick...
-      - Kéo mạng rất chậm trên CI/CD
-      - Bề mặt lỗ hổng bảo mật (CVE) phình to không cần thiết
-    footer: Chỉ hợp làm stage tạm để compile gói nặng
+      - Cài sẵn đủ trình biên dịch C++, Git, công cụ mạng dư thừa
+      - Kéo mạng rất chậm khi mở rộng Pod trên CI/CD & Kubernetes
+      - Bề mặt lỗ hổng bảo mật hệ điều hành (CVE) phình to
+    footer: Chỉ hợp làm stage tạm khi bắt buộc compile gói C++ đặc thù
   - num: 2
-    title: node:22-bookworm-slim
-    badge: ~220 MB · Chuẩn glibc
+    title: Debian Slim (python:3.12-slim / node:22-bookworm-slim)
+    badge: ~150–220 MB · Vàng cho Python!
     tone: sky
     bullets:
-      - Đã gọt bỏ công cụ thừa nhưng giữ thư viện C chuẩn **`glibc`**
-      - Tương thích cao với các native binary đóng sẵn yêu cầu `glibc` (AI/ML, một số driver C++ đặc thù)
-    footer: Khuyên dùng khi vướng thư viện native kén musl
+      - "Đã gọt sạch công cụ thừa nhưng giữ thư viện C chuẩn **`glibc`**"
+      - "**Lựa chọn số 1 cho Python / FastAPI / AI:** tải thẳng gói nhị phân `manylinux` wheel (`pydantic-core`, `numpy`, `psycopg`) cực nhanh, không bị lỗi biên dịch lại như trên `musl`!"
+    footer: Mặc định vàng cho Python 3.12 & Node có native addon glibc
   - num: 3
-    title: node:22-alpine
-    badge: ~135 MB · Khuyên dùng
+    title: Alpine Linux (node:22-alpine)
+    badge: ~135 MB · Vàng cho Node / Go
     tone: emerald
     bullets:
-      - Nền **Alpine Linux** siêu gọn dùng thư viện **`musl`**
-      - Tải cực nhanh, tốn ít ổ cứng và ít CVE hệ điều hành nhất
-      - Lựa chọn mặc định phổ biến số 1 cho REST / GraphQL API hiện đại
-    footer: Mặc định vàng cho Microservices Node.js
+      - Nền **Alpine Linux** siêu nhỏ dùng thư viện **`musl`**
+      - Tải cực nhanh, tốn ít ổ cứng và rất ít CVE hệ điều hành
+      - Lựa chọn phổ biến số 1 cho REST / GraphQL API thuần Node.js, Nginx, Redis
+    footer: Mặc định vàng cho Microservices Node.js & Go
 ```
 
-## 3. Vì sao trong Dockerfile bắt buộc dùng `npm ci` thay vì `npm install`?
+## 3. Tính tất định (Determinism): Khóa chặt Lockfile & Bẫy `CMD` Shell Form vs Exec Form
 
-Ở máy cá nhân khi thêm thư viện mới, bạn dùng `npm install`. Nhưng bên trong `Dockerfile`, mục tiêu tối thượng là ==tính tất định (determinism)== — build hôm nay hay 6 tháng sau đều phải ra đúng từng dòng phụ thuộc:
+Ở máy cá nhân khi thêm thư viện mới, bạn hay gõ `npm install` hoặc `pip install fastapi`. Nhưng bên trong `Dockerfile`, mục tiêu sống còn là ==tính tất định (determinism)== — build hôm nay hay 6 tháng sau đều phải ra đúng từng byte phụ thuộc:
 
-- [x] **Khóa cứng theo `package-lock.json`:** Nếu `package.json` và `package-lock.json` lệch nhau (do ai đó sửa tay quên cập nhật lock), **`npm ci` báo lỗi dừng build ngay lập tức** thay vì âm thầm cài đại phiên bản mới!
-- [x] **Nhanh và sạch cho CI/Docker:** `npm ci` (*Clean Install*) bỏ qua bước tính toán lại cây phụ thuộc nên cài đặt nhanh và ổn định hơn hẳn `npm install`.
+- [x] **Với Node.js:** Dùng **`RUN npm ci --omit=dev`** thay vì `npm install` — nếu `package-lock.json` bị lệch, lệnh sẽ báo lỗi dừng ngay thay vì âm thầm tự nâng phiên bản gói!
+- [x] **Với Python hiện đại (2026):** Dùng trình quản lý siêu tốc **`uv`** với **`RUN uv sync --frozen --no-dev`** (nhanh gấp 10–50 lần `pip`, khóa chặt tuyệt đối theo `uv.lock`)!
 
-## 4. Lỗi nghiêm trọng cần tránh số 1: Shell Form vs JSON Exec Form ở `CMD`
+Tiếp theo là cạm bẫy tinh vi nhất ở dòng cuối cùng `CMD`:
 
 ```visual
 kind: compare
 title: "Giải Phẫu PID 1 & Tín Hiệu Dừng SIGTERM Khi Viết CMD"
-subtitle: Chỉ khác nhau cặp ngoặc vuông JSON nhưng quyết định ứng dụng tắt êm hay đứt ngang giao dịch của khách hàng!
+subtitle: Chỉ khác nhau cặp ngoặc vuông JSON nhưng quyết định ứng dụng tắt êm hay làm đứt ngang giao dịch của khách hàng!
 left:
   badge: "CÁCH SAI · Shell Form"
   title: Docker âm thầm bọc vào /bin/sh -c
@@ -176,30 +176,35 @@ left:
     # Bị biến thành: /bin/sh -c "node src/index.js"
     CMD node src/index.js
 
-    # Cũng SAI chuẩn JSON (dùng nháy đơn):
-    CMD ['node', 'src/index.js']
+    # Hoặc bên Python viết dạng chuỗi:
+    CMD uvicorn app.main:app --host 0.0.0.0 --port 8000
   lang: dockerfile
   bullets:
-    - "Tiến trình giữ ==PID 1== là `/bin/sh` chứ **không phải** `node`"
-    - "Khi `docker stop` hay K8s Rolling Update gửi `SIGTERM` tới PID 1, `/bin/sh` trên Alpine **nuốt luôn tín hiệu**, không chuyển xuống `node`!"
-    - "Hàm `process.on('SIGTERM')` bị vô hiệu hoá; container treo đơ 10s rồi bị dừng tiến trình (kill) bằng **`SIGKILL (137)`** làm rớt request đang xử lý"
+    - "Tiến trình ngồi ghế **PID 1** là `/bin/sh` chứ **không phải** `node` hay `uvicorn`"
+    - "Khi `docker stop` hay Kubernetes cuộn phiên bản gửi `SIGTERM` tới PID 1, `/bin/sh` **nuốt mất tín hiệu**, không chuyển tiếp xuống app!"
+    - "Container treo đơ hết 10s rồi bị rút phích bằng **`SIGKILL (137)`**, cắt đứt mọi request đang xử lý dở"
 right:
   badge: "CÁCH CHUẨN · JSON Exec Form"
-  title: Gọi thẳng tiến trình Node làm PID 1
+  title: Trao thẳng ghế PID 1 cho ứng dụng
   tone: emerald
   code: |
     # Mảng JSON hợp lệ dùng dấu nháy kép "..."
     CMD ["node", "src/index.js"]
+
+    # Hoặc FastAPI / Uvicorn chuẩn Exec Form:
+    CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
   lang: dockerfile
   bullets:
-    - "Chính tiến trình **`node` giữ trực tiếp ==PID 1==** trong không gian tên container"
-    - "Nhận thẳng tín hiệu `SIGTERM` từ hệ điều hành để đóng HTTP server & trả kết nối DB êm ái (*Graceful Shutdown*)"
-    - "Gọi trực tiếp `[\"node\", ...]` thay vì `[\"npm\", \"start\"]` để không kẹp thêm tiến trình `npm` trung gian"
+    - "Chính tiến trình **`node` / `uvicorn` giữ trực tiếp ==PID 1==** trong không gian tên container"
+    - "Nhận thẳng tín hiệu `SIGTERM` từ nhân Linux để đóng HTTP server & trả kết nối DB êm ái (*Graceful Shutdown*)"
+    - "Luôn dùng dấu nháy kép `\"...\"` đúng chuẩn JSON (dùng nháy đơn `'...'` sẽ bị coi lại thành lỗi Shell Form!)"
 ```
 
-## 5. Đóng gói Image hoàn chỉnh với `docker build -t`
+## 4. Hai mẫu Dockerfile hoàn chỉnh: Node.js 22 LTS & Python 3.12 (`uv` + `FastAPI`)
 
-```dockerfile Dockerfile chuẩn cơ bản (Node 22 LTS)
+Hãy đối chiếu hai bản công thức chuẩn mực dưới đây — bạn sẽ thấy cấu trúc tư duy của chúng **giống hệt nhau từng bước một**:
+
+```dockerfile Dockerfile chuẩn cơ bản — Node.js 22 LTS (Express / Fastify)
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
@@ -210,6 +215,27 @@ EXPOSE 3000
 CMD ["node", "src/index.js"]
 ```
 
+```dockerfile Dockerfile chuẩn hiện đại 2026 — Python 3.12 + uv + FastAPI
+FROM python:3.12-slim
+COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /uvx /bin/
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/app/.venv/bin:$PATH"
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY app/ ./app/
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+> [!TIP] Giải mã 3 dòng vàng của Python Dockerfile cho bạn mới chuyển từ Python Mastery sang
+> - `PYTHONDONTWRITEBYTECODE=1`: Ngăn Python sinh hàng trăm tệp rác `.pyc` vô ích vào lớp ghi của container.
+> - `PYTHONUNBUFFERED=1`: Đẩy thẳng mọi dòng `print()` / `logging` ra `docker logs` tức thì không bị trễ bộ đệm.
+> - `--host 0.0.0.0`: Bắt buộc mở cửa `eth0` để nhận kết nối từ cờ `-p 8000:8000` hoặc từ Kubernetes Service!
+
+## 5. Đóng gói Image với `docker build -t`
+
 Biên dịch `Dockerfile` ở thư mục hiện tại thành Image mang nhãn Semantic Versioning rõ ràng:
 
 ```bash
@@ -217,9 +243,9 @@ docker build -t shop-api:1.0.0 .   # Đừng quên dấu chấm "." ở cuối l
 ```
 
 > [!WARNING] Cẩn thận dấu chấm `.` nhỏ bé ở cuối lệnh `docker build`!
-> Dấu ==`.`== ở cuối lệnh chính là đường dẫn **Build Context** — thư mục mà Docker CLI gom gửi sang bộ máy BuildKit để tìm `Dockerfile` và thực hiện các lệnh `COPY`. Quên dấu `.` là lỗi cú pháp kinh điển nhất khi mới gõ `docker build`!
+> Dấu ==`.`== ở cuối lệnh chính là đường dẫn **Build Context** — thư mục mà Docker CLI gom gửi sang bộ máy BuildKit để tìm `Dockerfile` và thực hiện các lệnh `COPY`. Quên dấu `.` là lỗi cú pháp kinh điển số 1 khi mới gõ `docker build`!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - **Ưu tiên `COPY` hơn `ADD`** · **Ưu tiên `RUN npm ci` hơn `npm install`** · **Ghim rõ `FROM node:22-alpine`**.
-> - `EXPOSE 3000` chỉ là tài liệu khai báo cổng, **không** tự publish cổng ra ngoài host.
-> - Luôn viết **`CMD ["node", "src/index.js"]`** (mảng JSON dấu nháy kép) để `node` nhận **PID 1** và xử lý được `SIGTERM`.
+> - **Ưu tiên `COPY` hơn `ADD`** · Khóa chặt lockfile bằng **`RUN npm ci --omit=dev`** (Node) hoặc **`RUN uv sync --frozen --no-dev`** (Python) · Ghim rõ `FROM node:22-alpine` hoặc `FROM python:3.12-slim`.
+> - `EXPOSE` chỉ là tài liệu khai báo cổng, **không** tự mở cổng ra ngoài máy chủ.
+> - Luôn viết ==`CMD ["...", "..."]`== (mảng JSON dấu nháy kép) để ứng dụng nhận trực tiếp **PID 1** và xử lý mượt mà tín hiệu dừng `SIGTERM`.

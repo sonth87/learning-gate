@@ -2,11 +2,11 @@
   "courseId": "redis",
   "passQuiz": 0.7,
   "levels": {
-    "0": "Nhập môn Kiến trúc In-Memory & Giao thức RESP (từ JS/Python sang Redis 8)",
-    "1": "Giải phẫu Cấu trúc Dữ liệu Cốt lõi & Xác suất (String, Hash, ZSet, Bloom, Geo)",
-    "2": "Đường ống Tốc độ Cao, Kịch bản Nguyên tử Lua & Redis Streams",
-    "3": "Chiến lược Caching Thực chiến, Khóa Phân tán & Rate Limiting",
-    "4": "Quản lý Bộ nhớ Eviction, Bền vững RDB/AOF & Tự động Failover (Sentinel)",
-    "5": "Phân mảnh Ngang 16384 Slots (Redis Cluster), Bảo mật ACL & Cứu hộ Production"
+    "0": "Kiến trúc In-Memory, Event Loop & Giao thức RESP3",
+    "1": "Cấu trúc Dữ liệu Cốt lõi & Xác suất (String, Hash, ZSet, HyperLogLog, Bloom)",
+    "2": "Pipelining, Transaction, Lua Scripting & Redis Streams",
+    "3": "Chiến lược Caching, Distributed Lock & Rate Limiting",
+    "4": "Quản lý Bộ nhớ (Eviction), Lưu trữ Bền vững (RDB/AOF) & Sentinel HA",
+    "5": "Phân mảnh Redis Cluster (16384 Slots), Bảo mật ACL & Giám sát Production"
   }
 }

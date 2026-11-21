@@ -53,7 +53,7 @@
   {
     "id": "cicd-q-c03-5",
     "type": "mc",
-    "q": "Khi bật `cache: \"npm\"` bên trong `actions/setup-node@v4`, Action này dựa vào file nào trong kho mã nguồn để tạo khoá băm (cache key) mặc định?",
+    "q": "Khi bật `cache: \"npm\"` bên trong `actions/setup-node@v4`, Action này dựa vào file nào trong kho mã nguồn để tạo Cache Key theo mã băm (cache key) mặc định?",
     "code": "- uses: actions/setup-node@v4\n  with:\n    node-version: \"22\"\n    cache: \"npm\"",
     "choices": [
       "`README.md`",

@@ -139,7 +139,7 @@
       ],
       [
         "Ai thực hiện & Ở vùng nào?",
-        "Đội dự án / Bộ phận QA · Vùng Executing (trong PMBOK 8 thuộc miền Governance).",
+        "Đội dự án / Bộ phận QA · Vùng Executing (trong PMBOK 8 thuộc Governance Domain).",
         "Nhóm kiểm thử / Đội dự án nội bộ · Vùng Monitoring & Controlling (làm TRƯỚC Validate Scope).",
         "Khách hàng / Sponsor cùng PM · Vùng Monitoring & Controlling (hoặc Sprint Review trong Agile)."
       ],
@@ -150,7 +150,7 @@
         "Accepted Deliverables (Sản phẩm đã nghiệm thu chính thức → đầu vào cho Close Project)."
       ]
     ],
-    "examTip": "Nhớ khẩu quyết: 'QC tìm bug nội bộ ra Verified → Khách ký Validate Scope ra Accepted → Đóng dự án ở Close'. Khách hàng phát hiện bug ở buổi Demo nghĩa là khâu QC / Definition of Done nội bộ đang hổng!",
+    "examTip": "Nhớ nguyên tắc ghi nhớ: 'QC tìm bug nội bộ ra Verified → Khách nghiệm thu Validate Scope ra Accepted → Đóng dự án ở Close'. Khách hàng phát hiện bug ở buổi Demo nghĩa là khâu QC / Definition of Done nội bộ đang hổng!",
     "moduleId": "P10",
     "evidenceLinkIds": [
       "core.quality.qc-validate",

@@ -34,7 +34,7 @@
       "Đặt limits gấp 10 lần requests"
     ],
     "answer": 2,
-    "explain": "Khi mọi container trong Pod đều có requests.cpu === limits.cpu VÀ requests.memory === limits.memory, Pod đạt hạng Guaranteed và gần như không bao giờ bị trục xuất khi Node thiếu bộ nhớ."
+    "explain": "Khi mọi container trong Pod đều có requests.cpu === limits.cpu VÀ requests.memory === limits.memory, Pod đạt hạng Guaranteed và gần như không bao giờ bị loại khỏi bộ nhớ (evicted) khi Node thiếu bộ nhớ."
   },
   {
     "id": "K15-Q4",

@@ -28,5 +28,10 @@
     "id": "C11-C6",
     "front": "Tại sao nên thêm `--ignore-scripts` khi chạy `npm ci` trong bước kiểm toán bảo mật PR?",
     "back": "Ngăn các kịch bản `preinstall`/`postinstall` độc hại ẩn trong gói thư viện lạ tự động thực thi mã bất hợp pháp ngay lúc cài đặt."
+  },
+  {
+    "id": "C11-C7",
+    "front": "Phân biệt ngắn gọn đối tượng soi chiếu giữa `SAST` và `SCA`?",
+    "back": "- **SAST** (*Static Application Security Testing* — vd `Semgrep`, `CodeQL`): quét lỗi bảo mật trong **code do chính đội bạn tự viết** (`src/`).\n- **SCA** (*Software Composition Analysis* — vd `npm audit`, `pip-audit`): quét lỗ hổng CVE đã biết trong **các thư viện bên thứ ba bạn cài vào** (qua lockfile)."
   }
 ]

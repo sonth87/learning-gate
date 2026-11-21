@@ -3,14 +3,14 @@
   "slug": "P11-schedule-finance-evm",
   "level": 3,
   "order": 5,
-  "title": "Miền Schedule & Finance: Đường găng, Quỹ dự phòng & Đọc vị sức khoẻ dự án qua EVM",
+  "title": "Schedule & Finance: Critical Path, Quỹ Dự phòng & Phân tích Chỉ số EVM",
   "summary": "Nắm chắc nghệ thuật nén tiến độ trên Đường găng (Crashing vs Fast-Tracking), cân bằng nguồn lực (Leveling vs Smoothing), phân định thẩm quyền túi tiền (Contingency vs Management Reserve) và đọc nhanh bảng mạch EVM để ra quyết định cứu lịch, cứu vốn chuẩn PMI.",
   "motto": "Compress the Critical Path · Respect Reserve Authority · Let EVM Guide Action",
   "provenance": [
     {
       "kind": "pmbok8",
       "label": "PMBOK 8 Guide §2.3 & §2.4",
-      "detail": "Miền Schedule & Miền Finance (đổi tên từ Cost cũ)"
+      "detail": "Schedule Domain & Miền Finance (đổi tên từ Cost cũ)"
     },
     {
       "kind": "pma-bridge",

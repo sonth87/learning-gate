@@ -3,8 +3,8 @@
   "slug": "R14-replication-and-sentinel-ha",
   "level": 4,
   "order": 2,
-  "title": "Sao chép Bất đồng bộ (PSYNC2), Chống Split-Brain & Tự động Chuyển đổi Dự phòng với Sentinel HA",
-  "summary": "Làm chủ cơ chế Replication Backlog tránh bão Full Resync, rào chắn min-replicas-to-write chống não chia đôi và quy trình bầu cử SDOWN -> ODOWN -> Failover của cụm 3 Sentinel.",
+  "title": "Replication (PSYNC2), Phòng tránh Split-Brain & Tự động Failover với Sentinel",
+  "summary": "Làm chủ cơ chế Replication Backlog tránh bão Full Resync, rào chắn min-replicas-to-write chống Split-Brain và quy trình bầu cử SDOWN -> ODOWN -> Failover của cụm 3 Sentinel.",
   "tags": [
     "replication",
     "psync2",

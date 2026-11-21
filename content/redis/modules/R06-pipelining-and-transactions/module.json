@@ -3,7 +3,7 @@
   "slug": "R06-pipelining-and-transactions",
   "level": 2,
   "order": 0,
-  "title": "Pipelining, MULTI/EXEC/WATCH & Sự thật phũ phàng: Redis KHÔNG Rollback!",
+  "title": "TCP Pipelining, MULTI/EXEC/WATCH & Cơ chế Transaction không Rollback",
   "summary": "Nhân thông lượng gấp 10 lần bằng TCP Pipelining, phân biệt rạch ròi Pipeline vs Transaction MULTI/EXEC, khoá lạc quan WATCH và dọn BigKey bằng UNLINK.",
   "tags": [
     "pipelining",
@@ -34,7 +34,7 @@
       "description": "Xem trực quan cách gom 100 lệnh vào 1 chuyến tàu TCP triệt tiêu 99 lần chờ khứ hồi mạng"
     },
     {
-      "label": "War Room: Cú giật DEL trên BigKey triệu phần tử",
+      "label": "Xử lý Sự cố: Cú giật DEL trên BigKey triệu phần tử",
       "kind": "incident",
       "targetId": "inc-bigkey-del-spike",
       "description": "So sánh hiện trường xoá đồng bộ DEL với thu hồi bất đồng bộ trên luồng nền UNLINK + lazyfree"

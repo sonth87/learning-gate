@@ -3,7 +3,7 @@
   "slug": "R03-lists-and-sets",
   "level": 1,
   "order": 1,
-  "title": "Lists (quicklist) & Sets (intset): Băng chuyền hàng đợi & Phép toán tập hợp",
+  "title": "Lists (quicklist) & Sets (intset): Hàng đợi hai đầu & Phép toán Tập hợp",
   "summary": "Nắm chắc cấu trúc lai quicklist cho Activity Feed giới hạn LTRIM, chuyển giao việc an toàn bằng LMOVE, và khai thác Set O(1) cùng intset, SINTER/SDIFF.",
   "tags": [
     "lists",
@@ -28,7 +28,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Cú giật BigKey do List/Set phình vô hạn",
+      "label": "Xử lý Sự cố: Cú giật BigKey do List/Set phình vô hạn",
       "kind": "incident",
       "targetId": "inc-bigkey-del-spike",
       "description": "Xem hậu quả khi LPUSH vào List suốt nhiều tháng mà quên kèm LTRIM giới hạn độ dài"

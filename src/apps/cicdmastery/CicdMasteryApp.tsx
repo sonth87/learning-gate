@@ -1,19 +1,23 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
-  useStore,
   useMenuAction,
   useContextAction,
 } from '@sonth87/device-layout';
 import { switchLearningApp, type LearningAppId } from '@/apps/appRegistry';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
-import { useCicdProgress } from '@/features/devops-course/store';
+import { useCourseCurriculum } from '@/features/devops-course/data';
+import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useCicdNav, useCicdProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
+import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { CicdMainTab } from './types/cicd.types';
 import { useCicdNavigationStore } from './stores/useCicdNavigationStore';
 import { useUserDataStore } from '@/stores/useUserDataStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
+import { CICD_BLUEPRINTS, CICD_LEVEL_TITLES } from './data/cicdScaleCurator';
 import { CicdHeader } from './components/layout/CicdHeader';
 import { CicdMobileBottomNav } from './components/layout/CicdMobileBottomNav';
 import { CicdSidebar } from './components/curriculum/CicdSidebar';
@@ -40,10 +44,22 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateAll = useUserDataStore((s) => s.hydrateAll);
   const hydrateCicd = useCicdProgress((s) => s.hydrate);
+  const goCicd = useCicdNav((s) => s.go);
   const fontSize = useSettingsStore((s) => s.fontSize);
 
-  const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
-  const isLight = deviceResolvedScheme === 'light';
+  const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const setSearchPaletteOpen = useWorkbenchStore((s) => s.setSearchPaletteOpen);
+  const setCourseCursor = useWorkbenchStore((s) => s.setCourseCursor);
+  const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
+
+  const { data: cur } = useCourseCurriculum('cicd');
+  const scaleLessons = useMemo(
+    () =>
+      cur
+        ? buildDevOpsScaleLessons('cicd', cur, CICD_LEVEL_TITLES, CICD_BLUEPRINTS)
+        : [],
+    [cur]
+  );
 
   useEffect(() => {
     hydrateAll();
@@ -52,14 +68,19 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
   const handleAction = useCallback(
     (action: string) => {
-      if (action === 'openSettings') {
+      if (action === 'quickSearch') {
+        setSearchPaletteOpen(true, 'cicdmastery');
+      } else if (action === 'openSettings') {
         setSettingsOpen(true);
       } else if (action.startsWith('tab:')) {
         const tab = action.replace('tab:', '') as CicdMainTab;
         setActiveTab(tab);
+        if (tab === 'learn') {
+          goCicd({ name: 'workbench' });
+        }
       }
     },
-    [setActiveTab, setSettingsOpen]
+    [goCicd, setActiveTab, setSearchPaletteOpen, setSettingsOpen]
   );
 
   useMenuAction('cicdmastery', handleAction, windowId);
@@ -82,12 +103,14 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
     [selectBlueprint, selectWarRoom, setActiveTab, setSimulatorMode]
   );
 
+  const isLight = workbenchTheme === 'light';
+
   return (
     <div
       onClick={() => hideTermPopover(false)}
       className={cn(
-        'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
-        isLight ? 'pylearn-light' : 'pylearn-dark',
+        'pylearn-root dts-shell @container/app relative w-full h-full min-h-0 min-w-0 bg-[var(--dts-canvas)] text-[var(--dts-ink)] flex flex-col overflow-hidden transition-colors duration-200 select-text',
+        isLight ? 'pylearn-light dts-light' : 'pylearn-dark dts-dark',
         fontSize === 'sm' && 'text-sm',
         fontSize === 'base' && 'text-base',
         fontSize === 'lg' && 'text-lg'
@@ -152,6 +175,33 @@ export const CicdMasteryApp: React.FC<CicdMasteryAppProps> = ({ windowId }) => {
 
       <TermPopover />
       <NotesDrawer />
+      <ScaleCommandPalette
+        courseId="cicdmastery"
+        lessons={scaleLessons}
+        onSelectLessonStep={(moduleId, stepIdx) => {
+          const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+          const stepObj = lesson?.steps[stepIdx];
+          setCourseCursor(
+            'cicdmastery',
+            moduleId,
+            stepIdx,
+            lesson && stepObj
+              ? {
+                  moduleTitleVi: lesson.title.vi,
+                  moduleTitleEn: lesson.title.en,
+                  stepTitleVi: stepObj.title.vi,
+                  stepTitleEn: stepObj.title.en,
+                }
+              : undefined
+          );
+          if (lesson) setExpandedLevel('cicdmastery', lesson.level);
+          setActiveTab('learn');
+          goCicd({ name: 'workbench' });
+        }}
+        onSelectGlossaryTerm={() => {
+          setActiveTab('glossary');
+        }}
+      />
       <SettingsModal />
     </div>
   );

@@ -3,7 +3,7 @@
   "slug": "R02-hashes-and-hexpire",
   "level": 1,
   "order": 0,
-  "title": "Hashes, nén bộ nhớ listpack & đột phá HEXPIRE trên từng trường (Redis 8)",
+  "title": "Hashes, Nén bộ nhớ listpack & Đặt TTL theo trường với HEXPIRE (Redis 8)",
   "summary": "Mô hình hoá Object/Entity siêu gọn bằng Redis Hash, hiểu ngưỡng chuyển đổi listpack -> hashtable, tránh bẫy HGETALL và làm chủ HEXPIRE/HTTL mới nhất.",
   "tags": [
     "hashes",
@@ -33,7 +33,7 @@
       "description": "Quan sát trực quan mức tiết kiệm bộ nhớ khi gom nhiều thuộc tính phẳng vào Hash nhỏ"
     },
     {
-      "label": "War Room: Cú giật độ trễ do BigKey Hash triệu trường",
+      "label": "Xử lý Sự cố: Cú giật độ trễ do BigKey Hash triệu trường",
       "kind": "incident",
       "targetId": "inc-bigkey-del-spike",
       "description": "Khám bệnh sự cố gọi HGETALL và DEL trên một Hash phình to không kiểm soát"

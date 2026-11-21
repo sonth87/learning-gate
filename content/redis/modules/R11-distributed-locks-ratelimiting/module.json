@@ -3,7 +3,7 @@
   "slug": "R11-distributed-locks-ratelimiting",
   "level": 3,
   "order": 2,
-  "title": "Điều phối Phân tán: Distributed Locks chuẩn Lua, Fencing Token & Bộ tứ Rate Limiter",
+  "title": "Điều phối Phân tán: Distributed Lock chuẩn Lua, Fencing Token & Rate Limiter",
   "summary": "Xây dựng khoá phân tán an toàn không bao giờ xoá nhầm khoá người khác, hiểu tranh luận Redlock vs Fencing Token và làm chủ Fixed Window, Sliding Window ZSet, Token Bucket bằng Lua.",
   "tags": [
     "distributed-lock",
@@ -31,7 +31,7 @@
       "targetId": "dist-lock-lua"
     },
     {
-      "label": "War Room: Thảm hoạ Xoá nhầm Khoá (Unsafe DEL)",
+      "label": "Xử lý Sự cố: Thảm hoạ Xoá nhầm Khoá (Unsafe DEL)",
       "kind": "incident",
       "targetId": "inc-unsafe-lock-del"
     }

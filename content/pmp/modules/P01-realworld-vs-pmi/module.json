@@ -3,9 +3,9 @@
   "slug": "P01-realworld-vs-pmi",
   "level": 0,
   "order": 2,
-  "title": "Từ 'Kinh nghiệm chữa cháy đời thực' sang 'Thế giới kỷ luật của PMI'",
-  "summary": "Phẫu thuật trực diện 6 thói quen quản lý dự án ngoài đời thực khiến người càng nhiều năm kinh nghiệm càng dễ mất điểm PMP, và cài đặt bộ lọc 6 Phản xạ vàng (Think Before Act · Limit Escalate · Do Not Remove · Follow the Process · Direct Communication · Confront Problems).",
-  "motto": "Tạm gác phản xạ chữa cháy · Đội chiếc mũ PM kỷ luật, chính trực và phân tích tại nguồn",
+  "title": "Chuyển đổi Tư duy: Từ Thói quen Thực tế sang Nguyên tắc Chuẩn PMI",
+  "summary": "Phân tích chi tiết 6 thói quen quản lý dự án ngoài đời thực khiến người càng nhiều năm kinh nghiệm càng dễ mất điểm PMP, và cài đặt bộ lọc 6 Phản xạ vàng (Think Before Act · Limit Escalate · Do Not Remove · Follow the Process · Direct Communication · Confront Problems).",
+  "motto": "Tạm gác phản xạ xử lý tình thế · Đội chiếc mũ PM kỷ luật, chính trực và phân tích tại nguồn",
   "provenance": [
     {
       "kind": "pma-bridge",
@@ -51,7 +51,7 @@
       "Trước khi chốt mỗi đáp án, tự hỏi: Phương án này có đang vi phạm 1 trong 6 điều cấm kỵ (hành động chưa phân tích, leo thang vội, đuổi người, lách quy trình, né xung đột, gửi email dằn mặt) không?"
     ],
     "selfCheck": [
-      "So với điểm số ở 'mini-cute-1', bạn đã loại bỏ được nhanh ít nhất 2 đáp án nhiễu mang tính 'chữa cháy cảm tính' trong mỗi câu hỏi chưa?",
+      "So với điểm số ở 'mini-cute-1', bạn đã loại bỏ được nhanh ít nhất 2 đáp án nhiễu mang tính 'xử lý tình thế cảm tính' trong mỗi câu hỏi chưa?",
       "Bạn đã thuộc lòng 3 trường hợp hiếm hoi ĐƯỢC PHÉP leo thang lên Project Sponsor chưa?",
       "Khi thấy hai thành viên tranh cãi gay gắt, phản xạ đầu tiên của bạn đã chuyển từ 'báo trưởng phòng chức năng' sang 'tạo không gian trao đổi trực tiếp / đối chiếu Team Charter' chưa?"
     ]

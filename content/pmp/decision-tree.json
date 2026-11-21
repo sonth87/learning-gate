@@ -138,9 +138,16 @@
         "Từ chối thẳng thừng yêu cầu của khách mà chưa phân tích tác động.",
         "Tự ý cập nhật Scope/Cost Baseline không qua CCB."
       ],
-      "artifactsToCheck": ["Change Management Plan", "Change Log", "Project Management Plan"],
+      "artifactsToCheck": [
+        "Change Management Plan",
+        "Change Log",
+        "Project Management Plan"
+      ],
       "moduleId": "P07",
-      "evidenceLinkIds": ["book.governance.change", "flow.change"]
+      "evidenceLinkIds": [
+        "book.governance.change",
+        "flow.change"
+      ]
     },
     "chg.leaf.pred-approved": {
       "id": "chg.leaf.pred-approved",
@@ -157,9 +164,16 @@
         "Thực thi ngầm mà quên cập nhật lại Baseline khiến báo cáo EVM sau đó bị sai lệch.",
         "Họp lại từ đầu để tranh cãi quyết định đã được CCB thông qua."
       ],
-      "artifactsToCheck": ["Change Log", "Scope/Schedule/Cost Baselines", "Communications Management Plan"],
+      "artifactsToCheck": [
+        "Change Log",
+        "Scope/Schedule/Cost Baselines",
+        "Communications Management Plan"
+      ],
       "moduleId": "P07",
-      "evidenceLinkIds": ["flow.change", "book.governance.wpd"]
+      "evidenceLinkIds": [
+        "flow.change",
+        "book.governance.wpd"
+      ]
     },
     "chg.leaf.gold-plating": {
       "id": "chg.leaf.gold-plating",
@@ -175,9 +189,15 @@
         "Khen thưởng việc tự ý thêm tính năng ngoài luồng.",
         "Giữ im lặng để tạo 'bất ngờ' cho khách hàng ở buổi nghiệm thu."
       ],
-      "artifactsToCheck": ["Scope Baseline / WBS Dictionary", "Change Management Plan"],
+      "artifactsToCheck": [
+        "Scope Baseline / WBS Dictionary",
+        "Change Management Plan"
+      ],
       "moduleId": "P10",
-      "evidenceLinkIds": ["book.scope.creep", "core.scope.wbs"]
+      "evidenceLinkIds": [
+        "book.scope.creep",
+        "core.scope.wbs"
+      ]
     },
     "chg.leaf.agile-mid-sprint": {
       "id": "chg.leaf.agile-mid-sprint",
@@ -194,9 +214,16 @@
         "Ép nhóm làm thêm giờ (OT) để nhồi thêm Story vào Sprint đang chạy.",
         "Yêu cầu nộp phiếu CCB hành chính rườm rà trong nội bộ nhóm Scrum."
       ],
-      "artifactsToCheck": ["Sprint Backlog", "Product Backlog", "Agile Team Charter"],
+      "artifactsToCheck": [
+        "Sprint Backlog",
+        "Product Backlog",
+        "Agile Team Charter"
+      ],
       "moduleId": "P05",
-      "evidenceLinkIds": ["core.agile.roles", "flow.agile-delivery"]
+      "evidenceLinkIds": [
+        "core.agile.roles",
+        "flow.agile-delivery"
+      ]
     },
     "chg.leaf.agile-backlog": {
       "id": "chg.leaf.agile-backlog",
@@ -212,9 +239,15 @@
         "Từ chối cập nhật Product Backlog vì 'đã chốt kế hoạch Release từ quý trước'.",
         "Để PM tự ý xếp lại thứ tự Backlog mà không thông qua Product Owner."
       ],
-      "artifactsToCheck": ["Product Backlog", "Definition of Ready (DoR)"],
+      "artifactsToCheck": [
+        "Product Backlog",
+        "Definition of Ready (DoR)"
+      ],
       "moduleId": "P05",
-      "evidenceLinkIds": ["book.value.mvp", "flow.value-prioritization"]
+      "evidenceLinkIds": [
+        "book.value.mvp",
+        "flow.value-prioritization"
+      ]
     },
     "chg.leaf.compliance": {
       "id": "chg.leaf.compliance",
@@ -232,11 +265,17 @@
         "Phát hành sản phẩm vi phạm pháp luật để 'kịp ngày Go-live rồi bản sau tính tiếp'.",
         "Tự ý dừng toàn bộ dự án khi chưa phân tích tác động và báo cáo Sponsor."
       ],
-      "artifactsToCheck": ["Regulatory Compliance Requirements", "Change Log / Product Backlog", "Risk Register"],
+      "artifactsToCheck": [
+        "Regulatory Compliance Requirements",
+        "Change Log / Product Backlog",
+        "Risk Register"
+      ],
       "moduleId": "P15",
-      "evidenceLinkIds": ["book.value.compliance", "flow.change"]
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "flow.change"
+      ]
     },
-
     "ri.q1": {
       "id": "ri.q1",
       "kind": "question",
@@ -302,9 +341,15 @@
         "Xin giải ngân Management Reserve ngay cho một rủi ro mới nhận diện.",
         "Chạy đi thực thi biện pháp tốn kém khi chưa đánh giá xác suất & mức độ tác động."
       ],
-      "artifactsToCheck": ["Risk Register", "Risk Management Plan"],
+      "artifactsToCheck": [
+        "Risk Register",
+        "Risk Management Plan"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["book.risk.vs-issue", "flow.risk"]
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "flow.risk"
+      ]
     },
     "ri.leaf.known-risk": {
       "id": "ri.leaf.known-risk",
@@ -320,9 +365,15 @@
         "Tổ chức họp lại từ đầu để bàn xem nên làm gì trong khi phương án đã viết sẵn.",
         "Đợi sự cố gây thiệt hại nặng rồi mới mở Risk Register ra xem."
       ],
-      "artifactsToCheck": ["Risk Register", "Contingency Reserve"],
+      "artifactsToCheck": [
+        "Risk Register",
+        "Contingency Reserve"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["core.risk.strategies", "flow.risk"]
+      "evidenceLinkIds": [
+        "core.risk.strategies",
+        "flow.risk"
+      ]
     },
     "ri.leaf.issue-planned": {
       "id": "ri.leaf.issue-planned",
@@ -338,9 +389,16 @@
         "Ngồi phân tích lại xác suất xảy ra của một việc ĐÃ XẢY RA 100%.",
         "Đổ lỗi cho cá nhân thay vì tập trung khắc phục."
       ],
-      "artifactsToCheck": ["Issue Log", "Risk Register", "Lessons Learned Register"],
+      "artifactsToCheck": [
+        "Issue Log",
+        "Risk Register",
+        "Lessons Learned Register"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["book.risk.vs-issue", "core.risk.strategies"]
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "core.risk.strategies"
+      ]
     },
     "ri.leaf.issue-workaround": {
       "id": "ri.leaf.issue-workaround",
@@ -357,11 +415,16 @@
         "Tự ý rút Management Reserve ra tiêu mà không qua phê duyệt Change Request.",
         "Giấu sự cố khỏi báo cáo tiến độ tuần."
       ],
-      "artifactsToCheck": ["Issue Log", "Change Request (nếu chạm Baseline / Management Reserve)"],
+      "artifactsToCheck": [
+        "Issue Log",
+        "Change Request (nếu chạm Baseline / Management Reserve)"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["book.risk.vs-issue", "core.finance.reserves"]
+      "evidenceLinkIds": [
+        "book.risk.vs-issue",
+        "core.finance.reserves"
+      ]
     },
-
     "tc.q1": {
       "id": "tc.q1",
       "kind": "question",
@@ -412,9 +475,14 @@
         "Nhảy vào áp đặt ngay giải pháp kỹ thuật theo ý chủ quan của PM (Forcing).",
         "Báo cáo ngay lên Giám đốc nhân sự hoặc Functional Manager."
       ],
-      "artifactsToCheck": ["Team Charter (Ground Rules)"],
+      "artifactsToCheck": [
+        "Team Charter (Ground Rules)"
+      ],
       "moduleId": "P09",
-      "evidenceLinkIds": ["book.resource.conflict", "flow.conflict"]
+      "evidenceLinkIds": [
+        "book.resource.conflict",
+        "flow.conflict"
+      ]
     },
     "tc.leaf.collaborate": {
       "id": "tc.leaf.collaborate",
@@ -430,9 +498,15 @@
         "Lảng tránh dời sang tuần sau (Withdraw/Avoid).",
         "Chia đôi kiểu dĩ hoà vi quý làm hỏng kiến trúc kỹ thuật khi vẫn còn đủ thời gian hợp tác tìm giải pháp tối ưu."
       ],
-      "artifactsToCheck": ["Team Charter", "Issue Log"],
+      "artifactsToCheck": [
+        "Team Charter",
+        "Issue Log"
+      ],
       "moduleId": "P09",
-      "evidenceLinkIds": ["book.resource.conflict", "flow.conflict"]
+      "evidenceLinkIds": [
+        "book.resource.conflict",
+        "flow.conflict"
+      ]
     },
     "tc.leaf.private-ei": {
       "id": "tc.leaf.private-ei",
@@ -448,9 +522,15 @@
         "Phê bình công khai trước mặt cả nhóm trong buổi Daily Standup.",
         "Lập tức gửi văn bản kỷ luật hoặc yêu cầu trả người về phòng chức năng."
       ],
-      "artifactsToCheck": ["Resource Management Plan", "Team Performance Assessments"],
+      "artifactsToCheck": [
+        "Resource Management Plan",
+        "Team Performance Assessments"
+      ],
       "moduleId": "P09",
-      "evidenceLinkIds": ["core.mindset.direct", "book.resource.tuckman"]
+      "evidenceLinkIds": [
+        "core.mindset.direct",
+        "book.resource.tuckman"
+      ]
     },
     "tc.leaf.coaching": {
       "id": "tc.leaf.coaching",
@@ -466,11 +546,16 @@
         "Sa thải hoặc đòi đổi nhân sự ngay khi chưa hỗ trợ đào tạo.",
         "Tự PM nhảy vào viết code/làm thay toàn bộ phần việc của thành viên."
       ],
-      "artifactsToCheck": ["Resource Management Plan", "Lessons Learned Register"],
+      "artifactsToCheck": [
+        "Resource Management Plan",
+        "Lessons Learned Register"
+      ],
       "moduleId": "P09",
-      "evidenceLinkIds": ["core.mindset.direct", "book.resource.tuckman"]
+      "evidenceLinkIds": [
+        "core.mindset.direct",
+        "book.resource.tuckman"
+      ]
     },
-
     "stk.q1": {
       "id": "stk.q1",
       "kind": "question",
@@ -506,9 +591,16 @@
         "Lập tức sửa Scope Baseline theo lời người mới khi chưa qua quy trình Change Control.",
         "Phớt lờ vì 'danh sách Stakeholder đã chốt từ đầu dự án'."
       ],
-      "artifactsToCheck": ["Stakeholder Register", "Stakeholder Engagement Plan", "Communications Management Plan"],
+      "artifactsToCheck": [
+        "Stakeholder Register",
+        "Stakeholder Engagement Plan",
+        "Communications Management Plan"
+      ],
       "moduleId": "P08",
-      "evidenceLinkIds": ["core.stakeholder.seam", "flow.stakeholder"]
+      "evidenceLinkIds": [
+        "core.stakeholder.seam",
+        "flow.stakeholder"
+      ]
     },
     "stk.leaf.comm-plan": {
       "id": "stk.leaf.comm-plan",
@@ -524,9 +616,15 @@
         "Nhầm lẫn sang sửa Scope Baseline khi gốc rễ chỉ là sai kênh/định dạng báo cáo.",
         "Trách Stakeholder 'đã gửi email rồi mà không chịu đọc'."
       ],
-      "artifactsToCheck": ["Communications Management Plan", "Work Performance Reports (WPR)"],
+      "artifactsToCheck": [
+        "Communications Management Plan",
+        "Work Performance Reports (WPR)"
+      ],
       "moduleId": "P08",
-      "evidenceLinkIds": ["core.comm.plan", "book.governance.wpd"]
+      "evidenceLinkIds": [
+        "core.comm.plan",
+        "book.governance.wpd"
+      ]
     },
     "stk.leaf.engagement-seam": {
       "id": "stk.leaf.engagement-seam",
@@ -542,11 +640,16 @@
         "Dùng quyền của Sponsor ép họ phải ký nghiệm thu khi chưa làm rõ khúc mắc.",
         "Loại họ ra khỏi danh sách mời họp để 'đỡ bị phản đối'."
       ],
-      "artifactsToCheck": ["Stakeholder Engagement Assessment Matrix (SEAM)", "Requirements Traceability Matrix"],
+      "artifactsToCheck": [
+        "Stakeholder Engagement Assessment Matrix (SEAM)",
+        "Requirements Traceability Matrix"
+      ],
       "moduleId": "P08",
-      "evidenceLinkIds": ["book.stakeholder.questions", "flow.scope-acceptance"]
+      "evidenceLinkIds": [
+        "book.stakeholder.questions",
+        "flow.scope-acceptance"
+      ]
     },
-
     "sc.q1": {
       "id": "sc.q1",
       "kind": "question",
@@ -581,9 +684,15 @@
         "Bơm thêm người vào các tác vụ KHÔNG nằm trên Đường găng (vừa tốn tiền vừa không rút ngắn được 1 ngày nào).",
         "Cắt bỏ khâu kiểm thử chất lượng để lấy lại lịch."
       ],
-      "artifactsToCheck": ["Schedule Baseline", "Schedule Network Diagram (Critical Path)"],
+      "artifactsToCheck": [
+        "Schedule Baseline",
+        "Schedule Network Diagram (Critical Path)"
+      ],
       "moduleId": "P11",
-      "evidenceLinkIds": ["book.schedule.compression", "flow.cost"]
+      "evidenceLinkIds": [
+        "book.schedule.compression",
+        "flow.cost"
+      ]
     },
     "sc.leaf.fast-tracking": {
       "id": "sc.leaf.fast-tracking",
@@ -599,9 +708,15 @@
         "Chạy song song các tác vụ có phụ thuộc vật lý/pháp lý bắt buộc (Mandatory / Hard Logic).",
         "Xin thêm ngân sách trong khi đề bài đã khoá cứng chi phí."
       ],
-      "artifactsToCheck": ["Schedule Network Diagram", "Risk Register"],
+      "artifactsToCheck": [
+        "Schedule Network Diagram",
+        "Risk Register"
+      ],
       "moduleId": "P11",
-      "evidenceLinkIds": ["book.schedule.compression", "core.risk.strategies"]
+      "evidenceLinkIds": [
+        "book.schedule.compression",
+        "core.risk.strategies"
+      ]
     },
     "sc.leaf.cost-recovery": {
       "id": "sc.leaf.cost-recovery",
@@ -618,11 +733,17 @@
         "Tự ý sửa lại Cost Baseline để làm CPI trông đẹp hơn.",
         "Lặng lẽ cắt giảm tính năng đã cam kết mà không qua CCB / Product Owner."
       ],
-      "artifactsToCheck": ["Cost Baseline", "Work Performance Information (EVM)", "Change Request"],
+      "artifactsToCheck": [
+        "Cost Baseline",
+        "Work Performance Information (EVM)",
+        "Change Request"
+      ],
       "moduleId": "P11",
-      "evidenceLinkIds": ["core.finance.evm", "core.finance.reserves"]
+      "evidenceLinkIds": [
+        "core.finance.evm",
+        "core.finance.reserves"
+      ]
     },
-
     "ven.q1": {
       "id": "ven.q1",
       "kind": "question",
@@ -653,9 +774,16 @@
         "Đơn phương huỷ hợp đồng và kiện ra toà ngay lập tức khi chưa đối chiếu điều khoản và đàm phán.",
         "Tự cho nhân sự nội bộ nhảy vào sửa hàng của Vendor làm mất hiệu lực bảo hành hợp đồng."
       ],
-      "artifactsToCheck": ["Procurement Agreement", "Procurement SOW", "Issue Log"],
+      "artifactsToCheck": [
+        "Procurement Agreement",
+        "Procurement SOW",
+        "Issue Log"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["book.procurement.contracts", "flow.procurement"]
+      "evidenceLinkIds": [
+        "book.procurement.contracts",
+        "flow.procurement"
+      ]
     },
     "ven.leaf.negotiate-adr": {
       "id": "ven.leaf.negotiate-adr",
@@ -672,11 +800,16 @@
         "Đưa thẳng ra toà án (Litigation) làm bước đầu tiên.",
         "Thoả thuận miệng trả thêm tiền cho Vendor ngoài luồng hợp đồng."
       ],
-      "artifactsToCheck": ["Procurement Agreement (Claims Clause)", "Contested Changes Log"],
+      "artifactsToCheck": [
+        "Procurement Agreement (Claims Clause)",
+        "Contested Changes Log"
+      ],
       "moduleId": "P12",
-      "evidenceLinkIds": ["flow.procurement", "book.procurement.contracts"]
+      "evidenceLinkIds": [
+        "flow.procurement",
+        "book.procurement.contracts"
+      ]
     },
-
     "eth.q1": {
       "id": "eth.q1",
       "kind": "question",
@@ -707,9 +840,15 @@
         "Sửa báo cáo màu Đỏ thành màu Xanh để chiều lòng cấp trên.",
         "Nhận quà tặng có giá trị lớn hoặc ưu đãi cá nhân từ nhà thầu đang dự thầu."
       ],
-      "artifactsToCheck": ["PMI Code of Ethics and Professional Conduct", "Work Performance Reports"],
+      "artifactsToCheck": [
+        "PMI Code of Ethics and Professional Conduct",
+        "Work Performance Reports"
+      ],
       "moduleId": "P03",
-      "evidenceLinkIds": ["core.mindset.process", "book.value.compliance"]
+      "evidenceLinkIds": [
+        "core.mindset.process",
+        "book.value.compliance"
+      ]
     },
     "eth.leaf.ai-governance": {
       "id": "eth.leaf.ai-governance",
@@ -725,9 +864,16 @@
         "Cấm cực đoan mọi công cụ hỗ trợ hợp lệ hoặc ngược lại phó mặc 100% quyết định dự án cho AI không kiểm chứng.",
         "Che giấu sự cố bảo mật dữ liệu."
       ],
-      "artifactsToCheck": ["Organizational Data Security Policy", "Team Charter (AI Usage Guidelines)", "Risk Register"],
+      "artifactsToCheck": [
+        "Organizational Data Security Policy",
+        "Team Charter (AI Usage Guidelines)",
+        "Risk Register"
+      ],
       "moduleId": "P15",
-      "evidenceLinkIds": ["book.value.compliance", "book.business.eef-opa"]
+      "evidenceLinkIds": [
+        "book.value.compliance",
+        "book.business.eef-opa"
+      ]
     }
   },
   "challenges": [

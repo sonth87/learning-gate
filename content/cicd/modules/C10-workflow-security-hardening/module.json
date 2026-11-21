@@ -3,7 +3,7 @@
   "slug": "C10-workflow-security-hardening",
   "level": 3,
   "order": 10,
-  "title": "Gia cố Bảo mật Đường ống: GITHUB_TOKEN Tối thiểu, Chống Script Injection, Bẫy Pwn Request & Ghim SHA 40 Ký tự",
+  "title": "Bảo mật GitHub Actions: Quyền GITHUB_TOKEN, Chống Script Injection & SHA Pinning",
   "summary": "Khoá quyền GITHUB_TOKEN tối thiểu, triệt tiêu lỗ hổng thực thi mã từ xa qua tiêu đề PR (Script Injection), ngăn chặn Pwn Request từ nhánh Fork và ghim cứng SHA 40 ký tự.",
   "tags": [
     "security",
@@ -26,7 +26,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room B3: Ứng cứu sự cố lộ Secret",
+      "label": "Xử lý Sự cố B3: Ứng cứu sự cố lộ Secret",
       "kind": "warroom",
       "targetId": "warroom-b3-secret-leak"
     }

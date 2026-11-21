@@ -2,19 +2,19 @@
 
 Trong các bài trước, khi muốn đưa ứng dụng lên cụm Kubernetes, chúng ta thường tiếp cận theo lối mòn **Push-based CD (Mô hình Đẩy)**: máy chủ GitHub Actions hoặc GitLab Runner cầm chìa khoá quản trị tối cao của cụm K8s (`KUBECONFIG` / Cloud Admin Role), rồi từ bên ngoài gõ thẳng lệnh `kubectl set image` hoặc `helm upgrade` chọc vào cụm Production.
 
-Mô hình Đẩy (**Push-based CD**) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt điểm yếu nghiêm trọng bảo mật. Đó là lúc kiến trúc ==Pull-based GitOps== với **ArgoCD** và **Single Source of Truth trên Git** trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
+Mô hình Đẩy (**Push-based CD**) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt lỗ hổng bảo mật nghiêm trọng. Đó là lúc kiến trúc ==Pull-based GitOps== với **Argo CD** (hoặc **Flux CD**) và **Single Source of Truth trên Git** trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
 
 ```visual
 kind: illustration
 diagram: "cicd:c15"
 src: "/illustrations/cicd/cicd-gitops-argocd-reconcile.jpg"
-alt: "Kiến trúc Pull-Based GitOps tách kho App CI với kho GitOps Config và vòng lặp đối chiếu tự chữa lành của ArgoCD bên trong cụm Kubernetes"
-title: "Giải Phẫu Kiến Trúc Pull-Based GitOps & Vòng Lặp Tự Chữa Lành Của ArgoCD"
-subtitle: "Xoá sổ hoàn toàn chìa khoá KUBECONFIG trên đường ống CI bên ngoài bằng trình điều phối chủ động kéo trạng thái từ trong cụm"
+alt: "Kiến trúc Pull-Based GitOps tách kho App CI với kho GitOps Config và vòng lặp đối chiếu tự phục hồi (Self-Healing) của ArgoCD bên trong cụm Kubernetes"
+title: "Giải Phẫu Kiến Trúc Pull-Based GitOps & Vòng Lặp Tự phục hồi (Self-Healing) Của ArgoCD"
+subtitle: "Xoá sổ hoàn toàn chìa khoá KUBECONFIG trên CI Pipeline bên ngoài bằng trình điều phối chủ động kéo trạng thái từ trong cụm"
 caption: "Luồng khép kín từ CI đẩy Image & cập nhật thẻ phiên bản vào kho GitOps Config tới ArgoCD phát hiện sai lệch (Drift) và tự đồng bộ 24/7"
 callouts:
   - num: 1
-    label: "Đường ống CI không còn giữ chìa khoá KUBECONFIG"
+    label: "CI Pipeline không còn giữ chìa khoá KUBECONFIG"
     desc: "CI chỉ đóng gói Image đẩy lên Registry rồi mở commit cập nhật mã tag mới vào kho cấu hình GitOps — tách biệt hoàn toàn quyền Admin cụm."
     tone: sky
   - num: 2
@@ -22,7 +22,7 @@ callouts:
     desc: "Tách riêng khỏi kho mã nguồn ứng dụng để tránh vòng lặp kích hoạt CI vô tận; mọi thao tác nâng cấp hay git revert đều lưu vết rõ ràng."
     tone: cyan
   - num: 3
-    label: "ArgoCD kéo chiều ra & Tự chữa lành (selfHeal: true)"
+    label: "ArgoCD chủ động kéo & Tự phục hồi (selfHeal: true)"
     desc: "Nằm kín bên trong cụm K8s không cần mở tường lửa chiều vào, liên tục phát hiện sửa tay trái phép (OutOfSync) để ép cụm về đúng chuẩn Git."
     tone: emerald
 ```
@@ -38,7 +38,7 @@ callouts:
 ```visual
 kind: layers
 title: "Đối Chiếu Kiến Trúc: Push-Based CD (Ngoài Cụm) vs Pull-Based GitOps (Trong Cụm)"
-subtitle: Đảo ngược chiều kết nối để xoá bỏ hoàn toàn chìa khoá K8s Admin nằm phơi trên đường ống CI bên ngoài
+subtitle: Đảo ngược chiều kết nối để xoá bỏ hoàn toàn chìa khoá K8s Admin nằm phơi trên CI Pipeline bên ngoài
 columns:
   - title: "Push-Based CD (kubectl / helm trong CI)"
     badge: Phản mẫu khi mở rộng · Rủi ro cao
@@ -53,7 +53,7 @@ columns:
         note: Bề mặt tấn công rộng
         tone: amber
       - label: "Mù hoàn toàn trước sai lệch cấu hình (Configuration Drift)"
-        sub: "Ai đó gõ tay kubectl edit / scale lúc 2 giờ sáng, đường ống CI không hề hay biết"
+        sub: "Ai đó gõ tay kubectl edit / scale lúc 2 giờ sáng, CI Pipeline không hề hay biết"
         note: Lệch chuẩn âm thầm
         tone: slate
     footer: Lịch sử triển khai nằm rải rác trong hàng trăm trang log CI rời rạc
@@ -69,12 +69,17 @@ columns:
         sub: "ArgoCD chủ động kéo (Outbound Pull) tệp cấu hình từ kho Git về cụm"
         note: Cụm K8s tàng hình
         tone: sky
-      - label: "Tự động phát hiện lệch chuẩn & Tự chữa lành (selfHeal: true)"
+      - label: "Tự động phát hiện lệch chuẩn & Tự phục hồi (selfHeal: true)"
         sub: "Báo OutOfSync tức thì và ghi đè cụm về đúng trạng thái khai báo trong Git"
         note: Đồng bộ liên tục 24/7
         tone: cyan
     footer: Toàn bộ lịch sử hạ tầng nằm gọn trong git log · Rollback chuẩn là git revert!
 ```
+
+> [!TIP] Bản đồ Hệ sinh thái GitOps: Chọn **Argo CD** hay **Flux CD**?
+> Cả hai đều là dự án **CNCF Graduated** đỉnh cao vận hành theo mô hình **Pull-based GitOps**, nhưng phục vụ hai phong cách đội ngũ khác nhau:
+> - **Argo CD:** Nổi bật với **giao diện Web UI đồ hoạ cây tài nguyên cực kỳ trực quan**, tích hợp sẵn phân quyền SSO/RBAC đa cụm tập trung và ghép đôi hoàn hảo với *Argo Rollouts* — lựa chọn số 1 khi muốn mọi Developer tự nhìn thấy sức khoẻ Pod của mình.
+> - **Flux CD:** Thiết kế dạng các bộ điều khiển vi dịch vụ thuần Kubernetes CRD siêu nhẹ (*GitOps Toolkit*), không gánh tầng Web UI nặng nề, cực mạnh khi tự động hoá đồng bộ Helm/Kustomize/Image qua CLI & Terraform cho hàng trăm cụm biên (*Fleet / Edge Clusters*).
 
 ---
 
@@ -88,7 +93,7 @@ Trong kiến trúc GitOps chuẩn mực, chúng ta tách riêng **Kho mã nguồ
 ```visual
 kind: flow
 title: Chu Trình GitOps Khép Kín Qua 2 Kho Chứa (App Repo → Config Repo → ArgoCD)
-subtitle: Đường ống CI hoàn toàn không có bóng dáng KUBECONFIG hay câu lệnh kubectl nào!
+subtitle: CI Pipeline hoàn toàn không có bóng dáng KUBECONFIG hay câu lệnh kubectl nào!
 steps:
   - icon: code
     badge: "Kho 1 · App Repo"

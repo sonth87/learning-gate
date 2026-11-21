@@ -11,6 +11,7 @@ export type { WpCard, WpQuestion, WpState };
 export type PmpTab = 'learn' | 'canvas' | 'decision' | 'lookup';
 
 export type PmpLearnView =
+  | { name: 'workbench' }
   | { name: 'home' }
   | { name: 'roadmap' }
   | { name: 'module'; id: string }

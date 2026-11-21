@@ -3,7 +3,7 @@
   "slug": "K16-security-context-rbac",
   "level": 5,
   "order": 16,
-  "title": "Bảo mật Pod & Phân quyền truy cập: SecurityContext, Pod Security Admission & RBAC",
+  "title": "Bảo mật Pod & Phân quyền: SecurityContext, Pod Security Admission & RBAC",
   "summary": "Gia cố container chạy non-root với hệ thống tệp chỉ đọc, áp dụng chuẩn Pod Security Admission restricted thay thế PSP cũ, và phân quyền RBAC tối thiểu.",
   "tags": [
     "securitycontext",

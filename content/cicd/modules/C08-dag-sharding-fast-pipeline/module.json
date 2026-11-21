@@ -3,7 +3,7 @@
   "slug": "C08-dag-sharding-fast-pipeline",
   "level": 2,
   "order": 8,
-  "title": "Tối ưu Tốc độ Đường ống: Đồ thị DAG, Chia mảnh Sharding, Cache Docker Buildx & Xoá bỏ Sleep Mù quáng",
+  "title": "Tối ưu Tốc độ Pipeline: Critical Path, Test Sharding & Docker Buildx Cache",
   "summary": "Cắt giảm thời gian chờ CI từ 42 phút xuống dưới 5 phút nhờ đồ thị quạt rộng Fan-out/Fan-in, chia tải E2E Sharding, lưu tầng Buildx GHA và thăm dò cổng thông minh.",
   "tags": [
     "dag",
@@ -26,12 +26,12 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room B1: Tối ưu Pipeline 42 phút xuống < 6 phút",
+      "label": "Xử lý Sự cố B1: Tối ưu Pipeline 42 phút xuống < 6 phút",
       "kind": "warroom",
       "targetId": "warroom-b1-42min-pipeline"
     },
     {
-      "label": "War Room B4: Trị dứt điểm Flaky Tests",
+      "label": "Xử lý Sự cố B4: Trị dứt điểm Flaky Tests",
       "kind": "warroom",
       "targetId": "warroom-b4-flaky-tests"
     }
@@ -47,7 +47,7 @@
     {
       "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
       "kind": "bug",
-      "note": "Hồ sơ pháp y kinh điển của một đường ống chậm 42 phút: cài lại npm install không cache ở mọi bước, xếp nối đuôi tuần tự và ngủ mù quáng sleep 45.",
+      "note": "Hồ sơ pháp y kinh điển của một pipeline chậm 42 phút: cài lại npm install không cache ở mọi bước, xếp nối đuôi tuần tự và ngủ mù quáng sleep 45.",
       "task": "Tính nhẩm xem nếu chuyển 3 bước lint (3p), typecheck (4p), unit_test (8p) sang chạy song song và chia 4 mảnh cho e2e_test (20p -> 5p), tổng Đường găng giảm đi bao nhiêu phút?",
       "answer": "Cụm kiểm tra đầu giảm từ 3+4+8 = 15 phút xuống max(3,4,8) = 8 phút (hoặc chạy song song luôn với E2E 5 phút), tiết kiệm hơn 30 phút chờ đợi mỗi lần đẩy code!"
     }

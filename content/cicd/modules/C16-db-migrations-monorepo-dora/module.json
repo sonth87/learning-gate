@@ -3,7 +3,7 @@
   "slug": "C16-db-migrations-monorepo-dora",
   "level": 5,
   "order": 16,
-  "title": "DB Migrations (Expand-and-Contract), Monorepo CI & DORA",
+  "title": "Zero-Downtime DB Migration (Expand-Contract), Monorepo CI & DORA Metrics",
   "summary": "Thiết kế luồng di trú cơ sở dữ liệu không gián đoạn (Expand-and-Contract), tối ưu Monorepo chỉ chạy các gói bị ảnh hưởng bằng Paths Filter / Turborepo và đo lường bộ 4 chỉ số DORA.",
   "tags": [
     "expand-and-contract",
@@ -26,7 +26,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room Kiến trúc A1–A3 (Monorepo & DB Migration)",
+      "label": "Xử lý Sự cố Kiến trúc A1–A3 (Monorepo & DB Migration)",
       "kind": "warroom",
       "targetId": "warroom-a1-a3-b6-arch"
     }
@@ -43,13 +43,13 @@
       "path": "governance/migration-drop-destructive.yml",
       "kind": "bug",
       "note": "Kịch bản thảm hoạ: chạy RENAME/DROP COLUMN ngay trước khi cuộn Pod mới khiến toàn bộ Pod cũ nổ lỗi 500.",
-      "task": "Ngoài việc làm sập Pod v1 trong lúc Rolling Update, việc chạy DROP COLUMN ngay lập tức còn phá hỏng khả năng cứu hộ nào?",
+      "task": "Ngoài việc làm sập Pod v1 trong lúc Rolling Update, việc chạy DROP COLUMN ngay lập tức còn phá hỏng khả năng khôi phục nào?",
       "answer": "Nó phá hỏng khả năng Rollback! Nếu code v2 bị lỗi logic nghiêm trọng cần quay lui khẩn cấp về v1, cột dữ liệu cũ đã bị xoá mất khiến v1 không thể khởi chạy lại được nữa."
     },
     {
       "path": "governance/monorepo-turborepo-affected.yml",
       "kind": "good",
-      "note": "Tối ưu đường ống Monorepo kết hợp fetch-depth: 0 và bộ lọc đồ thị phụ thuộc của Turborepo.",
+      "note": "Tối ưu pipeline Monorepo kết hợp fetch-depth: 0 và bộ lọc đồ thị phụ thuộc của Turborepo.",
       "task": "Điều gì xảy ra nếu bỏ dòng fetch-depth: 0 khỏi bước actions/checkout@v4 khi chạy turbo --filter=...[origin/main]?",
       "answer": "Mặc định actions/checkout@v4 chỉ tải nông 1 commit cuối (fetch-depth: 1), Git không có thông tin lịch sử nhánh origin/main nên Turborepo không tính được diff hoặc buộc phải chạy lại toàn bộ kho!"
     }

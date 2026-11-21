@@ -3,7 +3,7 @@
   "slug": "R09-caching-topologies",
   "level": 3,
   "order": 0,
-  "title": "Kiến trúc Caching Thực chiến: Cache-Aside, Write-Through, Write-Behind & Bẫy Bất nhất",
+  "title": "Mô hình Caching: Cache-Aside, Read/Write-Through, Write-Behind & Invalidation",
   "summary": "Làm chủ 4 mô hình đọc/ghi giữa Ứng dụng, Redis và Cơ sở dữ liệu quan hệ: lựa chọn đúng giữa Cache-Aside, Read/Write-Through và Write-Behind, giải quyết triệt để Race Condition khi xoá cache (`UNLINK` sau DB commit), Versioned Keys và Negative Caching.",
   "tags": [
     "caching",
@@ -32,7 +32,7 @@
       "targetId": "cache-aside-singleflight"
     },
     {
-      "label": "War Room: Sự cố xoá Bigkey đồng bộ gây đơ luồng",
+      "label": "Xử lý Sự cố: Sự cố xoá Bigkey đồng bộ gây đơ luồng",
       "kind": "incident",
       "targetId": "inc-bigkey-del-spike"
     }

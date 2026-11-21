@@ -3,7 +3,7 @@
   "slug": "C15-gitops-and-argocd",
   "level": 4,
   "order": 15,
-  "title": "GitOps Thực chiến với ArgoCD (Pull-Based CD)",
+  "title": "GitOps Thực tế với Argo CD: Pull-Based Sync, Self-Heal & Sync Waves",
   "summary": "Loại bỏ phản mẫu cấp quyền Admin K8s cho CI, chuyển sang kiến trúc Pull-Based GitOps với ArgoCD Application, tự động chống trôi cấu hình (selfHeal/prune), Helm valueFiles và điều phối thứ tự bằng Sync Waves.",
   "tags": [
     "gitops",

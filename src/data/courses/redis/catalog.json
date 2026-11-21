@@ -612,7 +612,7 @@
       "language": "shell",
       "loc": 52,
       "category": "lua-streams",
-      "topic": "Worker Node.js tự động cứu hộ bản ghi treo quá 45 giây bằng XAUTOCLAIM và cách ly thông điệp lỗi lặp (Poison Pill) sang DLQ",
+      "topic": "Worker Node.js tự động khôi phục bản ghi treo quá 45 giây bằng XAUTOCLAIM và cách ly thông điệp lỗi lặp (Poison Pill) sang DLQ",
       "level": 2,
       "difficulty": 3,
       "quality": 5,

@@ -1,109 +1,117 @@
-## 1. Ma trận Stacey & Phổ Phát triển (`PMBOK 8 Standard §4.2`): Bắt mạch Độ bất định
+## 1. Giải mã bằng ví dụ phần mềm: 5 cách tiếp cận phát triển khác nhau ra sao?
 
-Trong [!badge:amber:PMBOK 8], các phương pháp phát triển không đối đầu nhau kiểu "cũ — mới", mà nằm trên một **dải phổ liên tục (Spectrum)** từ định hướng kế hoạch đến định hướng thích ứng. Công cụ chẩn đoán nhanh nhất trên [!badge:sky:PMA Bridge] là **Ma trận Stacey** dựa trên 2 trục: **Độ bất định Yêu cầu (What)** × **Độ bất định Kỹ thuật (How)**, cộng thêm **Chi phí thay đổi (Cost of Change)**.
+Khi bắt tay làm một hệ thống công nghệ mới, không có phương pháp quản lý nào là "tốt nhất cho mọi dự án". Trong [!badge:amber:PMBOK 8] (`Standard §4.2`), PMI xếp các cách làm dự án trên một **dải phổ liên tục (Development Spectrum)** dựa vào **Ma trận Stacey**: mức độ bất định của **Yêu cầu (Làm cái gì?)** × mức độ bất định của **Kỹ thuật (Làm bằng cách nào?)**, cộng thêm **Chi phí sửa đổi (Cost of Change)**.
+
+Hãy hình dung cùng một bài toán xây dựng nền tảng thương mại điện tử và hạ tầng thanh toán để phân biệt ngay 5 cách tiếp cận mà không bao giờ nhầm lẫn:
+
+1. **Predictive (*Waterfall — Tuần tự dự báo trước*):** Dựng phòng máy chủ vật lý hoặc cổng khai báo thuế theo thông tư pháp luật đã chốt cứng 100%. Thiết kế xong xuôi từ đầu rồi mới thi công tuần tự, ==bàn giao trọn gói 1 lần duy nhất ở cuối dự án== vì đập đi xây lại cực kỳ tốn kém.
+2. **Iterative (*Lặp tinh chỉnh — Tối ưu ĐỘ ĐÚNG ĐẮN*):** Thiết kế giao diện đặt lệnh chứng khoán phức tạp mà khách hàng chưa hình dung rõ mình thích bố cục nào. Đội thiết kế dựng bản nháp đen trắng (*Wireframe*) → bản màu (*Mockup*) → bản bấm thử (*Prototype*) qua nhiều vòng góp ý cho thật trúng ý rồi mới đóng gói bàn giao.
+3. **Incremental (*Tăng trưởng từng phần — Tối ưu TỐC ĐỘ BÀN GIAO*):** Bức tranh tổng thể đã rõ nhưng công ty cần lên sóng kiếm tiền sớm: Tháng 1 phát hành xong 100% tính năng Giỏ hàng + Tiền mặt (dùng thật được ngay); Tháng 2 gắn thêm Ví điện tử; Tháng 3 gắn thêm Tích điểm thành viên.
+4. **Agile / Adaptive (*Thích ứng linh hoạt = Iterative + Incremental*):** Cắt dự án thành các nhịp ngắn cố định **1–4 tuần (Sprint / Timebox)** — mỗi Sprint vừa lấy phản hồi làm rõ yêu cầu mơ hồ, vừa xuất xưởng một phần mềm chạy thật.
+5. **Hybrid (*Lai ghép có chủ đích*):** Dự án Trạm sạc Xe điện Thông minh — nhánh đào móng lắp trụ điện chạy theo **Predictive** (vì không thể đào đường 2 tuần một lần!), còn nhánh App di động tìm trạm sạc chạy theo **Agile Scrum**.
 
 ```visual
 kind: groups
 title: "5 Cách Tiếp Cận Phát Triển Chuẩn PMBOK® 8 §4.2"
-subtitle: "Bắt đúng từ khoá mục tiêu trong đề bài để khoanh đáp án trong 15 giây"
+subtitle: "Nhìn đúng từ khoá mục tiêu của đề bài để chọn phương pháp trong 15 giây"
 columns: 3
 items:
   - num: "1"
     title: "Predictive (Waterfall)"
     badge: "Bàn giao 1 lần cuối"
     tone: "sky"
-    desc: "Yêu cầu rõ từ đầu · Công nghệ quen thuộc · Chi phí sửa đổi vật lý rất đắt."
+    desc: "Yêu cầu rõ ràng · Công nghệ quen thuộc · Chi phí sửa đổi vật lý cao."
     bullets:
       - "Khoá chặt Scope trước → ước lượng Schedule & Finance"
-      - "VD: Xây cầu đường, lắp dây chuyền nhà máy, chuẩn pháp lý cứng"
+      - "Từ khoá: fixed scope, clear requirements, high cost of change"
   - num: "2"
-    title: "Iterative (Lặp tinh chỉnh)"
+    title: "Iterative (Lặp làm mịn)"
     badge: "Tối ưu ĐỘ ĐÚNG ĐẮN"
     tone: "amber"
-    desc: "Yêu cầu còn mơ hồ cần thử nghiệm · Thường bàn giao chính thức 1 lần khi đã chốt chuẩn."
+    desc: "Yêu cầu mờ cần thử nghiệm nhiều vòng · Bàn giao khi đã chốt chuẩn."
     bullets:
-      - "Lặp qua Prototype / Mockup / Wireframe để thu phản hồi làm rõ yêu cầu"
-      - "Từ khoá đề thi: correctness, feedback on prototypes, refine understanding"
+      - "Lặp qua Prototype / Proof of Concept để làm rõ kỳ vọng"
+      - "Từ khoá: correctness, feedback on prototypes, refine understanding"
   - num: "3"
-    title: "Incremental (Tăng trưởng)"
+    title: "Incremental (Chia mảnh)"
     badge: "Tối ưu TỐC ĐỘ GIAO"
     tone: "cyan"
-    desc: "Bức tranh tổng thể khá rõ nhưng khách hàng cần dùng sớm từng phần hoàn chỉnh."
+    desc: "Yêu cầu khá rõ nhưng cần đưa từng phần hoàn chỉnh ra dùng sớm."
     bullets:
-      - "Chia sản phẩm thành các mảnh độc lập dùng được ngay sau mỗi đợt release"
-      - "Từ khoá đề thi: speed of delivery, usable subset early, phased rollout"
+      - "Mỗi đợt phát hành là một lát cắt hoàn thiện dùng được ngay"
+      - "Từ khoá: speed of delivery, usable subset early, phased rollout"
   - num: "4"
     title: "Adaptive / Agile"
     badge: "Iterative + Incremental"
     tone: "emerald"
-    desc: "Bất định cao cả yêu cầu lẫn kỹ thuật · Môi trường số chi phí thay đổi thấp."
+    desc: "Bất định cao cả yêu cầu lẫn kỹ thuật · Môi trường phần mềm dễ sửa đổi."
     bullets:
-      - "Timebox ngắn 1–4 tuần: vừa lặp lấy phản hồi vừa giao Increment chạy được"
-      - "Cố định Time & Cost, để Scope biến thiên theo giá trị trên Backlog"
+      - "Sprint ngắn 1–4 tuần: vừa học hỏi phản hồi vừa giao Increment chạy thật"
+      - "Cố định Time & Cost, linh hoạt tối ưu Scope theo giá trị trên Backlog"
   - num: "5"
     title: "Hybrid (Lai ghép)"
-    badge: "~60% trọng tâm đề PMP"
-    tone: "cyan"
-    desc: "Kết hợp có chủ đích Predictive + Adaptive theo hợp phần hoặc giai đoạn."
+    badge: "~60% bối cảnh đề PMP"
+    tone: "violet"
+    desc: "Phối hợp Predictive + Agile theo từng hợp phần hoặc từng giai đoạn."
     bullets:
-      - "Phần cứng/hạ tầng/mua sắm chạy Predictive + Phần mềm/UX chạy Agile"
-      - "Bước đệm an toàn khi tổ chức truyền thống mới chuyển đổi sang Agile"
+      - "Phần cứng/pháp lý chạy Predictive + Phần mềm/UX chạy Agile"
+      - "Cầu nối an toàn khi tổ chức truyền thống chuyển dịch sang linh hoạt"
 ```
 
-> [!WARNING] Cặp song sinh hay làm rớt điểm nhất: `Iterative` vs `Incremental`
-> Hãy tưởng tượng vẽ bức tranh nàng Mona Lisa:
-> - **Iterative (Vẽ phác thảo toàn bức → lên nét → tô màu):** Mỗi vòng làm *rõ và đúng hơn*, nhưng chỉ vòng cuối mới treo lên tường được.
-> - **Incremental (Vẽ hoàn chỉnh khuôn mặt → vẽ hoàn chỉnh đôi tay → vẽ nền):** Mỗi lát cắt xong là *hoàn chỉnh 100% ở phần đó*.
-> - **Agile:** Kết hợp cả hai trong từng Sprint ngắn!
+> [!WARNING]
+> **Ẩn dụ bức tranh nàng Mona Lisa để không bao giờ nhầm Iterative và Incremental:**
+> - **Iterative:** Phác chì cả bức tranh → tô mảng mờ → vẽ chi tiết. Mỗi vòng nét vẽ *đúng hơn*, nhưng chỉ vòng cuối mới treo lên tường được.
+> - **Incremental:** Vẽ hoàn chỉnh 100% khuôn mặt → vẽ hoàn chỉnh đôi tay → vẽ nền. Mỗi phần vẽ xong là *nét căng hoàn thiện ngay phần đó*.
 
-## 2. Đảo ngược Tam giác Ràng buộc & 4 Mẫu Hybrid thực chiến
+## 2. Đảo ngược Tam giác Ràng buộc & 4 mẫu thiết kế Hybrid thực tế
 
-- [x] **Predictive:** Cố định **Scope** làm gốc → ước lượng thời gian và ngân sách cần thiết.
-- [x] **Adaptive / Agile:** Đảo ngược đỉnh tam giác — cố định **Schedule (Timebox)** và **Finance (Team size ổn định)**, từ đó tối ưu hoá **Scope có giá trị cao nhất** làm được trong khung đó.
-- [x] **4 mẫu Hybrid thường gặp trong [!badge:violet:ECO 07/2026]:** (1) *Agile rồi Predictive* (R&D mẫu thử bằng Agile → sản xuất hàng loạt bằng Predictive); (2) *Predictive rồi Agile*; (3) *Song song đồng thời* (Phần cứng Waterfall + Phần mềm Scrum hội tụ tại các mốc tích hợp); (4) *Khung lớn Predictive rải một hợp phần nhỏ Agile* (ví dụ 10% công việc thiết kế giao diện phức tạp).
+Sự khác biệt gốc rễ giữa tư duy truyền thống và tư duy thích ứng nằm ở **Tam giác Ràng buộc đảo ngược (Inverted Triangle of Constraints)**:
 
-## 3. 5 Focus Areas (`PMBOK 8 §4.3`) vận hành xuyên mọi phương pháp thế nào?
+- Trong **Predictive**, ==Phạm vi (`Scope`) được ghim cố định làm đỉnh tam giác==; từ phạm vi đó PM mới tính ra cần bao nhiêu tháng (`Schedule`) và bao nhiêu tiền (`Finance`).
+- Trong **Agile**, tổ chức **ghim cố định Thời gian (`Sprint 2 tuần`) và Chi phí (`quy mô đội 7 người ổn định`)**, rồi điều chỉnh **Phạm vi (`Product Backlog`)** sao cho ==những tính năng mang lại giá trị kinh doanh cao nhất luôn được làm trước==!
 
-Đừng bao giờ nghĩ Agile "không lập kế hoạch" hay "không kiểm soát"! Trong [!badge:amber:PMBOK 8], cả **5 Focus Areas** đều hiện diện nhưng thay đổi nhịp điệu thực thi:
+Ngoài đời và trong [!badge:violet:ECO 07/2026], bạn sẽ gặp 4 mẫu **Hybrid** phổ biến: (1) *Agile trước, Predictive sau* (nghiên cứu mẫu thử AI bằng Agile rồi triển khai đồng loạt cho 200 chi nhánh bằng Waterfall); (2) *Predictive trước, Agile sau*; (3) *Chạy song song đồng thời* (đội phần cứng và đội phần mềm khớp nhau tại các cột mốc tích hợp chung); và (4) *Khung lớn Predictive nhúng một mô-đun nhỏ Agile*.
+
+## 3. 5 Focus Areas (`PMBOK 8 §4.3`) vận hành trong cả hai thế giới thế nào?
+
+Nhiều kỹ sư mới học hiểu lầm rằng *"Làm Agile là nhảy vào code luôn, không cần lập kế hoạch hay kiểm soát"*. Thực tế, **5 Nhóm trọng tâm (Focus Areas)** của PMBOK 8 luôn hiện diện đầy đủ nhưng đổi nhịp thực thi:
 
 ```visual
 kind: layers
-title: "5 Focus Areas (PMBOK® 8 §4.3): Tuần tự Lớn vs Vòng lặp Liên tục"
-subtitle: "Agile lập kế hoạch và kiểm soát nhiều hơn cả Waterfall — chỉ là chia nhỏ theo từng nhịp ngắn!"
+title: "5 Focus Areas (PMBOK® 8 §4.3): Pha Tuần tự Lớn vs Vòng lặp Ngắn"
+subtitle: "Agile lập kế hoạch liên tục ở nhiều tầng thay vì dồn hết vào tháng đầu tiên"
 columns:
   - title: "Trong Predictive (Plan-Driven)"
-    badge: "Theo Pha Lớn"
+    badge: "Theo Pha Lớn Đầu Kỳ"
     tone: "sky"
     layers:
       - label: "1. Initiating & 2. Planning"
-        sub: "Ký Charter → Lập PM Plan tổng thể chi tiết & khoá Baselines đầu kỳ"
-        note: "Upfront"
+        detail: "Ký Charter → Lập PM Plan chi tiết toàn diện & khoá cứng Baselines đầu dự án"
         tone: "sky"
       - label: "3. Executing"
-        sub: "Thực thi theo WBS, Manage QA và điều phối nguồn lực"
-        note: "Theo Plan"
+        detail: "Thi công theo WBS đã chốt, kiểm toán quy trình QA và điều phối nguồn lực"
         tone: "amber"
       - label: "4. Monitoring & Controlling + 5. Closing"
-        sub: "Đo CPI/SPI, duyệt Change Request qua CCB, nghiệm thu & đóng cuối kỳ"
-        note: "Kiểm soát mốc"
+        detail: "Đo CPI/SPI, duyệt Change Request qua CCB, nghiệm thu & đóng pha cuối kỳ"
         tone: "cyan"
   - title: "Trong Adaptive / Agile (Change-Driven)"
-    badge: "Lặp Trong Mỗi Sprint"
+    badge: "Lặp Gọn Mỗi Sprint"
     tone: "emerald"
     layers:
       - label: "1. Initiating & 2. Planning (Đa tầng)"
-        sub: "Vision/Charter → Roadmap → Release Plan → Refinement → Sprint Planning"
-        note: "Progressive"
+        detail: "Vision/Charter → Product Roadmap → Release Plan → Refinement → Sprint Planning"
         tone: "emerald"
       - label: "3. Executing"
-        sub: "Nhóm cross-functional tự tổ chức xây Increment, họp Daily 15 phút"
-        note: "Timebox 1–4w"
+        detail: "Đội đa chức năng tự tổ chức xây Increment, đồng bộ qua Daily Standup 15 phút"
         tone: "cyan"
       - label: "4. Monitoring & Controlling + 5. Closing"
-        sub: "Kanban WIP, Burndown, nghiệm thu tại Sprint Review, cải tiến ở Retro & đóng Release"
-        note: "Liên tục"
+        detail: "Giới hạn WIP, Burndown, demo ở Sprint Review, cải tiến ở Retro & đóng Release"
         tone: "amber"
 ```
 
-> [!REMEMBER] Phản xạ khi tổ chức truyền thống muốn "chuyển sang Agile ngay ngày mai"
-> Nếu ban lãnh đạo hào hứng đòi áp dụng 100% Agile thuần tuý ngay lập tức cho một tổ chức quen làm Waterfall lâu năm và sợ rủi ro: **KHÔNG nhảy vọt cực đoan!** Hãy khuyến nghị **cách tiếp cận Hybrid chuyển tiếp**, thí điểm trên hợp phần phù hợp kèm đào tạo & huấn luyện (Coaching).
+## 4. Tình huống thực chiến & Phản xạ vàng về Tailoring (May đo phương pháp)
+
+**Tailoring (*May đo quy trình*)** nghĩa là PM chủ động chọn lọc và tinh chỉnh phương pháp sao cho vừa vặn nhất với văn hoá công ty, năng lực đội ngũ và độ phức tạp sản phẩm — tuyệt đối không rập khuôn máy móc sách vở.
+
+> [!TIP]
+> **Bẫy chuyển đổi số cực đoan trong đề thi:** Nếu đề bài mô tả một tập đoàn ngân hàng lâu năm quen quy trình kiểm soát chặt chẽ muốn áp dụng Agile, đáp án đúng **không bao giờ** là *"Xoá bỏ ngay toàn bộ tài liệu và ép chuyển 100% sang thuần Scrum từ tuần sau"*! Hãy chọn ==triển khai mô hình Hybrid chuyển tiếp, chọn dự án thí điểm (Pilot) kết hợp đào tạo và huấn luyện (Coaching) từng bước==.

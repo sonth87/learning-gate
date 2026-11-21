@@ -1,7 +1,7 @@
 [
   {
     "id": "R03-FC1",
-    "front": "Vì sao **`LPUSH` + `LTRIM key 0 (N-1)`** được xem là cặp bài trùng bắt buộc cho bảng tin hoạt động (Activity Feed)?",
+    "front": "Vì sao **`LPUSH` + `LTRIM key 0 (N-1)`** được xem là bộ đôi kết hợp bắt buộc cho bảng tin hoạt động (Activity Feed)?",
     "back": "Giúp vừa đẩy sự kiện mới nhất lên đầu trong `O(1)`, vừa khoá cứng độ dài danh sách ở đúng `N` mục gần nhất (Ring Buffer), ngăn chặn List phình to vô hạn thành BigKey làm cạn RAM."
   },
   {

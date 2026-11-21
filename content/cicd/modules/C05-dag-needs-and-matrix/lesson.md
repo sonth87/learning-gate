@@ -2,8 +2,8 @@
 
 Khi dự án Node.js lớn dần, một Job duy nhất chạy nối tiếp `lint` (2 phút) -> `typecheck` (2 phút) -> `unit-test` (5 phút) -> `build` (3 phút) sẽ bắt lập trình viên ngồi chờ ròng rã **12 phút** cho mỗi lần đẩy code.
 
-> [!ANALOGY] Hãy hình dung như sau (Ánh xạ từ `Promise.all` trong JavaScript)
-> Khi ba hàm bất đồng bộ không phụ thuộc vào kết quả của nhau, bạn không viết ba dòng `await` tuần tự mà bọc chúng trong **`await Promise.all([lint(), typecheck(), unitTest()])`** rồi mới gọi `await build()`! Trong CI/CD, kiến trúc tương đương chính xác với `Promise.all` được gọi là ==Directed Acyclic Graph (DAG — Đồ thị có hướng không chu trình)== điều phối bằng từ khoá **`needs:`**.
+> [!ANALOGY] Hãy hình dung `DAG` bằng đời thực (và `Promise.all` trong code)
+> **`DAG` (*Directed Acyclic Graph* — Đồ thị luồng công việc phụ thuộc một chiều)** nghe có vẻ toán học, nhưng thực chất giống hệt **dây chuyền lắp ráp ô tô** (hoặc chuẩn bị bữa tối): khâu *chế tạo khung xe*, *kiểm tra động cơ* và *may ghế da* không hề phụ thuộc nhau nên 3 xưởng có thể làm **song song cùng lúc**; chỉ tới khâu *lắp ráp hoàn thiện* mới cần chờ cả 3 xưởng kia báo xong! Nếu quen lập trình JavaScript/Python, đó chính là **`await Promise.all([lint(), typecheck(), unitTest()])`** rồi mới gọi `await build()` — điều phối trong CI/CD bằng từ khoá **`needs:`**.
 
 ```visual
 kind: illustration

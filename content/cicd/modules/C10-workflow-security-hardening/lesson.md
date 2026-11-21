@@ -1,13 +1,13 @@
-# Gia cố Bảo mật Đường ống: GITHUB_TOKEN Tối thiểu, Chống Script Injection, Bẫy Pwn Request & Ghim SHA 40 Ký tự
+# Gia cố Bảo mật Pipeline: GITHUB_TOKEN Tối thiểu, Chống Script Injection, Bẫy Pwn Request & Ghim SHA 40 Ký tự
 
 Nhiều lập trình viên dồn 100% tâm trí bảo mật vào mã nguồn Express/Fastify trên Production, nhưng lại quên mất một sự thật lạnh gáy: **máy chủ CI/CD Runner chính là "Kho Báu Tối Thượng" mà mọi nhóm tin tặc săn lùng!**
 
 - [!] **Quyền lực tối cao hội tụ tại một điểm:** Runner nắm trong tay quyền ghi ngược mã độc vào kho Git (`GITHUB_TOKEN`), chìa khoá đẩy Container Image lên Registry và quyền triển khai thẳng lên đám mây AWS/Kubernetes!
-- [!] **Bề mặt tấn công mở ra Internet:** Chỉ cần một dòng cấu hình ngây thơ trong `.github/workflows/`, một người lạ trên mạng mở một Pull Request bình thường cũng có thể thực thi lệnh điều khiển từ xa (**RCE**) ngay bên trong Runner của công ty bạn!
+- [!] **Bề mặt tấn công mở ra Internet:** Chỉ cần một dòng cấu hình ngây thơ trong `.github/workflows/`, một người lạ trên mạng mở một Pull Request bình thường cũng có thể chiếm quyền chạy lệnh trái phép từ xa (**RCE — Remote Code Execution**) ngay bên trong Runner của công ty bạn!
 
 ```visual
 kind: groups
-title: "4 Lá Chắn Sống Còn Gia Cố Bảo Mật Đường Ống [!badge:emerald:Zero-Trust CI]"
+title: "4 Lá Chắn Sống Còn Gia Cố Bảo Mật Pipeline [!badge:emerald:Zero-Trust CI]"
 subtitle: Khóa chặt toàn bộ bề mặt tấn công cấp độ Workflow từ quyền hạn Token, đầu vào PR, ngữ cảnh Fork đến chuỗi cung ứng Action
 columns: 2
 items:
@@ -31,7 +31,7 @@ items:
       - "Tham chiếu an toàn bằng dấu nháy kép `\"$PR_TITLE\"` trong bash"
   - num: 3
     icon: shield-alert
-    title: "Chặn điểm yếu nghiêm trọng Pwn Request"
+    title: "Chặn lỗ hổng nghiêm trọng Pwn Request"
     badge: Fork Isolation
     tone: rose
     desc: "Phân biệt sống còn giữa `on: pull_request` và `on: pull_request_target` khi nhận PR từ kho Fork."
@@ -77,7 +77,7 @@ callouts:
 
 Mỗi khi một Workflow khởi chạy, GitHub tự động cấp một thẻ xác thực tạm thời gọi là **`GITHUB_TOKEN`**. Trên các kho lưu trữ hoặc tổ chức chưa siết cấu hình mặc định, chiếc thẻ này mang quyền **`write-all`** — cho phép bất kỳ bước kiểm thử nào bị xâm nhập cũng tự ý đẩy commit thẳng vào nhánh, sửa bản phát hành Release hoặc xoá gói!
 
-Quy chuẩn bảo mật bắt buộc năm 2026 là **nguyên lý Đặc quyền tối thiểu (Least Privilege)**: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ (**packages: write**) cho riêng Job thực sự cần**:
+Quy chuẩn bảo mật bắt buộc năm 2026 là **nguyên lý Đặc quyền tối thiểu (Least Privilege)** — giống như cấp **thẻ từ khách sạn chỉ mở đúng cửa phòng 302** thay vì trao chùm chìa khoá vạn năng của quản lý toà nhà: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ (`packages: write`) cho riêng Job thực sự cần**:
 
 ```yaml
 name: Hardened CI
@@ -163,7 +163,7 @@ right:
 
 ---
 
-## 3. Lá chắn #3 — Tránh xa "điểm yếu nghiêm trọng Pwn Request": `pull_request` vs `pull_request_target`
+## 3. Phòng chống lỗ hổng Pwn Request: Phân biệt `pull_request` vs `pull_request_target`
 
 Tại sao GitHub lại sinh ra hai sự kiện có cái tên dễ gây nhầm lẫn chết người đến vậy?
 
@@ -172,7 +172,7 @@ kind: compare
 title: "Sự Khác Biệt Sống Còn Đối Với PR Từ Kho Fork: pull_request vs pull_request_target"
 subtitle: "Sai một hậu tố _target là trao toàn bộ kho Secrets Production cho người lạ trên Internet!"
 left:
-  badge: "điểm yếu nghiêm trọng PWN REQUEST · Cực kỳ nguy hiểm"
+  badge: "LỖ HỔNG NGHIÊM TRỌNG · Pwn Request"
   title: "on: pull_request_target + Checkout code của PR"
   tone: rose
   code: |

@@ -504,4 +504,232 @@ export const CONCEPTS_GLOSSARY: GlossaryTerm[] = [
     jsEquivalent: 'try { JSON.parse(str) } catch (e) {}',
     relatedTerms: ['kw-try', 'kw-except', 'kw-raise'],
   },
+  {
+    id: 'concept-event-loop',
+    term: 'Event Loop (Vòng lặp Sự kiện)',
+    aliases: ['Event Loop', 'event loop', 'asyncio.run'],
+    category: 'concept',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Bộ điều phối trung tâm giúp Python thực thi mã bất đồng bộ (`async/await`) trên một luồng duy nhất (Single-threaded Concurrency), phổ biến nhất qua thư viện chuẩn `asyncio`.',
+    detailedExplanation:
+      'Event Loop quản lý hàng đợi các Coroutine và Task. Khi một tác vụ gặp lệnh chờ `await` (như gọi API, truy vấn DB, đọc file), Event Loop lập tức tạm dừng tác vụ đó để chuyển sang chạy tác vụ khác đang sẵn sàng, rồi quay lại đánh thức khi dữ liệu I/O trả về. Code `def` đồng bộ thông thường KHÔNG có sẵn Event Loop trừ khi khởi chạy bằng `asyncio.run(main())` hoặc chạy trong framework bất đồng bộ như FastAPI.',
+    analogy:
+      'Giống một đại kiện tướng cờ vua đấu đồng thời 20 bàn cờ: đi xong 1 nước ở bàn số 1, thay vì đứng khoanh tay chờ đối thủ suy nghĩ, kiện tướng bước ngay sang bàn số 2, 3, 4... Nhờ vậy chỉ 1 người vẫn phục vụ trơn tru cả 20 bàn!',
+    syntaxExample: `import asyncio\n\nasync def cong_viec(ten: str, giay: int):\n    print(f"Bắt đầu {ten}")\n    await asyncio.sleep(giay)  # Nhường quyền điều khiển cho Event Loop\n    print(f"Xong {ten}")\n\nasync def main():\n    await asyncio.gather(cong_viec("Task A", 2), cong_viec("Task B", 1))\n\nasyncio.run(main())`,
+    commonGotcha:
+      'Tuyệt đối không gọi hàm đồng bộ chạy lâu (`time.sleep()`, `requests.get()`, tính toán nặng CPU) trực tiếp bên trong `async def` vì sẽ làm đóng băng toàn bộ Event Loop! Ngoài `asyncio` (thường kết hợp `uvloop` trên Linux/macOS để tăng tốc), còn có `Trio`, `AnyIO` và `Tornado`.',
+    jsEquivalent: 'Libuv Event Loop (tích hợp mặc định trong Node.js / Browser)',
+    relatedTerms: ['concept-asyncio', 'concept-coroutine', 'concept-blocking-io', 'eco-uvloop'],
+  },
+  {
+    id: 'concept-coroutine',
+    term: 'Coroutine (Hàm Bất đồng bộ async def)',
+    aliases: ['Coroutine', 'coroutine', 'coroutines', 'async def'],
+    category: 'concept',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Hàm đặc biệt khai báo bằng `async def`, có khả năng chủ động tạm dừng tại điểm `await` và tiếp tục chạy lại đúng vị trí đó mà không làm chặn luồng chính.',
+    detailedExplanation:
+      'Khác với hàm `def` thường (chạy một mạch từ đầu đến `return`), khi bạn gọi `coro = lay_du_lieu()`, thân hàm CHƯA HỀ CHẠY NGAY mà trả về một đối tượng Coroutine. Để thực sự chạy nó, bạn phải `await coro`, bọc vào `asyncio.create_task(coro)` hoặc truyền vào `asyncio.gather()`.',
+    analogy:
+      'Giống cuốn sách có kẹp dấu trang (bookmark): đọc tới đoạn chờ tra cứu (`await`), bạn kẹp dấu trang lại chuyển sang đọc cuốn khác, lát sau mở đúng trang đó đọc tiếp mà không mất mạch.',
+    syntaxExample: `import asyncio\n\nasync def lay_gia_vang() -> int:\n    await asyncio.sleep(0.5)  # Tạm dừng không chặn luồng\n    return 85_000_000\n\n# Gọi trực tiếp lay_gia_vang() chỉ tạo Coroutine object, cần await để lấy kết quả:\nket_qua = asyncio.run(lay_gia_vang())`,
+    commonGotcha:
+      'Quên từ khóa `await` trước lời gọi hàm `async def` sẽ khiến hàm không hề được thực thi, trả về `<coroutine object>` kèm cảnh báo `RuntimeWarning: coroutine was never awaited`.',
+    jsEquivalent: 'async function trả về Promise trong JavaScript',
+    relatedTerms: ['concept-event-loop', 'kw-async', 'kw-await', 'concept-asyncio'],
+  },
+  {
+    id: 'concept-single-multi-thread',
+    term: 'Single-threaded vs Multi-threaded (Đơn luồng vs Đa luồng)',
+    aliases: ['Single-threaded', 'Multi-threaded', 'Multi-threading', 'Đơn luồng', 'Đa luồng'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-5',
+    shortSummary:
+      'Mặc định chương trình Python chạy trên **1 luồng duy nhất (Single-threaded)** từ trên xuống dưới; **Đa luồng (Multi-threaded)** tạo nhiều luồng trong cùng tiến trình để chờ nhiều tác vụ I/O đồng bộ cùng lúc.',
+    detailedExplanation:
+      'Một tiến trình (Process) giống như một cửa hàng, còn luồng (Thread) là nhân viên bên trong cửa hàng dùng chung quầy nguyên liệu (RAM). Trong Python chuẩn (CPython), do có khóa an toàn `GIL`, các luồng không chạy lệnh Python cùng một tích tắc trên nhiều nhân CPU, nhưng khi 1 luồng đứng chờ mạng/file (I/O), nó nhả `GIL` để luồng khác làm việc.',
+    analogy:
+      'Đơn luồng là quán chỉ có 1 pha chế làm từng ly; Đa luồng trong Python là 4 pha chế dùng chung 1 máy xay (GIL) — trong lúc 1 người chờ lò nướng bánh (chờ mạng I/O) thì người khác dùng máy xay.',
+    syntaxExample: `from concurrent.futures import ThreadPoolExecutor\nimport urllib.request\n\ndef tai_trang(url: str) -> int:\n    with urllib.request.urlopen(url, timeout=5) as r:\n        return r.status\n\n# Dùng 4 luồng chờ mạng song song thay vì xếp hàng từng URL:\nwith ThreadPoolExecutor(max_workers=4) as pool:\n    ket_qua = list(pool.map(tai_trang, ["https://example.com"] * 4))`,
+    commonGotcha:
+      'Vì các Thread dùng chung bộ nhớ RAM nên nếu nhiều luồng cùng cộng/trừ chung một biến hoặc sửa chung một `dict` mà không có khóa `threading.Lock()`, dữ liệu có thể bị sai lệch (Race Condition).',
+    jsEquivalent: 'Main Thread đơn luồng vs Worker Threads trong Node.js',
+    relatedTerms: ['concept-gil', 'concept-event-loop', 'concept-threadpool', 'concept-processpool'],
+  },
+  {
+    id: 'concept-blocking-io',
+    term: 'Blocking I/O vs Non-blocking I/O',
+    aliases: ['Blocking I/O', 'Non-blocking I/O', 'Blocking', 'Non-blocking'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-5',
+    shortSummary:
+      '`Blocking I/O` bắt toàn bộ luồng đứng im chờ tới khi đọc/ghi mạng hoặc đĩa hoàn tất; `Non-blocking I/O` giao việc chờ cho hệ điều hành rồi lập tức giải phóng luồng để làm việc khác.',
+    detailedExplanation:
+      'Hầu hết thư viện truyền thống của Python (`requests.get()`, `time.sleep()`, `sqlite3`, `input()`) là **Blocking**. Ngược lại, các thư viện bất đồng bộ hiện đại (`httpx.AsyncClient`, `aiohttp`, `asyncpg`, `asyncio.sleep()`) dùng **Non-blocking I/O** kết hợp `await` để một luồng duy nhất có thể phục vụ hàng nghìn kết nối đồng thời.',
+    analogy:
+      'Blocking giống đứng chôn chân trước quầy trà sữa tới khi nhận ly mới được đi; Non-blocking giống cầm thẻ rung báo hiệu rồi ra bàn ngồi làm việc khác, khi nào thẻ rung mới quay lại lấy nước.',
+    syntaxExample: `# ❌ BLOCKING: Làm đứng im cả luồng trong 2 giây\nimport time\ntime.sleep(2)\n\n# ✅ NON-BLOCKING (trong hàm async): Nhường luồng cho tác vụ khác chạy\nimport asyncio\nasync def demo():\n    await asyncio.sleep(2)`,
+    commonGotcha:
+      'Sai lầm nghiêm trọng nhất khi viết FastAPI / `asyncio` là gọi nhầm thư viện Blocking (`requests.get`, `time.sleep`) bên trong `async def` — hãy đổi sang `httpx.AsyncClient` hoặc bọc qua `await asyncio.to_thread(...)`.',
+    jsEquivalent: 'fs.readFileSync (Blocking) vs await fs.promises.readFile (Non-blocking)',
+    relatedTerms: ['concept-event-loop', 'concept-io-vs-cpu-bound', 'concept-threadpool'],
+  },
+  {
+    id: 'concept-io-vs-cpu-bound',
+    term: 'I/O-bound vs CPU-bound',
+    aliases: ['I/O-bound', 'CPU-bound', 'IO-bound', 'I/O-Bound', 'CPU-Bound'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-5',
+    shortSummary:
+      '`I/O-bound` là tác vụ chậm do phải chờ mạng/ổ đĩa/Database (CPU ngồi chơi); `CPU-bound` là tác vụ chậm do CPU phải tính toán nặng liên tục 100% (xử lý ảnh, giải mã, ma trận).',
+    detailedExplanation:
+      'Phân biệt đúng 2 loại này quyết định công cụ bạn chọn trong Python: Với **I/O-bound**, hãy dùng `asyncio` (tải lớn) hoặc `ThreadPoolExecutor` (thư viện đồng bộ cũ). Với **CPU-bound**, `asyncio` và `Thread` đều KHÔNG giúp chạy nhanh hơn do khóa `GIL` — bạn bắt buộc dùng `ProcessPoolExecutor` (đa tiến trình) hoặc thư viện viết bằng C/Rust như `NumPy`, `Polars`.',
+    analogy:
+      'I/O-bound giống gửi 50 bức thư rồi ngồi chờ bưu tá hồi âm; CPU-bound giống tự tay ngồi giải 50 đề toán tích phân hóc búa liên tục không nghỉ.',
+    syntaxExample: `# I/O-bound -> Dùng asyncio hoặc ThreadPoolExecutor\n# CPU-bound -> Dùng ProcessPoolExecutor chia đều ra các nhân CPU:\nfrom concurrent.futures import ProcessPoolExecutor\n\ndef tinh_nang_cpu(n: int) -> int:\n    return sum(i * i for i in range(n))`,
+    commonGotcha:
+      'Đừng dùng `ProcessPoolExecutor` cho các tác vụ I/O nhỏ nhẹ vì chi phí khởi tạo tiến trình mới và đóng gói dữ liệu (`pickle`) sẽ làm chậm hơn cả `asyncio`!',
+    jsEquivalent: 'Async I/O trên Event Loop vs CPU crunching trên Worker Threads / C++ Addons',
+    relatedTerms: ['concept-gil', 'concept-threadpool', 'concept-processpool', 'concept-event-loop'],
+  },
+  {
+    id: 'concept-threadpool',
+    term: 'ThreadPoolExecutor & asyncio.to_thread()',
+    aliases: ['ThreadPoolExecutor', 'to_thread', 'asyncio.to_thread'],
+    category: 'stdlib',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Công cụ chuẩn quản lý hồ các luồng (Thread Pool) để chạy đồng thời nhiều hàm Blocking I/O truyền thống (`requests`, `sqlite3`, đọc/ghi file) mà không cần viết lại sang `async/await`.',
+    detailedExplanation:
+      '`ThreadPoolExecutor` (thuộc `concurrent.futures`) tạo sẵn `max_workers` luồng tái sử dụng để tránh chi phí tạo/hủy luồng liên tục. Đặc biệt khi đang ở trong hàm `async def` (như FastAPI) mà buộc phải gọi một hàm thư viện cũ đồng bộ, `await asyncio.to_thread(func, *args)` sẽ đẩy hàm đó sang Thread Pool ngầm để giữ cho Event Loop luôn mượt mà.',
+    analogy:
+      'Cử riêng một đội nhân viên chạy việc vặt đi xếp hàng ở bưu điện (Blocking I/O) để lễ tân chính (Event Loop) ở nhà vẫn tiếp đón khách mới bình thường.',
+    syntaxExample: `import asyncio, time\nfrom concurrent.futures import ThreadPoolExecutor\n\ndef tac_vu_dong_bo_cu(x: int) -> int:\n    time.sleep(0.2)\n    return x * 10\n\n# Cách 1: Trong code đồng bộ\nwith ThreadPoolExecutor(max_workers=5) as pool:\n    ket_qua = list(pool.map(tac_vu_dong_bo_cu, [1, 2, 3]))\n\n# Cách 2: Từ bên trong hàm async def\nasync def handler():\n    return await asyncio.to_thread(tac_vu_dong_bo_cu, 5)`,
+    commonGotcha:
+      'Đừng đặt `max_workers` lên tới hàng nghìn (mỗi OS Thread ngốn nhiều RAM và chi phí chuyển ngữ cảnh); nếu cần hàng nghìn kết nối mạng đồng thời, hãy chuyển sang `asyncio` + `httpx`.',
+    jsEquivalent: 'p-limit / Piscina thread pool',
+    relatedTerms: ['concept-gil', 'concept-blocking-io', 'concept-processpool'],
+  },
+  {
+    id: 'concept-processpool',
+    term: 'ProcessPoolExecutor (Đa tiến trình vượt GIL)',
+    aliases: ['ProcessPoolExecutor', 'multiprocessing'],
+    category: 'stdlib',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Khởi tạo nhiều tiến trình Python độc lập trên tất cả các nhân CPU vật lý (mỗi tiến trình có trình thông dịch và khóa `GIL` riêng) để tăng tốc thực sự các tác vụ tính toán nặng (`CPU-bound`).',
+    detailedExplanation:
+      'Vì các tiến trình không dùng chung RAM, Python tự động tuần tự hóa (`pickle`) tham số đầu vào gửi sang tiến trình con tính toán song song 100% trên đa nhân, rồi gom kết quả trả về tiến trình cha.',
+    analogy:
+      'Thay vì 4 đầu bếp chen chúc giành nhau 1 con dao trong 1 bếp (Threading + GIL), bạn mở hẳn 4 gian bếp độc lập với 4 đầu bếp và 4 bộ dao riêng biệt!',
+    syntaxExample: `from concurrent.futures import ProcessPoolExecutor\n\ndef kiem_tra_nguyen_to(n: int) -> bool:\n    return n > 1 and all(n % i != 0 for i in range(2, int(n**0.5) + 1))\n\nif __name__ == "__main__":  # BẮT BUỘC có cổng này khi dùng đa tiến trình!\n    with ProcessPoolExecutor() as pool:\n        kq = list(pool.map(kiem_tra_nguyen_to, [10_000_019, 10_000_079]))`,
+    commonGotcha:
+      'Trên Windows và macOS (chế độ `spawn`), mọi đoạn code khởi tạo `ProcessPoolExecutor` BẮT BUỘC phải đặt bên trong `if __name__ == "__main__":`, nếu không các tiến trình con sẽ tự import đệ quy vô tận gây treo máy!',
+    jsEquivalent: 'child_process.fork() / Node.js cluster / Worker Threads',
+    relatedTerms: ['concept-gil', 'concept-io-vs-cpu-bound', 'dunder-name-main'],
+  },
+  {
+    id: 'concept-semaphore',
+    term: 'asyncio.Semaphore (Giới hạn Tải Đồng thời)',
+    aliases: ['Semaphore', 'asyncio.Semaphore'],
+    category: 'stdlib',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Bộ đếm "vé vào cổng" giới hạn tối đa bao nhiêu Coroutine được phép chạy đồng thời vào một khu vực nhạy cảm (ví dụ chỉ gọi tối đa 10 API cùng lúc để không bị khóa IP).',
+    detailedExplanation:
+      'Nếu bắn `asyncio.gather()` cho 5,000 URL cùng một lúc không kiểm soát, máy chủ đích sẽ trả lỗi `429 Too Many Requests` hoặc hệ điều hành cạn sạch cổng mạng (Socket exhaustion). Đặt `async with sem:` với `sem = asyncio.Semaphore(10)` đảm bảo luôn chỉ có tối đa 10 request đang bay trên mạng; chiếc thứ 11 tự động xếp hàng chờ 1 chiếc hoàn tất.',
+    analogy:
+      'Giống bãi đỗ xe tự động có 10 chỗ trống: xe thứ 11 tới cổng rào chắn sẽ đứng chờ, ngay khi có 1 xe đi ra thì rào chắn tự mở cho xe tiếp theo vào.',
+    syntaxExample: `import asyncio\n\nsem = asyncio.Semaphore(10)  # Tối đa 10 tác vụ chạy cùng lúc\n\nasync def goi_api_an_toan(url: str):\n    async with sem:\n        await asyncio.sleep(0.1)\n        return f"OK: {url}"`,
+    commonGotcha:
+      'Hãy khởi tạo `Semaphore` ở bên ngoài hàm tác vụ rồi truyền vào dùng chung — nếu tạo `asyncio.Semaphore(10)` bên trong hàm con thì mỗi tác vụ tự có 1 rào chắn riêng nên hoàn toàn mất tác dụng giới hạn!',
+    jsEquivalent: 'Thư viện p-limit / Bottleneck trong Node.js',
+    relatedTerms: ['concept-event-loop', 'concept-asyncio'],
+  },
+  {
+    id: 'eco-uvloop',
+    term: 'uvloop, Trio & AnyIO (Hệ sinh thái Async Mở rộng)',
+    aliases: ['uvloop', 'Trio', 'AnyIO', 'Tornado'],
+    category: 'ecosystem',
+    level: 'advanced',
+    stageId: 'stage-5',
+    shortSummary:
+      'Các thư viện nâng cấp và mở rộng lập trình bất đồng bộ ngoài `asyncio` chuẩn: `uvloop` tăng tốc Event Loop 2–4 lần trên Linux/macOS; `Trio` & `AnyIO` mang tới mô hình Structured Concurrency an toàn.',
+    detailedExplanation:
+      '`uvloop` được viết bằng Cython bọc trên thư viện C `libuv` (chính là lõi của Node.js), được `Uvicorn` / `FastAPI` tự động kích hoạt trên Linux/macOS để đạt hiệu năng mạng tiệm cận Go/Node. Trong khi đó, `Trio` thiết kế lại mô hình bất đồng bộ theo hướng "Nursery" (mọi tác vụ con đều có cha quản lý rõ ràng, không rò rỉ ngầm), và `AnyIO` là lớp trung gian giúp thư viện (như `httpx`, `Starlette`) chạy tốt trên cả `asyncio` lẫn `Trio`.',
+    analogy:
+      '`uvloop` giống việc thay động cơ đua F1 vào chiếc xe `asyncio` sẵn có mà không cần học lái lại; còn `Trio` giống chiếc xe thế hệ mới có hệ thống phanh an toàn tự động cho cả đoàn xe.',
+    syntaxExample: `# Cài đặt trên Linux / macOS: uv add uvloop\nimport asyncio\n# Với Python 3.12+, dùng asyncio.Runner(loop_factory=uvloop.new_event_loop)\n# (Khi chạy uvicorn main:app, Uvicorn đã tự động bật uvloop cho bạn!)`,
+    commonGotcha:
+      '`uvloop` hiện chỉ hỗ trợ Linux và macOS (không chạy trên Windows thuần — trên Windows hãy dùng WSL2 hoặc Event Loop chuẩn của `asyncio`).',
+    jsEquivalent: 'libuv trong Node.js / Effect-TS cho Structured Concurrency',
+    relatedTerms: ['concept-event-loop', 'concept-asyncio', 'eco-fastapi'],
+  },
+  {
+    id: 'concept-hashable',
+    term: 'Hashable (Khả băm — Điều kiện làm Key của Dict & Set)',
+    aliases: ['Hashable', 'hashable', 'unhashable'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-1',
+    shortSummary:
+      'Một đối tượng là `Hashable` nếu giá trị mã băm `hash(obj)` của nó không bao giờ thay đổi trong suốt vòng đời — điều kiện bắt buộc để làm chìa khóa (`key`) của `dict` hoặc phần tử của `set`.',
+    detailedExplanation:
+      '`dict` và `set` tìm kiếm siêu tốc `O(1)` bằng cách tính `hash(key)` để nhảy thẳng tới ngăn chứa (Bucket). Nếu `key` có thể bị sửa đổi nội dung sau khi cất (như `list` hay `dict`), mã băm sẽ bị lệch khiến dữ liệu thất lạc vĩnh viễn! Do đó: `str`, `int`, `float`, `bool`, `tuple` (chỉ chứa phần tử bất biến) là **Hashable**; còn `list`, `dict`, `set` là **Unhashable** (`TypeError: unhashable type: "list"`).',
+    analogy:
+      'Số căn cước công dân không đổi nên dùng để tra hồ sơ được ngay (`Hashable`); còn kiểu tóc thay đổi mỗi tháng (`list` khả biến) thì không thể dùng làm mã tra cứu cố định!',
+    syntaxExample: `# ✅ tuple bất biến dùng làm tọa độ key trong dict cực tốt:\nban_do = {(10, 20): "Kho báu"}\n\n# ❌ list khả biến sẽ báo lỗi TypeError: unhashable type: 'list'\n# ban_do[[10, 20]] = "Lỗi ngay!"`,
+    commonGotcha:
+      'Một `tuple` chứa `list` bên trong như `(1, [2, 3])` cũng KHÔNG hashable vì phần tử `[2, 3]` bên trong vẫn có thể bị thay đổi!',
+    jsEquivalent: 'Primitive keys trong Object/Set (khác Map của JS so sánh theo địa chỉ tham chiếu)',
+    relatedTerms: ['concept-mutable-immutable', 'type-dict', 'type-set', 'type-tuple'],
+  },
+  {
+    id: 'concept-bytecode-pvm',
+    term: 'Bytecode (.pyc) & CPython VM (PVM)',
+    aliases: ['Bytecode', 'PVM', '__pycache__'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary:
+      'Khi chạy tệp `.py`, Python tự động dịch mã nguồn sang tập lệnh trung gian gọn nhẹ gọi là `Bytecode` (lưu đệm trong `__pycache__/*.pyc`), sau đó Máy ảo Python (`PVM`) đọc và thực thi từng lệnh.',
+    detailedExplanation:
+      'Nhiều người mới tưởng Python đọc từng chữ văn bản đến đâu chạy đến đó. Thực tế Python đi qua 2 bước: (1) Kiểm tra toàn bộ cú pháp & thụt lề 4 dấu cách rồi dịch sang **Bytecode** (nếu sai thụt lề ở dòng cuối cùng thì chương trình báo `IndentationError` ngay lập tức mà chưa chạy dòng đầu tiên!); (2) Vòng lặp máy ảo **PVM** thực thi Bytecode trên vùng nhớ.',
+    analogy:
+      'Giống đầu bếp đọc bản công thức tiếng Việt (`.py`), tóm tắt sẵn thành phiếu ký hiệu nội bộ ngắn gọn (`Bytecode .pyc`) ghim lên kệ bếp để các lần nấu sau thao tác nhanh hơn.',
+    syntaxExample: `import dis\n\ndef cong(a, b):\n    return a + b\n\n# Xem trực tiếp các lệnh Bytecode bên dưới hàm Python:\ndis.dis(cong)`,
+    commonGotcha:
+      'Thư mục `__pycache__/` được Python sinh tự động để tăng tốc khởi động module — hãy luôn đưa `__pycache__/` vào `.gitignore`, không đẩy lên Git.',
+    jsEquivalent: 'V8 Ignition Bytecode trước khi chạy trong Node.js / Chrome',
+    relatedTerms: ['concept-cpython', 'mod-dis'],
+  },
+  {
+    id: 'concept-memoization',
+    term: 'Memoization (@functools.cache / lru_cache)',
+    aliases: ['Memoization', 'memoization', '@cache', 'lru_cache'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-3',
+    shortSummary:
+      'Kỹ thuật lưu lại kết quả của hàm ứng với từng bộ tham số đầu vào để nếu gặp lại bài toán con y hệt thì trả kết quả ngay lập tức `O(1)` thay vì đệ quy tính lại từ đầu.',
+    detailedExplanation:
+      'Trong đệ quy như Fibonacci hay Quy hoạch động (Dynamic Programming), `fib(35)` ngây thơ phải tính đi tính lại `fib(2)` hàng triệu lần (`O(2^n)`). Chỉ cần gắn `@functools.cache` lên đầu hàm, Python tự động dùng một `dict` ngầm nhớ mọi kết quả đã tính, hạ độ phức tạp xuống tuyến tính `O(n)` trong tích tắc!',
+    analogy:
+      'Giống làm toán có cuốn sổ nháp sạch sẽ bên cạnh: tính xong `17 × 29 = 493` thì ghi vào sổ, lát gặp lại phép tính đó chỉ việc liếc sổ chép đáp số trong 1 giây.',
+    syntaxExample: `from functools import cache\n\n@cache\ndef fib(n: int) -> int:\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)\n\nprint(fib(100))  # Chạy xong trong 0.0001 giây thay vì treo máy hàng năm!`,
+    commonGotcha:
+      'Vì `@cache` dùng `dict` lưu theo tham số đầu vào nên mọi tham số truyền vào hàm gắn `@cache` BẮT BUỘC phải `Hashable` (dùng `tuple` thay vì `list`)! Với web server chạy dài ngày, hãy dùng `@lru_cache(maxsize=1024)` để giới hạn RAM.',
+    jsEquivalent: 'lodash.memoize / React useMemo',
+    relatedTerms: ['concept-decorator', 'concept-hashable', 'mod-functools'],
+  },
 ];

@@ -1,112 +1,116 @@
-## 1. Lập kế hoạch Cuốn chiếu & Luật bất khả xâm phạm của Velocity
+## 1. Giải mã bằng ví dụ phần mềm: Vì sao giới hạn số việc làm dở (`WIP Limit`) lại giúp giao hàng nhanh hơn?
 
-Dự án thích ứng **không phải là không lập kế hoạch**, mà là lập kế hoạch liên tục ở nhiều tầng thông qua ==Progressive Elaboration== (làm rõ dần khi có thêm thông tin) và ==Rolling Wave Planning== [!badge:amber:PMBOK 8] (lập chi tiết cho chặng gần trước mắt, giữ mức khái quát cho chặng xa).
+Hãy tưởng tượng một lập trình viên Backend tên Nam cùng lúc nhận **5 thẻ Jira song song** (`WIP = 5` — *Work in Progress*, tức công việc đang làm dở). Sáng Nam đang viết dở API thanh toán thì QA gọi hỏi bug đơn hàng, trưa BA kéo vào họp làm rõ giỏ hàng, chiều lại checkout sang nhánh khác sửa hotfix. Kết quả là Nam mất tới 40% năng lượng não bộ chỉ để **chuyển đổi ngữ cảnh (*Context Switching*)**, cột `QA Testing` ùn ứ 15 thẻ nằm chờ kiểm thử, và trung bình 1 tính năng nhỏ phải ngâm 12 ngày mới tới tay người dùng!
 
-Để ước lượng tương đối mà không sa lầy vào tranh cãi giờ công tuyệt đối, nhóm chuyên môn dùng **Story Points** (kết hợp **Độ phức tạp · Khối lượng · Độ bất định**) thông qua kỹ thuật đồng thuận như **Planning Poker**. Từ đó hình thành **Velocity** — tổng Story Points của các hạng mục đạt chuẩn **Definition of Done** trong một Iteration.
+**Kanban** giải quyết triệt để căn bệnh ôm đồm đó bằng cơ chế **Luồng kéo (*Pull System*)** và vũ khí cốt lõi là ==WIP Limit (Giới hạn số lượng thẻ tối đa được phép nằm đồng thời ở mỗi cột)==. Quy luật toán học đứng sau nó chính là **Định luật Little (*Little's Law*)**:
+
+- **Công thức trực quan:** `Cycle Time (Thời gian hoàn tất 1 việc) = WIP (Số việc đang ôm dở) / Throughput (Tốc độ đầu ra trung bình)`.
+- **Hệ quả thực tế:** Khi năng lực của nhóm không đổi, ==muốn giảm một nửa thời gian hoàn thành từng tính năng (Cycle Time), cách nhanh nhất không phải là thức đêm làm thêm giờ mà là cắt giảm một nửa số việc đang bày dở dang (WIP)!==
+- **Phản xạ khi chạm trần WIP:** Giả sử cột `Testing` đặt trần `WIP Limit = 3` và hiện đã có đủ `3/3` thẻ. Lập trình viên vừa code xong thẻ thứ 4 **tuyệt đối không được nhét tràn sang cột Testing**, cũng **không kéo thêm thẻ mới về code chất đống**, mà cả đội phải xắn tay phụ gỡ nghẽn khâu kiểm thử cho thẻ cũ thông thoát trước (*Swarming — "Stop starting, start finishing!"*).
+
+## 2. Lập kế hoạch cuốn chiếu, Story Points & Luật cấm tối kỵ của Velocity
+
+Trong môi trường biến động, đội dự án lập kế hoạch qua hai kỹ thuật linh hoạt của [!badge:amber:PMBOK 8]: **Progressive Elaboration** (*làm rõ dần chi tiết khi có thêm thông tin thực tế*) và **Rolling Wave Planning** (*lập kế hoạch cuốn chiếu — lên chi tiết cho 1–2 chặng gần trước mắt, còn các quý xa chỉ phác thảo khung lớn*).
+
+Khi ước lượng công việc Agile, thay vì đoán mò số giờ tuyệt đối dễ sai lệch, các Developers dùng đơn vị tương đối gọi là **Story Points** (tổng hợp 3 yếu tố: **Độ phức tạp logic · Khối lượng việc · Độ rủi ro/mơ hồ**) bằng trò chơi đồng thuận **Planning Poker** hoặc phân nhóm nhanh **Affinity Estimating**. Tổng số Story Points của các thẻ **đạt chuẩn 100% DoD** trong 1 Sprint gọi là **Velocity** (*tốc độ trung bình của nhóm*).
 
 ```visual
 kind: compare
-title: "Sử dụng Story Points & Velocity trong phòng thi PMP"
-subtitle: "Ranh giới sinh tử giữa bẫy KPI quản lý vi mô và tư duy trao quyền chuẩn PMI"
+title: "Sử dụng Story Points & Velocity: Bẫy Quản lý Vi mô vs Chuẩn PMI"
+subtitle: "Velocity là thước đo dự báo dung lượng nội bộ — KHÔNG PHẢI thước đo thi đua!"
 left:
-  badge: "BẪY ĐỜI THỰC (SAI)"
-  title: "Biến Velocity thành cây gậy KPI"
+  badge: "BẪY ĐỜI THỰC (LOẠI NGAY)"
+  title: "Biến Velocity thành cây gậy chấm KPI"
   tone: "rose"
   bullets:
-    - "So sánh Nhóm A (50 điểm) giỏi hơn Nhóm B (30 điểm) rồi thưởng phạt theo điểm."
-    - "PM hoặc Tech Lead ước lượng sẵn Story Points rồi giao chỉ tiêu tăng 15% Velocity mỗi kỳ."
-    - "Cộng cả phần trăm dở dang (80% xong) của User Story chưa đạt DoD vào Velocity cuối Sprint."
+    - "So sánh Nhóm A đạt 60 điểm là chăm chỉ hơn Nhóm B đạt 25 điểm rồi xét thưởng phạt."
+    - "PM tự ước lượng điểm hoặc ép nhóm phải cam kết tăng Velocity thêm 20% ở Sprint sau."
+    - "Thẻ làm xong 90% code nhưng chưa test xong vẫn được tính tạm 90% điểm vào Velocity kỳ này."
 right:
-  badge: "PHẢN XẠ CHUẨN PMI (ĐÚNG)"
-  title: "Velocity là công cụ dự báo nội bộ nhóm"
+  badge: "PHẢN XẠ CHUẨN PMI (CHỌN)"
+  title: "Dùng Velocity để dự báo lịch phát hành bền vững"
   tone: "emerald"
   bullets:
-    - "Mỗi nhóm có hệ quy chiếu điểm riêng: tuyệt đối KHÔNG dùng Velocity để so sánh hai nhóm."
-    - "Chỉ những Developers trực tiếp làm việc mới ước lượng; Velocity tự ổn định để dự báo Release."
-    - "Nguyên tắc nhị phân 0% hoặc 100%: chưa đạt trọn vẹn Definition of Done thì tính 0 điểm ở Sprint đó."
+    - "Mỗi nhóm có thang quy chiếu điểm riêng: CẤM TUYỆT ĐỐI so sánh Velocity giữa hai nhóm khác nhau!"
+    - "Chỉ những người trực tiếp làm việc (Developers) mới có quyền ước lượng Story Points."
+    - "Luật nhị phân 0% hoặc 100%: chưa đạt trọn vẹn DoD thì kỳ đó tính 0 điểm, dời sang Sprint kế tiếp."
 ```
 
-> [!WARNING] Bẫy đề thi cực độc về "Tăng Velocity"
-> Nếu Sponsor đòi tăng Velocity gấp đôi cho Sprint tới, đáp án đúng **không bao giờ** là ép nhóm làm thêm giờ hay thổi phồng điểm ước lượng! Hãy chọn ==tháo gỡ Impediments, giảm nợ kỹ thuật hoặc cắt nhỏ phụ thuộc== để dòng chảy giá trị thông suốt tự nhiên.
+> [!WARNING]
+> **Bẫy đề thi về ép tăng Velocity:** Nếu lãnh đạo hỏi làm sao để tăng tốc độ giao giá trị của nhóm Agile, hãy loại ngay đáp án *"tăng giờ làm thêm"* hoặc *"giao chỉ tiêu Velocity cao hơn"*. Đáp án chuẩn luôn là ==tháo gỡ rào cản hệ thống (Impediments), tự động hoá CI/CD để giảm nợ kỹ thuật và hạn chế đa nhiệm==!
 
-## 2. Luồng kéo Kanban, Giới hạn WIP & Tín hiệu Biểu đồ Thích ứng
+## 3. Đọc vị 3 biểu đồ theo dõi thích ứng trong 10 giây
 
-Khác với Scrum đóng khung theo Timebox cố định, **Kanban** vận hành theo **luồng kéo liên tục (Pull System)** [!badge:sky:PMA Bridge]. Vũ khí mạnh nhất của Kanban là ==WIP Limit (Work in Progress Limit)== — giới hạn số lượng hạng mục tối đa được phép nằm đồng thời ở mỗi trạng thái.
-
-Theo **Định luật Little (Little's Law)**, khi giữ ổn định năng lực xử lý, ==càng hạ thấp WIP thì Cycle Time (thời gian hoàn tất 1 việc) càng giảm==, giảm lãng phí chuyển ngữ cảnh (*context switching*) và làm **lộ ngay cổ chai (bottleneck)** để cả nhóm hợp sức giải cứu (*swarming*).
+Đề thi PMP thường mô tả hình dáng đường biểu đồ đang biến động rồi hỏi PM nhận ra vấn đề gì:
 
 ```visual
 kind: groups
-title: "Giải mã 3 Biểu đồ Theo dõi Thích ứng hay gặp nhất trong đề thi"
-subtitle: "Nhìn đúng triệu chứng trên biểu đồ để chọn hành động tiếp theo chính xác"
+title: "Giải mã 3 Biểu đồ Thích ứng Kinh điển (Information Radiators)"
+subtitle: "Nhìn đúng hình dáng đường cong để chẩn đoán trúng bệnh của dòng chảy công việc"
 columns: 3
 items:
   - num: 1
     icon: "trend"
     title: "Burndown Chart"
-    badge: "CÒN BAO NHIÊU VIỆC"
+    badge: "VIỆC CÒN LẠI GIẢM VỀ 0"
     tone: "amber"
-    desc: "Theo dõi khối lượng công việc còn lại giảm dần về 0 theo thời gian Timebox."
+    desc: "Đo khối lượng việc còn tồn đọng theo từng ngày trong Sprint."
     bullets:
-      - "Đường thực tế đi ngang nhiều ngày: việc quá to chưa chẻ nhỏ hoặc đang vướng Impediment."
-      - "Nhược điểm: không tách bạch được 'nhóm làm chậm' với 'PO vừa thêm phạm vi mới'."
+      - "Đường thực tế đi ngang mãi không giảm: thẻ việc chẻ còn quá to hoặc nhóm đang kẹt Impediment."
+      - "Điểm mù: không phân biệt được nhóm làm chậm hay do PO vừa chèn thêm việc mới."
   - num: 2
     icon: "layers"
     title: "Burnup Chart"
-    badge: "TÁCH RÕ PHẠM VI"
+    badge: "TÁCH BẠCH PHẠM VI TỔNG"
     tone: "emerald"
-    desc: "Có 2 đường riêng biệt: Đường tổng phạm vi (Total Scope) ở trên và Đường việc đã xong ở dưới."
+    desc: "Vẽ tách riêng 2 đường: Đường Tổng phạm vi ở trên và Đường Việc đã hoàn tất ở dưới."
     bullets:
-      - "Thấy rõ ngay lúc phạm vi Release bị mở rộng hay thu hẹp mà không làm méo tốc độ thực của nhóm."
-      - "Rất hợp để báo cáo tiến độ Release cho Sponsor và khách hàng."
+      - "Nhìn thấy ngay lập tức thời điểm phạm vi Release bị cộng thêm mà không phủ nhận nỗ lực của nhóm."
+      - "Công cụ minh bạch nhất để báo cáo dự báo ngày phát hành với Sponsor."
   - num: 3
     icon: "eye"
     title: "Cumulative Flow (CFD)"
-    badge: "BẮT BỆNH CỔ CHAI"
+    badge: "SOI CỔ CHAI KANBAN"
     tone: "cyan"
-    desc: "Các dải màu xếp chồng thể hiện số lượng thẻ ở từng cột Kanban theo thời gian."
+    desc: "Các dải màu xếp chồng biểu diễn lượng thẻ tích tụ ở từng cột theo thời gian."
     bullets:
-      - "Bề ngang dải màu = Cycle Time; bề dọc = WIP hiện tại ở bước đó."
-      - "Một dải màu phình to bất thường (ví dụ cột QA Testing): cổ chai đang nghẽn ngay tại bước đó!"
+      - "Chiều cao dải màu = WIP hiện tại; bề ngang dải màu = Cycle Time trung bình."
+      - "Một dải màu phình rộng bất thường báo hiệu nút cổ chai đang tắc nghẽn ngay tại công đoạn đó!"
 ```
 
-- [!] **Khi cột Testing chạm trần WIP Limit**: Developers **không được** tiếp tục code thẻ mới đẩy sang chồng chất trước cửa Testing; phản xạ chuẩn là ==tạm dừng kéo việc mới và hỗ trợ giải phóng hàng đợi đang nghẽn== (*"Stop starting, start finishing"*).
+## 4. Tình huống thực chiến: Điều phối dự án Hybrid giữa phần cứng và phần mềm
 
-## 3. Điều phối Dự án Hybrid & Lộ trình Chuyển đổi Tổ chức sang Agile
-
-Hơn một nửa câu hỏi tình huống PMP hiện đại đặt bạn vào bối cảnh **Hybrid** [!badge:violet:ECO 07/2026] — nơi tổ chức kết hợp có chủ đích sự chặt chẽ của **Predictive** với tính linh hoạt của **Agile** tùy theo đặc thù từng hợp phần:
+Giả sử bạn điều hành dự án Kiosk Ngân hàng Tự động (**Hybrid**): đội sản xuất vỏ máy & đầu đọc thẻ chạy theo lịch **Predictive** cố định 6 tháng, trong khi đội viết phần mềm nhận diện khuôn mặt trên Kiosk chạy theo **Agile Sprint 2 tuần**. Nếu hai đội mạnh ai nấy chạy, ngày ghép máy chắc chắn vỡ trận!
 
 ```visual
 kind: flow
-title: "Chiến lược Chuyển đổi từ Waterfall sang Agile / Hybrid an toàn"
-subtitle: "Áp dụng khi tổ chức truyền thống có tâm lý ngại thay đổi hoặc dự án vừa có phần cứng vừa có phần mềm"
+title: "4 Bước Đồng bộ Dự án Hybrid & Chuyển đổi Tổ chức sang Thích ứng"
+subtitle: "PM đóng vai trò 'Bộ phiên dịch hai chiều' nối nhịp giữa kỷ luật mốc lớn và linh hoạt Sprint"
 steps:
   - icon: "search"
     badge: "BƯỚC 1"
-    title: "Đánh giá Độ sẵn sàng"
-    desc: "Phân tích văn hoá tổ chức (EEF), hợp đồng pháp lý và tách rõ hợp phần ổn định với hợp phần biến động."
+    title: "Phân tách ranh giới & Bản đồ phụ thuộc"
+    desc: "Xác định rõ giao diện tích hợp (Integration Milestones) và lập Dependency Map giữa nhánh Predictive và Agile."
     tone: "sky"
-    edge: "Thiết kế Tailoring"
+    edge: "Khớp lịch chung"
   - icon: "git-branch"
     badge: "BƯỚC 2"
-    title: "Dựng Khung Hybrid Cầu nối"
-    desc: "Giữ mốc Governance/Phần cứng theo Predictive; chạy phần mềm/UI theo Sprint ngắn và đồng bộ qua Milestone chung."
+    title: "Đồng bộ nhịp xuyên đội nhóm"
+    desc: "Sắp xếp Product Backlog của đội phần mềm bám sát các mốc bàn giao phần cứng qua họp đồng bộ định kỳ."
     tone: "amber"
-    edge: "Thí điểm & Huấn luyện"
+    edge: "Báo cáo đa tầng"
   - icon: "users"
     badge: "BƯỚC 3"
-    title: "Đào tạo & Thí điểm (Pilot)"
-    desc: "Huấn luyện Agile Mindset cho cả nhóm lẫn lãnh đạo; áp dụng dần từng thực hành (Daily, Retro, Kanban) trên dự án Pilot."
+    title: "Phiên dịch quản trị cho Lãnh đạo"
+    desc: "Cung cấp báo cáo Milestone/Ngân sách tổng cho Ban giám đốc, đồng thời che chắn không gian tự chủ cho các Sprint."
     tone: "cyan"
-    edge: "Mở rộng bền vững"
+    edge: "Lan toả bền vững"
   - icon: "award"
     badge: "BƯỚC 4"
-    title: "Chuẩn hoá & Nhân rộng"
-    desc: "Đúc kết Lessons Learned vào OPA, điều chỉnh quy trình PMO sang định hướng trao quyền và tập trung giá trị."
+    title: "Cải tiến & Đúc kết tài sản quy trình"
+    desc: "Thu hoạch bài học thực tế từ các đợt tích hợp để tinh chỉnh khung Hybrid của doanh nghiệp."
     tone: "emerald"
 ```
 
-> [!REMEMBER] Ba quy tắc vàng khi gặp câu hỏi Hybrid trong phòng thi
-> - [x] **Đồng bộ giao diện tích hợp**: Khi đội phần cứng (Predictive) phối hợp đội phần mềm (Agile), PM phải thiết lập ==lịch tích hợp chung, bản đồ phụ thuộc (Dependency Map) và họp đồng bộ định kỳ (như Scrum of Scrums)==.
-> - [x] **Không cực đoan hoá**: Nếu lãnh đạo cấp cao vẫn yêu cầu báo cáo mốc ngân sách quý cố định, PM đóng vai **bộ chuyển đổi (translator)** — giữ báo cáo Milestone cấp cao cho lãnh đạo trong khi vẫn bảo vệ không gian Sprint linh hoạt cho đội phát triển.
-> - [>] **Chuyển đổi từng bước**: Luôn loại bỏ các đáp án bắt tổ chức truyền thống *"chuyển 100% sang thuần Agile ngay lập tức"* mà không có bước đào tạo và chuyển tiếp Hybrid.
+> [!TIP]
+> **Câu thần chú gỡ rối Kanban & Hybrid:** Thấy hàng đợi ùn ứ ở một khâu → ==siết trần WIP Limit và điều phối nhóm hỗ trợ gỡ nghẽn tại chỗ==; thấy hai nhánh Waterfall và Agile lệch pha → ==thiết lập cột mốc tích hợp chung (Shared Integration Milestones) và họp đồng bộ liên nhóm==!

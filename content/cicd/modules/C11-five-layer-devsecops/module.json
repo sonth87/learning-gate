@@ -3,7 +3,7 @@
   "slug": "C11-five-layer-devsecops",
   "level": 3,
   "order": 11,
-  "title": "Phòng tuyến DevSecOps 5 Lớp: Quét Secret, SAST, SCA, Cổng chặn CVE Container, SBOM & Đóng gói Không Đặc quyền",
+  "title": "DevSecOps 5 Lớp: Secret Scan, SAST, SCA, Trivy, SBOM & Rootless Build (Kaniko)",
   "summary": "Thiết lập phễu bảo mật Shift-Left 5 lớp (Gitleaks, Semgrep, npm audit, Trivy image CRITICAL, CycloneDX SBOM) và thay thế privileged Docker-in-Docker bằng Kaniko rootless.",
   "tags": [
     "devsecops",
@@ -36,7 +36,7 @@
     {
       "path": "security/five-layer-devsecops.yml",
       "kind": "good",
-      "note": "Đường ống DevSecOps 5 lớp hoàn chỉnh từ quét lịch sử khoá rò rỉ tới xuất bản hồ sơ nguyên liệu phần mềm SBOM chuẩn CycloneDX.",
+      "note": "Pipeline DevSecOps 5 lớp hoàn chỉnh từ quét lịch sử khoá rò rỉ tới xuất bản hồ sơ nguyên liệu phần mềm SBOM chuẩn CycloneDX.",
       "task": "Tại sao bước checkout cho công cụ Gitleaks lại bắt buộc phải có tham số fetch-depth: 0 thay vì để mặc định?",
       "answer": "Mặc định actions/checkout@v4 chỉ tải commit cuối cùng (fetch-depth: 1). Nếu lập trình viên lỡ commit mật khẩu ở commit trước rồi xoá ở commit sau trong cùng PR, mật khẩu vẫn nằm nguyên trong lịch sử nhánh — chỉ fetch-depth: 0 mới giúp Gitleaks rà soát toàn bộ lịch sử commit!"
     },

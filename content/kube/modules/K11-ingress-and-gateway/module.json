@@ -3,8 +3,8 @@
   "slug": "K11-ingress-and-gateway",
   "level": 3,
   "order": 11,
-  "title": "Đưa ứng dụng ra Internet với Ingress, TLS HTTPS & Gateway API",
-  "summary": "Định tuyến HTTP/HTTPS tầng 7 tiết kiệm chi phí bằng networking.k8s.io/v1 Ingress, cấu hình chứng chỉ TLS và cập nhật góc nhìn Gateway API 2026.",
+  "title": "Định tuyến HTTP/HTTPS với Ingress, TLS & Kubernetes Gateway API",
+  "summary": "Định tuyến HTTP/HTTPS tầng 7 tiết kiệm Cloud LB bằng Ingress, giải mã TLS và nắm bắt bước ngoặt 2026 chuyển từ Ingress NGINX sang Gateway API (Envoy, Cilium, Traefik).",
   "tags": [
     "ingress",
     "tls",

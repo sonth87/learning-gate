@@ -31,12 +31,12 @@ interface NavState {
 }
 
 export const useWpNav = create<NavState>((set, get) => ({
-  view: { name: 'home' },
+  view: { name: 'workbench' },
   history: [],
   go: (view) => set({ view, history: [...get().history.slice(-30), get().view] }),
   back: () => {
     const h = get().history;
-    if (!h.length) return set({ view: { name: 'home' } });
+    if (!h.length) return set({ view: { name: 'workbench' } });
     set({ view: h[h.length - 1], history: h.slice(0, -1) });
   },
 }));

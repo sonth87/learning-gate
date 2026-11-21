@@ -3,7 +3,7 @@
   "slug": "C01-six-pipeline-entities",
   "level": 0,
   "order": 1,
-  "title": "Giải phẫu 6 thực thể đường ống: Trigger, Workflow, Job, Step & Ephemeral Runner",
+  "title": "Kiến trúc GitHub Actions: Trigger, Workflow, Job, Step & Ephemeral Runner",
   "summary": "Nắm vững cấu trúc phân cấp Trigger -> Workflow -> Job -> Step -> Action, hiểu bản chất máy ảo dùng một lần (Ephemeral Runner) và cấu hình working-directory cho repo nhiều thư mục.",
   "tags": [
     "pipeline-anatomy",

@@ -3,8 +3,8 @@
   "slug": "R10-stampede-penetration-avalanche",
   "level": 3,
   "order": 1,
-  "title": "Tam đại Thảm hoạ Caching: Chống Stampede, Penetration & Avalanche",
-  "summary": "Nhận diện và dựng lá chắn thực chiến trước 3 kịch bản đánh sập Database kinh điển ở quy mô triệu request: Đàn trâu điên (Stampede), Xuyên thủng (Penetration) và Tuyết lở đồng loạt (Avalanche).",
+  "title": "Xử lý 3 Sự cố Caching Điển hình: Cache Stampede, Penetration & Avalanche",
+  "summary": "Nhận diện và dựng lá chắn thực chiến trước 3 kịch bản đánh sập Database kinh điển ở quy mô triệu request: Quá tải truy vấn đồng thời (Stampede), Xuyên thủng (Penetration) và Tuyết lở đồng loạt (Avalanche).",
   "tags": [
     "cache-stampede",
     "cache-penetration",
@@ -26,12 +26,12 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Cơn bão Cache Stampede",
+      "label": "Xử lý Sự cố: Cơn bão Cache Stampede",
       "kind": "incident",
       "targetId": "inc-cache-stampede"
     },
     {
-      "label": "War Room: Tấn công Cache Penetration",
+      "label": "Xử lý Sự cố: Tấn công Cache Penetration",
       "kind": "incident",
       "targetId": "inc-cache-penetration"
     }

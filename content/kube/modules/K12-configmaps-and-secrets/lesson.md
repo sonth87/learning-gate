@@ -1,16 +1,19 @@
 # Quản lý Cấu hình & Bí mật trong K8s: ConfigMap, Secret & Bảo mật thực chiến
 
-Khi phát triển ứng dụng Node.js trên máy cá nhân, bạn thường tạo tệp `.env` hoặc `config/production.json`. Nhưng khi vận hành 30 Pod trên Kubernetes chạy xuyên suốt Dev, Staging và Production:
+Khi phát triển ứng dụng Python (`FastAPI`) hay Node.js trên máy cá nhân, bạn thường để cấu hình trong tệp `.env`. Nhưng khi vận hành 30 Pod trên Kubernetes chạy xuyên suốt Dev, Staging và Production:
 
 - [!] Bạn **không thể** đóng cứng chuỗi kết nối Database hay địa chỉ CORS vào bên trong Container Image bằng `ENV` của Dockerfile (vì mỗi môi trường mỗi khác!).
-- [!] Bạn càng **tuyệt đối không được** nhét mật khẩu cơ sở dữ liệu hay khoá ký JWT vào Dockerfile hay kho Git công khai.
+- [!] Bạn càng **tuyệt đối không được** nhét mật khẩu cơ sở dữ liệu hay khóa ký JWT/OpenAI API Key vào Dockerfile hay kho Git!
 
-Theo triết lý **12-Factor App**, Kubernetes tách bạch cấu hình thành cặp bài trùng: `ConfigMap` cho các thông số công khai thông thường và `Secret` cho các dữ liệu nhạy cảm.
+> [!NOTE] Mô hình tư duy: "Bảng thông báo sảnh chung" (`ConfigMap`) vs "Hồ sơ niêm phong nhạy cảm" (`Secret`)
+> Theo triết lý **12-Factor App**, Kubernetes tách bạch cấu hình thành hai ngăn rõ ràng để dễ phân quyền ai được phép đọc:
+> - **`ConfigMap`** giống như **bảng thông báo treo ở sảnh văn phòng**: chứa các tham số vận hành không nhạy cảm (`LOG_LEVEL=info`, `PORT=8000`, tệp `nginx.conf`) — ai trong nhóm xem cũng được và lưu thẳng lên Git thoải mái.
+> - **`Secret`** dành riêng cho **mật khẩu DB, khóa riêng TLS, API Key**: được Kubernetes gắn lên bộ nhớ RAM tạm (`tmpfs` không ghi xuống ổ đĩa Worker Node) và khóa chặt quyền đọc bằng RBAC!
 
 ```visual
 kind: groups
 title: Phân Tách Cấu Hình Chuẩn 12-Factor App — ConfigMap vs Secret
-subtitle: Tách riêng giúp áp quyền RBAC nghiêm ngặt và bật mã hoá phần cứng KMS riêng cho dữ liệu nhạy cảm
+subtitle: Tách riêng giúp áp quyền RBAC nghiêm ngặt và bật mã hóa phần cứng KMS riêng cho dữ liệu nhạy cảm
 columns: 2
 items:
   - num: 1
@@ -19,7 +22,7 @@ items:
     badge: Cấu hình KHÔNG nhạy cảm
     tone: sky
     bullets:
-      - "Lưu cặp khoá-giá trị văn bản rõ trong mục **`data:`**"
+      - "Lưu cặp khóa-giá trị văn bản rõ trong mục **`data:`**"
       - "Phù hợp cho biến đơn lẻ (`LOG_LEVEL`, `CORS_ORIGIN`, `PORT`) hoặc nguyên tệp cấu hình nhiều dòng (`nginx.conf`, `feature-flags.json`)"
     footer: Có thể lưu thẳng tệp ConfigMap YAML trên kho Git dự án
   - num: 2
@@ -29,12 +32,12 @@ items:
     tone: amber
     bullets:
       - "Mặc định dùng `type: Opaque` (ngoài ra có `kubernetes.io/tls`, `kubernetes.io/dockerconfigjson`)"
-      - "Dành riêng cho mật khẩu DB, API Key, khoá ký JWT, chứng chỉ TLS"
+      - "Dành riêng cho mật khẩu DB, API Key, khóa ký JWT, chứng chỉ TLS"
       - "Cho phép ghi chuỗi đọc được qua **`stringData:`** — API Server tự chuyển sang Base64 lưu vào `data:`"
     footer: TUYỆT ĐỐI KHÔNG commit Secret dạng văn bản thường/Base64 lên Git!
 ```
 
-## 1. `ConfigMap`: Tách cấu hình không nhạy cảm ra khỏi mã nguồn
+## 1. `ConfigMap`: Nạp biến môi trường (`envFrom`) vs Gắn tệp (`volumeMounts`)
 
 ```visual
 kind: illustration
@@ -42,15 +45,15 @@ diagram: "kube:k12"
 alt: "Tách cấu hình 12-Factor bằng ConfigMap và Secret nạp vào Pod qua biến môi trường envFrom so với gắn ổ đĩa chỉ đọc tmpfs"
 title: "Giải Phẫu Nạp Cấu Hình & Bí Mật: envFrom Tĩnh vs Ổ Đĩa Tmpfs Tự Đồng Bộ"
 subtitle: "Giữ Container Image bất biến xuyên suốt Dev, Staging và Production bằng cách tiêm cấu hình động từ bên ngoài"
-caption: "Sự khác biệt cốt lõi giữa nạp vào process.env lúc khởi tạo (không tự cập nhật nóng) và gắn thành tệp chỉ đọc trên RAM tmpfs (tự đồng bộ sau ~60s)"
+caption: "Sự khác biệt cốt lõi giữa nạp vào biến môi trường lúc khởi tạo (không tự cập nhật nóng) và gắn thành tệp chỉ đọc trên RAM tmpfs (tự đồng bộ sau ~60s)"
 callouts:
   - num: 1
     label: "Tách bạch ConfigMap công khai & Secret nhạy cảm"
-    desc: "ConfigMap lưu tham số rõ ràng; Secret lưu mật khẩu/chứng chỉ và cần bật mã hoá KMS hoặc External Secrets thay vì chỉ tin vào Base64."
+    desc: "ConfigMap lưu tham số rõ ràng; Secret lưu mật khẩu/chứng chỉ và cần bật mã hóa KMS hoặc External Secrets thay vì chỉ tin vào Base64."
     tone: sky
   - num: 2
     label: "Cơ chế env / envFrom — Đóng băng lúc khởi chạy"
-    desc: "Biến nạp vào process.env không tự đổi khi sửa ConfigMap trên cụm; bắt buộc chạy kubectl rollout restart để nhận giá trị mới."
+    desc: "Biến nạp vào os.environ / process.env không tự đổi khi sửa ConfigMap trên cụm; bắt buộc chạy kubectl rollout restart để nhận giá trị mới."
     tone: cyan
   - num: 3
     label: "Gắn Volume chỉ đọc trên tmpfs — Tự động đồng bộ"
@@ -68,14 +71,14 @@ data:
   CORS_ORIGIN: "https://shop.example.com"
 ```
 
-Có hai cách phổ biến nhất để nạp `ConfigMap` vào bên trong Pod — hãy chú ý sự khác biệt lớn về khả năng **cập nhật nóng (hot-reload)** giữa chúng:
+Có hai cách phổ biến nhất để đưa `ConfigMap` vào bên trong Pod — hãy chú ý sự khác biệt lớn về khả năng **cập nhật nóng (`hot-reload`)** giữa chúng:
 
 ```visual
 kind: compare
 title: Hai Cơ Chế Nạp ConfigMap Vào Pod — Biến Môi Trường vs Gắn Tệp Volume
 subtitle: Nắm rõ hành vi cập nhật khi bạn sửa ConfigMap trên cụm đang chạy!
 left:
-  badge: "CÁCH 1 · Nạp vào process.env (envFrom)"
+  badge: "CÁCH 1 · Nạp biến môi trường (envFrom)"
   title: Bất biến suốt vòng đời tiến trình
   tone: sky
   code: |
@@ -87,8 +90,8 @@ left:
               name: api-config
   lang: yaml
   bullets:
-    - "==`envFrom`== nạp trọn gói **tất cả** các khoá trong `api-config` thành `process.env.LOG_LEVEL`, `process.env.CORS_ORIGIN` (hoặc nạp lẻ bằng `configMapKeyRef`)"
-    - "**KHÔNG tự động đổi** khi bạn sửa `ConfigMap`! Biến môi trường OS chỉ nạp 1 lần lúc khởi tạo container"
+    - "==`envFrom`== nạp trọn gói **tất cả** các khóa trong `api-config` thành biến môi trường `LOG_LEVEL`, `CORS_ORIGIN` cho cả Python lẫn Node.js"
+    - "**KHÔNG tự động đổi** khi bạn sửa `ConfigMap`! Biến môi trường của Linux chỉ nạp đúng 1 lần lúc khởi tạo tiến trình"
     - "Muốn nhận giá trị mới, cần chạy **`kubectl rollout restart deployment/...`**"
 right:
   badge: "CÁCH 2 · Gắn thành tệp (volumeMounts)"
@@ -108,16 +111,16 @@ right:
           name: nginx-conf
   lang: yaml
   bullets:
-    - "Biến mỗi khoá trong `ConfigMap` thành một tệp văn bản trong thư mục `/etc/nginx/conf.d`"
-    - "Kubelet tự đồng bộ lại nội dung tệp sau khoảng ~1 phút khi `ConfigMap` thay đổi (trừ khi mount lẻ `subPath`)"
-    - "Luôn bật **`readOnly: true`** để ngăn ứng dụng vô tình (hoặc bị tấn công) ghi đè tệp cấu hình!"
+    - "Biến mỗi khóa trong `ConfigMap` thành một tệp văn bản trong thư mục `/etc/nginx/conf.d`"
+    - "Kubelet tự đồng bộ lại nội dung tệp sau khoảng ~60 giây khi `ConfigMap` thay đổi (lưu ý: nếu dùng `subPath` sẽ không tự đồng bộ!)"
+    - "Luôn bật **`readOnly: true`** để ngăn ứng dụng vô tình ghi đè tệp cấu hình!"
 ```
 
 ## 2. `Secret`: Hiểu đúng sự thật về `Base64` để không sập bẫy ảo tưởng an toàn!
 
-Khi tạo Manifest `Secret`, trường tiện lợi ==`stringData:`== cho phép bạn truyền chuỗi văn bản thường (write-only), và Kubernetes API Server sẽ tự động chuyển sang chuỗi `Base64` cất vào `data:`:
+Khi tạo Manifest `Secret`, trường tiện lợi ==`stringData:`== cho phép bạn viết văn bản thường dễ đọc, và Kubernetes API Server sẽ tự động chuyển sang chuỗi `Base64` cất vào `data:`:
 
-```yaml Khai báo Secret với stringData & nạp lẻ từng khoá qua secretKeyRef
+```yaml Khai báo Secret với stringData & nạp lẻ từng khóa qua secretKeyRef
 apiVersion: v1
 kind: Secret
 metadata:
@@ -135,8 +138,8 @@ stringData:
 #           key: DB_PASSWORD
 ```
 
-> [!WARNING] Cảnh báo bảo mật số 1 năm 2026: `Base64` KHÔNG PHẢI là Mã hoá (Encryption)!
-> Rất nhiều người thấy chuỗi `cGxhY2Vob2xkZXI=` trong `data:` của `Secret` liền yên tâm commit thẳng tệp `secret.yaml` lên GitHub! Đó là một sai lầm chết người: ==Base64 chỉ là phép biểu diễn ký tự (encoding)==, bất kỳ ai cũng giải mã về văn bản gốc trong 0.5 giây bằng `echo "..." | base64 -d` hoặc `Buffer.from(..., 'base64').toString()`!
+> [!WARNING] Cảnh báo bảo mật số 1: `Base64` KHÔNG PHẢI là Mã hóa mật mã học (`Encryption`)!
+> Rất nhiều người thấy chuỗi nhìn loằng ngoằng `cGxhY2Vob2xkZXI=` trong `data:` của `Secret` liền yên tâm đẩy thẳng tệp `secret.yaml` lên GitHub! Đó là một sai lầm nghiêm trọng: ==Base64 chỉ là phép đổi bảng chữ cái (`encoding`) giống như đánh vần mã Morse==, bất kỳ ai cũng dịch ngược về mật khẩu gốc trong 0.5 giây bằng `echo "..." | base64 -d` hoặc `base64.b64decode(...)`!
 
 ```visual
 kind: groups
@@ -149,25 +152,25 @@ items:
     badge: Bảo vệ ổ cứng Control Plane
     tone: cyan
     bullets:
-      - "Bật chế độ mã hoá dữ liệu `Secret` trước khi ghi xuống đĩa của `etcd` bằng khoá phần cứng đám mây (**AWS KMS / GCP KMS / Azure Key Vault**)"
+      - "Bật chế độ mã hóa dữ liệu `Secret` trước khi ghi xuống đĩa của `etcd` bằng khóa phần cứng đám mây (**AWS KMS / GCP KMS / Azure Key Vault**)"
   - num: 2
     icon: shield-alert
     title: Phân Quyền RBAC Tối Thiểu
     badge: Least Privilege
     tone: amber
     bullets:
-      - "Khoá chặt quyền `get`, `list`, `watch` đối với tài nguyên `secrets` — không cấp tràn lan cho tài khoản lập trình viên thông thường hay ServiceAccount mặc định"
+      - "Khóa chặt quyền `get`, `list`, `watch` đối với tài nguyên `secrets` — không cấp tràn lan cho tài khoản lập trình viên thông thường hay ServiceAccount mặc định"
   - num: 3
     icon: key
-    title: External Secrets / Sealed Secrets
+    title: External Secrets / SOPS
     badge: Tuyệt đối sạch Git
     tone: emerald
     bullets:
       - "Dùng **External Secrets Operator (ESO)** tự động kéo mật khẩu từ AWS Secrets Manager / HashiCorp Vault vào cụm"
-      - "Hoặc mã hoá bất đối xứng bằng **Sealed Secrets / SOPS** trước khi đưa vào luồng GitOps!"
+      - "Hoặc mã hóa thật bằng **Sealed Secrets / Mozilla SOPS** trước khi đưa vào luồng GitOps!"
 ```
 
-## 3. Khởi tạo trực tiếp trên CLI bằng `kubectl create`
+## 3. Khởi tạo nhanh trên CLI & Tư duy Fail-Fast Validation (Python & Node.js)
 
 Khi thao tác thực tế mà không muốn lưu mật khẩu ra tệp YAML trung gian trên ổ cứng, bạn có thể khởi tạo trực tiếp từ dòng lệnh bằng `--from-literal`:
 
@@ -176,7 +179,10 @@ kubectl create configmap app-cfg --from-literal=PORT=3000
 kubectl create secret generic jwt-sec --from-literal=JWT_PUBLIC_KID=kid-2026
 ```
 
-## 4. Chẩn đoán lỗi cấu hình & Tư duy Fail-Fast Validation trong Node.js
+> [!TIP] Mẫu thực chiến chống lỗi ngầm: Kiểm tra biến môi trường ngay giây đầu khởi động (`Fail-Fast`)
+> Nếu bạn nạp sỉ cả `ConfigMap` bằng `envFrom` mà bên trong quên khai báo khóa `REDIS_URL`, Kubernetes vẫn cho Pod chạy lên `1/1 Running` xanh rờn rồi đợi đến lúc khách hàng bấm thanh toán mới nổ lỗi `500`! Hãy luôn kiểm tra lược đồ biến ngay dòng đầu khởi động ứng dụng:
+> - **Trong Python (`FastAPI`):** Dùng **`pydantic-settings` (`BaseSettings`)** — thiếu biến bắt buộc là dừng ngay kèm thông báo `ValidationError` cực rõ trong `kubectl logs`!
+> - **Trong Node.js / TypeScript:** Dùng **`zod`** (`envSchema.parse(process.env)`) ngay đầu tệp `main.ts`!
 
 ```visual
 kind: troubleshoot
@@ -185,18 +191,18 @@ items:
   - symptom: "Pod đứng im ở trạng thái 0/1 với STATUS: CreateContainerConfigError"
     badge: Chặn trước khi chạy
     tone: rose
-    cause: "Pod tham chiếu tới một `Secret` hoặc `ConfigMap` chưa được tạo trên cùng Namespace, hoặc gõ sai tên khoá `key` trong `secretKeyRef` / `configMapKeyRef`."
+    cause: "Pod tham chiếu tới một `Secret` hoặc `ConfigMap` chưa được tạo trên cùng Namespace, hoặc gõ sai tên khóa `key` trong `secretKeyRef` / `configMapKeyRef`."
     fix: "Xem dòng lỗi chính xác ở cuối bảng Events của lệnh describe, rồi tạo đúng Secret/ConfigMap còn thiếu."
     cmd: "kubectl describe pod billing-worker && kubectl get secret,cm"
   - symptom: "Pod vẫn báo 1/1 Running nhưng văng lỗi 500 giữa chừng khi có khách gọi API"
     badge: Bẫy thiếu biến envFrom
     tone: amber
-    cause: "Dùng `envFrom` nạp sỉ cả `ConfigMap` mà bên trong vô tình thiếu mất khoá `REDIS_URL` — K8s vẫn cho container khởi chạy vào `node dist/server.js`!"
-    fix: "Kiểm tra lược đồ `process.env` bằng thư viện `zod` hoặc `envalid` ngay dòng đầu tiên của `main.ts` (Fail-Fast Validation) để thiếu biến là báo lỗi rõ trong `kubectl logs` tức khắc."
+    cause: "Dùng `envFrom` nạp sỉ cả `ConfigMap` mà bên trong vô tình thiếu mất khóa `REDIS_URL` — K8s vẫn cho container khởi chạy bình thường!"
+    fix: "Áp dụng Fail-Fast Validation (`pydantic-settings` bên Python hoặc `zod` bên Node.js) ngay lúc khởi động để bắt lỗi tức thì qua `kubectl logs`."
     cmd: "kubectl logs deployment/shop-api"
 ```
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **`ConfigMap`** (`data:`) lưu thông số công khai · **`Secret`** (`stringData:` → `data:`) lưu thông tin nhạy cảm; **`Base64` chỉ là encoding, KHÔNG PHẢI encryption** — trên Production dùng **External Secrets Operator** hoặc **Sealed Secrets / SOPS**.
-> - Nạp trọn gói bằng **`envFrom`** (`configMapRef` / `secretRef`) vào `process.env` **không tự đổi nóng** khi sửa ConfigMap — cần chạy `kubectl rollout restart deployment/...`.
+> - Nạp trọn gói bằng **`envFrom`** (`configMapRef` / `secretRef`) **không tự đổi nóng** khi sửa ConfigMap — cần chạy `kubectl rollout restart deployment/...`.
 > - Tham chiếu sai tên Secret hoặc sai `key` trong `secretKeyRef` sẽ chặn Pod ngay ở trạng thái ==`CreateContainerConfigError`==.

@@ -199,6 +199,7 @@ export interface GradeResult {
 }
 
 export type WpView =
+  | { name: 'workbench' }
   | { name: 'home' }
   | { name: 'roadmap' }
   | { name: 'module'; id: string }

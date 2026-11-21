@@ -71,7 +71,7 @@
       "Redis từ chối khởi động"
     ],
     "answer": 1,
-    "explain": "Đây là phản mẫu Hot-Slot / Jumbo-Slot kinh điển! `{HashTag}` chỉ được phép gắn theo định danh thực thể hạt mịn như `{userId}` hoặc `{orderId}`."
+    "explain": "Đây là phản mẫu Hot-Slot / Jumbo-Slot kinh điển! `{HashTag}` chỉ được phép gắn theo định danh thực thể chi tiết như `{userId}` hoặc `{orderId}`."
   },
   {
     "id": "R15-Q7",

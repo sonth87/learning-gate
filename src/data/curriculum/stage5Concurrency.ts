@@ -84,7 +84,7 @@ export const STAGE_5_LESSONS: LessonTopic[] = [
           },
         ],
         caption:
-          'Khác với मल्टी-threading (Preemptive Multitasking do OS cưỡng bức chuyển luồng), AsyncIO là **Cooperative Multitasking** (các hàm tự nguyện nhường luồng tại từ khóa `await`).',
+          'Khác với Multi-threading (Preemptive Multitasking do OS cưỡng bức chuyển luồng), AsyncIO là **Cooperative Multitasking** (các hàm tự nguyện nhường luồng tại từ khóa `await`).',
       },
     ],
     benchmarksAndProofs: [

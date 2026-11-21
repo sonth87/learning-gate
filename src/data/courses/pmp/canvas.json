@@ -436,7 +436,7 @@
       "step": 5,
       "title": "Cập nhật Tài liệu sống & Phòng ngừa tái diễn",
       "action": "Ghi nhận vào đúng sổ (Issue Log / Risk Register / Lessons Learned / Backlog) và theo dõi hiệu quả của hành động khắc phục.",
-      "neverDo": "Chữa cháy xong rồi bỏ qua không cập nhật tri thức khiến lỗi lặp lại ở giai đoạn sau."
+      "neverDo": "Xử lý tình thế xong rồi bỏ qua không cập nhật tri thức khiến lỗi lặp lại ở giai đoạn sau."
     }
   ],
   "domainBridge": [

@@ -13,7 +13,7 @@
     "kind": "redis-conf",
     "language": "redis-conf",
     "filename": "redis-pure-cache.conf",
-    "prompt": "Bạn đang thiết lập tệp `redis.conf` cho cụm bộ nhớ đệm sản phẩm chạy trên máy ảo 3GB RAM. Tệp cấu hình mặc định bên dưới đang để `maxmemory 0` (không giới hạn) và `noeviction`!\n\n- **Nhiệm vụ:** Chỉnh sửa tệp `redis.conf` thoả mãn đủ 3 tiêu chuẩn Pure Cache:\n  1. Giới hạn trần dữ liệu **`maxmemory 2gb`** (`2 GiB`).\n  2. Đặt chính sách trục xuất **`maxmemory-policy allkeys-lfu`** để giữ lại các khoá có tần suất đọc cao nhất.\n  3. Nâng kích thước tập lấy mẫu xấp xỉ **`maxmemory-samples 10`** (thay vì mặc định `5`) để độ chính xác LFU tiệm cận tuyệt đối.",
+    "prompt": "Bạn đang thiết lập tệp `redis.conf` cho cụm bộ nhớ đệm sản phẩm chạy trên máy ảo 3GB RAM. Tệp cấu hình mặc định bên dưới đang để `maxmemory 0` (không giới hạn) và `noeviction`!\n\n- **Nhiệm vụ:** Chỉnh sửa tệp `redis.conf` thoả mãn đủ 3 tiêu chuẩn Pure Cache:\n  1. Giới hạn trần dữ liệu **`maxmemory 2gb`** (`2 GiB`).\n  2. Đặt chính sách giải phóng bộ nhớ (Eviction) **`maxmemory-policy allkeys-lfu`** để giữ lại các khoá có tần suất đọc cao nhất.\n  3. Nâng kích thước tập lấy mẫu xấp xỉ **`maxmemory-samples 10`** (thay vì mặc định `5`) để độ chính xác LFU tiệm cận tuyệt đối.",
     "starter": "# Cấu hình mặc định chưa an toàn cho Pure Cache\nport 6379\nmaxmemory 0\nmaxmemory-policy noeviction\nmaxmemory-samples 5\n",
     "solution": "port 6379\nmaxmemory 2gb\nmaxmemory-policy allkeys-lfu\nmaxmemory-samples 10\n",
     "spec": {
@@ -179,7 +179,7 @@
     "kind": "redis-cli",
     "language": "redis",
     "filename": "live-memory-tuning.redis",
-    "prompt": "Một nút Redis Cache đang chạy trực tuyến chưa thể khởi động lại ngay, nhưng lại đang cấu hình nhầm `maxmemory-policy` là `noeviction` và tắt `lazyfree-lazy-eviction`.\n\n- **Nhiệm vụ:**\n  1. Quan sát tần suất truy cập LFU của khoá nóng bằng `OBJECT FREQ cache:item:hot` và thời gian nhàn rỗi của khoá lạnh bằng `OBJECT IDLETIME cache:item:cold`.\n  2. Chỉnh nóng chính sách trục xuất ngay lập tức bằng `CONFIG SET maxmemory-policy allkeys-lfu`.\n  3. Bật thu hồi bất đồng bộ khi trục xuất bằng `CONFIG SET lazyfree-lazy-eviction yes`.\n  4. Gọi `INFO memory` để xác nhận chính sách mới đã có hiệu lực.",
+    "prompt": "Một nút Redis Cache đang chạy trực tuyến chưa thể khởi động lại ngay, nhưng lại đang cấu hình nhầm `maxmemory-policy` là `noeviction` và tắt `lazyfree-lazy-eviction`.\n\n- **Nhiệm vụ:**\n  1. Quan sát tần suất truy cập LFU của khoá nóng bằng `OBJECT FREQ cache:item:hot` và thời gian nhàn rỗi của khoá lạnh bằng `OBJECT IDLETIME cache:item:cold`.\n  2. Chỉnh nóng chính sách giải phóng bộ nhớ (Eviction) ngay lập tức bằng `CONFIG SET maxmemory-policy allkeys-lfu`.\n  3. Bật thu hồi bất đồng bộ khi giải phóng (Eviction) bằng `CONFIG SET lazyfree-lazy-eviction yes`.\n  4. Gọi `INFO memory` để xác nhận chính sách mới đã có hiệu lực.",
     "starter": "# Kiểm tra cấu hình hiện tại\nCONFIG GET maxmemory-policy\n# 1. Chạy OBJECT FREQ cache:item:hot và OBJECT IDLETIME cache:item:cold\n# 2. Chạy CONFIG SET cho maxmemory-policy và lazyfree-lazy-eviction\n",
     "solution": "OBJECT FREQ cache:item:hot\nOBJECT IDLETIME cache:item:cold\nCONFIG SET maxmemory-policy allkeys-lfu\nCONFIG SET lazyfree-lazy-eviction yes\nINFO memory\n",
     "spec": {

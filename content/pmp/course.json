@@ -3,11 +3,11 @@
   "mindmapBaseUrl": "https://pmp-mindmap.vercel.app",
   "passQuiz": 0.7,
   "levels": {
-    "0": "Định hướng đề thi & Hiệu chỉnh phản xạ đời thực",
-    "1": "6 Nguyên tắc hành động PMBOK® 8 (2025)",
-    "2": "Phổ phát triển · Agile · Scrum · Hybrid & Tailoring",
-    "3": "Ra quyết định trên 7 Miền hiệu suất (Performance Domains)",
-    "4": "Phẫu thuật câu hỏi tình huống & Tách bẫy đáp án nhiễu",
-    "5": "Môi trường kinh doanh mới (Compliance · OCM · AI) & Chiến lược 54 bộ đề"
+    "0": "Cấu trúc Đề thi ECO 2026 & Tư duy Cốt lõi PMI",
+    "1": "6 Nguyên tắc Quản trị Dự án theo PMBOK® Guide 8",
+    "2": "Phương pháp Phát triển: Predictive, Agile, Scrum, Kanban & Hybrid",
+    "3": "Ra Quyết định trên 7 Performance Domains (PMBOK® 8)",
+    "4": "Chiến thuật Phân tích Câu hỏi Tình huống & Loại trừ Đáp án Nhiễu",
+    "5": "Business Environment (Compliance · ADKAR · AI) & Chiến thuật Phòng thi"
   }
 }

@@ -1,13 +1,19 @@
-import React, { useCallback, useEffect } from 'react';
-import { useContextAction, useMenuAction, useStore } from '@sonth87/device-layout';
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useContextAction, useMenuAction } from '@sonth87/device-layout';
 import { switchLearningApp, type LearningAppId } from '@/apps/appRegistry';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { DevOpsCourseApp } from '@/features/devops-course/DevOpsCourseApp';
-import { useRedisProgress } from '@/features/devops-course/store';
+import { useCourseCurriculum } from '@/features/devops-course/data';
+import { buildDevOpsScaleLessons } from '@/features/devops-course/scale/courseLessonBuilder';
+import { useRedisNav, useRedisProgress } from '@/features/devops-course/store';
 import type { RelatedToolLink } from '@/features/devops-course/types';
+import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
 import { useRedisStore } from './store/useRedisStore';
 import type { RedisFlowId, RedisMainTab, RedisSimMode } from './types/redis.types';
+import { REDIS_BLUEPRINTS, REDIS_LEVEL_TITLES } from './data/redisScaleCurator';
+import { REDIS_GLOSSARY_ENTRIES } from './data/redisGlossaryData';
 import { RedisHeader } from './components/RedisHeader';
 import { RedisMobileBottomNav } from './components/RedisMobileBottomNav';
 import { RedisSimulatorLab } from './components/RedisSimulatorLab';
@@ -30,13 +36,35 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
     openSimulatorMode,
     openFlowInStudio,
     openIncidentInWarRoom,
-    setSearchOpen,
   } = useRedisStore();
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateRedis = useRedisProgress((s) => s.hydrate);
-  const deviceResolvedScheme = useStore((s) => s.resolvedColorScheme);
-  const isLight = deviceResolvedScheme === 'light';
+  const goRedis = useRedisNav((s) => s.go);
+
+  const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const setSearchPaletteOpen = useWorkbenchStore((s) => s.setSearchPaletteOpen);
+  const setCourseCursor = useWorkbenchStore((s) => s.setCourseCursor);
+  const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
+
+  const { data: cur } = useCourseCurriculum('redis');
+  const scaleLessons = useMemo(
+    () =>
+      cur
+        ? buildDevOpsScaleLessons('redis', cur, REDIS_LEVEL_TITLES, REDIS_BLUEPRINTS)
+        : [],
+    [cur]
+  );
+
+  const glossaryItems = useMemo(
+    () =>
+      REDIS_GLOSSARY_ENTRIES.map((g) => ({
+        id: g.id,
+        term: `${g.term} (${g.complexity})`,
+        shortSummary: g.summary,
+      })),
+    []
+  );
 
   useEffect(() => {
     hydrateRedis();
@@ -45,15 +73,18 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
   const handleAction = useCallback(
     (action: string) => {
       if (action === 'quickSearch') {
-        setSearchOpen(true);
+        setSearchPaletteOpen(true, 'redismastery');
       } else if (action === 'openSettings') {
         setSettingsOpen(true);
       } else if (action.startsWith('tab:')) {
         const tab = action.replace('tab:', '') as RedisMainTab;
         setActiveTab(tab);
+        if (tab === 'learn') {
+          goRedis({ name: 'workbench' });
+        }
       }
     },
-    [setActiveTab, setSearchOpen, setSettingsOpen]
+    [goRedis, setActiveTab, setSearchPaletteOpen, setSettingsOpen]
   );
 
   useMenuAction('redismastery', handleAction, windowId);
@@ -76,12 +107,14 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
     [openFlowInStudio, openIncidentInWarRoom, openSimulatorMode, setActiveTab]
   );
 
+  const isLight = workbenchTheme === 'light';
+
   return (
     <div
       onClick={() => hideTermPopover(false)}
       className={cn(
-        'pylearn-root @container/app relative w-full h-full min-h-0 min-w-0 bg-slate-950 text-slate-100 flex flex-col overflow-hidden transition-colors duration-200 select-text',
-        isLight ? 'pylearn-light' : 'pylearn-dark'
+        'pylearn-root dts-shell @container/app relative w-full h-full min-h-0 min-w-0 bg-[var(--dts-canvas)] text-[var(--dts-ink)] flex flex-col overflow-hidden transition-colors duration-200 select-text',
+        isLight ? 'pylearn-light dts-light' : 'pylearn-dark dts-dark'
       )}
     >
       <RedisHeader windowId={windowId} />
@@ -115,6 +148,34 @@ export const RedisMasteryApp: React.FC<RedisMasteryAppProps> = ({ windowId }) =>
       <RedisMobileBottomNav />
       <TermPopover />
       <NotesDrawer />
+      <ScaleCommandPalette
+        courseId="redismastery"
+        lessons={scaleLessons}
+        glossaryItems={glossaryItems}
+        onSelectLessonStep={(moduleId, stepIdx) => {
+          const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+          const stepObj = lesson?.steps[stepIdx];
+          setCourseCursor(
+            'redismastery',
+            moduleId,
+            stepIdx,
+            lesson && stepObj
+              ? {
+                  moduleTitleVi: lesson.title.vi,
+                  moduleTitleEn: lesson.title.en,
+                  stepTitleVi: stepObj.title.vi,
+                  stepTitleEn: stepObj.title.en,
+                }
+              : undefined
+          );
+          if (lesson) setExpandedLevel('redismastery', lesson.level);
+          setActiveTab('learn');
+          goRedis({ name: 'workbench' });
+        }}
+        onSelectGlossaryTerm={() => {
+          setActiveTab('glossary');
+        }}
+      />
       <SettingsModal />
     </div>
   );

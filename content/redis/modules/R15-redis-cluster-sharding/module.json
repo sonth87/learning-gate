@@ -3,7 +3,7 @@
   "slug": "R15-redis-cluster-sharding",
   "level": 5,
   "order": 0,
-  "title": "Redis Cluster & Phân mảnh 16.384 Hash Slots",
+  "title": "Redis Cluster: Phân mảnh 16,384 Hash Slots, Gossip & Xử lý CROSSSLOT",
   "summary": "Vượt trần RAM và CPU của 1 máy chủ đơn lẻ bằng kiến trúc Sharding phi tập trung: giải phẫu công thức CRC16(key) mod 16384, giao thức Gossip cổng +10000, định tuyến MOVED/ASK, triệt tiêu lỗi CROSSSLOT bằng {HashTag} và phòng tránh phản mẫu Hot-Slot.",
   "tags": [
     "cluster",
@@ -36,7 +36,7 @@
     {
       "kind": "incident",
       "targetId": "inc-cluster-crossslot",
-      "label": "War-Room: Sự cố gãy giao dịch CROSSSLOT khi lên Cluster",
+      "label": "Xử lý Sự cố: Sự cố gãy giao dịch CROSSSLOT khi lên Cluster",
       "hint": "Tái hiện lỗi MGET/Lua sập hàng loạt khi di cư từ Standalone lên Redis Cluster và cách sửa bằng {HashTag}."
     }
   ],

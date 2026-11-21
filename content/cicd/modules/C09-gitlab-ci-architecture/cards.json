@@ -7,7 +7,7 @@
   {
     "id": "C09-C2",
     "front": "Tác dụng của từ khoá `needs:` trong GitLab CI?",
-    "back": "Chuyển đường ống từ chờ đợi cứng theo từng Stage sang Đồ thị DAG: Job chạy ngay khi các Job trong `needs` hoàn tất (hoặc chạy ngay lập tức từ giây 0 nếu `needs: []`)."
+    "back": "Chuyển pipeline từ chờ đợi cứng theo từng Stage sang Đồ thị DAG: Job chạy ngay khi các Job trong `needs` hoàn tất (hoặc chạy ngay lập tức từ giây 0 nếu `needs: []`)."
   },
   {
     "id": "C09-C3",
@@ -28,5 +28,10 @@
     "id": "C09-C6",
     "front": "Ràng buộc đường dẫn quan trọng cần nhớ khi khai báo `cache.paths` trên GitLab Runner?",
     "back": "Mọi đường dẫn trong `cache.paths` bắt buộc phải nằm bên trong thư mục dự án `$CI_PROJECT_DIR` (ví dụ `.npm/` thay vì `~/.npm`)."
+  },
+  {
+    "id": "C09-C7",
+    "front": "So sánh nhanh vị thế của Jenkins, Buildkite và Dagger bên cạnh GitHub Actions / GitLab CI?",
+    "back": "- **Jenkins**: nền tảng di sản doanh nghiệp lâu đời (`Jenkinsfile` Groovy, tự quản lý Controller + Plugin).\n- **CircleCI / Buildkite**: tốc độ cao, mạnh mô hình Hybrid (điều phối Cloud + Runner trong VPC nội bộ).\n- **Dagger**: viết pipeline bằng code (TS/Python/Go) chạy trên BuildKit Container giống hệt giữa laptop và mọi CI."
   }
 ]

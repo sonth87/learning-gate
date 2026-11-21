@@ -6,9 +6,9 @@
     "code": "",
     "choices": [
       "Cache Penetration (Xuyên thủng bộ nhớ đệm)",
-      "Cache Stampede / Thundering Herd (Đàn trâu điên / Hot Key Breakdown)",
+      "Cache Stampede / Thundering Herd (Quá tải truy vấn đồng thời / Hot Key Breakdown)",
       "Memory Fragmentation (Phân mảnh bộ nhớ)",
-      "Split-Brain (Não chia đôi)"
+      "Split-Brain (Split-Brain)"
     ],
     "answer": 1,
     "explain": "Cache Stampede xảy ra xoay quanh 1 khoá có tần suất truy cập cực cao vừa hết hạn khiến hàng vạn luồng đọc đồng thời cùng nhận `nil` và đua nhau tự dựng lại dữ liệu từ DB."
@@ -52,7 +52,7 @@
     "code": "",
     "choices": [
       "Vì Redis bị lỗi cú pháp khi lưu chuỗi `__NULL__`",
-      "Vì 20 triệu khoá rác mỗi khoá chỉ dùng 1 lần sẽ bơm tràn `maxmemory` của Redis và ép trục xuất (evict) các khoá dữ liệu thật của người dùng hợp lệ",
+      "Vì 20 triệu khoá rác mỗi khoá chỉ dùng 1 lần sẽ bơm tràn `maxmemory` của Redis và ép giải phóng (Eviction) (evict) các khoá dữ liệu thật của người dùng hợp lệ",
       "Vì lệnh SET EX 60 làm tăng gấp 100 lần băng thông ổ cứng của PostgreSQL",
       "Vì UUID không thể làm tên khoá trong Redis"
     ],

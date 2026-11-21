@@ -1,6 +1,11 @@
-# Giải phẫu 6 thực thể đường ống: Trigger, Workflow, Job, Step & Ephemeral Runner
+# Giải phẫu 6 thực thể pipeline: Trigger, Workflow, Job, Step & Ephemeral Runner
 
-Khi mới mở một tệp `.github/workflows/ci.yml` hoặc `.gitlab-ci.yml`, nhiều lập trình viên Node.js dễ choáng ngợp trước hàng loạt từ khoá lồng nhau: `on`, `jobs`, `runs-on`, `steps`, `uses`, `run`, `defaults`. Tin vui là **mọi nền tảng CI/CD hiện đại năm 2026** đều chỉ xoay quanh đúng ==6 thực thể cốt lõi==. Nắm chắc ranh giới vật lý giữa chúng — đặc biệt là cơ chế **Ephemeral Runner (máy ảo dùng một lần)** — bạn sẽ không bao giờ còn bối rối tự hỏi *"sao Job trước vừa build ra `dist/` mà Job sau lại báo không tìm thấy tệp?!"*.
+Khi mới mở một tệp `.github/workflows/ci.yml` hoặc `.gitlab-ci.yml`, người mới học rất dễ choáng ngợp trước hàng loạt từ khoá lồng nhau: `on`, `jobs`, `runs-on`, `steps`, `uses`, `run`, `defaults`. Tin vui là **mọi nền tảng CI/CD hiện đại** — dù bạn viết Node.js, Python, Go hay Java — đều chỉ xoay quanh đúng ==6 thực thể cốt lõi==:
+
+- **Webhook Trigger ("Chuông cửa tự động"):** Bạn không cần mở trang web bấm nút "Chạy kiểm tra". Ngay khoảnh khắc bạn gõ `git push` hoặc mở một **Pull Request (PR)**, máy chủ Git lập tức bắn một tín hiệu mạng nội bộ (Webhook JSON) đánh thức hệ thống CI trong chưa đầy 1 giây!
+- **Ephemeral Runner ("Máy ảo dùng một lần tự huỷ"):** Thay vì dùng chung một chiếc máy chủ vật lý cũ kỹ chạy suốt năm tháng (dễ đầy ổ cứng, kẹt tiến trình ngầm hoặc tồn lưu mã độc), mỗi **Job** được cấp riêng một **máy ảo Linux mới tinh vừa khui hộp**, thuê trong vài phút rồi **tiêu huỷ và xoá trắng ổ cứng** ngay khi Job kết thúc.
+
+Nắm chắc ranh giới vật lý giữa 6 thực thể này, bạn sẽ không bao giờ còn bối rối tự hỏi *"sao Job trước vừa đóng gói ra thư mục `dist/` mà Job sau lại báo không tìm thấy tệp?!"*.
 
 ```visual
 kind: flow
@@ -42,7 +47,7 @@ steps:
 kind: illustration
 diagram: "cicd:c01"
 alt: "Sơ đồ phân cấp 6 thực thể CI/CD từ Event Trigger, Workflow, Job trên máy ảo Ephemeral Runner đến chuỗi Step và Action"
-title: "Giải Phẫu 6 Thực Thể Đường Ống & Ranh Giới Cô Lập Máy Ảo Ephemeral Runner"
+title: "Giải Phẫu 6 Thực Thể Pipeline & Ranh Giới Cô Lập Máy Ảo Ephemeral Runner"
 subtitle: "Vì sao các Step trong cùng một Job chia sẻ chung ổ đĩa nhưng hai Job khác nhau lại tách biệt hoàn toàn về vật lý"
 caption: "Cấu trúc lồng nhau từ sự kiện kích hoạt (Trigger) -> Workflow -> các Job chạy trên máy ảo dùng một lần riêng biệt -> chuỗi Step và Action"
 callouts:
@@ -73,7 +78,7 @@ items:
     title: "Event / Trigger"
     badge: "on:"
     tone: amber
-    desc: "Tín hiệu đánh thức đường ống chạy tự động."
+    desc: "Tín hiệu đánh thức pipeline chạy tự động."
     bullets:
       - "Ẩn dụ Node.js: giống `fs.watch` hoặc Webhook gọi callback"
       - "Kích hoạt tức thì khi `git push`, mở `pull_request`, gắn tag hoặc lịch `schedule`"
@@ -119,9 +124,17 @@ items:
     tone: sky
     desc: "Gói hàm dựng sẵn để tái sử dụng thay vì tự viết Bash dài dòng."
     bullets:
-      - "Ẩn dụ Node.js: giống gói thư viện trên npm `import` về dùng ngay"
-      - "Đóng gói sẵn logic kéo Git, cài Node 22, khôi phục Cache"
+      - "Ẩn dụ dễ nhớ: giống gói thư viện cài sẵn đem ra gọi ngay"
+      - "Đóng gói sẵn logic kéo Git (`checkout@v4`), cài Node (`setup-node@v4`), Python (`astral-sh/setup-uv@v5`) hay Go (`setup-go@v5`)"
 ```
+
+> [!TIP] Bản đồ Hệ sinh thái Công cụ CI/CD trong Ngành Công nghiệp
+> Khi đi làm thực tế, bạn sẽ gặp nhiều tên tuổi CI/CD khác nhau, nhưng cả 6 thực thể trên đều ánh xạ 1-đối-1 sang mọi nền tảng:
+> - **GitHub Actions** (`.github/workflows/*.yml`): Phổ biến số 1 cho dự án Cloud & Open-Source, kho Action dựng sẵn cực lớn.
+> - **GitLab CI/CD** (`.gitlab-ci.yml` — học sâu ở bài `C09`): Tiêu chuẩn vàng tại các ngân hàng, tập đoàn tự vận hành hạ tầng nội bộ (*Self-managed*), mạnh về thực thi thuần Container.
+> - **Jenkins** (`Jenkinsfile` viết bằng Groovy): Tượng đài lâu đời tại các doanh nghiệp lớn (*Enterprise Legacy*); thường chạy mô hình Controller + Agent cố định nên rất cần kết hợp Docker/Kubernetes Agent để tránh rác môi trường.
+> - **CircleCI & Buildkite**: Nổi bật với tốc độ bộ đệm cực nhanh và mô hình Hybrid (điều phối trên Cloud nhưng đặt máy chạy Runner bên trong mạng riêng AWS/GCP của công ty).
+> - **Dagger**: Thế hệ CI "Pipeline-as-Code" mới cho phép viết luồng build bằng TypeScript/Python/Go chạy trong container BuildKit giống hệt 100% trên cả laptop lẫn mọi máy chủ CI!
 
 ## 2. Bước ngoặt tư duy số 1: Step chia sẻ ổ đĩa, nhưng Job thì KHÔNG!
 

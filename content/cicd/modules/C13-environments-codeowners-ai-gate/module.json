@@ -3,7 +3,7 @@
   "slug": "C13-environments-codeowners-ai-gate",
   "level": 4,
   "order": 13,
-  "title": "Environments, CODEOWNERS & Cổng rà soát AI (Governance)",
+  "title": "Quản trị Phát hành: GitHub Environments, CODEOWNERS & AI PR Review",
   "summary": "Thiết lập GitHub Environments tách biệt Staging/Production kèm cổng duyệt tay, phân quyền .github/CODEOWNERS và tối ưu AI PR Reviewer ít nhiễu, an toàn trước Fork PR.",
   "tags": [
     "github-environments",
@@ -42,7 +42,7 @@
     {
       "path": "governance/CODEOWNERS.example",
       "kind": "good",
-      "note": "Mẫu phân quyền người gác cổng bắt buộc cho đường ống CI/CD, Dockerfile và thư mục SQL migrations.",
+      "note": "Mẫu phân quyền người gác cổng bắt buộc cho CI/CD Pipeline, Dockerfile và thư mục SQL migrations.",
       "task": "Nếu một PR vừa sửa src/index.ts vừa sửa .github/workflows/ci.yml, những nhóm nào bắt buộc phải bấm Approve?",
       "answer": "Cả nhóm @acme/core-backend-maintainers (khớp quy tắc * cho src/index.ts) lẫn @acme/security-team và @acme/platform-devops (khớp /.github/workflows/) đều phải ký duyệt nếu bật Require review from Code Owners."
     },

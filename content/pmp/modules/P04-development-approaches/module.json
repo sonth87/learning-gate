@@ -3,7 +3,7 @@
   "slug": "P04-development-approaches",
   "level": 2,
   "order": 1,
-  "title": "Phổ Phát Triển: Khi nào chọn Predictive, Iterative, Incremental, Agile hay Hybrid?",
+  "title": "Chọn Phương pháp Phát triển: Predictive, Iterative, Incremental, Agile & Hybrid",
   "summary": "Nắm vững khung chẩn đoán và lựa chọn phương pháp phát triển theo PMBOK® 8 (Standard §4.2–4.3) và Ma trận Stacey: phân biệt sắc bén Iterative (lặp mẫu thử để làm ĐÚNG) với Incremental (cắt lát để giao NHANH), cách Agile hợp nhất cả hai trong Timebox ngắn, cùng sự vận hành của 5 Focus Areas xuyên suốt mọi vòng đời.",
   "motto": "Không có phương pháp vạn năng — Độ bất định của Yêu cầu và Kỹ thuật quyết định cách đi",
   "provenance": [

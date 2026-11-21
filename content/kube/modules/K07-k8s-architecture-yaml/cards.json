@@ -28,5 +28,10 @@
     "id": "K07-FC6",
     "front": "`apiVersion` chuẩn của `Pod`/`Service`/`ConfigMap`/`Secret` so với `Deployment`/`StatefulSet`?",
     "back": "- `Pod`, `Service`, `ConfigMap`, `Secret`, `Namespace`: **`v1`**\n- `Deployment`, `StatefulSet`, `DaemonSet`: **`apps/v1`**"
+  },
+  {
+    "id": "K07-FC7",
+    "front": "Chuỗi phân cấp 6 tầng từ ruột ra ngoài của một ứng dụng Web/API trên Kubernetes là gì?",
+    "back": "**`Container`** → **`Pod`** (vỏ kén chung localhost) → **`ReplicaSet`** (đếm quân số) → **`Deployment`** (cuộn phiên bản) → **`Service`** (tổng đài IP/DNS nội bộ) → **`Ingress / Gateway API`** (cửa ngõ HTTPS)."
   }
 ]

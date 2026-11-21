@@ -1,11 +1,11 @@
-# Đưa ứng dụng ra Internet với Ingress, TLS HTTPS & Góc nhìn Gateway API 2026
+# Đưa ứng dụng ra Internet với Ingress, TLS HTTPS & Bước ngoặt Gateway API 2026
 
 Ở bài `K10`, bạn đã biết rằng một `Service` kiểu `LoadBalancer` trên AWS hay Google Cloud sẽ cấp cho bạn một địa chỉ IP công cộng ngoài Internet. Nhưng hãy làm một phép tính kinh tế thực tế:
 
-- [!] Giả sử hệ thống thương mại điện tử của bạn có **20 microservices** (`auth`, `catalog`, `cart`, `orders`, `web-ui`...).
-- [!] Nếu mỗi microservice đều tạo 1 `Service` kiểu `LoadBalancer` riêng, bạn phải trả tiền thuê **20 bộ cân bằng tải đám mây** hàng tháng (tốn hàng trăm USD vô ích), đồng thời phải quản lý rời rạc 20 tên miền/IP và 20 chứng chỉ SSL!
+- [!] Giả sử hệ thống thương mại điện tử của bạn có **20 microservices** (`auth`, `catalog`, `ai-search` bằng Python FastAPI, `orders` bằng Node.js, `web-ui`...).
+- [!] Nếu mỗi dịch vụ đều tự mở 1 `Service` kiểu `LoadBalancer` riêng, bạn phải trả tiền thuê **20 bộ cân bằng tải đám mây** hàng tháng (tốn hàng trăm USD vô ích), đồng thời phải quản lý rời rạc 20 địa chỉ IP và 20 chứng chỉ SSL!
 
-Giải pháp chuẩn công nghiệp là đặt ==một cổng gác HTTP/HTTPS thông minh duy nhất ở tầng 7 (Layer 7)== đứng đầu cụm: chỉ thuê **đúng 1 Cloud LoadBalancer duy nhất**, gom toàn bộ chứng chỉ TLS HTTPS về một đầu mối rồi phân luồng vào từng `ClusterIP Service` nội bộ theo Hostname và URL Path (`/api`, `/`). Đó chính là vai trò của **`Ingress`** (cùng thế hệ kế nhiệm **Gateway API**).
+Giải pháp chuẩn công nghiệp là đặt ==một cổng gác HTTP/HTTPS thông minh duy nhất ở tầng 7 (Layer 7)== đứng đầu cụm: chỉ thuê **đúng 1 Cloud LoadBalancer duy nhất**, giải mã HTTPS tập trung một chỗ rồi phân luồng vào từng `ClusterIP Service` nội bộ theo tên miền và đường dẫn URL (`/api`, `/ai`, `/`). Đó chính là vai trò của **`Ingress`** và thế hệ chuẩn mới **`Kubernetes Gateway API`**.
 
 ```visual
 kind: illustration
@@ -21,22 +21,22 @@ callouts:
     tone: sky
   - num: 2
     label: "Giải mã TLS & Định tuyến thông minh Layer 7"
-    desc: "Ingress Controller (Nginx/Envoy) đọc chứng chỉ từ Secret để giải mã HTTPS rồi đọc luật Host và Path (/api, /) để rẽ nhánh."
+    desc: "Controller (Envoy Gateway / Cilium / Traefik / Nginx) đọc Secret để giải mã HTTPS rồi đọc luật Host và Path (/api, /) để rẽ nhánh."
     tone: cyan
   - num: 3
     label: "Chuyển tiếp an toàn vào các ClusterIP nội bộ"
-    desc: "Các microservice phía sau nằm kín trong mạng nội bộ dưới dạng ClusterIP và hỗ trợ chia phần trăm Canary mượt mà với Gateway API."
+    desc: "Các microservice phía sau nằm kín trong mạng nội bộ dưới dạng ClusterIP và hỗ trợ chia phần trăm Canary chuẩn gốc với Gateway API."
     tone: emerald
 ```
 
-## 1. Phân biệt Ingress Resource (Bản luật) và Ingress Controller (Người gác cổng)
+## 1. Phân biệt "Tờ giấy luật" (`Ingress` / `HTTPRoute`) và "Người gác cổng" (`Controller`)
 
-> [!WARNING] Bẫy số 1 khi mới học Ingress: Tờ giấy luật vs Người gác cổng thực thi!
-> Bản thân tệp YAML `kind: Ingress` **chỉ là một tờ giấy ghi luật định tuyến**! Nếu cụm của bạn (ví dụ cụm `kind` hoặc `kubeadm` mới dựng) chưa cài đặt một Pod **Ingress Controller** đang chạy thực tế (như `ingress-nginx`, `Traefik`, `HAProxy` hoặc `AWS Load Balancer Controller`), thì việc gõ `kubectl apply -f ingress.yaml` **hoàn toàn không mở cổng nhận lưu lượng Internet**!
+> [!WARNING] Bẫy số 1 của người mới: Nộp YAML xong nhưng không có người gác cổng thực thi!
+> Hãy hình dung tệp YAML `kind: Ingress` (hoặc `kind: HTTPRoute`) **chỉ là tờ bảng chỉ dẫn giao thông treo trên tường**! Nếu bên trong cụm của bạn (ví dụ cụm `kind` hay `minikube` mới tạo) chưa cài đặt một Pod **Controller** đang chạy thực tế để đứng đọc tờ giấy đó (như **`Envoy Gateway`**, **`Traefik`**, **`Cilium`** hoặc `AWS Load Balancer Controller`), thì việc gõ `kubectl apply -f ingress.yaml` **hoàn toàn chưa mở cổng đón khách Internet nào cả**!
 
 ```visual
 kind: flow
-title: Luồng Lưu Lượng Internet Qua 1 LoadBalancer & Ingress Controller Tầng 7
+title: Luồng Lưu Lượng Internet Qua 1 LoadBalancer & Bộ Điều Khiển Tầng 7
 subtitle: Tiết kiệm chi phí tối đa — 1 IP Public duy nhất giải mã HTTPS rồi rẽ nhánh vào hàng chục ClusterIP nội bộ
 steps:
   - icon: globe
@@ -48,11 +48,11 @@ steps:
     edge: giải mã TLS (443)
   - icon: shield-check
     badge: 2. Người gác cổng
-    title: Ingress Controller
-    desc: Pod Nginx / Envoy / Traefik đọc Secret shop-tls-cert để giải mã HTTPS ở cửa ngõ
+    title: Ingress / Gateway Controller
+    desc: Pod Envoy / Cilium / Traefik đọc Secret shop-tls-cert để giải mã HTTPS ở cửa ngõ
     code: "TLS Termination"
     tone: emerald
-    edge: đọc luật Ingress YAML
+    edge: đọc luật định tuyến YAML
   - icon: workflow
     badge: 3. Rẽ nhánh URL
     title: Định Tuyến Layer 7
@@ -63,14 +63,14 @@ steps:
   - icon: boxes
     badge: 4. Đích nội bộ
     title: Pods Microservices
-    desc: Ứng dụng Node.js & React chạy HTTP thuần an toàn đằng sau các ClusterIP Service
-    code: "Pods :3000 & :80"
+    desc: Ứng dụng FastAPI, Node.js & React chạy HTTP thuần an toàn đằng sau các ClusterIP Service
+    code: "Pods :3000, :8000 & :80"
     tone: amber
 ```
 
 ## 2. Cấu trúc chuẩn của `networking.k8s.io/v1` Ingress [!badge:sky:Chuẩn K8s 1.30+]
 
-Hãy quan sát một Manifest `Ingress` chuẩn ổn định hiện đại (`apiVersion: networking.k8s.io/v1` — thay thế hoàn toàn các nhánh cũ `extensions/v1beta1` và `networking.k8s.io/v1beta1` đã bị gỡ bỏ):
+Trong phần lớn các hệ thống hiện hữu (và trong đề thi chứng chỉ CKAD/CKA), bạn sẽ gặp Manifest `Ingress` chuẩn ổn định `apiVersion: networking.k8s.io/v1`:
 
 ```yaml Manifest Ingress chuẩn hiện đại (networking.k8s.io/v1) kèm TLS HTTPS
 apiVersion: networking.k8s.io/v1
@@ -78,7 +78,7 @@ kind: Ingress
 metadata:
   name: shop-ingress
 spec:
-  ingressClassName: nginx     # Chỉ định bộ điều khiển nào tiếp nhận luật này
+  ingressClassName: nginx     # Chỉ định bộ điều khiển nào tiếp nhận bản luật này
   tls:
     - hosts:
         - shop.example.com
@@ -106,15 +106,15 @@ spec:
 ```visual
 kind: anatomy
 title: 4 Chi Tiết Kỹ Thuật Bắt Buộc Trong networking.k8s.io/v1 Ingress
-subtitle: Nắm chắc 4 trường này để không dính lỗi cú pháp từ các bài hướng dẫn v1beta1 lỗi thời trên mạng
+subtitle: Nắm chắc 4 trường này để không bao giờ vướng lỗi cú pháp từ các bài viết v1beta1 cũ trên mạng
 items:
   - keyword: ingressClassName
     role: Chọn bộ điều khiển
     tone: sky
     summary: Đặt trực tiếp dưới `spec:` để chỉ định lớp Ingress Controller nào xử lý bản luật này.
     bullets:
-      - "Thay thế chính thức cho kiểu viết cũ bằng annotation `kubernetes.io/ingress.class` thời K8s cũ"
-    example: "spec:\n  ingressClassName: nginx"
+      - "Thay thế chính thức cho kiểu viết cũ bằng annotation `kubernetes.io/ingress.class` trước đây"
+    example: "spec:\n  ingressClassName: traefik"
     lang: yaml
   - keyword: pathType
     role: Kiểu khớp URL (Bắt buộc)
@@ -126,9 +126,9 @@ items:
     example: "path: /api\npathType: Prefix"
     lang: yaml
   - keyword: backend.service
-    role: Cấu trúc đích mới (1.19+)
+    role: Cấu trúc đích chuẩn v1
     tone: cyan
-    summary: Tách tường minh tên Service và số cổng (hoặc tên cổng) bên dưới khoá `service:`.
+    summary: Tách tường minh tên Service và số cổng (hoặc tên cổng) bên dưới khóa `service:`.
     bullets:
       - "Không còn viết gộp `serviceName` / `servicePort` như bản nháp `v1beta1` ngày xưa nữa!"
     example: "backend:\n  service:\n    name: api-svc\n    port:\n      number: 3000"
@@ -138,24 +138,30 @@ items:
     tone: amber
     summary: Tham chiếu tới một Kubernetes `Secret` (cùng namespace với Ingress) kiểu `kubernetes.io/tls`.
     bullets:
-      - "Secret này lưu cặp chứng chỉ công khai **`tls.crt`** và khoá riêng **`tls.key`** (thường được **`cert-manager`** tự động xin cấp & gia hạn từ Let's Encrypt)"
-      - "Nhờ TLS Termination ở cửa ngõ, code Node.js bên trong chỉ cần chạy HTTP thuần trên cổng `3000`"
+      - "Secret này lưu cặp chứng chỉ công khai **`tls.crt`** và khóa riêng **`tls.key`** (thường được **`cert-manager`** tự động xin cấp & gia hạn miễn phí từ Let's Encrypt)"
+      - "Nhờ TLS Termination ở cửa ngõ, code FastAPI / Node.js bên trong chỉ cần chạy HTTP thuần gọn nhẹ"
     example: "tls:\n  - hosts: [shop.example.com]\n    secretName: shop-tls-cert"
     lang: yaml
 ```
 
-## 3. Bức tranh năm 2026: Sự chuyển giao từ Ingress sang Kubernetes Gateway API
+## 3. Bước ngoặt lớn năm 2026: Từ nghỉ hưu `Ingress NGINX` sang chuẩn `Kubernetes Gateway API`!
 
-Dù `Ingress` (`networking.k8s.io/v1`) vẫn đang chạy ổn định trong ~90% dự án hiện hữu, nó vướng một hạn chế thiết kế: muốn chia tải Canary (`90%` bản cũ / `10%` bản mới), sửa HTTP Header hay Rate Limit, bạn phải nhồi hàng chục dòng `annotations:` riêng của Nginx không tương thích với Envoy hay Istio.
+> [!NOTE] Cập nhật sinh tử của ngành Cloud-Native năm 2026!
+> Suốt gần một thập kỷ, dự án cộng đồng **`Ingress NGINX` (`kubernetes/ingress-nginx`)** là lựa chọn phổ biến nhất, nhưng cộng đồng Kubernetes đã chính thức thông báo **ngừng phát triển tính năng mới và đưa `ingress-nginx` vào lộ trình nghỉ hưu (retirement)** vì gánh nặng bảo mật từ việc nhồi nhét hàng trăm `annotations` tùy biến!
+> Trong năm 2026, toàn ngành dịch chuyển mạnh mẽ sang chuẩn chính thức thế hệ mới ==Kubernetes Gateway API (`gateway.networking.k8s.io/v1`)== được thực thi bởi các bộ máy hiện đại, an toàn và hiệu năng cao như **`Envoy Gateway`**, **`Cilium`** (tích hợp thẳng eBPF trong nhân Linux) và **`Traefik`**.
 
-Vì vậy, cộng đồng Kubernetes đã chuẩn hoá ==Gateway API (`gateway.networking.k8s.io/v1`)== làm thế hệ kế nhiệm dài hạn:
+Tại sao **Gateway API** lại ưu việt hơn hẳn `Ingress` truyền thống?
+- Trong `Ingress` cũ, mọi thứ (cổng 443, chứng chỉ TLS hạ tầng lẫn đường dẫn `/api` của đội Dev, rồi cả cấu hình Canary/Rate-Limit bằng rừng `annotations` độc quyền) bị nhồi chung vào **1 tệp YAML duy nhất**.
+- Trong **Gateway API**, trách nhiệm được tách làm **2 tầng rành mạch theo đúng vai trò trong công ty**:
+  1. **Đội Hạ tầng / Platform** quản lý cổng mạng & chứng chỉ HTTPS thông qua **`GatewayClass`** + **`Gateway`**.
+  2. **Từng đội Lập trình viên (Python, Node.js...)** tự quản lý đường dẫn và chia tải Canary trong Namespace của mình thông qua ==`HTTPRoute`== — hoàn toàn chuẩn gốc không cần một dòng annotation kỳ dị nào!
 
 ```visual
 kind: compare
-title: So Sánh Ingress Kinh Điển vs Thế Hệ Mới Kubernetes Gateway API (2026)
-subtitle: Sự tiến hoá từ một tệp YAML kiêm nhiệm sang kiến trúc phân quyền đa đội ngũ & Canary chuẩn gốc
+title: So Sánh Ingress Truyền Thống vs Chuẩn Mới Kubernetes Gateway API (2026)
+subtitle: Hiểu cả hai giúp bạn vừa vận hành tốt các cụm hiện hữu, vừa tự tin thiết kế kiến trúc mới chuẩn 2026!
 left:
-  badge: "HIỆN HỮU PHỔ BIẾN · Ingress"
+  badge: "HỆ THỐNG HIỆN HỮU · Ingress"
   title: networking.k8s.io/v1
   tone: sky
   code: |
@@ -166,29 +172,35 @@ left:
         nginx.ingress.kubernetes.io/canary-weight: "10"
   lang: yaml
   bullets:
-    - "**Mô hình quyền hạn:** Gom chung cấu hình hạ tầng TLS và đường dẫn ứng dụng vào cùng 1 tệp YAML"
-    - "**Tính năng nâng cao (Canary, Rewrite, Rate Limit):** Phải phụ thuộc vào rừng `annotations` đặc thù riêng của từng hãng (Nginx, Traefik)"
-    - "**Lời khuyên 2026:** Bắt buộc nắm vững vì 90% hệ thống Production hiện có đang vận hành trên `Ingress`"
+    - "**Mô hình 1 tệp gom chung:** Hạ tầng TLS và đường dẫn ứng dụng nằm lẫn lộn trong 1 manifest"
+    - "**Canary / Header Routing / Rewrite:** Phải phụ thuộc vào `annotations` riêng lẻ của từng hãng; dự án `ingress-nginx` cộng đồng đang rút lui"
+    - "**Khi nào gặp:** Rất phổ biến trong các cụm hiện có và bài thi nền tảng — bắt buộc phải đọc/viết thành thạo"
 right:
-  badge: "THẾ HỆ KẾ NHIỆM · Gateway API"
-  title: gateway.networking.k8s.io/v1
+  badge: "CHUẨN MẶC ĐỊNH MỚI 2026 · Gateway API"
+  title: gateway.networking.k8s.io/v1 (Envoy / Cilium / Traefik)
   tone: emerald
   code: |
     apiVersion: gateway.networking.k8s.io/v1
     kind: HTTPRoute
     spec:
+      parentRefs:
+        - name: prod-gateway
       rules:
         - backendRefs:
             - { name: api-v1, port: 3000, weight: 90 }
             - { name: api-v2, port: 3000, weight: 10 }
   lang: yaml
   bullets:
-    - "**Tách bạch vai trò:** Đội Hạ tầng quản lý cổng & TLS qua `GatewayClass` + **`Gateway`**; từng đội Dev tự viết luật định tuyến riêng qua ==`HTTPRoute`=="
-    - "**Hỗ trợ chuẩn gốc trong `spec`:** Chia trọng số Canary (`backendRefs[].weight`), khớp Header và viết lại URL mà không cần annotation riêng lẻ"
-    - "**Lời khuyên 2026:** Ưu tiên chọn khi thiết kế cụm mới đa đội dự án (multi-team) hoặc cần Canary nâng cao"
+    - "**Phân quyền sạch sẽ:** Đội Infra nắm `Gateway` (TLS/IP), đội Dev tự chủ viết `HTTPRoute` (hoặc `GRPCRoute`)"
+    - "**Tính năng chuẩn gốc trong `spec`:** Chia phần trăm Canary (`weight: 90` / `10`), khớp Header, sửa URL chạy đồng nhất trên **Envoy Gateway, Cilium, Traefik, Istio, GKE, EKS**"
+    - "**Lời khuyên 2026:** Lựa chọn số 1 khi khởi tạo cụm Kubernetes mới!"
 ```
 
+> [!TIP] Tóm tắt cách chọn bộ điều khiển cửa ngõ năm 2026
+> - Dựng cụm mới hoặc thay thế `ingress-nginx` cũ → Ưu tiên **Gateway API** với **`Envoy Gateway`**, **`Cilium`** hoặc **`Traefik`**.
+> - Duy trì cụm đang dùng `Ingress` ổn định trên Cloud → Có thể dùng Cloud-native Ingress (`AWS Load Balancer Controller` / `GKE Ingress`) hoặc `Traefik` trước khi lên kế hoạch chuyển sang `HTTPRoute`.
+
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - **1 Ingress Controller** + nhiều `ClusterIP Service` giúp chỉ tốn **1 Cloud LoadBalancer duy nhất** và tập trung quản lý HTTPS.
-> - Tệp `kind: Ingress` (`apiVersion: networking.k8s.io/v1`) vô tác dụng nếu cụm chưa chạy Pod **Ingress Controller** · Luôn khai báo `spec.ingressClassName`, `pathType` (`Prefix` / `Exact`), và `spec.tls[].secretName` (Secret chứa `tls.crt` + `tls.key`).
-> - Trong **Gateway API** (`gateway.networking.k8s.io/v1`), hạ tầng cổng nằm ở `Gateway`, còn đội phát triển viết luật HTTP & Canary ở **`HTTPRoute`**.
+> - **1 bộ điều khiển cửa ngõ** + nhiều `ClusterIP Service` giúp chỉ tốn **1 Cloud LoadBalancer duy nhất** và tập trung quản lý chứng chỉ HTTPS (`cert-manager`).
+> - Tệp `kind: Ingress` (`networking.k8s.io/v1`) vô tác dụng nếu cụm chưa chạy Pod Controller · Luôn khai báo `spec.ingressClassName`, `pathType` (`Prefix` / `Exact`), và `spec.tls[].secretName`.
+> - Xu hướng 2026 dịch chuyển từ `ingress-nginx` sang ==Gateway API (`gateway.networking.k8s.io/v1`)== trên nền **Envoy Gateway / Cilium / Traefik**: đội Hạ tầng giữ `Gateway`, đội Dev viết luật HTTP & Canary ở **`HTTPRoute`**.

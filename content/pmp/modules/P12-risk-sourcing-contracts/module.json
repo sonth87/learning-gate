@@ -3,14 +3,14 @@
   "slug": "P12-risk-sourcing-contracts",
   "level": 3,
   "order": 6,
-  "title": "Miền Risk & Sourcing: Rủi ro vs Sự cố, Chiến lược ứng phó & Quản trị Hợp đồng",
+  "title": "Risk & Procurement: Phân biệt Risk vs Issue, Chiến lược Ứng phó & Hợp đồng",
   "summary": "Khoá chặt lằn ranh sinh tử giữa Risk (tương lai → Risk Register) và Issue (hiện tại → Issue Log), nắm vững 10 chiến lược đối phó Threat/Opportunity kèm Residual vs Secondary Risk, chọn đúng loại hợp đồng theo độ rõ phạm vi và xử lý tranh chấp Vendor chuẩn thứ bậc ADR.",
   "motto": "Future is Risk · Present is Issue · Match Contract to Uncertainty · Negotiate First",
   "provenance": [
     {
       "kind": "pmbok8",
       "label": "PMBOK 8 §2.7 & Appendix X4",
-      "detail": "Miền Risk + Plan Sourcing Strategy (Governance §2.1)"
+      "detail": "Risk Domain + Plan Sourcing Strategy (Governance §2.1)"
     },
     {
       "kind": "pma-bridge",

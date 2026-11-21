@@ -3,7 +3,7 @@
   "slug": "R13-persistence-rdb-aof-hybrid",
   "level": 4,
   "order": 1,
-  "title": "Lưu trữ Bền vững: RDB Snapshot, Copy-on-Write, Multi-Part AOF & Hybrid Preamble",
+  "title": "Lưu trữ Bền vững: RDB Snapshot, Copy-on-Write, Multi-Part AOF & Hybrid Persistence",
   "summary": "Giải phẫu cơ chế fork() Copy-on-Write của BGSAVE, đánh đổi RPO/Latency giữa 3 chế độ appendfsync, kiến trúc Multi-Part AOF trên Redis 8 và tinh chỉnh nhân Linux chống sập khi chụp ảnh.",
   "tags": [
     "persistence",

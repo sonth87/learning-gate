@@ -1,6 +1,6 @@
 # Chiến lược nhánh Git & 5 thủ phạm "Chạy được trên máy em nhưng đỏ trên CI"
 
-Câu nói kinh điển nhất trong mọi phòng họp kỹ thuật là: *"Ủa lạ vậy anh, trên MacBook của em vừa chạy `npm test` xanh mượt mà sao đẩy lên Pull Request nó lại treo cứng rồi đỏ lòm?!"*. Để đường ống CI thực sự trở thành tấm khiên bảo vệ đội ngũ thay vì nỗi ám ảnh mỗi chiều thứ Sáu, bạn cần kết hợp hai mảnh ghép: ==chiến lược phân nhánh ngắn hạn (Trunk-Based Development)== và ==kỷ luật đồng bộ môi trường giữa Laptop với CI Runner==.
+Câu nói kinh điển nhất trong mọi phòng họp kỹ thuật là: *"Ủa lạ vậy anh, trên MacBook của em vừa chạy `npm test` xanh mượt mà sao đẩy lên Pull Request nó lại treo cứng rồi đỏ lòm?!"*. Để CI Pipeline thực sự trở thành tấm khiên bảo vệ đội ngũ thay vì nỗi ám ảnh mỗi chiều thứ Sáu, bạn cần kết hợp hai mảnh ghép: ==chiến lược phân nhánh ngắn hạn (Trunk-Based Development)== và ==kỷ luật đồng bộ môi trường giữa Laptop với CI Runner==.
 
 ```visual
 kind: illustration
@@ -97,7 +97,7 @@ steps:
     tone: emerald
 ```
 
-## 2. Truy lùng 5 thủ phạm khiến "Máy em chạy ngon nhưng lên CI bị đỏ"
+## 2. Năm nguyên nhân phổ biến gây lệch kết quả giữa Local và CI Runner
 
 Sự cố lệch pha (*Environment Drift*) xảy ra vì chiếc MacBook/Windows cá nhân của bạn (**16–32 GB RAM**, ổ đĩa **không phân biệt hoa thường**, múi giờ **`Asia/Ho_Chi_Minh` GMT+7**, có bàn phím tương tác) khác rất xa chiếc máy ảo GitHub-hosted Runner tiêu chuẩn (`ubuntu-latest` Linux `ext4`, chỉ có ==2 vCPU & 7 GB RAM==, headless không màn hình/bàn phím!):
 
@@ -138,10 +138,10 @@ items:
     cmd: "NODE_OPTIONS=\"--max-old-space-size=4096\" npx jest --ci --maxWorkers=2"
 ```
 
-## 3. Cấu hình chuẩn hoá chống lệch môi trường cho dự án Node.js
+## 3. Cấu hình chuẩn hoá chống lệch môi trường (Node.js, Python & Đa ngôn ngữ)
 
 > [!WARNING] Đừng để một dòng `npx vitest` thiếu chữ `run` đốt sạch 6 tiếng CI!
-> Hầu hết thư viện trong hệ sinh thái JavaScript hiện đại (Vitest, Jest, Playwright, pnpm) đều kiểm tra `process.env.CI === "true"` để tự động tắt chế độ Watch tương tác và tắt thanh tiến trình động. Nếu ai đó vô tình ghi đè `CI: false`, tiến trình sẽ ngồi đợi bàn phím ảo trong vô vọng suốt **360 phút**!
+> Hầu hết thư viện kiểm thử hiện đại (Vitest, Jest, Playwright) đều kiểm tra `process.env.CI === "true"` để tự động tắt chế độ Watch tương tác và tắt thanh tiến trình động. Nếu ai đó vô tình ghi đè `CI: false`, tiến trình sẽ ngồi đợi bàn phím ảo trong vô vọng suốt **360 phút**!
 
 Chỉ với khối cấu hình 6 dòng dưới đây, bạn sẽ khoá chặt đồng thời cả 3 biến môi trường chuẩn hoá (`CI: true`, `TZ: UTC`, `NODE_OPTIONS`) và trần `--maxWorkers=2` vừa khít với ngân sách **2 vCPU / 7 GB RAM** của Hosted Runner:
 
@@ -153,6 +153,10 @@ Chỉ với khối cấu hình 6 dòng dưới đây, bạn sẽ khoá chặt đ
     NODE_OPTIONS: "--max-old-space-size=4096"
   run: npx jest --ci --maxWorkers=2
 ```
+
+> [!TIP] Quy luật chống lệch môi trường này áp dụng y hệt cho Python, Go & Java!
+> - **Python:** Luôn khoá phiên bản bằng `uv sync --frozen` (đọc cứng `uv.lock`), đặt `TZ: UTC` khi test `datetime`, chú ý tên file chữ hoa/thường trên Linux (`import user_service` != `User_Service.py`), và giới hạn `pytest -n 2` tránh tràn RAM `Exit 137`.
+> - **Go & Java:** Dùng `TZ=UTC go test -race ./...` (khoá `go.sum`) hoặc giới hạn bộ nhớ JVM `JAVA_OPTS: "-Xmx3g"` trên Gradle/Maven để không vượt trần 7 GB RAM của máy ảo CI!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **Trunk-Based Development:** Tách nhánh ngắn hạn (vài giờ đến 1–2 ngày), merge về `main` hàng ngày; dùng **Feature Flag** để giấu tính năng lớn chưa hoàn thiện giao diện.

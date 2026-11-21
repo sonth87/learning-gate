@@ -131,7 +131,7 @@ export const HomeView: React.FC = () => {
           {
             key: 'k8s',
             badge: 'PHẦN 2 · KUBERNETES (K07 – K19)',
-            title: 'Cẩm Nang Trực Quan Kiến Trúc Cụm, Mạng, Lưu Trữ & Cứu Hộ K8s',
+            title: 'Cẩm nang Trực quan Kiến trúc Cụm, Mạng, Lưu trữ & Xử lý Sự cố K8s',
             subtitle: 'Control Loop, Pod/Deployment, Service/Ingress/Gateway, ConfigMap/Secret, PVC/StatefulSet, Probes, HPA, RBAC & Troubleshoot',
             borderCls: 'border-indigo-500/35 bg-indigo-500/[0.05]',
             badgeCls: 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300',
@@ -154,7 +154,7 @@ export const HomeView: React.FC = () => {
             {
               key: 'redis-scale',
               badge: 'PHẦN 2 · CACHING, PERSISTENCE, SENTINEL & CLUSTER (R09 – R17)',
-              title: 'Cẩm Nang Trực Quan Chống Stampede, RDB/AOF, 16384 Hash Slots & War Room',
+              title: 'Cẩm nang Trực quan Chống Stampede, RDB/AOF, 16384 Hash Slots & Xử lý Sự cố',
               subtitle: 'Cache-Aside, Stampede/Penetration/Avalanche, Distributed Locks, Rate Limiting, Eviction LFU, RDB/AOF COW, Sentinel, Cluster & ACL',
               borderCls: 'border-amber-500/35 bg-amber-500/[0.05]',
               badgeCls: 'border-amber-500/40 bg-amber-500/15 text-amber-300',
@@ -166,7 +166,7 @@ export const HomeView: React.FC = () => {
           {
             key: 'ci-core',
             badge: 'PHẦN 1 · CI PIPELINE & DAG (C00 – C08)',
-            title: 'Cẩm Nang Trực Quan Đường Ống CI, Ephemeral Runner & Tăng Tốc DAG',
+            title: 'Cẩm nang Trực quan CI Pipeline, Ephemeral Runner & Tối ưu DAG',
             subtitle: 'Exit Codes, 6 Thực thể Pipeline, Trunk-based Git, GitHub Actions v4, Env/Outputs, Matrix, Services, Cache/Artifact & Sharding',
             borderCls: 'border-cyan-500/35 bg-cyan-500/[0.05]',
             badgeCls: 'border-cyan-500/40 bg-cyan-500/15 text-cyan-300',

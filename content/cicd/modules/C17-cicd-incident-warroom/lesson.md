@@ -1,14 +1,17 @@
-# Phòng Chiến Sự CI/CD (Incident War Room) — 4 Hồ sơ Thực chiến
+# Xử lý Sự cố CI/CD Thực chiến (Incident Triage) — 4 Hồ sơ Điển hình
 
-Chúc mừng bạn đã đi tới chặng cuối cùng của hành trình **CI/CD Mastery**! Kiến thức lý thuyết về YAML chỉ thực sự trở thành bản năng của một Senior DevOps / Platform Engineer khi bạn đứng trước một đường ống đang bốc cháy:
+Chúc mừng bạn đã đi tới chặng cuối cùng của hành trình **CI/CD Mastery**! Kiến thức lý thuyết về YAML chỉ thực sự trở thành bản năng của một Senior DevOps / Platform Engineer khi bạn đứng trước một pipeline đang bốc cháy:
 - [!] Đội sản phẩm xếp hàng chờ **42 phút** chưa merge nổi một bản vá khẩn cấp (**Hồ sơ B1**).
 - [!] Hai đợt deploy **ghi đè lên nhau (Race Condition)** làm hỏng khoá trạng thái hạ tầng Production (**Hồ sơ B2**).
 - [!] Hệ thống báo động phát hiện **API Key bị lộ trực tiếp** trong tệp workflow đã đẩy lên Git (**Hồ sơ B3**).
-- [!] Đáng sợ nhất: toàn bộ dấu tích CI đều **báo xanh giả (False Positive)** nhưng khách hàng đang nhận trang trắng lỗi **HTTP 500** (**Hồ sơ B6**)!
+- [!] Đáng sợ nhất: toàn bộ dấu tích CI đều **báo xanh giả (False-Green)** nhưng khách hàng đang nhận trang trắng lỗi **HTTP 500** (**Hồ sơ B6**)!
+
+> [!TIP] Nguyên tắc Vàng trong 5 phút đầu sự cố: "Cầm máu dịch vụ trước (Giảm MTTR), tìm nguyên nhân sau!"
+> Khi Production gặp sự cố sau đợt phát hành mới, phản xạ chuẩn của kỹ sư trưởng là **khôi phục dịch vụ nhanh nhất có thể trong < 2 phút** bằng cách **Rollback** về thẻ Image SHA ổn định trước đó (hoặc tắt công tắc **Feature Flag**) — thay vì ngồi mò debug code trực tiếp lúc khách hàng đang chịu lỗi `500`! Chỉ chọn **Roll-Forward** (đẩy bản vá mới tiến tới) khi bản vá cực nhỏ đã xác minh chắc chắn hoặc khi CSDL đã biến đổi ở bước không thể lùi ngược.
 
 ```visual
 kind: troubleshoot
-title: "Bảng Phân Loại & Phác Đồ Cấp Cứu Nhanh 4 Hồ Sơ Sự Cố Phòng Chiến Sự [!badge:rose:Incident Triage]"
+title: "Bảng Phân Loại & Phác Đồ Cấp Cứu Nhanh 4 Hồ Sơ Sự Cố CI/CD [!badge:rose:Incident Triage]"
 subtitle: Tra cứu nhanh triệu chứng hiện trường, nguyên nhân gốc rễ (RCA) và hành động khắc phục tức thì
 items:
   - symptom: "[Hồ sơ B1] Mỗi PR sửa 1 dòng code phải chờ 42 phút; job treo ngốn sạch 360 phút mặc định"
@@ -39,14 +42,14 @@ items:
 
 ---
 
-## 1. Hồ sơ B1: Đường ống "Rùa bò" 42 phút — Giải phẫu Nút thắt Cổ chai (Critical Path)
+## 1. Tình huống B1: Pipeline chậm 42 phút — Phân tích nút thắt Critical Path
 
 ```visual
 kind: illustration
 diagram: "cicd:c17"
-alt: "Bản đồ tác chiến phòng chiến sự CI/CD xử lý 4 khủng hoảng gồm nghẽn 42 phút & treo 360 phút, đua tranh deploy Production, lộ khoá Git và lỗi False-Green"
-title: "Bản Đồ Phòng Chiến Sự CI/CD: Phác Đồ Cấp Cứu 4 Sự Cố Nghiêm Trọng"
-subtitle: "Quy trình phản ứng chuẩn Senior Platform Engineer khi đường ống tắc nghẽn, hỏng khoá hạ tầng, lộ bí mật hoặc báo xanh giả"
+alt: "Bản đồ phân loại và xử lý 4 khủng hoảng CI/CD gồm nghẽn 42 phút & treo 360 phút, đua tranh deploy Production, lộ khoá Git và lỗi False-Green"
+title: "Bản Đồ Ứng Cứu Sự Cố CI/CD: Phác Đồ Xử Lý 4 Tình Huống Nghiêm Trọng"
+subtitle: "Quy trình phản ứng chuẩn Senior Platform Engineer khi pipeline tắc nghẽn, hỏng khoá hạ tầng, lộ bí mật hoặc báo xanh giả"
 caption: "Tóm lược triệu chứng hiện trường và đòn quyết định xử lý cho 4 hồ sơ sự cố: Nén đường găng, Xếp hàng Concurrency, Xoay vòng Secret và Chặn False-Green"
 callouts:
   - num: 1
@@ -123,7 +126,7 @@ right:
 
 ---
 
-## 2. Hồ sơ B2: Cuộc đua Sinh tử trên Production (Deployment Race Condition)
+## 2. Tình huống B2: Xung đột triển khai đồng thời (Deployment Race Condition)
 
 **Triệu chứng thực tế:** Lúc `14:02:00`, Commit `A` (nâng cấp dịch vụ thanh toán) được merge vào `main` và bắt đầu cập nhật hạ tầng. Lúc `14:02:40` (40 giây sau), Commit `B` (sửa README) được merge nối đuôi. Bất ngờ hệ thống báo lỗi không nhất quán, một nửa cụm chạy cấu hình dở dang (*partial deploy*) và khoá trạng thái (*state lock*) bị hỏng!
 
@@ -163,7 +166,7 @@ right:
 
 ---
 
-## 3. Hồ sơ B3: Rò rỉ Khoá Bí mật Cứng (Hardcoded Secret Leak) trong YAML
+## 3. Tình huống B3: Lộ thông tin nhạy cảm (Hardcoded Secret) trong Workflow YAML
 
 **Triệu chứng thực tế:** Một kỹ sư vì muốn chạy thử tích hợp thanh toán cho nhanh đã gõ cứng `STRIPE_API_KEY: "<HARDCODED_SECRET_EXAMPLE>"` ngay trong khối `env:` của `.github/workflows/ci.yml` rồi `git push` lên kho GitHub!
 
@@ -184,7 +187,7 @@ right:
 
 ---
 
-## 4. Hồ sơ B6: Thảm hoạ "Xanh vỏ đỏ lòng" (Silent False-Green Pipeline)
+## 4. Tình huống B6: Pipeline báo thành công giả (Silent False-Green)
 
 **Triệu chứng thực tế:** Một bản code chứa lỗi biên dịch và 14 bài Unit Test thất bại vẫn hiển thị **dấu tích xanh lá cây** rực rỡ trên PR, tự tin đi thẳng lên Production và đánh sập luồng đặt hàng!
 
@@ -234,7 +237,7 @@ items:
     codeLang: shell
 ```
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tổng kết Phòng Chiến Sự)
+> [!REMEMBER] Ghi nhớ bỏ túi (Tổng kết Xử lý Sự cố)
 > - **B1 (Tốc độ & Treo máy):** Dùng `cache: "npm"` + `npm ci`, tách DAG song song + Sharding 4 luồng, xoá `sleep` cảm tính và luôn đặt **`timeout-minutes`** (mặc định của GitHub Actions lên tới **360 phút**!).
 > - **B2 (Chống đè Deploy):** Trên Production luôn khoá **`concurrency: { group: "production-deploy", cancel-in-progress: false }`**.
 > - **B3 (Lộ Secret):** Bắt buộc **Revoke/Rotate** khoá cũ ngay lập tức (xoá ở commit mới không xoá được `git log`) + chặn bằng **`gitleaks detect`** kèm **`fetch-depth: 0`**.

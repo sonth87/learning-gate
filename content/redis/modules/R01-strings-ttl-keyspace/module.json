@@ -3,8 +3,8 @@
   "slug": "R01-strings-ttl-keyspace",
   "level": 0,
   "order": 1,
-  "title": "Strings (SDS), vòng đời TTL & kỷ luật Keyspace không làm đóng băng Server",
-  "summary": "Nắm vững cấu trúc chuỗi động SDS, cổng nguyên tử SET NX EX, bộ đếm INCR/DECRBY, cơ chế hết hạn Lazy + Active TTL và lý do phải thay KEYS * bằng SCAN.",
+  "title": "Strings (SDS), Cơ chế TTL & Quy chuẩn Đặt tên Keyspace",
+  "summary": "Nắm vững cấu trúc chuỗi động SDS, thao tác nguyên tử SET NX EX, bộ đếm INCR/DECRBY, cơ chế hết hạn Lazy + Active TTL và lý do phải thay KEYS * bằng SCAN.",
   "tags": [
     "strings",
     "sds",
@@ -28,7 +28,7 @@
   ],
   "relatedTools": [
     {
-      "label": "War Room: Sự cố KEYS * làm đóng băng toàn cụm",
+      "label": "Xử lý Sự cố: Sự cố KEYS * làm đóng băng toàn cụm",
       "kind": "incident",
       "targetId": "inc-keys-star-freeze",
       "description": "Trực tiếp khám nghiệm hiện trường một cronjob gọi KEYS * giữa giờ cao điểm và cách cứu hệ thống"

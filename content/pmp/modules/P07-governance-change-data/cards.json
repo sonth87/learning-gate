@@ -6,7 +6,7 @@
   },
   {
     "id": "p07-c2",
-    "front": "Khẩu quyết 5 bước bất biến khi xử lý một yêu cầu thay đổi chạm tới Baseline là gì?",
+    "front": "Nguyên tắc ghi nhớ 5 bước bất biến khi xử lý một yêu cầu thay đổi chạm tới Baseline là gì?",
     "back": "1. Phân tích tác động cùng nhóm → 2. Lập Change Request & ghi Change Log → 3. Trình CCB xét duyệt → 4. Cập nhật Baseline/PM Plan & Change Log → 5. Truyền thông & thực thi."
   },
   {
@@ -16,7 +16,7 @@
   },
   {
     "id": "p07-c4",
-    "front": "Trong PMBOK® Guide 8, Miền hiệu suất #1 Governance gom những mảng nào từ các bản trước?",
+    "front": "Trong PMBOK® Guide 8, Performance Domain #1 Governance gom những mảng nào từ các bản trước?",
     "back": "Gom toàn bộ Project Integration Management cũ cộng thêm Manage Quality Assurance (QA) và Plan Sourcing Strategy (chiến lược mua sắm cấp cao) thành 9 quy trình."
   },
   {

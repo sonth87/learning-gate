@@ -354,6 +354,106 @@ const EXTRA_COURSE_TERMS: GlossaryTerm[] = [
     syntaxExample: `1. Lắng nghe & Phân tích tác động (Scope, Time, Cost, Quality, Risk)\n2. Đệ trình Change Request lên CCB\n3. Nếu Approved -> Cập nhật Baselines & Thông báo Stakeholders`,
     relatedTerms: ['pmp_risk_issue', 'pmp_servant_leadership'],
   },
+  {
+    id: 'redis_valkey_ecosystem',
+    term: 'Valkey, DragonflyDB & Memcached (Hệ sinh thái In-Memory)',
+    aliases: ['Valkey', 'DragonflyDB', 'Dragonfly', 'Memcached'],
+    category: 'ecosystem',
+    level: 'basic',
+    stageId: 'stage-6',
+    shortSummary:
+      'Các hệ thống lưu trữ trên RAM cùng họ với Redis: `Valkey` là nhánh mã nguồn mở tương thích 100% do Linux Foundation bảo trợ; `DragonflyDB` là bộ máy đa luồng hiện đại; `Memcached` là cache chuỗi đa luồng tối giản.',
+    detailedExplanation:
+      'Khi thiết kế hệ thống thực tế: chọn **Redis 8 / Valkey** khi cần cấu trúc dữ liệu phong phú (`Hash`, `ZSet`, `Streams`, `Lua`, `Pub/Sub`) và lưu trữ bền vững `RDB/AOF`; chọn **DragonflyDB** khi cần gom cụm hàng chục GB RAM về 1 máy chủ đa nhân hiệu suất cực cao; chỉ chọn **Memcached** khi thuần túy lưu chuỗi phẳng không cần lưu đĩa.',
+    analogy:
+      'Memcached giống tủ gửi đồ siêu thị chỉ có ngăn vuông giống hệt nhau; Redis và Valkey giống bộ tủ đa năng Thụy Sĩ có ngăn xếp hạng tự động, băng chuyền tin nhắn và khóa hẹn giờ.',
+    syntaxExample: `# Mọi client chuẩn như redis-py / ioredis đều kết nối Valkey & Dragonfly y hệt Redis:\nimport redis\nr = redis.Redis.from_url("redis://localhost:6379/0", decode_responses=True)`,
+    relatedTerms: [],
+  },
+  {
+    id: 'redis_epoll_sds',
+    term: 'epoll / kqueue & SDS (Cơ chế Cốt lõi bên dưới Redis)',
+    aliases: ['epoll', 'kqueue', 'I/O Multiplexing', 'SDS', 'Simple Dynamic String', 'Skip List'],
+    category: 'concept',
+    level: 'advanced',
+    stageId: 'stage-6',
+    shortSummary:
+      '`epoll` (Linux) / `kqueue` (macOS/BSD) là cơ chế ghép kênh giúp 1 luồng theo dõi hàng vạn kết nối mạng cùng lúc; `SDS` là cấu trúc chuỗi lưu sẵn độ dài `len` giúp lấy độ dài `O(1)`; `Skip List` là danh sách nhiều tầng tốc độ `O(log N)` đứng sau `Sorted Set`.',
+    detailedExplanation:
+      'Nhờ hệ điều hành báo chính xác socket nào đã có dữ liệu đến qua `epoll/kqueue`, luồng chính của Redis không bao giờ phải đứng chờ mạng vô ích mà chỉ lấy lệnh ra chạy trên RAM trong vài trăm nano-giây.',
+    analogy:
+      'epoll giống bảng đèn chuông gọi phục vụ ở nhà hàng (bàn nào bấm nút đèn mới sáng để nhân viên chạy tới, thay vì phải đi hỏi từng bàn); Skip List giống tuyến tàu điện ngầm có làn tàu tốc hành nhảy qua nhiều ga lẻ.',
+    syntaxExample: `# Kiểm tra kiểu mã hóa nội bộ của key trên Redis:\nSET user:name "An"\nOBJECT ENCODING user:name`,
+    relatedTerms: [],
+  },
+  {
+    id: 'k8s_namespaces_cgroups',
+    term: 'Linux Namespaces & cgroups (Nền tảng của Container)',
+    aliases: ['Namespaces', 'cgroups', 'OOMKilled', 'Exit Code 137'],
+    category: 'concept',
+    level: 'basic',
+    stageId: 'stage-7',
+    shortSummary:
+      'Hai tính năng nhân Linux tạo nên Container: `Namespaces` cô lập **tầm nhìn** (tiến trình, mạng, ổ đĩa riêng), còn `cgroups` giới hạn **trần tài nguyên** (RAM, CPU được phép dùng).',
+    detailedExplanation:
+      'Khác với Máy ảo (VM) phải cõng thêm cả một hệ điều hành riêng nặng hàng GB, Container thực chất chỉ là một tiến trình bình thường trên Linux được bao bọc bởi `Namespaces` và khóa hạn mức bằng `cgroups`. Nếu tiến trình ngốn vượt trần RAM `limits.memory` trong `cgroups`, nhân Linux sẽ bắn tín hiệu `SIGKILL` trả về mã lỗi **Exit Code 137 (`OOMKilled`)**.',
+    analogy:
+      'Namespaces là những tấm vách ngăn kính mờ khiến mỗi phòng tưởng mình sở hữu riêng tòa nhà; cgroups là chiếc aptomat giới hạn điện năng từng phòng để 1 phòng chập điện không làm sập cả tòa nhà.',
+    syntaxExample: `docker run -d --memory="512m" --cpus="1.0" python:3.12-slim`,
+    commonGotcha:
+      'Gặp `OOMKilled (Exit 137)` không phải do lỗi cú pháp Docker/K8s mà do ứng dụng rò rỉ bộ nhớ (Memory Leak) hoặc đặt `limits.memory` quá thấp so với tải thực tế.',
+    relatedTerms: ['k8s_pod'],
+  },
+  {
+    id: 'k8s_gateway_helm',
+    term: 'Gateway API, Helm & Kustomize (Hệ sinh thái K8s Hiện đại)',
+    aliases: ['Gateway API', 'Helm', 'Kustomize', 'OrbStack', 'Podman'],
+    category: 'ecosystem',
+    level: 'advanced',
+    stageId: 'stage-7',
+    shortSummary:
+      '`Gateway API` là chuẩn điều hướng mạng thế hệ mới kế nhiệm `Ingress`; `Helm` là trình quản lý gói dùng template cho K8s; `Kustomize` là công cụ ghi đè YAML gốc theo môi trường (`dev`/`staging`/`prod`).',
+    detailedExplanation:
+      'Trong hệ sinh thái Kubernetes năm 2026, khi `Ingress NGINX` cộng đồng dần khép lại vòng đời, `Gateway API` (triển khai qua Envoy Gateway, Cilium, Traefik) tách bạch rõ quyền của đội Hạ tầng và đội Phát triển ứng dụng, hỗ trợ sẵn chia tải Canary theo trọng số mà không cần rừng annotation riêng lẻ.',
+    analogy:
+      'Helm giống khuôn in hợp đồng có chỗ điền biến số (`{{ .Values.replicas }}`); Kustomize giống đặt tờ giấy bóng kính lên bản gốc để ghi đè đúng vài con số khác biệt cho môi trường Production.',
+    syntaxExample: `# Cài đặt bằng Helm vs triển khai bằng Kustomize tích hợp sẵn trong kubectl:\nhelm upgrade --install api ./charts/api -f values-prod.yaml\nkubectl apply -k overlays/production/`,
+    relatedTerms: ['k8s_deployment'],
+  },
+  {
+    id: 'cicd_devsecops_oidc',
+    term: 'SAST, SCA, SBOM & Keyless OIDC (Bảo mật Pipeline Hiện đại)',
+    aliases: ['SAST', 'SCA', 'SBOM', 'Keyless OIDC', 'OIDC', 'SLSA', 'Ephemeral Runner'],
+    category: 'concept',
+    level: 'advanced',
+    stageId: 'stage-7',
+    shortSummary:
+      '`SAST` quét lỗi bảo mật trong mã nguồn tự viết; `SCA` quét lỗ hổng thư viện bên thứ ba; `SBOM` là danh mục thành phần phần mềm; `Keyless OIDC` cấp quyền Cloud tạm thời 15 phút không cần lưu khóa mật tĩnh dài hạn.',
+    detailedExplanation:
+      'Trên `Ephemeral Runner` (máy ảo sạch tự hủy sau mỗi Job), thay vì lưu `AWS_SECRET_ACCESS_KEY` cố định trong GitHub Secrets (dễ lộ lọt nhiều năm), giao thức **OpenID Connect (OIDC)** cho phép GitHub ký một thẻ định danh JWT ngắn hạn để đổi lấy quyền truy cập tạm thời từ AWS STS / GCP Workload Identity.',
+    analogy:
+      'SAST là kiểm tra tay nghề đầu bếp; SCA là kiểm tra hạn sử dụng nguyên liệu nhập về; SBOM là nhãn thành phần dinh dưỡng dán trên vỏ hộp; còn OIDC là thẻ khách tự hết hạn sau 15 phút thay vì đưa chìa khóa vạn năng.',
+    syntaxExample: `permissions:\n  id-token: write   # Bật cấp thẻ OIDC JWT ngắn hạn\n  contents: read`,
+    commonGotcha:
+      'Khi cấu hình IAM Trust Policy cho OIDC trên AWS/GCP, bắt buộc phải khóa chặt điều kiện `sub` theo đúng tên repo và nhánh (`repo:org/app:ref:refs/heads/main`), tuyệt đối không mở rộng `repo:*`!',
+    relatedTerms: [],
+  },
+  {
+    id: 'pmp_mvp_ocm_adkar',
+    term: 'Output vs Outcome, MVP vs MMF & Mô hình ADKAR (PMBOK® 8)',
+    aliases: ['MVP', 'MMF', 'ADKAR', 'OCM', 'Scope Creep', 'Gold Plating', 'ECO'],
+    category: 'concept',
+    level: 'fundamental',
+    stageId: 'stage-1',
+    shortSummary:
+      '`Output` là sản phẩm bàn giao, `Outcome` là kết quả thay đổi hành vi mang lại lợi ích; `MVP` dùng để kiểm chứng giả thuyết học hỏi nhanh, `MMF` là tính năng nhỏ nhất tạo giá trị thương mại; `ADKAR` là 5 bước quản trị thay đổi con người.',
+    detailedExplanation:
+      'Mô hình **ADKAR** trong Quản trị thay đổi tổ chức (`OCM`) đi theo đúng thứ tự tâm lý: (1) **A**wareness — hiểu vì sao phải đổi; (2) **D**esire — muốn tham gia; (3) **K**nowledge — biết cách làm; (4) **A**bility — thực hành thành thạo; (5) **R**einforcement — duy trì không quay lại thói quen cũ. Trong kiểm soát phạm vi: `Scope Creep` là yêu cầu phình to từ bên ngoài không qua kiểm soát; `Gold Plating` là nội bộ nhóm tự vẽ thêm tính năng khách không yêu cầu.',
+    analogy:
+      'Xây xong cây cầu đúng hạn là Output; người dân chịu đi qua cầu giảm kẹt xe 40% mới là Outcome!',
+    syntaxExample: `MVP -> Nhỏ nhất để HỌC & KIỂM CHỨNG GIẢ THUYẾT\nMMF -> Nhỏ nhất để RA THỊ TRƯỜNG & TẠO GIÁ TRỊ\nADKAR -> Awareness -> Desire -> Knowledge -> Ability -> Reinforcement`,
+    relatedTerms: ['pmp_servant_leadership', 'pmp_change_control'],
+  },
 ];
 
 export const DEVOPS_AND_PMP_GLOSSARY: GlossaryTerm[] = [

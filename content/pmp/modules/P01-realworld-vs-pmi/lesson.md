@@ -1,80 +1,97 @@
-## 1. Nghịch lý người giỏi thực chiến lại sập bẫy đề PMP
+## 1. Giải mã thuật ngữ đời thường & Căn bệnh "Chữa cháy đường tắt" trong ngành phần mềm
 
-Ngoài đời thực, một PM hoặc Tech Lead được khen "nhạy bén" thường là người biết **chữa cháy tức thì**: khách nhắn Zalo xin thêm nút bấm thì bảo dev làm luôn 2 tiếng cho xong chuyện; thành viên làm lỗi thì rút việc giao cho Senior gánh; phòng ban khác gây khó dễ thì nhờ Sếp lớn gọi điện can thiệp.
+Trước khi bước vào tư duy của PMI, hãy làm quen với 4 vai trò và khái niệm quản trị bạn sẽ gặp xuyên suốt mọi câu hỏi tình huống:
 
-Trong phòng thi PMP, [!badge:rose:Bẫy đề thi] **mọi thói quen "đường tắt" đó đều dẫn tới đáp án 0 điểm**! PMI thiết kế bài thi cho những dự án quy mô lớn, đa quốc gia — nơi một quyết định cảm tính chưa qua phân tích tác động sẽ gây sụp đổ dây chuyền về chi phí, pháp lý và chất lượng.
+- **Project Sponsor (*Nhà tài trợ dự án*):** Lãnh đạo cấp cao bỏ ngân sách, phê duyệt bài toán kinh doanh và ký giấy khai sinh dự án (tương đương Giám đốc Khối / Phó Tổng Giám đốc phụ trách sản phẩm).
+- **Project Charter (*Hiến chương / Giấy khai sinh dự án*):** Văn bản chính thức do Sponsor ký để trao quyền cho PM huy động nhân sự, máy chủ và ngân sách.
+- **Baseline (*Đường cơ sở đã chốt*):** Bản cam kết chuẩn về Phạm vi (`Scope`), Tiến độ (`Schedule`) và Chi phí (`Cost`) đã được phê duyệt để làm thước đo đối chiếu.
+- **CCB (*Change Control Board* — Hội đồng kiểm soát thay đổi):** Nhóm thẩm quyền xét duyệt các yêu cầu thay đổi làm ảnh hưởng đến `Baseline`.
+
+Ngoài đời thực ở các công ty công nghệ, một Tech Lead hay PM được khen "nhanh nhẹn" thường xử lý sự cố theo kiểu **đường tắt cảm tính**: khách hàng nhắn Zalo xin thêm nút xuất báo cáo PDF thì bảo dev làm lén 2 tiếng cho êm chuyện; lập trình viên Junior viết code lỗi thì rút việc tự thức đêm code thay (*Hero Coding*); phòng Hạ tầng cấp máy chủ chậm thì mách thẳng Giám đốc (`Sponsor`) nhờ gây sức ép.
+
+Trong bài thi PMP, [!badge:rose:Bẫy đề thi] ==100% những phản xạ "nhanh tay chữa cháy" đó đều dẫn tới đáp án 0 điểm!== Lý do rất thực tế: PMI thiết kế chuẩn mực cho các dự án quy mô lớn, đa phòng ban — nơi một lần "tự ý sửa code 2 tiếng không qua kiểm định" có thể làm sập cổng thanh toán hoặc vi phạm hợp đồng hàng triệu USD.
+
+## 2. Đối đầu trực diện: 6 Thói quen Đời thực vs 6 Phản xạ Vàng chuẩn PMI
+
+Chỉ cần đảo ngược 6 thói quen quản lý cảm tính sang 6 nguyên tắc kỷ luật dưới đây, bạn sẽ loại bỏ được ngay 2 phương án nhiễu trong hầu hết các câu hỏi PMP:
 
 ```visual
 kind: compare
-title: "Đối đầu trực diện: 6 Thói quen Đời thực vs 6 Phản xạ Vàng PMI/PMA"
-subtitle: "Chỉ cần đảo chiều 6 cặp phản xạ này, bạn sẽ loại ngay 50–75% đáp án nhiễu trong đề thi"
+title: "6 Thói quen Đời thực (Rớt điểm) vs 6 Phản xạ Vàng PMI (Ăn điểm)"
+subtitle: "Thay thế phản xạ chữa cháy cá nhân bằng tư duy lãnh đạo hệ thống"
 left:
-  badge: "BẪY ĐỜI THỰC (TRƯỢT PMP)"
-  title: "Phản xạ Chữa cháy & Đường tắt"
+  badge: "THÓI QUEN ĐỜI THỰC (LOẠI NGAY)"
+  title: "Cảm tính · Đường tắt · Đổ lỗi"
   tone: "rose"
   bullets:
-    - "1. Hành động ngay: Nghe tin đồn liền đổi kế hoạch, cập nhật lịch hoặc ra lệnh sửa ngay."
-    - "2. Đẩy lên Sponsor: Gặp xung đột hay thiếu hụt nhỏ cũng chạy lên xin ý kiến cấp trên."
-    - "3. Đuổi người / Thay máu: Ai làm chậm hoặc mắc lỗi liền đòi Functional Manager đổi người."
-    - "4. Sửa lén chiều khách (Gold Plating): Thấy việc nhỏ 'không tốn tiền' liền làm tặng ngoài Baseline."
-    - "5. Email dằn mặt tập thể: Gửi mail CC cả công ty hoặc mách sếp khi chưa nói chuyện riêng."
-    - "6. Né xung đột (Withdraw): Lờ đi bất đồng chuyên môn với hy vọng mọi chuyện tự êm xuôi."
+    - "1. Nghe tin đồn liền đổi lịch, sửa code ngay hoặc ra lệnh dừng dự án."
+    - "2. Hơi vướng mắc nội bộ đã gửi mail cầu cứu Project Sponsor giải quyết hộ."
+    - "3. Ai làm chậm hoặc gây bug liền đòi đuổi việc, cắt thưởng hoặc đổi sang Senior khác."
+    - "4. Thấy tính năng nhỏ 'tiện tay làm giúp khách' ngoài cam kết mà không kiểm soát."
+    - "5. Gửi email CC toàn công ty để phê bình khi chưa từng nói chuyện riêng 1-1."
+    - "6. Làm ngơ bất đồng kỹ thuật trong nhóm với hy vọng vài hôm sẽ tự lắng xuống."
 right:
-  badge: "PHẢN XẠ VÀNG (ĐỖ PMP)"
-  title: "Tư duy Kỷ luật & Tự chủ chuẩn PMI"
+  badge: "PHẢN XẠ VÀNG CHUẨN PMI (CHỌN)"
+  title: "Phân tích · Hợp tác · Đúng quy trình"
   tone: "emerald"
   bullets:
-    - "1. Think Before Act: Luôn xác thực sự thật, đọc tài liệu gốc và đánh giá tác động ĐẦU TIÊN."
-    - "2. Limit Escalate: PM tự giải quyết mọi việc trong thẩm quyền được giao bởi Project Charter."
-    - "3. Do Not Remove: Đào tạo, huấn luyện (coaching), ghép cặp (pairing) và tìm nguyên nhân hệ thống."
-    - "4. Follow the Process: Chạm Baseline phải qua Change Control (CCB); chạm Backlog phải qua PO."
-    - "5. Direct Communication: Ưu tiên gặp trực tiếp / gọi mặt đối mặt 1-1 một cách tôn trọng."
-    - "6. Confront Problems: Đối diện sớm với sự cố & giải quyết xung đột bằng Collaborate / Problem Solve."
+    - "1. Think Before Act: Xác minh sự thật tại nguồn và phân tích tác động ĐẦU TIÊN."
+    - "2. Chủ động giải quyết: PM tự xử lý mọi vấn đề nằm trong thẩm quyền Project Charter."
+    - "3. Không vội thay người: Tìm nguyên nhân gốc rễ, đào tạo, kèm cặp (Mentoring/Pairing)."
+    - "4. Tôn trọng quy trình: Đụng tới Baseline phải qua CCB; đụng tới Backlog phải qua PO."
+    - "5. Giao tiếp trực tiếp: Ưu tiên trao đổi mặt đối mặt (1-on-1) kín đáo và tôn trọng."
+    - "6. Đối diện sớm: Giải quyết xung đột bằng phân tích dữ liệu thắng–thắng (Collaborate)."
 ```
 
-## 2. Nhịp 4 bước "Phanh gấp — Phân tích — Hợp tác — Quy trình" cho câu hỏi `FIRST / NEXT`
+> [!NOTE]
+> **Hiểu đúng về Servant Leadership (Lãnh đạo phục vụ):** Làm PM chuẩn PMI không phải là làm "sếp ra lệnh" cũng không phải "người gánh việc hộ nhóm". Bạn đóng vai trò người mở đường: ==bảo vệ sự tập trung của đội kỹ sư, tháo gỡ rào cản thủ tục và tạo môi trường để nhóm phát huy chuyên môn==.
 
-Mỗi khi đề bài hỏi ==What should the project manager do FIRST / NEXT?==, hãy chạy tình huống qua phễu lọc 4 trạm của [!badge:sky:PMA Bridge] dưới đây:
+## 3. Quy trình 4 bước giải mã câu hỏi `FIRST / NEXT` trong phòng thi
+
+Khi đề bài dừng lại ngay lúc biến cố vừa phát sinh và hỏi ==What should the project manager do FIRST / NEXT?==, hãy chạy tình huống qua đúng 4 trạm tuần tự dưới đây:
 
 ```visual
 kind: flow
-title: "Chu trình Phản xạ Chuẩn khi gặp biến cố trong đề PMP"
-subtitle: "Không bao giờ nhảy cóc từ Trạm 1 thẳng sang Trạm 4!"
-footer: "Mẹo vàng: Đáp án chứa các động từ Assess, Analyze, Review, Meet with, Investigate thường thắng các động từ Escalate, Replace, Immediately change, Reject."
+title: "Chu trình 4 Trạm Phản xạ Chuẩn PMI trước mọi biến cố"
+subtitle: "Tuyệt đối không nhảy cóc từ Trạm 1 thẳng sang Trạm 4!"
 steps:
   - icon: "search"
-    badge: "BƯỚC 1 · FIRST"
-    title: "Kiểm chứng tại nguồn"
-    desc: "Xác nhận thông tin có thật không, đối chiếu Plan / Charter / Log hiện hành."
+    badge: "TRẠM 1 · VERIFY"
+    title: "Kiểm chứng dữ liệu gốc"
+    desc: "Xác nhận thông tin là sự thật hay tin đồn; mở Plan, Charter, Risk/Issue Log đối chiếu."
     tone: "amber"
-    edge: "Đã rõ sự thật"
+    edge: "Nắm đúng sự thật"
   - icon: "scale"
-    badge: "BƯỚC 2 · ASSESS"
-    title: "Đánh giá tác động"
-    desc: "Họp với nhóm chuyên môn phân tích ảnh hưởng lên Scope, Time, Finance, Risk, Value."
+    badge: "TRẠM 2 · ASSESS"
+    title: "Phân tích tác động cùng nhóm"
+    desc: "Họp với đội chuyên môn đánh giá ảnh hưởng dây chuyền lên Phạm vi, Tiến độ, Chi phí, Rủi ro."
     tone: "sky"
-    edge: "Có phương án"
+    edge: "Có các phương án"
   - icon: "handshake"
-    badge: "BƯỚC 3 · COLLABORATE"
-    title: "Trao đổi trực tiếp"
-    desc: "Làm việc mặt đối mặt với cá nhân/bên liên quan ở cấp thẩm quyền gần nhất."
+    badge: "TRẠM 3 · COLLABORATE"
+    title: "Làm việc trực tiếp các bên"
+    desc: "Đối thoại mặt đối mặt với cá nhân hoặc Stakeholder liên quan để thống nhất hướng tháo gỡ."
     tone: "emerald"
     edge: "Cần phê duyệt?"
   - icon: "shield"
-    badge: "BƯỚC 4 · GOVERN"
-    title: "Thực thi đúng quy trình"
-    desc: "Nộp Change Request lên CCB / đưa vào Backlog của PO và cập nhật tài liệu sống."
+    badge: "TRẠM 4 · GOVERN"
+    title: "Thực thi qua cổng quản trị"
+    desc: "Trình Change Request lên CCB (Predictive) hoặc cùng PO sắp lại Backlog (Agile) và cập nhật hồ sơ."
     tone: "cyan"
 ```
 
-## 3. Khi nào PM MỚI ĐƯỢC PHÉP leo thang lên Project Sponsor?
+> [!WARNING]
+> **Cảnh giác từ khoá:** Những đáp án mở đầu bằng *Immediately escalate*, *Ask HR to replace*, *Instruct the team to work overtime* hay *Pause all project work* gần như luôn là đáp án bẫy (trừ trường hợp khẩn cấp nguy hiểm tính mạng hoặc vi phạm pháp luật!).
 
-[!badge:emerald:Phản xạ vàng] Quy tắc `Limit Escalate` không có nghĩa là "không bao giờ gặp Sponsor", mà là **chỉ leo thang khi vấn đề vượt khỏi ranh giới thẩm quyền của PM**:
+## 4. Tình huống thực chiến: Khi nào PM mới được phép báo lên Sponsor?
 
-- [x] Thay đổi vượt ngoài dung sai cho phép của `Scope / Schedule / Cost Baseline` hoặc cần xin giải ngân **Management Reserve** ( khi không có CCB riêng, Sponsor nắm quyền này).
-- [x] Mục tiêu kinh doanh thay đổi khiến **Business Case không còn khả thi**, cần xem xét tái định hướng hoặc huỷ dự án.
-- [x] Rủi ro cấp chiến lược ảnh hưởng sang các dự án/phòng ban khác vượt ngoài phạm vi dự án (*Escalate* threat/opportunity).
-- [!] **Tuyệt đối KHÔNG mang "câu hỏi rỗng" lên Sponsor:** Trước khi báo cáo, PM bắt buộc phải hoàn tất phân tích tác động và mang theo **các phương án giải quyết kèm khuyến nghị rõ ràng**.
+Giả sử trong dự án nâng cấp Core Banking, một lập trình viên báo tin hành lang rằng nhà cung cấp dịch vụ xác thực đám mây sắp tăng giá gấp đôi. Nếu chọn *"Báo ngay cho Sponsor xin thêm tiền"* là bạn rơi thẳng vào bẫy! Phản xạ chuẩn phải là: **kiểm tra lại hợp đồng đã ký với nhà cung cấp và đánh giá tác động thực tế trước**.
 
-> [!REMEMBER] cần ghi nhớ trước khi sang Cấp độ 1
-> Trong bài thi PMP, bạn không phải "thư ký chuyển tin" hay "cảnh sát bắt lỗi". Bạn là một **Servant & Accountable Leader**: bình tĩnh trước biến cố, bảo vệ chất lượng, tôn trọng vai trò chuyên môn và dùng quy trình làm lá chắn cho giá trị dự án.
+Vậy khi nào PM **thực sự được phép và bắt buộc** leo thang (*Escalate*) lên `Project Sponsor`? Chỉ trong **3 trường hợp vượt ngoài thẩm quyền PM**:
+
+1. Mức thay đổi vượt quá biên độ dung sai của `Baseline` hoặc cần xin giải ngân quỹ dự phòng cấp cao (**Management Reserve**) khi tổ chức không lập CCB riêng.
+2. Bối cảnh thị trường thay đổi làm **bài toán đầu tư (Business Case) không còn sinh lời**, cần Sponsor quyết định tái định hướng hoặc đóng dự án sớm (PM không có quyền tự huỷ dự án!).
+3. Rủi ro mang tầm liên phòng ban / toàn tập đoàn vượt khỏi ranh giới dự án.
+
+> [!TIP]
+> **Nguyên tắc vàng trước khi gõ cửa phòng Sponsor:** ==Không bao giờ mang một "vấn đề trống không" lên hỏi cấp trên!== PM phải hoàn tất bước phân tích tác động và cầm theo **2–3 phương án giải quyết kèm khuyến nghị tối ưu** để Sponsor ra quyết định.

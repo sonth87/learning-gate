@@ -4,7 +4,7 @@
   "level": 1,
   "order": 5,
   "title": "Multi-stage Build, Non-Root User & HEALTHCHECK chuẩn Production",
-  "summary": "Tách biệt xưởng biên dịch TypeScript (AS builder) khỏi hộp chạy thật (AS runner), gọt bỏ devDependencies bằng npm prune --omit=dev, hạ quyền USER node và tự khám sức khoẻ.",
+  "summary": "Tách biệt xưởng biên dịch (AS builder) khỏi hộp chạy thật tinh gọn (AS runner) cho cả Node.js & Python, gọt devDependencies, hạ quyền Non-Root và tự khám HEALTHCHECK.",
   "tags": [
     "multi-stage",
     "typescript",

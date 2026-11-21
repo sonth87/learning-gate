@@ -1,6 +1,10 @@
-# Từ `npm scripts` đến CI Gate: Sức mạnh của Exit Code
+# Từ Dòng Lệnh Cơ Bản đến CI Gate: Sức mạnh của Exit Code
 
-Nếu bạn đã quen gõ `npm run lint && npm test && npm run build` trên laptop trước khi tạo Pull Request, xin chúc mừng: bạn đã hiểu **80% bản chất của Continuous Integration (CI)**. Một hệ thống CI/CD hiện đại như GitHub Actions hay GitLab CI không hề có phép thuật đọc hiểu mã nguồn bằng mắt thường. Thứ duy nhất giúp đường ống quyết định **cho phép merge (dấu tích xanh)** hay **chặn đứng Pull Request (dấu chéo đỏ)** là một con số nguyên nhỏ bé do hệ điều hành trả về sau mỗi tiến trình: ==Exit Code (mã thoát)==.
+Hãy tưởng tượng 5 lập trình viên cùng sửa chung một dự án phần mềm. Nếu ai viết xong cũng đẩy thẳng code chưa kiểm tra vào nhánh chính (`main`), chỉ một dấu ngoặc gõ thiếu lúc 5 giờ chiều Thứ Sáu cũng đủ làm tê liệt toàn bộ đội ngũ! Để ngăn thảm hoạ đó, ngành công nghiệp phần mềm vận hành dựa trên 3 khái niệm nền tảng:
+
+- **Pull Request (PR — hay Merge Request trên GitLab):** Thay vì sửa thẳng nhánh chính `main`, bạn tách ra một nhánh riêng, hoàn thành tính năng rồi mở "đơn đề nghị gộp code" (PR) để đồng nghiệp rà soát và máy tự động kiểm định.
+- **Webhook Trigger & Ephemeral Runner:** Ngay giây bạn mở PR hoặc gõ `git push`, GitHub bắn một tín hiệu tự động (**Webhook Trigger**) thuê tức thì một chiếc máy ảo Linux sạch tinh (**Ephemeral Runner** — sống khoảng 2–3 phút để kiểm tra code rồi tự xoá trắng ổ cứng sau khi xong việc).
+- **CI Gate & Exit Code (Mã thoát):** Chiếc máy ảo tự động đó không hề có "mắt thần" đọc hiểu ngữ nghĩa code. Thứ duy nhất giúp **Continuous Integration (CI — Tích hợp liên tục)** quyết định **mở khoá nút Merge (tích xanh)** hay **chặn đứng PR (chéo đỏ)** là một con số nguyên do hệ điều hành trả về sau mỗi câu lệnh: ==Exit Code (`0` = Đạt, `!= 0` = Chặn ngay lập tức)==.
 
 ```visual
 kind: flow
@@ -49,9 +53,9 @@ footer: "Quy ước POSIX & Node.js: Exit Code = 0 là thành công · Exit Code
 ```visual
 kind: illustration
 diagram: "cicd:c00"
-alt: "Đường ống cổng kiểm định CI Fail-Fast dựa trên mã thoát POSIX Exit Code 0 so với 1..255 và cách chống bẫy False-Green"
+alt: "Pipeline cổng kiểm định CI Fail-Fast dựa trên mã thoát POSIX Exit Code 0 so với 1..255 và cách chống bẫy False-Green"
 title: "Giải Phẫu Cổng Kiểm Định CI: Tín Hiệu POSIX Exit Code & Chốt Chặn Fail-Fast"
-subtitle: "Cách đường ống tự động mở khoá nút Merge khi mọi bước trả 0 và phanh gấp tức thì trước mọi mã lỗi 1..255"
+subtitle: "Cách pipeline tự động mở khoá nút Merge khi mọi bước trả 0 và phanh gấp tức thì trước mọi mã lỗi 1..255"
 caption: "Chuỗi cổng kiểm định tuần tự npm ci -> lint -> test -> build, bảng mã lỗi POSIX đặc trưng (1, 22, 127, 137) và cách triệt tiêu bẫy nuốt lỗi False-Green"
 callouts:
   - num: 1
@@ -63,15 +67,15 @@ callouts:
     desc: "Bất kỳ bước nào trả mã khác 0 (1 lỗi test, 22 lỗi HTTP, 137 tràn RAM OOM) sẽ lập tức huỷ các bước sau và chặn gộp code hỏng."
     tone: rose
   - num: 3
-    label: "Chống bẫy Xanh vỏ đỏ lòng (False-Green)"
+    label: "Chống bẫy báo xanh giả (False-Green)"
     desc: "Tuyệt đối cấm dùng || true hoặc continue-on-error ở cổng kiểm thử; luôn bật set -euo pipefail và cờ curl --fail-with-body."
     tone: amber
 ```
 
 > [!ANALOGY] Hãy hình dung như sau
-> Nếu `scripts` trong `package.json` là **danh sách bài kiểm tra**, thì **CI Gate** chính là một **giám thị máy ảo Linux sạch tinh** đứng gác ngay trước cửa nhánh `main` — không bao giờ mệt, không bao giờ quên chạy test chiều thứ Sáu, và không bao giờ dùng nhầm `node_modules` cũ tồn đọng trên máy cá nhân!
+> Dù bạn chưa từng cấu hình hệ thống tự động hoá bao giờ, hãy coi các câu lệnh kiểm tra code là **đề thi tiêu chuẩn**, còn **CI Gate** là một **giám thị máy ảo Linux vô trùng** đứng gác ngay trước cửa nhánh `main` — không bao giờ mệt, không bao giờ quên chấm bài chiều Thứ Sáu, và không bao giờ dùng nhầm thư viện cũ tồn đọng trên máy cá nhân!
 
-Trên máy cá nhân, bạn định nghĩa các câu lệnh kiểm tra chất lượng trong `package.json`:
+Trong dự án Node.js/TypeScript, các bước kiểm tra thường được đặt tên gọn trong tệp `package.json` (khi bạn gõ `npm test`, máy tính thực chất gọi lệnh kiểm thử tương ứng bên dưới):
 
 ```json
 {
@@ -84,10 +88,19 @@ Trên máy cá nhân, bạn định nghĩa các câu lệnh kiểm tra chất l�
 }
 ```
 
-Vấn đề của việc chạy thủ công trên laptop là **yếu tố con người**: thứ Sáu cuối tuần vội về quên gõ `npm test`, hoặc máy cá nhân còn sót thư viện cũ trong `node_modules` nên code vẫn chạy êm dù `package.json` khai báo thiếu gói. **CI Gate** thuê một máy ảo mới tinh chạy lại đúng chuỗi lệnh đó và phán quyết dựa tuyệt đối vào **Exit Code** (`process.exit(code)` trong Node.js):
+Điểm tuyệt vời của kiến trúc CI/CD là **nguyên lý Exit Code `0` vs `!= 0` hoàn toàn bất biến trên MỌI ngôn ngữ lập trình**! Dù đội bạn viết Node.js, Python, Go hay Java, dây chuyền CI trên máy ảo Linux đều vận hành theo đúng một khuôn mẫu 3 chặng:
 
-- [x] **`Exit Code = 0` (`EXIT_SUCCESS`)**: Tiến trình hoàn tất **thành công**. Đường ống bật đèn xanh và chuyển sang bước tiếp theo.
-- [!] **`Exit Code != 0` (`1`..`255`)**: Tiến trình **thất bại**. Đường ống lập tức dừng khẩn cấp (**Fail-Fast**) và khoá nút Merge.
+| Ngôn ngữ / Hệ sinh thái | 1. Cài đặt khoá cứng phiên bản | 2. Kiểm tra phong cách & Kiểu tĩnh | 3. Chạy Unit Test & Biên dịch |
+| :--- | :--- | :--- | :--- |
+| **Node.js / TypeScript** | `npm ci` (khớp `package-lock.json`) | `eslint . && tsc --noEmit` | `vitest run && npm run build` |
+| **Python (chuẩn `uv`)** | `uv sync --frozen` (khớp `uv.lock`) | `uv run ruff check .` | `uv run pytest` |
+| **Go (Golang)** | `go mod verify` (khớp `go.sum`) | `golangci-lint run` | `go test -race ./... && go build ./...` |
+| **Java / Kotlin** | `mvn -B dependency:go-offline` | `./gradlew checkstyleMain` | `./gradlew test assemble` |
+
+Vấn đề của việc chạy thủ công trên laptop là **yếu tố con người**: chiều Thứ Sáu vội về quên gõ lệnh test, hoặc máy cá nhân còn sót thư viện cũ trong `node_modules` / `.venv` nên code vẫn chạy êm dù tệp cấu hình khai báo thiếu gói. **CI Gate** thuê một máy ảo Ephemeral Runner mới tinh chạy lại đúng chuỗi lệnh đó và phán quyết dựa tuyệt đối vào **Exit Code** (`process.exit(code)` trong Node.js, `sys.exit(code)` trong Python, `os.Exit(code)` trong Go):
+
+- [x] **`Exit Code = 0` (`EXIT_SUCCESS`)**: Tiến trình hoàn tất **thành công**. Pipeline bật đèn xanh và chuyển sang bước tiếp theo.
+- [!] **`Exit Code != 0` (`1`..`255`)**: Tiến trình **thất bại**. Pipeline lập tức dừng khẩn cấp (**Fail-Fast**) và khoá nút Merge.
 
 | Mã thoát (`Exit Code`) | Ý nghĩa trong Linux & Node.js | Ví dụ thực tế trên CI Runner |
 | :--- | :--- | :--- |
@@ -101,13 +114,13 @@ Vấn đề của việc chạy thủ công trên laptop là **yếu tố con ng
 > [!TIP] Quy tắc cộng `128 + N` của tín hiệu Linux
 > Khi một tiến trình trên Linux chết do nhận tín hiệu hệ thống số `N`, mã thoát của nó luôn bằng ==`128 + N`==. Do đó thấy **`137`** (`128 + 9`, tức `SIGKILL`) trên CI hầu như chắc chắn là dấu hiệu tràn bộ nhớ RAM (**Out-Of-Memory — OOM Killer**)!
 
-## 2. Hiểm hoạ "Xanh vỏ đỏ lòng" (False-Green Pipeline)
+## 2. Rủi ro False-Green Pipeline (Pipeline báo xanh nhưng lệnh bên trong lỗi)
 
-Một đường ống bị đỏ còn dễ sửa; đáng sợ nhất trong nghề DevOps là ==False-Green Pipeline== — ứng dụng đang lỗi nát bét nhưng Pull Request vẫn hiện dấu tích xanh mượt mà!
+Một pipeline bị đỏ còn dễ sửa; đáng sợ nhất trong nghề DevOps là ==False-Green Pipeline== — ứng dụng đang lỗi nát bét nhưng Pull Request vẫn hiện dấu tích xanh mượt mà!
 
 ```visual
 kind: compare
-title: "Giải Phẫu 3 Bẫy Nuốt Mã Lỗi Gây 'Xanh Vỏ Đỏ Lòng' (False-Green)"
+title: "Giải Phẫu 3 Bẫy Nuốt Mã Lỗi Gây Báo Xanh Giả (False-Green)"
 subtitle: "Chỉ một thói quen viết lệnh hớ hênh cũng đủ vô hiệu hoá hoàn toàn tấm khiên bảo vệ nhánh main"
 left:
   badge: "NGUY HIỂM · Nuốt Exit Code"
@@ -146,7 +159,7 @@ right:
     - "**`curl --fail`** (hoặc `-f`, `--fail-with-body`) ép `curl` trả mã thoát **`22`** ngay khi gặp HTTP `>= 400`"
     - "**`-e` (`errexit`):** Dừng script tức khắc ngay dòng lệnh đầu tiên trả `Exit Code != 0`"
     - "**`-u` (`nounset`):** Báo lỗi ngay nếu gặp biến chưa khai báo (ngăn thảm hoạ `rm -rf /$EMPTY_VAR`)"
-    - "**`-o pipefail`:** Chỉ cần `npm test` ở đầu ống trả `1`, toàn bộ đường ống `|` lập tức trả `1`"
+    - "**`-o pipefail`:** Chỉ cần `npm test` ở đầu ống trả `1`, toàn bộ pipeline `|` lập tức trả `1`"
 ```
 
 > [!WARNING] Lưu ý về Shell mặc định trên GitHub Actions
@@ -154,19 +167,21 @@ right:
 
 ## 3. `npm ci` vs `npm install`: Kỷ luật bất biến trên CI
 
-Trên laptop khi thêm thư viện mới, bạn gõ `npm install`. Nhưng trên đường ống CI, `npm install` là một phản mẫu rủi ro vì nó được phép **tự ý sửa lại `package-lock.json`** nếu dải semver `^1.2.0` có bản vá mới vừa phát hành 5 phút trước.
+Trên laptop khi thêm thư viện mới, bạn gõ `npm install`. Nhưng trên CI Pipeline, `npm install` là một phản mẫu rủi ro vì nó được phép **tự ý sửa lại `package-lock.json`** nếu dải semver `^1.2.0` có bản vá mới vừa phát hành 5 phút trước.
 
 Ngược lại, ==`npm ci` (Clean Install)== sinh ra dành riêng cho môi trường tự động hoá:
 - [x] **Xoá sạch `node_modules` hiện có** để đảm bảo không gian làm việc tinh khiết 100%.
 - [x] **Đọc cứng từng phiên bản và mã băm `integrity`** đã khoá chặt trong `package-lock.json`.
-- [x] **Chặn đứng lệch pha lockfile:** Nếu lập trình viên nâng phiên bản trong `package.json` mà quên cập nhật `package-lock.json`, `npm ci` lập tức dừng lại và trả **`Exit Code = 1`** thay vì âm thầm đoán mò!
+- [x] **Chặn đứng lệch pha lockfile:** Nếu lập trình viên nâng phiên bản trong `package.json` mà quên cập nhật `package-lock.json`, `npm ci` lập tức dừng lại và trả **`Exit Code = 1`** thay vì âm thầm đoán mò! *(Ở thế giới Python hiện đại, lệnh tương đương chính xác 100% là **`uv sync --frozen`** hoặc `pip install --require-hashes`; ở Rust Cargo là `cargo test --locked`).*
 
 ## 4. Phân biệt rạch ròi: CI vs Continuous Delivery vs Continuous Deployment
 
+Người mới học rất dễ gộp chung chữ **"CI/CD"** thành một cục mờ ảo. Thực tế, chữ **"CD"** có thể mang **2 ý nghĩa khác hẳn nhau** ở khâu nút bấm cuối cùng trước khi chạm tới khách hàng thật:
+
 ```visual
 kind: groups
-title: "Ba Cấp Độ Trưởng Thành Của Đường Ống Tự Động Hoá [!badge:cyan:Core Concepts]"
-subtitle: "Cụm từ viết tắt 'CI/CD' thực chất bao hàm 2 khái niệm CD có ranh giới phê duyệt hoàn toàn khác nhau"
+title: "Ba Cấp Độ Trưởng Thành Của Pipeline Tự Động Hoá [!badge:cyan:Core Concepts]"
+subtitle: "Từ tự động gác cổng Pull Request (CI) -> sẵn sàng phát hành bằng 1 cú nhấp chuột (Delivery) -> tự động lên thẳng Production (Deployment)"
 columns: 3
 items:
   - num: 1
@@ -174,31 +189,31 @@ items:
     title: "Continuous Integration"
     badge: "Tích hợp liên tục (CI)"
     tone: sky
-    desc: "Tự động kiểm định mã nguồn mỗi khi có commit hoặc Pull Request mới vào nhánh chính."
+    desc: "Tự động kiểm định mã nguồn trên máy ảo sạch mỗi khi có commit hoặc mở Pull Request vào nhánh chính."
     bullets:
-      - "Chạy tự động `npm ci` -> `lint` -> `test` -> `build`"
-      - "Phát hiện xung đột logic và vỡ kiểu dữ liệu sớm từng giờ"
-    footer: "Mục tiêu: Nhánh main luôn biên dịch và chạy test xanh"
+      - "Chạy tự động cài đặt khoá phiên bản -> `lint` -> `test` -> `build`"
+      - "Phát hiện xung đột logic và vỡ kiểu dữ liệu sớm ngay trong vài phút"
+    footer: "Mục tiêu: Nhánh main luôn biên dịch và chạy test xanh 100%"
   - num: 2
     icon: shield
     title: "Continuous Delivery"
-    badge: "Chuyển giao liên tục"
+    badge: "Chuyển giao liên tục (1-Click)"
     tone: amber
-    desc: "Tự động đóng gói Artifact/Image và đẩy lên Staging, sẵn sàng phát hành bất cứ lúc nào."
+    desc: "Tự động đóng gói sản phẩm và đẩy lên môi trường thử nghiệm Staging, sẵn sàng lên Production chỉ bằng 1 cú nhấp chuột!"
     bullets:
-      - "Tự động hoá toàn bộ khâu build & kiểm thử trên `staging`"
-      - "Giữ **Cổng phê duyệt thủ công (Manual Approval Gate)** trước `environment: production`"
-    footer: "Tech Lead chủ động bấm nút Approve giờ lên Prod"
+      - "Tự động hoá trọn vẹn khâu đóng gói & kiểm thử trên `staging`"
+      - "Giữ **Cổng phê duyệt con người (Manual Approval Gate)** trước `environment: production`"
+    footer: "Sẵn sàng 100% — Tech Lead chủ động bấm nút chọn giờ lên Prod"
   - num: 3
     icon: rocket
     title: "Continuous Deployment"
-    badge: "Triển khai liên tục"
+    badge: "Triển khai liên tục (Auto-Prod)"
     tone: emerald
-    desc: "Xoá bỏ hoàn toàn bước bấm nút thủ công — tự động hoá xuyên suốt từ commit tới tay người dùng."
+    desc: "Xoá bỏ hoàn toàn bước bấm nút thủ công — tự động hoá xuyên suốt từ lúc merge code tới thẳng tay người dùng thật."
     bullets:
-      - "Mọi commit vượt qua toàn bộ cổng kiểm thử tự động trên `main` đi thẳng ra **Production**"
-      - "Đòi hỏi độ phủ test tự động, giám sát và cơ chế Rollback cực kỳ vững chắc"
-    footer: "Phát hành lên Production nhiều lần mỗi ngày tự động 100%"
+      - "Mọi commit vượt qua toàn bộ cổng kiểm thử tự động trên `main` tự động triển khai thẳng ra **Production**"
+      - "Đòi hỏi độ phủ test tự động, Canary và cơ chế tự động Rollback cực kỳ vững chắc"
+    footer: "Phát hành lên Production hàng chục lần mỗi ngày không cần chạm tay"
 ```
 
 > [!REMEMBER] Ghi nhớ bỏ túi

@@ -151,7 +151,7 @@
     "id": "cicd-ex-c15-3",
     "code": "C15.3",
     "module": "C15",
-    "title": "Bật Tự động Đồng bộ, Dọn rác (Prune) & Tự chữa lành (Self-Heal)",
+    "title": "Bật Tự động Đồng bộ, Dọn rác (Prune) & Tự phục hồi (Self-Healing) (Self-Heal)",
     "difficulty": 1,
     "tags": [
       "argocd",

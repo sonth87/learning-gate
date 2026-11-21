@@ -3,8 +3,8 @@
   "slug": "R00-why-redis-event-loop",
   "level": 0,
   "order": 0,
-  "title": "Vì sao 1 luồng Event Loop trên RAM của Redis gánh >100,000 ops/sec?",
-  "summary": "Giải mã chênh lệch tốc độ 1,000 lần giữa RAM và SSD, kiến trúc Single-Threaded Event Loop (epoll/kqueue), giao thức khung dây RESP3 và cách chạy Redis 8 an toàn bằng Docker.",
+  "title": "Kiến trúc In-Memory & Single-Threaded Event Loop (>100,000 ops/s)",
+  "summary": "Giải mã chênh lệch tốc độ 1,000 lần giữa RAM và SSD, kiến trúc Single-Threaded Event Loop (epoll/kqueue), giao thức RESP3 (Wire Protocol) và cách chạy Redis 8 an toàn bằng Docker.",
   "tags": [
     "redis-8",
     "in-memory",

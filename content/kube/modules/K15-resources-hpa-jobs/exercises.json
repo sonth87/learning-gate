@@ -77,7 +77,7 @@
     "kind": "yaml",
     "language": "yaml",
     "filename": "payment-guaranteed.yaml",
-    "prompt": "Pod xử lý lõi giao dịch `payment-core` cần đạt hạng **`Guaranteed` QoS** để không bị trục xuất khi Worker Node chịu áp lực bộ nhớ.\n\nHãy chỉnh sửa `resources` của container sao cho cả `requests` lẫn `limits` đều khớp tuyệt đối ở mức:\n- `cpu: \"500m\"`\n- `memory: \"512Mi\"`",
+    "prompt": "Pod xử lý lõi giao dịch `payment-core` cần đạt hạng **`Guaranteed` QoS** để không bị loại khỏi bộ nhớ (evicted) khi Worker Node chịu áp lực bộ nhớ.\n\nHãy chỉnh sửa `resources` của container sao cho cả `requests` lẫn `limits` đều khớp tuyệt đối ở mức:\n- `cpu: \"500m\"`\n- `memory: \"512Mi\"`",
     "starter": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: payment-core\nspec:\n  containers:\n    - name: payment\n      image: ghcr.io/acme/payment-core:3.0.1\n      resources:\n        requests:\n          cpu: \"200m\"\n          memory: \"256Mi\"\n        # Chỉnh lại requests và thêm limits bằng khít nhau (500m CPU, 512Mi RAM)\n",
     "solution": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: payment-core\nspec:\n  containers:\n    - name: payment\n      image: ghcr.io/acme/payment-core:3.0.1\n      resources:\n        requests:\n          cpu: \"500m\"\n          memory: \"512Mi\"\n        limits:\n          cpu: \"500m\"\n          memory: \"512Mi\"\n",
     "spec": {

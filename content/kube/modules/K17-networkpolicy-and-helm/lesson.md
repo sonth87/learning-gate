@@ -1,37 +1,39 @@
-# Tường lửa Mạng Zero-Trust & Đóng gói Ứng dụng: NetworkPolicy & Helm Charts
+# Tường lửa Mạng Zero-Trust (`NetworkPolicy`) & Đóng gói Đa môi trường (`Helm` vs `Kustomize`)
 
-Bạn đã đi được một chặng đường rất xa: từ đóng gói container, triển khai Deployment không gián đoạn, định tuyến qua Service/Ingress, quản lý lưu trữ PVC cho tới gia cố `securityContext` và RBAC. Ở chặng cuối của Level 5, chúng ta giải quyết hai bài toán kiến trúc lớn còn lại trước khi bước ra môi trường doanh nghiệp quy mô lớn:
+Bạn đã đi được một chặng đường rất xa: từ đóng gói container, triển khai Deployment không gián đoạn, định tuyến qua Service/Gateway API, quản lý lưu trữ PVC cho tới gia cố `securityContext` và RBAC. Ở chặng cuối của Level 5, chúng ta giải quyết hai bài toán kiến trúc lớn trước khi bước vào vận hành doanh nghiệp quy mô lớn:
 
 - [!] **Về mạng nội bộ:** Mặc định trong Kubernetes, mạng nội bộ phẳng hoàn toàn — làm sao chặn đứng việc một Pod Frontend bị xâm nhập tự ý kết nối thẳng vào cổng `5432` của PostgreSQL?
-- [!] **Về quản lý cấu hình:** Khi một dịch vụ cần tới 8 tệp YAML (`Deployment`, `Service`, `Ingress`, `HPA`, `ConfigMap`, `ServiceAccount`, `NetworkPolicy`...) nhân lên cho 4 môi trường (`dev`, `qa`, `staging`, `prod`), làm sao thoát khỏi *"địa ngục Copy-Paste 32 tệp YAML"*?
+- [!] **Về quản lý cấu hình đa môi trường:** Khi một dịch vụ cần tới 8 tệp YAML (`Deployment`, `Service`, `HTTPRoute`, `HPA`, `ConfigMap`, `ServiceAccount`, `NetworkPolicy`...) nhân lên cho 4 môi trường (`dev`, `qa`, `staging`, `prod`), làm sao thoát khỏi *"địa ngục Copy-Paste 32 tệp YAML"*?
 
-Câu trả lời chính là cặp công cụ tiêu chuẩn: `NetworkPolicy` và trình quản lý gói ==`Helm`==!
+Câu trả lời chính là tường lửa nội bộ ==`NetworkPolicy`== cùng bộ đôi quản lý cấu hình chuẩn công nghiệp năm 2026: ==`Helm`== và ==`Kustomize`==!
 
 ```visual
 kind: illustration
 diagram: "kube:k17"
 alt: "Tường lửa mạng nội bộ Zero-Trust với NetworkPolicy (Default Deny + Whitelist + DNS Egress 53) và bộ máy đóng gói biểu mẫu Helm Chart"
-title: "Giải Phẫu Tường Lửa Mạng Zero-Trust (NetworkPolicy) & Khuôn Đúc Gói Helm v3"
-subtitle: "Khoá chặt lưu lượng ngang Đông-Tây giữa các tầng dịch vụ và tái sử dụng một bộ khuôn mẫu YAML duy nhất cho mọi môi trường"
-caption: "Mô hình tường lửa Pod-to-Pod thực thi bởi Cilium/Calico (nhớ mở cổng 53 cho CoreDNS) và quy trình kết xuất bản phát hành của Helm Chart"
+title: "Giải Phẫu Tường Lửa Mạng Zero-Trust (NetworkPolicy) & Khuôn Đúc Gói Helm / Kustomize"
+subtitle: "Khóa chặt lưu lượng ngang Đông-Tây giữa các tầng dịch vụ và tái sử dụng một bộ khuôn mẫu YAML duy nhất cho mọi môi trường"
+caption: "Mô hình tường lửa Pod-to-Pod thực thi bởi Cilium/Calico (nhớ mở cổng 53 cho CoreDNS) và quy trình kết xuất cấu hình đa môi trường"
 callouts:
   - num: 1
-    label: "Zero-Trust NetworkPolicy: Khoá mặc định & Mở chọn lọc"
+    label: "Zero-Trust NetworkPolicy: Khóa mặc định & Mở chọn lọc"
     desc: "Áp dụng default-deny (podSelector: {}) chặn 100% kết nối lạ, sau đó chỉ mở đúng luồng hợp lệ từ web -> api -> postgres:5432."
     tone: emerald
   - num: 2
-    label: "Lưu ý sống còn khi khoá chiều ra (Egress) — Cổng 53 DNS"
+    label: "Lưu ý sống còn khi khóa chiều ra (Egress) — Cổng 53 DNS"
     desc: "Khi bật kiểm soát Egress, luôn phải mở cổng UDP/TCP 53 sang kube-system để Pod không bị mù phân giải tên miền CoreDNS."
     tone: cyan
   - num: 3
-    label: "Helm Chart — Tách khuôn templates/ và thông số values.yaml"
-    desc: "Loại bỏ hoàn toàn cảnh sao chép hàng chục tệp YAML thủ công và hỗ trợ tự động quay lui an toàn với cờ --atomic."
+    label: "Helm & Kustomize — Chuẩn hóa triển khai GitOps"
+    desc: "Dùng Helm Chart (khuôn mẫu + values.yaml) hoặc Kustomize (kubectl apply -k) để đồng bộ sạch sẽ qua ArgoCD / Flux."
     tone: cyan
 ```
 
-## 1. Sự thật bất ngờ: Mặc định mạng Kubernetes mở toang 100%!
+## 1. Giải thích bình dị `NetworkPolicy`: Dựng tường thẻ từ giữa các phòng ban!
 
-Theo thiết kế mặc định của Kubernetes khi bạn **chưa tạo bất kỳ `NetworkPolicy` nào**, ==mọi Pod ở bất kỳ Namespace nào cũng đều có thể kết nối trực tiếp tới mọi Pod khác trên toàn cụm== (*Allow All*)! Nếu trang Landing Page tiếp thị ở namespace `marketing` bị dính lỗ hổng bảo mật, kẻ tấn công từ đó có thể quét mạng và gõ thẳng vào cổng `5432` của Database thanh toán ở namespace `production`!
+> [!NOTE] Sự thật bất ngờ: Mặc định hành lang mạng Kubernetes mở toang 100%!
+> Nhiều người lầm tưởng chia `Namespace` (`marketing` và `production`) là mạng đã tự cách ly. **Không hề!** Mặc định khi chưa có `NetworkPolicy`, toàn bộ cụm K8s giống như một tòa nhà không có cửa khóa giữa các tầng — **mọi Pod ở bất kỳ Namespace nào cũng đều gọi thẳng được vào IP/cổng của mọi Pod khác**!
+> **`NetworkPolicy`** đóng vai trò **hệ thống cửa thẻ từ ở tầng IP/Port (Layer 3/4)**: bạn khóa mặc định toàn bộ cửa phòng (`Default Deny`), rồi chỉ quẹt thẻ mở đúng đường từ `web` → `api` và từ `api` → `postgres:5432`!
 
 ```visual
 kind: compare
@@ -50,10 +52,10 @@ left:
   lang: text
   bullets:
     - "Tạo `Namespace` mới **KHÔNG tự động dựng tường lửa mạng** ngăn cách các Pod"
-    - "Chỉ cần 1 container ngoại vi bị xâm nhập, tin tặc tự do dò quét ngang (*Lateral Movement*) khắp toàn cụm"
+    - "Chỉ cần 1 container ngoại vi bị xâm nhập, kẻ tấn công tự do dò quét ngang (*Lateral Movement*) khắp toàn cụm"
 right:
   badge: "ZERO-TRUST · Default Deny + Whitelist"
-  title: Khoá cửa mặc định · Chỉ mở đúng luồng hợp lệ
+  title: Khóa cửa mặc định · Chỉ mở đúng luồng hợp lệ
   tone: emerald
   code: |
     spec:
@@ -62,16 +64,17 @@ right:
         - Ingress           # Bỏ trống ingress -> Chặn 100% chiều vào!
   lang: yaml
   bullets:
-    - "**Bước 1 (`default-deny`):** Dùng đối tượng rỗng ==`podSelector: {}`== khoá sạch 100% kết nối gọi vào mọi Pod trong Namespace"
+    - "**Bước 1 (`default-deny`):** Dùng đối tượng rỗng ==`podSelector: {}`== khóa sạch 100% kết nối gọi vào mọi Pod trong Namespace"
     - "**Bước 2 (`Additive Whitelist`):** Thêm luật cho phép có chọn lọc — nhiều `NetworkPolicy` cùng nhắm tới 1 Pod sẽ **cộng gộp (hợp)** các nguồn hợp lệ!"
 ```
 
-> [!WARNING] Điều kiện bắt buộc: Phải có CNI Plugin hỗ trợ thực thi!
-> Bản thân API Server của Kubernetes **chỉ lưu trữ bản thiết kế luật `NetworkPolicy`**, còn việc chặn gói tin thực tế dưới nhân Linux do **CNI Plugin** đảm nhiệm (như **Cilium**, **Calico**, **Antrea**, Weave Net). Nếu cụm dùng mạng cơ bản không hỗ trợ như `flannel` thuần tuý, các tệp `NetworkPolicy` sẽ **bị phớt lờ âm thầm** mà không báo lỗi!
+> [!WARNING] Hai cái bẫy thực tế khi bật `NetworkPolicy` lần đầu
+> 1. **Phải có CNI Plugin hỗ trợ thực thi:** API Server chỉ lưu tờ giấy luật `NetworkPolicy`, còn người chặn gói tin thực sự là **CNI Plugin** (**`Cilium`** eBPF, **`Calico`**, `Antrea`). Nếu cụm dùng mạng tối giản không hỗ trợ (như `flannel` thuần), luật sẽ bị phớt lờ âm thầm!
+> 2. **Đừng tự khóa mù DNS cổng `53`:** Nếu bạn bật `policyTypes: ["Egress"]` (kiểm soát chiều đi ra), hãy luôn nhớ mở cổng `UDP/TCP 53` sang `kube-system` để Pod vẫn hỏi được danh bạ `CoreDNS`!
 
 ### Hai bước thiết lập Zero-Trust chuẩn mực (`networking.k8s.io/v1`):
 
-1. **Bước 1 — Khoá chặt cửa vào bằng `default-deny-ingress`:** Cú pháp `podSelector: {}` áp dụng cho **tất cả mọi Pod** trong Namespace hiện tại; khai báo `policyTypes: ["Ingress"]` mà cố tình bỏ trống mục `ingress:` sẽ từ chối 100% kết nối chiều vào:
+1. **Bước 1 — Khóa chặt cửa vào bằng `default-deny-ingress`:**
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -84,7 +87,7 @@ spec:
     - Ingress             # Không có mục ingress: -> Từ chối 100% kết nối gọi vào!
 ```
 
-2. **Bước 2 — Mở đường có chọn lọc (Chỉ cho `shop-api` gọi vào `postgres:5432`):** Vì `NetworkPolicy` mang tính **cộng gộp (*Additive Whitelist* — không có luật Deny đè Allow)**, gói tin được đi qua nếu thoả mãn ít nhất một chính sách cho phép:
+2. **Bước 2 — Mở đường có chọn lọc (Chỉ cho `shop-api` gọi vào `postgres:5432`):**
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -107,23 +110,22 @@ spec:
           port: 5432
 ```
 
-## 2. Helm Charts: "`npm` và `package.json` của thế giới Kubernetes"
+## 2. Helm Charts: Trình quản lý gói (`Package Manager`) của Kubernetes
 
-> [!ANALOGY] Ánh xạ từ Node.js / Handlebars sang Helm trong 30 giây
-> Thay vì nhân bản hàng chục tệp YAML gần giống hệt nhau giữa `staging` và `production`, **Helm** gom toàn bộ tài nguyên của ứng dụng vào một gói duy nhất gọi là **Helm Chart**, kết hợp khuôn mẫu động (`templates/`) với tệp tham số (`values.yaml`)!
+Thay vì nhân bản hàng chục tệp YAML gần giống hệt nhau giữa `staging` và `production`, **Helm** gom toàn bộ tài nguyên của ứng dụng vào một gói duy nhất gọi là **Helm Chart**, kết hợp khuôn mẫu động (`templates/`) với tệp tham số (`values.yaml`)!
 
 ```visual
 kind: groups
 title: Giải Phẫu Cấu Trúc Một Gói Helm Chart Chuẩn [!badge:sky:Package Manager]
-subtitle: "Ánh xạ trực tiếp sang tư duy quản lý gói quen thuộc của lập trình viên Node.js / npm"
+subtitle: "Ánh xạ trực tiếp sang tư duy quản lý gói quen thuộc (pyproject.toml / package.json)"
 columns: 2
 items:
   - num: 1
     icon: file-code
     title: Chart.yaml
-    badge: Tương đương package.json
+    badge: Định danh gói Chart
     tone: sky
-    desc: Khai báo siêu dữ liệu định danh của gói Helm Chart.
+    desc: Khai báo siêu dữ liệu của gói giống pyproject.toml hay package.json.
     bullets:
       - "Chứa tên gói (`name`), phiên bản Chart (`version`), phiên bản ứng dụng (`appVersion`) và các gói phụ thuộc (`dependencies`)"
     code: |
@@ -139,7 +141,7 @@ items:
     tone: cyan
     desc: Các tệp YAML chứa biểu thức nội suy Go Template.
     bullets:
-      - "Đọc giá trị từ `.Values`, hỗ trợ hàm đường ống như `{{ .Values.replicaCount | default 2 }}` (nếu `values.yaml` truyền `5` thì ra `5`, chỉ dùng `2` khi bị bỏ trống)"
+      - "Đọc giá trị từ `.Values`, hỗ trợ hàm mặc định như `{{ .Values.replicaCount | default 2 }}`"
     code: |
       spec:
         replicas: {{ .Values.replicaCount | default 2 }}
@@ -174,47 +176,46 @@ items:
     codeLang: shell
 ```
 
-## 3. Chuyển tiếp sang bức tranh tự động hoá: Từ Helm đến **CI/CD & GitOps (ArgoCD)**
+## 3. Góc nhìn năm 2026: Chọn `Helm` hay `Kustomize` (`kubectl apply -k`) & Chu trình GitOps?
 
-Trong môi trường doanh nghiệp năm 2026, không một kỹ sư nào ngồi gõ tay `kubectl apply` hay `helm upgrade` từ laptop cá nhân lên cụm Production nữa! Toàn bộ chu trình được khép kín tự động bằng **CI/CD + GitOps**:
+Trong hệ sinh thái Kubernetes 2026, không phải lúc nào bạn cũng bắt buộc dùng khuôn mẫu `{{ ... }}` của Helm! Cộng đồng sử dụng song song **hai trường phái đóng gói bổ trợ hoàn hảo cho nhau**:
 
 ```visual
-kind: flow
-title: Chu Trình Phát Hành Tự Động Hoá Doanh Nghiệp (Helm + CI/CD + GitOps)
-subtitle: Git trở thành nguồn chân lý duy nhất (Single Source of Truth) điều khiển cụm Production
-steps:
-  - icon: git-commit
-    badge: 1. Lập trình viên
-    title: Git Push Code
-    desc: Đẩy mã nguồn Node.js mới lên nhánh chính GitHub / GitLab
-    code: "git push origin main"
-    tone: sky
-    edge: kích hoạt CI
-  - icon: package
-    badge: 2. Đường ống CI
-    title: Test & Build Image
-    desc: Chạy kiểm thử, đóng gói Multi-stage Image và đẩy lên kho GHCR
-    code: "shop-api:2.1.0"
-    tone: cyan
-    edge: cập nhật tag
-  - icon: folder-git
-    badge: 3. Kho cấu hình
-    title: Cập nhật values-prod.yaml
-    desc: CI tự động nâng tag phiên bản mới vào tệp tham số Helm trên Git
-    code: 'tag: "2.1.0"'
-    tone: amber
-    edge: tự động kéo về
-  - icon: refresh
-    badge: 4. GitOps Controller
-    title: ArgoCD / Flux Đồng Bộ
-    desc: Phát hiện thay đổi trên Git và tự động render + đồng bộ Helm Chart vào cụm K8s!
-    code: "Synced & Healthy"
-    tone: emerald
+kind: compare
+title: "So Sánh Hai Chuẩn Đóng Gói Cấu Hình K8s Năm 2026: Helm vs Kustomize"
+subtitle: "Cả hai đều được hỗ trợ hạng nhất (first-class) bên trong ArgoCD và Flux GitOps!"
+left:
+  badge: "TEMPLATING + PACKAGE · Helm v3/v4"
+  title: Khuôn mẫu động & Kho gói cộng đồng
+  tone: sky
+  code: |
+    # Cài đặt gói bên thứ ba hoặc app đa biến số:
+    helm upgrade --install shop ./chart \
+      -f values-prod.yaml
+  lang: shell
+  bullets:
+    - "**Cơ chế:** Dùng cú pháp khuôn mẫu `{{ .Values.xxx }}` để sinh ra YAML"
+    - "**Mạnh nhất khi:** Cài đặt phần mềm hạ tầng bên thứ ba (`cert-manager`, `Envoy Gateway`, `Prometheus`, `CloudNativePG`) hoặc đóng gói sản phẩm phân phối cho nhiều khách hàng"
+    - "Tích hợp sẵn quản lý vòng đời bản phát hành (`helm list`, `helm rollback`)"
+right:
+  badge: "NATIVE YAML OVERLAYS · Kustomize"
+  title: Tích hợp sẵn trong kubectl apply -k
+  tone: emerald
+  code: |
+    # Áp lớp ghi đè (overlay) không cần sửa YAML gốc:
+    # base/deployment.yaml + overlays/prod/kustomization.yaml
+    kubectl apply -k overlays/prod
+  lang: shell
+  bullets:
+    - "**Cơ chế:** Giữ nguyên **100% tệp YAML thuần hợp lệ** ở `base/`, rồi đắp các bản vá nhỏ (`patches`, đổi `replicas`, nâng `newTag` image) ở từng thư mục `overlays/staging`, `overlays/prod`"
+    - "**Mạnh nhất khi:** Quản lý các microservice nội bộ (Python, Node.js, Go) của công ty — đọc dễ hiểu, không sợ lỗi thụt lề Go Template, chạy sẵn bằng **`kubectl apply -k`** không cần cài thêm CLI!"
 ```
 
-*(Bạn có thể nhấn nút chuyển sang ứng dụng **CI/CD Architecture** ngay bên dưới bài học để chinh phục trọn vẹn nửa mảnh ghép tự động hoá đó!)*
+> [!TIP] Bức tranh tự động hóa doanh nghiệp: GitOps với `ArgoCD` / `Flux`
+> Trên Production năm 2026, kỹ sư không ngồi gõ tay `kubectl apply` hay `helm upgrade` từ laptop cá nhân nữa! Mọi thay đổi (`values-prod.yaml` của Helm hoặc `kustomization.yaml` của Kustomize) đều được commit lên Git, và bộ điều khiển **GitOps (`ArgoCD` hoặc `Flux`)** nằm trong cụm sẽ tự động kéo về đồng bộ — biến Git thành nguồn sự thật duy nhất (*Single Source of Truth*).
+> *(Bạn có thể mở ứng dụng **CI/CD & GitOps Mastery** để thực hành trọn vẹn quy trình tự động hóa đó!)*
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - Mặc định mạng K8s là **Allow All xuyên mọi Namespace** · `NetworkPolicy` đòi hỏi **CNI hỗ trợ** (**Cilium / Calico / Antrea**) mới chặn gói tin thực tế!
 > - **`podSelector: {}`** khớp toàn bộ Pod trong Namespace · Nhiều luật `NetworkPolicy` hoạt động theo kiểu **cộng gộp cho phép (*Additive Whitelist*)**.
-> - Trong Helm: **`Chart.yaml`** giống `package.json`, **`values.yaml`** chứa biến mặc định, và lệnh triển khai chuẩn là **`helm upgrade --install <release> <chart> -f values-prod.yaml`**.
+> - Chọn **`Helm`** (`Chart.yaml` + `values.yaml`, `helm upgrade --install`) khi cần đóng gói giàu tham số/cài gói bên thứ ba; chọn **`Kustomize`** (`base/` + `overlays/`, `kubectl apply -k`) khi ưu tiên lớp phủ YAML thuần gọn sạch cho GitOps.

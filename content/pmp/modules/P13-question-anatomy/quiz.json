@@ -25,7 +25,7 @@
       "Báo cáo lên Project Sponsor để can thiệp với Giám đốc Sở Tư pháp"
     ],
     "answer": 2,
-    "explain": "Câu chốt hỏi **SHOULD HAVE DONE** (biện pháp phòng ngừa ở quá khứ), không hỏi cách chữa cháy hiện tại! Đáp án A và B là hành động khắc phục sau khi sự cố đã nổ ra; chỉ có C chỉ đúng lỗ hổng gốc rễ ở giai đoạn đầu là bỏ sót Key Stakeholder và yêu cầu pháp lý ngành."
+    "explain": "Câu chốt hỏi **SHOULD HAVE DONE** (biện pháp phòng ngừa ở quá khứ), không hỏi cách xử lý tình thế hiện tại! Đáp án A và B là hành động khắc phục sau khi sự cố đã nổ ra; chỉ có C chỉ đúng lỗ hổng gốc rễ ở giai đoạn đầu là bỏ sót Key Stakeholder và yêu cầu pháp lý ngành."
   },
   {
     "id": "p13-q3",
@@ -44,7 +44,7 @@
   {
     "id": "p13-q4",
     "type": "mc",
-    "q": "Một nhóm Agile đang phát triển ứng dụng đặt lịch khám bệnh trực tuyến. Khi hỗ trợ nhóm giải quyết tình trạng Velocity sụt giảm trong 2 Sprint gần đây, Project Manager (đóng vai trò Servant Leader) nên thực hiện tất cả các hành động dưới đây, **NGOẠI TRỪ (EXCEPT)**:",
+    "q": "Một nhóm Agile đang phát triển ứng dụng đặt lịch chẩn đoán lỗi trực tuyến. Khi hỗ trợ nhóm giải quyết tình trạng Velocity sụt giảm trong 2 Sprint gần đây, Project Manager (đóng vai trò Servant Leader) nên thực hiện tất cả các hành động dưới đây, **NGOẠI TRỪ (EXCEPT)**:",
     "code": "",
     "choices": [
       "Tạo không gian an toàn tâm lý trong buổi Sprint Retrospective để nhóm thẳng thắn tìm nguyên nhân gốc rễ",

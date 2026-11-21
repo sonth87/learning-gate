@@ -1,53 +1,81 @@
 import React from 'react';
-import { GitBranch, GraduationCap, Layers, Scale } from 'lucide-react';
-import { usePmpAppStore } from '@/features/pmp-course/store';
-import type { PmpTab } from '@/features/pmp-course/types';
+import { BookOpen, GitBranch, GraduationCap, Layers, Scale } from 'lucide-react';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { usePmpAppStore, usePmpNav } from '@/features/pmp-course/store';
 import { cn } from '@/utils/cn';
-
-const MOBILE_ITEMS: {
-  id: PmpTab;
-  label: string;
-  shortLabel: string;
-  icon: React.FC<{ className?: string }>;
-}[] = [
-  { id: 'learn', label: 'Học tư duy', shortLabel: 'Học', icon: GraduationCap },
-  { id: 'canvas', label: 'Mindset Canvas', shortLabel: 'Canvas', icon: Layers },
-  { id: 'decision', label: 'Cây quyết định', shortLabel: 'Quyết định', icon: GitBranch },
-  { id: 'lookup', label: 'Đối chiếu & Link', shortLabel: 'Tra cứu', icon: Scale },
-];
 
 export const PmpMobileBottomNav: React.FC = () => {
   const { activeTab, setActiveTab } = usePmpAppStore();
+  const pmpView = usePmpNav((s) => s.view);
+  const goPmp = usePmpNav((s) => s.go);
+  const lang = useWorkbenchStore((s) => s.language);
+
+  const items = [
+    {
+      id: 'learn',
+      label: lang === 'en' ? 'Learn' : 'Học',
+      icon: BookOpen,
+      active: activeTab === 'learn' && pmpView.name === 'workbench',
+      onClick: () => {
+        setActiveTab('learn');
+        goPmp({ name: 'workbench' });
+      },
+    },
+    {
+      id: 'practice',
+      label: lang === 'en' ? 'Quiz' : 'Quiz',
+      icon: GraduationCap,
+      active: activeTab === 'learn' && pmpView.name !== 'workbench',
+      onClick: () => {
+        setActiveTab('learn');
+        if (pmpView.name === 'workbench') goPmp({ name: 'quiz', mode: 'mix' });
+      },
+    },
+    {
+      id: 'canvas',
+      label: 'Canvas',
+      icon: Layers,
+      active: activeTab === 'canvas',
+      onClick: () => setActiveTab('canvas'),
+    },
+    {
+      id: 'decision',
+      label: lang === 'en' ? 'Decisions' : 'Quyết định',
+      icon: GitBranch,
+      active: activeTab === 'decision',
+      onClick: () => setActiveTab('decision'),
+    },
+    {
+      id: 'lookup',
+      label: lang === 'en' ? 'Lookup' : 'Tra cứu',
+      icon: Scale,
+      active: activeTab === 'lookup',
+      onClick: () => setActiveTab('lookup'),
+    },
+  ];
 
   return (
     <nav
-      aria-label="Điều hướng chính trên di động"
-      className="shrink-0 z-40 border-t border-slate-800/90 bg-slate-950/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] lg:hidden"
+      aria-label="Mobile navigation"
+      className="shrink-0 z-40 border-t-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel)] pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
-      <div className="mx-auto grid max-w-3xl grid-cols-4 gap-0.5 px-1 py-1">
-        {MOBILE_ITEMS.map((item) => {
+      <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1 px-1.5 py-1">
+        {items.map((item) => {
           const Icon = item.icon;
-          const active = activeTab === item.id;
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveTab(item.id)}
-              aria-current={active ? 'page' : undefined}
+              onClick={item.onClick}
               className={cn(
-                'flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-1.5 transition-all active:scale-95 cursor-pointer',
-                active
-                  ? 'text-amber-400 bg-amber-500/15 border border-amber-500/35 font-extrabold shadow-2xs'
-                  : 'text-slate-400 hover:text-slate-200 border border-transparent font-medium'
+                'flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 font-mono text-[10px] transition-all cursor-pointer',
+                item.active
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] font-extrabold text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:text-[var(--dts-ink)] font-semibold'
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
-              <span className="text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full sm:hidden">
-                {item.shortLabel}
-              </span>
-              <span className="hidden sm:inline text-[10px] leading-tight tracking-tight whitespace-nowrap truncate max-w-full">
-                {item.label}
-              </span>
+              <span className="truncate max-w-full">{item.label}</span>
             </button>
           );
         })}

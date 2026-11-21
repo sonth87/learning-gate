@@ -1,10 +1,10 @@
 # Bảo mật Pod & Phân quyền truy cập: SecurityContext, Pod Security Admission & RBAC
 
-Nếu một tin tặc khai thác thành công lỗ hổng thực thi mã từ xa (*RCE* — ví dụ qua một gói npm độc hại hoặc lỗ hổng giải mã dữ liệu đầu vào) bên trong container Node.js của bạn, điều gì sẽ xảy ra tiếp theo?
+Nếu một tin tặc khai thác thành công lỗ hổng thực thi mã từ xa (*RCE* — ví dụ qua lỗ hổng giải mã dữ liệu đầu vào hoặc thư viện bên thứ ba bị nhiễm mã độc) bên trong container Python / Node.js của bạn, điều gì sẽ xảy ra tiếp theo?
 
 ```visual
 kind: layers
-title: Hai Số Phận Trái Ngược Khi Container Node.js Dính Lỗ Hổng RCE
+title: Hai Số Phận Trái Ngược Khi Container Ứng Dụng Dính Lỗ Hổng RCE
 subtitle: "Sự khác biệt giữa mất trắng toàn bộ cụm máy chủ trong 30 giây và nhốt chặt kẻ tấn công trong chiếc hộp rỗng"
 columns:
   - title: Cụm Mặc Định Cẩu Thả (Default Cluster)
@@ -20,11 +20,11 @@ columns:
         note: Writable RootFS
         tone: amber
       - label: Giữ nguyên hơn 30 quyền nhân Linux (Capabilities)
-        sub: Có sẵn NET_RAW giả mạo gói tin ARP/ICMP nội bộ
+        sub: Có sẵn NET_RAW giả mạo gói tin nội bộ
         note: Dễ leo thang
         tone: rose
       - label: Gắn sẵn thẻ ServiceAccount Token quyền cluster-admin
-        sub: Đọc /var/run/secrets/kubernetes.io/serviceaccount/token xoá sạch cụm!
+        sub: Đọc /var/run/secrets/kubernetes.io/serviceaccount/token xóa sạch cụm!
         note: Container Breakout
         tone: rose
     footer: Một lỗ hổng nhỏ ở Web API kéo sập toàn bộ hạ tầng công ty
@@ -34,7 +34,7 @@ columns:
     layers:
       - label: "Lớp 1 · securityContext: Non-Root (uid=1000) & Read-Only /"
         sub: "allowPrivilegeEscalation: false + capabilities.drop: [\"ALL\"]"
-        note: Khoá chặt nhân Linux
+        note: Khóa chặt nhân Linux
         tone: emerald
       - label: "Lớp 2 · Pod Security Admission (PSA): restricted"
         sub: Cưỡng chế tự động bằng nhãn ngay trên Namespace từ API Server
@@ -42,7 +42,7 @@ columns:
         tone: sky
       - label: "Lớp 3 · RBAC Least Privilege & Tắt Auto-Mount Token"
         sub: "automountServiceAccountToken: false hoặc Role quyền tối thiểu"
-        note: Vô hiệu hoá API Server
+        note: Vô hiệu hóa API Server
         tone: cyan
     footer: Tin tặc bị nhốt cứng ở uid=1000, không ghi được đĩa, không gọi được K8s API!
 ```
@@ -54,12 +54,12 @@ kind: illustration
 diagram: "kube:k16"
 alt: "Ba lớp phòng thủ chiều sâu gồm securityContext (Non-Root, Read-Only RootFS, drop ALL), Pod Security Admission và phân quyền tối thiểu RBAC"
 title: "Giải Phẫu Phòng Thủ Chiều Sâu: Hardened SecurityContext, PSA Restricted & RBAC"
-subtitle: "Nhốt chặt mọi nguy cơ tấn công RCE trong chiếc hộp phi đặc quyền, khoá ghi ổ đĩa gốc và thu hồi quyền gọi K8s API"
+subtitle: "Nhốt chặt mọi nguy cơ tấn công RCE trong chiếc hộp phi đặc quyền, khóa ghi ổ đĩa gốc và thu hồi quyền gọi K8s API"
 caption: "Kiến trúc gia cố securityContext cấp nhân Linux, cổng kiểm duyệt Pod Security Admission trên Namespace và chuỗi phân quyền RBAC tối thiểu"
 callouts:
   - num: 1
     label: "securityContext — Non-Root, Read-Only / & Drop ALL"
-    desc: "Ép chạy uid=1000, khoá chỉ đọc cây thư mục gốc (chỉ gắn emptyDir ở /tmp) và thu hồi sạch mọi Linux Capabilities thừa."
+    desc: "Ép chạy uid=1000, khóa chỉ đọc cây thư mục gốc (chỉ gắn emptyDir ở /tmp) và thu hồi sạch mọi Linux Capabilities thừa."
     tone: emerald
   - num: 2
     label: "Pod Security Admission (PSA) & Seccomp"
@@ -73,16 +73,16 @@ callouts:
 
 ## 1. Lớp giáp thứ nhất: Gia cố `securityContext` ở cấp Pod & Container
 
-Ở bài `K05`, bạn đã quen với dòng `USER node` trong Dockerfile. Tuy nhiên, Kubernetes không mù quáng tin tưởng Dockerfile (vì ai đó có thể vô tình đẩy một bản image quên `USER node` lên cụm). Ta khoá chặt ngay trên YAML qua trường **`securityContext`** ở hai tầng:
+Ở bài `K05`, bạn đã quen với dòng `USER node` / `USER appuser` trong Dockerfile. Tuy nhiên, Kubernetes không mù quáng tin tưởng Dockerfile (vì ai đó có thể vô tình đẩy một bản image quên dòng `USER` lên cụm). Ta khóa chặt ngay trên YAML qua trường **`securityContext`** ở hai tầng:
 
 - [x] **Ở cấp Pod (`spec.securityContext`):** Áp dụng chung cho mọi container và quyền sở hữu ổ đĩa gắn vào Pod (`runAsNonRoot: true`, `runAsUser: 1000`, `fsGroup: 2000`, `seccompProfile.type: RuntimeDefault`).
-- [x] **Ở cấp từng Container (`spec.containers[].securityContext`):** Khoá chặt đặc quyền nhân Linux:
+- [x] **Ở cấp từng Container (`spec.containers[].securityContext`):** Khóa chặt đặc quyền nhân Linux:
   - **`allowPrivilegeEscalation: false`:** Cấm tuyệt đối tiến trình con leo thang đặc quyền qua cờ `setuid` (`sudo`, `su`).
-  - ==`capabilities.drop: ["ALL"]`==: Từ khoá viết hoa `ALL` thu hồi toàn bộ hơn 30 quyền đặc thù của nhân Linux (`NET_RAW`, `SYS_ADMIN`...) mà Web API Node.js không bao giờ cần tới.
-  - ==`readOnlyRootFilesystem: true`==: Khoá toàn bộ hệ thống tệp gốc `/` của container thành **Chỉ đọc**!
+  - ==`capabilities.drop: ["ALL"]`==: Từ khóa viết hoa `ALL` thu hồi toàn bộ hơn 30 quyền đặc thù của nhân Linux (`NET_RAW`, `SYS_ADMIN`...) mà Web API thông thường không bao giờ cần tới.
+  - ==`readOnlyRootFilesystem: true`==: Khóa toàn bộ hệ thống tệp gốc `/` của container thành **Chỉ đọc**!
 
-> [!TIP] Mẫu thiết kế chuẩn cho Node.js khi bật `readOnlyRootFilesystem: true`
-> Một số thư viện Node.js (như xử lý tệp tải lên với `multer`, xuất PDF, hoặc trình chạy `npm`) vẫn cần ghi tệp nháp vào thư mục `/tmp`. Giải pháp chuẩn mực là khoá cứng gốc `/` bằng `readOnlyRootFilesystem: true` rồi **gắn riêng một ổ đĩa tạm `emptyDir: {}` vào đúng đường dẫn `/tmp`**:
+> [!TIP] Mẫu thiết kế chuẩn cho cả Python & Node.js khi bật `readOnlyRootFilesystem: true`
+> Khi khóa gốc `/` chỉ đọc, một số thư viện xử lý tệp tải lên như `python-multipart` / `tempfile` (FastAPI) hay `multer` / xuất PDF (Node.js) vẫn cần ghi tệp nháp vào `/tmp`. Giải pháp chuẩn mực là **gắn riêng một ổ đĩa tạm `emptyDir: {}` vào đúng đường dẫn `/tmp`**!
 
 ```yaml
 spec:
@@ -109,14 +109,14 @@ spec:
       emptyDir: {}
 ```
 
-> [!WARNING] Ba điểm yếu nghiêm trọng bảo mật tuyệt đối tránh xa!
-> Trừ khi bạn đang viết phần mềm hạ tầng cấp thấp của hệ thống, **tuyệt đối cấm dùng**: `privileged: true`, `hostNetwork: true`, và gắn ổ đĩa `hostPath: /var/run/docker.sock` — vì bất kỳ container nào nắm giữ chúng đều tương đương quyền `root` trực tiếp trên máy chủ vật lý!
+> [!WARNING] Ba cấu hình mở toang cửa hậu cần tuyệt đối tránh xa!
+> Trừ khi bạn đang phát triển phần mềm hạ tầng mạng cấp thấp của hệ thống, **tuyệt đối cấm dùng**: `privileged: true`, `hostNetwork: true`, và gắn ổ đĩa `hostPath: /var/run/docker.sock` — vì bất kỳ container nào nắm giữ chúng đều tương đương nắm quyền `root` trực tiếp trên máy chủ vật lý!
 
 ## 2. Lớp giáp thứ hai: Cưỡng chế tự động bằng **Pod Security Admission (`PSA`)**
 
 Làm sao đảm bảo cả 50 lập trình viên trong công ty không ai quên viết `securityContext`?
 
-Trước năm 2022, Kubernetes từng dùng tài nguyên cũ `PodSecurityPolicy` (`policy/v1beta1`), nhưng cơ chế đó quá rườm rà nên **đã bị gỡ bỏ vĩnh viễn kể từ Kubernetes v1.25+**. Ngày nay (K8s v1.30+ / 2026), cơ chế tích hợp chính thức thay thế là ==Pod Security Admission (`PSA`)== — áp dụng trực tiếp bằng các **nhãn (`labels`) ngay trên `Namespace`** theo 3 mức **Pod Security Standards (`PSS`)**:
+Trước năm 2022, Kubernetes từng dùng tài nguyên cũ `PodSecurityPolicy`, nhưng cơ chế đó đã bị gỡ bỏ hoàn toàn từ K8s v1.25+. Ngày nay (K8s v1.30+ / 2026), cơ chế tích hợp sẵn chính thức là ==Pod Security Admission (`PSA`)== — kích hoạt cực gọn chỉ bằng **nhãn (`labels`) ngay trên `Namespace`** theo 3 mức **Pod Security Standards (`PSS`)**:
 
 ```visual
 kind: groups
@@ -132,7 +132,7 @@ items:
     desc: Không giới hạn đặc quyền, cho phép can thiệp sâu vào nhân máy chủ.
     bullets:
       - "Cho phép mọi quyền hệ thống ở cấp Node"
-      - "Chỉ được dùng cho `kube-system`, CNI plugin mạng, hoặc agent thu gom log cấp phần cứng"
+      - "Chỉ được dùng cho `kube-system`, CNI plugin mạng, hoặc agent giám sát phần cứng"
     footer: Tuyệt đối cấm dùng cho ứng dụng kinh doanh
   - num: 2
     icon: shield
@@ -168,28 +168,33 @@ metadata:
     pod-security.kubernetes.io/warn: restricted
 ```
 
-## 3. Lớp giáp thứ ba: Phân quyền tối thiểu với **RBAC** (`ServiceAccount` + `Role` + `RoleBinding`)
+## 3. Lớp giáp thứ ba: Hiểu dễ dàng về **RBAC** (`ServiceAccount` + `Role` + `RoleBinding`)
 
-Khác với tài khoản con người (*User*), mỗi Pod chạy bên trong cụm được định danh bằng một **`ServiceAccount`**. Mặc định, Kubernetes tự động gắn tệp thẻ xác thực vào `/var/run/secrets/kubernetes.io/serviceaccount/token` của mọi Pod.
+> [!NOTE] Mô hình tư duy RBAC bằng 3 tờ giấy hành chính quen thuộc!
+> Người mới hay rối trước 5 cái tên của RBAC (`ServiceAccount`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`). Hãy nhớ quy tắc 3 mảnh ghép cực đơn giản:
+> 1. **Ai đang xin quyền (`Subject`)?** Với con người là `User`/`Group`; với Pod ứng dụng chạy trong cụm là chiếc **thẻ nhân viên `ServiceAccount`**.
+> 2. **Được phép làm gì (`Role` vs `ClusterRole`)?** Là **bản mô tả quyền hạn** (ví dụ: chỉ được `get`, `list` đối tượng `configmaps`). `Role` chỉ có giá trị trong **1 tầng lầu Namespace**; `ClusterRole` có giá trị trên **toàn tòa nhà Cụm**.
+> 3. **Giấy quyết định bổ nhiệm (`RoleBinding` vs `ClusterRoleBinding`):** Nối chiếc thẻ nhân viên số (1) vào bản mô tả quyền hạn số (2)!
 
-- [!] **Quy tắc số 1 cho Web API thông thường:** Nếu Pod hoàn toàn không cần giao tiếp với Kubernetes API Server, hãy đặt ngay ==`automountServiceAccountToken: false`== trên `ServiceAccount` hoặc `Pod spec` để triệt tiêu hoàn toàn nguy cơ lộ thẻ xác thực nội bộ!
-- [>] **Quy tắc số 2 khi cần gọi K8s API:** Áp dụng mô hình **RBAC (`rbac.authorization.k8s.io/v1`)** theo nguyên lý **Đặc quyền tối thiểu (*Least Privilege*)** — **tuyệt đối cấm cấp ký tự đại diện tất cả `"*"` (Wildcard) hay quyền `cluster-admin`** cho `ServiceAccount` của ứng dụng!
+Hai quy tắc thực chiến bất di bất dịch cho mọi ứng dụng:
+- [!] **Quy tắc số 1 (95% Web/AI API thông thường):** Ứng dụng FastAPI hay Express chỉ nói chuyện với PostgreSQL/Redis chứ không hề gọi Kubernetes API Server → hãy đặt ngay ==`automountServiceAccountToken: false`== để không gắn thẻ token dư thừa vào trong Pod!
+- [>] **Quy tắc số 2 (5% công cụ nội bộ cần gọi K8s API):** Áp dụng nguyên lý **Đặc quyền tối thiểu (*Least Privilege*)** — **tuyệt đối cấm cấp ký tự đại diện tất cả `"*"` (Wildcard) hay quyền tối cao `cluster-admin`** cho `ServiceAccount` của ứng dụng!
 
 ```visual
 kind: flow
 title: Mô Hình 3 Mảnh Ghép Phân Quyền Tối Thiểu RBAC (Least Privilege)
 subtitle: "Phân biệt rõ phạm vi 1 Namespace (Role + RoleBinding) và phạm vi toàn cụm (ClusterRole + ClusterRoleBinding)"
-footer: "Tuyệt đối liệt kê tường minh verbs và resources — KHÔNG BAO GIỜ dùng verbs: [\"*\"] hoặc cluster-admin cho Pod ứng dụng!"
+footer: "Kiểm tra nhanh quyền thực tế bằng lệnh: kubectl auth can-i get secrets --as=system:serviceaccount:prod:job-runner -n prod"
 steps:
   - icon: key
     badge: 1. Ai gọi? (Subject)
     title: ServiceAccount (v1)
-    desc: Danh tính định danh riêng gắn cho Pod qua trường serviceAccountName
+    desc: Danh tính thẻ nhân viên riêng gắn cho Pod qua trường serviceAccountName
     code: "sa: job-runner"
     tone: sky
     edge: gắn vào subjects
   - icon: workflow
-    badge: 2. Cầu nối quyền
+    badge: 2. Quyết định bổ nhiệm
     title: RoleBinding / ClusterRoleBinding
     desc: Nối danh tính ServiceAccount (subjects) với bộ quyền hạn tương ứng (roleRef)
     code: "kind: RoleBinding"
@@ -211,6 +216,6 @@ steps:
 ```
 
 > [!REMEMBER] Ghi nhớ bỏ túi
-> - **`PodSecurityPolicy` đã bị khai tử từ K8s v1.25**, thay thế chính thức bằng **Pod Security Admission (`PSA`)** gắn nhãn mức **`restricted`** trên `Namespace`.
+> - **`PodSecurityPolicy` đã bị loại bỏ từ K8s v1.25**, thay thế chính thức bằng **Pod Security Admission (`PSA`)** gắn nhãn mức **`restricted`** trên `Namespace`.
 > - Gia cố container chuẩn mực: `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, **`capabilities.drop: ["ALL"]`**, và `readOnlyRootFilesystem: true` (kèm volume `emptyDir: {}` gắn vào `/tmp`).
-> - Tắt thẻ dư thừa bằng **`automountServiceAccountToken: false`** · Phân biệt **`Role`** (trong 1 Namespace) vs **`ClusterRole`** (toàn cụm, gồm cả `Nodes`/`PV`) · Cấm tuyệt đối wildcard `"*"`!
+> - Tắt thẻ dư thừa bằng **`automountServiceAccountToken: false`** · Phân biệt **`Role`** (trong 1 Namespace) vs **`ClusterRole`** (toàn cụm) · Cấm tuyệt đối wildcard `"*"`!

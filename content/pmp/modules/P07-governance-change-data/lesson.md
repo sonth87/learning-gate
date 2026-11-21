@@ -1,112 +1,116 @@
-## 1. Thẩm quyền Khai sinh Dự án: Project Charter vs Project Management Plan
+## 1. Giải mã bằng ví dụ phần mềm: Giấy khai sinh dự án (`Project Charter`) & Khi nào cần `CCB` vs khi nào chỉ cần `PO`?
 
-Trong **PMBOK® Guide 8 (`§2.1`)**, Miền hiệu suất **Governance** [!badge:amber:PMBOK 8] đóng vai trò hệ thần kinh trung ương kết nối mọi miền khác (hợp nhất Integration truyền thống cùng *Manage Quality Assurance* và *Plan Sourcing Strategy* thành 9 quy trình).
+Trong **PMBOK® Guide 8 (`§2.1`)**, miền **Governance** (*Quản trị điều phối — 9 quy trình*) đóng vai trò bộ khung xương pháp lý và kiểm soát của toàn bộ dự án. Người mới học PMP thường bối rối nhất ở 2 câu hỏi thực tế: *"Project Charter dùng làm gì?"* và *"Tại sao lúc thì bắt trình Hội đồng CCB rườm rà, lúc thì bảo chỉ cần Product Owner gật đầu là xong?"*
 
-Câu hỏi bẫy kinh điển ở giai đoạn khởi tạo xoay quanh thời điểm PM thực sự có thẩm quyền sử dụng nguồn lực tổ chức:
+Hãy dùng câu chuyện xây dựng hệ thống ERP cho tập đoàn để phân biệt rạch ròi ngay từ phút đầu:
+
+- **Project Charter (*Hiến chương / Giấy khai sinh dự án*):** Hãy tưởng tượng Tổng Giám đốc miệng bảo bạn làm PM dự án mới, nhưng chưa hề ký văn bản bổ nhiệm chính thức. Khi bạn sang phòng Hạ tầng xin cấp 10 máy chủ Cloud hay sang phòng Nhân sự mượn 3 lập trình viên giỏi, các trưởng phòng sẽ từ chối ngay vì *"anh lấy tư cách gì điều người của tôi?"*. `Project Charter` do **Project Sponsor ký ban hành** chính là ==tờ giấy khai sinh trao thẩm quyền chính thức cho PM sử dụng tiền bạc và nhân sự của tổ chức==!
+- **Khi nào BẮT BUỘC trình `CCB` (*Change Control Board*) vs khi nào chỉ cần `PO` (*Product Owner*)?**
+  - **Trình `CCB` qua quy trình `PICC` (*Perform Integrated Change Control — Kiểm soát thay đổi tích hợp*):** Khi dự án chạy theo **Predictive** (hoặc phần khung hợp đồng cố định của dự án **Hybrid**) **đã chốt khoá `Scope / Schedule / Cost Baseline`**. Mọi thay đổi làm xê dịch đường cơ sở đã cam kết đều phải qua CCB xét duyệt chính thức!
+  - **Chỉ cần `Product Owner` sắp xếp lại `Product Backlog` (KHÔNG cần CCB):** Khi thay đổi tính năng nằm gọn bên trong dự án **Agile** (nơi Timebox và Ngân sách giữ ổn định, còn phạm vi chi tiết linh hoạt theo giá trị). Tuy nhiên, nếu trong dự án Hybrid mà thay đổi đó phá vỡ **cột mốc hợp đồng pháp lý hoặc vượt tổng trần ngân sách công ty**, thì vẫn phải trình lên CCB/Sponsor!
 
 ```visual
 kind: compare
 title: "Đối chiếu Project Charter và Project Management Plan"
-subtitle: "Không bao giờ nhầm người ký, mục đích và cách thức cập nhật của hai tài liệu xương sống"
+subtitle: "Nắm chắc ai ký, mục đích và thời điểm khoá sổ của hai tài liệu trụ cột"
 left:
   badge: "SPONSOR KÝ BAN HÀNH"
-  title: "Project Charter (Hiến chương dự án)"
+  title: "Project Charter (Giấy khai sinh dự án)"
   tone: "amber"
   bullets:
-    - "Giấy khai sinh chính thức của dự án, dựa trên Business Case và Benefits Management Plan."
-    - "Trao thẩm quyền chính thức cho Project Manager huy động nguồn lực tổ chức."
-    - "Ghi mục tiêu cấp cao, mốc Milestone lớn, ngân sách tóm tắt và rủi ro tổng thể ban đầu."
-    - "PM có thể hỗ trợ soạn thảo, nhưng BẮT BUỘC Sponsor (hoặc thực thể ngoài dự án) ký duyệt."
+    - "Khai sinh chính thức dự án dựa trên Business Case và Benefits Management Plan."
+    - "Cấp thẩm quyền hợp pháp cho Project Manager huy động nguồn lực liên phòng ban."
+    - "Nêu mục tiêu cấp cao, mốc lớn (Summary Milestones), ngân sách khái quát và rủi ro tổng thể."
+    - "PM có thể chấp bút soạn giúp, nhưng người đặt bút ký duyệt BẮT BUỘC là Sponsor!"
 right:
   badge: "PM TÍCH HỢP & ĐIỀU HÀNH"
   title: "Project Management Plan (Kế hoạch QLDA)"
   tone: "emerald"
   bullets:
-    - "Bản thiết kế tổng thể chỉ rõ CÁCH thực thi, giám sát, kiểm soát và đóng dự án."
-    - "Tích hợp mọi kế hoạch con (Subsidiary Plans) và 3 đường cơ sở: Scope, Schedule, Cost Baselines."
-    - "TRƯỚC khi khoá Baseline: PM và nhóm chủ động tinh chỉnh linh hoạt không cần qua CCB."
-    - "SAU khi khoá Baseline: mọi thay đổi chạm tới Baseline bắt buộc phải có Change Request được duyệt."
+    - "Bản thiết kế tổng thể chỉ rõ CÁCH THỨC thực thi, theo dõi, kiểm soát và đóng dự án."
+    - "Gom toàn bộ các kế hoạch thành phần và 3 đường cơ sở: Scope, Schedule, Cost Baselines."
+    - "TRƯỚC khi chốt Baseline: PM và đội dự án tự do cập nhật hoàn thiện không cần trình CCB."
+    - "SAU khi đã chốt Baseline: hễ thay đổi chạm tới Baseline là bắt buộc phải đi qua PICC / CCB!"
 ```
 
-- [!] **Phản xạ phòng thi**: Nếu đề bài mô tả dự án chưa có **Project Charter** được ký mà trưởng phòng đòi mượn người làm thiết kế ngay, hành động ĐẦU TIÊN là ==hoàn tất và trình Sponsor ký duyệt Project Charter== (trừ các nghiên cứu tiền khả thi phục vụ Business Case).
+## 2. Chuỗi 5 bước bất biến của quy trình Kiểm soát Thay đổi Tích hợp (`PICC`)
 
-## 2. Chuỗi Bất biến Xử lý Yêu cầu Thay đổi (PICC & CCB)
-
-Khi dự án Predictive (hoặc phần khung Predictive của dự án Hybrid) đã khoá **Baseline**, mọi đề xuất thêm/bớt phạm vi, dịch lịch, xin dùng *Management Reserve* hay sửa lỗi quy trình (*Corrective / Preventive / Defect Repair*) đều phải đi qua quy trình **Perform Integrated Change Control (PICC)** [!badge:rose:Bẫy đề thi]:
+Sau khi dự án Predictive đã chốt `Baseline`, bất kỳ yêu cầu thêm/bớt tính năng, dời lịch, xin rút quỹ *Management Reserve*, hay hành động sửa sai quy trình (*Corrective Action · Preventive Action · Defect Repair*) đều phải đi qua **đúng thứ tự 5 mắt xích bất biến** dưới đây:
 
 ```visual
 kind: flow
-title: "Chuỗi 5 Mắt xích Vàng xử lý Change Request sau khi đã khoá Baseline"
-subtitle: "Sai một mắt xích là mất điểm ở các câu hỏi FIRST / NEXT!"
+title: "5 Mắt xích Vàng xử lý Change Request (PICC & CCB)"
+subtitle: "Đảo lộn bất kỳ mắt xích nào trong câu hỏi FIRST / NEXT là mất điểm ngay!"
 steps:
   - icon: "search"
-    badge: "1. ĐÁNH GIÁ TRƯỚC"
-    title: "Phân tích Tác động"
-    desc: "Cùng nhóm chuyên môn đánh giá ảnh hưởng toàn diện lên Scope, Time, Cost, Quality, Risk."
+    badge: "BƯỚC 1 · FIRST"
+    title: "Phân tích tác động cùng nhóm"
+    desc: "Đánh giá ảnh hưởng chéo lên Phạm vi, Tiến độ, Chi phí, Chất lượng và Rủi ro trước tiên."
     tone: "amber"
-    edge: "Lập hồ sơ"
+    edge: "Rõ cái giá phải trả"
   - icon: "file"
-    badge: "2. CHÍNH THỨC HOÁ"
-    title: "Ghi Change Request"
-    desc: "Lập phiếu Change Request văn bản và cập nhật trạng thái chờ duyệt vào Change Log."
+    badge: "BƯỚC 2 · LOG"
+    title: "Lập Change Request & Ghi sổ"
+    desc: "Chính thức hoá thành văn bản Change Request và ghi trạng thái chờ xét vào Change Log."
     tone: "sky"
-    edge: "Trình thẩm quyền"
+    edge: "Đệ trình phương án"
   - icon: "scale"
-    badge: "3. PHÁN QUYẾT"
-    title: "CCB Xét duyệt"
-    desc: "Trình CCB (hoặc Sponsor theo Change Management Plan) kèm các phương án khuyến nghị."
+    badge: "BƯỚC 3 · DECIDE"
+    title: "Hội đồng CCB phán quyết"
+    desc: "CCB (hoặc Sponsor theo quy định trong Change Management Plan) phê duyệt, hoãn hoặc bác bỏ."
     tone: "cyan"
-    edge: "Được duyệt / Bác bỏ"
+    edge: "Có kết quả duyệt"
   - icon: "refresh"
-    badge: "4. ĐỒNG BỘ PLAN"
-    title: "Cập nhật Baseline & Log"
-    desc: "Ghi kết quả vào Change Log. Nếu ĐƯỢC DUYỆT: cập nhật Baselines và PM Plan liên quan."
+    badge: "BƯỚC 4 · UPDATE"
+    title: "Cập nhật Change Log & Baselines"
+    desc: "Ghi phán quyết vào Change Log; nếu ĐƯỢC DUYỆT thì cập nhật lại Baselines và PM Plan."
     tone: "emerald"
-    edge: "Thực thi"
+    edge: "Đồng bộ thông tin"
   - icon: "play"
-    badge: "5. TRIỂN KHAI"
-    title: "Truyền thông & Thực hiện"
-    desc: "Thông báo cho các Stakeholder bị ảnh hưởng và chỉ đạo nhóm thực thi theo Baseline mới."
-    tone: "cyan"
+    badge: "BƯỚC 5 · EXECUTE"
+    title: "Thông báo & Triển khai thực hiện"
+    desc: "Truyền thông tới các Stakeholder liên quan và chỉ đạo đội dự án làm theo Baseline mới."
+    tone: "violet"
 ```
 
-> [!WARNING] Hai cái bẫy giết điểm nhiều nhất trong câu hỏi Thay đổi
-> 1. **Nộp đơn rỗng lên CCB**: Thấy khách hàng gửi email xin đổi liền *"trình ngay lên CCB"* là **SAI** — PM phải **phân tích tác động cùng nhóm trước** rồi mới trình CCB!
-> 2. **Quên ghi nhận yêu cầu bị từ chối**: Ngay cả khi CCB **từ chối (Rejected)**, PM vẫn bắt buộc ==cập nhật trạng thái Rejected kèm lý do vào Change Log== và thông báo lại cho người đề xuất.
+> [!WARNING]
+> **Hai cú lừa kinh điển nhất trong đề PMP về Change Control:**
+> 1. **Trình đơn rỗng lên CCB:** Vừa nghe khách hàng ngỏ ý muốn đổi tính năng liền chọn *"Submit a change request to the CCB immediately"* là **SAI** — PM bắt buộc phải ==phân tích tác động cùng đội chuyên môn trước== rồi mới đệ trình!
+> 2. **Bỏ mặc đơn bị từ chối:** Khi CCB bác bỏ yêu cầu (*Rejected*), PM vẫn bắt buộc ==cập nhật trạng thái Rejected kèm lý do vào Change Log== và thông báo minh bạch cho người đề xuất.
 
-## 3. Dòng chảy Dữ liệu (`WPD → WPI → WPR`), Tri thức & Đóng Dự án
+## 3. Nhà máy tinh luyện dữ liệu (`WPD → WPI → WPR`) & Quản trị Tri thức
 
-Miền Governance giữ cho thông tin và bài học kinh nghiệm không bị đứt gãy từ lúc chạy việc tới lúc khép lại dự án [!badge:sky:PMA Bridge]:
+Để không bị lạc trong các câu hỏi hỏi về báo cáo, hãy hình dung dữ liệu từ công trường phần mềm đi qua 3 khâu tinh luyện:
 
 ```visual
 kind: anatomy
-title: "Giải phẫu Dòng dữ liệu Hiệu suất, Quản trị Tri thức & Thủ tục Đóng"
-subtitle: "Phân biệt chuẩn xác đầu vào/đầu ra để không bao giờ chọn nhầm thuật ngữ"
+title: "Dòng chảy Dữ liệu (WPD → WPI → WPR) và Hai loại Tri thức Dự án"
+subtitle: "Phân biệt dữ liệu thô, thông tin đã so chuẩn và báo cáo đóng gói gửi lãnh đạo"
 items:
-  - keyword: "WPD → WPI → WPR"
-    role: "Dòng chảy dữ liệu thực thi"
-    tone: "cyan"
-    summary: "Biến số liệu thô tại hiện trường thành báo cáo ra quyết định cấp lãnh đạo."
-    bullets:
-      - "WPD (Work Performance Data): Số thô chưa so sánh — ví dụ 'đã tiêu 40.000$', 'xong 65% gói việc A', '12 lỗi phần mềm'."
-      - "WPI (Work Performance Information): Đã đối chiếu với Baseline ở quy trình Control — ví dụ 'CPI = 0.85, dự báo vượt ngân sách 15%'."
-      - "WPR (Work Performance Reports): Bản tổng hợp trực quan (Dashboard, Status Report) đóng gói từ WPI để gửi Stakeholder/CCB."
-  - keyword: "Tacit vs Explicit"
-    role: "Manage Project Knowledge"
-    tone: "cyan"
-    summary: "Hai dạng tri thức phải kết hợp song hành xuyên suốt dự án, không đợi cuối kỳ."
-    bullets:
-      - "Explicit Knowledge (Tri thức hiện): Dễ viết thành chữ, sơ đồ, tài liệu, số liệu trong Lessons Learned Register."
-      - "Tacit Knowledge (Tri thức ẩn): Kinh nghiệm nghề, trực giác, bối cảnh ngầm — chỉ truyền tải hiệu quả qua đối thoại, kèm cặp (shadowing), workshop và văn hoá tin cậy."
-  - keyword: "Close Project / Phase"
-    role: "Khép vòng đời chính thức"
+  - keyword: "WPD (Work Performance Data)"
+    role: "Số đo thô tại hiện trường (Executing)"
+    tone: "slate"
+    summary: "Con số trần trụi chưa đem so với kế hoạch: ví dụ *'Task A đã làm xong 60%'*, *'Phát sinh 14 bug trên Jira'*, *'Đã chi thực tế 500 triệu VNĐ'*."
+  - keyword: "WPI (Work Performance Information)"
+    role: "Thông tin đã phân tích so chuẩn (Controlling)"
+    tone: "sky"
+    summary: "Kết quả sau khi đem WPD đối chiếu với Baseline: ví dụ *'CPI = 0.85, dự án đang vượt ngân sách 15% và có nguy cơ trễ mốc UAT 2 tuần'*."
+  - keyword: "WPR (Work Performance Reports)"
+    role: "Báo cáo đóng gói trực quan (Governance)"
     tone: "emerald"
-    summary: "Bắt buộc thực hiện kể cả khi dự án hoàn thành 100% HAY bị huỷ bỏ giữa chừng."
-    bullets:
-      - "Xác nhận khách hàng đã ký nghiệm thu sản phẩm (Accepted Deliverables từ Validate Scope) → bàn giao sang vận hành."
-      - "Đo lường sự hài lòng, họp tổng kết bài học cuối và chuyển vào Lessons Learned Repository (OPA) của tổ chức."
-      - "Hoàn thiện Final Report, thanh lý hợp đồng và GIẢI PHÓNG NGUỒN LỰC ở bước sau cùng!"
+    summary: "Tập hợp WPI thành Dashboard, biểu đồ S-Curve, Status Report gửi tới Sponsor, CCB và các bên liên quan để ra quyết định."
+  - keyword: "Explicit vs Tacit Knowledge"
+    role: "Tri thức Hiện vs Tri thức Ẩn"
+    tone: "amber"
+    summary: "**Explicit** viết ra giấy/Confluence được ngay (tài liệu kiến trúc, số liệu); **Tacit** là kinh nghiệm xương máu trong đầu chuyên gia — phải truyền qua **trò chuyện, kèm cặp trực tiếp (Shadowing / Pairing) và hội thảo chia sẻ**!"
 ```
 
-> [!IMPORTANT] Khi dự án bị chấm dứt sớm (Early Termination)
-> Tuyệt đối **không** giải tán đội dự án ngay lập tức! PM phải mở quy trình **Close Project or Phase** để: ==(1) Ghi nhận chính thức lý do dừng dự án, (2) Kiểm kê và bàn giao phần sản phẩm dở dang đã hoàn tất tới thời điểm đó, (3) Đúc kết Lessons Learned vào OPA, rồi mới (4) Giải phóng nhân sự==.
+## 4. Tình huống thực chiến: Thủ tục Đóng dự án (`Close Project or Phase`)
+
+Một sai lầm rất nhiều kỹ sư mắc phải là nghĩ *"Khách hàng vừa ký nghiệm thu xong là cho anh em giải tán sang dự án mới ngay trong chiều!"* hoặc *"Dự án bị công ty cắt vốn huỷ giữa chừng thì dừng luôn khỏi làm thủ tục đóng"*.
+
+> [!TIP]
+> **Quy tắc bất di bất dịch khi Đóng dự án (hoặc khi dự án bị Huỷ sớm):**
+> 1. Xác nhận sản phẩm bàn giao đã có chữ ký nghiệm thu chính thức (`Accepted Deliverables`) hoặc kiểm kê toàn bộ phần việc đã hoàn thành tới thời điểm bị huỷ để ghi rõ lý do dừng dự án.
+> 2. Chuyển giao sản phẩm sang bộ phận Vận hành (*Operations*), hoàn tất thanh lý hợp đồng và khảo sát mức độ hài lòng của các bên.
+> 3. Đúc kết bài học cuối kỳ chuyển từ *Lessons Learned Register* của dự án vào **Kho tri thức chung của toàn công ty (*OPA — Organizational Process Assets*)**, xuất bản *Final Report*, và ==chỉ giải phóng nhân sự đội dự án ở bước cuối cùng==!

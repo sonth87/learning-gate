@@ -11,7 +11,7 @@
       "Pull-Based GitOps cho phép sửa tay trực tiếp trên server mà không cần lưu vào Git"
     ],
     "answer": 1,
-    "explain": "Giữ quyền quản trị bên trong cụm và chỉ coi Git là nguồn sự thật duy nhất (Single Source of Truth) giúp đóng kín bề mặt tấn công từ đường ống CI bên ngoài."
+    "explain": "Giữ quyền quản trị bên trong cụm và chỉ coi Git là nguồn sự thật duy nhất (Single Source of Truth) giúp đóng kín bề mặt tấn công từ CI Pipeline bên ngoài."
   },
   {
     "id": "C15-Q2",

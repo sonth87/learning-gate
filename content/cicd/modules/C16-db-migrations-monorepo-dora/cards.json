@@ -11,7 +11,7 @@
   },
   {
     "id": "C16-C3",
-    "front": "Cặp bài trùng cấu hình để chạy đúng các gói bị ảnh hưởng trên Monorepo bằng Turborepo trong GitHub Actions là gì?",
+    "front": "bộ đôi kết hợp cấu hình để chạy đúng các gói bị ảnh hưởng trên Monorepo bằng Turborepo trong GitHub Actions là gì?",
     "back": "1) `actions/checkout@v4` với `with: { fetch-depth: 0 }`.\n2) `npx turbo run lint test build --filter=...[origin/main]`."
   },
   {
