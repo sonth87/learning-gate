@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="pmp-bg" x1="12" y1="8" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="27" fill="url(#pmp-bg)" />
+  <circle cx="60" cy="60" r="34" stroke="#FFFFFF" opacity="0.28" stroke-width="5.5" />
+  <g transform="rotate(45 60 60)">
+    <polygon points="60,29 68,56.5 52,56.5" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round" />
+    <polygon points="60,91 68,63.5 52,63.5" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round" opacity="0.46" />
+  </g>
+</svg>

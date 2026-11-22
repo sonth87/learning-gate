@@ -1,55 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0B1120" />
-      <stop offset="55%" stop-color="#020617" />
-      <stop offset="100%" stop-color="#064E3B" />
-    </linearGradient>
-    <linearGradient id="gateArch" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#34D399" />
-      <stop offset="50%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#0EA5E9" />
-    </linearGradient>
-    <linearGradient id="sparkGrad" x1="36" y1="14" x2="50" y2="28" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FDE68A" />
-      <stop offset="100%" stop-color="#F59E0B" />
+    <linearGradient id="lg-bg" x1="12" y1="8" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#312E81" />
     </linearGradient>
   </defs>
-
-  <!-- Squircle Background -->
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#bgGrad)" stroke="#1E293B" stroke-width="2" />
-
-  <!-- Outer Learning Gate Portal Arch -->
-  <path
-    d="M14 50V27C14 17.0589 22.0589 9 32 9C41.9411 9 50 17.0589 50 27V50"
-    stroke="url(#gateArch)"
-    stroke-width="4.5"
-    stroke-linecap="round"
-  />
-
-  <!-- Gate Pillars Base -->
-  <path
-    d="M10 50H20M44 50H54"
-    stroke="#38BDF8"
-    stroke-width="3.5"
-    stroke-linecap="round"
-  />
-
-  <!-- Python Prompt '>_' Inside the Gate -->
-  <path
-    d="M23 26L31 32.5L23 39"
-    stroke="#34D399"
-    stroke-width="4"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M34 39H42"
-    stroke="#F59E0B"
-    stroke-width="4"
-    stroke-linecap="round"
-  />
-
-  <!-- Golden Knowledge Star / Node at Top Arch -->
-  <circle cx="32" cy="18" r="3" fill="url(#sparkGrad)" />
+  <rect width="120" height="120" rx="27" fill="url(#lg-bg)" />
+  <path d="M35 86V55C35 41.1929 46.1929 30 60 30C73.8071 30 85 41.1929 85 55V86" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" />
+  <path d="M60 47Q63.4 59.6 76 63Q63.4 66.4 60 79Q56.6 66.4 44 63Q56.6 59.6 60 47Z" fill="#FFFFFF" opacity="0.6" />
 </svg>

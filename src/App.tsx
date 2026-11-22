@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { DeviceLayout, useStore } from '@sonth87/device-layout';
 import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
+import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
 
 const SHELL_STABILIZED_KEY = 'pylearn_desktop_shell_stabilized_v1';
 
@@ -133,6 +134,8 @@ export const App: React.FC = () => {
       <DeviceLayout
         apps={ALL_LEARNING_APPS}
         builtInApps={false}
+        macOSAppleIcon={<LearningGateGlyph />}
+        windowsStartIcon={<LearningGateLogo className="h-5 w-5 rounded-[5px]" />}
       />
     </div>
   );
