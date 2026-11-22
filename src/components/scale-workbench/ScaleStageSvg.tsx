@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Minus, MousePointerClick, Plus, RotateCcw } from 'lucide-react';
+import { Minus, MousePointerClick, Plus } from 'lucide-react';
 import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
 import {
   pickText,
@@ -829,12 +829,25 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [hintAutoOpen, setHintAutoOpen] = useState(true);
   const [hintHovered, setHintHovered] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const gridCamRef = useRef<SVGGElement | null>(null);
+  const sceneCamRef = useRef<SVGGElement | null>(null);
+  const camRef = useRef<{ zoom: number; panX: number; panY: number }>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+  });
+  const lastDragEndRef = useRef(0);
   const panDragRef = useRef<{
+    pointerId: number;
     startX: number;
     startY: number;
     origPanX: number;
     origPanY: number;
+    svgPerPx: number;
     moved: boolean;
+    captured: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -847,18 +860,10 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   useEffect(() => {
     setSelectedInfo(null);
     setHoverPreview(null);
+    camRef.current = { zoom: 1, panX: 0, panY: 0 };
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [scene]);
-
-  const handleZoomBy = useCallback((delta: number) => {
-    setZoom((z) => Math.round(Math.max(0.65, Math.min(2.25, z + delta)) * 100) / 100);
-  }, []);
-
-  const handleResetView = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
 
   const expandedNodes = useMemo(
     () => composeIsometricLayout(scene.nodes, scene.links),
@@ -1007,12 +1012,85 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   }, [expandedNodes, builtLinks]);
 
   const stageViewBox = useMemo(() => {
-    const zw = baseBounds.w / zoom;
-    const zh = baseBounds.h / zoom;
-    const vx = baseBounds.cx - pan.x - zw / 2;
-    const vy = baseBounds.cy - pan.y - zh / 2;
-    return `${vx.toFixed(1)} ${vy.toFixed(1)} ${zw.toFixed(1)} ${zh.toFixed(1)}`;
-  }, [baseBounds, zoom, pan]);
+    const vx = baseBounds.cx - baseBounds.w / 2;
+    const vy = baseBounds.cy - baseBounds.h / 2;
+    return `${vx.toFixed(1)} ${vy.toFixed(1)} ${baseBounds.w.toFixed(1)} ${baseBounds.h.toFixed(1)}`;
+  }, [baseBounds]);
+
+  const buildCamTransform = useCallback(
+    (z: number, px: number, py: number) => {
+      const { cx, cy } = baseBounds;
+      return `translate(${(cx + px).toFixed(2)} ${(cy + py).toFixed(2)}) scale(${z.toFixed(4)}) translate(${(-cx).toFixed(2)} ${(-cy).toFixed(2)})`;
+    },
+    [baseBounds]
+  );
+
+  const syncDomCamera = useCallback(
+    (z: number, px: number, py: number) => {
+      const tf = buildCamTransform(z, px, py);
+      gridCamRef.current?.setAttribute('transform', tf);
+      sceneCamRef.current?.setAttribute('transform', tf);
+    },
+    [buildCamTransform]
+  );
+
+  const applyCamera = useCallback(
+    (nextZoom: number, nextPanX: number, nextPanY: number) => {
+      const clampedZoom = Math.round(Math.max(0.55, Math.min(2.5, nextZoom)) * 100) / 100;
+      const maxX = baseBounds.w * Math.max(0.75, clampedZoom * 0.85);
+      const maxY = baseBounds.h * Math.max(0.75, clampedZoom * 0.85);
+      const px = Math.max(-maxX, Math.min(maxX, nextPanX));
+      const py = Math.max(-maxY, Math.min(maxY, nextPanY));
+      camRef.current = { zoom: clampedZoom, panX: px, panY: py };
+      syncDomCamera(clampedZoom, px, py);
+      setZoom(clampedZoom);
+      setPan({ x: px, y: py });
+    },
+    [baseBounds, syncDomCamera]
+  );
+
+  const handleZoomBy = useCallback(
+    (delta: number) => {
+      const cur = camRef.current;
+      const nextZoom = Math.round(Math.max(0.55, Math.min(2.5, cur.zoom + delta)) * 100) / 100;
+      const ratio = nextZoom / cur.zoom;
+      applyCamera(nextZoom, cur.panX * ratio, cur.panY * ratio);
+    },
+    [applyCamera]
+  );
+
+  const handleResetView = useCallback(() => {
+    camRef.current = { zoom: 1, panX: 0, panY: 0 };
+    syncDomCamera(1, 0, 0);
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, [syncDomCamera]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheelNative = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) === 0 && Math.abs(e.deltaX) === 0) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const svgPerPx = Math.max(
+        baseBounds.w / Math.max(1, rect.width),
+        baseBounds.h / Math.max(1, rect.height)
+      );
+      const mx = (e.clientX - (rect.left + rect.width / 2)) * svgPerPx;
+      const my = (e.clientY - (rect.top + rect.height / 2)) * svgPerPx;
+      const cur = camRef.current;
+      const step = e.deltaY < 0 ? 0.12 : -0.12;
+      const nextZoom = Math.round(Math.max(0.55, Math.min(2.5, cur.zoom + step)) * 100) / 100;
+      if (nextZoom === cur.zoom) return;
+      const ratio = nextZoom / cur.zoom;
+      const nextPanX = mx - (mx - cur.panX) * ratio;
+      const nextPanY = my - (my - cur.panY) * ratio;
+      applyCamera(nextZoom, nextPanX, nextPanY);
+    };
+    el.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => el.removeEventListener('wheel', onWheelNative);
+  }, [baseBounds, applyCamera]);
 
   const pathRefs = useRef<Map<string, SVGPathElement>>(new Map());
   const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
@@ -1091,62 +1169,107 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     return resolveFallbackInspector(lbl, undefined, true);
   };
 
-  const isViewModified = Math.abs(zoom - 1) > 0.01 || Math.abs(pan.x) > 1 || Math.abs(pan.y) > 1;
+  const isViewModified = Math.abs(zoom - 1) > 0.005 || Math.hypot(pan.x, pan.y) > 2;
+  const stageBgColor = isDark ? '#24201c' : '#faf3e9';
+  const initialCamTf = buildCamTransform(zoom, pan.x, pan.y);
+
+  const finishPan = (e: React.PointerEvent<HTMLDivElement>) => {
+    const st = panDragRef.current;
+    if (!st || e.pointerId !== st.pointerId) return;
+    if (st.captured) {
+      try {
+        e.currentTarget.releasePointerCapture(st.pointerId);
+      } catch {
+        // ignore if already released
+      }
+    }
+    panDragRef.current = null;
+    if (st.moved) {
+      lastDragEndRef.current = performance.now();
+      setIsPanning(false);
+      setPan({ x: camRef.current.panX, y: camRef.current.panY });
+    } else {
+      const target = e.target as Element;
+      if (!target.closest('[data-iso-interactive="true"]')) {
+        setSelectedInfo(null);
+      }
+    }
+  };
 
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
-      style={{ cursor: isPanning ? 'grabbing' : zoom > 1.01 ? 'grab' : 'default' }}
-      onWheel={(e) => {
-        if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
+      ref={containerRef}
+      className="relative h-full w-full overflow-hidden select-none"
+      style={{
+        cursor: isPanning ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+      onDragStart={(e) => e.preventDefault()}
+      onClickCapture={(e) => {
+        if (performance.now() - lastDragEndRef.current < 200) {
+          e.stopPropagation();
           e.preventDefault();
-          const step = e.deltaY < 0 ? 0.12 : -0.12;
-          handleZoomBy(step);
         }
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        const target = e.target as HTMLElement | SVGElement;
-        if (target.closest('button')) return;
+        const target = e.target as Element;
+        if (target.closest('button, [data-no-pan="true"]')) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const svgPerPx = Math.max(
+          baseBounds.w / Math.max(1, rect.width),
+          baseBounds.h / Math.max(1, rect.height)
+        );
         panDragRef.current = {
+          pointerId: e.pointerId,
           startX: e.clientX,
           startY: e.clientY,
-          origPanX: pan.x,
-          origPanY: pan.y,
+          origPanX: camRef.current.panX,
+          origPanY: camRef.current.panY,
+          svgPerPx,
           moved: false,
+          captured: false,
         };
       }}
       onPointerMove={(e) => {
         const st = panDragRef.current;
-        if (!st) return;
+        if (!st || e.pointerId !== st.pointerId) return;
         const dx = e.clientX - st.startX;
         const dy = e.clientY - st.startY;
-        if (Math.hypot(dx, dy) > 4) {
+        if (!st.moved && Math.hypot(dx, dy) > 3) {
           st.moved = true;
-          if (!isPanning) setIsPanning(true);
-          const scaleFactor = 1 / zoom;
-          setPan({
-            x: Math.max(-320, Math.min(320, st.origPanX + dx * scaleFactor)),
-            y: Math.max(-220, Math.min(220, st.origPanY + dy * scaleFactor)),
-          });
+          try {
+            e.currentTarget.setPointerCapture(st.pointerId);
+            st.captured = true;
+          } catch {
+            // ignore
+          }
+          setHoveredKey(null);
+          setHoverPreview(null);
+          setIsPanning(true);
+        }
+        if (st.moved) {
+          e.preventDefault();
+          const z = camRef.current.zoom;
+          const maxX = baseBounds.w * Math.max(0.75, z * 0.85);
+          const maxY = baseBounds.h * Math.max(0.75, z * 0.85);
+          const nextX = Math.max(-maxX, Math.min(maxX, st.origPanX + dx * st.svgPerPx));
+          const nextY = Math.max(-maxY, Math.min(maxY, st.origPanY + dy * st.svgPerPx));
+          camRef.current.panX = nextX;
+          camRef.current.panY = nextY;
+          syncDomCamera(z, nextX, nextY);
         }
       }}
-      onPointerUp={() => {
-        if (panDragRef.current && !panDragRef.current.moved) {
-          setSelectedInfo(null);
-        }
-        panDragRef.current = null;
-        setIsPanning(false);
-      }}
-      onPointerCancel={() => {
-        panDragRef.current = null;
-        setIsPanning(false);
-      }}
+      onPointerUp={finishPan}
+      onPointerCancel={finishPan}
     >
       <svg
         key={sceneSignature}
         viewBox={stageViewBox}
         preserveAspectRatio="xMidYMid meet"
+        style={{ pointerEvents: isPanning ? 'none' : 'auto' }}
         className={className ?? 'h-full w-full select-none'}
         role="img"
         aria-label="Interactive Isometric System Diagram"
@@ -1170,22 +1293,18 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           </pattern>
 
           <radialGradient
-            id={`fade-${uid}`}
+            id={`vignette-${uid}`}
             gradientUnits="userSpaceOnUse"
-            cx={0}
-            cy={0}
-            r={680}
-            gradientTransform="scale(1 0.62)"
+            cx={baseBounds.cx}
+            cy={baseBounds.cy}
+            r={Math.max(baseBounds.w, baseBounds.h) * 0.78}
+            gradientTransform={`translate(${baseBounds.cx} ${baseBounds.cy}) scale(1 0.64) translate(${-baseBounds.cx} ${-baseBounds.cy})`}
           >
-            <stop offset="0%" stopColor="#ffffff" stopOpacity={1} />
-            <stop offset="56%" stopColor="#ffffff" stopOpacity={0.92} />
-            <stop offset="86%" stopColor="#ffffff" stopOpacity={0.32} />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+            <stop offset="0%" stopColor={stageBgColor} stopOpacity={0} />
+            <stop offset="60%" stopColor={stageBgColor} stopOpacity={0.08} />
+            <stop offset="88%" stopColor={stageBgColor} stopOpacity={0.68} />
+            <stop offset="100%" stopColor={stageBgColor} stopOpacity={1} />
           </radialGradient>
-
-          <mask id={`mask-${uid}`} maskUnits="userSpaceOnUse" x={-900} y={-560} width={1800} height={1120}>
-            <rect x={-900} y={-560} width={1800} height={1120} fill={`url(#fade-${uid})`} />
-          </mask>
 
           <filter id={`blur-sm-${uid}`} x="-25%" y="-25%" width="150%" height="150%">
             <feGaussianBlur stdDeviation={2.2} />
@@ -1259,16 +1378,27 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           </marker>
         </defs>
 
-        {/* 1. Isometric Grid Background */}
+        {/* 1. Infinite Isometric Grid Background + Static Viewport Vignette */}
+        <g ref={gridCamRef} transform={initialCamTf}>
+          <rect
+            x={-3200}
+            y={-2200}
+            width={6400}
+            height={4400}
+            fill={`url(#iso-${uid})`}
+          />
+        </g>
         <rect
-          x={-880}
-          y={-520}
-          width={1760}
-          height={1040}
-          fill={`url(#iso-${uid})`}
-          mask={`url(#mask-${uid})`}
+          x={baseBounds.cx - baseBounds.w}
+          y={baseBounds.cy - baseBounds.h}
+          width={baseBounds.w * 2}
+          height={baseBounds.h * 2}
+          fill={`url(#vignette-${uid})`}
+          pointerEvents="none"
         />
 
+        {/* 2–5. Interactive Scene Camera Group (60-120fps direct DOM transform) */}
+        <g ref={sceneCamRef} transform={initialCamTf} data-iso-interactive="true">
         {/* 2. Connector Links (Exact 2:1 Wall-Port Elbows + Draw-in Animation + Hover/Click Hit Target) */}
         <g className="layer-links">
           {builtLinks.map(({ link, d }, idx) => {
@@ -1818,10 +1948,12 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             );
           })}
         </g>
+        </g>
       </svg>
 
-      {/* Top-Right Interactive Zoom & Reset View Toolbar */}
+      {/* Top-Right Interactive Zoom Toolbar (click % directly to reset zoom & pan) */}
       <div
+        data-no-pan="true"
         onClick={(e) => e.stopPropagation()}
         className="absolute right-2.5 top-2 z-30 inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
       >
@@ -1837,8 +1969,16 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         <button
           type="button"
           onClick={handleResetView}
-          title={lang === 'en' ? 'Reset zoom & pan (100%)' : 'Đặt lại khung nhìn (100%)'}
-          className="inline-flex h-6 min-w-[42px] items-center justify-center rounded-lg px-1.5 tabular-nums hover:bg-[var(--dts-panel-muted)] cursor-pointer"
+          title={
+            lang === 'en'
+              ? 'Click to reset zoom & position (100%)'
+              : 'Nhấn để đặt lại thu phóng & vị trí (100%)'
+          }
+          className={`inline-flex h-6 min-w-[44px] items-center justify-center rounded-lg px-1.5 tabular-nums transition-colors cursor-pointer ${
+            isViewModified
+              ? 'bg-[var(--dts-amber-bg)] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90'
+              : 'hover:bg-[var(--dts-panel-muted)]'
+          }`}
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -1851,17 +1991,6 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         >
           <Plus className="h-3 w-3" />
         </button>
-        {isViewModified && (
-          <button
-            type="button"
-            onClick={handleResetView}
-            title={lang === 'en' ? 'Reset view' : 'Đặt lại góc nhìn'}
-            className="inline-flex h-6 items-center gap-1 rounded-lg bg-[var(--dts-amber-bg)] px-2 text-[10px] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90 cursor-pointer"
-          >
-            <RotateCcw className="h-2.5 w-2.5" />
-            <span>{lang === 'en' ? 'Reset' : 'Đặt lại'}</span>
-          </button>
-        )}
       </div>
 
       {/* Subtle Auto-Collapsing Interactive Hint Chip (expands on hover) */}
@@ -1873,6 +2002,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             : 'Nhấn vào khối, đường nối hoặc nhãn để xem giải thích sâu';
         return (
           <div
+            data-no-pan="true"
             onMouseEnter={() => setHintHovered(true)}
             onMouseLeave={() => setHintHovered(false)}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1881,7 +2011,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               setHintHovered((v) => !v);
             }}
             aria-label={hintLabel}
-            className={`pointer-events-auto absolute left-2.5 top-2 z-20 inline-flex h-[26px] max-w-[calc(100%-195px)] items-center overflow-hidden rounded-full border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)]/92 font-mono text-[10px] font-semibold text-[var(--dts-ink-muted)] shadow-[1px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px] transition-all duration-300 ease-out cursor-help ${
+            className={`pointer-events-auto absolute left-2.5 top-2 z-20 inline-flex h-[26px] max-w-[calc(100%-140px)] items-center overflow-hidden rounded-full border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)]/92 font-mono text-[10px] font-semibold text-[var(--dts-ink-muted)] shadow-[1px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px] transition-all duration-300 ease-out cursor-help ${
               showHintText ? 'px-2.5' : 'px-[6px]'
             }`}
           >
@@ -1918,6 +2048,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       {/* Full Deep-Dive Inspector Card (when clicked) */}
       {selectedInfo && (
         <div
+          data-no-pan="true"
           onClick={(e) => e.stopPropagation()}
           className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
         >

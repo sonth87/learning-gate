@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Minus, MousePointerClick, Plus, RotateCcw } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Minus, MousePointerClick, Plus } from 'lucide-react';
 import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
 import {
   pickText,
@@ -86,13 +86,57 @@ export const MemoryStageSvg: React.FC<{
   const [isPanning, setIsPanning] = useState(false);
   const [hintAutoOpen, setHintAutoOpen] = useState(true);
   const [hintHovered, setHintHovered] = useState(false);
+
+  const baseW = 810;
+  const baseH = 395;
+  const viewBoxStr = `${-baseW / 2} ${-baseH / 2} ${baseW} ${baseH}`;
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const camGroupRef = useRef<SVGGElement | null>(null);
+  const camRef = useRef<{ zoom: number; panX: number; panY: number }>({
+    zoom: 1,
+    panX: 0,
+    panY: 0,
+  });
+  const lastDragEndRef = useRef(0);
   const panDragRef = useRef<{
+    pointerId: number;
     startX: number;
     startY: number;
     origPanX: number;
     origPanY: number;
+    svgPerPx: number;
     moved: boolean;
+    captured: boolean;
   } | null>(null);
+
+  const buildCamTransform = useCallback(
+    (z: number, px: number, py: number) =>
+      `translate(${px.toFixed(2)} ${py.toFixed(2)}) scale(${z.toFixed(4)})`,
+    []
+  );
+
+  const syncDomCamera = useCallback(
+    (z: number, px: number, py: number) => {
+      camGroupRef.current?.setAttribute('transform', buildCamTransform(z, px, py));
+    },
+    [buildCamTransform]
+  );
+
+  const applyCamera = useCallback(
+    (nextZoom: number, nextPanX: number, nextPanY: number) => {
+      const clampedZoom = Math.round(Math.max(0.55, Math.min(2.5, nextZoom)) * 100) / 100;
+      const maxX = baseW * Math.max(0.75, clampedZoom * 0.85);
+      const maxY = baseH * Math.max(0.75, clampedZoom * 0.85);
+      const px = Math.max(-maxX, Math.min(maxX, nextPanX));
+      const py = Math.max(-maxY, Math.min(maxY, nextPanY));
+      camRef.current = { zoom: clampedZoom, panX: px, panY: py };
+      syncDomCamera(clampedZoom, px, py);
+      setZoom(clampedZoom);
+      setPan({ x: px, y: py });
+    },
+    [syncDomCamera]
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -104,30 +148,54 @@ export const MemoryStageSvg: React.FC<{
   useEffect(() => {
     setHoverInfo(null);
     setSelectedInfo(null);
+    camRef.current = { zoom: 1, panX: 0, panY: 0 };
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [scene]);
 
-  const handleZoomBy = useCallback((delta: number) => {
-    setZoom((z) => Math.round(Math.max(0.65, Math.min(2.25, z + delta)) * 100) / 100);
-  }, []);
+  const handleZoomBy = useCallback(
+    (delta: number) => {
+      const cur = camRef.current;
+      const nextZoom = Math.round(Math.max(0.55, Math.min(2.5, cur.zoom + delta)) * 100) / 100;
+      const ratio = nextZoom / cur.zoom;
+      applyCamera(nextZoom, cur.panX * ratio, cur.panY * ratio);
+    },
+    [applyCamera]
+  );
 
   const handleResetView = useCallback(() => {
+    camRef.current = { zoom: 1, panX: 0, panY: 0 };
+    syncDomCamera(1, 0, 0);
     setZoom(1);
     setPan({ x: 0, y: 0 });
-  }, []);
+  }, [syncDomCamera]);
 
-  const baseW = 810;
-  const baseH = 395;
-  const viewBoxStr = useMemo(() => {
-    const zw = baseW / zoom;
-    const zh = baseH / zoom;
-    const vx = -pan.x - zw / 2;
-    const vy = -pan.y - zh / 2;
-    return `${vx.toFixed(1)} ${vy.toFixed(1)} ${zw.toFixed(1)} ${zh.toFixed(1)}`;
-  }, [zoom, pan]);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheelNative = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) === 0 && Math.abs(e.deltaX) === 0) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const svgPerPx = Math.max(
+        baseW / Math.max(1, rect.width),
+        baseH / Math.max(1, rect.height)
+      );
+      const mx = (e.clientX - (rect.left + rect.width / 2)) * svgPerPx;
+      const my = (e.clientY - (rect.top + rect.height / 2)) * svgPerPx;
+      const cur = camRef.current;
+      const step = e.deltaY < 0 ? 0.12 : -0.12;
+      const nextZoom = Math.round(Math.max(0.55, Math.min(2.5, cur.zoom + step)) * 100) / 100;
+      if (nextZoom === cur.zoom) return;
+      const ratio = nextZoom / cur.zoom;
+      applyCamera(nextZoom, mx - (mx - cur.panX) * ratio, my - (my - cur.panY) * ratio);
+    };
+    el.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => el.removeEventListener('wheel', onWheelNative);
+  }, [applyCamera]);
 
-  const isViewModified = Math.abs(zoom - 1) > 0.01 || Math.abs(pan.x) > 1 || Math.abs(pan.y) > 1;
+  const isViewModified = Math.abs(zoom - 1) > 0.005 || Math.hypot(pan.x, pan.y) > 2;
+  const initialCamTf = buildCamTransform(zoom, pan.x, pan.y);
 
   const animKey = JSON.stringify(
     scene.kind === 'tape'
@@ -137,59 +205,102 @@ export const MemoryStageSvg: React.FC<{
         : scene.nodes.map((n) => `${n.id}:${n.pruned}`)
   );
 
+  const finishPan = (e: React.PointerEvent<HTMLDivElement>) => {
+    const st = panDragRef.current;
+    if (!st || e.pointerId !== st.pointerId) return;
+    if (st.captured) {
+      try {
+        e.currentTarget.releasePointerCapture(st.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+    panDragRef.current = null;
+    if (st.moved) {
+      lastDragEndRef.current = performance.now();
+      setIsPanning(false);
+      setPan({ x: camRef.current.panX, y: camRef.current.panY });
+    } else {
+      const target = e.target as Element;
+      if (!target.closest('[data-mem-interactive="true"]')) {
+        setSelectedInfo(null);
+      }
+    }
+  };
+
   return (
     <div
-      className="relative h-full w-full overflow-hidden"
-      style={{ cursor: isPanning ? 'grabbing' : zoom > 1.01 ? 'grab' : 'default' }}
-      onWheel={(e) => {
-        if (e.ctrlKey || e.metaKey || Math.abs(e.deltaY) > 0) {
+      ref={containerRef}
+      className="relative h-full w-full overflow-hidden select-none"
+      style={{
+        cursor: isPanning ? 'grabbing' : 'grab',
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+      onDragStart={(e) => e.preventDefault()}
+      onClickCapture={(e) => {
+        if (performance.now() - lastDragEndRef.current < 200) {
+          e.stopPropagation();
           e.preventDefault();
-          handleZoomBy(e.deltaY < 0 ? 0.12 : -0.12);
         }
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        const target = e.target as HTMLElement | SVGElement;
-        if (target.closest('button')) return;
+        const target = e.target as Element;
+        if (target.closest('button, [data-no-pan="true"]')) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const svgPerPx = Math.max(
+          baseW / Math.max(1, rect.width),
+          baseH / Math.max(1, rect.height)
+        );
         panDragRef.current = {
+          pointerId: e.pointerId,
           startX: e.clientX,
           startY: e.clientY,
-          origPanX: pan.x,
-          origPanY: pan.y,
+          origPanX: camRef.current.panX,
+          origPanY: camRef.current.panY,
+          svgPerPx,
           moved: false,
+          captured: false,
         };
       }}
       onPointerMove={(e) => {
         const st = panDragRef.current;
-        if (!st) return;
+        if (!st || e.pointerId !== st.pointerId) return;
         const dx = e.clientX - st.startX;
         const dy = e.clientY - st.startY;
-        if (Math.hypot(dx, dy) > 4) {
+        if (!st.moved && Math.hypot(dx, dy) > 3) {
           st.moved = true;
-          if (!isPanning) setIsPanning(true);
-          const sf = 1 / zoom;
-          setPan({
-            x: Math.max(-280, Math.min(280, st.origPanX + dx * sf)),
-            y: Math.max(-190, Math.min(190, st.origPanY + dy * sf)),
-          });
+          try {
+            e.currentTarget.setPointerCapture(st.pointerId);
+            st.captured = true;
+          } catch {
+            // ignore
+          }
+          setHoverInfo(null);
+          setIsPanning(true);
+        }
+        if (st.moved) {
+          e.preventDefault();
+          const z = camRef.current.zoom;
+          const maxX = baseW * Math.max(0.75, z * 0.85);
+          const maxY = baseH * Math.max(0.75, z * 0.85);
+          const nextX = Math.max(-maxX, Math.min(maxX, st.origPanX + dx * st.svgPerPx));
+          const nextY = Math.max(-maxY, Math.min(maxY, st.origPanY + dy * st.svgPerPx));
+          camRef.current.panX = nextX;
+          camRef.current.panY = nextY;
+          syncDomCamera(z, nextX, nextY);
         }
       }}
-      onPointerUp={() => {
-        if (panDragRef.current && !panDragRef.current.moved) {
-          setSelectedInfo(null);
-        }
-        panDragRef.current = null;
-        setIsPanning(false);
-      }}
-      onPointerCancel={() => {
-        panDragRef.current = null;
-        setIsPanning(false);
-      }}
+      onPointerUp={finishPan}
+      onPointerCancel={finishPan}
     >
       <svg
         key={animKey}
         viewBox={viewBoxStr}
         preserveAspectRatio="xMidYMid meet"
+        style={{ pointerEvents: isPanning ? 'none' : 'auto' }}
         className="h-full w-full select-none"
         role="img"
         aria-label="2D Data Structure & Memory Visualizer"
@@ -222,7 +333,8 @@ export const MemoryStageSvg: React.FC<{
           </marker>
         </defs>
 
-        <rect x={-700} y={-440} width={1400} height={880} rx={14} fill={`url(#dot-${uid})`} />
+        <g ref={camGroupRef} transform={initialCamTf} data-mem-interactive="true">
+        <rect x={-2600} y={-1800} width={5200} height={3600} fill={`url(#dot-${uid})`} />
 
         {/* 1. SPACIOUS 2D SEQUENCE / SLICE / STAGE PIPELINE TAPE */}
         {scene.kind === 'tape' && (() => {
@@ -941,10 +1053,12 @@ export const MemoryStageSvg: React.FC<{
             </g>
           );
         })()}
+        </g>
       </svg>
 
-      {/* Top-Right Interactive Zoom & Reset View Toolbar */}
+      {/* Top-Right Interactive Zoom Toolbar (click % directly to reset zoom & pan) */}
       <div
+        data-no-pan="true"
         onClick={(e) => e.stopPropagation()}
         className="absolute right-2.5 top-2 z-30 inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
       >
@@ -960,8 +1074,16 @@ export const MemoryStageSvg: React.FC<{
         <button
           type="button"
           onClick={handleResetView}
-          title={lang === 'en' ? 'Reset zoom & pan (100%)' : 'Đặt lại khung nhìn (100%)'}
-          className="inline-flex h-6 min-w-[42px] items-center justify-center rounded-lg px-1.5 tabular-nums hover:bg-[var(--dts-panel-muted)] cursor-pointer"
+          title={
+            lang === 'en'
+              ? 'Click to reset zoom & position (100%)'
+              : 'Nhấn để đặt lại thu phóng & vị trí (100%)'
+          }
+          className={`inline-flex h-6 min-w-[44px] items-center justify-center rounded-lg px-1.5 tabular-nums transition-colors cursor-pointer ${
+            isViewModified
+              ? 'bg-[var(--dts-amber-bg)] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90'
+              : 'hover:bg-[var(--dts-panel-muted)]'
+          }`}
         >
           {Math.round(zoom * 100)}%
         </button>
@@ -974,17 +1096,6 @@ export const MemoryStageSvg: React.FC<{
         >
           <Plus className="h-3 w-3" />
         </button>
-        {isViewModified && (
-          <button
-            type="button"
-            onClick={handleResetView}
-            title={lang === 'en' ? 'Reset view' : 'Đặt lại góc nhìn'}
-            className="inline-flex h-6 items-center gap-1 rounded-lg bg-[var(--dts-amber-bg)] px-2 text-[10px] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90 cursor-pointer"
-          >
-            <RotateCcw className="h-2.5 w-2.5" />
-            <span>{lang === 'en' ? 'Reset' : 'Đặt lại'}</span>
-          </button>
-        )}
       </div>
 
       {!selectedInfo && !hoverInfo && (() => {
@@ -995,6 +1106,7 @@ export const MemoryStageSvg: React.FC<{
             : 'Nhấn vào ô nhớ, biến hoặc nút để xem giải thích chi tiết';
         return (
           <div
+            data-no-pan="true"
             onMouseEnter={() => setHintHovered(true)}
             onMouseLeave={() => setHintHovered(false)}
             onMouseDown={(e) => e.stopPropagation()}
@@ -1003,7 +1115,7 @@ export const MemoryStageSvg: React.FC<{
               setHintHovered((v) => !v);
             }}
             aria-label={hintLabel}
-            className={`pointer-events-auto absolute left-2.5 top-2 z-20 inline-flex h-[26px] max-w-[calc(100%-195px)] items-center overflow-hidden rounded-full border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)]/92 font-mono text-[10px] font-semibold text-[var(--dts-ink-muted)] shadow-[1px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px] transition-all duration-300 ease-out cursor-help ${
+            className={`pointer-events-auto absolute left-2.5 top-2 z-20 inline-flex h-[26px] max-w-[calc(100%-140px)] items-center overflow-hidden rounded-full border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)]/92 font-mono text-[10px] font-semibold text-[var(--dts-ink-muted)] shadow-[1px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px] transition-all duration-300 ease-out cursor-help ${
               showHintText ? 'px-2.5' : 'px-[6px]'
             }`}
           >
@@ -1035,6 +1147,7 @@ export const MemoryStageSvg: React.FC<{
 
       {selectedInfo && (
         <div
+          data-no-pan="true"
           onClick={(e) => e.stopPropagation()}
           className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
         >
