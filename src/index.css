@@ -392,10 +392,12 @@ html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"
   --color-slate-900: #23201c;
   --color-slate-800: #35302a;
   --color-slate-700: #4c453d;
-  --color-slate-100: #f4ede2;
-  --color-slate-200: #e7dfd2;
-  --color-slate-300: #cfc5b6;
+  --color-slate-600: #6e7889;
+  --color-slate-500: #8e98a8;
   --color-slate-400: #9f9484;
+  --color-slate-300: #cfc5b6;
+  --color-slate-200: #e7dfd2;
+  --color-slate-100: #f4ede2;
   --color-white: #ffffff;
 }
 

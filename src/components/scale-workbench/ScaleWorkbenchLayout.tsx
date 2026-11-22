@@ -33,6 +33,7 @@ import type { RunResult } from '@/features/workpath/types';
 import { ScaleStageSvg } from './ScaleStageSvg';
 import { MemoryStageSvg } from './MemoryStageSvg';
 import { CodeTraceStage } from './CodeTraceStage';
+import { WorkbenchCodeSurface } from './WorkbenchCodeSurface';
 import { BlueprintMarkdown } from './BlueprintMarkdown';
 import { WORKBENCH_I18N } from './i18n';
 import {
@@ -1046,47 +1047,17 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           {/* Stage Viewport: Isometric 2.5D OR 2D Memory/Slice OR Interactive Code Trace */}
           <div className="relative mt-2.5 flex min-h-[260px] sm:min-h-[300px] xl:min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
             {manualSandboxOpen ? (
-              <div className="ide-dark-surface flex h-full min-h-[250px] flex-col rounded-xl border border-[#3a332b] bg-[#1c1916] p-3 text-[#f4ede2]">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs font-bold text-[#a8e686]">
-                    {sandboxTitle} · {activeLesson.moduleId} Step {safeStepIdx + 1}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleRunSandbox}
-                    disabled={sandboxRunning}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[#211e1b] bg-[#cfe3b2] px-3 py-1 font-mono text-xs font-extrabold text-[#1d2b14] hover:bg-[#dcecc4] disabled:opacity-50"
-                  >
-                    <Play className="h-3 w-3 fill-current" />
-                    <span>{sandboxRunning ? t.running : (runCodeLabel ?? t.runCode)}</span>
-                  </button>
-                </div>
-                <textarea
-                  value={sandboxCode}
-                  onChange={(e) => setSandboxCode(e.target.value)}
-                  spellCheck={false}
-                  className="min-h-[130px] flex-1 resize-none rounded-lg border border-[#332e28] bg-[#24201c] p-3 font-mono text-[12.5px] leading-relaxed text-[#f4ede2] outline-none"
-                />
-                {sandboxOut && (
-                  <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-[#332e28] bg-[#141210] p-2.5 font-mono text-xs">
-                    {sandboxOut.stdout && (
-                      <pre className="whitespace-pre-wrap text-[#a8e686]">
-                        {sandboxOut.stdout}
-                      </pre>
-                    )}
-                    {sandboxOut.stderr && (
-                      <pre className="whitespace-pre-wrap text-[#fda4af]">
-                        {sandboxOut.stderr}
-                      </pre>
-                    )}
-                    {!sandboxOut.stdout && !sandboxOut.stderr && (
-                      <span className="text-[#9e9383]">
-                        ✔ Exit 0 ({sandboxOut.ms} ms)
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+              <WorkbenchCodeSurface
+                code={sandboxCode}
+                onChange={setSandboxCode}
+                onRun={handleRunSandbox}
+                running={sandboxRunning}
+                output={sandboxOut}
+                titleBadge={`${sandboxTitle} · ${activeLesson.moduleId} Step ${safeStepIdx + 1}`}
+                lang={lang}
+                runLabel={runCodeLabel ?? t.runCode}
+                className="h-full min-h-[250px] flex-1"
+              />
             ) : isIsometricStage && activeStep.scene ? (
               <>
                 <div className="min-h-0 flex-1">

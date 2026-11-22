@@ -21,8 +21,10 @@ import type { EditorLanguage } from '@/features/devops-course/types';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { getIdeThemeConfig } from '@/utils/ideThemes';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { getAppContainerWidth } from '@/utils/viewport';
+import { IdeThemePicker } from './WorkbenchCodeSurface';
 import { cn } from '@/utils/cn';
 
 function getBadgeClasses(tone: string): string {
@@ -394,40 +396,103 @@ const BlueprintCodeBlock: React.FC<{ code: string; langTag?: string }> = ({
   langTag,
 }) => {
   const [copied, setCopied] = useState(false);
+  const ideTheme = useSettingsStore((s) => s.ideTheme);
+  const lang = useWorkbenchStore((s) => s.language);
+  const activeIdeTheme = useMemo(() => getIdeThemeConfig(ideTheme), [ideTheme]);
+  const isLight = activeIdeTheme.isLight;
+
   const trimmed = code.replace(/\n$/, '');
+  const lines = useMemo(() => trimmed.split('\n'), [trimmed]);
+  const showLineNums = lines.length >= 2;
   const configLang = useMemo(
     () => inferNonPythonConfigLang(trimmed, langTag),
     [trimmed, langTag]
   );
 
+  const label = langTag || (configLang ?? 'python');
+
   return (
-    <div className="ide-dark-surface group relative my-2.5 overflow-hidden rounded-xl border-[1.5px] border-[var(--dts-border)] bg-[#191715] text-[#f4ede2]">
-      {langTag && (
-        <div className="flex items-center justify-between border-b border-[#332e29] bg-[#221f1c] px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[#b5aa99]">
-          <span>{langTag}</span>
-        </div>
+    <div
+      style={{
+        backgroundColor: activeIdeTheme.editorBg,
+        borderColor: activeIdeTheme.barBorder,
+        colorScheme: isLight ? 'light' : 'dark',
+      }}
+      className={cn(
+        !isLight && 'ide-dark-surface',
+        'group relative my-2.5 overflow-hidden rounded-xl border-[1.5px] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
       )}
-      <button
-        type="button"
-        onClick={() => {
-          navigator.clipboard?.writeText(trimmed);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1400);
+    >
+      <div
+        style={{
+          backgroundColor: activeIdeTheme.barBg,
+          borderColor: activeIdeTheme.barBorder,
+          color: activeIdeTheme.barText,
         }}
-        aria-label="Copy code"
-        className="absolute right-2 top-1.5 z-10 rounded-md border border-[#3d3730] bg-[#26221e] p-1 text-[#bfb3a2] opacity-0 transition-opacity hover:text-white group-hover:opacity-100"
+        className="flex items-center justify-between gap-2 border-b px-2.5 py-1 font-mono text-[10px] font-bold"
       >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-emerald-400" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
+        <span className="flex items-center gap-1.5 uppercase tracking-wider opacity-85">
+          <span className="flex items-center gap-1" aria-hidden="true">
+            <span className="h-2 w-2 rounded-full bg-[#e5534b]" />
+            <span className="h-2 w-2 rounded-full bg-[#efb041]" />
+            <span className="h-2 w-2 rounded-full bg-[#7fc278]" />
+          </span>
+          <span>{label}</span>
+        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(trimmed);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1400);
+            }}
+            aria-label="Copy code"
+            title={lang === 'en' ? 'Copy code' : 'Sao chép mã'}
+            style={{
+              backgroundColor: activeIdeTheme.btnBg,
+              borderColor: activeIdeTheme.barBorder,
+              color: activeIdeTheme.barText,
+            }}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border transition-opacity hover:opacity-85 cursor-pointer"
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className="relative flex overflow-x-auto">
+        {showLineNums && (
+          <div
+            aria-hidden="true"
+            style={{
+              backgroundColor: activeIdeTheme.gutterBg,
+              borderColor: activeIdeTheme.gutterBorder,
+              color: activeIdeTheme.gutterText,
+            }}
+            className="select-none whitespace-pre border-r pt-2.5 pb-7 pl-2 pr-2 text-right font-mono text-[11.5px] leading-[1.6] tabular-nums"
+          >
+            {lines.map((_, i) => i + 1).join('\n')}
+          </div>
         )}
-      </button>
-      <pre className="overflow-x-auto p-3 font-mono text-[12px] leading-relaxed text-[#f4ede2]">
-        {configLang
-          ? renderHighlightedConfig(trimmed, configLang, false)
-          : renderHighlightedPython(trimmed, false)}
-      </pre>
+        <pre
+          style={{ color: isLight ? '#1f2328' : '#f4ede2' }}
+          className="min-w-0 flex-1 whitespace-pre pt-2.5 pr-3 pb-7 pl-2.5 font-mono text-[11.75px] leading-[1.6]"
+        >
+          {configLang
+            ? renderHighlightedConfig(trimmed, configLang, isLight)
+            : renderHighlightedPython(trimmed, isLight)}
+        </pre>
+      </div>
+
+      <div className="pointer-events-auto absolute bottom-1.5 right-2 z-10 opacity-85 transition-opacity group-hover:opacity-100">
+        <IdeThemePicker lang={lang} activeTheme={activeIdeTheme} compact />
+      </div>
     </div>
   );
 };

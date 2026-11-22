@@ -30,6 +30,7 @@ interface WorkbenchState {
   isSearchPaletteOpen: boolean;
   searchPaletteCourseId: string | null;
   isLeftSidebarCollapsed: boolean;
+  isCodeTraceCollapsed: boolean;
   rightSidebarWidth: number;
 
   setLanguage: (language: WorkbenchLang) => void;
@@ -53,6 +54,8 @@ interface WorkbenchState {
   setSearchPaletteOpen: (open: boolean, courseId?: string) => void;
   setLeftSidebarCollapsed: (collapsed: boolean) => void;
   toggleLeftSidebarCollapsed: () => void;
+  setCodeTraceCollapsed: (collapsed: boolean) => void;
+  toggleCodeTraceCollapsed: () => void;
   setRightSidebarWidth: (width: number) => void;
 }
 
@@ -82,6 +85,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       isSearchPaletteOpen: false,
       searchPaletteCourseId: null,
       isLeftSidebarCollapsed: false,
+      isCodeTraceCollapsed: false,
       rightSidebarWidth: DEFAULT_RIGHT_SIDEBAR_WIDTH,
 
       setLanguage: (language) => set({ language }),
@@ -144,6 +148,11 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       toggleLeftSidebarCollapsed: () =>
         set((s) => ({ isLeftSidebarCollapsed: !s.isLeftSidebarCollapsed })),
 
+      setCodeTraceCollapsed: (isCodeTraceCollapsed) =>
+        set({ isCodeTraceCollapsed }),
+      toggleCodeTraceCollapsed: () =>
+        set((s) => ({ isCodeTraceCollapsed: !s.isCodeTraceCollapsed })),
+
       setRightSidebarWidth: (width) =>
         set({
           rightSidebarWidth: Math.max(320, Math.min(640, Math.round(width))),
@@ -159,6 +168,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         recentSteps: s.recentSteps,
         isProgressExpanded: s.isProgressExpanded,
         isLeftSidebarCollapsed: s.isLeftSidebarCollapsed,
+        isCodeTraceCollapsed: s.isCodeTraceCollapsed,
         rightSidebarWidth: s.rightSidebarWidth,
       }),
     }

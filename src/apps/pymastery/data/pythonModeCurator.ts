@@ -712,8 +712,8 @@ export function buildCodeTraceScene(
 
   return {
     badge: {
-      vi: `${moduleId} · Thực thi trực tiếp (Không cần vẽ sơ đồ)`,
-      en: `${moduleId} · Interactive Code & Trace`,
+      vi: `${moduleId} · main.py`,
+      en: `${moduleId} · main.py`,
     },
     code,
     traceTitle: {
