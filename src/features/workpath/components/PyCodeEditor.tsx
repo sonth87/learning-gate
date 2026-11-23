@@ -364,7 +364,7 @@ export const PyCodeEditor = forwardRef<PyCodeEditorHandle, Props>(function PyCod
           onKeyDown={onKeyDown}
           onBlur={() => setTimeout(() => setPopup(null), 120)}
           onClick={() => setPopup(null)}
-          className="absolute inset-0 h-full w-full resize-none overflow-auto whitespace-pre border-0 bg-transparent p-3.5 text-transparent caret-emerald-400 outline-none selection:bg-emerald-500/30 [-webkit-text-fill-color:transparent]"
+          className="ide-code-textarea absolute inset-0 h-full w-full resize-none overflow-auto whitespace-pre border-0 bg-transparent p-3.5 text-transparent caret-emerald-400 outline-none selection:bg-emerald-500/30 [-webkit-text-fill-color:transparent]"
           style={FONT}
         />
         {popup && (

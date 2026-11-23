@@ -564,7 +564,8 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
             <pre
               ref={preRef}
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 m-0 overflow-hidden p-4 font-mono text-[13px] leading-6 whitespace-pre tab-size-4"
+              style={{ fontVariantLigatures: 'none', letterSpacing: '0px', tabSize: 4 }}
+              className="pointer-events-none absolute inset-0 m-0 overflow-hidden p-4 font-mono text-[13px] leading-6 whitespace-pre"
             >
               <code>
                 {renderHighlightedPython(code, activeIdeTheme.isLight)}
@@ -609,9 +610,11 @@ export const CodeWorkspace: React.FC<{ exercise: PracticeExercise }> = ({
               autoCapitalize="off"
               autoComplete="off"
               autoCorrect="off"
+              wrap="off"
+              style={{ fontVariantLigatures: 'none', letterSpacing: '0px', tabSize: 4 }}
               aria-label="Trình soạn thảo code Python"
               className={cn(
-                'absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent p-4 font-mono text-[13px] leading-6 whitespace-pre text-transparent focus:outline-none tab-size-4',
+                'ide-code-textarea absolute inset-0 h-full w-full resize-none overflow-auto border-0 bg-transparent p-4 font-mono text-[13px] leading-6 whitespace-pre text-transparent focus:outline-none [-webkit-text-fill-color:transparent]',
                 activeIdeTheme.caretClass,
                 activeIdeTheme.selectionClass
               )}
