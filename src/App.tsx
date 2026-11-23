@@ -4,6 +4,7 @@ import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
 import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { useCloudSyncStore } from '@/stores/useCloudSyncStore';
+import { useCloudMenuBarExtras } from '@/components/common/MenuBarUserExtra';
 
 const SHELL_STABILIZED_KEY = 'pylearn_desktop_shell_stabilized_v1';
 
@@ -34,6 +35,7 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
 export const App: React.FC = () => {
   const shellRootRef = useRef<HTMLDivElement>(null);
   const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const menuBarExtras = useCloudMenuBarExtras();
   const hasOpenWindow = useStore((s) =>
     Object.values(s.windows).some((w) => !w.isMinimized)
   );
@@ -210,6 +212,7 @@ export const App: React.FC = () => {
       <DeviceLayout
         apps={ALL_LEARNING_APPS}
         builtInApps={false}
+        menuBarExtras={menuBarExtras}
         macOSAppleIcon={<LearningGateGlyph />}
         windowsStartIcon={<LearningGateLogo className="h-5 w-5 rounded-[5px]" />}
       />
