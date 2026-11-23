@@ -155,7 +155,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
 
       setRightSidebarWidth: (width) =>
         set({
-          rightSidebarWidth: Math.max(320, Math.min(920, Math.round(width))),
+          rightSidebarWidth: Math.max(320, Math.min(1180, Math.round(width))),
         }),
     }),
     {

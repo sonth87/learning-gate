@@ -2,6 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { DeviceLayout, useStore } from '@sonth87/device-layout';
 import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
 import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 
 const SHELL_STABILIZED_KEY = 'pylearn_desktop_shell_stabilized_v1';
 
@@ -30,6 +31,32 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
 }
 
 export const App: React.FC = () => {
+  const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const hasOpenWindow = useStore((s) =>
+    Object.values(s.windows).some((w) => !w.isMinimized)
+  );
+
+  // Sync iOS Safari / Add-to-Home-Screen safe-area background & <meta name="theme-color">
+  // so top & bottom safe areas never show stark white bars on iPhone / iPad.
+  useEffect(() => {
+    const surfaceColor = hasOpenWindow
+      ? workbenchTheme === 'dark'
+        ? '#26221e'
+        : '#efe4d4'
+      : '#0f172a';
+
+    document.documentElement.style.backgroundColor = surfaceColor;
+    document.body.style.backgroundColor = surfaceColor;
+
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', surfaceColor);
+  }, [workbenchTheme, hasOpenWindow]);
+
   useEffect(() => {
     const syncInitialShellState = () => {
       try {

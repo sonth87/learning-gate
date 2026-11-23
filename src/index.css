@@ -46,10 +46,62 @@
  * rubber-banding / pull-to-refresh when the user swipes on mobile.
  */
 html,
-body {
+body,
+#root {
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
+  background-color: #0f172a;
+}
+
+/*
+ * Seamless iOS "Add to Home Screen" & mobile safe-area theming:
+ * MobileAppViewer in @sonth87/device-layout defaults to `bg-white` (`#ffffff`) for both
+ * `padding-top: env(safe-area-inset-top)`, its 44px mobile header bar, and its bottom
+ * `env(safe-area-inset-bottom)` spacer. Match them seamlessly to Paper Light / Espresso Dark
+ * and deduplicate the bottom safe-area spacer!
+ */
+html:has(.pylearn-root.dts-light),
+html:has(.pylearn-root.dts-light) body,
+html:has(.pylearn-root.dts-light) #root {
+  background-color: #efe4d4 !important;
+}
+
+html:has(.pylearn-root.dts-dark),
+html:has(.pylearn-root.dts-dark) body,
+html:has(.pylearn-root.dts-dark) #root {
+  background-color: #26221e !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-light) {
+  background-color: #efe4d4 !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-light) > div:first-child {
+  background-color: rgba(239, 228, 212, 0.96) !important;
+  border-bottom-color: #dfd3c2 !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-light) > div:first-child span {
+  color: #201d1a !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-dark) {
+  background-color: #26221e !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-dark) > div:first-child {
+  background-color: rgba(38, 34, 30, 0.96) !important;
+  border-bottom-color: #363029 !important;
+}
+
+.z-\[500\]:has(.pylearn-root.dts-dark) > div:first-child span {
+  color: #efe6d6 !important;
+}
+
+.z-\[500\] .lg-mobile-bottom-nav {
+  padding-bottom: 0px !important;
 }
 
 /*

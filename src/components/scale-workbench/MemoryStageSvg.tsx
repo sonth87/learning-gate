@@ -9,7 +9,7 @@ import {
   type StageInspectorInfo,
 } from './types';
 import {
-  StageEntityInspectorCard,
+  StageInspectorPortal,
   resolveFallbackInspector,
 } from './StageEntityInspector';
 
@@ -71,7 +71,8 @@ export const MemoryStageSvg: React.FC<{
   scene: MemoryScene;
   lang: WorkbenchLang;
   theme: WorkbenchTheme;
-}> = ({ scene, lang, theme }) => {
+  replayNonce?: number;
+}> = ({ scene, lang, theme, replayNonce = 0 }) => {
   const uid = useId().replace(/:/g, '');
   const isDark = theme === 'dark';
   const ink = isDark ? '#efe6d6' : '#211e1b';
@@ -126,8 +127,8 @@ export const MemoryStageSvg: React.FC<{
   const applyCamera = useCallback(
     (nextZoom: number, nextPanX: number, nextPanY: number) => {
       const clampedZoom = Math.round(Math.max(0.55, Math.min(2.5, nextZoom)) * 100) / 100;
-      const maxX = baseW * Math.max(0.75, clampedZoom * 0.85);
-      const maxY = baseH * Math.max(0.75, clampedZoom * 0.85);
+      const maxX = baseW * (0.12 + 0.32 * clampedZoom);
+      const maxY = baseH * (0.12 + 0.32 * clampedZoom);
       const px = Math.max(-maxX, Math.min(maxX, nextPanX));
       const py = Math.max(-maxY, Math.min(maxY, nextPanY));
       camRef.current = { zoom: clampedZoom, panX: px, panY: py };
@@ -169,6 +170,12 @@ export const MemoryStageSvg: React.FC<{
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [syncDomCamera]);
+
+  useEffect(() => {
+    if (replayNonce > 0) {
+      handleResetView();
+    }
+  }, [replayNonce, handleResetView]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -283,8 +290,8 @@ export const MemoryStageSvg: React.FC<{
         if (st.moved) {
           e.preventDefault();
           const z = camRef.current.zoom;
-          const maxX = baseW * Math.max(0.75, z * 0.85);
-          const maxY = baseH * Math.max(0.75, z * 0.85);
+          const maxX = baseW * (0.12 + 0.32 * z);
+          const maxY = baseH * (0.12 + 0.32 * z);
           const nextX = Math.max(-maxX, Math.min(maxX, st.origPanX + dx * st.svgPerPx));
           const nextY = Math.max(-maxY, Math.min(maxY, st.origPanY + dy * st.svgPerPx));
           camRef.current.panX = nextX;
@@ -1078,11 +1085,11 @@ export const MemoryStageSvg: React.FC<{
         </g>
       </svg>
 
-      {/* Top-Right Interactive Zoom Toolbar (click % directly to reset zoom & pan) */}
+      {/* Top-Right Interactive Zoom Toolbar (desktop only; Replay resets zoom & pan on mobile/tablet) */}
       <div
         data-no-pan="true"
         onClick={(e) => e.stopPropagation()}
-        className="absolute right-2.5 top-2 z-30 inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
+        className="absolute right-2.5 top-2 z-30 hidden lg:inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
       >
         <button
           type="button"
@@ -1168,18 +1175,13 @@ export const MemoryStageSvg: React.FC<{
       )}
 
       {selectedInfo && (
-        <div
-          data-no-pan="true"
-          data-allow-select="true"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
-        >
-          <StageEntityInspectorCard
-            info={selectedInfo}
-            lang={lang}
-            onClose={() => setSelectedInfo(null)}
-          />
-        </div>
+        <StageInspectorPortal
+          info={selectedInfo}
+          lang={lang}
+          theme={theme}
+          anchorRef={containerRef}
+          onClose={() => setSelectedInfo(null)}
+        />
       )}
     </div>
   );

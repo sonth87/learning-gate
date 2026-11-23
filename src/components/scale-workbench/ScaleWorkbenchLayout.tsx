@@ -237,8 +237,24 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const leftAsideRef = useRef<HTMLElement>(null);
+  const centerStageCardRef = useRef<HTMLDivElement>(null);
   const railHideTimerRef = useRef<number | null>(null);
   const narrativeScrollRef = useRef<HTMLDivElement>(null);
+  const [isCenterCompact, setIsCenterCompact] = useState(false);
+
+  useEffect(() => {
+    const el = centerStageCardRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    setIsCenterCompact(el.getBoundingClientRect().width < 585);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (typeof w === 'number' && w > 0) {
+        setIsCenterCompact(w < 585);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const openRailFlyout = useCallback(
     (
@@ -301,7 +317,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         (isLeftSidebarCollapsed ? 62 : 254);
       const maxAllowed = Math.max(
         380,
-        Math.min(920, Math.floor(containerW - leftW - 340))
+        Math.min(1180, Math.floor(containerW - leftW - 260))
       );
 
       setIsResizingRight(true);
@@ -858,10 +874,11 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   };
 
   return (
-    <div
-      ref={rootContainerRef}
-      className="relative flex h-full min-h-0 w-full flex-col xl:flex-row gap-3 p-2.5 sm:p-3.5 overflow-y-auto xl:overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]"
-    >
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]">
+      <div
+        ref={rootContainerRef}
+        className="relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 overflow-y-auto xl:overflow-hidden"
+      >
       {/* Mobile / Tablet Slide-over Syllabus Drawer */}
       {mobileDrawerOpen && (
         <div
@@ -906,7 +923,10 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
       {/* 2. CENTER COLUMN */}
       <section className="flex min-w-0 flex-1 flex-col gap-2.5 xl:min-h-0">
-        <div className="dts-panel flex flex-1 flex-col rounded-2xl p-4 sm:p-5 xl:min-h-0 bg-[var(--dts-stage-bg)]">
+        <div
+          ref={centerStageCardRef}
+          className="dts-panel flex flex-1 flex-col rounded-2xl p-3.5 sm:p-4 xl:min-h-0 bg-[var(--dts-stage-bg)]"
+        >
           {/* Breadcrumb */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 font-mono text-[11px] font-semibold text-[var(--dts-ink-muted)]">
@@ -998,56 +1018,81 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
               })}
             </div>
 
-            {/* Playback & Live Code Controls (Replay/Pause only shown when isometric packets exist!) */}
+            {/* Playback & Live Code Controls (icon-only on mobile/tablet OR when center column is resized narrow!) */}
             <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {!isNativeCodeTrace && onRunCodeSnippet && (
                 <button
                   type="button"
                   onClick={() => setManualSandboxOpen((o) => !o)}
+                  title={manualSandboxOpen ? t.visualStage : t.liveCode}
+                  aria-label={manualSandboxOpen ? t.visualStage : t.liveCode}
                   className={cn(
-                    'dts-btn-tactile inline-flex items-center gap-1 rounded-xl px-2 py-1 font-mono text-[11px] font-bold',
+                    'dts-btn-tactile inline-flex items-center justify-center gap-1 rounded-xl font-mono text-[11px] font-bold',
+                    isCenterCompact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0 lg:h-auto lg:w-auto lg:px-2 lg:py-1',
                     manualSandboxOpen
                       ? 'bg-[var(--dts-blue-bg)] text-[var(--dts-blue-ink)]'
                       : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
                   )}
                 >
-                  <Code2 className="h-3 w-3" />
-                  <span>{manualSandboxOpen ? t.visualStage : t.liveCode}</span>
+                  <Code2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className={cn('hidden', !isCenterCompact && 'lg:inline')}>
+                    {manualSandboxOpen ? t.visualStage : t.liveCode}
+                  </span>
+                </button>
+              )}
+
+              {(isIsometricStage || isMemoryStage) && !manualSandboxOpen && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPlaying(true);
+                    setReplayNonce((n) => n + 1);
+                  }}
+                  title={
+                    lang === 'en'
+                      ? `${t.replay} & Reset View`
+                      : `${t.replay} & Căn giữa lại sơ đồ`
+                  }
+                  aria-label={t.replay}
+                  className={cn(
+                    'dts-btn-tactile inline-flex items-center justify-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] font-mono text-[11px] font-bold text-[var(--dts-ink)]',
+                    isCenterCompact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0 lg:h-auto lg:w-auto lg:px-2 lg:py-1'
+                  )}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                  <span className={cn('hidden', !isCenterCompact && 'lg:inline')}>
+                    {t.replay}
+                  </span>
                 </button>
               )}
 
               {isIsometricStage && !manualSandboxOpen && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPlaying(true);
-                      setReplayNonce((n) => n + 1);
-                    }}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold text-[var(--dts-ink)]"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    <span>{t.replay}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsPlaying((p) => !p)}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold text-[var(--dts-ink)]"
-                  >
-                    {isPlaying ? (
-                      <>
-                        <Pause className="h-3 w-3" />
-                        <span>{t.pause}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-3 w-3" />
-                        <span>{t.play}</span>
-                      </>
-                    )}
-                  </button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => setIsPlaying((p) => !p)}
+                  title={isPlaying ? t.pause : t.play}
+                  aria-label={isPlaying ? t.pause : t.play}
+                  className={cn(
+                    'dts-btn-tactile inline-flex items-center justify-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] font-mono text-[11px] font-bold text-[var(--dts-ink)]',
+                    isCenterCompact ? 'h-7 w-7 p-0' : 'h-8 w-8 p-0 lg:h-auto lg:w-auto lg:px-2 lg:py-1'
+                  )}
+                >
+                  {isPlaying ? (
+                    <>
+                      <Pause className="h-3.5 w-3.5 shrink-0" />
+                      <span className={cn('hidden', !isCenterCompact && 'lg:inline')}>
+                        {t.pause}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-3.5 w-3.5 shrink-0" />
+                      <span className={cn('hidden', !isCenterCompact && 'lg:inline')}>
+                        {t.play}
+                      </span>
+                    </>
+                  )}
+                </button>
               )}
             </div>
           </div>
@@ -1092,6 +1137,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                   scene={activeStep.memoryScene}
                   lang={lang}
                   theme={theme}
+                  replayNonce={replayNonce}
                 />
               </div>
             ) : activeStep.codeTrace ? (
@@ -1113,7 +1159,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             <span>{t.stepOf(safeStepIdx + 1, activeLesson.steps.length)}</span>
           </div>
 
-          <div className="overflow-x-auto pb-1 no-scrollbar">
+          <div className="overflow-x-auto pt-1.5 pb-1.5 px-1 no-scrollbar">
             <div className="relative flex min-w-max items-start justify-between gap-2 px-1">
               {activeLesson.steps.map((st, idx) => {
                 const isActive = idx === safeStepIdx;
@@ -1167,7 +1213,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         </div>
       </section>
 
-      {/* Vertical Resize Handle between Center Stage and Right Narrative Sidebar */}
+      {/* Vertical Resize Handle between Center Stage and Right Narrative Sidebar (net gap = 10px, equal to Left-Center!) */}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -1175,7 +1221,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         title={t.resizeSidebarHint}
         onPointerDown={handleStartRightResize}
         onDoubleClick={() => setRightSidebarWidth(DEFAULT_RIGHT_SIDEBAR_WIDTH)}
-        className="group relative -mx-2 hidden xl:flex w-3.5 shrink-0 cursor-col-resize items-center justify-center select-none z-20"
+        className="group relative -mx-2.5 hidden xl:flex w-2.5 shrink-0 cursor-col-resize items-center justify-center select-none z-20 after:content-[''] after:absolute after:-inset-x-1.5 after:inset-y-0"
       >
         <div
           className={cn(
@@ -1280,8 +1326,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             )}
           </div>
 
-          {/* Navigation Footer */}
-          <div className="mt-3 shrink-0 border-t border-[var(--dts-border-soft)] pt-3">
+          {/* Navigation Footer (Desktop lg+; Mobile/Tablet uses the sticky bottom bar snapped above the 5-tab nav!) */}
+          <div className="mt-3 hidden lg:block shrink-0 border-t border-[var(--dts-border-soft)] pt-3">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1460,6 +1506,42 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           )}
         </div>
       </aside>
+      </div>
+
+      {/* Sticky Mobile / Tablet Step Navigation Bar — snapped directly above the 5-item Bottom Nav! */}
+      <div className="shrink-0 z-30 border-t border-[var(--dts-line-strong)] bg-[var(--dts-panel)]/98 px-2.5 py-2 backdrop-blur-xs lg:hidden">
+        <div className="mx-auto flex max-w-3xl items-center gap-2">
+          <button
+            type="button"
+            onClick={handlePrevStep}
+            disabled={activeLessonIdx === 0 && safeStepIdx === 0}
+            className="dts-btn-tactile inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[var(--dts-panel-elevated)] px-3 py-2 font-mono text-xs font-extrabold text-[var(--dts-ink)] disabled:opacity-40"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>{t.back}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNextStep}
+            className="dts-btn-tactile flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)]"
+          >
+            <span className="truncate">
+              {!isLastStep
+                ? `${t.next}: ${pickText(nextStepObj.shortLabel, lang)}`
+                : nextLessonObj
+                  ? `${t.nextModule}: ${nextLessonObj.moduleId}`
+                  : t.finishLesson}
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1">
+              <span className="rounded bg-black/8 px-1.5 py-0.5 text-[10px] tabular-nums dark:bg-white/10">
+                {safeStepIdx + 1}/{activeLesson.steps.length}
+              </span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

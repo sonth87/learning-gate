@@ -14,7 +14,7 @@ import {
   type StageZoneSlab,
 } from './types';
 import {
-  StageEntityInspectorCard,
+  StageInspectorPortal,
   resolveFallbackInspector,
 } from './StageEntityInspector';
 
@@ -1027,6 +1027,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [hintAutoOpen, setHintAutoOpen] = useState(true);
   const [hintHovered, setHintHovered] = useState(false);
+  const [stageWidth, setStageWidth] = useState<number>(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -1296,7 +1299,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       lines: Array<{ text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>;
     } | null = null;
 
-    if (scene.noteCard && scene.noteCard.lines.length > 0) {
+    // Hide inline note card on mobile / narrow stages (< 560px) so 100% of space belongs to the model
+    if (stageWidth >= 560 && scene.noteCard && scene.noteCard.lines.length > 0) {
       const titleStr = pickText(scene.noteCard.title, lang);
       const lines = scene.noteCard.lines.map((ln) => ({
         text: pickText(ln.text, lang),
@@ -1386,7 +1390,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       baseBounds: { cx, cy, w, h } as BoundsBox,
       noteCardLayout: resolvedNote,
     };
-  }, [expandedNodes, builtZones, builtLinks, scene.noteCard, lang]);
+  }, [expandedNodes, builtZones, builtLinks, scene.noteCard, lang, stageWidth]);
 
   const stageViewBox = useMemo(() => {
     const vx = baseBounds.cx - baseBounds.w / 2;
@@ -1414,8 +1418,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const applyCamera = useCallback(
     (nextZoom: number, nextPanX: number, nextPanY: number) => {
       const clampedZoom = Math.round(Math.max(0.55, Math.min(2.5, nextZoom)) * 100) / 100;
-      const maxX = baseBounds.w * Math.max(0.75, clampedZoom * 0.85);
-      const maxY = baseBounds.h * Math.max(0.75, clampedZoom * 0.85);
+      const maxX = baseBounds.w * (0.12 + 0.32 * clampedZoom);
+      const maxY = baseBounds.h * (0.12 + 0.32 * clampedZoom);
       const px = Math.max(-maxX, Math.min(maxX, nextPanX));
       const py = Math.max(-maxY, Math.min(maxY, nextPanY));
       camRef.current = { zoom: clampedZoom, panX: px, panY: py };
@@ -1442,6 +1446,27 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }, [syncDomCamera]);
+
+  // Replay button also resets zoom & centers the diagram
+  useEffect(() => {
+    if (replayNonce > 0) {
+      handleResetView();
+    }
+  }, [replayNonce, handleResetView]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    setStageWidth(el.getBoundingClientRect().width || window.innerWidth);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (typeof w === 'number' && w > 0) {
+        setStageWidth(w);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -2507,8 +2532,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         if (st.moved) {
           e.preventDefault();
           const z = camRef.current.zoom;
-          const maxX = baseBounds.w * Math.max(0.75, z * 0.85);
-          const maxY = baseBounds.h * Math.max(0.75, z * 0.85);
+          const maxX = baseBounds.w * (0.12 + 0.32 * z);
+          const maxY = baseBounds.h * (0.12 + 0.32 * z);
           const nextX = Math.max(-maxX, Math.min(maxX, st.origPanX + dx * st.svgPerPx));
           const nextY = Math.max(-maxY, Math.min(maxY, st.origPanY + dy * st.svgPerPx));
           camRef.current.panX = nextX;
@@ -3113,47 +3138,49 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </g>
       </svg>
 
-      {/* Top-Right Interactive Zoom Toolbar (click % directly to reset zoom & pan) */}
-      <div
-        data-no-pan="true"
-        onClick={(e) => e.stopPropagation()}
-        className="absolute right-2.5 top-2 z-30 inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
-      >
-        <button
-          type="button"
-          onClick={() => handleZoomBy(-0.15)}
-          title={lang === 'en' ? 'Zoom out' : 'Thu nhỏ'}
-          aria-label={lang === 'en' ? 'Zoom out' : 'Thu nhỏ'}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-lg hover:bg-[var(--dts-panel-muted)] cursor-pointer"
+      {/* Top-Right Interactive Zoom Toolbar (desktop with spacious stage only; Replay resets zoom & pan when narrow/mobile) */}
+      {stageWidth >= 420 && (
+        <div
+          data-no-pan="true"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-2.5 top-2 z-30 hidden lg:inline-flex items-center gap-0.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 p-0.5 font-mono text-[10.5px] font-bold text-[var(--dts-ink)] shadow-[1.5px_1.5px_0_var(--dts-shadow-color)] backdrop-blur-[2px]"
         >
-          <Minus className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={handleResetView}
-          title={
-            lang === 'en'
-              ? 'Click to reset zoom & position (100%)'
-              : 'Nhấn để đặt lại thu phóng & vị trí (100%)'
-          }
-          className={`inline-flex h-6 min-w-[44px] items-center justify-center rounded-lg px-1.5 tabular-nums transition-colors cursor-pointer ${
-            isViewModified
-              ? 'bg-[var(--dts-amber-bg)] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90'
-              : 'hover:bg-[var(--dts-panel-muted)]'
-          }`}
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <button
-          type="button"
-          onClick={() => handleZoomBy(0.15)}
-          title={lang === 'en' ? 'Zoom in' : 'Phóng to'}
-          aria-label={lang === 'en' ? 'Zoom in' : 'Phóng to'}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-lg hover:bg-[var(--dts-panel-muted)] cursor-pointer"
-        >
-          <Plus className="h-3 w-3" />
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => handleZoomBy(-0.15)}
+            title={lang === 'en' ? 'Zoom out' : 'Thu nhỏ'}
+            aria-label={lang === 'en' ? 'Zoom out' : 'Thu nhỏ'}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-lg hover:bg-[var(--dts-panel-muted)] cursor-pointer"
+          >
+            <Minus className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleResetView}
+            title={
+              lang === 'en'
+                ? 'Click to reset zoom & position (100%)'
+                : 'Nhấn để đặt lại thu phóng & vị trí (100%)'
+            }
+            className={`inline-flex h-6 min-w-[44px] items-center justify-center rounded-lg px-1.5 tabular-nums transition-colors cursor-pointer ${
+              isViewModified
+                ? 'bg-[var(--dts-amber-bg)] font-extrabold text-[var(--dts-amber-ink)] hover:opacity-90'
+                : 'hover:bg-[var(--dts-panel-muted)]'
+            }`}
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            type="button"
+            onClick={() => handleZoomBy(0.15)}
+            title={lang === 'en' ? 'Zoom in' : 'Phóng to'}
+            aria-label={lang === 'en' ? 'Zoom in' : 'Phóng to'}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-lg hover:bg-[var(--dts-panel-muted)] cursor-pointer"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
+      )}
 
       {/* Subtle Auto-Collapsing Interactive Hint Chip (expands on hover) */}
       {!selectedInfo && !hoverPreview && (() => {
@@ -3207,20 +3234,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </div>
       )}
 
-      {/* Full Deep-Dive Inspector Card */}
+      {/* Full Deep-Dive Inspector Card (rendered via Portal so short diagrams never squash it!) */}
       {selectedInfo && (
-        <div
-          data-no-pan="true"
-          data-allow-select="true"
-          onClick={(e) => e.stopPropagation()}
-          className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
-        >
-          <StageEntityInspectorCard
-            info={selectedInfo.info}
-            lang={lang}
-            onClose={() => setSelectedInfo(null)}
-          />
-        </div>
+        <StageInspectorPortal
+          info={selectedInfo.info}
+          lang={lang}
+          theme={theme}
+          anchorRef={containerRef}
+          onClose={() => setSelectedInfo(null)}
+        />
       )}
     </div>
   );

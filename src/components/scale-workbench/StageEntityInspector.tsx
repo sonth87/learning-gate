@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { BookOpen, Cpu, HelpCircle, Lightbulb, Sparkles, X } from 'lucide-react';
-import type { WorkbenchLang } from '@/stores/useWorkbenchStore';
+import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
+import { cn } from '@/utils/cn';
 import { EXTRA_ENTITY_KNOWLEDGE } from './entityKnowledgeExtra';
 import { pickText, type BilingualText, type StageInspectorInfo } from './types';
 
@@ -440,12 +442,14 @@ export const StageEntityInspectorCard: React.FC<{
   info: StageInspectorInfo;
   lang: WorkbenchLang;
   onClose: () => void;
-}> = ({ info, lang, onClose }) => {
+  maxHeightStyle?: string;
+}> = ({ info, lang, onClose, maxHeightStyle }) => {
   return (
     <div
       role="region"
       aria-label={pickText(info.title, lang)}
-      className="dts-card-tactile z-30 flex max-h-[86%] w-full max-w-[390px] flex-col overflow-hidden rounded-2xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] animate-[dts-pill-in_200ms_ease-out]"
+      style={maxHeightStyle ? { maxHeight: maxHeightStyle } : undefined}
+      className="dts-card-tactile z-30 flex max-h-[min(78vh,540px)] w-full max-w-[396px] flex-col overflow-hidden rounded-2xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] shadow-2xl animate-[dts-pill-in_200ms_ease-out]"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-3.5 py-2.5">
@@ -517,5 +521,122 @@ export const StageEntityInspectorCard: React.FC<{
         </span>
       </div>
     </div>
+  );
+};
+
+/**
+ * Viewport-level Portal for StageEntityInspectorCard so its height is NEVER clipped
+ * by a short SVG diagram container, while staying anchored near the stage on desktop
+ * and presenting as an ergonomic sheet on mobile/tablet.
+ */
+export const StageInspectorPortal: React.FC<{
+  info: StageInspectorInfo;
+  lang: WorkbenchLang;
+  theme: WorkbenchTheme;
+  anchorRef: React.RefObject<HTMLElement | null>;
+  onClose: () => void;
+}> = ({ info, lang, theme, anchorRef, onClose }) => {
+  const [layout, setLayout] = useState<{
+    isMobile: boolean;
+    right: number;
+    bottom: number;
+    maxH: number;
+  }>(() => ({
+    isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
+    right: 20,
+    bottom: 24,
+    maxH: 520,
+  }));
+
+  useEffect(() => {
+    const updatePosition = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const isMobile = vw < 768;
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect || isMobile) {
+        setLayout({
+          isMobile,
+          right: 12,
+          bottom: 112,
+          maxH: Math.max(280, Math.min(500, Math.floor(vh * 0.66))),
+        });
+        return;
+      }
+
+      const right = Math.max(14, Math.min(vw - 410, Math.round(vw - rect.right + 10)));
+      const bottom = Math.max(16, Math.min(vh - 300, Math.round(vh - rect.bottom + 10)));
+      const availableAbove = vh - bottom - 18;
+      setLayout({
+        isMobile: false,
+        right,
+        bottom,
+        maxH: Math.max(300, Math.min(550, Math.floor(availableAbove))),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [anchorRef, info]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [onClose]);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className={cn(
+        'pylearn-root dts-shell pointer-events-none fixed inset-0 z-[9980]',
+        theme === 'dark' ? 'dts-dark dark' : 'dts-light'
+      )}
+    >
+      {layout.isMobile && (
+        <div
+          onClick={onClose}
+          className="pointer-events-auto absolute inset-0 bg-black/25 backdrop-blur-[1px]"
+        />
+      )}
+      <div
+        data-no-pan="true"
+        data-allow-select="true"
+        onClick={(e) => e.stopPropagation()}
+        style={
+          layout.isMobile
+            ? {
+                left: 12,
+                right: 12,
+                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 114px)',
+              }
+            : {
+                right: `${layout.right}px`,
+                bottom: `${layout.bottom}px`,
+                width: '396px',
+              }
+        }
+        className="pointer-events-auto fixed flex justify-center sm:justify-end"
+      >
+        <StageEntityInspectorCard
+          info={info}
+          lang={lang}
+          onClose={onClose}
+          maxHeightStyle={`${layout.maxH}px`}
+        />
+      </div>
+    </div>,
+    document.body
   );
 };

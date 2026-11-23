@@ -58,7 +58,7 @@ export const KubeMobileBottomNav: React.FC = () => {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="shrink-0 z-40 border-t-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel)] pb-[env(safe-area-inset-bottom)] lg:hidden"
+      className="lg-mobile-bottom-nav shrink-0 z-40 border-t-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel)] pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1 px-1.5 py-1">
         {items.map((item) => {
