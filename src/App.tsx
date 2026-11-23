@@ -175,20 +175,6 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Prevent fullscreen top-edge chrome peek (`clientY <= 6` / `clientY < 50` in MacOSTheme)
-  // from repeatedly slamming MenuBar + WindowChrome down over app headers (`0..48px`)
-  // during normal tab clicks, while still allowing intentional reveal at the literal top 1px edge.
-  const handleShellMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const state = useStore.getState();
-    if (state.fullscreenChromeRevealed) return;
-    if (e.clientY > 1 && e.clientY < 52) {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('.pylearn-root')) {
-        e.stopPropagation();
-      }
-    }
-  }, []);
-
   // Prevent pressing Escape inside inputs, editors, or dialogs inside `.pylearn-root`
   // from bubbling to `Window.tsx` and accidentally yanking the learning app out of Fullscreen.
   const handleShellKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -206,7 +192,6 @@ export const App: React.FC = () => {
     <div
       ref={shellRootRef}
       className="fixed inset-0 overflow-hidden"
-      onMouseMove={handleShellMouseMove}
       onKeyDown={handleShellKeyDown}
     >
       <DeviceLayout
