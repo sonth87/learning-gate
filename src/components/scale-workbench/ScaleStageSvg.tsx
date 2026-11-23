@@ -1207,6 +1207,13 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         WebkitUserSelect: 'none',
       }}
       onDragStart={(e) => e.preventDefault()}
+      onMouseDown={(e) => {
+        if (e.button !== 0) return;
+        const target = e.target as Element;
+        if (!target.closest('[data-allow-select="true"]')) {
+          e.preventDefault();
+        }
+      }}
       onClickCapture={(e) => {
         if (performance.now() - lastDragEndRef.current < 200) {
           e.stopPropagation();
@@ -1269,7 +1276,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         key={sceneSignature}
         viewBox={stageViewBox}
         preserveAspectRatio="xMidYMid meet"
-        style={{ pointerEvents: isPanning ? 'none' : 'auto' }}
+        style={{
+          pointerEvents: isPanning ? 'none' : 'auto',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
         className={className ?? 'h-full w-full select-none'}
         role="img"
         aria-label="Interactive Isometric System Diagram"
@@ -2049,6 +2060,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       {selectedInfo && (
         <div
           data-no-pan="true"
+          data-allow-select="true"
           onClick={(e) => e.stopPropagation()}
           className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
         >

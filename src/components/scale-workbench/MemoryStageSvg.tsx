@@ -239,6 +239,13 @@ export const MemoryStageSvg: React.FC<{
         WebkitUserSelect: 'none',
       }}
       onDragStart={(e) => e.preventDefault()}
+      onMouseDown={(e) => {
+        if (e.button !== 0) return;
+        const target = e.target as Element;
+        if (!target.closest('[data-allow-select="true"]')) {
+          e.preventDefault();
+        }
+      }}
       onClickCapture={(e) => {
         if (performance.now() - lastDragEndRef.current < 200) {
           e.stopPropagation();
@@ -300,7 +307,11 @@ export const MemoryStageSvg: React.FC<{
         key={animKey}
         viewBox={viewBoxStr}
         preserveAspectRatio="xMidYMid meet"
-        style={{ pointerEvents: isPanning ? 'none' : 'auto' }}
+        style={{
+          pointerEvents: isPanning ? 'none' : 'auto',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
         className="h-full w-full select-none"
         role="img"
         aria-label="2D Data Structure & Memory Visualizer"
@@ -1148,6 +1159,7 @@ export const MemoryStageSvg: React.FC<{
       {selectedInfo && (
         <div
           data-no-pan="true"
+          data-allow-select="true"
           onClick={(e) => e.stopPropagation()}
           className="absolute right-2.5 bottom-2.5 z-30 flex max-h-[92%] w-[calc(100%-20px)] sm:w-[375px] justify-end"
         >

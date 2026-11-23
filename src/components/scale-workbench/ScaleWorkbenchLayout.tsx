@@ -296,7 +296,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       const startWidth = rightSidebarWidth;
       const containerW =
         rootContainerRef.current?.getBoundingClientRect().width ?? 1440;
-      const maxAllowed = Math.max(360, Math.min(640, Math.floor(containerW * 0.5)));
+      const leftW =
+        leftAsideRef.current?.getBoundingClientRect().width ??
+        (isLeftSidebarCollapsed ? 62 : 254);
+      const maxAllowed = Math.max(
+        380,
+        Math.min(920, Math.floor(containerW - leftW - 340))
+      );
 
       setIsResizingRight(true);
       const prevCursor = document.body.style.cursor;
@@ -316,12 +322,14 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         document.body.style.userSelect = prevSelect;
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
       };
 
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
     },
-    [rightSidebarWidth, setRightSidebarWidth]
+    [rightSidebarWidth, setRightSidebarWidth, isLeftSidebarCollapsed]
   );
 
   const levelGroups = useMemo(() => {
@@ -1060,7 +1068,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
               />
             ) : isIsometricStage && activeStep.scene ? (
               <>
-                <div className="min-h-0 flex-1">
+                <div className="dts-stage-noselect min-h-0 flex-1 select-none">
                   <ScaleStageSvg
                     scene={activeStep.scene}
                     lang={lang}
@@ -1069,7 +1077,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                     replayNonce={replayNonce}
                   />
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
+                <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
                   {legendKinds.map((kind) => (
                     <span key={kind} className="inline-flex items-center gap-1.5">
                       <LegendDot kind={kind} />
@@ -1079,7 +1087,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </div>
               </>
             ) : isMemoryStage && activeStep.memoryScene ? (
-              <div className="min-h-0 flex-1">
+              <div className="dts-stage-noselect min-h-0 flex-1 select-none">
                 <MemoryStageSvg
                   scene={activeStep.memoryScene}
                   lang={lang}
