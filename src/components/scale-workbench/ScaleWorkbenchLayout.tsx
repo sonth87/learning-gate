@@ -953,10 +953,10 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             {pickText(activeLesson.subtitle, lang)}
           </p>
 
-          {/* Designed-to-Scale Telemetry Chips + Stage Controls */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-stretch gap-2">
-              {activeStep.telemetry.map((kpi, idx) => {
+          {/* Designed-to-Scale Compact Telemetry Strip + Stage Controls (single-row friendly so stage stays tall!) */}
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-stretch gap-1.5">
+              {activeStep.telemetry.slice(0, 3).map((kpi, idx) => {
                 const barBg =
                   kpi.tone === 'ok'
                     ? 'bg-[#4caf50]'
@@ -977,20 +977,20 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 return (
                   <div
                     key={idx}
-                    className="relative flex min-w-[110px] flex-col gap-0.5 rounded-[10px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-3 py-1.5 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
+                    className="relative flex min-w-0 flex-col rounded-[9px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
                   >
                     {kpi.tone && kpi.tone !== 'default' && (
                       <span
                         className={cn(
-                          'absolute left-0 top-2 bottom-2 w-[3px] rounded-r',
+                          'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r',
                           barBg
                         )}
                       />
                     )}
-                    <div className="font-mono text-[9.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                    <div className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)] leading-tight">
                       {pickText(kpi.label, lang)}
                     </div>
-                    <div className={cn('font-mono text-[13.5px] font-extrabold tabular-nums', valColor)}>
+                    <div className={cn('font-mono text-[12px] font-extrabold tabular-nums leading-snug', valColor)}>
                       {pickText(kpi.value, lang)}
                     </div>
                   </div>
@@ -999,19 +999,19 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             </div>
 
             {/* Playback & Live Code Controls (Replay/Pause only shown when isometric packets exist!) */}
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex shrink-0 items-center gap-1.5">
               {!isNativeCodeTrace && onRunCodeSnippet && (
                 <button
                   type="button"
                   onClick={() => setManualSandboxOpen((o) => !o)}
                   className={cn(
-                    'dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 font-mono text-xs font-bold',
+                    'dts-btn-tactile inline-flex items-center gap-1 rounded-xl px-2 py-1 font-mono text-[11px] font-bold',
                     manualSandboxOpen
                       ? 'bg-[var(--dts-blue-bg)] text-[var(--dts-blue-ink)]'
                       : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
                   )}
                 >
-                  <Code2 className="h-3.5 w-3.5" />
+                  <Code2 className="h-3 w-3" />
                   <span>{manualSandboxOpen ? t.visualStage : t.liveCode}</span>
                 </button>
               )}
@@ -1024,25 +1024,25 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                       setIsPlaying(true);
                       setReplayNonce((n) => n + 1);
                     }}
-                    className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-panel-elevated)] px-2.5 py-1.5 font-mono text-xs font-bold text-[var(--dts-ink)]"
+                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold text-[var(--dts-ink)]"
                   >
-                    <RotateCcw className="h-3.5 w-3.5" />
+                    <RotateCcw className="h-3 w-3" />
                     <span>{t.replay}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsPlaying((p) => !p)}
-                    className="dts-btn-tactile inline-flex items-center gap-1.5 rounded-xl bg-[var(--dts-panel-elevated)] px-2.5 py-1.5 font-mono text-xs font-bold text-[var(--dts-ink)]"
+                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-xl bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[11px] font-bold text-[var(--dts-ink)]"
                   >
                     {isPlaying ? (
                       <>
-                        <Pause className="h-3.5 w-3.5" />
+                        <Pause className="h-3 w-3" />
                         <span>{t.pause}</span>
                       </>
                     ) : (
                       <>
-                        <Play className="h-3.5 w-3.5" />
+                        <Play className="h-3 w-3" />
                         <span>{t.play}</span>
                       </>
                     )}

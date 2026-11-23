@@ -449,11 +449,11 @@ html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"
 @keyframes dts-entity-drop {
   0% {
     opacity: 0;
-    transform: translateY(-28px) scale(0.95);
+    transform: translateY(-48px) scale(0.96);
   }
-  70% {
+  72% {
     opacity: 1;
-    transform: translateY(2.5px) scale(1.01);
+    transform: translateY(4.5px) scale(1.012);
   }
   100% {
     opacity: 1;

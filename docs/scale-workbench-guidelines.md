@@ -19,8 +19,11 @@ Tuyệt đối **không gượng ép vẽ sơ đồ khối hệ thống** cho nh
 2. **Định tuyến Cổng Mặt Bên Chính Xác (`NE`, `SE`, `SW`, `NW` Isometric Ports):**
    - Đường nối `.link` bắt buộc xuất phát và kết thúc vuông góc tại đúng tâm cạnh isometric (`NE`, `SE`, `SW`, `NW`) của hình khối — không bao giờ lơ lửng ngoài rìa hoặc cắt chéo qua đỉnh khối.
    - Khi một khối có nhiều đường nối đi ra/đi vào, tự động phân bổ sang các cổng khác nhau (`NE` cho nhánh trên, `SE` cho nhánh dưới) để không chồng chéo hay gãy khúc ngược.
-3. **Animation Xuất Hiện Khi Tải Bước / Chạy Lại (`Entrance & Draw-in Motion`):**
-   - Khi mở bước mới hoặc nhấn `Chạy lại (R)`: các hình khối rơi nhẹ từ trên xuống kèm độ nảy mượt theo thứ tự (`staggered drop-in`), bóng sàn nở theo, sau đó đường nối `.link` vẽ dần từ nguồn tới đích (`stroke-dashoffset`) rồi các thẻ `.pill` và hạt tín hiệu mới bắt đầu chạy.
+3. **Animation Kịch Bản Rơi Nảy & Biến Đổi Mượt Giữa Các Step (`Persistent rAF Choreography & Morphing`):**
+   - Thẻ `<svg>` **luôn giữ nguyên trên DOM xuyên suốt bài học** (tuyệt đối không gắn `key` ép remount lại sơ đồ khi chuyển step).
+   - Khi mở bước đầu hoặc bấm `Chạy lại`: các khối sắp xếp từ sau ra trước, rơi nhẹ từ trên xuống theo đường cong nảy `easeOutBack` (`680ms`, trễ lệch `125ms`), bóng sàn đậm dần khi tiếp đất. **Chỉ sau khi cả 2 khối đầu mút đã chạm sàn**, đường nối `.link` mới bắt đầu vẽ từ nguồn tới đích (`540ms`), mũi tên (`marker-end`) bật ở cuối hành trình (`> 95%`), rồi thẻ `.pill` và hạt tín hiệu mới xuất hiện.
+   - Khi chuyển `Step 1 → Step 2 → Step 3`: các khối cũ giữ nguyên `id` sẽ **trượt mượt sang vị trí mới (`760ms`)** trong khi dây nối co giãn bám theo thời gian thực; khối không còn dùng bay nhẹ lên mờ dần (`380ms`); thành phần kiến trúc mới rơi xuống kèm đệm sáng mặt sàn (`spot`), vùng nhóm nét đứt (`StageZoneSlab` như `NAMESPACE · ZERO-TRUST`, `REDIS IN-MEMORY ENGINE`), ký hiệu ngắt mạch `✕` (`cut`) / nhịp tim xanh (`heartbeat`) và **Bảng ghi chú nhỏ (`StageNoteCard`)** ở góc sân khấu.
+   - Chữ bên trong khối `block` đặt cao thoáng (`y = 15.5` cho 1 dòng, `y = 10 / 22.5` cho 2 dòng) để không bao giờ chạm đường viền vát đáy.
 
 ---
 

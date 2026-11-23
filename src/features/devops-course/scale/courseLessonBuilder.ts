@@ -5,9 +5,14 @@ import type {
   MemoryScene,
   ScaleLessonStep,
   ScaleModuleLesson,
+  StageLink,
+  StageNode,
+  StageNoteCard,
+  StagePacket,
   StageRenderMode,
   StageScene,
   StageTelemetryItem,
+  StageZoneSlab,
   StepCategory,
   StepDiffItem,
 } from '@/components/scale-workbench/types';
@@ -561,6 +566,306 @@ function buildEnglishNarrative(
   return { stepTitleEn, summaryEn: body };
 }
 
+function inferZoneLabel(courseKey: string, modId: string): BilingualText {
+  if (courseKey === 'python') {
+    if (modId === 'M21') {
+      return { vi: 'FASTAPI · PYDANTIC BOUNDARY', en: 'FASTAPI · PYDANTIC BOUNDARY' };
+    }
+    if (modId === 'M22') {
+      return { vi: 'CPYTHON · CONCURRENCY ENGINE', en: 'CPYTHON · CONCURRENCY ENGINE' };
+    }
+    if (modId === 'M24') {
+      return { vi: 'DEFENSE-IN-DEPTH PERIMETER', en: 'DEFENSE-IN-DEPTH PERIMETER' };
+    }
+    if (modId === 'M09' || modId === 'M23') {
+      return { vi: 'CLEAN ARCHITECTURE · SRC/', en: 'CLEAN ARCHITECTURE · SRC/' };
+    }
+    return { vi: 'CPYTHON 3.12 RUNTIME', en: 'CPYTHON 3.12 RUNTIME' };
+  }
+  if (courseKey === 'redis') {
+    if (modId === 'R14' || modId === 'R15') {
+      return { vi: 'CỤM SENTINEL HA', en: 'SENTINEL HA ZONE' };
+    }
+    if (modId === 'R16') {
+      return { vi: 'REDIS CLUSTER · 16384 SLOTS', en: 'REDIS CLUSTER · 16384 SLOTS' };
+    }
+    if (modId === 'R17') {
+      return { vi: 'VÙNG ZERO-TRUST · TLS & ACL', en: 'ZERO-TRUST · TLS & ACL' };
+    }
+    return { vi: 'REDIS IN-MEMORY ENGINE', en: 'REDIS IN-MEMORY ENGINE' };
+  }
+  if (courseKey === 'kube') {
+    if (/^K0[0-5]$/.test(modId)) {
+      return { vi: 'LINUX HOST KERNEL', en: 'LINUX HOST KERNEL' };
+    }
+    if (modId === 'K06') {
+      return { vi: 'K8S CONTROL PLANE', en: 'K8S CONTROL PLANE' };
+    }
+    if (modId === 'K17') {
+      return { vi: 'NAMESPACE · ZERO-TRUST', en: 'NAMESPACE · ZERO-TRUST' };
+    }
+    return { vi: 'KUBERNETES CLUSTER', en: 'KUBERNETES CLUSTER' };
+  }
+  if (courseKey === 'cicd') {
+    if (modId === 'C10' || modId === 'C11') {
+      return { vi: 'RANH GIỚI KEYLESS OIDC', en: 'KEYLESS OIDC TRUST' };
+    }
+    if (/^C1[2-5]$/.test(modId)) {
+      return { vi: 'PRODUCTION · GITOPS CLUSTER', en: 'PRODUCTION · GITOPS CLUSTER' };
+    }
+    return { vi: 'EPHEMERAL CI RUNNER', en: 'EPHEMERAL CI RUNNER' };
+  }
+  return { vi: 'CỔNG QUẢN TRỊ PMBOK 8', en: 'PMBOK 8 GOVERNANCE' };
+}
+
+/**
+ * Transforms static blueprint scenes into authentic Designed-to-Scale progressive stories:
+ * - Step 0 (SETUP): starts with the essential 3-node baseline so Step 0 -> Step 1 morphs & drops in new components!
+ * - Step >= 1: adds rounded dashed 2:1 isometric floor group zones, heartbeat/cut links, crash states, and compact formula note cards.
+ */
+export function choreographProgressiveScene(
+  courseKey: string,
+  modId: string,
+  stepIdx: number,
+  totalSteps: number,
+  category: StepCategory,
+  curated: CuratedStepPayload
+): StageScene | undefined {
+  const base = curated.scene;
+  if (!base || base.nodes.length === 0) return undefined;
+
+  let nodes: StageNode[] = base.nodes.map((n) => ({ ...n }));
+  let links: StageLink[] = base.links.map((l) => ({ ...l }));
+  let packets: StagePacket[] = base.packets.map((p) => ({ ...p }));
+
+  // 1. Progressive Step-0 Baseline Reduction (so clicking Next into Step 2 glides & drops in the new component!)
+  if (stepIdx === 0 && totalSteps >= 3 && nodes.length === 4) {
+    const sorted = [...nodes].sort((a, b) => a.x - b.x || a.y - b.y);
+    const [n0, n1, n2, n3] = sorted;
+    const inDeg2 = links.filter((l) => l.to === n2.id).length;
+    const outDeg0 = links.filter((l) => l.from === n0.id).length;
+    const outDeg1 = links.filter((l) => l.from === n1.id).length;
+
+    if (inDeg2 >= 2) {
+      // Gate topology (e.g. K17 NetworkPolicy): Step 1 shows unguarded flat access straight into n3!
+      nodes = nodes.filter((nd) => nd.id !== n2.id);
+      const link0 = links.find((l) => l.from === n0.id);
+      const link1 = links.find((l) => l.from === n1.id);
+      links = [
+        {
+          id: `${n0.id}_direct_${n3.id}`,
+          from: n0.id,
+          to: n3.id,
+          style: 'danger',
+          label: { vi: 'mạng phẳng (chưa chặn!)', en: 'flat network (open!)' },
+          inspector: link0?.inspector,
+        },
+        {
+          id: `${n1.id}_direct_${n3.id}`,
+          from: n1.id,
+          to: n3.id,
+          style: 'solid',
+          label: link1?.label ?? { vi: 'TCP trực tiếp', en: 'direct TCP' },
+          inspector: link1?.inspector,
+        },
+      ];
+      packets = [
+        { id: 'pk_flat_0', linkId: `${n0.id}_direct_${n3.id}`, kind: 'error', speed: 0.44 },
+        { id: 'pk_flat_1', linkId: `${n1.id}_direct_${n3.id}`, kind: 'request', speed: 0.44, offset: 0.45 },
+      ];
+    } else if (outDeg0 >= 2 || outDeg1 >= 2) {
+      // Fan-out / Replica topology: Step 1 starts with primary path (omit n3 replica/shard until Step 2!)
+      nodes = nodes.filter((nd) => nd.id !== n3.id);
+      const keepIds = new Set(nodes.map((nd) => nd.id));
+      links = links.filter((l) => keepIds.has(l.from) && keepIds.has(l.to));
+      const keepLinkIds = new Set(links.map((l) => l.id));
+      packets = packets.filter((p) => keepLinkIds.has(p.linkId));
+    } else {
+      // 4-node sequential chain (n0 -> n1 -> n2 -> n3): Step 1 shows core 3-node baseline [n0, n2, n3], then n1 drops in at Step 2!
+      const l01 = links.find((l) => l.from === n0.id && l.to === n1.id);
+      const l12 = links.find((l) => l.from === n1.id && l.to === n2.id);
+      if (l01 && l12) {
+        nodes = nodes.filter((nd) => nd.id !== n1.id);
+        const keepIds = new Set(nodes.map((nd) => nd.id));
+        const bridgeId = `${n0.id}_bridge_${n2.id}`;
+        const otherLinks = links.filter((l) => keepIds.has(l.from) && keepIds.has(l.to));
+        links = [
+          {
+            id: bridgeId,
+            from: n0.id,
+            to: n2.id,
+            style: l01.style ?? 'solid',
+            label: l01.label,
+            inspector: l01.inspector,
+          },
+          ...otherLinks,
+        ];
+        const validLinkIds = new Set(links.map((l) => l.id));
+        packets = [
+          { id: 'pk_bridge', linkId: bridgeId, kind: 'request', speed: 0.45 },
+          ...packets.filter((p) => validLinkIds.has(p.linkId)),
+        ];
+      }
+    }
+  } else if (stepIdx === 0 && totalSteps >= 3 && nodes.length === 3) {
+    const sorted = [...nodes].sort((a, b) => a.x - b.x || a.y - b.y);
+    const [n0, n1, n2] = sorted;
+    const outDeg0 = links.filter((l) => l.from === n0.id).length;
+    if (outDeg0 >= 2 && !links.some((l) => l.from === n1.id && l.to === n2.id)) {
+      // 3-node Fan-Out: Step 1 shows primary path [n0 -> n1], then secondary branch n2 drops in at Step 2!
+      nodes = nodes.filter((nd) => nd.id !== n2.id);
+      const keepIds = new Set(nodes.map((nd) => nd.id));
+      links = links.filter((l) => keepIds.has(l.from) && keepIds.has(l.to));
+      const validLinkIds = new Set(links.map((l) => l.id));
+      packets = packets.filter((p) => validLinkIds.has(p.linkId));
+    } else {
+      const l01 = links.find((l) => l.from === n0.id && l.to === n1.id);
+      const l12 = links.find((l) => l.from === n1.id && l.to === n2.id);
+      if (l01 && l12) {
+        // 3-node Pipeline: Step 1 shows direct coupling [n0 -> n2], then mediator n1 drops into the middle at Step 2!
+        nodes = [n0, n2];
+        const directId = `${n0.id}_direct_${n2.id}`;
+        links = [
+          {
+            id: directId,
+            from: n0.id,
+            to: n2.id,
+            style: 'dashed',
+            label: l01.label,
+            inspector: l01.inspector,
+          },
+        ];
+        packets = [{ id: 'pk_direct', linkId: directId, kind: 'request', speed: 0.44 }];
+      }
+    }
+  }
+
+  // 2. Semantic Link & Failure Enrichment (heartbeat green pulse, cut red X on blocked links, dead crash state)
+  const isPitfallStep =
+    category === 'PITFALL' || curated.callout?.kind === 'watch-out';
+  const hasOffLink = links.some((l) => l.style === 'off');
+
+  links = links.map((l) => {
+    const lblText = l.label ? `${l.label.vi} ${l.label.en}`.toLowerCase() : '';
+    if (
+      l.style === 'dashed' &&
+      /heartbeat|gossip|probe|sentinel|sync|health|quorum/i.test(lblText)
+    ) {
+      return { ...l, style: 'heartbeat' };
+    }
+    if (
+      l.style === 'danger' &&
+      (hasOffLink || /block|chặn|403|401|deny|reject|cut|drop/i.test(lblText))
+    ) {
+      return { ...l, style: 'cut' };
+    }
+    return l;
+  });
+
+  if (isPitfallStep) {
+    nodes = nodes.map((nd) => {
+      const badgeTxt = nd.badge ? `${nd.badge.text.vi} ${nd.badge.text.en}`.toLowerCase() : '';
+      if (
+        nd.dead ||
+        (nd.tone === 'rose' &&
+          /oom|crash|down|sập|chết|502|503|spof|dead|lost/i.test(badgeTxt))
+      ) {
+        return { ...nd, dead: true, highlighted: true };
+      }
+      return nd;
+    });
+  }
+
+  // 3. Dashed 2:1 Isometric Floor Zone grouping internal engine/cluster nodes (Step >= 1)
+  let zones: StageZoneSlab[] | undefined = base.zones;
+  if ((!zones || zones.length === 0) && stepIdx >= 1 && nodes.length >= 3) {
+    const sorted = [...nodes].sort((a, b) => a.x - b.x || a.y - b.y);
+    const firstIsClient =
+      sorted[0].shape === 'device' || sorted[0].shape === 'crowd';
+    const memberNodes = firstIsClient ? sorted.slice(1) : sorted.slice(1);
+    if (memberNodes.length >= 2) {
+      zones = [
+        {
+          id: `zone-${modId}`,
+          nodeIds: memberNodes.map((m) => m.id),
+          label: inferZoneLabel(courseKey, modId),
+          tone: isPitfallStep ? 'rose' : stepIdx >= totalSteps - 2 ? 'green' : 'neutral',
+        },
+      ];
+    }
+  }
+
+  // 4. Compact Stage Note Card ("bảng ghi chú nhỏ") on Mechanism / Problem / Pitfall steps
+  // Uses curated.whatChanged (non-redundant with top KPI strip!) + sharpest status/metric rule.
+  let noteCard: StageNoteCard | undefined = base.noteCard;
+  if (
+    !noteCard &&
+    stepIdx >= 1 &&
+    (isPitfallStep || category === 'MECHANISM' || category === 'PROBLEM')
+  ) {
+    const shortenNote = (raw: string, max = 40): string => {
+      const clean = raw.replace(/\s+/g, ' ').trim();
+      if (clean.length <= max) return clean;
+      const cut = clean.slice(0, max - 1);
+      const lastSpace = cut.lastIndexOf(' ');
+      return `${lastSpace > 20 ? cut.slice(0, lastSpace) : cut}…`;
+    };
+
+    const lines: StageNoteCard['lines'] = [];
+    for (const diff of curated.whatChanged.slice(0, 2)) {
+      const prefix = diff.op === '+' ? '+ ' : diff.op === '-' ? '− ' : '~ ';
+      const tone: StageNoteCard['lines'][number]['tone'] =
+        diff.op === '-'
+          ? 'bad'
+          : lines.length === 1 && diff.op === '+'
+            ? 'good'
+            : lines.length === 1
+              ? 'muted'
+              : 'plain';
+      lines.push({
+        text: {
+          vi: `${prefix}${shortenNote(diff.text.vi, 34)}`,
+          en: `${prefix}${shortenNote(diff.text.en, 35)}`,
+        },
+        tone,
+      });
+    }
+
+    if (lines.length === 0) {
+      const activeBadgeNode =
+        nodes.find((nd) => nd.dead && nd.badge) ??
+        nodes.find((nd) => nd.highlighted && nd.badge) ??
+        nodes.find((nd) => nd.badge?.tone === 'bad' || nd.badge?.tone === 'ok');
+      if (activeBadgeNode?.badge) {
+        lines.push({
+          text: {
+            vi: `→ ${shortenNote(activeBadgeNode.badge.text.vi, 33)}`,
+            en: `→ ${shortenNote(activeBadgeNode.badge.text.en, 34)}`,
+          },
+          tone: isPitfallStep ? 'bad' : 'good',
+        });
+      }
+    }
+
+    if (lines.length > 0) {
+      noteCard = {
+        title: isPitfallStep
+          ? { vi: 'Điểm nghẽn sự cố', en: 'Failure Mechanism' }
+          : { vi: 'Biến đổi ở bước này', en: 'Step Delta' },
+        lines,
+      };
+    }
+  }
+
+  return {
+    zones,
+    noteCard,
+    nodes,
+    links,
+    packets,
+  };
+}
+
 export function buildDevOpsScaleLessons(
   courseId: DevOpsCourseId,
   curriculum: DevOpsCurriculum,
@@ -668,7 +973,17 @@ export function buildDevOpsScaleLessons(
         whatChanged: curated.whatChanged,
         telemetry: curated.telemetry,
         stageMode: stepMode,
-        scene: stepMode === 'isometric' ? (curated.scene ?? undefined) : undefined,
+        scene:
+          stepMode === 'isometric'
+            ? choreographProgressiveScene(
+                courseId,
+                mod.id,
+                idx,
+                totalSteps,
+                category,
+                curated
+              )
+            : undefined,
         memoryScene:
           stepMode === 'memory-2d' ? (curated.memoryScene ?? undefined) : undefined,
         codeTrace,
@@ -799,7 +1114,17 @@ export function buildPmpScaleLessons(
         whatChanged: curated.whatChanged,
         telemetry: curated.telemetry,
         stageMode: stepMode,
-        scene: stepMode === 'isometric' ? (curated.scene ?? undefined) : undefined,
+        scene:
+          stepMode === 'isometric'
+            ? choreographProgressiveScene(
+                'pmp',
+                mod.id,
+                idx,
+                totalSteps,
+                category,
+                curated
+              )
+            : undefined,
         memoryScene:
           stepMode === 'memory-2d' ? (curated.memoryScene ?? undefined) : undefined,
         codeTrace,

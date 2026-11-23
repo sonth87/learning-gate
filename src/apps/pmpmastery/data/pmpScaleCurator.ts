@@ -61,7 +61,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       'Translate PMI acronyms (ECO, PMBOK 8, OCM, ESG) into plain language and map the 33% / 41% / 26% blueprint.',
     durationMin: 16,
     difficulty: 'Beginner',
-    primaryMode: 'isometric',
+    primaryMode: 'memory-2d',
     objectives: [
       bi(
         'Giải mã bằng ngôn ngữ đời thường: ECO (Khung đề thi) vs PMBOK® 8 (Sách quy chuẩn kiến trúc QLDA), OCM & ESG',
@@ -156,52 +156,43 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             'Golden Reflex: Read the final question sentence first, identify Agile/Predictive/Hybrid cues, and pace yourself at ~80 seconds per question.'
           )
         ),
-        scene: {
-          nodes: [
-            {
-              id: 'p6',
-              shape: 'block',
-              tone: 'yellow',
-              x: -235,
-              y: -15,
-              label: bi('6 Principles', '6 Principles'),
-              icon: 'sparkles',
-              highlighted: phase === 'first' || phase === 'last',
-              dimmed: phase === 'mid1',
-              badge: { text: bi('Kim chỉ nam PMBOK 8', 'PMBOK 8 North Star') },
-            },
-            {
-              id: 'pd',
-              shape: 'block',
-              tone: 'blue',
-              x: 0,
-              y: 18,
-              label: bi('7 Domains', '7 Domains'),
-              icon: 'layers',
-              highlighted: phase === 'mid2' || phase === 'last',
-              dimmed: phase === 'mid1',
-              badge: { text: bi('40 Processes tích hợp', '40 Integrated Processes') },
-            },
-            {
-              id: 'eco',
-              shape: 'block',
-              tone: 'green',
-              x: 235,
-              y: -15,
-              label: bi('ECO 07/2026', 'ECO 07/2026'),
-              icon: 'shield',
-              highlighted: phase === 'mid1' || phase === 'last',
-              badge: { text: bi('33% · 41% · 26%', '33% · 41% · 26%'), tone: 'ok' },
-            },
+        memoryScene: {
+          kind: 'tape',
+          title: bi(
+            ' Bản đồ Khung Đề thi PMP® ECO 07/2026 & Kiến trúc PMBOK® 8',
+            'PMP® ECO 07/2026 Blueprint & PMBOK® 8 Architecture'
+          ),
+          subtitle: bi(
+            '180 câu / 240 phút · Mọi câu tình huống đều kết hợp Con người + Quy trình + Môi trường kinh doanh',
+            '180 questions / 240 mins · Situational judgment integrating People, Process & Business Environment'
+          ),
+          cells: [
+            'People (33%)',
+            'Process (41%)',
+            'Biz Env (26%)',
+            'PMBOK 8 (6P·7PD)',
           ],
-          links: [
-            { id: 'l1', from: 'p6', to: 'pd', label: bi('guides behavior', 'guides behavior') },
-            { id: 'l2', from: 'pd', to: 'eco', label: bi('180 situational Qs', '180 situational Qs') },
-          ],
-          packets: [
-            { id: 'p1', linkId: 'l1', kind: 'request', speed: 0.45 },
-            { id: 'p2', linkId: 'l2', kind: 'response', speed: 0.45, offset: 0.48 },
-          ],
+          activeIndices:
+            phase === 'first'
+              ? [0, 1]
+              : phase === 'mid1'
+                ? [2]
+                : phase === 'mid2'
+                  ? [3]
+                  : [0, 1, 2, 3],
+          pointers:
+            phase === 'first'
+              ? [{ index: 1, label: 'Cốt lõi vận hành', tone: 'blue' }]
+              : phase === 'mid1'
+                ? [{ index: 2, label: 'Tăng 8% → 26%!', tone: 'orange' }]
+                : phase === 'mid2'
+                  ? [{ index: 3, label: '6 Nguyên tắc + 7 Domains', tone: 'purple' }]
+                  : [{ index: 2, label: '180 câu tích hợp', tone: 'green' }],
+          outputPill: {
+            label: bi('Nhịp phòng thi', 'Target Pace'),
+            value: bi('~80 giây / câu · 0 trừ điểm câu sai', '~80s / question · No guessing penalty'),
+            tone: 'green',
+          },
         },
         defaultCode: `[PMP® ECO 07/2026 & PMBOK® 8 QUICK MAP]\n• ECO 07/2026  : People 33% (8 tasks) | Process 41% (10 tasks) | Business Env 26% (8 tasks)\n• PMBOK® 8     : 6 Guiding Principles -> 5 Focus Areas -> 7 Performance Domains (40 Processes)\n• Exam Format  : 180 Questions (175 scored + 5 pretest) / 240 mins (~80s/question)`,
       };
@@ -215,7 +206,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       'Unlearn impulsive escalation, hero-coding, and firing team members — adopt Verify → Assess → Collaborate → Govern.',
     durationMin: 16,
     difficulty: 'Beginner',
-    primaryMode: 'isometric',
+    primaryMode: 'memory-2d',
     objectives: [
       bi(
         'Hiểu vai trò của Sponsor, Project Charter, Baseline & CCB để thấy vì sao "chữa cháy đường tắt" ngoài đời làm trượt PMP',
@@ -310,60 +301,43 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             'Golden Reflex: Never bring an empty problem to the Sponsor — complete impact analysis first and present actionable options with a recommendation.'
           )
         ),
-        scene: {
-          nodes: [
-            {
-              id: 'sit',
-              shape: 'device',
-              tone: 'neutral',
-              x: -245,
-              y: 10,
-              label: bi('Exam Scenario', 'Exam Scenario'),
-              highlighted: phase === 'first' || phase === 'last',
-            },
-            {
-              id: 'trap',
-              shape: 'block',
-              tone: 'rose',
-              x: 5,
-              y: -55,
-              label: bi('Escalate / Fire', 'Escalate / Fire'),
-              icon: 'alert',
-              highlighted: phase === 'first' || phase === 'mid1',
-              dimmed: phase === 'mid2' || phase === 'last',
-              badge: { text: bi('Bẫy rớt điểm đời thực!', 'Exam Trap — Reject!'), tone: 'bad' },
-            },
-            {
-              id: 'pmi',
-              shape: 'block',
-              tone: 'green',
-              x: 195,
-              y: 38,
-              label: bi('Assess → Team', 'Assess → Team'),
-              icon: 'shield',
-              highlighted: phase === 'mid1' || phase === 'mid2' || phase === 'last',
-              badge: { text: bi('6 Phản xạ Vàng PMI ✔', 'PMI Golden Reflex ✔'), tone: 'ok' },
-            },
+        memoryScene: {
+          kind: 'tape',
+          title: bi(
+            'Chuỗi 4 Bước Phản xạ Chuẩn PMI Cho Câu Hỏi FIRST / NEXT',
+            'PMI 4-Step Decision Sequence for FIRST / NEXT Questions'
+          ),
+          subtitle: bi(
+            'Loại ngay đáp án sa thải / tự code thay / leo thang Sponsor khi chưa phân tích tác động',
+            'Eliminate firing, hero-coding, or escalating to Sponsor before impact analysis'
+          ),
+          cells: [
+            '1. Verify Facts',
+            '2. Assess Impact',
+            '3. Meet Team 1-1',
+            '4. CCB / Backlog',
           ],
-          links: [
-            {
-              id: 'l1',
-              from: 'sit',
-              to: 'trap',
-              style: 'danger',
-              label: bi('reactive shortcut', 'reactive shortcut'),
-            },
-            {
-              id: 'l2',
-              from: 'sit',
-              to: 'pmi',
-              label: bi('1. Analyze · 2. Meet', '1. Analyze · 2. Meet'),
-            },
-          ],
-          packets: [
-            { id: 'p1', linkId: 'l1', kind: 'error', speed: 0.42 },
-            { id: 'p2', linkId: 'l2', kind: 'response', speed: 0.48, offset: 0.4 },
-          ],
+          activeIndices:
+            phase === 'first'
+              ? [0]
+              : phase === 'mid1'
+                ? [0, 1]
+                : phase === 'mid2'
+                  ? [0, 1, 2]
+                  : [0, 1, 2, 3],
+          pointers:
+            phase === 'first'
+              ? [{ index: 0, label: 'Đọc log / kế hoạch gốc', tone: 'blue' }]
+              : phase === 'mid1'
+                ? [{ index: 1, label: 'Đánh giá toàn diện', tone: 'green' }]
+                : phase === 'mid2'
+                  ? [{ index: 2, label: 'Hợp tác giải gốc rễ', tone: 'purple' }]
+                  : [{ index: 3, label: 'Quản trị đúng luồng', tone: 'orange' }],
+          outputPill: {
+            label: bi('Ngoại lệ Sponsor', 'Sponsor Escalation'),
+            value: bi('Chỉ khi vượt trần Charter / Business Case (kèm phương án!)', 'Only beyond Charter / Business Case with options!'),
+            tone: 'yellow',
+          },
         },
         defaultCode: `[4-STEP PMI REFLEX FOR "FIRST / NEXT" QUESTIONS]\n1. VERIFY      : Check facts at the source (Plan / Charter / Contract / Logs).\n2. ASSESS      : Analyze holistic impact with the team (Scope, Time, Cost, Risk, Value).\n3. COLLABORATE : Meet face-to-face (1-on-1 / Workshop) to solve root causes.\n4. GOVERN      : Route Baseline changes via CCB (Predictive) or Backlog via PO (Agile).`,
       };
@@ -377,7 +351,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       'Separate Output from Outcome & Benefits, contrast MVP vs MMF, and overcome Sunk Cost Fallacy.',
     durationMin: 16,
     difficulty: 'Beginner',
-    primaryMode: 'isometric',
+    primaryMode: 'memory-2d',
     objectives: [
       bi(
         'Phân biệt qua ví dụ App thực tế: Output (bộ code bàn giao) ≠ Outcome (người dùng chuyển sang xài) ≠ Benefits (doanh thu/tiết kiệm ròng)',
@@ -472,49 +446,43 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             'Golden Reflex: Past spending is a Sunk Cost. If Business Case value vanishes, reassess with the Sponsor to pivot or formally terminate.'
           )
         ),
-        scene: {
-          nodes: [
-            {
-              id: 'out',
-              shape: 'block',
-              tone: 'blue',
-              x: -235,
-              y: 10,
-              label: bi('Output (App)', 'Output (App)'),
-              icon: 'code',
-              highlighted: phase === 'first' || phase === 'mid1',
-              dimmed: phase === 'mid2',
-              badge: { text: bi('Đúng hạn & ngân sách', 'On time & budget') },
-            },
-            {
-              id: 'oc',
-              shape: 'block',
-              tone: 'purple',
-              x: 0,
-              y: -28,
-              label: bi('Outcome', 'Outcome'),
-              icon: 'zap',
-              highlighted: phase === 'first' || phase === 'mid1' || phase === 'last',
-              badge: { text: bi('Khách dùng thực tế', 'User adoption') },
-            },
-            {
-              id: 'ben',
-              shape: 'db',
-              tone: 'green',
-              x: 235,
-              y: 15,
-              label: bi('Net Benefits & ESG', 'Net Benefits & ESG'),
-              highlighted: phase === 'mid2' || phase === 'last',
-            },
+        memoryScene: {
+          kind: 'tape',
+          title: bi(
+            'Chuỗi Chuyển hóa Giá trị: Output → Outcome → Net Benefits & ESG',
+            'Value Realization Chain: Output → Outcome → Net Benefits & ESG'
+          ),
+          subtitle: bi(
+            'MVP = Thử nghiệm nhỏ nhất để kiểm chứng giả thuyết · MMF = Tính năng nhỏ nhất đủ tạo giá trị thực',
+            'MVP = Smallest experiment to validate hypothesis · MMF = Smallest marketable feature set'
+          ),
+          cells: [
+            'MVP (Học sớm)',
+            'Output (Bàn giao)',
+            'Outcome (Đón nhận)',
+            'Benefits & ESG',
           ],
-          links: [
-            { id: 'l1', from: 'out', to: 'oc', label: bi('MVP / MMF adoption', 'MVP / MMF adoption') },
-            { id: 'l2', from: 'oc', to: 'ben', label: bi('value & ESG realized', 'value & ESG realized') },
-          ],
-          packets: [
-            { id: 'p1', linkId: 'l1', kind: 'request', speed: 0.45 },
-            { id: 'p2', linkId: 'l2', kind: 'response', speed: 0.45, offset: 0.48 },
-          ],
+          activeIndices:
+            phase === 'first'
+              ? [1, 2, 3]
+              : phase === 'mid1'
+                ? [0, 1]
+                : phase === 'mid2'
+                  ? [2, 3]
+                  : [3],
+          pointers:
+            phase === 'first'
+              ? [{ index: 2, label: 'Thay đổi hành vi user', tone: 'purple' }]
+              : phase === 'mid1'
+                ? [{ index: 0, label: 'Kiểm chứng giả thuyết', tone: 'blue' }]
+                : phase === 'mid2'
+                  ? [{ index: 3, label: 'Holistic & ESG', tone: 'green' }]
+                  : [{ index: 3, label: 'Bỏ qua Sunk Cost!', tone: 'orange' }],
+          outputPill: {
+            label: bi('Quy tắc Sunk Cost', 'Sunk Cost Rule'),
+            value: bi('Chi phí đã tiêu không tính vào quyết định tương lai', 'Past spend never justifies continuing a broken Business Case'),
+            tone: 'green',
+          },
         },
         defaultCode: `[VALUE DELIVERY CHAIN & SLICE SELECTION]\n• Output (Deliverable) -> Outcome (Behavior Shift) -> Benefits (Net ROI / NPV / ESG)\n• MVP = Smallest experiment to VALIDATE HYPOTHESIS & learn fast\n• MMF = Smallest complete feature set to DELIVER REAL MARKET VALUE`,
       };
@@ -2451,7 +2419,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       'Treat Compliance as #1 priority, lead adoption via 5-step ADKAR, govern GenAI safely, and master locked 3×60 exam breaks.',
     durationMin: 17,
     difficulty: 'Advanced',
-    primaryMode: 'isometric',
+    primaryMode: 'memory-2d',
     objectives: [
       bi(
         'Khắc ghi nguyên tắc số 1 của Business Environment (26%): Tuân thủ luật pháp (Compliance) luôn là ưu tiên tối thượng không thương lượng',
@@ -2546,50 +2514,41 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             'Golden Exam-Day Reflex: Answer 100% of questions (no penalty for wrong guesses), hit clock checkpoints 160m & 80m, and think like a principled Servant Leader!'
           )
         ),
-        scene: {
-          nodes: [
-            {
-              id: 'cmp',
-              shape: 'block',
-              tone: 'orange',
-              x: -235,
-              y: -15,
-              label: bi('Compliance & AI', 'Compliance & AI'),
-              icon: 'shield',
-              highlighted: phase === 'first' || phase === 'last',
-              badge: { text: bi('Luật #1 · Human-in-Loop', 'Law #1 · Human-in-Loop'), tone: 'ok' },
-            },
-            {
-              id: 'ocm',
-              shape: 'block',
-              tone: 'blue',
-              x: 0,
-              y: 20,
-              label: bi('ADKAR · 3×80m', 'ADKAR · 3×80m'),
-              icon: 'layers',
-              highlighted: phase === 'first' || phase === 'mid1' || phase === 'mid2',
-              badge: { text: bi('Khoá đề ở Q60 & Q120!', 'Locked at Q60 & Q120!') },
-            },
-            {
-              id: 'win',
-              shape: 'block',
-              tone: 'green',
-              x: 235,
-              y: -15,
-              label: bi('PMP® 3AT Pass!', 'PMP® 3AT Pass!'),
-              icon: 'sparkles',
-              highlighted: phase === 'last',
-              badge: { text: bi('3 × 60 Qs · Above Target', '3 × 60 Qs · Above Target'), tone: 'ok' },
-            },
-          ],
-          links: [
-            { id: 'l1', from: 'cmp', to: 'ocm', label: bi('governed adoption', 'governed adoption') },
-            { id: 'l2', from: 'ocm', to: 'win', label: bi('sustained benefits', 'sustained benefits') },
-          ],
-          packets: [
-            { id: 'p1', linkId: 'l1', kind: 'request', speed: 0.46 },
-            { id: 'p2', linkId: 'l2', kind: 'response', speed: 0.46, offset: 0.48 },
-          ],
+        memoryScene: {
+          kind: 'tape',
+          title: bi(
+            'ADKAR (5 Bước Chuyển đổi) & Nhịp Đồng hồ 240 Phút (3 Chặng Khóa Đề)',
+            '5-Step ADKAR Change Adoption & 240-Minute 3-Block Pacing'
+          ),
+          subtitle: bi(
+            'Sau Câu 60 và Câu 120: bấm nghỉ 10 phút sẽ KHÓA VĨNH VIỄN 60 câu vừa làm!',
+            'Submitting Q60 and Q120 for 10-minute breaks PERMANENTLY LOCKS previous blocks!'
+          ),
+          cells:
+            phase === 'first'
+              ? ['Awareness', 'Desire', 'Knowledge', 'Ability', 'Reinforce']
+              : ['Q1–60 (80p)', 'Nghỉ 10p 🔒', 'Q61–120 (80p)', 'Nghỉ 10p 🔒', 'Q121–180 (80p)'],
+          activeIndices:
+            phase === 'first'
+              ? [0, 1]
+              : phase === 'mid1'
+                ? [0, 1, 2]
+                : phase === 'mid2'
+                  ? [1, 3, 4]
+                  : [0, 2, 4],
+          pointers:
+            phase === 'first'
+              ? [{ index: 0, label: 'Hiểu VÌ SAO trước khi đào tạo!', tone: 'orange' }]
+              : phase === 'mid1'
+                ? [{ index: 1, label: 'Mốc đồng hồ: còn 160p', tone: 'rose' }]
+                : phase === 'mid2'
+                  ? [{ index: 3, label: 'Mốc đồng hồ: còn 80p', tone: 'purple' }]
+                  : [{ index: 4, label: 'Trả lời đủ 180/180 câu!', tone: 'green' }],
+          outputPill: {
+            label: bi('Ưu tiên số 1', '#1 Priority'),
+            value: bi('Compliance bắt buộc > Tính năng thường · Không dán PII lên AI công cộng', 'Mandatory Compliance #1 · Zero PII on public GenAI'),
+            tone: 'green',
+          },
         },
         defaultCode: `[BUSINESS ENVIRONMENT 26% & EXAM DAY PACING]\n• Regulatory Compliance : #1 Mandatory -> Top of Backlog (Agile) or Mandatory CR to CCB (Predictive).\n• ADKAR Change Model    : Awareness -> Desire -> Knowledge -> Ability -> Reinforcement.\n• AI Governance         : Zero PII on public AI + check Bias/Hallucinations + Human-in-the-Loop.\n• 240-Min Clock Pacing  : Block 1 (240->160m) [LOCKED BREAK] Block 2 (160->80m) [LOCKED BREAK] Block 3 (80->0m).`,
       };

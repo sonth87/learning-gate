@@ -197,14 +197,6 @@ export const MemoryStageSvg: React.FC<{
   const isViewModified = Math.abs(zoom - 1) > 0.005 || Math.hypot(pan.x, pan.y) > 2;
   const initialCamTf = buildCamTransform(zoom, pan.x, pan.y);
 
-  const animKey = JSON.stringify(
-    scene.kind === 'tape'
-      ? [scene.cells, scene.activeIndices]
-      : scene.kind === 'refs'
-        ? scene.names.map((n) => `${n.id}:${n.targetId}`)
-        : scene.nodes.map((n) => `${n.id}:${n.pruned}`)
-  );
-
   const finishPan = (e: React.PointerEvent<HTMLDivElement>) => {
     const st = panDragRef.current;
     if (!st || e.pointerId !== st.pointerId) return;
@@ -303,8 +295,8 @@ export const MemoryStageSvg: React.FC<{
       onPointerUp={finishPan}
       onPointerCancel={finishPan}
     >
+      {/* Persistent SVG Stage — stays mounted across steps so cells, pointers & references glide smoothly */}
       <svg
-        key={animKey}
         viewBox={viewBoxStr}
         preserveAspectRatio="xMidYMid meet"
         style={{
@@ -450,18 +442,21 @@ export const MemoryStageSvg: React.FC<{
                 return (
                   <g
                     key={idx}
-                    transform={`translate(${cx}, -22)`}
+                    transform={`translate(${cx}, ${isAct ? -27 : -22})`}
                     onMouseEnter={() => setHoverInfo(cellInfo)}
                     onMouseLeave={() => setHoverInfo(null)}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedInfo(cellInfo);
                     }}
-                    style={{ cursor: 'pointer' }}
+                    style={{
+                      cursor: 'pointer',
+                      transition: 'transform 460ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
                   >
                     <g
                       className="dts-anim-drop"
-                      style={{ animationDelay: `${idx * 45}ms` }}
+                      style={{ animationDelay: `${idx * 65}ms` }}
                     >
                       <text
                         x={cw / 2}
@@ -475,7 +470,15 @@ export const MemoryStageSvg: React.FC<{
                         {isStageCards ? `#${idx + 1}` : idx}
                       </text>
 
-                      <rect x={2} y={2.5} width={cw} height={ch} rx={11} fill={shadow} opacity={0.85} />
+                      <rect
+                        x={2}
+                        y={isAct ? 4.5 : 2.5}
+                        width={cw}
+                        height={ch}
+                        rx={11}
+                        fill={shadow}
+                        opacity={0.85}
+                      />
                       <rect
                         x={0}
                         y={0}
@@ -485,6 +488,7 @@ export const MemoryStageSvg: React.FC<{
                         fill={tc.bg}
                         stroke={tc.border}
                         strokeWidth={isAct ? 2 : 1.5}
+                        style={{ transition: 'fill 320ms ease, stroke 320ms ease' }}
                       />
 
                       {cellLines.length === 1 ? (
@@ -564,10 +568,16 @@ export const MemoryStageSvg: React.FC<{
                 const pc = toneColors(ptr.tone ?? 'blue', isDark);
 
                 return (
-                  <g key={pIdx} transform={`translate(${px}, ${basePy})`}>
+                  <g
+                    key={pIdx}
+                    transform={`translate(${px}, ${basePy})`}
+                    style={{
+                      transition: 'transform 520ms cubic-bezier(0.22, 1, 0.36, 1)',
+                    }}
+                  >
                     <g
                       className="dts-anim-pill"
-                      style={{ animationDelay: `${220 + pIdx * 70}ms` }}
+                      style={{ animationDelay: `${340 + pIdx * 85}ms` }}
                     >
                       <path
                         d={`M 0,-12 L 0,${4 + rowShift}`}
@@ -697,7 +707,8 @@ export const MemoryStageSvg: React.FC<{
                       {
                         strokeDasharray: '320 320',
                         '--line-len': '320',
-                        animationDelay: `${140 + idx * 70}ms`,
+                        animationDelay: `${360 + idx * 90}ms`,
+                        transition: 'd 520ms cubic-bezier(0.22, 1, 0.36, 1), stroke 320ms ease',
                       } as React.CSSProperties
                     }
                     stroke={isErr ? '#dc2626' : ink}

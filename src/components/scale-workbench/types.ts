@@ -111,6 +111,8 @@ export interface StageNode {
   stackFrames?: string[];
   dimmed?: boolean;
   highlighted?: boolean;
+  /** Crashed / unreachable / failed state (renders stone-gray body + red X + DOWN badge) */
+  dead?: boolean;
 }
 
 export interface StageLink {
@@ -120,7 +122,7 @@ export interface StageLink {
   /** Optional explicit exit/entry isometric wall ports ('NE' | 'SE' | 'SW' | 'NW') */
   fromPort?: IsoPortDir;
   toPort?: IsoPortDir;
-  style?: 'solid' | 'dashed' | 'off' | 'danger';
+  style?: 'solid' | 'dashed' | 'off' | 'danger' | 'heartbeat' | 'cut';
   label?: BilingualText;
   curve?: number;
   /** Optional rich inspector documentation when user hovers/clicks this connector or its tag */
@@ -146,16 +148,31 @@ export interface StagePacket {
 
 export interface StageZoneSlab {
   id: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
+  /** Optional member node IDs to automatically wrap in a rounded dashed 2:1 isometric floor boundary */
+  nodeIds?: string[];
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
   label: BilingualText;
   tone?: IsoTone;
 }
 
+export interface StageNoteLine {
+  text: BilingualText;
+  tone?: 'plain' | 'muted' | 'good' | 'bad' | 'amber';
+}
+
+export interface StageNoteCard {
+  id?: string;
+  title: BilingualText;
+  lines: StageNoteLine[];
+  position?: 'top-left' | 'bottom-left' | 'bottom-right';
+}
+
 export interface StageScene {
   zones?: StageZoneSlab[];
+  noteCard?: StageNoteCard;
   nodes: StageNode[];
   links: StageLink[];
   packets: StagePacket[];

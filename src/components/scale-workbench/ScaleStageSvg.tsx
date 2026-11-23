@@ -6,12 +6,12 @@ import {
   type IsoNodeShape,
   type IsoTone,
   type LegacyNodeShape,
-  type PacketKind,
   type StageIconKind,
   type StageInspectorInfo,
   type StageLink,
   type StageNode,
   type StageScene,
+  type StageZoneSlab,
 } from './types';
 import {
   StageEntityInspectorCard,
@@ -23,48 +23,89 @@ interface Pt {
   y: number;
 }
 
-/** Rounds every corner of a closed polygon using smooth quadratic Bezier Q curves */
-function roundedPolygonPath(pts: Pt[], radius = 9.5): string {
+interface BoundsBox {
+  cx: number;
+  cy: number;
+  w: number;
+  h: number;
+}
+
+/* ============================================================================
+ * DESIGNED-TO-SCALE EASING & MASTER CHOREOGRAPHY CONSTANTS
+ * ============================================================================ */
+
+const TIMING = {
+  exit: 380,
+  move: 760,
+  enter: 680,
+  stagger: 125,
+  draw: 540,
+  linkStagger: 85,
+};
+
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v;
+}
+
+function easeInOutCubic(t: number): number {
+  const c = clamp01(t);
+  return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+}
+
+function easeOutCubic(t: number): number {
+  const c = clamp01(t);
+  return 1 - Math.pow(1 - c, 3);
+}
+
+/** Authentic Designed-to-Scale back-overshoot landing curve (s = 1.35) */
+function easeOutBack(t: number): number {
+  const c = clamp01(t);
+  const u = c - 1;
+  return 1 + 2.35 * u * u * u + 1.35 * u * u;
+}
+
+/* ============================================================================
+ * ROUNDED ISOMETRIC GEOMETRY & OBSTACLE-AVOIDING 2:1 GRID ROUTER
+ * ============================================================================ */
+
+function roundedPolygonPath(pts: Pt[], radius: number): string {
   const n = pts.length;
   if (n < 3) return '';
-  const cmds: string[] = [];
+  const segs: string[] = [];
 
   for (let i = 0; i < n; i++) {
     const prev = pts[(i - 1 + n) % n];
     const curr = pts[i];
     const next = pts[(i + 1) % n];
 
-    const dx1 = prev.x - curr.x;
-    const dy1 = prev.y - curr.y;
-    const len1 = Math.hypot(dx1, dy1) || 1;
-    const r1 = Math.min(radius, len1 * 0.44);
+    const v1x = prev.x - curr.x;
+    const v1y = prev.y - curr.y;
+    const len1 = Math.hypot(v1x, v1y) || 1;
 
-    const dx2 = next.x - curr.x;
-    const dy2 = next.y - curr.y;
-    const len2 = Math.hypot(dx2, dy2) || 1;
-    const r2 = Math.min(radius, len2 * 0.44);
+    const v2x = next.x - curr.x;
+    const v2y = next.y - curr.y;
+    const len2 = Math.hypot(v2x, v2y) || 1;
 
-    const sx = curr.x + (dx1 / len1) * r1;
-    const sy = curr.y + (dy1 / len1) * r1;
-    const ex = curr.x + (dx2 / len2) * r2;
-    const ey = curr.y + (dy2 / len2) * r2;
+    const r = Math.min(radius, len1 * 0.42, len2 * 0.42);
+    const p1x = curr.x + (v1x / len1) * r;
+    const p1y = curr.y + (v1y / len1) * r;
+    const p2x = curr.x + (v2x / len2) * r;
+    const p2y = curr.y + (v2y / len2) * r;
 
     if (i === 0) {
-      cmds.push(`M ${sx.toFixed(2)},${sy.toFixed(2)}`);
+      segs.push(`M ${p1x.toFixed(2)},${p1y.toFixed(2)}`);
     } else {
-      cmds.push(`L ${sx.toFixed(2)},${sy.toFixed(2)}`);
+      segs.push(`L ${p1x.toFixed(2)},${p1y.toFixed(2)}`);
     }
-    cmds.push(`Q ${curr.x.toFixed(2)},${curr.y.toFixed(2)} ${ex.toFixed(2)},${ey.toFixed(2)}`);
+    segs.push(`Q ${curr.x.toFixed(2)},${curr.y.toFixed(2)} ${p2x.toFixed(2)},${p2y.toFixed(2)}`);
   }
 
-  cmds.push('Z');
-  return cmds.join(' ');
+  segs.push('Z');
+  return segs.join(' ');
 }
 
-/** Rounds interior corners of an open polyline using smooth quadratic Bezier Q bends */
-function roundedPolylinePath(pts: Pt[], radius = 14): string {
-  if (pts.length === 0) return '';
-  if (pts.length === 1) return `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)}`;
+function roundedPolylinePath(pts: Pt[], radius: number): string {
+  if (pts.length < 2) return '';
   if (pts.length === 2) {
     return `M ${pts[0].x.toFixed(2)},${pts[0].y.toFixed(2)} L ${pts[1].x.toFixed(2)},${pts[1].y.toFixed(2)}`;
   }
@@ -107,7 +148,7 @@ function normalizeShape(shape: LegacyNodeShape): IsoNodeShape {
 
 function splitShortLines(raw: string): string[] {
   const clean = raw.trim();
-  if (clean.length <= 14) return [clean];
+  if (clean.length <= 13) return [clean];
   const words = clean.split(/\s+/);
   if (words.length === 1) {
     return [clean.slice(0, 14)];
@@ -123,22 +164,23 @@ function splitShortLines(raw: string): string[] {
   return [line1, rest.length > 14 ? `${rest.slice(0, 13)}…` : rest];
 }
 
-/**
- * Ground-floor plane anchor & exact outer silhouette polygon ray intersection:
- * All isometric entities and connectors share the ground-floor 2:1 plane (just like designed-to-scale),
- * so SW/SE links hit the exact 50% wall midpoint (±28px) and NE/NW links emerge cleanly from the side wall
- * with zero corner drift and zero "M" roof humps!
- */
 function getGroundOffset(shape: LegacyNodeShape): number {
   const kind = normalizeShape(shape);
   if (kind === 'block') return 22;
   if (kind === 'db') return 21;
   if (kind === 'device') return 16;
-  return 14; // crowd
+  return 14;
 }
 
-function getGroundCenter(node: StageNode): Pt {
+function getGroundCenter(node: { x: number; y: number; shape: LegacyNodeShape }): Pt {
   return { x: node.x, y: node.y + getGroundOffset(node.shape) };
+}
+
+function getInitialLift(shape: LegacyNodeShape): number {
+  const kind = normalizeShape(shape);
+  if (kind === 'device') return 44;
+  if (kind === 'crowd') return 30;
+  return 108;
 }
 
 function getSilhouettePolygon(shape: LegacyNodeShape): Pt[] {
@@ -188,13 +230,13 @@ function getSilhouettePolygon(shape: LegacyNodeShape): Pt[] {
 }
 
 function getBoundaryDistAlongDir(
-  node: StageNode,
+  shape: LegacyNodeShape,
   ux: number,
   uy: number,
   extraGap = 2
 ): number {
-  const gOff = getGroundOffset(node.shape);
-  const poly = getSilhouettePolygon(node.shape);
+  const gOff = getGroundOffset(shape);
+  const poly = getSilhouettePolygon(shape);
   let bestT = Infinity;
 
   for (let i = 0; i < poly.length; i++) {
@@ -226,13 +268,15 @@ function hashIds(nodes: StageNode[]): number {
 }
 
 /**
- * Transforms flat horizontal node rows into authentic 2D isometric grid compositions
- * (NE->SE Corner, SE->NE Valley, Stepped Terrace, Echelon Fan-Out, Fan-In, 4-Node 2:1 Diamond)
- * so blocks stay large and crisp while direct links align cleanly along pure 2:1 axes!
+ * Composes clean, spacious 2:1 isometric grid layouts so blocks never overlap
+ * and direct connectors align cleanly along authentic 2:1 floor axes.
  */
 function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNode[] {
   const n = nodes.length;
-  if (n <= 1) return nodes;
+  if (n === 0) return nodes;
+  if (n === 1) {
+    return [{ ...nodes[0], x: 0, y: -getGroundOffset(nodes[0].shape) }];
+  }
 
   const xs = nodes.map((nd) => nd.x);
   const ys = nodes.map((nd) => nd.y);
@@ -280,39 +324,33 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const [n0, n1, n2] = sorted;
     const map = new Map<string, StageNode>();
 
-    // Fan-Out from left hub (e.g. Load Balancer / Traffic Split)
     if ((outDeg.get(n0.id) ?? 0) >= 2 && !links.some((l) => l.from === n1.id && l.to === n2.id)) {
       map.set(n0.id, placeAtGround(n0, -172, 56));
-      map.set(n1.id, placeAtGround(n1, 56, -58));   // +228, -114 (exact 2:1 NE)
-      map.set(n2.id, placeAtGround(n2, 176, 52));   // spacious SE echelon below n1
+      map.set(n1.id, placeAtGround(n1, 56, -58));
+      map.set(n2.id, placeAtGround(n2, 176, 52));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    // Fan-In into right target (e.g. parallel DAG lint + test -> build)
     if ((inDeg.get(n2.id) ?? 0) >= 2 && !links.some((l) => l.from === n0.id && l.to === n1.id)) {
-      map.set(n0.id, placeAtGround(n0, -96, -80));  // +240, +120 into n2 (exact 2:1 SE)
-      map.set(n1.id, placeAtGround(n1, -186, 80));  // 160px vertical ground gap below n0!
+      map.set(n0.id, placeAtGround(n0, -96, -80));
+      map.set(n1.id, placeAtGround(n1, -186, 80));
       map.set(n2.id, placeAtGround(n2, 144, 40));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    // 3-Node Sequential Pipeline — vary across 3 spacious pure 2:1 straight-line isometric compositions!
     const variant = hashIds(sorted) % 3;
     if (variant === 0) {
-      // Back-Apex Isometric Corner (Front-Left -> Back-Center -> Front-Right: 2 pure 2:1 straight lines!)
       map.set(n0.id, placeAtGround(n0, -226, 62));
-      map.set(n1.id, placeAtGround(n1, 0, -51));    // +226, -113 (exact 2:1 NE)
-      map.set(n2.id, placeAtGround(n2, 226, 62));   // +226, +113 (exact 2:1 SE)
+      map.set(n1.id, placeAtGround(n1, 0, -51));
+      map.set(n2.id, placeAtGround(n2, 226, 62));
     } else if (variant === 1) {
-      // Front-Apex Isometric Valley (Back-Left -> Front-Center -> Back-Right: 2 pure 2:1 straight lines!)
       map.set(n0.id, placeAtGround(n0, -224, -46));
-      map.set(n1.id, placeAtGround(n1, 0, 66));     // +224, +112 (exact 2:1 SE)
-      map.set(n2.id, placeAtGround(n2, 224, -46));  // +224, -112 (exact 2:1 NE)
+      map.set(n1.id, placeAtGround(n1, 0, 66));
+      map.set(n2.id, placeAtGround(n2, 224, -46));
     } else {
-      // Ascending 2:1 Isometric Diagonal (Front-Left -> Center -> Back-Right: 2 pure 2:1 straight lines!)
       map.set(n0.id, placeAtGround(n0, -216, 88));
-      map.set(n1.id, placeAtGround(n1, 0, -20));    // +216, -108 (exact 2:1 NE)
-      map.set(n2.id, placeAtGround(n2, 216, -128)); // +216, -108 (exact 2:1 NE)
+      map.set(n1.id, placeAtGround(n1, 0, -20));
+      map.set(n2.id, placeAtGround(n2, 216, -128));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -322,45 +360,41 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const [n0, n1, n2, n3] = sorted;
     const map = new Map<string, StageNode>();
 
-    // 4a: 1 Hub fanning out to 3 Shards/Servers (e.g. Redis Cluster)
     if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0) {
-      map.set(n0.id, placeAtGround(n0, -192, 54));
-      map.set(n1.id, placeAtGround(n1, 32, -96));
-      map.set(n2.id, placeAtGround(n2, 138, -18));
-      map.set(n3.id, placeAtGround(n3, 244, 60));
+      map.set(n0.id, placeAtGround(n0, -188, 56));
+      map.set(n1.id, placeAtGround(n1, 24, -104));
+      map.set(n2.id, placeAtGround(n2, 136, -48));
+      map.set(n3.id, placeAtGround(n3, 248, 8));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    // 4b: Producer -> Broker -> 2 Consumers
     if ((outDeg.get(n1.id) ?? 0) >= 2) {
       map.set(n0.id, placeAtGround(n0, -228, 62));
-      map.set(n1.id, placeAtGround(n1, -16, -44));  // +212, -106 (exact 2:1 NE)
+      map.set(n1.id, placeAtGround(n1, -16, -44));
       map.set(n2.id, placeAtGround(n2, 196, -90));
-      map.set(n3.id, placeAtGround(n3, 196, 62));   // +212, +106 (exact 2:1 SE), 152px vertical gap!
+      map.set(n3.id, placeAtGround(n3, 196, 62));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    // 4c: 2 Sources -> Gate -> Target (e.g. K17 NetworkPolicy)
     if ((inDeg.get(n2.id) ?? 0) >= 2) {
       map.set(n0.id, placeAtGround(n0, -172, -84));
-      map.set(n1.id, placeAtGround(n1, -214, 84));  // 168px vertical separation so n1 roof never touches n0 pill!
-      map.set(n2.id, placeAtGround(n2, 36, 20));    // +208, +104 from n0 (exact 2:1 SE)
-      map.set(n3.id, placeAtGround(n3, 248, -86));  // +212, -106 from n2 (exact 2:1 NE)
+      map.set(n1.id, placeAtGround(n1, -214, 84));
+      map.set(n2.id, placeAtGround(n2, 36, 20));
+      map.set(n3.id, placeAtGround(n3, 248, -86));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    // 4d: 4-Node Sequential Chain — spacious pure 2:1 zigzag diamond (all 3 arrows straight!)
     const flip = hashIds(sorted) % 2 === 1;
     if (!flip) {
       map.set(n0.id, placeAtGround(n0, -294, 58));
-      map.set(n1.id, placeAtGround(n1, -98, -40));  // +196, -98 (exact 2:1 NE)
-      map.set(n2.id, placeAtGround(n2, 98, 58));    // +196, +98 (exact 2:1 SE)
-      map.set(n3.id, placeAtGround(n3, 294, -40));  // +196, -98 (exact 2:1 NE)
+      map.set(n1.id, placeAtGround(n1, -98, -40));
+      map.set(n2.id, placeAtGround(n2, 98, 58));
+      map.set(n3.id, placeAtGround(n3, 294, -40));
     } else {
       map.set(n0.id, placeAtGround(n0, -294, -32));
-      map.set(n1.id, placeAtGround(n1, -98, 66));   // +196, +98 (exact 2:1 SE)
-      map.set(n2.id, placeAtGround(n2, 98, -32));   // +196, -98 (exact 2:1 NE)
-      map.set(n3.id, placeAtGround(n3, 294, 66));   // +196, +98 (exact 2:1 SE)
+      map.set(n1.id, placeAtGround(n1, -98, 66));
+      map.set(n2.id, placeAtGround(n2, 98, -32));
+      map.set(n3.id, placeAtGround(n3, 294, 66));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -379,6 +413,15 @@ function rectOverlapArea(a: RectBox, b: RectBox): number {
   const ox = Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0));
   const oy = Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
   return ox * oy;
+}
+
+function distPointToSeg(p: Pt, a: Pt, b: Pt): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const l2 = dx * dx + dy * dy;
+  if (l2 < 1e-4) return Math.hypot(p.x - a.x, p.y - a.y);
+  const t = clamp01(((p.x - a.x) * dx + (p.y - a.y) * dy) / l2);
+  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }
 
 function sampleSegmentPoint(pts: Pt[], t: number): Pt {
@@ -408,10 +451,16 @@ function sampleSegmentPoint(pts: Pt[], t: number): Pt {
   };
 }
 
+/**
+ * Pure 2:1 grid-aligned isometric elbow router:
+ * Decomposes every connector onto exact SE (+2,+1) and NE (+2,-1) isometric floor axes
+ * and automatically chooses the elbow that routes cleanly AROUND intermediate blocks!
+ */
 function buildIsoLink(
   link: StageLink,
-  from: StageNode,
-  to: StageNode
+  from: { id: string; x: number; y: number; shape: LegacyNodeShape },
+  to: { id: string; x: number; y: number; shape: LegacyNodeShape },
+  allNodes: ReadonlyArray<{ id: string; x: number; y: number; shape: LegacyNodeShape }> = []
 ): { d: string; pts: Pt[]; labelPos: Pt } {
   const c0 = getGroundCenter(from);
   const c1 = getGroundCenter(to);
@@ -426,17 +475,40 @@ function buildIsoLink(
 
   let waypoints: Pt[];
 
-  if (lenA < 20 || lenB < 20) {
+  if (lenA < 10 || lenB < 10) {
     waypoints = [c0, c1];
   } else {
-    const preferNEFirst =
-      link.curve !== undefined ? link.curve < 0 : dy < -28;
+    const elbowSE: Pt = { x: c0.x + 2 * a, y: c0.y + a };
+    const elbowNE: Pt = { x: c0.x + 2 * b, y: c0.y - b };
 
-    const elbow: Pt = preferNEFirst
-      ? { x: c0.x + 2 * b, y: c0.y - b }
-      : { x: c0.x + 2 * a, y: c0.y + a };
+    const scoreElbow = (eb: Pt): number => {
+      let penalty = 0;
+      for (const other of allNodes) {
+        if (other.id === from.id || other.id === to.id) continue;
+        const oc = getGroundCenter(other);
+        const d1 = distPointToSeg(oc, c0, eb);
+        const d2 = distPointToSeg(oc, eb, c1);
+        const minD = Math.min(d1, d2);
+        if (minD < 82) {
+          penalty += (82 - minD) * 10;
+        }
+      }
+      return penalty;
+    };
 
-    waypoints = [c0, elbow, c1];
+    const penSE = scoreElbow(elbowSE);
+    const penNE = scoreElbow(elbowNE);
+
+    let useNE: boolean;
+    if (Math.abs(penNE - penSE) > 25) {
+      useNE = penNE < penSE;
+    } else if (link.curve !== undefined) {
+      useNE = link.curve < 0;
+    } else {
+      useNE = dy < -28;
+    }
+
+    waypoints = [c0, useNE ? elbowNE : elbowSE, c1];
   }
 
   const firstNext = waypoints[1];
@@ -446,8 +518,8 @@ function buildIsoLink(
   const fux = fdx / fLen;
   const fuy = fdy / fLen;
   const startTrim = Math.min(
-    getBoundaryDistAlongDir(from, fux, fuy, 1.5),
-    fLen * 0.45
+    getBoundaryDistAlongDir(from.shape, fux, fuy, 2),
+    fLen * 0.46
   );
   const pStart: Pt = {
     x: c0.x + fux * startTrim,
@@ -461,8 +533,8 @@ function buildIsoLink(
   const lux = ldx / lLen;
   const luy = ldy / lLen;
   const endTrim = Math.min(
-    getBoundaryDistAlongDir(to, -lux, -luy, 4),
-    lLen * 0.45
+    getBoundaryDistAlongDir(to.shape, -lux, -luy, 4.5),
+    lLen * 0.46
   );
   const pEnd: Pt = {
     x: c1.x - lux * endTrim,
@@ -506,6 +578,78 @@ function buildIsoLink(
   };
 }
 
+/** Computes a rounded 2:1 isometric floor boundary polygon around member nodes (or explicit coordinates) */
+function computeZoneGeometry(
+  zone: StageZoneSlab,
+  nodeMap: Map<string, StageNode>
+): { path: string; labelPt: Pt; corners: Pt[] } | null {
+  let minU = Infinity;
+  let maxU = -Infinity;
+  let minV = Infinity;
+  let maxV = -Infinity;
+
+  if (zone.nodeIds && zone.nodeIds.length > 0) {
+    let found = 0;
+    for (const id of zone.nodeIds) {
+      const nd = nodeMap.get(id);
+      if (!nd) continue;
+      found++;
+      const gc = getGroundCenter(nd);
+      const u = gc.x / 2 + gc.y;
+      const v = gc.x / 2 - gc.y;
+      minU = Math.min(minU, u);
+      maxU = Math.max(maxU, u);
+      minV = Math.min(minV, v);
+      maxV = Math.max(maxV, v);
+    }
+    if (found === 0) return null;
+    const padU = 44;
+    const padV = 44;
+    minU -= padU;
+    maxU += padU;
+    minV -= padV;
+    maxV += padV;
+  } else if (
+    typeof zone.x === 'number' &&
+    typeof zone.y === 'number' &&
+    typeof zone.w === 'number' &&
+    typeof zone.h === 'number'
+  ) {
+    const u0 = zone.x / 2 + zone.y;
+    const v0 = zone.x / 2 - zone.y;
+    minU = u0 - zone.h / 2;
+    maxU = u0 + zone.h / 2;
+    minV = v0 - zone.w / 2;
+    maxV = v0 + zone.w / 2;
+  } else {
+    return null;
+  }
+
+  const toScreen = (u: number, v: number): Pt => ({
+    x: u + v,
+    y: (u - v) / 2,
+  });
+
+  const top = toScreen(minU, maxV);
+  const right = toScreen(maxU, maxV);
+  const bottom = toScreen(maxU, minV);
+  const left = toScreen(minU, minV);
+  const corners = [top, right, bottom, left];
+
+  // Place skewed floor label along the unobstructed upper-back edge (top -> right)
+  const labelPt = toScreen(minU + 14, maxV - 15);
+
+  return {
+    path: roundedPolygonPath(corners, 11),
+    labelPt,
+    corners,
+  };
+}
+
+/* ============================================================================
+ * PALETTE & VISUAL PRIMITIVES
+ * ============================================================================ */
+
 interface FaceGrad {
   top0: string;
   top1: string;
@@ -517,12 +661,14 @@ function getPalette(isDark: boolean): {
   ink: string;
   mutedLink: string;
   dangerLink: string;
+  beatLink: string;
   grid: string;
   shadow: string;
   pillBg: string;
   pillShadow: string;
   pillInk: string;
   slab: FaceGrad;
+  dead: FaceGrad;
   tones: Record<IsoTone, FaceGrad>;
 } {
   if (isDark) {
@@ -530,12 +676,14 @@ function getPalette(isDark: boolean): {
       ink: '#e7ddd0',
       mutedLink: '#6a6054',
       dangerLink: '#f26d65',
+      beatLink: '#6bd17e',
       grid: '#8f7d63',
       shadow: '#090806',
       pillBg: '#2e2923',
       pillShadow: '#110f0c',
       pillInk: '#f2e9dc',
       slab: { top0: '#38322b', top1: '#302b25', side0: '#29241f', side1: '#221e1a' },
+      dead: { top0: '#49443e', top1: '#3e3a34', side0: '#33302b', side1: '#2a2723' },
       tones: {
         orange: { top0: '#6e4527', top1: '#5d391f', side0: '#4e301a', side1: '#402614' },
         green: { top0: '#3d5430', top1: '#334728', side0: '#2a3b20', side1: '#22301a' },
@@ -552,12 +700,14 @@ function getPalette(isDark: boolean): {
     ink: '#211e1b',
     mutedLink: '#a59c90',
     dangerLink: '#c93b32',
+    beatLink: '#3fa456',
     grid: '#a8916f',
     shadow: '#6b5236',
     pillBg: '#fbf6ef',
     pillShadow: '#1c1a17',
     pillInk: '#211e1b',
     slab: { top0: '#f7f0e7', top1: '#f0e7dc', side0: '#ece2d5', side1: '#e3d7c8' },
+    dead: { top0: '#d0c9bf', top1: '#c2bab0', side0: '#b3aba0', side1: '#a49b90' },
     tones: {
       orange: { top0: '#fee6cc', top1: '#fcd4ad', side0: '#f9c697', side1: '#f3b47f' },
       green: { top0: '#e2f2d7', top1: '#d1e9c2', side0: '#c3e1b2', side1: '#b3d79f' },
@@ -575,7 +725,7 @@ function MinimalIcon({
   stroke,
   x = 0,
   y = 0,
-  scale = 0.92,
+  scale = 0.9,
 }: {
   kind?: StageIconKind;
   stroke: string;
@@ -637,7 +787,25 @@ function MinimalIcon({
           <path d="M-4 -1.5L-1.5 1 -4 3.5M0.5 3.5h3.5" />
         </>
       )}
-      {(k === 'sparkles' || k === 'filter' || k === 'clock' || k === 'alert' || k === 'box') && (
+      {k === 'alert' && (
+        <>
+          <path d="M0 -7.2L7.5 6H-7.5L0 -7.2z" />
+          <path d="M0 -2v3.2M0 3.8h0.01" />
+        </>
+      )}
+      {k === 'sparkles' && (
+        <path d="M0 -7.5L2 -2l5.5 2-5.5 2L0 7.5-2 2-7.5 0-2 -2 0 -7.5z" />
+      )}
+      {k === 'filter' && (
+        <path d="M-7.5 -5.5H7.5L2 0.8v5.2l-4-2V0.8L-7.5 -5.5z" />
+      )}
+      {k === 'box' && (
+        <>
+          <polygon points="0,-7.5 7,-3.8 7,3.8 0,7.5 -7,3.8 -7,-3.8" />
+          <path d="M-7 -3.8L0 0l7-3.8M0 0v7.5" />
+        </>
+      )}
+      {k === 'clock' && (
         <>
           <circle cx={0} cy={0} r={6.8} />
           <path d="M0 -3.5V0l2.5 1.8" />
@@ -656,7 +824,8 @@ function TactilePill({
   stroke,
   shadow,
   isSelected,
-  delayMs = 240,
+  pillRef,
+  initialOpacity = 1,
   onHover,
   onLeave,
   onClick,
@@ -669,7 +838,8 @@ function TactilePill({
   stroke: string;
   shadow: string;
   isSelected?: boolean;
-  delayMs?: number;
+  pillRef?: (el: SVGGElement | null) => void;
+  initialOpacity?: number;
   onHover?: () => void;
   onLeave?: () => void;
   onClick?: () => void;
@@ -677,7 +847,9 @@ function TactilePill({
   const w = Math.max(52, text.length * 6.2 + 20);
   return (
     <g
+      ref={pillRef}
       transform={`translate(${x.toFixed(1)}, ${y.toFixed(1)})`}
+      opacity={initialOpacity}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
       onClick={(e) => {
@@ -688,33 +860,28 @@ function TactilePill({
       }}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
     >
-      <g
-        className="dts-anim-pill"
-        style={{ animationDelay: `${delayMs}ms` }}
+      <rect x={-w / 2} y={-8.5} width={w} height={20} rx={10} fill={shadow} />
+      <rect
+        x={-w / 2}
+        y={-10.5}
+        width={w}
+        height={20}
+        rx={10}
+        fill={bg}
+        stroke={stroke}
+        strokeWidth={isSelected ? 2.1 : 1.35}
+      />
+      <text
+        x={0}
+        y={2.4}
+        textAnchor="middle"
+        fontSize={9.5}
+        fontWeight={750}
+        fill={fg}
+        fontFamily="var(--dts-font-mono)"
       >
-        <rect x={-w / 2} y={-8.5} width={w} height={20} rx={10} fill={shadow} />
-        <rect
-          x={-w / 2}
-          y={-10.5}
-          width={w}
-          height={20}
-          rx={10}
-          fill={bg}
-          stroke={stroke}
-          strokeWidth={isSelected ? 2.1 : 1.35}
-        />
-        <text
-          x={0}
-          y={2.8}
-          textAnchor="middle"
-          fontSize={9.5}
-          fontWeight={700}
-          fill={fg}
-          fontFamily="var(--dts-font-mono)"
-        >
-          {text}
-        </text>
-      </g>
+        {text}
+      </text>
     </g>
   );
 }
@@ -765,6 +932,16 @@ const BLOCK_RIDGE_PATH = roundedPolylinePath(
   10
 );
 
+const GROUND_SPOT_PATH = roundedPolygonPath(
+  [
+    { x: 0, y: -35 },
+    { x: 70, y: 0 },
+    { x: 0, y: 35 },
+    { x: -70, y: 0 },
+  ],
+  9
+);
+
 const SLAB_W = 58;
 const SLAB_H = 29;
 const SLAB_DROP = 8;
@@ -788,6 +965,33 @@ const SLAB_TOP = roundedPolygonPath(
   ],
   8
 );
+
+/* ============================================================================
+ * PERSISTENT INTERACTIVE ISOMETRIC STAGE WITH STEP-TO-STEP MORPHING ENGINE
+ * ============================================================================ */
+
+interface NodeAnimPlan {
+  kind: 'enter' | 'move' | 'exit';
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  fromLift: number;
+  toLift: number;
+  fromOp: number;
+  toOp: number;
+  delay: number;
+  dur: number;
+  readyAt: number;
+}
+
+interface LinkAnimPlan {
+  kind: 'draw' | 'morph';
+  delay: number;
+  dur: number;
+  readyAt: number;
+  isSolidSweep: boolean;
+}
 
 export interface ScaleStageSvgProps {
   scene: StageScene;
@@ -817,13 +1021,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     info: StageInspectorInfo;
   } | null>(null);
 
-  // Clear open inspector when switching steps/scenes
-  const sceneSignature = useMemo(
-    () =>
-      `${replayNonce}:${scene.nodes.map((n) => `${n.id}-${pickText(n.label, 'en')}`).join('|')}`,
-    [scene.nodes, replayNonce]
-  );
-
+  const [exitingNodes, setExitingNodes] = useState<StageNode[]>([]);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState<Pt>({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -831,8 +1029,36 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const [hintHovered, setHintHovered] = useState(false);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const gridCamRef = useRef<SVGGElement | null>(null);
   const sceneCamRef = useRef<SVGGElement | null>(null);
+
+  // Direct DOM refs for 60-120fps choreography & morphing without per-frame React re-renders
+  const nodeOuterRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const nodeLiftRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const nodeShadowRefs = useRef<Map<string, SVGElement>>(new Map());
+  const spotRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const exitNodeRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const linkGroupRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const linkHitRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const pathRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const linkPillRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const zoneRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const noteCardRef = useRef<SVGGElement | null>(null);
+
+  const prevSnapshotRef = useRef<{
+    nodes: Map<string, StageNode>;
+    links: Set<string>;
+    bounds: BoundsBox | null;
+    replayNonce: number;
+  }>({
+    nodes: new Map(),
+    links: new Set(),
+    bounds: null,
+    replayNonce: -1,
+  });
+
   const camRef = useRef<{ zoom: number; panX: number; panY: number }>({
     zoom: 1,
     panX: 0,
@@ -865,10 +1091,13 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     setPan({ x: 0, y: 0 });
   }, [scene]);
 
-  const expandedNodes = useMemo(
-    () => composeIsometricLayout(scene.nodes, scene.links),
-    [scene.nodes, scene.links]
-  );
+  const expandedNodes = useMemo(() => {
+    const positioned = composeIsometricLayout(scene.nodes, scene.links);
+    // Sort back-to-front by ground Y so front blocks naturally overlap behind blocks in 2.5D
+    return [...positioned].sort(
+      (a, b) => getGroundCenter(a).y - getGroundCenter(b).y || a.x - b.x
+    );
+  }, [scene.nodes, scene.links]);
 
   const nodeMap = useMemo(() => {
     const m = new Map<string, StageNode>();
@@ -876,8 +1105,82 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     return m;
   }, [expandedNodes]);
 
+  const builtZones = useMemo(() => {
+    if (!scene.zones || scene.zones.length === 0) return [];
+    return scene.zones
+      .map((z) => {
+        const geo = computeZoneGeometry(z, nodeMap);
+        return geo ? { zone: z, ...geo } : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
+  }, [scene.zones, nodeMap]);
+
+  const resolveLinkLabelPlacement = useCallback(
+    (
+      rawPts: Pt[],
+      defaultPos: Pt,
+      txt: string,
+      obstacles: RectBox[],
+      placedPills: RectBox[]
+    ): Pt => {
+      const hw = Math.max(34, (txt.length * 6.4 + 22) / 2) + 3;
+      const hh = 12.5;
+      const candidates: { pt: Pt; distPenalty: number }[] = [
+        { pt: defaultPos, distPenalty: 0 },
+      ];
+      const offsets: Array<[number, number]> = [
+        [0, 0],
+        [0, -18],
+        [0, 18],
+        [-18, -20],
+        [18, -20],
+        [-18, 20],
+        [18, 20],
+        [0, -30],
+        [0, 30],
+      ];
+      for (const t of [0.5, 0.42, 0.58, 0.34, 0.66]) {
+        const base = sampleSegmentPoint(rawPts, t);
+        for (const [dxOff, dyOff] of offsets) {
+          candidates.push({
+            pt: { x: base.x + dxOff, y: base.y + dyOff },
+            distPenalty: Math.abs(t - 0.5) * 18 + Math.hypot(dxOff, dyOff) * 0.42,
+          });
+        }
+      }
+
+      let best = defaultPos;
+      let bestScore = Infinity;
+      for (const cand of candidates) {
+        const box: RectBox = {
+          x0: cand.pt.x - hw,
+          y0: cand.pt.y - hh,
+          x1: cand.pt.x + hw,
+          y1: cand.pt.y + hh,
+        };
+        let overlap = 0;
+        for (const obs of obstacles) overlap += rectOverlapArea(box, obs);
+        for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.5;
+        const score = overlap * 100 + cand.distPenalty;
+        if (score < bestScore) {
+          bestScore = score;
+          best = cand.pt;
+          if (overlap === 0 && cand.distPenalty === 0) break;
+        }
+      }
+
+      placedPills.push({
+        x0: best.x - hw,
+        y0: best.y - hh,
+        x1: best.x + hw,
+        y1: best.y + hh,
+      });
+      return best;
+    },
+    []
+  );
+
   const builtLinks = useMemo(() => {
-    // Build obstacle rectangles for every node body, bottom pill, and top load meter
     const obstacles: RectBox[] = [];
     for (const n of expandedNodes) {
       const kind = normalizeShape(n.shape);
@@ -892,12 +1195,16 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         const hw = Math.max(44, (lbl.length * 6.4 + 24) / 2);
         const py = kind === 'db' ? n.y + 50 : n.y + 56;
         obstacles.push({ x0: n.x - hw, y0: py - 13, x1: n.x + hw, y1: py + 13 });
-      } else if (n.badge || n.sublabel) {
-        const txt = n.badge ? pickText(n.badge.text, lang) : pickText(n.sublabel!, lang);
+      } else if (n.badge || n.sublabel || n.dead) {
+        const txt = n.badge
+          ? pickText(n.badge.text, lang)
+          : n.sublabel
+            ? pickText(n.sublabel, lang)
+            : 'DOWN';
         const hw = Math.max(44, (txt.length * 6.4 + 26) / 2);
         obstacles.push({ x0: n.x - hw, y0: n.y + 51, x1: n.x + hw, y1: n.y + 77 });
       }
-      if (typeof n.loadPct === 'number') {
+      if (typeof n.loadPct === 'number' || n.dead) {
         obstacles.push({ x0: n.x - 42, y0: n.y - 68, x1: n.x + 42, y1: n.y - 40 });
       }
     }
@@ -908,108 +1215,178 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         const a = nodeMap.get(l.from);
         const b = nodeMap.get(l.to);
         if (!a || !b) return null;
-        const raw = buildIsoLink(l, a, b);
+        const raw = buildIsoLink(l, a, b, expandedNodes);
         if (!l.label) return { link: l, ...raw };
         const txt = pickText(l.label, lang);
         if (!txt) return { link: l, ...raw };
-
-        const hw = Math.max(34, (txt.length * 6.4 + 22) / 2) + 3;
-        const hh = 12.5;
-
-        const candidates: { pt: Pt; distPenalty: number }[] = [
-          { pt: raw.labelPos, distPenalty: 0 },
-        ];
-        const offsets: Array<[number, number]> = [
-          [0, 0],
-          [0, -18],
-          [0, 18],
-          [-18, -20],
-          [18, -20],
-          [-18, 20],
-          [18, 20],
-          [0, -30],
-          [0, 30],
-        ];
-        for (const t of [0.5, 0.42, 0.58, 0.34, 0.66]) {
-          const base = sampleSegmentPoint(raw.pts, t);
-          for (const [dxOff, dyOff] of offsets) {
-            candidates.push({
-              pt: { x: base.x + dxOff, y: base.y + dyOff },
-              distPenalty: Math.abs(t - 0.5) * 18 + Math.hypot(dxOff, dyOff) * 0.42,
-            });
-          }
-        }
-
-        let best = raw.labelPos;
-        let bestScore = Infinity;
-        for (const cand of candidates) {
-          const box: RectBox = {
-            x0: cand.pt.x - hw,
-            y0: cand.pt.y - hh,
-            x1: cand.pt.x + hw,
-            y1: cand.pt.y + hh,
-          };
-          let overlap = 0;
-          for (const obs of obstacles) overlap += rectOverlapArea(box, obs);
-          for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.5;
-          const score = overlap * 100 + cand.distPenalty;
-          if (score < bestScore) {
-            bestScore = score;
-            best = cand.pt;
-            if (overlap === 0 && cand.distPenalty === 0) break;
-          }
-        }
-
-        placedPills.push({
-          x0: best.x - hw,
-          y0: best.y - hh,
-          x1: best.x + hw,
-          y1: best.y + hh,
-        });
-
+        const best = resolveLinkLabelPlacement(
+          raw.pts,
+          raw.labelPos,
+          txt,
+          obstacles,
+          placedPills
+        );
         return { link: l, d: raw.d, pts: raw.pts, labelPos: best };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-  }, [scene.links, nodeMap, expandedNodes, lang]);
+  }, [scene.links, nodeMap, expandedNodes, lang, resolveLinkLabelPlacement]);
 
-  const baseBounds = useMemo(() => {
+  const { baseBounds, noteCardLayout } = useMemo(() => {
     if (expandedNodes.length === 0) {
-      return { cx: 0, cy: 0, w: 640, h: 350 };
+      return {
+        baseBounds: { cx: 0, cy: 0, w: 580, h: 280 } as BoundsBox,
+        noteCardLayout: null,
+      };
     }
     let minX = Infinity;
     let maxX = -Infinity;
     let minY = Infinity;
     let maxY = -Infinity;
 
+    const obsList: RectBox[] = [];
+
     for (const n of expandedNodes) {
-      minX = Math.min(minX, n.x - 86);
-      maxX = Math.max(maxX, n.x + 86);
-      minY = Math.min(minY, n.y - (typeof n.loadPct === 'number' ? 70 : 50));
-      maxY = Math.max(maxY, n.y + 78);
+      const topReach = typeof n.loadPct === 'number' || n.dead ? 68 : 48;
+      const botReach =
+        normalizeShape(n.shape) !== 'block' || n.badge || n.sublabel ? 76 : 54;
+      minX = Math.min(minX, n.x - 76);
+      maxX = Math.max(maxX, n.x + 76);
+      minY = Math.min(minY, n.y - topReach);
+      maxY = Math.max(maxY, n.y + botReach);
+      obsList.push({
+        x0: n.x - 82,
+        y0: n.y - topReach - 4,
+        x1: n.x + 82,
+        y1: n.y + botReach + 6,
+      });
+    }
+    for (const bz of builtZones) {
+      for (const c of bz.corners) {
+        minX = Math.min(minX, c.x - 10);
+        maxX = Math.max(maxX, c.x + 10);
+        minY = Math.min(minY, c.y - 10);
+        maxY = Math.max(maxY, c.y + 10);
+      }
     }
     for (const bl of builtLinks) {
       for (const p of bl.pts) {
-        minX = Math.min(minX, p.x - 28);
-        maxX = Math.max(maxX, p.x + 28);
-        minY = Math.min(minY, p.y - 24);
-        maxY = Math.max(maxY, p.y + 24);
+        minX = Math.min(minX, p.x - 20);
+        maxX = Math.max(maxX, p.x + 20);
+        minY = Math.min(minY, p.y - 18);
+        maxY = Math.max(maxY, p.y + 18);
       }
-      minX = Math.min(minX, bl.labelPos.x - 54);
-      maxX = Math.max(maxX, bl.labelPos.x + 54);
-      minY = Math.min(minY, bl.labelPos.y - 18);
-      maxY = Math.max(maxY, bl.labelPos.y + 18);
+      minX = Math.min(minX, bl.labelPos.x - 50);
+      maxX = Math.max(maxX, bl.labelPos.x + 50);
+      minY = Math.min(minY, bl.labelPos.y - 15);
+      maxY = Math.max(maxY, bl.labelPos.y + 15);
+      obsList.push({
+        x0: bl.labelPos.x - 54,
+        y0: bl.labelPos.y - 16,
+        x1: bl.labelPos.x + 54,
+        y1: bl.labelPos.y + 16,
+      });
     }
 
-    const padX = 34;
-    const padY = 28;
+    let resolvedNote: {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      title: string;
+      lines: Array<{ text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>;
+    } | null = null;
+
+    if (scene.noteCard && scene.noteCard.lines.length > 0) {
+      const titleStr = pickText(scene.noteCard.title, lang);
+      const lines = scene.noteCard.lines.map((ln) => ({
+        text: pickText(ln.text, lang),
+        tone: (ln.tone ?? 'plain') as 'plain' | 'muted' | 'good' | 'bad' | 'amber',
+      }));
+      const maxChars = Math.max(
+        titleStr.length + 4,
+        ...lines.map((ln) => ln.text.length + (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 3 : 0))
+      );
+      const cardW = Math.max(182, Math.min(242, Math.round(maxChars * 5.75 + 26)));
+      const cardH = Math.round(30 + lines.length * 18.5 + 8);
+
+      const resolveCleanRect = (
+        initX: number,
+        initY: number,
+        pushMode: 'right' | 'left' | 'down'
+      ): { x: number; y: number } => {
+        let x = initX;
+        let y = initY;
+        for (let pass = 0; pass < 3; pass++) {
+          for (const ob of obsList) {
+            const box: RectBox = {
+              x0: x - 14,
+              y0: y - 12,
+              x1: x + cardW + 14,
+              y1: y + cardH + 12,
+            };
+            const overlaps = !(
+              box.x1 <= ob.x0 ||
+              box.x0 >= ob.x1 ||
+              box.y1 <= ob.y0 ||
+              box.y0 >= ob.y1
+            );
+            if (overlaps) {
+              if (pushMode === 'right') x = Math.max(x, ob.x1 + 16);
+              else if (pushMode === 'left') x = Math.min(x, ob.x0 - cardW - 16);
+              else y = Math.max(y, ob.y1 + 14);
+            }
+          }
+        }
+        return { x, y };
+      };
+
+      const candidates = [
+        resolveCleanRect(maxX - cardW + 28, maxY - cardH + 14, 'right'),
+        resolveCleanRect(minX - 28, maxY - cardH + 14, 'left'),
+        resolveCleanRect(maxX - cardW + 16, maxY - cardH + 22, 'down'),
+        resolveCleanRect(minX - 16, maxY - cardH + 22, 'down'),
+      ];
+
+      let best = candidates[0];
+      let bestCost = Infinity;
+      for (const cand of candidates) {
+        const combW = Math.max(maxX, cand.x + cardW) - Math.min(minX, cand.x);
+        const combH = Math.max(maxY, cand.y + cardH) - Math.min(minY, cand.y);
+        // Optimize for maximum block size inside a ~2.15:1 landscape viewport
+        const cost = Math.max(combH * 2.15, combW) + combH * 0.25;
+        if (cost < bestCost) {
+          bestCost = cost;
+          best = cand;
+        }
+      }
+
+      resolvedNote = {
+        x: Math.round(best.x),
+        y: Math.round(best.y),
+        w: cardW,
+        h: cardH,
+        title: titleStr,
+        lines,
+      };
+      minX = Math.min(minX, resolvedNote.x - 8);
+      maxX = Math.max(maxX, resolvedNote.x + cardW + 8);
+      minY = Math.min(minY, resolvedNote.y - 8);
+      maxY = Math.max(maxY, resolvedNote.y + cardH + 8);
+    }
+
+    const padX = 28;
+    const padY = 22;
     const rawW = maxX - minX + padX * 2;
     const rawH = maxY - minY + padY * 2;
-    const w = Math.max(620, rawW);
-    const h = Math.max(335, rawH);
+    const w = Math.max(540, rawW);
+    const h = Math.max(255, rawH);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    return { cx, cy, w, h };
-  }, [expandedNodes, builtLinks]);
+    return {
+      baseBounds: { cx, cy, w, h } as BoundsBox,
+      noteCardLayout: resolvedNote,
+    };
+  }, [expandedNodes, builtZones, builtLinks, scene.noteCard, lang]);
 
   const stageViewBox = useMemo(() => {
     const vx = baseBounds.cx - baseBounds.w / 2;
@@ -1084,71 +1461,478 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       const nextZoom = Math.round(Math.max(0.55, Math.min(2.5, cur.zoom + step)) * 100) / 100;
       if (nextZoom === cur.zoom) return;
       const ratio = nextZoom / cur.zoom;
-      const nextPanX = mx - (mx - cur.panX) * ratio;
-      const nextPanY = my - (my - cur.panY) * ratio;
-      applyCamera(nextZoom, nextPanX, nextPanY);
+      applyCamera(nextZoom, mx - (mx - cur.panX) * ratio, my - (my - cur.panY) * ratio);
     };
     el.addEventListener('wheel', onWheelNative, { passive: false });
     return () => el.removeEventListener('wheel', onWheelNative);
   }, [baseBounds, applyCamera]);
 
-  const pathRefs = useRef<Map<string, SVGPathElement>>(new Map());
-  const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
-  const elapsedRef = useRef(0);
+  /* ============================================================================
+   * MASTER CHOREOGRAPHY & STEP-TO-STEP MORPHING ENGINE (rAF)
+   * ============================================================================ */
+
+  const packetElapsedRef = useRef(0);
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
 
   useEffect(() => {
-    elapsedRef.current = 0;
-  }, [sceneSignature]);
+    const prev = prevSnapshotRef.current;
+    const isReplay = prev.replayNonce !== replayNonce || prev.nodes.size === 0;
 
-  useEffect(() => {
-    let raf = 0;
-    let last = performance.now();
+    // 1. Diff previous vs next nodes
+    const nextNodeIds = new Set(expandedNodes.map((n) => n.id));
+    const removedNodes: StageNode[] = [];
+    if (!isReplay) {
+      for (const [id, oldNode] of prev.nodes.entries()) {
+        if (!nextNodeIds.has(id)) {
+          removedNodes.push(oldNode);
+        }
+      }
+    }
+    setExitingNodes(removedNodes);
 
-    const lengths = new Map<string, number>();
-    for (const bl of builtLinks) {
-      const pEl = pathRefs.current.get(bl.link.id);
-      if (pEl) {
-        try {
-          lengths.set(bl.link.id, pEl.getTotalLength());
-        } catch {
-          lengths.set(bl.link.id, 0);
+    const hasExits = removedNodes.length > 0;
+    let hasMoves = false;
+    if (!isReplay) {
+      for (const n of expandedNodes) {
+        const old = prev.nodes.get(n.id);
+        if (old && (Math.abs(old.x - n.x) > 2 || Math.abs(old.y - n.y) > 2)) {
+          hasMoves = true;
+          break;
         }
       }
     }
 
-    const syncPackets = (sec: number) => {
+    // Order entering nodes back-to-front by isometric depth (gx - 2 * gy)
+    const enteringSorted = expandedNodes
+      .filter((n) => isReplay || !prev.nodes.has(n.id))
+      .sort((a, b) => {
+        const ga = getGroundCenter(a);
+        const gb = getGroundCenter(b);
+        return ga.y - gb.y || ga.x - gb.x;
+      });
+    const enterOrder = new Map<string, number>();
+    enteringSorted.forEach((n, i) => enterOrder.set(n.id, i));
+
+    const moveDelay = hasExits ? Math.round(TIMING.exit * 0.5) : 0;
+    const baseEnterDelay = isReplay
+      ? 0
+      : hasMoves
+        ? moveDelay + Math.round(TIMING.move * 0.45)
+        : hasExits
+          ? Math.round(TIMING.exit * 0.65)
+          : 0;
+
+    const nodePlans = new Map<string, NodeAnimPlan>();
+    for (const n of expandedNodes) {
+      const old = !isReplay ? prev.nodes.get(n.id) : undefined;
+      if (old) {
+        const moved = Math.abs(old.x - n.x) > 1 || Math.abs(old.y - n.y) > 1;
+        nodePlans.set(n.id, {
+          kind: 'move',
+          fromX: old.x,
+          fromY: old.y,
+          toX: n.x,
+          toY: n.y,
+          fromLift: 0,
+          toLift: 0,
+          fromOp: old.dimmed ? 0.42 : 1,
+          toOp: n.dimmed ? 0.42 : 1,
+          delay: moveDelay,
+          dur: moved ? TIMING.move : 280,
+          readyAt: moved ? moveDelay + Math.round(TIMING.move * 0.85) : 0,
+        });
+      } else {
+        const idx = enterOrder.get(n.id) ?? 0;
+        const delay = baseEnterDelay + idx * TIMING.stagger;
+        nodePlans.set(n.id, {
+          kind: 'enter',
+          fromX: n.x,
+          fromY: n.y,
+          toX: n.x,
+          toY: n.y,
+          fromLift: getInitialLift(n.shape),
+          toLift: 0,
+          fromOp: 0,
+          toOp: n.dimmed ? 0.42 : 1,
+          delay,
+          dur: TIMING.enter,
+          readyAt: delay + Math.round(TIMING.enter * 0.82),
+        });
+      }
+    }
+
+    // 2. Plan link choreography (links wait until BOTH endpoint blocks have landed!)
+    const linkPlans = new Map<string, LinkAnimPlan>();
+    let drawIdx = 0;
+    for (const bl of builtLinks) {
+      const l = bl.link;
+      const sig = `${l.id}:${l.from}->${l.to}:${l.style ?? 'solid'}`;
+      const pFrom = nodePlans.get(l.from);
+      const pTo = nodePlans.get(l.to);
+      const endpointsWereAlive =
+        !isReplay &&
+        prev.links.has(sig) &&
+        pFrom?.kind === 'move' &&
+        pTo?.kind === 'move';
+
+      const st = l.style ?? 'solid';
+      const isSolidSweep = st === 'solid';
+
+      if (endpointsWereAlive) {
+        linkPlans.set(l.id, {
+          kind: 'morph',
+          delay: moveDelay,
+          dur: TIMING.move,
+          readyAt: moveDelay + Math.round(TIMING.move * 0.5),
+          isSolidSweep,
+        });
+      } else {
+        const waitNodes = Math.max(pFrom?.readyAt ?? 0, pTo?.readyAt ?? 0);
+        const delay = waitNodes + 65 + drawIdx * TIMING.linkStagger;
+        drawIdx++;
+        linkPlans.set(l.id, {
+          kind: 'draw',
+          delay,
+          dur: TIMING.draw,
+          readyAt: delay + TIMING.draw,
+          isSolidSweep,
+        });
+      }
+    }
+
+    const fromBounds =
+      !isReplay && prev.bounds ? prev.bounds : baseBounds;
+    const toBounds = baseBounds;
+    const boundsChanged =
+      Math.abs(fromBounds.cx - toBounds.cx) > 1 ||
+      Math.abs(fromBounds.cy - toBounds.cy) > 1 ||
+      Math.abs(fromBounds.w - toBounds.w) > 1 ||
+      Math.abs(fromBounds.h - toBounds.h) > 1;
+
+    // Save snapshot for the NEXT step transition
+    const nextMap = new Map<string, StageNode>();
+    for (const n of expandedNodes) nextMap.set(n.id, n);
+    const nextLinksSet = new Set<string>();
+    for (const bl of builtLinks) {
+      const l = bl.link;
+      nextLinksSet.add(`${l.id}:${l.from}->${l.to}:${l.style ?? 'solid'}`);
+    }
+    prevSnapshotRef.current = {
+      nodes: nextMap,
+      links: nextLinksSet,
+      bounds: toBounds,
+      replayNonce,
+    };
+
+    // Measure SVG path lengths once mounted
+    const measuredLengths = new Map<string, number>();
+    const measureLinkLen = (id: string, pEl: SVGPathElement): number => {
+      let cached = measuredLengths.get(id);
+      if (!cached || cached < 2) {
+        try {
+          cached = pEl.getTotalLength();
+          measuredLengths.set(id, cached);
+        } catch {
+          cached = 180;
+        }
+      }
+      return cached;
+    };
+
+    const startAt = performance.now();
+    let lastTick = startAt;
+    let rafId = 0;
+    let exitCleaned = !hasExits;
+
+    const getMarkerUrl = (st?: StageLink['style']): string => {
+      if (st === 'off' || st === 'heartbeat' || st === 'cut') return '';
+      if (st === 'danger') return `url(#arr-danger-${uid})`;
+      return `url(#arr-${uid})`;
+    };
+
+    const getDashPattern = (st?: StageLink['style']): string => {
+      if (st === 'dashed') return '5.5 4.5';
+      if (st === 'off') return '4 5';
+      if (st === 'heartbeat') return '2 5.5';
+      if (st === 'danger' || st === 'cut') return '7 5';
+      return '';
+    };
+
+    const tick = (now: number) => {
+      const elapsed = now - startAt;
+      const dt = Math.min(0.05, (now - lastTick) / 1000);
+      lastTick = now;
+
+      // A. Smoothly re-frame camera viewBox across steps (when not manually zoomed)
+      if (boundsChanged && svgRef.current && Math.abs(camRef.current.zoom - 1) < 0.01) {
+        const bt = easeInOutCubic((elapsed - moveDelay) / TIMING.move);
+        const cx = fromBounds.cx + (toBounds.cx - fromBounds.cx) * bt;
+        const cy = fromBounds.cy + (toBounds.cy - fromBounds.cy) * bt;
+        const w = fromBounds.w + (toBounds.w - fromBounds.w) * bt;
+        const h = fromBounds.h + (toBounds.h - fromBounds.h) * bt;
+        svgRef.current.setAttribute(
+          'viewBox',
+          `${(cx - w / 2).toFixed(1)} ${(cy - h / 2).toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`
+        );
+      }
+
+      // B. Animate exiting nodes
+      if (!exitCleaned) {
+        const et = clamp01(elapsed / TIMING.exit);
+        const eEase = easeInOutCubic(et);
+        for (const ex of removedNodes) {
+          const g = exitNodeRefs.current.get(ex.id);
+          if (g) {
+            const lift = -22 * eEase;
+            g.setAttribute('transform', `translate(${ex.x.toFixed(1)}, ${(ex.y + lift).toFixed(1)})`);
+            g.setAttribute('opacity', (1 - eEase).toFixed(3));
+          }
+        }
+        if (et >= 1) {
+          exitCleaned = true;
+          setExitingNodes([]);
+        }
+      }
+
+      // C. Animate surviving (sliding) & entering (dropping + bouncing) nodes
+      const livePositions = new Map<
+        string,
+        { id: string; x: number; y: number; shape: LegacyNodeShape }
+      >();
+
+      for (const n of expandedNodes) {
+        const plan = nodePlans.get(n.id);
+        if (!plan) continue;
+        const rawT = (elapsed - plan.delay) / plan.dur;
+        const outerEl = nodeOuterRefs.current.get(n.id);
+        const liftEl = nodeLiftRefs.current.get(n.id);
+        const shadowEl = nodeShadowRefs.current.get(n.id);
+        const spotEl = spotRefs.current.get(n.id);
+
+        let curX = plan.toX;
+        let curY = plan.toY;
+        let curLift = 0;
+        let curOp = plan.toOp;
+
+        if (plan.kind === 'enter') {
+          if (rawT <= 0) {
+            curLift = plan.fromLift;
+            curOp = 0;
+          } else if (rawT < 1) {
+            curLift = plan.fromLift * (1 - easeOutBack(rawT));
+            curOp = plan.toOp * easeOutCubic(Math.min(1, rawT * 1.35));
+          }
+        } else {
+          const mt = easeInOutCubic(rawT);
+          curX = plan.fromX + (plan.toX - plan.fromX) * mt;
+          curY = plan.fromY + (plan.toY - plan.fromY) * mt;
+          curOp = plan.fromOp + (plan.toOp - plan.fromOp) * mt;
+        }
+
+        livePositions.set(n.id, { id: n.id, x: curX, y: curY, shape: n.shape });
+
+        if (outerEl) {
+          outerEl.setAttribute('transform', `translate(${curX.toFixed(2)}, ${curY.toFixed(2)})`);
+          outerEl.setAttribute('opacity', curOp.toFixed(3));
+        }
+        if (liftEl) {
+          liftEl.setAttribute('transform', `translate(0, ${(-curLift).toFixed(2)})`);
+        }
+        if (shadowEl) {
+          const baseShadowOp = isDark ? 0.42 : 0.24;
+          const heightFactor = Math.max(0.14, 1 - Math.max(0, curLift) / 135);
+          shadowEl.setAttribute('opacity', (baseShadowOp * heightFactor).toFixed(3));
+        }
+        if (spotEl) {
+          const settleProgress = clamp01((elapsed - (plan.delay + plan.dur * 0.72)) / 360);
+          spotEl.setAttribute('opacity', settleProgress.toFixed(3));
+        }
+      }
+
+      // D. Fade in floor zones & SVG Note Card gently
+      for (const bz of builtZones) {
+        const zEl = zoneRefs.current.get(bz.zone.id);
+        if (zEl) {
+          const zt = easeOutCubic((elapsed - baseEnterDelay * 0.5) / 520);
+          zEl.setAttribute('opacity', zt.toFixed(3));
+        }
+      }
+      if (noteCardRef.current && noteCardLayout) {
+        const noteDelay = baseEnterDelay + Math.min(260, enteringSorted.length * 75) + 180;
+        const nt = easeOutCubic((elapsed - noteDelay) / 480);
+        const ny = noteCardLayout.y + (1 - nt) * 10;
+        noteCardRef.current.setAttribute(
+          'transform',
+          `translate(${noteCardLayout.x.toFixed(1)}, ${ny.toFixed(1)})`
+        );
+        noteCardRef.current.setAttribute('opacity', nt.toFixed(3));
+      }
+
+      // E. Animate links (draw AFTER both blocks land, or stretch live during morph!)
+      const liveArr = Array.from(livePositions.values());
+      for (const bl of builtLinks) {
+        const l = bl.link;
+        const plan = linkPlans.get(l.id);
+        const pEl = pathRefs.current.get(l.id);
+        const hitEl = linkHitRefs.current.get(l.id);
+        const pillEl = linkPillRefs.current.get(l.id);
+        if (!plan || !pEl) continue;
+
+        if (plan.kind === 'morph' && hasMoves && elapsed <= plan.delay + plan.dur + 32) {
+          const aPos = livePositions.get(l.from);
+          const bPos = livePositions.get(l.to);
+          if (aPos && bPos) {
+            const liveGeo = buildIsoLink(l, aPos, bPos, liveArr);
+            pEl.setAttribute('d', liveGeo.d);
+            hitEl?.setAttribute('d', liveGeo.d);
+            measuredLengths.delete(l.id);
+            if (pillEl) {
+              pillEl.setAttribute(
+                'transform',
+                `translate(${liveGeo.labelPos.x.toFixed(1)}, ${liveGeo.labelPos.y.toFixed(1)})`
+              );
+              pillEl.setAttribute('opacity', '1');
+            }
+          }
+          pEl.setAttribute('opacity', '1');
+          pEl.style.strokeDashoffset = '';
+          pEl.style.strokeDasharray = getDashPattern(l.style);
+          const mk = getMarkerUrl(l.style);
+          if (mk) pEl.setAttribute('marker-end', mk);
+        } else if (plan.kind === 'draw') {
+          const rawT = (elapsed - plan.delay) / plan.dur;
+          if (rawT <= 0) {
+            pEl.setAttribute('opacity', '0');
+            pEl.removeAttribute('marker-end');
+            if (pillEl) pillEl.setAttribute('opacity', '0');
+          } else if (rawT < 1) {
+            const draw = easeInOutCubic(rawT);
+            if (plan.isSolidSweep) {
+              const totalLen = measureLinkLen(l.id, pEl);
+              pEl.setAttribute('opacity', '1');
+              pEl.style.strokeDasharray = `${totalLen.toFixed(1)} ${totalLen.toFixed(1)}`;
+              pEl.style.strokeDashoffset = `${(totalLen * (1 - draw)).toFixed(1)}`;
+            } else {
+              pEl.style.strokeDasharray = getDashPattern(l.style);
+              pEl.style.strokeDashoffset = '';
+              pEl.setAttribute('opacity', clamp01(draw * 1.35).toFixed(3));
+            }
+            const mk = getMarkerUrl(l.style);
+            if (mk && draw > 0.95) pEl.setAttribute('marker-end', mk);
+            else pEl.removeAttribute('marker-end');
+
+            if (pillEl) {
+              const pillOp = clamp01((draw - 0.56) / 0.44);
+              pillEl.setAttribute('opacity', pillOp.toFixed(3));
+            }
+          } else {
+            pEl.setAttribute('opacity', '1');
+            pEl.style.strokeDashoffset = '';
+            pEl.style.strokeDasharray = getDashPattern(l.style);
+            const mk = getMarkerUrl(l.style);
+            if (mk) pEl.setAttribute('marker-end', mk);
+            else pEl.removeAttribute('marker-end');
+            if (pillEl) pillEl.setAttribute('opacity', '1');
+          }
+        } else {
+          pEl.setAttribute('opacity', '1');
+          if (pillEl) pillEl.setAttribute('opacity', '1');
+        }
+      }
+
+      // F. Flow traffic packets ONLY on links whose draw animation has completed!
+      if (isPlayingRef.current && scene.packets.length > 0) {
+        packetElapsedRef.current += dt;
+      }
+      const sec = packetElapsedRef.current;
+
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
         const pEl = pathRefs.current.get(pkt.linkId);
-        const totalLen = lengths.get(pkt.linkId) ?? 0;
-        if (!gEl || !pEl || totalLen <= 1) continue;
+        const lPlan = linkPlans.get(pkt.linkId);
+        if (!gEl || !pEl || !lPlan) continue;
 
-        const speed = pkt.speed ?? 0.4;
+        if (elapsed < lPlan.readyAt) {
+          gEl.setAttribute('opacity', '0');
+          continue;
+        }
+
+        const totalLen = measureLinkLen(pkt.linkId, pEl);
+        if (totalLen <= 1) continue;
+
+        const speed = pkt.speed ?? 0.42;
         const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
         const t = pkt.reverse ? 1 - phase : phase;
         const pt = pEl.getPointAtLength(t * totalLen);
-
-        const fade =
+        const fadeInAfterLink = clamp01((elapsed - lPlan.readyAt) / 260);
+        const edgeFade =
           phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
+
         gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-        gEl.setAttribute('opacity', fade.toFixed(2));
+        gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+      }
+
+      const maxChoreoTime =
+        Math.max(
+          TIMING.exit + TIMING.move + 120,
+          ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 400),
+          ...Array.from(linkPlans.values()).map((p) => p.readyAt + 320)
+        ) || 1200;
+
+      if (elapsed <= maxChoreoTime || (isPlayingRef.current && scene.packets.length > 0)) {
+        rafId = requestAnimationFrame(tick);
       }
     };
 
-    syncPackets(elapsedRef.current);
-    if (!isPlaying || scene.packets.length === 0) return;
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [
+    expandedNodes,
+    builtLinks,
+    builtZones,
+    baseBounds,
+    noteCardLayout,
+    replayNonce,
+    scene.packets,
+    isDark,
+    uid,
+  ]);
 
-    const frame = (now: number) => {
+  // Resume packet rAF loop cleanly if user toggles Play back ON after choreography settled
+  useEffect(() => {
+    if (!isPlaying || scene.packets.length === 0) return;
+    let raf = 0;
+    let last = performance.now();
+    const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      elapsedRef.current += dt;
-      syncPackets(elapsedRef.current);
-      raf = requestAnimationFrame(frame);
+      packetElapsedRef.current += dt;
+      const sec = packetElapsedRef.current;
+      for (const pkt of scene.packets) {
+        const gEl = packetRefs.current.get(pkt.id);
+        const pEl = pathRefs.current.get(pkt.linkId);
+        if (!gEl || !pEl) continue;
+        let len = 0;
+        try {
+          len = pEl.getTotalLength();
+        } catch {
+          len = 0;
+        }
+        if (len <= 1) continue;
+        const speed = pkt.speed ?? 0.42;
+        const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
+        const t = pkt.reverse ? 1 - phase : phase;
+        const pt = pEl.getPointAtLength(t * len);
+        const fade = phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
+        gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+        gEl.setAttribute('opacity', fade.toFixed(2));
+      }
+      raf = requestAnimationFrame(loop);
     };
-
-    raf = requestAnimationFrame(frame);
+    raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, scene.packets, builtLinks, sceneSignature]);
+  }, [isPlaying, scene.packets]);
 
   const getNodeInspector = (node: StageNode): StageInspectorInfo => {
     if (node.inspector) return node.inspector;
@@ -1180,7 +1964,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       try {
         e.currentTarget.releasePointerCapture(st.pointerId);
       } catch {
-        // ignore if already released
+        // ignore
       }
     }
     panDragRef.current = null;
@@ -1194,6 +1978,469 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         setSelectedInfo(null);
       }
     }
+  };
+
+  const renderNodeBody = (
+    node: StageNode,
+    isHovered: boolean,
+    isSelected: boolean,
+    isExiting = false
+  ) => {
+    const kind = normalizeShape(node.shape);
+    const rawLabel = pickText(node.label, lang);
+    const subText = node.sublabel ? pickText(node.sublabel, lang) : '';
+    const lines = splitShortLines(rawLabel);
+    const strokeW = isHovered || isSelected ? 2.35 : 1.85;
+    const isDead = Boolean(node.dead);
+    const topGrad = isDead ? `url(#g-dead-top-${uid})` : `url(#g-${node.tone}-top-${uid})`;
+    const sideGrad = isDead ? `url(#g-dead-side-${uid})` : `url(#g-${node.tone}-side-${uid})`;
+
+    return (
+      <>
+        {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK (with shifted-up crisp typography & dead state) */}
+        {kind === 'block' && (
+          <g>
+            <path
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeShadowRefs.current.set(node.id, el);
+                      else nodeShadowRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+              d={BLOCK_OUTER_PATH}
+              transform="translate(0, 9)"
+              fill={pal.shadow}
+              opacity={isDark ? 0.42 : 0.24}
+              filter={`url(#blur-lg-${uid})`}
+            />
+            <g
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeLiftRefs.current.set(node.id, el);
+                      else nodeLiftRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+            >
+              <path d={BLOCK_OUTER_PATH} fill={sideGrad} />
+              <path
+                d={`M 0,${TOP_OFFSET_Y + BLOCK_H} L ${BLOCK_W - 2},${TOP_OFFSET_Y + 1} L ${BLOCK_W - 2},${TOP_OFFSET_Y + BLOCK_DROP} L 0,${TOP_OFFSET_Y + BLOCK_DROP + BLOCK_H} Z`}
+                fill="#3a2a14"
+                opacity={isDark ? 0.14 : 0.055}
+              />
+              <path d={BLOCK_TOP_PATH} fill={topGrad} />
+              <path
+                d={BLOCK_SHEEN_PATH}
+                fill="#ffffff"
+                opacity={isDark ? 0.08 : 0.22}
+                filter={`url(#blur-sm-${uid})`}
+              />
+              <path
+                d={BLOCK_RIDGE_PATH}
+                transform="translate(0, 1.3)"
+                fill="none"
+                stroke="#ffffff"
+                strokeOpacity={isDark ? 0.26 : 0.76}
+                strokeWidth={1.6}
+                strokeLinecap="round"
+              />
+              <path
+                d={BLOCK_RIDGE_PATH}
+                transform="translate(0, 3.2)"
+                fill="none"
+                stroke="#5a4123"
+                strokeOpacity={0.07}
+                strokeWidth={2.2}
+                strokeLinecap="round"
+              />
+              <path
+                d={BLOCK_OUTER_PATH}
+                fill="none"
+                stroke={pal.ink}
+                strokeWidth={strokeW}
+                strokeLinejoin="round"
+              />
+
+              {isDead ? (
+                <g
+                  transform="translate(0, -19)"
+                  stroke={pal.dangerLink}
+                  strokeWidth={3.1}
+                  strokeLinecap="round"
+                >
+                  <path d="M-8.5,-8.5 L8.5,8.5 M8.5,-8.5 L-8.5,8.5" />
+                </g>
+              ) : (
+                <MinimalIcon kind={node.icon} stroke={pal.ink} x={0} y={-20} />
+              )}
+
+              {/* Shifted up +10.5px so 1-line and 2-line labels never touch sloping bottom borders */}
+              <g opacity={isDead ? 0.58 : 1}>
+                {lines.length === 1 ? (
+                  <text
+                    x={0}
+                    y={13.5}
+                    textAnchor="middle"
+                    fontSize={11.5}
+                    fontWeight={800}
+                    fill={pal.ink}
+                    fontFamily="var(--dts-font-mono)"
+                  >
+                    {lines[0]}
+                  </text>
+                ) : (
+                  <>
+                    <text
+                      x={0}
+                      y={8.5}
+                      textAnchor="middle"
+                      fontSize={10.8}
+                      fontWeight={800}
+                      fill={pal.ink}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {lines[0]}
+                    </text>
+                    <text
+                      x={0}
+                      y={20.5}
+                      textAnchor="middle"
+                      fontSize={10.2}
+                      fontWeight={800}
+                      fill={pal.ink}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {lines[1]}
+                    </text>
+                  </>
+                )}
+              </g>
+
+              {isDead && (
+                <TactilePill
+                  x={0}
+                  y={-54}
+                  text={lang === 'en' ? '⚠ DOWN' : '⚠ NGỪNG ĐÁP ỨNG'}
+                  bg={pal.tones.rose.top0}
+                  fg={isDark ? '#fde2e4' : '#7f1d1d'}
+                  stroke={pal.dangerLink}
+                  shadow={pal.pillShadow}
+                />
+              )}
+
+              {(node.badge || subText) && (
+                <TactilePill
+                  x={0}
+                  y={64}
+                  text={node.badge ? pickText(node.badge.text, lang) : subText}
+                  bg={
+                    node.badge?.tone === 'bad'
+                      ? pal.tones.rose.top0
+                      : node.badge?.tone === 'ok'
+                        ? pal.tones.green.top0
+                        : node.badge?.tone === 'warn'
+                          ? pal.tones.yellow.top0
+                          : pal.pillBg
+                  }
+                  fg={pal.pillInk}
+                  stroke={pal.ink}
+                  shadow={pal.pillShadow}
+                  isSelected={isSelected}
+                />
+              )}
+
+              {!isDead && typeof node.loadPct === 'number' && (() => {
+                const pct = Math.max(0, Math.min(100, node.loadPct));
+                const barColor =
+                  pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
+                return (
+                  <g transform="translate(0, -54)">
+                    <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
+                    <rect
+                      x={-37}
+                      y={-10.5}
+                      width={74}
+                      height={19}
+                      rx={9.5}
+                      fill={pal.pillBg}
+                      stroke={pal.ink}
+                      strokeWidth={1.3}
+                    />
+                    <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
+                    <rect
+                      x={-29}
+                      y={-4}
+                      width={Math.max(3, (30 * pct) / 100)}
+                      height={6}
+                      rx={3}
+                      fill={barColor}
+                    />
+                    <text
+                      x={29}
+                      y={2.4}
+                      textAnchor="end"
+                      fontSize={9.5}
+                      fontWeight={800}
+                      fill={pct >= 90 ? '#c93b32' : pal.pillInk}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {pct}%
+                    </text>
+                  </g>
+                );
+              })()}
+            </g>
+          </g>
+        )}
+
+        {/* B. CYLINDER DATABASE */}
+        {kind === 'db' && (
+          <g transform="translate(0, -10)">
+            <ellipse
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeShadowRefs.current.set(node.id, el);
+                      else nodeShadowRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+              cx={0}
+              cy={39}
+              rx={35}
+              ry={16.5}
+              fill={pal.shadow}
+              opacity={isDark ? 0.42 : 0.22}
+              filter={`url(#blur-lg-${uid})`}
+            />
+            <g
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeLiftRefs.current.set(node.id, el);
+                      else nodeLiftRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+            >
+              <path
+                d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4 Z"
+                fill={sideGrad}
+              />
+              <path
+                d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4 Z"
+                fill={`url(#cyl-sheen-${uid})`}
+              />
+              <ellipse cx={0} cy={-4} rx={32} ry={16} fill={topGrad} />
+              <path
+                d="M -29,-1.5 A 29,14 0 0 0 29,-1.5"
+                fill="none"
+                stroke="#ffffff"
+                strokeOpacity={isDark ? 0.25 : 0.72}
+                strokeWidth={1.4}
+              />
+              <path
+                d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4"
+                fill="none"
+                stroke={pal.ink}
+                strokeWidth={strokeW}
+                strokeLinejoin="round"
+              />
+              <ellipse
+                cx={0}
+                cy={-4}
+                rx={32}
+                ry={16}
+                fill="none"
+                stroke={pal.ink}
+                strokeWidth={strokeW}
+              />
+              {isDead ? (
+                <g
+                  transform="translate(0, -4)"
+                  stroke={pal.dangerLink}
+                  strokeWidth={2.8}
+                  strokeLinecap="round"
+                >
+                  <path d="M-7,-6 L7,6 M7,-6 L-7,6" />
+                </g>
+              ) : (
+                <MinimalIcon kind={node.icon ?? 'db'} stroke={pal.ink} x={0} y={17} scale={0.86} />
+              )}
+              <TactilePill
+                x={0}
+                y={60}
+                text={rawLabel}
+                bg={pal.pillBg}
+                fg={pal.pillInk}
+                stroke={pal.ink}
+                shadow={pal.pillShadow}
+                isSelected={isSelected}
+              />
+            </g>
+          </g>
+        )}
+
+        {/* C. LAPTOP CLIENT */}
+        {kind === 'device' && (
+          <g transform="translate(0, 8)">
+            <path
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeShadowRefs.current.set(node.id, el);
+                      else nodeShadowRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+              d={SLAB_OUTER}
+              transform="translate(0, 7)"
+              fill={pal.shadow}
+              opacity={isDark ? 0.42 : 0.22}
+              filter={`url(#blur-lg-${uid})`}
+            />
+            <g
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeLiftRefs.current.set(node.id, el);
+                      else nodeLiftRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+            >
+              <path d={SLAB_OUTER} fill={`url(#slab-side-${uid})`} />
+              <path d={SLAB_TOP} fill={`url(#slab-top-${uid})`} />
+              <path
+                d={SLAB_OUTER}
+                fill="none"
+                stroke={pal.ink}
+                strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
+                strokeLinejoin="round"
+              />
+              <g
+                transform="matrix(1 -0.5 1 0.5 -32 -4)"
+                fill="#fbf8f4"
+                stroke="#b9b1a7"
+                strokeWidth={0.6}
+              >
+                <rect x={0} y={0} width={30} height={20} rx={2} fill="#e8dfd2" stroke={pal.ink} strokeWidth={1.1} />
+                <rect x={4} y={3} width={22} height={9} rx={1} />
+                <rect x={10} y={14} width={10} height={4} rx={1} />
+              </g>
+              <g transform="matrix(1 -0.5 0 1 -33 -42)">
+                <rect
+                  x={0}
+                  y={0}
+                  width={42}
+                  height={31}
+                  rx={2.5}
+                  fill="#fbf8f4"
+                  stroke={pal.ink}
+                  strokeWidth={1.6}
+                />
+                <rect x={1.5} y={1.5} width={39} height={5.5} rx={1.2} fill="#e4d9cb" />
+                <circle cx={4.8} cy={4.2} r={1} fill="#e5534b" />
+                <circle cx={8} cy={4.2} r={1} fill="#efb041" />
+                <circle cx={11.2} cy={4.2} r={1} fill="#7fc278" />
+                <rect x={5} y={10.5} width={32} height={9.5} rx={1.5} fill="#d8c7ee" />
+                <rect x={5} y={23} width={21} height={2.4} rx={1.2} fill="#d6ccbf" />
+              </g>
+              <TactilePill
+                x={0}
+                y={49}
+                text={rawLabel}
+                bg={pal.pillBg}
+                fg={pal.pillInk}
+                stroke={pal.ink}
+                shadow={pal.pillShadow}
+                isSelected={isSelected}
+              />
+            </g>
+          </g>
+        )}
+
+        {/* D. CROWD / CONCURRENT TASKS SLAB */}
+        {kind === 'crowd' && (
+          <g transform="translate(0, 6)">
+            <path
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeShadowRefs.current.set(node.id, el);
+                      else nodeShadowRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+              d={SLAB_OUTER}
+              transform="translate(0, 7)"
+              fill={pal.shadow}
+              opacity={isDark ? 0.42 : 0.22}
+              filter={`url(#blur-lg-${uid})`}
+            />
+            <g
+              ref={
+                !isExiting
+                  ? (el) => {
+                      if (el) nodeLiftRefs.current.set(node.id, el);
+                      else nodeLiftRefs.current.delete(node.id);
+                    }
+                  : undefined
+              }
+            >
+              <path d={SLAB_OUTER} fill={`url(#slab-side-${uid})`} />
+              <path d={SLAB_TOP} fill={`url(#slab-top-${uid})`} />
+              <path
+                d={SLAB_OUTER}
+                fill="none"
+                stroke={pal.ink}
+                strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
+                strokeLinejoin="round"
+              />
+              {[
+                { x: -22, y: 2, c: '#f6cd82' },
+                { x: -6, y: -6, c: '#a9c5e8' },
+                { x: 10, y: -14, c: '#b3d79f' },
+                { x: -6, y: 10, c: '#cbbae6' },
+                { x: 10, y: 2, c: '#f3b47f' },
+                { x: 24, y: -5, c: '#f9cbd0' },
+              ].map((av, aIdx) => (
+                <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
+                  <ellipse cx={0} cy={0} rx={5.2} ry={2.5} fill="#6b5236" opacity={0.18} />
+                  <path
+                    d="M-4.8,0 V-8.2 A4.8,4.8 0 0 1 4.8,-8.2 V0 A4.8,2.2 0 0 1 -4.8,0 Z"
+                    fill={av.c}
+                    stroke={pal.ink}
+                    strokeWidth={1.3}
+                  />
+                  <circle
+                    cx={0}
+                    cy={-15.5}
+                    r={3.9}
+                    fill="#fdf6ec"
+                    stroke={pal.ink}
+                    strokeWidth={1.3}
+                  />
+                </g>
+              ))}
+              <TactilePill
+                x={0}
+                y={50}
+                text={rawLabel}
+                bg={pal.pillBg}
+                fg={pal.pillInk}
+                stroke={pal.ink}
+                shadow={pal.pillShadow}
+                isSelected={isSelected}
+              />
+            </g>
+          </g>
+        )}
+      </>
+    );
   };
 
   return (
@@ -1272,8 +2519,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       onPointerUp={finishPan}
       onPointerCancel={finishPan}
     >
+      {/* Persistent SVG Stage — NEVER unmounts across steps so nodes morph & glide smoothly! */}
       <svg
-        key={sceneSignature}
+        ref={svgRef}
         viewBox={stageViewBox}
         preserveAspectRatio="xMidYMid meet"
         style={{
@@ -1331,6 +2579,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           <linearGradient id={`slab-side-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={pal.slab.side0} />
             <stop offset="100%" stopColor={pal.slab.side1} />
+          </linearGradient>
+
+          <linearGradient id={`g-dead-top-${uid}`} x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0%" stopColor={pal.dead.top0} />
+            <stop offset="100%" stopColor={pal.dead.top1} />
+          </linearGradient>
+          <linearGradient id={`g-dead-side-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={pal.dead.side0} />
+            <stop offset="100%" stopColor={pal.dead.side1} />
           </linearGradient>
 
           <linearGradient id={`cyl-sheen-${uid}`} x1="0" y1="0" x2="1" y2="0">
@@ -1408,557 +2665,451 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           pointerEvents="none"
         />
 
-        {/* 2–5. Interactive Scene Camera Group (60-120fps direct DOM transform) */}
+        {/* 2–6. Interactive Scene Camera Group */}
         <g ref={sceneCamRef} transform={initialCamTf} data-iso-interactive="true">
-        {/* 2. Connector Links (Exact 2:1 Wall-Port Elbows + Draw-in Animation + Hover/Click Hit Target) */}
-        <g className="layer-links">
-          {builtLinks.map(({ link, d }, idx) => {
-            const st = link.style ?? 'solid';
-            const linkKey = `link:${link.id}`;
-            const isHovered =
-              hoveredKey === linkKey ||
-              hoveredKey === `node:${link.from}` ||
-              hoveredKey === `node:${link.to}`;
-            const isSelected = selectedInfo?.key === linkKey;
-            const stroke =
-              st === 'danger'
-                ? pal.dangerLink
-                : st === 'off'
-                  ? pal.mutedLink
-                  : pal.ink;
-            const marker =
-              st === 'danger'
-                ? `url(#arr-danger-${uid})`
-                : st === 'off'
-                  ? ''
-                  : `url(#arr-${uid})`;
+          {/* 2. Floor Layer: Dashed Isometric Group Zones + Ground Footprint Pads (Spots) */}
+          <g className="layer-floor" pointerEvents="none">
+            {builtZones.map(({ zone, path, labelPt }) => {
+              const tone = zone.tone ?? 'neutral';
+              const zFill =
+                tone === 'rose'
+                  ? isDark
+                    ? '#472328'
+                    : '#fdf0f1'
+                  : tone === 'green'
+                    ? isDark
+                      ? '#283822'
+                      : '#f2f9ed'
+                    : tone === 'blue'
+                      ? isDark
+                        ? '#223347'
+                        : '#eef5fc'
+                      : isDark
+                        ? '#2e2923'
+                        : '#fffaf2';
+              const zStroke =
+                tone === 'rose'
+                  ? pal.dangerLink
+                  : tone === 'green'
+                    ? pal.beatLink
+                    : pal.ink;
 
-            const isDashed = st === 'dashed' || st === 'off' || st === 'danger';
-            const info = getLinkInspector(link);
-
-            return (
-              <g
-                key={link.id}
-                onMouseEnter={() => {
-                  setHoveredKey(linkKey);
-                  setHoverPreview(info);
-                }}
-                onMouseLeave={() => {
-                  setHoveredKey(null);
-                  setHoverPreview(null);
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedInfo({ key: linkKey, info });
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {/* Wide invisible hit target so clicking/hovering thin lines is effortless */}
-                <path d={d} fill="none" stroke="transparent" strokeWidth={15} />
-                <path
-                  ref={(el) => {
-                    if (el) pathRefs.current.set(link.id, el);
-                    else pathRefs.current.delete(link.id);
-                  }}
-                  d={d}
-                  fill="none"
-                  className={isDashed ? undefined : 'dts-anim-line'}
-                  style={
-                    isDashed
-                      ? undefined
-                      : ({
-                          strokeDasharray: '760 760',
-                          '--line-len': '760',
-                          animationDelay: `${130 + idx * 60}ms`,
-                        } as React.CSSProperties)
-                  }
-                  stroke={stroke}
-                  strokeWidth={isHovered || isSelected ? 2.6 : st === 'off' ? 1.5 : 1.85}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeDasharray={
-                    st === 'dashed'
-                      ? '5 4.5'
-                      : st === 'off'
-                        ? '4 5'
-                        : st === 'danger'
-                          ? '7 5'
-                          : undefined
-                  }
-                  opacity={hoveredKey && !isHovered ? 0.35 : 1}
-                  markerEnd={marker}
-                />
-              </g>
-            );
-          })}
-        </g>
-
-        {/* 3. Animated Traffic Packets */}
-        <g className="layer-packets" pointerEvents="none">
-          {scene.packets.map((pkt) => (
-            <g
-              key={pkt.id}
-              ref={(el) => {
-                if (el) packetRefs.current.set(pkt.id, el);
-                else packetRefs.current.delete(pkt.id);
-              }}
-              opacity={0}
-            >
-              {pkt.kind === 'request' && (
-                <circle r={4.4} fill="#f3b47f" stroke={pal.ink} strokeWidth={1.5} />
-              )}
-              {pkt.kind === 'response' && (
-                <circle r={4.4} fill="#9fd28f" stroke={pal.ink} strokeWidth={1.5} />
-              )}
-              {pkt.kind === 'pointer' && (
-                <circle r={4.4} fill="#f4fbef" stroke="#2f8a43" strokeWidth={2} />
-              )}
-              {pkt.kind === 'mutation' && (
-                <rect
-                  x={-4.2}
-                  y={-4.2}
-                  width={8.4}
-                  height={8.4}
-                  rx={2}
-                  fill="#b79ce6"
-                  stroke={pal.ink}
-                  strokeWidth={1.5}
-                />
-              )}
-              {pkt.kind === 'cache-hit' && (
-                <circle r={4.5} fill="#efb041" stroke={pal.ink} strokeWidth={1.5} />
-              )}
-              {pkt.kind === 'error' && (
-                <rect
-                  x={-4.8}
-                  y={-4.8}
-                  width={9.6}
-                  height={9.6}
-                  rx={2.4}
-                  fill="#e5534b"
-                  stroke="#5e1b16"
-                  strokeWidth={1.5}
-                />
-              )}
-            </g>
-          ))}
-        </g>
-
-        {/* 4. Staggered Drop-in 2.5D Isometric Entities */}
-        <g className="layer-ents">
-          {expandedNodes.map((node, idx) => {
-            const kind = normalizeShape(node.shape);
-            const rawLabel = pickText(node.label, lang);
-            const subText = node.sublabel ? pickText(node.sublabel, lang) : '';
-            const lines = splitShortLines(rawLabel);
-            const nodeKey = `node:${node.id}`;
-            const isHovered = hoveredKey === nodeKey;
-            const isSelected = selectedInfo?.key === nodeKey;
-            const info = getNodeInspector(node);
-            const strokeW = isHovered || isSelected ? 2.4 : 1.85;
-
-            return (
-              <g
-                key={node.id}
-                transform={`translate(${node.x}, ${node.y})`}
-                opacity={node.dimmed ? 0.38 : 1}
-                onMouseEnter={() => {
-                  setHoveredKey(nodeKey);
-                  setHoverPreview(info);
-                }}
-                onMouseLeave={() => {
-                  setHoveredKey(null);
-                  setHoverPreview(null);
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedInfo({ key: nodeKey, info });
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                {/* Animated inner wrapper so SVG position translate(x,y) stays crisp while child drops in! */}
+              return (
                 <g
-                  className="dts-anim-drop"
-                  style={{ animationDelay: `${idx * 70}ms` }}
+                  key={`zone-${zone.id}`}
+                  ref={(el) => {
+                    if (el) zoneRefs.current.set(zone.id, el);
+                    else zoneRefs.current.delete(zone.id);
+                  }}
                 >
-                  {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK */}
-                  {kind === 'block' && (
-                    <g>
-                      <path
-                        d={BLOCK_OUTER_PATH}
-                        transform="translate(0, 9)"
-                        fill={pal.shadow}
-                        opacity={isDark ? 0.45 : 0.24}
-                        filter={`url(#blur-lg-${uid})`}
-                      />
-                      <path d={BLOCK_OUTER_PATH} fill={`url(#g-${node.tone}-side-${uid})`} />
-                      <path
-                        d={`M 0,${TOP_OFFSET_Y + BLOCK_H} L ${BLOCK_W - 2},${TOP_OFFSET_Y + 1} L ${BLOCK_W - 2},${TOP_OFFSET_Y + BLOCK_DROP} L 0,${TOP_OFFSET_Y + BLOCK_DROP + BLOCK_H} Z`}
-                        fill="#3a2a14"
-                        opacity={isDark ? 0.14 : 0.055}
-                      />
-                      <path d={BLOCK_TOP_PATH} fill={`url(#g-${node.tone}-top-${uid})`} />
-                      <path
-                        d={BLOCK_SHEEN_PATH}
-                        fill="#ffffff"
-                        opacity={isDark ? 0.08 : 0.22}
-                        filter={`url(#blur-sm-${uid})`}
-                      />
-                      <path
-                        d={BLOCK_RIDGE_PATH}
-                        transform="translate(0, 1.3)"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeOpacity={isDark ? 0.28 : 0.76}
-                        strokeWidth={1.6}
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d={BLOCK_RIDGE_PATH}
-                        transform="translate(0, 3.2)"
-                        fill="none"
-                        stroke="#5a4123"
-                        strokeOpacity={0.07}
-                        strokeWidth={2.2}
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d={BLOCK_OUTER_PATH}
-                        fill="none"
-                        stroke={pal.ink}
-                        strokeWidth={strokeW}
-                        strokeLinejoin="round"
-                      />
-
-                      <MinimalIcon kind={node.icon} stroke={pal.ink} x={0} y={-16} />
-                      {lines.length === 1 ? (
-                        <text
-                          x={0}
-                          y={24}
-                          textAnchor="middle"
-                          fontSize={11.5}
-                          fontWeight={800}
-                          fill={pal.ink}
-                          fontFamily="var(--dts-font-mono)"
-                        >
-                          {lines[0]}
-                        </text>
-                      ) : (
-                        <>
-                          <text
-                            x={0}
-                            y={18}
-                            textAnchor="middle"
-                            fontSize={11}
-                            fontWeight={800}
-                            fill={pal.ink}
-                            fontFamily="var(--dts-font-mono)"
-                          >
-                            {lines[0]}
-                          </text>
-                          <text
-                            x={0}
-                            y={31.5}
-                            textAnchor="middle"
-                            fontSize={10.5}
-                            fontWeight={800}
-                            fill={pal.ink}
-                            fontFamily="var(--dts-font-mono)"
-                          >
-                            {lines[1]}
-                          </text>
-                        </>
-                      )}
-                    </g>
-                  )}
-
-                  {/* B. CYLINDER DATABASE */}
-                  {kind === 'db' && (
-                    <g transform="translate(0, -10)">
-                      <ellipse
-                        cx={0}
-                        cy={39}
-                        rx={35}
-                        ry={16.5}
-                        fill={pal.shadow}
-                        opacity={isDark ? 0.42 : 0.22}
-                        filter={`url(#blur-lg-${uid})`}
-                      />
-                      <path
-                        d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4 Z"
-                        fill={`url(#g-${node.tone}-side-${uid})`}
-                      />
-                      <path
-                        d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4 Z"
-                        fill={`url(#cyl-sheen-${uid})`}
-                      />
-                      <ellipse
-                        cx={0}
-                        cy={-4}
-                        rx={32}
-                        ry={16}
-                        fill={`url(#g-${node.tone}-top-${uid})`}
-                      />
-                      <path
-                        d="M -29,-1.5 A 29,14 0 0 0 29,-1.5"
-                        fill="none"
-                        stroke="#ffffff"
-                        strokeOpacity={isDark ? 0.25 : 0.72}
-                        strokeWidth={1.4}
-                      />
-                      <path
-                        d="M -32,-4 V 33 A 32,16 0 0 0 32,33 V -4"
-                        fill="none"
-                        stroke={pal.ink}
-                        strokeWidth={strokeW}
-                        strokeLinejoin="round"
-                      />
-                      <ellipse
-                        cx={0}
-                        cy={-4}
-                        rx={32}
-                        ry={16}
-                        fill="none"
-                        stroke={pal.ink}
-                        strokeWidth={strokeW}
-                      />
-                      <MinimalIcon kind={node.icon ?? 'db'} stroke={pal.ink} x={0} y={19} scale={0.86} />
-                      <TactilePill
-                        x={0}
-                        y={62}
-                        text={rawLabel}
-                        bg={pal.pillBg}
-                        fg={pal.pillInk}
-                        stroke={pal.ink}
-                        shadow={pal.pillShadow}
-                        isSelected={isSelected}
-                        delayMs={180 + idx * 70}
-                      />
-                    </g>
-                  )}
-
-                  {/* C. LAPTOP CLIENT */}
-                  {kind === 'device' && (
-                    <g transform="translate(0, 8)">
-                      <path
-                        d={SLAB_OUTER}
-                        transform="translate(0, 7)"
-                        fill={pal.shadow}
-                        opacity={isDark ? 0.42 : 0.22}
-                        filter={`url(#blur-lg-${uid})`}
-                      />
-                      <path d={SLAB_OUTER} fill={`url(#slab-side-${uid})`} />
-                      <path d={SLAB_TOP} fill={`url(#slab-top-${uid})`} />
-                      <path
-                        d={SLAB_OUTER}
-                        fill="none"
-                        stroke={pal.ink}
-                        strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
-                        strokeLinejoin="round"
-                      />
-                      <g
-                        transform="matrix(1 -0.5 1 0.5 -32 -4)"
-                        fill="#fbf8f4"
-                        stroke="#b9b1a7"
-                        strokeWidth={0.6}
-                      >
-                        <rect x={0} y={0} width={30} height={20} rx={2} fill="#e8dfd2" stroke={pal.ink} strokeWidth={1.1} />
-                        <rect x={4} y={3} width={22} height={9} rx={1} />
-                        <rect x={10} y={14} width={10} height={4} rx={1} />
-                      </g>
-                      <g transform="matrix(1 -0.5 0 1 -33 -42)">
-                        <rect
-                          x={0}
-                          y={0}
-                          width={42}
-                          height={31}
-                          rx={2.5}
-                          fill="#fbf8f4"
-                          stroke={pal.ink}
-                          strokeWidth={1.6}
-                        />
-                        <rect x={1.5} y={1.5} width={39} height={5.5} rx={1.2} fill="#e4d9cb" />
-                        <circle cx={4.8} cy={4.2} r={1} fill="#e5534b" />
-                        <circle cx={8} cy={4.2} r={1} fill="#efb041" />
-                        <circle cx={11.2} cy={4.2} r={1} fill="#7fc278" />
-                        <rect x={5} y={10.5} width={32} height={9.5} rx={1.5} fill="#d8c7ee" />
-                        <rect x={5} y={23} width={21} height={2.4} rx={1.2} fill="#d6ccbf" />
-                      </g>
-                      <TactilePill
-                        x={0}
-                        y={49}
-                        text={rawLabel}
-                        bg={pal.pillBg}
-                        fg={pal.pillInk}
-                        stroke={pal.ink}
-                        shadow={pal.pillShadow}
-                        isSelected={isSelected}
-                        delayMs={180 + idx * 70}
-                      />
-                    </g>
-                  )}
-
-                  {/* D. CROWD / CONCURRENT TASKS SLAB */}
-                  {kind === 'crowd' && (
-                    <g transform="translate(0, 6)">
-                      <path
-                        d={SLAB_OUTER}
-                        transform="translate(0, 7)"
-                        fill={pal.shadow}
-                        opacity={isDark ? 0.42 : 0.22}
-                        filter={`url(#blur-lg-${uid})`}
-                      />
-                      <path d={SLAB_OUTER} fill={`url(#slab-side-${uid})`} />
-                      <path d={SLAB_TOP} fill={`url(#slab-top-${uid})`} />
-                      <path
-                        d={SLAB_OUTER}
-                        fill="none"
-                        stroke={pal.ink}
-                        strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
-                        strokeLinejoin="round"
-                      />
-                      {[
-                        { x: -22, y: 2, c: '#f6cd82' },
-                        { x: -6, y: -6, c: '#a9c5e8' },
-                        { x: 10, y: -14, c: '#b3d79f' },
-                        { x: -6, y: 10, c: '#cbbae6' },
-                        { x: 10, y: 2, c: '#f3b47f' },
-                        { x: 24, y: -5, c: '#f9cbd0' },
-                      ].map((av, aIdx) => (
-                        <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
-                          <ellipse cx={0} cy={0} rx={5.2} ry={2.5} fill="#6b5236" opacity={0.18} />
-                          <path
-                            d="M-4.8,0 V-8.2 A4.8,4.8 0 0 1 4.8,-8.2 V0 A4.8,2.2 0 0 1 -4.8,0 Z"
-                            fill={av.c}
-                            stroke={pal.ink}
-                            strokeWidth={1.3}
-                          />
-                          <circle
-                            cx={0}
-                            cy={-15.5}
-                            r={3.9}
-                            fill="#fdf6ec"
-                            stroke={pal.ink}
-                            strokeWidth={1.3}
-                          />
-                        </g>
-                      ))}
-                      <TactilePill
-                        x={0}
-                        y={50}
-                        text={rawLabel}
-                        bg={pal.pillBg}
-                        fg={pal.pillInk}
-                        stroke={pal.ink}
-                        shadow={pal.pillShadow}
-                        isSelected={isSelected}
-                        delayMs={180 + idx * 70}
-                      />
-                    </g>
-                  )}
-
-                  {/* Status / Role Pill below block */}
-                  {kind === 'block' && (node.badge || subText) && (
-                    <TactilePill
-                      x={0}
-                      y={64}
-                      text={node.badge ? pickText(node.badge.text, lang) : subText}
-                      bg={
-                        node.badge?.tone === 'bad'
-                          ? pal.tones.rose.top0
-                          : node.badge?.tone === 'ok'
-                            ? pal.tones.green.top0
-                            : pal.pillBg
-                      }
-                      fg={pal.pillInk}
-                      stroke={pal.ink}
-                      shadow={pal.pillShadow}
-                      isSelected={isSelected}
-                      delayMs={200 + idx * 70}
-                    />
-                  )}
-
-                  {/* Load Meter Pill above block */}
-                  {typeof node.loadPct === 'number' && (() => {
-                    const pct = Math.max(0, Math.min(100, node.loadPct));
-                    const barColor =
-                      pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
-                    return (
-                      <g transform="translate(0, -54)">
-                        <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
-                        <rect
-                          x={-37}
-                          y={-10.5}
-                          width={74}
-                          height={19}
-                          rx={9.5}
-                          fill={pal.pillBg}
-                          stroke={pal.ink}
-                          strokeWidth={1.3}
-                        />
-                        <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
-                        <rect
-                          x={-29}
-                          y={-4}
-                          width={Math.max(3, (30 * pct) / 100)}
-                          height={6}
-                          rx={3}
-                          fill={barColor}
-                        />
-                        <text
-                          x={29}
-                          y={2.5}
-                          textAnchor="end"
-                          fontSize={9.5}
-                          fontWeight={800}
-                          fill={pct >= 90 ? '#c93b32' : pal.pillInk}
-                          fontFamily="var(--dts-font-mono)"
-                        >
-                          {pct}%
-                        </text>
-                      </g>
-                    );
-                  })()}
+                  <path
+                    d={path}
+                    fill={zFill}
+                    fillOpacity={0.62}
+                    stroke={zStroke}
+                    strokeOpacity={0.55}
+                    strokeWidth={1.5}
+                    strokeDasharray="6 5"
+                  />
+                  <text
+                    transform={`translate(${labelPt.x.toFixed(1)}, ${labelPt.y.toFixed(1)}) matrix(0.894, 0.447, -0.894, 0.447, 0, 0)`}
+                    fontSize={9.5}
+                    fontWeight={800}
+                    letterSpacing={1.4}
+                    fill={tone === 'rose' ? pal.dangerLink : isDark ? '#b5aa9a' : '#6f6961'}
+                    fontFamily="var(--dts-font-mono)"
+                  >
+                    {pickText(zone.label, lang).toUpperCase()}
+                  </text>
                 </g>
+              );
+            })}
+
+            {expandedNodes.map((node) => {
+              if (!node.highlighted && !node.dead) return null;
+              const gc = getGroundCenter(node);
+              const isDead = Boolean(node.dead);
+              const strokeCol = isDead ? pal.dangerLink : pal.beatLink;
+              return (
+                <path
+                  key={`spot-${node.id}`}
+                  ref={(el) => {
+                    if (el) spotRefs.current.set(node.id, el);
+                    else spotRefs.current.delete(node.id);
+                  }}
+                  d={GROUND_SPOT_PATH}
+                  transform={`translate(${gc.x.toFixed(1)}, ${gc.y.toFixed(1)})`}
+                  fill={strokeCol}
+                  fillOpacity={isDark ? 0.14 : 0.1}
+                  stroke={strokeCol}
+                  strokeOpacity={0.65}
+                  strokeWidth={1.8}
+                />
+              );
+            })}
+          </g>
+
+          {/* 3. Connector Links (Pure 2:1 Grid Elbows + Post-Landing Draw Sweep) */}
+          <g className="layer-links">
+            {builtLinks.map(({ link, d, pts }) => {
+              const st = link.style ?? 'solid';
+              const linkKey = `link:${link.id}`;
+              const isHovered =
+                hoveredKey === linkKey ||
+                hoveredKey === `node:${link.from}` ||
+                hoveredKey === `node:${link.to}`;
+              const isSelected = selectedInfo?.key === linkKey;
+              const stroke =
+                st === 'danger' || st === 'cut'
+                  ? pal.dangerLink
+                  : st === 'heartbeat'
+                    ? pal.beatLink
+                    : st === 'off'
+                      ? pal.mutedLink
+                      : pal.ink;
+
+              const info = getLinkInspector(link);
+              const midPt = sampleSegmentPoint(pts, 0.5);
+
+              return (
+                <g
+                  key={link.id}
+                  ref={(el) => {
+                    if (el) linkGroupRefs.current.set(link.id, el);
+                    else linkGroupRefs.current.delete(link.id);
+                  }}
+                  onMouseEnter={() => {
+                    setHoveredKey(linkKey);
+                    setHoverPreview(info);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredKey(null);
+                    setHoverPreview(null);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfo({ key: linkKey, info });
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <path
+                    ref={(el) => {
+                      if (el) linkHitRefs.current.set(link.id, el);
+                      else linkHitRefs.current.delete(link.id);
+                    }}
+                    d={d}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={15}
+                  />
+                  <path
+                    ref={(el) => {
+                      if (el) pathRefs.current.set(link.id, el);
+                      else pathRefs.current.delete(link.id);
+                    }}
+                    d={d}
+                    fill="none"
+                    stroke={stroke}
+                    strokeWidth={isHovered || isSelected ? 2.6 : st === 'off' ? 1.55 : 1.9}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={hoveredKey && !isHovered ? 0.35 : 0}
+                  />
+                  {st === 'cut' && (
+                    <g transform={`translate(${midPt.x.toFixed(1)}, ${midPt.y.toFixed(1)})`}>
+                      <circle r={7.5} fill={pal.pillBg} stroke={pal.dangerLink} strokeWidth={1.5} />
+                      <path
+                        d="M-3.2,-3.2 L3.2,3.2 M3.2,-3.2 L-3.2,3.2"
+                        stroke={pal.dangerLink}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+          </g>
+
+          {/* 4. Animated Traffic Packets (begin flowing once link finishes drawing) */}
+          <g className="layer-packets" pointerEvents="none">
+            {scene.packets.map((pkt) => (
+              <g
+                key={pkt.id}
+                ref={(el) => {
+                  if (el) packetRefs.current.set(pkt.id, el);
+                  else packetRefs.current.delete(pkt.id);
+                }}
+                opacity={0}
+              >
+                {pkt.kind === 'request' && (
+                  <circle r={4.4} fill="#f3b47f" stroke={pal.ink} strokeWidth={1.5} />
+                )}
+                {pkt.kind === 'response' && (
+                  <circle r={4.4} fill="#9fd28f" stroke={pal.ink} strokeWidth={1.5} />
+                )}
+                {pkt.kind === 'pointer' && (
+                  <circle r={4.4} fill="#f4fbef" stroke="#2f8a43" strokeWidth={2} />
+                )}
+                {pkt.kind === 'mutation' && (
+                  <rect
+                    x={-4.2}
+                    y={-4.2}
+                    width={8.4}
+                    height={8.4}
+                    rx={2}
+                    fill="#b79ce6"
+                    stroke={pal.ink}
+                    strokeWidth={1.5}
+                  />
+                )}
+                {pkt.kind === 'cache-hit' && (
+                  <circle r={4.5} fill="#efb041" stroke={pal.ink} strokeWidth={1.5} />
+                )}
+                {pkt.kind === 'error' && (
+                  <rect
+                    x={-4.8}
+                    y={-4.8}
+                    width={9.6}
+                    height={9.6}
+                    rx={2.4}
+                    fill="#e5534b"
+                    stroke="#5e1b16"
+                    strokeWidth={1.5}
+                  />
+                )}
               </g>
-            );
-          })}
-        </g>
+            ))}
+          </g>
 
-        {/* 5. Interactive Floating Link Label Pills */}
-        <g className="layer-link-labels">
-          {builtLinks.map(({ link, labelPos }, idx) => {
-            if (!link.label) return null;
-            const text = pickText(link.label, lang);
-            if (!text) return null;
-            const linkKey = `link:${link.id}`;
-            const info = getLinkInspector(link);
+          {/* 5. Exiting Entities (smooth lift & fade out during step transition) */}
+          <g className="layer-exiting" pointerEvents="none">
+            {exitingNodes.map((exNode) => (
+              <g
+                key={`exit-${exNode.id}`}
+                ref={(el) => {
+                  if (el) exitNodeRefs.current.set(exNode.id, el);
+                  else exitNodeRefs.current.delete(exNode.id);
+                }}
+                transform={`translate(${exNode.x}, ${exNode.y})`}
+              >
+                {renderNodeBody(exNode, false, false, true)}
+              </g>
+            ))}
+          </g>
 
-            return (
-              <TactilePill
-                key={`lbl-${link.id}`}
-                x={labelPos.x}
-                y={labelPos.y}
-                text={text}
-                bg={link.style === 'danger' ? pal.tones.rose.top0 : pal.pillBg}
-                fg={pal.pillInk}
-                stroke={link.style === 'danger' ? pal.dangerLink : pal.ink}
-                shadow={pal.pillShadow}
-                isSelected={selectedInfo?.key === linkKey}
-                delayMs={260 + idx * 60}
-                onHover={() => {
-                  setHoveredKey(linkKey);
-                  setHoverPreview(info);
-                }}
-                onLeave={() => {
-                  setHoveredKey(null);
-                  setHoverPreview(null);
-                }}
-                onClick={() => setSelectedInfo({ key: linkKey, info })}
+          {/* 6. Active & Entering 2.5D Isometric Entities (depth-sorted back-to-front) */}
+          <g className="layer-ents">
+            {expandedNodes.map((node) => {
+              const nodeKey = `node:${node.id}`;
+              const isHovered = hoveredKey === nodeKey;
+              const isSelected = selectedInfo?.key === nodeKey;
+              const info = getNodeInspector(node);
+
+              return (
+                <g
+                  key={node.id}
+                  ref={(el) => {
+                    if (el) nodeOuterRefs.current.set(node.id, el);
+                    else nodeOuterRefs.current.delete(node.id);
+                  }}
+                  transform={`translate(${node.x}, ${node.y})`}
+                  opacity={0}
+                  onMouseEnter={() => {
+                    setHoveredKey(nodeKey);
+                    setHoverPreview(info);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredKey(null);
+                    setHoverPreview(null);
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedInfo({ key: nodeKey, info });
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {renderNodeBody(node, isHovered, isSelected, false)}
+                </g>
+              );
+            })}
+          </g>
+
+          {/* 7. Interactive Floating Link Label Pills */}
+          <g className="layer-link-labels">
+            {builtLinks.map(({ link, labelPos }) => {
+              if (!link.label) return null;
+              const text = pickText(link.label, lang);
+              if (!text) return null;
+              const linkKey = `link:${link.id}`;
+              const info = getLinkInspector(link);
+
+              return (
+                <TactilePill
+                  key={`lbl-${link.id}`}
+                  pillRef={(el) => {
+                    if (el) linkPillRefs.current.set(link.id, el);
+                    else linkPillRefs.current.delete(link.id);
+                  }}
+                  initialOpacity={0}
+                  x={labelPos.x}
+                  y={labelPos.y}
+                  text={text}
+                  bg={
+                    link.style === 'danger' || link.style === 'cut'
+                      ? pal.tones.rose.top0
+                      : link.style === 'heartbeat'
+                        ? pal.tones.green.top0
+                        : pal.pillBg
+                  }
+                  fg={pal.pillInk}
+                  stroke={
+                    link.style === 'danger' || link.style === 'cut'
+                      ? pal.dangerLink
+                      : pal.ink
+                  }
+                  shadow={pal.pillShadow}
+                  isSelected={selectedInfo?.key === linkKey}
+                  onHover={() => {
+                    setHoveredKey(linkKey);
+                    setHoverPreview(info);
+                  }}
+                  onLeave={() => {
+                    setHoveredKey(null);
+                    setHoverPreview(null);
+                  }}
+                  onClick={() => setSelectedInfo({ key: linkKey, info })}
+                />
+              );
+            })}
+          </g>
+
+          {/* 8. Non-Colliding Tactile SVG Stage Note Card ("bảng ghi chú nhỏ" like Designed-to-Scale) */}
+          {noteCardLayout && (
+            <g
+              className="layer-note-card"
+              ref={noteCardRef}
+              transform={`translate(${noteCardLayout.x}, ${noteCardLayout.y})`}
+              opacity={0}
+              pointerEvents="none"
+            >
+              <rect
+                x={0}
+                y={2.4}
+                width={noteCardLayout.w}
+                height={noteCardLayout.h}
+                rx={10}
+                fill={pal.pillShadow}
               />
-            );
-          })}
-        </g>
+              <rect
+                x={0}
+                y={0}
+                width={noteCardLayout.w}
+                height={noteCardLayout.h}
+                rx={10}
+                fill={pal.pillBg}
+                stroke={pal.ink}
+                strokeWidth={1.4}
+              />
+              <line
+                x1={11}
+                y1={25.5}
+                x2={noteCardLayout.w - 11}
+                y2={25.5}
+                stroke={isDark ? '#423b33' : '#e6ddd0'}
+                strokeWidth={1}
+              />
+              <MinimalIcon
+                kind="sparkles"
+                stroke={isDark ? '#efb041' : '#b7791f'}
+                x={17}
+                y={13.2}
+                scale={0.62}
+              />
+              <text
+                x={27}
+                y={16.5}
+                fontSize={9}
+                fontWeight={800}
+                letterSpacing={0.9}
+                fill={isDark ? '#b5aa9a' : '#6f6961'}
+                fontFamily="var(--dts-font-mono)"
+              >
+                {noteCardLayout.title.toUpperCase()}
+              </text>
+
+              {noteCardLayout.lines.map((ln, idx) => {
+                const rowY = 30 + idx * 18.5;
+                if (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber') {
+                  const pBg =
+                    ln.tone === 'good'
+                      ? isDark
+                        ? '#2b3e24'
+                        : '#dcefd2'
+                      : ln.tone === 'bad'
+                        ? isDark
+                          ? '#4d2328'
+                          : '#f8d5cf'
+                        : isDark
+                          ? '#4a3a1b'
+                          : '#fbe5bd';
+                  const pFg =
+                    ln.tone === 'good'
+                      ? isDark
+                        ? '#b8e8a3'
+                        : '#24521c'
+                      : ln.tone === 'bad'
+                        ? isDark
+                          ? '#fca5a5'
+                          : '#8f2a22'
+                        : isDark
+                          ? '#fde68a'
+                          : '#6d4a0c';
+                  return (
+                    <g key={idx}>
+                      <rect
+                        x={9}
+                        y={rowY}
+                        width={noteCardLayout.w - 18}
+                        height={16}
+                        rx={5}
+                        fill={pBg}
+                      />
+                      <text
+                        x={15}
+                        y={rowY + 11.2}
+                        fontSize={9.4}
+                        fontWeight={800}
+                        fill={pFg}
+                        fontFamily="var(--dts-font-mono)"
+                      >
+                        {ln.text}
+                      </text>
+                    </g>
+                  );
+                }
+                return (
+                  <text
+                    key={idx}
+                    x={11}
+                    y={rowY + 11.2}
+                    fontSize={ln.tone === 'muted' ? 9.2 : 9.6}
+                    fontWeight={ln.tone === 'muted' ? 600 : 700}
+                    fill={
+                      ln.tone === 'muted'
+                        ? isDark
+                          ? '#a89d8e'
+                          : '#7d756b'
+                        : pal.pillInk
+                    }
+                    fontFamily="var(--dts-font-mono)"
+                  >
+                    {ln.text}
+                  </text>
+                );
+              })}
+            </g>
+          )}
         </g>
       </svg>
 
@@ -2038,7 +3189,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         );
       })()}
 
-      {/* Quick Hover Preview Tooltip (when hovering before clicking) */}
+      {/* Quick Hover Preview Tooltip */}
       {!selectedInfo && hoverPreview && (
         <div className="pointer-events-none absolute left-2.5 top-2 z-20 max-w-[360px] rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] px-3 py-2 shadow-[1.5px_2px_0_var(--dts-shadow-color)]">
           <div className="flex items-center justify-between gap-2 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
@@ -2056,7 +3207,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </div>
       )}
 
-      {/* Full Deep-Dive Inspector Card (when clicked) */}
+      {/* Full Deep-Dive Inspector Card */}
       {selectedInfo && (
         <div
           data-no-pan="true"

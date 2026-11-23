@@ -18,6 +18,7 @@ import {
   buildCuratedIsometricScene,
   buildCuratedMemoryScene,
 } from './pythonModeCurator';
+import { choreographProgressiveScene } from '@/features/devops-course/scale/courseLessonBuilder';
 
 export const ALL_PY_SPECS: Record<string, PyModuleVisualSpec> = {
   ...PY_SPECS_PART1,
@@ -561,13 +562,22 @@ export function buildPythonScaleModule(
       stepMode = 'code-trace';
     }
 
-    const isoScene =
+    const rawIsoScene =
       stepMode === 'isometric'
         ? buildCuratedIsometricScene(mod.id, idx)
         : null;
-    if (stepMode === 'isometric' && !isoScene) {
+    if (stepMode === 'isometric' && !rawIsoScene) {
       stepMode = 'code-trace';
     }
+    const isoScene =
+      stepMode === 'isometric' && rawIsoScene
+        ? (choreographProgressiveScene('python', mod.id, idx, totalSteps, category, {
+            telemetry: frame.telemetry,
+            whatChanged: frame.whatChanged,
+            callout: frame.callout,
+            scene: rawIsoScene,
+          }) ?? rawIsoScene)
+        : null;
 
     const memScene =
       stepMode === 'memory-2d'
