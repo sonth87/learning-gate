@@ -53,6 +53,19 @@ body,
   overflow: hidden;
   overscroll-behavior: none;
   background-color: #0f172a;
+  touch-action: manipulation;
+}
+
+/*
+ * Prevent iOS Safari / iPadOS from auto-zooming the page when focusing inputs/selects/textareas
+ * while preserving exact monospace metric alignment inside overlaid IDE code editors.
+ */
+@media (hover: none) and (pointer: coarse) {
+  input:not(.ide-code-textarea),
+  textarea:not(.ide-code-textarea),
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /*
@@ -102,6 +115,10 @@ html:has(.pylearn-root.dts-dark) #root {
 
 .z-\[500\] .lg-mobile-bottom-nav {
   padding-bottom: 0px !important;
+}
+
+.z-\[500\] > div[style*="safe-area-inset-bottom"] {
+  max-height: 18px !important;
 }
 
 /*

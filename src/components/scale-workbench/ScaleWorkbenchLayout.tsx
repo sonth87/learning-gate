@@ -241,6 +241,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const railHideTimerRef = useRef<number | null>(null);
   const narrativeScrollRef = useRef<HTMLDivElement>(null);
   const [isCenterCompact, setIsCenterCompact] = useState(false);
+  const [isMobileHeaderStuck, setIsMobileHeaderStuck] = useState(false);
 
   useEffect(() => {
     const el = centerStageCardRef.current;
@@ -874,9 +875,40 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[var(--dts-canvas)] text-[var(--dts-ink)]">
+      {/* Sticky Floating Mobile/Tablet Header on Scroll (icon-only Menu + Lesson Title, zero layout shift) */}
+      <div
+        aria-hidden={!isMobileHeaderStuck}
+        className={cn(
+          'absolute top-0 inset-x-0 z-30 flex items-center gap-2 border-b border-[var(--dts-line-strong)] bg-[var(--dts-stage-bg)]/95 px-3 py-1.5 backdrop-blur-md shadow-xs transition-all duration-150 xl:hidden',
+          isMobileHeaderStuck
+            ? 'translate-y-0 opacity-100 pointer-events-auto'
+            : '-translate-y-2 opacity-0 pointer-events-none'
+        )}
+      >
+        <button
+          type="button"
+          onClick={() => setMobileDrawerOpen(true)}
+          aria-label={t.openCourseMenu}
+          title={t.openCourseMenu}
+          className="dts-btn-tactile inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
+        <span className="min-w-0 flex-1 truncate font-mono text-xs font-extrabold text-[var(--dts-ink)]">
+          {pickText(activeLesson.title, lang)}
+        </span>
+        <span className="shrink-0 rounded-full border border-[var(--dts-border)] bg-[var(--dts-purple-bg)] px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--dts-purple-ink)] tabular-nums">
+          {safeStepIdx + 1}/{activeLesson.steps.length}
+        </span>
+      </div>
+
       <div
         ref={rootContainerRef}
+        onScroll={(e) => {
+          const stuck = e.currentTarget.scrollTop > 56;
+          setIsMobileHeaderStuck((prev) => (prev === stuck ? prev : stuck));
+        }}
         className="relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 overflow-y-auto xl:overflow-hidden"
       >
       {/* Mobile / Tablet Slide-over Syllabus Drawer */}
@@ -934,10 +966,10 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 type="button"
                 onClick={() => setMobileDrawerOpen(true)}
                 aria-label={t.openCourseMenu}
-                className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 text-[11px] font-bold text-[var(--dts-ink)] xl:hidden"
+                className="dts-btn-tactile inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 text-[11px] font-bold text-[var(--dts-ink)] xl:hidden"
               >
-                <Menu className="h-3.5 w-3.5" />
-                <span>{t.course}</span>
+                <Menu className="h-3.5 w-3.5 shrink-0" />
+                <span>Menu</span>
               </button>
               <span>
                 {String(activeLesson.level).padStart(2, '0')}.{' '}

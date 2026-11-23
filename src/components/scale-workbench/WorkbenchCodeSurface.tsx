@@ -549,7 +549,7 @@ export const WorkbenchCodeSurface: React.FC<WorkbenchCodeSurfaceProps> = ({
             aria-label="Interactive syntax-highlighted code editor"
             style={EDITOR_FONT}
             className={cn(
-              'absolute inset-0 h-full w-full resize-none overflow-auto whitespace-pre border-0 bg-transparent pt-3 pr-3 pb-10 pl-3 text-transparent outline-none [-webkit-text-fill-color:transparent]',
+              'ide-code-textarea absolute inset-0 h-full w-full resize-none overflow-auto whitespace-pre border-0 bg-transparent pt-3 pr-3 pb-10 pl-3 text-transparent outline-none [-webkit-text-fill-color:transparent]',
               activeIdeTheme.caretClass,
               activeIdeTheme.selectionClass
             )}

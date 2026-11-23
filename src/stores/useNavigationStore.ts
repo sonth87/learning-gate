@@ -20,6 +20,14 @@ export interface ActiveTermPopover {
   pinned: boolean;
 }
 
+export interface PinnedTermPopover {
+  id: string;
+  termId: string;
+  anchorRect: { top: number; left: number; bottom: number; width: number };
+  position?: { left: number; top: number };
+  zIndex: number;
+}
+
 interface NavigationState {
   activeTab: MainTab;
   selectedLessonId: string;
@@ -40,6 +48,7 @@ interface NavigationState {
     targetTitle: string;
   };
   activePopover: ActiveTermPopover | null;
+  pinnedPopovers: PinnedTermPopover[];
 
   setActiveTab: (tab: MainTab) => void;
   selectLesson: (lessonId: string) => void;
@@ -65,10 +74,19 @@ interface NavigationState {
   ) => void;
   hideTermPopover: (force?: boolean) => void;
   keepTermPopoverOpen: () => void;
+  pinActivePopover: () => void;
+  closePinnedPopover: (id: string) => void;
+  closeAllPinnedPopovers: () => void;
+  bringPinnedPopoverToFront: (id: string) => void;
+  updatePinnedPopoverPosition: (
+    id: string,
+    position: { left: number; top: number }
+  ) => void;
 }
 
 let popoverShowTimeout: ReturnType<typeof setTimeout> | null = null;
 let popoverHideTimeout: ReturnType<typeof setTimeout> | null = null;
+let pinnedZCounter = 95;
 
 export const useNavigationStore = create<NavigationState>((set) => ({
   activeTab: 'learn',
@@ -90,11 +108,13 @@ export const useNavigationStore = create<NavigationState>((set) => ({
     targetTitle: '',
   },
   activePopover: null,
+  pinnedPopovers: [],
 
   setActiveTab: (activeTab) =>
     set({
       activeTab,
       activePopover: null,
+      pinnedPopovers: [],
       isMobileSidebarOpen: false,
       isMobileTocOpen: false,
     }),
@@ -103,6 +123,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
       activeTab: 'curriculum',
       selectedLessonId: lessonId,
       activePopover: null,
+      pinnedPopovers: [],
       isMobileSidebarOpen: false,
       isMobileTocOpen: false,
     }),
@@ -111,6 +132,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
       activeTab: 'practice',
       selectedExerciseId: exerciseId,
       activePopover: null,
+      pinnedPopovers: [],
       isMobileSidebarOpen: false,
       isMobileTocOpen: false,
     }),
@@ -119,6 +141,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
       activeTab: 'exams',
       selectedExamId: examId,
       activePopover: null,
+      pinnedPopovers: [],
       isMobileSidebarOpen: false,
       isMobileTocOpen: false,
     }),
@@ -144,7 +167,7 @@ export const useNavigationStore = create<NavigationState>((set) => ({
       notesDrawerTarget: { ...s.notesDrawerTarget, isOpen: false },
     })),
   showTermPopover: (termId, anchorRect, pinned = false) => {
-    // If pinned (user clicked), show immediately and cancel any pending timers
+    // If pinned (user clicked), add/focus in pinnedPopovers so multiple pinned popups can stay open & be dragged
     if (pinned) {
       if (popoverShowTimeout) {
         clearTimeout(popoverShowTimeout);
@@ -154,7 +177,40 @@ export const useNavigationStore = create<NavigationState>((set) => ({
         clearTimeout(popoverHideTimeout);
         popoverHideTimeout = null;
       }
-      set({ activePopover: { termId, anchorRect, pinned: true } });
+      set((s) => {
+        const nextZ = ++pinnedZCounter;
+        const existingIdx = s.pinnedPopovers.findIndex((p) => p.termId === termId);
+        const nextHover =
+          s.activePopover?.termId === termId ? null : s.activePopover;
+
+        if (existingIdx >= 0) {
+          const updated = s.pinnedPopovers.map((p, idx) =>
+            idx === existingIdx ? { ...p, zIndex: nextZ } : p
+          );
+          return { activePopover: nextHover, pinnedPopovers: updated };
+        }
+
+        const cascadeOffset = (s.pinnedPopovers.length % 5) * 26;
+        const cascadedRect = {
+          top: anchorRect.top + cascadeOffset,
+          left: anchorRect.left + cascadeOffset,
+          bottom: anchorRect.bottom + cascadeOffset,
+          width: anchorRect.width,
+        };
+
+        return {
+          activePopover: nextHover,
+          pinnedPopovers: [
+            ...s.pinnedPopovers,
+            {
+              id: termId,
+              termId,
+              anchorRect: cascadedRect,
+              zIndex: nextZ,
+            },
+          ],
+        };
+      });
       return;
     }
 
@@ -171,7 +227,8 @@ export const useNavigationStore = create<NavigationState>((set) => ({
     popoverShowTimeout = setTimeout(() => {
       popoverShowTimeout = null;
       set((s) => {
-        if (s.activePopover?.pinned && s.activePopover.termId !== termId) {
+        // Don't show a duplicate hover popover if this term is already pinned
+        if (s.pinnedPopovers.some((p) => p.termId === termId)) {
           return s;
         }
         return { activePopover: { termId, anchorRect, pinned: false } };
@@ -190,11 +247,15 @@ export const useNavigationStore = create<NavigationState>((set) => ({
         clearTimeout(popoverHideTimeout);
         popoverHideTimeout = null;
       }
-      set((s) => (s.activePopover === null ? s : { activePopover: null }));
+      set((s) =>
+        s.activePopover === null && s.pinnedPopovers.length === 0
+          ? s
+          : { activePopover: null, pinnedPopovers: [] }
+      );
       return;
     }
 
-    // If mouse left, allow a 180ms grace period so user can cross into the popover card
+    // If mouse left, allow a 180ms grace period so user can cross into the hover popover card
     if (popoverHideTimeout) {
       clearTimeout(popoverHideTimeout);
     }
@@ -213,4 +274,48 @@ export const useNavigationStore = create<NavigationState>((set) => ({
       popoverHideTimeout = null;
     }
   },
+  pinActivePopover: () =>
+    set((s) => {
+      if (!s.activePopover) return s;
+      const { termId, anchorRect } = s.activePopover;
+      const nextZ = ++pinnedZCounter;
+      const existing = s.pinnedPopovers.find((p) => p.termId === termId);
+      if (existing) {
+        return {
+          activePopover: null,
+          pinnedPopovers: s.pinnedPopovers.map((p) =>
+            p.termId === termId ? { ...p, zIndex: nextZ } : p
+          ),
+        };
+      }
+      return {
+        activePopover: null,
+        pinnedPopovers: [
+          ...s.pinnedPopovers,
+          { id: termId, termId, anchorRect, zIndex: nextZ },
+        ],
+      };
+    }),
+  closePinnedPopover: (id) =>
+    set((s) => ({
+      pinnedPopovers: s.pinnedPopovers.filter((p) => p.id !== id),
+    })),
+  closeAllPinnedPopovers: () => set({ pinnedPopovers: [] }),
+  bringPinnedPopoverToFront: (id) =>
+    set((s) => {
+      const target = s.pinnedPopovers.find((p) => p.id === id);
+      if (!target || target.zIndex === pinnedZCounter) return s;
+      const nextZ = ++pinnedZCounter;
+      return {
+        pinnedPopovers: s.pinnedPopovers.map((p) =>
+          p.id === id ? { ...p, zIndex: nextZ } : p
+        ),
+      };
+    }),
+  updatePinnedPopoverPosition: (id, position) =>
+    set((s) => ({
+      pinnedPopovers: s.pinnedPopovers.map((p) =>
+        p.id === id ? { ...p, position } : p
+      ),
+    })),
 }));

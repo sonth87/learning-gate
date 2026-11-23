@@ -1,0 +1,136 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{uid}/progress/{docId}
+    // Document IDs (docId) allowed:
+    //   - Course/WorkPath slots: 'slot_wp', 'slot_kube', 'slot_cicd', 'slot_pmp', 'slot_redis'
+    //   - Classic user data & settings: 'classic_userdata', 'settings'
+    //
+    // Slot documents ('slot_*'):
+    //   - updatedAt: number (required, >= 0, epoch ms timestamp)
+    //   - state: map (required, <= 30 top-level keys)
+    //     - Optional nested sanity checks if keys are present:
+    //       - xp: number (>= 0)
+    //       - started: string (<= 64 chars)
+    //       - quizWrong: list (<= 2000 items)
+    //       - log: list (<= 5000 items)
+    //
+    // Classic userdata & settings ('classic_userdata', 'settings'):
+    //   - updatedAt: number (required, >= 0, epoch ms timestamp)
+    //   - Additional fields in document map (total keys <= 30)
+    //
+    // All other collections and document paths are denied by default.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user owns the resource path
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    // Validate required fields exist on the incoming document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that the document contains only the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Check if docId is a valid course/workpath slot document ID
+    function isSlotDocId(docId) {
+      return docId in [
+        'slot_wp',
+        'slot_kube',
+        'slot_cicd',
+        'slot_pmp',
+        'slot_redis'
+      ];
+    }
+
+    // Check if docId is a valid classic/settings document ID
+    function isClassicOrSettingsDocId(docId) {
+      return docId in ['classic_userdata', 'settings'];
+    }
+
+    // Check if docId is one of the allowed progress document IDs
+    function isValidProgressDocId(docId) {
+      return isSlotDocId(docId) || isClassicOrSettingsDocId(docId);
+    }
+
+    // Validate updatedAt is a non-negative number (epoch ms)
+    function isValidUpdatedAt(data) {
+      return data.updatedAt is number && data.updatedAt >= 0;
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update)
+    // ===============================================================
+
+    // Validate 'slot_*' progress documents
+    function isValidSlotDoc(data) {
+      return data is map &&
+        hasRequiredFields(['updatedAt', 'state']) &&
+        hasOnlyAllowedFields(['updatedAt', 'state']) &&
+        isValidUpdatedAt(data) &&
+        data.state is map &&
+        data.state.keys().size() <= 30 &&
+        (!('xp' in data.state) || (data.state.xp is number && data.state.xp >= 0)) &&
+        (!('started' in data.state) || (data.state.started is string && data.state.started.size() <= 64)) &&
+        (!('quizWrong' in data.state) || (data.state.quizWrong is list && data.state.quizWrong.size() <= 2000)) &&
+        (!('log' in data.state) || (data.state.log is list && data.state.log.size() <= 5000));
+    }
+
+    // Validate 'classic_userdata' and 'settings' documents
+    function isValidClassicOrSettingsDoc(data) {
+      return data is map &&
+        hasRequiredFields(['updatedAt']) &&
+        isValidUpdatedAt(data) &&
+        data.keys().size() >= 1 &&
+        data.keys().size() <= 30;
+    }
+
+    // Dispatch validator by docId
+    function isValidProgressDoc(docId, data) {
+      return (isSlotDocId(docId) && isValidSlotDoc(data)) ||
+        (isClassicOrSettingsDocId(docId) && isValidClassicOrSettingsDoc(data));
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{uid}/progress/{docId} {
+      allow get: if isOwner(uid) && isValidProgressDocId(docId);
+      allow list: if isOwner(uid);
+      allow create: if isOwner(uid) &&
+        isValidProgressDocId(docId) &&
+        isValidProgressDoc(docId, request.resource.data);
+      allow update: if isOwner(uid) &&
+        isValidProgressDocId(docId) &&
+        isValidProgressDoc(docId, request.resource.data);
+      allow delete: if isOwner(uid) && isValidProgressDocId(docId);
+    }
+
+    // Default deny: explicitly deny all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

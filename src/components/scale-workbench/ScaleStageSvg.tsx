@@ -1068,6 +1068,16 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     panY: 0,
   });
   const lastDragEndRef = useRef(0);
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchRef = useRef<{
+    startDist: number;
+    startZoom: number;
+    startPanX: number;
+    startPanY: number;
+    startMidX: number;
+    startMidY: number;
+    svgPerPx: number;
+  } | null>(null);
   const panDragRef = useRef<{
     pointerId: number;
     startX: number;
@@ -1983,15 +1993,46 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const initialCamTf = buildCamTransform(zoom, pan.x, pan.y);
 
   const finishPan = (e: React.PointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(e.pointerId);
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (pinchRef.current && activePointersRef.current.size < 2) {
+      pinchRef.current = null;
+      lastDragEndRef.current = performance.now();
+      setIsPanning(false);
+      setZoom(camRef.current.zoom);
+      setPan({ x: camRef.current.panX, y: camRef.current.panY });
+
+      // Seamlessly hand off remaining 1 finger to panDragRef so lifting 1 finger never jumps
+      if (activePointersRef.current.size === 1) {
+        const [remId, remPt] = Array.from(activePointersRef.current.entries())[0];
+        const rect = e.currentTarget.getBoundingClientRect();
+        const svgPerPx = Math.max(
+          baseBounds.w / Math.max(1, rect.width),
+          baseBounds.h / Math.max(1, rect.height)
+        );
+        panDragRef.current = {
+          pointerId: remId,
+          startX: remPt.x,
+          startY: remPt.y,
+          origPanX: camRef.current.panX,
+          origPanY: camRef.current.panY,
+          svgPerPx,
+          moved: true,
+          captured: false,
+        };
+      }
+      return;
+    }
+
     const st = panDragRef.current;
     if (!st || e.pointerId !== st.pointerId) return;
-    if (st.captured) {
-      try {
-        e.currentTarget.releasePointerCapture(st.pointerId);
-      } catch {
-        // ignore
-      }
-    }
     panDragRef.current = null;
     if (st.moved) {
       lastDragEndRef.current = performance.now();
@@ -2493,26 +2534,93 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         }
       }}
       onPointerDown={(e) => {
-        if (e.button !== 0) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
         const target = e.target as Element;
         if (target.closest('button, [data-no-pan="true"]')) return;
+
+        activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
         const rect = e.currentTarget.getBoundingClientRect();
         const svgPerPx = Math.max(
           baseBounds.w / Math.max(1, rect.width),
           baseBounds.h / Math.max(1, rect.height)
         );
-        panDragRef.current = {
-          pointerId: e.pointerId,
-          startX: e.clientX,
-          startY: e.clientY,
-          origPanX: camRef.current.panX,
-          origPanY: camRef.current.panY,
-          svgPerPx,
-          moved: false,
-          captured: false,
-        };
+
+        if (activePointersRef.current.size === 2) {
+          const pts = Array.from(activePointersRef.current.values());
+          const dist = Math.max(12, Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y));
+          const midX = (pts[0].x + pts[1].x) / 2;
+          const midY = (pts[0].y + pts[1].y) / 2;
+          panDragRef.current = null;
+          pinchRef.current = {
+            startDist: dist,
+            startZoom: camRef.current.zoom,
+            startPanX: camRef.current.panX,
+            startPanY: camRef.current.panY,
+            startMidX: midX,
+            startMidY: midY,
+            svgPerPx,
+          };
+          setHoveredKey(null);
+          setHoverPreview(null);
+          setIsPanning(true);
+          return;
+        }
+
+        if (activePointersRef.current.size === 1) {
+          panDragRef.current = {
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            startY: e.clientY,
+            origPanX: camRef.current.panX,
+            origPanY: camRef.current.panY,
+            svgPerPx,
+            moved: false,
+            captured: false,
+          };
+        }
       }}
       onPointerMove={(e) => {
+        if (activePointersRef.current.has(e.pointerId)) {
+          activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        }
+
+        const pinch = pinchRef.current;
+        if (pinch && activePointersRef.current.size >= 2) {
+          e.preventDefault();
+          const pts = Array.from(activePointersRef.current.values());
+          const curDist = Math.max(12, Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y));
+          const curMidX = (pts[0].x + pts[1].x) / 2;
+          const curMidY = (pts[0].y + pts[1].y) / 2;
+
+          const nextZoom =
+            Math.round(
+              Math.max(0.55, Math.min(2.5, pinch.startZoom * (curDist / pinch.startDist))) * 100
+            ) / 100;
+          const ratio = nextZoom / pinch.startZoom;
+
+          const rect = e.currentTarget.getBoundingClientRect();
+          const anchorSvgX = (pinch.startMidX - (rect.left + rect.width / 2)) * pinch.svgPerPx;
+          const anchorSvgY = (pinch.startMidY - (rect.top + rect.height / 2)) * pinch.svgPerPx;
+
+          const rawPanX =
+            anchorSvgX -
+            (anchorSvgX - pinch.startPanX) * ratio +
+            (curMidX - pinch.startMidX) * pinch.svgPerPx;
+          const rawPanY =
+            anchorSvgY -
+            (anchorSvgY - pinch.startPanY) * ratio +
+            (curMidY - pinch.startMidY) * pinch.svgPerPx;
+
+          const maxX = baseBounds.w * (0.12 + 0.32 * nextZoom);
+          const maxY = baseBounds.h * (0.12 + 0.32 * nextZoom);
+          const nextX = Math.max(-maxX, Math.min(maxX, rawPanX));
+          const nextY = Math.max(-maxY, Math.min(maxY, rawPanY));
+
+          camRef.current = { zoom: nextZoom, panX: nextX, panY: nextY };
+          syncDomCamera(nextZoom, nextX, nextY);
+          return;
+        }
+
         const st = panDragRef.current;
         if (!st || e.pointerId !== st.pointerId) return;
         const dx = e.clientX - st.startX;

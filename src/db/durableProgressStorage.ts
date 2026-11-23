@@ -403,19 +403,40 @@ export async function loadDurableProgress(
   };
 }
 
+export interface CloudProgressHooks {
+  onSaveSlot?: (slot: ProgressSlotId, state: WpState) => void;
+  onClearSlot?: (slot: ProgressSlotId, freshState: WpState) => void;
+}
+
+let cloudHooks: CloudProgressHooks = {};
+
+export function registerCloudProgressHooks(hooks: CloudProgressHooks): void {
+  cloudHooks = hooks;
+}
+
 /**
  * Lưu kép tức thì:
  * 1. Ghi ĐỒNG BỘ (0ms) vào LocalStorage ngay trong call stack để tắt tab đột ngột không bao giờ mất bài.
  * 2. Đẩy NGAY vào hàng đợi IndexedDB bất đồng bộ và báo trạng thái hoàn tất.
+ * 3. Nếu đang đăng nhập Google và không có `skipCloudPush`, thông báo hook đồng bộ Cloud.
  */
 export function saveDurableProgress(
   slot: ProgressSlotId,
   state: WpState,
-  onMeta?: (meta: Partial<StorageSyncMeta>) => void
+  onMeta?: (meta: Partial<StorageSyncMeta>) => void,
+  options?: { skipCloudPush?: boolean }
 ): Promise<boolean> {
   const now = state.updatedAt || Date.now();
   const stamped: WpState = state.updatedAt ? state : { ...state, updatedAt: now };
   const localOk = writeLocalProgressMirror(slot, stamped);
+
+  if (!options?.skipCloudPush) {
+    try {
+      cloudHooks.onSaveSlot?.(slot, stamped);
+    } catch {
+      // Never let cloud hook failure break local save
+    }
+  }
 
   onMeta?.({
     status: 'saving',
@@ -451,6 +472,11 @@ export async function clearDurableProgress(slot: ProgressSlotId): Promise<WpStat
     }
   } catch (e) {
     console.warn(`[durableProgressStorage] Lỗi xoá IndexedDB (${slot}):`, e);
+  }
+  try {
+    cloudHooks.onClearSlot?.(slot, fresh);
+  } catch {
+    // Ignore cloud hook error
   }
   return fresh;
 }

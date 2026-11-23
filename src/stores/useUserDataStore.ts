@@ -84,6 +84,20 @@ interface UserDataState {
   ) => Promise<void>;
 }
 
+let userDataChangeHook: (() => void) | null = null;
+
+export function registerUserDataChangeHook(hook: (() => void) | null): void {
+  userDataChangeHook = hook;
+}
+
+function notifyUserDataChanged(): void {
+  try {
+    userDataChangeHook?.();
+  } catch {
+    // Never let cloud hook break local writes
+  }
+}
+
 export const useUserDataStore = create<UserDataState>((set, get) => ({
   isHydrated: false,
   completedLessonIds: [],
@@ -146,6 +160,7 @@ export const useUserDataStore = create<UserDataState>((set, get) => ({
     }
     saveLessonStudySeconds(currentSeconds);
     set({ completedLessonIds, lessonStudySeconds: currentSeconds });
+    notifyUserDataChanged();
   },
 
   addLessonStudyTime: async (lessonId, deltaSeconds = 1) => {
@@ -168,24 +183,28 @@ export const useUserDataStore = create<UserDataState>((set, get) => ({
     } else {
       set({ lessonStudySeconds: updatedMap });
     }
+    notifyUserDataChanged();
   },
 
   toggleBookmark: async (params) => {
     await progressRepo.toggleBookmark(params);
     const bookmarks = await progressRepo.getAllBookmarks();
     set({ bookmarks });
+    notifyUserDataChanged();
   },
 
   addOrUpdateNote: async (params) => {
     await notesRepo.saveNote(params);
     const notes = await notesRepo.getAllNotes();
     set({ notes });
+    notifyUserDataChanged();
   },
 
   removeNote: async (id) => {
     await notesRepo.deleteNote(id);
     const notes = await notesRepo.getAllNotes();
     set({ notes });
+    notifyUserDataChanged();
   },
 
   saveExerciseSubmission: async (exerciseId, code, passed) => {
@@ -196,6 +215,7 @@ export const useUserDataStore = create<UserDataState>((set, get) => ({
         [exerciseId]: record,
       },
     });
+    notifyUserDataChanged();
   },
 
   rateFlashcard: async (cardId, rating) => {
@@ -206,11 +226,13 @@ export const useUserDataStore = create<UserDataState>((set, get) => ({
         [cardId]: updated,
       },
     });
+    notifyUserDataChanged();
   },
 
   recordExamAttempt: async (attempt) => {
     await examRepo.saveAttempt(attempt);
     const examHistory = await examRepo.getAllAttempts();
     set({ examHistory });
+    notifyUserDataChanged();
   },
 }));

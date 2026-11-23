@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { DeviceLayout, useStore } from '@sonth87/device-layout';
 import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
 import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useCloudSyncStore } from '@/stores/useCloudSyncStore';
 
 const SHELL_STABILIZED_KEY = 'pylearn_desktop_shell_stabilized_v1';
 
@@ -31,10 +32,50 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
 }
 
 export const App: React.FC = () => {
+  const shellRootRef = useRef<HTMLDivElement>(null);
   const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
   const hasOpenWindow = useStore((s) =>
     Object.values(s.windows).some((w) => !w.isMinimized)
   );
+
+  // Fix iOS Safari / Standalone PWA stuck bottom gap after keyboard open/close or input focus:
+  // Always keep window scroll at (0, 0) and snap the root container back to full viewport height.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const syncViewport = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
+      const el = shellRootRef.current;
+      const vv = window.visualViewport;
+      if (!el || !vv) return;
+      const keyboardOpen = window.innerHeight - vv.height > 120;
+      if (keyboardOpen) {
+        el.style.height = `${vv.height}px`;
+        el.style.bottom = 'auto';
+      } else {
+        el.style.height = '';
+        el.style.bottom = '';
+      }
+    };
+
+    const onFocusOut = () => {
+      syncViewport();
+      window.setTimeout(syncViewport, 80);
+      window.setTimeout(syncViewport, 250);
+    };
+
+    window.visualViewport?.addEventListener('resize', syncViewport);
+    window.visualViewport?.addEventListener('scroll', syncViewport);
+    window.addEventListener('focusout', onFocusOut);
+    window.addEventListener('orientationchange', onFocusOut);
+    return () => {
+      window.visualViewport?.removeEventListener('resize', syncViewport);
+      window.visualViewport?.removeEventListener('scroll', syncViewport);
+      window.removeEventListener('focusout', onFocusOut);
+      window.removeEventListener('orientationchange', onFocusOut);
+    };
+  }, []);
 
   // Sync iOS Safari / Add-to-Home-Screen safe-area background & <meta name="theme-color">
   // so top & bottom safe areas never show stark white bars on iPhone / iPad.
@@ -56,6 +97,13 @@ export const App: React.FC = () => {
     }
     meta.setAttribute('content', surfaceColor);
   }, [workbenchTheme, hasOpenWindow]);
+
+  useEffect(() => {
+    const unsubCloudAuth = useCloudSyncStore.getState().initAuthListener();
+    return () => {
+      unsubCloudAuth();
+    };
+  }, []);
 
   useEffect(() => {
     const syncInitialShellState = () => {
@@ -154,6 +202,7 @@ export const App: React.FC = () => {
   // UI (e.g. PyMastery's bottom nav) underneath the browser toolbar.
   return (
     <div
+      ref={shellRootRef}
       className="fixed inset-0 overflow-hidden"
       onMouseMove={handleShellMouseMove}
       onKeyDown={handleShellKeyDown}
