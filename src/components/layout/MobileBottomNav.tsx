@@ -7,6 +7,7 @@ import {
   GraduationCap,
   MoreHorizontal,
   Terminal,
+  Wrench,
 } from 'lucide-react';
 import { MainTab, useNavigationStore } from '@/stores/useNavigationStore';
 import { useWpNav } from '@/features/workpath/store';
@@ -15,7 +16,7 @@ import { WORKBENCH_I18N } from '@/components/scale-workbench/i18n';
 import { cn } from '@/utils/cn';
 
 export const MobileBottomNav: React.FC = () => {
-  const { activeTab, setActiveTab } = useNavigationStore();
+  const { activeTab, setActiveTab, setSetupGuideOpen } = useNavigationStore();
   const wpView = useWpNav((s) => s.view);
   const goWp = useWpNav((s) => s.go);
   const lang = useWorkbenchStore((s) => s.language);
@@ -25,7 +26,8 @@ export const MobileBottomNav: React.FC = () => {
   const isLearn = activeTab === 'learn' && wpView.name === 'workbench';
   const isPractice = activeTab === 'learn' && wpView.name !== 'workbench';
 
-  const moreItems: { id: MainTab; labelVi: string; labelEn: string; icon: React.ReactNode }[] = [
+  const moreItems: { id: MainTab | 'setup'; labelVi: string; labelEn: string; icon: React.ReactNode }[] = [
+    { id: 'setup', labelVi: 'Cài đặt Python & uv', labelEn: 'Setup Python & uv', icon: <Wrench className="h-4 w-4" /> },
     { id: 'samples', labelVi: '16 Dự án Mẫu', labelEn: 'Sample Projects', icon: <FolderGit2 className="h-4 w-4" /> },
     { id: 'exams', labelVi: 'Thi sát hạch', labelEn: 'Exams', icon: <GraduationCap className="h-4 w-4" /> },
     { id: 'reference', labelVi: 'Chuyên đề PDF', labelEn: 'Deep Dives', icon: <Compass className="h-4 w-4" /> },
@@ -122,7 +124,11 @@ export const MobileBottomNav: React.FC = () => {
               key={it.id}
               type="button"
               onClick={() => {
-                setActiveTab(it.id);
+                if (it.id === 'setup') {
+                  setSetupGuideOpen(true);
+                } else {
+                  setActiveTab(it.id);
+                }
                 setMoreOpen(false);
               }}
               className="flex items-center gap-2 rounded-xl border border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3 py-2 text-left font-mono text-xs font-bold text-[var(--dts-ink)]"
