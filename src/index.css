@@ -498,6 +498,32 @@ html:not(.dark) [data-os-theme="android"] .z-\[500\] > div[style*="height: 76px"
   box-shadow: 1px 1px 0 var(--dts-shadow-color);
 }
 
+/* Signature half-height green marker underline highlight for interactive glossary terms & syntax */
+.dts-term-marker {
+  background-image: linear-gradient(transparent 50%, rgba(154, 212, 112, 0.58) 50%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 700;
+  color: var(--dts-ink);
+  cursor: help;
+  text-decoration: none;
+  transition: background-image 140ms ease;
+}
+
+.dts-term-marker:hover {
+  background-image: linear-gradient(transparent 40%, rgba(138, 204, 92, 0.78) 40%);
+}
+
+.dts-dark .dts-term-marker {
+  background-image: linear-gradient(transparent 50%, rgba(127, 194, 120, 0.34) 50%);
+}
+
+.dts-dark .dts-term-marker:hover {
+  background-image: linear-gradient(transparent 40%, rgba(127, 194, 120, 0.54) 40%);
+}
+
 .dts-stage-noselect,
 .dts-stage-noselect svg,
 .dts-stage-noselect svg * {

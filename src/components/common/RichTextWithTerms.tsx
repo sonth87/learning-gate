@@ -114,9 +114,8 @@ export const InteractiveTermTrigger: React.FC<InteractiveTermTriggerProps> = ({
       onClick={handleClick}
       title={`Hover hoặc Click để xem giải thích: ${term.term}`}
       className={cn(
-        'cursor-help rounded px-1 py-0.5 transition-colors duration-150 inline-block leading-baseline',
-        isCode && 'font-mono text-[0.92em]',
-        CATEGORY_HIGHLIGHT_STYLE[term.category]
+        'dts-term-marker',
+        isCode && 'font-mono text-[0.92em]'
       )}
     >
       {displayText}

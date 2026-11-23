@@ -127,7 +127,7 @@ const BlueprintTermTrigger: React.FC<{
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
         title={`Bấm hoặc rê chuột để xem giải nghĩa: ${term.term}`}
-        className="cursor-help rounded border border-[var(--dts-border)] bg-[var(--dts-panel-muted)] px-1.5 py-0.5 font-mono text-[0.86em] font-semibold text-[var(--dts-ink)] underline decoration-dotted decoration-[var(--dts-ink-muted)] underline-offset-[3px] transition-colors hover:bg-[var(--dts-amber-soft)]"
+        className="dts-term-marker font-mono text-[0.92em]"
       >
         {children}
       </code>
@@ -141,7 +141,7 @@ const BlueprintTermTrigger: React.FC<{
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
         title={`Bấm hoặc rê chuột để xem giải nghĩa: ${term.term}`}
-        className="cursor-help rounded bg-[var(--dts-amber-bg)] px-1 py-0.5 font-semibold text-[var(--dts-amber-ink)] underline decoration-dotted decoration-current/65 underline-offset-[3px]"
+        className="dts-term-marker bg-transparent"
       >
         {children}
       </mark>
@@ -155,7 +155,7 @@ const BlueprintTermTrigger: React.FC<{
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
         title={`Bấm hoặc rê chuột để xem giải nghĩa: ${term.term}`}
-        className="cursor-help font-bold text-[var(--dts-ink)] underline decoration-dotted decoration-[var(--dts-ink-muted)] underline-offset-[3px] transition-colors hover:text-[var(--dts-amber-ink)]"
+        className="dts-term-marker"
       >
         {children}
       </strong>
@@ -168,7 +168,7 @@ const BlueprintTermTrigger: React.FC<{
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       title={`Bấm hoặc rê chuột để xem giải nghĩa: ${term.term}`}
-      className="cursor-help border-b border-dotted border-[var(--dts-ink-muted)] font-medium text-[var(--dts-ink)] transition-colors hover:border-[var(--dts-ink)] hover:bg-[var(--dts-amber-soft)] rounded-xs px-0.5"
+      className="dts-term-marker"
     >
       {children}
     </span>
