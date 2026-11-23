@@ -11,41 +11,41 @@ Nhét tất cả máy móc xây dựng vào chung một Image vừa làm chậm 
 kind: illustration
 diagram: "kube:k05"
 src: "/illustrations/kube/docker-multistage-distillery.jpg"
-alt: "Xưởng chưng cất Multi-stage Dockerfile từ builder 1.1GB sang runner 140MB chạy quyền non-root UID 1000"
-title: "Xưởng Chưng Cất Multi-Stage: Từ Builder Nặng 1.1 GB Sang Runner Tinh Gọn ~140 MB"
-subtitle: "Giữ lại toàn bộ trình biên dịch ở xưởng tạm và chỉ gắp đúng thành phẩm sang Image Production hạ quyền Non-Root"
-caption: "Quy trình chưng cất 2 giai đoạn giúp giảm 80–90% dung lượng Image, xóa bỏ công cụ build dư thừa và khóa chặt quyền Non-Root (UID 1000)"
+alt: "Kiến trúc Multi-stage Dockerfile từ builder 1.1GB sang runner 140MB chạy quyền non-root UID 1000"
+title: "Kiến Trúc Multi-Stage Build: Từ Builder Nặng 1.1 GB Sang Runner Tinh Gọn ~140 MB"
+subtitle: "Giữ lại toàn bộ trình biên dịch ở giai đoạn tạm và chỉ sao chép thành phẩm sang Image Production hạ quyền Non-Root"
+caption: "Quy trình đóng gói 2 giai đoạn giúp giảm 80–90% dung lượng Image, loại bỏ công cụ build dư thừa và thiết lập quyền Non-Root (UID 1000)"
 callouts:
   - num: 1
-    label: "Stage 1 (builder) — Xưởng chế tạo tự hủy"
-    desc: "Chứa đầy đủ TypeScript / uv / trình biên dịch C để tạo thành phẩm dist/ hoặc .venv, sau đó tự động bị bỏ lại hoàn toàn."
+    label: "Stage 1 (builder) — Giai đoạn biên dịch tạm thời"
+    desc: "Chứa đầy đủ TypeScript / uv / trình biên dịch C để tạo thành phẩm dist/ hoặc .venv, sau đó bị loại bỏ hoàn toàn khỏi Image cuối."
     tone: amber
   - num: 2
-    label: "Cầu nối chọn lọc COPY --from=builder"
+    label: "Sao chép chọn lọc COPY --from=builder"
     desc: "Chỉ gắp sang đúng thư mục chạy thật (gọt devDependencies bằng npm prune --omit=dev hoặc uv sync --no-dev) kèm --chown."
     tone: sky
   - num: 3
     label: "Stage 2 (runner) — Tinh gọn & Hạ quyền UID 1000"
-    desc: "Image cuối siêu nhẹ, chạy dưới tài khoản thường (USER node / appuser, không phải root) và tích hợp sẵn cảm biến HEALTHCHECK."
+    desc: "Image cuối siêu nhẹ, chạy dưới tài khoản thường (USER node / appuser, không phải root) và tích hợp sẵn chỉ thị HEALTHCHECK."
     tone: emerald
 ```
 
-## 1. Tư duy nhà máy lắp ráp: Multi-stage Dockerfile (`builder` → `runner`)
+## 1. Tối ưu dung lượng Image với Multi-stage Dockerfile (`builder` → `runner`)
 
-> [!NOTE] Mô hình tư duy: Gian bếp sơ chế & Đĩa thức ăn dọn lên bàn khách
-> Một `Dockerfile` được phép chứa **nhiều chỉ thị `FROM`**. Mỗi dòng `FROM` mở ra một căn phòng mới tinh: toàn bộ vỏ rau, dao thớt và nồi niêu cồng kềnh nằm lại ở gian bếp sơ chế (**`AS builder`**), chỉ có phần món ăn tinh tươm được gắp sang chiếc đĩa sạch ở giai đoạn cuối cùng (**`AS runner`**) để mang ra phục vụ Production!
+> [!NOTE] Cơ chế Multi-stage Build: Tách giai đoạn biên dịch và giai đoạn chạy
+> Một `Dockerfile` được phép chứa **nhiều chỉ thị `FROM`**. Mỗi dòng `FROM` khởi tạo một stage độc lập: toàn bộ trình biên dịch, mã nguồn gốc và công cụ build cồng kềnh chỉ tồn tại ở giai đoạn biên dịch (**`AS builder`**), sau đó bạn dùng `COPY --from=builder` để lấy duy nhất thành phẩm đã biên dịch sang giai đoạn chạy sạch sẽ (**`AS runner`**) cho Production (có thể hình dung giống như khu vực sơ chế bếp tách riêng khỏi phần món ăn tinh gọn được bày lên đĩa phục vụ).
 
 ```visual
 kind: layers
 title: "Dây Chuyền Multi-Stage Build Chuẩn Production (Builder -> Runner)"
 subtitle: "Toàn bộ trình biên dịch, công cụ build và gói dev ở Stage 1 tự động bị bỏ lại, không đi vào Image cuối!"
 columns:
-  - title: "STAGE 1: builder (Gian bếp sơ chế tạm)"
+  - title: "STAGE 1: builder (Giai đoạn biên dịch tạm)"
     badge: "~850 MB – 1.1 GB · Tự bỏ sau khi build"
     tone: amber
     layers:
       - label: "FROM ... AS builder"
-        note: Mở xưởng build
+        note: Mở stage build
         tone: slate
       - label: "Cài đặt đầy đủ công cụ build & dependencies"
         sub: "Node: RUN npm ci · Python: uv sync --frozen --no-dev"
@@ -81,7 +81,7 @@ columns:
 ### Mẫu 1: Multi-stage chuẩn Production cho **Node.js 22 / TypeScript**
 
 ```dockerfile Dockerfile Multi-stage chuẩn Production (Node 22 LTS)
-# ==================== STAGE 1: builder (Xưởng chế tạo) ====================
+# ==================== STAGE 1: builder (Biên dịch) ====================
 FROM node:22-alpine AS builder
 WORKDIR /app
 
@@ -97,7 +97,7 @@ RUN npm run build
 # 3. Gọt bỏ toàn bộ devDependencies theo chuẩn npm 10+ hiện đại
 RUN npm prune --omit=dev
 
-# ==================== STAGE 2: runner (Đóng hộp thành phẩm) ====================
+# ==================== STAGE 2: runner (Runtime tối giản) ====================
 FROM node:22-alpine AS runner
 ENV NODE_ENV=production
 WORKDIR /app
@@ -145,7 +145,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 > [!TIP] Chuẩn cú pháp gọt gói dev hiện đại năm 2026
 > Bên Node.js 22 (npm 10+), hãy luôn viết ==`npm prune --omit=dev`== (cờ `--omit=dev` thay thế cho cờ cũ thời npm v6 đã ngưng khuyến khích). Bên Python `uv`, chỉ cần truyền `--no-dev` vào `uv sync` là toàn bộ `pytest`, `ruff`, `mypy` sẽ được loại sạch khỏi `.venv`!
 
-## 2. Hạ quyền khỏi `root` với `USER` (`UID 1000`): Chốt chặn bảo mật sống còn
+## 2. Hạ quyền khỏi `root` với `USER` (`UID 1000`): Nguyên tắc bảo mật bắt buộc
 
 Một sự thật khiến nhiều người mới giật mình: ==nếu không khai báo dòng `USER`, mọi Docker container mặc định đều chạy dưới quyền tối cao `root` (`UID 0`)!==
 
@@ -182,11 +182,11 @@ right:
     - "Luôn để ứng dụng lắng nghe ở cổng cao như **`3000`**, **`8000`** hoặc **`8080`**"
 ```
 
-## 3. Tự khám sức khỏe định kỳ bằng chỉ thị `HEALTHCHECK` (Không cần cài `curl`!)
+## 3. Kiểm tra sức khỏe container với chỉ thị `HEALTHCHECK` (Không cần `curl`)
 
 Hãy hình dung sự cố âm ỉ nguy hiểm nhất trên Production: kết nối tới Redis bị treo hoặc vòng lặp xử lý bị kẹt cứng (*deadlock*) khiến mọi request gọi vào đều quay vòng `504 Timeout`, nhưng bản thân tiến trình `node` hay `python` **vẫn chưa thoát** nên `docker ps` vẫn báo xanh rờn `Up 3 days`!
 
-Chỉ thị ==`HEALTHCHECK`== dạy cho Docker Engine cách chủ động gõ cửa HTTP bên trong định kỳ — và mẹo hay nhất là **dùng ngay thư viện chuẩn có sẵn của Node 22 / Python 3.12** để khỏi phải cài thêm `curl` vào stage `runner`:
+Chỉ thị ==`HEALTHCHECK`== dạy cho Docker Engine cách chủ động kiểm tra HTTP endpoint nội bộ định kỳ — và giải pháp gọn sạch nhất là **dùng ngay thư viện chuẩn có sẵn của Node 22 / Python 3.12** để không phải cài thêm `curl` vào stage `runner`:
 
 ```dockerfile
 # Cách 1 — Trên Node.js 22 (tận dụng hàm fetch() toàn cục có sẵn):
@@ -200,13 +200,13 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 ```visual
 kind: anatomy
-title: "Giải Phẫu Chỉ Thị HEALTHCHECK Không Cần Cài curl / wget"
+title: "Cấu Trúc Chỉ Thị HEALTHCHECK Không Cần Cài curl / wget"
 subtitle: "Giữ Image cuối sạch bóng công cụ tải mạng dư thừa để tăng cường bảo mật tối đa"
 items:
   - keyword: "--interval & --timeout"
-    role: Nhịp khám & Hạn giờ
+    role: Nhịp kiểm tra & Hạn giờ
     tone: sky
-    summary: "Cứ mỗi `30s` Docker gõ cửa kiểm tra 1 lần; nếu quá `3s` không phản hồi thì tính là 1 lần thất bại."
+    summary: "Cứ mỗi `30s` Docker gửi yêu cầu kiểm tra 1 lần; nếu quá `3s` không phản hồi thì tính là 1 lần thất bại."
     bullets:
       - "`--start-period=10s` ân xá 10 giây đầu lúc ứng dụng đang khởi động kết nối DB"
       - "`--retries=3` cho phép trượt liên tiếp 3 lần trước khi chính thức gắn nhãn `(unhealthy)`"
@@ -217,7 +217,7 @@ items:
     bullets:
       - "**Lợi ích bảo mật kép:** Không có `curl` / `wget` ở stage `runner` khiến kẻ tấn công không có công cụ tải mã độc về nếu ứng dụng lỡ dính lỗi RCE!"
   - keyword: "exit 0 vs exit 1"
-    role: Quy ước mã thoát sống còn
+    role: Quy ước mã thoát chuẩn
     tone: amber
     summary: "Docker phán quyết sức khỏe container hoàn toàn dựa vào mã thoát của lệnh kiểm tra."
     bullets:
@@ -226,7 +226,7 @@ items:
 ```
 
 > [!WARNING] Vì sao trong `HEALTHCHECK` lại gọi được `127.0.0.1`?
-> Ở bài `K01`, ta biết bên ngoài máy chủ không gọi vào `127.0.0.1` của container được. Nhưng câu lệnh `HEALTHCHECK` được Docker chạy **ngay bên trong chính căn phòng mạng của container đó**, nên kiểm tra qua `http://127.0.0.1:3000/healthz` (hoặc `:8000/healthz`) là hoàn toàn hợp lệ và nhanh nhất!
+> Ở bài `K01`, ta biết bên ngoài máy chủ không gọi vào `127.0.0.1` của container được. Nhưng câu lệnh `HEALTHCHECK` được Docker chạy **ngay bên trong Network Namespace của chính container đó**, nên kiểm tra qua `http://127.0.0.1:3000/healthz` (hoặc `:8000/healthz`) là hoàn toàn hợp lệ và nhanh nhất!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **Multi-stage Build:** Biên dịch ở `FROM ... AS builder`, gọt gói dev (`RUN npm prune --omit=dev` hoặc `uv sync --no-dev`), rồi gắp thành phẩm sang `runner` bằng **`COPY --from=builder`**.

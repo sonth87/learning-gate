@@ -13,7 +13,7 @@ kind: illustration
 diagram: "cicd:c12"
 src: "/illustrations/cicd/cicd-oidc-keyless-bridge.jpg"
 alt: "Cơ chế xác thực đám mây không dùng Static Key (Keyless) qua cầu nối OIDC JWT từ GitHub Provider sang AWS STS / GCP WIF cấp token tự huỷ ngắn hạn"
-title: "Giải Phẫu Cầu Nối Xác Thực Không Mật Khẩu: GitHub OIDC JWT -> AWS STS / GCP WIF"
+title: "Cơ chế xác thực không cần khóa tĩnh: GitHub OIDC JWT -> AWS STS / GCP WIF"
 subtitle: "Xoá sổ hoàn toàn cặp khoá tĩnh dài hạn lưu trong GitHub Secrets bằng phiên làm việc tự huỷ sau 15-60 phút"
 caption: "Luồng bắt tay mật mã từ quyền id-token: write, đúc thẻ JWT mang định danh nhánh/kho ở trường sub tới kiểm tra Trust Policy cấp token tạm thời"
 callouts:
@@ -33,11 +33,11 @@ callouts:
 
 ---
 
-## 1. Cơ chế bắt tay "Không Mật khẩu" của OpenID Connect (OIDC)
+## 1. Cơ chế xác thực không cần khóa tĩnh (Keyless Authentication) với OpenID Connect (OIDC)
 
-> [!ANALOGY] Ẩn dụ cốt lõi: Bỏ "Chìa khoá sắt cổng chính vĩnh viễn", đổi sang "Thẻ khách thăm tự huỷ sau 15 phút"!
-> - **Cách cũ (`AWS_SECRET_ACCESS_KEY`):** Giống như đúc một **chiếc chìa khoá sắt vĩnh viễn mở cổng chính toà nhà** rồi giấu dưới tấm thảm suốt nhiều năm — kẻ gian nhặt được một lần là ra vào kho dữ liệu của bạn mãi mãi!
-> - **Chuẩn mới (`Keyless OIDC`):** Không còn chiếc chìa khoá cố định nào được lưu trữ cả! Mỗi khi Job triển khai bắt đầu, GitHub cấp cho Runner một **"Thẻ khách thăm điện tử tự huỷ sau 15 phút" (`OIDC JWT`)** có đóng dấu mật mã. Cổng bảo vệ đám mây (**AWS STS** hoặc **GCP Workload Identity Federation**) soi chữ ký, kiểm tra đúng tên công ty + đúng kho code + đúng nhánh `main` ghi trên thẻ (`sub` & `aud` claims) rồi mới mở cửa tạm thời vừa đủ vài phút để triển khai xong là tự khoá lại!
+Thay vì lưu cặp khóa dài hạn (`AWS_ACCESS_KEY_ID` và `AWS_SECRET_ACCESS_KEY`) trong GitHub Secrets, **Keyless OIDC** sử dụng liên kết tin cậy mật mã giữa nhà cung cấp CI và nhà cung cấp Cloud:
+- Khi Job triển khai khởi chạy với quyền `id-token: write`, GitHub OIDC Provider phát hành một thẻ định danh **JWT ngắn hạn** chứa thông tin tổ chức, kho mã nguồn và nhánh Git (`sub` & `aud`).
+- Runner gửi thẻ JWT này tới **AWS STS** (hoặc **GCP Workload Identity Federation**). Dịch vụ đám mây xác minh chữ ký công khai của GitHub, kiểm tra điều kiện khớp chính xác trong Trust Policy rồi cấp **phiên truy cập tạm thời tự hết hạn sau 15–60 phút**. *(Cơ chế này tương tự việc cấp thẻ khách tạm thời tự vô hiệu hóa sau một phiên làm việc thay vì trao chìa khóa cố định dùng vĩnh viễn).*
 
 ```visual
 kind: flow
@@ -127,13 +127,13 @@ right:
 
 ## 2. Ràng buộc chặt chẽ điều kiện `sub` trong **AWS IAM Trust Policy**
 
-> [!WARNING] Cảnh báo đỏ ở phía AWS / GCP / Azure!
+> [!WARNING] Rủi ro cấu hình sai điều kiện IAM Trust Policy
 > Hàng triệu người dùng trên khắp thế giới đều dùng chung **cùng một máy chủ phát hành thẻ OIDC** là `https://token.actions.githubusercontent.com`!
 > Nếu trong chính sách tin cậy **IAM Role Trust Policy** trên AWS, bạn chỉ kiểm tra nhà phát hành mà **quên khoá điều kiện `token.actions.githubusercontent.com:sub` (Subject)** — hoặc cẩu thả viết ký tự đại diện `"repo:*"` — thì **bất kỳ người lạ nào tạo một kho GitHub cá nhân rồi điền ARN Role của bạn vào cũng chiếm đoạt được toàn quyền AWS của công ty bạn**!
 
 ```visual
 kind: anatomy
-title: Giải Phẫu 3 Trường Danh Tính Sống Còn Trong Thẻ OIDC JWT & IAM Trust Policy
+title: Ba trường định danh quan trọng trong thẻ OIDC JWT và IAM Trust Policy
 subtitle: AWS STS dùng khoá công khai của GitHub xác minh chữ ký rồi kiểm tra từng trường trong khối Condition.StringEquals
 items:
   - keyword: "iss (Issuer)"
@@ -176,14 +176,11 @@ Condition:
 
 ---
 
-## 3. Giấy chứng nhận xuất xứ bản build với **SLSA Build Provenance**
+## 3. Xác thực nguồn gốc bản build với chuẩn **SLSA Build Provenance**
 
-Giả sử mã nguồn đã được bảo vệ kỹ, nhưng làm sao cụm Kubernetes Production có thể chắc chắn 100% rằng bức ảnh container `ghcr.io/acme/shop-api:sha-9f8e7d` đang chuẩn bị kéo về **thực sự được biên dịch tự động trên máy chủ GitHub Actions chính thống từ nhánh `main`**, chứ không phải do ai đó lén build ảnh cài cửa hậu (*backdoor*) trên laptop cá nhân rồi đẩy đè lên Registry?
+Ngay cả khi mã nguồn được bảo vệ kỹ, cụm Kubernetes Production vẫn cần xác minh rằng container image `ghcr.io/acme/shop-api:sha-9f8e7d` **thực sự được biên dịch tự động trên GitHub Actions từ nhánh `main`**, chứ không phải được build thủ công trên máy cá nhân bên ngoài rồi đẩy đè lên Registry.
 
-> [!ANALOGY] `SLSA Build Provenance` chính là "Giấy chứng nhận xuất xứ bản build" có kẹp chì niêm phong!
-> Nếu **`SBOM`** (bài `C11`) là *"bảng liệt kê thành phần nguyên liệu"*, thì **`SLSA Build Provenance`** (*Supply-chain Levels for Software Artifacts*, đọc là *"Salsa"*) chính là **"giấy chứng nhận xuất xứ có dấu đỏ mật mã của nhà máy"** — ghi rõ gói phần mềm này được đúc tại dây chuyền CI nào, từ commit Git nào, bởi tệp workflow nào, đảm bảo không ai có thể tráo hàng giả trên đường vận chuyển lên Production!
-
-Cũng nhờ nền tảng định danh **OIDC (`id-token: write`)** kết hợp quyền ==`attestations: write`==, chuẩn **SLSA Build Provenance** cho phép đóng dấu chứng nhận xuất xứ không thể chối bỏ ngay lúc đóng gói bằng `actions/attest-build-provenance@v2` (hoặc ký không khoá qua **Sigstore Cosign**):
+Chuẩn **SLSA Build Provenance** (*Supply-chain Levels for Software Artifacts*) giải quyết bài toán này bằng cách tạo chứng thực mật mã gắn liền với artifact hoặc container image, ghi nhận chính xác kho Git nguồn, commit SHA, đường dẫn workflow và danh tính hệ thống build. Nhờ nền tảng định danh **OIDC (`id-token: write`)** kết hợp quyền ==`attestations: write`==, bạn có thể ký chứng thực nguồn gốc ngay lúc đóng gói bằng `actions/attest-build-provenance@v2` (hoặc ký không khoá qua **Sigstore Cosign**). *(Nếu `SBOM` ở bài `C11` là bảng liệt kê thành phần, thì `SLSA Build Provenance` đóng vai trò như chứng thư xuất xứ xác nhận quy trình sản xuất bản build).*
 
 ```yaml
 permissions:

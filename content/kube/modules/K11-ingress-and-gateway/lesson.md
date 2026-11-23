@@ -11,7 +11,7 @@ Giải pháp chuẩn công nghiệp là đặt ==một cổng gác HTTP/HTTPS th
 kind: illustration
 diagram: "kube:k11"
 alt: "Cơ chế Ingress và Gateway API tầng 7 giải mã TLS HTTPS tại 1 Cloud LoadBalancer duy nhất rồi rẽ nhánh Host và Path vào ClusterIP nội bộ"
-title: "Giải Phẫu Cửa Ngõ Tầng 7: Ingress / Gateway API, Giải Mã TLS & Rẽ Nhánh Đường Dẫn"
+title: "Cơ Chế Định Tuyến Tầng 7: Ingress / Gateway API, Giải Mã TLS & Rẽ Nhánh Đường Dẫn"
 subtitle: "Dùng chung 1 địa chỉ IP công cộng duy nhất cho hàng chục Microservices để tiết kiệm tối đa chi phí Cloud LoadBalancer"
 caption: "Luồng lưu lượng HTTPS từ Internet đi qua 1 Cloud LoadBalancer vào Ingress/Gateway Controller để giải mã TLS rồi phân luồng theo Hostname và URL Path"
 callouts:
@@ -29,10 +29,10 @@ callouts:
     tone: emerald
 ```
 
-## 1. Phân biệt "Tờ giấy luật" (`Ingress` / `HTTPRoute`) và "Người gác cổng" (`Controller`)
+## 1. Kiến trúc định tuyến HTTP trên K8s: Bản khai báo (`Ingress` / `HTTPRoute`) và Bộ thực thi (`Controller`)
 
-> [!WARNING] Bẫy số 1 của người mới: Nộp YAML xong nhưng không có người gác cổng thực thi!
-> Hãy hình dung tệp YAML `kind: Ingress` (hoặc `kind: HTTPRoute`) **chỉ là tờ bảng chỉ dẫn giao thông treo trên tường**! Nếu bên trong cụm của bạn (ví dụ cụm `kind` hay `minikube` mới tạo) chưa cài đặt một Pod **Controller** đang chạy thực tế để đứng đọc tờ giấy đó (như **`Envoy Gateway`**, **`Traefik`**, **`Cilium`** hoặc `AWS Load Balancer Controller`), thì việc gõ `kubectl apply -f ingress.yaml` **hoàn toàn chưa mở cổng đón khách Internet nào cả**!
+> [!WARNING] Lưu ý quan trọng: Khai báo YAML sẽ không hoạt động nếu cụm thiếu Controller
+> Tài nguyên `kind: Ingress` (hoặc `kind: HTTPRoute`) chỉ là **bản khai báo quy tắc định tuyến** lưu trong `etcd`. Để thực sự tiếp nhận lưu lượng mạng, giải mã TLS và chuyển tiếp request theo các quy tắc đó, cụm của bạn bắt buộc phải cài đặt và chạy một **Controller Pod** thực thi thực tế (như **`Envoy Gateway`**, **`Traefik`**, **`Cilium`** hoặc `AWS Load Balancer Controller`). Nếu cụm (ví dụ `kind` hay `minikube` mới tạo) chưa cài Controller, lệnh `kubectl apply -f ingress.yaml` vẫn thành công nhưng sẽ không mở cổng đón khách nào cả (tương tự việc có bảng quy định giao thông nhưng chưa có đơn vị thực thi điều phối tại ngã tư).
 
 ```visual
 kind: flow
@@ -47,7 +47,7 @@ steps:
     tone: sky
     edge: giải mã TLS (443)
   - icon: shield-check
-    badge: 2. Người gác cổng
+    badge: 2. Bộ thực thi
     title: Ingress / Gateway Controller
     desc: Pod Envoy / Cilium / Traefik đọc Secret shop-tls-cert để giải mã HTTPS ở cửa ngõ
     code: "TLS Termination"
@@ -144,9 +144,9 @@ items:
     lang: yaml
 ```
 
-## 3. Bước ngoặt lớn năm 2026: Từ nghỉ hưu `Ingress NGINX` sang chuẩn `Kubernetes Gateway API`!
+## 3. Chuyển dịch tiêu chuẩn năm 2026: Từ `Ingress NGINX` sang `Kubernetes Gateway API`
 
-> [!NOTE] Cập nhật sinh tử của ngành Cloud-Native năm 2026!
+> [!NOTE] Thay đổi quan trọng của hệ sinh thái Kubernetes năm 2026
 > Suốt gần một thập kỷ, dự án cộng đồng **`Ingress NGINX` (`kubernetes/ingress-nginx`)** là lựa chọn phổ biến nhất, nhưng cộng đồng Kubernetes đã chính thức thông báo **ngừng phát triển tính năng mới và đưa `ingress-nginx` vào lộ trình nghỉ hưu (retirement)** vì gánh nặng bảo mật từ việc nhồi nhét hàng trăm `annotations` tùy biến!
 > Trong năm 2026, toàn ngành dịch chuyển mạnh mẽ sang chuẩn chính thức thế hệ mới ==Kubernetes Gateway API (`gateway.networking.k8s.io/v1`)== được thực thi bởi các bộ máy hiện đại, an toàn và hiệu năng cao như **`Envoy Gateway`**, **`Cilium`** (tích hợp thẳng eBPF trong nhân Linux) và **`Traefik`**.
 

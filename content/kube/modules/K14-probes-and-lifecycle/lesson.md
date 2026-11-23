@@ -14,7 +14,7 @@ kind: illustration
 diagram: "kube:k14"
 src: "/illustrations/kube/k8s-probes-health-gates.jpg"
 alt: "Ba cổng kiểm tra sức khỏe Pod (startupProbe, readinessProbe, livenessProbe) và trình tự dừng an toàn (Graceful Shutdown) preStop kết hợp SIGTERM"
-title: "Giải Phẫu 3 Cổng Thăm Dò Sức Khỏe & Kịch Bản Dừng An Toàn (Zero-502 Shutdown)"
+title: "Cơ Chế 3 Loại Probe Sức Khỏe & Quy Trình Dừng An Toàn (Zero-502 Shutdown)"
 subtitle: "Phân tách rạch ròi giữa điều tiết lưu lượng khách hàng, tự khởi động lại khi treo cứng và rút êm kết nối lúc tắt Pod"
 caption: "Máy trạng thái 3 cảm biến của kubelet (startup -> readiness cắt lưu lượng vs liveness khởi động lại) và chuỗi tắt êm preStop + SIGTERM"
 callouts:
@@ -32,17 +32,18 @@ callouts:
     tone: amber
 ```
 
-## 1. Giải thích bình dị 3 loại Probe: `startupProbe` vs `readinessProbe` vs `livenessProbe`
+## 1. Phân biệt 3 loại Probe: `startupProbe`, `readinessProbe` và `livenessProbe`
 
-> [!NOTE] Mô hình tư duy "Quán cà phê buổi sáng" — Phân biệt trong 10 giây!
-> Hãy tưởng tượng mỗi chiếc Pod là một quầy pha chế cà phê:
-> 1. **`startupProbe` ("Máy pha đã đun sôi nước lần đầu chưa?"):** Bảo vệ quầy lúc sáng sớm mới bật công tắc (mất 30–60s làm nóng máy hay nạp AI model). Chừng nào `startupProbe` chưa báo xong, K8s kiên nhẫn chờ chứ không phạt!
-> 2. **`readinessProbe` ("Quầy có đang rảnh để nhận thêm đơn mới không?"):** Nếu quầy đang quá tải hoặc chờ nguyên liệu từ kho (Database lag), quầy chỉ **tạm treo biển "Tạm ngưng nhận khách mới"** (rút IP khỏi `Service`), xử lý nốt ly đang pha mà **KHÔNG bị đập bỏ quầy**!
-> 3. **`livenessProbe` ("Người pha chế có bị ngất xỉu hoàn toàn không?"):** Nếu gọi hỏi thăm đơn giản nhất mà cũng không nhúc nhích (*deadlock* cứng), K8s mới dùng biện pháp mạnh nhất: **đóng quầy cũ, thay người mới tinh khởi động lại từ đầu** (`RESTARTS +1`)!
+> [!NOTE] Vai trò của 3 loại Health Probe trong Kubernetes
+> Mỗi loại Probe kiểm tra một giai đoạn khác nhau và dẫn đến hành động xử lý khác nhau từ `kubelet`:
+> 1. **`startupProbe`:** Bảo vệ các ứng dụng có thời gian khởi động ban đầu lâu (ví dụ 30–60s để nạp mô hình AI hoặc warm cache). Trong thời gian `startupProbe` chưa đạt, `kubelet` tạm vô hiệu hóa `livenessProbe` và `readinessProbe` để không giết nhầm container.
+> 2. **`readinessProbe`:** Kiểm tra xem Pod hiện có đủ điều kiện tiếp nhận lưu lượng mới từ `Service` hay không. Nếu thất bại, `kubelet` chỉ đánh dấu `Ready=false` để rút IP Pod khỏi danh sách `Endpoints` của `Service`, **tuyệt đối không khởi động lại container**.
+> 3. **`livenessProbe`:** Kiểm tra xem tiến trình ứng dụng còn hoạt động bình thường hay đã rơi vào trạng thái treo cứng (*deadlock*). Nếu thất bại liên tiếp vượt `failureThreshold`, `kubelet` sẽ **khởi động lại container (`RESTARTS +1`)**.
+> *(Có thể hình dung đơn giản: `startupProbe` là thời gian khởi động làm nóng máy đầu ngày, `readinessProbe` là tạm treo biển ngưng nhận thêm đơn mới khi quá tải mà không tắt hệ thống, còn `livenessProbe` là kiểm tra tiến trình có bị treo cứng để khởi động lại.)*
 
 ```visual
 kind: groups
-title: Giải Phẫu 3 Cảm Biến Sức Khỏe Của Pod [!badge:emerald:Chuẩn Production]
+title: So Sánh 3 Loại Probe Sức Khỏe Của Pod [!badge:emerald:Chuẩn Production]
 subtitle: Mỗi loại Probe trả lời một câu hỏi khác nhau và dẫn tới hành động hoàn toàn khác nhau của kubelet
 columns: 3
 items:
@@ -78,9 +79,9 @@ items:
     footer: Cấu hình sai sẽ gây bão khởi động lại toàn cụm!
 ```
 
-## 2. Thảm họa số 1 cần tránh trên Production: Gắn kiểm tra Database vào `livenessProbe`!
+## 2. Sai lầm nghiêm trọng cần tránh: Gắn kiểm tra Database vào `livenessProbe`
 
-Hãy tưởng tượng kịch bản từng đánh sập hàng loạt hệ thống lớn khi lập trình viên dùng chung một đường dẫn `/health` gọi `SELECT 1` xuống PostgreSQL cho cả `readinessProbe` lẫn `livenessProbe` (với `timeoutSeconds: 1`):
+Hãy xem kịch bản từng gây gián đoạn diện rộng nhiều hệ thống lớn khi lập trình viên dùng chung một đường dẫn `/health` gọi `SELECT 1` xuống PostgreSQL cho cả `readinessProbe` lẫn `livenessProbe` (với `timeoutSeconds: 1`):
 
 1. Giờ cao điểm, PostgreSQL hơi bận nên trả lời `SELECT 1` mất `1.3 giây` (vượt ngưỡng `1s`).
 2. `livenessProbe` báo trượt 3 lần → Kubernetes tưởng cả 20 Pod API đều chết cứng nên **đồng loạt giết và khởi động lại cả 20 Pod cùng một lúc**!
@@ -95,7 +96,7 @@ left:
   title: Nhét kiểm tra Database vào livenessProbe
   tone: rose
   code: |
-    # THẢM HỌA: DB chập chờn 2s -> K8s giết sạch 20 Pod API!
+    # SAI LẦM NGHIÊM TRỌNG: DB chập chờn 2s -> K8s giết sạch 20 Pod API!
     livenessProbe:
       httpGet:
         path: /readyz-with-db-query
@@ -155,7 +156,7 @@ containers:
       failureThreshold: 3
 ```
 
-## 3. Bí quyết Zero-Downtime lúc tắt Pod: Đua tốc độ `Terminating` & `preStop` Hook
+## 3. Tắt Pod không gián đoạn (Zero-Downtime): Xử lý `Terminating` với `preStop` Hook và `SIGTERM`
 
 Ngay cả khi đã có `readinessProbe`, nhiều đội ngũ vẫn thấy khách hàng thỉnh thoảng bị lỗi `502 Bad Gateway` trong vài giây đầu của mỗi đợt Rolling Update! Nguyên nhân nằm ở **hai luồng chạy song song bất đồng bộ** ngay khoảnh khắc Kubernetes xóa một Pod cũ:
 

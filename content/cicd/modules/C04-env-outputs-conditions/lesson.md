@@ -1,17 +1,17 @@
 # Biến môi trường, `$GITHUB_OUTPUT`, Điều kiện `if` & Bộ lọc đường dẫn
 
-Một tệp workflow tĩnh chỉ chạy một mạch từ đầu tới cuối giống như một hàm JavaScript không có tham số, không có `return` và không có `if/else`. Để biến CI Pipeline thành cỗ máy điều phối thông minh — biết truyền mã phiên bản giữa các bước, biết tự thu gom ảnh chụp lỗi khi bài kiểm thử E2E vấp ngã, và biết "ngủ yên" tiết kiệm tiền khi đồng nghiệp chỉ sửa dấu chấm câu trong `README.md` — bạn cần làm chủ 4 công cụ điều khiển luồng cốt lõi của GitHub Actions.
+Một tệp workflow tĩnh chỉ chạy một mạch từ đầu tới cuối giống như một hàm không có tham số, không có `return` và không có `if/else`. Để cấu hình CI Pipeline linh hoạt — biết truyền mã phiên bản giữa các bước, tự thu thập nhật ký lỗi khi kiểm thử E2E thất bại, và bỏ qua không chạy khi thay đổi chỉ nằm ở tài liệu `README.md` — bạn cần làm chủ 4 cơ chế điều khiển luồng cốt lõi của GitHub Actions.
 
 ```visual
 kind: illustration
 diagram: "cicd:c04"
-alt: "Tháp ưu tiên 3 tầng biến môi trường env, truyền kết quả xuyên Job qua tệp $GITHUB_OUTPUT và các chốt chặn điều kiện if: failure / always"
-title: "Giải Phẫu Điều Khiển Luồng: Phạm Vi Biến env, Trạm Tiếp Sức $GITHUB_OUTPUT & Cổng if:"
-subtitle: "Truyền dữ liệu an toàn xuyên suốt các bước/Job và điều hướng thông minh khi pipeline gặp sự cố hoặc chỉ sửa tài liệu"
-caption: "Thứ tự ưu tiên ghi đè biến môi trường (Step > Job > Workflow), luồng xuất biến qua $GITHUB_OUTPUT và các hàm điều kiện trạng thái thực thi"
+alt: "Tháp ưu tiên 3 tầng biến môi trường env, truyền kết quả xuyên Job qua tệp $GITHUB_OUTPUT và các điều kiện if: failure / always"
+title: "Điều khiển luồng trong GitHub Actions: Phạm vi biến env, $GITHUB_OUTPUT và điều kiện if:"
+subtitle: "Truyền dữ liệu an toàn giữa các bước/Job và điều hướng thông minh khi pipeline gặp lỗi hoặc chỉ sửa tài liệu"
+caption: "Thứ tự ưu tiên ghi đè biến môi trường (Step > Job > Workflow), luồng xuất biến qua $GITHUB_OUTPUT và các hàm kiểm tra trạng thái thực thi"
 callouts:
   - num: 1
-    label: "Tháp phạm vi env: & Mặt nạ che giấu secrets.*"
+    label: "Tháp phạm vi env: & Che giấu secrets.*"
     desc: "Biến ở phạm vi hẹp hơn (Step) luôn ghi đè phạm vi rộng (Job, Workflow); biến nhạy cảm đọc từ secrets.* được tự động che dấu *** trên log."
     tone: sky
   - num: 2
@@ -19,12 +19,12 @@ callouts:
     desc: "Ghi cặp key=value vào tệp môi trường $GITHUB_OUTPUT (thay cho ::set-output cũ đã loại bỏ) và khai báo jobs.<id>.outputs để Job sau đọc."
     tone: cyan
   - num: 3
-    label: "Chốt chặn điều kiện if: & Bộ lọc đường dẫn paths-ignore"
-    desc: "Dùng failure() để thu gom ảnh chụp lỗi E2E, always() & !cancelled() để dọn dẹp hạ tầng và paths-ignore để nghỉ chạy khi chỉ sửa tệp .md."
+    label: "Điều kiện if: & Bộ lọc đường dẫn paths-ignore"
+    desc: "Dùng failure() để thu gom ảnh chụp lỗi E2E, always() & !cancelled() để dọn dẹp hạ tầng và paths-ignore để bỏ qua khi chỉ sửa tệp .md."
     tone: amber
 ```
 
-## 1. Phân cấp 3 tầng Biến môi trường (`env:`) — Phạm vi hẹp thắng phạm vi rộng
+## 1. Phân cấp 3 tầng biến môi trường (`env:`): Thứ tự ưu tiên ghi đè
 
 Tương tự quy tắc *Lexical Scope* trong JavaScript (biến cục bộ bên trong hàm ghi đè biến toàn cục bên ngoài), GitHub Actions cho phép khai báo khối `env:` ở **3 tầng phân cấp**:
 
@@ -111,9 +111,9 @@ steps:
     run: echo "Image tag will be app:${{ steps.meta.outputs.sha }}"
 ```
 
-## 3. Biểu thức điều kiện `if:` và 4 hàm kiểm tra trạng thái sống còn
+## 3. Biểu thức điều kiện `if:` và 4 hàm kiểm tra trạng thái thực thi
 
-Mặc định mọi Step mang điều kiện ngầm là `if: success()`. Để kiểm soát các nhánh rẽ như chỉ phát hành khi gộp vào `main` (`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`) hoặc khôi phục dữ liệu khám nghiệm lỗi, bạn cần nắm chắc **4 hàm trạng thái**:
+Mặc định mọi Step mang điều kiện ngầm là `if: success()`. Để kiểm soát các nhánh rẽ như chỉ phát hành khi gộp vào `main` (`if: github.ref == 'refs/heads/main' && github.event_name == 'push'`) hoặc thu thập dữ liệu chẩn đoán lỗi, bạn cần nắm chắc **4 hàm trạng thái**:
 
 ```visual
 kind: groups
@@ -123,7 +123,7 @@ items:
   - num: 1
     icon: check
     title: "success() — Mặc định ngầm"
-    badge: "Khi mọi bước trước đều xanh"
+    badge: "Khi mọi bước trước đều đạt"
     tone: emerald
     bullets:
       - "Tự động áp dụng nếu bạn không viết dòng `if:` nào"
@@ -131,40 +131,40 @@ items:
   - num: 2
     icon: alert
     title: "failure()"
-    badge: "Chỉ chạy khi có bước bị đỏ"
+    badge: "Chỉ chạy khi có bước bị lỗi"
     tone: rose
     bullets:
       - "Trả `true` khi bất kỳ Step nào phía trước bị thất bại"
-      - "**Ứng dụng vàng:** Gắn vào bước `Upload Playwright Screenshots` hoặc bắn cảnh báo Slack để thu thập tang vật ngay khi bài test E2E sập!"
+      - "**Ứng dụng thực tế:** Gắn vào bước `Upload Playwright Screenshots` hoặc gửi cảnh báo Slack để thu thập dữ liệu chẩn đoán ngay khi bài test E2E thất bại."
   - num: 3
     icon: refresh
     title: "always()"
-    badge: "Chạy bất chấp Xanh, Đỏ hay Cancel"
+    badge: "Chạy bất chấp đạt, lỗi hay Cancel"
     tone: amber
     bullets:
-      - "Luôn luôn thực thi kể cả khi bước trước lỗi hoặc người dùng bấm nút **Cancel** huỷ Job"
-      - "Dành riêng cho bước dọn dẹp hạ tầng tạm thời (xoá test container/cloud sandbox tránh tốn tiền)"
+      - "Luôn thực thi kể cả khi bước trước lỗi hoặc người dùng bấm nút **Cancel** huỷ Job"
+      - "Thích hợp cho bước dọn dẹp hạ tầng tạm thời (xóa test container/cloud sandbox tránh tốn chi phí)"
   - num: 4
     icon: shield-check
     title: "!cancelled()"
-    badge: "Chạy cả khi Xanh lẫn Đỏ (trừ khi Cancel)"
+    badge: "Chạy cả khi đạt lẫn lỗi (trừ khi Cancel)"
     tone: sky
     bullets:
       - "Kết hợp hàm `cancelled()`: chạy khi Job thành công HOẶC thất bại, nhưng dừng ngay nếu người dùng chủ động huỷ ngang"
-      - "Lựa chọn tinh tế nhất để tải báo cáo HTML tổng hợp ở cuối bộ kiểm thử"
+      - "Lựa chọn phù hợp để tải báo cáo HTML tổng hợp ở cuối bộ kiểm thử"
 ```
 
 ## 4. Bộ lọc đường dẫn (`paths` / `paths-ignore`) & Chống vòng lặp Push vô tận
 
-Đừng đốt quỹ phút CI quý giá cho những thay đổi chỉ sửa tài liệu chữ nghĩa:
-- [x] **`paths-ignore: ["**.md", "docs/**"]`**: Bỏ qua toàn bộ workflow nếu mọi tệp thay đổi trong commit/PR đều nằm trong danh sách tài liệu loại trừ.
-- [x] **`paths: ["apps/api/**", "packages/shared/**"]`**: Chỉ kích hoạt kiểm thử dịch vụ API khi có tệp liên quan bị chạm tới.
-- [!] **Quy tắc cú pháp sống còn:** Không được viết đồng thời cả `paths:` và `paths-ignore:` trên cùng một sự kiện `on.push`! Nếu muốn vừa lọc bao gồm vừa loại trừ trong cùng sự kiện, hãy dùng duy nhất `paths:` kèm dấu chấm than phủ định ==`!`== (ví dụ: `paths: ["apps/api/**", "!apps/api/**.md"]`).
+Để không tiêu tốn tài nguyên CI cho những thay đổi chỉ sửa tài liệu văn bản:
+- [x] **`paths-ignore: ["**.md", "docs/**"]`**: Bỏ qua toàn bộ workflow nếu mọi tệp thay đổi trong commit/PR đều nằm trong danh sách loại trừ.
+- [x] **`paths: ["apps/api/**", "packages/shared/**"]`**: Chỉ kích hoạt kiểm thử dịch vụ API khi có tệp liên quan bị thay đổi.
+- [!] **Quy tắc cú pháp bắt buộc:** Không được viết đồng thời cả `paths:` và `paths-ignore:` trên cùng một sự kiện `on.push`. Nếu muốn vừa lọc bao gồm vừa loại trừ trong cùng sự kiện, hãy dùng duy nhất `paths:` kèm dấu chấm than phủ định ==`!`== (ví dụ: `paths: ["apps/api/**", "!apps/api/**.md"]`).
 
-> [!WARNING] Phòng chống thảm hoạ "Infinite Push Loop" (Vòng lặp tự kích hoạt vô tận)
-> Nếu một Job lắng nghe `on: push` lại tự động sửa `CHANGELOG.md` / số phiên bản rồi chạy `git commit` và `git push` bằng **Personal Access Token (PAT)**, cú push đó sẽ được GitHub coi như người thật đẩy code -> bắn tiếp sự kiện `push` mới -> kích hoạt lại chính workflow đó hàng nghìn lần không điểm dừng!
+> [!WARNING] Phòng tránh vòng lặp tự kích hoạt vô tận (Infinite Push Loop)
+> Nếu một Job lắng nghe `on: push` lại tự động sửa `CHANGELOG.md` / số phiên bản rồi chạy `git commit` và `git push` bằng **Personal Access Token (PAT)**, thao tác push đó sẽ được GitHub coi như người dùng đẩy code, tiếp tục phát sinh sự kiện `push` mới và kích hoạt lại chính workflow đó liên tục không dừng.
 >
-> Luôn khoá chặt bằng **3 lớp chốt an toàn**:
+> Luôn phòng tránh bằng **3 biện pháp an toàn**:
 > 1. Ưu tiên dùng **`GITHUB_TOKEN` mặc định** (sự kiện tạo bởi `GITHUB_TOKEN` không kích hoạt dây chuyền workflow mới).
 > 2. Chèn hậu tố **`[skip ci]`** vào thông điệp commit tự động của bot.
 > 3. Bổ sung bộ lọc `paths-ignore` hoặc điều kiện `if: github.actor != 'release-bot'`.

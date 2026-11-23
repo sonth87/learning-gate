@@ -34,11 +34,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Nắm vững từ gốc: Pull Request (PR), Webhook Trigger, Ephemeral Runner và quy luật Exit Code == 0 cho qua, != 0 chặn gộp ngay lập tức (áp dụng cho Node, Python, Go, Java)',
+        'Nắm vững các khái niệm cốt lõi: Pull Request (PR), Webhook Trigger, Ephemeral Runner và quy luật Exit Code == 0 (đạt), != 0 (thất bại) trên Node, Python, Go, Java',
         'Understand PRs, Webhook Triggers, Ephemeral Runners, and universal Exit Code 0 vs non-zero gating across Node, Python, Go & Java'
       ),
       bi(
-        'Phân biệt rạch ròi CI vs Continuous Delivery (sẵn sàng lên Prod bằng 1 cú nhấp duyệt) vs Continuous Deployment (tự động lên thẳng Prod)',
+        'Phân biệt rõ CI, Continuous Delivery (sẵn sàng phát hành với bước phê duyệt thủ công) và Continuous Deployment (tự động triển khai lên Production)',
         'Distinguish CI from Continuous Delivery (1-click approval to Prod) and Continuous Deployment (auto-deploy to Prod)'
       ),
     ],
@@ -60,9 +60,9 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           {
             label: bi('TÍN HIỆU PHÁN QUYẾT', 'GATE SIGNAL'),
             value: failGate
-              ? bi('Exit 1 / 137 → Chặn PR!', 'Exit 1 / 137 → Blocked!')
+              ? bi('Exit 1 / 137 → Chặn PR', 'Exit 1 / 137 → Blocked')
               : falseGreenTrap
-                ? bi('Bẫy False-Green (|| true)!', 'False-Green Trap (|| true)!')
+                ? bi('Lỗi False-Green (|| true)', 'False-Green Issue (|| true)')
                 : bi('Exit 0 → Mở khóa Merge', 'Exit 0 → Merge Allowed'),
             tone: failGate ? 'bad' : falseGreenTrap ? 'warn' : 'ok',
           },
@@ -78,40 +78,40 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Từ con số 0: CI Gate thực chất là gì?',
+                'Khái niệm cốt lõi: CI Gate là gì?',
                 'First Principles: What Is a CI Gate?',
-                'Mỗi khi bạn mở Pull Request (đơn xin gộp code), GitHub tự thuê một máy ảo Linux sạch tinh trong ~3 phút (Ephemeral Runner) chạy bộ kiểm tra và chỉ nhìn vào con số Exit Code cuối cùng: 0 = Xanh, khác 0 = Chặn!',
+                'Mỗi khi bạn mở Pull Request (yêu cầu gộp code), GitHub khởi tạo một máy ảo Linux sạch tạm thời trong ~3 phút (Ephemeral Runner) để chạy các lệnh kiểm tra và quyết định kết quả dựa hoàn toàn vào Exit Code: 0 là đạt, khác 0 là thất bại.',
                 'Every Pull Request automatically rents a clean disposable Linux VM (Ephemeral Runner) for ~3 minutes and gates the Merge button strictly by process Exit Code: 0 passes, non-zero blocks!'
               )
             : s === 1
               ? callout(
                   'technique',
-                  'Ngôn ngữ nào cũng chung một luật Exit Code!',
+                  'Quy chuẩn Exit Code thống nhất trên mọi ngôn ngữ',
                   'Universal Exit Code Contract Across Languages',
-                  'Dù bạn chạy npm test (Node.js), uv run pytest (Python), hay go test ./... (Go), hệ điều hành luôn trả 0 khi đạt, 1 khi lỗi logic, và 137 (128 + 9 SIGKILL) khi tiến trình ngốn tràn bộ nhớ RAM!',
+                  'Dù bạn chạy npm test (Node.js), uv run pytest (Python), hay go test ./... (Go), hệ điều hành luôn trả 0 khi đạt, 1 khi lỗi kiểm thử, và 137 (128 + 9 SIGKILL) khi tiến trình vượt giới hạn bộ nhớ RAM.',
                   'Whether running npm test (Node), uv run pytest (Python), or go test (Go), POSIX returns 0 on pass, 1 on test failure, and 137 (128 + 9 SIGKILL) on out-of-memory kills!'
                 )
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Thảm hoạ "Báo Xanh Giả" (False-Green Pipeline)',
+                    'Rủi ro "Báo Xanh Giả" (False-Green Pipeline)',
                     'Beware Silent False-Green Pipelines',
-                    'Viết npm test || true, bật continue-on-error: true, hoặc gọi curl thiếu cờ --fail sẽ biến mã lỗi khác 0 thành 0 — khiến code đang sập HTTP 500 vẫn hiện tích xanh đi thẳng vào nhánh main!',
+                    'Viết npm test || true, bật continue-on-error: true, hoặc gọi curl thiếu cờ --fail sẽ chuyển mã lỗi khác 0 thành 0 — khiến lỗi HTTP 500 vẫn báo đạt và đi vào nhánh main.',
                     'Using || true, continue-on-error: true, or curl without --fail swallows non-zero exit codes into 0 — letting HTTP 500 bugs slip straight into main with a green checkmark!'
                   )
                 : s === 3
                   ? callout(
                       'compare',
-                      'Tại sao cấm npm install trên CI?',
+                      'Tại sao nên dùng npm ci thay cho npm install trên CI?',
                       'Why CI Demands npm ci / --frozen Lockfiles',
-                      'npm install được phép âm thầm nâng phiên bản phụ và sửa lại lockfile; còn npm ci (giống uv sync --frozen trong Python) xoá sạch thư mục cũ và báo lỗi Exit 1 ngay nếu lockfile bị lệch!',
+                      'npm install có thể tự động cập nhật phiên bản phụ và sửa lại lockfile; còn npm ci (tương tự uv sync --frozen trong Python) cài đặt đúng theo lockfile và báo lỗi Exit 1 ngay nếu lockfile không khớp.',
                       'npm install mutates lockfiles when minor versions drift, whereas npm ci (and uv sync --frozen in Python) enforces 100% deterministic lockfile hashes!'
                     )
                   : callout(
                       'key-idea',
-                      'Đúc kết Kiến trúc sư: Phân biệt 2 chữ "CD"',
+                      'Phân biệt Continuous Delivery và Continuous Deployment',
                       'Architect Takeaway: Delivery vs Deployment',
-                      'Continuous Delivery đóng gói sẵn sàng lên Production chỉ bằng 1 cú nhấp chuột phê duyệt (Manual Approval); Continuous Deployment bỏ luôn nút bấm tay để tự động đẩy thẳng tới người dùng thật!',
+                      'Continuous Delivery tự động kiểm tra và đóng gói sẵn sàng lên Production với một bước phê duyệt thủ công (Manual Approval); Continuous Deployment tự động hóa hoàn toàn đến môi trường Production.',
                       'Continuous Delivery stops at a 1-click human approval gate before Production; Continuous Deployment automates the final mile straight to live users!'
                     ),
         whatChanged:
@@ -243,11 +243,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Phân biệt sắc bén: các Step trong cùng 1 Job dùng chung ổ đĩa máy ảo; hai Job khác nhau chạy trên 2 máy ảo Ephemeral VM mới tinh tách biệt 100%!',
+        'Nắm vững nguyên tắc cô lập môi trường: các Step trong cùng 1 Job dùng chung ổ đĩa máy ảo, nhưng hai Job khác nhau chạy trên hai máy ảo Ephemeral VM tách biệt',
         'Remember Steps share a workspace, whereas separate Jobs run on isolated fresh Ephemeral VMs'
       ),
       bi(
-        'Định vị mô hình 6 thực thể xuyên suốt hệ sinh thái GitHub Actions, GitLab CI, Jenkins, CircleCI, Buildkite & Dagger',
+        'Nắm mô hình 6 thành phần cốt lõi (Trigger, Workflow, Job, Runner, Step, Action) áp dụng cho GitHub Actions, GitLab CI, Jenkins, CircleCI, Buildkite và Dagger',
         'Map the 6-entity mental model across GitHub Actions, GitLab CI, Jenkins, CircleCI, Buildkite & Dagger'
       ),
     ],
@@ -261,7 +261,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             label: bi('GIỮA CÁC STEP', 'STEPS IN 1 JOB'),
             value:
               s === 3
-                ? bi('Chung đĩa · Khác subshell!', 'Shared disk · New subshell!')
+                ? bi('Chung đĩa · Khác subshell', 'Shared disk · New subshell')
                 : bi('Chung ổ đĩa /workspace', 'Shared /workspace disk'),
             tone: s === 3 ? 'warn' : 'ok',
           },
@@ -280,40 +280,40 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Webhook Trigger & Máy ảo "Phòng Phẫu Thuật Dùng 1 Lần"',
-                'Webhook Doorbell & Disposable Clean-Room VMs',
-                'Webhook là tiếng chuông cửa tự động báo tin mỗi khi có git push/PR; còn Ephemeral Runner là chiếc máy ảo Ubuntu sạch tinh thuê trong vài phút rồi huỷ bỏ hoàn toàn để không bao giờ lưu rác hay mã độc!',
-                'A Webhook acts as an automatic doorbell on git push/PR, renting a fresh Ubuntu Ephemeral Runner VM for minutes and destroying its disk immediately after the Job finishes!'
+                'Webhook Trigger & Máy ảo dùng một lần (Ephemeral Runner)',
+                'Webhook Triggers & Disposable Clean-Room VMs',
+                'Webhook Trigger gửi tín hiệu kích hoạt tự động khi có git push hoặc PR; còn Ephemeral Runner là máy ảo Ubuntu sạch được cấp phát tạm thời để chạy Job rồi xóa hoàn toàn để tránh tồn lưu rác cấu hình hoặc mã độc.',
+                'A Webhook automatically triggers on git push/PR, renting a fresh Ubuntu Ephemeral Runner VM for minutes and destroying its disk immediately after the Job finishes!'
               )
             : s === 1
               ? callout(
                   'good-to-know',
-                  'Học 1 lần, đọc hiểu mọi công cụ CI/CD trên thị trường',
+                  'Mô hình 6 thành phần dùng chung cho mọi nền tảng CI/CD',
                   'One Mental Model Fits Every Industry CI Tool',
-                  'Dù công ty dùng GitHub Actions, GitLab CI, Jenkins (Jenkinsfile doanh nghiệp lâu đời), CircleCI/Buildkite hay Dagger, tất cả đều xoay quanh đúng 6 thực thể: Trigger → Workflow → Job → Runner → Step → Action/Plugin.',
+                  'Dù sử dụng GitHub Actions, GitLab CI, Jenkins, CircleCI/Buildkite hay Dagger, cấu trúc nền tảng đều gồm 6 thành phần: Trigger → Workflow → Job → Runner → Step → Action/Plugin.',
                   'Whether your team uses GitHub Actions, GitLab CI, Jenkins, CircleCI/Buildkite, or Dagger, all platforms share the exact 6 entities: Trigger → Workflow → Job → Runner → Step → Action.'
                 )
               : diskTrap
                 ? callout(
                     'watch-out',
-                    'Cú ngã tuần đầu của 90% người mới học CI/CD!',
-                    'The #1 Week-One Beginner Mistake!',
-                    'Job 1 chạy npm run build tạo ra thư mục dist/ trên Máy ảo #1 rồi máy ảo đó bị xoá sổ! Job 2 thức dậy trên Máy ảo #2 trống trơn (chưa có cả code Git nếu quên actions/checkout@v4)!',
+                    'Lỗi phổ biến: Job sau không thấy tệp của Job trước',
+                    'Common Mistake: Missing Files Across Jobs',
+                    'Job 1 chạy npm run build tạo thư mục dist/ trên Máy ảo #1, sau đó máy ảo đó bị xóa. Job 2 khởi chạy trên Máy ảo #2 trống hoàn toàn — cần chạy lại actions/checkout@v4 và tải Artifact nếu muốn nhận tệp từ Job 1.',
                     'Job 1 builds dist/ on VM #1, which is then destroyed! Job 2 wakes up on a blank VM #2 — without even source code unless it runs actions/checkout@v4 and downloads Artifacts!'
                   )
                 : s === 3
                   ? callout(
                       'technique',
-                      'uses: vs run: — Bẫy lệnh cd bị "mất trí nhớ"',
+                      'Phân biệt uses: với run: và phạm vi subshell của lệnh cd',
                       'uses: vs run: — Why "cd subdir" Resets Next Step',
-                      'Mỗi Step run: mở một tiến trình subshell mới tinh đặt tại gốc dự án. Gõ cd apps/api ở Step 1 sang Step 2 sẽ quay về thư mục gốc ngay!',
+                      'Mỗi Step run: khởi chạy một tiến trình subshell mới tại thư mục gốc dự án. Vì vậy lệnh cd apps/api ở Step 1 sẽ không còn hiệu lực khi chuyển sang Step 2.',
                       'Every run: Step spawns a fresh subshell rooted at the workspace. Running cd apps/api in Step 1 will NOT persist into Step 2!'
                     )
                   : callout(
                       'key-idea',
-                      'Đúc kết Kiến trúc sư: Job tự thân vận động',
+                      'Thiết kế Job độc lập và cấu hình working-directory',
                       'Architect Takeaway: Self-Contained Jobs',
-                      'Thiết kế mỗi Job tự checkout + khôi phục cache độc lập, và dùng defaults.run.working-directory khi mã nguồn đặt trong thư mục con thay vì lặp lại lệnh cd.',
+                      'Thiết kế mỗi Job tự checkout và khôi phục cache độc lập; sử dụng defaults.run.working-directory khi mã nguồn nằm trong thư mục con thay vì lặp lại lệnh cd.',
                       'Keep every Job self-contained (checkout + cached install) and declare defaults.run.working-directory cleanly for subfolder services.'
                     ),
         whatChanged:
@@ -423,11 +423,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Áp dụng Trunk-Based Development (nhánh PR ngắn < 1–2 ngày + Feature Flags) chấm dứt địa ngục xung đột Merge Hell',
-        'Adopt short-lived Trunk-Based PRs (<24h) + Feature Flags to eliminate Merge Hell'
+        'Áp dụng Trunk-Based Development (nhánh PR ngắn < 1–2 ngày kết hợp Feature Flags) để giảm xung đột khi gộp code',
+        'Adopt short-lived Trunk-Based PRs (<24h) + Feature Flags to minimize merge conflicts'
       ),
       bi(
-        'Bắt gọn 5 thủ phạm làm CI đỏ cho cả Node.js, Python & Go: phân biệt hoa/thường Linux ext4, lệch giờ UTC, treo Watch mode, trôi runtime và tràn RAM Exit 137',
+        'Khắc phục 5 nguyên nhân gây lệch kết quả giữa máy cá nhân và CI cho Node.js, Python & Go: phân biệt hoa/thường Linux ext4, múi giờ UTC, Watch mode, trôi phiên bản runtime và tràn RAM Exit 137',
         'Eliminate the 5 local-vs-CI drift culprits across Node, Python & Go: Linux case-sensitivity, UTC, watch hangs, runtime drift & Exit 137 OOM'
       ),
     ],
@@ -459,32 +459,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Vì sao "Chạy mượt trên MacBook của em" nhưng lên CI lại sập?',
+                'Nguyên nhân mã nguồn chạy đúng trên máy cá nhân nhưng lỗi trên CI',
                 'Why "Works on My MacBook" Breaks on Cloud CI',
-                'Laptop của bạn có 16–32GB RAM, ổ đĩa macOS/Windows không phân biệt hoa thường và múi giờ GMT+7; trong khi CI Runner là máy Linux ext4 không màn hình, múi giờ UTC, chỉ có 2 vCPU & 7GB RAM!',
+                'Máy cá nhân thường có 16–32GB RAM, ổ đĩa macOS/Windows không phân biệt hoa thường và múi giờ địa phương; trong khi CI Runner là máy Linux ext4 không màn hình, múi giờ UTC, chỉ có 2 vCPU & 7GB RAM.',
                 'Your laptop has 16–32GB RAM, a case-insensitive macOS/Windows disk, and local timezone — whereas CI runs on headless Linux ext4 in UTC with only 2 vCPUs & 7GB RAM!'
               )
             : s === 1
               ? callout(
                   'compare',
-                  'Trunk-Based + Feature Flags thắng tuyệt đối nhánh dài hạn',
+                  'So sánh Trunk-Based Development và GitFlow nhánh dài hạn',
                   'Short-Lived Trunk PRs + Feature Flags Beat GitFlow',
-                  'Ôm nhánh riêng 3 tuần tạo ra PR 4.000 dòng không ai review nổi (Merge Hell). Hãy chia nhỏ PR 100–300 dòng gộp về main mỗi ngày và ẩn tính năng chưa xong giao diện đằng sau Feature Flag!',
+                  'Giữ nhánh riêng nhiều tuần tạo ra PR hàng nghìn dòng khó kiểm soát và dễ xung đột khi gộp. Hãy chia nhỏ PR 100–300 dòng gộp về main mỗi ngày và ẩn tính năng chưa hoàn thiện sau Feature Flag.',
                   'Multi-week branches breed 4,000-line Merge Hell PRs. Merge small 100–300 line PRs daily into main and hide unfinished UI safely behind Feature Flags!'
                 )
               : s === 2
                 ? callout(
                     'watch-out',
-                    '5 Cái bẫy Lệch Môi Trường kinh điển (Node, Python & Go)',
+                    '5 Nguyên nhân phổ biến gây lệch môi trường Local và CI',
                     'Top 5 Local-vs-CI Drift Traps Across Languages',
-                    '1) Đổi tên file UserCard.tsx vs userCard.tsx (macOS cho qua, Linux báo lỗi ngay!), 2) Lệch múi giờ GMT+7 vs UTC, 3) Quên cờ CI=true làm treo Watch mode 6 tiếng, 4) Không ghim runtime, 5) Đẻ quá nhiều worker gây tràn RAM Exit 137.',
+                    '1) Đổi tên file UserCard.tsx vs userCard.tsx (macOS cho qua, Linux ext4 báo lỗi), 2) Lệch múi giờ địa phương vs UTC, 3) Thiếu biến CI=true làm treo Watch mode 6 tiếng, 4) Không ghim phiên bản runtime, 5) Tạo quá nhiều worker gây tràn RAM Exit 137.',
                     '1) Filename casing on Linux ext4, 2) Local timezone vs UTC, 3) Interactive watch-mode hangs without CI=true, 4) Unpinned runtime versions, 5) Too many test workers causing Exit 137 OOM.'
                   )
                 : callout(
                     'key-idea',
-                    'Đúc kết Kiến trúc sư: Bộ 3 khóa chuẩn hóa mọi dự án',
+                    'Ba cấu hình chuẩn hóa môi trường CI cho mọi dự án',
                     'Architect Takeaway: The 3-Lock CI Hygiene Formula',
-                    'Luôn khóa: (1) Runtime & Lockfile cố định (Node 22 + npm ci / Python uv sync --frozen), (2) env: { CI: true, TZ: UTC }, và (3) giới hạn số worker khớp 2 vCPU / 7GB RAM.',
+                    'Luôn cố định: (1) Runtime & Lockfile (Node 22 + npm ci / Python uv sync --frozen), (2) env: { CI: true, TZ: UTC }, và (3) giới hạn số worker khớp 2 vCPU / 7GB RAM.',
                     'Always lock: (1) Exact runtime + lockfile, (2) env: { CI: true, TZ: UTC }, and (3) worker concurrency sized for a 2-vCPU / 7GB RAM runner.'
                   ),
         whatChanged:
@@ -543,7 +543,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             label: bi('TRẠNG THÁI ĐỒNG BỘ', 'ENVIRONMENT PARITY'),
             value:
               s === 2
-                ? bi('Cảnh giác 5 bẫy lệch pha!', '5 Drift Hazards Detected!')
+                ? bi('5 điểm lệch môi trường cần lưu ý', '5 Drift Hazards Detected')
                 : bi('Đồng nhất Laptop == CI 100%', '100% Laptop == CI Parity'),
             tone: s === 2 ? 'rose' : 'green',
           },
@@ -613,9 +613,9 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Bẫy viết gọn "on: [push, pull_request]" làm đốt gấp đôi tiền CI!',
+                    'Cấu hình "on: [push, pull_request]" thiếu lọc nhánh gây chạy trùng lặp',
                     'Trap: Bare "on: [push, pull_request]" Doubles Your CI Bill!',
-                    'Nếu không lọc branches: [main], mỗi lần bạn đẩy commit lên nhánh PR sẽ kích hoạt ĐỒNG THỜI 1 lượt push và 1 lượt pull_request chạy y hệt nhau! Lọc branches: [main] giúp mỗi PR chỉ chạy đúng 1 lần.',
+                    'Nếu không lọc branches: [main], mỗi lần bạn đẩy commit lên nhánh PR sẽ kích hoạt đồng thời 1 lượt push và 1 lượt pull_request chạy giống nhau. Lọc branches: [main] giúp mỗi PR chỉ chạy đúng 1 lần.',
                     'Without branches: [main], pushing to an open PR branch fires BOTH a push run and a pull_request run simultaneously! Filtering base branch main cuts redundant runs by 50%.'
                   )
                 : s === 3
@@ -834,32 +834,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Giải mã bình dân thuật ngữ DAG (Đồ thị luồng công việc phụ thuộc)',
+                'Giải thích trực diện khái niệm DAG (Đồ thị phụ thuộc không chu trình)',
                 'Plain-Language Guide to DAG (Directed Acyclic Graph)',
-                'DAG giống hệt dây chuyền lắp ráp ô tô: xưởng làm khung xe và xưởng kiểm tra động cơ chạy song song cùng lúc từ giây 0 (Fan-Out), và chỉ khâu lắp ráp cuối mới chờ cả hai xong (Fan-In qua từ khoá needs:)!',
+                'Trong DAG, các tác vụ không phụ thuộc lẫn nhau (như kiểm tra mã và kiểm thử đơn vị) chạy song song từ giây 0 (Fan-Out), và tác vụ đóng gói chỉ chạy sau khi các tác vụ trước hoàn tất (Fan-In qua từ khóa needs:). Cơ chế này tương tự dây chuyền lắp ráp khi nhiều bộ phận được gia công đồng thời trước khâu lắp ráp cuối.',
                 'A DAG works like a parallel car assembly line: chassis and engine checks start simultaneously at t=0 (Fan-Out), and final assembly waits for both via needs: (Fan-In)!'
               )
             : s === 1
               ? callout(
                   'technique',
-                  'Logic cổng AND tiết kiệm tiền máy ảo Build',
+                  'Logic cổng AND tiết kiệm tài nguyên máy ảo Build',
                   'Strict AND Gate Saves Downstream Compute',
-                  'Khi Job build khai báo needs: [lint, unit-test], chỉ cần lint đỏ là build tự động chuyển sang Skipped — không tốn một xu bật máy ảo đóng gói mã nguồn lỗi!',
+                  'Khi Job build khai báo needs: [lint, unit-test], chỉ cần lint thất bại là build tự động chuyển sang Skipped — không tốn tài nguyên khởi tạo máy ảo đóng gói mã nguồn lỗi.',
                   'With needs: [lint, unit-test], if lint fails, build is automatically Skipped — burning zero compute minutes on broken code!'
                 )
               : matrixTrap
                 ? callout(
                     'watch-out',
-                    'Hai cái bẫy của Matrix: fail-fast ngầm & Hệ số giá macOS gấp 10x!',
+                    'Lưu ý khi dùng Matrix: Cờ fail-fast mặc định và chi phí macOS',
                     'Two Matrix Gotchas: Default fail-fast & 10× macOS Multiplier!',
-                    'Mặc định fail-fast: true sẽ giết ngang mọi máy ảo còn lại ngay khi 1 tổ hợp chớm lỗi làm bạn mù thông tin! Hãy đặt fail-fast: false — và nhớ trên kho Private, macos-latest tốn phút gấp ~10 lần Linux.',
+                    'Mặc định fail-fast: true sẽ hủy toàn bộ các tổ hợp còn lại ngay khi 1 tổ hợp gặp lỗi, làm thiếu thông tin chẩn đoán đa nền tảng. Hãy đặt fail-fast: false — và lưu ý trên repo Private, macos-latest có chi phí cao gấp ~10 lần Linux.',
                     'Default fail-fast: true cancels all sibling matrix runners on the first failure! Set fail-fast: false for full visibility, and note macos-latest bills at ~10× Linux rates on private repos.'
                   )
                 : callout(
                     'key-idea',
-                    'Đúc kết Kiến trúc sư: Đừng bao giờ quên mắt xích số 2 của outputs!',
+                    'Quy trình 3 bước truyền outputs giữa hai Job',
                     'Architect Takeaway: The 3-Link Cross-Job Outputs Bridge',
-                    'Truyền dữ liệu giữa 2 Job chạy trên 2 máy ảo khác nhau bắt buộc đủ 3 mắt xích: (1) Step ghi "$GITHUB_OUTPUT" → (2) Khai báo jobs.<id>.outputs ở vỏ Job nguồn → (3) Job đích có needs và đọc needs.<id>.outputs!',
+                    'Truyền dữ liệu giữa 2 Job chạy trên 2 máy ảo tách biệt cần đủ 3 bước: (1) Step ghi "$GITHUB_OUTPUT" → (2) Khai báo jobs.<id>.outputs ở Job nguồn → (3) Job đích khai báo needs và đọc needs.<id>.outputs.',
                     'Passing data across isolated Job VMs requires all 3 links: (1) Step writes "$GITHUB_OUTPUT" → (2) Job declares outputs: mapping → (3) Consumer declares needs: and reads needs.<id>.outputs!'
                   ),
         whatChanged:
@@ -960,7 +960,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Attach real ephemeral Postgres & Redis Service Containers with --health-cmd readiness gates'
       ),
       bi(
-        'Khoá trần timeout-minutes: 10 chống bẫy 360 phút mặc định và đảo ngược cờ cancel-in-progress giữa PR (true) và Production (false)',
+        'Đặt giới hạn timeout-minutes: 10 (tránh mức mặc định 360 phút) và cấu hình cancel-in-progress phù hợp giữa PR (true) và Production (false)',
         'Cap jobs with timeout-minutes: 10 and flip cancel-in-progress between PRs (true) and Production (false)'
       ),
     ],
@@ -974,14 +974,14 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           {
             label: bi('TRẦN THỜI GIAN', 'JOB TIMEOUT'),
             value: timeoutTrap
-              ? bi('Mặc định 360m → Khóa 10m!', 'Default 360m → Cap 10m!')
+              ? bi('Mặc định 360m → Giới hạn 10m', 'Default 360m → Cap 10m')
               : bi('timeout-minutes: 10', 'timeout-minutes: 10'),
             tone: timeoutTrap ? 'warn' : 'ok',
           },
           {
             label: bi('ĐIỀU TIẾT LUỒNG', 'CONCURRENCY'),
             value: concurrencyStep
-              ? bi('PR: true · Prod: false!', 'PR: true · Prod: false!')
+              ? bi('PR: true · Prod: false', 'PR: true · Prod: false')
               : bi('cancel-in-progress: true (PR)', 'cancel-in-progress: true (PR)'),
             tone: 'ok',
           },
@@ -995,25 +995,25 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Đừng chỉ tin vào Mock DB giả lập — hãy test trên Postgres & Redis thật!',
+                'Kiểm thử tích hợp với PostgreSQL & Redis thật bằng Service Containers',
                 'Mock Databases Lie — Test Against Ephemeral Real Containers!',
-                'Dữ liệu mock dễ bỏ lọt lỗi sai cú pháp SQL hoặc vỡ ràng buộc khoá ngoại. Service Containers dựng Postgres & Redis thật sống đúng vài phút cùng Job rồi tự xoá sạch sành sanh!',
+                'Dữ liệu mock dễ bỏ sót lỗi cú pháp SQL hoặc ràng buộc khóa ngoại. Service Containers khởi chạy Postgres & Redis thật dùng một lần ngay bên cạnh Job rồi xóa sạch khi hoàn tất.',
                 'Mocked DB calls miss real SQL syntax and foreign-key bugs. Service Containers boot real Postgres & Redis alongside your Job and wipe everything afterward!'
               )
             : timeoutTrap
               ? callout(
                   'watch-out',
-                  'Bẫy ngầm 360 phút (6 tiếng) đốt cháy ngân sách CI!',
+                  'Giới hạn timeout-minutes để tránh mức mặc định 360 phút (6 giờ)',
                   'The Silent 360-Minute (6-Hour) Default Timeout Trap!',
-                  'Nếu quên khai báo timeout-minutes, một kết nối DB treo sẽ làm Runner đứng im trừ tiền suốt 6 tiếng đồng hồ! Luôn đặt timeout-minutes: 10 (hoặc 15) cho mọi Job.',
+                  'Nếu không khai báo timeout-minutes, một kết nối DB bị treo sẽ làm Runner chờ suốt 6 giờ trước khi tự dừng. Luôn đặt timeout-minutes: 10 (hoặc 15) cho mọi Job.',
                   'Omitting timeout-minutes lets a single hung test burn 360 minutes (6 hours) of quota! Always declare explicit timeout-minutes: 10 or 15.'
                 )
               : concurrencyStep
                 ? callout(
                     'compare',
-                    'Một từ khoá concurrency — Hai thái cực sống còn PR vs Production!',
+                    'Cấu hình concurrency đối lập giữa PR và Production',
                     'One Concurrency Keyword — Opposite Rules for PR vs Prod!',
-                    'Trên nhánh PR nháp: bật cancel-in-progress: true để huỷ ngay lượt chạy cũ khi vừa đẩy commit mới. Trên Production: BẮT BUỘC đặt cancel-in-progress: false để xếp hàng tuần tự, tránh đứt gãy DB migration giữa chừng!',
+                    'Trên nhánh PR: bật cancel-in-progress: true để hủy lượt chạy cũ khi có commit mới. Trên Production: bắt buộc đặt cancel-in-progress: false để xếp hàng tuần tự, tránh hủy ngang quá trình DB migration.',
                     'On PR branches: set cancel-in-progress: true to abort stale commits. On Production: ALWAYS set cancel-in-progress: false to queue safely without corrupting live migrations!'
                   )
                 : s === 3
@@ -1128,11 +1128,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Phân biệt sống còn: Cache tăng tốc cài thư viện xuyên các lượt chạy (xoá vẫn chạy được); Artifact chuyển gói thành phẩm bất biến giữa các Job trong cùng 1 lượt chạy',
-        'Distinguish cross-run dependency Caches ("pantry") from intra-run immutable build Artifacts ("delivery package")'
+        'Phân biệt bản chất: Cache lưu thư mục phụ thuộc để tăng tốc giữa các lần chạy (xóa vẫn chạy được); Artifact lưu sản phẩm đầu ra bất biến để truyền giữa các Job trong cùng một lượt chạy',
+        'Distinguish cross-run dependency Caches from intra-run immutable build Artifacts'
       ),
       bi(
-        'Tuyệt đối không nén node_modules vào Artifact và áp dụng Read-Only Cache (actions/cache/restore@v4) chống Cache Poisoning',
+        'Không đẩy node_modules vào Artifact và áp dụng mô hình Read-Only Cache (actions/cache/restore@v4) để chống Cache Poisoning',
         'Never upload node_modules as an Artifact; use Read-Only Cache restore on parallel/PR jobs to prevent Cache Poisoning'
       ),
     ],
@@ -1163,32 +1163,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Ẩn dụ Căn bếp: "Tủ gia vị làm sẵn" (Cache) vs "Hộp món ăn giao khách" (Artifact)',
-                'Kitchen Analogy: Prepped Pantry (Cache) vs Sealed Delivery Box (Artifact)',
-                'Cache (~/.npm, ~/.cache/uv) giúp lần chạy sau đỡ tốn công tải lại thư viện — lỡ xoá sạch tủ thì đi chợ tải lại vẫn nấu xong món ăn! Còn Artifact (dist/, sbom.json) là hộp thành phẩm bàn giao từ Job Build sang Job Deploy — mất hộp này là Shipper dừng việc ngay!',
+                'Phân biệt Cache (tăng tốc cài thư viện) và Artifact (bàn giao thành phẩm)',
+                'Dependency Cache vs Build Artifacts',
+                'Cache (~/.npm, ~/.cache/uv) giúp các lần chạy sau không phải tải lại thư viện từ mạng — nếu bị xóa thì pipeline chỉ tải lại chậm hơn một chút. Artifact (dist/, sbom.json) là thành phẩm bắt buộc truyền từ Job Build sang Job Deploy trong cùng lượt chạy. (Có thể hình dung Cache giống kho nguyên liệu sơ chế sẵn, còn Artifact là hộp thành phẩm giao cho khách).',
                 'Cache (~/.npm, ~/.cache/uv) speeds up future runs — if evicted, CI simply re-downloads packages! Artifacts (dist/, sbom.json) hand off exact build outputs to Deploy — if missing, deployment halts!'
               )
             : s === 1
               ? callout(
                   'compare',
-                  'Phạm vi tồn tại trái ngược: Xuyên lượt chạy vs Trong 1 lượt chạy',
+                  'Phạm vi tồn tại khác nhau: Xuyên lượt chạy vs Trong 1 lượt chạy',
                   'Opposite Scopes: Cross-Run Best-Effort vs Single-Run Exact SHA',
-                  'Cache chia sẻ giữa lượt chạy hôm qua và các PR hôm nay (tự xoá sau 7 ngày không dùng); Artifact gắn chặt 100% vào đúng Commit SHA hiện tại (nên đặt retention-days: 7 cho bản nháp tiết kiệm 90% dung lượng).',
+                  'Cache chia sẻ giữa các lần chạy workflow khác nhau (tự xóa sau 7 ngày không truy cập); Artifact gắn chặt với đúng Commit SHA hiện tại (nên đặt retention-days: 7 cho bản tạm để tiết kiệm dung lượng).',
                   'Caches bridge across separate workflow runs (auto-evicted after 7 idle days); Artifacts belong strictly to one exact Commit SHA run.'
                 )
               : s === 2
                 ? callout(
                     'technique',
-                    'Thuật toán tra cứu 2 tầng: Exact Hash Hit + Lưới đỡ restore-keys',
+                    'Cơ chế tra cứu 2 tầng: Exact Hash Hit và dự phòng restore-keys',
                     'Two-Tier Lookup: Exact Lockfile Hash + Prefix restore-keys',
-                    'Khi PR không sửa lockfile, hashFiles khớp 100% (tải gói trong vài giây). Khi vừa cài thêm 1 thư viện mới, restore-keys vớt lại bản đệm cũ chứa sẵn 99% gói quen thuộc!',
+                    'Khi PR không sửa lockfile, hashFiles khớp 100% và giải nén gói trong vài giây. Khi vừa thêm thư viện mới, restore-keys giúp khôi phục bản đệm gần nhất chứa sẵn phần lớn gói cũ.',
                     'Unchanged lockfiles hit 100% exact cache keys; when adding a dependency, restore-keys salvage 99% of cached packages from the closest prefix!'
                   )
                 : callout(
                     'watch-out',
-                    'Đúc kết Kiến trúc sư: Cấm nén node_modules & Dùng Read-Only Cache!',
+                    'Lưu ý với node_modules và mô hình Read-Only Cache',
                     'Architect Takeaway: Never Artifact node_modules + Use Read-Only Cache!',
-                    'Nén 50.000 file nhỏ của node_modules vào Artifact mất 5 phút và làm hỏng quyền thực thi symlink! Hãy đệm ~/.npm bằng actions/cache/restore@v4 (chỉ đọc trên các nhánh PR/Job song song, chống ô nhiễm bộ đệm).',
+                    'Đẩy 50.000 file nhỏ của node_modules vào Artifact mất nhiều phút và dễ làm mất quyền thực thi symlink. Hãy đệm ~/.npm bằng actions/cache/restore@v4 (chỉ đọc trên PR/Job song song để tránh ghi đè và ô nhiễm bộ đệm).',
                     'Archiving 50,000 tiny node_modules files takes minutes and breaks +x symlinks! Cache ~/.npm instead, using actions/cache/restore@v4 on parallel/PR jobs to prevent cache poisoning.'
                   ),
         whatChanged:
@@ -1289,11 +1289,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Nén Đường găng (Critical Path): chạy song song DAG + chia mảnh bộ E2E nặng (--shard=1/4..4/4) hội tụ về cổng duy nhất gate',
+        'Tối ưu đường găng (Critical Path): chạy song song DAG và chia mảnh kiểm thử E2E (--shard=1/4..4/4) hội tụ về cổng duy nhất gate',
         'Compress Critical Path using parallel DAG + 4-way E2E sharding converging into a single aggregator gate'
       ),
       bi(
-        'Lưu đệm toàn bộ tầng trung gian Docker bằng cache-to: type=gha,mode=max và thay thế sleep 30 mù quáng bằng thăm dò /healthz',
+        'Lưu đệm toàn bộ tầng trung gian Docker với cache-to: type=gha,mode=max và thay thế sleep 30 cố định bằng thăm dò /healthz',
         'Cache multi-stage Docker layers with mode=max and replace flaky blind sleeps with active /healthz polling'
       ),
     ],
@@ -1341,16 +1341,16 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               : shardStep
                 ? callout(
                     'watch-out',
-                    'Chia 4 mảnh Playwright: Đừng quên fail-fast: false & if: !cancelled()!',
+                    'Khi chia 4 mảnh Playwright: kết hợp fail-fast: false và if: !cancelled()',
                     'Sharding Gotcha: Pair fail-fast: false with if: !cancelled()!',
-                    'Nếu thiếu if: ${{ !cancelled() }} ở bước upload-artifact, ngay khi mảnh 2/4 bắt được lỗi UI và trả Exit 1, bước tải ảnh chụp màn hình lỗi sẽ bị Skipped mất trắng tang vật!',
+                    'Nếu thiếu if: ${{ !cancelled() }} ở bước upload-artifact, ngay khi mảnh 2/4 gặp lỗi UI và trả Exit 1, bước tải ảnh chụp màn hình lỗi sẽ bị Skipped làm mất dữ liệu chẩn đoán.',
                     'Without if: ${{ !cancelled() }} on upload-artifact, a failing shard skips the report upload step — wiping out the exact crash screenshots you need!'
                   )
                 : callout(
                     'key-idea',
-                    'Đúc kết Kiến trúc sư: mode=max cho Multi-stage Docker & Xoá sổ sleep 30!',
+                    'Dùng mode=max cho Multi-stage Docker & thay sleep 30 bằng Polling /healthz',
                     'Architect Takeaway: Buildx mode=max & Active Readiness Polling',
-                    'Mặc định Docker cache mode=min bỏ quên tầng builder trung gian — hãy bật mode=max! Và thay ngay sleep 30 cảm tính bằng curl --fail --retry 15 --retry-connrefused /healthz.',
+                    'Mặc định Docker cache mode=min bỏ qua tầng builder trung gian — hãy bật mode=max. Đồng thời thay sleep 30 cố định bằng curl --fail --retry 15 --retry-connrefused /healthz.',
                     'Default mode=min skips intermediate multi-stage builder layers — always set mode=max! And replace blind sleep 30 with deterministic curl --retry readiness polling.'
                   ),
         whatChanged:
@@ -1477,40 +1477,40 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'GitLab CI ném thẳng từng Job vào trong Docker Container ngay giây đầu!',
+                'GitLab CI khởi chạy mỗi Job trực tiếp trong Docker Container',
                 'GitLab CI Is Container-Native Out of the Box!',
-                'Khác với GitHub Actions cấp máy ảo Ubuntu rồi bạn mới gọi setup-node, GitLab Runner khởi chạy mọi Job trực tiếp bên trong Docker/K8s Container khai báo tại default: { image: node:22-alpine }!',
+                'Khác với GitHub Actions cấp máy ảo Ubuntu rồi mới gọi setup-node, GitLab Runner khởi chạy mọi Job trực tiếp bên trong Docker/K8s Container khai báo tại default: { image: node:22-alpine }.',
                 'Unlike VM-first GitHub Actions, GitLab Runner boots every Job directly inside the Docker image declared under default: { image: node:22-alpine }!'
               )
             : s === 1
               ? callout(
                   'compare',
-                  '2 Đặc sản siêu gọn của GitLab: Auto-Artifact & parallel: 4',
+                  'Tính năng tích hợp sẵn của GitLab: Auto-Artifact và parallel: 4',
                   'Two GitLab Superpowers: Auto-Artifacts & 1-Line Sharding',
-                  'Trên GitLab, các stage sau TỰ ĐỘNG tải artifacts của stage trước không cần plugin rời; và chỉ cần viết đúng 1 dòng parallel: 4 là tự có biến $CI_NODE_INDEX/$CI_NODE_TOTAL!',
+                  'Trên GitLab, các stage sau tự động tải artifacts của stage trước không cần plugin rời; và chỉ cần khai báo parallel: 4 là hệ thống tự cấp biến $CI_NODE_INDEX/$CI_NODE_TOTAL.',
                   'Downstream GitLab stages auto-download upstream artifacts natively, and a single line parallel: 4 shards tests with automatic $CI_NODE_INDEX/$CI_NODE_TOTAL vars!'
                 )
               : s === 2
                 ? callout(
                     'technique',
-                    'Phá vỡ bức tường chờ đợi tuần tự của stages bằng needs: []',
+                    'Thực thi song song giữa các stage bằng từ khóa needs: []',
                     'Break Rigid Stage Barriers with needs: []',
-                    'Mặc định toàn bộ stage trước phải xong thì stage sau mới được chạy. Gắn mảng rỗng needs: [] giúp các Job nhẹ (như lint) phóng đi ngay lập tức ở giây thứ 0!',
+                    'Mặc định toàn bộ stage trước phải xong thì stage sau mới được chạy. Gắn mảng rỗng needs: [] giúp các Job nhẹ (như lint) chạy ngay ở giây thứ 0.',
                     'By default, stages wait for every prior-stage job. Adding needs: [] lets fast lint jobs launch immediately at second zero!'
                   )
                 : s === 3
                   ? callout(
                       'watch-out',
-                      'Giới hạn sống còn của GitLab Cache: Phải nằm trong $CI_PROJECT_DIR!',
+                      'Giới hạn đường dẫn GitLab Cache: phải nằm trong $CI_PROJECT_DIR',
                       'Critical GitLab Cache Rule: Must Live Inside $CI_PROJECT_DIR!',
-                      'Viết paths: ["~/.npm"] trên GitLab sẽ bị bỏ qua ngay vì nằm ngoài thư mục dự án! Hãy trỏ vào .npm/ nội bộ kèm policy: pull cho các Job test chỉ đọc.',
+                      'Viết paths: ["~/.npm"] trên GitLab sẽ bị bỏ qua vì nằm ngoài thư mục dự án. Hãy trỏ vào .npm/ nội bộ kèm policy: pull cho các Job test chỉ đọc.',
                       'Paths outside $CI_PROJECT_DIR like ~/.npm are ignored by GitLab Runner! Cache .npm/ inside the workspace with policy: pull on downstream test jobs.'
                     )
                   : callout(
                       'key-idea',
-                      'Đúc kết Kiến trúc sư: rules: hiện đại & Toàn cảnh Hệ sinh thái CI/CD',
+                      'Sử dụng rules: hiện đại và đối chiếu hệ sinh thái công cụ CI/CD',
                       'Architect Takeaway: Blocking Manual Rules & Ecosystem Orientation',
-                      'Luôn kèm allow_failure: false cạnh when: manual để khóa cứng cổng Prod; và nắm rõ khi nào chọn GitHub Actions (Cloud), GitLab CI (On-prem), Jenkins (Legacy), Buildkite (Hybrid quy mô lớn) hay Dagger (Container SDK)!',
+                      'Luôn kèm allow_failure: false cạnh when: manual để khóa cổng Production; đồng thời nắm rõ ưu nhược điểm giữa GitHub Actions (Cloud), GitLab CI (On-prem), Jenkins (Legacy), Buildkite (Hybrid quy mô lớn) và Dagger (Container SDK).',
                       'Always pair when: manual with allow_failure: false for blocking Prod gates — and know the trade-offs across GitHub Actions, GitLab CI, Jenkins, Buildkite, and Dagger!'
                     ),
         whatChanged:
@@ -1601,40 +1601,40 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Vì sao Máy chủ CI Runner là "Kho Báu Tối Thượng" của Hacker?',
+                'Vì sao CI/CD Runner là mục tiêu tấn công có giá trị cao?',
                 'Why Hackers Target CI Runners Above Everything Else',
-                'Runner giữ chìa khoá ghi code vào kho Git, đẩy ảnh lên Registry và triển khai thẳng lên Cloud! Chỉ một lỗ hổng thực thi mã từ xa (RCE) từ Pull Request lạ là kẻ tấn công chiếm trọn hạ tầng công ty.',
+                'Runner giữ quyền ghi code vào kho Git, đẩy ảnh lên Registry và triển khai lên Cloud. Chỉ một lỗ hổng thực thi mã từ xa (RCE) từ Pull Request bên ngoài có thể làm lộ toàn bộ hạ tầng.',
                 'CI Runners hold Git write tokens, registry credentials, and cloud deploy access! One Pull Request RCE vulnerability hands attackers the keys to your entire kingdom.'
               )
             : s === 1
               ? callout(
                   'technique',
-                  'Nguyên lý Đặc quyền tối thiểu: "Thẻ từ khách sạn chỉ mở đúng phòng 302"',
-                  'Least Privilege: Hotel Keycard vs Master Building Key',
-                  'Đặt permissions: { contents: read } ngay đầu tệp YAML để tước quyền write-all mặc định của GITHUB_TOKEN; chỉ cấp thêm packages: write ở đúng duy nhất Job đóng gói!',
+                  'Nguyên tắc đặc quyền tối thiểu cho GITHUB_TOKEN (permissions:)',
+                  'Least Privilege: Scoped Permissions vs Default Write-All',
+                  'Đặt permissions: { contents: read } ngay đầu tệp YAML để thu hồi quyền write-all mặc định của GITHUB_TOKEN; chỉ cấp thêm packages: write ở đúng duy nhất Job đóng gói (tương tự thẻ từ chỉ mở đúng phòng cần thiết).',
                   'Set top-level permissions: { contents: read } to strip default write-all privileges, granting narrow scopes like packages: write only on the specific packaging job!'
                 )
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Script Injection trong YAML nguy hiểm y hệt SQL Injection!',
+                    'Phòng chống lỗ hổng Script Injection qua biến môi trường env:',
                     'YAML ${{ ... }} Inside run: Is Shell Injection!',
-                    'GitHub bung văn bản ${{ github.event.pull_request.title }} (và cả tên nhánh head.ref!) TRƯỚC KHI chạy bash. Đặt tiêu đề PR chứa "; curl ... là chèn lệnh đánh cắp Secret ngay! Luôn truyền qua khối env:.',
+                    'GitHub nội suy văn bản ${{ github.event.pull_request.title }} (và tên nhánh head.ref) trước khi chạy bash. Đặt tiêu đề PR chứa "; curl ... sẽ thực thi lệnh tùy ý (tương tự SQL Injection). Luôn truyền dữ liệu đầu vào qua khối env:.',
                     'GitHub expands ${{ ... }} text BEFORE bash parses the script! Malicious PR titles or branch names execute arbitrary shell commands unless bound through env: variables.'
                   )
                 : s === 3
                   ? callout(
                       'watch-out',
-                      'Tử huyệt "Pwn Request": Sai hậu tố _target là mất trắng kho Secrets!',
+                      'Phòng tránh Pwn Request: phân biệt pull_request và pull_request_target',
                       'Pwn Request Alert: pull_request vs pull_request_target',
-                      'pull_request_target chạy với ĐẦY ĐỦ Secrets của nhánh main! Nếu bên trong nó bạn checkout code từ Fork rồi gõ npm ci, lệnh postinstall trong package.json của kẻ lạ sẽ hút sạch toàn bộ khóa Production!',
+                      'pull_request_target chạy với đầy đủ Secrets của nhánh main. Nếu bên trong nó bạn checkout code từ Fork rồi chạy npm ci, kịch bản postinstall trong package.json của người gửi PR có thể đọc toàn bộ khóa Production.',
                       'pull_request_target runs with full main secrets and write token! Checking out untrusted Fork code and running npm ci executes attacker postinstall scripts with full secrets!'
                     )
                   : callout(
                       'key-idea',
-                      'Đúc kết Kiến trúc sư: Ghim cứng mã băm SHA đủ 40 ký tự!',
+                      'Bảo mật chuỗi cung ứng bằng cách ghim mã băm Commit SHA 40 ký tự',
                       'Architect Takeaway: Pin Third-Party Actions to 40-Char SHAs!',
-                      'Thẻ phiên bản @v4 hay @main có thể bị kẻ chiếm quyền kho Action trỏ lén sang mã độc (như vụ tj-actions/changed-files 2025). Chỉ mã băm Commit SHA đủ 40 ký tự hex mới bất biến tuyệt đối!',
+                      'Thẻ phiên bản @v4 hay @main có thể bị kẻ chiếm quyền kho Action trỏ sang mã độc (như sự cố tj-actions/changed-files năm 2025). Chỉ mã băm Commit SHA đủ 40 ký tự hex mới đảm bảo bất biến.',
                       'Mutable tags like @v4 can be hijacked overnight (as seen in the 2025 tj-actions attack). Always pin third-party Actions to full immutable 40-character commit SHAs!'
                     ),
         whatChanged:
@@ -1762,11 +1762,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Giải mã rạch ròi 5 lớp bảo mật: Secret Scan (lịch sử Git) → SAST (code tự viết) → SCA (thư viện cài thêm) → Trivy (ảnh OS Container) → SBOM ("bảng thành phần nguyên liệu")',
-        'Demystify Secret Scanning, SAST (your code), SCA (3rd-party deps), Trivy (OS image CVEs), and SBOM ("ingredient label")'
+        'Phân biệt rõ 5 lớp bảo mật: Secret Scan (lịch sử Git), SAST (code tự viết), SCA (thư viện bên thứ ba), Trivy (CVE hệ điều hành Container) và SBOM (danh mục thành phần phần mềm)',
+        'Demystify Secret Scanning, SAST (your code), SCA (3rd-party deps), Trivy (OS image CVEs), and SBOM (software bill of materials)'
       ),
       bi(
-        'Triệt tiêu cảnh báo nhiễu (--omit=dev, Trivy --exit-code 1 --ignore-unfixed) và đóng gói Container Rootless với Kaniko thay cho docker:dind đặc quyền',
+        'Giảm thiểu cảnh báo nhiễu (--omit=dev, Trivy --exit-code 1 --ignore-unfixed) và đóng gói Container Rootless với Kaniko thay cho docker:dind đặc quyền',
         'Eliminate alert fatigue (--omit=dev, --exit-code 1 --ignore-unfixed) and build rootless images via Kaniko'
       ),
     ],
@@ -1798,32 +1798,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Shift-Left Security: Bắt lỗ hổng ngay phút thứ 3 của PR thay vì tuần cuối trước lễ ra mắt!',
+                'Shift-Left Security: Kiểm tra bảo mật tự động ngay từ mỗi Pull Request',
                 'Shift-Left DevSecOps: Catch Flaws in 3 Minutes on Every PR',
-                'Đợi tới sát ngày phát hành mới quét bảo mật sẽ làm trễ tiến độ hàng tháng trời. Đưa 5 trạm gác tự động vào CI biến việc bắt lỗi bảo mật nhẹ nhàng y như ESLint báo lỗi cú pháp!',
+                'Chờ tới sát ngày phát hành mới quét bảo mật dễ làm chậm tiến độ. Đưa 5 lớp kiểm tra tự động vào CI giúp phát hiện sớm lỗ hổng tương tự như công cụ lint.',
                 'Waiting until pre-launch security audits stalls releases for weeks. Running 5 fast automated gates on every PR catches vulnerabilities as effortlessly as linting!'
               )
             : s === 1
               ? callout(
                   'compare',
-                  'Phân biệt trong 10 giây: SAST vs SCA vs Trivy vs SBOM!',
+                  'Phân biệt vai trò: SAST, SCA, Trivy Image Scan và SBOM',
                   '10-Second Clarity: SAST vs SCA vs Image Scan vs SBOM!',
-                  'SAST soi lỗi trong code BẠN TỰ VIẾT; SCA soi lỗ hổng trong thư viện BÊN THỨ BA bạn cài vào; Trivy soi các gói Linux dưới đáy Docker Image; còn SBOM là "bảng thành phần nguyên liệu" giúp tra cứu Zero-day mới trong 2 giây!',
+                  'SAST phân tích mã nguồn tự viết; SCA kiểm tra thư viện bên thứ ba; Trivy quét các gói hệ điều hành bên trong Docker Image; còn SBOM xuất danh mục thành phần JSON giúp truy vết nhanh khi có lỗ hổng Zero-day mới.',
                   'SAST scans YOUR code; SCA audits THIRD-PARTY packages; Trivy scans OS packages inside the container image; and SBOM is the "nutrition ingredient label" for 2-second Zero-day lookups!'
                 )
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Bẫy chí mạng: Gitleaks thiếu fetch-depth: 0 & Trivy mặc định trả Exit Code 0!',
+                    'Lưu ý cấu hình Gitleaks (fetch-depth: 0) và Trivy (--exit-code 1)',
                     'Two Classic Traps: Shallow Gitleaks & Trivy Default Exit 0!',
-                    'Gitleaks bắt buộc cần fetch-depth: 0 để bắt khóa lộ ở commit cũ trong PR; còn trivy image nếu quên truyền --exit-code 1 thì dù thấy 20 lỗ hổng CRITICAL nó vẫn trả 0 (Báo Xanh)! Kết hợp thêm --ignore-unfixed để tránh báo động nhiễu.',
+                    'Gitleaks cần fetch-depth: 0 để kiểm tra cả khóa lộ trong commit cũ của PR; còn trivy image mặc định trả về 0 nên phải truyền --exit-code 1 (kèm --ignore-unfixed để giảm cảnh báo chưa có bản vá).',
                     'Gitleaks needs fetch-depth: 0 to catch keys deleted in later commits; and Trivy returns Exit 0 by default unless you pass --exit-code 1 (pair with --ignore-unfixed to avoid unactionable noise)!'
                   )
                 : callout(
                     'watch-out',
-                    'Đúc kết Kiến trúc sư: Bỏ docker:dind (privileged), dùng Kaniko / BuildKit Rootless!',
+                    'Thay thế docker:dind (privileged) bằng Kaniko hoặc BuildKit Rootless',
                     'Architect Takeaway: Replace Privileged DinD with Rootless Kaniko!',
-                    'Bật cờ privileged: true hay gắn /var/run/docker.sock trên cụm Runner dùng chung tương đương trao quyền root máy chủ vật lý cho code PR! Hãy dùng Kaniko đóng gói hoàn toàn trong Userspace an toàn.',
+                    'Bật privileged: true hoặc gắn /var/run/docker.sock trên Runner dùng chung tiềm ẩn rủi ro thoát khỏi container chiếm quyền host. Kaniko đóng gói image hoàn toàn trong userspace mà không cần quyền root.',
                     'Mounting docker.sock or running privileged DinD on shared runners grants host root escape! Use daemonless, rootless Kaniko or BuildKit instead.'
                   ),
         whatChanged:
@@ -1927,11 +1927,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Xoá sổ hoàn toàn "chìa khoá cổng chính vĩnh viễn" (AWS_SECRET_ACCESS_KEY) bằng "thẻ khách thăm tự huỷ sau 15 phút" (OIDC JWT → AWS STS / GCP WIF)',
-        'Replace multi-year static cloud keys with 15-minute self-expiring OIDC JWT visitor badges via AWS STS / GCP WIF'
+        'Thay thế hoàn toàn khóa tĩnh dài hạn (AWS_SECRET_ACCESS_KEY) bằng xác thực không mật khẩu sử dụng token ngắn hạn OIDC JWT (tự hết hạn sau 15–60 phút) qua AWS STS hoặc GCP WIF',
+        'Replace multi-year static cloud keys with 15-minute self-expiring OIDC JWT tokens via AWS STS / GCP WIF'
       ),
       bi(
-        'Khoá chặt trường sub & aud trong IAM Trust Policy (cấm repo:*) và đóng dấu "giấy chứng nhận xuất xứ bản build" SLSA Build Provenance',
+        'Giới hạn chặt điều kiện sub & aud trong IAM Trust Policy (không dùng ký tự đại diện repo:*) và xác thực nguồn gốc bản build với chuẩn SLSA Build Provenance',
         'Lock IAM Trust Policy sub & aud claims strictly and sign cryptographic SLSA Build Provenance attestations'
       ),
     ],
@@ -1943,18 +1943,18 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         telemetry: [
           {
             label: bi('KHOÁ TĨNH LƯU TRỮ', 'STATIC CLOUD KEYS'),
-            value: bi('0 (Xoá sổ 100%!)', '0 (100% Eliminated!)'),
+            value: bi('0 (Không lưu Static Key)', '0 (Zero Static Keys)'),
             tone: 'ok',
           },
           {
-            label: bi('THẺ TẠM THỜI OIDC', 'STS BADGE TTL'),
-            value: bi('15–60 phút tự huỷ', '15–60m auto-expiring'),
+            label: bi('THẺ TẠM THỜI OIDC', 'STS TOKEN TTL'),
+            value: bi('15–60 phút tự hết hạn', '15–60m auto-expiring'),
             tone: 'ok',
           },
           {
             label: bi('ĐIỀU KIỆN TIN CẬY', 'IAM SUB CLAIM'),
             value: subTrap
-              ? bi('Cấm tuyệt đối repo:*!', 'NEVER allow repo:*!')
+              ? bi('Không dùng repo:*', 'Never allow repo:*')
               : isLast
                 ? bi('SLSA Provenance Signed ✔', 'SLSA Provenance Signed ✔')
                 : bi('repo:org/app:ref:main', 'repo:org/app:ref:main'),
@@ -1965,32 +1965,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Bỏ "Chìa khoá sắt cổng chính vĩnh viễn", đổi sang "Thẻ khách thăm tự huỷ sau 15 phút"!',
-                'Replace Permanent House Keys with 15-Minute Visitor Badges!',
-                'Lưu AWS_SECRET_ACCESS_KEY cố định trong GitHub Secrets suốt 3 năm giống như giấu chìa khoá cổng chính dưới thảm — lộ 1 lần là mất nhà! Keyless OIDC cấp thẻ JWT dùng 1 lần tự hết hạn sau 15 phút.',
-                'Storing static AWS_SECRET_ACCESS_KEY for years is like hiding a permanent house key under the doormat! Keyless OIDC issues a 15-minute self-expiring visitor badge per run.'
+                'Xác thực không dùng khóa tĩnh (Keyless OIDC) thay cho Static Keys',
+                'Keyless OIDC Authentication vs Static Keys',
+                'Lưu AWS_SECRET_ACCESS_KEY dài hạn trong GitHub Secrets có rủi ro lộ thông tin vĩnh viễn nếu bị đánh cắp. Keyless OIDC thay thế hoàn toàn khóa tĩnh bằng token JWT ngắn hạn chỉ có hiệu lực 15–60 phút cho từng lần chạy (tương tự thẻ ra vào tạm thời thay cho chìa khóa cố định).',
+                'Storing static AWS_SECRET_ACCESS_KEY for years risks permanent compromise if leaked. Keyless OIDC issues a 15-minute self-expiring JWT token per run.'
               )
             : s === 1
               ? callout(
                   'technique',
-                  'Cặp bài trùng bắt buộc: id-token: write + AWS STS / GCP WIF',
+                  'Cơ chế trao đổi token: id-token: write + AWS STS / GCP WIF',
                   'How OIDC Handshake Works Across AWS, GCP & Azure',
-                  'Runner dùng quyền id-token: write xin GitHub ký thẻ OIDC JWT, rồi gửi sang AWS STS (hoặc GCP Workload Identity Federation / Azure) đổi lấy phiên truy cập tạm thời mà không lưu một ký tự mật khẩu nào!',
+                  'Runner dùng quyền id-token: write để nhận OIDC JWT từ GitHub, sau đó gửi sang AWS STS (hoặc GCP Workload Identity Federation / Azure) để đổi lấy phiên truy cập tạm thời mà không cần lưu bất kỳ mật khẩu tĩnh nào.',
                   'With id-token: write, the runner requests a GitHub-signed JWT and exchanges it at AWS STS (or GCP Workload Identity Federation) for ephemeral credentials — zero stored secrets!'
                 )
               : subTrap
                 ? callout(
                     'watch-out',
-                    'Tử huyệt phía Cloud: Quên khoá trường "sub" là người lạ chiếm trọn tài khoản AWS!',
+                    'Rủi ro bảo mật Cloud: Bắt buộc ràng buộc trường "sub" trong Trust Policy',
                     'Critical Cloud Misconfiguration: Always Lock the "sub" Claim!',
-                    'Mọi kho GitHub trên thế giới đều dùng chung máy chủ phát hành token.actions.githubusercontent.com! Nếu IAM Trust Policy thiếu điều kiện sub (hoặc ghi repo:*), bất kỳ ai biết ARN Role cũng mạo danh chiếm quyền Cloud của bạn ngay!',
+                    'Mọi kho GitHub đều dùng chung máy chủ phát hành token.actions.githubusercontent.com. Nếu IAM Trust Policy thiếu điều kiện sub (hoặc dùng "repo:*"), bất kỳ kho GitHub bên ngoài nào biết Role ARN đều có thể nhận quyền truy cập hạ tầng của bạn.',
                     'Every GitHub user shares issuer token.actions.githubusercontent.com! Omitting the sub claim condition (or using repo:*) lets any external GitHub repo assume your production IAM Role!'
                   )
                 : callout(
                     'key-idea',
-                    'Đúc kết Kiến trúc sư: SLSA Build Provenance — "Giấy chứng nhận xuất xứ bản build"',
+                    'Xác thực nguồn gốc bản build với chuẩn SLSA Build Provenance',
                     'Architect Takeaway: SLSA Provenance = Certificate of Origin',
-                    'Kết hợp id-token: write + attestations: write với attest-build-provenance@v2 đóng dấu mật mã chứng minh ảnh Container thực sự sinh ra từ máy chủ CI chính hãng chứ không phải bản build lậu cài cửa hậu!',
+                    'Kết hợp id-token: write + attestations: write với actions/attest-build-provenance@v2 để ký mật mã xác nhận ảnh Container thực sự được build từ đúng kho Git, commit SHA và workflow CI chính thống.',
                     'Pairing id-token: write + attestations: write signs an unforgeable SLSA certificate proving the container image came from your exact repo, commit, and trusted CI workflow!'
                   ),
         whatChanged:
@@ -2149,16 +2149,16 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Hai câu bẫy phỏng vấn kinh điển về tệp .github/CODEOWNERS!',
+                    'Hai quy tắc quan trọng khi cấu hình .github/CODEOWNERS',
                     'Two Classic CODEOWNERS Gotchas!',
-                    '1) Đọc từ trên xuống dưới, DÒNG KHỚP CUỐI CÙNG THẮNG (giống .gitignore)! 2) Chỉ tạo file CODEOWNERS thôi thì CHƯA khóa được nút Merge — bắt buộc phải bật kèm tùy chọn "Require review from Code Owners" trong Ruleset!',
+                    '1) Đọc từ trên xuống dưới, dòng khớp cuối cùng sẽ có hiệu lực (tương tự .gitignore). 2) Chỉ tạo file CODEOWNERS chưa đủ để chặn nút Merge — cần bật thêm tùy chọn "Require review from Code Owners" trong Branch Ruleset.',
                     '1) Evaluated top-to-bottom where LAST MATCH WINS! 2) CODEOWNERS alone only requests reviews — you MUST enable "Require review from Code Owners" in Branch Rulesets to block merges!'
                   )
                 : callout(
                     'watch-out',
-                    'Đúc kết Kiến trúc sư: Lọc nhiễu lockfile & Chặn lộ OPENAI_API_KEY trên PR Fork!',
+                    'Giảm nhiễu cho AI Review và bảo vệ API Key trước Fork PR',
                     'Architect Takeaway: Low-Noise, Fork-Safe AI Review Gates',
-                    'Loại bỏ !**/package-lock.json và !**/dist/** trong path_filters để AI không bình luận rác; và tuyệt đối không chạy AI workflow giữ khóa API bằng pull_request_target trên code từ Fork!',
+                    'Loại bỏ !**/package-lock.json và !**/dist/** trong path_filters để tránh AI tạo bình luận thừa; đồng thời không chạy AI workflow giữ khóa API bằng pull_request_target trên code từ Fork.',
                     'Exclude lockfiles and dist/ via path_filters to prevent noisy AI comments, and never expose LLM API keys to untrusted Fork code via pull_request_target!'
                   ),
         whatChanged:
@@ -2252,7 +2252,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Tag immutable commit-SHA images instead of mutable :latest so rollbacks always target an exact known artifact'
       ),
       bi(
-        'Phân biệt Rolling Update, Blue-Green (2 sân khấu song song, gạt <1s, tốn ~2x hạ tầng) và Canary (mở hé 5% → 25% → 100%) kèm tự động Rollback (curl --fail + if: failure())',
+        'Phân biệt Rolling Update, Blue-Green (hai cụm song song, chuyển lưu lượng tức thì, tốn ~2x tài nguyên) và Canary (chuyển dần 5% → 25% → 100%) kèm tự động Rollback (curl --fail + if: failure())',
         'Contrast Rolling, Blue-Green (instant switch, 2x capacity), and Canary (5%->25%->100%) with automated SLO rollback'
       ),
     ],
@@ -2283,32 +2283,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Phát hành 30 lần/ngày lúc cao điểm mà khách hàng không thấy 1 trang lỗi!',
+                'Phát hành liên tục không gián đoạn (Zero-Downtime Delivery)',
                 'Deploy 30× a Day at Peak Load with Zero User-Facing Errors!',
-                'Bí quyết không nằm ở việc viết code không bao giờ có bug, mà nằm ở kiến trúc thu hẹp bán kính ảnh hưởng (Blast Radius) xuống 5% lưu lượng và tự động quay lui trong dưới 30 giây khi chỉ số lỗi nhích lên!',
+                'Độ tin cậy cao đạt được nhờ giới hạn phạm vi ảnh hưởng (Blast Radius) xuống 5% lưu lượng khi thử nghiệm bản mới và tự động quay lui trong dưới 30 giây nếu tỷ lệ lỗi tăng vượt ngưỡng.',
                 'Elite reliability comes not from bug-free humans, but from shrinking deployment blast radius to 5% traffic and auto-rolling back within 30 seconds on metric spikes!'
               )
             : s === 1
               ? callout(
                   'watch-out',
-                  'Tại sao thẻ Docker ":latest" phá hỏng khả năng Rollback lúc 2 giờ sáng?',
+                  'Lý do không nên dùng thẻ Docker ":latest" trên Production',
                   'Why Mutable ":latest" Tags Destroy 2 AM Rollbacks',
-                  'Đẩy đè lên :latest làm mất dấu ảnh ổn định cũ và khiến các Node K8s kéo lệch phiên bản! Mỗi commit bắt buộc mang thẻ bất biến sha-${{ github.sha }} (hoặc v1.4.2) để lùi về trong 1 dòng lệnh.',
+                  'Đẩy đè lên :latest làm mất dấu ảnh ổn định cũ và khiến các Node K8s chạy lệch phiên bản. Mỗi commit nên gắn thẻ bất biến sha-${{ github.sha }} (hoặc v1.4.2) để có thể quay lui chính xác.',
                   'Overwriting :latest erases your last known-good artifact and causes node version skew! Always tag images immutably with sha-${{ github.sha }}.'
                 )
               : s === 2
                 ? callout(
                     'compare',
-                    'Ẩn dụ 3 Chiến lược: Thay xe buýt cuốn chiếu vs 2 Sân khấu vs Chim hoàng yến!',
-                    'Rolling Bus Swap vs Dual Blue-Green Stage vs Coal-Mine Canary!',
-                    'Rolling Update thay từng Pod tiết kiệm tiền; Blue-Green dựng cụm Green song song rồi gạt công tắc 100% trong <1s (tốn gấp đôi RAM/CPU tạm thời); Canary mở hé 5% dò lỗi trước rồi mới nâng 25% → 100% (nhớ pause: {} dừng chờ lệnh promote)!',
+                    'So sánh 3 chiến lược: Rolling Update, Blue-Green và Canary',
+                    'Rolling Update vs Blue-Green vs Canary Strategies',
+                    'Rolling Update thay thế lần lượt từng Pod để tiết kiệm chi phí; Blue-Green dựng cụm mới song song rồi chuyển 100% lưu lượng tức thì (tốn ~2x tài nguyên tạm thời); Canary chuyển dần 5% → 25% → 100% để theo dõi lỗi sớm (dùng pause: {} khi cần dừng chờ lệnh promote).',
                     'Rolling swaps pods gradually; Blue-Green switches 100% traffic in <1s at 2× temp capacity; Canary tests 5% live traffic first before promoting 25% → 100%!'
                   )
                 : callout(
                     'watch-out',
-                    'Đúc kết Kiến trúc sư: Hai cái bẫy làm "Đứt Phanh" Job Rollback tự động!',
+                    'Hai lỗi cấu hình làm vô hiệu hóa Job Rollback tự động',
                     'Architect Takeaway: Two Bugs That Silently Disable Rollback!',
-                    '1) Smoke test gọi curl thiếu cờ --fail sẽ báo Xanh dù API trả 500! 2) Job rollback có needs: [smoke-test] nếu quên viết if: failure() sẽ bị GitHub tự động SKIPPED ngay lúc smoke-test báo Đỏ!',
+                    '1) Smoke test gọi curl thiếu cờ --fail vẫn thoát mã 0 dù API trả HTTP 500. 2) Job rollback có needs: [smoke-test] nếu thiếu if: failure() sẽ bị GitHub bỏ qua (Skipped) ngay khi smoke-test thất bại.',
                     '1) curl without --fail exits 0 on HTTP 500! 2) A rollback job with needs: defaults to if: success() — without explicit if: failure(), it gets SKIPPED right when smoke tests fail!'
                   ),
         whatChanged:
@@ -2450,9 +2450,9 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Ẩn dụ: Đừng trao chìa khoá két sắt cho Shipper bên ngoài — hãy đặt Quản gia bên trong cụm!',
+                'Pull-based GitOps: Không lưu KUBECONFIG quản trị cụm trên CI bên ngoài',
                 'Stop Handing Cluster-Admin Keys to External CI Runners!',
-                'Push-based CD bắt bạn lưu KUBECONFIG quyền tối cao trên CI bên ngoài và mở cổng tường lửa K8s ra Internet. Pull-based GitOps đặt Argo CD nằm kín BÊN TRONG cụm K8s, chủ động kéo bản thiết kế chuẩn từ Git về thực thi!',
+                'Push-based CD yêu cầu lưu KUBECONFIG quyền cao trên CI bên ngoài và mở API Server K8s ra Internet. Pull-based GitOps đặt Argo CD bên trong cụm K8s để chủ động kéo cấu hình chuẩn từ Git về đồng bộ.',
                 'Push-based CD exposes cluster-admin KUBECONFIGs to external CI runners. Pull-based GitOps places Argo CD safely INSIDE the cluster, pulling desired YAML outbound from Git!'
               )
             : s === 1
@@ -2585,11 +2585,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Tuyệt đối không RENAME / DROP cột SQL trực tiếp lúc Rolling Update — áp dụng mô hình "xây cầu song song" 3 pha Expand → Switch Read → Contract',
+        'Không RENAME / DROP cột SQL trực tiếp trong lúc Rolling Update — áp dụng quy trình 3 pha tương thích ngược Expand → Switch Read → Contract',
         'Never RENAME/DROP SQL columns directly during RollingUpdates — apply 3-phase Expand-and-Contract'
       ),
       bi(
-        'Chạy CI thông minh theo đồ thị gói bị ảnh hưởng trên Monorepo (Turborepo --filter=...[origin/main] kèm fetch-depth: 0) và đo lường bộ 4 chỉ số DORA',
+        'Tối ưu Monorepo CI theo đồ thị phụ thuộc (Turborepo --filter=...[origin/main] kèm fetch-depth: 0) và đo lường 4 chỉ số DORA',
         'Filter Monorepo CI via dependency graphs (fetch-depth: 0 + --filter=...[origin/main]) and track the 4 DORA metrics'
       ),
     ],
@@ -2600,7 +2600,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         telemetry: [
           {
             label: bi('ĐỔI CỘT TRỰC TIẾP', 'DIRECT RENAME/DROP'),
-            value: bi('Sập Pod v1 ngay lập tức!', 'Crashes live v1 Pods!'),
+            value: bi('Lỗi Pod v1 khi Rolling Update', 'Crashes live v1 Pods'),
             tone: 'bad',
           },
           {
@@ -2621,32 +2621,32 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Ba bài toán lớn khi hệ thống vượt ngưỡng Startup nhỏ',
+                'Ba bài toán kiến trúc CI/CD khi hệ thống mở rộng quy mô',
                 'Three Architecture Pillars of High-Scale Engineering',
-                'Ở quy mô chục nghìn giao dịch/phút và trăm PR/ngày: sửa cột SQL ẩu sẽ làm nổ lỗi 500 lúc cuộn Pod; build lại cả kho Monorepo sẽ đốt sạch ngân sách; và thiếu chỉ số DORA sẽ khiến đội ngũ mù mờ về chất lượng!',
+                'Ở quy mô lớn: đổi tên cột SQL trực tiếp sẽ làm lỗi Pod v1 khi Rolling Update; build lại toàn bộ Monorepo gây lãng phí CI; và thiếu chỉ số DORA khiến đội ngũ khó đánh giá khách quan hiệu suất phát hành.',
                 'At scale: naive SQL renames crash rolling pods, unfiltered monorepos burn CI budgets, and missing DORA telemetry leaves engineering leadership flying blind!'
               )
             : s === 1
               ? callout(
                   'watch-out',
-                  'Ẩn dụ "Xây cầu mới song song cầu cũ": Vì sao cấm RENAME COLUMN trong 1 lần deploy?',
-                  'Parallel Bridge Analogy: Why Direct RENAME COLUMN Causes Outages!',
-                  'Trong 45 giây Rolling Update, cả Pod v1 (code cũ) và Pod v2 (code mới) CÙNG truy vấn 1 Database! Đổi tên cột ngay lập tức = đập sập cầu cũ khi xe v1 vẫn đang chạy trên đó! Phải tách 3 đợt: Expand (+cột NULL & ghi kép) → Switch Read → Contract (xóa cột cũ).',
+                  'Mô hình Expand-and-Contract 3 pha: vì sao không chạy RENAME COLUMN trực tiếp?',
+                  'Why Direct RENAME COLUMN Causes Outages During Rolling Updates',
+                  'Trong thời gian Rolling Update, cả Pod v1 (code cũ) và Pod v2 (code mới) cùng truy vấn vào một Database duy nhất. Đổi tên hoặc xóa cột ngay lập tức làm Pod v1 lỗi HTTP 500 và không thể Rollback. Cần tách thành 3 pha: Expand (thêm cột NULL & ghi kép) → Switch Read → Contract (xóa cột cũ) — tương tự việc xây cầu mới song song cầu cũ rồi mới tháo dỡ cầu cũ.',
                   'During RollingUpdates, old v1 and new v2 pods query ONE database simultaneously! Dropping/renaming a column mid-rollout crashes live v1 pods and breaks rollbacks — always split into Expand → Switch → Contract!'
                 )
               : s === 2
                 ? callout(
                     'technique',
-                    'Ba dấu chấm "..." thần kỳ của Turborepo & Điều kiện bắt buộc fetch-depth: 0!',
+                    'Lọc phụ thuộc bắc cầu trên Turborepo với fetch-depth: 0',
                     'Monorepo Transitive Dependents (...[origin/main]) Need fetch-depth: 0!',
-                    'Khi sửa gói nền packages/shared-dto, cờ --filter=...[origin/main] tự tìm và test luôn mọi ứng dụng cha có import gói đó! Nhưng nhớ bật fetch-depth: 0 trên checkout@v4 để Git nhìn thấy nhánh origin/main.',
+                    'Khi sửa gói dùng chung packages/shared-dto, cờ --filter=...[origin/main] tự động tìm và chạy CI cho cả các ứng dụng phụ thuộc vào gói đó. Lưu ý bật fetch-depth: 0 trên checkout@v4 để Git có lịch sử nhánh origin/main.',
                     'Prefixing three dots in --filter=...[origin/main] tests both the changed package AND every upstream app importing it — just remember checkout fetch-depth: 0 so origin/main exists!'
                   )
                 : callout(
                     'key-idea',
-                    'Đúc kết Kiến trúc sư: 4 Chỉ số DORA = 2 Chân Ga Tốc độ + 2 Phanh Ổn định!',
-                    'Architect Takeaway: DORA Balances Throughput (Gas) & Stability (Brakes)',
-                    'Chân Ga gồm Deployment Frequency & Lead Time (<1h); Phanh Ổn định gồm Change Failure Rate (0–5%) & MTTR (<1h). Chạy nhanh mà CFR vọt lên 30% không phải Agile — đó là phóng xe mất phanh!',
+                    '4 chỉ số DORA: cân bằng giữa Tốc độ (Throughput) và Độ ổn định (Stability)',
+                    'Architect Takeaway: DORA Balances Throughput & Stability',
+                    'Nhóm chỉ số Tốc độ gồm Deployment Frequency & Lead Time (<1h); nhóm Độ ổn định gồm Change Failure Rate (0–5%) & MTTR (<1h). Theo dõi đồng thời cả hai nhóm giúp phát hành nhanh mà vẫn giữ hệ thống ổn định.',
                     'Throughput tracks Deployment Frequency & Lead Time (<1h); Stability tracks Change Failure Rate (0–5%) & MTTR (<1h). True Elite teams excel at both simultaneously!'
                   ),
         whatChanged:
@@ -2701,8 +2701,8 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           activeIndices: s === 0 ? [0, 1] : s === 1 ? [0, 1, 2, 3] : s === 2 ? [1, 2] : [0, 1, 2, 3],
           pointers: isLast
             ? [
-                { index: 1, label: 'Tốc độ (Chân Ga)', tone: 'blue' },
-                { index: 3, label: 'Ổn định (Phanh)', tone: 'green' },
+                { index: 1, label: 'Tốc độ (Throughput)', tone: 'blue' },
+                { index: 3, label: 'Ổn định (Stability)', tone: 'green' },
               ]
             : [
                 { index: 0, label: 'v1 & v2 cùng sống ✔', tone: 'green' },
@@ -2730,11 +2730,11 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Phản xạ chuẩn trong 5 phút đầu sự cố: Cầm máu khôi phục dịch vụ trước (Rollback SHA ổn định / tắt Feature Flag giảm MTTR), mổ xẻ nguyên nhân gốc rễ sau',
+        'Nguyên tắc xử lý sự cố Production: khôi phục dịch vụ trước (Rollback về SHA ổn định hoặc tắt Feature Flag để giảm MTTR), phân tích nguyên nhân gốc rễ sau',
         'Follow Golden Incident Triage: restore service FIRST (<2m Rollback / Feature Flag kill-switch), debug root cause SECOND'
       ),
       bi(
-        'Xử lý dứt điểm 4 hồ sơ thực chiến: Nén đường găng 42p → <5p (B1), Chống đè deploy Prod (B2), Revoke & Rotate ngay khi lộ Secret trên Git (B3), và Diệt sạch False-Green (B6)',
+        'Xử lý 4 tình huống thực tế: tối ưu đường găng 42p → <5p (B1), xếp hàng deploy Production (B2), Revoke & Rotate ngay khi lộ Secret trên Git (B3), và loại bỏ lỗi False-Green (B6)',
         'Resolve all 4 war-room cases: 42m->5m sharding (B1), Prod concurrency queue (B2), immediate Secret Rotation + Gitleaks (B3), and False-Green elimination (B6)'
       ),
     ],
@@ -2746,14 +2746,14 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         telemetry: [
           {
             label: bi('ƯU TIÊN PHÚT ĐẦU', 'MINUTE-ZERO PRIORITY'),
-            value: bi('Cầm máu dịch vụ (<2m MTTR)', 'Mitigate first (<2m MTTR)'),
+            value: bi('Khôi phục dịch vụ (<2m MTTR)', 'Mitigate first (<2m MTTR)'),
             tone: 'ok',
           },
           {
             label: bi('KHI LỘ SECRET GIT', 'LEAKED GIT SECRET'),
             value: secretCase
-              ? bi('Revoke & Rotate NGAY LẬP TỨC!', 'Revoke & Rotate IMMEDIATELY!')
-              : bi('Xoá commit KHÔNG cứu được khóa!', 'New commit NEVER un-leaks key!'),
+              ? bi('Revoke & Rotate ngay lập tức', 'Revoke & Rotate immediately')
+              : bi('Xoá commit không xoá được git log', 'New commit never un-leaks key'),
             tone: 'warn',
           },
           {
@@ -2768,40 +2768,40 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s === 0
             ? callout(
                 'key-idea',
-                'Nguyên tắc Vàng ứng cứu sự cố: "Cầm máu dịch vụ trước, mổ xẻ code sau!"',
-                'Golden Incident Rule: Stop the Bleeding First, Debug Second!',
-                'Khi khách hàng đang chịu lỗi 500 lúc 2 giờ sáng, đừng ngồi mò debug trên nhánh mới! Hãy kéo giảm MTTR xuống <2 phút bằng Rollback về thẻ SHA ổn định (hoặc tắt Feature Flag), sau đó mới họp Blameless Postmortem.',
+                'Nguyên tắc xử lý sự cố: Khôi phục dịch vụ trước, phân tích nguyên nhân sau',
+                'Incident Rule: Restore Service First, Debug Second',
+                'Khi Production gặp lỗi 500 sau một đợt phát hành, ưu tiên hàng đầu là giảm MTTR xuống dưới 2 phút bằng Rollback về thẻ SHA ổn định (hoặc tắt Feature Flag), sau đó mới họp Blameless Postmortem tìm nguyên nhân gốc rễ.',
                 'When users hit HTTP 500s at 2 AM, never live-debug forward first! Cut MTTR under 2 minutes via immutable SHA Rollback or Feature Flag kill-switch, then run a blameless postmortem.'
               )
             : s === 1
               ? callout(
                   'technique',
-                  'Hồ sơ B1: Chặt đứt đường găng 42 phút & Cái bẫy treo máy 360 phút!',
+                  'Tình huống B1: Tối ưu đường găng 42 phút và tránh mức timeout 360 phút',
                   'Case B1: Slashing 42m Queues & 360m Hung Runners',
-                  'Đổi npm install sang cache: "npm" + npm ci, tách lint song song với 4 mảnh test (--shard=1/4..4/4), xóa sleep 45 cảm tính và khóa cứng timeout-minutes: 15 ngay lập tức!',
+                  'Chuyển npm install sang cache: "npm" + npm ci, chạy lint song song với 4 mảnh test (--shard=1/4..4/4), bỏ sleep 45 cố định và đặt timeout-minutes: 15.',
                   'Replace uncached npm install with cached npm ci, run lint parallel to 4 test shards, delete blind sleep 45, and enforce timeout-minutes: 15!'
                 )
               : s === 2
                 ? callout(
                     'watch-out',
-                    'Hồ sơ B2: Tai nạn Copy-Paste cờ cancel-in-progress: true lên Production!',
+                    'Tình huống B2: Lỗi dùng cancel-in-progress: true trên Production',
                     'Case B2: Never Copy PR cancel-in-progress: true onto Production!',
-                    'Hai commit merge cách nhau 40 giây mà bật cancel-in-progress: true trên Production sẽ rút phích cắm ngang hông bản đang chạy dở làm hỏng state lock! Bắt buộc đổi sang false để xếp hàng Pending tuần tự.',
+                    'Hai commit merge gần nhau mà bật cancel-in-progress: true trên Production sẽ hủy ngang đợt deploy đang chạy dở làm hỏng state lock. Phải đặt cancel-in-progress: false để xếp hàng Pending tuần tự.',
                     'Two merges 40s apart with cancel-in-progress: true kill an in-flight deploy mid-migration! Production concurrency groups MUST set cancel-in-progress: false.'
                   )
                 : secretCase
                   ? callout(
                       'watch-out',
-                      'Hồ sơ B3: Đẩy commit mới xoá dòng API Key KHÔNG HỀ xoá được khoá trong git log!',
+                      'Tình huống B3: Xoá API Key ở commit mới không xoá được khóa trong git log',
                       'Case B3: Removing a Secret in Commit #2 Leaves Commit #1 Wide Open!',
-                      'Bot săn khóa tự động quét sạch git log chỉ trong vài giây! Phác đồ bắt buộc: (1) Vào trang quản trị Thu hồi & Xoay vòng (Revoke & Rotate) khóa ngay lập tức, (2) Dựng cổng Gitleaks kèm fetch-depth: 0.',
+                      'Các công cụ quét tự động có thể thu thập khóa trong lịch sử git log rất nhanh. Quy trình xử lý bắt buộc: (1) Thu hồi & xoay vòng (Revoke & Rotate) khóa ngay trên hệ thống cung cấp, (2) Thêm Gitleaks với fetch-depth: 0.',
                       'Bots scrape git history within seconds! Always: (1) Revoke & Rotate the compromised credential immediately at the provider, and (2) add Gitleaks with fetch-depth: 0.'
                     )
                   : callout(
                       'key-idea',
-                      'Đúc kết Toàn khóa (Hồ sơ B6): Tuyệt đối bảo vệ sự trung thực của Exit Code!',
+                      'Tình huống B6: Bảo vệ tính trung thực của Exit Code trong Pipeline',
                       'Course Finale Takeaway (Case B6): Guard Exit Code Honesty!',
-                      'Quét sạch 3 kẻ thù làm mù hệ thống CI/CD: continue-on-error: true trên cổng bảo mật/test, toán tử nuốt lỗi || true, và lệnh curl thiếu cờ --fail. Chúc mừng bạn hoàn thành CI/CD Mastery!',
+                      'Loại bỏ 3 nguyên nhân gây báo thành công giả (False-Green): continue-on-error: true trên cổng kiểm tra bắt buộc, toán tử || true, và lệnh curl thiếu cờ --fail.',
                       'Purge the 3 silent killers of pipeline trust: continue-on-error: true on hard gates, || true exit-swallowers, and curl without --fail. Congratulations on mastering CI/CD Architecture!'
                     ),
         whatChanged:

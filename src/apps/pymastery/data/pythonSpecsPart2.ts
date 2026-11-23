@@ -142,7 +142,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'watch-out',
-              text: bi('Cảnh giác bẫy chỉ số âm: bắt IndexError trên board[move] KHÔNG chặn được move = -1 vì chỉ số âm hợp lệ trong Python! Luôn kiểm tra rõ 0 <= move < len(board).', 'Watch out for negative indices: catching IndexError on board[move] will NOT reject move = -1 because negative indexing is valid in Python! Check 0 <= move < len(board).'),
+              text: bi('Lưu ý lỗi chỉ số âm: bắt IndexError trên board[move] KHÔNG chặn được move = -1 vì chỉ số âm hợp lệ trong Python! Luôn kiểm tra rõ 0 <= move < len(board).', 'Watch out for negative indices: catching IndexError on board[move] will NOT reject move = -1 because negative indexing is valid in Python! Check 0 <= move < len(board).'),
             },
           },
         ],
@@ -250,7 +250,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Mẹo nhớ trọn đời: chữ "s" ở cuối json.loads / json.dumps là viết tắt của "string" (chuỗi trong bộ nhớ); không có chữ "s" là làm việc với tệp mở!', 'Lifelong mnemonic: the trailing "s" in json.loads / json.dumps stands for "string"; without "s" (load / dump) reads or writes an open file!'),
+              text: bi('Mẹo ghi nhớ nhanh: chữ "s" ở cuối json.loads / json.dumps là viết tắt của "string" (chuỗi trong bộ nhớ); không có chữ "s" là làm việc với tệp mở!', 'Quick mnemonic: the trailing "s" in json.loads / json.dumps stands for "string"; without "s" (load / dump) reads or writes an open file!'),
             },
           },
           {
@@ -357,7 +357,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Nguyên tắc vàng của Unix: nếu người dùng chạy python tool.py | jq ., chỉ một dòng chữ "Đang tải..." lọt vào stdout cũng làm hỏng toàn bộ JSON! Hãy đẩy log sang sys.stderr.', 'Golden Unix rule: when users pipe python tool.py | jq ., a single "Loading..." line on stdout breaks JSON parsing! Always send logs to sys.stderr.'),
+              text: bi('Nguyên tắc quan trọng của Unix: nếu người dùng chạy python tool.py | jq ., chỉ một dòng chữ "Đang tải..." lọt vào stdout cũng làm hỏng toàn bộ JSON! Hãy đẩy log sang sys.stderr.', 'Core Unix rule: when users pipe python tool.py | jq ., a single "Loading..." line on stdout breaks JSON parsing! Always send logs to sys.stderr.'),
             },
           },
           {
@@ -368,7 +368,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('MÃ LỖI CÚ PHÁP', 'USAGE EXIT'), value: bi('Exit code 2 tự động', 'Auto exit code 2'), tone: 'warn' },
             ],
             whatChanged: [
-              { op: '-', text: bi('Bỏ cách cắt sys.argv[1] thủ công dễ nổ IndexError khi thiếu đối số', 'Replaced fragile manual sys.argv indexing prone to IndexError') },
+              { op: '-', text: bi('Bỏ cách cắt sys.argv[1] thủ công dễ gây lỗi IndexError khi thiếu đối số', 'Replaced fragile manual sys.argv indexing prone to IndexError') },
               { op: '+', text: bi('Khai báo type=int, choices=[...] và tự động sinh hướng dẫn --help bằng argparse', 'Added typed flags, constrained choices, and automatic --help via argparse') },
             ],
             callout: {
@@ -405,7 +405,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'technique',
-              text: bi('Mẫu def main(argv: list[str] | None = None) -> int là bí quyết chuyên nghiệp: khi chạy thật argv=None tự đọc sys.argv[1:], còn trong pytest bạn gọi thẳng main(["--limit", "5"])!', 'def main(argv: list[str] | None = None) -> int is the pro CLI pattern: runtime uses sys.argv[1:], while pytest calls main(["--limit", "5"]) directly!'),
+              text: bi('Mẫu def main(argv: list[str] | None = None) -> int là mẫu thiết kế chuẩn mực: khi chạy thật argv=None tự đọc sys.argv[1:], còn trong pytest bạn gọi thẳng main(["--limit", "5"])!', 'def main(argv: list[str] | None = None) -> int is the standard CLI pattern: runtime uses sys.argv[1:], while pytest calls main(["--limit", "5"]) directly!'),
             },
           },
           {
@@ -469,14 +469,14 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
 
   M13: {
     id: 'M13',
-    titleEn: 'Classes & Objects: Blueprint, self & Instance Memory',
-    subtitleEn: 'Build clean mental models of Class blueprints vs Heap instances, demystify self dispatch, avoid shared class-list bugs, and implement __repr__ / __eq__.',
+    titleEn: 'Classes & Objects: Definition, self & Instance Memory',
+    subtitleEn: 'Build clean mental models of Class definitions vs Heap instances, understand self dispatch, avoid shared class-list bugs, and implement __repr__ / __eq__.',
     durationMin: 14,
     difficulty: 'Intermediate',
     objectives: [
-      bi('Phân biệt Bản thiết kế (Class) với từng đối tượng độc lập trên bộ nhớ Heap (Instance) & __init__', 'Separate the shared Class blueprint from independent per-instance Heap objects initialized via __init__'),
-      bi('Hiểu bản chất u.method(x) chính là cú pháp tắt của Class.method(u, x) — giải mã hoàn toàn self', 'Demystify self: u.method(x) is exact syntactic sugar for Class.method(u, x)'),
-      bi('Tránh bẫy khai báo list/dict khả biến ở cấp Class khiến mọi đối tượng dùng chung vùng nhớ', 'Eliminate shared mutable class-attribute bugs by binding mutable fields on self inside __init__'),
+      bi('Phân biệt khuôn mẫu định nghĩa (Class) với từng đối tượng độc lập trên bộ nhớ Heap (Instance) & __init__', 'Separate the shared Class definition from independent per-instance Heap objects initialized via __init__'),
+      bi('Hiểu bản chất u.method(x) chính là cú pháp tắt của Class.method(u, x) — làm rõ tham số self', 'Understand self: u.method(x) is exact syntactic sugar for Class.method(u, x)'),
+      bi('Tránh lỗi khai báo list/dict khả biến ở cấp Class khiến mọi đối tượng dùng chung vùng nhớ', 'Eliminate shared mutable class-attribute bugs by binding mutable fields on self inside __init__'),
       bi('Cài đặt __repr__ minh bạch để gỡ lỗi và __eq__ để so sánh đối tượng theo giá trị', 'Implement unambiguous __repr__ for debugging and value-based __eq__ equality'),
     ],
     buildFrame: (s, total) => {
@@ -487,18 +487,18 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
         [
           {
             telemetry: [
-              { label: bi('KHUÔN MẪU', 'BLUEPRINT'), value: bi('class BankAccount:', 'class BankAccount:'), tone: 'ok' },
+              { label: bi('ĐỊNH NGHĨA CLASS', 'CLASS DEF'), value: bi('class BankAccount:', 'class BankAccount:'), tone: 'ok' },
               { label: bi('KHỞI TẠO', 'CONSTRUCTOR'), value: bi('def __init__(self, ...)', 'def __init__(self, ...)'), tone: 'ok' },
               { label: bi('CẤP PHÁT', 'INSTANTIATION'), value: bi('Account("An") (không new)', 'Account("An") (no new)'), tone: 'ok' },
               { label: bi('VÙNG NHỚ HEAP', 'HEAP MEMORY'), value: bi('Mỗi object độc lập', 'Isolated per instance'), tone: 'ok' },
             ],
             whatChanged: [
-              { op: '+', text: bi('Gom dữ liệu trạng thái (owner, balance) và hành vi hợp lệ (deposit) vào chung Class', 'Encapsulated state fields and valid domain operations inside one Class blueprint') },
+              { op: '+', text: bi('Gom dữ liệu trạng thái (owner, balance) và hành vi hợp lệ (deposit) vào chung Class', 'Encapsulated state fields and valid domain operations inside one Class definition') },
               { op: '+', text: bi('Tạo hai đối tượng acc_an và acc_binh có không gian thuộc tính tách biệt trên Heap', 'Allocated independent Heap instances initialized cleanly through __init__') },
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Hình dung Class là bản vẽ kiến trúc (chỉ có 1 bản), còn mỗi lần gọi BankAccount("An") là xây một ngôi nhà thật độc lập trên bộ nhớ Heap!', 'Think of a Class as an architectural blueprint, whereas calling BankAccount("An") constructs an independent house in Heap memory!'),
+              text: bi('Class là định nghĩa khuôn mẫu dùng chung (chỉ có 1 bản), còn mỗi lần gọi BankAccount("An") sẽ cấp phát một đối tượng (Instance) độc lập trên vùng nhớ Heap (có thể hình dung giống như một bản vẽ kiến trúc dùng để xây nhiều ngôi nhà riêng biệt).', 'A Class is a single shared type definition, whereas calling BankAccount("An") allocates an independent object instance in Heap memory (similar to one architectural blueprint used to build multiple separate houses).'),
             },
           },
           {
@@ -509,7 +509,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('TRA CỨU THUỘC TÍNH', 'ATTR LOOKUP'), value: bi('self.__dict__ → Class', 'self.__dict__ → Class') },
             ],
             whatChanged: [
-              { op: '+', text: bi('Giải mã cơ chế Python tự truyền đối tượng trước dấu chấm vào tham số đầu tiên self', 'Revealed how Python passes the receiver before the dot as the explicit first argument self') },
+              { op: '+', text: bi('Làm rõ cơ chế Python tự truyền đối tượng trước dấu chấm vào tham số đầu tiên self', 'Explained how Python passes the receiver before the dot as the explicit first argument self') },
               { op: '+', text: bi('Tận dụng Bound Method truyền u.deposit làm callback mà không bao giờ rơi mất ngữ cảnh', 'Passed bound method u.deposit as a callback without ever losing its target instance') },
             ],
             callout: {
@@ -519,7 +519,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
           },
           {
             telemetry: [
-              { label: bi('TRẠNG THÁI INSTANCE', 'INSTANCE STATE'), value: bi('BẪY: Dùng chung list Class!', 'TRAP: Shared Class list!'), tone: 'bad' },
+              { label: bi('TRẠNG THÁI INSTANCE', 'INSTANCE STATE'), value: bi('LỖI: Dùng chung list Class!', 'BUG: Shared Class list!'), tone: 'bad' },
               { label: bi('NGUYÊN NHÂN', 'ROOT CAUSE'), value: bi('members = [] ngoài __init__', 'members = [] on Class body'), tone: 'bad' },
               { label: bi('CÁCH SỬA ĐÚNG', 'PROPER FIX'), value: bi('self.members = [] trong __init__', 'self.members = [] in __init__'), tone: 'ok' },
               { label: bi('CẤP CLASS CHỈ ĐẶT', 'CLASS LEVEL'), value: bi('Hằng số bất biến (MAX=10)', 'Immutable constants only'), tone: 'ok' },
@@ -638,7 +638,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'technique',
-              text: bi('Nguyên tắc thiết kế thực chiến: chỉ kế thừa khi thỏa mãn quan hệ "B thực sự là một loại A"; còn khi "B cần dùng tính năng của A", hãy truyền A vào thuộc tính của B (Composition)!', 'Design rule of thumb: inherit only for true "Is-A" relationships; when B merely uses A’s capability, pass A as a field on B (Composition)!'),
+              text: bi('Nguyên tắc thiết kế chuẩn: chỉ kế thừa khi thỏa mãn quan hệ "B thực sự là một loại A"; còn khi "B cần dùng tính năng của A", hãy truyền A vào thuộc tính của B (Composition)!', 'Core design rule: inherit only for true "Is-A" relationships; when B merely uses A’s capability, pass A as a field on B (Composition)!'),
             },
           },
           {
@@ -755,9 +755,9 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     durationMin: 14,
     difficulty: 'Advanced',
     objectives: [
-      bi('Hiểu mô hình Máy lọc nước chảy từng giọt O(1) RAM (Lazy) vs Hồ bơi chứa sẵn O(N) RAM (Eager list)', 'Contrast O(1)-RAM lazy pull streams against O(N)-RAM eager list materialization'),
-      bi('Nắm chắc cơ chế đóng băng khung nhớ cục bộ tại lệnh yield và thức dậy ở nhịp next() kế tiếp', 'Visualize how yield freezes the local stack frame on Heap and resumes on next()'),
-      bi('Tránh bẫy duyệt Generator lần 2 ra rỗng im lặng và biết cách viết Class __iter__ tái sử dụng', 'Avoid silent single-pass generator exhaustion and write reusable __iter__ classes'),
+      bi('Phân biệt cơ chế tính toán lười từng phần tử O(1) RAM (Lazy Iterator) và nạp toàn bộ vào danh sách O(N) RAM (Eager list)', 'Contrast O(1)-RAM lazy pull streams against O(N)-RAM eager list materialization'),
+      bi('Hiểu cơ chế tạm dừng hàm tại từ khóa yield, giữ nguyên biến cục bộ và chạy tiếp khi gọi next()', 'Understand how yield pauses execution, preserves local variables on Heap, and resumes on next()'),
+      bi('Tránh lỗi duyệt Generator lần 2 bị rỗng im lặng và biết cách viết Class __iter__ tái sử dụng', 'Avoid silent single-pass generator exhaustion and write reusable __iter__ classes'),
       bi('Lắp ghép đường ống Lazy Pipeline kiểu Unix với yield from, itertools và more-itertools', 'Compose zero-allocation pipelines with yield from, stdlib itertools, and more-itertools'),
     ],
     buildFrame: (s, total) => {
@@ -779,14 +779,14 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Hãy nhớ hình ảnh Máy lọc nước theo giọt (Iterator O(1) RAM) so với Bơm đầy cả hồ bơi rồi mới uống (List O(N) RAM) — file 50 GB vẫn xử lý mượt trên laptop 8 GB!', 'Picture a drop-by-drop water dispenser (O(1) RAM Iterator) vs filling an entire swimming pool first (O(N) RAM List) — process 50 GB files smoothly!'),
+              text: bi('Iterator xử lý từng phần tử một theo yêu cầu nên chỉ tốn O(1) RAM, khác với List phải nạp toàn bộ dữ liệu vào bộ nhớ O(N) RAM — nhờ đó tệp 50 GB vẫn xử lý mượt trên máy 8 GB RAM (có thể hình dung như lấy nước từng cốc theo nhu cầu thay vì bơm đầy cả bể rồi mới dùng).', 'An Iterator computes and yields one item on demand in O(1) RAM, unlike a List that buffers all items in O(N) RAM — letting you process 50 GB files smoothly on an 8 GB laptop.'),
             },
           },
           {
             telemetry: [
               { label: bi('GỌI GEN()', 'CALLING GEN()'), value: bi('Chưa chạy thân hàm!', 'Returns generator object'), tone: 'warn' },
-              { label: bi('GẶP LỆNH YIELD', 'AT YIELD'), value: bi('Đóng băng khung nhớ cục bộ', 'Freezes local stack frame'), tone: 'ok' },
-              { label: bi('GỌI NEXT() KẾ', 'ON NEXT()'), value: bi('Thức dậy chạy tiếp sau yield', 'Resumes right after yield'), tone: 'ok' },
+              { label: bi('GẶP LỆNH YIELD', 'AT YIELD'), value: bi('Tạm dừng & giữ biến cục bộ', 'Pauses & keeps locals'), tone: 'ok' },
+              { label: bi('GỌI NEXT() KẾ', 'ON NEXT()'), value: bi('Chạy tiếp ngay sau yield', 'Resumes right after yield'), tone: 'ok' },
               { label: bi('KHÁC RETURN', 'VS RETURN'), value: bi('Giữ nguyên biến cục bộ', 'Preserves local variables'), tone: 'ok' },
             ],
             whatChanged: [
@@ -806,12 +806,12 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('MUỐN DÙNG NHIỀU LẦN', 'REUSABLE FIX'), value: bi('Class có def __iter__: yield', 'Class with def __iter__: yield'), tone: 'ok' },
             ],
             whatChanged: [
-              { op: '~', text: bi('Phát hiện bẫy truyền cùng biến generator vào sum(g) rồi max(g) làm hàm sau nhận rỗng', 'Exposed bug where passing an exhausted generator to a second consumer yields 0 items') },
+              { op: '~', text: bi('Tránh lỗi truyền cùng biến generator vào sum(g) rồi max(g) làm hàm sau nhận rỗng', 'Exposed bug where passing an exhausted generator to a second consumer yields 0 items') },
               { op: '+', text: bi('Bọc generator bên trong phương thức __iter__ của Class để mỗi vòng for tạo con trỏ mới', 'Wrapped yield inside a Class __iter__ method so every loop gets a fresh iterator') },
             ],
             callout: {
               kind: 'watch-out',
-              text: bi('Cạm bẫy kinh điển: Generator chỉ duyệt được ĐÚNG MỘT LẦN! Lần duyệt thứ hai trên cùng biến generator trả về rỗng [] mà không báo bất kỳ lỗi nào.', 'Classic gotcha: Generators are SINGLE-USE! Iterating over the same generator variable a second time silently yields zero items.'),
+              text: bi('Lưu ý quan trọng: Generator chỉ duyệt được đúng một lần! Lần duyệt thứ hai trên cùng biến generator trả về rỗng [] mà không báo lỗi nào.', 'Important rule: Generators are SINGLE-USE! Iterating over the same generator variable a second time silently yields zero items.'),
             },
           },
           {
@@ -835,7 +835,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('CẮT LÁT & NỐI', 'SLICE & JOIN'), value: bi('islice · chain · batched', 'islice · chain · batched'), tone: 'ok' },
               { label: bi('TỔ HỢP TOÁN HỌC', 'COMBINATORICS'), value: bi('product · combinations', 'product · combinations'), tone: 'ok' },
               { label: bi('ĐIỀU KIỆN GROUPBY', 'GROUPBY RULE'), value: bi('Phải sorted(key=) trước!', 'Must sorted(key=) first!'), tone: 'warn' },
-              { label: bi('MỞ RỘNG THỰC CHIẾN', 'ECOSYSTEM'), value: bi('more-itertools (100+ hàm)', 'more-itertools (100+ ops)'), tone: 'ok' },
+              { label: bi('MỞ RỘNG THƯ VIỆN', 'ECOSYSTEM'), value: bi('more-itertools (100+ hàm)', 'more-itertools (100+ ops)'), tone: 'ok' },
             ],
             whatChanged: [
               { op: '+', text: bi('Áp dụng itertools.batched(stream, 100) chia lô dữ liệu lớn chạy ở tốc độ C', 'Chunked large streams in C-speed batches via Python 3.12+ itertools.batched') },
@@ -896,7 +896,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     difficulty: 'Advanced',
     objectives: [
       bi('Hiểu @decorator thực chất là fn = decorator(fn) bọc logic trước/sau mà không làm bẩn hàm gốc', 'Understand @decorator as fn = decorator(fn) wrapping pre/post logic cleanly'),
-      bi('Luôn gắn @functools.wraps(fn) bảo toàn siêu dữ liệu và nắm vững nhà máy Decorator 3 tầng', 'Always apply @functools.wraps(fn) and build 3-tier parameterized decorator factories'),
+      bi('Luôn gắn @functools.wraps(fn) bảo toàn siêu dữ liệu và viết Decorator nhận tham số (3 tầng)', 'Always apply @functools.wraps(fn) and build 3-tier parameterized decorators'),
       bi('Nắm chắc hệ sinh thái Decorator thực tế (@cache, FastAPI @app.get, pytest, tenacity @retry)', 'Leverage production decorators (@cache, FastAPI routes, pytest, tenacity @retry)'),
       bi('Viết Context Manager chuẩn bằng class (__enter__/__exit__) hoặc @contextmanager bọc try/finally', 'Author leak-proof with blocks via __enter__/__exit__ or @contextmanager + try/finally'),
     ],
@@ -919,7 +919,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('@measure_time đặt trên def compute_tax hoàn toàn không có phép thuật ẩn nào: Python đơn giản định nghĩa hàm xong rồi gán compute_tax = measure_time(compute_tax)!', '@measure_time above def compute_tax has zero magic: Python simply defines the function and reassigns compute_tax = measure_time(compute_tax)!'),
+              text: bi('@measure_time đặt trên def compute_tax hoàn toàn không có cơ chế ẩn giấu nào: Python đơn giản định nghĩa hàm xong rồi gán compute_tax = measure_time(compute_tax)!', '@measure_time above def compute_tax has no hidden mechanism: Python simply defines the function and reassigns compute_tax = measure_time(compute_tax)!'),
             },
           },
           {
@@ -931,7 +931,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             whatChanged: [
               { op: '+', text: bi('Gắn @functools.wraps(func) bảo toàn __name__, __doc__ và __annotations__ cho FastAPI/pytest', 'Applied @functools.wraps(func) preserving __name__, __doc__, and type signatures') },
-              { op: '+', text: bi('Xây dựng nhà máy 3 tầng def retry(max_attempts) trả về decorator tùy biến', 'Built 3-tier decorator factory accepting configuration arguments like @retry(max_attempts=4)') },
+              { op: '+', text: bi('Xây dựng Decorator có tham số 3 tầng def retry(max_attempts) trả về decorator tùy biến', 'Built 3-tier parameterized decorator accepting configuration arguments like @retry(max_attempts=4)') },
             ],
             callout: {
               kind: 'watch-out',
@@ -957,7 +957,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             telemetry: [
               { label: bi('BƯỚC VÀO WITH', 'ON ENTER'), value: bi('__enter__(self) → as var', '__enter__(self) → as var'), tone: 'ok' },
               { label: bi('RỜI KHỐI WITH', 'ON EXIT'), value: bi('__exit__(exc_type, exc, tb)', '__exit__(exc_type, exc, tb)'), tone: 'ok' },
-              { label: bi('CAM KẾT DỌN DẸP', 'GUARANTEE'), value: bi('100% kể cả khi nổ lỗi!', '100% even on exception!'), tone: 'ok' },
+              { label: bi('CAM KẾT DỌN DẸP', 'GUARANTEE'), value: bi('100% kể cả khi có lỗi!', '100% even on exception!'), tone: 'ok' },
               { label: bi('TRẢ VỀ FALSE', 'RETURN FALSE'), value: bi('Để lỗi lan ra bình thường', 'Propagates exceptions'), tone: 'ok' },
             ],
             whatChanged: [
@@ -988,15 +988,15 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
           telemetry: [
             { label: bi('DECORATOR CHUẨN', 'DECORATOR'), value: bi('@wraps + *args, **kwargs', '@wraps + *args, **kwargs'), tone: 'ok' },
             { label: bi('CONTEXT MANAGER', 'WITH BLOCK'), value: bi('@contextmanager + finally', '@contextmanager + finally'), tone: 'ok' },
-            { label: bi('RETRY THỰC CHIẾN', 'RETRY LIB'), value: bi('tenacity', 'tenacity'), tone: 'ok' },
+            { label: bi('THƯ VIỆN RETRY', 'RETRY LIB'), value: bi('tenacity', 'tenacity'), tone: 'ok' },
             { label: bi('QUẢN LÝ ĐỘNG', 'DYNAMIC WITH'), value: bi('contextlib.ExitStack', 'contextlib.ExitStack'), tone: 'ok' },
           ],
           whatChanged: [
-            { op: '+', text: bi('Làm chủ hai vũ khí tách biệt mối quan tâm (Decorator) và bảo toàn tài nguyên (Context Manager)', 'Mastered cross-cutting function wrappers (@decorator) and deterministic teardown (with)') },
+            { op: '+', text: bi('Áp dụng hai kỹ thuật chuẩn để tách biệt logic bổ trợ (Decorator) và giải phóng tài nguyên (Context Manager)', 'Mastered cross-cutting function wrappers (@decorator) and deterministic teardown (with)') },
           ],
           callout: {
             kind: 'key-idea',
-            text: bi('Quy tắc đôi M16: Viết Decorator luôn nhớ @functools.wraps(func); viết @contextmanager luôn bọc yield trong try ... finally:!', 'M16 Twin Golden Rules: Every custom decorator gets @functools.wraps(func); every @contextmanager wraps yield inside try ... finally:!'),
+            text: bi('Quy tắc đôi M16: Viết Decorator luôn nhớ @functools.wraps(func); viết @contextmanager luôn bọc yield trong try ... finally:!', 'M16 Core Rules: Every custom decorator gets @functools.wraps(func); every @contextmanager wraps yield inside try ... finally:!'),
           },
         }
       );
@@ -1005,7 +1005,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
         ...beat,
         scene: {
           zones: [
-            { id: 'onion', x: 0, y: 0, w: 410, h: 270, label: ctxMode ? bi('Khối with (__enter__ ➔ __exit__)', 'with Block (__enter__ ➔ __exit__)') : bi('Lớp vỏ Decorator (@wraps)', 'Decorator Wrapper Onion (@wraps)'), tone: 'purple' },
+            { id: 'onion', x: 0, y: 0, w: 410, h: 270, label: ctxMode ? bi('Khối with (__enter__ ➔ __exit__)', 'with Block (__enter__ ➔ __exit__)') : bi('Lớp vỏ Decorator (@wraps)', 'Decorator Wrapper (@wraps)'), tone: 'purple' },
           ],
           nodes: [
             { id: 'caller', shape: 'laptop', tone: 'neutral', x: -280, y: 0, label: bi('Caller', 'Caller') },
@@ -1136,7 +1136,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
           ],
           callout: {
             kind: 'key-idea',
-            text: bi('Bộ đôi chất lượng M17: Chạy pyright / ty để diệt sạch lỗi None & sai chữ ký hàm trước khi chạy; chạy uv run pytest với @parametrize để khóa chặt logic nghiệp vụ!', 'M17 Quality Duo: Run pyright / ty to catch None & signature bugs statically; run uv run pytest with @parametrize to lock down business logic!'),
+            text: bi('Bộ đôi chất lượng M17: Chạy pyright / ty để phát hiện sớm lỗi None & sai chữ ký hàm trước khi chạy; chạy uv run pytest với @parametrize để khóa chặt logic nghiệp vụ!', 'M17 Quality Duo: Run pyright / ty to catch None & signature bugs statically; run uv run pytest with @parametrize to lock down business logic!'),
           },
         }
       );
@@ -1173,7 +1173,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     durationMin: 15,
     difficulty: 'Advanced',
     objectives: [
-      bi('Nhận diện tức thì bẫy x in list O(n) nằm trong vòng lặp gây treo máy O(n²) và đổi sang set/dict O(1)', 'Spot hidden O(n²) x in list loops immediately and convert lookups to O(1) set/dict'),
+      bi('Nhận diện lỗi hiệu năng khi đặt x in list O(n) trong vòng lặp gây độ phức tạp O(n²) và đổi sang set/dict O(1)', 'Spot hidden O(n²) x in list loops immediately and convert lookups to O(1) set/dict'),
       bi('Tìm kiếm nhị phân O(log n) không sai lệch chỉ số trên dữ liệu đã sắp xếp bằng bisect', 'Execute bug-free O(log n) binary searches on sorted sequences via stdlib bisect'),
       bi('Tận dụng Timsort O(n log n) ổn định viết bằng C bên dưới sorted() cùng hàm key= đa tiêu chí', 'Leverage CPython’s C-speed stable Timsort with multi-criteria key= functions'),
       bi('Duy trì hàng đợi ưu tiên và lấy Top-K trong O(n log k) bằng cây Min-Heap heapq', 'Maintain priority queues and extract Top-K items in O(n log k) via heapq'),
@@ -1272,7 +1272,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             { label: bi('TOP-K & ƯU TIÊN', 'PRIORITY / TOP-K'), value: bi('heapq · O(n log k)', 'heapq · O(n log k)'), tone: 'ok' },
           ],
           whatChanged: [
-            { op: '+', text: bi('Đúc kết bản đồ độ phức tạp Big-O và 4 vũ khí tốc độ C có sẵn trong thư viện chuẩn', 'Synthesized Big-O intuition and Python’s 4 C-accelerated stdlib algorithmic engines') },
+            { op: '+', text: bi('Đúc kết bản đồ độ phức tạp Big-O và 4 công cụ tốc độ C có sẵn trong thư viện chuẩn', 'Synthesized Big-O intuition and Python’s 4 C-accelerated stdlib algorithmic engines') },
           ],
           callout: {
             kind: 'key-idea',
@@ -1312,7 +1312,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     objectives: [
       bi('Dùng list.append/pop() cho Stack LIFO O(1) và tuyệt đối tránh dùng list.pop(0) O(n) làm hàng đợi', 'Use list.append()/pop() for O(1) LIFO Stacks and never use O(n) list.pop(0) as a queue'),
       bi('Sử dụng collections.deque đạt O(1) ở cả hai đầu (popleft / append) và cửa sổ trượt maxlen', 'Use double-ended collections.deque for O(1) FIFO queues and maxlen sliding windows'),
-      bi('Nắm chắc liên kết con trỏ Node, kỹ thuật Rùa - Thỏ và tính chất duyệt In-order trên cây BST', 'Master Linked List pointer reversal, fast/slow pointers, and sorted BST In-order traversal'),
+      bi('Nắm chắc liên kết con trỏ Node, kỹ thuật hai con trỏ nhanh – chậm (Floyd) và duyệt In-order trên cây BST', 'Master Linked List pointer reversal, fast/slow pointers, and sorted BST In-order traversal'),
       bi('Tìm đường đi ít bước nhất bằng BFS trên đồ thị kèm quy tắc đánh dấu visited ngay khi đẩy vào deque', 'Find unweighted shortest paths via Graph BFS marking visited immediately on enqueue'),
     ],
     buildFrame: (s, total) => {
@@ -1325,12 +1325,12 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             telemetry: [
               { label: bi('STACK LIFO', 'STACK LIFO'), value: bi('list.append / pop() · O(1)', 'list.append / pop() · O(1)'), tone: 'ok' },
               { label: bi('XEM ĐỈNH STACK', 'STACK PEEK'), value: bi('stack[-1] · O(1)', 'stack[-1] · O(1)'), tone: 'ok' },
-              { label: bi('BẪY LIST.POP(0)', 'LIST.POP(0) TRAP'), value: bi('O(n) dồn mảng → O(n²)!', 'O(n) shift → O(n²) loop!'), tone: 'bad' },
+              { label: bi('LỖI LIST.POP(0)', 'LIST.POP(0) COST'), value: bi('O(n) dồn mảng → O(n²)!', 'O(n) shift → O(n²) loop!'), tone: 'bad' },
               { label: bi('KIỂM TRA RỖNG', 'EMPTY CHECK'), value: bi('if not stack:', 'if not stack:') },
             ],
             whatChanged: [
               { op: '+', text: bi('Dùng trực tiếp list chuẩn cho bài toán Ngăn xếp LIFO (khớp ngoặc, Undo, DFS)', 'Used built-in list tail operations for O(1) LIFO Stack problems') },
-              { op: '-', text: bi('Cảnh báo thảm họa gọi list.pop(0) trong vòng lặp hàng đợi lớn', 'Flagged list.pop(0) anti-pattern that degrades queue loops from O(n) to O(n²)') },
+              { op: '-', text: bi('Tránh lỗi hiệu năng khi gọi list.pop(0) trong vòng lặp hàng đợi lớn', 'Flagged list.pop(0) anti-pattern that degrades queue loops from O(n) to O(n²)') },
             ],
             callout: {
               kind: 'watch-out',
@@ -1350,7 +1350,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'technique',
-              text: bi('deque(maxlen=100) là cấu trúc bộ đệm vòng (Ring Buffer) tuyệt đẹp viết sẵn bằng C: khi thêm phần tử thứ 101 vào cuối, phần tử cũ nhất ở đầu tự động rơi ra trong O(1)!', 'deque(maxlen=100) acts as a C-speed Ring Buffer: appending the 101st item automatically evicts the oldest head item in O(1)!'),
+              text: bi('deque(maxlen=100) là cấu trúc bộ đệm vòng (Ring Buffer) hiệu quả viết sẵn bằng C: khi thêm phần tử thứ 101 vào cuối, phần tử cũ nhất ở đầu tự động rơi ra trong O(1)!', 'deque(maxlen=100) acts as a C-speed Ring Buffer: appending the 101st item automatically evicts the oldest head item in O(1)!'),
             },
           },
           {
@@ -1362,7 +1362,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             whatChanged: [
               { op: '+', text: bi('Đảo chiều mũi tên liên kết tại chỗ bằng phép gán đồng thời cur.next, prev, cur = ...', 'Reversed node next pointers in-place in O(1) memory via tuple assignment') },
-              { op: '+', text: bi('Áp dụng hai con trỏ Rùa - Thỏ tìm phần tử chính giữa và phát hiện chu trình khép kín', 'Applied Floyd’s fast/slow pointers for single-pass midpoint and cycle detection') },
+              { op: '+', text: bi('Áp dụng hai con trỏ nhanh – chậm (Floyd) tìm phần tử chính giữa và phát hiện chu trình khép kín', 'Applied Floyd’s fast/slow pointers for single-pass midpoint and cycle detection') },
             ],
             callout: {
               kind: 'good-to-know',
@@ -1451,7 +1451,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     objectives: [
       bi('Hiểu vì sao Tham lam thất bại (đổi xu 1, 3, 4 cho tổng 6) và thiết kế DP theo 4 bước chuẩn', 'See why Greedy fails on [1, 3, 4] → 6 and formulate Dynamic Programming in 4 systematic steps'),
       bi('Chuyển đổi linh hoạt giữa Top-Down (đệ quy + @cache) và Bottom-Up (điền bảng dp[] O(1) stack)', 'Convert cleanly between Top-Down (@functools.cache) and Bottom-Up iterative tabulation'),
-      bi('Nắm chắc khuôn 3 nhịp Quay lui (Chọn → Đệ quy → Gỡ) và luôn lưu nghiệm bằng path.copy()', 'Apply Choose → Explore → Unchoose backtracking and snapshot solutions via path.copy()'),
+      bi('Nắm chắc khuôn 3 bước Quay lui (Chọn → Đệ quy → Hoàn tác) và luôn lưu nghiệm bằng path.copy()', 'Apply Choose → Explore → Unchoose backtracking and snapshot solutions via path.copy()'),
       bi('Cắt tỉa nhánh cụt sớm (Pruning) và biết hệ sinh thái tối ưu công nghiệp (OR-Tools, PuLP)', 'Prune dead search subtrees early and recognize industrial solvers (OR-Tools, PuLP, SciPy)'),
     ],
     buildFrame: (s, total) => {
@@ -1473,7 +1473,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Quy hoạch động không phải phép đoán mò: chỉ cần trả lời rành mạch câu hỏi "dp[i] đại diện cho con số tối ưu nào tính tới bước i?", công thức truy hồi sẽ tự hiện ra!', 'DP isn’t guesswork: once you define precisely in one sentence what dp[i] represents, the state transition recurrence writes itself!'),
+              text: bi('Bản chất của Quy hoạch động: chỉ cần trả lời rành mạch câu hỏi "dp[i] đại diện cho con số tối ưu nào tính tới bước i?", công thức truy hồi sẽ tự hiện ra!', 'Core idea of DP: once you define precisely in one sentence what dp[i] represents, the state transition recurrence follows directly!'),
             },
           },
           {
@@ -1489,7 +1489,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'technique',
-              text: bi('Chiến thuật thực chiến: viết Top-Down + @cache trước trong 3 phút để kiểm tra công thức trên ca nhỏ; nếu đầu vào n > 1.000 hãy chuyển sang vòng lặp Bottom-Up!', 'Battle-tested workflow: prototype Top-Down + @cache in 3 minutes to validate your recurrence, then convert to Bottom-Up tabulation when n > 1,000!'),
+              text: bi('Kinh nghiệm thực hành: viết Top-Down + @cache trước để kiểm chứng nhanh công thức trên ca nhỏ; nếu đầu vào n > 1.000 hãy chuyển sang vòng lặp Bottom-Up!', 'Practical workflow: prototype Top-Down + @cache first to validate your recurrence, then convert to Bottom-Up tabulation when n > 1,000!'),
             },
           },
           {
@@ -1509,13 +1509,13 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
           },
           {
             telemetry: [
-              { label: bi('NHỊP 1: CHỌN', '1. CHOOSE'), value: bi('path.append(candidate)', 'path.append(candidate)'), tone: 'ok' },
-              { label: bi('NHỊP 2: THÁM HIỂM', '2. EXPLORE'), value: bi('backtrack(next_state)', 'backtrack(next_state)'), tone: 'ok' },
-              { label: bi('NHỊP 3: GỠ LÙI', '3. UNCHOOSE'), value: bi('path.pop() hoàn trả!', 'path.pop() restore!'), tone: 'ok' },
+              { label: bi('BƯỚC 1: CHỌN', '1. CHOOSE'), value: bi('path.append(candidate)', 'path.append(candidate)'), tone: 'ok' },
+              { label: bi('BƯỚC 2: ĐỆ QUY', '2. EXPLORE'), value: bi('backtrack(next_state)', 'backtrack(next_state)'), tone: 'ok' },
+              { label: bi('BƯỚC 3: GỠ LÙI', '3. UNCHOOSE'), value: bi('path.pop() hoàn trả!', 'path.pop() restore!'), tone: 'ok' },
               { label: bi('GHI NHẬN NGHIỆM', 'SNAPSHOT'), value: bi('results.append(path.copy())', 'results.append(path.copy())'), tone: 'warn' },
             ],
             whatChanged: [
-              { op: '+', text: bi('Áp dụng khuôn 3 nhịp Chọn → Đệ quy → Gỡ cho bài toán liệt kê tổ hợp & Sudoku', 'Applied the universal 3-step Choose → Explore → Unchoose backtracking template') },
+              { op: '+', text: bi('Áp dụng khuôn 3 bước Chọn → Đệ quy → Gỡ cho bài toán liệt kê tổ hợp & Sudoku', 'Applied the universal 3-step Choose → Explore → Unchoose backtracking template') },
               { op: '+', text: bi('Chụp bản sao độc lập path.copy() khi chạm đích để không bị xóa rỗng lúc quay lui', 'Cloned path.copy() upon recording valid solutions so later pops don’t wipe results') },
             ],
             callout: {
@@ -1612,7 +1612,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'watch-out',
-              text: bi('Rủi ro sập Production kinh điển: requests.get(url) không truyền timeout= sẽ đứng chờ VÔ THỜI HẠN nếu máy chủ đối tác treo kết nối, làm cạn sạch toàn bộ worker của bạn!', 'Classic production outage: requests.get(url) without timeout= waits FOREVER if the upstream stalls, starving every worker thread in your server!'),
+              text: bi('Lỗi Production thường gặp: requests.get(url) không truyền timeout= sẽ đứng chờ VÔ THỜI HẠN nếu máy chủ đối tác treo kết nối, làm cạn sạch toàn bộ worker của bạn!', 'Common production outage: requests.get(url) without timeout= waits FOREVER if the upstream stalls, starving every worker thread in your server!'),
             },
           },
           {
@@ -1660,7 +1660,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Sức mạnh của FastAPI + Pydantic: khi dữ liệu đã bước được vào bên trong thân hàm endpoint của bạn, bạn yên tâm 100% nó đã đúng kiểu và thỏa mọi điều kiện Field(ge=0)!', 'FastAPI + Pydantic superpower: once execution enters your endpoint body, inputs are 100% guaranteed to match your types and Field(ge=0) constraints!'),
+              text: bi('Lợi ích của FastAPI + Pydantic: khi dữ liệu đã bước được vào bên trong thân hàm endpoint của bạn, bạn yên tâm 100% nó đã đúng kiểu và thỏa mọi điều kiện Field(ge=0)!', 'FastAPI + Pydantic benefit: once execution enters your endpoint body, inputs are 100% guaranteed to match your types and Field(ge=0) constraints!'),
             },
           },
           {
@@ -1691,7 +1691,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
           ],
           callout: {
             kind: 'key-idea',
-            text: bi('Bộ 4 quy tắc vàng M21: (1) Luôn đặt timeout= · (2) Luôn gọi raise_for_status() · (3) Tiêm client để unit test offline · (4) Xác thực cổng vào bằng Pydantic BaseModel!', 'M21 Golden Quartet: (1) Always pass timeout= · (2) Always call raise_for_status() · (3) Inject transport for offline tests · (4) Validate inputs with Pydantic!'),
+            text: bi('4 nguyên tắc bắt buộc M21: (1) Luôn đặt timeout= · (2) Luôn gọi raise_for_status() · (3) Tiêm client để unit test offline · (4) Xác thực cổng vào bằng Pydantic BaseModel!', 'M21 Four Core Rules: (1) Always pass timeout= · (2) Always call raise_for_status() · (3) Inject transport for offline tests · (4) Validate inputs with Pydantic!'),
           },
         }
       );
@@ -1731,7 +1731,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
     objectives: [
       bi('Hiểu cách Python chạy đồng bộ 1 luồng mặc định và phân biệt rõ I/O-bound (chờ mạng/DB) vs CPU-bound (tính toán 100%)', 'Contrast default single-threaded sync execution and distinguish I/O-bound wait from CPU-bound crunching'),
       bi('Thấu suốt cách Event Loop & await điều phối hàng trăm tác vụ I/O trên 1 luồng (gather, Semaphore, timeout)', 'Understand how the asyncio Event Loop & await multiplex hundreds of I/O tasks on 1 thread'),
-      bi('Nắm vững cảnh báo sống còn: tuyệt đối không gọi hàm Blocking (time.sleep, requests.get) bên trong async def', 'Never freeze the Event Loop with sync blocking calls (time.sleep, requests.get) inside async def'),
+      bi('Nắm vững quy tắc bắt buộc: tuyệt đối không gọi hàm Blocking (time.sleep, requests.get) bên trong async def', 'Never stall the Event Loop with sync blocking calls (time.sleep, requests.get) inside async def'),
       bi('Hiểu rõ khóa GIL (ThreadPool cho sync I/O vs ProcessPool vượt GIL cho CPU nặng) và hệ sinh thái uvloop/Celery', 'Master CPython’s GIL, ThreadPool vs ProcessPool, and the uvloop / AnyIO / Celery ecosystem'),
     ],
     buildFrame: (s, total) => {
@@ -1775,19 +1775,19 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'technique',
-              text: bi('Hình ảnh người đầu bếp Event Loop: khi đặt nồi nước lên bếp (await mạng), đầu bếp không đứng nhìn nồi sôi mà quay sang chế biến cho 20 bàn khác ngay trên chính 1 luồng đó!', 'Event Loop chef mental model: while waiting for water to boil (awaiting network I/O), the single-threaded chef immediately preps 20 other orders instead of standing idle!'),
+              text: bi('Event Loop điều phối các Coroutine trên 1 luồng theo cơ chế hợp tác: khi gặp await, tác vụ hiện tại tạm dừng chờ I/O để nhường luồng cho tác vụ khác (có thể hình dung giống như một đầu bếp tranh thủ sơ chế món khác trong lúc chờ nồi nước sôi).', 'Event Loop cooperative scheduling: when one coroutine awaits I/O on the single thread, the loop immediately runs other ready coroutines (similar to a chef prepping other orders while waiting for water to boil).'),
             },
           },
           // Step 2: Warning against blocking calls inside async def
           {
             telemetry: [
-              { label: bi('TRẠNG THÁI LOOP', 'EVENT LOOP STATE'), value: bi('ĐÓNG BĂNG! (Dính Blocking!)', 'FROZEN! (Blocking call!)'), tone: 'bad' },
+              { label: bi('TRẠNG THÁI LOOP', 'EVENT LOOP STATE'), value: bi('BỊ TREO! (Dính Blocking!)', 'STALLED! (Blocking call!)'), tone: 'bad' },
               { label: bi('THỦ PHẠM CẤM GỌI', 'FORBIDDEN CALLS'), value: bi('time.sleep() · requests.get()', 'time.sleep() · requests.get()'), tone: 'bad' },
               { label: bi('THAY THẾ ASYNC', 'ASYNC REPLACEMENT'), value: bi('asyncio.sleep · httpx.AsyncClient', 'asyncio.sleep · httpx.AsyncClient'), tone: 'ok' },
               { label: bi('CẦU NỐI HÀM CŨ', 'LEGACY SYNC BRIDGE'), value: bi('await asyncio.to_thread(fn)', 'await asyncio.to_thread(fn)'), tone: 'ok' },
             ],
             whatChanged: [
-              { op: '~', text: bi('CẢNH BÁO ĐỎ: Gọi time.sleep(3) hay requests.get() trong async def làm tê liệt toàn bộ Event Loop!', 'CRITICAL BUG: Calling sync time.sleep(3) or requests.get() inside async def freezes every user on the loop!') },
+              { op: '~', text: bi('LỖI NGHIÊM TRỌNG: Gọi time.sleep(3) hay requests.get() trong async def làm treo toàn bộ Event Loop!', 'CRITICAL BUG: Calling sync time.sleep(3) or requests.get() inside async def stalls every user on the loop!') },
               { op: '+', text: bi('Chuyển sang await asyncio.sleep(), httpx.AsyncClient hoặc đẩy sang luồng phụ bằng asyncio.to_thread()', 'Replaced blocking calls with non-blocking httpx.AsyncClient or offloaded via asyncio.to_thread()') },
             ],
             callout: {
@@ -1809,7 +1809,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Sự thật dễ nhớ về GIL: khóa GIL chỉ giữ chặt khi chạy mã tính toán Python, còn khi luồng đứng chờ mạng (requests.get) hay đọc đĩa thì GIL được NHẢ RA ngay — nên ThreadPoolExecutor rất hợp cho code I/O đồng bộ cũ!', 'Simple truth about the GIL: CPython holds the GIL for bytecode execution, but RELEASES the GIL during network/disk waits — making ThreadPoolExecutor great for sync I/O!'),
+              text: bi('Cơ chế của khóa GIL: khóa GIL chỉ giữ chặt khi chạy mã tính toán Python, còn khi luồng đứng chờ mạng (requests.get) hay đọc đĩa thì GIL được NHẢ RA ngay — nên ThreadPoolExecutor rất hợp cho code I/O đồng bộ cũ!', 'How the GIL works: CPython holds the GIL for bytecode execution, but RELEASES the GIL during network/disk waits — making ThreadPoolExecutor great for sync I/O!'),
             },
           },
           // Step 4: ProcessPoolExecutor bypassing GIL across CPU cores
@@ -1931,7 +1931,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'key-idea',
-              text: bi('Quy tắc vàng của Kiến trúc sạch: core.py TUYỆT ĐỐI KHÔNG bao giờ import cli, tkinter hay fastapi! Lõi nghiệp vụ chỉ nhận dữ liệu sạch và trả kết quả hoặc raise lỗi miền.', 'Golden Clean-Architecture rule: core.py NEVER imports cli, tkinter, or fastapi! Domain logic accepts typed objects and returns values or raises domain errors.'),
+              text: bi('Nguyên tắc cốt lõi của Kiến trúc sạch: core.py TUYỆT ĐỐI KHÔNG bao giờ import cli, tkinter hay fastapi! Lõi nghiệp vụ chỉ nhận dữ liệu sạch và trả kết quả hoặc raise lỗi miền.', 'Core Clean-Architecture rule: core.py NEVER imports cli, tkinter, or fastapi! Domain logic accepts typed objects and returns values or raises domain errors.'),
             },
           },
           {
@@ -1973,7 +1973,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('WEB / DESKTOP PYTHON', 'FULL PYTHON UI'), value: bi('NiceGUI · PySide6 · Textual', 'NiceGUI · PySide6 · Textual'), tone: 'ok' },
             ],
             whatChanged: [
-              { op: '+', text: bi('Khám phá hệ sinh thái giao diện nhanh gấp 10 lần tkinter: Streamlit, Gradio, NiceGUI và Textual', 'Mapped rapid Python UI frameworks: Streamlit dashboards, Gradio AI apps, NiceGUI, and Textual') },
+              { op: '+', text: bi('Khám phá hệ sinh thái giao diện dựng nhanh thay cho tkinter: Streamlit, Gradio, NiceGUI và Textual', 'Mapped rapid Python UI frameworks: Streamlit dashboards, Gradio AI apps, NiceGUI, and Textual') },
             ],
             callout: {
               kind: 'good-to-know',
@@ -2084,7 +2084,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
             ],
             callout: {
               kind: 'watch-out',
-              text: bi('SHA-256 sinh ra để kiểm tra tệp tải về nên chạy CỰC NHANH — điều đó lại là thảm họa cho mật khẩu vì GPU thử được hàng chục tỷ mật khẩu mỗi giây! Mật khẩu bắt buộc dùng hàm băm cố tình CHẬM.', 'SHA-256 is designed to be blazingly FAST — which makes it disastrous for passwords because GPUs test billions per second! Passwords require deliberately SLOW memory-hard KDFs.'),
+              text: bi('SHA-256 sinh ra để kiểm tra tệp tải về nên chạy CỰC NHANH — điều đó lại là rủi ro rất lớn cho mật khẩu vì GPU thử được hàng chục tỷ mật khẩu mỗi giây! Mật khẩu bắt buộc dùng hàm băm cố tình CHẬM.', 'SHA-256 is designed to be blazingly FAST — which makes it risky for passwords because GPUs test billions per second! Passwords require deliberately SLOW memory-hard KDFs.'),
             },
           },
           {

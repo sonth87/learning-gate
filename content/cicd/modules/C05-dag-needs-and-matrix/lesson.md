@@ -1,18 +1,17 @@
 # Đồ thị phụ thuộc Job (`DAG needs`) & Ma trận kiểm thử (`Strategy Matrix`)
 
-Khi dự án Node.js lớn dần, một Job duy nhất chạy nối tiếp `lint` (2 phút) -> `typecheck` (2 phút) -> `unit-test` (5 phút) -> `build` (3 phút) sẽ bắt lập trình viên ngồi chờ ròng rã **12 phút** cho mỗi lần đẩy code.
+Khi dự án Node.js lớn dần, một Job duy nhất chạy nối tiếp `lint` (2 phút) -> `typecheck` (2 phút) -> `unit-test` (5 phút) -> `build` (3 phút) sẽ khiến lập trình viên phải chờ **12 phút** cho mỗi lần đẩy code.
 
-> [!ANALOGY] Hãy hình dung `DAG` bằng đời thực (và `Promise.all` trong code)
-> **`DAG` (*Directed Acyclic Graph* — Đồ thị luồng công việc phụ thuộc một chiều)** nghe có vẻ toán học, nhưng thực chất giống hệt **dây chuyền lắp ráp ô tô** (hoặc chuẩn bị bữa tối): khâu *chế tạo khung xe*, *kiểm tra động cơ* và *may ghế da* không hề phụ thuộc nhau nên 3 xưởng có thể làm **song song cùng lúc**; chỉ tới khâu *lắp ráp hoàn thiện* mới cần chờ cả 3 xưởng kia báo xong! Nếu quen lập trình JavaScript/Python, đó chính là **`await Promise.all([lint(), typecheck(), unitTest()])`** rồi mới gọi `await build()` — điều phối trong CI/CD bằng từ khoá **`needs:`**.
+Để rút ngắn thời gian phản hồi, các hệ thống CI hiện đại điều phối công việc theo mô hình **DAG (*Directed Acyclic Graph* — Đồ thị có hướng không chu trình)**: các bước không phụ thuộc vào nhau (như `lint`, `typecheck`, `unit-test`) được chạy **song song cùng lúc**, và chỉ bước tổng hợp (`build`) mới cần đợi tất cả các bước trước hoàn thành thông qua từ khóa **`needs:`**. Trong lập trình JavaScript/Python, cơ chế này tương đương với **`await Promise.all([lint(), typecheck(), unitTest()])`** rồi mới gọi `await build()`. (Có thể hình dung tương tự như dây chuyền sản xuất nơi khâu làm khung, kiểm tra động cơ và làm nội thất chạy đồng thời trước khi đưa vào khâu lắp ráp cuối).
 
 ```visual
 kind: illustration
 diagram: "cicd:c05"
 src: "/illustrations/cicd/cicd-dag-fanout-matrix.jpg"
-alt: "Đồ thị phụ thuộc DAG Fan-Out / Fan-In với từ khoá needs: và ma trận nhân bản kiểm thử đa chiều strategy.matrix kèm fail-fast: false"
-title: "Giải Phẫu Đồ Thị Phụ Thuộc DAG (needs:) & Ma Trận Kiểm Thử Đa Chiều (Matrix)"
-subtitle: "Chạy quạt rộng song song các cổng kiểm tra độc lập như Promise.all và kiểm định chéo đa hệ điều hành không tốn công lặp YAML"
-caption: "Kiến trúc Fan-Out / Fan-In rút ngắn thời gian đồng hồ thực và ma trận tích Đề-các 3 OS x 2 phiên bản Node với chế độ fail-fast: false"
+alt: "Đồ thị phụ thuộc DAG Fan-Out / Fan-In với từ khoá needs: và ma trận kiểm thử đa chiều strategy.matrix kèm fail-fast: false"
+title: "Đồ thị phụ thuộc DAG (needs:) & Ma trận kiểm thử (strategy.matrix)"
+subtitle: "Chạy song song các cổng kiểm tra độc lập và kiểm thử chéo đa hệ điều hành không cần lặp lại cấu hình YAML"
+caption: "Kiến trúc Fan-Out / Fan-In rút ngắn thời gian thực thi và ma trận 3 OS x 2 phiên bản Node với tùy chọn fail-fast: false"
 callouts:
   - num: 1
     label: "Fan-Out song song ngay từ giây thứ 0"
@@ -71,9 +70,9 @@ footer: "Chữ 'Acyclic' trong DAG cấm tuyệt đối vòng lặp phụ thuộ
 - [x] **Logic cổng `AND` chặt chẽ:** Nếu `lint` thất bại (`Exit Code 1`) dù `unit-test` xanh (`Exit Code 0`), Job `build` vẫn lập tức chuyển sang trạng thái **`Skipped`**, không tốn một xu tiền máy ảo đóng gói code hỏng.
 - [x] **Chặn nhánh triển khai trên PR:** Job `deploy-staging` kết hợp `needs: build` và `if: github.ref == 'refs/heads/main'` để chỉ triển khai khi code đã gộp vào nhánh chính.
 
-## 2. Nhân bản kiểm thử đa chiều với `strategy.matrix` & Bẫy `fail-fast`
+## 2. Kiểm thử đa môi trường với `strategy.matrix` và tùy chọn `fail-fast`
 
-Giả sử bạn phát triển một gói thư viện/CLI cần cam kết chạy mượt trên nhiều phiên bản Node (**`20`**, **`22`**) và nhiều hệ điều hành (`ubuntu-latest`, `macos-latest`, `windows-latest`). Thay vì sao chép thành 6 Job dài ngoằng, ==`strategy.matrix`== tự động nhân tích Đề-các (`3 hệ điều hành × 2 phiên bản Node = 6` lượt Job song song):
+Giả sử bạn phát triển một gói thư viện/CLI cần đảm bảo hoạt động ổn định trên nhiều phiên bản Node (**`20`**, **`22`**) và nhiều hệ điều hành (`ubuntu-latest`, `macos-latest`, `windows-latest`). Thay vì sao chép thành 6 Job riêng lẻ, ==`strategy.matrix`== tự động tạo tích Đề-các (`3 hệ điều hành × 2 phiên bản Node = 6` lượt Job song song):
 
 ```yaml
 unit-test:
@@ -95,11 +94,11 @@ unit-test:
 
 ```visual
 kind: compare
-title: "Cú Lừa Mặc Định Của strategy.fail-fast Khi Chạy Matrix"
-subtitle: "Chỉ một dòng cấu hình quyết định bạn nhận đủ bức tranh chẩn đoán hay bị mù thông tin!"
+title: "Hành vi mặc định của strategy.fail-fast khi chạy Matrix"
+subtitle: "Một dòng cấu hình quyết định việc nhận đầy đủ kết quả chẩn đoán hay dừng toàn bộ các tổ hợp còn lại"
 left:
-  badge: "MẶC ĐỊNH NGẦM · fail-fast: true"
-  title: "Một lát cắt gãy -> Giết ngang toàn bộ các máy ảo còn lại"
+  badge: "MẶC ĐỊNH · fail-fast: true"
+  title: "Một tổ hợp lỗi -> Hủy ngay toàn bộ các Job còn lại"
   tone: rose
   code: |
     strategy:
@@ -109,9 +108,9 @@ left:
         node: [20, 22]
   lang: yaml
   bullets:
-    - "Khi tổ hợp `(macos-latest, Node 20)` vấp lỗi ở phút thứ 3, GitHub lập tức bắn lệnh **`Cancel` huỷ luôn 3 máy ảo đang chạy dở**!"
-    - "Bạn bị mù thông tin: không biết lỗi đó chỉ kén riêng Node 20 hay cả Node 22 trên Ubuntu cũng hỏng"
-    - "Chỉ hợp khi dùng Runner đắt đỏ và chỉ cần biết nhị phân 'có lỗi hay không'"
+    - "Khi tổ hợp `(macos-latest, Node 20)` gặp lỗi ở phút thứ 3, GitHub lập tức gửi lệnh **`Cancel` hủy luôn 3 máy ảo đang chạy dở**."
+    - "Bạn thiếu thông tin chẩn đoán: không biết lỗi đó chỉ xảy ra trên Node 20 hay cả Node 22 trên Ubuntu cũng gặp phải."
+    - "Chỉ phù hợp khi dùng Runner chi phí cao và chỉ cần biết nhanh có lỗi hay không."
 right:
   badge: "KHUYÊN DÙNG · fail-fast: false"
   title: "Giữ các tổ hợp còn lại chạy nốt để gom trọn vẹn kết quả"
@@ -132,14 +131,14 @@ right:
 > [!WARNING] Bài toán kinh tế trên kho Private: Cẩn trọng hệ số nhân cước của `macos-latest`!
 > Trên các kho mã nguồn Private, GitHub tính cước phút chạy theo hệ số nhân hệ điều hành: **`macos-latest` đắt gấp khoảng 10 lần** máy ảo Linux `ubuntu-latest` (và `windows-latest` đắt gấp khoảng **2 lần**)! Vì vậy hãy dùng `exclude:` để chỉ bật `macos-latest` trên đúng phiên bản Node LTS cần thiết khi công cụ của bạn thực sự chạm tới hệ thống tệp hoặc binary đặc thù của macOS.
 
-## 3. Bắc cầu truyền dữ liệu xuyên qua ranh giới hai Job (`jobs.<id>.outputs`)
+## 3. Truyền dữ liệu giữa các Job qua `jobs.<id>.outputs`
 
-Ở bài `C04`, ta đã dùng `"$GITHUB_OUTPUT"` để truyền dữ liệu giữa hai Step **trong cùng một Job**. Nhưng vì hai Job chạy trên hai máy ảo tách biệt, mọi Step output mặc định bị đóng kín bên trong vỏ Job đó! Muốn truyền số phiên bản `version` từ Job `build` sang Job `deploy`, bạn bắt buộc lắp đủ ==cây cầu 3 mắt xích==:
+Ở bài `C04`, ta đã dùng `"$GITHUB_OUTPUT"` để truyền dữ liệu giữa hai Step **trong cùng một Job**. Nhưng vì hai Job chạy trên hai máy ảo tách biệt, mọi Step output mặc định chỉ tồn tại trong phạm vi Job đó. Để truyền số phiên bản `version` từ Job `build` sang Job `deploy`, bạn cần khai báo đủ ==3 bước liên kết==:
 
 ```visual
 kind: flow
-title: "Cây Cầu 3 Mắt Xích Truyền Dữ Liệu Giữa Hai Job Độc Lập"
-subtitle: "Thiếu bất kỳ mắt xích nào (đặc biệt là mắt xích số 2) sẽ làm giá trị bên nhận biến thành chuỗi rỗng \"\"!"
+title: "Quy trình 3 bước truyền dữ liệu giữa hai Job độc lập"
+subtitle: "Thiếu bất kỳ bước nào (đặc biệt là bước 2) sẽ khiến giá trị bên nhận thành chuỗi rỗng \"\""
 steps:
   - icon: terminal
     badge: "Mắt xích 1 · Trong Step"

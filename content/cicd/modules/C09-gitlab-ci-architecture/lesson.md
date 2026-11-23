@@ -1,27 +1,24 @@
-# Kiến trúc GitLab CI/CD Thực chiến: Chuyển đổi Tư duy từ GitHub Actions sang `.gitlab-ci.yml`
+# Kiến trúc GitLab CI/CD: Chuyển đổi cấu hình từ GitHub Actions sang `.gitlab-ci.yml`
 
-Nếu GitHub Actions thống lĩnh thế giới mã nguồn mở và các công ty khởi nghiệp trên nền đám mây, thì tại các ngân hàng, tập đoàn viễn thông và doanh nghiệp tự vận hành máy chủ nội bộ (*Self-managed / On-premise*), **GitLab CI/CD** lại là ông vua không ngai.
+Nếu GitHub Actions phổ biến trong cộng đồng mã nguồn mở và các dự án trên nền tảng đám mây, thì tại nhiều ngân hàng, tập đoàn viễn thông và doanh nghiệp tự vận hành máy chủ nội bộ (*Self-managed / On-premise*), **GitLab CI/CD** lại là nền tảng được sử dụng rộng rãi nhất.
 
-- [x] **90% tư duy nền tảng giữ nguyên bản chất 100%:** **Ephemeral Container**, **Lockfile Cache**, **Artifacts**, đồ thị **DAG** và **Sharding** đều hoạt động theo cùng nguyên lý cốt lõi.
-- [>] **Điểm khác biệt duy nhất nằm ở "ngữ pháp":** Toàn bộ pipeline được định nghĩa trong tệp duy nhất ==`.gitlab-ci.yml`== đặt ngay tại thư mục gốc dự án.
-
-> [!ANALOGY] Hãy hình dung như sau
-> Nếu **GitHub Actions** mặc định cấp cho bạn một máy ảo Ubuntu trống rồi bạn tự gọi `actions/setup-node@v4` để cài Node.js, thì **GitLab Runner (Docker / Kubernetes Executor)** ném thẳng từng Job vào chạy bên trong **một Docker Container ngay từ giây đầu tiên**! Chỉ cần khai báo `image: node:22-alpine` trong khối `default:` là toàn bộ pipeline có sẵn môi trường Node 22 gọn nhẹ.
+- [x] **90% nguyên lý nền tảng giữ nguyên:** **Ephemeral Container**, **Lockfile Cache**, **Artifacts**, đồ thị **DAG** và **Sharding** đều hoạt động theo cùng cơ chế cốt lõi.
+- [>] **Điểm khác biệt chính nằm ở cú pháp và môi trường mặc định:** Toàn bộ pipeline được định nghĩa trong tệp duy nhất ==`.gitlab-ci.yml`== đặt tại thư mục gốc dự án. Trong khi GitHub Actions mặc định cấp một máy ảo Ubuntu trống rồi bạn tự gọi `actions/setup-node@v4`, **GitLab Runner (Docker / Kubernetes Executor)** khởi chạy từng Job trực tiếp bên trong **một Docker Container**: chỉ cần khai báo `image: node:22-alpine` trong khối `default:` là toàn bộ pipeline có sẵn môi trường Node 22.
 
 ```visual
 kind: illustration
 diagram: "cicd:c09"
 alt: "Kiến trúc tệp .gitlab-ci.yml chạy thuần Container trên Docker/Kubernetes Runner với stages, workflow.rules, needs DAG và artifacts:reports"
-title: "Giải Phẫu Kiến Trúc GitLab CI/CD: Thực Thi Thuần Container, Stages & DAG Lai"
-subtitle: "Ánh xạ trọn vẹn tư duy pipeline hiện đại sang cấu trúc tệp đơn .gitlab-ci.yml dùng trong môi trường doanh nghiệp"
-caption: "Mô hình Container-first trên Docker/K8s Executor, đồ thị lai kết hợp stages với needs: [] phá rào chờ đợi và cơ chế tự động truyền Artifacts"
+title: "Kiến trúc GitLab CI/CD: Thực thi trong Container, Stages và DAG"
+subtitle: "Áp dụng tư duy pipeline hiện đại sang cấu trúc tệp đơn .gitlab-ci.yml dùng trong môi trường doanh nghiệp"
+caption: "Mô hình Container-first trên Docker/K8s Executor, đồ thị kết hợp stages với needs: [] và cơ chế tự động truyền Artifacts"
 callouts:
   - num: 1
     label: "Container-First Default & Bộ lọc workflow.rules"
     desc: "Mọi Job khởi chạy thẳng bên trong Docker/K8s Pod từ image: node:22-alpine; dùng workflow.rules chuẩn mực để chống nhân đôi pipeline MR."
     tone: amber
   - num: 2
-    label: "Đồ thị lai: Phân tầng stages kết hợp vượt rào needs:"
+    label: "Đồ thị kết hợp: Phân tầng stages và từ khóa needs:"
     desc: "Các Job xếp theo tầng trực quan nhưng có thể dùng needs: [] để xuất phát ngay giây 0 và chia mảnh kiểm thử chỉ bằng 1 dòng parallel: 4."
     tone: sky
   - num: 3
@@ -30,7 +27,7 @@ callouts:
     tone: emerald
 ```
 
-## 1. Từ điển chuyển ngữ trực diện: GitHub Actions sang GitLab CI
+## 1. Đối chiếu các khái niệm tương đương giữa GitHub Actions và GitLab CI
 
 ```visual
 kind: layers
@@ -83,8 +80,8 @@ columns:
 
 ```visual
 kind: anatomy
-title: "Giải Phẫu 7 Từ Khoá Xương Sống Trong .gitlab-ci.yml [!badge:emerald:Core DSL]"
-subtitle: Nắm vững 7 từ khoá gốc này là bạn đọc hiểu và tự viết được 95% pipeline GitLab CI thực tế
+title: "Bảy từ khóa cốt lõi trong tệp .gitlab-ci.yml [!badge:emerald:Core DSL]"
+subtitle: Nắm vững 7 từ khóa gốc này giúp bạn đọc hiểu và tự viết được hầu hết pipeline GitLab CI thực tế
 items:
   - keyword: "default:"
     role: Cấu hình gốc toàn cục
@@ -147,7 +144,7 @@ items:
 
 ---
 
-## 2. Phá vỡ rào cản tuần tự của `stages` bằng Đồ thị `needs:`
+## 2. Tối ưu thực thi song song giữa các stage bằng từ khóa `needs:`
 
 Theo mô hình truyền thống của GitLab CI, các Job được gom vào từng giai đoạn trong `stages: [install, test, build, deploy]`. Mặc định, **toàn bộ mọi Job ở stage trước phải chạy xong 100% thì các Job ở stage sau mới được phép rục rịch bắt đầu**!
 
@@ -247,7 +244,7 @@ title: "Cú Pháp Điều Kiện Chạy Job: Cũ Kỹ (only/except) vs Hiện Đ
 subtitle: "Khối rules: duyệt tuần tự từ trên xuống dưới như câu lệnh switch-case và kiểm soát chặt cổng duyệt tay Production"
 left:
   badge: "ĐÃ LỖI THỜI · Ngừng khuyến nghị"
-  title: "Cú pháp cũ only: / except: & Bẫy Manual"
+  title: "Cú pháp cũ only: / except: & Lưu ý với when: manual"
   tone: rose
   code: |
     deploy_prod:
@@ -255,14 +252,14 @@ left:
       only:
         - main
       when: manual
-      # BẪY NGẦM: Thiếu allow_failure: false!
+      # LƯU Ý QUAN TRỌNG: Thiếu allow_failure: false!
       # Mặc định when: manual mang allow_failure: true
       script:
         - ./scripts/deploy.sh production
   lang: yaml
   bullets:
     - "`only:` và `except:` không còn được GitLab phát triển thêm, khó viết điều kiện kết hợp `$CI_PIPELINE_SOURCE`"
-    - "**Bẫy cực dễ nhầm:** Khi đặt `when: manual` mà quên ghi `allow_failure: false`, GitLab mặc định coi bước đó là **tuỳ chọn (`allow_failure: true`)** — không chặn trạng thái Xanh chung của Pipeline!"
+    - "**Điểm dễ nhầm lẫn:** Khi đặt `when: manual` mà quên ghi `allow_failure: false`, GitLab mặc định coi bước đó là **tùy chọn (`allow_failure: true`)** — không chặn trạng thái thành công chung của Pipeline."
 right:
   badge: "CHUẨN HIỆN ĐẠI 2026 · Blocking Gate"
   title: "Khối rules: tường minh kèm allow_failure: false"
@@ -285,15 +282,15 @@ right:
 > [!WARNING] Nhớ nằm lòng giới hạn đường dẫn Cache của GitLab Runner!
 > Đừng bao giờ viết `paths: ["~/.npm"]` hay `/root/.npm` trong `.gitlab-ci.yml` — GitLab Runner sẽ báo cảnh báo bỏ qua ngay vì đường dẫn nằm ngoài `$CI_PROJECT_DIR`. Hãy luôn dùng thư mục con tương đối như `.npm/` kèm `--cache .npm`!
 
-### Toàn cảnh Hệ sinh thái Công cụ CI/CD: Chọn đúng vũ khí cho từng tổ chức
+### So sánh các công cụ CI/CD phổ biến trong doanh nghiệp
 
-Khi đi phỏng vấn hoặc thiết kế kiến trúc nền tảng (*Platform Engineering*), bạn sẽ thường xuyên phải so sánh **GitHub Actions** và **GitLab CI/CD** với các công cụ lớn khác trên thị trường:
+Khi thiết kế kiến trúc nền tảng (*Platform Engineering*) hoặc lựa chọn công cụ cho tổ chức, bạn sẽ thường xuyên đối chiếu **GitHub Actions** và **GitLab CI/CD** với các công cụ lớn khác trên thị trường:
 
 | Nền tảng CI/CD | Tệp cấu hình | Điểm mạnh cốt lõi & Môi trường phù hợp nhất | Lưu ý / Đánh đổi thực tế |
 | :--- | :--- | :--- | :--- |
 | **GitHub Actions** | `.github/workflows/*.yml` | Hệ sinh thái Action cộng đồng lớn nhất thế giới; tích hợp liền mạch PR, OIDC & Cloud | Phải tự khai báo Action rời cho Cache/Artifact; dễ bị loãng nếu copy-paste nhiều file YAML |
-| **GitLab CI/CD** | `.gitlab-ci.yml` | **All-in-one DevSecOps** thuần Container; chuẩn vàng cho Ngân hàng / On-premise tự chủ hạ tầng | Gắn chặt vào nền tảng GitLab; Cache bắt buộc nằm trong `$CI_PROJECT_DIR` |
-| **Jenkins** | `Jenkinsfile` (Groovy) | Tượng đài lâu đời tại các tập đoàn lớn (*Enterprise Legacy*); tuỳ biến kịch bản cực kỳ tự do | Gánh nặng vận hành máy chủ Controller và "địa ngục xung đột phiên bản Plugin" |
+| **GitLab CI/CD** | `.gitlab-ci.yml` | **All-in-one DevSecOps** thuần Container; tiêu chuẩn cho Ngân hàng / On-premise tự chủ hạ tầng | Gắn chặt vào nền tảng GitLab; Cache bắt buộc nằm trong `$CI_PROJECT_DIR` |
+| **Jenkins** | `Jenkinsfile` (Groovy) | Phổ biến lâu đời tại các tập đoàn lớn (*Enterprise Legacy*); tuỳ biến kịch bản linh hoạt | Tốn công vận hành máy chủ Controller và dễ gặp xung đột phiên bản Plugin khi nâng cấp |
 | **CircleCI / Buildkite** | `.circleci/config.yml` / `.buildkite/pipeline.yml` | Tốc độ bộ đệm & chia mảnh cực nhanh; **Buildkite** mạnh mô hình điều phối Cloud + Runner nội bộ quy mô nghìn máy | Tốn thêm chi phí thuê nền tảng bên ngoài thay vì tích hợp sẵn trong kho Git |
 | **Dagger** | Code TS / Python / Go | Viết pipeline như code thật chạy trên BuildKit Container — **chạy trên laptop giống hệt 100% trên mọi CI**! | Đòi hỏi đội ngũ làm quen tư duy SDK thay vì chỉ viết YAML thuần |
 

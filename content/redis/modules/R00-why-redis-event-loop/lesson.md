@@ -1,12 +1,14 @@
-# Vì sao 1 luồng Event Loop trên RAM của Redis gánh >100,000 ops/sec?
+# Vì sao kiến trúc Single-Threaded Event Loop trên RAM của Redis đạt >100,000 ops/sec?
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân (Dành cho cả người mới bắt đầu)
-> Hãy tưởng tượng ứng dụng Web/App của bạn là một quán cà phê đông nghẹt khách giờ cao điểm, còn cơ sở dữ liệu truyền thống (**PostgreSQL / MySQL**) là **tủ hồ sơ cất dưới tầng hầm**: muốn tìm giá một món nước hay kiểm tra phiên đăng nhập, nhân viên phải chạy xuống hầm mở khóa tủ trên ổ cứng (**SSD/Disk**), mất khoảng `2ms – 10ms`. Bình thường `5ms` nghe rất nhanh, nhưng khi **15,000 khách ập vào cùng một giây** dịp Flash Sale, cầu thang xuống tầng hầm tắc cứng!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Trong các hệ thống web thông thường, cơ sở dữ liệu quan hệ truyền thống (**PostgreSQL / MySQL**) lưu dữ liệu chủ yếu trên ổ cứng (**SSD/Disk**). Mỗi truy vấn thường mất khoảng `2ms – 10ms` cho chi phí đọc đĩa, phân tích SQL và quản lý khóa giao dịch. Khi hệ thống gặp tải đột biến (ví dụ **15,000 request/giây** trong dịp Flash Sale), I/O ổ cứng và hàng đợi kết nối sẽ nhanh chóng bị quá tải.
 >
-> **Redis** (*Remote Dictionary Server* — máy chủ từ điển từ xa) giải quyết triệt để nút thắt này bằng cách đặt một **bảng ghi chú siêu tốc ngay trên mặt bàn pha chế (`RAM`)**:
-> - **RAM vs Ổ cứng SSD:** Đọc dữ liệu trên **RAM (`~100 nano-giây`)** nhanh gấp khoảng ==1,000 lần== so với đọc ổ cứng SSD (`~100 micro-giây`), giống như liếc mắt nhìn tờ giấy nhớ trước mặt thay vì đi thang máy xuống tầng hầm.
-> - **Đơn luồng không khóa (*Single-Threaded Event Loop*):** Thay vì thuê 50 đầu bếp chen chúc quanh một cái thớt, cứ 2 giây lại phải giành nhau ổ khóa an toàn (**`Mutex Lock`** — khóa loại trừ lẫn nhau để tránh 2 người cùng sửa hỏng 1 món) và dừng tay đổi việc (**`Context Switch`** — chi phí CPU chuyển đổi qua lại giữa các luồng), Redis chỉ dùng **1 đầu bếp siêu tốc duy nhất** thái rau trên mặt bàn RAM. Vì làm tuần tự từng món một trong nháy mắt (`< 1 micro-giây`), đầu bếp ==không bao giờ tốn thời gian tranh khóa hay chờ đợi ai==!
-> - **Ghép kênh vào/ra (*I/O Multiplexing* — `epoll` trên Linux / `kqueue` trên macOS):** Giống một bảng đèn báo thông minh ở quầy lễ tân giúp theo dõi cùng lúc **10,000 bàn khách** trên 1 màn hình: bàn nào gọi món xong đèn mới sáng để phục vụ ngay, không cần thuê 10,000 nhân viên đứng kè kè chờ từng bàn.
+> **Redis** (*Remote Dictionary Server*) giải quyết bài toán này bằng cách lưu trữ và xử lý dữ liệu trực tiếp trên **RAM** thông qua 3 cơ chế kỹ thuật chính:
+> - **Lưu trữ trực tiếp trên RAM (In-Memory):** Truy cập **DRAM (`~100 nano-giây`)** nhanh gấp khoảng ==1,000 lần== so với đọc ngẫu nhiên trên ổ cứng SSD (`~100 micro-giây`).
+> - **Single-Threaded Event Loop (Đơn luồng không khóa):** Thay vì dùng hàng chục luồng (Thread) cùng sửa dữ liệu và phải dùng **`Mutex Lock`** (khóa loại trừ lẫn nhau) kèm chi phí chuyển ngữ cảnh (**`Context Switch`**), Redis chỉ dùng **1 luồng chính duy nhất (*Main Thread*)** thực thi tuần tự từng lệnh trên RAM. Vì mỗi lệnh chỉ tốn `< 1 micro-giây`, mô hình này ==triệt tiêu hoàn toàn tranh chấp khóa và Deadlock==.
+> - **I/O Multiplexing (`epoll` trên Linux / `kqueue` trên macOS):** Cơ chế của hệ điều hành cho phép 1 luồng theo dõi đồng thời hàng chục nghìn kết nối TCP mà không cần tạo thread riêng cho từng kết nối, chỉ xử lý ngay khi socket có dữ liệu sẵn sàng.
+>
+> *Liên hệ trực quan:* Có thể hình dung cơ chế này giống như một nhân viên xử lý tuần tự các yêu cầu ngay trên mặt bàn (RAM) thông qua bảng tín hiệu tự động cho hàng nghìn khách, thay vì nhiều nhân viên cùng chạy xuống kho tầng hầm (SSD) và phải chờ nhau mở khóa cửa.
 
 Dù bạn viết backend bằng **Python (`FastAPI` / `Django` / `asyncio`)**, **Node.js / TypeScript**, **Go**, **Java**, hay mới tìm hiểu hệ thống phân tán lần đầu, nắm vững 3 trụ cột dưới đây sẽ giúp bạn hiểu vì sao một tiến trình Redis nhỏ gọn lại gánh nổi **>100,000 thao tác/giây**:
 
@@ -21,7 +23,7 @@ diagram: "redis:r00"
 alt: "Kiến trúc Single-Threaded Event Loop của Redis 8 kết hợp epoll/kqueue I/O Multiplexing và bậc thang độ trễ RAM vs SSD"
 badge: "Bản đồ Giải phẫu · R00"
 title: "Bậc Thang Độ Trễ Bộ Nhớ & Kiến Trúc Single-Threaded Event Loop"
-subtitle: "Tại sao 1 đầu bếp siêu tốc thao tác trực tiếp trên bàn RAM đánh bại hàng chục luồng tranh giành khoá trên đĩa cứng"
+subtitle: "Tại sao mô hình xử lý tuần tự trên RAM kết hợp I/O Multiplexing vượt trội hơn mô hình đa luồng tranh chấp khóa trên đĩa cứng"
 caption: "Nhấn vào hình minh họa hoặc sơ đồ kỹ thuật để phóng to toàn màn hình — quan sát hành trình từ 1,000 kết nối TCP qua bộ ghép kênh epoll/kqueue vào luồng thực thi tuần tự trên RAM"
 callouts:
   - num: 1
@@ -38,10 +40,10 @@ callouts:
     tone: emerald
 ```
 
-## 1. Ánh xạ tư duy: Từ Biến cục bộ sang Kho RAM Dùng chung & Hệ sinh thái Hiện đại
+## 1. Từ bộ nhớ cục bộ trong tiến trình đến kho dữ liệu RAM dùng chung (Redis)
 
-> [!ANALOGY] Vì sao không dùng thẳng biến `dict` trong Python hay `Map` trong JS/Go/Java?
-> Một biến `cache = {}` trong Python hay `new Map()` trong Node.js cực nhanh nhưng **bị nhốt kín trong từng tiến trình riêng lẻ**: nếu bạn chạy 10 máy chủ (hoặc 10 Pod Kubernetes), mỗi máy sẽ giữ 1 bản dữ liệu lệch nhau và bay sạch mỗi lần khởi động lại code. **Redis** tách bộ nhớ đó thành một ==Kho Cấu Trúc Dữ Liệu Trên RAM Dùng Chung Qua Mạng== cho mọi ngôn ngữ lập trình cùng truy cập nhất quán!
+> [!NOTE] Vì sao không dùng thẳng biến `dict` trong Python hay `Map` trong JS/Go/Java làm Cache?
+> Một biến `cache = {}` trong Python hay `new Map()` trong Node.js rất nhanh nhưng **bị cô lập bên trong từng tiến trình riêng lẻ**: nếu bạn chạy 10 máy chủ (hoặc 10 Pod Kubernetes), mỗi máy sẽ giữ một bản dữ liệu khác nhau và toàn bộ dữ liệu sẽ mất sạch mỗi khi tiến trình khởi động lại. **Redis** tách bộ nhớ đó thành một ==Kho Cấu Trúc Dữ Liệu Trên RAM Dùng Chung Qua Mạng== cho mọi dịch vụ và ngôn ngữ lập trình cùng truy cập nhất quán.
 
 | Khái niệm quen thuộc trong Code | Tương đương trong Redis 8 | Điểm nâng cấp vượt trội của Redis |
 | --- | --- | --- |
@@ -114,9 +116,9 @@ r.set("app:version", "8.0", ex=3600)  # Ghi kèm hẹn giờ tự hủy TTL = 36
 print(r.get("app:version"))           # -> "8.0"
 ```
 
-> [!WARNING] Gót chân Achilles số #1 của mô hình Đơn luồng: Một con sâu làm rầu nồi canh!
-> Giống như quầy thanh toán nhanh chỉ có **1 thu ngân duy nhất**: nếu khách hàng phía trước rút ra một bao tải 20 triệu đồng tiền xu lẻ bắt thu ngân ngồi đếm tay suốt 1 giây, toàn bộ 500 khách phía sau chỉ mua 1 chai nước đều bị **đứng hình chờ theo** (*Head-of-Line Blocking*)!
-> Trong Redis, nếu ai đó gõ lệnh **`KEYS *`** quét qua 20 triệu khóa (mất `800ms`), ==mọi lệnh `GET`/`SET` siêu nhanh của toàn hệ thống đều bị đóng băng suốt 800ms đó==. Nguyên tắc sống còn của kỹ sư Redis là **luôn kiểm tra độ phức tạp Big-O của câu lệnh trước khi chạy trên Production**!
+> [!WARNING] Điểm nghẽn lớn nhất của mô hình Single-Threaded: Chặn luồng chính (Head-of-Line Blocking)
+> Vì chỉ có một luồng chính thực thi lệnh tuần tự, nếu một câu lệnh tốn nhiều thời gian chạy (độ phức tạp `O(N)` trên tập dữ liệu lớn), toàn bộ các kết nối khác đều phải chờ trong hàng đợi cho đến khi lệnh đó hoàn tất.
+> Cụ thể trong Redis, nếu chạy lệnh **`KEYS *`** để quét qua 20 triệu khóa (mất `800ms`), ==mọi lệnh `GET`/`SET` khác của toàn hệ thống đều bị đóng băng suốt 800ms đó==. Nguyên tắc bắt buộc khi vận hành Redis là **luôn kiểm tra độ phức tạp Big-O của câu lệnh trước khi chạy trên Production**. (Có thể hình dung giống như một quầy thu ngân duy nhất bị nghẽn hàng đợi nếu người đứng đầu mất nhiều phút để kiểm đếm).
 
 ## 3. Ba nguyên tắc An toàn tối thiểu ngay ngày đầu khởi chạy Redis
 
@@ -124,8 +126,8 @@ Trước khi viết dòng code đầu tiên kết nối vào Redis, hãy khóa c
 
 ```visual
 kind: compare
-title: "Cấu Hình Khởi Chạy Redis: Mở Toang Nguy Hiểm vs Khoá Chặt Chuẩn Mực"
-subtitle: "Không bao giờ phơi trực tiếp cổng 6379 không mật khẩu ra ngoài mạng công cộng"
+title: "Cấu Hình Khởi Chạy Redis: Không Bảo Mật vs Chuẩn Mực An Toàn"
+subtitle: "Không bao giờ mở trực tiếp cổng 6379 không mật khẩu ra ngoài mạng công cộng"
 left:
   badge: "RỦI RO BỊ BOT QUÉT TỰ ĐỘNG TẤN CÔNG"
   title: "Mở 0.0.0.0 & Tắt Protected Mode"

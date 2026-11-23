@@ -1,8 +1,8 @@
-## 1. Giải mã bằng ví dụ phần mềm: Stakeholder là ai và Ma trận ủng hộ `SEAM` dùng thế nào?
+## 1. Nhận diện các bên liên quan (`Stakeholders`), `Power/Interest Grid` và Ma trận `SEAM`
 
-Khi triển khai phần mềm Quản lý Kho mới thay thế sổ sách truyền thống, nhiều PM trẻ chỉ chăm chăm họp với ông Giám đốc ký hợp đồng mà quên bẵng chị Kế toán kho lâu năm. Tới ngày chạy thật, chị Kế toán sợ phần mềm mới làm lộ sai sót tồn kho cũ nên âm thầm xúi nhân viên nhập liệu đối phó, khiến dự án tê liệt!
+Khi triển khai hệ thống Quản lý Kho mới thay thế quy trình cũ, nhiều PM chỉ tập trung báo cáo với lãnh đạo phê duyệt ngân sách mà bỏ qua người vận hành trực tiếp (như thủ kho hoặc kế toán kho). Đến giai đoạn vận hành thực tế, những người dùng cuối này có thể phản đối vì lo ngại quy trình mới gây phức tạp hoặc phơi bày sai sót cũ, dẫn đến dự án bị đình trệ.
 
-Trong **PMBOK® Guide 8 (`§2.5`)**, PMI gộp chung **Gắn kết Bên liên quan** và **Truyền thông** vào một miền duy nhất là **Stakeholders** (7 quy trình). Hãy nắm rõ 3 khái niệm mở đường sau bằng ngôn ngữ đời thường:
+Trong **PMBOK® Guide 8 (`§2.5`)**, PMI hợp nhất **Gắn kết Bên liên quan** và **Truyền thông** vào một miền duy nhất là **Stakeholders** (7 quy trình). Cần nắm rõ 3 khái niệm cốt lõi sau:
 
 - **Stakeholder (*Bên liên quan*):** Bất kỳ cá nhân hay tổ chức nào tác động đến dự án, bị ảnh hưởng bởi dự án, hoặc **tự cảm thấy mình bị ảnh hưởng** (từ Sponsor, đội Dev, bộ phận Pháp chế đến người dùng cuối). Việc nhận diện (`Identify Stakeholders`) phải làm **ngay từ lúc khởi tạo và lặp lại liên tục** khi sang pha mới.
 - **Power / Interest Grid (*Lưới Quyền lực × Mức độ quan tâm*):** Chia các bên vào 4 ô để phân bổ sức lực hợp lý: *Quyền cao + Quan tâm cao → Theo sát chặt chẽ (`Manage Closely`)*; *Quyền cao + Quan tâm thấp → Giữ hài lòng, tránh làm phiền chi tiết (`Keep Satisfied`)*; *Quyền thấp + Quan tâm cao → Cập nhật thông tin đầy đủ (`Keep Informed`)*; *Thấp + Thấp → Theo dõi định kỳ (`Monitor`)*.
@@ -47,9 +47,9 @@ steps:
 > [!WARNING]
 > **Trình tự chuẩn khi phát hiện một Stakeholder mới giữa chừng dự án:** Tuyệt đối không gửi bừa tài liệu ngay! Hãy đi đúng 4 bước: ==(1) Ghi danh vào Stakeholder Register → (2) Phân tích quyền lực, mối quan tâm và thái độ hiện tại → (3) Cập nhật Stakeholder Engagement Plan & Communications Plan → (4) Chủ động gặp gỡ gắn kết==.
 
-## 2. Công thức bùng nổ kênh liên lạc & 3 Phương thức Truyền thông
+## 2. Công thức số kênh truyền thông và 3 phương thức giao tiếp chuẩn PMI
 
-Khi quy mô đội dự án và các bên liên quan phình to, độ phức tạp giao tiếp không tăng tuyến tính mà tăng vọt theo công thức **Số kênh liên lạc = `N × (N - 1) / 2`** (trong đó `N` là tổng số người, **nhớ cộng cả PM nếu đề bài chưa tính PM!**). Ví dụ: nhóm 5 người chỉ có `5 × 4 / 2 = 10 kênh`, nhưng khi tăng thêm 5 người lên `N = 10` thì số kênh nhảy vọt lên **`10 × 9 / 2 = 45 kênh`**!
+Khi quy mô đội dự án và số lượng bên liên quan tăng lên, độ phức tạp giao tiếp tăng theo hàm bậc hai dựa trên công thức **Số kênh liên lạc = `N × (N - 1) / 2`** (trong đó `N` là tổng số người tham gia, cần tính cả PM nếu đề bài chưa cộng). Ví dụ: nhóm 5 người có `5 × 4 / 2 = 10 kênh`, nhưng khi tăng lên `N = 10` thì số kênh tăng lên **`10 × 9 / 2 = 45 kênh`**.
 
 ```visual
 kind: groups
@@ -86,14 +86,14 @@ items:
       - "Tránh làm ngập hòm thư của các Stakeholder chỉ cần tra cứu định kỳ."
 ```
 
-## 3. Phân biệt sinh tử: `Stakeholder Engagement Plan` vs `Communications Management Plan`
+## 3. Phân biệt Kế hoạch gắn kết các bên liên quan (`Stakeholder Engagement Plan`) và Kế hoạch quản lý truyền thông (`Communications Management Plan`)
 
-Đây là cặp đáp án song sinh làm mất điểm nhiều nhất trong phòng thi: cả hai đều nằm cạnh nhau trong lựa chọn B và C! Hãy dùng lăng kính phân tách 3 giây dưới đây:
+Đây là cặp phương án rất dễ gây nhầm lẫn trong đề thi khi thường xuất hiện cùng lúc trong các lựa chọn. Có thể phân biệt nhanh theo bảng đối chiếu sau:
 
 ```visual
 kind: compare
-title: "Khi nào mở Stakeholder Engagement Plan vs Communications Management Plan?"
-subtitle: "Một bên sửa ĐƯỜNG ỐNG ĐƯA TIN · Một bên sửa THÁI ĐỘ LÒNG NGƯỜI!"
+title: "Khi nào cập nhật Stakeholder Engagement Plan vs Communications Management Plan?"
+subtitle: "Phân biệt giữa vấn đề ĐỊNH DẠNG/KÊNH TRUYỀN TIN và vấn đề THÁI ĐỘ/MỨC ĐỘ ỦNG HỘ"
 left:
   badge: "THÔNG TIN GÌ · ĐỊNH DẠNG NÀO · BAO LÂU?"
   title: "Communications Management Plan"
@@ -108,15 +108,15 @@ right:
   tone: "emerald"
   bullets:
     - "Triệu chứng đề bài: 'Trưởng phòng nghiệp vụ cố tình vắng họp liên tiếp', 'Người dùng nghi ngờ hệ thống mới và từ chối hợp tác UAT'."
-    - "Nội dung quản lý: Chiến lược tâm lý và hành động cụ thể để xây dựng lòng tin, tháo gỡ kháng cự và dịch chuyển mức ủng hộ trên bảng SEAM."
+    - "Nội dung quản lý: Chiến lược làm việc và hành động cụ thể để xây dựng lòng tin, tháo gỡ kháng cự và dịch chuyển mức ủng hộ trên bảng SEAM."
     - "Từ khoá nhận diện: Resistance, attitude, buy-in, expectations, engagement gap."
 ```
 
-## 4. Tình huống thực chiến & Phản xạ vàng phòng thi
+## 4. Tình huống thực tế và nguyên tắc lựa chọn giữa hai kế hoạch
 
 Giả sử bạn gửi báo cáo tiến độ PDF đều đặn mỗi sáng thứ Hai, nhưng Giám đốc Vận hành vẫn liên tục bác bỏ sản phẩm ở buổi họp cuối tháng vì cho rằng đội dự án không hiểu quy trình kho bãi của ông ấy.
 
 > [!TIP]
-> **Mẹo khoanh đáp án chuẩn 100%:**
-> - Nếu vấn đề là ==báo cáo vẫn gửi đều nhưng người nhận chống đối, lạnh nhạt hoặc lệch kỳ vọng== → Gặp trực tiếp lắng nghe và cập nhật **Stakeholder Engagement Plan**!
-> - Nếu vấn đề là ==họ rất thiện chí ủng hộ nhưng không nắm được tiến độ do báo cáo rối rắm, gửi sai kênh hoặc sót người nhận== → Cập nhật **Communications Management Plan**!
+> **Nguyên tắc phân biệt nhanh:**
+> - Nếu vấn đề là ==báo cáo vẫn gửi đầy đủ nhưng người nhận phản đối, thờ ơ hoặc lệch kỳ vọng== → Gặp trực tiếp lắng nghe và cập nhật **Stakeholder Engagement Plan**.
+> - Nếu vấn đề là ==họ có thiện chí ủng hộ nhưng không nắm được tiến độ do báo cáo khó hiểu, gửi sai kênh hoặc thiếu người nhận== → Cập nhật **Communications Management Plan**.

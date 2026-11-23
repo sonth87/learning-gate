@@ -49,7 +49,7 @@
     {
       "path": "security/pull-request-target-pwn.yml",
       "kind": "security",
-      "note": "Thảm hoạ Pwn Request: kết hợp sự kiện pull_request_target đầy quyền hạn với hành động checkout mã nguồn từ nhánh Fork chưa kiểm duyệt rồi chạy npm ci.",
+      "note": "Lỗ hổng bảo mật Pwn Request: kết hợp sự kiện pull_request_target đầy quyền hạn với hành động checkout mã nguồn từ nhánh Fork chưa kiểm duyệt rồi chạy npm ci.",
       "task": "Chỉ ra tại sao chạy npm ci trên mã nguồn Fork trong ngữ cảnh pull_request_target lại làm lộ toàn bộ kho secrets của dự án.",
       "answer": "Khác với pull_request thông thường, pull_request_target cấp đầy đủ quyền đọc secrets của kho gốc. Khi chạy npm ci trên code của kẻ tấn công, kịch bản postinstall trong package.json được tự động kích hoạt và đọc trọn bộ secrets!"
     }

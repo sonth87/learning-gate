@@ -1,30 +1,30 @@
-## 1. Giải mã bằng ví dụ phần mềm: Phân biệt tức thì `Risk` (Chưa nổ) vs `Issue` (Đã nổ)
+## 1. Phân biệt Rủi ro (`Risk` — sự kiện chưa xảy ra) và Vấn đề (`Issue` — sự kiện đã phát sinh)
 
-Trong **Miền #7 Risk** (`PMBOK 8 §2.7`), lỗi mất điểm oan uổng nhất của thí sinh là không nhìn kỹ **thì thời gian của động từ** trong câu hỏi. Hãy xét hai câu thông báo sau trong buổi họp sáng của đội phát triển:
+Trong **Miền #7 Risk** (`PMBOK 8 §2.7`), một lỗi mất điểm phổ biến là không xác định đúng **mốc thời gian của sự kiện** trong câu hỏi. Xét hai tình huống sau trong dự án phần mềm:
 
-- **Câu A:** *"Cổng thanh toán đối tác dạo này hay chập chờn, **có nguy cơ** cuối tuần Flash Sale sẽ bị quá tải!"* → Sự việc **chưa xảy ra** (xác suất từ `1%` đến `99%`). Đó là **Risk (*Rủi ro*)**! Bạn ghi vào **`Risk Register`**, gán người chịu trách nhiệm theo dõi (**`Risk Owner`**), đánh giá xác suất × mức thiệt hại (`P × I`) và chuẩn bị sẵn phương án dự phòng (**`Contingency Plan`**).
-- **Câu B:** *"Cổng thanh toán đối tác **vừa sập hoàn toàn từ 8 giờ sáng nay**, khách hàng đang không trả tiền được!"* → Sự việc **đã nổ ra rồi** (xác suất `= 100%`). Nó không còn là rủi ro nữa mà đã biến thành **Issue (*Sự cố hiện hữu*)**! ==Hễ sự kiện đã xảy ra, bạn phải ghi ngay vào Issue Log==: nếu trước đó đã chuẩn bị sẵn kịch bản dự phòng thì kích hoạt ngay `Contingency Plan`; còn nếu đây là tai hoạ bất ngờ chưa từng nghĩ tới thì phải tung giải pháp ứng biến tức thời gọi là **`Workaround`**!
+- **Tình huống A:** *"Cổng thanh toán đối tác hoạt động không ổn định, **có nguy cơ** quá tải vào dịp khuyến mãi cuối tuần!"* → Sự kiện **chưa xảy ra** (xác suất từ `1%` đến `99%`). Đây là **Risk (*Rủi ro*)**. Cần ghi nhận vào **`Risk Register`**, phân công người theo dõi (**`Risk Owner`**), đánh giá xác suất × mức độ tác động (`P × I`) và chuẩn bị phương án ứng phó (**`Contingency Plan`**).
+- **Tình huống B:** *"Cổng thanh toán đối tác **đã ngừng hoạt động từ 8 giờ sáng nay**, khách hàng hiện không thể thanh toán!"* → Sự kiện **đã xảy ra rồi** (xác suất `= 100%`). Đây không còn là rủi ro mà là **Issue (*Vấn đề / Sự cố hiện hữu*)**. ==Khi sự kiện đã xảy ra, cần ghi nhận ngay vào Issue Log==: nếu đã có kế hoạch ứng phó chuẩn bị trước thì kích hoạt `Contingency Plan`; nếu là sự cố bất ngờ chưa lường trước thì triển khai giải pháp ứng biến tức thời gọi là **`Workaround`**.
 
 ```visual
 kind: compare
-title: "Bộ Lọc 3 Giây Phân Tách Tuyệt Đối: Risk vs Issue"
-subtitle: "Sai sổ ghi chép (Risk Register vs Issue Log) là chọn nhầm đáp án ngay lập tức!"
+title: "Quy tắc Phân tách Risk và Issue"
+subtitle: "Chọn đúng tài liệu ghi nhận (Risk Register vs Issue Log) để xử lý chính xác"
 left:
   badge: "TƯƠNG LAI · XÁC SUẤT < 100%"
   title: "Risk (Rủi ro: Đe doạ hoặc Cơ hội)"
   tone: "amber"
   bullets:
     - "Từ khoá nhận diện: *có thể (might/may/could)*, *nguy cơ*, *lo ngại rằng*, *nếu xảy ra thì...*."
-    - "Hồ sơ ghi nhận đầu tiên: **Risk Register** (kèm chỉ định Risk Owner ngay lập tức)."
-    - "Quy trình tiếp theo: Phân tích định tính (Qualitative P×I) → Định lượng (nếu dự án lớn) → Lập Risk Response."
+    - "Hồ sơ ghi nhận đầu tiên: **Risk Register** (kèm chỉ định Risk Owner)."
+    - "Quy trình tiếp theo: Phân tích định tính (Qualitative P×I) → Định lượng (nếu cần) → Lập Risk Response."
 right:
   badge: "HIỆN TẠI · ĐÃ XẢY RA = 100%"
   title: "Issue (Sự cố / Vấn đề đang diễn ra)"
   tone: "rose"
   bullets:
     - "Từ khoá nhận diện: *đã nghỉ việc (has resigned)*, *vừa bị khoá*, *nhà thầu vừa báo trễ*, *phát hiện lỗi*."
-    - "Hồ sơ ghi nhận đầu tiên: **Issue Log** (gán Issue Owner đứng mũi chịu sào xử lý)."
-    - "Hành động: Đã có phương án sẵn → chạy **Contingency Plan**; chưa từng lường trước → lập **Workaround**!"
+    - "Hồ sơ ghi nhận đầu tiên: **Issue Log** (gán Issue Owner chịu trách nhiệm xử lý)."
+    - "Hành động: Đã có phương án sẵn → chạy **Contingency Plan**; chưa lường trước → lập **Workaround**."
 ```
 
 ## 2. Mười chiến lược ứng phó Rủi ro & Hai loại rủi ro phát sinh sau đó
@@ -63,11 +63,11 @@ Sau khi triển khai biện pháp ứng phó, đừng nhầm lẫn hai khái ni�
 - **Residual Risk (*Rủi ro tàn dư*):** Phần nguy cơ nhỏ **còn sót lại** sau khi đã phòng bị (ví dụ: đã dựng máy chủ dự phòng nhưng vẫn còn 1% nguy cơ đứt cáp quang cả hai vùng).
 - **Secondary Risk (*Rủi ro thứ cấp*):** Rủi ro **mới tinh đẻ ra trực tiếp từ giải pháp ứng phó** (ví dụ: thuê công ty ngoài viết module bảo mật để `Transfer` rủi ro thiếu nhân sự lại đẻ ra rủi ro mới là lộ bí mật mã nguồn!).
 
-## 3. Chọn loại Hợp đồng Mua sắm (`FFP · CPFF · CPIF · T&M`) theo nguyên tắc "Ai gánh rủi ro đội vốn?"
+## 3. Lựa chọn Hợp đồng Mua sắm (`FFP · CPFF · CPIF · T&M`) theo mức độ rõ ràng phạm vi và rủi ro chi phí
 
-Khi dự án đi thuê nhà thầu ngoài (*Vendor / Seller*), quy trình **Plan Sourcing Strategy** (`PMBOK 8 §2.1 & Appendix X4`) dạy bạn chọn loại hợp đồng dựa trên câu hỏi cốt lõi: **Phạm vi công việc đã rõ ràng tới đâu và ai là người chịu thiệt khi chi phí phát sinh vượt dự tính?**
+Khi dự án thuê nhà thầu ngoài (*Vendor / Seller*), quy trình **Plan Sourcing Strategy** (`PMBOK 8 §2.1 & Appendix X4`) yêu cầu chọn loại hợp đồng dựa trên 2 yếu tố: **Phạm vi công việc đã rõ ràng đến mức nào** và **bên nào chịu rủi ro khi chi phí phát sinh vượt dự tính**:
 
-| Loại hợp đồng viết tắt | Nghĩa đời thường & Ví dụ phần mềm | Ai gánh rủi ro đội chi phí? |
+| Loại hợp đồng viết tắt | Đặc điểm & Ví dụ phần mềm | Bên nào chịu rủi ro vượt chi phí? |
 | :--- | :--- | :--- |
 | **FFP** *(Firm Fixed Price — Giá trọn gói cố định)* | Phạm vi **đã cực kỳ rõ ràng 100%** (ví dụ: cắt giao diện cho đúng 12 màn hình Figma đã chốt). Chốt giá cứng 600 triệu — Vendor làm chậm tự bù lỗ! *(Biến thể: `FPIF` có thưởng vượt tiến độ; `FP-EPA` cho trượt giá nhiều năm).* | ==Seller (Nhà thầu) chịu rủi ro cao nhất== |
 | **CPFF** *(Cost Plus Fixed Fee)* | Phạm vi **mờ mịt, nghiên cứu R&D mới** (ví dụ: thử nghiệm mô hình AI chẩn đoán ảnh X-quang). Người mua thanh toán toàn bộ chi phí thực tế hợp lệ + 1 khoản phí lời cố định cho Vendor. | ==Buyer (Người mua) gánh trọn rủi ro đội vốn== |
@@ -77,12 +77,12 @@ Khi dự án đi thuê nhà thầu ngoài (*Vendor / Seller*), quy trình **Plan
 > [!WARNING]
 > **Bẫy ghép nhầm hợp đồng trong đề thi:** Nếu đề bài mô tả *"Yêu cầu dự án chưa rõ ràng và thay đổi liên tục qua từng tháng"*, đừng bao giờ chọn **FFP** (vì nhà thầu sẽ hét giá phòng thủ cực đắt hoặc liên tục kiện đòi tiền Change Request!). Hãy chọn hợp đồng linh hoạt (Agile Multi-tiered / Cost-reimbursable / T&M có trần).
 
-## 4. Tình huống thực chiến: Xử lý tranh chấp với Nhà thầu (`Vendor Dispute`)
+## 4. Quy trình xử lý tranh chấp hợp đồng với Nhà thầu (`Vendor Dispute`)
 
 ```visual
 kind: flow
-title: "Thang 4 Nấc Giải quyết Tranh chấp Hợp đồng Chuẩn PMI"
-subtitle: "Không bao giờ doạ kiện ra toà hay ngắt thanh toán ngay ở bước đầu tiên!"
+title: "Thang 4 Bước Giải quyết Tranh chấp Hợp đồng Chuẩn PMI"
+subtitle: "Không đe dọa khởi kiện hoặc dừng thanh toán khi chưa đối chiếu hợp đồng và đàm phán trực tiếp"
 steps:
   - icon: "file"
     badge: "BƯỚC 1 · REVIEW"
@@ -110,4 +110,4 @@ steps:
 ```
 
 > [!TIP]
-> **Câu thần chú Sourcing:** Mọi tranh chấp hợp đồng trong đề PMP, phương án được ưu tiên tốt nhất (**BEST**) để giữ tiến độ và quan hệ luôn là ==Đàm phán trực tiếp (Direct Negotiation)==!
+> **Nguyên tắc xử lý tranh chấp hợp đồng:** Trong các tình huống tranh chấp với nhà thầu ở đề PMP, phương án được ưu tiên hàng đầu (**BEST**) để bảo toàn tiến độ và quan hệ hợp tác luôn là ==Đàm phán trực tiếp (Direct Negotiation)==.

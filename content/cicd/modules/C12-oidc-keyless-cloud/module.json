@@ -49,7 +49,7 @@
       "path": "security/aws-iam-trust-policy.yaml",
       "kind": "good",
       "note": "Chính sách tin cậy AWS IAM Role khoá cứng điều kiện StringEquals đối với cả hai trường aud và sub của thẻ OIDC.",
-      "task": "Giải thích hậu quả thảm khốc nếu người quản trị viết `StringLike` với giá trị `\"repo:*:ref:refs/heads/main\"` cho trường `sub`.",
+      "task": "Giải thích hậu quả bảo mật nếu người quản trị viết `StringLike` với giá trị `\"repo:*:ref:refs/heads/main\"` cho trường `sub`.",
       "answer": "Dấu `*` ở phần tổ chức/kho cho phép BẤT KỲ người lạ nào trên toàn thế giới tạo một kho GitHub cá nhân có nhánh `main` rồi mượn thẳng IAM Role của công ty bạn để chiếm quyền điều khiển hạ tầng AWS!"
     },
     {

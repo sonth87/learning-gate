@@ -3,7 +3,7 @@
 Bạn đã đi được một chặng đường rất xa: từ đóng gói container, triển khai Deployment không gián đoạn, định tuyến qua Service/Gateway API, quản lý lưu trữ PVC cho tới gia cố `securityContext` và RBAC. Ở chặng cuối của Level 5, chúng ta giải quyết hai bài toán kiến trúc lớn trước khi bước vào vận hành doanh nghiệp quy mô lớn:
 
 - [!] **Về mạng nội bộ:** Mặc định trong Kubernetes, mạng nội bộ phẳng hoàn toàn — làm sao chặn đứng việc một Pod Frontend bị xâm nhập tự ý kết nối thẳng vào cổng `5432` của PostgreSQL?
-- [!] **Về quản lý cấu hình đa môi trường:** Khi một dịch vụ cần tới 8 tệp YAML (`Deployment`, `Service`, `HTTPRoute`, `HPA`, `ConfigMap`, `ServiceAccount`, `NetworkPolicy`...) nhân lên cho 4 môi trường (`dev`, `qa`, `staging`, `prod`), làm sao thoát khỏi *"địa ngục Copy-Paste 32 tệp YAML"*?
+- [!] **Về quản lý cấu hình đa môi trường:** Khi một dịch vụ cần tới 8 tệp YAML (`Deployment`, `Service`, `HTTPRoute`, `HPA`, `ConfigMap`, `ServiceAccount`, `NetworkPolicy`...) nhân lên cho 4 môi trường (`dev`, `qa`, `staging`, `prod`), làm sao thoát khỏi cảnh sao chép thủ công hàng chục tệp YAML gần giống nhau?
 
 Câu trả lời chính là tường lửa nội bộ ==`NetworkPolicy`== cùng bộ đôi quản lý cấu hình chuẩn công nghiệp năm 2026: ==`Helm`== và ==`Kustomize`==!
 
@@ -11,7 +11,7 @@ Câu trả lời chính là tường lửa nội bộ ==`NetworkPolicy`== cùng 
 kind: illustration
 diagram: "kube:k17"
 alt: "Tường lửa mạng nội bộ Zero-Trust với NetworkPolicy (Default Deny + Whitelist + DNS Egress 53) và bộ máy đóng gói biểu mẫu Helm Chart"
-title: "Giải Phẫu Tường Lửa Mạng Zero-Trust (NetworkPolicy) & Khuôn Đúc Gói Helm / Kustomize"
+title: "Cơ Chế NetworkPolicy (Zero-Trust) & Đóng Gói Cấu Hình Helm / Kustomize"
 subtitle: "Khóa chặt lưu lượng ngang Đông-Tây giữa các tầng dịch vụ và tái sử dụng một bộ khuôn mẫu YAML duy nhất cho mọi môi trường"
 caption: "Mô hình tường lửa Pod-to-Pod thực thi bởi Cilium/Calico (nhớ mở cổng 53 cho CoreDNS) và quy trình kết xuất cấu hình đa môi trường"
 callouts:
@@ -20,7 +20,7 @@ callouts:
     desc: "Áp dụng default-deny (podSelector: {}) chặn 100% kết nối lạ, sau đó chỉ mở đúng luồng hợp lệ từ web -> api -> postgres:5432."
     tone: emerald
   - num: 2
-    label: "Lưu ý sống còn khi khóa chiều ra (Egress) — Cổng 53 DNS"
+    label: "Lưu ý quan trọng khi khóa chiều ra (Egress) — Cổng 53 DNS"
     desc: "Khi bật kiểm soát Egress, luôn phải mở cổng UDP/TCP 53 sang kube-system để Pod không bị mù phân giải tên miền CoreDNS."
     tone: cyan
   - num: 3
@@ -29,11 +29,11 @@ callouts:
     tone: cyan
 ```
 
-## 1. Giải thích bình dị `NetworkPolicy`: Dựng tường thẻ từ giữa các phòng ban!
+## 1. Cơ chế cô lập mạng `NetworkPolicy`: Nguyên tắc Default-Deny và Whitelist
 
-> [!NOTE] Sự thật bất ngờ: Mặc định hành lang mạng Kubernetes mở toang 100%!
-> Nhiều người lầm tưởng chia `Namespace` (`marketing` và `production`) là mạng đã tự cách ly. **Không hề!** Mặc định khi chưa có `NetworkPolicy`, toàn bộ cụm K8s giống như một tòa nhà không có cửa khóa giữa các tầng — **mọi Pod ở bất kỳ Namespace nào cũng đều gọi thẳng được vào IP/cổng của mọi Pod khác**!
-> **`NetworkPolicy`** đóng vai trò **hệ thống cửa thẻ từ ở tầng IP/Port (Layer 3/4)**: bạn khóa mặc định toàn bộ cửa phòng (`Default Deny`), rồi chỉ quẹt thẻ mở đúng đường từ `web` → `api` và từ `api` → `postgres:5432`!
+> [!NOTE] Mặc định mạng trong Kubernetes cho phép mọi Pod kết nối lẫn nhau (`Allow-All`)
+> Nhiều người lầm tưởng chia `Namespace` (`marketing` và `production`) là mạng đã tự cách ly. Thực tế, **Namespace chỉ tách tên tài nguyên chứ không tạo tường lửa mạng** — mặc định khi chưa có `NetworkPolicy`, mọi Pod ở mọi Namespace đều có thể gọi thẳng tới IP/cổng của mọi Pod khác.
+> **`NetworkPolicy`** định nghĩa quy tắc tường lửa ở tầng IP/Port (Layer 3/4) cho Pod: bạn áp dụng luật khóa toàn bộ kết nối mặc định (`Default Deny`), rồi chỉ mở có chọn lọc đúng các luồng hợp lệ từ `web` → `api` và từ `api` → `postgres:5432` (tương tự như lắp hệ thống kiểm soát cửa giữa các phòng ban trong một tòa nhà mở).
 
 ```visual
 kind: compare
@@ -69,7 +69,7 @@ right:
 ```
 
 > [!WARNING] Hai cái bẫy thực tế khi bật `NetworkPolicy` lần đầu
-> 1. **Phải có CNI Plugin hỗ trợ thực thi:** API Server chỉ lưu tờ giấy luật `NetworkPolicy`, còn người chặn gói tin thực sự là **CNI Plugin** (**`Cilium`** eBPF, **`Calico`**, `Antrea`). Nếu cụm dùng mạng tối giản không hỗ trợ (như `flannel` thuần), luật sẽ bị phớt lờ âm thầm!
+> 1. **Phải có CNI Plugin hỗ trợ thực thi:** API Server chỉ lưu bản khai báo `NetworkPolicy`, còn thành phần thực thi chặn gói tin thực tế là **CNI Plugin** (**`Cilium`** eBPF, **`Calico`**, `Antrea`). Nếu cụm dùng mạng tối giản không hỗ trợ (như `flannel` thuần), luật sẽ bị bỏ qua âm thầm!
 > 2. **Đừng tự khóa mù DNS cổng `53`:** Nếu bạn bật `policyTypes: ["Egress"]` (kiểm soát chiều đi ra), hãy luôn nhớ mở cổng `UDP/TCP 53` sang `kube-system` để Pod vẫn hỏi được danh bạ `CoreDNS`!
 
 ### Hai bước thiết lập Zero-Trust chuẩn mực (`networking.k8s.io/v1`):
@@ -116,7 +116,7 @@ Thay vì nhân bản hàng chục tệp YAML gần giống hệt nhau giữa `st
 
 ```visual
 kind: groups
-title: Giải Phẫu Cấu Trúc Một Gói Helm Chart Chuẩn [!badge:sky:Package Manager]
+title: Cấu Trúc Một Gói Helm Chart Chuẩn [!badge:sky:Package Manager]
 subtitle: "Ánh xạ trực tiếp sang tư duy quản lý gói quen thuộc (pyproject.toml / package.json)"
 columns: 2
 items:

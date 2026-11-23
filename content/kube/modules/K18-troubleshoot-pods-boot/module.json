@@ -26,7 +26,7 @@
   ],
   "relatedTools": [
     {
-      "label": "Flow: Sơ đồ Khám bệnh K8s",
+      "label": "Flow: Quy trình Chẩn đoán K8s",
       "kind": "flow",
       "targetId": "troubleshooting-flowchart"
     },

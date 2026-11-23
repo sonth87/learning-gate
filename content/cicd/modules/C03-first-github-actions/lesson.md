@@ -1,37 +1,37 @@
-# Viết GitHub Actions Workflow đầu tiên chuẩn 2026
+# Xây dựng GitHub Actions Workflow chuẩn 2026 (.github/workflows/ci.yml)
 
-Sau khi nắm vững Exit Code, Ephemeral Runner và kỷ luật đồng bộ môi trường, giờ là lúc bạn tự tay viết hoàn chỉnh một tệp **GitHub Actions Workflow chuẩn công nghiệp năm 2026** từ con số 0. Trên mạng hiện nay vẫn tràn ngập các bài hướng dẫn cũ từ 2020–2022 khuyên dùng các thẻ Action đời cũ (`v1`–`v3`) hay `node-version: 16` — nếu sao chép nguyên xi vào dự án hôm nay, pipeline sẽ lập tức báo lỗi đỏ vì runtime Node 12/16 nhúng trên Hosted Runner đã chính thức ngừng hỗ trợ (EOL)!
+Sau khi nắm vững Exit Code, Ephemeral Runner và nguyên tắc đồng bộ môi trường, bạn có thể xây dựng hoàn chỉnh một tệp **GitHub Actions Workflow chuẩn công nghiệp** từ đầu. Lưu ý tránh sao chép các hướng dẫn cũ từ giai đoạn 2020–2022 sử dụng Action đời cũ (`v1`–`v3`) hoặc `node-version: 16`, vì các runtime cũ trên Hosted Runner đã ngừng hỗ trợ (EOL) và sẽ gây lỗi khi chạy.
 
 ```visual
 kind: illustration
 diagram: "cicd:c03"
-alt: "Giải phẫu cấu trúc tệp YAML GitHub Actions chuẩn v4 gồm bộ lọc sự kiện on, permissions tối thiểu, checkout@v4, setup-node@v4 và npm ci"
-title: "Giải Phẫu Tệp Workflow GitHub Actions Chuẩn Công Nghiệp Năm 2026"
-subtitle: "Ba khối cấu trúc chuẩn mực biến tệp .github/workflows/ci.yml thành trạm kiểm định tự động tốc độ cao cho Node.js 22"
-caption: "Sơ đồ giải phẫu từ bộ lọc sự kiện & quyền hạn đầu tệp, khởi tạo máy ảo với Action thế hệ v4 tới chuỗi lệnh kiểm định bất biến npm ci"
+alt: "Cấu trúc tệp YAML GitHub Actions chuẩn v4 gồm bộ lọc sự kiện on, permissions tối thiểu, checkout@v4, setup-node@v4 và npm ci"
+title: "Cấu trúc tệp Workflow GitHub Actions chuẩn công nghiệp năm 2026"
+subtitle: "Ba phần cấu hình chính giúp tệp .github/workflows/ci.yml kiểm định tự động nhanh và an toàn cho Node.js 22"
+caption: "Sơ đồ cấu trúc từ bộ lọc sự kiện & quyền hạn đầu tệp, khởi tạo máy ảo với Action thế hệ v4 tới chuỗi lệnh kiểm định npm ci"
 callouts:
   - num: 1
     label: "Bộ lọc sự kiện on: & Quyền tối thiểu permissions:"
-    desc: "Ghim rõ nhánh main cho push/pull_request kèm workflow_dispatch thủ công và khoá chặt quyền mặc định ở mức contents: read."
+    desc: "Chỉ định rõ nhánh main cho push/pull_request kèm workflow_dispatch thủ công và giới hạn quyền mặc định ở mức contents: read."
     tone: amber
   - num: 2
     label: "Runner sạch kết hợp cặp Action chuẩn @v4"
-    desc: "Dùng checkout@v4 tải nông (fetch-depth: 1) siêu nhanh và setup-node@v4 ghim Node 22 kèm bộ đệm tự động cache: npm."
+    desc: "Dùng checkout@v4 tải nông (fetch-depth: 1) nhanh và setup-node@v4 ghim Node 22 kèm bộ đệm tự động cache: npm."
     tone: sky
   - num: 3
-    label: "Chuỗi xác minh tất định từ npm ci đến Build"
-    desc: "Giải nén thư viện khớp tuyệt đối với lockfile rồi chạy tuần tự lint, test, build để báo cáo trạng thái bắt buộc lên PR."
+    label: "Chuỗi kiểm định tất định từ npm ci đến Build"
+    desc: "Giải nén thư viện khớp tuyệt đối với lockfile rồi chạy tuần tự lint, test, build để báo cáo trạng thái lên PR."
     tone: emerald
 ```
 
-## 1. Giải phẫu tệp `.github/workflows/ci.yml` và quy tắc vàng YAML
+## 1. Cấu trúc tệp `.github/workflows/ci.yml` và quy tắc cú pháp YAML
 
-GitHub chỉ tự động quét các tệp mang phần mở rộng `.yml` hoặc `.yaml` đặt trực tiếp bên trong đúng đường dẫn thư mục ==`.github/workflows/`==. Chỉ cần gõ thiếu chữ `s` thành `.github/workflow/ci.yml` hoặc thụt lề bằng ký tự **Tab cứng (`\t`)**, tệp cấu hình sẽ bị bỏ qua hoặc báo lỗi cú pháp ngay lập tức (luôn dùng **2 dấu cách — 2 spaces** cho mỗi cấp thụt lề).
+GitHub chỉ tự động nhận diện các tệp mang phần mở rộng `.yml` hoặc `.yaml` đặt trong đúng đường dẫn thư mục ==`.github/workflows/`==. Nếu đặt sai tên thư mục (ví dụ thiếu chữ `s` thành `.github/workflow/ci.yml`) hoặc thụt lề bằng ký tự **Tab cứng (`\t`)**, tệp cấu hình sẽ bị bỏ qua hoặc báo lỗi cú pháp ngay lập tức (luôn dùng **2 dấu cách — 2 spaces** cho mỗi cấp thụt lề).
 
 ```visual
 kind: anatomy
-title: "Giải Phẫu Từ Khoá Cốt Lõi Trong Workflow Chuẩn 2026 [!badge:cyan:GitHub Actions v4]"
-subtitle: "Đọc từ trên xuống dưới theo đúng cấu trúc chuẩn của .github/workflows/ci.yml"
+title: "Các từ khóa cốt lõi trong Workflow GitHub Actions [!badge:cyan:GitHub Actions v4]"
+subtitle: "Đọc từ trên xuống dưới theo cấu trúc chuẩn của tệp .github/workflows/ci.yml"
 items:
   - keyword: "on.push / pull_request"
     role: "Bộ lọc sự kiện & nhánh"
@@ -78,23 +78,23 @@ items:
     lang: yaml
 ```
 
-## 2. Lọc nhánh thông minh cho `push` & `pull_request`: Tránh đốt gấp đôi số phút CI!
+## 2. Cấu hình lọc nhánh cho `push` và `pull_request` để tránh chạy trùng lặp Workflow
 
 ```visual
 kind: compare
-title: "Cạm Bẫy Nhân Đôi Lượt Chạy Khi Thiếu Bộ Lọc Nhánh"
-subtitle: "Hiểu đúng cơ chế lọc nhánh đích (base branch) của pull_request giúp tiết kiệm ngay 50% chi phí CI"
+title: "Tránh kích hoạt trùng lặp Workflow khi thiếu bộ lọc nhánh"
+subtitle: "Hiểu đúng cơ chế lọc nhánh đích (base branch) của pull_request giúp tiết kiệm 50% thời gian và chi phí CI"
 left:
-  badge: "LÃNG PHÍ · Không lọc nhánh"
-  title: "Chạy trùng lặp 2 Workflow y hệt nhau cho mỗi commit"
+  badge: "CHƯA TỐI ƯU · Thiếu lọc nhánh"
+  title: "Chạy trùng lặp 2 Workflow giống nhau cho mỗi commit"
   tone: rose
   code: |
-    # Bẫy phổ biến của người mới:
+    # Cấu hình thiếu bộ lọc thường gặp:
     on: [push, pull_request]
   lang: yaml
   bullets:
-    - "Khi bạn đẩy commit lên nhánh `feat/login` đang mở PR vào `main`, GitHub bắn **2 sự kiện cùng lúc**: 1 cho `push` trên `feat/login` và 1 cho `pull_request`!"
-    - "Hai máy ảo chạy song song đúng một bộ test giống hệt nhau -> **tốn gấp đôi quỹ phút CI** vô ích"
+    - "Khi bạn đẩy commit lên nhánh `feat/login` đang mở PR vào `main`, GitHub phát **2 sự kiện cùng lúc**: 1 cho `push` trên `feat/login` và 1 cho `pull_request`."
+    - "Hai máy ảo chạy song song cùng một bộ test giống hệt nhau, gây tốn gấp đôi thời gian chạy CI."
 right:
   badge: "CHUẨN MỰC · Lọc nhánh main"
   title: "Mỗi PR chạy đúng 1 lượt, gộp xong kiểm định lại trên main"

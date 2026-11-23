@@ -1,22 +1,22 @@
 # Cấu trúc xác suất & Không gian: Bitmap, HyperLogLog, Bloom Filter & Geo
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Khi hệ thống mới có 10,000 người dùng, lưu mọi thứ chính xác từng chữ vào `Set` hay `Hash` chẳng tốn bao nhiêu bộ nhớ. Nhưng khi nền tảng vươn tới **50 triệu người dùng**, bài toán vật lý của RAM hiện nguyên hình:
-> - Nếu lưu 50 triệu chuỗi ID người đọc vào một `Set` chỉ để đếm xem bài báo có bao nhiêu người đọc duy nhất (*Unique Visitors*), riêng **1 bài báo đã ngốn đứt ~3.5 GB RAM**!
-> - Nếu kẻ xấu dùng bot hỏi dồn dập hàng triệu mã đơn hàng ảo không tồn tại (`order_id = -99182...`), Redis không thấy trong cache nên đẩy 100% câu hỏi xuyên thủng xuống làm gục Database!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Khi hệ thống đạt quy mô **hàng chục triệu người dùng**, việc lưu toàn bộ dữ liệu chính xác vào `Set` hoặc `Hash` sẽ tiêu tốn lượng lớn RAM:
+> - Lưu 50 triệu ID người dùng vào một `Set` chỉ để đếm lượng người đọc duy nhất (*Unique Visitors*) của 1 bài báo đã tiêu tốn ~3.5 GB RAM.
+> - Nếu hệ thống nhận hàng triệu truy vấn với ID không tồn tại (`order_id = -99182...`), Cache Miss liên tục sẽ đẩy 100% tải xuống Database.
 >
-> Đó là lúc các kỹ sư rút ra **4 cấu trúc dữ liệu nén không gian & xác suất thông minh** (tất cả đều **có sẵn mặc định trong Redis 8**):
-> 1. **`Bitmap` (Bản đồ bit `0/1`):** Thay vì ghi tên `"user_42"`, ta dùng 1 dãy công tắc đèn siêu nhỏ mà mỗi người chỉ chiếm đúng **1 bit** (`0` = vắng, `1` = có mặt) — lưu điểm danh 100 triệu người chỉ mất `~12 MB`!
-> 2. **`HyperLogLog` (`HLL` — Bộ ước lượng số lượng duy nhất):** Thuật toán toán học kỳ diệu đếm hàng trăm triệu người truy cập không trùng lặp mà ==luôn chỉ tốn tối đa đúng `12 KB` RAM== (đổi lại chấp nhận sai số siêu nhỏ `±0.81%` — quá hoàn hảo để hiện *"1.24M lượt xem"*).
-> 3. **`Bloom Filter` (Bộ lọc gác cổng xác suất):** Hoạt động như người bảo vệ cầm danh sách rút gọn ở cổng: nếu Bloom nói **"Chắc chắn KHÔNG có!" (`0`)** thì **đúng 100%** (không bao giờ bỏ sót người thật — *0% False Negative*), giúp chặn đứng truy vấn rác ngay tại cửa! Nếu nói **"Có vẻ có" (`1`)**, có xác suất nhầm rất nhỏ (ví dụ `1%` *False Positive* — dương tính giả) được phép đi tiếp vào kiểm tra kỹ hơn.
-> 4. **`Geospatial` (Chỉ mục bản đồ 2 chiều):** Biến kinh độ & vĩ độ thành một con số 52-bit (**`Geohash`**) đặt lên `Skip List` của `ZSet`, giúp tìm các tài xế quanh bán kính `3 km` chỉ trong vài mili-giây!
+> **Redis 8 tích hợp sẵn 4 cấu trúc dữ liệu chuyên dụng** để giải quyết các bài toán này với chi phí RAM cực thấp:
+> 1. **`Bitmap` (Mảng bit `0/1`):** Biểu diễn trạng thái nhị phân của mỗi ID bằng đúng **1 bit** (`0` hoặc `1`) trên nền chuỗi, giúp lưu trạng thái điểm danh của 100 triệu người dùng chỉ với `~12 MB`.
+> 2. **`HyperLogLog` (`HLL`):** Cấu trúc ước lượng số lượng phần tử duy nhất (*Cardinality*) với dung lượng cố định tối đa ==`12 KB` RAM== (sai số chuẩn `±0.81%`), phù hợp để đếm lượt xem duy nhất quy mô lớn.
+> 3. **`Bloom Filter`:** Cấu trúc kiểm tra tập hợp theo xác suất: nếu trả về **`0`**, phần tử **chắc chắn 100% không tồn tại** (*0% False Negative*), giúp chặn đứng truy vấn rác trước khi chạm tới Database; nếu trả về **`1`**, phần tử có khả năng tồn tại (với tỷ lệ dương tính giả cấu hình được, ví dụ `1%`).
+> 4. **`Geospatial`:** Mã hóa cặp kinh độ và vĩ độ thành một số nguyên 52-bit (**`Geohash`**) lưu trên `ZSet`, giúp truy vấn các điểm trong bán kính `3 km` chỉ trong vài mili-giây.
 
 ```visual
 kind: illustration
 diagram: redis:r05
 alt: Bốn cấu trúc dữ liệu chuyên dụng cho quy mô lớn trên Redis 8 — Mảng bit Bitmap, thanh ghi 12KB HyperLogLog, bộ lọc nhiều hàm băm Bloom Filter và lưới Geohash 52-bit
 badge: Quy mô hàng chục triệu User · Redis 8
-title: Bản Đồ 4 Vũ Khí Nén Không Gian & Xác Suất Trong Redis 8
+title: Bốn Cấu Trúc Dữ Liệu Nén Bộ Nhớ & Xác Suất Trong Redis 8
 subtitle: Giảm 99% chi phí RAM nhờ thao tác bit, ước lượng xác suất thông minh và mã hoá không gian 2 chiều thành số nguyên 52-bit
 caption: Nhấn vào sơ đồ để phóng to — đối chiếu cơ chế vận hành của Bitmap, HyperLogLog (12KB), Bloom Filter và chỉ mục Geohash
 callouts:
@@ -36,11 +36,11 @@ callouts:
 
 ## 1. Bảng quyết định nhanh: Khi nào chọn Set, Bitmap, HyperLogLog hay Bloom Filter?
 
-> [!ANALOGY] Hình dung sự đánh đổi giữa "Giữ từng cái tên" và "Tiết kiệm 99% RAM"
-> - **`Set`** = Cuốn sổ hộ khẩu ghi đủ họ tên (tốn giấy nhất nhưng đọc lại được từng tên).
-> - **`Bitmap`** = Tờ phiếu trắc nghiệm tô ô tròn `0/1` theo số báo danh `0..N`.
-> - **`HyperLogLog`** = Máy đếm lưu lượng khán giả ở cổng sân vận động trên tờ giấy nhớ `12 KB` (biết tổng số người, nhưng không lưu tên ai).
-> - **`Bloom Filter`** = Máy quét vé nhanh ở vòng ngoài chặn 99% vé giả trước khi vào quầy kiểm tra chính.
+> [!NOTE] Đánh đổi giữa lưu trữ chính xác từng phần tử và tối ưu 99% RAM
+> - **`Set`:** Lưu đầy đủ từng giá trị gốc, đọc lại được danh sách nhưng tốn bộ nhớ tuyến tính `O(N)`.
+> - **`Bitmap`:** Dùng 1 bit cho mỗi số thứ tự `0..N`, phù hợp cho tập ID số nguyên liên tiếp cần đếm hoặc phép toán bit theo ngày.
+> - **`HyperLogLog`:** Cố định `12 KB` RAM bằng mảng thanh ghi xác suất — biết tổng số phần tử duy nhất nhưng không lưu lại giá trị gốc.
+> - **`Bloom Filter`:** Dùng mảng bit kết hợp nhiều hàm băm để kiểm tra nhanh sự tồn tại ở vòng ngoài, loại bỏ phần lớn truy vấn rác trước khi chạm tới Database.
 
 | Cấu trúc | RAM cho 10 triệu mục | Lấy lại danh sách tên? | Kiểm tra 1 mục tồn tại? | Bài toán sinh ra để giải |
 | --- | --- | --- | --- | --- |
@@ -107,13 +107,13 @@ GEODIST drivers:hcm "driver:minh" "driver:tuan" km
 GEOSEARCH drivers:hcm FROMLONLAT 106.7000 10.7750 BYRADIUS 3 km ASC COUNT 5
 ```
 
-> [!WARNING] Ba cái bẫy rất dễ vấp với Bitmap và Geospatial
+> [!WARNING] Ba sai lầm thường gặp với Bitmap và Geospatial
 > 1. **Truyền số `offset` khổng lồ thưa thớt vào `SETBIT`:** Nếu ID người dùng bắt đầu từ `4,000,000,000` và bạn truyền thẳng vào `SETBIT key 4000000000 1`, Redis sẽ cấp phát ngay một chuỗi dài ==`512 MB` toàn số 0== chỉ vì bật 1 bit ở cuối! Nếu ID lớn, hãy trừ đi mốc cơ sở (`id - BASE_ID`) hoặc chia nhỏ khóa theo từng cụm 1 triệu ID.
 > 2. **Viết ngược Vĩ độ – Kinh độ theo thói quen Google Maps:** Trên Google Maps ta quen đọc `(Lat, Lon)` = `(10.7725, 106.6980)`. Nhưng chuẩn tọa độ Đề-các `(X, Y)` của Redis `GEOADD` bắt buộc **`Longitude` (`106.6980`) trước, `Latitude` (`10.7725`) sau** — truyền ngược sẽ báo lỗi vượt ngưỡng vĩ độ `85.05°`!
-> 3. **Đi tìm lệnh `GEODEL` không hề tồn tại:** Vì khóa Geo thực chất là một **`zset`** bên dưới, muốn xóa 1 tài xế hãy gọi thẳng lệnh **`ZREM <key> <member>`**!
+> 3. **Tìm lệnh `GEODEL` không tồn tại:** Vì khóa Geo thực chất là một **`zset`** bên dưới, muốn xóa 1 tài xế hãy gọi thẳng lệnh **`ZREM <key> <member>`**!
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
-> - **Bitmap (`SETBIT`/`BITCOUNT`/`BITOP`):** Tốn 1 bit cho mỗi ID liên tiếp — vô địch cho bài toán Điểm danh hàng ngày & Retention.
-> - **HyperLogLog (`PFADD`/`PFCOUNT`/`PFMERGE`):** Đóng trần **`12 KB`**, sai số chuẩn **`0.81%`** — vô địch đếm Unique Visitors quy mô lớn.
-> - **Bloom Filter (`BF.RESERVE`/`BF.ADD`/`BF.EXISTS`):** Trả về `0` là **chắc chắn 100% chưa từng tồn tại** — lá chắn vòng ngoài chống **Cache Penetration**.
-> - **Geo (`GEOADD`/`GEODIST`/`GEOSEARCH`):** Thuộc nằm lòng ==`Longitude` (Kinh độ) trước, `Latitude` (Vĩ độ) sau==, dùng `GEOSEARCH` và xóa điểm bằng `ZREM`.
+> [!REMEMBER] Ghi nhớ cốt lõi
+> - **Bitmap (`SETBIT`/`BITCOUNT`/`BITOP`):** Tốn 1 bit cho mỗi ID liên tiếp — tối ưu cho bài toán Điểm danh hàng ngày & Retention.
+> - **HyperLogLog (`PFADD`/`PFCOUNT`/`PFMERGE`):** Đóng trần **`12 KB`**, sai số chuẩn **`0.81%`** — tối ưu để đếm Unique Visitors quy mô lớn.
+> - **Bloom Filter (`BF.RESERVE`/`BF.ADD`/`BF.EXISTS`):** Trả về `0` là **chắc chắn 100% chưa từng tồn tại** — lớp bảo vệ vòng ngoài chống **Cache Penetration**.
+> - **Geo (`GEOADD`/`GEODIST`/`GEOSEARCH`):** Thứ tự tham số bắt buộc là ==`Longitude` (Kinh độ) trước, `Latitude` (Vĩ độ) sau==, dùng `GEOSEARCH` và xóa điểm bằng `ZREM`.

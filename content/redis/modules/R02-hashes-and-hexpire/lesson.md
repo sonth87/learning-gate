@@ -1,13 +1,15 @@
-# Hashes, nén bộ nhớ listpack & đột phá HEXPIRE trên từng trường (Redis 8)
+# Hashes, cấu trúc nén listpack và thiết lập TTL theo trường với HEXPIRE (Redis 8)
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Khi cần lưu thông tin một người dùng (`name`, `tier`, `points`, `otp_code`) hoặc một giỏ hàng lên Redis, người mới thường làm theo 1 trong 2 cách chưa tối ưu:
-> 1. **Gom hết thành 1 cục văn bản JSON lưu vào `String`:** Giống như đóng gói cả bộ hồ sơ vào **thùng các-tông dán băng keo kín mít**. Mỗi lần khách chỉ được cộng thêm `10` điểm thưởng, ứng dụng phải tải cả thùng JSON nặng `20KB` qua mạng về máy, cắt băng keo (`json.loads` / `JSON.parse`), sửa đúng 1 con số rồi dán thùng gửi đè lên lại — vừa tốn băng thông, vừa dễ **ghi đè mất dữ liệu của nhau (*Lost Update*)** khi 2 thao tác diễn ra cùng lúc!
-> 2. **Xé lẻ thành 10 khóa `String` rời rạc (`user:42:name`, `user:42:points`...):** Giống như mua 10 cái két sắt to đùng chỉ để mỗi két cất đúng 1 tờ giấy nhỏ — phần "vỏ két" quản lý khóa của Redis sẽ ngốn RAM gấp 3–5 lần dữ liệu thật!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Khi cần lưu một đối tượng có nhiều thuộc tính (như hồ sơ người dùng `name`, `tier`, `points`, `otp_code` hoặc giỏ hàng) vào Redis, có hai cách tiếp cận ban đầu nhưng đều tồn tại nhược điểm:
+> 1. **Lưu toàn bộ thành 1 chuỗi JSON trong kiểu `String`:** Mỗi lần chỉ cần cộng thêm `10` điểm thưởng, ứng dụng vẫn phải tải toàn bộ chuỗi JSON `20KB` qua mạng, giải mã (`json.loads` / `JSON.parse`), sửa một trường rồi ghi đè toàn bộ — vừa lãng phí băng thông mạng, vừa dễ gây **ghi đè mất dữ liệu (*Lost Update*)** khi hai request cập nhật đồng thời.
+> 2. **Tách thành 10 khóa `String` rời rạc (`user:42:name`, `user:42:points`...):** Mỗi khóa Redis đều tốn bộ nhớ metadata quản lý khóa (con trỏ bảng băm, đối tượng `robj`), khiến phần chi phí phụ trợ ngốn RAM gấp 3–5 lần dữ liệu thực.
 >
-> **Redis Hash** giải quyết trọn vẹn cả hai nỗi đau: nó hoạt động giống hệt một **tủ hồ sơ nhiều ngăn kéo có dán nhãn từng ngăn (`field -> value`)** — tương đương `dict[str, str]` trong Python, `Map<string, string>` trong JS/Java hay `map[string]string` trong Go:
-> - **`listpack` (Danh sách đóng gói liền khối):** Với các Hash vừa và nhỏ, Redis xếp tất cả ngăn kéo nằm sát cạnh nhau trên một dải bộ nhớ phẳng không tốn con trỏ thừa, tiết kiệm tới **60%–70% RAM**.
-> - **`HEXPIRE` (Hẹn giờ tự hủy cho từng trường — Đột phá trên Redis 7.4 / Redis 8):** Trước đây bạn chỉ có thể hẹn giờ hủy cả cái tủ (`EXPIRE user:42`). Nay trên **Redis 8**, bạn có thể gắn đồng hồ tự hủy riêng cho đúng ngăn kéo `otp_code` sau 60 giây mà ==giữ nguyên toàn bộ hồ sơ `user:42` còn lại==!
+> **Redis Hash** lưu một tập hợp các cặp **`field -> value`** dưới cùng một khóa (tương đương `dict[str, str]` trong Python, `Map<string, string>` trong JS/Java hay `map[string]string` trong Go), giúp giải quyết cả hai vấn đề trên:
+> - **`listpack` (Cấu trúc đóng gói liền khối):** Với các Hash nhỏ và vừa, Redis xếp các cặp trường/giá trị liền kề trên một vùng nhớ liên tiếp không dùng con trỏ rời, tiết kiệm **60%–70% RAM**.
+> - **`HEXPIRE` (TTL theo từng trường — Redis 7.4+ / Redis 8):** Cho phép gắn thời gian hết hạn riêng cho từng trường bên trong Hash (ví dụ chỉ xóa `otp_code` sau 60 giây) mà ==vẫn giữ nguyên các trường khác của `user:42`==.
+>
+> *Liên hệ trực quan:* Bạn có thể hình dung Redis Hash giống như một hồ sơ gồm nhiều mục riêng lẻ có thể cập nhật hoặc hết hạn độc lập, thay vì phải đóng gói lại cả tập hồ sơ mỗi lần sửa một dòng.
 
 ```visual
 kind: illustration
@@ -27,21 +29,21 @@ callouts:
     desc: HSET, HMGET và HINCRBY tác động thẳng vào đúng trường cần sửa trong 1 nhịp nguyên tử mà không đụng tới các trường anh em.
     tone: sky
   - num: 3
-    label: Đột Phá Redis 8 — Per-Field TTL (HEXPIRE / HTTL)
-    desc: Đặt hạn sống độc lập cho từng field (như OTP phụ, mã flash-voucher, token tạm) ngay bên trong Hash mẹ mà không làm bay màu cả đối tượng!
+    label: Tính Năng Redis 8 — Per-Field TTL (HEXPIRE / HTTL)
+    desc: Đặt hạn sống độc lập cho từng field (như OTP phụ, mã flash-voucher, token tạm) ngay bên trong Hash mẹ mà không xóa cả đối tượng.
     tone: amber
 ```
 
 ## 1. Khi nào chọn JSON String, khi nào chọn Redis Hash (hoặc Redis JSON)?
 
-> [!ANALOGY] Quy tắc chọn nhanh trong 5 giây
-> - Chọn **JSON String** khi dữ liệu là **thùng hàng nguyên đai nguyên kiện** (cấu trúc lồng nhau nhiều tầng phức tạp và API luôn đọc/trả về 100% cục dữ liệu đó).
-> - Chọn **Redis Hash** khi dữ liệu là **bảng thuộc tính phẳng hay được đọc/sửa từng phần** (cộng điểm `HINCRBY`, đổi số lượng món hàng trong giỏ, kiểm tra 2 trường nhỏ mà không muốn kéo cả cục `50KB` về ứng dụng).
+> [!NOTE] Quy tắc lựa chọn nhanh
+> - Chọn **JSON String** khi dữ liệu có cấu trúc lồng nhau nhiều tầng phức tạp và API luôn đọc/trả về toàn bộ đối tượng cùng một lúc.
+> - Chọn **Redis Hash** khi dữ liệu là tập hợp các thuộc tính phẳng thường xuyên cần đọc/cập nhật riêng lẻ từng trường (cộng điểm `HINCRBY`, đổi số lượng món hàng trong giỏ, chỉ đọc 2 trường nhỏ mà không muốn truyền cả payload `50KB` qua mạng).
 
 ```visual
 kind: compare
 title: Lưu Đối Tượng Bằng JSON String vs Redis Hash — Chọn Sao Cho Chuẩn?
-subtitle: Đừng dùng một chiếc búa cho mọi chiếc đinh — hãy nhìn vào tần suất cập nhật lẻ và độ sâu lồng nhau của dữ liệu
+subtitle: Lựa chọn dựa trên tần suất cập nhật từng trường và mức độ lồng nhau của dữ liệu
 left:
   badge: ĐỌC NGUYÊN KHỐI
   title: String chứa JSON / MsgPack
@@ -68,7 +70,7 @@ right:
     - "**Lưu ý hệ sinh thái Redis 8:** Giá trị mỗi `field` trong Hash là chuỗi phẳng. Nếu bạn vừa có cây JSON lồng sâu nhiều tầng vừa muốn sửa lẻ nhánh con (`JSON.SET`, `JSON.NUMINCRBY`), **Redis 8** đã tích hợp sẵn kiểu dữ liệu **Redis JSON** nguyên bản mà không cần cài thêm plugin ngoài!"
 ```
 
-## 2. Bí mật tiết kiệm RAM: `listpack` thay thế hoàn toàn `ziplist` cũ
+## 2. Cơ chế tối ưu RAM bên dưới: `listpack` thay thế `ziplist`
 
 Trước Redis 7, Hash nhỏ dùng cấu trúc `ziplist` nhưng mắc nhược điểm *dịch chuyển dây chuyền (cascade update)* khi chèn phần tử lớn ở giữa. Từ **Redis 7 → Redis 8**, cấu trúc nội bộ mặc định cho Hash nhỏ là ==`listpack` — một dải byte phẳng nằm liền kề nhau trên RAM==:
 
@@ -77,7 +79,7 @@ Trước Redis 7, Hash nhỏ dùng cấu trúc `ziplist` nhưng mắc nhược �
   2. `hash-max-listpack-value 64`: Độ dài tên trường và giá trị mỗi trường **từ `64 bytes` trở xuống**.
 - Ngay khi vượt 1 trong 2 ngưỡng (ví dụ chèn thêm 1 đoạn mô tả dài `300 bytes` hoặc nhét hàng ngàn trường vào 1 Hash), Redis **tự động nâng cấp một chiều** Hash đó lên bảng băm **`hashtable`** để giữ tốc độ tra cứu `O(1)` (và không tự hạ ngược về `listpack` dù sau đó bạn xóa bớt trường).
 
-## 3. Bộ lệnh Hash cốt lõi & Đột phá `HEXPIRE` trên từng trường (Redis 8)
+## 3. Các lệnh Hash cốt lõi và thiết lập TTL theo trường với `HEXPIRE` (Redis 8)
 
 ```visual
 kind: anatomy
@@ -143,11 +145,11 @@ r.execute_command("HEXPIRE", "cart:u:777", 900, "FIELDS", 1, "promo:flash50")
 items = r.hmget("cart:u:777", ["sku:airpods", "promo:flash50"])  # Chỉ đọc đúng 2 trường cần thiết!
 ```
 
-> [!WARNING] Hai cái bẫy kinh điển khi làm việc với Redis Hash
-> 1. **Thói quen gọi `HGETALL` vô tội vạ:** Trên một Hash hồ sơ `8` trường thì `HGETALL` chỉ mất vài micro-giây. Nhưng nếu ai đó gom toàn bộ danh mục 200,000 sản phẩm vào **1 khóa Hash khổng lồ duy nhất (`catalog:all`)**, mỗi lệnh ==`HGETALL catalog:all` sẽ khóa cứng Event Loop== và đổ hàng chục MB qua card mạng! Hãy chỉ lấy đúng trường cần dùng bằng **`HMGET`** hoặc duyệt bằng **`HSCAN`**.
+> [!WARNING] Hai lỗi thường gặp khi làm việc với Redis Hash
+> 1. **Gọi `HGETALL` trên Hash quá lớn:** Trên một Hash hồ sơ `8` trường thì `HGETALL` chỉ mất vài micro-giây. Nhưng nếu gom toàn bộ danh mục 200,000 sản phẩm vào **1 khóa Hash duy nhất (`catalog:all`)**, mỗi lệnh ==`HGETALL catalog:all` sẽ chặn luồng chính Event Loop== và truyền hàng chục MB dữ liệu qua mạng. Hãy chỉ lấy đúng trường cần dùng bằng **`HMGET`** hoặc duyệt từng phần bằng **`HSCAN`**.
 > 2. **Quên tham số đếm `<numfields>` sau từ khóa `FIELDS` của `HEXPIRE` / `HTTL`:** Cú pháp chuẩn luôn yêu cầu truyền rõ **số lượng trường** ngay sau chữ `FIELDS` (ví dụ `HEXPIRE myhash 60 FIELDS 2 f1 f2`).
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - Dùng **`HSET`** (ghi nhiều trường — bỏ `HMSET` cũ), **`HMGET`** (đọc chọn lọc đúng trường cần thiết) và **`HINCRBY`** (cộng trừ số lượng nguyên tử tại chỗ).
 > - Hash nhỏ giữ dưới ngưỡng cấu hình sẽ được đóng gói liền mạch bằng ==`listpack` tiết kiệm tới ~70% RAM== so với tách lẻ nhiều khóa String.
 > - Trên **Redis 8** (lưu ý: `HEXPIRE` là tính năng mới từ Redis 7.4+/8, kiểm tra phiên bản nếu hạ tầng Cloud dùng nhánh cũ hơn), dùng **`HEXPIRE key seconds [NX|XX|GT|LT] FIELDS n f1 ...`** và **`HTTL`** để đặt hạn sống độc lập cho từng trường.

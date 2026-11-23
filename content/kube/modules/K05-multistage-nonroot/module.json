@@ -4,7 +4,7 @@
   "level": 1,
   "order": 5,
   "title": "Multi-stage Build, Non-Root User & HEALTHCHECK chuẩn Production",
-  "summary": "Tách biệt xưởng biên dịch (AS builder) khỏi hộp chạy thật tinh gọn (AS runner) cho cả Node.js & Python, gọt devDependencies, hạ quyền Non-Root và tự khám HEALTHCHECK.",
+  "summary": "Tách biệt giai đoạn biên dịch (AS builder) khỏi stage chạy thực tế tinh gọn (AS runner) cho cả Node.js & Python, gọt devDependencies, hạ quyền Non-Root và kiểm tra HEALTHCHECK.",
   "tags": [
     "multi-stage",
     "typescript",
@@ -50,7 +50,7 @@
     {
       "path": "docker/go-service/Dockerfile.distroless",
       "kind": "compare",
-      "note": "Cấp độ bảo mật tối thượng: stage cuối dùng Distroless không có cả `/bin/sh` lẫn trình quản lý gói.",
+      "note": "Cấp độ bảo mật cao: stage cuối dùng Distroless không có cả `/bin/sh` lẫn trình quản lý gói.",
       "task": "Tại sao loại bỏ hoàn toàn `/bin/sh` và `apk`/`apt` ở Image cuối cùng lại vô hiệu hoá hiệu quả tấn công Reverse Shell?",
       "answer": "Khi kẻ tấn công khai thác lỗi thực thi lệnh (RCE) và gọi `child_process.exec(\"/bin/sh -c ...\")`, hệ thống báo lỗi không tồn tại tệp thực thi `/bin/sh` và cũng không có `curl`/`wget` để tải công cụ tấn công về."
     }

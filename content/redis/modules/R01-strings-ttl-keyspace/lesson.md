@@ -1,11 +1,11 @@
-# Strings (SDS), vòng đời TTL & kỷ luật Keyspace không làm đóng băng Server
+# Kiểu dữ liệu String (SDS), cơ chế TTL và quy chuẩn quản lý Keyspace
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Trong bất kỳ ngôn ngữ nào (Python, JavaScript, Go, Java), chuỗi ký tự (`string`) là kiểu dữ liệu quen thuộc nhất. Khi bước sang **Redis**, cặp **`Key -> String Value`** giống như những **chiếc hộp đựng đồ có dán nhãn tên bên ngoài và gắn đồng hồ hẹn giờ tự hủy**:
-> - **`Key` (Nhãn định danh):** Tên duy nhất của chiếc hộp, thường đặt theo cấu trúc thư mục phân cấp bằng dấu hai chấm như `auth:otp:user_42` để nhìn vào biết ngay thuộc dịch vụ nào.
-> - **`TTL` (*Time-To-Live* — Thời gian sống tự hủy):** Giống tin nhắn tự xóa trên ứng dụng chat — bạn hẹn `120 giây` (`EX 120`), đúng 2 phút sau mã OTP tự động bốc hơi khỏi RAM mà bạn không cần viết hàm dọn rác!
-> - **`SDS` (*Simple Dynamic String* — Chuỗi động thông minh của Redis):** Trong ngôn ngữ C truyền thống, chuỗi văn bản kết thúc bằng ký tự rỗng `\0`, nên muốn biết chuỗi dài bao nhiêu phải đếm từng chữ từ đầu đến cuối (`O(N)`), và không lưu được file ảnh vì ảnh có chứa byte `0`. Redis tự thiết kế vỏ hộp **SDS** ghi sẵn con số độ dài **`len`** và dung lượng **`alloc`** ngay ngoài nắp hộp — hỏi độ dài `STRLEN` trả lời ngay lập tức (`O(1)`) và chứa được cả văn bản, JSON lẫn dữ liệu nhị phân (ảnh, Protobuf, MessagePack) tối đa `512MB`!
-> - **`Nguyên tử` (*Atomic*):** Một thao tác chạy trọn vẹn từ đầu đến cuối trong 1 nhịp không thể bị ai cắt ngang.
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Trong **Redis**, cặp **`Key -> String Value`** là kiểu dữ liệu cơ bản và phổ biến nhất, được thiết kế với 4 đặc tính kỹ thuật quan trọng:
+> - **`Key` (Khóa định danh):** Tên duy nhất trỏ tới giá trị trong RAM, thường được đặt theo quy ước phân cấp bằng dấu hai chấm như `auth:otp:user_42` để dễ phân nhóm theo dịch vụ.
+> - **`TTL` (*Time-To-Live* — Thời gian sống):** Thời điểm tự động hết hạn của khóa (ví dụ `EX 120` cho 120 giây). Khi hết hạn, Redis tự động thu hồi bộ nhớ mà ứng dụng không cần chạy tác vụ dọn thủ công.
+> - **`SDS` (*Simple Dynamic String*):** Khác với chuỗi C truyền thống kết thúc bằng ký tự rỗng `\0` (khiến việc đo độ dài tốn `O(N)` và không lưu được dữ liệu nhị phân chứa byte `0x00`), Redis tự xây dựng cấu trúc **SDS** lưu sẵn trường độ dài **`len`** và dung lượng cấp phát **`alloc`** ở phần đầu (header). Nhờ vậy, lệnh `STRLEN` đạt `O(1)` và chuỗi an toàn nhị phân (*binary-safe*) cho cả văn bản, JSON, hình ảnh hay Protobuf/MessagePack tối đa `512MB`.
+> - **Tính nguyên tử (*Atomic*):** Mỗi lệnh Redis thực thi trọn vẹn trong 1 bước trên luồng chính, không bị lệnh khác xen ngang.
 
 Trên thực tế Production, kiểu **Redis String** đảm nhiệm cùng lúc **4 vai trò trụ cột**:
 
@@ -37,10 +37,10 @@ callouts:
     tone: amber
 ```
 
-## 1. Bên dưới nắp hộp Redis String: `SDS` và 3 hình thái ép nhỏ từng byte RAM
+## 1. Cấu trúc dữ liệu SDS bên dưới Redis String và 3 chế độ tối ưu bộ nhớ
 
-> [!ANALOGY] Hình dung vỏ hộp co giãn thông minh của SDS
-> Tưởng tượng chuỗi C cổ điển là dải băng giấy không ghi kích thước, mỗi lần nối thêm chữ là phải đi cắt dán sang tờ giấy mới. Còn **SDS** giống chiếc hộp ghi rõ ngoài bìa: *"Đang chứa `len = 8` byte, hộp rộng `alloc = 16` byte"*. Lấy độ dài `STRLEN` luôn đạt ==độ phức tạp hằng số `O(1)`== và chứa mọi định dạng `bytes` (Python) hay `Buffer` (Node.js) an toàn tuyệt đối!
+> [!NOTE] Vì sao Redis dùng SDS thay vì chuỗi C truyền thống?
+> Chuỗi C cổ điển không lưu độ dài nên mỗi lần đo độ dài hay nối chuỗi đều phải duyệt lại toàn bộ mảng ký tự và cấp phát lại bộ nhớ. Cấu trúc **SDS** khắc phục bằng cách lưu sẵn **`len`** (độ dài hiện tại) và **`alloc`** (dung lượng đã cấp phát) ở phần header, giúp `STRLEN` đạt ==độ phức tạp hằng số `O(1)`==, tránh tràn bộ đệm và lưu trữ an toàn mọi định dạng `bytes` (Python) hay `Buffer` (Node.js).
 
 Khi bạn gõ `OBJECT ENCODING <key>`, Redis 8 tự động chọn **1 trong 3 cách đóng gói nội bộ (*Encoding*)** tùy theo nội dung bạn lưu để tiết kiệm RAM tối đa:
 
@@ -54,7 +54,7 @@ Khi bạn gõ `OBJECT ENCODING <key>`, Redis 8 tự động chọn **1 trong 3 c
 
 ```visual
 kind: anatomy
-title: Bộ Tứ Lệnh String Thực Chiến Mọi Backend Đều Dùng Hàng Ngày
+title: Bốn Nhóm Lệnh String Cốt Lõi Trong Ứng Dụng Backend
 subtitle: Luôn kiểm tra độ phức tạp Big-O và tính nguyên tử trước khi đưa vào luồng chịu tải cao
 items:
   - keyword: SET k v NX EX s
@@ -98,7 +98,7 @@ items:
 > [!WARNING] Tuyệt đối KHÔNG viết `SETNX` rồi mới gọi `EXPIRE` ở câu lệnh thứ hai!
 > Giả sử ứng dụng Python, Go hay Node.js của bạn vừa chạy xong dòng 1 `SETNX lock:order:99 1` thì container bị khởi động lại hoặc rớt mạng **trước khi** kịp gửi dòng 2 `EXPIRE lock:order:99 30`. Hậu quả: khóa đó mang `TTL = -1` — trở thành ==khóa bất tử (Zombie Key)== nằm lì trên RAM và làm kẹt cứng đơn hàng số 99 mãi mãi! Luôn gộp thành **1 lệnh nguyên tử duy nhất**: `SET lock:order:99 <token> NX EX 30` (trong Python `redis-py`: `r.set("lock:order:99", token, nx=True, ex=30)`).
 
-## 3. Vòng đời TTL (Xóa lười + Xóa chủ động) & Kỷ luật vệ sinh Keyspace
+## 3. Cơ chế hết hạn khóa (TTL) và quy ước đặt tên Keyspace
 
 Khi kiểm tra hạn sống bằng `TTL <key>` (đơn vị giây) hoặc `PTTL <key>` (mili-giây), Redis luôn trả về **1 trong 3 giá trị đặc biệt** cần thuộc lòng:
 - **`>= 0`:** Số giây (hoặc mili-giây) còn lại trước khi khóa tự động biến mất.
@@ -109,7 +109,7 @@ Khi kiểm tra hạn sống bằng `TTL <key>` (đơn vị giây) hoặc `PTTL <
 1. **Lazy Expiration (*Xóa thụ động khi có người chạm vào*):** Khi ứng dụng gọi `GET`, `TTL`, `EXISTS`... lên một khóa, Redis liếc nhìn đồng hồ hạn sống trước tiên — nếu thấy đã quá giờ thì xóa ngay tại chỗ và trả về trống `(nil)` / `-2`.
 2. **Active Expiration (*Bốc mẫu chủ động định kỳ*):** Để những khóa hết hạn mà không ai hỏi tới nữa không nằm ỳ chiếm RAM, mặc định **10 lần mỗi giây (`hz 10`)**, Redis bốc ngẫu nhiên 20 khóa trong nhóm có gắn TTL để kiểm tra. Nếu thấy **hơn 25%** số mẫu đã quá hạn, Redis lập tức bốc tiếp mẻ mới ngay để dọn sạch rác!
 
-### Kỷ luật sống còn trên Production: Đặt tên phân cấp, `SCAN` & `UNLINK`
+### Quy chuẩn vận hành trên Production: Đặt tên phân cấp, `SCAN` & `UNLINK`
 
 Quy ước chuẩn ngành là ghép các từ khóa bằng dấu hai chấm `:` đi từ lớn đến nhỏ: **`<dịch-vụ>:<thực-thể>:<id>[:<thuộc-tính>]`** (ví dụ `billing:invoice:882:status` hoặc `auth:session:u4019`). Khi cần dọn dẹp hàng loạt khóa hoặc xóa khóa dung lượng lớn:
 - **Duyệt khóa bằng con trỏ `SCAN`** (thay vì `KEYS *` gây đứng hình toàn bộ server).
@@ -117,8 +117,8 @@ Quy ước chuẩn ngành là ghép các từ khóa bằng dấu hai chấm `:` 
 
 ```visual
 kind: compare
-title: Quét Khoá Trên Production — Thảm Hoạ KEYS * vs Con Trỏ An Toàn SCAN + UNLINK
-subtitle: Cùng tìm và dọn các khoá theo mẫu `sess:expired:*` trên 20 triệu key nhưng số phận máy chủ trái ngược hoàn toàn
+title: "Quét Khoá Trên Production: Lệnh KEYS * (Chặn Luồng Chính) vs Con Trỏ SCAN + UNLINK"
+subtitle: Cùng tìm và dọn các khoá theo mẫu `sess:expired:*` trên 20 triệu key nhưng tác động lên hệ thống khác nhau hoàn toàn
 left:
   badge: CẤM TRÊN PRODUCTION
   title: KEYS sess:expired:* + DEL (Chặn cứng Server)
@@ -152,10 +152,10 @@ right:
     - "Lưu ý: `COUNT` là gợi ý số ô cần dò (một mẻ trả về có thể rỗng dù chưa hết dữ liệu, tức `cursor != 0`) và `SCAN` có thể lặp lại 1 khoá nếu bảng băm đang co giãn."
 ```
 
-> [!TIP] Mẹo chống "Tuyết lở bộ nhớ đệm" (Cache Avalanche) khi đặt TTL hàng loạt
-> Nếu lúc 00:00 đêm bạn nạp 50,000 sản phẩm vào Redis và gán cứng tất cả `EX 3600`, đúng 01:00:00 cả 50,000 khóa sẽ **hết hạn cùng một tích tắc**, khiến hàng vạn truy vấn ập thẳng xuống đánh sập Database! Hãy luôn cộng thêm ==độ lệch ngẫu nhiên (TTL Jitter)==: ví dụ `ttl = 3600 + random.randint(0, 300)` trong Python (hoặc `3600 + Math.floor(Math.random() * 300)` trong JS).
+> [!TIP] Phòng tránh hiệu ứng Cache Avalanche khi đặt TTL hàng loạt
+> Nếu lúc 00:00 đêm bạn nạp 50,000 sản phẩm vào Redis và gán cứng tất cả `EX 3600`, đúng 01:00:00 cả 50,000 khóa sẽ **hết hạn cùng một thời điểm**, khiến hàng vạn truy vấn cùng lúc đi thẳng xuống Database và gây quá tải! Hãy luôn cộng thêm ==độ lệch ngẫu nhiên (TTL Jitter)==: ví dụ `ttl = 3600 + random.randint(0, 300)` trong Python (hoặc `3600 + Math.floor(Math.random() * 300)` trong JS).
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - **SDS String** lưu sẵn độ dài `len` giúp `STRLEN` đạt `O(1)`, an toàn nhị phân và tự động nén thành `int` (số 64-bit) hoặc `embstr` (`<= 44B`).
 > - Luôn dùng **`SET key val NX EX seconds`** nguyên tử thay cho `SETNX` + `EXPIRE` rời rạc; dùng **`GETDEL`** cho mã OTP dùng 1 lần.
 > - Ba mã trả về của `TTL`: **`-2`** = không tồn tại · **`-1`** = tồn tại vĩnh viễn không hạn · **`>= 0`** = số giây còn sống.

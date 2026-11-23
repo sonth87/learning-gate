@@ -25,7 +25,7 @@
   {
     "id": "cicd-q-c06-3",
     "type": "tf",
-    "q": "Đối với Job triển khai lên môi trường Production (có chạy database migration hoặc cập nhật hạ tầng), bạn nên bật `cancel-in-progress: true` để rút phích cắm bản cũ ngay lập tức khi có bản mới.",
+    "q": "Đối với Job triển khai lên môi trường Production (có chạy database migration hoặc cập nhật hạ tầng), bạn nên bật `cancel-in-progress: true` để hủy ngang bản cũ ngay lập tức khi có bản mới.",
     "code": "",
     "choices": [],
     "answer": false,

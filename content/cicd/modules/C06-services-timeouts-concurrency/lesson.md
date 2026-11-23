@@ -1,30 +1,30 @@
-# Service Containers (Postgres/Redis), Timeout bảo vệ ví & Concurrency
+# Service Containers (Postgres/Redis), Giới hạn timeout-minutes và Concurrency
 
-Unit Test với dữ liệu giả lập (`vi.mock('pg')`) chạy rất nhanh nhưng mang một điểm mù nguy hiểm: câu lệnh SQL gõ sai tên cột hay migration Prisma/Drizzle vấp khoá ngoại vẫn có thể… báo xanh mượt mà! Trên laptop, bạn gõ `docker compose up -d postgres redis` để kiểm thử thật. Khi đưa lên GitHub Actions, bạn cần kết hợp **3 tấm khiên vận hành thực chiến**: dựng cụm **PostgreSQL 16 + Redis 7** sống cùng vòng đời Job, khoá trần **`timeout-minutes`** chống đốt ví 6 tiếng, và điều phối **`concurrency`** thông minh giữa Pull Request với Production!
+Unit Test sử dụng dữ liệu giả lập (`vi.mock('pg')`) chạy nhanh nhưng không phát hiện được các lỗi liên quan đến câu lệnh SQL, tên cột hoặc migration cơ sở dữ liệu. Trên máy cá nhân, lập trình viên thường chạy `docker compose up -d postgres redis` để kiểm thử tích hợp. Khi đưa lên GitHub Actions, bạn cần kết hợp **3 cơ chế vận hành cốt lõi**: khởi chạy **PostgreSQL 16 + Redis 7** gắn với vòng đời Job, đặt giới hạn **`timeout-minutes`** để tránh job treo kéo dài, và điều phối **`concurrency`** phù hợp giữa Pull Request với Production.
 
 ```visual
 kind: groups
-title: "Bộ Ba Lá Chắn Sống Còn Cho Pipeline Kiểm Thử & Triển Khai [!badge:emerald:Production Grade]"
+title: "Ba cơ chế kiểm soát và bảo vệ Pipeline Kiểm thử & Triển khai [!badge:emerald:Production Grade]"
 columns: 3
 items:
   - num: 1
     icon: shield-alert
     title: "timeout-minutes"
-    badge: "Chống bẫy 360 phút"
+    badge: "Giới hạn thời gian chạy"
     tone: rose
-    desc: "Cắt đứt ngay các tiến trình treo kết nối thay vì để cháy túi suốt 6 giờ."
+    desc: "Dừng các tiến trình bị treo thay vì để chạy hết ngưỡng mặc định 6 giờ."
     bullets:
-      - "Mặc định nếu bỏ trống, GitHub cho Job chạy tới ==**360 phút (6 tiếng)**== mới tự huỷ!"
-      - "Luôn khai báo rõ `timeout-minutes: 10` (hoặc `15`) ở mọi Job CI"
+      - "Mặc định nếu bỏ trống, GitHub cho Job chạy tới ==**360 phút (6 tiếng)**== mới tự huỷ."
+      - "Luôn khai báo rõ `timeout-minutes: 10` (hoặc `15`) ở mọi Job CI."
   - num: 2
     icon: layers
     title: "concurrency"
-    badge: "Chống đua tranh & Lãng phí"
+    badge: "Điều phối xung đột & Lãng phí"
     tone: amber
-    desc: "Kiểm soát các lượt chạy trùng nhánh trên PR hoặc xếp hàng an toàn trên Production."
+    desc: "Kiểm soát các lượt chạy trùng nhánh trên PR hoặc xếp hàng tuần tự trên Production."
     bullets:
-      - "Trên PR: `cancel-in-progress: true` để huỷ ngay bản chạy cũ lỗi thời"
-      - "Trên Production: `cancel-in-progress: false` để xếp hàng tuần tự, bảo vệ DB migration"
+      - "Trên PR: `cancel-in-progress: true` để huỷ ngay bản chạy cũ lỗi thời."
+      - "Trên Production: `cancel-in-progress: false` để xếp hàng tuần tự, bảo vệ DB migration."
   - num: 3
     icon: database
     title: "services:"
@@ -32,35 +32,35 @@ items:
     tone: sky
     desc: "Đính kèm container cơ sở dữ liệu thật dùng một lần ngay bên cạnh Job kiểm thử."
     bullets:
-      - "Tự động bật trước Step đầu tiên và **xoá sạch dữ liệu** khi Job khép lại"
-      - "Kết hợp `--health-cmd` để loại bỏ hoàn toàn lỗi `ECONNREFUSED`"
+      - "Tự động bật trước Step đầu tiên và **xoá sạch dữ liệu** khi Job kết thúc."
+      - "Kết hợp `--health-cmd` để loại bỏ lỗi kết nối sớm `ECONNREFUSED`."
 ```
 
-## 1. Cái bẫy 360 phút mặc định và kỷ luật `timeout-minutes`
+## 1. Giới hạn thời gian chạy Job với `timeout-minutes` (tránh mức mặc định 360 phút)
 
 ```visual
 kind: illustration
 diagram: "cicd:c06"
-alt: "Ba lá chắn vận hành gồm Service Containers (PostgreSQL 16 + Redis 7 kèm healthcheck), trần thời gian timeout-minutes và điều phối concurrency"
-title: "Giải Phẫu Bộ Ba Vận Hành CI: Service Containers, Trần Timeout & Concurrency"
-subtitle: "Kiểm thử tích hợp trên cơ sở dữ liệu thật dùng một lần, chặn đứng tiến trình treo 6 tiếng và điều tiết tranh chấp luồng"
-caption: "Cụm PostgreSQL/Redis đính kèm vòng đời Job với healthcheck tự động, rào chắn timeout-minutes: 10 và hai chế độ concurrency cho PR vs Production"
+alt: "Ba cơ chế vận hành gồm Service Containers (PostgreSQL 16 + Redis 7 kèm healthcheck), giới hạn timeout-minutes và điều phối concurrency"
+title: "Ba cơ chế vận hành CI: Service Containers, Timeout & Concurrency"
+subtitle: "Kiểm thử tích hợp trên cơ sở dữ liệu thật dùng một lần, giới hạn tiến trình treo 6 tiếng và điều phối xung đột luồng"
+caption: "Cụm PostgreSQL/Redis gắn với vòng đời Job có healthcheck tự động, giới hạn timeout-minutes: 10 và hai chế độ concurrency cho PR vs Production"
 callouts:
   - num: 1
-    label: "Service Containers kèm cổng gác Healthcheck"
+    label: "Service Containers kèm Healthcheck"
     desc: "Khởi chạy PostgreSQL 16 và Redis 7 thật ngay cạnh Job; cờ --health-cmd đảm bảo các bước kiểm thử chỉ chạy sau khi DB đã sẵn sàng."
     tone: sky
   - num: 2
-    label: "timeout-minutes chặn bẫy đốt tiền 360 phút"
-    desc: "Thay thế mức trần mặc định 6 tiếng nguy hiểm của GitHub bằng ngưỡng 10-15 phút hợp lý để tự cắt ngay các kết nối bị treo."
+    label: "timeout-minutes tránh mức mặc định 360 phút"
+    desc: "Thay thế mức trần mặc định 6 tiếng của GitHub bằng ngưỡng 10-15 phút hợp lý để tự động dừng các kết nối bị treo."
     tone: rose
   - num: 3
-    label: "concurrency đối lập giữa PR và Production"
+    label: "concurrency khác biệt giữa PR và Production"
     desc: "Bật cancel-in-progress: true trên nhánh PR để huỷ bản cũ lỗi thời, nhưng bắt buộc đặt false trên Production để xếp hàng tuần tự an toàn."
     tone: amber
 ```
 
-Ít người để ý dòng quy định mặc định của GitHub Actions: **nếu bạn quên viết `timeout-minutes`, một Job bị treo sẽ tiếp tục chạy và trừ tiền suốt ==360 phút (6 giờ đồng hồ)==** trước khi bị hệ thống cưỡng chế dừng! Chỉ cần một bài kiểm thử tích hợp quên đóng kết nối database khiến tiến trình Node.js đứng im, 10 Pull Request trong ngày sẽ thiêu rụi **3.600 phút CI** của cả đội.
+Theo cấu hình mặc định của GitHub Actions, **nếu bạn không khai báo `timeout-minutes`, một Job bị treo sẽ tiếp tục chạy tới ==360 phút (6 giờ đồng hồ)==** trước khi bị hệ thống cưỡng chế dừng. Nếu một bài kiểm thử tích hợp quên đóng kết nối database khiến tiến trình Node.js bị treo, 10 Pull Request trong ngày sẽ tiêu tốn **3.600 phút CI** của cả đội.
 
 ```yaml
 jobs:
@@ -71,7 +71,7 @@ jobs:
 
 ## 2. Kiểm soát tranh chấp với `concurrency`: Khi nào Huỷ, khi nào Xếp hàng?
 
-Khi lập trình viên phát hiện lỗi chính tả rồi `git push` dồn dập 4 commit trong 2 phút lên cùng một nhánh PR, để cả 4 workflow chạy song song là sự lãng phí vô nghĩa. Nhưng ngược lại, trên nhánh `main` đang chạy **Production deployment** kèm cập nhật schema cơ sở dữ liệu, nếu rút phích cắm ngang hông bản đang chạy thì hệ thống sẽ hỏng khoá trạng thái (*state lock*) và sập ngay lập tức!
+Khi lập trình viên phát hiện lỗi chính tả rồi `git push` liên tiếp 4 commit trong 2 phút lên cùng một nhánh PR, việc để cả 4 workflow chạy song song gây lãng phí tài nguyên. Ngược lại, trên nhánh `main` đang chạy **Production deployment** kèm cập nhật schema cơ sở dữ liệu, việc hủy ngang tiến trình đang chạy sẽ gây hỏng khóa trạng thái (*state lock*) và gián đoạn hệ thống.
 
 ```visual
 kind: compare
@@ -105,7 +105,7 @@ right:
 
 ## 3. Service Containers: Thay thế `compose.yaml` kèm Healthcheck chuẩn xác
 
-Khối ==`services:`== cho phép đính kèm `postgres:16-alpine` và `redis:7-alpine` chạy song hành cùng Job. Tuy nhiên, có một cái bẫy kinh điển: Docker báo container `Running` ngay mili-giây tiến trình PID 1 vừa bật, nhưng bên trong PostgreSQL còn mất thêm 2–4 giây chạy `initdb` mới mở cổng TCP `5432`. Nếu Step `npm run db:migrate` nổ súng quá sớm, bạn sẽ dính lỗi đỏ chót ==`ECONNREFUSED 127.0.0.1:5432`==!
+Khối ==`services:`== cho phép chạy `postgres:16-alpine` và `redis:7-alpine` song hành cùng Job. Tuy nhiên, có một lỗi phổ biến: Docker báo container `Running` ngay khi tiến trình PID 1 vừa khởi tạo, nhưng bên trong PostgreSQL còn cần thêm 2–4 giây chạy `initdb` mới mở cổng TCP `5432`. Nếu Step `npm run db:migrate` chạy ngay lập tức, bạn sẽ gặp lỗi ==`ECONNREFUSED 127.0.0.1:5432`==.
 
 ```visual
 kind: flow

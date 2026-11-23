@@ -4,14 +4,14 @@ Hãy hình dung ứng dụng Node.js của bạn đang xử lý 2.000 đơn hàn
 - [!] Khách hàng nhận hàng loạt lỗi `502 Bad Gateway` trong lúc thay thế container.
 - [!] Hoặc tệ hơn: lỗi `TypeError: Cannot read properties of undefined` lọt qua Unit Test vì dữ liệu thật trên Production có trường `discountCode: null` mà bộ mock ở máy cá nhân chưa từng nghĩ tới!
 
-Làm thế nào các đội ngũ kỹ thuật hàng đầu phát hành 30 lần/ngày mà khách hàng **không bao giờ thấy trang lỗi (Zero-Downtime)**, thu hẹp bán kính rủi ro bằng **Canary / Blue-Green**, và khi gặp sự cố thì hệ thống **tự động quay lui trong chưa đầy 30 giây (Automated Rollback)**? Bí quyết nằm ở trọn bộ 3 trụ cột triển khai dưới đây.
+Làm thế nào các đội ngũ kỹ thuật phát hành hàng chục lần mỗi ngày mà khách hàng **không gặp gián đoạn dịch vụ (Zero-Downtime)**, giới hạn phạm vi rủi ro bằng **Canary / Blue-Green**, và khi có lỗi thì hệ thống **tự động quay lui trong dưới 30 giây (Automated Rollback)**? Điều này đạt được nhờ kết hợp 3 kỹ thuật triển khai dưới đây.
 
 ```visual
 kind: illustration
 diagram: "cicd:c14"
 src: "/illustrations/cicd/cicd-canary-progressive-traffic.jpg"
 alt: "So sánh chuyển mạch tức thì Blue-Green với phát hành thăm dò Canary (5% -> 25% -> 100%) kèm tự động quay lui khi tỷ lệ lỗi vượt ngưỡng"
-title: "Giải Phẫu Phát Hành Lũy Tiến: Chuyển Mạch Blue-Green vs Canary & Tự Động Rollback"
+title: "Các chiến lược phát hành: Blue-Green, Canary và Tự động Rollback"
 subtitle: "Thu hẹp bán kính ảnh hưởng sự cố xuống 5% lưu lượng và tự động cắt lui trong dưới 30 giây không cần đợi người trực đêm"
 caption: "Cơ chế gạt công tắc tức thì của Blue-Green trên thẻ ảnh SHA bất biến đối chiếu với nhịp mở lưu lượng Canary giám sát bởi chỉ số Prometheus"
 callouts:
@@ -33,7 +33,7 @@ callouts:
 
 ## 1. Thẻ Image Bất biến (Immutable Image Tags) — Điều kiện tiên quyết để Rollback
 
-Sai lầm kinh điển nhất của người mới dùng Docker trong CI/CD là đóng gói và đẩy đè mãi lên thẻ `:latest`:
+Một lỗi phổ biến khi mới dùng Docker trong CI/CD là đóng gói và đẩy đè liên tục lên cùng một thẻ `:latest`:
 
 - [!] **Mất dấu bản ổn định cũ:** Thẻ `:latest` là thẻ khả biến (*mutable tag*) — giống như xuất bản gói npm mà cứ xoá đi ghi đè mãi vào phiên bản `1.0.0`. Lúc 2 giờ sáng khi bản mới sập, ảnh ổn định trước đó đã bị ghi đè mất nhãn tham chiếu!
 - [!] **Hỗn loạn phiên bản giữa các Node:** Trên cụm Kubernetes dùng `imagePullPolicy: IfNotPresent`, Node A giữ bản `:latest` cũ trong cache còn Node B vừa kéo bản `:latest` mới về, tạo ra trạng thái chạy lệch phiên bản cực khó chẩn đoán.
@@ -45,12 +45,7 @@ Sai lầm kinh điển nhất của người mới dùng Docker trong CI/CD là 
 
 ## 2. So sánh 3 Chiến lược Phát hành: Rolling Update vs Blue-Green vs Canary
 
-> [!ANALOGY] Hình dung đời thực về 3 chiến lược nâng cấp không sập dịch vụ
-> - **Rolling Update (Cập nhật cuốn chiếu):** Giống như **thay mới lần lượt từng chiếc xe buýt** trên tuyến đường đang chạy — không bao giờ ngừng tuyến và không tốn tiền thuê gấp đôi bãi xe, nhưng trong vài phút giao thời sẽ có cả xe đời cũ (`v1`) lẫn xe đời mới (`v2`) cùng đón khách.
-> - **Blue-Green (Hai cụm song song gạt công tắc):** Giống như **dựng sẵn sân khấu Green hoàn chỉnh bên cạnh sân khấu Blue đang biểu diễn**; đội QA vào sân khấu Green kiểm tra âm thanh ánh sáng êm xuôi 100% rồi mới **gạt cầu dao chuyển toàn bộ khán giả sang trong chưa đầy 1 giây** (đổi lại tốn gấp đôi tiền thuê hạ tầng lúc chuyển giao).
-> - **Canary ("Chim hoàng yến dò khí độc"):** Ngày xưa thợ mỏ mang chim hoàng yến xuống hầm để phát hiện khí độc sớm; trên Cloud, bạn chỉ **mở hé 5% khách hàng thật** vào bản mới trước, đứng canh biểu đồ lỗi HTTP `5xx` và độ trễ `p99` — nếu êm mới mở tiếp `25% -> 100%`, còn nếu chim ngất (lỗi vượt `1%`) thì rút về `0%` ngay lập tức, cứu an toàn cho 95% khách hàng còn lại!
-
-Thay vì tắt sạch Pod cũ rồi mới bật Pod mới (*Recreate* gây chết dịch vụ), Kubernetes và **Argo Rollouts** (`argoproj.io/v1alpha1`) cung cấp 3 chiến lược điều phối lưu lượng thông minh:
+Thay vì tắt toàn bộ Pod cũ rồi mới khởi tạo Pod mới (*Recreate* gây gián đoạn dịch vụ), Kubernetes và **Argo Rollouts** (`argoproj.io/v1alpha1`) cung cấp 3 chiến lược điều phối lưu lượng không gián đoạn:
 
 ```visual
 kind: groups
@@ -80,15 +75,17 @@ items:
     footer: Lý tưởng khi cần QA kiểm tra cổng Preview trước giờ G
   - num: 3
     icon: activity
-    title: Canary (Chim hoàng yến)
+    title: Canary
     badge: Nhỏ giọt 5% → 25% → 100%
     tone: emerald
     bullets:
-      - "Chuyển dần từng phần trăm nhỏ lưu lượng người dùng thật kèm nhịp nghỉ nghe ngóng metric"
-      - "**Ưu điểm tối thượng:** Thu hẹp **bán kính ảnh hưởng (*Blast Radius*)** — nếu bản mới lỗi, 95% khách hàng còn lại vẫn bình an!"
+      - "Chuyển dần từng phần trăm nhỏ lưu lượng người dùng thật kèm nhịp nghỉ theo dõi metric"
+      - "**Ưu điểm nổi bật:** Thu hẹp **bán kính ảnh hưởng (*Blast Radius*)** — nếu bản mới lỗi, 95% khách hàng còn lại không bị ảnh hưởng."
       - "**Yêu cầu:** Cần Argo Rollouts / Ingress / Service Mesh và đo lường HTTP 5xx"
     footer: Tiêu chuẩn vàng cho thanh toán & lưu lượng lớn
 ```
+
+*(Để dễ hình dung sự khác biệt: **Rolling Update** giống như thay lần lượt từng chiếc xe trên một tuyến đang hoạt động nên có giai đoạn hai phiên bản chạy song song; **Blue-Green** giống như chuẩn bị sẵn một hệ thống mới hoàn chỉnh bên cạnh hệ thống cũ rồi chuyển toàn bộ lưu lượng sang ngay khi kiểm thử xong; còn tên gọi **Canary** bắt nguồn từ phương pháp thợ mỏ dùng chim hoàng yến để phát hiện khí độc sớm — tương ứng với việc chỉ cho 5% người dùng đầu tiên thử nghiệm phiên bản mới để theo dõi chỉ số lỗi `5xx` và độ trễ `p99` trước khi mở rộng lên 100%).*
 
 Trong **Argo Rollouts**, cấu hình **Blue-Green** tách biệt rạch ròi lưu lượng khách hàng thật (`activeService`) và cổng kiểm thử nội bộ (`previewService`):
 
@@ -163,10 +160,10 @@ steps:
 
 ```visual
 kind: compare
-title: "Chốt Chặn Smoke Test & Job Rollback: Hai Cái Bẫy Khiến Hệ Thống Mất Phanh!"
-subtitle: "Thiếu cờ --fail trên curl hoặc quên if: failure() trên job rollback sẽ vô hiệu hoá hoàn toàn cơ chế tự khôi phục"
+title: "Hai lỗi cấu hình làm vô hiệu hóa Smoke Test và Job Rollback"
+subtitle: "Thiếu cờ --fail trên curl hoặc quên if: failure() trên job rollback sẽ làm hỏng hoàn toàn cơ chế tự khôi phục"
 left:
-  badge: "PHẢN MẪU MẤT PHANH · False-Green & Skipped"
+  badge: "LỖI CẤU HÌNH · False-Green & Skipped"
   title: "curl thiếu --fail & Job rollback bị bỏ qua"
   tone: rose
   code: |
@@ -174,13 +171,13 @@ left:
       needs: deploy-prod
       runs-on: ubuntu-latest
       steps:
-        # BẪY 1: Nhận HTTP 500 nhưng curl vẫn thoát mã 0 (Xanh giả)!
+        # LỖI 1: Nhận HTTP 500 nhưng curl vẫn thoát mã 0 (False-Green)!
         - run: curl https://api.shop.example.com/readyz
 
     rollback:
       needs: [deploy-prod, smoke-test]
-      # BẪY 2: Thiếu if: failure() -> Mặc định là if: success()
-      # Khi smoke-test đỏ, job rollback này bị SKIPPED luôn!
+      # LỖI 2: Thiếu if: failure() -> Mặc định là if: success()
+      # Khi smoke-test lỗi, job rollback này bị SKIPPED luôn!
       runs-on: ubuntu-latest
       steps:
         - run: ./scripts/rollback.sh
@@ -189,7 +186,7 @@ left:
     - "Mặc định `curl` coi việc nhận được phản hồi `HTTP 500 / 502 / 503` là giao tiếp mạng thành công và trả về **exit code `0`**!"
     - "Mọi job có `needs:` trong GitHub Actions ngầm định `if: success()` — khi `smoke-test` gãy, `rollback` bị **bỏ qua (`skipped`)** thay vì chạy!"
 right:
-  badge: "CHUẨN SRE TỰ PHỤC HỒI · Đủ phanh khẩn cấp"
+  badge: "CHUẨN SRE · Kiểm tra và tự động quay lui"
   title: "curl --fail --retry 5 + Rollback với if: failure()"
   tone: emerald
   code: |

@@ -6,7 +6,7 @@
   },
   {
     "id": "C10-C2",
-    "front": "Tại sao kết hợp `on: pull_request_target` với `actions/checkout` mã nguồn của PR lại gây thảm hoạ Pwn Request?",
+    "front": "Tại sao kết hợp `on: pull_request_target` với `actions/checkout` mã nguồn của PR lại gây lỗ hổng bảo mật Pwn Request?",
     "back": "Vì `pull_request_target` chạy với đầy đủ `secrets` và `GITHUB_TOKEN` quyền ghi của kho gốc; khi tải và chạy mã chưa duyệt từ Fork (`npm ci`, `build`), tin tặc đọc sạch toàn bộ bí mật dự án!"
   },
   {

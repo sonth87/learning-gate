@@ -1,13 +1,13 @@
-# Pub/Sub vs Redis Streams: Từ Loa Phát Thanh Tức Thời Đến Event Log Bền vững
+# Pub/Sub và Redis Streams: Truyền tin tức thời vs Event Log bền vững
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Khi hệ thống của bạn tách thành nhiều dịch vụ nhỏ (ví dụ **API Đặt hàng** cần báo cho **Dịch vụ Thanh toán** và **Dịch vụ Gửi Email** xử lý nền), gửi tin nhắn qua Redis có **2 cơ chế hoàn toàn khác nhau** mà người mới rất dễ chọn nhầm:
-> 1. **`Pub/Sub` (*Publish / Subscribe* — Đài phát thanh trực tiếp):** Giống hệt loa phát thanh FM hoặc phát trực tiếp không ghi hình — ai đang bật đài nghe đúng giây đó thì nhận được tin tức thì (`< 0.3ms`); ai đang mất mạng 2 giây vì khởi động lại máy chủ thì **mất vĩnh viễn bản tin đó**, Redis không lưu lại bất kỳ chữ nào!
-> 2. **`Redis Streams` (Nhật ký luồng sự kiện bền vững):** Giống một **nhóm chat có lưu toàn bộ lịch sử kèm biên bản bàn giao việc**:
->    - **`Consumer Group` (Nhóm công nhân chia việc):** Nếu có 5 máy xử lý thanh toán trong cùng 1 nhóm, Redis tự chia đều mỗi máy làm 1 đơn hàng khác nhau để tăng tốc gấp 5 lần.
->    - **`PEL` (*Pending Entries List* — Sổ theo dõi việc đang làm dở):** Khi giao đơn hàng số `#101` cho Máy 1, Redis ghi ngay vào sổ **`PEL`**: *"Máy 1 đang giữ đơn #101 lúc 10:00:00"*.
->    - **`XACK` (*Acknowledge* — Đóng dấu báo cáo hoàn thành):** Máy 1 trừ tiền xong phải gửi lệnh `XACK` về thì Redis mới gạch tên đơn `#101` khỏi sổ chờ `PEL`.
->    - **`XAUTOCLAIM` (Tự động giải cứu việc bị kẹt):** Nếu Máy 1 đang làm dở mà bị sập nguồn khiến đơn `#101` nằm im trong sổ `PEL` quá 60 giây, Máy 2 gọi `XAUTOCLAIM` để tự động nhận lại đơn đó xử lý thay — ==đảm bảo không rơi rớt một đơn hàng nào==!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Khi hệ thống tách thành nhiều dịch vụ nhỏ (ví dụ **API Đặt hàng** cần gửi sự kiện cho **Dịch vụ Thanh toán** và **Dịch vụ Gửi Email** xử lý nền), Redis cung cấp **2 cơ chế truyền tin hoàn toàn khác nhau** về độ bền vững dữ liệu:
+> 1. **`Pub/Sub` (*Publish / Subscribe* — Truyền tin tức thời không lưu trữ):** Tin nhắn được đẩy ngay (`< 0.3ms`) tới tất cả các client đang kết nối lắng nghe tại thời điểm `PUBLISH`. Nếu một dịch vụ đang khởi động lại hoặc mất kết nối trong 2 giây, mọi tin nhắn phát ra trong khoảng thời gian đó sẽ **mất vĩnh viễn** vì Redis không lưu lại lịch sử.
+> 2. **`Redis Streams` (Append-Only Event Log bền vững):** Lưu trữ toàn bộ luồng sự kiện có ID tăng dần theo thời gian (tương tự log phân tán) và hỗ trợ xử lý tin cậy qua 4 thành phần:
+>    - **`Consumer Group`:** Chia đều các bản tin trong một luồng cho nhiều worker trong cùng nhóm để xử lý song song, đồng thời cho phép nhiều nhóm khác nhau đọc độc lập cùng một luồng.
+>    - **`PEL` (*Pending Entries List*):** Danh sách lưu vết những bản tin đã giao cho từng worker nhưng chưa được xác nhận hoàn thành.
+>    - **`XACK` (*Acknowledge*):** Lệnh xác nhận từ worker báo đã xử lý xong bản tin để Redis xóa bản tin đó khỏi danh sách chờ `PEL`.
+>    - **`XAUTOCLAIM`:** Cơ chế tự động chuyển giao các bản tin bị treo quá ngưỡng thời gian (`min-idle-time`) trong `PEL` từ worker bị sập sang worker khác xử lý tiếp, ==đảm bảo không bỏ sót sự kiện==.
 
 ```visual
 kind: illustration
@@ -15,16 +15,16 @@ src: /illustrations/redis/redis-streams-pel.jpg
 diagram: redis:r08
 alt: Kiến trúc Redis Streams với luồng sự kiện XADD MAXLEN ~, phân phối qua Consumer Group, bảng theo dõi PEL chờ XACK và khôi phục tiến trình sập bằng XAUTOCLAIM
 badge: Truyền Thông Phân Tán · Streams & PEL
-title: Băng Chuyền Nhật Ký Redis Streams — Giao Tin Tin Cậy Với PEL, XACK & XAUTOCLAIM
-subtitle: Khắc phục hoàn toàn nhược điểm mất tin của Pub/Sub bằng sổ theo dõi Pending Entries List và cơ chế thu hồi tự động khi Worker gặp sự cố
-caption: Nhấn vào minh hoạ hoặc sơ đồ kỹ thuật để phóng to — quan sát hành trình bản tin từ XADD qua XREADGROUP vào hộp chờ PEL cho tới khi nhận XACK hoặc được XAUTOCLAIM giải cứu
+title: Kiến Trúc Redis Streams — Giao Tin Tin Cậy Với PEL, XACK & XAUTOCLAIM
+subtitle: Khắc phục hoàn toàn nhược điểm mất tin của Pub/Sub bằng danh sách Pending Entries List và cơ chế thu hồi tự động khi Worker gặp sự cố
+caption: Nhấn vào minh hoạ hoặc sơ đồ kỹ thuật để phóng to — quan sát hành trình bản tin từ XADD qua XREADGROUP vào danh sách chờ PEL cho tới khi nhận XACK hoặc được XAUTOCLAIM thu hồi
 callouts:
   - num: 1
     label: Nhật Ký Bền Vững Có Cắt Ngọn (XADD MAXLEN ~)
     desc: Mỗi bản tin nhận ID thời gian tăng dần tự động (ms-seq); cờ xấp xỉ MAXLEN ~ 10000 giữ dung lượng RAM cố định với chi phí O(1) nhờ cắt theo từng nút Listpack.
     tone: sky
   - num: 2
-    label: Sổ Theo Dõi Tạm Giữ PEL & Con Dấu XACK
+    label: Danh Sách Chờ Xác Nhận PEL & Lệnh XACK
     desc: Khi XREADGROUP giao tin bằng ký hiệu '>', bản tin lập tức ghi danh vào PEL của Consumer đó và chỉ biến mất khỏi PEL khi Worker gửi lệnh XACK xác nhận hoàn tất.
     tone: emerald
   - num: 3
@@ -117,7 +117,7 @@ steps:
    - `XPENDING` soi xem bản tin nào đang kẹt, đã nằm im bao nhiêu mili-giây (`idle time`) và bị thử lại mấy lần (`deliveryCount`).
    - ==`XAUTOCLAIM orders:stream payment-cg worker-2 60000 0-0 COUNT 10`== tự động chuyển quyền các bản tin treo quá `60,000ms` (1 phút) sang `worker-2` và trả luôn nội dung bản tin để xử lý ngay!
 
-> [!WARNING] Hai quả bom hẹn giờ làm tràn RAM với Redis Streams
+> [!WARNING] Hai nguyên nhân thường gặp gây tràn RAM và lặp vô tận trên Redis Streams
 > 1. **Quên cắt ngọn `MAXLEN ~` khi gọi `XADD`:** Lệnh `XACK` **chỉ xóa dòng ghi nợ trong sổ `PEL` chứ KHÔNG xóa bản tin gốc khỏi Stream** (vì có thể nhóm khác vẫn cần đọc!). Nếu không gắn ==`MAXLEN ~ 50000`== (dùng dấu ngã `~` để cắt nhanh theo từng cụm `listpack` `O(1)`), Stream sẽ phình to ăn sạch RAM!
 > 2. **Bỏ mặc "Tin nhắn độc" (*Poison Message*) lặp vô tận:** Nếu 1 đơn hàng bị lỗi dữ liệu làm code Worker văng lỗi liên tục, nó sẽ bị `XAUTOCLAIM` chuyền qua chuyền lại mãi mãi. Hãy kiểm tra nếu số lần giao `deliveryCount > 5` thì đẩy sang luồng lỗi riêng (`orders:dlq` — *Dead-Letter Queue*) rồi gọi `XACK` để giải phóng `PEL`!
 
@@ -162,7 +162,7 @@ await redis.xadd(
 );
 ```
 
-> [!REMEMBER] Quy tắc bỏ túi khi thiết kế hệ thống truyền tin
+> [!REMEMBER] Quy tắc lựa chọn khi thiết kế hệ thống truyền tin
 > - Cần bắn tín hiệu tức thời cho mọi máy chủ đang lắng nghe (chat trực tiếp, tọa độ con trỏ, xóa bộ đệm L1) và chấp nhận mất tin khi rớt mạng -> Chọn **Pub/Sub** (hoặc **`SSUBSCRIBE`** trên Cluster).
 > - Cần chạy job nền đơn giản trong code Python/Node.js -> Dùng **`ARQ` / `Celery` / `RQ`** hoặc **`BullMQ`**.
 > - Cần luồng nhật ký sự kiện bền vững nhiều dịch vụ cùng đọc độc lập với chi phí vận hành tối giản -> Chọn **Redis Streams (`XADD MAXLEN ~` + `XREADGROUP` + `XACK` + `XAUTOCLAIM`)**.

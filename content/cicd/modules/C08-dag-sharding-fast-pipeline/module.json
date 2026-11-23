@@ -47,7 +47,7 @@
     {
       "path": "gitlab/slow-42min-serial.gitlab-ci.yml",
       "kind": "bug",
-      "note": "Hồ sơ pháp y kinh điển của một pipeline chậm 42 phút: cài lại npm install không cache ở mọi bước, xếp nối đuôi tuần tự và ngủ mù quáng sleep 45.",
+      "note": "Phân tích cấu hình của một pipeline chậm 42 phút: cài lại npm install không cache ở mọi bước, chạy nối tiếp tuần tự và dùng sleep 45 cố định.",
       "task": "Tính nhẩm xem nếu chuyển 3 bước lint (3p), typecheck (4p), unit_test (8p) sang chạy song song và chia 4 mảnh cho e2e_test (20p -> 5p), tổng Đường găng giảm đi bao nhiêu phút?",
       "answer": "Cụm kiểm tra đầu giảm từ 3+4+8 = 15 phút xuống max(3,4,8) = 8 phút (hoặc chạy song song luôn với E2E 5 phút), tiết kiệm hơn 30 phút chờ đợi mỗi lần đẩy code!"
     }

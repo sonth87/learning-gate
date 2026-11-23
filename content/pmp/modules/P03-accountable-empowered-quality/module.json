@@ -23,7 +23,7 @@
       "detail": "Đối chiếu QA vs QC vs Validate Scope, Cost of Quality và 4 nhiệm vụ lá chắn của Servant Leader"
     }
   ],
-  "realWorldTrap": "Khi gấp tiến độ liền cắt bớt kiểm thử (QC), sợ sếp mắng nên giấu chỉ số trễ hạn thêm 1–2 tuần chờ nhóm làm bù, hoặc tự tay ước lượng rồi ép nhóm phải gật đầu theo con số của PM.",
+  "realWorldTrap": "Khi gấp tiến độ liền cắt bớt kiểm thử (QC), ngại cấp trên khiển trách nên giấu chỉ số trễ hạn chờ nhóm làm bù, hoặc tự tay ước lượng rồi áp đặt nhóm phải cam kết theo con số của PM.",
   "pmiMindsetShift": "Phòng ngừa lỗi trong quy trình (Prevention) luôn rẻ hơn sửa lỗi bên ngoài; Low Grade có thể chấp nhận nhưng Low Quality là cấm kỵ; lãnh đạo có trách nhiệm phải trung thực tuyệt đối với dữ liệu và trao quyền ước lượng cho người trực tiếp làm việc.",
   "tags": [
     "embed-quality",

@@ -23,7 +23,7 @@
       "detail": "Trục Bất định Yêu cầu × Bất định Kỹ thuật và 4 mẫu kết hợp Hybrid phổ biến nhất"
     }
   ],
-  "realWorldTrap": "Thấy từ 'Agile' là chọn bừa trong mọi câu hỏi, hoặc đánh đồng hoàn toàn Iterative với Incremental khiến mất điểm oan ở các câu hỏi chọn vòng đời theo mục tiêu kinh doanh.",
+  "realWorldTrap": "Thấy từ 'Agile' là chọn ngay trong mọi câu hỏi bất chấp bối cảnh, hoặc đánh đồng hoàn toàn Iterative với Incremental khiến mất điểm ở các câu hỏi chọn vòng đời theo mục tiêu kinh doanh.",
   "pmiMindsetShift": "Chọn phương pháp dựa trên 3 yếu tố: độ rõ ràng yêu cầu, độ ổn định kỹ thuật và nhu cầu bàn giao sớm — cần kiểm chứng độ đúng qua phản hồi mẫu thử thì chọn Iterative; cần cắt lát dùng ngay thì chọn Incremental; biến động kép thì chọn Agile; đa hợp phần khác tính chất thì chọn Hybrid.",
   "tags": [
     "development-approaches",

@@ -24,7 +24,7 @@
     }
   ],
   "realWorldTrap": "Chưa có Project Charter ký duyệt đã cho đội bắt tay vào làm; thấy khách xin đổi tính năng liền cập nhật thẳng Baseline hoặc chạy ngay lên CCB khi chưa phân tích tác động; dự án bị huỷ giữa chừng liền giải tán nhóm luôn không làm thủ tục đóng.",
-  "pmiMindsetShift": "Project Charter do Sponsor ký là giấy khai sinh duy nhất trao quyền cho PM; sau khi khoá Baseline, mọi thay đổi phải theo trật tự 'Ghi nhận → Phân tích tác động → Trình CCB → Cập nhật Plan & Truyền thông'; ngay cả dự án bị huỷ sớm vẫn bắt buộc qua Close Project để lưu Lessons Learned và thanh lý hợp đồng.",
+  "pmiMindsetShift": "Project Charter do Sponsor ký là văn bản chính thức duy nhất trao quyền cho PM; sau khi khoá Baseline, mọi thay đổi phải theo trật tự 'Ghi nhận → Phân tích tác động → Trình CCB → Cập nhật Plan & Truyền thông'; ngay cả dự án bị huỷ sớm vẫn bắt buộc qua Close Project để lưu Lessons Learned và thanh lý hợp đồng.",
   "tags": [
     "governance",
     "project-charter",

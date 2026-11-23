@@ -4,7 +4,7 @@
   "level": 3,
   "order": 5,
   "title": "Schedule & Finance: Critical Path, Quỹ Dự phòng & Phân tích Chỉ số EVM",
-  "summary": "Nắm chắc nghệ thuật nén tiến độ trên Đường găng (Crashing vs Fast-Tracking), cân bằng nguồn lực (Leveling vs Smoothing), phân định thẩm quyền túi tiền (Contingency vs Management Reserve) và đọc nhanh bảng mạch EVM để ra quyết định cứu lịch, cứu vốn chuẩn PMI.",
+  "summary": "Nắm chắc kỹ thuật nén tiến độ trên Đường găng (Crashing vs Fast-Tracking), cân bằng nguồn lực (Leveling vs Smoothing), phân định thẩm quyền hai quỹ dự phòng (Contingency vs Management Reserve) và đọc nhanh chỉ số EVM để ra quyết định điều chỉnh lịch và chi phí chuẩn PMI.",
   "motto": "Compress the Critical Path · Respect Reserve Authority · Let EVM Guide Action",
   "provenance": [
     {

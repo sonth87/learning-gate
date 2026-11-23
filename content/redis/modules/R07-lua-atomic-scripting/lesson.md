@@ -1,17 +1,17 @@
 # Lua Scripting & Redis Functions: Triệt tiêu Race Condition trong 1 nhịp nguyên tử
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Giả sử cửa hàng còn đúng **1 chiếc điện thoại cuối cùng** trong kho (`stock = 1`), nhưng đúng 12h00 trưa có **2 khách hàng bấm nút "Mua ngay" cùng một mili-giây** từ 2 máy chủ API khác nhau:
-> - Nếu viết code kiểu thông thường ở phía ứng dụng (Python, Node.js, Go, Java): Bước 1 gọi `GET stock` về thấy bằng `1` (`>= 1`, đủ hàng!) → Bước 2 gửi lệnh `DECR stock` để trừ kho. Vì giữa Bước 1 và Bước 2 có khoảng trễ mạng `0.5ms`, **cả 2 máy chủ đều kịp đọc thấy `1` trước khi người kia kịp trừ**, dẫn đến cả hai cùng trừ kho xuống **`-1`**! Bạn vừa bán 2 đơn cho 1 món hàng duy nhất — lỗi này gọi là ==TOCTOU Race Condition== (*Time-of-Check to Time-of-Use* — khoảng hở tử thần giữa lúc kiểm tra và lúc hành động).
-> - **Redis Lua Scripting (`EVAL` / `EVALSHA`)** giải quyết triệt để bằng cách nhúng sẵn trình thông dịch ngôn ngữ **Lua** siêu nhẹ ngay bên trong tiến trình Redis. Bạn gửi tờ hướng dẫn *"Đọc tồn kho -> Nếu `>= số lượng mua` thì trừ ngay, ngược lại báo hết hàng"* chạy thẳng trên luồng đơn của Redis: **không một lệnh nào khác trên đời có thể chen vào giữa**, vừa ==nguyên tử 100%==, vừa chỉ tốn đúng **1 chuyến mạng (1 RTT)**!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Giả sử kho hàng còn đúng **1 sản phẩm cuối cùng** (`stock = 1`), và có **2 request mua hàng** đi tới 2 máy chủ API tại cùng một mili-giây:
+> - Nếu kiểm tra và trừ kho bằng 2 lệnh tách rời từ phía ứng dụng (Bước 1 gọi `GET stock` thấy `1 >= 1`, Bước 2 gửi `DECR stock`), khoảng trễ mạng `0.5ms` giữa 2 lệnh đủ để **cả 2 máy chủ cùng đọc được giá trị `1` trước khi lệnh trừ của bên kia chạy**, khiến tồn kho bị trừ thành **`-1`** (bán vượt tồn kho). Lỗi này là ==TOCTOU Race Condition== (*Time-of-Check to Time-of-Use*).
+> - **Redis Lua Scripting (`EVAL` / `EVALSHA`)** giải quyết triệt để bài toán này bằng trình thông dịch **Lua** tích hợp sẵn trong tiến trình Redis. Toàn bộ logic *"Đọc tồn kho -> Nếu đủ thì trừ -> Ngược lại trả lỗi"* được thực thi trọn gói trên luồng chính duy nhất của Redis: **không có lệnh nào khác có thể chen ngang**, đảm bảo ==tính nguyên tử 100%== và chỉ tốn đúng **1 vòng mạng (1 RTT)**.
 
 ```visual
 kind: illustration
 diagram: redis:r07
 alt: So sánh lỗi bán âm kho do Check-Then-Act ở phía ứng dụng với hộp thực thi nguyên tử Lua Sandbox bên trong luồng chính Redis 8
 badge: Lập trình phía Server · Lua Atomic
-title: Hộp Cát Nguyên Tử Lua Sandbox — Đọc, Rẽ Nhánh & Ghi Trong 1 Nhịp Duy Nhất
-subtitle: Cách KEYS[] + ARGV[] đi vào trình thông dịch Lua nhúng sẵn của Redis mà không cho phép bất kỳ lệnh ngoại lai nào chen ngang
+title: Thực Thi Nguyên Tử Với Lua Sandbox — Đọc, Rẽ Nhánh & Ghi Trong 1 Nhịp Duy Nhất
+subtitle: Cách KEYS[] + ARGV[] đi vào trình thông dịch Lua nhúng sẵn của Redis mà không cho phép bất kỳ lệnh nào xen ngang
 caption: Nhấn vào sơ đồ để phóng to — đối chiếu lỗi đua tranh TOCTOU qua mạng với thực thi nguyên tử khép kín của EVAL / EVALSHA
 callouts:
   - num: 1
@@ -19,7 +19,7 @@ callouts:
     desc: Thay vì GET đem về ứng dụng kiểm tra rồi mới DECRBY (bị request khác chen ngang), Lua kiểm tra if cur >= qty và trừ ngay tại chỗ trên RAM.
     tone: rose
   - num: 2
-    label: Luật Thép Tách Bạch KEYS[] và ARGV[]
+    label: Quy Tắc Tách Bạch KEYS[] và ARGV[]
     desc: Mọi tên khoá bắt buộc truyền qua mảng KEYS[1..N] (chỉ số bắt đầu từ 1!) để Redis Cluster kiểm tra Hash Slot trước khi chạy; tham số phụ truyền qua ARGV[].
     tone: amber
   - num: 3
@@ -30,9 +30,9 @@ callouts:
 
 ## 1. Đối chiếu trực tiếp: Race Condition ở tầng Ứng dụng vs Lua Script nguyên tử
 
-> [!ANALOGY] Hình dung giao dịch qua điện thoại vs Đưa giấy ủy nhiệm trực tiếp cho Thủ quỹ
-> - **Đọc rồi mới Ghi từ App:** Bạn gọi điện hỏi thủ quỹ *"Còn đủ 5 triệu không?"* → Nghe đáp *"Còn"*, bạn cúp máy, 2 giây sau gọi lại bảo *"Trừ 5 triệu nhé!"* — nhưng trong 2 giây đó người thân cầm thẻ phụ đã rút mất 4 triệu ở cây ATM khác rồi!
-> - **Lua Script (`EVAL`):** Bạn trao tờ phiếu ghi sẵn điều kiện vào tận tay người thủ quỹ duy nhất của ngân hàng — thủ quỹ nhìn sổ và gạch tiền liền tay trong cùng một tích tắc trước khi gọi khách tiếp theo!
+> [!NOTE] Phân biệt trực tiếp: Đọc-rồi-Ghi từ ứng dụng vs Thực thi Lua trên Server
+> - **Đọc rồi mới Ghi từ App:** Ứng dụng gửi lệnh `GET`, đợi kết quả trả về qua mạng, kiểm tra `if/else` ở tầng App rồi mới gửi lệnh `DECRBY`. Trong khoảng thời gian khứ hồi mạng giữa hai lệnh đó, dữ liệu trên Redis có thể đã bị một client khác thay đổi.
+> - **Lua Script (`EVAL`):** Toàn bộ logic kiểm tra điều kiện và cập nhật được đóng gói thành một script chạy trực tiếp trên luồng chính của Redis trong một bước không thể tách rời. (Có thể hình dung giống như giao trọn yêu cầu có điều kiện cho một giao dịch viên xử lý khép kín tại quầy thay vì gọi điện hỏi số dư rồi mới gọi lại yêu cầu rút tiền).
 
 ```visual
 kind: compare
@@ -78,7 +78,7 @@ right:
 
 ```visual
 kind: groups
-title: Ba Mẫu Lua Script Kinh Điển Nhất Trong Thiết Kế Hệ Thống Phân Tán [!badge:emerald:Production]
+title: Ba Mẫu Lua Script Tiêu Chuẩn Trong Thiết Kế Hệ Thống Phân Tán [!badge:emerald:Production]
 columns: 3
 items:
   - num: 1
@@ -146,7 +146,7 @@ Khi viết `redis.call()` bên trong Lua, hãy ghim kỹ 4 quy tắc đặc thù
 > 2. **CẤM viết vòng lặp dài hoặc tính toán nặng quá vài mili-giây:** Khi Lua đang chạy, toàn bộ luồng chính bị giữ độc quyền — một script chạy mất `500ms` sẽ chặn đứng toàn bộ hệ thống suốt nửa giây! Hãy giữ script ngắn gọn dưới 30 dòng.
 > 3. **CẤM tự sinh giá trị ngẫu nhiên/thời gian ngoài ở trong script:** Những giá trị như `now_ms` hay `uuid` hãy tạo sẵn ở ứng dụng rồi truyền vào qua **`ARGV[]`** để đảm bảo tính tất định (*deterministic*).
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - Dùng **`EVAL` / `EVALSHA`** bất cứ khi nào bước Ghi phụ thuộc trực tiếp vào kết quả vừa Đọc ra (trừ tồn kho, nhả khóa phân tán, giới hạn tốc độ).
-> - Ba luật vàng của Redis Lua: **Mảng bắt đầu từ `1` (`KEYS[1]`, `ARGV[1]`)** · **Luôn bọc `tonumber()` khi so sánh số** · **Mọi tên khóa phải đi qua `KEYS[]`**.
+> - Ba quy tắc bắt buộc của Redis Lua: **Mảng bắt đầu từ `1` (`KEYS[1]`, `ARGV[1]`)** · **Luôn bọc `tonumber()` khi so sánh số** · **Mọi tên khóa phải đi qua `KEYS[]`**.
 > - Tận dụng `r.register_script(...)` (`redis-py`) hoặc `redis.defineCommand(...)` (`ioredis`) để tự động hóa `EVALSHA`.

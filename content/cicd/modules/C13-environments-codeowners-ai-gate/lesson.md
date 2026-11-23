@@ -3,7 +3,7 @@
 Ở chặng trước, bạn đã dựng hàng rào bảo mật tự động (5-Layer DevSecOps & Keyless OIDC). Nhưng trong doanh nghiệp thực tế, công cụ quét tự động thôi chưa đủ:
 - [>] **Ai** được phép phê duyệt một bản release lên Production lúc 11 giờ trưa Thứ Sáu?
 - [>] **Ai** chịu trách nhiệm ký duyệt khi một Pull Request âm thầm sửa `.github/workflows/deploy.yml` hoặc thêm câu lệnh SQL thay đổi lược đồ cơ sở dữ liệu?
-- [>] Làm sao tận dụng **AI PR Reviewer** (như CodeRabbit, GitHub Copilot Code Review) bắt lỗi logic sớm mà không biến mỗi PR thành "bãi rác bình luận" hoặc mở toang lỗ hổng lộ `OPENAI_API_KEY` từ nhánh Fork?
+- [>] Làm sao tận dụng **AI PR Reviewer** (như CodeRabbit, GitHub Copilot Code Review) bắt lỗi logic sớm mà không tạo quá nhiều bình luận nhiễu hoặc làm lộ `OPENAI_API_KEY` từ nhánh Fork?
 
 Bài học này giải quyết trọn vẹn 3 trụ cột **Quản trị phát hành (Release Governance)**: **GitHub Environments**, **CODEOWNERS + Branch Protection**, và **Low-Noise AI Review Gate** — đảm bảo ==kiểm soát rủi ro chặt chẽ== mà không làm chậm nhịp phát hành.
 
@@ -53,7 +53,7 @@ items:
 kind: illustration
 diagram: "cicd:c13"
 alt: "Ba chốt chặn quản trị phát hành doanh nghiệp gồm CODEOWNERS kèm Ruleset, trợ lý rà soát AI ít nhiễu và cổng phê duyệt environment: production"
-title: "Giải Phẫu Quản Trị Phát Hành: CODEOWNERS, Cổng AI Ít Nhiễu & Protected Environment"
+title: "Mô hình quản trị phát hành: CODEOWNERS, AI PR Gate và Protected Environment"
 subtitle: "Phối hợp trách nhiệm con người, tự động hoá rà soát mã nguồn và cô lập nghiêm ngặt bí mật Production"
 caption: "Chuỗi 3 trạm kiểm duyệt từ phân quyền sở hữu thư mục nhạy cảm, lọc nhiễu trợ lý AI tới cổng bấm nút Approve mở khoá bí mật Production"
 callouts:
@@ -157,7 +157,7 @@ Tệp **`.github/CODEOWNERS`** ánh xạ từng đường dẫn nhạy cảm t�
 /src/auth/                  @acme/security-team
 ```
 
-> [!WARNING] Hai quy tắc sống còn về `CODEOWNERS` rất hay bị hỏi trong phỏng vấn!
+> [!WARNING] Hai quy tắc quan trọng khi cấu hình `CODEOWNERS`
 > 1. **Thứ tự ưu tiên — ==Dòng khớp cuối cùng sẽ thắng (*Last match wins*)==:** Giống hệt `.gitignore`, `CODEOWNERS` đọc từ trên xuống dưới; tệp nằm trong `/src/auth/jwt.ts` khớp cả dòng `*` lẫn dòng `/src/auth/` nên chủ sở hữu quyết định cuối cùng là `@acme/security-team`.
 > 2. **Chỉ tạo tệp `.github/CODEOWNERS` thôi thì CHƯA chặn được Merge!** Nếu chưa bật **Branch Protection** hoặc **Repository Ruleset** kèm tuỳ chọn **`"Require review from Code Owners"`**, tệp `CODEOWNERS` chỉ tự động gắn người review gợi ý chứ không khoá nút Merge!
 
@@ -176,18 +176,18 @@ Tệp **`.github/CODEOWNERS`** ánh xạ từng đường dẫn nhạy cảm t�
 
 ## 3. Cổng rà soát AI (AI PR Gate): Giảm nhiễu & Chống lộ Secret từ Fork
 
-Các công cụ rà soát mã nguồn bằng AI (như **CodeRabbit** với `.coderabbit.yaml` hoặc workflow gọi LLM nội bộ) giúp bắt lỗi thiếu `await`, rò rỉ bộ nhớ hoặc SQL Injection trong 45 giây đầu tiên. Tuy nhiên, triển khai thực tế bắt buộc phải tránh **2 cái bẫy lớn**:
+Các công cụ rà soát mã nguồn bằng AI (như **CodeRabbit** với `.coderabbit.yaml` hoặc workflow gọi LLM nội bộ) giúp bắt lỗi thiếu `await`, rò rỉ bộ nhớ hoặc SQL Injection trong 45 giây đầu tiên. Tuy nhiên, triển khai thực tế cần tránh **2 rủi ro thường gặp**:
 
 ```visual
 kind: compare
-title: "Triển Khai AI PR Reviewer: Cấu Hình Ngây Thơ Dễ Lộ Khoá vs Chuẩn Doanh Nghiệp Ít Nhiễu"
+title: "Triển Khai AI PR Reviewer: Cấu Hình Dễ Lộ Khoá vs Chuẩn Doanh Nghiệp Ít Nhiễu"
 subtitle: "Vừa lọc bỏ tệp sinh tự động (lockfile, dist) vừa khoá chặt OPENAI_API_KEY trước các Pull Request từ nhánh Fork"
 left:
-  badge: "SAI LẦM NGUY HIỂM · Nhiễu & Lộ Secret"
+  badge: "RỦI RO BẢO MẬT · Nhiễu & Lộ Secret"
   title: "Dùng pull_request_target + Không lọc lockfile"
   tone: rose
   code: |
-    # BẪY PWN REQUEST LỘ OPENAI_API_KEY:
+    # LỖ HỔNG PWN REQUEST LÀM LỘ OPENAI_API_KEY:
     on: pull_request_target
     jobs:
       ai-review:

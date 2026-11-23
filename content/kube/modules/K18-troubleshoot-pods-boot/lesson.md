@@ -2,13 +2,13 @@
 
 Trên lý thuyết, mọi tệp YAML bạn viết đều chạy mượt mà lên trạng thái `Running` xanh mướt. Nhưng trong công việc thực tế của một kỹ sư Backend/DevOps trực ca vận hành (*On-call*), 80% giá trị chuyên môn của bạn tỏa sáng vào khoảnh khắc bạn gõ `kubectl get pods` và nhìn thấy hàng chữ báo động: `Pending`, `ImagePullBackOff`, `CreateContainerConfigError` hay ==`CrashLoopBackOff`==!
 
-Khi sự cố xảy ra, người mới thường hoảng loạn xóa đại Pod đi tạo lại hoặc sửa mò mẫm tệp YAML theo cảm tính. Ngược lại, kỹ sư chuyên nghiệp luôn tuân thủ **Phễu Chẩn đoán 3 Bước (*3-Step K8s Triage*)** chính xác như bác sĩ đọc phim X-quang.
+Khi sự cố xảy ra, người mới thường vội vàng xóa Pod đi tạo lại hoặc sửa tệp YAML theo cảm tính. Ngược lại, kỹ sư chuyên nghiệp luôn tuân thủ **Quy trình Chẩn đoán 3 Bước (*3-Step K8s Triage*)** một cách có hệ thống.
 
 ```visual
 kind: illustration
 diagram: "kube:k18"
 alt: "Cây quyết định chẩn đoán sự cố khởi động Pod từ Pending, ImagePullBackOff, CreateContainerConfigError đến CrashLoopBackOff --previous"
-title: "Cây Quyết Định Khám Bệnh Khởi Động Pod: Đọc Events Hạ Tầng vs Logs Phiên Cũ"
+title: "Sơ Đồ Quyết Định Chẩn Đoán Lỗi Khởi Động Pod: Đọc Events Hạ Tầng vs Logs Phiên Cũ"
 subtitle: "Rẽ nhánh chính xác ngay từ giây thứ 5 dựa trên việc tiến trình ứng dụng đã từng được chạy hay chưa"
 caption: "Sơ đồ phân nhánh chẩn đoán SRE giữa 3 lỗi kẹt trước vạch xuất phát (xem describe pod) và lỗi sập sau khi chạy (xem logs --previous)"
 callouts:
@@ -67,7 +67,7 @@ Hãy đối chiếu từng trạng thái lỗi với đúng mắt xích bị t�
 
 ```visual
 kind: troubleshoot
-title: Bảng Khám Bệnh 4 Trạng Thái Kẹt Khởi Động Kinh Điển [!badge:rose:On-Call Playbook]
+title: Bảng Chẩn Đoán 4 Trạng Thái Lỗi Khởi Động Phổ Biến [!badge:rose:On-Call Playbook]
 subtitle: Triệu chứng trên get pods -> Thủ phạm gốc rễ -> Câu lệnh chẩn đoán quyết định
 items:
   - symptom: "1. Pending (Tắc ở khâu Lập lịch & Gắn đĩa — kube-scheduler / CSI)"
@@ -96,7 +96,7 @@ items:
     cmd: kubectl logs <name> --previous
 ```
 
-## 3. Giải mã chu kỳ lùi lũy thừa & Bí quyết cờ `--previous` (`-p`) ở `CrashLoopBackOff`
+## 3. Chu kỳ lùi lũy thừa (`Exponential Backoff`) & Cách đọc log với cờ `--previous` (`-p`) ở `CrashLoopBackOff`
 
 Khi ứng dụng bị lỗi lúc khởi động (ví dụ thiếu biến môi trường làm `pydantic-settings` của FastAPI báo lỗi hoặc `TypeError` trong Node.js), container bật lên trong `0.2 giây` rồi chết. Để tránh một container lỗi liên tục đốt cháy 100% CPU của Worker Node, `kubelet` áp dụng thuật toán **Lùi lũy thừa nhân đôi (*Exponential Backoff*)**:
 
@@ -127,7 +127,7 @@ steps:
     tone: cyan
     edge: truy xuất phiên cũ
   - icon: terminal
-    badge: Cờ sống còn --previous
+    badge: Cờ quan trọng --previous
     title: Bắt Tận Tay Stack Trace
     desc: Lấy trọn vẹn stdout/stderr của phiên bản container vừa mới chết ngay trước đó!
     code: "kubectl logs <pod> --previous"
@@ -140,7 +140,7 @@ Nếu bạn chỉ gõ `kubectl logs <pod>` đúng lúc `kubelet` vừa tạo con
 kubectl logs order-worker-10001 --previous
 ```
 
-> [!TIP] Tăng tốc khám bệnh gấp 5 lần trên Terminal thực tế với `k9s` & `kubectl debug`
+> [!TIP] Tăng tốc chẩn đoán nhanh hơn trên Terminal thực tế với `k9s` & `kubectl debug`
 > - Trong công cụ giao diện TUI **`k9s`**, bạn chỉ cần di vệt sáng vào Pod đang đỏ rồi bấm phím **`d`** (tương đương `describe`), phím **`l`** (xem `logs`) hoặc phím **`p`** (xem ngay `logs --previous`!) trong 0.5 giây!
 > - Nếu gặp container tối giản (như Distroless) không có `/bin/sh` để gõ `exec`, K8s hiện đại cung cấp lệnh **`kubectl debug -it <pod> --image=busybox:1.36`** để gắn tạm một container chẩn đoán vào chung không gian mạng với Pod đó!
 

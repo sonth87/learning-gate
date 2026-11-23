@@ -23,7 +23,7 @@
       "detail": "Đối chiếu chỉ số NPV/IRR/BCR, tam giác ràng buộc mở rộng và dòng chảy ưu tiên giá trị"
     }
   ],
-  "realWorldTrap": "Cắm đầu làm đủ 100% đầu việc trong WBS bất chấp thị trường đã đổi (tư duy 'đủ Output là hết trách nhiệm'), hoặc chọn vật tư giá rẻ nhất để đẹp ngân sách ngắn hạn nhưng gây ô nhiễm và đội chi phí vận hành gấp ba.",
+  "realWorldTrap": "Chỉ tập trung hoàn thành 100% đầu việc trong WBS bất chấp thị trường đã đổi (tư duy 'đủ Output là hết trách nhiệm'), hoặc chọn vật tư giá rẻ nhất để tối ưu ngân sách ngắn hạn nhưng gây ô nhiễm và làm tăng gấp ba chi phí vận hành.",
   "pmiMindsetShift": "PM phải nhìn dự án như một hệ thống sống gắn liền với Business Case: một biến số đổi sẽ kéo toàn bộ ràng buộc đổi theo; ưu tiên cắt lát giao giá trị sớm (MVP/MMF); sẵn sàng đề xuất dừng dự án nếu mất giá trị kinh doanh và nhúng tiêu chí bền vững ngay từ đầu.",
   "tags": [
     "holistic-view",

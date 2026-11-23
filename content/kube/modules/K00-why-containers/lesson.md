@@ -20,9 +20,9 @@ steps:
     tone: sky
     edge: docker build
   - icon: package
-    badge: Bước 2 · Khuôn bánh chỉ đọc
+    badge: Bước 2 · Image chỉ đọc
     title: Container Image
-    desc: Khuôn mẫu nhị phân bất biến xếp chồng từ nhiều lớp chỉ đọc (read-only layers)
+    desc: Gói nhị phân bất biến xếp chồng từ nhiều lớp chỉ đọc (read-only layers)
     code: shop-api:1.4.2
     tone: cyan
     edge: docker pull / push
@@ -41,33 +41,33 @@ steps:
     tone: emerald
 ```
 
-## 1. Mô hình tư duy từ con số 0: Nhà riêng vs Chung cư (VM vs Container) & Khuôn bánh vs Chiếc bánh (Image vs Container)
+## 1. Phân biệt Máy ảo (VM) với Container, và Image với Container đang chạy
 
-Trước khi gõ bất kỳ câu lệnh nào, hãy nắm thật chắc **hai cặp khái niệm cốt lõi nhất** bằng hình ảnh đời thường:
+Trước khi gõ bất kỳ câu lệnh nào, hãy nắm chắc **hai cặp khái niệm nền tảng nhất** trong hệ sinh thái container:
 
-> [!NOTE] Mô hình tư duy #1 — Máy ảo (Virtual Machine) vs Container: Thuê nguyên căn nhà hay Thuê căn hộ chung cư?
-> - **Máy ảo (VM)** giống như **xây nguyên một căn nhà biệt lập**: mỗi ứng dụng phải tự cõng riêng nền móng, hệ thống ống nước và máy phát điện riêng — tức một bản hệ điều hành khách đầy đủ (**Guest OS Kernel** nặng hàng chục GB, bật mất cả phút).
-> - **Container** giống như **căn hộ hiện đại trong cùng một tòa chung cư**: mọi căn hộ vẫn có cửa khóa và phòng ốc riêng tư tuyệt đối, nhưng **dùng chung nền móng và đường điện nước trung tâm** chính là ==nhân Linux có sẵn của máy chủ (Host Linux Kernel)==. Nhờ bỏ hẳn Guest OS dư thừa, container nhẹ chỉ vài chục MB và bật lên trong **~50–80 mili-giây** như mở một tab trình duyệt!
+> [!NOTE] Phân biệt Máy ảo (Virtual Machine) và Container
+> - **Máy ảo (VM):** Hypervisor giả lập phần cứng để mỗi VM khởi chạy một bản hệ điều hành khách đầy đủ (**Guest OS Kernel** riêng biệt, tốn hàng GB RAM/ổ đĩa và mất vài chục giây đến cả phút để khởi động).
+> - **Container:** Là một tiến trình Linux thông thường được cô lập về không gian nhìn (`Namespaces`) và giới hạn tài nguyên (`cgroups`), **dùng chung nhân Linux có sẵn của máy chủ (Host Linux Kernel)**. Nhờ bỏ qua tầng Guest OS, container chỉ nặng vài chục MB và khởi động trong **~50–80 mili-giây**. Có thể hình dung đơn giản: VM giống như xây nguyên một căn nhà tự cấp điện nước riêng, còn Container giống các căn hộ riêng tư dùng chung hạ tầng điện nước của cả tòa nhà.
 
-> [!TIP] Mô hình tư duy #2 — Image vs Container: Công thức bánh cấp đông vs Chiếc bánh dọn lên bàn
-> - **Container Image** giống như **bản thiết kế `class` trong lập trình** hoặc **khuôn bánh đã cấp đông cứng**: nó hoàn toàn ==bất biến, chỉ đọc (Read-Only)== và nằm yên trên ổ đĩa.
-> - **Container** là **đối tượng `instance` đang sống trên RAM** (chiếc bánh đã nướng nóng hổi đặt lên bàn, phủ thêm **1 lớp kem ghi tạm mỏng** ở trên cùng). Từ **1 Image duy nhất**, bạn có thể đúc ra **10 hay 100 Container** chạy song song trong tích tắc mà không tốn thêm dung lượng nhân bản lớp nền!
+> [!TIP] Phân biệt Container Image (chỉ đọc) và Container (đang chạy)
+> - **Container Image:** Là gói phần mềm đóng băng **bất biến, chỉ đọc (Read-Only)** nằm trên ổ đĩa (tương tự bản thiết kế `class` trong lập trình hướng đối tượng), chứa mã nguồn, runtime và thư viện hệ thống.
+> - **Container:** Là một **tiến trình đang thực thi (`instance`) trên RAM** được khởi tạo từ Image, gắn thêm **1 lớp ghi tạm mỏng (Read-Write layer)** ở trên cùng để ứng dụng ghi dữ liệu tạm. Từ **1 Image duy nhất**, bạn có thể khởi chạy hàng chục Container song song mà không tốn thêm dung lượng nhân bản các lớp nền bên dưới (tương tự như từ một khuôn mẫu có thể đúc ra nhiều sản phẩm độc lập).
 
 ```visual
 kind: illustration
 diagram: "kube:k00"
 src: "/illustrations/kube/docker-vm-vs-container.jpg"
 alt: "So sánh kiến trúc Máy ảo Hypervisor với Container chia sẻ Host Kernel và các lớp ảnh chỉ đọc OverlayFS"
-title: "Giải Phẫu Kỹ Thuật: Máy Ảo (VM) vs Container Dùng Chung Nhân Linux & Lớp Ảnh Chỉ Đọc"
+title: "So Sánh Kiến Trúc: Máy Ảo (VM) vs Container Dùng Chung Nhân Linux & Lớp Ảnh Chỉ Đọc"
 subtitle: "Loại bỏ hoàn toàn nhân hệ điều hành khách (Guest OS) để bật tiến trình cô lập trong vài chục mili-giây"
 caption: "Đối chiếu ngăn xếp Hypervisor/Guest OS của VM với Docker Container dùng chung Host Kernel và cơ chế xếp chồng Read-Only Image Layers"
 callouts:
   - num: 1
-    label: "Ngăn xếp Máy ảo (VM) — Nguyên căn nhà nặng nề"
+    label: "Ngăn xếp Máy ảo (VM) — Kèm Guest OS riêng biệt"
     desc: "Mỗi VM phải gánh riêng một nhân Guest OS đầy đủ bên trên tầng Hypervisor giả lập phần cứng, tiêu tốn hàng GB RAM."
     tone: rose
   - num: 2
-    label: "Container — Căn hộ dùng chung Host Linux Kernel"
+    label: "Container — Dùng chung Host Linux Kernel"
     desc: "Mọi tiến trình container gọi thẳng syscall vào nhân Linux sẵn có của máy chủ, cô lập gọn nhẹ bằng Namespaces và cgroups."
     tone: emerald
   - num: 3
@@ -79,7 +79,7 @@ callouts:
 | Quen thuộc ở Python & Node.js | Khái niệm trong Container | Vai trò thực chất |
 | --- | --- | --- |
 | `pyproject.toml` / `package.json` + hướng dẫn cài OS | **`Dockerfile`** | Bản công thức văn bản mô tả từng bước chuẩn bị OS, runtime (Python/Node), chép code |
-| Môi trường `.venv` / `node_modules` đóng băng kèm cả Linux | **Container Image** | Khuôn mẫu **chỉ đọc (read-only)** theo chuẩn OCI xếp chồng từ các lớp bất biến |
+| Môi trường `.venv` / `node_modules` đóng băng kèm cả Linux | **Container Image** | Đơn vị đóng gói **chỉ đọc (read-only)** theo chuẩn OCI xếp chồng từ các lớp bất biến |
 | Tiến trình sống `uvicorn main:app` / `node server.js` | **Container** | Tiến trình Linux thực thi từ Image, gắn thêm **1 lớp ghi tạm mỏng** ở trên cùng |
 | Kho `PyPI` (`uv add`) / `npm` (`npm install`) | **Container Registry** | Kho trung tâm (Docker Hub, GHCR, ECR) để `docker pull` / `docker push` |
 
@@ -127,13 +127,13 @@ columns:
     footer: Tiết kiệm tài nguyên tối đa · Chạy hàng trăm microservice đa ngôn ngữ trên cùng 1 node
 ```
 
-## 2. Giải phẫu định danh Image & Bức tranh công cụ Container năm 2026
+## 2. Cấu trúc tên gọi Image & Các Container Engine phổ biến năm 2026
 
 Khi bạn gặp chuỗi `ghcr.io/acme/shop-api:1.4.2`, `python:3.12-slim` hay `redis:7-alpine`, cấu trúc của nó rất giống tên gói kèm phiên bản mà bạn vẫn dùng hằng ngày:
 
 ```visual
 kind: groups
-title: "Giải Phẫu Tên Image — [registry]/[namespace]/[repo]:[tag]"
+title: "Cấu Trúc Tên Gọi Image — [registry]/[namespace]/[repo]:[tag]"
 subtitle: "Ví dụ chuẩn: ghcr.io/acme/shop-api:1.4.2 hoặc viết gọn python:3.12-slim (= docker.io/library/python:3.12-slim)"
 columns: 2
 items:
@@ -166,7 +166,7 @@ kind: flow
 title: Vòng Đời Tiến Trình Container Trên Dòng Lệnh (CLI Lifecycle)
 steps:
   - icon: upload
-    badge: 1. Tải khuôn
+    badge: 1. Tải Image
     title: Pull
     code: docker pull redis:7-alpine
     tone: sky
@@ -190,7 +190,7 @@ steps:
     tone: rose
 ```
 
-Điểm kỳ diệu nhất cho người mới là: **máy tính của bạn không cần cài sẵn Python 3.12, Node 22 hay Redis** — chỉ một dòng `docker run` là bạn chạy được mọi ngôn ngữ ngay lập tức trong không gian sạch sẽ:
+Ưu điểm nổi bật khi thực hành là **máy tính của bạn không cần cài sẵn Python 3.12, Node 22 hay Redis** — chỉ một dòng `docker run` là bạn chạy được mọi ngôn ngữ ngay lập tức trong không gian sạch sẽ:
 
 ```bash
 # Chạy thử nhanh câu lệnh Python 3.12 ngay trong container rồi tự dọn sạch (--rm):
@@ -245,7 +245,7 @@ items:
     badge: Cleanup
     tone: rose
     bullets:
-      - "`docker rm` **chỉ xóa Container** (chiếc bánh & lớp ghi tạm), còn khuôn gốc **Image vẫn nằm nguyên** trong `docker images` để lần sau bật tức thì!"
+      - "`docker rm` **chỉ xóa Container** (tiến trình và lớp ghi tạm), còn **Image gốc vẫn nằm nguyên** trong `docker images` để lần sau khởi tạo lại tức thì!"
       - "Thêm `-f` để vừa ép dừng vừa xóa gọn trong 1 lệnh ở máy dev"
     code: |
       docker rm cache-dev      # Xóa container đã dừng (giải phóng tên)
@@ -276,6 +276,6 @@ items:
 > Tuyệt đối không chui vào bên trong một container đang chạy để gõ `pip install`, `npm install` hay sửa tay tệp code trên Production — vì lần tới khi container khởi tạo lại từ Image gốc, mọi chỉnh sửa tay sẽ biến mất sạch! Muốn cập nhật code, hãy luôn đi đúng vòng tuần hoàn: **sửa code → build Image mới (tăng tag version) → thay thế container cũ bằng container mới**.
 
 > [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
-> - **VM** = Xây nhà riêng cõng cả **Guest OS** nặng nề · **Container** = Căn hộ dùng chung **Host Linux Kernel**, khởi động trong vài chục mili-giây.
-> - **Image** = Khuôn mẫu **chỉ đọc** (`Read-only layers`) · **Container** = Tiến trình sống + 1 lớp ghi tạm mỏng (`docker rm` xóa Container nhưng không làm mất Image!).
+> - **VM** = Chạy kèm **Guest OS** riêng biệt (nặng, khởi động chậm) · **Container** = Dùng chung **Host Linux Kernel**, khởi động trong vài chục mili-giây.
+> - **Image** = Đơn vị đóng gói **chỉ đọc** (`Read-only layers`) · **Container** = Tiến trình sống + 1 lớp ghi tạm mỏng (`docker rm` xóa Container nhưng không làm mất Image!).
 > - Bỏ trống `:tag` = tự gắn `:latest` · Node/Go chuộng **`-alpine`**, Python/FastAPI chuộng **`-slim`** · Xem cả container đã tắt bằng `docker ps -a`.

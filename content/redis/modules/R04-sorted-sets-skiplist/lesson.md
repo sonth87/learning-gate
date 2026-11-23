@@ -1,22 +1,24 @@
-# Sorted Sets (ZSet) & Đường cao tốc nhiều tầng Skip List O(log N)
+# Sorted Sets (ZSet) và cấu trúc Skip List O(log N)
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Hãy thử giải bài toán quen thuộc này bằng SQL truyền thống: một tựa game hoặc sàn thương mại điện tử có **5 triệu người tham gia đua Top**, mỗi giây có hàng nghìn người được cộng điểm mới và đồng thời hàng vạn người bấm xem **"Top 10 toàn server"** kèm **"Tôi đang đứng hạng mấy?"**. Trên PostgreSQL, câu lệnh `ORDER BY score DESC` kết hợp cập nhật liên tục sẽ làm nghẽn cứng cây chỉ mục chỉ trong vài phút!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Với bài toán bảng xếp hạng có **5 triệu người chơi**, mỗi giây có hàng nghìn lượt cập nhật điểm và hàng vạn truy vấn xem **"Top 10"** kèm **"Thứ hạng hiện tại của một user"**, câu lệnh SQL `ORDER BY score DESC` trên PostgreSQL sẽ nhanh chóng nghẽn do chi phí ghi đĩa và cập nhật chỉ mục B-Tree liên tục.
 >
-> **Sorted Set (`ZSet` — Tập hợp có thứ tự theo điểm số)** chính là "vũ khí ngôi vương" giúp Redis giải bài toán trên trong **chưa tới `0.2 mili-giây`** nhờ ghép đôi 2 cấu trúc dữ liệu chạy song hành bên dưới cùng 1 khóa:
-> - **Mỗi phần tử (`member`) là duy nhất** (như tên tài khoản `"player:chi"`), nhưng luôn gắn kèm một con số thực gọi là **điểm sắp xếp (`score`**, ví dụ `980` điểm hoặc mốc thời gian Unix Timestamp).
-> - **Bảng băm (`Hash Table` nội bộ):** Giúp hỏi điểm của một người bất kỳ (`ZSCORE`) trả kết quả ngay lập tức ==`O(1)`==.
-> - **Danh sách nhảy nhiều tầng (`Skip List`):** Hãy hình dung **hệ thống tàu điện ngầm có các tầng tàu tốc hành** — tầng thấp nhất đi qua từng ga lẻ, tầng 2 nhảy cóc mỗi 5 ga, tầng 3 nhảy mỗi 25 ga, tầng 4 nhảy mỗi 100 ga. Nhờ đi tàu tốc hành từ tầng cao xuống tầng thấp, Redis tìm vị trí chèn điểm hoặc đếm thứ hạng giữa **10 triệu người chơi** chỉ mất khoảng ~23 bước nhảy (==`O(log N)`==)!
+> **Sorted Set (`ZSet` — Tập hợp có thứ tự theo điểm số)** giải quyết bài toán này trong **chưa tới `0.2 mili-giây`** bằng cách kết hợp 2 cấu trúc dữ liệu bên dưới cùng một khóa:
+> - **Mỗi phần tử (`member`) là duy nhất**, luôn gắn kèm một số thực dấu phẩy động gọi là **điểm sắp xếp (`score`)** (ví dụ `980` điểm hoặc mốc thời gian Unix Timestamp).
+> - **Bảng băm (`Hash Table` nội bộ):** Ánh xạ `member -> score` giúp tra cứu điểm của một thành viên bất kỳ (`ZSCORE`) đạt ==`O(1)`==.
+> - **Danh sách nhảy nhiều tầng (`Skip List`):** Duy trì thứ tự các phần tử theo `score` bằng nhiều tầng con trỏ nhảy bước (tầng cao nhảy bước dài, tầng đáy nối tuần tự từng phần tử), giúp tìm kiếm, chèn mới hoặc tính thứ hạng giữa **10 triệu phần tử** chỉ mất ~23 bước so sánh (==`O(log N)`==).
+>
+> *Liên hệ trực quan:* Có thể hình dung Skip List giống như mạng lưới tàu điện có nhiều tuyến tốc hành ở tầng trên (nhảy qua nhiều ga cùng lúc) kết hợp tuyến dừng từng ga ở tầng đáy để tiếp cận đúng vị trí nhanh nhất.
 
 ```visual
 kind: illustration
 src: "/illustrations/redis/redis-skiplist-express.jpg"
 diagram: "redis:r04"
-alt: "Đoàn tàu cao tốc nhiều tầng (Skip List Express Lanes) nhảy vọt qua hàng vạn ga lẻ kết hợp bảng băm O(1) của Redis Sorted Set"
-badge: "Ngôi vương cấu trúc dữ liệu · Sorted Set"
+alt: "Cấu trúc kép của Redis Sorted Set gồm bảng băm Hash Table O(1) và danh sách nhảy nhiều tầng Skip List O(log N)"
+badge: "Cấu trúc dữ liệu · Sorted Set"
 title: "Giải Phẫu Cấu Trúc Kép Của ZSet — Hash Table O(1) + Skip List O(log N)"
 subtitle: "Vì sao Redis chọn Skip List kèm con trỏ span thay vì cây Đỏ-Đen (Red-Black Tree) của C++ std::map?"
-caption: "Nhấn vào sơ đồ hoặc ảnh ẩn dụ tuyến tàu tốc hành để phóng to — theo dõi đường nhảy từ tầng cao tốc L3 xuống tầng cơ sở L0 và cách tính thứ hạng ZRANK"
+caption: "Nhấn vào sơ đồ để phóng to — theo dõi đường tìm kiếm từ tầng cao L3 xuống tầng cơ sở L0 và cách tính thứ hạng ZRANK"
 callouts:
   - num: 1
     label: "Hash Table Nội Bộ (member -> score)"
@@ -24,7 +26,7 @@ callouts:
     tone: cyan
   - num: 2
     label: "Skip List Nhiều Tầng Kèm Độ Dài Nhảy (span)"
-    desc: "Tầng cao nhảy bước lớn như tàu tốc hành, tầng thấp dò chi tiết; nhờ lưu khoảng cách span trên mỗi cung nhảy, Redis tính thứ hạng ZRANK cũng trong O(log N)!"
+    desc: "Tầng cao nhảy bước lớn giúp bỏ qua hàng loạt phần tử, tầng thấp dò chi tiết; nhờ lưu khoảng cách span trên mỗi liên kết, Redis tính thứ hạng ZRANK cũng trong O(log N)!"
     tone: amber
   - num: 3
     label: "Duyệt Dải Hai Chiều Mượt Mà (Range Scan)"
@@ -34,8 +36,8 @@ callouts:
 
 ## 1. Tại sao tác giả Redis chọn Skip List thay vì Cây nhị phân cân bằng (Red-Black Tree)?
 
-> [!ANALOGY] Hình dung tuyến tàu điện tốc hành có ghi sẵn "số trạm vượt qua" (`span`)
-> Nếu bạn đi tàu tốc hành tầng 3 nhảy một mạch từ Ga đầu đến Ga 800, trên vé tàu Redis có ghi sẵn con số **`span = 800`** (bước nhảy này đã bỏ qua đúng 800 người đứng trước). Khi đáp xuống đúng vị trí của người chơi `"Chi"`, Redis chỉ việc cộng nhẩm các con số `span` trên đường đi là biết ngay `"Chi"` đang đứng **Hạng #892** mà không cần đếm tay từ người số 1!
+> [!NOTE] Cơ chế tính thứ hạng nhanh bằng trường `span` trên Skip List
+> Trên mỗi liên kết nhảy tiến ở các tầng của Skip List, Redis lưu thêm một số nguyên **`span`** cho biết liên kết đó đã bỏ qua bao nhiêu nút ở tầng đáy (`L0`). Trong quá trình đi từ tầng cao xuống vị trí của phần tử `"Chi"`, Redis chỉ cần cộng dồn các giá trị `span` đã đi qua để trả về chính xác thứ hạng (ví dụ **Hạng #892**) trong `O(log N)` mà không phải đếm tuần tự từ đầu danh sách.
 
 So với cây Đỏ-Đen (*Red-Black Tree*), **Skip List** trong Redis thắng áp đảo ở 3 điểm thực dụng:
 1. **Cắt lát danh sách (`ZRANGE`) cực kỳ tự nhiên:** Khi đã đáp xuống nút bắt đầu trong `O(log N)`, việc lấy tiếp `10` người kế tiếp chỉ là đi thẳng một mạch trên đường ray tầng đáy (`L0`) với chi phí `O(log N + 10)`, không phải leo lên tụt xuống các nhánh cây phức tạp.
@@ -98,7 +100,7 @@ items:
 
 ```visual
 kind: groups
-title: Ba Vũ Khí Kiến Trúc Từ Sorted Set Mọi Kỹ Sư Backend Đều Gặp [!badge:amber:System Design]
+title: Ba Bài Toán Kiến Trúc Tiêu Biểu Giải Bằng Sorted Set [!badge:amber:System Design]
 columns: 3
 items:
   - num: 1
@@ -146,7 +148,7 @@ def allow_request(r, user_id: str, limit: int = 100, window_ms: int = 60_000) ->
 > - Trên Redis CLI thuần, **`ZADD key score member`** đặt điểm `score` **TRƯỚC** tên `member` (còn trong Python `redis-py` hàm `r.zadd(key, {member: score})` truyền qua `dict` nên tránh được nhầm lẫn!).
 > - Điểm `score` trong ZSet là số thực dấu phẩy động chuẩn IEEE 754 `double` 64-bit: nó chỉ biểu diễn **chính xác tuyệt đối số nguyên tới ==`2^53` (`9,007,199,254,740,992` — 16 chữ số)==**. Tuyệt đối đừng nhét nguyên mã Snowflake ID 64-bit (`~10^18`, 19 chữ số) vào làm `score` kẻo bị làm tròn mất các chữ số hàng đơn vị!
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - **Cấu trúc kép ZSet:** `Hash Table` cho `ZSCORE` **`O(1)`** + `Skip List` cho `ZADD`, `ZINCRBY`, `ZRANK`/`ZREVRANK` **`O(log N)`** và `ZRANGE` **`O(log N + M)`**.
 > - Ưu tiên cú pháp hợp nhất **`ZRANGE key start stop REV WITHSCORES`** trên Redis 8 và tận dụng cờ **`GT` / `LT` / `NX`** ngay trong `ZADD`.
 > - Biến điểm `score` thành **Unix Timestamp** giúp ZSet hóa thân thành **Sliding Window Rate Limiter** và **Delayed Job Queue** chuẩn mực.

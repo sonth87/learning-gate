@@ -1,20 +1,20 @@
 # Tăng tốc Pipeline: Phân biệt Cache vs Artifact, Cache Key theo mã băm Lockfile & Mô hình Cache Read-Only
 
-Ở các bài trước, bạn đã nắm vững sự thật vật lý của **Ephemeral Runners**: mỗi Job chạy trên một máy ảo Ubuntu mới tinh và bị xoá sổ vĩnh viễn ngay giây phút Job kết thúc! Chính cơ chế "dùng một lần rồi huỷ" này đặt ra hai bài toán thực tế rất tốn thời gian:
-1. Chẳng lẽ mỗi khi có 4 Job chạy song song (`lint`, `typecheck`, `unit-test`, `build`), cả 4 máy ảo đều phải tải lại hàng trăm megabyte gói thư viện từ `registry.npmjs.org`?
-2. Sau khi Job `build` mất 2 phút biên dịch TypeScript/Vite ra thư mục `dist/`, làm sao truyền nguyên vẹn `dist/` sang Job `deploy` mà không cần chạy lại `npm run build` lần hai?
+Ở các bài trước, bạn đã nắm cơ chế của **Ephemeral Runners**: mỗi Job chạy trên một máy ảo mới hoàn toàn và bị xóa sau khi Job kết thúc. Chính đặc điểm này đặt ra hai bài toán thực tế về hiệu năng và truyền dữ liệu:
+1. Làm sao tránh việc 4 Job chạy song song (`lint`, `typecheck`, `unit-test`, `build`) đều phải tải lại hàng trăm megabyte gói thư viện từ `registry.npmjs.org`?
+2. Sau khi Job `build` biên dịch TypeScript/Vite ra thư mục `dist/`, làm sao chuyển nguyên vẹn thư mục `dist/` sang Job `deploy` mà không phải chạy lại `npm run build`?
 
-Chìa khoá nằm ở việc phân biệt rạch ròi hai công cụ có bản chất hoàn toàn trái ngược nhau: ==`Cache`== và ==`Artifact`==!
+Giải pháp nằm ở việc phân biệt đúng hai cơ chế lưu trữ có mục đích hoàn toàn khác nhau:
+- **`Cache` (Bộ nhớ đệm thư viện giữa các lần chạy):** Dùng để lưu lại các thư mục gói phụ thuộc tải từ mạng (`~/.npm`, `~/.cache/uv`, `~/.m2`) giữa các lượt chạy workflow khác nhau nhằm rút ngắn thời gian cài đặt. Cache mang tính chất *tùy chọn (best-effort)*: nếu bộ đệm bị xóa hoặc hết hạn, pipeline vẫn tải lại thư viện từ Internet và chạy bình thường, chỉ tốn thêm thời gian.
+- **`Artifact` (Sản phẩm đầu ra của một lần chạy):** Dùng để lưu trữ các tệp thành phẩm (`dist/`, file `.jar`, báo cáo Playwright HTML, `sbom.json`) nhằm truyền dữ liệu từ Job này sang Job khác trong cùng một lần chạy workflow, hoặc lưu lại để tải về kiểm tra. Artifact mang tính *bắt buộc*: nếu thiếu Artifact đầu vào, Job triển khai (`deploy`) phía sau sẽ thất bại.
 
-> [!ANALOGY] Hãy hình dung căn bếp nhà hàng: "Tủ nguyên liệu sơ chế" vs "Hộp thành phẩm giao khách"
-> - **`Cache` (Tăng tốc cài thư viện giữa các lần chạy):** Giống như **tủ gia vị và nguyên liệu sơ chế sẵn** (`~/.npm`, `~/.cache/uv`, `~/.m2`) giữ lại từ ca nấu hôm qua sang ca hôm nay để đỡ mất công đi chợ lại từ đầu. Nếu lỡ ai đó dọn sạch tủ Cache, đầu bếp chỉ tốn thêm 2 phút tải lại thư viện từ Internet nhưng **món ăn vẫn nấu thành công 100%**.
-> - **`Artifact` (Sản phẩm đóng gói giữ lại sau khi build):** Giống như **hộp món ăn thành phẩm đã đóng dấu niêm phong** (`dist/`, file `.jar`, báo cáo lỗi Playwright HTML, `sbom.json`) để chuyền từ bàn Bếp (`Job: build`) sang tay Shipper (`Job: deploy`) trong **cùng một đơn hàng**. Nếu làm mất hộp Artifact này, Shipper không có gì để giao và bước Deploy thất bại ngay lập tức!
+*(Có thể hình dung đơn giản: `Cache` giống như kho nguyên liệu sơ chế sẵn dùng lại qua nhiều ngày để tiết kiệm thời gian chuẩn bị, còn `Artifact` giống như thành phẩm đã đóng gói niêm phong của một đơn hàng cụ thể để chuyển từ khâu sản xuất sang khâu giao nhận).*
 
 ```visual
 kind: illustration
 diagram: "cicd:c07"
 alt: "Đối chiếu kiến trúc Dependency Cache băm theo lockfile xuyên lượt chạy với Build Artifacts truyền gói thành phẩm xuyên các Job"
-title: "Giải Phẫu Lưu Trữ Pipeline: Dependency Cache Xuyên Lượt vs Artifact Xuyên Job"
+title: "Cơ chế lưu trữ Pipeline: Dependency Cache xuyên lượt vs Artifact xuyên Job"
 subtitle: "Tăng tốc cài đặt thư viện qua mã băm package-lock.json và đảm bảo nguyên tắc Build Một Lần, Triển Khai Mọi Môi Trường"
 caption: "Cơ chế Cache Key theo mã băm hashFiles('**/package-lock.json') của Cache (main ghi, PR đọc) đối lập với quy trình upload/download-artifact bất biến giữa các Job"
 callouts:
@@ -65,7 +65,7 @@ columns:
         note: "Đầu ra chính thức"
         tone: cyan
       - label: "Cam kết tồn tại: Bắt buộc chính xác 100% theo Commit SHA"
-        sub: "Job deploy phụ thuộc sống còn vào đúng bản dist/ vừa đóng gói"
+        sub: "Job deploy phụ thuộc trực tiếp vào đúng bản dist/ vừa đóng gói"
         note: "Bất biến tuyệt đối"
         tone: amber
       - label: "Phạm vi & Lưu trữ: Giữa các Job cùng lượt chạy + Tải ZIP"
@@ -125,20 +125,20 @@ steps:
 > [!TIP] Đường tắt gọn đẹp nhất cho dự án Node.js tiêu chuẩn
 > Khi chỉ cần đệm thư mục tải gói npm mặc định, bạn chỉ việc viết `cache: "npm"` bên trong `actions/setup-node@v4` — ở bên dưới nó tự động gọi chính xác cơ chế băm `package-lock.json` và lưu đệm `~/.npm` mà không cần viết khối `actions/cache@v4` thủ công!
 
-## 3. Cạm bẫy thảm hoạ `node_modules` & Mô hình **Read-Only Cache Pattern** chuẩn 2026
+## 3. Lưu ý khi cache `node_modules` và mô hình **Read-Only Cache**
 
-Nhiều người mới cố tình nén cả thư mục `node_modules` bằng `actions/upload-artifact@v4` ở Job đầu để truyền sang các Job sau, hoặc cho cả 4 Job song song cùng vừa đọc vừa ghi đè Cache. Cả hai đều là phản mẫu gây chậm và rủi ro bảo mật:
+Một số lập trình viên mới thường nén toàn bộ thư mục `node_modules` bằng `actions/upload-artifact@v4` ở Job đầu để truyền sang các Job sau, hoặc cấu hình cả 4 Job song song vừa đọc vừa ghi đè Cache. Cả hai cách làm này đều làm chậm pipeline và tiềm ẩn rủi ro bảo mật:
 
 ```visual
 kind: compare
-title: "Phản Mẫu Nén node_modules / Tranh Chấp Ghi vs Read-Only Cache Pattern"
-subtitle: "Tách bạch rạch ròi: ~/.npm đi đường Cache chỉ đọc · dist/ gọn nhẹ đi đường Artifact!"
+title: "So sánh: Đẩy node_modules vào Artifact vs Mô hình Read-Only Cache"
+subtitle: "Tách bạch rõ ràng: ~/.npm đi qua Cache chỉ đọc · dist/ gọn nhẹ đi qua Artifact"
 left:
-  badge: "PHẢN MẪU · Chậm 4–6 phút & Lỗi quyền"
+  badge: "KHÔNG TỐI ƯU · Chậm 4–6 phút & Lỗi quyền"
   title: "Đẩy node_modules vào Artifact & Ghi đè Cache bừa bãi"
   tone: rose
   code: |
-    # SAI LẦM NGHIÊM TRỌNG: Nén 50.000 tệp nhỏ!
+    # CÁCH LÀM KHÔNG HIỆU QUẢ: Nén 50.000 tệp nhỏ!
     - uses: actions/upload-artifact@v4
       with:
         name: node-deps

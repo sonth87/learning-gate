@@ -4,7 +4,7 @@
   "level": 4,
   "order": 0,
   "title": "Cấp phát Bộ nhớ jemalloc, Chính sách Eviction (LRU vs LFU) & Định mức RAM trên K8s",
-  "summary": "Thấu hiểu cấu trúc redisObject 24-bit, bộ đếm xác suất Morris Counter của LFU, cơ chế thu hồi nền bio_lazy_free và cách tính giới hạn RAM tránh án tử OOMKilled 137.",
+  "summary": "Nắm vững cấu trúc redisObject 24-bit, bộ đếm xác suất Morris Counter của LFU, cơ chế thu hồi nền bio_lazy_free và cách tính giới hạn RAM tránh lỗi OOMKilled (Exit Code 137).",
   "tags": [
     "memory",
     "jemalloc",

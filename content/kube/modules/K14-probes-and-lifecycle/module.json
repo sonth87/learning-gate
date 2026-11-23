@@ -4,7 +4,7 @@
   "level": 4,
   "order": 14,
   "title": "Kiểm tra Sức khỏe Pod (Startup / Readiness / Liveness Probes) & Graceful Shutdown",
-  "summary": "Phân biệt rạch ròi 3 cảm biến sức khoẻ, tránh thảm hoạ kiểm tra Database trong livenessProbe và cấu hình tắt Pod không rớt kết nối với preStop + SIGTERM.",
+  "summary": "Phân biệt rạch ròi 3 loại Health Probes, tránh lỗi sập dây chuyền khi kiểm tra Database trong livenessProbe và cấu hình tắt Pod không rớt kết nối với preStop + SIGTERM.",
   "tags": [
     "probes",
     "readiness",
@@ -47,7 +47,7 @@
     {
       "path": "k8s/workloads/probes-liveness-trap.yaml",
       "kind": "bug",
-      "note": "Phản mẫu nguy hiểm bậc nhất trên Production: nhúng truy vấn kiểm tra Database vào livenessProbe với timeout 1 giây gây sập dây chuyền toàn hệ thống.",
+      "note": "Phản mẫu phổ biến gây sự cố trên Production: nhúng truy vấn kiểm tra Database vào livenessProbe với timeout 1 giây gây sập dây chuyền toàn hệ thống.",
       "task": "Chỉ ra điều gì xảy ra với toàn bộ 10 Pod API nếu Database bị chậm tạm thời 1.5 giây.",
       "answer": "Tất cả 10 Pod đồng loạt trượt livenessProbe sau 3 chu kỳ và bị kubelet giết cùng lúc! Khi bật lại, cả 10 Pod ồ ạt mở kết nối mới đập vào Database (Thundering Herd) gây CrashLoopBackOff toàn diện. Kiểm tra DB chỉ được đặt ở readinessProbe!"
     }

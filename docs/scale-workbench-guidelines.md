@@ -50,12 +50,35 @@ Mọi thành phần trên sơ đồ (`block`, `db`, `device`, `crowd`, đường
 
 ---
 
-## 5. Quy Chuẩn Ngôn Từ & Thuật Ngữ Kỹ Thuật Tiếng Việt (Cấm Dịch Máy / Từ Lóng Tối Nghĩa)
+## 5. Quy Chuẩn Sư Phạm, Ngôn Từ & Thuật Ngữ Kỹ Thuật Tiếng Việt (Cấm Ẩn Dụ Hóa Quá Đà / Dịch Máy / Từ Lóng Tối Nghĩa)
+
 1. **Giữ nguyên thuật ngữ Tiếng Anh chuyên ngành phổ biến:**
    - Luôn giữ nguyên: `Event Loop`, `Coroutine`, `async / await`, `Non-blocking I/O`, `Blocking I/O`, `Thread`, `ThreadPool`, `ProcessPool`, `GIL`, `Bytecode`, `Call Stack`, `Heap`, `Immutable`, `Mutable`, `Shallow Copy`, `Deep Copy`, `Hashable`, `Hash Table`, `Generator`, `Decorator`, `Context Manager`, `Traceback`, `stdin / stdout / stderr`, `Exit Code`, `Rate Limit`, `Cache Hit / Cache Miss`, `Deadlock`, `Race Condition`.
+
 2. **Tuyệt đối tránh cách ghép từ tối nghĩa, khẩu ngữ cụt lủn hoặc dịch từng chữ:**
    - ❌ Sai: *"await nhường mượt"*, *"tốt cho sync I/O"*, *"1 Thread giữ bytecode/lúc"*, *"time.sleep() làm đơ!"*, *"nhả từng hạt"*.
    - ✅ Đúng: **`Nhường luồng tại await (Non-blocking)`**, **`Xử lý tác vụ Blocking I/O`**, **`1 Thread thực thi Bytecode tại một thời điểm`**, **`Hàm đồng bộ làm nghẽn Event Loop`**, **`Sinh tuần tự từng phần tử (Lazy Evaluation)`**.
+
+3. **Cấm đưa "Ẩn dụ tự chế" (Over-metaphorization) lên Tiêu đề (`#`, `##`, `###`), Mục tiêu bài học (`objectives`), Khối `visual`, `telemetry` hoặc `whatChanged`:**
+   - **Quy tắc Trực diện:** Tiêu đề mục và mục tiêu bài học phải nói thẳng tên khái niệm kỹ thuật hoặc bài toán thực tế bằng ngôn ngữ bình thường, rõ ràng để người học nhìn là biết ngay mục đó dạy cái gì và tra cứu lại dễ dàng.
+   - ❌ Sai: `## 1. Máy lọc nước theo giọt (O(1) RAM) vs Hồ bơi chứa sẵn (O(N) RAM)`
+   - ✅ Đúng: `## 1. Tại sao cần Generator? Xử lý từng phần tử (O(1) RAM) thay vì nạp toàn bộ vào List (O(N) RAM)`
+   - ❌ Sai: `## 1. Giải ngố từ gốc: "Vách ngăn tầm nhìn" Namespaces vs "Cầu dao điện nước" cgroups`
+   - ✅ Đúng: `## 1. Cơ chế cô lập Container trong Linux: Namespaces (cô lập tầm nhìn) và cgroups (giới hạn tài nguyên)`
+   - ❌ Sai: `## 1. Phân biệt "Tờ giấy luật" (Ingress / HTTPRoute) và "Người gác cổng" (Controller)`
+   - ✅ Đúng: `## 1. Kiến trúc định tuyến HTTP trên Kubernetes: Bản khai báo (Ingress / HTTPRoute) và Bộ thực thi (Controller)`
+   - ❌ Sai: `## 1. Mô hình tư duy từ con số 0: Nhà riêng vs Chung cư (VM vs Container) & Khuôn bánh vs Chiếc bánh (Image vs Container)`
+   - ✅ Đúng: `## 1. Phân biệt Máy ảo (VM) với Container, và Image với Container đang chạy`
+
+4. **Trình tự giải thích chuẩn sư phạm 3 bước (Direct Pedagogical Order):**
+   - Khi biên soạn nội dung bài học (`lesson.md` / `curriculum.json`), hộp ghi chú (`callout`) và giải thích câu hỏi (`quiz` / `cards`), bắt buộc tuân theo trình tự:
+     1. **Bước 1 — Định nghĩa & Bài toán thực tế (Concept First):** Nêu thẳng khái niệm kỹ thuật là gì và nó giải quyết vấn đề gì bằng câu chữ bình thường, mạch lạc.
+     2. **Bước 2 — Cơ chế hoạt động & Code/Cấu hình (Mechanism & Code):** Giải thích cụ thể hệ thống xử lý ra sao, đầu vào/đầu ra thế nào.
+     3. **Bước 3 — Ví dụ liên hệ trực quan (Supporting Analogy — Tùy chọn ở cuối đoạn):** Nếu khái niệm trừu tượng, có thể bổ sung 1 câu ví dụ đời thường ngắn gọn ở cuối đoạn mở đầu (*"Bạn có thể hình dung cơ chế này giống như..."*) để củng cố trí nhớ — tuyệt đối không dùng từ vựng ẩn dụ thay thế cho thuật ngữ chính trong phần còn lại của bài.
+
+5. **Loại bỏ văn phong "gồng", giật tít hoặc khẩu ngữ thiếu chuyên nghiệp:**
+   - Tránh lạm dụng các từ ngữ phóng đại hoặc khẩu ngữ như: *"Giải ngố"*, *"Phép thuật ngầm"*, *"Vũ khí tối thượng"*, *"Phản xạ sinh tử"*, *"Bí mật động trời"*, *"Thần chú"*, *"Cú lừa kinh điển"*.
+   - Thay bằng ngôn ngữ sư phạm điềm đạm, chuẩn xác, tôn trọng người học: *"Nguyên lý cốt lõi"*, *"Cơ chế hoạt động bên dưới"*, *"Công cụ tiêu chuẩn"*, *"Nguyên tắc quan trọng"*, *"Lưu ý thực tế"*, *"Sai lầm phổ biến"*.
 
 
 6. **Ground-Floor `2:1` Port Plane & Đa dạng Bố cục Chiều sâu Isometric (Không xếp ngang kiểu chữ M)**:

@@ -1,17 +1,17 @@
 # Xử lý Sự cố CI/CD Thực chiến (Incident Triage) — 4 Hồ sơ Điển hình
 
-Chúc mừng bạn đã đi tới chặng cuối cùng của hành trình **CI/CD Mastery**! Kiến thức lý thuyết về YAML chỉ thực sự trở thành bản năng của một Senior DevOps / Platform Engineer khi bạn đứng trước một pipeline đang bốc cháy:
-- [!] Đội sản phẩm xếp hàng chờ **42 phút** chưa merge nổi một bản vá khẩn cấp (**Hồ sơ B1**).
-- [!] Hai đợt deploy **ghi đè lên nhau (Race Condition)** làm hỏng khoá trạng thái hạ tầng Production (**Hồ sơ B2**).
-- [!] Hệ thống báo động phát hiện **API Key bị lộ trực tiếp** trong tệp workflow đã đẩy lên Git (**Hồ sơ B3**).
-- [!] Đáng sợ nhất: toàn bộ dấu tích CI đều **báo xanh giả (False-Green)** nhưng khách hàng đang nhận trang trắng lỗi **HTTP 500** (**Hồ sơ B6**)!
+Chúc mừng bạn đã đi tới chặng cuối cùng của khóa học **CI/CD Mastery**. Kiến thức cấu hình YAML chỉ thực sự phát huy giá trị trong thực tế khi bạn phải chẩn đoán và xử lý một pipeline đang gặp sự cố:
+- [!] Đội sản phẩm phải chờ **42 phút** cho mỗi bản vá khẩn cấp (**Tình huống B1**).
+- [!] Hai đợt deploy **ghi đè lên nhau (Race Condition)** làm hỏng khóa trạng thái hạ tầng Production (**Tình huống B2**).
+- [!] Hệ thống cảnh báo phát hiện **API Key bị lộ trực tiếp** trong tệp workflow đã đẩy lên Git (**Tình huống B3**).
+- [!] Tình huống khó phát hiện nhất: toàn bộ pipeline đều **báo thành công giả (False-Green)** nhưng người dùng đang nhận lỗi **HTTP 500** (**Tình huống B6**).
 
-> [!TIP] Nguyên tắc Vàng trong 5 phút đầu sự cố: "Cầm máu dịch vụ trước (Giảm MTTR), tìm nguyên nhân sau!"
-> Khi Production gặp sự cố sau đợt phát hành mới, phản xạ chuẩn của kỹ sư trưởng là **khôi phục dịch vụ nhanh nhất có thể trong < 2 phút** bằng cách **Rollback** về thẻ Image SHA ổn định trước đó (hoặc tắt công tắc **Feature Flag**) — thay vì ngồi mò debug code trực tiếp lúc khách hàng đang chịu lỗi `500`! Chỉ chọn **Roll-Forward** (đẩy bản vá mới tiến tới) khi bản vá cực nhỏ đã xác minh chắc chắn hoặc khi CSDL đã biến đổi ở bước không thể lùi ngược.
+> [!TIP] Nguyên tắc xử lý sự cố Production: Khôi phục dịch vụ trước (giảm MTTR), phân tích nguyên nhân sau
+> Khi Production gặp sự cố sau một đợt phát hành mới, phản xạ chuẩn của kỹ sư vận hành là **khôi phục dịch vụ nhanh nhất có thể (dưới 2 phút)** bằng cách **Rollback** về thẻ Image SHA ổn định trước đó (hoặc tắt **Feature Flag**) — thay vì dò lỗi trực tiếp trong khi khách hàng đang gặp lỗi `500`. Chỉ chọn **Roll-Forward** (đẩy bản vá mới) khi bản vá rất nhỏ đã được xác minh hoặc khi cơ sở dữ liệu đã thay đổi ở trạng thái không thể quay lui.
 
 ```visual
 kind: troubleshoot
-title: "Bảng Phân Loại & Phác Đồ Cấp Cứu Nhanh 4 Hồ Sơ Sự Cố CI/CD [!badge:rose:Incident Triage]"
+title: "Phân loại và quy trình xử lý 4 sự cố CI/CD phổ biến [!badge:rose:Incident Triage]"
 subtitle: Tra cứu nhanh triệu chứng hiện trường, nguyên nhân gốc rễ (RCA) và hành động khắc phục tức thì
 items:
   - symptom: "[Hồ sơ B1] Mỗi PR sửa 1 dòng code phải chờ 42 phút; job treo ngốn sạch 360 phút mặc định"
@@ -48,9 +48,9 @@ items:
 kind: illustration
 diagram: "cicd:c17"
 alt: "Bản đồ phân loại và xử lý 4 khủng hoảng CI/CD gồm nghẽn 42 phút & treo 360 phút, đua tranh deploy Production, lộ khoá Git và lỗi False-Green"
-title: "Bản Đồ Ứng Cứu Sự Cố CI/CD: Phác Đồ Xử Lý 4 Tình Huống Nghiêm Trọng"
-subtitle: "Quy trình phản ứng chuẩn Senior Platform Engineer khi pipeline tắc nghẽn, hỏng khoá hạ tầng, lộ bí mật hoặc báo xanh giả"
-caption: "Tóm lược triệu chứng hiện trường và đòn quyết định xử lý cho 4 hồ sơ sự cố: Nén đường găng, Xếp hàng Concurrency, Xoay vòng Secret và Chặn False-Green"
+title: "Quy trình xử lý 4 tình huống sự cố CI/CD nghiêm trọng"
+subtitle: "Quy trình phản ứng chuẩn kỹ sư nền tảng khi pipeline tắc nghẽn, hỏng khoá hạ tầng, lộ bí mật hoặc báo thành công giả"
+caption: "Tóm tắt triệu chứng và biện pháp xử lý cho 4 tình huống sự cố: Tối ưu đường găng, Xếp hàng Concurrency, Xoay vòng Secret và Chặn False-Green"
 callouts:
   - num: 1
     label: "Cắt đứt nghẽn cổ chai 42 phút & Treo máy 360 phút"
@@ -132,8 +132,8 @@ right:
 
 ```visual
 kind: compare
-title: "Hồ Sơ B2 — Hai Bộ Mặt Đối Lập Của Cờ cancel-in-progress: PR Nháp vs Production"
-subtitle: "Cùng một từ khoá concurrency nhưng copy-paste nguyên xi từ PR sang Production sẽ gây tai nạn rút phích cắm giữa chừng!"
+title: "Hồ Sơ B2 — Khác biệt cấu hình cancel-in-progress giữa PR nháp và Production"
+subtitle: "Sử dụng nguyên cấu hình concurrency của PR cho Production sẽ gây hủy ngang đợt triển khai đang chạy"
 left:
   badge: "DÀNH RIÊNG CHO PR NHÁP · Tiết kiệm phút CI"
   title: "Huỷ ngay bản chạy cũ đã lỗi thời (true)"
@@ -152,7 +152,7 @@ right:
   title: "Xếp hàng chờ đợt đang chạy hoàn tất (false)"
   tone: emerald
   code: |
-    # TRÊN PRODUCTION: Nhóm cố định + Cấm rút phích cắm ngang xương!
+    # TRÊN PRODUCTION: Nhóm cố định + Không hủy ngang đợt đang chạy!
     deploy-production:
       environment: production
       concurrency:
@@ -170,7 +170,7 @@ right:
 
 **Triệu chứng thực tế:** Một kỹ sư vì muốn chạy thử tích hợp thanh toán cho nhanh đã gõ cứng `STRIPE_API_KEY: "<HARDCODED_SECRET_EXAMPLE>"` ngay trong khối `env:` của `.github/workflows/ci.yml` rồi `git push` lên kho GitHub!
 
-> [!WARNING] Ngộ nhận chết người khi xử lý lộ Secret trên Git!
+> [!WARNING] Sai lầm phổ biến khi xử lý lộ Secret trên Git
 > Nhiều người tưởng rằng chỉ cần tạo một commit mới sửa dòng đó thành `${{ secrets.STRIPE_API_KEY }}` là xong. **SAI HOÀN TOÀN!** Commit mới chỉ xoá chuỗi khoá ở ảnh chụp `HEAD` hiện tại, còn khoá thật vẫn nằm nguyên vẹn vĩnh viễn trong lịch sử `git log` (và các bot săn khoá tự động chỉ mất vài giây để quét thu thập)!
 
 **Phác đồ ứng cứu chuẩn DevSecOps bắt buộc thực hiện đủ 2 vế:**
@@ -193,8 +193,8 @@ right:
 
 ```visual
 kind: groups
-title: "Hồ Sơ B6 — Truy Quét Tận Gốc 3 Thủ Phạm 'Nuốt Mã Thoát' (Exit Code != 0 Biến Thành 0)"
-subtitle: Chỉ cần tồn tại 1 trong 3 dòng cấu hình này, mọi cổng kiểm định chất lượng và bảo mật đều trở thành hình nộm vô tác dụng!
+title: "Ba nguyên nhân phổ biến gây báo thành công giả (Exit Code != 0 bị chuyển thành 0)"
+subtitle: Chỉ cần tồn tại 1 trong 3 cấu hình này, các bước kiểm tra chất lượng và bảo mật sẽ không thể chặn PR lỗi.
 columns: 3
 items:
   - num: 1

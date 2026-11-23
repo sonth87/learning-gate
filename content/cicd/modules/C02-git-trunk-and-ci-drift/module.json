@@ -4,7 +4,7 @@
   "level": 0,
   "order": 2,
   "title": "Trunk-Based Development & 5 Nguyên nhân Lệch Môi trường Local vs CI",
-  "summary": "Thực hành luồng nhánh ngắn Trunk-Based Git và triệt tiêu 5 nguyên nhân gây lệch môi trường giữa Laptop cá nhân với CI Runner (Node latest, Watch mode, Timezone, Case-sensitivity, Worker OOM 137).",
+  "summary": "Thực hành luồng nhánh ngắn Trunk-Based Git và khắc phục 5 nguyên nhân gây lệch môi trường giữa Laptop cá nhân với CI Runner (Node latest, Watch mode, Timezone, Case-sensitivity, Worker OOM 137).",
   "tags": [
     "trunk-based",
     "git-flow",
@@ -45,7 +45,7 @@
     {
       "path": "github/local-vs-ci-drift.yml",
       "kind": "bug",
-      "note": "Một file workflow hội tụ đủ 4 cái bẫy khiến dự án chạy mượt trên MacBook của dev nhưng lên CI vừa chạy lệch phiên bản vừa bị treo cứng.",
+      "note": "Một file workflow chứa 4 lỗi cấu hình thường gặp khiến dự án chạy bình thường trên máy cá nhân nhưng lại sai phiên bản hoặc bị treo trên CI.",
       "task": "Hãy điểm mặt cả 4 lỗi cấu hình được đánh dấu trong file `github/local-vs-ci-drift.yml` và nêu cách sửa từng lỗi.",
       "answer": "1) Thiếu `timeout-minutes` (treo tốn 360 phút) -> thêm `timeout-minutes: 10`; 2) `node-version: latest` trôi nổi -> ghim cứng `node-version: \"22\"`; 3) Dùng `npm install` lỏng lẻo -> đổi sang `npm ci`; 4) Đặt `CI: false` và gọi `npx vitest` gây treo ở watch mode -> đặt `CI: true` và gọi `npx vitest run`."
     },

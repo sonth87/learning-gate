@@ -9,9 +9,9 @@ kind: illustration
 diagram: "kube:k15"
 src: "/illustrations/kube/k8s-oom-vs-throttling.jpg"
 alt: "So sánh CPU Throttling với Memory OOMKilled (Exit Code 137), cơ chế tự động co giãn HPA v2 và tác vụ định kỳ Job/CronJob"
-title: "Giải Phẫu Quản Trị Năng Lực: CPU Throttling vs OOM 137, Co Giãn HPA & Tác Vụ CronJob"
+title: "Cơ Chế Quản Trị Tài Nguyên: CPU Throttling vs OOM 137, Co Giãn HPA & Tác Vụ CronJob"
 subtitle: "Định mức chính xác phần cứng cho từng Pod, tự động nhân bản theo tải thực tế và thực thi tác vụ nền chạy tới khi hoàn tất"
-caption: "Sự khác biệt sinh tử giữa vượt trần CPU (chỉ hãm xung) và vượt trần RAM (bị giết OOM 137), vòng lặp co giãn HPA v2 và lịch trình CronJob"
+caption: "Sự khác biệt quan trọng giữa vượt trần CPU (chỉ hãm xung) và vượt trần RAM (bị giết OOM 137), vòng lặp co giãn HPA v2 và lịch trình CronJob"
 callouts:
   - num: 1
     label: "requests/limits — Hãm xung CPU vs Bắn hạ OOM 137"
@@ -27,11 +27,11 @@ callouts:
     tone: cyan
 ```
 
-## 1. Giải thích bình dị `resources.requests` vs `resources.limits`
+## 1. Phân biệt `resources.requests` và `resources.limits`
 
-> [!NOTE] Mô hình tư duy: "Vé đặt chỗ ngồi tối thiểu" (`requests`) vs "Cầu dao trần tối đa" (`limits`)
-> - **`resources.requests` ("Vé đặt cọc chỗ ngồi"):** Là lượng tài nguyên tối thiểu bạn xin giữ chỗ trước. Bác tài **`kube-scheduler`** chỉ nhìn vào con số `requests` này để tìm chiếc xe Worker Node còn đủ ghế trống cho Pod lên ngồi!
-> - **`resources.limits` ("Cầu dao khóa trần trên Node"):** Khi xe đã chạy, nếu lúc đông khách Pod muốn dùng thêm vượt quá `requests` thì vẫn được dùng phần dư của máy, **nhưng không bao giờ được vượt quá vạch `limits`** do `cgroups` của nhân Linux canh giữ!
+> [!NOTE] Phân biệt `resources.requests` (mức đảm bảo) và `resources.limits` (giới hạn tối đa)
+> - **`resources.requests`:** Lượng tài nguyên tối thiểu mà Pod yêu cầu được cấp phát. Thành phần **`kube-scheduler`** chỉ dựa vào con số `requests` này để tìm Worker Node còn đủ chỗ trống xếp lịch cho Pod, và HPA cũng dùng `requests` làm mẫu số tính phần trăm tải.
+> - **`resources.limits`:** Ngưỡng tiêu thụ tối đa mà container không được phép vượt quá trong quá trình chạy thực tế, được nhân Linux **`cgroups`** kiểm soát trực tiếp. Nếu Node còn dư tài nguyên, Pod được phép dùng vượt `requests` nhưng sẽ bị chặn lại tại vạch `limits`. *(Có thể hình dung `requests` như phần chỗ ngồi đặt trước để Scheduler xếp lên Node, còn `limits` là cầu dao trần tối đa khi đang vận hành.)*
 
 Về đơn vị đo lường trong Kubernetes:
 - [>] **CPU tính bằng Millicores (`m`):** `1000m = 1 vCPU` (1 nhân ảo trọn vẹn) → **`500m = 0.5 vCPU`**, **`250m = 0.25 vCPU`**.
@@ -39,7 +39,7 @@ Về đơn vị đo lường trong Kubernetes:
 
 ```visual
 kind: compare
-title: "Giải Phẫu resources.requests (Đặt Chỗ) vs resources.limits (Trần Cầu Dao)"
+title: "So Sánh resources.requests (Đặt Chỗ) vs resources.limits (Giới Hạn Cứng)"
 subtitle: Một bên phục vụ xếp lịch chỗ ngồi trên Control Plane, một bên do nhân Linux cưỡng chế lúc đang chạy!
 left:
   badge: "kube-scheduler ĐỌC · Đặt Chỗ"
@@ -67,20 +67,20 @@ right:
   lang: yaml
   bullets:
     - "**Vượt `limits.cpu`:** CPU là tài nguyên nén được nên chỉ bị ==hãm xung nhịp (`CPU Throttling`)== — phản hồi chậm đi đôi chút nhưng **KHÔNG bị giết**"
-    - "**Vượt `limits.memory`:** RAM không thể nén nên nhân Linux dập cầu dao **OOM Killer**, bắn chết container ngay lập tức với ==`OOMKilled` (`Exit Code 137`)==!"
+    - "**Vượt `limits.memory`:** RAM không thể nén nên nhân Linux kích hoạt **OOM Killer**, bắn chết container ngay lập tức với ==`OOMKilled` (`Exit Code 137`)==!"
 ```
 
 > [!TIP] Kinh nghiệm đặt `limits` thực chiến năm 2026 cho Python & Node.js
 > - **Về RAM:** Luôn đặt `requests.memory` sát thực tế và `limits.memory` dư khoảng 25–40% cho đỉnh tải ngắn hạn (với Node.js đặt `NODE_OPTIONS="--max-old-space-size=..."` ~75% trần; với Python AI/Pandas tính kỹ dung lượng mô hình nạp vào RAM).
 > - **Về CPU:** Đừng siết `limits.cpu` quá thấp (ví dụ `100m`), vì lúc khởi động ứng dụng FastAPI / TypeScript cần bứt tốc nạp hàng trăm module — siết quá chặt sẽ gây *CPU Throttling* làm thời gian khởi động chậm gấp 5 lần!
 
-## 2. Ba hạng ghế ưu tiên khi Node cạn sạch RAM: **QoS Classes**
+## 2. Cơ chế ưu tiên khi Node thiếu RAM: **3 hạng QoS Classes**
 
-Dựa vào cách bạn khai báo `requests` và `limits`, Kubernetes tự động xếp hạng từng Pod vào một trong 3 hạng ghế **Quality of Service (QoS)**. Khi một Worker Node bất ngờ cạn kiệt RAM vật lý, `kubelet` sẽ nhìn vào hạng ghế này để quyết định **"mời ai xuống xe trước (*Eviction*), bảo vệ ai tới cùng"**:
+Dựa vào cách bạn khai báo `requests` và `limits`, Kubernetes tự động xếp hạng từng Pod vào một trong 3 cấp **Quality of Service (QoS)**. Khi một Worker Node bất ngờ cạn kiệt RAM vật lý, `kubelet` sẽ dựa vào cấp QoS này để quyết định thứ tự trục xuất Pod (*Eviction*) nhằm giải phóng bộ nhớ cho hệ thống:
 
 ```visual
 kind: groups
-title: Ba Hạng Ưu Tiên Bảo Vệ QoS Khi Worker Node Thiếu Bộ Nhớ
+title: 3 Hạng QoS Classes Khi Worker Node Thiếu Bộ Nhớ
 subtitle: Thứ tự bị trục xuất khỏi Node (Eviction) đi từ BestEffort -> Burstable -> Guaranteed
 columns: 3
 items:
@@ -89,7 +89,7 @@ items:
     title: BestEffort
     badge: Bị đuổi ĐẦU TIÊN
     tone: rose
-    desc: Vé vớt thả nổi hoàn toàn không khai báo tài nguyên.
+    desc: Mức ưu tiên thấp nhất khi không khai báo tài nguyên.
     bullets:
       - "Hoàn toàn **không khai báo** bất kỳ `requests` hay `limits` nào"
       - "Khi máy chủ thiếu RAM vật lý, nhóm này bị loại bỏ đầu tiên ngay lập tức"
@@ -99,7 +99,7 @@ items:
     title: Burstable
     badge: Linh hoạt · Phổ biến nhất
     tone: sky
-    desc: Giữ ghế mức nền vừa phải, cho phép bứt tốc giờ cao điểm.
+    desc: Đặt mức nền vừa phải, cho phép dùng thêm khi Node còn dư tài nguyên.
     bullets:
       - "Khai báo `requests` **nhỏ hơn** `limits` (ví dụ `requests: 256Mi`, `limits: 512Mi`)"
       - "Bình thường tiết kiệm chi phí Node, lúc đông khách được phép tăng tốc lên tới `limits`"
@@ -107,9 +107,9 @@ items:
   - num: 3
     icon: shield-check
     title: Guaranteed
-    badge: Khoang VIP Tối Thượng
+    badge: Ưu tiên cao nhất
     tone: emerald
-    desc: Đặc quyền bảo vệ cao nhất cho dịch vụ lõi sinh tử.
+    desc: Mức bảo vệ cao nhất cho các dịch vụ lõi quan trọng.
     bullets:
       - "**Mọi container trong Pod** đều khai báo cả CPU lẫn Memory sao cho ==`requests` bằng khít tuyệt đối `limits`== (`cpu: 500m`, `memory: 512Mi`)"
       - "Được bảo vệ tới cùng, gần như không bao giờ bị trục xuất khỏi Node"
@@ -178,7 +178,7 @@ items:
     desc: Tự động đẻ ra các đối tượng Job theo lịch hẹn định kỳ.
     bullets:
       - "Dùng biểu thức Cron 5 trường (`phút giờ ngày tháng thứ`, ví dụ `\"0 2 * * *\"` là 02:00 sáng hàng ngày)"
-      - "Cấu hình sống còn ==`concurrencyPolicy: Forbid`==: nếu kỳ chạy lúc 02:00 hôm nay còn chưa xong, K8s sẽ **bỏ qua kỳ kế tiếp thay vì bật chồng 2 Job chạy đè nhau**!"
+      - "Cấu hình quan trọng ==`concurrencyPolicy: Forbid`==: nếu kỳ chạy lúc 02:00 hôm nay còn chưa xong, K8s sẽ **bỏ qua kỳ kế tiếp thay vì bật chồng 2 Job chạy đè nhau**!"
     code: |
       spec:
         schedule: "0 2 * * *"

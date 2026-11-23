@@ -5,15 +5,15 @@
 - [!] **Mỗi lần Pod được khởi tạo lại, nó nhận một địa chỉ IP nội bộ hoàn toàn mới** (ví dụ Pod cũ là `10.244.1.15`, Pod mới sinh ra ở Node khác lại là `10.244.2.48`)!
 - [>] Nếu Frontend hay dịch vụ khác lưu cứng IP của Pod, chỉ sau một đợt Rolling Update toàn bộ kết nối sẽ đứt gãy sạch.
 
-> [!NOTE] Mô hình tư duy "Số điện thoại tổng đài cố định `1900`" (`Service`)
-> Bạn không bao giờ lưu số điện thoại di động cá nhân của từng nhân viên trực tổng đài (vì họ nghỉ ca liên tục), mà bạn gọi vào **số tổng đài cố định duy nhất** để hệ thống tự động nối máy tới nhân viên nào đang rảnh và khỏe mạnh! Trong Kubernetes, tài nguyên **`Service` (`apiVersion: v1`)** chính là chiếc tổng đài mang ==địa chỉ IP ảo cố định (`ClusterIP`)== kèm **tên miền DNS bất biến** đứng chắn phía trước dàn Pod.
+> [!NOTE] Vai trò của `Service`: Điểm truy cập mạng ổn định phía trước Pod
+> Trong Kubernetes, tài nguyên **`Service` (`apiVersion: v1`)** tạo ra một ==địa chỉ IP ảo cố định (`ClusterIP`)== kèm **tên miền DNS bất biến** đứng phía trước một nhóm Pod. Service liên tục theo dõi các Pod khớp nhãn `selector` và tự động cân bằng tải tới những Pod đang khỏe mạnh (`Ready`), giúp ứng dụng gọi nhau ổn định bất chấp việc IP của từng Pod thay đổi sau mỗi lần triển khai lại (tương tự như gọi vào một số tổng đài cố định để hệ thống tự nối máy tới nhân viên đang sẵn sàng trực).
 
 ```visual
 kind: illustration
 diagram: "kube:k10"
 src: "/illustrations/kube/k8s-service-ingress-routing.jpg"
 alt: "So sánh 3 kiểu Service (ClusterIP, NodePort, LoadBalancer), phân giải CoreDNS và định tuyến EndpointSlice tới các Pod khỏe mạnh"
-title: "Giải Phẫu Kubernetes Service: Địa Chỉ Ảo ClusterIP, CoreDNS & EndpointSlice"
+title: "Cơ Chế Kubernetes Service: Địa Chỉ Ảo ClusterIP, CoreDNS & EndpointSlice"
 subtitle: "Neo giữ điểm truy cập mạng bất biến phía trước hàng chục địa chỉ IP Pod sinh diệt liên tục"
 caption: "Ba lớp kiểu Service lồng nhau, cơ chế phân giải tên miền nội bộ qua CoreDNS và cách kube-proxy chỉ chia tải vào các Pod đạt Ready=true"
 callouts:
@@ -31,7 +31,7 @@ callouts:
     tone: emerald
 ```
 
-## 1. Giải thích bình dị 3 loại Service: `ClusterIP` vs `NodePort` vs `LoadBalancer`
+## 1. Phân biệt 3 loại Service: `ClusterIP`, `NodePort` và `LoadBalancer`
 
 Người mới rất dễ nhầm lẫn khi nào chọn loại `Service` nào. Hãy phân biệt chúng theo phạm vi mở cửa từ hẹp ra rộng:
 
@@ -47,7 +47,7 @@ items:
     badge: Chỉ gọi nội bộ cụm
     tone: emerald
     bullets:
-      - "**Là gì:** Số điện thoại nội bộ chỉ gọi được từ bên trong tòa nhà cụm K8s (Internet ngoài hoàn toàn không chạm vào được)"
+      - "**Là gì:** Địa chỉ IP ảo nội bộ chỉ truy cập được từ bên trong cụm K8s (lưu lượng từ Internet bên ngoài không chạm trực tiếp vào được)"
       - "Kiểu mặc định khi bỏ trống `spec.type`"
       - "**Khi nào dùng:** **90% mọi dịch vụ** — FastAPI / Node.js Backend, PostgreSQL, Redis, Queue"
     footer: Mặc định vàng cho giao tiếp Đông-Tây (East-West) nội bộ
@@ -77,8 +77,8 @@ Rất nhiều sự cố `502 Bad Gateway` hoặc `Connection Refused` bắt ngu�
 
 ```visual
 kind: anatomy
-title: Giải Phẫu Bộ Lọc Nhãn & 3 Con Số Cổng Trong Manifest Service
-subtitle: Nhớ quy tắc ngắn gọn — port là cổng quầy lễ tân của Service, còn targetPort là cửa phòng bên trong Pod!
+title: Cấu Trúc Bộ Lọc Nhãn & 3 Con Số Cổng Trong Manifest Service
+subtitle: Quy tắc ngắn gọn — port là cổng mở trên Service VIP, còn targetPort là cổng ứng dụng đang lắng nghe bên trong Pod
 items:
   - keyword: selector
     role: Bộ lọc tìm Pod đích
@@ -160,14 +160,14 @@ steps:
     tone: amber
     edge: cân bằng tải tới targetPort
   - icon: container
-    badge: 4. Cửa phòng trong Pod
+    badge: 4. Cổng trong Pod
     title: Backend Pod
     desc: Tiến trình Node.js / FastAPI nhận gói tin tại cổng thực tế bên trong
     code: "targetPort: 3000"
     tone: emerald
 ```
 
-> [!WARNING] Phản xạ số 1 khi gọi Service mất mạng: Soi ngay `ENDPOINTS = <none>`!
+> [!WARNING] Bước kiểm tra đầu tiên khi gọi Service bị lỗi: Soi ngay `ENDPOINTS = <none>`!
 > Hãy chạy `kubectl get endpoints shop-api-svc` đầu tiên khi gọi Service bị lỗi! Nếu các Pod vẫn đang `1/1 Running` nhưng cột `ENDPOINTS` hiển thị ==`<none>`==, thủ phạm số 1 là **nhãn trong `spec.selector` của Service bị gõ lệch không khớp với `metadata.labels` trên các Pod**!
 
 ## 3. Quy chuẩn tên miền CoreDNS: Cùng Namespace vs Xuyên Namespace

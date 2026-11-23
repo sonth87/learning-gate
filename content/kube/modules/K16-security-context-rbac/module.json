@@ -48,7 +48,7 @@
       "path": "k8s/security/pod-privileged-escape.yaml",
       "kind": "security",
       "note": "Tệp YAML cực kỳ nguy hiểm mở toang cánh cửa thoát khỏi container (Container Escape) chiếm quyền điều khiển máy chủ vật lý.",
-      "task": "Chỉ ra 3 cấu hình tử huyệt trong tệp này biến container thành root của toàn bộ Worker Node.",
+      "task": "Chỉ ra 3 cấu hình cực kỳ nguy hiểm trong tệp này biến container thành root của toàn bộ Worker Node.",
       "answer": "1) privileged: true (gỡ bỏ mọi rào cản cgroups/capabilities), 2) hostNetwork: true (nghe lén lưu lượng mạng của Node), và 3) gắn hostPath /var/run/docker.sock (cho phép tạo container quyền tối cao trực tiếp trên máy chủ)."
     },
     {

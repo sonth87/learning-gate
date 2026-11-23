@@ -4,7 +4,7 @@
   "level": 3,
   "order": 6,
   "title": "Risk & Procurement: Phân biệt Risk vs Issue, Chiến lược Ứng phó & Hợp đồng",
-  "summary": "Khoá chặt lằn ranh sinh tử giữa Risk (tương lai → Risk Register) và Issue (hiện tại → Issue Log), nắm vững 10 chiến lược đối phó Threat/Opportunity kèm Residual vs Secondary Risk, chọn đúng loại hợp đồng theo độ rõ phạm vi và xử lý tranh chấp Vendor chuẩn thứ bậc ADR.",
+  "summary": "Phân biệt rạch ròi giữa Risk (sự kiện chưa xảy ra → Risk Register) và Issue (sự kiện đã phát sinh → Issue Log), nắm vững 10 chiến lược ứng phó Threat/Opportunity kèm Residual vs Secondary Risk, chọn đúng loại hợp đồng theo độ rõ phạm vi và xử lý tranh chấp Vendor theo thứ bậc ADR.",
   "motto": "Future is Risk · Present is Issue · Match Contract to Uncertainty · Negotiate First",
   "provenance": [
     {

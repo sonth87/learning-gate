@@ -1,10 +1,30 @@
 # Hướng dẫn Biên soạn & Kiểm định Nội dung (`content/`)
 
-Thư mục `content/` là **nguồn nội dung duy nhất (Single Source of Truth)** cho tính năng **"Học"** của hai ứng dụng:
+Thư mục `content/` là **nguồn nội dung duy nhất (Single Source of Truth)** cho tính năng **"Học"** của bốn ứng dụng:
 - **Docker & K8s Mastery** (`content/kube/` → biên dịch ra `src/data/courses/kube/*.json`)
 - **CI/CD Architecture** (`content/cicd/` → biên dịch ra `src/data/courses/cicd/*.json`)
+- **Redis Mastery** (`content/redis/` → biên dịch ra `src/data/courses/redis/*.json`)
+- **PMP Mastery** (`content/pmp/` → biên dịch ra `src/data/courses/pmp/*.json`)
 
-> **Lưu ý quan trọng:** Tuyệt đối **không sửa tay** các file JSON trong `src/data/courses/`. Mọi thay đổi nội dung phải thực hiện trong `content/<course>/` rồi chạy lệnh biên dịch và kiểm định bên dưới.
+(Riêng **Python Mastery** sử dụng nguồn bài học tại `src/data/workpath/curriculum.json` kết hợp với kịch bản trực quan trong `src/apps/pymastery/data/pythonSpecsPart1.ts` và `pythonSpecsPart2.ts`).
+
+> **Lưu ý quan trọng:** Tuyệt đối **không sửa tay** các file JSON đã biên dịch trong `src/data/courses/`. Mọi thay đổi nội dung của Kube, CI/CD, Redis, PMP phải thực hiện trong `content/<course>/` rồi chạy lệnh biên dịch và kiểm định bên dưới.
+
+---
+
+## 0. Quy Chuẩn Sư Phạm & Văn Phong Biên Soạn (Bắt Buộc)
+
+Toàn bộ bài học (`lesson.md`, `curriculum.json`), kịch bản trực quan (`*ScaleCurator.ts`, `pythonSpecsPart*.ts`), câu hỏi (`quiz.json`) và thẻ ghi nhớ (`cards.json`) phải tuân thủ nghiêm ngặt quy tắc sư phạm trực diện (xem chi tiết tại [`docs/scale-workbench-guidelines.md` §5](../docs/scale-workbench-guidelines.md)):
+
+1. **Trực diện ngay từ đầu — Không đặt ẩn dụ làm tiêu đề hoặc định nghĩa chính:**
+   - Tiêu đề bài học, tiêu đề mục (`##`, `###`), mục tiêu (`objectives`), nhãn sơ đồ (`visual`, `telemetry`, `whatChanged`) phải gọi đúng tên khái niệm kỹ thuật hoặc vấn đề thực tế bằng ngôn ngữ bình thường, tự nhiên.
+   - **Không** dùng các cụm ẩn dụ tự chế hoặc khẩu ngữ giật tít trên tiêu đề như *"Máy lọc nước theo giọt vs Hồ bơi chứa sẵn"*, *"Giải ngố từ gốc: Vách ngăn tầm nhìn vs Cầu dao điện nước"*, *"Tờ giấy luật vs Người gác cổng"*, *"Bí mật động trời"*, *"Phản xạ sinh tử"*.
+2. **Trình tự giải thích 3 bước trong nội dung bài học:**
+   - **Bước 1 (Khái niệm & Bài toán thực tế):** Giải thích thẳng khái niệm đó là gì, dùng để giải quyết vấn đề gì bằng câu chữ bình thường, dễ hiểu.
+   - **Bước 2 (Cơ chế & Ví dụ Code/Cấu hình):** Trình bày cách hoạt động cụ thể, đầu vào, đầu ra và minh họa bằng code/cấu hình thực tế.
+   - **Bước 3 (Liên hệ trực quan — nếu cần):** Nếu khái niệm trừu tượng, chỉ dùng 1 câu ví dụ liên hệ đời thường ngắn gọn ở sau để hỗ trợ hình dung, tuyệt đối không lấy từ vựng ẩn dụ thay thế cho thuật ngữ chuyên ngành.
+3. **Rà soát thủ công từng bài:**
+   - Việc biên tập nội dung phải đọc hiểu và chỉnh sửa thủ công từng mục theo mạch sư phạm, tuyệt đối không dùng script thay thế chuỗi hàng loạt làm hỏng ngữ cảnh câu văn hoặc cấu trúc dữ liệu.
 
 ---
 

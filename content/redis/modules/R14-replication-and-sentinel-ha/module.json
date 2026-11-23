@@ -4,7 +4,7 @@
   "level": 4,
   "order": 2,
   "title": "Replication (PSYNC2), Phòng tránh Split-Brain & Tự động Failover với Sentinel",
-  "summary": "Làm chủ cơ chế Replication Backlog tránh bão Full Resync, rào chắn min-replicas-to-write chống Split-Brain và quy trình bầu cử SDOWN -> ODOWN -> Failover của cụm 3 Sentinel.",
+  "summary": "Làm chủ cơ chế Replication Backlog tránh tình trạng Full Resync hàng loạt, cấu hình min-replicas-to-write chống Split-Brain và quy trình bầu cử SDOWN -> ODOWN -> Failover của cụm 3 Sentinel.",
   "tags": [
     "replication",
     "psync2",

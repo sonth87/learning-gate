@@ -68,7 +68,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                   ]
                 : importMode
                   ? [
-                      { op: '+', text: bi('Đặt cổng chắn if __name__ == "__main__": bảo vệ file khi được import', 'Added if __name__ == "__main__": guard to skip demo code on import') },
+                      { op: '+', text: bi('Dùng điều kiện if __name__ == "__main__": bảo vệ file khi được import', 'Added if __name__ == "__main__": guard to skip demo code on import') },
                     ]
                   : [
                       { op: '+', text: bi('Xuất dữ liệu với print(..., sep, end) và thử nghiệm tức thì trong REPL', 'Formatted stdout via print(..., sep, end) and tested live in REPL') },
@@ -82,7 +82,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Môi trường ảo .venv giống như hộp đồ nghề riêng của từng dự án giúp các phiên bản thư viện không bao giờ đè lên nhau — và uv tự động tạo/chọn .venv cho bạn!', 'A .venv virtual environment acts like a private toolbox per project so library versions never clash — and uv manages it automatically!'),
+                  text: bi('Môi trường ảo .venv cô lập phiên bản Python và thư viện cho từng dự án (tương tự như hộp đồ nghề riêng) để các gói cài đặt không xung đột nhau — và uv tự động quản lý nó cho bạn.', 'A .venv virtual environment isolates Python and libraries per project (like a private toolbox) so versions never clash — and uv manages it automatically.'),
                 }
               : s === 2
                 ? {
@@ -179,7 +179,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                     { op: '+', text: bi('Đọc dòng cuối Traceback tìm tên lỗi + nhìn ngược lên File "...", line N', 'Read bottom Traceback line for error type + line number right above') },
                   ]
                 : [
-                    { op: '+', text: bi('Tổng hợp phản xạ kiểm tra thư mục & giải mã nhanh 10 loại lỗi phổ biến', 'Consolidated directory check & 10-error quick triage workflow') },
+                    { op: '+', text: bi('Tổng hợp quy trình kiểm tra thư mục & nhận diện nhanh 10 loại lỗi phổ biến', 'Consolidated directory check & 10-error quick triage workflow') },
                   ],
         callout:
           s === 0
@@ -190,7 +190,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('90% lỗi "No such file or directory" là do Terminal đang đứng sai thư mục. Hãy tập phản xạ gõ pwd và ls kiểm tra trước, kết hợp phím Tab để tự điền tên file!', '90% of "No such file" errors happen because Terminal is in another folder. Check pwd and ls first, and press Tab to autocomplete filenames!'),
+                  text: bi('Phần lớn lỗi "No such file or directory" là do Terminal đang đứng sai thư mục. Hãy gõ pwd và ls kiểm tra trước, kết hợp phím Tab để tự điền tên file.', 'Most "No such file" errors happen because Terminal is in another folder. Check pwd and ls first, and press Tab to autocomplete filenames.'),
                 }
               : s <= 3
                 ? {
@@ -217,7 +217,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               tone: hasError ? 'rose' : 'green',
               x: 205,
               y: 5,
-              label: hasError ? bi('Traceback (Đọc từ đáy ↑)', 'Traceback (Read bottom ↑)') : bi('Call Stack (Êm)', 'Call Stack (Clean)'),
+              label: hasError ? bi('Traceback (Đọc từ đáy ↑)', 'Traceback (Read bottom ↑)') : bi('Call Stack (Bình thường)', 'Call Stack (Clean)'),
               stackFrames: hasError
                 ? ['1. main() line 12', '2. calc(0) line 6', '🔥 ZeroDivisionError!']
                 : ['1. main() line 12', '2. greet("An")', '✔ Exit Code 0'],
@@ -246,7 +246,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     durationMin: 12,
     difficulty: 'Beginner',
     objectives: [
-      bi('Hiểu dòng chảy vào – xử lý – ra của một chương trình Python', 'Understand the Input → Process → Output pipeline'),
+      bi('Hiểu luồng vào – xử lý – ra của một chương trình Python', 'Understand the Input → Process → Output pipeline'),
       bi('Phân biệt rạch ròi print() (chỉ in ra màn hình, trả về None) và return (trả giá trị thật)', 'Distinguish print() (side-effect, returns None) vs return (yields value)'),
       bi('Gán biến rõ nghĩa và đọc chuỗi từ người dùng bằng input()', 'Bind clear variable names and read user strings via input()'),
       bi('Ghép biến & biểu thức trực quan bằng f-string f"Xin chào {name}"', 'Interpolate variables cleanly with f-strings f"Hello {name}"'),
@@ -268,7 +268,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               ]
             : s <= 3
               ? [
-                  { op: '+', text: bi('Gán biến từ phải sang trái (=) và đọc chuỗi bàn phím qua input()', 'Bound variable tags right-to-left (=) and read stdin strings via input()') },
+                  { op: '+', text: bi('Gán biến từ phải sang trái (=) và đọc chuỗi bàn phím qua input()', 'Bound variables right-to-left (=) and read stdin strings via input()') },
                 ]
               : [
                   { op: '+', text: bi('Định nghĩa hàm def trả giá trị thực bằng return và định dạng f-string', 'Defined function emitting real values via return and formatted f-strings') },
@@ -288,7 +288,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               : s === 2
                 ? {
                     kind: 'key-idea',
-                    text: bi('Dấu = đơn là phép gán từ PHẢI sang TRÁI: Python tính xong biểu thức bên phải trước rồi mới gắn nhãn biến bên trái vào kết quả đó.', 'Single = is right-to-left assignment: Python evaluates the right-hand side completely first, then binds the left-hand variable name to it.'),
+                    text: bi('Dấu = đơn là phép gán từ PHẢI sang TRÁI: Python tính xong biểu thức bên phải trước rồi mới gán tên biến bên trái vào kết quả đó.', 'Single = is right-to-left assignment: Python evaluates the right-hand side completely first, then binds the left-hand variable name to it.'),
                   }
                 : s === 3
                   ? {
@@ -298,7 +298,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                   : !isLast
                     ? {
                         kind: 'watch-out',
-                        text: bi('Bẫy số 1 của người mới: viết print(a + b) bên trong hàm thay vì return a + b. print() chỉ hiện chữ rồi trả về None, còn mọi bài kiểm thử đều chấm giá trị return!', 'Beginner Trap #1: writing print(a + b) inside a function instead of return a + b. print() returns None, whereas tests check the return value!'),
+                        text: bi('Lỗi thường gặp của người mới: viết print(a + b) bên trong hàm thay vì return a + b. print() chỉ in ra màn hình rồi trả về None, còn mọi bài kiểm thử đều kiểm tra giá trị return.', 'Common beginner mistake: writing print(a + b) inside a function instead of return a + b. print() returns None, whereas tests check the return value.'),
                       }
                     : {
                         kind: 'key-idea',
@@ -307,7 +307,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         scene: {
           nodes: [
             { id: 'in', shape: 'laptop', tone: 'neutral', x: -260, y: 0, label: bi('input("Tên: ")', 'input("Name: ")') },
-            { id: 'vars', shape: 'box', tone: 'yellow', x: -85, y: 0, label: bi('name = "An"', 'name = "An"'), sublabel: bi('nhãn biến', 'variable tag') },
+            { id: 'vars', shape: 'box', tone: 'yellow', x: -85, y: 0, label: bi('name = "An"', 'name = "An"'), sublabel: bi('tên biến', 'variable name') },
             { id: 'fn', shape: 'hex', tone: 'blue', x: 85, y: 0, label: bi('def calc(x):', 'def calc(x):'), sublabel: bi('xử lý & f-string', 'logic & f-string'), icon: 'sparkles', highlighted: returnFocus },
             { id: 'outPrint', shape: 'box', tone: 'orange', x: 265, y: -70, label: bi('print(...) → màn hình', 'print(...) → stdout'), sublabel: bi('trả về None', 'returns None'), dimmed: returnFocus },
             { id: 'outRet', shape: 'hex', tone: 'green', x: 265, y: 70, label: bi('return result', 'return result'), sublabel: bi('tái sử dụng!', 'chainable value!'), icon: 'zap', highlighted: returnFocus },
@@ -372,7 +372,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Phép / luôn sinh ra float (6 / 3 == 2.0). Cặp đôi x // k (thương nguyên) và x % k (số dư) là chìa khóa vàng để đổi giây sang phút:giây và tách chữ số!', '/ always produces a float (6 / 3 == 2.0). The pair x // k and x % k is the golden tool for converting seconds to mm:ss and extracting digits!'),
+                  text: bi('Phép / luôn sinh ra float (6 / 3 == 2.0). Cặp toán tử x // k (thương nguyên) và x % k (số dư) rất hữu ích để đổi giây sang phút:giây và tách từng chữ số.', '/ always produces a float (6 / 3 == 2.0). The pair x // k and x % k is essential for converting seconds to mm:ss and extracting digits.'),
                 }
               : s === 2
                 ? {
@@ -407,7 +407,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               label: floatTrap ? bi('math.isclose()', 'math.isclose()') : bi('Thứ tự ưu tiên', 'Precedence'),
               sublabel: floatTrap ? bi('|a - b| ≤ 1e-9', '|a - b| ≤ 1e-9') : bi('() → ** → * // → + -', '() → ** → * // → + -'),
               highlighted: floatTrap,
-              badge: floatTrap ? { text: bi('chống bẫy 0.30000000004', 'guards 0.30000000004'), tone: 'ok' } : undefined,
+              badge: floatTrap ? { text: bi('xử lý sai số 0.30000000004', 'guards 0.30000000004 drift'), tone: 'ok' } : undefined,
             },
           ],
           links: [
@@ -451,7 +451,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         whatChanged:
           s <= 2
             ? [
-                { op: '+', text: bi('Tường chắn Strong Typing chặn cộng ngầm str với int và mở cầu ép kiểu int()/str()', 'Strong-typing guard blocked str + int and added explicit int()/str() casts') },
+                { op: '+', text: bi('Áp dụng Strong Typing chặn cộng ngầm str với int và ép kiểu tường minh bằng int()/str()', 'Strong typing blocked implicit str + int; used explicit int()/str() casts') },
               ]
             : [
                 { op: '+', text: bi('Đánh giá ngắn mạch and/or, lọc nhóm Falsy và kiểm tra định danh x is None', 'Applied short-circuit and/or, Falsy filtering, and identity check x is None') },
@@ -465,12 +465,12 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Định kiểu Mạnh (Strong Typing): Python thà báo lỗi TypeError ở phép "5" + 3 còn hơn tự ý đoán mò ép kiểu làm sai lệch kết quả tính toán ngầm!', 'Strong Typing: Python raises TypeError on "5" + 3 rather than silently guessing string concatenation or addition behind your back!'),
+                  text: bi('Định kiểu Mạnh (Strong Typing): Python báo lỗi TypeError ở phép "5" + 3 thay vì tự ý ép kiểu ngầm làm sai lệch kết quả tính toán.', 'Strong Typing: Python raises TypeError on "5" + 3 rather than performing implicit coercion behind your back.'),
                 }
               : s === 2
                 ? {
                     kind: 'watch-out',
-                    text: bi('Bẫy ép kiểu chuỗi số thực: gọi thẳng int("3.5") sẽ nổ lỗi ValueError vì dấu chấm không phải chữ số nguyên! Phải đi qua 2 bước: int(float("3.5")).', 'Decimal-string trap: int("3.5") raises ValueError because "." is not an integer digit! Convert in two steps: int(float("3.5")).'),
+                    text: bi('Lỗi thường gặp khi ép kiểu chuỗi số thực: gọi thẳng int("3.5") sẽ phát sinh ValueError vì dấu chấm không phải chữ số nguyên. Cần chuyển 2 bước: int(float("3.5")).', 'Decimal-string trap: int("3.5") raises ValueError because "." is not an integer digit. Convert in two steps: int(float("3.5")).'),
                   }
                 : s === 3
                   ? {
@@ -517,7 +517,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     durationMin: 12,
     difficulty: 'Beginner',
     objectives: [
-      bi('Hiểu biến trong Python là nhãn dán (name tag) trỏ tới Object trên Heap', 'Visualize Python variables as name tags pointing to Heap objects'),
+      bi('Hiểu biến trong Python là tên tham chiếu (reference) trỏ tới Object trên Heap', 'Understand Python variables as references pointing to Heap objects'),
       bi('Phân biệt rạch ròi == (giá trị) với is (định danh) và quy tắc //, % cho số âm', 'Distinguish == (value) vs is (identity) and negative // & % rules'),
       bi('So sánh chuỗi điều kiện toán học 0 <= score <= 100 & logic or trả toán hạng', 'Write chained comparisons 0 <= score <= 100 & value-returning or'),
       bi('Hoán đổi hai biến trong 1 dòng a, b = b, a & tách hàm tính toán thuần', 'Swap variables via Tuple Unpacking a, b = b, a & decouple pure functions'),
@@ -527,7 +527,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
       const unpackPhase = s >= 4;
       return {
         telemetry: [
-          { label: bi('MÔ HÌNH BIẾN', 'BINDING MODEL'), value: bi('Name Tag → Object', 'Name Tag → Object'), tone: 'ok' },
+          { label: bi('MÔ HÌNH BIẾN', 'BINDING MODEL'), value: bi('Reference → Object', 'Reference → Object'), tone: 'ok' },
           { label: bi('GIÁ TRỊ VS ĐỊNH DANH', 'EQUAL VS IDENTITY'), value: bi('== (nội dung) · is (cùng id)', '== (value) · is (same id)'), tone: 'ok' },
           { label: bi('OR MẶC ĐỊNH', 'SHORT-CIRCUIT OR'), value: bi('name or "Khách"', 'name or "Guest"') },
           { label: bi('HOÁN ĐỔI', 'TUPLE SWAP'), value: unpackPhase ? bi('a, b = b, a (O(1))', 'a, b = b, a (O(1))') : bi('Sẵn sàng', 'Ready'), tone: unpackPhase ? 'ok' : 'default' },
@@ -535,7 +535,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         whatChanged:
           s <= 1
             ? [
-                { op: '+', text: bi('Ánh xạ nhãn tên từ Namespace sang Object trên Heap và tách biệt == với is', 'Mapped Namespace tags onto Heap objects and contrasted == vs is') },
+                { op: '+', text: bi('Ánh xạ tên tham chiếu từ Namespace sang Object trên Heap và phân biệt == với is', 'Mapped Namespace references onto Heap objects and contrasted == vs is') },
               ]
             : !unpackPhase
               ? [
@@ -548,7 +548,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           s === 0
             ? {
                 kind: 'key-idea',
-                text: bi('Biến trong Python KHÔNG phải chiếc hộp cố định kiểu! Kiểu dữ liệu nằm trên ĐỐI TƯỢNG trong bộ nhớ Heap, còn tên biến chỉ là mảnh nhãn dán buộc dây tới đối tượng đó.', 'A Python variable is NOT a typed box! Types live on HEAP OBJECTS; variable names are just sticky labels pointing to those objects.'),
+                text: bi('Trong Python, kiểu dữ liệu nằm trên ĐỐI TƯỢNG trong bộ nhớ Heap, còn biến là tên tham chiếu trỏ tới đối tượng đó (tương tự như một nhãn gắn vào món đồ, chứ không phải ô nhớ cố định kiểu).', 'In Python, types live on HEAP OBJECTS, and variables are references pointing to those objects (like a label attached to an item, rather than a typed storage slot).'),
               }
             : s === 1
               ? {
@@ -568,15 +568,15 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                   : !isLast
                     ? {
                         kind: 'technique',
-                        text: bi('Viết a, b = b, a đóng gói cặp giá trị bên phải trước rồi tráo nhãn cùng lúc; đồng thời hãy tách hàm tính toán thuần khỏi các lệnh input()/print().', 'a, b = b, a packs the right-hand tuple first then swaps bindings atomically; also keep calculation functions pure and separate from input()/print().'),
+                        text: bi('Viết a, b = b, a đóng gói cặp giá trị bên phải trước rồi tráo tham chiếu cùng lúc; đồng thời hãy tách hàm tính toán thuần khỏi các lệnh input()/print().', 'a, b = b, a packs the right-hand tuple first then swaps bindings atomically; also keep calculation functions pure and separate from input()/print().'),
                       }
                     : {
                         kind: 'key-idea',
-                        text: bi('Đúc kết: biến là nhãn tham chiếu (b = a dùng chung đối tượng!), dùng == cho giá trị, is None cho None, -7 // 2 == -4, và a, b = b, a để hoán đổi.', 'Takeaway: variables are object labels (b = a shares references!), use == for values, is None for None, -7 // 2 == -4, and a, b = b, a to swap.'),
+                        text: bi('Đúc kết: biến là tên tham chiếu (b = a dùng chung đối tượng), dùng == cho giá trị, is None cho None, -7 // 2 == -4, và a, b = b, a để hoán đổi.', 'Takeaway: variables are object references (b = a shares the object), use == for values, is None for None, -7 // 2 == -4, and a, b = b, a to swap.'),
                       },
         scene: {
           zones: [
-            { id: 'ns', x: -185, y: 0, w: 230, h: 300, label: bi('Không gian tên (Names)', 'Namespace (Labels)'), tone: 'blue' },
+            { id: 'ns', x: -185, y: 0, w: 230, h: 300, label: bi('Không gian tên (Names)', 'Namespace (References)'), tone: 'blue' },
             { id: 'hp', x: 140, y: 0, w: 340, h: 300, label: bi('Vùng nhớ Đối tượng (Object Heap)', 'Object Heap'), tone: 'purple' },
           ],
           nodes: [
@@ -615,7 +615,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     durationMin: 14,
     difficulty: 'Beginner',
     objectives: [
-      bi('Đọc thông thạo thước chỉ số hai chiều: 0..n-1 từ trái và -n..-1 từ phải', 'Read dual index rulers fluently: 0..n-1 forward & -n..-1 backward'),
+      bi('Đọc thành thạo chỉ số hai chiều: 0..n-1 từ trái và -n..-1 từ phải', 'Read dual positive/negative indexing fluently: 0..n-1 forward & -n..-1 backward'),
       bi('Cắt chuỗi chính xác bằng s[start:stop:step] và đảo chuỗi s[::-1]', 'Slice substrings with s[start:stop:step] and reverse via s[::-1]'),
       bi('Hiểu tính bất biến (Immutable) của str: mọi biến đổi đều sinh chuỗi mới', 'Respect str immutability: mutations allocate new string objects'),
       bi('Ghép danh sách chuỗi lớn bằng "".join(parts) O(n) thay vì cộng dồn +', 'Join string sequences in O(n) with "".join(parts) instead of += loops'),
@@ -634,7 +634,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         whatChanged:
           s <= 2
             ? [
-                { op: '+', text: bi('Định dạng f-string chuyên sâu và gắn thước chỉ số kép 0..5 / -6..-1', 'Applied f-string formatters and mounted dual 0..5 / -6..-1 index ruler') },
+                { op: '+', text: bi('Định dạng f-string chuyên sâu và đánh chỉ số hai chiều 0..5 / -6..-1', 'Applied f-string formatters and dual 0..5 / -6..-1 indexing') },
               ]
             : s === 3
               ? [
@@ -658,7 +658,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               : s === 2
                 ? {
                     kind: 'key-idea',
-                    text: bi('Mỗi chuỗi có 2 chiều đánh số song song: đếm xuôi từ 0 ở đầu trái (s[0]) và đếm lùi từ -1 ở sát cuối phải (s[-1] luôn lấy ký tự cuối cùng cực gọn!).', 'Every string has a dual ruler: 0 counting forward from the left (s[0]) and -1 counting backward from the right (s[-1] grabs the last char cleanly!).'),
+                    text: bi('Mỗi chuỗi có 2 chiều đánh số song song: đếm xuôi từ 0 ở đầu trái (s[0]) và đếm lùi từ -1 ở sát cuối phải (s[-1] luôn lấy ký tự cuối cùng rất gọn).', 'Every string supports dual indexing: 0 counting forward from the left (s[0]) and -1 counting backward from the right (s[-1] grabs the last char cleanly).'),
                   }
                 : s === 3
                   ? {
@@ -672,7 +672,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                       }
                     : {
                         kind: 'key-idea',
-                        text: bi(' Tóm tắt chuỗi: kiểm tra chuỗi con bằng "py" in s, cắt đảo bằng s[a:b:c] / s[::-1], gán lại khi gọi .strip()/.replace(), và khâu danh sách bằng "sep".join().', 'String recap: check substrings with "py" in s, slice/reverse via s[a:b:c] / s[::-1], reassign .strip()/.replace(), and stitch lists with "sep".join().'),
+                        text: bi('Tóm tắt chuỗi: kiểm tra chuỗi con bằng "py" in s, cắt đảo bằng s[a:b:c] / s[::-1], gán lại khi gọi .strip()/.replace(), và ghép danh sách bằng "sep".join().', 'String recap: check substrings with "py" in s, slice/reverse via s[a:b:c] / s[::-1], reassign .strip()/.replace(), and join lists with "sep".join().'),
                       },
         scene: {
           nodes: [
@@ -712,7 +712,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             },
           ],
           links: [
-            { id: 'l1', from: 'mutErr', to: 'tape', style: 'danger', label: bi('bị khóa bất biến', 'immutable lock') },
+            { id: 'l1', from: 'mutErr', to: 'tape', style: 'danger', label: bi('bất biến (không sửa tại chỗ)', 'immutable (read-only)') },
             { id: 'l2', from: 'tape', to: 'newStr', label: s === 3 ? bi('s[0:4]', 's[0:4]') : bi('s[start:stop:step]', 's[start:stop:step]') },
           ],
           packets: [
@@ -732,7 +732,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     difficulty: 'Beginner',
     objectives: [
       bi('Sắp xếp điều kiện if / elif từ chặt nhất tới rộng nhất để không lọt nhầm nhánh', 'Order if / elif conditions from strictest to broadest'),
-      bi('Xóa bỏ "kim tự tháp if lồng nhau" bằng Guard Clauses (return sớm)', 'Flatten deeply nested if-pyramids using early-return Guard Clauses'),
+      bi('Giảm cấu trúc if lồng nhau nhiều tầng bằng Guard Clauses (return sớm)', 'Flatten deeply nested if-blocks using early-return Guard Clauses'),
       bi('Viết gọn biểu thức điều kiện 1 dòng a if cond else b đúng chỗ', 'Use single-line conditional expressions a if cond else b cleanly'),
       bi('Kiểm thử chặt các điểm biên (0, số âm, bằng đúng ngưỡng >=)', 'Verify boundary values (0, negative inputs, exact >= thresholds)'),
     ],
@@ -749,27 +749,27 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         whatChanged:
           s <= 2
             ? [
-                { op: '+', text: bi('Xếp cổng chặt (>= 90) lên trước cổng rộng (>= 50) & ghép điều kiện an toàn', 'Ordered strict gate (>= 90) ahead of broad gate (>= 50) & safe boolean logic') },
+                { op: '+', text: bi('Xếp điều kiện chặt (>= 90) lên trước điều kiện rộng (>= 50) & ghép điều kiện an toàn', 'Ordered strict condition (>= 90) ahead of broad condition (>= 50) & safe boolean logic') },
               ]
             : [
-                { op: '+', text: bi('Đặt cổng Guard Clause chặn đầu vào không hợp lệ return sớm ngay đầu hàm', 'Placed early-return Guard Clause at function entry') },
-                { op: '-', text: bi('Xóa bỏ kim tự tháp if/else lồng nhau và kiểm thử chặt các điểm ranh giới', 'Flattened nested if-pyramids and verified boundary thresholds') },
+                { op: '+', text: bi('Dùng Guard Clause chặn đầu vào không hợp lệ và return sớm ngay đầu hàm', 'Placed early-return Guard Clause at function entry') },
+                { op: '-', text: bi('Giảm cấu trúc if/else lồng nhau nhiều tầng và kiểm thử chặt các điểm ranh giới', 'Flattened nested if-blocks and verified boundary thresholds') },
               ],
         callout:
           s === 0
             ? {
                 kind: 'key-idea',
-                text: bi('Câu lệnh if hoạt động như ghi chuyển làn tàu hỏa: kết thúc dòng điều kiện bằng dấu :, thụt lề 4 dấu cách cho phần thân; lùi về cột 0 là ra khỏi nhánh.', 'An if statement switches execution tracks: end the header with :, indent the body 4 spaces, and return to column 0 to exit the branch.'),
+                text: bi('Câu lệnh if phân nhánh luồng thực thi theo điều kiện: kết thúc dòng điều kiện bằng dấu :, thụt lề 4 dấu cách cho phần thân; lùi về cột 0 là ra khỏi nhánh.', 'An if statement branches execution flow by condition: end the header with :, indent the body 4 spaces, and return to column 0 to exit the branch.'),
               }
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Python chạy theo luật Nhánh đúng đầu tiên thắng! Nếu đặt if diem >= 50: lên trước elif diem >= 90:, bài 95 điểm sẽ lọt nhầm vào nhánh đầu tiên ngay!', 'First-Match Wins: if you put if score >= 50: above elif score >= 90:, a score of 95 gets swallowed by the first branch and never reaches Grade A!'),
+                  text: bi('Python chạy theo nguyên tắc nhánh đúng đầu tiên được chọn: nếu đặt if diem >= 50: lên trước elif diem >= 90:, bài 95 điểm sẽ lọt vào nhánh đầu tiên ngay.', 'First matching branch runs: if you put if score >= 50: above elif score >= 90:, a score of 95 matches the first branch and never reaches Grade A.'),
                 }
               : s === 2
                 ? {
                     kind: 'watch-out',
-                    text: bi('Bẫy kinh điển: viết if x == 1 or 2: sẽ LUÔN LUÔN ĐÚNG vì Python hiểu là (x == 1) or (2), mà số 2 là Truthy! Hãy viết chuẩn if x in (1, 2):.', 'Classic bug: if x == 1 or 2: is ALWAYS True because Python parses (x == 1) or 2! Always write if x in (1, 2): instead.'),
+                    text: bi('Lỗi thường gặp: viết if x == 1 or 2: sẽ LUÔN LUÔN ĐÚNG vì Python hiểu là (x == 1) or (2), mà số 2 là Truthy. Hãy viết chuẩn if x in (1, 2):.', 'Common bug: if x == 1 or 2: is ALWAYS True because Python parses (x == 1) or 2. Always write if x in (1, 2): instead.'),
                   }
                 : s === 3
                   ? {
@@ -787,8 +787,8 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                       },
         scene: {
           nodes: [
-            { id: 'in', shape: 'box', tone: 'yellow', x: -265, y: 0, label: bi('score = 92', 'score = 92'), sublabel: bi('hạt đầu vào', 'input value') },
-            { id: 'g1', shape: 'gate', tone: guardMode ? 'rose' : 'blue', x: -80, y: -55, label: guardMode ? bi('score < 0 ?', 'score < 0 ?') : bi('score >= 90 ?', 'score >= 90 ?'), sublabel: guardMode ? bi('Guard: return sớm', 'Guard: early return') : bi('cổng chặt #1', 'strict gate #1'), highlighted: true },
+            { id: 'in', shape: 'box', tone: 'yellow', x: -265, y: 0, label: bi('score = 92', 'score = 92'), sublabel: bi('giá trị đầu vào', 'input value') },
+            { id: 'g1', shape: 'gate', tone: guardMode ? 'rose' : 'blue', x: -80, y: -55, label: guardMode ? bi('score < 0 ?', 'score < 0 ?') : bi('score >= 90 ?', 'score >= 90 ?'), sublabel: guardMode ? bi('Guard: return sớm', 'Guard: early return') : bi('nhánh chặt #1', 'strict branch #1'), highlighted: true },
             { id: 'g2', shape: 'gate', tone: 'purple', x: 75, y: 20, label: bi('score >= 70 ?', 'score >= 70 ?'), sublabel: bi('elif #2', 'elif #2') },
             { id: 'outA', shape: 'hex', tone: 'green', x: 255, y: -65, label: bi('Return "A"', 'Return "A"'), sublabel: bi('khớp nhánh đúng', 'matched branch'), icon: 'zap' },
             { id: 'outElse', shape: 'box', tone: 'neutral', x: 255, y: 80, label: bi('else: "C"', 'else: "C"'), sublabel: bi('mặc định', 'fallback') },
@@ -825,7 +825,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
       const breakMode = s >= 3;
       return {
         telemetry: [
-          { label: bi('NGUỒN PHÁT', 'GENERATOR'), value: bi('range(1, 6) → 1..5', 'range(1, 6) → 1..5'), tone: 'ok' },
+          { label: bi('BỘ SINH DÃY', 'RANGE ITERATOR'), value: bi('range(1, 6) → 1..5', 'range(1, 6) → 1..5'), tone: 'ok' },
           { label: bi('BỘ TÍCH LŨY', 'ACCUMULATOR'), value: bi('total = 0 → 15', 'total = 0 → 15'), tone: 'ok' },
           { label: bi('ĐIỀU KHIỂN LẶP', 'LOOP CONTROL'), value: breakMode ? bi('break / continue', 'break / continue') : bi('Duyệt tuần tự hết dãy', 'Full iteration') },
           { label: bi('RAM TIÊU THỤ', 'RANGE MEMORY'), value: bi('O(1) · 48 bytes', 'O(1) · 48 bytes'), tone: 'ok' },
@@ -834,14 +834,14 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           s <= 1
             ? [
                 { op: '+', text: bi('Khởi tạo biến tích lũy total = 0 bên ngoài trước khi chạy vòng lặp for', 'Initialized accumulator total = 0 outside before entering the for loop') },
-                { op: '+', text: bi('Phát từng số qua range(1, n + 1) tiết kiệm RAM O(1) và cộng dồn total += x', 'Streamed numbers lazily via range(1, n + 1) into total += x') },
+                { op: '+', text: bi('Sinh từng số qua range(1, n + 1) tiết kiệm RAM O(1) và cộng dồn total += x', 'Streamed numbers lazily via range(1, n + 1) into total += x') },
               ]
             : !breakMode
               ? [
-                  { op: '+', text: bi('Kiểm tra điều kiện canh trước mỗi vòng while và cập nhật biến tiến tới dừng', 'Checked while guard before each pass and updated variable toward stop') },
+                  { op: '+', text: bi('Kiểm tra điều kiện lặp trước mỗi vòng while và cập nhật biến tiến tới dừng', 'Checked while guard before each pass and updated variable toward stop') },
                 ]
               : [
-                  { op: '+', text: bi('Điều hướng vòng lặp bằng continue (bỏ qua lượt) & break (thoát khẩn cấp)', 'Controlled loop flow with continue (skip tick) & break (exit loop)') },
+                  { op: '+', text: bi('Điều hướng vòng lặp bằng continue (bỏ qua lượt) & break (thoát vòng lặp)', 'Controlled loop flow with continue (skip tick) & break (exit loop)') },
                 ],
         callout:
           s === 0
@@ -852,7 +852,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Lỗi kinh điển ở mẫu Tích lũy: đặt tong = 0 thụt vào BÊN TRONG vòng for khiến tổng bị xóa trắng về 0 ở mỗi vòng! Luôn khởi tạo ở ngoài trước vòng lặp.', 'Classic Accumulator bug: putting total = 0 INSIDE the for loop resets it every pass! Always initialize accumulators outside before the loop.'),
+                  text: bi('Lỗi thường gặp với biến tích lũy: đặt tong = 0 thụt vào BÊN TRONG vòng for khiến tổng bị đặt lại về 0 ở mỗi vòng. Luôn khởi tạo ở ngoài trước vòng lặp.', 'Common accumulator bug: putting total = 0 INSIDE the for loop resets it every pass. Always initialize accumulators outside before the loop.'),
                 }
               : s === 2
                 ? {
@@ -862,7 +862,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                 : s === 3
                   ? {
                       kind: 'technique',
-                      text: bi('Phân biệt rõ hai van điều hướng: break thoát HẲN ra khỏi vòng lặp ngay lập tức, còn continue chỉ bỏ qua phần dưới của lượt hiện tại để sang phần tử kế.', 'Know your valves: break exits the ENTIRE loop immediately, whereas continue skips only the remainder of the current pass to start the next item.'),
+                      text: bi('Phân biệt rõ hai lệnh điều khiển: break thoát HẲN ra khỏi vòng lặp ngay lập tức, còn continue chỉ bỏ qua phần dưới của lượt hiện tại để sang phần tử kế.', 'Control statements: break exits the ENTIRE loop immediately, whereas continue skips only the remainder of the current pass to start the next item.'),
                     }
                   : !isLast
                     ? {
@@ -881,7 +881,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             { id: 'exit', shape: 'box', tone: 'orange', x: 165, y: 95, label: bi('Sau vòng lặp', 'After Loop'), sublabel: bi('return total', 'return total'), dimmed: !breakMode },
           ],
           links: [
-            { id: 'l1', from: 'rng', to: 'gate', label: bi('nhả từng số x', 'next x') },
+            { id: 'l1', from: 'rng', to: 'gate', label: bi('lấy từng số x', 'next x') },
             { id: 'l2', from: 'gate', to: 'acc', label: bi('cộng dồn', 'accumulate') },
             { id: 'l3', from: 'gate', to: 'exit', style: breakMode ? 'solid' : 'dashed', label: breakMode ? bi('break thoát ngay!', 'break exits now!') : bi('hết dãy', 'exhausted') },
           ],
@@ -904,7 +904,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     objectives: [
       bi('Khớp cấu trúc dữ liệu phức tạp (tuple, dict, command) bằng match / case', 'Destructure tuples, dicts & commands cleanly with match / case'),
       bi('Duyệt kèm chỉ số bằng enumerate() và ghép song song nhiều dãy bằng zip()', 'Iterate with indices via enumerate() and pair sequences via zip()'),
-      bi('Hiểu đúng đặc sản for ... else: khối else CHỈ chạy khi vòng lặp không bị break', 'Master for ... else: else runs ONLY if the loop never hit break'),
+      bi('Hiểu rõ cấu trúc for ... else: khối else CHỈ chạy khi vòng lặp không bị break', 'Understand for ... else: the else block runs ONLY if the loop never hits break'),
       bi('Tách biệt hàm tính toán trả dữ liệu thuần khỏi lớp print() giao diện', 'Decouple pure data-returning logic from UI print() statements'),
     ],
     buildFrame: (s, total) => {
@@ -1037,7 +1037,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                 : s === 3
                   ? {
                       kind: 'watch-out',
-                      text: bi('Bẫy ma trận 2D kinh điển: grid = [[0]*3]*3 tạo 3 hàng trỏ chung vào MỘT list duy nhất! Sửa grid[0][0] = 1 làm cả 3 hàng nhảy thành 1. Luôn viết [[0]*3 for _ in range(3)].', 'Classic 2D matrix trap: [[0]*3]*3 aliases all 3 rows to the SAME inner list! Always initialize grids via [[0]*3 for _ in range(3)].'),
+                      text: bi('Lỗi tạo mảng 2D thường gặp: grid = [[0]*3]*3 tạo 3 hàng trỏ chung vào MỘT list duy nhất, nên sửa grid[0][0] = 1 làm cả 3 hàng đều đổi thành 1. Luôn viết [[0]*3 for _ in range(3)].', 'Common 2D matrix trap: [[0]*3]*3 aliases all 3 rows to the SAME inner list. Always initialize grids via [[0]*3 for _ in range(3)].'),
                     }
                   : !isLast
                     ? {
@@ -1108,17 +1108,17 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           s === 0
             ? {
                 kind: 'key-idea',
-                text: bi('Hình dung dict/set như tủ gửi đồ có đánh mã băm: kiểm tra x in my_set chỉ tốn 1 bước O(1), nhanh hơn hàng nghìn lần so với quét tuần tự x in my_list O(n)!', 'Think of dict/set as a hashed locker room: checking x in my_set takes 1 step O(1), thousands of times faster than scanning x in my_list O(n)!'),
+                text: bi('dict và set dùng bảng băm (Hash Table) tính hash(key) để nhảy thẳng tới ô nhớ trong 1 bước O(1), nhanh hơn nhiều so với quét tuần tự O(n) trên list (tương tự tìm thẳng theo mã số thay vì rà từng phần tử).', 'dict and set use a Hash Table via hash(key) to jump directly to a slot in O(1), far faster than scanning a list in O(n) (similar to looking up by direct ID instead of checking each item).'),
               }
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Khóa của dict (và phần tử set) bắt buộc phải Hashable (giá trị không đổi suốt vòng đời): dùng str, int, tuple (x, y) được — nhưng dùng list sẽ nổ TypeError ngay!', 'Dict keys and set items must be Hashable (unchanging value): str, int, and immutable tuples (x, y) work, whereas mutable lists raise TypeError!'),
+                  text: bi('Khóa của dict (và phần tử set) bắt buộc phải Hashable (giá trị không đổi suốt vòng đời): dùng str, int, tuple (x, y) được — nhưng dùng list sẽ báo TypeError ngay.', 'Dict keys and set items must be Hashable (unchanging value): str, int, and immutable tuples (x, y) work, whereas mutable lists raise TypeError.'),
                 }
               : s === 2
                 ? {
                     kind: 'technique',
-                    text: bi('Truy cập d["k"] khi thiếu khóa sẽ nổ KeyError; hãy dùng d.get("k", mac_dinh) để nhận giá trị dự phòng êm ái và dùng d1 | d2 để gộp hai từ điển.', 'd["k"] raises KeyError when missing; use d.get("k", default) for safe fallbacks and d1 | d2 to merge dictionaries cleanly.'),
+                    text: bi('Truy cập d["k"] khi thiếu khóa sẽ báo KeyError; hãy dùng d.get("k", mac_dinh) để nhận giá trị mặc định an toàn và dùng d1 | d2 để gộp hai từ điển.', 'd["k"] raises KeyError when missing; use d.get("k", default) for safe fallbacks and d1 | d2 to merge dictionaries cleanly.'),
                   }
                 : s <= 4
                   ? {
@@ -1139,7 +1139,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             { id: 'key', shape: 'box', tone: 'yellow', x: -260, y: 0, label: bi('key = "user_42"', 'key = "user_42"'), sublabel: bi('hashable ✔', 'hashable ✔') },
             { id: 'hash', shape: 'hex', tone: 'blue', x: -85, y: 0, label: bi('hash(key) & mask', 'hash(key) & mask'), sublabel: bi('slot = 5 · O(1)', 'slot = 5 · O(1)'), icon: 'hash', highlighted: true },
             { id: 'idx', shape: 'tape', tone: 'purple', x: 145, y: -60, label: bi('dk_indices (Compact)', 'dk_indices (Compact)'), tapeCells: ['-', '2', '-', '0', '-', '1'], activeIndices: [5] },
-            { id: 'ent', shape: 'cylinder', tone: 'green', x: 205, y: 70, label: setPhase ? bi('Set Algebra (& | -)', 'Set Algebra (& | -)') : bi('dk_entries[1]', 'dk_entries[1]'), sublabel: setPhase ? bi('lọc trùng O(1)', 'O(1) dedup') : bi('{"user_42": "An"}', '{"user_42": "An"}'), icon: 'db', badge: { text: bi('nhảy thẳng 1 bước O(1)', 'direct 1-hop O(1)'), tone: 'ok' } },
+            { id: 'ent', shape: 'cylinder', tone: 'green', x: 205, y: 70, label: setPhase ? bi('Set Algebra (& | -)', 'Set Algebra (& | -)') : bi('dk_entries[1]', 'dk_entries[1]'), sublabel: setPhase ? bi('lọc trùng O(1)', 'O(1) dedup') : bi('{"user_42": "An"}', '{"user_42": "An"}'), icon: 'db', badge: { text: bi('truy cập trực tiếp O(1)', 'direct 1-hop O(1)'), tone: 'ok' } },
           ],
           links: [
             { id: 'l1', from: 'key', to: 'hash', label: bi('SipHash', 'SipHash') },
@@ -1220,8 +1220,8 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         scene: {
           nodes: [
             { id: 'src', shape: 'tape', tone: 'blue', x: -245, y: 0, label: bi('Nguồn 10M dòng', '10M Source Stream'), tapeCells: ['1', '2', '3', '4', '...'], activeIndices: [1, 3] },
-            { id: 'flt', shape: 'gate', tone: 'purple', x: -55, y: 0, label: bi('if x % 2 == 0', 'if x % 2 == 0'), sublabel: bi('trạm lọc', 'filter gate') },
-            { id: 'map', shape: 'hex', tone: genMode ? 'green' : 'orange', x: 115, y: 0, label: genMode ? bi('(x * x ...)', '(x * x ...)') : bi('[x * x ...]', '[x * x ...]'), sublabel: genMode ? bi('nhả từng hạt · RAM 0KB', 'lazy yield · 0KB RAM') : bi('tạo list mới', 'builds full list'), icon: 'zap', highlighted: true },
+            { id: 'flt', shape: 'gate', tone: 'purple', x: -55, y: 0, label: bi('if x % 2 == 0', 'if x % 2 == 0'), sublabel: bi('điều kiện lọc', 'filter condition') },
+            { id: 'map', shape: 'hex', tone: genMode ? 'green' : 'orange', x: 115, y: 0, label: genMode ? bi('(x * x ...)', '(x * x ...)') : bi('[x * x ...]', '[x * x ...]'), sublabel: genMode ? bi('duyệt từng phần tử · O(1) RAM', 'lazy yield · O(1) RAM') : bi('tạo list mới', 'builds full list'), icon: 'zap', highlighted: true },
             { id: 'red', shape: 'cylinder', tone: 'green', x: 275, y: 0, label: bi('sum / any / all', 'sum / any / all'), sublabel: bi('kết quả cuối', 'final reduction'), icon: 'sparkles' },
           ],
           links: [
@@ -1247,7 +1247,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     difficulty: 'Beginner',
     objectives: [
       bi('Hiểu đầy đủ 4 nhánh: try (thử) → except (bắt lỗi cụ thể) → else (khi không lỗi) → finally (luôn chạy)', 'Master all 4 clauses: try → specific except → else (no error) → finally (always)'),
-      bi('Chỉ bắt đúng loại lỗi dự kiến (ValueError, KeyError), tuyệt đối tránh except: trần', 'Catch specific exceptions only; never swallow bugs with bare except:'),
+      bi('Chỉ bắt đúng loại lỗi dự kiến (ValueError, KeyError), tuyệt đối tránh except: không chỉ định kiểu lỗi', 'Catch specific exceptions only; never swallow bugs with bare except:'),
       bi('Xây dựng hàm ép kiểu có giá trị dự phòng và vòng lặp hỏi lại tới khi hợp lệ', 'Build safe fallback parsers and retry-until-valid input loops'),
       bi('Chủ động phát tín hiệu lỗi sớm với raise ValueError("lý do rõ ràng")', 'Fail fast on invalid arguments via raise ValueError("clear message")'),
     ],
@@ -1273,7 +1273,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           s === 0
             ? {
                 kind: 'key-idea',
-                text: bi('try / except là tấm lưới bảo hộ có kiểm soát: nếu dòng rủi ro gặp đúng loại ngoại lệ đã khai báo, chương trình không bị sập mà chuyển sang nhánh phục hồi.', 'try / except is a controlled safety net: if the risky line raises the expected exception, execution recovers cleanly instead of crashing.'),
+                text: bi('try / except giúp bắt và xử lý ngoại lệ có kiểm soát: nếu dòng code gặp đúng loại ngoại lệ đã khai báo, chương trình không bị dừng đột ngột mà chuyển sang nhánh phục hồi.', 'try / except provides controlled exception handling: if the risky line raises an expected exception, execution recovers cleanly instead of crashing.'),
               }
             : s === 1
               ? {
@@ -1283,7 +1283,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               : s === 2
                 ? {
                     kind: 'technique',
-                    text: bi('Giữ khối try thật nhỏ gọn! Chỉ bọc đúng 1-2 dòng có nguy cơ nổ lỗi, phần xử lý tiếp theo hãy đặt sang else: (chỉ chạy khi try không lỗi) và dọn dẹp ở finally:.', 'Keep the try block tiny! Wrap only the risky line inside try, put follow-up code in else:, and put guaranteed cleanup in finally:.'),
+                    text: bi('Giữ khối try thật gọn: chỉ bọc đúng 1-2 dòng có khả năng phát sinh lỗi, phần xử lý tiếp theo đặt sang else: (chỉ chạy khi try không lỗi) và dọn dẹp ở finally:.', 'Keep the try block small: wrap only the risky lines inside try, put follow-up code in else:, and put guaranteed cleanup in finally:.'),
                   }
                 : s <= 4
                   ? {
@@ -1293,7 +1293,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                   : !isLast
                     ? {
                         kind: 'watch-out',
-                        text: bi('Cấm kỵ số 1: tuyệt đối KHÔNG viết except: pass nuốt lỗi im lặng! Nó sẽ che khuất cả lỗi gõ nhầm tên biến NameError và chặn cả phím tắt dừng Ctrl+C!', 'Golden rule: NEVER write silent except: pass! Swallowing every exception hides NameError typos and even traps Ctrl+C KeyboardInterrupt!'),
+                        text: bi('Nguyên tắc quan trọng: tuyệt đối KHÔNG viết except: pass bỏ qua lỗi âm thầm vì nó sẽ che khuất cả lỗi gõ nhầm tên biến NameError và chặn cả phím tắt dừng Ctrl+C.', 'Important rule: NEVER write silent except: pass! Swallowing every exception hides NameError typos and even traps Ctrl+C KeyboardInterrupt.'),
                       }
                     : {
                         kind: 'key-idea',
@@ -1329,13 +1329,13 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
   M32: {
     id: 'M32',
     titleEn: 'Imports, Standard Library & PyPI',
-    subtitleEn: 'Explore Python module namespaces, sys.modules caching, stdlib batteries, uv add, and file-shadowing traps.',
+    subtitleEn: 'Explore Python module namespaces, sys.modules caching, stdlib modules, uv add, and file-shadowing traps.',
     durationMin: 11,
     difficulty: 'Beginner',
     objectives: [
       bi('Chọn đúng giữa import math, from math import sqrt và import ... as', 'Choose wisely among import mod, from mod import fn, and aliases'),
       bi('Khám phá nhanh mọi thư viện ngay trong REPL với dir(mod) và help(fn)', 'Inspect unfamiliar modules on the fly with dir() and help()'),
-      bi('Khai thác thư viện chuẩn sẵn có (Python Stdlib): math, random, datetime, pathlib, collections', 'Tap built-in Stdlib batteries: math, random, datetime, pathlib, collections'),
+      bi('Khai thác thư viện chuẩn sẵn có (Python Stdlib): math, random, datetime, pathlib, collections', 'Use Python Standard Library modules: math, random, datetime, pathlib, collections'),
       bi('Tránh bẫy đặt tên file trùng thư viện chuẩn (random.py, json.py) gây tự import chính mình', 'Avoid naming local files random.py or json.py (module shadowing trap!)'),
     ],
     buildFrame: (s, total) => {
@@ -1344,7 +1344,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
       return {
         telemetry: [
           { label: bi('BỘ NHỚ ĐỆM', 'MODULE CACHE'), value: bi('sys.modules (nạp 1 lần)', 'sys.modules (singleton)'), tone: 'ok' },
-          { label: bi('KHO CÓ SẴN', 'STDLIB'), value: bi('math · datetime · random', 'math · datetime · random'), tone: 'ok' },
+          { label: bi('THƯ VIỆN CHUẨN', 'STDLIB'), value: bi('math · datetime · random', 'math · datetime · random'), tone: 'ok' },
           { label: bi('BẪY TRÙNG TÊN', 'NAME SHADOWING'), value: shadowTrap ? bi('random.py che khuất Stdlib!', 'random.py shadows Stdlib!') : bi('An toàn (không trùng)', 'Clean (no collision)'), tone: shadowTrap ? 'bad' : 'ok' },
           { label: bi('GÓI NGOÀI', 'PYPI INSTALL'), value: bi('uv add requests', 'uv add requests') },
         ],
@@ -1383,7 +1383,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
                       }
                     : {
                         kind: 'key-idea',
-                        text: bi('Tóm tắt: ưu tiên kiểm tra Thư viện chuẩn có sẵn trước khi cài gói ngoài, dùng random.Random(seed) khi cần kiểm thử, và tuyệt đối tránh đặt tên file trùng module chuẩn.', 'Recap: check built-in Stdlib batteries first, seed random.Random(42) for deterministic tests, and never name local files after Stdlib modules.'),
+                        text: bi('Tóm tắt: ưu tiên kiểm tra Thư viện chuẩn có sẵn trước khi cài gói ngoài, dùng random.Random(seed) khi cần kiểm thử, và tuyệt đối tránh đặt tên file trùng module chuẩn.', 'Recap: check built-in Stdlib modules first, seed random.Random(42) for deterministic tests, and never name local files after Stdlib modules.'),
                       },
         scene: {
           nodes: [
@@ -1450,12 +1450,12 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             : s === 1
               ? {
                   kind: 'good-to-know',
-                  text: bi('Đặt dấu * đứng riêng (def gui(to, *, khan_cap=False):) bắt buộc người gọi ghi rõ khan_cap=True — xóa sổ hoàn toàn các lời gọi hàm truyền True/False mù mờ!', 'Place a bare * (def send(to, *, urgent=False):) to force self-documenting keyword calls and eliminate mysterious positional booleans!'),
+                  text: bi('Đặt dấu * đứng riêng (def gui(to, *, khan_cap=False):) bắt buộc người gọi ghi rõ khan_cap=True — tránh hoàn toàn các lời gọi hàm truyền True/False thiếu ngữ cảnh.', 'Place a bare * (def send(to, *, urgent=False):) to force self-documenting keyword calls and eliminate unclear positional booleans.'),
                 }
               : mutTrap
                 ? {
                     kind: 'watch-out',
-                    text: bi('Bẫy kinh điển nhất Python: giá trị mặc định được tạo ĐÚNG MỘT LẦN vào lúc đọc dòng def (không tạo lại ở mỗi lần gọi)! Tuyệt đối không đặt [] hay {} làm mặc định — hãy dùng None!', 'Python’s #1 trap: default values are evaluated ONCE when def runs, NOT per call! Never use [] or {} as defaults — always default to None and create inside!'),
+                    text: bi('Lỗi thường gặp với tham số mặc định: giá trị mặc định được tạo ĐÚNG MỘT LẦN vào lúc đọc dòng def (không tạo lại ở mỗi lần gọi). Không đặt [] hay {} làm mặc định — hãy dùng None.', 'Common default-argument mistake: default values are evaluated ONCE when def runs, NOT per call. Never use [] or {} as defaults — default to None and create inside.'),
                   }
                 : s === 3
                   ? {
@@ -1502,7 +1502,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
     objectives: [
       bi('Thiết kế đệ quy đủ 2 phần bắt buộc: Điểm dừng cơ sở (Base Case) & Bước thu nhỏ bài toán', 'Write sound recursion with an explicit Base Case and shrinking subproblem'),
       bi('Hiểu cơ chế Call Stack và giới hạn an toàn ~1.000 tầng của CPython (RecursionError)', 'Understand the Call Stack and CPython’s ~1,000-frame safety ceiling (RecursionError)'),
-      bi('Biến đệ quy bùng nổ hàm mũ O(2^n) thành tuyến tính O(n) chỉ với 1 dòng @functools.cache', 'Collapse exponential O(2^n) trees into O(n) linear time with @functools.cache'),
+      bi('Tối ưu đệ quy hàm mũ O(2^n) thành tuyến tính O(n) bằng @functools.cache', 'Optimize exponential O(2^n) recursion to linear O(n) with @functools.cache'),
       bi('Duyệt mượt cấu trúc cây thư mục / JSON lồng sâu bất kỳ và Chia để trị', 'Traverse arbitrarily nested JSON/trees and Divide-and-Conquer problems'),
     ],
     buildFrame: (s, total) => {
@@ -1518,7 +1518,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
         whatChanged: !cached
           ? [
               { op: '+', text: bi('Xếp các khung gọi đệ quy lên Call Stack cho tới khi chạm Base Case n <= 1', 'Pushed recursive frames onto Call Stack down to Base Case n <= 1') },
-              { op: '~', text: bi('Cây fib(n) chưa có sổ nhớ tính lặp lại nhánh con theo hàm mũ O(2^n)', 'Unmemoized fib(n) recomputes identical subtrees exponentially O(2^n)') },
+              { op: '~', text: bi('Cây fib(n) chưa có bộ nhớ đệm tính lặp lại nhánh con theo hàm mũ O(2^n)', 'Unmemoized fib(n) recomputes identical subtrees exponentially O(2^n)') },
             ]
           : [
               { op: '+', text: bi('Gắn @functools.cache lưu kết quả từng tham số đã giải vào bảng băm O(1)', 'Added @functools.cache to memoize solved subproblems in O(1)') },
@@ -1528,7 +1528,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           s === 0
             ? {
                 kind: 'key-idea',
-                text: bi('Mọi hàm đệ quy giống như mở búp bê gỗ Nga: bắt buộc phải có Điểm dừng cơ sở (Base Case nhỏ nhất trả kết quả ngay) và Bước thu nhỏ làm đầu vào tiến dần về điểm dừng.', 'Every recursive function works like Russian nesting dolls: it must have an explicit Base Case that stops immediately and a step that shrinks the input toward it.'),
+                text: bi('Mọi hàm đệ quy bắt buộc phải có hai phần: Điểm dừng cơ sở (Base Case nhỏ nhất trả kết quả ngay) và Bước thu nhỏ làm đầu vào tiến dần về điểm dừng (tương tự các lớp lồng nhau thu nhỏ dần tới lớp trong cùng).', 'Every recursive function requires two parts: an explicit Base Case that stops immediately and a recursive step that shrinks the input toward it (similar to nested layers converging to the core).'),
               }
             : s === 1
               ? {
@@ -1538,7 +1538,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               : s === 2
                 ? {
                     kind: 'key-idea',
-                    text: bi('@functools.cache hoạt động như "cuốn sổ tay ghi đáp số": bài toán con nào giải xong 1 lần liền cất vào sổ, lần sau gặp lại tra ra ngay trong 1 bước O(1)!', '@functools.cache acts like a notebook of solved results: each subproblem is computed once and served in O(1) on every repeat visit!'),
+                    text: bi('@functools.cache lưu lại kết quả của mỗi lần gọi hàm theo tham số (kỹ thuật Memoization): bài toán con nào đã tính 1 lần sẽ trả về ngay trong O(1) ở các lần gọi lặp lại (tương tự ghi lại đáp số để dùng lại).', '@functools.cache stores each call result by its arguments (Memoization): once a subproblem is solved, repeat calls return in O(1) (like recording computed answers for reuse).'),
                   }
                 : !isLast
                   ? {
@@ -1553,7 +1553,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
           nodes: [
             { id: 'root', shape: 'hex', tone: 'blue', x: -235, y: 0, label: bi('fib(6)', 'fib(6)'), sublabel: bi('bài toán gốc', 'root call'), icon: 'git', loadPct: cached ? 12 : 98 },
             { id: 'subL', shape: 'hex', tone: cached ? 'green' : 'orange', x: -35, y: -65, label: bi('fib(5) → fib(4)', 'fib(5) → fib(4)'), sublabel: bi('nhánh chính O(n)', 'spine O(n)'), icon: 'cpu' },
-            { id: 'dup', shape: 'hex', tone: 'rose', x: -35, y: 75, label: bi('Nhánh trùng O(2^n)', 'Duplicate Subtrees'), sublabel: bi('fib(4), fib(3) lặp lại!', 'recomputed million×!'), icon: 'alert', dimmed: cached, badge: cached ? { text: bi('đã cắt tỉa nhờ @cache!', 'pruned by @cache!'), tone: 'ok' } : { text: bi('bùng nổ hàm mũ!', 'exponential explosion!'), tone: 'bad' } },
+            { id: 'dup', shape: 'hex', tone: 'rose', x: -35, y: 75, label: bi('Nhánh trùng O(2^n)', 'Duplicate Subtrees'), sublabel: bi('fib(4), fib(3) lặp lại!', 'recomputed million×!'), icon: 'alert', dimmed: cached, badge: cached ? { text: bi('đã cắt tỉa nhờ @cache!', 'pruned by @cache!'), tone: 'ok' } : { text: bi('tính lặp hàm mũ!', 'exponential recomputation!'), tone: 'bad' } },
             { id: 'memo', shape: 'cylinder', tone: 'purple', x: 215, y: -55, label: bi('@functools.cache', '@functools.cache'), sublabel: bi('{0:0, 1:1, 2:1, 3:2…}', '{0:0, 1:1, 2:1, 3:2…}'), icon: 'zap', dimmed: !cached, highlighted: cached },
             { id: 'base', shape: 'gate', tone: 'green', x: 215, y: 75, label: bi('Base: n <= 1', 'Base: n <= 1'), sublabel: bi('return n (điểm dừng)', 'return n (stop)') },
           ],
@@ -1561,7 +1561,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
             { id: 'l1', from: 'root', to: 'subL', label: bi('n - 1', 'n - 1') },
             { id: 'l2', from: 'root', to: 'dup', style: cached ? 'off' : 'danger', label: cached ? bi('pruned', 'pruned') : bi('n - 2 (lặp!)', 'n - 2 (dup!)') },
             { id: 'l3', from: 'subL', to: 'memo', style: cached ? 'solid' : 'off', label: bi('O(1) memo hit', 'O(1) memo hit') },
-            { id: 'l4', from: 'subL', to: 'base', label: bi('chạm đáy', 'base case') },
+            { id: 'l4', from: 'subL', to: 'base', label: bi('điểm dừng', 'base case') },
           ],
           packets: cached
             ? [
@@ -1589,7 +1589,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
       bi('Tổ chức dự án nhiều file chuẩn công nghiệp: pyproject.toml + src/<pkg>/ + tests/', 'Organize multi-file apps with standard pyproject.toml + src/<pkg>/ + tests/'),
       bi('Hiểu vai trò của __init__.py, bộ đệm sys.modules và import tuyệt đối từ package gốc', 'Understand __init__.py, sys.modules caching, and clean absolute imports'),
       bi('Nắm rõ hệ sinh thái công cụ uv + uv.lock so với pip + venv truyền thống', 'Compare modern uv + uv.lock workflow with traditional pip + venv'),
-      bi('Nhận diện và phá vỡ vòng lặp Circular Import (a.py ↔ b.py) bằng tách tầng thứ 3', 'Break Circular Imports (a.py ↔ b.py) via shared leaf model extraction'),
+      bi('Nhận diện và phòng tránh vòng lặp Circular Import (a.py ↔ b.py) bằng tách tầng thứ 3', 'Avoid Circular Imports (a.py ↔ b.py) via shared leaf model extraction'),
     ],
     buildFrame: (s, total) => {
       const isLast = s >= total - 1;
@@ -1606,7 +1606,7 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               { op: '+', text: bi('Tổ chức mã nguồn theo bố cục src/<pkg>/ + __init__.py và khóa phiên bản uv.lock', 'Structured package under src/<pkg>/ + __init__.py with deterministic uv.lock') },
             ]
           : [
-              { op: '-', text: bi('Phá vỡ vòng gọi chéo service.py ↔ api.py khi module mới nạp dở dang', 'Broke top-level circular import cycle between service.py ↔ api.py') },
+              { op: '-', text: bi('Loại bỏ vòng import chéo service.py ↔ api.py khi module mới nạp dở dang', 'Removed top-level circular import cycle between service.py ↔ api.py') },
               { op: '+', text: bi('Đưa các kiểu dùng chung xuống tầng đáy models.py tạo luồng phụ thuộc 1 chiều', 'Extracted shared types into leaf models.py module (one-way DAG)') },
             ],
         callout:
@@ -1623,12 +1623,12 @@ export const PY_SPECS_PART1: Record<string, PyModuleVisualSpec> = {
               : s <= 3
                 ? {
                     kind: 'good-to-know',
-                    text: bi('Toàn cảnh công cụ: uv tự động hóa trọn gói phiên bản Python + .venv + uv.lock siêu tốc, thay thế hoàn toàn các bước gõ venv activate + pip install thủ công truyền thống.', 'Ecosystem view: uv unifies Python versions + .venv + uv.lock at blazing speed, replacing manual venv activation + pip install steps.'),
+                    text: bi('Toàn cảnh công cụ: uv tự động hóa trọn gói phiên bản Python + .venv + uv.lock với tốc độ cao, thay thế các bước gõ venv activate + pip install thủ công truyền thống.', 'Ecosystem view: uv unifies Python versions + .venv + uv.lock efficiently, replacing manual venv activation + pip install steps.'),
                   }
                 : !isLast
                   ? {
                       kind: 'watch-out',
-                      text: bi('Bẫy Circular Import: khi hai file import chéo nhau ở đầu file, Python sẽ nổ ImportError do module chưa nạp xong! Hãy tách phần dùng chung xuống file thứ ba (models.py).', 'Circular Import trap: two files importing each other at top level raise ImportError mid-load! Extract shared types into a third leaf module (models.py).'),
+                      text: bi('Lỗi Circular Import: khi hai file import chéo nhau ở đầu file, Python sẽ báo ImportError do module chưa nạp xong. Hãy tách phần dùng chung xuống file thứ ba (models.py).', 'Circular Import error: two files importing each other at top level raise ImportError mid-load. Extract shared types into a third leaf module (models.py).'),
                     }
                   : {
                       kind: 'key-idea',

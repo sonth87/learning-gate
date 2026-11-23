@@ -42,7 +42,7 @@
     {
       "path": "k8s/network/service-clusterip.yaml",
       "kind": "good",
-      "note": "bộ đôi kết hợp Deployment + Service chuẩn mực sử dụng Named Port.",
+      "note": "Bộ đôi kết hợp Deployment + Service chuẩn mực sử dụng Named Port.",
       "task": "Trong tệp này, `targetPort` không ghi số `3000` mà lại ghi chữ `http`. Kubernetes làm thế nào để biết `http` là cổng bao nhiêu?",
       "answer": "Kubernetes đối chiếu chuỗi `http` với trường `ports[].name: http` bên trong container của Pod (nơi gán `containerPort: 3000`). Cách dùng Named Port giúp tách rời cấu hình mạng khỏi số cổng nội bộ của code."
     },

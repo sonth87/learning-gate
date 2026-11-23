@@ -1,9 +1,9 @@
-# Lists (quicklist) & Sets (intset): Băng chuyền hàng đợi & Phép toán tập hợp
+# Lists (quicklist) và Sets (intset): Hàng đợi hai đầu và phép toán tập hợp
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Khi lập trình ứng dụng hàng ngày, có 2 nhu cầu xuất hiện liên tục nhưng dùng mảng thông thường (`list` trong Python hay `Array` trong JavaScript) ở quy mô lớn sẽ rất chậm:
-> 1. **Xếp hàng xử lý theo thứ tự trước-sau (*FIFO Queue* — Vào trước Ra trước) hoặc giữ đúng 50 thông báo mới nhất:** Chèn một phần tử vào đầu mảng 100,000 mục bắt máy tính phải dịch chuyển toàn bộ 100,000 ô nhớ phía sau (`O(N)`). **Redis List** giải quyết bằng cấu trúc **`quicklist`** (băng chuyền hai đầu ghép từ nhiều toa tàu nén nhỏ `listpack`) — đẩy vào đầu hay rút ra ở cuối đều nhanh tức thì ==`O(1)`== bất kể băng chuyền dài bao nhiêu!
-> 2. **Lưu danh sách không trùng lặp & tìm điểm chung (Ai đã bấm Like? Hai người có bao nhiêu bạn chung?):** **Redis Set** hoạt động như một **chiếc rổ tự động khử trùng**: bỏ cùng một mã người dùng vào 100 lần thì trong rổ vẫn chỉ giữ đúng 1 bản duy nhất, kiểm tra một người có trong rổ hay không (`SISMEMBER`) mất đúng ==`O(1)`==, và đặc biệt nếu toàn bộ phần tử là con số nguyên thì Redis nén gọn vào **`intset`** (mảng số nguyên liền mạch tiết kiệm tới 80% RAM).
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Trong lập trình thông thường, dùng mảng động (`list` trong Python hay `Array` trong JavaScript) ở quy mô lớn gặp 2 giới hạn:
+> 1. **Hàng đợi FIFO hoặc danh sách tin mới nhất:** Việc chèn phần tử vào đầu mảng 100,000 mục bắt hệ thống phải dịch chuyển toàn bộ các ô nhớ phía sau (`O(N)`). **Redis List** sử dụng cấu trúc **`quicklist`** (danh sách liên kết hai chiều gồm các khối `listpack` nén) giúp thao tác thêm/lấy ở cả hai đầu đạt ==`O(1)`== bất kể độ dài danh sách.
+> 2. **Tập hợp phần tử duy nhất & phép toán giao/hiệu:** **Redis Set** lưu trữ tập hợp không thứ tự và tự động loại bỏ phần tử trùng lặp; kiểm tra một phần tử có tồn tại hay không (`SISMEMBER`) mất ==`O(1)`==. Đặc biệt, nếu toàn bộ phần tử là số nguyên 64-bit (`<= 512` phần tử), Redis tự động dùng cấu trúc mảng nguyên liền khối **`intset`** giúp tiết kiệm tới 80% RAM.
 
 ```visual
 kind: illustration
@@ -30,10 +30,10 @@ callouts:
 
 ## 1. Redis List (`quicklist`): Hàng đợi hai đầu, `LTRIM` & `LMOVE` an toàn
 
-> [!ANALOGY] Vì sao Redis không dùng Danh sách liên kết (Linked List) cổ điển?
-> Trong bộ nhớ 64-bit, một mắt xích Linked List cổ điển tốn mất `16 bytes` chỉ để lưu 2 mũi tên chỉ đường `trước` + `sau` — nếu lưu chữ `"ok"` dài 2 byte thì tiền "vỏ bọc mũi tên" đắt gấp 8 lần dữ liệu thật! Vì vậy Redis phát minh ra **`quicklist`**: một đoàn tàu nối hai đầu mà **mỗi toa tàu là cả một khối `listpack`** chở hàng chục phần tử ngồi sát cạnh nhau (rất giống `collections.deque` trong Python).
+> [!NOTE] Vì sao Redis thiết kế `quicklist` thay vì Danh sách liên kết (Linked List) cổ điển?
+> Trên kiến trúc 64-bit, mỗi node trong Linked List cổ điển tốn `16 bytes` chỉ để lưu 2 con trỏ `prev` và `next` — nếu phần tử chỉ là chuỗi `"ok"` dài 2 byte thì chi phí con trỏ lớn gấp 8 lần dữ liệu thực. Vì vậy Redis sử dụng **`quicklist`**: một danh sách liên kết hai chiều mà **mỗi node là một khối `listpack`** chứa nhiều phần tử nằm liền kề nhau trên bộ nhớ (tương tự cơ chế phân khối của `collections.deque` trong Python).
 
-Nhờ thiết kế đó, thao tác ở hai đầu danh sách (`LPUSH`, `RPUSH`, `LPOP`, `RPOP`) luôn là **`O(1)`**, trong khi mò vào đúng phần tử ở chính giữa đoàn tàu (`LINDEX` xa hai đầu) tốn **`O(N)`**. Hai mẫu thực chiến quan trọng nhất với List gồm:
+Nhờ thiết kế đó, thao tác ở hai đầu danh sách (`LPUSH`, `RPUSH`, `LPOP`, `RPOP`) luôn đạt **`O(1)`**, trong khi truy cập phần tử ở giữa danh sách (`LINDEX` xa hai đầu) tốn **`O(N)`**. Hai mẫu thiết kế quan trọng nhất với List gồm:
 
 ```visual
 kind: groups
@@ -114,11 +114,11 @@ items:
     lang: redis
 ```
 
-> [!WARNING] Ba cái bẫy làm đơ Redis khi dùng List và Set sai cách
+> [!WARNING] Ba sai lầm phổ biến khi sử dụng List và Set
 > 1. **Gọi `LRANGE mylist 0 -1` hoặc `SMEMBERS myset` trên tập lớn:** Cả hai đều có độ phức tạp `O(N)`. Nếu Set có 1 triệu người dùng, bắt buộc duyệt phân trang bằng con trỏ **`SSCAN key 0 COUNT 200`**.
-> 2. **Ghép thêm tiền tố chữ vào Set toàn số:** Đổi từ `SADD uids 1001 1002` sang `SADD uids "u_1001" "u_1002"` sẽ ==phá vỡ ngay cơ chế nén `intset`==, làm lượng RAM tiêu thụ của hàng triệu Set nhỏ phình gấp nhiều lần!
-> 3. **Dùng lệnh cũ `RPOPLPUSH` / `BRPOPLPUSH`:** Nhóm lệnh này đã lỗi thời (*deprecated*) — hãy thống nhất dùng **`LMOVE`** và **`BLMOVE`** rõ nghĩa cả 4 hướng (`LEFT` / `RIGHT`).
+> 2. **Ghép thêm tiền tố chữ vào Set toàn số:** Đổi từ `SADD uids 1001 1002` sang `SADD uids "u_1001" "u_1002"` sẽ ==phá vỡ ngay cơ chế nén `intset`==, làm lượng RAM tiêu thụ của hàng triệu Set nhỏ tăng lên gấp nhiều lần.
+> 3. **Dùng lệnh cũ `RPOPLPUSH` / `BRPOPLPUSH`:** Nhóm lệnh này đã lỗi thời (*deprecated*) — hãy thống nhất dùng **`LMOVE`** và **`BLMOVE`** với 4 tham số hướng rõ ràng (`LEFT` / `RIGHT`).
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - **List (`quicklist`):** Giữ thứ tự chèn, cho phép trùng lặp, `O(1)` ở hai đầu. Luôn đi đôi **`LPUSH` + `LTRIM`** cho danh sách giới hạn và dùng **`LMOVE` / `BLMOVE`** (hoặc `Celery` / `ARQ` / `BullMQ`) cho hàng đợi công việc.
 > - **Set (`intset` / `listpack` / `hashtable`):** Không thứ tự, tự động khử trùng. Dùng **`SISMEMBER` / `SMISMEMBER`** để kiểm tra thành viên trong `O(1)`, **`SCARD`** để lấy tổng số lượng, và **`SINTERCARD`** khi chỉ cần đếm giao của hai tập hợp.

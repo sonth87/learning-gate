@@ -2,13 +2,13 @@
 
 Khi mới chuyển từ Docker sang Kubernetes, câu hỏi đầu tiên mà hầu hết lập trình viên (**Python, Node.js, Go...**) đều thắc mắc là: *"Tại sao Kubernetes không quản lý trực tiếp từng Container cho gọn, mà lại đẻ thêm khái niệm **Pod** bọc ở bên ngoài?"*
 
-Hiểu thấu đáo thiết kế "vỏ kén" của ==Pod==, hệ thống thẻ từ **Labels**, vách ngăn tầng lầu **Namespaces** và thẻ thông hành `imagePullSecrets` sẽ giúp bạn nắm chắc viên gạch nguyên tử của toàn bộ hệ sinh thái Kubernetes.
+Hiểu rõ kiến trúc mạng chia sẻ của ==Pod==, cơ chế gắn nhãn **Labels**, phân vùng **Namespaces** và cấu hình xác thực `imagePullSecrets` sẽ giúp bạn nắm chắc đơn vị vận hành cơ bản nhất trong Kubernetes.
 
 ```visual
 kind: illustration
 diagram: "kube:k08"
 alt: "Không gian mạng chia sẻ localhost bên trong Pod (Main + Sidecar), cơ chế khớp nhãn Labels/Selectors và ranh giới Namespace"
-title: "Giải Phẫu Pod Sandbox, Ma Trận Nhãn Labels/Selectors & Vách Ngăn Namespace"
+title: "Kiến Trúc Pod Sandbox, Cơ Chế Labels/Selectors & Phân Vùng Namespace"
 subtitle: "Cách các container trong cùng 1 Pod chia sẻ địa chỉ IP/localhost và cách toàn cụm liên kết lỏng qua hệ thống nhãn động"
 caption: "Cấu trúc không gian cô lập của Pod chia sẻ Network Namespace & ổ đĩa emptyDir, bộ lọc chọn lọc theo nhãn và ranh giới phân tách tài nguyên giữa các Namespace"
 callouts:
@@ -17,7 +17,7 @@ callouts:
     desc: "Container chính và Sidecar chia sẻ cùng một Network Namespace nên gọi nhau thẳng qua 127.0.0.1 và dùng chung ổ đĩa tạm emptyDir."
     tone: emerald
   - num: 2
-    label: "Labels & Selectors — Sợi dây liên kết lỏng"
+    label: "Labels & Selectors — Cơ chế liên kết lỏng"
     desc: "Thay vì trỏ vào tên Pod ngẫu nhiên hay đổi, Service và Deployment quét tìm đúng nhóm Pod thông qua các cặp nhãn key: value."
     tone: sky
   - num: 3
@@ -28,10 +28,10 @@ callouts:
 
 ## 1. Tại sao đơn vị nhỏ nhất trên K8s là `Pod` chứ không phải `Container`?
 
-> [!NOTE] Mô hình tư duy "Vỏ kén Đậu Hà Lan" (`Pod`)
-> Trong tiếng Anh, *pod* nghĩa là vỏ quả đậu bọc một hoặc vài hạt đậu bên trong. Hãy coi **Pod** như một **"căn hộ mini dùng chung một địa chỉ IP"**:
+> [!NOTE] Pod: Đơn vị triển khai nhỏ nhất của Kubernetes
+> **Pod** là một nhóm gồm một hoặc nhiều container được triển khai cùng nhau trên một Worker Node, dùng chung một **Network Namespace** (cùng địa chỉ IP và `localhost`) và có thể chia sẻ chung ổ đĩa tạm (`emptyDir`):
 > - Trong **95% trường hợp thực tế**, một Pod chỉ bọc **đúng 1 container chính** (ví dụ API FastAPI hoặc Node.js của bạn).
-> - Trong **5% trường hợp nâng cao**, ứng dụng chính cần một tiến trình trợ lý sát sườn gọi là **Sidecar Container** (như đại lý gom log Fluent Bit, proxy mã hóa Envoy, hay Cloud SQL Auth Proxy). Vì nằm chung trong 1 vỏ Pod, hai container này gọi nhau siêu tốc qua `localhost` và đọc chung một thư mục tạm mà không cần đi vòng ra mạng ngoài!
+> - Trong **5% trường hợp nâng cao**, ứng dụng chính cần một tiến trình trợ lý chạy kèm gọi là **Sidecar Container** (như đại lý gom log Fluent Bit, proxy mã hóa Envoy, hay Cloud SQL Auth Proxy). Vì nằm chung một Pod, hai container này giao tiếp qua `localhost` và đọc chung tệp trên ổ đĩa cục bộ mà không cần đi vòng qua mạng ngoài (tên gọi *Pod* — vỏ đậu — thể hiện việc bọc một hoặc vài container phối hợp chặt chẽ cùng nhau).
 
 ```visual
 kind: layers
@@ -90,7 +90,7 @@ spec:
         - containerPort: 80
 ```
 
-## 2. Labels & Selectors: Sợi dây liên kết lỏng (`Loose Coupling`) của cả cụm
+## 2. Labels & Selectors: Cơ chế liên kết lỏng (`Loose Coupling`) giữa các đối tượng
 
 Trên một cụm Kubernetes chạy 500 Pod đủ loại (Frontend React, Order API Node.js, Recommendation AI Python, Redis...), Kubernetes **không dùng danh sách tên cứng** để gom nhóm chúng, vì tên Pod sinh tự động thay đổi liên tục mỗi lần cập nhật (`shop-api-7d9f8b-xk2lp`). Thay vào đó, K8s dùng ==`metadata.labels`== — những chiếc thẻ dán mang cặp khóa-giá trị (`key: value`) để truy vấn động:
 
@@ -133,9 +133,9 @@ items:
 > [!WARNING] Nhãn (`labels`) KHÔNG PHẢI là vật trang trí cho đẹp!
 > Chỉ một ký tự viết sai chính tả trong `metadata.labels` (ví dụ gõ nhầm `app: shop-backned` thay vì `app: shop-backend`) sẽ khiến **`Service` mất trắng kết nối tới Pod ngay lập tức**!
 
-## 3. Namespaces: Chia tòa nhà Cụm thành các tầng lầu độc lập
+## 3. Namespaces: Phân vùng tài nguyên logic trong cụm Kubernetes
 
-Nếu hai đội dự án (`team-a` và `team-b`) hoặc hai môi trường (`staging` và `production`) dùng chung một cụm vật lý, làm sao cả hai cùng tạo được `Service` trùng tên `api-svc` mà không đè lên nhau? Câu trả lời là **Namespaces** — các tầng lầu lô-gic riêng biệt bên trong cùng một tòa nhà cụm:
+Nếu hai đội dự án (`team-a` và `team-b`) hoặc hai môi trường (`staging` và `production`) dùng chung một cụm vật lý, làm sao cả hai cùng tạo được `Service` trùng tên `api-svc` mà không đè lên nhau? Câu trả lời là **Namespaces** — các không gian tên lô-gic độc lập bên trong cùng một cụm (tương tự việc phân tách các phòng ban hoặc khu vực riêng biệt trong một hệ thống):
 
 ```visual
 kind: groups
@@ -153,10 +153,10 @@ items:
   - num: 2
     icon: settings
     title: kube-system
-    badge: Phòng máy hệ thống
+    badge: Thành phần hệ thống
     tone: rose
     bullets:
-      - "Nơi ở của các thành phần sống còn như **`coredns`**, **`kube-proxy`**, CNI mạng"
+      - "Nơi chạy các thành phần cốt lõi như **`coredns`**, **`kube-proxy`**, CNI mạng"
       - "**Tuyệt đối không** triển khai ứng dụng kinh doanh vào `kube-system`!"
   - num: 3
     icon: layers
@@ -200,14 +200,14 @@ kubectl run fraud-check --image=node:22-alpine -n payments
 
 ## 4. Kéo Image từ Kho riêng tư (`Private Registry`) với `imagePullSecrets`
 
-Các Image công cộng như `python:3.12-slim` hay `node:22-alpine` ai kéo cũng được, nhưng Image sản phẩm của công ty luôn nằm trong kho riêng tư (**GitHub Container Registry `ghcr.io`**, **AWS ECR**, **Google Artifact Registry**, **Harbor**). Nếu thiếu thẻ thông hành xác thực, Pod sẽ kẹt cứng ở lỗi ==`ErrImagePull` / `ImagePullBackOff`== (`401 Unauthorized`).
+Các Image công cộng như `python:3.12-slim` hay `node:22-alpine` ai kéo cũng được, nhưng Image sản phẩm của công ty luôn nằm trong kho riêng tư (**GitHub Container Registry `ghcr.io`**, **AWS ECR**, **Google Artifact Registry**, **Harbor**). Nếu thiếu thông tin xác thực, Pod sẽ kẹt cứng ở lỗi ==`ErrImagePull` / `ImagePullBackOff`== (`401 Unauthorized`).
 
 ```visual
 kind: flow
 title: Quy Trình 2 Bước Xác Thực Kéo Image Riêng Tư Không Dính ImagePullBackOff
 steps:
   - icon: key
-    badge: Bước 1 · Tạo thẻ
+    badge: Bước 1 · Tạo Secret
     title: Secret dockerconfigjson
     desc: Tạo Secret kiểu kubernetes.io/dockerconfigjson chứa thông tin đăng nhập Registry
     code: "name: regcred"
@@ -223,7 +223,7 @@ steps:
   - icon: container
     badge: Bước 3 · Tải thành công
     title: Running Container
-    desc: kubelet trình thẻ cho Private Registry, kéo Image mượt mà và khởi chạy Pod
+    desc: kubelet gửi thông tin xác thực tới Private Registry, kéo Image mượt mà và khởi chạy Pod
     code: "1/1 Running"
     tone: emerald
 ```

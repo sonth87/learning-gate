@@ -1,39 +1,39 @@
-# Chiến lược nhánh Git & 5 thủ phạm "Chạy được trên máy em nhưng đỏ trên CI"
+# Chiến lược nhánh Git và 5 nguyên nhân gây lệch môi trường Local với CI
 
-Câu nói kinh điển nhất trong mọi phòng họp kỹ thuật là: *"Ủa lạ vậy anh, trên MacBook của em vừa chạy `npm test` xanh mượt mà sao đẩy lên Pull Request nó lại treo cứng rồi đỏ lòm?!"*. Để CI Pipeline thực sự trở thành tấm khiên bảo vệ đội ngũ thay vì nỗi ám ảnh mỗi chiều thứ Sáu, bạn cần kết hợp hai mảnh ghép: ==chiến lược phân nhánh ngắn hạn (Trunk-Based Development)== và ==kỷ luật đồng bộ môi trường giữa Laptop với CI Runner==.
+Một tình huống thường gặp trong phát triển phần mềm là mã nguồn chạy kiểm thử thành công trên máy cá nhân nhưng lại thất bại hoặc bị treo khi đẩy lên Pull Request. Để CI Pipeline hoạt động ổn định và tin cậy, đội ngũ kỹ thuật cần kết hợp hai yếu tố: ==chiến lược phân nhánh ngắn hạn (Trunk-Based Development)== và ==đồng bộ hóa môi trường giữa máy cá nhân với CI Runner==.
 
 ```visual
 kind: illustration
 diagram: "cicd:c02"
 src: "/illustrations/cicd/cicd-trunk-vs-gitflow.jpg"
-alt: "Đối chiếu địa ngục xung đột GitFlow nhánh dài hạn với Trunk-Based Development nhánh ngắn hạn và hàng đợi Merge Queue chống lệch ngữ nghĩa"
-title: "Giải Phẫu Chiến Lược Nhánh: Địa Ngục GitFlow vs Trunk-Based & Merge Queue"
+alt: "Đối chiếu xung đột nhánh dài hạn GitFlow với Trunk-Based Development nhánh ngắn hạn và hàng đợi Merge Queue chống xung đột ngữ nghĩa"
+title: "Chiến lược nhánh: GitFlow nhánh dài hạn vs Trunk-Based & Merge Queue"
 subtitle: "Gộp nhánh nhỏ hàng ngày kết hợp Feature Flags và hàng đợi kiểm thử gộp để giữ nhánh main luôn sẵn sàng phát hành"
-caption: "Sự đối lập giữa nhánh dài hạn nhiều tuần gây nổ xung đột, mô hình Trunk-Based PR ngắn dưới 24 giờ và lớp bảo vệ Merge Queue chống xung đột ngữ nghĩa"
+caption: "Sự khác biệt giữa nhánh dài hạn nhiều tuần dễ phát sinh xung đột, mô hình Trunk-Based PR ngắn dưới 24 giờ và lớp kiểm định Merge Queue"
 callouts:
   - num: 1
-    label: "Nhánh dài hạn gây Địa ngục xung đột (Merge Hell)"
-    desc: "Tách nhánh suốt nhiều tuần khiến mã nguồn trôi dạt hàng nghìn dòng, xanh trên nhánh lẻ nhưng vỡ vụn ngay khi gộp chung."
+    label: "Nhánh dài hạn dễ gây xung đột lớn (Merge Hell)"
+    desc: "Tách nhánh suốt nhiều tuần khiến mã nguồn lệch xa nhánh chính, dù test đạt trên nhánh lẻ nhưng dễ lỗi khi gộp chung."
     tone: rose
   - num: 2
     label: "Trunk-Based PR ngắn hạn & Đồng bộ môi trường"
     desc: "Gộp các PR nhỏ mỗi ngày kết hợp Feature Flags, khoá phiên bản .nvmrc, múi giờ UTC và kiểm tra chữ hoa/thường tên tệp Linux."
     tone: emerald
   - num: 3
-    label: "Merge Queue chặn đứng xung đột ngữ nghĩa chéo"
-    desc: "Tự động tạo nhánh gộp tạm thời để chạy kiểm thử tổ hợp PR #101 + PR #102 cùng nhau trước khi cho phép chạm vào nhánh main."
+    label: "Merge Queue phòng tránh xung đột ngữ nghĩa chéo"
+    desc: "Tự động tạo nhánh gộp tạm thời để chạy kiểm thử tổ hợp PR #101 + PR #102 cùng nhau trước khi cho phép gộp vào nhánh main."
     tone: sky
 ```
 
-## 1. Trunk-Based Development vs GitFlow cổ điển: Vì sao CI yêu nhánh ngắn hạn?
+## 1. So sánh Trunk-Based Development và GitFlow: Lợi ích của nhánh ngắn hạn trong CI
 
 ```visual
 kind: compare
-title: "GitFlow Nhánh Dài Hạn (Merge Hell) vs Trunk-Based Development Hiện Đại"
-subtitle: "Chữ 'Continuous Integration' theo nghĩa gốc là gộp code vào nhánh thân chính ít nhất mỗi ngày một lần!"
+title: "So sánh GitFlow nhánh dài hạn và Trunk-Based Development hiện đại"
+subtitle: "Nguyên tắc của Continuous Integration là tích hợp code vào nhánh chính thường xuyên, lý tưởng nhất là mỗi ngày một lần"
 left:
   badge: "CỔ ĐIỂN · GitFlow Dài Hạn"
-  title: "Nhánh sống nhiều tuần gây Địa ngục xung đột"
+  title: "Nhánh kéo dài nhiều tuần dễ gây xung đột khi gộp code"
   tone: rose
   code: |
     main ───────────────────────────────────● (Release quý)
@@ -43,9 +43,9 @@ left:
         feature/a ──●───●───● (Tách riêng 3 tuần)
   lang: text
   bullets:
-    - "5 lập trình viên ôm 5 nhánh `feature/*` riêng rẽ suốt 3–4 tuần mới gộp lại"
-    - "Trên nhánh riêng thì CI báo xanh, nhưng vừa trộn vào nhau là vỡ tung kiến trúc (**Merge Hell**)"
-    - "Pull Request dài 4.000 dòng không ai review nổi chất lượng"
+    - "Nhiều lập trình viên làm việc trên các nhánh `feature/*` tách rời suốt 3–4 tuần mới gộp lại"
+    - "Trên nhánh riêng thì CI báo đạt, nhưng khi hợp nhất lại thường phát sinh xung đột phức tạp (**Merge Hell**)"
+    - "Pull Request dài hàng nghìn dòng khiến việc rà soát (code review) kém hiệu quả"
 right:
   badge: "CHUẨN CI/CD · Trunk-Based Development"
   title: "Nhánh cực ngắn hạn + Feature Flags an toàn"
@@ -103,8 +103,8 @@ Sự cố lệch pha (*Environment Drift*) xảy ra vì chiếc MacBook/Windows 
 
 ```visual
 kind: troubleshoot
-title: "Bảng Chẩn Đoán 5 Thủ Phạm Gây Lệch Pha Laptop vs CI Runner [!badge:amber:Must Know]"
-subtitle: "Rà soát đúng 5 chốt chặn này sẽ giải quyết 99% sự cố 'trên máy em vẫn xanh mượt'"
+title: "5 Nguyên nhân phổ biến gây lệch kết quả giữa máy cá nhân và CI Runner [!badge:amber:Must Know]"
+subtitle: "Kiểm tra đúng 5 cấu hình này giúp xử lý phần lớn sự cố sai khác giữa môi trường Local và CI"
 items:
   - symptom: "Hôm qua vẫn xanh, sáng nay mọi PR đồng loạt gãy native addon dù không sửa code"
     badge: "1. Trôi bản Node & npm"
@@ -140,8 +140,8 @@ items:
 
 ## 3. Cấu hình chuẩn hoá chống lệch môi trường (Node.js, Python & Đa ngôn ngữ)
 
-> [!WARNING] Đừng để một dòng `npx vitest` thiếu chữ `run` đốt sạch 6 tiếng CI!
-> Hầu hết thư viện kiểm thử hiện đại (Vitest, Jest, Playwright) đều kiểm tra `process.env.CI === "true"` để tự động tắt chế độ Watch tương tác và tắt thanh tiến trình động. Nếu ai đó vô tình ghi đè `CI: false`, tiến trình sẽ ngồi đợi bàn phím ảo trong vô vọng suốt **360 phút**!
+> [!WARNING] Lưu ý cấu hình lệnh kiểm thử chạy một lần (Non-watch Mode)
+> Hầu hết thư viện kiểm thử hiện đại (Vitest, Jest, Playwright) đều kiểm tra biến môi trường `process.env.CI === "true"` để tự động tắt chế độ Watch tương tác. Nếu cấu hình nhầm `CI: false` hoặc thiếu tham số `run`, tiến trình sẽ đứng chờ thao tác bàn phím cho đến khi hết giới hạn **360 phút**!
 
 Chỉ với khối cấu hình 6 dòng dưới đây, bạn sẽ khoá chặt đồng thời cả 3 biến môi trường chuẩn hoá (`CI: true`, `TZ: UTC`, `NODE_OPTIONS`) và trần `--maxWorkers=2` vừa khít với ngân sách **2 vCPU / 7 GB RAM** của Hosted Runner:
 

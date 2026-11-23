@@ -1,18 +1,18 @@
-## 1. Giải mã bằng ví dụ đội kỹ thuật: `Team Charter` là gì và khác `Project Charter` ra sao?
+## 1. Thỏa ước làm việc nhóm (`Team Charter`) và sự khác biệt với Điều lệ dự án (`Project Charter`)
 
-Khi ghép 4 kỹ sư Backend cũ với 3 lập trình viên Mobile mới tuyển vào cùng một dự án, tuần đầu tiên thường nảy sinh đủ chuyện dở khóc dở cười: người quen thức code lúc 1 giờ sáng rồi ngủ tới trưa làm nhỡ buổi họp Daily, người gửi Pull Request 5 ngày không ai review, lúc góp ý code thì dùng lời lẽ gay gắt chạm tự ái nhau!
+Khi tập hợp một nhóm kỹ thuật gồm các thành viên từ nhiều bộ phận hoặc thói quen làm việc khác nhau, giai đoạn đầu thường phát sinh ma sát trong phối hợp: khác biệt giờ làm việc, thời gian phản hồi code review kéo dài hoặc cách góp ý chuyên môn thiếu thống nhất.
 
-Trong **PMBOK® Guide 8 (`§2.6` — Miền Resources, quy trình `Lead the Team`)**, công cụ đầu tiên để phòng ngừa hỗn loạn nội bộ chính là **Team Charter** (*còn gọi là Social Contract / Ground Rules — Bản thoả ước làm việc của đội*):
+Trong **PMBOK® Guide 8 (`§2.6` — Miền Resources, quy trình `Lead the Team`)**, công cụ nền tảng để thiết lập kỷ luật tự quản ngay từ đầu là **Team Charter** (*còn gọi là Social Contract / Ground Rules — Thỏa ước làm việc của nhóm*):
 
-- **Đừng bao giờ nhầm với `Project Charter`:** Nếu `Project Charter` do Sponsor ký để khai sinh dự án và trao quyền cho PM, thì ==Team Charter do chính toàn bộ thành viên trong nhóm cùng ngồi thảo luận và đồng thuận viết ra==!
-- **Nội dung thiết thực bên trong:** Quy ước giờ họp chung không ai vắng mặt (*Core Hours*), chuẩn mực giao tiếp tôn trọng khi tranh luận kỹ thuật, cam kết review code trong vòng 4 giờ, và cách nhóm biểu quyết khi bất đồng ý kiến. Khi chính tay anh em lập ra luật chơi, cả đội sẽ tự giác giữ kỷ luật mà không cần PM đứng canh từng người.
+- **Phân biệt với `Project Charter`:** Trong khi `Project Charter` do Sponsor ký để phê duyệt dự án và trao quyền cho PM, thì ==Team Charter do toàn bộ thành viên trong nhóm cùng thảo luận và đồng thuận xây dựng==.
+- **Nội dung cốt lõi:** Quy định khung giờ làm việc chung (*Core Hours*), chuẩn mực giao tiếp tôn trọng khi phản biện kỹ thuật, cam kết thời gian review code, và cơ chế biểu quyết khi phát sinh bất đồng. Khi chính đội ngũ tham gia thiết lập quy tắc, mức độ tự giác tuân thủ sẽ cao hơn nhiều so với nội quy áp đặt từ trên xuống.
 
-## 2. Năm bậc phát triển nhóm của `Tuckman` & Phong cách lãnh đạo linh hoạt
+## 2. Mô hình 5 giai đoạn phát triển nhóm `Tuckman` và phong cách lãnh đạo tương ứng
 
-Nhà tâm lý học Bruce Tuckman chỉ ra rằng mọi đội nhóm đều trải qua **5 giai đoạn tâm lý tự nhiên**. Một PM giỏi không giữ khư khư một kiểu lãnh đạo duy nhất, mà phải ==uyển chuyển đổi phong cách dẫn dắt theo từng nấc trưởng thành của đội==:
+Nhà tâm lý học Bruce Tuckman chỉ ra rằng mọi đội nhóm đều trải qua **5 giai đoạn phát triển**. PM cần ==điều chỉnh linh hoạt phong cách lãnh đạo tương ứng với từng giai đoạn trưởng thành của nhóm==:
 
-- **Forming (*Hình thành*) → Chỉ dẫn rõ (*Directing*):** Ngày đầu tiên 7 thành viên mới ngồi vào bàn, ai cũng lịch sự dè dặt nhìn PM chờ phân việc. Lúc này PM cần nêu mục tiêu dự án thật rõ và tạo không gian để cả đội cùng viết `Team Charter`.
-- **Storming (*Sóng gió*) → Huấn luyện (*Coaching*):** Sang tuần thứ 3, Backend và Mobile bắt đầu cãi nhau gay gắt về chuẩn thiết kế API. Đừng hoảng hốt dập tắt tranh luận — đây là bước chuyển mình tất yếu! PM dùng Trí tuệ cảm xúc lắng nghe và huấn luyện nhóm tranh biện dựa trên số liệu khách観.
+- **Forming (*Hình thành*) → Chỉ dẫn rõ (*Directing*):** Khi các thành viên mới bắt đầu làm việc cùng nhau, tâm lý chung còn dè dặt và phụ thuộc vào điều phối của PM. Lúc này PM cần làm rõ mục tiêu dự án và hướng dẫn nhóm cùng xây dựng `Team Charter`.
+- **Storming (*Sóng gió*) → Huấn luyện (*Coaching*):** Khi bắt tay vào công việc thực tế, nhóm bắt đầu nảy sinh bất đồng về giải pháp kỹ thuật hoặc cách phối hợp. Đây là giai đoạn bình thường trong tiến trình phát triển nhóm; PM cần lắng nghe, giữ môi trường trao đổi an toàn và huấn luyện nhóm giải quyết bất đồng dựa trên dữ liệu khách quan.
 - **Norming (*Ổn định*) → Hỗ trợ (*Supporting*):** Nhóm bắt đầu hiểu ý nhau, tự giác tuân thủ quy ước review code. PM lùi lại một bước để khích lệ sự tin cậy.
 - **Performing (*Bứt phá*) → Trao quyền (*Delegating*):** Nhóm vận hành trơn tru như một cỗ máy tự tổ chức. PM trao quyền tối đa ở tầng kỹ thuật để tập trung tháo gỡ các rào cản chiến lược bên ngoài.
 - **Adjourning (*Giải tán*) → Ghi nhận & Chuyển tiếp:** Khi dự án đóng lại, PM tổ chức vinh danh thành quả và giúp thành viên tự tin bước sang dự án mới.
@@ -56,7 +56,7 @@ steps:
     tone: "cyan"
 ```
 
-## 3. Trí tuệ Cảm xúc (`EI`), Động lực Nội tại & Quản trị Nhóm Từ xa (`Virtual Team`)
+## 3. Trí tuệ Cảm xúc (`EI`), Động lực nội tại và Quản trị nhóm phân tán (`Virtual Team`)
 
 Chiếm tới **33% tổng điểm đề thi**, miền **People** của [!badge:violet:ECO 07/2026] đòi hỏi PM dẫn dắt kỹ sư tri thức bằng sự thấu cảm thay vì mệnh lệnh hành chính:
 
@@ -96,9 +96,9 @@ items:
       - "Dùng bảng trực quan chung kết hợp cuộc gọi bật camera định kỳ để xây dựng kết nối con người."
 ```
 
-## 4. Năm chế độ Giải quyết Xung đột & Phản xạ vàng khi nhân sự đuối sức
+## 4. Năm phương pháp giải quyết xung đột và cách hỗ trợ thành viên suy giảm hiệu suất
 
-Khi hai Senior Engineer cãi nhau nảy lửa về việc chọn PostgreSQL hay MongoDB, bạn xử lý thế nào? Hãy khắc cốt ghi tâm **thang can thiệp 3 bước** và **5 chế độ giải quyết xung đột** sau:
+Khi hai kỹ sư cấp cao bất đồng gay gắt về việc lựa chọn cơ sở dữ liệu hay kiến trúc hệ thống, PM cần nắm vững **thang can thiệp 3 bước** và **5 phương pháp giải quyết xung đột** sau:
 
 ```visual
 kind: anatomy
@@ -124,4 +124,4 @@ items:
 ```
 
 > [!TIP]
-> **Phản xạ vàng trước nhân sự làm việc kém hiệu quả:** Gặp câu hỏi *"Một lập trình viên liên tục trễ task 2 Sprint gần đây"*, hãy gạch bỏ ngay đáp án đòi sa thải, cắt thưởng hay trả về phòng chức năng! Đáp án chuẩn luôn là: ==Hẹn gặp riêng 1-1 một cách tôn trọng và thấu cảm để tìm nguyên nhân gốc rễ → hỗ trợ đào tạo (Training), kèm cặp (Coaching / Pair Programming) hoặc tái phân bổ công việc phù hợp sở trường==.
+> **Cách xử lý chuẩn PMI khi thành viên suy giảm hiệu suất:** Khi đề bài nêu *"Một lập trình viên liên tục chậm tiến độ trong 2 Sprint gần đây"*, cần loại bỏ ngay các phương án sa thải, cắt thưởng hay trả về phòng chức năng. Phương án chuẩn là: ==Hẹn gặp riêng 1-1 một cách tôn trọng và thấu cảm để tìm nguyên nhân gốc rễ → hỗ trợ đào tạo (Training), kèm cặp (Coaching / Pair Programming) hoặc điều chỉnh phân công phù hợp năng lực==.

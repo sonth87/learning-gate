@@ -1,19 +1,19 @@
-## 1. Từ điển nhập môn bằng ngôn ngữ đời thường: PMI, ECO và PMBOK® Guide 8 là gì?
+## 1. Khái niệm nền tảng: PMI, Khung đề thi (ECO) và Bộ quy chuẩn PMBOK® Guide 8
 
-Nếu bạn là Software Engineer, Business Analyst (BA) hay Tech Lead lần đầu mở tài liệu ôn thi **PMP®** (*Project Management Professional*), cảm giác choáng ngợp đầu tiên luôn đến từ một rừng chữ viết tắt. Hãy dùng hình ảnh một kỳ sát hạch Kiến trúc sư Phần mềm để giải mã ngay 5 thuật ngữ nền tảng nhất trước khi đi sâu vào chiến thuật:
+Khi bắt đầu ôn thi **PMP®** (*Project Management Professional*), người học thường gặp nhiều thuật ngữ viết tắt chuyên ngành. Dưới đây là 5 khái niệm cốt lõi cần nắm trước khi đi sâu vào các miền kiến thức:
 
-- **PMI (*Project Management Institute* — Viện Quản lý Dự án Hoa Kỳ):** Tổ chức quốc tế ra đề và cấp chứng chỉ PMP trên toàn cầu.
-- **ECO (*Exam Content Outline* — Khung đề cương thi chính thức):** Bản thiết kế quy định đề thi sẽ kiểm tra những kỹ năng thực tế nào và chiếm bao nhiêu phần trăm điểm số. Phiên bản mới nhất là [!badge:violet:ECO 07/2026]. Hãy coi `ECO` chính là **đề cương câu hỏi thi**.
-- **PMBOK® Guide 8th Edition (*Project Management Body of Knowledge* — Bộ quy chuẩn Kiến thức QLDA bản 8):** Cuốn sách khung chuẩn mực giải thích nguyên tắc, miền công việc và quy trình quản trị. Nếu `ECO` là đề cương ra đề, thì `PMBOK® 8` chính là **tài liệu kiến trúc tham chiếu**.
-- **OCM (*Organizational Change Management* — Quản trị thay đổi con người trong tổ chức):** Nghệ thuật giúp nhân viên và người dùng thực sự đón nhận hệ thống mới thay vì tẩy chay quay về dùng file Excel cũ.
-- **ESG (*Environmental, Social, and Governance* — Môi trường, Xã hội & Quản trị):** Tiêu chuẩn phát triển bền vững, tiết kiệm tài nguyên máy chủ/năng lượng, an toàn lao động và đạo đức dữ liệu.
+- **PMI (*Project Management Institute* — Viện Quản lý Dự án Hoa Kỳ):** Tổ chức quốc tế xây dựng chuẩn mực nghề nghiệp, tổ chức thi và cấp chứng chỉ PMP trên toàn cầu.
+- **ECO (*Exam Content Outline* — Khung đề cương thi chính thức):** Tài liệu quy định cấu trúc đề thi, các nhiệm vụ quản trị được kiểm tra và tỷ trọng điểm số của từng miền. Phiên bản hiện hành là [!badge:violet:ECO 07/2026].
+- **PMBOK® Guide 8th Edition (*Project Management Body of Knowledge* — Bộ quy chuẩn Kiến thức QLDA bản 8):** Tài liệu khung chuẩn mực giải thích nguyên tắc, miền hiệu suất và quy trình quản trị dự án. Nếu `ECO` là đề cương phạm vi kiến thức thi, thì `PMBOK® 8` là tài liệu tham chiếu nền tảng.
+- **OCM (*Organizational Change Management* — Quản trị thay đổi tổ chức):** Hệ thống hoạt động giúp nhân sự và người dùng cuối tiếp nhận, thích nghi và sử dụng sản phẩm mới vào công việc thực tế thay vì quay lại cách làm cũ.
+- **ESG (*Environmental, Social, and Governance* — Môi trường, Xã hội & Quản trị):** Bộ tiêu chuẩn đánh giá tính bền vững, bao gồm tối ưu tài nguyên, an toàn lao động, bảo mật và đạo đức dữ liệu.
 
 > [!NOTE]
-> **Góc nhìn dự án phần mềm:** Trước đây nhiều kỹ sư nghĩ làm PM chỉ là kẻ bảng Gantt và giục lập trình viên code đúng hạn. Trong chuẩn mới của PMI, một dự án chỉ thành công khi phần mềm đó ==hợp pháp lý, người dùng chịu sử dụng và tạo ra giá trị kinh doanh bền vững==.
+> **Góc nhìn dự án phần mềm:** Quản lý dự án không chỉ dừng ở việc lập tiến độ (Gantt chart) và đôn đốc hoàn thành tác vụ đúng hạn. Theo chuẩn mực của PMI, một dự án chỉ được xem là thành công khi sản phẩm bàn giao ==tuân thủ quy định pháp lý, được người dùng tiếp nhận thực tế và tạo ra giá trị kinh doanh bền vững==.
 
-## 2. Cấu trúc đề thi ECO 07/2026: Cú nhảy vọt lịch sử của Business Environment
+## 2. Cấu trúc đề thi PMP (ECO 07/2026) và sự gia tăng tỷ trọng của Business Environment
 
-Bài thi PMP gồm **180 câu hỏi** (175 câu tính điểm + 5 câu thử nghiệm *pretest* ẩn ngẫu nhiên không báo trước) làm trong **240 phút**, chia thành 3 chặng 60 câu với 2 kỳ nghỉ giải lao 10 phút. Thay đổi chấn động nhất của [!badge:violet:ECO 07/2026] là miền **Business Environment** tăng gấp hơn 3 lần: từ `8%` vọt lên ==26% tổng điểm bài thi==!
+Bài thi PMP gồm **180 câu hỏi** (175 câu tính điểm + 5 câu thử nghiệm *pretest* phân bố ngẫu nhiên) với thời lượng **240 phút**, chia thành 3 chặng 60 câu kèm 2 lần nghỉ giải lao 10 phút. Thay đổi đáng chú ý nhất của [!badge:violet:ECO 07/2026] là tỷ trọng miền **Business Environment** tăng gấp hơn 3 lần: từ `8%` lên ==26% tổng điểm bài thi==.
 
 ```visual
 kind: groups
@@ -48,7 +48,7 @@ items:
 ```
 
 > [!WARNING]
-> **Bẫy học vẹt kiểu đại học:** Đề thi PMP hiện đại gần như không hỏi thuộc lòng định nghĩa khô khan. Đề sẽ kể một câu chuyện rắc rối dài 3–5 dòng ở công ty rồi hỏi: ==What should the project manager do FIRST / NEXT / BEST?== Cả 4 đáp án đều nghe lịch sự, nhưng chỉ **1 đáp án đi đúng trình tự tư duy chuẩn PMI**.
+> **Hạn chế của việc học thuộc lòng:** Đề thi PMP hiện đại hiếm khi kiểm tra định nghĩa rời rạc. Phần lớn câu hỏi mô tả một tình huống thực tế dài 3–5 dòng và yêu cầu xác định: ==What should the project manager do FIRST / NEXT / BEST?== Cả 4 phương án thường có vẻ hợp lý, nhưng chỉ **1 phương án tuân thủ đúng trình tự xử lý chuẩn của PMI**.
 
 ## 3. Kiến trúc 3 tầng của PMBOK® Guide 8 và Bản đồ PMP Mindmap
 
@@ -87,7 +87,7 @@ columns:
         detail: "Business Case, MVP/MMF, Compliance, OCM và phát triển bền vững"
         tone: "cyan"
       - label: "core.mindset · core.agile · core.adaptive"
-        detail: "6 Phản xạ vàng, Scrum Roles/Events, Kanban WIP & Velocity"
+        detail: "6 Nguyên tắc phản xạ PMI, Scrum Roles/Events, Kanban WIP & Velocity"
         tone: "emerald"
       - label: "governance · quality · procurement · stakeholder · resource"
         detail: "Charter, CCB, QA/QC, Hợp đồng FFP/T&M, ma trận SEAM & Tuckman"
@@ -97,13 +97,13 @@ columns:
         tone: "sky"
 ```
 
-## 4. Tình huống thực chiến & Phản xạ vàng phòng thi
+## 4. Tình huống tổng hợp và phương pháp ôn tập hiệu quả
 
-Giả sử bạn là Tech Lead vừa chuyển sang làm PM cho dự án Ví điện tử. Giữa dự án, Ngân hàng Nhà nước ban hành thông tư bắt buộc xác thực sinh trắc học mới (thuộc **Business Environment — Compliance**), khiến đội kỹ thuật hoang mang (thuộc **People**) và lịch phát hành bị đe doạ (thuộc **Process**). Một câu hỏi PMP thực thụ sẽ lồng ghép cả 3 miền này trong cùng một tình huống!
+Giả sử bạn là Tech Lead chuyển sang đảm nhiệm vai trò PM cho dự án Ví điện tử. Trong quá trình triển khai, Ngân hàng Nhà nước ban hành quy định mới bắt buộc xác thực sinh trắc học (thuộc **Business Environment — Compliance**), khiến đội kỹ thuật lúng túng về phạm vi công việc (thuộc **People**) và lịch phát hành có nguy cơ chậm trễ (thuộc **Process**). Một câu hỏi PMP thực tế thường lồng ghép cả 3 miền này trong cùng một tình huống để đánh giá năng lực điều phối toàn diện.
 
 > [!TIP]
-> **Lộ trình 4 bước học nhàn — nhớ sâu trên hệ thống này:**
-> 1. Đọc từng bước bài học để hiểu **bản chất tiếng Việt đời thường** và câu chuyện phần mềm trước tiên.
-> 2. Quan sát sơ đồ tương tác bên trái để nắm ==mối quan hệ nhân quả thay vì học vẹt công thức==.
-> 3. Làm ngay bộ Quiz cuối bài để phát hiện những "thói quen chữa cháy ngoài đời" đang làm bạn chọn sai.
-> 4. Bấm sang các nhánh dẫn chứng trên **PMP Mindmap** để luyện phản xạ tốc độ cao `~80 giây/câu`.
+> **Phương pháp học 4 bước trên hệ thống:**
+> 1. Đọc kỹ từng mục bài học để nắm rõ **khái niệm cốt lõi và bối cảnh áp dụng** trước khi xem ví dụ minh họa.
+> 2. Quan sát sơ đồ trực quan để hiểu ==mối quan hệ nhân quả giữa các thành phần quản trị== thay vì ghi nhớ máy móc.
+> 3. Hoàn thành bộ Quiz cuối bài để nhận diện các thói quen xử lý cảm tính dễ gây mất điểm.
+> 4. Tra cứu các nhánh dẫn chứng trên **PMP Mindmap** và luyện giải đề với nhịp độ mục tiêu `~80 giây/câu`.

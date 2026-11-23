@@ -8,7 +8,7 @@
 kind: illustration
 diagram: "kube:k09"
 alt: "Cơ chế Deployment điều phối Rolling Update giữa ReplicaSet v1 giảm dần và ReplicaSet v2 tăng dần cùng lệnh rollout undo"
-title: "Giải Phẫu Deployment: Cuộn Phiên Bản Không Gián Đoạn & Rollback Tức Thì"
+title: "Cơ Chế Deployment: Cuộn Phiên Bản Không Gián Đoạn & Rollback Tức Thì"
 subtitle: "Cách Deployment điều khiển đồng thời hai ReplicaSet cũ-mới qua cặp thông số maxSurge và maxUnavailable"
 caption: "Quá trình chuyển giao lưu lượng cuốn chiếu từ ReplicaSet v1 sang ReplicaSet v2 đảm bảo 0% gián đoạn và lưu lịch sử Revision để quay lui trong 2 giây"
 callouts:
@@ -28,16 +28,16 @@ callouts:
 
 ## 1. Chuỗi phân cấp 3 tầng: `Deployment` → `ReplicaSet` → `Pod`
 
-> [!NOTE] Mô hình tư duy "Giám đốc chi nhánh → Tổ trưởng ca trực → Nhân viên đứng quầy"
-> Nhiều người mới thắc mắc vì sao `Deployment` không đẻ thẳng ra `Pod` mà lại có **`ReplicaSet`** nằm giữa:
-> - **`Pod` (Nhân viên đứng quầy):** Trực tiếp phục vụ HTTP request của khách hàng (chạy FastAPI, Node.js, Go...).
-> - **`ReplicaSet` (Tổ trưởng ca trực của 1 phiên bản):** Chỉ làm đúng 1 việc là **đếm đầu người** của một phiên bản cố định (ví dụ bản `v1.2.0` phải luôn đủ `3` Pod). Thiếu 1 người là tuyển bù ngay!
-> - **`Deployment` (Giám đốc điều phối nâng cấp):** Khi bạn nâng cấp lên `v1.3.0`, Giám đốc `Deployment` tạo ra Tổ trưởng mới (`ReplicaSet v2`) tăng dần từ `0 → 3` người, đồng thời bảo Tổ trưởng cũ (`ReplicaSet v1`) giảm dần từ `3 → 0` người — giúp giao ca êm ru không một giây đóng cửa!
+> [!NOTE] Vai trò của 3 tầng: Deployment, ReplicaSet và Pod
+> Nhiều người mới thắc mắc vì sao `Deployment` không tạo trực tiếp `Pod` mà lại có **`ReplicaSet`** nằm giữa. Mỗi tầng đảm nhiệm một trách nhiệm tách biệt:
+> - **`Pod`:** Đơn vị thực thi chứa container ứng dụng (FastAPI, Node.js, Go...) trực tiếp nhận HTTP request.
+> - **`ReplicaSet`:** Bộ điều khiển duy trì đúng số lượng bản sao (`replicas`) của **một phiên bản cấu hình Pod cố định** (ví dụ bản `v1.2.0` phải luôn đủ `3` Pod). Nếu một Pod gặp sự cố, ReplicaSet tạo bù Pod thay thế ngay lập tức.
+> - **`Deployment`:** Tầng quản lý cấp cao điều phối quá trình **nâng cấp phiên bản** (`RollingUpdate`) và lưu lịch sử **Revision**. Khi nâng cấp lên `v1.3.0`, Deployment tạo ra `ReplicaSet v2` tăng dần từ `0 → 3` đồng thời giảm `ReplicaSet v1` từ `3 → 0` giúp dịch vụ không bị gián đoạn. (Có thể hình dung `Pod` như nhân viên trực quầy, `ReplicaSet` là tổ trưởng điểm danh đủ quân số mỗi ca, còn `Deployment` là quản lý điều phối chuyển giao giữa hai ca.)
 
 ```visual
 kind: compare
 title: Tại Sao Cần Tránh Chạy Naked Pod Trên Production?
-subtitle: Sự khác biệt sinh tử khi một Worker Node bất ngờ sập nguồn lúc nửa đêm
+subtitle: Sự khác biệt rõ rệt khi một Worker Node bất ngờ sập nguồn lúc nửa đêm
 left:
   badge: "NGUY HIỂM · Naked Pod (Pod trần)"
   title: Mồ côi không người giám hộ
@@ -85,7 +85,7 @@ steps:
   - icon: layers
     badge: Tầng 2 · Trung gian ngầm
     title: ReplicaSet
-    desc: Tổ trưởng điểm danh quân số của MỘT phiên bản cụ thể — luôn canh gác đảm bảo đủ đúng số Pod sống
+    desc: Bộ điều khiển giữ quân số của MỘT phiên bản cụ thể — luôn theo dõi đảm bảo đủ đúng số Pod sống
     code: "replicas: 3"
     tone: sky
     edge: đếm qua matchLabels
@@ -97,7 +97,7 @@ steps:
     tone: emerald
 ```
 
-## 2. Nguyên tắc khớp nối sống còn: `selector.matchLabels` và `template.metadata.labels`
+## 2. Quy tắc khớp nhãn giữa `selector.matchLabels` và `template.metadata.labels`
 
 Trong một `Deployment` (`apiVersion: apps/v1`), có hai vị trí khai báo nhãn bắt buộc phải ăn khớp chặt chẽ với nhau:
 
@@ -110,25 +110,25 @@ spec:
   replicas: 3
   selector:
     matchLabels:
-      app: shop-api          # (A) Kính lúp để Deployment/ReplicaSet nhận diện "con của mình"
+      app: shop-api          # (A) Điều kiện lọc để Deployment/ReplicaSet nhận diện Pod thuộc quyền quản lý
   template:
     metadata:
       labels:
-        app: shop-api        # (B) Thẻ tên đeo lên ngực từng Pod lúc mới sinh ra!
+        app: shop-api        # (B) Bộ nhãn được gắn lên mỗi Pod khi khởi tạo
     spec:
       containers:
         - name: api
           image: ghcr.io/acme/shop-api:1.2.0
 ```
 
-> [!WARNING] Lỗi Validation kinh điển khi lệch nhãn `(A)` và `(B)`
-> Hãy tưởng tượng `(B)` (`spec.template.metadata.labels`) là bảng tên đeo lên áo từng Pod sinh ra, còn `(A)` (`spec.selector.matchLabels`) là bộ lọc điểm danh quân số. **Mọi cặp khóa-giá trị trong `(A)` BẮT BUỘC phải có mặt y hệt trong `(B)`!**
+> [!WARNING] Lỗi Validation phổ biến khi lệch nhãn `(A)` và `(B)`
+> Trong cấu hình trên, `(B)` (`spec.template.metadata.labels`) là bộ nhãn gắn lên mỗi Pod khi tạo ra, còn `(A)` (`spec.selector.matchLabels`) là điều kiện lọc để Deployment nhận diện đúng các Pod thuộc quyền quản lý của mình. **Mọi cặp khóa-giá trị trong `(A)` BẮT BUỘC phải có mặt y hệt trong `(B)`!**
 > Nếu `(A)` ghi `{ app: "web" }` mà `(B)` lại ghi `{ app: "frontend" }`, Kubernetes API Server sẽ từ chối ngay lập tức với lỗi:
 > ==`Invalid value: 'selector' does not match template 'labels'`==.
 
 ## 3. Chiến lược nâng cấp không gián đoạn: `RollingUpdate` (`maxUnavailable: 0`)
 
-Khi bạn nâng `image` từ `1.2.0` lên `1.3.0`, mặc định Kubernetes dùng chiến lược **`RollingUpdate`** — giống như **mở thêm quầy thu ngân mới đón khách xong xuôi rồi mới cho nhân viên quầy cũ nghỉ ca**. Để đảm bảo ==Zero-Downtime tuyệt đối== không bao giờ hụt năng lực phục vụ ở giờ cao điểm, ta kết hợp bộ đôi tham số vàng:
+Khi bạn nâng `image` từ `1.2.0` lên `1.3.0`, mặc định Kubernetes dùng chiến lược **`RollingUpdate`** — thay thế dần từng Pod cũ bằng Pod mới thay vì tắt đồng loạt. Để đảm bảo ==Zero-Downtime tuyệt đối== không bị hụt năng lực phục vụ ở giờ cao điểm, ta kết hợp bộ đôi tham số sau (tương tự việc mở thêm quầy thu ngân mới hoạt động ổn định rồi mới đóng quầy cũ):
 
 - [x] **`maxUnavailable: 0`:** Trong suốt lúc nâng cấp, số Pod sẵn sàng phục vụ (`Ready`) **không được phép tụt xuống thấp hơn `replicas` ban đầu** dù chỉ 1 Pod! (Với `replicas: 4`, cụm luôn giữ tối thiểu `4 - 0 = 4` Pod sẵn sàng).
 - [x] **`maxSurge: 1`:** Cho phép cụm bật vọt thêm tối đa `1` Pod mới vượt trên mức `replicas` (với `replicas: 4` là tạm thời vọt lên tối đa **`5` Pod**). Chỉ khi Pod mới báo `Ready`, K8s mới tắt 1 Pod cũ!
@@ -178,13 +178,13 @@ steps:
 > [!TIP] Khi nào mới dùng chiến lược thứ hai `type: Recreate`?
 > Khác với `RollingUpdate`, chiến lược `Recreate` sẽ **tắt sạch 100% Pod cũ rồi mới bật Pod mới** (chấp nhận vài giây Downtime). Ta chỉ dùng `Recreate` cho ứng dụng cũ không cho phép 2 phiên bản chạy song song cùng ghi vào 1 ổ đĩa đơn hoặc lúc nâng cấp GPU đặc thù trên máy thiếu khe cắm!
 
-## 4. Co giãn nóng (`scale`) và Cứu hỏa khẩn cấp (`rollout undo`)
+## 4. Mở rộng số lượng bản sao (`scale`) và Khôi phục phiên bản trước (`rollout undo`)
 
-Nhờ `Deployment` giữ lại các `ReplicaSet` cũ (hạ số bản sao về `0`) trong lịch sử theo `spec.revisionHistoryLimit` (mặc định lưu **10 bản**), nếu bản `2.0.0-crash` vừa đẩy lên dính lỗi code rơi vào `CrashLoopBackOff`, bạn không cần chờ CI/CD build lại mất 10 phút mà có thể ==quay ngược thời gian trong 2 giây==!
+Nhờ `Deployment` giữ lại các `ReplicaSet` cũ (hạ số bản sao về `0`) trong lịch sử theo `spec.revisionHistoryLimit` (mặc định lưu **10 bản**), nếu bản `2.0.0-crash` vừa đẩy lên dính lỗi code rơi vào `CrashLoopBackOff`, bạn không cần chờ CI/CD build lại mất 10 phút mà có thể ==khôi phục ngay phiên bản ổn định trước đó trong vài giây==:
 
 ```visual
 kind: groups
-title: Bảng Lệnh Điều Hành Co Giãn & Rollback Khẩn Cấp [!badge:emerald:Thực Chiến]
+title: Bảng Lệnh Điều Chỉnh Số Bản Sao & Khôi Phục Phiên Bản [!badge:emerald:Thực Chiến]
 columns: 2
 items:
   - num: 1

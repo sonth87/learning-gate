@@ -4,7 +4,7 @@
   "level": 6,
   "order": 19,
   "title": "Troubleshooting K8s (Phần 2): OOMKilled (137), Lỗi 502 Bad Gateway & Rollback",
-  "summary": "Xử lý trực diện 4 sự cố vận hành căng thẳng nhất trên Production: tràn RAM OOMKilled 137, rỗng Endpoints gây 502, Rollback khẩn cấp bằng CLI và gia cố Zero-Downtime.",
+  "summary": "Xử lý trực diện 4 sự cố vận hành phổ biến nhất trên Production: tràn RAM OOMKilled 137, rỗng Endpoints gây 502, Rollback nhanh bằng CLI và cấu hình Zero-Downtime.",
   "tags": [
     "oomkilled",
     "502-bad-gateway",

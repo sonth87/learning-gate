@@ -1,8 +1,8 @@
-## 1. Giải mã bằng ví dụ phần mềm: 5 cách tiếp cận phát triển khác nhau ra sao?
+## 1. Năm cách tiếp cận phát triển dự án theo PMBOK® 8 (`Predictive, Iterative, Incremental, Agile, Hybrid`)
 
-Khi bắt tay làm một hệ thống công nghệ mới, không có phương pháp quản lý nào là "tốt nhất cho mọi dự án". Trong [!badge:amber:PMBOK 8] (`Standard §4.2`), PMI xếp các cách làm dự án trên một **dải phổ liên tục (Development Spectrum)** dựa vào **Ma trận Stacey**: mức độ bất định của **Yêu cầu (Làm cái gì?)** × mức độ bất định của **Kỹ thuật (Làm bằng cách nào?)**, cộng thêm **Chi phí sửa đổi (Cost of Change)**.
+Khi triển khai một sản phẩm hay hệ thống mới, không có phương pháp quản lý nào phù hợp cho mọi bối cảnh. Trong [!badge:amber:PMBOK 8] (`Standard §4.2`), PMI phân loại các cách tiếp cận trên một **dải phổ liên tục (Development Spectrum)** dựa vào **Ma trận Stacey**: mức độ bất định của **Yêu cầu (What)** × mức độ bất định của **Kỹ thuật (How)**, kết hợp với **Chi phí thay đổi (Cost of Change)**.
 
-Hãy hình dung cùng một bài toán xây dựng nền tảng thương mại điện tử và hạ tầng thanh toán để phân biệt ngay 5 cách tiếp cận mà không bao giờ nhầm lẫn:
+Xét trên cùng bối cảnh xây dựng nền tảng thương mại điện tử và hạ tầng thanh toán, có thể phân biệt 5 cách tiếp cận như sau:
 
 1. **Predictive (*Waterfall — Tuần tự dự báo trước*):** Dựng phòng máy chủ vật lý hoặc cổng khai báo thuế theo thông tư pháp luật đã chốt cứng 100%. Thiết kế xong xuôi từ đầu rồi mới thi công tuần tự, ==bàn giao trọn gói 1 lần duy nhất ở cuối dự án== vì đập đi xây lại cực kỳ tốn kém.
 2. **Iterative (*Lặp tinh chỉnh — Tối ưu ĐỘ ĐÚNG ĐẮN*):** Thiết kế giao diện đặt lệnh chứng khoán phức tạp mà khách hàng chưa hình dung rõ mình thích bố cục nào. Đội thiết kế dựng bản nháp đen trắng (*Wireframe*) → bản màu (*Mockup*) → bản bấm thử (*Prototype*) qua nhiều vòng góp ý cho thật trúng ý rồi mới đóng gói bàn giao.
@@ -58,12 +58,12 @@ items:
       - "Cầu nối an toàn khi tổ chức truyền thống chuyển dịch sang linh hoạt"
 ```
 
-> [!WARNING]
-> **Ẩn dụ bức tranh nàng Mona Lisa để không bao giờ nhầm Iterative và Incremental:**
-> - **Iterative:** Phác chì cả bức tranh → tô mảng mờ → vẽ chi tiết. Mỗi vòng nét vẽ *đúng hơn*, nhưng chỉ vòng cuối mới treo lên tường được.
-> - **Incremental:** Vẽ hoàn chỉnh 100% khuôn mặt → vẽ hoàn chỉnh đôi tay → vẽ nền. Mỗi phần vẽ xong là *nét căng hoàn thiện ngay phần đó*.
+> [!NOTE]
+> **Ví dụ liên hệ giúp phân biệt Iterative và Incremental:** Có thể hình dung qua việc vẽ một bức tranh chân dung:
+> - **Iterative:** Phác thảo toàn bộ bố cục bằng chì → lên mảng màu thô → hoàn thiện chi tiết. Mỗi vòng nét vẽ *chính xác hơn*, nhưng chỉ đến vòng cuối cùng sản phẩm mới hoàn chỉnh để sử dụng.
+> - **Incremental:** Hoàn thiện 100% phần khuôn mặt → hoàn thiện phần nền → hoàn thiện chi tiết phụ. Mỗi phần xong là có *giá trị hoàn chỉnh ngay cho phần đó*.
 
-## 2. Đảo ngược Tam giác Ràng buộc & 4 mẫu thiết kế Hybrid thực tế
+## 2. Tam giác Ràng buộc đảo ngược (`Inverted Triangle`) và 4 mô hình `Hybrid` phổ biến
 
 Sự khác biệt gốc rễ giữa tư duy truyền thống và tư duy thích ứng nằm ở **Tam giác Ràng buộc đảo ngược (Inverted Triangle of Constraints)**:
 
@@ -72,9 +72,9 @@ Sự khác biệt gốc rễ giữa tư duy truyền thống và tư duy thích 
 
 Ngoài đời và trong [!badge:violet:ECO 07/2026], bạn sẽ gặp 4 mẫu **Hybrid** phổ biến: (1) *Agile trước, Predictive sau* (nghiên cứu mẫu thử AI bằng Agile rồi triển khai đồng loạt cho 200 chi nhánh bằng Waterfall); (2) *Predictive trước, Agile sau*; (3) *Chạy song song đồng thời* (đội phần cứng và đội phần mềm khớp nhau tại các cột mốc tích hợp chung); và (4) *Khung lớn Predictive nhúng một mô-đun nhỏ Agile*.
 
-## 3. 5 Focus Areas (`PMBOK 8 §4.3`) vận hành trong cả hai thế giới thế nào?
+## 3. Sự vận hành của 5 Focus Areas (`PMBOK 8 §4.3`) trong Predictive và Agile
 
-Nhiều kỹ sư mới học hiểu lầm rằng *"Làm Agile là nhảy vào code luôn, không cần lập kế hoạch hay kiểm soát"*. Thực tế, **5 Nhóm trọng tâm (Focus Areas)** của PMBOK 8 luôn hiện diện đầy đủ nhưng đổi nhịp thực thi:
+Một hiểu lầm phổ biến là *"Làm Agile thì không cần lập kế hoạch hay kiểm soát"*. Thực tế, **5 Nhóm trọng tâm (Focus Areas)** của PMBOK 8 luôn hiện diện đầy đủ trong cả hai mô hình nhưng khác nhau về nhịp độ thực thi:
 
 ```visual
 kind: layers
@@ -109,9 +109,9 @@ columns:
         tone: "amber"
 ```
 
-## 4. Tình huống thực chiến & Phản xạ vàng về Tailoring (May đo phương pháp)
+## 4. Nguyên tắc `Tailoring` (tùy biến phương pháp) khi chuyển đổi sang Agile
 
-**Tailoring (*May đo quy trình*)** nghĩa là PM chủ động chọn lọc và tinh chỉnh phương pháp sao cho vừa vặn nhất với văn hoá công ty, năng lực đội ngũ và độ phức tạp sản phẩm — tuyệt đối không rập khuôn máy móc sách vở.
+**Tailoring (*May đo / Tùy biến quy trình*)** nghĩa là PM chủ động chọn lọc và điều chỉnh phương pháp sao cho phù hợp với văn hóa tổ chức, năng lực đội ngũ và độ phức tạp của sản phẩm, thay vì áp dụng rập khuôn một mô hình lý thuyết.
 
 > [!TIP]
-> **Bẫy chuyển đổi số cực đoan trong đề thi:** Nếu đề bài mô tả một tập đoàn ngân hàng lâu năm quen quy trình kiểm soát chặt chẽ muốn áp dụng Agile, đáp án đúng **không bao giờ** là *"Xoá bỏ ngay toàn bộ tài liệu và ép chuyển 100% sang thuần Scrum từ tuần sau"*! Hãy chọn ==triển khai mô hình Hybrid chuyển tiếp, chọn dự án thí điểm (Pilot) kết hợp đào tạo và huấn luyện (Coaching) từng bước==.
+> **Xử lý tình huống chuyển đổi quy trình trong đề thi:** Nếu đề bài mô tả một tổ chức truyền thống (như ngân hàng lâu năm quen kiểm soát chặt chẽ) muốn chuyển sang Agile, đáp án đúng **không bao giờ** là *"Xoá bỏ ngay toàn bộ tài liệu và ép chuyển 100% sang Scrum từ tuần sau"*. Phương án chuẩn là ==triển khai mô hình Hybrid chuyển tiếp, chọn dự án thí điểm (Pilot) kết hợp đào tạo và huấn luyện (Coaching) từng bước==.

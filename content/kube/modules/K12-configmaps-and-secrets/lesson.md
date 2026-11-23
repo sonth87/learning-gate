@@ -5,10 +5,10 @@ Khi phát triển ứng dụng Python (`FastAPI`) hay Node.js trên máy cá nh�
 - [!] Bạn **không thể** đóng cứng chuỗi kết nối Database hay địa chỉ CORS vào bên trong Container Image bằng `ENV` của Dockerfile (vì mỗi môi trường mỗi khác!).
 - [!] Bạn càng **tuyệt đối không được** nhét mật khẩu cơ sở dữ liệu hay khóa ký JWT/OpenAI API Key vào Dockerfile hay kho Git!
 
-> [!NOTE] Mô hình tư duy: "Bảng thông báo sảnh chung" (`ConfigMap`) vs "Hồ sơ niêm phong nhạy cảm" (`Secret`)
-> Theo triết lý **12-Factor App**, Kubernetes tách bạch cấu hình thành hai ngăn rõ ràng để dễ phân quyền ai được phép đọc:
-> - **`ConfigMap`** giống như **bảng thông báo treo ở sảnh văn phòng**: chứa các tham số vận hành không nhạy cảm (`LOG_LEVEL=info`, `PORT=8000`, tệp `nginx.conf`) — ai trong nhóm xem cũng được và lưu thẳng lên Git thoải mái.
-> - **`Secret`** dành riêng cho **mật khẩu DB, khóa riêng TLS, API Key**: được Kubernetes gắn lên bộ nhớ RAM tạm (`tmpfs` không ghi xuống ổ đĩa Worker Node) và khóa chặt quyền đọc bằng RBAC!
+> [!NOTE] Phân biệt `ConfigMap` và `Secret` theo nguyên tắc 12-Factor App
+> Theo triết lý **12-Factor App**, Kubernetes tách biệt cấu hình thành hai loại tài nguyên để áp dụng chính sách bảo mật và phân quyền khác nhau:
+> - **`ConfigMap`:** Lưu trữ các tham số vận hành không nhạy cảm (`LOG_LEVEL=info`, `PORT=8000`, tệp `nginx.conf`) dưới dạng văn bản rõ — có thể lưu trực tiếp trên Git.
+> - **`Secret`:** Dành riêng cho thông tin nhạy cảm (mật khẩu DB, khóa riêng TLS, API Key), được Kubernetes nạp vào bộ nhớ RAM tạm (`tmpfs`, không ghi xuống ổ đĩa Worker Node) và kiểm soát quyền truy cập chặt chẽ qua RBAC (tương tự như bảng thông báo công khai tách biệt với hồ sơ bảo mật có khóa kiểm soát).
 
 ```visual
 kind: groups
@@ -43,7 +43,7 @@ items:
 kind: illustration
 diagram: "kube:k12"
 alt: "Tách cấu hình 12-Factor bằng ConfigMap và Secret nạp vào Pod qua biến môi trường envFrom so với gắn ổ đĩa chỉ đọc tmpfs"
-title: "Giải Phẫu Nạp Cấu Hình & Bí Mật: envFrom Tĩnh vs Ổ Đĩa Tmpfs Tự Đồng Bộ"
+title: "Cơ Chế Nạp Cấu Hình & Bí Mật: envFrom Tĩnh vs Ổ Đĩa Tmpfs Tự Đồng Bộ"
 subtitle: "Giữ Container Image bất biến xuyên suốt Dev, Staging và Production bằng cách tiêm cấu hình động từ bên ngoài"
 caption: "Sự khác biệt cốt lõi giữa nạp vào biến môi trường lúc khởi tạo (không tự cập nhật nóng) và gắn thành tệp chỉ đọc trên RAM tmpfs (tự đồng bộ sau ~60s)"
 callouts:
@@ -116,7 +116,7 @@ right:
     - "Luôn bật **`readOnly: true`** để ngăn ứng dụng vô tình ghi đè tệp cấu hình!"
 ```
 
-## 2. `Secret`: Hiểu đúng sự thật về `Base64` để không sập bẫy ảo tưởng an toàn!
+## 2. `Secret`: Hiểu đúng bản chất `Base64` và cách bảo vệ dữ liệu nhạy cảm
 
 Khi tạo Manifest `Secret`, trường tiện lợi ==`stringData:`== cho phép bạn viết văn bản thường dễ đọc, và Kubernetes API Server sẽ tự động chuyển sang chuỗi `Base64` cất vào `data:`:
 
@@ -138,8 +138,8 @@ stringData:
 #           key: DB_PASSWORD
 ```
 
-> [!WARNING] Cảnh báo bảo mật số 1: `Base64` KHÔNG PHẢI là Mã hóa mật mã học (`Encryption`)!
-> Rất nhiều người thấy chuỗi nhìn loằng ngoằng `cGxhY2Vob2xkZXI=` trong `data:` của `Secret` liền yên tâm đẩy thẳng tệp `secret.yaml` lên GitHub! Đó là một sai lầm nghiêm trọng: ==Base64 chỉ là phép đổi bảng chữ cái (`encoding`) giống như đánh vần mã Morse==, bất kỳ ai cũng dịch ngược về mật khẩu gốc trong 0.5 giây bằng `echo "..." | base64 -d` hoặc `base64.b64decode(...)`!
+> [!WARNING] Lưu ý bảo mật quan trọng: `Base64` KHÔNG PHẢI là Mã hóa mật mã học (`Encryption`)!
+> Nhiều người thấy chuỗi `cGxhY2Vob2xkZXI=` trong `data:` của `Secret` liền yên tâm đẩy thẳng tệp `secret.yaml` lên GitHub. Đó là một sai lầm nghiêm trọng: ==Base64 chỉ là phép mã hóa định dạng văn bản (`encoding`)==, bất kỳ ai đọc được tệp YAML đều giải mã ngược về mật khẩu gốc trong tích tắc bằng `echo "..." | base64 -d` hoặc `base64.b64decode(...)` (giống như chuyển chữ sang mã Morse để truyền tin chứ không hề bảo mật).
 
 ```visual
 kind: groups

@@ -29,10 +29,10 @@ function makeStepCallout(
         : 'watch-out';
   const title =
     phase === 'first'
-      ? bi('Giải mã khái niệm & Ẩn dụ thực tế', 'Plain-Language Concept & Analogy')
+      ? bi('Khái niệm cốt lõi & Bối cảnh áp dụng', 'Core Concept & Practical Context')
       : phase === 'last'
-        ? bi('Phản xạ Vàng chốt điểm phòng thi', 'Golden Exam Decision Reflex')
-        : bi('Cơ chế PMI & Bẫy đề thi cần tránh', 'PMI Mechanism & Classic Exam Trap');
+        ? bi('Nguyên tắc áp dụng khi giải đề', 'Key Exam Decision Principle')
+        : bi('Cơ chế PMI & Sai lầm cần tránh', 'PMI Mechanism & Common Pitfall');
   const text =
     phase === 'first'
       ? firstText
@@ -64,12 +64,12 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Giải mã bằng ngôn ngữ đời thường: ECO (Khung đề thi) vs PMBOK® 8 (Sách quy chuẩn kiến trúc QLDA), OCM & ESG',
-        'Demystify ECO (Exam Syllabus) vs PMBOK® 8 (Reference Standard), OCM, and ESG in plain terms'
+        'Nắm vững khái niệm nền tảng: ECO (Khung đề cương thi), PMBOK® 8 (Bộ quy chuẩn QLDA), OCM và ESG',
+        'Understand ECO (Exam Syllabus), PMBOK® 8 (Reference Standard), OCM, and ESG clearly'
       ),
       bi(
-        'Nắm chắc cấu trúc 180 câu / 240 phút và cú nhảy vọt tỷ trọng Business Environment từ 8% lên 26%',
-        'Master the 180-question / 240-minute format and Business Environment surge from 8% to 26%'
+        'Nắm chắc cấu trúc 180 câu / 240 phút và sự gia tăng tỷ trọng miền Business Environment từ 8% lên 26%',
+        'Master the 180-question / 240-minute format and Business Environment weight increase from 8% to 26%'
       ),
       bi(
         'Kết nối kiến trúc 3 tầng PMBOK 8 (6 Nguyên tắc → 5 Focus Areas → 7 Domains) sang 14 chủ đề PMP Mindmap',
@@ -112,8 +112,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   {
                     op: '+',
                     text: bi(
-                      'Miền Business Environment (Compliance, OCM, Benefits, ESG, AI) tăng gấp hơn 3 lần từ 8% lên 26%!',
-                      'Business Environment domain surged more than 3× from 8% to 26% of exam weight'
+                      'Miền Business Environment (Compliance, OCM, Benefits, ESG, AI) tăng gấp hơn 3 lần từ 8% lên 26% tổng điểm',
+                      'Business Environment domain increased more than 3× from 8% to 26% of exam weight'
                     ),
                   },
                 ]
@@ -140,20 +140,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Hãy hình dung kỳ thi Kiến trúc sư Phần mềm: ECO 07/2026 chính là "Đề cương ra đề", còn PMBOK® Guide 8 là "Sách tài liệu chuẩn". Hiểu vai trò từng cuốn giúp bạn không học lan man!',
-            'Think of a Software Architect exam: ECO 07/2026 is the official exam syllabus, while PMBOK® Guide 8 is the reference manual.'
+            'ECO 07/2026 là khung đề cương quy định các nhiệm vụ được kiểm tra và tỷ trọng điểm, còn PMBOK® Guide 8 là tài liệu quy chuẩn kiến thức tham chiếu. Có thể hình dung giống như mối quan hệ giữa đề cương ôn thi và giáo trình chuẩn mực.',
+            'ECO 07/2026 is the official exam syllabus specifying tested tasks and weights, while PMBOK® Guide 8 is the reference standard manual.'
           ),
           bi(
-            'Đừng học vẹt danh sách đầu vào/đầu ra (ITTO) hay bỏ qua Business Environment! Hơn 90% đề thi hỏi hành động FIRST / NEXT / BEST và riêng Business Environment đã chiếm 26% điểm.',
+            'Không học thuộc lòng danh sách đầu vào/đầu ra (ITTO) hay xem nhẹ Business Environment: hơn 90% đề thi hỏi hành động FIRST / NEXT / BEST và riêng Business Environment chiếm 26% điểm.',
             'Never cram raw ITTO lists or ignore Business Environment — 90%+ of questions test situational FIRST/NEXT/BEST judgment, with 26% in Business Environment.'
           ),
           bi(
-            'Bẫy hay gặp: Tưởng Agile xóa bỏ 5 Focus Areas (Initiating → Closing). Thực tế cả 5 nhóm này vẫn chạy đủ trong từng Sprint 2 tuần của Agile!',
-            'Exam trap: Assuming Agile eliminates Initiating -> Closing. In PMBOK 8, all 5 Focus Areas cycle continuously inside every short Sprint!'
+            'Lưu ý thường gặp: Agile không xóa bỏ 5 Focus Areas (Initiating → Closing). Thực tế cả 5 nhóm trọng tâm này vẫn vận hành đầy đủ theo chu kỳ ngắn trong từng Sprint.',
+            'Common misconception: Agile does not eliminate Initiating -> Closing. In PMBOK 8, all 5 Focus Areas cycle continuously inside every short Sprint.'
           ),
           bi(
-            'Phản xạ Vàng: Mỗi câu hỏi tình huống luôn lồng ghép Con người + Quy trình + Giá trị kinh doanh. Hãy đọc câu chốt cuối cùng trước và giữ nhịp ~80 giây/câu!',
-            'Golden Reflex: Read the final question sentence first, identify Agile/Predictive/Hybrid cues, and pace yourself at ~80 seconds per question.'
+            'Nguyên tắc ôn tập: Mỗi câu hỏi tình huống thường lồng ghép Con người + Quy trình + Giá trị kinh doanh. Hãy đọc câu chốt cuối cùng trước và giữ nhịp ~80 giây/câu.',
+            'Key Principle: Read the final question sentence first, identify Agile/Predictive/Hybrid cues, and pace yourself at ~80 seconds per question.'
           )
         ),
         memoryScene: {
@@ -209,12 +209,12 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Hiểu vai trò của Sponsor, Project Charter, Baseline & CCB để thấy vì sao "chữa cháy đường tắt" ngoài đời làm trượt PMP',
+        'Hiểu vai trò của Sponsor, Project Charter, Baseline & CCB để thấy vì sao thói quen xử lý cảm tính ngoài thực tế dễ gây mất điểm PMP',
         'Understand Sponsor, Charter, Baseline & CCB roles and why ad-hoc shortcuts fail on the PMP exam'
       ),
       bi(
-        'Đảo ngược 6 thói quen cảm tính sang 6 Phản xạ Vàng chuẩn PMI: Phân tích trước → Hợp tác trực tiếp → Tuân thủ quy trình',
-        'Flip 6 reactive real-world habits into PMI’s 6 Golden Reflexes: Verify -> Assess -> Collaborate -> Govern'
+        'Chuyển đổi 6 thói quen cảm tính sang 6 nguyên tắc hành động chuẩn PMI: Phân tích trước → Hợp tác trực tiếp → Tuân thủ quy trình',
+        'Flip 6 reactive real-world habits into PMI’s 6 disciplined principles: Verify -> Assess -> Collaborate -> Govern'
       ),
       bi(
         'Nắm rõ 3 ngoại lệ duy nhất PM được phép leo thang (Escalate) vấn đề lên Project Sponsor',
@@ -247,7 +247,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '-',
                   text: bi(
-                    'Nhận diện căn bệnh "chữa cháy trên Zalo/Slack": tự sửa code ngầm, rút việc về tự làm, mách sếp lớn',
+                    'Nhận diện các thói quen xử lý cảm tính: tự ý sửa code không qua kiểm soát, làm thay việc của nhóm, báo cáo thẳng lên cấp trên khi chưa phân tích',
                     'Identified real-world firefighting traps: stealth code edits, hero coding, premature escalation'
                   ),
                 },
@@ -257,8 +257,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   {
                     op: '+',
                     text: bi(
-                      'Thay thế 6 phản xạ cảm tính bằng 6 kỷ luật vàng của Servant & Accountable Leader',
-                      'Replaced 6 impulsive shortcuts with PMI’s 6 disciplined leadership reflexes'
+                      'Thay thế 6 phản ứng cảm tính bằng 6 nguyên tắc kỷ luật của Servant & Accountable Leader',
+                      'Replaced 6 impulsive shortcuts with PMI’s 6 disciplined leadership principles'
                     ),
                   },
                 ]
@@ -267,7 +267,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '+',
                       text: bi(
-                        'Khoá chặt phễu 4 trạm cho câu hỏi FIRST/NEXT: Kiểm chứng → Đánh giá tác động → Họp 1-1 → Qua CCB/PO',
+                        'Áp dụng quy trình 4 bước cho câu hỏi FIRST/NEXT: Kiểm chứng → Đánh giá tác động → Họp 1-1 → Qua CCB/PO',
                         'Installed 4-step FIRST/NEXT sequence: Verify -> Assess -> Collaborate -> Govern'
                       ),
                     },
@@ -276,7 +276,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '~',
                       text: bi(
-                        'Chỉ leo thang lên Sponsor khi vượt trần Baseline/Management Reserve hoặc gãy Business Case (kèm phương án đề xuất!)',
+                        'Chỉ leo thang lên Sponsor khi vượt trần Baseline/Management Reserve hoặc thay đổi Business Case (kèm phương án đề xuất)',
                         'Restricted Sponsor escalation strictly to Charter/Business Case boundaries with concrete options'
                       ),
                     },
@@ -285,20 +285,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ngoài công ty nhỏ, tự sửa code giúp khách trong 2 tiếng được khen là nhiệt tình; nhưng ở dự án lớn chuẩn PMI, sửa không qua đánh giá tác động sẽ làm vỡ dây chuyền bảo mật, tiến độ và hợp đồng!',
+            'Ở quy mô nhỏ, tự ý sửa nhanh giúp khách hàng có thể được xem là linh hoạt; nhưng trong quản trị dự án chuẩn PMI, mọi thay đổi chưa qua đánh giá tác động đều tiềm ẩn rủi ro dây chuyền về bảo mật, tiến độ và hợp đồng.',
             'In small startups, stealth 2-hour fixes look helpful; in enterprise PMI governance, unassessed changes trigger cascading cost, security, and legal failures.'
           ),
           bi(
-            'Bẫy rớt điểm #1: Đáp án chứa "Ask HR to replace the developer", "Immediately pause the project", hoặc "Take over the coding task yourself" sai tới 99%!',
-            'Top exam trap: Choices saying "Replace the team member", "Halt the project", or "Do the technical task yourself" are wrong 99% of the time!'
+            'Lưu ý quan trọng: Các phương án có nội dung "Ask HR to replace the developer", "Immediately pause the project", hoặc "Take over the technical task yourself" hầu như luôn sai.',
+            'Top exam trap: Choices saying "Replace the team member", "Halt the project", or "Do the technical task yourself" are almost always wrong.'
           ),
           bi(
-            'Khi gặp câu hỏi "What should the PM do FIRST?", đừng nhảy thẳng sang nộp Change Request — luôn kiểm chứng sự thật và phân tích tác động cùng nhóm trước!',
-            'On "do FIRST" questions, never jump straight to submitting a Change Request — verify facts and assess impact with the team first!'
+            'Khi gặp câu hỏi "What should the PM do FIRST?", không nhảy thẳng sang nộp Change Request — luôn kiểm chứng thông tin và phân tích tác động cùng nhóm trước.',
+            'On "do FIRST" questions, never jump straight to submitting a Change Request — verify facts and assess impact with the team first.'
           ),
           bi(
-            'Phản xạ Vàng: Trước khi gõ cửa Sponsor (khi vượt thẩm quyền), PM bắt buộc phải phân tích xong dữ liệu và cầm theo các phương án khuyến nghị rõ ràng.',
-            'Golden Reflex: Never bring an empty problem to the Sponsor — complete impact analysis first and present actionable options with a recommendation.'
+            'Nguyên tắc xử lý: Trước khi báo cáo vấn đề vượt thẩm quyền lên Sponsor, PM phải hoàn tất phân tích dữ liệu và chuẩn bị sẵn các phương án kèm khuyến nghị cụ thể.',
+            'Key Principle: Never bring an empty problem to the Sponsor — complete impact analysis first and present actionable options with a recommendation.'
           )
         ),
         memoryScene: {
@@ -354,15 +354,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Phân biệt qua ví dụ App thực tế: Output (bộ code bàn giao) ≠ Outcome (người dùng chuyển sang xài) ≠ Benefits (doanh thu/tiết kiệm ròng)',
+        'Phân biệt 3 cấp độ giá trị dự án: Output (sản phẩm bàn giao), Outcome (hành vi sử dụng thực tế) và Benefits (lợi ích kinh doanh ròng)',
         'Distinguish Deliverable Output from Behavioral Outcome and Business Benefits via software examples'
       ),
       bi(
-        'Tách rạch ròi MVP (bản thử nghiệm nhỏ nhất để kiểm chứng giả thuyết) với MMF (tính năng nhỏ nhất đủ bán/tạo giá trị)',
+        'Phân biệt rõ MVP (bản thử nghiệm nhỏ nhất để kiểm chứng giả thuyết) với MMF (tính năng nhỏ nhất đủ tạo giá trị thương mại)',
         'Contrast MVP (minimum experiment for learning) vs MMF (minimum feature for real market value)'
       ),
       bi(
-        'Áp dụng Tư duy Hệ thống (Holistic View), Phát triển Bền vững (ESG) và dũng cảm cắt bỏ Chi phí chìm (Sunk Cost)',
+        'Áp dụng Tư duy Hệ thống (Holistic View), Phát triển Bền vững (ESG) và loại bỏ ngụy biện Chi phí chìm (Sunk Cost)',
         'Apply Holistic Systems Thinking, ESG Sustainability, and reject the Sunk Cost Fallacy'
       ),
     ],
@@ -430,20 +430,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ví dụ dễ nhớ: Code xong App đặt lịch khám đúng hạn là Output; 70% bệnh nhân chịu đặt lịch qua App là Outcome; giảm 80 phút chờ & tăng 25% công suất viện là Benefits!',
-            'Software analogy: Shipping the booking app on time is Output; 70% patient adoption is Outcome; 25% higher clinic throughput & positive NPV is Benefits!'
+            'Output là sản phẩm kỹ thuật bàn giao đúng hạn, Outcome là sự thay đổi hành vi sử dụng của người dùng, còn Benefits là lợi ích kinh doanh thu về. Ví dụ trong dự án App đặt lịch khám: bàn giao App là Output, 70% bệnh nhân đặt lịch qua App là Outcome, tăng 25% công suất bệnh viện là Benefits.',
+            'Output is the delivered technical product, Outcome is user behavior adoption, and Benefits are measurable business gains (e.g., shipping the booking app -> 70% patient adoption -> 25% higher clinic throughput).'
           ),
           bi(
-            'Bẫy từ vựng cực phổ biến: Đề hỏi "kiểm chứng xem khách hàng có quan tâm ý tưởng mới không" → chọn MVP! Đề hỏi "phát hành cụm tính năng nhỏ nhất tạo doanh thu ngay" → chọn MMF!',
-            'Classic exam trap: Testing a risky market hypothesis -> pick MVP! Releasing the smallest complete feature that earns value -> pick MMF!'
+            'Cách phân biệt trong đề thi: Khi đề hỏi "kiểm chứng xem khách hàng có quan tâm ý tưởng mới không" → chọn MVP. Khi đề hỏi "phát hành cụm tính năng nhỏ nhất tạo doanh thu ngay" → chọn MMF.',
+            'Exam distinction: Testing a risky market hypothesis -> pick MVP. Releasing the smallest complete feature that earns value -> pick MMF.'
           ),
           bi(
-            'Mọi thay đổi nhỏ (như rút ngắn 1 tuần test) đều tạo hiệu ứng cánh bướm sang Rủi ro, Chất lượng và Chi phí bảo trì — luôn đánh giá Holistic View!',
+            'Mọi điều chỉnh cục bộ (như rút ngắn 1 tuần kiểm thử) đều tạo tác động dây chuyền sang Rủi ro, Chất lượng và Chi phí bảo trì — luôn thực hiện đánh giá tác động toàn diện (Holistic View).',
             'Every local shortcut triggers system-wide ripple effects across Quality, Risk, and lifecycle ops — always run a Holistic Impact Assessment.'
           ),
           bi(
-            'Phản xạ Vàng trước Sunk Cost: Dù dự án đã tiêu 85% tiền, nếu sản phẩm không còn tạo ra Benefits nữa, PM phải rà soát Business Case và báo Sponsor xét Pivot hoặc dừng dự án!',
-            'Golden Reflex: Past spending is a Sunk Cost. If Business Case value vanishes, reassess with the Sponsor to pivot or formally terminate.'
+            'Nguyên tắc xử lý Sunk Cost: Dù dự án đã chi 85% ngân sách, nếu sản phẩm không còn tạo ra Benefits khả thi, PM phải rà soát Business Case và báo cáo Sponsor xem xét Pivot hoặc dừng dự án.',
+            'Key Principle: Past spending is a Sunk Cost. If Business Case value vanishes, reassess with the Sponsor to pivot or formally terminate.'
           )
         ),
         memoryScene: {
@@ -499,11 +499,11 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Giải mã An toàn tâm lý (Psychological Safety), Báo cáo dưa hấu (Watermelon Report) và ranh giới Quality vs Grade',
-        'Understand Psychological Safety, Watermelon Status Reports, and Quality vs Grade'
+        'Hiểu rõ An toàn tâm lý (Psychological Safety), tính minh bạch báo cáo trạng thái (tránh "báo cáo dưa hấu") và phân biệt Quality vs Grade',
+        'Understand Psychological Safety, transparent status reporting (avoiding Watermelon Reports), and Quality vs Grade'
       ),
       bi(
-        'Áp dụng quy luật Chi phí Chất lượng (CoQ): phòng ngừa trong quy trình rẻ gấp chục lần lỗi lọt ra khách hàng',
+        'Áp dụng quy luật Chi phí Chất lượng (CoQ): phòng ngừa trong quy trình luôn tiết kiệm hơn nhiều lần so với sửa lỗi lọt ra khách hàng',
         'Apply Cost of Quality (CoQ): prevention inside the process saves 10–100× over external failures'
       ),
       bi(
@@ -537,8 +537,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '+',
                   text: bi(
-                    'Xây dựng An toàn tâm lý để kỹ sư dám báo rủi ro ngay phút đầu, triệt tiêu "Báo cáo dưa hấu" xanh vỏ đỏ lòng',
-                    'Built Psychological Safety eliminating "Watermelon Status Reports" and separating Quality from Grade'
+                    'Xây dựng An toàn tâm lý để thành viên báo cáo rủi ro sớm, đảm bảo tính minh bạch thực trạng thay vì che giấu vấn đề',
+                    'Built Psychological Safety for early risk reporting and eliminated hidden-red status reports'
                   ),
                 },
               ]
@@ -575,20 +575,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ví dụ thực tế: Bản App miễn phí ít tính năng màu mè (Low Grade) nhưng chạy mượt không bug (High Quality) là hoàn toàn hợp lệ; còn App trăm tính năng mà bấm đâu crash đó (Low Quality) là cấm tuyệt đối!',
-            'Plain analogy: A minimalist app with zero bugs (Low Grade, High Quality) is perfectly valid; a feature-packed app that crashes (Low Quality) is never acceptable!'
+            'Quality là mức độ sản phẩm đáp ứng đúng yêu cầu cam kết và ít lỗi; Grade là mức độ phong phú tính năng cao cấp. Ví dụ, ứng dụng ít tính năng (Low Grade) nhưng ổn định không lỗi (High Quality) là đạt chuẩn, còn ứng dụng nhiều tính năng (High Grade) nhưng hay lỗi (Low Quality) là không chấp nhận được.',
+            'Quality measures conformance to requirements and reliability; Grade measures feature richness. A simple bug-free app (Low Grade, High Quality) is valid; a feature-packed buggy app (Low Quality) is never acceptable.'
           ),
           bi(
-            'Bẫy đề thi kinh điển: Khi gấp deadline, đáp án gợi ý "tạm bỏ qua kiểm thử tích hợp để kịp giao hàng" luôn SAI 100%! Phòng ngừa luôn rẻ hơn sửa lỗi ngoài thị trường.',
-            'Classic trap: "Skip integration testing to hit the launch date" is ALWAYS wrong! External failure is the most destructive Cost of Quality.'
+            'Sai lầm cần tránh: Khi gấp tiến độ, phương án gợi ý "tạm bỏ qua kiểm thử tích hợp để kịp giao hàng" luôn sai. Chi phí phòng ngừa luôn thấp hơn nhiều so với sửa lỗi ngoài thị trường.',
+            'Common pitfall: "Skip integration testing to hit the launch date" is ALWAYS wrong. External failure is the most destructive Cost of Quality.'
           ),
           bi(
-            'Dù cấp trên ép "tô xanh báo cáo tuần này cho khách đỡ lo", PM chính trực bắt buộc phải từ chối làm giả số liệu và báo cáo trung thực kèm phương án xử lý.',
+            'Dù cấp trên đề nghị điều chỉnh báo cáo sang trạng thái tích cực để khách hàng yên tâm, PM chính trực phải từ chối làm sai lệch số liệu và báo cáo trung thực kèm phương án xử lý.',
             'Even if pressured by a manager to hide schedule delays, an Accountable Leader must report accurate data transparently alongside recovery options.'
           ),
           bi(
-            'Phản xạ Vàng: Người trực tiếp viết code hiểu rõ kỹ thuật nhất — hãy để nhóm tự ước lượng và dùng Blameless Retrospective sửa quy trình thay vì tìm người chịu tội!',
-            'Golden Reflex: Let practitioners estimate their own work and run Blameless Retrospectives to fix systemic process gaps rather than blaming individuals.'
+            'Nguyên tắc cốt lõi: Người trực tiếp thực thi hiểu rõ nhất giải pháp kỹ thuật — hãy để nhóm tự ước lượng nỗ lực và dùng Blameless Retrospective để cải tiến quy trình thay vì đổ lỗi cá nhân.',
+            'Key Principle: Let practitioners estimate their own work and run Blameless Retrospectives to fix systemic process gaps rather than blaming individuals.'
           )
         ),
         memoryScene: {
@@ -626,11 +626,11 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   { index: 1, label: 'CI/CD & Peer Review', tone: 'blue' },
                 ],
           outputPill: {
-            label: bi('CHUẨN PHẢN XẠ', 'CORE RULE'),
+            label: bi('NGUYÊN TẮC CỐT LÕI', 'CORE RULE'),
             value:
               phase === 'last'
                 ? bi('Trao quyền + Phòng ngừa từ gốc', 'Empowerment + Prevention First')
-                : bi('Cấm cắt giảm Quality!', 'Never compromise Quality!'),
+                : bi('Không thỏa hiệp về Quality', 'Never compromise Quality'),
             tone: 'green',
           },
         },
@@ -648,15 +648,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Phân biệt qua ví dụ thực tế: Predictive (1 lần cuối), Iterative (lặp làm ĐÚNG ý), Incremental (chia mảnh giao NHANH), Agile & Hybrid',
+        'Phân biệt 5 phương pháp phát triển: Predictive (bàn giao 1 lần), Iterative (lặp hoàn thiện độ đúng), Incremental (chia phần bàn giao sớm), Agile và Hybrid',
         'Contrast Predictive, Iterative (correctness), Incremental (speed), Agile, and Hybrid via real software/hardware cases'
       ),
       bi(
-        'Hiểu Tam giác Ràng buộc đảo ngược: Predictive ghim cứng Scope; Agile ghim Time & Cost để tối ưu Scope giá trị cao nhất',
+        'Hiểu Tam giác Ràng buộc đảo ngược: Predictive cố định Scope; Agile cố định Time & Cost để tối ưu Scope theo giá trị',
         'Understand the Inverted Triangle of Constraints between Plan-Driven and Adaptive projects'
       ),
       bi(
-        'May đo (Tailoring) lộ trình Hybrid an toàn thay vì bắt tổ chức truyền thống nhảy cực đoan sang 100% Agile qua một đêm',
+        'Tùy biến (Tailoring) lộ trình Hybrid an toàn thay vì bắt tổ chức truyền thống chuyển sang 100% Agile ngay lập tức',
         'Tailor pragmatic Hybrid transitions rather than forcing overnight 100% Agile shocks'
       ),
     ],
@@ -724,20 +724,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ẩn dụ bức tranh Mona Lisa cực dễ nhớ: Iterative là phác chì cả bức rồi tô nét dần (tối ưu ĐỘ ĐÚNG); Incremental là vẽ xong hoàn chỉnh từng phần mặt → tay → nền (tối ưu TỐC ĐỘ GIAO); Agile gộp cả hai!',
-            'Mona Lisa analogy: Iterative sketches then refines the whole canvas (Correctness); Incremental finishes the face 100%, then hands (Speed); Agile combines both!'
+            'Iterative tập trung lặp nhiều vòng qua mẫu thử để làm rõ và tối ưu độ chính xác yêu cầu; Incremental chia sản phẩm thành từng phần hoàn chỉnh để đưa vào sử dụng sớm; Agile kết hợp cả hai. Có thể liên hệ như vẽ tranh: Iterative phác thảo rồi tô chi tiết dần cả bức, còn Incremental hoàn thiện dứt điểm từng phần một.',
+            'Iterative refines prototypes across cycles for correctness; Incremental delivers usable slices early for speed; Agile combines both (like sketching then refining a full painting vs finishing one section at a time).'
           ),
           bi(
-            'Bẫy từ khoá đề thi: Thấy "refine requirements via prototypes" → chọn Iterative! Thấy "deliver usable subset of features quickly" → chọn Incremental!',
-            'Keyword trap: "Feedback on prototypes to clarify uncertain scope" -> Iterative! "Release usable feature slices early" -> Incremental!'
+            'Từ khóa phân biệt trong đề thi: Thấy "refine requirements via prototypes" → chọn Iterative. Thấy "deliver usable subset of features quickly" → chọn Incremental.',
+            'Keyword distinction: "Feedback on prototypes to clarify uncertain scope" -> Iterative. "Release usable feature slices early" -> Incremental.'
           ),
           bi(
-            'Đừng bao giờ chọn câu nói "Agile không cần lập kế hoạch" — Agile lập kế hoạch liên tục ở 5 tầng (Vision → Roadmap → Release → Iteration → Daily)!',
-            'Never pick "Agile skips planning" — Agile plans continuously across Vision, Roadmap, Release, Sprint, and Daily horizons!'
+            'Không chọn phương án nói "Agile không cần lập kế hoạch" — Agile lập kế hoạch liên tục ở 5 cấp độ (Vision → Roadmap → Release → Iteration → Daily).',
+            'Never pick "Agile skips planning" — Agile plans continuously across Vision, Roadmap, Release, Sprint, and Daily horizons.'
           ),
           bi(
-            'Phản xạ Vàng khi chuyển đổi tổ chức: Với công ty lâu năm quen Waterfall, luôn chọn bước đệm Hybrid + Dự án Pilot + Huấn luyện (Coaching), loại ngay câu "chuyển 100% Agile tức thì"!',
-            'Golden Reflex: When transitioning traditional firms, recommend a Hybrid bridge + Pilot project + Agile Coaching — never an abrupt overnight cutover.'
+            'Nguyên tắc chuyển đổi phương pháp: Với tổ chức lâu năm quen Waterfall, luôn chọn mô hình Hybrid chuyển tiếp kết hợp dự án thí điểm (Pilot) và huấn luyện (Coaching), loại bỏ phương án chuyển 100% sang Agile tức thì.',
+            'Key Principle: When transitioning traditional firms, recommend a Hybrid bridge + Pilot project + Agile Coaching — never an abrupt overnight cutover.'
           )
         ),
         memoryScene: {
@@ -812,15 +812,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Hiểu ngôn ngữ đời thường của Scrum (Product Backlog, Sprint Timebox, T-shaped Team, Impediment) và khóa chặt ranh giới 3 vai trò',
+        'Nắm vững các khái niệm cốt lõi của Scrum (Product Backlog, Sprint Timebox, T-shaped Team, Impediment) và phân định rõ trách nhiệm 3 vai trò',
         'Master Scrum fundamentals and enforce strict role boundaries across PO, Developers, and Scrum Master'
       ),
       bi(
-        'Phân biệt sắc nét 3 cổng chất lượng trên 1 tính năng: DoR (đủ rõ trước Sprint) → AC (điều kiện tính năng đúng) → DoD (chuẩn xuất xưởng chung)',
+        'Phân biệt 3 tiêu chuẩn kiểm soát chất lượng: DoR (đủ rõ đầu vào Sprint) → AC (tiêu chí riêng từng Story) → DoD (chuẩn hoàn thành chung)',
         'Distinguish Definition of Ready (entry), Acceptance Criteria (story-specific), and Definition of Done (release-wide)'
       ),
       bi(
-        'Chẩn đoán và sửa ngay 4 căn bệnh biến tướng của Daily Scrum, Sprint chèn việc, Sprint Review và Retrospective',
+        'Nhận diện và điều chỉnh 4 sai lệch vận hành phổ biến trong Daily Scrum, chèn việc giữa Sprint, Sprint Review và Retrospective',
         'Diagnose and fix anti-patterns in Daily Scrum, mid-Sprint interruptions, Review, and Retrospective'
       ),
     ],
@@ -839,7 +839,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             tone: 'ok',
           },
           {
-            label: bi('3 CỔNG CHẤT LƯỢNG', '3 QUALITY GATES'),
+            label: bi('3 TIÊU CHUẨN CHẤT LƯỢNG', '3 QUALITY GATES'),
             value: bi('DoR → AC → DoD (100%)', 'DoR → AC → DoD (100%)'),
             tone: phase === 'mid2' ? 'warn' : 'ok',
           },
@@ -888,20 +888,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Hình dung dễ hiểu: Product Owner là "Thuyền trưởng chọn đảo kho báu (What & Why)", Developers là "Thuỷ thủ đoàn tự lái tàu & đo sức gió (How & How much)", còn Scrum Master là "Người dọn đá ngầm bảo vệ đoàn"!',
-            'Easy analogy: PO picks the destination (What/Why), Developers steer and estimate effort (How/How much), and Scrum Master clears rocks out of the way!'
+            'Product Owner quản lý Product Backlog và tối ưu giá trị (What & Why); Developers chịu trách nhiệm thực thi kỹ thuật và ước lượng nỗ lực (How & How much); Scrum Master bảo vệ quy trình và tháo gỡ rào cản. Có thể hình dung như PO xác định mục tiêu, Developers vận hành công việc và Scrum Master dọn trở ngại.',
+            'PO owns Product Backlog value prioritization (What/Why); Developers own technical execution and estimation (How/How much); Scrum Master safeguards the process and clears impediments.'
           ),
           bi(
-            'Bẫy đề thi tần suất cao: Hễ thấy câu "Scrum Master assigns tasks", "PO estimates Story Points", hay "Stakeholder adds an urgent item directly to Developers mid-Sprint" → gạch bỏ ngay lập tức!',
-            'High-frequency trap: Eliminate any choice where SM assigns tasks, PO estimates effort, or Stakeholders inject work directly into an active Sprint!'
+            'Lỗi thẩm quyền thường gặp: Loại bỏ ngay các phương án để "Scrum Master assigns tasks", "PO estimates Story Points", hay "Stakeholder adds an urgent item directly to Developers mid-Sprint".',
+            'Common role trap: Eliminate any choice where SM assigns tasks, PO estimates effort, or Stakeholders inject work directly into an active Sprint.'
           ),
           bi(
-            'Phân biệt 3 giây: DoR = Đủ rõ để KÉO VÀO Sprint; AC = Đúng nghiệp vụ RIÊNG thẻ đó; DoD = Chuẩn kỹ thuật CHUNG mọi thẻ (chưa đạt DoD = 0 điểm Velocity, không mang ra Sprint Review!).',
-            '3-second rule: DoR = Ready to ENTER Sprint; AC = Story-specific functional rules; DoD = Shared release quality bar (unmet DoD = 0 Velocity, no Demo!).'
+            'Phân biệt nhanh: DoR = Đủ rõ để đưa vào Sprint; AC = Điều kiện nghiệm thu riêng từng Story; DoD = Tiêu chuẩn chất lượng chung cho mọi Increment (chưa đạt DoD = 0 điểm Velocity, không trình diễn ở Sprint Review).',
+            'Quick rule: DoR = Ready to ENTER Sprint; AC = Story-specific functional rules; DoD = Shared release quality bar (unmet DoD = 0 Velocity, no Demo).'
           ),
           bi(
-            'Phản xạ Vàng: Ai xin thêm tính năng giữa Sprint → hướng dẫn họ làm việc với Product Owner để đưa vào Product Backlog ưu tiên cho Sprint sau!',
-            'Golden Reflex: Shield the active Sprint — route mid-Sprint feature requests through the Product Owner for Product Backlog prioritization.'
+            'Nguyên tắc bảo vệ Sprint: Mọi yêu cầu bổ sung giữa Sprint cần được chuyển qua Product Owner để đánh giá giá trị và đưa vào Product Backlog cho Sprint tiếp theo.',
+            'Key Principle: Shield the active Sprint — route mid-Sprint feature requests through the Product Owner for Product Backlog prioritization.'
           )
         ),
         scene: {
@@ -975,15 +975,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Hiểu trực quan Định luật Little (Cycle Time = WIP / Throughput): vì sao khóa trần WIP Limit lại giúp giao tính năng nhanh hơn!',
+        'Nắm vững Định luật Little (Cycle Time = WIP / Throughput) và lý do giới hạn công việc dở dang (WIP Limit) giúp rút ngắn thời gian hoàn thành',
         'Understand Little’s Law intuitively: why capping Work-in-Progress (WIP) slashes Cycle Time and exposes bottlenecks'
       ),
       bi(
-        'Nắm quy tắc sắt của Velocity: thước đo nội bộ để dự báo dung lượng nhóm — CẤM so sánh thưởng phạt giữa 2 nhóm!',
-        'Protect Story-Point Velocity as an internal team forecasting metric — never compare across teams!'
+        'Bảo vệ ý nghĩa của Velocity: chỉ số nội bộ để dự báo năng lực nhóm — không dùng để so sánh thưởng phạt giữa các nhóm khác nhau',
+        'Protect Story-Point Velocity as an internal team forecasting metric — never compare across teams'
       ),
       bi(
-        'Đọc nhanh 3 biểu đồ thích ứng (Burndown · Burnup · CFD) và đồng bộ mốc tích hợp dự án Hybrid',
+        'Đọc và phân tích 3 biểu đồ thích ứng (Burndown · Burnup · CFD) và đồng bộ cột mốc tích hợp dự án Hybrid',
         'Read Burndown, Burnup, and Cumulative Flow (CFD) charts and coordinate Hybrid integration milestones'
       ),
     ],
@@ -1051,26 +1051,26 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ví dụ thực tế cực thấm: Đường cao tốc tắc cứng không phải vì xe chạy chậm, mà vì cho quá nhiều xe tràn vào cùng lúc (WIP quá cao)! Hạ WIP xuống là từng tính năng lướt vèo qua bảng ("Stop starting, start finishing!").',
-            'Highway analogy: Traffic jams happen when too many cars enter at once (high WIP). Cap WIP so the team swarms on blocked work and finishes items twice as fast!'
+            'Theo Định luật Little, khi giảm số lượng công việc đang làm dở (WIP), nhóm giảm chuyển đổi ngữ cảnh và rút ngắn thời gian hoàn thành từng đầu việc. Hiện tượng này tương tự việc kiểm soát lượng xe vào cao tốc giúp lưu thông nhanh hơn.',
+            'By Little’s Law, capping Work-in-Progress (WIP) cuts context-switching and speeds up Cycle Time — similar to metering highway entry ramps so traffic flows faster.'
           ),
           bi(
-            'Bẫy độc trong đề thi: "Nhóm A đạt 50 Story Points, Nhóm B chỉ đạt 25 Story Points — PM nên chấn chỉnh Nhóm B thế nào?" → KHÔNG làm gì cả! Mỗi nhóm có thang điểm riêng, cấm so bì!',
-            'Classic exam trap: Never compare Team A’s 50 Story Points against Team B’s 25 Points — Story Points are relative and unique to each team!'
+            'Sai lầm cần tránh: Khi đề hỏi "Nhóm A đạt 50 Story Points, Nhóm B đạt 25 Story Points — PM nên xử lý thế nào?" → Không so sánh hay ép tăng điểm! Mỗi nhóm có thang quy chiếu Story Points riêng.',
+            'Common pitfall: Never compare Team A’s 50 Story Points against Team B’s 25 Points — Story Points are relative and unique to each team.'
           ),
           bi(
-            'Khi cột QA Testing đã đầy 3/3 thẻ WIP, lập trình viên KHÔNG ĐƯỢC tiếp tục code thẻ mới đẩy sang ùn đọng — phải tạm dừng kéo việc mới để phụ gỡ nghẽn Testing!',
-            'When QA Testing hits its 3/3 WIP limit, Developers must NOT push more code into the pile — swarm to clear Testing first!'
+            'Khi cột QA Testing đã chạm ngưỡng WIP 3/3, lập trình viên không đẩy thêm thẻ mới sang gây ùn ứ mà chuyển sang hỗ trợ giải phóng điểm nghẽn tại khâu kiểm thử.',
+            'When QA Testing hits its 3/3 WIP limit, Developers must NOT push more code into the pile — swarm to clear Testing first.'
           ),
           bi(
-            'Phản xạ Vàng cho dự án Hybrid: PM làm "bộ chuyển đổi" — báo cáo mốc ngân sách lớn cho lãnh đạo cấp cao trong khi giữ nguyên nhịp Sprint linh hoạt cho đội kỹ sư.',
-            'Golden Reflex in Hybrid: Act as a governance translator — provide macro milestone visibility to executives while protecting agile Sprint autonomy for devs.'
+            'Nguyên tắc điều phối Hybrid: PM đóng vai trò cầu nối quản trị — cung cấp báo cáo cột mốc và ngân sách tổng cho lãnh đạo trong khi giữ không gian tự chủ theo Sprint cho đội kỹ thuật.',
+            'Key Principle in Hybrid: Act as a governance translator — provide macro milestone visibility to executives while protecting agile Sprint autonomy for devs.'
           )
         ),
         memoryScene: {
           kind: 'tape',
           title: bi(
-            'Bảng Luồng Kéo Kanban: Khoá trần WIP Limit làm lộ ngay nút cổ chai để cả đội hợp sức gỡ!',
+            'Bảng Luồng Kéo Kanban: Giới hạn WIP Limit giúp phát hiện điểm nghẽn để cả đội hỗ trợ xử lý',
             'Kanban Pull Board with Explicit WIP Limits & Bottleneck Swarming'
           ),
           subtitle: bi(
@@ -1116,15 +1116,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Hiểu rõ Project Charter là giấy khai sinh trao thẩm quyền cho PM, và khi nào cần trình CCB vs khi nào chỉ cần PO sắp lại Backlog',
+        'Nắm vững vai trò của Project Charter (văn bản trao quyền chính thức cho PM) và phân biệt thẩm quyền phê duyệt thay đổi giữa CCB và Product Owner',
         'Understand Project Charter authority and when Baseline changes require CCB vs Agile PO backlog reprioritization'
       ),
       bi(
-        'Thuộc lòng 5 mắt xích bất biến của Kiểm soát Thay đổi Tích hợp (PICC): Phân tích tác động → Lập CR → CCB duyệt → Cập nhật Baseline/Log → Thực thi',
+        'Nắm chắc 5 bước tuần tự của Kiểm soát Thay đổi Tích hợp (PICC): Phân tích tác động → Lập CR → CCB duyệt → Cập nhật Baseline/Log → Thực thi',
         'Master the exact 5-step Perform Integrated Change Control (PICC) workflow'
       ),
       bi(
-        'Phân biệt dòng tinh luyện dữ liệu WPD → WPI → WPR, tri thức Tacit vs Explicit, và thủ tục Đóng dự án (kể cả khi bị huỷ sớm!)',
+        'Phân biệt quy trình chuyển hóa dữ liệu WPD → WPI → WPR, tri thức Tacit vs Explicit, và thủ tục Đóng dự án (kể cả khi bị hủy sớm)',
         'Trace WPD -> WPI -> WPR, Tacit vs Explicit knowledge, and mandatory Close Project steps'
       ),
     ],
@@ -1143,7 +1143,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             tone: phase === 'mid1' ? 'warn' : 'ok',
           },
           {
-            label: bi('LUỒNG DỮ LIỆU', 'DATA REFINERY'),
+            label: bi('DÒNG DỮ LIỆU', 'DATA FLOW'),
             value: bi('WPD (Thô) → WPI → WPR (Báo cáo)', 'WPD → WPI → WPR'),
             tone: 'ok',
           },
@@ -1192,20 +1192,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Mẹo phân biệt cực sáng: Dự án Predictive đã chốt Baseline → đổi phạm vi/tiến độ/ngân sách BẮT BUỘC trình CCB! Dự án Agile giữ nguyên Timebox/Ngân sách → chỉ cần Product Owner sắp lại thứ tự ưu tiên trên Product Backlog!',
-            'Crystal-clear rule: Locked Predictive Baselines require formal CCB approval; Agile feature reprioritization within fixed Timebox/Budget goes through the Product Owner!'
+            'Nguyên tắc phân định rõ ràng: Dự án Predictive đã chốt Baseline → thay đổi phạm vi/tiến độ/ngân sách phải trình CCB. Dự án Agile giữ ổn định Timebox/Ngân sách → chỉ cần Product Owner sắp xếp lại Product Backlog.',
+            'Clear rule: Locked Predictive Baselines require formal CCB approval; Agile feature reprioritization within fixed Timebox/Budget goes through the Product Owner.'
           ),
           bi(
-            'Hai cái bẫy làm mất điểm nhiều nhất ở câu hỏi Thay đổi: (1) Trình ngay lên CCB khi chưa đánh giá tác động cùng nhóm; (2) Quên ghi nhận vào Change Log khi yêu cầu bị CCB từ chối (Rejected)!',
-            'Top 2 PICC traps: (1) Submitting to CCB before analyzing impact with the team; (2) Failing to log Rejected change requests in the Change Log!'
+            'Hai lỗi thường gặp ở câu hỏi Change Control: (1) Trình ngay lên CCB khi chưa đánh giá tác động cùng nhóm; (2) Quên ghi nhận trạng thái và lý do vào Change Log khi yêu cầu bị CCB từ chối (Rejected).',
+            'Top 2 PICC mistakes: (1) Submitting to CCB before analyzing impact with the team; (2) Failing to log Rejected change requests in the Change Log.'
           ),
           bi(
-            'Nhớ mẹo dữ liệu: WPD = con số thô ("đã tiêu 500tr"); WPI = đã đem so với chuẩn ("CPI = 0.85, lố 15%"); WPR = bản Dashboard tổng hợp gửi đi họp!',
-            'Data trick: WPD = raw number ("spent $50k"); WPI = analyzed against baseline ("CPI = 0.85"); WPR = compiled status report for stakeholders!'
+            'Phân biệt dữ liệu dự án: WPD là số đo thô ("đã chi 500tr"); WPI là thông tin đã so sánh với chuẩn ("CPI = 0.85, vượt 15%"); WPR là báo cáo tổng hợp gửi lãnh đạo.',
+            'Data flow rule: WPD = raw number ("spent $50k"); WPI = analyzed against baseline ("CPI = 0.85"); WPR = compiled status report for stakeholders.'
           ),
           bi(
-            'Phản xạ Vàng khi dự án bị huỷ giữa chừng: KHÔNG giải tán nhóm ngay! Phải mở quy trình Close Project để ghi lý do dừng, nghiệm thu bàn giao phần đã làm xong và lưu bài học vào OPA trước!',
-            'Golden Reflex on Early Termination: Never release the team immediately — formally close the project, document the cause, hand over completed work, and archive Lessons Learned first!'
+            'Nguyên tắc khi dự án kết thúc sớm: Không giải tán nhóm ngay lập tức. Phải thực hiện Close Project để ghi nhận lý do dừng, bàn giao phần đã hoàn tất và lưu bài học kinh nghiệm vào OPA trước.',
+            'Key Principle on Early Termination: Never release the team immediately — formally close the project, document the cause, hand over completed work, and archive Lessons Learned first.'
           )
         ),
         scene: {
@@ -1277,15 +1277,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Hiểu ma trận mức độ ủng hộ SEAM (Unaware → Resistant → Neutral → Supportive → Leading) để kéo thái độ hiện tại [C] về mong muốn [D]',
+        'Hiểu ma trận mức độ ủng hộ SEAM (Unaware → Resistant → Neutral → Supportive → Leading) để dịch chuyển thái độ hiện tại [C] về mong muốn [D]',
         'Use the Stakeholder Engagement Assessment Matrix (SEAM) to move stakeholders from Current [C] to Desired [D]'
       ),
       bi(
-        'Tính nhanh kênh giao tiếp N(N - 1)/2 và chọn đúng Interactive (nhạy cảm/xung đột), Push (lưu vết) hay Pull (tài liệu lớn)',
+        'Tính đúng số kênh giao tiếp N(N - 1)/2 và chọn đúng Interactive (nhạy cảm/xung đột), Push (lưu vết) hay Pull (tài liệu lớn)',
         'Compute N(N-1)/2 communication channels and match Interactive, Push, and Pull methods to context'
       ),
       bi(
-        'Phân biệt trong 3 giây: vấn đề thái độ/kháng cự mở Stakeholder Engagement Plan; vấn đề định dạng/tần suất báo cáo mở Communications Plan!',
+        'Phân biệt rõ phạm vi của Stakeholder Engagement Plan (chiến lược thái độ và gắn kết) và Communications Management Plan (định dạng, kênh và tần suất truyền tin)',
         'Separate Stakeholder Engagement Plan (attitude/resistance) from Communications Management Plan (format/frequency)'
       ),
     ],
@@ -1335,7 +1335,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '~',
                       text: bi(
-                        'Tách bạch dứt điểm 2 kế hoạch hay nhầm: đường ống đưa tin (Communications) vs chiến lược lòng người (Engagement)',
+                        'Phân tách dứt điểm 2 kế hoạch hay nhầm: định dạng/kênh truyền tin (Communications) vs chiến lược gắn kết thái độ (Engagement)',
                         'Separated report-delivery mechanics (Communications Plan) from relationship strategy (Engagement Plan)'
                       ),
                     },
@@ -1353,20 +1353,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Ví dụ thực tế: Khi triển khai phần mềm ERP mới, chị Kế toán trưởng sợ mất quyền nên ngầm phản đối (Resistant [C]). Nếu PM làm ngơ, ngày nghiệm thu UAT chắc chắn thất bại! Phải gặp riêng lắng nghe để kéo chị sang Supportive [D].',
-            'Real-world analogy: An accounting lead fearing loss of control quietly resists a new ERP [C = Resistant]. Engage 1-on-1 early to uncover concerns and move her to [D = Supportive]!'
+            'Khi một bên liên quan phản đối dự án trên ma trận SEAM (Current = Resistant), PM cần chủ động gặp trực tiếp 1-1 để tìm hiểu nỗi lo gốc rễ và xây dựng sự đồng thuận (Desired = Supportive), thay vì né tránh.',
+            'When a key stakeholder resists a new system [C = Resistant], engage 1-on-1 early to uncover concerns and move them toward [D = Supportive].'
           ),
           bi(
-            'Bẫy tính nhẩm kênh giao tiếp: Đề viết "PM làm việc cùng đội 9 người, vừa thêm 2 người mới" → nhớ CỘNG CẢ PM: ban đầu N = 10 (45 kênh), lúc sau N = 12 (66 kênh), tức tăng thêm 21 kênh!',
-            'Math trap: "A PM leads a team of 9" means N = 10 people (45 channels)! Always check whether the PM is already counted in N.'
+            'Lưu ý tính số kênh giao tiếp: Đề viết "PM làm việc cùng đội 9 người, vừa thêm 2 người mới" → nhớ tính cả PM: ban đầu N = 10 (45 kênh), lúc sau N = 12 (66 kênh), tăng thêm 21 kênh.',
+            'Math check: "A PM leads a team of 9" means N = 10 people (45 channels). Always check whether the PM is already counted in N.'
           ),
           bi(
-            'Mẹo 3 giây diệt gọn cặp đáp án song sinh: Đề than phiền "sót báo cáo, sai định dạng, gửi trễ" → chọn Communications Plan! Đề than phiền "vắng họp, chê bai, sợ thay đổi" → chọn Stakeholder Engagement Plan!',
-            '3-second twin-choice filter: Missed/cluttered reports -> Communications Plan! Absenteeism, skepticism, or pushback -> Stakeholder Engagement Plan!'
+            'Quy tắc phân biệt hai kế hoạch: Vấn đề "sót báo cáo, sai định dạng, gửi trễ" → cập nhật Communications Plan. Vấn đề "vắng họp, nghi ngại, phản đối thay đổi" → cập nhật Stakeholder Engagement Plan.',
+            'Twin-choice filter: Missed/cluttered reports -> Communications Plan. Absenteeism, skepticism, or pushback -> Stakeholder Engagement Plan.'
           ),
           bi(
-            'Phản xạ Vàng khi xuất hiện Stakeholder mới giữa dự án: (1) Ghi vào Stakeholder Register → (2) Phân tích Power/Interest & SEAM → (3) Cập nhật Plans → (4) Gặp gỡ gắn kết!',
-            'Golden Reflex for new mid-project stakeholders: 1. Update Register -> 2. Analyze Power/Interest & SEAM -> 3. Update Plans -> 4. Engage proactively.'
+            'Trình tự xử lý khi có Stakeholder mới giữa dự án: (1) Ghi vào Stakeholder Register → (2) Phân tích Power/Interest & SEAM → (3) Cập nhật Plans → (4) Gặp gỡ gắn kết.',
+            'Key Principle for new mid-project stakeholders: 1. Update Register -> 2. Analyze Power/Interest & SEAM -> 3. Update Plans -> 4. Engage proactively.'
           )
         ),
         memoryScene: {
@@ -1422,11 +1422,11 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Distinguish Team Charter (team-authored social contract) from Sponsor-signed Project Charter'
       ),
       bi(
-        'Đổi phong cách lãnh đạo theo 5 giai đoạn Tuckman (Forming → Storming → Norming → Performing → Adjourning) và nhớ thay người sẽ lùi bậc!',
+        'Điều chỉnh phong cách lãnh đạo theo 5 giai đoạn Tuckman (Forming → Storming → Norming → Performing → Adjourning) và nhớ thay đổi nhân sự sẽ đưa nhóm quay về Forming',
         'Adapt leadership across Tuckman’s 5 stages and remember adding/removing members resets the ladder to Forming'
       ),
       bi(
-        'Áp dụng Trí tuệ cảm xúc (EI) và 5 chế độ xử lý xung đột: ưu tiên số 1 luôn là Collaborate / Problem Solve (Thắng–Thắng)',
+        'Áp dụng Trí tuệ cảm xúc (EI) và 5 phương pháp xử lý xung đột: ưu tiên hàng đầu là Collaborate / Problem Solve (Win-Win)',
         'Apply Emotional Intelligence and PMI’s #1 conflict resolution mode: Collaborate / Problem Solve (Win-Win)'
       ),
     ],
@@ -1494,20 +1494,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Đừng nhầm tên 2 tờ Charter: Project Charter do Sponsor ký trao quyền cho PM; còn Team Charter là "nội quy anh em tự bàn tự viết" (nếu PM viết sẵn ép nhóm ký sẽ là đáp án SAI!).',
-            'Never mix up the two Charters: Sponsor signs the Project Charter; the team co-writes the Team Charter (a top-down PM-written rulebook is an exam trap!).'
+            'Phân biệt hai loại Charter: Project Charter do Sponsor ký để trao quyền cho PM; Team Charter là thỏa ước làm việc do toàn bộ thành viên nhóm cùng thảo luận và thống nhất (nếu PM tự viết áp đặt sẽ sai nguyên tắc).',
+            'Never mix up the two Charters: Sponsor signs the Project Charter; the team co-writes the Team Charter (a top-down PM-written rulebook is an exam trap).'
           ),
           bi(
-            'Bẫy đề thi cực hay hỏi: Nhóm đang chạy băng băng ở Performing, nay bổ sung thêm 2 Senior giỏi vào phụ việc — nhóm sang giai đoạn nào? Đáp án: Quay ngược về Forming!',
-            'Classic Tuckman trap: Adding even top-tier Senior Engineers to a Performing team resets team dynamics back to Forming!'
+            'Lưu ý về động học nhóm Tuckman: Nếu nhóm đang ở giai đoạn Performing mà có thành viên mới gia nhập hoặc rời đi, nhóm sẽ chuyển về giai đoạn Forming để thiết lập lại mối quan hệ và quy ước phối hợp.',
+            'Classic Tuckman principle: Adding even top-tier Senior Engineers to a Performing team resets team dynamics back to Forming.'
           ),
           bi(
-            'Với nhóm làm việc từ xa đa múi giờ (Virtual Team), đừng chỉ gửi chat khô khan — hãy thống nhất khung giờ giao thoa (Overlap Hours) và họp video định kỳ để xoá cảm giác cô lập.',
+            'Với nhóm làm việc từ xa đa múi giờ (Virtual Team), cần thống nhất khung giờ giao thoa hợp lý (Overlap Hours) và họp video định kỳ để duy trì sự gắn kết.',
             'For global Virtual Teams, establish fair overlap core hours and interactive video check-ins to prevent cultural drift and isolation.'
           ),
           bi(
-            'Phản xạ Vàng: Xung đột chuyên môn lành mạnh → để nhóm tự giải quyết trước; căng thẳng cá nhân → gặp riêng 1-1 rồi dẫn sang Collaborate (Win-Win); chỉ dùng Force khi nguy cấp tính mạng/pháp luật!',
-            'Golden Reflex: Let teams self-resolve healthy technical debates first; escalate to private 1-on-1 + Win-Win Collaboration if tense; use Force ONLY in safety/legal emergencies!'
+            'Nguyên tắc giải quyết xung đột: Tranh luận chuyên môn lành mạnh → để nhóm tự giải quyết trước; căng thẳng cá nhân → gặp riêng 1-1 rồi dẫn hướng Collaborate (Win-Win); chỉ dùng Force khi khẩn cấp an toàn/pháp luật.',
+            'Key Principle: Let teams self-resolve healthy technical debates first; escalate to private 1-on-1 + Win-Win Collaboration if tense; use Force ONLY in safety/legal emergencies.'
           )
         ),
         memoryScene: {
@@ -1561,15 +1561,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Hiểu cây phân rã sản phẩm WBS (100% Rule, gói việc Work Package), bộ ba Scope Baseline và ma trận truy vết RTM',
+        'Nắm vững cấu trúc phân rã sản phẩm WBS (100% Rule, gói công việc Work Package), bộ ba Scope Baseline và ma trận truy vết RTM',
         'Master deliverable-oriented WBS (100% Rule, Work Packages), the 3-part Scope Baseline, and RTM'
       ),
       bi(
-        'Phân biệt rạch ròi nguồn gốc Scope Creep (khách lén nhét thêm việc) vs Gold Plating (dev tự ý vẽ thêm tính năng mạ vàng)',
+        'Phân biệt nguồn gốc Scope Creep (yêu cầu ngoài phạm vi từ bên ngoài) và Gold Plating (đội dự án tự ý bổ sung tính năng ngoài yêu cầu)',
         'Distinguish customer-driven Scope Creep from internal developer Gold Plating'
       ),
       bi(
-        'Thuộc chuỗi nghiệm thu một chiều: QA (kiểm quy trình) → QC (kiểm sản phẩm nội bộ ra Verified) → Validate Scope (khách ký nhận ra Accepted)',
+        'Nắm chắc trình tự kiểm soát: QA (kiểm toán quy trình) → QC (kiểm sản phẩm nội bộ ra Verified) → Validate Scope (khách nghiệm thu ra Accepted)',
         'Sequence Manage Quality (QA process) -> Control Quality (Verified) -> Validate Scope (Accepted) -> Close'
       ),
     ],
@@ -1607,8 +1607,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             s,
             total,
             bi(
-              'Hiểu đơn giản: WBS không phải danh sách việc lặt vặt theo tuần, mà là "Cây chia nhỏ sản phẩm bàn giao" (tổng các con = đúng 100% cha); còn RTM giúp biết ngay tính năng này phục vụ mục tiêu kinh doanh nào!',
-              'Plain concept: WBS is a deliverable tree obeying the 100% Rule (lowest level = Work Package), while RTM traces every requirement from business goal down to test case!'
+              'WBS là cấu trúc phân cấp các sản phẩm bàn giao tuân thủ Quy tắc 100% (tổng các nhánh con bằng đúng 100% nhánh cha); còn RTM liên kết từng yêu cầu từ mục tiêu kinh doanh đến ca kiểm thử.',
+              'WBS is a deliverable hierarchy obeying the 100% Rule (lowest level = Work Package), while RTM traces every requirement from business goal down to test case.'
             ),
             bi('', ''),
             bi('', ''),
@@ -1701,8 +1701,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             total,
             bi('', ''),
             bi(
-              'Coi chừng câu bẫy ngọt ngào: "Lập trình viên muốn tặng thêm tính năng nhỏ miễn phí không làm trễ hạn để lấy lòng khách" → ĐÓ CHÍNH LÀ GOLD PLATING! Phải dừng lại ngay vì ngoài Scope Baseline!',
-              'Sweet-sounding trap: "A developer adds a small free bonus feature without delaying the schedule" -> That is Gold Plating! Reject unauthorized extras outside the Baseline!'
+              'Lưu ý về Gold Plating: Khi đề bài nêu "lập trình viên tự thêm một tính năng nhỏ miễn phí và không làm trễ lịch", đây vẫn là Gold Plating và không được tự ý thực hiện vì nằm ngoài Scope Baseline.',
+              'Gold Plating check: "A developer adds a small free bonus feature without delaying the schedule" is still Gold Plating — reject unauthorized extras outside the Baseline.'
             ),
             bi('', ''),
             bi('', '')
@@ -1798,12 +1798,12 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           bi('', ''),
           bi('', ''),
           bi(
-            'Tuyệt đối không đảo ngược thứ tự: Control Quality (QC nội bộ tìm bug kỹ thuật → Verified) LUÔN chạy trước Validate Scope (khách hàng nghiệm thu UAT → Accepted)!',
-            'Never invert the chain: internal Control Quality (producing Verified Deliverables) MUST happen before customer Validate Scope (producing Accepted Deliverables)!'
+            'Không đảo ngược trình tự: Control Quality (QC nội bộ kiểm tra kỹ thuật → Verified) luôn thực hiện trước Validate Scope (khách hàng nghiệm thu UAT → Accepted).',
+            'Never invert the sequence: internal Control Quality (producing Verified Deliverables) MUST happen before customer Validate Scope (producing Accepted Deliverables).'
           ),
           bi(
-            'Phản xạ Vàng 1 dòng ăn điểm: QA soi QUY TRÌNH phòng ngừa · QC soi LỖI SẢN PHẨM nội bộ · Validate Scope xin CHỮ KÝ KHÁCH HÀNG nghiệm thu!',
-            'Golden Reflex: QA audits the PROCESS · QC inspects the PRODUCT internally (Verified) · Validate Scope secures CUSTOMER SIGN-OFF (Accepted)!'
+            'Nguyên tắc phân biệt nhanh: QA kiểm toán QUY TRÌNH phòng ngừa · QC kiểm tra SẢN PHẨM nội bộ (Verified) · Validate Scope lấy XÁC NHẬN KHÁCH HÀNG (Accepted).',
+            'Key Principle: QA audits the PROCESS · QC inspects the PRODUCT internally (Verified) · Validate Scope secures CUSTOMER SIGN-OFF (Accepted).'
           )
         ),
         scene: {
@@ -1875,15 +1875,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Hiểu trọn bộ EVM trong 60 giây qua câu chuyện 4 module × 100tr VNĐ: luôn đặt EV đứng đầu (CPI = EV/AC, SPI = EV/PV, EAC = BAC/CPI)',
-        'Master EVM in 60 seconds via a 4-module budget story: always put EV first (CPI = EV/AC, SPI = EV/PV, EAC = BAC/CPI)'
+        'Nắm vững các chỉ số EVM qua ví dụ 4 module × 100tr VNĐ: luôn đặt EV đứng đầu công thức (CPI = EV/AC, SPI = EV/PV, EAC = BAC/CPI)',
+        'Master EVM via a 4-module budget story: always put EV first (CPI = EV/AC, SPI = EV/PV, EAC = BAC/CPI)'
       ),
       bi(
-        'Nén lịch trên Đường găng (Float = 0): phân biệt Crashing (tốn thêm tiền) vs Fast-Tracking (làm gối đầu tăng rủi ro Rework)',
+        'Nén lịch trình trên Đường găng (Float = 0): phân biệt Crashing (tăng chi phí) và Fast-Tracking (chạy song song tăng rủi ro làm lại)',
         'Compress the Critical Path (Float = 0) by trading off Crashing (extra cost) vs Fast-Tracking (rework risk)'
       ),
       bi(
-        'Tách rạch ròi 2 túi tiền: Contingency Reserve (rủi ro đã biết, nằm TRONG Cost Baseline, PM tự quyết) vs Management Reserve (rủi ro chưa biết, xin CCB!)',
+        'Phân biệt hai quỹ dự phòng: Contingency Reserve (rủi ro đã biết, nằm trong Cost Baseline, thuộc thẩm quyền PM) và Management Reserve (rủi ro chưa lường trước, cần trình CCB)',
         'Separate PM-controlled Contingency Reserve (inside Cost Baseline) from CCB-controlled Management Reserve'
       ),
     ],
@@ -1913,7 +1913,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '+',
                   text: bi(
-                    'Giải mã EVM bằng ví dụ 400tr VNĐ: xong 1.5 module (EV=150tr) trên lịch 2 module (PV=200tr), đã chi 200tr (AC) ➔ CPI = SPI = 0.75!',
+                    'Minh họa EVM bằng ví dụ 400tr VNĐ: xong 1.5 module (EV=150tr) trên lịch 2 module (PV=200tr), đã chi 200tr (AC) ➔ CPI = SPI = 0.75',
                     'Decoded EVM via concrete numbers: EV=150 vs PV=200 & AC=200 -> CPI = 0.75 (over budget) & SPI = 0.75 (behind schedule)'
                   ),
                 },
@@ -1951,20 +1951,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Mẹo nhớ EVM 60 giây không bao giờ lộn: Luôn đặt EV (giá trị việc THỰC SỰ làm xong) đứng đầu! CPI = EV / AC (< 1 là tốn tiền hơn giá trị tạo ra); SPI = EV / PV (< 1 là làm chậm hơn lịch)!',
-            '60-second EVM rule: Always put EV (work actually earned) FIRST! CPI = EV / AC (<1 over budget); SPI = EV / PV (<1 behind schedule); typical EAC = BAC / CPI.'
+            'Nguyên tắc ghi nhớ công thức EVM: Luôn đặt EV (giá trị công việc thực sự hoàn thành) đứng đầu! CPI = EV / AC (< 1 là vượt ngân sách); SPI = EV / PV (< 1 là chậm tiến độ).',
+            'EVM rule: Always put EV (work actually earned) FIRST. CPI = EV / AC (<1 over budget); SPI = EV / PV (<1 behind schedule); typical EAC = BAC / CPI.'
           ),
           bi(
-            'Bẫy nén lịch: Rút ngắn tác vụ có Float = 5 ngày chẳng giúp ngày Go-Live sớm hơn 1 giây nào! Chỉ nén trên Đường găng (Float = 0): còn tiền chọn Crashing, hết tiền chọn Fast-Tracking.',
-            'Schedule trap: Compressing non-critical tasks with positive Float saves zero days! Compress ONLY Critical Path tasks: Crashing costs money; Fast-Tracking adds rework risk.'
+            'Lưu ý về nén tiến độ: Rút ngắn tác vụ có Float > 0 không làm sớm ngày kết thúc dự án. Chỉ nén các tác vụ trên Đường găng (Float = 0): còn ngân sách xét Crashing, không thêm ngân sách xét Fast-Tracking.',
+            'Schedule rule: Compressing non-critical tasks with positive Float saves zero days. Compress ONLY Critical Path tasks: Crashing costs money; Fast-Tracking adds rework risk.'
           ),
           bi(
-            'Bẫy 2 túi tiền: Rủi ro đã ghi trong Risk Register xảy ra → PM tự rút Contingency Reserve! Biến cố hoàn toàn mới tinh chưa từng dự báo → bắt buộc lập Change Request xin Management Reserve!',
-            'Reserve trap: Realized Risk Register item -> PM uses Contingency Reserve! Unforeseen shock (Unknown-Unknown) -> submit Change Request to CCB for Management Reserve!'
+            'Phân biệt thẩm quyền hai quỹ dự phòng: Rủi ro đã ghi trong Risk Register xảy ra → PM sử dụng Contingency Reserve. Biến cố bất ngờ chưa lường trước → lập Change Request xin Management Reserve.',
+            'Reserve authority: Realized Risk Register item -> PM uses Contingency Reserve. Unforeseen shock (Unknown-Unknown) -> submit Change Request to CCB for Management Reserve.'
           ),
           bi(
-            'Phản xạ Vàng kết hợp: Nếu đề cho SPI = 0.85 (trễ lịch) nhưng CPI = 1.15 (đang dư tiền) → giải pháp tối ưu nhất để kéo lại tiến độ trên Đường găng là Crashing!',
-            'Golden Reflex: SPI = 0.85 (behind schedule) + CPI = 1.15 (under budget) -> use your budget cushion for targeted Crashing on the Critical Path!'
+            'Nguyên tắc kết hợp Schedule và EVM: Nếu đề cho SPI = 0.85 (chậm tiến độ) và CPI = 1.15 (dư ngân sách) → phương án hợp lý để khôi phục tiến độ trên Đường găng là Crashing.',
+            'Key Principle: SPI = 0.85 (behind schedule) + CPI = 1.15 (under budget) -> use the budget cushion for targeted Crashing on the Critical Path.'
           )
         ),
         memoryScene: {
@@ -2040,15 +2040,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Dùng bộ lọc thì thời gian 3 giây: sự kiện tương lai (<100%) ghi vào Risk Register; sự kiện ĐÃ XẢY RA (=100%) ghi vào Issue Log + Workaround!',
-        'Apply the 3-second tense filter: uncertain future (<100%) -> Risk Register; realized event (=100%) -> Issue Log + Workaround!'
+        'Phân biệt theo mốc thời gian: sự kiện tương lai chưa chắc chắn (<100%) ghi vào Risk Register; sự kiện đã xảy ra (=100%) ghi vào Issue Log kèm Contingency/Workaround',
+        'Apply the tense filter: uncertain future (<100%) -> Risk Register; realized event (=100%) -> Issue Log + Workaround'
       ),
       bi(
-        'Phân biệt 5 chiến lược Threat ↔ 5 chiến lược Opportunity, cùng Residual Risk (còn sót lại) vs Secondary Risk (mới đẻ ra từ giải pháp)',
+        'Phân biệt 5 chiến lược Threat ↔ 5 chiến lược Opportunity, cùng Residual Risk (rủi ro tàn dư) và Secondary Risk (rủi ro phát sinh từ giải pháp ứng phó)',
         'Pair the 5 Threat and 5 Opportunity strategies, separating Residual Risk from Secondary Risk'
       ),
       bi(
-        'Chọn hợp đồng theo "Ai gánh rủi ro đội vốn?" (FFP = Seller chịu; CPFF/CPIF = Buyer chịu; T&M gắn trần NTE) và ưu tiên Đàm phán trực tiếp khi tranh chấp',
+        'Chọn hợp đồng theo bên chịu rủi ro vượt chi phí (FFP = Seller chịu; CPFF/CPIF = Buyer chịu; T&M gắn trần NTE) và ưu tiên Đàm phán trực tiếp khi có tranh chấp',
         'Match contract types (FFP, CPFF, CPIF, T&M + NTE) by cost-overrun risk bearer and prioritize Direct Negotiation'
       ),
     ],
@@ -2062,8 +2062,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             tone: 'ok',
           },
           {
-            label: bi('ĐÃ NỔ RA RỒI (100%)', 'ALREADY HAPPENED'),
-            value: bi('Issue Log + Workaround!', 'Issue Log + Workaround!'),
+            label: bi('ĐÃ XẢY RA (100%)', 'ALREADY HAPPENED'),
+            value: bi('Issue Log + Workaround', 'Issue Log + Workaround'),
             tone: phase === 'first' ? 'warn' : 'ok',
           },
           {
@@ -2107,8 +2107,8 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '+',
                       text: bi(
-                        'Giải quyết bất đồng nhà thầu theo bậc thang hoà bình: Đọc hợp đồng → Đàm phán trực tiếp (Negotiation) → ADR → Toà án',
-                        'prioritized contract review and Direct Negotiation before ADR or Litigation in vendor disputes'
+                        'Giải quyết tranh chấp nhà thầu theo trình tự: Đọc hợp đồng → Đàm phán trực tiếp (Negotiation) → ADR → Khởi kiện',
+                        'Prioritized contract review and Direct Negotiation before ADR or Litigation in vendor disputes'
                       ),
                     },
                   ],
@@ -2116,20 +2116,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Mẹo 3 giây nhìn động từ: Đề viết "could / might delay" (chưa xảy ra) → mở Risk Register! Đề viết "has resigned / server crashed" (đã nổ ra 100%) → mở Issue Log ngay, ai chọn Risk Register là mất điểm!',
-            '3-second verb check: "Might/could happen" -> Risk Register! "Has occurred / just resigned" -> Issue Log + Contingency/Workaround!'
+            'Quy tắc đối chiếu thời gian: Đề viết "could / might delay" (chưa xảy ra) → ghi vào Risk Register. Đề viết "has resigned / server crashed" (đã xảy ra 100%) → ghi vào Issue Log.',
+            'Tense check: "Might/could happen" -> Risk Register. "Has occurred / just resigned" -> Issue Log + Contingency/Workaround.'
           ),
           bi(
-            'Coi chừng nhầm Residual vs Secondary Risk: Thuê ngoài Vendor để tránh thiếu người lại đẻ ra nguy cơ mới là "lộ mã nguồn" → đó là Secondary Risk (rủi ro thứ cấp đẻ ra từ chính giải pháp)!',
-            'Residual vs Secondary trap: Outsourcing code to mitigate staffing shortages creates a brand-new "source-code leak" threat -> Secondary Risk!'
+            'Phân biệt Residual và Secondary Risk: Thuê ngoài để tránh rủi ro thiếu nhân sự lại phát sinh rủi ro mới là "lộ mã nguồn" → đó là Secondary Risk (rủi ro thứ cấp sinh ra trực tiếp từ giải pháp ứng phó).',
+            'Residual vs Secondary: Outsourcing code to mitigate staffing shortages creates a new "source-code leak" threat -> Secondary Risk.'
           ),
           bi(
-            'Hiểu hợp đồng siêu dễ theo túi tiền: Đặc tả rõ 100% chọn FFP (Vendor làm lố giờ tự chịu lỗ); R&D AI mờ mịt chọn CPFF/CPIF (Khách chịu chi phí thực); thuê chuyên gia theo giờ chọn T&M kèm trần NTE!',
-            'Contract risk rule: Clear scope -> FFP (Seller bears cost risk); uncertain R&D -> CPFF/CPIF (Buyer bears cost risk); staff augmentation -> T&M with Not-To-Exceed cap!'
+            'Nguyên tắc chọn hợp đồng theo rủi ro chi phí: Phạm vi rõ 100% chọn FFP (Vendor chịu rủi ro vượt chi phí); R&D chưa rõ chọn CPFF/CPIF (Buyer chịu chi phí thực); thuê chuyên gia theo giờ chọn T&M kèm trần NTE.',
+            'Contract risk rule: Clear scope -> FFP (Seller bears cost risk); uncertain R&D -> CPFF/CPIF (Buyer bears cost risk); staff augmentation -> T&M with Not-To-Exceed cap.'
           ),
           bi(
-            'Phản xạ Vàng khi tranh chấp với Nhà thầu: Tuyệt đối không doạ kiện hay cắt thanh toán ngay — phương án BEST luôn là rà soát điều khoản SOW và Đàm phán trực tiếp (Direct Negotiation)!',
-            'Golden Reflex on Vendor Disputes: Review contract terms first, then engage in face-to-face Direct Negotiation — Litigation is always the absolute last resort!'
+            'Nguyên tắc xử lý tranh chấp Nhà thầu: Không đe dọa khởi kiện hay dừng thanh toán ngay — phương án ưu tiên nhất luôn là rà soát điều khoản SOW và Đàm phán trực tiếp (Direct Negotiation).',
+            'Key Principle on Vendor Disputes: Review contract terms first, then engage in face-to-face Direct Negotiation — Litigation is always the absolute last resort.'
           )
         ),
         scene: {
@@ -2196,15 +2196,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'code-trace',
     objectives: [
       bi(
-        'Thực hành quy trình giải phẫu câu hỏi dài trong ≤ 65 giây: luôn đọc câu chốt cuối cùng TRƯỚC khi đọc bối cảnh mở đầu',
+        'Thực hành quy trình phân tích câu hỏi dài trong ≤ 65 giây: luôn đọc câu chốt cuối cùng TRƯỚC khi đọc bối cảnh mở đầu',
         'Execute the 65-second anatomy workflow: read the final question sentence FIRST to filter narrative noise'
       ),
       bi(
-        'Phân biệt sắc bén 4 từ khóa: FIRST/NEXT (xác minh/đánh giá bước đầu), BEST (trị tận gốc Root Cause), SHOULD HAVE (phòng ngừa quá khứ), NOT/EXCEPT',
+        'Phân biệt 4 từ khóa điều hướng: FIRST/NEXT (xác minh/đánh giá bước đầu), BEST (xử lý tận gốc Root Cause), SHOULD HAVE (phòng ngừa quá khứ), NOT/EXCEPT',
         'Distinguish FIRST/NEXT (verify/assess), BEST (solve root cause), SHOULD HAVE (preventive origin), and NOT/EXCEPT'
       ),
       bi(
-        'Quét ra-đa từ vựng để không bao giờ áp nhầm luật Waterfall (CCB/Baseline) sang câu Agile (PO/Backlog) hoặc ngược lại',
+        'Nhận diện tín hiệu phương pháp để không áp nhầm quy trình Predictive (CCB/Baseline) sang câu Agile (PO/Backlog) hoặc ngược lại',
         'Match lifecycle vocabulary triggers (Agile vs Predictive vs Hybrid) so you never mix governance rules'
       ),
     ],
@@ -2234,7 +2234,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '+',
                   text: bi(
-                    'Đảo chiều đọc đề: nhìn câu hỏi cuối cùng trong 5 giây đầu để lọc sạch 70% chi tiết nhiễu ở mở bài',
+                    'Đọc câu hỏi cuối cùng trước trong 5 giây đầu để lọc bỏ các chi tiết bối cảnh phụ ở phần mở đầu',
                     'Reversed reading order: scan the final question stem in the first 5 seconds to ignore narrative fluff'
                   ),
                 },
@@ -2254,7 +2254,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '-',
                       text: bi(
-                        'Loại bỏ các đáp án "râu ông nọ cắm cằm bà kia" (đem CCB vào Sprint Agile hoặc bảo PO tự sửa Scope Baseline)',
+                        'Loại bỏ các đáp án sai bối cảnh vòng đời (đem CCB vào Sprint Agile hoặc để PO tự sửa Scope Baseline)',
                         'Eliminated cross-lifecycle mismatches (e.g., routing Agile User Stories to CCB)'
                       ),
                     },
@@ -2263,7 +2263,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '+',
                       text: bi(
-                        'Áp dụng phễu 4 tầng kiểm chứng (Pháp lý/An toàn → Trung thực → Phân tích trước → Hợp tác trực tiếp) chốt đáp án 100%',
+                        'Áp dụng 4 tiêu chí kiểm chứng cuối cùng (Pháp lý/An toàn → Trung thực → Phân tích trước → Hợp tác trực tiếp)',
                         'Verified final answer via 4-tier PMI priority funnel: Compliance/Safety -> Honesty -> Assess -> Collaborate'
                       ),
                     },
@@ -2272,30 +2272,30 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Tại sao kỹ sư đọc nhanh vẫn thiếu giờ? Vì đọc xuôi từ dòng 1 làm não bị cuốn vào câu chuyện 15 triệu USD, đến cuối mới thấy chữ FIRST lại phải đọc lại lần hai! Luôn đọc câu chốt cuối cùng TRƯỚC!',
-            'Why fast readers run out of time: reading top-down loads decoy details into memory, forcing a second read once you hit the final verb! Read the last sentence FIRST!'
+            'Đọc tuần tự từ dòng 1 dễ làm trí nhớ bị phân tán bởi bối cảnh phụ, đến cuối mới gặp từ FIRST lại phải đọc lại từ đầu. Hãy luôn đọc câu hỏi chốt cuối cùng TRƯỚC.',
+            'Reading top-down loads decoy details into memory, forcing a second read once you hit the final verb. Always read the last sentence FIRST.'
           ),
           bi(
-            'Cẩn thận cái bẫy tinh vi nhất của từ NEXT: Nếu câu áp chót viết "After assessing the impact with the team, what should the PM do NEXT?", tức bước đánh giá ĐÃ XONG RỒI — lúc này mới chọn nộp Change Request!',
-            'Watch out for completed steps: If the prompt says "After analyzing the impact, what should the PM do NEXT?", assessment is DONE — advance to the next governance step!'
+            'Lưu ý quan trọng với từ khóa NEXT: Nếu câu áp chót viết "After assessing the impact with the team, what should the PM do NEXT?", tức bước đánh giá đã xong — lúc này cần chuyển sang bước nộp Change Request hoặc thực thi tiếp theo.',
+            'Watch out for completed steps: If the prompt says "After analyzing the impact, what should the PM do NEXT?", assessment is DONE — advance to the next governance step.'
           ),
           bi(
-            'Khi đề mô tả dự án Hybrid (phần cứng cố định + phần mềm Agile), hãy soi đúng sự cố đang nằm ở nhánh nào để bật đúng bộ quy tắc của nhánh đó!',
-            'In Hybrid prompts, check whether the problem sits in the Predictive hardware track (use Baseline/CCB) or the Agile software track (use PO/Backlog)!'
+            'Khi đề mô tả dự án Hybrid (phần cứng cố định + phần mềm Agile), cần xác định sự cố đang nằm ở nhánh nào để áp dụng đúng quy tắc của nhánh đó.',
+            'In Hybrid prompts, check whether the problem sits in the Predictive hardware track (use Baseline/CCB) or the Agile software track (use PO/Backlog).'
           ),
           bi(
-            'Phản xạ Vàng: Trước câu hỏi có chữ NOT / EXCEPT / LEAST, hãy tự dịch thầm trong đầu thành "Phương án nào TỆ NHẤT trái chuẩn PMI?" để không quen tay bấm nhầm câu hay nhất!',
-            'Golden Reflex on NOT / EXCEPT questions: Mentally rephrase as "Which option violates PMI mindset?" so muscle memory does not click a good answer!'
+            'Nguyên tắc với câu hỏi phủ định: Khi gặp từ NOT / EXCEPT / LEAST, hãy tự quy đổi thành "Phương án nào SAI hoặc KHÔNG PHÙ HỢP nhất?" để tránh chọn nhầm câu đúng chuẩn PMI.',
+            'Key Principle on NOT / EXCEPT questions: Mentally rephrase as "Which option violates PMI mindset?" so muscle memory does not click a good answer.'
           )
         ),
         defaultCode:
           phase === 'first'
-            ? `[QUY TRÌNH 65 GIÂY PHẪU THUẬT CÂU HỎI TÌNH HUỐNG PMP]\n• 00s–08s (Bước 1) : Đọc câu chốt cuối cùng TRƯỚC -> Khoá từ khoá FIRST / NEXT / BEST / NOT.\n• 08s–20s (Bước 2) : Quét tín hiệu vòng đời -> Agile (Sprint/PO) | Predictive (Baseline/CCB) | Hybrid.\n• 20s–40s (Bước 3) : Đọc câu áp chót -> Xác định sự cố gốc & bước PM ĐÃ LÀM XONG.\n• 40s–65s (Bước 4) : Gạch 2 câu bẫy cực đoan -> Chốt câu đúng nhịp thời gian & trao quyền.`
+            ? `[QUY TRÌNH 65 GIÂY PHÂN TÍCH CÂU HỎI TÌNH HUỐNG PMP]\n• 00s–08s (Bước 1) : Đọc câu chốt cuối cùng TRƯỚC -> Khoá từ khoá FIRST / NEXT / BEST / NOT.\n• 08s–20s (Bước 2) : Nhận diện phương pháp -> Agile (Sprint/PO) | Predictive (Baseline/CCB) | Hybrid.\n• 20s–40s (Bước 3) : Đọc câu áp chót -> Xác định sự cố gốc & bước PM ĐÃ LÀM XONG.\n• 40s–65s (Bước 4) : Loại 2 câu nhiễu cực đoan -> Chốt câu đúng nhịp thời gian & trao quyền.`
             : phase === 'mid1'
-              ? `[4 TỪ KHOÁ ĐIỀU HƯỚNG ĐÁP ÁN]\n• do FIRST / NEXT  -> Bước khởi đầu ngay lúc đề dừng: Verify data / Assess impact / Meet 1-on-1.\n• do BEST          -> Giải pháp trị tận gốc (Root Cause) & ngăn tái diễn dài hạn.\n• SHOULD HAVE done -> Quay ngược quá khứ: thiếu bước phòng ngừa nào ở Initiating / Planning?\n• NOT / EXCEPT     -> Đảo ngược câu hỏi: tìm duy nhất 1 đáp án VI PHẠM chuẩn mực PMI!`
+              ? `[4 TỪ KHOÁ ĐIỀU HƯỚNG ĐÁP ÁN]\n• do FIRST / NEXT  -> Bước khởi đầu ngay lúc đề dừng: Verify data / Assess impact / Meet 1-on-1.\n• do BEST          -> Giải pháp xử lý tận gốc (Root Cause) & ngăn tái diễn dài hạn.\n• SHOULD HAVE done -> Quay ngược quá khứ: thiếu bước phòng ngừa nào ở Initiating / Planning?\n• NOT / EXCEPT     -> Đảo ngược câu hỏi: tìm duy nhất 1 đáp án VI PHẠM chuẩn mực PMI.`
               : phase === 'mid2'
-                ? `[RA-ĐA VÒNG ĐỜI CHỐNG CHỌN NHẦM CÔNG CỤ]\n• Tín hiệu Agile (Sprint, Backlog, Velocity)    -> Trao quyền Developers + PO giữ ưu tiên (Loại CCB!).\n• Tín hiệu Predictive (WBS, Baseline, CPI/SPI)  -> Phân tích tác động + PICC / CCB (Loại tự sửa ngầm!).\n• Tín hiệu Hybrid (Phần cứng + App Sprint)      -> Nhánh nào áp đúng luật nhánh nấy + khớp Milestone chung!`
-                : `[MỔ XẺ TÌNH HUỐNG MẪU: KỸ SƯ MUỐN VIẾT LẠI MODULE TĂNG TỐC GẤP ĐÔI NHƯNG TRỄ 4 NGÀY]\n✘ A. Cho làm luôn cho khách vui       -> Sai (Bẫy Gold Plating vượt kiểm soát).\n✘ B. Trình ngay Change Request lên CCB -> Sai (Nhảy cóc khi chưa phân tích tác động).\n✘ C. Cấm tiệt không cho bàn cãi        -> Sai (Cực đoan, dập tắt sáng kiến).\n✔ D. Cùng nhóm đánh giá lợi ích & tác động tổng thể trước khi quyết định lập CR -> ĐÚNG 100%!`,
+                ? `[NHẬN DIỆN BỐI CẢNH PHƯƠNG PHÁP PHÁT TRIỂN]\n• Tín hiệu Agile (Sprint, Backlog, Velocity)    -> Trao quyền Developers + PO giữ ưu tiên (Loại CCB!).\n• Tín hiệu Predictive (WBS, Baseline, CPI/SPI)  -> Phân tích tác động + PICC / CCB (Loại tự sửa ngầm!).\n• Tín hiệu Hybrid (Phần cứng + App Sprint)      -> Nhánh nào áp đúng luật nhánh nấy + khớp Milestone chung.`
+                : `[PHÂN TÍCH TÌNH HUỐNG MẪU: KỸ SƯ MUỐN VIẾT LẠI MODULE TĂNG TỐC GẤP ĐÔI NHƯNG TRỄ 4 NGÀY]\n✘ A. Cho làm luôn cho khách vui       -> Sai (Gold Plating ngoài kiểm soát).\n✘ B. Trình ngay Change Request lên CCB -> Sai (Nhảy cóc khi chưa phân tích tác động).\n✘ C. Từ chối không cho xem xét        -> Sai (Cực đoan, dập tắt sáng kiến).\n✔ D. Cùng nhóm đánh giá lợi ích & tác động tổng thể trước khi quyết định lập CR -> ĐÚNG 100%!`,
       };
     },
   },
@@ -2310,15 +2310,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'code-trace',
     objectives: [
       bi(
-        'Nhận diện tức thì 12 mẫu đáp án nhiễu chia theo 4 cụm tâm lý (Cực đoan/Sa thải · Đẩy bóng Sponsor/HR · Thụ động/Đường tắt · Nhảy cóc/Lấn vai)',
+        'Nhận diện nhanh 12 dạng đáp án nhiễu chia theo 4 nhóm (Cực đoan/Sa thải · Đẩy trách nhiệm Sponsor/HR · Thụ động/Đường tắt · Bỏ qua quy trình/Sai vai trò)',
         'Spot and eliminate 12 classic distractor patterns across 4 psychological trap families'
       ),
       bi(
-        'Khắc phục 3 quán tính sai lầm phổ biến nhất của Tech Lead / BA lâu năm (đòi đổi người, đợi cuối Sprint mới gỡ Blocker, cãi nhau qua email)',
+        'Khắc phục 3 quán tính sai lầm phổ biến nhất của Tech Lead / BA lâu năm (đòi đổi người, đợi cuối Sprint mới gỡ Blocker, tranh luận qua email)',
         'Correct real-world Tech Lead reflexes: firing staff, delaying blocker removal to Retro, or arguing via email'
       ),
       bi(
-        'Áp dụng Bàn cân 3 Tầng khi còn 2 phương án 50/50 đều hợp lý: Trình tự thời gian → Đối thoại trực tiếp & Trao quyền → Xử lý gốc rễ hệ thống',
+        'Áp dụng Quy tắc 3 tầng lựa chọn khi còn 2 phương án 50/50 đều hợp lý: Trình tự thời gian → Đối thoại trực tiếp & Trao quyền → Xử lý gốc rễ hệ thống',
         'Break 50/50 ties systematically: Chronological Order -> Direct Collaboration -> Systemic Root Cause'
       ),
     ],
@@ -2348,7 +2348,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '-',
                   text: bi(
-                    'Quét sạch 12 mẫu từ khoá độc hại: sa thải nhân sự, cầu cứu Sponsor/HR vô cớ, cắt bớt kiểm thử, tự ý sửa Baseline',
+                    'Loại bỏ 12 dạng đáp án nhiễu phổ biến: sa thải nhân sự, cầu cứu Sponsor/HR vô cớ, cắt bớt kiểm thử, tự ý sửa Baseline',
                     'Filtered out all 12 toxic PMI distractor patterns in under 15 seconds'
                   ),
                 },
@@ -2358,7 +2358,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   {
                     op: '~',
                     text: bi(
-                      'Tách rõ ranh giới: Blocker hiện tại phải gỡ NGAY TRONG NGÀY (không chờ Retro!), và chỉ báo HR khi vi phạm đạo đức/pháp luật',
+                      'Tách rõ ranh giới: Blocker hiện tại phải gỡ NGAY TRONG NGÀY (không chờ Retro), và chỉ báo HR khi vi phạm đạo đức/pháp luật',
                       'Separated immediate daily blocker removal from Sprint Retrospectives and restricted HR escalation to legal/ethics breaches'
                     ),
                   },
@@ -2368,7 +2368,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '+',
                       text: bi(
-                        'Thiết lập Bàn cân 3 Tầng phân thắng bại khi cả 2 đáp án còn lại đều lịch sự và đúng thuật ngữ PMI',
+                        'Áp dụng Quy tắc 3 tầng lựa chọn khi cả 2 đáp án còn lại đều lịch sự và đúng thuật ngữ PMI',
                         'Installed the 3-tier rubric to resolve 50/50 ties between two valid-looking PMI choices'
                       ),
                     },
@@ -2377,7 +2377,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                     {
                       op: '+',
                       text: bi(
-                        'Áp dụng câu hỏi kiểm tra "Ai mở đường & bao hàm ai?" để chọn trúng phương án trao quyền toàn diện nhất',
+                        'Áp dụng câu hỏi kiểm tra "Phương án nào là bước tiền đề bao quát hơn?" để chọn nhất quán phương án tối ưu',
                         'Applied the inclusion & chronology check to pick the winning answer consistently'
                       ),
                     },
@@ -2386,28 +2386,28 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Vì sao đề PMP hay lừa được người giỏi kỹ thuật? Vì các câu nhiễu viết y hệt cách sếp ngoài đời hay làm: "báo lên cấp trên", "đổi người làm chậm", "gửi mail nhắc nhở chung"! Thấy 12 mẫu này là gạch ngay!',
-            'Why experienced leads fall for distractors: wrong options mirror common corporate shortcuts (escalating, swapping devs, mass emails). Spot them and cross them out first!'
+            'Các phương án nhiễu thường được viết dựa trên chính những thói quen xử lý nhanh nhưng thiếu bài bản ngoài thực tế (đẩy lên cấp trên, đổi người làm chậm, gửi email nhắc nhở chung). Nhận diện 12 dạng này giúp loại nhanh từ đầu.',
+            'Wrong options mirror common corporate shortcuts (escalating prematurely, swapping devs, mass emails). Spot them and cross them out first.'
           ),
           bi(
-            'Bẫy nhầm thời điểm cực độc: Môi trường Test sập làm đội ngồi chơi hôm nay → phải gỡ Blocker NGAY HÔM NAY! Ai chọn "Đợi họp Sprint Retrospective cuối tuần bàn bạc" là dính bẫy trì hoãn #7!',
-            'Deadly timing trap: If a broken test server blocks devs today, remove the impediment TODAY — never wait until Friday’s Sprint Retrospective!'
+            'Lưu ý về ranh giới xử lý tức thời và Retrospective: Môi trường Test hỏng làm đội ngừng việc hôm nay → phải gỡ Blocker ngay trong ngày, không chờ đến Sprint Retrospective cuối tuần.',
+            'Timing rule: If a broken test server blocks devs today, remove the impediment TODAY — never wait until Friday’s Sprint Retrospective.'
           ),
           bi(
-            'Khi còn 2 câu 50/50 đều tốt: Câu nào "chỉ ghi vào sổ rồi theo dõi thụ động" hoặc "gửi email 1 chiều" luôn THUA câu "gặp trực tiếp cùng nhóm phân tích giải quyết"!',
-            'In 50/50 ties, passive logging or one-way emails ALWAYS lose to proactive face-to-face team problem-solving!'
+            'Khi còn 2 phương án 50/50 đều hợp lý: Phương án "chỉ ghi vào sổ theo dõi thụ động" hoặc "gửi email 1 chiều" luôn kém ưu tiên hơn phương án "gặp trực tiếp cùng nhóm phân tích giải quyết".',
+            'In 50/50 ties, passive logging or one-way emails ALWAYS lose to proactive face-to-face team problem-solving.'
           ),
           bi(
-            'Phản xạ Vàng phá thế 50/50: Hỏi FIRST → chọn bước diễn ra TRƯỚC (Phân tích trước khi Trình duyệt); hỏi BEST → chọn bước sửa QUY TRÌNH GỐC (cập nhật DoR/DoD/QA) để lỗi không tái diễn!',
-            'Golden Reflex for 50/50 ties: On FIRST, pick the prerequisite step (Assess before Request); on BEST, pick the systemic safeguard (DoD/QA) that prevents recurrence!'
+            'Nguyên tắc chọn khi còn 2 phương án gần đúng: Câu hỏi FIRST → chọn bước diễn ra TRƯỚC (Phân tích trước khi Trình duyệt); câu hỏi BEST → chọn giải pháp sửa QUY TRÌNH GỐC (cập nhật DoR/DoD/QA) để ngăn tái diễn.',
+            'Key Principle for 50/50 ties: On FIRST, pick the prerequisite step (Assess before Request); on BEST, pick the systemic safeguard (DoD/QA) that prevents recurrence.'
           )
         ),
         defaultCode:
           phase === 'first'
-            ? `[4 CỤM 12 ĐÁP ÁN NHIỄU CẦN GẠCH BỎ TRONG 15 GIÂY]\n• Cụm 1 (Cực đoan)  : Always/Never/Halt project | Đuổi việc/Đổi người | Ép OT độc đoán.\n• Cụm 2 (Đẩy bóng)  : Cầu cứu Sponsor sớm | Đùn tranh cãi kỹ thuật sang HR | Bắt khách tự test lỗi.\n• Cụm 3 (Đường tắt) : Chờ tuần sau/Chờ cuối Sprint | Gửi mass email lạnh lùng | Cắt test / Gold Plating.\n• Cụm 4 (Sai luật)  : Sửa Baseline trước khi qua CCB | Tráo Risk <-> Issue | SM/PO lấn sân của Devs.`
+            ? `[4 NHÓM 12 ĐÁP ÁN NHIỄU CẦN LOẠI TRONG 15 GIÂY]\n• Nhóm 1 (Cực đoan)  : Always/Never/Halt project | Đuổi việc/Đổi người | Ép OT độc đoán.\n• Nhóm 2 (Đẩy việc)  : Cầu cứu Sponsor sớm | Đùn tranh cãi kỹ thuật sang HR | Bắt khách tự test lỗi.\n• Nhóm 3 (Đường tắt) : Chờ tuần sau/Chờ cuối Sprint | Gửi mass email lạnh lùng | Cắt test / Gold Plating.\n• Nhóm 4 (Sai luật)  : Sửa Baseline trước khi qua CCB | Tráo Risk <-> Issue | SM/PO lấn sân của Devs.`
             : phase === 'mid1'
-              ? `[RANH GIỚI THẨM QUYỀN KHÔNG ĐƯỢC NHẦM]\n• Gọi HR khi nào?       -> CHỈ khi quấy rối, phân biệt đối xử, trộm cắp, vi phạm pháp luật/đạo đức.\n• Gặp Sponsor khi nào?  -> CHỈ khi vượt trần Charter / xin Management Reserve / gãy Business Case.\n• Đợi Retro khi nào?    -> Cải tiến quy trình dài hạn (Còn Blocker hôm nay phải gỡ NGAY TRONG NGÀY!).`
-              : `[BÀN CÂN 3 TẦNG PHÁ THẾ CỜ 50/50 (KHI CÒN 2 CÂU ĐỀU ĐÚNG CHUẨN PMI)]\n• Tầng 1 (Thời gian) : Đánh giá tác động (Bước 1) LUÔN THẮNG Gửi Change Request (Bước 2) khi hỏi FIRST!\n• Tầng 2 (Giao tiếp) : Họp trực tiếp cùng nhóm (Interactive) LUÔN THẮNG Gửi email / Ghi sổ thụ động!\n• Tầng 3 (Chiều sâu) : Nâng cấp quy trình gốc (DoR/DoD/QA) LUÔN THẮNG Chữa cháy thủ công 1 lần khi hỏi BEST!`,
+              ? `[RANH GIỚI THẨM QUYỀN KHÔNG ĐƯỢC NHẦM]\n• Gọi HR khi nào?       -> CHỈ khi quấy rối, phân biệt đối xử, trộm cắp, vi phạm pháp luật/đạo đức.\n• Gặp Sponsor khi nào?  -> CHỈ khi vượt trần Charter / xin Management Reserve / mất khả thi Business Case.\n• Đợi Retro khi nào?    -> Cải tiến quy trình dài hạn (Còn Blocker hôm nay phải gỡ NGAY TRONG NGÀY).`
+              : `[QUY TẮC 3 TẦNG KHI CÒN 2 ĐÁP ÁN ĐỀU ĐÚNG CHUẨN PMI (50/50)]\n• Tầng 1 (Thời gian) : Đánh giá tác động (Bước 1) LUÔN ƯU TIÊN HƠN Gửi Change Request (Bước 2) khi hỏi FIRST.\n• Tầng 2 (Giao tiếp) : Họp trực tiếp cùng nhóm (Interactive) LUÔN ƯU TIÊN HƠN Gửi email / Ghi sổ thụ động.\n• Tầng 3 (Chiều sâu) : Nâng cấp quy trình gốc (DoR/DoD/QA) LUÔN ƯU TIÊN HƠN Khắc phục tạm thời 1 lần khi hỏi BEST.`,
       };
     },
   },
@@ -2422,15 +2422,15 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Khắc ghi nguyên tắc số 1 của Business Environment (26%): Tuân thủ luật pháp (Compliance) luôn là ưu tiên tối thượng không thương lượng',
+        'Nắm vững nguyên tắc hàng đầu của Business Environment (26%): Tuân thủ luật pháp (Compliance) luôn là ưu tiên bắt buộc không trì hoãn',
         'Prioritize mandatory Regulatory Compliance above ordinary feature desires across Agile and Predictive'
       ),
       bi(
-        'Dẫn dắt con người đón nhận hệ thống mới bằng 5 bước ADKAR (Awareness → Desire → Knowledge → Ability → Reinforcement) và quản trị AI an toàn (Human-in-the-Loop)',
+        'Dẫn dắt con người tiếp nhận hệ thống mới bằng 5 bước ADKAR (Awareness → Desire → Knowledge → Ability → Reinforcement) và quản trị AI an toàn (Human-in-the-Loop)',
         'Lead organizational adoption via the 5-step ADKAR model and enforce Responsible AI guardrails'
       ),
       bi(
-        'Làm chủ nhịp đồng hồ 240 phút (240 → 160 → 80 → 0) với 2 kỳ nghỉ 10 phút KHOÁ VĨNH VIỄN đề tại Câu 60 và Câu 120!',
+        'Làm chủ nhịp đồng hồ 240 phút (240 → 160 → 80 → 0) với 2 kỳ nghỉ 10 phút khóa cố định đề tại Câu 60 và Câu 120',
         'Master 240-minute exam pacing (80m per 60-question block) and the two permanently locked 10-minute breaks'
       ),
     ],
@@ -2498,20 +2498,20 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           s,
           total,
           bi(
-            'Hiểu ADKAR qua 1 câu chuyện: Đừng ép nhân viên đi học cách bấm phần mềm mới (Knowledge) khi họ còn chưa hiểu VÌ SAO phải bỏ file Excel cũ (Awareness) và chưa thấy lợi ích cho mình (Desire)!',
-            'ADKAR in plain words: Never push staff straight into software training (Knowledge) before building Awareness of why change matters and Desire to participate!'
+            'Trình tự 5 bước ADKAR bắt đầu từ nhận thức: Không đưa nhân viên thẳng vào lớp đào tạo cách dùng phần mềm mới (Knowledge) khi họ chưa hiểu lý do phải thay đổi (Awareness) và chưa có động lực tham gia (Desire).',
+            'ADKAR sequence: Never push staff straight into software training (Knowledge) before building Awareness of why change matters and Desire to participate.'
           ),
           bi(
-            'Luật sống còn ở phòng thi Pearson VUE: Khi xong Câu 60 và Câu 120, một khi bạn bấm xác nhận sang màn hình nghỉ 10 phút, 60 câu vừa làm bị KHOÁ VĨNH VIỄN không bao giờ quay lại sửa được nữa!',
-            'Critical Pearson VUE rule: Once you submit Q60 or Q120 to start your 10-minute break, those 60 questions are PERMANENTLY LOCKED and cannot be revisited!'
+            'Quy định quan trọng tại phòng thi Pearson VUE: Khi hoàn thành Câu 60 và Câu 120, ngay sau khi xác nhận sang màn hình nghỉ 10 phút, 60 câu vừa làm sẽ bị khóa vĩnh viễn và không thể quay lại chỉnh sửa.',
+            'Critical Pearson VUE rule: Once you submit Q60 or Q120 to start your 10-minute break, those 60 questions are PERMANENTLY LOCKED and cannot be revisited.'
           ),
           bi(
-            'Bẫy AI & Bảo mật: Cấm tuyệt đối dán dữ liệu khách hàng (PII) hay tài liệu mật lên GenAI công cộng; và không bao giờ nhắm mắt nghe AI cắt kiểm thử mà thiếu con người thẩm định!',
-            'AI Governance trap: Never paste confidential/PII data into public GenAI tools, and never blindly accept AI outputs without Human-in-the-Loop verification!'
+            'Nguyên tắc quản trị AI & Bảo mật: Không đưa dữ liệu cá nhân (PII) hay tài liệu mật lên GenAI công cộng, và luôn giữ con người kiểm chứng (Human-in-the-Loop) trước mọi đề xuất của AI.',
+            'AI Governance rule: Never paste confidential/PII data into public GenAI tools, and never blindly accept AI outputs without Human-in-the-Loop verification.'
           ),
           bi(
-            'Phản xạ Vàng về đích PMP®: Không bỏ trống bất kỳ câu nào (sai không trừ điểm), canh đồng hồ 240 → 160 → 80 → 0, và giữ vững trái tim của một Servant Leader chính trực!',
-            'Golden Exam-Day Reflex: Answer 100% of questions (no penalty for wrong guesses), hit clock checkpoints 160m & 80m, and think like a principled Servant Leader!'
+            'Nguyên tắc làm bài trong ngày thi PMP®: Trả lời đủ 100% câu hỏi (câu sai không bị trừ điểm), theo dõi mốc đồng hồ 240 → 160 → 80 → 0, và áp dụng nhất quán tư duy Servant Leader.',
+            'Key Principle on Exam Day: Answer 100% of questions (no penalty for wrong guesses), hit clock checkpoints 160m & 80m, and think like a principled Servant Leader.'
           )
         ),
         memoryScene: {

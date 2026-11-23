@@ -1,11 +1,11 @@
-# Pipelining, MULTI/EXEC/WATCH & Sự thật phũ phàng: Redis KHÔNG Rollback!
+# Pipelining, MULTI/EXEC/WATCH và cơ chế Transaction không Rollback trong Redis
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Đã bao giờ bạn viết một vòng lặp `for` trong Python hay Node.js gọi `GET` tới Redis **500 lần liên tiếp**, và ngỡ ngàng thấy API chậm mất **`250 mili-giây`** dù mỗi lệnh trên RAM của Redis chỉ mất vỏn vẹn `0.001 mili-giây`?
-> - **`RTT` (*Round-Trip Time* — Thời gian khứ hồi mạng):** Giống như bạn đứng ở tầng 1 gửi từng bức thư lên tầng 5 — dù người nhận đọc mất 1 giây, thời gian đi thang máy lên xuống mới là thứ ngốn hết buổi sáng! Nếu mạng nội bộ mất `0.5ms` mỗi chuyến đi-về, gửi lẻ tẻ 500 lệnh bắt ứng dụng ngồi chờ mạng đúng `500 × 0.5ms = 250ms`!
-> - **`TCP Pipelining` (Gửi dồn ống dẫn):** Bạn gom cả 500 bức thư bỏ vào **1 túi bưu phẩm gửi đi trong đúng 1 chuyến**, kéo tổng thời gian từ `250ms` tụt xuống còn ==`~1.2ms` (nhanh gấp hàng chục lần)==!
-> - **`MULTI / EXEC` (Giao dịch xếp hàng tuần tự):** Gom một nhóm lệnh vào khay riêng để khi bấm nút `EXEC`, Redis cam kết chạy liền một mạch không cho bất kỳ ai chen ngang ở giữa. Nhưng hãy cẩn thận: khác với SQL, ==Redis cố tình KHÔNG tự động hoàn tác (Rollback)== nếu có một lệnh ở giữa bị sai kiểu dữ liệu lúc chạy!
-> - **`WATCH` (Khóa lạc quan — *Optimistic Locking*):** Gắn một "camera theo dõi" lên khóa trước khi mở giao dịch; nếu phát hiện có người khác vừa sửa khóa đó trước lúc bạn kịp chốt `EXEC`, toàn bộ giao dịch tự hủy để bạn thử lại an toàn.
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Khi ứng dụng chạy vòng lặp gọi `GET` tới Redis **500 lần liên tiếp**, tổng thời gian có thể lên tới **`250 mili-giây`** dù thời gian xử lý mỗi lệnh trên RAM của Redis chưa tới `0.001 mili-giây`. Nguyên nhân nằm ở chi phí mạng, và Redis cung cấp các cơ chế sau để tối ưu và kiểm soát giao dịch:
+> - **`RTT` (*Round-Trip Time* — Thời gian khứ hồi mạng):** Thời gian một gói tin đi từ ứng dụng tới Redis và nhận phản hồi quay về. Nếu RTT nội mạng là `0.5ms`, gửi tuần tự 500 lệnh riêng lẻ sẽ mất ít nhất `500 × 0.5ms = 250ms` chỉ để chờ mạng.
+> - **`TCP Pipelining` (Gửi gộp theo lô):** Gửi dồn cả 500 lệnh qua socket TCP trong **1 lần gửi** và nhận lại 500 kết quả trong 1 lượt, kéo tổng thời gian từ `250ms` xuống còn ==`~1.2ms`==.
+> - **`MULTI / EXEC` (Transaction tuần tự):** Đưa một nhóm lệnh vào hàng đợi (`QUEUED`) và thực thi liền mạch từ đầu tới cuối khi gọi `EXEC`, đảm bảo không có client nào xen ngang ở giữa. Tuy nhiên, khác với SQL, ==Redis không tự động Rollback== nếu một lệnh bên trong gặp lỗi kiểu dữ liệu khi thực thi.
+> - **`WATCH` (Khóa lạc quan — *Optimistic Locking*):** Theo dõi một hoặc nhiều khóa trước khi mở `MULTI`; nếu khóa bị client khác thay đổi trước thời điểm `EXEC`, giao dịch tự động hủy để ứng dụng đọc lại và thử lại an toàn.
 
 ```visual
 kind: illustration
@@ -32,9 +32,9 @@ callouts:
 
 ## 1. Pipelining vs `MULTI/EXEC`: Khác nhau thế nào trên Python & Node.js?
 
-> [!ANALOGY] Hình dung Túi bưu phẩm chung vs Quầy phục vụ ưu tiên trọn gói
-> - **Pure Pipelining:** Bạn gom 100 lá thư gửi đi trong 1 chuyến xe cho nhanh; nhưng khi tới bưu điện, nhân viên có thể đóng dấu xen kẽ thư của bạn với thư của khách khác (**chỉ tối ưu mạng, không khóa cô lập**).
-> - **`MULTI` / `EXEC`:** Nhân viên gom toàn bộ yêu cầu của bạn vào khay riêng (`QUEUED`); tới lúc gọi **`EXEC`**, quầy phục vụ khóa cửa xử lý trọn vẹn từ đầu tới cuối khay của bạn rồi mới tiếp người kế tiếp!
+> [!NOTE] Phân biệt trực tiếp: Pure Pipelining vs Transaction `MULTI / EXEC`
+> - **Pure Pipelining:** Gửi nhiều lệnh cùng lúc để giảm số vòng mạng `RTT`, nhưng trên server Redis các lệnh từ client khác vẫn có thể thực thi xen kẽ giữa các lệnh trong lô (**tối ưu mạng, không cô lập**).
+> - **`MULTI` / `EXEC`:** Redis xếp toàn bộ lệnh vào hàng đợi (`QUEUED`); khi nhận **`EXEC`**, luồng chính thực thi liên tiếp trọn bộ hàng đợi của bạn trước khi chuyển sang lệnh của client khác (**cô lập tuần tự**).
 
 ```visual
 kind: compare
@@ -73,7 +73,7 @@ right:
     - "**Giới hạn cần nhớ:** Bên trong khối `MULTI`, mọi lệnh chỉ trả về chữ **`QUEUED`** — bạn **không thể đọc kết quả `GET` ở dòng 1 để viết `if/else` cho dòng 2**!"
 ```
 
-## 2. Cú sốc lớn nhất khi từ SQL sang Redis: Vì sao KHÔNG có Rollback?
+## 2. Khác biệt quan trọng giữa Redis Transaction và SQL: Vì sao Redis không hỗ trợ Rollback?
 
 Để giữ lõi thực thi trên RAM cực kỳ gọn nhẹ và đạt tốc độ hàng trăm ngàn lệnh/giây (không phải ghi sổ hoàn tác *Undo Log* nặng nề như PostgreSQL/MySQL), Redis xử lý 2 nhóm lỗi trong `MULTI / EXEC` hoàn toàn khác nhau:
 
@@ -109,7 +109,7 @@ EXEC
 ```visual
 kind: anatomy
 title: Vệ Sinh Bộ Nhớ Không Chặn Luồng Chính (Non-Blocking Cleanup)
-subtitle: Xoá 1 String nhỏ thì DEL và UNLINK như nhau; nhưng xoá 1 Hash/Set/ZSet 500,000 phần tử thì DEL là thuốc độc!
+subtitle: Xoá 1 String nhỏ thì DEL và UNLINK tương đương; nhưng xoá 1 Hash/Set/ZSet 500,000 phần tử thì DEL sẽ chặn luồng chính gây giật độ trễ!
 items:
   - keyword: UNLINK k1 [k2 ...]
     role: O(1) trên luồng chính!
@@ -130,7 +130,7 @@ items:
 > [!TIP] Khi nào nên dừng dùng `WATCH + MULTI/EXEC` để chuyển sang Lua Script (Mô-đun `R07`)?
 > Nếu một khóa có độ tranh chấp cực cao (ví dụ tồn kho sản phẩm Flash Sale có 5,000 người bấm mua trong cùng 1 giây), dùng `WATCH` sẽ khiến **4,999 kết nối bị hủy nhận `(nil)` và phải chạy vòng lặp thử lại liên tục** (*Retry Storm*), gây nghẽn mạng vô ích! Khi đó, **Lua Script (`EVAL`)** ở bài kế tiếp mới là giải pháp chuẩn vì kiểm tra và trừ kho trọn gói ngay trên máy chủ chỉ trong 1 lần gọi.
 
-> [!REMEMBER] Ghi nhớ bỏ túi (Tóm tắt 30 giây)
+> [!REMEMBER] Ghi nhớ cốt lõi
 > - **Pipelining** gom `N` lệnh vào **1 chuyến mạng (1 RTT)** (chia lô `100–1,000` lệnh; trong Python `redis-py` dùng `r.pipeline(transaction=False)` khi chỉ cần gom mạng thuần túy).
 > - **`MULTI` / `EXEC`** chạy các lệnh liền mạch không bị chen ngang, **`DISCARD`** hủy khay chờ, nhưng **KHÔNG Rollback** khi gặp lỗi kiểu dữ liệu lúc thực thi!
 > - Dùng **`WATCH`** trước `MULTI` cho khóa lạc quan ít va chạm, và luôn ưu tiên **`UNLINK`** + **`lazyfree-lazy-*`** thay cho `DEL` trên khóa lớn.

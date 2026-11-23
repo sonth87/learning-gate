@@ -1,15 +1,15 @@
-# GitOps Thực chiến với ArgoCD (Pull-Based CD)
+# GitOps với Argo CD: Kiến trúc Pull-Based, Self-Heal và Sync Waves
 
-Trong các bài trước, khi muốn đưa ứng dụng lên cụm Kubernetes, chúng ta thường tiếp cận theo lối mòn **Push-based CD (Mô hình Đẩy)**: máy chủ GitHub Actions hoặc GitLab Runner cầm chìa khoá quản trị tối cao của cụm K8s (`KUBECONFIG` / Cloud Admin Role), rồi từ bên ngoài gõ thẳng lệnh `kubectl set image` hoặc `helm upgrade` chọc vào cụm Production.
+Trong các bài trước, khi triển khai ứng dụng lên cụm Kubernetes, mô hình phổ biến ban đầu thường là **Push-based CD (Mô hình Đẩy)**: máy chủ GitHub Actions hoặc GitLab Runner giữ thông tin xác thực quản trị cụm K8s (`KUBECONFIG` / Cloud Admin Role), rồi từ bên ngoài chạy lệnh `kubectl set image` hoặc `helm upgrade` vào cụm Production.
 
-Mô hình Đẩy (**Push-based CD**) đó chạy ổn với 1 dịch vụ nhỏ, nhưng khi doanh nghiệp mở rộng lên 30 microservices kèm tiêu chuẩn kiểm toán tài chính (*PCI-DSS, SOC2*), nó bộc lộ hàng loạt lỗ hổng bảo mật nghiêm trọng. Đó là lúc kiến trúc ==Pull-based GitOps== với **Argo CD** (hoặc **Flux CD**) và **Single Source of Truth trên Git** trở thành tiêu chuẩn vàng của thế giới Cloud-Native.
+Mô hình Đẩy (**Push-based CD**) dễ thiết lập cho một dịch vụ nhỏ, nhưng khi hệ thống mở rộng lên hàng chục microservices kèm yêu cầu kiểm toán bảo mật (*PCI-DSS, SOC2*), nó bộc lộ nhiều rủi ro. Kiến trúc ==Pull-based GitOps== với **Argo CD** (hoặc **Flux CD**) và **Single Source of Truth trên Git** khắc phục triệt để các rủi ro này.
 
 ```visual
 kind: illustration
 diagram: "cicd:c15"
 src: "/illustrations/cicd/cicd-gitops-argocd-reconcile.jpg"
 alt: "Kiến trúc Pull-Based GitOps tách kho App CI với kho GitOps Config và vòng lặp đối chiếu tự phục hồi (Self-Healing) của ArgoCD bên trong cụm Kubernetes"
-title: "Giải Phẫu Kiến Trúc Pull-Based GitOps & Vòng Lặp Tự phục hồi (Self-Healing) Của ArgoCD"
+title: "Kiến trúc Pull-Based GitOps và cơ chế tự đồng bộ (Self-Healing) của Argo CD"
 subtitle: "Xoá sổ hoàn toàn chìa khoá KUBECONFIG trên CI Pipeline bên ngoài bằng trình điều phối chủ động kéo trạng thái từ trong cụm"
 caption: "Luồng khép kín từ CI đẩy Image & cập nhật thẻ phiên bản vào kho GitOps Config tới ArgoCD phát hiện sai lệch (Drift) và tự đồng bộ 24/7"
 callouts:
@@ -31,9 +31,9 @@ callouts:
 
 ## 1. Tại sao Push-based `kubectl apply` từ CI là một Phản mẫu Bảo mật?
 
-> [!ANALOGY] Hãy hình dung sự khác biệt cốt lõi
-> - **Push-based CD** giống như cấp tài khoản SSH `root` cho máy tính bên ngoài tự chui vào server Production sửa cấu hình mỗi khi chạy test xong.
-> - **Pull-based GitOps** đặt một **Trình điều phối (ArgoCD Controller) nằm sẵn ngay BÊN TRONG cụm Kubernetes**: nó chủ động kéo trạng thái chuẩn từ kho Git (*Single Source of Truth*) về đối chiếu và tự động chữa lành liên tục 24/7!
+Sự khác biệt cốt lõi giữa hai mô hình nằm ở vị trí giữ quyền quản trị và chiều kết nối:
+- **Push-based CD:** CI Runner nằm bên ngoài cụm phải lưu `KUBECONFIG` có quyền cao và chủ động kết nối vào API Server của cụm Production để đẩy thay đổi.
+- **Pull-based GitOps:** Bộ điều khiển (**ArgoCD Controller**) được cài đặt ngay **bên trong cụm Kubernetes**, chủ động kéo trạng thái cấu hình từ kho Git (*Single Source of Truth*) về đối chiếu và tự động đồng bộ liên tục 24/7. *(Thay vì cấp tài khoản quản trị từ xa cho máy chủ bên ngoài tự đăng nhập vào server Production, trình điều phối nằm sẵn bên trong cụm sẽ tự đối chiếu và cập nhật theo bản cấu hình chuẩn trên Git).*
 
 ```visual
 kind: layers
@@ -67,7 +67,7 @@ columns:
         tone: emerald
       - label: "Đóng kín tường lửa chiều vào · Chỉ gọi HTTPS chiều ra"
         sub: "ArgoCD chủ động kéo (Outbound Pull) tệp cấu hình từ kho Git về cụm"
-        note: Cụm K8s tàng hình
+        note: Không mở API Server ra Internet
         tone: sky
       - label: "Tự động phát hiện lệch chuẩn & Tự phục hồi (selfHeal: true)"
         sub: "Báo OutOfSync tức thì và ghi đè cụm về đúng trạng thái khai báo trong Git"
@@ -76,8 +76,8 @@ columns:
     footer: Toàn bộ lịch sử hạ tầng nằm gọn trong git log · Rollback chuẩn là git revert!
 ```
 
-> [!TIP] Bản đồ Hệ sinh thái GitOps: Chọn **Argo CD** hay **Flux CD**?
-> Cả hai đều là dự án **CNCF Graduated** đỉnh cao vận hành theo mô hình **Pull-based GitOps**, nhưng phục vụ hai phong cách đội ngũ khác nhau:
+> [!TIP] Lựa chọn công cụ GitOps: **Argo CD** hay **Flux CD**?
+> Cả hai đều là dự án **CNCF Graduated** phổ biến vận hành theo mô hình **Pull-based GitOps**, nhưng phục vụ hai nhu cầu sử dụng khác nhau:
 > - **Argo CD:** Nổi bật với **giao diện Web UI đồ hoạ cây tài nguyên cực kỳ trực quan**, tích hợp sẵn phân quyền SSO/RBAC đa cụm tập trung và ghép đôi hoàn hảo với *Argo Rollouts* — lựa chọn số 1 khi muốn mọi Developer tự nhìn thấy sức khoẻ Pod của mình.
 > - **Flux CD:** Thiết kế dạng các bộ điều khiển vi dịch vụ thuần Kubernetes CRD siêu nhẹ (*GitOps Toolkit*), không gánh tầng Web UI nặng nề, cực mạnh khi tự động hoá đồng bộ Helm/Kustomize/Image qua CLI & Terraform cho hàng trăm cụm biên (*Fleet / Edge Clusters*).
 
@@ -126,7 +126,7 @@ steps:
 
 ---
 
-## 3. Giải phẫu đối tượng ArgoCD `Application` (`argoproj.io/v1alpha1`)
+## 3. Cấu trúc đối tượng ArgoCD `Application` (`argoproj.io/v1alpha1`)
 
 Bên trong cụm Kubernetes, bạn định nghĩa mối liên kết giữa kho `shop-gitops` và cụm đích thông qua Custom Resource `kind: Application`:
 
@@ -167,7 +167,7 @@ Nếu đội của bạn dùng **Helm Chart** thay vì Kustomize, khối `spec.s
 
 ```visual
 kind: anatomy
-title: Giải Phẫu Các Cờ Điều Khiển Linh Hồn Trong ArgoCD Application
+title: Các tham số cấu hình quan trọng trong ArgoCD Application
 subtitle: Nắm chắc sự khác biệt giữa prune, selfHeal, CreateNamespace và sóng đồng bộ sync-wave
 items:
   - keyword: "automated.prune: true"
@@ -226,10 +226,10 @@ Annotation ==`argocd.argoproj.io/sync-wave`== giải quyết gọn đẹp bài t
 
 ```visual
 kind: troubleshoot
-title: Bẫy Vận Hành GitOps & ArgoCD Thường Gặp Ngoài Đời Thực
+title: Các lỗi vận hành GitOps & ArgoCD thường gặp
 items:
   - symptom: "Gõ tay kubectl set image để Rollback khẩn cấp nhưng 5 giây sau Pod lại tự quay về bản lỗi!"
-    badge: Bẫy selfHeal
+    badge: Cơ chế selfHeal
     tone: rose
     cause: "Ứng dụng đang bật syncPolicy.automated.selfHeal: true nên ArgoCD coi thao tác sửa tay trên cụm là Configuration Drift và lập tức ghi đè lại theo kho Git."
     fix: "Trong mô hình GitOps, mọi thao tác Rollback phải thực hiện bằng git revert commit cập nhật tag ảnh trên kho cấu hình GitOps."

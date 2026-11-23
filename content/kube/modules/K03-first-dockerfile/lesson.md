@@ -2,8 +2,8 @@
 
 Nếu `docker run` giúp bạn mượn sẵn Image cộng đồng như Nginx, Redis hay PostgreSQL, thì **`Dockerfile`** chính là nơi bạn tự viết **"bản công thức tự động"** biến mã nguồn **Node.js (`Express`, `NestJS`)** hay **Python (`FastAPI`, `Django`)** của chính bạn thành một **Container Image bất biến** chạy đồng nhất từ laptop lên Kubernetes.
 
-> [!NOTE] Mô hình tư duy dây chuyền lắp ráp từng lớp (Layers)
-> Hãy coi `Dockerfile` như kịch bản cài đặt một căn phòng sạch từ con số 0: mỗi dòng chỉ thị viết hoa (`FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD`) đắp thêm **một lớp (layer) chỉ đọc xác định** chồng lên hệ thống tệp của Image. Quy luật này giống hệt nhau dù bạn viết bằng Node.js, Python hay Go!
+> [!NOTE] Cơ chế xếp lớp (Layers) trong Dockerfile
+> `Dockerfile` là kịch bản khai báo từng bước tạo môi trường chạy ứng dụng từ một Base Image có sẵn: mỗi dòng chỉ thị viết hoa (`FROM`, `WORKDIR`, `COPY`, `RUN`, `CMD`) tạo ra **một lớp (layer) chỉ đọc xác định** chồng lên hệ thống tệp của Image. Quy luật này giống hệt nhau dù bạn viết bằng Node.js, Python hay Go.
 
 ```visual
 kind: flow
@@ -31,13 +31,13 @@ steps:
     tone: emerald
 ```
 
-## 1. Giải phẫu 7 chỉ thị cốt lõi trong mọi Dockerfile
+## 1. 7 chỉ thị cốt lõi trong mọi Dockerfile
 
 ```visual
 kind: illustration
 diagram: "kube:k03"
 alt: "Dây chuyền chỉ thị Dockerfile từ FROM đến CMD và sự khác biệt giữa Exec Form với Shell Form đối với tín hiệu PID 1"
-title: "Giải Phẫu Dây Chuyền Dockerfile & Cơ Chế Bắt Tín Hiệu Dừng Của PID 1"
+title: "Cấu Trúc Chỉ Thị Dockerfile & Cơ Chế Bắt Tín Hiệu Dừng Của PID 1"
 subtitle: "Phân định rạch ròi các bước đóng gói lúc Build-time với lệnh khởi chạy tiến trình chuẩn Exec Form lúc Run-time"
 caption: "Chuỗi lắp ráp các lớp chỉ thị Dockerfile chuẩn mực và lý do bắt buộc viết CMD dạng mảng JSON để nhận trực tiếp tín hiệu SIGTERM"
 callouts:
@@ -46,11 +46,11 @@ callouts:
     desc: "FROM, WORKDIR, COPY và RUN thực thi tuần tự trong lúc đóng gói để tạo ra các lớp ảnh bất biến."
     tone: sky
   - num: 2
-    label: "Bẫy Shell Form làm mù tín hiệu dừng"
-    desc: "Viết CMD dạng chuỗi khiến /bin/sh chiếm ghế PID 1 và nuốt mất tín hiệu SIGTERM, làm container treo 10s rồi bị rút điện SIGKILL."
+    label: "Shell Form làm mất tín hiệu dừng SIGTERM"
+    desc: "Viết CMD dạng chuỗi khiến /bin/sh chiếm PID 1 và nuốt mất tín hiệu SIGTERM, làm container treo 10s rồi bị ngắt bằng SIGKILL."
     tone: rose
   - num: 3
-    label: "Chuẩn Exec Form trao thẳng ghế PID 1 cho App"
+    label: "Exec Form trao trực tiếp PID 1 cho ứng dụng"
     desc: "Cú pháp mảng JSON CMD [\"node\", ...] hoặc [\"uvicorn\", ...] giúp ứng dụng nhận trực tiếp SIGTERM để đóng kết nối êm ái."
     tone: emerald
 ```
@@ -157,16 +157,16 @@ items:
 
 ## 3. Tính tất định (Determinism): Khóa chặt Lockfile & Bẫy `CMD` Shell Form vs Exec Form
 
-Ở máy cá nhân khi thêm thư viện mới, bạn hay gõ `npm install` hoặc `pip install fastapi`. Nhưng bên trong `Dockerfile`, mục tiêu sống còn là ==tính tất định (determinism)== — build hôm nay hay 6 tháng sau đều phải ra đúng từng byte phụ thuộc:
+Ở máy cá nhân khi thêm thư viện mới, bạn hay gõ `npm install` hoặc `pip install fastapi`. Nhưng bên trong `Dockerfile`, mục tiêu quan trọng là ==tính tất định (determinism)== — build hôm nay hay 6 tháng sau đều phải ra đúng từng byte phụ thuộc:
 
 - [x] **Với Node.js:** Dùng **`RUN npm ci --omit=dev`** thay vì `npm install` — nếu `package-lock.json` bị lệch, lệnh sẽ báo lỗi dừng ngay thay vì âm thầm tự nâng phiên bản gói!
 - [x] **Với Python hiện đại (2026):** Dùng trình quản lý siêu tốc **`uv`** với **`RUN uv sync --frozen --no-dev`** (nhanh gấp 10–50 lần `pip`, khóa chặt tuyệt đối theo `uv.lock`)!
 
-Tiếp theo là cạm bẫy tinh vi nhất ở dòng cuối cùng `CMD`:
+Tiếp theo là lỗi phổ biến ở dòng cuối cùng `CMD`:
 
 ```visual
 kind: compare
-title: "Giải Phẫu PID 1 & Tín Hiệu Dừng SIGTERM Khi Viết CMD"
+title: "Ảnh Hưởng Của Cách Viết CMD Tới PID 1 & Tín Hiệu Dừng SIGTERM"
 subtitle: Chỉ khác nhau cặp ngoặc vuông JSON nhưng quyết định ứng dụng tắt êm hay làm đứt ngang giao dịch của khách hàng!
 left:
   badge: "CÁCH SAI · Shell Form"
@@ -180,12 +180,12 @@ left:
     CMD uvicorn app.main:app --host 0.0.0.0 --port 8000
   lang: dockerfile
   bullets:
-    - "Tiến trình ngồi ghế **PID 1** là `/bin/sh` chứ **không phải** `node` hay `uvicorn`"
+    - "Tiến trình giữ **PID 1** là `/bin/sh` chứ **không phải** `node` hay `uvicorn`"
     - "Khi `docker stop` hay Kubernetes cuộn phiên bản gửi `SIGTERM` tới PID 1, `/bin/sh` **nuốt mất tín hiệu**, không chuyển tiếp xuống app!"
-    - "Container treo đơ hết 10s rồi bị rút phích bằng **`SIGKILL (137)`**, cắt đứt mọi request đang xử lý dở"
+    - "Container treo đơ hết 10s rồi bị ngắt bằng **`SIGKILL (137)`**, cắt đứt mọi request đang xử lý dở"
 right:
   badge: "CÁCH CHUẨN · JSON Exec Form"
-  title: Trao thẳng ghế PID 1 cho ứng dụng
+  title: Trao trực tiếp PID 1 cho ứng dụng
   tone: emerald
   code: |
     # Mảng JSON hợp lệ dùng dấu nháy kép "..."
@@ -229,7 +229,7 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-> [!TIP] Giải mã 3 dòng vàng của Python Dockerfile cho bạn mới chuyển từ Python Mastery sang
+> [!TIP] Giải thích 3 thiết lập quan trọng trong Python Dockerfile
 > - `PYTHONDONTWRITEBYTECODE=1`: Ngăn Python sinh hàng trăm tệp rác `.pyc` vô ích vào lớp ghi của container.
 > - `PYTHONUNBUFFERED=1`: Đẩy thẳng mọi dòng `print()` / `logging` ra `docker logs` tức thì không bị trễ bộ đệm.
 > - `--host 0.0.0.0`: Bắt buộc mở cửa `eth0` để nhận kết nối từ cờ `-p 8000:8000` hoặc từ Kubernetes Service!
@@ -243,7 +243,7 @@ docker build -t shop-api:1.0.0 .   # Đừng quên dấu chấm "." ở cuối l
 ```
 
 > [!WARNING] Cẩn thận dấu chấm `.` nhỏ bé ở cuối lệnh `docker build`!
-> Dấu ==`.`== ở cuối lệnh chính là đường dẫn **Build Context** — thư mục mà Docker CLI gom gửi sang bộ máy BuildKit để tìm `Dockerfile` và thực hiện các lệnh `COPY`. Quên dấu `.` là lỗi cú pháp kinh điển số 1 khi mới gõ `docker build`!
+> Dấu ==`.`== ở cuối lệnh chính là đường dẫn **Build Context** — thư mục mà Docker CLI gom gửi sang bộ máy BuildKit để tìm `Dockerfile` và thực hiện các lệnh `COPY`. Quên dấu `.` là lỗi phổ biến nhất khi mới gõ `docker build`!
 
 > [!REMEMBER] Ghi nhớ bỏ túi
 > - **Ưu tiên `COPY` hơn `ADD`** · Khóa chặt lockfile bằng **`RUN npm ci --omit=dev`** (Node) hoặc **`RUN uv sync --frozen --no-dev`** (Python) · Ghim rõ `FROM node:22-alpine` hoặc `FROM python:3.12-slim`.

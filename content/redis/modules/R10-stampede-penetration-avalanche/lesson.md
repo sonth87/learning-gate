@@ -1,12 +1,12 @@
 # 3 Sự cố Điển hình Caching: Chống Stampede, Penetration & Avalanche
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Một hệ thống chạy mượt mà ở mức `20,000 request/giây` nhờ Redis đỡ hộ `99.5%` lượt đọc thực chất đang ẩn giấu một rủi ro lớn: **Database phía sau chỉ đủ sức chịu khoảng `200 câu SQL/giây`**. Chỉ cần tấm khiên Redis bị thủng trong **3 giây**, hàng ngàn câu truy vấn sẽ ập thẳng xuống nghiền nát Database ngay lập tức!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Một hệ thống xử lý `20,000 request/giây` nhờ Redis phục vụ `99.5%` lượt đọc thực tế thường đặt phía trước một **Database chỉ chịu tải được khoảng `200 câu SQL/giây`**. Nếu tầng Cache mất khả năng chặn tải trong vài giây, lượng truy vấn dồn thẳng xuống sẽ nhanh chóng làm cạn Connection Pool của Database.
 >
-> Mọi vụ sập Database xuyên qua tầng Cache ngoài đời thực đều quy về **3 kịch bản kinh điển** — hãy nhớ chúng qua **ẩn dụ Tiệm Bánh Nổi Tiếng Giờ Cao Điểm**:
-> 1. **`Cache Stampede` (Giẫm đạp dây chuyền vì 1 khóa siêu nóng hết hạn):** Đúng 12h00 trưa, tấm biển ghi giá chiếc bánh Best-seller trên quầy vừa hết hạn bị gỡ xuống. Thay vì cử **1 nhân viên duy nhất** chạy vào bếp hỏi lại giá mới (**`Singleflight` / `Mutex Lock`**), cả **1,000 khách hàng đồng loạt xô cửa ùa thẳng vào bếp** hỏi cùng một câu làm sập cả căn bếp!
-> 2. **`Cache Penetration` (Đâm xuyên thủng vì hỏi thứ không tồn tại):** Kẻ phá hoại thuê hàng ngàn người tới hỏi mua món *"Bánh Rồng Sao Hỏa"* — món này trên quầy không có mà trong bếp cũng chẳng có! Vì không có nên quầy không ghi lại, khiến lần nào nhân viên cũng phải chạy tuốt vào bếp tìm trong vô vọng.
-> 3. **`Cache Avalanche` (Tuyết lở đồng loạt vì vạn khóa chết cùng một giây):** Quản lý cài hẹn giờ cho **toàn bộ 50 tủ trưng bày tự động làm mới cùng lúc đúng 13h00:00** — khiến khách của tất cả các quầy đổ dồn vào bếp trong cùng một tích tắc!
+> Các sự cố quá tải Database xuyên qua tầng Cache thường rơi vào **3 kịch bản chính**:
+> 1. **`Cache Stampede` (*Hot Key Breakdown*):** Một khóa có lượng truy cập cực lớn hết hạn `TTL`; trong khoảng vài chục mili-giây chưa kịp nạp lại, hàng nghìn request đồng thời đều gặp `Cache Miss` và cùng gửi truy vấn giống hệt nhau xuống Database. Cách xử lý là dùng **`Singleflight`** hoặc **`Mutex Lock`** để chỉ cho phép 1 luồng truy vấn Database và nạp lại Cache.
+> 2. **`Cache Penetration`:** Hệ thống nhận lượng lớn truy vấn cho các ID **không tồn tại cả trong Redis lẫn Database** (ví dụ `product_id = -1` hoặc UUID giả), khiến `Cache Miss` đạt 100% và mọi request đều đi thẳng xuống Database. Cách xử lý là dùng **`Bloom Filter`** kiểm tra trước ở tầng Redis kết hợp **`Negative Cache`**.
+> 3. **`Cache Avalanche`:** Hàng chục nghìn khóa trong Cache hết hạn cùng một thời điểm (thường do đặt cùng một hằng số TTL khi nạp dữ liệu hàng loạt), hoặc nút Redis gặp sự cố mất kết nối, tạo ra đợt tăng tải đột biến lên Database. Cách xử lý là cộng thêm độ lệch ngẫu nhiên **`TTL Jitter`** và triển khai Redis HA.
 
 ```visual
 kind: illustration
@@ -14,9 +14,9 @@ src: "/illustrations/redis/redis-cache-stampede-shield.jpg"
 diagram: "redis:r10"
 alt: "Lá chắn phòng thủ trước 3 Sự cố Điển hình Caching: Stampede, Penetration và Avalanche"
 badge: "High-Concurrency Defense · R10"
-title: "Giải phẫu 3 Kịch bản Đánh sập Database & Hệ thống Lá chắn 3 Tầng"
-subtitle: "Phân biệt chính xác nguồn phát sinh của Stampede (1 khoá siêu nóng), Penetration (khoá không tồn tại) và Avalanche (hàng vạn khoá chết cùng giây)"
-caption: "Kết hợp Bloom Filter ở biên + Singleflight/Mutex cho Hot Key + TTL Jitter cho Batch Import tạo nên pháo đài bất khả xâm phạm."
+title: "Phân Tích 3 Sự Cố Caching & Cơ Chế Phòng Vệ Tương Ứng"
+subtitle: "Phân biệt chính xác nguồn phát sinh của Stampede (1 khoá siêu nóng), Penetration (khoá không tồn tại) và Avalanche (hàng vạn khoá hết hạn cùng lúc)"
+caption: "Kết hợp Bloom Filter ở biên + Singleflight/Mutex cho Hot Key + TTL Jitter cho Batch Import để bảo vệ Database."
 callouts:
   - num: 1
     label: "Chống Stampede (1 Hot Key hết hạn)"
@@ -36,10 +36,10 @@ callouts:
 
 **Triệu chứng:** Duy nhất **một khóa có lưu lượng đọc cực lớn** (như trang chủ `cache:home:hero` hoặc sản phẩm mở bán lúc 0h `cache:flashsale:iphone`) vừa chạm mốc `TTL = 0`. Trong vỏn vẹn `40ms` mà truy vấn đầu tiên đang bận chạy SQL dưới Database chưa kịp `SET` lại lên Redis, `5,000` request khác ập tới cùng thấy trống `(nil)` và mở `5,000` kết nối SQL y hệt nhau!
 
-- [>] **Lớp khiên 1 — Gom cổ chai nội bộ (`Singleflight`) + Khóa phân tán (`SET ... NX PX`):**
+- [>] **Biện pháp 1 — Gom cổ chai nội bộ (`Singleflight`) + Khóa phân tán (`SET ... NX PX`):**
   1. Bên trong từng tiến trình ứng dụng (Go `singleflight.Group`, `asyncio.Lock` theo khóa trong Python, hoặc `Map<string, Promise>` trong Node.js), gom 500 request trùng khóa lại để chờ chung kết quả của **1 lời gọi duy nhất**.
   2. Giữa 20 máy chủ ứng dụng với nhau, tranh quyền nạp lại cache bằng ==`SET lock:rebuild:home <uuid> NX PX 3000`==: chỉ **1 máy chủ thắng khóa** được phép truy vấn PostgreSQL; 19 máy còn lại chờ `30–50ms` rồi đọc bản mới từ Redis!
-- [>] **Lớp khiên 2 — Hết hạn mềm (*Logical Expiration* — Không bao giờ xóa trắng Hot Key):**
+- [>] **Biện pháp 2 — Hết hạn mềm (*Logical Expiration* — Không xóa trắng Hot Key):**
   Với khóa siêu nóng đêm sự kiện, đặt TTL vật lý dài (ví dụ `3600s`) nhưng nhúng trường thời gian hết hạn mềm `logical_exp` (`now + 300s`) vào dữ liệu. Khi quá hạn mềm, mọi khách hàng vẫn nhận ngay dữ liệu hiện tại trong `0.3ms`, chỉ duy nhất 1 worker nền đi làm mới êm ái!
 
 ## 2. Kịch bản #2: Chặn đứng Cache Penetration (*Xuyên thủng bởi ID ảo*)
@@ -100,9 +100,9 @@ items:
     cmd: "redis-cli INFO replication && redis-cli INFO memory"
 ```
 
-- [+] **Công thức vàng cho `TTL Jitter`:** Đừng bao giờ viết cứng `ttl = 300`. Hãy luôn cộng thêm ==`10% – 20%` thời gian ngẫu nhiên== (`ttl = base_sec + random.randint(10, int(base_sec * 0.2))`) để rải đều thời điểm hết hạn êm ái theo thời gian!
+- [+] **Quy tắc thiết lập `TTL Jitter`:** Đừng bao giờ viết cứng `ttl = 300`. Hãy luôn cộng thêm ==`10% – 20%` thời gian ngẫu nhiên== (`ttl = base_sec + random.randint(10, int(base_sec * 0.2))`) để rải đều thời điểm hết hạn êm ái theo thời gian!
 
-## 4. Mẫu kết hợp 3 lớp khiên thực chiến (TypeScript / Node.js & Python)
+## 4. Kết hợp các kỹ thuật bảo vệ Cache trong ứng dụng thực tế (TypeScript / Node.js & Python)
 
 Đoạn mã dưới đây minh họa cách ghép cả **Singleflight nội bộ + Khóa phân tán Redis + TTL Jitter** bảo vệ tuyệt đối cho PostgreSQL:
 

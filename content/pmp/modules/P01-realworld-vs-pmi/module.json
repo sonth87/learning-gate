@@ -4,13 +4,13 @@
   "level": 0,
   "order": 2,
   "title": "Chuyển đổi Tư duy: Từ Thói quen Thực tế sang Nguyên tắc Chuẩn PMI",
-  "summary": "Phân tích chi tiết 6 thói quen quản lý dự án ngoài đời thực khiến người càng nhiều năm kinh nghiệm càng dễ mất điểm PMP, và cài đặt bộ lọc 6 Phản xạ vàng (Think Before Act · Limit Escalate · Do Not Remove · Follow the Process · Direct Communication · Confront Problems).",
-  "motto": "Tạm gác phản xạ xử lý tình thế · Đội chiếc mũ PM kỷ luật, chính trực và phân tích tại nguồn",
+  "summary": "Phân tích chi tiết 6 thói quen quản lý dự án ngoài đời thực dễ gây mất điểm trong bài thi PMP, và áp dụng 6 nguyên tắc hành động chuẩn PMI (Think Before Act · Limit Escalate · Do Not Remove · Follow the Process · Direct Communication · Confront Problems).",
+  "motto": "Tạm gác phản xạ xử lý tình thế · Áp dụng tư duy PM kỷ luật, chính trực và phân tích từ gốc",
   "provenance": [
     {
       "kind": "pma-bridge",
-      "label": "6 Phản xạ vàng PMA",
-      "detail": "Bộ quy tắc lọc đáp án nhanh nhất cho câu hỏi FIRST / NEXT / BEST từ Core Mindset"
+      "label": "6 Nguyên tắc phản xạ PMA",
+      "detail": "Bộ quy tắc lọc đáp án cho câu hỏi FIRST / NEXT / BEST từ Core Mindset"
     },
     {
       "kind": "pmbok8",
@@ -23,7 +23,7 @@
       "detail": "Trọng tâm giải quyết xung đột cộng tác, không đẩy trách nhiệm và tuân thủ kiểm soát thay đổi"
     }
   ],
-  "realWorldTrap": "Thấy sự cố là nhảy vào sửa ngay cho nhanh, gặp khách khó là chạy lên méc Sponsor, thấy dev làm chậm là đòi đổi người, hoặc âm thầm sửa thêm code chiều lòng khách hàng thân thiết.",
+  "realWorldTrap": "Thấy sự cố là tự ý sửa ngay cho nhanh, gặp vướng mắc là báo thẳng lên Sponsor, thấy nhân sự làm chậm là yêu cầu đổi người, hoặc âm thầm làm thêm tính năng ngoài phạm vi để chiều lòng khách hàng.",
   "pmiMindsetShift": "Trong thế giới PMI, PM là nhà lãnh đạo tự chủ và có hệ thống: luôn kiểm tra dữ liệu gốc trước khi hành động, giải quyết vấn đề ở cấp thẩm quyền của mình, nói chuyện trực tiếp 1-1, huấn luyện thay vì sa thải và tuyệt đối tôn trọng quy trình.",
   "tags": [
     "pmi-mindset",

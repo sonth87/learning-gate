@@ -1,13 +1,13 @@
-# Phòng tuyến DevSecOps 5 Lớp: Quét Secret, SAST, SCA, Cổng chặn CVE Container, SBOM & Rootless Container Build
+# Kiến trúc DevSecOps 5 lớp: Quét Secret, SAST, SCA, Trivy, SBOM và Rootless Container Build
 
-Trong mô hình phát triển phần mềm cũ cách đây một thập kỷ, đội Bảo mật chỉ nhảy vào kiểm tra vào... tuần cuối cùng trước ngày ra mắt sản phẩm. Khi họ phát hiện 15 lỗ hổng nghiêm trọng và 1 khoá API nằm phơi trong lịch sử Git, ngày phát hành bị hoãn cả tháng trong sự căng thẳng tột độ giữa Dev và Security!
+Trong quy trình phát triển phần mềm truyền thống, đội Bảo mật thường chỉ kiểm tra vào giai đoạn cuối trước khi phát hành. Khi phát hiện nhiều lỗ hổng nghiêm trọng hoặc khóa API lộ trong lịch sử Git vào phút chót, kế hoạch phát hành buộc phải trì hoãn để xử lý lại từ đầu.
 
-Triết lý ==DevSecOps ("Shift-Left Security" — Dịch chuyển bảo mật sang bên trái)== thay đổi hoàn toàn cuộc chơi: đưa các chốt kiểm tra tự động (**Gitleaks**, **Semgrep**, **npm audit**, **Trivy**, **CycloneDX SBOM**) chạy ngay trong **3–5 phút đầu của mỗi Pull Request**, biến việc bắt lỗ hổng nhẹ nhàng như cách `ESLint` hay `TypeScript` báo gạch chân đỏ ngay lúc bạn vừa gõ code xong!
+Triết lý ==DevSecOps ("Shift-Left Security" — Dịch chuyển bảo mật sang giai đoạn sớm)== khắc phục vấn đề này bằng cách tích hợp các công cụ kiểm tra tự động (**Gitleaks**, **Semgrep**, **npm audit**, **Trivy**, **CycloneDX SBOM**) chạy ngay trong **3–5 phút đầu của mỗi Pull Request**, giúp lập trình viên phát hiện và sửa lỗ hổng ngay trong quá trình viết code tương tự như `ESLint` hoặc `TypeScript`.
 
 ```visual
 kind: flow
-title: Phễu Lọc Bảo Mật DevSecOps 5 Lớp Tự Động Ngay Trên Pipeline
-subtitle: Mỗi lớp soi chiếu một bề mặt tấn công độc lập — lọt qua lớp trước sẽ bị chặn đứng ở lớp sau
+title: Hệ thống kiểm tra bảo mật DevSecOps 5 lớp tự động trên Pipeline
+subtitle: Mỗi lớp kiểm tra một bề mặt tấn công độc lập — lỗ hổng vượt qua lớp trước sẽ bị phát hiện ở lớp sau
 steps:
   - icon: key
     badge: Lớp 1 · Git History
@@ -40,54 +40,56 @@ steps:
 
 ---
 
-## 1. Kiến trúc Phòng thủ Đa tầng ("Lát Phô mai Thuỵ Sĩ") trên CI
+## 1. Kiến trúc phòng thủ đa tầng trong DevSecOps trên CI
 
 ```visual
 kind: illustration
 diagram: "cicd:c11"
 src: "/illustrations/cicd/cicd-devsecops-five-shields.jpg"
-alt: "Phòng tuyến DevSecOps 5 lớp tự động gồm Gitleaks quét Secret, Semgrep SAST, npm audit SCA, Trivy quét CVE Container và hồ sơ SBOM/Cosign"
-title: "Giải Phẫu Phòng Tuyến DevSecOps 5 Lớp: Dịch Chuyển Bảo Mật Sang Trái (Shift-Left)"
-subtitle: "Phối hợp 5 trạm soi chiếu chuyên biệt cùng đóng gói Rootless để bắt gọn lỗ hổng ngay trong vài phút đầu của mỗi Pull Request"
-caption: "Mô hình Lát Phô mai Thuỵ Sĩ từ quét khoá lịch sử Git, phân tích mã tĩnh SAST, kiểm toán gói phụ thuộc SCA, quét ảnh Trivy tới xuất hồ sơ SBOM & DAST"
+alt: "Hệ thống kiểm tra DevSecOps 5 lớp tự động gồm Gitleaks quét Secret, Semgrep SAST, npm audit SCA, Trivy quét CVE Container và hồ sơ SBOM/Cosign"
+title: "Kiến trúc kiểm định DevSecOps 5 lớp (Shift-Left Security)"
+subtitle: "Phối hợp 5 công cụ kiểm tra chuyên biệt cùng đóng gói Rootless để phát hiện lỗ hổng ngay từ mỗi Pull Request"
+caption: "5 lớp kiểm tra độc lập từ quét khóa lịch sử Git, phân tích mã tĩnh SAST, kiểm toán gói phụ thuộc SCA, quét ảnh Trivy tới xuất hồ sơ SBOM & DAST"
 callouts:
   - num: 1
-    label: "Lớp 1-3: Quét Secret (Gitleaks), SAST & SCA trước khi gói"
-    desc: "Soi toàn bộ lịch sử commit (fetch-depth: 0) bắt khoá rò rỉ, rà lỗi bảo mật trong mã tự viết bằng Semgrep và kiểm tra gói chạy thật với npm audit."
+    label: "Lớp 1-3: Quét Secret (Gitleaks), SAST & SCA trước khi đóng gói"
+    desc: "Kiểm tra toàn bộ lịch sử commit (fetch-depth: 0) bắt khoá rò rỉ, rà lỗi bảo mật trong mã tự viết bằng Semgrep và kiểm tra gói chạy thật với npm audit."
     tone: amber
   - num: 2
     label: "Lớp 4: Cổng chặn CVE hệ điều hành Container (Trivy)"
-    desc: "Quét sâu các thư viện C dưới đáy Alpine/Debian của ảnh vừa đóng gói (không gắn docker.sock của Host) và trả mã lỗi 1 nếu dính CVE nghiêm trọng."
+    desc: "Quét các thư viện C dưới đáy Alpine/Debian của ảnh vừa đóng gói (không gắn docker.sock của Host) và trả mã lỗi 1 nếu phát hiện CVE nghiêm trọng."
     tone: rose
   - num: 3
-    label: "Lớp 5: Xuất danh mục nguyên liệu SBOM, Ký số & DAST"
-    desc: "Sinh tệp CycloneDX JSON để truy vết tức thì khi có Zero-Day mới công bố, ký xác thực ảnh với Cosign và quét động điểm cuối Staging."
+    label: "Lớp 5: Xuất danh mục thành phần SBOM, Ký số & DAST"
+    desc: "Sinh tệp CycloneDX JSON để truy vết nhanh khi có Zero-Day mới công bố, ký xác thực ảnh với Cosign và quét động điểm cuối Staging."
     tone: emerald
 ```
 
-Tại sao không dùng 1 công cụ duy nhất mà phải phối hợp đủ **5 lớp**? Bởi một ứng dụng hiện đại (dù viết bằng Node.js, Python hay Go) được ghép từ nhiều tầng vật liệu khác nhau — code của bạn sạch không có nghĩa là gói thư viện tải về hay nhân Linux dưới đáy Docker Image cũng sạch! Trước khi đi vào cấu hình, hãy giải mã bình dân toàn bộ "rừng từ viết tắt" bảo mật này:
+Một ứng dụng hiện đại được cấu thành từ nhiều lớp (mã nguồn tự viết, thư viện bên thứ ba, hệ điều hành trong Container Image), nên một công cụ đơn lẻ không thể phát hiện hết mọi rủi ro. Dưới đây là vai trò kỹ thuật của từng lớp kiểm tra:
 
-- **`Secret Scanning` (Quét rò rỉ khoá bí mật — vd `Gitleaks`):** Như **cổng dò kim loại ở sân bay**, rà soát toàn bộ lịch sử các commit Git để bắt kịp mật khẩu DB, AWS Key hay Stripe Token lỡ bỏ quên trong code.
-- **`SAST` (*Static Application Security Testing* — Quét lỗi bảo mật trong code bạn tự viết):** Như **chụp phim X-quang mã nguồn** (`src/`), đọc cây cú pháp của chính đội bạn gõ để phát hiện lỗi cộng chuỗi SQL Injection, `eval()`, XSS mà không cần chạy ứng dụng.
-- **`SCA` (*Software Composition Analysis* — Quét lỗ hổng trong thư viện bên thứ ba bạn cài vào):** Tới 80% dung lượng phần mềm hiện đại là thư viện mở cài từ `npm`, `PyPI`, `Go Modules`. `SCA` (`npm audit`, `pip-audit`, `Trivy fs`) đối chiếu tệp lockfile với danh sách lỗ hổng công khai toàn cầu (**CVE — Common Vulnerabilities and Exposures**).
-- **`Container Image Scan` (Quét ảnh Container — vd `Trivy image`):** Mở tung bức ảnh Docker vừa đóng gói để kiểm tra các thư viện hệ điều hành Linux (`Alpine`, `Debian` như `openssl`, `libcrypto`, `curl`) nằm sâu bên dưới runtime ứng dụng.
-- **`SBOM` (*Software Bill of Materials* — "Bảng thành phần nguyên liệu phần mềm"):** Giống hệt **nhãn thành phần dinh dưỡng in trên vỏ hộp sữa**, xuất ra tệp JSON liệt kê đầy đủ từng gói và phiên bản có mặt trong bản phát hành.
+- **`Secret Scanning` (Quét rò rỉ khóa bí mật — ví dụ `Gitleaks`):** Rà soát toàn bộ lịch sử commit Git để phát hiện mật khẩu cơ sở dữ liệu, khóa API hay token bị đưa nhầm vào mã nguồn.
+- **`SAST` (*Static Application Security Testing* — Phân tích mã nguồn tĩnh):** Phân tích cây cú pháp mã nguồn (`src/`) do đội ngũ tự viết để phát hiện các mẫu lỗi như SQL Injection, `eval()`, XSS mà không cần chạy ứng dụng.
+- **`SCA` (*Software Composition Analysis* — Kiểm toán thư viện bên thứ ba):** Vì phần lớn mã chạy thực tế đến từ các gói cài đặt qua `npm`, `PyPI`, `Go Modules`, `SCA` (`npm audit`, `pip-audit`, `Trivy fs`) đối chiếu tệp lockfile với cơ sở dữ liệu lỗ hổng công khai (**CVE — Common Vulnerabilities and Exposures**).
+- **`Container Image Scan` (Quét ảnh Container — ví dụ `Trivy image`):** Kiểm tra các gói hệ điều hành Linux (`Alpine`, `Debian` như `openssl`, `libcrypto`, `curl`) được đóng gói bên trong Docker Image.
+- **`SBOM` (*Software Bill of Materials* — Danh mục thành phần phần mềm):** Xuất tệp JSON chuẩn hóa (`CycloneDX` / `SPDX`) liệt kê toàn bộ thư viện, gói hệ điều hành và phiên bản có trong bản phát hành.
+
+*(Mô hình phòng thủ đa tầng này thường được ví như mô hình **"Lát Phô mai Thụy Sĩ"** (*Swiss Cheese Model*): mỗi công cụ có thể có điểm mù riêng, nhưng khi xếp chồng nhiều lớp độc lập, lỗ hổng lọt qua lớp này sẽ bị lớp tiếp theo chặn lại. Tương tự, `SBOM` đóng vai trò như bảng liệt kê thành phần trên nhãn sản phẩm, giúp đội Bảo mật tra cứu ngay dịch vụ nào bị ảnh hưởng khi một lỗ hổng Zero-day mới như *Log4Shell* hay *xz-utils* được công bố mà không cần quét lại toàn bộ image).*
 
 ```visual
 kind: layers
-title: "Bản Đồ 5 Lớp Phòng Tuyến DevSecOps Trong Dự Án Node.js [!badge:emerald:Defense in Depth]"
-subtitle: Phân biệt rạch ròi đối tượng soi chiếu của từng công cụ để không trùng lặp và không bỏ lọt lỗ hổng
+title: "Bản Đồ 5 Lớp DevSecOps Trong Dự Án Node.js [!badge:emerald:Defense in Depth]"
+subtitle: Phân biệt rạch ròi đối tượng kiểm tra của từng công cụ để không trùng lặp và không bỏ sót lỗ hổng
 columns:
   - title: Các Lớp Kiểm Định Trước Đóng Gói (Source & Dependencies)
     badge: Lớp 1 → Lớp 3 · Chạy trong vài chục giây
     tone: sky
     layers:
       - label: "Lớp 1 — Secret Scanning (Gitleaks / TruffleHog)"
-        sub: "Soi toàn bộ lịch sử các commit Git (yêu cầu fetch-depth: 0)"
+        sub: "Kiểm tra toàn bộ lịch sử các commit Git (yêu cầu fetch-depth: 0)"
         note: Bắt lộ DB URL, JWT, Stripe Key
         tone: amber
       - label: "Lớp 2 — SAST: Phân tích Mã tĩnh (Semgrep / CodeQL)"
-        sub: "Soi cây cú pháp AST mã nguồn do chính đội bạn viết (src/**/*.ts)"
+        sub: "Phân tích cây cú pháp AST mã nguồn tự viết (src/**/*.ts)"
         note: Bắt SQLi, eval(), Regex DoS, thiếu Auth
         tone: sky
       - label: "Lớp 3 — SCA: Kiểm toán Thư viện mở (npm audit / Trivy fs)"
@@ -100,35 +102,32 @@ columns:
     tone: emerald
     layers:
       - label: "Lớp 4 — Container Image CVE Gate (Trivy image / Grype)"
-        sub: "Soi các gói hệ điều hành Alpine/Debian (openssl, libcrypto, curl) trong Image"
-        note: Chặn tràn bộ nhớ tầng OS C/C++
+        sub: "Kiểm tra các gói hệ điều hành Alpine/Debian (openssl, libcrypto, curl) trong Image"
+        note: Chặn lỗ hổng tầng OS C/C++
         tone: rose
-      - label: "Lớp 5 — Hồ sơ Nguyên liệu SBOM (CycloneDX / SPDX)"
+      - label: "Lớp 5 — Danh mục thành phần SBOM (CycloneDX / SPDX)"
         sub: "Xuất danh mục kiểm kê toàn bộ thành phần có mặt trong bản build (sbom.cdx.json)"
-        note: Tra cứu Zero-day mới trong 2 giây!
+        note: Tra cứu Zero-day mới trong 2 giây
         tone: emerald
       - label: "Mở rộng — DAST / Smoke Security trên Staging (OWASP ZAP)"
-        sub: "Giả lập truy vấn HTTP thực tế vào dịch vụ đang sống để rà thiếu Security Headers / CORS"
+        sub: "Giả lập truy vấn HTTP thực tế vào dịch vụ đang chạy để rà thiếu Security Headers / CORS"
         note: Kiểm chứng hành vi thực thi động
         tone: cyan
     footer: Đảm bảo chỉ những Container Image sạch và có hồ sơ xuất xứ rõ ràng mới được lên Registry
 ```
 
-> [!ANALOGY] SBOM giống hệt "Bảng thành phần dinh dưỡng" hoặc hồ sơ linh kiện máy bay!
-> Khi tuần sau thế giới bất ngờ công bố một lỗ hổng Zero-day chấn động (như *Log4Shell* hay *xz-utils*), thay vì phải kéo hàng trăm Docker Image cũ về quét lại mất cả ngày, đội Bảo mật chỉ cần truy vấn kho tệp **`sbom.cdx.json`** là biết chính xác trong **2 giây** những microservice nào đang chứa phiên bản thư viện lỗi đó để vá khẩn cấp!
-
 ---
 
-## 2. Cấu hình thực dụng từng Lớp (Triệt tiêu bẫy "Cảnh báo ồn ào" — Alert Fatigue!)
+## 2. Cấu hình chi tiết từng lớp và giảm thiểu cảnh báo nhiễu (Alert Fatigue)
 
-Sai lầm khiến nhiều đội ngũ chán ghét công cụ bảo mật rồi lén tắt bỏ là **để ngưỡng báo động quá nhiễu**: ví dụ bắt lỗi cả các gói `devDependencies` chỉ chạy ở máy dev (`eslint`, `vitest`), hoặc chặn pipeline vì một lỗ hổng mức `LOW` trong nhân Debian mà chính nhà phát hành Debian còn chưa tung bản vá!
+Sai lầm khiến nhiều đội ngũ bỏ qua công cụ bảo mật là **để ngưỡng báo động quá nhiễu**: ví dụ báo lỗi cả các gói `devDependencies` chỉ chạy ở máy phát triển (`eslint`, `vitest`), hoặc chặn pipeline vì một lỗ hổng mức `LOW` trong nhân Debian khi nhà phát hành chưa tung bản vá.
 
 Hãy áp dụng bộ tham số tinh chỉnh chuẩn công nghiệp sau:
 
-### 1) Lớp 1 — Quét lịch sử Git với `Gitleaks` (Bắt buộc mở `fetch-depth: 0`!)
-Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối cùng** (`fetch-depth: 1`). Nếu lập trình viên lỡ commit lộ khoá ở commit #1 trong PR, rồi ở commit #2 họ xoá dòng đó đi, quét nông sẽ **bỏ lọt hoàn toàn khoá vẫn nằm nguyên trong lịch sử commit #1**!
+### 1) Lớp 1 — Quét lịch sử Git với `Gitleaks` (Bắt buộc mở `fetch-depth: 0`)
+Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối cùng** (`fetch-depth: 1`). Nếu lập trình viên lỡ commit lộ khoá ở commit #1 trong PR, rồi ở commit #2 họ xoá dòng đó đi, quét nông sẽ **bỏ sót khóa bí mật vẫn nằm trong lịch sử commit #1**.
 - [x] Bắt buộc đặt ==`fetch-depth: 0`== để tải trọn vẹn lịch sử commit.
-- [x] Luôn truyền cờ **`--redact`** để Gitleaks che dấu `***` thay vì in ngược chuỗi bí mật vừa bắt được ra màn hình log CI công khai!
+- [x] Luôn truyền cờ **`--redact`** để Gitleaks che dấu `***` thay vì in chuỗi bí mật vừa phát hiện ra màn hình log CI.
 
 ```yaml
 - uses: actions/checkout@v4
@@ -138,8 +137,8 @@ Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối c
   run: gitleaks detect --source . --no-banner --redact
 ```
 
-### 2) Lớp 2 & 3 — Phân tích mã nhà trồng (`Semgrep`) vs Nguyên liệu nhập về (`npm audit --omit=dev`)
-- **`SAST` (`Semgrep`):** Quét lỗi tư duy bảo mật trong code của chính đội bạn viết.
+### 2) Lớp 2 & 3 — Phân tích mã nguồn tự viết (`Semgrep`) và thư viện bên thứ ba (`npm audit --omit=dev`)
+- **`SAST` (`Semgrep`):** Quét lỗi bảo mật trong mã nguồn của chính đội ngũ phát triển.
 - **`SCA` (`npm audit`):** Dùng cờ chuẩn hiện đại ==`--omit=dev`== (thay cho `--production` cũ) để **chỉ kiểm toán các thư viện thực sự chạy trên Production (`dependencies`)**, bỏ qua công cụ phát triển:
 
 ```yaml
@@ -150,14 +149,14 @@ Mặc định `actions/checkout@v4` chỉ tải nông đúng **1 commit cuối c
   run: semgrep ci
 ```
 
-### 3) Lớp 4 & 5 — Cổng chặn `Trivy` với "Bộ 3 Cờ Vàng" & Xuất `CycloneDX SBOM`
-> [!WARNING] Lỗi nghiêm trọng cần tránh số 1 của Trivy: Mặc định `--exit-code` bằng `0`!
-> Nếu bạn chỉ gõ `trivy image ghcr.io/acme/shop-api:1.0` mà **quên truyền `--exit-code 1`**, dù phát hiện **12 lỗ hổng `CRITICAL`** thì Trivy chỉ in bảng cảnh báo cho vui rồi vẫn trả mã thoát `0` — khiến pipeline báo **XANH** và đẩy thẳng ảnh đầy lỗ hổng lên Production!
+### 3) Lớp 4 & 5 — Cấu hình cổng kiểm định `Trivy` và xuất `CycloneDX SBOM`
+> [!WARNING] Lưu ý quan trọng với Trivy: Mặc định `--exit-code` bằng `0`
+> Nếu bạn chỉ chạy `trivy image ghcr.io/acme/shop-api:1.0` mà **quên truyền `--exit-code 1`**, dù phát hiện **12 lỗ hổng `CRITICAL`** thì Trivy vẫn chỉ in bảng cảnh báo rồi trả mã thoát `0` — khiến pipeline báo đạt và tiếp tục đẩy ảnh lỗi lên Production.
 
-Luôn kết hợp đồng thời **3 cờ vàng** trên cổng chặn Trivy:
-1. ==`--exit-code 1`==: Ép trả mã thoát đỏ (`1`) để chặn cứng pipeline khi phát hiện vi phạm.
-2. **`--severity CRITICAL`**: Chỉ chặn đứng pipeline với các lỗ hổng chí mạng thực sự.
-3. ==`--ignore-unfixed`==: Chỉ chặn những CVE **đã có bản vá chính thức** từ nhà phát hành hệ điều hành/thư viện — đảm bảo mỗi khi pipeline báo đỏ, lập trình viên luôn có hướng nâng cấp rõ ràng thay vì bất lực đi bật `continue-on-error: true`!
+Luôn kết hợp đồng thời **3 tham số quan trọng** trên cổng kiểm định Trivy:
+1. ==`--exit-code 1`==: Ép trả mã thoát lỗi (`1`) để chặn pipeline khi phát hiện vi phạm.
+2. **`--severity CRITICAL`**: Tập trung chặn pipeline với các lỗ hổng mức độ nghiêm trọng cao.
+3. ==`--ignore-unfixed`==: Chỉ chặn những CVE **đã có bản vá chính thức** từ nhà phát hành hệ điều hành/thư viện — đảm bảo mỗi khi pipeline báo lỗi, lập trình viên luôn có phương án nâng cấp rõ ràng thay vì phải bật `continue-on-error: true`.
 
 ```yaml
 - name: Cổng chặn lỗ hổng Container mức CRITICAL đã có bản vá
@@ -169,7 +168,7 @@ Luôn kết hợp đồng thời **3 cờ vàng** trên cổng chặn Trivy:
 
 ---
 
-## 3. Hiểm hoạ `Docker-in-Docker (privileged)` & Lời giải Đóng gói Rootless với **Kaniko**
+## 3. Rủi ro của `Docker-in-Docker (privileged)` và giải pháp đóng gói Rootless với **Kaniko**
 
 Trên GitLab CI hoặc các cụm Kubernetes Runner nội bộ dùng chung, để đóng gói ảnh Docker bên trong một container CI, cách làm cũ thường bật dịch vụ `docker:dind` kèm cờ `privileged: true` hoặc gắn thẳng ổ cắm `/var/run/docker.sock` của máy chủ vật lý vào Runner.
 

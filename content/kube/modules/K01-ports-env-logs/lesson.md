@@ -1,13 +1,13 @@
-# Ánh xạ cổng, Biến môi trường, Đọc Log & Khám bên trong Container
+# Ánh xạ cổng, Biến môi trường, Đọc Log & Kiểm tra Container
 
-Ở bài `K00`, bạn đã khởi chạy thành công `nginx:1.27-alpine` ở chế độ ngầm (`Up`). Nhưng nếu mở trình duyệt gõ `http://localhost:80`, bạn sẽ nhận ngay dòng báo lỗi lạnh lùng **`ERR_CONNECTION_REFUSED`**! Tại sao container rõ ràng đang sống mà bên ngoài lại không gọi vào được?
+Ở bài `K00`, bạn đã khởi chạy thành công `nginx:1.27-alpine` ở chế độ ngầm (`Up`). Nhưng nếu mở trình duyệt gõ `http://localhost:80`, bạn sẽ nhận ngay dòng báo lỗi **`ERR_CONNECTION_REFUSED`**! Tại sao container rõ ràng đang chạy mà bên ngoài lại không gọi vào được?
 
-Hãy quay lại hình ảnh **căn hộ khép kín** ở bài trước: khi mới sinh ra, mỗi container nằm trong một **phòng mạng riêng biệt (Network Namespace)** với địa chỉ IP nội bộ riêng, đóng kín mọi cánh cửa với bên ngoài theo nguyên lý ==cô lập mạng mặc định==. Muốn khách từ trình duyệt bên ngoài bước vào được căn hộ đó, bạn phải chủ động nối một "đường dây chuông cửa" từ cổng lễ tân máy chủ vào đúng cửa phòng bên trong!
+Mỗi container khi khởi tạo đều nằm trong một **không gian mạng riêng biệt (Network Namespace)** với địa chỉ IP nội bộ độc lập, cô lập hoàn toàn với mạng bên ngoài theo mặc định. Muốn lưu lượng từ trình duyệt hoặc client bên ngoài đi vào được ứng dụng bên trong, bạn phải ánh xạ một cổng mạng từ máy chủ vào đúng cổng mà container đang lắng nghe.
 
 ```visual
 kind: flow
-title: "Luồng Gói Tin Qua Cầu Nối Mạng -p HOST_PORT:CONTAINER_PORT"
-subtitle: "Quy tắc bất di bất dịch: luôn đọc từ NGOÀI cổng lễ tân máy chủ (trái) đi VÀO TRONG cửa căn hộ container (phải)"
+title: "Luồng Gói Tin Qua Ánh Xạ Cổng -p HOST_PORT:CONTAINER_PORT"
+subtitle: "Quy tắc đọc: vế trái là cổng mở trên máy chủ (ngoài), vế phải là cổng lắng nghe bên trong container (trong)"
 footer: "Hai container khác nhau có thể cùng mở cổng 3000 (hoặc 8000) ở bên trong, miễn là Host Port bên trái khác nhau (-p 3001:3000 và -p 3002:3000)"
 steps:
   - icon: globe
@@ -19,26 +19,26 @@ steps:
     edge: "-p 8080:3000"
   - icon: network
     badge: Vế trái · Host Port
-    title: Cổng Lễ Tân Máy Chủ (8080)
+    title: Cổng Trên Máy Chủ (8080)
     desc: Do bạn tự chọn cổng trống trên máy mình; cấm 2 container trùng Host Port
     code: "Host :8080"
     tone: amber
     edge: NAT qua eth0
   - icon: container
     badge: Vế phải · Container Port
-    title: Cửa Phòng Nội Bộ (3000)
+    title: Cổng Nội Bộ Container (3000)
     desc: Khớp chính xác cổng mà code Python/Node bên trong đang lắng nghe
     code: "0.0.0.0:3000"
     tone: emerald
 ```
 
-## 1. Bắc cầu mạng `-p HOST_PORT:CONTAINER_PORT` & Bẫy kinh điển `127.0.0.1` vs `0.0.0.0`
+## 1. Ánh xạ cổng `-p HOST_PORT:CONTAINER_PORT` và Lỗi lắng nghe `127.0.0.1` thay vì `0.0.0.0`
 
 ```visual
 kind: illustration
 diagram: "kube:k01"
 alt: "Sơ đồ ánh xạ cổng NAT -p 8080:3000, tiêm biến môi trường -e và luồng thu gom log stdout/stderr"
-title: "Giải Phẫu Giao Tiếp Container: Cầu Nối Mạng (-p), Tiêm Biến (-e) & Dòng Chảy Log"
+title: "Cơ Chế Giao Tiếp Container: Ánh Xạ Cổng (-p), Biến Môi Trường (-e) & Thu Gom Log"
 subtitle: "Ba kênh tương tác chuẩn 12-Factor giữa máy chủ bên ngoài và không gian mạng cô lập của Container"
 caption: "Cơ chế chuyển tiếp gói tin từ cổng máy chủ qua eth0 vào 0.0.0.0:3000, nạp cấu hình động vào os.environ / process.env và thu gom luồng stdout/stderr"
 callouts:
@@ -66,21 +66,21 @@ docker run -d --name shop-nginx -p 8080:80 nginx:1.27-alpine
 docker run -d --name web-ui -p 9090:80 nginx:1.27-alpine
 ```
 
-- [>] **Bên trái dấu `:` (`8080` hoặc `9090`) — *Host Port*:** Số cổng tại quầy lễ tân máy chủ (`http://localhost:8080`). Trên cùng một máy tính, **không thể có 2 tiến trình chiếm chung 1 Host Port** cùng lúc.
-- [>] **Bên phải dấu `:` (`80`, `3000` hoặc `8000`) — *Container Port*:** Số cổng thực tế mà server Python/Node bên trong đang mở (`--port 8000` hoặc `app.listen(3000)`). Vì mỗi căn hộ container có không gian mạng độc lập, 10 container hoàn toàn có thể cùng mở cổng `3000` hoặc `8000` ở vế phải!
+- [>] **Bên trái dấu `:` (`8080` hoặc `9090`) — *Host Port*:** Số cổng lắng nghe trên máy chủ (`http://localhost:8080`). Trên cùng một máy tính, **không thể có 2 tiến trình chiếm chung 1 Host Port** cùng lúc.
+- [>] **Bên phải dấu `:` (`80`, `3000` hoặc `8000`) — *Container Port*:** Số cổng thực tế mà server Python/Node bên trong đang mở (`--port 8000` hoặc `app.listen(3000)`). Vì mỗi container có Network Namespace độc lập, 10 container hoàn toàn có thể cùng mở cổng `3000` hoặc `8000` ở vế phải!
 
-> [!WARNING] Mô hình tư duy giúp không bao giờ mắc lỗi `127.0.0.1` vs `0.0.0.0`!
-> Rất nhiều bạn chạy `uvicorn main:app` (Python FastAPI) hoặc `vite dev` / `fastify` (Node.js) với `-p 8000:8000` chuẩn chỉ, nhưng mở trình duyệt vẫn bị đánh bật ra ngoài! Vì sao?
-> - Bên trong phòng kín của container có **2 ngõ nhận tin**: vòng lặp tự kỷ nội bộ **`127.0.0.1` (`localhost`)** và cửa chính thông ra hành lang cầu nối Docker **`eth0`**.
-> - Nếu server mặc định chỉ lắng nghe trên **`127.0.0.1`**, nó giống hệt người **đeo tai nghe nói chuyện một mình trong phòng khóa cửa** — chỉ tiến trình nằm sẵn bên trong cùng container đó mới gọi được!
-> - Khi bạn đặt ==`0.0.0.0`== ("lắng nghe trên **tất cả** mọi cánh cửa mạng hiện có trong phòng"), server mới mở cửa `eth0` để đón lưu lượng đi từ cờ `-p` vào!
+> [!WARNING] Nguyên nhân lỗi kết nối phổ biến: Lắng nghe `127.0.0.1` thay vì `0.0.0.0`
+> Rất nhiều bạn chạy `uvicorn main:app` (Python FastAPI) hoặc `vite dev` / `fastify` (Node.js) với `-p 8000:8000` đúng cú pháp, nhưng mở trình duyệt vẫn bị từ chối kết nối. Lý do nằm ở giao diện mạng mà server lắng nghe bên trong container:
+> - Trong Network Namespace của container có **2 giao diện mạng**: giao diện loopback nội bộ **`127.0.0.1` (`localhost`)** và card mạng ảo **`eth0`** nối ra cầu nối Docker.
+> - Nếu server chỉ lắng nghe trên **`127.0.0.1`**, nó chỉ tiếp nhận kết nối phát sinh từ chính bên trong container đó — mọi gói tin đi qua `-p` từ máy chủ bước vào qua `eth0` đều bị từ chối.
+> - Khi cấu hình ==`0.0.0.0`== (lắng nghe trên tất cả giao diện mạng hiện có của container), server sẽ mở cả `eth0` để đón lưu lượng từ `-p` (có thể hình dung `127.0.0.1` như cửa nội bộ chỉ người trong phòng gọi nhau, còn `0.0.0.0` mở thông cả cửa chính ra hành lang).
 
 ```visual
 kind: compare
-title: "Bẫy Mạng Kinh Điển Của Python (Uvicorn/Flask) & Node.js (Fastify/Vite): 127.0.0.1 vs 0.0.0.0"
+title: "Lỗi Thường Gặp Ở Python (Uvicorn/Flask) & Node.js (Fastify/Vite): 127.0.0.1 vs 0.0.0.0"
 subtitle: "Tại sao đã truyền đúng -p 8000:8000 (hoặc 3000:3000) mà trình duyệt bên ngoài vẫn báo lỗi từ chối kết nối?"
 left:
-  badge: "CÁCH SAI · Đóng kín cửa phòng eth0"
+  badge: "CÁCH SAI · Chỉ nghe trên loopback"
   title: "Mặc định chỉ nghe trên 127.0.0.1"
   tone: rose
   code: |
@@ -92,9 +92,9 @@ left:
   lang: shell
   bullets:
     - "`127.0.0.1` bên trong container **chỉ nhận gói tin sinh ra từ chính bên trong container đó**"
-    - "Gói tin từ trình duyệt máy chủ đi qua cầu `-p` bước vào qua cửa **`eth0`** nên bị chặn đứng ngay ngoài thềm (`Empty reply` / `Connection reset`)!"
+    - "Gói tin từ trình duyệt máy chủ đi qua cầu `-p` bước vào qua **`eth0`** nên bị chặn (`Empty reply` / `Connection reset`)!"
 right:
-  badge: "CÁCH CHUẨN · Mở cửa cho cầu nối Docker"
+  badge: "CÁCH CHUẨN · Lắng nghe trên mọi giao diện"
   title: "Bắt buộc lắng nghe trên 0.0.0.0"
   tone: emerald
   code: |
@@ -133,7 +133,7 @@ docker run -d --name order-api \
 Trong thế giới container, ứng dụng **không tự mở tệp `logs/app.log` ghi ngầm vào ổ đĩa tạm bên trong** (vì xóa container là mất sạch lịch sử lỗi, hoặc tệp phình to làm đầy cứng ổ đĩa server). Thay vào đó:
 
 - [>] Cứ in thẳng ra màn hình chuẩn: `logging.StreamHandler()` / `print(..., flush=True)` trong Python hoặc `console.log` / `pino` trong Node.js → Docker Engine tự động thu gom toàn bộ luồng **`stdout`** và **`stderr`**.
-- [!] **Vũ khí cứu mạng khi container vừa bật đã tắt:** ==`docker logs` vẫn đọc được trọn vẹn lịch sử báo lỗi ngay cả khi container đã sập (`Exited (1)`)==, miễn là bạn chưa xóa nó bằng `docker rm`!
+- [!] **Công cụ chẩn đoán quan trọng khi container vừa bật đã tắt:** ==`docker logs` vẫn đọc được trọn vẹn lịch sử báo lỗi ngay cả khi container đã sập (`Exited (1)`)==, miễn là bạn chưa xóa nó bằng `docker rm`!
 
 ```bash
 docker logs payment-worker                # In toàn bộ lịch sử stdout/stderr từ lúc khởi chạy
@@ -143,7 +143,7 @@ docker logs -f --tail 50 payment-worker   # Xem trực tiếp (-f follow) 50 dò
 > [!TIP] Mẹo nhỏ cho lập trình viên Python khi đọc `docker logs`
 > Python mặc định gom bộ đệm (*buffer*) đầu ra khi chạy không gắn màn hình tương tác, làm dòng `print()` có thể hiện trễ vài giây trong `docker logs -f`. Khi đóng gói Python, đặt biến môi trường `PYTHONUNBUFFERED=1` sẽ giúp từng dòng log hiện ra tức thì theo thời gian thực!
 
-## 4. Khám xét bên trong Container đang sống với `docker exec`
+## 4. Kiểm tra bên trong Container đang chạy với `docker exec`
 
 Khi cần kiểm tra nhanh tiến trình đang chạy dưới tài khoản nào, biến môi trường nạp vào đã đúng chưa hoặc thử kết nối mạng từ bên trong, ta dùng ==`docker exec`==:
 
@@ -162,7 +162,7 @@ docker exec -it shop-api sh
 
 ```visual
 kind: groups
-title: "Bộ Công Cụ Giao Tiếp & Khám Bệnh Container [!badge:emerald:Cheat Sheet]"
+title: "Bộ Lệnh Giao Tiếp & Kiểm Tra Container [!badge:emerald:Cheat Sheet]"
 columns: 2
 items:
   - num: 1
@@ -172,7 +172,7 @@ items:
     tone: amber
     bullets:
       - "`docker exec` **KHÔNG THỂ chạy** trên container đã `Exited`!"
-      - "Phản xạ số 1 luôn là đọc `stderr` lưu lại trước lúc chết bằng `docker logs`"
+      - "Bước kiểm tra đầu tiên luôn là đọc `stderr` lưu lại trước lúc thoát bằng `docker logs`"
     code: |
       docker ps -a              # Xem mã lỗi Exited (1)
       docker logs shop-api      # Đọc Traceback Python / Stack trace Node

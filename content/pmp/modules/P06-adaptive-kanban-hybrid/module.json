@@ -23,7 +23,7 @@
       "detail": "Quy tắc đọc Velocity, biểu đồ Burndown/Burnup/CFD và lý thuyết hàng đợi Little's Law"
     }
   ],
-  "realWorldTrap": "Lấy Velocity của Nhóm A đem so KPI với Nhóm B, ép Developer tăng Velocity mỗi Sprint, hoặc 'đập bỏ Waterfall sau một đêm' bắt cả khối phần cứng lẫn pháp lý chạy Sprint 2 tuần.",
+  "realWorldTrap": "Lấy Velocity của Nhóm A đem so KPI với Nhóm B, ép Developer tăng Velocity mỗi Sprint, hoặc ép chuyển đổi toàn bộ sang Agile ngay lập tức bất chấp đặc thù phần cứng và pháp lý.",
   "pmiMindsetShift": "Velocity chỉ là thước đo dự báo dung lượng nội bộ của RIÊNG một nhóm; muốn làm xong nhanh hơn trong Kanban phải GIẢM giới hạn WIP (Stop starting, start finishing); chuyển đổi sang Agile phải tiến hành dần dần qua mô hình Hybrid kèm đào tạo và huấn luyện.",
   "tags": [
     "rolling-wave",

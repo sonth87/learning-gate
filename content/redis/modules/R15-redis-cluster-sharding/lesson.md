@@ -1,14 +1,14 @@
 # Redis Cluster & Phân mảnh 16.384 Hash Slots
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Ở bài `R14`, mô hình **1 Master + 2 Replica + Sentinel** giúp hệ thống không sợ hỏng máy, nhưng vẫn chạm **2 bức tường cứng của một máy chủ duy nhất**:
-> 1. **Trần dung lượng RAM:** Khi dữ liệu phình lên `100 GB – 500 GB` trên một máy, việc sao lưu nền hay khởi động lại trở nên cực kỳ nặng nề.
-> 2. **Trần tốc độ Ghi:** Mọi lệnh ghi (`SET`, `HSET`, `ZADD`, `XADD`) vẫn đổ dồn vào **1 nhân CPU duy nhất của Master** (`~100k – 150k lệnh/giây`).
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Ở bài `R14`, mô hình **1 Master + 2 Replica + Sentinel** đảm bảo tính sẵn sàng cao nhưng vẫn bị giới hạn bởi tài nguyên của **một nút Master duy nhất**:
+> 1. **Giới hạn RAM:** Khi dữ liệu tăng lên `100 GB – 500 GB` trên một máy, việc sao lưu nền (`BGSAVE`) hay khôi phục khi khởi động lại sẽ rất chậm.
+> 2. **Giới hạn CPU cho lệnh Ghi:** Mọi lệnh ghi (`SET`, `HSET`, `ZADD`, `XADD`) vẫn đi qua **1 luồng chính duy nhất của Master** (`~100k – 150k lệnh/giây`).
 >
-> **==Redis Cluster== (Phân mảnh ngang — *Horizontal Sharding*)** phá vỡ giới hạn này bằng cách chia dữ liệu ra nhiều máy chủ Master chạy song song theo nguyên lý **16.384 Ngăn Tủ Bưu Chính**:
-> - **`Hash Slot` (Ngăn tủ băm — từ `0` đến `16383`):** Toàn bộ không gian khóa được chia sẵn thành **16,384 ngăn tủ đánh số cố định**. Nếu bạn có 3 máy Master (**3 Shards**): Máy 1 giữ ngăn `0..5460`, Máy 2 giữ ngăn `5461..10922`, Máy 3 giữ ngăn `10923..16383`.
-> - **Công thức chia ngăn tự động:** Với bất kỳ tên khóa nào, ứng dụng tính nhanh phép toán `CRC16(tên_khóa) chia lấy dư cho 16384` là biết ngay khóa đó nằm ở ngăn tủ số mấy, thuộc Máy chủ nào để gửi thẳng tới đó trong **1 bước mạng** (không cần máy trung gian làm nghẽn cổ chai!).
-> - **Lỗi `CROSSSLOT` & Nhãn gom nhóm `{HashTag}`:** Vì Máy 1 và Máy 2 độc lập nhau, bạn không thể bắt 1 câu lệnh xử lý cùng lúc 2 khóa nằm ở 2 máy khác nhau (sẽ báo lỗi `CROSSSLOT`). Giải pháp là kẹp **cặp ngoặc nhọn `{u42}`** vào tên khóa (như `user:{u42}:profile` và `user:{u42}:cart`): Redis sẽ **chỉ tính toán trên chữ `u42` trong ngoặc**, ép mọi khóa của khách hàng `u42` luôn rơi vào chung 1 ngăn tủ!
+> **==Redis Cluster== (Phân mảnh ngang — *Horizontal Sharding*)** vượt qua giới hạn này bằng cách chia dữ liệu ra nhiều nút Master chạy song song thông qua 3 cơ chế:
+> - **`Hash Slot` (`0` đến `16383`):** Toàn bộ không gian khóa được chia cố định thành **16,384 Hash Slot**. Với cụm 3 nút Master (**3 Shards**): Node 1 quản lý slot `0..5460`, Node 2 quản lý `5461..10922`, Node 3 quản lý `10923..16383`.
+> - **Định tuyến trực tiếp bằng công thức băm:** Với mỗi tên khóa, client tính `CRC16(key) % 16384` để xác định chính xác slot và gửi thẳng tới nút Master sở hữu slot đó chỉ trong **1 bước mạng (1-hop)** mà không cần proxy trung gian.
+> - **Lỗi `CROSSSLOT` & `{HashTag}`:** Các lệnh đa khóa (`MGET`, `MULTI/EXEC`, `EVAL` Lua) yêu cầu mọi khóa phải nằm trên **cùng 1 Hash Slot**, nếu không sẽ báo lỗi `CROSSSLOT`. Khi đặt cặp ngoặc nhọn `{u42}` trong tên khóa (ví dụ `user:{u42}:profile` và `user:{u42}:cart`), Redis chỉ băm chuỗi `u42` bên trong ngoặc để đảm bảo mọi khóa của cùng một đối tượng rơi vào chung 1 slot.
 
 ## 1. Giải phẫu Kiến trúc 16.384 Hash Slots & Định tuyến Thông minh
 
@@ -92,7 +92,7 @@ Trên Redis Cluster, mọi câu lệnh chạm vào nhiều khóa cùng lúc (`MG
 
 ## 4. Cấu hình Nút Cluster & Kết nối Smart Client (Python & TypeScript)
 
-Trong tệp cấu hình `redis.conf` của từng nút Cluster, có một tham số sống còn cần đổi sang `no`:
+Trong tệp cấu hình `redis.conf` của từng nút Cluster, có một tham số quan trọng cần đổi sang `no`:
 
 ```ini
 port 6379
@@ -103,7 +103,7 @@ cluster-enabled yes
 cluster-config-file nodes.conf
 cluster-node-timeout 5000
 
-# SỐNG CÒN: Đổi từ mặc định yes sang no để nếu 1 phân mảnh hỏng cả Master lẫn Replica,
+# QUAN TRỌNG: Đổi từ mặc định yes sang no để nếu 1 phân mảnh hỏng cả Master lẫn Replica,
 # các phân mảnh khoẻ mạnh còn lại VẪN TIẾP TỤC PHỤC VỤ bình thường!
 cluster-require-full-coverage no
 

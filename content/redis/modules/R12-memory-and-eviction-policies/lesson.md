@@ -1,13 +1,13 @@
-# Giải phẫu Bộ nhớ jemalloc, 8 Chính sách Eviction (LRU vs LFU) & Quy tắc 65% Headroom trên K8s
+# Quản lý Bộ nhớ jemalloc, 8 Chính sách Eviction (LRU vs LFU) và Giới hạn RAM trên K8s
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Với cơ sở dữ liệu trên ổ cứng (như PostgreSQL), thiếu RAM thì máy chạy chậm đi một chút. Nhưng với **Redis sống hoàn toàn trên RAM**, khi bộ nhớ chạm trần giới hạn (`maxmemory`) mà cấu hình sai, hệ thống sẽ ngay lập tức **từ chối mọi lệnh ghi mới (`OOM command not allowed`)** hoặc bị nhân hệ điều hành Linux **cắt cầu dao giết chết tiến trình (`OOMKilled - Exit Code 137`)**! Để vận hành Redis êm ru suốt nhiều năm, hãy nắm rõ 4 khái niệm cốt lõi sau:
-> - **`jemalloc` (Trình quản lý chia ô nhớ):** Giống người thủ kho thông minh bên dưới Redis, chuyên cắt các dải RAM thành từng khay vừa vặn (`8B`, `16B`, `32B`...) để hạn chế tối đa khoảng trống lãng phí (*phân mảnh bộ nhớ — Memory Fragmentation*).
-> - **`Eviction` (Cơ chế đào thải tự động khi đầy kệ):** Khi tủ sách `maxmemory` chỉ chứa được 100 cuốn mà bạn cất cuốn thứ 101 vào, Redis phải chọn: từ chối nhận thêm (`noeviction`) hay tự động vứt bớt 1 cuốn cũ đi để nhường chỗ?
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Vì **Redis lưu toàn bộ dữ liệu trên RAM**, khi bộ nhớ chạm ngưỡng giới hạn (`maxmemory`) mà cấu hình không phù hợp, Redis sẽ **từ chối mọi lệnh ghi mới (`OOM command not allowed`)** hoặc tiến trình sẽ bị nhân Linux chấm dứt với lỗi **`OOMKilled (Exit Code 137)`**. Để vận hành ổn định, cần nắm vững 4 cơ chế cốt lõi:
+> - **`jemalloc` (Trình cấp phát bộ nhớ):** Bộ cấp phát bộ nhớ mặc định của Redis, chia RAM thành các vùng kích thước cố định (`8B`, `16B`, `32B`...) nhằm tối ưu tốc độ cấp phát và giảm thiểu hiện tượng **phân mảnh bộ nhớ (*Memory Fragmentation*)**.
+> - **`Eviction` (Thu hồi khóa khi đầy bộ nhớ):** Khi `used_memory` đạt tới `maxmemory`, chính sách `maxmemory-policy` quyết định Redis sẽ từ chối ghi mới (`noeviction`) hay tự động xóa bớt các khóa hiện có để nhường chỗ.
 > - **`LRU` (*Least Recently Used*) vs `LFU` (*Least Frequently Used*):**
->   - **`LRU`** vứt cuốn sách **lâu ngày nhất chưa ai chạm tới** — nhược điểm là nếu hôm qua có 1 người tò mò lật lướt qua 100 cuốn sách cũ ít ai đọc, các cuốn Best-seller vừa nghỉ ngơi 5 phút lại bị vứt nhầm!
->   - **`LFU`** vứt cuốn sách có **tổng tần suất được mượn đọc thấp nhất** — ==bảo vệ tuyệt đối những khóa "nóng" thực sự được khách hàng truy cập hàng trăm lần mỗi ngày==!
-> - **`Headroom` (Khoảng thở RAM dự phòng 30%–35%):** Trên Docker/Kubernetes, nếu container được cấp tối đa `4 GB` RAM, bạn chỉ được đặt `maxmemory` cho dữ liệu Redis khoảng **`2.6 GB` (`65%`)**; `35%` còn lại là phao cứu sinh dành cho bộ đệm kết nối mạng và quá trình chụp ảnh sao lưu nền!
+>   - **`LRU`** ưu tiên xóa khóa **lâu nhất chưa được truy cập** — nhược điểm là một tác vụ quét hàng loạt một lần có thể làm các khóa nóng thực sự bị đẩy ra khỏi Cache.
+>   - **`LFU`** ưu tiên xóa khóa có **tần suất truy cập thấp nhất** (kèm cơ chế giảm dần theo thời gian) — ==bảo vệ các khóa nóng có tần suất đọc cao==.
+> - **`Headroom` (Bộ nhớ dự phòng 30%–35%):** Trên Docker/Kubernetes, nếu container có giới hạn `4 GB` RAM, chỉ nên đặt `maxmemory` khoảng **`2.6 GB` (`65%`)**; phần còn lại dành cho bộ đệm kết nối mạng, `Replication Buffer` và chi phí `Copy-on-Write` khi chạy `BGSAVE`.
 
 ```visual
 kind: illustration
@@ -31,7 +31,7 @@ callouts:
     tone: amber
 ```
 
-## 1. Đọc vị sức khỏe RAM qua `INFO memory` & Chỉ số Phân mảnh
+## 1. Kiểm tra mức sử dụng bộ nhớ với `INFO memory` và tỷ lệ phân mảnh RAM
 
 Không phải cứ bạn lưu `2GB` chuỗi dữ liệu là tiến trình `redis-server` chỉ tiêu tốn đúng `2GB` RAM vật lý! Tỷ số **`mem_fragmentation_ratio = used_memory_rss / used_memory`** trong lệnh `INFO memory` là chiếc nhiệt kế sức khỏe RAM mà mọi kỹ sư đều phải biết đọc:
 
@@ -46,7 +46,7 @@ Khi `used_memory` chạm ngưỡng `maxmemory`, Redis dựa vào cấu hình `ma
 ```visual
 kind: groups
 title: "Phân Nhóm 8 Chính Sách maxmemory-policy Trong Redis 8"
-subtitle: "Chọn sai 1 dòng cấu hình có thể làm bay màu đơn hàng trong hàng đợi hoặc làm nghẽn cứng API!"
+subtitle: "Chọn sai chính sách có thể làm mất dữ liệu trong hàng đợi hoặc khiến API bị từ chối lệnh ghi!"
 columns: 2
 items:
   - num: 1
@@ -102,10 +102,10 @@ items:
     codeLang: redis-conf
 ```
 
-> [!TIP] Bí mật thú vị: Làm sao Redis đếm tần suất LFU tới hàng triệu lượt mà chỉ tốn... 8 bit?
+> [!TIP] Cơ chế bên dưới: Cách Redis đếm tần suất LFU chỉ trong 8 bit
 > Thay vì tốn thêm hàng chục byte cho mỗi khóa, Redis tận dụng khéo léo **24 bit có sẵn** trong đầu mục quản lý mỗi khóa: **16 bit đầu** lưu mốc thời gian theo phút để giảm dần độ "nóng" nếu khóa ngừng được đọc (`lfu-decay-time`), còn **8 bit cuối** (`0..255`) chạy **bộ đếm xác suất logarit (Morris Counter)**! Khóa mới tạo khởi đầu ở mức `5` để không bị đào thải oan ngay lúc vừa sinh ra. Bạn có thể tự soi độ nóng của khóa bằng lệnh `OBJECT FREQ <key>` (khi bật LFU) hoặc thời gian nhàn rỗi bằng `OBJECT IDLETIME <key>` (khi bật LRU)!
 
-## 3. Quy tắc sống còn trên Docker/Kubernetes: Đặt `maxmemory` = 65%–70% giới hạn Container
+## 3. Cấu hình giới hạn `maxmemory` an toàn khi chạy Redis trên Docker và Kubernetes
 
 Một sai lầm rất phổ biến khi triển khai container là cấp cho Pod Kubernetes `limits.memory: 4Gi` rồi đặt luôn `maxmemory 4gb` trong `redis.conf` — dẫn tới cứ đêm khuya lúc Redis chạy sao lưu nền là Pod bị giết đột ngột với lỗi ==`OOMKilled (Exit Code 137)`==!
 

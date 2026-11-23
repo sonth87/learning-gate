@@ -1,13 +1,13 @@
 # Bảo mật Redis Zero-Trust: Mạng Nội bộ, TLS/mTLS & Phân quyền ACL
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Vì Redis được thiết kế tối ưu cho tốc độ cực đại bên trong mạng riêng tin cậy, nếu một người mới vô tình mở cổng `6379` của Redis thẳng ra Internet công cộng (`bind 0.0.0.0`) mà không đặt mật khẩu, các công cụ quét tự động trên mạng sẽ dò ra và **xóa trắng dữ liệu hoặc cài mã độc chiếm máy chủ chỉ trong chưa đầy 90 giây**!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Redis mặc định ưu tiên hiệu năng bên trong mạng nội bộ tin cậy. Nếu vô tình mở cổng `6379` ra Internet công cộng (`bind 0.0.0.0`) mà không bật bảo vệ hoặc mật khẩu, các trình quét tự động có thể phát hiện và **xóa toàn bộ dữ liệu hoặc chiếm quyền máy chủ trong vài phút**.
 >
-> Để khóa chặt Redis theo chuẩn doanh nghiệp (**`Zero-Trust`** — *"Không tin tưởng mù quáng bất kỳ ai, kể cả bên trong mạng nội bộ"*), chúng ta dựng **4 lớp cửa bảo vệ như hầm ngân hàng**:
-> 1. **`Private VPC` & `bind` (Hầm ngầm cách ly mạng):** Đặt máy chủ Redis sâu trong mạng riêng nội bộ, tuyệt đối không gắn IP công cộng ra ngoài Internet.
-> 2. **`TLS` / `mTLS` (Đường ống mã hóa chống nghe lén):** Mặc định dữ liệu truyền tới Redis là văn bản thường; bật **`TLS`** (`rediss://` — thêm chữ `s` ở cuối giống `https://`) giúp mã hóa toàn bộ gói tin trên đường truyền.
-> 3. **`ACL` (*Access Control List* — Thẻ nhân viên phân quyền chi tiết):** Thay vì cả công ty dùng chung 1 mật khẩu duy nhất, mỗi dịch vụ được cấp 1 tài khoản riêng — ví dụ dịch vụ Thanh toán chỉ được mở đúng dãy tủ khóa bắt đầu bằng `checkout:*` (**`~checkout:*`**) và không thể nhìn trộm dữ liệu của dịch vụ Nhân sự!
-> 4. **Tháo bỏ các "nút bấm tự hủy" (`-@dangerous`):** Khóa vĩnh viễn các câu lệnh nguy hiểm có thể xóa sạch RAM (`FLUSHALL`, `FLUSHDB`) hoặc làm treo máy (`KEYS *`, `DEBUG`) đối với tài khoản của ứng dụng!
+> Để triển khai Redis theo mô hình **`Zero-Trust`** (*không mặc định tin cậy bất kỳ kết nối nào, kể cả trong mạng nội bộ*), cần áp dụng **4 lớp bảo vệ độc lập**:
+> 1. **Cô lập mạng (`Private VPC`, `bind`, `NetworkPolicy`):** Đặt Redis trong mạng riêng nội bộ không có IP công cộng và chỉ cho phép các dịch vụ được chỉ định kết nối vào cổng `6379`.
+> 2. **Mã hóa đường truyền (`TLS` / `mTLS`):** Tắt cổng không mã hóa (`port 0`) và chỉ mở `tls-port 6379` (`rediss://`) để mã hóa toàn bộ gói tin, kèm xác thực chứng chỉ hai chiều (`mTLS`).
+> 3. **Phân quyền chi tiết (`ACL` — *Access Control List*):** Thay vì dùng chung 1 mật khẩu gốc, mỗi dịch vụ được cấp tài khoản riêng giới hạn theo tiền tố khóa (ví dụ dịch vụ Thanh toán chỉ truy cập được nhánh `~checkout:*`).
+> 4. **Vô hiệu hóa lệnh nguy hiểm (`-@dangerous`):** Chặn các lệnh có khả năng xóa toàn bộ dữ liệu (`FLUSHALL`, `FLUSHDB`), khóa luồng chính (`KEYS *`) hoặc thay đổi cấu hình hệ thống (`CONFIG`, `DEBUG`) đối với tài khoản ứng dụng.
 
 ## 1. Tại sao phơi cổng 6379 lại nguy hiểm đến mức mất quyền điều khiển máy chủ?
 
@@ -18,7 +18,7 @@ kind: illustration
 diagram: "redis:r16"
 alt: "Kiến trúc bảo mật Redis Zero-Trust 4 lớp: NetworkPolicy, mTLS, ACL theo microservice và vô hiệu hoá lệnh nguy hiểm"
 badge: "Zero-Trust Security · R16"
-title: "Pháo đài Redis Zero-Trust: Mạng Riêng, Mã hoá mTLS & Phân quyền ACL chi tiết"
+title: "Kiến Trúc Bảo Mật Redis Zero-Trust: Mạng Riêng, Mã hoá mTLS & Phân quyền ACL"
 subtitle: "Chặn đứng truy cập trái phép từ tầng L3/L4 Kubernetes NetworkPolicy cho tới kiểm soát từng tiền tố khoá và từng nhóm lệnh trên Redis 8"
 caption: "Không bao giờ tin tưởng mạng nội bộ một cách mù quáng: kết hợp NetworkPolicy + mTLS + ACL tách biệt cho từng Microservice."
 callouts:
@@ -31,7 +31,7 @@ callouts:
     desc: "Vô hiệu hoá user default off; mỗi dịch vụ có tài khoản riêng giới hạn đúng nhánh khoá (~checkout:*) và quyền đọc/ghi (%R~ / %W~)."
     tone: emerald
   - num: 3
-    label: "Chặn Nhóm Lệnh Huỷ Diệt (-@dangerous)"
+    label: "Chặn Nhóm Lệnh Nguy Hiểm (-@dangerous)"
     desc: "Cấm tuyệt đối ứng dụng gọi KEYS, FLUSHALL, FLUSHDB, CONFIG, REPLICAOF, DEBUG qua ACL -@dangerous hoặc rename-command thành chuỗi rỗng."
     tone: rose
 ```
@@ -111,7 +111,7 @@ user analytics-ro on >AnalyticsPass_Example2026 ~metrics:* -@all +@read -keys
 user exporter-mon on >ExporterPass_Example2026 resetkeys -@all +info +ping +slowlog +latency +memory +client
 ```
 
-> [!WARNING] Cạm bẫy chết người về Thứ tự từ trái sang phải trong Redis ACL!
+> [!WARNING] Lưu ý quan trọng về thứ tự từ trái sang phải trong Redis ACL
 > Redis đọc và ghi đè quyền từ trái sang phải:
 > - **ĐÚNG:** ==`+@all -@dangerous`== -> Cấp các lệnh thông dụng, sau đó **tước bỏ nhóm nguy hiểm** (An toàn!).
 > - **SAI NGHIÊM TRỌNG:** `-@dangerous +@all` -> Chặn lệnh nguy hiểm ở đầu, nhưng chữ **`+@all` đứng sau lập tức cấp lại toàn bộ 100% quyền (gồm cả `FLUSHALL` và `KEYS *`)**! Luôn đặt các dấu trừ cấm đoán (`-@dangerous`, `-@admin`, `-keys`) ở **cuối dòng**!

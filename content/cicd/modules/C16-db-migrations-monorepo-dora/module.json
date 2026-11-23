@@ -42,7 +42,7 @@
     {
       "path": "governance/migration-drop-destructive.yml",
       "kind": "bug",
-      "note": "Kịch bản thảm hoạ: chạy RENAME/DROP COLUMN ngay trước khi cuộn Pod mới khiến toàn bộ Pod cũ nổ lỗi 500.",
+      "note": "Lỗi cấu hình phổ biến: chạy RENAME/DROP COLUMN ngay trước khi cập nhật Pod mới khiến các Pod cũ đồng loạt trả lỗi HTTP 500.",
       "task": "Ngoài việc làm sập Pod v1 trong lúc Rolling Update, việc chạy DROP COLUMN ngay lập tức còn phá hỏng khả năng khôi phục nào?",
       "answer": "Nó phá hỏng khả năng Rollback! Nếu code v2 bị lỗi logic nghiêm trọng cần quay lui khẩn cấp về v1, cột dữ liệu cũ đã bị xoá mất khiến v1 không thể khởi chạy lại được nữa."
     },

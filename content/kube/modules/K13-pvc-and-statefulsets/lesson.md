@@ -11,17 +11,17 @@
 kind: illustration
 diagram: "kube:k13"
 alt: "Quy trình cấp phát ổ đĩa động qua StorageClass, PVC, PV và kiến trúc định danh cố định db-0, db-1 của StatefulSet"
-title: "Giải Phẫu Lưu Trữ Bền Vững: Dynamic Provisioning (PVC/PV) & Định Danh StatefulSet"
+title: "Cơ Chế Lưu Trữ Bền Vững: Dynamic Provisioning (PVC/PV) & Định Danh StatefulSet"
 subtitle: "Tự động cắt ổ đĩa đám mây đi theo Pod khắp mọi Node và giữ tên tuổi gắn kết 1-1 cho từng máy chủ Database"
 caption: "Chu trình cấp phát ổ đĩa tự động qua CSI Driver từ StorageClass -> PVC <-> PV và cách StatefulSet kết hợp Headless Service giữ định danh pg-0, pg-1"
 callouts:
   - num: 1
-    label: "StorageClass — Thực đơn hạng ổ đĩa đám mây"
+    label: "StorageClass — Định nghĩa hạng ổ đĩa đám mây"
     desc: "Kỹ sư hạ tầng định nghĩa sẵn loại đĩa SSD (gp3, pd-ssd) và chính sách giữ dữ liệu Retain để ứng dụng chỉ việc chọn tên hạng đĩa."
     tone: sky
   - num: 2
-    label: "Cặp ghép đôi 1:1 giữa phiếu PVC và ổ đĩa thật PV"
-    desc: "Khi nộp phiếu PVC, CSI Driver tự động tạo ổ đĩa đám mây PV và tự tháo-lắp ổ đĩa đó đi theo Pod nếu Node cũ gặp sự cố."
+    label: "Cặp ghép đôi 1:1 giữa PVC và ổ đĩa thật PV"
+    desc: "Khi nộp yêu cầu PVC, CSI Driver tự động tạo ổ đĩa đám mây PV và tự tháo-lắp ổ đĩa đó đi theo Pod nếu Node cũ gặp sự cố."
     tone: emerald
   - num: 3
     label: "StatefulSet & Headless Service — Danh tính bất biến"
@@ -29,38 +29,38 @@ callouts:
     tone: cyan
 ```
 
-## 1. Giải thích bình dị chuỗi cấp phát động: `StorageClass` → `PVC` → `PV`
+## 1. Cơ chế cấp phát ổ đĩa động: `StorageClass` → `PVC` → `PV`
 
-> [!NOTE] Mô hình tư duy "Đặt tủ khóa hành lý di động theo thực đơn"
-> Thay vì bắt lập trình viên Python hay Node.js phải biết mã ổ cứng vật lý AWS EBS `vol-0a1b2c3d` phức tạp, Kubernetes chia việc xin ổ đĩa thành 3 vai trò cực dễ hiểu:
-> 1. **`StorageClass` (Thực đơn hạng tủ):** Đội Hạ tầng soạn sẵn thực đơn các loại ổ đĩa trên Cloud (ví dụ hạng `gp3` là SSD tốc độ cao, hạng `efs` là ổ mạng dùng chung).
-> 2. **`PersistentVolumeClaim — PVC` (Tờ phiếu đăng ký của bạn):** Ứng dụng của bạn chỉ cần điền phiếu *"Cho tôi xin 10Gi ổ đĩa hạng `gp3`"*.
-> 3. **`PersistentVolume — PV` (Chiếc ổ đĩa thật):** Ngay khi nhận phiếu `PVC`, trình điều khiển lưu trữ (**CSI Driver**) tự động gọi Cloud cắt ra 1 ổ SSD thật `10Gi` và khóa chặt 1-1 (`Bound`) với tờ phiếu của bạn!
+> [!NOTE] Phân vai 3 thành phần lưu trữ: `StorageClass`, `PVC` và `PV`
+> Thay vì bắt lập trình viên Python hay Node.js phải cấu hình trực tiếp mã ổ cứng vật lý AWS EBS `vol-0a1b2c3d`, Kubernetes tách việc cấp phát lưu trữ thành 3 đối tượng độc lập:
+> 1. **`StorageClass`:** Do kỹ sư hạ tầng định nghĩa sẵn các loại ổ đĩa trên Cloud (ví dụ `gp3` là SSD tốc độ cao, `efs` là ổ mạng dùng chung) kèm chính sách thu hồi dữ liệu.
+> 2. **`PersistentVolumeClaim — PVC`:** Bản khai báo yêu cầu lưu trữ của ứng dụng (ví dụ xin `10Gi` dung lượng thuộc `storageClassName: gp3` với chế độ truy cập `ReadWriteOnce`).
+> 3. **`PersistentVolume — PV`:** Ổ đĩa vật lý/đám mây thực tế do **CSI Driver** tự động tạo ra khi nhận được `PVC`, sau đó gắn kết 1-1 (`Bound`) với `PVC` đó (có thể hình dung `StorageClass` như danh mục các hạng ổ đĩa, `PVC` là phiếu yêu cầu của ứng dụng, còn `PV` là ổ đĩa thực tế được cấp phát).
 
 ```visual
 kind: flow
 title: Chu Trình Cấp Phát Ổ Đĩa Tự Động (Dynamic Provisioning)
-subtitle: Từ thực đơn hạ tầng đám mây tới thư mục bền vững bên trong Container
-footer: "CSI Driver tự động cắt ổ đĩa thật trên Cloud và gắn (Bind 1:1) với tờ phiếu PVC của bạn"
+subtitle: Từ khai báo hạng đĩa hạ tầng đám mây tới thư mục bền vững bên trong Container
+footer: "CSI Driver tự động cấp phát ổ đĩa thật trên Cloud và gắn kết (Bound 1:1) với PVC của bạn"
 steps:
   - icon: layers
     badge: Hạ tầng / Cloud
     title: StorageClass
-    desc: Thực đơn loại ổ đĩa do kỹ sư hạ tầng định nghĩa sẵn (SSD gp3, pd-ssd, EFS)
+    desc: Khai báo loại ổ đĩa do kỹ sư hạ tầng định nghĩa sẵn (SSD gp3, pd-ssd, EFS)
     code: "storageClassName: gp3"
     tone: sky
     edge: tham chiếu hạng đĩa
   - icon: file-code
-    badge: Dev / DevOps nộp phiếu
+    badge: Dev / DevOps khai báo
     title: PersistentVolumeClaim (PVC)
-    desc: Phiếu xin cấp 10Gi thuộc hạng gp3 với chế độ truy cập ReadWriteOnce
+    desc: Yêu cầu cấp 10Gi thuộc hạng gp3 với chế độ truy cập ReadWriteOnce
     code: "upload-pvc (10Gi)"
     tone: amber
     edge: CSI cắt & Bind 1:1
   - icon: disk
     badge: CSI Driver tự tạo
     title: PersistentVolume (PV)
-    desc: Chiếc ổ đĩa đám mây thật sự (AWS EBS vol-0a1b2c3d) gắn chặt với PVC
+    desc: Ổ đĩa đám mây thực tế (AWS EBS vol-0a1b2c3d) gắn chặt với PVC
     code: "Status: Bound"
     tone: cyan
     edge: volumeMounts
@@ -158,12 +158,12 @@ spec:
 
 ## 3. Tại sao Database không dùng `Deployment` mà bắt buộc cần `StatefulSet`?
 
-Với Web API không lưu trạng thái (*Stateless*), 3 bản sao trong `Deployment` giống hệt những nhân viên thời vụ vô danh (`shop-api-7f8d9`, `shop-api-2x9k1`) — ai bật trước, tắt trước cũng được.
+Với Web API không lưu trạng thái (*Stateless*), các bản sao trong `Deployment` có thể thay thế lẫn nhau hoàn toàn (`shop-api-7f8d9`, `shop-api-2x9k1`) — bản sao nào bật trước hay tắt trước đều không ảnh hưởng.
 
-Nhưng với cụm cơ sở dữ liệu **PostgreSQL Primary – Replica**, **Redis Cluster** hay **Kafka**, `Deployment` không thể đáp ứng vì 2 lý do sống còn:
+Nhưng với cụm cơ sở dữ liệu **PostgreSQL Primary – Replica**, **Redis Cluster** hay **Kafka**, `Deployment` không thể đáp ứng vì 2 yêu cầu kỹ thuật bắt buộc:
 
-- [!] **Không thể dùng chung 1 ổ đĩa nhị phân:** Nếu 2 tiến trình PostgreSQL trên 2 máy cùng ghi đè vào chung 1 thư mục tệp dữ liệu, Database sẽ **hỏng dữ liệu (`data corruption`)** ngay lập tức! Mỗi bản sao Database bắt buộc phải có **một chiếc `PVC` riêng biệt** đi theo nó suốt đời.
-- [!] **Cần danh tính và số thứ tự cố định (*Sticky Identity*):** Máy chính `postgres-0` đóng vai trò Primary (nhận ghi), còn `postgres-1` là Replica (sao chép dữ liệu từ đúng địa chỉ `postgres-0`). Nếu `postgres-0` khởi động lại, nó **bắt buộc phải lấy lại đúng cái tên ==`postgres-0`== và cắm lại đúng chiếc ổ đĩa cũ `data-postgres-0`**!
+- [!] **Không thể dùng chung 1 ổ đĩa nhị phân:** Nếu 2 tiến trình PostgreSQL trên 2 máy cùng ghi đè vào chung 1 thư mục tệp dữ liệu, Database sẽ **hỏng dữ liệu (`data corruption`)** ngay lập tức! Mỗi bản sao Database bắt buộc phải có **một `PVC` riêng biệt** gắn với riêng nó.
+- [!] **Cần danh tính và số thứ tự cố định (*Sticky Identity*):** Máy chính `postgres-0` đóng vai trò Primary (nhận ghi), còn `postgres-1` là Replica (sao chép dữ liệu từ đúng địa chỉ `postgres-0`). Nếu `postgres-0` khởi động lại, nó **bắt buộc phải giữ nguyên tên ==`postgres-0`== và gắn lại đúng ổ đĩa cũ `data-postgres-0`**!
 
 Đó chính là lý do **`StatefulSet` (`apiVersion: apps/v1`)** ra đời:
 
@@ -229,7 +229,7 @@ Mọi `StatefulSet` đều yêu cầu trường `spec.serviceName` trỏ tới m
 
 ```visual
 kind: troubleshoot
-title: Hai Tình Huống Vận Hành Lưu Trữ Phải Nhớ Lòng Trên Production
+title: Hai Tình Huống Vận Hành Lưu Trữ Thường Gặp Trên Production
 items:
   - symptom: "Pod & PVC đứng hình mãi ở trạng thái Pending"
     badge: Lỗi cấu hình PVC
@@ -240,7 +240,7 @@ items:
   - symptom: "Đã chạy kubectl delete statefulset postgres nhưng các PVC vẫn còn nguyên"
     badge: Cơ chế bảo vệ dữ liệu
     tone: emerald
-    cause: "KHÔNG PHẢI LỖI! Khi xóa hoặc scale down `StatefulSet`, Kubernetes cố tình giữ lại toàn bộ `PVC` sinh từ `volumeClaimTemplates` để ngăn thảm họa bấm nhầm xóa mất Database sản xuất."
+    cause: "KHÔNG PHẢI LỖI! Khi xóa hoặc scale down `StatefulSet`, Kubernetes cố tình giữ lại toàn bộ `PVC` sinh từ `volumeClaimTemplates` để ngăn sự cố bấm nhầm xóa mất Database sản xuất."
     fix: "Nếu thực sự muốn dọn sạch ổ đĩa ở môi trường thử nghiệm, bạn phải xóa tường minh từng PVC sau khi đã sao lưu."
     cmd: kubectl get pvc && kubectl delete pvc data-postgres-0
 ```

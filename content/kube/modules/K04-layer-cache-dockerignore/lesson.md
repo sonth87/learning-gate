@@ -7,39 +7,39 @@ Bài học này giải quyết triệt để cả ba nỗi đau đó bằng cơ 
 ```visual
 kind: illustration
 diagram: "kube:k04"
-alt: "Cơ chế lá chắn .dockerignore và quy tắc sụp đổ dây chuyền Domino của BuildKit Layer Cache"
-title: "Giải Phẫu Tối Ưu BuildKit: Lá Chắn .dockerignore & Tháp Bộ Đệm Layer Cache"
-subtitle: "Chặn rác ngay từ cửa Build Context và sắp xếp thứ tự chỉ thị thông minh để tái sử dụng 100% lớp cài đặt thư viện"
-caption: "Cách tệp .dockerignore lọc sạch node_modules/.venv/.env và sự đối lập tốc độ giữa thứ tự COPY sai lầm (~120s) với thứ tự tách riêng lockfile (~0.8s)"
+alt: "Cơ chế lọc .dockerignore và quy tắc mất cache dây chuyền của BuildKit Layer Cache"
+title: "Cơ Chế Tối Ưu BuildKit: Bộ Lọc .dockerignore & Thứ Tự Layer Cache"
+subtitle: "Chặn tệp thừa ngay từ Build Context và sắp xếp thứ tự chỉ thị hợp lý để tái sử dụng 100% lớp cài đặt thư viện"
+caption: "Cách tệp .dockerignore lọc sạch node_modules/.venv/.env và sự chênh lệch tốc độ giữa thứ tự COPY sai (~120s) với thứ tự tách riêng lockfile (~0.8s)"
 callouts:
   - num: 1
-    label: "Lá chắn .dockerignore lọc sạch Build Context"
+    label: "Tệp .dockerignore lọc sạch Build Context"
     desc: "Loại bỏ node_modules, .venv, .git và tệp mật khẩu .env trước khi gửi sang BuildKit, vừa bảo mật vừa chống xung đột binary khác hệ điều hành."
     tone: amber
   - num: 2
-    label: "Hiệu ứng Domino khi đặt COPY . . quá sớm"
-    desc: "Chỉ sửa 1 ký tự trong code cũng làm đổi mã băm SHA-256, kéo sập toàn bộ cache của bước cài thư viện (npm ci / uv sync) nặng nề bên dưới."
+    label: "Vỡ cache hàng loạt khi đặt COPY . . quá sớm"
+    desc: "Chỉ sửa 1 ký tự trong code cũng làm đổi mã băm SHA-256, khiến toàn bộ layer cài thư viện (npm ci / uv sync) phía dưới phải chạy lại."
     tone: rose
   - num: 3
-    label: "Tháp Cache chuẩn: Tách Lockfile lên trước"
+    label: "Thứ tự chuẩn: Tách Lockfile lên trước"
     desc: "Đưa bước ít thay đổi (lockfile + cài gói) lên trên và đẩy COPY mã nguồn xuống cuối giúp rút thời gian build lại còn chưa tới 1 giây."
     tone: emerald
 ```
 
-## 1. Quy luật bất biến của Docker Layer Cache (Hiệu ứng Domino)
+## 1. Cơ chế hoạt động của Docker Layer Cache và thứ tự sắp xếp chỉ thị
 
-> [!NOTE] Mô hình tư duy chồng gạch Lego
-> Mỗi chỉ thị `FROM`, `WORKDIR`, `COPY`, `RUN` trong `Dockerfile` giống như **đặt thêm một viên gạch Lego lên chồng tháp**. Nếu bạn rút viên gạch ở tầng 2 ra sửa, toàn bộ các tầng 3, 4, 5 bên trên bắt buộc phải tháo ra lắp lại từ đầu; nhưng nếu bạn chỉ thay viên gạch trên nóc cùng, toàn bộ phần móng nặng nề bên dưới giữ nguyên bất động!
+> [!NOTE] Nguyên tắc tái sử dụng và hủy cache theo tầng (Layer Invalidation)
+> Mỗi chỉ thị `FROM`, `WORKDIR`, `COPY`, `RUN` trong `Dockerfile` tạo ra một lớp (layer) tuần tự. BuildKit kiểm tra cache từ trên xuống dưới: chỉ cần một lớp ở vị trí `k` thay đổi đầu vào, toàn bộ các lớp `k+1, k+2...` bên dưới nó đều bị mất cache và phải thực thi lại từ đầu. Do đó, các bước ít thay đổi (cài OS, chép lockfile, cài thư viện) phải đặt lên trên, còn bước thay đổi thường xuyên nhất (`COPY` mã nguồn) phải đặt xuống dưới cùng (tương tự như việc xếp chồng gạch từ móng lên nóc: thay viên gạch trên nóc sẽ không làm xáo trộn phần móng bên dưới).
 
 Khi bạn gõ `docker build`, bộ máy BuildKit kiểm tra tuần tự từ trên xuống dưới:
 
 - [x] **So khớp mã băm SHA256:** Với lệnh `COPY`, BuildKit tính checksum toàn bộ tệp nguồn được chép. Nếu không một byte nào đổi, nó tái sử dụng ngay lớp cũ — báo **`CACHED` (`0.0s`)**!
-- [!] **Quy tắc sụp đổ dây chuyền (*Domino Invalidation*):** Ngay khoảnh khắc **một layer thứ `k` bị mất cache** (do tệp nguồn vừa sửa), ==TOÀN BỘ các layer `k+1, k+2...` đứng phía dưới nó đều buộc phải chạy lại từ đầu==, dù câu lệnh ở dưới không đổi một chữ nào!
+- [!] **Quy tắc hủy cache dây chuyền (*Cache Invalidation*):** Ngay khoảnh khắc **một layer thứ `k` bị mất cache** (do tệp nguồn vừa sửa), ==TOÀN BỘ các layer `k+1, k+2...` đứng phía dưới nó đều buộc phải chạy lại từ đầu==, dù câu lệnh ở dưới không đổi một chữ nào!
 
 ```visual
 kind: layers
-title: "Hiệu Ứng Domino Khi Bạn Chỉ Sửa 1 Dòng Code Trong Dự Án"
-subtitle: "Quy tắc số 1: Đưa bước ÍT THAY ĐỔI (lockfile -> cài gói) lên trên · Đẩy bước HAY SỬA NHẤT (COPY code) xuống cuối!"
+title: "Ảnh Hưởng Của Thứ Tự Chỉ Thị Tới Cache Khi Sửa 1 Dòng Code"
+subtitle: "Nguyên tắc cốt lõi: Đưa bước ÍT THAY ĐỔI (lockfile -> cài gói) lên trên · Đẩy bước HAY SỬA NHẤT (COPY code) xuống cuối!"
 columns:
   - title: "THỨ TỰ SAI — Chép tất cả từ quá sớm"
     badge: Build lại mất ~120 giây!
@@ -52,7 +52,7 @@ columns:
         sub: "Checksum SHA256 thay đổi -> Mất cache ngay tại tầng này"
         note: "CACHE MISS!"
         tone: rose
-      - label: "3. RUN npm ci / uv sync  (Bị vạ lây Domino!)"
+      - label: "3. RUN npm ci / uv sync  (Mất toàn bộ cache phía dưới!)"
         sub: "Dù không thêm thư viện nào, Docker vẫn phải cài lại toàn bộ từ đầu"
         note: "Chạy lại ~120s"
         tone: amber
@@ -112,14 +112,14 @@ COPY app/ ./app/
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-## 2. Lá chắn `.dockerignore`: Bảo vệ Tốc độ lẫn Bí mật
+## 2. Tệp `.dockerignore`: Lọc Build Context để tăng tốc và bảo mật
 
 > [!WARNING] Docker KHÔNG tự động đọc `.gitignore`!
 > Khi bạn gõ `docker build -t shop-api:1.0.0 .`, Docker gom toàn bộ thư mục `.` (**Build Context**) gửi sang BuildKit. Nếu quên tạo tệp **`.dockerignore`**, cả `node_modules` (500 MB), `.venv` (400 MB), `.git` lẫn tệp mật khẩu `.env` trên máy bạn sẽ lao thẳng vào trong Image!
 
 ```visual
 kind: groups
-title: "Ba Thảm Họa Được Chặn Đứng Nhờ Tệp .dockerignore"
+title: "Ba Vấn Đề Được Ngăn Chặn Nhờ Tệp .dockerignore"
 columns: 3
 items:
   - num: 1

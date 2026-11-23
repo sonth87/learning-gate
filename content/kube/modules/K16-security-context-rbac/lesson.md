@@ -53,7 +53,7 @@ Bài học này giúp bạn dựng lên trọn vẹn **3 lớp phòng thủ chi�
 kind: illustration
 diagram: "kube:k16"
 alt: "Ba lớp phòng thủ chiều sâu gồm securityContext (Non-Root, Read-Only RootFS, drop ALL), Pod Security Admission và phân quyền tối thiểu RBAC"
-title: "Giải Phẫu Phòng Thủ Chiều Sâu: Hardened SecurityContext, PSA Restricted & RBAC"
+title: "Kiến Trúc Phòng Thủ Chiều Sâu: Hardened SecurityContext, PSA Restricted & RBAC"
 subtitle: "Nhốt chặt mọi nguy cơ tấn công RCE trong chiếc hộp phi đặc quyền, khóa ghi ổ đĩa gốc và thu hồi quyền gọi K8s API"
 caption: "Kiến trúc gia cố securityContext cấp nhân Linux, cổng kiểm duyệt Pod Security Admission trên Namespace và chuỗi phân quyền RBAC tối thiểu"
 callouts:
@@ -71,7 +71,7 @@ callouts:
     tone: amber
 ```
 
-## 1. Lớp giáp thứ nhất: Gia cố `securityContext` ở cấp Pod & Container
+## 1. Lớp bảo vệ 1: Gia cố `securityContext` ở cấp Pod và Container
 
 Ở bài `K05`, bạn đã quen với dòng `USER node` / `USER appuser` trong Dockerfile. Tuy nhiên, Kubernetes không mù quáng tin tưởng Dockerfile (vì ai đó có thể vô tình đẩy một bản image quên dòng `USER` lên cụm). Ta khóa chặt ngay trên YAML qua trường **`securityContext`** ở hai tầng:
 
@@ -112,7 +112,7 @@ spec:
 > [!WARNING] Ba cấu hình mở toang cửa hậu cần tuyệt đối tránh xa!
 > Trừ khi bạn đang phát triển phần mềm hạ tầng mạng cấp thấp của hệ thống, **tuyệt đối cấm dùng**: `privileged: true`, `hostNetwork: true`, và gắn ổ đĩa `hostPath: /var/run/docker.sock` — vì bất kỳ container nào nắm giữ chúng đều tương đương nắm quyền `root` trực tiếp trên máy chủ vật lý!
 
-## 2. Lớp giáp thứ hai: Cưỡng chế tự động bằng **Pod Security Admission (`PSA`)**
+## 2. Lớp bảo vệ 2: Kiểm soát tập trung bằng **Pod Security Admission (`PSA`)**
 
 Làm sao đảm bảo cả 50 lập trình viên trong công ty không ai quên viết `securityContext`?
 
@@ -168,13 +168,13 @@ metadata:
     pod-security.kubernetes.io/warn: restricted
 ```
 
-## 3. Lớp giáp thứ ba: Hiểu dễ dàng về **RBAC** (`ServiceAccount` + `Role` + `RoleBinding`)
+## 3. Lớp bảo vệ 3: Phân quyền tối thiểu với **RBAC** (`ServiceAccount`, `Role` và `RoleBinding`)
 
-> [!NOTE] Mô hình tư duy RBAC bằng 3 tờ giấy hành chính quen thuộc!
-> Người mới hay rối trước 5 cái tên của RBAC (`ServiceAccount`, `Role`, `ClusterRole`, `RoleBinding`, `ClusterRoleBinding`). Hãy nhớ quy tắc 3 mảnh ghép cực đơn giản:
-> 1. **Ai đang xin quyền (`Subject`)?** Với con người là `User`/`Group`; với Pod ứng dụng chạy trong cụm là chiếc **thẻ nhân viên `ServiceAccount`**.
-> 2. **Được phép làm gì (`Role` vs `ClusterRole`)?** Là **bản mô tả quyền hạn** (ví dụ: chỉ được `get`, `list` đối tượng `configmaps`). `Role` chỉ có giá trị trong **1 tầng lầu Namespace**; `ClusterRole` có giá trị trên **toàn tòa nhà Cụm**.
-> 3. **Giấy quyết định bổ nhiệm (`RoleBinding` vs `ClusterRoleBinding`):** Nối chiếc thẻ nhân viên số (1) vào bản mô tả quyền hạn số (2)!
+> [!NOTE] Cấu trúc 3 thành phần cốt lõi của RBAC
+> Hệ thống phân quyền RBAC gồm 3 thành phần liên kết trực tiếp với nhau:
+> 1. **Chủ thể (`Subject`):** Với người dùng là `User`/`Group`; với ứng dụng chạy trong Pod là **`ServiceAccount`**.
+> 2. **Tập quyền hạn (`Role` vs `ClusterRole`):** Định nghĩa danh sách tài nguyên (`resources`) và hành động được phép (`verbs` như `get`, `list`). `Role` chỉ có hiệu lực trong **1 Namespace**; `ClusterRole` có hiệu lực trên **toàn cụm**.
+> 3. **Liên kết gán quyền (`RoleBinding` vs `ClusterRoleBinding`):** Gắn chủ thể ở mục (1) với tập quyền hạn ở mục (2). *(Có thể hình dung `ServiceAccount` như thẻ định danh của Pod, `Role` là bảng mô tả quyền hạn, còn `RoleBinding` là quyết định cấp quyền đó.)*
 
 Hai quy tắc thực chiến bất di bất dịch cho mọi ứng dụng:
 - [!] **Quy tắc số 1 (95% Web/AI API thông thường):** Ứng dụng FastAPI hay Express chỉ nói chuyện với PostgreSQL/Redis chứ không hề gọi Kubernetes API Server → hãy đặt ngay ==`automountServiceAccountToken: false`== để không gắn thẻ token dư thừa vào trong Pod!
@@ -189,7 +189,7 @@ steps:
   - icon: key
     badge: 1. Ai gọi? (Subject)
     title: ServiceAccount (v1)
-    desc: Danh tính thẻ nhân viên riêng gắn cho Pod qua trường serviceAccountName
+    desc: Danh tính (Identity) riêng gắn cho Pod qua trường serviceAccountName
     code: "sa: job-runner"
     tone: sky
     edge: gắn vào subjects

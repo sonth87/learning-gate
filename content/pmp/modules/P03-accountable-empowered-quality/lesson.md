@@ -1,76 +1,76 @@
-## 1. Giải mã bằng ngôn ngữ đời thường: An toàn tâm lý, Báo cáo dưa hấu & Quality vs Grade
+## 1. Ba khái niệm cốt lõi: An toàn tâm lý (Psychological Safety), Tính minh bạch báo cáo và Quality vs Grade
 
-Trong các dự án phần mềm áp lực cao, tại sao có những dự án suốt 5 tháng đầu tuần nào cũng báo cáo màu xanh đẹp đẽ, nhưng đúng 1 tuần trước ngày Go-Live lại bất ngờ nổ tung hàng trăm lỗi nghiêm trọng? Hiện tượng đó trong quản trị dự án gọi là **"Báo cáo dưa hấu" (*Watermelon Status Report*)** — bên ngoài vỏ xanh mướt, nhưng bổ ra bên trong ruột đỏ lòm!
+Trong các dự án chịu áp lực tiến độ cao, nhiều báo cáo trạng thái hàng tuần vẫn hiển thị màu xanh nhưng đến sát ngày bàn giao lại bộc lộ hàng loạt lỗi nghiêm trọng và trễ hạn nặng. Trong quản trị dự án, hiện tượng che giấu thực trạng xấu phía sau lớp vỏ báo cáo tốt đẹp này thường được ví là **"báo cáo dưa hấu"** (*Watermelon Status Report* — bên ngoài xanh nhưng bên trong đỏ).
 
-Để chữa tận gốc căn bệnh này, [!badge:amber:PMBOK 8] trang bị 3 khái niệm cốt lõi mà bất kỳ kỹ sư hay PM mới nào cũng cần nắm rõ ngay từ đầu:
+Để phòng tránh tình trạng này và xây dựng đội ngũ bền vững, [!badge:amber:PMBOK 8] nhấn mạnh 3 khái niệm cốt lõi sau:
 
-- **Psychological Safety (*An toàn tâm lý*):** Bầu không khí tin cậy nơi một lập trình viên Junior lỡ cấu hình sai làm chậm tiến độ hoặc phát hiện lỗ hổng kiến trúc ==dám lên tiếng báo ngay lập tức== mà không sợ bị sỉ nhục, trừ lương hay đem ra làm vật tế thần.
-- **Servant Leadership (*Lãnh đạo phục vụ*):** Phong cách lãnh đạo đặt việc tháo gỡ rào cản (*Impediments*), cung cấp công cụ và che chắn áp lực bên ngoài cho đội ngũ lên hàng đầu để nhóm toàn tâm sáng tạo giá trị.
-- **Quality (*Chất lượng*) vs Grade (*Cấp hạng sản phẩm*):** Hai chữ này ngoài đời hay gọi lẫn lộn nhưng trong đề PMP là ranh giới sinh tử! **Quality** là mức độ sản phẩm chạy đúng cam kết, không lỗi vặt; còn **Grade** là mức độ sang trọng, nhiều tính năng cao cấp. Một ứng dụng ghi chú miễn phí chỉ có tính năng gõ chữ cơ bản (**Low Grade**) nhưng mở cực nhanh, không bao giờ mất dữ liệu (**High Quality**) là hoàn toàn chuẩn mực; ngược lại, siêu ứng dụng trăm tính năng (**High Grade**) nhưng bấm đâu văng app đó (**Low Quality**) là ==thảm hoạ không bao giờ được chấp nhận==!
+- **Psychological Safety (*An toàn tâm lý*):** Môi trường làm việc tin cậy nơi một thành viên lỡ gây lỗi cấu hình hoặc phát hiện rủi ro kiến trúc ==dám lên tiếng báo cáo ngay lập tức== mà không sợ bị chỉ trích, trừng phạt hay đổ lỗi cá nhân.
+- **Servant Leadership (*Lãnh đạo phục vụ*):** Phong cách lãnh đạo tập trung vào việc tháo gỡ rào cản (*Impediments*), cung cấp công cụ và che chắn áp lực không cần thiết để đội ngũ tập trung tạo ra giá trị.
+- **Quality (*Chất lượng*) vs Grade (*Cấp hạng sản phẩm*):** Hai khái niệm này cần phân biệt rạch ròi trong quản trị và đề thi PMP. **Quality** là mức độ sản phẩm đáp ứng đúng yêu cầu cam kết, vận hành ổn định, ít lỗi; còn **Grade** là mức độ phong phú tính năng hoặc tiện ích cao cấp. Một ứng dụng ghi chú chỉ có chức năng cơ bản (**Low Grade**) nhưng hoạt động ổn định, không mất dữ liệu (**High Quality**) là chấp nhận được; ngược lại, một ứng dụng nhiều tính năng phức tạp (**High Grade**) nhưng thường xuyên gặp lỗi nghiêm trọng (**Low Quality**) là ==tình trạng không đạt chuẩn chất lượng và không thể chấp nhận==.
 
-## 2. Nguyên tắc #3 — Embed Quality (`PMBOK 8 §3.5`): Nhúng chất lượng từ gốc rẻ gấp bội dò lỗi cuối kỳ
+## 2. Nguyên tắc #3 — Tích hợp Chất lượng (`Embed Quality`) và Chi phí Chất lượng (`CoQ`)
 
-Nhiều đội dự án làm theo kiểu "code ẩu cho nhanh rồi tháng cuối ném hết sang cho đội Tester bắt bug". Quy luật **Chi phí Chất lượng (*Cost of Quality — CoQ*)** chỉ rõ: lỗi phát hiện càng muộn thì chi phí sửa chữa càng nhân lên theo cấp số nhân (1 đồng ở khâu thiết kế → 10 đồng khi đang code → 100 đồng khi khách hàng gặp lỗi ngoài Production!).
+Nhiều đội dự án có thói quen lập trình nhanh và dồn toàn bộ việc tìm lỗi sang giai đoạn kiểm thử cuối kỳ. Quy luật **Chi phí Chất lượng (*Cost of Quality — CoQ*)** chỉ ra rằng lỗi phát hiện càng muộn thì chi phí khắc phục càng tăng theo cấp số nhân (1 đơn vị chi phí ở khâu thiết kế → 10 đơn vị khi lập trình → 100 đơn vị khi phát sinh sự cố ngoài môi trường Production).
 
 ```visual
 kind: anatomy
-title: "Giải phẫu 3 Quy luật Sống còn về Chất lượng trong Đề thi PMP"
-subtitle: "Phòng ngừa trong quy trình luôn chiến thắng kiểm tra vá lỗi ở cuối nguồn"
+title: "Ba Nguyên tắc Trọng tâm về Quản lý Chất lượng (PMBOK® 8)"
+subtitle: "Phòng ngừa lỗi trong quy trình luôn hiệu quả hơn kiểm tra sửa lỗi ở cuối nguồn"
 items:
   - keyword: "Quality vs Grade"
-    role: "Độ đúng đắn vs Độ sang xịn"
+    role: "Độ chính xác cam kết vs Mức độ tính năng"
     tone: "amber"
-    summary: "Khi dự án thiếu ngân sách hoặc gấp tiến độ, bạn có thể trình duyệt hạ **Grade** (làm bản tiêu chuẩn trước), nhưng **TUYỆT ĐỐI CẤM** cắt bớt kiểm thử hay hạ chuẩn **Quality**!"
+    summary: "Khi thiếu ngân sách hoặc gấp tiến độ, có thể trình duyệt hạ **Grade** (giảm bớt tính năng phụ), nhưng **TUYỆT ĐỐI KHÔNG** cắt bớt kiểm thử hay hạ chuẩn **Quality**."
     bullets:
-      - "Đáp án nào gợi ý 'Skip integration testing to meet the deadline' → gạch bỏ ngay trong 1 giây!"
+      - "Các phương án gợi ý 'Skip integration testing to meet the deadline' luôn là phương án sai."
   - keyword: "Cost of Conformance"
-    role: "Chi phí Tuân thủ (Đầu tư khôn ngoan)"
+    role: "Chi phí Tuân thủ (Đầu tư phòng ngừa)"
     tone: "emerald"
-    summary: "Tiền chi để **không xảy ra lỗi** (Prevention: đào tạo, quy chuẩn code, CI/CD linter, DoD) và **thẩm định sớm** (Appraisal: peer review, automated test)."
+    summary: "Chi phí bỏ ra để **ngăn ngừa lỗi từ đầu** (Prevention: đào tạo, quy chuẩn code, CI/CD linter, DoD) và **kiểm tra sớm** (Appraisal: peer review, automated test)."
     bullets:
-      - "Luôn rẻ hơn hàng chục lần so với Cost of Nonconformance (Rework, bảo hành, đền hợp đồng, mất khách)."
+      - "Luôn thấp hơn nhiều lần so với Cost of Nonconformance (Rework, bảo hành, phạt hợp đồng, mất uy tín)."
   - keyword: "Built-in Quality"
-    role: "Nhúng chất lượng vào cách làm"
+    role: "Tích hợp chất lượng vào quy trình"
     tone: "sky"
-    summary: "Chất lượng thuộc trách nhiệm của **cả đội dự án ở từng dòng code**, không phải việc riêng của bộ phận QA/Tester ở cuối Sprint."
+    summary: "Chất lượng thuộc trách nhiệm chung của **cả đội dự án ở từng bước thực thi**, không phải việc riêng của bộ phận QA/Tester ở cuối Sprint."
 ```
 
-## 3. Nguyên tắc #4 — Accountable Leader (`§3.6`): Chính trực dữ liệu & Đạo đức PMI
+## 3. Nguyên tắc #4 — Lãnh đạo có trách nhiệm (`Accountable Leader`) và Đạo đức nghề nghiệp PMI
 
-Trở thành một **Nhà lãnh đạo có trách nhiệm giải trình (*Accountable Leader*)** đòi hỏi sự hoà quyện giữa tinh thần người quản gia trung thực (*Stewardship*) và **4 giá trị cốt lõi trong Bộ Quy tắc Đạo đức PMI**: *Responsibility (Trách nhiệm) · Respect (Tôn trọng) · Fairness (Công bằng) · Honesty (Trung thực)*.
+Trở thành **Nhà lãnh đạo có trách nhiệm giải trình (*Accountable Leader*)** đòi hỏi tinh thần quản trị trung thực (*Stewardship*) gắn liền với **4 giá trị cốt lõi trong Bộ Quy tắc Đạo đức PMI**: *Responsibility (Trách nhiệm) · Respect (Tôn trọng) · Fairness (Công bằng) · Honesty (Trung thực)*.
 
-- **Không bao giờ tô hồng báo cáo:** Nếu chỉ số tiến độ thực tế đang chậm 20%, dù Giám đốc bộ phận gây sức ép bảo bạn *"sửa báo cáo sang màu xanh cho khách hàng yên tâm tuần này đi"*, phản xạ bắt buộc của PMI là ==từ chối làm sai lệch số liệu, báo cáo đúng sự thật kèm phân tích nguyên nhân và phương án khắc phục==.
-- **Tránh xung đột lợi ích (*Conflict of Interest*):** Không nhận quà cáp giá trị cao từ nhà thầu đang dự tuyển; nếu phát hiện công ty của người thân tham gia đấu thầu, bạn phải **khai báo minh bạch ngay lập tức** và rút khỏi hội đồng chấm thầu.
-- **Bảo vệ tài sản trí tuệ & Dữ liệu mật:** Không lấy code/tài liệu có bản quyền của công ty cũ mang sang dự án mới; không dán dữ liệu khách hàng chưa ẩn danh lên các công cụ AI công cộng.
+- **Minh bạch số liệu báo cáo:** Nếu chỉ số tiến độ thực tế đang chậm 20%, dù cấp trên gợi ý điều chỉnh màu trạng thái để khách hàng yên tâm, nguyên tắc bắt buộc của PMI là ==từ chối làm sai lệch số liệu, báo cáo trung thực thực trạng kèm phân tích nguyên nhân và phương án khắc phục==.
+- **Tránh xung đột lợi ích (*Conflict of Interest*):** Không nhận quà tặng có giá trị lớn từ nhà thầu; nếu phát hiện doanh nghiệp của người thân tham gia đấu thầu, phải **khai báo minh bạch ngay lập tức** và rút khỏi hội đồng đánh giá.
+- **Bảo vệ tài sản trí tuệ & Dữ liệu mật:** Không mang mã nguồn hoặc tài liệu thuộc sở hữu của tổ chức cũ sang dự án mới; không đưa dữ liệu khách hàng chưa ẩn danh lên các công cụ AI công cộng.
 
 > [!WARNING]
-> **Bẫy đạo đức tinh vi:** Đôi khi đề bài gài tình huống *"Một khoản phí bôi trơn không chính thức là thông lệ quen thuộc tại quốc gia sở tại để thông quan thiết bị nhanh"*. Nhớ kỹ: phân biệt giữa *phí hành chính hợp pháp có hoá đơn nhà nước* (được phép) và *hối lộ ngầm trái luật* (bị cấm tuyệt đối theo chuẩn PMI!).
+> **Lưu ý về tình huống đạo đức đa quốc gia:** Đề thi có thể nêu tình huống một khoản chi phí không chính thức được coi là thông lệ tại địa phương để đẩy nhanh thủ tục. Cần phân biệt rõ giữa *lệ phí hành chính hợp pháp có hóa đơn nhà nước* (được phép) và *khoản hối lộ trái pháp luật* (bị cấm tuyệt đối theo chuẩn PMI).
 
-## 4. Nguyên tắc #6 — Empowered Culture (`§3.8`) & Phản xạ phòng thi
+## 4. Nguyên tắc #6 — Văn hóa trao quyền (`Empowered Culture`) và Lãnh đạo phục vụ
 
-Khi đội ngũ được trao quyền (*Empowerment*) đi kèm sự rõ ràng về mục tiêu, hiệu suất và tốc độ ra quyết định sẽ vượt xa cơ chế kiểm soát vi mô (*Micromanagement*):
+Khi đội ngũ được trao quyền (*Empowerment*) đi kèm sự rõ ràng về mục tiêu, hiệu suất và tốc độ ra quyết định sẽ vượt trội so với cơ chế kiểm soát vi mô (*Micromanagement*):
 
 ```visual
 kind: compare
 title: "Quản lý Vi mô Áp đặt vs Văn hoá Trao quyền & An toàn Tâm lý"
-subtitle: "Người trực tiếp viết code và kiểm thử là người hiểu rõ nhất giải pháp kỹ thuật tối ưu"
+subtitle: "Người trực tiếp thực thi kỹ thuật là người nắm rõ nhất giải pháp và mức độ nỗ lực cần thiết"
 left:
-  badge: "MICROMANAGEMENT (BẪY ĐỀ THI)"
-  title: "Áp đặt · Truy tìm thủ phạm · Giấu lỗi"
+  badge: "MICROMANAGEMENT (KHÔNG PHÙ HỢP)"
+  title: "Áp đặt · Truy tìm lỗi cá nhân · Giấu vấn đề"
   tone: "rose"
   bullets:
-    - "PM tự ước lượng thời gian từng task rồi ép lập trình viên ký cam kết làm theo."
-    - "Khi sập hệ thống Production, mở cuộc họp chỉ trích cá nhân để phạt làm gương."
-    - "PM tự soạn nội quy làm việc cứng nhắc từ trên dội xuống cho toàn đội."
+    - "PM tự ước lượng thời gian từng task rồi ép thành viên ký cam kết thực hiện theo."
+    - "Khi hệ thống gặp sự cố Production, tổ chức họp chỉ trích cá nhân để răn đe."
+    - "PM tự soạn nội quy làm việc áp đặt từ trên xuống cho toàn đội."
 right:
   badge: "EMPOWERED CULTURE (CHUẨN PMI)"
   title: "Tự tổ chức · Học từ sự cố · Đồng thuận"
   tone: "emerald"
   bullets:
     - "Để chính các thành viên chuyên môn tự ước lượng nỗ lực và chủ động nhận đầu việc."
-    - "Tổ chức Blameless Postmortem / Retrospective: tìm lỗ hổng quy trình thay vì đổ lỗi con người."
+    - "Tổ chức Blameless Postmortem / Retrospective: tìm lỗ hổng quy trình thay vì đổ lỗi cá nhân."
     - "Cả đội cùng thảo luận và đồng kiến tạo bản quy ước làm việc chung (Team Charter)."
 ```
 
 > [!TIP]
-> **Công thức chốt câu hỏi People & Quality:** Hễ thấy nhóm mắc lỗi lặp lại, hãy chọn ==cải tiến quy trình phòng ngừa (Built-in Quality / QA) + đào tạo nâng năng lực trong không gian an toàn tâm lý==, không bao giờ chọn cắt giảm kiểm thử hay trừng phạt cá nhân!
+> **Nguyên tắc chung cho câu hỏi People & Quality:** Khi nhóm gặp lỗi lặp lại, phương án đúng thường là ==cải tiến quy trình phòng ngừa (Built-in Quality / QA) kết hợp đào tạo nâng năng lực trong môi trường an toàn tâm lý==, tuyệt đối không cắt giảm kiểm thử hay xử phạt cá nhân.

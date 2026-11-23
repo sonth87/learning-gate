@@ -4,8 +4,8 @@
   "level": 0,
   "order": 1,
   "title": "Tổng quan Đề thi PMP (ECO 07/2026) & Kiến trúc PMBOK® Guide 8",
-  "summary": "Nắm trọn cấu trúc đề thi PMP mới nhất theo ECO 07/2026 (Business Environment tăng vọt lên 26%) và bản đồ đối chiếu xuyên suốt giữa 6 Nguyên tắc · 5 Focus Areas · 7 Performance Domains của PMBOK® Guide 8th Edition (2025) sang 14 chủ đề thực chiến của PMP Mindmap.",
-  "motto": "Hiểu luật chơi đề tình huống · Nối liền chuẩn mực PMBOK 8 với phản xạ thực chiến PMA",
+  "summary": "Nắm vững cấu trúc đề thi PMP mới nhất theo ECO 07/2026 (Business Environment tăng lên 26%) và bản đồ đối chiếu xuyên suốt giữa 6 Nguyên tắc · 5 Focus Areas · 7 Performance Domains của PMBOK® Guide 8th Edition (2025) sang 14 chủ đề trong PMP Mindmap.",
+  "motto": "Hiểu bản chất đề thi tình huống · Kết nối chuẩn mực PMBOK 8 với hệ thống PMP Mindmap",
   "provenance": [
     {
       "kind": "eco2026",
@@ -24,7 +24,7 @@
     }
   ],
   "realWorldTrap": "Học vẹt thuộc lòng danh sách ITTO hoặc công thức rời rạc như thi đại học, đồng thời xem nhẹ miền Business Environment vì tưởng chỉ chiếm 8% như đề cũ.",
-  "pmiMindsetShift": "Hơn 90% đề PMP là câu hỏi tình huống hỏi bước đi ĐẦU TIÊN / TIẾP THEO / TỐT NHẤT của người lãnh đạo dự án xoay quanh Giá trị kinh doanh, Tuân thủ, Con người và Quy trình thích ứng.",
+  "pmiMindsetShift": "Hơn 90% đề PMP là câu hỏi tình huống hỏi bước đi ĐẦU TIÊN / TIẾP THEO / TỐT NHẤT của người quản lý dự án xoay quanh Giá trị kinh doanh, Tuân thủ, Con người và Quy trình thích ứng.",
   "tags": [
     "eco-2026",
     "pmbok-8",

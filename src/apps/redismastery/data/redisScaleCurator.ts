@@ -33,18 +33,18 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Hình dung bình dân: PostgreSQL như tủ hồ sơ dưới tầng hầm (mất vài ms đi lấy), còn Redis là tờ giấy nhớ dán ngay trên mặt bàn RAM (~100 nano-giây) do 1 đầu bếp siêu tốc xử lý tuần tự không tốn thời gian tranh khóa!',
-              'Mental model: Disk DBs are filing cabinets in the basement (ms), while Redis is a sticky note on your RAM desk (~100ns) served by one ultra-fast lock-free chef!'
+              'Cơ sở dữ liệu trên ổ cứng (PostgreSQL/MySQL) mất vài mili-giây cho I/O đĩa, trong khi Redis lưu dữ liệu trực tiếp trên RAM (~100 nano-giây) và thực thi tuần tự trên 1 luồng chính giúp triệt tiêu tranh chấp Mutex Lock.',
+              'Disk databases spend milliseconds on storage I/O, while Redis keeps data in RAM (~100ns) and executes commands sequentially on one main thread with zero Mutex Lock contention.'
             )
           : s === 1
             ? bi(
-                'Biến dict/Map cục bộ bị nhốt trong từng tiến trình riêng lẻ; Redis biến kho cấu trúc dữ liệu RAM thành tài nguyên dùng chung cho cả dàn API Python (redis-py), Node.js (ioredis) và Go!',
+                'Biến dict/Map cục bộ bị cô lập trong từng tiến trình riêng lẻ; Redis tách kho cấu trúc dữ liệu RAM thành dịch vụ dùng chung qua mạng cho các ứng dụng Python (redis-py), Node.js (ioredis) và Go.',
                 'In-process dicts/Maps die with each pod; Redis provides a shared network RAM data-structure store across Python, Node.js, Go, and Java.'
               )
             : blocked
               ? bi(
-                  'Cảnh báo sống còn: Vì luồng thực thi dữ liệu là đơn luồng, gõ một lệnh O(N) như KEYS * quét hàng triệu khóa sẽ khóa cứng toàn bộ khách hàng đứng sau! Luôn kiểm tra độ phức tạp Big-O.',
-                  'Critical trap: Data execution is single-threaded — one O(N) command like KEYS * stalls every concurrent client behind it! Always check Big-O.'
+                  'Lưu ý quan trọng: Vì luồng thực thi dữ liệu là đơn luồng, một lệnh O(N) như KEYS * quét hàng triệu khóa sẽ chặn toàn bộ các lệnh đứng sau trong hàng đợi. Luôn kiểm tra độ phức tạp Big-O trước khi dùng.',
+                  'Critical rule: Data execution is single-threaded — one O(N) command like KEYS * stalls every concurrent client behind it! Always check Big-O.'
                 )
               : bi(
                   'Quy tắc kiến trúc ngày 1: Luôn khóa bind nội bộ (127.0.0.1 / Private VPC), bật protected-mode yes, ghim image redis:8.0-alpine và bật slowlog-log-slower-than 10000.',
@@ -135,9 +135,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Beginner',
     primaryMode: 'memory-2d',
     objectives: [
-      bi('Hiểu cấu trúc chuỗi động thông minh SDS (ghi sẵn độ dài len giúp STRLEN đạt O(1))', 'Understand binary-safe SDS layout storing explicit O(1) length'),
-      bi('Đặt đồng hồ tự hủy TTL chuẩn nguyên tử ngay khi ghi bằng SET key val NX EX sec', 'Combine value write, TTL, and condition atomically via SET key val NX EX s'),
-      bi('Duyệt khóa bằng con trỏ SCAN và xóa khóa lớn êm ái ở luồng nền bằng UNLINK', 'Iterate safely with SCAN and delete large keys asynchronously via UNLINK'),
+      bi('Hiểu cấu trúc chuỗi động SDS (lưu sẵn độ dài len ở header giúp STRLEN đạt O(1))', 'Understand binary-safe SDS layout storing explicit O(1) length'),
+      bi('Thiết lập TTL nguyên tử ngay khi ghi bằng SET key val NX EX sec', 'Combine value write, TTL, and condition atomically via SET key val NX EX s'),
+      bi('Duyệt khóa an toàn bằng con trỏ SCAN và xóa khóa lớn bất đồng bộ bằng UNLINK', 'Iterate safely with SCAN and delete large keys asynchronously via UNLINK'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -146,18 +146,18 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Giải nghĩa bình dân: Cặp Key -> String trong Redis giống chiếc hộp có dán nhãn phân cấp (service:entity:id) và gắn đồng hồ hẹn giờ tự hủy TTL như tin nhắn tự xóa!',
-              'Plain mental model: A Redis String is a labeled box (service:entity:id) with an optional self-destruct timer (TTL)!'
+              'Mỗi cặp Key -> String trong Redis gồm khóa định danh phân cấp (service:entity:id) và giá trị chuỗi an toàn nhị phân (tối đa 512MB), có thể gắn thời gian tự hết hạn (TTL).',
+              'Each Redis Key -> String pair maps a hierarchical key (service:entity:id) to a binary-safe value (up to 512MB) with an optional automatic TTL expiration.'
             )
           : s === 1
             ? bi(
-                'Nhờ vỏ hộp SDS ghi sẵn độ dài len ngay ở đầu, Redis lấy STRLEN trong O(1), lưu được cả file nhị phân và tự động nén số nguyên 64-bit vào encoding int siêu gọn.',
+                'Cấu trúc SDS lưu sẵn trường độ dài len ở header, giúp STRLEN chạy trong O(1), lưu được dữ liệu nhị phân và tự động nén số nguyên 64-bit vào encoding int.',
                 'Because SDS stores an explicit len header upfront, STRLEN is O(1), binary bytes are safe, and 64-bit integers pack directly into int encoding.'
               )
             : s === 2 && !isLast
               ? bi(
-                  'Cạm bẫy kinh điển: Đừng bao giờ tách SETNX và EXPIRE thành 2 lệnh rời! Nếu app sập ở giữa, khóa sẽ mang TTL = -1 (Zombie Key sống vĩnh viễn). Luôn gộp SET k v NX EX 60.',
-                  'Classic bug: Never send SETNX followed by a separate EXPIRE — a crash in between leaks an immortal Zombie Key (TTL = -1)! Always fuse SET k v NX EX 60.'
+                  'Lỗi thường gặp: Không tách SETNX và EXPIRE thành 2 lệnh rời. Nếu ứng dụng sập ở giữa, khóa sẽ mang TTL = -1 (không tự hết hạn). Luôn gộp thành SET k v NX EX 60.',
+                  'Classic bug: Never send SETNX followed by a separate EXPIRE — a crash in between leaks a persistent key (TTL = -1)! Always fuse SET k v NX EX 60.'
                 )
               : bi(
                   'Quy tắc kiến trúc: Không bao giờ gõ KEYS * hay DEL trên khóa lớn ở Production — luôn lặp bằng con trỏ SCAN 0 MATCH ... COUNT 200 kết hợp UNLINK + TTL Jitter!',
@@ -183,7 +183,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         callout: { kind: calloutKind, text: calloutText },
         memoryScene: {
           kind: 'tape',
-          title: bi('Cấu trúc hộp chuỗi thông minh SDS & Vòng đời TTL', 'SDS Memory Layout & Atomic TTL Lifecycle'),
+          title: bi('Cấu trúc bộ nhớ SDS & Cơ chế hết hạn TTL', 'SDS Memory Layout & Atomic TTL Lifecycle'),
           subtitle:
             s <= 1
               ? bi('Header ghi sẵn len=7, alloc=16 ➔ hỏi STRLEN trả lời tức thì O(1), không sợ byte 0x00', 'Explicit len & alloc header ➔ O(1) STRLEN & binary safety')
@@ -226,7 +226,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     objectives: [
       bi('Biểu diễn đối tượng nhiều trường bằng Hash thay vì tải cả cục JSON lớn hoặc băm nhỏ hàng chục String key rời', 'Model multi-field entities cleanly in one Hash instead of full JSON blobs or scattered keys'),
       bi('Hiểu cơ chế nén liền khối listpack giúp tiết kiệm tới ~70% RAM cho Hash vừa và nhỏ', 'Leverage contiguous listpack encoding to cut memory footprint by up to 70%'),
-      bi('Sử dụng tính năng đột phá HEXPIRE / HTTL của Redis 8 đặt hạn tự hủy riêng cho từng trường', 'Expire individual fields inside a Hash natively with Redis 8 HEXPIRE'),
+      bi('Sử dụng lệnh HEXPIRE / HTTL của Redis 8 để đặt TTL độc lập cho từng trường trong Hash', 'Expire individual fields inside a Hash natively with Redis 8 HEXPIRE'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -235,27 +235,27 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ dễ nhớ: Lưu JSON vào String giống thùng hàng dán kín (sửa 1 món phải bóc cả thùng), còn Redis Hash là tủ nhiều ngăn kéo — muốn cộng điểm ngăn nào chỉ mở đúng ngăn đó (HINCRBY)!',
-              'Analogy: A JSON String is a sealed shipping box, whereas a Redis Hash is a labeled chest of drawers — update any single field in place via HINCRBY!'
+              'Lưu cả đối tượng vào String JSON buộc phải tải và ghi đè toàn bộ chuỗi mỗi lần sửa 1 thuộc tính; ngược lại Redis Hash cho phép đọc và cập nhật trực tiếp từng trường (HINCRBY, HSET) ngay trên RAM.',
+              'Storing an object as a JSON String requires downloading and rewriting the entire payload for any small edit; Redis Hash updates individual fields in place via HINCRBY and HSET.'
             )
           : s === 1
             ? bi(
-                'Chọn nhanh: Dữ liệu lồng sâu luôn đọc nguyên cục -> dùng String JSON (hoặc Redis JSON trên Redis 8); đối tượng phẳng hay đọc/sửa từng trường -> chọn ngay Redis Hash!',
+                'Quy tắc chọn nhanh: Dữ liệu lồng sâu luôn đọc nguyên khối -> dùng String JSON (hoặc Redis JSON trên Redis 8); đối tượng phẳng hay đọc/sửa từng trường -> chọn Redis Hash.',
                 'Rule of thumb: Deeply nested read-all payloads -> String/RedisJSON; flat entities with frequent partial reads/counters -> Redis Hash!'
               )
             : s === 2 && !isLast
               ? bi(
-                  'Bí mật tiết kiệm RAM: Khi số trường và kích thước nhỏ hơn ngưỡng cấu hình, toàn bộ Hash nằm gọn trên 1 dải byte phẳng listpack không tốn con trỏ phụ (~70% nhẹ hơn tách lẻ String)!',
-                  'RAM secret: Small hashes live inside a flat contiguous listpack byte array with zero pointer overhead — saving ~70% RAM vs separate String keys!'
+                  'Tối ưu bộ nhớ: Khi số trường và độ dài giá trị nằm dưới ngưỡng cấu hình, toàn bộ Hash được đóng gói liền khối trong listpack không tốn con trỏ phụ (~70% nhẹ hơn tách lẻ String).',
+                  'RAM optimization: Small hashes live inside a flat contiguous listpack byte array with zero pointer overhead — saving ~70% RAM vs separate String keys!'
                 )
               : bi(
-                  'Quy tắc kiến trúc Redis 8: Dùng HEXPIRE key sec FIELDS n field... để tự hủy mã giảm giá/OTP tạm ngay trong Hash, và luôn dùng HMGET / HSCAN thay vì HGETALL trên Hash lớn!',
+                  'Quy tắc Redis 8: Dùng HEXPIRE key sec FIELDS n field... để tự hủy mã giảm giá/OTP tạm ngay trong Hash, và luôn dùng HMGET / HSCAN thay vì HGETALL trên Hash lớn.',
                   'Redis 8 rule: Use HEXPIRE key sec FIELDS n field... for per-field TTLs, and always prefer HMGET / HSCAN over blocking HGETALL on large hashes!'
                 );
 
       const whatChanged =
         s === 0
-          ? [{ op: '+' as const, text: bi('Gom các thuộc tính rời của user:42 vào 1 tủ ngăn kéo Hash giúp sửa lẻ từng trường nguyên tử', 'Grouped user:42 attributes into one Hash enabling atomic per-field updates') }]
+          ? [{ op: '+' as const, text: bi('Gom các thuộc tính rời của user:42 vào cấu trúc Hash giúp cập nhật lẻ từng trường nguyên tử', 'Grouped user:42 attributes into one Hash enabling atomic per-field updates') }]
           : s === 1
             ? [{ op: '~' as const, text: bi('Loại bỏ lỗi ghi đè mất dữ liệu (Lost Update) khi 2 request cùng tải và ghi đè chuỗi JSON', 'Eliminated JSON read-modify-write Lost Update races via in-place HINCRBY') }]
             : s === 2 && !isLast
@@ -326,8 +326,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Giải nghĩa bình dân: Redis List là băng chuyền hai đầu ghép từ nhiều toa tàu nén (quicklist) đẩy/rút O(1), còn Redis Set là chiếc rổ tự động khử trùng kiểm tra thành viên tức thì!',
-              'Plain mental model: A Redis List is an O(1) double-ended conveyor of packed cars (quicklist), while a Set is an auto-deduplicating basket!'
+              'Redis List dùng cấu trúc quicklist (danh sách liên kết gồm các khối listpack nén) cho phép thêm/lấy hai đầu đạt O(1); Redis Set lưu tập hợp không trùng lặp với thao tác kiểm tra thành viên SISMEMBER đạt O(1).',
+              'Redis List uses quicklist (a doubly-linked list of packed listpack nodes) for O(1) head/tail ops, while Redis Set stores unique items with O(1) SISMEMBER lookups.'
             )
           : s === 1
             ? bi(
@@ -358,7 +358,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           kind: 'tape',
           title: isLast
             ? bi('Redis Set: Khử trùng O(1) & Nén mảng số nguyên intset', 'Redis Set: O(1) Membership & Compact intset')
-            : bi('Redis quicklist: Băng chuyền hai đầu O(1) có cắt ngọn LTRIM', 'Redis quicklist: Bounded Double-Ended Queue'),
+            : bi('Redis quicklist: Hàng đợi hai đầu O(1) giới hạn độ dài với LTRIM', 'Redis quicklist: Bounded Double-Ended Queue'),
           subtitle: isLast
             ? bi('Lưu thuần số nguyên ≤ 512 mục ➔ tự bật intset liền khối · Kiểm tra SISMEMBER O(1)', 'Pure 64-bit integers ≤ 512 items ➔ contiguous intset · O(1) SISMEMBER')
             : bi('LPUSH chèn đầu trái O(1) · LTRIM 0 4 giữ đúng 5 sự kiện mới nhất · LMOVE bốc cuối phải an toàn', 'LPUSH head O(1) · LTRIM 0 4 caps size · LMOVE pops tail atomically'),
@@ -392,7 +392,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Intermediate',
     primaryMode: 'memory-2d',
     objectives: [
-      bi('Hiểu cấu trúc kép của ZSet: Hash Table (tra điểm O(1)) + Skip List (nhảy tàu tốc hành tìm hạng O(log N))', 'Understand ZSet dual internals: Hash Table O(1) + Skip List express lanes O(log N)'),
+      bi('Hiểu cấu trúc kép của ZSet: Hash Table (tra điểm O(1)) và Skip List nhiều tầng (tìm kiếm và xếp hạng O(log N))', 'Understand ZSet dual internals: Hash Table O(1) + multi-level Skip List O(log N)'),
       bi('Sử dụng cú pháp ZRANGE hợp nhất trên Redis 8 (kèm cờ REV, BYSCORE, LIMIT) và ZADD GT/LT', 'Use unified Redis 8 ZRANGE (REV, BYSCORE, LIMIT) and conditional ZADD GT/LT'),
       bi('Ứng dụng ZSet cho 3 bài toán lớn: Bảng xếp hạng thời gian thực, Cửa sổ trượt Rate Limit & Hẹn giờ Job', 'Apply ZSet to real-time leaderboards, sliding-window rate limiters, and delayed queues'),
     ],
@@ -403,8 +403,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ tàu điện tốc hành: Thay vì dừng ở cả 1.000 nhà ga lẻ, Skip List xây các tầng tàu nhảy cóc 100 ga -> 25 ga -> 5 ga, giúp xếp hạng 10 triệu người chơi chỉ trong ~23 bước nhảy!',
-              'Express metro analogy: Instead of stopping at every station, Skip List express lanes jump 100 -> 25 -> 5 nodes, ranking 10M players in ~23 hops!'
+              'Skip List duy trì thứ tự các phần tử bằng nhiều tầng con trỏ nhảy bước (tầng cao nhảy bước lớn, tầng đáy nối tuần tự), giúp tìm kiếm và xếp hạng trong 10 triệu phần tử chỉ mất ~23 bước so sánh O(log N).',
+              'Skip List maintains sorted elements using multi-level forward pointers (upper levels jump large spans, base level links sequentially), ranking 10M items in ~23 O(log N) hops.'
             )
           : s === 1
             ? bi(
@@ -440,9 +440,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         callout: { kind: calloutKind, text: calloutText },
         memoryScene: {
           kind: 'tree',
-          title: bi('Cấu trúc Kép của ZSet: Tàu tốc hành Skip List + Bảng băm O(1)', 'ZSet Dual Engine: Multi-Level Skip List + O(1) Dict'),
+          title: bi('Cấu trúc kép của ZSet: Skip List nhiều tầng + Bảng băm O(1)', 'ZSet Dual Engine: Multi-Level Skip List + O(1) Dict'),
           nodes: [
-            { id: 'l3a', x: -225, y: -105, label: 'Level 3 Head', sub: bi('tầng tốc hành (span=2)', 'express lane (span=2)'), tone: s === 1 ? 'green' : 'purple' },
+            { id: 'l3a', x: -225, y: -105, label: 'Level 3 Head', sub: bi('tầng cao (span=2)', 'top layer (span=2)'), tone: s === 1 ? 'green' : 'purple' },
             { id: 'l3b', x: 225, y: -105, label: 'Level 3 → 980', sub: bi('nhảy vọt O(log N)', 'O(log N) jump'), tone: s === 1 ? 'green' : 'purple' },
             { id: 'n1', x: -225, y: 12, label: 'An: 120', tone: 'blue' },
             { id: 'n2', x: 0, y: 12, label: 'Bình: 600', sub: bi('bỏ qua ở tầng 3', 'skipped at L3'), tone: 'neutral', pruned: s === 1 },
@@ -471,7 +471,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi('Đếm hàng trăm triệu khách truy cập duy nhất (UV) chỉ tốn cố định 12 KB RAM bằng HyperLogLog', 'Count 100M+ unique visitors in a fixed 12 KB using HyperLogLog'),
-      bi('Dùng Bitmap (1 bit/user) tính chuỗi đăng nhập liên tục và Bloom Filter chặn 100% truy vấn ID ma', 'Track 1-bit flags with Bitmaps and block nonexistent IDs via native Redis 8 Bloom Filters'),
+      bi('Dùng Bitmap (1 bit/user) tính chuỗi đăng nhập liên tục và Bloom Filter chặn các truy vấn ID không tồn tại', 'Track 1-bit flags with Bitmaps and block nonexistent IDs via native Redis 8 Bloom Filters'),
       bi('Tìm tài xế quanh bán kính thực tế bằng GEOSEARCH (nhớ quy tắc Kinh độ đứng trước Vĩ độ!)', 'Query nearby locations with GEOSEARCH remembering Longitude comes before Latitude'),
     ],
     buildStep: (s, total) => {
@@ -481,17 +481,17 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Giải nghĩa bình dân: Ở quy mô 100 triệu user, giữ đủ họ tên trong Set ngốn hàng GB RAM; đánh đổi lấy sai số 0.81% với HyperLogLog ép toàn bộ bộ đếm xuống vừa vặn tờ giấy nhớ 12 KB!',
-              'Plain mental model: At 100M users, storing exact IDs in a Set burns GBs of RAM; trading 0.81% error with HyperLogLog shrinks the counter to a fixed 12 KB!'
+              'Ở quy mô 100 triệu phần tử, lưu toàn bộ ID vào Set tốn hàng GB RAM; HyperLogLog đánh đổi sai số chuẩn 0.81% để giữ dung lượng cố định đúng 12 KB bằng 16,384 thanh ghi xác suất.',
+              'At 100M items, storing exact IDs in a Set burns GBs of RAM; HyperLogLog trades 0.81% standard error to maintain a fixed 12 KB footprint using probabilistic registers.'
             )
           : s === 1
             ? bi(
-                'Chọn công cụ chuẩn: Điểm danh 0/1 theo số báo danh -> Bitmap; đếm lượt người xem duy nhất -> HyperLogLog (12 KB); gác cổng chặn ID không tồn tại -> Bloom Filter (có sẵn trong Redis 8)!',
+                'Chọn công cụ chuẩn: Điểm danh 0/1 theo ID số nguyên -> Bitmap; đếm lượt người xem duy nhất -> HyperLogLog (12 KB); lọc trước các ID không tồn tại -> Bloom Filter (có sẵn trong Redis 8).',
                 'Pick the right tool: 0/1 daily flags -> Bitmap; unique visitor count -> HyperLogLog (12 KB); front-door guard against nonexistent IDs -> native Redis 8 Bloom Filter!'
               )
             : s === 2 && !isLast
               ? bi(
-                  'Định luật bất biến của Bloom Filter: Khi BF.EXISTS trả về 0 nghĩa là CHẮC CHẮN 100% mục đó chưa từng tồn tại trong Database — chặn đứng ngay lập tức không tốn 1 câu SQL nào!',
+                  'Tính chất cốt lõi của Bloom Filter: Khi BF.EXISTS trả về 0 nghĩa là CHẮC CHẮN 100% mục đó chưa từng tồn tại trong Database — chặn ngay lập tức không tốn truy vấn SQL.',
                   'Bloom Filter invariant: BF.EXISTS == 0 means 100% GUARANTEED absent in the database — reject immediately with zero SQL load!'
                 )
               : bi(
@@ -569,21 +569,21 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Giải nghĩa bình dân: Gọi lẻ 500 lệnh giống chạy thang máy 500 chuyến để đưa từng lá thư (chờ mạng RTT mất 250ms); Pipelining bỏ cả 500 lá thư vào 1 túi gửi đi trong 1 chuyến (~1.2ms)!',
-              'Plain mental model: Sending 500 serial commands is 500 elevator trips (250ms RTT); Pipelining drops all 500 letters in one mailbag (~1.2ms)!'
+              'Gửi tuần tự 500 lệnh rời rạc khiến ứng dụng mất 500 lần chờ khứ hồi mạng RTT (~250ms); TCP Pipelining gửi dồn toàn bộ lô lệnh qua socket trong 1 lượt và nhận phản hồi một lần (~1.2ms).',
+              'Sending 500 serial commands incurs 500 network RTT waits (~250ms); TCP Pipelining batches all 500 commands into a single socket flush and response read (~1.2ms).'
             )
           : s === 1
             ? bi(
-                'Mẹo SDK đa ngôn ngữ: Trong Node.js ioredis, redis.pipeline() là Pure Pipeline; còn trong Python redis-py, nhớ truyền r.pipeline(transaction=False) nếu không cần bọc MULTI/EXEC!',
+                'Mẹo SDK đa ngôn ngữ: Trong Node.js ioredis, redis.pipeline() là Pure Pipeline; còn trong Python redis-py, nhớ truyền r.pipeline(transaction=False) nếu không cần bọc MULTI/EXEC.',
                 'SDK tip: In Node ioredis, redis.pipeline() is pure batching; in Python redis-py, pass r.pipeline(transaction=False) when you do not need MULTI/EXEC!'
               )
             : rollbackTrap
               ? bi(
-                  'Cú sốc lớn nhất khi từ SQL sang Redis: Trong MULTI ... EXEC, nếu lệnh #2 bị lỗi kiểu dữ liệu (WRONGTYPE), lệnh #1 và #3 VẪN CHẠY THÀNH CÔNG, hoàn toàn KHÔNG có Rollback!',
-                  'Biggest shock coming from SQL: Inside MULTI ... EXEC, if command #2 fails at runtime (WRONGTYPE), commands #1 and #3 STILL COMMIT — zero rollback!'
+                  'Khác biệt quan trọng so với SQL: Trong MULTI ... EXEC, nếu lệnh #2 bị lỗi kiểu dữ liệu (WRONGTYPE), lệnh #1 và #3 VẪN CHẠY THÀNH CÔNG, Redis không tự động Rollback.',
+                  'Key difference from SQL: Inside MULTI ... EXEC, if command #2 fails at runtime (WRONGTYPE), commands #1 and #3 STILL COMMIT — zero rollback!'
                 )
               : bi(
-                  'Quy tắc kiến trúc: Dùng WATCH trước MULTI cho khóa ít đụng độ (nếu đụng độ cao như Flash Sale, hãy chuyển sang Lua ở R07!) và luôn dọn khóa lớn bằng UNLINK + lazyfree.',
+                  'Quy tắc kiến trúc: Dùng WATCH trước MULTI cho khóa ít đụng độ (nếu đụng độ cao như Flash Sale, hãy chuyển sang Lua ở R07) và luôn dọn khóa lớn bằng UNLINK + lazyfree.',
                   'Architect rule: Use WATCH + MULTI for low-contention optimistic updates (switch to Lua in R07 under heavy contention!) and delete big keys via UNLINK.'
                 );
 
@@ -594,7 +594,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ? [{ op: '+' as const, text: bi('Đóng gói 200 lệnh vào 1 chuyến TCP Pipeline giúp vọt thông lượng gấp hàng chục lần', 'Flushed 200 commands in one TCP Pipeline round-trip boosting throughput >20×') }]
             : rollbackTrap
               ? [{ op: '~' as const, text: bi('Lệnh lỗi kiểu WRONGTYPE lúc chạy EXEC không hoàn tác các lệnh hợp lệ đứng trước và sau nó!', 'Runtime WRONGTYPE error inside EXEC left sibling commands committed without rollback!') }]
-              : [{ op: '+' as const, text: bi('Gắn camera khóa lạc quan WATCH trước MULTI và bật thu hồi nền UNLINK + lazyfree-lazy-*', 'Armed WATCH optimistic CAS guard and enabled non-blocking UNLINK + lazyfree') }];
+              : [{ op: '+' as const, text: bi('Áp dụng khóa lạc quan WATCH trước MULTI và bật thu hồi nền UNLINK + lazyfree-lazy-*', 'Armed WATCH optimistic CAS guard and enabled non-blocking UNLINK + lazyfree') }];
 
       return {
         telemetry: [
@@ -647,7 +647,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     objectives: [
       bi('Hiểu vì sao đọc GET về ứng dụng rồi mới gửi DECR luôn dính lỗi bán âm kho (TOCTOU Race Condition)', 'See why app-side GET followed by DECR causes inventory overselling under concurrency'),
       bi('Gói trọn kiểm tra + trừ kho vào kịch bản Lua chạy nguyên tử 100% qua EVALSHA / register_script', 'Fuse check-and-decrement into an atomic server-side Lua script via EVALSHA'),
-      bi('Tuân thủ 3 luật vàng Lua: chỉ số đếm từ 1, ép kiểu tonumber(), và truyền mọi tên khóa qua KEYS[]', 'Follow the 3 Lua rules: 1-based indexing, tonumber() casts, and explicit KEYS[]'),
+      bi('Tuân thủ 3 quy tắc bắt buộc của Lua: chỉ số đếm từ 1, ép kiểu tonumber(), và truyền mọi tên khóa qua KEYS[]', 'Follow the 3 Lua rules: 1-based indexing, tonumber() casts, and explicit KEYS[]'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -657,8 +657,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Giải nghĩa bình dân: Đọc số dư về app rồi mới trừ tiền giống hỏi thủ quỹ qua điện thoại rồi cúp máy gọi lại — người khác rút mất ở giữa! Gửi kịch bản Lua là đưa phiếu cho thủ quỹ kiểm tra và gạch sổ liền tay!',
-              'Plain mental model: App-side GET then DECR leaves a network gap where concurrent buyers slip in; Lua hands the check-and-deduct slip directly to the single-threaded cashier!'
+              'Tách thành 2 lệnh GET rồi DECR từ phía ứng dụng tạo khoảng trễ mạng để request khác xen vào giữa (TOCTOU Race Condition); gửi kịch bản Lua giúp kiểm tra điều kiện và cập nhật nguyên tử ngay trên luồng chính Redis trong 1 RTT.',
+              'Splitting GET then DECR on the client leaves a network gap for concurrent writes (TOCTOU Race Condition); a Lua script executes check-and-update atomically on Redis in 1 RTT.'
             )
           : s === 1
             ? bi(
@@ -671,8 +671,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   'Bandwidth pro-tip: Use Python r.register_script() or ioredis defineCommand() to cache the script once and execute via lightweight 40-char SHA1 EVALSHA!'
                 )
               : bi(
-                  'Ba luật thép viết Lua: (1) Mảng đếm từ KEYS[1], ARGV[1]; (2) Luôn bọc tonumber() vì chuỗi "9" > "10" là true!; (3) Cấm tự ghép tên khóa ngoài KEYS[] để tương thích Redis Cluster!',
-                  'Three iron Lua rules: (1) 1-based KEYS[1], ARGV[1]; (2) Always wrap tonumber() ("9" > "10" lexicographically!); (3) Never build key names outside KEYS[]!'
+                  'Ba quy tắc bắt buộc khi viết Lua: (1) Mảng đếm từ KEYS[1], ARGV[1]; (2) Luôn bọc tonumber() vì chuỗi "9" > "10" là true; (3) Không tự ghép tên khóa ngoài KEYS[] để tương thích Redis Cluster.',
+                  'Three mandatory Lua rules: (1) 1-based KEYS[1], ARGV[1]; (2) Always wrap tonumber() ("9" > "10" lexicographically!); (3) Never build key names outside KEYS[]!'
                 );
 
       const whatChanged =
@@ -733,8 +733,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Intermediate',
     primaryMode: 'isometric',
     objectives: [
-      bi('Phân biệt rõ Pub/Sub (đài FM trực tiếp, rớt mạng là mất tin) với Redis Streams lưu nhật ký bền vững', 'Contrast ephemeral live-radio Pub/Sub with durable append-only Redis Streams'),
-      bi('Hiểu vòng đời sổ theo dõi PEL (Pending Entries List), đóng dấu XACK và giải cứu tin kẹt bằng XAUTOCLAIM', 'Master Consumer Group PEL tracking, XACK confirmation, and XAUTOCLAIM crash recovery'),
+      bi('Phân biệt rõ Pub/Sub (truyền tin tức thời không lưu trữ) với Redis Streams (Event Log bền vững)', 'Contrast ephemeral fire-and-forget Pub/Sub with durable append-only Redis Streams'),
+      bi('Hiểu vòng đời danh sách chờ PEL (Pending Entries List), xác nhận XACK và thu hồi tin treo bằng XAUTOCLAIM', 'Master Consumer Group PEL tracking, XACK confirmation, and XAUTOCLAIM crash recovery'),
       bi('Biết khi nào chọn Celery/ARQ/BullMQ, khi nào chọn Redis Streams và khi nào mới cần tới Apache Kafka', 'Choose wisely among Celery/ARQ/BullMQ, Redis Streams, and Apache Kafka'),
     ],
     buildStep: (s, total) => {
@@ -746,8 +746,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ bình dân: Pub/Sub như đài FM phát trực tiếp (ai tắt đài 2 giây lúc deploy là mất tin mãi mãi); Redis Streams là nhóm chat lưu trọn lịch sử kèm sổ ký nhận bàn giao PEL!',
-              'Plain analogy: Pub/Sub is live FM radio (disconnect for 2s during deploy and messages vanish); Redis Streams is a recorded log with a Pending Entries List (PEL) receipt book!'
+              'Pub/Sub gửi tin tức thời nhưng không lưu trữ (client mất kết nối trong lúc deploy sẽ mất tin); Redis Streams lưu Event Log bền vững kết hợp Consumer Group và danh sách chờ xác nhận PEL.',
+              'Pub/Sub delivers messages immediately without persistence (offline clients miss messages); Redis Streams stores a durable Event Log with Consumer Groups and Pending Entries List (PEL).'
             )
           : s === 1
             ? bi(
@@ -756,8 +756,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               )
             : pelStep
               ? bi(
-                  'Hai quả bom tràn RAM cần nhớ: (1) XACK chỉ xóa khỏi sổ chờ PEL chứ không xóa tin gốc — luôn gắn XADD MAXLEN ~ 10000!; (2) Worker sập để lại tin mồ côi trong PEL — phải quét XAUTOCLAIM!',
-                  'Two RAM time-bombs: (1) XACK clears PEL, NOT the stream — always cap via XADD MAXLEN ~ 10000!; (2) Crashed workers leave orphaned PEL entries — reclaim via XAUTOCLAIM!'
+                  'Hai nguyên nhân dễ gây tràn RAM cần tránh: (1) XACK chỉ xóa khỏi PEL chứ không xóa tin gốc — luôn gắn XADD MAXLEN ~ 10000; (2) Worker sập để lại tin mồ côi trong PEL — phải quét XAUTOCLAIM.',
+                  'Two common RAM leak pitfalls: (1) XACK clears PEL, NOT the stream — always cap via XADD MAXLEN ~ 10000; (2) Crashed workers leave orphaned PEL entries — reclaim via XAUTOCLAIM.'
                 )
               : bi(
                   'Quy tắc kiến trúc sư: Vì Streams giao tin At-Least-Once (có thể giao lại qua XAUTOCLAIM khi pod cũ sập), hàm xử lý đơn hàng của Worker bắt buộc phải thiết kế chống chạy trùng (Idempotent)!',
@@ -766,7 +766,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
 
       const whatChanged =
         s === 0
-          ? [{ op: '+' as const, text: bi('Nâng cấp từ loa phát thanh Pub/Sub dễ mất tin sang nhật ký bền vững Redis Streams có lưu vết', 'Upgraded from ephemeral Pub/Sub to durable append-only Redis Streams') }]
+          ? [{ op: '+' as const, text: bi('Nâng cấp từ Pub/Sub không lưu trữ sang nhật ký bền vững Redis Streams có lưu vết', 'Upgraded from ephemeral Pub/Sub to durable append-only Redis Streams') }]
           : s === 1
             ? [{ op: '+' as const, text: bi('Tạo Consumer Group chia việc song song cho nhiều Worker kèm cắt ngọn xấp xỉ MAXLEN ~ O(1)', 'Created Consumer Group scaling workers horizontally with O(1) MAXLEN ~ trimming') }]
             : pelStep
@@ -847,8 +847,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ quán cà phê: PostgreSQL là kho lạnh tầng hầm (đi lấy mất 25ms), còn Redis là kệ nguyên liệu ngay tầm tay Barista (0.4ms). Khó nhất là khi đổi công thức dưới hầm phải dọn ngay bình cũ trên kệ!',
-              'Barista analogy: Postgres is the basement freezer (25ms), while Redis is the counter shelf (0.4ms). The hardest part is invalidating stale jars on the shelf when recipes change!'
+              'Đặt Redis làm bộ nhớ đệm trước PostgreSQL giúp giảm độ trễ đọc từ ~25ms xuống ~0.4ms; điểm khó nhất là làm mất hiệu lực bản đệm cũ (Cache Invalidation) kịp thời khi dữ liệu gốc thay đổi.',
+              'Placing Redis in front of PostgreSQL cuts read latency from ~25ms to ~0.4ms; the hardest challenge is timely Cache Invalidation when underlying database rows change.'
             )
           : s === 1
             ? bi(
@@ -862,7 +862,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 )
               : s === 3 && !isLast
                 ? bi(
-                    'Ba vũ khí vận hành êm ái: Nhúng hậu tố phiên bản (cache:product:v2:108) khi đổi cấu trúc JSON, lưu "__NULL__" ngắn hạn 45s cho ID rỗng, và tận dụng cashews (Python) / bentocache (Node.js)!',
+                    'Ba kỹ thuật tối ưu vận hành: Nhúng hậu tố phiên bản (cache:product:v2:108) khi đổi cấu trúc JSON, lưu "__NULL__" ngắn hạn 45s cho ID rỗng, và tận dụng cashews (Python) / bentocache (Node.js).',
                     'Zero-downtime caching trio: Versioned keys (v2) during schema rollouts, 45s "__NULL__" negative cache sentinels, and L1+L2 libraries like cashews / bentocache!'
                   )
                 : bi(
@@ -872,7 +872,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
 
       const whatChanged =
         s === 0
-          ? [{ op: '+' as const, text: bi('Đặt kệ đệm Redis đứng trước PostgreSQL hạ độ trễ đọc từ 25ms xuống 0.4ms (-92% tải DB)', 'Placed Redis cache in front of PostgreSQL cutting read latency from 25ms to 0.4ms') }]
+          ? [{ op: '+' as const, text: bi('Đặt tầng đệm Redis đứng trước PostgreSQL hạ độ trễ đọc từ 25ms xuống 0.4ms (-92% tải DB)', 'Placed Redis cache in front of PostgreSQL cutting read latency from 25ms to 0.4ms') }]
           : s === 1
             ? [{ op: '+' as const, text: bi('So sánh 4 mô hình Cache-Aside, Write-Through, Write-Behind và Stale-While-Revalidate', 'Mapped trade-offs across Cache-Aside, Write-Through, Write-Behind, and SWR') }]
             : dualWriteBug
@@ -929,9 +929,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'isometric',
     objectives: [
-      bi('Chặn Cache Stampede (1.000 người ùa vào bếp khi 1 khóa nóng hết hạn) bằng Singleflight + Mutex Lock', 'Stop Cache Stampede on hot-key expiry using Singleflight coalescing + Redis Mutex'),
-      bi('Chặn Cache Penetration (quét hàng triệu ID ảo không tồn tại) bằng Bloom Filter + Negative Cache ngắn hạn', 'Defeat Cache Penetration scans with front-door Bloom Filters + short-TTL null sentinels'),
-      bi('Chống Cache Avalanche (vạn khóa tắt điện cùng 1 giây) bằng cộng độ lệch ngẫu nhiên TTL Jitter', 'Prevent synchronized Cache Avalanche by adding ±15% random TTL Jitter'),
+      bi('Chặn Cache Stampede (nhiều luồng cùng truy vấn DB khi 1 khóa nóng hết hạn) bằng Singleflight + Mutex Lock', 'Stop Cache Stampede on hot-key expiry using Singleflight coalescing + Redis Mutex'),
+      bi('Chặn Cache Penetration (truy vấn hàng loạt ID không tồn tại) bằng Bloom Filter + Negative Cache ngắn hạn', 'Defeat Cache Penetration scans with front-door Bloom Filters + short-TTL null sentinels'),
+      bi('Chống Cache Avalanche (nhiều khóa hết hạn cùng một thời điểm) bằng cộng độ lệch ngẫu nhiên TTL Jitter', 'Prevent synchronized Cache Avalanche by adding ±15% random TTL Jitter'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -941,8 +941,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ tiệm bánh giờ cao điểm: Stampede là 1.000 khách ùa vào bếp khi biển giá bánh Best-seller vừa gỡ; Penetration là hỏi món không hề có trên đời; Avalanche là cả 50 tủ bánh tắt điện cùng 1 giây!',
-              'Bakery analogy: Stampede = 1,000 shoppers rushing the kitchen when 1 hot cake sign expires; Penetration = asking for nonexistent items; Avalanche = all 50 displays expiring at the exact same second!'
+              'Phân biệt 3 sự cố Caching: Stampede xảy ra khi 1 khóa nóng hết hạn khiến hàng nghìn request cùng xuống DB; Penetration là truy vấn các ID không tồn tại xuyên qua Cache; Avalanche là hàng loạt khóa hết hạn cùng thời điểm.',
+              'Distinguish the 3 cache failures: Stampede occurs when one hot key expires under burst load; Penetration hits nonexistent IDs; Avalanche happens when massive keys expire simultaneously.'
             )
           : s === 1
             ? bi(
@@ -951,17 +951,17 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               )
             : s === 2
               ? bi(
-                  'Cảnh báo Penetration: Lưu "__NULL__" đơn thuần vẫn bị hacker sinh 10 triệu UUID ngẫu nhiên bơm tràn RAM! Hãy đặt Bloom Filter (BF.EXISTS) chặn đứng 100% ID ma ngay từ cửa ngõ!',
+                  'Cảnh báo Penetration: Lưu "__NULL__" đơn thuần vẫn bị hacker sinh 10 triệu UUID ngẫu nhiên bơm tràn RAM! Hãy đặt Bloom Filter (BF.EXISTS) chặn đứng 100% ID không tồn tại ngay từ cửa ngõ.',
                   'Penetration trap: Naive "__NULL__" caching still lets attackers flood RAM with 10M random UUIDs! Place a Bloom Filter (BF.EXISTS) in front to drop 100% of fake IDs!'
                 )
               : s === 3 && !isLast
                 ? bi(
-                    'Chống Avalanche đơn giản mà cực hiệu quả: Không bao giờ đặt cứng EX 3600 cho lô 50.000 sản phẩm — luôn cộng thêm TTL Jitter ngẫu nhiên 10%–20% để rải phẳng đường cong hết hạn!',
+                    'Chống Avalanche đơn giản mà hiệu quả: Không đặt cứng EX 3600 cho lô 50.000 sản phẩm — luôn cộng thêm TTL Jitter ngẫu nhiên 10%–20% để rải đều thời điểm hết hạn.',
                     'Avalanche cure: Never assign an identical EX 3600 to 50,000 batch-loaded keys — always add 10%–20% random TTL Jitter to flatten expiration spikes!'
                   )
                 : bi(
-                    'Pháo đài 3 lớp hoàn chỉnh: Validate + Bloom Filter ở vòng ngoài ➔ Singleflight + Mutex cho khóa nóng ➔ Negative Cache + TTL Jitter khi ghi lại lên Redis!',
-                    'Complete 3-layer fortress: Input check + Bloom Filter at the edge ➔ Singleflight + Mutex for hot keys ➔ Negative Cache + TTL Jitter on populate!'
+                    'Kiến trúc phòng vệ kết hợp 3 lớp: Validate + Bloom Filter ở vòng ngoài ➔ Singleflight + Mutex cho khóa nóng ➔ Negative Cache + TTL Jitter khi ghi lại lên Redis.',
+                    'Complete 3-layer defense: Input check + Bloom Filter at the edge ➔ Singleflight + Mutex for hot keys ➔ Negative Cache + TTL Jitter on populate.'
                   );
 
       const whatChanged =
@@ -975,9 +975,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
 
       return {
         telemetry: [
-          { label: bi('BÃO KHÓA NÓNG', 'HOT-KEY MISS'), value: unguarded ? bi('10,000 QPS tràn vào DB!', '10,000 QPS hit DB!') : bi('Đúng 1 câu SQL (Singleflight)', '1 SQL query (Singleflight)'), tone: unguarded ? 'bad' : 'ok' },
-          { label: bi('CHẶN ID MA', 'PENETRATION'), value: s >= 2 ? bi('Bloom BF.EXISTS + Null 45s', 'Bloom BF.EXISTS + Null 45s') : bi('Đang mở khiên...', 'Arming shield...'), tone: s >= 2 ? 'ok' : 'warn' },
-          { label: bi('CHỐNG TUYẾT LỞ', 'AVALANCHE'), value: s >= 3 ? bi('TTL + Jitter ngẫu nhiên', 'TTL + random jitter') : bi('Cần thêm Jitter!', 'Add TTL Jitter!'), tone: s >= 3 ? 'ok' : 'warn' },
+          { label: bi('TRUY VẤN KHÓA NÓNG', 'HOT-KEY MISS'), value: unguarded ? bi('10,000 QPS tràn vào DB!', '10,000 QPS hit DB!') : bi('Đúng 1 câu SQL (Singleflight)', '1 SQL query (Singleflight)'), tone: unguarded ? 'bad' : 'ok' },
+          { label: bi('CHỐNG PENETRATION', 'PENETRATION'), value: s >= 2 ? bi('Bloom BF.EXISTS + Null 45s', 'Bloom BF.EXISTS + Null 45s') : bi('Đang bật bảo vệ...', 'Arming guard...'), tone: s >= 2 ? 'ok' : 'warn' },
+          { label: bi('CHỐNG AVALANCHE', 'AVALANCHE'), value: s >= 3 ? bi('TTL + Jitter ngẫu nhiên', 'TTL + random jitter') : bi('Cần thêm Jitter!', 'Add TTL Jitter!'), tone: s >= 3 ? 'ok' : 'warn' },
         ],
         whatChanged,
         callout: { kind: calloutKind, text: calloutText },
@@ -1034,8 +1034,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ chìa khóa phòng họp chung: Phải gắn đồng hồ cát tự bung chốt (PX) phòng người bên trong ngất xỉu, và gắn thẻ tên riêng (UUID) để lúc ra ngoài không bấm nhầm mở cửa của người kế tiếp!',
-              'Phone-booth lock analogy: Attach an auto-expire hourglass (PX) against crashes, plus an owner nametag (UUID) so a late worker never unlocks someone else’s booth!'
+              'Khóa phân tán trên Redis dùng lệnh nguyên tử SET key uuid NX PX ms để đặt thời gian tự hết hạn (tránh Deadlock khi worker sập) và gắn mã UUID duy nhất để khi mở khóa bằng Lua không xóa nhầm khóa của worker khác.',
+              'Redis distributed locks use atomic SET key uuid NX PX ms for crash-safe expiration and a unique owner UUID so Lua Compare-And-Delete never removes another worker’s lock.'
             )
           : s === 1
             ? bi(
@@ -1110,9 +1110,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'memory-2d',
     objectives: [
-      bi('Phân biệt rõ LRU (vứt món lâu chưa đụng) với LFU (giữ lại món Best-seller có tần suất đọc cao nhất)', 'Contrast LRU recency eviction with LFU frequency protection against cache pollution'),
-      bi('Đọc vị chỉ số phân mảnh mem_fragmentation_ratio trên trình cấp phát jemalloc và bật activedefrag', 'Diagnose jemalloc mem_fragmentation_ratio (<1.0 swap danger vs >1.5 fragmentation)'),
-      bi('Áp dụng quy tắc vàng trên Docker/K8s: đặt maxmemory ~65%–70% giới hạn RAM của Pod chống OOMKilled 137', 'Set Redis maxmemory to ~65%–70% of Kubernetes Pod memory limits to prevent OOMKills'),
+      bi('Phân biệt rõ cơ chế đào thải LRU (lâu chưa truy cập) và LFU (tần suất truy cập thấp nhất)', 'Contrast LRU recency eviction with LFU frequency protection against cache pollution'),
+      bi('Kiểm tra chỉ số phân mảnh mem_fragmentation_ratio trên trình cấp phát jemalloc và bật activedefrag', 'Diagnose jemalloc mem_fragmentation_ratio (<1.0 swap danger vs >1.5 fragmentation)'),
+      bi('Áp dụng giới hạn an toàn trên Docker/K8s: đặt maxmemory ~65%–70% giới hạn RAM của Pod để tránh OOMKilled (Exit Code 137)', 'Set Redis maxmemory to ~65%–70% of Kubernetes Pod memory limits to prevent OOMKills'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -1121,13 +1121,13 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ kệ sách 100 cuốn: Khi mua cuốn thứ 101, noeviction từ chối nhận thêm (dùng cho Queue/Lock); allkeys-lru vứt cuốn lâu chưa ai sờ; còn allkeys-lfu giữ chặt các cuốn Best-seller hay được đọc nhất!',
-              '100-book shelf analogy: On book #101, noeviction refuses writes (for Queues/Locks); allkeys-lru drops least-recent; allkeys-lfu protects high-frequency bestsellers!'
+              'Khi bộ nhớ chạm maxmemory: noeviction từ chối lệnh ghi mới (phù hợp cho Queue/Lock); allkeys-lru xóa khóa lâu chưa truy cập; allkeys-lfu xóa khóa có tần suất đọc thấp nhất để bảo vệ các khóa nóng.',
+              'When memory hits maxmemory: noeviction rejects writes (for Queues/Locks); allkeys-lru evicts least-recently-used keys; allkeys-lfu protects frequently accessed hot keys.'
             )
           : s === 1
             ? bi(
-                'Đọc nhiệt kế INFO memory: Tỷ số phân mảnh 1.0–1.4 là đẹp; > 1.5 là lỗ chỗ trang nhớ jemalloc (bật activedefrag yes); còn < 1.0 là BÁO ĐỘNG ĐỎ đang tràn sang ổ cứng Swap!',
-                'INFO memory thermometer: Fragmentation 1.0–1.4 is healthy; >1.5 needs activedefrag yes; <1.0 means RED ALERT — Linux is swapping Redis pages to disk!'
+                'Kiểm tra INFO memory: mem_fragmentation_ratio từ 1.0–1.4 là ổn định; > 1.5 cho thấy phân mảnh cao (bật activedefrag yes); < 1.0 cảnh báo Redis đang bị đẩy xuống Swap ổ đĩa!',
+                'INFO memory check: Fragmentation 1.0–1.4 is healthy; >1.5 needs activedefrag yes; <1.0 means RED ALERT — Linux is swapping Redis pages to disk!'
               )
             : s === 2 && !isLast
               ? bi(
@@ -1135,8 +1135,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                   'Separate roles cleanly: Pure Cache instances use allkeys-lfu + lazyfree-lazy-eviction yes; Streams / task queues MUST keep noeviction!'
                 )
               : bi(
-                  'Quy tắc sống còn trên Kubernetes: Pod giới hạn 4 GiB thì maxmemory chỉ đặt ~2.6 GiB (65%)! 35% còn lại là khoảng thở bắt buộc cho BGSAVE Copy-on-Write và bộ đệm kết nối chống OOMKilled 137.',
-                  'Kubernetes survival rule: On a 4 GiB Pod, cap maxmemory at ~2.6 GiB (65%) — reserve 35% headroom for fork Copy-on-Write and output buffers against OOMKill 137!'
+                  'Cấu hình an toàn trên Kubernetes: Pod giới hạn 4 GiB thì maxmemory chỉ đặt ~2.6 GiB (65%)! 35% còn lại là khoảng dự phòng bắt buộc cho BGSAVE Copy-on-Write và bộ đệm kết nối tránh OOMKilled 137.',
+                  'Kubernetes safety rule: On a 4 GiB Pod, cap maxmemory at ~2.6 GiB (65%) — reserve 35% headroom for fork Copy-on-Write and output buffers against OOMKill 137!'
                 );
 
       const whatChanged =
@@ -1161,8 +1161,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           title: bi('Phân bổ Ngân sách RAM 4 GiB Chuẩn Production trên Docker / Kubernetes', 'Production 4 GiB Container Memory Budget'),
           subtitle:
             s === 1
-              ? bi('used_memory_rss / used_memory: 1.0..1.4 chuẩn · >1.5 phân mảnh cao · <1.0 nguy hiểm tràn Swap!', 'rss / used_memory: 1.0..1.4 ideal · >1.5 fragmented · <1.0 swapping to disk!')
-              : bi('Tuyệt đối không đặt maxmemory == 100% giới hạn Pod — luôn chừa 35% khoảng thở chống OOMKilled 137!', 'Never set maxmemory == 100% of Pod limit — keep 35% headroom against OOMKill 137!'),
+              ? bi('used_memory_rss / used_memory: 1.0..1.4 ổn định · >1.5 phân mảnh cao · <1.0 nguy hiểm tràn Swap!', 'rss / used_memory: 1.0..1.4 ideal · >1.5 fragmented · <1.0 swapping to disk!')
+              : bi('Không đặt maxmemory == 100% giới hạn Pod — luôn chừa 35% bộ nhớ dự phòng tránh OOMKilled 137.', 'Never set maxmemory == 100% of Pod limit — keep 35% headroom against OOMKill 137!'),
           cells: ['Dataset 65%', 'CoW Fork 20%', 'Buffers 10%', 'jemalloc 5%'],
           activeIndices: s === 0 ? [0] : s === 1 ? [0, 3] : s === 2 ? [0, 2] : [0, 1, 2, 3],
           pointers: [
@@ -1188,8 +1188,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'isometric',
     objectives: [
-      bi('Phân biệt ảnh chụp nén định kỳ RDB (dump.rdb) với sổ nhật ký ghi nối đuôi AOF và bản lai Hybrid RDB+AOF', 'Contrast compact RDB snapshots, append-only AOF logs, and Redis 7/8 Hybrid RDB+AOF'),
-      bi('Hiểu phép thuật fork() Copy-on-Write giúp BGSAVE ghi 20GB ra đĩa mà không làm đứng hình luồng chính', 'Understand how OS fork() Copy-on-Write lets BGSAVE snapshot RAM without blocking traffic'),
+      bi('Phân biệt ảnh chụp nhị phân định kỳ RDB (dump.rdb) với nhật ký ghi nối đuôi AOF và bản lai Hybrid RDB+AOF', 'Contrast compact RDB snapshots, append-only AOF logs, and Redis 7/8 Hybrid RDB+AOF'),
+      bi('Hiểu cơ chế OS fork() Copy-on-Write giúp BGSAVE ghi 20GB ra đĩa mà không chặn luồng chính', 'Understand how OS fork() Copy-on-Write lets BGSAVE snapshot RAM without blocking traffic'),
       bi('Chọn chuẩn appendfsync everysec, tắt SAVE đồng bộ và bật vm.overcommit_memory=1 + tắt THP trên Linux', 'Use appendfsync everysec, ban synchronous SAVE, and tune Linux overcommit_memory & THP'),
     ],
     buildStep: (s, total) => {
@@ -1200,23 +1200,23 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ dễ hiểu: RDB là tấm ảnh chụp toàn cảnh kho hàng mỗi 15 phút (nhẹ, bật máy cực nhanh); AOF là cuốn sổ ghi từng giao dịch mỗi giây; Hybrid AOF kẹp tấm ảnh lên trang đầu cuốn sổ để được cả đôi đường!',
-              'Plain analogy: RDB is a periodic warehouse photo (compact, fast boot); AOF is a per-second transaction diary; Hybrid AOF staples the RDB photo onto page 1 of the diary!'
+              'RDB lưu ảnh chụp dữ liệu nhị phân định kỳ (gọn, khởi động lại nhanh); AOF ghi nối từng lệnh thay đổi xuống đĩa mỗi giây; Hybrid AOF kết hợp phần đầu RDB nén và phần đuôi AOF để vừa an toàn dữ liệu vừa phục hồi nhanh.',
+              'RDB saves compact point-in-time binary snapshots (fast boot); AOF logs every write command each second; Hybrid AOF combines an RDB base preamble with an AOF tail for fast, durable recovery.'
             )
           : s === 1
             ? bi(
-                'Phép thuật Copy-on-Write: Khi gọi BGSAVE, tiến trình con dùng chung bảng trang RAM với cha — chỉ trang 4KB nào vừa bị khách sửa mới được nhân bản riêng! Tuyệt đối cấm gõ lệnh SAVE đồng bộ!',
-                'Copy-on-Write magic: During BGSAVE, the forked child shares memory pages with the parent — Linux copies only the 4KB pages mutated during the save! Never run synchronous SAVE!'
+                'Cơ chế Copy-on-Write: Khi chạy BGSAVE, tiến trình con dùng chung bảng trang RAM với tiến trình cha — Linux chỉ sao chép trang 4KB nào có ghi mới, giúp luồng chính tiếp tục phục vụ bình thường. Không dùng lệnh SAVE đồng bộ.',
+                'Copy-on-Write mechanism: During BGSAVE, the forked child shares memory pages with the parent — Linux copies only mutated 4KB pages so traffic stays unblocked. Never run synchronous SAVE!'
               )
             : fsyncAlwaysTrap
               ? bi(
-                  'Điểm cân bằng vàng: appendfsync always ép ổ đĩa ở từng lệnh làm tụt thông lượng 50 lần; appendfsync everysec giữ tốc độ như RAM thuần mà rút phích điện đột ngột chỉ mất tối đa ≤ 1 giây!',
+                  'Lựa chọn cân bằng hiệu năng và an toàn: appendfsync always ép ổ đĩa ở từng lệnh làm tụt thông lượng 50 lần; appendfsync everysec giữ tốc độ như RAM thuần mà mất điện đột ngột chỉ mất tối đa ≤ 1 giây.',
                   'Durability sweet spot: appendfsync always tanks throughput 50× waiting on disk IOPS; appendfsync everysec runs at RAM speed with ≤ 1 second worst-case data loss!'
                 )
               : s === 3 && !isLast
                 ? bi(
-                    'Hai tham số nhân Linux cứu mạng lúc nửa đêm: Bật sysctl vm.overcommit_memory=1 (tránh lỗi fork thiếu RAM giả) và tắt Transparent Huge Pages = never (tránh nhân bản tảng 2MB gây giật)!',
-                    'Two midnight-saving Linux tunings: Set vm.overcommit_memory=1 (so fork() never fails above 50% RAM) and disable Transparent Huge Pages (keep 4KB CoW pages)!'
+                    'Hai tham số nhân Linux quan trọng khi chạy Persistence: Bật sysctl vm.overcommit_memory=1 (tránh lỗi fork thiếu RAM giả) và tắt Transparent Huge Pages = never (tránh nhân bản tảng 2MB gây giật).',
+                    'Two essential Linux kernel tunings: Set vm.overcommit_memory=1 (so fork() never fails above 50% RAM) and disable Transparent Huge Pages (keep 4KB CoW pages)!'
                   )
                 : bi(
                     'Quy tắc triển khai Container: Cụm Pure Cache tắt sạch ghi đĩa (save "" + appendonly no); cụm Durable bật Hybrid AOF everysec và bắt buộc gắn Volume bền vững vào thư mục /data!',
@@ -1289,9 +1289,9 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'isometric',
     objectives: [
-      bi('Hiểu cuộn băng ghi âm repl-backlog-size giúp PSYNC2 đồng bộ bù siêu nhẹ thay vì Full Resync nặng nề', 'Size repl-backlog-size properly so brief disconnects use fast PSYNC2 partial resync'),
-      bi('Nắm quy trình 4 bước tự động chuyển đổi dự phòng của hội đồng 3 Sentinel (SDOWN ➔ ODOWN Quorum ➔ Failover)', 'Trace 3-Sentinel failover: SDOWN -> ODOWN Quorum -> Leader vote -> REPLICAOF NO ONE'),
-      bi('Khóa van chống mất dữ liệu khi đứt cáp Split-Brain bằng min-replicas-to-write 1 và kết nối qua Sentinel SDK', 'Bound Split-Brain loss via min-replicas-to-write and connect apps via Sentinel SDKs'),
+      bi('Cấu hình vùng đệm vòng repl-backlog-size giúp PSYNC2 đồng bộ bù nhanh thay vì Full Resync nặng nề', 'Size repl-backlog-size properly so brief disconnects use fast PSYNC2 partial resync'),
+      bi('Nắm quy trình 4 bước tự động chuyển đổi dự phòng của cụm 3 Sentinel (SDOWN ➔ ODOWN Quorum ➔ Failover)', 'Trace 3-Sentinel failover: SDOWN -> ODOWN Quorum -> Leader vote -> REPLICAOF NO ONE'),
+      bi('Phòng chống mất dữ liệu do Split-Brain bằng min-replicas-to-write 1 và kết nối qua Sentinel SDK', 'Bound Split-Brain loss via min-replicas-to-write and connect apps via Sentinel SDKs'),
     ],
     buildStep: (s, total) => {
       const isLast = s >= total - 1;
@@ -1302,8 +1302,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ Bếp trưởng & Hội đồng 3 Trọng tài: Master nấu chính, 2 Replica chép theo; nếu Master ngất xỉu và tối thiểu 2/3 Trọng tài Sentinel cùng xác nhận (ODOWN), Replica cập nhật đủ nhất sẽ tự động lên thay trong vài giây!',
-              'Head Chef & 3 Referees analogy: Master writes, Replicas follow; when ≥2/3 Sentinels confirm Master is down (ODOWN), the freshest Replica is promoted automatically in seconds!'
+              'Master nhận lệnh ghi và sao chép bất đồng bộ sang các Replica; khi Master mất kết nối và đủ Quorum Sentinel (ví dụ 2/3) xác nhận ODOWN, Sentinel bầu Leader và thăng cấp Replica cập nhật nhất lên làm Master mới.',
+              'Master handles writes and replicates asynchronously to Replicas; when a Sentinel quorum (e.g., 2/3) confirms ODOWN, Sentinel elects a leader and promotes the freshest Replica automatically.'
             )
           : s === 1
             ? bi(
@@ -1317,7 +1317,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 )
               : splitBrainStep
                 ? bi(
-                    'Chống Split-Brain ("2 Vua cùng nhận đơn"): Đặt min-replicas-to-write 1 và min-replicas-max-lag 10 để nếu Master cũ bị đứt cáp cô lập khỏi mọi Replica quá 10s, nó tự khóa ghi ngay!',
+                    'Phòng chống Split-Brain khi phân mảnh mạng: Đặt min-replicas-to-write 1 và min-replicas-max-lag 10 để nếu Master cũ bị đứt cáp cô lập khỏi mọi Replica quá 10s, nó tự từ chối lệnh ghi ngay.',
                     'Split-Brain shield: Set min-replicas-to-write 1 and min-replicas-max-lag 10 so an isolated old Master stops accepting doomed writes after 10 seconds!'
                   )
                 : bi(
@@ -1327,12 +1327,12 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
 
       const whatChanged =
         s === 0
-          ? [{ op: '+' as const, text: bi('Dựng mô hình 1 Master + 2 Replicas kèm hội đồng 3 nút Sentinel canh gác chéo 24/7', 'Deployed 1 Master + 2 Replicas watched by an odd 3-Sentinel quorum') }]
+          ? [{ op: '+' as const, text: bi('Dựng mô hình 1 Master + 2 Replicas kèm cụm 3 nút Sentinel giám sát 24/7', 'Deployed 1 Master + 2 Replicas watched by an odd 3-Sentinel quorum') }]
           : s === 1
             ? [{ op: '+' as const, text: bi('Mở rộng bộ đệm vòng repl-backlog-size lên 64mb kích hoạt đồng bộ bù PSYNC2 siêu nhanh', 'Expanded repl-backlog-size to 64mb enabling instant PSYNC2 partial resynchronization') }]
             : failoverStep
               ? [{ op: '~' as const, text: bi('Master gặp sự cố: 2/3 Sentinel chốt ODOWN và tự động thăng cấp Replica mới nhất bằng REPLICAOF NO ONE!', 'Master unreachable: 2/3 Sentinels confirmed ODOWN and promoted freshest Replica!') }]
-              : [{ op: '+' as const, text: bi('Khóa van chống Split-Brain bằng min-replicas-to-write 1 và triển khai trên StatefulSet', 'Added min-replicas-to-write 1 Split-Brain guard and StatefulSet stable DNS identities') }];
+              : [{ op: '+' as const, text: bi('Cấu hình chống Split-Brain bằng min-replicas-to-write 1 và triển khai trên StatefulSet', 'Added min-replicas-to-write 1 Split-Brain guard and StatefulSet stable DNS identities') }];
 
       return {
         telemetry: [
@@ -1391,7 +1391,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'isometric',
     objectives: [
-      bi('Hiểu mô hình chia 16.384 ngăn tủ Hash Slots (CRC16(key) % 16384) trên tối thiểu 6 nút (3 Master + 3 Replica)', 'Route keys deterministically across 16,384 CRC16 slots on ≥3 Master–Replica shards'),
+      bi('Hiểu cơ chế chia 16,384 Hash Slots (CRC16(key) % 16384) trên tối thiểu 6 nút (3 Master + 3 Replica)', 'Route keys deterministically across 16,384 CRC16 slots on ≥3 Master–Replica shards'),
       bi('Phân biệt 2 cổng TCP (6379 + 16379 Gossip Bus) và tín hiệu chuyển ngăn trực tuyến -MOVED vs -ASK', 'Distinguish data port vs Gossip Bus (+10000) and live resharding -MOVED vs -ASK redirects'),
       bi('Hóa giải lỗi CROSSSLOT bằng {HashTag} cấp thực thể ({u42}), tránh bẫy Hot-Slot {all} và bật full-coverage no', 'Fix CROSSSLOT via entity {HashTags}, avoid {all} Hot-Slots, and set cluster-require-full-coverage no'),
     ],
@@ -1403,8 +1403,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ 16.384 Ngăn Tủ Bưu Chính: Thay vì 1 bưu cục gánh cả thành phố, Redis chia cố định 16.384 ngăn tủ cho nhiều máy Master giữ — Smart Client tính CRC16(key) % 16384 là gửi thẳng tới đúng máy sau 1 chặng!',
-              '16,384 Post-Office Boxes analogy: Redis splits the keyspace into 16,384 fixed Hash Slots across Masters — Smart Clients compute CRC16(key) % 16384 for direct 1-hop routing!'
+              'Redis Cluster phân chia toàn bộ không gian khóa thành cố định 16,384 Hash Slots trải đều trên nhiều nút Master; Smart Client tính CRC16(key) % 16384 để định tuyến trực tiếp tới đúng nút chỉ trong 1 bước mạng.',
+              'Redis Cluster partitions the keyspace into 16,384 fixed Hash Slots across Masters; Smart Clients compute CRC16(key) % 16384 for direct 1-hop routing.'
             )
           : s === 1
             ? bi(
@@ -1418,7 +1418,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 )
               : s === 3 && !isLast
                 ? bi(
-                    'Tham số sống còn trong redis.conf: Đổi cluster-require-full-coverage sang no để lỡ 1 phân mảnh hỏng cả Master lẫn Replica thì 90% khách hàng ở các phân mảnh khác vẫn chạy bình thường!',
+                    'Tham số quan trọng trong redis.conf: Đổi cluster-require-full-coverage sang no để lỡ 1 phân mảnh hỏng cả Master lẫn Replica thì 90% khách hàng ở các phân mảnh khác vẫn chạy bình thường.',
                     'Critical config: Set cluster-require-full-coverage no so a dual-failure on one shard never takes down healthy shards with CLUSTERDOWN!'
                   )
                 : bi(
@@ -1494,8 +1494,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ Hầm Ngân Hàng 4 Lớp Khóa: (1) Đặt ngầm trong mạng riêng VPC, (2) Đường ống mã hóa chống nghe lén TLS, (3) Thẻ nhân viên ACL chỉ mở đúng dãy tủ của mình, (4) Tháo bỏ nút tự hủy FLUSHALL!',
-              '4-Layer Bank Vault analogy: (1) Private VPC + NetworkPolicy, (2) Encrypted TLS tunnel, (3) Per-service ACL keycard (~checkout:*), (4) Disabled self-destruct buttons (-@dangerous)!'
+              'Mô hình bảo mật Redis Zero-Trust gồm 4 lớp: (1) Cô lập trong mạng riêng VPC & NetworkPolicy, (2) Mã hóa đường truyền TLS/mTLS, (3) Phân quyền ACL riêng cho từng dịch vụ (~checkout:*), (4) Chặn nhóm lệnh nguy hiểm (-@dangerous).',
+              '4-Layer Zero-Trust Redis security: (1) Private VPC + NetworkPolicy, (2) Encrypted TLS/mTLS tunnel, (3) Per-service ACL scoping (~checkout:*), (4) Blocked dangerous commands (-@dangerous).'
             )
           : s === 1
             ? bi(
@@ -1509,8 +1509,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 )
               : aclOrderStep
                 ? bi(
-                    'Cạm bẫy thứ tự ACL chết người: Redis đọc quy tắc TỪ TRÁI SANG PHẢI! Phải viết +@all -@dangerous (nếu viết ngược -@dangerous +@all thì +@all đứng sau sẽ mở toang lại lệnh FLUSHALL)!',
-                    'Deadly ACL ordering trap: Redis evaluates rules LEFT TO RIGHT! Always place -@dangerous -@admin AT THE END (+@all -@dangerous), never before +@all!'
+                    'Lưu ý quan trọng về thứ tự quy tắc ACL: Redis đọc quy tắc TỪ TRÁI SANG PHẢI. Phải viết +@all -@dangerous (nếu viết ngược -@dangerous +@all thì +@all đứng sau sẽ mở lại lệnh FLUSHALL).',
+                    'Critical ACL rule-ordering rule: Redis evaluates rules LEFT TO RIGHT! Always place -@dangerous -@admin AT THE END (+@all -@dangerous), never before +@all!'
                   )
                 : bi(
                     'Chuẩn kiểm toán Zero-Trust trên K8s: Tắt user default off, cấp user riêng cho từng microservice + exporter giám sát, và khóa L4 bằng Kubernetes NetworkPolicy chỉ nhận từ api-backend!',
@@ -1575,7 +1575,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     difficulty: 'Advanced',
     primaryMode: 'isometric',
     objectives: [
-      bi('Tránh 3 cú lừa đo lường: phạm vi của SLOWLOG, đo Hit Ratio bằng rate(...[5m]) và CPU đơn luồng trên máy đa nhân', 'Avoid 3 metric traps: SLOWLOG CPU-only scope, rate([5m]) hit ratio, and per-thread CPU'),
+      bi('Hiểu đúng 3 chỉ số giám sát dễ nhầm lẫn: phạm vi của SLOWLOG, đo Hit Ratio bằng rate(...[5m]) và CPU đơn luồng trên máy đa nhân', 'Avoid 3 metric misreadings: SLOWLOG CPU-only scope, rate([5m]) hit ratio, and single-thread CPU'),
       bi('Xử lý nhanh 5 ca sự cố điển hình (KEYS *, DEL Bigkey, nhầm noeviction, rò rỉ PEL, lỗi CROSSSLOT)', 'Triage the 5 classic Redis outages (KEYS *, sync DEL, noeviction cache, PEL leak, CROSSSLOT)'),
       bi('Chạy phác đồ chẩn đoán chỉ đọc 30 giây an toàn (cấm chạy MONITOR lúc cao điểm!) và lưu cấu hình bằng CONFIG REWRITE', 'Run safe 30s read-only triage (never MONITOR under load!) and persist fixes via CONFIG REWRITE'),
     ],
@@ -1587,13 +1587,13 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       const calloutText =
         s === 0
           ? bi(
-              'Ẩn dụ Bác sĩ Cấp cứu: INFO stats/memory là máy đo nhịp tim & huyết áp; SLOWLOG GET là camera bắt quả tang câu lệnh O(N) gây tắc mạch; còn LATENCY DOCTOR là bác sĩ hội chẩn gai trễ hệ điều hành!',
-              'ER Doctor analogy: INFO stats/memory is the vital-signs monitor; SLOWLOG GET is the camera catching blocking O(N) culprits; LATENCY DOCTOR diagnoses OS/fork stalls!'
+              'Bộ công cụ chẩn đoán sự cố Redis: INFO stats/memory cung cấp thông số lưu lượng và bộ nhớ tổng quan; SLOWLOG GET ghi nhận các lệnh O(N) chạy chậm trên CPU; LATENCY DOCTOR phân tích nguyên nhân trễ ở tầng hệ điều hành.',
+              'Redis diagnostic toolkit: INFO stats/memory shows throughput and memory health; SLOWLOG GET catches slow O(N) commands; LATENCY DOCTOR diagnoses OS and fork stalls.'
             )
           : metricTrapStep
             ? bi(
-                'Ba cú lừa kinh điển: (1) SLOWLOG chỉ đo CPU thực thi lệnh, không đo chờ mạng/hàng đợi; (2) Tính Hit Ratio phải dùng rate(...[5m]) thay vì tổng cộng dồn; (3) Máy 32 nhân báo CPU 3.1% có nghĩa luồng chính Redis đã nghẽn 100%!',
-                'Three metric traps: (1) SLOWLOG measures command CPU only, not queue wait; (2) Compute Hit Ratio with rate([5m]); (3) 3.1% host CPU on a 32-core box means the Redis main thread is 100% maxed!'
+                'Ba điểm dễ hiểu nhầm khi đọc số liệu: (1) SLOWLOG chỉ đo CPU thực thi lệnh, không đo chờ mạng/hàng đợi; (2) Tính Hit Ratio phải dùng rate(...[5m]) thay vì tổng cộng dồn; (3) Máy 32 nhân báo CPU 3.1% có nghĩa luồng chính Redis đã bão hòa 100%.',
+                'Three common metric pitfalls: (1) SLOWLOG measures command CPU only, not queue wait; (2) Compute Hit Ratio with rate([5m]); (3) 3.1% host CPU on a 32-core box means the Redis main thread is 100% maxed!'
               )
             : s === 2
               ? bi(
@@ -1602,8 +1602,8 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 )
               : s === 3
                 ? bi(
-                    'Điều cấm kỵ khi đang cháy Production: Tuyệt đối KHÔNG gõ lệnh MONITOR trên server chịu tải cao (làm tụt 50% hiệu năng ngay lập tức)! Và chỉ chạy --bigkeys -i 0.05 trên nút Replica!',
-                    'Incident war-room taboo: NEVER run MONITOR on a heavily loaded production node (it slashes throughput by ~50%)! Run --bigkeys -i 0.05 on a Replica instead!'
+                    'Lưu ý an toàn khi chẩn đoán trên Production: Tuyệt đối KHÔNG gõ lệnh MONITOR trên server chịu tải cao (làm tụt 50% hiệu năng ngay lập tức), và chỉ chạy --bigkeys -i 0.05 trên nút Replica.',
+                    'Production safety rule: NEVER run MONITOR on a heavily loaded production node (it slashes throughput by ~50%)! Run --bigkeys -i 0.05 on a Replica instead!'
                   )
                 : bi(
                     'Kỷ luật khép lại ca trực & toàn khóa học: Sau khi vá nóng bằng CONFIG SET trên RAM, luôn chạy CONFIG REWRITE (hoặc cập nhật Git/Helm) để lỗi cũ không sống dậy ở lần khởi động sau!',

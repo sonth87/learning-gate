@@ -1,15 +1,15 @@
-# Kiến trúc Caching Thực chiến: Cache-Aside, Write-Through, Write-Behind & Bẫy Bất nhất
+# Mô hình Caching: Cache-Aside, Write-Through, Write-Behind và xử lý bất nhất dữ liệu
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Giả sử trang chi tiết sản phẩm của bạn có 50,000 người xem mỗi phút nhưng giá sản phẩm cả ngày chỉ đổi 1–2 lần. Nếu bắt PostgreSQL tính toán lại câu `SELECT` phức tạp 50,000 lần/phút thì quá lãng phí! Đặt **Redis làm Bộ nhớ đệm (*Cache*)** đứng chắn phía trước giúp hạ thời gian đọc từ `25ms` xuống dưới **`0.4ms`**:
-> - **`Cache Hit` (Trúng bộ nhớ đệm):** Dữ liệu đã nằm sẵn trên kệ RAM của Redis -> lấy trả ngay cho khách.
-> - **`Cache Miss` (Trượt bộ nhớ đệm):** Trên kệ Redis chưa có (hoặc đã hết hạn `TTL`) -> ứng dụng mới xuống kho lạnh Database lấy lên, cất một bản sao lên kệ Redis cho những người sau dùng chung.
-> - **`Cache Invalidation` (Làm mất hiệu lực bản đệm cũ):** Khoảnh khắc khó nhất của nghề Backend! Khi quản lý vừa giảm giá sản phẩm dưới Database, làm sao xóa hoặc làm mới tờ giấy ghi giá cũ trên Redis để ==khách hàng không nhìn thấy giá sai lệch suốt hàng giờ liền==?
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Nếu trang chi tiết sản phẩm có 50,000 lượt xem mỗi phút nhưng giá sản phẩm cả ngày chỉ đổi 1–2 lần, việc bắt PostgreSQL thực thi lại câu `SELECT` phức tạp 50,000 lần/phút là rất lãng phí. Đặt **Redis làm bộ nhớ đệm (*Cache*)** đứng phía trước giúp giảm thời gian đọc từ `25ms` xuống dưới **`0.4ms`**:
+> - **`Cache Hit`:** Dữ liệu đã có sẵn trong Redis -> ứng dụng đọc và trả về ngay cho client.
+> - **`Cache Miss`:** Khóa chưa có trong Redis (hoặc đã hết hạn `TTL`) -> ứng dụng truy vấn Database, sau đó ghi bản sao lên Redis kèm `TTL` để các request tiếp theo dùng lại.
+> - **`Cache Invalidation`:** Quá trình xóa hoặc làm mới bản đệm cũ khi dữ liệu gốc trong Database thay đổi, nhằm ==tránh tình trạng người dùng đọc phải dữ liệu cũ (*Stale Data*)==.
 
-> [!ANALOGY] Ẩn dụ Kệ Nguyên Liệu Quầy Pha Chế (Redis) & Kho Lạnh Tầng Hầm (PostgreSQL)
-> - **Cache-Aside (*Lazy Loading* — Cần mới nạp):** Khách gọi món nào Barista mới ngó lên kệ quầy; nếu kệ hết (`Cache Miss`) thì chạy xuống hầm lấy lên pha và châm đầy kệ cho các ly tiếp theo.
-> - **Write-Through (Ghi xuyên thấu):** Mỗi khi quản lý đổi công thức, họ bắt buộc cập nhật sổ kho dưới hầm **đồng thời** thay luôn bình nguyên liệu trên kệ rồi mới báo hoàn tất.
-> - **Write-Behind (*Write-Back* — Ghi trễ gom mẻ):** Giờ cao điểm đông nghịt, Barista ghi nhanh số lượng bán ra lên bảng trắng tại quầy (`< 1ms`), cứ mỗi 5 giây trợ lý mới gom một mẻ đem xuống hầm cập nhật sổ cái một thể!
+> [!NOTE] Phân biệt trực tiếp 3 chiến lược đọc/ghi Cache
+> - **Cache-Aside (*Lazy Loading*):** Ứng dụng kiểm tra Redis trước; chỉ khi `Cache Miss` mới đọc từ Database và nạp ngược lên Redis.
+> - **Write-Through:** Mọi thao tác ghi đều cập nhật đồng bộ cả Database và Redis trước khi trả kết quả thành công.
+> - **Write-Behind (*Write-Back*):** Ứng dụng ghi ngay vào Redis (`< 1ms`) và trả kết quả, sau đó worker nền gom theo lô (*batch*) để cập nhật xuống Database sau.
 
 ## 1. Bức tranh toàn cảnh 4 Mô hình Caching (Caching Topologies)
 
@@ -42,7 +42,7 @@ callouts:
 - [>] **3. Write-Behind (*Write-Back*)** [!badge:amber:Thông lượng ghi cực đại]: Ứng dụng ghi thẳng vào Redis (`HINCRBY`, `ZINCRBY`, `XADD`) trả kết quả tức thì dưới `1ms`, sau đó Worker nền gom lô (*Batch UPSERT*) ghi xuống PostgreSQL/ClickHouse. Rất hợp cho **đếm lượt xem video, tim livestream, tọa độ xe**, nhưng không dùng cho số dư ngân hàng nếu chưa thiết kế chống mất điện kỹ lưỡng!
 - [>] **4. Stale-While-Revalidate (*SWR* — Trả bản cũ trong lúc âm thầm làm mới)** [!badge:violet:Độ trễ mượt mà]: Nhúng mốc hết hạn mềm bên trong dữ liệu; khi vừa quá hạn mềm, khách hàng vẫn nhận phản hồi tức thì trong `0.4ms` trong khi 1 tác vụ nền lặng lẽ cập nhật lại giá trị mới từ Database.
 
-## 2. Cuộc chiến kinh điển: Cập nhật đè Cache hay Xóa Cache? Và Xóa Trước hay Sau DB?
+## 2. Chiến lược đồng bộ dữ liệu: Nên cập nhật đè hay xóa Cache khi Database thay đổi?
 
 Đây là câu hỏi phỏng vấn System Design kinh điển! Giả sử sản phẩm `id=108` vừa giảm giá từ `5.000.000đ` xuống `4.290.000đ`. Tại sao ==chuẩn công nghiệp luôn là: Ghi Database thành công trước -> Xóa (`UNLINK`) Cache sau==?
 
@@ -88,7 +88,7 @@ right:
 
 ```visual
 kind: anatomy
-title: "3 Vũ Khí Vận Hành Bộ Nhớ Đệm Không Gián Đoạn"
+title: "Ba Kỹ Thuật Thiết Kế Khóa Cache An Toàn"
 subtitle: "Chống lỗi lệch cấu trúc khi cập nhật code mới, chống cạn kiệt RAM và chặn truy vấn rác"
 items:
   - keyword: "Versioned Key"
@@ -110,7 +110,7 @@ items:
       SET cache:product:v2:108 '{"price":4290000}' EX 600
     lang: redis
   - keyword: "Negative Cache"
-    role: "Lá chắn cho ID Không tồn tại"
+    role: "Ngăn truy vấn ID không tồn tại"
     tone: amber
     summary: "Lưu chuỗi đánh dấu rỗng (`\"__NULL__\"`) với TTL ngắn (`30s–60s`) khi Database trả về 0 dòng."
     bullets:

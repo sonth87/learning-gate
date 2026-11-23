@@ -1,10 +1,10 @@
-# Điều phối Phân tán: Distributed Locks chuẩn Lua, Fencing Token & Bộ tứ Rate Limiter
+# Điều phối Phân tán: Distributed Locks chuẩn Lua, Fencing Token và các thuật toán Rate Limiter
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Khi ứng dụng của bạn chỉ chạy trên 1 máy tính duy nhất, dùng khóa nội bộ (`threading.Lock` trong Python hay `sync.Mutex` trong Go) là đủ để ngăn hai luồng trừ tiền khách hàng hai lần. Nhưng khi bạn mở rộng dịch vụ lên **10 container chạy trên 10 máy chủ khác nhau**, hai cú bấm đúp nút *"Thanh toán"* cách nhau `3 mili-giây` sẽ rơi vào 2 máy chủ không hề biết mặt nhau! Đó là lúc toàn hệ thống cần **Redis đứng giữa làm Trọng tài**:
-> - **`Distributed Lock` (Khóa phân tán):** Giống **chiếc chìa khóa duy nhất của buồng gọi điện thoại chung** có gắn **thẻ tên người mượn (`UUID`)** và **đồng hồ cát tự động bung chốt (`PX` mili-giây)**. Nếu người bên trong lỡ ngất xỉu (container sập), đồng hồ cát hết giờ sẽ tự mở cửa để không khóa chết căn phòng mãi mãi (*Deadlock*); và khi mở cửa trả chìa, bắt buộc phải **đối chiếu đúng thẻ tên của mình** bằng kịch bản Lua để không vô tình mở nhầm cửa khi người kế tiếp đã vào trong!
-> - **`GC Pause` & `Fencing Token` (Thẻ số thứ tự chống phiếu cũ):** Đôi khi tiến trình giữ khóa bị "đứng hình tạm thời" vài giây để dọn rác bộ nhớ (*Garbage Collection Pause*) đúng lúc đồng hồ cát hết giờ. Để ngăn nó tỉnh dậy ghi đè dữ liệu muộn, mỗi lần mượn khóa ta phát kèm một **số thứ tự phiếu tăng dần (`33`, `34`, `35`... gọi là `Fencing Token`)** — Database thấy phiếu số `33` đến sau phiếu `34` sẽ lập tức từ chối!
-> - **`Rate Limiter` (Bộ giới hạn tốc độ truy cập):** Cổng kiểm soát chỉ cho phép mỗi tài khoản/IP gửi tối đa `N` yêu cầu trong một khoảng thời gian (chống dò mật khẩu, chống spam API).
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Khi ứng dụng chạy trên 1 tiến trình duy nhất, các khóa nội bộ (`threading.Lock` trong Python hay `sync.Mutex` trong Go) đủ để ngăn hai luồng cùng sửa một tài nguyên. Nhưng khi mở rộng dịch vụ lên **10 container trên nhiều máy chủ khác nhau**, hai yêu cầu thanh toán cách nhau vài mili-giây có thể rơi vào 2 máy chủ độc lập. Lúc này hệ thống cần **Redis làm điểm điều phối tập trung**:
+> - **`Distributed Lock` (Khóa phân tán):** Cơ chế chiếm quyền độc quyền một tài nguyên qua lệnh nguyên tử `SET key <uuid> NX PX <ms>`. Giá trị `uuid` định danh duy nhất chủ sở hữu, còn `PX` đảm bảo khóa tự hết hạn nếu container giữ khóa bị sập (tránh Deadlock). Khi giải phóng khóa, bắt buộc phải dùng **Lua script** kiểm tra đúng `uuid` của mình rồi mới xóa để tránh xóa nhầm khóa của tiến trình kế tiếp.
+> - **`GC Pause` & `Fencing Token`:** Nếu tiến trình giữ khóa bị tạm dừng (ví dụ *Garbage Collection Pause*) vượt quá thời gian thuê `PX`, khóa sẽ hết hạn và chuyển sang tiến trình khác. Để ngăn tiến trình cũ tỉnh dậy ghi đè dữ liệu muộn, mỗi lần cấp khóa cần kèm một **số thứ tự tăng dần đơn điệu (`Fencing Token`: `33`, `34`, `35`...)** để Database đích từ chối các ghi nhận có token nhỏ hơn token mới nhất.
+> - **`Rate Limiter` (Giới hạn tốc độ):** Giới hạn số yêu cầu tối đa từ một tài khoản hoặc IP trong một khoảng thời gian (chống brute-force đăng nhập, chống quá tải API).
 
 ```visual
 kind: illustration
@@ -32,10 +32,10 @@ callouts:
 
 ```visual
 kind: compare
-title: "Khoá Phân Tán Ngây Thơ (Chờ Ngày Gây Hoạ) vs Khoá Phân Tán Chuẩn Công Nghiệp"
-subtitle: "Chỉ thiếu kiểm tra UUID lúc nhả khoá là hệ thống thanh toán đối mặt nguy cơ trừ đúp tiền!"
+title: "Khóa Phân Tán Không An Toàn vs Khóa Phân Tán Chuẩn Production"
+subtitle: "Thiếu kiểm tra UUID khi giải phóng khóa có thể dẫn đến xóa nhầm khóa của worker khác đang giữ tài nguyên"
 left:
-  badge: "NGUY HIỂM CHẾT NGƯỜI"
+  badge: "KHÔNG AN TOÀN"
   title: "SETNX rời rạc & Nhả khoá bằng DEL trần"
   tone: rose
   code: |
@@ -157,7 +157,7 @@ redis.call("SET", KEYS[1], tostring(remaining), "EX", 60)
 return remaining
 ```
 
-> [!WARNING] Luôn nhớ quy tắc sống còn khi gọi Lua trên Redis Cluster
+> [!WARNING] Quy tắc bắt buộc khi gọi Lua trên Redis Cluster
 > Mọi tên khóa phải truyền qua **`KEYS[1]`** (tuyệt đối không tự nối chuỗi tên khóa bên trong Lua) và giữ kịch bản chạy hoàn tất trong `< 1ms` để không làm nghẽn các kết nối khác!
 
 > [!REMEMBER] Ghi nhớ cốt lõi từ R11

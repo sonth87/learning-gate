@@ -1,10 +1,10 @@
-# Từ Dòng Lệnh Cơ Bản đến CI Gate: Sức mạnh của Exit Code
+# Từ dòng lệnh cơ bản đến CI Gate: Cơ chế Exit Code
 
-Hãy tưởng tượng 5 lập trình viên cùng sửa chung một dự án phần mềm. Nếu ai viết xong cũng đẩy thẳng code chưa kiểm tra vào nhánh chính (`main`), chỉ một dấu ngoặc gõ thiếu lúc 5 giờ chiều Thứ Sáu cũng đủ làm tê liệt toàn bộ đội ngũ! Để ngăn thảm hoạ đó, ngành công nghiệp phần mềm vận hành dựa trên 3 khái niệm nền tảng:
+Khi nhiều lập trình viên cùng làm việc trên một dự án, việc đẩy trực tiếp mã nguồn chưa kiểm tra vào nhánh chính (`main`) dễ dẫn đến lỗi biên dịch hoặc làm gián đoạn công việc của cả đội ngũ. Để kiểm soát chất lượng trước khi hợp nhất mã nguồn, quy trình phát triển phần mềm hiện đại vận hành dựa trên 3 khái niệm nền tảng:
 
-- **Pull Request (PR — hay Merge Request trên GitLab):** Thay vì sửa thẳng nhánh chính `main`, bạn tách ra một nhánh riêng, hoàn thành tính năng rồi mở "đơn đề nghị gộp code" (PR) để đồng nghiệp rà soát và máy tự động kiểm định.
-- **Webhook Trigger & Ephemeral Runner:** Ngay giây bạn mở PR hoặc gõ `git push`, GitHub bắn một tín hiệu tự động (**Webhook Trigger**) thuê tức thì một chiếc máy ảo Linux sạch tinh (**Ephemeral Runner** — sống khoảng 2–3 phút để kiểm tra code rồi tự xoá trắng ổ cứng sau khi xong việc).
-- **CI Gate & Exit Code (Mã thoát):** Chiếc máy ảo tự động đó không hề có "mắt thần" đọc hiểu ngữ nghĩa code. Thứ duy nhất giúp **Continuous Integration (CI — Tích hợp liên tục)** quyết định **mở khoá nút Merge (tích xanh)** hay **chặn đứng PR (chéo đỏ)** là một con số nguyên do hệ điều hành trả về sau mỗi câu lệnh: ==Exit Code (`0` = Đạt, `!= 0` = Chặn ngay lập tức)==.
+- **Pull Request (PR — hay Merge Request trên GitLab):** Thay vì sửa trực tiếp trên nhánh chính `main`, lập trình viên tách ra một nhánh riêng, hoàn thành tính năng rồi tạo yêu cầu gộp code (PR) để đồng nghiệp rà soát và hệ thống tự động kiểm tra.
+- **Webhook Trigger & Ephemeral Runner:** Ngay khi bạn mở PR hoặc thực hiện `git push`, GitHub gửi tín hiệu tự động (**Webhook Trigger**) để khởi tạo một máy ảo Linux sạch (**Ephemeral Runner** — tồn tại vài phút để kiểm tra code rồi bị xóa sau khi hoàn tất).
+- **CI Gate & Exit Code (Mã thoát):** Máy ảo kiểm định không tự đọc hiểu ngữ nghĩa mã nguồn. Cơ sở duy nhất để **Continuous Integration (CI — Tích hợp liên tục)** quyết định **cho phép Merge (đạt)** hay **chặn PR (thất bại)** là một số nguyên do hệ điều hành trả về sau mỗi câu lệnh: ==Exit Code (`0` = Thành công, `!= 0` = Thất bại)==.
 
 ```visual
 kind: flow
@@ -48,34 +48,31 @@ steps:
 footer: "Quy ước POSIX & Node.js: Exit Code = 0 là thành công · Exit Code != 0 (1..255) kích hoạt dừng khẩn cấp (Fail-Fast)"
 ```
 
-## 1. Ánh xạ tư duy: Từ `package.json` trên Laptop lên CI Gate
+## 1. Chuyển quy trình kiểm tra từ `package.json` trên máy cá nhân lên CI Gate
 
 ```visual
 kind: illustration
 diagram: "cicd:c00"
-alt: "Pipeline cổng kiểm định CI Fail-Fast dựa trên mã thoát POSIX Exit Code 0 so với 1..255 và cách chống bẫy False-Green"
-title: "Giải Phẫu Cổng Kiểm Định CI: Tín Hiệu POSIX Exit Code & Chốt Chặn Fail-Fast"
-subtitle: "Cách pipeline tự động mở khoá nút Merge khi mọi bước trả 0 và phanh gấp tức thì trước mọi mã lỗi 1..255"
-caption: "Chuỗi cổng kiểm định tuần tự npm ci -> lint -> test -> build, bảng mã lỗi POSIX đặc trưng (1, 22, 127, 137) và cách triệt tiêu bẫy nuốt lỗi False-Green"
+alt: "Pipeline cổng kiểm định CI Fail-Fast dựa trên mã thoát POSIX Exit Code 0 so với 1..255 và cách phòng tránh lỗi False-Green"
+title: "Cổng kiểm định CI: Tín hiệu POSIX Exit Code & Cơ chế Fail-Fast"
+subtitle: "Cách pipeline cho phép Merge khi mọi bước trả 0 và dừng ngay khi gặp mã lỗi 1..255"
+caption: "Chuỗi cổng kiểm định tuần tự npm ci -> lint -> test -> build, bảng mã lỗi POSIX đặc trưng (1, 22, 127, 137) và cách phòng tránh lỗi nuốt mã thoát False-Green"
 callouts:
   - num: 1
     label: "Chuỗi cổng kiểm định yêu cầu Exit Code == 0"
     desc: "Mỗi tiến trình từ npm ci, eslint, vitest đến build đều phải kết thúc với mã thoát 0 thì nút Merge Pull Request mới được mở khoá."
     tone: emerald
   - num: 2
-    label: "Phanh gấp Fail-Fast khi gặp mã thoát 1..255"
-    desc: "Bất kỳ bước nào trả mã khác 0 (1 lỗi test, 22 lỗi HTTP, 137 tràn RAM OOM) sẽ lập tức huỷ các bước sau và chặn gộp code hỏng."
+    label: "Cơ chế Fail-Fast khi gặp mã thoát 1..255"
+    desc: "Bất kỳ bước nào trả mã khác 0 (1 lỗi test, 22 lỗi HTTP, 137 tràn RAM OOM) sẽ lập tức huỷ các bước sau và chặn gộp code lỗi."
     tone: rose
   - num: 3
-    label: "Chống bẫy báo xanh giả (False-Green)"
-    desc: "Tuyệt đối cấm dùng || true hoặc continue-on-error ở cổng kiểm thử; luôn bật set -euo pipefail và cờ curl --fail-with-body."
+    label: "Phòng tránh lỗi báo xanh giả (False-Green)"
+    desc: "Không dùng || true hoặc continue-on-error ở cổng kiểm thử; luôn bật set -euo pipefail và cờ curl --fail-with-body."
     tone: amber
 ```
 
-> [!ANALOGY] Hãy hình dung như sau
-> Dù bạn chưa từng cấu hình hệ thống tự động hoá bao giờ, hãy coi các câu lệnh kiểm tra code là **đề thi tiêu chuẩn**, còn **CI Gate** là một **giám thị máy ảo Linux vô trùng** đứng gác ngay trước cửa nhánh `main` — không bao giờ mệt, không bao giờ quên chấm bài chiều Thứ Sáu, và không bao giờ dùng nhầm thư viện cũ tồn đọng trên máy cá nhân!
-
-Trong dự án Node.js/TypeScript, các bước kiểm tra thường được đặt tên gọn trong tệp `package.json` (khi bạn gõ `npm test`, máy tính thực chất gọi lệnh kiểm thử tương ứng bên dưới):
+Trong dự án Node.js/TypeScript, các bước kiểm tra thường được khai báo gọn trong tệp `package.json` (khi bạn gõ `npm test`, hệ thống sẽ thực thi lệnh kiểm thử tương ứng bên dưới):
 
 ```json
 {
@@ -88,7 +85,7 @@ Trong dự án Node.js/TypeScript, các bước kiểm tra thường được đ
 }
 ```
 
-Điểm tuyệt vời của kiến trúc CI/CD là **nguyên lý Exit Code `0` vs `!= 0` hoàn toàn bất biến trên MỌI ngôn ngữ lập trình**! Dù đội bạn viết Node.js, Python, Go hay Java, dây chuyền CI trên máy ảo Linux đều vận hành theo đúng một khuôn mẫu 3 chặng:
+Điểm quan trọng của kiến trúc CI/CD là **nguyên lý Exit Code `0` và `!= 0` áp dụng đồng nhất trên mọi ngôn ngữ lập trình**. Dù dự án dùng Node.js, Python, Go hay Java, quy trình CI trên máy ảo Linux đều chạy theo 3 chặng cơ bản:
 
 | Ngôn ngữ / Hệ sinh thái | 1. Cài đặt khoá cứng phiên bản | 2. Kiểm tra phong cách & Kiểu tĩnh | 3. Chạy Unit Test & Biên dịch |
 | :--- | :--- | :--- | :--- |
@@ -97,7 +94,7 @@ Trong dự án Node.js/TypeScript, các bước kiểm tra thường được đ
 | **Go (Golang)** | `go mod verify` (khớp `go.sum`) | `golangci-lint run` | `go test -race ./... && go build ./...` |
 | **Java / Kotlin** | `mvn -B dependency:go-offline` | `./gradlew checkstyleMain` | `./gradlew test assemble` |
 
-Vấn đề của việc chạy thủ công trên laptop là **yếu tố con người**: chiều Thứ Sáu vội về quên gõ lệnh test, hoặc máy cá nhân còn sót thư viện cũ trong `node_modules` / `.venv` nên code vẫn chạy êm dù tệp cấu hình khai báo thiếu gói. **CI Gate** thuê một máy ảo Ephemeral Runner mới tinh chạy lại đúng chuỗi lệnh đó và phán quyết dựa tuyệt đối vào **Exit Code** (`process.exit(code)` trong Node.js, `sys.exit(code)` trong Python, `os.Exit(code)` trong Go):
+Vấn đề của việc chạy kiểm tra thủ công trên máy cá nhân là dễ xảy ra sai sót do con người (quên chạy test trước khi đẩy code) hoặc do môi trường máy cá nhân còn lưu thư viện cũ trong `node_modules` / `.venv`. **CI Gate** giải quyết triệt để điều này bằng cách chạy lại đúng chuỗi lệnh trên một máy ảo sạch và quyết định kết quả dựa hoàn toàn vào **Exit Code** (`process.exit(code)` trong Node.js, `sys.exit(code)` trong Python, `os.Exit(code)` trong Go). Có thể hình dung đơn giản giống như một bài kiểm tra chuẩn hóa được chấm tự động trên môi trường độc lập, không bị ảnh hưởng bởi cấu hình riêng trên máy cá nhân.
 
 - [x] **`Exit Code = 0` (`EXIT_SUCCESS`)**: Tiến trình hoàn tất **thành công**. Pipeline bật đèn xanh và chuyển sang bước tiếp theo.
 - [!] **`Exit Code != 0` (`1`..`255`)**: Tiến trình **thất bại**. Pipeline lập tức dừng khẩn cấp (**Fail-Fast**) và khoá nút Merge.
@@ -116,34 +113,34 @@ Vấn đề của việc chạy thủ công trên laptop là **yếu tố con ng
 
 ## 2. Rủi ro False-Green Pipeline (Pipeline báo xanh nhưng lệnh bên trong lỗi)
 
-Một pipeline bị đỏ còn dễ sửa; đáng sợ nhất trong nghề DevOps là ==False-Green Pipeline== — ứng dụng đang lỗi nát bét nhưng Pull Request vẫn hiện dấu tích xanh mượt mà!
+Một pipeline báo đỏ giúp phát hiện lỗi sớm để sửa; ngược lại, tình huống nguy hiểm trong vận hành CI/CD là ==False-Green Pipeline== — mã nguồn hoặc dịch vụ đang gặp lỗi nhưng Pull Request vẫn hiển thị trạng thái đạt!
 
 ```visual
 kind: compare
-title: "Giải Phẫu 3 Bẫy Nuốt Mã Lỗi Gây Báo Xanh Giả (False-Green)"
-subtitle: "Chỉ một thói quen viết lệnh hớ hênh cũng đủ vô hiệu hoá hoàn toàn tấm khiên bảo vệ nhánh main"
+title: "Ba lỗi cấu hình phổ biến làm mất Exit Code (gây False-Green)"
+subtitle: "Một sơ suất nhỏ khi viết lệnh shell có thể vô hiệu hóa toàn bộ quy trình kiểm tra tự động"
 left:
-  badge: "NGUY HIỂM · Nuốt Exit Code"
-  title: "Báo tích xanh giả dù ứng dụng đang sập"
+  badge: "RỦI RO · Nuốt Exit Code"
+  title: "Pipeline báo đạt dù ứng dụng đang lỗi"
   tone: rose
   code: |
     #!/usr/bin/env bash
     # 1. Thiếu cờ --fail: HTTP 500 vẫn trả exit 0!
     curl http://localhost:3000/healthz
 
-    # 2. Bùa hại người || true xoá sạch mã lỗi 1 thành 0:
+    # 2. Toán tử || true ghi đè mã lỗi 1 thành 0:
     npm test || true
 
     # 3. Không có pipefail: chỉ lấy exit 0 của lệnh tee!
     npm test | tee report.txt
   lang: bash
   bullets:
-    - "**`curl` mặc định** chỉ kiểm tra kết nối TCP: dù server trả `HTTP 404` hay `500 Internal Server Error`, `curl` vẫn in JSON lỗi ra rồi kết thúc với **`Exit Code = 0`**!"
-    - "**Toán tử `A || B`** chạy vế phải khi vế trái lỗi: viết `false || true` hay `npm test || true` sẽ làm `$?` biến thành **`0`** (tương tự lạm dụng `continue-on-error: true`)"
-    - "**Ống dẫn `|` mặc định** của Bash chỉ lấy mã thoát của lệnh cuối cùng (`tee` ghi file thành công trả `0`), bỏ lọt lỗi `1` của `npm test`"
+    - "**`curl` mặc định** chỉ kiểm tra kết nối TCP: dù server trả `HTTP 404` hay `500 Internal Server Error`, `curl` vẫn in nội dung ra rồi kết thúc với **`Exit Code = 0`**."
+    - "**Toán tử `A || B`** chạy vế phải khi vế trái lỗi: viết `false || true` hay `npm test || true` sẽ làm `$?` biến thành **`0`** (tương tự việc bật `continue-on-error: true`)."
+    - "**Pipeline `|` mặc định** của Bash chỉ lấy mã thoát của lệnh cuối cùng (`tee` ghi file thành công trả `0`), bỏ sót lỗi `1` của `npm test`."
 right:
   badge: "CHUẨN MỰC · Fail-Fast Nghiêm Ngặt"
-  title: "Bắt dính mọi lỗi ngay giây đầu tiên"
+  title: "Phát hiện và dừng ngay khi có lỗi"
   tone: emerald
   code: |
     #!/usr/bin/env bash
@@ -156,10 +153,10 @@ right:
     npm test | tee report.txt
   lang: bash
   bullets:
-    - "**`curl --fail`** (hoặc `-f`, `--fail-with-body`) ép `curl` trả mã thoát **`22`** ngay khi gặp HTTP `>= 400`"
-    - "**`-e` (`errexit`):** Dừng script tức khắc ngay dòng lệnh đầu tiên trả `Exit Code != 0`"
-    - "**`-u` (`nounset`):** Báo lỗi ngay nếu gặp biến chưa khai báo (ngăn thảm hoạ `rm -rf /$EMPTY_VAR`)"
-    - "**`-o pipefail`:** Chỉ cần `npm test` ở đầu ống trả `1`, toàn bộ pipeline `|` lập tức trả `1`"
+    - "**`curl --fail`** (hoặc `-f`, `--fail-with-body`) ép `curl` trả mã thoát **`22`** ngay khi gặp HTTP `>= 400`."
+    - "**`-e` (`errexit`):** Dừng script ngay tại dòng lệnh đầu tiên trả `Exit Code != 0`."
+    - "**`-u` (`nounset`):** Báo lỗi ngay nếu gặp biến chưa khai báo (tránh rủi ro chạy nhầm lệnh như `rm -rf /$EMPTY_VAR`)."
+    - "**`-o pipefail`:** Chỉ cần `npm test` ở đầu ống dẫn trả `1`, toàn bộ pipeline `|` lập tức trả `1`."
 ```
 
 > [!WARNING] Lưu ý về Shell mặc định trên GitHub Actions

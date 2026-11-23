@@ -51,11 +51,11 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Hiểu sự khác biệt cốt lõi giữa Máy ảo (thuê nguyên căn nhà có Guest OS nặng) và Container (căn hộ dùng chung Linux Kernel)',
+        'Phân biệt bản chất giữa Máy ảo (kèm Guest OS nặng nề) và Container (dùng chung Host Linux Kernel)',
         'Contrast heavyweight Guest-OS VMs with lightweight shared-kernel Containers'
       ),
       bi(
-        'Phân biệt rạch ròi Image (khuôn bánh bất biến chỉ đọc) và Container (chiếc bánh đang phục vụ có lớp ghi mỏng)',
+        'Phân biệt rõ Container Image (gói chỉ đọc bất biến) và Container (tiến trình đang chạy có lớp ghi mỏng)',
         'Distinguish immutable read-only Images from running Container processes'
       ),
       bi(
@@ -148,17 +148,17 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình tư duy khởi đầu',
-              'Zero-Jargon Mental Model',
-              'Nếu uv.lock hay package-lock.json chỉ khóa gói ngôn ngữ, thì Container đóng băng luôn cả căn phòng Linux bên dưới — chấm dứt vĩnh viễn câu nói "trên máy em vẫn chạy mà!".',
+              'Mục tiêu cốt lõi của Container',
+              'Core Purpose of Containers',
+              'Nếu uv.lock hay package-lock.json chỉ khóa gói ngôn ngữ, thì Container đóng băng luôn cả hệ thống tệp Linux và runtime bên dưới để dev và production chạy đồng nhất.',
               'Lockfiles only pin language packages; an OCI Container freezes the entire Linux filesystem + runtime so dev and production behave identically.'
             ),
             makeCallout(
               'compare',
-              'Nhà riêng (VM) vs Căn hộ (Container)',
-              'Detached House (VM) vs Apartment (Container)',
-              'Máy ảo phải xây riêng móng và máy phát điện (Guest OS nặng nề). Container giống căn hộ riêng tư dùng chung điện nước tòa nhà (Host Kernel), còn Image là khuôn bánh cấp đông chỉ đọc!',
-              'VMs boot a separate Guest OS like a detached house; Containers are isolated apartments sharing the Host Linux Kernel, booted from a read-only Image mold.'
+              'Phân biệt Máy ảo (VM) và Container',
+              'Virtual Machine (VM) vs Container',
+              'Máy ảo khởi chạy riêng một Guest OS đầy đủ nên nặng hàng GB; Container là tiến trình cô lập dùng chung Host Linux Kernel nên nhẹ và bật trong vài chục ms, còn Image là gói chỉ đọc bất biến (tương tự nhà riêng tự cấp điện nước vs căn hộ dùng chung hạ tầng tòa nhà).',
+              'VMs boot a separate Guest OS; Containers are isolated processes sharing the Host Linux Kernel, started from a read-only Image (like detached houses vs shared-utility apartments).'
             ),
             makeCallout(
               'technique',
@@ -171,7 +171,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'watch-out',
               'Nhớ cờ -a khi tìm container tắt',
               'Remember -a for Exited Containers',
-              'docker ps chỉ hiện container đang sống (Up). Khi container vừa bật đã thoát lỗi, hãy gõ docker ps -a để thấy vỏ Exited, và nhớ docker rm chỉ xóa chiếc bánh chứ không mất khuôn Image!',
+              'docker ps chỉ hiện container đang sống (Up). Khi container vừa bật đã thoát lỗi, hãy gõ docker ps -a để thấy trạng thái Exited, và nhớ docker rm chỉ xóa Container chứ không mất Image gốc!',
               'docker ps hides stopped containers! Run docker ps -a to inspect Exited (1)/(137) containers, and remember docker rm never deletes the underlying Image.'
             ),
             makeCallout(
@@ -212,7 +212,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 text:
                   s === 2
                     ? bi('python:3.12-slim · ghim tag', 'python:3.12-slim · pinned')
-                    : bi('Khuôn bất biến', 'Immutable Mold'),
+                    : bi('Bất biến (Read-Only)', 'Immutable Read-Only'),
                 tone: 'ok',
               },
             },
@@ -258,11 +258,11 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Đọc đúng chiều -p HOST_PORT:CONTAINER_PORT và hiểu vì sao phải bind 0.0.0.0 thay vì 127.0.0.1 trong phòng mạng cô lập',
+        'Đọc đúng chiều -p HOST_PORT:CONTAINER_PORT và hiểu vì sao phải bind 0.0.0.0 thay vì 127.0.0.1 trong Network Namespace cô lập',
         'Master -p HOST:CONTAINER port mapping and why 0.0.0.0 is mandatory over 127.0.0.1'
       ),
       bi(
-        'Tiêm cấu hình 12-Factor qua -e (os.environ / process.env), đọc docker logs khi container đã sập và khám bằng docker exec',
+        'Tiêm cấu hình 12-Factor qua -e (os.environ / process.env), đọc docker logs khi container đã sập và kiểm tra bằng docker exec',
         'Inject 12-Factor env vars via -e, read crash logs via docker logs, and debug live via docker exec'
       ),
     ],
@@ -300,8 +300,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Mỗi container sinh ra trong phòng mạng riêng khép kín — cần bắc cầu -p từ cổng lễ tân máy chủ vào',
-                  'Containers start in an isolated network room requiring explicit -p host-to-container port forwarding'
+                  'Mỗi container khởi tạo trong một Network Namespace khép kín — cần ánh xạ cổng -p từ máy chủ vào',
+                  'Containers start in an isolated network namespace requiring explicit -p host-to-container port forwarding'
                 ),
               },
             ],
@@ -358,21 +358,21 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình chuông cửa chung cư (-p)',
-              'Apartment Intercom Model (-p)',
-              'Hãy đọc -p 8080:3000 xuôi từ ngoài vào trong: khách bấm số 8080 ở cổng lễ tân máy chủ (trái), dây nối dẫn vào cửa phòng 3000 bên trong căn hộ container (phải).',
+              'Nguyên tắc ánh xạ cổng (-p)',
+              'Port Mapping Principle (-p)',
+              'Hãy đọc -p 8080:3000 xuôi từ ngoài vào trong: cổng 8080 mở trên máy chủ (trái) chuyển tiếp lưu lượng qua cầu nối mạng vào cổng 3000 bên trong container (phải).',
               'Always read -p 8080:3000 from outside in: port 8080 on your Host machine forwards across the virtual bridge to port 3000 inside the container.'
             ),
             makeCallout(
               'watch-out',
-              'Bẫy số 1 của Uvicorn / Fastify / Vite: 127.0.0.1',
+              'Lỗi phổ biến của Uvicorn / Fastify / Vite: bind 127.0.0.1',
               'Classic Gotcha: Binding 127.0.0.1 Inside Containers',
-              'Nghe trên 127.0.0.1 trong container giống như đeo tai nghe nói chuyện một mình trong phòng khóa cửa! Phải đặt --host 0.0.0.0 để mở cửa chính eth0 đón khách từ cờ -p.',
+              'Nghe trên 127.0.0.1 trong container chỉ nhận kết nối nội bộ từ chính container đó, bỏ qua lưu lượng đi vào qua eth0! Luôn đặt --host 0.0.0.0 để mở lắng nghe trên mọi giao diện mạng.',
               'Listening on 127.0.0.1 inside an isolated container ignores traffic arriving on eth0! Always bind Uvicorn, Flask, Fastify, and Vite to 0.0.0.0.'
             ),
             makeCallout(
               'technique',
-              'Một khuôn Image chạy mọi môi trường (-e)',
+              'Một Image dùng chung cho mọi môi trường (-e)',
               '12-Factor Config via -e',
               'Không bao giờ đóng cứng URL Database vào code! Truyền qua -e để Python đọc từ os.environ và Node.js đọc từ process.env mà không cần build lại Image.',
               'Keep images environment-agnostic: inject URLs and flags at runtime with -e (or --env-file locally) into os.environ / process.env.'
@@ -381,14 +381,14 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'technique',
               'Container sập rồi vẫn đọc được Log!',
               'Logs Survive Container Crashes!',
-              'Khi container vừa chạy 0.2s đã tắt (Exited 1), docker exec sẽ từ chối chạy — nhưng docker logs <tên> vẫn giữ nguyên toàn bộ Traceback cứu mạng bạn!',
+              'Khi container vừa chạy 0.2s đã tắt (Exited 1), docker exec sẽ từ chối chạy — nhưng docker logs <tên> vẫn giữ nguyên toàn bộ Traceback giúp bạn chẩn đoán lỗi!',
               'docker exec cannot enter an Exited container, but docker logs <name> preserves the full stdout/stderr crash trace until docker rm.'
             ),
             makeCallout(
               'technique',
-              'Khám trực tiếp bằng sh trên nền tối giản',
+              'Kiểm tra trực tiếp bằng sh trên nền tối giản',
               'Use sh on Minimal Images',
-              'Các image nhẹ như node:22-alpine hay nginx-alpine không cài bash. Hãy tập phản xạ gõ docker exec -it <tên> sh khi cần mở shell kiểm tra!',
+              'Các image nhẹ như node:22-alpine hay nginx-alpine không cài bash. Hãy tập thói quen gõ docker exec -it <tên> sh khi cần mở shell kiểm tra!',
               'Minimal Alpine images omit bash to save space — always reach for docker exec -it <name> sh when opening an interactive shell.'
             ),
             makeCallout(
@@ -462,14 +462,14 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     id: 'K02',
     titleEn: 'Kernel Namespaces, cgroups Memory Caps (OOM 137) & Volumes',
     subtitleEn:
-      'Demystify Linux Namespaces ("visibility walls") vs cgroups ("circuit breakers"), Exit 137 OOMKills, and Named Volumes.',
+      'Understand Linux Namespaces (visibility isolation) vs cgroups (resource limits), Exit 137 OOMKills, and Named Volumes.',
     durationMin: 14,
     difficulty: 'Beginner',
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Phân biệt bình dị Namespaces (tấm vách ngăn tầm nhìn) và cgroups (cầu dao khóa trần RAM/CPU)',
-        'Separate Linux Namespaces (visibility walls) from cgroups (hardware resource circuit breakers)'
+        'Phân biệt rõ Linux Namespaces (cô lập không gian nhìn) và cgroups (giới hạn tài nguyên RAM/CPU)',
+        'Separate Linux Namespaces (visibility isolation) from cgroups (hardware resource limits)'
       ),
       bi(
         'Giải mã công thức Exit Code 137 = 128 + 9 (SIGKILL OOM) và bảo toàn dữ liệu Database bằng Named Volume',
@@ -483,12 +483,12 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
       return {
         telemetry: [
           {
-            label: bi('VÁCH NGĂN TẦM NHÌN', 'VISIBILITY WALL'),
+            label: bi('CÔ LẬP TẦM NHÌN', 'VISIBILITY ISOLATION'),
             value: bi('Namespaces (PID · NET · MNT)', 'Namespaces (PID · NET · MNT)'),
             tone: 'ok',
           },
           {
-            label: bi('CẦU DAO PHẦN CỨNG', 'RESOURCE BREAKER'),
+            label: bi('GIỚI HẠN PHẦN CỨNG', 'RESOURCE LIMITS'),
             value: isOom
               ? bi('Vượt --memory → Exit 137!', 'Over --memory → Exit 137!')
               : bi('cgroups v2 (--memory/--cpus)', 'cgroups v2 (--memory/--cpus)'),
@@ -508,7 +508,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Giải mã "hộp ảo hóa": Container thực chất là tiến trình Linux gắn Namespaces + cgroups v2',
+                  'Container thực chất là tiến trình Linux gắn Namespaces + cgroups v2, không phải máy ảo',
                   'Unmasked containers as native Linux processes isolated by Namespaces and bounded by cgroups v2'
                 ),
               },
@@ -517,8 +517,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Dựng vách ngăn Namespaces che tầm nhìn PID/Mạng và lắp cầu dao cgroups khóa trần tiêu thụ',
-                  'Combined Namespace visibility walls with cgroup CPU/Memory quotas'
+                  'Kết hợp Namespaces cô lập tầm nhìn PID/Mạng với cgroups giới hạn mức tiêu thụ CPU/RAM',
+                  'Combined Namespace visibility isolation with cgroup CPU/Memory quotas'
                 ),
               },
             ],
@@ -557,21 +557,21 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Không có phép thuật đen nào cả!',
+              'Hai trụ cột nhân Linux tạo nên Container',
               'Two Native Linux Kernel Primitives',
-              'Toàn bộ sức mạnh của Docker lẫn Kubernetes đứng trên 2 trụ cột của nhân Linux: Namespaces ("được nhìn thấy gì?") và cgroups ("được tiêu thụ tối đa bao nhiêu?").',
+              'Toàn bộ khả năng cô lập của Docker lẫn Kubernetes dựa trên 2 cơ chế của nhân Linux: Namespaces ("được nhìn thấy gì?") và cgroups ("được tiêu thụ tối đa bao nhiêu?").',
               'Every container in Docker and Kubernetes is built on two Linux Kernel primitives: Namespaces (what it can see) and cgroups (how much it can consume).'
             ),
             makeCallout(
               'compare',
-              'Vách ngăn căn hộ vs Cầu dao điện tổng',
-              'Apartment Walls vs Circuit Breakers',
-              'Namespaces giống tường ngăn căn hộ để nhà ai chỉ thấy đồ nhà nấy. cgroups là cầu dao riêng từng hộ để một worker Python/Node chập điện không làm sập nguồn cả tòa nhà!',
-              'Namespaces act like apartment walls isolating sightlines; cgroups act like per-unit circuit breakers so one leaky worker cannot starve the entire server.'
+              'Namespaces (cô lập tầm nhìn) vs cgroups (giới hạn tài nguyên)',
+              'Namespaces (Isolation) vs cgroups (Resource Limits)',
+              'Namespaces cô lập cây tiến trình và mạng để mỗi container chỉ thấy phần của mình; cgroups khóa trần RAM/CPU để một worker rò rỉ bộ nhớ không làm sập cả máy chủ (tương tự vách ngăn căn hộ và cầu dao điện riêng).',
+              'Namespaces isolate sightlines while cgroups cap CPU/RAM so one leaky worker cannot starve the server (like apartment walls vs per-unit circuit breakers).'
             ),
             makeCallout(
               'watch-out',
-              'Bí ẩn con số Exit Code 137 (OOMKilled)',
+              'Nguyên nhân mã thoát Exit Code 137 (OOMKilled)',
               'Why OOMKills Always Show Exit Code 137',
               'Mặc định docker run KHÔNG khóa trần RAM! Khi đặt --memory mà tiến trình vượt vạch, Kernel bắn SIGKILL (số 9) → theo công thức Unix 128 + 9 sinh ra đúng mã thoát 137!',
               'By default docker run has NO memory cap! Once --memory is set, exceeding it triggers Kernel SIGKILL (signal 9) -> POSIX formula 128 + 9 = Exit Code 137.'
@@ -604,7 +604,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               y: -15,
               icon: 'shield',
               highlighted: s === 1 || isOom,
-              label: bi('cgroups Cầu dao', 'cgroups Breaker'),
+              label: bi('cgroups Limits', 'cgroups Limits'),
               badge: {
                 text: isOom
                   ? bi('SIGKILL 9 → Exit 137!', 'SIGKILL 9 → Exit 137!')
@@ -751,7 +751,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '~',
                 text: bi(
-                  'Đổi CMD từ Shell Form sang mảng JSON Exec Form giúp node / uvicorn giữ thẳng ghế PID 1 nhận SIGTERM',
+                  'Đổi CMD từ Shell Form sang mảng JSON Exec Form giúp node / uvicorn giữ trực tiếp PID 1 nhận SIGTERM',
                   'Replaced Shell Form with JSON Exec Form CMD so node/uvicorn runs as PID 1 and catches SIGTERM'
                 ),
               },
@@ -782,8 +782,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Dockerfile là dây chuyền đắp từng lớp bất biến',
-              'Dockerfile as a Deterministic Layer Assembly Line',
+              'Dockerfile tạo các lớp ảnh bất biến tuần tự',
+              'Dockerfile Builds Deterministic Layers',
               'Mỗi dòng FROM, COPY, RUN tạo ra 1 lớp chỉ đọc chồng lên nhau. Viết tốt một lần, cả dự án Node.js lẫn Python FastAPI đều build ra Image giống hệt 100% ở mọi máy!',
               'Each FROM, COPY, and RUN instruction stacks a read-only layer. Whether packaging Node.js or Python FastAPI, the mental model is 100% identical.'
             ),
@@ -803,14 +803,14 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'watch-out',
-              'Bẫy PID 1 khi viết CMD thiếu ngoặc vuông JSON!',
+              'Lỗi PID 1 khi viết CMD thiếu ngoặc vuông JSON',
               'The Shell-Form CMD PID 1 Trap',
-              'Viết CMD node server.js làm /bin/sh chiếm ghế PID 1 và nuốt mất tín hiệu dừng SIGTERM! Bắt buộc viết mảng JSON nháy kép: CMD ["node", "src/index.js"] hoặc CMD ["uvicorn", ...].',
+              'Viết CMD node server.js làm /bin/sh giữ PID 1 và nuốt mất tín hiệu dừng SIGTERM! Bắt buộc viết mảng JSON nháy kép: CMD ["node", "src/index.js"] hoặc CMD ["uvicorn", ...].',
               'Shell-form CMD wraps your app in /bin/sh as PID 1, swallowing SIGTERM on stop! Always write double-quoted JSON Exec Form: CMD ["uvicorn", ...].'
             ),
             makeCallout(
               'technique',
-              'Bộ ba Python 3.12 + uv + FastAPI chuẩn 2026',
+              'Cấu hình Python 3.12 + uv + FastAPI chuẩn 2026',
               'Modern Python 3.12 + uv + FastAPI Pattern',
               'Kết hợp uv sync --frozen --no-dev với PYTHONUNBUFFERED=1 (log tức thì) và --host 0.0.0.0 giúp container Python khởi động nhanh, sạch và chuẩn Production ngay từ bài đầu!',
               'Pair uv sync --frozen --no-dev with PYTHONUNBUFFERED=1 and --host 0.0.0.0 for blazing-fast, production-grade FastAPI containers.'
@@ -834,7 +834,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           ),
           subtitle: isCmdStep
             ? bi(
-                'Bước #5 bắt buộc dùng JSON Exec Form ["..."] để tiến trình giữ trực tiếp ghế PID 1!',
+                'Bước #5 bắt buộc dùng JSON Exec Form ["..."] để tiến trình giữ trực tiếp PID 1!',
                 'Stage #5 must use JSON Exec Form ["..."] so your server owns PID 1 and receives SIGTERM!'
               )
             : bi(
@@ -934,8 +934,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Đưa COPY package*.json / uv.lock lên trên RUN cài gói, đẩy COPY mã nguồn hay sửa xuống tầng cuối cùng',
-                  'Moved lockfile COPY + dependency install above source COPY to prevent Domino cache invalidation'
+                  'Đưa COPY package*.json / uv.lock lên trên RUN cài gói, đẩy COPY mã nguồn hay sửa xuống tầng cuối cùng để tránh mất cache dây chuyền',
+                  'Moved lockfile COPY + dependency install above source COPY to prevent cascading cache invalidation'
                 ),
               },
             ],
@@ -974,9 +974,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình chồng gạch Lego của Layer Cache',
-              'Lego Tower Mental Model of Layer Caching',
-              'Nếu bạn rút viên gạch ở tầng dưới ra sửa, mọi tầng bên trên đều sập cache và phải xây lại! Vì vậy hãy đặt thứ ít đổi nhất lên trên và thứ sửa mỗi phút xuống đáy.',
+              'Nguyên tắc hủy cache theo tầng của BuildKit',
+              'Layer Cache Invalidation Principle',
+              'Khi một lớp thay đổi, mọi lớp đứng sau nó đều mất cache và phải build lại từ đầu! Vì vậy hãy đặt bước ít đổi nhất lên trên và bước sửa thường xuyên xuống cuối (tương tự xếp chồng gạch từ móng lên nóc).',
               'Mutating an early layer invalidates every layer stacked after it! Always order Dockerfile instructions from least-frequently to most-frequently changed.'
             ),
             makeCallout(
@@ -1057,7 +1057,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Tách gian bếp sơ chế (AS builder) khỏi đĩa thành phẩm tinh gọn (AS runner) cho cả TypeScript lẫn Python uv',
+        'Tách giai đoạn biên dịch (AS builder) khỏi stage chạy thực tế tinh gọn (AS runner) cho cả TypeScript lẫn Python uv',
         'Separate heavy compiler/uv builder stage from minimal production runtime stage'
       ),
       bi(
@@ -1136,9 +1136,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Gian bếp sơ chế vs Đĩa món ăn dọn lên bàn',
-              'Kitchen Prep Stage vs Clean Serving Plate',
-              'Multi-stage Dockerfile cho phép dùng nhiều dòng FROM: mọi trình biên dịch C++, TypeScript, uv nằm lại ở gian bếp builder, chỉ thành phẩm tinh gọn sang đĩa runner!',
+              'Tách stage builder (biên dịch) và stage runner (chạy thực tế)',
+              'Separate Builder Stage from Lean Runtime Stage',
+              'Multi-stage Dockerfile cho phép dùng nhiều dòng FROM: trình biên dịch C++, TypeScript, uv nằm lại ở stage builder, chỉ thành phẩm tinh gọn được COPY sang stage runner (tương tự tách khu sơ chế khỏi đĩa món ăn phục vụ).',
               'Multi-stage Dockerfiles let you leave TypeScript compilers, gcc, and build caches behind in the builder stage — shipping only lean runtime artifacts.'
             ),
             makeCallout(
@@ -1349,7 +1349,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'watch-out',
-              'Phân biệt sống còn: compose down vs compose down -v',
+              'Phân biệt quan trọng: compose down vs compose down -v',
               'Critical Distinction: down vs down -v',
               'docker compose down chỉ dọn container & mạng, giữ an toàn 100% dữ liệu DB. Chỉ thêm cờ -v khi bạn thực sự muốn xóa trắng toàn bộ Named Volume!',
               'docker compose down preserves Named Volumes safely; adding -v wipes database volumes clean — use -v only for intentional resets!'
@@ -1503,8 +1503,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Tách bạch Bộ não Control Plane (apiserver, etcd, scheduler, controller) và Xưởng Worker Node (kubelet, containerd)',
-                  'Separated Control Plane brain components from Worker Node execution agents'
+                  'Tách bạch Control Plane (điều phối: apiserver, etcd, scheduler, controller) và Worker Node (thực thi: kubelet, containerd)',
+                  'Separated Control Plane components from Worker Node execution agents'
                 ),
               },
             ],
@@ -1512,7 +1512,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Vận hành Vòng lặp Đối soát như điều hòa nhiệt độ: Node #2 sập mất 1 Pod → tự động tạo bù sang Node #3!',
+                  'Vận hành Vòng lặp Đối soát liên tục 24/7: Node #2 sập mất 1 Pod → tự động tạo bù sang Node #3',
                   'Activated declarative Reconciliation Loop automatically rescheduling lost Pods across healthy Nodes'
                 ),
               },
@@ -1543,14 +1543,14 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'K8s là "máy điều hòa nhiệt độ" cho cả trung tâm dữ liệu',
-              'Kubernetes as a Datacenter Thermostat',
-              'Thay vì tự gõ lệnh bật từng container lúc 3 giờ sáng, bạn chỉ đặt mức nhiệt mong muốn (replicas: 3) — K8s tự canh gác và đẻ bù Pod suốt ngày đêm!',
+              'Nguyên lý điều phối khai báo của Kubernetes',
+              'Kubernetes Declarative Control Loop',
+              'Thay vì tự bật từng container thủ công lúc sự cố, bạn chỉ khai báo trạng thái mong muốn (replicas: 3) — K8s liên tục đối soát và tự tạo bù Pod 24/7 (tương tự máy điều hòa tự giữ nhiệt độ cài đặt).',
               'Instead of babysitting servers manually at 3 AM, you declare Desired State (replicas: 3) and Kubernetes continuously reconciles reality to match.'
             ),
             makeCallout(
               'compare',
-              'Đừng vội vác đại bác nếu chỉ chạy 1 server nhỏ!',
+              'Khi nào chưa cần dùng Kubernetes?',
               'Know When You Do NOT Need Kubernetes Yet',
               '1 VPS nhỏ → Docker Compose là đủ. MVP muốn tự co giãn không lo hạ tầng → Cloud Run / Fly.io. Chỉ lên K8s khi cần điều phối đa dịch vụ, tự chữa lành đa máy chủ và không khóa chặt Cloud!',
               '1 server -> Docker Compose. Zero-ops serverless -> Cloud Run / Fly.io. Choose Kubernetes when running multi-service architectures needing multi-node self-healing and cloud portability.'
@@ -1660,7 +1660,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'memory-2d',
     objectives: [
       bi(
-        'Hiểu vì sao Pod là vỏ kén nhỏ nhất (chia sẻ chung IP/localhost và emptyDir giữa container chính & Sidecar)',
+        'Hiểu vì sao Pod là đơn vị triển khai nhỏ nhất (chia sẻ chung IP/localhost và emptyDir giữa container chính & Sidecar)',
         'Understand Pod as the atomic wrapper sharing IP/localhost and volumes between main & sidecar containers'
       ),
       bi(
@@ -1728,7 +1728,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Chia cụm thành các tầng lầu Namespace (staging, payments) ngăn cách bằng dấu --- trong YAML',
+                  'Phân vùng cụm thành các Namespace (staging, payments) ngăn cách bằng dấu --- trong YAML',
                   'Partitioned cluster logically into Namespaces separated cleanly with --- YAML dividers'
                 ),
               },
@@ -1750,9 +1750,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình "Vỏ kén đậu Hà Lan" (Pod)',
-              'The Pea-Pod Wrapper Mental Model',
-              '95% thời gian 1 Pod chỉ bọc đúng 1 container (FastAPI hoặc Node.js). Nhưng vỏ Pod cho phép kẹp thêm trợ lý Sidecar dùng chung 127.0.0.1 và ổ đĩa tạm cực tiện!',
+              'Pod: Đơn vị triển khai nhỏ nhất dùng chung IP & localhost',
+              'Pod: Atomic Unit Sharing IP & Localhost',
+              '95% thời gian 1 Pod chỉ bọc đúng 1 container (FastAPI hoặc Node.js). Khi cần trợ lý Sidecar, Pod cho phép hai container dùng chung 127.0.0.1 và ổ đĩa tạm emptyDir cực tiện!',
               '95% of Pods wrap a single container, while the Pod sandbox lets optional Sidecar helpers share localhost and local emptyDir storage effortlessly.'
             ),
             makeCallout(
@@ -1771,7 +1771,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'technique',
-              'Dùng kubens chuyển tầng Namespace nhanh trong 1 phím',
+              'Dùng kubens chuyển Namespace nhanh trong 1 lệnh',
               'Switch Namespaces Effortlessly with kubens',
               'Tuyệt đối không nhét ứng dụng kinh doanh vào kube-system! Hãy tách riêng staging / production và dùng kubens để khỏi phải gõ lặp lại -n mỗi lần.',
               'Never deploy apps into kube-system! Isolate workloads per Namespace and use kubens to switch active context cleanly.'
@@ -1876,7 +1876,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             tone: 'ok',
           },
           {
-            label: bi('CỨU HỎA ROLLBACK', 'EMERGENCY UNDO'),
+            label: bi('KHÔI PHỤC PHIÊN BẢN', 'FAST ROLLBACK'),
             value: isUndo
               ? bi('rollout undo (~2 giây!)', 'rollout undo (~2 sec!)')
               : isLabelMatch
@@ -1940,9 +1940,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Giám đốc (Deployment) → Tổ trưởng (ReplicaSet) → Nhân viên (Pod)',
-              'Branch Manager -> Shift Lead -> Staff Mental Model',
-              'Pod trần chết là mất vĩnh viễn! Khi bọc trong Deployment, Tổ trưởng ReplicaSet tự động đếm bù quân số 24/7, còn Giám đốc Deployment lo chuyển giao phiên bản mới êm ru!',
+              'Phân cấp 3 tầng: Deployment → ReplicaSet → Pod',
+              '3-Tier Hierarchy: Deployment -> ReplicaSet -> Pod',
+              'Pod đơn lẻ chết là mất vĩnh viễn! Khi bọc trong Deployment, ReplicaSet tự động duy trì đủ số bản sao 24/7, còn Deployment điều phối chuyển giao phiên bản mới êm ái (tương tự quản lý → tổ trưởng → nhân viên).',
               'Naked Pods die permanently on node failure. A Deployment delegates headcount to ReplicaSets while orchestrating zero-downtime version transitions.'
             ),
             makeCallout(
@@ -1956,13 +1956,13 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'watch-out',
               'Lệch nhãn giữa selector.matchLabels và template.metadata.labels!',
               'Selector vs Pod Template Label Mismatch!',
-              'selector.matchLabels là kính lúp tìm con, còn template.metadata.labels là bảng tên đeo lên Pod. Thiếu hoặc lệch nhau 1 chữ là API Server từ chối thẳng!',
+              'selector.matchLabels là điều kiện lọc tìm Pod quản lý, còn template.metadata.labels là bộ nhãn gắn lên Pod khi tạo mới. Thiếu hoặc lệch nhau 1 chữ là API Server từ chối thẳng!',
               'Every key-value pair in spec.selector.matchLabels must appear identically in spec.template.metadata.labels or validation fails immediately.'
             ),
             makeCallout(
               'technique',
-              'Mở quầy thu ngân mới xong mới đóng quầy cũ (maxUnavailable: 0)',
-              'Open the New Register Before Closing the Old One',
+              'Mở Pod mới trước khi tắt Pod cũ (maxUnavailable: 0)',
+              'Start Replacement Pods Before Terminating Old Ones',
               'Với maxUnavailable: 0 và maxSurge: 1, K8s bắt buộc đợi Pod v2 mới báo Ready xong xuôi mới tắt 1 Pod v1 cũ — năng lực phục vụ không bao giờ hụt dù chỉ 1 giây!',
               'Setting maxUnavailable: 0 with maxSurge: 1 ensures a new v2 Pod passes Readiness before any v1 Pod is terminated.'
             ),
@@ -1970,7 +1970,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'good-to-know',
               'Quy tắc Vàng Production',
               'Production Golden Rule',
-              'Không bao giờ chạy Pod trần; luôn đặt maxUnavailable: 0 kèm readinessProbe, và nhớ lệnh cứu hỏa 2 giây: kubectl rollout undo deployment/<tên>!',
+              'Không bao giờ chạy Pod trần; luôn đặt maxUnavailable: 0 kèm readinessProbe, và giữ sẵn lệnh khôi phục 2 giây: kubectl rollout undo deployment/<tên>!',
               'Never run naked Pods; pair maxUnavailable: 0 with readinessProbes, and keep kubectl rollout undo ready for 2-second incident recovery.'
             ),
           ],
@@ -2057,7 +2057,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Phân biệt bình dị 3 kiểu Service (ClusterIP nội bộ, NodePort 30000–32767, LoadBalancer đám mây)',
+        'Phân biệt rõ 3 kiểu Service (ClusterIP nội bộ, NodePort 30000–32767, LoadBalancer đám mây)',
         'Distinguish ClusterIP (internal default), NodePort (30000–32767), and cloud LoadBalancer Services'
       ),
       bi(
@@ -2099,7 +2099,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Đặt "số tổng đài cố định" Service đứng chắn trước dàn Pod có địa chỉ IP thay đổi liên tục',
+                  'Đặt điểm truy cập ổn định Service (ClusterIP VIP) đứng trước dàn Pod có địa chỉ IP thay đổi liên tục',
                   'Placed a stable Service Virtual IP in front of ephemeral, constantly-rescheduled Pod IPs'
                 ),
               },
@@ -2148,9 +2148,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Service là "Số tổng đài 1900 cố định"',
-              'Service as a Stable Switchboard Number',
-              'Mỗi lần Pod tái tạo là đổi IP mới! Không bao giờ gọi thẳng IP của Pod — hãy gọi qua tên Service để CoreDNS và EndpointSlice tự nối máy tới các Pod đang khỏe mạnh.',
+              'Service: Địa chỉ IP ảo và DNS ổn định trước Pod',
+              'Service: Stable Virtual IP & DNS in Front of Pods',
+              'Mỗi lần Pod tái tạo là đổi IP mới! Không bao giờ gọi thẳng IP của Pod — hãy gọi qua tên Service để CoreDNS và EndpointSlice định tuyến tới các Pod đang khỏe mạnh (tương tự gọi vào số tổng đài cố định).',
               'Pod IPs change on every rollout! Always connect via a Service name so CoreDNS and EndpointSlices route only to healthy Ready Pods.'
             ),
             makeCallout(
@@ -2162,7 +2162,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'watch-out',
-              'port là mặt tiền Service · targetPort là cửa phòng trong Pod!',
+              'port là cổng trên Service VIP · targetPort là cổng trong Pod',
               'port vs targetPort + Empty Endpoints Check',
               'Nếu gọi Service báo lỗi, hãy gõ ngay kubectl get endpoints <svc>: thấy <none> là bạn gõ lệch nhãn selector; thấy có IP mà vẫn lỗi là targetPort lệch với cổng code đang nghe!',
               'Run kubectl get endpoints <svc> first on connection failures: <none> means a selector typo; IPs present with Connection Refused means a targetPort mismatch.'
@@ -2171,7 +2171,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'technique',
               'Cùng Namespace gọi tên ngắn · Khác Namespace nối thêm .<ns>',
               'Short Names Intra-Namespace · FQDN Cross-Namespace',
-              'Chung tầng lầu chỉ cần gọi http://shop-api-svc. Gọi sang tầng khác bắt buộc ghi rõ: redis-master.cache.svc.cluster.local!',
+              'Cùng Namespace chỉ cần gọi http://shop-api-svc. Gọi sang Namespace khác bắt buộc ghi rõ: redis-master.cache.svc.cluster.local!',
               'Same-namespace calls use http://shop-api-svc; cross-namespace calls must include the target namespace (<svc>.<ns>.svc.cluster.local).'
             ),
             makeCallout(
@@ -2284,7 +2284,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               ? bi('Envoy · Cilium · Traefik', 'Envoy · Cilium · Traefik')
               : isIngressSpec
                 ? bi('pathType: Prefix + TLS Secret', 'pathType: Prefix + TLS Secret')
-                : bi('Tờ luật YAML + Pod gác cổng', 'YAML Rule + Controller Pod'),
+                : bi('Bản khai báo YAML + Controller', 'YAML Rule + Controller Pod'),
             tone: isCtrlWarn ? 'warn' : 'ok',
           },
         ],
@@ -2303,7 +2303,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '~',
                 text: bi(
-                  'Phân biệt rõ "tờ giấy luật" (Ingress/HTTPRoute YAML) với "người gác cổng thực thi" (Controller Pod)',
+                  'Phân biệt rõ bản khai báo quy tắc (Ingress/HTTPRoute YAML) với bộ thực thi lưu lượng (Controller Pod)',
                   'Separated declarative routing manifests from the live data-plane Controller Pod executing them'
                 ),
               },
@@ -2334,16 +2334,16 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Một quầy lễ tân HTTPS duy nhất cho cả tòa nhà 20 dịch vụ',
-              'One Smart HTTPS Reception Desk for 20+ Microservices',
+              'Một điểm nhận HTTPS duy nhất cho nhiều dịch vụ nội bộ',
+              'One Shared HTTPS Entrypoint for Many Microservices',
               'Thay vì thuê 20 IP công cộng tốn kém, mọi lưu lượng HTTPS đi vào 1 cổng duy nhất, giải mã SSL tập trung rồi rẽ nhánh /api sang Node, /ai sang Python FastAPI!',
               'Terminate HTTPS once at the cluster edge and route /api, /ai, and / cleanly to internal ClusterIP Services.'
             ),
             makeCallout(
               'watch-out',
-              'Nộp Ingress YAML lên cụm trống sẽ KHÔNG có gì xảy ra nếu thiếu Controller!',
+              'Ingress/HTTPRoute YAML sẽ không hoạt động nếu thiếu Controller',
               'An Ingress YAML Does Nothing Without a Running Controller!',
-              'kind: Ingress chỉ là tờ nội quy dán tường. Cụm bắt buộc phải cài sẵn Pod Controller đang sống (như Envoy Gateway, Cilium, Traefik) đứng đọc và mở cổng đón khách!',
+              'kind: Ingress chỉ là bản khai báo quy tắc định tuyến. Cụm bắt buộc phải cài sẵn Pod Controller đang chạy thực tế (như Envoy Gateway, Cilium, Traefik) để mở cổng tiếp nhận lưu lượng!',
               'Ingress/HTTPRoute manifests are purely declarative rules — your cluster must run an active Controller Pod to actually accept traffic.'
             ),
             makeCallout(
@@ -2355,7 +2355,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'good-to-know',
-              'Bước ngoặt 2026: Tạm biệt Ingress NGINX → Đón chuẩn Gateway API!',
+              'Chuyển dịch năm 2026: Từ Ingress NGINX sang chuẩn Gateway API',
               '2026 Industry Shift: Ingress NGINX Retirement -> Gateway API',
               'Dự án cộng đồng Ingress NGINX đang nghỉ hưu! Khi dựng cụm mới năm 2026, hãy ưu tiên Kubernetes Gateway API (Gateway cho Infra + HTTPRoute chia tải Canary gốc cho Dev) trên nền Envoy Gateway, Cilium hoặc Traefik.',
               'With community Ingress NGINX retiring, greenfield 2026 clusters standardize on Kubernetes Gateway API (Gateway + HTTPRoute) backed by Envoy Gateway, Cilium, or Traefik.'
@@ -2514,9 +2514,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Bảng thông báo sảnh chung (ConfigMap) vs Hồ sơ mật (Secret)',
-              'Lobby Noticeboard (ConfigMap) vs Restricted Safe (Secret)',
-              'ConfigMap chứa thông số thường (LOG_LEVEL, PORT) lưu lên Git vô tư. Secret chứa mật khẩu DB / API Key được K8s giữ trên bộ nhớ RAM tmpfs và khóa quyền đọc riêng!',
+              'Phân biệt ConfigMap (công khai) và Secret (nhạy cảm)',
+              'Public ConfigMap vs Sensitive Secret',
+              'ConfigMap chứa thông số thường (LOG_LEVEL, PORT) lưu lên Git bình thường. Secret chứa mật khẩu DB / API Key được K8s nạp trên bộ nhớ RAM tmpfs và kiểm soát quyền đọc riêng qua RBAC (tương tự bảng thông báo chung vs hồ sơ mật có khóa).',
               'ConfigMaps store plain settings safe for Git; Secrets hold credentials mounted via RAM-backed tmpfs and guarded by strict RBAC.'
             ),
             makeCallout(
@@ -2528,7 +2528,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'watch-out',
-              'Base64 chỉ giống mã Morse — bất kỳ ai cũng giải mã trong 0.5 giây!',
+              'Base64 chỉ là encoding — bất kỳ ai cũng giải mã trong tích tắc',
               'Base64 Is Encoding, NOT Cryptographic Encryption!',
               'Đừng bao giờ commit tệp Secret YAML lên Git vì nghĩ chuỗi Base64 đã mã hóa! Trên Production hãy dùng External Secrets Operator kéo từ Vault/Cloud KMS hoặc mã hóa bằng SOPS.',
               'Anyone can decode Base64 in milliseconds with base64 -d! Never commit raw Secret YAMLs to Git — use External Secrets Operator or SOPS.'
@@ -2674,7 +2674,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Nộp phiếu PVC chọn hạng đĩa StorageClass (gp3) để CSI Driver tự cắt ổ SSD thật PV ở chế độ ReadWriteOnce',
+                  'Khai báo PVC chọn hạng đĩa StorageClass (gp3) để CSI Driver tự cấp phát ổ SSD thật PV ở chế độ ReadWriteOnce',
                   'Submitted PVC against StorageClass triggering automatic CSI provisioning of a Bound cloud PV'
                 ),
               },
@@ -2714,9 +2714,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình "Tủ hành lý di động đi theo nhân viên"',
-              'Portable Cloud Locker Mental Model',
-              'Trên cụm 15 máy chủ, Pod hôm nay ở máy #1 mai dời sang máy #8! Nhờ PVC + CSI Driver, chiếc ổ cứng đám mây tự động rút khỏi máy #1 và cắm sang máy #8 theo Pod!',
+              'Lưu trữ động qua StorageClass, PVC và PV',
+              'Dynamic Storage via StorageClass, PVC & PV',
+              'Trên cụm nhiều máy chủ, Pod hôm nay chạy ở máy #1 mai có thể dời sang máy #8. Nhờ PVC + CSI Driver, ổ đĩa đám mây tự động tháo khỏi máy #1 và gắn sang máy #8 theo Pod (tương tự tủ hành lý di động đi theo nhân viên).',
               'When a Pod reschedules from Node #1 to Node #8, CSI detaches the cloud block volume and reattaches it automatically to the new Node.'
             ),
             makeCallout(
@@ -2896,10 +2896,10 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mô hình "Quán cà phê buổi sáng" cho 3 loại Probe',
-              'Morning Coffee Shop Analogy for the 3 Probes',
-              'startupProbe = chờ máy pha đun sôi nước lần đầu; readinessProbe = tạm treo biển kín bàn ngưng nhận khách mới (không đập quầy!); livenessProbe = người pha ngất xỉu cần khởi động lại!',
-              'startupProbe = warming up the espresso machine; readinessProbe = "temporarily full" sign gating new traffic; livenessProbe = restarting a frozen process.'
+              'Vai trò của 3 loại Health Probe',
+              'Role of the 3 Health Probes',
+              'startupProbe chờ quá trình khởi tạo chậm lần đầu; readinessProbe quyết định Pod có được nhận lưu lượng từ Service hay không mà không giết container; livenessProbe phát hiện deadlock để khởi động lại container (tương tự đun nóng máy đầu ngày, treo biển tạm ngưng nhận đơn khi bận, và khởi động lại khi nhân sự ngất).',
+              'startupProbe protects slow boot; readinessProbe gates Service traffic without killing Pods; livenessProbe restarts frozen deadlocked processes.'
             ),
             makeCallout(
               'technique',
@@ -2910,8 +2910,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'watch-out',
-              'Thảm họa số 1 Production: Nhét câu lệnh SELECT 1 vào livenessProbe!',
-              '#1 Production Outage Cause: Querying DB Inside livenessProbe!',
+              'Sai lầm nghiêm trọng trên Production: Nhét SELECT 1 vào livenessProbe',
+              'Critical Production Anti-Pattern: Querying DB Inside livenessProbe',
               'DB chỉ chậm nhẹ 2 giây → liveness trượt → K8s giết đồng loạt cả 20 Pod API → 20 Pod bật dậy dội bão kết nối đánh sập hẳn DB! Chỉ kiểm tra DB ở readinessProbe (/readyz)!',
               'A brief DB hiccup fails liveness across all Pods at once, triggering a massive restart storm that crushes the DB! Check dependencies ONLY in readinessProbe.'
             ),
@@ -2985,7 +2985,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
     primaryMode: 'isometric',
     objectives: [
       bi(
-        'Phân biệt bình dị requests (vé giữ chỗ cho Scheduler & mẫu số HPA) vs limits (cầu dao cgroups: CPU Throttling vs RAM OOM 137) và 3 hạng QoS',
+        'Phân biệt rõ requests (căn cứ xếp lịch cho Scheduler & mẫu số HPA) vs limits (giới hạn cgroups: CPU Throttling vs RAM OOM 137) và 3 hạng QoS',
         'Separate Scheduler/HPA requests from cgroup limits (CPU throttling vs OOM 137) and master 3 QoS classes'
       ),
       bi(
@@ -3035,7 +3035,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Tách rõ requests (vé giữ chỗ trên Scheduler) và limits (trần cgroups: vượt CPU bị chậm, vượt RAM nổ OOM 137)',
+                  'Tách rõ requests (mức đảm bảo cho Scheduler) và limits (giới hạn cgroups: vượt CPU bị chậm, vượt RAM nổ OOM 137)',
                   'Configured requests for scheduling and limits for cgroup caps (CPU throttling vs Memory OOM 137)'
                 ),
               },
@@ -3044,7 +3044,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Thiết lập hạng ghế VIP Guaranteed QoS (requests == limits) cho dịch vụ thanh toán lõi không bị trục xuất khi thiếu RAM',
+                  'Thiết lập mức ưu tiên Guaranteed QoS (requests == limits) cho dịch vụ thanh toán lõi không bị trục xuất khi thiếu RAM',
                   'Assigned Guaranteed QoS (requests == limits) protecting critical workloads from node-pressure eviction'
                 ),
               },
@@ -3075,9 +3075,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Vé giữ chỗ ngồi (requests) vs Cầu dao khóa trần (limits)',
-              'Reserved Seat Ticket (requests) vs Circuit Breaker (limits)',
-              'kube-scheduler chỉ nhìn requests để tìm xe Worker Node còn ghế trống. Khi đã chạy, vượt limits.cpu chỉ bị hãm tốc (Throttling), nhưng vượt limits.memory sẽ nổ OOMKilled 137!',
+              'Phân biệt resources.requests và resources.limits',
+              'requests (Scheduling) vs limits (Runtime Cap)',
+              'kube-scheduler chỉ nhìn requests để tìm Worker Node còn đủ chỗ trống. Khi đã chạy, vượt limits.cpu chỉ bị hãm tốc (Throttling), nhưng vượt limits.memory sẽ bị OOMKilled 137 (tương tự mức đặt chỗ khi xếp lịch vs cầu dao trần tối đa lúc vận hành).',
               'kube-scheduler places Pods based strictly on requests. At runtime, exceeding CPU limits throttles speed, while exceeding memory limits triggers an instant OOMKill (137).'
             ),
             makeCallout(
@@ -3089,9 +3089,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'compare',
-              'Ba hạng ghế QoS khi máy chủ cạn sạch RAM vật lý',
+              '3 hạng QoS Classes khi máy chủ thiếu RAM vật lý',
               'Three QoS Classes Under Node Memory Pressure',
-              'Không khai báo gì = BestEffort (bị đuổi đầu tiên!). requests < limits = Burstable (phổ biến cho API). requests bằng khít limits ở mọi container = Guaranteed (khoang VIP bảo vệ tới cùng!).',
+              'Không khai báo gì = BestEffort (bị trục xuất đầu tiên). requests < limits = Burstable (phổ biến cho API). requests bằng khít limits ở mọi container = Guaranteed (mức ưu tiên bảo vệ cao nhất).',
               'No resources = BestEffort (evicted first). requests < limits = Burstable. Identical requests and limits on all containers = Guaranteed (highest protection).'
             ),
             makeCallout(
@@ -3188,7 +3188,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Harden containers with runAsNonRoot, readOnlyRootFilesystem (+ /tmp emptyDir), and dropped capabilities'
       ),
       bi(
-        'Bật nhãn PSA restricted trên Namespace và hiểu dễ dàng bộ 3 RBAC: Thẻ nhân viên ServiceAccount ← RoleBinding → Role',
+        'Bật nhãn PSA restricted trên Namespace và nắm rõ bộ 3 RBAC: ServiceAccount ← RoleBinding → Role',
         'Enforce Namespace PSA restricted standards and wire least-privilege ServiceAccount -> RoleBinding -> Role'
       ),
     ],
@@ -3285,9 +3285,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'good-to-know',
-              'Mô hình 3 tờ giấy RBAC & Quy tắc Vàng Production',
+              'Cấu trúc 3 thành phần RBAC & Quy tắc Production',
               '3-Piece RBAC Model & Production Golden Rule',
-              '95% API không gọi K8s API → đặt automountServiceAccountToken: false! Nếu cần gọi, nối Thẻ nhân viên (ServiceAccount) qua Quyết định (RoleBinding) tới Quyền cụ thể (Role), tuyệt đối cấm "*"!',
+              '95% API không gọi K8s API → đặt automountServiceAccountToken: false! Nếu cần gọi, nối danh tính ServiceAccount qua RoleBinding tới tập quyền Role cụ thể (tương tự thẻ định danh, quyết định gán quyền và bảng mô tả quyền), tuyệt đối cấm "*"!',
               'Set automountServiceAccountToken: false for normal APIs! Otherwise bind a dedicated ServiceAccount via RoleBinding to an explicit Role (never "*" or cluster-admin).'
             ),
           ],
@@ -3391,7 +3391,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Giải quyết 2 bài toán doanh nghiệp: khóa tường lửa mạng nội bộ và xóa sổ cảnh copy-paste 32 tệp YAML',
+                  'Giải quyết 2 bài toán doanh nghiệp: cô lập tường lửa mạng nội bộ và loại bỏ cảnh sao chép thủ công nhiều tệp YAML',
                   'Solved enterprise East-West microsegmentation and eliminated multi-environment YAML copy-paste'
                 ),
               },
@@ -3431,9 +3431,9 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
           [
             makeCallout(
               'key-idea',
-              'Mặc định hành lang mạng K8s mở thông thống xuyên mọi Namespace!',
+              'Mặc định mạng Kubernetes cho phép kết nối xuyên mọi Namespace',
               'By Default, Kubernetes Networking Is 100% Flat Allow-All!',
-              'Chia Namespace KHÔNG tự dựng tường lửa mạng! Bạn cần NetworkPolicy làm cửa thẻ từ khóa từng phòng ban, và cần Helm / Kustomize để quản lý cấu hình chuyên nghiệp.',
+              'Chia Namespace KHÔNG tự dựng tường lửa mạng! Bạn cần NetworkPolicy để kiểm soát truy cập tầng 3/4 giữa các nhóm Pod (tương tự cửa kiểm soát giữa các phòng ban), và cần Helm / Kustomize để quản lý cấu hình chuyên nghiệp.',
               'Namespaces do NOT isolate network traffic! Use NetworkPolicies for L3/L4 microsegmentation and Helm/Kustomize for DRY multi-env manifests.'
             ),
             makeCallout(
@@ -3541,7 +3541,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Diagnose pre-execution states (Pending, ImagePullBackOff, CreateContainerConfigError) via kubectl describe Events'
       ),
       bi(
-        'Bắt trọn Traceback của phiên vừa sập ở CrashLoopBackOff (lùi lũy thừa 10s→5m) bằng cờ sống còn kubectl logs --previous & k9s',
+        'Bắt trọn Traceback của phiên vừa sập ở CrashLoopBackOff (lùi lũy thừa 10s→5m) bằng cờ quan trọng kubectl logs --previous & k9s',
         'Capture crash tracebacks in CrashLoopBackOff (10s->5m backoff) using kubectl logs --previous and k9s'
       ),
     ],
@@ -3576,7 +3576,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Thay thế thói quen xóa Pod đoán mò bằng Phễu Chẩn Đoán 3 Bước chuẩn SRE: get → describe → logs --previous',
+                  'Thay thế thói quen xóa Pod đoán mò bằng Quy trình Chẩn đoán 3 Bước chuẩn SRE: get → describe → logs --previous',
                   'Replaced guesswork restarts with the deterministic 3-Step SRE Triage workflow'
                 ),
               },
@@ -3655,7 +3655,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'good-to-know',
               'Quy tắc Vàng Trực Chiến (On-Call Rule)',
               'On-Call Golden Rule',
-              'Luôn chẩn đoán tìm bằng chứng thép (describe Events / logs --previous, hoặc phím d / p trên k9s) rồi mới sửa thẳng vào tệp nguồn YAML!',
+              'Luôn chẩn đoán tìm bằng chứng rõ ràng (describe Events / logs --previous, hoặc phím d / p trên k9s) rồi mới sửa thẳng vào tệp nguồn YAML!',
               'Gather hard evidence first via describe Events or logs --previous (keys d / p in k9s), then fix the declarative manifest.'
             ),
           ],
@@ -3736,8 +3736,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Resolve Exit 137 OOMKills by right-sizing memory.limits and streaming large payloads in Python/Node'
       ),
       bi(
-        'Bắt bệnh 502 qua kubectl get endpoints (<none> vs lệch targetPort), cầm máu 3s bằng rollout undo và chốt Kiềng 3 Chân Zero-Downtime',
-        'Fix 502s via kubectl get endpoints, recover in 3s via rollout undo, and enforce the 3 Zero-Downtime pillars'
+        'Bắt bệnh 502 qua kubectl get endpoints (<none> vs lệch targetPort), khôi phục 3s bằng rollout undo và áp dụng 3 cơ chế Zero-Downtime',
+        'Fix 502s via kubectl get endpoints, recover in 3s via rollout undo, and enforce the 3 Zero-Downtime mechanisms'
       ),
     ],
     buildStep: (s, total) => {
@@ -3755,16 +3755,16 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             tone: isOom ? 'bad' : 'ok',
           },
           {
-            label: bi('BẮT MẠCH LỖI 502', '502 TRIAGE'),
+            label: bi('CHẨN ĐOÁN LỖI 502', '502 TRIAGE'),
             value: is502
               ? bi('Endpoints = <none> / targetPort', 'Endpoints = <none> / targetPort')
               : bi('selector == labels ✔', 'selector == labels ✔'),
             tone: is502 ? 'warn' : 'ok',
           },
           {
-            label: bi('CẦM MÁU & ĐỘ BỀN', 'MTTR & UPTIME'),
+            label: bi('KHÔI PHỤC & UPTIME', 'MTTR & UPTIME'),
             value: isZeroDown
-              ? bi('Kiềng 3 Chân · 100% Uptime', '3 Pillars · 100% Uptime')
+              ? bi('3 Cơ chế · 100% Uptime', '3 Mechanisms · 100% Uptime')
               : bi('rollout undo (~3 giây)', 'rollout undo (~3 sec)'),
             tone: 'ok',
           },
@@ -3775,7 +3775,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Làm chủ 4 kịch bản trực chiến căng thẳng nhất khi Pod nhìn vẫn Running nhưng khách hàng báo lỗi!',
+                  'Làm chủ 4 kịch bản trực chiến phổ biến nhất khi Pod nhìn vẫn Running nhưng khách hàng báo lỗi!',
                   'Mastered the 4 highest-stakes live production incidents beyond initial Pod boot'
                 ),
               },
@@ -3784,7 +3784,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '~',
                 text: bi(
-                  'Trị dứt điểm OOMKilled (Exit 137): nâng limits.memory trước mắt và đổi code sang Python StreamingResponse / Node stream.pipeline',
+                  'Xử lý triệt để OOMKilled (Exit 137): nâng limits.memory trước mắt và đổi code sang Python StreamingResponse / Node stream.pipeline',
                   'Fixed Exit 137 OOMKills via memory limit right-sizing + chunked streaming in Python & Node.js'
                 ),
               },
@@ -3802,7 +3802,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Cầm máu sự cố phát hành lỗi trong 3 giây bằng kubectl rollout undo thay vì ngồi chờ CI build lại 15 phút',
+                  'Khôi phục sự cố phát hành lỗi trong 3 giây bằng kubectl rollout undo thay vì ngồi chờ CI build lại 15 phút',
                   'Slashed incident MTTR to 3 seconds using kubectl rollout undo before root-cause debugging'
                 ),
               },
@@ -3811,8 +3811,8 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Khóa chặt Kiềng 3 Chân Zero-Downtime: maxUnavailable: 0 + readinessProbe + lifecycle.preStop (sleep 5)',
-                  'Locked in the 3 Zero-Downtime pillars: maxUnavailable: 0 + readinessProbe + 5s preStop hook'
+                  'Áp dụng đầy đủ 3 cơ chế Zero-Downtime: maxUnavailable: 0 + readinessProbe + lifecycle.preStop (sleep 5)',
+                  'Locked in the 3 Zero-Downtime mechanisms: maxUnavailable: 0 + readinessProbe + 5s preStop hook'
                 ),
               },
             ],
@@ -3826,36 +3826,36 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               'key-idea',
               'Pod hiện 1/1 Running chưa chắc khách hàng đã vào được!',
               '1/1 Running Does Not Guarantee Happy Users!',
-              'Những sự cố Production hiểm hóc nhất nằm ở tràn RAM lúc tải đỉnh (OOM 137), đứt cầu nối nhãn Service (502) hoặc rớt gói tin vài giây lúc cuộn phiên bản mới.',
+              'Những sự cố Production hay gặp nhất nằm ở tràn RAM lúc tải đỉnh (OOM 137), đứt cầu nối nhãn Service (502) hoặc rớt gói tin vài giây lúc cuộn phiên bản mới.',
               'Real-world outages often strike running Pods: peak-load OOMKills (137), broken Service Endpoint wiring (502), or rollout race conditions.'
             ),
             makeCallout(
               'watch-out',
-              'Chữa OOMKilled (Exit 137): Nâng trần RAM + Đổi sang xử lý từng khúc (Streaming)!',
+              'Xử lý OOMKilled (Exit 137): Nâng trần RAM + Chuyển sang Streaming',
               'Cure Exit 137 Twice: Right-Size RAM + Stream Chunks!',
-              'Tăng limits.memory giúp cầm máu ngay, nhưng về căn cơ đừng đọc cả tệp 300MB vào 1 biến! Hãy dùng generator/StreamingResponse (FastAPI) hoặc stream.pipeline (Node.js).',
+              'Tăng limits.memory giúp khắc phục tức thời, nhưng về căn cơ đừng đọc cả tệp 300MB vào 1 biến! Hãy dùng generator/StreamingResponse (FastAPI) hoặc stream.pipeline (Node.js).',
               'Raise memory.limits for immediate relief, then eliminate memory spikes using Python generators/StreamingResponse or Node.js stream.pipeline.'
             ),
             makeCallout(
               'technique',
-              'Pod vẫn xanh mà ăn 502? Gõ ngay kubectl get endpoints <svc>!',
+              'Pod vẫn xanh mà trả về 502? Kiểm tra ngay kubectl get endpoints <svc>',
               'Pods Green but Getting 502? Check kubectl get endpoints Immediately!',
               'Nếu cột ENDPOINTS hiện <none> → chắc chắn Service selector gõ lệch nhãn Pod! Nếu đã có danh sách IP mà vẫn 502 → Service đang trỏ sai số cổng targetPort!',
               'ENDPOINTS = <none> proves a Service selector mismatch (or failing readiness); IPs present with 502 points directly to a wrong targetPort!'
             ),
             makeCallout(
               'watch-out',
-              'Cháy nhà giờ cao điểm: Rollback trong 3 giây trước, mở IDE sửa bug sau!',
-              'Bleeding Production Rule: Roll Back in 3 Seconds First, Debug Later!',
+              'Sự cố phát hành lỗi giờ cao điểm: Rollback trong 3 giây trước, gỡ lỗi sau',
+              'Production Incident Rule: Roll Back in 3 Seconds First, Debug Later',
               'Đừng bắt khách hàng nhìn trang lỗi 15 phút chờ bạn sửa code chạy lại CI! Gõ kubectl rollout undo deployment/<tên> để kéo MTTR về 3 giây ngay lập tức.',
               'Never debug live while users see 500s! Run kubectl rollout undo deployment/<name> to restore service in 3 seconds, then debug calmly in staging.'
             ),
             makeCallout(
               'good-to-know',
-              'Kiềng 3 Chân Tổng Kết Khóa Học (100% Zero-Downtime)',
-              'Capstone Golden Triad for 100% Zero-Downtime',
+              '3 Cơ chế tổng kết khóa học cho 100% Zero-Downtime',
+              'Capstone 3 Mechanisms for 100% Zero-Downtime',
               'Mọi Deployment chuẩn Production phải có đủ bộ ba: (1) maxUnavailable: 0 + maxSurge: 1, (2) readinessProbe (/readyz), và (3) lifecycle.preStop (sleep 5) + xử lý SIGTERM!',
-              'Every production Deployment needs all three pillars: (1) maxUnavailable: 0 + maxSurge: 1, (2) readinessProbe, and (3) a 5s preStop hook + SIGTERM drain!'
+              'Every production Deployment needs all three mechanisms: (1) maxUnavailable: 0 + maxSurge: 1, (2) readinessProbe, and (3) a 5s preStop hook + SIGTERM drain!'
             ),
           ],
           s,
@@ -3904,7 +3904,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               badge: {
                 text: isOom
                   ? bi('OOM 137 → Stream Fix', 'OOM 137 → Stream Fix')
-                  : bi('Zero-Downtime 3 Pillars ✔', 'Zero-Downtime 3 Pillars ✔'),
+                  : bi('Zero-Downtime 3 Mechanisms ✔', 'Zero-Downtime 3 Mechanisms ✔'),
                 tone: isOom ? 'bad' : 'ok',
               },
             },

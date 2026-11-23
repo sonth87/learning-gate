@@ -47,7 +47,7 @@
     {
       "path": "github/infinite-push-loop.yml",
       "kind": "bug",
-      "note": "Hồ sơ tai nạn đốt sạch hoá đơn phút chạy CI chỉ trong 1 đêm vì Job tự commit rồi push ngược về nhánh `main` bằng PAT.",
+      "note": "Tình huống lỗi cấu hình gây tiêu tốn tài nguyên CI liên tục vì Job tự commit rồi push ngược về nhánh `main` bằng PAT.",
       "task": "Vì sao khi thay `token: ${{ secrets.RELEASE_BOT_PAT_PLACEHOLDER }}` về `GITHUB_TOKEN` mặc định hoặc thêm `[skip ci]` vào commit message ở dòng 26 lại cắt đứt được vòng lặp vô tận?",
       "answer": "Theo cơ chế chống lặp của GitHub, các sự kiện phát sinh bởi `GITHUB_TOKEN` mặc định sẽ không kích hoạt workflow `on: push` mới; đồng thời chuỗi `[skip ci]` trong commit message báo thẳng cho bộ lập lịch GitHub bỏ qua không tạo lượt chạy CI cho commit tự động đó."
     }

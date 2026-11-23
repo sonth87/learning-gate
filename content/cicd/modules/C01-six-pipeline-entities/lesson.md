@@ -1,11 +1,11 @@
-# Giải phẫu 6 thực thể pipeline: Trigger, Workflow, Job, Step & Ephemeral Runner
+# Sáu thành phần cốt lõi trong CI/CD: Trigger, Workflow, Job, Step và Ephemeral Runner
 
-Khi mới mở một tệp `.github/workflows/ci.yml` hoặc `.gitlab-ci.yml`, người mới học rất dễ choáng ngợp trước hàng loạt từ khoá lồng nhau: `on`, `jobs`, `runs-on`, `steps`, `uses`, `run`, `defaults`. Tin vui là **mọi nền tảng CI/CD hiện đại** — dù bạn viết Node.js, Python, Go hay Java — đều chỉ xoay quanh đúng ==6 thực thể cốt lõi==:
+Khi mới mở một tệp `.github/workflows/ci.yml` hoặc `.gitlab-ci.yml`, người học thường gặp nhiều từ khóa lồng nhau như `on`, `jobs`, `runs-on`, `steps`, `uses`, `run`, `defaults`. Tuy nhiên, **mọi nền tảng CI/CD hiện đại** — dù dùng cho Node.js, Python, Go hay Java — đều vận hành dựa trên ==6 thành phần cốt lõi==:
 
-- **Webhook Trigger ("Chuông cửa tự động"):** Bạn không cần mở trang web bấm nút "Chạy kiểm tra". Ngay khoảnh khắc bạn gõ `git push` hoặc mở một **Pull Request (PR)**, máy chủ Git lập tức bắn một tín hiệu mạng nội bộ (Webhook JSON) đánh thức hệ thống CI trong chưa đầy 1 giây!
-- **Ephemeral Runner ("Máy ảo dùng một lần tự huỷ"):** Thay vì dùng chung một chiếc máy chủ vật lý cũ kỹ chạy suốt năm tháng (dễ đầy ổ cứng, kẹt tiến trình ngầm hoặc tồn lưu mã độc), mỗi **Job** được cấp riêng một **máy ảo Linux mới tinh vừa khui hộp**, thuê trong vài phút rồi **tiêu huỷ và xoá trắng ổ cứng** ngay khi Job kết thúc.
+- **Webhook Trigger:** Ngay khi bạn thực hiện `git push` hoặc mở một **Pull Request (PR)**, máy chủ Git lập tức gửi một sự kiện mạng (Webhook JSON) để kích hoạt hệ thống CI chạy tự động mà không cần thao tác thủ công.
+- **Ephemeral Runner:** Thay vì chạy trên một máy chủ dùng chung lâu dài (dễ tồn lưu rác cấu hình, đầy ổ đĩa hoặc nhiễm mã độc), mỗi **Job** được cấp phát một **máy ảo Linux sạch mới khởi tạo**, chạy trong vài phút rồi **tự động thu hồi và xóa trắng ổ đĩa** ngay khi Job kết thúc.
 
-Nắm chắc ranh giới vật lý giữa 6 thực thể này, bạn sẽ không bao giờ còn bối rối tự hỏi *"sao Job trước vừa đóng gói ra thư mục `dist/` mà Job sau lại báo không tìm thấy tệp?!"*.
+Nắm vững ranh giới giữa 6 thành phần này giúp bạn thiết kế pipeline chính xác và tránh lỗi phổ biến như không tìm thấy tệp giữa các Job khác nhau.
 
 ```visual
 kind: flow
@@ -41,23 +41,23 @@ steps:
     tone: emerald
 ```
 
-## 1. Bản đồ 6 thực thể cốt lõi (kèm phép ẩn dụ Node.js)
+## 1. Sáu thành phần cốt lõi trong một GitHub Actions Workflow
 
 ```visual
 kind: illustration
 diagram: "cicd:c01"
-alt: "Sơ đồ phân cấp 6 thực thể CI/CD từ Event Trigger, Workflow, Job trên máy ảo Ephemeral Runner đến chuỗi Step và Action"
-title: "Giải Phẫu 6 Thực Thể Pipeline & Ranh Giới Cô Lập Máy Ảo Ephemeral Runner"
-subtitle: "Vì sao các Step trong cùng một Job chia sẻ chung ổ đĩa nhưng hai Job khác nhau lại tách biệt hoàn toàn về vật lý"
-caption: "Cấu trúc lồng nhau từ sự kiện kích hoạt (Trigger) -> Workflow -> các Job chạy trên máy ảo dùng một lần riêng biệt -> chuỗi Step và Action"
+alt: "Sơ đồ phân cấp 6 thành phần CI/CD từ Event Trigger, Workflow, Job trên máy ảo Ephemeral Runner đến chuỗi Step và Action"
+title: "Cấu trúc 6 thành phần Pipeline & Cơ chế cô lập Ephemeral Runner"
+subtitle: "Vì sao các Step trong cùng một Job dùng chung ổ đĩa nhưng hai Job khác nhau lại tách biệt hoàn toàn"
+caption: "Cấu trúc phân cấp từ sự kiện kích hoạt (Trigger) -> Workflow -> các Job chạy trên máy ảo dùng một lần riêng biệt -> chuỗi Step và Action"
 callouts:
   - num: 1
     label: "1. Event Trigger & 2. Workflow điều phối tổng"
-    desc: "Sự kiện push hoặc pull_request đánh thức tệp Workflow YAML để phân bổ các Job độc lập chạy song song mặc định."
+    desc: "Sự kiện push hoặc pull_request kích hoạt tệp Workflow YAML để phân bổ các Job độc lập chạy song song mặc định."
     tone: amber
   - num: 2
     label: "3. Job, 4. Runner VM, 5. Step & 6. Action"
-    desc: "Mỗi Job được cấp 1 máy ảo Ubuntu mới tinh; các Step bên trong chạy nối tiếp trên cùng ổ đĩa rồi máy ảo bị huỷ sạch khi xong việc."
+    desc: "Mỗi Job được cấp 1 máy ảo Ubuntu mới tinh; các Step bên trong chạy nối tiếp trên cùng ổ đĩa rồi máy ảo bị thu hồi khi xong việc."
     tone: cyan
   - num: 3
     label: "Ranh giới ổ đĩa giữa hai Job khác nhau"
@@ -65,12 +65,11 @@ callouts:
     tone: rose
 ```
 
-> [!ANALOGY] Hãy hình dung như sau (Ánh xạ sang kiến trúc Backend Node.js)
-> Nếu **Trigger (`on:`)** giống như một HTTP Webhook đánh thức hệ thống, **Workflow** là hàm điều phối tổng, thì mỗi **Job** là một máy chủ Worker tách biệt hoàn toàn về vật lý, còn các **Step** là từng dòng lệnh chạy nối tiếp bên trong cùng một hàm trên máy Worker đó!
+Trong một quy trình GitHub Actions, 6 thành phần này tổ chức theo thứ tự phân cấp từ sự kiện bên ngoài đi vào từng câu lệnh thực thi:
 
 ```visual
 kind: groups
-title: "6 Thực Thể Nền Tảng Của Mọi Hệ Thống CI/CD Hiện Đại"
+title: "6 Thành Phần Nền Tảng Của Hệ Thống CI/CD Hiện Đại"
 columns: 3
 items:
   - num: 1
@@ -78,27 +77,28 @@ items:
     title: "Event / Trigger"
     badge: "on:"
     tone: amber
-    desc: "Tín hiệu đánh thức pipeline chạy tự động."
+    desc: "Sự kiện kích hoạt pipeline chạy tự động."
     bullets:
-      - "Ẩn dụ Node.js: giống `fs.watch` hoặc Webhook gọi callback"
+      - "Lắng nghe các thao tác Git hoặc lịch định kỳ từ bên ngoài"
       - "Kích hoạt tức thì khi `git push`, mở `pull_request`, gắn tag hoặc lịch `schedule`"
   - num: 2
     icon: workflow
     title: "Workflow"
     badge: ".github/workflows/*.yml"
     tone: sky
-    desc: "Bản thiết kế điều phối tổng thể của một quy trình tự động."
+    desc: "Tệp cấu hình điều phối tổng thể của một quy trình tự động."
     bullets:
+      - "Định nghĩa toàn bộ các Job, biến môi trường và điều kiện chạy"
       - "Một kho Git có thể chứa nhiều Workflow độc lập (`ci.yml`, `release.yml`, `CodeQL.yml`)"
   - num: 3
     icon: server
     title: "Runner"
     badge: "runs-on: ubuntu-latest"
     tone: cyan
-    desc: "Máy ảo Linux/macOS/Windows thuê theo phút để gánh công việc."
+    desc: "Máy ảo Linux/macOS/Windows được cấp phát tạm thời để thực thi Job."
     bullets:
-      - "Sống đúng bằng thời gian chạy **1 Job duy nhất**"
-      - "Job kết thúc là máy ảo bị tiêu huỷ và xoá sạch ổ cứng!"
+      - "Vòng đời tồn tại đúng bằng thời gian chạy **1 Job duy nhất**"
+      - "Khi Job kết thúc, máy ảo bị thu hồi và xóa toàn bộ dữ liệu trên ổ đĩa"
   - num: 4
     icon: boxes
     title: "Job"
@@ -106,8 +106,8 @@ items:
     tone: cyan
     desc: "Đơn vị công việc độc lập chạy trên một Runner riêng biệt."
     bullets:
-      - "Mặc định không có `needs:` thì các Job chạy **song song cùng lúc**"
-      - "**KHÔNG chia sẻ ổ cứng hay bộ nhớ RAM** với Job khác"
+      - "Mặc định nếu không khai báo `needs:`, các Job chạy **song song cùng lúc**"
+      - "**Không chia sẻ ổ đĩa hay bộ nhớ RAM** với Job khác"
   - num: 5
     icon: terminal
     title: "Step"
@@ -116,17 +116,19 @@ items:
     desc: "Từng bước thực thi nhỏ bên trong một Job."
     bullets:
       - "Chạy **tuần tự từ trên xuống** trên cùng 1 máy ảo Runner"
-      - "**CÓ chia sẻ chung ổ đĩa workspace** `/home/runner/work/...`"
+      - "**Có chia sẻ chung ổ đĩa workspace** `/home/runner/work/...`"
   - num: 6
     icon: package
     title: "Action"
     badge: "uses: actions/checkout@v4"
     tone: sky
-    desc: "Gói hàm dựng sẵn để tái sử dụng thay vì tự viết Bash dài dòng."
+    desc: "Mô-đun đóng gói sẵn để tái sử dụng thay vì tự viết lại kịch bản Bash."
     bullets:
-      - "Ẩn dụ dễ nhớ: giống gói thư viện cài sẵn đem ra gọi ngay"
+      - "Hoạt động tương tự một thư viện hoặc hàm tiện ích có thể gọi lại qua tên và phiên bản"
       - "Đóng gói sẵn logic kéo Git (`checkout@v4`), cài Node (`setup-node@v4`), Python (`astral-sh/setup-uv@v5`) hay Go (`setup-go@v5`)"
 ```
+
+Nếu liên hệ với kiến trúc ứng dụng Node.js để dễ hình dung: **Trigger (`on:`)** giống như một HTTP Webhook tiếp nhận sự kiện, **Workflow** là hàm điều phối tổng, mỗi **Job** là một tiến trình worker trên máy chủ tách biệt hoàn toàn, còn các **Step** là từng câu lệnh chạy nối tiếp nhau bên trong worker đó.
 
 > [!TIP] Bản đồ Hệ sinh thái Công cụ CI/CD trong Ngành Công nghiệp
 > Khi đi làm thực tế, bạn sẽ gặp nhiều tên tuổi CI/CD khác nhau, nhưng cả 6 thực thể trên đều ánh xạ 1-đối-1 sang mọi nền tảng:
@@ -136,9 +138,9 @@ items:
 > - **CircleCI & Buildkite**: Nổi bật với tốc độ bộ đệm cực nhanh và mô hình Hybrid (điều phối trên Cloud nhưng đặt máy chạy Runner bên trong mạng riêng AWS/GCP của công ty).
 > - **Dagger**: Thế hệ CI "Pipeline-as-Code" mới cho phép viết luồng build bằng TypeScript/Python/Go chạy trong container BuildKit giống hệt 100% trên cả laptop lẫn mọi máy chủ CI!
 
-## 2. Bước ngoặt tư duy số 1: Step chia sẻ ổ đĩa, nhưng Job thì KHÔNG!
+## 2. Nguyên tắc cô lập môi trường: Các Step trong cùng Job dùng chung ổ đĩa, nhưng các Job chạy trên máy ảo tách biệt
 
-Đây là cái bẫy khiến **90% người mới học CI/CD vấp ngã ngay tuần đầu tiên**.
+Đây là điểm dễ nhầm lẫn nhất khi mới làm quen với cấu hình CI/CD.
 
 Trong cùng một **Job** (ví dụ `jobs.verify`), mọi **Step** chạy nối tiếp nhau trên **cùng một máy ảo Runner (`ubuntu-latest`)**: Step 1 `actions/checkout@v4` kéo code về đĩa -> Step 2 `actions/setup-node@v4` cài Node 22 vào `PATH` -> Step 3 `run: npm ci` tạo `node_modules/` trên SSD -> Step 4 `run: npm test` thấy sẵn toàn bộ code lẫn `node_modules/` vừa cài!
 
@@ -176,8 +178,8 @@ columns:
         note: "Trống rỗng 100%"
         tone: slate
       - label: "Nếu gọi ngay: run: npm test (Thiếu checkout & npm ci)"
-        sub: "Nổ lỗi tức khắc: ENOENT: Could not read package.json!"
-        note: "Bẫy kinh điển!"
+        sub: "Gặp lỗi tức khắc: ENOENT: Could not read package.json!"
+        note: "Lỗi thường gặp"
         tone: rose
       - label: "Quy tắc chuẩn: Job tự thân vận động (Self-Contained)"
         sub: "Tự checkout@v4 + setup-node@v4 (cache: 'npm') + npm ci trên VM #2"

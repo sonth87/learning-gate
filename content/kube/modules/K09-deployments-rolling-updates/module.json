@@ -4,7 +4,7 @@
   "level": 2,
   "order": 9,
   "title": "Deployment, Tự phục hồi (Self-Healing), Rolling Update & Rollback",
-  "summary": "Quản lý vòng đời Pod tự phục hồi (Self-Healing) qua Deployment & ReplicaSet, khớp nối selector.matchLabels, cấu hình RollingUpdate Zero-Downtime và khôi phục khẩn cấp bằng rollout undo.",
+  "summary": "Quản lý vòng đời Pod tự phục hồi (Self-Healing) qua Deployment & ReplicaSet, khớp nối selector.matchLabels, cấu hình RollingUpdate Zero-Downtime và khôi phục phiên bản trước bằng rollout undo.",
   "tags": [
     "deployment",
     "replicaset",

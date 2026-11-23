@@ -8,7 +8,7 @@ Một hệ thống thực tế hiếm khi chạy lẻ loi một mình: dịch v�
 kind: illustration
 diagram: "kube:k06"
 alt: "Kiến trúc mạng cầu nối nội bộ Docker Compose v2 với DNS theo tên dịch vụ, depends_on service_healthy và Named Volume"
-title: "Giải Phẫu Docker Compose v2: Mạng Bridge DNS Nội Bộ, Healthcheck & Ổ Đĩa Bền Vững"
+title: "Cơ Chế Docker Compose v2: Mạng Bridge DNS Nội Bộ, Healthcheck & Ổ Đĩa Bền Vững"
 subtitle: "Điều phối trọn bộ Backend API (Node/Python), PostgreSQL và Redis giao tiếp mượt mà chỉ qua một tệp khai báo compose.yaml"
 caption: "Sơ đồ phân giải DNS nội bộ theo tên dịch vụ (postgres:5432, redis:6379), chốt chặn khởi động service_healthy và lưu trữ dữ liệu qua Named Volume"
 callouts:
@@ -68,10 +68,10 @@ right:
     - "**Bỏ hoàn toàn khóa `version:`** ở đầu tệp; tự động tạo mạng chung & DNS theo tên dịch vụ"
 ```
 
-## 2. Quy tắc vàng về DNS nội bộ: Quên `localhost` đi, hãy gọi bằng Tên Dịch Vụ!
+## 2. Quy tắc DNS nội bộ: Gọi nhau bằng Tên Dịch Vụ thay vì `localhost`
 
 > [!WARNING] Cái bẫy chiếm 80% lỗi kết nối của người mới viết `compose.yaml`
-> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính căn hộ container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` (hoặc `postgresql://...@localhost:5432` trong FastAPI/SQLAlchemy) chắc chắn sẽ nổ lỗi **`Connection refused 127.0.0.1:5432`**.
+> Bên trong container `api`, địa chỉ `localhost` (`127.0.0.1`) **chỉ trỏ về chính Network Namespace của container `api` đó**, tuyệt đối không phải máy Mac/Windows của bạn và càng không phải container `postgres`! Đặt `DB_HOST: localhost` (hoặc `postgresql://...@localhost:5432` trong FastAPI/SQLAlchemy) chắc chắn sẽ nổ lỗi **`Connection refused 127.0.0.1:5432`**.
 
 Khi bạn gõ `docker compose up -d`, Compose tự động tạo một mạng Bridge riêng cho dự án (ví dụ `myshop_default`) và đăng ký **chính tên khóa dưới mục `services:`** vào máy chủ DNS nội bộ:
 
@@ -141,7 +141,7 @@ items:
 
 ## 4. Khởi động đúng trình tự sẵn sàng: `healthcheck` + `service_healthy`
 
-Nếu bạn chỉ viết ngây thơ `depends_on: [postgres]`, Compose mặc định chỉ chờ tiến trình container `postgres` **vừa bật lên (`service_started`)** là lập tức phóng `api` chạy ngay! Trong khi đó, PostgreSQL mất thêm 2–4 giây khởi tạo tệp hệ thống mới thực sự mở cổng `5432` nhận câu lệnh SQL → SQLAlchemy / Prisma trong `api` lao vào quá sớm và sập tức khắc!
+Nếu bạn chỉ viết đơn giản `depends_on: [postgres]`, Compose mặc định chỉ chờ tiến trình container `postgres` **vừa bật lên (`service_started`)** là lập tức phóng `api` chạy ngay! Trong khi đó, PostgreSQL mất thêm 2–4 giây khởi tạo tệp hệ thống mới thực sự mở cổng `5432` nhận câu lệnh SQL → SQLAlchemy / Prisma trong `api` lao vào quá sớm và sập tức khắc!
 
 Giải pháp chuẩn Production là kết hợp tiện ích có sẵn ==`pg_isready`== của PostgreSQL với điều kiện ==`condition: service_healthy`==:
 
@@ -158,7 +158,7 @@ steps:
     tone: sky
     edge: mỗi 5s kiểm tra
   - icon: doctor
-    badge: Bước 2 · Tự khám nội bộ
+    badge: Bước 2 · Kiểm tra sẵn sàng
     title: Chạy lệnh pg_isready
     desc: Tiện ích chuẩn của Postgres kiểm tra trạng thái nhận kết nối thực tế
     code: "pg_isready -U shop"
@@ -210,7 +210,7 @@ volumes:
   pgdata:   # Top-level Named Volume giữ an toàn dữ liệu qua các lần compose down
 ```
 
-## 5. Vũ khí hiện đại trên Compose v2: `develop.watch` & `profiles`
+## 5. Tính năng hiện đại trên Compose v2: `develop.watch` & `profiles`
 
 > [!TIP] Hot-reload mượt mà cho cả FastAPI lẫn Node.js với `docker compose watch`
 > Thay vì dùng Bind Mount `- .:/app` dễ làm mất thư mục `.venv` hoặc `node_modules` bên trong container, tính năng `develop.watch` tự động chép nóng đúng thư mục mã nguồn (`./app` hoặc `./src`) vào container mỗi khi bạn bấm `Ctrl+S`, và chỉ tự `rebuild` Image khi bạn sửa `pyproject.toml` hoặc `package.json`!

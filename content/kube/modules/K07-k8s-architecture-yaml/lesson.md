@@ -7,20 +7,20 @@
 
 **Kubernetes (`K8s` — chữ `8` là viết tắt của 8 chữ cái giữa `K` và `s`)** ra đời để làm ==Hệ điều hành của cả cụm nhiều máy chủ==: bạn chỉ cần nộp một **bản thiết kế trạng thái mong muốn**, còn K8s tự động canh gác và chữa lành hệ thống suốt 24/7!
 
-## 1. Khoan đã — Khi nào bạn CHƯA CẦN Kubernetes, và khi nào K8s tỏa sáng?
+## 1. Khi nào chưa cần Kubernetes, và khi nào nên dùng Kubernetes?
 
-> [!NOTE] Lời khuyên trung thực năm 2026: Đừng vác đại bác bắn chim sẻ!
-> Không phải dự án nào cũng cần nhảy ngay lên Kubernetes ngày đầu tiên. Hãy chọn đúng công cụ theo quy mô thực tế:
+> [!NOTE] Nguyên tắc lựa chọn hạ tầng phù hợp năm 2026
+> Không phải dự án nào cũng cần sử dụng Kubernetes ngay từ ngày đầu tiên. Hãy chọn công cụ phù hợp với quy mô và bài toán vận hành thực tế:
 > - **Chưa cần K8s (1 máy chủ VPS đơn lẻ / Dự án nội bộ nhỏ):** **`Docker Compose v2`** trên 1 máy Linux thừa sức chạy mượt hàng nghìn người dùng với chi phí vận hành gần như bằng 0.
 > - **Chưa cần tự quản lý K8s (Startup MVP / Web & AI API cần co giãn tự động nhanh):** Các nền tảng Serverless Container như **`Google Cloud Run`**, **`AWS App Runner`** hoặc **`Fly.io`** nhận thẳng Docker Image của bạn và tự lo HTTPS + autoscale (thậm chí thu về 0 khi vắng khách).
-> - **Khi Kubernetes thực sự tỏa sáng:** Hệ thống có nhiều dịch vụ đa ngôn ngữ (Node.js, Python FastAPI, Go, Workers), cần **tự chữa lành đa máy chủ (`Self-Healing`)**, định tuyến & tường lửa nội bộ chặt chẽ, kiểm soát chi phí phần cứng ở quy mô lớn và **không bị khóa chặt vào một đám mây duy nhất (`Cloud-Agnostic`)**.
+> - **Khi Kubernetes thực sự phù hợp:** Hệ thống có nhiều dịch vụ đa ngôn ngữ (Node.js, Python FastAPI, Go, Workers), cần **tự chữa lành đa máy chủ (`Self-Healing`)**, định tuyến & tường lửa nội bộ chặt chẽ, kiểm soát chi phí phần cứng ở quy mô lớn và **không bị khóa chặt vào một đám mây duy nhất (`Cloud-Agnostic`)**.
 
-Khi bước vào thế giới K8s, người mới hay choáng ngợp vì có quá nhiều tên gọi (`Pod`, `Deployment`, `Service`, `Ingress`...). Hãy nhìn **Bản đồ 6 Tầng Bọc Ngoài Nhau** dưới đây trước tiên — bạn sẽ thấy mọi mảnh ghép ăn khớp vô cùng tự nhiên:
+Khi bước vào thế giới K8s, người mới hay choáng ngợp vì có quá nhiều tên gọi (`Pod`, `Deployment`, `Service`, `Ingress`...). Hãy nhìn **Phân Cấp 6 Tầng Đối Tượng** dưới đây trước tiên — bạn sẽ thấy mọi mảnh ghép ăn khớp vô cùng tự nhiên:
 
 ```visual
 kind: flow
-title: "Bản Đồ 6 Tầng Từ Ruột Ra Ngoài Của Kubernetes (Dành Cho Người Mới)"
-subtitle: "Học thuộc chuỗi 6 mắt xích này, bạn sẽ không bao giờ bị lạc giữa rừng tài nguyên YAML của K8s!"
+title: "Phân Cấp 6 Tầng Đối Tượng Trong Kubernetes"
+subtitle: "Nắm vững chuỗi 6 mắt xích này để không bị nhầm lẫn giữa các loại tài nguyên YAML của K8s"
 steps:
   - icon: box
     badge: "Tầng 1 · Nhân lõi"
@@ -30,21 +30,21 @@ steps:
     tone: slate
     edge: "bọc vào trong"
   - icon: package
-    badge: "Tầng 2 · Vỏ kén (K08)"
+    badge: "Tầng 2 · Đơn vị cơ bản (K08)"
     title: "Pod"
     desc: "Đơn vị nhỏ nhất trên K8s bọc 1+ container dùng chung 1 địa chỉ IP nội bộ"
     code: "kind: Pod"
     tone: sky
     edge: "nhân bản & hồi sinh"
   - icon: layers
-    badge: "Tầng 3–4 · Quản đốc (K09)"
+    badge: "Tầng 3–4 · Điều phối (K09)"
     title: "ReplicaSet & Deployment"
     desc: "Giữ đủ quân số 3 Pod sống và cuộn phiên bản mới không rớt mạng"
     code: "kind: Deployment"
     tone: emerald
-    edge: "gắn số tổng đài cố định"
+    edge: "cung cấp điểm truy cập ổn định"
   - icon: network
-    badge: "Tầng 5 · Tổng đài nội bộ (K10)"
+    badge: "Tầng 5 · Định tuyến nội bộ (K10)"
     title: "Service"
     desc: "Cấp IP ảo & tên miền DNS bất biến đứng trước các Pod hay đổi IP"
     code: "kind: Service"
@@ -58,19 +58,19 @@ steps:
     tone: amber
 ```
 
-## 2. Giải phẫu Cụm Kubernetes: Bộ não Control Plane vs Xưởng Worker Nodes
+## 2. Kiến trúc Cụm Kubernetes: Control Plane (Điều phối) và Worker Nodes (Thực thi)
 
 ```visual
 kind: illustration
 diagram: "kube:k07"
 src: "/illustrations/kube/k8s-control-plane-brain.jpg"
 alt: "Kiến trúc tổng thể cụm Kubernetes gồm Control Plane (API Server, etcd, Scheduler, Controller) và Worker Node (kubelet, containerd, kube-proxy)"
-title: "Bản Đồ Giải Phẫu Cụm Kubernetes: Bộ Não Control Plane & Xưởng Thực Thi Worker Node"
+title: "Kiến Trúc Cụm Kubernetes: Control Plane (Điều Phối) & Worker Node (Thực Thi)"
 subtitle: "Luồng phối hợp giữa cổng trung tâm kube-apiserver, sổ cái etcd, các đại lý trên Node và vòng lặp đối soát trạng thái 24/7"
 caption: "Kiến trúc phân tách giữa Control Plane ra quyết định với các Worker Node chạy Pod qua containerd và vòng lặp tự phục hồi Reconciliation Loop"
 callouts:
   - num: 1
-    label: "Control Plane — Bộ não quản trị & Sổ cái etcd"
+    label: "Control Plane — Thành phần điều phối & Sổ cái etcd"
     desc: "Mọi thao tác đều đi qua cổng HTTPS duy nhất là kube-apiserver; chỉ thành phần này được phép đọc/ghi trực tiếp vào kho dữ liệu etcd."
     tone: cyan
   - num: 2
@@ -83,14 +83,14 @@ callouts:
     tone: cyan
 ```
 
-Một cụm (**Cluster**) Kubernetes luôn chia thành hai nhóm máy rõ rệt giống như **Ban điều hành trung tâm** (*Control Plane* — ra quyết định và giữ sổ cái) và **Đội xưởng sản xuất** (*Worker Nodes* — nơi thực sự gánh CPU/RAM chạy container ứng dụng của bạn):
+Một cụm (**Cluster**) Kubernetes luôn chia thành hai nhóm thành phần rõ rệt: **Control Plane** (thành phần điều phối, lưu trữ sổ cái và ra quyết định lập lịch) và **Worker Nodes** (các máy chủ thực sự cấp CPU/RAM để chạy container ứng dụng của bạn). Có thể hình dung Control Plane như ban điều hành trung tâm, còn Worker Nodes như các phân xưởng thực thi:
 
 ```visual
 kind: layers
 title: "Kiến Trúc Một Cụm Kubernetes Chuẩn — Control Plane vs Worker Nodes"
 subtitle: "Nguyên tắc bảo mật cốt lõi: Chỉ duy nhất kube-apiserver được phép đọc/ghi trực tiếp vào kho dữ liệu etcd!"
 columns:
-  - title: Control Plane (Bộ não điều phối)
+  - title: Control Plane (Thành phần điều phối)
     badge: Quản trị & Ra quyết định
     tone: cyan
     layers:
@@ -130,11 +130,9 @@ columns:
     footer: Có thể co giãn linh hoạt từ 2 máy đến hàng nghìn Worker Node theo tải thực tế
 ```
 
-## 3. Trái tim của K8s: Vòng lặp Đối soát (`Reconciliation Loop`)
+## 3. Cơ chế cốt lõi của K8s: Vòng lặp Đối soát (`Reconciliation Loop`)
 
-Hãy hình dung chiếc **máy điều hòa nhiệt độ** đặt ở mức **`24°C`**: bạn không ngồi canh bật/tắt lốc lạnh từng phút, mà cảm biến của máy đo nhiệt độ phòng mỗi giây — hễ phòng nóng lên `26°C`, máy tự bật làm mát kéo về đúng `24°C`!
-
-Đó chính là ==Vòng lặp Đối soát (Reconciliation Loop)== theo tư duy **Khai báo (`Declarative`)** của Kubernetes:
+==Vòng lặp Đối soát (Reconciliation Loop)== là cơ chế cốt lõi giúp Kubernetes vận hành theo tư duy **Khai báo (`Declarative`)**: thay vì ra lệnh từng bước, bạn chỉ nộp bản khai báo **trạng thái mong muốn (`Desired State`)** (ví dụ `replicas: 3`) vào `etcd`. Các Controller liên tục theo dõi **trạng thái hiện tại (`Current State`)** trên cụm — mỗi khi `Current != Desired`, hệ thống tự động tạo bù hoặc điều chỉnh Pod về đúng trạng thái đã khai báo (tương tự như chiếc máy điều hòa đặt ở mức `24°C`: cảm biến liên tục đo nhiệt độ phòng và tự bật/tắt lốc lạnh để duy trì đúng `24°C`).
 
 ```visual
 kind: compare
@@ -206,7 +204,7 @@ Dù bạn viết một `Pod` nhỏ 12 dòng hay một `Deployment` lớn 200 dò
 
 ```visual
 kind: anatomy
-title: Giải Phẫu Bộ Tứ Trường Gốc Trong Mọi Manifest YAML Của Kubernetes
+title: Cấu Trúc 4 Trường Gốc Trong Mọi Manifest YAML Của Kubernetes
 subtitle: Khác với Docker Compose (services/volumes), mọi đối tượng K8s đều tuân thủ khuôn mẫu 4 khóa gốc đồng nhất này
 items:
   - keyword: apiVersion
@@ -275,7 +273,7 @@ kubectl get pods
 # 2. Liệt kê TẤT CẢ Pod trên mọi namespace toàn cụm (gồm cả kube-system nơi coredns đang chạy):
 kubectl get pods -A
 
-# 3. Xem hồ sơ khám sức khỏe chi tiết (Node được xếp chỗ, IP và bảng Events ở cuối trang):
+# 3. Xem chi tiết trạng thái và sự kiện (Events) của Pod:
 kubectl describe pod payment-pod
 ```
 

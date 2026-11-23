@@ -1,11 +1,11 @@
 # Lưu trữ Bền vững: RDB Snapshot, Copy-on-Write, Multi-Part AOF & Hybrid Preamble
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Người mới học thường truyền tai nhau một hiểu lầm tai hại: *"Redis lưu trên RAM nên cúp điện là mất sạch 100% dữ liệu!"*. Sự thật là Redis có cơ chế **Lưu trữ Bền vững xuống ổ cứng (*Persistence*)** cực kỳ thông minh, kết hợp hai phương pháp kinh điển mà bạn có thể hình dung ngay qua đời thực:
-> - **`RDB` (*Redis Database Snapshot* — Ảnh chụp toàn cảnh kho hàng):** Giống như cứ 15 phút người thủ kho lại bấm máy ảnh chụp **1 tấm hình nén gọn gàng toàn bộ kệ hàng** tại đúng giây phút đó lưu thành file `dump.rdb`. Ưu điểm: file siêu nhẹ, chép đi sao lưu đám mây (S3/GCS) cực nhanh, bật máy nạp lại 20GB chỉ mất vài giây. Nhược điểm: nếu mất điện ở phút thứ 14 thì mất 14 phút thay đổi mới nhất!
-> - **`AOF` (*Append-Only File* — Cuốn nhật ký ghi chép từng giao dịch):** Giống cuốn sổ thu ngân — hễ có ai sửa dữ liệu (`SET`, `INCR`, `HSET`...), Redis ghi nối thêm 1 dòng vào cuối sổ và mỗi giây chốt mực xuống ổ cứng SSD một lần (**`appendfsync everysec`**). Dù sập nguồn đột ngột cũng **chỉ mất tối đa `<= 1 giây`**!
-> - **`Hybrid RDB + AOF` (Kết hợp lai trên Redis 7/8):** Cứ định kỳ khi cuốn sổ nhật ký quá dày, Redis tự động kẹp **tấm ảnh nén RDB lên trang đầu cuốn sổ**, và chỉ ghi nối các dòng nhật ký AOF mới phát sinh ở phần đuôi — ==vừa an toàn từng giây, vừa khởi động lại nhanh như chớp==!
-> - **`fork()` & `Copy-on-Write` (`CoW` — Chụp bản sao không dừng phục vụ):** Khi chụp ảnh `BGSAVE`, hệ điều hành Linux tạo một "tiến trình phụ tá" dùng chung bảng mục lục RAM với tiến trình chính chỉ mất vài mili-giây; tiến trình chính vẫn tiếp tục phục vụ 100,000 khách/giây, chỉ đúng ô nhớ nào khách vừa sửa đổi thì Linux mới chép riêng trang 4KB đó ra để không làm nhòe tấm ảnh đang chụp!
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Dù Redis xử lý dữ liệu trực tiếp trên RAM, hệ thống vẫn hỗ trợ **Lưu trữ bền vững xuống ổ đĩa (*Persistence*)** để khôi phục dữ liệu sau khi khởi động lại hoặc mất điện, thông qua các cơ chế sau:
+> - **`RDB` (*Redis Database Snapshot*):** Chụp ảnh nhị phân toàn bộ dữ liệu tại một thời điểm định kỳ (ví dụ mỗi 15 phút) thành tệp `dump.rdb`. Tệp gọn nhẹ, dễ sao lưu lên Object Storage (S3/GCS) và khôi phục dữ liệu hàng chục GB chỉ trong vài giây; tuy nhiên sẽ mất phần dữ liệu thay đổi kể từ lần chụp gần nhất.
+> - **`AOF` (*Append-Only File*):** Ghi nối tiếp mọi lệnh làm thay đổi dữ liệu (`SET`, `INCR`, `HSET`...) vào tệp nhật ký và đồng bộ xuống ổ đĩa theo chu kỳ cấu hình (mặc định **`appendfsync everysec`** — mỗi giây một lần), giúp giảm rủi ro mất dữ liệu khi mất điện xuống ==tối đa `<= 1 giây`==.
+> - **`Hybrid RDB + AOF` (Mặc định trên Redis 7/8):** Khi nén lại tệp AOF (`BGREWRITEAOF`), phần nền được lưu ở định dạng nhị phân **RDB** gọn nhẹ, nối tiếp phía sau là các lệnh **AOF** mới phát sinh — ==vừa đảm bảo an toàn từng giây, vừa khởi động lại nhanh==.
+> - **`fork()` & `Copy-on-Write` (`CoW`):** Khi chạy `BGSAVE`, tiến trình chính gọi `fork()` của Linux để tạo tiến trình con dùng chung bảng trang bộ nhớ (*Page Table*) chỉ trong vài mili-giây. Tiến trình chính tiếp tục phục vụ client bình thường; hệ điều hành chỉ nhân bản trang nhớ `4KB` khi tiến trình chính ghi đè đúng trang đó.
 
 ```visual
 kind: illustration
@@ -31,10 +31,10 @@ callouts:
     tone: emerald
 ```
 
-## 1. Phân biệt sinh tử: `BGSAVE` (Chạy nền) vs `SAVE` (Đóng băng Server)
+## 1. Cơ chế tạo bản chụp RDB: Khác biệt giữa `BGSAVE` (chạy nền) và `SAVE` (chặn luồng chính)
 
-- [+] **`BGSAVE` (*Background Save* — Luôn dùng trên Production):** Gọi `fork()` đẻ tiến trình con âm thầm xuất dữ liệu ra tệp tạm rồi đổi tên đè lên `dump.rdb` an toàn trong khi luồng chính vẫn trả lời khách bình thường.
-- [!] **`SAVE` (*Synchronous Save* — CẤM TUYỆT ĐỐI trên Production):** Bắt chính người đầu bếp duy nhất bỏ hết khách hàng để ngồi ghi đĩa suốt hàng chục giây! Trên thực tế, kỹ sư vận hành luôn khóa cứng lệnh `SAVE` qua phân quyền ACL.
+- [+] **`BGSAVE` (*Background Save* — Luôn dùng trên Production):** Gọi `fork()` tạo tiến trình con chạy nền để xuất dữ liệu ra tệp tạm rồi đổi tên thay thế `dump.rdb`, trong khi luồng chính vẫn phục vụ các lệnh của client bình thường.
+- [!] **`SAVE` (*Synchronous Save* — Không dùng trên Production):** Thực hiện ghi toàn bộ dữ liệu xuống đĩa ngay trên luồng chính duy nhất, làm treo toàn bộ kết nối client suốt hàng chục giây. Trên môi trường Production, quản trị viên thường vô hiệu hóa lệnh `SAVE` qua phân quyền ACL.
 
 ## 2. Đối chiếu 3 chế độ chốt ổ đĩa `appendfsync` của nhật ký AOF
 
@@ -45,7 +45,7 @@ kind: compare
 title: "Cạm Bẫy Đốt Cháy Ổ Đĩa (appendfsync always) vs Điểm Cân Bằng Vàng (everysec)"
 subtitle: "Hiểu rõ ranh giới giữa lệnh write() vào bộ đệm hệ điều hành và lệnh fsync() ép ghi vật lý xuống SSD"
 left:
-  badge: "SÁT THỦ THÔNG LƯỢNG"
+  badge: "GIẢM MẠNH THÔNG LƯỢNG"
   title: "appendfsync always (Ép đĩa ở mọi lệnh)"
   tone: rose
   code: |
@@ -81,7 +81,7 @@ right:
 
 ```visual
 kind: anatomy
-title: "3 Thiết Lập Hạ Tầng Sống Còn Khi Vận Hành Redis Persistence"
+title: "Ba Thiết Lập Hạ Tầng Quan Trọng Cho Redis Persistence"
 subtitle: "Từ tắt ghi đĩa cho Pure Cache đến hai tham số nhân Linux giúp fork() mượt mà"
 items:
   - keyword: 'save ""'

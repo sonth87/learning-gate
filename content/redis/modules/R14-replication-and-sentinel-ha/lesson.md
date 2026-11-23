@@ -1,13 +1,13 @@
 # Sao chép Bất đồng bộ (PSYNC2), Chống Split-Brain & Tự động Chuyển đổi Dự phòng với Sentinel HA
 
-> [!NOTE] Bối cảnh & Giải nghĩa bình dân
-> Lưu dữ liệu xuống ổ cứng ở bài `R13` giúp bạn không mất dữ liệu khi bật lại máy, nhưng **nếu cả máy chủ vật lý cháy nguồn lúc 8 giờ tối**, bạn vẫn bị sập dịch vụ (*Downtime*) suốt 20 phút chờ dựng máy mới! Để hệ thống **tự động chữa lành trong vài giây** mà không cần con người thức dậy lúc nửa đêm (**`High Availability` — Sẵn sàng cao**), Redis sử dụng bộ ba khái niệm rất dễ hình dung:
-> - **`Master` (Bản chính) & `Replica` (Bản sao dự phòng):** Giống **1 Bếp trưởng** đứng nấu chính (nhận mọi lệnh Ghi) và đọc to từng thao tác qua bộ đàm cho **2 Bếp phó (`Replicas`)** chép lại y hệt trên bàn phụ (giúp gánh phụ các lệnh Đọc và sẵn sàng lên thay bất cứ lúc nào).
-> - **`PSYNC2` & `Replication Backlog` (Cuộn băng ghi âm chống chép lại từ đầu):** Nếu bộ đàm của Bếp phó bị nhiễu sóng mất tiếng 3 giây, Bếp phó chỉ cần tua nghe lại **cuộn băng ghi âm các thao tác gần nhất (`repl-backlog-size`)** để làm bù vài món bị thiếu (*Partial Resync*), thay vì phải đổ cả nồi súp đi chép lại từ con số 0 (*Full Resync*)!
-> - **`Redis Sentinel` (Hội đồng 3 Trọng tài canh gác tự động):** Một nhóm **số lẻ `>= 3` tiến trình giám sát độc lập** liên tục hỏi thăm sức khỏe Bếp trưởng:
->   - 1 Trọng tài thấy im lặng -> mới là nghi ngờ cá nhân (**`SDOWN`** — *Subjectively Down*, biết đâu dây mạng của chính trọng tài đó bị lỏng?).
->   - **Đủ đa số `2/3` Trọng tài (`Quorum`)** cùng xác nhận Bếp trưởng bất tỉnh -> kết luận khách quan (**`ODOWN`** — *Objectively Down*) và lập tức ==tự động trao mũ Bếp trưởng mới cho người Bếp phó cập nhật đầy đủ nhất==, đồng thời báo địa chỉ mới cho toàn bộ ứng dụng!
-> - **`Split-Brain` (Hiện tượng "Não chẻ đôi" — 2 Vua cùng tồn tại):** Khi đứt cáp mạng giữa hai phòng máy làm Bếp trưởng cũ bị cô lập nhưng chưa chết hẳn, dẫn tới 2 nơi cùng nhận đơn hàng gây mất dữ liệu lúc nối mạng lại.
+> [!NOTE] Khái niệm cốt lõi & Bài toán thực tế
+> Lưu trữ bền vững trên đĩa ở bài `R13` giúp bảo toàn dữ liệu khi khởi động lại, nhưng **nếu máy chủ vật lý bị sập nguồn hoàn toàn**, dịch vụ vẫn gián đoạn (*Downtime*) cho tới khi dựng lại máy mới. Để hệ thống đạt **High Availability (Sẵn sàng cao)** và tự động phục hồi trong vài giây, Redis sử dụng các cơ chế sau:
+> - **`Master` & `Replica`:** Nút **Master** nhận toàn bộ lệnh Ghi và sao chép bất đồng bộ dòng lệnh sang các nút **Replica** (dùng để chia tải Đọc và dự phòng thay thế khi Master gặp sự cố).
+> - **`PSYNC2` & `Replication Backlog`:** Khi Replica bị rớt mạng ngắn hạn rồi kết nối lại, Master tra cứu vùng đệm vòng (`repl-backlog-size`) trên RAM để gửi bù phần lệnh bị thiếu (*Partial Resync*) dựa trên `replicationId` và `offset`, tránh phải sao chép lại toàn bộ dữ liệu từ đầu (*Full Resync*).
+> - **`Redis Sentinel`:** Hệ thống giám sát gồm **số lẻ `>= 3` tiến trình độc lập** liên tục kiểm tra trạng thái Master:
+>   - 1 Sentinel không nhận được phản hồi -> đánh dấu nghi ngờ cục bộ (**`SDOWN`** — *Subjectively Down*).
+>   - **Đủ số lượng `Quorum` Sentinel** (ví dụ `2/3`) cùng xác nhận Master ngừng hoạt động -> chuyển sang trạng thái khách quan (**`ODOWN`** — *Objectively Down*), bầu Leader và ==tự động thăng cấp Replica cập nhật nhất lên làm Master mới==, đồng thời cập nhật địa chỉ mới cho ứng dụng.
+> - **`Split-Brain`:** Tình trạng phân mảnh mạng khiến một phần cụm đã bầu Master mới trong khi Master cũ bị cô lập vẫn tiếp tục nhận lệnh Ghi từ một số client, dẫn tới mất các bản ghi đó khi mạng khôi phục và Master cũ bị hạ xuống làm Replica.
 
 ```visual
 kind: illustration
@@ -31,12 +31,12 @@ callouts:
     tone: rose
 ```
 
-## 1. Giải phẫu Cơ chế Sao chép `PSYNC2` & Cách chặn "Bão Full Resync"
+## 1. Cơ chế sao chép `PSYNC2` và cách phòng tránh `Full Resync` hàng loạt
 
 Mặc định sao chép trong Redis là **bất đồng bộ (*Async Replication*)**: Master ghi xong vào RAM là trả lời `OK` ngay cho ứng dụng (`< 0.5ms`), rồi lập tức truyền dòng lệnh sang các Replica ở nền. Khi Replica kết nối lại sau sự cố mạng, có 2 kịch bản:
 
 - [>] **Full Resynchronization (Rất tốn tài nguyên):** Khi kết nối lần đầu hoặc bị tụt quá xa, Master phải gọi `BGSAVE` đóng gói toàn bộ kho RAM gửi qua mạng cho Replica nạp lại từ đầu (trên mạng nội bộ nhanh, có thể bật `repl-diskless-sync yes` để truyền thẳng qua socket không qua đĩa).
-- [>] **Partial Resynchronization (`PSYNC2` — Nhẹ nhàng trong chớp mắt):** Master giữ bộ đệm vòng **`repl-backlog-size`** trên RAM. Nếu vị trí đọc (`offset`) của Replica vẫn nằm trong cuộn băng này, Master chỉ gửi bù đúng vài MB lệnh bị lỡ!
+- [>] **Partial Resynchronization (`PSYNC2` — Đồng bộ bù nhanh):** Master giữ bộ đệm vòng **`repl-backlog-size`** trên RAM. Nếu vị trí đọc (`offset`) của Replica vẫn nằm trong vùng đệm vòng này, Master chỉ gửi bù đúng vài MB lệnh bị lỡ!
 - [!] **Cạm bẫy cấu hình mặc định:** Mặc định `repl-backlog-size` của Redis chỉ có **`1mb`**! Với hệ thống ghi `20MB/s`, chỉ chập chờn mạng `0.1 giây` là tràn bộ đệm `1mb`, bắt toàn bộ Replica phải chạy Full Resync! Trên Production, luôn nâng ==`repl-backlog-size` lên `64mb – 256mb`==.
 
 ## 2. Quy trình 4 Bước Tự động Chuyển đổi Dự phòng (Failover) của Cụm 3 Sentinel
@@ -69,7 +69,7 @@ steps:
     desc: "Sentinel Leader (đạt >= N/2+1 phiếu) chọn Replica có dữ liệu mới nhất (offset cao nhất)."
     code: "+vote-for-leader ..."
     tone: cyan
-    edge: "thăng cấp ngôi vương"
+    edge: "thăng cấp Master mới"
   - icon: rocket
     badge: "Bước 4 · Thăng Cấp"
     title: "REPLICAOF NO ONE"
@@ -78,11 +78,11 @@ steps:
     tone: emerald
 ```
 
-## 3. Khóa van chống mất dữ liệu Split-Brain & Kết nối từ Ứng dụng Thực tế
+## 3. Phòng chống mất dữ liệu do Split-Brain và cấu hình kết nối từ ứng dụng
 
-> [!WARNING] Làm sao ngăn chặn Master cũ bị cô lập mạng vẫn tiếp tục nhận đơn hàng rồi làm mất sạch?
+> [!WARNING] Làm sao ngăn chặn Master cũ bị cô lập mạng vẫn tiếp tục nhận đơn hàng rồi làm mất dữ liệu?
 > Nếu đường cáp mạng giữa hai khu vực bị đứt: phía bên kia `2/3` Sentinel đã phong `Replica-1` lên làm **Master Mới**, nhưng phía bên này một vài container ứng dụng vẫn nhìn thấy **Master Cũ** và tiếp tục ghi đơn hàng vào đó — tới khi nối mạng lại, Master Cũ bị giáng xuống làm Replica nên xóa sạch số đơn hàng vừa nhận!
-> Cách khóa van an toàn trong `redis.conf` của Master: đặt ==`min-replicas-to-write 1` và `min-replicas-max-lag 10`== — nếu Master không thấy ít nhất 1 Replica phản hồi trong vòng 10 giây, nó sẽ **tự động khóa ghi (`NOREPLICAS`)** ngay lập tức để bảo vệ tính toàn vẹn!
+> Cách ngăn ghi trên Master bị cô lập trong `redis.conf`: đặt ==`min-replicas-to-write 1` và `min-replicas-max-lag 10`== — nếu Master không thấy ít nhất 1 Replica phản hồi trong vòng 10 giây, nó sẽ **tự động từ chối lệnh ghi (`NOREPLICAS`)** ngay lập tức để bảo vệ tính toàn vẹn!
 
 ```conf
 # Cấu hình chống Split-Brain & tối ưu Backlog trên Master:

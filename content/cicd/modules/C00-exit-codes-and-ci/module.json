@@ -4,7 +4,7 @@
   "level": 0,
   "order": 0,
   "title": "Từ npm scripts đến CI Gate: Cơ chế Exit Code & Chặn lỗi False-Green",
-  "summary": "Hiểu cơ chế Exit Code chặn cổng lỗi, diệt bẫy False-Green (curl --fail, || true, set -euo pipefail), chuẩn npm ci và ranh giới CI vs Continuous Delivery vs Deployment.",
+  "summary": "Hiểu cơ chế Exit Code trong quy trình kiểm định CI, phòng tránh lỗi báo xanh giả False-Green (curl --fail, || true, set -euo pipefail), chuẩn npm ci và phân biệt CI, Continuous Delivery và Continuous Deployment.",
   "tags": [
     "exit-code",
     "npm-ci",
@@ -48,7 +48,7 @@
     {
       "path": "github/false-green-exitcode.yml",
       "kind": "bug",
-      "note": "Hồ sơ bẫy \"báo xanh giả (False-Green)\" (False-Green): cả TypeScript, Unit Test lẫn API Staging đều hỏng nhưng workflow vẫn báo tích xanh.",
+      "note": "Tình huống lỗi báo xanh giả (False-Green): cả TypeScript, Unit Test lẫn API Staging đều hỏng nhưng workflow vẫn báo thành công.",
       "task": "Hãy chỉ ra chính xác 3 cơ chế đang nuốt mất Exit Code ở các bước `Typecheck`, `Run Unit Tests` và `Smoke check staging health`.",
       "answer": "1) Bước `Typecheck` bật `continue-on-error: true` khiến lỗi biên dịch vẫn tính là pass; 2) Bước `Run Unit Tests` nối `|| true` ép mã thoát luôn về `0`; 3) Bước `Smoke check` gọi `curl` thiếu cờ `--fail` (hoặc `-f`) nên HTTP 500 vẫn trả về exit code `0`."
     }

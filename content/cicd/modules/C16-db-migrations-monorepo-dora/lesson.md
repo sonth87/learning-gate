@@ -10,7 +10,7 @@ Khi ứng dụng còn ở giai đoạn MVP ít người dùng lúc nửa đêm, 
 kind: illustration
 diagram: "cicd:c16"
 alt: "Ba trụ cột quy mô lớn gồm di trú cơ sở dữ liệu 3 pha Expand-and-Contract, đồ thị gói bị ảnh hưởng trong Monorepo và 4 chỉ số DORA"
-title: "Giải Phẫu Kiến Trúc Quy Mô Lớn: Di Trú SQL 3 Pha, Đồ Thị Monorepo & Thước Đo DORA"
+title: "Kiến trúc CI/CD quy mô lớn: DB Migration 3 pha, Monorepo Affected Graph và DORA Metrics"
 subtitle: "Thay đổi lược đồ Database không rớt giao dịch, chỉ kiểm thử đúng gói bị ảnh hưởng và định lượng hiệu suất kỹ thuật khách quan"
 caption: "Quy trình Expand-Switch-Contract bảo vệ các Pod v1 đang chạy, bộ lọc đồ thị phụ thuộc Turborepo/Nx và 4 chỉ số tốc độ/ổn định chuẩn DORA"
 callouts:
@@ -30,16 +30,16 @@ callouts:
 
 ---
 
-## 1. Bẫy "Đổi tên / Xoá cột SQL" và Mô hình Expand-and-Contract 3 Pha
+## 1. Rủi ro khi đổi tên hoặc xóa cột SQL và mô hình Expand-and-Contract 3 pha
 
-Hãy xét một tai nạn kinh điển trên Production: lập trình viên đổi tên cột `full_name` thành `display_name` (hoặc `total` thành `grand_total`), tạo file migration `ALTER TABLE users RENAME COLUMN full_name TO display_name;` và đẩy thẳng lên `main`.
+Hãy xét một sự cố phổ biến trên Production: lập trình viên đổi tên cột `full_name` thành `display_name` (hoặc `total` thành `grand_total`), tạo file migration `ALTER TABLE users RENAME COLUMN full_name TO display_name;` và đẩy thẳng lên `main`.
 
 ```visual
 kind: compare
 title: "Thay Đổi Lược Đồ SQL Trong Lúc Rolling Update: Phá Huỷ Tức Thì vs Tương Thích Ngược"
 subtitle: "Tại thời điểm chuyển giao Zero-Downtime, luôn tồn tại đồng thời cả Pod v1 và Pod v2 cùng truy vấn vào 1 Database duy nhất!"
 left:
-  badge: "THẢM HOẠ DOWNTIME · Phá vỡ tương thích ngược"
+  badge: "GÂY DOWNTIME · Phá vỡ tương thích ngược"
   title: "Chạy RENAME COLUMN / DROP COLUMN trực tiếp"
   tone: rose
   code: |
@@ -50,7 +50,7 @@ left:
     -- Phút 00:01 -> 00:45 (Đang Rolling Update 10 Pod):
     -- Các Pod v1 cũ vẫn đang sống và gọi:
     SELECT id, full_name FROM users;
-    -- -> NỔ HÀNG NGHÌN LỖI HTTP 500!
+    -- -> Gây lỗi HTTP 500 trên toàn bộ Pod v1!
   lang: sql
   bullets:
     - "Trong 45 giây cuộn Pod từ `v1` sang `v2`, mọi Pod `v1` đang phục vụ khách hàng lập tức sập vì `column \"full_name\" does not exist`!"
@@ -153,7 +153,7 @@ steps:
 
 ## 3. Đo lường Hiệu năng Kỹ thuật bằng Bộ 4 Chỉ số DORA (Four Keys)
 
-Làm sao biết đội ngũ của bạn đang phát hành nhanh thật sự hay đang "chạy ẩu làm sập hệ thống liên miên"? Chương trình nghiên cứu **DORA (*DevOps Research and Assessment*)** cung cấp bảng đồng hồ buồng lái gồm ==4 chỉ số chuẩn công nghiệp (Four Keys)== — kết hợp hài hoà giữa **2 đồng hồ đo Chân Ga Tốc độ (*Throughput*)** và **2 đồng hồ đo Hệ thống Phanh Ổn định (*Stability*)**:
+Làm thế nào để biết đội ngũ đang phát hành nhanh một cách bền vững thay vì đẩy nhanh tốc độ nhưng gây lỗi hệ thống liên tục? Chương trình nghiên cứu **DORA (*DevOps Research and Assessment*)** cung cấp ==4 chỉ số chuẩn công nghiệp (Four Keys)== — kết hợp cân bằng giữa **2 chỉ số đo Tốc độ giao nhận (*Throughput*)** và **2 chỉ số đo Độ ổn định (*Stability*)**:
 
 ```visual
 kind: groups
