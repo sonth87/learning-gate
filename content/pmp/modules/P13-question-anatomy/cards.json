@@ -1,7 +1,7 @@
 [
   {
     "id": "p13-c1",
-    "front": "Quy trình 4 bước giải phẫu một câu hỏi tình huống PMP dài trong **65 giây** diễn ra theo thứ tự nào?",
+    "front": "Quy trình 4 bước phân tích một câu hỏi tình huống PMP dài trong **65 giây** diễn ra theo thứ tự nào?",
     "back": "1. **Đọc câu hỏi chốt cuối cùng TRƯỚC** (`FIRST/NEXT`, `BEST`, `SHOULD HAVE`, `EXCEPT`).\n2. **Quét ra-đa vòng đời** (`Agile` vs `Predictive` vs `Hybrid`).\n3. **Tách nhiễu bối cảnh**, khoanh vùng sự kiện nút thắt ở câu áp chót & những bước PM đã làm xong.\n4. **Lọc đáp án qua Phễu 4 tầng PMI** (An toàn/Pháp lý → Minh bạch → Phân tích trước → Hợp tác)."
   },
   {

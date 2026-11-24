@@ -17,9 +17,9 @@ Trên thực tế Production, kiểu **Redis String** đảm nhiệm cùng lúc 
 ```visual
 kind: illustration
 diagram: redis:r01
-alt: Giải phẫu cấu trúc chuỗi động SDS, tổ hợp cờ nguyên tử SET NX EX và vòng đời xoá khoá hết hạn Lazy + Active TTL
+alt: Cấu trúc chuỗi động SDS, tổ hợp cờ nguyên tử SET NX EX và vòng đời xoá khoá hết hạn Lazy + Active TTL
 badge: Nền tảng cốt lõi · Strings & Keyspace
-title: Giải Phẫu SDS String, thao tác nguyên tử SET NX EX & Cơ Chế Hết Hạn Kép
+title: Cấu Trúc SDS String, Thao Tác Nguyên Tử SET NX EX & Cơ Chế Hết Hạn Kép
 subtitle: Vì sao Redis không dùng chuỗi C kết thúc bằng '\0' và cách Redis tự dọn rác TTL mà không cần quét toàn bộ RAM mỗi giây
 caption: Nhấn vào sơ đồ để phóng to — đối chiếu 3 cơ chế biểu diễn nội bộ (int, embstr, raw) và hai nhánh thu hồi TTL (Thụ động vs Chủ động)
 callouts:

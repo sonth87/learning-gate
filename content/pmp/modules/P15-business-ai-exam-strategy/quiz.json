@@ -11,7 +11,7 @@
       "Tự ý giao ngầm cho 2 lập trình viên làm thêm giờ ban đêm mà không cần đưa vào Product Backlog"
     ],
     "answer": 1,
-    "explain": "**Regulatory Compliance** là ràng buộc pháp lý sống còn (không tuân thủ thì toàn bộ sản phẩm không được phép vận hành = Value bằng 0!). Trong môi trường Agile, PM phối hợp đánh giá yêu cầu tuân thủ cùng chuyên gia pháp chế rồi làm việc với **Product Owner** để tái ưu tiên (`Reprioritize`) đưa hạng mục bắt buộc này lên đầu `Product Backlog`."
+    "explain": "**Regulatory Compliance** là ràng buộc pháp lý bắt buộc (không tuân thủ thì toàn bộ sản phẩm không được phép vận hành = Value bằng 0!). Trong môi trường Agile, PM phối hợp đánh giá yêu cầu tuân thủ cùng chuyên gia pháp chế rồi làm việc với **Product Owner** để tái ưu tiên (`Reprioritize`) đưa hạng mục bắt buộc này lên đầu `Product Backlog`."
   },
   {
     "id": "p15-q2",

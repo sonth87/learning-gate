@@ -2,13 +2,13 @@ import { FlashcardItem } from '@/types/assessment.types';
 
 export const FLASHCARDS_FUNDAMENTAL_ZERO_TO_SETUP: FlashcardItem[] = [
   // ============================================================================
-  // PHẦN A: TỪ CON SỐ 0 — CÀI ĐẶT PYTHON, UV, PYENV, .VENV & GIẢI PHẪU DỰ ÁN (fc-101 -> fc-130)
+  // PHẦN A: TỪ CON SỐ 0 — CÀI ĐẶT PYTHON, UV, PYENV, .VENV & CẤU TRÚC DỰ ÁN (fc-101 -> fc-130)
   // ============================================================================
   {
     id: 'fc-101',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Môi trường (.venv)',
+    category: 'Cấu trúc Dự án & Môi trường (.venv)',
     frontQuestion: 'Thư mục `.venv/` (Virtual Environment) trong dự án Python là gì và tại sao tuyệt đối không nên cài thư viện thẳng vào máy tính (Global)?',
     frontHint: 'So sánh với thư mục `node_modules/` của từng dự án Node.js.',
     backAnswer:
@@ -24,7 +24,7 @@ export const FLASHCARDS_FUNDAMENTAL_ZERO_TO_SETUP: FlashcardItem[] = [
     id: 'fc-102',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Môi trường (.venv)',
+    category: 'Cấu trúc Dự án & Môi trường (.venv)',
     frontQuestion: 'Tại sao trên macOS hoặc Linux Ubuntu mới, khi gõ `pip install requests` trực tiếp ở ngoài môi trường ảo lại bị báo lỗi đỏ `error: externally-managed-environment` (PEP 668)?',
     frontHint: 'Hệ điều hành tự bảo vệ bản Python hệ thống (`/usr/bin/python3`).',
     backAnswer:
@@ -43,7 +43,7 @@ export const FLASHCARDS_FUNDAMENTAL_ZERO_TO_SETUP: FlashcardItem[] = [
     id: 'fc-103',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Môi trường (.venv)',
+    category: 'Cấu trúc Dự án & Môi trường (.venv)',
     frontQuestion: 'File `pyproject.toml` trong dự án Python là gì và nó đóng vai trò tương đương với những file nào bên Node.js / TypeScript?',
     frontHint: 'File trung tâm duy nhất định nghĩa tên dự án, phiên bản Python, thư viện và cấu hình công cụ.',
     backAnswer:
@@ -64,7 +64,7 @@ dev = ["pytest>=8.3.0", "ruff>=0.7.0"]`,
     id: 'fc-104',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Môi trường (.venv)',
+    category: 'Cấu trúc Dự án & Môi trường (.venv)',
     frontQuestion: 'File `.python-version` nằm ở thư mục gốc dự án có tác dụng gì đối với `uv` và `pyenv`?',
     frontHint: 'Tương đương file `.nvmrc` hoặc `.node-version` trong Node.js.',
     backAnswer:
@@ -215,7 +215,7 @@ poetry run pytest`,
     id: 'fc-113',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Entrypoint',
+    category: 'Cấu trúc Dự án & Entrypoint',
     frontQuestion: 'Điểm khởi chạy (Entrypoint) của một dự án Python là gì? Khi nhận một dự án mới, làm sao biết phải chạy file nào và bằng lệnh gì?',
     frontHint: 'Kiểm tra `pyproject.toml` (`[project.scripts]`), `main.py` / `app.py` và khối `if __name__ == "__main__":`.',
     backAnswer:
@@ -232,7 +232,7 @@ uv run uvicorn my_app.main:app --reload    # 3. Dự án Web API FastAPI`,
     id: 'fc-114',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Entrypoint',
+    category: 'Cấu trúc Dự án & Entrypoint',
     frontQuestion: 'Tại sao khi dự án chia theo cấu trúc `src/my_app/main.py`, ta nên chạy bằng lệnh `python -m my_app.main` (sau khi cài Editable) thay vì `python src/my_app/main.py`?',
     frontHint: 'Tránh lỗi `ModuleNotFoundError: No module named my_app` do khác biệt trong `sys.path`.',
     backAnswer:
@@ -250,7 +250,7 @@ uv run python -m my_app.main`,
     id: 'fc-115',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & Entrypoint',
+    category: 'Cấu trúc Dự án & Entrypoint',
     frontQuestion: 'Dòng lệnh `if __name__ == "__main__":` ở cuối file Python có ý nghĩa gì? Nếu bỏ nó đi thì chuyện gì xảy ra?',
     frontHint: 'Phân biệt giữa việc file được chạy trực tiếp bằng lệnh `python file.py` và việc file được nơi khác `import`.',
     backAnswer:
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     id: 'fc-116',
     stageId: 'stage-1',
     level: 'fundamental',
-    category: 'Giải phẫu Dự án & IDE',
+    category: 'Cấu trúc Dự án & IDE',
     frontQuestion: 'Tại sao đã cài thư viện bằng `uv add` hoặc `pip install` và chạy trong Terminal ngon lành, nhưng trong VS Code / Cursor vẫn báo gạch chân vàng `Import "httpx" could not be resolved`?',
     frontHint: 'VS Code đang trỏ nhầm Python Interpreter ra ngoài hệ thống thay vì `.venv` của dự án.',
     backAnswer:

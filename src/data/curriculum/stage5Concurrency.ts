@@ -6,7 +6,7 @@ export const STAGE_5_LESSONS: LessonTopic[] = [
     stageId: 'stage-5',
     level: 'master',
     order: 10,
-    title: '5.1. Giải phẫu GIL vs. AsyncIO Event Loop, Threading, Multiprocessing & Celery',
+    title: '5.1. Cơ chế GIL vs. AsyncIO Event Loop, Threading, Multiprocessing & Celery',
     shortDescription:
       'Hiểu tận gốc sự khác biệt giữa Concurrency và Parallelism trong CPython, tại sao gọi hàm sync trong async def làm treo server FastAPI, và ma trận chọn công nghệ.',
     estimatedMinutes: 50,
@@ -42,7 +42,7 @@ export const STAGE_5_LESSONS: LessonTopic[] = [
     diagrams: [
       {
         id: 'diag-s5-event-loop-gil',
-        title: 'Sơ đồ Giải phẫu AsyncIO Event Loop vs. Lệnh Blocking Làm Đóng Băng Server',
+        title: 'Sơ đồ Hoạt động của AsyncIO Event Loop vs. Lệnh Blocking Làm Đóng Băng Server',
         subtitle: 'Điều gì xảy ra trên luồng chính (Main Thread) khi 1 Coroutine gọi await hợp chuẩn so với gọi time.sleep() / requests.get()',
         type: 'pipeline',
         nodes: [

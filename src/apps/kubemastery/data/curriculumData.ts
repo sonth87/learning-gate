@@ -5,7 +5,7 @@ export const KUBE_STAGES: KubeStageMeta[] = [
     id: 'stage-1',
     number: 1,
     title: 'Giai đoạn 1: Cội nguồn & Làm chủ Docker (Móng nhà)',
-    subtitle: 'Giải mã bản chất OCI/CRI, Namespaces/cgroups/UnionFS, tối ưu Dockerfile Multi-stage, Volumes & Docker Compose',
+    subtitle: 'Phân tích bản chất OCI/CRI, Namespaces/cgroups/UnionFS, tối ưu Dockerfile Multi-stage, Volumes & Docker Compose',
     coreKnowledge: [
       'Sự thật về "File Zip" (Image) và "Thư mục giải nén" (Container), chuẩn quốc tế OCI & CRI',
       'Cơ chế kỹ thuật dưới đáy: Linux Namespaces, cgroups & UnionFS (OverlayFS)',
@@ -62,16 +62,16 @@ export const KUBE_STAGES: KubeStageMeta[] = [
     id: 'stage-4',
     number: 4,
     title: 'Giai đoạn 4: K8s Master, Cloud Native & Chẩn đoán Sự cố Thực chiến',
-    subtitle: 'Helm Charts, GitOps với ArgoCD + CI/CD, Giám sát Prometheus/Grafana, RBAC/NetworkPolicy & Phác đồ Bắt bệnh 8 Sự cố',
+    subtitle: 'Helm Charts, GitOps với ArgoCD + CI/CD, Giám sát Prometheus/Grafana, RBAC/NetworkPolicy & Quy trình Chẩn đoán 8 Sự cố',
     coreKnowledge: [
       'Quản lý gói ứng dụng với Helm Charts & Tự động hóa triển khai hiện đại theo mô hình GitOps với ArgoCD + CI/CD',
       'Giám sát & Gom log tập trung: Prometheus, Grafana, Loki / ELK Stack',
       'Bảo mật cụm: Phân quyền RBAC & Tường lửa nội bộ NetworkPolicy',
-      'Quy trình 4 Bước "Khám Bệnh" & Giải pháp triệt để cho 8 Sự cố kinh điển trên Production',
+      'Quy trình 4 Bước Chẩn đoán & Giải pháp triệt để cho 8 Sự cố kinh điển trên Production',
     ],
     practicalGoals: [
       'Thiết lập quy trình CI/CD + GitOps: Lập trình viên vừa Merge code, hệ thống tự build Image và ArgoCD tự đồng bộ lên K8s',
-      'Nắm vững phác đồ bắt bệnh nhanh cho Pending, ImagePullBackOff, CrashLoopBackOff, OOMKilled (137), Lệch Selector & Terminating',
+      'Nắm vững quy trình chẩn đoán nhanh cho Pending, ImagePullBackOff, CrashLoopBackOff, OOMKilled (137), Lệch Selector & Terminating',
       'Làm chủ toàn bộ bảng lệnh thực chiến "gối đầu giường" của kỹ sư DevOps/SRE',
     ],
     milestone: 'Làm chủ toàn diện chu trình DevOps/SRE chuẩn doanh nghiệp lớn và xử lý sự cố trong vài phút.',
@@ -86,7 +86,7 @@ export const KUBE_LESSONS: KubeLesson[] = [
     level: 'fundamental',
     order: 1,
     title: 'Bài 1.1: Cội nguồn Bản chất — Sự thật về "File Zip" (Image), "Thư mục giải nén" (Container) & Chuẩn OCI/CRI',
-    shortDescription: 'Giải mã tận gốc mối quan hệ giữa Container, Image, Docker, Containerd, chuẩn quốc tế OCI, cổng CRI và vị Tổng chỉ huy Kubernetes để không bao giờ học vẹt.',
+    shortDescription: 'Làm rõ tận gốc mối quan hệ giữa Container, Image, Docker, Containerd, chuẩn quốc tế OCI, cổng CRI và vị Tổng chỉ huy Kubernetes để không bao giờ học vẹt.',
     estimatedMinutes: 15,
     theorySections: [
       {
@@ -199,7 +199,7 @@ docker ps`,
     level: 'fundamental',
     order: 2,
     title: 'Bài 1.2: Cơ chế Kỹ thuật Dưới đáy — Linux Namespaces, cgroups, UnionFS & Vòng lặp Control Loop',
-    shortDescription: 'Tại sao người ta chuyển từ Máy ảo (VM) nặng hàng chục GB sang Container chỉ vài chục MB? Giải mã 3 công nghệ lõi của Linux Kernel và triết lý Declarative của K8s.',
+    shortDescription: 'Tại sao người ta chuyển từ Máy ảo (VM) nặng hàng chục GB sang Container chỉ vài chục MB? Tìm hiểu 3 công nghệ lõi của Linux Kernel và triết lý Declarative của K8s.',
     estimatedMinutes: 15,
     theorySections: [
       {
@@ -303,7 +303,7 @@ docker history node:20-alpine`,
     estimatedMinutes: 20,
     theorySections: [
       {
-        heading: '3.1 & 4.1. Giải mã Dockerfile, Layer Caching & Multi-stage Build',
+        heading: '3.1 & 4.1. Chi tiết về Dockerfile, Layer Caching & Multi-stage Build',
         paragraphs: [
           'Một sai lầm kinh điển của người mới là dùng câu lệnh COPY . . (sao chép toàn bộ mã nguồn) ngay ở đầu file trước khi chạy lệnh cài đặt thư viện (npm install), đồng thời chạy ứng dụng bằng quyền quản trị tối cao (root). Điều này khiến Docker mất hoàn toàn khả năng tận dụng Cache (sửa 1 dấu chấm trong code cũng phải tải lại hàng trăm MB thư viện) và tạo lỗ hổng bảo mật nghiêm trọng.',
         ],
@@ -673,11 +673,11 @@ kubectl describe node worker-node-1`,
     level: 'basic',
     order: 6,
     title: 'Bài 2.2: Các Thực thể Cốt lõi — Pod (Căn hộ), Deployment (Quản lý ca trực) & Service (Tổng đài cố định)',
-    shortDescription: 'Vì sao không bao giờ tạo Pod lẻ tẻ bằng tay? Cách kết nối chuỗi mắt xích sống còn Deployment → Pod ← Service thông qua Thẻ tên (Labels & Selectors).',
+    shortDescription: 'Vì sao không bao giờ tạo Pod lẻ tẻ bằng tay? Cách kết nối chuỗi mắt xích quan trọng Deployment → Pod ← Service thông qua Thẻ tên (Labels & Selectors).',
     estimatedMinutes: 25,
     theorySections: [
       {
-        heading: '3.3. Giải mã Pod, Deployment & ReplicaSet',
+        heading: '3.3. Chi tiết về Pod, Deployment & ReplicaSet',
         paragraphs: [
           'Trong Kubernetes, bạn làm việc thông qua các Thực thể (Objects) chuẩn mực:',
         ],
@@ -695,7 +695,7 @@ kubectl describe node worker-node-1`,
       {
         heading: '3.3. Service (Tổng đài Số điện thoại Cố định) & ConfigMap / Secret',
         paragraphs: [
-          'Các Pod trong K8s có tính chất "sinh tử vô thường" — khi một Pod chết đi và được Deployment tạo lại bằng một Pod mới, Pod mới sẽ mang một địa chỉ IP hoàn toàn mới. Nếu ứng dụng Frontend gọi trực tiếp vào IP của Pod Backend thì mỗi lần Pod Backend khởi động lại là Frontend mất liên lạc!',
+          'Các Pod trong K8s có tính chất "vòng đời ngắn" (ephemeral) — khi một Pod chết đi và được Deployment tạo lại bằng một Pod mới, Pod mới sẽ mang một địa chỉ IP hoàn toàn mới. Nếu ứng dụng Frontend gọi trực tiếp vào IP của Pod Backend thì mỗi lần Pod Backend khởi động lại là Frontend mất liên lạc!',
         ],
         bulletPoints: [
           {
@@ -716,7 +716,7 @@ kubectl describe node worker-node-1`,
         {
           technicalTerm: 'Pod (1 Pod = 1 App + Sidecar)',
           analogyName: 'Căn hộ chung cư nhỏ nhất (Chung IP & Tủ đồ)',
-          explanation: 'Đơn vị nhỏ nhất trên K8s; mang tính chất dùng một lần (sinh tử vô thường).',
+          explanation: 'Đơn vị nhỏ nhất trên K8s; mang tính chất dùng một lần (ephemeral, có thể bị thay thế bất kỳ lúc nào).',
         },
         {
           technicalTerm: 'Deployment (replicas: 3)',
@@ -800,7 +800,7 @@ spec:
         annotations: [
           { line: 19, keyword: 'replicas: 3', explanation: 'Cam kết duy trì 3 bản sao Pod hoạt động liên tục.' },
           { line: 23, keyword: 'maxSurge: 1 / maxUnavailable: 0', explanation: 'Cấu hình nâng cấp cuốn chiếu Zero-Downtime: bật 1 Pod mới khỏe rồi mới tắt 1 Pod cũ.' },
-          { line: 27, keyword: 'app: shop-web', explanation: 'Nhãn liên kết sống còn giữa Deployment, Pod template và Service selector.' },
+          { line: 27, keyword: 'app: shop-web', explanation: 'Nhãn liên kết cốt lõi giữa Deployment, Pod template và Service selector.' },
           { line: 39, keyword: 'configMapRef: name: web-app-config', explanation: 'Tiêm toàn bộ các biến PORT, LOG_LEVEL, CACHE_TTL vào Pod làm biến môi trường.' },
           { line: 54, keyword: 'port: 80 / targetPort: 3000', explanation: 'Gói tin gọi vào cổng 80 của Service sẽ được chuyển tiếp tới cổng 3000 của Pod.' },
         ],
@@ -961,14 +961,14 @@ spec:
     stageId: 'stage-3',
     level: 'advanced',
     order: 8,
-    title: 'Bài 3.2: Ba Bài Khám Y Tế Định Kỳ (Probes), Định mức Điện Nước (Requests/Limits) & Co Giãn Tự Động HPA',
-    shortDescription: 'Làm sao phát hiện Container báo Running nhưng bên trong đã chết lâm sàng (Deadlock)? Cách thiết lập Bác sĩ trực Probes và điều động nhân viên thời vụ HPA lúc 0h00.',
+    title: 'Bài 3.2: Cơ chế Kiểm tra Sức khỏe (Probes), Định mức Tài nguyên (Requests/Limits) & Co Giãn Tự Động HPA',
+    shortDescription: 'Làm sao phát hiện Container báo Running nhưng bên trong đã bị treo (Deadlock)? Cách thiết lập Probes kiểm tra tự động và điều động thêm Pod bằng HPA lúc 0h00.',
     estimatedMinutes: 25,
     theorySections: [
       {
-        heading: '3.3. Probes — Startup, Liveness, Readiness (Ba bài kiểm tra y tế định kỳ)',
+        heading: '3.3. Probes — Startup, Liveness, Readiness (Ba cơ chế kiểm tra sức khỏe định kỳ)',
         paragraphs: [
-          'Nhiều khi Container vẫn báo trạng thái Running (đang chạy), nhưng thực chất ứng dụng bên trong đã bị treo cứng (Deadlock) không phản hồi được nữa. K8s cung cấp 3 cơ chế khám sức khỏe tự động:',
+          'Nhiều khi Container vẫn báo trạng thái Running (đang chạy), nhưng thực chất ứng dụng bên trong đã bị treo cứng (Deadlock) không phản hồi được nữa. K8s cung cấp 3 cơ chế kiểm tra sức khỏe tự động:',
         ],
         bulletPoints: [
           {
@@ -976,30 +976,30 @@ spec:
             text: 'Dành cho các ứng dụng nặng (như Java Spring Boot cũ) cần 1–2 phút để khởi động xong. Khi Startup Probe báo thành công thì hai bài kiểm tra dưới mới bắt đầu hoạt động.',
           },
           {
-            boldPrefix: 'Liveness Probe (Bắt mạch sống chết):',
-            text: 'K8s định kỳ gõ cửa hỏi "Còn sống không?". Nếu ứng dụng bị treo không trả lời sau 3 lần hỏi, K8s kết luận ứng dụng đã chết lâm sàng và lập tức khởi động lại (Restart) container đó.',
+            boldPrefix: 'Liveness Probe (Kiểm tra tiến trình còn phản hồi):',
+            text: 'K8s định kỳ gửi yêu cầu kiểm tra xem ứng dụng còn phản hồi không. Nếu ứng dụng bị treo không trả lời sau 3 lần kiểm tra, K8s kết luận tiến trình đã bị kẹt (Deadlock) và lập tức khởi động lại (Restart) container đó.',
           },
           {
-            boldPrefix: 'Readiness Probe (Kiểm tra sẵn sàng tiếp khách):',
-            text: 'Ứng dụng vẫn sống nhưng đang bận tải dữ liệu lớn hoặc đang mất kết nối tạm thời tới Database. Khi Readiness Probe báo thất bại, K8s KHÔNG giết Pod, mà chỉ tạm thời rút tên Pod đó khỏi tổng đài Service để ngưng gửi khách hàng mới vào, đợi khi nào Pod khỏe lại mới cho nhận khách tiếp.',
+            boldPrefix: 'Readiness Probe (Kiểm tra sẵn sàng nhận traffic):',
+            text: 'Ứng dụng vẫn sống nhưng đang bận tải dữ liệu lớn hoặc đang mất kết nối tạm thời tới Database. Khi Readiness Probe báo thất bại, K8s KHÔNG dừng Pod, mà chỉ tạm thời rút tên Pod đó khỏi danh sách Endpoints của Service để ngưng gửi request mới vào, đợi khi nào Pod sẵn sàng lại mới cho nhận traffic tiếp.',
           },
         ],
       },
       {
-        heading: '3.3. HPA — Horizontal Pod Autoscaler (Cơ chế điều động nhân viên thời vụ tự động)',
+        heading: '3.3. HPA — Horizontal Pod Autoscaler (Cơ chế tự động mở rộng số lượng Pod)',
         paragraphs: [
           'Vào ngày thường, cửa hàng của bạn chỉ cần 2 Pod là đủ phục vụ. Nhưng vào lúc 0h00 đêm ngày khuyến mãi lớn, lượng khách tăng gấp 10 lần làm CPU vọt lên 90%. Thay vì kỹ sư phải thức đêm canh gõ lệnh, HPA tự động theo dõi chỉ số CPU/RAM và lập tức nhân bản từ 2 Pod lên 20 Pod. Đến 2h00 sáng khi khách đã đi ngủ hết, HPA tự động thu gọn về lại 2 Pod để tiết kiệm tiền thuê máy chủ.',
         ],
       },
     ],
     analogyCards: {
-      title: 'Liên tưởng Hóa: Đội Bác sĩ Trực 3 Ca, Hợp đồng Điện nước & Nhân sự Thời vụ',
-      scenario: 'Bảo vệ ứng dụng khỏi tình trạng chết lâm sàng, tràn RAM và quá tải giờ cao điểm.',
+      title: 'Liên hệ Thực tế: Kiểm tra Sức khỏe 3 Lớp, Hạn mức Tài nguyên & Co giãn Tự động',
+      scenario: 'Bảo vệ ứng dụng khỏi tình trạng treo tiến trình (Deadlock), tràn RAM và quá tải giờ cao điểm.',
       mappings: [
         {
           technicalTerm: 'Liveness Probe vs. Readiness Probe',
-          analogyName: 'Bắt mạch sống chết (Restart) vs. Biển báo "Đang bận" (Ngắt khách)',
-          explanation: 'Trượt Liveness → Giết và bật lại Container. Trượt Readiness → Rút tên khỏi Tổng đài Service nhưng giữ nguyên Container.',
+          analogyName: 'Kiểm tra trạng thái hoạt động (Restart) vs. Kiểm tra sẵn sàng nhận traffic (Tạm ngắt khỏi Service)',
+          explanation: 'Trượt Liveness → Dừng và bật lại Container. Trượt Readiness → Rút tên khỏi Service Endpoints nhưng giữ nguyên Container.',
         },
         {
           technicalTerm: 'resources.requests vs. limits',
@@ -1012,7 +1012,7 @@ spec:
           explanation: 'Tự động tăng/giảm số lượng Pod dựa trên phần trăm CPU/RAM so với mức requests.',
         },
       ],
-      summaryCallout: 'LƯU Ý SỐNG CÒN: HPA tính phần trăm CPU dựa trên thông số resources.requests.cpu của Pod! Nếu bạn quên khai báo requests.cpu trong Deployment, HPA sẽ mù thông số (<unknown>/70%) và không bao giờ tự nhân bản được!',
+      summaryCallout: 'LƯU Ý QUAN TRỌNG: HPA tính phần trăm CPU dựa trên thông số resources.requests.cpu của Pod! Nếu bạn quên khai báo requests.cpu trong Deployment, HPA sẽ thiếu thông số (<unknown>/70%) và không bao giờ tự nhân bản được!',
     },
     animatedFlowId: 'rolling-update-hpa',
     codeExamples: [
@@ -1020,7 +1020,7 @@ spec:
         id: 'ex-3-2-probes-hpa',
         filename: 'probes-resources-and-hpa.yaml',
         language: 'yaml',
-        purpose: 'Cấu hình chuẩn mực: Định mức phần cứng (Requests/Limits) + Bác sĩ trực (Probes) + Mở rộng tự động (HPA)',
+        purpose: 'Cấu hình chuẩn mực: Định mức phần cứng (Requests/Limits) + Kiểm tra sức khỏe (Probes) + Mở rộng tự động (HPA)',
         code: `# Phần bên trong spec.containers của Deployment:
           resources:
             requests:                # <-- [MỨC TỐI THIỂU]: Để Trưởng phòng Scheduler tìm máy chủ còn đủ chỗ
@@ -1192,23 +1192,23 @@ spec:
     stageId: 'stage-4',
     level: 'master',
     order: 10,
-    title: 'Bài 4.2: Cẩm nang Chẩn đoán Sự cố Thực chiến — Quy trình 4 Bước "Khám Bệnh" & 8 Căn bệnh Kinh điển',
+    title: 'Bài 4.2: Cẩm nang Chẩn đoán Sự cố Thực tế — Quy trình 4 Bước Chẩn đoán & 8 Sự cố Kinh điển',
     shortDescription: 'Phương pháp luận chuẩn của chuyên gia Kubernetes thực thụ: Cách nhận diện triệu chứng, khoanh vùng nguyên nhân từ ngoài vào trong và xử lý dứt điểm 8 sự cố phổ biến nhất.',
     estimatedMinutes: 30,
     theorySections: [
       {
-        heading: '5.1. Quy trình 4 Bước "Khám Bệnh" Cho Mọi Sự Cố Trên Kubernetes',
+        heading: '5.1. Quy trình 4 Bước Chẩn đoán Cho Mọi Sự Cố Trên Kubernetes',
         paragraphs: [
           'Khả năng phân biệt một kỹ sư mới học và một chuyên gia Kubernetes thực thụ nằm ở tốc độ nhận diện triệu chứng, khoanh vùng nguyên nhân và xử lý sự cố khi hệ thống gặp trục trặc. Khi một ứng dụng trên K8s không hoạt động như ý muốn, đừng đoán mò. Hãy đi từ ngoài vào trong theo đúng 4 bước tuần tự sau:',
         ],
         bulletPoints: [
           {
-            boldPrefix: 'Bước 1 — Quan sát trạng thái tổng thể (Nhìn sắc diện):',
+            boldPrefix: 'Bước 1 — Quan sát trạng thái tổng thể (STATUS & RESTARTS):',
             text: 'Chạy lệnh kubectl get pods -n [NAMESPACE] -o wide để xem cột STATUS đang báo gì, cột RESTARTS có tăng liên tục không và Pod đang nằm ở máy chủ (Node) nào.',
           },
           {
-            boldPrefix: 'Bước 2 — Đọc hồ sơ bệnh án hệ thống (Events):',
-            text: 'Chạy lệnh kubectl describe pod [TÊN_POD] -n [NAMESPACE] và kéo xuống mục Events ở dưới cùng. Đây là nơi K8s ghi lại toàn bộ nhật ký điều phối (tải Image thành công hay thất bại, gắn ổ cứng có được không, khám sức khỏe Probe có đỗ không).',
+            boldPrefix: 'Bước 2 — Đọc lịch sử sự kiện hệ thống (Events):',
+            text: 'Chạy lệnh kubectl describe pod [TÊN_POD] -n [NAMESPACE] và kéo xuống mục Events ở dưới cùng. Đây là nơi K8s ghi lại toàn bộ nhật ký điều phối (tải Image thành công hay thất bại, gắn ổ cứng có được không, kiểm tra Probe có đạt không).',
           },
           {
             boldPrefix: 'Bước 3 — Kiểm tra nhật ký nội bộ của ứng dụng (Application Logs):',
@@ -1221,7 +1221,7 @@ spec:
         ],
       },
       {
-        heading: '5.2. Tóm lược 8 Căn bệnh Kinh điển trong Thực tế Vận hành',
+        heading: '5.2. Tóm lược 8 Sự cố Kinh điển trong Thực tế Vận hành',
         paragraphs: [
           'Mọi sự cố trong thực tế đều quy về 8 kịch bản cốt lõi mà bạn có thể thực hành giải cứu trực tiếp tại phân hệ "8 Tình huống Sự cố":',
         ],
@@ -1262,31 +1262,31 @@ spec:
       },
     ],
     analogyCards: {
-      title: 'Phác đồ Chẩn đoán Y khoa 4 Bước trên Kubernetes',
-      scenario: 'Đối chiếu 4 câu lệnh chẩn đoán cốt lõi với quy trình khám bệnh tại bệnh viện.',
+      title: 'Quy trình Chẩn đoán 4 Bước trên Kubernetes',
+      scenario: 'Bốn câu lệnh chẩn đoán cốt lõi giúp khoanh vùng nhanh nguyên nhân sự cố từ ngoài vào trong.',
       mappings: [
         {
           technicalTerm: 'kubectl get pods -o wide',
-          analogyName: 'Bước 1: Nhìn sắc diện & Đếm số lần ngất (RESTARTS)',
-          explanation: 'Phân loại ngay bệnh nhân thuộc nhóm Pending, ImagePullBackOff, CrashLoopBackOff hay Running.',
+          analogyName: 'Bước 1: Kiểm tra trạng thái & Số lần khởi động lại (RESTARTS)',
+          explanation: 'Phân loại ngay Pod đang gặp sự cố ở nhóm Pending, ImagePullBackOff, CrashLoopBackOff hay Running.',
         },
         {
           technicalTerm: 'kubectl describe pod [TÊN_POD]',
-          analogyName: 'Bước 2: Đọc Hồ sơ Bệnh án Hệ thống (Events & Last State)',
+          analogyName: 'Bước 2: Đọc Lịch sử Sự kiện Hệ thống (Events & Last State)',
           explanation: 'Tìm nguyên nhân FailedScheduling, Failed to pull image hoặc Reason: OOMKilled (Exit Code 137).',
         },
         {
           technicalTerm: 'kubectl logs [TÊN_POD] --previous',
-          analogyName: 'Bước 3: Nghe lời trăn trối cuối cùng trước khi ngất',
+          analogyName: 'Bước 3: Xem log của container trước khi khởi động lại',
           explanation: 'Đọc stacktrace lỗi code hoặc lỗi thiếu biến DATABASE_URL của phiên bản container vừa bị sập.',
         },
         {
           technicalTerm: 'kubectl get endpoints [TÊN_SERVICE]',
-          analogyName: 'Bước 4: Kiểm tra danh bạ Tổng đài điện thoại',
-          explanation: 'Nếu trả về <none> nghĩa là Tổng đài Service đang bị đứt dây nối với Pod do lệch nhãn Selector.',
+          analogyName: 'Bước 4: Kiểm tra danh sách IP đích của Service',
+          explanation: 'Nếu trả về <none> nghĩa là Service đang không kết nối được với Pod nào do lệch nhãn Selector.',
         },
       ],
-      summaryCallout: 'Hãy chuyển ngay sang tab "8 Tình huống Sự cố (War-Room)" trên thanh công cụ để trực tiếp gõ lệnh khám bệnh và sửa file YAML cứu hệ thống như một kỹ sư SRE thực thụ!',
+      summaryCallout: 'Hãy chuyển ngay sang tab "8 Tình huống Sự cố (War-Room)" trên thanh công cụ để trực tiếp gõ lệnh chẩn đoán và sửa file YAML khắc phục hệ thống như một kỹ sư SRE thực thụ!',
     },
     animatedFlowId: 'troubleshooting-flowchart',
     codeExamples: [
@@ -1294,14 +1294,14 @@ spec:
         id: 'ex-4-2-diagnostic-commands',
         filename: 'sre-4-step-diagnostics.sh',
         language: 'bash',
-        purpose: 'Bộ 4 câu lệnh khám bệnh chuẩn mực và lệnh Rollback khẩn cấp khi nâng cấp lỗi (Trang 16, 21 PDF)',
-        code: `# BƯỚC 1: Quan sát trạng thái tổng thể (Nhìn sắc diện & cột RESTARTS)
+        purpose: 'Bộ 4 câu lệnh chẩn đoán chuẩn mực và lệnh Rollback khẩn cấp khi nâng cấp lỗi (Trang 16, 21 PDF)',
+        code: `# BƯỚC 1: Quan sát trạng thái tổng thể (STATUS & cột RESTARTS)
 kubectl get pods -n production -o wide
 
-# BƯỚC 2: Đọc hồ sơ bệnh án hệ thống (Kéo xuống mục Events & Last State)
+# BƯỚC 2: Đọc lịch sử sự kiện hệ thống (Kéo xuống mục Events & Last State)
 kubectl describe pod shop-web-7d9f8b-x92k -n production
 
-# BƯỚC 3: Đọc lời trăn trối của container ở lần sập ngay trước đó (trị CrashLoopBackOff)
+# BƯỚC 3: Đọc nhật ký của container ở lần sập ngay trước đó (xử lý CrashLoopBackOff)
 kubectl logs shop-web-7d9f8b-x92k -n production --previous
 
 # BƯỚC 4: Kiểm tra danh bạ IP của Tổng đài Service & Kéo cổng trực tiếp vào Pod

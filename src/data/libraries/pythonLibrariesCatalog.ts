@@ -594,7 +594,7 @@ if shutil.which("git") is not None:
 app_env = os.getenv("APP_ENV", "development")
 print(f"Đang chạy ở môi trường: {app_env}")`,
     tipsAndTricks: [
-      'Bảo mật sống còn: Luôn truyền lệnh dưới dạng danh sách `["git", "commit", "-m", msg]` và giữ `shell=False` (mặc định). Tuyệt đối không nối chuỗi với `shell=True` khi có dữ liệu từ người dùng (tránh lỗ hổng OS Command Injection)!',
+      'Nguyên tắc bảo mật cốt lõi: Luôn truyền lệnh dưới dạng danh sách `["git", "commit", "-m", msg]` và giữ `shell=False` (mặc định). Tuyệt đối không nối chuỗi với `shell=True` khi có dữ liệu từ người dùng (tránh lỗ hổng OS Command Injection)!',
       'Luôn thêm `timeout=...` vào `subprocess.run()` để tiến trình con bị treo không làm treo luôn ứng dụng chính của bạn.',
     ],
     alternatives: [
@@ -911,7 +911,7 @@ async def create_payment(
 # $ uv run uvicorn main:app --reload --port 8000
 # Mở trình duyệt vào: http://localhost:8000/docs để test API trực tiếp!`,
     tipsAndTricks: [
-      'Quy tắc sống còn về `async def` vs `def` trong FastAPI: Nếu bên trong route bạn gọi thư viện **bất đồng bộ** (`await httpx`, `await AsyncSession`), hãy khai báo `async def`. Nhưng nếu bên trong bạn gọi thư viện **đồng bộ chặn luồng** (`requests.get`, `time.sleep`, `psycopg2` đồng bộ), hãy khai báo **`def` thường** (không có `async`) để FastAPI tự đẩy vào ThreadPool mà không làm đơ toàn bộ Event Loop!',
+      'Nguyên tắc quan trọng về `async def` vs `def` trong FastAPI: Nếu bên trong route bạn gọi thư viện **bất đồng bộ** (`await httpx`, `await AsyncSession`), hãy khai báo `async def`. Nhưng nếu bên trong bạn gọi thư viện **đồng bộ chặn luồng** (`requests.get`, `time.sleep`, `psycopg2` đồng bộ), hãy khai báo **`def` thường** (không có `async`) để FastAPI tự đẩy vào ThreadPool mà không làm đơ toàn bộ Event Loop!',
       'Tận dụng `lifespan` context manager trên `FastAPI(lifespan=...)` để khởi tạo Connection Pool lúc bật server và đóng sạch lúc tắt server.',
     ],
     alternatives: [
@@ -1243,7 +1243,7 @@ logger.bind(order_id="ORD-99", user_id=42).info("Đã xử lý thanh toán thàn
       poetry: 'poetry add tenacity selectolax arq',
     },
     whatItIs:
-      'Các thư viện vũ khí bí mật của kỹ sư Senior Python: **`tenacity`** tự động thử lại (Retry với Exponential Backoff + Jitter) khi gọi API/DB chập chờn; **`playwright` & `selectolax`** tự động hóa trình duyệt và bóc tách HTML siêu tốc; **`arq` / `celery`** đẩy các tác vụ nặng (gửi email, xuất báo cáo, gọi AI) xuống chạy ngầm qua Redis.',
+      'Các thư viện hữu ích của kỹ sư Python chuyên nghiệp: **`tenacity`** tự động thử lại (Retry với Exponential Backoff + Jitter) khi gọi API/DB chập chờn; **`playwright` & `selectolax`** tự động hóa trình duyệt và bóc tách HTML siêu tốc; **`arq` / `celery`** đẩy các tác vụ nặng (gửi email, xuất báo cáo, gọi AI) xuống chạy ngầm qua Redis.',
     problemSolved:
       'Giúp hệ thống tự phục hồi khi mạng lỗi tạm thời mà không cần viết vòng lặp `try...except...time.sleep` thủ công, và tách các tác vụ tốn thời gian ra khỏi luồng phản hồi API chính.',
     keyApis: [
@@ -1288,7 +1288,7 @@ async def call_partner_webhook(url: str, payload: dict) -> dict:
       {
         name: 'BeautifulSoup4 (uv add beautifulsoup4 lxml)',
         whenToChoose:
-          'Thư viện bóc tách HTML/XML kinh điển dễ dùng nhất khi tốc độ không phải yếu tố sống còn.',
+          'Thư viện bóc tách HTML/XML kinh điển dễ dùng nhất khi tốc độ không phải yếu tố quyết định.',
       },
     ],
     nodeJsEquivalent: {

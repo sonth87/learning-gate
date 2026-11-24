@@ -1643,7 +1643,7 @@ export const CICD_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '~',
                   text: bi(
-                    'Nhận diện 4 bề mặt tấn công chí mạng nhắm vào CI Runner từ Pull Request bên ngoài',
+                    'Nhận diện 4 bề mặt tấn công nghiêm trọng nhắm vào CI Runner từ Pull Request bên ngoài',
                     'Mapped the 4 critical attack vectors targeting CI Runners from untrusted Pull Requests'
                   ),
                 },

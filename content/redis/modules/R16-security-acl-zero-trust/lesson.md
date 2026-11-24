@@ -72,7 +72,7 @@ Cú pháp một dòng **Redis ACL** cực kỳ trực quan khi bạn đọc tu�
 
 ```visual
 kind: anatomy
-title: "Giải Phẫu Cú Pháp Phân Quyền Một Dòng Lệnh Redis ACL"
+title: "Cấu Trúc Cú Pháp Phân Quyền Một Dòng Lệnh Redis ACL"
 subtitle: "Đọc từ trái sang phải: quy tắc viết đứng SAU sẽ ghi đè lên quy tắc viết đứng TRƯỚC!"
 items:
   - keyword: "on >StrongPass2026"

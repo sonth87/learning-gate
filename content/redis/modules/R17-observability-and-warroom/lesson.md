@@ -137,7 +137,7 @@ groups:
 ```
 
 > [!WARNING] Lưu ý sau khi xử lý sự cố: Lưu cấu hình bằng `CONFIG REWRITE`
-> Nếu bạn vừa chữa cháy trực tiếp trên RAM bằng lệnh ==`CONFIG SET maxmemory-policy allkeys-lfu`==, thay đổi đó **chưa tự lưu vào file cấu hình trên ổ đĩa**! Hãy chạy thêm **`CONFIG REWRITE`** (hoặc cập nhật ngay tệp cấu hình trên Git / Helm / Docker Compose) để lần khởi động lại sau hệ thống không bị quay về cấu hình lỗi cũ.
+> Nếu bạn vừa khắc phục trực tiếp trên RAM bằng lệnh ==`CONFIG SET maxmemory-policy allkeys-lfu`==, thay đổi đó **chưa tự lưu vào file cấu hình trên ổ đĩa**! Hãy chạy thêm **`CONFIG REWRITE`** (hoặc cập nhật ngay tệp cấu hình trên Git / Helm / Docker Compose) để lần khởi động lại sau hệ thống không bị quay về cấu hình lỗi cũ.
 
 > [!REMEMBER] Đúc kết trọn vẹn hành trình Redis Mastery (R00 → R17)
 > 1. **Tôn trọng luồng đơn siêu tốc:** Giữ mọi câu lệnh và kịch bản Lua gọn nhẹ dưới vài micro-giây; luôn dùng **`SCAN`** thay cho `KEYS` và **`UNLINK` + `lazyfree`** thay cho `DEL` trên khóa lớn.

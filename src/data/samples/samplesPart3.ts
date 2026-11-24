@@ -267,7 +267,7 @@ tests/test_frontmatter.py::test_markdown_escapes_malicious_script_tags PASSED   
     complexityLabel: 'Cấp 12 • Background Worker & Hàng đợi',
     category: 'Distributed Task Queue & Workers',
     summary:
-      'Giải phẫu kiến trúc bên trong của Celery / Redis Queue (RQ): Cách đóng gói hàm thành JobEnvelope có chữ ký HMAC chống giả mạo, đăng ký hàm qua Decorator @task, đẩy vào hàng đợi ưu tiên (deque / heapq), tự động thử lại (Retry) và chuyển vào Dead-Letter Queue (DLQ) khi vượt quá số lần lỗi.',
+      'Phân tích kiến trúc bên trong của Celery / Redis Queue (RQ): Cách đóng gói hàm thành JobEnvelope có chữ ký HMAC chống giả mạo, đăng ký hàm qua Decorator @task, đẩy vào hàng đợi ưu tiên (deque / heapq), tự động thử lại (Retry) và chuyển vào Dead-Letter Queue (DLQ) khi vượt quá số lần lỗi.',
     architectureNotes: [
       'Cấu trúc chia thành 4 gói chuyên biệt: `core/` (định nghĩa JobEnvelope & bảo mật HMAC), `broker/` (quản lý Main Queue & Dead-Letter Queue), `worker/` (Registry Decorator & tiến trình tiêu thụ bất đồng bộ), và `tasks/` (các hàm nghiệp vụ gửi email/xuất báo cáo).',
       'Tuyệt đối không dùng `pickle` cho dữ liệu hàng đợi từ bên ngoài vì nguy cơ thực thi mã từ xa (RCE); dự án dùng JSON kết hợp chữ ký `hmac.compare_digest`.',

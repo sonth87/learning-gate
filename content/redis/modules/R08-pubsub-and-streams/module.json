@@ -44,7 +44,7 @@
     {
       "path": "streams/bad-stream-missing-xack-maxlen.ts",
       "kind": "bug",
-      "note": "Worker xử lý đơn hàng viết bằng TypeScript mắc liền 2 lỗi chí mạng: bắn `XADD` không giới hạn `MAXLEN ~` và tiêu thụ bằng `XREADGROUP` nhưng quên gọi `XACK`.",
+      "note": "Worker xử lý đơn hàng viết bằng TypeScript mắc liền 2 lỗi nghiêm trọng: bắn `XADD` không giới hạn `MAXLEN ~` và tiêu thụ bằng `XREADGROUP` nhưng quên gọi `XACK`.",
       "task": "Điều gì sẽ xảy ra với dung lượng RAM của Redis và danh sách `PEL` sau 1 tuần chạy liên tục ở tải 500 đơn/giây?",
       "answer": "Không có `MAXLEN ~`, danh sách bản ghi gốc phình to vô hạn cho tới khi chạm `maxmemory` gây lỗi `OOM`. Nghiêm trọng không kém, mọi tin đọc qua `XREADGROUP ... >` mà không `XACK` đều nằm vĩnh viễn trong bảng `PEL` (Pending Entries List) của Consumer Group — tạo ra rò rỉ bộ nhớ ngầm ngay cả khi sau đó bạn có cắt ngắn Stream!"
     },

@@ -123,7 +123,7 @@ print(discounted)  # [510.0, 850.0, 350.0]`,
     order: 5,
     title: '2.2. Iterators & Generators (yield), Decorators (Closure) & Context Managers (with)',
     shortDescription:
-      'Ba vũ khí hạng nặng làm nên sức mạnh của Python: Xử lý luồng dữ liệu khổng lồ với yield, giải phẫu Decorator dưới tầng Closure và tự viết Context Manager.',
+      'Ba cơ chế nâng cao quan trọng của Python: Xử lý luồng dữ liệu khổng lồ với yield, tìm hiểu bản chất Decorator dưới tầng Closure và tự viết Context Manager.',
     estimatedMinutes: 45,
     theoryParagraphs: [
       '**Generator (`yield`)**: Khi cần xử lý một file log 50GB hoặc hàng triệu bản ghi từ Database, nếu bạn nạp tất cả vào `list`, chương trình sẽ tràn bộ nhớ (`MemoryError`). Hàm chứa từ khóa `yield` biến thành một Generator tuân thủ giao thức Iterator (`__iter__` và `__next__`): mỗi lần gọi `next()`, nó chỉ tính toán và trả về ĐÚNG 1 phần tử rồi tạm đóng băng trạng thái, giúp tiêu thụ chỉ vài KB RAM.',

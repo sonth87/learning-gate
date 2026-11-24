@@ -57,7 +57,7 @@
       "Vì UUID không thể làm tên khoá trong Redis"
     ],
     "answer": 1,
-    "explain": "Negative Caching chỉ hiệu quả khi kẻ tấn công hỏi lặp đi lặp lại *cùng một vài ID giả*. Khi kẻ tấn công xoay vòng hàng triệu ID giả ngẫu nhiên không trùng lặp, Bloom Filter đứng trước mới là vũ khí tiết kiệm bộ nhớ (~1.2 byte/phần tử) để chặn rác không cho ghi vào Redis."
+    "explain": "Negative Caching chỉ hiệu quả khi kẻ tấn công hỏi lặp đi lặp lại *cùng một vài ID giả*. Khi kẻ tấn công xoay vòng hàng triệu ID giả ngẫu nhiên không trùng lặp, Bloom Filter đứng trước mới là công cụ tiết kiệm bộ nhớ (~1.2 byte/phần tử) để chặn rác không cho ghi vào Redis."
   },
   {
     "id": "R10-Q6",

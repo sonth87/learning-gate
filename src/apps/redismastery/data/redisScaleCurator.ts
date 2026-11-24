@@ -1597,7 +1597,7 @@ export const REDIS_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               )
             : s === 2
               ? bi(
-                  'Phản xạ vá nóng 5 sự cố: Nghẽn KEYS ➔ đổi SCAN; giật DEL khóa lớn ➔ đổi UNLINK; Cache báo OOM ➔ chuyển allkeys-lfu; kẹt Stream PEL ➔ chạy XAUTOCLAIM; lỗi CROSSSLOT ➔ gắn {HashTag}!',
+                  'Cách xử lý nhanh 5 sự cố: Nghẽn KEYS ➔ đổi SCAN; giật DEL khóa lớn ➔ đổi UNLINK; Cache báo OOM ➔ chuyển allkeys-lfu; kẹt Stream PEL ➔ chạy XAUTOCLAIM; lỗi CROSSSLOT ➔ gắn {HashTag}!',
                   '5 instant incident fixes: KEYS stall ➔ SCAN; Bigkey DEL spike ➔ UNLINK; Cache OOM ➔ allkeys-lfu; stuck Stream PEL ➔ XAUTOCLAIM; CROSSSLOT ➔ entity {HashTag}!'
                 )
               : s === 3

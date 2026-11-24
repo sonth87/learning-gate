@@ -358,7 +358,7 @@ const QUESTIONS_STDLIB_IO: ExamQuestion[] = [
     ],
     [
       'Chính xác: sử dụng dấu hỏi chấm `?` (qmark style) kèm một `tuple` tham số `(user_input, "member")` hoặc `:name` kèm `dict` là Parameterized Query — driver SQLite biên dịch câu lệnh SQL riêng và truyền dữ liệu riêng nên không thể bị SQL Injection.',
-      'Sai: nối chuỗi bằng f-string tạo lỗ hổng SQL Injection chí mạng (ví dụ `user_input = "\' OR \'1\'=\'1"`).',
+      'Sai: nối chuỗi bằng f-string tạo lỗ hổng SQL Injection nghiêm trọng (ví dụ `user_input = "\' OR \'1\'=\'1"`).',
       'Sai: toán tử `%` cũng chỉ là nối chuỗi văn bản thông thường, hoàn toàn bị SQL Injection!',
       'Sai: `(user_input)` không có dấu phẩy chỉ là một chuỗi `str`, nên `sqlite3` sẽ coi từng ký tự của chuỗi là một tham số riêng và ném `ProgrammingError: Incorrect number of bindings supplied`! Phải viết `(user_input,)`.',
     ],
@@ -741,7 +741,7 @@ const QUESTIONS_STDLIB_ALGO: ExamQuestion[] = [
       'Sai: sub-iterator `group` trả về trong mỗi bước lặp dùng chung con trỏ với `groupby` bên ngoài, nên nếu muốn lưu lại phải bọc `list(group)` ngay trong vòng lặp!',
     ],
     0,
-    'Hai quy tắc sống còn với `itertools.groupby(iterable, key=fn)`: (1) Luôn sắp xếp `iterable` theo cùng hàm `fn` trước khi gọi `groupby` (hoặc dùng `defaultdict(list)` để gom nhóm trong `O(n)` mà không cần sort); (2) Chuyển `list(group)` ngay bên trong vòng lặp nếu cần dùng lại dữ liệu của nhóm đó sau này.',
+    'Hai nguyên tắc quan trọng với `itertools.groupby(iterable, key=fn)`: (1) Luôn sắp xếp `iterable` theo cùng hàm `fn` trước khi gọi `groupby` (hoặc dùng `defaultdict(list)` để gom nhóm trong `O(n)` mà không cần sort); (2) Chuyển `list(group)` ngay bên trong vòng lặp nếu cần dùng lại dữ liệu của nhóm đó sau này.',
     'Nếu chỉ cần gom nhóm vào bộ nhớ mà không cần thứ tự sắp xếp, `defaultdict(list)` vừa nhanh hơn (`O(n)` so với `O(n log n)`) vừa không sợ quên sort!',
     ['term-itertools']
   ),

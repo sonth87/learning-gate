@@ -51,7 +51,7 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
             <tr>
               <th className="px-3 py-2">Mã</th>
               <th className="px-3 py-2">Bài</th>
-              <th className="px-3 py-2">Độ khó</th>
+              <th className="hidden px-3 py-2 sm:table-cell">Độ khó</th>
               <th className="hidden px-3 py-2 md:table-cell">Chủ đề</th>
               <th className="px-3 py-2">Trạng thái</th>
               <th className="hidden px-3 py-2 sm:table-cell">Chấm</th>
@@ -64,12 +64,12 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
                 <tr key={e.id} onClick={() => go({ name: 'exercise', code: e.code })} className="cursor-pointer border-t border-slate-800/70 hover:bg-slate-800/50">
                   <td className="px-3 py-2 font-mono font-bold text-emerald-400">{e.code}</td>
                   <td className="px-3 py-2 text-slate-100">{e.title}</td>
-                  <td className="px-3 py-2">
+                  <td className="hidden px-3 py-2 sm:table-cell">
                     <Stars n={e.difficulty} />
                   </td>
                   <td className="hidden px-3 py-2 text-xs text-slate-500 md:table-cell">{e.tags.slice(0, 3).join(', ')}</td>
                   <td className="px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <Pill tone={st === 'passed' ? 'ok' : st === 'skipped' ? 'info' : st === 'started' ? 'warn' : 'neutral'}>
                         {st === 'passed' ? 'đạt' : st === 'skipped' ? 'đã bỏ qua' : st === 'started' ? 'đang làm' : 'chưa làm'}
                       </Pill>

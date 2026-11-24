@@ -829,7 +829,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
           'Nó mở một trình duyệt web ẩn danh; để thoát ra nhấn `Alt + F4`',
         ],
         [
-          'Chính xác! Không có phép thuật nào cả: `activate` chỉ sửa biến `$PATH` của cửa sổ terminal hiện tại để khi bạn gõ `python` hay `pip`, shell tìm thấy `.venv/bin/python` trước tiên. Hàm shell `deactivate` sẽ khôi phục lại `$PATH` ban đầu.',
+          'Chính xác! Cơ chế hoạt động rất đơn giản: `activate` chỉ sửa biến `$PATH` của cửa sổ terminal hiện tại để khi bạn gõ `python` hay `pip`, shell tìm thấy `.venv/bin/python` trước tiên. Hàm shell `deactivate` sẽ khôi phục lại `$PATH` ban đầu.',
           'Sai! Nó chỉ sửa biến môi trường trong bộ nhớ RAM của một cửa sổ terminal.',
           'Sai! `rm -rf .venv` là xóa hẳn thư mục môi trường ảo trên ổ đĩa, còn `deactivate` chỉ là thoát khỏi trạng thái kích hoạt.',
           'Sai! Không liên quan đến trình duyệt web.',
@@ -1161,7 +1161,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
         ],
         0,
         'Luôn đặt tên môi trường ảo là `.venv` ngay tại thư mục gốc của dự án (và đảm bảo `.venv/` có trong `.gitignore`). Đó là quy ước vàng giống như `node_modules/` trong JavaScript.',
-        'Đặt tên `.venv` giống như để bình cứu hỏa vào đúng hộp quy chuẩn cạnh cửa: bất kỳ lính cứu hỏa (IDE, `uv`, `ruff`) nào bước vào cũng tìm thấy ngay không cần hỏi.',
+        'Đặt tên `.venv` giống như đặt hộp dụng cụ vào đúng vị trí quy chuẩn cạnh cửa: bất kỳ công cụ (IDE, `uv`, `ruff`) nào kiểm tra dự án cũng tìm thấy ngay không cần hỏi.',
         ['env-venv', 'tool-uv']
       ),
       q(
@@ -1318,7 +1318,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
   },
   {
     id: 'exam-zero-project-anatomy',
-    title: 'Đề Zero 3: Giải phẫu Dự án, Thực thi Code, Import & Bộ công cụ IDE/Linter',
+    title: 'Đề Zero 3: Cấu trúc Dự án, Thực thi Code, Import & Bộ công cụ IDE/Linter',
     description:
       'Làm chủ cấu trúc thư mục Python, entrypoint __name__ == "__main__", sự khác biệt giữa python file.py và python -m, sys.path, __init__.py, VS Code, Ruff và Mypy/Pyright.',
     targetLevel: 'fundamental',
@@ -1361,7 +1361,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
         `def add(a: int, b: int) -> int:\n    return a + b\n\nif __name__ == "__main__":\n    print("Chạy thử:", add(2, 3))`,
         [
           'Để phân biệt: khi file này được chạy trực tiếp (`python math_utils.py`) thì biến đặc biệt `__name__` có giá trị là `"__main__"` và khối code bên trong sẽ chạy; nhưng khi file khác `import math_utils` để tái sử dụng hàm `add`, thì `__name__` là `"math_utils"` nên khối code chạy thử bên dưới sẽ KHÔNG bị thực thi ngoài ý muốn',
-          'Đây là câu thần chú bắt buộc của trình biên dịch: nếu thiếu dòng này thì file Python sẽ báo lỗi `SyntaxError` và không thể chạy được',
+          'Đây là cú pháp bắt buộc của trình biên dịch: nếu thiếu dòng này thì file Python sẽ báo lỗi `SyntaxError` và không thể chạy được',
           'Dùng để biến tất cả các biến bên trong khối `if` thành biến cục bộ riêng tư (private scope) không lộ ra ngoài file',
           'Dùng để tăng tốc độ thực thi của hàm `add()` lên gấp 10 lần',
         ],
@@ -1816,7 +1816,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
           'Tắt máy tính khởi động lại mỗi khi gặp lỗi này',
         ],
         [
-          'Chính xác! Hai vũ khí mạnh nhất trị Circular Import là: 1) Tái cấu trúc đồ thị phụ thuộc thành hình cây một chiều (tách `common`/`schemas`), và 2) Nếu vòng lặp chỉ xảy ra do import class để viết Type Hint, hãy dùng `from typing import TYPE_CHECKING` và đặt câu lệnh import bên trong `if TYPE_CHECKING:` (vì khối này luôn là `False` lúc chạy thật nên không gây lỗi circular import!).',
+          'Chính xác! Hai kỹ thuật chuẩn nhất để xử lý Circular Import là: 1) Tái cấu trúc đồ thị phụ thuộc thành hình cây một chiều (tách `common`/`schemas`), và 2) Nếu vòng lặp chỉ xảy ra do import class để viết Type Hint, hãy dùng `from typing import TYPE_CHECKING` và đặt câu lệnh import bên trong `if TYPE_CHECKING:` (vì khối này luôn là `False` lúc chạy thật nên không gây lỗi circular import!).',
           'Sai! Dồn mọi thứ vào 1 file khổng lồ phá hỏng khả năng bảo trì của dự án.',
           'Sai! Chạy bao nhiêu lần thì thứ tự khởi tạo module vòng tròn vẫn lỗi như vậy.',
           'Sai! Đây là lỗi thiết kế phụ thuộc giữa các module trong code.',
@@ -1947,7 +1947,7 @@ export const EXAM_SETS_PART_3: ExamSet[] = [
           'Sai! Code gõ trong REPL sẽ mất ngay khi đóng cửa sổ terminal.',
         ],
         0,
-        'Chúc mừng bạn đã nắm vững toàn bộ nền tảng Môi trường, Quản lý Dự án và Giải phẫu Cấu trúc Python hiện đại! Với nền tảng này, bạn đã sẵn sàng bước vào viết code Python cốt lõi một cách tự tin nhất.',
+        'Chúc mừng bạn đã nắm vững toàn bộ nền tảng Môi trường, Quản lý Dự án và Cấu trúc Python hiện đại! Với nền tảng này, bạn đã sẵn sàng bước vào viết code Python cốt lõi một cách tự tin nhất.',
         'Giống như đã thiết lập xong một căn bếp chuẩn 5 sao với dao sắc (`uv`), máy rửa tự động (`ruff`) và cân điện tử (`mypy`) — giờ là lúc bắt đầu nấu những món ăn tuyệt hảo bằng ngôn ngữ Python!',
         ['tool-uv', 'tool-ruff', 'file-pyproject', 'env-venv']
       ),

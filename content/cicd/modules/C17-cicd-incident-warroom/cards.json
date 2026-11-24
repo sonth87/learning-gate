@@ -1,12 +1,12 @@
 [
   {
     "id": "C17-C1",
-    "front": "Phác đồ 4 điểm để trị dứt điểm sự cố **Pipeline 42 phút (Case B1)** là gì?",
+    "front": "Giải pháp 4 bước để khắc phục triệt để sự cố **Pipeline 42 phút (Case B1)** là gì?",
     "back": "1) `setup-node@v4` (`cache: \"npm\"`) + `npm ci`.\n2) Tách `lint` và `test` chạy song song.\n3) Bật `strategy.matrix.shard: [1, 2, 3, 4]` cho `test`.\n4) Xoá `sleep` cảm tính & thêm `timeout-minutes`."
   },
   {
     "id": "C17-C2",
-    "front": "Phác đồ cấu hình chống **Deployment Race Condition trên Production (Case B2)** là gì?",
+    "front": "Cấu hình tiêu chuẩn để chống **Deployment Race Condition trên Production (Case B2)** là gì?",
     "back": "Gắn `environment: production` VÀ khai báo:\n`concurrency:`\n`  group: production-deploy`\n`  cancel-in-progress: false`"
   },
   {
@@ -16,7 +16,7 @@
   },
   {
     "id": "C17-C4",
-    "front": "Ba thủ phạm kinh điển gây bệnh **False-Green Pipeline (Case B6)** là gì?",
+    "front": "Ba nguyên nhân phổ biến gây lỗi **False-Green Pipeline (Case B6)** là gì?",
     "back": "1) `continue-on-error: true` trên bước test/scan.\n2) Nối đuôi `|| true` vào câu lệnh kiểm thử.\n3) Gọi `curl <url>` kiểm tra sức khoẻ mà thiếu cờ `--fail`."
   },
   {

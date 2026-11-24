@@ -194,8 +194,8 @@ export const PmpLearnShell: React.FC = () => {
         aria-label="Practice navigation"
         className="@container shrink-0 border-b border-[var(--dts-line-strong)] bg-[var(--dts-panel)] px-2.5 sm:px-3.5"
       >
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 py-1.5">
-          <div className="flex min-w-0 items-center gap-2">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-x-2 gap-y-1.5 py-1.5">
+          <div className="flex min-w-0 max-w-full items-center gap-2">
             <button
               type="button"
               onClick={() => go({ name: 'workbench' })}
@@ -218,7 +218,7 @@ export const PmpLearnShell: React.FC = () => {
             <div
               role="tablist"
               aria-label={lang === 'en' ? 'Practice modes' : 'Chế độ ôn luyện'}
-              className="inline-flex min-w-0 items-center gap-0.5 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-0.5"
+              className="no-scrollbar inline-flex max-w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-0.5"
             >
               {PMP_PRACTICE_TABS.map((tab) => {
                 const active = tab.match.includes(view.name);
@@ -247,7 +247,7 @@ export const PmpLearnShell: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1.5">
             <button
               type="button"
               onClick={() => go({ name: 'roadmap' })}

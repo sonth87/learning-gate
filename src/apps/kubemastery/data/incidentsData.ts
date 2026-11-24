@@ -121,7 +121,7 @@ CMD ["node", "dist/server.js"]`,
     diagnosticSteps: [
       {
         stepOrder: 1,
-        stepTitle: 'Bước 1 — Quan sát trạng thái tổng thể (Nhìn sắc diện)',
+        stepTitle: 'Bước 1 — Quan sát trạng thái tổng thể (STATUS & RESTARTS)',
         command: 'kubectl get pods -n production -o wide',
         terminalOutput: `NAME                                  READY   STATUS             RESTARTS   AGE   IP            NODE
 shop-payment-deploy-6b8f9d4c2-9x2la   0/1     ImagePullBackOff   0          3m    10.244.1.45   worker-node-1
@@ -130,7 +130,7 @@ shop-payment-deploy-6b8f9d4c2-k41mp   0/1     ErrImagePull       0          3m  
       },
       {
         stepOrder: 2,
-        stepTitle: 'Bước 2 — Đọc hồ sơ bệnh án hệ thống (Events)',
+        stepTitle: 'Bước 2 — Đọc lịch sử sự kiện hệ thống (Events)',
         command: 'kubectl describe pod shop-payment-deploy-6b8f9d4c2-9x2la -n production',
         terminalOutput: `Events:
   Type     Reason     Age                  From               Message
@@ -247,7 +247,7 @@ order-service-deploy-84c9d7-m29xp   0/1     CrashLoopBackOff   12 (42s ago)    1
       },
       {
         stepOrder: 2,
-        stepTitle: 'Bước 2 — Đọc hồ sơ bệnh án hệ thống (Events)',
+        stepTitle: 'Bước 2 — Đọc lịch sử sự kiện hệ thống (Events)',
         command: 'kubectl describe pod order-service-deploy-84c9d7-m29xp -n production',
         terminalOutput: `Events:
   Warning  Unhealthy  2m (x12 over 14m)  kubelet  Liveness probe failed: Get "http://10.244.1.88:3000/healthz": dial tcp 10.244.1.88:3000: connect: connection refused
@@ -257,14 +257,14 @@ order-service-deploy-84c9d7-m29xp   0/1     CrashLoopBackOff   12 (42s ago)    1
       },
       {
         stepOrder: 3,
-        stepTitle: 'Bước 3 — Đọc lời trăn trối cuối cùng của ứng dụng (logs --previous)',
+        stepTitle: 'Bước 3 — Đọc nhật ký lỗi trước khi sập của ứng dụng (logs --previous)',
         command: 'kubectl logs order-service-deploy-84c9d7-m29xp -n production --previous',
         terminalOutput: `[2026-11-08T15:10:02Z] INFO  Starting Order Service v2.1...
 [2026-11-08T15:10:03Z] FATAL Error: Missing required environment variable DATABASE_URL!
     at loadConfig (/usr/src/app/dist/config.js:18:11)
     at main (/usr/src/app/dist/server.js:9:5)
 Process exited with code 1`,
-        clueExplanation: 'Lời trăn trối chỉ rõ: Ứng dụng tìm biến môi trường DATABASE_URL không thấy nên tự ném Fatal Error và thoát với Exit Code 1!',
+        clueExplanation: 'Log trước khi thoát chỉ rõ: Ứng dụng tìm biến môi trường DATABASE_URL không thấy nên tự ném Fatal Error và thoát với Exit Code 1!',
       },
       {
         stepOrder: 4,
@@ -383,7 +383,7 @@ report-worker-5f7b9c6d4-v82jk    180m         126Mi   # <-- Sát mức trần 12
       },
       {
         stepOrder: 2,
-        stepTitle: 'Bước 2 — Đọc hồ sơ bệnh án tìm mục Last State: Terminated',
+        stepTitle: 'Bước 2 — Đọc chi tiết Pod tìm mục Last State: Terminated',
         command: 'kubectl describe pod report-worker-5f7b9c6d4-v82jk -n production',
         terminalOutput: `Containers:
   report-worker:
@@ -506,7 +506,7 @@ analytics-worker-6d4f8b9-p01kx   0/1     Pending   0          15m   <none>   <no
       },
       {
         stepOrder: 2,
-        stepTitle: 'Bước 2 — Đọc hồ sơ bệnh án tìm dòng Warning FailedScheduling',
+        stepTitle: 'Bước 2 — Đọc chi tiết Events tìm dòng Warning FailedScheduling',
         command: 'kubectl describe pod analytics-worker-6d4f8b9-p01kx -n production',
         terminalOutput: `Events:
   Type     Reason            Age                 From               Message
@@ -627,7 +627,7 @@ web-app-deployment-5d8c9f7-q18zw   0/1     CreateContainerConfigError   0       
       },
       {
         stepOrder: 2,
-        stepTitle: 'Bước 2 — Đọc hồ sơ bệnh án Events để tìm tên ConfigMap/Secret bị thiếu',
+        stepTitle: 'Bước 2 — Đọc lịch sử Events để tìm tên ConfigMap/Secret bị thiếu',
         command: 'kubectl describe pod web-app-deployment-5d8c9f7-q18zw -n production',
         terminalOutput: `Events:
   Normal   Pulled   4m                kubelet  Successfully pulled image "myregistry.io/shop-web:v1.2.0"
@@ -758,7 +758,7 @@ web-app-service   <none>      25m   # <-- [BÁO ĐỘNG ĐỎ: Danh bạ Tổng 
 Selector:          app=web-shop     # <-- Lệch nhãn với Pod (app=shop-web)!
 Port:              http  80/TCP
 TargetPort:        8080/TCP         # <-- Gõ nhầm cổng 8080 trong khi Container mở cổng 3000!`,
-        clueExplanation: 'Phát hiện 2 lỗi chí mạng ở Service: Selector gõ nhầm thành "app: web-shop" làm ENDPOINTS báo <none>, và targetPort gõ nhầm thành 8080 thay vì 3000!',
+        clueExplanation: 'Phát hiện 2 lỗi nghiêm trọng ở Service: Selector gõ nhầm thành "app: web-shop" làm ENDPOINTS báo <none>, và targetPort gõ nhầm thành 8080 thay vì 3000!',
       },
       {
         stepOrder: 4,

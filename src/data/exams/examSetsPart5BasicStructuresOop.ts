@@ -1519,7 +1519,7 @@ const QUESTIONS_SET_3: ExamQuestion[] = [
       'Chính xác: cây phân cấp ngoại lệ của Python tách `KeyboardInterrupt`, `SystemExit`, và `GeneratorExit` nằm ngang hàng với `Exception` ngay dưới `BaseException`. Nếu viết `except:` trần, người dùng bấm `Ctrl+C` hoặc gọi `sys.exit()` cũng bị nuốt mất khiến chương trình treo không thoát được!',
       'Sai: `except:` trần hợp lệ về cú pháp nhưng bị Ruff/Flake8 cấm (`E722`).',
       'Sai: `BaseException` là lớp gốc của toàn bộ mọi ngoại lệ trong Python.',
-      'Sai: khác biệt sống còn khi xử lý tín hiệu thoát chương trình và hủy coroutine (`asyncio.CancelledError` từ Python 3.8+ cũng kế thừa từ `BaseException`!).',
+      'Sai: khác biệt quan trọng khi xử lý tín hiệu thoát chương trình và hủy coroutine (`asyncio.CancelledError` từ Python 3.8+ cũng kế thừa từ `BaseException`!).',
     ],
     0,
     'Trong cây phân cấp ngoại lệ Python (`BaseException` -> `Exception`, `SystemExit`, `KeyboardInterrupt`, `GeneratorExit`, `asyncio.CancelledError`), mọi lỗi logic/runtime thông thường và mọi custom exception bạn tự tạo ĐỀU phải kế thừa từ `Exception`, tuyệt đối không kế thừa trực tiếp từ `BaseException`.',

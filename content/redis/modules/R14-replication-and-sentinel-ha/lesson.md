@@ -14,7 +14,7 @@ kind: illustration
 diagram: "redis:r14"
 badge: "Replication & Sentinel HA · R14"
 title: "Cơ chế Đồng bộ PSYNC2 (Replication Backlog) & Chu trình Failover của Cụm 3 Sentinel"
-subtitle: "Cách thức Partial Resynchronization cứu mạng nội bộ và cách 3 Sentinel ngăn chặn thảm hoạ Split-Brain"
+subtitle: "Cách thức Partial Resynchronization đồng bộ bù nhanh nội bộ và cách 3 Sentinel ngăn chặn sự cố Split-Brain"
 caption: "Ứng dụng dùng thư viện hỗ trợ Sentinel (redis-py / ioredis / go-redis) kết nối qua cổng 26379 để luôn tự động tìm ra địa chỉ Master hiện hành."
 callouts:
   - num: 1

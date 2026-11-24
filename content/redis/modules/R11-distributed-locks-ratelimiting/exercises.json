@@ -68,7 +68,7 @@
     "language": "redis",
     "filename": "safe-lua-unlock.redis",
     "prompt": "Trên Redis đang có 2 khoá giữ chỗ ghế xem phim:\n- `lock:seat:A1` hiện đã chuyển sang thuộc về `\"owner-bob\"` (do phiên của Alice bị GC Pause quá hạn).\n- `lock:seat:B2` hiện đang thuộc hợp lệ về `\"owner-alice\"`.\n\nNếu Alice gọi `DEL` trần trụi trên cả hai khoá, cô ấy sẽ **xoá nhầm mất khoá ghế `A1` của Bob**!\n\n- **Nhiệm vụ:** Viết kịch bản Lua trong lệnh **`EVAL`** kiểm tra `redis.call(\"GET\", KEYS[1]) == ARGV[1]` trước khi gọi `redis.call(\"DEL\", KEYS[1])` (nếu lệch chủ trả về `0`), và chạy lần lượt với tư cách `\"owner-alice\"` trên cả hai khoá:\n  1. Chạy `EVAL` nhả `lock:seat:A1` với `ARGV[1] = \"owner-alice\"` → Phải trả về `(integer) 0` và giữ nguyên khoá của Bob!\n  2. Chạy `EVAL` nhả `lock:seat:B2` với `ARGV[1] = \"owner-alice\"` → Phải trả về `(integer) 1` và xoá thành công `lock:seat:B2`!",
-    "starter": "# BẪY THẢM HOẠ: Dùng DEL trực tiếp sẽ xoá bay khoá hợp lệ của owner-bob trên ghế A1!\n# Hãy thay bằng 2 lệnh EVAL chạy kịch bản Lua Compare-And-Delete cho owner-alice:\nGET lock:seat:A1\nGET lock:seat:B2\n",
+    "starter": "# LỖI NGHIÊM TRỌNG: Dùng DEL trực tiếp sẽ xoá nhầm khoá hợp lệ của owner-bob trên ghế A1!\n# Hãy thay bằng 2 lệnh EVAL chạy kịch bản Lua Compare-And-Delete cho owner-alice:\nGET lock:seat:A1\nGET lock:seat:B2\n",
     "solution": "EVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:seat:A1 \"owner-alice\"\nEVAL 'if redis.call(\"GET\", KEYS[1]) == ARGV[1] then return redis.call(\"DEL\", KEYS[1]) else return 0 end' 1 lock:seat:B2 \"owner-alice\"\n",
     "spec": {
       "kind": "redis-cli",

@@ -28,7 +28,7 @@ callouts:
     tone: amber
 ```
 
-## 1. Giải phẫu Khóa Phân tán Chuẩn SRE (Tránh 3 tai nạn kinh điển)
+## 1. Cấu trúc Khóa Phân tán Chuẩn SRE (Tránh 3 lỗi phổ biến)
 
 ```visual
 kind: compare

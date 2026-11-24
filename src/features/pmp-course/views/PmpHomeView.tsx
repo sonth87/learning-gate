@@ -126,8 +126,8 @@ export const PmpHomeView: React.FC = () => {
     },
     {
       key: 'exam-surgery',
-      badge: 'CHẶNG 3 · PHẪU THUẬT ĐỀ TÌNH HUỐNG & CHIẾN LƯỢC THI (P13 – P15)',
-      title: 'Kỹ Thuật Giải Đề Tình Huống (FIRST / NEXT / BEST), 12 Bẫy Đáp Án & AI/Compliance',
+      badge: 'CHẶNG 3 · PHÂN TÍCH ĐỀ TÌNH HUỐNG & CHIẾN LƯỢC THI (P13 – P15)',
+      title: 'Kỹ Thuật Giải Đề Tình Huống (FIRST / NEXT / BEST), 12 Đáp Án Nhiễu & AI/Compliance',
       subtitle:
         'Đọc ngược câu chốt, nhận diện 12 WeaknessTag kinh điển, chọn giữa 2 đáp án tốt, xử lý Compliance/OCM/AI (PMBOK 8 Appendix X3) & lộ trình 54 bộ đề bên Mindmap',
       borderCls: 'border-emerald-500/35 bg-emerald-500/[0.05]',

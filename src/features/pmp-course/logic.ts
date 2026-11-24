@@ -173,7 +173,7 @@ export function pmpNextSteps(
   if (due) steps.push({ text: `Ôn ${due} thẻ phản xạ SRS đến hạn hôm nay`, view: { name: 'flash' } });
   if (s.quizWrong.length) {
     steps.push({
-      text: `Phẫu thuật lại ${s.quizWrong.length} câu tình huống từng chọn nhầm`,
+      text: `Ôn lại ${s.quizWrong.length} câu tình huống từng trả lời sai`,
       view: { name: 'quiz', mode: 'review' },
     });
   }

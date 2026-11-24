@@ -1,4 +1,4 @@
-# LỖ HỔNG CHÍ MẠNG "PWN REQUEST" (SECURITY RISK — TUYỆT ĐỐI CẤM SAO CHÉP LÊN REPO THẬT!)
+# LỖ HỔNG NGHIÊM TRỌNG "PWN REQUEST" (SECURITY RISK — TUYỆT ĐỐI CẤM SAO CHÉP LÊN REPO THẬT!)
 # Sự kiện `pull_request_target` chạy trong ngữ cảnh nhánh đích (có đầy đủ Secrets thật và GITHUB_TOKEN quyền ghi).
 # Nếu bạn dùng nó mà lại tự tay checkout mã nguồn nhánh Fork của người lạ rồi chạy `npm install`,
 # script `postinstall` trong package.json của kẻ tấn công sẽ đọc trộm toàn bộ Secrets ngay lập tức!

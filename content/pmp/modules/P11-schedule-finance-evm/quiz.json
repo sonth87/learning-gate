@@ -25,7 +25,7 @@
       "Dự án đang tiết kiệm chi phí (`CPI = 1.25`) nhưng chậm tiến độ (`SPI = 0.80`)"
     ],
     "answer": 2,
-    "explain": "Đừng sập bẫy so sánh trực tiếp `AC` với `PV`! Mọi công thức EVM đều lấy `EV` làm chuẩn: `SPI = EV / PV = 200k / 250k = 0.80` (< 1 → chậm tiến độ) và `CPI = EV / AC = 200k / 250k = 0.80` (< 1 → vượt chi phí)."
+    "explain": "Tránh nhầm lẫn khi so sánh trực tiếp `AC` với `PV`! Mọi công thức EVM đều lấy `EV` làm chuẩn: `SPI = EV / PV = 200k / 250k = 0.80` (< 1 → chậm tiến độ) và `CPI = EV / AC = 200k / 250k = 0.80` (< 1 → vượt chi phí)."
   },
   {
     "id": "p11-q3",

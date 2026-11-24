@@ -104,7 +104,7 @@ class AppSettings(BaseSettings):
     problemStatement:
       'Lập trình viên từ TypeScript/Java sang Python rất hay gặp lỗi `ImportError: cannot import name ... (most likely due to a circular import)` khi module `models/user.py` import `Order` để gõ Type Hint, còn `models/order.py` lại import `User`. Trong TS có `import type { Order }`, còn trong Python chuẩn công nghiệp là dùng `from __future__ import annotations` kết hợp với chốt chặn `if TYPE_CHECKING:`. Hãy sửa đoạn code bên dưới để loại bỏ Circular Import lúc Runtime!',
     realWorldContext:
-      'Trong các dự án SQLAlchemy hoặc Domain-Driven Design có quan hệ 2 chiều (`User.orders` <-> `Order.user`), `if TYPE_CHECKING:` là vũ khí bắt buộc để IDE/Mypy/Pyright hiểu đầy đủ kiểu dữ liệu mà Python Runtime không hề phải nạp module chéo nhau.',
+      'Trong các dự án SQLAlchemy hoặc Domain-Driven Design có quan hệ 2 chiều (`User.orders` <-> `Order.user`), `if TYPE_CHECKING:` là công cụ bắt buộc để IDE/Mypy/Pyright hiểu đầy đủ kiểu dữ liệu mà Python Runtime không hề phải nạp module chéo nhau.',
     requirements: [
       'Bật `from __future__ import annotations` ở dòng đầu tiên để hoãn đánh giá Type Hints (Postponed Evaluation)',
       'Import `TYPE_CHECKING` từ module `typing`',
@@ -682,7 +682,7 @@ class BookingRequest(BaseModel):
     level: 'pro',
     relatedLessonId: 's4-fastapi-di-pydantic',
     problemStatement:
-      'Một lỗi chí mạng làm sập hệ thống FastAPI sau vài giờ chạy tải cao là mở kết nối Database trong từng API endpoint nhưng quên đóng khi xảy ra Exception, dẫn đến lỗi `QueuePool limit of size 5 overflow 10 reached`. Hãy viết hàm Dependency Generator `async def get_db()` sử dụng `async with async_session_maker() as session:` kết hợp `try: yield session` và `except Exception: await session.rollback(); raise`, sau đó tiêm vào endpoint bằng `db: AsyncSession = Depends(get_db)`.',
+      'Một lỗi nghiêm trọng làm sập hệ thống FastAPI sau vài giờ chạy tải cao là mở kết nối Database trong từng API endpoint nhưng quên đóng khi xảy ra Exception, dẫn đến lỗi `QueuePool limit of size 5 overflow 10 reached`. Hãy viết hàm Dependency Generator `async def get_db()` sử dụng `async with async_session_maker() as session:` kết hợp `try: yield session` và `except Exception: await session.rollback(); raise`, sau đó tiêm vào endpoint bằng `db: AsyncSession = Depends(get_db)`.',
     realWorldContext:
       'Hệ thống Dependency Injection (`Depends`) của FastAPI cực kỳ thông minh: khi bạn truyền một hàm có `yield` vào `Depends(get_db)`, FastAPI tự động biến phần trước `yield` thành Middleware trước Request và phần sau `yield` (bao gồm đóng kết nối của `async with`) thành khối dọn dẹp sau khi Response đã gửi xong!',
     requirements: [
@@ -973,7 +973,7 @@ class UserORM(Base):
     level: 'pro',
     relatedLessonId: 's4-sqlalchemy-clean-arch',
     problemStatement:
-      'Khi dùng **Async SQLAlchemy** trong FastAPI, nếu bạn truy vấn `select(Author)` rồi truy cập thuộc tính quan hệ `author.books`, ứng dụng sẽ sập ngay lập tức với lỗi khét tiếng: `sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can\'t call await_only() here`! Nguyên nhân là Async SQLAlchemy cấm Lazy Loading ngầm (vì truy cập thuộc tính `author.books` bằng dấu chấm không có từ khóa `await`, và nếu cho phép sẽ gây ra thảm họa **N+1 Query**). Hãy sửa hàm `get_authors_with_books(session)` bằng cách nạp trước (`Eager Loading`) quan hệ `Author.books` với `.options(selectinload(Author.books))`!',
+      'Khi dùng **Async SQLAlchemy** trong FastAPI, nếu bạn truy vấn `select(Author)` rồi truy cập thuộc tính quan hệ `author.books`, ứng dụng sẽ sập ngay lập tức với lỗi khét tiếng: `sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can\'t call await_only() here`! Nguyên nhân là Async SQLAlchemy cấm Lazy Loading ngầm (vì truy cập thuộc tính `author.books` bằng dấu chấm không có từ khóa `await`, và nếu cho phép sẽ gây ra sự cố hiệu năng **N+1 Query**). Hãy sửa hàm `get_authors_with_books(session)` bằng cách nạp trước (`Eager Loading`) quan hệ `Author.books` với `.options(selectinload(Author.books))`!',
     realWorldContext:
       'Đây là lỗi số 1 mà 100% lập trình viên Backend Python đều đụng phải khi chuyển sang `AsyncSession`. Dùng `selectinload()` vừa giải cứu lỗi `MissingGreenlet`, vừa gom 100 câu query lẻ thành đúng 1 câu `SELECT ... WHERE author_id IN (...)` siêu tốc.',
     requirements: [

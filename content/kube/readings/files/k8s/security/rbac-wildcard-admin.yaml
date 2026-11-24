@@ -1,4 +1,4 @@
-# THẢM HOẠ BẢO MẬT: Đừng bao giờ "chữa cháy" lỗi 403 Forbidden bằng cách gán cluster-admin!
+# LỖI BẢO MẬT NGHIÊM TRỌNG: Đừng bao giờ xử lý tạm lỗi 403 Forbidden bằng cách gán cluster-admin!
 # Trong cấu hình dưới đây:
 #   1) ClusterRole dùng ký tự đại diện "*" cho phép đọc/xoá MỌI Secret của mọi Namespace và tạo Pod privileged!
 #   2) Tệ hơn nữa, ClusterRoleBinding lại gắn quyền này vào ServiceAccount "default" —

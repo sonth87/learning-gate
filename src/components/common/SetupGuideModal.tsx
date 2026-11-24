@@ -365,8 +365,8 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
               )}
             >
               <Compass className="h-3.5 w-3.5 shrink-0" />
-              <span className="sm:hidden truncate">0. Giải phẫu Dự án</span>
-              <span className="hidden sm:inline">0. Giải phẫu Dự án từ Zero (Cần biết trước tiên!)</span>
+              <span className="sm:hidden truncate">0. Cấu trúc Dự án</span>
+              <span className="hidden sm:inline">0. Cấu trúc Dự án từ đầu (Cần biết trước tiên!)</span>
             </button>
             <button
               type="button"
@@ -517,7 +517,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
                   Khi mới chuyển sang Python, bạn sẽ thấy những cái tên lạ lẫm như{' '}
                   <code>pyproject.toml</code>, <code>.venv</code>,{' '}
                   <code>__init__.py</code>, <code>if __name__ == &quot;__main__&quot;:</code>.
-                  Hãy xem giải phẫu chi tiết từng thành phần ngay dưới đây:
+                  Hãy xem chi tiết từng thành phần ngay dưới đây:
                 </p>
               </div>
 
@@ -679,7 +679,7 @@ export const SetupGuideModal: React.FC<SetupGuideModalProps> = ({
 
               {/* 3. Annotated pyproject.toml Example */}
               <GuidedStepBlock
-                stepNumber="Giải phẫu"
+                stepNumber="Chi tiết"
                 title="Bên trong file 'pyproject.toml' có gì? (Đọc hiểu từng dòng có comment)"
                 badge="pyproject.toml ≈ package.json"
                 explanation="Đây là nội dung thực tế của một file pyproject.toml chuẩn trong dự án Python. Mỗi mục đều được comment giải thích rõ vai trò để bạn nhìn vào bất kỳ dự án nào cũng hiểu ngay:"

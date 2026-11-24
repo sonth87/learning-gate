@@ -741,7 +741,7 @@ steps:
         heading: '2. Tình huống B2 (Out-of-order Deployment Race Condition) & Tình huống B3 (Ứng cứu Lộ Secret Git) (PDF Trang 18 & 19)',
         body: 'Hai sự cố nghiêm trọng nhất liên quan đến triển khai và bảo mật:',
         bulletPoints: [
-          'Tình huống B2 (Hai PR merge cách nhau 30s — Commit A trước, B sau; B xong trước lên Prod rồi A mới xong và ghi đè code cũ lên B!): Nguyên nhân là Deployment Race Condition do cho phép nhiều Pipeline cùng chạy bước Deploy một lúc. Nguyên tắc sống còn: Với các Job kiểm thử (CI) trên nhánh PR, bật cancel-in-progress: true để tiết kiệm tài nguyên. Nhưng với Job Deploy lên Production (CD), tuyệt đối KHÔNG được hủy ngang (cancel-in-progress: false) vì ngắt đột ngột khi Helm/Terraform đang chạy dở sẽ làm hỏng trạng thái hạ tầng (State Lock Corruption). Thay vào đó, phải đưa vào hàng đợi khóa tuần tự (group: production-deploy-lock hoặc resource_group với process_mode=newest_first).',
+          'Tình huống B2 (Hai PR merge cách nhau 30s — Commit A trước, B sau; B xong trước lên Prod rồi A mới xong và ghi đè code cũ lên B!): Nguyên nhân là Deployment Race Condition do cho phép nhiều Pipeline cùng chạy bước Deploy một lúc. Nguyên tắc quan trọng: Với các Job kiểm thử (CI) trên nhánh PR, bật cancel-in-progress: true để tiết kiệm tài nguyên. Nhưng với Job Deploy lên Production (CD), tuyệt đối KHÔNG được hủy ngang (cancel-in-progress: false) vì ngắt đột ngột khi Helm/Terraform đang chạy dở sẽ làm hỏng trạng thái hạ tầng (State Lock Corruption). Thay vào đó, phải đưa vào hàng đợi khóa tuần tự (group: production-deploy-lock hoặc resource_group với process_mode=newest_first).',
           'Tình huống B3 (Vô tình commit DB Password & AWS Secret Key lên Git và in ra CI Log): Khẳng định kỹ thuật: Chạy lệnh git rm rồi tạo commit mới hoàn toàn KHÔNG có tác dụng bảo mật vì mật khẩu vẫn nằm nguyên vẹn trong .git/objects của commit trước! Quy trình 4 bước theo đúng thứ tự ưu tiên: (Bước 1) Thu hồi và Xoay vòng khóa ngay lập tức (Revoke & Rotate First trên AWS IAM, đổi mật khẩu DB, thay khóa JWT — làm đầu tiên trước khi dọn Git!); (Bước 2) Xóa vĩnh viễn khỏi lịch sử Git bằng git-filter-repo + git push --force --all và xóa bản ghi CI Console Log; (Bước 3) Rà soát nhật ký truy cập (Security Audit trên AWS CloudTrail & DB Log); (Bước 4) Cài đặt pre-commit hook chạy gitleaks protect --staged trên máy dev kết hợp quét trên CI.',
         ],
       },
@@ -756,7 +756,7 @@ steps:
       },
     ],
     visualAnalogy: {
-      title: 'Phòng Cấp cứu & Điều hành Khẩn cấp (Incident War-Room)',
+      title: 'Phòng Xử lý Sự cố Khẩn cấp (Incident War-Room)',
       realWorldScenario:
         'Hãy hình dung cách xử lý khi chìa khóa két sắt bị lộ (B3) hoặc khi 2 đoàn tàu cùng lao vào 1 đường ray đơn (B2):',
       mappingPoints: [
@@ -868,7 +868,7 @@ CI=true npx prisma migrate deploy --non-interactive
 
 # [Lỗi 5] Lỗi /bin/sh^M: bad interpreter (Ký tự xuống dòng CRLF của Windows): Tạo file .gitattributes ở thư mục gốc
 echo "*.sh text eol=lf" > .gitattributes`,
-        outputOrImpact: 'Chấm dứt hoàn toàn 5 căn bệnh kinh điển khiến code chạy tốt ở máy cá nhân nhưng gãy trên CI.',
+        outputOrImpact: 'Chấm dứt hoàn toàn 5 lỗi phổ biến khiến code chạy tốt ở máy cá nhân nhưng gặp sự cố trên CI.',
         annotations: [
           { line: 2, explanation: 'Bắt Git nhận diện ngay việc đổi tên file từ usersvc.ts sang UserSvc.ts trên macOS/Windows.' },
           { line: 5, explanation: 'Ngăn Node.js vượt trần RAM của Container dẫn đến bị Linux Kernel OOM Killer giết bằng SIGKILL (137).' },

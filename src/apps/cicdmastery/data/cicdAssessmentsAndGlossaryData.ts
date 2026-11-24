@@ -135,7 +135,7 @@ export const CICD_EXAM_SETS: CicdExamSet[] = [
       },
       {
         id: 'q1-2',
-        question: 'Nguyên tắc bảo mật sống còn nào được nêu trong Bảng 1.2 đối với thành phần số 6 (Runner / Agent)?',
+        question: 'Nguyên tắc bảo mật quan trọng nào được nêu trong Bảng 1.2 đối với thành phần số 6 (Runner / Agent)?',
         options: [
           'Luôn chạy mọi Job bằng quyền root trên máy chủ vật lý.',
           'Tuyệt đối không cho phép Pull Request từ kho Fork lạ chạy trên Self-hosted Runner nằm trong mạng nội bộ.',

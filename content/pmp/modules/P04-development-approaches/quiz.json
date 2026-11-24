@@ -39,7 +39,7 @@
       "Tách thành hai công ty riêng biệt không liên lạc với nhau."
     ],
     "answer": 2,
-    "explain": "Theo PMBOK 8 §4.2, Hybrid là lựa chọn tối ưu cho các dự án đa hợp phần: hợp phần vật lý/pháp lý chi phí thay đổi cao chạy Predictive; hợp phần phần mềm cần phản hồi linh hoạt chạy Agile; nhiệm vụ sống còn của PM là quản trị phụ thuộc và đồng bộ nhịp tích hợp giữa hai luồng."
+    "explain": "Theo PMBOK 8 §4.2, Hybrid là lựa chọn tối ưu cho các dự án đa hợp phần: hợp phần vật lý/pháp lý chi phí thay đổi cao chạy Predictive; hợp phần phần mềm cần phản hồi linh hoạt chạy Agile; nhiệm vụ trọng tâm của PM là quản trị phụ thuộc và đồng bộ nhịp tích hợp giữa hai luồng."
   },
   {
     "id": "p04-q4",

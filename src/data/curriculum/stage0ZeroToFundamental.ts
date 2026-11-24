@@ -511,7 +511,7 @@ print("Đã sẵn sàng cấu hình .vscode/settings.json chuẩn chuyên nghi�
         keyDifference: 'Cơ chế `uv run` đảm bảo code luôn chạy bên trong môi trường ảo `.venv` của dự án mà bạn không cần bận tâm đến việc kích hoạt (`activate`) môi trường đó lên trước.',
       },
       {
-        concept: 'Giải phẫu File Cấu hình: package.json vs. pyproject.toml',
+        concept: 'Cấu trúc File Cấu hình: package.json vs. pyproject.toml',
         jsTsWay: 'package.json + package-lock.json + node_modules/ + .nvmrc',
         pythonWay: 'pyproject.toml + uv.lock (hoặc requirements.txt) + .venv/ + .python-version',
         jsCode: `{\n  "name": "my-project",\n  "engines": { "node": ">=22" },\n  "dependencies": { "axios": "^1.7.0" },\n  "devDependencies": { "vitest": "^2.0.0" }\n}`,
@@ -1114,7 +1114,7 @@ print("Dữ liệu hợp lệ:", order.model_dump(), "| Tổng:", order.subtotal
     order: 1,
     title: '1.1. Tổng quan Toàn diện về Python, Triết lý Thiết kế & Cơ chế Hoạt động Bên dưới Nắp máy',
     shortDescription:
-      'Bắt đầu từ con số 0: Python là gì, tại sao thống trị thế giới công nghệ, triết lý Zen of Python và giải phẫu cách CPython biên dịch mã nguồn .py sang Bytecode (.pyc) rồi chạy trên máy ảo PVM.',
+      'Bắt đầu từ con số 0: Python là gì, tại sao thống trị thế giới công nghệ, triết lý Zen of Python và chi tiết cách CPython biên dịch mã nguồn .py sang Bytecode (.pyc) rồi chạy trên máy ảo PVM.',
     estimatedMinutes: 30,
     theoryParagraphs: [
       '**Python là gì?** Ra đời năm 1991 bởi **Guido van Rossum**, Python là ngôn ngữ lập trình bậc cao (High-level), thông dịch kết hợp biên dịch Bytecode, định kiểu động (**Dynamically Typed**) nhưng định kiểu mạnh (**Strongly Typed** — không tự ý cộng chuỗi với số `"5" + 3` gây lỗi ngầm như JavaScript), và hỗ trợ đa mô hình lập trình (Hướng đối tượng OOP, Lập trình hàm Functional, và Thủ tục Procedural).',
@@ -1150,7 +1150,7 @@ print("Dữ liệu hợp lệ:", order.model_dump(), "| Tổng:", order.subtotal
       {
         id: 'diag-s0-cpython-pipeline',
         title: 'Sơ đồ Luồng Thực thi 4 Bước của CPython (Từ Source Code .py đến CPU)',
-        subtitle: 'Giải phẫu quá trình CPython biên dịch ngầm định ra Bytecode trước khi chạy trên máy ảo PVM',
+        subtitle: 'Phân tích quá trình CPython biên dịch ngầm định ra Bytecode trước khi chạy trên máy ảo PVM',
         type: 'pipeline',
         nodes: [
           {
@@ -1260,7 +1260,7 @@ print("Dữ liệu hợp lệ:", order.model_dump(), "| Tổng:", order.subtotal
     codeExamples: [
       {
         id: 'ex-s0-1-dis',
-        title: 'Khám phá Triết lý Zen, Kiểm tra Kiểu Mạnh (Strong Typing) & Giải phẫu Bytecode',
+        title: 'Khám phá Triết lý Zen, Kiểm tra Kiểu Mạnh (Strong Typing) & Phân tích Bytecode',
         description: 'Chứng minh cách Python kiểm tra kiểu dữ liệu và xem mã Bytecode thực tế bên dưới một hàm.',
         code: `import dis
 import sys

@@ -737,7 +737,7 @@ def top_k_hashtags(tags: list[str], k: int = 2) -> list[tuple[str, int]]:
     problemStatement:
       'Khi cần duyệt kèm chỉ số thứ tự, lập trình viên C/JS hay viết `for i in range(len(items)):` (bị coi là Anti-pattern trong Python!). Khi cần duyệt song song 2 danh sách `names` và `scores`, Python có hàm `zip()`, nhưng `zip()` mặc định sẽ **âm thầm cắt bỏ phần tử thừa** nếu 2 danh sách lệch độ dài! Từ Python 3.10 (PEP 618), `zip(names, scores, strict=True)` sẽ ném lỗi `ValueError` ngay nếu 2 danh sách không khớp độ dài. Hãy viết hàm `build_leaderboard(names: list[str], scores: list[int]) -> list[str]` kết hợp `enumerate(..., start=1)` và `zip(names, scores, strict=True)`.',
     realWorldContext:
-      'Khi ghép cột dữ liệu (Headers & Row Values) hoặc ghép nhãn dự đoán AI với dữ liệu gốc, bật `strict=True` trong `zip()` là chốt chặn sống còn ngăn chặn lỗi lệch dòng dữ liệu âm thầm.',
+      'Khi ghép cột dữ liệu (Headers & Row Values) hoặc ghép nhãn dự đoán AI với dữ liệu gốc, bật `strict=True` trong `zip()` là bước kiểm tra quan trọng ngăn chặn lỗi lệch dòng dữ liệu âm thầm.',
     requirements: [
       'Sử dụng `zip(names, scores, strict=True)` để ghép cặp tên và điểm an toàn',
       'Bọc trong `enumerate(..., start=1)` để đánh số thứ hạng bắt đầu từ `1`',

@@ -138,7 +138,7 @@ export const FLASHCARDS_STAGE_1_TO_2: FlashcardItem[] = [
     frontQuestion: 'Những giá trị nào là **Falsy** trong Python và điểm khác biệt lớn nhất so với JavaScript là gì?',
     frontHint: 'Chú ý tới mảng rỗng `[]` và object/dict rỗng `{}`!',
     backAnswer:
-      'Trong Python, các giá trị Falsy gồm: `None`, `False`, số bằng `0` (`0`, `0.0`, `0j`), và **mọi tập hợp/chuỗi rỗng** (`""`, `[]`, `()`, `{}`, `set()`, `range(0)`). Điểm khác biệt chí mạng với JS/TS: trong JavaScript `Boolean([])` và `Boolean({})` là `true`, còn trong Python `bool([])` và `bool({})` là **`False`**!',
+      'Trong Python, các giá trị Falsy gồm: `None`, `False`, số bằng `0` (`0`, `0.0`, `0j`), và **mọi tập hợp/chuỗi rỗng** (`""`, `[]`, `()`, `{}`, `set()`, `range(0)`). Điểm khác biệt rất dễ gây nhầm lẫn với JS/TS: trong JavaScript `Boolean([])` và `Boolean({})` là `true`, còn trong Python `bool([])` và `bool({})` là **`False`**!',
     backAnalogy:
       'JavaScript nhìn thấy cái giỏ rỗng vẫn tính là "có cái giỏ" (`true`), còn Python mở giỏ ra thấy không có hàng bên trong thì kết luận là "trống rỗng" (`False`).',
     codeSnippet: `items: list[int] = []\nif not items:\n    print("Danh sách đang rỗng!")  # Chuẩn Pythonic thay vì len(items) == 0`,
@@ -177,7 +177,7 @@ export const FLASHCARDS_STAGE_1_TO_2: FlashcardItem[] = [
     stageId: 'stage-1',
     level: 'fundamental',
     category: 'Chuỗi & Định dạng',
-    frontQuestion: 'Tại sao nối chuỗi bằng `s += chunk` trong vòng lặp lại chậm (`O(n^2)`) và cú pháp f-string hiện đại có những vũ khí gì?',
+    frontQuestion: 'Tại sao nối chuỗi bằng `s += chunk` trong vòng lặp lại chậm (`O(n^2)`) và cú pháp f-string hiện đại có những tính năng hữu ích gì?',
     frontHint: 'Tính bất biến (Immutability) của `str` + `"".join()` + `f"{var=}"`.',
     backAnswer:
       '`str` là **bất biến (Immutable)** nên mỗi lần `s += chunk` phải cấp phát vùng nhớ mới và copy lại toàn bộ chuỗi cũ. Để nối nhiều chuỗi trong vòng lặp, hãy gom vào `list` rồi gọi **`"".join(parts)`** (`O(n)`). Với f-string (Python 3.8–3.12+), dùng `f"{user_id=}"` để tự in cả tên biến lẫn giá trị khi debug, và `f"{price:,.2f}"` để định dạng số.',

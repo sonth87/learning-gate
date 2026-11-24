@@ -16,7 +16,7 @@ kind: illustration
 diagram: redis:r02
 alt: Cấu trúc Redis Hash đóng gói siêu gọn bằng listpack trên CPU cache, ngưỡng nâng cấp lên hashtable và cơ chế HEXPIRE tự huỷ từng field trên Redis 8
 badge: Cấu trúc dữ liệu · Hashes & HEXPIRE
-title: Giải Phẫu Redis Hash — Nén Bộ Nhớ listpack & Hẹn Giờ Từng Trường HEXPIRE
+title: Cấu Trúc Redis Hash — Nén Bộ Nhớ listpack & Hẹn Giờ Từng Trường HEXPIRE
 subtitle: Đọc/ghi thuộc tính lẻ O(1), tiết kiệm tới 70% RAM cho đối tượng nhỏ và tự động gỡ trường tạm đúng giây hết hạn
 caption: Nhấn vào sơ đồ để phóng to — quan sát ranh giới chuyển đổi tự động từ listpack sang hashtable và dòng thời gian của HEXPIRE
 callouts:

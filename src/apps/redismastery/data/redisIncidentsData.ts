@@ -49,7 +49,7 @@ export const REDIS_INCIDENT_SCENARIOS: RedisIncidentScenario[] = [
         command: 'CONFIG SET maxmemory 1mb',
         isCorrect: false,
         feedback:
-          'Thảm họa! 4,200 req/s đọc trực tiếp sẽ đánh gục toàn bộ dàn Read Replica ngay lập tức.',
+          'Sự cố nghiêm trọng! 4,200 req/s đọc trực tiếp sẽ làm quá tải toàn bộ dàn Read Replica ngay lập tức.',
         p99AfterMs: 5000,
         dbLoadAfterPct: 100,
       },
@@ -230,7 +230,7 @@ export const REDIS_INCIDENT_SCENARIOS: RedisIncidentScenario[] = [
       '16:40:04 [redis-info] db0: keys=3,120,000, expires=410,000 (2.71M keys have NO TTL!)',
     ],
     diagnosticHint:
-      'Chú ý 2 chi tiết sống còn: (1) `maxmemory-policy` đang để mặc định `noeviction`, và (2) có tới 2.71 triệu key cache sản phẩm từng quên đặt TTL!',
+      'Chú ý 2 chi tiết quan trọng: (1) `maxmemory-policy` đang để mặc định `noeviction`, và (2) có tới 2.71 triệu key cache sản phẩm từng quên đặt TTL!',
     rootCause:
       'Instance đóng vai trò Cache nhưng để mặc định `noeviction` và có lượng lớn key quên gắn TTL; khi đầy 4 GB RAM, mọi lệnh ghi mới bị từ chối cứng bằng lỗi OOM.',
     options: [
@@ -315,7 +315,7 @@ export const REDIS_INCIDENT_SCENARIOS: RedisIncidentScenario[] = [
         command: 'SET lock:wallet:77 "1" NX',
         isCorrect: false,
         feedback:
-          'Thảm họa Deadlock! Chỉ cần 1 pod bị OOM hoặc mất điện khi đang giữ khoá, ví của khách hàng đó sẽ bị khoá chết vĩnh viễn cho tới khi có người xóa tay.',
+          'Lỗi Deadlock nghiêm trọng! Chỉ cần 1 pod bị OOM hoặc mất điện khi đang giữ khoá, ví của khách hàng đó sẽ bị khoá chết vĩnh viễn cho tới khi có người xóa tay.',
         p99AfterMs: 5000,
         dbLoadAfterPct: 20,
       },

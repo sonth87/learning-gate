@@ -818,7 +818,7 @@ export const FLASHCARDS_BASIC_AND_STDLIB: FlashcardItem[] = [
     backAnswer:
       'Toán tử `a == b` so sánh chuỗi từ trái sang phải và **trả về `False` ngay lập tức tại byte khác biệt đầu tiên**. Kẻ tấn công có thể gửi hàng nghìn request và đo thời gian phản hồi chính xác đến mức nano-giây: nếu ký tự đầu tiên đoán đúng, server sẽ tốn thêm một chút thời gian để xét sang ký tự thứ hai (**Timing Attack**), từ đó dò ra từng ký tự của chữ ký bí mật! `hmac.compare_digest(a, b)` thực hiện so sánh **thời gian hằng số (Constant-time comparison)**: luôn duyệt hết toàn bộ độ dài chuỗi dù sai ở ngay byte đầu tiên.',
     backAnalogy:
-      '`a == b` giống như người gác cổng kiểm tra mật khẩu từng chữ cái và lắc đầu ngay khi bạn đọc sai chữ đầu; `compare_digest` là nghe hết trọn vẹn câu thần chú với thời gian y hệt nhau rồi mới trả lời.',
+      '`a == b` giống như người gác cổng kiểm tra mật khẩu từng chữ cái và từ chối ngay khi bạn đọc sai chữ đầu; `compare_digest` là nghe hết trọn vẹn chuỗi khóa bí mật với thời gian y hệt nhau rồi mới trả lời.',
     codeSnippet: `import hashlib\nimport hmac\n\ndef verify_webhook(payload: bytes, secret: bytes, signature_hex: str) -> bool:\n    expected = hmac.new(secret, payload, hashlib.sha256).hexdigest()\n    # ✅ Chống Timing Attack bằng so sánh thời gian hằng số\n    return hmac.compare_digest(expected, signature_hex)`,
     relatedTermIds: ['stdlib-hmac', 'stdlib-hashlib', 'concept-security'],
   },

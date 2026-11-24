@@ -21,7 +21,7 @@ kind: illustration
 src: "/illustrations/redis/redis-single-thread-chef.jpg"
 diagram: "redis:r00"
 alt: "Kiến trúc Single-Threaded Event Loop của Redis 8 kết hợp epoll/kqueue I/O Multiplexing và bậc thang độ trễ RAM vs SSD"
-badge: "Bản đồ Giải phẫu · R00"
+badge: "Sơ đồ Kiến trúc · R00"
 title: "Bậc Thang Độ Trễ Bộ Nhớ & Kiến Trúc Single-Threaded Event Loop"
 subtitle: "Tại sao mô hình xử lý tuần tự trên RAM kết hợp I/O Multiplexing vượt trội hơn mô hình đa luồng tranh chấp khóa trên đĩa cứng"
 caption: "Nhấn vào hình minh họa hoặc sơ đồ kỹ thuật để phóng to toàn màn hình — quan sát hành trình từ 1,000 kết nối TCP qua bộ ghép kênh epoll/kqueue vào luồng thực thi tuần tự trên RAM"

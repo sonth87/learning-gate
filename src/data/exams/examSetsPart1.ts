@@ -56,7 +56,7 @@ export const EXAM_SETS_PART_1: ExamSet[] = [
         stageId: 'stage-1',
         level: 'fundamental',
         question:
-          'Đoạn code kiểm tra tính Truthy/Falsy dưới đây in ra kết quả nào (chú ý sự khác biệt chí mạng với JavaScript)?',
+          'Đoạn code kiểm tra tính Truthy/Falsy dưới đây in ra kết quả nào (chú ý sự khác biệt quan trọng với JavaScript)?',
         codeSnippet: `print(bool([]), bool({}), bool("0"), bool(0.0))`,
         options: [
           {

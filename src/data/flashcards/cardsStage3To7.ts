@@ -9,7 +9,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     stageId: 'stage-3',
     level: 'advanced',
     category: 'Quản lý Dự án & Packaging',
-    frontQuestion: 'Cặp bài trùng `pyproject.toml` (PEP 621) và `uv.lock` giải quyết hạn chế chí mạng nào của file `requirements.txt` truyền thống?',
+    frontQuestion: 'Cặp bài trùng `pyproject.toml` (PEP 621) và `uv.lock` giải quyết hạn chế nghiêm trọng nào của file `requirements.txt` truyền thống?',
     frontHint: 'Direct Dependencies (Khai báo ý định) vs Transitive Dependencies + Cryptographic Hash Lock (Khóa tái lập 100%).',
     backAnswer:
       '`requirements.txt` trộn lẫn thư viện trực tiếp với thư viện phụ thuộc bắc cầu và không đảm bảo đồng nhất giữa các hệ điều hành. Chuẩn hiện đại dùng **`pyproject.toml`** để khai báo metadata dự án, cấu hình `ruff`/`pytest`/`pyright` và dải phiên bản thư viện chính; còn **`uv.lock`** khóa cứng chính xác phiên bản + mã băm SHA-256 của toàn bộ cây phụ thuộc, đảm bảo mọi máy Dev và CI/CD cài đặt giống nhau 100% (`uv sync --frozen`).',
@@ -200,7 +200,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     backAnswer:
       'Pydantic v2 viết lại toàn bộ nhân kiểm tra hợp lệ và tuần tự hóa JSON (`model_validate`, `model_validate_json`, `model_dump`) bằng ngôn ngữ **Rust (`pydantic-core`)**. Về kiến trúc, tuyệt đối không dùng chung 1 class cho mọi việc: **`UserCreate`** nhận `password` thô từ client; **`UserModel` (ORM)** lưu `password_hash` xuống DB; còn **`UserRead`** chỉ trả về `id`, `email`, `created_at` để không bao giờ làm lộ mật khẩu băm hay cho phép người dùng tự gửi `is_admin=True` (Mass Assignment).',
     backAnalogy:
-      'Tờ khai đăng ký khám bệnh (`UserCreate`), hồ sơ bệnh án mật của bác sĩ (`ORM Model`) và giấy chứng nhận sức khỏe cấp ra ngoài (`UserRead`) phải là 3 biểu mẫu tách biệt.',
+      'Dữ liệu đầu vào từ client (`UserCreate`), thực thể lưu trữ nội bộ trong DB (`ORM Model`) và dữ liệu trả ra ngoài API (`UserRead`) cần được tách thành 3 schema riêng biệt để tránh rò rỉ thông tin nhạy cảm như `password_hash`.',
     codeSnippet: `from pydantic import BaseModel, EmailStr, Field\n\nclass UserCreate(BaseModel):\n    email: EmailStr\n    password: str = Field(min_length=8, max_length=128)\n\nclass UserRead(BaseModel):\n    id: int\n    email: EmailStr`,
     relatedTermIds: ['eco-pydantic', 'eco-fastapi'],
   },
@@ -423,7 +423,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     stageId: 'stage-5',
     level: 'master',
     category: 'Kiến trúc Đồng thời & Song song',
-    frontQuestion: 'Quy tắc chọn đúng vũ khí giữa `asyncio`, `ThreadPoolExecutor` (`threading`) và `ProcessPoolExecutor` (`multiprocessing`) cho từng loại bài toán là gì?',
+    frontQuestion: 'Quy tắc chọn đúng công cụ giữa `asyncio`, `ThreadPoolExecutor` (`threading`) và `ProcessPoolExecutor` (`multiprocessing`) cho từng loại bài toán là gì?',
     frontHint: 'I/O-bound có thư viện Async vs I/O-bound thư viện Sync cũ vs CPU-bound tính toán nặng.',
     backAnswer:
       'Ma trận lựa chọn chuẩn kỹ sư hệ thống: (1) **`asyncio` (1 Process, 1 Thread)**: Tối ưu nhất cho **High-concurrency Network I/O** (hàng nghìn kết nối HTTP/DB/WebSocket với thư viện `async`); (2) **`ThreadPoolExecutor` (1 Process, $N$ Threads)**: Dành cho **Blocking Sync I/O** (đọc/ghi đĩa, thư viện `boto3`/`requests` chưa có async); (3) **`ProcessPoolExecutor` ($N$ Processes, $N$ GILs)**: Bắt buộc cho **CPU-bound** (mã hóa, nén dữ liệu, xử lý ảnh/video, thuật toán nặng CPU).',
@@ -454,7 +454,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     frontQuestion: 'Làm thế nào để thiết kế một Celery Task xử lý thanh toán đạt chuẩn Production không bao giờ mất đơn hay trừ tiền 2 lần khi Worker bị crash?',
     frontHint: 'Bộ tứ: Idempotency Key + `acks_late=True` + Exponential Backoff with Jitter + Dead-Letter Queue (DLQ).',
     backAnswer:
-      '4 nguyên tắc sống còn cho Distributed Worker: (1) **`acks_late=True`**: Chỉ gửi xác nhận xóa message khỏi Broker *sau khi* Task đã chạy xong (nếu Worker sập giữa chừng, Broker sẽ giao lại cho Worker khác); (2) **Idempotency (Tính lũy đẳng)**: Luôn kiểm tra `idempotency_key` / trạng thái đơn trong DB để chạy lại 2 lần cũng chỉ trừ tiền đúng 1 lần; (3) **Exponential Backoff + Jitter**: Tăng dần thời gian chờ khi retry để không dội bom dịch vụ đang lỗi; (4) **DLQ**: Đẩy các task lỗi quá số lần retry vào hàng đợi riêng để cảnh báo.',
+      '4 nguyên tắc quan trọng cho Distributed Worker: (1) **`acks_late=True`**: Chỉ gửi xác nhận xóa message khỏi Broker *sau khi* Task đã chạy xong (nếu Worker sập giữa chừng, Broker sẽ giao lại cho Worker khác); (2) **Idempotency (Tính lũy đẳng)**: Luôn kiểm tra `idempotency_key` / trạng thái đơn trong DB để chạy lại 2 lần cũng chỉ trừ tiền đúng 1 lần; (3) **Exponential Backoff + Jitter**: Tăng dần thời gian chờ khi retry để không dội bom dịch vụ đang lỗi; (4) **DLQ**: Đẩy các task lỗi quá số lần retry vào hàng đợi riêng để cảnh báo.',
     backAnalogy:
       'Shipper chỉ ký xác nhận hoàn tất sau khi đã giao tận tay khách (`acks_late`), và mỗi kiện hàng có mã vạch duy nhất để lỡ quét 2 lần cũng không thu tiền đúp (`Idempotency`).',
     codeSnippet: `@celery_app.task(\n    bind=True,\n    acks_late=True,\n    autoretry_for=(httpx.RequestError,),\n    retry_backoff=True,\n    retry_jitter=True,\n    max_retries=5,\n)\ndef process_payment(self, order_id: int, idempotency_key: str) -> None: ...`,
@@ -683,7 +683,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     stageId: 'stage-7',
     level: 'master',
     category: 'Caching & High Availability (Redis)',
-    frontQuestion: 'Thảm họa **Cache Stampede (Thundering Herd)** trong Redis xảy ra khi nào và kỹ thuật **TTL Jitter** + **Distributed Lock** ngăn chặn nó ra sao?',
+    frontQuestion: 'Sự cố **Cache Stampede (Thundering Herd)** trong Redis xảy ra khi nào và kỹ thuật **TTL Jitter** + **Distributed Lock** ngăn chặn nó ra sao?',
     frontHint: 'Điều gì xảy ra khi 10.000 key cache được nạp cùng lúc hoặc 1 Hot Key hết hạn đúng lúc có 5.000 người đang truy cập?',
     backAnswer:
       '**Cache Stampede** xảy ra khi một key cực nóng (ví dụ trang chủ sự kiện Flash Sale) hoặc hàng loạt key vừa hết hạn (`TTL = 0`) cùng một giây: hàng nghìn request đồng loạt bị **Cache Miss** và ập thẳng xuống Database cùng lúc làm sập DB. Hai lớp phòng thủ chuẩn: (1) **TTL Jitter**: Cộng thêm một số giây ngẫu nhiên `ttl = 3600 + random.randint(0, 300)` để các key không bao giờ hết hạn đồng loạt; (2) **Mutex Lock / Singleflight**: Khi Cache Miss, chỉ cho phép **1 request duy nhất** xuống DB tính toán và nạp lại cache.',
@@ -711,7 +711,7 @@ export const FLASHCARDS_STAGE_3_TO_7: FlashcardItem[] = [
     stageId: 'stage-7',
     level: 'master',
     category: 'Bảo mật Backend Python (OWASP)',
-    frontQuestion: 'Ba nguyên tắc bảo mật sống còn trong Backend Python đối với câu lệnh SQL, so sánh chữ ký/Token bí mật, và kiểm tra lỗ hổng thư viện là gì?',
+    frontQuestion: 'Ba nguyên tắc bảo mật cốt lõi trong Backend Python đối với câu lệnh SQL, so sánh chữ ký/Token bí mật, và kiểm tra lỗ hổng thư viện là gì?',
     frontHint: 'Parameterized Queries (Cấm f-string trong SQL) + `secrets.compare_digest()` chống Timing Attack + `pip-audit`/`uv`.',
     backAnswer:
       '3 chốt chặn an ninh bắt buộc: (1) **Chống SQL Injection**: Tuyệt đối không nối chuỗi f-string vào câu lệnh SQL (`f"SELECT ... WHERE name = \'{name}\'"`); luôn dùng ORM hoặc **Bound Parameters** (`text("... WHERE name = :name"), {"name": name}`); (2) **Chống Timing Attack**: Khi so sánh Webhook HMAC Signature hoặc API Key, phải dùng **`secrets.compare_digest(a, b)`** (so sánh trong thời gian hằng số) thay vì `a == b`; (3) **Supply Chain Security**: Quét lỗ hổng CVE trong cây thư viện trên CI/CD bằng `pip-audit` / `ruff` (`S` rules - Bandit).',

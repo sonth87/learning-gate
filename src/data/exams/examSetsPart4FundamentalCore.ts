@@ -342,7 +342,7 @@ export const EXAM_SETS_PART_4: ExamSet[] = [
           'Không có cách nào xóa tiền tố trong Python mà phải dùng thư viện C++',
         ],
         [
-          'Chính xác! Rất nhiều lập trình viên kỳ cựu cũng từng sập bẫy này: `.strip("abc")` nghĩa là "xóa mọi ký tự nằm trong tập `{a, b, c}` ở hai đầu". Vì chữ `"p"` và `"r"` đầu chữ `"process"` cũng nằm trong tập `{"p", "r", "e", "_"}`, nên `.lstrip("pre_")` nuốt luôn cả `"pr"`! Hãy luôn dùng `.removeprefix()` và `.removesuffix()` (PEP 616, có từ Python 3.9+).',
+          'Chính xác! Rất nhiều lập trình viên kỳ cựu cũng từng nhầm lẫn ở điểm này: `.strip("abc")` nghĩa là "xóa mọi ký tự nằm trong tập `{a, b, c}` ở hai đầu". Vì chữ `"p"` và `"r"` đầu chữ `"process"` cũng nằm trong tập `{"p", "r", "e", "_"}`, nên `.lstrip("pre_")` nuốt luôn cả `"pr"`! Hãy luôn dùng `.removeprefix()` và `.removesuffix()` (PEP 616, có từ Python 3.9+).',
           'Sai! Đây là hành vi thiết kế từ đầu của `.strip(chars)`, không phải lỗi bộ nhớ.',
           'Sai! Chuỗi hoàn toàn bình thường.',
           'Sai! `.removeprefix()` và `.removesuffix()` có sẵn ngay trên mọi đối tượng `str`.',
@@ -373,7 +373,7 @@ export const EXAM_SETS_PART_4: ExamSet[] = [
           'Sai! Dùng được cho mọi chuỗi `str` và `bytes`.',
         ],
         0,
-        'Cặp phương thức `.partition(sep)` (tìm từ trái sang) và `.rpartition(sep)` (tìm từ phải sang, rất tiện để tách tên file và phần mở rộng `name, dot, ext = filename.rpartition(".")`) là vũ khí bí mật của các lập trình viên Python giàu kinh nghiệm.',
+        'Cặp phương thức `.partition(sep)` (tìm từ trái sang) và `.rpartition(sep)` (tìm từ phải sang, rất tiện để tách tên file và phần mở rộng `name, dot, ext = filename.rpartition(".")`) là kỹ thuật rất hữu ích của các lập trình viên Python giàu kinh nghiệm.',
         '`.split(":", 1)` giống chiếc hộp lúc có 1 ngăn lúc có 2 ngăn (mở không khéo là trượt tay nổ `ValueError`); còn `.partition(":")` luôn là chiếc khay đúc sẵn 3 ngăn cố định `(trước, vách_ngăn, sau)`.',
         ['type-str', 'type-tuple']
       ),
@@ -710,7 +710,7 @@ export const EXAM_SETS_PART_4: ExamSet[] = [
           'Sai! Hai `list` so sánh bằng `==` hoàn toàn hợp lệ.',
         ],
         0,
-        'Quy tắc vàng chống sập bẫy cho dev từ JS/TS: **`is` KHÔNG PHẢI LÀ `===`!** Trong Python, vì `==` đã là Strong Typing (không ép kiểu bậy bạ `"5" == 5` luôn là `False`) và hỗ trợ so sánh sâu cho cả `list`/`dict`/`set`, nên **99% trường hợp bạn dùng `==`**. Chỉ dùng `is` khi kiểm tra `x is None` (hoặc kiểm tra hai biến có trỏ cùng 1 object không)!',
+        'Quy tắc vàng tránh nhầm lẫn cho dev từ JS/TS: **`is` KHÔNG PHẢI LÀ `===`!** Trong Python, vì `==` đã là Strong Typing (không ép kiểu bậy bạ `"5" == 5` luôn là `False`) và hỗ trợ so sánh sâu cho cả `list`/`dict`/`set`, nên **99% trường hợp bạn dùng `==`**. Chỉ dùng `is` khi kiểm tra `x is None` (hoặc kiểm tra hai biến có trỏ cùng 1 object không)!',
         '`a == b` là hỏi "Hai chiếc xe máy này có cùng mẫu mã, màu sắc, cấu hình giống hệt nhau không? (`True`)"; còn `a is b` là hỏi "Hai chiếc chìa khóa này có mở CÙNG MỘT CHIẾC XE duy nhất có cùng biển số (`id()`) không? (`False`)".',
         ['type-list', 'type-none']
       ),
@@ -985,7 +985,7 @@ export const EXAM_SETS_PART_4: ExamSet[] = [
           'Sai! Nó tự tạo/gán biến `ADMIN_ROLE` nên không có `NameError`.',
         ],
         0,
-        'Hãy khắc cốt ghi tâm quy tắc sống còn của `match ... case`: **Tên đơn (`case FOO:`) = Gán biến mới (khớp tất cả!). Tên có dấu chấm (`case Color.RED:` hoặc `case consts.FOO:`) = So sánh giá trị hằng số!** Vì vậy khi dùng `match ... case` với hằng số, hãy luôn định nghĩa chúng bằng `enum.Enum` (ví dụ `class Role(StrEnum): ADMIN = "admin"` -> `case Role.ADMIN:`).',
+        'Hãy ghi nhớ nguyên tắc quan trọng của `match ... case`: **Tên đơn (`case FOO:`) = Gán biến mới (khớp tất cả!). Tên có dấu chấm (`case Color.RED:` hoặc `case consts.FOO:`) = So sánh giá trị hằng số!** Vì vậy khi dùng `match ... case` với hằng số, hãy luôn định nghĩa chúng bằng `enum.Enum` (ví dụ `class Role(StrEnum): ADMIN = "admin"` -> `case Role.ADMIN:`).',
         'Trong `match-case`, một cái tên đứng trơ trọi (`case ADMIN_ROLE:`) bị hiểu là chiếc vợt trống rỗng chụp lấy bất kỳ quả bóng nào bay tới; muốn làm tấm biển đối chiếu cố định, nó phải được đóng đinh vào một bảng tên có dấu chấm (`case Role.ADMIN:`).',
         ['stmt-match-case']
       ),
@@ -1316,13 +1316,13 @@ export const EXAM_SETS_PART_4: ExamSet[] = [
           'Lần 2 xóa mất phần tử của lần 1',
         ],
         [
-          'Chính xác! Đây là khác biệt chí mạng giữa JS và Python: Trong JS, `tags = []` được tính lại (re-evaluated) mỗi lần hàm được gọi. Nhưng trong Python, biểu thức mặc định `[]` được tạo ra đúng 1 lần khi trình thông dịch chạy qua dòng `def add_tag...`, và đối tượng `list` đó được cất vào thuộc tính `add_tag.__defaults__` dùng chung cho MỌI lần gọi hàm sau đó! Cách sửa chuẩn 100%: dùng **`tags: list[str] | None = None`** rồi trong hàm viết **`if tags is None: tags = []`**!',
+          'Chính xác! Đây là khác biệt quan trọng giữa JS và Python: Trong JS, `tags = []` được tính lại (re-evaluated) mỗi lần hàm được gọi. Nhưng trong Python, biểu thức mặc định `[]` được tạo ra đúng 1 lần khi trình thông dịch chạy qua dòng `def add_tag...`, và đối tượng `list` đó được cất vào thuộc tính `add_tag.__defaults__` dùng chung cho MỌI lần gọi hàm sau đó! Cách sửa chuẩn 100%: dùng **`tags: list[str] | None = None`** rồi trong hàm viết **`if tags is None: tags = []`**!',
           'Sai! Đó là hành vi của JavaScript ES6, KHÔNG phải của Python!',
           'Sai! Cú pháp hợp lệ nhưng là một anti-pattern nguy hiểm (Ruff rule `B006` sẽ báo động đỏ ngay lập tức khi thấy `= []` hoặc `= {}` trên thanh tham số!).',
           'Sai! Nó tích lũy nối đuôi tất cả các phần tử của mọi lần gọi trước đó vào chung một mảng!',
         ],
         0,
-        'Quy tắc sống còn số 1 khi viết hàm Python: **KHÔNG BAO GIỜ đặt đối tượng khả biến (`[]`, `{}`, `set()`) làm giá trị mặc định của tham số hàm!** Luôn luôn dùng `None` làm giá trị mặc định rồi khởi tạo bên trong thân hàm:\n```python\ndef add_tag(tag: str, tags: list[str] | None = None) -> list[str]:\n    if tags is None:\n        tags = []\n    tags.append(tag)\n    return tags\n```',
+        'Nguyên tắc cốt lõi số 1 khi viết hàm Python: **KHÔNG BAO GIỜ đặt đối tượng khả biến (`[]`, `{}`, `set()`) làm giá trị mặc định của tham số hàm!** Luôn luôn dùng `None` làm giá trị mặc định rồi khởi tạo bên trong thân hàm:\n```python\ndef add_tag(tag: str, tags: list[str] | None = None) -> list[str]:\n    if tags is None:\n        tags = []\n    tags.append(tag)\n    return tags\n```',
         'Trong JS, `tags = []` là phát cho mỗi vị khách bước vào hàm một chiếc giỏ mới tinh; còn trong Python, `tags = []` ở dòng `def` là gắn cố định MỘT chiếc giỏ duy nhất ngay ở cửa hàm — vị khách thứ 2 bước vào sẽ bỏ đồ chung vào đúng chiếc giỏ còn nguyên đồ của vị khách thứ 1!',
         ['trap-mutable-default', 'type-list', 'type-none']
       ),

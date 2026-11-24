@@ -1,6 +1,6 @@
 // ============================================================================
 // [ANTI-PATTERN / BUGGY] Lỗi Đua Tranh TOCTOU Khi Tách Rời GET và DECRBY Ở Ứng Dụng
-// Kịch bản thảm họa Flash Sale: Kho chỉ còn 1 chiếc iPhone nhưng bán lố (oversell) cho 8 người!
+// Kịch bản sự cố Flash Sale: Kho chỉ còn 1 chiếc iPhone nhưng bán vượt tồn kho (oversell) cho 8 người!
 // ============================================================================
 
 import Redis from "ioredis";

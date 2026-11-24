@@ -4,7 +4,7 @@
   "level": 5,
   "order": 0,
   "title": "Redis Cluster: Phân mảnh 16,384 Hash Slots, Gossip & Xử lý CROSSSLOT",
-  "summary": "Vượt trần RAM và CPU của 1 máy chủ đơn lẻ bằng kiến trúc Sharding phi tập trung: giải phẫu công thức CRC16(key) mod 16384, giao thức Gossip cổng +10000, định tuyến MOVED/ASK, triệt tiêu lỗi CROSSSLOT bằng {HashTag} và phòng tránh phản mẫu Hot-Slot.",
+  "summary": "Vượt trần RAM và CPU của 1 máy chủ đơn lẻ bằng kiến trúc Sharding phi tập trung: phân tích công thức CRC16(key) mod 16384, giao thức Gossip cổng +10000, định tuyến MOVED/ASK, triệt tiêu lỗi CROSSSLOT bằng {HashTag} và phòng tránh phản mẫu Hot-Slot.",
   "tags": [
     "cluster",
     "sharding",

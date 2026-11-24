@@ -13,7 +13,7 @@
 kind: illustration
 diagram: "redis:r12"
 badge: "Memory & Eviction Internals · R12"
-title: "Giải phẫu Không gian RAM jemalloc, 24-bit redisObject & Luồng Giải phóng (Eviction)"
+title: "Cấu trúc Không gian RAM jemalloc, 24-bit redisObject & Luồng Giải phóng (Eviction)"
 subtitle: "Sự chênh lệch giữa used_memory và used_memory_rss cùng thuật toán lấy mẫu xấp xỉ Approximated LFU"
 caption: "Redis không dùng danh sách liên kết đôi tốn 16-24 bytes/khoá cho LRU mà nhúng khéo léo dấu thời gian/tần suất vào đúng 24 bit sẵn có của header redisObject!"
 callouts:

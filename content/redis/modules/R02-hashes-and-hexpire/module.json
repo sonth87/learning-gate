@@ -36,7 +36,7 @@
       "label": "Xử lý Sự cố: Cú giật độ trễ do BigKey Hash triệu trường",
       "kind": "incident",
       "targetId": "inc-bigkey-del-spike",
-      "description": "Khám bệnh sự cố gọi HGETALL và DEL trên một Hash phình to không kiểm soát"
+      "description": "Chẩn đoán sự cố gọi HGETALL và DEL trên một Hash phình to không kiểm soát"
     }
   ],
   "readings": [

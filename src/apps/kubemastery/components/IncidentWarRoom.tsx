@@ -95,7 +95,7 @@ export const IncidentWarRoom: React.FC = () => {
           </span>
         </div>
         <h1 className="font-mono text-base sm:text-2xl font-extrabold text-white">
-          Thực Hành Quy Trình 4 Bước "Khám Bệnh" & Vá Lỗi Trực Tiếp Trên Cụm K8s
+          Thực Hành Quy Trình 4 Bước "Chẩn Đoán" & Vá Lỗi Trực Tiếp Trên Cụm K8s
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed hidden sm:block">
           Đừng đoán mò khi hệ thống sập! Hãy đi tuần tự từ Bước 1 đến Bước 4
@@ -108,7 +108,7 @@ export const IncidentWarRoom: React.FC = () => {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-[11px] text-slate-400 lg:hidden px-0.5">
           <span className="font-semibold text-slate-300">
-            Vuốt ngang để chọn Ca cấp cứu ({scenario.number}/8):
+            Vuốt ngang để chọn Tình huống sự cố ({scenario.number}/8):
           </span>
           <span className="font-mono text-rose-300">{scenario.statusBadge}</span>
         </div>
@@ -198,7 +198,7 @@ export const IncidentWarRoom: React.FC = () => {
           )}
         >
           <Terminal className="h-3.5 w-3.5 shrink-0" />
-          <span>1. Khám Bệnh (4 Bước)</span>
+          <span>1. Chẩn Đoán (4 Bước)</span>
         </button>
         <button
           onClick={() => setMobilePanel('patch')}
@@ -227,7 +227,7 @@ export const IncidentWarRoom: React.FC = () => {
             <div className="flex items-center gap-2">
               <Terminal className="h-4 w-4 text-sky-400 shrink-0" />
               <h3 className="text-sm sm:text-base font-extrabold text-white">
-                Quy trình 4 Bước "Khám Bệnh" Từ Ngoài Vào Trong
+                Quy trình 4 Bước "Chẩn Đoán" Từ Ngoài Vào Trong
               </h3>
             </div>
           </div>
@@ -251,8 +251,8 @@ export const IncidentWarRoom: React.FC = () => {
                     Bước {st.stepOrder}/4
                   </div>
                   <div className="text-[11px] font-bold mt-0.5 line-clamp-1">
-                    {st.stepOrder === 1 && 'Nhìn sắc diện'}
-                    {st.stepOrder === 2 && 'Đọc bệnh án'}
+                    {st.stepOrder === 1 && 'Kiểm tra trạng thái'}
+                    {st.stepOrder === 2 && 'Xem sự kiện'}
                     {st.stepOrder === 3 && 'Đọc nhật ký'}
                     {st.stepOrder === 4 && 'Khoanh vùng & Vá'}
                   </div>
@@ -296,7 +296,7 @@ export const IncidentWarRoom: React.FC = () => {
           {/* Root Causes & Solutions Reference */}
           <div className="space-y-2 pt-2 border-t border-slate-800">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Nguyên nhân gốc rễ & Phác đồ giải quyết triệt để:
+              Nguyên nhân gốc rễ & Giải pháp xử lý triệt để:
             </div>
             {scenario.rootCausesAndSolutions.map((rc, idx) => (
               <div

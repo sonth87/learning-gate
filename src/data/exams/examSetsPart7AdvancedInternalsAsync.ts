@@ -368,7 +368,7 @@ squares_gen  = (x * x for x in range(100_000_000))`,
       'Sai. Generator chạy trên CPU bình thường theo cơ chế tạm dừng trạng thái frame (`yield`).',
     ],
     1,
-    'Generator Expression là vũ khí tối thượng khi truyền vào các hàm tổng hợp như `sum(x * x for x in data)` hoặc `any(...)`, giúp xử lý luồng dữ liệu khổng lồ với lượng RAM gần bằng 0.',
+    'Generator Expression là công cụ hiệu quả nhất khi truyền vào các hàm tổng hợp như `sum(x * x for x in data)` hoặc `any(...)`, giúp xử lý luồng dữ liệu khổng lồ với lượng RAM gần bằng 0.',
     'List giống như in sẵn toàn bộ 100 triệu trang sách chất đầy kho (`O(N)`); Generator giống như máy in theo yêu cầu chỉ in đúng trang bạn đang đọc (`O(1)`).',
     ['generator', 'lazy-evaluation']
   ),
@@ -1468,7 +1468,7 @@ class Customer:
       'Sai. Các import dùng thật trong thân hàm lúc runtime vẫn phải đặt ở ngoài `if TYPE_CHECKING:`.',
     ],
     0,
-    'Lưu ý: với Pydantic hoặc FastAPI (những thư viện cần giải mã type hints ngay lúc runtime để tạo validator), nếu bạn giấu class bên trong `if TYPE_CHECKING:` thì lúc runtime Pydantic sẽ không tìm thấy class đó trừ khi gọi `model_rebuild()` và cung cấp namespace.',
+    'Lưu ý: với Pydantic hoặc FastAPI (những thư viện cần phân tích type hints ngay lúc runtime để tạo validator), nếu bạn giấu class bên trong `if TYPE_CHECKING:` thì lúc runtime Pydantic sẽ không tìm thấy class đó trừ khi gọi `model_rebuild()` và cung cấp namespace.',
     '`if TYPE_CHECKING:` giống như câu lệnh `import type { Order } from "./order"` trong TypeScript: chỉ tồn tại cho trình kiểm tra kiểu đọc, còn khi biên dịch/chạy thật thì biến mất hoàn toàn để không gây vòng lặp import.',
     ['type-checking', 'circular-import']
   ),
@@ -1765,7 +1765,7 @@ except* TypeError as eg:
     ],
     [
       'Chính xác! Event Loop là kiến trúc **Cooperative Multitasking (đa nhiệm hợp tác)** chạy trên 1 luồng duy nhất: một coroutine chỉ nhường quyền điều khiển khi gặp từ khóa `await` trên một đối tượng non-blocking. Gọi `time.sleep(5)` hay `requests.get()` sẽ khóa cứng luồng OS chứa Event Loop. Dùng `await asyncio.to_thread(...)` giúp đẩy hàm đồng bộ đó sang `ThreadPoolExecutor` mặc định và giải phóng Event Loop ngay!',
-      'Sai. `async def` không có phép thuật biến hàm đồng bộ `time.sleep` thành non-blocking (phải dùng `await asyncio.sleep(5)` hoặc thư viện async như `httpx.AsyncClient`).',
+      'Sai. `async def` không có cơ chế tự động biến hàm đồng bộ `time.sleep` thành non-blocking (phải dùng `await asyncio.sleep(5)` hoặc thư viện async như `httpx.AsyncClient`).',
       'Sai. `create_task()` vẫn chạy coroutine đó trên chính luồng của Event Loop, nên nếu bên trong nó gọi `time.sleep(5)` thì toàn bộ Event Loop vẫn bị treo cứng 5 giây.',
       'Sai. `asyncio.to_thread()` sử dụng `ThreadPoolExecutor` ngay trong tiến trình hiện tại.',
     ],
@@ -1921,7 +1921,7 @@ request_id_var: ContextVar[str] = ContextVar("request_id", default="anonymous")`
     'advanced',
     CAT_ADV_3,
     TAGS_ADV_3,
-    'Khi thiết kế mô hình **Producer - Consumer** bất đồng bộ sử dụng `asyncio.Queue(maxsize=100)`, chuyện gì xảy ra khi hàng đợi đã đầy đủ 100 phần tử mà Producer gọi `await queue.put(item)`, và tại sao tham số `maxsize` lại sống còn trong hệ thống thực tế?',
+    'Khi thiết kế mô hình **Producer - Consumer** bất đồng bộ sử dụng `asyncio.Queue(maxsize=100)`, chuyện gì xảy ra khi hàng đợi đã đầy đủ 100 phần tử mà Producer gọi `await queue.put(item)`, và tại sao tham số `maxsize` lại đóng vai trò cốt lõi trong hệ thống thực tế?',
     `queue: asyncio.Queue[Job] = asyncio.Queue(maxsize=100)
 
 async def producer(job: Job):
@@ -2156,7 +2156,7 @@ async def coordinator():
     `# Chạy với debug=True trong môi trường dev/staging:
 asyncio.run(main(), debug=True)`,
     [
-      'Nó giúp phát hiện và cảnh báo sớm hai lỗi chí mạng trong lập trình bất đồng bộ: **(1) Các coroutine nào chiếm giữ CPU / chặn Event Loop quá lâu** (mặc định > 100ms, cấu hình qua `loop.slow_callback_duration`) và **(2) Truy vết đầy đủ stack trace tại nơi tạo ra các coroutine bị bỏ quên không được `await`** hoặc ngoại lệ chưa được lấy ra.',
+      'Nó giúp phát hiện và cảnh báo sớm hai lỗi nghiêm trọng trong lập trình bất đồng bộ: **(1) Các coroutine nào chiếm giữ CPU / chặn Event Loop quá lâu** (mặc định > 100ms, cấu hình qua `loop.slow_callback_duration`) và **(2) Truy vết đầy đủ stack trace tại nơi tạo ra các coroutine bị bỏ quên không được `await`** hoặc ngoại lệ chưa được lấy ra.',
       'Nó tự động sửa mọi lỗi `SyntaxError` trong các hàm `async def`.',
       'Nó giúp tăng tốc độ chạy của ứng dụng lên gấp 5 lần trên môi trường Production.',
       'Nó tự động chuyển đổi tất cả các thư viện đồng bộ như `requests` thành `httpx`.',

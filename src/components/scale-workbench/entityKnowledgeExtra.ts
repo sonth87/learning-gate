@@ -210,7 +210,7 @@ export const EXTRA_ENTITY_KNOWLEDGE: Array<{
         'Eliminates broken hardcoded IPs and prevents traffic from hitting unready or terminating Pods.'
       ),
       tipOrCase: bi(
-        'Mẹo bắt bệnh 502/Connection Refused trong 10 giây: Chạy ngay kubectl get endpoints <svc> — nếu danh sách trống rỗng (<none>), 95% là sai lệch nhãn selector.matchLabels hoặc sai cổng targetPort!',
+        'Cách kiểm tra nhanh lỗi 502/Connection Refused trong 10 giây: Chạy ngay kubectl get endpoints <svc> — nếu danh sách trống rỗng (<none>), 95% là sai lệch nhãn selector.matchLabels hoặc sai cổng targetPort!',
         '10-Second Debug Trick: Run kubectl get endpoints <svc> — if empty, check Service selector labels and container targetPort!'
       ),
     },

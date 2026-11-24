@@ -13,7 +13,7 @@ src: "/illustrations/redis/redis-rdb-aof-persistence.jpg"
 diagram: "redis:r13"
 alt: "Cơ chế lưu trữ bền vững RDB Copy-on-Write kết hợp nhật ký AOF Hybrid trong Redis 8"
 badge: "Persistence Internals · R13"
-title: "Giải phẫu Luồng BGSAVE Copy-on-Write & Cấu trúc Multi-Part Hybrid AOF"
+title: "Cơ chế Luồng BGSAVE Copy-on-Write & Cấu trúc Multi-Part Hybrid AOF"
 subtitle: "Cách tiến trình con dùng chung bảng trang bộ nhớ ảo (Page Table) với tiến trình cha và cấu trúc RDB Preamble + AOF Tail"
 caption: "Trên Redis 7.0+ và Redis 8, tệp AOF được tách thành thư mục appendonlydir gồm tệp gốc (base RDB), tệp tăng trưởng (incr AOF) và tệp manifest quản lý nguyên tử."
 callouts:

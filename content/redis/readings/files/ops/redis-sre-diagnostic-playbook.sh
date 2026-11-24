@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
 # Kịch Bản Chẩn Đoán Nhanh Sự Cố Độ Trễ Redis Production Trong 60 Giây (SRE Playbook)
-# LƯU Ý SỐNG CÒN: Kịch bản này KHÔNG BAO GIỜ gọi KEYS * hay MONITOR (tránh làm sập thêm nút!)
+# LƯU Ý QUAN TRỌNG: Kịch bản này KHÔNG BAO GIỜ gọi KEYS * hay MONITOR (tránh làm sập thêm nút!)
 # Cách dùng: REDISCLI_AUTH="$REDIS_ADMIN_PASS" ./ops/redis-sre-diagnostic-playbook.sh 10.20.4.25 6379
 # ============================================================================
 set -euo pipefail

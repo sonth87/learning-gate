@@ -21,7 +21,7 @@
   },
   {
     "id": "R14-FC5",
-    "front": "Cách ngăn chặn thảm hoạ Split-Brain làm mất dữ liệu trên Master bị cô lập mạng?",
+    "front": "Cách ngăn chặn sự cố Split-Brain làm mất dữ liệu trên Master bị cô lập mạng?",
     "back": "Cấu hình trên Master:\n`min-replicas-to-write 1`\n`min-replicas-max-lag 10`\nNếu Master mất liên lạc với toàn bộ Replica quá 10 giây, nó sẽ tự ngừng nhận lệnh ghi mới."
   },
   {

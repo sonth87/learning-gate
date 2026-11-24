@@ -49,7 +49,7 @@ export const FlowStudioHub: React.FC = () => {
           Trực Quan Hóa Luồng Hoạt Động Docker & Kubernetes Bằng Animation Tương Tác
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed">
-          Thay vì học vẹt qua chữ viết khô khan, hãy quan sát trực tiếp cách các gói tin, tầng bánh Layer Cache, vòng lặp Control Loop và phác đồ bắt bệnh vận hành theo thời gian thực.
+          Thay vì học vẹt qua chữ viết khô khan, hãy quan sát trực tiếp cách các gói tin, các tầng Layer Cache, vòng lặp Control Loop và quy trình chẩn đoán sự cố vận hành theo thời gian thực.
         </p>
       </div>
 

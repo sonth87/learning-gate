@@ -71,7 +71,7 @@ items:
   - symptom: "Họp Daily Scrum kéo dài 45 phút, biến thành buổi báo cáo sếp & tranh cãi bug kỹ thuật"
     badge: "15 phút · Dành cho Developers"
     tone: "rose"
-    cause: "Biến buổi đồng bộ kế hoạch 24h của nhóm thành buổi kiểm điểm tiến độ hoặc mổ xẻ code chi tiết."
+    cause: "Biến buổi đồng bộ kế hoạch 24h của nhóm thành buổi kiểm điểm tiến độ hoặc thảo luận kỹ thuật chi tiết."
     fix: "Huấn luyện nhóm giữ nghiêm Timebox **15 phút** xoay quanh Sprint Goal; các thảo luận kỹ thuật sâu tách sang nhóm nhỏ họp riêng ngay sau đó (*Parking Lot*); lãnh đạo nếu dự chỉ quan sát, không chất vấn."
   - symptom: "Giám đốc Kinh doanh yêu cầu Developer lập trình gấp 1 tính năng ngay giữa Sprint đang chạy"
     badge: "Bảo vệ Sprint Goal"

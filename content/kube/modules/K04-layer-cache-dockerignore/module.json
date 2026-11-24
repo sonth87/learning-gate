@@ -50,7 +50,7 @@
       "path": "docker/node-api/.dockerignore.leaky",
       "kind": "security",
       "note": "Tệp .dockerignore viết cẩu thả vừa để lọt tệp .env vừa chặn nhầm cấu hình ứng dụng.",
-      "task": "Chỉ ra 2 lỗi chí mạng trong file này và cách sửa từng lỗi.",
+      "task": "Chỉ ra 2 lỗi nghiêm trọng trong file này và cách sửa từng lỗi.",
       "answer": "1) Thiếu chặn `.env`, `.env.*` và `.git` gây lộ mật khẩu local vào Image layer; 2) Chặn `*.json` diện rộng làm mất luôn `package.json`, `tsconfig.json` và `src/config/*.json` — phải xoá dòng `*.json` đó đi."
     },
     {

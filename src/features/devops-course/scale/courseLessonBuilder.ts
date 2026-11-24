@@ -188,7 +188,7 @@ export function makeShortStepperLabel(
 
   const lower = stripped.toLowerCase();
   let vi = '';
-  if (lower.includes('thuật ngữ') || lower.includes('nhập môn') || lower.includes('đời thường')) vi = 'Giải mã Thuật ngữ';
+  if (lower.includes('thuật ngữ') || lower.includes('nhập môn') || lower.includes('đời thường')) vi = 'Thuật ngữ Nền tảng';
   else if (lower.includes('output') && lower.includes('outcome')) vi = 'Output vs Outcome';
   else if (lower.includes('mvp') && lower.includes('mmf')) vi = 'MVP vs MMF';
   else if (lower.includes('an toàn tâm lý') || lower.includes('psychological')) vi = 'An toàn Tâm lý';

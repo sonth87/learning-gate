@@ -21,7 +21,7 @@
   },
   {
     "id": "K18-C5",
-    "front": "Tại sao cờ `--previous` lại sống còn khi gỡ lỗi `CrashLoopBackOff`?",
+    "front": "Tại sao cờ `--previous` lại rất quan trọng khi gỡ lỗi `CrashLoopBackOff`?",
     "back": "Vì container mới có thể vừa được tạo chưa kịp ghi log hoặc đang trong thời gian chờ Backoff; `--previous` đọc lại nguyên vẹn Stack Trace của lần vừa sập ngay trước đó."
   },
   {

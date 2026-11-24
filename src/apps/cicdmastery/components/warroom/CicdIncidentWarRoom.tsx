@@ -185,7 +185,7 @@ export const CicdIncidentWarRoom: React.FC = () => {
          ===================================================================== */}
       {selectedWarRoomId === 'warroom-b1-42min-pipeline' && (
         <div className="grid gap-6 lg:grid-cols-12 items-start">
-          <div className="lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4">
+          <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4">
             <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
               Tình huống B1 (Trang 17–18): Bật 6 Kỹ thuật Tối ưu Điểm nghẽn Pipeline
             </div>
@@ -255,7 +255,7 @@ export const CicdIncidentWarRoom: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-5">
+          <div className="min-w-0 lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-5">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-bold uppercase text-cyan-400">
@@ -399,7 +399,7 @@ RUN npm ci`
               )}
             >
               <div className="text-xs font-bold text-rose-300">
-                ❌ Kịch bản Thảm họa khi KHÔNG có Khóa Tuần tự CD:
+                ❌ Rủi ro nghiêm trọng khi KHÔNG có Khóa Tuần tự CD:
               </div>
               <ul className="space-y-1.5 text-xs text-slate-200 font-mono">
                 <li>• [t=00s] Dev 1 merge PR #1 (Commit A - cũ) → Pipeline A chạy trên Runner chậm.</li>
@@ -420,7 +420,7 @@ RUN npm ci`
               )}
             >
               <div className="text-xs font-bold text-emerald-300">
-                ✅ Giải pháp Kỹ thuật Bắt buộc (Nguyên tắc Sống còn Trang 18):
+                ✅ Giải pháp Kỹ thuật Bắt buộc (Nguyên tắc quan trọng Trang 18):
               </div>
               <p className="text-xs text-slate-200 leading-relaxed">
                 1. Đối với Job kiểm thử (CI) trên nhánh PR: bật <code>cancel-in-progress: true</code> để hủy bản cũ tiết kiệm tài nguyên.

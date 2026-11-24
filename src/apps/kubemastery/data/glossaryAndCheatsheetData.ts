@@ -200,9 +200,9 @@ export const GLOSSARY_ANALOGY_ITEMS: GlossaryAnalogyItem[] = [
     id: 'term-probes-hpa',
     term: 'Probes (Startup, Liveness, Readiness) & HPA',
     category: 'Cloud Native & SRE',
-    analogyTag: 'Ba bài khám y tế định kỳ & Điều động nhân viên thời vụ tự động',
+    analogyTag: 'Ba bài kiểm tra sức khỏe định kỳ & Điều động nhân sự tự động',
     technicalDefinition: 'Probes kiểm tra ứng dụng đã khởi động xong chưa, còn sống không (Liveness → Restart) và sẵn sàng nhận khách chưa (Readiness → Service). HPA tự động tăng/giảm số Pod theo CPU/RAM.',
-    vividAnalogy: 'Bác sĩ trực thấy nhân viên ngất (Liveness fail) thì cấp cứu khởi động lại; thấy đang bận (Readiness fail) thì tạm ngưng gửi khách; thấy khách đông lúc 0h00 thì HPA gọi thêm 18 nhân viên thời vụ!',
+    vividAnalogy: 'Liveness fail thì tự động khởi động lại; Readiness fail thì tạm ngưng gửi request vào; thấy tải cao lúc 0h00 thì HPA gọi thêm 18 Pod dự phòng!',
     exampleCommandOrYaml: 'kubectl get hpa -n production',
   },
   {
@@ -267,7 +267,7 @@ export const CHEATSHEET_GROUPS: CheatsheetGroup[] = [
       {
         cmd: 'kubectl get pods -A -o wide',
         explanation: 'Xem toàn bộ Pod ở tất cả các Namespace (-A) kèm địa chỉ IP và máy chủ chứa nó.',
-        whenToUse: 'Bước 1 trong Phác đồ khám bệnh: Quan sát cột STATUS và RESTARTS.',
+        whenToUse: 'Bước 1 trong Quy trình chẩn đoán: Quan sát cột STATUS và RESTARTS.',
       },
       {
         cmd: 'kubectl get deploy,svc,ing,pvc -n prod',
@@ -284,12 +284,12 @@ export const CHEATSHEET_GROUPS: CheatsheetGroup[] = [
   {
     id: 'cs-group-3-k8s-diagnose',
     groupNumber: 3,
-    groupTitle: '3. Chẩn đoán & Khám bệnh Pod (Troubleshooting)',
+    groupTitle: '3. Chẩn đoán & Xử lý lỗi Pod (Troubleshooting)',
     commands: [
       {
         cmd: 'kubectl describe pod [TÊN_POD] -n prod',
-        explanation: 'Xem "hồ sơ bệnh án" chi tiết, trạng thái Last State (OOMKilled 137) và lịch sử Events ở dưới cùng.',
-        whenToUse: 'Bước 2 khám bệnh: Trị lỗi Pending, ImagePullBackOff, CreateContainerConfigError, OOMKilled.',
+        explanation: 'Xem thông tin chi tiết, trạng thái Last State (OOMKilled 137) và lịch sử Events ở dưới cùng.',
+        whenToUse: 'Bước 2 chẩn đoán: Xử lý lỗi Pending, ImagePullBackOff, CreateContainerConfigError, OOMKilled.',
       },
       {
         cmd: 'kubectl logs [TÊN_POD] -c [TÊN_CONTAINER] -f',
@@ -298,8 +298,8 @@ export const CHEATSHEET_GROUPS: CheatsheetGroup[] = [
       },
       {
         cmd: 'kubectl logs [TÊN_POD] -n prod --previous',
-        explanation: 'Đọc những lời trăn trối cuối cùng của phiên bản container vừa bị sập ngay trước đó.',
-        whenToUse: 'Bước 3 khám bệnh: Vũ khí bắt buộc để trị bệnh lặp vòng sập CrashLoopBackOff!',
+        explanation: 'Đọc nhật ký lỗi cuối cùng của phiên bản container vừa bị sập ngay trước đó.',
+        whenToUse: 'Bước 3 chẩn đoán: Công cụ bắt buộc để xử lý lỗi khởi động lại liên tục CrashLoopBackOff!',
       },
       {
         cmd: 'kubectl exec -it [TÊN_POD] -n prod -- /bin/sh',
@@ -331,7 +331,7 @@ export const CHEATSHEET_GROUPS: CheatsheetGroup[] = [
       {
         cmd: 'kubectl get endpoints [TÊN_SERVICE] -n prod',
         explanation: 'Kiểm tra danh bạ của Tổng đài Service xem có tìm thấy địa chỉ IP của các Pod phía sau không.',
-        whenToUse: 'Bước 4 khám bệnh: Nếu trả về <none> nghĩa là bị lệch nhãn Selector giữa Service và Pod!',
+        whenToUse: 'Bước 4 chẩn đoán: Nếu trả về <none> nghĩa là bị lệch nhãn Selector giữa Service và Pod!',
       },
       {
         cmd: 'kubectl rollout status deploy/[TÊN_DEPLOY] -n prod',

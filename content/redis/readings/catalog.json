@@ -536,7 +536,7 @@
       "path": "caching/bad-stampede-naive-cache.ts",
       "language": "shell",
       "category": "caching-locks",
-      "topic": "Phản mẫu đọc-ghi Cache ngây thơ dính đồng thời cả 3 thảm họa: Cache Stampede, Cache Penetration và Cache Avalanche",
+      "topic": "Phản mẫu đọc-ghi Cache ngây thơ gây đồng thời cả 3 sự cố nghiêm trọng: Cache Stampede, Cache Penetration và Cache Avalanche",
       "level": 3,
       "difficulty": 1,
       "quality": 2,

@@ -4,7 +4,7 @@
   "level": 5,
   "order": 2,
   "title": "Giám sát Hiệu năng (Observability), Metrics & Xử lý Sự cố Redis Production",
-  "summary": "Tổng hợp toàn bộ tư duy vận hành Redis Production thành phản xạ chẩn đoán sự cố trong 120 giây: giải mã INFO stats/memory, cạm bẫy thời gian của SLOWLOG GET, LATENCY DOCTOR, Prometheus redis_exporter và thực chiến xử lý 5 ca trực PagerDuty kinh điển.",
+  "summary": "Tổng hợp toàn bộ tư duy vận hành Redis Production thành quy trình chẩn đoán sự cố trong 120 giây: phân tích INFO stats/memory, cạm bẫy thời gian của SLOWLOG GET, LATENCY DOCTOR, Prometheus redis_exporter và thực chiến xử lý 5 ca trực PagerDuty kinh điển.",
   "tags": [
     "observability",
     "war-room",

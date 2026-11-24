@@ -396,7 +396,7 @@ jobs:
     estimatedMinutes: 30,
     pdfRef: 'Mục 2.4 — Trang 6, 7 & 8 / 21',
     summary:
-      'Mổ xẻ tệp cấu hình .gitlab-ci.yml cấp độ Doanh nghiệp đi qua 5 giai đoạn: Kiểm thử chia luồng song song (Test Sharding) → Quét Secret & SAST bằng đồ thị DAG → Đóng gói Docker Multi-stage & Quét lỗ hổng Trivy → Tự động lên Staging → Chờ Tech Lead bấm nút Phê duyệt (Manual Approval Gate) mới lên Production.',
+      'Phân tích chi tiết tệp cấu hình .gitlab-ci.yml cấp độ Doanh nghiệp đi qua 5 giai đoạn: Kiểm thử chia luồng song song (Test Sharding) → Quét Secret & SAST bằng đồ thị DAG → Đóng gói Docker Multi-stage & Quét lỗ hổng Trivy → Tự động lên Staging → Chờ Tech Lead bấm nút Phê duyệt (Manual Approval Gate) mới lên Production.',
     keyObjectives: [
       'Hiểu chiến lược Cache pull-push ở Job đầu tiên kết hợp policy: pull ở các Job sau để tiết kiệm 30–60 giây nén file.',
       'Hiểu ý nghĩa cờ --ignore-unfixed --severity CRITICAL,HIGH trong Trivy Scan để không làm tắc nghẽn Pipeline bởi các CVE chưa có bản vá.',
@@ -849,7 +849,7 @@ spec:
     summary:
       'Trong mô hình truyền thống (Push-based), CI Runner giữ chứng chỉ quản trị cụm Production và đẩy lệnh từ ngoài vào. Kiến trúc GitOps (Pull-based với ArgoCD/FluxCD) đảo ngược luồng này: một Agent nằm bên trong cụm Kubernetes chủ động kéo (Pull) cấu hình từ Git Manifest Repo về và tự động đồng bộ trạng thái.',
     keyObjectives: [
-      'Hiểu rủi ro an ninh chí mạng của mô hình Push-based CD truyền thống khi CI Runner bị xâm nhập.',
+      'Hiểu rủi ro an ninh nghiêm trọng của mô hình Push-based CD truyền thống khi CI Runner bị xâm nhập.',
       'Nắm vững luồng hoạt động 6 bước của mô hình GitOps (Hình 3.2) giữa Vùng CI và Production K8s Cluster (Mạng nội bộ đóng kín).',
       'Hiểu cơ chế phát hiện cấu hình lệch (Configuration Drift) và tự động đồng bộ (Reconcile) của ArgoCD Controller.',
     ],
@@ -1042,7 +1042,7 @@ spec:
       },
       {
         heading: '2. Database Migration Không Gián đoạn — Expand-and-Contract Pattern (Mục 3.3 — PDF Trang 10)',
-        body: 'Đây là bài toán sống còn ở cấp độ Senior/Architect: Khi chạy Rolling Update hoặc Canary, code cũ (v1.0) và code mới (v2.0) CÙNG TRUY CẬP vào một Database tại cùng thời điểm! Nếu bạn đổi tên cột trực tiếp (RENAME COLUMN) hoặc xóa cột cũ ngay lập tức, các Pod v1.0 đang chạy sẽ lập tức báo lỗi SQL 500! Vì vậy, mọi thay đổi Schema phải chia làm 3 pha tương thích ngược:',
+        body: 'Đây là bài toán cốt lõi ở cấp độ Senior/Architect: Khi chạy Rolling Update hoặc Canary, code cũ (v1.0) và code mới (v2.0) CÙNG TRUY CẬP vào một Database tại cùng thời điểm! Nếu bạn đổi tên cột trực tiếp (RENAME COLUMN) hoặc xóa cột cũ ngay lập tức, các Pod v1.0 đang chạy sẽ lập tức báo lỗi SQL 500! Vì vậy, mọi thay đổi Schema phải chia làm 3 pha tương thích ngược:',
         bulletPoints: [
           'Pha 1 — Expand (Mở rộng): Thêm cột mới cho phép NULL (giữ nguyên cột cũ). Cập nhật code v1.1 ghi đồng thời vào cả 2 cột (Dual-Write). Nếu v1.1 lỗi, Rollback về v1.0 an toàn 100%.',
           'Pha 2 — Backfill & Switch Read: Chạy script đồng bộ dữ liệu lịch sử từ cột cũ sang cột mới (Backfill), sau đó cập nhật code v1.2 chuyển sang đọc từ cột mới.',

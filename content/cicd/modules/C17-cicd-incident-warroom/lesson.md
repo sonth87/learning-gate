@@ -7,7 +7,7 @@ Chúc mừng bạn đã đi tới chặng cuối cùng của khóa học **CI/CD
 - [!] Tình huống khó phát hiện nhất: toàn bộ pipeline đều **báo thành công giả (False-Green)** nhưng người dùng đang nhận lỗi **HTTP 500** (**Tình huống B6**).
 
 > [!TIP] Nguyên tắc xử lý sự cố Production: Khôi phục dịch vụ trước (giảm MTTR), phân tích nguyên nhân sau
-> Khi Production gặp sự cố sau một đợt phát hành mới, phản xạ chuẩn của kỹ sư vận hành là **khôi phục dịch vụ nhanh nhất có thể (dưới 2 phút)** bằng cách **Rollback** về thẻ Image SHA ổn định trước đó (hoặc tắt **Feature Flag**) — thay vì dò lỗi trực tiếp trong khi khách hàng đang gặp lỗi `500`. Chỉ chọn **Roll-Forward** (đẩy bản vá mới) khi bản vá rất nhỏ đã được xác minh hoặc khi cơ sở dữ liệu đã thay đổi ở trạng thái không thể quay lui.
+> Khi Production gặp sự cố sau một đợt phát hành mới, nguyên tắc xử lý chuẩn của kỹ sư vận hành là **khôi phục dịch vụ nhanh nhất có thể (dưới 2 phút)** bằng cách **Rollback** về thẻ Image SHA ổn định trước đó (hoặc tắt **Feature Flag**) — thay vì dò lỗi trực tiếp trong khi khách hàng đang gặp lỗi `500`. Chỉ chọn **Roll-Forward** (đẩy bản vá mới) khi bản vá rất nhỏ đã được xác minh hoặc khi cơ sở dữ liệu đã thay đổi ở trạng thái không thể quay lui.
 
 ```visual
 kind: troubleshoot
@@ -93,7 +93,7 @@ left:
     - "`npm install` không có bộ đệm phải kéo mạng từ đầu mỗi lần khởi tạo ephemeral runner"
     - "Mọi bước xếp hàng 1 cột dọc khiến tổng thời gian bằng tổng cộng dồn tất cả các bước"
 right:
-  badge: "PHÁC ĐỒ CHUẨN · Dưới 5 Phút / PR"
+  badge: "CẤU HÌNH CHUẨN · Dưới 5 Phút / PR"
   title: "Cache npm ci + Tách DAG Song Song + Sharding 4 Luồng"
   tone: emerald
   code: |
@@ -173,7 +173,7 @@ right:
 > [!WARNING] Sai lầm phổ biến khi xử lý lộ Secret trên Git
 > Nhiều người tưởng rằng chỉ cần tạo một commit mới sửa dòng đó thành `${{ secrets.STRIPE_API_KEY }}` là xong. **SAI HOÀN TOÀN!** Commit mới chỉ xoá chuỗi khoá ở ảnh chụp `HEAD` hiện tại, còn khoá thật vẫn nằm nguyên vẹn vĩnh viễn trong lịch sử `git log` (và các bot săn khoá tự động chỉ mất vài giây để quét thu thập)!
 
-**Phác đồ ứng cứu chuẩn DevSecOps bắt buộc thực hiện đủ 2 vế:**
+**Quy trình xử lý chuẩn DevSecOps bắt buộc thực hiện đủ 2 bước:**
 - [x] **Vế 1 — Ứng cứu tức thời (Remediation):** Lập tức vào trang quản trị dịch vụ bên thứ ba **Thu hồi & Xoay vòng (==Revoke / Rotate==)** khoá bị lộ để biến chuỗi trong lịch sử Git thành vô giá trị; đồng thời cập nhật YAML sang `${{ secrets.STRIPE_API_KEY }}`.
 - [x] **Vế 2 — Dựng chốt chặn phòng ngừa tái phát (Preventive Gate):** Bổ sung bước quét lịch sử commit bằng **Gitleaks** đi kèm ==`fetch-depth: 0`== trên `actions/checkout@v4` ngay đầu pipeline — giúp bắt gọn cả trường hợp ai đó lỡ commit lộ khoá ở commit thứ #1 rồi xoá đi ở commit thứ #2 trong cùng một PR!
 

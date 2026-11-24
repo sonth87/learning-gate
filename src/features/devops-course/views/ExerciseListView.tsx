@@ -85,12 +85,12 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
         <table className="w-full text-sm">
           <thead className="bg-slate-900 text-left text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-3 py-2.5">Mã</th>
-              <th className="px-3 py-2.5">Bài thực hành</th>
+              <th className="px-2 py-2.5 sm:px-3">Mã</th>
+              <th className="px-2 py-2.5 sm:px-3">Bài thực hành</th>
               <th className="hidden px-3 py-2.5 sm:table-cell">Loại</th>
-              <th className="px-3 py-2.5">Độ khó</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">Độ khó</th>
               <th className="hidden px-3 py-2.5 md:table-cell">Chủ đề</th>
-              <th className="px-3 py-2.5">Trạng thái</th>
+              <th className="px-2 py-2.5 sm:px-3">Trạng thái</th>
             </tr>
           </thead>
           <tbody>
@@ -102,17 +102,17 @@ export const ExerciseListView: React.FC<{ moduleId?: string; status?: ExerciseSt
                   onClick={() => go({ name: 'exercise', code: e.code })}
                   className="cursor-pointer border-t border-slate-800/70 hover:bg-slate-800/50"
                 >
-                  <td className={cn('px-3 py-2.5 font-mono font-bold', codeTone)}>{e.code}</td>
-                  <td className="px-3 py-2.5 text-slate-100">{e.title}</td>
+                  <td className={cn('px-2 py-2.5 font-mono font-bold whitespace-nowrap sm:px-3', codeTone)}>{e.code}</td>
+                  <td className="px-2 py-2.5 [overflow-wrap:anywhere] text-slate-100 sm:px-3">{e.title}</td>
                   <td className="hidden px-3 py-2.5 font-mono text-xs text-slate-400 sm:table-cell">
                     {KIND_SHORT[e.kind] ?? e.kind}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="hidden px-3 py-2.5 sm:table-cell">
                     <Stars n={e.difficulty} />
                   </td>
                   <td className="hidden px-3 py-2.5 text-xs text-slate-500 md:table-cell">{e.tags.slice(0, 3).join(', ')}</td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
+                  <td className="px-2 py-2.5 sm:px-3">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <Pill
                         tone={
                           st === 'passed'

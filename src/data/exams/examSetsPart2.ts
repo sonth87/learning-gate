@@ -158,7 +158,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
         ],
         correctOptionId: 'opt-a',
         overallExplanation:
-          'Nếu hai module thực sự cần gọi hàm của nhau lúc runtime (chứ không chỉ Type Hints), đó là dấu hiệu kiến trúc bị kết dính (Tight Coupling) — hãy tách phần logic chung sang module thứ 3; còn nếu chỉ cần cho Type Hints thì `if TYPE_CHECKING:` là vũ khí chuẩn mực nhất.',
+          'Nếu hai module thực sự cần gọi hàm của nhau lúc runtime (chứ không chỉ Type Hints), đó là dấu hiệu kiến trúc bị kết dính (Tight Coupling) — hãy tách phần logic chung sang module thứ 3; còn nếu chỉ cần cho Type Hints thì `if TYPE_CHECKING:` là giải pháp chuẩn mực nhất.',
         relatedTermIds: ['kw-import', 'concept-type-hints'],
       },
       {
@@ -456,7 +456,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
             id: 'opt-b',
             text: 'Khai báo `async def` luôn luôn tự động chạy đa luồng (multi-threading) cho mọi lệnh bên trong nó',
             whyRightOrWrong:
-              'Sai lầm chí mạng! `async def` chạy ngay trên 1 luồng duy nhất của Event Loop. Nếu bạn gọi hàm blocking trong `async def`, toàn bộ worker đó bị treo đứng!',
+              'Sai lầm nghiêm trọng! `async def` chạy ngay trên 1 luồng duy nhất của Event Loop. Nếu bạn gọi hàm blocking trong `async def`, toàn bộ worker đó bị treo đứng!',
           },
           {
             id: 'opt-c',
@@ -696,7 +696,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
             id: 'opt-d',
             text: 'Nên tắt hết Eager Loading và tự viết vòng lặp `for` chạy câu lệnh `SELECT` bên trong vòng lặp',
             whyRightOrWrong:
-              'Sai! Viết câu lệnh `SELECT` bên trong vòng lặp `for` chính là định nghĩa của thảm họa hiệu năng **N+1 Query**!',
+              'Sai! Viết câu lệnh `SELECT` bên trong vòng lặp `for` chính là định nghĩa của sự cố hiệu năng **N+1 Query**!',
           },
         ],
         correctOptionId: 'opt-a',
@@ -858,9 +858,9 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
   },
   {
     id: 'exam-concurrency-gil',
-    title: 'Đề 7: Giải phẫu GIL, AsyncIO Event Loop, Multiprocessing & Celery (Giai đoạn 5)',
+    title: 'Đề 7: Cơ chế GIL, AsyncIO Event Loop, Multiprocessing & Celery (Giai đoạn 5)',
     description:
-      'Chinh phục bài toán khó nhất của Python cấp độ Master: Giải phẫu Global Interpreter Lock (GIL), Bẫy chặn Event Loop, `TaskGroup` vs `gather`, `Semaphore`, Race Condition qua điểm `await`, `ProcessPoolExecutor`, Celery Idempotency và Python 3.13 Free-Threaded (PEP 703).',
+      'Chinh phục bài toán khó nhất của Python cấp độ Master: Cơ chế Global Interpreter Lock (GIL), Bẫy chặn Event Loop, `TaskGroup` vs `gather`, `Semaphore`, Race Condition qua điểm `await`, `ProcessPoolExecutor`, Celery Idempotency và Python 3.13 Free-Threaded (PEP 703).',
     targetLevel: 'master',
     targetStage: 'stage-5',
     durationMinutes: 25,
@@ -1100,7 +1100,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
         level: 'master',
         question:
           'Khi một Coroutine bị hủy giữa chừng (do hết thời gian chờ `asyncio.timeout(5.0)` / `asyncio.wait_for()` hoặc do client ngắt kết nối), điều gì xảy ra bên trong Coroutine đó và tại sao phải cẩn thận khi viết `except Exception:`?',
-        codeSnippet: `async def worker():\n    try:\n        await long_io_operation()\n    except asyncio.CancelledError:\n        await cleanup_resources()\n        raise  # Tại sao dòng raise này lại quan trọng sống còn?`,
+        codeSnippet: `async def worker():\n    try:\n        await long_io_operation()\n    except asyncio.CancelledError:\n        await cleanup_resources()\n        raise  # Tại sao dòng raise này lại rất quan trọng?`,
         options: [
           {
             id: 'opt-a',
@@ -1576,7 +1576,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
             id: 'opt-b',
             text: 'Nên gọi `create_async_engine(DATABASE_URL)` bên trong hàm xử lý của từng HTTP request để đảm bảo kết nối mới nhất',
             whyRightOrWrong:
-              'Sai lầm chí mạng! `AsyncEngine` chứa toàn bộ Connection Pool của Database nên chỉ được khởi tạo ĐÚNG 1 LẦN cho toàn bộ vòng đời ứng dụng (và gọi `await engine.dispose()` ở phần sau `yield` của `lifespan`).',
+              'Sai lầm nghiêm trọng! `AsyncEngine` chứa toàn bộ Connection Pool của Database nên chỉ được khởi tạo ĐÚNG 1 LẦN cho toàn bộ vòng đời ứng dụng (và gọi `await engine.dispose()` ở phần sau `yield` của `lifespan`).',
           },
           {
             id: 'opt-c',
@@ -1682,7 +1682,7 @@ export const EXAM_SETS_PART_2: ExamSet[] = [
             id: 'opt-a',
             text: 'Toán tử `a == b` dừng ngay ở ký tự khác nhau đầu tiên (Short-circuit evaluation), cho phép hacker đo độ trễ phản hồi (Timing Attack) để đoán dần từng ký tự của mã bí mật; còn `secrets.compare_digest(a, b)` so sánh trong **thời gian hằng số (Constant-Time)**! Và với SQL thô, tuyệt đối cấm dùng f-string `text(f"... {user_input}")` mà phải dùng **Bound Parameters** (`:email` kèm truyền tham số tách biệt) để Database xử lý `user_input` thuần túy như dữ liệu chứ không bao giờ thực thi như lệnh SQL!',
             whyRightOrWrong:
-              'Chính xác tuyệt đối! Đây là hai chuẩn mực bảo mật OWASP sống còn mà mọi kỹ sư Backend Python cấp độ Pro/Master đều phải tuân thủ nghiêm ngặt.',
+              'Chính xác tuyệt đối! Đây là hai chuẩn mực bảo mật OWASP cốt lõi mà mọi kỹ sư Backend Python cấp độ Pro/Master đều phải tuân thủ nghiêm ngặt.',
           },
           {
             id: 'opt-b',

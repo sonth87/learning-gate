@@ -1,7 +1,7 @@
 [
   {
     "id": "R10-FC1",
-    "front": "Phân biệt nhanh 3 thảm hoạ: Cache Stampede, Cache Penetration và Cache Avalanche?",
+    "front": "Phân biệt nhanh 3 sự cố nghiêm trọng: Cache Stampede, Cache Penetration và Cache Avalanche?",
     "back": "- **Stampede:** 1 Hot Key vừa hết hạn -> vạn luồng đâm sầm vào DB cùng lúc.\n- **Penetration:** Truy vấn ID không tồn tại ở cả Redis lẫn DB -> xuyên thủng 100%.\n- **Avalanche:** Hàng vạn khoá hết hạn cùng một giây (hoặc sập cả nút Redis)."
   },
   {

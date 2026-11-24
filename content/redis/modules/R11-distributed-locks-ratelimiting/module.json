@@ -31,7 +31,7 @@
       "targetId": "dist-lock-lua"
     },
     {
-      "label": "Xử lý Sự cố: Thảm hoạ Xoá nhầm Khoá (Unsafe DEL)",
+      "label": "Xử lý Sự cố: Lỗi Xoá nhầm Khoá (Unsafe DEL)",
       "kind": "incident",
       "targetId": "inc-unsafe-lock-del"
     }

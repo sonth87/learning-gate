@@ -214,7 +214,7 @@ export const RedisIncidentWarRoom: React.FC = () => {
               Chọn hành động khắc phục trên Production:
             </h3>
             <p className="text-xs text-slate-400">
-              Cẩn trọng: một số phương án "chữa cháy cảm tính" sẽ gây mất dữ liệu, Deadlock hoặc làm nổ OOM nghiêm trọng hơn!
+              Cẩn trọng: một số phương án xử lý tạm thời thiếu kiểm tra sẽ gây mất dữ liệu, Deadlock hoặc làm lỗi OOM nghiêm trọng hơn!
             </p>
           </div>
 

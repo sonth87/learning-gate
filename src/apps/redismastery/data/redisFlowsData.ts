@@ -57,7 +57,7 @@ export const REDIS_FLOW_SCENARIOS: RedisFlowScenario[] = [
         latencyBadge: 'Pipelined: ~0.6 ms (Nhanh gấp ~40x)',
         commandSnippet: '# Cảnh báo: một lệnh O(N) như KEYS * (80ms)\n# sẽ chặn đứng toàn bộ hàng đợi phía sau trên Main Loop!',
         explanation:
-          'Vì chỉ có duy nhất 1 luồng chạm vào cấu trúc dữ liệu RAM, Redis không tốn CPU cho Mutex Lock hay Context Switch. Hệ quả sống còn: tuyệt đối không chạy lệnh `O(N)` lớn trên production!',
+          'Vì chỉ có duy nhất 1 luồng chạm vào cấu trúc dữ liệu RAM, Redis không tốn CPU cho Mutex Lock hay Context Switch. Nguyên tắc quan trọng: tuyệt đối không chạy lệnh `O(N)` lớn trên production!',
       },
     ],
   },
@@ -123,7 +123,7 @@ export const REDIS_FLOW_SCENARIOS: RedisFlowScenario[] = [
   },
   {
     id: 'dist-lock-lua',
-    title: 'Distributed Lock: SET NX PX & Giải phẫu Lỗi Xóa Nhầm Khoá',
+    title: 'Distributed Lock: SET NX PX & Phân tích Lỗi Xóa Nhầm Khoá',
     badge: 'R07 · R11',
     moduleRef: 'R11',
     summary:
@@ -158,7 +158,7 @@ export const REDIS_FLOW_SCENARIOS: RedisFlowScenario[] = [
           'Sau 5,000ms, lease của Worker A hết hạn tự động để tránh treo hệ thống. Worker B bước vào hợp lệ và ghi đè giá trị khoá thành `"uuid-B"`.',
       },
       {
-        title: 'Bước 3 — Nếu Worker A tỉnh dậy và gọi DEL trần: THẢM HOẠ XÓA KHOÁ CỦA B!',
+        title: 'Bước 3 — Nếu Worker A tỉnh dậy và gọi DEL trần: SỰ CỐ XÓA NHẦM KHOÁ CỦA B!',
         activeNodes: ['workerA', 'lockkey'],
         packetFrom: 'workerA',
         packetTo: 'lockkey',

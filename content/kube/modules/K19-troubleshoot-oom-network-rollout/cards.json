@@ -21,7 +21,7 @@
   },
   {
     "id": "K19-C5",
-    "front": "Nguyên tắc SRE \"Mitigate first, investigate later\" (Cầm máu trước, điều tra sau) áp dụng thế nào trên K8s?",
+    "front": "Nguyên tắc SRE \"Mitigate first, investigate later\" (Khôi phục dịch vụ trước, điều tra nguyên nhân sau) áp dụng thế nào trên K8s?",
     "back": "Khi bản deploy mới gây lỗi trên Production, lập tức `rollout undo` về bản tốt trong vài giây để khôi phục dịch vụ cho khách hàng, sau đó mới thu thập log sửa lỗi ở môi trường phát triển."
   },
   {

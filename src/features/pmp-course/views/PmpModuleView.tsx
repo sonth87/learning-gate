@@ -76,7 +76,7 @@ function getPmpModuleBrand(level: number) {
     };
   }
   return {
-    label: 'PHẪU THUẬT ĐỀ TÌNH HUỐNG & CHIẾN LƯỢC THI',
+    label: 'PHÂN TÍCH ĐỀ TÌNH HUỐNG & CHIẾN LƯỢC THI',
     badgeCls: 'border-violet-500/45 bg-violet-500/15 text-violet-300',
     heroGrad: 'from-violet-500/12 via-slate-900/90 to-slate-900/90 border-violet-500/30',
     icon: <Target className="h-3.5 w-3.5" aria-hidden="true" />,

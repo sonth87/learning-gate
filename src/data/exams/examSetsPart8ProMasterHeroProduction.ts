@@ -98,7 +98,7 @@ async def route_b():
       'FastAPI cấm sử dụng từ khóa `def` thông thường cho route handler.',
     ],
     [
-      'Chính xác! Đây là quy tắc sống còn khi viết FastAPI: nếu bên trong hàm bạn dùng thư viện bất đồng bộ (`await httpx`, `await async_session.execute`), hãy dùng `async def`; nhưng nếu bạn bắt buộc phải gọi SDK/DB driver đồng bộ (blocking I/O), hãy khai báo route bằng `def` thường để FastAPI tự động đưa nó vào worker threadpool!',
+      'Chính xác! Đây là nguyên tắc quan trọng khi viết FastAPI: nếu bên trong hàm bạn dùng thư viện bất đồng bộ (`await httpx`, `await async_session.execute`), hãy dùng `async def`; nhưng nếu bạn bắt buộc phải gọi SDK/DB driver đồng bộ (blocking I/O), hãy khai báo route bằng `def` thường để FastAPI tự động đưa nó vào worker threadpool!',
       'Sai. FastAPI không tự tạo tiến trình con cho từng request.',
       'Sai. Dùng thư viện đồng bộ chặn luồng bên trong `async def` là lỗi nghiêm trọng nhất làm nghẽn toàn bộ Event Loop của worker Uvicorn.',
       'Sai. FastAPI hỗ trợ đầy đủ cả `def` và `async def`.',
@@ -312,7 +312,7 @@ users = user_list_adapter.validate_json(raw_json_bytes)`,
     [
       'Chính xác! `TypeAdapter` là một trong những cải tiến sáng giá nhất của Pydantic v2 (thay thế cho `parse_obj_as` chậm chạp ở v1): nó biên dịch schema Rust cho bất kỳ kiểu Python nào (`list[T]`, `dict[K, V]`, `TypedDict`, `Annotated`, `dataclass`). Lưu ý: hãy khởi tạo `TypeAdapter` 1 lần ở cấp module để tái sử dụng bộ validator đã biên dịch thay vì khởi tạo lại trong mỗi vòng lặp!',
       'Sai. `TypeAdapter` cho phép giữ nguyên `TypedDict` hoặc `dataclass` thuần mà vẫn có validation tốc độ cao.',
-      'Sai. Dùng `eval()` trên dữ liệu đầu vào là lỗ hổng bảo mật Remote Code Execution (RCE) chí mạng!',
+      'Sai. Dùng `eval()` trên dữ liệu đầu vào là lỗ hổng bảo mật Remote Code Execution (RCE) nghiêm trọng!',
       'Sai. `TypeAdapter(list[User])` hoặc `RootModel[list[User]]` hỗ trợ root-level list hoàn hảo.',
     ],
     0,
@@ -563,7 +563,7 @@ stmt_job = (
       'Sai. `RENAME COLUMN` đổi tên ngay lập tức trong catalog của PostgreSQL làm gãy mọi truy vấn đang gọi tên cũ.',
     ],
     0,
-    'Một lưu ý sống còn khác với PostgreSQL + Alembic: khi tạo Index trên bảng lớn đang chạy Production, hãy dùng **`op.create_index(..., postgresql_concurrently=True)`** bên trong khối `with op.get_context().autocommit_block():` để Postgres không khóa bảng chặn các lệnh `INSERT/UPDATE`!',
+    'Một lưu ý quan trọng khác với PostgreSQL + Alembic: khi tạo Index trên bảng lớn đang chạy Production, hãy dùng **`op.create_index(..., postgresql_concurrently=True)`** bên trong khối `with op.get_context().autocommit_block():` để Postgres không khóa bảng chặn các lệnh `INSERT/UPDATE`!',
     'Expand & Contract giống như xây cầu mới thay cầu cũ: bạn phải xây xong cầu mới (`Expand`) bên cạnh cầu cũ, hướng dẫn toàn bộ xe cộ chuyển sang đi cầu mới (`Switch`), đợi chiếc xe cuối cùng rời khỏi cầu cũ rồi mới tháo dỡ cầu cũ (`Contract`) — chứ không ai đập sập cầu cũ khi xe vẫn đang chạy trên đó!',
     ['alembic', 'zero-downtime-migration', 'expand-and-contract']
   ),
@@ -1156,7 +1156,7 @@ HTTP_LATENCY = Histogram(
       'Sai. Trung bình cộng các phân vị p99 là lỗi toán học kinh điển trong giám sát hệ thống.',
     ],
     0,
-    'Cảnh báo sống còn khi dùng Prometheus labels (`labelnames`): tuyệt đối **KHÔNG bao giờ đưa giá trị có độ phân tán vô hạn (High Cardinality)** như `user_id`, `email`, `request_id`, hay URL chưa chuẩn hóa (`/users/12345` thay vì template `/users/{id}`) vào làm label của Prometheus — vì mỗi tổ hợp label mới tạo ra một chuỗi thời gian (time series) riêng, làm nổ tung bộ nhớ RAM của Prometheus Server!',
+    'Lưu ý quan trọng khi dùng Prometheus labels (`labelnames`): tuyệt đối **KHÔNG bao giờ đưa giá trị có độ phân tán vô hạn (High Cardinality)** như `user_id`, `email`, `request_id`, hay URL chưa chuẩn hóa (`/users/12345` thay vì template `/users/{id}`) vào làm label của Prometheus — vì mỗi tổ hợp label mới tạo ra một chuỗi thời gian (time series) riêng, làm nổ tung bộ nhớ RAM của Prometheus Server!',
     'Không thể lấy điểm thi đứng thứ 99% của lớp A (10 học sinh) cộng trung bình với lớp B (1.000 học sinh) được; nhưng nếu mỗi lớp gửi bảng thống kê số lượng học sinh theo từng thang điểm (`Histogram buckets: <=5, <=7, <=9, <=10`), Sở Giáo dục chỉ cần cộng dồn các cột thang điểm lại là tính được ngay top 1% (`p99`) của toàn thành phố!',
     ['prometheus-histogram', 'observability', 'high-cardinality']
   ),
@@ -1366,7 +1366,7 @@ settings = Settings()  # Chuyện gì xảy ra ngay khi khởi động nếu thi
     'pro',
     CAT_PRO_2,
     TAGS_PRO_2,
-    'Giả sử trong một endpoint FastAPI bạn có viết câu truy vấn SQL qua f-string: `await session.execute(text(f"SELECT * FROM users WHERE username = \'{username}\'"))`. Tại saoแม้ đã dùng SQLAlchemy nhưng đoạn code này vẫn dính lỗ hổng **SQL Injection** chí mạng, và cách truyền tham số ràng buộc (**Bound Parameters**) chuẩn trong `text()` là gì?',
+    'Giả sử trong một endpoint FastAPI bạn có viết câu truy vấn SQL qua f-string: `await session.execute(text(f"SELECT * FROM users WHERE username = \'{username}\'"))`. Tại sao mặc dù đã dùng SQLAlchemy nhưng đoạn code này vẫn dính lỗ hổng **SQL Injection** nghiêm trọng, và cách truyền tham số ràng buộc (**Bound Parameters**) chuẩn trong `text()` là gì?',
     `# NGUY HIỂM (SQL Injection qua f-string):
 # stmt = text(f"SELECT * FROM users WHERE username = '{username}'")
 
@@ -1761,7 +1761,7 @@ async def chat_stream(req: ChatRequest):
     'master',
     CAT_MASTER_3,
     TAGS_MASTER_3,
-    'Khi một tiến trình Python trên môi trường **Production** đột nhiên bị ngốn 100% CPU hoặc bị treo không rõ nguyên nhân, tại sao công cụ **`py-spy`** (Sampling Profiler viết bằng Rust) lại là vũ khí cứu hộ số 1 thay vì dùng `cProfile` dựng sẵn?',
+    'Khi một tiến trình Python trên môi trường **Production** đột nhiên bị ngốn 100% CPU hoặc bị treo không rõ nguyên nhân, tại sao công cụ **`py-spy`** (Sampling Profiler viết bằng Rust) lại là công cụ chẩn đoán hiệu quả nhất thay vì dùng `cProfile` dựng sẵn?',
     `# Gắn trực tiếp vào tiến trình đang chạy có PID = 12345 mà không cần restart:
 py-spy top --pid 12345
 py-spy record -o profile.svg --pid 12345 --duration 30`,
@@ -1985,7 +1985,7 @@ raise AgentMaxStepsExceededError("Agent vượt quá giới hạn 8 bước suy 
       'Không bao giờ cần giới hạn `max_steps` vì LLM luôn dừng lại đúng lúc 100%.',
     ],
     [
-      'Chính xác! Trong kỹ thuật AI sản xuất (Production AI Engineering), một Agent không có chốt chặn `max_steps` (thường từ 5–10 bước), `timeout` tổng thể, và `max_budget_tokens` là một thảm họa tài chính và vận hành (**Denial of Wallet / Runaway Agent**). Ngoài `max_steps`, bạn còn nên phát hiện **vòng lặp trùng lặp (Cycle Detection)**: nếu Agent gọi cùng một tên Tool với cùng bộ tham số y hệt lần trước liên tiếp 2 lần, hãy ngắt sớm hoặc tiêm cảnh báo vào Observation ngay!',
+      'Chính xác! Trong kỹ thuật AI sản xuất (Production AI Engineering), một Agent không có chốt chặn `max_steps` (thường từ 5–10 bước), `timeout` tổng thể, và `max_budget_tokens` có thể gây ra sự cố tài chính và vận hành nghiêm trọng (**Denial of Wallet / Runaway Agent**). Ngoài `max_steps`, bạn còn nên phát hiện **vòng lặp trùng lặp (Cycle Detection)**: nếu Agent gọi cùng một tên Tool với cùng bộ tham số y hệt lần trước liên tiếp 2 lần, hãy ngắt sớm hoặc tiêm cảnh báo vào Observation ngay!',
       'Sai. Vòng lặp Python không có giới hạn đó.',
       'Sai. LLM API cứ nhận request là tính tiền và trả lời tiếp.',
       'Sai. Runaway loop khi tool报错 hoặc thiếu dữ liệu là một trong những lỗi phổ biến nhất của AI Agents thực tế.',

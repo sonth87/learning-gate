@@ -60,7 +60,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           </span>
         </div>
         <h1 className="font-mono text-base sm:text-2xl font-extrabold text-white">
-          Giải Mã Hàng Chục Thuật Ngữ Qua Lăng Kính Thực Tế & Cheatsheet Thực
+          Tra Cứu Nhanh Thuật Ngữ Qua Lăng Kính Thực Tế & Cheatsheet Thực
           Chiến
         </h1>
       </div>
@@ -156,7 +156,7 @@ export const GlossaryAndCheatsheetHub: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-400 shrink-0" />
             <h2 className="text-sm sm:text-lg font-extrabold text-white">
-              Từ Điển Giải Mã Thuật Ngữ Qua Lăng Kính Liên Tưởng Hóa (
+              Từ Điển Thuật Ngữ & Liên Hệ Thực Tế (
               {filteredGlossary.length} thuật ngữ)
             </h2>
           </div>

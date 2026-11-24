@@ -420,7 +420,7 @@ deploy_prod_deployment:
     keyObjectives: [
       'Hiểu bản chất kỹ thuật, cơ chế vận hành và nguyên tắc thiết kế thực tế của từng thành phần trong 6 thực thể chuẩn.',
       'Nắm rõ sự cô lập giữa các Job (Ephemeral Environment — không chia sẻ ổ cứng) so với các Step trong cùng một Job (chia sẻ RAM, CPU và $WORKSPACE).',
-      'Nắm nguyên tắc bảo mật sống còn đối với Self-hosted Runner khi xử lý Pull Request từ kho Fork lạ.',
+      'Nắm nguyên tắc bảo mật cốt lõi đối với Self-hosted Runner khi xử lý Pull Request từ kho Fork lạ.',
     ],
     svgBlueprint: 'svg-six-core-entities',
     theorySections: [
@@ -437,7 +437,7 @@ deploy_prod_deployment:
         ],
       },
       {
-        heading: '2. Điểm khác biệt sống còn giữa Job và Step (Tại sao file vừa build ở Job A lại biến mất ở Job B?)',
+        heading: '2. Điểm khác biệt quan trọng giữa Job và Step (Tại sao file vừa build ở Job A lại biến mất ở Job B?)',
         body: 'Đây là bẫy phổ biến nhất với người mới: Các Step nằm trong cùng 1 Job thì chạy tuần tự trên cùng một Container nên Step 2 đọc được thư mục node_modules hoặc dist/ do Step 1 tạo ra. Ngược lại, Job 1 và Job 2 chạy trên 2 máy ảo/Container hoàn toàn độc lập (Ephemeral Environment) và bị xóa sạch ngay khi Job kết thúc. Muốn truyền dữ liệu giữa các Job, bắt buộc phải dùng Cache hoặc Artifact.',
       },
     ],
@@ -804,7 +804,7 @@ export async function processCheckout(order: OrderInput, user: UserContext) {
     estimatedMinutes: 30,
     pdfRef: 'Mục 1.4 — Trang 3, 4 & 5 / 21',
     summary:
-      'Mổ xẻ chi tiết tệp cấu hình GitHub Actions hoàn chỉnh (.github/workflows/lean-ci-cd.yml): tự động hủy các lần chạy thừa (Concurrency), dựng Container PostgreSQL 16 & Redis 7 thật để chạy Integration Test, đóng gói Artifact và tự động triển khai Staging kèm Smoke Test.',
+      'Phân tích chi tiết tệp cấu hình GitHub Actions hoàn chỉnh (.github/workflows/lean-ci-cd.yml): tự động hủy các lần chạy thừa (Concurrency), dựng Container PostgreSQL 16 & Redis 7 thật để chạy Integration Test, đóng gói Artifact và tự động triển khai Staging kèm Smoke Test.',
     keyObjectives: [
       'Hiểu cơ chế khối concurrency và tại sao biểu thức cancel-in-progress: ${{ github.ref != \'refs/heads/main\' }} bảo vệ nhánh main.',
       'Làm chủ kỹ thuật khai báo Service Containers (postgres:16-alpine và redis:7-alpine) kèm cờ --health-cmd pg_isready.',

@@ -53,7 +53,7 @@ const KIND_BADGE: Record<string, string> = {
   cli: 'Terminal CLI',
   'redis-cli': 'Redis 8 VM',
   'redis-conf': 'redis.conf AST',
-  troubleshoot: 'Khám bệnh & Vá lỗi',
+  troubleshoot: 'Chẩn đoán & Khắc phục lỗi',
 };
 
 interface DomainBrand {

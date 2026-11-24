@@ -83,7 +83,7 @@ export const CleanArchExplorer: React.FC = () => {
 
           <div className="space-y-1.5">
             <div className="text-xs font-bold text-slate-300 px-1">
-              Chọn file để mổ xẻ chi tiết từng tầng:
+              Chọn file để xem phân tích chi tiết từng tầng:
             </div>
             {CLEAN_ARCH_FILES.map((file) => {
               const active = file.path === activeFile.path;

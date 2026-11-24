@@ -16,7 +16,7 @@
   {
     "id": "R05-Q2",
     "type": "mc",
-    "q": "Đặc tính xác suất sống còn nào của **Bloom Filter** (`BF.EXISTS`) giúp nó trở thành lá chắn hoàn hảo chống tấn công **Cache Penetration**?",
+    "q": "Đặc tính xác suất quan trọng nào của **Bloom Filter** (`BF.EXISTS`) giúp nó trở thành lớp lọc hiệu quả chống tấn công **Cache Penetration**?",
     "code": "",
     "choices": [
       "Không bao giờ có Dương tính giả (False Positive), nhưng đôi khi có Âm tính giả (False Negative)",

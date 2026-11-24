@@ -188,7 +188,7 @@ COPY --from=builder --chown=node:node /usr/src/app/package.json ./`,
     level: 'basic',
     category: 'dockerfile',
     title:
-      'Lab 02: Thiết kế .dockerignore Chặn Rác/Mật Khẩu & Cấu hình HEALTHCHECK Tự Khám Bệnh',
+      'Lab 02: Thiết kế .dockerignore Chặn Rác/Mật Khẩu & Cấu hình HEALTHCHECK Tự Kiểm Tra Sức Khỏe',
     scenario:
       'Mỗi khi lập trình viên gõ lệnh `docker build .`, Docker mất 45 giây chỉ để gửi 600MB thư mục `node_modules` và `.git` vào Build Context, thậm chí làm lộ cả file mật khẩu `.env` vào trong Image! Ngoài ra, khi ứng dụng bị treo cứng, `docker ps` vẫn báo `Up 2 hours` chứ không biết đường cảnh báo. Hãy viết kết hợp danh sách chặn `.dockerignore` và chỉ thị `HEALTHCHECK` trong Dockerfile.',
     requirements: [
@@ -250,7 +250,7 @@ COPY --chown=node:node ./node_modules ./node_modules
 
 EXPOSE 3000
 
-# Bác sĩ nội trú kiểm tra sức khỏe mỗi 30 giây, quá 3 lần thất bại sẽ đánh dấu unhealthy
+# Kiểm tra sức khỏe định kỳ mỗi 30 giây, quá 3 lần thất bại sẽ đánh dấu unhealthy
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \\
   CMD wget -qO- http://localhost:3000/health/live || exit 1
 
@@ -1356,9 +1356,9 @@ spec:
     level: 'master',
     category: 'k8s-enterprise',
     title:
-      'Lab 08: Định Mức Tài Nguyên (Requests/Limits), Bác Sĩ Trực Probes & Tự Động Co Giãn HPA',
+      'Lab 08: Định Mức Tài Nguyên (Requests/Limits), Health Probes & Tự Động Co Giãn HPA',
     scenario:
-      'Chuẩn bị cho chiến dịch khuyến mãi 0h00: Hãy cấu hình hợp đồng điện nước (requests/limits), bài kiểm tra sẵn sàng tiếp khách (readinessProbe), bắt mạch sống chết (livenessProbe) và HPA tự nhân bản từ 2 lên 20 Pod khi CPU vượt 70%.',
+      'Chuẩn bị cho chiến dịch khuyến mãi 0h00: Hãy cấu hình hạn mức tài nguyên (requests/limits), kiểm tra sẵn sàng nhận traffic (readinessProbe), kiểm tra trạng thái sống (livenessProbe) và HPA tự nhân bản từ 2 lên 20 Pod khi CPU vượt 70%.',
     requirements: [
       'Khai báo resources.requests (cpu: "250m", memory: "256Mi") và limits (cpu: "500m", memory: "512Mi")',
       'Cấu hình readinessProbe (/health/ready) và livenessProbe (/health/live) kiểm tra cổng 3000',

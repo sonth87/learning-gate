@@ -16,7 +16,7 @@ src: "/illustrations/redis/redis-skiplist-express.jpg"
 diagram: "redis:r04"
 alt: "Cấu trúc kép của Redis Sorted Set gồm bảng băm Hash Table O(1) và danh sách nhảy nhiều tầng Skip List O(log N)"
 badge: "Cấu trúc dữ liệu · Sorted Set"
-title: "Giải Phẫu Cấu Trúc Kép Của ZSet — Hash Table O(1) + Skip List O(log N)"
+title: "Chi Tiết Cấu Trúc Kép Của ZSet — Hash Table O(1) + Skip List O(log N)"
 subtitle: "Vì sao Redis chọn Skip List kèm con trỏ span thay vì cây Đỏ-Đen (Red-Black Tree) của C++ std::map?"
 caption: "Nhấn vào sơ đồ để phóng to — theo dõi đường tìm kiếm từ tầng cao L3 xuống tầng cơ sở L0 và cách tính thứ hạng ZRANK"
 callouts:

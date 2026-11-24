@@ -998,7 +998,7 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 shrink-0">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
           <button
             onClick={() => setSimulatorMode('pipeline')}
             className={cn(
@@ -1097,7 +1097,7 @@ export const CicdLivePipelineSimulator: React.FC = () => {
             {/* Left Control & Chaos Injection Panel (4 cols) */}
             <div
               className={cn(
-                'lg:col-span-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4 sm:space-y-5',
+                'min-w-0 lg:col-span-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4 sm:space-y-5',
                 mobileSimSection !== 'all' &&
                   mobileSimSection !== 'config-chaos' &&
                   'hidden lg:block'
@@ -1251,7 +1251,7 @@ export const CicdLivePipelineSimulator: React.FC = () => {
           </div>
 
           {/* Right Live DAG Graph + Synchronized YAML Code Inspector + Console Logs (8 cols) */}
-          <div className="lg:col-span-8 space-y-5">
+          <div className="min-w-0 lg:col-span-8 space-y-5">
             {/* Concurrency YAML Highlight Banner when PR Burst is triggered */}
             {showConcurrencyBanner && (
               <div className="ide-dark-surface rounded-2xl border border-amber-500/50 bg-amber-950/20 p-4 space-y-2">
@@ -1409,7 +1409,7 @@ concurrency:
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 p-1">
+                <div className="flex max-w-full flex-wrap items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 p-1">
                   <button
                     onClick={() => setCodeViewTab('step-xray')}
                     className={cn(
@@ -1440,7 +1440,7 @@ concurrency:
               {codeViewTab === 'step-xray' ? (
                 <div className="grid gap-4 lg:grid-cols-12 items-start">
                   {/* YAML Code Snippet of the Active Job */}
-                  <div className="lg:col-span-7 space-y-2.5">
+                  <div className="min-w-0 lg:col-span-7 space-y-2.5">
                     <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
                       <span>📄 {activeJob.codeFile}</span>
                       <span
@@ -1480,10 +1480,10 @@ concurrency:
                   </div>
 
                   {/* Line-by-Line Architecture Breakdown */}
-                  <div className="lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
+                  <div className="min-w-0 lg:col-span-5 rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2.5">
                     <div className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400">
                       <Sparkles className="h-4 w-4" />
-                      <span>Giải phẫu Ý nghĩa Từng Dòng Cấu hình:</span>
+                      <span>Giải thích Ý nghĩa Từng Dòng Cấu hình:</span>
                     </div>
                     <ul className="space-y-2 text-xs text-slate-200">
                       {activeJob.codeBreakdown.map((item, idx) => (
@@ -1590,7 +1590,7 @@ concurrency:
       {selectedSimulatorMode === 'traffic' && (
         <div className="grid gap-6 lg:grid-cols-12 items-start">
           {/* Left Controls: Strategy & 3 Zero-Downtime Pieces (5 cols) */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-5">
+          <div className="min-w-0 lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-5">
             <div className="space-y-2">
               <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                 1. Chọn Chiến lược Điều phối Lưu lượng (Mục 3.1)
@@ -1785,7 +1785,7 @@ concurrency:
           </div>
 
           {/* Right Live Telemetry + Reactive 4-Tab Code Inspector (7 cols) */}
-          <div className="lg:col-span-7 space-y-5">
+          <div className="min-w-0 lg:col-span-7 space-y-5">
             {/* Live Telemetry Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-3.5">

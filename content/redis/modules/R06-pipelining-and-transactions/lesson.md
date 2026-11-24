@@ -12,7 +12,7 @@ kind: illustration
 diagram: redis:r06
 alt: Đối chiếu trực quan giữa gửi lệnh tuần tự tốn N vòng RTT, gom chuyến TCP Pipelining 1 RTT và hàng đợi nguyên tử MULTI/EXEC/WATCH của Redis
 badge: Tối ưu thông lượng & Giao dịch · Level 2
-title: Giải Phẫu TCP Pipelining (1 RTT) vs Hàng Đợi Cô Lập MULTI / EXEC / WATCH
+title: Cơ Chế TCP Pipelining (1 RTT) vs Hàng Đợi Cô Lập MULTI / EXEC / WATCH
 subtitle: Hiểu rõ khi nào chỉ cần gom gói mạng, khi nào cần cô lập tuần tự, và vì sao lỗi kiểu dữ liệu giữa chừng không được Rollback
 caption: Nhấn vào sơ đồ để phóng to — quan sát đường đi của gói tin trong Pipeline so với hàng đợi QUEUED của MULTI/EXEC
 callouts:

@@ -4,7 +4,7 @@
   "level": 5,
   "order": 1,
   "title": "Bảo mật Redis Zero-Trust: Cô lập Mạng, TLS/mTLS & Phân quyền ACL",
-  "summary": "Khoá chặt bề mặt tấn công Redis từ tầng mạng tới tầng lệnh: giải phẫu kịch bản chiếm quyền RCE khi phơi cổng 6379 ra Internet, thiết lập bind/protected-mode, mã hoá TLS/mTLS (`port 0`), phân quyền chi tiết với Redis ACL (`~prefix:*`, `-@dangerous`) và cô lập bằng Kubernetes NetworkPolicy.",
+  "summary": "Khoá chặt bề mặt tấn công Redis từ tầng mạng tới tầng lệnh: phân tích kịch bản chiếm quyền RCE khi phơi cổng 6379 ra Internet, thiết lập bind/protected-mode, mã hoá TLS/mTLS (`port 0`), phân quyền chi tiết với Redis ACL (`~prefix:*`, `-@dangerous`) và cô lập bằng Kubernetes NetworkPolicy.",
   "tags": [
     "security",
     "acl",

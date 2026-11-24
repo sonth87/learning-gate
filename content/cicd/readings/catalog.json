@@ -717,7 +717,7 @@
       "path": "governance/migration-drop-destructive.yml",
       "language": "yaml",
       "category": "governance",
-      "topic": "Thảm hoạ đổi tên cột trực tiếp (RENAME COLUMN) khi các Pod bản cũ v1 vẫn đang phục vụ khách",
+      "topic": "Sự cố nghiêm trọng khi đổi tên cột trực tiếp (RENAME COLUMN) lúc các Pod bản cũ v1 vẫn đang phục vụ khách",
       "level": 5,
       "difficulty": 4,
       "quality": 5,

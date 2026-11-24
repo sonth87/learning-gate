@@ -184,7 +184,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         highlightBadge: 'Quota Locked',
       },
     ],
-    interactiveTakeaway: 'Container thực chất không phải là một "máy ảo thu nhỏ", mà là một tiến trình Linux bình thường được bọc trong 3 lớp phép thuật của Kernel: Namespaces (Che mắt) + cgroups (Khóa van) + UnionFS (Xếp lớp).',
+    interactiveTakeaway: 'Container thực chất không phải là một "máy ảo thu nhỏ", mà là một tiến trình Linux bình thường được bọc trong 3 lớp cơ chế của Kernel: Namespaces (Cô lập tầm nhìn) + cgroups (Giới hạn tài nguyên) + UnionFS (Xếp lớp hệ thống tệp).',
   },
 
   'dockerfile-layer-cache': {
@@ -446,7 +446,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
   'k8s-network-traffic': {
     id: 'k8s-network-traffic',
     title: 'Luồng Đi Thực Tế Của Một Yêu Cầu Mạng: Khách hàng → Ingress → Service → Pod',
-    subtitle: 'Giải mã cách gói tin HTTPS đi từ trình duyệt qua Lễ tân tòa nhà (Ingress), Tổng đài nội bộ (Service Selector) tới đúng cổng Container',
+    subtitle: 'Phân tích cách gói tin HTTPS đi từ trình duyệt qua Lễ tân tòa nhà (Ingress), Tổng đài nội bộ (Service Selector) tới đúng cổng Container',
     pdfFigureRef: 'Hình 3.2 (Trang 9 PDF)',
     analogySummary: 'Khách hàng gõ tên miền shop.com → Quầy Lễ Tân Tòa Nhà (Ingress) kiểm tra chứng chỉ HTTPS rồi chuyển vào Số Tổng Đài Cố Định (Service Port 80) → Tổng đài dò thẻ tên (selector: app=shop-web) nối máy vào Căn hộ Pod đang mở cổng 3000.',
     nodes: [
@@ -475,7 +475,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         analogyLabel: 'Số Điện Thoại Tổng Đài Cố Định',
         category: 'network',
         color: 'sky',
-        details: 'Vì các Pod sinh tử vô thường và đổi IP liên tục khi khởi động lại, Service cung cấp một địa chỉ IP/DNS cố định. Nó dùng selector tìm tất cả các Pod đang mang thẻ tên "app: shop-web" và còn khỏe mạnh (Readiness=True).',
+        details: 'Vì các Pod có vòng đời ngắn và đổi IP liên tục khi khởi động lại, Service cung cấp một địa chỉ IP/DNS cố định. Nó dùng selector tìm tất cả các Pod đang mang thẻ tên "app: shop-web" và còn khỏe mạnh (Readiness=True).',
       },
       {
         id: 'shop-pods',
@@ -550,8 +550,8 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
       {
         id: 'probes-gate',
         label: 'Startup, Readiness & Liveness Probes',
-        sublabel: '3 bài kiểm tra y tế định kỳ (/healthz, /ready)',
-        analogyLabel: 'Đội Bác sĩ Trực Khám Sức Khỏe',
+        sublabel: '3 cơ chế kiểm tra sức khỏe định kỳ (/healthz, /ready)',
+        analogyLabel: 'Kiểm tra sức khỏe định kỳ của Pod',
         category: 'worker-node',
         color: 'emerald',
         details: 'Readiness Probe kiểm tra xem Pod v1.3 mới bật đã kết nối xong Database và sẵn sàng tiếp khách chưa. Chưa đỗ Readiness thì Service chưa gửi khách vào và Pod v1.2 cũ chưa bị tắt!',
@@ -588,7 +588,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
       },
       {
         stepNumber: 2,
-        title: 'Bác sĩ Readiness Probe khám đạt → Đưa vào Tổng đài & Tắt 1 Pod cũ',
+        title: 'Readiness Probe đạt chuẩn → Đưa vào Service & Tắt 1 Pod cũ',
         actor: 'Readiness Probe → Service → Deployment',
         commandOrEvent: 'HTTP GET /ready 200 OK → Terminate 1 Pod v1.2',
         description: 'Chỉ khi Readiness Probe báo Pod v1.3 mới đã khỏe mạnh 100%, Service mới nối dây mạng cho nó nhận khách, đồng thời K8s mới tắt 1 Pod v1.2 cũ. Lặp lại cuốn chiếu cho đến khi cả 3 Pod đều lên v1.3!',
@@ -691,16 +691,16 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
 
   'troubleshooting-flowchart': {
     id: 'troubleshooting-flowchart',
-    title: 'Phác đồ Bắt bệnh Nhanh 4 Bước Cho Mọi Sự Cố Trên Kubernetes',
-    subtitle: 'Quy trình chuẩn của chuyên gia SRE: Đi từ ngoài vào trong (Nhìn sắc diện → Đọc bệnh án Events → Xem nhật ký Logs → Kiểm tra đường dây Endpoints)',
+    title: 'Quy trình Chẩn đoán Nhanh 4 Bước Cho Mọi Sự Cố Trên Kubernetes',
+    subtitle: 'Quy trình chuẩn của chuyên gia SRE: Đi từ ngoài vào trong (Kiểm tra trạng thái → Đọc sự kiện Events → Xem nhật ký Logs → Kiểm tra đường dây Endpoints)',
     pdfFigureRef: 'Hình 5.1 (Trang 16 PDF)',
-    analogySummary: 'Khi ứng dụng lỗi, đừng đoán mò! Bắt đầu bằng lệnh kubectl get pods để nhìn cột STATUS rồi rẽ nhánh chính xác vào 1 trong 4 phác đồ điều trị.',
+    analogySummary: 'Khi ứng dụng lỗi, đừng đoán mò! Bắt đầu bằng lệnh kubectl get pods để nhìn cột STATUS rồi rẽ nhánh chính xác vào 1 trong 4 hướng xử lý.',
     nodes: [
       {
         id: 'step0-getpods',
-        label: 'BƯỚC 1: Quan sát sắc diện tổng thể',
+        label: 'BƯỚC 1: Kiểm tra trạng thái tổng thể',
         sublabel: 'kubectl get pods -n [NS] -o wide',
-        analogyLabel: 'Khám tổng quát nhìn sắc diện & số lần ngất (RESTARTS)',
+        analogyLabel: 'Kiểm tra tổng quát trạng thái (STATUS) & số lần khởi động lại (RESTARTS)',
         category: 'control-plane',
         color: 'sky',
         details: 'Xem cột STATUS đang báo trạng thái gì, cột RESTARTS có tăng liên tục không (1, 2, 5, 15...) và Pod đang nằm ở máy chủ (NODE) nào.',
@@ -750,21 +750,21 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         commandOrEvent: 'kubectl get pods -n production -o wide',
         description: 'Nhìn vào cột STATUS và RESTARTS để xác định sự cố đang nằm ở khâu Xếp lịch (Pending), Tải Image (ImagePullBackOff), Ruột ứng dụng (CrashLoopBackOff) hay Đường mạng (Running nhưng lỗi Web).',
         activeNodeIds: ['step0-getpods'],
-        highlightBadge: 'Bước 1: Nhìn Sắc Diện',
+        highlightBadge: 'Bước 1: Kiểm Tra Trạng Thái',
       },
       {
         stepNumber: 2,
-        title: 'Bước 2: Đọc hồ sơ bệnh án hệ thống (Events) với kubectl describe',
+        title: 'Bước 2: Đọc lịch sử sự kiện hệ thống (Events) với kubectl describe',
         actor: 'Kỹ sư SRE → Events Log',
         commandOrEvent: 'kubectl describe pod [TÊN_POD] -n production',
         description: 'Giải quyết triệt để các ca Pending, ImagePullBackOff, CreateContainerConfigError và phát hiện dấu vết OOMKilled (Exit Code 137) ở mục Last State.',
         activeNodeIds: ['step0-getpods', 'branch-pending', 'branch-imagepull'],
         packetPath: { from: 'step0-getpods', to: 'branch-pending', label: 'describe pod (Events)', color: '#f59e0b' },
-        highlightBadge: 'Bước 2: Đọc Bệnh Án',
+        highlightBadge: 'Bước 2: Đọc Sự Kiện',
       },
       {
         stepNumber: 3,
-        title: 'Bước 3: Đọc lời trăn trối của ứng dụng với kubectl logs --previous',
+        title: 'Bước 3: Đọc nhật ký lỗi cuối cùng của ứng dụng với kubectl logs --previous',
         actor: 'Kỹ sư SRE → Container Logs',
         commandOrEvent: 'kubectl logs [TÊN_POD] -n production --previous',
         description: 'Khi Pod bị CrashLoopBackOff, đọc nhật ký do chính code sinh ra ở lần sập ngay trước đó để thấy ngay dòng báo lỗi thiếu biến DATABASE_URL hay lỗi cú pháp.',
@@ -783,7 +783,7 @@ export const ANIMATED_FLOWS_DATA: Record<AnimatedFlowType, AnimatedFlowDiagram> 
         highlightBadge: 'Bước 4: Thông Mạng',
       },
     ],
-    interactiveTakeaway: 'Nắm vững phác đồ 4 bước này giúp bạn khoanh vùng chính xác 99% sự cố Kubernetes trên thực tế chỉ trong vòng dưới 2 phút mà không bao giờ phải đoán mò!',
+    interactiveTakeaway: 'Nắm vững quy trình 4 bước này giúp bạn khoanh vùng chính xác 99% sự cố Kubernetes trên thực tế chỉ trong vòng dưới 2 phút mà không bao giờ phải đoán mò!',
   },
 };
 

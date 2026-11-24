@@ -241,7 +241,7 @@ export const KEYWORDS_GLOSSARY: GlossaryTerm[] = [
     detailedExplanation:
       'Cú pháp `except SpecificError as err:`. Có thể có nhiều khối `except` cho từng loại lỗi từ cụ thể đến khái quát.',
     analogy:
-      'Đội cứu hộ chuyên trách: nếu hỏa hoạn thì đội cứu hỏa vào xử lý, nếu ngập lụt thì đội thoát nước vào xử lý.',
+      'Đội ngũ chuyên trách theo từng sự cố: nếu mất điện thì kỹ thuật điện vào xử lý, nếu mất mạng thì bộ phận hạ tầng mạng vào xử lý.',
     syntaxExample: `try:\n    val = int(user_input)\nexcept ValueError as err:\n    print(f"Lỗi nhập liệu: {err}")`,
     commonGotcha:
       'Không bao giờ viết `except:` trống không (bare except) vì nó bắt luôn cả `KeyboardInterrupt` (Ctrl+C), khiến bạn không thể dừng chương trình.',

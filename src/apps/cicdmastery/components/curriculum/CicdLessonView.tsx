@@ -345,7 +345,7 @@ export const CicdLessonView: React.FC = () => {
                     </div>
                     <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-[11px] text-slate-300">
                       <MousePointerClick className="h-3.5 w-3.5 text-emerald-400" />
-                      <span>Bấm vào từng khối để mổ xẻ cơ chế</span>
+                      <span>Bấm vào từng khối để xem chi tiết cơ chế</span>
                     </span>
                   </div>
 

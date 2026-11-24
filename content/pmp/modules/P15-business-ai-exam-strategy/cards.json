@@ -11,7 +11,7 @@
   },
   {
     "id": "p15-c3",
-    "front": "Ba nguyên tắc sống còn khi ứng dụng **Trí tuệ Nhân tạo (AI)** trong quản lý dự án theo `PMBOK 8 Appendix X3` là gì?",
+    "front": "Ba nguyên tắc quan trọng khi ứng dụng **Trí tuệ Nhân tạo (AI)** trong quản lý dự án theo `PMBOK 8 Appendix X3` là gì?",
     "back": "1. **Bảo mật & Quyền riêng tư:** Không bao giờ nạp dữ liệu mật, mã nguồn độc quyền hoặc `PII` vào AI công cộng chưa được tổ chức phê duyệt.\n2. **Chống Bias & Hallucination:** Luôn kiểm chứng độ tin cậy đầu ra và thiên kiến trong dữ liệu huấn luyện.\n3. **Human-in-the-Loop:** Con người/PM giữ quyền phán đoán đạo đức và **chịu trách nhiệm giải trình cuối cùng**."
   },
   {

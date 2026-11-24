@@ -1417,7 +1417,7 @@ function executeSingleCommand(cmd: string, world: SimWorldState): ExecStepResult
   };
 }
 
-/** Chạy 1 lệnh chẩn đoán trên bản sao trạng thái để hiển thị trong khung Terminal khám bệnh */
+/** Chạy 1 lệnh chẩn đoán trên bản sao trạng thái để hiển thị trong khung Terminal chẩn đoán */
 export function executeDiagnosticCommand(
   cmd: string,
   state: SimWorldState

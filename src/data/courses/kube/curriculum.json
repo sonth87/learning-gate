@@ -1133,7 +1133,7 @@
       "level": 0,
       "order": 2,
       "title": "Linux Namespaces, cgroups (OOM 137), Bridge Network & Named Volume",
-      "summary": "Hiểu hai trụ cột Namespaces & cgroups của Linux Kernel, giải mã Exit Code 137, tạo Bridge Network có DNS tự động và giữ dữ liệu DB bằng Named Volume.",
+      "summary": "Hiểu hai trụ cột Namespaces & cgroups của Linux Kernel, hiểu ý nghĩa Exit Code 137, tạo Bridge Network có DNS tự động và giữ dữ liệu DB bằng Named Volume.",
       "tags": [
         "namespaces",
         "cgroups",
@@ -2582,7 +2582,7 @@
           "path": "docker/node-api/.dockerignore.leaky",
           "kind": "security",
           "note": "Tệp .dockerignore viết cẩu thả vừa để lọt tệp .env vừa chặn nhầm cấu hình ứng dụng.",
-          "task": "Chỉ ra 2 lỗi chí mạng trong file này và cách sửa từng lỗi.",
+          "task": "Chỉ ra 2 lỗi nghiêm trọng trong file này và cách sửa từng lỗi.",
           "answer": "1) Thiếu chặn `.env`, `.env.*` và `.git` gây lộ mật khẩu local vào Image layer; 2) Chặn `*.json` diện rộng làm mất luôn `package.json`, `tsconfig.json` và `src/config/*.json` — phải xoá dòng `*.json` đó đi.",
           "catalogN": 6
         },
@@ -9401,7 +9401,7 @@
           "id": "kube-ex-k18-4",
           "code": "K18.4",
           "module": "K18",
-          "title": "Ca trực #4 — Đọc logs --previous bắt bệnh CrashLoopBackOff cho order-worker",
+          "title": "Ca trực #4 — Đọc logs --previous chẩn đoán lỗi CrashLoopBackOff cho order-worker",
           "difficulty": 3,
           "tags": [
             "troubleshoot",
@@ -9656,7 +9656,7 @@
         },
         {
           "id": "K18-C5",
-          "front": "Tại sao cờ `--previous` lại sống còn khi gỡ lỗi `CrashLoopBackOff`?",
+          "front": "Tại sao cờ `--previous` lại rất quan trọng khi gỡ lỗi `CrashLoopBackOff`?",
           "back": "Vì container mới có thể vừa được tạo chưa kịp ghi log hoặc đang trong thời gian chờ Backoff; `--previous` đọc lại nguyên vẹn Stack Trace của lần vừa sập ngay trước đó."
         },
         {
@@ -10478,7 +10478,7 @@
         },
         {
           "id": "K19-C5",
-          "front": "Nguyên tắc SRE \"Mitigate first, investigate later\" (Cầm máu trước, điều tra sau) áp dụng thế nào trên K8s?",
+          "front": "Nguyên tắc SRE \"Mitigate first, investigate later\" (Khôi phục dịch vụ trước, điều tra nguyên nhân sau) áp dụng thế nào trên K8s?",
           "back": "Khi bản deploy mới gây lỗi trên Production, lập tức `rollout undo` về bản tốt trong vài giây để khôi phục dịch vụ cho khách hàng, sau đó mới thu thập log sửa lỗi ở môi trường phát triển."
         },
         {

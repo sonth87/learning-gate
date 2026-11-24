@@ -83,7 +83,7 @@ right:
 > - **Cần luồng sự kiện (*Event Streaming*) tốc độ dưới 1ms cho Microservices vừa và lớn (`10k – 100k events/s`) mà không muốn gánh chi phí vận hành cụm mới:** Chọn **Redis Streams** ngay trên hạ tầng Redis sẵn có!
 > - **Khi nào thực sự cần tới Apache Kafka (hoặc RabbitMQ)?** Chọn **Kafka** khi bạn cần lưu trữ hàng **Terabyte** lịch sử sự kiện trên ổ cứng rẻ tiền suốt nhiều tuần/tháng để tua lại (*Event Sourcing / Data Lake*) hoặc thông lượng hàng triệu bản tin/giây; chọn **RabbitMQ** khi cần định tuyến phân nhánh phức tạp (*Topic/Header Exchange*).
 
-## 2. Giải phẫu vòng đời bản tin bên trong Consumer Group & PEL
+## 2. Phân tích vòng đời bản tin bên trong Consumer Group & PEL
 
 Điểm quan trọng nhất khi làm việc với Redis Streams là hiểu rõ **3 ký hiệu ID đặc biệt** (`$`, `0`, `>`) và quy trình 4 bước khép kín:
 

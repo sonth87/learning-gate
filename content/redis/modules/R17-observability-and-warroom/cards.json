@@ -16,12 +16,12 @@
   },
   {
     "id": "R17-FC4",
-    "front": "Phản xạ 2 bước khi phát hiện Bigkey cần xoá khẩn cấp trên Production?",
+    "front": "Quy trình 2 bước khi phát hiện Bigkey cần xoá khẩn cấp trên Production?",
     "back": "1. Đo kiểm chứng bằng `MEMORY USAGE <key>`.\n2. Xoá bất đồng bộ bằng **`UNLINK <key>`** (tuyệt đối không gọi `DEL`) và đảm bảo bật `lazyfree-lazy-expire yes` + `lazyfree-lazy-server-del yes`."
   },
   {
     "id": "R17-FC5",
-    "front": "Phản xạ giải cứu đơn hàng bị treo trong danh sách chờ xác nhận (PEL) của Redis Streams?",
+    "front": "Cách xử lý đơn hàng bị treo trong danh sách chờ xác nhận (PEL) của Redis Streams?",
     "back": "1. Chẩn đoán bằng `XPENDING <stream> <group> - + 10` tìm consumer chết.\n2. Thu hồi tin nhắn quá hạn idle bằng **`XAUTOCLAIM <stream> <group> <new-worker> <min-idle-ms> 0-0`**.\n3. Xử lý hoàn tất và gọi **`XACK`** giải phóng bộ nhớ PEL."
   },
   {

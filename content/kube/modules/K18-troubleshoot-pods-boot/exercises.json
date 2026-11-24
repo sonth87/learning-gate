@@ -363,7 +363,7 @@
     "id": "kube-ex-k18-4",
     "code": "K18.4",
     "module": "K18",
-    "title": "Ca trực #4 — Đọc logs --previous bắt bệnh CrashLoopBackOff cho order-worker",
+    "title": "Ca trực #4 — Đọc logs --previous chẩn đoán lỗi CrashLoopBackOff cho order-worker",
     "difficulty": 3,
     "tags": [
       "troubleshoot",

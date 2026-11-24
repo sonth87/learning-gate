@@ -45,7 +45,7 @@ export const CURRICULUM_STAGES: StageMeta[] = [
     id: 'stage-5',
     number: 5,
     title: 'Giai đoạn 5: Concurrency, AsyncIO & System Programming',
-    subtitle: 'Giải phẫu GIL vs Event Loop, AsyncIO Coroutines, Threading, Multiprocessing & Celery Distributed Queue',
+    subtitle: 'Cơ chế GIL vs Event Loop, AsyncIO Coroutines, Threading, Multiprocessing & Celery Distributed Queue',
     durationWeeks: 'Tuần 11–12',
     goal: 'Hiểu bản chất Concurrency vs Parallelism trong CPython, vượt qua giới hạn GIL và xử lý hàng nghìn tác vụ đồng thời.',
     primaryLevels: ['pro', 'master'],

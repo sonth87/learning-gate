@@ -86,7 +86,7 @@ export const CicdGlossaryAndMatrices: React.FC = () => {
         {filteredTerms.map((item) => (
           <div
             key={item.id}
-            className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3"
+            className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5 space-y-3"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="rounded bg-cyan-500/20 border border-cyan-500/40 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300">

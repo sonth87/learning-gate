@@ -28,7 +28,7 @@ export const STAGE_4_LESSONS: LessonTopic[] = [
         {
           realWorld: 'Trợ lý hậu cần chuẩn bị sẵn hồ sơ người dùng và kết nối DB (`Depends`)',
           pythonEquivalent: '`current_user: User = Depends(get_current_user)`',
-          explanation: 'Bác sĩ phẫu thuật (Route Handler) chỉ việc chìa tay nhận đúng dụng cụ đã khử trùng sẵn. Đặc biệt khi chạy Unit Test, bạn có thể tráo dụng cụ giả (`app.dependency_overrides`) chỉ bằng 1 dòng lệnh!',
+          explanation: 'Hàm Route Handler chỉ việc khai báo tham số để nhận đúng đối tượng đã chuẩn bị sẵn từ Dependency. Đặc biệt khi chạy Unit Test, bạn có thể thay thế bằng bản giả lập (`app.dependency_overrides`) chỉ với 1 dòng lệnh!',
         },
       ],
       mentalModelTip:

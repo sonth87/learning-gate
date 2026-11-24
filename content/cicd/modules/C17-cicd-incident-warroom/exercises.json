@@ -3,7 +3,7 @@
     "id": "cicd-ex-c17-1",
     "code": "C17.1",
     "module": "C17",
-    "title": "Case B1 — Cấp cứu Pipeline \"chậm\" 42 phút xuống dưới 5 phút",
+    "title": "Case B1 — Tối ưu Pipeline chậm 42 phút xuống dưới 5 phút",
     "difficulty": 3,
     "tags": [
       "war-room",
@@ -13,7 +13,7 @@
     "kind": "troubleshoot",
     "language": "yaml",
     "filename": ".github/workflows/pr-ci-incident-b1.yml",
-    "prompt": "**Tình huống sự cố:** Đội phát triển đang bị tê liệt: mỗi Pull Request phải xếp hàng chờ **42 phút**! Kiểm tra tệp workflow hiện tại phát hiện 4 căn bệnh trầmkha: dùng `npm install` không có bộ nhớ đệm, gộp chung `lint` và toàn bộ `test` vào 1 luồng tuần tự duy nhất, chèn `sleep 45` vô nghĩa và không hề giới hạn `timeout-minutes`.\n\nHãy tái cấu trúc toàn diện tệp workflow sự cố bên dưới:\n1. Tách thành 2 job chạy song song: `lint` và `test` (cả hai đều đặt `timeout-minutes: 10` hoặc `<= 15`).\n2. Ở cả 2 job, sử dụng `actions/setup-node@v4` với `node-version: \"22\"` và `cache: \"npm\"`, cài đặt bằng `npm ci` (xoá bỏ `npm install`).\n3. Ở job `test`, bật chia mảnh song song `strategy.matrix.shard: [1, 2, 3, 4]`, chạy `npm test -- --shard=${{ matrix.shard }}/4`, và **xoá bỏ hoàn toàn** lệnh `sleep 45`.",
+    "prompt": "**Tình huống sự cố:** Đội phát triển đang bị gián đoạn: mỗi Pull Request phải xếp hàng chờ **42 phút**! Kiểm tra tệp workflow hiện tại phát hiện 4 vấn đề nghiêm trọng: dùng `npm install` không có bộ nhớ đệm, gộp chung `lint` và toàn bộ `test` vào 1 luồng tuần tự duy nhất, chèn `sleep 45` vô nghĩa và không hề giới hạn `timeout-minutes`.\n\nHãy tái cấu trúc toàn diện tệp workflow sự cố bên dưới:\n1. Tách thành 2 job chạy song song: `lint` và `test` (cả hai đều đặt `timeout-minutes: 10` hoặc `<= 15`).\n2. Ở cả 2 job, sử dụng `actions/setup-node@v4` với `node-version: \"22\"` và `cache: \"npm\"`, cài đặt bằng `npm ci` (xoá bỏ `npm install`).\n3. Ở job `test`, bật chia mảnh song song `strategy.matrix.shard: [1, 2, 3, 4]`, chạy `npm test -- --shard=${{ matrix.shard }}/4`, và **xoá bỏ hoàn toàn** lệnh `sleep 45`.",
     "starter": "name: PR Verification Pipeline\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  monolith-slow-check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n      - run: npm install\n      - run: sleep 45\n      - run: npm run lint\n      - run: npm test\n",
     "solution": "name: PR Verification Pipeline\n\non:\n  pull_request:\n    branches: [main]\n\npermissions:\n  contents: read\n\njobs:\n  lint:\n    runs-on: ubuntu-latest\n    timeout-minutes: 10\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm run lint\n\n  test:\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n    strategy:\n      matrix:\n        shard: [1, 2, 3, 4]\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: \"22\"\n          cache: \"npm\"\n      - run: npm ci\n      - run: npm test -- --shard=${{ matrix.shard }}/4\n",
     "spec": {

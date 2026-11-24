@@ -10,7 +10,7 @@ kind: illustration
 diagram: redis:r03
 alt: Cấu trúc lai quicklist hai đầu của Redis List (LPUSH + LTRIM, LMOVE) đối chiếu với biểu diễn nén intset và phép giao SINTER của Redis Set
 badge: Cấu trúc dữ liệu · Lists & Sets
-title: Giải Phẫu Quicklist Hai Đầu (Lists) & Tập Hợp Khử Trùng (Sets)
+title: Cấu Trúc Quicklist Hai Đầu (Lists) & Tập Hợp Khử Trùng (Sets)
 subtitle: Thêm/bớt O(1) ở hai cực danh sách, bàn giao tác vụ nguyên tử với LMOVE và phép toán tập hợp siêu tốc trên RAM
 caption: Nhấn vào sơ đồ để phóng to — quan sát cách quicklist ghép nhiều khối listpack nhỏ và cách Set tự động chọn intset khi lưu toàn số nguyên
 callouts:

@@ -11,7 +11,7 @@
       "Tách hai lập trình viên này sang hai nhóm dự án khác nhau để chấm dứt mâu thuẫn"
     ],
     "answer": 2,
-    "explain": "Giải phẫu 3 bẫy kinh điển: **A** là bẫy *Đẩy bóng lên cấp trên (#5)*; **B** là bẫy *Trì hoãn thụ động (#7)* khi sự việc đang làm kẹt Sprint ngay lúc này; **D** là bẫy *Né tránh / Chia tách cực đoan (#2)*. **C** thắng tuyệt đối vì áp dụng *Collaborate / Problem Solve* và tôn trọng quyền tự chủ kỹ thuật của nhóm."
+    "explain": "Phân tích 3 phương án nhiễu: **A** là bẫy *Đẩy bóng lên cấp trên (#5)*; **B** là bẫy *Trì hoãn thụ động (#7)* khi sự việc đang làm kẹt Sprint ngay lúc này; **D** là bẫy *Né tránh / Chia tách cực đoan (#2)*. **C** thắng tuyệt đối vì áp dụng *Collaborate / Problem Solve* và tôn trọng quyền tự chủ kỹ thuật của nhóm."
   },
   {
     "id": "p14-q2",
@@ -44,11 +44,11 @@
   {
     "id": "p14-q4",
     "type": "tf",
-    "q": "Khi dự án bị chậm 5 ngày trên một công việc có `Total Float = 0` nhưng mức trượt này vẫn có thể khắc phục bằng cách điều phối lại nguồn lực nội bộ hoặc Fast-Tracking mà không vượt thẩm quyền ngân sách trong Project Charter, việc chọn đáp án *'Báo cáo ngay lên Project Sponsor để xin lùi ngày kết thúc dự án'* là sập bẫy **Leo thang sớm (Premature Escalation)**.",
+    "q": "Khi dự án bị chậm 5 ngày trên một công việc có `Total Float = 0` nhưng mức trượt này vẫn có thể khắc phục bằng cách điều phối lại nguồn lực nội bộ hoặc Fast-Tracking mà không vượt thẩm quyền ngân sách trong Project Charter, việc chọn đáp án *'Báo cáo ngay lên Project Sponsor để xin lùi ngày kết thúc dự án'* là mắc lỗi **Leo thang sớm (Premature Escalation)**.",
     "code": "",
     "choices": [],
     "answer": true,
-    "explain": "Đúng! Theo phản xạ vàng của PMI (`core.mindset.escalate`), PM được trả lương để chủ động phân tích và giải quyết các biến động tiến độ trong phạm vi thẩm quyền của mình (như Fast-Tracking, Crashing trong hạn mức dự phòng). Chỉ leo thang lên Sponsor khi mọi phương án trong thẩm quyền đều bất khả thi!"
+    "explain": "Đúng! Theo nguyên tắc của PMI (`core.mindset.escalate`), PM được trả lương để chủ động phân tích và giải quyết các biến động tiến độ trong phạm vi thẩm quyền của mình (như Fast-Tracking, Crashing trong hạn mức dự phòng). Chỉ leo thang lên Sponsor khi mọi phương án trong thẩm quyền đều bất khả thi!"
   },
   {
     "id": "p14-q5",

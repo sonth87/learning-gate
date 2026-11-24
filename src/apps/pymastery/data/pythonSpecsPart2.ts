@@ -1804,7 +1804,7 @@ export const PY_SPECS_PART2: Record<string, PyModuleVisualSpec> = {
               { label: bi('THREADPOOL CHO CPU', 'PURE CPU LOOP'), value: bi('Không tăng tốc (nghẽn GIL)', 'No speedup (serialized by GIL)'), tone: 'bad' },
             ],
             whatChanged: [
-              { op: '+', text: bi('Giải mã khóa GIL: CPython nhả GIL khi chờ mạng/ổ đĩa nên ThreadPoolExecutor tăng tốc tốt cho I/O đồng bộ', 'Explained why ThreadPoolExecutor accelerates legacy sync I/O because CPython releases the GIL on OS I/O waits') },
+              { op: '+', text: bi('Cơ chế khóa GIL: CPython nhả GIL khi chờ mạng/ổ đĩa nên ThreadPoolExecutor tăng tốc tốt cho I/O đồng bộ', 'Explained why ThreadPoolExecutor accelerates legacy sync I/O because CPython releases the GIL on OS I/O waits') },
               { op: '+', text: bi('Cập nhật Python 3.13+ (PEP 703): bản thử nghiệm Free-threaded cho phép tắt GIL trong tương lai', 'Noted Python 3.13+ experimental free-threaded build alongside standard GIL behavior') },
             ],
             callout: {

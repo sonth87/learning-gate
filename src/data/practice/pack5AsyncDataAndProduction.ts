@@ -9,7 +9,7 @@ export const PACK_5_EXERCISES: PracticeExercise[] = [
     level: 'master',
     relatedLessonId: 's5-asyncio-gil-concurrency',
     problemStatement:
-      'Lập trình viên từ Java/PHP sang FastAPI rất hay mắc lỗi chí mạng: viết từ khóa `async def` cho đẹp nhưng bên trong lại gọi hàm đồng bộ chặn luồng `time.sleep(1)` và `requests.get(url)`! Vì Event Loop của `asyncio` chạy trên **1 Thread duy nhất**, lệnh `requests.get()` hoặc `time.sleep()` sẽ làm **đóng băng toàn bộ Server** — 999 khách hàng khác đang gọi `/health` cũng phải đứng chờ theo! Hãy giải cứu hàm `fetch_partner_status(url: str)` bằng cách thay `time.sleep` bằng `await asyncio.sleep(0.1)` và thay `requests.get` bằng `async with httpx.AsyncClient() as client:` kèm `resp = await client.get(url)`.',
+      'Lập trình viên từ Java/PHP sang FastAPI rất hay mắc lỗi nghiêm trọng: viết từ khóa `async def` cho đẹp nhưng bên trong lại gọi hàm đồng bộ chặn luồng `time.sleep(1)` và `requests.get(url)`! Vì Event Loop của `asyncio` chạy trên **1 Thread duy nhất**, lệnh `requests.get()` hoặc `time.sleep()` sẽ làm **đóng băng toàn bộ Server** — 999 khách hàng khác đang gọi `/health` cũng phải đứng chờ theo! Hãy giải cứu hàm `fetch_partner_status(url: str)` bằng cách thay `time.sleep` bằng `await asyncio.sleep(0.1)` và thay `requests.get` bằng `async with httpx.AsyncClient() as client:` kèm `resp = await client.get(url)`.',
     realWorldContext:
       'Trong kiến trúc ASGI (Uvicorn + FastAPI), một lời gọi Blocking I/O bên trong `async def` nguy hiểm gấp 10 lần so với trong `def` thường (vì FastAPI tự động đẩy `def` thường sang ThreadPool, nhưng lại chạy `async def` trực tiếp trên Main Event Loop!).',
     requirements: [
@@ -20,7 +20,7 @@ export const PACK_5_EXERCISES: PracticeExercise[] = [
     starterCode: `import time
 import requests
 
-# THẢM HỌA PRODUCTION: Gọi time.sleep và requests.get bên trong async def
+# LỖI NGHIÊM TRỌNG TRÊN PRODUCTION: Gọi time.sleep và requests.get bên trong async def
 # sẽ khóa cứng (block) toàn bộ Main Event Loop của FastAPI!
 async def fetch_partner_status(url: str) -> int:
     # TODO: Thay import ở trên bằng asyncio và httpx,
@@ -102,7 +102,7 @@ async def fetch_partner_status(url: str) -> int:
     level: 'master',
     relatedLessonId: 's5-asyncio-gil-concurrency',
     problemStatement:
-      'Trong Node.js bạn phải cài thêm thư viện `p-limit` để tránh việc `Promise.all()` bắn 1.000 HTTP request cùng lúc làm sập server đích hoặc dính lỗi `429 Too Many Requests`. Trong Python, thư viện chuẩn `asyncio` đã tích hợp sẵn vũ khí hạng nặng `asyncio.Semaphore`! Hãy viết hàm `crawl_urls(urls: list[str], max_concurrent: int = 10)` khởi tạo `sem = asyncio.Semaphore(max_concurrent)`, bọc phần tải bên trong `async with sem:` và chạy đồng thời bằng `await asyncio.gather(...)`.',
+      'Trong Node.js bạn phải cài thêm thư viện `p-limit` để tránh việc `Promise.all()` bắn 1.000 HTTP request cùng lúc làm sập server đích hoặc dính lỗi `429 Too Many Requests`. Trong Python, thư viện chuẩn `asyncio` đã tích hợp sẵn công cụ tiêu chuẩn `asyncio.Semaphore`! Hãy viết hàm `crawl_urls(urls: list[str], max_concurrent: int = 10)` khởi tạo `sem = asyncio.Semaphore(max_concurrent)`, bọc phần tải bên trong `async with sem:` và chạy đồng thời bằng `await asyncio.gather(...)`.',
     realWorldContext:
       'Kỹ thuật Bounded Concurrency (Đồng thời có giới hạn) bắt buộc phải có khi bạn viết Web Crawler, hệ thống gửi Webhook hàng loạt, hoặc gọi OpenAI/Gemini API cho hàng nghìn văn bản cùng lúc.',
     requirements: [
@@ -453,7 +453,7 @@ def parallel_squares(numbers: list[int]) -> list[int]:
     problemStatement:
       'Lập trình viên từ JS/Java sang làm Data Engineering rất hay dùng vòng lặp `for row in df.iter_rows():` để tính cột mới cho bảng dữ liệu 10 triệu dòng. Trong Python, lặp qua từng dòng ở tầng Bytecode chậm gấp **50 đến 100 lần** so với việc đẩy biểu thức xuống tầng SIMD đa luồng viết bằng Rust của **Polars**! Hãy viết hàm `add_total_with_tax(df: pl.DataFrame) -> pl.DataFrame` sử dụng `df.with_columns((pl.col("price") * pl.col("qty") * 1.1).alias("total_with_tax"))` mà tuyệt đối KHÔNG dùng vòng lặp `for`.',
     realWorldContext:
-      'Vectorization (Vector hóa) là nguyên lý sống còn trong Khoa học Dữ liệu và AI (Polars, NumPy, PyTorch): thay vì ra lệnh cho Python cộng từng con số một, bạn mô tả phép toán trên toàn bộ cột để động cơ Rust/C++ thực thi bằng tập lệnh AVX-512 của CPU.',
+      'Vectorization (Vector hóa) là nguyên lý cốt lõi trong Khoa học Dữ liệu và AI (Polars, NumPy, PyTorch): thay vì ra lệnh cho Python cộng từng con số một, bạn mô tả phép toán trên toàn bộ cột để động cơ Rust/C++ thực thi bằng tập lệnh AVX-512 của CPU.',
     requirements: [
       'Không sử dụng vòng lặp `for` hay `iter_rows()`',
       'Sử dụng `df.with_columns(...)` kết hợp biểu thức cột `pl.col("price") * pl.col("qty") * 1.1`',

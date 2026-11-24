@@ -581,7 +581,7 @@ export type CliStateCheckRule =
       id: string;
       doc: string;
       target: 'stdout-inspected';
-      /** Dành cho bài khám bệnh / quan sát: người học đã chạy lệnh để xuất ra thông tin cần đọc */
+      /** Dành cho bài chẩn đoán / quan sát: người học đã chạy lệnh để xuất ra thông tin cần đọc */
       contains: string;
     };
 

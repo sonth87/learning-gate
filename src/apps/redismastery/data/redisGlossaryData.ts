@@ -141,7 +141,7 @@ has_redis = r.sismember("tags:post:101", "redis")  # True`,
     complexityDetail: 'O(log N) chèn/cập nhật trên SkipList + O(1) tra điểm của 1 member nhờ Dict kép (`ZSCORE`)',
     analogy: 'Sự kết hợp thiên tài giữa `Dict` (tra điểm của An trong O(1)) và `SkipList` nhiều tầng làn cao tốc (lấy Top 10 từ triệu người trong O(log N)).',
     summary:
-      'Vũ khí đặc sản của Redis cho Bảng xếp hạng thời gian thực (Real-time Leaderboard), Hàng đợi ưu tiên / Hẹn giờ Delay Queue (score = unix timestamp) và Sliding Window Rate Limiter.',
+      'Công cụ tiêu chuẩn của Redis cho Bảng xếp hạng thời gian thực (Real-time Leaderboard), Hàng đợi ưu tiên / Hẹn giờ Delay Queue (score = unix timestamp) và Sliding Window Rate Limiter.',
     cliExample: 'ZADD lb:weekly 1500 "alice" 2100 "bob" 1850 "linh"\nZINCRBY lb:weekly 400 "linh"\nZRANGE lb:weekly 0 2 REV WITHSCORES\nZREVRANK lb:weekly "linh"',
     nodeExample: `await redis.zincrby('lb:weekly', 400, 'linh');
 // Redis >= 6.2+: ZRANGE hỗ trợ REV + BYSCORE hợp nhất

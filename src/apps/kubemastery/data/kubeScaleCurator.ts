@@ -472,7 +472,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Separate Linux Namespaces (visibility isolation) from cgroups (hardware resource limits)'
       ),
       bi(
-        'Giải mã công thức Exit Code 137 = 128 + 9 (SIGKILL OOM) và bảo toàn dữ liệu Database bằng Named Volume',
+        'Phân tích công thức Exit Code 137 = 128 + 9 (SIGKILL OOM) và bảo toàn dữ liệu Database bằng Named Volume',
         'Decode Exit 137 (128 + SIGKILL 9) OOMKills and persist stateful DB files on Named Volumes'
       ),
     ],
@@ -3603,7 +3603,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
               {
                 op: '+',
                 text: bi(
-                  'Giải mã nhịp nghỉ nhân đôi Exponential Backoff (10s → 300s) và dùng --previous bắt Traceback Python/Node phiên vừa chết',
+                  'Phân tích nhịp nghỉ nhân đôi Exponential Backoff (10s → 300s) và dùng --previous bắt Traceback Python/Node phiên vừa chết',
                   'Decoded 10s->5m exponential backoff and extracted prior-container stack traces via --previous'
                 ),
               },
@@ -3639,7 +3639,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
             ),
             makeCallout(
               'technique',
-              'Bản đồ 4 thủ phạm trong 10 giây nhìn cột STATUS',
+              'Bản đồ 4 nguyên nhân gốc rễ trong 10 giây nhìn cột STATUS',
               '10-Second Status-to-Culprit Cheat Sheet',
               'Pending = thiếu RAM/CPU hoặc sai StorageClass PVC · ImagePullBackOff = sai tag hoặc thiếu imagePullSecrets · CreateContainerConfigError = thiếu Secret/ConfigMap · CrashLoop = lỗi code!',
               'Pending = node capacity/unbound PVC · ImagePull = bad tag/missing pullSecret · ConfigError = missing Secret/CM key · CrashLoop = app exited != 0!'
@@ -3736,7 +3736,7 @@ export const KUBE_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
         'Resolve Exit 137 OOMKills by right-sizing memory.limits and streaming large payloads in Python/Node'
       ),
       bi(
-        'Bắt bệnh 502 qua kubectl get endpoints (<none> vs lệch targetPort), khôi phục 3s bằng rollout undo và áp dụng 3 cơ chế Zero-Downtime',
+        'Chẩn đoán lỗi 502 qua kubectl get endpoints (<none> vs lệch targetPort), khôi phục 3s bằng rollout undo và áp dụng 3 cơ chế Zero-Downtime',
         'Fix 502s via kubectl get endpoints, recover in 3s via rollout undo, and enforce the 3 Zero-Downtime mechanisms'
       ),
     ],

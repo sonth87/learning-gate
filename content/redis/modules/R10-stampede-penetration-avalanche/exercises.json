@@ -276,7 +276,7 @@
       ]
     },
     "hints": [
-      "Gõ `redis-cli TTL cache:flash:iphone16` ở khung Terminal Chẩn đoán phía trên trước để hệ thống ghi nhận bước khám bệnh (ra kết quả `(integer) -2`).",
+      "Gõ `redis-cli TTL cache:flash:iphone16` ở khung Terminal Chẩn đoán phía trên trước để hệ thống ghi nhận bước kiểm tra (ra kết quả `(integer) -2`).",
       "Trong khung soạn thảo bên dưới, gõ `SET lock:rebuild:flash:iphone16 \"sre-oncall\" NX PX 3000` và `SET cache:flash:iphone16 '{\"sku\":\"ip16pro\",\"price\":28990000}' EX 337`."
     ],
     "ref": "caching/bad-stampede-naive-cache.ts",

@@ -131,8 +131,8 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
             <tr>
               <th className="px-3 py-2.5">#</th>
               <th className="px-3 py-2.5">Cấu hình</th>
-              <th className="px-3 py-2.5">Loại</th>
-              <th className="px-3 py-2.5">Cấp</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">Loại</th>
+              <th className="hidden px-3 py-2.5 sm:table-cell">Cấp</th>
               <th className="hidden px-3 py-2.5 sm:table-cell">Đánh giá</th>
               <th className="hidden px-3 py-2.5 md:table-cell">Dòng</th>
               <th className="px-3 py-2.5">Trạng thái</th>
@@ -154,12 +154,12 @@ export const BrowseView: React.FC<{ preset?: Preset }> = ({ preset }) => {
                     <span className="break-all font-mono text-[13px]">{it.path}</span>
                     {it.topic && <div className="text-xs text-slate-400">{it.topic}</div>}
                   </td>
-                  <td className="px-3 py-2.5">
+                  <td className="hidden px-3 py-2.5 sm:table-cell">
                     <span className={`inline-block rounded border px-1.5 py-0.5 text-[10px] font-bold ${badge.cls}`}>
                       {badge.label}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5">{it.level}</td>
+                  <td className="hidden px-3 py-2.5 sm:table-cell">{it.level}</td>
                   <td className="hidden px-3 py-2.5 sm:table-cell">
                     <Stars n={it.quality} />
                   </td>

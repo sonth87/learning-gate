@@ -664,7 +664,7 @@ export const AnimatedFlowEngine: React.FC<AnimatedFlowEngineProps> = ({
               <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
                 <Info className="h-4 w-4 shrink-0" />
                 <span>
-                  Giải mã [{inspectedNode.label}] — Liên tưởng:{' '}
+                  Chi tiết [{inspectedNode.label}] — Liên tưởng:{' '}
                   <span className="text-amber-300">
                     {inspectedNode.analogyLabel}
                   </span>

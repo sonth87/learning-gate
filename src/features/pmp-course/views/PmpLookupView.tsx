@@ -216,7 +216,7 @@ export const PmpLookupView: React.FC = () => {
                 <div className="text-amber-100">
                   <b className="text-amber-300">💡 Mẹo phản xạ phòng thi:</b> {table.examTip}
                 </div>
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => {

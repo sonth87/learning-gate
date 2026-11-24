@@ -11,7 +11,7 @@
       "Chế độ TLS đang hoạt động ổn định"
     ],
     "answer": 1,
-    "explain": "`mem_fragmentation_ratio = used_memory_rss / used_memory`. Khi `used_memory_rss` (lượng trang RAM vật lý thực giữ) nhỏ hơn lượng byte logic Redis đã cấp phát, nghĩa là hệ điều hành đã đá bớt trang nhớ của Redis ra vùng Swap trên đĩa cứng — tử huyệt hiệu năng của cơ sở dữ liệu In-Memory!"
+    "explain": "`mem_fragmentation_ratio = used_memory_rss / used_memory`. Khi `used_memory_rss` (lượng trang RAM vật lý thực giữ) nhỏ hơn lượng byte logic Redis đã cấp phát, nghĩa là hệ điều hành đã đá bớt trang nhớ của Redis ra vùng Swap trên đĩa cứng — điểm nghẽn hiệu năng nghiêm trọng của cơ sở dữ liệu In-Memory!"
   },
   {
     "id": "R12-Q2",

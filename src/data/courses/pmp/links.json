@@ -409,7 +409,7 @@
   },
   "core.finance.evm": {
     "linkId": "core.finance.evm",
-    "label": "Core Map: Đọc vị EVM (CV, SV, CPI, SPI, EAC, TCPI)",
+    "label": "Core Map: Phân tích chỉ số EVM (CV, SV, CPI, SPI, EAC, TCPI)",
     "kind": "node",
     "edition": "core",
     "topicId": "core.finance",
@@ -426,7 +426,7 @@
   },
   "book.risk.vs-issue": {
     "linkId": "book.risk.vs-issue",
-    "label": "Book Map: Ranh giới sống còn Risk (Tương lai) vs Issue (Hiện tại)",
+    "label": "Book Map: Phân biệt rõ Risk (Tương lai) và Issue (Hiện tại)",
     "kind": "node",
     "edition": "book",
     "topicId": "risk",

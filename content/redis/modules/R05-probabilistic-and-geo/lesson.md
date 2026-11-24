@@ -49,7 +49,7 @@ callouts:
 | **HyperLogLog** (`PFADD`) | **`12 KB`** (cố định!) | **Không** | **Không** | Đếm lượt khách truy cập duy nhất (`PFCOUNT`, gộp tuần/tháng bằng `PFMERGE`) |
 | **Bloom Filter** (`BF.ADD`) | **`~11.5 MB`** (sai số `1%`) | **Không** | ==Không bao giờ âm tính giả!== | Chặn **Cache Penetration**, kiểm tra nhanh username đã tồn tại, lọc tin trùng |
 
-## 2. Giải phẫu lệnh Bitmap, HyperLogLog & Bloom Filter trên Redis 8
+## 2. Chi tiết các lệnh Bitmap, HyperLogLog & Bloom Filter trên Redis 8
 
 Một nâng cấp lớn của **Redis 8**: trước đây muốn dùng lệnh `BF.ADD` bạn phải cài riêng bản *Redis Stack* hoặc nạp module *RedisBloom*; nay **Redis 8 đã tích hợp sẵn nhóm cấu trúc xác suất ngay trong nhân mặc định**!
 

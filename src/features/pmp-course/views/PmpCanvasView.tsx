@@ -136,7 +136,7 @@ export const PmpCanvasView: React.FC = () => {
           <div className="flex items-center justify-between gap-2">
             <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
               <Sparkles className="h-4 w-4 text-amber-400" aria-hidden="true" />
-              <span>Vùng 1 · 6 Nguyên Tắc PMBOK 8 &amp; 6 Phản Xạ Vàng PMA</span>
+              <span>Vùng 1 · 6 Nguyên Tắc PMBOK 8 &amp; 6 Nguyên Tắc Hành Động PMA</span>
             </h2>
             <ProvenancePill kind="pmbok8" label="Standard §3.3–3.8" />
           </div>

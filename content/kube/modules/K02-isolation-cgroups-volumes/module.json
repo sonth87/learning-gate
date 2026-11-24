@@ -4,7 +4,7 @@
   "level": 0,
   "order": 2,
   "title": "Linux Namespaces, cgroups (OOM 137), Bridge Network & Named Volume",
-  "summary": "Hiểu hai trụ cột Namespaces & cgroups của Linux Kernel, giải mã Exit Code 137, tạo Bridge Network có DNS tự động và giữ dữ liệu DB bằng Named Volume.",
+  "summary": "Hiểu hai trụ cột Namespaces & cgroups của Linux Kernel, hiểu ý nghĩa Exit Code 137, tạo Bridge Network có DNS tự động và giữ dữ liệu DB bằng Named Volume.",
   "tags": [
     "namespaces",
     "cgroups",

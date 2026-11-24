@@ -19,7 +19,7 @@ Không có một mô hình duy nhất cho mọi bài toán. Kỹ sư thiết k�
 kind: illustration
 diagram: "redis:r09"
 badge: "Caching Topologies · R09"
-title: "Giải phẫu 4 Luồng Đọc/Ghi Giữa Application, Redis và Database"
+title: "Kiến Trúc 4 Luồng Đọc/Ghi Giữa Application, Redis và Database"
 subtitle: "So sánh đường đi dữ liệu của Cache-Aside, Write-Through và nguy cơ Race Condition khi đồng bộ kép"
 caption: "90% microservice Web/API hiện đại chọn Cache-Aside kết hợp UNLINK sau khi commit Database."
 callouts:

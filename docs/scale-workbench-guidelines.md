@@ -76,9 +76,12 @@ Mọi thành phần trên sơ đồ (`block`, `db`, `device`, `crowd`, đường
      2. **Bước 2 — Cơ chế hoạt động & Code/Cấu hình (Mechanism & Code):** Giải thích cụ thể hệ thống xử lý ra sao, đầu vào/đầu ra thế nào.
      3. **Bước 3 — Ví dụ liên hệ trực quan (Supporting Analogy — Tùy chọn ở cuối đoạn):** Nếu khái niệm trừu tượng, có thể bổ sung 1 câu ví dụ đời thường ngắn gọn ở cuối đoạn mở đầu (*"Bạn có thể hình dung cơ chế này giống như..."*) để củng cố trí nhớ — tuyệt đối không dùng từ vựng ẩn dụ thay thế cho thuật ngữ chính trong phần còn lại của bài.
 
-5. **Loại bỏ văn phong "gồng", giật tít hoặc khẩu ngữ thiếu chuyên nghiệp:**
-   - Tránh lạm dụng các từ ngữ phóng đại hoặc khẩu ngữ như: *"Giải ngố"*, *"Phép thuật ngầm"*, *"Vũ khí tối thượng"*, *"Phản xạ sinh tử"*, *"Bí mật động trời"*, *"Thần chú"*, *"Cú lừa kinh điển"*.
-   - Thay bằng ngôn ngữ sư phạm điềm đạm, chuẩn xác, tôn trọng người học: *"Nguyên lý cốt lõi"*, *"Cơ chế hoạt động bên dưới"*, *"Công cụ tiêu chuẩn"*, *"Nguyên tắc quan trọng"*, *"Lưu ý thực tế"*, *"Sai lầm phổ biến"*.
+5. **Loại bỏ văn phong "gồng", y khoa hóa / quân sự hóa, giật tít hoặc khẩu ngữ thiếu chuyên nghiệp trên TOÀN BỘ ứng dụng (gồm cả UI Component, Quiz, Flashcards, Simulator, War-Room, Glossary & Giáo trình):**
+   - **Cấm dùng các động từ y khoa hóa / huyền bí hóa** như: *"Giải phẫu"*, *"Phẫu thuật"*, *"Mổ xẻ"*, *"Bắt bệnh"*, *"Khám bệnh"*, *"Cầm máu"*, *"Cứu mạng"*, *"Giải mã"* (trừ khi nói về `decode` dữ liệu nhị phân/UTF-8/JWT), *"Đọc vị"*, *"Giải ngố"*.
+     - Thay bằng từ bình thường: **`Phân tích`**, **`Cấu trúc của...`**, **`Giải thích chi tiết`**, **`Kiểm tra / Chẩn đoán lỗi`**, **`Khắc phục sự cố`**, **`Tìm hiểu`**.
+     - Ví dụ trên nút bấm / nhãn UI: ❌ *"Chấm bài & Giải phẫu đáp án"*, *"Giải phẫu tư duy PMI"*, *"Phẫu thuật lại các câu từng chọn nhầm"*, *"SẬP BẪY"* → ✅ **`Chấm bài & Xem giải thích`**, **`Giải thích theo chuẩn PMI`**, **`Ôn lại các câu trả lời sai`**, **`CHƯA ĐÚNG`**.
+   - **Cấm dùng các từ quân sự hóa / cường điệu hóa / giật tít** như: *"Phép thuật ngầm"*, *"Vũ khí (tối thượng / số 1 / hạng nặng)"*, *"Tuyệt chiêu"*, *"Bí kíp / Bảo bối / Thần chú"*, *"Phản xạ sinh tử / vàng"*, *"Phân biệt sinh tử"*, *"Quy tắc sống còn"*, *"Tử huyệt"*, *"Chí mạng"*, *"Thảm họa"*, *"Cú lừa (đo lường / kinh điển)"*, *"Cẩm nang tác chiến"*, *"So găng"*, *"Sát thủ"*, *"Cứu hỏa / Chữa cháy"*.
+     - Thay bằng ngôn ngữ sư phạm điềm đạm, chuẩn xác, tôn trọng người học: **`Nguyên lý cốt lõi`**, **`Cơ chế hoạt động`**, **`Công cụ tiêu chuẩn`**, **`Nguyên tắc quan trọng`**, **`Lưu ý thực tế`**, **`Sai lầm phổ biến`**, **`Lỗi nghiêm trọng`**, **`Hướng dẫn xử lý sự cố`**, **`So sánh trực tiếp`**.
 
 
 6. **Ground-Floor `2:1` Port Plane & Đa dạng Bố cục Chiều sâu Isometric (Không xếp ngang kiểu chữ M)**:

@@ -1787,7 +1787,7 @@ export const PMP_BLUEPRINTS: Record<string, ModuleCuratedBlueprint> = {
                 {
                   op: '+',
                   text: bi(
-                    'Phân vai chuẩn xác khi bắt bệnh: lỗi lặp lại do hỏng quy trình → sửa QA; lỗi lọt sang buổi UAT của khách → siết lại QC nội bộ!',
+                    'Phân vai chuẩn xác khi chẩn đoán nguyên nhân: lỗi lặp lại do hỏng quy trình → sửa QA; lỗi lọt sang buổi UAT của khách → siết lại QC nội bộ!',
                     'Mapped root-cause fixes cleanly: recurring defects -> QA process audit; bugs found during customer UAT -> tighten internal QC'
                   ),
                 },

@@ -35,7 +35,7 @@ export const KUBE_FLASHCARDS: KubeFlashcard[] = [
     id: 'fc-5',
     category: 'K8s Objects',
     frontQuestion: 'Sự khác nhau giữa Liveness Probe và Readiness Probe khi kiểm tra thất bại là gì?',
-    analogyHint: 'Liên tưởng: Bắt mạch sống chết (Cấp cứu khởi động lại) vs. Biển báo "Đang bận" (Tạm ngưng nhận khách)',
+    analogyHint: 'Liên tưởng: Kiểm tra tiến trình còn hoạt động (Restart khi kẹt) vs. Biển báo "Đang bận" (Tạm ngưng nhận traffic)',
     backAnswer: '• Liveness Probe thất bại: K8s kết luận ứng dụng bị treo (Deadlock) và lập tức GIẾT + KHỞI ĐỘNG LẠI (Restart) container.\n• Readiness Probe thất bại: K8s KHÔNG giết Pod mà chỉ tạm rút IP của Pod khỏi danh bạ Tổng đài Service để ngưng gửi khách mới vào cho đến khi Pod khỏe lại.',
   },
   {
@@ -149,7 +149,7 @@ export const KUBE_QUIZ_QUESTIONS: KubeQuizQuestion[] = [
     id: 'q-7',
     stageId: 'stage-4',
     scenarioContext: 'Một Pod trên Production bị lặp vòng sập liên tục (CrashLoopBackOff) với cột RESTARTS = 8.',
-    question: 'Câu lệnh nào giúp bạn đọc chính xác "lời trăn trối cuối cùng" (stacktrace lỗi) của container ở lần sập ngay trước đó?',
+    question: 'Câu lệnh nào giúp bạn đọc chính xác nhật ký lỗi cuối cùng (stacktrace) của container ở lần sập ngay trước đó?',
     options: [
       'kubectl get endpoints [TÊN_SERVICE]',
       'kubectl logs [TÊN_POD] -n production --previous',

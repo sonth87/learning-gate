@@ -34,7 +34,7 @@
       "description": "Xem hậu quả khi LPUSH vào List suốt nhiều tháng mà quên kèm LTRIM giới hạn độ dài"
     },
     {
-      "label": "Simulator: Giải phẫu Bộ nhớ quicklist & intset",
+      "label": "Simulator: Cấu trúc Bộ nhớ quicklist & intset",
       "kind": "simulator-preset",
       "targetId": "memory",
       "description": "So sánh lượng RAM tiêu thụ giữa Set chuỗi bất kỳ và Set toàn số nguyên (intset)"

@@ -221,7 +221,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        {/* ------- Đề bài & Khung khám bệnh ------- */}
+        {/* ------- Đề bài & Khung chẩn đoán ------- */}
         <div className="min-w-0 space-y-4">
           <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 sm:p-5">
             <CourseMarkdown source={ex.prompt} accent={accent} />
@@ -301,7 +301,7 @@ export const ExerciseView: React.FC<{ code: string }> = ({ code: exCode }) => {
                 <input
                   value={diagCmd}
                   onChange={(e) => setDiagCmd(e.target.value)}
-                  placeholder="Gõ lệnh khám bệnh (vd: kubectl get pods, kubectl describe pod ...)"
+                  placeholder="Gõ lệnh kiểm tra / chẩn đoán (vd: kubectl get pods, kubectl describe pod ...)"
                   aria-label="Lệnh chẩn đoán"
                   className="min-h-[44px] sm:min-h-[36px] min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 font-mono text-xs text-slate-100 outline-none focus:border-sky-500/70"
                 />

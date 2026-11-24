@@ -436,7 +436,7 @@ const PyM25: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm25';
   return (
-    <Shell id={id} badge="PY:M25" title="Cây Thư Mục (pwd/cd) & Giải Phẫu Traceback Từ Dưới Lên" rightNote="pwd · ../ · Traceback" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M25" title="Cây Thư Mục (pwd/cd) & Cách Đọc Traceback Từ Dưới Lên" rightNote="pwd · ../ · Traceback" isLight={isLight} className={className}>
       {/* Left: Working directory & Relative vs Absolute */}
       <Panel x={14} y={54} w={396} h={312} title="Đường dẫn Tuyệt đối (/...) vs Tương đối (./ · ../)" tone="cyan" p={p} />
       <Callout x={390} y={66} n={1} tone="cyan" p={p} />
@@ -1208,7 +1208,7 @@ const PyM05: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm05';
   return (
-    <Shell id={id} badge="PY:M05" title="Giải Phẫu CPython Compact Dict: Băm O(1) & Bảo Toàn Thứ Tự Chèn" rightNote="hash(key) -> O(1) · set" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M05" title="Kiến Trúc CPython Compact Dict: Băm O(1) & Bảo Toàn Thứ Tự Chèn" rightNote="hash(key) -> O(1) · set" isLight={isLight} className={className}>
       {/* Top: Hash -> Sparse Index -> Dense Entries */}
       <Panel x={14} y={54} w={852} h={176} title='Kiến trúc Bảng Băm 2 Tầng của Python 3.7+ (Vừa tra cứu O(1), vừa giữ đúng thứ tự chèn)' tone="cyan" p={p} />
       <Callout x={846} y={66} n={1} tone="cyan" p={p} />
@@ -1321,7 +1321,7 @@ const PyM06: DiagramRenderer = ({ isLight, className }) => {
   return (
     <Shell id={id} badge="PY:M06" title="Đường Ống Comprehension (for -> if -> expr) & Tổ Hợp Hàm Dựng Sẵn" rightNote="List/Dict/Set Comp · GenExpr" isLight={isLight} className={className}>
       {/* Top: 3-Stage Comprehension Pipeline */}
-      <Panel x={14} y={54} w={852} h={158} title="Giải phẫu thứ tự thực thi: [ x * 10   for x in [1, 2, 3, 4]   if x % 2 == 1 ]  ->  [10, 30]" tone="cyan" p={p} />
+      <Panel x={14} y={54} w={852} h={158} title="Thứ tự thực thi: [ x * 10   for x in [1, 2, 3, 4]   if x % 2 == 1 ]  ->  [10, 30]" tone="cyan" p={p} />
       <Callout x={846} y={66} n={1} tone="cyan" p={p} />
 
       {/* Syntax Color Mapping */}
@@ -1511,7 +1511,7 @@ const PyM07: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm07';
   return (
-    <Shell id={id} badge="PY:M07" title="Giải Phẫu Hàm Python: *args/**kwargs, Phạm Vi LEGB & Bẫy Tham Số Mặc Định" rightNote="*args · **kwargs · LEGB" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M07" title="Cấu Trúc Hàm Python: *args/**kwargs, Phạm Vi LEGB & Lưu Ý Tham Số Mặc Định" rightNote="*args · **kwargs · LEGB" isLight={isLight} className={className}>
       {/* Left: Signature & LEGB */}
       <Panel x={14} y={54} w={432} h={312} title="Chữ ký linh hoạt (*args, **kwargs) & Quy tắc tra cứu LEGB" tone="cyan" p={p} />
       <Callout x={426} y={66} n={1} tone="cyan" p={p} />
@@ -1870,7 +1870,7 @@ const PyM12: DiagramRenderer = ({ isLight, className }) => {
   const p = getPalette(isLight);
   const id = 'm12';
   return (
-    <Shell id={id} badge="PY:M12" title="Giải Phẫu Công Cụ Dòng Lệnh Chuẩn Unix: argparse, 3 Dòng I/O & Mã Thoát" rightNote="argparse · stdout/stderr · rc" isLight={isLight} className={className}>
+    <Shell id={id} badge="PY:M12" title="Cấu Trúc Công Cụ Dòng Lệnh Chuẩn Unix: argparse, 3 Dòng I/O & Mã Thoát" rightNote="argparse · stdout/stderr · rc" isLight={isLight} className={className}>
       {/* Top: Command -> argparse -> main(argv) */}
       <Panel x={14} y={54} w={852} h={142} title="Tách biệt Phân tích Tham số (argparse) khỏi Logic Xử lý để Test được không cần subprocess" tone="cyan" p={p} />
       <Callout x={846} y={66} n={1} tone="cyan" p={p} />

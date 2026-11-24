@@ -10,7 +10,7 @@
 > - **Định tuyến trực tiếp bằng công thức băm:** Với mỗi tên khóa, client tính `CRC16(key) % 16384` để xác định chính xác slot và gửi thẳng tới nút Master sở hữu slot đó chỉ trong **1 bước mạng (1-hop)** mà không cần proxy trung gian.
 > - **Lỗi `CROSSSLOT` & `{HashTag}`:** Các lệnh đa khóa (`MGET`, `MULTI/EXEC`, `EVAL` Lua) yêu cầu mọi khóa phải nằm trên **cùng 1 Hash Slot**, nếu không sẽ báo lỗi `CROSSSLOT`. Khi đặt cặp ngoặc nhọn `{u42}` trong tên khóa (ví dụ `user:{u42}:profile` và `user:{u42}:cart`), Redis chỉ băm chuỗi `u42` bên trong ngoặc để đảm bảo mọi khóa của cùng một đối tượng rơi vào chung 1 slot.
 
-## 1. Giải phẫu Kiến trúc 16.384 Hash Slots & Định tuyến Thông minh
+## 1. Chi tiết Kiến trúc 16.384 Hash Slots & Định tuyến Thông minh
 
 Công thức định tuyến chuẩn của mọi thư viện Redis Cluster:
 
@@ -88,7 +88,7 @@ Trên Redis Cluster, mọi câu lệnh chạm vào nhiều khóa cùng lúc (`MG
   - Nhờ đó giao dịch thanh toán giỏ hàng của `u42` chạy nguyên tử mượt mà trên cùng 1 máy, trong khi hàng triệu khách hàng `{u43}`, `{u44}`... vẫn được rải đều sang tất cả các máy chủ trong cụm!
 
 > [!WARNING] Đại kỵ số #1 trên Cluster: Đặt nhãn chung `{all}` hoặc `{app}` gây nghẽn "Hot-Slot"!
-> Đừng bao giờ "chữa cháy" lỗi `CROSSSLOT` bằng cách đặt tên mọi khóa trong dự án là `cache:{all}:product:1`, `cache:{all}:product:2`...! Khi làm vậy, **100% dữ liệu toàn công ty đều băm đúng chữ `"all"` và đổ dồn hết vào duy nhất 1 máy chủ**, làm máy đó tràn RAM sập nguồn trong khi các máy chủ còn lại ngồi chơi `0%` tải! Luôn gắn `{HashTag}` theo đơn vị nhỏ nhất cần gom nhóm (`{userId}`, `{orderId}`).
+> Đừng bao giờ xử lý tạm lỗi `CROSSSLOT` bằng cách đặt tên mọi khóa trong dự án là `cache:{all}:product:1`, `cache:{all}:product:2`...! Khi làm vậy, **100% dữ liệu toàn công ty đều băm đúng chữ `"all"` và đổ dồn hết vào duy nhất 1 máy chủ**, làm máy đó tràn RAM sập nguồn trong khi các máy chủ còn lại ngồi chơi `0%` tải! Luôn gắn `{HashTag}` theo đơn vị nhỏ nhất cần gom nhóm (`{userId}`, `{orderId}`).
 
 ## 4. Cấu hình Nút Cluster & Kết nối Smart Client (Python & TypeScript)
 
