@@ -28,7 +28,7 @@ export const MobileBottomNav: React.FC = () => {
 
   const moreItems: { id: MainTab | 'setup'; labelVi: string; labelEn: string; icon: React.ReactNode }[] = [
     { id: 'setup', labelVi: 'Cài đặt Python & uv', labelEn: 'Setup Python & uv', icon: <Wrench className="h-4 w-4" /> },
-    { id: 'samples', labelVi: '16 Dự án Mẫu', labelEn: 'Sample Projects', icon: <FolderGit2 className="h-4 w-4" /> },
+    { id: 'samples', labelVi: 'Dự án Thực tế', labelEn: 'Real Projects', icon: <FolderGit2 className="h-4 w-4" /> },
     { id: 'exams', labelVi: 'Thi sát hạch', labelEn: 'Exams', icon: <GraduationCap className="h-4 w-4" /> },
     { id: 'reference', labelVi: 'Chuyên đề PDF', labelEn: 'Deep Dives', icon: <Compass className="h-4 w-4" /> },
     { id: 'curriculum', labelVi: 'Giáo trình 7 giai đoạn', labelEn: '7-Stage Archive', icon: <BookOpen className="h-4 w-4" /> },

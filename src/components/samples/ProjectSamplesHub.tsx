@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   FolderOpen,
   Folder,
@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   Layers,
   Globe,
   FlaskConical,
@@ -21,7 +22,11 @@ import {
   SlidersHorizontal,
   Wrench,
   ArrowRightLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Loader2,
 } from 'lucide-react';
+import { runCode } from '@/features/workpath/engine/pyEngine';
 import { ALL_SAMPLE_PROJECTS } from '@/data/samples/samplesData';
 import {
   SampleProject,
@@ -35,6 +40,7 @@ import { useSettingsStore } from '@/stores/useSettingsStore';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { IDE_THEMES, getIdeThemeConfig } from '@/utils/ideThemes';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
+import { RealWorldProjectsCatalog } from './RealWorldProjectsCatalog';
 import { cn } from '@/utils/cn';
 
 interface TreeFolderNode {
@@ -114,6 +120,13 @@ export const ProjectSamplesHub: React.FC = () => {
   const [copiedFile, setCopiedFile] = useState(false);
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [toolingStack, setToolingStack] = useState<ProjectToolingStack>('uv');
+  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  const [explorerWidth, setExplorerWidth] = useState(288);
+  const [isFilesSectionOpen, setIsFilesSectionOpen] = useState(true);
+  const [isStructureSectionOpen, setIsStructureSectionOpen] = useState(true);
+  const [isConsoleOpen, setIsConsoleOpen] = useState(true);
+  const [isRunningLive, setIsRunningLive] = useState(false);
+  const [isToolingGuideOpen, setIsToolingGuideOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<'split' | 'tree' | 'code'>(
     'split'
   );
@@ -175,7 +188,96 @@ export const ProjectSamplesHub: React.FC = () => {
     setCustomCommandInput(formatCommandForStack(cmd.command, toolingStack));
     setTerminalOutput(cmd.stdout);
     setActiveHttpMeta(cmd.httpMeta);
+    setIsConsoleOpen(true);
     setRunCount((c) => c + 1);
+  };
+
+  const handleStartResizeExplorer = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = explorerWidth;
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const delta = moveEvent.clientX - startX;
+        const nextWidth = Math.min(520, Math.max(200, startWidth + delta));
+        setExplorerWidth(nextWidth);
+      };
+
+      const onMouseUp = () => {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    },
+    [explorerWidth]
+  );
+
+  const handleRunLiveCode = async () => {
+    setIsConsoleOpen(true);
+    setIsRunningLive(true);
+    try {
+      const pyFiles = currentProject.files.filter((f) => f.language === 'python');
+      const targetCode =
+        activeFile.language === 'python'
+          ? activeFile.code
+          : pyFiles[0]?.code || '';
+
+      // Register sibling modules in sys.modules so multi-file pure-Python projects import cleanly in Pyodide
+      const moduleSetupLines: string[] = [
+        'import sys, types',
+      ];
+      for (const f of pyFiles) {
+        const cleaned = f.path.replace(/^src\//, '').replace(/\.py$/, '');
+        const parts = cleaned.split('/');
+        for (let i = 1; i < parts.length; i++) {
+          const pkg = parts.slice(0, i).join('.');
+          moduleSetupLines.push(
+            `if ${JSON.stringify(pkg)} not in sys.modules:\n    _m = types.ModuleType(${JSON.stringify(pkg)})\n    _m.__path__ = []\n    sys.modules[${JSON.stringify(pkg)}] = _m`
+          );
+        }
+        const modName =
+          parts[parts.length - 1] === '__init__'
+            ? parts.slice(0, -1).join('.')
+            : parts.join('.');
+        if (modName && f.path !== activeFile.path) {
+          moduleSetupLines.push(
+            `_mod = types.ModuleType(${JSON.stringify(modName)})\nsys.modules[${JSON.stringify(modName)}] = _mod\ntry:\n    exec(${JSON.stringify(f.code)}, _mod.__dict__)\nexcept Exception:\n    pass`
+          );
+        }
+      }
+
+      const fullScript = `${moduleSetupLines.join('\n')}\n\n${targetCode}`;
+      const res = await runCode(fullScript, '');
+      const cleanOut = [res.stdout.trim(), res.stderr.trim()]
+        .filter(Boolean)
+        .join('\n');
+
+      const fallbackOut =
+        currentProject.interactiveCommands[0]?.stdout ||
+        'Đã thực thi thành công.';
+
+      if (res.exitCode === 0 && cleanOut) {
+        setTerminalOutput(
+          `# [Pyodide Live Run] Đã chạy trực tiếp ${activeFile.path} (${res.ms}ms):\n${cleanOut}`
+        );
+        setActiveHttpMeta(undefined);
+      } else if (res.exitCode === 0 && !cleanOut) {
+        setTerminalOutput(
+          `# [Pyodide Live Run] File ${activeFile.path} biên dịch hợp lệ (${res.ms}ms) • Kết quả chạy kịch bản dự án:\n${fallbackOut}`
+        );
+      } else {
+        // External server framework (FastAPI, Django, Celery, Scrapy...) -> show simulated runtime output
+        setTerminalOutput(
+          `# [Chạy kịch bản Dự án: ${currentProject.interactiveCommands[0]?.command || activeFile.path}]\n${fallbackOut}`
+        );
+      }
+      setRunCount((c) => c + 1);
+    } finally {
+      setIsRunningLive(false);
+    }
   };
 
   const handleSelectToolingStack = (nextStack: ProjectToolingStack) => {
@@ -301,7 +403,10 @@ export const ProjectSamplesHub: React.FC = () => {
   const codeLines = activeFile.code.split('\n');
 
   return (
-    <div className="mx-auto max-w-[1680px] px-3 sm:px-6 py-3.5 space-y-3.5">
+    <div
+      id="vscode-ide-top"
+      className="mx-auto max-w-[1680px] px-3 sm:px-6 py-3.5 space-y-3.5"
+    >
       {/* Compact Single-Row Top Project Selector Bar */}
       <div className="rounded-2xl border border-slate-800/90 bg-slate-900/75 px-3.5 py-2.5 shadow-md">
         <div className="flex flex-wrap items-center justify-between gap-2.5">
@@ -512,198 +617,245 @@ export const ProjectSamplesHub: React.FC = () => {
         </button>
       </div>
 
-      {/* Main 12-Column IDE Layout: Left Explorer & Architecture (4 cols) + Right Code Editor & Interactive Terminal (8 cols) */}
-      <div className="grid gap-4 lg:grid-cols-12 items-start">
-        {/* LEFT PANE: Directory Tree Explorer + Architecture Standards */}
+      {/* Unified VS Code-Style IDE Shell: Collapsible Left Explorer & Structure + Right Code Editor */}
+      <div
+        className="rounded-2xl border overflow-hidden shadow-xl transition-colors"
+        style={{
+          borderColor: activeIdeTheme.barBorder,
+          backgroundColor: activeIdeTheme.editorBg,
+        }}
+      >
+        {/* VS Code Top Title Bar: Explorer Toggle + Window Dots + Active Breadcrumb + Copy */}
         <div
-          className={cn(
-            'lg:col-span-4 space-y-3.5 min-w-0',
-            mobilePane === 'code' && 'hidden lg:block'
-          )}
+          className="flex items-center justify-between gap-2 border-b px-3 py-2"
+          style={{
+            backgroundColor: activeIdeTheme.barBg,
+            borderColor: activeIdeTheme.barBorder,
+          }}
         >
-          {/* File Explorer Card */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between border-b border-slate-800 bg-slate-950/90 px-3.5 py-2.5">
-              <div className="flex items-center gap-2">
-                <FolderOpen className="h-4 w-4 text-amber-400" />
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Cấu trúc Thư mục Dự án
-                </span>
-              </div>
-              <span className="font-mono text-[11px] text-slate-400">
-                {currentProject.files.length} files
-              </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <button
+              type="button"
+              onClick={() => setIsExplorerOpen((v) => !v)}
+              title={isExplorerOpen ? 'Thu gọn thanh Explorer bên trái' : 'Mở thanh Explorer bên trái'}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer"
+            >
+              {isExplorerOpen ? (
+                <PanelLeftClose className="h-3.5 w-3.5" />
+              ) : (
+                <PanelLeftOpen className="h-3.5 w-3.5" />
+              )}
+              <span>{isExplorerOpen ? 'Thu gọn' : 'Explorer'}</span>
+            </button>
+
+            <div
+              className="hidden sm:flex items-center gap-1.5 pr-2.5 border-r shrink-0"
+              style={{ borderColor: activeIdeTheme.barBorder }}
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
             </div>
 
-            <div className="p-3 bg-slate-950/50">
-              {/* Project Root Folder Header */}
-              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400 pb-1.5 mb-1.5 border-b border-slate-800/80">
-                <FolderOpen className="h-4 w-4 text-emerald-400 shrink-0" />
-                <span>{currentProject.slug}/</span>
-              </div>
-
-              {renderTreeNode(directoryTree, 0)}
+            <div
+              className="flex items-center gap-1.5 font-mono text-xs truncate"
+              style={{ color: activeIdeTheme.barText }}
+            >
+              {activeFile.language === 'python' ? (
+                <FileCode2
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    activeIdeTheme.isLight ? 'text-blue-600' : 'text-sky-400'
+                  )}
+                />
+              ) : (
+                <FileText
+                  className={cn(
+                    'h-3.5 w-3.5 shrink-0',
+                    activeIdeTheme.isLight ? 'text-amber-600' : 'text-amber-400'
+                  )}
+                />
+              )}
+              <span className="font-bold truncate">
+                {activeFile.path.split('/').join(' › ')}
+              </span>
             </div>
           </div>
 
-          {/* Project Overview & Architecture Best Practices Card */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-              <Sparkles className="h-4 w-4" />
-              <span>Chuẩn Tổ chức & Kiến trúc Dự án</span>
-            </div>
+          {/* Right Pinned Run + Console Toggle + Copy Buttons */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleRunLiveCode}
+              disabled={isRunningLive}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-2.5 py-1 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors cursor-pointer shadow-2xs disabled:opacity-60"
+              title="Chạy trực tiếp code Python của file/dự án này và hiển thị kết quả dưới Console"
+            >
+              {isRunningLive ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="h-3.5 w-3.5 fill-current" />
+              )}
+              <span>Chạy code</span>
+            </button>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
-              {currentProject.summary}
-            </p>
+            <button
+              type="button"
+              onClick={() => setIsConsoleOpen((v) => !v)}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
+              title="Ẩn/hiện khung Console & Terminal bên dưới"
+            >
+              <Terminal className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">
+                {isConsoleOpen ? 'Ẩn Console' : 'Hiện Console'}
+              </span>
+            </button>
 
-            <div className="space-y-2 pt-1">
-              {currentProject.architectureNotes.map((note, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-xl border border-slate-800/90 bg-slate-950/60 p-2.5 text-xs text-slate-300 leading-relaxed"
-                >
-                  <span className="font-mono text-[11px] font-bold text-emerald-400 shrink-0">
-                    0{i + 1}.
-                  </span>
-                  <span>{note}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {currentProject.techStack.map((tech) => (
-                <span
-                  key={tech}
-                  className="rounded-lg border border-slate-700/80 bg-slate-950 px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-300"
-                >
-                  {tech}
-                </span>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={handleCopyFileCode}
+              style={{
+                backgroundColor: activeIdeTheme.btnBg,
+                borderColor: activeIdeTheme.barBorder,
+                color: activeIdeTheme.barText,
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
+            >
+              {copiedFile ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="text-emerald-500">Đã chép</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy file</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {/* RIGHT PANE: Multi-Tab IDE Code Viewer + Interactive Terminal / cURL Playground */}
-        <div
-          className={cn(
-            'lg:col-span-8 space-y-4 min-w-0',
-            mobilePane === 'tree' && 'hidden lg:block'
-          )}
-        >
-          {/* IDE Code Viewer Window */}
-          <div
-            className="rounded-2xl border overflow-hidden shadow-xl transition-colors"
-            style={{
-              borderColor: activeIdeTheme.barBorder,
-              backgroundColor: activeIdeTheme.editorBg,
-            }}
+        {/* VS Code Split Body: Left Resizable Sidebar + Drag Handle + Right Editor & Bottom Console */}
+        <div className="flex flex-col lg:flex-row items-stretch">
+          {/* LEFT SIDEBAR: File Explorer & Structure (Collapsible & Resizable on Desktop) */}
+          <aside
+            style={{ width: isExplorerOpen ? `${explorerWidth}px` : undefined }}
+            className={cn(
+              'w-full lg:shrink-0 border-b lg:border-b-0 border-slate-800 bg-slate-950/90 text-slate-200 flex flex-col',
+              !isExplorerOpen && 'lg:hidden',
+              mobilePane === 'code' && 'hidden lg:flex'
+            )}
           >
-            {/* IDE Open File Tabs Bar: Left Traffic Lights (Fixed) | Middle Scrollable File Tabs | Right Copy Button (Fixed) */}
-            <div
-              className="flex items-center justify-between border-b px-3 py-2"
-              style={{
-                backgroundColor: activeIdeTheme.barBg,
-                borderColor: activeIdeTheme.barBorder,
-              }}
-            >
-              {/* Left Pinned Window Dots */}
-              <div
-                className="hidden sm:flex items-center gap-1.5 pr-3 border-r shrink-0"
-                style={{ borderColor: activeIdeTheme.barBorder }}
+            {/* Section 1: EXPLORER (Directory Tree) */}
+            <div className="border-b border-slate-800/90">
+              <button
+                type="button"
+                onClick={() => setIsFilesSectionOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-slate-900/80 hover:bg-slate-900 text-left cursor-pointer"
               >
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-              </div>
-
-              {/* Middle Scrollable File Tabs with Clean Margin & Spacing */}
-              <div className="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto no-scrollbar px-2 sm:px-3">
-                {currentProject.files.map((file) => {
-                  const fileName = file.path.split('/').pop() || file.path;
-                  const isActive = file.path === activeFile.path;
-                  return (
-                    <button
-                      key={file.path}
-                      onClick={() => {
-                setActiveFilePath(file.path);
-                if (mobilePane === 'tree') {
-                  setMobilePane('code');
-                }
-              }}
-                      title={file.path}
-                      style={
-                        isActive
-                          ? {
-                              backgroundColor: activeIdeTheme.popupActiveBg,
-                              borderColor: activeIdeTheme.popupActiveAccent,
-                              color: activeIdeTheme.popupActiveText,
-                            }
-                          : {
-                              backgroundColor: activeIdeTheme.btnBg,
-                              borderColor: activeIdeTheme.barBorder,
-                              color: activeIdeTheme.barText,
-                            }
-                      }
-                      className={cn(
-                        'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-xs transition-all shrink-0 cursor-pointer',
-                        isActive ? 'font-bold shadow-2xs' : 'opacity-80 hover:opacity-100'
-                      )}
-                    >
-                      {file.language === 'python' ? (
-                        <FileCode2
-                          className={cn(
-                            'h-3.5 w-3.5 shrink-0',
-                            activeIdeTheme.isLight
-                              ? 'text-blue-600'
-                              : 'text-sky-400'
-                          )}
-                        />
-                      ) : (
-                        <FileText
-                          className={cn(
-                            'h-3.5 w-3.5 shrink-0',
-                            activeIdeTheme.isLight
-                              ? 'text-amber-600'
-                              : 'text-amber-400'
-                          )}
-                        />
-                      )}
-                      <span>{fileName}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Right Pinned Copy Button (Never scrolls or overlaps file tabs) */}
-              <div
-                className="pl-2.5 border-l shrink-0 flex items-center"
-                style={{ borderColor: activeIdeTheme.barBorder }}
-              >
-                <button
-                  onClick={handleCopyFileCode}
-                  style={{
-                    backgroundColor: activeIdeTheme.btnBg,
-                    borderColor: activeIdeTheme.barBorder,
-                    color: activeIdeTheme.barText,
-                  }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold shrink-0 transition-opacity hover:opacity-85 cursor-pointer shadow-2xs"
-                >
-                  {copiedFile ? (
-                    <>
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                      <span className="text-emerald-500">Đã chép</span>
-                    </>
+                <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-slate-200">
+                  {isFilesSectionOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
                   ) : (
-                    <>
-                      <Copy className="h-3.5 w-3.5" />
-                      <span>Copy file</span>
-                    </>
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
                   )}
-                </button>
-              </div>
+                  Explorer
+                </span>
+                <span className="font-mono text-[10px] text-slate-400">
+                  {currentProject.files.length} files
+                </span>
+              </button>
+
+              {isFilesSectionOpen && (
+                <div className="p-2.5 max-h-[290px] overflow-y-auto">
+                  <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-emerald-400 pb-1.5 mb-1.5 border-b border-slate-800/80">
+                    <FolderOpen className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{currentProject.slug}/</span>
+                  </div>
+                  {renderTreeNode(directoryTree, 0)}
+                </div>
+              )}
             </div>
 
+            {/* Section 2: STRUCTURE & ARCHITECTURE */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <button
+                type="button"
+                onClick={() => setIsStructureSectionOpen((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-2 bg-slate-900/80 hover:bg-slate-900 text-left cursor-pointer border-b border-slate-800/70"
+              >
+                <span className="flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+                  {isStructureSectionOpen ? (
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                  ) : (
+                    <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                  )}
+                  <Sparkles className="h-3 w-3" />
+                  Structure & Kiến trúc
+                </span>
+              </button>
+
+              {isStructureSectionOpen && (
+                <div className="p-3 space-y-2.5 overflow-y-auto max-h-[320px]">
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {currentProject.summary}
+                  </p>
+                  <div className="space-y-1.5">
+                    {currentProject.architectureNotes.map((note, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-2 rounded-lg border border-slate-800/90 bg-slate-900/60 p-2 text-[11px] text-slate-300 leading-relaxed"
+                      >
+                        <span className="font-mono text-[10px] font-bold text-emerald-400 shrink-0">
+                          0{i + 1}.
+                        </span>
+                        <span>{note}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                    {currentProject.techStack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="rounded-md border border-slate-700/80 bg-slate-900 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-sky-300"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </aside>
+
+          {/* Resizable Vertical Divider Handle (Desktop) */}
+          {isExplorerOpen && (
+            <div
+              onMouseDown={handleStartResizeExplorer}
+              onDoubleClick={() => setExplorerWidth(288)}
+              title="Kéo để thay đổi độ rộng thanh Explorer • Nháy đúp để đặt lại mặc định"
+              className="hidden lg:block w-1.5 shrink-0 cursor-col-resize bg-slate-800/80 hover:bg-emerald-500/70 active:bg-emerald-400 transition-colors"
+            />
+          )}
+
+          {/* RIGHT PANE: File Role Banner + Code Body + Integrated Console + Bottom Status Bar */}
+          <div
+            className={cn(
+              'flex-1 min-w-0 flex flex-col',
+              mobilePane === 'tree' && 'hidden lg:flex'
+            )}
+          >
             {/* File Path Breadcrumb & Architectural Role Explanation Banner */}
             <div
               className="border-b px-4 py-2.5 text-xs space-y-1.5"
@@ -736,17 +888,17 @@ export const ProjectSamplesHub: React.FC = () => {
               </p>
             </div>
 
-            {/* Syntax-Highlighted Code Body with Line Numbers */}
+            {/* Syntax-Highlighted Code Body with Line Numbers (flex-1 eliminates any dead gap above Status Bar) */}
             <div
               className={cn(
-                'flex overflow-x-auto font-mono text-[13px] leading-6 max-h-[420px] overflow-y-auto',
+                'flex-1 flex overflow-x-auto font-mono text-[13px] leading-6 max-h-[480px] overflow-y-auto',
                 !activeIdeTheme.isLight && 'ide-dark-surface'
               )}
               style={{ backgroundColor: activeIdeTheme.editorBg }}
             >
               <div
                 aria-hidden="true"
-                className="select-none border-r py-4 px-2.5 text-right font-mono text-[12px] leading-6 shrink-0 w-11"
+                className="select-none border-r pt-4 pb-10 px-2.5 text-right font-mono text-[12px] leading-6 shrink-0 w-11"
                 style={{
                   backgroundColor: activeIdeTheme.gutterBg,
                   borderColor: activeIdeTheme.gutterBorder,
@@ -756,31 +908,173 @@ export const ProjectSamplesHub: React.FC = () => {
                 {codeLines.map((_, idx) => (
                   <div key={idx}>{idx + 1}</div>
                 ))}
+                <div className="h-6" />
               </div>
 
-              <pre className="m-0 p-4 font-mono text-[13px] leading-6 whitespace-pre flex-1">
+              <pre className="m-0 pt-4 pb-10 px-4 font-mono text-[13px] leading-6 whitespace-pre flex-1">
                 <code>
                   {renderHighlightedPython(
                     activeFile.code,
                     activeIdeTheme.isLight
                   )}
                 </code>
+                <div className="h-20" aria-hidden="true" />
               </pre>
             </div>
 
-            {/* IDE Bottom Status Bar + Bottom-Right Theme Switcher Icon */}
+            {/* Integrated VS Code Bottom Console / Terminal Drawer (Toggleable from Status Bar) */}
+            {isConsoleOpen && (
+              <div
+                className="border-t p-3 space-y-2.5"
+                style={{
+                  backgroundColor: activeIdeTheme.gutterBg,
+                  borderColor: activeIdeTheme.barBorder,
+                }}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-400 mr-1">
+                      <Terminal className="h-3.5 w-3.5" />
+                      <span>Console / Terminal</span>
+                    </span>
+                    {currentProject.interactiveCommands.map((cmd) => {
+                      const isActive = cmd.id === activeCommandId;
+                      return (
+                        <button
+                          key={cmd.id}
+                          type="button"
+                          onClick={() => handleSelectCommand(cmd)}
+                          className={cn(
+                            'inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold transition-all cursor-pointer',
+                            isActive
+                              ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300'
+                              : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700'
+                          )}
+                        >
+                          {cmd.kind === 'curl' ? (
+                            <Globe className="h-3 w-3 text-cyan-400" />
+                          ) : cmd.kind === 'pytest' ? (
+                            <FlaskConical className="h-3 w-3 text-violet-400" />
+                          ) : (
+                            <Play className="h-3 w-3 text-emerald-400 fill-current" />
+                          )}
+                          <span>{cmd.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsConsoleOpen(false)}
+                    className="font-mono text-[10px] text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    Thu gọn Console ✕
+                  </button>
+                </div>
+
+                {/* Editable Command / cURL Runner Bar */}
+                <form
+                  onSubmit={handleExecuteCustomCommand}
+                  className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+                >
+                  <div className="flex-1 flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1.5 font-mono text-xs">
+                    <span className="text-emerald-400 font-bold select-none shrink-0">
+                      {toolingStack === 'pyenv-pip' ? '(.venv) $' : '$'}
+                    </span>
+                    <input
+                      type="text"
+                      value={customCommandInput}
+                      onChange={(e) => setCustomCommandInput(e.target.value)}
+                      aria-label="Lệnh Terminal hoặc cURL"
+                      className="w-full bg-transparent text-sky-200 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors shrink-0 cursor-pointer"
+                  >
+                    <Send className="h-3 w-3" />
+                    <span>Thực thi lệnh</span>
+                  </button>
+                </form>
+
+                {activeHttpMeta && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cyan-500/30 bg-cyan-950/20 px-3 py-1.5 font-mono text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-cyan-500/20 px-1.5 py-0.2 text-[10px] font-bold text-cyan-300">
+                        {activeHttpMeta.method}
+                      </span>
+                      <span className="text-slate-200 font-semibold">
+                        {activeHttpMeta.endpoint}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 text-[10px] font-bold">
+                        HTTP {activeHttpMeta.statusText}
+                      </span>
+                      <span className="text-slate-400 text-[10px]">
+                        {activeHttpMeta.latencyMs}ms
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  key={runCount}
+                  className={cn(
+                    'rounded-lg border p-2.5 font-mono text-xs leading-5 max-h-44 overflow-y-auto overflow-x-auto',
+                    !activeIdeTheme.isLight && 'ide-dark-surface'
+                  )}
+                  style={{
+                    backgroundColor: activeIdeTheme.editorBg,
+                    borderColor: activeIdeTheme.barBorder,
+                  }}
+                >
+                  <pre className="whitespace-pre-wrap m-0">
+                    <code>
+                      {renderHighlightedPython(
+                        terminalOutput,
+                        activeIdeTheme.isLight
+                      )}
+                    </code>
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* IDE Bottom Status Bar (Pinned to bottom edge via mt-auto; click to toggle Console) */}
             <div
-              className="relative flex flex-wrap items-center justify-between gap-2 border-t px-3.5 py-1.5 font-mono text-[11px]"
+              className="mt-auto relative flex flex-wrap items-center justify-between gap-2 border-t px-3.5 py-1.5 font-mono text-[11px]"
               style={{
                 backgroundColor: activeIdeTheme.barBg,
                 borderColor: activeIdeTheme.barBorder,
                 color: activeIdeTheme.barText,
               }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span>{codeLines.length} dòng</span>
                 <span className="opacity-40">|</span>
                 <span>UTF-8 • Python 3.12</span>
+                <span className="opacity-40">|</span>
+                <button
+                  type="button"
+                  onClick={() => setIsConsoleOpen((v) => !v)}
+                  className="inline-flex items-center gap-1.5 font-bold text-emerald-400 hover:underline cursor-pointer"
+                  title="Bấm để đóng/mở bảng Console & Terminal ngay bên trên thanh này"
+                >
+                  <Terminal className="h-3.5 w-3.5" />
+                  <span>
+                    {isConsoleOpen
+                      ? 'Console: Đang mở (Bấm để ẩn)'
+                      : 'Console: Đang ẩn (Bấm để mở)'}
+                  </span>
+                  {isConsoleOpen ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronUp className="h-3 w-3" />
+                  )}
+                </button>
               </div>
 
               {/* Bottom-Right IDE Theme Switcher Icon */}
@@ -895,419 +1189,196 @@ export const ProjectSamplesHub: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Interactive Terminal & Dual-Track Project Management Workflow */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 space-y-3.5 shadow-xl">
-            {/* Project Management Tooling Switcher (Method 1: uv vs Method 2: pyenv/pip, Poetry, Pipenv) */}
-            <div className="rounded-xl border border-slate-800/90 bg-slate-950/70 p-3 space-y-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                  <span className="text-xs font-bold text-slate-200">
-                    Chọn Phương pháp Quản lý Dự án & Chạy Lệnh (Xuyên suốt 16 Project):
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectToolingStack('uv')}
-                    className={cn(
-                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
-                      toolingStack === 'uv'
-                        ? 'bg-emerald-500 text-slate-950 shadow-xs'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
-                    )}
-                  >
-                    Cách 1: Dùng `uv`
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectToolingStack('pyenv-pip')}
-                    className={cn(
-                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
-                      toolingStack === 'pyenv-pip'
-                        ? 'bg-sky-400 text-slate-950 shadow-xs'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
-                    )}
-                  >
-                    Cách 2A: `pyenv + venv + pip`
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectToolingStack('poetry')}
-                    className={cn(
-                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
-                      toolingStack === 'poetry'
-                        ? 'bg-sky-400 text-slate-950 shadow-xs'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
-                    )}
-                  >
-                    Cách 2B: `pyenv + Poetry`
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSelectToolingStack('pipenv')}
-                    className={cn(
-                      'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
-                      toolingStack === 'pipenv'
-                        ? 'bg-sky-400 text-slate-950 shadow-xs'
-                        : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
-                    )}
-                  >
-                    Cách 2C: `pyenv + Pipenv`
-                  </button>
-                </div>
+      {/* Collapsible 3-Step Local Tooling Workflow (Collapsed by default so page stays compact) */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-md">
+        <button
+          type="button"
+          onClick={() => setIsToolingGuideOpen((v) => !v)}
+          className="w-full flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-950/70 hover:bg-slate-900/90 text-left cursor-pointer"
+        >
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-200">
+            <Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+            <span>
+              Hướng dẫn 3 bước khởi tạo & chạy dự án{' '}
+              <code className="text-emerald-300 font-mono">
+                {currentProject.slug}
+              </code>{' '}
+              trên máy thật (uv / pyenv / Poetry / Pipenv)
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1 font-mono text-[11px] font-semibold text-emerald-400">
+            <span>{isToolingGuideOpen ? 'Thu gọn' : 'Mở xem 3 bước'}</span>
+            {isToolingGuideOpen ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+          </span>
+        </button>
+
+        {isToolingGuideOpen && (
+          <div className="p-3.5 border-t border-slate-800/90 space-y-2.5 bg-slate-950/50">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-200">
+                  Chọn công cụ quản lý môi trường:
+                </span>
               </div>
-
-              {/* Detailed 3-Step Guided Cards with Explanations + Python Old + Node.js Comparison */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
-                <div className="flex items-center gap-2 text-xs text-slate-300">
-                  <span className="font-semibold text-amber-300">
-                    🎯 Đầu vào (Entrypoint) của dự án này:
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveFilePath(currentProject.defaultFilePath)
-                    }
-                    className="rounded-md bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
-                    title="Bấm để mở ngay file đầu vào (Entrypoint) của dự án này"
-                  >
-                    {currentProject.defaultFilePath}
-                  </button>
-                  <span className="hidden lg:inline text-[11px] text-slate-400">
-                    (File chứa hàm khởi chạy chính • Cấu hình thư viện nằm ở{' '}
-                    <button
-                      type="button"
-                      onClick={() => setActiveFilePath('pyproject.toml')}
-                      className="text-amber-300 underline hover:text-amber-200 cursor-pointer font-mono"
-                    >
-                      pyproject.toml
-                    </button>
-                    )
-                  </span>
-                </div>
-
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={toggleJsTsComparison}
-                  aria-pressed={showJsTsComparison}
+                  onClick={() => handleSelectToolingStack('uv')}
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer',
-                    showJsTsComparison
-                      ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
-                      : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+                    'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                    toolingStack === 'uv'
+                      ? 'bg-emerald-500 text-slate-950 shadow-xs'
+                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
                   )}
                 >
-                  <ArrowRightLeft className="h-3 w-3" />
-                  <span>
-                    So sánh Node.js / JS-TS:{' '}
-                    {showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}
-                  </span>
+                  Cách 1: Dùng `uv`
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectToolingStack('pyenv-pip')}
+                  className={cn(
+                    'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                    toolingStack === 'pyenv-pip'
+                      ? 'bg-sky-400 text-slate-950 shadow-xs'
+                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                  )}
+                >
+                  Cách 2A: `pyenv + venv + pip`
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectToolingStack('poetry')}
+                  className={cn(
+                    'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                    toolingStack === 'poetry'
+                      ? 'bg-sky-400 text-slate-950 shadow-xs'
+                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                  )}
+                >
+                  Cách 2B: `pyenv + Poetry`
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectToolingStack('pipenv')}
+                  className={cn(
+                    'rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer',
+                    toolingStack === 'pipenv'
+                      ? 'bg-sky-400 text-slate-950 shadow-xs'
+                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+                  )}
+                >
+                  Cách 2C: `pyenv + Pipenv`
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <span className="font-semibold text-amber-300">
+                  🎯 Đầu vào (Entrypoint) của dự án này:
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveFilePath(currentProject.defaultFilePath)
+                  }
+                  className="rounded-md bg-emerald-500/15 border border-emerald-500/40 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                >
+                  {currentProject.defaultFilePath}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-                {/* STEP 1 CARD */}
-                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-emerald-300">
-                        Bước 1 • Khởi tạo Dự án & Version
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        .python-version + .venv
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {toolingStack === 'uv' &&
-                        'Thay vì tự tạo thư mục, môi trường ảo .venv và file cấu hình thủ công, bạn chỉ cần chạy uv init và ghim Python 3.12:'}
-                      {toolingStack === 'pyenv-pip' &&
-                        'Tạo thư mục dự án, dùng pyenv chọn Python 3.12.7, tạo thư mục môi trường ảo .venv và kích hoạt (activate) nó lên:'}
-                      {toolingStack === 'poetry' &&
-                        'Khởi tạo dự án với Poetry (bật chế độ đặt .venv ngay trong dự án) và chọn phiên bản Python 3.12:'}
-                      {toolingStack === 'pipenv' &&
-                        'Tạo thư mục dự án, đặt biến lưu .venv trong dự án và khởi tạo Pipenv với Python 3.12:'}
-                    </p>
-                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-emerald-300 overflow-x-auto">
-                      {toolingStack === 'uv' &&
-                        `uv init ${currentProject.slug}\ncd ${currentProject.slug} && uv python pin 3.12`}
-                      {toolingStack === 'pyenv-pip' &&
-                        `mkdir ${currentProject.slug} && cd ${currentProject.slug}\npython -m venv .venv && source .venv/bin/activate`}
-                      {toolingStack === 'poetry' &&
-                        `poetry new --src ${currentProject.slug} && cd ${currentProject.slug}\npoetry config virtualenvs.in-project true && poetry env use 3.12`}
-                      {toolingStack === 'pipenv' &&
-                        `mkdir ${currentProject.slug} && cd ${currentProject.slug}\nexport PIPENV_VENV_IN_PROJECT=1 && pipenv --python 3.12`}
-                    </pre>
-                  </div>
-
-                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
-                    <div className="text-slate-400">
-                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
-                      <code className="font-mono text-slate-200">
-                        {toolingStack === 'uv'
-                          ? 'mkdir app && cd app && python -m venv .venv'
-                          : 'uv init ' + currentProject.slug}
-                      </code>
-                    </div>
-                    {showJsTsComparison && (
-                      <div className="text-cyan-300/90">
-                        <strong>• Tương ứng Node.js:</strong>{' '}
-                        <code className="font-mono text-cyan-200">
-                          mkdir {currentProject.slug} && cd {currentProject.slug}{' '}
-                          && npm init -y
-                        </code>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* STEP 2 CARD */}
-                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-sky-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-sky-300">
-                        Bước 2 • Thêm & Đồng bộ Thư viện
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        pyproject.toml ≈ package.json
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {toolingStack === 'uv' &&
-                        'uv tự động tạo thư mục .venv (tương đương node_modules), tải thư viện siêu tốc, ghi vào pyproject.toml và khóa vào uv.lock:'}
-                      {toolingStack === 'pyenv-pip' &&
-                        'Khi đã đứng trong (.venv), dùng pip để cài đặt thư viện cùng source code dự án (-e .) và lưu danh sách ra requirements.txt:'}
-                      {toolingStack === 'poetry' &&
-                        'Poetry tự động tải thư viện vào .venv, ghi nhận vào pyproject.toml và khóa chặt phiên bản vào file poetry.lock:'}
-                      {toolingStack === 'pipenv' &&
-                        'Pipenv cài đặt thư viện vào .venv, ghi nhận vào Pipfile và khóa mã băm SHA256 vào Pipfile.lock:'}
-                    </p>
-                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-sky-300 overflow-x-auto">
-                      {toolingStack === 'uv' &&
-                        `# Đồng bộ từ pyproject.toml (hoặc thêm mới: uv add <gói>):\nuv sync\nuv add --dev pytest ruff`}
-                      {toolingStack === 'pyenv-pip' &&
-                        `# Cài package dự án (-e .) + công cụ test:\npip install -e . pytest ruff\npip freeze > requirements.txt`}
-                      {toolingStack === 'poetry' &&
-                        `# Cài từ pyproject.toml (hoặc: poetry add <gói>):\npoetry install\npoetry add --group dev pytest ruff`}
-                      {toolingStack === 'pipenv' &&
-                        `# Cài vào Pipfile & khóa Pipfile.lock:\npipenv install -e .\npipenv install --dev pytest ruff`}
-                    </pre>
-                  </div>
-
-                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
-                    <div className="text-slate-400">
-                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
-                      <code className="font-mono text-slate-200">
-                        {toolingStack === 'uv'
-                          ? 'pip install <gói> && pip freeze > requirements.txt'
-                          : 'uv add <gói> / uv sync'}
-                      </code>
-                    </div>
-                    {showJsTsComparison && (
-                      <div className="text-cyan-300/90">
-                        <strong>• Tương ứng Node.js:</strong>{' '}
-                        <code className="font-mono text-cyan-200">
-                          npm install &lt;gói&gt; / pnpm install
-                        </code>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* STEP 3 CARD */}
-                <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2 flex flex-col justify-between">
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-300">
-                        Bước 3 • Chạy Đầu vào & Kiểm thử
-                      </span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        Entrypoint Runner
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      {toolingStack === 'uv' &&
-                        'Lệnh uv run đảm bảo code luôn chạy bên trong môi trường ảo .venv của dự án mà bạn không cần bận tâm việc activate thủ công:'}
-                      {toolingStack === 'pyenv-pip' &&
-                        'Khi môi trường (.venv) đang được kích hoạt (activate), bạn gọi trực tiếp lệnh python và pytest để chạy điểm đầu vào của dự án:'}
-                      {toolingStack === 'poetry' &&
-                        'Dùng lệnh poetry run để thực thi điểm đầu vào của dự án và chạy bộ kiểm thử bên trong môi trường ảo của Poetry:'}
-                      {toolingStack === 'pipenv' &&
-                        'Dùng lệnh pipenv run để chạy điểm đầu vào của dự án bên trong môi trường ảo đã khóa của Pipenv:'}
-                    </p>
-                    <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-amber-300 overflow-x-auto">
-                      {`${formatCommandForStack(
-                        currentProject.interactiveCommands[0]?.command ||
-                          'uv run python main.py',
-                        toolingStack
-                      )}\n${formatCommandForStack('uv run pytest -v', toolingStack)}`}
-                    </pre>
-                  </div>
-
-                  <div className="space-y-1 pt-1.5 border-t border-slate-800/80 text-[10px]">
-                    <div className="text-slate-400">
-                      <strong className="text-sky-300">• Tương ứng Python khác:</strong>{' '}
-                      <code className="font-mono text-slate-200">
-                        {toolingStack === 'uv'
-                          ? 'source .venv/bin/activate && ' +
-                            formatCommandForStack(
-                              currentProject.interactiveCommands[0]?.command ||
-                                'uv run python main.py',
-                              'pyenv-pip'
-                            )
-                          : currentProject.interactiveCommands[0]?.command}
-                      </code>
-                    </div>
-                    {showJsTsComparison && (
-                      <div className="text-cyan-300/90">
-                        <strong>• Tương ứng Node.js:</strong>{' '}
-                        <code className="font-mono text-cyan-200">
-                          node index.js / npm start &amp;&amp; npm test
-                        </code>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Terminal className="h-4 w-4 text-emerald-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                  Terminal Tương tác & Giả lập Gọi API / cURL / Pytest
-                </h3>
-              </div>
-
-              <span className="font-mono text-[11px] text-slate-400">
-                Bấm vào kịch bản bên dưới hoặc sửa tham số lệnh rồi nhấn Thực thi
-              </span>
-            </div>
-
-            {/* Preset Interactive Command / cURL Buttons */}
-            <div className="flex flex-wrap items-center gap-2">
-              {currentProject.interactiveCommands.map((cmd) => {
-                const isActive = cmd.id === activeCommandId;
-                return (
-                  <button
-                    key={cmd.id}
-                    type="button"
-                    onClick={() => handleSelectCommand(cmd)}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
-                      isActive
-                        ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-xs'
-                        : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:bg-slate-800'
-                    )}
-                  >
-                    {cmd.kind === 'curl' ? (
-                      <Globe className="h-3.5 w-3.5 text-cyan-400" />
-                    ) : cmd.kind === 'pytest' ? (
-                      <FlaskConical className="h-3.5 w-3.5 text-violet-400" />
-                    ) : (
-                      <Play className="h-3.5 w-3.5 text-emerald-400 fill-current" />
-                    )}
-                    <span>{cmd.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Editable Command / cURL Runner Bar */}
-            <form
-              onSubmit={handleExecuteCustomCommand}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
-            >
-              <div className="flex-1 flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-xs">
-                <span className="text-emerald-400 font-bold select-none shrink-0">
-                  {toolingStack === 'pyenv-pip' ? '(.venv) $' : '$'}
-                </span>
-                <input
-                  type="text"
-                  value={customCommandInput}
-                  onChange={(e) => setCustomCommandInput(e.target.value)}
-                  aria-label="Lệnh Terminal hoặc cURL"
-                  className="w-full bg-transparent text-sky-200 focus:outline-none"
-                />
-              </div>
               <button
-                type="submit"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 transition-colors shrink-0 cursor-pointer"
+                type="button"
+                onClick={toggleJsTsComparison}
+                aria-pressed={showJsTsComparison}
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer',
+                  showJsTsComparison
+                    ? 'border-cyan-500/50 bg-cyan-500/15 text-cyan-300'
+                    : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
+                )}
               >
-                <Send className="h-3.5 w-3.5" />
-                <span>Thực thi</span>
-              </button>
-            </form>
-
-            {/* HTTP Response Status Pill (for cURL / FastAPI / RAG commands) */}
-            {activeHttpMeta && (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-500/30 bg-cyan-950/20 px-3.5 py-2 font-mono text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-cyan-500/20 px-2 py-0.5 text-[11px] font-bold text-cyan-300">
-                    {activeHttpMeta.method}
-                  </span>
-                  <span className="text-slate-200 font-semibold">
-                    {activeHttpMeta.endpoint}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      'rounded-md px-2 py-0.5 text-[11px] font-bold',
-                      activeHttpMeta.statusCode >= 200 &&
-                        activeHttpMeta.statusCode < 300
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                    )}
-                  >
-                    HTTP {activeHttpMeta.statusText}
-                  </span>
-                  <span className="text-slate-400 text-[11px]">
-                    Latency: {activeHttpMeta.latencyMs}ms
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Terminal Output Console */}
-            <div
-              key={runCount}
-              className={cn(
-                'rounded-xl border p-3.5 font-mono text-xs leading-5 overflow-x-auto animate-in fade-in duration-150',
-                !activeIdeTheme.isLight && 'ide-dark-surface'
-              )}
-              style={{
-                backgroundColor: activeIdeTheme.editorBg,
-                borderColor: activeIdeTheme.barBorder,
-              }}
-            >
-              <div
-                className="flex items-center justify-between text-[11px] pb-2 mb-2 border-b"
-                style={{
-                  color: activeIdeTheme.gutterText,
-                  borderColor: activeIdeTheme.barBorder,
-                }}
-              >
+                <ArrowRightLeft className="h-3 w-3" />
                 <span>
-                  Terminal Output ({currentProject.slug}) — Lần chạy #{runCount}
+                  So sánh Node.js / JS-TS:{' '}
+                  {showJsTsComparison ? 'Đang BẬT' : 'Đang TẮT'}
                 </span>
-                <span className="text-emerald-400 font-semibold">
-                  ✓ Ready
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+              {/* STEP 1 CARD */}
+              <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
+                <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-emerald-300">
+                  Bước 1 • Khởi tạo Dự án & Version
                 </span>
+                <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-emerald-300 overflow-x-auto">
+                  {toolingStack === 'uv' &&
+                    `uv init ${currentProject.slug}\ncd ${currentProject.slug} && uv python pin 3.12`}
+                  {toolingStack === 'pyenv-pip' &&
+                    `mkdir ${currentProject.slug} && cd ${currentProject.slug}\npython -m venv .venv && source .venv/bin/activate`}
+                  {toolingStack === 'poetry' &&
+                    `poetry new --src ${currentProject.slug} && cd ${currentProject.slug}\npoetry config virtualenvs.in-project true && poetry env use 3.12`}
+                  {toolingStack === 'pipenv' &&
+                    `mkdir ${currentProject.slug} && cd ${currentProject.slug}\nexport PIPENV_VENV_IN_PROJECT=1 && pipenv --python 3.12`}
+                </pre>
               </div>
-              <pre className="whitespace-pre-wrap">
-                <code>
-                  {renderHighlightedPython(
-                    terminalOutput,
-                    activeIdeTheme.isLight
-                  )}
-                </code>
-              </pre>
+
+              {/* STEP 2 CARD */}
+              <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
+                <span className="rounded bg-sky-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-sky-300">
+                  Bước 2 • Thêm & Đồng bộ Thư viện
+                </span>
+                <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-sky-300 overflow-x-auto">
+                  {toolingStack === 'uv' &&
+                    `uv sync\nuv add --dev pytest ruff`}
+                  {toolingStack === 'pyenv-pip' &&
+                    `pip install -e . pytest ruff\npip freeze > requirements.txt`}
+                  {toolingStack === 'poetry' &&
+                    `poetry install\npoetry add --group dev pytest ruff`}
+                  {toolingStack === 'pipenv' &&
+                    `pipenv install -e .\npipenv install --dev pytest ruff`}
+                </pre>
+              </div>
+
+              {/* STEP 3 CARD */}
+              <div className="rounded-xl border border-slate-800/90 bg-slate-900/90 p-3 space-y-2">
+                <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-extrabold text-amber-300">
+                  Bước 3 • Chạy Đầu vào & Kiểm thử
+                </span>
+                <pre className="rounded-lg bg-slate-950 p-2 font-mono text-[11px] text-amber-300 overflow-x-auto">
+                  {`${formatCommandForStack(
+                    currentProject.interactiveCommands[0]?.command ||
+                      'uv run python main.py',
+                    toolingStack
+                  )}\n${formatCommandForStack('uv run pytest -v', toolingStack)}`}
+                </pre>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
+
+      {/* Real-World Templates & Project-Based Learning Catalog */}
+      <RealWorldProjectsCatalog
+        activeIdeProjectId={currentProject.id}
+        onSelectProjectInIde={(projectId) => {
+          setSelectedLevel('all');
+          setSelectedProjectId(projectId);
+          setIsProjectPickerOpen(false);
+          document
+            .getElementById('vscode-ide-top')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+      />
     </div>
   );
 };

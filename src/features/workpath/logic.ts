@@ -235,20 +235,7 @@ export function nextSteps(s: WpState, c: WpCurriculum, catalog: WpCatalog | null
   const due = dueCards(s, c).length;
   if (due) steps.push({ text: `Ôn ${due} flashcard đến hạn`, view: { name: 'flash' } });
   if (s.quizWrong.length) steps.push({ text: `Ôn lại ${s.quizWrong.length} câu quiz từng sai`, view: { name: 'quiz', mode: 'review' } });
-  if (current && catalog && lessonSatisfied(s, current.id)) {
-    for (const r of current.readings) {
-      const item = r.catalogN ? catalog.items.find((i) => i.n === r.catalogN) : undefined;
-      if (item && ['todo', 'reading'].includes(catalogStatus(s, item.id))) {
-        steps.push({
-          text: `Đọc code thực tế: ${r.path}`,
-          view: { name: 'read', n: item.n },
-          skipTarget: { kind: 'reading', id: item.id },
-        });
-        break;
-      }
-    }
-  }
-  if (!steps.length) steps.push({ text: 'Bạn đã xong lộ trình! Chọn một bài ngẫu nhiên trong Python-master', view: { name: 'browse', preset: 'forme' } });
+  if (!steps.length) steps.push({ text: 'Khám phá 39 Dự án Thực tế & Project-Based Learning trong VS Code IDE', view: { name: 'projects' } });
   return steps;
 }
 

@@ -112,8 +112,8 @@ export const Header: React.FC<{ windowId?: string }> = ({ windowId }) => {
   }[] = [
     {
       id: 'samples',
-      labelVi: '16 Dự án Mẫu (IDE)',
-      labelEn: '16 Sample Projects (IDE)',
+      labelVi: 'Dự án Thực tế & PBL (IDE)',
+      labelEn: 'Real Projects & PBL (IDE)',
       icon: <FolderGit2 className="h-3.5 w-3.5" />,
     },
     {

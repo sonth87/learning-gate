@@ -123,7 +123,7 @@ export const WORKBENCH_I18N: Record<
       quiz: (n) => `Quiz (${n} câu)`,
       exercises: (passed, total) => `Bài tập (${passed}/${total})`,
       flashcards: (n) => `Flashcard (${n})`,
-      readings: (n) => `Code thật (${n})`,
+      readings: () => 'Dự án Thực tế (39)',
     },
     keyboardHint: {
       step: 'chuyển bước',
@@ -214,7 +214,7 @@ export const WORKBENCH_I18N: Record<
       quiz: (n) => `Quiz (${n} Qs)`,
       exercises: (passed, total) => `Exercises (${passed}/${total})`,
       flashcards: (n) => `Flashcards (${n})`,
-      readings: (n) => `Real Code (${n})`,
+      readings: () => 'Real Projects (39)',
     },
     keyboardHint: {
       step: 'step',

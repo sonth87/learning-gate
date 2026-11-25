@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { ArrowRight, BookOpen, Code2, Flame, Library, SkipForward, Star, Trophy } from 'lucide-react';
 import { useCatalog, useCurriculum } from '../data';
-import { activeDays, addDays, catalogStatus, currentLevel, dueCards, exStatus, moduleDone, nextSteps, rankOf, streak, todayStr } from '../logic';
+import { activeDays, addDays, currentLevel, dueCards, exStatus, moduleDone, nextSteps, rankOf, streak, todayStr } from '../logic';
 import { useWpNav, useWpProgress } from '../store';
 import { Bar, Card, PageHeader, Spinner } from '../components/ui';
 import { cn } from '@/utils/cn';
@@ -42,7 +42,6 @@ export const HomeView: React.FC = () => {
   const exs = cur.modules.flatMap((m) => m.exercises);
   const modsDone = cur.modules.filter((m) => moduleDone(s, m, cur.passQuiz)).length;
   const exPassed = exs.filter((e) => exStatus(s, e.id) === 'passed').length;
-  const readDone = cat ? cat.items.filter((i) => ['done', 'rewritten'].includes(catalogStatus(s, i.id))).length : 0;
   const steps = nextSteps(s, cur, cat);
   const fresh = s.xp === 0 && Object.keys(s.lessons).length === 0;
 
@@ -55,7 +54,7 @@ export const HomeView: React.FC = () => {
         <Stat icon={<Flame className="h-6 w-6" />} label="Chuỗi ngày học" value={`${streak(s)} ngày`} />
         <Stat icon={<BookOpen className="h-6 w-6" />} label="Module hoàn thành" value={`${modsDone}/${cur.modules.length}`} bar={modsDone / cur.modules.length} />
         <Stat icon={<Code2 className="h-6 w-6" />} label="Bài tập đạt" value={`${exPassed}/${exs.length}`} bar={exPassed / exs.length} />
-        <Stat icon={<Library className="h-6 w-6" />} label="Code thật đã đọc" value={`${readDone}/${cat?.items.length ?? '…'}`} bar={cat ? readDone / cat.items.length : 0} />
+        <Stat icon={<Library className="h-6 w-6" />} label="Dự án Thực tế & PBL" value="39 dự án" sub="10 chuyên mục • VS Code IDE" bar={1} />
       </div>
 
       <section aria-labelledby="next-steps">
@@ -102,7 +101,7 @@ export const HomeView: React.FC = () => {
             <Trophy className="h-4 w-4 text-amber-400" aria-hidden="true" /> Cách học trong 5 bước (lặp lại cho mỗi module)
           </h2>
           <ol className="grid gap-2 text-sm text-slate-300 sm:grid-cols-5">
-            {['Đọc lesson, gõ thử ví dụ', 'Làm quiz (cần ≥ 70%)', 'Làm bài tập — chấm bằng test thật', 'Đọc code thật trong Python-master', 'Ôn flashcard & quiz sai mỗi ngày'].map((t, i) => (
+            {['Đọc lesson, gõ thử ví dụ', 'Làm quiz (cần ≥ 70%)', 'Làm bài tập — chấm bằng test thật', 'Khám phá Dự án Thực tế & PBL trong IDE', 'Ôn flashcard & quiz sai mỗi ngày'].map((t, i) => (
               <li key={t} className="rounded-lg bg-slate-800/60 p-2.5">
                 <span className="mr-1.5 font-bold text-emerald-400">{i + 1}.</span>
                 {t}

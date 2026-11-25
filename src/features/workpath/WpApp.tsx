@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   ArrowLeft,
-  BookOpen,
   Code2,
+  FolderGit2,
   Layers,
   ListChecks,
   Map as MapIcon,
@@ -28,6 +28,7 @@ import { FlashView } from './views/FlashView';
 import { DrillView } from './views/DrillView';
 import { BrowseView } from './views/BrowseView';
 import { ReadView } from './views/ReadView';
+import { ProjectSamplesHub } from '@/components/samples/ProjectSamplesHub';
 import { Spinner } from './components/ui';
 import { ProgressSyncBadge } from '@/components/common/ProgressSyncBadge';
 import {
@@ -79,14 +80,14 @@ const CORE_PRACTICE_TABS: {
     match: ['flash', 'drill'],
   },
   {
-    id: 'browse',
-    labelVi: 'Code thật',
-    labelEn: 'Real Code',
-    tipVi: 'Đọc & phân tích trích đoạn mã nguồn thực tế',
-    tipEn: 'Read & analyze real-world Python snippets',
-    icon: <BookOpen className="h-3.5 w-3.5 shrink-0" />,
-    go: { name: 'browse', preset: 'forme' },
-    match: ['browse', 'read'],
+    id: 'projects',
+    labelVi: 'Dự án Thực tế',
+    labelEn: 'Real Projects',
+    tipVi: 'VS Code IDE Dự án Mẫu & Thư viện Project-Based Learning',
+    tipEn: 'Sample Projects IDE & Project-Based Learning Catalog',
+    icon: <FolderGit2 className="h-3.5 w-3.5 shrink-0" />,
+    go: { name: 'projects' },
+    match: ['projects'],
   },
 ];
 
@@ -118,6 +119,12 @@ const PracticeViewSwitch: React.FC<{ view: WpView }> = ({ view }) => {
       return <BrowseView preset={view.preset} />;
     case 'read':
       return <ReadView key={view.n} n={view.n} />;
+    case 'projects':
+      return (
+        <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-5">
+          <ProjectSamplesHub />
+        </div>
+      );
     case 'workbench':
     default:
       return null;
@@ -237,7 +244,7 @@ export const WpApp: React.FC = () => {
           go({ name: 'flash', moduleId })
         }
         onOpenReadings={() =>
-          go({ name: 'browse', preset: 'forme' })
+          go({ name: 'projects' })
         }
         onRunCodeSnippet={handleRunSnippet}
       />

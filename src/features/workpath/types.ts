@@ -209,4 +209,5 @@ export type WpView =
   | { name: 'flash'; moduleId?: string }
   | { name: 'drill'; moduleId: string }
   | { name: 'browse'; preset?: 'forme' | 'all' | 'curated' | 'security' }
-  | { name: 'read'; n: number };
+  | { name: 'read'; n: number }
+  | { name: 'projects' };

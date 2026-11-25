@@ -19,6 +19,9 @@ import {
   buildCuratedMemoryScene,
 } from './pythonModeCurator';
 import { choreographProgressiveScene } from '@/features/devops-course/scale/courseLessonBuilder';
+import curatedReadingsRaw from '@/data/workpath/readings.json';
+
+const CURATED_READINGS_CODE = curatedReadingsRaw as Record<string, string>;
 
 export const ALL_PY_SPECS: Record<string, PyModuleVisualSpec> = {
   ...PY_SPECS_PART1,
@@ -158,8 +161,8 @@ function makeShortStepperLabel(heading: string, idx: number, total: number): Bil
   if (idx === total - 1 || /tóm tắt/i.test(stripped)) {
     return { vi: 'Đúc kết', en: 'Recap' };
   }
-  if (/python-master/i.test(stripped)) {
-    return { vi: 'Code thật', en: 'Real Code' };
+  if (/python-master|ví dụ áp dụng/i.test(stripped)) {
+    return { vi: 'Ví dụ áp dụng', en: 'Case Study' };
   }
   if (/bẫy|cạm bẫy|lỗi hay gặp/i.test(stripped)) {
     return { vi: 'Cạm bẫy', en: 'Pitfall' };
@@ -537,6 +540,36 @@ export function buildPythonScaleModule(
   const spec: PyModuleVisualSpec = ALL_PY_SPECS[mod.id] ?? ALL_PY_SPECS.M00;
   const primaryMode: StageRenderMode = PYTHON_PRIMARY_MODE[mod.id] ?? 'code-trace';
   const rawSections = splitMarkdownSections(mod.lesson);
+
+  // Nhúng các snippet chọn lọc (mod.readings) trực tiếp vào bài học tương ứng trước bước Tóm tắt
+  const validReadings = (mod.readings ?? []).filter(
+    (r) => typeof CURATED_READINGS_CODE[r.path] === 'string'
+  );
+  if (validReadings.length > 0) {
+    const blocks = validReadings.slice(0, 3).map((r, i) => {
+      const snippet = CURATED_READINGS_CODE[r.path].trim();
+      const parts = [
+        `### Ví dụ ${i + 1}: \`${r.path}\``,
+        r.note,
+        '```python\n' + snippet + '\n```',
+      ];
+      if (r.task) {
+        parts.push(`**Câu hỏi phân tích:** ${r.task}`);
+      }
+      if (r.answer) {
+        parts.push(`> **Gợi ý trả lời:** ${r.answer}`);
+      }
+      return parts.join('\n\n');
+    });
+
+    const readingSection = {
+      heading: 'Ví dụ áp dụng thực tế trong bài học',
+      body: blocks.join('\n\n---\n\n'),
+    };
+    const insertAt = Math.max(1, rawSections.length - 1);
+    rawSections.splice(insertAt, 0, readingSection);
+  }
+
   const totalSteps = rawSections.length;
   const levelTitle = PY_LEVEL_TITLES[mod.level] ?? {
     vi: `Cấp ${mod.level}`,
