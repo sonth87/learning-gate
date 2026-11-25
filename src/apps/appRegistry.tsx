@@ -39,60 +39,25 @@ export const PYMASTERY_CONFIG: AppConfig = {
   ],
   menuBarMenus: [
     {
-      label: 'File',
+      label: 'Công cụ',
       items: [
-        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
-        { key: 'notes', label: 'Notes & Bookmarks', action: 'openNotes' },
-        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'notes', label: 'Ghi chú & Đánh dấu', action: 'openNotes' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
       ],
     },
     {
-      label: 'Edit',
-      items: [
-        { key: 'undo', label: 'Undo', shortcut: '⌘Z', action: 'undo' },
-        { key: 'redo', label: 'Redo', shortcut: '⌘⇧Z', action: 'redo' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'cut', label: 'Cut', shortcut: '⌘X', action: 'cut' },
-        { key: 'copy', label: 'Copy', shortcut: '⌘C', action: 'copy' },
-        { key: 'paste', label: 'Paste', shortcut: '⌘V', action: 'paste' },
-        { key: 'select-all', label: 'Select All', shortcut: '⌘A', action: 'selectAll' },
-      ],
-    },
-    {
-      label: 'View',
+      label: 'Chuyển mục',
       items: [
         { key: 'learn', label: 'Học — lộ trình, bài tập, quiz', shortcut: '⌘1', action: 'tab:learn' },
         { key: 'playground', label: 'Sân chơi & Studio IDE', shortcut: '⌘2', action: 'tab:playground' },
         { key: 'glossary', label: 'Từ điển Python', shortcut: '⌘3', action: 'tab:glossary' },
-        { key: 'sepv', label: '', separator: true },
-        { key: 'curriculum', label: 'Giáo trình cũ (7 giai đoạn)', action: 'tab:curriculum' },
-        { key: 'practice', label: 'Bài thực hành cũ', action: 'tab:practice' },
         { key: 'samples', label: 'Dự án Mẫu (16 Projects IDE)', action: 'tab:samples' },
-        { key: 'flashcards', label: 'Flashcards cũ', action: 'tab:flashcards' },
-        { key: 'exams', label: 'Thi Sát hạch', action: 'tab:exams' },
         { key: 'reference', label: 'Chuyên đề PDF', action: 'tab:reference' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'jsts', label: 'Toggle JS/TS Comparison', action: 'toggleJsTs' },
-        { key: 'sep2', label: '', separator: true },
-        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      items: [
-        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
-        { key: 'zoom', label: 'Zoom', action: 'zoom' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
-      ],
-    },
-    {
-      label: 'Help',
-      items: [
-        { key: 'glossary-help', label: 'Python Glossary & Stdlib', action: 'tab:glossary' },
-        { key: 'about', label: 'About Python Mastery', action: 'about' },
+        { key: 'jsts', label: 'Bật/tắt so sánh JS/TS', action: 'toggleJsTs' },
       ],
     },
   ],
@@ -125,44 +90,22 @@ export const KUBEMASTERY_CONFIG: AppConfig = {
   ],
   menuBarMenus: [
     {
-      label: 'File',
+      label: 'Công cụ',
       items: [
-        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
-        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
       ],
     },
     {
-      label: 'View',
+      label: 'Chuyển mục',
       items: [
         { key: 'learn', label: 'Học — lộ trình, bài thực hành, quiz', shortcut: '⌘1', action: 'tab:learn' },
         { key: 'cluster-sim', label: 'Mô phỏng Cụm K8s & Terminal', shortcut: '⌘2', action: 'tab:cluster-sim' },
         { key: 'glossary', label: 'Từ điển Liên tưởng & Cheatsheet', shortcut: '⌘3', action: 'tab:glossary' },
-        { key: 'sepv', label: '', separator: true },
         { key: 'flow-studio', label: 'Sơ đồ Động (Animated Flows)', action: 'tab:flow-studio' },
         { key: 'incidents', label: '8 Tình huống Sự cố (War-Room)', action: 'tab:incidents' },
-        { key: 'curriculum', label: 'Giáo trình cũ (4 giai đoạn)', action: 'tab:curriculum' },
-        { key: 'practice', label: 'Luyện tập YAML cũ', action: 'tab:practice' },
-        { key: 'exams', label: 'Thi Sát hạch cũ', action: 'tab:exams' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      items: [
-        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
-        { key: 'zoom', label: 'Zoom', action: 'zoom' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
-      ],
-    },
-    {
-      label: 'Help',
-      items: [
-        { key: 'cheatsheet', label: 'Docker & K8s Command Cheatsheet', action: 'tab:glossary' },
-        { key: 'warroom', label: '8 Incident Troubleshooting War-Room', action: 'tab:incidents' },
       ],
     },
   ],
@@ -194,37 +137,22 @@ export const CICD_MASTERY_CONFIG: AppConfig = {
   ],
   menuBarMenus: [
     {
-      label: 'File',
+      label: 'Công cụ',
       items: [
-        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
       ],
     },
     {
-      label: 'View',
+      label: 'Chuyển mục',
       items: [
         { key: 'learn', label: 'Học — lộ trình, bài thực hành, quiz', shortcut: '⌘1', action: 'tab:learn' },
         { key: 'simulator', label: 'Giả lập Pipeline & Traffic', shortcut: '⌘2', action: 'tab:simulator' },
         { key: 'glossary', label: 'Từ điển & Ma trận', shortcut: '⌘3', action: 'tab:glossary' },
-        { key: 'sepv', label: '', separator: true },
         { key: 'warroom', label: 'Mô phỏng Tình huống (B1–B7)', action: 'tab:warroom' },
         { key: 'blueprints', label: '4 Bộ Full Flow Blueprints', action: 'tab:blueprints' },
-        { key: 'curriculum', label: 'Giáo trình gốc (PDF)', action: 'tab:curriculum' },
-        { key: 'practice', label: 'Thực hành cũ', action: 'tab:practice' },
-        { key: 'flashcards', label: 'Flashcards cũ', action: 'tab:flashcards' },
-        { key: 'exams', label: 'Thi Sát hạch cũ', action: 'tab:exams' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      items: [
-        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
-        { key: 'zoom', label: 'Zoom', action: 'zoom' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
       ],
     },
   ],
@@ -257,16 +185,16 @@ export const PMP_MASTERY_CONFIG: AppConfig = {
   ],
   menuBarMenus: [
     {
-      label: 'File',
+      label: 'Công cụ',
       items: [
-        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
-        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
       ],
     },
     {
-      label: 'View',
+      label: 'Chuyển mục',
       items: [
         { key: 'learn', label: 'Học tư duy — 16 module, quiz, SRS', shortcut: '⌘1', action: 'tab:learn' },
         { key: 'canvas', label: 'PMP Mindset Canvas (1 trang)', shortcut: '⌘2', action: 'tab:canvas' },
@@ -274,24 +202,6 @@ export const PMP_MASTERY_CONFIG: AppConfig = {
         { key: 'lookup', label: 'Bảng đối chiếu & Kho Deep Link', shortcut: '⌘4', action: 'tab:lookup' },
         { key: 'sepv', label: '', separator: true },
         { key: 'mindmap', label: 'Mở PMP Mindmap (Tab mới ↗)', action: 'openMindmapExternal' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      items: [
-        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
-        { key: 'zoom', label: 'Zoom', action: 'zoom' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
-      ],
-    },
-    {
-      label: 'Help',
-      items: [
-        { key: 'canvas-help', label: 'PMP Mindset Canvas (PMBOK 8 & ECO 2026)', action: 'tab:canvas' },
-        { key: 'mindmap-help', label: 'PMP Mindmap Companion App ↗', action: 'openMindmapExternal' },
       ],
     },
   ],
@@ -323,40 +233,22 @@ export const REDIS_MASTERY_CONFIG: AppConfig = {
   ],
   menuBarMenus: [
     {
-      label: 'File',
+      label: 'Công cụ',
       items: [
-        { key: 'search', label: 'Quick Search...', shortcut: '⌘K', action: 'quickSearch' },
-        { key: 'settings', label: 'Preferences & Backup...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
         { key: 'sep1', label: '', separator: true },
-        { key: 'close', label: 'Close Window', shortcut: '⌘W', action: 'close' },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
       ],
     },
     {
-      label: 'View',
+      label: 'Chuyển mục',
       items: [
         { key: 'learn', label: 'Học — 18 module, bài thực hành, quiz', shortcut: '⌘1', action: 'tab:learn' },
         { key: 'simulator', label: 'Mô phỏng RAM Eviction & Cluster', shortcut: '⌘2', action: 'tab:simulator' },
         { key: 'flow-studio', label: 'Sơ đồ Động 6 Luồng Kiến trúc', shortcut: '⌘3', action: 'tab:flow-studio' },
         { key: 'incidents', label: 'War-Room 8 Sự cố Production', shortcut: '⌘4', action: 'tab:incidents' },
         { key: 'glossary', label: 'Từ điển Lệnh, Big-O & SDK', shortcut: '⌘5', action: 'tab:glossary' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'fullscreen', label: 'Enter Full Screen', shortcut: '⌃⌘F', action: 'toggleFullscreen' },
-      ],
-    },
-    {
-      label: 'Window',
-      items: [
-        { key: 'minimize', label: 'Minimize', shortcut: '⌘M', action: 'minimize' },
-        { key: 'zoom', label: 'Zoom', action: 'zoom' },
-        { key: 'sep1', label: '', separator: true },
-        { key: 'bring-all', label: 'Bring All to Front', action: 'bringAllToFront' },
-      ],
-    },
-    {
-      label: 'Help',
-      items: [
-        { key: 'glossary-help', label: 'Redis 8 Command & Big-O Reference', action: 'tab:glossary' },
-        { key: 'warroom-help', label: '8 Production Redis Incident War-Room', action: 'tab:incidents' },
       ],
     },
   ],

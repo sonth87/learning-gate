@@ -378,8 +378,8 @@ export const SettingsModal: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:p-3.5">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 sm:p-3.5">
+              <div className="min-w-0">
                 <p className="text-xs font-semibold text-white">
                   Cách tổ chức thanh lộ trình
                 </p>
@@ -394,7 +394,7 @@ export const SettingsModal: React.FC = () => {
                     e.target.value as 'by-stage' | 'by-level'
                   )
                 }
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white shrink-0"
+                className="w-full sm:w-auto max-w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-white"
               >
                 <option value="by-stage">Theo 7 Giai đoạn (Stage 1 → 7)</option>
                 <option value="by-level">
@@ -411,15 +411,15 @@ export const SettingsModal: React.FC = () => {
             <span>2. Hệ thống Highlight & Hover Preview Thuật ngữ</span>
           </div>
 
-          <label className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer">
-            <span className="text-xs font-semibold text-white">
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 cursor-pointer">
+            <span className="min-w-0 text-xs font-semibold text-white">
               Tự động Highlight & Xem nhanh khi di chuột (Hover Preview)
             </span>
             <input
               type="checkbox"
               checked={settings.enableAutoHighlight}
               onChange={() => settings.toggleAutoHighlight()}
-              className="h-4 w-4 accent-amber-500"
+              className="h-4 w-4 shrink-0 accent-amber-500"
             />
           </label>
 
