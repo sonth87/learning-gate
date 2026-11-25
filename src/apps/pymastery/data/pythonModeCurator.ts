@@ -410,14 +410,23 @@ export function buildCuratedMemoryScene(
       const trap = stepIdx === 2 || stepIdx === 3;
       return {
         kind: 'refs',
-        leftTitle: bi('Biến List cấp ngoài', 'Outer List Variables'),
-        rightTitle: bi('Đối tượng List con trên Heap', 'Nested Inner List Heap'),
+        leftTitle: bi('Tầng 1: Khay List ngoài (a vs b)', 'Tier 1: Outer List Containers'),
+        rightTitle: bi('Tầng 2: Ô nhớ List con trên Heap', 'Tier 2: Inner List Objects on Heap'),
         names: [
-          { id: 'la', name: 'a[0]', note: bi('tham chiếu gốc', 'original ref'), targetId: 'in1' },
+          {
+            id: 'la',
+            name: 'a (0x100) ➔ a[0]',
+            note: bi('khay gốc của a', 'original outer list a'),
+            targetId: 'in1',
+          },
           {
             id: 'lb',
-            name: trap ? 'b = a[:]  →  b[0]' : 'b = deepcopy(a) → b[0]',
-            note: trap ? bi('Shallow Copy vẫn dùng chung list con!', 'Shallow copy shares inner list!') : bi('Deep Copy sao chép độc lập hoàn toàn', 'Deep copy fully isolated'),
+            name: trap
+              ? 'b = a[:] / a.copy() (0x200) ➔ b[0]'
+              : 'b = deepcopy(a) (0x200) ➔ b[0]',
+            note: trap
+              ? bi('Khác khay ngoài (0x200), nhưng b[0] vẫn trỏ CHUNG 0x500!', 'New outer list, but b[0] shares inner 0x500!')
+              : bi('Deep Copy: đúc mới cả khay ngoài lẫn hộp con 0x900', 'Deep copy isolates both outer & inner lists'),
             targetId: trap ? 'in1' : 'in2',
             style: trap ? 'danger' : 'solid',
           },
@@ -426,16 +435,34 @@ export function buildCuratedMemoryScene(
           ? [
               {
                 id: 'in1',
-                typeTag: 'list',
-                value: '[10, 20, 99!]',
-                fields: ['b[0].append(99) làm thay đổi cả a[0]!'],
+                typeTag: 'list (Heap 0x500)',
+                value: '[10, 20, 999!]',
+                fields: [
+                  'Sửa lớp ngoài b.append(...) ➔ a KHÔNG đổi',
+                  'Sửa lớp trong b[0].append(999) ➔ a[0] BỊ ĐỔI THEO!',
+                ],
                 tone: 'rose',
-                badge: bi('⚠ Lỗi Aliasing: hai biến trỏ chung 1 list con', '⚠ Aliasing bug on nested list!'),
+                badge: bi(
+                  '⚠ Shallow Copy chỉ tách tầng 1, tầng 2 vẫn dùng chung ô nhớ 0x500',
+                  '⚠ Shallow copy only clones tier 1; tier 2 is shared!'
+                ),
               },
             ]
           : [
-              { id: 'in1', typeTag: 'list', value: '[10, 20]', fields: ['vùng nhớ riêng của a[0]'], tone: 'blue' },
-              { id: 'in2', typeTag: 'list', value: '[10, 20, 99]', fields: ['bản sao độc lập của b[0]'], tone: 'green' },
+              {
+                id: 'in1',
+                typeTag: 'list (Heap 0x500)',
+                value: '[10, 20]',
+                fields: ['Ô nhớ tầng 2 riêng của a[0]'],
+                tone: 'blue',
+              },
+              {
+                id: 'in2',
+                typeTag: 'list (Heap 0x900)',
+                value: '[10, 20, 999]',
+                fields: ['Ô nhớ tầng 2 đúc mới hoàn toàn cho b[0]'],
+                tone: 'green',
+              },
             ],
       };
     }

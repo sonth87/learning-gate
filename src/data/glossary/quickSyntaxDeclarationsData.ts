@@ -1031,4 +1031,107 @@ safe_divide(10, 0)`,
       note: 'Python có thêm nhánh else: trong khối try/except (chỉ chạy khi khối try hoàn tất mà không gặp lỗi nào).',
     },
   },
+  {
+    id: 'decl-overloaded-asterisks-slash',
+    category: 'operators',
+    categoryLabel: '3. Toán tử & Logic',
+    title: 'Giải mã Toàn bộ 8 Cách Dùng Dấu Sao (`*`, `**`) & 3 Cách Dùng Dấu `/`',
+    badge: 'Overloaded * / ** / /',
+    summary:
+      'Dấu sao (*) là ký hiệu đa năng nhất trong Python: vừa là phép nhân/lũy thừa, vừa dùng để lặp chuỗi, giải nén mảng/dict, gom tham số (*args, **kwargs) và làm vách ngăn bắt buộc truyền tên hàm (func(*, x, y)).',
+    declarationForms: [
+      {
+        label: '1 & 2. Nhân số học, Lũy thừa & Nhân bản Chuỗi / List',
+        syntax: 'tich = 3 * 4          # 12 (Nhân số)\nluy_thua = 2 ** 3     # 8  (2 mũ 3)\nke_ngang = "-" * 20   # Lặp chuỗi 20 lần\nmang_khong = [0] * 5  # [0, 0, 0, 0, 0]',
+        note: 'Cẩn thận: [[0] * 3] * 3 tạo 3 hàng trỏ chung vào 1 list con! Muốn 3 hàng độc lập phải dùng [[0] * 3 for _ in range(3)].',
+      },
+      {
+        label: '3 & 4. Giải nén (Unpacking / Spread) khi Gán biến & Ghép List / Dict',
+        syntax: 'dau, *giua, cuoi = [10, 20, 30, 40, 50]   # giua = [20, 30, 40]\ngop_list = [*list_a, *list_b]\ngop_dict = {**dict_a, **dict_b}',
+        note: '*giua gom toàn bộ phần tử thừa ở giữa vào một list; *list_a tương đương ...list_a trong JS.',
+      },
+      {
+        label: '5, 6 & 7. Gom tham số trong def (*args, **kwargs) vs Trải đối số khi Gọi hàm',
+        syntax: 'def log_all(*args, **kwargs):   # args là tuple, kwargs là dict\n    print(args, kwargs)\n\ntoa_do = (10, 20)\ncau_hinh = {"color": "red"}\nlog_all(*toa_do, **cau_hinh)    # Trải tuple/dict thành các đối số rời',
+        note: 'Ở dòng def: * và ** dùng để GOM nhiều đối số lại. Ở dòng gọi hàm: * và ** dùng để TRẢI list/dict ra.',
+      },
+      {
+        label: '8. Vách ngăn Tham số Hàm: Dấu * đứng một mình và dấu /',
+        syntax: 'def gui_mail(id_khach, /, tieu_de, *, khan_cap=False):\n    ...',
+        note: 'Trước dấu / bắt buộc truyền theo VỊ TRÍ. Sau dấu * đứng riêng lẻ bắt buộc truyền rõ TÊN (khan_cap=True).',
+      },
+    ],
+    codeExample: `# 1. Giải nén với dấu * khi gán biến
+diem_so = [95, 88, 82, 79, 60]
+cao_nhat, *nhom_giua, thap_nhat = diem_so
+print("Cao nhất:", cao_nhat, "| Nhóm giữa:", nhom_giua)
+
+# 2. Vách ngăn * bắt buộc gọi tên tham số (Keyword-Only)
+def tao_lenh(ma_ck: str, *, so_luong: int, gia_tran: float) -> str:
+    return f"Mua {so_luong} cổ phiếu {ma_ck} giá {gia_tran}"
+
+# Phải ghi rõ so_luong=... và gia_tran=... (truyền chay tao_lenh("FPT", 100, 130.5) sẽ báo TypeError!)
+print(tao_lenh("FPT", so_luong=100, gia_tran=130.5))
+
+# 3. Gom *args, **kwargs và Trải ngược lại khi gọi hàm
+def cong_ba_so(a: int, b: int, c: int) -> int:
+    return a + b + c
+
+ gói_so = [10, 20, 30]
+print("Trải list vào hàm bằng *:", cong_ba_so(*gói_so))`,
+    output: `Cao nhất: 95 | Nhóm giữa: [88, 82, 79]
+Mua 100 cổ phiếu FPT giá 130.5
+Trải list vào hàm bằng *: 60`,
+    detailsAndGotchas: [
+      'Ngoài phép chia thực (7 / 2 = 3.5) và vách ngăn Positional-Only trong def, dấu / còn được thư viện pathlib.Path nạp chồng để nối đường dẫn: Path("data") / "2026" / "users.csv".',
+    ],
+    jsEquivalent: {
+      syntax: 'Math.pow(a, b) -> a ** b | ...rest -> *args / **kwargs',
+      note: 'JS chỉ có ... cho cả mảng và object; Python tách rõ * cho dữ liệu theo vị trí (iterable) và ** cho dữ liệu khóa-giá trị (dict).',
+    },
+  },
+  {
+    id: 'decl-overloaded-underscore-colon-modern',
+    category: 'operators',
+    categoryLabel: '3. Toán tử & Logic',
+    title: 'Giải mã Ký hiệu Gạch dưới (`_`), Dấu hai chấm (`:`), `@`, `|` và `:=`',
+    badge: 'Symbols _ : @ | :=',
+    summary:
+      'Tổng hợp toàn bộ ý nghĩa của các ký hiệu nhỏ nhưng xuất hiện dày đặc trong code Python thực tế mà người mới rất dễ bối rối.',
+    declarationForms: [
+      {
+        label: '6 Cách dùng Dấu gạch dưới (_ và __)',
+        syntax: 'for _ in range(3): ...           # 1. Biến nháp bỏ qua giá trị không dùng\nluong = 25_000_000               # 2. Phân cách hàng nghìn cho số dễ đọc\ncase _:                          # 3. Nhánh mặc định (Wildcard) trong match/case\n_noi_bo = 1                      # 4. 1 gạch đầu: Quy ước biến/hàm nội bộ (private)\nself.__bi_mat = 2                # 5. 2 gạch đầu: Đổi tên thành _TenClass__bi_mat\ndef __init__(self): ...          # 6. 2 gạch cả 2 đầu (Dunder): Hàm hệ thống Python',
+        note: 'Ngoài ra trong cửa sổ tương tác REPL (>>>), biến _ luôn giữ kết quả của phép tính ngay trước đó.',
+      },
+      {
+        label: '5 Cách dùng Dấu hai chấm (:)',
+        syntax: 'if x > 0:                        # 1. Mở đầu một khối lệnh thụt lề\ncon = ds[1:5:2]                  # 2. Cắt lát Slicing [start:stop:step]\nuser = {"id": 1}                 # 3. Ngăn cách key: value trong dict\ntuoi: int = 20                   # 4. Chú thích kiểu dữ liệu (Type Hints)\nf"{gia:,.2f}"                    # 5. Mở đặc tả định dạng bên trong f-string',
+        note: 'Trong biểu thức hàm ẩn danh lambda x: x * 2, dấu : ngăn cách danh sách tham số và biểu thức trả về.',
+      },
+      {
+        label: 'Ký hiệu @ (Decorator & Nhân ma trận), | (Union/Merge) và := (Walrus)',
+        syntax: '@dataclass                       # @ bọc hàm/class bằng Decorator\nC = A @ B                        # @ nhân 2 ma trận NumPy/PyTorch\nx: int | None = None             # | kiểu hợp (int hoặc None)\ngop = dict_1 | dict_2            # | gộp 2 từ điển (hoặc hợp 2 tập hợp set)\nif (n := len(ds)) > 5: ...       # := vừa gán n = len(ds) vừa dùng n để so sánh',
+        note: 'Ký hiệu 3 dấu chấm liên tiếp ... (Ellipsis) là một giá trị hợp lệ trong Python, thường dùng làm thân hàm giữ chỗ tương tự pass.',
+      },
+    ],
+    codeExample: `# 1. Dấu _ phân cách số và làm biến nháp khi giải nén
+ngan_sach = 150_000_000
+ho_ten, _, phong_ban = ("Nguyễn Văn An", "Mã_Tạm_Bỏ_Qua", "Kỹ thuật")
+print(f"Nhân sự: {ho_ten} ({phong_ban}) | Ngân sách: {ngan_sach:,}đ")
+
+# 2. Toán tử Walrus (:=) vừa tính vừa gắn vào biến ngay trong điều kiện if
+du_lieu = [12, 45, 88, 102]
+if (so_phan_tu := len(du_lieu)) >= 3:
+    print(f"Danh sách đủ dài ({so_phan_tu} phần tử)")`,
+    output: `Nhân sự: Nguyễn Văn An (Kỹ thuật) | Ngân sách: 150,000,000đ
+Danh sách đủ dài (4 phần tử)`,
+    detailsAndGotchas: [
+      'Khi dùng toán tử := bên trong điều kiện if, hãy luôn bọc cặp ngoặc tròn (n := len(ds)) > 5; nếu viết thiếu ngoặc if n := len(ds) > 5:, biến n sẽ nhận giá trị True/False thay vì độ dài!',
+    ],
+    jsEquivalent: {
+      syntax: 'Numeric separator 25_000_000 (giống nhau) | TypeScript x: number | null (giống nhau)',
+      note: 'Toán tử gộp dict1 | dict2 và Walrus := là đặc trưng rất tiện của Python 3.8–3.10+.',
+    },
+  },
 ];
