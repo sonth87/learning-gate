@@ -321,13 +321,13 @@ export const ScaleAppHeader: React.FC<ScaleAppHeaderProps> = ({
             )}
           </div>
 
-          {/* Paper Light / Espresso Dark Theme Toggle */}
+          {/* Paper Light / Espresso Dark Theme Toggle (Desktop >= 1024px; on Mobile/Tablet accessible inside Settings) */}
           <button
             type="button"
             onClick={handleToggleTheme}
             title={theme === 'light' ? t.themes.dark : t.themes.light}
             aria-label="Toggle Paper Light / Espresso Dark theme"
-            className="dts-btn-tactile inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] cursor-pointer"
+            className="dts-btn-tactile hidden @[1024px]:inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] cursor-pointer"
           >
             {theme === 'light' ? (
               <Moon className="h-3.5 w-3.5" />
@@ -336,12 +336,13 @@ export const ScaleAppHeader: React.FC<ScaleAppHeaderProps> = ({
             )}
           </button>
 
-          {/* Preferences & Backup */}
+          {/* Preferences & Backup (Always visible; replaces Theme slot on Mobile/Tablet) */}
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
+            title="Cài đặt & Đăng nhập đồng bộ"
             aria-label="Preferences & Backup"
-            className="dts-btn-tactile hidden sm:inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] cursor-pointer"
+            className="dts-btn-tactile inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] cursor-pointer"
           >
             <Settings className="h-3.5 w-3.5" />
           </button>
