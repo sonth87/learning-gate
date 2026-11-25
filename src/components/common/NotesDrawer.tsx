@@ -41,14 +41,14 @@ export const NotesDrawer: React.FC = () => {
   return (
     <div
       onClick={closeNotesDrawer}
-      className="fixed inset-0 z-[120] flex justify-end bg-black/75 backdrop-blur-xs"
+      className="absolute inset-0 z-[120] flex justify-end bg-black/75 backdrop-blur-xs overflow-hidden"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex h-full w-full lg:max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl pb-[env(safe-area-inset-bottom)]"
+        className="flex h-full max-h-full w-full lg:max-w-md flex-col border-l border-slate-800 bg-slate-900 shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 px-3.5 sm:px-5 py-3 sm:py-4">
+        <div className="shrink-0 flex items-center justify-between border-b border-slate-800 px-3.5 sm:px-5 py-3 sm:py-4">
           <div className="flex items-center gap-2 min-w-0">
             <StickyNote className="h-5 w-5 text-amber-400 shrink-0" />
             <div className="min-w-0">
@@ -70,7 +70,7 @@ export const NotesDrawer: React.FC = () => {
         </div>
 
         {/* Sub-tabs */}
-        <div className="grid grid-cols-3 border-b border-slate-800 bg-slate-950/50 p-1 text-xs font-medium">
+        <div className="shrink-0 grid grid-cols-3 border-b border-slate-800 bg-slate-950/50 p-1 text-xs font-medium">
           <button
             onClick={() => setActiveTab('current')}
             className={`rounded-lg py-2 transition-colors ${
@@ -115,6 +115,9 @@ export const NotesDrawer: React.FC = () => {
                   rows={4}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => {
+                    window.scrollTo(0, 0);
+                  }}
                   placeholder="Ghi lại ý tưởng, đoạn code mẫu hoặc điểm cần nhớ..."
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
                 />

@@ -133,7 +133,7 @@ export const ScaleCommandPalette: React.FC<ScaleCommandPaletteProps> = ({
       aria-modal="true"
       aria-label={t.searchTitle}
       onClick={() => setOpen(false)}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/45 p-3 pt-14 backdrop-blur-[2px]"
+      className="absolute inset-0 z-[120] flex items-start justify-center bg-black/45 p-3 pt-4 sm:pt-14 backdrop-blur-[2px] overflow-hidden"
     >
       <div
         onClick={(e) => e.stopPropagation()}

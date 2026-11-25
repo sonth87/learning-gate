@@ -391,11 +391,11 @@ const TermPopoverCard: React.FC<TermCardInstanceProps> = ({
       <div
         style={{ zIndex }}
         onClick={onClose}
-        className="fixed inset-0 flex items-end justify-center bg-black/70 backdrop-blur-xs lg:hidden"
+        className="absolute inset-0 flex items-end justify-center bg-black/70 backdrop-blur-xs lg:hidden overflow-hidden"
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-xl rounded-t-2xl border-t border-slate-700 bg-slate-900 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl"
+          className="w-full max-w-xl rounded-t-2xl border-t border-slate-700 bg-slate-900 p-4 shadow-2xl"
         >
           <div className="mx-auto mb-2.5 h-1 w-10 rounded-full bg-slate-700" />
           {renderCardContent()}

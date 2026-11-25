@@ -915,7 +915,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       {mobileDrawerOpen && (
         <div
           onClick={() => setMobileDrawerOpen(false)}
-          className="fixed inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden"
+          className="absolute inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden overflow-hidden"
         >
           <div
             onClick={(e) => e.stopPropagation()}
