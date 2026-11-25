@@ -16,6 +16,7 @@ import { FlashcardDeck } from '@/components/assessment/FlashcardDeck';
 import { ExamCenter } from '@/components/assessment/ExamCenter';
 import { GlossaryExplorer } from '@/components/glossary/GlossaryExplorer';
 import { ReferenceHub } from '@/components/reference/ReferenceHub';
+import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
 import { TermPopover } from '@/components/common/TermPopover';
 import { NotesDrawer } from '@/components/common/NotesDrawer';
 import { SetupGuideModal } from '@/components/common/SetupGuideModal';
@@ -137,6 +138,13 @@ export const PyMasteryApp: React.FC<PyMasteryAppProps> = ({ windowId }) => {
         {activeTab === 'samples' && (
           <div className="h-full overflow-y-auto">
             <ProjectSamplesHub />
+          </div>
+        )}
+        {activeTab === 'libraries' && (
+          <div className="h-full overflow-y-auto p-3 sm:p-6">
+            <div className="mx-auto max-w-[1600px]">
+              <PythonLibrariesEncyclopedia />
+            </div>
           </div>
         )}
         {activeTab === 'flashcards' && (

@@ -10,6 +10,7 @@ import {
   GraduationCap,
   LayoutGrid,
   Moon,
+  Package,
   Search,
   Settings,
   StickyNote,
@@ -99,6 +100,9 @@ export const Header: React.FC<{ windowId?: string }> = ({ windowId }) => {
   const isLearnMode = activeTab === 'learn' && wpView.name === 'workbench';
   const isPracticeMode = activeTab === 'learn' && wpView.name !== 'workbench';
   const isLabMode = activeTab === 'playground';
+  const isLibrariesMode =
+    activeTab === 'libraries' ||
+    (activeTab === 'learn' && wpView.name === 'libraries');
   const isCheatsheetsMode = activeTab === 'glossary';
   const isMoreActive = ['samples', 'exams', 'reference', 'curriculum', 'practice', 'flashcards'].includes(
     activeTab
@@ -230,6 +234,23 @@ export const Header: React.FC<{ windowId?: string }> = ({ windowId }) => {
               <Terminal className="h-3.5 w-3.5 shrink-0" />
               <span className={cn(isLabMode ? 'inline' : 'hidden @[1020px]:inline')}>
                 {t.tabs.lab}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              title={lang === 'en' ? 'Libraries' : 'Thư viện'}
+              onClick={() => setActiveTab('libraries')}
+              className={cn(
+                'inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-xl px-2.5 py-1 font-mono text-xs font-bold transition-all',
+                isLibrariesMode
+                  ? 'dts-card-tactile bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                  : 'text-[var(--dts-ink-soft)] hover:bg-[var(--dts-panel-muted)] hover:text-[var(--dts-ink)]'
+              )}
+            >
+              <Package className="h-3.5 w-3.5 shrink-0" />
+              <span className={cn(isLibrariesMode ? 'inline' : 'hidden @[1080px]:inline')}>
+                {lang === 'en' ? 'Libraries' : 'Thư viện'}
               </span>
             </button>
 

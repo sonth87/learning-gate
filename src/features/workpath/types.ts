@@ -210,4 +210,5 @@ export type WpView =
   | { name: 'drill'; moduleId: string }
   | { name: 'browse'; preset?: 'forme' | 'all' | 'curated' | 'security' }
   | { name: 'read'; n: number }
-  | { name: 'projects' };
+  | { name: 'projects' }
+  | { name: 'libraries' };

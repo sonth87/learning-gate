@@ -1716,4 +1716,216 @@ st.line_chart(lich_su)`,
         'Đây chính là lợi thế độc quyền khiến hệ sinh thái Python thống trị mảng Data & AI Prototyping.',
     },
   },
+  {
+    id: 'lib-3rd-openai-genai-instructor',
+    name: 'openai, google-genai & instructor',
+    title: 'OpenAI / Google GenAI SDK & Instructor — Gọi Trực tiếp LLM API & Ép Trả về JSON Chuẩn Pydantic',
+    kind: 'third-party',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: 'uv add openai google-genai instructor pydantic',
+      pip: 'pip install openai google-genai instructor pydantic',
+      poetry: 'poetry add openai google-genai instructor pydantic',
+    },
+    whatItIs:
+      'Bộ SDK chính hãng để gọi trực tiếp các mô hình ngôn ngữ lớn (GPT-4o, Gemini, Claude) kết hợp với Instructor giúp ép AI luôn trả về đúng đối tượng Pydantic thay vì đoạn văn bản tự do.',
+    problemSolved:
+      '70% ứng dụng AI thực tế chỉ cần gửi Prompt và nhận kết quả có cấu trúc (ví dụ: trích xuất CV, phân loại email, tóm tắt hóa đơn). Dùng SDK gốc + Pydantic/Instructor giúp code cực kỳ gọn nhẹ, dễ debug mà không cần cài các framework nặng nề.',
+    keyApis: [
+      {
+        symbol: 'client.responses.create() / client.models.generate_content()',
+        description: 'Gửi prompt văn bản hoặc hình ảnh tới LLM và nhận kết quả (hỗ trợ cả stream từng từ).',
+      },
+      {
+        symbol: 'response_format / response_schema=MyPydanticModel',
+        description: 'Ép mô hình AI trả về JSON khớp 100% với các trường đã khai báo trong class Pydantic.',
+      },
+    ],
+    usageCode: `from pydantic import BaseModel, Field
+
+# 1. Định nghĩa khuôn dữ liệu bạn muốn AI trích xuất ra
+class InvoiceExtraction(BaseModel):
+    vendor_name: str = Field(description="Tên đơn vị bán hàng")
+    total_amount: float = Field(description="Tổng số tiền thanh toán")
+    currency: str = Field(description="Đơn vị tiền tệ (VND, USD)")
+
+# 2. Khi gọi OpenAI / Gemini SDK với response_schema=InvoiceExtraction:
+# AI sẽ trả về đúng đối tượng Python đã được kiểm tra kiểu dữ liệu!
+sample = InvoiceExtraction(vendor_name="AWS Cloud", total_amount=145.50, currency="USD")
+print(sample.model_dump_json(indent=2))`,
+    tipsAndTricks: [
+      'Nguyên tắc cho người mới làm AI: Hãy bắt đầu bằng **SDK chính hãng + Pydantic** trước. Chỉ khi nào cần kết nối hàng chục nguồn tài liệu hoặc luồng Agent vòng lặp phức tạp mới thêm LlamaIndex / LangGraph.',
+      'Luôn đặt `timeout` và giới hạn `max_tokens` khi gọi LLM API để tránh treo ứng dụng hoặc tốn chi phí bất ngờ.',
+    ],
+    alternatives: [
+      {
+        name: 'LiteLLM (uv add litellm)',
+        whenToChoose:
+          'Khi bạn muốn dùng chung 1 cú pháp duy nhất để gọi hơn 100 nhà cung cấp AI khác nhau (OpenAI, Gemini, Anthropic, Ollama local).',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'openai / @google/genai / ai (Vercel AI SDK)',
+      explanation:
+        'Tương đương bộ SDK chính hãng và Vercel AI SDK (`generateObject` với Zod) bên hệ sinh thái TypeScript.',
+    },
+  },
+  {
+    id: 'lib-3rd-llamaindex-langgraph',
+    name: 'llamaindex, langgraph & chromadb',
+    title: 'LlamaIndex, LangGraph & ChromaDB — Xây dựng Hệ thống RAG Hỏi đáp Tài liệu & AI Agent Nhiều Bước',
+    kind: 'third-party',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: 'uv add llama-index langgraph chromadb',
+      pip: 'pip install llama-index langgraph chromadb',
+      poetry: 'poetry add llama-index langgraph chromadb',
+    },
+    whatItIs:
+      'Bộ ba thư viện cho ứng dụng AI nâng cao: LlamaIndex chuyên đọc/cắt nhỏ tài liệu (PDF, Word, Notion), ChromaDB lưu trữ vector tìm kiếm theo ngữ nghĩa, và LangGraph điều phối AI Agent suy nghĩ theo đồ thị trạng thái.',
+    problemSolved:
+      'Mô hình LLM mặc định không biết dữ liệu nội bộ công ty bạn (và không thể nhồi cả nghìn trang PDF vào 1 câu hỏi). RAG giúp tìm đúng đoạn văn liên quan nhất để đưa cho AI trả lời; còn LangGraph giúp AI tự gọi công cụ (tra DB, tìm web) và tự sửa lỗi qua nhiều bước.',
+    keyApis: [
+      {
+        symbol: 'VectorStoreIndex.from_documents(docs)',
+        description: '[LlamaIndex] Tự động cắt nhỏ tài liệu, tạo vector embedding và lưu vào Vector DB.',
+      },
+      {
+        symbol: 'StateGraph(AgentState) -> add_node() / add_conditional_edges()',
+        description: '[LangGraph] Định nghĩa từng bước suy nghĩ và nhánh rẽ điều kiện cho AI Agent.',
+      },
+    ],
+    usageCode: `# Minh họa tư duy phân vai rõ ràng trong hệ thống RAG + Agent:
+# 1. LlamaIndex / ChromaDB: Chỉ làm nhiệm vụ "Thủ thư" tìm đoạn tài liệu khớp câu hỏi
+def search_internal_docs(query: str) -> list[str]:
+    return [f"Trích dẫn nội bộ cho '{query}': Chính sách bảo hành 24 tháng."]
+
+# 2. LangGraph Node: Nhận câu hỏi -> Gọi "Thủ thư" -> Đưa cho LLM tổng hợp
+docs = search_internal_docs("Thời hạn bảo hành bao lâu?")
+print("Ngữ cảnh đưa vào LLM:", docs[0])`,
+    tipsAndTricks: [
+      'Phân biệt rõ phạm vi: Chọn **LlamaIndex** khi bài toán trọng tâm là **Tìm kiếm & Hỏi đáp trên kho tài liệu (RAG)**. Chọn **LangGraph** khi bài toán trọng tâm là **Luồng công việc nhiều bước / Multi-Agent có gọi Tool**.',
+    ],
+    alternatives: [
+      {
+        name: 'PydanticAI (uv add pydantic-ai)',
+        whenToChoose:
+          'Framework làm AI Agent thế hệ mới của đội ngũ Pydantic: cực kỳ gọn nhẹ, chuẩn Type Hints giống hệt cảm giác viết FastAPI.',
+      },
+      {
+        name: 'Qdrant / pgvector (PostgreSQL)',
+        whenToChoose:
+          'Khi đưa Vector Database lên Production cần hiệu năng cao hoặc muốn gộp chung Vector vào thẳng PostgreSQL hiện có.',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: '@langchain/langgraph / llamaindex (TS)',
+      explanation:
+        'Bản Python luôn được cập nhật tính năng sớm nhất và có hệ sinh thái đọc file PDF/khoa học dữ liệu phong phú hơn hẳn.',
+    },
+  },
+  {
+    id: 'lib-3rd-sklearn-pytorch',
+    name: 'scikit-learn, xgboost & pytorch',
+    title: 'Scikit-learn, XGBoost & PyTorch — Huấn luyện Mô hình Machine Learning Bảng & Mạng Nơ-ron Deep Learning',
+    kind: 'third-party',
+    domain: 'data-ai',
+    domainLabel: 'Xử lý Dữ liệu Lớn, Scraping & AI',
+    installCmd: {
+      uv: 'uv add scikit-learn xgboost torch',
+      pip: 'pip install scikit-learn xgboost torch',
+      poetry: 'poetry add scikit-learn xgboost torch',
+    },
+    whatItIs:
+      'Trụ cột của Khoa học Dữ liệu và Học máy: Scikit-learn & XGBoost thống trị các bài toán dự báo trên dữ liệu dạng bảng (Excel/SQL), trong khi PyTorch là nền tảng số 1 để xây dựng mạng nơ-ron sâu (Deep Learning) chạy trên GPU.',
+    problemSolved:
+      'Giúp bạn phân biệt rõ: Không phải bài toán AI nào cũng dùng LLM hay Deep Learning! Nếu dữ liệu là bảng số liệu (dự đoán giá nhà, tỉ lệ khách rời bỏ, phát hiện gian lận thẻ), Scikit-learn / XGBoost chạy trên CPU thường vẫn nhanh và chính xác hơn. Chỉ khi xử lý Ảnh, Âm thanh, Video hoặc tự train LLM mới cần tới PyTorch.',
+    keyApis: [
+      {
+        symbol: 'train_test_split(X, y) & model.fit(X_train, y_train) -> model.predict(X_test)',
+        description: '[Scikit-learn / XGBoost] Giao diện 3 bước chuẩn mực cho mọi thuật toán Machine Learning cổ điển.',
+      },
+      {
+        symbol: 'torch.nn.Module / tensor.to("cuda") / loss.backward()',
+        description: '[PyTorch] Khai báo kiến trúc mạng nơ-ron, đẩy ma trận lên GPU và tự động tính đạo hàm ngược (Autograd).',
+      },
+    ],
+    usageCode: `# Giao diện .fit() và .predict() thống nhất của Scikit-learn:
+from sklearn.linear_model import LogisticRegression
+
+# Đặc trưng: [Số giờ ôn tập, Số bài tập đã làm] -> Nhãn: 1 (Đỗ), 0 (Trượt)
+X_train = [[1, 2], [2, 3], [8, 15], [10, 20]]
+y_train = [0, 0, 1, 1]
+
+clf = LogisticRegression().fit(X_train, y_train)
+print("Dự đoán học viên ôn 9 giờ, làm 18 bài:", clf.predict([[9, 18]])[0])`,
+    tipsAndTricks: [
+      'Quy tắc chọn nhanh: **Dữ liệu Bảng (Tabular Data)** → dùng `scikit-learn` / `xgboost` / `lightgbm`. **Dữ liệu Phi cấu trúc (Ảnh, Âm thanh, Văn bản)** → dùng `PyTorch` + `transformers` (Hugging Face) / `opencv-python`.',
+    ],
+    alternatives: [
+      {
+        name: 'Hugging Face Transformers (uv add transformers)',
+        whenToChoose:
+          'Khi bạn muốn tải các mô hình Deep Learning đã được huấn luyện sẵn (Pre-trained) về chạy thay vì tự train từ con số 0 bằng PyTorch.',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'TensorFlow.js / ONNX Runtime Web',
+      explanation:
+        'Việc huấn luyện (Training) mô hình ML/DL gần như được thực hiện độc quyền trên Python nhờ hệ sinh thái C++/CUDA bên dưới.',
+    },
+  },
+  {
+    id: 'lib-std-3rd-desktop-gui',
+    name: 'tkinter (có sẵn) vs pywebview & PySide6',
+    title: 'tkinter vs PyWebView & PySide6 (Qt) — Xây dựng Phần mềm Desktop Có Giao diện Đồ họa (GUI)',
+    kind: 'stdlib',
+    domain: 'file-os',
+    domainLabel: 'File, Đường dẫn & Hệ điều hành',
+    installCmd: {
+      uv: '# tkinter có sẵn! Nếu cần UI hiện đại: uv add pywebview hoặc uv add PySide6',
+      pip: '# tkinter có sẵn! Nếu cần UI hiện đại: pip install pywebview PySide6',
+      poetry: 'poetry add pywebview',
+    },
+    whatItIs:
+      'Các công cụ giúp tạo phần mềm chạy trên màn hình Desktop (Windows, macOS, Linux) có cửa sổ, nút bấm, hộp chọn file mà người dùng không biết gõ lệnh Terminal vẫn sử dụng được.',
+    problemSolved:
+      'Giúp bạn biết rõ giới hạn: Python đi kèm sẵn `tkinter` để làm nhanh một bảng điều khiển nội bộ (chọn file Excel -> bấm nút xử lý) mà không cần cài thêm gì. Nhưng nếu muốn giao diện đẹp như web hiện đại thì dùng `pywebview` (HTML/JS + Python), còn muốn làm phần mềm đồ sộ chuẩn công nghiệp thì dùng `PySide6 (Qt)`.',
+    keyApis: [
+      {
+        symbol: 'tkinter.Tk() / filedialog.askopenfilename()',
+        description: '[Có sẵn trong Python] Mở cửa sổ cơ bản hoặc bật hộp thoại chọn file của Windows/macOS.',
+      },
+      {
+        symbol: 'webview.create_window("Title", html=..., js_api=Api())',
+        description: '[pywebview] Dùng HTML/CSS/React làm giao diện đẹp và gọi trực tiếp hàm Python ở local.',
+      },
+    ],
+    usageCode: `# Ví dụ: Chỉ dùng tkinter có sẵn trong Python để mở hộp thoại chọn file
+import tkinter as tk
+from tkinter import filedialog
+
+def chon_file_bao_cao() -> str:
+    root = tk.Tk()
+    root.withdraw()  # Ẩn cửa sổ chính, chỉ bật hộp chọn file của hệ điều hành
+    return filedialog.askopenfilename(title="Chọn file CSV cần xử lý")`,
+    tipsAndTricks: [
+      'Mẹo cực hay: Kể cả khi bạn viết script chạy trên Terminal, bạn vẫn có thể dùng 3 dòng `tkinter.filedialog.askopenfilename()` có sẵn để bật cửa sổ chọn file của Windows/macOS cho đồng nghiệp chọn file dễ dàng!',
+      'Sau khi viết xong Desktop App, dùng **PyInstaller** (`uv add --dev pyinstaller`) hoặc **Briefcase** để đóng gói thành file `.exe` / `.app` gửi cho máy không cài Python.',
+    ],
+    alternatives: [
+      {
+        name: 'CustomTkinter (uv add customtkinter)',
+        whenToChoose:
+          'Khi bạn thích sự đơn giản của `tkinter` nhưng muốn giao diện tự động có Dark Mode và nút bo tròn hiện đại.',
+      },
+    ],
+    nodeJsEquivalent: {
+      packages: 'Electron / Tauri',
+      explanation:
+        '`pywebview` trong Python nhẹ hơn Electron rất nhiều vì tận dụng trình duyệt WebView có sẵn của hệ điều hành.',
+    },
+  },
 ];

@@ -24,6 +24,10 @@ import {
   PYTHON_LIBRARIES_CATALOG,
   PythonLibraryGuide,
 } from '@/data/libraries/pythonLibrariesCatalog';
+import {
+  APPLICATION_DOMAIN_STACKS,
+  STDLIB_VS_THIRD_PARTY_BOUNDARIES,
+} from '@/data/libraries/pythonLibraryEcosystemData';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import { renderHighlightedPython } from '@/utils/pythonHighlighter';
 import { cn } from '@/utils/cn';
@@ -378,8 +382,335 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
     (l) => l.kind === 'third-party'
   ).length;
 
+  const [activeView, setActiveView] = useState<
+    'domains' | 'boundaries' | 'catalog'
+  >('domains');
+  const [selectedStackId, setSelectedStackId] = useState<string>('all');
+
+  const handleJumpToLibrary = (keyword: string) => {
+    const clean = keyword.split(' ')[0].toLowerCase().replace(/[^a-z0-9-_]/g, '');
+    const match = PYTHON_LIBRARIES_CATALOG.find(
+      (l) =>
+        l.name.toLowerCase().includes(clean) ||
+        l.title.toLowerCase().includes(clean)
+    );
+    setKindFilter('all');
+    setDomainFilter('all');
+    if (match) {
+      setSearchQuery('');
+      setSelectedLibId(match.id);
+      setViewAllMode(false);
+    } else {
+      setSearchQuery(clean);
+    }
+    setActiveView('catalog');
+  };
+
+  const visibleStacks = useMemo(() => {
+    if (selectedStackId === 'all') return APPLICATION_DOMAIN_STACKS;
+    return APPLICATION_DOMAIN_STACKS.filter((s) => s.id === selectedStackId);
+  }, [selectedStackId]);
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Top Hero Header & 3-Perspective Switcher */}
+      <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 p-4 sm:p-5 space-y-4 shadow-lg">
+        <div className="space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[11px] font-bold text-emerald-300">
+            <Package className="h-3.5 w-3.5" />
+            <span>
+              Bản đồ Hệ sinh thái Thư viện Python • {stdlibCount} Nhóm Có Sẵn +{' '}
+              {thirdPartyCount} Nhóm Thư viện Ngoài
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white">
+            Thư viện Python Thông dụng theo Mảng & Phạm vi Sử dụng
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed">
+            Giúp bạn nắm rõ bức tranh toàn cảnh: với mỗi mảng (Web API, App,
+            AI/LLM, Data/ML, Scraping, Desktop) thì dùng những thư viện nào,{' '}
+            <strong className="text-emerald-300">
+              phạm vi mỗi thư viện dừng ở đâu
+            </strong>
+            , cái gì <strong className="text-amber-300">Python có sẵn</strong>{' '}
+            không cần cài và khi nào mới cần cài thư viện riêng.
+          </p>
+        </div>
+
+        {/* 3 Main Perspective Tabs */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => setActiveView('domains')}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+              activeView === 'domains'
+                ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-sm'
+                : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:text-white'
+            )}
+          >
+            <Layers className="h-4 w-4 shrink-0" />
+            <span>1. Phạm vi theo 6 Mảng Ứng dụng (Web, App, AI, ML...)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView('boundaries')}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+              activeView === 'boundaries'
+                ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-sm'
+                : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:text-white'
+            )}
+          >
+            <GitCompare className="h-4 w-4 shrink-0" />
+            <span>2. Ranh giới: Có sẵn (Không cần cài) vs Cần cài Thư viện</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveView('catalog')}
+            className={cn(
+              'inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all cursor-pointer',
+              activeView === 'catalog'
+                ? 'border-emerald-400 bg-emerald-500 text-slate-950 shadow-sm'
+                : 'border-slate-800 bg-slate-950/80 text-slate-300 hover:border-slate-700 hover:text-white'
+            )}
+          >
+            <BookOpen className="h-4 w-4 shrink-0" />
+            <span>
+              3. Từ điển Chi tiết & Code Mẫu ({PYTHON_LIBRARIES_CATALOG.length}{' '}
+              nhóm)
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* =====================================================================
+          VIEW 1: 6 APPLICATION DOMAIN STACKS & SCOPE PIPELINES
+      ===================================================================== */}
+      {activeView === 'domains' && (
+        <div className="space-y-5">
+          {/* Quick Domain Filter Pills */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedStackId('all')}
+              className={cn(
+                'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                selectedStackId === 'all'
+                  ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300'
+                  : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
+              )}
+            >
+              Xem tất cả 6 mảng
+            </button>
+            {APPLICATION_DOMAIN_STACKS.map((st) => (
+              <button
+                key={st.id}
+                type="button"
+                onClick={() => setSelectedStackId(st.id)}
+                className={cn(
+                  'rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
+                  selectedStackId === st.id
+                    ? 'border-emerald-500/60 bg-emerald-500/20 text-emerald-300'
+                    : 'border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700'
+                )}
+              >
+                {st.title.split(':')[0]}:{' '}
+                {st.title.split(':')[1]?.split('&')[0]?.trim()}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-6">
+            {visibleStacks.map((stack) => (
+              <section
+                key={stack.id}
+                className="rounded-2xl border border-slate-800 bg-slate-900/85 p-4 sm:p-5 space-y-4 shadow-lg"
+              >
+                <div className="space-y-1.5">
+                  <h3 className="text-base sm:text-lg font-bold text-white">
+                    {stack.title}
+                  </h3>
+                  <p className="text-xs font-semibold text-emerald-400">
+                    {stack.subtitle}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    {stack.overview}
+                  </p>
+                </div>
+
+                {/* When No External Library Is Needed Banner */}
+                <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200 leading-relaxed">
+                  <Lightbulb className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="text-amber-300">
+                      Khi nào KHÔNG cần cài thư viện ngoài ở mảng này?{' '}
+                    </strong>
+                    <span>{stack.whenNoExternalLibNeeded}</span>
+                  </div>
+                </div>
+
+                {/* Pipeline Stages Breakdown */}
+                <div className="grid gap-3 md:grid-cols-2">
+                  {stack.pipelineStages.map((stage) => (
+                    <div
+                      key={stage.stepNumber}
+                      className="rounded-xl border border-slate-800 bg-slate-950/80 p-3.5 space-y-2.5 flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-xs font-extrabold text-sky-300">
+                            {stage.stageName}
+                          </span>
+                        </div>
+
+                        {/* Clickable Library Badges */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {stage.libraries.map((libName) => (
+                            <button
+                              key={libName}
+                              type="button"
+                              onClick={() => handleJumpToLibrary(libName)}
+                              title="Bấm để xem code mẫu & hướng dẫn chi tiết thư viện này"
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
+                            >
+                              <Package className="h-3 w-3" />
+                              <span>{libName}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="space-y-1.5 pt-1 text-xs">
+                          <p className="text-slate-200 leading-relaxed">
+                            <strong className="text-emerald-400">
+                              ✓ Phạm vi làm được:{' '}
+                            </strong>
+                            {stage.whatItDoes}
+                          </p>
+                          <p className="text-slate-400 leading-relaxed">
+                            <strong className="text-rose-400">
+                              ✕ Giới hạn (Không làm):{' '}
+                            </strong>
+                            {stage.whatItDoesNotDo}
+                          </p>
+                        </div>
+                      </div>
+
+                      {stage.isStdlibAvailable && (
+                        <div className="pt-2 border-t border-slate-800/80 text-[11px] text-amber-300/90">
+                          ⚡ <strong>Đồ có sẵn thay thế:</strong>{' '}
+                          {stage.isStdlibAvailable}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          VIEW 2: STDLIB VS THIRD-PARTY BOUNDARY COMPARISON TABLE
+      ===================================================================== */}
+      {activeView === 'boundaries' && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/85 p-4 sm:p-5 space-y-3 shadow-lg">
+            <h3 className="text-base sm:text-lg font-bold text-white">
+              Bảng Ranh giới: Khi nào dùng Thư viện Có Sẵn (Stdlib) vs Khi nào
+              cài Thư viện Ngoài (PyPI)?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Python nổi tiếng với triết lý{' '}
+              <em>&quot;Batteries Included&quot; (Có sẵn pin)</em> — rất nhiều
+              việc bạn có thể làm ngay mà không cần cài thêm bất kỳ gói nào. Bảng
+              dưới đây giúp bạn biết rõ giới hạn của đồ có sẵn dừng ở đâu.
+            </p>
+
+            <div className="space-y-3 pt-2">
+              {STDLIB_VS_THIRD_PARTY_BOUNDARIES.map((row) => (
+                <div
+                  key={row.id}
+                  className="rounded-xl border border-slate-800 bg-slate-950/80 p-4 space-y-3"
+                >
+                  <h4 className="text-sm sm:text-base font-bold text-white">
+                    {row.taskCategory}
+                  </h4>
+
+                  <div className="grid gap-3 lg:grid-cols-3">
+                    {/* Col 1: Stdlib */}
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/15 p-3 space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                        ⚡ Có sẵn trong Python (Không cần cài)
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {row.stdlibModules.map((mod) => (
+                          <button
+                            key={mod}
+                            type="button"
+                            onClick={() => handleJumpToLibrary(mod)}
+                            className="rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 font-mono text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 cursor-pointer"
+                          >
+                            import {mod}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {row.stdlibScope}
+                      </p>
+                    </div>
+
+                    {/* Col 2: Threshold */}
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-950/15 p-3 space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                        ⚠️ Khi nào đồ có sẵn KHÔNG đủ?
+                      </div>
+                      <p className="text-xs text-amber-100/90 leading-relaxed">
+                        {row.whenToSwitch}
+                      </p>
+                    </div>
+
+                    {/* Col 3: Third-party */}
+                    <div className="rounded-xl border border-sky-500/30 bg-sky-950/15 p-3 space-y-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-sky-400">
+                        📦 Thư viện ngoài khuyên dùng (uv add)
+                      </div>
+                      <div className="space-y-1.5">
+                        {row.thirdPartyLibs.map((tp) => (
+                          <div
+                            key={tp.name}
+                            className="flex flex-col gap-0.5 rounded-lg border border-slate-800 bg-slate-900/80 p-2"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => handleJumpToLibrary(tp.name)}
+                              className="w-fit font-mono text-xs font-bold text-sky-300 hover:underline cursor-pointer text-left"
+                            >
+                              {tp.name}
+                            </button>
+                            <span className="text-[11px] text-slate-300">
+                              {tp.role}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          VIEW 3: DETAILED LIBRARY ENCYCLOPEDIA & CODE EXAMPLES
+      ===================================================================== */}
+      {activeView === 'catalog' && (
+        <div className="space-y-4">
       {/* Mobile & Tablet Quick Library Selector Bar (< lg) */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-800/90 bg-slate-900/90 px-3.5 py-2.5 lg:hidden">
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -673,6 +1004,8 @@ export const PythonLibrariesEncyclopedia: React.FC = () => {
         )}
       </section>
       </div>
+        </div>
+      )}
     </div>
   );
 };

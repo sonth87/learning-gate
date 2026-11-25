@@ -9,6 +9,7 @@ export type MainTab =
   | 'playground'
   | 'practice'
   | 'samples'
+  | 'libraries'
   | 'flashcards'
   | 'exams'
   | 'glossary'

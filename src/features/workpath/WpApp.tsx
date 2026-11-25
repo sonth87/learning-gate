@@ -6,6 +6,7 @@ import {
   Layers,
   ListChecks,
   Map as MapIcon,
+  Package,
   Trophy,
 } from 'lucide-react';
 import { useCurriculum } from './data';
@@ -29,6 +30,7 @@ import { DrillView } from './views/DrillView';
 import { BrowseView } from './views/BrowseView';
 import { ReadView } from './views/ReadView';
 import { ProjectSamplesHub } from '@/components/samples/ProjectSamplesHub';
+import { PythonLibrariesEncyclopedia } from '@/components/libraries/PythonLibrariesEncyclopedia';
 import { Spinner } from './components/ui';
 import { ProgressSyncBadge } from '@/components/common/ProgressSyncBadge';
 import {
@@ -89,6 +91,16 @@ const CORE_PRACTICE_TABS: {
     go: { name: 'projects' },
     match: ['projects'],
   },
+  {
+    id: 'libraries',
+    labelVi: 'Thư viện',
+    labelEn: 'Libraries',
+    tipVi: 'Các thư viện Python thông dụng theo mảng, phạm vi & khi nào cần cài thêm',
+    tipEn: 'Common Python libraries by domain, scope & stdlib vs third-party boundaries',
+    icon: <Package className="h-3.5 w-3.5 shrink-0" />,
+    go: { name: 'libraries' },
+    match: ['libraries'],
+  },
 ];
 
 const PracticeViewSwitch: React.FC<{ view: WpView }> = ({ view }) => {
@@ -123,6 +135,12 @@ const PracticeViewSwitch: React.FC<{ view: WpView }> = ({ view }) => {
       return (
         <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-5">
           <ProjectSamplesHub />
+        </div>
+      );
+    case 'libraries':
+      return (
+        <div className="mx-auto w-full max-w-[1600px] p-3 sm:p-5">
+          <PythonLibrariesEncyclopedia />
         </div>
       );
     case 'workbench':
