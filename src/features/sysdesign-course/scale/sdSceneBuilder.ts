@@ -145,6 +145,162 @@ export function buildSdMemoryScene(def: SdSceneDef): MemoryScene | null {
   return null;
 }
 
+function getGroundOffsetForShape(shape: LegacyNodeShape): number {
+  if (shape === 'cylinder' || shape === 'db') return 21;
+  if (shape === 'laptop' || shape === 'device') return 16;
+  if (shape === 'crowd') return 14;
+  return 22;
+}
+
+function hashSceneKey(ids: readonly string[]): number {
+  const s = ids.join(':');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+/**
+ * Tự động bố trí tọa độ mặt sàn Isometric 2:1 (u, v) theo cấu trúc đồ thị DAG khi node không khai báo x/y tường minh:
+ * - Quy đổi từ lưới mặt sàn 2:1 `(u, v)` sang `(gx = u + v, gy = (u - v) / 2)` và trừ `getGroundOffsetForShape(shape)`
+ *   để mọi đường nối `.link` đi dọc đúng trục isometric `SE (+2, +1)` / `NE (+2, -1)` và cắm thẳng vào chính giữa cạnh tường khối.
+ * - Với 1..4 node: gán `x` tăng dần theo thứ tự topo để `composeIsometricLayout` của `ScaleStageSvg` dùng đúng các mẫu
+ *   Đường chéo 2:1, Góc vuông Isometric, Fan-Out / Fan-In và Zíc-zắc Kim cương.
+ * - Với ≥ 5 node: bố trí chiều sâu 2.5D (ví dụ chuỗi 5 node gập góc chữ L / chữ U trên mặt sàn 2:1; đồ thị phân tầng
+ *   có nhánh song song `app1..3` xếp dọc theo trục `v` lệch với trục tiến `u`), giữ `viewBox` gọn (~600×330) và tự nhiên.
+ */
+function computeIsometricDagCoords(
+  nodeIds: readonly string[],
+  shapes: Map<string, LegacyNodeShape>,
+  links: readonly { from: string; to: string }[]
+): Map<string, { x: number; y: number }> {
+  const out = new Map<string, { x: number; y: number }>();
+  const n = nodeIds.length;
+  if (n === 0) return out;
+
+  const rankOf = new Map<string, number>();
+  for (const id of nodeIds) rankOf.set(id, 0);
+  for (let pass = 0; pass < n; pass++) {
+    let changed = false;
+    for (const l of links) {
+      const rf = rankOf.get(l.from) ?? 0;
+      const rt = rankOf.get(l.to) ?? 0;
+      if (rf + 1 > rt) {
+        rankOf.set(l.to, rf + 1);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
+  const byRank = new Map<number, string[]>();
+  let maxRank = 0;
+  for (const id of nodeIds) {
+    const r = rankOf.get(id) ?? 0;
+    if (r > maxRank) maxRank = r;
+    const list = byRank.get(r) ?? [];
+    list.push(id);
+    byRank.set(r, list);
+  }
+
+  const placeGround = (id: string, gx: number, gy: number) => {
+    const sh = shapes.get(id) ?? 'block';
+    out.set(id, {
+      x: Math.round(gx),
+      y: Math.round(gy - getGroundOffsetForShape(sh)),
+    });
+  };
+
+  // Khi n <= 4: để composeIsometricLayout của ScaleStageSvg tự chọn mẫu 2:1 chuẩn (chỉ cần x tăng theo rank, spanY < 125)
+  if (n <= 4) {
+    const ordered = [...nodeIds].sort(
+      (a, b) => (rankOf.get(a) ?? 0) - (rankOf.get(b) ?? 0)
+    );
+    ordered.forEach((id, idx) => {
+      out.set(id, { x: idx * 80, y: (idx % 2) * 20 });
+    });
+    return out;
+  }
+
+  // Trường hợp chuỗi 5 node nối tiếp (mỗi tầng 1 node, ví dụ client -> lb -> app1 -> cache -> db):
+  // Thay vì xếp ngang / \ / \ tốn diện tích, bố trí theo đường gập 2.5D trên lưới mặt sàn 2:1
+  // để các đoạn nối thẳng tắp dọc trục SE (+2,+1) và NE (+2,-1) không bị gãy khuỷu chữ Z.
+  const isSingleChain5 =
+    n === 5 &&
+    maxRank === 4 &&
+    [0, 1, 2, 3, 4].every((r) => (byRank.get(r)?.length ?? 0) === 1);
+
+  if (isSingleChain5) {
+    const ids = [0, 1, 2, 3, 4].map((r) => byRank.get(r)![0]);
+    const variant = hashSceneKey(ids) % 2;
+    // Lưu ý: ScaleStageSvg nhân spread = 1.26 khi n >= 5, nên tọa độ dưới đây đã chia trước cho 1.26
+    // để sau khi nhân 1.26 mọi cặp node liền kề nằm chính xác trên trục 2:1 (|Δgy| = |Δgx| / 2)!
+    if (variant === 0) {
+      // Mẫu Arch-S 2:1:
+      // 0 -> 1 (NE), 1 -> 2 (SE), 2 -> 3 (SE), 3 -> 4 (SW)
+      const pts: Array<[number, number]> = [
+        [-210, 15],
+        [-70, -55],
+        [70, 15],
+        [210, 85],
+        [70, 155],
+      ];
+      ids.forEach((id, idx) => placeGround(id, pts[idx][0], pts[idx][1]));
+    } else {
+      // Mẫu Courtyards 2:1:
+      // 0 -> 1 (SE), 1 -> 2 (NE), 2 -> 3 (SE), 3 -> 4 (NE)
+      const pts: Array<[number, number]> = [
+        [-220, -25],
+        [-90, 40],
+        [40, -25],
+        [170, 40],
+        [260, -5],
+      ];
+      ids.forEach((id, idx) => placeGround(id, pts[idx][0], pts[idx][1]));
+    }
+    return out;
+  }
+
+  // Đồ thị phân tầng tổng quát (n >= 5, có tầng rẽ nhánh song song như client -> lb -> [app1, app2, app3] -> cache -> db):
+  // Đặt theo hệ trục mặt sàn 2:1:
+  // - Tiến theo tầng (rank) dọc hướng hỗn hợp u/v có chiều sâu
+  // - Các node song song trong cùng một tầng trải dọc theo trục chéo isometric `v` (Δgx = -110, Δgy = +55)
+  //   giúp fan-out từ LB sang App 1..3 và fan-in từ App 1..3 về Cache tạo thành hình thoi 2.5D tự nhiên!
+    // Với ग्राफ 7 node dạng client -> lb -> [app1, app2, app3] -> cache -> db:
+    // Đặt client -> lb theo trục NE (+130, -65), cụm app1..3 rẽ nhánh dọc trục SE (+56, +28) từ trục chính,
+    // rồi tụ về cache và gập xuống db theo trục SW (-130, +65) tạo thành bố cục cụm 2.5D có chiều sâu,
+    // giữ chiều ngang chỉ ~500px (thay vì trải ngang 800px) nên khối luôn to, rõ!
+    const rankAnchors5: Array<[number, number]> = [
+      [-210, 10],   // rank 0: client (trái)
+      [-80, -55],   // rank 1: lb (thẳng trục NE 2:1 từ client: Δgx=+130, Δgy=-65)
+      [50, 10],     // rank 2: tâm cụm app1..3 (thẳng trục SE 2:1 từ lb: Δgx=+130, Δgy=+65)
+      [180, -55],   // rank 3: cache (thẳng trục NE 2:1 từ tâm app: Δgx=+130, Δgy=-65)
+      [180, 95],    // rank 4: db (nằm phía trước cache ở góc phải-dưới)
+    ];
+
+    for (const [r, members] of byRank.entries()) {
+      const anchor =
+        r < rankAnchors5.length
+          ? rankAnchors5[r]
+          : [
+              Math.round((r - maxRank / 2) * 125),
+              r % 2 === 0 ? 28 : -28,
+            ];
+      const m = members.length;
+      members.forEach((id, idx) => {
+        if (m === 1) {
+          placeGround(id, anchor[0], anchor[1]);
+        } else {
+          // Trải các node cùng tầng theo trục mặt sàn 2:1 (mỗi bước lệch Δgx = -36, Δgy = +72)
+          const offset = idx - (m - 1) / 2;
+          const gx = anchor[0] - offset * 36;
+          const gy = anchor[1] + offset * 72;
+          placeGround(id, gx, gy);
+        }
+      });
+    }
+
+  return out;
+}
 /**
  * Dựng StageScene từ định nghĩa cảnh. `model` (từ sim.json) cung cấp liên kết; thiếu model thì cảnh chỉ có node.
  * Trả null nếu cảnh không có node nào (người gọi sẽ rơi về code-trace).
@@ -162,46 +318,43 @@ export function buildSdStageScene(
   if (nodeIds.length === 0) return null;
   const shown = new Set(nodeIds);
 
-  const modelLinks = (model?.links ?? []).filter((l) => shown.has(l.from) && shown.has(l.to));
+  const rawModelLinks = model?.links ?? [];
+  const linkIds = def.show.links === undefined || def.show.links === '*' ? null : new Set(def.show.links);
 
-  // Tự động bố trí tọa độ mặt phẳng 2:1 theo tầng DAG (topological rank) khi node không khai báo x/y tường minh,
-  // tránh việc composeIsometricLayout với n >= 5 chỉ nhân hệ số 1.26 trên lưới nhỏ (i % 4)*2 khiến các khối chồng lên nhau.
-  const autoCoords = new Map<string, { x: number; y: number }>();
-  if (nodeIds.some((id) => stage.nodes[id]?.x === undefined || stage.nodes[id]?.y === undefined)) {
-    const rankOf = new Map<string, number>();
-    for (const id of nodeIds) rankOf.set(id, 0);
-    for (let pass = 0; pass < nodeIds.length; pass++) {
-      let changed = false;
-      for (const l of modelLinks) {
-        const rf = rankOf.get(l.from) ?? 0;
-        const rt = rankOf.get(l.to) ?? 0;
-        if (rf + 1 > rt) {
-          rankOf.set(l.to, rf + 1);
-          changed = true;
+  // Tìm các đường nối trực tiếp giữa các node đang hiển thị; nếu hai node nối nhau qua 1 node trung gian đang ẩn
+  // (ví dụ Step 1 hiện [client, lb, app1, db] khi cache chưa xuất hiện), tự động bắc cầu (bridge link) để luồng liền mạch.
+  const directLinks = rawModelLinks.filter((l) => shown.has(l.from) && shown.has(l.to));
+  const bridgedLinks: SdModelLinkLike[] = [...directLinks];
+  if (def.show.links === undefined || def.show.links === '*') {
+    const directPairs = new Set(directLinks.map((l) => `${l.from}->${l.to}`));
+    for (const hidden of model?.nodes ?? []) {
+      if (shown.has(hidden.id)) continue;
+      const inLinks = rawModelLinks.filter((l) => l.to === hidden.id && shown.has(l.from));
+      const outLinks = rawModelLinks.filter((l) => l.from === hidden.id && shown.has(l.to));
+      for (const il of inLinks) {
+        for (const ol of outLinks) {
+          const key = `${il.from}->${ol.to}`;
+          if (!directPairs.has(key)) {
+            directPairs.add(key);
+            bridgedLinks.push({ id: il.id, from: il.from, to: ol.to });
+          }
         }
       }
-      if (!changed) break;
-    }
-    const byRank = new Map<number, string[]>();
-    let maxRank = 0;
-    for (const id of nodeIds) {
-      const r = rankOf.get(id) ?? 0;
-      if (r > maxRank) maxRank = r;
-      const list = byRank.get(r) ?? [];
-      list.push(id);
-      byRank.set(r, list);
-    }
-    const colSpacing = maxRank >= 4 ? 175 : 210;
-    const rowSpacing = 120;
-    for (const [r, members] of byRank.entries()) {
-      const xBase = Math.round((r - maxRank / 2) * colSpacing);
-      const zigY = members.length === 1 ? (r % 2 === 0 ? 34 : -34) : 0;
-      members.forEach((id, idx) => {
-        const yOffset = Math.round((idx - (members.length - 1) / 2) * rowSpacing + zigY);
-        autoCoords.set(id, { x: xBase, y: yOffset });
-      });
     }
   }
+  const modelLinks = bridgedLinks;
+
+  const shapeByNode = new Map<string, LegacyNodeShape>();
+  for (const id of nodeIds) {
+    const d = stage.nodes[id] ?? {};
+    const mn = modelNodes.get(id);
+    const kd = (mn?.kind && KIND_DEFAULTS[mn.kind]) || { shape: 'block' as LegacyNodeShape, tone: 'neutral' as IsoTone };
+    shapeByNode.set(id, d.shape ?? kd.shape);
+  }
+
+  const autoCoords = nodeIds.some((id) => stage.nodes[id]?.x === undefined || stage.nodes[id]?.y === undefined)
+    ? computeIsometricDagCoords(nodeIds, shapeByNode, modelLinks)
+    : new Map<string, { x: number; y: number }>();
 
   const nodes: StageNode[] = nodeIds.map((id, i) => {
     const d = stage.nodes[id] ?? {};
@@ -230,7 +383,6 @@ export function buildSdStageScene(
     return node;
   });
 
-  const linkIds = def.show.links === undefined || def.show.links === '*' ? null : new Set(def.show.links);
   const links: StageLink[] = modelLinks
     .filter((l) => (linkIds ? linkIds.has(l.id) : true))
     .map((l) => {

@@ -296,14 +296,21 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
   const spanY = Math.max(...ys) - Math.min(...ys);
 
   if (n >= 5 || (spanY >= 125 && spanX <= 440)) {
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const gxs = nodes.map((nd) => nd.x);
+    const gys = nodes.map((nd) => nd.y + getGroundOffset(nd.shape));
+    const cx = (Math.min(...gxs) + Math.max(...gxs)) / 2;
+    const cy = (Math.min(...gys) + Math.max(...gys)) / 2;
     const spread = 1.26;
-    return nodes.map((nd) => ({
-      ...nd,
-      x: Math.round(cx + (nd.x - cx) * spread),
-      y: Math.round(cy + (nd.y - cy) * spread),
-    }));
+    return nodes.map((nd) => {
+      const gOff = getGroundOffset(nd.shape);
+      const gx = cx + (nd.x - cx) * spread;
+      const gy = cy + (nd.y + gOff - cy) * spread;
+      return {
+        ...nd,
+        x: Math.round(gx),
+        y: Math.round(gy - gOff),
+      };
+    });
   }
 
   const placeAtGround = (nd: StageNode, gx: number, gy: number): StageNode => ({

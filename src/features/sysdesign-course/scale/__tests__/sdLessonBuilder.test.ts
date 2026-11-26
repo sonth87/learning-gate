@@ -45,8 +45,8 @@ assert(
   'S1-03 có dòng nguồn attribution từ SDC'
 );
 assert(
-  s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 5 && !st.codeTrace),
-  'step isometric có scene ≥ 5 node và không kèm codeTrace'
+  s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 4 && !st.codeTrace),
+  'step isometric có scene ≥ 4 node và không kèm codeTrace'
 );
 assert(s103!.steps.some((st) => st.stageMode === 'memory-2d' && st.memoryScene?.kind === 'tree'), 'có step memory-2d dựng MemoryScene tree');
 assert(s103!.primaryMode === 'isometric', 'S1-03 primaryMode isometric');

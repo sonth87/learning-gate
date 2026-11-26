@@ -435,7 +435,6 @@
           "client",
           "lb",
           "app1",
-          "cache",
           "db"
         ]
       },
@@ -445,9 +444,6 @@
         },
         "app1": {
           "loadPct": 56
-        },
-        "cache": {
-          "loadPct": 7
         },
         "db": {
           "loadPct": 100,
