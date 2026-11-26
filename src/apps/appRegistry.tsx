@@ -4,12 +4,14 @@ import { KubeMasteryApp } from './kubemastery/KubeMasteryApp';
 import { CicdMasteryApp } from './cicdmastery/CicdMasteryApp';
 import { PmpMasteryApp } from './pmpmastery/PmpMasteryApp';
 import { RedisMasteryApp } from './redismastery/RedisMasteryApp';
+import { SdMasteryApp } from './sdmastery/SdMasteryApp';
 import {
   PyMasteryLogo,
   KubeMasteryLogo,
   CicdMasteryLogo,
   PmpMasteryLogo,
   RedisMasteryLogo,
+  SdMasteryLogo,
 } from '@/components/common/AppLogos';
 
 export const PYMASTERY_CONFIG: AppConfig = {
@@ -254,12 +256,65 @@ export const REDIS_MASTERY_CONFIG: AppConfig = {
   ],
 };
 
+export const SD_MASTERY_CONFIG: AppConfig = {
+  id: 'sdmastery',
+  name: 'System Design Mastery',
+  icon: SdMasteryLogo,
+  rawIcon: true,
+  fullBleedIcon: true,
+  iconColor: ['#14B8A6', '#0F766E'],
+  render: SdMasteryApp,
+  defaultMaximized: false,
+  defaultFullscreen: true,
+  mobileFullscreen: true,
+  defaultSize: { width: 1300, height: 840 },
+  minSize: { width: 320, height: 420 },
+  hasMenuBar: true,
+  launchMode: 'single',
+  contextMenu: [
+    { key: 'search', label: 'Tìm kiếm nhanh (⌘K)', action: 'quickSearch' },
+    { key: 'sep1', label: '', action: '', separator: true },
+    { key: 'learn', label: 'Học — lộ trình, quiz, flashcard', action: 'tab:learn' },
+    { key: 'lab', label: 'Phòng Lab thiết kế hệ thống', action: 'tab:lab' },
+    { key: 'warroom', label: 'Xử lý sự cố giả lập', action: 'tab:warroom' },
+    { key: 'cases', label: 'Case thiết kế hoàn chỉnh', action: 'tab:cases' },
+    { key: 'sep2', label: '', action: '', separator: true },
+    { key: 'atlas', label: 'Từ điển mẫu thiết kế', action: 'tab:atlas' },
+    { key: 'interview', label: 'Luyện phỏng vấn', action: 'tab:interview' },
+    { key: 'credits', label: 'Nguồn & ghi công', action: 'tab:credits' },
+  ],
+  menuBarMenus: [
+    {
+      label: 'Công cụ',
+      items: [
+        { key: 'search', label: 'Tìm kiếm nhanh...', shortcut: '⌘K', action: 'quickSearch' },
+        { key: 'settings', label: 'Cài đặt & Đồng bộ...', shortcut: '⌘,', action: 'openSettings' },
+        { key: 'sep1', label: '', separator: true },
+        { key: 'close', label: 'Đóng ứng dụng', shortcut: '⌘W', action: 'close' },
+      ],
+    },
+    {
+      label: 'Chuyển mục',
+      items: [
+        { key: 'learn', label: 'Học — lộ trình, quiz, flashcard', shortcut: '⌘1', action: 'tab:learn' },
+        { key: 'lab', label: 'Phòng Lab thiết kế hệ thống', shortcut: '⌘2', action: 'tab:lab' },
+        { key: 'warroom', label: 'Xử lý sự cố giả lập', shortcut: '⌘3', action: 'tab:warroom' },
+        { key: 'cases', label: 'Case thiết kế hoàn chỉnh', shortcut: '⌘4', action: 'tab:cases' },
+        { key: 'atlas', label: 'Từ điển mẫu thiết kế', shortcut: '⌘5', action: 'tab:atlas' },
+        { key: 'interview', label: 'Luyện phỏng vấn', shortcut: '⌘6', action: 'tab:interview' },
+        { key: 'credits', label: 'Nguồn & ghi công', shortcut: '⌘7', action: 'tab:credits' },
+      ],
+    },
+  ],
+};
+
 export type LearningAppId =
   | 'pymastery'
   | 'kubemastery'
   | 'cicdmastery'
   | 'pmpmastery'
-  | 'redismastery';
+  | 'redismastery'
+  | 'sdmastery';
 
 export const ALL_LEARNING_APPS: AppConfig[] = [
   PYMASTERY_CONFIG,
@@ -267,6 +322,7 @@ export const ALL_LEARNING_APPS: AppConfig[] = [
   KUBEMASTERY_CONFIG,
   CICD_MASTERY_CONFIG,
   PMP_MASTERY_CONFIG,
+  SD_MASTERY_CONFIG,
 ];
 
 export const switchLearningApp = (
@@ -275,7 +331,9 @@ export const switchLearningApp = (
   try {
     const store = useStore.getState();
     const targetConfig =
-      targetAppId === 'redismastery'
+      targetAppId === 'sdmastery'
+        ? SD_MASTERY_CONFIG
+        : targetAppId === 'redismastery'
         ? REDIS_MASTERY_CONFIG
         : targetAppId === 'pmpmastery'
         ? PMP_MASTERY_CONFIG

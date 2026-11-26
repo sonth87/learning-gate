@@ -1,0 +1,126 @@
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { useContextAction, useMenuAction } from '@sonth87/device-layout';
+import { SettingsModal } from '@/components/layout/SettingsModal';
+import { useNavigationStore } from '@/stores/useNavigationStore';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { SdLearnShell } from '@/features/sysdesign-course/SdLearnShell';
+import { SdCreditsView } from '@/features/sysdesign-course/views/SdCreditsView';
+import { useSdCurriculum, useSdSims } from '@/features/sysdesign-course/data';
+import { buildSdScaleLessons } from '@/features/sysdesign-course/scale/sdLessonBuilder';
+import { useSdNav, useSdProgress } from '@/features/sysdesign-course/store';
+import { ScaleCommandPalette } from '@/components/scale-workbench/ScaleCommandPalette';
+import { TermPopover } from '@/components/common/TermPopover';
+import { NotesDrawer } from '@/components/common/NotesDrawer';
+import { cn } from '@/utils/cn';
+import { SD_TAB_ORDER, type SdMainTab } from './sd.types';
+import { useSdStore } from './store/useSdStore';
+import { SdHeader } from './components/SdHeader';
+import { SdMobileBottomNav } from './components/SdMobileBottomNav';
+import { SdPlaceholder } from './components/SdPlaceholder';
+
+export interface SdMasteryAppProps {
+  appId?: string;
+  windowId?: string;
+}
+
+// Chưa có glossary riêng (T7.4); truyền mảng rỗng để palette không hiện thuật ngữ của app khác.
+const NO_GLOSSARY: { id: string; term: string; shortSummary: string }[] = [];
+
+export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
+  const { activeTab, setActiveTab } = useSdStore();
+  const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
+  const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
+  const hydrateSd = useSdProgress((s) => s.hydrate);
+  const goSd = useSdNav((s) => s.go);
+
+  const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const setSearchPaletteOpen = useWorkbenchStore((s) => s.setSearchPaletteOpen);
+  const setCourseCursor = useWorkbenchStore((s) => s.setCourseCursor);
+  const setExpandedLevel = useWorkbenchStore((s) => s.setExpandedLevel);
+
+  const { data: cur } = useSdCurriculum();
+  const { data: sims } = useSdSims();
+  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
+
+  useEffect(() => {
+    hydrateSd();
+  }, [hydrateSd]);
+
+  const handleAction = useCallback(
+    (action: string) => {
+      if (action === 'quickSearch') {
+        setSearchPaletteOpen(true, 'sdmastery');
+      } else if (action === 'openSettings') {
+        setSettingsOpen(true);
+      } else if (action.startsWith('tab:')) {
+        const tab = action.replace('tab:', '') as SdMainTab;
+        if (!SD_TAB_ORDER.includes(tab)) return;
+        setActiveTab(tab);
+        if (tab === 'learn') goSd({ name: 'workbench' });
+      }
+    },
+    [goSd, setActiveTab, setSearchPaletteOpen, setSettingsOpen]
+  );
+
+  useMenuAction('sdmastery', handleAction, windowId);
+  useContextAction('sdmastery', handleAction);
+
+  const isLight = workbenchTheme === 'light';
+
+  return (
+    <div
+      onClick={() => hideTermPopover(false)}
+      className={cn(
+        'pylearn-root dts-shell @container/app relative w-full h-full min-h-0 min-w-0 bg-[var(--dts-canvas)] text-[var(--dts-ink)] flex flex-col overflow-hidden transition-colors duration-200 select-text',
+        isLight ? 'pylearn-light dts-light' : 'pylearn-dark dts-dark'
+      )}
+    >
+      <SdHeader windowId={windowId} />
+
+      <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
+        {activeTab === 'learn' && <SdLearnShell />}
+        {activeTab === 'credits' && (
+          <div className="h-full overflow-y-auto">
+            <SdCreditsView />
+          </div>
+        )}
+        {activeTab !== 'learn' && activeTab !== 'credits' && <SdPlaceholder tab={activeTab} />}
+      </main>
+
+      <SdMobileBottomNav />
+      <TermPopover />
+      <NotesDrawer />
+      <ScaleCommandPalette
+        courseId="sdmastery"
+        lessons={scaleLessons}
+        glossaryItems={NO_GLOSSARY}
+        onSelectLessonStep={(moduleId, stepIdx) => {
+          const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+          const stepObj = lesson?.steps[stepIdx];
+          setCourseCursor(
+            'sdmastery',
+            moduleId,
+            stepIdx,
+            lesson && stepObj
+              ? {
+                  moduleTitleVi: lesson.title.vi,
+                  moduleTitleEn: lesson.title.en,
+                  stepTitleVi: stepObj.title.vi,
+                  stepTitleEn: stepObj.title.en,
+                }
+              : undefined
+          );
+          if (lesson) setExpandedLevel('sdmastery', lesson.level);
+          setActiveTab('learn');
+          goSd({ name: 'workbench' });
+        }}
+        onSelectGlossaryTerm={() => {
+          setActiveTab('atlas');
+        }}
+      />
+      <SettingsModal />
+    </div>
+  );
+};
+
+export default SdMasteryApp;

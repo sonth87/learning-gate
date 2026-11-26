@@ -72,6 +72,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         kubemastery: { moduleId: 'K00', stepIndex: 0 },
         cicdmastery: { moduleId: 'C00', stepIndex: 0 },
         pmpmastery: { moduleId: 'P00', stepIndex: 0 },
+        sdmastery: { moduleId: 'S0-01', stepIndex: 0 },
       },
       expandedLevels: {
         pymastery: 0,
@@ -79,6 +80,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         kubemastery: 0,
         cicdmastery: 0,
         pmpmastery: 0,
+        sdmastery: 0,
       },
       recentSteps: [],
       isProgressExpanded: false,
