@@ -1,0 +1,651 @@
+---
+title: "Components Trong Hệ Thống Web - Hiểu Từng Building Block"
+description: "Phân tích chi tiết các components cơ bản của web system: Client, Load Balancer, Application Server, Cache, Database. Học vai trò, trade-offs và khi nào nên dùng từng component trong kiến trúc phân tán."
+order: 11
+---
+
+# Components Trong Một Hệ Thống Web
+
+Chào mừng đến Phase 1 - Foundation: Thinking in Systems.
+
+Sau Phase 0, bạn đã thay đổi mindset. Giờ là lúc build foundation thực sự: **Hiểu các building blocks của mọi hệ thống.**
+
+Tôi còn nhớ lần đầu debug production issue. API chậm. Nhưng chậm ở đâu?
+
+Senior architect vẽ diagram:
+```
+Client → Load Balancer → App Server → Cache → Database
+```
+
+Rồi hỏi: *"Request đi qua bao nhiêu bước? Mỗi bước mất bao lâu?"*
+
+Đó là lần đầu tôi hiểu: **Hệ thống là tập hợp components tương tác.** Hiểu từng component = hiểu cả hệ thống.
+
+## Tại Sao Phải Học Components?
+
+**Code-level view:**
+```python
+def get_user(user_id):
+    return db.query("SELECT * FROM users WHERE id = ?", user_id)
+```
+
+Bạn thấy function. Nhưng architect thấy:
+
+**System-level view:**
+```
+Client (50ms)
+  ↓
+Load Balancer (10ms)
+  ↓
+Application Server (20ms)
+  ↓
+Database Query (500ms) ← BOTTLENECK
+  ↓
+Total: 580ms
+```
+
+System-level thinking giúp bạn:
+- **Identify bottlenecks** nhanh chóng
+- **Design for scale** từ đầu
+- **Debug production** hiệu quả
+- **Communicate** rõ ràng với team
+
+Bạn không thể optimize cái bạn không hiểu.
+
+## Component 1: Client (Browser/Mobile App)
+
+### Vai Trò
+
+Client là presentation layer. Nơi user tương tác với hệ thống.
+
+**Đặc điểm:**
+- Không đáng tin (user có thể modify code)
+- Không kiểm soát được environment (device, network)
+- Stateful (có thể lưu data locally)
+
+### Critical Rules
+
+**Rule 1: NEVER trust client**
+```javascript
+//  BAD: Validate price ở client only
+function checkout(items) {
+    let total = items.reduce((sum, item) => sum + item.price, 0)
+    submitOrder(total)  // Hacker có thể modify price
+}
+
+//  GOOD: Always validate server-side
+function checkout(items) {
+    submitOrder(items)  // Server recalculate price
+}
+```
+
+**Why?** Tôi từng thấy hacker modify JavaScript, đổi giá từ $100 → $1, submit. Server tin client → Company mất tiền.
+
+**Rule 2: Client validation chỉ là UX enhancement**
+```javascript
+// Client validation: Immediate feedback (UX)
+if (!email.includes('@')) {
+    showError("Invalid email")
+}
+
+// Server PHẢI validate lại
+if (!isValidEmail(email)) {
+    return 400  // Never trust client
+}
+```
+
+### Trade-offs
+```
+ Advantages:
+- Rich interactions
+- Offline capability
+- Reduce server load (client-side rendering)
+
+ Disadvantages:
+- Security risk
+- Inconsistent environments
+- Hard to update (users don't refresh)
+```
+
+### Khi Nào Optimize Client?
+
+**Optimize khi:**
+- Bundle size lớn (> 1MB)
+- First paint chậm (> 3s)
+- User có slow devices/networks
+
+**Techniques:**
+- Code splitting
+- Lazy loading
+- Service workers (caching)
+- CDN cho static assets
+
+## Component 2: Load Balancer
+
+### Vai Trò
+
+Phân phối traffic đều giữa multiple servers.
+
+### Khi Nào Cần?
+```
+Scenario 1: Single Server
+1 server handles 1,000 req/s
+Traffic grows to 5,000 req/s
+→ Server overload → Slow/crashes
+
+Scenario 2: Multiple Servers + Load Balancer
+5 servers, each handles 1,000 req/s
+Load Balancer distributes evenly
+→ System handles 5,000 req/s smoothly
+```
+
+**Cần load balancer khi:**
+- 1 server không đủ capacity
+- Cần high availability (1 server dies, others take over)
+- Rolling deployments (update servers từng cái)
+
+### Khi Nào KHÔNG Cần?
+```
+ Don't need khi:
+- < 1,000 users
+- Internal tools
+- MVP/Prototypes
+- Budget constraints
+
+Start simple. Add LB when proven necessary.
+```
+
+### Core Algorithms
+
+**Round Robin:**
+```
+Request 1 → Server A
+Request 2 → Server B
+Request 3 → Server C
+Request 4 → Server A (repeat)
+
+ Simple, even distribution
+ Doesn't consider server load
+```
+
+**Least Connections:**
+```
+Server A: 50 connections
+Server B: 20 connections ← Choose this
+Server C: 35 connections
+
+ Better load balancing
+ More complex, need to track state
+```
+
+**Weighted Round Robin:**
+```
+Server A (16GB RAM): weight 2
+Server B (8GB RAM): weight 1
+
+A gets 2 requests for every 1 to B
+
+ Utilize powerful servers more
+ Need to configure weights
+```
+
+### Trade-offs
+```
+ Gains:
+- Increased capacity
+- High availability
+- Zero-downtime deployments
+
+ Costs:
+- Additional complexity
+- Potential single point of failure (LB itself)
+- Network latency (+10-50ms)
+```
+
+### Personal Recommendation
+
+Start với Round Robin. Simple và works cho 80% cases.
+
+Chỉ dùng Least Connections khi requests có execution time rất khác nhau (WebSocket, file uploads).
+
+## Component 3: Application Server
+
+### Vai Trò
+
+Business logic layer. Process requests, orchestrate data flow.
+
+### Critical Decision: Stateless vs Stateful
+
+**Stateless Server:**
+```python
+# Không lưu user session trong memory
+def handle_request(request):
+    user_id = jwt.decode(request.token)  # Get from token
+    user = db.get_user(user_id)          # Get from DB
+    return process(user)
+
+# Benefit: Any server can handle any request
+```
+
+**Stateful Server:**
+```python
+# Lưu session trong memory
+sessions = {}  # In-memory
+
+def handle_login(user_id):
+    sessions[user_id] = UserSession(user_id)
+
+def handle_request(user_id):
+    session = sessions[user_id]  # Must hit same server!
+    return process(session)
+```
+
+### Trade-off Analysis
+```
+Stateless:
+ Easy horizontal scaling
+ Any server handles any request
+ Cloud-friendly (servers can die)
+ Extra DB call for user data
+
+Stateful:
+ Low latency (no DB roundtrip)
+ Can cache user-specific data
+ Hard to scale (need sticky sessions)
+ Lose sessions khi server restart
+```
+
+### My Strong Opinion
+
+**Default to stateless.** Stateful chỉ khi có lý do rất tốt (WebSocket connections, gaming servers).
+
+Modern systems với microservices? Stateless là must.
+
+### Server Configuration
+
+**Concurrency model matters:**
+```
+Thread-based (Java, traditional):
+- 1 thread per request
+- Limited by thread pool size
+- Good: Familiar model
+- Bad: Memory overhead
+
+Event-loop (Node.js, Python asyncio):
+- 1 thread handles many requests
+- Non-blocking I/O
+- Good: High concurrency
+- Bad: CPU-heavy tasks block everything
+
+Worker-based (Gunicorn, uWSGI):
+- Pre-fork workers
+- Each worker handles requests
+- Good: Isolate failures
+- Bad: More memory
+```
+
+**Choose based on workload:**
+- I/O heavy (API calls, DB queries) → Event-loop
+- CPU heavy (image processing) → Worker-based
+- Mixed → Worker-based với async inside
+
+## Component 4: Cache Layer
+
+### Vai Trò
+
+Store frequently accessed data in-memory để giảm DB load.
+
+### The Fundamental Question
+
+**Có nên cache không?**
+
+Answer bằng flowchart:
+```
+Is it read-heavy? (read:write > 10:1)
+  ↓ YES
+Data thay đổi thường xuyên không?
+  ↓ NO
+Query expensive? (> 100ms)
+  ↓ YES
+→ USE CACHE
+
+Any NO → Consider carefully
+```
+
+### Cache Strategies
+
+**Strategy 1: Cache-Aside (Lazy Loading)**
+```python
+def get_product(product_id):
+    # 1. Check cache
+    product = cache.get(f"product:{product_id}")
+    if product:
+        return product  # Cache hit
+    
+    # 2. Cache miss → Query DB
+    product = db.query("SELECT * FROM products WHERE id = ?", product_id)
+    
+    # 3. Store in cache
+    cache.set(f"product:{product_id}", product, ttl=3600)
+    return product
+
+ Only cache what's needed
+ First request slow (cache miss)
+```
+
+**Strategy 2: Write-Through**
+```python
+def update_product(product_id, data):
+    # 1. Update DB
+    db.update("products", product_id, data)
+    
+    # 2. Update cache immediately
+    cache.set(f"product:{product_id}", data)
+
+ Cache always fresh
+ Every write slower (2 operations)
+```
+
+**Strategy 3: Write-Behind**
+```python
+def update_product(product_id, data):
+    # 1. Update cache immediately
+    cache.set(f"product:{product_id}", data)
+    
+    # 2. Async write to DB
+    queue.add({"action": "update_product", "id": product_id, "data": data})
+
+ Writes very fast
+ Risk data loss if cache crashes
+```
+
+### Cache Invalidation - The Hard Problem
+
+Phil Karlton: *"There are only two hard things in Computer Science: cache invalidation and naming things."*
+
+**Problem:**
+```
+1. User updates profile → DB updated
+2. Cache still has old data
+3. User refresh → Sees old data (cache hit)
+4. User confused
+```
+
+**Solutions:**
+
+**Option 1: TTL (Time To Live)**
+```python
+cache.set("user:123", user, ttl=300)  # Expire after 5min
+
+ Simple
+ Data stale for up to 5 minutes
+```
+
+**Option 2: Active Invalidation**
+```python
+def update_user(user_id, data):
+    db.update("users", user_id, data)
+    cache.delete(f"user:{user_id}")  # Delete immediately
+
+ Always fresh
+ Must remember to invalidate everywhere
+```
+
+**Option 3: Event-Driven**
+```python
+# Service A updates user
+db.update("users", user_id, data)
+event_bus.publish("user.updated", user_id)
+
+# Service B listens
+@event_bus.subscribe("user.updated")
+def on_user_updated(user_id):
+    cache.delete(f"user:{user_id}")
+
+ Decoupled, scalable
+ Complex infrastructure
+```
+
+### Personal Rule
+
+Start với TTL. Simple và works.
+
+Add active invalidation khi data freshness critical.
+
+Event-driven chỉ khi có nhiều services cần react.
+
+### When NOT to Cache
+```
+ Don't cache:
+- Write-heavy data (inventory counts thay đổi liên tục)
+- Real-time data (stock prices)
+- Personalized data (different per user, low hit rate)
+- Small datasets (< 1000 records, DB fast enough)
+```
+
+## Component 5: Database
+
+### Vai Trò
+
+Persistent storage. Source of truth.
+
+### Why Database is Often the Bottleneck
+```
+Memory read:  100 nanoseconds
+SSD read:     150 microseconds  (1,500x slower)
+HDD read:     10 milliseconds   (100,000x slower)
+
+Database phải:
+- Read from disk
+- Parse query
+- Execute plan
+- Return results
+
+→ Inherently slow compared to memory
+```
+
+### Optimization Hierarchy
+
+**Level 1: Query Optimization (Do this first)**
+```sql
+--  BAD: No index, full table scan
+SELECT * FROM users WHERE email = 'john@example.com';
+-- 10M rows → 5 seconds
+
+--  GOOD: Add index
+CREATE INDEX idx_users_email ON users(email);
+-- Same query → 10ms (500x faster!)
+```
+
+**Level 2: Connection Pooling**
+```python
+#  BAD: New connection per request
+def get_user(user_id):
+    conn = create_connection()  # Expensive!
+    user = conn.query(...)
+    conn.close()
+    return user
+
+#  GOOD: Reuse connections
+pool = ConnectionPool(min=5, max=20)
+
+def get_user(user_id):
+    with pool.get_connection() as conn:
+        return conn.query(...)
+```
+
+**Level 3: Read Replicas**
+```
+Master (Write)
+  ↓ replicate
+Slave 1, Slave 2, Slave 3 (Read)
+
+Writes → Master
+Reads → Load balance across Slaves
+
+ Scale reads easily
+ Eventual consistency (replication lag)
+```
+
+**Level 4: Sharding (Last resort)**
+```
+Only khi:
+- Single DB can't handle load
+- Vertical scaling maxed out
+- Data too large for 1 machine
+
+Cost:
+- Very complex
+- Cross-shard queries hard
+- Resharding nightmare
+```
+
+### Trade-offs: SQL vs NoSQL
+```
+SQL (PostgreSQL, MySQL):
+ ACID transactions
+ Rich queries (JOIN, aggregations)
+ Data integrity
+ Harder to scale horizontally
+ Schema changes expensive
+
+NoSQL (MongoDB, DynamoDB):
+ Easy horizontal scaling
+ Flexible schema
+ High write throughput
+ No JOIN (application-level)
+ Eventual consistency
+ Less query power
+```
+
+**Decision framework:**
+```
+Choose SQL khi:
+- Need transactions (banking, e-commerce)
+- Complex relationships
+- Ad-hoc queries
+- Data integrity critical
+
+Choose NoSQL khi:
+- Need massive scale
+- Write-heavy workload
+- Flexible schema
+- Simple queries (key-value lookups)
+```
+
+### My Opinion
+
+**Start với SQL (PostgreSQL).** 
+
+Nó handle được 99% use cases. JSONB column cho flexibility. Scale vertically first, add read replicas second.
+
+Chỉ switch sang NoSQL khi proven SQL can't handle load.
+
+## Putting It All Together: Request Flow
+
+Hãy trace một request từ đầu đến cuối:
+
+### Example: User loads homepage
+```
+1. Browser → DNS lookup
+   Time: 20ms
+
+2. Browser → HTTPS to Load Balancer
+   Time: 50ms (TCP + TLS)
+
+3. Load Balancer → Choose App Server (Round Robin)
+   Time: 5ms
+
+4. App Server → Check Cache for homepage data
+   Time: 2ms
+   Result: Cache HIT
+
+5. App Server → Return HTML to LB
+   Time: 5ms
+
+6. LB → Return to Browser
+   Time: 10ms
+
+7. Browser → Parse and render
+   Time: 200ms
+
+Total: ~292ms
+Bottleneck: Browser rendering (200ms)
+```
+
+### If Cache MISS:
+```
+4. App Server → Check Cache
+   Result: MISS
+
+5. App Server → Query Database
+   Time: 300ms ← NEW BOTTLENECK
+
+6. App Server → Store in Cache
+   Time: 2ms
+
+7. App Server → Return HTML
+   Time: 5ms
+
+Total: ~594ms (2x slower)
+```
+
+### Optimization Strategy
+```
+Current bottleneck: Database (300ms)
+
+Options:
+A. Add indexes → 300ms → 50ms (6x faster, low effort)
+B. Query optimization → 50ms → 20ms (2.5x, medium effort)
+C. Add more caching → Reduce DB hits to near zero
+
+Action: Do A first (high ROI), then monitor.
+```
+
+## Mental Model: Everything Is A System
+
+Apply component thinking everywhere:
+
+**Restaurant:**
+- Client: Customer
+- Load Balancer: Host
+- Servers: Waiters
+- Cache: Menu knowledge
+- Database: Kitchen
+
+**Bottleneck?** Kitchen (20 min prepare time)
+
+**Solution?** Add more chefs (horizontal scaling) or better equipment (vertical scaling).
+
+**Coffee shop:**
+- Bottleneck: 1 barista, 10 customers
+- Solution: Add baristas hoặc self-service kiosks
+
+Khi bạn see patterns này, bạn understand systems deeply.
+
+## Key Takeaways
+
+**Mọi web system có 5 components cơ bản:**
+1. **Client** - Presentation, không tin cậy
+2. **Load Balancer** - Distribute traffic
+3. **Application Server** - Business logic, stateless preferred
+4. **Cache** - Fast reads, invalidation is hard
+5. **Database** - Source of truth, often bottleneck
+
+**Design principles:**
+- **Start simple** - Don't over-engineer
+- **Measure first** - Find real bottlenecks
+- **Optimize bottlenecks** - Not everything
+- **Scale gradually** - Vertical → Horizontal
+
+**Trade-off awareness:**
+- Stateless vs Stateful servers
+- Cache complexity vs Performance
+- SQL consistency vs NoSQL scale
+- Simple monolith vs Complex distributed
+
+**Next steps:**
+
+Practice với real system. Trace requests. Identify components. Measure latency. Find bottlenecks.
+
+Component thinking là foundation. Master này trước khi học patterns phức tạp hơn.

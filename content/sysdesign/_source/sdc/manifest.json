@@ -1,0 +1,429 @@
+{
+  "repo": "steve-bang/systemdesigncore",
+  "commit": "fe4234da7d6fe719e8e18547856fc0a730155420",
+  "files": [
+    {
+      "path": "content/phases/phase-0/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "60183bc6856f4c7f96f264c45c74bb36bcc682a2",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/index.mdx",
+      "bytes": 6108,
+      "sha256": "e2b6d9b831ddc6f9ffb1baf0f1be3ce5be50c24867983b65881ffc881d39068c",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-1-code-first-to-problem-first.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "8d211f0cd23cb609b3ee82330887e97007b636d2",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-1-code-first-to-problem-first.mdx",
+      "bytes": 9857,
+      "sha256": "104de36bab103f2dd8c30f60050575ee637b2f2e58e9163ece5c16ed11cc4cea",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-2-perfect-solution-to-trade-off-thinking.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "9d12c837e47e6dba53e9f38092aea17974d69a14",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-2-perfect-solution-to-trade-off-thinking.mdx",
+      "bytes": 14021,
+      "sha256": "90a18f5bcf13d7b144de103e5e500c7d6faedea65bddf5667215027d1110a110",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-3-foundation-exercises.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "40dbf84e055c5b64bd6f015594b13f15bf1b93aa",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-3-foundation-exercises.mdx",
+      "bytes": 16131,
+      "sha256": "5127f39820d20170834923cf0c3a69444d0baf221837173cfb5b7c5c4eccf585",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-4-thinking-in-constraints.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "bcf4c3f5a65502351a633b96166011d1f93ab121",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-4-thinking-in-constraints.mdx",
+      "bytes": 16347,
+      "sha256": "67925cb06c46e4337e8f6cba0566e2845b345316b2d64b4258597ef964680898",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-5-scale-intuition.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "cfc8a1df2900c0f1e032302993937a74e7e1d986",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-5-scale-intuition.mdx",
+      "bytes": 18188,
+      "sha256": "fda04a779fca23df69c3e8d1f69aaaddcee917c14000e675d4b8008f254a5909",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-6-system-thinking-framework.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "4df9c11967c16d677cc331d7d3b1685425c32c96",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-6-system-thinking-framework.mdx",
+      "bytes": 17187,
+      "sha256": "3cf1fcd04a5da6df802a08ebefc3f3178fb01e3292d929c0d29fe62534fd5474",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-7-system-question-framework.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "e11b4810677758360e4fada8735d8c370a9840b8",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-7-system-question-framework.mdx",
+      "bytes": 11370,
+      "sha256": "d8423a6f93eab4e2c4b9851b99e0433e780cf82a49af66a26797a7e6fdd0b86d",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-0/lessons/lesson-8-mental-model-recap.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "bad15da9d1d15a88f77529907a5966c570f0b611",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-8-mental-model-recap.mdx",
+      "bytes": 10391,
+      "sha256": "4987bd052d22347b346aeda6648b390b6da994ef3e3f2e910526a405782f8784",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "33b1ceae0852cb1f6afefea33a8bd7b1a3687cad",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/index.mdx",
+      "bytes": 3614,
+      "sha256": "eaf34c41a4d59b803c0607433da3f1a36b179e48a32df1547953a3d546cad7ed",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/lessons/lesson-1-components-trong-he-thong-web.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "811a1d655f2ef112c80b51eaddb25797f8743d4a",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-1-components-trong-he-thong-web.mdx",
+      "bytes": 14633,
+      "sha256": "607e17e3814e7ed5c745c3f3ef94c03227b73d58f386705aa9cc8c042bcf517a",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/lessons/lesson-2-communication-patterns.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "18686044cc35872bd25aea0f3d0420d3f04dffc6",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-2-communication-patterns.mdx",
+      "bytes": 19578,
+      "sha256": "e83838382f5041b9538376875de8958eb7c9cb8ce58fb1676beff39328803e4c",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "252b162e9837bbaf67f6a861734adba1f10d9156",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+      "bytes": 20077,
+      "sha256": "46d62ff4eef8f919fde9ffea1ddb17c9775f0a74202c0435ec7b2b260bcfcf2f",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/lessons/lesson-4-cac-khai-niem-quan-trong.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "92e3ca0196132f83156649cb9fd2b3980c8da54f",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-4-cac-khai-niem-quan-trong.mdx",
+      "bytes": 16784,
+      "sha256": "cd2cafa0cad3f9f8f6892b9a127c4f96dca6987d27e98492d45d3ee11e662b39",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-1/lessons/lesson-5-bai-tap-tong-hop.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "10b608e07e6ff2c5e10eb63293b3043661ec2bb8",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-5-bai-tap-tong-hop.mdx",
+      "bytes": 25885,
+      "sha256": "4d358201375a4a0052e5f3b94bc7dd810c13a2853d533388c6421c9124500e6a",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "eb10a3d74b32be438e2ed4570520530018b99378",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/index.mdx",
+      "bytes": 4707,
+      "sha256": "316928548445885fe2e941d2bde98baa22cc06be3622bf43d1c77432d01046db",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/lessons/lesson-1-load-balancing.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "5e03af2f4752d9e50f60ab60b3334ab0321f3749",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-1-load-balancing.mdx",
+      "bytes": 29625,
+      "sha256": "1f7fa3e2225e66974bd69f21ef789719197f6a251c8113ccabccbe0c20f10e69",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/lessons/lesson-2-caching.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "c2ebeb683c26ef8ad3c11d637f31e25866a2b509",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-2-caching.mdx",
+      "bytes": 19401,
+      "sha256": "656c85fc74c0d408e128f89b44a3861b4441895701ea2c8e11d795f28b9e177a",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/lessons/lesson-3-database.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "91a4b52b30e95e04880feb6888835172e2dc1b2d",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-3-database.mdx",
+      "bytes": 20840,
+      "sha256": "5ab9cdbc22c2ebf04310003d6c458c4356b89c036d4371a248f274c1577751d8",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/lessons/lesson-4-message-queues-async-processing-decoupling-services.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "60bfaed9395be5359958fbf21475d71b50161328",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-4-message-queues-async-processing-decoupling-services.mdx",
+      "bytes": 24757,
+      "sha256": "caf8e4a9f774311106f2b7e441dbd54ae4f86e2077962f81c627d74c30f4a898",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-2/lessons/lesson-5-integration-trade-off-thinking.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "aaed477f63d5c667dccf451f7469cccb33663fb1",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-5-integration-trade-off-thinking.mdx",
+      "bytes": 23797,
+      "sha256": "eb1726641c5be6c98a9691604e32237e1c911b496ebe2ae31a6d8d2c6908ef64",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "f94bb61265d8f84f746f7c3c19b02e1cbe5556bc",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/index.mdx",
+      "bytes": 5198,
+      "sha256": "b8f385781da917de02f3cff5bf40d16d7cc716bfb1f94e737f2a0609947027d1",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-1-reality-of-distributed-systems.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "d210c65e0372ee065db01808053779725b4cf426",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-1-reality-of-distributed-systems.mdx",
+      "bytes": 22268,
+      "sha256": "829a52c5fa63502f8718ae2375bdbc25a3e2cfe36ca6b3c36a3f4c9b19ff59a6",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-2-consistency-models-strong-and-eventual-consistency.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "93ae539819c7f69eb2731cecfe294b3be4e91481",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-2-consistency-models-strong-and-eventual-consistency.mdx",
+      "bytes": 19134,
+      "sha256": "849f91486903ceb5bc827de1b70d7c478f55deb602eaf14989138ffff926ed62",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-3-consensus-leader-election.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "db79274797b7d6f8a29a533a53c2a72b7030bf06",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-3-consensus-leader-election.mdx",
+      "bytes": 17771,
+      "sha256": "c2deaccfc45118e4cabeba4e424bf054363bf230b99344ba3dd14d694bbf8077",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-4-distributed-transactions-data-integrity.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "812c2248e4c3ee45efd71626a92e5bfb051944a3",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-4-distributed-transactions-data-integrity.mdx",
+      "bytes": 30641,
+      "sha256": "19227e580b28083636ad90ac4047cbf6a711fd96ccecf5c8d43b5a3e42298a7c",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-5-distributed-id-and-ordering.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "64c0cf55d57f410f2ce6e40a3b98202d5f92ef73",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-5-distributed-id-and-ordering.mdx",
+      "bytes": 24531,
+      "sha256": "32d2687990c7b521982b4008074d8eb76e8bedc2b664cc1a1dfc6f119e2a5220",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-3/lessons/lesson-6-time-event-ordering-clock-problem-trong-distributed-systems.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "891a9d2b714d95f36ce0d7a7217751104ee3a50f",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-6-time-event-ordering-clock-problem-trong-distributed-systems.mdx",
+      "bytes": 16038,
+      "sha256": "5cf2583e43b1a539db8e161827846405979a7585aef9079677f5ffdbad4b07b6",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "9b7b2a1b51d9f80272503b996955cec66e8fb04c",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/index.mdx",
+      "bytes": 6076,
+      "sha256": "62dbae78d84934e195edc3d3b056a6eb4f8cf21c9d756e905fcfd423ab0ed95d",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-1-performance-bottleneck-thinking.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "729bc67f7011f989052593665b442f0a7091e08b",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-1-performance-bottleneck-thinking.mdx",
+      "bytes": 14432,
+      "sha256": "fea2dbebe1def398af4ed919cd0d65fdb5d418ad83d0d81344b441493ecdac72",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-2-caching-strategy-trade-consistency-de-lay-speed.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "2aac2a946cd8f572f38facfbd20e2a458c2be548",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-2-caching-strategy-trade-consistency-de-lay-speed.mdx",
+      "bytes": 17659,
+      "sha256": "39fec712af274b96a506fe1bdc9d7581be39d519f5d744aabb81626fc86d220f",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-3-cdn-and-edge-computing-distributed-cache-gan-user.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "f0821b6ae9ab65925213bdde0ba74416fa3fc32c",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-3-cdn-and-edge-computing-distributed-cache-gan-user.mdx",
+      "bytes": 18147,
+      "sha256": "43c456ef849022ded4c4f4b6ac31f23e5a4ffe2f2c14dea04d91e8333b3d00d4",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-4-database-scaling-optimization.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "a000436fcff83768bf0c7396cb64fefee80b22ab",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-4-database-scaling-optimization.mdx",
+      "bytes": 22364,
+      "sha256": "dbb727d62d38e3217f81625fb16bb19b89744d581e092d0b38789312b6aee9da",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-5-rate-limiting-and-load-control.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "f61f374852ca2f70f8ac1376f9e9243badad5592",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-5-rate-limiting-and-load-control.mdx",
+      "bytes": 27679,
+      "sha256": "8fe12aa1d24855d3c4c501349ec392bf3c5d16c55e7543668cca11b3905ed36b",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-6-asynchronous-processin-queues.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "05bcf5727f1deda24323aaaa961fb9222af79974",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-6-asynchronous-processin-queues.mdx",
+      "bytes": 23708,
+      "sha256": "44c0588196315605c637cfb5dd9aae30197e291b537b65dc231a2eb594f362a6",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-4/lessons/lesson-7-monitoring-observability-performance-debugging.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "2f7c179fac53c1000c51f90603a889ec2709a493",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-7-monitoring-observability-performance-debugging.mdx",
+      "bytes": 24841,
+      "sha256": "4b0fa4e8e3d00221993137b9021e0206457cbff74385589ff03aa32c0a9b69b2",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-5/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "8a09a6bbfee8d17c5a79b931b86fa88eb71df314",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/index.mdx",
+      "bytes": 4550,
+      "sha256": "e8211b5e13c50a35812840fb873974ca56684312cf5e80c84ba4520be4a60cda",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-5/lessons/lesson-1-architecture-evolution-mindset.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "c5c02833b6e9df3dd9078d645fc1d961dde5903e",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-1-architecture-evolution-mindset.mdx",
+      "bytes": 22420,
+      "sha256": "19a887cd53933b10a364a4618ea47cdd51b3fcea4828e2851a1ee929f7ffe976",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-5/lessons/lesson-2-head-heavy-systems.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "a8354c04cd62457906da1a07f361a41d018d1109",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-2-head-heavy-systems.mdx",
+      "bytes": 24473,
+      "sha256": "5d042e3e647a16b616dfe02822983d0104113fab31187bbf216b1d7990147a63",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-5/lessons/lesson-3-social-feed-systems.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "7e0c6da7af42b57a8b12b4359a1f97e4b663eedc",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-3-social-feed-systems.mdx",
+      "bytes": 28604,
+      "sha256": "43c9f5bc0fcd1cccf0150f63692a268deccfd9df38002737bea52f1e671611ba",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/index.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "d8e56d4bed7f1879e420cc5cc9e21dd4defbb9df",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/index.mdx",
+      "bytes": 5932,
+      "sha256": "64dc762ef3769d47a852ce54e971a477892e5539aa195d6ceb9ecf24f0d3c08b",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-1-system-design-thinking-framework.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "73640e63f10c3f9fc1dc378017b158a15b0041b2",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-1-system-design-thinking-framework.mdx",
+      "bytes": 26777,
+      "sha256": "42e795d9959c061f8e0403e519494b7599486f4afdc7a1f3613437f0b10bc533",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-2-snake-framework.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "9296dd1e8239e7ed5224de4e36cae41b22c1a1f4",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-2-snake-framework.mdx",
+      "bytes": 27560,
+      "sha256": "a62b1723696558f43713bd0c7c66726677a32768f1e88e2a6835b8e69afa5b86",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-3-trade-offs-and-architecture-decision-making.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "ae7c831af71781897e5d6e5df212dc47379da614",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-3-trade-offs-and-architecture-decision-making.mdx",
+      "bytes": 23083,
+      "sha256": "5473e387e28805cdb35d0f2a64f5a6da1375f00c384447c339b3e56aad02b837",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-4-real-interview-strategy.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "4b9c11eaa4cdddfb9cfb2d7858d17c729371fd71",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-4-real-interview-strategy.mdx",
+      "bytes": 22186,
+      "sha256": "bb5db5a834597539c800b9a5c17a266406b85989f9bd68b5aab4571d8e1892cc",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-5-advanced-architecture-topics.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "8a983417b7c1f9880196ca294ee9dd0dfb462c95",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-5-advanced-architecture-topics.mdx",
+      "bytes": 27946,
+      "sha256": "0893e749d37e9ea509d7283193dd82e47780721e531d966e9c70fae7dc511daf",
+      "fetchedAt": "2026-11-26"
+    },
+    {
+      "path": "content/phases/phase-6/lessons/lesson-6-architect-mindset-production-thinking.mdx",
+      "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+      "blobSha": "c010afb0df532d450665c3827560fabdfed64d0c",
+      "url": "https://raw.githubusercontent.com/steve-bang/systemdesigncore/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-6-architect-mindset-production-thinking.mdx",
+      "bytes": 31479,
+      "sha256": "0a183b1ff95941aed6862841c072b9f2cfc65b37e40c55d986c88e496e163eef",
+      "fetchedAt": "2026-11-26"
+    }
+  ]
+}
