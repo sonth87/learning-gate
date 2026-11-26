@@ -433,3 +433,98 @@ export interface LiveSimSpec {
   pauseAtSec?: number[];
   focus?: { nodes?: string[]; links?: string[] };
 }
+
+export interface LiveKnobDescriptor {
+  node: string;
+  key: string;
+  label: BilingualText;
+  type: 'number' | 'select' | 'bool';
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  options?: { value: string; label: BilingualText }[];
+  value: number | string | boolean;
+  defaultValue?: number | string | boolean;
+  changeCost?: number;
+}
+
+export interface LiveMarker {
+  t: number;
+  kind: 'event' | 'learner' | 'milestone' | 'alert';
+  label: BilingualText;
+  nodeId?: string;
+}
+
+export interface LiveSeries {
+  /** các cột cùng độ dài */
+  t: Float32Array;
+  v: Float32Array;
+  length: number;
+}
+
+export interface LiveTraceSpan {
+  id: string;
+  nodeId?: string;
+  linkId?: string;
+  kind: 'net' | 'queue' | 'service' | 'retry-wait' | 'timeout';
+  label: BilingualText;
+  startMs: number;
+  durMs: number;
+  ok: boolean;
+  isSlowest?: boolean;
+  slowestSharePct?: number;
+}
+
+export interface LiveTrace {
+  packetId?: number;
+  packetKind?: PacketKind;
+  totalMs: number;
+  attempts?: number;
+  outcome: 'ok' | 'timeout' | 'error' | 'dropped';
+  spans: LiveTraceSpan[];
+  note?: BilingualText;
+}
+
+export interface LiveSimSession {
+  readonly source: LiveSimSource;
+  readonly durationSec: number;
+  /** Tiến mô phỏng tới t giây (bước cố định 100 ms). Trả số tick đã chạy. */
+  advanceTo(tSec: number): number;
+  /** Vị trí hiện tại (giây) */
+  getT(): number;
+  /** Mép phải đã mô phỏng (giây) */
+  getHeadT(): number;
+  /** Scrub về tSec */
+  seek(tSec: number): void;
+  reset(): void;
+  getLoadMultiplier?(): number;
+  setLoadMultiplier(x: number): void;
+  setKnob(node: string, key: string, value: number | string | boolean): void;
+  resetKnob?(node: string, key: string): void;
+  inject(
+    kind: LiveChaosKind,
+    target: { node?: string; link?: string },
+    opts?: { addMs?: number; share?: number }
+  ): void;
+  knobs(): LiveKnobDescriptor[];
+  series(metric: string): LiveSeries;
+  nodeSeries?(nodeId: string, field: 'rho' | 'p99' | 'queue' | 'lambda'): LiveSeries;
+  markers(): LiveMarker[];
+  trace(hint?: { packetId?: number; linkId?: string; kind?: PacketKind }): LiveTrace | null;
+  dispose(): void;
+}
+
+export interface LiveSimAdapter {
+  open(
+    spec: LiveSimSpec,
+    ctx: { lang: WorkbenchLang; moduleId: string; stepIndex: number }
+  ): LiveSimSession | null;
+  renderNodeLiveSlot?: (
+    session: LiveSimSession,
+    spec: LiveSimSpec,
+    entity: { kind: 'node' | 'link'; id: string },
+    lang: WorkbenchLang
+  ) => React.ReactNode;
+}
+
