@@ -11,7 +11,10 @@ import esbuild from 'esbuild';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const TEST_ROOT = path.join(ROOT, 'src/features/sysdesign-course');
+const TEST_ROOTS = [
+  path.join(ROOT, 'src/features/sysdesign-course'),
+  path.join(ROOT, 'src/components/scale-workbench/live'),
+];
 const CACHE_DIR = path.join(ROOT, 'node_modules/.cache/sd-tests');
 
 function findTests(dir, out = []) {
@@ -25,7 +28,7 @@ function findTests(dir, out = []) {
 }
 
 async function main() {
-  const tests = findTests(TEST_ROOT);
+  const tests = TEST_ROOTS.flatMap((r) => findTests(r)).sort();
   if (tests.length === 0) {
     console.error('[sd:test] Không tìm thấy file test nào trong src/features/sysdesign-course/**/__tests__/');
     process.exit(1);
