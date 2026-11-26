@@ -6,9 +6,12 @@ import { DT, type CompiledModel } from './model';
 import { tickRng } from './rng';
 import type { SimPacket, SimPacketKind, SimState } from './types';
 
+/** Dãy 1-2-5 từ 1 tới trần 1 000 000 req/s mỗi chấm (04 §4 bước 1: trần `packetScale`). */
+export const PACKET_SCALE_MAX = 1_000_000;
 const SCALE_STEPS: number[] = (() => {
   const out: number[] = [];
-  for (let e = 0; e <= 9; e++) for (const m of [1, 2, 5]) out.push(m * Math.pow(10, e));
+  for (let e = 0; e <= 5; e++) for (const m of [1, 2, 5]) out.push(m * Math.pow(10, e));
+  out.push(PACKET_SCALE_MAX);
   return out;
 })();
 

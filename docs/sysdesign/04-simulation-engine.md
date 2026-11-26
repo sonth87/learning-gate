@@ -2,7 +2,7 @@
 
 > Nguồn sự thật cho M2. Nội dung bám `docs/sysdesign/_brief/PLAN.md` (M2) và `_brief/BRIEF.md` (§2.2–§2.7). Engine là **TypeScript thuần**: không import React, DOM, `window`, `performance`, `Math.random`, `Date`. Mọi sự ngẫu nhiên đi qua RNG có seed (§5).
 >
-> Trạng thái: **spec M0**; T2.1–T2.3 đã có code (`sim/{types,model,rng,profiles,events,latency,cache,primitives,packets,engine,index}.ts` + `__tests__/sim.test.ts`), recorder/analyze/grade/trace/hashing là T2.4–T2.9. Chỗ nào code khác spec đều có ghi chú "[cập nhật T2.3: …]". Các con số "tham chiếu" trong §9 được tính tay bằng công thức ở §2 (đã kiểm tra bằng script nháp ngày 2026-11-26) để implementer đối chiếu; nếu code cho kết quả khác quá dung sai, sửa code hoặc sửa tài liệu này kèm ghi vào `DECISIONS.md`, không âm thầm đổi ngưỡng test.
+> Trạng thái: **spec M0**; T2.1–T2.9 đã có code (`sim/{types,model,rng,profiles,events,latency,cache,primitives,packets,engine,recorder,analyze,grade,hashing,trace,index}.ts` + `__tests__/{sim,sim2}.test.ts`). Chỗ nào code khác spec đều có ghi chú "[cập nhật T2.x: …]". Các con số "tham chiếu" trong §9 được tính tay bằng công thức ở §2 (đã kiểm tra bằng script nháp ngày 2026-11-26) để implementer đối chiếu; nếu code cho kết quả khác quá dung sai, sửa code hoặc sửa tài liệu này kèm ghi vào `DECISIONS.md`, không âm thầm đổi ngưỡng test.
 
 ---
 
@@ -707,7 +707,7 @@ Nếu node `down`, vẫn tính tiền (instance còn bật). `replicas` là số
 
 Mục tiêu: stage vẽ ≤ 200 chấm, mỗi chấm đại diện N req/s, phản ánh **đúng tỉ lệ** loại lưu lượng, và **không làm thay đổi kết quả mô phỏng** (dùng luồng RNG riêng).
 
-1. **Hệ số co giãn.** Tổng lưu lượng quan sát `Σ_e A_e` (mọi link, cả hướng response nếu bật). Số chấm đồng thời mong muốn ≈ `Σ_e A_e·travelSec/N`. Chọn `N` nhỏ nhất trong dãy `{1,2,5,10,20,50,100,200,500,1000,…}` sao cho số chấm ước lượng ≤ `maxPackets·0,8`. **Hysteresis:** chỉ đổi `N` khi ước lượng lệch > ×1,4 so với `packetScale` hiện tại (tránh nhãn "1 chấm = N req/s" nhảy).
+1. **Hệ số co giãn.** Tổng lưu lượng quan sát `Σ_e A_e` (mọi link, cả hướng response nếu bật). Số chấm đồng thời mong muốn ≈ `Σ_e A_e·travelSec/N`. Chọn `N` nhỏ nhất trong dãy `{1,2,5,10,20,50,100,200,500,1000,…}` sao cho số chấm ước lượng ≤ `maxPackets·0,8`. **Hysteresis:** chỉ đổi `N` khi ước lượng lệch > ×1,4 so với `packetScale` hiện tại (tránh nhãn "1 chấm = N req/s" nhảy). **[cập nhật T2.9: trần `packetScale`]** Dãy dừng ở `PACKET_SCALE_MAX = 1 000 000` (1-2-5 từ 1 tới 500 000, rồi 1 000 000). Lý do: bản T2.3 để dãy chạy tới 5·10⁹, nên một lỗi tải (hoặc `loadMultiplier` nhầm) làm nhãn "1 chấm = 5 000 000 000 req/s" vô nghĩa; với tải tối đa của bài (cỡ 10⁴ rps × núm ×10 × khuếch đại retry × số link ≈ 10⁷ rps cộng dồn) thì ước lượng chấm ở N = 10⁶ đã ≤ `maxPackets·0,8`. Nếu vẫn vượt trần, bước 5 (cắt `request`/`response` cũ nhất, giữ chấm lỗi) đảm bảo `≤ maxPackets`.
 2. **Sinh chấm trên từng link.** `acc_e ← acc_e + A_e·DT/N`; sinh `floor(acc_e)` chấm, `acc_e −= floor`. Không dùng RNG cho số lượng ⇒ ổn định.
 3. **Phân loại** (dùng `tickRng(seed, k, ch=2)`, deterministic): với mỗi chấm mới trên link `e`, lấy tỉ lệ thật tại tick:
    - `retry` với xác suất `rr_e/A_e`;
@@ -753,7 +753,14 @@ Hash khoá cho consistent hashing/mod-N dùng `fnv1a32` + avalanche (xem `hashin
 - **inputLog:** `InputRecord[]` sắp xếp theo tick. Ghi mọi `setInput`.
 - **`frameAt(t)` / `scrub(t)`:** `k = round(t/DT)`; tìm checkpoint `c ≤ k` gần nhất; `state = clone(c.state)`; chạy `stepState` từ `c.tick` tới `k`, áp `inputLog` đúng tick; trả `SimFrame` đầy đủ (kể cả packets). Chi phí tối đa 49 tick ≈ vài chục ms; `scrub` kéo liên tục được vì UI chỉ yêu cầu frame mỗi `requestAnimationFrame` (gộp).
 - **Đổi núm khi đang ở quá khứ (ghi đè tương lai):** nếu `setInput` gọi tại `k < tickHead`: (1) cắt `inputLog` các bản ghi `tick > k`; (2) bỏ checkpoint có `tick > k`; (3) đặt `tickHead = k`, `ringLength = k`; (4) thêm bản ghi mới; (5) mô phỏng tiếp từ `k` với đầu vào mới. Mốc sự kiện learner sau `k` cũng bị xoá (nhánh mới). UI phải cảnh báo "Thay đổi sẽ ghi đè phần timeline sau thời điểm này" (05-live-stage). *Chưa quyết:* giữ "ghost" của nhánh cũ để A/B compare (M8); v1 bỏ.
-- **Quy tắc tương đương:** `scrub(t)` phải bằng frame của lần chạy thẳng tới `t` với cùng `inputLog` (test I8).
+- **Quy tắc tương đương:** `scrub(t)` phải bằng frame của lần chạy thẳng tới `t` với cùng `inputLog` (test I12).
+- **[cập nhật T2.4 — quy ước cài đặt]**
+  - *Thời gian.* Frame `k` là kết quả chạy tick `k` (`t = k·DT`); sau khi chạy `state.tick = k+1`. `scrub(t)` đặt `state.tick = k+1` với `k = round(t/DT)`, kẹp vào `[earliestTick, length−1]` (`earliestTick` = checkpoint cũ nhất còn giữ; chưa tràn ring thì = 0). `Sim.tick` là tick **sẽ chạy tiếp**.
+  - *Đầu vào.* `setInput` chỉ ghi `{tick: state.tick, change}` vào `inputLog` (không áp ngay). `step()` áp mọi bản ghi có `tick ≤ state.tick` (con trỏ `logPtr`, hàm `flushInputs`) rồi mới chạy tick; chaos tiêm tức thì (`type:'event'`) bắn đúng ở tick đó. Chạy lại từ checkpoint dùng cùng đường áp dụng nên tương đương chạy thẳng.
+  - *Checkpoint.* Lưu **sau** khi chạy tick `c−1` (tức trạng thái trước tick `c`, `c` chia hết 50): `{tick: c, state, inputs, logPtr}`, trong đó `inputs` là bản clone của `SimInputs` đã gộp (không phải fold lại cả log). Luôn có checkpoint tick 0. Giữ tối đa `ceil(ringCapacityTicks/50)+1`; checkpoint có `tick < length − ringCapacityTicks` bị bỏ (nên không scrub được về trước vùng ring).
+  - *Ghi đè tương lai.* Điều kiện là `state.tick < recorder.length` (đang ở quá khứ). `truncate(headTick = state.tick)`: `length = headTick` (sau `scrub(30)`: 301), `inputLog` bỏ bản ghi `tick ≥ headTick`, bỏ checkpoint `tick > headTick`, bỏ marker `tick ≥ headTick`. `step()` ở quá khứ **không** cắt: nó chạy lại và ghi đè đúng giá trị cũ (xác định), tiếp tục áp các bản ghi tương lai còn trong log.
+  - *Ring.* Cột `Float32Array(capacity)` cho `t, offered, goodput, errorRate, p50, p95, p99, cost, retryRps`; theo node `rho, queue, state (0..6 theo thứ tự NodeState), lambda`; theo link `rps, errorRate` (khoá `node:<id>:<f>`, `link:<id>:<f>`). `series(key)` trả **view** khi chưa tràn vòng, **bản sao tuyến tính** khi đã tràn (dữ liệu cuộn nên không có view liền). Float32 đủ cho đồ thị; `seriesFromRecorder` đổi sang Float64 để chấm bài.
+  - *Chi phí.* Tick có recorder: trung vị 0,105 ms (30 node/49 link); `scrub` ≈ 5 ms (tối đa 49 tick chạy lại).
 
 ---
 
@@ -807,6 +814,12 @@ Ví dụ: `client → lb → [app1,app2,app3] → cache → db`: `lb`, `cache`, 
 | `SINGLE_AZ` | mọi node có cùng `zone` |
 | `DB_FANIN_EXCEEDS_CONNS` | Σ(replicas·poolSize) các node gọi DB > `maxConnections` |
 
+**[cập nhật T2.5 — quyết định cài đặt]**
+- *SPOF của node lá có trạng thái.* Định nghĩa articulation point thuần tuý không bắt `db` (lá, không chia cắt gì), nhưng ví dụ ở trên và I20 đòi `db` là SPOF. Quy tắc cài đặt: báo `v` nếu (a) `v` là articulation point và nhánh bị cắt chứa node quan trọng, **hoặc** (b) chính `v` quan trọng (kind ∈ `sql, nosql, queue, blob, search, coordinator` hoặc `stateful`) và với tới được từ lối vào bằng link cứng. `cuts` = các node bị tách (lá: rỗng). Mức: `replicas ≥ 2` ⇒ `info`; node `stateful` có link `replicate` (vào hoặc ra) ⇒ `info`; còn lại `error`. Link `async`, `replicate`, `fallback:'bypass'|'degrade'` bị loại khỏi đồ thị; node `enabled=false` cũng bị loại.
+- *Mức cảnh báo.* `SPOF` ⇒ `error` (hoặc `info`); `NO_RATE_LIMIT_AT_EDGE` ⇒ `warn` (để rule `has-rate-limit` có thể fail); `SINGLE_AZ` ⇒ `info`; mọi mã còn lại ⇒ `warn`. `NO_RATE_LIMIT_AT_EDGE` = không có `rate-limiter`/`gateway` trong 2 bước đầu từ `client`. `STATEFUL_NO_REPLICA` bỏ qua node có link `replicate`. `replicas` đọc từ `params.replicas ?? spec.replicas` (đúng như engine). `structuralWarnings(model, frame?)` nhận `frame` tuỳ chọn để xác định đường nóng (link có `rps ≥ 5%·offered`); không có thì mọi link sync đều tính là nóng. `RETRY_AMPLIFICATION` báo ở link đầu tiên làm tích `Π(1+max)` dọc đường đạt ≥ 9.
+- *Bottleneck.* `reason` ưu tiên `hot-shard` (nếu `hotShare>0`), rồi `saturated` (ρ ≥ 1), `pool-limited`, `queueing` (thời gian chờ > 40% độ trễ tại node); khi không còn ứng viên ρ ≥ 0,8 thì `slow-dependency` (node có độ trễ tại chỗ ≥ 40% độ trễ đầu-cuối) hoặc `none`. Thời gian chờ = `latency.mean − (baseMs + slowAddMs)`. Với danh sách frame, ρ/λ/độ trễ lấy **trung bình cửa sổ**, `state` lấy ở frame cuối. `headroom` kẹp ở 1e9.
+- *`maxSustainableRps`.* `= offeredRps / max_n ρ_n` trên node có tải (không tính `client`); `ρ` của frame đã gồm retry nên khi đang có retry storm con số thấp hơn thực tế — gọi ở tải ổn định, trước nghẽn (S1-03 t=20: 3011 rps, `limitedBy: db`).
+
 Mỗi warning có `messageKey` để UI/Inspector giải thích; chỉ là gợi ý — **không** làm hỏng bài tập trừ khi Constraint cấu trúc yêu cầu (§7).
 
 ---
@@ -852,6 +865,12 @@ export function evaluate(
 - `structural`: gọi `analyze` (SPOF, warnings) trên `model`; `pass ⇔` không có warning mức `≥ warn` cho rule đó (hoặc node/link chỉ định).
 Cửa sổ nằm ngoài thời gian đã chạy ⇒ `pass=false`, `messageKey:'window-not-run'`.
 
+**[cập nhật T2.6 — quyết định cài đặt]**
+- `RunSeries` là cột `Float64Array` (`t, offered, goodput, errorRate, p50, p95, p99, costPerHour`; theo node `rho, queue, lambda, state`; theo link `rps, errorRate`) do `simulate` sinh trực tiếp từ `stepInPlace` (không qua recorder; đo: S1-03 90 s = 38 ms); `seriesFromRecorder(rec)` đổi ring Float32 sang `RunSeries` để chấm bài đang chạy trực tiếp.
+- `applyChangesToModel(model, changes)` dựng model "đã áp thay đổi của người học" (núm → `params`, riêng `replicas` cũng đặt `spec.replicas`; `link` → vá `LinkSpec`); `runAndEvaluate(scenario, constraints, changes)` gói `simulate + applyChangesToModel + evaluate`.
+- Cửa sổ `[fromSec, toSec)` theo `t = k·DT`; `window-not-run` khi `toSec > durationSec` hoặc cửa sổ rỗng. `slo-latency`: `actual` = p95 của chuỗi trong cửa sổ, `worstAtSec` = tick có giá trị lớn nhất. `node-state`: mặc định `allowViolationPct = 2`. `structural`: `pass ⇔` không có `StructuralWarning` mức `warn|error` mang mã tương ứng (`stateful-has-replica→STATEFUL_NO_REPLICA`, `has-timeout→NO_TIMEOUT`, `has-retry-backoff→RETRY_NO_BACKOFF`, `has-breaker→NO_BREAKER_ON_DEP`, `has-dlq→QUEUE_NO_DLQ`, `cache-has-jitter→CACHE_SYNC_TTL`, `no-sync-cross-region-hot-path→SYNC_CROSS_REGION_HOT_PATH`, `has-rate-limit→NO_RATE_LIMIT_AT_EDGE`); `no-spof` chỉ tính `SpofReport` mức `error`; lọc theo `node`/`link` nếu constraint chỉ định.
+- **Lưu ý SLO latency của S1-03.** `metrics.latency` chỉ gồm phân phối của request **thành công** (đã bị chặn bởi timeout), nên p99 ở S1-03 không vượt ≈ 194 ms dù 53% request lỗi sau t≈36 s. SLO `p99 ≤ 300 ms` ở §10 vì thế luôn đạt (kể cả starter và `trap-more-apps`); thứ phân biệt starter/preset là SLO `slo-error` (0,421 → 0,000). Xem §11 mục 9.
+
 **Chạy headless** (cho fix-challenge, doctor): `simulate(scenario, changes: InputRecord[]): RunSeries` chạy `durationSec/DT` tick không sinh packet (`options.maxPackets=0`), tốc độ ≈ 1 ms/tick.
 
 ---
@@ -865,7 +884,7 @@ export function ringAssign(keys: string[], nodes: string[], vnodes = 150): strin
 export function movedFraction(a: (string|number)[], b: (string|number)[]): number;
 export function zipfKeys(count: number, s: number, seed: number): string[];          // hot key heatmap
 ```
-Tham chiếu: 10→11 node, 100 000 khoá: mod-N dời ≈ 90,96% (lý thuyết N/(N+1) = 90,9%); ring (150 vnode) dời ≈ 9,1% (lý thuyết 1/(N+1)).
+Tham chiếu: 10→11 node, 100 000 khoá: mod-N dời ≈ 90,96% (lý thuyết N/(N+1) = 90,9%); ring (150 vnode) dời ≈ 9,1% (lý thuyết 1/(N+1)). Đo ở T2.5 với khoá `user:<i>`, nút `node-<i>`: mod-N 90,94%, ring 8,81%; ring chỉ chuyển khoá sang nút mới. `zipfKeys(count, s, seed)`: vũ trụ `count` khoá `k0..k{count-1}`, xác suất ∝ `1/(rank+1)^s`, lấy bằng nghịch đảo CDF + `mulberry32(seed)`.
 
 ---
 
@@ -895,7 +914,7 @@ src/features/sysdesign-course/sim/
 `sim/` không import gì ngoài `sim/` (03 §3); doctor kiểm không có import React/DOM/`@/components`. Adapter `SimFrame` → `LiveSimFrame` của workbench (đổi `BadgeCode` thành `BilingualText`, cài `LiveSimAdapter`/`LiveSimSession` của 05 §2.1) nằm ở lớp feature: `src/features/sysdesign-course/live/liveSimAdapter.ts` (T3.6).
 
 ### 9.2 API công khai
-> [cập nhật T2.3] `Sim` hiện có `step/runUntil/setInput/frame/reset/dispose`, `inputLog`, `state`, `compiled`; `recorder`/`scrub` do T2.4 bổ sung. `simulate`/`traceRequest`/`evaluate`/`analyze` thuộc T2.5–T2.9.
+> [cập nhật T2.3–T2.9] `Sim` có `step/runUntil/setInput/scrub/frame/reset/dispose`, `inputLog`, `state`, `compiled`, `recorder` (T2.4). `simulate`/`evaluate`/`applyChangesToModel`/`runAndEvaluate`/`seriesFromRecorder` ở `grade.ts` (T2.6); `findBottleneck/maxSustainableRps/findSpofs/structuralWarnings` ở `analyze.ts` (T2.5); `traceRequest` ở `trace.ts` (T2.9) — tất cả xuất qua `sim/index.ts`. Chữ ký `traceRequest(c, frame, hint = {})` trả `RequestTrace | null` (null khi `hint.linkId` không tồn tại): `{packetId, kind, tick, outcome: 'ok'|'timeout'|'error'|'dropped', totalMs, attempts, ancestorTimeoutsIgnored, path: LinkId[], spans: TraceSpan[], slowest: {index, nodeId?, linkId?, share}}`; `TraceSpan {kind: 'net'|'queue'|'service'|'retry-wait'|'timeout', nodeId?, linkId?, startMs, durMs, ok, attempt?, note?: 'cache-hit'|'cache-miss', culpritNodeId?}`.
 
 ```ts
 export interface Sim {
@@ -922,6 +941,8 @@ export { findBottleneck, maxSustainableRps, findSpofs, structuralWarnings } from
 export { evaluate } from './grade';
 export { compile, SimModelError } from './model';
 ```
+**[cập nhật T2.9 — `traceRequest`]** RNG = `tickRng(seed ^ hash(packetId), frame.tick, 4)`: cùng (model, frame, hint) ⇒ cùng trace; đổi `packetId` hoặc frame ⇒ trace khác. Đường đi: nếu `hint.packetId` có trong `frame.packets` thì lấy `linkId`/`kind` từ chấm; `hint.linkId` **ép** đường đi qua link đó (lùi theo link vào đầu tiên tới client; cache nằm trước link bị ép `MISS`). Không có hint thì lấy mẫu: loại request đọc/ghi theo `readRatio`, `split` chọn link theo `LinkFrame.rps`, `all-*` đi hết link (có `fraction`, `calls`), link `onMissOf` chỉ đi khi cache đó miss, cache `HIT` với xác suất `hitRatio` (dừng ở cache). Mỗi node sinh span `queue` (= `queueWaitMs` của frame) + `service` (độ trễ lấy mẫu từ shifted-exp khớp `NodeFrame.latency`, trừ phần chờ); mỗi link sinh span `net` (`netMs`). Link có `timeoutMs`: lần thử dài hơn `timeoutMs` bị thay bằng span `timeout` dài đúng `timeoutMs` (`nodeId` = callee, `culpritNodeId` = node chậm nhất bên trong lần thử bị cắt — nhờ vậy ở S1-03 t=40 chặng chậm nhất luôn quy về `db` dù timeout 100 ms xảy ra ở `app→cache`), rồi `retry-wait` (backoff + jitter lấy mẫu; `none` ⇒ 0 ms) và lần thử kế tiếp tới `retry.max`; hết lần thử mà `fallback ∈ {bypass, degrade}` thì người gọi vẫn thành công. Kind `retry` ⇒ lần thử #1 trên link của chấm bị ép timeout; `timeout` ⇒ cắt tại `timeoutMs` và dừng (`outcome:'timeout'`); `dropped`/`error` ⇒ dừng tại node đích của link (`outcome` tương ứng); `cache-hit` ⇒ HIT tại cache đích của link. Với `retry`/`timeout`, timeout của các link **tổ tiên** bị bỏ qua (cờ `ancestorTimeoutsIgnored`) để chặng được bấm hiện đủ — nếu không, ở S1-03 timeout 100 ms của `app→cache` che mất timeout 800 ms của `cache→db`. Quá `clientTimeoutMs` ⇒ `outcome:'timeout'`.
+
 `step` ở trạng thái "đang xem quá khứ" (sau `scrub`): tiến tiếp từ điểm đó theo `inputLog` hiện hành (đã bị cắt nếu có thay đổi).
 
 ### 9.3 Hiệu năng
@@ -954,34 +975,34 @@ Fixtures nhỏ (`fixtures.ts`): `singleNode(μ,S)`, `chain3`, `lbApps(n)`, `cach
 ### 9.5 Bất biến phải test (có số)
 Mỗi test dùng `noise:false` trừ I7. Dung sai ghi sẵn; nếu implementer phải nới dung sai > gấp đôi, cần ghi `DECISIONS.md`.
 
-| # | Bất biến | Cách đo | Ngưỡng | Đo được (T2.3) |
+| # | Bất biến | Cách đo | Ngưỡng | Đo được (T2.3–T2.7) |
 |---|---|---|---|---|
 | I1 | **Little (hệ thống)**: ở trạng thái dừng, không lỗi/retry, `Σ_n λ_n·W_n + Σ_e A_e·net_e/1000 = λ0·E[T_e2e]/1000` | steady 1000 rps qua `client→lb→app×3→cache→db`, đo tick 100–200 | sai lệch ≤ 1% | sai lệch tương đối ≤ 1e-13 (đạt) |
 | I2 | **Bảo toàn dòng**: `enqueue = drain + Δbacklog/dt + dropped`; mọi node: `λ_in = served + Δqueue/dt + dropped + limited` | queue+worker quá tải 30 s | tuyệt đối ≤ 1e-6·λ | |residual|/λ = 0 ở mọi node, kể cả khi queue đầy và có drop (đạt) |
 | I3 | **ρ→1 latency vọt** (node `μ=1000, S=10 ms`, `c=10`): `p99(ρ=0,95)/p99(ρ=0,5) ≥ 3`; `p99(ρ=0,97)/p99(ρ=0,5) ≥ 5`; `p99(ρ=0,9)/p99(ρ=0,5) ≥ 2` | steady tại λ=500/900/950/970 | theo bảng §2.11a ±10% | p99 28,5 / 71,2 / 117,5 / 178,9 ms tại ρ=0,5/0,9/0,95/0,97; tỉ lệ ×2,50 / ×4,13 / ×6,29; bảng §2.11a khớp ≤ 3% (đạt) |
 | I4 | **Thêm server ở tầng không nghẽn không giảm p99**: S1-03 steady 3200 rps (DB `ρ≈1,06`): mỗi `app` replicas 1→2 (tổng 3→6 instance) giảm p99 e2e **< 5%**; nhân đôi DB `opsPerSec` giảm p99 **> 50%** | so p99 trung vị t∈[40,60] | như nêu | p99 gốc 164 ms; app ×2: 154 ms (−6,5%); DB ×2: 73 ms (−55,4%). **Nới ngưỡng "thêm app" từ <5% lên <10% (≤ 2× theo quy ước dung sai)**: app ρ 0,59→0,30 làm đuôi tầng app mỏng đi ~10 ms trên nền 164 ms (nền bị cắt ở ~100 ms do timeout `app→cache`) (đạt) |
 | I5 | **Hit 90% → λ_db ≈ 10%**: client 1000 rps toàn đọc, `hitRatioMax=0,9, coverage=1, ttlFactor→1, cacheWarm=1` ⇒ `λ_db ∈ [98,102]`; trộn `readRatio=0,9` ⇒ `λ_db ∈ [188,192]` | steady 60 s | như nêu | λ_db = 100,00 và 190,00 (đạt) |
-| I6a | **Retry storm** — node `μ=1000`, tải 600 rps, retry `max=3, backoff:'none'`, timeout 500 ms; `slowdown(+S)` làm `μ→500` tại t=10 | `λ_in(node)` trung bình t∈[25,30] **≥ 1,8×600** (kỳ vọng ≈ 2,3×) | | λ_in = 2364 rps = ×3,94 (giới hạn r→1: 1+max = 4; "≈2,3×" của spec ứng với r=0,7) (đạt) |
+| I6a | **Retry storm** — node `μ=1000`, tải 600 rps, retry `max=3, backoff:'none'`, timeout 500 ms; `slowdown(+S)` làm `μ→500` tại t=10 | `λ_in(node)` trung bình t∈[25,30] **≥ 1,8×600** (kỳ vọng ≈ 2,3× nếu r = 0,7; tiệm cận 1+max = 4 khi r → 1) | | λ_in = 2364 rps = ×3,94 (đạt). **[cập nhật T2.4: câu "≈2,3×" của bản đầu sai chỗ]** 2,3× chỉ đúng nếu xác suất 1 attempt hỏng cố định `r = 0,7` (`Σ r^j = 2,53` với max=3). Nhưng retry không backoff làm tải thật `λ_in` tăng ⇒ ρ > 1 ⇒ hàng đợi đầy và gần như mọi attempt timeout ⇒ `r → 1` (phản hồi dương, §2.1) ⇒ `Σ r^j → 1+max = 4`; đo ×3,94 tương ứng `r ≈ 0,99`. Ngưỡng `≥ 1,8×` giữ nguyên (không nới), trần lý thuyết là ×4 |
 | I6b | Cùng kịch bản nhưng `retry{max:3, backoff:'exponential', baseMs:200, jitter:'full', budgetRatio:0.1}` | `λ_in(node)` t∈[25,30] **≤ 1,15×600** | | λ_in = 660 rps = ×1,100 (đạt) |
 | I6c | Không retry (`max=0`) | `λ_in(node) = 600` (±1%) | | λ_in = 600,00 (đạt) |
 | I7 | Nhiễu `noise:true`: seed khác ⇒ chuỗi `offeredRps` khác (≥ 1 tick lệch > 0,1%), cùng seed ⇒ trùng từng bit | 600 tick | | σ ≈ 4,9% quanh 600 rps; cùng seed trùng từng bit (đạt) |
 | I8 | **Jitter giảm đỉnh**: (a) retry `full` jitter so với `none` (cùng backoff 1000 ms): đỉnh `retryRps` của `none` **≥ 2,5×** của `full`; (b) cache stampede: sau `cache-expire-all`, `max λ_db` với `ttlJitterPct=0` so với `0.2`+`singleflight`: giảm **≥ 30%** | | | (a) đỉnh retryRps none 1000 / full 182 = ×5,5; (b) max λ_db 2000 → 667 (−66,7%) (đạt) |
-| I9 | **Consistent hashing**: 100 000 khoá, 10→11 node: `modN` dời ∈ [88%, 94%]; `ring(150 vnode)` dời ∈ [7%, 12%] | | | — |
+| I9 | **Consistent hashing**: 100 000 khoá, 10→11 node: `modN` dời ∈ [88%, 94%]; `ring(150 vnode)` dời ∈ [7%, 12%] | | | mod-N dời 90,94%; ring (150 vnode) dời 8,81% (lý thuyết 90,91% / 9,09%); ring chỉ chuyển khoá sang nút mới; phân bố mỗi nút trong ±40% trung bình (đạt) |
 | I10 | **Decoupling**: `app→queue→worker→db`, worker bị `slowdown`: `p99` của `app` (producer) tăng **< 5%**, còn `backlog` tăng đơn điệu | 60 s | | p99 producer 12,02 → 12,02 ms (0,00%); backlog đơn điệu, 13 500 sau 60 s (đạt) |
-| I11 | **Determinism**: cùng scenario + seed + inputLog ⇒ `JSON.stringify(frames)` bằng nhau cho 600 tick | | | — |
-| I12 | **scrub(t) == chạy thẳng tới t**: với `t ∈ {0, 4.9, 5.0, 12.3, 59.9}`, có `setInput` tại t=20: `deepEqual(sim.scrub(t), straight.frameAt(t))`, gồm `packets` | | | — |
-| I13 | **Ghi đè tương lai**: sau `scrub(30)` + `setInput(knob)`: `recorder.length == 301`, `inputLog` không còn bản ghi `tick>300`; frame ở t≤30 không đổi | | | — |
+| I11 | **Determinism**: cùng scenario + seed + inputLog ⇒ `JSON.stringify(frames)` bằng nhau cho 600 tick | | | 600 tick, nhiễu bật + packets bật (200): `JSON.stringify(frames)` trùng từng bit, đổi seed thì khác; `simulate(inputLog)` cho cùng chuỗi `offeredRps` (đạt) |
+| I12 | **scrub(t) == chạy thẳng tới t**: với `t ∈ {0, 4.9, 5.0, 12.3, 59.9}`, có `setInput` tại t=20: `deepEqual(sim.scrub(t), straight.frameAt(t))`, gồm `packets` | | | `deepEqual(scrub(t), frame chạy thẳng)` gồm `packets` với t ∈ {0; 4,9; 5,0; 12,3; 19,9; 20,0; 33,0; 42,0; 59,9} (có nhiễu, 3 đầu vào tại t=20/33/42); `step()` sau `scrub(19,5)` tái tạo đúng 264 tick kế tiếp (đạt) |
+| I13 | **Ghi đè tương lai**: sau `scrub(30)` + `setInput(knob)`: `recorder.length == 301`, `inputLog` không còn bản ghi `tick>300`; frame ở t≤30 không đổi | | | sau `scrub(30)` + `setInput`: `recorder.length = 301`, `inputLog` ticks [200, 301] (bản ghi 330 và 420 bị cắt), checkpoint ≤ 301, marker tương lai bị xoá, 301 frame đầu giống hệt; nhánh mới có hiệu lực (đạt). Ring tràn (`ringCapacityTicks=300`): `series` 300 phần tử đơn điệu, checkpoint ≤ `maxCheckpoints`, bộ nhớ không tăng khi chạy thêm (đạt) |
 | I14 | **Fan-out tail**: 100 callee đồng nhất (`p50=30,p99=100`), `all-parallel`: `p50_fanout > p99_đơn`; `p99_fanout ∈ [170,195]` | | | leaf p50/p99 = 30,1/99,5 ms; fan-out p50/p99 = 106,1/181,1 ms (đạt) |
 | I15 | **Token bucket**: `ratePerSec=100, burst=20`, tải 500 rps 10 s: Σ admitted ≤ 100·10 + 20; `limited ≥ 3900` | | | Σ admitted = 1010 (≤1020); limited = 3990 (đạt) |
 | I16 | **Breaker**: node phụ thuộc quá tải; breaker `errorThreshold 0.5, openSec 10`: breaker `open` trong ≤ 5 s kể từ lúc lỗi vượt ngưỡng; khi `open`, `λ_in(callee)` giảm xuống ≤ 5% mức trước; sau khi callee hồi phục và `openSec` hết ⇒ `half-open` ⇒ `closed` | | | lỗi >50% tại t=0,2 s, `open` tại 1,5 s (trễ 1,3 s); λ_in callee 800 → 0; half-open t=11,5 s; closed t=13,5 s (đạt) |
 | I17 | **LB health detection**: 3 app, RR, `healthCheckSec=3`, `crash(app2)` tại t=10: lỗi `down` ≈ `(1/3)·λ·3 s` trong t∈[10,13] (±15%), sau t=13 chỉ còn ≈ 0; RR vs least-conn khi `slowdown(app2, +S)`: p99 e2e của RR cao hơn least-conn **≥ 20%** | | | lỗi down trong [10,13) = 900 (kỳ vọng 900); sau 13,2 s = 0; p99 RR 125,1 ms vs least-conn 88,4 ms (+42%) (đạt) |
 | I18 | **Hysteresis**: ρ dao động 0,89↔0,91 mỗi tick suốt 10 s ⇒ số lần đổi state hiển thị **≤ 2** | | | ρ 0,89–0,91 ⇒ 0 lần đổi state trong 10 s (đạt) |
 | I19 | **Replication lag**: ghi 800 w/s, `applyRps=500` ⇒ `lagMs` tăng đơn điệu; ghi giảm về 300 ⇒ `lagMs` giảm về < 50 ms trong ≤ 30 s | | | lag đỉnh 6061 ms tại t=10 s, tăng đơn điệu; < 50 ms sau 15,1 s (đạt) |
-| I20 | **Analyze**: S1-03 gốc ⇒ `findBottleneck.nodeId==='db'` tại t∈[36,60]; `findSpofs` trả `lb`, `cache`, `db` mức `error`; bản sửa cấu trúc (LB `replicas:2`, cache `replicas:2`, DB có node replica nối `replicate`) ⇒ không còn `error` | | | — |
-| I21 | **Grade**: starter không đạt, solution đạt cho từng `activities.json` mẫu (kiểm tra trong doctor) | | | — |
-| I22 | **Hiệu năng**: trung vị ≤ 5 ms/tick (in cảnh báo > 1 ms) với S1-03 mở rộng lên 30 node | | | phần tick (T2.3): 30 node/49 link, packets bật: trung vị 0,16 ms/tick, p95 0,29 ms (đạt, ≪ 1 ms); phần analyze chờ T2.5 |
+| I20 | **Analyze**: S1-03 gốc ⇒ `findBottleneck.nodeId==='db'` tại t∈[36,60]; `findSpofs` trả `lb`, `cache`, `db` mức `error`; bản sửa cấu trúc (LB `replicas:2`, cache `replicas:2`, DB có node replica nối `replicate`) ⇒ không còn `error` | | | `findBottleneck` = `db` (reason `saturated`) tại mọi t ∈ [36,60] bước 2 s và trên trung bình cửa sổ [36,60); `maxSustainableRps(t=20)` = 3011 giới hạn bởi `db`; SPOF gốc `lb`, `cache`, `db` đều `error`, `app1..3` không phải; bản sửa (LB ×2, cache ×2, replica DB nối `replicate`): `lb`, `cache`, `db` → `info`, không còn `error`; cache-aside với `fallback:'bypass'` ⇒ cache hết là SPOF (đạt) |
+| I21 | **Grade**: starter không đạt, solution đạt cho từng `activities.json` mẫu (kiểm tra trong doctor) | | | starter: p99 = 193,6 ms ✔, lỗi = 0,421 ✘ (không đạt); `fix-cache-and-db`: p99 = 106,2 ms ✔, lỗi = 0,000 ✔ (đạt); chỉ DB ×2 cũng đạt; `trap-more-apps`: lỗi = 0,421 ✘ (không đạt); chi phí preset 2,31 USD/giờ; `simulate` 90 s = 38 ms. Lưu ý p99 luôn ≤ 300 ms (§6 ghi chú T2.6) nên SLO lỗi mới là thứ chấm (đạt). Doctor kiểm preset trên `activities.json` còn chờ T4/T1.x |
+| I22 | **Hiệu năng**: trung vị ≤ 5 ms/tick (in cảnh báo > 1 ms) với S1-03 mở rộng lên 30 node | | | phần tick (T2.3): 30 node/49 link, packets bật: trung vị 0,16 ms/tick, p95 0,29 ms (đạt, ≪ 1 ms). T2.4–T2.5 (cùng cỡ 30 node/49 link): `findBottleneck` 0,010 ms (1 frame) / 0,56 ms (300 frame); `findSpofs` 0,028 ms; `structuralWarnings` 0,10 ms; `maxSustainableRps` 0,001 ms; `scrub` ≈ 4,9 ms; tick có recorder 0,105 ms; `simulate` 60 s = 91 ms (đạt) |
 
-Khi code đạt, ghi số đo thực tế vào bảng này (cột "đo được") để reviewer thấy sai lệch với lý thuyết. Cột "Đo được (T2.3)" lấy từ các dòng `[đo]` mà `sim/__tests__/sim.test.ts` in ra; I9, I11–I13, I20, I21 thuộc T2.4–T2.6 nên để "—" (riêng tính deterministic của I11 đã có test sơ bộ 600 tick trong `sim.test.ts`).
+Khi code đạt, ghi số đo thực tế vào bảng này (cột "đo được") để reviewer thấy sai lệch với lý thuyết. Cột "Đo được" lấy từ các dòng `[đo]` mà `sim/__tests__/sim.test.ts` (I1–I8, I10, I14–I19) và `sim/__tests__/sim2.test.ts` (I9, I11–I13, I20–I22, trace) in ra khi chạy `npm run sd:test`. Phần "doctor kiểm preset trên `activities.json`" của I21 chờ có `activities.json`; engine-side (`runAndEvaluate` với preset của §10) đã có test.
 
 ---
 
@@ -1134,6 +1155,7 @@ Một `SimDoc` (phần tử của mảng `sims[]` trong `sim.json`, xem 07 §2.5
 ```
 Ghi chú:
 - **Số đo thực tế của engine (T2.3, `noise:false`)**: `ρ_db = 0,9` tại t = 31,4 s (DB `saturated` ngay lúc đó); `ρ_db = 1` tại t = 35,2 s (λ = 3016 rps); DB `overloaded` tại t = 38,1 s (nhờ điều kiện "ρ ≥ 1 liên tục ≥ 3 s", §2.13); app `saturated` tại t = 58,3 s; `maxSustainableRps` (= λ0/ρ_max tại t=20) = 3011 rps, giới hạn bởi `db`. Mọi giá trị nằm trong `expect` bên dưới.
+- **[cập nhật T2.6]** Chấm bằng `slos` ở trên: starter p99 = 193,6 ms (đạt), lỗi = 0,421 (không đạt); `fix-cache-and-db` lỗi = 0,000, p99 = 106,2 ms (đạt); `trap-more-apps` lỗi = 0,421 (không đạt) — xem §6 ghi chú T2.6 về việc p99 không phân biệt được.
 - `expect` là **neo hồi quy** cho test/doctor: nếu engine đổi mà `db` không còn là bottleneck, hoặc mốc lệch khỏi khoảng ⇒ test đỏ. `maxSustainableRps ≈ 1600/0,531 ≈ 3010` (khớp khoảng `[2900, 3100]`; activity `tune-to-limit` S1-03.A3 dùng 2950 vì retry ở `cache-db` làm DB tệ hơn ngay trước ρ = 1).
 - Cache là read-through nằm trên đường bắt buộc tới DB nên `findSpofs` trả `lb`, `cache`, `db` đều là articulation point mức `error` (replicas=1); muốn cache thành phụ thuộc mềm phải dựng topology cache-aside (`app→cache` với `fallback:'bypass'` và `app→db` với `onMissOf:'cache'`).
 - Lưu ý `cache` là **read-through** ở đây: lưu lượng miss từ `app*` đi qua `cache` tới `db` (link `cache-db`). Ba link `app*-cache` đều dẫn vào cùng 1 cache; `cache-db` gom miss + ghi.
@@ -1152,8 +1174,9 @@ Ghi chú:
 | 4 | Mô hình sticky read-after-write | Chưa quyết (routing trong scene hay knob) — chốt ở T6.5 (batch 5, S2-08) |
 | 5 | Ghost timeline cho A/B compare | M8 (T8.2) |
 | 6 | Raft trên engine tải, multi-region nâng cao | M8 (T8.3). Raft dạng kịch bản cho S3-03 thuộc §12 |
-| 7 | Dung sai các test I1–I22 | Điều chỉnh trong lần implement đầu (T2.7), ghi vào bảng §9.5 cột "đo được" |
+| 7 | Dung sai các test I1–I22 | Đã điều chỉnh/ghi ở T2.7; duy nhất I4 (thêm app) nới 5% → 10% (≤ 2×), giải thích ở bảng §9.5; I6a giữ ngưỡng, sửa câu "≈ 2,3×" (T2.4) |
 | 8 | Độ chính xác của `traceRequest` (waterfall lấy mẫu từ phân phối, không phải request thật) | Chấp nhận ở v1; UI ghi "request đại diện" (T3.5) |
+| 9 | **p99 chỉ gồm request thành công** (`metrics.latency`): khi DB lỗi 53%, p99 vẫn ≈ 194 ms nên SLO `p99 ≤ 300 ms` của S1-03 không bao giờ vi phạm; chỉ `slo-error` phân biệt starter/preset | Chưa quyết (T2.8/T4.4): hoặc đưa SLO latency xuống ≈ 100 ms cho S1-03 (starter vi phạm sau t≈35 s, nhưng preset `fix-cache-and-db` p99 cực đại ≈ 106 ms cần `allowViolationPct`), hoặc thêm `latencyIncludingErrors` (lỗi tính ở `timeoutMs`/`clientTimeoutMs`) vào `GlobalMetrics` |
 
 ---
 

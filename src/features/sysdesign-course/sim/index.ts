@@ -18,6 +18,7 @@ export { effectiveHit, hitTarget, singleflightCap } from './cache';
 export { KIND_DEFAULTS, makeNode } from './primitives';
 export { cloneState, createInitialState, createSim, stepInPlace, stepState } from './engine';
 export type { Sim } from './engine';
+export { PACKET_SCALE_MAX } from './packets';
 export { createRecorder, flushInputs, linkKey, nodeKey, NODE_STATE_BY_CODE, NODE_STATE_CODE } from './recorder';
 export type { Checkpoint, Recorder, RecorderMarker, RestoreResult } from './recorder';
 export { fnv1a32, modNAssign, movedFraction, ringAssign, zipfKeys } from './hashing';
