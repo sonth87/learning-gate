@@ -1,7 +1,7 @@
 /**
- * Store tiến độ của System Design Mastery (courseId = 'sysdesign').
- * Khung tối thiểu cho T1.2, T1.1a mở rộng: chỉ phần progress (hydrate, replaceAll, reset,
- * markLessonRead, recordQuiz, rateCard). Nav stack, views, activity, skip thêm ở T1.1a/T4.1.
+ * Store của System Design Mastery (courseId = 'sysdesign'): nav stack tab Learn và tiến độ
+ * (hydrate, replaceAll, reset, markLessonRead, recordQuiz, rateCard, skip).
+ * TODO(T4.1): activity (recordActivity) thêm ở T4.1.
  */
 import { create } from 'zustand';
 import {
@@ -15,7 +15,30 @@ import {
   type StorageSyncMeta,
 } from '@/db/durableProgressStorage';
 import { BOX_DAYS, XP, addDays, emptyState, todayStr, type QuestionResult } from '@/features/workpath/logic';
-import type { WpState } from './types';
+import type { SdLearnView, WpState } from './types';
+import type { SdSkipTarget } from './logic';
+
+/* ---------------- Learn Path Navigation Store ---------------- */
+
+export interface SdNavState {
+  view: SdLearnView;
+  history: SdLearnView[];
+  go: (view: SdLearnView) => void;
+  back: () => void;
+}
+
+export const useSdNav = create<SdNavState>((set, get) => ({
+  view: { name: 'workbench' },
+  history: [],
+  go: (view) => set({ view, history: [...get().history.slice(-30), get().view] }),
+  back: () => {
+    const h = get().history;
+    if (!h.length) return set({ view: { name: 'workbench' } });
+    set({ view: h[h.length - 1], history: h.slice(0, -1) });
+  },
+}));
+
+/* ---------------- Durable Progress Store (courseId = 'sysdesign') ---------------- */
 
 export interface SdProgressState {
   state: WpState;
@@ -28,6 +51,12 @@ export interface SdProgressState {
   markLessonRead: (moduleId: string) => number;
   recordQuiz: (moduleId: string | null, total: number, results: QuestionResult[]) => { xp: number; record: boolean };
   rateCard: (cardId: string, ok: boolean) => void;
+
+  toggleSkipModule: (moduleId: string, forceSkip?: boolean) => boolean;
+  skipModulesBatch: (moduleIds: string[], skip: boolean) => void;
+  toggleSkipLesson: (moduleId: string, forceSkip?: boolean) => boolean;
+  toggleSkipQuiz: (moduleId: string, forceSkip?: boolean) => boolean;
+  applySkipTarget: (target: SdSkipTarget) => void;
 }
 
 function logXp(s: WpState, event: string, xp: number): void {
@@ -149,6 +178,49 @@ function createSdProgressStore() {
           rec.due = addDays(todayStr(), BOX_DAYS[Math.max(1, rec.box)]);
           logXp(s, `card:${cardId}`, XP.card);
         }),
+
+      toggleSkipModule: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedModules ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      skipModulesBatch: (moduleIds, skip) =>
+        mutate((s) => {
+          const map = (s.skippedModules ??= {});
+          const now = Date.now();
+          for (const id of moduleIds) {
+            if (skip) map[id] = now;
+            else delete map[id];
+          }
+        }),
+
+      toggleSkipLesson: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedLessons ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      toggleSkipQuiz: (moduleId, forceSkip) =>
+        mutate((s) => {
+          const map = (s.skippedQuizzes ??= {});
+          const shouldSkip = forceSkip ?? !(moduleId in map);
+          if (shouldSkip) map[moduleId] = Date.now();
+          else delete map[moduleId];
+          return shouldSkip;
+        }),
+
+      applySkipTarget: (target) => {
+        if (target.kind === 'module') get().toggleSkipModule(target.id, true);
+        else if (target.kind === 'lesson') get().toggleSkipLesson(target.id, true);
+        else get().toggleSkipQuiz(target.id, true);
+      },
     };
   });
 
