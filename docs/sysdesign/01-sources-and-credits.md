@@ -18,23 +18,24 @@
 
 Danh sách 40 bài và đường dẫn từng bài: `02-curriculum.md` §4 (cột SDC) và BRIEF §1.1.
 
-### 1.1 Tình trạng giấy phép (mâu thuẫn, chưa giải quyết)
+### 1.1 Tình trạng giấy phép (đã được tác giả đồng ý)
 
-Các dữ kiện đã kiểm tra:
+**Cập nhật 2026-11-26 (ADR-014):** tác giả SDC (Steve, GitHub `steve-bang`) đã đồng ý cho dự án dùng nội dung. Người dùng xác nhận việc này ngày 2026-11-26. Mâu thuẫn về giấy phép ở dưới vẫn còn trên repo gốc, nhưng không còn là điều kiện chặn.
+
+Các dữ kiện đã kiểm tra lúc khảo sát (giữ để tham chiếu):
 1. README của repo ghi "This project is licensed under the MIT License".
 2. Repo **không có file `LICENSE`**.
 3. Phần Author của README còn placeholder của template ("Your Name").
 4. Footer của web ghi "© 2026 System Design Core. All rights reserved."
 
-Hai tuyên bố mâu thuẫn nhau và chưa xác định được tuyên bố nào có hiệu lực.
+**Cách xử lý hiện hành:**
+- Dùng nội dung SDC với sự đồng ý của tác giả.
+- Vẫn ghi nguồn đầy đủ từng bài (mục 3), có trang Credits, và giữ ghi chú MIT (mục 3.4) như một cam kết ghi công.
+- Vẫn giữ thiết kế truy vết (`source` từng bài, phần mô phỏng/bài tập tách khỏi `lesson.md`) để nếu sau này tác giả đổi ý thì gỡ được nội dung gốc mà không phá phần tự viết.
 
-**Cách xử lý đã chốt (ADR-004):**
-- Người dùng tự liên hệ tác giả để xác nhận giấy phép. Việc này nằm ngoài các task của agent. Không có bản nháp tin nhắn trong docs.
-- Trong lúc chờ: dùng theo điều kiện MIT, kèm ghi nguồn đầy đủ (mục 3) và giữ ghi chú MIT (mục 3.4).
-- Nếu tác giả phản đối: **rút nội dung gốc**. Phần mô phỏng, scene, bài tập, quiz và cards do mình tự viết được giữ. Để làm được việc này, nội dung chuyển thể từ SDC phải truy vết được (`source` trong từng bài, mục 3.1), và phần mô phỏng/bài tập phải tách khỏi `lesson.md`.
-- Khi có xác nhận (hoặc phản đối): cập nhật mục này và Credits; ghi thêm một ADR.
+**Ghi chú lịch sử (ADR-004):** trước khi có sự đồng ý, cách xử lý là dùng theo điều kiện MIT kèm ghi nguồn và sẽ rút nội dung gốc nếu tác giả phản đối. ADR-014 cập nhật lại tình trạng này.
 
-Trạng thái xác nhận: **chưa có** (2026-11-26).
+Trạng thái xác nhận: **đã được tác giả đồng ý** (người dùng xác nhận 2026-11-26).
 
 ### 1.2 Cách dùng nội dung SDC
 
@@ -122,7 +123,7 @@ Ghi chú: `content/README.md` yêu cầu `sources` (URL tài liệu chính thứ
 
 > Nguồn: System Design Core — "<tiêu đề bài gốc>" (Steve, MIT). Biên tập lại cho Learning Gate. Xem Credits.
 
-- "Steve" và "MIT" là chuỗi cố định theo trạng thái giấy phép hiện tại, đặt **một chỗ** ở `src/features/sysdesign-course/credits.ts` (hằng `SDC_ATTRIBUTION`, tạo ở T1.1a); cập nhật tại đó khi tình trạng đổi.
+- "Steve" và "MIT" là chuỗi cố định theo trạng thái giấy phép hiện tại, đặt **một chỗ** ở `src/features/sysdesign-course/credits.ts` (hằng `SDC_ATTRIBUTION`, tạo ở T1.1a); cập nhật tại đó khi tình trạng đổi (tác giả đã đồng ý, ADR-014).
 - Cơ chế hiển thị: `sdLessonBuilder` tạo `ScaleModuleLesson.attribution = { text, href }` từ `source` + `SDC_ATTRIBUTION`; `ScaleWorkbenchLayout` hiển thị ở cuối cột phải khi field có giá trị (field thêm ở T3.1, render và điền ở T3.6; xem `05-live-stage.md` §2). App khác không đặt field nên không đổi.
 - "Xem Credits" chuyển sang tab `credits`.
 - Bài tự viết không có dòng này; nếu có tham chiếu ý tưởng từ DTS thì không ghi trong dòng này, chỉ ghi ở Credits.
@@ -130,7 +131,7 @@ Ghi chú: `content/README.md` yêu cầu `sources` (URL tài liệu chính thứ
 ### 3.3 Trang Credits (tab `credits`)
 
 Nội dung tối thiểu:
-1. **System Design Core**: tên, tác giả (Steve, `steve-bang`), link web, link repo, commit đã dùng, ngày lấy, tình trạng giấy phép (README ghi MIT, không có LICENSE, footer ghi "All rights reserved", đang chờ xác nhận) — nói thẳng, không che.
+1. **System Design Core**: tên, tác giả (Steve, `steve-bang`), link web, link repo, commit đã dùng, ngày lấy, tình trạng giấy phép (README ghi MIT, không có LICENSE, footer ghi "All rights reserved"; tác giả đã đồng ý cho dùng nội dung) — nói thẳng, không che.
 2. **Ghi chú MIT** nguyên văn (mục 3.4).
 3. **Danh sách bài đã chuyển thể**: tự sinh từ `source` của từng module (id, tiêu đề, link nguồn, ngày biên tập).
 4. **Designed to Scale**: ghi là tài liệu tham khảo về mô hình minh họa; link web; tác giả Dilum Sanjaya; nêu rõ không dùng nội dung của họ.
@@ -139,7 +140,7 @@ Nội dung tối thiểu:
 
 ### 3.4 Ghi chú MIT
 
-Giữ nguyên văn bản mà README của SDC ghi ("This project is licensed under the MIT License") và đặt ở Credits kèm link README tại đúng commit. Khi có LICENSE hoặc xác nhận của tác giả, chép đầy đủ văn bản giấy phép vào Credits. Không tự soạn lại điều khoản.
+Giữ nguyên văn bản mà README của SDC ghi ("This project is licensed under the MIT License") và đặt ở Credits kèm link README tại đúng commit. Khi có LICENSE, chép đầy đủ văn bản giấy phép vào Credits. Không tự soạn lại điều khoản.
 
 ## 4. Tóm tắt thao tác cho agent biên tập một bài từ SDC
 

@@ -84,3 +84,14 @@ Trạng thái chung: tất cả ADR dưới đây có hiệu lực từ 2026-11-
 - **Quyết định:** 15 batch theo `02-curriculum.md` §6: batch 1 dùng lại primitive của bài mẫu (S1-07, S1-04, S1-01, S1-02, S1-06); Phase 0 ở batch 2–3; case study ở batch 14–15. `TASKS.md` dùng `T6.<số batch>`. Bài cần mô phỏng sự kiện bị chặn bởi T6.0a/T6.0b (`04-simulation-engine.md` §12).
 - **Hệ quả:** Mỗi batch kèm phần mở rộng engine hoặc công cụ mà nó cần, có test bất biến tương ứng.
 
+## ADR-014 — Tác giả SDC đồng ý sử dụng
+- **Ngày:** 2026-11-26
+- **Ngữ cảnh:** ADR-004 dùng nội dung SDC trong lúc chờ xác nhận giấy phép mâu thuẫn và dự phòng rút nội dung nếu tác giả phản đối.
+- **Quyết định:** Tác giả SDC (Steve, `steve-bang`) đã đồng ý cho dùng nội dung; người dùng xác nhận ngày 2026-11-26. Cập nhật ADR-004 (không thay thế): vẫn ghi nguồn từng bài, có trang Credits, giữ ghi chú MIT như cam kết. Phần "rút nội dung nếu phản đối" chỉ còn là ghi chú lịch sử.
+- **Hệ quả:** Việc xác nhận giấy phép không còn là việc chờ người dùng. Thiết kế truy vết (`source`, `_source/`, tách sim/bài tập khỏi `lesson.md`) giữ nguyên.
+
+## ADR-015 — Sonnet triển khai, Opus điều phối và review; TASKS.md do điều phối viên cập nhật
+- **Ngày:** 2026-11-26
+- **Ngữ cảnh:** ADR-003 chia vai Sonnet làm, Opus review; cần nói rõ hơn về phân quyền và tránh xung đột khi nhiều agent chạy song song.
+- **Quyết định:** Mọi task triển khai do Sonnet thực hiện. Agent điều phối (Opus) chỉ review và kiểm soát chất lượng. Mỗi agent làm việc trong worktree riêng và **không sửa `TASKS.md`**; điều phối viên cập nhật `TASKS.md` sau khi review.
+- **Hệ quả:** Không xung đột khi merge `TASKS.md`. Agent báo cáo kết quả trong báo cáo cuối; trạng thái task chỉ đổi sau review.

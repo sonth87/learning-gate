@@ -13,9 +13,9 @@ Liên kết nhanh: [TASKS](./TASKS.md) · [DECISIONS](./DECISIONS.md) · [Quy tr
 - Chưa có code của app. Chưa tồn tại: `src/features/sysdesign-course/`, `src/apps/sdmastery/`, `content/sysdesign/`, các script `sd:*`.
 - Thứ tự phụ thuộc: M0 → (M1 ∥ M2) → M3 → M4 → M5 (cổng duyệt của người dùng) → (M6 ∥ M7) → M8.
 - Việc chờ người dùng (không chặn M1/M2):
-  1. Xác nhận giấy phép với tác giả SDC (`01-sources-and-credits.md` §1.1).
-  2. Duyệt phạm vi mô phỏng sự kiện do T6.0a đề xuất (`04-simulation-engine.md` §12), trước batch 4 của M6.
-  3. Giữ nhóm Security & Shipping (S6-08..S6-12) ở Phase 6 hay tách level riêng (`02-curriculum.md` §8), trước batch 12.
+  1. Duyệt phạm vi mô phỏng sự kiện do T6.0a đề xuất (`04-simulation-engine.md` §12), trước batch 4 của M6.
+  2. Giữ nhóm Security & Shipping (S6-08..S6-12) ở Phase 6 hay tách level riêng (`02-curriculum.md` §8), trước batch 12.
+  (Giấy phép SDC đã được tác giả đồng ý — ADR-014; không còn là việc chờ.)
   Các chỗ ghi **Chưa quyết** khác là quyết định kỹ thuật, chốt ở task được ghi kèm.
 - Mục "Trạng thái hiện tại" này phải cập nhật mỗi khi một milestone đổi trạng thái (xem `08-workflow.md` §9).
 
