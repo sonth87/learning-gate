@@ -16,7 +16,7 @@ import type {
 } from '@/components/scale-workbench/types';
 import { buildCodeTraceFromSection, extractFirstCodeBlock } from '@/features/devops-course/scale/courseLessonBuilder';
 import type { SdBilingual, SdCurriculum, SdModule, SdStepBlock, SdText } from '../types';
-import { buildSdStageScene, toBilingual, type SdModelLike } from './sdSceneBuilder';
+import { buildSdMemoryScene, buildSdStageScene, toBilingual, type SdModelLike } from './sdSceneBuilder';
 
 export const SD_MAX_STEPS = 12;
 
@@ -150,45 +150,78 @@ export function buildSdModuleLesson(
     ...mod.objectives.map((o) => `- ${o.vi}`),
   ].join('\n');
 
+  // Quy tắc chọn sân khấu (07 §2.3, guidelines §1): KHÔNG còn fallback ngầm về code-trace.
+  //  - step khai báo `mode: code` và thân có code block thật ⇒ code-trace;
+  //  - có scene (isometric | memory-2d) ⇒ dựng scene đó; `@prev` giữ scene trước;
+  //  - không khai báo scene (hoặc `none`) ⇒ kế thừa scene isometric gần nhất trước đó, hoặc `stage.base` (mặc định: scene đầu tiên);
+  //  - chỉ khi module không có stage (khai báo `stage: "none"`, hoặc dữ liệu hỏng mà doctor đã chặn) mới dùng code-trace phòng thủ.
+  const scenes = mod.stage?.scenes ?? {};
+  const baseKey = mod.stage
+    ? mod.stage.base && scenes[mod.stage.base]
+      ? mod.stage.base
+      : Object.keys(scenes)[0]
+    : undefined;
   let prevScene: string | undefined;
+  let lastIso: string | undefined;
+
+  const tryBuild = (key: string | undefined, simId: string | undefined) => {
+    const def = key ? scenes[key] : undefined;
+    if (!key || !def || !mod.stage) return null;
+    const mode = def.mode ?? 'isometric';
+    if (mode === 'isometric') {
+      const built = buildSdStageScene(mod.stage, def, modelFor(mod, simId, sims));
+      return built ? { key, stageMode: 'isometric' as const, scene: built } : null;
+    }
+    if (mode === 'memory-2d') {
+      const mem = buildSdMemoryScene(def);
+      return mem ? { key, stageMode: 'memory-2d' as const, memoryScene: mem } : null;
+    }
+    return null;
+  };
+
   const steps: ScaleLessonStep[] = sections.map((sec, idx) => {
     const b = sec.block ?? {};
     const category: StepCategory =
       b.category && CATEGORIES.has(b.category) ? (b.category as StepCategory) : fallbackCategory(idx, total);
 
-    let sceneKey = b.scene;
-    if (sceneKey === '@prev') sceneKey = prevScene;
-    if (sceneKey && sceneKey !== 'none') prevScene = sceneKey;
+    const wantsCode = b.mode === 'code' && extractFirstCodeBlock(sec.body) !== undefined;
 
-    // TODO(T3.6): b.live (live-sim) tạm dựng như cảnh isometric tĩnh theo `scene`; engine/stage live chưa có.
     let scene: ScaleLessonStep['scene'];
+    let memoryScene: ScaleLessonStep['memoryScene'];
     let stageMode: StageRenderMode = 'code-trace';
-    if (sceneKey && sceneKey !== 'none' && mod.stage) {
-      const def = mod.stage.scenes[sceneKey];
-      if (def && (def.mode ?? 'isometric') === 'isometric') {
-        const built = buildSdStageScene(mod.stage, def, modelFor(mod, b.sim, sims));
-        if (built) {
-          scene = built;
-          stageMode = 'isometric';
-        }
+    if (!wantsCode) {
+      // TODO(T3.6): b.live (live-sim) tạm dựng như cảnh tĩnh theo `scene`; engine/stage live chưa có.
+      const explicit = b.scene && b.scene !== 'none' ? (b.scene === '@prev' ? prevScene : b.scene) : undefined;
+      let built = tryBuild(explicit, b.sim);
+      if (!built) built = tryBuild(lastIso, b.sim);
+      if (!built) built = tryBuild(baseKey, b.sim);
+      if (built) {
+        stageMode = built.stageMode;
+        scene = 'scene' in built ? built.scene : undefined;
+        memoryScene = 'memoryScene' in built ? built.memoryScene : undefined;
+        prevScene = built.key;
+        if (built.stageMode === 'isometric') lastIso = built.key;
       }
     }
-    // TODO(T3.6): mode 'memory-2d' từ stage.json (scene: none + bảng so sánh) chưa dựng; rơi về code-trace.
+    const isCodeTrace = stageMode === 'code-trace';
 
     const titleVi = cleanHeading(sec.heading);
     const shortLabel: BilingualText = {
       vi: b.short ?? shortFromHeading(sec.heading),
       en: b.shortEn ?? b.short ?? shortFromHeading(sec.heading),
     };
-    const snippet = extractFirstCodeBlock(sec.body) ?? brief;
-    const codeTrace = buildCodeTraceFromSection(
-      `${mod.id} · ${mod.title}`,
-      `${mod.id} · ${mod.titleEn ?? mod.title}`,
-      titleVi,
-      titleVi,
-      snippet,
-      sec.body
-    );
+    const snippet = isCodeTrace ? (extractFirstCodeBlock(sec.body) ?? brief) : undefined;
+    const codeTrace =
+      isCodeTrace && snippet !== undefined
+        ? buildCodeTraceFromSection(
+            `${mod.id} · ${mod.title}`,
+            `${mod.id} · ${mod.titleEn ?? mod.title}`,
+            titleVi,
+            titleVi,
+            snippet,
+            sec.body
+          )
+        : undefined;
 
     const callout = b.callout
       ? {
@@ -212,6 +245,7 @@ export function buildSdModuleLesson(
       telemetry: telemetryOf(b.telemetry),
       stageMode,
       scene,
+      memoryScene,
       codeTrace,
     };
   });
@@ -229,7 +263,11 @@ export function buildSdModuleLesson(
     subtitle: { vi: mod.summary, en: mod.summaryEn ?? mod.summary },
     durationMin: mod.durationMin,
     difficulty: mod.difficulty,
-    primaryMode: steps.some((s) => s.stageMode === 'isometric') ? 'isometric' : 'code-trace',
+    primaryMode: steps.some((s) => s.stageMode === 'isometric')
+      ? 'isometric'
+      : steps.some((s) => s.stageMode === 'memory-2d')
+        ? 'memory-2d'
+        : 'code-trace',
     objectives: mod.objectives.map((o) => ({ vi: o.vi, en: o.en ?? o.vi })),
     steps,
     quizCount: mod.quiz.length,

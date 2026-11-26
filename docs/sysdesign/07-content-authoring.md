@@ -179,7 +179,8 @@ telemetry:
 |---|---|---|
 | `category` | có | `SETUP \| PROBLEM \| TECHNIQUE \| MECHANISM \| PITFALL \| REAL_CODE \| RECAP` (khớp `StepCategory`). Step đầu = `SETUP`, cuối = `RECAP`. Khác với app cũ (suy ra từ từ khoá tiêu đề), app này **khai báo tường minh**. |
 | `short` | có | Nhãn stepper ≤ 16 ký tự (VI). Tuỳ chọn `shortEn`. |
-| `scene` | khuyến nghị | khoá trong `stage.json` `scenes`; hoặc `@prev` (giữ cảnh bước trước, không morph); hoặc `none` (không cần sơ đồ: builder dùng `memory-2d` bảng so sánh nếu `stage.json` có, ngược lại `code-trace`). Doctor cảnh báo step không có `scene`/`live` (trừ `RECAP`). |
+| `scene` | khuyến nghị | khoá trong `stage.json` `scenes`; hoặc `@prev` (giữ cảnh bước trước, không morph); hoặc `none`/bỏ trống ⇒ **kế thừa scene isometric gần nhất trước đó**, nếu chưa có thì dùng `stage.base` (mặc định: scene đầu tiên của `stage.json`). **Không còn fallback ngầm sang `code-trace`** (ADR-012 bổ sung). Doctor cảnh báo step không có `scene`/`live` (trừ `RECAP` và `mode: code`). |
+| `mode` | không | Chỉ có giá trị `code`: step hiển thị khung code (`code-trace`) thay cho sân khấu. **Bắt buộc** thân step có code block thật (fence có nội dung ≥ 12 ký tự). Dùng cho bước dạy đọc/viết code hoặc cấu hình; không dùng chung với `live`. Mọi step khác không bao giờ hiển thị code-trace. |
 | `live` | không | khoá trong `stage.json` `live` ⇒ step `stageMode:'live-sim'` (05). Bắt buộc có `scene` (cấu trúc). |
 | `sim` | khi dùng `{…}` | id sim trong `sim.json` dùng để phân giải biến trong `telemetry`/`callout`; `live` mặc định suy ra `sim` từ preset. |
 | `activity` + `gate` | không | id activity (06) và `required \| optional` (mặc định `optional`). Tối đa 1 activity mỗi step. |
@@ -204,6 +205,8 @@ Chuỗi hiển thị song ngữ: dạng `vi:`/`en:` hoặc một chuỗi (hiểu
 ```ts
 export interface StageFile {
   version: 1;
+  /** Khoá scene mặc định cho step không khai báo scene mà chưa có scene isometric nào trước đó (mặc định: scene đầu tiên) */
+  base?: string;
   /** Hiển thị cho MỌI node có trong sim.json/model; thiếu ⇒ builder suy mặc định từ NodeSpec.kind */
   nodes: Record<string, {
     shape?: 'block' | 'db' | 'device' | 'crowd';
@@ -227,16 +230,18 @@ export interface StageFile {
 }
 
 export interface SceneDef {
-  mode?: 'isometric' | 'memory-2d' | 'code-trace';           // mặc định isometric (live → live-sim)
+  mode?: 'isometric' | 'memory-2d';                           // mặc định isometric (live → live-sim); code-trace dùng `mode: code` ở khối step
   show: { nodes: string[] | '*'; links?: string[] | '*' };    // tập con của model, reveal dần theo step
   /** Minh hoạ tĩnh (khi không live): trạng thái từng node/link */
   state?: Record<string, { loadPct?: number; dead?: boolean; dimmed?: boolean; highlighted?: boolean;
                            badge?: { text: { vi: string; en?: string }; tone?: 'default' | 'ok' | 'warn' | 'bad' } }>;
-  linkState?: Record<string, { style?: 'solid' | 'dashed' | 'off' | 'danger' | 'heartbeat' | 'cut' }>;
+  linkState?: Record<string, { style?: 'solid' | 'dashed' | 'off' | 'danger' | 'heartbeat' | 'cut'; label?: { vi: string; en?: string } }>;  // `label` ghi đè nhãn đường nối riêng cho scene này
   packets?: 'auto' | { id: string; linkId: string; kind: string; speed?: number; offset?: number; reverse?: boolean }[];
   zones?: string[];
   noteCard?: { title: { vi: string; en?: string }; lines: { text: { vi: string; en?: string }; tone?: string }[]; position?: string };
   raw?: unknown;                                              // StageScene đầy đủ, thay hết các trường trên
+  /** Chỉ khi `mode: 'memory-2d'`: MemoryScene `tape | refs | tree` (src/components/scale-workbench/types.ts); chuỗi hiển thị là string hoặc `{ vi, en? }`. `show` bỏ qua. */
+  memory?: Record<string, unknown>;
 }
 
 export interface LiveDef {
@@ -250,6 +255,10 @@ export interface LiveDef {
   focus?: { nodes?: string[]; links?: string[] };
 }
 ```
+`inspector` của node/link viết gọn `{ what, how, why, tip }` (mỗi trường là string hoặc `{ vi, en? }`; `title`, `kindLabel` tuỳ chọn, mặc định lấy từ nhãn và loại khối); thiếu `what`/`how`/`why` thì không hiển thị. Chế độ `code-trace` **không** khai báo trong `stage.json` (dùng `mode: code` ở khối step).
+
+**Bài không có sân khấu.** Mọi bài phải có `stage.json`. Riêng bài thuần tư duy muốn bỏ sân khấu khai báo trong `module.json`: `"stage": "none"` kèm `"stageReason": "<lý do>"`; chỉ khi đó builder mới dùng khung code-trace phòng thủ cho các step không có scene.
+
 Quy tắc: step `live` dùng scene với `show.nodes:'*'` hoặc tập cố định (cấu trúc không đổi trong step); **không** điền `state.loadPct/dead/badge` cho scene dùng với `live` (05 §3.3). `StageNode.id` = `NodeSpec.id`, `StageLink.id` = `LinkSpec.id` (doctor kiểm).
 
 Ví dụ rút gọn cho S1-03:
@@ -477,6 +486,10 @@ Mức: **E** = lỗi (exit ≠ 0), **W** = cảnh báo (hiển thị, không fai
 6. (E) Từ/cụm cấm (§5.5): *giải phẫu, phẫu thuật, mổ xẻ, bắt bệnh, khám bệnh, cầm máu, cứu mạng, đọc vị, giải ngố, phép thuật ngầm, vũ khí, tuyệt chiêu, bí kíp, bảo bối, thần chú, sinh tử, sống còn, tử huyệt, chí mạng, thảm họa/thảm hoạ, cú lừa, cẩm nang tác chiến, so găng, sát thủ, cứu hỏa, chữa cháy, sập bẫy*. Ngoại lệ `giải mã` chỉ trong ngữ cảnh decode.
 7. (E) Giai thoại cá nhân: `Tôi còn nhớ`, `Tôi từng`, `Mình còn nhớ`, `Hồi đó tôi`, `Câu chuyện của tôi`, `I remember`. (W) Khẩu ngữ: `game changer`, `Problem solved`, `boom`, `magic`, `siêu dễ`, `cực kỳ đỉnh`.
 8. (W) Tiêu đề có ẩn dụ dạng `"..." vs "..."` hoặc có ngoặc kép trong `##`/`title`/`objectives`.
+
+**Sân khấu (không code-trace ngầm)**
+20. (E) Step có `mode` ≠ `code`; `mode: code` mà thân không có code block thật; `mode: code` đi cùng `live`; scene trong `stage.json` có `mode: 'code-trace'` hoặc `memory-2d` thiếu `memory` đúng dạng `tape|refs|tree`.
+21. (E) Module không có `stage.json` mà `module.json` không khai báo `"stage": "none"` kèm `stageReason` (và ngược lại: khai báo `none` nhưng vẫn có `stage.json`); `stage.json` không có scene nào; `stage.base` không có trong `scenes`. (W) Scene đầu tiên là `memory-2d` mà không có `stage.base`.
 
 **Quiz/card/bài tập**
 9. (E) Quiz: `answer` ngoài phạm vi (`mc`: chỉ số hợp lệ; `tf`: boolean; `output`: chuỗi); thiếu `explain`. (W) < 4 quiz hoặc 1 loại; < 5 card; `explain` < 40 ký tự.

@@ -60,8 +60,11 @@ export interface SdStageLinkDef {
 }
 
 export interface SdSceneDef {
+  /** `isometric` (mặc định) hoặc `memory-2d`. `code-trace` không còn hợp lệ trong stage.json: dùng `mode: code` ở khối step. */
   mode?: 'isometric' | 'memory-2d' | 'code-trace';
   show: { nodes: string[] | '*'; links?: string[] | '*' };
+  /** Chỉ cho `mode: 'memory-2d'`: MemoryScene (tape | refs | tree) theo src/components/scale-workbench/types.ts; chuỗi hiển thị có thể là string hoặc `{ vi, en? }`. */
+  memory?: Record<string, unknown>;
   state?: Record<
     string,
     {
@@ -72,7 +75,8 @@ export interface SdSceneDef {
       badge?: { text: SdBilingual; tone?: 'default' | 'ok' | 'warn' | 'bad' };
     }
   >;
-  linkState?: Record<string, { style?: SdLinkStyle }>;
+  /** `label` ghi đè `stage.links.<id>.label` cho riêng scene này (vd độ trễ từng chặng đổi theo bước). */
+  linkState?: Record<string, { style?: SdLinkStyle; label?: SdBilingual }>;
   packets?: 'auto' | { id: string; linkId: string; kind: string; speed?: number; offset?: number; reverse?: boolean }[];
   zones?: string[];
   noteCard?: {
@@ -98,6 +102,8 @@ export interface SdLiveDef {
 
 export interface SdStageFile {
   version: 1;
+  /** Khoá scene mặc định cho bước không khai báo scene và chưa có scene isometric nào trước đó (mặc định: scene đầu tiên). */
+  base?: string;
   nodes: Record<string, SdStageNodeDef>;
   links?: Record<string, SdStageLinkDef>;
   zones?: Record<string, { nodeIds: string[]; label: SdBilingual; tone?: string }>;
@@ -124,6 +130,8 @@ export interface SdStepBlock {
   short?: string;
   shortEn?: string;
   scene?: string;
+  /** `code`: bước hiển thị khung code (code-trace); bắt buộc có code block thật trong thân bước. Mặc định: sân khấu theo scene. */
+  mode?: 'code';
   live?: string;
   sim?: string;
   activity?: string;
@@ -165,6 +173,9 @@ export interface SdModule {
   quiz: WpQuestion[];
   cards: WpCard[];
   stage: SdStageFile | null;
+  /** `module.json` khai báo `"stage": "none"` (bài thuần tư duy, có `stageReason`): cho phép không có stage.json. */
+  noStage?: boolean;
+  stageReason?: string;
   activities: unknown[];
   simIds: string[];
 }

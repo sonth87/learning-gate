@@ -37,6 +37,7 @@ function buildSysdesign() {
       quiz: m.quiz,
       cards: m.cards,
       stage: m.stage,
+      noStage: meta.stage === 'none',
       activities: m.activities,
       simIds,
     });

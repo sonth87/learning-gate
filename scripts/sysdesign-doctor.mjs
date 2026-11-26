@@ -21,6 +21,14 @@ const ACTIVITY_KINDS = [
 ];
 const QUIZ_TYPES = ['mc', 'tf', 'output'];
 const SDC_REPO = 'steve-bang/systemdesigncore';
+// Cùng định nghĩa "code block thật" với extractFirstCodeBlock (courseLessonBuilder): fence có nội dung ≥ 12 ký tự, không phải visual.
+const hasRealCodeBlock = (body) => {
+  const re = /```(?!visual)(?:[a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g;
+  let mt;
+  while ((mt = re.exec(body)) !== null) if (mt[1].trim().length >= 12) return true;
+  return false;
+};
+const MEMORY_KINDS = ['tape', 'refs', 'tree'];
 
 // Rule 6: từ cấm (guidelines §5.5)
 const FORBIDDEN = [
@@ -181,12 +189,16 @@ function checkLesson(m, ctx) {
         }
       }
     }
+    // Quy tắc 20: code-trace chỉ khi step khai báo `mode: code` và thân có code block thật.
+    if (b.mode !== undefined && b.mode !== 'code') E(`${where}: mode "${b.mode}" không hợp lệ (chỉ có \`mode: code\`)`);
+    if (b.mode === 'code' && !hasRealCodeBlock(st.body)) E(`${where}: \`mode: code\` nhưng thân bước không có code block thật (fence ≥ 12 ký tự)`);
+    if (b.mode === 'code' && b.live !== undefined) E(`${where}: \`mode: code\` không dùng chung với live`);
     if (b.live !== undefined && !lives.has(b.live)) E(`${where}: live "${b.live}" không có trong stage.json`);
     if (b.live !== undefined && b.scene === undefined) E(`${where}: step live phải có scene`);
     if (b.scene !== undefined && !['@prev', 'none'].includes(b.scene) && !scenes.has(b.scene)) {
       E(`${where}: scene "${b.scene}" không có trong stage.json`);
     }
-    if (b.scene === undefined && b.live === undefined && b.category !== 'RECAP') W(`${where}: không có scene/live`);
+    if (b.scene === undefined && b.live === undefined && b.category !== 'RECAP' && b.mode !== 'code') W(`${where}: không có scene/live`);
     if (b.activity !== undefined) {
       if (!activityIds.has(b.activity)) E(`${where}: activity "${b.activity}" không có trong activities.json`);
       attached.set(b.activity, (attached.get(b.activity) ?? 0) + 1);
@@ -320,7 +332,16 @@ function checkSim(m, ctx) {
 function checkStage(m, ctx) {
   const id = m.meta.id;
   const st = m.stage;
-  if (st === null) return;
+  // Quy tắc 21: module phải có stage.json, trừ khi module.json khai báo "stage": "none" kèm "stageReason".
+  if (st === null) {
+    if (m.meta.stage === 'none') {
+      if (typeof m.meta.stageReason !== 'string' || !m.meta.stageReason.trim()) E(`${id}: "stage": "none" cần "stageReason" (lý do bài không có sân khấu)`);
+    } else {
+      E(`${id}: thiếu stage.json (bài không có sân khấu phải khai báo "stage": "none" + "stageReason" trong module.json; không còn rơi về code-trace)`);
+    }
+    return;
+  }
+  if (m.meta.stage === 'none') E(`${id}: module.json khai báo "stage": "none" nhưng vẫn có stage.json`);
   if (!isObj(st) || st.version !== 1) return E(`${id}: stage.json phải có version: 1`);
   if (!isObj(st.scenes)) return E(`${id}: stage.json thiếu scenes`);
   if (/_source\/|designed-to-scale/i.test(JSON.stringify(st))) E(`${id}: stage.json chứa đường dẫn tới _source/ hoặc domain DTS`);
@@ -331,16 +352,32 @@ function checkStage(m, ctx) {
   const linkSet = new Set(sims.flatMap((s) => [...s.linkIds]));
   const hasModel = sims.length > 0;
   const liveScenes = new Set();
+  if (Object.keys(st.scenes).length === 0) E(`${id}: stage.json không có scene nào`);
+  if (st.base !== undefined && !st.scenes[st.base]) E(`${id}: stage.base "${st.base}" không có trong scenes`);
+  if (st.base === undefined && Object.keys(st.scenes).length > 0 && st.scenes[Object.keys(st.scenes)[0]]?.mode === 'memory-2d') {
+    W(`${id}: scene đầu tiên là memory-2d và không có stage.base: bước không khai báo scene sẽ lấy scene này làm mặc định`);
+  }
   for (const lv of Object.values(st.live ?? {})) {
     if (lv?.sim && !ctx.simClaimed.has(lv.sim)) E(`${id}: live.sim "${lv.sim}" không có trong sim.json`);
   }
   for (const [key, sc] of Object.entries(st.scenes)) {
     const where = `${id} scene "${key}"`;
+    if (isObj(sc) && sc.mode === 'memory-2d') {
+      const mm = sc.memory;
+      const okShape =
+        isObj(mm) &&
+        MEMORY_KINDS.includes(mm.kind) &&
+        (mm.kind === 'tape' ? Array.isArray(mm.cells) : mm.kind === 'refs' ? Array.isArray(mm.names) && Array.isArray(mm.objects) : Array.isArray(mm.nodes) && Array.isArray(mm.edges));
+      if (!okShape) E(`${where}: mode memory-2d cần "memory" đúng dạng tape|refs|tree (xem scale-workbench/types.ts)`);
+      continue;
+    }
     if (!isObj(sc) || !isObj(sc.show)) {
       E(`${where}: thiếu show`);
       continue;
     }
-    if (sc.mode !== undefined && !['isometric', 'memory-2d', 'code-trace'].includes(sc.mode)) E(`${where}: mode không hợp lệ`);
+    if (sc.mode !== undefined && !['isometric', 'memory-2d'].includes(sc.mode)) {
+      E(`${where}: mode "${sc.mode}" không hợp lệ trong stage.json (code-trace khai báo bằng \`mode: code\` ở khối step)`);
+    }
     if (hasModel) {
       const shown = sc.show.nodes === '*' ? [] : sc.show.nodes ?? [];
       for (const n of shown) if (!nodeSet.has(n)) E(`${where}: node "${n}" không có trong sim`);

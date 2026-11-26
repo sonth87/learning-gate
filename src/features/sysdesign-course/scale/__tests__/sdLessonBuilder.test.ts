@@ -1,7 +1,9 @@
 /**
- * Test builder bài học (T1.1c): fixture S1-03 + một bài tổng hợp có stage.json và sim model.
+ * Test builder bài học (T1.1c): S1-03 thật + các bài tổng hợp kiểm quy tắc chọn sân khấu
+ * (07 §2.3: không còn fallback code-trace; scene kế thừa; memory-2d; `mode: code`).
  */
 import curriculumJson from '@/data/courses/sysdesign/curriculum.json';
+import simsJson from '@/data/courses/sysdesign/sims.json';
 import type { SdCurriculum, SdModule } from '../../types';
 import { buildSdScaleLessons, parseSdLesson, SD_MAX_STEPS } from '../sdLessonBuilder';
 
@@ -14,17 +16,32 @@ function assert(cond: unknown, msg: string): void {
 
 const cur = curriculumJson as unknown as SdCurriculum;
 
-// 1) Fixture thật từ sd:build
-const lessons = buildSdScaleLessons(cur);
+// 1) Bài S1-03 thật từ sd:build
+const lessons = buildSdScaleLessons(cur, simsJson.sims as never);
 assert(lessons.length === cur.modules.length, 'mỗi module có một lesson');
 const s103 = lessons.find((l) => l.moduleId === 'S1-03');
 assert(s103, 'có lesson S1-03');
-assert(s103!.steps.length >= 4 && s103!.steps.length <= SD_MAX_STEPS, 'số step trong 1..12');
+assert(s103!.steps.length >= 8 && s103!.steps.length <= SD_MAX_STEPS, 'S1-03 có 8–12 step');
 assert(s103!.steps[0].category === 'SETUP', 'step đầu là SETUP');
 assert(s103!.steps[s103!.steps.length - 1].category === 'RECAP', 'step cuối là RECAP');
-assert(s103!.steps.every((st, i) => st.index === i + 1 && st.stageMode === 'code-trace' && st.codeTrace), 'fixture không scene ⇒ code-trace hợp lệ');
+assert(s103!.steps.every((st, i) => st.index === i + 1), 'chỉ số step liên tục');
+const codeSteps = s103!.steps.filter((st) => st.stageMode === 'code-trace');
+assert(codeSteps.length === 1 && codeSteps[0].codeTrace, 'S1-03 chỉ có đúng 1 step code-trace (step khai báo mode: code)');
+assert(
+  s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 5 && !st.codeTrace),
+  'step isometric có scene ≥ 5 node và không kèm codeTrace'
+);
+assert(s103!.steps.some((st) => st.stageMode === 'memory-2d' && st.memoryScene?.kind === 'tree'), 'có step memory-2d dựng MemoryScene tree');
+assert(s103!.primaryMode === 'isometric', 'S1-03 primaryMode isometric');
 assert(s103!.steps[0].callout?.kind === 'key-idea', 'callout được đọc từ khối step');
-assert(s103!.steps[1].whatChanged[0]?.op === '+', 'whatChanged op +');
+assert(s103!.steps[0].whatChanged[0]?.op === '+', 'whatChanged op +');
+const dbNode = s103!.steps[4].scene?.nodes.find((n) => n.id === 'db');
+assert(dbNode?.loadPct === 100 && dbNode.inspector?.what.vi && dbNode.inspector?.tipOrCase, 'node db có state và inspector what/how/why/tip');
+assert(
+  s103!.steps[4].scene?.links.some((l) => l.id === 'cache-db' && l.inspector?.why.vi),
+  'link cache-db có inspector'
+);
+assert(s103!.steps[2].scene?.links.find((l) => l.id === 'cache-db')?.label?.vi === '300 ms', 'linkState.label ghi đè nhãn đường nối theo scene');
 
 // 2) Bài tổng hợp có scene + model
 const lessonMd = [
@@ -96,8 +113,110 @@ assert(parseSdLesson(many).length === SD_MAX_STEPS, 'cắt tối đa 12 step');
 const fenced = '## 1. A\n```bash\n## not a heading\n```\n\n## 2. B\nx';
 assert(parseSdLesson(fenced).length === 2, '`##` trong code fence không tách step');
 
-// 4) Không có stage ⇒ không crash khi scene khai báo
-const noStage = buildSdScaleLessons({ ...cur, modules: [{ ...synthetic, stage: null }] }, null);
-assert(noStage[0].steps[0].stageMode === 'code-trace', 'thiếu stage ⇒ code-trace');
+// 4) Quy tắc chọn sân khấu: kế thừa scene, base, memory-2d, mode: code
+const ruleMd = [
+  '## 1. Mở đầu không khai báo scene',
+  '```step',
+  'category: SETUP',
+  'short: Mở đầu',
+  '```',
+  'Thân bước có code nhưng không khai báo mode.',
+  '',
+  '```python',
+  'print("không phải code-trace vì chưa khai báo mode: code")',
+  '```',
+  '',
+  '## 2. Scene riêng',
+  '```step',
+  'category: MECHANISM',
+  'short: Scene A',
+  'scene: a',
+  '```',
+  'Nội dung.',
+  '',
+  '## 3. Bảng bộ nhớ',
+  '```step',
+  'category: MECHANISM',
+  'short: Memory',
+  'scene: mem',
+  '```',
+  'Nội dung.',
+  '',
+  '## 4. Không khai báo scene sau memory',
+  '```step',
+  'category: TECHNIQUE',
+  'short: Kế thừa',
+  'scene: none',
+  '```',
+  'Kế thừa scene isometric gần nhất (a), không phải memory.',
+  '',
+  '## 5. Code thật',
+  '```step',
+  'category: REAL_CODE',
+  'short: Code',
+  'mode: code',
+  '```',
+  'Có code thật.',
+  '',
+  '```python',
+  'def timed(fn):\n    return fn',
+  '```',
+  '',
+  '## 6. Khai báo mode code nhưng không có code',
+  '```step',
+  'category: RECAP',
+  'short: Hết',
+  'mode: code',
+  '```',
+  'Không có code block.',
+].join('\n');
+const ruleMod: SdModule = {
+  ...synthetic,
+  id: 'S9-98',
+  lesson: ruleMd,
+  simIds: ['S9-99/a'],
+  stage: {
+    version: 1,
+    base: 'a',
+    nodes: {
+      client: { shape: 'crowd' },
+      lb: { inspector: { what: 'Là gì', how: { vi: 'Thế nào' }, why: 'Vì sao', tip: 'Mẹo' } },
+      db: { shape: 'db' },
+    },
+    scenes: {
+      a: { show: { nodes: '*' } },
+      mem: {
+        mode: 'memory-2d',
+        show: { nodes: [] },
+        memory: {
+          kind: 'tree',
+          title: 'Cây',
+          nodes: [
+            { id: 'r', x: 0, y: 0, label: 'Gốc', tone: 'neutral' },
+            { id: 'c', x: 100, y: 90, label: 'Con', sub: 'ghi chú', tone: 'green' },
+          ],
+          edges: [{ from: 'r', to: 'c', label: 'x' }],
+        },
+      },
+    },
+  },
+};
+const ruleOut = buildSdScaleLessons({ ...cur, modules: [ruleMod] }, sims)[0];
+const rs = ruleOut.steps;
+assert(rs[0].stageMode === 'isometric' && rs[0].scene, 'không khai báo scene ở đầu bài ⇒ stage.base (isometric), kể cả khi thân có code block');
+assert(!rs[0].codeTrace && rs[0].codeSnippet === undefined, 'bước isometric không kèm codeTrace/codeSnippet');
+assert(rs[1].stageMode === 'isometric', 'scene a ⇒ isometric');
+assert(rs[2].stageMode === 'memory-2d' && rs[2].memoryScene?.kind === 'tree' && !rs[2].scene, 'scene memory-2d ⇒ MemoryScene thật');
+assert(rs[2].memoryScene?.kind === 'tree' && rs[2].memoryScene.nodes[1].sub?.vi === 'ghi chú', 'chuỗi MemoryScene được chuẩn hoá thành BilingualText');
+assert(rs[3].stageMode === 'isometric' && rs[3].scene?.nodes.length === 3, 'scene none sau memory ⇒ kế thừa scene isometric gần nhất');
+assert(rs[4].stageMode === 'code-trace' && rs[4].codeTrace, 'mode: code + có code block ⇒ code-trace');
+assert(rs[5].stageMode !== 'code-trace', 'mode: code nhưng không có code block ⇒ KHÔNG code-trace');
+const lbIns = rs[0].scene?.nodes.find((n) => n.id === 'lb')?.inspector;
+assert(lbIns?.what.vi === 'Là gì' && lbIns.how.vi === 'Thế nào' && lbIns.tipOrCase?.vi === 'Mẹo' && lbIns.title.vi === 'LB', 'inspector rút gọn (string | {vi}) được mở rộng đủ trường');
+assert(ruleOut.primaryMode === 'isometric', 'primaryMode isometric khi có step isometric');
+
+// 5) Module khai báo không có stage (doctor đã kiểm lý do) ⇒ phòng thủ code-trace; module thiếu stage vô tình cũng không crash
+const noStage = buildSdScaleLessons({ ...cur, modules: [{ ...synthetic, stage: null, noStage: true }] }, null);
+assert(noStage[0].steps[0].stageMode === 'code-trace', 'module không có stage ⇒ code-trace phòng thủ (doctor chặn trừ khi stage: "none")');
 
 console.log('[sdLessonBuilder] OK');

@@ -9,7 +9,9 @@ import type {
   IsoPortDir,
   IsoTone,
   LegacyNodeShape,
+  MemoryScene,
   PacketKind,
+  StageInspectorInfo,
   StageIconKind,
   StageLink,
   StageNode,
@@ -66,6 +68,83 @@ function asIcon(i: string | undefined, fallback?: StageIconKind): StageIconKind 
   return i && ICONS.has(i) ? (i as StageIconKind) : fallback;
 }
 
+const SHAPE_KIND_LABEL: Record<string, BilingualText> = {
+  block: { vi: 'Thành phần', en: 'Component' },
+  db: { vi: 'Cơ sở dữ liệu', en: 'Database' },
+  crowd: { vi: 'Nhóm người dùng', en: 'User group' },
+  device: { vi: 'Thiết bị', en: 'Device' },
+};
+
+/**
+ * `inspector` trong stage.json: `{ what, how, why, tip?, title?, kindLabel? }`, mỗi trường là string hoặc `{ vi, en? }`.
+ * Thiếu what/how/why thì không gắn (tránh thẻ inspector rỗng). `title` mặc định = nhãn; `kindLabel` mặc định theo loại.
+ */
+function toInspector(raw: unknown, title: BilingualText, kindLabel: BilingualText): StageInspectorInfo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const r = raw as Record<string, unknown>;
+  const f = (v: unknown): BilingualText | undefined =>
+    typeof v === 'string' || (v && typeof v === 'object' && typeof (v as SdBilingual).vi === 'string')
+      ? toBilingual(v as SdBilingual | string)
+      : undefined;
+  const what = f(r.what);
+  const how = f(r.how);
+  const why = f(r.why);
+  if (!what || !how || !why) return undefined;
+  const info: StageInspectorInfo = {
+    title: f(r.title) ?? title,
+    kindLabel: f(r.kindLabel) ?? kindLabel,
+    what,
+    how,
+    why,
+  };
+  const tip = f(r.tip ?? r.tipOrCase);
+  if (tip) info.tipOrCase = tip;
+  return info;
+}
+
+/** Dựng MemoryScene (tape | refs | tree) từ `scenes.<key>.memory`; null nếu sai dạng. */
+export function buildSdMemoryScene(def: SdSceneDef): MemoryScene | null {
+  const m = def.memory as Record<string, any> | undefined;
+  if (!m || typeof m !== 'object') return null;
+  const bi = (v: unknown, fb = ''): BilingualText => toBilingual(v as SdBilingual | string | undefined, fb);
+  const biOpt = (v: unknown): BilingualText | undefined => (v === undefined || v === null ? undefined : bi(v));
+  if (m.kind === 'tape') {
+    if (!Array.isArray(m.cells)) return null;
+    return {
+      kind: 'tape',
+      title: bi(m.title),
+      subtitle: biOpt(m.subtitle),
+      cells: m.cells.map(String),
+      activeIndices: m.activeIndices,
+      showNegativeIndices: m.showNegativeIndices,
+      pointers: m.pointers,
+      outputPill: m.outputPill
+        ? { label: bi(m.outputPill.label), value: bi(m.outputPill.value), tone: m.outputPill.tone }
+        : undefined,
+    };
+  }
+  if (m.kind === 'refs') {
+    if (!Array.isArray(m.names) || !Array.isArray(m.objects)) return null;
+    return {
+      kind: 'refs',
+      leftTitle: bi(m.leftTitle),
+      rightTitle: bi(m.rightTitle),
+      names: m.names.map((n: any) => ({ ...n, note: biOpt(n.note) })),
+      objects: m.objects.map((o: any) => ({ ...o, tone: asTone(o.tone, 'neutral'), badge: biOpt(o.badge) })),
+    };
+  }
+  if (m.kind === 'tree') {
+    if (!Array.isArray(m.nodes) || !Array.isArray(m.edges)) return null;
+    return {
+      kind: 'tree',
+      title: bi(m.title),
+      nodes: m.nodes.map((n: any) => ({ ...n, tone: asTone(n.tone, 'neutral'), sub: biOpt(n.sub) })),
+      edges: m.edges,
+    };
+  }
+  return null;
+}
+
 /**
  * Dựng StageScene từ định nghĩa cảnh. `model` (từ sim.json) cung cấp liên kết; thiếu model thì cảnh chỉ có node.
  * Trả null nếu cảnh không có node nào (người gọi sẽ rơi về code-trace).
@@ -104,11 +183,8 @@ export function buildSdStageScene(
     if (st?.dimmed) node.dimmed = true;
     if (st?.highlighted) node.highlighted = true;
     if (st?.badge) node.badge = { text: toBilingual(st.badge.text), tone: st.badge.tone };
-    // d.inspector là Partial<StageInspectorInfo>; chỉ gắn khi đủ trường bắt buộc.
-    const ins = d.inspector as Partial<NonNullable<StageNode['inspector']>> | undefined;
-    if (ins && ins.title && ins.kindLabel && ins.what && ins.how && ins.why) {
-      node.inspector = ins as NonNullable<StageNode['inspector']>;
-    }
+    const ins = toInspector(d.inspector, node.label, SHAPE_KIND_LABEL[node.shape] ?? SHAPE_KIND_LABEL.block);
+    if (ins) node.inspector = ins;
     return node;
   });
 
@@ -121,10 +197,17 @@ export function buildSdStageScene(
       const style = def.linkState?.[l.id]?.style ?? d.style;
       const link: StageLink = { id: l.id, from: l.from, to: l.to };
       if (style) link.style = style;
-      if (d.label) link.label = toBilingual(d.label);
+      const lab = def.linkState?.[l.id]?.label ?? d.label;
+      if (lab) link.label = toBilingual(lab);
       if (d.fromPort) link.fromPort = d.fromPort as IsoPortDir;
       if (d.toPort) link.toPort = d.toPort as IsoPortDir;
       if (d.curve !== undefined) link.curve = d.curve;
+      const ins = toInspector(
+        d.inspector,
+        lab ? toBilingual(lab) : { vi: `${l.from} → ${l.to}`, en: `${l.from} → ${l.to}` },
+        { vi: 'Đường nối', en: 'Connection' }
+      );
+      if (ins) link.inspector = ins;
       return link;
     });
 
