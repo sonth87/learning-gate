@@ -27,3 +27,5 @@ export type {
 } from './analyze';
 export { applyChangesToModel, evaluate, runAndEvaluate, seriesFromRecorder, simulate } from './grade';
 export type { Constraint, ConstraintResult, RunSeries, StructuralRule, TimeWindow } from './grade';
+export { traceRequest } from './trace';
+export type { RequestTrace, TraceHint, TraceOutcome, TraceSpan, TraceSpanKind } from './trace';
