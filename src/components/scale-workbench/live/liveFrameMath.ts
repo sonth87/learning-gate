@@ -82,7 +82,7 @@ export function nodeVisual(f: LiveNodeFrame | undefined): NodeVisual {
     down,
     showWarm: !down && (state === 'recovering' || warm > 0),
     warm,
-    shake: state === 'saturated',
+    shake: false,
     pulse: state === 'overloaded',
   };
 }

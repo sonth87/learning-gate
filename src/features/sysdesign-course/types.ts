@@ -82,6 +82,7 @@ export interface SdSceneDef {
   noteCard?: {
     title: SdBilingual;
     lines: { text: SdBilingual; tone?: string }[];
+    chart?: { utilPct: number; xLabel?: SdBilingual; yLabel?: SdBilingual };
     position?: string;
   };
   /** StageScene đầy đủ, thay hết các trường trên. */

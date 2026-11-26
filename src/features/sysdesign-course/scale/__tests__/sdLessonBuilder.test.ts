@@ -25,8 +25,10 @@ assert(s103!.steps.length >= 8 && s103!.steps.length <= SD_MAX_STEPS, 'S1-03 có
 assert(s103!.steps[0].category === 'SETUP', 'step đầu là SETUP');
 assert(s103!.steps[s103!.steps.length - 1].category === 'RECAP', 'step cuối là RECAP');
 assert(s103!.steps.every((st, i) => st.index === i + 1), 'chỉ số step liên tục');
-const codeSteps = s103!.steps.filter((st) => st.stageMode === 'code-trace');
-assert(codeSteps.length === 1 && codeSteps[0].codeTrace, 'S1-03 chỉ có đúng 1 step code-trace (step khai báo mode: code)');
+assert(
+  s103!.steps.every((st) => st.stageMode === 'isometric' || st.stageMode === 'live-sim'),
+  'S1-03 giữ xuyên suốt sân khấu isometric / live-sim ở cả 11 bước (không giật sang code-trace hay memory-2d)'
+);
 const liveSteps = s103!.steps.filter((st) => st.stageMode === 'live-sim');
 assert(
   liveSteps.length === 2 &&
@@ -48,7 +50,6 @@ assert(
   s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 3 && !st.codeTrace),
   'step isometric có scene ≥ 3 node và không kèm codeTrace'
 );
-assert(s103!.steps.some((st) => st.stageMode === 'memory-2d' && st.memoryScene?.kind === 'tree'), 'có step memory-2d dựng MemoryScene tree');
 assert(s103!.primaryMode === 'isometric', 'S1-03 primaryMode isometric');
 assert(s103!.steps[0].callout?.kind === 'key-idea', 'callout được đọc từ khối step');
 assert(s103!.steps[0].whatChanged[0]?.op === '+', 'whatChanged op +');

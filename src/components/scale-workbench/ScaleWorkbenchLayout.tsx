@@ -209,11 +209,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     cursors,
     expandedLevels,
     isProgressExpanded,
+    isObjectivesExpanded,
     isLeftSidebarCollapsed,
     rightSidebarWidth,
     setCourseCursor,
     setExpandedLevel,
     toggleProgressExpanded,
+    toggleObjectivesExpanded,
     toggleLeftSidebarCollapsed,
     setRightSidebarWidth,
   } = useWorkbenchStore(
@@ -223,11 +225,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       cursors: s.cursors,
       expandedLevels: s.expandedLevels,
       isProgressExpanded: s.isProgressExpanded,
+      isObjectivesExpanded: s.isObjectivesExpanded,
       isLeftSidebarCollapsed: s.isLeftSidebarCollapsed,
       rightSidebarWidth: s.rightSidebarWidth,
       setCourseCursor: s.setCourseCursor,
       setExpandedLevel: s.setExpandedLevel,
       toggleProgressExpanded: s.toggleProgressExpanded,
+      toggleObjectivesExpanded: s.toggleObjectivesExpanded,
       toggleLeftSidebarCollapsed: s.toggleLeftSidebarCollapsed,
       setRightSidebarWidth: s.setRightSidebarWidth,
     }))
@@ -680,7 +684,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 space-y-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 space-y-1">
           {levelGroups.map((grp) => {
             const isOpen = openLevel === grp.level;
             const doneInGrp = grp.items.filter((it) => {
@@ -760,16 +764,18 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         <button
           type="button"
           onClick={toggleProgressExpanded}
+          aria-expanded={isProgressExpanded}
           className="flex w-full items-center justify-between font-mono text-[11px] font-extrabold tracking-wider text-[var(--dts-ink)]"
         >
           <span>{t.progress}</span>
           <span className="flex items-center gap-1 text-[var(--dts-ink-soft)]">
             {totalCompletedLessons} / {lessons.length}
-            {isProgressExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronUp className="h-3.5 w-3.5" />
-            )}
+            <ChevronUp
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-300 ease-out',
+                isProgressExpanded && 'rotate-180'
+              )}
+            />
           </span>
         </button>
 
@@ -784,45 +790,55 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           />
         </div>
 
-        {isProgressExpanded && (
-          <div className="mt-2.5 max-h-44 space-y-1.5 overflow-y-auto pr-1">
-            {levelGroups.map((grp) => {
-              const doneInGrp = grp.items.filter((it) => {
-                const st = getModuleStatus(it.moduleId);
-                return st.completed || st.lessonRead;
-              }).length;
-              const allDone = doneInGrp === grp.items.length;
+        <div
+          aria-hidden={!isProgressExpanded}
+          className={cn(
+            'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
+            isProgressExpanded
+              ? 'grid-rows-[1fr] opacity-100'
+              : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="mt-2.5 max-h-44 space-y-1.5 overflow-y-auto pr-1">
+              {levelGroups.map((grp) => {
+                const doneInGrp = grp.items.filter((it) => {
+                  const st = getModuleStatus(it.moduleId);
+                  return st.completed || st.lessonRead;
+                }).length;
+                const allDone = doneInGrp === grp.items.length;
 
-              return (
-                <div
-                  key={grp.level}
-                  className="flex items-center justify-between gap-2 font-mono text-[11px] text-[var(--dts-ink-soft)]"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-line-strong)]',
-                        allDone
-                          ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                          : doneInGrp > 0
-                            ? 'bg-[var(--dts-green-soft)]'
-                            : 'bg-[var(--dts-panel-elevated)]'
-                      )}
-                    >
-                      {allDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                    </span>
-                    <span className="truncate">
-                      {lang === 'en' ? grp.titleEn : grp.titleVi}
+                return (
+                  <div
+                    key={grp.level}
+                    className="flex items-center justify-between gap-2 font-mono text-[11px] text-[var(--dts-ink-soft)]"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-line-strong)]',
+                          allDone
+                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                            : doneInGrp > 0
+                              ? 'bg-[var(--dts-green-soft)]'
+                              : 'bg-[var(--dts-panel-elevated)]'
+                        )}
+                      >
+                        {allDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                      </span>
+                      <span className="truncate">
+                        {lang === 'en' ? grp.titleEn : grp.titleVi}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-[10.5px] text-[var(--dts-ink-muted)]">
+                      {doneInGrp}/{grp.items.length}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[10.5px] text-[var(--dts-ink-muted)]">
-                    {doneInGrp}/{grp.items.length}
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -1054,25 +1070,17 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         </span>
       </div>
 
-      <div
-        ref={rootContainerRef}
-        onScroll={(e) => {
-          const stuck = e.currentTarget.scrollTop > 56;
-          setIsMobileHeaderStuck((prev) => (prev === stuck ? prev : stuck));
-        }}
-        className="relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 overflow-y-auto xl:overflow-hidden"
-      >
-      {/* Mobile / Tablet Slide-over Syllabus Drawer */}
+      {/* Mobile / Tablet Slide-over Syllabus Drawer (placed outside rootContainerRef so it overlays the viewport and doesn't scroll with page content) */}
       {mobileDrawerOpen && (
         <div
           onClick={() => setMobileDrawerOpen(false)}
-          className="absolute inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden overflow-hidden"
+          className="absolute inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden overflow-hidden overscroll-contain touch-pan-y"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-[290px] max-w-[85vw] flex-col bg-[var(--dts-canvas)] p-3 shadow-2xl"
+            className="flex h-full min-h-0 w-[290px] max-w-[85vw] flex-col bg-[var(--dts-canvas)] p-3 shadow-2xl overscroll-contain"
           >
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex shrink-0 items-center justify-between">
               <span className="font-mono text-xs font-extrabold uppercase tracking-wider">
                 {t.openCourseMenu}
               </span>
@@ -1084,11 +1092,22 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="min-h-0 flex-1">{renderSyllabusContent(false)}</div>
+            <div className="min-h-0 flex-1 overflow-hidden">{renderSyllabusContent(false)}</div>
           </div>
         </div>
       )}
 
+      <div
+        ref={rootContainerRef}
+        onScroll={(e) => {
+          const stuck = e.currentTarget.scrollTop > 56;
+          setIsMobileHeaderStuck((prev) => (prev === stuck ? prev : stuck));
+        }}
+        className={cn(
+          'relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 xl:overflow-hidden',
+          mobileDrawerOpen ? 'overflow-hidden' : 'overflow-y-auto'
+        )}
+      >
       {/* 1. LEFT COLUMN (Collapsible into Icon + Chapter Number Rail with Hover Tooltip/Flyout) */}
       <aside
         ref={leftAsideRef}
@@ -1347,87 +1366,90 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 runLabel={runCodeLabel ?? t.runCode}
                 className="h-full min-h-[250px] flex-1"
               />
-            ) : isLiveStage && activeStep.scene && liveSession && activeStep.liveSim ? (
-              <>
-                <div className="dts-stage-noselect relative min-h-0 flex-1 select-none">
-                  <ScaleStageSvg
-                    scene={activeStep.scene}
-                    lang={lang}
-                    theme={theme}
-                    isPlaying={isPlaying}
-                    replayNonce={replayNonce}
-                    frameSource={liveSession.source}
-                    liveOptions={{
-                      tracerEnabled: Boolean(activeStep.liveSim.controls.tracer),
-                      focus: activeStep.liveSim.focus,
-                    }}
-                    onPacketPick={(p) => {
-                      setIsPlaying(false);
-                      setActiveTrace(
-                        liveSession.trace({
-                          packetId: p.id,
-                          linkId: p.linkId,
-                          kind: p.kind,
-                        })
-                      );
-                    }}
-                    pickMode={
-                      activeChaosPick
-                        ? {
-                            accept: activeChaosPick.accept,
-                            onPick: handleChaosPick,
-                          }
-                        : null
-                    }
-                    renderLiveSlot={(ent) =>
-                      liveSimAdapter?.renderNodeLiveSlot?.(
-                        liveSession,
-                        activeStep.liveSim!,
-                        ent,
-                        lang
-                      )
-                    }
-                  />
-                  <RequestTracerDrawer
-                    trace={activeTrace}
-                    lang={lang}
-                    onClose={() => setActiveTrace(null)}
-                  />
-                </div>
-                <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
-                  {liveLegendKinds.map((kind) => (
-                    <span key={kind} className="inline-flex items-center gap-1.5">
-                      <LegendDot kind={kind} />
-                      <span>{t.packets[kind]}</span>
-                    </span>
-                  ))}
-                  {livePacketScale > 0 && (
-                    <span className="text-[10.5px] font-bold">
-                      — {t.live.packetScale(livePacketScale)}
-                    </span>
-                  )}
-                </div>
-              </>
-            ) : isIsometricStage && activeStep.scene ? (
-              <>
-                <div className="dts-stage-noselect min-h-0 flex-1 select-none">
-                  <ScaleStageSvg
-                    scene={activeStep.scene}
-                    lang={lang}
-                    theme={theme}
-                    isPlaying={isPlaying}
-                    replayNonce={replayNonce}
-                  />
-                </div>
-                <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
-                  {legendKinds.map((kind) => (
-                    <span key={kind} className="inline-flex items-center gap-1.5">
-                      <LegendDot kind={kind} />
-                      <span>{t.packets[kind]}</span>
-                    </span>
-                  ))}
-                </div>
-              </>
+            ) : (isIsometricStage || isLiveStage) && activeStep.scene ? (
+              (() => {
+                const activeLive =
+                  isLiveStage && liveSession && activeStep.liveSim
+                    ? { session: liveSession, spec: activeStep.liveSim }
+                    : null;
+                const shownLegendKinds = activeLive ? liveLegendKinds : legendKinds;
+                return (
+                  <>
+                    <div className="dts-stage-noselect relative min-h-0 flex-1 select-none">
+                      <ScaleStageSvg
+                        key={activeLesson.moduleId}
+                        scene={activeStep.scene}
+                        lang={lang}
+                        theme={theme}
+                        isPlaying={isPlaying}
+                        replayNonce={replayNonce}
+                        frameSource={activeLive?.session.source}
+                        liveOptions={
+                          activeLive
+                            ? {
+                                tracerEnabled: Boolean(activeLive.spec.controls.tracer),
+                                focus: activeLive.spec.focus,
+                              }
+                            : undefined
+                        }
+                        onPacketPick={
+                          activeLive
+                            ? (p) => {
+                                setIsPlaying(false);
+                                setActiveTrace(
+                                  activeLive.session.trace({
+                                    packetId: p.id,
+                                    linkId: p.linkId,
+                                    kind: p.kind,
+                                  })
+                                );
+                              }
+                            : undefined
+                        }
+                        pickMode={
+                          activeLive && activeChaosPick
+                            ? {
+                                accept: activeChaosPick.accept,
+                                onPick: handleChaosPick,
+                              }
+                            : null
+                        }
+                        renderLiveSlot={
+                          activeLive
+                            ? (ent) =>
+                                liveSimAdapter?.renderNodeLiveSlot?.(
+                                  activeLive.session,
+                                  activeLive.spec,
+                                  ent,
+                                  lang
+                                )
+                            : undefined
+                        }
+                      />
+                      {activeLive && (
+                        <RequestTracerDrawer
+                          trace={activeTrace}
+                          lang={lang}
+                          onClose={() => setActiveTrace(null)}
+                        />
+                      )}
+                    </div>
+                    <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
+                      {shownLegendKinds.map((kind) => (
+                        <span key={kind} className="inline-flex items-center gap-1.5">
+                          <LegendDot kind={kind} />
+                          <span>{t.packets[kind]}</span>
+                        </span>
+                      ))}
+                      {activeLive && livePacketScale > 0 && (
+                        <span className="text-[10.5px] font-bold">
+                          — {t.live.packetScale(livePacketScale)}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()
             ) : isMemoryStage && activeStep.memoryScene ? (
               <div className="dts-stage-noselect min-h-0 flex-1 select-none">
                 <MemoryStageSvg
@@ -1716,138 +1738,180 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
         {/* Bottom Card: YOU'LL LEARN + Practice Links */}
         <div className="dts-panel shrink-0 rounded-2xl p-3.5">
-          <div className="mb-2 font-mono text-[11px] font-extrabold uppercase tracking-wider text-[var(--dts-ink)]">
-            {t.youWillLearn}
-          </div>
-          <ul className="space-y-1.5">
-            {activeLesson.objectives.map((obj, idx) => {
-              const threshold = Math.floor(
-                ((idx + 1) / activeLesson.objectives.length) *
-                  (activeLesson.steps.length - 1)
-              );
-              const checked =
-                activeStatus.lessonRead ||
-                activeStatus.completed ||
-                safeStepIdx >= Math.max(0, threshold);
+          <button
+            type="button"
+            onClick={toggleObjectivesExpanded}
+            aria-expanded={isObjectivesExpanded}
+            className="flex w-full items-center justify-between font-mono text-[11px] font-extrabold uppercase tracking-wider text-[var(--dts-ink)]"
+          >
+            <span>{t.youWillLearn}</span>
+            <span className="flex items-center gap-1 text-[var(--dts-ink-soft)]">
+              <span className="tabular-nums">
+                {
+                  activeLesson.objectives.filter((_, idx) => {
+                    const threshold = Math.floor(
+                      ((idx + 1) / activeLesson.objectives.length) *
+                        (activeLesson.steps.length - 1)
+                    );
+                    return (
+                      activeStatus.lessonRead ||
+                      activeStatus.completed ||
+                      safeStepIdx >= Math.max(0, threshold)
+                    );
+                  }).length
+                }{' '}
+                / {activeLesson.objectives.length}
+              </span>
+              <ChevronUp
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform duration-300 ease-out',
+                  isObjectivesExpanded && 'rotate-180'
+                )}
+              />
+            </span>
+          </button>
 
-              return (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2 font-mono text-[11.5px] leading-snug text-[var(--dts-ink-soft)]"
-                >
-                  <span
-                    className={cn(
-                      'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-border)] transition-colors',
-                      checked
-                        ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-panel-elevated)]'
-                    )}
-                  >
-                    {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                  </span>
-                  <span className={cn(checked && 'text-[var(--dts-ink)] font-medium')}>
-                    {pickText(obj, lang)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <div
+            aria-hidden={!isObjectivesExpanded}
+            className={cn(
+              'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
+              isObjectivesExpanded
+                ? 'grid-rows-[1fr] opacity-100'
+                : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+            )}
+          >
+            <div className="overflow-hidden">
+              <ul className="mt-2 space-y-1.5">
+                {activeLesson.objectives.map((obj, idx) => {
+                  const threshold = Math.floor(
+                    ((idx + 1) / activeLesson.objectives.length) *
+                      (activeLesson.steps.length - 1)
+                  );
+                  const checked =
+                    activeStatus.lessonRead ||
+                    activeStatus.completed ||
+                    safeStepIdx >= Math.max(0, threshold);
 
-          {(onOpenQuiz || onOpenExercises || onOpenFlashcards || onOpenReadings) && (
-            <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2.5">
-              <div className="mb-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                {t.practiceActions.title}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {onOpenQuiz && activeLesson.quizCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenQuiz(activeLesson.moduleId)}
-                    className={cn(
-                      'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
-                      activeStatus.quizPassed
-                        ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
-                    )}
-                  >
-                    <ListChecks className="h-3 w-3" />
-                    <span>{t.practiceActions.quiz(activeLesson.quizCount)}</span>
-                  </button>
-                )}
-                {onOpenExercises && activeLesson.exerciseCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenExercises(activeLesson.moduleId)}
-                    className={cn(
-                      'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
-                      activeStatus.passedExercises === activeLesson.exerciseCount
-                        ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]'
-                    )}
-                  >
-                    <Code2 className="h-3 w-3" />
-                    <span>
-                      {courseId === 'pmpmastery'
-                        ? lang === 'vi'
-                          ? `Tình huống (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
-                          : `Scenarios (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
-                        : t.practiceActions.exercises(
-                            activeStatus.passedExercises,
-                            activeLesson.exerciseCount
-                          )}
-                    </span>
-                  </button>
-                )}
-                {onOpenFlashcards && activeLesson.cardCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenFlashcards(activeLesson.moduleId)}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
-                  >
-                    <Layers className="h-3 w-3" />
-                    <span>{t.practiceActions.flashcards(activeLesson.cardCount)}</span>
-                  </button>
-                )}
-                {onOpenReadings && activeLesson.readingCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenReadings(activeLesson.moduleId)}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
-                  >
-                    <BookOpen className="h-3 w-3" />
-                    <span>
-                      {courseId === 'pmpmastery'
-                        ? lang === 'vi'
-                          ? `Dẫn chứng (${activeLesson.readingCount})`
-                          : `Evidence (${activeLesson.readingCount})`
-                        : courseId !== 'pymastery'
-                          ? lang === 'vi'
-                            ? `Cấu hình thật (${activeLesson.readingCount})`
-                            : `Real Configs (${activeLesson.readingCount})`
-                          : t.practiceActions.readings(activeLesson.readingCount)}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+                  return (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 font-mono text-[11.5px] leading-snug text-[var(--dts-ink-soft)]"
+                    >
+                      <span
+                        className={cn(
+                          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-border)] transition-colors',
+                          checked
+                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-panel-elevated)]'
+                        )}
+                      >
+                        {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                      </span>
+                      <span className={cn(checked && 'text-[var(--dts-ink)] font-medium')}>
+                        {pickText(obj, lang)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
 
-          {activeLesson.attribution && (
-            <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10px] leading-relaxed text-[var(--dts-ink-muted)]">
-              {activeLesson.attribution.href ? (
-                <a
-                  href={activeLesson.attribution.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-[var(--dts-ink)]"
-                >
-                  {pickText(activeLesson.attribution.text, lang)}
-                </a>
-              ) : (
-                <span>{pickText(activeLesson.attribution.text, lang)}</span>
+              {(onOpenQuiz || onOpenExercises || onOpenFlashcards || onOpenReadings) && (
+                <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2.5">
+                  <div className="mb-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                    {t.practiceActions.title}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onOpenQuiz && activeLesson.quizCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenQuiz(activeLesson.moduleId)}
+                        className={cn(
+                          'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
+                          activeStatus.quizPassed
+                            ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
+                        )}
+                      >
+                        <ListChecks className="h-3 w-3" />
+                        <span>{t.practiceActions.quiz(activeLesson.quizCount)}</span>
+                      </button>
+                    )}
+                    {onOpenExercises && activeLesson.exerciseCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenExercises(activeLesson.moduleId)}
+                        className={cn(
+                          'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
+                          activeStatus.passedExercises === activeLesson.exerciseCount
+                            ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]'
+                        )}
+                      >
+                        <Code2 className="h-3 w-3" />
+                        <span>
+                          {courseId === 'pmpmastery'
+                            ? lang === 'vi'
+                              ? `Tình huống (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
+                              : `Scenarios (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
+                            : t.practiceActions.exercises(
+                                activeStatus.passedExercises,
+                                activeLesson.exerciseCount
+                              )}
+                        </span>
+                      </button>
+                    )}
+                    {onOpenFlashcards && activeLesson.cardCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenFlashcards(activeLesson.moduleId)}
+                        className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
+                      >
+                        <Layers className="h-3 w-3" />
+                        <span>{t.practiceActions.flashcards(activeLesson.cardCount)}</span>
+                      </button>
+                    )}
+                    {onOpenReadings && activeLesson.readingCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenReadings(activeLesson.moduleId)}
+                        className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
+                      >
+                        <BookOpen className="h-3 w-3" />
+                        <span>
+                          {courseId === 'pmpmastery'
+                            ? lang === 'vi'
+                              ? `Dẫn chứng (${activeLesson.readingCount})`
+                              : `Evidence (${activeLesson.readingCount})`
+                            : courseId !== 'pymastery'
+                              ? lang === 'vi'
+                                ? `Cấu hình thật (${activeLesson.readingCount})`
+                                : `Real Configs (${activeLesson.readingCount})`
+                              : t.practiceActions.readings(activeLesson.readingCount)}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeLesson.attribution && (
+                <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10px] leading-relaxed text-[var(--dts-ink-muted)]">
+                  {activeLesson.attribution.href ? (
+                    <a
+                      href={activeLesson.attribution.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-[var(--dts-ink)]"
+                    >
+                      {pickText(activeLesson.attribution.text, lang)}
+                    </a>
+                  ) : (
+                    <span>{pickText(activeLesson.attribution.text, lang)}</span>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </aside>
       </div>

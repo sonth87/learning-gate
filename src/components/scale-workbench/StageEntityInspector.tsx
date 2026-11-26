@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Cpu, HelpCircle, Lightbulb, Sparkles, X } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Cpu, HelpCircle, Lightbulb, X } from 'lucide-react';
 import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 import { EXTRA_ENTITY_KNOWLEDGE } from './entityKnowledgeExtra';
@@ -447,20 +447,26 @@ export const StageEntityInspectorCard: React.FC<{
   /** live-sim: số liệu trực tiếp chèn giữa header và khối What/How/Why */
   liveSlot?: React.ReactNode;
 }> = ({ info, lang, onClose, maxHeightStyle, liveSlot }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [info]);
+
   return (
     <div
       role="region"
       aria-label={pickText(info.title, lang)}
       style={maxHeightStyle ? { maxHeight: maxHeightStyle } : undefined}
-      className="dts-card-tactile z-30 flex max-h-[min(78vh,540px)] w-full max-w-[396px] flex-col overflow-hidden rounded-2xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] shadow-2xl animate-[dts-pill-in_200ms_ease-out]"
+      className="dts-card-tactile z-30 flex max-h-[min(62vh,380px)] w-full max-w-[292px] flex-col overflow-hidden rounded-xl bg-[var(--dts-panel-elevated)]/98 text-[var(--dts-ink)] shadow-xl backdrop-blur-[3px] animate-[dts-pill-in_160ms_ease-out]"
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-3.5 py-2.5">
+      {/* Compact Header */}
+      <div className="flex items-start justify-between gap-2 border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-3 py-2">
         <div className="min-w-0">
-          <div className="font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+          <div className="font-mono text-[9px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
             {pickText(info.kindLabel, lang)}
           </div>
-          <h3 className="font-mono text-xs sm:text-[13px] font-extrabold text-[var(--dts-ink)] leading-snug">
+          <h3 className="font-mono text-[12px] font-extrabold text-[var(--dts-ink)] leading-snug">
             {pickText(info.title, lang)}
           </h3>
         </div>
@@ -468,7 +474,7 @@ export const StageEntityInspectorCard: React.FC<{
           type="button"
           onClick={onClose}
           aria-label="Close inspector"
-          className="rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-1 text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]"
+          className="rounded-md border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-0.5 text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)] cursor-pointer"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -477,91 +483,104 @@ export const StageEntityInspectorCard: React.FC<{
       {liveSlot ? (
         <section
           aria-live="off"
-          className="border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3.5 py-2"
+          className="border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3 py-1.5"
         >
-          <div className="mb-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+          <div className="mb-0.5 font-mono text-[9px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
             {WORKBENCH_I18N[lang].live.inspector.title}
           </div>
           {liveSlot}
         </section>
       ) : null}
 
-      {/* Body: What / How / Why / Tips & Case Study */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3.5 space-y-2.5 text-[12px] leading-relaxed">
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-green-ink)]">
-            <HelpCircle className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'What is it?' : '1. Đây là gì?'}</span>
-          </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.what, lang)}</p>
-        </div>
+      {/* Concise Default Body + Optional Expandable Deep-Dive */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 space-y-2 text-[11.5px] leading-snug">
+        <p className="text-[var(--dts-ink-soft)]">{pickText(info.what, lang)}</p>
 
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-blue-ink)]">
-            <Cpu className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'How it works' : '2. Cơ chế hoạt động'}</span>
-          </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.how, lang)}</p>
-        </div>
-
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-purple-ink)]">
-            <BookOpen className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'Why does it matter?' : '3. Tại sao lại thế?'}</span>
-          </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.why, lang)}</p>
-        </div>
-
-        {info.tipOrCase && (
-          <div className="rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-amber-soft)] p-2.5 text-[var(--dts-amber-ink)]">
-            <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider">
-              <Lightbulb className="h-3 w-3 shrink-0" />
-              <span>
-                {lang === 'en' ? 'Tips & Real-World Case' : 'Mẹo thực chiến & Case Study'}
-              </span>
+        {expanded && (
+          <div className="space-y-2 pt-1 border-t border-[var(--dts-border-soft)]">
+            <div>
+              <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-blue-ink)]">
+                <Cpu className="h-3 w-3 shrink-0" />
+                <span>{lang === 'en' ? 'How it works' : 'Cơ chế hoạt động'}</span>
+              </div>
+              <p className="text-[var(--dts-ink-soft)]">{pickText(info.how, lang)}</p>
             </div>
-            <p className="text-[11.5px] leading-relaxed">
-              {pickText(info.tipOrCase, lang)}
-            </p>
+
+            <div>
+              <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-purple-ink)]">
+                <BookOpen className="h-3 w-3 shrink-0" />
+                <span>{lang === 'en' ? 'Why it matters' : 'Vai trò kiến trúc'}</span>
+              </div>
+              <p className="text-[var(--dts-ink-soft)]">{pickText(info.why, lang)}</p>
+            </div>
+
+            {info.tipOrCase && (
+              <div className="rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-amber-soft)] p-2 text-[var(--dts-amber-ink)]">
+                <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider">
+                  <Lightbulb className="h-3 w-3 shrink-0" />
+                  <span>{lang === 'en' ? 'Practical Tip' : 'Mẹo thực tế'}</span>
+                </div>
+                <p className="text-[11px] leading-snug">
+                  {pickText(info.tipOrCase, lang)}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className="border-t border-[var(--dts-border-soft)] bg-[var(--dts-panel)] px-3.5 py-1.5 font-mono text-[10px] text-[var(--dts-ink-muted)] flex items-center gap-1.5">
-        <Sparkles className="h-3 w-3 shrink-0" />
-        <span>
-          {lang === 'en'
-            ? 'Click any other block, connector, or tag to inspect'
-            : 'Nhấn vào bất kỳ khối, đường nối hoặc nhãn nào khác để đối chiếu'}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between border-t border-[var(--dts-border-soft)] bg-[var(--dts-panel)] px-3 py-1.5 font-mono text-[10px] font-bold text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)] cursor-pointer"
+      >
+        <span className="inline-flex items-center gap-1">
+          <HelpCircle className="h-3 w-3 shrink-0" />
+          {expanded
+            ? lang === 'en'
+              ? 'Collapse details'
+              : 'Thu gọn chi tiết'
+            : lang === 'en'
+              ? 'Mechanism & practical tips'
+              : 'Xem cơ chế & mẹo thực tế'}
         </span>
-      </div>
+        {expanded ? (
+          <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+        )}
+      </button>
     </div>
   );
 };
 
 /**
- * Viewport-level Portal for StageEntityInspectorCard so its height is NEVER clipped
- * by a short SVG diagram container, while staying anchored near the stage on desktop
- * and presenting as an ergonomic sheet on mobile/tablet.
+ * Compact Corner Popover Portal:
+ * Anchors neatly in the opposite corner from the clicked node so it NEVER obscures the diagram,
+ * and closes automatically when clicking anywhere outside or pressing Escape.
  */
 export const StageInspectorPortal: React.FC<{
   info: StageInspectorInfo;
   lang: WorkbenchLang;
   theme: WorkbenchTheme;
   anchorRef: React.RefObject<HTMLElement | null>;
+  preferLeft?: boolean;
   onClose: () => void;
   liveSlot?: React.ReactNode;
-}> = ({ info, lang, theme, anchorRef, onClose, liveSlot }) => {
+}> = ({ info, lang, theme, anchorRef, preferLeft = false, onClose, liveSlot }) => {
+  const cardWrapRef = useRef<HTMLDivElement | null>(null);
   const [layout, setLayout] = useState<{
     isMobile: boolean;
-    right: number;
-    bottom: number;
+    left?: number;
+    right?: number;
+    top?: number;
+    bottom?: number;
     maxH: number;
   }>(() => ({
     isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
     right: 20,
-    bottom: 24,
-    maxH: 520,
+    top: 80,
+    maxH: 360,
   }));
 
   useEffect(() => {
@@ -575,20 +594,21 @@ export const StageInspectorPortal: React.FC<{
           isMobile,
           right: 12,
           bottom: 112,
-          maxH: Math.max(280, Math.min(500, Math.floor(vh * 0.66))),
+          maxH: Math.max(240, Math.min(360, Math.floor(vh * 0.52))),
         });
         return;
       }
 
-      const right = Math.max(14, Math.min(vw - 410, Math.round(vw - rect.right + 10)));
-      const bottom = Math.max(16, Math.min(vh - 300, Math.round(vh - rect.bottom + 10)));
-      const availableAbove = vh - bottom - 18;
-      setLayout({
-        isMobile: false,
-        right,
-        bottom,
-        maxH: Math.max(300, Math.min(550, Math.floor(availableAbove))),
-      });
+      const cardW = 292;
+      const top = Math.max(12, Math.round(rect.top + 38));
+      const maxH = Math.max(210, Math.min(370, Math.floor(vh - top - 20)));
+      if (preferLeft) {
+        const left = Math.max(12, Math.min(vw - cardW - 12, Math.round(rect.left + 10)));
+        setLayout({ isMobile: false, left, top, maxH });
+      } else {
+        const right = Math.max(12, Math.min(vw - cardW - 12, Math.round(vw - rect.right + 10)));
+        setLayout({ isMobile: false, right, top, maxH });
+      }
     };
 
     updatePosition();
@@ -598,7 +618,7 @@ export const StageInspectorPortal: React.FC<{
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [anchorRef, info]);
+  }, [anchorRef, info, preferLeft]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -607,8 +627,19 @@ export const StageInspectorPortal: React.FC<{
         onClose();
       }
     };
+    const onOutsideDown = (e: PointerEvent) => {
+      const target = e.target as Element | null;
+      if (!target) return;
+      if (cardWrapRef.current?.contains(target)) return;
+      if (target.closest('[data-iso-interactive="true"], [data-mem-interactive="true"]')) return;
+      onClose();
+    };
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener('pointerdown', onOutsideDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('pointerdown', onOutsideDown, true);
+    };
   }, [onClose]);
 
   if (typeof document === 'undefined') return null;
@@ -623,10 +654,11 @@ export const StageInspectorPortal: React.FC<{
       {layout.isMobile && (
         <div
           onClick={onClose}
-          className="pointer-events-auto absolute inset-0 bg-black/25 backdrop-blur-[1px]"
+          className="pointer-events-auto absolute inset-0 bg-black/20 backdrop-blur-[1px]"
         />
       )}
       <div
+        ref={cardWrapRef}
         data-no-pan="true"
         data-allow-select="true"
         onClick={(e) => e.stopPropagation()}
@@ -638,9 +670,11 @@ export const StageInspectorPortal: React.FC<{
                 bottom: 'calc(env(safe-area-inset-bottom, 0px) + 114px)',
               }
             : {
-                right: `${layout.right}px`,
-                bottom: `${layout.bottom}px`,
-                width: '396px',
+                ...(layout.left !== undefined ? { left: `${layout.left}px` } : {}),
+                ...(layout.right !== undefined ? { right: `${layout.right}px` } : {}),
+                ...(layout.top !== undefined ? { top: `${layout.top}px` } : {}),
+                ...(layout.bottom !== undefined ? { bottom: `${layout.bottom}px` } : {}),
+                width: '292px',
               }
         }
         className="pointer-events-auto fixed flex justify-center sm:justify-end"

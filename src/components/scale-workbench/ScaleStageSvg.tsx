@@ -179,9 +179,9 @@ function splitShortLines(raw: string): string[] {
 function getGroundOffset(shape: LegacyNodeShape): number {
   const kind = normalizeShape(shape);
   if (kind === 'block') return 22;
-  if (kind === 'db') return 21;
-  if (kind === 'device') return 16;
-  return 14;
+  if (kind === 'db') return 16;
+  if (kind === 'device') return 12;
+  return 10;
 }
 
 function getGroundCenter(node: { x: number; y: number; shape: LegacyNodeShape }): Pt {
@@ -300,7 +300,7 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const gys = nodes.map((nd) => nd.y + getGroundOffset(nd.shape));
     const cx = (Math.min(...gxs) + Math.max(...gxs)) / 2;
     const cy = (Math.min(...gys) + Math.max(...gys)) / 2;
-    const spread = 1.26;
+    const spread = spanX >= 360 || spanY >= 150 ? 1.04 : 1.16;
     return nodes.map((nd) => {
       const gOff = getGroundOffset(nd.shape);
       const gx = cx + (nd.x - cx) * spread;
@@ -322,8 +322,8 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
   if (n === 2) {
     const ordered = [...nodes].sort((a, b) => a.x - b.x);
     const map = new Map<string, StageNode>();
-    map.set(ordered[0].id, placeAtGround(ordered[0], -128, 64));
-    map.set(ordered[1].id, placeAtGround(ordered[1], 128, -64));
+    map.set(ordered[0].id, placeAtGround(ordered[0], -126, 63));
+    map.set(ordered[1].id, placeAtGround(ordered[1], 126, -63));
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
 
@@ -344,32 +344,29 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const map = new Map<string, StageNode>();
 
     if ((outDeg.get(n0.id) ?? 0) >= 2 && !links.some((l) => l.from === n1.id && l.to === n2.id)) {
-      map.set(n0.id, placeAtGround(n0, -172, 56));
-      map.set(n1.id, placeAtGround(n1, 56, -58));
-      map.set(n2.id, placeAtGround(n2, 176, 52));
+      map.set(n0.id, placeAtGround(n0, -168, 52));
+      map.set(n1.id, placeAtGround(n1, 48, -56));
+      map.set(n2.id, placeAtGround(n2, 160, 52));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((inDeg.get(n2.id) ?? 0) >= 2 && !links.some((l) => l.from === n0.id && l.to === n1.id)) {
-      map.set(n0.id, placeAtGround(n0, -96, -80));
-      map.set(n1.id, placeAtGround(n1, -186, 80));
-      map.set(n2.id, placeAtGround(n2, 144, 40));
+      map.set(n0.id, placeAtGround(n0, -96, -72));
+      map.set(n1.id, placeAtGround(n1, -180, 68));
+      map.set(n2.id, placeAtGround(n2, 136, 32));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    const variant = hashIds(sorted) % 3;
+    // Chuẩn bố cục góc vuông isometric 2:1 (SW -> NE -> SE như DTS) gọn gàng, dành khoảng trống góc dưới cho bảng ghi chú
+    const variant = hashIds(sorted) % 2;
     if (variant === 0) {
-      map.set(n0.id, placeAtGround(n0, -226, 62));
-      map.set(n1.id, placeAtGround(n1, 0, -51));
-      map.set(n2.id, placeAtGround(n2, 226, 62));
-    } else if (variant === 1) {
-      map.set(n0.id, placeAtGround(n0, -224, -46));
-      map.set(n1.id, placeAtGround(n1, 0, 66));
-      map.set(n2.id, placeAtGround(n2, 224, -46));
+      map.set(n0.id, placeAtGround(n0, -176, 48));
+      map.set(n1.id, placeAtGround(n1, -16, -32));
+      map.set(n2.id, placeAtGround(n2, 144, 48));
     } else {
-      map.set(n0.id, placeAtGround(n0, -216, 88));
-      map.set(n1.id, placeAtGround(n1, 0, -20));
-      map.set(n2.id, placeAtGround(n2, 216, -128));
+      map.set(n0.id, placeAtGround(n0, -176, -24));
+      map.set(n1.id, placeAtGround(n1, -16, 56));
+      map.set(n2.id, placeAtGround(n2, 144, -24));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -380,40 +377,41 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const map = new Map<string, StageNode>();
 
     if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0) {
-      map.set(n0.id, placeAtGround(n0, -188, 56));
-      map.set(n1.id, placeAtGround(n1, 24, -104));
-      map.set(n2.id, placeAtGround(n2, 136, -48));
-      map.set(n3.id, placeAtGround(n3, 248, 8));
+      map.set(n0.id, placeAtGround(n0, -180, 56));
+      map.set(n1.id, placeAtGround(n1, 16, -96));
+      map.set(n2.id, placeAtGround(n2, 108, -50));
+      map.set(n3.id, placeAtGround(n3, 200, -4));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((outDeg.get(n1.id) ?? 0) >= 2) {
-      map.set(n0.id, placeAtGround(n0, -228, 62));
-      map.set(n1.id, placeAtGround(n1, -16, -44));
-      map.set(n2.id, placeAtGround(n2, 196, -90));
-      map.set(n3.id, placeAtGround(n3, 196, 62));
+      map.set(n0.id, placeAtGround(n0, -208, 56));
+      map.set(n1.id, placeAtGround(n1, -32, -32));
+      map.set(n2.id, placeAtGround(n2, 152, -84));
+      map.set(n3.id, placeAtGround(n3, 152, 56));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((inDeg.get(n2.id) ?? 0) >= 2) {
-      map.set(n0.id, placeAtGround(n0, -172, -84));
-      map.set(n1.id, placeAtGround(n1, -214, 84));
-      map.set(n2.id, placeAtGround(n2, 36, 20));
-      map.set(n3.id, placeAtGround(n3, 248, -86));
+      map.set(n0.id, placeAtGround(n0, -164, -76));
+      map.set(n1.id, placeAtGround(n1, -200, 72));
+      map.set(n2.id, placeAtGround(n2, 28, 16));
+      map.set(n3.id, placeAtGround(n3, 204, -72));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
+    // Thay vì trải ngang zíc-zắc / \ / tốn 590px, đi dọc trục chính NE rồi rẽ vuông góc SE (gọn 408px, có chiều sâu 2.5D)
     const flip = hashIds(sorted) % 2 === 1;
     if (!flip) {
-      map.set(n0.id, placeAtGround(n0, -294, 58));
-      map.set(n1.id, placeAtGround(n1, -98, -40));
-      map.set(n2.id, placeAtGround(n2, 98, 58));
-      map.set(n3.id, placeAtGround(n3, 294, -40));
+      map.set(n0.id, placeAtGround(n0, -188, 68));
+      map.set(n1.id, placeAtGround(n1, -52, 0));
+      map.set(n2.id, placeAtGround(n2, 84, -68));
+      map.set(n3.id, placeAtGround(n3, 220, 0));
     } else {
-      map.set(n0.id, placeAtGround(n0, -294, -32));
-      map.set(n1.id, placeAtGround(n1, -98, 66));
-      map.set(n2.id, placeAtGround(n2, 98, -32));
-      map.set(n3.id, placeAtGround(n3, 294, 66));
+      map.set(n0.id, placeAtGround(n0, -204, 48));
+      map.set(n1.id, placeAtGround(n1, -68, -20));
+      map.set(n2.id, placeAtGround(n2, 68, 48));
+      map.set(n3.id, placeAtGround(n3, 204, -20));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -470,19 +468,62 @@ function sampleSegmentPoint(pts: Pt[], t: number): Pt {
   };
 }
 
+function samplePolylineFromEnd(pts: Pt[], distFromEnd: number): Pt {
+  if (pts.length === 0) return { x: 0, y: 0 };
+  if (pts.length === 1) return pts[0];
+  let rem = Math.max(0, distFromEnd);
+  for (let i = pts.length - 1; i >= 1; i--) {
+    const p1 = pts[i];
+    const p0 = pts[i - 1];
+    const segLen = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    if (rem <= segLen || i === 1) {
+      const u = segLen > 1e-3 ? Math.min(1, rem / segLen) : 0;
+      return {
+        x: p1.x + (p0.x - p1.x) * u,
+        y: p1.y + (p0.y - p1.y) * u,
+      };
+    }
+    rem -= segLen;
+  }
+  return pts[0];
+}
+
+function getPolylineSegmentNormalAt(pts: Pt[], t: number): Pt {
+  const pA = sampleSegmentPoint(pts, Math.max(0, t - 0.04));
+  const pB = sampleSegmentPoint(pts, Math.min(1, t + 0.04));
+  const dx = pB.x - pA.x;
+  const dy = pB.y - pA.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // Pháp tuyến hướng lên trên (ny <= 0) để nhãn nổi gọn bên cạnh dây nối như DTS
+  let nx = -dy / len;
+  let ny = dx / len;
+  if (ny > 0) {
+    nx = -nx;
+    ny = -ny;
+  }
+  return { x: nx, y: ny };
+}
+
 /**
  * Pure 2:1 grid-aligned isometric elbow router:
- * Decomposes every connector onto exact SE (+2,+1) and NE (+2,-1) isometric floor axes
- * and automatically chooses the elbow that routes cleanly AROUND intermediate blocks!
+ * Decomposes every connector onto exact SE (+2,+1) and NE (+2,-1) isometric floor axes,
+ * distributes fan-out / fan-in across distinct walls (like DTS Fan-out), and trims flush!
  */
 function buildIsoLink(
   link: StageLink,
   from: { id: string; x: number; y: number; shape: LegacyNodeShape },
   to: { id: string; x: number; y: number; shape: LegacyNodeShape },
-  allNodes: ReadonlyArray<{ id: string; x: number; y: number; shape: LegacyNodeShape }> = []
+  allNodes: ReadonlyArray<{ id: string; x: number; y: number; shape: LegacyNodeShape }> = [],
+  degreeHint?: { outFrom: number; inTo: number; startSlotOffset?: Pt; endSlotOffset?: Pt }
 ): { d: string; pts: Pt[]; labelPos: Pt } {
-  const c0 = getGroundCenter(from);
-  const c1 = getGroundCenter(to);
+  const rawC0 = getGroundCenter(from);
+  const rawC1 = getGroundCenter(to);
+  const c0: Pt = degreeHint?.startSlotOffset
+    ? { x: rawC0.x + degreeHint.startSlotOffset.x, y: rawC0.y + degreeHint.startSlotOffset.y }
+    : rawC0;
+  const c1: Pt = degreeHint?.endSlotOffset
+    ? { x: rawC1.x + degreeHint.endSlotOffset.x, y: rawC1.y + degreeHint.endSlotOffset.y }
+    : rawC1;
   const dx = c1.x - c0.x;
   const dy = c1.y - c0.y;
 
@@ -523,6 +564,12 @@ function buildIsoLink(
       useNE = penNE < penSE;
     } else if (link.curve !== undefined) {
       useNE = link.curve < 0;
+    } else if (degreeHint && degreeHint.outFrom >= 2 && degreeHint.inTo <= 1) {
+      // Fan-out (vd LB -> App 1..3): rẽ ngang NW/SE trước rồi tiến thẳng NE vào mặt trước mỗi server
+      useNE = Math.abs(b) < Math.abs(a) * 0.45;
+    } else if (degreeHint && degreeHint.inTo >= 2 && degreeHint.outFrom <= 1) {
+      // Fan-in (vd App 1..3 -> Cache): tiến thẳng NE ra khỏi mặt sau mỗi server rồi hội tụ NW/SE
+      useNE = Math.abs(b) >= Math.abs(a) * 0.45;
     } else {
       useNE = dy < -28;
     }
@@ -536,8 +583,9 @@ function buildIsoLink(
   const fLen = Math.hypot(fdx, fdy) || 1;
   const fux = fdx / fLen;
   const fuy = fdy / fLen;
+  // Tucked -1.2px behind outer border (since layer-links sits beneath layer-ents) so zero air gap ever appears
   const startTrim = Math.min(
-    getBoundaryDistAlongDir(from.shape, fux, fuy, 2),
+    Math.max(8, getBoundaryDistAlongDir(from.shape, fux, fuy, -1.2)),
     fLen * 0.46
   );
   const pStart: Pt = {
@@ -552,7 +600,7 @@ function buildIsoLink(
   const lux = ldx / lLen;
   const luy = ldy / lLen;
   const endTrim = Math.min(
-    getBoundaryDistAlongDir(to.shape, -lux, -luy, 4.5),
+    getBoundaryDistAlongDir(to.shape, -lux, -luy, 2.8),
     lLen * 0.46
   );
   const pEnd: Pt = {
@@ -563,9 +611,10 @@ function buildIsoLink(
   const finalPts =
     waypoints.length === 2 ? [pStart, pEnd] : [pStart, waypoints[1], pEnd];
 
-  let labelPos: Pt;
+  let midAnchor: Pt;
+  let anchorT = 0.5;
   if (finalPts.length === 2) {
-    labelPos = {
+    midAnchor = {
       x: (finalPts[0].x + finalPts[1].x) / 2,
       y: (finalPts[0].y + finalPts[1].y) / 2,
     };
@@ -578,17 +627,27 @@ function buildIsoLink(
       finalPts[2].x - finalPts[1].x,
       finalPts[2].y - finalPts[1].y
     );
-    labelPos =
-      seg1 >= seg2
-        ? {
-            x: (finalPts[0].x + finalPts[1].x) / 2,
-            y: (finalPts[0].y + finalPts[1].y) / 2,
-          }
-        : {
-            x: (finalPts[1].x + finalPts[2].x) / 2,
-            y: (finalPts[1].y + finalPts[2].y) / 2,
-          };
+    const total = seg1 + seg2 || 1;
+    if (seg1 >= seg2) {
+      midAnchor = {
+        x: (finalPts[0].x + finalPts[1].x) / 2,
+        y: (finalPts[0].y + finalPts[1].y) / 2,
+      };
+      anchorT = (seg1 * 0.5) / total;
+    } else {
+      midAnchor = {
+        x: (finalPts[1].x + finalPts[2].x) / 2,
+        y: (finalPts[1].y + finalPts[2].y) / 2,
+      };
+      anchorT = (seg1 + seg2 * 0.5) / total;
+    }
   }
+
+  const nrm = getPolylineSegmentNormalAt(finalPts, anchorT);
+  const labelPos: Pt = {
+    x: midAnchor.x + nrm.x * 24,
+    y: midAnchor.y + nrm.y * 24,
+  };
 
   return {
     d: roundedPolylinePath(finalPts, 14),
@@ -688,6 +747,7 @@ function getPalette(isDark: boolean): {
   pillInk: string;
   slab: FaceGrad;
   dead: FaceGrad;
+  overload: FaceGrad;
   tones: Record<IsoTone, FaceGrad>;
 } {
   if (isDark) {
@@ -703,6 +763,7 @@ function getPalette(isDark: boolean): {
       pillInk: '#f2e9dc',
       slab: { top0: '#38322b', top1: '#302b25', side0: '#29241f', side1: '#221e1a' },
       dead: { top0: '#49443e', top1: '#3e3a34', side0: '#33302b', side1: '#2a2723' },
+      overload: { top0: '#663840', top1: '#552d34', side0: '#46242a', side1: '#381c21' },
       tones: {
         orange: { top0: '#6e4527', top1: '#5d391f', side0: '#4e301a', side1: '#402614' },
         green: { top0: '#3d5430', top1: '#334728', side0: '#2a3b20', side1: '#22301a' },
@@ -727,6 +788,7 @@ function getPalette(isDark: boolean): {
     pillInk: '#211e1b',
     slab: { top0: '#f7f0e7', top1: '#f0e7dc', side0: '#ece2d5', side1: '#e3d7c8' },
     dead: { top0: '#d0c9bf', top1: '#c2bab0', side0: '#b3aba0', side1: '#a49b90' },
+    overload: { top0: '#ecd4d8', top1: '#dec0c6', side0: '#d1aeb5', side1: '#c299a2' },
     tones: {
       orange: { top0: '#fee6cc', top1: '#fcd4ad', side0: '#f9c697', side1: '#f3b47f' },
       green: { top0: '#e2f2d7', top1: '#d1e9c2', side0: '#c3e1b2', side1: '#b3d79f' },
@@ -1062,6 +1124,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const [selectedInfo, setSelectedInfo] = useState<{
     key: string;
     info: StageInspectorInfo;
+    preferLeft?: boolean;
   } | null>(null);
 
   const [exitingNodes, setExitingNodes] = useState<StageNode[]>([]);
@@ -1090,6 +1153,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const pathRefs = useRef<Map<string, SVGPathElement>>(new Map());
   const linkPillRefs = useRef<Map<string, SVGGElement>>(new Map());
   const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const staticQueueRefs = useRef<Map<string, SVGGElement>>(new Map());
   const zoneRefs = useRef<Map<string, SVGGElement>>(new Map());
   const noteCardRef = useRef<SVGGElement | null>(null);
 
@@ -1209,29 +1273,30 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       obstacles: RectBox[],
       placedPills: RectBox[]
     ): Pt => {
-      const hw = Math.max(34, (txt.length * 6.4 + 22) / 2) + 3;
-      const hh = 12.5;
-      const candidates: { pt: Pt; distPenalty: number }[] = [
-        { pt: defaultPos, distPenalty: 0 },
-      ];
-      const offsets: Array<[number, number]> = [
-        [0, 0],
-        [0, -18],
-        [0, 18],
-        [-18, -20],
-        [18, -20],
-        [-18, 20],
-        [18, 20],
-        [0, -30],
-        [0, 30],
-      ];
+      const hw = Math.max(32, (txt.length * 6.2 + 20) / 2) + 4;
+      const hh = 13;
+      const candidates: { pt: Pt; distPenalty: number }[] = [];
+
+      // Luôn đặt pill tách hẳn sang cạnh bên vuông góc với dây nối (24..34px), TUYỆT ĐỐI không đè lên [0,0] giữa dây!
       for (const t of [0.5, 0.42, 0.58, 0.34, 0.66]) {
         const base = sampleSegmentPoint(rawPts, t);
-        for (const [dxOff, dyOff] of offsets) {
-          candidates.push({
-            pt: { x: base.x + dxOff, y: base.y + dyOff },
-            distPenalty: Math.abs(t - 0.5) * 18 + Math.hypot(dxOff, dyOff) * 0.42,
-          });
+        const nrm = getPolylineSegmentNormalAt(rawPts, t);
+        const tx = -nrm.y;
+        const ty = nrm.x;
+        for (const perpDist of [24, -24, 32, -32]) {
+          for (const tangShift of [0, -14, 14]) {
+            candidates.push({
+              pt: {
+                x: base.x + nrm.x * perpDist + tx * tangShift,
+                y: base.y + nrm.y * perpDist + ty * tangShift,
+              },
+              distPenalty:
+                Math.abs(t - 0.5) * 22 +
+                (perpDist < 0 ? 3 : 0) +
+                Math.abs(perpDist - 24) * 0.35 +
+                Math.abs(tangShift) * 0.25,
+            });
+          }
         }
       }
 
@@ -1246,12 +1311,12 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         };
         let overlap = 0;
         for (const obs of obstacles) overlap += rectOverlapArea(box, obs);
-        for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.5;
-        const score = overlap * 100 + cand.distPenalty;
+        for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.8;
+        const score = overlap * 120 + cand.distPenalty;
         if (score < bestScore) {
           bestScore = score;
           best = cand.pt;
-          if (overlap === 0 && cand.distPenalty === 0) break;
+          if (overlap === 0 && cand.distPenalty < 1) break;
         }
       }
 
@@ -1267,55 +1332,98 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   );
 
   const builtLinks = useMemo(() => {
+    const outDeg = new Map<string, number>();
+    const inDeg = new Map<string, number>();
+    for (const l of scene.links) {
+      outDeg.set(l.from, (outDeg.get(l.from) ?? 0) + 1);
+      inDeg.set(l.to, (inDeg.get(l.to) ?? 0) + 1);
+    }
+
     const obstacles: RectBox[] = [];
     for (const n of expandedNodes) {
       const kind = normalizeShape(n.shape);
+      const hasLoad = typeof n.loadPct === 'number' || Boolean(n.dead);
+      const hasBadge = Boolean(n.badge);
       obstacles.push({
-        x0: n.x - (kind === 'db' ? 42 : kind === 'block' ? 68 : 62),
-        y0: n.y - (kind === 'block' ? 44 : kind === 'db' ? 40 : 32),
-        x1: n.x + (kind === 'db' ? 42 : kind === 'block' ? 68 : 62),
-        y1: n.y + (kind === 'block' ? 48 : 40),
+        x0: n.x - (kind === 'db' ? 40 : kind === 'block' ? 64 : 62),
+        y0: n.y - (kind === 'block' ? 44 : kind === 'db' ? 34 : 26),
+        x1: n.x + (kind === 'db' ? 40 : kind === 'block' ? 64 : 62),
+        y1: n.y + (kind === 'block' ? 52 : kind === 'db' ? 34 : 44),
       });
+      // Top pills (loadPct và badge xếp chồng phía trên cho block & db)
+      if (kind === 'block' || kind === 'db') {
+        const baseTopY = kind === 'block' ? n.y - 53 : n.y - 44;
+        if (hasLoad) {
+          obstacles.push({ x0: n.x - 45, y0: baseTopY - 12, x1: n.x + 45, y1: baseTopY + 12 });
+        }
+        if (hasBadge && n.badge) {
+          const bTxt = pickText(n.badge.text, lang);
+          const bHw = Math.max(40, (bTxt.length * 6.2 + 22) / 2);
+          const bY = hasLoad ? baseTopY - 23 : baseTopY;
+          obstacles.push({ x0: n.x - bHw, y0: bY - 12, x1: n.x + bHw, y1: bY + 12 });
+        }
+      }
+      // Bottom name pill (chỉ db, crowd, device mới có 1 nhãn tên phía dưới)
       if (kind !== 'block') {
         const lbl = pickText(n.label, lang);
-        const hw = Math.max(44, (lbl.length * 6.4 + 24) / 2);
-        const py = kind === 'db' ? n.y + 50 : n.y + 56;
-        obstacles.push({ x0: n.x - hw, y0: py - 13, x1: n.x + hw, y1: py + 13 });
-      } else if (n.badge || n.sublabel || n.dead) {
-        const txt = n.badge
-          ? pickText(n.badge.text, lang)
-          : n.sublabel
-            ? pickText(n.sublabel, lang)
-            : 'DOWN';
-        const hw = Math.max(44, (txt.length * 6.4 + 26) / 2);
-        obstacles.push({ x0: n.x - hw, y0: n.y + 51, x1: n.x + hw, y1: n.y + 77 });
-      }
-      if (typeof n.loadPct === 'number' || n.dead) {
-        obstacles.push({ x0: n.x - 42, y0: n.y - 68, x1: n.x + 42, y1: n.y - 40 });
+        const hw = Math.max(42, (lbl.length * 6.2 + 22) / 2);
+        const py = kind === 'db' ? n.y + 42 : n.y + 56;
+        obstacles.push({ x0: n.x - hw, y0: py - 12, x1: n.x + hw, y1: py + 12 });
       }
     }
 
-    const placedPills: RectBox[] = [];
-    return scene.links
+    const rawBuilt = scene.links
       .map((l) => {
         const a = nodeMap.get(l.from);
         const b = nodeMap.get(l.to);
         if (!a || !b) return null;
-        const raw = buildIsoLink(l, a, b, expandedNodes);
-        if (!l.label) return { link: l, ...raw };
-        const txt = pickText(l.label, lang);
-        if (!txt) return { link: l, ...raw };
-        const best = resolveLinkLabelPlacement(
-          raw.pts,
-          raw.labelPos,
-          txt,
-          obstacles,
-          placedPills
-        );
-        return { link: l, d: raw.d, pts: raw.pts, labelPos: best };
+        const degHint = {
+          outFrom: outDeg.get(l.from) ?? 1,
+          inTo: inDeg.get(l.to) ?? 1,
+        };
+        const raw = buildIsoLink(l, a, b, expandedNodes, degHint);
+        const toLoad = !frameSource && typeof b.loadPct === 'number' && !b.dead ? b.loadPct : 0;
+        const st = l.style ?? 'solid';
+        const queueCount =
+          st === 'off' || st === 'cut'
+            ? 0
+            : toLoad >= 95
+              ? 5
+              : toLoad >= 85
+                ? 4
+                : toLoad >= 75
+                  ? 3
+                  : toLoad >= 68
+                    ? 2
+                    : 0;
+        const hasDrop = queueCount > 0 && toLoad >= 95;
+        return { link: l, ...raw, degHint, queueCount, hasDrop };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-  }, [scene.links, nodeMap, expandedNodes, lang, resolveLinkLabelPlacement]);
+
+    // Đưa cả các đoạn dây nối vào danh sách vật cản để nhãn đường nối không bao giờ đè lên bất kỳ dây nào
+    for (const rb of rawBuilt) {
+      for (const s of [0.16, 0.32, 0.5, 0.68, 0.84]) {
+        const wp = sampleSegmentPoint(rb.pts, s);
+        obstacles.push({ x0: wp.x - 8, y0: wp.y - 8, x1: wp.x + 8, y1: wp.y + 8 });
+      }
+    }
+
+    const placedPills: RectBox[] = [];
+    return rawBuilt.map((rb) => {
+      if (!rb.link.label) return rb;
+      const txt = pickText(rb.link.label, lang);
+      if (!txt) return rb;
+      const best = resolveLinkLabelPlacement(
+        rb.pts,
+        rb.labelPos,
+        txt,
+        obstacles,
+        placedPills
+      );
+      return { ...rb, labelPos: best };
+    });
+  }, [scene.links, nodeMap, expandedNodes, lang, frameSource, resolveLinkLabelPlacement]);
 
   const { baseBounds, noteCardLayout } = useMemo(() => {
     if (expandedNodes.length === 0) {
@@ -1332,17 +1440,20 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     const obsList: RectBox[] = [];
 
     for (const n of expandedNodes) {
-      const topReach = typeof n.loadPct === 'number' || n.dead ? 68 : 48;
-      const botReach =
-        normalizeShape(n.shape) !== 'block' || n.badge || n.sublabel ? 76 : 54;
-      minX = Math.min(minX, n.x - 76);
-      maxX = Math.max(maxX, n.x + 76);
+      const kind = normalizeShape(n.shape);
+      const hasLoad = typeof n.loadPct === 'number' || Boolean(n.dead);
+      const hasBadge = Boolean(n.badge);
+      const topReach =
+        hasLoad && hasBadge ? 90 : hasLoad || hasBadge ? 68 : 48;
+      const botReach = kind === 'block' ? 54 : kind === 'db' ? 58 : 72;
+      minX = Math.min(minX, n.x - 74);
+      maxX = Math.max(maxX, n.x + 74);
       minY = Math.min(minY, n.y - topReach);
       maxY = Math.max(maxY, n.y + botReach);
       obsList.push({
-        x0: n.x - 82,
+        x0: n.x - 80,
         y0: n.y - topReach - 4,
-        x1: n.x + 82,
+        x1: n.x + 80,
         y1: n.y + botReach + 6,
       });
     }
@@ -1356,21 +1467,23 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     }
     for (const bl of builtLinks) {
       for (const p of bl.pts) {
-        minX = Math.min(minX, p.x - 20);
-        maxX = Math.max(maxX, p.x + 20);
-        minY = Math.min(minY, p.y - 18);
-        maxY = Math.max(maxY, p.y + 18);
+        minX = Math.min(minX, p.x - 18);
+        maxX = Math.max(maxX, p.x + 18);
+        minY = Math.min(minY, p.y - 16);
+        maxY = Math.max(maxY, p.y + 16);
       }
-      minX = Math.min(minX, bl.labelPos.x - 50);
-      maxX = Math.max(maxX, bl.labelPos.x + 50);
-      minY = Math.min(minY, bl.labelPos.y - 15);
-      maxY = Math.max(maxY, bl.labelPos.y + 15);
-      obsList.push({
-        x0: bl.labelPos.x - 54,
-        y0: bl.labelPos.y - 16,
-        x1: bl.labelPos.x + 54,
-        y1: bl.labelPos.y + 16,
-      });
+      if (bl.link.label) {
+        minX = Math.min(minX, bl.labelPos.x - 48);
+        maxX = Math.max(maxX, bl.labelPos.x + 48);
+        minY = Math.min(minY, bl.labelPos.y - 14);
+        maxY = Math.max(maxY, bl.labelPos.y + 14);
+        obsList.push({
+          x0: bl.labelPos.x - 52,
+          y0: bl.labelPos.y - 16,
+          x1: bl.labelPos.x + 52,
+          y1: bl.labelPos.y + 16,
+        });
+      }
     }
 
     let resolvedNote: {
@@ -1380,21 +1493,49 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       h: number;
       title: string;
       lines: Array<{ text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>;
+      chart?: { utilPct: number; xLabel: string; yLabel: string };
     } | null = null;
 
     // Hide inline note card on mobile / narrow stages (< 560px) so 100% of space belongs to the model
-    if (stageWidth >= 560 && scene.noteCard && scene.noteCard.lines.length > 0) {
+    if (
+      stageWidth >= 560 &&
+      scene.noteCard &&
+      (scene.noteCard.lines.length > 0 || scene.noteCard.chart)
+    ) {
       const titleStr = pickText(scene.noteCard.title, lang);
       const lines = scene.noteCard.lines.map((ln) => ({
         text: pickText(ln.text, lang),
         tone: (ln.tone ?? 'plain') as 'plain' | 'muted' | 'good' | 'bad' | 'amber',
       }));
+      const chart = scene.noteCard.chart
+        ? {
+            utilPct: Math.max(2, Math.min(100, scene.noteCard.chart.utilPct)),
+            xLabel: scene.noteCard.chart.xLabel
+              ? pickText(scene.noteCard.chart.xLabel, lang)
+              : lang === 'en'
+                ? 'utilization →'
+                : 'mức sử dụng →',
+            yLabel: scene.noteCard.chart.yLabel
+              ? pickText(scene.noteCard.chart.yLabel, lang)
+              : lang === 'en'
+                ? 'latency'
+                : 'độ trễ',
+          }
+        : undefined;
       const maxChars = Math.max(
         titleStr.length + 4,
-        ...lines.map((ln) => ln.text.length + (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 3 : 0))
+        ...lines.map(
+          (ln) =>
+            ln.text.length +
+            (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 3 : 0)
+        )
       );
-      const cardW = Math.max(182, Math.min(242, Math.round(maxChars * 5.75 + 26)));
-      const cardH = Math.round(30 + lines.length * 18.5 + 8);
+      const cardW = Math.max(
+        chart ? 208 : 182,
+        Math.min(244, Math.round(maxChars * 5.75 + 26))
+      );
+      const chartBlockH = chart ? 70 : 0;
+      const cardH = Math.round(30 + chartBlockH + lines.length * 18.5 + 8);
 
       const resolveCleanRect = (
         initX: number,
@@ -1454,6 +1595,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         h: cardH,
         title: titleStr,
         lines,
+        chart,
       };
       minX = Math.min(minX, resolvedNote.x - 8);
       maxX = Math.max(maxX, resolvedNote.x + cardW + 8);
@@ -1897,7 +2039,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           const aPos = livePositions.get(l.from);
           const bPos = livePositions.get(l.to);
           if (aPos && bPos) {
-            const liveGeo = buildIsoLink(l, aPos, bPos, liveArr);
+            const liveGeo = buildIsoLink(l, aPos, bPos, liveArr, bl.degHint);
             pEl.setAttribute('d', liveGeo.d);
             hitEl?.setAttribute('d', liveGeo.d);
             measuredLengths.delete(l.id);
@@ -1955,28 +2097,26 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         }
       }
 
-      // F. Flow traffic packets ONLY on links whose draw animation has completed!
+      // F. Flow traffic packets & in-line queue dots ONLY on links whose draw animation has completed!
       if (isPlayingRef.current && scene.packets.length > 0) {
         packetElapsedRef.current += dt;
       }
       const sec = packetElapsedRef.current;
 
-      // Hiệu ứng rung nhẹ (bottleneck shake) cho các node tĩnh có loadPct >= 90 sau khi đã tiếp đất
-      if (!frameSource && isPlayingRef.current) {
-        for (const n of expandedNodes) {
-          if (typeof n.loadPct === 'number' && n.loadPct >= 90) {
-            const plan = nodePlans.get(n.id);
-            if (plan && elapsed > plan.delay + plan.dur) {
-              const outerEl = nodeOuterRefs.current.get(n.id);
-              if (outerEl) {
-                const amp = n.loadPct >= 100 ? 0.95 : 0.55;
-                const shakeX = amp * Math.sin(sec * 2 * Math.PI * 16);
-                outerEl.setAttribute(
-                  'transform',
-                  `translate(${(plan.toX + shakeX).toFixed(2)}, ${plan.toY.toFixed(2)})`
-                );
-              }
-            }
+      const linkQueueStopPx = new Map<string, number>();
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          const lPlan = linkPlans.get(bl.link.id);
+          if (bl.queueCount > 0) {
+            linkQueueStopPx.set(
+              bl.link.id,
+              (bl.hasDrop ? 23 : 12) + bl.queueCount * 10.5
+            );
+          }
+          if (qEl && lPlan) {
+            const fade = elapsed < lPlan.readyAt ? 0 : clamp01((elapsed - lPlan.readyAt) / 260);
+            qEl.setAttribute('opacity', fade.toFixed(2));
           }
         }
       }
@@ -1995,24 +2135,29 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         const totalLen = measureLinkLen(pkt.linkId, pEl);
         if (totalLen <= 1) continue;
 
-        const speed = pkt.speed ?? 0.42;
+        const speed = pkt.speed ?? 0.44;
         const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const t = pkt.reverse ? 1 - phase : phase;
+        const qStop = !pkt.reverse ? (linkQueueStopPx.get(pkt.linkId) ?? 0) : 0;
+        const maxFrac = qStop > 0 ? Math.max(0.24, 1 - qStop / totalLen) : 1;
+        const t = pkt.reverse ? 1 - phase : phase * maxFrac;
         const pt = pEl.getPointAtLength(t * totalLen);
         const fadeInAfterLink = clamp01((elapsed - lPlan.readyAt) / 260);
         const edgeFade =
-          phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
+          phase < 0.08 ? phase / 0.08 : phase > 0.9 ? (1 - phase) / 0.1 : 1;
 
         gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
         gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
       }
 
-      const maxChoreoTime =
-        Math.max(
-          TIMING.exit + TIMING.move + 120,
-          ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 400),
-          ...Array.from(linkPlans.values()).map((p) => p.readyAt + 320)
-        ) || 1200;
+      const isTopologyUnchanged =
+        !isReplay && !hasExits && !hasMoves && enteringSorted.length === 0;
+      const maxChoreoTime = isTopologyUnchanged
+        ? 180
+        : Math.max(
+            TIMING.exit + TIMING.move + 120,
+            ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 360),
+            ...Array.from(linkPlans.values()).map((p) => p.readyAt + 280)
+          ) || 1100;
 
       if (elapsed > maxChoreoTime && choreoSettledAtRef.current === 0) {
         choreoSettledAtRef.current = now;
@@ -2058,18 +2203,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
       packetElapsedRef.current += dt;
       const sec = packetElapsedRef.current;
+      const qStopByLink = new Map<string, number>();
       if (!frameSource) {
-        for (const n of expandedNodes) {
-          if (typeof n.loadPct === 'number' && n.loadPct >= 90) {
-            const outerEl = nodeOuterRefs.current.get(n.id);
-            if (outerEl) {
-              const amp = n.loadPct >= 100 ? 0.95 : 0.55;
-              const shakeX = amp * Math.sin(sec * 2 * Math.PI * 16);
-              outerEl.setAttribute(
-                'transform',
-                `translate(${(n.x + shakeX).toFixed(2)}, ${n.y.toFixed(2)})`
-              );
-            }
+        for (const bl of builtLinks) {
+          if (bl.queueCount > 0) {
+            qStopByLink.set(bl.link.id, (bl.hasDrop ? 23 : 12) + bl.queueCount * 10.5);
           }
         }
       }
@@ -2084,11 +2222,13 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           len = 0;
         }
         if (len <= 1) continue;
-        const speed = pkt.speed ?? 0.42;
+        const speed = pkt.speed ?? 0.44;
         const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const t = pkt.reverse ? 1 - phase : phase;
+        const qStop = !pkt.reverse ? (qStopByLink.get(pkt.linkId) ?? 0) : 0;
+        const maxFrac = qStop > 0 ? Math.max(0.24, 1 - qStop / len) : 1;
+        const t = pkt.reverse ? 1 - phase : phase * maxFrac;
         const pt = pEl.getPointAtLength(t * len);
-        const fade = phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
+        const fade = phase < 0.08 ? phase / 0.08 : phase > 0.9 ? (1 - phase) / 0.1 : 1;
         gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
         gEl.setAttribute('opacity', fade.toFixed(2));
       }
@@ -2096,7 +2236,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, scene.packets]);
+  }, [isPlaying, scene.packets, builtLinks, frameSource]);
 
   /* ============================================================================
    * LIVE-SIM (05 §3.2–3.4): ref map + rAF áp frame. Chỉ chạy khi có frameSource.
@@ -2155,6 +2295,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       pathEls.set(link.id, root.querySelector('[data-r="path"]') as SVGPathElement);
       links.push({
         id: link.id,
+        toNodeId: link.to,
         path: q(root, '[data-r="path"]'),
         err: q(root, '[data-r="err"]'),
         cut: q(root, '[data-r="cut"]'),
@@ -2164,6 +2305,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         lag: q(root, '[data-r="lag"]'),
         lag2: q(root, '[data-r="lag2"]'),
         lagText: q(root, '[data-r="lagText"]'),
+        qdots: q(root, '[data-r="qdots"]'),
+        qdotCircles: Array.from(root.querySelectorAll('[data-r="qd"]')) as unknown as LiveEl[],
+        qdrop: q(root, '[data-r="qdrop"]'),
       });
     }
     const pool: LivePacketEls[] = [];
@@ -2267,6 +2411,28 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 <line x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
                 <line data-r="lag2" x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
                 <text data-r="lagText" x={0} y={-13} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+              </g>
+              <g data-r="qdots" display="none">
+                {[0, 1, 2, 3, 4].map((qi) => (
+                  <circle
+                    key={qi}
+                    data-r="qd"
+                    r={4.2}
+                    fill="#efb041"
+                    stroke={pal.ink}
+                    strokeWidth={1.45}
+                    display="none"
+                  />
+                ))}
+              </g>
+              <g data-r="qdrop" display="none">
+                <circle r={5.4} fill="#e05249" stroke={pal.ink} strokeWidth={1.4} />
+                <path
+                  d="M-2.2,-2.2 L2.2,2.2 M2.2,-2.2 L-2.2,2.2"
+                  stroke="#ffffff"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                />
               </g>
             </g>
           );
@@ -2374,30 +2540,37 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               pathLength={100}
               display="none"
             />
-            <g data-r="bar" transform={`translate(0, ${minY - 12})`} display="none">
-              <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
-              <rect x={-37} y={-10.5} width={74} height={19} rx={9.5} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.3} />
-              <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
-              <rect data-r="barFill" x={-29} y={-4} width={3} height={6} rx={3} fill="#7fc278" />
-              <text data-r="barText" x={29} y={2.4} textAnchor="end" fontSize={9.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+            <g data-r="bar" transform={`translate(0, ${minY - 13})`} display="none">
+              <rect x={-41} y={-8.5} width={82} height={19} rx={9.5} fill={pal.pillShadow} />
+              <rect x={-41} y={-10.5} width={82} height={19} rx={9.5} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.3} />
+              <g transform="translate(-31.5, -1)" fill="none" stroke={pal.ink} strokeWidth={1.25} strokeLinecap="round">
+                <circle r={2.8} />
+                <path d="M0,-4.5V-3.4 M0,3.4V4.5 M-3.9,-2.2L-3,-1.7 M3,1.7L3.9,2.2 M-3.9,2.2L-3,1.7 M3,-1.7L3.9,-2.2" />
+              </g>
+              <rect x={-22} y={-4} width={30} height={6} rx={3} fill={isDark ? '#423b33' : '#e6ddd0'} />
+              <rect data-r="barFill" x={-22} y={-4} width={3} height={6} rx={3} fill="#7fc278" />
+              <text data-r="barText" x={34} y={2.4} textAnchor="end" fontSize={9.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
             </g>
-            <g data-r="pile" transform={`translate(${-maxX - 12}, ${maxY - 6})`} display="none">
-              {Array.from({ length: PILE_MAX }, (_, i) => (
-                <rect
-                  key={i}
-                  data-r="pr"
-                  x={-3}
-                  y={-4 - i * 5.2}
-                  width={6}
-                  height={4}
-                  rx={1}
-                  fill="#f2994a"
-                  stroke={pal.ink}
-                  strokeWidth={0.6}
-                  display="none"
-                />
-              ))}
-              <text data-r="queueText" x={0} y={8} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" display="none" />
+            {/* Giữ DOM pile ẩn (opacity=0) để tương thích test liveStageApplier, hiển thị hàng đợi thật trực tiếp trên dây nối (qdots) */}
+            <g opacity={0} pointerEvents="none">
+              <g data-r="pile" transform={`translate(${-maxX - 12}, ${maxY - 6})`} display="none">
+                {Array.from({ length: PILE_MAX }, (_, i) => (
+                  <rect
+                    key={i}
+                    data-r="pr"
+                    x={-3}
+                    y={-4 - i * 5.2}
+                    width={6}
+                    height={4}
+                    rx={1}
+                    fill="#f2994a"
+                    stroke={pal.ink}
+                    strokeWidth={0.6}
+                    display="none"
+                  />
+                ))}
+                <text data-r="queueText" x={0} y={8} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" display="none" />
+              </g>
             </g>
             <g data-r="x" display="none">
               <path d="M-12,-12 L12,12 M12,-12 L-12,12" transform={`translate(0, ${cyMid})`} stroke="#e5534b" strokeWidth={4.5} strokeLinecap="round" />
@@ -2405,7 +2578,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 {WORKBENCH_I18N[lang].live.down}
               </text>
             </g>
-            <g data-r="badge" transform={`translate(0, ${maxY + 14})`} display="none">
+            <g data-r="badge" transform={`translate(0, ${minY - 36})`} display="none">
               <rect data-r="badgeRect" x={-30} y={-10.5} width={60} height={20} rx={10} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.35} />
               <text data-r="badgeText" x={0} y={2.4} textAnchor="middle" fontSize={9.5} fontWeight={750} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
             </g>
@@ -2506,6 +2679,71 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     }
   };
 
+  const maxSceneLoad = useMemo(() => {
+    let m = 0;
+    for (const n of scene.nodes) {
+      if (typeof n.loadPct === 'number' && n.loadPct > m) m = n.loadPct;
+    }
+    return m;
+  }, [scene.nodes]);
+
+  const renderLoadBarPill = (pctRaw: number, yPos: number) => {
+    const pct = Math.max(0, Math.min(100, Math.round(pctRaw)));
+    const barColor = pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
+    return (
+      <g transform={`translate(0, ${yPos})`}>
+        <rect x={-41} y={-8.5} width={82} height={19} rx={9.5} fill={pal.pillShadow} />
+        <rect
+          x={-41}
+          y={-10.5}
+          width={82}
+          height={19}
+          rx={9.5}
+          fill={pal.pillBg}
+          stroke={pct >= 90 ? pal.dangerLink : pal.ink}
+          strokeWidth={1.35}
+        />
+        <g
+          transform="translate(-31.5, -1)"
+          fill="none"
+          stroke={pal.ink}
+          strokeWidth={1.25}
+          strokeLinecap="round"
+        >
+          <circle r={2.8} />
+          <path d="M0,-4.5V-3.4 M0,3.4V4.5 M-3.9,-2.2L-3,-1.7 M3,1.7L3.9,2.2 M-3.9,2.2L-3,1.7 M3,-1.7L3.9,-2.2" />
+        </g>
+        <rect
+          x={-22}
+          y={-4}
+          width={30}
+          height={6}
+          rx={3}
+          fill={isDark ? '#423b33' : '#e6ddd0'}
+        />
+        <rect
+          x={-22}
+          y={-4}
+          width={Math.max(3, (30 * pct) / 100)}
+          height={6}
+          rx={3}
+          fill={barColor}
+        />
+        <text
+          x={34}
+          y={2.4}
+          textAnchor="end"
+          fontSize={9.5}
+          fontWeight={800}
+          fill={pct >= 90 ? '#c93b32' : pal.pillInk}
+          fontFamily="var(--dts-font-mono)"
+        >
+          {pct}%
+        </text>
+      </g>
+    );
+  };
+
   const renderNodeBody = (
     node: StageNode,
     isHovered: boolean,
@@ -2514,18 +2752,39 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   ) => {
     const kind = normalizeShape(node.shape);
     const rawLabel = pickText(node.label, lang);
-    const subText = node.sublabel ? pickText(node.sublabel, lang) : '';
     const lines = splitShortLines(rawLabel);
     const strokeW = isHovered || isSelected ? 2.35 : 1.85;
     const isDead = Boolean(node.dead);
-    const topGrad = isDead ? `url(#g-dead-top-${uid})` : `url(#g-${node.tone}-top-${uid})`;
-    const sideGrad = isDead ? `url(#g-dead-side-${uid})` : `url(#g-${node.tone}-side-${uid})`;
+    const isOverloaded =
+      !isDead && !frameSource && typeof node.loadPct === 'number' && node.loadPct >= 88;
+    const topGrad = isDead
+      ? `url(#g-dead-top-${uid})`
+      : isOverloaded
+        ? `url(#g-overload-top-${uid})`
+        : `url(#g-${node.tone}-top-${uid})`;
+    const sideGrad = isDead
+      ? `url(#g-dead-side-${uid})`
+      : isOverloaded
+        ? `url(#g-overload-side-${uid})`
+        : `url(#g-${node.tone}-side-${uid})`;
+    const hasStaticLoad = !isDead && !frameSource && typeof node.loadPct === 'number';
 
     return (
       <>
-        {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK (with shifted-up crisp typography & dead state) */}
+        {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK (top-stacked pills only — zero bottom wire collisions!) */}
         {kind === 'block' && (
           <g>
+            {isOverloaded && (
+              <ellipse
+                cx={0}
+                cy={14}
+                rx={64}
+                ry={36}
+                fill="#e5534b"
+                opacity={isDark ? 0.24 : 0.16}
+                filter={`url(#blur-lg-${uid})`}
+              />
+            )}
             <path
               ref={
                 !isExiting
@@ -2603,7 +2862,6 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 <MinimalIcon kind={node.icon} stroke={pal.ink} x={0} y={-20} />
               )}
 
-              {/* Shifted up +10.5px so 1-line and 2-line labels never touch sloping bottom borders */}
               <g opacity={isDead ? 0.58 : 1}>
                 {lines.length === 1 ? (
                   <text
@@ -2648,7 +2906,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               {isDead && (
                 <TactilePill
                   x={0}
-                  y={-54}
+                  y={-53}
                   text={lang === 'en' ? '⚠ DOWN' : '⚠ NGỪNG ĐÁP ỨNG'}
                   bg={pal.tones.rose.top0}
                   fg={isDark ? '#fde2e4' : '#7f1d1d'}
@@ -2657,67 +2915,28 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 />
               )}
 
-              {(node.badge || subText) && (
+              {hasStaticLoad && renderLoadBarPill(node.loadPct!, -53)}
+
+              {!frameSource && node.badge && (
                 <TactilePill
                   x={0}
-                  y={64}
-                  text={node.badge ? pickText(node.badge.text, lang) : subText}
+                  y={hasStaticLoad || isDead ? -76 : -53}
+                  text={pickText(node.badge.text, lang)}
                   bg={
-                    node.badge?.tone === 'bad'
+                    node.badge.tone === 'bad'
                       ? pal.tones.rose.top0
-                      : node.badge?.tone === 'ok'
+                      : node.badge.tone === 'ok'
                         ? pal.tones.green.top0
-                        : node.badge?.tone === 'warn'
+                        : node.badge.tone === 'warn'
                           ? pal.tones.yellow.top0
                           : pal.pillBg
                   }
                   fg={pal.pillInk}
-                  stroke={pal.ink}
+                  stroke={node.badge.tone === 'bad' ? pal.dangerLink : pal.ink}
                   shadow={pal.pillShadow}
                   isSelected={isSelected}
                 />
               )}
-
-              {!isDead && !frameSource && typeof node.loadPct === 'number' && (() => {
-                const pct = Math.max(0, Math.min(100, node.loadPct));
-                const barColor =
-                  pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
-                return (
-                  <g transform="translate(0, -54)">
-                    <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
-                    <rect
-                      x={-37}
-                      y={-10.5}
-                      width={74}
-                      height={19}
-                      rx={9.5}
-                      fill={pal.pillBg}
-                      stroke={pal.ink}
-                      strokeWidth={1.3}
-                    />
-                    <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
-                    <rect
-                      x={-29}
-                      y={-4}
-                      width={Math.max(3, (30 * pct) / 100)}
-                      height={6}
-                      rx={3}
-                      fill={barColor}
-                    />
-                    <text
-                      x={29}
-                      y={2.4}
-                      textAnchor="end"
-                      fontSize={9.5}
-                      fontWeight={800}
-                      fill={pct >= 90 ? '#c93b32' : pal.pillInk}
-                      fontFamily="var(--dts-font-mono)"
-                    >
-                      {pct}%
-                    </text>
-                  </g>
-                );
-              })()}
             </g>
           </g>
         )}
@@ -2725,6 +2944,17 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         {/* B. CYLINDER DATABASE */}
         {kind === 'db' && (
           <g transform="translate(0, -10)">
+            {isOverloaded && (
+              <ellipse
+                cx={0}
+                cy={22}
+                rx={46}
+                ry={26}
+                fill="#e5534b"
+                opacity={isDark ? 0.25 : 0.17}
+                filter={`url(#blur-lg-${uid})`}
+              />
+            )}
             <ellipse
               ref={
                 !isExiting
@@ -2798,7 +3028,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               )}
               <TactilePill
                 x={0}
-                y={60}
+                y={53}
                 text={rawLabel}
                 bg={pal.pillBg}
                 fg={pal.pillInk}
@@ -2806,82 +3036,26 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 shadow={pal.pillShadow}
                 isSelected={isSelected}
               />
-              {(node.badge || subText) && (
+              {hasStaticLoad && renderLoadBarPill(node.loadPct!, -34)}
+              {!frameSource && node.badge && (
                 <TactilePill
                   x={0}
-                  y={84}
-                  text={node.badge ? pickText(node.badge.text, lang) : subText}
+                  y={hasStaticLoad || isDead ? -57 : -34}
+                  text={pickText(node.badge.text, lang)}
                   bg={
-                    node.badge?.tone === 'bad'
+                    node.badge.tone === 'bad'
                       ? pal.tones.rose.top0
-                      : node.badge?.tone === 'ok'
+                      : node.badge.tone === 'ok'
                         ? pal.tones.green.top0
-                        : node.badge?.tone === 'warn'
+                        : node.badge.tone === 'warn'
                           ? pal.tones.yellow.top0
                           : pal.pillBg
                   }
                   fg={pal.pillInk}
-                  stroke={node.badge?.tone === 'bad' ? pal.dangerLink : pal.ink}
+                  stroke={node.badge.tone === 'bad' ? pal.dangerLink : pal.ink}
                   shadow={pal.pillShadow}
                   isSelected={isSelected}
                 />
-              )}
-              {!isDead && !frameSource && typeof node.loadPct === 'number' && (() => {
-                const pct = Math.max(0, Math.min(100, node.loadPct));
-                const barColor =
-                  pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
-                return (
-                  <g transform="translate(0, -34)">
-                    <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
-                    <rect
-                      x={-37}
-                      y={-10.5}
-                      width={74}
-                      height={19}
-                      rx={9.5}
-                      fill={pal.pillBg}
-                      stroke={pct >= 90 ? pal.dangerLink : pal.ink}
-                      strokeWidth={1.3}
-                    />
-                    <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
-                    <rect
-                      x={-29}
-                      y={-4}
-                      width={Math.max(3, (30 * pct) / 100)}
-                      height={6}
-                      rx={3}
-                      fill={barColor}
-                    />
-                    <text
-                      x={29}
-                      y={2.4}
-                      textAnchor="end"
-                      fontSize={9.5}
-                      fontWeight={800}
-                      fill={pct >= 90 ? '#c93b32' : pal.pillInk}
-                      fontFamily="var(--dts-font-mono)"
-                    >
-                      {pct}%
-                    </text>
-                  </g>
-                );
-              })()}
-              {!isDead && !frameSource && typeof node.loadPct === 'number' && node.loadPct >= 90 && (
-                <g transform="translate(-44, 18)">
-                  {[0, 1, 2, 3, 4].map((qi) => (
-                    <rect
-                      key={qi}
-                      x={-3.5}
-                      y={-qi * 5.4}
-                      width={7}
-                      height={4.2}
-                      rx={1.1}
-                      fill={node.loadPct! >= 100 ? '#e5534b' : '#f2994a'}
-                      stroke={pal.ink}
-                      strokeWidth={0.7}
-                    />
-                  ))}
-                </g>
               )}
             </g>
           </g>
@@ -3003,32 +3177,50 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
                 strokeLinejoin="round"
               />
-              {[
-                { x: -22, y: 2, c: '#f6cd82' },
-                { x: -6, y: -6, c: '#a9c5e8' },
-                { x: 10, y: -14, c: '#b3d79f' },
-                { x: -6, y: 10, c: '#cbbae6' },
-                { x: 10, y: 2, c: '#f3b47f' },
-                { x: 24, y: -5, c: '#f9cbd0' },
-              ].map((av, aIdx) => (
-                <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
-                  <ellipse cx={0} cy={0} rx={5.2} ry={2.5} fill="#6b5236" opacity={0.18} />
-                  <path
-                    d="M-4.8,0 V-8.2 A4.8,4.8 0 0 1 4.8,-8.2 V0 A4.8,2.2 0 0 1 -4.8,0 Z"
-                    fill={av.c}
-                    stroke={pal.ink}
-                    strokeWidth={1.3}
-                  />
-                  <circle
-                    cx={0}
-                    cy={-15.5}
-                    r={3.9}
-                    fill="#fdf6ec"
-                    stroke={pal.ink}
-                    strokeWidth={1.3}
-                  />
-                </g>
-              ))}
+              {(() => {
+                const allAvatars = [
+                  { x: 0, y: -16, c: '#a9c5e8' },
+                  { x: -16, y: -8, c: '#cbbae6' },
+                  { x: 16, y: -8, c: '#b3d79f' },
+                  { x: -30, y: 0, c: '#f6cd82' },
+                  { x: 0, y: 0, c: '#f3b47f' },
+                  { x: 30, y: 0, c: '#a9c5e8' },
+                  { x: -16, y: 8, c: '#b3d79f' },
+                  { x: 16, y: 8, c: '#f9cbd0' },
+                  { x: 0, y: 16, c: '#cbbae6' },
+                  { x: -8, y: -12, c: '#f6cd82' },
+                  { x: 8, y: -4, c: '#b3d79f' },
+                  { x: -8, y: 4, c: '#f3b47f' },
+                ];
+                const count =
+                  frameSource || maxSceneLoad >= 88 || scene.nodes.length >= 6
+                    ? 11
+                    : maxSceneLoad >= 50
+                      ? 8
+                      : 5;
+                const chosen = allAvatars
+                  .slice(0, count)
+                  .sort((a, b) => a.y - b.y || a.x - b.x);
+                return chosen.map((av, aIdx) => (
+                  <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
+                    <ellipse cx={0} cy={0} rx={5} ry={2.4} fill="#6b5236" opacity={0.18} />
+                    <path
+                      d="M-4.6,0 V-8 A4.6,4.6 0 0 1 4.6,-8 V0 A4.6,2.1 0 0 1 -4.6,0 Z"
+                      fill={av.c}
+                      stroke={pal.ink}
+                      strokeWidth={1.3}
+                    />
+                    <circle
+                      cx={0}
+                      cy={-15}
+                      r={3.7}
+                      fill="#fdf6ec"
+                      stroke={pal.ink}
+                      strokeWidth={1.3}
+                    />
+                  </g>
+                ));
+              })()}
               <TactilePill
                 x={0}
                 y={50}
@@ -3260,6 +3452,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             <stop offset="100%" stopColor={pal.dead.side1} />
           </linearGradient>
 
+          <linearGradient id={`g-overload-top-${uid}`} x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0%" stopColor={pal.overload.top0} />
+            <stop offset="100%" stopColor={pal.overload.top1} />
+          </linearGradient>
+          <linearGradient id={`g-overload-side-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={pal.overload.side0} />
+            <stop offset="100%" stopColor={pal.overload.side1} />
+          </linearGradient>
+
           <linearGradient id={`cyl-sheen-${uid}`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#ffffff" stopOpacity={0} />
             <stop offset="30%" stopColor="#ffffff" stopOpacity={isDark ? 0.14 : 0.36} />
@@ -3396,10 +3597,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
 
             {expandedNodes.map((node) => {
-              if (!node.highlighted && !node.dead) return null;
+              if (!node.dead) return null;
               const gc = getGroundCenter(node);
-              const isDead = Boolean(node.dead);
-              const strokeCol = isDead ? pal.dangerLink : pal.beatLink;
               return (
                 <path
                   key={`spot-${node.id}`}
@@ -3409,11 +3608,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                   }}
                   d={GROUND_SPOT_PATH}
                   transform={`translate(${gc.x.toFixed(1)}, ${gc.y.toFixed(1)})`}
-                  fill={strokeCol}
+                  fill={pal.dangerLink}
                   fillOpacity={isDark ? 0.14 : 0.1}
-                  stroke={strokeCol}
-                  strokeOpacity={0.65}
-                  strokeWidth={1.8}
+                  stroke={pal.dangerLink}
+                  strokeOpacity={0.55}
+                  strokeWidth={1.5}
                 />
               );
             })}
@@ -3462,7 +3661,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                       pickMode.onPick({ kind: 'link', id: link.id });
                       return;
                     }
-                    setSelectedInfo({ key: linkKey, info });
+                    setSelectedInfo({
+                      key: linkKey,
+                      info,
+                      preferLeft: midPt.x > baseBounds.cx,
+                    });
                   }}
                   style={{ cursor: 'pointer' }}
                 >
@@ -3505,9 +3708,50 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
           </g>
 
-          {/* 4. Animated Traffic Packets (begin flowing once link finishes drawing) */}
+          {/* 4. Animated Traffic Packets + In-Line Bottleneck Queue Dots & Drop Marker (chuẩn DTS) */}
           {!frameSource && (
           <g className="layer-packets" pointerEvents="none">
+            {builtLinks.map(({ link, pts, queueCount, hasDrop }) => {
+              if (queueCount <= 0) return null;
+              const dropPt = hasDrop ? samplePolylineFromEnd(pts, 9.5) : null;
+              return (
+                <g
+                  key={`sq-${link.id}`}
+                  ref={(el) => {
+                    if (el) staticQueueRefs.current.set(link.id, el);
+                    else staticQueueRefs.current.delete(link.id);
+                  }}
+                  opacity={0}
+                >
+                  {Array.from({ length: queueCount }, (_, qi) => {
+                    const dist = (hasDrop ? 21 : 11) + qi * 10.5;
+                    const qp = samplePolylineFromEnd(pts, dist);
+                    return (
+                      <circle
+                        key={qi}
+                        cx={qp.x}
+                        cy={qp.y}
+                        r={4.2}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.45}
+                      />
+                    );
+                  })}
+                  {dropPt && (
+                    <g transform={`translate(${dropPt.x.toFixed(1)}, ${dropPt.y.toFixed(1)})`}>
+                      <circle r={5.4} fill="#e05249" stroke={pal.ink} strokeWidth={1.4} />
+                      <path
+                        d="M-2.2,-2.2 L2.2,2.2 M2.2,-2.2 L-2.2,2.2"
+                        stroke="#ffffff"
+                        strokeWidth={1.7}
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
             {scene.packets.map((pkt) => (
               <g
                 key={pkt.id}
@@ -3607,7 +3851,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                       pickMode.onPick({ kind: 'node', id: node.id });
                       return;
                     }
-                    setSelectedInfo({ key: nodeKey, info });
+                    setSelectedInfo({
+                      key: nodeKey,
+                      info,
+                      preferLeft: node.x > baseBounds.cx,
+                    });
                   }}
                   style={{ cursor: 'pointer' }}
                   {...(frameSource
@@ -3684,7 +3932,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                       pickMode.onPick({ kind: 'link', id: link.id });
                       return;
                     }
-                    setSelectedInfo({ key: linkKey, info });
+                    setSelectedInfo({
+                      key: linkKey,
+                      info,
+                      preferLeft: labelPos.x > baseBounds.cx,
+                    });
                   }}
                 />
               );
@@ -3745,8 +3997,119 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 {noteCardLayout.title.toUpperCase()}
               </text>
 
+              {noteCardLayout.chart && (() => {
+                const ch = noteCardLayout.chart;
+                const plotX0 = 15;
+                const plotX1 = noteCardLayout.w - 13;
+                const plotW = Math.max(80, plotX1 - plotX0);
+                const plotY0 = 32;
+                const plotY1 = 83;
+                const plotH = plotY1 - plotY0;
+                const curveYAt = (u: number) => {
+                  const raw = 1 / (1 - 0.915 * Math.min(0.975, Math.max(0, u))) - 1;
+                  return plotY1 - 2 - Math.min(1, raw / 7.9) * (plotH - 6);
+                };
+                const curvePts: string[] = [];
+                for (let s = 0; s <= 22; s++) {
+                  const u = (s / 22) * 0.97;
+                  const cx = plotX0 + u * plotW;
+                  const cy = curveYAt(u);
+                  curvePts.push(`${s === 0 ? 'M' : 'L'} ${cx.toFixed(1)},${cy.toFixed(1)}`);
+                }
+                const uDot = Math.max(0.05, Math.min(0.97, ch.utilPct / 100));
+                const dotX = plotX0 + uDot * plotW;
+                const dotY = curveYAt(uDot);
+                const dotCol =
+                  ch.utilPct >= 90 ? '#e5534b' : ch.utilPct >= 65 ? '#efb041' : '#7fc278';
+                return (
+                  <g>
+                    <rect
+                      x={plotX0 + plotW * 0.78}
+                      y={plotY0}
+                      width={plotW * 0.22}
+                      height={plotH}
+                      rx={3}
+                      fill={isDark ? '#4d2328' : '#f9dfe0'}
+                      opacity={0.85}
+                    />
+                    <line
+                      x1={plotX0}
+                      y1={plotY0}
+                      x2={plotX0}
+                      y2={plotY1}
+                      stroke={isDark ? '#706558' : '#b8ad9e'}
+                      strokeWidth={1}
+                    />
+                    <line
+                      x1={plotX0}
+                      y1={plotY1}
+                      x2={plotX1}
+                      y2={plotY1}
+                      stroke={isDark ? '#706558' : '#b8ad9e'}
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={plotX0 + 4}
+                      y={plotY0 + 8}
+                      fontSize={8}
+                      fontWeight={650}
+                      fill={isDark ? '#a89d8e' : '#7d756b'}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {ch.yLabel}
+                    </text>
+                    <text
+                      x={plotX1}
+                      y={plotY1 + 10}
+                      textAnchor="end"
+                      fontSize={8}
+                      fontWeight={650}
+                      fill={isDark ? '#a89d8e' : '#7d756b'}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {ch.xLabel}
+                    </text>
+                    <path
+                      d={curvePts.join(' ')}
+                      fill="none"
+                      stroke={pal.ink}
+                      strokeWidth={1.65}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={dotX}
+                      y1={dotY}
+                      x2={dotX}
+                      y2={plotY1}
+                      stroke={dotCol}
+                      strokeWidth={1.1}
+                      strokeDasharray="2.5 2.5"
+                    />
+                    <circle
+                      cx={dotX}
+                      cy={dotY}
+                      r={4}
+                      fill={dotCol}
+                      stroke={pal.ink}
+                      strokeWidth={1.4}
+                    />
+                    <text
+                      x={uDot > 0.8 ? dotX - 6 : dotX}
+                      y={uDot > 0.8 ? dotY + 3 : dotY - 6}
+                      textAnchor={uDot > 0.8 ? 'end' : 'middle'}
+                      fontSize={8.8}
+                      fontWeight={800}
+                      fill={pal.pillInk}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {Math.round(ch.utilPct)}%
+                    </text>
+                  </g>
+                );
+              })()}
+
               {noteCardLayout.lines.map((ln, idx) => {
-                const rowY = 30 + idx * 18.5;
+                const rowY = (noteCardLayout.chart ? 100 : 30) + idx * 18.5;
                 if (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber') {
                   const pBg =
                     ln.tone === 'good'
@@ -3925,13 +4288,14 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </div>
       )}
 
-      {/* Full Deep-Dive Inspector Card (rendered via Portal so short diagrams never squash it!) */}
+      {/* Compact Corner Inspector Popover (anchored away from clicked node so diagram stays unobstructed!) */}
       {selectedInfo && (
         <StageInspectorPortal
           info={selectedInfo.info}
           lang={lang}
           theme={theme}
           anchorRef={containerRef}
+          preferLeft={selectedInfo.preferLeft}
           onClose={() => setSelectedInfo(null)}
           liveSlot={liveSlotNode}
         />

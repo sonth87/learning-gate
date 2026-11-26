@@ -166,10 +166,18 @@ export interface StageNoteLine {
   tone?: 'plain' | 'muted' | 'good' | 'bad' | 'amber';
 }
 
+export interface StageNoteChart {
+  /** Mức sử dụng 0..100 hiển thị trên đường cong độ trễ theo mức bận (hockey-stick) */
+  utilPct: number;
+  xLabel?: BilingualText;
+  yLabel?: BilingualText;
+}
+
 export interface StageNoteCard {
   id?: string;
   title: BilingualText;
   lines: StageNoteLine[];
+  chart?: StageNoteChart;
   position?: 'top-left' | 'bottom-left' | 'bottom-right';
 }
 

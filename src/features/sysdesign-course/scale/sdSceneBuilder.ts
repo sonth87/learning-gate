@@ -146,9 +146,9 @@ export function buildSdMemoryScene(def: SdSceneDef): MemoryScene | null {
 }
 
 function getGroundOffsetForShape(shape: LegacyNodeShape): number {
-  if (shape === 'cylinder' || shape === 'db') return 21;
-  if (shape === 'laptop' || shape === 'device') return 16;
-  if (shape === 'crowd') return 14;
+  if (shape === 'cylinder' || shape === 'db') return 16;
+  if (shape === 'laptop' || shape === 'device') return 12;
+  if (shape === 'crowd') return 10;
   return 22;
 }
 
@@ -232,28 +232,24 @@ function computeIsometricDagCoords(
   if (isSingleChain5) {
     const ids = [0, 1, 2, 3, 4].map((r) => byRank.get(r)![0]);
     const variant = hashSceneKey(ids) % 2;
-    // Lưu ý: ScaleStageSvg nhân spread = 1.26 khi n >= 5, nên tọa độ dưới đây đã chia trước cho 1.26
-    // để sau khi nhân 1.26 mọi cặp node liền kề nằm chính xác trên trục 2:1 (|Δgy| = |Δgx| / 2)!
     if (variant === 0) {
-      // Mẫu Arch-S 2:1:
-      // 0 -> 1 (NE), 1 -> 2 (SE), 2 -> 3 (SE), 3 -> 4 (SW)
+      // Trục tiến SW -> NE (client -> lb -> app1 -> cache) rồi rẽ 90° SE sang db (không zíc-zắc / \ / \)
       const pts: Array<[number, number]> = [
-        [-210, 15],
-        [-70, -55],
-        [70, 15],
-        [210, 85],
-        [70, 155],
+        [-228, 84],
+        [-112, 26],
+        [4, -32],
+        [120, -90],
+        [248, -26],
       ];
       ids.forEach((id, idx) => placeGround(id, pts[idx][0], pts[idx][1]));
     } else {
-      // Mẫu Courtyards 2:1:
-      // 0 -> 1 (SE), 1 -> 2 (NE), 2 -> 3 (SE), 3 -> 4 (NE)
+      // Trục gập chữ L rộng rãi: NE 2 nhịp rồi SE 2 nhịp (chevron cân đối trên mặt sàn 2:1)
       const pts: Array<[number, number]> = [
-        [-220, -25],
-        [-90, 40],
-        [40, -25],
-        [170, 40],
-        [260, -5],
+        [-232, 76],
+        [-104, 12],
+        [24, -52],
+        [152, 12],
+        [280, 76],
       ];
       ids.forEach((id, idx) => placeGround(id, pts[idx][0], pts[idx][1]));
     }
@@ -261,43 +257,28 @@ function computeIsometricDagCoords(
   }
 
   // Đồ thị phân tầng tổng quát (n >= 5, có tầng rẽ nhánh song song như client -> lb -> [app1, app2, app3] -> cache -> db):
-  // Đặt theo hệ trục mặt sàn 2:1:
-  // - Tiến theo tầng (rank) dọc hướng hỗn hợp u/v có chiều sâu
-  // - Các node song song trong cùng một tầng trải dọc theo trục chéo isometric `v` (Δgx = -110, Δgy = +55)
-  //   giúp fan-out từ LB sang App 1..3 và fan-in từ App 1..3 về Cache tạo thành hình thoi 2.5D tự nhiên!
-    // Với ग्राफ 7 node dạng client -> lb -> [app1, app2, app3] -> cache -> db:
-    // Đặt client -> lb theo trục NE (+130, -65), cụm app1..3 rẽ nhánh dọc trục SE (+56, +28) từ trục chính,
-    // rồi tụ về cache và gập xuống db theo trục SW (-130, +65) tạo thành bố cục cụm 2.5D có chiều sâu,
-    // giữ chiều ngang chỉ ~500px (thay vì trải ngang 800px) nên khối luôn to, rõ!
-    const rankAnchors5: Array<[number, number]> = [
-      [-210, 10],   // rank 0: client (trái)
-      [-80, -55],   // rank 1: lb (thẳng trục NE 2:1 từ client: Δgx=+130, Δgy=-65)
-      [50, 10],     // rank 2: tâm cụm app1..3 (thẳng trục SE 2:1 từ lb: Δgx=+130, Δgy=+65)
-      [180, -55],   // rank 3: cache (thẳng trục NE 2:1 từ tâm app: Δgx=+130, Δgy=-65)
-      [180, 95],    // rank 4: db (nằm phía trước cache ở góc phải-dưới)
-    ];
+  // - Trục chính tiến dọc hướng SW -> NE (+116, -58 mỗi bậc)
+  // - Các instance song song trong cùng tầng (vd App 1..3) xếp thành hàng chéo NW -> SE (Δgx = +88, Δgy = +44)
+  //   nhờ đó LB rẽ 3 mặt tường riêng (NW, NE, SE) vào mặt SW của App 1..3, rồi App 1..3 hội tụ sạch về Cache -> DB!
+  const stepNE: [number, number] = [118, -59];
+  const originGx = -Math.round((maxRank * stepNE[0]) / 2);
+  const originGy = -Math.round((maxRank * stepNE[1]) / 2);
 
-    for (const [r, members] of byRank.entries()) {
-      const anchor =
-        r < rankAnchors5.length
-          ? rankAnchors5[r]
-          : [
-              Math.round((r - maxRank / 2) * 125),
-              r % 2 === 0 ? 28 : -28,
-            ];
-      const m = members.length;
-      members.forEach((id, idx) => {
-        if (m === 1) {
-          placeGround(id, anchor[0], anchor[1]);
-        } else {
-          // Trải các node cùng tầng theo trục mặt sàn 2:1 (mỗi bước lệch Δgx = -36, Δgy = +72)
-          const offset = idx - (m - 1) / 2;
-          const gx = anchor[0] - offset * 36;
-          const gy = anchor[1] + offset * 72;
-          placeGround(id, gx, gy);
-        }
-      });
-    }
+  for (const [r, members] of byRank.entries()) {
+    const ax = originGx + r * stepNE[0];
+    const ay = originGy + r * stepNE[1];
+    const m = members.length;
+    members.forEach((id, idx) => {
+      if (m === 1) {
+        placeGround(id, ax, ay);
+      } else {
+        const offset = idx - (m - 1) / 2;
+        const gx = ax + offset * 92;
+        const gy = ay + offset * 46;
+        placeGround(id, gx, gy);
+      }
+    });
+  }
 
   return out;
 }
@@ -429,20 +410,17 @@ export function buildSdStageScene(
       if (l.style === 'off' || l.style === 'cut') continue;
       const toLoad = def.state?.[l.to]?.loadPct ?? 0;
       const fromLoad = def.state?.[l.from]?.loadPct ?? 0;
-      const isOverloaded = toLoad >= 95 || l.style === 'danger';
-      const isHot = toLoad >= 75 || fromLoad >= 75;
-      // Khi đi vào thành phần đang nghẽn (ρ >= 95%), bắn dồn dập 3–4 hạt (xen hạt lỗi đỏ và phản hồi chậm)
-      // để thể hiện rõ sự gấp gáp, ùn ứ tại điểm nghẽn thay vì chảy đều đều.
-      const count = isOverloaded ? 4 : isHot ? 3 : 2;
-      const baseSpeed = isOverloaded ? 0.68 : isHot ? 0.54 : 0.44;
+      const isOverloaded = toLoad >= 90 || l.style === 'danger';
+      const isHot = toLoad >= 68 || fromLoad >= 68;
+      // Khi đi vào thành phần đang bận/nghẽn: các request hạt cam dồn nhanh tới đuôi hàng đợi trên dây nối,
+      // trong khi phần hàng đợi chấm vàng + dấu ✕ từ chối ở cửa vào được ScaleStageSvg dựng trực tiếp dọc dây!
+      const count = isOverloaded ? 3 : isHot ? 3 : 2;
+      const baseSpeed = isOverloaded ? 0.72 : isHot ? 0.56 : 0.44;
       for (let k = 0; k < count; k++) {
         let kind: PacketKind = 'request';
         let reverse = false;
-        let speed = baseSpeed;
-        if (isOverloaded && k === count - 1) {
-          kind = 'error';
-          speed = baseSpeed * 0.52; // ùn chậm trước điểm nghẽn
-        } else if (!isOverloaded && k === count - 1 && l.to === 'cache') {
+        const speed = baseSpeed;
+        if (!isOverloaded && k === count - 1 && l.to === 'cache') {
           kind = 'cache-hit';
           reverse = true;
         } else if (!isOverloaded && k === count - 1 && li === 0) {
@@ -454,7 +432,7 @@ export function buildSdStageScene(
           linkId: l.id,
           kind,
           speed,
-          offset: Number(((k / count + li * 0.17) % 1).toFixed(2)),
+          offset: Number(((k / count + li * 0.19) % 1).toFixed(2)),
           reverse,
         });
       }
@@ -495,6 +473,14 @@ export function buildSdStageScene(
         text: toBilingual(l.text),
         tone: (['plain', 'muted', 'good', 'bad', 'amber'] as const).find((t) => t === l.tone),
       })),
+      chart:
+        def.noteCard.chart && typeof def.noteCard.chart.utilPct === 'number'
+          ? {
+              utilPct: def.noteCard.chart.utilPct,
+              xLabel: def.noteCard.chart.xLabel ? toBilingual(def.noteCard.chart.xLabel) : undefined,
+              yLabel: def.noteCard.chart.yLabel ? toBilingual(def.noteCard.chart.yLabel) : undefined,
+            }
+          : undefined,
       position: (['top-left', 'bottom-left', 'bottom-right'] as const).find((p) => p === def.noteCard?.position),
     };
   }

@@ -9,8 +9,8 @@ callout:
   title: Luật cốt lõi
   vi: "Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần chậm nhất trên đường đi của request. Tối ưu một thành phần khác không làm hệ thống nhanh hơn."
 whatChanged:
-  - "+ Đường đi của một request: Client, Load Balancer, App, Cache, Database"
-  - "~ Database là thành phần đầu tiên chạm ρ = 1 khi tải tăng"
+  - "+ Đường đi cơ bản khi chưa có Load Balancer & Cache: Người dùng → App → Database"
+  - "~ Khi tải lớn, request xếp hàng dồn ứ ngay trước Database (ρ = 1,00)"
 telemetry:
   - label: "ρ của Database"
     value: "1,00"
@@ -112,11 +112,23 @@ Một lưu ý khi đọc kết quả: đo một request cho biết thời gian n
 ```step
 category: TECHNIQUE
 short: Công cụ đo
-mode: code
+scene: s4-tools
 callout:
   kind: technique
   title: Ba lớp công cụ
   vi: "Log thời gian tự viết cho câu trả lời nhanh, APM và Distributed Tracing cho cả đường đi của request, EXPLAIN ANALYZE cho từng câu truy vấn."
+whatChanged:
+  - "+ Gắn điểm đo log perf_counter tại App, span tại Cache và EXPLAIN tại Database"
+  - "~ Phát hiện Seq Scan 285 ms là nguyên nhân gốc của chặng Database 300 ms"
+telemetry:
+  - label: "Log App"
+    value: "perf_counter"
+  - label: "Span Cache"
+    value: "5 ms"
+    tone: ok
+  - label: "EXPLAIN Database"
+    value: "Seq Scan 285 ms"
+    tone: bad
 ```
 
 Có ba cách phổ biến để lấy số đo ở môi trường thật, từ đơn giản đến đầy đủ.
@@ -237,7 +249,7 @@ Tầng App chỉ chạm ρ = 0,9 ở khoảng giây thứ 58, rất lâu sau Dat
 ```step
 category: MECHANISM
 short: Các loại nghẽn
-scene: s7-diagnosis
+scene: s7-types
 activity: S1-03.A2
 gate: optional
 callout:
@@ -245,7 +257,7 @@ callout:
   title: Triệu chứng chỉ ra loại điểm nghẽn
   vi: "Số đo tài nguyên của từng thành phần (CPU, RAM, I/O, mạng, hàng đợi) cho biết điểm nghẽn thuộc loại nào, từ đó chọn đúng cách sửa."
 whatChanged:
-  - "+ Cây chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn"
+  - "+ Đối chiếu triệu chứng CPU, RAM, Pool kết nối, RTT mạng và I/O đĩa ngay trên sơ đồ"
 telemetry:
   - label: "Loại phổ biến"
     value: "5 loại"

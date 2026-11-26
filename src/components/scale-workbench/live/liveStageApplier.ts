@@ -45,6 +45,7 @@ export interface LiveNodeEls {
 
 export interface LiveLinkEls {
   id: string;
+  toNodeId?: string;
   path: LiveEl;
   err: LiveEl;
   cut: LiveEl;
@@ -54,6 +55,10 @@ export interface LiveLinkEls {
   lag: LiveEl;
   lag2: LiveEl;
   lagText: LiveEl;
+  /** Các chấm vàng xếp hàng dọc dây nối ngay trước node đích đang bận/nghẽn (chuẩn DTS) */
+  qdots?: LiveEl | null;
+  qdotCircles?: LiveEl[];
+  qdrop?: LiveEl | null;
 }
 
 export interface LivePacketEls {
@@ -319,13 +324,17 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
       show(l.cut, v.showCut);
       show(l.gate, v.showGate);
       show(l.lag, v.showLag);
-      if (!v.show) continue;
-      put(l.path, 'stroke-width', n1(v.width));
+      if (!v.show) {
+        if (l.qdots) show(l.qdots, false);
+        if (l.qdrop) show(l.qdrop, false);
+        continue;
+      }
+      put(l.path, 'stroke-width', n1(Math.min(2.4, v.width)));
       put(l.path, 'stroke', v.stroke === 'ink' ? cfg.inkColor : v.stroke);
       put(l.path, 'stroke-dasharray', v.dash);
       put(l.path, 'opacity', n2(v.opacity));
       if (v.errOpacity > 0) {
-        put(l.err, 'stroke-width', n1(v.errWidth));
+        put(l.err, 'stroke-width', n1(Math.min(2.2, v.errWidth)));
         put(l.err, 'opacity', n2(roundTo(v.errOpacity, 0.05)));
       }
       if (v.showGate) {
@@ -336,6 +345,48 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
         put(l.lag2, 'transform', `translate(${n1(v.lagGap)}, 0)`);
         put(l.lag2, 'stroke', v.lagWarn ? '#e8883a' : cfg.inkColor);
         putText(l.lagText, v.lagText);
+      }
+      // Hàng đợi chấm vàng + dấu ✕ đỏ ngay cửa vào thành phần đang bận / nghẽn
+      if (l.qdots && l.qdotCircles && l.toNodeId) {
+        const toNf = f.nodes[l.toNodeId];
+        const lut = luts.get(l.id);
+        const load = toNf?.loadPct ?? 0;
+        const qPct = toNf?.queuePct ?? 0;
+        const st = toNf?.state ?? 'healthy';
+        const hasDrop =
+          st === 'overloaded' || (lf?.errorRate ?? 0) > 0.02 || load >= 99;
+        const qCount =
+          st === 'down' || (lf?.rps ?? 0) <= 0.1
+            ? 0
+            : st === 'overloaded' || qPct >= 0.65 || load >= 96
+              ? 5
+              : st === 'saturated' || qPct >= 0.3 || load >= 88
+                ? 4
+                : st === 'busy' || qPct >= 0.08 || load >= 68
+                  ? 3
+                  : 0;
+        show(l.qdots, qCount > 0 && Boolean(lut));
+        if (qCount > 0 && lut) {
+          const baseEnd = hasDrop ? 0.87 : 0.93;
+          for (let qi = 0; qi < l.qdotCircles.length; qi++) {
+            const cEl = l.qdotCircles[qi];
+            const vis = qi < qCount;
+            show(cEl, vis);
+            if (vis) {
+              const frac = Math.max(0.28, baseEnd - qi * 0.068);
+              lutAt(lut, frac, tmp);
+              put(cEl, 'cx', n1(tmp.x));
+              put(cEl, 'cy', n1(tmp.y));
+            }
+          }
+        }
+        if (l.qdrop) {
+          show(l.qdrop, hasDrop && Boolean(lut));
+          if (hasDrop && lut) {
+            lutAt(lut, 0.94, tmp);
+            put(l.qdrop, 'transform', `translate(${n1(tmp.x)}, ${n1(tmp.y)})`);
+          }
+        }
       }
     }
   };
