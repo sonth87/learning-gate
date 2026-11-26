@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { ArrowLeft, Layers, ListChecks, Map as MapIcon, Trophy } from 'lucide-react';
-import { useSdCurriculum } from './data';
+import { useSdCurriculum, useSdSims } from './data';
+import { buildSdScaleLessons } from './scale/sdLessonBuilder';
 import { lessonSatisfied, quizSatisfied, sdModuleDone } from './logic';
 import { useSdNav, useSdProgress } from './store';
 import type { SdLearnView } from './types';
@@ -15,7 +16,6 @@ import {
   ScaleWorkbenchLayout,
   type ModuleStatusSnapshot,
 } from '@/components/scale-workbench/ScaleWorkbenchLayout';
-import type { ScaleModuleLesson } from '@/components/scale-workbench/types';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 
@@ -91,6 +91,7 @@ export const SdLearnShell: React.FC = () => {
   const cursorModId = useWorkbenchStore((s) => s.cursors.sdmastery?.moduleId);
 
   const { data: cur } = useSdCurriculum();
+  const { data: sims } = useSdSims();
 
   useEffect(() => {
     hydrate();
@@ -100,8 +101,7 @@ export const SdLearnShell: React.FC = () => {
     document.getElementById('course-scroll-sd')?.scrollTo({ top: 0 });
   }, [view]);
 
-  // TODO(T1.1c): thay bằng buildSdScaleLessons(cur).
-  const scaleLessons = useMemo<ScaleModuleLesson[]>(() => [], []);
+  const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
 
   const getModuleStatus = useCallback(
     (moduleId: string): ModuleStatusSnapshot => {
@@ -118,7 +118,7 @@ export const SdLearnShell: React.FC = () => {
     [cur, sdState]
   );
 
-  if (!hydrated || !cur) {
+  if (!hydrated || !cur || !sims) {
     return <Spinner label={lang === 'en' ? 'Loading System Design workbench…' : 'Đang tải bàn học System Design…'} />;
   }
 

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { SdCurriculum } from './types';
+import type { SdSimsMap } from './scale/sdLessonBuilder';
 
 interface SdDataCache {
   curriculum?: SdCurriculum;
+  sims?: SdSimsMap;
 }
 
 const cache: SdDataCache = {};
@@ -15,6 +17,15 @@ export function loadSdCurriculum(): Promise<SdCurriculum> {
     );
   }
   return promises.curriculum;
+}
+
+export function loadSdSims(): Promise<SdSimsMap> {
+  if (!promises.sims) {
+    promises.sims = import('@/data/courses/sysdesign/sims.json').then(
+      (m) => (cache.sims = (m.default as unknown as { sims: SdSimsMap }).sims)
+    );
+  }
+  return promises.sims;
 }
 
 function useSdAsync<K extends keyof SdDataCache>(
@@ -49,5 +60,4 @@ function useSdAsync<K extends keyof SdDataCache>(
 }
 
 export const useSdCurriculum = () => useSdAsync('curriculum', loadSdCurriculum);
-
-// TODO(T2.x/T4.x): `loadSdSims()` cho '@/data/courses/sysdesign/sims.json' khi engine cần.
+export const useSdSims = () => useSdAsync('sims', loadSdSims);
