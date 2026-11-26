@@ -479,7 +479,7 @@ export const StageEntityInspectorCard: React.FC<{
           className="border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3.5 py-2"
         >
           <div className="mb-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-            {lang === 'en' ? 'Live metrics' : 'Số liệu trực tiếp'}
+            {WORKBENCH_I18N[lang].live.inspector.title}
           </div>
           {liveSlot}
         </section>
