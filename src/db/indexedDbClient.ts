@@ -40,7 +40,7 @@ export interface PyLearnDBSchema extends DBSchema {
     key: string;
     value: { key: string; state: WpState };
   };
-  /** Tiến độ các khoá học khác theo courseId ('kube' | 'cicd' | 'pmp') */
+  /** Tiến độ các khoá học khác theo courseId ('kube' | 'cicd' | 'pmp' | 'redis' | 'sysdesign') */
   course_state: {
     key: string;
     value: { courseId: string; state: WpState };

@@ -24,6 +24,7 @@ import { useCloudSyncStore } from '@/stores/useCloudSyncStore';
 import { useWpProgress } from '@/features/workpath/store';
 import { useKubeProgress, useCicdProgress, useRedisProgress } from '@/features/devops-course/store';
 import { usePmpProgress } from '@/features/pmp-course/store';
+import { useSdProgress } from '@/features/sysdesign-course/store';
 import { backupService } from '@/db/backupService';
 import { FullBackupPayload } from '@/types/user.types';
 import { cn } from '@/utils/cn';
@@ -42,6 +43,8 @@ export const SettingsModal: React.FC = () => {
   const redisMeta = useRedisProgress((s) => s.syncMeta);
   const pmpState = usePmpProgress((s) => s.state);
   const pmpMeta = usePmpProgress((s) => s.syncMeta);
+  const sdState = useSdProgress((s) => s.state);
+  const sdMeta = useSdProgress((s) => s.syncMeta);
 
   const cloudConfigured = useCloudSyncStore((s) => s.configured);
   const cloudAuthReady = useCloudSyncStore((s) => s.authReady);
@@ -100,6 +103,7 @@ export const SettingsModal: React.FC = () => {
         useCicdProgress.getState().hydrate(true),
         useRedisProgress.getState().hydrate(true),
         usePmpProgress.getState().hydrate(true),
+        useSdProgress.getState().hydrate(true),
       ]);
       setStatusMessage(
         'Khôi phục thành công toàn bộ tiến độ, ghi chú, SRS Flashcard & Cài đặt!'
@@ -226,7 +230,7 @@ export const SettingsModal: React.FC = () => {
                   <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2.5">
                     <span>
                       {cloudSyncStatus === 'syncing'
-                        ? 'Đang hợp nhất & đồng bộ tất cả app (Python, K8s, CI/CD, Redis, PMP)...'
+                        ? 'Đang hợp nhất & đồng bộ tất cả app (Python, K8s, CI/CD, Redis, PMP, System Design)...'
                         : cloudSyncStatus === 'error'
                           ? `Lỗi đồng bộ: ${cloudError || 'Không xác định'}`
                           : 'Tự động lưu Local + đồng bộ Google Cloud cho toàn bộ Learning Gate.'}
@@ -245,7 +249,7 @@ export const SettingsModal: React.FC = () => {
                       Đăng nhập Google để học liền mạch mọi thiết bị
                     </p>
                     <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
-                      Đăng nhập một lần cho toàn bộ Learning Gate (Python, K8s, CI/CD, Redis, PMP).
+                      Đăng nhập một lần cho toàn bộ Learning Gate (Python, K8s, CI/CD, Redis, PMP, System Design).
                       Vẫn giữ nguyên lưu LocalStorage + IndexedDB khi ngoại tuyến.
                     </p>
                   </div>
@@ -492,6 +496,7 @@ export const SettingsModal: React.FC = () => {
               { label: 'CI/CD Architecture', st: cicdState, meta: cicdMeta },
               { label: 'Redis Mastery', st: redisState, meta: redisMeta },
               { label: 'PMP Mastery', st: pmpState, meta: pmpMeta },
+              { label: 'System Design Mastery', st: sdState, meta: sdMeta },
             ].map((item) => {
               const passedEx = Object.values(item.st.exercises ?? {}).filter((e) => e.status === 'passed').length;
               const skippedCount =

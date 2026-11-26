@@ -1,0 +1,180 @@
+/**
+ * Store tiến độ của System Design Mastery (courseId = 'sysdesign').
+ * Khung tối thiểu cho T1.2, T1.1a mở rộng: chỉ phần progress (hydrate, replaceAll, reset,
+ * markLessonRead, recordQuiz, rateCard). Nav stack, views, activity, skip thêm ở T1.1a/T4.1.
+ */
+import { create } from 'zustand';
+import {
+  clearDurableProgress,
+  getLocalMirrorKey,
+  loadDurableProgress,
+  mergeWpStates,
+  normalizeWpState,
+  readLocalProgressMirror,
+  saveDurableProgress,
+  type StorageSyncMeta,
+} from '@/db/durableProgressStorage';
+import { BOX_DAYS, XP, addDays, emptyState, todayStr, type QuestionResult } from '@/features/workpath/logic';
+import type { WpState } from './types';
+
+export interface SdProgressState {
+  state: WpState;
+  hydrated: boolean;
+  syncMeta: StorageSyncMeta;
+  hydrate: (force?: boolean) => Promise<void>;
+  replaceAll: (s: WpState) => Promise<void>;
+  reset: () => Promise<void>;
+
+  markLessonRead: (moduleId: string) => number;
+  recordQuiz: (moduleId: string | null, total: number, results: QuestionResult[]) => { xp: number; record: boolean };
+  rateCard: (cardId: string, ok: boolean) => void;
+}
+
+function logXp(s: WpState, event: string, xp: number): void {
+  s.xp += xp;
+  s.log.push({ t: Date.now(), event, xp });
+  if (s.log.length > 2000) s.log = s.log.slice(-2000);
+}
+
+function createSdProgressStore() {
+  const slot = 'sysdesign' as const;
+  const initialMirror = readLocalProgressMirror(slot);
+
+  const store = create<SdProgressState>((set, get) => {
+    const updateMeta = (patch: Partial<StorageSyncMeta>) =>
+      set((cur) => ({ syncMeta: { ...cur.syncMeta, ...patch } }));
+
+    const mutate = <T,>(fn: (s: WpState) => T): T => {
+      const latestMirror = readLocalProgressMirror(slot);
+      const baseState =
+        latestMirror && (latestMirror.updatedAt ?? 0) > (get().state.updatedAt ?? 0)
+          ? mergeWpStates(get().state, latestMirror)
+          : get().state;
+
+      const next = structuredClone(baseState);
+      const out = fn(next);
+      next.updatedAt = Date.now();
+      delete next.resetAt;
+      set({ state: next });
+      void saveDurableProgress(slot, next, updateMeta);
+      return out;
+    };
+
+    return {
+      state: initialMirror ?? emptyState(),
+      hydrated: false,
+      syncMeta: {
+        status: initialMirror ? 'local-only' : 'idle',
+        localOk: initialMirror !== null,
+        idbOk: false,
+        persistedGranted: null,
+        lastSavedAt: initialMirror?.updatedAt && initialMirror.updatedAt > 0 ? initialMirror.updatedAt : null,
+      },
+
+      hydrate: async (force = false) => {
+        if (get().hydrated && !force) return;
+        try {
+          const { state, meta } = await loadDurableProgress(slot, get().state);
+          set({ state, hydrated: true, syncMeta: meta });
+        } catch (err) {
+          console.warn('[useSdProgress] Không thể tải IndexedDB, dùng bản LocalStorage/RAM:', err);
+          set({
+            hydrated: true,
+            syncMeta: {
+              ...get().syncMeta,
+              status: get().syncMeta.localOk ? 'local-only' : 'error',
+              idbOk: false,
+            },
+          });
+        }
+      },
+
+      replaceAll: async (s) => {
+        const next = normalizeWpState({ ...s, updatedAt: Date.now() });
+        set({ state: next, hydrated: true });
+        await saveDurableProgress(slot, next, updateMeta);
+      },
+
+      reset: async () => {
+        const fresh = await clearDurableProgress(slot);
+        set({
+          state: fresh,
+          hydrated: true,
+          syncMeta: {
+            ...get().syncMeta,
+            status: 'synced',
+            lastSavedAt: fresh.updatedAt ?? Date.now(),
+          },
+        });
+      },
+
+      markLessonRead: (moduleId) =>
+        mutate((s) => {
+          if (s.skippedLessons) delete s.skippedLessons[moduleId];
+          if (moduleId in s.lessons) return 0;
+          s.lessons[moduleId] = Date.now();
+          logXp(s, `lesson:${moduleId}`, XP.lesson);
+          return XP.lesson;
+        }),
+
+      recordQuiz: (moduleId, total, results) =>
+        mutate((s) => {
+          const correct = results.filter((r) => r.ok).length;
+          const wrong = new Set(s.quizWrong);
+          for (const r of results) (r.ok ? wrong.delete(r.id) : wrong.add(r.id));
+          s.quizWrong = [...wrong].sort();
+          let xp = XP.quizPerCorrect * correct;
+          let record = false;
+          if (moduleId) {
+            const rec = (s.quiz[moduleId] ??= { best: 0, bestCorrect: 0, attempts: 0 });
+            rec.attempts += 1;
+            if (results.length === total && correct > rec.bestCorrect) {
+              xp += XP.quizRecordPerCorrect * (correct - rec.bestCorrect);
+              rec.bestCorrect = correct;
+              rec.best = Math.round((correct / total) * 1000) / 1000;
+              record = true;
+            }
+            if (rec.best >= 0.7 && s.skippedQuizzes) {
+              delete s.skippedQuizzes[moduleId];
+            }
+          }
+          logXp(s, `quiz:${moduleId ?? 'mix'}:${correct}/${results.length}`, xp);
+          return { xp, record };
+        }),
+
+      rateCard: (cardId, ok) =>
+        mutate((s) => {
+          const rec = (s.cards[cardId] ??= { box: 0, due: todayStr() });
+          rec.box = ok ? Math.min(5, rec.box + 1) : 1;
+          rec.due = addDays(todayStr(), BOX_DAYS[Math.max(1, rec.box)]);
+          logXp(s, `card:${cardId}`, XP.card);
+        }),
+    };
+  });
+
+  if (typeof window !== 'undefined') {
+    const mirrorKey = getLocalMirrorKey(slot);
+    window.addEventListener('storage', (ev) => {
+      if (ev.key === mirrorKey && ev.newValue) {
+        const incoming = readLocalProgressMirror(slot);
+        if (incoming) {
+          const merged = mergeWpStates(store.getState().state, incoming);
+          store.setState({ state: merged });
+        }
+      }
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        const incoming = readLocalProgressMirror(slot);
+        if (incoming && (incoming.updatedAt ?? 0) > (store.getState().state.updatedAt ?? 0)) {
+          const merged = mergeWpStates(store.getState().state, incoming);
+          store.setState({ state: merged });
+        }
+      }
+    });
+  }
+
+  return store;
+}
+
+export const useSdProgress = createSdProgressStore();

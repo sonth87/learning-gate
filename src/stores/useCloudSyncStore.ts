@@ -35,6 +35,7 @@ import {
   useRedisProgress,
 } from '@/features/devops-course/store';
 import { usePmpProgress } from '@/features/pmp-course/store';
+import { useSdProgress } from '@/features/sysdesign-course/store';
 import type { WpState } from '@/features/workpath/types';
 import type { UserSettings } from '@/types/user.types';
 
@@ -97,6 +98,8 @@ function getSlotInMemoryState(slot: ProgressSlotId): WpState {
       return useRedisProgress.getState().state;
     case 'pmp':
       return usePmpProgress.getState().state;
+    case 'sysdesign':
+      return useSdProgress.getState().state;
   }
 }
 
@@ -129,6 +132,9 @@ function applyMergedSlotToStore(slot: ProgressSlotId, nextState: WpState): void 
     case 'pmp':
       usePmpProgress.setState((cur) => apply(cur));
       break;
+    case 'sysdesign':
+      useSdProgress.setState((cur) => apply(cur));
+      break;
   }
 }
 
@@ -144,6 +150,8 @@ function isSlotHydrated(slot: ProgressSlotId): boolean {
       return useRedisProgress.getState().hydrated;
     case 'pmp':
       return usePmpProgress.getState().hydrated;
+    case 'sysdesign':
+      return useSdProgress.getState().hydrated;
   }
 }
 
