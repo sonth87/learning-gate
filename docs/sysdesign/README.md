@@ -2,7 +2,7 @@
 
 App thứ 6 của Learning Gate: học system design bằng một mô hình chạy được (mô phỏng tải, lỗi, hồi phục) thay vì sơ đồ tĩnh. App id `sdmastery`, course/slot id `sysdesign`, branch `feat/sdmastery`.
 
-Liên kết nhanh: [TASKS](./TASKS.md) · [DECISIONS](./DECISIONS.md) · [Quy trình](./08-workflow.md) · [Kiến trúc](./03-architecture.md)
+Liên kết nhanh: **[HANDOFF — bắt đầu từ đây nếu bạn tiếp quản](./HANDOFF.md)** · [TASKS](./TASKS.md) · [DECISIONS](./DECISIONS.md) · [Quy trình](./08-workflow.md) · [Kiến trúc](./03-architecture.md)
 
 ## Trạng thái hiện tại
 
@@ -33,6 +33,7 @@ Liên kết nhanh: [TASKS](./TASKS.md) · [DECISIONS](./DECISIONS.md) · [Quy tr
 | [`06-activities-and-grading.md`](./06-activities-and-grading.md) | Schema các dạng bài tập và bộ chấm, lưu điểm vào `WpState` |
 | [`07-content-authoring.md`](./07-content-authoring.md) | Định dạng `content/sysdesign/modules/<id>/` (module, lesson, stage, sim, activities, quiz, cards), cách chuyển một bài SDC, checklist bài "xong", quy tắc doctor |
 | [`08-workflow.md`](./08-workflow.md) | Quy trình subagent, mẫu prompt, checklist review, Definition of Done, lệnh kiểm tra, quy tắc commit |
+| [`HANDOFF.md`](./HANDOFF.md) | Bàn giao cho agent tiếp quản: trạng thái tại `341a0fa`, quy tắc bắt buộc, việc tiếp theo, vấn đề đã biết, quyết định chờ người dùng |
 | [`TASKS.md`](./TASKS.md) | Bảng việc M0→M8 với ID, phụ thuộc, tiêu chí nghiệm thu, trạng thái |
 | [`DECISIONS.md`](./DECISIONS.md) | ADR-001..013: các quyết định đã chốt |
 | [`reference/dts-models.md`](./reference/dts-models.md) | Thẻ đối chiếu từng bài DTS (bằng lời riêng): khái niệm, thành phần scene, trình tự bước, metric chính |
