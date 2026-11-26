@@ -52,7 +52,7 @@ Mẫu: `src/features/pmp-course/`, `scripts/build-pmp.mjs`, `scripts/pmp-doctor.
 | T1.3 | App shell `src/apps/sdmastery/` (`SdMasteryApp`, `SdHeader`, `SdMobileBottomNav`, `useSdStore`, `sd.types`), 7 tab (tab chưa làm = placeholder); đăng ký ở `appRegistry.tsx` (`SD_MASTERY_CONFIG`, `LearningAppId` 257, `ALL_LEARNING_APPS` 264, `switchLearningApp` 272), `AppLogos.tsx` (`SdMasteryLogo`), `App.tsx:117-126`, `useWorkbenchStore.ts:69-82` (cursor `{moduleId:'S0-01',stepIndex:0}`), accent (`--dts-*` mới hoặc `cyan`) | T1.1b, T1.2 | Sonnet | `src/apps/sdmastery/**`, `src/apps/appRegistry.tsx`, `src/components/common/AppLogos.tsx`, `src/App.tsx`, `src/stores/useWorkbenchStore.ts`, `src/index.css` (nếu thêm accent) | App mở được từ dock và launcher; chuyển được 7 tab; ⌘1..7 chuyển tab; light/dark đúng; 5 app cũ vẫn mở bình thường | M2; **tuần tự với T1.2** | done (cd6e3e0) — UI chưa kiểm bằng mắt |
 | T1.4 | `scripts/build-sysdesign.mjs`, `scripts/sysdesign-doctor.mjs` (khung quy tắc 07 §6; phần chạy engine nối ở T4.6), `scripts/run-sysdesign-tests.mjs` + npm scripts `sd:build`, `sd:doctor`, `sd:test` | T0.5 | Sonnet | `scripts/*sysdesign*.mjs`, `package.json` | `sd:build` sinh `src/data/courses/sysdesign/{curriculum,sims}.json` từ fixture; doctor bắt: trùng id, thiếu `source` ở bài từ SDC (schema 01 §3.1), quiz/cards thiếu, schema `stage.json`/`sim.json` sai, secret, từ cấm §5; `sd:test` chạy được một test mẫu. Quyết việc có theo dõi `src/data/courses/sysdesign/` trong git (theo thông lệ khoá khác) | M2, T1.1a | done (3634e53) |
 | T1.5 | `scripts/import-sdc.mjs`: tải `content/phases/**` theo commit cố định vào `content/sysdesign/_source/sdc/` + `manifest.json` | T0.5 | Sonnet | `scripts/import-sdc.mjs`, `content/sysdesign/_source/sdc/**` | Manifest có path, sha, url, fetchedAt cho từng file; chạy lại cho kết quả giống hệt; `_source/` không vào bundle; doctor cảnh báo nếu file trong `_source/` khác manifest | T1.1a–c, T1.4, M2 | done (4a6b9b0) |
-| T1.6 | Review M1 (Opus): chạy hết lệnh kiểm tra, kiểm hồi quy 5 app | T1.1a–T1.5 | Opus | — | `build`, `lint`, `sd:*`, `course:*`, `pmp:doctor` xanh; mở 5 app cũ không lỗi | — | todo |
+| T1.6 | Review M1 (Opus): chạy hết lệnh kiểm tra, kiểm hồi quy 5 app | T1.1a–T1.5 | Opus | — | `build`, `lint`, `sd:*`, `course:*`, `pmp:doctor` xanh; mở 5 app cũ không lỗi | — | done — tự động xanh, UI chờ kiểm bằng mắt cùng T3.7 |
 
 ---
 
@@ -70,7 +70,7 @@ Chi tiết thuật toán: `04-simulation-engine.md` (cây file §9.1). Cấm imp
 | T2.6 | `grade.ts`: `Constraint`, `evaluate`, `simulate` headless | T2.3, T2.5 | Sonnet | `sim/grade.ts` | I21 (preset `fix-cache-and-db` đạt, `trap-more-apps` không đạt); test cửa sổ, trọng số lưu lượng | T2.4 | done (506d360) |
 | T2.7 | `__tests__/sim.test.ts` + fixtures + nối vào `sd:test`; bench I22 | T2.3 (tăng dần theo T2.4–T2.6) | Sonnet | `sim/__tests__/*`, `scripts/run-sysdesign-tests.mjs` | Đủ I1–I22 của 04 §9.5; ghi số đo thực tế vào cột "đo được" | — | done (734f198) |
 | T2.9 | `trace.ts`: `traceRequest` (waterfall request đại diện cho `RequestTracer`, 04 §9.2) | T2.3 | Sonnet | `sim/trace.ts` | Cùng `packetId` cho cùng trace; chặng chậm nhất ở S1-03 t=40 là DB; kind `retry` có chặng timeout | T2.4–T2.6 | done (40af57b) |
-| T2.8 | Review M2 (Opus): đối chiếu xu hướng và độ lớn với lý thuyết hàng đợi; chốt 04 §11 mục 1 | T2.1–T2.7, T2.9 | Opus | — | Mọi bất biến xanh; không import React/`@/components`; ghi giới hạn mô hình vào 04 | — | todo |
+| T2.8 | Review M2 (Opus): đối chiếu xu hướng và độ lớn với lý thuyết hàng đợi; chốt 04 §11 mục 1 | T2.1–T2.7, T2.9 | Opus | — | Mọi bất biến xanh; không import React/`@/components`; ghi giới hạn mô hình vào 04 | — | done |
 
 ---
 
@@ -162,7 +162,7 @@ Nghiệm thu chung mỗi bài: checklist "xong" ở `07-content-authoring.md` §
 | T7.3 | `cases` | Design Cases + Evolution timeline (02 §7.2; URL Shortener và News Feed bọc S5-02, S5-03) | T3.7, T4.7 | Sonnet | Mỗi case có bước hỏi bắt buộc đầu tiên (khung câu hỏi SDC) và timeline v1→vN chạy được | T7.1, T7.2, T7.4–T7.6 | todo |
 | T7.4 | `atlas` | Pattern Atlas/Glossary, gắn vào `TermPopover` qua `src/data/glossary/devopsAndPmpData.ts` (file dùng chung) | T5.5 | Sonnet | Thuật ngữ hiện popover ở bài học; không phá glossary của app khác | T7.1–T7.3, T7.5, T7.6 | todo |
 | T7.5 | `interview` | Interview Mode: SNAKE 5 chặng, bấm giờ | T4.7 | Sonnet | Chạy đủ 5 chặng, có đồng hồ, lưu kết quả | T7.1–T7.4, T7.6 | todo |
-| T7.6 | `credits` | Trang Credits (nội dung theo `01-sources-and-credits.md` §3.3). **Khuyến nghị làm sớm** (ngay sau T1.3) vì liên quan giấy phép | T1.3 | Sonnet | Liệt kê SDC (repo, sha, giấy phép, ghi chú MIT), DTS (tham chiếu), danh sách bài đã chuyển lấy từ `source` | bất kỳ | todo |
+| T7.6 | `credits` | Trang Credits (nội dung theo `01-sources-and-credits.md` §3.3). **Khuyến nghị làm sớm** (ngay sau T1.3) vì liên quan giấy phép | T1.3 | Sonnet | Liệt kê SDC (repo, sha, giấy phép, ghi chú MIT), DTS (tham chiếu), danh sách bài đã chuyển lấy từ `source` | bất kỳ | done (b9a355d, cd6e3e0) |
 | T7.7 | Review M7 (Opus), một dòng cho mỗi tab | T7.1–T7.6 | Opus | — | Tab hoạt động; không hồi quy | — | todo |
 
 ---
@@ -183,3 +183,5 @@ Nghiệm thu chung mỗi bài: checklist "xong" ở `07-content-authoring.md` §
 |---|---|---|---|
 | 2026-11-26 | T0.1–T0.4 | đạt (sau khi T0.5 sửa trực tiếp) | Đã đồng bộ: kịch bản S1-03 theo 04 §10 (02/05/06/07); schema `source` duy nhất ở 01 §3.1; `ScaleModuleLesson.attribution` (05 §2, 03 §5.3, T3.1/T3.6); file dùng chung `ExerciseRecord`/`mergeWpStates`/`PacketKind`/`LegendDot`/`legendKinds`/`i18n.ts` (03 §5, 08 §6, T3.1, T4.1); M6 theo 15 batch của 02 (ADR-013); thêm 04 §12 + T6.0a/b cho bài sự kiện; bỏ nhãn `quiz-only`; adapter engine → workbench chuyển từ `sim/view.ts` sang `sysdesign-course/live/`. Commit M0 do orchestrator làm |
 | 2026-11-26 | T0.5 | done | Xem báo cáo review |
+| 2026-11-26 | T1.6 | done | Kiểm tra toàn bộ M1 (`build`, `sd:build`, `sd:doctor`, `sd:test`, `course:build`, `course:doctor`, `course:test`, `pmp:doctor`) đều xanh; ranh giới module `sysdesign-course` không import `src/apps/`; `SdCreditsView` (T7.6) đã hoạt động; kiểm UI bằng mắt gộp ở T3.7 |
+| 2026-11-26 | T2.8 | done | Kiểm tra `sim/` thuần TS (0 import React/DOM/`@/components`/`@/apps`/`@/stores`, 0 `Math.random`/`Date`); 7/7 file test (I1–I22 + trace + live stage math) xanh; chốt 04 §11 mục 1 (`c = round(μ_tot·S)`) và bổ sung §11.1 Giới hạn mô hình đã xác nhận |

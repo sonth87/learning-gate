@@ -1168,15 +1168,23 @@ Ghi chú:
 
 | # | Vấn đề | Tình trạng |
 |---|---|---|
-| 1 | Công thức `c = round(μ_tot·S)` làm `c` thay đổi khi `replicas` đổi ⇒ p99 thay đổi nhẹ ngay cả khi ρ đã thấp | Đề xuất chấp nhận (hiệu ứng thật, thêm server giảm Wq); xác nhận ở T2.8 |
+| 1 | Công thức `c = round(μ_tot·S)` làm `c` thay đổi khi `replicas` đổi ⇒ p99 thay đổi nhẹ ngay cả khi ρ đã thấp | **Đã chốt (T2.8):** chấp nhận — đúng lý thuyết hàng đợi M/M/c (cùng ρ nhưng tăng số kênh phục vụ `c` làm giảm `Wq` theo Sakasegawa); đây cũng là lý do I4 giảm 6,5% khi nhân đôi App |
 | 2 | Xử lý `cancelOnTimeout` (callee huỷ công việc đã bị bỏ) | Mặc định `false` để thấy lãng phí; thêm knob ở war-room (T7.2) |
-| 3 | Chạy engine trong Web Worker | Chưa quyết — quyết sau bench ở T3.6/T3.7 (≥ 20 node) |
+| 3 | Chạy engine trong Web Worker | Chưa quyết — quyết sau bench ở T3.6/T3.7 (≥ 20 node; hiện trung vị tick 30 node = 0,16 ms nên main thread dư sức) |
 | 4 | Mô hình sticky read-after-write | Chưa quyết (routing trong scene hay knob) — chốt ở T6.5 (batch 5, S2-08) |
 | 5 | Ghost timeline cho A/B compare | M8 (T8.2) |
 | 6 | Raft trên engine tải, multi-region nâng cao | M8 (T8.3). Raft dạng kịch bản cho S3-03 thuộc §12 |
 | 7 | Dung sai các test I1–I22 | Đã điều chỉnh/ghi ở T2.7; duy nhất I4 (thêm app) nới 5% → 10% (≤ 2×), giải thích ở bảng §9.5; I6a giữ ngưỡng, sửa câu "≈ 2,3×" (T2.4) |
 | 8 | Độ chính xác của `traceRequest` (waterfall lấy mẫu từ phân phối, không phải request thật) | Chấp nhận ở v1; UI ghi "request đại diện" (T3.5) |
-| 9 | **p99 chỉ gồm request thành công** (`metrics.latency`): khi DB lỗi 53%, p99 vẫn ≈ 194 ms nên SLO `p99 ≤ 300 ms` của S1-03 không bao giờ vi phạm; chỉ `slo-error` phân biệt starter/preset | Chưa quyết (T2.8/T4.4): hoặc đưa SLO latency xuống ≈ 100 ms cho S1-03 (starter vi phạm sau t≈35 s, nhưng preset `fix-cache-and-db` p99 cực đại ≈ 106 ms cần `allowViolationPct`), hoặc thêm `latencyIncludingErrors` (lỗi tính ở `timeoutMs`/`clientTimeoutMs`) vào `GlobalMetrics` |
+| 9 | **p99 chỉ gồm request thành công** (`metrics.latency`): khi DB lỗi 53%, p99 vẫn ≈ 194 ms nên SLO `p99 ≤ 300 ms` của S1-03 không bao giờ vi phạm; chỉ `slo-error` phân biệt starter/preset | Chờ người dùng quyết trước T4.4/T5.3 (`HANDOFF.md` §8): đề xuất thêm chỉ số p99 tính cả lỗi/timeout vào `GlobalMetrics` |
+
+### 11.1 Giới hạn mô hình đã xác nhận (T2.8)
+
+1. **Mô hình dòng chảy (fluid model, `dt = 100 ms`) so với lý thuyết hàng đợi:** khớp chặt ở trạng thái dừng và quá độ chậm — Little's Law (I1, sai lệch ≤ $10^{-13}$), bảo toàn dòng (I2, sai lệch 0), xấp xỉ Sakasegawa M/M/c (I3, lệch bảng lý thuyết ≤ 3%), khuếch đại đuôi fan-out song song (I14, khớp $1 - 0{,}99^{100}$), consistent hashing (I9, khớp $1/(N+1)$). Giới hạn: không theo dõi từng request rời rạc; chấm trên stage và `traceRequest` là mẫu đại diện có seed.
+2. **Hỗn hợp phân phối `Dist` tối đa 4 thành phần shifted-exponential:** giải quyết đúng tương quan giữa nhánh nhanh (cache hit) và nhánh chậm/lỗi (cache miss xuống DB quá tải), không bị nhân xác suất độc lập giả tạo. Khi đường đi tách thành hơn 4 nhánh có độ trễ khác biệt lớn, các thành phần dư được gộp về thành phần gần nhất nên phân vị đuôi là xấp xỉ.
+3. **Số kênh phục vụ hiệu dụng `c = max(1, round(μ_tot · S))`:** tăng `replicas` hoặc `sizeFactor` làm tăng cả `μ_tot` lẫn `c`, nên ở mức tải chưa bão hòa `Wq` vẫn giảm nhẹ theo công thức M/M/c (ví dụ I4: nhân đôi tầng App khi DB đang nghẽn làm p99 toàn cục giảm ~6,5% do phần đuôi tầng App mỏng đi ~10 ms).
+4. **Độ trễ báo cáo (`metrics.latency`) chỉ tính trên các thành phần `ok: true`:** mọi phần khối lượng vượt `timeoutMs` của link hoặc `clientTimeoutMs` được cắt sang nhánh thất bại (`ok: false`) và tính vào `errorRate`. Hệ quả: khi một chặng có `timeoutMs` ngắn hơn SLO, p99 của các request thành công bị chặn trên gần ngưỡng timeout đó trong khi `errorRate` tăng vọt.
+5. **Thời điểm ghi nhận lỗi và lập lịch retry:** xác suất thất bại $1 - p_{\text{succ}}$ của tick $k$ được tính trong lượt backward cùng tick, còn lưu lượng retry được đưa vào `retryRing` để bắn ở tick $k + \lceil(\text{detect} + \text{backoff})/dt\rceil$. Nhờ đó không có vòng lặp đại số tức thời và tạo đúng hiệu ứng phản hồi dương trễ (retry storm I6a đạt $\times 3{,}94 \to 1 + \text{max}$), nhưng tỷ lệ lỗi hiển thị sớm hơn thời điểm client thực sự nhận timeout một khoảng tối đa bằng `timeoutMs`.
 
 ---
 

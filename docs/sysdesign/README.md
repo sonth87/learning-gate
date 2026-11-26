@@ -7,16 +7,13 @@ Liên kết nhanh: **[HANDOFF — bắt đầu từ đây nếu bạn tiếp qu�
 ## Trạng thái hiện tại
 
 - Ngày: 2026-11-26
-- **M0 — Bộ tài liệu: xong** (T0.1–T0.4 viết, T0.5 review đã sửa trực tiếp; commit M0 do orchestrator làm).
-- **Tiếp theo: M1 (khung app) song song M2 (engine)**. Bắt đầu được ngay: T1.2, T1.4, T1.5 (M1) và T2.1 (M2); T1.1a cần T1.2.
+- **M0 — Bộ tài liệu: xong** (`0ba5606` + cập nhật ADR-001..018, `HANDOFF.md`).
+- **M1 — Khung app và feature module: xong** (T1.1a–T1.6, kèm T7.6 trang Credits và bài mẫu S1-03 phần nội dung T5.1).
+- **M2 — Engine mô phỏng (`src/features/sysdesign-course/sim/`): xong** (T2.1–T2.9, đủ 22 bất biến I1–I22, review T2.8 xong).
+- **M3 — Stage chế độ `live-sim`: đang làm** (T3.1–T3.3 xong; đang triển khai T3.4–T3.6 theo `HANDOFF.md` §6.1).
 - Chương trình chốt: 74 bài (40 SDC + 22 bổ sung từ chủ đề DTS + 12 tự thêm ★), level 0–7 (`02-curriculum.md`, ADR-010).
-- Chưa có code của app. Chưa tồn tại: `src/features/sysdesign-course/`, `src/apps/sdmastery/`, `content/sysdesign/`, các script `sd:*`.
 - Thứ tự phụ thuộc: M0 → (M1 ∥ M2) → M3 → M4 → M5 (cổng duyệt của người dùng) → (M6 ∥ M7) → M8.
-- Việc chờ người dùng (không chặn M1/M2):
-  1. Duyệt phạm vi mô phỏng sự kiện do T6.0a đề xuất (`04-simulation-engine.md` §12), trước batch 4 của M6.
-  2. Giữ nhóm Security & Shipping (S6-08..S6-12) ở Phase 6 hay tách level riêng (`02-curriculum.md` §8), trước batch 12.
-  (Giấy phép SDC đã được tác giả đồng ý — ADR-014; không còn là việc chờ.)
-  Các chỗ ghi **Chưa quyết** khác là quyết định kỹ thuật, chốt ở task được ghi kèm.
+- Việc chờ người dùng: xem bảng tổng hợp tại [`HANDOFF.md`](./HANDOFF.md) §8.
 - Mục "Trạng thái hiện tại" này phải cập nhật mỗi khi một milestone đổi trạng thái (xem `08-workflow.md` §9).
 
 ## Mục lục
