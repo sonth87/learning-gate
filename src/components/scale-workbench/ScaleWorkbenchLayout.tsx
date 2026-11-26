@@ -135,6 +135,12 @@ const LegendDot: React.FC<{ kind: PacketKind }> = ({ kind }) => {
       return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--dts-border)] bg-[#efb041]" />;
     case 'error':
       return <span className="inline-block h-2.5 w-2.5 rounded-[2px] border border-[#5e1b16] bg-[#e5534b]" />;
+    case 'retry':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-[#a8531a] bg-[#e8883a]" />;
+    case 'timeout':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--dts-border)] bg-[#bdb4a8] opacity-60" />;
+    case 'dropped':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#5e1b16] bg-[#e5534b]" />;
   }
 };
 
@@ -477,6 +483,15 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     }
   };
 
+  // F3: hook phải đứng trước early return (Rules of Hooks).
+  const legendScene = activeLesson?.steps[safeStepIdx]?.scene;
+  const legendKinds = useMemo(() => {
+    if (!legendScene) return [];
+    const set = new Set<PacketKind>(['request', 'response']);
+    for (const p of legendScene.packets) set.add(p.kind);
+    return [...set];
+  }, [legendScene]);
+
   if (!activeLesson || !activeStep) return null;
 
   const totalCompletedLessons = lessons.filter(
@@ -492,13 +507,6 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const isMemoryStage =
     activeStep.stageMode === 'memory-2d' && Boolean(activeStep.memoryScene);
   const isNativeCodeTrace = activeStep.stageMode === 'code-trace';
-
-  const legendKinds = useMemo(() => {
-    if (!activeStep.scene) return [];
-    const set = new Set<PacketKind>(['request', 'response']);
-    for (const p of activeStep.scene.packets) set.add(p.kind);
-    return [...set];
-  }, [activeStep.scene]);
 
   const renderSyllabusContent = (showCollapseBtn = false) => (
     <div className="flex h-full min-h-0 flex-col gap-2.5">

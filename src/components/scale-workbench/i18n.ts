@@ -158,6 +158,9 @@ export const WORKBENCH_I18N: Record<
       mutation: 'cập nhật trạng thái / yield',
       'cache-hit': 'trúng cache O(1) (Cache Hit)',
       error: 'ngoại lệ / tác vụ gây nghẽn',
+      retry: 'gọi lại (retry)',
+      timeout: 'quá thời gian chờ (timeout)',
+      dropped: 'bị loại bỏ (dropped)',
     },
     themes: {
       light: 'Giấy sáng (Paper)',
@@ -249,6 +252,9 @@ export const WORKBENCH_I18N: Record<
       mutation: 'state / yield',
       'cache-hit': 'cache / O(1) hit',
       error: 'exception / blocked',
+      retry: 'retry',
+      timeout: 'timed out',
+      dropped: 'dropped',
     },
     themes: {
       light: 'Paper Light',
