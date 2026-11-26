@@ -134,6 +134,8 @@ export interface NodeRuntime {
   queue: number;
   rhoPrev: number;
   stateHoldTicks: number;
+  /** số tick liên tiếp ρ ≥ 1 (điều kiện phụ của `overloaded`, xem 04 §2.13) */
+  overTicks: number;
   stateShown: NodeState;
   slowAddMs: number; slowUntilTick?: number;
   hotShare: number; hotUntilTick?: number;
