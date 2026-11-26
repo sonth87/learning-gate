@@ -7,7 +7,7 @@
  *  - `stepState`: bản thuần, clone state trước khi chạy.
  */
 import { effectiveHit, hitTarget, singleflightCap, stepCacheState, type CacheParams } from './cache';
-import { applyEvent, applyInput, initialInputs } from './events';
+import { applyEvent, initialInputs } from './events';
 import {
   D_FAIL0, D_ZERO, dMark, dMassBeyond, dMax, dMean, dMix, dOkMass, dPoint, dQuantile, dRetry, dScaleCalls, dSerial,
   dShift, dSummary, dTruncate, nodeDist, type Dist,
@@ -17,6 +17,7 @@ import {
   type SimScenario, type TimedEvent,
 } from './model';
 import { stepPackets, visiblePackets, type PacketLinkInput } from './packets';
+import { createRecorder, flushInputs, type Recorder } from './recorder';
 import { gauss, tickRng } from './rng';
 import { rpsAt } from './profiles';
 import type {
@@ -1168,15 +1169,22 @@ function badgeOf(
 export interface Sim {
   readonly scenario: SimScenario;
   readonly compiled: CompiledModel;
+  /** Tick sẽ chạy tiếp theo (= số tick đã chạy trên nhánh hiện tại). Sau `scrub(t)` = round(t/DT)+1. */
   readonly tick: number;
   readonly t: number;
   readonly inputLog: readonly InputRecord[];
   readonly state: SimState;
-  /** +1 tick (100 ms). */
+  readonly recorder: Recorder;
+  /** +1 tick (100 ms). Đang ở quá khứ (sau scrub) thì chạy lại theo inputLog hiện hành. */
   step(): SimFrame;
   runUntil(tSec: number, onFrame?: (f: SimFrame) => void): SimFrame;
-  /** Áp tại tick hiện tại (có hiệu lực từ lần `step()` kế tiếp). */
+  /**
+   * Áp tại tick hiện tại (có hiệu lực từ lần `step()` kế tiếp). Đang ở quá khứ ⇒ ghi đè tương lai:
+   * cắt inputLog/checkpoint/ring/marker phía sau (04 §5.2).
+   */
   setInput(change: InputChange): void;
+  /** Đặt con trỏ tại t (tick k = round(t/DT), kẹp vào vùng còn lưu) và trả frame đầy đủ (có packets). */
+  scrub(tSec: number): SimFrame;
   /** Frame của tick đã chạy gần nhất (hoặc null nếu chưa chạy). */
   frame(): SimFrame | null;
   reset(seed?: number): void;
@@ -1187,21 +1195,24 @@ export function createSim(scenario: SimScenario): Sim {
   let c = compile(scenario);
   let state = createInitialState(c);
   let inputs: SimInputs = initialInputs();
-  let log: InputRecord[] = [];
-  let pending: TimedEvent[] = [];
+  let logPtr = 0;
   let last: SimFrame | null = null;
+  let rec = createRecorder(c, stepInPlace, createInitialState);
 
   const sim: Sim = {
     scenario,
     get compiled() { return c; },
     get tick() { return state.tick; },
     get t() { return state.tick * DT; },
-    get inputLog() { return log; },
+    get inputLog() { return rec.log; },
     get state() { return state; },
+    get recorder() { return rec; },
     step() {
-      const ev = pending;
-      pending = [];
+      const ev: TimedEvent[] = [];
+      logPtr = flushInputs(rec.log, logPtr, state.tick, inputs, ev);
       last = stepInPlace(c, state, inputs, ev);
+      rec.push(last);
+      rec.checkpointIfDue(state, inputs, logPtr);
       return last;
     },
     runUntil(tSec, onFrame) {
@@ -1214,10 +1225,23 @@ export function createSim(scenario: SimScenario): Sim {
       return f ?? sim.step();
     },
     setInput(change) {
-      const rec: InputRecord = { tick: state.tick, change };
-      log.push(rec);
-      const ev = applyInput(inputs, rec);
-      if (ev) pending.push(ev);
+      if (state.tick < rec.length) {
+        // đang ở quá khứ: cắt nhánh tương lai (log/ring/checkpoint/marker phía sau tick hiện tại)
+        rec.truncate(state.tick);
+        logPtr = Math.min(logPtr, rec.log.length);
+      }
+      rec.append({ tick: state.tick, change });
+    },
+    scrub(tSec) {
+      if (rec.length === 0) return sim.step();
+      const k = Math.min(rec.length - 1, Math.max(rec.earliestTick, Math.round(tSec / DT)));
+      if (last && k === state.tick - 1) return last;
+      const r = rec.restoreAt(k);
+      state = r.state;
+      inputs = r.inputs;
+      logPtr = r.logPtr;
+      last = r.frame;
+      return r.frame;
     },
     frame() { return last; },
     reset(seed) {
@@ -1225,11 +1249,11 @@ export function createSim(scenario: SimScenario): Sim {
       c = compile(sc);
       state = createInitialState(c);
       inputs = initialInputs();
-      log = [];
-      pending = [];
+      logPtr = 0;
       last = null;
+      rec = createRecorder(c, stepInPlace, createInitialState);
     },
-    dispose() { last = null; log = []; pending = []; },
+    dispose() { last = null; rec.clear(); },
   };
   return sim;
 }
