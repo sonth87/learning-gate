@@ -1,5 +1,7 @@
 # 08 — Quy trình làm việc với subagent
 
+> **Từ 2026-11-26 (ADR-018):** agent tiếp quản làm việc một mình — xem `HANDOFF.md` §0. Vai trò Sonnet/Opus và worktree bên dưới chỉ còn giá trị tham khảo; checklist review §4–§5 và Definition of Done vẫn áp dụng.
+
 > Ngày: 2026-11-26. Áp dụng cho mọi task trong [`TASKS.md`](./TASKS.md). Quyết định gốc: ADR-003.
 
 ## 1. Vai trò

@@ -1,7 +1,45 @@
 # HANDOFF — Tiếp quản dự án System Design Mastery (`sdmastery`)
 
-> Viết ngày 2026-11-26 cho agent tiếp quản (Gemini). Người viết: Claude (điều phối viên ở giai đoạn M0–M3).
+> Viết ngày 2026-11-26 cho agent tiếp quản (Gemini). Người viết: Claude (điều phối viên ở giai đoạn M0–M3). Trạng thái tại commit `341a0fa` (+ commit docs bàn giao).
 > Đọc hết file này trước khi sửa bất kỳ dòng code nào. File này là điểm vào; chi tiết nằm ở các docs được trỏ tới.
+
+---
+
+## 0. Vai trò của bạn (đọc trước — ghi đè các docs cũ)
+
+Giai đoạn trước chạy theo mô hình nhiều agent của Claude Code: "Sonnet triển khai, Opus review, agent con không sửa `TASKS.md`" (ADR-003, ADR-015, `08-workflow.md`, cột **Agent** và trạng thái `review` trong `TASKS.md`). **Mô hình đó không áp dụng cho bạn.** Từ nay (ADR-018):
+
+- **Bạn vừa triển khai vừa tự review.** Với mỗi task: đọc docs → làm → chạy đủ lệnh ở §5 → tự đi qua checklist review ở `08-workflow.md` §4–§5 (đọc lại diff của chính mình như một reviewer) → commit → cập nhật `TASKS.md`.
+- **Bạn được và phải tự cập nhật `TASKS.md`** (cột Trạng thái: `doing` khi bắt đầu, `done (<hash>)` khi xong; ghi chú review vào mục "Ghi chú review" cuối file). Bỏ qua cột **Agent** và trạng thái `review`.
+- Phần "mẫu prompt subagent", "worktree song song" trong `08-workflow.md` là tham khảo; bạn làm tuần tự trên `feat/sdmastery` là đủ.
+- **Dừng lại hỏi người dùng khi:** (1) gặp một mục trong §8 "Quyết định đang chờ"; (2) cần đổi một ADR; (3) thay đổi làm **khác hành vi nhìn thấy được** của 5 app cũ; (4) muốn thêm dependency npm; (5) muốn push hoặc tạo PR; (6) tới cổng duyệt T5.5. Ngoài các trường hợp đó, cứ làm theo `TASKS.md`.
+
+## 0.1 Môi trường
+
+- Node **20.19** (đã dùng), npm, có `package-lock.json` → `npm ci` nếu chưa có `node_modules`.
+- Không có ESLint config (`npm run lint` báo `eslint: command not found`) → kiểm tra kiểu dựa vào `tsc -b` trong `npm run build`. **Không tự thêm eslint** khi chưa hỏi.
+- Không có Vitest/Jest/Playwright. Test là file `*.test.ts` tự chứa (dùng `node:assert/strict` + hàm `test()` tự viết), chạy bằng `npm run sd:test` (bundle bằng esbuild có sẵn qua vite). Viết test mới theo đúng mẫu `src/features/sysdesign-course/sim/__tests__/sim.test.ts`.
+- Chạy thử UI: `npm run dev -- --port 5199 --strictPort` → mở trình duyệt → app **System Design Mastery** ở dock (logo teal).
+
+## 0.2 Mục tiêu cuối (thế nào là "xong" cả dự án)
+
+Một app trong Learning Gate mà người học:
+1. Đi qua **74 bài** (level 0–7, danh sách ở `02-curriculum.md`), lời giảng tiếng Việt chuyển thể từ SDC, mỗi bước có **sơ đồ isometric hoặc 2D**, không bao giờ là khung IDE cho nội dung không phải code.
+2. Ở các bài có mô phỏng (38 bài live-sim + 19 bài mô phỏng sự kiện), **tự kéo tải, tiêm lỗi, chỉnh tham số, tua timeline** và thấy thành phần đổi trạng thái (healthy → busy → saturated → overloaded → down), hàng đợi dồn, packet lỗi/retry — số liệu do engine tính, không viết tay.
+3. Làm **bài tập có chấm điểm** (đoán chỗ nghẽn, tinh chỉnh tới giới hạn, ước lượng, thử thách sửa có ngân sách…), cộng quiz + flashcard, tiến độ lưu và đồng bộ như các app khác.
+4. Dùng các tab mở rộng: Lab (tự lắp kiến trúc 2D), War-Room (sự cố chạy trên engine), Case thiết kế, Atlas (từ điển mẫu), Interview (SNAKE bấm giờ), Credits.
+Mốc gần nhất cần đạt: **bài mẫu S1-03 hoàn chỉnh (live-sim + bài tập) để người dùng duyệt (T5.5)**.
+
+## 0.3 Dữ liệu lấy từ đâu
+
+| Cần gì | Lấy ở đâu | Ghi chú |
+|---|---|---|
+| Lời giảng gốc | `content/sysdesign/_source/sdc/phase-<n>/lessons/*.mdx` (40 bài) + `manifest.json` | Bản gốc SDC tại commit `fe4234da…`, **chỉ đọc**. Map bài SDC → id của mình: cột "Nguồn SDC" trong `02-curriculum.md`. Tải lại bằng `node scripts/import-sdc.mjs` (kết quả phải y hệt). |
+| Cách DTS trình bày một khái niệm | `docs/sysdesign/reference/dts-models.md` (40 thẻ, viết bằng lời của mình) | **Không cần và không nên** mở bundle DTS. Đường dẫn scratchpad trong `_brief/BRIEF.md` §1.2 đã không còn. Muốn xem trực quan thì mở https://designed-to-scale.vercel.app trên trình duyệt, chỉ để tham khảo. |
+| Topology, tham số, số liệu mô phỏng | Engine `src/features/sysdesign-course/sim/` + `sim.json` của từng bài | Mọi con số trong bài (telemetry, callout) phải đo từ engine. Ví dụ cách đo + neo số: `src/features/sysdesign-course/__tests__/content-s1-03.test.ts`. |
+| Định dạng bài | `07-content-authoring.md` + bài mẫu `content/sysdesign/modules/S1-03-data-flow-and-bottlenecks/` | `module.json`, `lesson.md` (khối ```step), `stage.json`, `sim.json`, `quiz.json`, `cards.json`, `activities.json`. |
+| Quy chuẩn văn phong và sân khấu | `docs/scale-workbench-guidelines.md` | §1 chọn chế độ sân khấu, §5 từ ngữ. |
+| Kiểu và API dùng chung | `src/components/scale-workbench/types.ts`, `src/features/workpath/types.ts` | Không phá tương thích. |
 
 ---
 
@@ -113,6 +151,18 @@ Chi tiết từng task (file chạm, nghiệm thu) ở `TASKS.md`. Tóm tắt:
 9. Sau "duyệt": **M6** theo 15 batch ở `02-curriculum.md` §6 (batch 1: S1-07, S1-04, S1-01, S1-02, S1-06), **M7** các tab mở rộng (Lab, War-Room, Cases, Atlas, Interview), **M8** (bản EN, A/B compare…).
 
 ---
+
+## 6.1 Phiên làm việc đầu tiên — kế hoạch cụ thể (T3.4 → T3.6)
+
+Mục tiêu phiên: **bài S1-03 bước 6 chạy mô phỏng thật trong app.** Đọc trước `05-live-stage.md` (toàn văn, đặc biệt §2 kiểu `LiveSimAdapter/LiveSimSession`, §4 `useSimClock`, §5 UI (§5.2 vị trí chèn trong Layout), §6 `liveSlot`, §7 khoá i18n, §10 phân rã) và `04-simulation-engine.md` §9 (API: `createSim`, `step`, `scrub`, `traceRequest`).
+
+1. **Adapter phía feature** — tạo `src/features/sysdesign-course/live/liveSimAdapter.ts`: nhận `SimScenario` (từ `sims.json` qua `useSdSims`), dựng `Sim` của engine (có recorder), đổi `SimFrame` của engine → `LiveSimFrame` của workbench (kiểu đã có trong `scale-workbench/types.ts`), cài `LiveSimSource` (`getFrame()` cho rAF, `subscribe()` cho UI), `seek(t)` dùng `scrub`, `setInput` cho núm, `trace(packetId)` dùng `traceRequest`. Kèm test thuần (frame đổi đúng kiểu, seek ra frame giống chạy thẳng).
+2. **Builder** — `scale/sdLessonBuilder.ts`: với bước có khối `live:` → `stageMode: 'live-sim'`, điền `step.liveSim` (spec từ `LiveDef` trong `lesson.md`/`sim.json`), `lesson.attribution` (dùng `sdAttributionLine` ở `credits.ts`), phân giải biến telemetry `{node.field@t:dp}` bằng engine (chạy headless một lần lúc build lesson, có cache).
+3. **T3.4** — `scale-workbench/live/SimTimeline.tsx` (thanh tua, sparkline SVG tự vẽ cập nhật ~10 Hz qua `subscribe`, mốc sự kiện, đường SLO) và `LiveTelemetryStrip.tsx`; i18n nhóm `live` trong `i18n.ts`.
+4. **T3.5** — `LoadKnob`, `ChaosToolbox`, `KnobPanel`, `RequestTracer` (waterfall), `liveSlot` trong inspector (`StageEntityInspector.tsx` đã có prop), `src/features/sysdesign-course/live/NodeLivePanel.tsx`.
+5. **T3.6** — `ScaleWorkbenchLayout.tsx`: thêm prop tùy chọn `liveSimAdapter`; nhánh renderer `stageMode === 'live-sim'` → `ScaleStageSvg` với `scene` cố định + `frameSource`; đặt timeline giữa stage và stepper, controls cạnh cụm Play/Replay; nối Space/R vào `useSimClock`; hiển thị `attribution` cuối cột phải; **ẩn nút/khung "Code thật" (sandbox Python mặc định) khi course là `sdmastery`**. `SdLearnShell.tsx` truyền adapter vào Layout. App khác không truyền prop mới → hành vi y hệt.
+6. Kiểm: §5 đủ lệnh; mở app, S1-03 bước 6: Play → tải tăng, DB vàng → cam → đỏ khoảng t≈31–38 s, hàng đợi dồn, packet lỗi xuất hiện; kéo thanh tua về t=20 thấy trạng thái cũ; bấm một packet ra waterfall có chặng DB chậm nhất. Bước 9: thêm App không cứu được. Mở Redis R10 + PMP P04 xác nhận không đổi.
+7. Commit theo task (`feat(sdmastery): T3.4 — …`, `T3.5`, `T3.6`), cập nhật `TASKS.md`, báo người dùng kèm danh sách kiểm bằng mắt (`05-live-stage.md` §9).
 
 ## 7. Vấn đề đã biết / bẫy
 

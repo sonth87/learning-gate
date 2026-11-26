@@ -19,7 +19,7 @@
 2. Reviewer: đổi → `done` khi đạt, hoặc trả về `doing` kèm danh sách sửa (thêm dòng dưới bảng, mục "Ghi chú review").
 3. Mỗi task = 1 commit trên `feat/sdmastery` (xem `08-workflow.md` §8). Commit chứa luôn thay đổi của TASKS.md.
 4. Cột **Song song với** cho biết task có thể chạy cùng lúc (worktree riêng) vì không chạm chung file. Nếu cột trống hoặc ghi "—" thì chạy tuần tự.
-5. Cột **Agent**: theo ADR-015 (2026-11-26) **mọi task triển khai do Sonnet làm**, kể cả các dòng còn ghi `Opus`; điều phối viên (Opus) review, kiểm soát chất lượng, merge và cập nhật file này.
+5. Cột **Agent**: **từ ADR-018 bỏ qua cột này** — agent tiếp quản tự làm và tự review. (Lịch sử: theo ADR-015 (2026-11-26) **mọi task triển khai do Sonnet làm**, kể cả các dòng còn ghi `Opus`; điều phối viên (Opus) review, kiểm soát chất lượng, merge và cập nhật file này.
 6. Phụ thuộc cấp milestone: **M0** → (**M1** ∥ **M2**) → **M3** (cần T2.1) → **M4** → **M5 (cổng duyệt)** → (**M6** ∥ **M7**) → **M8**.
 
 Số dòng trong cột "File chạm chính" lấy từ BRIEF §4 và đã đối chiếu code tại 2026-11-26 (commit `7bf4997`). Kiểm tra lại trước khi sửa (xem `03-architecture.md` §5). File dùng chung (chạy tuần tự) liệt kê ở `08-workflow.md` §6.
