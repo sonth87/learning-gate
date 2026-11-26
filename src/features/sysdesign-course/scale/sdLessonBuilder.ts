@@ -467,8 +467,7 @@ export function buildSdModuleLesson(
     objectives: mod.objectives.map((o) => ({ vi: o.vi, en: o.en ?? o.vi })),
     steps,
     quizCount: mod.quiz.length,
-    // TODO(T4.1): đếm activity khi có onOpenExercises.
-    exerciseCount: 0,
+    exerciseCount: Array.isArray(mod.activities) ? mod.activities.length : 0,
     cardCount: mod.cards.length,
     readingCount: 0,
     attribution: attr

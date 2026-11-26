@@ -16,6 +16,7 @@ import {
   type QuestionResult,
 } from '@/features/workpath/logic';
 import type { WpQuestion, WpState } from '@/features/workpath/types';
+import { parseSdLesson } from './scale/sdLessonBuilder';
 import type { SdCurriculum, SdLearnView, SdModule } from './types';
 
 export {
@@ -64,12 +65,35 @@ export function sortedSdModules(c: SdCurriculum): SdModule[] {
   return [...c.modules].sort((a, b) => a.level - b.level || a.order - b.order);
 }
 
-/** Tiến độ một module: đọc xong bài (hoặc bỏ qua) và đạt quiz ≥ passQuiz (nếu có quiz). */
+/** Một activity được coi là hoàn thành cổng (gate) khi đã passed, skipped hoặc đã xem lời giải (06 §4). */
+export function isActivitySatisfied(s: WpState, activityId: string): boolean {
+  const rec = s.exercises[activityId];
+  if (!rec) return false;
+  return rec.status === 'passed' || rec.status === 'skipped' || Boolean(rec.solutionViewed);
+}
+
+/** Lấy danh sách activityId có `gate: 'required'` trong lesson.md của module. */
+export function requiredActivityIdsOfModule(m: SdModule): string[] {
+  const steps = parseSdLesson(m.lesson ?? '');
+  const out: string[] = [];
+  for (const st of steps) {
+    if (st.block?.activity && st.block.gate === 'required') {
+      out.push(st.block.activity);
+    }
+  }
+  return out;
+}
+
+/** Tiến độ một module: đọc xong bài (hoặc bỏ qua), đạt quiz ≥ passQuiz (nếu có quiz) và xong mọi activity required (06 §4). */
 export function sdModuleProgress(s: WpState, m: SdModule, passQuiz: number): [number, number] {
-  const total = 1 + (m.quiz.length ? 1 : 0);
+  const reqActs = requiredActivityIdsOfModule(m);
+  const total = 1 + (m.quiz.length ? 1 : 0) + reqActs.length;
   if (isModuleSkipped(s, m.id)) return [total, total];
   let done = Number(lessonSatisfied(s, m.id));
   if (m.quiz.length) done += Number(quizSatisfied(s, m.id, passQuiz));
+  for (const aid of reqActs) {
+    if (isActivitySatisfied(s, aid)) done += 1;
+  }
   return [done, total];
 }
 

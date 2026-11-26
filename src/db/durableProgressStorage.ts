@@ -180,6 +180,8 @@ export function mergeWpStates(
     if (ea && eb) {
       const passed = ea.status === 'passed' || eb.status === 'passed';
       const status = passed ? 'passed' : eb.status;
+      const bestVal = Math.max(ea.best ?? -1, eb.best ?? -1);
+      const starsVal = Math.max(ea.stars ?? -1, eb.stars ?? -1);
       exercises[k] = {
         status,
         attempts: Math.max(ea.attempts, eb.attempts),
@@ -192,6 +194,8 @@ export function mergeWpStates(
             : (ea.passedAt ?? eb.passedAt),
         skippedAt: status === 'skipped' ? (eb.skippedAt ?? ea.skippedAt ?? Date.now()) : undefined,
         code: eb.code ?? ea.code,
+        ...(bestVal >= 0 ? { best: bestVal } : {}),
+        ...(starsVal >= 0 ? { stars: starsVal as 0 | 1 | 2 | 3 } : {}),
       };
     } else {
       exercises[k] = structuredClone((eb ?? ea)!);

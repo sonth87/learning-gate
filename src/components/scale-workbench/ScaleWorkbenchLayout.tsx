@@ -176,6 +176,15 @@ export interface ScaleWorkbenchLayoutProps {
   runCodeLabel?: string;
   /** live-sim: adapter do feature cấp (05 §2.1); không truyền thì bước live-sim rơi về isometric tĩnh */
   liveSimAdapter?: LiveSimAdapter;
+  /** Cổng activity (05 §2.1, 06 §4): render thẻ bài tập ở cột phải trước mục objectives */
+  renderStepActivity?: (ctx: {
+    moduleId: string;
+    stepIndex: number;
+    activityId: string;
+    gate: 'required' | 'optional';
+  }) => React.ReactNode;
+  /** true ⇒ khoá nút Bước tiếp / Hoàn thành bài cho tới khi đạt/bỏ qua activity required */
+  isStepLocked?: (moduleId: string, stepIndex: number) => boolean;
 }
 
 export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
@@ -191,6 +200,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   sandboxTitle = 'Python 3.12 (Pyodide)',
   runCodeLabel,
   liveSimAdapter,
+  renderStepActivity,
+  isStepLocked,
 }) => {
   const {
     lang,
@@ -528,6 +539,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
   const handleNextStep = useCallback(() => {
     if (!activeLesson) return;
+    if (isStepLocked?.(activeLesson.moduleId, safeStepIdx)) return;
     if (safeStepIdx < activeLesson.steps.length - 1) {
       const nextIdx = safeStepIdx + 1;
       if (nextIdx === activeLesson.steps.length - 1) {
@@ -547,6 +559,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     lessons,
     onMarkLessonComplete,
     selectLessonAndStep,
+    isStepLocked,
   ]);
 
   useEffect(() => {
@@ -620,6 +633,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   ).length;
   const activeStatus = getModuleStatus(activeLesson.moduleId);
   const isLastStep = safeStepIdx === activeLesson.steps.length - 1;
+  const stepLocked = Boolean(isStepLocked?.(activeLesson.moduleId, safeStepIdx));
   const nextStepObj = activeLesson.steps[safeStepIdx + 1];
   const nextLessonObj = lessons[activeLessonIdx + 1];
 
@@ -1646,7 +1660,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="dts-btn-tactile flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)]"
+                disabled={stepLocked}
+                className="dts-btn-tactile flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)] disabled:opacity-40"
               >
                 <span className="truncate">
                   {!isLastStep
@@ -1690,6 +1705,14 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             </div>
           </div>
         </div>
+
+        {activeStep.activityId &&
+          renderStepActivity?.({
+            moduleId: activeLesson.moduleId,
+            stepIndex: safeStepIdx,
+            activityId: activeStep.activityId,
+            gate: activeStep.activityGate ?? 'optional',
+          })}
 
         {/* Bottom Card: YOU'LL LEARN + Practice Links */}
         <div className="dts-panel shrink-0 rounded-2xl p-3.5">

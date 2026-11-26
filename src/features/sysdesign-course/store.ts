@@ -15,6 +15,11 @@ import {
   type StorageSyncMeta,
 } from '@/db/durableProgressStorage';
 import { BOX_DAYS, XP, addDays, emptyState, todayStr, type QuestionResult } from '@/features/workpath/logic';
+import {
+  ACTIVITY_DEFAULT_XP,
+  computeActivityXp,
+  type ActivityKind,
+} from './activities/types';
 import type { SdLearnView, WpState } from './types';
 import type { SdSkipTarget } from './logic';
 
@@ -51,6 +56,20 @@ export interface SdProgressState {
   markLessonRead: (moduleId: string) => number;
   recordQuiz: (moduleId: string | null, total: number, results: QuestionResult[]) => { xp: number; record: boolean };
   rateCard: (cardId: string, ok: boolean) => void;
+
+  recordActivity: (r: {
+    activityId: string;
+    kind: ActivityKind;
+    xpBase?: number;
+    score: number;
+    stars: 0 | 1 | 2 | 3;
+    passed: boolean;
+    hintsUsed: number;
+    solutionViewed: boolean;
+  }) => { xp: number; first: boolean; improved: boolean };
+  saveActivityDraft: (activityId: string, draftJson: string) => void;
+  markActivitySolutionViewed: (activityId: string) => void;
+  skipActivity: (activityId: string) => void;
 
   toggleSkipModule: (moduleId: string, forceSkip?: boolean) => boolean;
   skipModulesBatch: (moduleIds: string[], skip: boolean) => void;
@@ -177,6 +196,90 @@ function createSdProgressStore() {
           rec.box = ok ? Math.min(5, rec.box + 1) : 1;
           rec.due = addDays(todayStr(), BOX_DAYS[Math.max(1, rec.box)]);
           logXp(s, `card:${cardId}`, XP.card);
+        }),
+
+      recordActivity: (r) =>
+        mutate((s) => {
+          const rec = (s.exercises[r.activityId] ??= {
+            status: 'todo',
+            attempts: 0,
+            hints: 0,
+          });
+          const prevPassed = rec.status === 'passed';
+          const prevStars = (rec.stars ?? 0) as 0 | 1 | 2 | 3;
+          const prevBest = rec.best ?? 0;
+          const solViewed = Boolean(rec.solutionViewed || r.solutionViewed);
+
+          rec.attempts += 1;
+          rec.hints = Math.max(rec.hints, r.hintsUsed);
+          if (solViewed) rec.solutionViewed = true;
+          rec.lastScore = String(Math.round(r.score));
+          rec.best = Math.max(prevBest, Math.round(r.score));
+          rec.stars = Math.max(prevStars, r.stars) as 0 | 1 | 2 | 3;
+
+          if (r.passed) {
+            rec.status = 'passed';
+            rec.passedAt ??= Date.now();
+            delete rec.skippedAt;
+          } else if (rec.status === 'todo') {
+            rec.status = 'started';
+          }
+
+          const xpBase = r.xpBase ?? ACTIVITY_DEFAULT_XP[r.kind] ?? 10;
+          const xp = computeActivityXp({
+            xpBase,
+            passed: r.passed,
+            stars: r.stars,
+            prevPassed,
+            prevStars,
+            hintsUsed: rec.hints,
+            solutionViewed: solViewed,
+          });
+          if (xp > 0) {
+            logXp(s, `activity:${r.activityId}:${Math.round(r.score)}`, xp);
+          }
+
+          return {
+            xp,
+            first: r.passed && !prevPassed,
+            improved:
+              r.stars > prevStars || Math.round(r.score) - prevBest >= 5,
+          };
+        }),
+
+      saveActivityDraft: (activityId, draftJson) =>
+        mutate((s) => {
+          const rec = (s.exercises[activityId] ??= {
+            status: 'todo',
+            attempts: 0,
+            hints: 0,
+          });
+          if (rec.status === 'todo') rec.status = 'started';
+          rec.code = draftJson.slice(0, 4096);
+        }),
+
+      markActivitySolutionViewed: (activityId) =>
+        mutate((s) => {
+          const rec = (s.exercises[activityId] ??= {
+            status: 'todo',
+            attempts: 0,
+            hints: 0,
+          });
+          if (rec.status === 'todo') rec.status = 'started';
+          rec.solutionViewed = true;
+        }),
+
+      skipActivity: (activityId) =>
+        mutate((s) => {
+          const rec = (s.exercises[activityId] ??= {
+            status: 'todo',
+            attempts: 0,
+            hints: 0,
+          });
+          if (rec.status !== 'passed') {
+            rec.status = 'skipped';
+            rec.skippedAt = Date.now();
+          }
         }),
 
       toggleSkipModule: (moduleId, forceSkip) =>

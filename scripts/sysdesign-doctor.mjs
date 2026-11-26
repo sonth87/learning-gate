@@ -1,9 +1,11 @@
 #!/usr/bin/env node
-// Doctor cho content/sysdesign (T1.4). Quy tắc theo docs/sysdesign/07-content-authoring.md §6.
+// Doctor cho content/sysdesign (T1.4, T4.6). Quy tắc theo docs/sysdesign/07-content-authoring.md §6 & 06-activities-and-grading.md §8.
 // E = lỗi (exit 1), W = cảnh báo (--strict thì cũng exit 1), I = thông tin.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import esbuild from 'esbuild';
 import { CONTENT_DIR, OUT_DIR, ROOT, SOURCE_DIR, loadCourse, parseSteps, rel } from './lib/sysdesign-content.mjs';
 
 const STRICT = process.argv.includes('--strict');
@@ -12,6 +14,25 @@ const warnings = [];
 const infos = [];
 const E = (msg) => errors.push(msg);
 const W = (msg) => warnings.push(msg);
+
+async function loadDoctorBridge() {
+  const entry = path.join(ROOT, 'src/features/sysdesign-course/activities/doctorBridge.ts');
+  const cacheDir = path.join(ROOT, 'node_modules/.cache/sd-doctor');
+  fs.mkdirSync(cacheDir, { recursive: true });
+  const outfile = path.join(cacheDir, 'doctorBridge.mjs');
+  await esbuild.build({
+    entryPoints: [entry],
+    bundle: true,
+    platform: 'node',
+    format: 'esm',
+    packages: 'external',
+    alias: { '@': path.join(ROOT, 'src') },
+    outfile,
+    tsconfig: path.join(ROOT, 'tsconfig.json'),
+    logLevel: 'silent',
+  });
+  return import(pathToFileURL(outfile).href);
+}
 
 const STEP_CATEGORIES = ['SETUP', 'PROBLEM', 'TECHNIQUE', 'MECHANISM', 'PITFALL', 'REAL_CODE', 'RECAP'];
 const CALLOUT_KINDS = ['key-idea', 'watch-out', 'good-to-know', 'compare', 'technique'];
@@ -204,9 +225,47 @@ function checkLesson(m, ctx) {
       attached.set(b.activity, (attached.get(b.activity) ?? 0) + 1);
       if (b.gate !== undefined && !['required', 'optional'].includes(b.gate)) E(`${where}: gate phải là required|optional`);
     }
+    // Quy tắc 13: kiểm biến {...} trong telemetry / callout
+    const simIdForStep =
+      (typeof b.sim === 'string' && b.sim) ||
+      (typeof b.live === 'string' && m.stage?.live?.[b.live]?.sim) ||
+      [...(ctx.moduleSims.get(id) ?? [])][0];
+    const runInfo = simIdForStep ? ctx.simRuns.get(simIdForStep) : null;
+    const checkTemplateVars = (rawText, fieldName) => {
+      if (typeof rawText !== 'string' || !/\{[^}]+\}/.test(rawText)) return;
+      if (!runInfo || !ctx.bridge) {
+        E(`${where}: ${fieldName} có biến {...} nhưng step không gắn sim`);
+        return;
+      }
+      const res = ctx.bridge.resolveExplainText(rawText, {}, {
+        baseRun: runInfo.run,
+        baseModel: runInfo.doc.scenario.model,
+        defaultSec: 35,
+      });
+      if (res.unresolved.length > 0) {
+        E(`${where}: ${fieldName} có biến không phân giải được: ${res.unresolved.join(', ')}`);
+      }
+    };
+    if (b.callout) {
+      checkTemplateVars(b.callout.vi, 'callout.vi');
+      checkTemplateVars(b.callout.en, 'callout.en');
+    }
+    if (Array.isArray(b.telemetry)) {
+      for (const t of b.telemetry) {
+        if (typeof t?.value === 'string') checkTemplateVars(t.value, 'telemetry.value');
+        else if (isObj(t?.value)) {
+          checkTemplateVars(t.value.vi, 'telemetry.value.vi');
+          checkTemplateVars(t.value.en, 'telemetry.value.en');
+        }
+      }
+    }
     const words = wordCount(st.body.replace(/```[\s\S]*?```/g, ''));
     if (words > 300) W(`${where}: ${words} từ (> 300)`);
   });
+
+  const reqCount = steps.filter((s) => s.stepBlock?.activity && s.stepBlock?.gate === 'required').length;
+  if (reqCount > 2) E(`${id}: có ${reqCount} activity gate: required (> 2)`);
+  else if (reqCount > 1) W(`${id}: có ${reqCount} activity gate: required (khuyến nghị ≤ 1)`);
 
   for (const [aid, n] of attached) if (n > 1) E(`${id}: activity "${aid}" được gắn ${n} lần`);
   for (const a of Array.isArray(m.activities) ? m.activities : []) {
@@ -255,20 +314,228 @@ function checkActivities(m, ctx) {
   const id = m.meta.id;
   if (!Array.isArray(m.activities)) return E(`${id}: activities.json phải là mảng`);
   ctx.actCount += m.activities.length;
+  const br = ctx.bridge;
+  const gradeCtx = br
+    ? {
+        sims: ctx.simsRecord,
+        simulate: br.simulate,
+        analyze: br,
+        evaluate: br.evaluate,
+        hintsUsed: 0,
+      }
+    : null;
+
   m.activities.forEach((a, i) => {
     const where = `${id} activities[${i}] (${a?.id ?? '?'})`;
     if (!isObj(a)) return E(`${where}: không phải object`);
     ctx.claimId(a.id, /^S\d+-\d+\.A\d+$/, 'activity', where);
-    if (!ACTIVITY_KINDS.includes(a.kind)) E(`${where}: kind "${a.kind}" không hợp lệ`);
+    if (typeof a.id === 'string' && !a.id.startsWith(`${id}.`)) {
+      E(`${where}: id "${a.id}" phải có tiền tố module "${id}."`);
+    }
+    if (!ACTIVITY_KINDS.includes(a.kind)) return E(`${where}: kind "${a.kind}" không hợp lệ`);
+    if (a.title !== undefined && (!isObj(a.title) || !a.title.vi)) E(`${where}: title.vi không hợp lệ`);
     if (!isObj(a.prompt) || !a.prompt.vi) E(`${where}: thiếu prompt.vi`);
     if (![1, 2, 3].includes(a.difficulty)) E(`${where}: difficulty phải là 1|2|3`);
     if (!isObj(a.explain) || !a.explain.vi) E(`${where}: thiếu explain.vi`);
-    for (const ref of [a.sim, a.replay]) {
+    if (Array.isArray(a.hints) && a.hints.length > 3) E(`${where}: hints.length (${a.hints.length}) > 3`);
+
+    for (const ref of [a.sim, a.replay, a.incident]) {
       if (ref?.simId && !ctx.simIds.has(ref.simId)) E(`${where}: simId "${ref.simId}" không tồn tại`);
     }
+    if (a.simId && !ctx.simIds.has(a.simId)) E(`${where}: simId "${a.simId}" không tồn tại`);
+
+    const primarySimId =
+      a.simId ?? a.sim?.simId ?? a.replay?.simId ?? a.incident?.simId ?? [...(ctx.moduleSims.get(id) ?? [])][0];
+    const simInfo = primarySimId ? ctx.simModels.get(primarySimId) : null;
+    const simDoc = primarySimId ? ctx.simsRecord[primarySimId] : null;
+    const durationSec = simDoc?.scenario?.durationSec ?? Infinity;
+
+    const checkNodeRef = (nid, field) => {
+      if (simInfo && !simInfo.nodeIds.has(nid)) E(`${where}: ${field} trỏ tới node "${nid}" không có trong sim "${primarySimId}"`);
+    };
+    const checkLinkRef = (lid, field) => {
+      if (simInfo && !simInfo.linkIds.has(lid)) E(`${where}: ${field} trỏ tới link "${lid}" không có trong sim "${primarySimId}"`);
+    };
+    const checkConstraint = (c, field) => {
+      if (!isObj(c)) return;
+      if (c.window) {
+        if (c.window.fromSec < 0 || c.window.toSec > durationSec || c.window.fromSec > c.window.toSec) {
+          E(`${where}: ${field} (${c.id}) có window [${c.window.fromSec}, ${c.window.toSec}] nằm ngoài [0, ${durationSec}]`);
+        }
+      }
+      if (c.node) checkNodeRef(c.node, `${field}.node`);
+      if (c.link) checkLinkRef(c.link, `${field}.link`);
+    };
+    const checkAllowed = (allowedList) => {
+      for (const al of allowedList ?? []) {
+        if (al?.type === 'knob') {
+          checkNodeRef(al.node, 'allowed.node');
+          const nodeSpec = simDoc?.scenario?.model?.nodes?.find((n) => n.id === al.node);
+          const knobSpec = nodeSpec?.knobs?.find((k) => k.key === al.key);
+          if (nodeSpec && !knobSpec && !(al.key in (nodeSpec.params ?? {}))) {
+            E(`${where}: allowed knob "${al.node}.${al.key}" không tồn tại trong node`);
+          }
+        } else if (al?.type === 'link') {
+          checkLinkRef(al.link, 'allowed.link');
+        }
+      }
+    };
+
+    for (const ref of [a.sim, a.replay, a.incident]) {
+      for (const nid of ref?.focus?.nodes ?? []) checkNodeRef(nid, 'focus.nodes');
+      for (const lid of ref?.focus?.links ?? []) checkLinkRef(lid, 'focus.links');
+    }
+
+    // Kiểm cấu trúc theo từng kind (06 §8.1)
+    if (a.kind === 'predict') {
+      if (a.question?.type === 'node') {
+        for (const nid of a.question.expected ?? []) checkNodeRef(nid, 'question.expected');
+        for (const nid of a.question.partial ?? []) checkNodeRef(nid, 'question.partial');
+      }
+    } else if (a.kind === 'spot-bottleneck') {
+      for (const nid of a.expected ?? []) checkNodeRef(nid, 'expected');
+    } else if (a.kind === 'tune-to-limit') {
+      for (const c of a.constraints ?? []) checkConstraint(c, 'constraints');
+      checkAllowed(a.allowed);
+    } else if (a.kind === 'fix-challenge') {
+      checkAllowed(a.allowed);
+      for (const c of a.goal ?? []) checkConstraint(c, 'goal');
+      for (const c of a.soft ?? []) checkConstraint(c, 'soft');
+      if (a.par && a.budget && a.par.changes > a.budget.maxChanges) {
+        E(`${where}: par.changes (${a.par.changes}) > budget.maxChanges (${a.budget.maxChanges})`);
+      }
+      if (a.par && a.budget?.maxCostPerHour !== undefined && a.par.costPerHour > a.budget.maxCostPerHour) {
+        E(`${where}: par.costPerHour (${a.par.costPerHour}) > budget.maxCostPerHour (${a.budget.maxCostPerHour})`);
+      }
+    } else if (a.kind === 'order') {
+      if (!Array.isArray(a.items) || a.items.length < 2) E(`${where}: order cần ≥ 2 items`);
+      else {
+        const ids = new Set();
+        for (const it of a.items) {
+          if (!it?.id || !it?.text?.vi) E(`${where}: item thiếu id hoặc text.vi`);
+          else if (ids.has(it.id)) E(`${where}: trùng item id "${it.id}"`);
+          else ids.add(it.id);
+        }
+        if (br) {
+          const rawShuffled = br.rawShuffleOrderItems(a.items, a.shuffleSeed ?? 1);
+          if (rawShuffled.every((it, idx) => it.id === a.items[idx].id)) {
+            E(`${where}: shuffleSeed=${a.shuffleSeed} tạo hoán vị trùng thứ tự đúng`);
+          }
+        }
+      }
+    } else if (a.kind === 'timeline-read') {
+      const histIds = new Set();
+      for (const op of a.history ?? []) {
+        if (!op?.id) E(`${where}: history op thiếu id`);
+        else histIds.add(op.id);
+        if (!(op.start <= op.end)) E(`${where}: history op "${op?.id}" có start (${op?.start}) > end (${op?.end})`);
+      }
+      for (const eid of a.expected ?? []) {
+        if (!histIds.has(eid)) E(`${where}: expected "${eid}" không có trong history`);
+      }
+    } else if (a.kind === 'postmortem') {
+      let wSum = 0;
+      for (const q of a.questions ?? []) {
+        wSum += Number(q?.weight ?? 0);
+        const optIds = new Set((q?.options ?? []).map((o) => o.id));
+        if (!Array.isArray(q?.correct) || q.correct.length === 0) {
+          E(`${where}: câu hỏi "${q?.id}" không có đáp án đúng`);
+        } else {
+          for (const cid of q.correct) {
+            if (!optIds.has(cid)) E(`${where}: câu hỏi "${q?.id}" có correct "${cid}" không thuộc options`);
+          }
+        }
+      }
+      if (wSum !== 100) E(`${where}: tổng weight của postmortem = ${wSum} (phải bằng 100)`);
+    } else if (a.kind === 'design-constraint') {
+      for (const sc of a.scenarios ?? []) {
+        for (const c of sc.constraints ?? []) checkConstraint(c, `scenarios[${sc.id}].constraints`);
+      }
+      for (const c of a.structural ?? []) checkConstraint(c, 'structural');
+    }
+
+    // 06 §8.2 & §8.3: chạy engine kiểm tra activity
+    if (!br || !gradeCtx) return;
+    const t0 = performance.now();
+    const passScore = a.passScore ?? (a.kind === 'spot-bottleneck' && a.maxPicks === 1 ? 99 : a.kind === 'order' ? (a.items.length <= 4 ? 100 : 80) : a.kind === 'timeline-read' ? 80 : 70);
+
+    // 1. Starter / không làm gì ⇒ phải không đạt
+    const emptyAns = br.emptyAnswerForActivity(a);
+    const r0 = br.gradeActivity(a, emptyAns, gradeCtx);
+    if (r0.passed || r0.score >= passScore) {
+      E(`${where}: đáp án rỗng/khởi điểm phải không đạt nhưng đạt score=${r0.score}, passed=${r0.passed}`);
+    }
+
+    // 2. Solution ⇒ phải đạt đủ 3 sao
+    const solAns = br.solutionAnswerForActivity(a, gradeCtx);
+    const r1 = br.gradeActivity(a, solAns, gradeCtx);
+    if (!r1.passed || r1.stars !== 3) {
+      E(`${where}: đáp án chuẩn (solution) phải đạt 3 sao nhưng được passed=${r1.passed}, score=${r1.score}, stars=${r1.stars}`);
+    }
+
+    // 3. Biến nội suy trong explain phải phân giải hết
+    if (r1.resolvedExplain?.vi && /\{[^}]+\}/.test(r1.resolvedExplain.vi)) {
+      E(`${where}: explain.vi còn biến chưa phân giải sau khi chấm: "${r1.resolvedExplain.vi}"`);
+    }
+    if (r1.resolvedExplain?.en && /\{[^}]+\}/.test(r1.resolvedExplain.en)) {
+      E(`${where}: explain.en còn biến chưa phân giải sau khi chấm: "${r1.resolvedExplain.en}"`);
+    }
+
+    // 4. Đối chiếu expected với kết quả tính từ engine
+    if (a.kind === 'predict' && a.question?.type === 'node' && simDoc) {
+      const runInfo = ctx.simRuns.get(primarySimId);
+      if (runInfo) {
+        const comp = br.computePredictExpectedNodes(runInfo.run, a.question.rule);
+        const want = [...(a.question.expected ?? [])].sort().join(',');
+        const got = comp.winners.join(',');
+        if (want !== got) {
+          E(`${where}: predict.expected [${want}] lệch với engine [${got}]`);
+        }
+      }
+    } else if (a.kind === 'spot-bottleneck' && simDoc) {
+      const comp = br.computeSpotExpectedNodes(a, simDoc.scenario);
+      const want = [...(a.expected ?? [])].sort().join(',');
+      const got = [...comp].sort().join(',');
+      if (want !== got) {
+        E(`${where}: spot-bottleneck.expected [${want}] lệch với engine [${got}]`);
+      }
+    } else if (a.kind === 'tune-to-limit' && a.objective === 'max-load' && a.reference && simDoc) {
+      const bisected = br.bisectMaxSustainableLoad(simDoc.scenario, a.runSec, a.constraints);
+      const relErr = Math.abs(bisected - a.reference.value) / Math.max(1, a.reference.value);
+      if (relErr > 0.03) {
+        E(`${where}: tune-to-limit reference.value=${a.reference.value} lệch > 3% so với bisection=${bisected} (${(relErr * 100).toFixed(1)}%)`);
+      }
+    } else if (a.kind === 'timeline-read') {
+      const comp = br.computeTimelineViolations(a.history ?? [], a.question);
+      const want = [...(a.expected ?? [])].sort().join(',');
+      const got = [...comp].sort().join(',');
+      if (want !== got) {
+        E(`${where}: timeline-read.expected [${want}] lệch với checker [${got}]`);
+      }
+    }
+
+    // 5. Mọi trap phải không đạt và khớp matchedTrap
+    for (const trap of a.traps ?? []) {
+      if (!trap?.why?.vi) E(`${where}: trap "${trap?.id}" thiếu why.vi`);
+      const rt = br.gradeActivity(a, { changes: trap.changes ?? [] }, gradeCtx);
+      if (rt.passed) {
+        E(`${where}: trap "${trap.id}" phải không đạt nhưng lại passed=true (score=${rt.score})`);
+      }
+      if (a.kind === 'fix-challenge' && rt.matchedTrap?.id !== trap.id) {
+        E(`${where}: trap "${trap.id}" không khớp matchedTrap khi chấm`);
+      }
+    }
+
+    // 6. Determinism: chấm 2 lần cho JSON giống hệt
+    const r1Again = br.gradeActivity(a, solAns, gradeCtx);
+    if (JSON.stringify(r1) !== JSON.stringify(r1Again)) {
+      E(`${where}: gradeActivity không tất định (chạy 2 lần ra kết quả khác nhau)`);
+    }
+
+    const elapsedMs = performance.now() - t0;
+    if (elapsedMs > 2000) E(`${where}: thời gian chấm quá chậm (${elapsedMs.toFixed(0)} ms > 2000 ms)`);
+    else if (elapsedMs > 1000) W(`${where}: thời gian chấm ${elapsedMs.toFixed(0)} ms (> 1000 ms)`);
   });
-  // TODO(T4.6): chạy engine để kiểm activity (starter không đạt, solution đạt 3 sao,
-  // traps không đạt, `expected` khớp engine, biến {…} phân giải được). Xem 06 §8.2.
 }
 
 function checkSim(m, ctx) {
@@ -323,10 +590,118 @@ function checkSim(m, ctx) {
       return false;
     };
     if ([...nodeIds].some((n) => cyclic(n))) E(`${where}: model có chu trình (phải là DAG)`);
-    ctx.simModels.set(sim.id, { nodeIds, linkIds });
+    const knobSet = new Set();
+    for (const n of nodes) {
+      for (const k of n.knobs ?? []) {
+        knobSet.add(`${n.id}:${k.key}`);
+        const defVal = n.params?.[k.key] ?? k.default;
+        if (k.type === 'number' && typeof defVal === 'number') {
+          if ((k.min !== undefined && defVal < k.min) || (k.max !== undefined && defVal > k.max)) {
+            E(`${where}: knob "${n.id}.${k.key}" có giá trị mặc định ${defVal} ngoài [${k.min}, ${k.max}]`);
+          }
+        }
+      }
+    }
+    ctx.simModels.set(sim.id, { nodeIds, linkIds, knobSet });
+    ctx.simsRecord[sim.id] = sim;
+
+    // Quy tắc 11 (T4.6): chạy engine kiểm tra không NaN/∞, kiểm `expect` và `presets`
+    if (ctx.bridge) {
+      const br = ctx.bridge;
+      try {
+        br.compile(sc);
+        const run = br.simulate(sc, []);
+        ctx.simRuns.set(sim.id, { doc: sim, run });
+
+        const checkArr = (arr, name) => {
+          for (let i = 0; i < run.ticks; i++) {
+            if (!Number.isFinite(arr[i])) {
+              E(`${where}: ${name} có NaN/Infinity tại tick ${i}`);
+              return;
+            }
+          }
+        };
+        checkArr(run.offered, 'offered');
+        checkArr(run.goodput, 'goodput');
+        checkArr(run.errorRate, 'errorRate');
+        checkArr(run.p99, 'p99');
+        for (const [nid, ns] of Object.entries(run.nodes)) {
+          checkArr(ns.rho, `node.${nid}.rho`);
+          checkArr(ns.queue, `node.${nid}.queue`);
+        }
+
+        const exp = sim.expect;
+        if (isObj(exp)) {
+          if (exp.bottleneck) {
+            const f38 = br.getScenarioFrameAt(sc, Math.min(38, sc.durationSec * 0.5));
+            const bn = br.findBottleneck(sc.model, f38);
+            if (bn.nodeId !== exp.bottleneck) {
+              E(`${where}: expect.bottleneck="${exp.bottleneck}" nhưng engine tìm ra "${bn.nodeId}"`);
+            }
+            const bns = run.nodes[exp.bottleneck];
+            const firstTickAt = (code) => {
+              if (!bns) return -1;
+              for (let k = 0; k < run.ticks; k++) if (bns.state[k] >= code) return run.t[k];
+              return -1;
+            };
+            if (Array.isArray(exp.firstSaturatedAtSec)) {
+              const tSat = firstTickAt(br.NODE_STATE_CODE.saturated);
+              if (tSat < exp.firstSaturatedAtSec[0] || tSat > exp.firstSaturatedAtSec[1]) {
+                E(`${where}: firstSaturatedAtSec=${tSat.toFixed(1)}s ngoài [${exp.firstSaturatedAtSec.join(', ')}]`);
+              }
+            }
+            if (Array.isArray(exp.firstOverloadedAtSec)) {
+              const tOver = firstTickAt(br.NODE_STATE_CODE.overloaded);
+              if (tOver < exp.firstOverloadedAtSec[0] || tOver > exp.firstOverloadedAtSec[1]) {
+                E(`${where}: firstOverloadedAtSec=${tOver.toFixed(1)}s ngoài [${exp.firstOverloadedAtSec.join(', ')}]`);
+              }
+            }
+          }
+          if (Array.isArray(exp.appFirstSaturatedAtSec)) {
+            const appNodes = nodes.filter((n) => n.kind === 'service').map((n) => n.id);
+            let tAppSat = Infinity;
+            for (const aid of appNodes) {
+              const ans = run.nodes[aid];
+              if (!ans) continue;
+              for (let k = 0; k < run.ticks; k++) {
+                if (ans.state[k] >= br.NODE_STATE_CODE.saturated) {
+                  if (run.t[k] < tAppSat) tAppSat = run.t[k];
+                  break;
+                }
+              }
+            }
+            if (tAppSat < exp.appFirstSaturatedAtSec[0] || tAppSat > exp.appFirstSaturatedAtSec[1]) {
+              E(`${where}: appFirstSaturatedAtSec=${tAppSat.toFixed(1)}s ngoài [${exp.appFirstSaturatedAtSec.join(', ')}]`);
+            }
+          }
+          if (Array.isArray(exp.maxSustainableRpsApprox)) {
+            const f20 = br.getScenarioFrameAt(sc, Math.min(20, sc.durationSec * 0.25));
+            const ms = br.maxSustainableRps(sc.model, f20);
+            if (ms.rps < exp.maxSustainableRpsApprox[0] || ms.rps > exp.maxSustainableRpsApprox[1]) {
+              E(`${where}: maxSustainableRps=${ms.rps} ngoài [${exp.maxSustainableRpsApprox.join(', ')}]`);
+            }
+          }
+        }
+
+        if (Array.isArray(sim.presets) && Array.isArray(sim.slos) && sim.slos.length > 0) {
+          for (const pr of sim.presets) {
+            const inputRecs = (pr.changes ?? []).map((c) => ({
+              tick: 0,
+              change: c.type === 'knob' ? { type: 'knob', node: c.node, key: c.key, value: c.value } : { type: 'link', link: c.link, patch: c.patch },
+            }));
+            const { results } = br.runAndEvaluate(sc, sim.slos, inputRecs);
+            const passed = results.every((r) => r.pass);
+            if (typeof pr.expectPass === 'boolean' && passed !== pr.expectPass) {
+              E(`${where}: preset "${pr.id}" có expectPass=${pr.expectPass} nhưng chạy ra passed=${passed}`);
+            }
+          }
+        }
+      } catch (err) {
+        E(`${where}: lỗi chạy engine (${err.message})`);
+      }
+    }
   }
   ctx.moduleSims.set(id, modSimIds);
-  // TODO(T4.6/M2): chạy engine để kiểm `expect`, mọi preset đúng `expectPass`, không NaN/∞ (rule 11).
 }
 
 function checkStage(m, ctx) {
@@ -357,8 +732,22 @@ function checkStage(m, ctx) {
   if (st.base === undefined && Object.keys(st.scenes).length > 0 && st.scenes[Object.keys(st.scenes)[0]]?.mode === 'memory-2d') {
     W(`${id}: scene đầu tiên là memory-2d và không có stage.base: bước không khai báo scene sẽ lấy scene này làm mặc định`);
   }
-  for (const lv of Object.values(st.live ?? {})) {
+  for (const [lvKey, lv] of Object.entries(st.live ?? {})) {
     if (lv?.sim && !ctx.simClaimed.has(lv.sim)) E(`${id}: live.sim "${lv.sim}" không có trong sim.json`);
+    const simModel = lv?.sim ? ctx.simModels.get(lv.sim) : null;
+    if (simModel) {
+      for (const kb of lv?.controls?.knobs ?? []) {
+        if (!simModel.knobSet?.has(`${kb?.node}:${kb?.key}`)) {
+          E(`${id} live "${lvKey}": controls.knobs "${kb?.node}.${kb?.key}" không có trong knob của sim "${lv.sim}"`);
+        }
+      }
+      for (const nid of lv?.focus?.nodes ?? []) {
+        if (!simModel.nodeIds.has(nid)) E(`${id} live "${lvKey}": focus.nodes "${nid}" không có trong sim`);
+      }
+      for (const lid of lv?.focus?.links ?? []) {
+        if (!simModel.linkIds.has(lid)) E(`${id} live "${lvKey}": focus.links "${lid}" không có trong sim`);
+      }
+    }
   }
   for (const [key, sc] of Object.entries(st.scenes)) {
     const where = `${id} scene "${key}"`;
@@ -379,7 +768,8 @@ function checkStage(m, ctx) {
       E(`${where}: mode "${sc.mode}" không hợp lệ trong stage.json (code-trace khai báo bằng \`mode: code\` ở khối step)`);
     }
     if (hasModel) {
-      const shown = sc.show.nodes === '*' ? [] : sc.show.nodes ?? [];
+      const shown = sc.show.nodes === '*' ? [...nodeSet] : sc.show.nodes ?? [];
+      if (shown.length === 0) W(`${where}: scene không phủ node nào của model`);
       for (const n of shown) if (!nodeSet.has(n)) E(`${where}: node "${n}" không có trong sim`);
       const sl = sc.show.links === '*' ? [] : sc.show.links ?? [];
       for (const l of sl) if (!linkSet.has(l)) E(`${where}: link "${l}" không có trong sim`);
@@ -485,10 +875,12 @@ function checkSourceIntegrity() {
 
 // ───────────────────────── chạy ─────────────────────────
 
-function main() {
+async function main() {
   let loaded;
+  let bridge = null;
   try {
     loaded = loadCourse();
+    bridge = await loadDoctorBridge();
   } catch (err) {
     console.error(`[sd:doctor] ${err.message}`);
     process.exit(1);
@@ -505,8 +897,10 @@ function main() {
   const levels = new Set(Object.keys(course.levels ?? {}));
 
   const ctx = {
+    bridge,
     stepCount: 0, quizCount: 0, cardCount: 0, actCount: 0, simCount: 0,
     simClaimed: new Set(), simModels: new Map(), moduleSims: new Map(),
+    simRuns: new Map(), simsRecord: {},
     simIds: new Set(),
     claimed: new Map(),
     claimId(idv, re, kind, where) {
@@ -549,9 +943,9 @@ function main() {
     if (table && !table.has(id)) missingInTable.push(id);
 
     const sdcSources = checkSource(m, manifest, table?.get(id));
+    checkSim(m, ctx);
     checkLesson(m, ctx);
     checkQuizCards(m, ctx);
-    checkSim(m, ctx);
     checkActivities(m, ctx);
     checkStage(m, ctx);
     checkStyle(m);
@@ -599,4 +993,7 @@ function main() {
   process.exit(fail ? 1 : 0);
 }
 
-main();
+main().catch((err) => {
+  console.error(`[sd:doctor] ${err.message}`);
+  process.exit(1);
+});

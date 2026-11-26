@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { ArrowLeft, Layers, ListChecks, Map as MapIcon, Trophy } from 'lucide-react';
 import { useSdCurriculum, useSdSims } from './data';
+import { ActivityGate, type Activity, type SimDocForGrade } from './activities';
 import { createSdLiveSimAdapter } from './live/liveSimAdapter';
 import { buildSdScaleLessons } from './scale/sdLessonBuilder';
-import { lessonSatisfied, quizSatisfied, sdModuleDone } from './logic';
+import { isActivitySatisfied, lessonSatisfied, quizSatisfied, sdModuleDone } from './logic';
 import { useSdNav, useSdProgress } from './store';
 import type { SdLearnView } from './types';
 import { SdHomeView } from './views/SdHomeView';
@@ -104,20 +105,64 @@ export const SdLearnShell: React.FC = () => {
 
   const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
   const liveSimAdapter = useMemo(() => createSdLiveSimAdapter(sims), [sims]);
+  const activitiesById = useMemo(() => {
+    const map = new Map<string, Activity>();
+    for (const m of cur?.modules ?? []) {
+      for (const a of (m.activities ?? []) as Activity[]) {
+        if (a?.id) map.set(a.id, a);
+      }
+    }
+    return map;
+  }, [cur]);
 
   const getModuleStatus = useCallback(
     (moduleId: string): ModuleStatusSnapshot => {
       const mod = cur?.modules.find((m) => m.id === moduleId);
       if (!cur || !mod) return EMPTY_STATUS;
+      const acts = (mod.activities ?? []) as Activity[];
+      const passedActs = acts.filter((a) => isActivitySatisfied(sdState, a.id)).length;
       return {
         completed: sdModuleDone(sdState, mod, cur.passQuiz),
         lessonRead: lessonSatisfied(sdState, mod.id),
-        passedExercises: 0,
-        totalExercises: 0,
+        passedExercises: passedActs,
+        totalExercises: acts.length,
         quizPassed: quizSatisfied(sdState, mod.id, cur.passQuiz),
       };
     },
     [cur, sdState]
+  );
+
+  const isStepLocked = useCallback(
+    (moduleId: string, stepIndex: number): boolean => {
+      const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+      const st = lesson?.steps[stepIndex];
+      if (!st?.activityId || st.activityGate !== 'required') return false;
+      return !isActivitySatisfied(sdState, st.activityId);
+    },
+    [scaleLessons, sdState]
+  );
+
+  const renderStepActivity = useCallback(
+    (ctx: {
+      moduleId: string;
+      stepIndex: number;
+      activityId: string;
+      gate: 'required' | 'optional';
+    }) => {
+      const act = activitiesById.get(ctx.activityId);
+      if (!act || !sims) return null;
+      return (
+        <ActivityGate
+          key={act.id}
+          activity={act}
+          gate={ctx.gate}
+          sims={sims as unknown as Record<string, SimDocForGrade>}
+          lang={lang}
+          onOpenFlashcards={() => go({ name: 'flash', moduleId: ctx.moduleId })}
+        />
+      );
+    },
+    [activitiesById, sims, lang, go]
   );
 
   if (!hydrated || !cur || !sims) {
@@ -136,6 +181,8 @@ export const SdLearnShell: React.FC = () => {
         onOpenQuiz={(moduleId) => go({ name: 'quiz', mode: 'module', moduleId })}
         onOpenFlashcards={(moduleId) => go({ name: 'flash', moduleId })}
         liveSimAdapter={liveSimAdapter}
+        renderStepActivity={renderStepActivity}
+        isStepLocked={isStepLocked}
       />
     );
   }
