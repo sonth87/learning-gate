@@ -162,17 +162,59 @@ export function buildSdStageScene(
   if (nodeIds.length === 0) return null;
   const shown = new Set(nodeIds);
 
+  const modelLinks = (model?.links ?? []).filter((l) => shown.has(l.from) && shown.has(l.to));
+
+  // Tự động bố trí tọa độ mặt phẳng 2:1 theo tầng DAG (topological rank) khi node không khai báo x/y tường minh,
+  // tránh việc composeIsometricLayout với n >= 5 chỉ nhân hệ số 1.26 trên lưới nhỏ (i % 4)*2 khiến các khối chồng lên nhau.
+  const autoCoords = new Map<string, { x: number; y: number }>();
+  if (nodeIds.some((id) => stage.nodes[id]?.x === undefined || stage.nodes[id]?.y === undefined)) {
+    const rankOf = new Map<string, number>();
+    for (const id of nodeIds) rankOf.set(id, 0);
+    for (let pass = 0; pass < nodeIds.length; pass++) {
+      let changed = false;
+      for (const l of modelLinks) {
+        const rf = rankOf.get(l.from) ?? 0;
+        const rt = rankOf.get(l.to) ?? 0;
+        if (rf + 1 > rt) {
+          rankOf.set(l.to, rf + 1);
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+    const byRank = new Map<number, string[]>();
+    let maxRank = 0;
+    for (const id of nodeIds) {
+      const r = rankOf.get(id) ?? 0;
+      if (r > maxRank) maxRank = r;
+      const list = byRank.get(r) ?? [];
+      list.push(id);
+      byRank.set(r, list);
+    }
+    const colSpacing = maxRank >= 4 ? 175 : 210;
+    const rowSpacing = 120;
+    for (const [r, members] of byRank.entries()) {
+      const xBase = Math.round((r - maxRank / 2) * colSpacing);
+      const zigY = members.length === 1 ? (r % 2 === 0 ? 34 : -34) : 0;
+      members.forEach((id, idx) => {
+        const yOffset = Math.round((idx - (members.length - 1) / 2) * rowSpacing + zigY);
+        autoCoords.set(id, { x: xBase, y: yOffset });
+      });
+    }
+  }
+
   const nodes: StageNode[] = nodeIds.map((id, i) => {
     const d = stage.nodes[id] ?? {};
     const mn = modelNodes.get(id);
     const kd = (mn?.kind && KIND_DEFAULTS[mn.kind]) || { shape: 'block' as LegacyNodeShape, tone: 'neutral' as IsoTone };
     const st = def.state?.[id];
+    const auto = autoCoords.get(id);
     const node: StageNode = {
       id,
       shape: d.shape ?? kd.shape,
       tone: asTone(d.tone, kd.tone),
-      x: d.x ?? (i % 4) * 2,
-      y: d.y ?? Math.floor(i / 4) * 2,
+      x: d.x ?? auto?.x ?? (i % 4) * 180 - 240,
+      y: d.y ?? auto?.y ?? Math.floor(i / 4) * 120 - 60,
       label: toBilingual(d.label ?? mn?.label, id),
     };
     const icon = asIcon(d.icon, kd.icon);
@@ -188,7 +230,6 @@ export function buildSdStageScene(
     return node;
   });
 
-  const modelLinks = (model?.links ?? []).filter((l) => shown.has(l.from) && shown.has(l.to));
   const linkIds = def.show.links === undefined || def.show.links === '*' ? null : new Set(def.show.links);
   const links: StageLink[] = modelLinks
     .filter((l) => (linkIds ? linkIds.has(l.id) : true))
