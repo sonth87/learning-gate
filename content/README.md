@@ -1,10 +1,11 @@
 # Hướng dẫn Biên soạn & Kiểm định Nội dung (`content/`)
 
-Thư mục `content/` là **nguồn nội dung duy nhất (Single Source of Truth)** cho tính năng **"Học"** của bốn ứng dụng:
+Thư mục `content/` là **nguồn nội dung duy nhất (Single Source of Truth)** cho tính năng **"Học"** của các ứng dụng sau:
 - **Docker & K8s Mastery** (`content/kube/` → biên dịch ra `src/data/courses/kube/*.json`)
 - **CI/CD Architecture** (`content/cicd/` → biên dịch ra `src/data/courses/cicd/*.json`)
 - **Redis Mastery** (`content/redis/` → biên dịch ra `src/data/courses/redis/*.json`)
 - **PMP Mastery** (`content/pmp/` → biên dịch ra `src/data/courses/pmp/*.json`)
+- **System Design Mastery** (`content/sysdesign/` → biên dịch ra `src/data/courses/sysdesign/*.json` bằng `npm run sd:build`; kiểm định bằng `npm run sd:doctor`, test bằng `npm run sd:test`; xem [`docs/sysdesign/07-content-authoring.md`](../docs/sysdesign/07-content-authoring.md))
 
 (Riêng **Python Mastery** sử dụng nguồn bài học tại `src/data/workpath/curriculum.json` kết hợp với kịch bản trực quan trong `src/apps/pymastery/data/pythonSpecsPart1.ts` và `pythonSpecsPart2.ts`).
 

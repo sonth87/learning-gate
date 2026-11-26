@@ -1,6 +1,6 @@
-# Quy Chuẩn Thiết Kế & Sư Phạm `ScaleWorkbench` (Áp Dụng Bắt Buộc Cho Cả 5 Ứng Dụng Learning Gate)
+# Quy Chuẩn Thiết Kế & Sư Phạm `ScaleWorkbench` (Áp Dụng Bắt Buộc Cho Cả 6 Ứng Dụng Learning Gate)
 
-Tài liệu này khóa cứng toàn bộ quy tắc về **phân loại bài học, đồ họa Isometric 2.5D, animation, tương tác chi tiết, bố cục co giãn và chuẩn hóa thuật ngữ Tiếng Việt / Tiếng Anh** để áp dụng thống nhất xuyên suốt cả 5 ứng dụng: `PyMastery`, `RedisMastery`, `KubeMastery`, `CicdMastery` và `PmpMastery`.
+Tài liệu này khóa cứng toàn bộ quy tắc về **phân loại bài học, đồ họa Isometric 2.5D, animation, tương tác chi tiết, bố cục co giãn và chuẩn hóa thuật ngữ Tiếng Việt / Tiếng Anh** để áp dụng thống nhất xuyên suốt cả 6 ứng dụng: `PyMastery`, `RedisMastery`, `KubeMastery`, `CicdMastery`, `PmpMastery` và `SdMastery` (System Design Mastery).
 
 ---
 
@@ -97,3 +97,11 @@ Mọi thành phần trên sơ đồ (`block`, `db`, `device`, `crowd`, đường
 8. **Chuẩn Hiển Thị Code IDE (`WorkbenchCodeSurface`) & Bảng Phân Tích Nhanh Thu Gọn Được (`CodeTraceStage`)**:
    - Mọi khung hiển thị code (sân khấu `CodeTraceStage`, khung `Chạy thử Code` và các khối code trong `BlueprintMarkdown`) bắt buộc hiển thị chuẩn trình soạn thảo mã nguồn: có **cột đánh số dòng (`1..N`)**, **cuộn ngang `whitespace-pre` không tự xuống dòng giữa câu lệnh**, **tô màu cú pháp 1-1** (`renderHighlightedPython` / `renderHighlightedConfig`) và **nút đổi giao diện 6 bảng màu IDE** (`Nord`, `Dracula`, `Monokai`, `Midnight`, `Solarized`, `GitHub Light`) đồng bộ xuyên suốt ứng dụng.
    - `Bảng phân tích nhanh` bên phải của `CodeTraceStage` có nút **thu gọn thành thanh dọc gọn `42px`** (và mở rộng lại bất cứ lúc nào), nhường tối đa chiều ngang cho khung soạn thảo code khi cần đọc những dòng mã dài.
+
+---
+
+## 6. Chế độ `live-sim` (System Design Mastery)
+
+Ngoài 3 chế độ ở §1, ứng dụng `SdMastery` có thêm chế độ sân khấu **`live-sim`**: dùng `ScaleStageSvg` với `scene` cố định cho cả bước, còn trạng thái theo thời gian (tải, hàng đợi, trạng thái node, packet) đi qua một kênh frame riêng (`frameSource`, dữ liệu `LiveSimFrame` do engine mô phỏng sinh ra qua adapter của feature). Bước không khai báo `liveSim` vẫn chạy đúng như các quy chuẩn ở trên. Các quy tắc §2, §3, §5 áp dụng nguyên vẹn cho `live-sim`.
+
+Chi tiết (kênh frame riêng `frameSource`, packet pool, `SimTimeline`, controls, inspector `liveSlot`, các lỗi cần sửa kèm): xem [`docs/sysdesign/05-live-stage.md`](./sysdesign/05-live-stage.md).
