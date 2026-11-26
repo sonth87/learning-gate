@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S2-06.q1",
+    "type": "mc",
+    "q": "Ứng dụng lưu thông tin đăng nhập trong bộ nhớ RAM riêng của từng máy chủ và đứng sau Load Balancer Round Robin (không Sticky Session). Hiện tượng gì xảy ra khi người dùng vừa đăng nhập ở App A rồi tải trang kế tiếp?",
+    "code": "",
+    "choices": [
+      "Mọi máy chủ tự động đồng bộ RAM với nhau mà không cần cấu hình",
+      "Request kế tiếp có xác suất rơi sang App B hoặc App C không có phiên đó, buộc người dùng đăng nhập lại",
+      "Load Balancer tự sao chép RAM của App A sang Database",
+      "Tốc độ phản hồi tăng gấp ba lần nhờ đọc RAM cục bộ"
+    ],
+    "answer": 1,
+    "explain": "Với 3 máy chủ chia đều theo Round Robin, chỉ App A giữ đối tượng session trong RAM. Khoảng 2/3 số request tiếp theo đi vào App B hoặc App C sẽ không tìm thấy session ID và trả về lỗi chưa xác thực."
+  },
+  {
+    "id": "S2-06.q2",
+    "type": "tf",
+    "q": "Bật Sticky Session trên Load Balancer giúp bảo toàn giỏ hàng lưu trong RAM cục bộ của App A ngay cả khi App A bị mất điện đột ngột.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sticky Session chỉ ghim các request của cùng người dùng về App A khi máy này còn chạy. Khi App A ngừng hoạt động, dữ liệu trong RAM cục bộ biến mất hoàn toàn; người dùng được chuyển sang máy khác sẽ mất phiên và giỏ hàng."
+  },
+  {
+    "id": "S2-06.q3",
+    "type": "output",
+    "q": "Cụm 4 máy App lưu phiên cục bộ với Sticky Session chia đều 100.000 người dùng đang trực tuyến. Nếu 1 máy dừng đột ngột, bao nhiêu người dùng bị mất phiên ngay lập tức? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "25000",
+    "explain": "Mỗi máy đang giữ độc quyền 100.000 / 4 = 25.000 phiên trong RAM riêng. Khi 1 máy gặp sự cố, toàn bộ 25.000 phiên gắn với máy đó mất trạng thái và phải xác thực lại từ đầu."
+  },
+  {
+    "id": "S2-06.q4",
+    "type": "mc",
+    "q": "So với lưu phiên trong Redis dùng chung, việc dùng thẻ JWT tự chứa chữ ký số (Stateless Token) có đánh đổi lớn nhất là gì?",
+    "code": "",
+    "choices": [
+      "Bắt buộc phải bật Sticky Session trên Load Balancer",
+      "Khó thu hồi tức thì một token cụ thể trước khi hết hạn nếu không tra thêm danh sách thu hồi (denylist)",
+      "Không thể xác thực chữ ký trên nhiều máy chủ ứng dụng khác nhau",
+      "Tốn một lượt đọc đĩa cứng ở mỗi request"
+    ],
+    "answer": 1,
+    "explain": "Vì máy chủ xác thực JWT chỉ bằng khoá mật mã mà không tra cứu kho trung tâm, một JWT hợp lệ vẫn tiếp tục dùng được cho tới khi chạm mốc exp, trừ khi hệ thống duy trì thêm danh sách thu hồi hoặc đặt thời hạn sống ngắn kèm Refresh Token."
+  },
+  {
+    "id": "S2-06.q5",
+    "type": "mc",
+    "q": "Một ứng dụng có 3 instance ghi ảnh đại diện vừa tải lên vào thư mục cục bộ /var/uploads của máy xử lý request đó. Giải pháp chuẩn để mọi instance đều phục vụ được tệp là gì?",
+    "code": "",
+    "choices": [
+      "Tăng dung lượng ổ cứng cục bộ trên từng máy chủ ứng dụng",
+      "Chuyển sang lưu tệp trên Object Storage dùng chung (như S3) và chỉ giữ đường dẫn metadata trong Database",
+      "Đổi thuật toán Load Balancer từ Round Robin sang Random",
+      "Gộp lại thành một máy chủ duy nhất và tắt mở rộng ngang"
+    ],
+    "answer": 1,
+    "explain": "Ổ đĩa cục bộ gắn chặt với từng máy chủ nên máy khác không đọc được tệp và tệp sẽ mất khi Autoscaling thu hồi máy. Đưa tệp nhị phân sang Object Storage dùng chung giúp toàn bộ tầng ứng dụng hoàn toàn phi trạng thái."
+  },
+  {
+    "id": "S2-06.q6",
+    "type": "tf",
+    "q": "Khi đưa toàn bộ phiên đăng nhập ra một cụm Session Cache dùng chung, bản thân kho Session Cache đó cần có bản sao dự phòng (Replication) để không trở thành điểm lỗi đơn mới.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Tầng App đã phi trạng thái nên mất 1 máy App không gây gián đoạn, nhưng trạng thái đã chuyển dồn về Session Cache. Nếu chỉ chạy 1 node Redis duy nhất không có replica, khi node này hỏng toàn bộ người dùng sẽ bị đăng xuất cùng lúc."
+  }
+]

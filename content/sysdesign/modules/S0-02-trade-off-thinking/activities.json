@@ -1,0 +1,90 @@
+[
+  {
+    "id": "S0-02.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán phương án thắng khi đảo thứ tự ưu tiên" },
+    "prompt": { "vi": "Một startup 4 kỹ sư làm ví nội bộ cần ra mắt trong 6 tuần, đội ngũ thành thạo SQL và yêu cầu số dư giao dịch phải chính xác tuyệt đối (ACID). Lưu lượng năm đầu dự kiến chỉ 80 req/s. Khi lập Ma trận đánh đổi, phương án nào phù hợp nhất?" },
+    "difficulty": 1,
+    "at": 0,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Tách 8 Microservices kết hợp cụm NoSQL phân mảnh ngang ngay từ đầu" },
+        { "vi": "Ứng dụng Monolith có cấu trúc mô-đun kết hợp PostgreSQL (giao dịch ACID)" },
+        { "vi": "Chỉ lưu số dư trên Redis RAM để đạt độ trễ dưới 1 ms, bỏ qua Database đĩa" },
+        { "vi": "Ghi đồng thời sang cả PostgreSQL, MongoDB và cụm tìm kiếm phân tán" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 0, "playToSec": 10, "speed": 1 },
+    "hints": [
+      { "vi": "Xác định 3 ưu tiên cao nhất từ đề bài: toàn vẹn tiền tệ (ACID), thời hạn ngắn 6 tuần và quy mô nhóm 4 kỹ sư." }
+    ],
+    "explain": { "vi": "Với lưu lượng 80 req/s, một máy PostgreSQL dư sức xử lý mà vẫn bảo đảm giao dịch ACID cho dữ liệu tài chính. Kết hợp Monolith giúp nhóm 4 kỹ sư tận dụng kỹ năng SQL sẵn có để ra mắt đúng hạn 6 tuần thay vì tốn hàng tháng dựng hạ tầng phân tán." }
+  },
+  {
+    "id": "S0-02.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Đánh đổi chi phí, độ trễ và TTL Jitter trên danh mục 80.000 sản phẩm" },
+    "prompt": { "vi": "Dịch vụ Danh mục sản phẩm nhận 3.200 req/s lúc bình thường và tăng lên 4.200 req/s vào giờ cao điểm (92% lượt đọc trên 80.000 sản phẩm). Với ngân sách ≤ 1,30 USD/giờ và tối đa 3 thay đổi, hãy cấu hình hệ thống để đạt p99 ≤ 90 ms ở tải thường, p99 ≤ 110 ms ở tải đỉnh, lỗi ≤ 1% và có TTL Jitter tránh hết hạn đồng loạt." },
+    "difficulty": 2,
+    "simId": "S0-02/catalog",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "normal-3200",
+        "label": { "vi": "Tải thường 3.200 req/s (p99 ≤ 90 ms, lỗi ≤ 1%)" },
+        "simId": "S0-02/catalog",
+        "constraints": [
+          { "id": "p99-normal", "kind": "slo-latency", "metric": "p99", "maxMs": 90, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-normal", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "peak-4200",
+        "label": { "vi": "Tải cao điểm 4.200 req/s (p99 ≤ 110 ms, lỗi ≤ 1%)" },
+        "simId": "S0-02/catalog",
+        "loadOverride": { "kind": "steady", "rps": 4200 },
+        "constraints": [
+          { "id": "p99-peak", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-peak", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 1
+      }
+    ],
+    "structural": [
+      { "id": "cache-jitter", "kind": "structural", "rule": "cache-has-jitter", "node": "cache" }
+    ],
+    "budget": {
+      "maxCostPerHour": 1.3,
+      "maxChanges": 3
+    },
+    "par": {
+      "costPerHour": 1.21,
+      "changes": 3
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app", "key": "replicas", "value": 3 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 },
+        { "type": "knob", "node": "cache", "key": "ttlJitterPct", "value": 0.2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "expensive-db-vertical",
+        "label": { "vi": "Tăng cỡ máy Product DB lên mức 3 thay vì mở rộng Cache" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Scale-up Product DB lên mức 3 đẩy chi phí vượt xa trần 1,30 USD/giờ, trong khi 2 instance Catalog API (tổng 3.200 req/s) vẫn nghẽn cứng ở tải cao điểm 4.200 req/s." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ở tải cao điểm 4.200 req/s, 2 instance Catalog API (mỗi máy 1.600 req/s) không đủ năng lực xử lý." },
+      { "vi": "Tăng dung lượng Cache lên 80.000 key rẻ hơn nhiều so với nâng cấp Product DB, đồng thời bật TTL Jitter ≥ 0,1 để đạt tiêu chí cấu trúc." }
+    ],
+    "explain": { "vi": "Đánh đổi tối ưu là nâng Catalog API lên 3 instance (tổng μ = 4.800 req/s), cấp đủ 80.000 key cho Product Cache (Hit Ratio đạt {cache.hitRatio'@30:0%}) và đặt TTL Jitter 0,2. Nhờ đó Product DB giữ nguyên cỡ máy 1 (ρ = {db.rho'@30:2} ở tải thường), p99 đạt {m.p99'@30:0} ms và chi phí chỉ {m.cost'@30:2} USD/giờ." }
+  }
+]

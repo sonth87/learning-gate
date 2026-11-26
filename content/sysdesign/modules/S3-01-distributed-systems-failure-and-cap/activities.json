@@ -1,0 +1,99 @@
+[
+  {
+    "id": "S3-01.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán tỷ lệ lỗi toàn cục ở chế độ CP khi đứt cáp xuyên vùng" },
+    "prompt": { "vi": "Hệ thống nhận 2.000 req/s chia đều 50% tại Vùng A (US) và 50% tại Vùng B (EU); trong mỗi vùng có 70% lượt đọc cục bộ và 30% lượt ghi phải đồng bộ về Primary ở US. Tại giây 20, tuyến cáp xuyên vùng bị cắt hoàn toàn. Ở chế độ CP, tỷ lệ lỗi toàn hệ thống tại giây 30 là bao nhiêu?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "0% lỗi vì Vùng B tự động chuyển sang chấp nhận ghi cục bộ không cần hỏi Vùng A" },
+        { "vi": "15% lỗi: chỉ 30% lượt ghi của nửa lưu lượng tại EU (50% × 30%) bị từ chối, còn US và lượt đọc tại EU vẫn thành công" },
+        { "vi": "50% lỗi vì toàn bộ người dùng tại Vùng B bị chặn cả đọc lẫn ghi" },
+        { "vi": "30% lỗi vì mọi lượt ghi ở cả hai vùng US và EU đều thất bại" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 36, "speed": 2 },
+    "hints": [
+      { "vi": "Người dùng ở Vùng A (US) nằm ngay cạnh DB Primary nên cả đọc lẫn ghi đều không đi qua cáp xuyên lục địa." },
+      { "vi": "Tại Vùng B (EU), 70% lượt đọc vẫn đọc từ Replica nội vùng; chỉ 30% lượt ghi của 50% người dùng toàn cầu phải đi qua tuyến eu-wan bị cắt." }
+    ],
+    "explain": { "vi": "Tại giây 30, 1.000 req/s ở US và 700 req/s đọc ở EU đều thành công ({global.goodputRps@30:0} req/s), riêng 300 req/s ghi ở EU bị từ chối để bảo toàn tính nhất quán CP, tạo ra tỷ lệ lỗi toàn cục bằng đúng {global.errorRate@30:0%}." },
+    "sim": { "simId": "S3-01/cp-partition", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S3-01/cp-partition", "seekSec": 18, "focus": { "nodes": ["app-eu", "db-us"], "links": ["eu-wan"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-01.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Thiết kế dịch vụ hồ sơ đa vùng chịu được cả tải đỉnh lẫn chia cắt mạng" },
+    "prompt": { "vi": "Dịch vụ cập nhật hồ sơ và bảng tin (ưu tiên AP khi đứt cáp) chạy trên hai vùng US – EU với tải đỉnh 2.600 req/s (75% đọc, 25% ghi). Hiện tại mỗi tầng App chỉ có 1 instance (1.200 req/s), còn đường xuyên vùng eu-wan để Timeout 1.200 ms, Retry không Backoff và trả lỗi cứng khi đứt mạng. Với ngân sách ≤ 2,40 USD/giờ và tối đa 4 thay đổi, hãy cấu hình để đạt SLO qua cả hai kịch bản và đảm bảo Retry có Backoff." },
+    "difficulty": 2,
+    "simId": "S3-01/wan-design",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "peak-normal",
+        "label": { "vi": "Giờ cao điểm mạng bình thường (2.600 req/s)" },
+        "simId": "S3-01/wan-design",
+        "events": [],
+        "constraints": [
+          { "id": "p99-peak", "kind": "slo-latency", "metric": "p99", "maxMs": 160, "window": { "fromSec": 5, "toSec": 55 }, "allowViolationPct": 2 },
+          { "id": "err-peak", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 55 } }
+        ],
+        "weight": 1
+      },
+      {
+        "id": "wan-cut",
+        "label": { "vi": "Sự cố đứt cáp liên vùng t = 20..45 s (2.000 req/s)" },
+        "simId": "S3-01/wan-design",
+        "loadOverride": { "kind": "steady", "rps": 2000 },
+        "constraints": [
+          { "id": "p99-part", "kind": "slo-latency", "metric": "p99", "maxMs": 480, "window": { "fromSec": 5, "toSec": 55 }, "allowViolationPct": 5 },
+          { "id": "err-part", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 55 } }
+        ],
+        "weight": 1
+      }
+    ],
+    "structural": [
+      { "id": "wan-backoff", "kind": "structural", "rule": "has-retry-backoff", "link": "eu-wan" }
+    ],
+    "budget": { "maxCostPerHour": 2.4, "maxChanges": 4 },
+    "par": { "costPerHour": 2.18, "changes": 3 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app-us", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "app-eu", "key": "replicas", "value": 2 },
+        {
+          "type": "link",
+          "link": "eu-wan",
+          "patch": {
+            "fallback": "degrade",
+            "timeoutMs": 180,
+            "retry": { "max": 1, "backoff": "exponential", "baseMs": 80, "jitter": "full", "budgetRatio": 0.1 }
+          }
+        }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-db-keep-cp",
+        "label": { "vi": "Chỉ tăng cỡ máy hai Database mà giữ nguyên cấu hình đường truyền eu-wan" },
+        "changes": [
+          { "type": "knob", "node": "db-us", "key": "sizeFactor", "value": 2 },
+          { "type": "knob", "node": "db-eu", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Hai Database vốn còn dư công suất; lỗi xảy ra do tầng App chỉ có 1 instance bị quá tải ở 1.300 req/s mỗi vùng và đường eu-wan vẫn trả lỗi cứng (CP) kèm Retry không Backoff khi đứt cáp." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ở tải 2.600 req/s chia đều hai vùng, mỗi vùng nhận 1.300 req/s vượt trần 1.200 req/s của 1 instance App." },
+      { "vi": "Với tính năng hồ sơ cá nhân ưu tiên AP, hãy đổi fallback của link eu-wan sang degrade kết hợp hạ timeoutMs xuống khoảng 180 ms." },
+      { "vi": "Chuyển retry trên eu-wan sang exponential backoff kèm jitter (hoặc tắt retry không backoff) để đạt kiểm tra cấu trúc." }
+    ],
+    "explain": { "vi": "Tăng mỗi cụm App lên 2 instance hạ mức bận ở tải đỉnh xuống {app-us.rho'@30:2}, đồng thời cấu hình eu-wan với fallback degrade, timeout 180 ms và exponential backoff có jitter giúp giữ tỷ lệ lỗi bằng 0% suốt sự cố đứt cáp với chi phí 2,18 USD/giờ." },
+    "replay": { "simId": "S3-01/wan-design", "seekSec": 25, "focus": { "nodes": ["app-eu", "db-us"], "links": ["eu-wan"] } }
+  }
+]

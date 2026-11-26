@@ -1,0 +1,245 @@
+{
+  "sims": [
+    {
+      "id": "S0-06/profile-flow",
+      "scenario": {
+        "id": "S0-06/profile-flow",
+        "seed": 606,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.7
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "ramp",
+          "from": 300,
+          "to": 2200,
+          "overSec": 45
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Client" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB ngừng hoạt động", "en": "LB down" } }
+              ]
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "API Server", "en": "API Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1400 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 2 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Instance ứng dụng lỗi", "en": "API instance crash" } }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.8, "cv": 0.3 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0.15,
+                "hitRatioMax": 0.75,
+                "workingSetKeys": 50000,
+                "capacityKeys": 50000,
+                "warmupSec": 20,
+                "singleflight": false
+              },
+              "knobs": [],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Mất dữ liệu đệm, lượt đọc dồn xuống DB", "en": "Cache flush hits DB" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": {
+                "shards": 1,
+                "applyRps": 800,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "sizeFactor": 1
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "DB size factor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Truy vấn thiếu chỉ mục làm giảm thông lượng", "en": "Slow queries cut throughput" } }
+              ]
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Message Queue", "en": "Message Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 1.5, "cv": 0.3 },
+              "params": {
+                "maxDepth": 50000,
+                "dlq": true,
+                "visibilitySec": 30
+              },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Background Worker", "en": "Background Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.08,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 350 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 3 },
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Worker dừng làm tồn đọng Queue", "en": "Worker crash grows backlog" } }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-api",
+              "from": "lb",
+              "to": "api",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "api-cache",
+              "from": "api",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 150
+            },
+            {
+              "id": "cache-db",
+              "from": "cache",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 900
+            },
+            {
+              "id": "api-queue",
+              "from": "api",
+              "to": "queue",
+              "mode": "async",
+              "carries": "w",
+              "netClass": "same-az"
+            },
+            {
+              "id": "queue-worker",
+              "from": "queue",
+              "to": "worker",
+              "mode": "pull",
+              "netClass": "same-az"
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "api": "all-sequential",
+            "cache": "split",
+            "queue": "split"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "db",
+        "maxSustainableRpsApprox": [1620, 1750]
+      }
+    }
+  ]
+}

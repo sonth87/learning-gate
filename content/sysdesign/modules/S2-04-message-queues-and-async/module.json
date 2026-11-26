@@ -1,0 +1,30 @@
+{
+  "id": "S2-04",
+  "slug": "S2-04-message-queues-and-async",
+  "level": 2,
+  "order": 4,
+  "title": "Message Queues và xử lý bất đồng bộ: tách tải, Ack và Dead Letter Queue",
+  "summary": "Tách các tác vụ nặng ra khỏi đường phản hồi trực tiếp bằng hàng đợi thông điệp (Message Queue) để hấp thụ đột biến tải gấp 10 lần, đảm bảo không mất việc bằng cơ chế xác nhận Ack, cô lập thông điệp lỗi vào Dead Letter Queue và giữ thứ tự theo khoá phân vùng.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích cách Message Queue tách rời tốc độ tiếp nhận của API khỏi tốc độ xử lý của Worker và vì sao thông lượng dài hạn vẫn do Worker quyết định" },
+    { "vi": "So sánh các mức cam kết giao nhận (At-most-once, At-least-once, Exactly-once) và kết hợp cơ chế Ack với tính lũy đẳng (Idempotency)" },
+    { "vi": "Thiết lập giới hạn số lần thử lại và Dead Letter Queue (DLQ) để ngăn thông điệp lỗi (Poison Message) làm nghẽn toàn bộ hàng đợi" },
+    { "vi": "Phân biệt mô hình Queue cạnh tranh (Point-to-Point) với Pub/Sub và dùng khoá phân vùng (Partition Key) để bảo toàn thứ tự sự kiện theo thực thể" }
+  ],
+  "tags": ["message-queue", "async", "worker", "ack", "idempotency", "dlq", "backpressure", "partition-key"],
+  "prerequisites": ["S1-01", "S1-03", "S1-06"],
+  "related": ["S2-11", "S2-12", "S4-06", "S4-10", "S4-11"],
+  "dtsRef": "queues",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-2/lessons/lesson-4-message-queues-async-processing-decoupling-services.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-4-message-queues-async-processing-decoupling-services.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân và sơ đồ tĩnh, dựng mô phỏng trực tiếp đợt tăng tải đột biến gấp 10 lần (300 lên 3.000 req/s) qua API → Queue → Worker Pool + DLQ để minh hoạ tách rời độ trễ phản hồi khỏi tốc độ xả backlog; bổ sung định tuyến giữ thứ tự theo Partition Key, giới hạn chiều sâu hàng đợi và bài tập đọc dòng thời gian bất nhất khi thiếu khoá thứ tự."
+  }
+}

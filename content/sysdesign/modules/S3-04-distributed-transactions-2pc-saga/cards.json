@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-04.c1",
+    "front": "Vì sao giao dịch ACID cục bộ không dùng được ngang qua nhiều microservices?",
+    "back": "Mỗi microservice sở hữu cơ sở dữ liệu riêng (và có thể gọi API đối tác ngoài). Khi một dịch vụ đã COMMIT cục bộ mà dịch vụ kế tiếp báo lỗi, không tồn tại câu lệnh ROLLBACK chung để quay lui các kho dữ liệu khác qua mạng."
+  },
+  {
+    "id": "S3-04.c2",
+    "front": "Hai pha của 2PC hoạt động thế nào và rủi ro lớn nhất của nó là gì?",
+    "back": "Pha 1 (Prepare): Coordinator yêu cầu mọi DB khoá dòng, ghi sẵn WAL và bỏ phiếu YES/NO. Pha 2 (Commit/Abort): đủ YES mới chốt đồng loạt. Rủi ro: Coordinator dừng sau Pha 1 khiến mọi DB đã bỏ phiếu YES bị treo khoá ở trạng thái in-doubt."
+  },
+  {
+    "id": "S3-04.c3",
+    "front": "Giao dịch bù trừ (Compensation) trong Saga khác gì với ROLLBACK của cơ sở dữ liệu?",
+    "back": "ROLLBACK huỷ bỏ thay đổi chưa chốt như chưa từng xảy ra; còn Compensation chạy một giao dịch mới đảo ngược tác dụng nghiệp vụ của bước đã COMMIT trước đó (cả bước gốc lẫn bước hoàn tác đều lưu lại trên lịch sử kiểm toán)."
+  },
+  {
+    "id": "S3-04.c4",
+    "front": "So sánh nhanh Saga Orchestration và Saga Choreography?",
+    "back": "Orchestration dùng một bộ điều phối trung tâm lưu máy trạng thái và gọi từng bước (rõ luồng, dễ gỡ lỗi cho quy trình ≥ 4 bước). Choreography để các dịch vụ tự lắng nghe và phát sự kiện qua Event Bus (ghép nối lỏng, hợp luồng ngắn 2–3 bước)."
+  },
+  {
+    "id": "S3-04.c5",
+    "front": "Semantic Lock trong Saga dùng để giải quyết vấn đề gì?",
+    "back": "Saga thiếu tính cô lập (chỉ đạt ACD) vì mỗi bước COMMIT cục bộ ngay. Semantic Lock đánh dấu bản ghi bằng trạng thái trung gian (như PENDING) để cảnh báo và chặn các giao dịch đồng thời khác sửa nhầm khi Saga chưa hoàn tất."
+  },
+  {
+    "id": "S3-04.c6",
+    "front": "Vì sao cả bước tiến lẫn bước bù trừ trong Saga đều bắt buộc phải có Idempotency-Key?",
+    "back": "Vì lỗi mạng hoặc Timeout không cho biết phía nhận đã thực thi xong trước khi rớt gói ACK hay chưa. Idempotency-Key giúp Orchestrator thử lại bền bỉ mà không bao giờ trừ tiền hai lần hoặc hoàn tiền hai lần."
+  }
+]

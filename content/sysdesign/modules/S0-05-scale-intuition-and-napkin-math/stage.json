@@ -1,0 +1,228 @@
+{
+  "version": 1,
+  "base": "s1-spectrum",
+  "nodes": {},
+  "scenes": {
+    "s1-spectrum": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Thang quy mô hệ thống (mỗi bậc tăng 10× DAU)",
+          "en": "System Scale Spectrum (10× DAU steps)"
+        },
+        "subtitle": {
+          "vi": "Mỗi bậc nhảy 10× làm thay đổi kiến trúc và điểm nghẽn chính",
+          "en": "Every 10× jump shifts the primary bottleneck and architecture"
+        },
+        "cells": [
+          "1K DAU · ~2 RPS",
+          "10K DAU · ~25 RPS",
+          "100K DAU · ~300 RPS",
+          "1M DAU · ~3K RPS",
+          "10M DAU · ~30K RPS"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 0, "label": "1 App + 1 DB", "tone": "blue" },
+          { "index": 2, "label": "Cache + Replica", "tone": "green" },
+          { "index": 4, "label": "Sharding + Đa vùng", "tone": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Mục tiêu Napkin Math", "en": "Napkin Math Goal" },
+          "value": { "vi": "Đúng bậc độ lớn (±30%)", "en": "Right order of magnitude (±30%)" },
+          "tone": "green"
+        }
+      }
+    },
+    "s2-constants": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Đại lượng gốc", "en": "Base Quantity" },
+        "rightTitle": { "vi": "Quy đổi nhẩm nhanh", "en": "Fast Approximation" },
+        "names": [
+          { "id": "n1", "name": "1 ngày (24 × 3600)", "note": { "vi": "86.400 giây" }, "targetId": "o1" },
+          { "id": "n2", "name": "1 năm (365 ngày)", "note": { "vi": "31.536.000 giây" }, "targetId": "o2" },
+          { "id": "n3", "name": "Đơn vị truyền mạng", "note": { "vi": "Byte sang bit" }, "targetId": "o3" },
+          { "id": "n4", "name": "Năng lực tham chiếu", "note": { "vi": "1 instance điển hình" }, "targetId": "o4" }
+        ],
+        "objects": [
+          { "id": "o1", "typeTag": "THỜI GIAN", "value": "≈ 10^5 giây", "fields": ["Dịch 5 chữ số thập phân", "Dư ~15% an toàn"], "tone": "blue" },
+          { "id": "o2", "typeTag": "VÒNG ĐỜI", "value": "≈ 3,15 × 10^7 s", "fields": ["1 tháng ≈ 2,6 × 10^6 s", "Nhớ nhanh: π × 10^7 s"], "tone": "purple" },
+          { "id": "o3", "typeTag": "BĂNG THÔNG", "value": "1 MB/s = 8 Mb/s", "fields": ["1 GB = 10^9 B", "1 TB = 10^12 B"], "tone": "orange" },
+          { "id": "o4", "typeTag": "THÔNG LƯỢNG", "value": "App ~1K · Cache ~50K", "fields": ["SQL đơn giản ~2K–5K/s", "Redis RAM ~50K–100K/s"], "tone": "green" }
+        ]
+      }
+    },
+    "s3-rps-chain": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Chuỗi quy đổi DAU sang lưu lượng đỉnh (ví dụ 200K DAU)",
+          "en": "DAU to Peak RPS Pipeline (200K DAU example)"
+        },
+        "subtitle": {
+          "vi": "10 trang/người/ngày × 5 API/trang = 50 request/người/ngày",
+          "en": "10 pages/user/day × 5 API calls/page = 50 req/user/day"
+        },
+        "cells": [
+          "200K DAU",
+          "× 50 req/ngày",
+          "10M req/ngày",
+          "÷ 86.400 s ≈ 116 RPS",
+          "× 3 đỉnh ≈ 348 RPS"
+        ],
+        "activeIndices": [3, 4],
+        "pointers": [
+          { "index": 3, "label": "Avg RPS (trung bình)", "tone": "blue" },
+          { "index": 4, "label": "Peak RPS (thiết kế)", "tone": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc", "en": "Rule" },
+          "value": { "vi": "Luôn chọn cỡ hạ tầng theo Peak RPS", "en": "Always size infrastructure for Peak RPS" },
+          "tone": "orange"
+        }
+      }
+    },
+    "s4-servers": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Định cỡ số instance App có dự phòng tải (Headroom)",
+          "en": "App Instance Sizing with Headroom & HA"
+        },
+        "nodes": [
+          { "id": "peak", "x": -150, "y": -80, "label": "Peak = 1.500 RPS", "sub": { "vi": "Tải cao điểm đầu vào" }, "tone": "orange" },
+          { "id": "cap", "x": 150, "y": -80, "label": "μ = 500 RPS/máy", "sub": { "vi": "Trần lý thuyết 1 máy" }, "tone": "blue" },
+          { "id": "safe", "x": 150, "y": 5, "label": "An toàn: 350 RPS", "sub": { "vi": "Giữ ρ_target = 0,70" }, "tone": "green" },
+          { "id": "bad", "x": -160, "y": 95, "label": "3 máy (ρ = 1,00)", "sub": { "vi": "Mất 1 máy → quá tải" }, "tone": "rose", "pruned": true },
+          { "id": "good", "x": 100, "y": 95, "label": "5 máy (ρ = 0,60)", "sub": { "vi": "Chịu được 1 máy dừng" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "cap", "to": "safe", "label": "× 0,7" },
+          { "from": "peak", "to": "bad", "label": "÷ 500 (sai)", "style": "danger" },
+          { "from": "peak", "to": "good", "label": "ceil(1500/350)" },
+          { "from": "safe", "to": "good" }
+        ]
+      }
+    },
+    "s5-storage": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ước lượng lưu trữ theo vòng đời và hệ số sao chép",
+          "en": "Lifecycle & Replicated Storage Estimation"
+        },
+        "subtitle": {
+          "vi": "Tách riêng Metadata (Database) và Media nhị phân (Object Storage)",
+          "en": "Separate structured Metadata (DB) from binary Media (Object Storage)"
+        },
+        "cells": [
+          "Bản ghi mới/ngày",
+          "× Kích thước TB",
+          "Dung lượng/ngày",
+          "× 365 × Số năm",
+          "× 3 bản sao (RF=3)"
+        ],
+        "activeIndices": [2, 4],
+        "pointers": [
+          { "index": 1, "label": "Text 0,5KB · Ảnh 1,5MB", "tone": "blue" },
+          { "index": 4, "label": "Tổng đĩa vật lý", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Ví dụ 1M DAU", "en": "1M DAU Example" },
+          "value": { "vi": "DB ≈ 1,1 TB/năm · Ảnh S3 ≈ 548 TB/năm", "en": "DB ≈ 1.1 TB/yr · Photos ≈ 548 TB/yr" },
+          "tone": "purple"
+        }
+      }
+    },
+    "s6-bw-ram": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Thành phần tài nguyên", "en": "Resource Dimension" },
+        "rightTitle": { "vi": "Công thức & điểm chặn tải", "en": "Formula & Offload Layer" },
+        "names": [
+          { "id": "b1", "name": "Ingress (luồng vào)", "note": { "vi": "Peak Write × Payload" }, "targetId": "r1" },
+          { "id": "b2", "name": "Egress (luồng ra)", "note": { "vi": "Peak Read × Payload" }, "targetId": "r2" },
+          { "id": "b3", "name": "RAM Cache (tập nóng)", "note": { "vi": "Quy tắc Pareto 80/20" }, "targetId": "r3" }
+        ],
+        "objects": [
+          { "id": "r1", "typeTag": "MẠNG VÀO", "value": "Đi thẳng tới Origin", "fields": ["Đổi B/s × 8 = bit/s", "Tải ảnh lớn có thể qua Presigned URL"], "tone": "blue" },
+          { "id": "r2", "typeTag": "MẠNG RA", "value": "CDN gánh 85%–95%", "fields": ["3.000 RPS × 500 KB = 12 Gb/s", "Origin chỉ chịu ~1,2 Gb/s"], "tone": "green" },
+          { "id": "r3", "typeTag": "BỘ NHỚ ĐỆM", "value": "20% dữ liệu ngày × 1,3", "fields": ["10 GB đọc/ngày → ~2,6 GB RAM", "Vừa gọn 1 node Redis 4–8 GB"], "tone": "yellow" }
+        ]
+      }
+    },
+    "s7-rw-patterns": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Tỉ lệ Đọc : Ghi quyết định hướng kiến trúc",
+          "en": "Read : Write Ratio Drives Architecture"
+        },
+        "nodes": [
+          { "id": "ratio", "x": 0, "y": -85, "label": "Tỉ lệ Read : Write", "sub": { "vi": "Từ bước tính RPS" }, "tone": "purple" },
+          { "id": "rh", "x": -190, "y": 5, "label": "Read-Heavy (≥90%)", "sub": { "vi": "Tin tức, Feed, Short URL" }, "tone": "green" },
+          { "id": "bal", "x": 0, "y": 5, "label": "Balanced (50–85%)", "sub": { "vi": "Thương mại điện tử" }, "tone": "yellow" },
+          { "id": "wh", "x": 190, "y": 5, "label": "Write-Heavy (≥50% ghi)", "sub": { "vi": "Log, IoT, Telemetry" }, "tone": "orange" },
+          { "id": "rh-fix", "x": -190, "y": 95, "label": "Cache + CDN + Replica", "sub": { "vi": "Giảm >90% tải đọc DB" }, "tone": "green" },
+          { "id": "bal-fix", "x": 0, "y": 95, "label": "Index + Cache nóng", "sub": { "vi": "Bảo vệ giao dịch ghi" }, "tone": "blue" },
+          { "id": "wh-fix", "x": 190, "y": 95, "label": "Queue + Batch + Shard", "sub": { "vi": "Đệm đỉnh & ghi tuần tự" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "ratio", "to": "rh", "label": "10:1..100:1" },
+          { "from": "ratio", "to": "bal", "label": "3:1..5:1" },
+          { "from": "ratio", "to": "wh", "label": "≤ 1:1" },
+          { "from": "rh", "to": "rh-fix" },
+          { "from": "bal", "to": "bal-fix" },
+          { "from": "wh", "to": "wh-fix" }
+        ]
+      }
+    },
+    "s8-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy trình 5 bước Napkin Math trước khi vẽ kiến trúc",
+          "en": "5-Step Napkin Math Checklist Before Architecture"
+        },
+        "subtitle": {
+          "vi": "Biến mô tả sản phẩm thành bộ tham số định lượng cho mô phỏng",
+          "en": "Turn product briefs into quantitative simulation parameters"
+        },
+        "cells": [
+          "DAU → Avg RPS",
+          "Nhân đỉnh → Peak",
+          "Chia μ (ρ ≤ 0,7)",
+          "Lưu trữ × năm × RF",
+          "Băng thông & RAM"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 1, "label": "Tải thiết kế", "tone": "orange" },
+          { "index": 4, "label": "Cỡ Cache & CDN", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Kết nối tiếp theo", "en": "Next Connection" },
+          "value": { "vi": "Đưa Peak RPS & Read:Write vào Brief (S0-07) và Sim", "en": "Feeds Peak RPS & Read:Write into Brief & Sim" },
+          "tone": "blue"
+        }
+      }
+    }
+  }
+}

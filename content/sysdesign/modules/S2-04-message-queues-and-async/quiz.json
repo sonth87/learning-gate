@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S2-04.q1",
+    "type": "output",
+    "q": "Trong 20 giây cao điểm, API đẩy vào Message Queue 2.500 job/s, trong khi cụm Worker xử lý đều đặn 500 job/s (hàng đợi ban đầu rỗng). Kết thúc 20 giây đó, backlog tồn đọng trong Queue là bao nhiêu job? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "40000",
+    "explain": "Tốc độ tích luỹ ròng mỗi giây là 2.500 − 500 = 2.000 job/s. Sau 20 giây cao điểm, lượng backlog nằm chờ trong Queue bằng 2.000 × 20 = 40.000 job, sẽ được cụm Worker xả dần khi lưu lượng đầu vào hạ xuống dưới 500 job/s."
+  },
+  {
+    "id": "S2-04.q2",
+    "type": "tf",
+    "q": "Đặt Message Queue có dung lượng lớn giữa API và Worker giúp hệ thống chịu được lưu lượng trung bình 3.000 job/s vô thời hạn dù cụm Worker chỉ xử lý tối đa 600 job/s.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Message Queue chỉ là bộ đệm hấp thụ các đợt tăng vọt tạm thời (burst/spike), không tự sinh ra năng lực tính toán. Nếu lưu lượng vào trung bình lớn hơn thông lượng xả của Worker trong thời gian dài, hàng đợi chắc chắn chạm trần maxDepth và phải đánh rớt hoặc tạo áp lực ngược."
+  },
+  {
+    "id": "S2-04.q3",
+    "type": "mc",
+    "q": "Để không làm mất job khi một Worker bị tắt đột ngột ngay lúc đang xử lý dở, hàng đợi cần vận hành cơ chế xác nhận (Ack) như thế nào?",
+    "code": "",
+    "choices": [
+      "Xoá thông điệp khỏi Queue ngay khoảnh khắc vừa gửi sang mạng cho Worker",
+      "Giữ thông điệp ở trạng thái ẩn tạm thời (Visibility Timeout) và chỉ xoá khi Worker gửi Ack sau khi đã hoàn tất công việc",
+      "Yêu cầu người dùng nhấn nút tải lại trang mỗi 5 giây",
+      "Tắt hoàn toàn cơ chế thử lại trên mọi Worker"
+    ],
+    "answer": 1,
+    "explain": "Xoá ngay khi giao là At-most-once nên Worker sập sẽ mất job. Giữ bản ghi cho tới khi nhận Ack hoàn tất (At-least-once) giúp hàng đợi tự động giao lại thông điệp cho Worker khác khi hết Visibility Timeout."
+  },
+  {
+    "id": "S2-04.q4",
+    "type": "mc",
+    "q": "Vì cơ chế At-least-once có thể giao lại cùng một thông điệp nhiều hơn một lần (ví dụ Worker đã ghi DB xong nhưng rớt mạng trước khi kịp gửi Ack), phía Worker BẮT BUỘC phải thiết kế tính chất gì?",
+    "code": "",
+    "choices": [
+      "Tính lũy đẳng (Idempotency) dựa trên khoá định danh duy nhất của thông điệp hoặc nghiệp vụ",
+      "Chạy duy nhất 1 luồng xử lý trên toàn hệ thống",
+      "Lưu trạng thái xử lý trong biến toàn cục của RAM cục bộ",
+      "Bỏ qua toàn bộ kiểm tra ràng buộc khoá chính trong Database"
+    ],
+    "answer": 0,
+    "explain": "Khi một thông điệp được giao lặp lần hai, xử lý lũy đẳng (kiểm tra idempotency_key hoặc ràng buộc UNIQUE trong giao dịch DB) đảm bảo tác động nghiệp vụ như trừ tiền hay tạo đơn chỉ xảy ra đúng một lần."
+  },
+  {
+    "id": "S2-04.q5",
+    "type": "mc",
+    "q": "Vai trò chính của Dead Letter Queue (DLQ) khi xử lý thông điệp độc (Poison Message — bản tin sai định dạng luôn gây lỗi mã nguồn) là gì?",
+    "code": "",
+    "choices": [
+      "Tự động sửa lỗi cú pháp JSON bên trong thông điệp rồi trả về cho người dùng",
+      "Tách thông điệp thất bại vượt quá số lần thử tối đa sang hàng đợi riêng để cảnh báo, điều tra và tránh làm nghẽn hàng đợi chính",
+      "Nhân bản thông điệp đó tới tất cả dịch vụ trong hệ thống",
+      "Xoá vĩnh viễn mọi thông điệp ngay lần lỗi mạng đầu tiên"
+    ],
+    "answer": 1,
+    "explain": "Nếu thử lại vô hạn một Poison Message, nó sẽ chiếm dụng vòng lặp của Worker và chặn các job hợp lệ phía sau. Chuyển sang DLQ sau N lần thất bại (ví dụ 3–5 lần) giúp giải phóng luồng chính mà vẫn giữ lại dữ liệu lỗi để gỡ lỗi và phát lại (replay) sau khi vá code."
+  },
+  {
+    "id": "S2-04.q6",
+    "type": "mc",
+    "q": "Nhiều Worker cùng kéo job song song từ một hàng đợi chung làm hai sự kiện PAID rồi SHIPPED của cùng đơn hàng #108 có nguy cơ hoàn tất ngược thứ tự. Cách chuẩn để giữ đúng thứ tự theo từng đơn hàng mà vẫn mở rộng ngang nhiều Worker là gì?",
+    "code": "",
+    "choices": [
+      "Giảm số lượng Worker của toàn hệ thống xuống còn đúng 1 máy",
+      "Băm theo khoá phân vùng (Partition Key = order_id) để mọi sự kiện của cùng một đơn hàng luôn đi vào cùng một partition tuần tự",
+      "Tăng thời gian chờ Timeout của phía trình duyệt lên 120 giây",
+      "Tắt cơ chế Ack trên hàng đợi"
+    ],
+    "answer": 1,
+    "explain": "Ta hầu như không cần thứ tự toàn cục giữa hai đơn hàng khác nhau, mà chỉ cần thứ tự cục bộ trong cùng một order_id. Định tuyến theo Partition Key = order_id đảm bảo mỗi partition chỉ do một consumer trong nhóm đọc tuần tự, vừa giữ đúng thứ tự vừa chạy song song trên nhiều partition."
+  }
+]

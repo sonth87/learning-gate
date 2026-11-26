@@ -1,0 +1,271 @@
+{
+  "sims": [
+    {
+      "id": "S3-04/two-pc-hang",
+      "scenario": {
+        "id": "S3-04/two-pc-hang",
+        "seed": 3304,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.2
+        },
+        "clientTimeoutMs": 2500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 450
+        },
+        "events": [
+          {
+            "at": 20,
+            "type": "crash",
+            "node": "coord"
+          },
+          {
+            "at": 42,
+            "type": "recover",
+            "node": "coord"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Khách đặt chuyến",
+                "en": "Travelers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {}
+            },
+            {
+              "id": "coord",
+              "kind": "coordinator",
+              "label": {
+                "vi": "Trip Coordinator",
+                "en": "Trip Coordinator"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance điều phối",
+                    "en": "Coordinator instances"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Coordinator sập sau Prepare làm các kho dữ liệu bị kẹt in-doubt",
+                    "en": "Coordinator crash after Prepare leaves DBs locked in-doubt"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 2500
+              },
+              "latency": {
+                "baseMs": 4,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 1,
+                "poolSize": 60
+              }
+            },
+            {
+              "id": "flight_db",
+              "kind": "sql",
+              "label": {
+                "vi": "Flight DB",
+                "en": "Flight DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Flight DB",
+                    "en": "Flight DB size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1800
+              },
+              "latency": {
+                "baseMs": 5,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "poolSize": 40,
+                "sizeFactor": 1
+              }
+            },
+            {
+              "id": "hotel_db",
+              "kind": "sql",
+              "label": {
+                "vi": "Hotel DB",
+                "en": "Hotel DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Hotel DB",
+                    "en": "Hotel DB size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1800
+              },
+              "latency": {
+                "baseMs": 6,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "poolSize": 40,
+                "sizeFactor": 1
+              }
+            },
+            {
+              "id": "pay_db",
+              "kind": "sql",
+              "label": {
+                "vi": "Payment DB",
+                "en": "Payment DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Payment DB",
+                    "en": "Payment DB size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1800
+              },
+              "latency": {
+                "baseMs": 5,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "poolSize": 40,
+                "sizeFactor": 1
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-coord",
+              "from": "client",
+              "to": "coord",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2500
+            },
+            {
+              "id": "coord-flight",
+              "from": "coord",
+              "to": "flight_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1000
+            },
+            {
+              "id": "coord-hotel",
+              "from": "coord",
+              "to": "hotel_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1000
+            },
+            {
+              "id": "coord-pay",
+              "from": "coord",
+              "to": "pay_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1000
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "coord": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

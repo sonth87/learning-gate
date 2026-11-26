@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S1-02.q1",
+    "type": "mc",
+    "q": "Tính năng nào dưới đây bắt buộc nên giữ giao tiếp đồng bộ (Request-Response) thay vì trả mã 202 và xử lý nền?",
+    "code": "",
+    "choices": [
+      "Gửi email biên nhận sau khi đơn hàng đã thanh toán",
+      "Xác thực mật khẩu và cấp JWT khi người dùng bấm Đăng nhập",
+      "Tạo 3 kích thước ảnh thu nhỏ cho video vừa tải lên",
+      "Cập nhật bảng thống kê doanh thu theo ngày cho bộ phận kế toán"
+    ],
+    "answer": 1,
+    "explain": "Khi đăng nhập, trình duyệt bắt buộc phải biết mật khẩu đúng hay sai và nhận ngay token phiên làm việc để chuyển trang; ba tác vụ còn lại người dùng không cần chờ kết quả tức thì."
+  },
+  {
+    "id": "S1-02.q2",
+    "type": "output",
+    "q": "Một dịch vụ đồng bộ có pool tối đa 42 luồng xử lý song song. Khi đối tác bên ngoài bị chậm làm thời gian mỗi request kéo dài 0,525 giây (525 ms), thông lượng tối đa của dịch vụ còn bao nhiêu req/s? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "80",
+    "explain": "Theo quan hệ thông lượng và giới hạn luồng đồng thời, μ = poolSize / S = 42 / 0,525 = 80 req/s. Với lưu lượng đến 180 req/s, mức sử dụng vọt lên ρ = 2,25 gây quá tải ngay lập tức."
+  },
+  {
+    "id": "S1-02.q3",
+    "type": "tf",
+    "q": "Trong hàng đợi dùng cơ chế giao ít nhất một lần (At-Least-Once), một thông điệp không bao giờ bị xử lý lặp lại hai lần trên cụm Worker.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nếu một Worker thực thi xong tác vụ nhưng gặp sự cố mạng hoặc sập tiến trình trước khi gửi tín hiệu ACK về Queue, hàng đợi sẽ giao lại thông điệp đó cho Worker khác. Vì vậy Worker phải được viết lũy đẳng (Idempotent)."
+  },
+  {
+    "id": "S1-02.q4",
+    "type": "mc",
+    "q": "Khi một đơn hàng hoàn tất, bốn dịch vụ độc lập (Email, Kho vận, Điểm thưởng, Phân tích) đều cần tự phản ứng mà không muốn phải sửa mã của Order Service mỗi khi thêm dịch vụ thứ năm. Mẫu nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Order Service gọi tuần tự 4 API đồng bộ",
+      "Một hàng đợi điểm-tới-điểm duy nhất dùng chung cho cả 4 dịch vụ",
+      "Kiến trúc Event-Driven (Pub/Sub) phát sự kiện order.created lên Event Bus",
+      "Client tự gọi riêng lẻ tới từng dịch vụ sau khi đặt hàng"
+    ],
+    "answer": 2,
+    "explain": "Với Pub/Sub, Order Service chỉ phát một sự kiện order.created lên Topic/Event Bus. Mỗi dịch vụ đăng ký nhận bản sao độc lập, giúp giảm mức gắn kết và mở rộng thêm bên nhận mới mà không sửa bên phát."
+  },
+  {
+    "id": "S1-02.q5",
+    "type": "mc",
+    "q": "Vai trò chính của Dead-Letter Queue (DLQ) trong hệ thống xử lý bất đồng bộ là gì?",
+    "code": "",
+    "choices": [
+      "Tăng gấp đôi tốc độ truyền mạng giữa API Server và Database",
+      "Cô lập các thông điệp lỗi lặp đi lặp lại sau khi đã hết số lần thử lại tối đa để không làm nghẽn cụm Worker",
+      "Thay thế hoàn toàn nhu cầu ghi dữ liệu xuống cơ sở dữ liệu chính",
+      "Tự động chuyển lời gọi bất đồng bộ thành lời gọi đồng bộ khi hàng đợi đầy"
+    ],
+    "answer": 1,
+    "explain": "Thông điệp sai định dạng hoặc gặp lỗi dữ liệu cố định (Poison Message) sẽ luôn thất bại dù thử lại bao nhiêu lần. Tách chúng sang DLQ sau N lần thử giúp cụm Worker tiếp tục phục vụ các thông điệp hợp lệ và cho phép kỹ sư kiểm tra nguyên nhân sau."
+  },
+  {
+    "id": "S1-02.q6",
+    "type": "tf",
+    "q": "Đặt Message Queue phía trước một cụm Worker có tổng năng lực 100 req/s sẽ giúp hệ thống xử lý bền vững mức tải trung bình 250 req/s suốt cả ngày mà không bị đầy hàng đợi.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Message Queue chỉ đóng vai trò bộ đệm hấp thụ các đợt tăng tải hoặc chậm tạm thời, không tự tạo thêm năng lực xử lý. Nếu tốc độ đến trung bình (250 req/s) luôn vượt tổng năng lực tiêu thụ (100 req/s), backlog sẽ tăng 150 việc mỗi giây cho tới khi tràn bộ nhớ."
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S4-11.q1",
+    "type": "output",
+    "q": "Một yêu cầu đi qua chuỗi 3 tầng: Mobile App → API Gateway → Order Service → Payment API. Nếu cả 3 chặng gọi đều cấu hình thử lại tối đa 2 lần sau lần gọi đầu tiên (tức tối đa 3 lượt mỗi chặng), trong trường hợp xấu nhất một thao tác của người dùng có thể sinh ra tối đa bao nhiêu lượt gọi đập vào Payment API? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "27",
+    "explain": "Khi bật Retry lồng nhau ở nhiều tầng nối tiếp, số lượt gọi nhân theo cấp số nhân qua từng chặng: (1 + 2) × (1 + 2) × (1 + 2) = 3 × 3 × 3 = 27 lượt gọi. Vì vậy kiến trúc chuẩn chỉ cho phép Retry tại một tầng duy nhất."
+  },
+  {
+    "id": "S4-11.q2",
+    "type": "mc",
+    "q": "Mục đích chính của việc cộng thêm thành phần ngẫu nhiên Full Jitter vào thuật toán Exponential Backoff khi thực hiện Retry là gì?",
+    "code": "",
+    "choices": [
+      "Để mã hoá nội dung gói tin HTTP tránh bị nghe lén trên đường truyền",
+      "Để phá vỡ sự đồng bộ thời gian giữa hàng nghìn client cùng bị lỗi một lúc, trải đều các lượt gọi thử lại thay vì tạo thành từng đợt sóng đập đồng loạt vào dịch vụ đang hồi phục",
+      "Để đảm bảo mọi request luôn được thử lại ngay ở mili-giây thứ 0",
+      "Để thay thế hoàn toàn nhu cầu đặt Timeout trên kết nối mạng"
+    ],
+    "answer": 1,
+    "explain": "Nếu chỉ dùng Exponential Backoff thuần (ví dụ 200 ms, 400 ms, 800 ms cố định), hàng nghìn client cùng gặp lỗi tại một thời điểm sẽ tiếp tục thức dậy và gọi lại vào đúng cùng một mili-giây kế tiếp. Full Jitter chọn ngẫu nhiên đều trong [0, d_k] giúp san phẳng hoàn toàn các đỉnh cộng hưởng này."
+  },
+  {
+    "id": "S4-11.q3",
+    "type": "tf",
+    "q": "Khi dịch vụ Checkout gọi POST /charge sang dịch vụ Payment và nhận lỗi Request Timeout, Checkout có thể chắc chắn 100% rằng tiền của khách hàng chưa bị trừ.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Timeout trên mạng là trạng thái bất định (Unknown): yêu cầu có thể bị rơi trước khi tới Payment, nhưng cũng rất có thể Payment đã trừ tiền thành công rồi gói tin phản hồi mới bị trễ hoặc rớt trên đường quay về. Do đó bắt buộc phải kèm Idempotency-Key khi thử lại."
+  },
+  {
+    "id": "S4-11.q4",
+    "type": "mc",
+    "q": "Trong máy trạng thái của Circuit Breaker, vai trò của trạng thái trung gian Half-Open (Nửa mở) là gì?",
+    "code": "",
+    "choices": [
+      "Cho phép 100% lưu lượng cộng thêm toàn bộ các lượt Retry cũ dồn thẳng vào dịch vụ đích ngay lập tức",
+      "Sau khi hết thời gian ngắt mạch (openSec), chỉ cho một lượng nhỏ request thăm dò đi qua để kiểm tra dịch vụ đích đã thực sự khoẻ lại chưa trước khi đóng mạch hoàn toàn về Closed",
+      "Tự động xoá toàn bộ dữ liệu trong cơ sở dữ liệu để giải phóng ổ cứng",
+      "Giữ kết nối TCP mở vô thời hạn không bao giờ đóng"
+    ],
+    "answer": 1,
+    "explain": "Nếu chuyển thẳng từ Open về Closed và đổ 100% tải vào ngay lập tức, một dịch vụ vừa mới khởi động lại còn nguội có thể sập lại tức thì. Trạng thái Half-Open mở hé một vài request thăm dò (probeRps): nếu thành công cao mới về Closed, nếu còn lỗi sẽ bật ngược về Open."
+  },
+  {
+    "id": "S4-11.q5",
+    "type": "mc",
+    "q": "Mẫu thiết kế nào giúp đảm bảo khi dịch vụ Gợi ý sản phẩm bên ngoài bị phản hồi chậm 15 giây, các luồng xử lý của tính năng Đăng nhập và Thanh toán trong cùng ứng dụng vẫn không bị cạn kiệt theo?",
+    "code": "",
+    "choices": [
+      "Tăng thời gian Timeout của lời gọi Gợi ý sản phẩm lên 120 giây",
+      "Mẫu vách ngăn Bulkhead: cấp cho nhánh gọi dịch vụ Gợi ý sản phẩm một Thread Pool / Connection Pool riêng biệt có giới hạn cứng nhỏ",
+      "Gộp chung mọi lời gọi mạng của toàn ứng dụng vào một Connection Pool duy nhất không phân biệt đích đến",
+      "Tắt tính năng kiểm tra chứng chỉ bảo mật TLS"
+    ],
+    "answer": 1,
+    "explain": "Bulkhead cô lập tài nguyên theo từng phụ thuộc. Nếu dịch vụ Gợi ý chậm, tối đa nó chỉ làm đầy Pool nhỏ dành riêng cho Gợi ý (ví dụ 10 luồng), còn các Pool của Đăng nhập và Thanh toán vẫn hoàn toàn thông thoáng."
+  }
+]

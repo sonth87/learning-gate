@@ -1,0 +1,24 @@
+{
+  "id": "S2-10",
+  "slug": "S2-10-consistent-hashing-and-vnodes",
+  "level": 2,
+  "order": 10,
+  "title": "Consistent Hashing và cân bằng tải bằng Virtual Nodes",
+  "summary": "Đặt cả máy chủ và khoá dữ liệu lên cùng vòng băm 2^32 để giảm tỷ lệ dời khoá từ N/(N+1) xuống chỉ còn 1/(N+1) khi co giãn cụm Cache/DB, đồng thời dùng Virtual Nodes để triệt tiêu độ lệch cung.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích vì sao đổi số máy trên cụm Cache dùng hash(key) mod N gây bão Cache Miss làm quá tải Database phía sau" },
+    { "vi": "Mô tả quy tắc ánh xạ theo chiều kim đồng hồ trên vòng băm nhất quán 2^32 và tính tỷ lệ dời khoá 1/(N+1) khi thêm nút" },
+    { "vi": "Lý giải nguyên nhân lệch tải khi mỗi máy chỉ giữ 1 điểm trên vòng và cách Virtual Nodes làm phẳng phân phối lưu lượng" },
+    { "vi": "Vận dụng Virtual Nodes cho cụm phần cứng không đồng nhất và sao chép dữ liệu sang R nút kế tiếp trên vòng" }
+  ],
+  "tags": ["consistent-hashing", "virtual-nodes", "hash-ring", "cache-cluster", "partitioning"],
+  "prerequisites": ["S1-03", "S2-02", "S2-09"],
+  "related": ["S2-03", "S3-01", "S4-02"],
+  "dtsRef": "consistent-hashing",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về vòng băm nhất quán (Consistent Hashing), tỷ lệ dời khoá 1/(N+1) so với mod N và cân bằng tải bằng Virtual Nodes."
+  }
+}

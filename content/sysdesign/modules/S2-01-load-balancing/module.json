@@ -1,0 +1,30 @@
+{
+  "id": "S2-01",
+  "slug": "S2-01-load-balancing",
+  "level": 2,
+  "order": 1,
+  "title": "Load Balancing: thuật toán phân phối, Health Check và Layer 4 / Layer 7",
+  "summary": "Đặt bộ cân bằng tải phía trước cụm máy chủ ứng dụng để mở rộng ngang, so sánh Round Robin, Least Connections, Weighted và IP Hash dưới tải không đồng đều, thiết lập Health Check loại bỏ máy lỗi và triển khai cặp dự phòng Active-Standby.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích vai trò của Load Balancer trong mở rộng ngang, phân tán tải qua một điểm vào duy nhất và triển khai không gián đoạn" },
+    { "vi": "Lựa chọn thuật toán chia tải (Round Robin, Least Connections, Weighted, IP Hash) phù hợp với thời gian xử lý và cấu hình máy chủ" },
+    { "vi": "Cấu hình Health Check với chu kỳ và ngưỡng thất bại hợp lý để tách biệt máy ngừng phản hồi khỏi máy chậm tạm thời" },
+    { "vi": "Phân biệt cân bằng tải Layer 4 với Layer 7 và loại bỏ điểm lỗi đơn bằng cặp Load Balancer Active-Standby qua Virtual IP" }
+  ],
+  "tags": ["load-balancing", "round-robin", "least-connections", "health-check", "layer-4", "layer-7", "failover"],
+  "prerequisites": ["S1-01", "S1-03", "S1-06"],
+  "related": ["S2-06", "S2-10", "S3-09", "S4-01"],
+  "dtsRef": "load-balancing",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-2/lessons/lesson-1-load-balancing.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-1-load-balancing.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo mô hình định lượng: lược bỏ giai thoại cá nhân và sơ đồ tĩnh, dựng mô phỏng trực tiếp ở 600 req/s để đối chiếu Round Robin với Least Connections khi máy chủ gánh tác vụ nặng, kiểm tra độ trễ phát hiện lỗi của Health Check và chuyển đổi dự phòng Active-Standby qua Virtual IP; bổ sung quy trình rút kết nối êm (Connection Draining) khi cập nhật phiên bản."
+  }
+}

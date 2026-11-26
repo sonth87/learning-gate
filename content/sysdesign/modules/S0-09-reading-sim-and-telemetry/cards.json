@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-09.c1",
+    "front": "Công thức mức sử dụng ρ trên một thành phần mô phỏng là gì và ngưỡng nào báo hiệu quá tải?",
+    "back": "ρ = λ / μ, với λ là lưu lượng request đi vào mỗi giây và μ là năng lực xử lý tối đa mỗi giây của thành phần. Khi ρ ≥ 1,00, lượng đến vượt lượng xử lý nên hàng đợi tích luỹ không dừng."
+  },
+  {
+    "id": "S0-09.c2",
+    "front": "Bốn trạng thái vận hành của khối trên sân khấu biến đổi theo ρ như thế nào?",
+    "back": "healthy (còn dư năng lực, ρ < 0,75) → busy (bắt đầu bận, ρ ≥ 0,75) → saturated (bão hoà, ρ ≥ 0,90) → overloaded (quá tải kéo dài ρ ≥ 1,00 kèm hàng đợi dồn)."
+  },
+  {
+    "id": "S0-09.c3",
+    "front": "Vì sao khi theo dõi mô phỏng ta ưu tiên nhìn p99 thay vì chỉ nhìn p50 hay tỉ lệ lỗi?",
+    "back": "p99 đo 1% request chậm nhất nên phản ứng rất nhạy với hiện tượng xếp hàng ngay khi ρ tiến sát 0,9–1,0, sớm hơn nhiều so với p50 và trước cả khi request chạm ngưỡng timeout gây báo lỗi."
+  },
+  {
+    "id": "S0-09.c4",
+    "front": "Tỷ lệ hạt tín hiệu (packetScale) trên dây nối có ý nghĩa gì?",
+    "back": "Mỗi hạt chuyển động đại diện cho một cụm request (ví dụ 1 chấm = 10 req/s) tự điều chỉnh theo quy mô tải để mật độ hiển thị luôn rõ ràng và trực quan."
+  },
+  {
+    "id": "S0-09.c5",
+    "front": "Ba công cụ tương tác chính trên bàn live-sim giúp kiểm chứng giả thuyết là gì?",
+    "back": "1) Thanh tua Timeline để lùi/tiến tới đúng giây chuyển trạng thái; 2) Bảng Inspector khi nhấp vào khối/dây nối để đọc ρ, hàng đợi và giải thích; 3) Các núm LoadKnob, cấu hình instance và Tracer."
+  },
+  {
+    "id": "S0-09.c6",
+    "front": "Nguyên tắc hiểu đúng giới hạn của mô phỏng so với hệ thống thật là gì?",
+    "back": "Đúng xu hướng và quan hệ nhân quả (nghẽn ở đâu, vì sao p99 vọt, tác dụng của mở rộng/đệm), nhưng không thay thế việc đo đạc thực nghiệm bằng log, tracing và benchmark trên môi trường thật."
+  }
+]

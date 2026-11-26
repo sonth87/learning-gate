@@ -1,0 +1,421 @@
+{
+  "version": 1,
+  "base": "s4-partition-intro",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng (US & EU)", "en": "Users (US & EU)" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng toàn cầu gửi lưu lượng chia đều 50/50 vào trung tâm dữ liệu US và EU.",
+          "en": "Global users sending traffic split 50/50 across US and EU datacenters."
+        },
+        "how": {
+          "vi": "Gồm 70–75% truy vấn đọc tại chỗ và 25–30% thao tác ghi cập nhật dữ liệu.",
+          "en": "Generates 70–75% local reads and 25–30% state-mutating writes."
+        },
+        "why": {
+          "vi": "Cho phép quan sát sự khác biệt rõ rệt giữa vùng giữ Primary và vùng bị cô lập khi đứt cáp.",
+          "en": "Contrasts user impact in the primary region versus the isolated region during a WAN cut."
+        }
+      }
+    },
+    "app-us": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Vùng A (US)", "en": "App Region A (US)" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm máy chủ ứng dụng đặt tại Vùng A (US), xử lý 1.200 req/s mỗi instance.",
+          "en": "Stateless application cluster in Region A (US), serving 1,200 req/s per instance."
+        },
+        "how": {
+          "vi": "Đọc và ghi trực tiếp vào DB Vùng A trong cùng mạng nội bộ độ trễ thấp (~0,5 ms).",
+          "en": "Reads and writes directly to local Region A Primary DB over low-latency LAN."
+        },
+        "why": {
+          "vi": "Nằm cùng vùng với Primary DB nên tiếp tục phục vụ bình thường khi tuyến xuyên lục địa đứt.",
+          "en": "Co-located with Primary DB, remaining unaffected during cross-region partitions."
+        }
+      }
+    },
+    "app-eu": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "globe",
+      "label": { "vi": "App Vùng B (EU)", "en": "App Region B (EU)" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm máy chủ ứng dụng đặt tại Vùng B (EU), phục vụ người dùng châu Âu.",
+          "en": "Application cluster in Region B (EU) serving European traffic."
+        },
+        "how": {
+          "vi": "Đọc tại DB Vùng B; với lệnh ghi, hoặc gọi đồng bộ sang DB Vùng A (CP) hoặc ghi tạm cục bộ khi đứt mạng (AP).",
+          "en": "Serves local reads from Region B DB; coordinates writes across WAN (CP) or degrades locally (AP)."
+        },
+        "why": {
+          "vi": "Là nơi thể hiện trực tiếp quyết định đánh đổi giữa trả lỗi (CP) và chấp nhận dữ liệu tạm lệch (AP).",
+          "en": "Directly embodies the CP reject-on-partition vs AP accept-and-reconcile trade-off."
+        }
+      }
+    },
+    "db-us": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "DB Vùng A (Primary)", "en": "DB Region A (Primary)" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu gốc tại Vùng A (US), tiếp nhận giao dịch chuẩn và phát luồng sao chép sang EU.",
+          "en": "Primary database in Region A (US), serializing authoritative writes and replicating to EU."
+        },
+        "how": {
+          "vi": "Xử lý tối đa 2.200 req/s với thời gian phục vụ nền 5 ms và truyền WAL qua cáp xuyên đại dương.",
+          "en": "Handles 2,200 req/s at 5 ms base service time while streaming WAL across WAN."
+        },
+        "why": {
+          "vi": "Đóng vai trò nguồn sự thật trong cấu hình CP để ngăn hai vùng ghi đè trái ngược nhau.",
+          "en": "Acts as the authoritative serialization point preventing conflicting writes in CP mode."
+        }
+      }
+    },
+    "db-eu": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "DB Vùng B (Replica)", "en": "DB Region B (Replica)" },
+      "inspector": {
+        "what": {
+          "vi": "Bản sao cơ sở dữ liệu tại Vùng B (EU) phục vụ đọc độ trễ thấp cho người dùng châu Âu.",
+          "en": "Regional replica database in Region B (EU) serving low-latency local reads."
+        },
+        "how": {
+          "vi": "Nhận luồng sao chép từ DB Vùng A (RTT ~65 ms); khi đứt cáp, độ trễ sao chép tích luỹ liên tục.",
+          "en": "Receives replication from Region A (~65 ms RTT); accumulates lag rapidly during WAN cuts."
+        },
+        "why": {
+          "vi": "Giúp 70% lưu lượng đọc ở châu Âu không phải chịu 65 ms khứ hồi vượt đại dương.",
+          "en": "Saves 70% of European read queries from paying cross-ocean round-trip latency."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-us": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng Bắc Mỹ đi vào App Vùng A.", "en": "North American traffic routed to Region A App." },
+        "how": { "vi": "Chiếm 50% tổng lưu lượng toàn cầu qua định tuyến địa lý.", "en": "Carries 50% of global load via Geo-DNS routing." },
+        "why": { "vi": "Đưa người dùng tới trung tâm dữ liệu gần nhất.", "en": "Connects users to their closest regional PoP." }
+      }
+    },
+    "client-eu": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng châu Âu đi vào App Vùng B.", "en": "European traffic routed to Region B App." },
+        "how": { "vi": "Chiếm 50% tổng lưu lượng toàn cầu.", "en": "Carries 50% of global load." },
+        "why": { "vi": "Giảm RTT mạng truy cập đầu-cuối cho người dùng tại EU.", "en": "Minimizes edge RTT for European clients." }
+      }
+    },
+    "us-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối đọc/ghi nội bộ giữa App Vùng A và DB Vùng A.", "en": "Intra-region read/write link in Region A." },
+        "how": { "vi": "Độ trễ mạng nội bộ ~0,5 ms, không phụ thuộc đường cáp liên lục địa.", "en": "Sub-millisecond LAN hop unaffected by WAN faults." },
+        "why": { "vi": "Giữ giao dịch tại Vùng A ổn định ngay cả khi mất kết nối quốc tế.", "en": "Keeps Region A healthy during international link cuts." }
+      }
+    },
+    "eu-db": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn đọc nội bộ từ App Vùng B xuống DB Vùng B.", "en": "Local read path from Region B App to Region B Replica." },
+        "how": { "vi": "Phục vụ toàn bộ lượt đọc tại EU với độ trễ nội vùng ~0,5 ms.", "en": "Serves all EU read traffic within the local region." },
+        "why": { "vi": "Tránh chi phí mạng xuyên vùng cho các thao tác chỉ đọc.", "en": "Eliminates cross-region latency on reads." }
+      }
+    },
+    "eu-wan": {
+      "inspector": {
+        "what": { "vi": "Đường truyền lệnh ghi xuyên vùng từ App Vùng B sang DB Vùng A (~65 ms).", "en": "Cross-region write coordination link from EU App to US Primary (~65 ms)." },
+        "how": { "vi": "Khi bị cắt ở t = 20 s: chế độ CP trả lỗi (fallback: error), chế độ AP chuyển sang ghi tạm cục bộ (fallback: degrade).", "en": "When severed at t = 20 s: CP fails requests, AP degrades to local queueing." },
+        "why": { "vi": "Là ranh giới quyết định hành vi CP hay AP của hệ thống đa vùng.", "en": "Governs whether the system behaves as CP or AP under partition." },
+        "tip": { "vi": "Luôn đặt Timeout ngắn (150–250 ms) và Backoff có Jitter trên đường gọi xuyên vùng.", "en": "Always configure short timeouts and jittered backoff on WAN links." }
+      }
+    },
+    "dc-repl": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": { "vi": "Luồng sao chép dữ liệu liên vùng từ DB Vùng A sang DB Vùng B.", "en": "Cross-region WAL replication stream from US Primary to EU Replica." },
+        "how": { "vi": "Khi cáp đứt, gói sao chép bị chặn khiến DB Vùng B lùi dần về dữ liệu cũ.", "en": "Severed during partition, causing EU Replica lag to grow continuously." },
+        "why": { "vi": "Đồng bộ trạng thái hai châu lục và hồi phục hội tụ sau khi nối mạng.", "en": "Synchronizes state across continents and heals divergence post-partition." }
+      }
+    }
+  },
+  "zones": {
+    "dc-us": {
+      "nodeIds": ["app-us", "db-us"],
+      "label": { "vi": "VÙNG A · US DATACENTER", "en": "REGION A · US DATACENTER" },
+      "tone": "orange"
+    },
+    "dc-eu": {
+      "nodeIds": ["app-eu", "db-eu"],
+      "label": { "vi": "VÙNG B · EU DATACENTER", "en": "REGION B · EU DATACENTER" },
+      "tone": "blue"
+    }
+  },
+  "scenes": {
+    "s1-local-vs-remote": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Ngữ cảnh thực thi lời gọi", "en": "Invocation Context" },
+        "rightTitle": { "vi": "Đặc tính vật lý & Kết cục", "en": "Physical Reality & Outcomes" },
+        "names": [
+          { "id": "loc", "name": "calc_total(items) · Cùng tiến trình", "note": { "vi": "Truy cập RAM trực tiếp", "en": "In-memory call" }, "targetId": "det" },
+          { "id": "rem", "name": "rpc.charge(order) · Qua mạng", "note": { "vi": "Tuần tự hoá + TCP/IP", "en": "Serialization + WAN" }, "targetId": "indet", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "det",
+            "typeTag": "SINGLE MACHINE",
+            "value": "2 kết cục rõ ràng (OK / Exception)",
+            "fields": ["Độ trễ nano-giây dự đoán được", "Cùng sống hoặc cùng tắt nguồn"],
+            "tone": "green"
+          },
+          {
+            "id": "indet",
+            "typeTag": "DISTRIBUTED",
+            "value": "3 kết cục: OK / Lỗi / Timeout (Chưa rõ!)",
+            "fields": ["Gói tin rơi, trễ vọt, đến trùng lặp", "Lỗi cục bộ một phần (Partial Failure)"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s2-packet-dup": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Cơ chế phát sinh giao dịch trùng lặp khi mất gói phản hồi",
+          "en": "How Dropped Responses Cause Duplicate Mutations on Retry"
+        },
+        "subtitle": {
+          "vi": "Client không thể phân biệt gói yêu cầu bị rơi với gói phản hồi bị rơi sau khi DB đã ghi",
+          "en": "Client cannot distinguish a dropped request from a dropped response after DB commit"
+        },
+        "cells": [
+          "1. Gửi Pay 100$",
+          "2. DB trừ 100$ xong",
+          "3. Rơi gói ACK!",
+          "4. Client Timeout & Retry",
+          "5. Kiểm Idempotency Key"
+        ],
+        "activeIndices": [2, 4],
+        "pointers": [
+          { "index": 2, "label": "mất phản hồi", "tone": "rose" },
+          { "index": 4, "label": "trả kết quả cũ an toàn", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc bắt buộc", "en": "Rule" },
+          "value": { "vi": "Mọi thao tác ghi có Retry phải đính kèm Idempotency Key hoặc khoá UNIQUE", "en": "Every retried mutation requires an Idempotency Key or UNIQUE constraint" },
+          "tone": "green"
+        }
+      }
+    },
+    "s3-partial-failure": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Lỗi một phần (Partial Failure) trong luồng đặt hàng đa dịch vụ",
+          "en": "Partial Failure Leaving Multi-Service Checkout in an Inconsistent State"
+        },
+        "nodes": [
+          { "id": "req", "x": 0, "y": -96, "label": "Yêu cầu Đặt đơn #408", "sub": { "vi": "Đi qua 4 dịch vụ độc lập qua mạng", "en": "Spans 4 network services" }, "tone": "blue" },
+          { "id": "pay", "x": -200, "y": 24, "label": "1. Payment Service", "sub": { "vi": "Đã trừ thẻ · OK", "en": "Card charged · OK" }, "tone": "green" },
+          { "id": "ord", "x": -65, "y": 24, "label": "2. Order Service", "sub": { "vi": "Đã tạo đơn · OK", "en": "Order saved · OK" }, "tone": "green" },
+          { "id": "inv", "x": 75, "y": 24, "label": "3. Inventory Service", "sub": { "vi": "Timeout 3s · Chưa trừ kho!", "en": "Timeout · Stock unreserved!" }, "tone": "rose" },
+          { "id": "mail", "x": 210, "y": 24, "label": "4. Email Service", "sub": { "vi": "503 Down · Mất xác nhận", "en": "503 Down · No email" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "req", "to": "pay", "label": "OK" },
+          { "from": "req", "to": "ord", "label": "OK" },
+          { "from": "req", "to": "inv", "label": "TIMEOUT", "style": "danger" },
+          { "from": "req", "to": "mail", "label": "ERR 503", "style": "danger" }
+        ]
+      }
+    },
+    "s4-partition-intro": {
+      "show": { "nodes": "*" },
+      "zones": ["dc-us", "dc-eu"],
+      "state": {
+        "app-us": { "loadPct": 42 },
+        "app-eu": { "loadPct": 42 },
+        "db-us": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Primary sống", "en": "Primary Up" }, "tone": "ok" }
+        },
+        "db-eu": {
+          "loadPct": 32,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Mất liên lạc US", "en": "Isolated from US" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "eu-wan": { "style": "cut", "label": { "vi": "Đứt cáp WAN", "en": "WAN Cut" } },
+        "dc-repl": { "style": "cut" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chia cắt mạng (Network Partition)", "en": "Cross-Region Network Partition" },
+        "lines": [
+          { "text": { "vi": "Máy chủ ở cả US và EU vẫn chạy bình thường", "en": "Servers in both US and EU remain healthy" }, "tone": "good" },
+          { "text": { "vi": "Gói tin giữa hai vùng bị chặn hoàn toàn (P)", "en": "All cross-region packets dropped (P)" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-cp-live": {
+      "show": { "nodes": "*" },
+      "zones": ["dc-us", "dc-eu"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kịch bản CP · Cắt cáp t = 20..45 s", "en": "CP Mode · WAN Cut t = 20..45 s" },
+        "lines": [
+          { "text": { "vi": "EU từ chối 30% lệnh ghi không đồng bộ được", "en": "EU rejects 30% uncoordinated writes" }, "tone": "bad" },
+          { "text": { "vi": "Lỗi toàn cục = 15% · Dữ liệu nhất quán 100%", "en": "15% global error · 100% data consistency" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-ap-live": {
+      "show": { "nodes": "*" },
+      "zones": ["dc-us", "dc-eu"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kịch bản AP · Cắt cáp t = 20..45 s", "en": "AP Mode · WAN Cut t = 20..45 s" },
+        "lines": [
+          { "text": { "vi": "EU nhận ghi tạm cục bộ · Lỗi toàn cục = 0%", "en": "EU accepts writes locally · 0% errors" }, "tone": "good" },
+          { "text": { "vi": "DB EU trễ > 3 giây · Phát sinh xung đột bản ghi", "en": "EU DB lags > 3 s · Write conflicts emerge" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-cap-pacelc": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Mô hình PACELC: đánh đổi ngay cả khi đường mạng hoàn toàn ổn định",
+          "en": "PACELC Theorem: Trade-offs Both During Partition and Normal Operation"
+        },
+        "nodes": [
+          { "id": "root", "x": 0, "y": -98, "label": "Hệ lưu trữ có sao chép qua mạng", "sub": { "vi": "Kiểm tra trạng thái đường truyền liên vùng", "en": "Evaluate network state" }, "tone": "purple" },
+          { "id": "p", "x": -165, "y": -4, "label": "Khi ĐỨT MẠNG (P)", "sub": { "vi": "Chọn C (trả lỗi) hay A (ghi lệch)?", "en": "Choose Consistency or Availability" }, "tone": "rose" },
+          { "id": "e", "x": 165, "y": -4, "label": "Khi MẠNG LÀNH (Else)", "sub": { "vi": "Chọn L (nhanh) hay C (đợi đồng bộ)?", "en": "Choose Latency or Consistency" }, "tone": "blue" },
+          { "id": "pcec", "x": -165, "y": 88, "label": "PC / EC: Spanner, etcd, Raft", "tone": "orange" },
+          { "id": "pael", "x": 165, "y": 88, "label": "PA / EL: DynamoDB, Cassandra", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "root", "to": "p", "label": "có sự cố P", "style": "danger" },
+          { "from": "root", "to": "e", "label": "bình thường" },
+          { "from": "p", "to": "pcec", "label": "giữ đúng" },
+          { "from": "e", "to": "pael", "label": "giảm RTT" }
+        ]
+      }
+    },
+    "s8-hybrid-design": {
+      "show": { "nodes": "*" },
+      "zones": ["dc-us", "dc-eu"],
+      "state": {
+        "app-us": { "loadPct": 54, "badge": { "text": { "vi": "2 máy · Idempotent", "en": "2 nodes · Idempotent" }, "tone": "ok" } },
+        "app-eu": {
+          "loadPct": 54,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Timeout 180 ms + Backoff", "en": "180 ms Timeout + Backoff" }, "tone": "ok" }
+        },
+        "db-us": { "loadPct": 58, "badge": { "text": { "vi": "CP cho Thanh toán", "en": "CP for Payments" }, "tone": "warn" } },
+        "db-eu": { "loadPct": 44, "badge": { "text": { "vi": "AP cho Hồ sơ / Feed", "en": "AP for Profile / Feed" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "eu-wan": { "label": { "vi": "Degrade AP / CP tuỳ luồng", "en": "Per-feature CP / AP" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc lai đa vùng bền vững", "en": "Resilient Hybrid Multi-Region Design" },
+        "lines": [
+          { "text": { "vi": "Timeout ngắn + Exponential Backoff + Jitter", "en": "Fail-fast timeout + jittered backoff" }, "tone": "good" },
+          { "text": { "vi": "Tách riêng luồng CP (tiền/kho) và AP (hồ sơ/feed)", "en": "Separate CP (ledger) from AP (social)" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["dc-us", "dc-eu"],
+      "state": {
+        "app-us": { "loadPct": 42, "badge": { "text": { "vi": "Idempotency Key", "en": "Idempotency Key" }, "tone": "ok" } },
+        "app-eu": { "loadPct": 42, "badge": { "text": { "vi": "Fail Fast + Jitter", "en": "Fail Fast + Jitter" }, "tone": "ok" } },
+        "db-us": { "loadPct": 48, "badge": { "text": { "vi": "CP khi cần chính xác", "en": "CP when accuracy rules" }, "tone": "warn" } },
+        "db-eu": { "loadPct": 35, "badge": { "text": { "vi": "AP khi ưu tiên phục vụ", "en": "AP when uptime rules" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Thực tế Hệ phân tán", "en": "Distributed Systems Recap" },
+        "lines": [
+          { "text": { "vi": "Timeout = Chưa biết · Retry cần Idempotency", "en": "Timeout = Unknown · Retry needs Idempotency" }, "tone": "amber" },
+          { "text": { "vi": "Đứt mạng (P) là tất yếu → Chọn CP hoặc AP", "en": "Partitions happen → Choose CP or AP per feature" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "cp-partition": {
+      "sim": "S3-01/cp-partition",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["partition", "slow"],
+        "knobs": [
+          { "node": "app-us", "key": "replicas" },
+          { "node": "app-eu", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 180, "badAbove": 380 } },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+      ],
+      "slo": [
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["app-eu", "db-us", "db-eu"], "links": ["eu-wan", "dc-repl"] }
+    },
+    "ap-partition": {
+      "sim": "S3-01/ap-partition",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["partition", "slow"],
+        "knobs": [
+          { "node": "app-us", "key": "replicas" },
+          { "node": "app-eu", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 180, "badAbove": 350 } },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+      ],
+      "focus": { "nodes": ["app-eu", "db-eu"], "links": ["eu-wan", "dc-repl"] }
+    }
+  }
+}

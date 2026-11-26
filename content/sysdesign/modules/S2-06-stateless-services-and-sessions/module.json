@@ -1,0 +1,24 @@
+{
+  "id": "S2-06",
+  "slug": "S2-06-stateless-services-and-sessions",
+  "level": 2,
+  "order": 2,
+  "title": "Dịch vụ phi trạng thái (Stateless) và quản lý phiên đăng nhập",
+  "summary": "Hiểu vì sao lưu phiên đăng nhập hay tệp tải lên cục bộ trên từng máy chủ ứng dụng cản trở mở rộng ngang, nhận diện rủi ro mất phiên của Sticky Session khi máy chủ gặp sự cố, và chuyển trạng thái sang bộ nhớ đệm phiên dùng chung, JWT hoặc Object Storage.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt dịch vụ giữ trạng thái cục bộ (Stateful) với dịch vụ phi trạng thái (Stateless) khi đặt sau Load Balancer" },
+    { "vi": "Giải thích cơ chế Sticky Session (Session Affinity) và hai rủi ro chính: lệch tải và mất phiên khi máy chủ dừng đột ngột" },
+    { "vi": "So sánh hai hướng phi trạng thái hoá phiên đăng nhập: kho phiên dùng chung (Redis Session Store) và thẻ tự chứa chữ ký số (JWT)" },
+    { "vi": "Tách tệp tải lên và dữ liệu tạm khỏi ổ đĩa cục bộ của máy chủ ứng dụng sang Object Storage dùng chung" }
+  ],
+  "tags": ["stateless", "session", "sticky-session", "redis", "jwt", "object-storage", "horizontal-scaling"],
+  "prerequisites": ["S1-01", "S1-06", "S2-01"],
+  "related": ["S2-02", "S2-07", "S2-12", "S4-01"],
+  "dtsRef": "stateless",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về dịch vụ phi trạng thái, tách phiên đăng nhập sang bộ nhớ đệm dùng chung và rủi ro mất phiên khi dùng sticky session."
+  }
+}

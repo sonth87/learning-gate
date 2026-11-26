@@ -1,0 +1,238 @@
+{
+  "sims": [
+    {
+      "id": "S0-01/view-counter",
+      "scenario": {
+        "id": "S0-01/view-counter",
+        "seed": 101,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.85
+        },
+        "clientTimeoutMs": 1500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 2500
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người xem",
+                "en": "Viewers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": {
+                "vi": "View API",
+                "en": "View API"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1600
+              },
+              "latency": {
+                "baseMs": 10,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 1,
+                "poolSize": 20
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance View API",
+                    "en": "View API instances"
+                  },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Instance dừng hoạt động",
+                    "en": "Instance down"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": {
+                "vi": "Cache lượt xem",
+                "en": "View Cache"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": {
+                "warm": 1
+              },
+              "capacity": {
+                "opsPerSec": 40000
+              },
+              "latency": {
+                "baseMs": 0.5,
+                "cv": 0.3
+              },
+              "params": {
+                "ttlSec": 120,
+                "ttlJitterPct": 0.15,
+                "hitRatioMax": 0.9,
+                "workingSetKeys": 60000,
+                "capacityKeys": 10000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": {
+                    "vi": "Dung lượng Cache (số key)",
+                    "en": "Cache capacity (keys)"
+                  },
+                  "min": 10000,
+                  "max": 100000,
+                  "step": 10000,
+                  "default": 10000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "data-loss",
+                  "note": {
+                    "vi": "Mất dữ liệu Cache",
+                    "en": "Cache data loss"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": {
+                "vi": "Database bền vững",
+                "en": "Persistent DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1000
+              },
+              "latency": {
+                "baseMs": 5,
+                "cv": 0.3
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 1000,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "poolSize": 16,
+                "sizeFactor": 1
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Database (scale-up)",
+                    "en": "Database size factor"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Truy vấn chậm",
+                    "en": "Slow queries"
+                  }
+                }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-app",
+              "from": "client",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-cache",
+              "from": "app",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 200
+            },
+            {
+              "id": "cache-db",
+              "from": "cache",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      }
+    }
+  ]
+}

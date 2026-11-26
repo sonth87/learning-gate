@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S1-07.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán p99 khi mức sử dụng chạm ρ = 0,96" },
+    "prompt": { "vi": "Checkout API (μ = 500 req/s, xử lý nền S = 10 ms) đang tăng tải từ 50 lên 480 req/s. Tại giây 30 (265 req/s, ρ = 0,53), p99 mới ở khoảng 36 ms. Khi lưu lượng đạt 480 req/s (ρ = 0,96, vẫn nhỏ hơn 500 req/s và không rớt request nào) ở giây 60, độ trễ p99 sẽ diễn biến ra sao?" },
+    "difficulty": 1,
+    "at": 30,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Giữ nguyên quanh 36 ms vì lưu lượng 480 req/s vẫn chưa vượt năng lực 500 req/s" },
+        { "vi": "Tăng tuyến tính nhẹ lên khoảng 65 ms tương ứng với tỉ lệ tăng tải chưa tới gấp đôi" },
+        { "vi": "Vọt dựng đứng lên khoảng 250 ms (gấp gần 7 lần) do hệ số hàng đợi 1 / (1 − ρ) nhảy lên 25" },
+        { "vi": "Rơi về 0 ms vì máy chủ từ chối nhận toàn bộ gói tin ngay khi ρ vượt 0,90" }
+      ],
+      "correct": 2
+    },
+    "reveal": { "playFromSec": 30, "playToSec": 65, "speed": 2 },
+    "hints": [
+      { "vi": "Thay ρ = 0,96 vào hệ số nhân 1 / (1 − ρ) của công thức W = S / (1 − ρ) và so sánh với hệ số tại ρ = 0,53." }
+    ],
+    "explain": { "vi": "Tại ρ = 0,53 (giây 30), hệ số 1/(1−ρ) mới khoảng 2,1 lần nên p99 là {m.p99@30:0} ms. Nhưng tại ρ = 0,96 (giây 60), phần dư công suất chỉ còn 4% làm hệ số vọt lên 25 lần, đẩy p99 thực tế trên mô phỏng lên {m.p99@60:0} ms dù tỉ lệ lỗi vẫn bằng {m.errorRate@60:0%}." },
+    "sim": { "simId": "S1-07/queueing", "seekSec": 30, "autoplay": false },
+    "replay": { "simId": "S1-07/queueing", "seekSec": 30, "focus": { "nodes": ["app"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S1-07.A2",
+    "kind": "estimate",
+    "title": { "vi": "Tính số request đồng thời bằng Định luật Little" },
+    "prompt": { "vi": "Một dịch vụ thanh toán phục vụ ổn định lưu lượng λ = 400 req/s. Trong giờ cao điểm, thời gian phản hồi trung bình của mỗi request bên trong dịch vụ (gồm cả chờ và xử lý) là W = 250 ms (0,25 giây). Theo Định luật Little (L = λ × W), trung bình có bao nhiêu request đang đồng thời nằm trong dịch vụ?" },
+    "difficulty": 2,
+    "quantity": "Số request đồng thời trung bình (L)",
+    "unit": "request",
+    "truth": { "type": "formula", "expr": "400 * 0.25", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Đổi thời gian lưu trú trung bình sang giây: W = 250 ms = 0,25 giây." },
+      { "vi": "Áp dụng Định luật Little: L = λ × W = 400 × 0,25 = 100 request đang xử lý/chờ đồng thời." }
+    ],
+    "hints": [
+      { "vi": "Nhớ đổi W = 250 ms sang đơn vị giây (0,25 s) để khớp thứ nguyên với λ = 400 req/s trước khi nhân." }
+    ],
+    "explain": { "vi": "Số request hiện diện đồng thời trung bình là L = 400 × 0,25 = {truth:0} request. Nếu dịch vụ chỉ cấu hình Thread Pool hoặc Connection Pool dưới 100 slot, bản thân pool sẽ trở thành cổ chai dù CPU chưa cạn." }
+  },
+  {
+    "id": "S1-07.A3",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần lưu lượng giữ được SLO p99 ≤ 80 ms" },
+    "prompt": { "vi": "Trên dịch vụ Checkout API hiện có (1 instance, μ = 500 req/s), hãy tìm mức lưu lượng ổn định cao nhất (req/s) sao cho hệ thống vẫn giữ được p99 ≤ 80 ms và tỉ lệ lỗi ≤ 1% trong cửa sổ vận hành." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 80, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 426, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Quan sát timeline của S1-07/queueing quanh giây 49–54 xem ở mức tải nào p99 bắt đầu vượt mốc 80 ms." },
+      { "vi": "Giá trị cần tìm thấp hơn đáng kể so với 500 req/s (nằm quanh vùng ρ ≈ 0,85)." }
+    ],
+    "explain": { "vi": "Dù năng lực tối đa lý thuyết là 500 req/s, để giữ p99 ≤ 80 ms thì dịch vụ chỉ nhận được tối đa khoảng {ref.value:0} req/s (tương ứng ρ ≈ 0,85, chừa 15% headroom). Vượt mốc này, thời gian chờ trong hàng đợi làm p99 phá vỡ SLO." },
+    "sim": { "simId": "S1-07/queueing", "seekSec": 0, "autoplay": false }
+  }
+]

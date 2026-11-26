@@ -1,0 +1,251 @@
+{
+  "sims": [
+    {
+      "id": "S2-09/hotkey",
+      "scenario": {
+        "id": "S2-09/hotkey",
+        "seed": 2209,
+        "durationSec": 70,
+        "mix": {
+          "readRatio": 0.9
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 5200
+        },
+        "events": [
+          {
+            "at": 15,
+            "type": "hot-key",
+            "node": "shard_db",
+            "share": 0.7
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB dừng hoạt động", "en": "LB down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Shard Router App", "en": "Shard Router App" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 5,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 10,
+                  "step": 1,
+                  "default": 5,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": { "replicas": 5, "poolSize": 40 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Hot-Key Cache", "en": "Hot-Key Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "initial": { "warm": 1 },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (số key)", "en": "Cache capacity (keys)" },
+                  "min": 2000,
+                  "max": 200000,
+                  "step": 2000,
+                  "default": 4000,
+                  "changeCost": 1
+                },
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "TTL", "en": "TTL" },
+                  "min": 10,
+                  "max": 1800,
+                  "step": 10,
+                  "default": 300,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Mất cache: đọc nóng dồn vào shard", "en": "Cache loss exposes hot shard" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0.1,
+                "hitRatioMax": 0.9,
+                "workingSetKeys": 100000,
+                "capacityKeys": 4000,
+                "warmupSec": 15,
+                "singleflight": false
+              }
+            },
+            {
+              "id": "shard_db",
+              "kind": "nosql",
+              "label": { "vi": "NoSQL Shards", "en": "NoSQL Shards" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số phân mảnh (Shards)", "en": "Number of Shards" },
+                  "min": 1,
+                  "max": 16,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Shard nóng làm nghẽn toàn cụm", "en": "Hot shard bottlenecks cluster" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 3, "cv": 0.3 },
+              "params": {
+                "shards": 4,
+                "applyRps": 4000,
+                "rewriteHotness": 0.02,
+                "maxConnections": 2000,
+                "poolSize": 30
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-app",
+              "from": "lb",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-cache",
+              "from": "app",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 100
+            },
+            {
+              "id": "cache-shards",
+              "from": "cache",
+              "to": "shard_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 120,
+          "window": { "fromSec": 0, "toSec": 70 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 0, "toSec": 70 }
+        }
+      ],
+      "expect": {
+        "bottleneck": "shard_db"
+      },
+      "presets": [
+        {
+          "id": "fix-hot-cache",
+          "label": { "vi": "Mở rộng Hot-Key Cache lên 100.000 key", "en": "Expand Hot-Key Cache to 100k keys" },
+          "changes": [
+            { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 100000 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-add-shards",
+          "label": { "vi": "Tăng từ 4 lên 16 Shards mà không mở rộng Cache", "en": "Add 16 Shards without Cache" },
+          "changes": [
+            { "type": "knob", "node": "shard_db", "key": "shards", "value": 16 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

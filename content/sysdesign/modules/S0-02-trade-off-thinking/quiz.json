@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-02.q1",
+    "type": "mc",
+    "q": "Theo định lý CAP, khi xảy ra phân tách mạng giữa các nút lưu trữ của hệ thống thanh toán ngân hàng, lựa chọn đánh đổi nào là hợp lý?",
+    "code": "",
+    "choices": [
+      "Ưu tiên Tính sẵn sàng (AP), cho phép rút tiền trên cả hai nhánh rồi đối soát thủ công sau nhiều ngày",
+      "Ưu tiên Tính nhất quán (CP), tạm từ chối giao dịch ghi không đủ đồng thuận để bảo toàn số dư chính xác",
+      "Tắt toàn bộ cơ chế kiểm tra giao dịch để giữ độ trễ dưới 5 ms",
+      "Chuyển toàn bộ sổ cái giao dịch sang lưu tạm trên trình duyệt của người dùng"
+    ],
+    "answer": 1,
+    "explain": "Trong nghiệp vụ ngân hàng và thanh toán, sai lệch số dư gây thiệt hại trực tiếp nên bắt buộc chọn CP. Hệ thống chấp nhận giảm tính sẵn sàng tạm thời khi đứt mạng để đảm bảo mọi giao dịch được ghi nhận nhất quán."
+  },
+  {
+    "id": "S0-02.q2",
+    "type": "tf",
+    "q": "Khi một API đã đạt độ trễ 90 ms (vượt mục tiêu SLO < 200 ms), việc dành thêm 2 tháng viết lại tầng lưu trữ để giảm xuống 60 ms luôn mang lại hiệu quả đầu tư cao.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đây là biểu hiện của lợi suất giảm dần và tối ưu quá mức. Khi độ trễ đã nằm dưới ngưỡng cảm nhận ~100 ms và đạt SLO, đầu tư thêm 2 tháng kỹ sư làm chậm các tính năng mang lại giá trị lớn hơn cho người dùng."
+  },
+  {
+    "id": "S0-02.q3",
+    "type": "mc",
+    "q": "Khi nào nên cân nhắc phi chuẩn hoá (Denormalization) như lưu sẵn cột like_count trực tiếp trong bảng posts?",
+    "code": "",
+    "choices": [
+      "Khi hệ thống có 90% thao tác là ghi và yêu cầu đối soát kế toán nghiêm ngặt",
+      "Khi tỉ lệ đọc vượt trội so với ghi (ví dụ 99% đọc), cần tránh phép JOIN nặng và chấp nhận độ trễ đồng bộ nhỏ",
+      "Khi bảng dữ liệu mới có dưới 500 bản ghi và độ trễ truy vấn đang ở mức 2 ms",
+      "Khi đội ngũ muốn xoá bỏ hoàn toàn khoá chính của bảng dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Phi chuẩn hoá đánh đổi chi phí cập nhật khi ghi và nguy cơ lệch tạm thời để đổi lấy tốc độ đọc nhanh không cần JOIN. Lựa chọn này phát huy tác dụng rõ nhất trên các luồng đọc áp đảo như bảng tin mạng xã hội."
+  },
+  {
+    "id": "S0-02.q4",
+    "type": "output",
+    "q": "Luồng tải video lên gồm 4 bước: lưu file thô lên Object Storage (2 giây), tạo ảnh thu nhỏ (3 giây), chuyển mã 720p (30 giây), gửi thông báo (1 giây). Nếu chuyển 3 bước cuối sang hàng đợi bất đồng bộ (Async), người dùng chỉ phải chờ bao nhiêu giây để nhận phản hồi tải lên thành công? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "2",
+    "explain": "Khi tách bất đồng bộ qua hàng đợi, kết nối HTTP của người dùng chỉ thực hiện bước lưu file thô (2 giây) và đẩy thông điệp vào hàng đợi (vài mili-giây) trước khi trả kết quả, thay vì bắt người dùng chờ tổng cộng 36 giây."
+  },
+  {
+    "id": "S0-02.q5",
+    "type": "mc",
+    "q": "Theo mô hình Khả năng đảo ngược (Reversibility), quyết định nào sau đây có chi phí quay lui cao nhất và cần phân tích đánh đổi kỹ nhất trước khi chốt?",
+    "code": "",
+    "choices": [
+      "Đổi thời gian hết hạn TTL của một khoá Cache từ 120 giây sang 300 giây",
+      "Thay đổi giao diện bảng màu của trang quản trị nội bộ",
+      "Tách ứng dụng Monolith đang chạy ổn định thành 12 Microservices với các cơ sở dữ liệu riêng biệt",
+      "Bổ sung một chỉ mục phụ trên bảng đơn hàng để tăng tốc truy vấn lọc theo ngày"
+    ],
+    "answer": 2,
+    "explain": "Tách sang Microservices và chia tách cơ sở dữ liệu là quyết định một chiều có chi phí đảo ngược rất lớn về mã nguồn, đường truyền và quy trình vận hành; trong khi chỉnh TTL hay thêm chỉ mục có thể hoàn tác trong vài phút."
+  }
+]

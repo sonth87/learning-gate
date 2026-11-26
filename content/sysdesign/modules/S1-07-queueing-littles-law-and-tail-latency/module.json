@@ -1,0 +1,24 @@
+{
+  "id": "S1-07",
+  "slug": "S1-07-queueing-littles-law-and-tail-latency",
+  "level": 1,
+  "order": 7,
+  "title": "Hàng đợi, Định luật Little và khuếch đại độ trễ đuôi",
+  "summary": "Giải thích vì sao độ trễ vọt dựng đứng theo W = S/(1 − ρ) ngay khi vượt 80% công suất, áp dụng Định luật Little (L = λW) để tính luồng đồng thời, và định lượng hiện tượng khuếch đại đuôi khi fan-out song song nhiều phân mảnh.",
+  "durationMin": 18,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích đường cong hàng đợi W = S / (1 − ρ) và lý do phải giữ khoảng dự phòng (Headroom) ρ ≤ 0,75–0,80 thay vì khai thác sát 100%" },
+    { "vi": "Áp dụng Định luật Little (L = λ × W) để tính số lượng request đồng thời và định cỡ Connection Pool / Thread Pool" },
+    { "vi": "Tính xác suất gặp ít nhất một nhánh chậm 1 − (1 − p)^N khi một request gọi song song (Fan-out) tới N dịch vụ hoặc phân mảnh" },
+    { "vi": "Chọn kỹ thuật giảm độ trễ đuôi phù hợp: tránh Scatter-Gather, trả kết quả một phần khi quá hạn và Hedged Requests" }
+  ],
+  "tags": ["queueing", "littles-law", "tail-latency", "fan-out", "p99", "capacity"],
+  "prerequisites": ["S1-03", "S1-04"],
+  "related": ["S2-04", "S4-01", "S4-10"],
+  "dtsRef": "latency-throughput",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về đường cong hàng đợi M/M/c (W = S/(1-ρ)), định luật Little (L = λW) và khuếch đại đuôi khi fan-out song song."
+  }
+}

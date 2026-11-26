@@ -1,0 +1,30 @@
+{
+  "id": "S3-06",
+  "slug": "S3-06-clocks-lamport-and-vector-clocks",
+  "level": 3,
+  "order": 8,
+  "title": "Thời gian và thứ tự sự kiện: độ lệch đồng hồ, Lamport, Vector Clock và HLC",
+  "summary": "Hiểu vì sao đồng hồ vật lý không thể sắp xếp tin cậy các sự kiện phân tán: phân tích lỗi mất dữ liệu của Last-Write-Wins khi lệch NTP, quan hệ nhân quả Happens-Before, Lamport Timestamp, Vector Clock và Hybrid Logical Clock.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích độ trôi thạch anh (clock drift), sai số đồng bộ NTP, sự khác biệt giữa đồng hồ tường và đồng hồ đơn điệu, cùng lỗi mất bản ghi của Last-Write-Wins" },
+    { "vi": "Xác định quan hệ nhân quả Happens-Before (a → b) và sự kiện đồng thời (a ∥ b) giữa nhiều tiến trình trao đổi thông điệp" },
+    { "vi": "Tính nhãn thời gian Lamport và giải thích vì sao L(a) < L(b) không suy ngược ra được a xảy ra trước b" },
+    { "vi": "Sử dụng Vector Clock để phát hiện xung đột ghi đồng thời và hiểu cách Hybrid Logical Clock (HLC) dung hoà thời gian thực với trật tự nhân quả" }
+  ],
+  "tags": ["clocks", "clock-skew", "ntp", "lamport-clock", "vector-clock", "hlc", "causality"],
+  "prerequisites": ["S3-01", "S3-02"],
+  "related": ["S3-03", "S3-05", "S3-08"],
+  "dtsRef": "cap",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-6-time-event-ordering-clock-problem-trong-distributed-systems.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-6-time-event-ordering-clock-problem-trong-distributed-systems.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: chuyển các biểu đồ Mermaid sang 9 cảnh memory-2d (tape, refs, tree) trực quan hoá độ lệch NTP, kịch bản mất bản ghi LWW, quy tắc Lamport, so sánh Vector Clock và cấu trúc HLC; bổ sung phân biệt Time-of-Day với Monotonic Clock và bài tập đọc lịch sử phát hiện lỗi LWW."
+  }
+}

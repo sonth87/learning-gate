@@ -1,0 +1,31 @@
+{
+  "id": "S1-05",
+  "slug": "S1-05-phase-1-synthesis",
+  "level": 1,
+  "order": 8,
+  "title": "Bài tập tổng hợp Phase 1: từ ước lượng đến kiến trúc chạy thật",
+  "summary": "Vận dụng trọn bộ nền tảng Phase 0 và Phase 1 vào ba bài toán thực tế: phân tích ngược luồng dữ liệu ứng dụng lớn, thiết kế và gỡ nghẽn dịch vụ rút gọn URL ở tải 2.500–4.200 req/s, và chọn phương án lai cho tính năng tải ảnh đại diện.",
+  "durationMin": 18,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân tích ngược một thao tác người dùng trên ứng dụng thực tế thành sơ đồ thành phần, luồng đồng bộ/bất đồng bộ và dự báo điểm nghẽn khi tăng quy mô 10 lần" },
+    { "vi": "Tính nhẩm lưu lượng đọc/ghi, dung lượng lưu trữ 5 năm và chọn cơ chế sinh mã Base62 không va chạm cho dịch vụ URL Shortener" },
+    { "vi": "Chẩn đoán và gỡ nghẽn bản nháp URL Shortener chạy 2.500 req/s đồng thời loại bỏ điểm lỗi đơn dưới đỉnh tải 4.200 req/s trong ngân sách cho phép" },
+    { "vi": "So sánh định lượng ba hướng thiết kế Đồng bộ, Bất đồng bộ và Lai (Hybrid) cho bài toán tải và xử lý ảnh đại diện" }
+  ],
+  "tags": ["synthesis", "url-shortener", "base62", "capacity", "trade-offs", "caching"],
+  "prerequisites": ["S1-01", "S1-02", "S1-03", "S1-04", "S1-07"],
+  "uses": ["S0-05", "S0-07"],
+  "related": ["S2-01", "S2-02", "S5-02"],
+  "dtsRef": "design-url-shortener",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-1/lessons/lesson-5-bai-tap-tong-hop.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-5-bai-tap-tong-hop.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật trực diện: bỏ lời kể cá nhân, chuyển các sơ đồ Mermaid sang sân khấu isometric chạy mô phỏng trực tiếp bản nháp URL Shortener ở 2.500 req/s và 4.200 req/s kèm hai thử thách chấm điểm tự động fix-challenge và design-constraint."
+  }
+}

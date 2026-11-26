@@ -1,0 +1,30 @@
+{
+  "id": "S2-02",
+  "slug": "S2-02-caching-fundamentals-and-stampede",
+  "level": 2,
+  "order": 3,
+  "title": "Caching: Hit Ratio, TTL, Invalidation và chống Cache Stampede",
+  "summary": "Đo hiệu quả bộ nhớ đệm qua Hit Ratio để giảm tải cơ sở dữ liệu, chọn chiến lược đọc ghi và làm mới dữ liệu (Cache-Aside, TTL, Explicit Invalidation), đồng thời xử lý hiện tượng Cache Stampede bằng TTL Jitter và Singleflight.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Tính lưu lượng thực tế đi xuống Database theo tỉ lệ đọc và Cache Hit Ratio, từ đó xác định trần chịu tải mới của hệ thống" },
+    { "vi": "Đối chiếu chiến lược Cache-Aside, Write-Through và Write-Behind theo độ tươi dữ liệu, độ trễ ghi và rủi ro mất dữ liệu" },
+    { "vi": "Kết hợp TTL và xoá chủ động (Explicit Invalidation) để giới hạn thời gian tồn tại dữ liệu cũ khi bản ghi gốc thay đổi" },
+    { "vi": "Nhận diện cơ chế gây quá tải đột ngột của Cache Stampede và khắc phục bằng TTL Jitter cùng khoá hợp nhất truy vấn Singleflight" }
+  ],
+  "tags": ["caching", "hit-ratio", "ttl", "cache-invalidation", "cache-stampede", "singleflight", "redis"],
+  "prerequisites": ["S1-01", "S1-03", "S2-06"],
+  "related": ["S2-03", "S2-10", "S4-02", "S4-03"],
+  "dtsRef": "caching",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-2/lessons/lesson-2-caching.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-2-caching.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân và sơ đồ tĩnh, xây dựng hai kịch bản mô phỏng trực tiếp (tác động phi tuyến của Hit Ratio lên trần tải Database khi tăng từ 800 lên 5.000 req/s và sự cố Cache Stampede khi khoá hết hạn đồng loạt ở 3.600 req/s); bổ sung Singleflight, TTL Jitter và bài toán Cache Penetration (khoá không tồn tại)."
+  }
+}

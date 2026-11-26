@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S4-04.c1",
+    "front": "Vì sao cây chỉ mục B+Tree tra cứu trên bảng 50 triệu dòng chỉ mất 3–4 lần đọc trang?",
+    "back": "Mỗi trang B+Tree (8–16 KB) chứa hàng trăm khoá phân nhánh (hệ số phân nhánh B ≈ 300–500). Nhờ log_500(50.000.000) < 3, chiều cao cây chỉ 3–4 tầng và các tầng trên nằm sẵn trong RAM Buffer Pool."
+  },
+  {
+    "id": "S4-04.c2",
+    "front": "Quy tắc tiền tố trái (Leftmost Prefix) và thứ tự đặt cột trong Composite Index?",
+    "back": "Chỉ mục (A, B, C) chỉ hỗ trợ tra cứu bắt đầu từ cột ngoài cùng bên trái: (A), (A, B) hoặc (A, B, C). Khi thiết kế, luôn đặt các cột lọc bằng (=) ở bên trái và đặt cột lọc khoảng (>, <, BETWEEN) hoặc ORDER BY ở bên phải."
+  },
+  {
+    "id": "S4-04.c3",
+    "front": "Covering Index là gì và vì sao SELECT * làm mất tác dụng của nó?",
+    "back": "Là chỉ mục chứa đủ toàn bộ các cột mà câu truy vấn cần (thường kèm INCLUDE), cho phép chạy Index-Only Scan không cần đọc bảng Heap. Dùng SELECT * đòi lấy thêm các cột ngoài chỉ mục nên buộc DB phải quay lại đọc bảng gốc."
+  },
+  {
+    "id": "S4-04.c4",
+    "front": "Chi phí khuếch đại ghi (Write Amplification) của chỉ mục phụ là gì?",
+    "back": "Trên bảng có k chỉ mục phụ, mỗi lệnh INSERT phải ghi 1 lần vào bảng gốc cộng k lần cập nhật trên k cây B+Tree (tổng 1 + k thao tác), làm tăng I/O ngẫu nhiên và nhật ký WAL. Cần định kỳ xoá các chỉ mục có idx_scan = 0."
+  },
+  {
+    "id": "S4-04.c5",
+    "front": "Ba cách viết SQL phổ biến vô hiệu hoá chỉ mục B+Tree chuẩn?",
+    "back": "1) Bọc hàm hoặc phép tính lên cột lọc (WHERE YEAR(created_at) = 2026); 2) Đặt ký tự đại diện ở đầu chuỗi (LIKE '%abc'); 3) Ép kiểu ngầm định lệch kiểu dữ liệu cột hoặc dùng điều kiện OR cắt ngang cột không có chỉ mục."
+  },
+  {
+    "id": "S4-04.c6",
+    "front": "Lỗi N+1 là gì và cách sửa chuẩn?",
+    "back": "Chạy 1 truy vấn lấy danh sách N dòng cha rồi lặp N lần gọi thêm N truy vấn con (tổng N + 1 câu SQL). Sửa bằng cách gom toàn bộ ID vào 1 câu truy vấn lô thứ hai (WHERE parent_id IN (...)) hoặc dùng JOIN / Eager Loading."
+  }
+]

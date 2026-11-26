@@ -1,0 +1,43 @@
+[
+  {
+    "id": "S4-08.A1",
+    "kind": "predict",
+    "title": { "vi": "Storage Engine nào chạm trần quá tải trước dưới luồng ghi 85.000 ops/s?" },
+    "prompt": { "vi": "Ingest Gateway nhân đôi luồng dữ liệu cảm biến IoT (90% là thao tác ghi khoá phân tán ngẫu nhiên, tăng đều từ 10.000 lên 85.000 ops/s) sang cả B-Tree Engine lẫn LSM-Tree Engine. Mô phỏng dừng ở giây 10: hãy dự đoán thành phần nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên." },
+    "difficulty": 1,
+    "at": 10,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 10 },
+      "expected": ["btree_db"]
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 28, "speed": 2 },
+    "hints": [
+      { "vi": "So sánh mẫu truy cập ổ đĩa khi chèn khoá rải rác: cập nhật trang 8–16 KB ngẫu nhiên tại chỗ so với ghi nối đuôi tuần tự vào MemTable + WAL." },
+      { "vi": "B-Tree Engine chạm giới hạn IOPS ghi ngẫu nhiên ở khoảng 38.000 ops/s, trong khi LSM-Tree Engine xử lý tới 120.000 ops/s nhờ ghi tuần tự." }
+    ],
+    "explain": { "vi": "{btree_db.name} chuyển sang quá tải đầu tiên vào giây {t.first.btree_db:1} khi luồng ghi vượt mốc 38.000 ops/s (ở giây 22 mức sử dụng lên ρ = {btree_db.rho@22:2} với hàng đợi {btree_db.queue@22:0}), trong khi {lsm_db.name} chỉ nối đuôi WAL và chèn MemTable trong RAM nên giữ mức sử dụng thảnh thơi ρ = {lsm_db.rho@22:2}." },
+    "sim": { "simId": "S4-08/write-heavy", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S4-08/write-heavy", "seekSec": 10, "focus": { "nodes": ["btree_db", "lsm_db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-08.A2",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp đúng quy trình ghi WAL, Checkpoint và khôi phục sau mất điện" },
+    "prompt": { "vi": "Hãy sắp xếp các bước theo đúng trình tự thời gian từ lúc cơ sở dữ liệu nhận giao dịch ghi, tối ưu bằng Checkpoint cho tới lúc tự khôi phục lại trạng thái bền vững sau sự cố cúp điện đột ngột." },
+    "difficulty": 2,
+    "items": [
+      { "id": "wal_append", "text": { "vi": "Giao dịch sửa trang dữ liệu trong RAM (Dirty Page) và nối đuôi bản ghi thay đổi vào tệp WAL" } },
+      { "id": "fsync_ack", "text": { "vi": "Engine gọi fsync đẩy đoạn WAL xuống đĩa bền vững (Group Commit) rồi trả kết quả COMMIT cho client" } },
+      { "id": "ckpt", "text": { "vi": "Tiến trình nền xả các trang bẩn cũ xuống đĩa và ghi mốc Checkpoint đánh dấu vị trí an toàn" } },
+      { "id": "crash", "text": { "vi": "Sự cố mất điện đột ngột làm toàn bộ các Dirty Page mới phát sinh sau Checkpoint trong RAM biến mất" } },
+      { "id": "redo", "text": { "vi": "Khi khởi động lại, Engine tìm mốc Checkpoint gần nhất và phát lại tuần tự (Redo) các bản ghi WAL phía sau" } }
+    ],
+    "shuffleSeed": 9,
+    "hints": [
+      { "vi": "Luật cốt lõi của Write-Ahead Log: bản ghi WAL bắt buộc phải được fsync xuống đĩa trước khi báo COMMIT cho người dùng." },
+      { "vi": "Nhờ có mốc Checkpoint đã chốt các trang cũ trước lúc mất điện, bước khôi phục cuối cùng chỉ cần đọc tiếp phần WAL sau Checkpoint." }
+    ],
+    "explain": { "vi": "Chuỗi chuẩn là: sửa RAM + nối đuôi WAL → fsync WAL rồi mới báo COMMIT → xả trang nền kèm đánh dấu Checkpoint → gặp sự cố mất RAM → khởi động lại đọc từ Checkpoint để phát lại (Redo) các giao dịch sau mốc đó, vừa không mất dữ liệu vừa rút ngắn tối đa thời gian khởi động." }
+  }
+]

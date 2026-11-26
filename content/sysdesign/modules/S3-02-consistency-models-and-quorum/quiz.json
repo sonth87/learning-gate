@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-02.q1",
+    "type": "output",
+    "q": "Một cụm lưu trữ có N = 5 bản sao và cấu hình ghi W = 3. Để đảm bảo tập đọc luôn giao nhau ít nhất 1 bản sao với tập ghi mới nhất (W + R > N), giá trị R tối thiểu phải bằng bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "3",
+    "explain": "Điều kiện giao nhau bắt buộc W + R > N, tức 3 + R > 5, suy ra R > 2. Vậy giá trị nguyên tối thiểu của R là 3 (cấu hình đa số chuẩn 3 trên 5 cho cả đọc và ghi)."
+  },
+  {
+    "id": "S3-02.q2",
+    "type": "mc",
+    "q": "Người dùng vừa cập nhật tiểu sử cá nhân và bấm tải lại trang ngay lập tức nhưng lại thấy nội dung tiểu sử cũ trước khi sửa. Hiện tượng này vi phạm trực tiếp bảo đảm nào?",
+    "code": "",
+    "choices": [
+      "Monotonic Writes",
+      "Read-Your-Writes",
+      "Durability (Tính bền vững trên đĩa)",
+      "Idempotency (Tính bất biến khi thử lại)"
+    ],
+    "answer": 1,
+    "explain": "Read-Your-Writes cam kết rằng một khi khách hàng X đã hoàn tất thao tác ghi, mọi lượt đọc tiếp theo của chính khách hàng X trên khoá đó phải phản ánh ít nhất bản cập nhật vừa ghi."
+  },
+  {
+    "id": "S3-02.q3",
+    "type": "mc",
+    "q": "Với cụm N = 3 bản sao đặt ở 3 vùng khả dụng, cấu hình nào tối ưu nhất cho bảng dữ liệu cấu hình hệ thống có 99,9% truy vấn là đọc tại chỗ cực nhanh, rất hiếm khi ghi nhưng một khi đã ghi xong thì mọi máy đều phải đọc thấy bản mới ngay?",
+    "code": "",
+    "choices": [
+      "W = 1, R = 1",
+      "W = 3, R = 1",
+      "W = 1, R = 3",
+      "W = 2, R = 1"
+    ],
+    "answer": 1,
+    "explain": "W = 3, R = 1 thoả mãn W + R = 4 > 3 nên đọc từ 1 bản sao bất kỳ (R = 1) vẫn luôn thấy dữ liệu mới nhất với độ trễ tối thiểu. Đánh đổi là thao tác ghi chậm hơn và không thể ghi nếu 1 trong 3 máy đang ngừng hoạt động."
+  },
+  {
+    "id": "S3-02.q4",
+    "type": "tf",
+    "q": "Chỉ cần đặt W + R > N trên cơ sở dữ liệu phi Leader dùng cơ chế phân giải xung đột Last-Write-Wins (theo đồng hồ vật lý hệ thống), hệ thống sẽ luôn đạt Linearizability tuyệt đối và không bao giờ mất bản ghi đồng thời.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Khi có hai lệnh ghi đồng thời mà đồng hồ NTP giữa các máy bị lệch, Last-Write-Wins có thể giữ lại bản ghi cũ có mốc giờ lớn hơn và xoá mất bản ghi mới hơn. Ngoài ra Sloppy Quorum hoặc đọc gối đầu khi chưa Read Repair cũng làm mất tính tuyến tính hoá."
+  },
+  {
+    "id": "S3-02.q5",
+    "type": "mc",
+    "q": "Trong cơ chế Quorum (W = 2, R = 2 trên N = 3), vai trò của tiến trình Read Repair là gì?",
+    "code": "",
+    "choices": [
+      "Tự động nén các bảng chỉ mục B-tree vào ban đêm",
+      "Khi Coordinator đọc R bản sao và thấy một bản có version cũ hơn bản mới nhất, nó trả giá trị mới cho khách đồng thời gửi bản mới cập nhật bù cho bản sao bị trễ",
+      "Chia đều khoá dữ liệu sang thêm shard mới khi ổ đĩa đầy",
+      "Huỷ bỏ mọi giao dịch ghi nếu thời gian phản hồi vượt 10 ms"
+    ],
+    "answer": 1,
+    "explain": "Nhờ so sánh số phiên bản giữa R bản sao trong lúc đọc, Coordinator phát hiện ngay bản sao nào bị lỡ gói ghi trước đó và phát lệnh cập nhật bù, giúp các bản sao hội tụ nhanh mà không phải đợi quét toàn bộ đĩa."
+  },
+  {
+    "id": "S3-02.q6",
+    "type": "mc",
+    "q": "Một người dùng mở trang bình luận thấy 15 bình luận mới, nhưng 2 giây sau bấm làm mới trang lại chỉ thấy 12 bình luận cũ (do lần đọc thứ hai rơi vào một Read Replica đang trễ hơn). Cần áp dụng bảo đảm nào để chấm dứt lỗi trải nghiệm này?",
+    "code": "",
+    "choices": [
+      "Monotonic Reads (gắn phiên đọc cố định hoặc đính kèm mốc phiên bản tối thiểu đã thấy)",
+      "Giảm số lượng bản sao xuống còn 1 máy duy nhất không dự phòng",
+      "Bỏ hoàn toàn chỉ mục khoá chính trên bảng bình luận",
+      "Chuyển sang giao thức UDP cho các truy vấn đọc"
+    ],
+    "answer": 0,
+    "explain": "Monotonic Reads đảm bảo dòng thời gian quan sát của một người dùng không bao giờ đi giật lùi: khi đã thấy trạng thái tại mốc v_k, mọi lượt đọc kế tiếp chỉ chấp nhận bản sao đã áp tới ít nhất v_k."
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "id": "S0-04",
+  "slug": "S0-04-thinking-in-constraints",
+  "level": 0,
+  "order": 4,
+  "title": "Thinking in Constraints: giới hạn compute, memory, network, DB, nhân sự",
+  "summary": "Thiết kế hệ thống là bài toán làm việc bên trong các giới hạn thực tế về CPU, RAM, độ trễ mạng, thông lượng Database, ngân sách và quy mô đội ngũ kỹ sư thay vì vẽ sơ đồ tách rời thực tại.",
+  "durationMin": 15,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích vì sao các giới hạn thực tế là tham số đầu vào định hình kiến trúc thay vì trở ngại phụ" },
+    { "vi": "Ước lượng nhanh ngân sách tài nguyên cho 4 giới hạn kỹ thuật: Compute (CPU), Memory (RAM), Network (RTT) và Database" },
+    { "vi": "Đánh giá giới hạn nhân sự và năng lực vận hành của đội ngũ khi chọn độ phức tạp kiến trúc" },
+    { "vi": "Thiết kế cấu hình đạt mục tiêu độ trễ và độ sẵn sàng bên trong trần ngân sách cố định" }
+  ],
+  "tags": ["constraints", "compute", "memory", "network", "database", "team-size", "budget"],
+  "prerequisites": ["S0-01", "S0-02"],
+  "related": ["S0-05", "S0-07", "S1-03", "S1-04"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-4-thinking-in-constraints.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-4-thinking-in-constraints.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong sư phạm trực diện: bỏ giai thoại mở đầu và thay sơ đồ Mermaid bằng 8 cảnh memory-2d minh hoạ khung ràng buộc và thanh ngân sách CPU/RAM/Mạng/DB/Nhân sự; thêm bài tập estimate dung lượng RAM đệm và bài tập design-constraint theo trần ngân sách."
+  }
+}

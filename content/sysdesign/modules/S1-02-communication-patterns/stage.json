@@ -1,0 +1,403 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Client", "en": "Client" },
+      "inspector": {
+        "what": {
+          "vi": "Thiết bị người dùng gửi yêu cầu tạo đơn hàng với tốc độ ổn định 180 req/s.",
+          "en": "End-user clients submitting checkout orders at a steady 180 req/s."
+        },
+        "how": {
+          "vi": "Gửi HTTP POST qua Internet (~30 ms) và chờ mã xác nhận từ API Server trong ngưỡng Timeout 2.000 ms.",
+          "en": "Sends HTTP POST over the Internet (~30 ms) with a 2,000 ms client timeout."
+        },
+        "why": {
+          "vi": "Người dùng cần biết đơn đã được ghi nhận ngay, nhưng không cần chờ email biên nhận gửi xong.",
+          "en": "Users need immediate order confirmation, not synchronous SMTP completion."
+        },
+        "tip": {
+          "vi": "Tách rõ phần kết quả bắt buộc trả ngay cho giao diện khỏi phần tác vụ hậu kỳ có thể chạy nền.",
+          "en": "Separate what the UI needs immediately from side effects that can run in the background."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Server", "en": "API Server" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng tiếp nhận HTTP xác thực người dùng và kiểm tra định dạng đơn hàng (μ = 1.200 req/s, ~8 ms).",
+          "en": "Entry HTTP server authenticating callers and validating payloads (μ = 1,200 req/s, ~8 ms)."
+        },
+        "how": {
+          "vi": "Chuyển tiếp yêu cầu hợp lệ sang Order Service qua mạng nội bộ cùng vùng khả dụng.",
+          "en": "Forwards validated requests to Order Service over a low-latency same-AZ link."
+        },
+        "why": {
+          "vi": "Cô lập kiểm tra đầu vào khỏi dịch vụ xử lý nghiệp vụ cốt lõi phía sau.",
+          "en": "Isolates edge authentication and input checks from core domain logic."
+        }
+      }
+    },
+    "order": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Order Service", "en": "Order Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ nghiệp vụ ghi nhận đơn hàng và giữ tồn kho (μ = 800 req/s, xử lý ~18 ms).",
+          "en": "Core service persisting orders and reserving inventory (μ = 800 req/s, ~18 ms)."
+        },
+        "how": {
+          "vi": "Ở bản đồng bộ, dịch vụ phải gọi trực tiếp Email Service rồi mới trả lời; ở bản bất đồng bộ, chỉ đẩy thông điệp vào Queue rồi trả mã 202.",
+          "en": "Blocks on Email Service in sync mode, or enqueues a job in ~1.5 ms and returns 202 in async mode."
+        },
+        "why": {
+          "vi": "Quyết định giao tiếp tại nút này định đoạt việc lỗi ở Email Service có lan ngược lên người mua hay không.",
+          "en": "Communication mode here determines whether downstream SMTP slowdowns impact checkout."
+        },
+        "tip": {
+          "vi": "Chỉ giữ các bước kiểm tra điều kiện tiên quyết (tồn kho, thanh toán) trên đường đồng bộ.",
+          "en": "Keep only strict preconditions on the synchronous path; offload notifications."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "layers",
+      "label": { "vi": "Message Queue", "en": "Message Queue" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi thông điệp lưu đệm công việc gửi email (μ = 30.000 req/s, nhận tin ~1,5 ms).",
+          "en": "Durable message queue buffering email jobs (μ = 30,000 req/s, ~1.5 ms enqueue)."
+        },
+        "how": {
+          "vi": "Nhận thông điệp từ Order Service, giữ bền vững trong backlog cho tới khi Email Worker xử lý xong và gửi xác nhận ACK.",
+          "en": "Accepts jobs asynchronously and retains them until Email Workers acknowledge completion."
+        },
+        "why": {
+          "vi": "Biến sự cố chậm hoặc đột biến lưu lượng thành hàng chờ có kiểm soát thay vì lỗi Timeout cho người dùng.",
+          "en": "Absorbs downstream slowdowns and traffic bursts as backlog rather than user-facing errors."
+        },
+        "tip": {
+          "vi": "Luôn bật Dead-Letter Queue (DLQ) và theo dõi tuổi của thông điệp cũ nhất trong backlog.",
+          "en": "Enable a Dead-Letter Queue and alert on oldest-message age in the backlog."
+        }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "cpu",
+      "label": { "vi": "Email Worker", "en": "Email Worker" },
+      "inspector": {
+        "what": {
+          "vi": "Tiến trình nền kéo công việc từ Message Queue và gọi sang Email Service (μ = 250 req/s khi bình thường).",
+          "en": "Background consumer pulling jobs from Message Queue and calling Email Service."
+        },
+        "how": {
+          "vi": "Chủ động kéo việc theo tốc độ xử lý của chính mình; khi đối tác chậm +500 ms, Worker xử lý chậm lại nhưng không chặn Order Service.",
+          "en": "Pulls at its own pace; slows down during SMTP latency spikes without blocking Order Service."
+        },
+        "why": {
+          "vi": "Cho phép tăng giảm số lượng Worker độc lập để xả nhanh backlog sau sự cố.",
+          "en": "Allows scaling background consumers independently to drain accumulated backlog."
+        },
+        "tip": {
+          "vi": "Mọi hàm xử lý trên Worker phải thiết kế lũy đẳng (Idempotent) vì Queue có thể giao lại tin khi mất ACK.",
+          "en": "Make worker handlers idempotent since At-Least-Once queues can redeliver messages."
+        }
+      }
+    },
+    "notify": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "globe",
+      "label": { "vi": "Email Service", "en": "Email Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ gửi email biên nhận phụ thuộc cổng SMTP bên ngoài (nền 25 ms, pool 42 kết nối).",
+          "en": "Email delivery service backed by an external SMTP gateway (25 ms base, pool = 42)."
+        },
+        "how": {
+          "vi": "Tại t = 20 s, thời gian phản hồi tăng thêm 500 ms (lên 525 ms), làm năng lực thực tế qua pool 42 kết nối sụt từ 600 xuống 80 req/s.",
+          "en": "At t = 20 s, +500 ms latency cuts effective throughput on its 42-slot pool from 600 to 80 req/s."
+        },
+        "why": {
+          "vi": "Đại diện cho các phụ thuộc bên ngoài có độ trễ dao động mạnh không nên đặt trực tiếp trên đường đồng bộ.",
+          "en": "Represents variable external dependencies that should be decoupled from synchronous user paths."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-api": {
+      "inspector": {
+        "what": { "vi": "Đường truyền HTTPS từ người dùng tới API Server (~30 ms).", "en": "Public HTTPS hop from Client to API Server (~30 ms)." },
+        "how": { "vi": "Client giữ kết nối chờ phản hồi 200 OK hoặc 202 Accepted.", "en": "Client waits synchronously for 200 OK or 202 Accepted." },
+        "why": { "vi": "Đo trực tiếp thời gian phản hồi đầu-cuối người dùng cảm nhận.", "en": "Captures true user-perceived response time." }
+      }
+    },
+    "api-order": {
+      "inspector": {
+        "what": { "vi": "Lời gọi đồng bộ nội bộ từ API Server sang Order Service.", "en": "Internal synchronous call from API Server to Order Service." },
+        "how": { "vi": "Truyền trong cùng vùng mạng (~0,5 ms) với Timeout 1.800 ms.", "en": "Same-AZ hop (~0.5 ms) with 1,800 ms timeout." },
+        "why": { "vi": "Bắt buộc đồng bộ vì người dùng cần mã đơn hàng hợp lệ ngay lập tức.", "en": "Must be synchronous because the caller needs a confirmed order ID." }
+      }
+    },
+    "order-notify": {
+      "inspector": {
+        "what": { "vi": "Lời gọi đồng bộ trực tiếp từ Order Service sang Email Service.", "en": "Direct synchronous call from Order Service to Email Service." },
+        "how": { "vi": "Khóa luồng của Order Service cho tới khi gửi xong email hoặc chạm Timeout 1.500 ms.", "en": "Blocks Order Service until SMTP finishes or hits the 1,500 ms timeout." },
+        "why": { "vi": "Tạo gắn kết chặt (Tight Coupling): Email Service chậm sẽ kéo sập luồng đặt hàng.", "en": "Creates tight temporal coupling between checkout and email delivery." }
+      }
+    },
+    "order-queue": {
+      "inspector": {
+        "what": { "vi": "Đường đẩy thông điệp bất đồng bộ từ Order Service vào Message Queue.", "en": "Asynchronous publish link from Order Service to Message Queue." },
+        "how": { "vi": "Ghi nhận gói công việc trong ~1,5 ms rồi giải phóng ngay Order Service để trả mã 202.", "en": "Enqueues the job in ~1.5 ms so Order Service can immediately return 202." },
+        "why": { "vi": "Cắt đứt sự phụ thuộc về thời gian giữa luồng đặt hàng và khâu gửi email.", "en": "Decouples user checkout latency from background email latency." }
+      }
+    },
+    "queue-worker": {
+      "inspector": {
+        "what": { "vi": "Đường kéo công việc (Pull) từ Message Queue sang Email Worker.", "en": "Pull consumption link from Message Queue to Email Worker." },
+        "how": { "vi": "Worker chỉ lấy thông điệp mới khi còn luồng rảnh và gửi ACK sau khi hoàn tất.", "en": "Workers pull jobs according to available capacity and ACK upon completion." },
+        "why": { "vi": "Ngăn Worker bị quá tải dây chuyền khi lưu lượng đầu vào tăng đột biến.", "en": "Prevents consumer overload during upstream traffic spikes." }
+      }
+    },
+    "worker-notify": {
+      "inspector": {
+        "what": { "vi": "Lời gọi từ Email Worker tới Email Service để phát thư.", "en": "Downstream call from Email Worker to Email Service." },
+        "how": { "vi": "Chịu độ trễ +500 ms khi đối tác chậm nhưng nằm hoàn toàn ngoài đường chờ của người dùng.", "en": "Absorbs the +500 ms slowdown off the critical user-facing path." },
+        "why": { "vi": "Cho phép thử lại theo hàm mũ (Exponential Backoff) an toàn ở nền.", "en": "Allows safe background retries with exponential backoff." }
+      }
+    }
+  },
+  "zones": {
+    "sync-tier": {
+      "nodeIds": ["api", "order"],
+      "label": { "vi": "ĐƯỜNG GĂNG ĐỒNG BỘ", "en": "CRITICAL SYNC PATH" },
+      "tone": "neutral"
+    },
+    "async-tier": {
+      "nodeIds": ["queue", "worker", "notify"],
+      "label": { "vi": "XỬ LÝ NỀN BẤT ĐỒNG BỘ", "en": "ASYNC BACKGROUND TIER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": ["client", "api", "order", "notify"] },
+      "state": {
+        "api": { "loadPct": 15 },
+        "order": { "loadPct": 23 },
+        "notify": { "loadPct": 30, "badge": { "text": { "vi": "25 ms", "en": "25 ms" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chuỗi 3 dịch vụ (λ = 180 req/s)", "en": "3-Service Chain (λ = 180 req/s)" },
+        "lines": [
+          { "text": { "vi": "Bình thường: p99 ≈ 116 ms · Lỗi 0%", "en": "Healthy: p99 ≈ 116 ms · 0% errors" }, "tone": "good" },
+          { "text": { "vi": "Điều gì xảy ra khi khâu cuối chậm?", "en": "What happens when the tail slows?" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-sync": {
+      "show": { "nodes": ["client", "api", "order", "notify"] },
+      "zones": ["sync-tier"],
+      "state": {
+        "api": { "loadPct": 15, "badge": { "text": { "vi": "8 ms", "en": "8 ms" }, "tone": "ok" } },
+        "order": { "loadPct": 23, "badge": { "text": { "vi": "18 ms", "en": "18 ms" }, "tone": "ok" } },
+        "notify": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "Chặn luồng", "en": "Blocking" }, "tone": "warn" } }
+      },
+      "linkState": {
+        "client-api": { "label": { "vi": "Chờ toàn chuỗi", "en": "Waits full chain" } },
+        "order-notify": { "label": { "vi": "Sync HTTP", "en": "Sync HTTP" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Request-Response đồng bộ", "en": "Synchronous Request-Response" },
+        "lines": [
+          { "text": { "vi": "Tổng độ trễ = tổng các chặng nối tiếp", "en": "Total latency = sum of serial hops" }, "tone": "plain" },
+          { "text": { "vi": "Gắn kết chặt với độ sẵn sàng khâu cuối", "en": "Tightly coupled to tail availability" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-sync-live": {
+      "show": { "nodes": ["client", "api", "order", "notify"] },
+      "zones": ["sync-tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "t = 20 s: Email chậm +500 ms", "en": "t = 20 s: Email slows +500 ms" },
+        "lines": [
+          { "text": { "vi": "Pool 42 luồng → μ tụt còn 80 req/s", "en": "42-thread pool → μ drops to 80 req/s" }, "tone": "bad" },
+          { "text": { "vi": "ρ Email = 2,25 · p99 vọt > 1.500 ms", "en": "Email ρ = 2.25 · p99 spikes > 1,500 ms" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-async": {
+      "show": { "nodes": ["client", "api", "order", "queue", "worker", "notify"] },
+      "zones": ["sync-tier", "async-tier"],
+      "state": {
+        "api": { "loadPct": 15 },
+        "order": { "loadPct": 23, "highlighted": true, "badge": { "text": { "vi": "202 Accepted", "en": "202 Accepted" }, "tone": "ok" } },
+        "queue": { "loadPct": 5, "highlighted": true, "badge": { "text": { "vi": "Đệm ~1,5 ms", "en": "Buffer ~1.5 ms" }, "tone": "ok" } },
+        "worker": { "loadPct": 72 },
+        "notify": { "loadPct": 30 }
+      },
+      "linkState": {
+        "order-queue": { "style": "dashed", "label": { "vi": "Async", "en": "Async" } },
+        "queue-worker": { "style": "dashed", "label": { "vi": "Pull", "en": "Pull" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách hàng đợi (Message Queue)", "en": "Message Queue Decoupling" },
+        "lines": [
+          { "text": { "vi": "Người dùng nhận 202 trong ~80 ms", "en": "Client gets 202 in ~80 ms" }, "tone": "good" },
+          { "text": { "vi": "Worker kéo việc xử lý tách biệt ở nền", "en": "Worker pulls and processes off-path" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-async-live": {
+      "show": { "nodes": ["client", "api", "order", "queue", "worker", "notify"] },
+      "zones": ["sync-tier", "async-tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cùng sự cố +500 ms có Queue", "en": "Same +500 ms Fault with Queue" },
+        "lines": [
+          { "text": { "vi": "Client giữ p99 ≈ 80 ms · Lỗi 0%", "en": "Client stays p99 ≈ 80 ms · 0% errors" }, "tone": "good" },
+          { "text": { "vi": "Queue gom backlog rồi tự xả sau t = 45 s", "en": "Queue buffers backlog, drains after 45 s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-pubsub": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Event-Driven (Pub/Sub): một sự kiện, nhiều bên đăng ký độc lập", "en": "Event-Driven (Pub/Sub): One Event, Multiple Independent Subscribers" },
+        "nodes": [
+          { "id": "pub", "x": 0, "y": -104, "label": "Order Service (Publisher)", "sub": { "vi": "Phát sự kiện order.created", "en": "Publishes order.created" }, "tone": "green" },
+          { "id": "bus", "x": 0, "y": -20, "label": "Event Bus / Topic", "sub": { "vi": "Lưu nhật ký sự kiện bền vững", "en": "Durable event log" }, "tone": "rose" },
+          { "id": "sub1", "x": -185, "y": 68, "label": "Email Service", "sub": { "vi": "Gửi biên nhận", "en": "Sends receipt" }, "tone": "orange" },
+          { "id": "sub2", "x": 0, "y": 68, "label": "Analytics Service", "sub": { "vi": "Cập nhật doanh thu", "en": "Updates metrics" }, "tone": "blue" },
+          { "id": "sub3", "x": 185, "y": 68, "label": "Loyalty Service", "sub": { "vi": "Cộng điểm thưởng", "en": "Awards points" }, "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "pub", "to": "bus" },
+          { "from": "bus", "to": "sub1" },
+          { "from": "bus", "to": "sub2" },
+          { "from": "bus", "to": "sub3" }
+        ]
+      }
+    },
+    "s8-pitfalls": {
+      "show": { "nodes": ["client", "api", "order", "notify"] },
+      "state": {
+        "api": { "loadPct": 15 },
+        "order": { "loadPct": 23, "badge": { "text": { "vi": "Thiếu Timeout", "en": "No Timeout" }, "tone": "warn" } },
+        "notify": { "loadPct": 100, "highlighted": true, "badge": { "text": { "vi": "ρ = 2,25 · Nghẽn", "en": "ρ = 2.25 · Bottleneck" }, "tone": "bad" } }
+      },
+      "linkState": {
+        "order-notify": { "style": "danger", "label": { "vi": "+500 ms", "en": "+500 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba lỗi thiết kế giao tiếp", "en": "Three Communication Pitfalls" },
+        "lines": [
+          { "text": { "vi": "1. Chuỗi đồng bộ dài qua API bên thứ ba", "en": "1. Deep sync chain into external APIs" }, "tone": "bad" },
+          { "text": { "vi": "2. Quên đặt Timeout · 3. Queue thiếu DLQ", "en": "2. Missing Timeout · 3. Queue without DLQ" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": ["client", "api", "order", "queue", "worker", "notify"] },
+      "zones": ["sync-tier", "async-tier"],
+      "state": {
+        "api": { "loadPct": 15 },
+        "order": { "loadPct": 23, "badge": { "text": { "vi": "Sync cho đọc/chốt đơn", "en": "Sync for core" }, "tone": "ok" } },
+        "queue": { "loadPct": 5, "badge": { "text": { "vi": "Async cho việc nền", "en": "Async for jobs" }, "tone": "ok" } },
+        "worker": { "loadPct": 45, "badge": { "text": { "vi": "Idempotent", "en": "Idempotent" }, "tone": "default" } },
+        "notify": { "loadPct": 30 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khung chọn mẫu giao tiếp", "en": "Pattern Selection Summary" },
+        "lines": [
+          { "text": { "vi": "Cần kết quả ngay & nhanh → Đồng bộ", "en": "Immediate & fast → Synchronous" }, "tone": "plain" },
+          { "text": { "vi": "Tác vụ chậm / hấp thụ đỉnh tải → Queue", "en": "Slow work / spike buffer → Queue" }, "tone": "good" },
+          { "text": { "vi": "Một sự kiện nhiều bên nhận → Pub/Sub", "en": "One event, many consumers → Pub/Sub" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sync": {
+      "sim": "S1-02/sync",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow", "kill"],
+        "knobs": [
+          { "node": "notify", "key": "replicas" },
+          { "node": "notify", "key": "poolSize" },
+          { "node": "order", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 250, "badAbove": 1000 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 300 }
+      ],
+      "focus": { "nodes": ["order", "notify"] }
+    },
+    "async": {
+      "sim": "S1-02/async",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow", "kill"],
+        "knobs": [
+          { "node": "worker", "key": "replicas" },
+          { "node": "queue", "key": "dlq" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99 Client", "en": "Client p99" }, "format": "ms", "tone": { "warnAbove": 150, "badAbove": 400 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi Client", "en": "Client Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 200 }
+      ],
+      "focus": { "nodes": ["queue", "worker", "notify"] }
+    }
+  }
+}

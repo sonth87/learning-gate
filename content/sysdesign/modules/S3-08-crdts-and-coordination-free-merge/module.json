@@ -1,0 +1,35 @@
+{
+  "id": "S3-08",
+  "slug": "S3-08-crdts-and-coordination-free-merge",
+  "level": 3,
+  "order": 9,
+  "title": "CRDT và hợp nhất dữ liệu không cần phối hợp",
+  "summary": "Thiết kế các bản sao ghi độc lập ngay cả khi đứt mạng liên vùng mà vẫn tự hội tụ về cùng một kết quả đúng nhờ ba tính chất giao hoán, kết hợp, luỹ đẳng trên G-Counter, PN-Counter, LWW-Register và Add-Wins OR-Set.",
+  "durationMin": 16,
+  "difficulty": "Advanced",
+  "objectives": [
+    {
+      "vi": "Giải thích vì sao ghi đè theo mốc thời gian đơn thuần (Last-Write-Wins) làm mất lượt cộng hoặc mất món hàng khi hai replica cùng nhận ghi trong lúc phân tách mạng",
+      "en": "Explain why naive Last-Write-Wins overwrites concurrent counter increments and shopping-cart additions during network partitions"
+    },
+    {
+      "vi": "Chứng minh vai trò của ba tính chất đại số (Giao hoán, Kết hợp, Luỹ đẳng — Join-Semilattice) giúp hàm merge hội tụ không cần khoá hay bầu Leader",
+      "en": "Demonstrate how Commutativity, Associativity, and Idempotence (Join-Semilattice) guarantee Strong Eventual Consistency without locks or leader election"
+    },
+    {
+      "vi": "Vận hành chính xác trạng thái và hàm hợp nhất của bốn cấu trúc dữ liệu chuẩn: G-Counter, PN-Counter, LWW-Register và Add-Wins OR-Set",
+      "en": "Operate state representations and merge functions for G-Counter, PN-Counter, LWW-Register, and Add-Wins OR-Set"
+    },
+    {
+      "vi": "Nhận diện ranh giới áp dụng của CRDT: chi phí phình thẻ xóa (tombstone), hiện tượng đọc lùi khi đổi replica và các bài toán bắt buộc phải phối hợp chặt",
+      "en": "Identify CRDT boundaries: metadata/tombstone overhead, non-monotonic reads across unmerged replicas, and invariants requiring strict coordination"
+    }
+  ],
+  "tags": ["crdt", "eventual-consistency", "g-counter", "pn-counter", "or-set", "lww", "multi-leader"],
+  "prerequisites": ["S3-01", "S3-02", "S3-06"],
+  "related": ["S2-08", "S3-07"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về cấu trúc dữ liệu hội tụ không cần phối hợp (G-Counter, PN-Counter, LWW-Register, Add-Wins OR-Set) và tính chất giao hoán, kết hợp, luỹ đẳng."
+  }
+}

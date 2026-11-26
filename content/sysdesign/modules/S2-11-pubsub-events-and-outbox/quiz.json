@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S2-11.q1",
+    "type": "mc",
+    "q": "Điểm khác biệt cốt lõi giữa Message Queue (Point-to-Point) và Pub/Sub Topic khi có 3 dịch vụ khác nhau (Email, Tích điểm, Phân tích) cùng cần phản ứng trước một đơn hàng mới là gì?",
+    "code": "",
+    "choices": [
+      "Message Queue sao chép thông điệp cho cả 3 dịch vụ, còn Topic chỉ giao cho 1 dịch vụ",
+      "Message Queue chỉ giao mỗi thông điệp cho 1 người nhận trong nhóm, còn Pub/Sub Topic phân phối bản sao sự kiện tới tất cả các nhóm đã đăng ký",
+      "Pub/Sub Topic bắt buộc người gửi phải chờ cả 3 dịch vụ xử lý xong mới trả lời",
+      "Message Queue không lưu thông điệp trên đĩa còn Pub/Sub Topic luôn lưu vĩnh viễn"
+    ],
+    "answer": 1,
+    "explain": "Message Queue chia tải công việc sao cho mỗi thông điệp chỉ do một worker nhận xử lý. Ngược lại, Pub/Sub Topic phát quảng bá mỗi sự kiện đến mọi subscription độc lập để nhiều nghiệp vụ cùng phản ứng song song."
+  },
+  {
+    "id": "S2-11.q2",
+    "type": "tf",
+    "q": "Trong ứng dụng đặt hàng, phát sự kiện lên Event Bus trước rồi mới gọi lệnh COMMIT vào cơ sở dữ liệu sẽ tránh được hoàn toàn lỗi lệch dữ liệu.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nếu phát sự kiện lên Event Bus thành công nhưng lệnh COMMIT xuống Database thất bại và bị Rollback, các dịch vụ phụ sẽ xử lý một sự kiện ma của đơn hàng không hề tồn tại."
+  },
+  {
+    "id": "S2-11.q3",
+    "type": "output",
+    "q": "Hệ thống phát đều đặn 500 sự kiện/giây vào kênh Sub: Email. Dịch vụ Email ngừng hoạt động trong 20 giây nên không tiêu thụ sự kiện nào. Khi dừng xong, hàng đợi Sub: Email tích luỹ bao nhiêu sự kiện? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "10000",
+    "explain": "Trong 20 giây dịch vụ Email ngừng hoạt động, tốc độ nạp vào là 500 sự kiện/giây và tốc độ tiêu thụ bằng 0, nên lượng tồn đọng tích luỹ đúng 500 × 20 = 10.000 sự kiện chờ xử lý bù."
+  },
+  {
+    "id": "S2-11.q4",
+    "type": "mc",
+    "q": "Mẫu Transactional Outbox đảm bảo không đánh rơi sự kiện bằng cơ chế nào?",
+    "code": "",
+    "choices": [
+      "Dùng giao thức đồng thuận hai pha (2PC) khoá đồng thời cả Database lẫn Event Bus trên đường đồng bộ",
+      "Ghi bản ghi nghiệp vụ và bản ghi sự kiện vào bảng outbox trong cùng một giao dịch ACID cục bộ, sau đó tiến trình Relay/CDC đọc và đẩy lên Event Bus",
+      "Lưu sự kiện tạm trong bộ nhớ RAM của ứng dụng và thử lại tối đa 3 lần",
+      "Để phía trình duyệt của khách hàng tự gọi trực tiếp lên Event Bus sau khi thanh toán"
+    ],
+    "answer": 1,
+    "explain": "Giao dịch ACID trên cùng một cơ sở dữ liệu đảm bảo đơn hàng và dòng outbox cùng thành công hoặc cùng huỷ. Tiến trình Relay tách biệt chịu trách nhiệm đẩy sự kiện lên Event Bus cho đến khi nhận được xác nhận."
+  },
+  {
+    "id": "S2-11.q5",
+    "type": "tf",
+    "q": "Khi dùng mẫu Transactional Outbox kèm tiến trình Relay, mỗi subscriber vẫn bắt buộc phải được thiết kế bất biến (Idempotent) theo mã sự kiện.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Outbox Relay cung cấp ngữ nghĩa At-least-once: nếu Relay đẩy sự kiện lên Broker xong nhưng gặp sự cố trước khi đánh dấu đã gửi trong DB, nó sẽ gửi lại sự kiện đó. Subscriber cần kiểm tra event_id để không thực thi trùng."
+  },
+  {
+    "id": "S2-11.q6",
+    "type": "output",
+    "q": "Hàng đợi Sub: Email đang tồn 14.000 sự kiện trong khi sự kiện mới vẫn đến đều 500 sự kiện/giây. Cụm worker Email hồi phục với tổng năng lực xử lý 1.200 sự kiện/giây. Mất bao nhiêu giây để xả hết phần tồn đọng này? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "20",
+    "explain": "Tốc độ xả ròng của cụm worker là năng lực xử lý trừ đi lưu lượng mới đến: 1.200 − 500 = 700 sự kiện/giây. Thời gian cần để xử lý hết 14.000 sự kiện tồn đọng là 14.000 / 700 = 20 giây."
+  }
+]

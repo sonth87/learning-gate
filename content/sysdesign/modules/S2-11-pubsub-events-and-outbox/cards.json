@@ -1,0 +1,8 @@
+[
+  { "id": "S2-11.c1", "front": "Phụ thuộc thời gian (Temporal Coupling) trong kiến trúc đồng bộ là gì?", "back": "Là trạng thái dịch vụ gọi phải chờ dịch vụ bị gọi phản hồi ngay trong request hiện tại; nếu dịch vụ phụ chậm hoặc dừng, luồng chính cũng chậm hoặc lỗi theo." },
+  { "id": "S2-11.c2", "front": "Khi nào chọn Message Queue và khi nào chọn Pub/Sub Topic?", "back": "Chọn Message Queue khi muốn chia một hàng việc cho nhiều worker cùng loại (mỗi việc 1 người nhận). Chọn Pub/Sub Topic khi muốn quảng bá một sự kiện đã xảy ra cho nhiều dịch vụ độc lập cùng nhận bản sao." },
+  { "id": "S2-11.c3", "front": "Bài toán ghi kép (Dual-Write Problem) xảy ra khi nào?", "back": "Khi ứng dụng ghi trạng thái vào Database và phát thông điệp lên Broker bằng hai lệnh mạng rời nhau: tiến trình sập ở giữa gây mất sự kiện, hoặc DB rollback sau khi phát gây sự kiện ma." },
+  { "id": "S2-11.c4", "front": "Mẫu Transactional Outbox hoạt động như thế nào?", "back": "Ứng dụng chèn dữ liệu nghiệp vụ và bản ghi sự kiện vào bảng outbox trong cùng một giao dịch ACID cục bộ; tiến trình Outbox Relay hoặc CDC đọc bảng outbox/WAL để phát lên Event Bus cho tới khi được xác nhận." },
+  { "id": "S2-11.c5", "front": "Vì sao Outbox luôn phải đi kèm Idempotent Consumer ở phía nhận?", "back": "Relay đảm bảo chuyển giao ít nhất một lần (At-least-once) nên có thể gửi lặp sự kiện nếu sập trước bước đánh dấu đã gửi. Subscriber cần lưu khoá UNIQUE(event_id) để không xử lý trùng tác dụng phụ." },
+  { "id": "S2-11.c6", "front": "Ba đánh đổi cần lưu ý khi chuyển sang kiến trúc hướng sự kiện (Pub/Sub)?", "back": "Dữ liệu giữa các dịch vụ chỉ đạt nhất quán cuối cùng (Eventual Consistency), thông điệp có thể đến lặp hoặc đảo thứ tự, và cần gắn mã trace_id xuyên suốt để gỡ lỗi phân tán." }
+]

@@ -1,0 +1,341 @@
+{
+  "sims": [
+    {
+      "id": "S3-09/spof-audit",
+      "scenario": {
+        "id": "S3-09/spof-audit",
+        "seed": 3309,
+        "durationSec": 40,
+        "mix": { "readRatio": 0.8 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1000 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb_a",
+              "kind": "lb",
+              "label": { "vi": "LB (AZ-A)", "en": "LB (AZ-A)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB đơn lẻ ngừng hoạt động làm đứt toàn bộ lối vào", "en": "Single LB crash cuts all entry traffic" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app_a",
+              "kind": "service",
+              "label": { "vi": "App 1 (AZ-A)", "en": "App 1 (AZ-A)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200, "concurrency": 20 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 20 }
+            },
+            {
+              "id": "app_b",
+              "kind": "service",
+              "label": { "vi": "App 2 (AZ-B)", "en": "App 2 (AZ-B)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 1200, "concurrency": 20 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 20 }
+            },
+            {
+              "id": "db_a",
+              "kind": "sql",
+              "label": { "vi": "DB Primary (AZ-A)", "en": "DB Primary (AZ-A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "DB đơn lẻ ngừng hoạt động làm lỗi toàn bộ đọc ghi", "en": "Single DB crash fails all queries" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-lba", "from": "client", "to": "lb_a", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lba-appa", "from": "lb_a", "to": "app_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "lba-appb", "from": "lb_a", "to": "app_b", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1200 },
+            { "id": "appa-dba", "from": "app_a", "to": "db_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "appb-dba", "from": "app_b", "to": "db_a", "mode": "sync", "netClass": "cross-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb_a": "split",
+            "app_a": "all-sequential",
+            "app_b": "all-sequential"
+          }
+        }
+      }
+    },
+    {
+      "id": "S3-09/az-failover",
+      "scenario": {
+        "id": "S3-09/az-failover",
+        "seed": 3310,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.8 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1200 },
+        "events": [
+          { "at": 18, "type": "crash", "node": "lb_a" },
+          { "at": 18, "type": "crash", "node": "app_a" },
+          { "at": 18, "type": "crash", "node": "db_a" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "dns",
+              "kind": "dns",
+              "label": { "vi": "Global DNS / VIP", "en": "Global DNS / VIP" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.02,
+              "knobs": [
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "Thời gian cắt lưu lượng DNS/VIP", "en": "DNS / VIP cutover TTL" },
+                  "min": 1,
+                  "max": 30,
+                  "step": 1,
+                  "default": 4,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.2, "cv": 0.1 },
+              "params": { "replicas": 2, "ttlSec": 4, "algorithm": "round-robin" }
+            },
+            {
+              "id": "lb_a",
+              "kind": "lb",
+              "label": { "vi": "LB (AZ-A)", "en": "LB (AZ-A)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Mất điện vùng AZ-A", "en": "AZ-A power outage" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "lb_b",
+              "kind": "lb",
+              "label": { "vi": "LB (AZ-B)", "en": "LB (AZ-B)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app_a",
+              "kind": "service",
+              "label": { "vi": "App 1 (AZ-A)", "en": "App 1 (AZ-A)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Cụm App vùng AZ-A ngừng hoạt động", "en": "AZ-A App pool down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 900, "concurrency": 20 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 20 }
+            },
+            {
+              "id": "app_b",
+              "kind": "service",
+              "label": { "vi": "App 2 (AZ-B)", "en": "App 2 (AZ-B)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 900, "concurrency": 20 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 20 }
+            },
+            {
+              "id": "db_proxy",
+              "kind": "lb",
+              "label": { "vi": "DB Failover Router", "en": "DB Failover Router" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.03,
+              "knobs": [
+                {
+                  "key": "healthCheckSec",
+                  "type": "number",
+                  "label": { "vi": "Thời gian thăng cấp DB (RTO)", "en": "DB promotion time (RTO)" },
+                  "min": 2,
+                  "max": 30,
+                  "step": 1,
+                  "default": 8,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.1 },
+              "params": { "replicas": 2, "algorithm": "weighted", "healthCheckSec": 8 }
+            },
+            {
+              "id": "db_a",
+              "kind": "sql",
+              "label": { "vi": "DB Primary (AZ-A)", "en": "DB Primary (AZ-A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Primary vùng AZ-A mất kết nối", "en": "AZ-A Primary DB crash" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "maxConnections": 600 }
+            },
+            {
+              "id": "db_b",
+              "kind": "sql",
+              "label": { "vi": "DB Standby (AZ-B)", "en": "DB Standby (AZ-B)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "applyRps": 1800, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "client-dns", "from": "client", "to": "dns", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "dns-lba", "from": "dns", "to": "lb_a", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "dns-lbb", "from": "dns", "to": "lb_b", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lba-appa", "from": "lb_a", "to": "app_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "lbb-appb", "from": "lb_b", "to": "app_b", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "appa-dbp", "from": "app_a", "to": "db_proxy", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1000 },
+            { "id": "appb-dbp", "from": "app_b", "to": "db_proxy", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "dbp-dba", "from": "db_proxy", "to": "db_a", "mode": "sync", "netClass": "cross-az", "weight": 200, "timeoutMs": 800 },
+            { "id": "dbp-dbb", "from": "db_proxy", "to": "db_b", "mode": "sync", "netClass": "same-az", "weight": 1, "timeoutMs": 800 },
+            { "id": "dba-dbb", "from": "db_a", "to": "db_b", "mode": "replicate", "netClass": "cross-az" }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "dns": "split",
+            "lb_a": "split",
+            "lb_b": "split",
+            "app_a": "all-sequential",
+            "app_b": "all-sequential",
+            "db_proxy": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "post-rto-err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 28, "toSec": 60 } },
+        { "id": "fast-rto-err", "kind": "slo-error", "maxRate": 0.06, "window": { "fromSec": 0, "toSec": 60 } }
+      ],
+      "presets": [
+        {
+          "id": "fast-failover",
+          "label": { "vi": "Rút ngắn DNS TTL 2s và thăng cấp DB 3s", "en": "2s DNS TTL and 3s DB promotion" },
+          "changes": [
+            { "type": "knob", "node": "dns", "key": "ttlSec", "value": 2 },
+            { "type": "knob", "node": "db_proxy", "key": "healthCheckSec", "value": 3 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "slow-dns-ttl",
+          "label": { "vi": "Đặt DNS TTL dài 20s làm kéo dài RTO", "en": "Long 20s DNS TTL stretches RTO" },
+          "changes": [
+            { "type": "knob", "node": "dns", "key": "ttlSec", "value": 20 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

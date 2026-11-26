@@ -1,0 +1,30 @@
+{
+  "id": "S2-03",
+  "slug": "S2-03-database-scaling-overview",
+  "level": 2,
+  "order": 7,
+  "title": "Database Scaling: nâng cỡ máy, Read Replica và Sharding",
+  "summary": "Nắm thang mở rộng tầng cơ sở dữ liệu từ nâng cấp phần cứng (Vertical Scale-up), tách đọc sang Read Replica đến phân mảnh ngang (Sharding), nhận diện giới hạn thông lượng và chi phí của từng bậc khi lưu lượng tăng từ 500 lên 8.000 req/s.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích vì sao cơ sở dữ liệu giữ trạng thái thường chạm giới hạn thông lượng sớm hơn tầng ứng dụng phi trạng thái" },
+    { "vi": "Đánh giá ưu nhược điểm, giới hạn vật lý và đường cong chi phí của nâng cấp dọc (Vertical Scale-up)" },
+    { "vi": "Phân biệt phạm vi giải quyết của Read Replica (mở rộng đọc) với Sharding (mở rộng cả ghi lẫn dung lượng lưu trữ)" },
+    { "vi": "Chọn đúng bậc mở rộng cơ sở dữ liệu theo tỷ lệ đọc/ghi, mục tiêu độ trễ p99 và ngân sách vận hành" }
+  ],
+  "tags": ["database", "scaling", "vertical-scaling", "read-replica", "sharding", "capacity"],
+  "prerequisites": ["S1-01", "S1-03", "S2-07"],
+  "related": ["S2-08", "S2-09", "S2-10", "S4-01"],
+  "dtsRef": "replication",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-2/lessons/lesson-3-database.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-3-database.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn theo hướng định lượng: bỏ toàn bộ giai thoại cá nhân và sơ đồ Mermaid; dựng hai kịch bản mô phỏng trực tiếp tải tăng từ 500 lên 8.000 req/s để so sánh Vertical Scale-up, Read Replica và Sharding theo mức sử dụng ρ, độ trễ p99 và chi phí mỗi giờ; thêm bài tập đo trần tải và thiết kế theo ràng buộc."
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "sims": [
+    {
+      "id": "S3-03/minority-isolated",
+      "scenario": {
+        "id": "S3-03/minority-isolated",
+        "seed": 3306,
+        "durationSec": 55,
+        "mix": { "readRatio": 0.6 },
+        "clientTimeoutMs": 1500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1200 },
+        "events": [
+          { "at": 20, "type": "partition", "link": "leader-f1" },
+          { "at": 20, "type": "partition", "link": "leader-f2" },
+          { "at": 40, "type": "heal", "link": "leader-f1" },
+          { "at": 40, "type": "heal", "link": "leader-f2" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client / Service", "en": "Client / Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "leader",
+              "kind": "coordinator",
+              "label": { "vi": "Node 1 (Leader · AZ-A)", "en": "Node 1 (Leader · AZ-A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "sizeFactor": 1 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Node 1", "en": "Node 1 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "split-brain", "note": { "vi": "Bị cô lập ở nhánh thiểu số 1/3", "en": "Isolated in 1/3 minority" } }
+              ]
+            },
+            {
+              "id": "f1",
+              "kind": "coordinator",
+              "label": { "vi": "Node 2 (Follower · AZ-B)", "en": "Node 2 (Follower · AZ-B)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "sizeFactor": 1 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "f2",
+              "kind": "coordinator",
+              "label": { "vi": "Node 3 (Follower · AZ-C)", "en": "Node 3 (Follower · AZ-C)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "zone": "az-c",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 3.5, "cv": 0.25 },
+              "params": { "sizeFactor": 1 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "storage",
+              "kind": "sql",
+              "label": { "vi": "Kho dữ liệu (Fencing)", "en": "Storage (Fencing)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.7,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2800 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 800, "poolSize": 32 },
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-leader", "from": "client", "to": "leader", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "leader-f1", "from": "leader", "to": "f1", "mode": "sync", "carries": "w", "netClass": "cross-az", "netMs": 2, "timeoutMs": 250 },
+            { "id": "leader-f2", "from": "leader", "to": "f2", "mode": "sync", "carries": "w", "netClass": "cross-az", "netMs": 3, "timeoutMs": 250 },
+            { "id": "leader-storage", "from": "leader", "to": "storage", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 600 }
+          ],
+          "routes": {
+            "client": "split",
+            "leader": "all-parallel"
+          }
+        }
+      }
+    }
+  ]
+}

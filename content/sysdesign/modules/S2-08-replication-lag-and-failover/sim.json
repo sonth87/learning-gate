@@ -1,0 +1,430 @@
+{
+  "sims": [
+    {
+      "id": "S2-08/lag-surge",
+      "scenario": {
+        "id": "S2-08/lag-surge",
+        "seed": 2208,
+        "durationSec": 70,
+        "mix": {
+          "readRatio": 0.75
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "spike",
+          "base": 1600,
+          "peak": 4000,
+          "atSec": 15,
+          "holdSec": 25,
+          "riseSec": 5,
+          "fallSec": 5
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB dừng hoạt động", "en": "LB down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Router", "en": "App Router" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": { "replicas": 4, "poolSize": 32 }
+            },
+            {
+              "id": "primary",
+              "kind": "sql",
+              "label": { "vi": "Primary (Leader)", "en": "Primary (Leader)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Primary", "en": "Primary sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Leader ngừng nhận ghi", "en": "Leader write outage" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.12,
+                "maxConnections": 800,
+                "poolSize": 24
+              }
+            },
+            {
+              "id": "replica",
+              "kind": "sql",
+              "label": { "vi": "Read Replicas", "en": "Read Replicas" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.5,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Read Replica", "en": "Read Replicas" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Follower áp WAL trễ", "en": "Follower replay lag" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": {
+                "replicas": 2,
+                "applyRps": 1560,
+                "rewriteHotness": 0.18,
+                "maxConnections": 800,
+                "poolSize": 20
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-app",
+              "from": "lb",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-primary",
+              "from": "app",
+              "to": "primary",
+              "mode": "sync",
+              "carries": "w",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "app-replica",
+              "from": "app",
+              "to": "replica",
+              "mode": "sync",
+              "carries": "r",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "primary-replica",
+              "from": "primary",
+              "to": "replica",
+              "mode": "replicate",
+              "netClass": "same-az"
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 120,
+          "window": { "fromSec": 0, "toSec": 70 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 0, "toSec": 70 }
+        }
+      ]
+    },
+    {
+      "id": "S2-08/failover",
+      "scenario": {
+        "id": "S2-08/failover",
+        "seed": 2209,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.8
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 2500
+        },
+        "events": [
+          {
+            "at": 20,
+            "type": "crash",
+            "node": "primary"
+          },
+          {
+            "at": 38,
+            "type": "recover",
+            "node": "primary"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Router", "en": "App Router" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": { "replicas": 4, "poolSize": 32 }
+            },
+            {
+              "id": "primary",
+              "kind": "sql",
+              "label": { "vi": "Primary (Leader)", "en": "Primary (Leader)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Primary", "en": "Primary sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Primary sập làm đứt luồng ghi", "en": "Primary crash drops writes" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.12,
+                "maxConnections": 800,
+                "poolSize": 24
+              }
+            },
+            {
+              "id": "replica",
+              "kind": "sql",
+              "label": { "vi": "Read Replicas", "en": "Read Replicas" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.5,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Read Replica", "en": "Read Replicas" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": {
+                "replicas": 2,
+                "applyRps": 1200,
+                "rewriteHotness": 0.12,
+                "maxConnections": 800,
+                "poolSize": 20
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-app",
+              "from": "lb",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-primary",
+              "from": "app",
+              "to": "primary",
+              "mode": "sync",
+              "carries": "w",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "app-replica",
+              "from": "app",
+              "to": "replica",
+              "mode": "sync",
+              "carries": "r",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "primary-replica",
+              "from": "primary",
+              "to": "replica",
+              "mode": "replicate",
+              "netClass": "same-az"
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "split"
+          }
+        }
+      }
+    }
+  ]
+}

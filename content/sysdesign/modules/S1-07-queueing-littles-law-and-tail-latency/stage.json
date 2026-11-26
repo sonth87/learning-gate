@@ -1,0 +1,365 @@
+{
+  "version": 1,
+  "base": "s1-setup",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Client", "en": "Client" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng gửi các request độc lập có thời điểm đến ngẫu nhiên.",
+          "en": "Users sending independent requests with bursty inter-arrival times."
+        },
+        "how": {
+          "vi": "Ở kịch bản hàng đợi, tải tăng từ 50 lên 480 req/s; ở kịch bản fan-out, tải ổn định 420 req/s.",
+          "en": "Ramps 50 → 480 req/s in the queueing scenario; holds 420 req/s in the fan-out scenario."
+        },
+        "why": {
+          "vi": "Sự dao động ngẫu nhiên giữa các lần đến tạo ra hàng chờ ngắn hạn ngay cả khi tốc độ trung bình nhỏ hơn năng lực máy.",
+          "en": "Arrival randomness creates transient queues well before utilization hits 100%."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Checkout API", "en": "Checkout API" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ đơn lẻ có năng lực tối đa μ = 500 req/s và thời gian xử lý nền S = 10 ms.",
+          "en": "Single-instance service with μ = 500 req/s capacity and S = 10 ms base service time."
+        },
+        "how": {
+          "vi": "Khi lưu lượng đạt 480 req/s (ρ = 0,96), thời gian phản hồi tuân theo quy luật W = S / (1 − ρ) làm p99 tăng lên ~248 ms.",
+          "en": "At 480 req/s (ρ = 0.96), queueing pushes p99 to ~248 ms despite zero dropped requests."
+        },
+        "why": {
+          "vi": "Chứng minh rằng định cỡ sát 100% công suất sẽ làm phá vỡ hoàn toàn SLO về độ trễ.",
+          "en": "Demonstrates why running near 100% utilization violates latency SLOs."
+        },
+        "tip": {
+          "vi": "Giữ mức sử dụng mục tiêu dưới 75–80% để hệ số nhân 1/(1 − ρ) không vượt quá 4–5 lần.",
+          "en": "Keep target utilization below 75–80% so the 1/(1 − ρ) multiplier stays bounded."
+        }
+      }
+    },
+    "coord": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Aggregator", "en": "Aggregator" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ điều phối tìm kiếm gửi đồng thời (all-parallel) mỗi request xuống cả 6 phân mảnh.",
+          "en": "Search aggregator broadcasting each incoming request in parallel across all 6 shards."
+        },
+        "how": {
+          "vi": "Chỉ có thể hợp nhất kết quả trả về cho Client sau khi phân mảnh chậm nhất trong 6 nhánh đã trả lời xong.",
+          "en": "Must wait for max(Shard 1..6) before merging and returning the response."
+        },
+        "why": {
+          "vi": "Minh họa cơ chế khuếch đại độ trễ đuôi: chỉ cần 1 trên 6 nhánh rơi vào vùng chậm là cả trang bị chậm.",
+          "en": "Illustrates tail amplification: any single slow shard delays the entire parent request."
+        }
+      }
+    },
+    "s1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shard 1", "en": "Shard 1" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 1 (μ = 600 req/s, nền 12 ms).", "en": "Data Shard 1 (μ = 600 req/s, 12 ms base)." },
+        "how": { "vi": "Nhận 420 req/s (ρ = 0,70), p99 cục bộ khoảng 49 ms.", "en": "Serves 420 req/s (ρ = 0.70) with ~49 ms local p99." },
+        "why": { "vi": "Hoạt động ổn định nhưng vẫn đóng góp xác suất đuôi vào phép lấy max 6 nhánh.", "en": "Healthy on its own, yet contributes independent tail probability to the 6-way max." }
+      }
+    },
+    "s2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shard 2", "en": "Shard 2" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 2 (μ = 600 req/s, nền 12 ms).", "en": "Data Shard 2 (μ = 600 req/s, 12 ms base)." },
+        "how": { "vi": "Xử lý song song cùng 5 phân mảnh còn lại.", "en": "Executes in parallel alongside the other 5 shards." },
+        "why": { "vi": "Chia nhỏ tập chỉ mục để tìm kiếm nhanh trong RAM.", "en": "Partitions the index to fit in memory." }
+      }
+    },
+    "s3": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shard 3", "en": "Shard 3" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 3 (μ = 600 req/s, nền 12 ms).", "en": "Data Shard 3 (μ = 600 req/s, 12 ms base)." },
+        "how": { "vi": "Giữ p99 cục bộ ~49 ms ở mức bận 70%.", "en": "Maintains ~49 ms local p99 at 70% utilization." },
+        "why": { "vi": "Mảnh ghép trong truy vấn Scatter-Gather.", "en": "Participant in the scatter-gather query." }
+      }
+    },
+    "s4": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shard 4", "en": "Shard 4" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 4 (μ = 600 req/s, nền 12 ms).", "en": "Data Shard 4 (μ = 600 req/s, 12 ms base)." },
+        "how": { "vi": "Phản hồi qua mạng nội bộ 1 ms về Aggregator.", "en": "Replies over a 1 ms intra-AZ hop to Aggregator." },
+        "why": { "vi": "Góp một phần sáu dữ liệu kết quả.", "en": "Supplies one-sixth of the queried dataset." }
+      }
+    },
+    "s5": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shard 5", "en": "Shard 5" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 5 (μ = 600 req/s, nền 12 ms).", "en": "Data Shard 5 (μ = 600 req/s, 12 ms base)." },
+        "how": { "vi": "Vận hành khỏe mạnh xuyên suốt 60 giây.", "en": "Remains healthy throughout the 60-second run." },
+        "why": { "vi": "Cho thấy 5 nhánh nhanh không bù được 1 nhánh chậm khi dùng phép hội tụ tất cả.", "en": "Shows 5 fast shards cannot mask 1 slow straggler in an all-parallel join." }
+      }
+    },
+    "s6": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "cpu",
+      "label": { "vi": "Shard 6", "en": "Shard 6" },
+      "inspector": {
+        "what": { "vi": "Phân mảnh dữ liệu thứ 6 chịu hiện tượng trễ tạm thời +90 ms từ giây 25.", "en": "Data Shard 6 experiencing a +90 ms latency stall starting at t = 25 s." },
+        "how": { "vi": "Khi nền tăng từ 12 ms lên 102 ms (do thu gom rác GC hoặc nén đĩa), p99 của riêng Shard 6 lên ~360 ms.", "en": "When base latency rises to 102 ms, Shard 6 p99 hits ~360 ms." },
+        "why": { "vi": "Vì mọi request đều chạm Shard 6, riêng một phân mảnh này kéo p99 toàn trang lên 375 ms.", "en": "Because every request waits on Shard 6, this lone straggler pulls overall p99 to 375 ms." },
+        "tip": { "vi": "Dùng Hedged Requests sang bản sao phụ hoặc đặt Timeout trả kết quả 5/6 nhánh để chặn nhánh trễ.", "en": "Use hedged requests to a replica or partial-result timeouts to bound stragglers." }
+      }
+    }
+  },
+  "links": {
+    "client-app": {
+      "inspector": {
+        "what": { "vi": "Đường gọi trực tiếp từ Client vào Checkout API (2 ms).", "en": "Direct 2 ms link from Client to Checkout API." },
+        "how": { "vi": "Độ trễ mạng rất nhỏ để làm nổi bật thuần túy thời gian xếp hàng W bên trong Checkout API.", "en": "Minimal network delay isolates internal queueing wait time W." },
+        "why": { "vi": "Giúp quan sát chính xác đường cong W = S / (1 − ρ).", "en": "Cleanly reveals the M/M/c queueing curve." }
+      }
+    },
+    "client-coord": {
+      "inspector": {
+        "what": { "vi": "Chặng gọi từ Client tới bộ điều phối Aggregator (10 ms).", "en": "Client request link to Aggregator (10 ms)." },
+        "how": { "vi": "Gửi 1 truy vấn tổng hợp, nhận về kết quả sau khi 6 nhánh con hoàn tất.", "en": "Sends 1 parent request that fans out to 6 shards." },
+        "why": { "vi": "Đo độ trễ đầu-cuối sau khi đã lấy max qua 6 nhánh song song.", "en": "Measures parent latency after taking the 6-way parallel maximum." }
+      }
+    }
+  },
+  "zones": {
+    "shards": {
+      "nodeIds": ["s1", "s2", "s3", "s4", "s5", "s6"],
+      "label": { "vi": "6 PHÂN MẢNH GỌI SONG SONG (ALL-PARALLEL)", "en": "6 PARALLEL SHARDS (ALL-PARALLEL)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-setup": {
+      "show": { "nodes": ["client", "app"] },
+      "state": {
+        "app": { "loadPct": 96, "highlighted": true, "badge": { "text": { "vi": "ρ = 0,96 · p99 ≈ 248 ms", "en": "ρ = 0.96 · p99 ≈ 248 ms" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chưa chạm 100% đã rất chậm", "en": "Slow Well Before 100% Load" },
+        "chart": { "utilPct": 96 },
+        "lines": [
+          { "text": { "vi": "Tải 480 / 500 req/s (lỗi = 0%)", "en": "480 / 500 req/s (0% errors)" }, "tone": "amber" },
+          { "text": { "vi": "Nhưng p99 tăng gấp > 7 lần lúc rảnh", "en": "Yet p99 jumps > 7× idle baseline" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-curve": {
+      "show": { "nodes": ["client", "app"] },
+      "state": {
+        "app": { "loadPct": 80, "highlighted": true, "badge": { "text": { "vi": "Điểm gãy ρ ≈ 0,80", "en": "Knee at ρ ≈ 0.80" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Luật hàng đợi W = S / (1 − ρ)", "en": "Queueing Law W = S / (1 − ρ)" },
+        "chart": { "utilPct": 80 },
+        "lines": [
+          { "text": { "vi": "ρ = 0,50 → nhân ×2 · ρ = 0,80 → ×5", "en": "ρ = 0.50 → ×2 · ρ = 0.80 → ×5" }, "tone": "good" },
+          { "text": { "vi": "ρ = 0,90 → ×10 · ρ = 0,96 → ×25", "en": "ρ = 0.90 → ×10 · ρ = 0.96 → ×25" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-queue-live": {
+      "show": { "nodes": ["client", "app"] },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tăng tải 50 → 480 req/s (μ = 500)", "en": "Ramp 50 → 480 req/s (μ = 500)" },
+        "lines": [
+          { "text": { "vi": "t = 30 s (ρ = 0,53): p99 ≈ 36 ms", "en": "t = 30 s (ρ = 0.53): p99 ≈ 36 ms" }, "tone": "good" },
+          { "text": { "vi": "t = 60 s (ρ = 0,96): p99 ≈ 248 ms", "en": "t = 60 s (ρ = 0.96): p99 ≈ 248 ms" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-headroom": {
+      "show": { "nodes": ["client", "app"] },
+      "state": {
+        "app": { "loadPct": 75, "highlighted": true, "badge": { "text": { "vi": "Headroom ≥ 20%", "en": "Headroom ≥ 20%" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Định cỡ chừa khoảng thở", "en": "Capacity Headroom Target" },
+        "chart": { "utilPct": 75 },
+        "lines": [
+          { "text": { "vi": "Giữ p99 ≤ 80 ms → tải ≤ 426 req/s", "en": "Keep p99 ≤ 80 ms → load ≤ 426 req/s" }, "tone": "good" },
+          { "text": { "vi": "Hoặc tăng lên 2 máy để hạ ρ còn 0,48", "en": "Or add 2nd instance to halve ρ to 0.48" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-little": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Định luật Little: L = λ × W (Số request đồng thời trong hệ thống)", "en": "Little's Law: L = λ × W (Concurrent In-Flight Requests)" },
+        "subtitle": { "vi": "Áp dụng cho mọi hệ ổn định bất kể phân phối xác suất của thời điểm đến", "en": "Holds for any stable system regardless of arrival distribution" },
+        "cells": [
+          "λ = 400 req/s",
+          "×",
+          "W = 0,05 s → L = 20 luồng",
+          "W = 0,25 s → L = 100 luồng"
+        ],
+        "activeIndices": [0, 3],
+        "pointers": [
+          { "index": 2, "label": "Khi nhanh (50 ms)", "color": "green" },
+          { "index": 3, "label": "Khi chậm (250 ms)", "color": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Định cỡ Pool", "en": "Pool Sizing" },
+          "value": { "vi": "poolSize ≥ λ_đỉnh × W_p99", "en": "poolSize ≥ λ_peak × W_p99" },
+          "tone": "good"
+        }
+      }
+    },
+    "s6-fanout-math": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Xác suất dính ít nhất 1 nhánh chậm p99 khi Fan-out song song: 1 − 0,99^N", "en": "Probability of Hitting ≥ 1 Slow p99 Shard on Parallel Fan-out: 1 − 0.99^N" },
+        "nodes": [
+          { "id": "root", "x": 0, "y": -102, "label": "Mỗi nhánh con có 1% rơi vào đuôi chậm (p99)", "sub": { "vi": "Cha phải chờ max(T_1 .. T_N)", "en": "Parent waits for max(T_1 .. T_N)" }, "tone": "purple" },
+          { "id": "n1", "x": -185, "y": 10, "label": "N = 1 nhánh: 1,0%", "sub": { "vi": "Hiếm gặp", "en": "Rare" }, "tone": "green" },
+          { "id": "n6", "x": 0, "y": 10, "label": "N = 6 nhánh: 5,9%", "sub": { "vi": "Cứ 17 lượt có 1 lượt trễ", "en": "1 in 17 requests slow" }, "tone": "yellow" },
+          { "id": "n100", "x": 185, "y": 10, "label": "N = 100 nhánh: 63,4%", "sub": { "vi": "Đuôi p99 thành quá bán (> p50)!", "en": "Tail becomes the median!" }, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "root", "to": "n1" },
+          { "from": "root", "to": "n6" },
+          { "from": "root", "to": "n100" }
+        ]
+      }
+    },
+    "s7-fanout-live": {
+      "show": { "nodes": ["client", "coord", "s1", "s2", "s3", "s4", "s5", "s6"] },
+      "zones": ["shards"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Fan-out song song 6 Shard", "en": "6-Shard Parallel Fan-out" },
+        "lines": [
+          { "text": { "vi": "Trước 25 s: mỗi shard 49 ms → tổng 82 ms", "en": "Before 25 s: shard 49 ms → total 82 ms" }, "tone": "amber" },
+          { "text": { "vi": "Sau 25 s: riêng Shard 6 trễ → tổng 375 ms", "en": "After 25 s: Shard 6 stalls → total 375 ms" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-mitigate": {
+      "show": { "nodes": ["client", "coord", "s1", "s2", "s3", "s4", "s5", "s6"] },
+      "zones": ["shards"],
+      "state": {
+        "coord": { "loadPct": 8, "highlighted": true, "badge": { "text": { "vi": "Timeout ngắn · Hedged", "en": "Short Timeout · Hedged" }, "tone": "ok" } },
+        "s1": { "loadPct": 70 },
+        "s2": { "loadPct": 70 },
+        "s3": { "loadPct": 70 },
+        "s4": { "loadPct": 70 },
+        "s5": { "loadPct": 70 },
+        "s6": { "loadPct": 70, "highlighted": true, "badge": { "text": { "vi": "Nhánh trễ bị cắt đuôi", "en": "Straggler bounded" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiểm soát đuôi khi Fan-out", "en": "Taming Fan-out Tail Latency" },
+        "lines": [
+          { "text": { "vi": "1. Định tuyến đúng khóa (tránh gọi hết)", "en": "1. Route by shard key (avoid broadcast)" }, "tone": "good" },
+          { "text": { "vi": "2. Hedged Request + trả kết quả 5/6 nhánh", "en": "2. Hedged requests + partial results" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": ["client", "app"] },
+      "state": {
+        "app": { "loadPct": 75, "badge": { "text": { "vi": "ρ ≤ 0,80 · L = λW", "en": "ρ ≤ 0.80 · L = λW" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba quy luật định lượng cốt lõi", "en": "Three Core Queueing Laws" },
+        "lines": [
+          { "text": { "vi": "W = S / (1 − ρ) · Chừa ≥ 20% headroom", "en": "W = S / (1 − ρ) · Keep ≥ 20% headroom" }, "tone": "good" },
+          { "text": { "vi": "L = λW · Đuôi fan-out: 1 − (1 − p)^N", "en": "L = λW · Fan-out tail: 1 − (1 − p)^N" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "queueing": {
+      "sim": "S1-07/queueing",
+      "startAtSec": 20,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "app", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p50", "label": { "vi": "p50", "en": "p50" }, "format": "ms" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 80, "badAbove": 150 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 80 }
+      ],
+      "focus": { "nodes": ["app"] }
+    },
+    "fanout": {
+      "sim": "S1-07/fanout",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "s6", "key": "replicas" },
+          { "node": "coord", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p50", "label": { "vi": "p50 tổng", "en": "Total p50" }, "format": "ms" },
+        { "metric": "p99", "label": { "vi": "p99 tổng", "en": "Total p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 200 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 }
+      ],
+      "focus": { "nodes": ["coord", "s6"] }
+    }
+  }
+}

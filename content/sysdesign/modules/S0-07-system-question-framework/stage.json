@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "base": "s1-checklist",
+  "scenes": {
+    "s1-checklist": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Bảng kiểm 7 câu hỏi trước khi vẽ kiến trúc", "en": "7-Question Pre-Design Checklist" },
+        "nodes": [
+          { "id": "brief", "label": "Đề bài ban đầu", "sub": "mơ hồ, thiếu số đo", "layer": 0, "tone": "amber" },
+          { "id": "q123", "label": "1–3. Khối lượng", "sub": "Scale · Traffic · Data", "layer": 1, "tone": "blue" },
+          { "id": "q456", "label": "4–6. Chất lượng", "sub": "Availability · Consistency · Latency", "layer": 1, "tone": "purple" },
+          { "id": "q7", "label": "7. Thực tế vận hành", "sub": "Ngân sách · Quy mô đội ngũ", "layer": 1, "tone": "green" },
+          { "id": "card", "label": "Requirements Card", "sub": "RPS, TB, SLO, $/tháng", "layer": 2, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "brief", "to": "q123", "label": "đo quy mô" },
+          { "from": "brief", "to": "q456", "label": "chốt cam kết" },
+          { "from": "brief", "to": "q7", "label": "khóa trần phí" },
+          { "from": "q123", "to": "card" },
+          { "from": "q456", "to": "card" },
+          { "from": "q7", "to": "card" }
+        ]
+      }
+    },
+    "s2-scale-traffic": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Câu hỏi 1 & 2: Quy mô (Scale) và Mẫu lưu lượng (Traffic Pattern)", "en": "Q1 & Q2: Scale and Traffic Pattern" },
+        "cells": [
+          { "id": "c1", "label": "1. DAU & tăng trưởng", "value": "1.000 hay 10M người dùng?", "note": "Quyết định 1 máy đơn hay cụm phân tán", "tone": "blue" },
+          { "id": "c2", "label": "2a. Tỉ lệ Đọc : Ghi", "value": "95 : 5 hay 50 : 50?", "note": "Đọc nặng ưu tiên Cache; ghi nặng ưu tiên Queue/Shard", "tone": "green" },
+          { "id": "c3", "label": "2b. Hình dạng tải", "value": "Đều đặn hay vọt gấp 5×?", "note": "Có đỉnh nhọn cần Autoscaling và hàng đợi đệm", "tone": "amber" }
+        ]
+      }
+    },
+    "s3-data": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Câu hỏi 3: Kích thước và vòng đời dữ liệu (Data Lifecycle)", "en": "Q3: Data Size and Lifecycle" },
+        "cells": [
+          { "id": "d1", "label": "Kích thước bản ghi", "value": "500 B metadata hay 5 MB ảnh?", "note": "Tách tệp nhị phân lớn sang Object Storage", "tone": "blue" },
+          { "id": "d2", "label": "Tốc độ phình dữ liệu", "value": "1 GB/tháng hay 3 TB/tháng?", "note": "12 GB/năm nằm gọn 1 SQL; 36 TB/năm cần phân tầng", "tone": "purple" },
+          { "id": "d3", "label": "Nóng so với Lạnh", "value": "30 ngày đầu vs lưu trữ 5 năm", "note": "SSD cho dữ liệu nóng, kho lạnh giá rẻ cho lịch sử", "tone": "green" }
+        ]
+      }
+    },
+    "s4-avail-cons": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Câu hỏi 4 & 5: Độ sẵn sàng (Availability) và Tính nhất quán (Consistency)", "en": "Q4 & Q5: Availability and Consistency" },
+        "names": [
+          { "id": "n-pay", "name": "Thanh toán / Đặt ghế", "target": "o-strong" },
+          { "id": "n-feed", "name": "Bảng tin / Đếm lượt xem", "target": "o-eventual" },
+          { "id": "n-tool", "name": "Công cụ quản trị nội bộ", "target": "o-999" }
+        ],
+        "objects": [
+          { "id": "o-strong", "type": "99,99% + Strong Consistency", "value": "Không được sai số dư; cần đa vùng và giao dịch chặt", "tone": "rose" },
+          { "id": "o-eventual", "type": "99,9% + Eventual Consistency", "value": "Chấp nhận trễ vài giây để đổi lấy phản hồi nhanh", "tone": "green" },
+          { "id": "o-999", "type": "99%–99,9% + Bảo trì ngoài giờ", "value": "Đơn giản hóa vận hành, tiết kiệm chi phí hạ tầng", "tone": "blue" }
+        ]
+      }
+    },
+    "s5-lat-cost": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Câu hỏi 6 & 7: Mục tiêu độ trễ (p99) và Ngân sách vận hành", "en": "Q6 & Q7: Latency SLO and Cost Budget" },
+        "cells": [
+          { "id": "l1", "label": "6. Độ trễ p95 / p99", "value": "Chuyển hướng < 80 ms, báo cáo < 30 s", "note": "Đo ở phân vị p99 thay vì số trung bình", "tone": "amber" },
+          { "id": "l2", "label": "7a. Trần chi phí hạ tầng", "value": "≤ 1,35 USD/giờ (~1.000 USD/tháng)", "note": "Loại bỏ các phương án dư thừa vượt ngân sách", "tone": "green" },
+          { "id": "l3", "label": "7b. Năng lực vận hành", "value": "Đội 3 kỹ sư ưu tiên dịch vụ quản lý sẵn", "note": "Chi phí nhân sự trực đêm thường lớn hơn tiền máy", "tone": "blue" }
+        ]
+      }
+    },
+    "s6-mistakes": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Chuyển câu trả lời mơ hồ thành thông số kỹ thuật kiểm chứng được", "en": "Turning Vague Answers into Testable Specs" },
+        "names": [
+          { "id": "v1", "name": "Khách nói: Hệ thống rất đông", "target": "m1" },
+          { "id": "v2", "name": "Khách nói: Không bao giờ sập", "target": "m2" },
+          { "id": "v3", "name": "Khách nói: Càng nhanh càng rẻ", "target": "m3" }
+        ],
+        "objects": [
+          { "id": "m1", "type": "Chốt số RPS đỉnh", "value": "100M lượt/ngày ⇒ TB 1.160 req/s, đỉnh ~3.500 req/s", "tone": "blue" },
+          { "id": "m2", "type": "Chốt số phút ngừng/năm", "value": "99,9% (8,76 giờ/năm) khác hẳn 99,999% (5,26 phút/năm)", "tone": "amber" },
+          { "id": "m3", "type": "Chỉ ra mâu thuẫn sớm", "value": "p99 < 10 ms đa châu lục không thể đi cùng ngân sách 100 USD/tháng", "tone": "rose" }
+        ]
+      }
+    },
+    "s7-url-card": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Requirements Card hoàn chỉnh: Dịch vụ rút gọn URL", "en": "Requirements Card: URL Shortener" },
+        "cells": [
+          { "id": "u1", "label": "Lưu lượng & Tỉ lệ", "value": "Đỉnh 3.500 req/s · 97% Đọc : 3% Ghi", "note": "Rất hợp đặt bộ nhớ đệm trước Database", "tone": "blue" },
+          { "id": "u2", "label": "Dung lượng 5 năm", "value": "1,8 tỷ bản ghi × 500 B ≈ 900 GB", "note": "Vừa gọn trong 1 cụm SQL có bản sao đọc", "tone": "purple" },
+          { "id": "u3", "label": "Cam kết SLO", "value": "p99 ≤ 90 ms · Lỗi ≤ 1% · Uptime 99,9%", "note": "Cần ít nhất 2 instance App để tránh gián đoạn", "tone": "amber" },
+          { "id": "u4", "label": "Ngân sách trần", "value": "≤ 1,35 USD/giờ · Tối đa 2 thay đổi", "note": "Ưu tiên mở rộng App + tăng dung lượng Cache", "tone": "green" }
+        ]
+      }
+    }
+  }
+}

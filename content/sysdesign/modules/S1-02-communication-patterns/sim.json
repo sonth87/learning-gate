@@ -1,0 +1,377 @@
+{
+  "sims": [
+    {
+      "id": "S1-02/sync",
+      "scenario": {
+        "id": "S1-02/sync",
+        "seed": 1102,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.0 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 180 },
+        "events": [
+          { "at": 20, "type": "slowdown", "node": "notify", "addMs": 500, "durationSec": 40 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Client" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "API Server", "en": "API Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "API Server ngừng phản hồi", "en": "API Server down" } }
+              ]
+            },
+            {
+              "id": "order",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 18, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order", "en": "Order instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Order Service ngừng hoạt động", "en": "Order Service down" } }
+              ]
+            },
+            {
+              "id": "notify",
+              "kind": "service",
+              "label": { "vi": "Email Service", "en": "Email Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 25, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 42 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Email", "en": "Email instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                },
+                {
+                  "key": "poolSize",
+                  "type": "number",
+                  "label": { "vi": "Worker pool", "en": "Worker pool" },
+                  "min": 8,
+                  "max": 128,
+                  "step": 2,
+                  "default": 42
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Máy chủ SMTP đối tác phản hồi chậm +500 ms", "en": "External SMTP slows +500 ms" } }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-api",
+              "from": "client",
+              "to": "api",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "api-order",
+              "from": "api",
+              "to": "order",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1800
+            },
+            {
+              "id": "order-notify",
+              "from": "order",
+              "to": "notify",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "api": "all-sequential",
+            "order": "all-sequential"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "notify"
+      }
+    },
+    {
+      "id": "S1-02/async",
+      "scenario": {
+        "id": "S1-02/async",
+        "seed": 1102,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.0 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 180 },
+        "events": [
+          { "at": 20, "type": "slowdown", "node": "worker", "addMs": 500, "durationSec": 25 },
+          { "at": 20, "type": "slowdown", "node": "notify", "addMs": 500, "durationSec": 25 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Client" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "API Server", "en": "API Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "order",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 18, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order", "en": "Order instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Message Queue", "en": "Message Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 1.5, "cv": 0.3 },
+              "params": { "maxDepth": 100000, "dlq": true, "visibilitySec": 30 },
+              "knobs": [
+                {
+                  "key": "dlq",
+                  "type": "bool",
+                  "label": { "vi": "Dead-Letter Queue", "en": "Dead-Letter Queue" },
+                  "default": true
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Tràn giới hạn hàng đợi gây rớt thông điệp", "en": "Queue overflow drops messages" } }
+              ]
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Email Worker", "en": "Email Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 250 },
+              "latency": { "baseMs": 25, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 52 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Worker", "en": "Workers" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Worker dừng làm tăng backlog trên Queue", "en": "Worker crash grows backlog" } }
+              ]
+            },
+            {
+              "id": "notify",
+              "kind": "service",
+              "label": { "vi": "Email Service", "en": "Email Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 160 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Email", "en": "Email instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            {
+              "id": "client-api",
+              "from": "client",
+              "to": "api",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "api-order",
+              "from": "api",
+              "to": "order",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1800
+            },
+            {
+              "id": "order-queue",
+              "from": "order",
+              "to": "queue",
+              "mode": "async",
+              "netClass": "same-az"
+            },
+            {
+              "id": "queue-worker",
+              "from": "queue",
+              "to": "worker",
+              "mode": "pull",
+              "netClass": "same-az"
+            },
+            {
+              "id": "worker-notify",
+              "from": "worker",
+              "to": "notify",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "api": "all-sequential",
+            "order": "all-sequential",
+            "queue": "split",
+            "worker": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

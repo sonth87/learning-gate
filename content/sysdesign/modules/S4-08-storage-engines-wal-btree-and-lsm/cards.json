@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S4-08.c1",
+    "front": "Write-Ahead Log (WAL), Group Commit và Checkpoint phối hợp với nhau như thế nào?",
+    "back": "Mọi thay đổi được ghi nối đuôi tuần tự vào WAL và gộp nhiều giao dịch trong 1 lần fsync (Group Commit) trước khi báo COMMIT; trang dữ liệu trong RAM được xả nền sau kèm mốc Checkpoint để thu hồi WAL cũ và rút ngắn thời gian Redo khi khôi phục sau sự cố."
+  },
+  {
+    "id": "S4-08.c2",
+    "front": "Điểm khác biệt cốt lõi giữa B-Tree Engine và LSM-Tree Engine khi xử lý lệnh ghi?",
+    "back": "B-Tree cập nhật tại chỗ trên các trang 8–16 KB cố định (đọc rất nhanh nhưng ghi rải rác gây bão I/O ngẫu nhiên và tách trang). LSM-Tree chỉ ghi tuần tự vào WAL + MemTable trên RAM rồi xả thành các tệp SSTable bất biến."
+  },
+  {
+    "id": "S4-08.c3",
+    "front": "Tiến trình Compaction và thẻ Tombstone trong LSM-Tree làm nhiệm vụ gì?",
+    "back": "Vì SSTable bất biến, lệnh xoá/sửa chỉ ghi thêm bản mới hoặc thẻ đánh dấu xoá (Tombstone). Compaction chạy nền trộn các SSTable đã sắp xếp (Merge Sort), giữ bản mới nhất và dọn sạch bản cũ cùng Tombstone để trả lại dung lượng đĩa."
+  },
+  {
+    "id": "S4-08.c4",
+    "front": "Bloom Filter giúp tăng tốc đường đọc của LSM-Tree bằng cách nào?",
+    "back": "Mỗi SSTable có một mảng bit Bloom Filter trong RAM: nếu báo 'không có' thì chắc chắn 100% khoá không nằm trong tệp đó (0% âm tính giả), giúp bỏ qua ngay hàng loạt tệp SSTable mà không tốn lượt đọc đĩa nào."
+  },
+  {
+    "id": "S4-08.c5",
+    "front": "Khi nào chọn B-Tree, khi nào chọn LSM-Tree?",
+    "back": "Chọn B-Tree (PostgreSQL, MySQL InnoDB) cho nghiệp vụ giao dịch OLTP cần độ trễ đọc p99 thấp, đều và khoá dòng chặt. Chọn LSM-Tree (RocksDB, ScyllaDB, Cassandra) cho tải ghi cường độ cực lớn như lịch sử chat, sự kiện log và IoT."
+  },
+  {
+    "id": "S4-08.c6",
+    "front": "Vì sao kho phân tích dữ liệu (OLAP) lại lưu trữ theo cột (Column-oriented) thay vì theo dòng?",
+    "back": "Truy vấn phân tích thường quét hàng tỷ dòng nhưng chỉ tính toán trên vài cột trên tổng hàng chục cột. Lưu theo cột giúp chỉ đọc đúng những cột cần thiết từ đĩa, nén RLE/Dictionary cực gọn (5–10 lần) và tận dụng xử lý vector SIMD của CPU."
+  }
+]

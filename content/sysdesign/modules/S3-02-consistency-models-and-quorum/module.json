@@ -1,0 +1,30 @@
+{
+  "id": "S3-02",
+  "slug": "S3-02-consistency-models-and-quorum",
+  "level": 3,
+  "order": 3,
+  "title": "Mô hình nhất quán và Quorum: từ tuyến tính hoá đến nhất quán cuối cùng",
+  "summary": "So sánh Linearizability, các bảo đảm theo phiên (Read-Your-Writes, Monotonic Reads) và Eventual Consistency; định lượng cơ chế Quorum (N, W, R) để cân bằng độ đúng đắn, thông lượng và độ trễ.",
+  "durationMin": 17,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt Linearizability (nhất quán mạnh), bảo đảm theo phiên (Read-Your-Writes, Monotonic Reads) và Eventual Consistency trên dòng thời gian đọc/ghi" },
+    { "vi": "Chứng minh điều kiện giao nhau W + R > N của hệ thống Quorum giúp tập đọc luôn chạm ít nhất một bản sao giữ giá trị mới nhất" },
+    { "vi": "Định lượng chi phí độ trễ đuôi và sự sụt giảm trần thông lượng khi nâng từ W = R = 1 lên W = R = 2 trên cụm 3 bản sao" },
+    { "vi": "Chọn mức nhất quán phù hợp cho từng tính năng dựa trên rủi ro kinh doanh, kỳ vọng thời gian thực và khả năng bù trừ sai lệch" }
+  ],
+  "tags": ["consistency", "linearizability", "eventual-consistency", "quorum", "read-your-writes", "dynamo"],
+  "prerequisites": ["S2-08", "S3-01"],
+  "related": ["S3-03", "S3-06", "S3-08"],
+  "dtsRef": "cap",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-2-consistency-models-strong-and-eventual-consistency.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-2-consistency-models-strong-and-eventual-consistency.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân mở đầu, thay sơ đồ Mermaid bằng các cảnh memory-2d và cụm isometric 3 bản sao có Coordinator, bổ sung toán học Quorum (N, W, R), cơ chế Read Repair, Sloppy Quorum, bảo đảm theo phiên (Read-Your-Writes, Monotonic Reads) và hai kịch bản mô phỏng đối chiếu trần thông lượng W = R = 2 với W = R = 1."
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-03.c1",
+    "front": "Sự khác biệt giữa góc nhìn mã nguồn (Code-level) và góc nhìn kiến trúc (Architecture-level) là gì?",
+    "back": "Góc nhìn mã nguồn tập trung vào hàm, lớp và biến trong một tiến trình; góc nhìn kiến trúc nhìn hệ thống thành các thành phần độc lập tương tác qua mạng để xác định độ trễ từng chặng, điểm lỗi và khả năng mở rộng."
+  },
+  {
+    "id": "S0-03.c2",
+    "front": "Vai trò chính của Load Balancer trong hệ thống web là gì?",
+    "back": "Đứng trước cụm máy chủ ứng dụng để phân phối lưu lượng đồng đều (như Round-robin, Least Connections), loại bỏ máy đang lỗi qua kiểm tra sức khoẻ và hỗ trợ triển khai không gián đoạn."
+  },
+  {
+    "id": "S0-03.c3",
+    "front": "Vì sao App Server thường được thiết kế theo mô hình không trạng thái (Stateless)?",
+    "back": "Để không phụ thuộc vào dữ liệu phiên lưu cục bộ trên một máy lẻ; nhờ đó bất kỳ instance nào cũng xử lý được mọi request và việc thêm hoặc bớt máy chủ diễn ra tức thì."
+  },
+  {
+    "id": "S0-03.c4",
+    "front": "Mẫu Cache-Aside vận hành như thế nào giữa App Server, Cache và Database?",
+    "back": "Khi đọc, App kiểm tra Cache trước: nếu có (Cache Hit) thì trả về ngay; nếu không có (Cache Miss) thì đọc từ Database, lưu vào Cache kèm TTL rồi trả kết quả. Khi ghi cập nhật, App ghi Database và xoá khoá cũ trong Cache."
+  },
+  {
+    "id": "S0-03.c5",
+    "front": "Khi nào dùng giao tiếp Đồng bộ (Sync) và khi nào dùng Bất đồng bộ (Async qua Message Queue)?",
+    "back": "Dùng Sync (đường nét liền) khi người dùng cần kết quả ngay để tiếp tục thao tác; dùng Async (đường nét đứt qua Message Queue tới Worker) cho tác vụ nặng kéo dài hoặc cần đệm tải tăng đột biến."
+  },
+  {
+    "id": "S0-03.c6",
+    "front": "Ba câu hỏi cốt lõi khi phân tích nhanh một hệ thống ở mức khởi động là gì?",
+    "back": "1) Hệ thống gồm những thành phần nào? 2) Các thành phần giao tiếp đồng bộ hay bất đồng bộ? 3) Bước nào trên đường đi đang chiếm nhiều thời gian nhất?"
+  }
+]

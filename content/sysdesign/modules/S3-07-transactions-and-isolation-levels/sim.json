@@ -1,0 +1,315 @@
+{
+  "sims": [
+    {
+      "id": "S3-07/lock-pool",
+      "scenario": {
+        "id": "S3-07/lock-pool",
+        "seed": 3307,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.5
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 320
+        },
+        "events": [
+          {
+            "at": 16,
+            "type": "slowdown",
+            "node": "seat_db",
+            "addMs": 242,
+            "durationSec": 30
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người mua vé",
+                "en": "Ticket Buyers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {}
+            },
+            {
+              "id": "app1",
+              "kind": "service",
+              "label": {
+                "vi": "Booking API 1",
+                "en": "Booking API 1"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance API 1",
+                    "en": "API 1 instances"
+                  },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Instance ứng dụng dừng",
+                    "en": "App instance down"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1200
+              },
+              "latency": {
+                "baseMs": 8,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 1,
+                "poolSize": 30
+              }
+            },
+            {
+              "id": "app2",
+              "kind": "service",
+              "label": {
+                "vi": "Booking API 2",
+                "en": "Booking API 2"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance API 2",
+                    "en": "API 2 instances"
+                  },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Instance ứng dụng dừng",
+                    "en": "App instance down"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1200
+              },
+              "latency": {
+                "baseMs": 8,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 1,
+                "poolSize": 30
+              }
+            },
+            {
+              "id": "seat_db",
+              "kind": "sql",
+              "label": {
+                "vi": "Seat DB",
+                "en": "Seat DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "poolSize",
+                  "type": "number",
+                  "label": {
+                    "vi": "Connection Pool tối đa",
+                    "en": "Max Connection Pool"
+                  },
+                  "min": 5,
+                  "max": 120,
+                  "step": 5,
+                  "default": 20,
+                  "changeCost": 1
+                },
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy DB (scale-up)",
+                    "en": "DB instance size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Giữ khoá qua HTTP ngoài làm cạn Connection Pool",
+                    "en": "Holding locks across external HTTP exhausts pool"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1800
+              },
+              "latency": {
+                "baseMs": 8,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 1000,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "poolSize": 20,
+                "sizeFactor": 1,
+                "queueLimit": 800
+              }
+            },
+            {
+              "id": "pay_gw",
+              "kind": "service",
+              "label": {
+                "vi": "Payment API",
+                "en": "Payment API"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Cổng thanh toán bên thứ ba phản hồi chậm",
+                    "en": "External payment gateway slows down"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1500
+              },
+              "latency": {
+                "baseMs": 45,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 2,
+                "poolSize": 150
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-app1",
+              "from": "client",
+              "to": "app1",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "client-app2",
+              "from": "client",
+              "to": "app2",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "app1-db",
+              "from": "app1",
+              "to": "seat_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1200
+            },
+            {
+              "id": "app2-db",
+              "from": "app2",
+              "to": "seat_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1200
+            },
+            {
+              "id": "app1-pay",
+              "from": "app1",
+              "to": "pay_gw",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500,
+              "carries": "w"
+            },
+            {
+              "id": "app2-pay",
+              "from": "app2",
+              "to": "pay_gw",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500,
+              "carries": "w"
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "app1": "all-sequential",
+            "app2": "all-sequential"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "seat_db"
+      }
+    }
+  ]
+}

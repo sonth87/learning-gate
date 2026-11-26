@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S2-03.q1",
+    "type": "mc",
+    "q": "Một ứng dụng có 90% truy vấn là đọc và 10% là ghi. Máy Database đơn lẻ đang chạy CPU 92% chủ yếu do các câu lệnh SELECT, trong khi lượng ghi còn rất thấp. Bước mở rộng ngang hợp lý đầu tiên là gì?",
+    "code": "",
+    "choices": [
+      "Chia nhỏ cơ sở dữ liệu ngay lập tức thành 16 phân mảnh (Sharding)",
+      "Bổ sung Read Replicas và định tuyến các truy vấn đọc có thể chấp nhận độ trễ nhỏ sang bản sao",
+      "Nhân đôi số lượng máy chủ ở tầng ứng dụng App Tier",
+      "Tắt hoàn toàn nhật ký giao dịch để ghi trực tiếp lên RAM"
+    ],
+    "answer": 1,
+    "explain": "Khi tải đọc chiếm ưu thế và Primary vẫn dư sức nhận toàn bộ lệnh ghi, thêm Read Replica tách 90% lưu lượng đọc sang các máy bản sao với độ phức tạp vận hành thấp hơn nhiều so với Sharding."
+  },
+  {
+    "id": "S2-03.q2",
+    "type": "tf",
+    "q": "Bổ sung thêm nhiều Read Replicas giúp tăng tuyến tính thông lượng ghi tối đa của cụm cơ sở dữ liệu.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Trong mô hình Primary - Read Replica, mọi thao tác ghi vẫn phải đi vào máy Primary trước rồi sao chép sang từng bản sao. Thêm Read Replica chỉ mở rộng năng lực đọc chứ không giảm tải ghi trên Primary."
+  },
+  {
+    "id": "S2-03.q3",
+    "type": "output",
+    "q": "Hệ thống nhận 6.000 req/s với 80% là lượt đọc (chuyển hết sang Read Replicas) và mỗi Read Replica xử lý tối đa 2.000 ops/s. Cần tối thiểu bao nhiêu Read Replica để giữ mức sử dụng ρ ≤ 0,80? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "3",
+    "explain": "Lưu lượng đọc vào cụm Replica là 6.000 × 0,80 = 4.800 req/s. Để giữ ρ ≤ 0,80, mỗi máy chỉ nên gánh tối đa 2.000 × 0,80 = 1.600 req/s, vậy số bản sao tối thiểu là 4.800 / 1.600 = 3 máy."
+  },
+  {
+    "id": "S2-03.q4",
+    "type": "mc",
+    "q": "Hạn chế nào dưới đây là đặc trưng của nâng cấp dọc (Vertical Scale-up) cho cơ sở dữ liệu?",
+    "code": "",
+    "choices": [
+      "Làm hỏng toàn bộ các phép nối JOIN giữa các bảng trong cùng cơ sở dữ liệu",
+      "Buộc ứng dụng phải viết lại mọi câu truy vấn SQL sang giao thức mới",
+      "Có trần phần cứng vật lý, chi phí tăng nhanh hơn hiệu năng và vẫn tồn tại điểm lỗi đơn (SPOF)",
+      "Gây ra độ trễ sao chép bất đồng bộ giữa các CPU trong cùng một máy chủ"
+    ],
+    "answer": 2,
+    "explain": "Vertical Scale-up giữ nguyên mô hình một máy nên không tốn công sửa code hay mất JOIN, nhưng bị chặn bởi kích cỡ máy lớn nhất, chi phí phần cứng đắt đỏ ở phân khúc cao và rủi ro ngừng toàn bộ dịch vụ khi máy đơn gặp sự cố."
+  },
+  {
+    "id": "S2-03.q5",
+    "type": "mc",
+    "q": "Trong tình huống nào hệ thống thực sự cần bước lên bậc phân mảnh ngang (Sharding)?",
+    "code": "",
+    "choices": [
+      "Khi sản phẩm mới ra mắt có 5.000 người dùng và muốn chuẩn bị trước cho tương lai xa",
+      "Khi câu truy vấn chậm do thiếu chỉ mục trên cột tìm kiếm phổ biến",
+      "Khi lưu lượng ghi hoặc tổng dung lượng dữ liệu đã vượt khả năng của máy Primary lớn nhất dù đã tối ưu truy vấn và dùng Cache",
+      "Khi tầng App Server bị thiếu bộ nhớ do rò rỉ biến toàn cục"
+    ],
+    "answer": 2,
+    "explain": "Sharding mang lại khả năng chia cả tải ghi lẫn dung lượng lưu trữ ra nhiều máy độc lập, nhưng đổi lại chi phí vận hành và truy vấn xuyên mảnh rất lớn nên chỉ áp dụng khi các bậc đơn giản hơn đã chạm trần."
+  }
+]

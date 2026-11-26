@@ -1,0 +1,375 @@
+{
+  "version": 1,
+  "base": "s1-ram-vs-disk",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Cảm biến IoT", "en": "IoT Sensors" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng trăm nghìn thiết bị gửi dữ liệu đo đạc liên tục (90% là thao tác ghi nhỏ, tăng từ 10.000 lên 85.000 ops/s).",
+          "en": "Fleet of devices streaming telemetry (90% small writes, ramping 10,000 → 85,000 ops/s)."
+        },
+        "how": {
+          "vi": "Khoá ghi phân bố ngẫu nhiên khắp nhiều mã thiết bị thay vì tăng tuần tự theo một dãy đơn lẻ.",
+          "en": "Keys arrive distributed across random device IDs."
+        },
+        "why": {
+          "vi": "Tải ghi ngẫu nhiên cường độ cao là phép thử khắc nghiệt nhất bộc lộ sự khác biệt giữa B-Tree và LSM-Tree.",
+          "en": "High-rate random writes sharply expose the I/O gap between B-Tree and LSM-Tree engines."
+        }
+      }
+    },
+    "ingest_gw": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Ingest Gateway", "en": "Ingest Gateway" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm cổng tiếp nhận sự kiện (4 instance × 35.000 = 140.000 ops/s) nhân đôi dòng ghi sang hai Storage Engine để đối chiếu.",
+          "en": "Ingestion gateway mirroring the exact same write stream to both engines for direct comparison."
+        },
+        "how": {
+          "vi": "Cho phép người học tắt nhánh B-Tree (enabled = false) để quan sát riêng đường cong độ trễ của LSM-Tree khi Compaction.",
+          "en": "Lets learners toggle off B-Tree to isolate LSM-Tree behavior during background compaction."
+        },
+        "why": {
+          "vi": "Đảm bảo hai kiến trúc lưu trữ chịu cùng một áp lực tải tại từng mili-giây.",
+          "en": "Subjects both storage engines to identical arrival traffic."
+        }
+      }
+    },
+    "btree_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "B-Tree Engine", "en": "B-Tree Engine" },
+      "inspector": {
+        "what": {
+          "vi": "Engine lưu trữ cập nhật trang tại chỗ theo cây B+Tree (ví dụ PostgreSQL, MySQL InnoDB — μ = 38.000 ops/s).",
+          "en": "In-place page-oriented B+Tree storage engine (e.g. PostgreSQL, InnoDB — μ = 38,000 ops/s)."
+        },
+        "how": {
+          "vi": "Đọc cực nhanh vì mỗi khoá nằm ở đúng một vị trí trang, nhưng khi ghi rải rác phải nạp và xả hàng loạt trang 8–16 KB ngẫu nhiên xuống đĩa.",
+          "en": "Fast point/range reads, but random writes dirty scattered 8–16 KB pages requiring random disk I/O."
+        },
+        "why": {
+          "vi": "Chạm trần IOPS ghi ngẫu nhiên ở khoảng ~38.000 ops/s (giây ~18) dù dung lượng đĩa vẫn còn trống.",
+          "en": "Hits random-write IOPS saturation around ~38,000 ops/s at t ≈ 18s."
+        }
+      }
+    },
+    "lsm_db": {
+      "shape": "db",
+      "tone": "green",
+      "label": { "vi": "LSM-Tree Engine", "en": "LSM-Tree Engine" },
+      "inspector": {
+        "what": {
+          "vi": "Engine lưu trữ Log-Structured Merge-Tree không ghi đè tại chỗ (ví dụ RocksDB, Cassandra, ScyllaDB — μ = 120.000 ops/s).",
+          "en": "Append-only Log-Structured Merge-Tree engine (e.g. RocksDB, Cassandra — μ = 120,000 ops/s)."
+        },
+        "how": {
+          "vi": "Mọi lệnh ghi chỉ nối đuôi tuần tự vào WAL và chèn vào MemTable trên RAM, sau đó xả nguyên mảng đã sắp thành SSTable bất biến.",
+          "en": "Appends sequentially to WAL and inserts into in-memory MemTable, flushing sorted immutable SSTables."
+        },
+        "why": {
+          "vi": "Hấp thụ mượt 85.000 ops/s (ρ ≈ 0,71), đổi lại có nhích nhẹ độ trễ ở giây 50..56 khi tiến trình Compaction gộp tệp chạy nền.",
+          "en": "Sustains 85,000 ops/s (ρ ≈ 0.71), trading periodic background compaction I/O spikes at t = 50..56s."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-gw": {
+      "inspector": {
+        "what": { "vi": "Luồng dữ liệu cảm biến (10.000 → 85.000 ops/s).", "en": "Sensor ingestion stream (10,000 → 85,000 ops/s)." },
+        "how": { "vi": "90% thao tác ghi bản ghi mới, 10% truy vấn trạng thái gần nhất.", "en": "90% writes and 10% point reads." },
+        "why": { "vi": "Đại diện cho các bài toán nhật ký, tin nhắn chat và chuỗi thời gian.", "en": "Models chat messages, audit logs, and time-series workloads." }
+      }
+    },
+    "gw-btree": {
+      "inspector": {
+        "what": { "vi": "Nhánh ghi vào B-Tree Engine.", "en": "Write stream into B-Tree Engine." },
+        "how": { "vi": "Ghi WAL tuần tự nhưng bước Checkpoint bên dưới phải xả trang bẩn ngẫu nhiên.", "en": "Appends WAL sequentially, while background checkpointer flushes random dirty pages." },
+        "why": { "vi": "Lộ rõ giới hạn khuếch đại trang đĩa khi khoá ghi phân tán ngẫu nhiên.", "en": "Demonstrates random page-flush bottleneck." }
+      }
+    },
+    "gw-lsm": {
+      "inspector": {
+        "what": { "vi": "Nhánh ghi vào LSM-Tree Engine.", "en": "Write stream into LSM-Tree Engine." },
+        "how": { "vi": "Biến mọi thao tác ghi ngẫu nhiên thành ghi tuần tự 100% trên ổ đĩa.", "en": "Converts random logical writes into purely sequential disk I/O." },
+        "why": { "vi": "Tận dụng băng thông tuần tự vượt trội của cả SSD lẫn HDD.", "en": "Exploits sequential disk bandwidth." }
+      }
+    }
+  },
+  "zones": {
+    "engines": {
+      "nodeIds": ["btree_db", "lsm_db"],
+      "label": { "vi": "HAI KIẾN TRÚC STORAGE ENGINE", "en": "TWO STORAGE ENGINE ARCHITECTURES" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-ram-vs-disk": {
+      "show": { "nodes": ["client", "ingest_gw", "btree_db"] },
+      "state": {
+        "ingest_gw": { "loadPct": 15 },
+        "btree_db": {
+          "loadPct": 42,
+          "highlighted": true,
+          "badge": { "text": { "vi": "RAM nhanh · Đĩa bền", "en": "Fast RAM · Durable Disk" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Nghịch lý Tốc độ và Độ bền", "en": "Speed vs Durability Dilemma" },
+        "lines": [
+          { "text": { "vi": "Chỉ sửa trên RAM → mất sạch dữ liệu khi cúp điện", "en": "RAM-only write → data lost on power cut" }, "tone": "bad" },
+          { "text": { "vi": "Xả trang 8 KB ngẫu nhiên mỗi lần ghi → quá chậm", "en": "Random 8 KB page fsync per write → too slow" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-wal-group-commit": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+          "title": {
+          "vi": "Write-Ahead Log (WAL): ghi nối đuôi tuần tự + Group Commit + Checkpoint",
+          "en": "Write-Ahead Log (WAL): Sequential Append + Group Commit + Checkpoint"
+        },
+        "subtitle": {
+          "vi": "Luôn fsync nhật ký xuống đĩa trước khi báo COMMIT · Trang dữ liệu (Dirty Page) xả nền sau",
+          "en": "Flush append-only log before COMMIT · Flush dirty data pages lazily in the background"
+        },
+        "cells": [
+          "LSN 101: TX1 k1=9",
+          "LSN 102: TX2 k8=4",
+          "LSN 103: fsync GỘP",
+          "LSN 104: CHECKPOINT",
+          "LSN 105: TX3 k5=7"
+        ],
+        "activeIndices": [2, 3, 4],
+        "pointers": [
+          { "index": 2, "label": "Group Commit", "tone": "green" },
+          { "index": 3, "label": "mốc phát lại khi crash", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Khôi phục sau mất điện", "en": "Crash Recovery" },
+          "value": {
+            "vi": "Chỉ cần đọc từ mốc CHECKPOINT (LSN 104) trở đi để phát lại (Redo) các trang chưa kịp xả",
+            "en": "Replays (Redo) only WAL records after the latest CHECKPOINT (LSN 104) for fast recovery"
+          },
+          "tone": "green"
+        }
+      }
+    },
+    "s3-btree-inplace": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "B-Tree Engine cập nhật tại chỗ: tối ưu cho đọc nhưng nặng I/O khi ghi rải rác",
+          "en": "In-Place B-Tree Engine: Fast Reads, Heavy Random Page Flush on Scattered Writes"
+        },
+        "nodes": [
+          { "id": "bp", "x": 0, "y": -82, "label": "Buffer Pool RAM (Dirty Pages)", "sub": { "vi": "Sửa 50 byte vẫn đánh dấu bẩn cả trang 8 KB", "en": "50-byte edit dirties an entire 8 KB page" }, "tone": "orange" },
+          { "id": "p1", "x": -190, "y": 48, "label": "Trang đĩa #1042", "sub": { "vi": "Ghi đè tại chỗ (Double-write / Full-page)", "en": "In-place overwrite on SSD" }, "tone": "blue" },
+          { "id": "p2", "x": 0, "y": 48, "label": "Trang đĩa #88310 (ĐẦY!)", "sub": { "vi": "Tách đôi trang (Page Split) tốn thêm I/O", "en": "Page Split allocates & rewrites 2 pages" }, "tone": "rose" },
+          { "id": "p3", "x": 190, "y": 48, "label": "Trang đĩa #509204", "sub": { "vi": "Nhảy đầu đọc rải rác khắp không gian khoá", "en": "Scattered random writes across keyspace" }, "tone": "blue" }
+        ],
+        "edges": [
+          { "from": "bp", "to": "p1", "label": "flush" },
+          { "from": "bp", "to": "p2", "label": "split!", "style": "danger" },
+          { "from": "bp", "to": "p3", "label": "flush" }
+        ]
+      }
+    },
+    "s4-lsm-memtable-sstable": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "LSM-Tree Engine: biến mọi thao tác ghi thành ghi tuần tự 100% trên đĩa",
+          "en": "LSM-Tree Engine: Converting Random Writes into Purely Sequential SSTable Runs"
+        },
+        "nodes": [
+          { "id": "mem", "x": -160, "y": -84, "label": "MemTable (RAM SkipList)", "sub": { "vi": "Chèn có thứ tự trong RAM + nối đuôi WAL", "en": "Sorted in-memory tree + sequential WAL" }, "tone": "green" },
+          { "id": "l0", "x": 160, "y": -84, "label": "SSTable L0 (Bất biến)", "sub": { "vi": "Đầy ~64 MB thì xả 1 mạch xuống đĩa", "en": "Sequential flush when MemTable fills" }, "tone": "blue" },
+          { "id": "comp", "x": 0, "y": 4, "label": "Compaction chạy nền (Merge Sort)", "sub": { "vi": "Gộp nhiều tệp, giữ bản mới nhất & dọn thẻ xoá Tombstone", "en": "Merges sorted runs & purges Tombstones" }, "tone": "purple" },
+          { "id": "l1", "x": 0, "y": 86, "label": "SSTable L1 / L2 (Khoảng khoá tách rời)", "sub": { "vi": "Mỗi tầng chỉ có tối đa 1 tệp chứa khoá cần tìm", "en": "Non-overlapping key ranges per level" }, "tone": "yellow" }
+        ],
+        "edges": [
+          { "from": "mem", "to": "l0", "label": "xả tuần tự" },
+          { "from": "l0", "to": "comp", "label": "gộp nền" },
+          { "from": "comp", "to": "l1", "label": "loại bản cũ" }
+        ]
+      }
+    },
+    "s5-lsm-read-bloom": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Đường đọc trên LSM-Tree: dùng Bloom Filter để né các tệp SSTable không chứa khoá",
+          "en": "LSM-Tree Read Path: Per-SSTable Bloom Filters Skip Unnecessary Disk Reads"
+        },
+        "subtitle": {
+          "vi": "Tra từ mới nhất đến cũ nhất · Bloom Filter trả lời 'Chắc chắn KHÔNG có' chỉ với vài bit RAM",
+          "en": "Search newest to oldest · Bloom Filter proves 'Definitely NOT present' in RAM"
+        },
+        "cells": [
+          "1. MemTable (Miss)",
+          "2. L0 Bloom: KHÔNG CÓ",
+          "3. L1 Bloom: CÓ THỂ!",
+          "4. Sparse Index → Đọc!"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 1, "label": "bỏ qua đọc đĩa!", "tone": "green" },
+          { "index": 3, "label": "chỉ chạm đúng 1 tệp", "tone": "blue" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Độ chính xác Bloom Filter", "en": "Bloom Filter Guarantee" },
+          "value": {
+            "vi": "Không bao giờ báo âm tính giả (0% False Negative); ~1% dương tính giả chỉ tốn thêm 1 lần kiểm tra đĩa",
+            "en": "Zero false negatives; ~1% false positives only cost one harmless extra disk check"
+          },
+          "tone": "purple"
+        }
+      }
+    },
+    "s6-write-heavy-live": {
+      "show": { "nodes": "*" },
+      "zones": ["engines"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đối chiếu 10.000 → 85.000 ghi/giây", "en": "10,000 → 85,000 Writes/s Benchmark" },
+        "lines": [
+          { "text": { "vi": "t ≈ 18 s (~40k ops/s): B-Tree chạm trần IOPS", "en": "t ≈ 18s (~40k ops/s): B-Tree saturates" }, "tone": "bad" },
+          { "text": { "vi": "LSM-Tree gánh trọn 85k ops/s (nhích nhẹ lúc Compaction)", "en": "LSM-Tree sustains 85k ops/s (brief compaction bump)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-amplification-triad": {
+      "show": { "nodes": "*" },
+      "zones": ["engines"],
+      "state": {
+        "ingest_gw": { "loadPct": 35 },
+        "btree_db": {
+          "loadPct": 50,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Mạnh về Đọc & OLTP", "en": "Read & OLTP winner" }, "tone": "ok" }
+        },
+        "lsm_db": {
+          "loadPct": 40,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Mạnh về Ghi & Nén", "en": "Write & Compression winner" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tam giác đánh đổi Đọc – Ghi – Dung lượng", "en": "Read / Write / Space Trade-Off" },
+        "lines": [
+          { "text": { "vi": "B-Tree: đọc ít chạm tệp hơn · ghi rải rác nặng hơn", "en": "B-Tree: lower read amp · higher random write I/O" }, "tone": "plain" },
+          { "text": { "vi": "LSM-Tree: ghi cực nhanh & nén tốt · tốn CPU Compaction", "en": "LSM-Tree: fast sequential writes · compaction overhead" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-row-vs-column": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Lưu trữ theo Dòng (OLTP) so với Lưu trữ theo Cột (OLAP / Data Warehouse)",
+          "en": "Row-Oriented (OLTP) vs Column-Oriented (OLAP Analytics) Physical Layout"
+        },
+        "subtitle": {
+          "vi": "Truy vấn phân tích: SELECT AVG(amount) FROM events (bảng rộng 60 cột, 1 tỷ dòng)",
+          "en": "Analytical query: SELECT AVG(amount) FROM events (60-column wide table, 1B rows)"
+        },
+        "cells": [
+          "Row: [id1,u9,50,HN]",
+          "Row: [id2,u4,80,SG]",
+          "Col amt: [50,80,120,80]",
+          "Col city: [HN×3, SG×5]"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 0, "label": "OLTP: lấy trọn 1 đơn", "tone": "orange" },
+          { "index": 2, "label": "OLAP: đọc 1/60 lượng byte!", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nén cực tốt theo cột", "en": "Columnar Compression" },
+          "value": {
+            "vi": "Cùng một kiểu dữ liệu nằm sát nhau giúp nén Run-Length / Dictionary giảm 5–10 lần dung lượng và tính SIMD",
+            "en": "Homogeneous contiguous values enable 5–10x RLE/Dictionary compression and vectorized SIMD scans"
+          },
+          "tone": "blue"
+        }
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["engines"],
+      "state": {
+        "ingest_gw": { "loadPct": 35 },
+        "btree_db": {
+          "loadPct": 45,
+          "badge": { "text": { "vi": "PostgreSQL / InnoDB", "en": "PostgreSQL / InnoDB" }, "tone": "ok" }
+        },
+        "lsm_db": {
+          "loadPct": 38,
+          "badge": { "text": { "vi": "RocksDB / Cassandra", "en": "RocksDB / Cassandra" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chọn đúng Storage Engine cho bài toán", "en": "Storage Engine Selection Guide" },
+        "lines": [
+          { "text": { "vi": "Giao dịch đơn hàng, đọc nhiều → B-Tree + WAL", "en": "Transactional OLTP, read-heavy → B-Tree + WAL" }, "tone": "plain" },
+          { "text": { "vi": "Luồng log, IoT, lịch sử tin nhắn → LSM-Tree", "en": "High-rate logs, IoT, chat history → LSM-Tree" }, "tone": "good" },
+          { "text": { "vi": "Báo cáo tổng hợp hàng tỷ dòng → Columnar Store", "en": "Billion-row aggregations → Columnar Store" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "write-heavy": {
+      "sim": "S4-08/write-heavy",
+      "startAtSec": 6,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "btree_db", "key": "enabled" },
+          { "node": "btree_db", "key": "sizeFactor" },
+          { "node": "lsm_db", "key": "shards" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Luồng ghi IoT", "en": "IoT Stream" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 60, "badAbove": 200 } },
+        { "metric": "errorRate", "label": { "vi": "Tỉ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["btree_db", "lsm_db"] }
+    }
+  }
+}

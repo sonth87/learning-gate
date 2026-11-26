@@ -1,0 +1,88 @@
+[
+  {
+    "id": "S2-06.A1",
+    "kind": "predict",
+    "title": { "vi": "Chuyện gì xảy ra khi máy giữ phiên gặp sự cố?" },
+    "prompt": { "vi": "Hệ thống đang dùng Sticky Session (ip-hash) và chỉ định tuyến vào máy App A lưu phiên cục bộ. Tại giây 22, máy App A dừng đột ngột. Điều gì sẽ xảy ra với người dùng và luồng lưu lượng?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Load Balancer tự sao chép RAM của App A sang máy khác nên phiên đăng nhập vẫn nguyên vẹn" },
+        { "vi": "Phiên cục bộ trên App A mất hoàn toàn và toàn bộ request bị lỗi do chưa có máy phi trạng thái thay thế" },
+        { "vi": "Object Storage tự động trả lời thay cho tầng ứng dụng mà không cần App Server" },
+        { "vi": "Độ trễ giảm xuống bằng 0 ms vì không phải kiểm tra quyền đăng nhập nữa" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 32, "speed": 2 },
+    "hints": [
+      { "vi": "Dữ liệu giữ trong bộ nhớ RAM riêng của một máy chủ có tồn tại sau khi tiến trình máy đó sập không?" },
+      { "vi": "Quan sát xem App B và App C đã được bật để chia tải hay chưa." }
+    ],
+    "explain": { "vi": "Khi {app1.name} dừng hoạt động ở giây 22, mọi phiên đăng nhập lưu trong RAM riêng của nó biến mất. Vì chưa có cụm máy phi trạng thái dự phòng, tỷ lệ lỗi ở giây 25 tăng lên {m.errorRate@25:0%}." },
+    "sim": { "simId": "S2-06/session", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S2-06/session", "seekSec": 18, "focus": { "nodes": ["lb", "app1", "session_store"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-06.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Chuyển sang cụm ứng dụng phi trạng thái chịu lỗi" },
+    "prompt": { "vi": "Hệ thống nhận 650 req/s và máy App A dừng hoạt động ở giây 22. Với tối đa 5 thay đổi và chi phí không quá 1,85 USD/giờ, hãy mở rộng cụm ứng dụng phi trạng thái dùng chung Session Cache để giữ p99 ≤ 120 ms, tỷ lệ lỗi ≤ 2% và không còn kho lưu trữ đơn lẻ thiếu bản sao." },
+    "difficulty": 2,
+    "simId": "S2-06/session",
+    "budget": { "maxChanges": 5, "maxCostPerHour": 1.85 },
+    "allowed": [
+      { "type": "knob", "node": "app2", "key": "enabled", "values": [true, false] },
+      { "type": "knob", "node": "app3", "key": "enabled", "values": [true, false] },
+      { "type": "knob", "node": "lb", "key": "algorithm", "values": ["ip-hash", "round-robin", "least-conn"] },
+      { "type": "knob", "node": "lb", "key": "healthCheckSec", "min": 1, "max": 30 },
+      { "type": "knob", "node": "session_store", "key": "replicas", "min": 1, "max": 3 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 3 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 65 } }
+    ],
+    "soft": [
+      { "id": "session-ha", "kind": "structural", "rule": "stateful-has-replica", "node": "session_store" },
+      { "id": "no-spof", "kind": "structural", "rule": "no-spof" }
+    ],
+    "observe": { "runSec": 65 },
+    "par": { "changes": 5, "costPerHour": 1.73 },
+    "solution": [
+      { "type": "knob", "node": "app2", "key": "enabled", "value": true },
+      { "type": "knob", "node": "app3", "key": "enabled", "value": true },
+      { "type": "knob", "node": "lb", "key": "algorithm", "value": "round-robin" },
+      { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 },
+      { "type": "knob", "node": "session_store", "key": "replicas", "value": 2 }
+    ],
+    "traps": [
+      {
+        "id": "only-one-backup-app",
+        "label": { "vi": "Chỉ bật thêm App B và rút ngắn Health Check (thiếu App C)" },
+        "changes": [
+          { "type": "knob", "node": "app2", "key": "enabled", "value": true },
+          { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 }
+        ],
+        "why": { "vi": "Mỗi máy App chỉ chịu được 450 req/s. Khi App A dừng ở giây 22, một mình App B phải gánh toàn bộ 650 req/s (ρ = 1,44) nên vẫn quá tải nặng và đánh rớt hơn 30% request." }
+      },
+      {
+        "id": "keep-slow-healthcheck",
+        "label": { "vi": "Bật cả App B, App C nhưng để nguyên chu kỳ Health Check 18 giây" },
+        "changes": [
+          { "type": "knob", "node": "app2", "key": "enabled", "value": true },
+          { "type": "knob", "node": "app3", "key": "enabled", "value": true }
+        ],
+        "why": { "vi": "Dù App B và App C đủ sức gánh tải và đọc chung Session Cache, chu kỳ Health Check 18 giây làm Load Balancer tiếp tục gửi 1/3 lưu lượng vào App A đã sập suốt 18 giây." }
+      }
+    ],
+    "hints": [
+      { "vi": "Khi App A (450 req/s) sập, các máy App còn sống phải có tổng năng lực lớn hơn 650 req/s." },
+      { "vi": "Bỏ ghim Sticky Session (đổi sang round-robin hoặc least-conn) và giảm chu kỳ Health Check xuống 1–2 giây." },
+      { "vi": "Đừng quên tăng số bản sao (replicas) cho Session Cache để chính kho phiên không thành điểm lỗi đơn." }
+    ],
+    "explain": { "vi": "Bật cả {app2.name} và {app3.name} giúp hai máy còn sống đạt tổng năng lực 900 req/s sau khi {app1.name} sập ở giây 22 (mỗi máy chạy êm ở ρ = {app2.rho'@30:2}, p99 chỉ khoảng {m.p99'@30:0} ms). Rút Health Check về 1 giây giúp chuyển hướng tức thì, còn nhân bản {session_store.name} lên 2 node loại bỏ điểm lỗi đơn ở tầng lưu phiên." },
+    "replay": { "simId": "S2-06/session", "seekSec": 18, "focus": { "nodes": ["app1", "app2", "app3", "session_store"] }, "autoplay": true }
+  }
+]

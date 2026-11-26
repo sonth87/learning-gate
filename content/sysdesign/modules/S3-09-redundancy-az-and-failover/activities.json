@@ -1,0 +1,100 @@
+[
+  {
+    "id": "S3-09.A1",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra toàn bộ điểm lỗi đơn (SPOF)" },
+    "prompt": { "vi": "Nhóm kỹ sư vừa đặt 2 máy chủ ứng dụng (App 1 ở AZ-A và App 2 ở AZ-B) nhưng vẫn giữ nguyên phần còn lại của hệ thống. Hãy nhấn chọn TẤT CẢ các thành phần đang là điểm lỗi đơn (SPOF) có thể làm sập 100% dịch vụ nếu hỏng." },
+    "difficulty": 1,
+    "mode": "spof",
+    "atSec": 10,
+    "maxPicks": 2,
+    "scoring": "exact",
+    "expected": ["db_a", "lb_a"],
+    "hints": [
+      { "vi": "Một thành phần là SPOF nếu mọi đường đi từ Người dùng tới tầng dữ liệu đều bắt buộc đi qua duy nhất một bản của thành phần đó." },
+      { "vi": "App 1 và App 2 chạy song song nên hỏng 1 máy vẫn còn máy kia; hãy kiểm tra tầng đứng trước và tầng đứng sau chúng." }
+    ],
+    "explain": { "vi": "{lb_a.name} và {db_a.name} đều chỉ có 1 bản duy nhất trên đường đi chính. Dù tầng App đã có 2 nhánh song song, nếu {lb_a.name} ngừng phản hồi hoặc {db_a.name} hỏng ổ cứng, lưu lượng thành công của toàn hệ thống lập tức tụt về 0." },
+    "sim": { "simId": "S3-09/spof-audit", "seekSec": 10, "autoplay": false }
+  },
+  {
+    "id": "S3-09.A2",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng thời gian ngừng hoạt động hằng năm của chuỗi nối tiếp" },
+    "prompt": { "vi": "Một dịch vụ thanh toán đi qua 3 tầng mắc nối tiếp không có dự phòng: Load Balancer (độ sẵn sàng 99,95%), App Server (99,90%) và Database (99,85%). Với 1 năm = 8.760 giờ, hãy ước lượng tổng số giờ ngừng hoạt động kỳ vọng trong năm của toàn hệ thống." },
+    "difficulty": 2,
+    "quantity": "Thời gian ngừng hoạt động mỗi năm",
+    "unit": "giờ/năm",
+    "truth": { "type": "formula", "expr": "8760*(1 - 0.9995*0.999*0.9985)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Độ sẵn sàng cả chuỗi: A = 0,9995 × 0,9990 × 0,9985 ≈ 0,997002 (xấp xỉ cộng tỷ lệ lỗi: 0,05% + 0,10% + 0,15% = 0,30% không sẵn sàng)." },
+      { "vi": "Số giờ gián đoạn trong năm: 8.760 × (1 − 0,997002) ≈ 26,26 giờ/năm (hơn một ngày trọn vẹn)." }
+    ],
+    "hints": [
+      { "vi": "Với chuỗi nối tiếp, độ sẵn sàng tổng bằng tích độ sẵn sàng của từng chặng: A = A1 × A2 × A3." },
+      { "vi": "Lấy (1 − A) nhân với 8.760 giờ để đổi sang số giờ gián đoạn trong năm." }
+    ],
+    "explain": { "vi": "Đáp án chuẩn ≈ {truth:1} giờ/năm (độ sẵn sàng chuỗi còn khoảng 99,70%). Chỉ cần ghép nối tiếp các thành phần ba số 9 (three nines), tổng độ sẵn sàng đã tụt xuống mức hai số 9 (two nines)." },
+    "replay": { "simId": "S3-09/spof-audit", "seekSec": 10, "focus": { "nodes": ["lb_a", "app_a", "db_a"] } }
+  },
+  {
+    "id": "S3-09.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: Failover treo 14 phút và bản phát hành lỗi toàn cục" },
+    "prompt": { "vi": "Hệ thống đặt vé đã triển khai trên 2 vùng khả dụng (AZ-A và AZ-B), nhưng gặp hai sự cố nghiêm trọng trong quý vừa qua: (1) Khi AZ-A mất điện lúc 02:10, theo thiết kế RTO phải dưới 15 giây, song thực tế người dùng bị lỗi suốt 14 phút vì bản ghi DNS đặt TTL = 600 giây và script thăng cấp DB Standby ở AZ-B thất bại do tường lửa chặn cổng quản trị từ 3 tháng trước mà chưa từng chạy thử; ngoài ra 4 giây giao dịch đã xác nhận bị mất do sao chép bất đồng bộ; (2) Hai tuần sau, bản cập nhật v2.4 chứa lỗi truy cập con trỏ rỗng được CI/CD đẩy đồng loạt lên 100% instance ở cả AZ-A lẫn AZ-B, làm toàn bộ hệ thống trả mã lỗi 500. Hãy chọn chẩn đoán và hướng khắc phục đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S3-09/az-failover",
+      "seekSec": 20,
+      "focus": { "nodes": ["dns", "db_proxy", "db_b"] }
+    },
+    "questions": [
+      {
+        "id": "why-multi-az-failed",
+        "type": "single",
+        "prompt": { "vi": "Vì sao kiến trúc dự phòng đa vùng khả dụng (Multi-AZ) không ngăn được sự cố ngừng dịch vụ toàn cục khi phát hành bản v2.4?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do hai vùng khả dụng có độ trễ mạng nội vùng quá cao làm nghẽn băng thông" } },
+          { "id": "b", "text": { "vi": "Multi-AZ chỉ cô lập lỗi hạ tầng vật lý (điện, mạng, phần cứng), còn bản phát hành đẩy đồng loạt tạo ra lỗi phần mềm tương quan trên mọi vùng cùng lúc" } },
+          { "id": "c", "text": { "vi": "Do số lượng vùng khả dụng mới dừng ở 2 thay vì 3 vùng" } },
+          { "id": "d", "text": { "vi": "Do Load Balancer dùng thuật toán Round-robin thay vì Least-connections" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-rto-rpo",
+        "type": "multi",
+        "prompt": { "vi": "Những biện pháp nào khắc phục trực tiếp nguyên nhân kéo dài RTO 14 phút và mất 4 giây giao dịch (RPO > 0) trong sự cố mất điện AZ-A?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Hạ thấp DNS TTL / dùng Anycast VIP kết hợp diễn tập chuyển đổi dự phòng tự động định kỳ (GameDay) để phát hiện sớm lỗi tường lửa, quyền truy cập" } },
+          { "id": "b", "text": { "vi": "Chuyển sao chép Database liên vùng AZ từ bất đồng bộ sang bán đồng bộ (Semi-synchronous) để ít nhất 1 Standby xác nhận WAL trước khi trả COMMIT" } },
+          { "id": "c", "text": { "vi": "Gom toàn bộ máy chủ từ AZ-B về chung phòng máy AZ-A để bỏ độ trễ mạng liên vùng" } },
+          { "id": "d", "text": { "vi": "Tăng DNS TTL lên 3.600 giây để giảm tải truy vấn cho máy chủ tên miền" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-release",
+        "type": "single",
+        "prompt": { "vi": "Quy trình triển khai nào giúp thu hẹp phạm vi ảnh hưởng (Blast Radius) của bản lỗi v2.4 xuống một tỷ lệ nhỏ lưu lượng và tự khôi phục nhanh?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Nâng gấp đôi cấu hình CPU và RAM của mọi máy chủ ứng dụng trước giờ phát hành" } },
+          { "id": "b", "text": { "vi": "Triển khai Canary (định tuyến 1–5% lưu lượng vào phiên bản mới, giám sát tỷ lệ lỗi 5xx/p99 và tự động Rollback khi vượt ngưỡng)" } },
+          { "id": "c", "text": { "vi": "Tắt toàn bộ kiểm tra Health Check trong suốt quá trình cập nhật phần mềm" } },
+          { "id": "d", "text": { "vi": "Bật bộ nhớ đệm Read-through phía trước cơ sở dữ liệu" } }
+        ],
+        "correct": ["b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Cơ chế Failover chưa từng được kiểm thử trên môi trường thật coi như chưa hoạt động; DNS TTL quyết định bao lâu client còn giữ IP cũ." },
+      { "vi": "Để chặn lỗi phần mềm hoặc cấu hình lan ra toàn hệ thống, phải tách đợt phát hành theo từng bước nhỏ (Canary / Staged Rollout theo từng AZ)." }
+    ],
+    "explain": { "vi": "Kiến trúc chịu lỗi hoàn chỉnh đòi hỏi cả hai chiều: (1) cô lập lỗi vật lý bằng Multi-AZ kèm Semi-sync replication (RPO = 0), TTL ngắn và diễn tập Failover định kỳ để giữ RTO ở mức vài giây; (2) cô lập lỗi phần mềm/cấu hình bằng triển khai Canary theo giai đoạn và tự động Rollback khi vi phạm SLO." }
+  }
+]

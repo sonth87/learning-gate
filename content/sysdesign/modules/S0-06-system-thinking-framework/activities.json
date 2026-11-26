@@ -1,0 +1,40 @@
+[
+  {
+    "id": "S0-06.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp luồng cập nhật hồ sơ người dùng (Update Profile)" },
+    "prompt": { "vi": "Sắp xếp các bước xử lý của thao tác POST /users/123 theo đúng trình tự từ lúc nhận request tới khi hoàn tất tác vụ nền." },
+    "difficulty": 1,
+    "items": [
+      { "id": "input", "text": { "vi": "Client gửi POST /users/123 qua Load Balancer tới một API Server" } },
+      { "id": "validate", "text": { "vi": "API Server xác thực quyền truy cập và kiểm tra định dạng dữ liệu đầu vào" } },
+      { "id": "persist", "text": { "vi": "Database thực thi câu lệnh UPDATE và xác nhận giao dịch bền vững" } },
+      { "id": "invalidate", "text": { "vi": "API Server xoá khoá user:123 trên Redis Cache để tránh bản đọc cũ" } },
+      { "id": "enqueue", "text": { "vi": "API Server đẩy sự kiện user.updated vào Message Queue và trả 200 OK cho Client" } },
+      { "id": "worker", "text": { "vi": "Background Worker kéo sự kiện từ Queue để gửi email và cập nhật chỉ mục tìm kiếm" } }
+    ],
+    "shuffleSeed": 11,
+    "hints": [
+      { "vi": "Áp dụng đúng thứ tự Input → Processing (kiểm tra hợp lệ) → Storage (ghi bền vững) trước khi dọn Cache." },
+      { "vi": "Tác vụ gửi email của Background Worker luôn chạy sau khi sự kiện đã được đưa vào Message Queue." }
+    ],
+    "explain": { "vi": "Dữ liệu phải được kiểm tra ở API rồi ghi thành công xuống Database (Source of Truth) trước khi xoá bản cũ trên Cache và phát sự kiện vào Queue. Nhờ đẩy bước gửi email sang Worker xử lý sau cùng, người dùng nhận ngay phản hồi 200 OK chỉ sau khoảng 137 ms." }
+  },
+  {
+    "id": "S0-06.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra thành phần gây nghẽn trên toàn hệ thống" },
+    "prompt": { "vi": "Ở giây thứ 40 (lưu lượng gần 2.000 req/s, gồm 70% đọc và 30% cập nhật hồ sơ), thời gian phản hồi p99 tăng vọt dù tầng API và nhánh Queue/Worker vẫn hoạt động ổn định. Hãy chọn đúng thành phần đang là điểm nghẽn." },
+    "difficulty": 2,
+    "mode": "bottleneck",
+    "atSec": 40,
+    "maxPicks": 1,
+    "expected": ["db"],
+    "hints": [
+      { "vi": "Tính tỉ lệ request thực sự đi xuống từng thành phần lưu trữ: 25% lượt đọc bị Cache Miss cộng với toàn bộ 30% lượt ghi." },
+      { "vi": "Đối chiếu tải đến với năng lực xử lý tối đa μ của API (2.800 req/s), Worker (1.050 tác vụ/s) và Database (800 req/s)." }
+    ],
+    "explain": { "vi": "{db.name} đang có mức sử dụng ρ = {db.rho@40:2} (nhận {db.lambda@40:0} req/s so với năng lực 800 req/s) và hàng đợi dồn {db.queue@40:0} request, trong khi API mới ở ρ = {api.rho@40:2} và Worker ở ρ = {worker.rho@40:2}. Mọi lượt cập nhật và đọc Cache Miss đều bị giữ chân tại Database." },
+    "sim": { "simId": "S0-06/profile-flow", "seekSec": 40, "autoplay": false }
+  }
+]

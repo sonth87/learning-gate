@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "base": "s1-intro",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm người dùng gửi lưu lượng request đầu vào (λ) tới dịch vụ qua Internet.",
+          "en": "Concurrent users generating incoming request rate (λ) over the Internet."
+        },
+        "how": {
+          "vi": "Trong kịch bản của bài, λ bắt đầu từ 50 req/s ở t = 0 s và tăng đều 5 req/s mỗi giây lên tới 400 req/s ở t = 70 s; mỗi request đặt ngưỡng chờ tối đa 1.500 ms.",
+          "en": "Ramps λ linearly from 50 to 400 req/s over 70s (+5 req/s per second) with a 1,500 ms client timeout."
+        },
+        "why": {
+          "vi": "Giúp quan sát trọn vẹn quá trình một dịch vụ chuyển từ trạng thái rảnh sang bận, bão hoà rồi quá tải trên cùng một đường tăng tải.",
+          "en": "Lets you observe the full transition from healthy to busy, saturated, and overloaded in one continuous run."
+        },
+        "tip": {
+          "vi": "Khi kéo núm nhân tải (LoadKnob), toàn bộ đường cong lưu lượng đầu vào sẽ được nhân theo hệ số bạn chọn.",
+          "en": "Adjusting the LoadKnob scales the incoming traffic curve proportionally."
+        }
+      }
+    },
+    "svc": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Service", "en": "App Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ ứng dụng xử lý yêu cầu với năng lực tối đa μ = 300 req/s mỗi instance và độ trễ cơ bản 15 ms.",
+          "en": "Application service with maximum capacity μ = 300 req/s per instance and 15 ms base latency."
+        },
+        "how": {
+          "vi": "Khi λ < 300 req/s (ρ < 1), dịch vụ xử lý kịp; khi λ > 300 req/s (ρ > 1), phần dư λ − μ xếp vào hàng đợi phía trước làm thời gian chờ tăng nhanh.",
+          "en": "Keeps up while λ < 300 req/s; once λ > 300 req/s, excess arrivals accumulate in the queue."
+        },
+        "why": {
+          "vi": "Đóng vai trò thành phần mẫu duy nhất để bạn tập đọc mối liên hệ trực tiếp giữa ρ, hàng đợi, p50/p99 và tỉ lệ lỗi.",
+          "en": "Single-component sandbox isolating the exact relationship among ρ, queue length, p50/p99, and errors."
+        },
+        "tip": {
+          "vi": "Tăng núm Số instance từ 1 lên 2 sẽ nhân đôi năng lực lên μ = 600 req/s, đưa ρ ở tải đỉnh 400 req/s về mức 0,67.",
+          "en": "Increasing Instances from 1 to 2 raises aggregate μ to 600 req/s, dropping peak ρ to 0.67."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-svc": {
+      "inspector": {
+        "what": {
+          "vi": "Đường kết nối HTTP đồng bộ qua Internet từ Người dùng tới App Service.",
+          "en": "Synchronous Internet HTTP link from Users to App Service."
+        },
+        "how": {
+          "vi": "Cộng khoảng 30 ms độ trễ mạng cơ bản; hiển thị các hạt request/response và đống hàng đợi dồn trước cửa vào dịch vụ khi quá tải.",
+          "en": "Adds ~30 ms Internet RTT and visualizes moving packets plus queue buildup under overload."
+        },
+        "why": {
+          "vi": "Cho phép nhìn bằng mắt thường khi nào lưu lượng thông suốt và khi nào gói tin bị quá hạn 1.500 ms.",
+          "en": "Makes packet flow, queueing, and 1,500 ms timeouts immediately visible."
+        }
+      }
+    }
+  },
+  "scenes": {
+    "s1-intro": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 17,
+          "badge": { "text": { "vi": "μ = 300 req/s", "en": "μ = 300 req/s" }, "tone": "ok" }
+        }
+      },
+      "linkState": {
+        "client-svc": { "label": { "vi": "50 → 400 req/s", "en": "50 → 400 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô hình làm quen", "en": "Sandbox Topology" },
+        "lines": [
+          { "text": { "vi": "1 Client → 1 App Service", "en": "1 Client → 1 App Service" }, "tone": "plain" },
+          { "text": { "vi": "Năng lực μ = 300 req/s", "en": "Capacity μ = 300 req/s" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-rho": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 90,
+          "highlighted": true,
+          "badge": { "text": { "vi": "ρ = λ / μ = 0,90", "en": "ρ = λ / μ = 0.90" }, "tone": "warn" }
+        }
+      },
+      "linkState": {
+        "client-svc": { "label": { "vi": "λ = 270 req/s", "en": "λ = 270 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "4 cấp trạng thái theo ρ", "en": "4 Node States by ρ" },
+        "lines": [
+          { "text": { "vi": "< 0,75: healthy · ≥ 0,75: busy", "en": "< 0.75: healthy · ≥ 0.75: busy" }, "tone": "good" },
+          { "text": { "vi": "≥ 0,90: saturated · ≥ 1,00: overloaded", "en": "≥ 0.90: saturated · ≥ 1.00: overloaded" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-latency": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 97,
+          "highlighted": true,
+          "badge": { "text": { "vi": "p99 ≈ 469 ms", "en": "p99 ≈ 469 ms" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đường cong độ trễ theo ρ", "en": "Latency vs Utilization" },
+        "chart": { "utilPct": 97 },
+        "lines": [
+          { "text": { "vi": "p50: 44 ms → 99 ms (tăng vừa)", "en": "p50: 44 ms → 99 ms" }, "tone": "plain" },
+          { "text": { "vi": "p99: 75 ms → 469 ms (vọt dựng đứng)", "en": "p99: 75 ms → 469 ms (steep spike)" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-packets": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hàng đợi dồn", "en": "Queueing" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "client-svc": {
+          "style": "danger",
+          "label": { "vi": "λ = 350 > μ = 300", "en": "λ = 350 > μ = 300" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khi λ vượt quá μ", "en": "When λ Exceeds μ" },
+        "lines": [
+          { "text": { "vi": "Dư 50 req/s cộng dồn vào hàng đợi", "en": "+50 req/s piles into queue" }, "tone": "amber" },
+          { "text": { "vi": "Chạm 1.500 ms → báo lỗi Timeout", "en": "Hits 1,500 ms → Timeout errors" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-live-tour": {
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tăng tải 50 → 400 req/s", "en": "Ramp 50 → 400 req/s" },
+        "lines": [
+          { "text": { "vi": "t = 20 s: λ = 150 · ρ = 0,50", "en": "t = 20 s: λ = 150 · ρ = 0.50" }, "tone": "good" },
+          { "text": { "vi": "Tính mốc giây khi λ = 300 req/s", "en": "Predict second when λ = 300 req/s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-inspector": {
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tự do tua & chỉnh núm", "en": "Scrub & Tune Knobs" },
+        "lines": [
+          { "text": { "vi": "Nhấp khối để mở bảng Inspector", "en": "Click node to open Inspector" }, "tone": "plain" },
+          { "text": { "vi": "Thử nâng Số instance từ 1 lên 2", "en": "Try raising Instances from 1 to 2" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-limits": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 67,
+          "badge": { "text": { "vi": "2 instance · ρ 0,67", "en": "2 instances · ρ 0.67" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Phạm vi của mô phỏng", "en": "Simulation Scope" },
+        "lines": [
+          { "text": { "vi": "Đúng xu hướng & quan hệ nhân quả", "en": "Accurate causal trends" }, "tone": "good" },
+          { "text": { "vi": "Luôn đo lại trên môi trường thật", "en": "Always benchmark in production" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": ["client", "svc"] },
+      "state": {
+        "svc": {
+          "loadPct": 50,
+          "badge": { "text": { "vi": "Đọc ρ · p99 · Queue", "en": "Read ρ · p99 · Queue" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Quy trình 4 bước đọc sim", "en": "4-Step Sim Reading" },
+        "lines": [
+          { "text": { "vi": "1. Xem μ · 2. So ρ = λ / μ", "en": "1. Check μ · 2. Compare ρ = λ / μ" }, "tone": "plain" },
+          { "text": { "vi": "3. Canh p99 · 4. Tua & thử núm", "en": "3. Watch p99 · 4. Scrub & tune" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "tour": {
+      "sim": "S0-09/ramp",
+      "startAtSec": 20,
+      "autoplay": false,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": { "vi": "Lưu lượng", "en": "Offered Load" },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 150, "badAbove": 250 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Lỗi", "en": "Errors" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 250 }
+      ],
+      "focus": {
+        "nodes": ["svc"]
+      }
+    },
+    "explore": {
+      "sim": "S0-09/ramp",
+      "startAtSec": 45,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "svc", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": { "vi": "Lưu lượng", "en": "Offered Load" },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 150, "badAbove": 250 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Lỗi", "en": "Errors" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 250 }
+      ],
+      "focus": {
+        "nodes": ["svc"]
+      }
+    }
+  }
+}

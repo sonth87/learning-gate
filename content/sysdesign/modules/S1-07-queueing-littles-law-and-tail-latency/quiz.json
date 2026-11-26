@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S1-07.q1",
+    "type": "output",
+    "q": "Theo công thức hàng đợi M/M/1 W = S / (1 − ρ), nếu thời gian xử lý nền khi rảnh là S = 10 ms và máy chủ đang bận ở mức ρ = 0,90, thời gian phản hồi trung bình W bằng bao nhiêu ms? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "100",
+    "explain": "Thay S = 10 ms và ρ = 0,90 vào công thức: W = 10 / (1 − 0,90) = 10 / 0,10 = 100 ms (gấp 10 lần thời gian xử lý nền chỉ vì máy chủ chỉ còn 10% khoảng rảnh)."
+  },
+  {
+    "id": "S1-07.q2",
+    "type": "output",
+    "q": "Một cổng API xử lý ổn định 600 req/s, thời gian trung bình mỗi request lưu lại trong hệ thống là 0,2 giây (200 ms). Theo Định luật Little (L = λW), trung bình có bao nhiêu request đang đồng thời nằm trong hệ thống? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "120",
+    "explain": "Theo Định luật Little, L = λ × W = 600 req/s × 0,2 s = 120 request đồng thời. Đây là mức tối thiểu để tham chiếu khi cấu hình giới hạn kết nối và worker đồng thời."
+  },
+  {
+    "id": "S1-07.q3",
+    "type": "mc",
+    "q": "Một trang tìm kiếm gửi truy vấn song song (all-parallel) tới 100 phân mảnh độc lập và phải đợi phân mảnh cuối cùng trả lời xong. Nếu mỗi phân mảnh có 1% xác suất rơi vào đuôi chậm (p99), xác suất để người dùng gặp trang chậm là khoảng bao nhiêu?",
+    "code": "",
+    "choices": [
+      "Khoảng 1% (giống hệt một phân mảnh đơn lẻ)",
+      "Khoảng 10%",
+      "Khoảng 63,4% (tức 1 − 0,99^100, quá nửa số lượt tải trang)",
+      "100% tuyệt đối ở mọi lượt gọi"
+    ],
+    "answer": 2,
+    "explain": "Xác suất cả 100 phân mảnh cùng tránh được vùng 1% chậm là 0,99^100 ≈ 0,366. Do đó xác suất dính ít nhất một phân mảnh chậm là 1 − 0,366 = 0,634 (63,4%), biến sự kiện hiếm p99 ở máy con thành trải nghiệm thường xuyên của trang cha."
+  },
+  {
+    "id": "S1-07.q4",
+    "type": "tf",
+    "q": "Nếu một dịch vụ có năng lực tối đa μ = 1.000 req/s và lưu lượng đỉnh là 980 req/s, chỉ cần chạy đúng 1 máy là luôn đảm bảo độ trễ p99 tương đương lúc chạy ở 200 req/s.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Ở 980 / 1.000 req/s (ρ = 0,98), hệ số hàng đợi 1/(1 − ρ) vọt lên 50 lần so với 1,25 lần ở ρ = 0,20. Dù 980 < 1.000, các cụm request đến sát nhau sẽ làm p99 tăng gấp hàng chục lần."
+  },
+  {
+    "id": "S1-07.q5",
+    "type": "mc",
+    "q": "Kỹ thuật Hedged Requests giúp cắt giảm độ trễ đuôi khi gọi phân mảnh dữ liệu có bản sao (Replica) bằng cơ chế nào?",
+    "code": "",
+    "choices": [
+      "Gửi đồng thời mọi truy vấn tới toàn bộ 100 máy chủ ngay từ mili-giây thứ 0",
+      "Chờ một ngưỡng ngắn (như p95); nếu nhánh chính chưa trả lời thì gửi thêm yêu cầu dự phòng sang bản sao khác và lấy kết quả nào về trước",
+      "Tắt hoàn toàn cơ chế Timeout để chờ phân mảnh bị kẹt thu gom rác xong",
+      "Gom 1.000 request của người dùng lại thành một lô xử lý sau mỗi 10 giây"
+    ],
+    "answer": 1,
+    "explain": "Hedged Requests chỉ kích hoạt bản gọi thứ hai cho khoảng 5% số lượt gọi chậm vượt mốc p95, nên chỉ cộng thêm tải rất nhỏ nhưng loại bỏ hiệu quả các gai trễ cục bộ do GC pause hoặc nghẽn mạng thoáng qua."
+  },
+  {
+    "id": "S1-07.q6",
+    "type": "mc",
+    "q": "Lưu lượng đỉnh dự kiến là 1.500 req/s, mỗi instance xử lý tối đa μ = 500 req/s. Nếu nhóm kỹ thuật quy định giữ mức sử dụng tối đa ρ ≤ 0,75 để bảo vệ p99, cần cấp phát ít nhất bao nhiêu instance?",
+    "code": "",
+    "choices": ["2 instance", "3 instance", "4 instance", "6 instance"],
+    "answer": 2,
+    "explain": "Năng lực an toàn mỗi instance ở ngưỡng ρ = 0,75 là 500 × 0,75 = 375 req/s. Để gánh 1.500 req/s cần ceil(1.500 / 375) = 4 instance (nếu chỉ dùng 3 instance thì ρ = 1,00 sẽ gây bão hòa hàng đợi)."
+  }
+]

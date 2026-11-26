@@ -1,0 +1,90 @@
+[
+  {
+    "id": "S4-04.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải đầu tiên dưới bẫy khuếch đại ORM N+1?" },
+    "prompt": { "vi": "Lưu lượng người dùng mở trang lịch sử 24 đơn hàng tăng nhẹ từ 30 lên 220 req/s. Endpoint Order API (N+1) chạy 1 câu lấy danh sách + 24 câu lẻ lấy chi tiết mặt hàng cho mỗi request (hệ số calls = 25). Mô phỏng dừng ở giây 10: hãy dự đoán thành phần nào sẽ chuyển sang trạng thái Quá tải (overloaded) đầu tiên." },
+    "difficulty": 1,
+    "at": 10,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 10 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 26, "speed": 2 },
+    "hints": [
+      { "vi": "Đừng chỉ nhìn lưu lượng người dùng bên ngoài (chưa tới 110 req/s ở giây 15): hãy nhân với số câu SQL mà mỗi request sinh ra." },
+      { "vi": "Với calls = 25, chỉ cần ~90 req/s từ người dùng là Orders DB đã phải gánh hơn 2.200 câu truy vấn mỗi giây." }
+    ],
+    "explain": { "vi": "Ngay ở giây {t.first.db:1} khi lưu lượng người dùng mới khoảng {global.offeredRps@15:0} req/s, vòng lặp N+1 đã nhân gấp 25 lần thành {db.lambda@15:0} truy vấn/giây đổ xuống {db.name} (vượt năng lực 2.200 ops/s, ρ = {db.rho@15:2}), trong khi tầng {api_n1.name} gần như rảnh rỗi ở ρ = {api_n1.rho@15:2}." },
+    "sim": { "simId": "S4-04/n-plus-1", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S4-04/n-plus-1", "seekSec": 10, "focus": { "nodes": ["api_n1", "db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-04.A2",
+    "kind": "estimate",
+    "title": { "vi": "Tính khuếch đại thao tác ghi khi gắn nhiều chỉ mục phụ" },
+    "prompt": { "vi": "Bảng sự kiện giao dịch nhận đều đặn 800 lệnh INSERT mỗi giây. Để phục vụ đủ loại bộ lọc báo cáo, một lập trình viên tạo thêm k = 6 chỉ mục phụ B+Tree trên các cột khác nhau (ngoài 1 lần ghi bắt buộc vào bảng gốc). Hãy tính tổng số thao tác chèn cấu trúc dữ liệu (bảng gốc + các cây chỉ mục) mà Database phải thực hiện mỗi giây." },
+    "difficulty": 2,
+    "quantity": "Tổng thao tác ghi bảng và chỉ mục",
+    "unit": "ops/s",
+    "truth": { "type": "formula", "expr": "800*(1+6)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Mỗi dòng INSERT mới tốn 1 thao tác ghi vào bảng gốc (Heap / Clustered)." },
+      { "vi": "Đồng thời phải cập nhật thêm k = 6 cây B+Tree chỉ mục phụ → tổng 1 + 6 = 7 cấu trúc mỗi dòng." },
+      { "vi": "Tổng tốc độ cập nhật cấu trúc: 800 × 7 = 5.600 ops/s." }
+    ],
+    "hints": [
+      { "vi": "Đừng quên cộng cả 1 thao tác ghi vào chính bảng dữ liệu gốc bên cạnh 6 chỉ mục phụ: công thức là R_insert × (1 + k)." }
+    ],
+    "explain": { "vi": "Giá trị chính xác là {truth:0} ops/s (khuếch đại gấp 7 lần so với 800 lệnh INSERT gốc). Đó là lý do các bảng ghi tần suất cao chỉ nên giữ bộ chỉ mục ghép tinh gọn thực sự có truy vấn sử dụng." }
+  },
+  {
+    "id": "S4-04.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Triệt tiêu bão truy vấn N+1 mà không cần nâng cấp máy chủ DB" },
+    "prompt": { "vi": "Khi lưu lượng tăng lên 220 req/s, nhánh Order API (N+1) đẩy 5.500 SQL/s làm Orders DB sập hoàn toàn (p99 > 1.800 ms). Với tối đa 3 thay đổi và ngân sách chi phí không quá 1,50 USD/giờ, hãy giữ p99 ≤ 90 ms và tỷ lệ lỗi ≤ 1% trong suốt 60 giây." },
+    "difficulty": 3,
+    "simId": "S4-04/n-plus-1",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 1.5 },
+    "allowed": [
+      { "type": "knob", "node": "api_n1", "key": "enabled" },
+      { "type": "knob", "node": "api_batch", "key": "enabled" },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 5000, "max": 100000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "api_n1", "key": "replicas", "min": 1, "max": 6 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 90, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["busy", "saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 }
+    ],
+    "observe": { "runSec": 60 },
+    "par": { "changes": 3, "costPerHour": 1.18 },
+    "solution": [
+      { "type": "knob", "node": "api_n1", "key": "enabled", "value": false },
+      { "type": "knob", "node": "api_batch", "key": "enabled", "value": true },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 50000 }
+    ],
+    "traps": [
+      {
+        "id": "scale-up-db-only",
+        "label": { "vi": "Giữ nguyên code N+1, chỉ nâng gấp đôi cỡ máy Orders DB" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Nâng gấp đôi máy DB vừa vượt trần ngân sách (lên 2,21 USD/giờ > 1,50 USD/giờ), vừa chỉ nâng năng lực lên 4.400 ops/s — vẫn sập trước 5.500 SQL/giây do vòng lặp N+1 tạo ra!" }
+      }
+    ],
+    "hints": [
+      { "vi": "Nhớ bật nhánh Order API (Batch IN) VÀ tắt nhánh Order API (N+1) để chuyển hẳn lưu lượng sang đường gom lô 2 câu SQL." },
+      { "vi": "Mở rộng dung lượng Query Cache lên 50.000 key để khớp trọn tập làm việc đang hoạt động mà không cần tăng cỡ máy DB." }
+    ],
+    "explain": { "vi": "Chuyển lưu lượng từ nhánh N+1 sang nhánh Batch IN cắt hệ số gọi DB từ ×25 xuống ×2, kết hợp mở rộng Query Cache lên 50.000 key giúp tải thực tế vào Orders DB ở đỉnh 220 req/s giảm từ {db.lambda@45:0} xuống chỉ còn {db.lambda'@45:0} SQL/s (ρ = {db.rho'@45:2}), kéo p99 về {global.p99'@45:1} ms với chi phí chỉ {global.costPerHour'@45:2} USD/giờ." },
+    "replay": { "simId": "S4-04/n-plus-1", "seekSec": 15, "focus": { "nodes": ["api_batch", "cache", "db"] }, "autoplay": true }
+  }
+]

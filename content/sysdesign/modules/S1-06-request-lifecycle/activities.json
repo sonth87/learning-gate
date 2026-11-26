@@ -1,0 +1,46 @@
+[
+  {
+    "id": "S1-06.A1",
+    "kind": "estimate",
+    "title": { "vi": "Tính tổng độ trễ khi người dùng ở xa" },
+    "prompt": { "vi": "Người dùng ở châu lục khác có độ trễ mạng khứ hồi RTT = 150 ms tới máy chủ. Địa chỉ IP đã có sẵn trong bộ đệm DNS cục bộ (0 ms). Mở kết nối HTTPS mới mất 2 RTT (1 RTT bắt tay TCP + 1 RTT bắt tay TLS 1.3), gửi HTTP request và nhận phản hồi mất 1 RTT, Web Server xử lý 15 ms và Database truy vấn mất 25 ms (mạng nội bộ xấp xỉ 0 ms). Ước lượng tổng thời gian hoàn tất request (ms)." },
+    "difficulty": 1,
+    "quantity": "Tổng độ trễ đầu-cuối của request",
+    "unit": "ms",
+    "truth": { "type": "formula", "expr": "2*150 + 1*150 + 15 + 25", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Bắt tay TCP + TLS 1.3 trên kết nối mới: 2 × 150 = 300 ms." },
+      { "vi": "Vòng khứ hồi gửi HTTP request và nhận phản hồi: 1 × 150 = 150 ms." },
+      { "vi": "Xử lý nội bộ Web Server + Database: 15 + 25 = 40 ms." },
+      { "vi": "Tổng cộng: 300 + 150 + 40 = 490 ms (riêng mạng ngoài chiếm 92%)." }
+    ],
+    "hints": [
+      { "vi": "Đếm tổng số vòng RTT trên đường mạng ngoài (2 RTT bắt tay + 1 RTT dữ liệu HTTP) rồi cộng phần xử lý ở máy chủ." }
+    ],
+    "explain": { "vi": "Tổng độ trễ đúng bằng {truth:0} ms, trong đó 450 ms nằm ở 3 vòng RTT xuyên lục địa và chỉ 40 ms nằm ở máy chủ. Muốn hạ rõ rệt con số này phải dùng lại kết nối ấm hoặc chấm dứt TLS tại CDN Edge gần người dùng." },
+    "replay": { "simId": "S1-06/trace", "seekSec": 10, "focus": { "nodes": ["client", "web"] } }
+  },
+  {
+    "id": "S1-06.A2",
+    "kind": "timeline-read",
+    "title": { "vi": "Phát hiện lượt tra cứu nhận địa chỉ IP cũ do bộ đệm DNS" },
+    "prompt": { "vi": "Đội vận hành vừa đổi bản ghi tên miền api.shop.vn từ địa chỉ IP cũ 10.0.1.10 sang IP mới 10.0.2.50 trên máy chủ DNS gốc (hoàn tất lúc 130 ms). Tuy nhiên một số DNS Resolver trung gian vẫn trả bản ghi cũ trong thời gian chờ hết hạn TTL. Hãy chọn tất cả các lượt đọc trả về dữ liệu cũ (Stale Read)." },
+    "difficulty": 2,
+    "question": "find-stale-reads",
+    "history": [
+      { "id": "w1", "client": "ops", "op": "write", "key": "api.shop.vn", "value": "10.0.1.10", "start": 0, "end": 20, "node": "auth-dns" },
+      { "id": "w2", "client": "ops", "op": "write", "key": "api.shop.vn", "value": "10.0.2.50", "start": 100, "end": 130, "node": "auth-dns" },
+      { "id": "r1", "client": "A", "op": "read", "key": "api.shop.vn", "value": "10.0.1.10", "start": 150, "end": 165, "node": "resolver-cache" },
+      { "id": "r2", "client": "B", "op": "read", "key": "api.shop.vn", "value": "10.0.2.50", "start": 160, "end": 180, "node": "auth-dns" },
+      { "id": "r3", "client": "C", "op": "read", "key": "api.shop.vn", "value": "10.0.1.10", "start": 210, "end": 225, "node": "resolver-cache" },
+      { "id": "r4", "client": "A", "op": "read", "key": "api.shop.vn", "value": "10.0.2.50", "start": 400, "end": 418, "node": "resolver-cache" }
+    ],
+    "expected": ["r1", "r3"],
+    "hints": [
+      { "vi": "Tìm các lượt đọc bắt đầu sau mốc 130 ms (khi bản ghi mới w2 đã ghi xong) nhưng vẫn nhận giá trị cũ 10.0.1.10." }
+    ],
+    "explain": { "vi": "Bản ghi IP mới 10.0.2.50 đã hoàn tất ghi ở mốc 130 ms (w2). Hai lượt tra cứu r1 (150 ms) và r3 (210 ms) bắt đầu sau thời điểm đó nhưng vẫn nhận IP cũ 10.0.1.10 từ bộ đệm resolver chưa hết hạn TTL. Ở r4 (400 ms), TTL đã hết hạn nên resolver nạp lại IP mới." }
+  }
+]

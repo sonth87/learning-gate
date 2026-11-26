@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-08.q1",
+    "type": "mc",
+    "q": "Vì sao cơ sở dữ liệu ghi bản ghi thay đổi vào tệp Write-Ahead Log (WAL) trước thay vì xả thẳng từng trang dữ liệu B-Tree xuống đĩa ở mỗi câu lệnh COMMIT?",
+    "code": "",
+    "choices": [
+      "Vì tệp WAL chỉ nằm trong RAM và không bao giờ chạm xuống ổ đĩa vật lý",
+      "Vì ghi nối đuôi tuần tự vào cuối tệp WAL (kết hợp Group Commit) nhanh hơn rất nhiều so với nhảy ghi ngẫu nhiên nhiều trang 8–16 KB và ngăn ngừa lỗi rách trang khi mất điện",
+      "Vì WAL tự động xoá bỏ toàn bộ nhu cầu dùng bộ nhớ đệm Buffer Pool",
+      "Vì tệp WAL cho phép thực thi câu lệnh SQL JOIN không cần CPU"
+    ],
+    "answer": 1,
+    "explain": "Một giao dịch có thể chạm tới nhiều trang dữ liệu và chỉ mục nằm rải rác trên đĩa; ghi nối đuôi vào cuối tệp WAL biến thao tác đảm bảo độ bền thành I/O tuần tự tốc độ cao và cho phép gộp nhiều giao dịch vào một lần fsync (Group Commit)."
+  },
+  {
+    "id": "S4-08.q2",
+    "type": "mc",
+    "q": "Trong kiến trúc LSM-Tree (như RocksDB, Cassandra), khi ứng dụng chạy lệnh DELETE một khoá, điều gì diễn ra ngay tại thời điểm đó?",
+    "code": "",
+    "choices": [
+      "Engine mở toàn bộ các tệp SSTable cũ trên đĩa ra để tìm và xoá trắng những dòng chứa khoá đó ngay lập tức",
+      "Engine ghi nối tiếp một bản ghi đánh dấu xoá (Tombstone) vào WAL và MemTable; dung lượng đĩa thực sự sẽ được thu hồi sau đó khi tiến trình Compaction gộp tệp",
+      "Lệnh DELETE bị từ chối vì LSM-Tree chỉ hỗ trợ thao tác INSERT",
+      "Toàn bộ MemTable trong RAM lập tức bị huỷ bỏ để giải phóng khoá"
+    ],
+    "answer": 1,
+    "explain": "Các tệp SSTable trên đĩa là bất biến (immutable) nên không sửa tại chỗ. Lệnh DELETE ghi một thẻ Tombstone mới nhất; khi đọc gặp Tombstone sẽ báo không tồn tại, và khi Compaction gộp qua đủ tầng mới dọn sạch cả bản ghi cũ lẫn Tombstone."
+  },
+  {
+    "id": "S4-08.q3",
+    "type": "tf",
+    "q": "Khi bộ lọc xác suất Bloom Filter của một tệp SSTable báo rằng khoá K 'không tồn tại', vẫn có khoảng 1% khả năng khoá K thực sự nằm trong tệp SSTable đó (âm tính giả).",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Ngược lại hoàn toàn: Bloom Filter tuyệt đối KHÔNG BAO GIỜ có âm tính giả (0% False Negative) — nếu báo không có thì chắc chắn 100% khoá không nằm trong tệp đó và được bỏ qua an toàn. Sai số ~1% chỉ xảy ra ở chiều dương tính giả (báo 'có thể có' khiến đọc kiểm tra thêm 1 lần trên đĩa)."
+  },
+  {
+    "id": "S4-08.q4",
+    "type": "output",
+    "q": "Một bảng kho dữ liệu phân tích rộng 50 cột (giả sử mỗi cột chiếm dung lượng bằng nhau trên đĩa) lưu 100 triệu dòng. Khi chạy câu truy vấn SELECT SUM(revenue), AVG(discount) FROM sales_events trên hệ thống lưu trữ theo cột (Column-oriented Store), hệ thống chỉ cần đọc bao nhiêu phần trăm tổng dung lượng bảng chưa nén từ đĩa? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4",
+    "explain": "Lưu trữ theo cột tách riêng mỗi cột thành tệp/khối độc lập. Câu truy vấn chỉ chạm đúng 2 cột (revenue và discount) trên tổng số 50 cột, tương đương 2 / 50 = 0,04 hay 4% lượng dữ liệu (chưa tính lợi ích nén RLE/Dictionary còn giảm nhỏ hơn nữa)."
+  },
+  {
+    "id": "S4-08.q5",
+    "type": "mc",
+    "q": "Vai trò chính của mốc Checkpoint trong hệ thống dùng Write-Ahead Log (WAL) là gì?",
+    "code": "",
+    "choices": [
+      "Tăng gấp đôi kích thước trang dữ liệu từ 8 KB lên 16 KB sau mỗi giờ",
+      "Xả các trang bẩn cũ từ RAM xuống đĩa để cắt ngắn phần đầu tệp WAL và giới hạn quãng đường phải phát lại (Redo) khi khôi phục sau sự cố",
+      "Tự động chuyển đổi cấu trúc B-Tree sang LSM-Tree vào ban đêm",
+      "Mã hoá mật khẩu người dùng trước khi gửi qua mạng"
+    ],
+    "answer": 1,
+    "explain": "Mốc Checkpoint đảm bảo mọi thay đổi trước một số thứ tự LSN nhất định đã nằm an toàn trong các tệp trang dữ liệu trên đĩa. Nhờ vậy DB có thể thu hồi các đoạn WAL cũ trước đó và chỉ mất vài giây phát lại phần đuôi WAL mới nếu máy chủ sập rồi khởi động lại."
+  },
+  {
+    "id": "S4-08.q6",
+    "type": "mc",
+    "q": "Kịch bản hệ thống nào dưới đây phát huy rõ nhất ưu thế của LSM-Tree so với B-Tree truyền thống?",
+    "code": "",
+    "choices": [
+      "Bảng danh mục 500 quốc gia và tiền tệ hầu như chỉ đọc hàng nghìn lần mỗi giây, cả năm mới cập nhật một lần",
+      "Hệ thống lưu trữ lịch sử tin nhắn chat và chuỗi thời gian cảm biến tiếp nhận hàng trăm nghìn bản ghi nhỏ mỗi giây liên tục",
+      "Hệ thống kế toán nội bộ chỉ chạy 5 giao dịch mỗi phút nhưng cần khoá dòng đa bảng phức tạp",
+      "Bảng cấu hình ứng dụng có tổng cộng 20 dòng nằm trọn trong bộ nhớ L1 Cache của CPU"
+    ],
+    "answer": 1,
+    "explain": "Luồng tin nhắn chat và telemetry cảm biến có tỷ trọng ghi rất cao và liên tục theo thời gian; LSM-Tree gom ghi vào MemTable và xả tuần tự thành SSTable nén chặt giúp đạt thông lượng ghi vượt trội và tiết kiệm chi phí lưu trữ dài hạn."
+  }
+]

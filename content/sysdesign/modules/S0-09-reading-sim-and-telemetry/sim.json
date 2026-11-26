@@ -1,0 +1,166 @@
+{
+  "sims": [
+    {
+      "id": "S0-09/ramp",
+      "scenario": {
+        "id": "S0-09/ramp",
+        "seed": 909,
+        "durationSec": 80,
+        "mix": {
+          "readRatio": 1.0
+        },
+        "clientTimeoutMs": 1500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "ramp",
+          "from": 50,
+          "to": 400,
+          "overSec": 70
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người dùng",
+                "en": "Users"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "svc",
+              "kind": "service",
+              "label": {
+                "vi": "App Service",
+                "en": "App Service"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 300,
+                "concurrency": 60
+              },
+              "latency": {
+                "baseMs": 15,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 1
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance",
+                    "en": "Instances"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Instance dừng hoạt động",
+                    "en": "Instance down"
+                  }
+                }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-svc",
+              "from": "client",
+              "to": "svc",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1500
+            }
+          ]
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 250,
+          "window": {
+            "fromSec": 0,
+            "toSec": 80
+          },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": {
+            "fromSec": 0,
+            "toSec": 80
+          }
+        }
+      ],
+      "expect": {
+        "bottleneck": "svc",
+        "firstSaturatedAtSec": [
+          43,
+          45
+        ],
+        "firstOverloadedAtSec": [
+          52,
+          55
+        ],
+        "maxSustainableRpsApprox": [
+          295,
+          305
+        ]
+      },
+      "presets": [
+        {
+          "id": "scale-two-instances",
+          "label": {
+            "vi": "Tăng lên 2 instance App Service",
+            "en": "Scale to 2 App Service instances"
+          },
+          "changes": [
+            {
+              "type": "knob",
+              "node": "svc",
+              "key": "replicas",
+              "value": 2
+            }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

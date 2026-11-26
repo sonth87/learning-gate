@@ -1,0 +1,319 @@
+{
+  "version": 1,
+  "base": "s1-axes",
+  "nodes": {},
+  "scenes": {
+    "s1-axes": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Mục tiêu muốn tối đa", "en": "Desired Gain" },
+        "rightTitle": { "vi": "Chi phí đối ứng phải cân nhắc", "en": "Counterbalancing Cost" },
+        "names": [
+          {
+            "id": "perf",
+            "name": "Hiệu năng phản hồi cao",
+            "note": { "vi": "Đệm RAM / Bản sao gần", "en": "RAM Cache / Edge Replica" },
+            "targetId": "cons-cost",
+            "style": "solid"
+          },
+          {
+            "id": "scale",
+            "name": "Mở rộng độc lập lớn",
+            "note": { "vi": "Phân mảnh / Tách dịch vụ", "en": "Sharding / Microservices" },
+            "targetId": "simp-cost",
+            "style": "solid"
+          },
+          {
+            "id": "rel",
+            "name": "Độ sẵn sàng đa vùng",
+            "note": { "vi": "Dự phòng Active-Active", "en": "Multi-region redundancy" },
+            "targetId": "infra-cost",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "cons-cost",
+            "typeTag": "CONSISTENCY",
+            "value": "Độ trễ đồng bộ dữ liệu",
+            "fields": ["Nguy cơ đọc dữ liệu cũ", "Xoá đệm phức tạp"],
+            "tone": "yellow"
+          },
+          {
+            "id": "simp-cost",
+            "typeTag": "COMPLEXITY",
+            "value": "Độ phức tạp vận hành",
+            "fields": ["Độ trễ mạng nội bộ", "Gỡ lỗi phân tán"],
+            "tone": "orange"
+          },
+          {
+            "id": "infra-cost",
+            "typeTag": "BUDGET",
+            "value": "Chi phí hạ tầng & đồng bộ",
+            "fields": ["Nhân bản tài nguyên", "Phí băng thông liên vùng"],
+            "tone": "purple"
+          }
+        ]
+      }
+    },
+    "s2-context": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Cùng lựa chọn kỹ thuật · Khác bối cảnh → Khác quyết định",
+          "en": "Same Options · Different Context → Different Decision"
+        },
+        "nodes": [
+          { "id": "root", "x": 0, "y": -102, "label": "Chọn kiến trúc ứng dụng & dữ liệu", "tone": "blue" },
+          { "id": "ctx1", "x": -165, "y": -26, "label": "Nhóm 5 người · Giao dịch tiền tệ", "tone": "green" },
+          { "id": "ctx2", "x": 165, "y": -26, "label": "100 nhóm · Bài đăng phi cấu trúc", "tone": "purple" },
+          { "id": "ans1", "x": -165, "y": 58, "label": "Monolith + PostgreSQL (ACID)", "tone": "green" },
+          { "id": "ans2", "x": 165, "y": 58, "label": "Microservices + NoSQL phân mảnh", "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "root", "to": "ctx1", "label": "Ưu tiên toàn vẹn & tốc độ ra mắt" },
+          { "from": "root", "to": "ctx2", "label": "Ưu tiên tự chủ & mở rộng ngang" },
+          { "from": "ctx1", "to": "ans1", "label": "Khớp ràng buộc" },
+          { "from": "ctx2", "to": "ans2", "label": "Khớp ràng buộc" }
+        ]
+      }
+    },
+    "s3-matrix": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy trình 3 bước lập Ma trận đánh đổi (Trade-off Matrix)",
+          "en": "3-Step Trade-Off Matrix Process"
+        },
+        "subtitle": {
+          "vi": "Thay đổi trọng số ở Bước 3 sẽ làm thay đổi phương án thắng giữa PostgreSQL và MongoDB",
+          "en": "Changing priority weights in Step 3 flips the winning option"
+        },
+        "cells": [
+          "1. Chốt ràng buộc",
+          "2. Liệt kê Lợi & Hại",
+          "3. Xếp hạng ưu tiên",
+          "4. Chốt phương án Fit"
+        ],
+        "activeIndices": [1, 2],
+        "pointers": [
+          { "index": 0, "label": "Quy mô · Ngân sách · Đội ngũ", "tone": "blue" },
+          { "index": 2, "label": "Trọng số quyết định", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Kết quả", "en": "Result" },
+          "value": { "vi": "Quyết định minh bạch, bảo vệ được bằng lý lẽ", "en": "Transparent, defensible decision" },
+          "tone": "green"
+        }
+      }
+    },
+    "s4-cache-ab": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Phương án trang sản phẩm", "en": "Product Page Option" },
+        "rightTitle": { "vi": "Hồ sơ đánh đổi định lượng", "en": "Quantitative Trade-Off Profile" },
+        "names": [
+          {
+            "id": "no-cache",
+            "name": "PA A: Đọc thẳng Database",
+            "note": { "vi": "Tải nhỏ ~100 req/s", "en": "Low load ~100 req/s" },
+            "targetId": "fresh-profile",
+            "style": "solid"
+          },
+          {
+            "id": "with-cache",
+            "name": "PA B: Qua tầng Redis Cache",
+            "note": { "vi": "Tải cao > 3.000 req/s", "en": "High load > 3,000 req/s" },
+            "targetId": "fast-profile",
+            "style": "solid"
+          },
+          {
+            "id": "sync-ttl",
+            "name": "PA B thiếu TTL Jitter",
+            "note": { "vi": "Khoá hết hạn đồng loạt", "en": "Simultaneous expiry" },
+            "targetId": "stampede-risk",
+            "style": "danger"
+          }
+        ],
+        "objects": [
+          {
+            "id": "fresh-profile",
+            "typeTag": "FRESH 100%",
+            "value": "Đơn giản · Tồn kho chuẩn",
+            "fields": ["Không tốn RAM", "Nghẽn sớm khi đọc tăng"],
+            "tone": "blue"
+          },
+          {
+            "id": "fast-profile",
+            "typeTag": "LOW LATENCY",
+            "value": "p99 < 80 ms · Chắn tải DB",
+            "fields": ["Trễ dữ liệu trong TTL", "Tốn thêm 0,15 USD/giờ"],
+            "tone": "green"
+          },
+          {
+            "id": "stampede-risk",
+            "typeTag": "STAMPEDE",
+            "value": "Dồn truy vấn đột ngột",
+            "fields": ["Cần thêm TTL Jitter ≥ 10%"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s5-pairs": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Cặp đánh đổi cốt lõi", "en": "Core Trade-Off Pair" },
+        "rightTitle": { "vi": "Quy tắc chọn theo nghiệp vụ", "en": "Domain Selection Rule" },
+        "names": [
+          {
+            "id": "cap",
+            "name": "Consistency vs Availability",
+            "note": { "vi": "Khi có phân tách mạng", "en": "Under network partition" },
+            "targetId": "rule-cap",
+            "style": "solid"
+          },
+          {
+            "id": "norm",
+            "name": "3NF vs Denormalization",
+            "note": { "vi": "Tổ chức bảng dữ liệu", "en": "Schema organization" },
+            "targetId": "rule-norm",
+            "style": "solid"
+          },
+          {
+            "id": "sync",
+            "name": "Synchronous vs Asynchronous",
+            "note": { "vi": "Luồng xử lý tác vụ", "en": "Execution model" },
+            "targetId": "rule-sync",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "rule-cap",
+            "typeTag": "CP vs AP",
+            "value": "Thanh toán: CP · Feed: AP",
+            "fields": ["Tiền cần đúng", "Bảng tin cần phản hồi ngay"],
+            "tone": "purple"
+          },
+          {
+            "id": "rule-norm",
+            "typeTag": "READ vs WRITE",
+            "value": "Ghi nhiều: 3NF · Đọc 99%: Gộp",
+            "fields": ["3NF giữ toàn vẹn", "Phi chuẩn hoá bỏ JOIN"],
+            "tone": "yellow"
+          },
+          {
+            "id": "rule-sync",
+            "typeTag": "UX vs QUEUE",
+            "value": "Đăng nhập: Sync · Video: Async",
+            "fields": ["Tác vụ > 5s đẩy vào Queue"],
+            "tone": "green"
+          }
+        ]
+      }
+    },
+    "s6-goodenough": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy luật lợi suất giảm dần khi tối ưu API (Đích < 200 ms)",
+          "en": "Diminishing Returns in API Optimization (Target < 200 ms)"
+        },
+        "subtitle": {
+          "vi": "20% công sức đầu giải quyết phần lớn độ trễ; cần biết dừng khi đã đạt mục tiêu SLO",
+          "en": "Initial low-effort steps yield the largest gains; stop once target SLO is met"
+        },
+        "cells": [
+          "Hiện tại: 800 ms",
+          "Index (2h): 300 ms",
+          "Cache (1w): 150 ms",
+          "Đổi DB (2m): 100 ms"
+        ],
+        "activeIndices": [1, 2],
+        "pointers": [
+          { "index": 1, "label": "ROI cao nhất (−62%)", "tone": "green" },
+          { "index": 2, "label": "Đạt đích < 200 ms → Dừng", "tone": "blue" },
+          { "index": 3, "label": "Tốn 2 tháng, lợi ích nhỏ", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Quyết định", "en": "Decision" },
+          "value": { "vi": "Dừng ở 150 ms để dành nguồn lực cho tính năng chính", "en": "Stop at 150 ms and ship product value" },
+          "tone": "green"
+        }
+      }
+    },
+    "s7-models": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "3 mô hình tư duy chốt quyết định kiến trúc",
+          "en": "3 Mental Models for Architectural Decisions"
+        },
+        "nodes": [
+          { "id": "dec", "x": 0, "y": -102, "label": "Đứng trước nhiều phương án", "tone": "blue" },
+          { "id": "rev", "x": -185, "y": -20, "label": "1. Khả năng đảo ngược", "tone": "green" },
+          { "id": "roi", "x": 0, "y": -20, "label": "2. Tác động / Công sức", "tone": "yellow" },
+          { "id": "reg", "x": 185, "y": -20, "label": "3. Giảm thiểu hối tiếc", "tone": "purple" },
+          { "id": "act1", "x": -185, "y": 64, "label": "Dễ đổi → Quyết nhanh", "tone": "green" },
+          { "id": "act2", "x": 0, "y": 64, "label": "Tác động cao, rẻ → Làm ngay", "tone": "yellow" },
+          { "id": "act3", "x": 185, "y": 64, "label": "MVP → Chọn công nghệ chín", "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "dec", "to": "rev" },
+          { "from": "dec", "to": "roi" },
+          { "from": "dec", "to": "reg" },
+          { "from": "rev", "to": "act1" },
+          { "from": "roi", "to": "act2" },
+          { "from": "reg", "to": "act3" }
+        ]
+      }
+    },
+    "s8-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Tóm tắt 5 bước ra quyết định theo Trade-off",
+          "en": "5-Step Trade-Off Decision Summary"
+        },
+        "subtitle": {
+          "vi": "Không có giải pháp hoàn hảo, chỉ có sự đánh đổi khớp với bối cảnh và ưu tiên hiện tại",
+          "en": "No perfect solutions — only trade-offs aligned with current context and priorities"
+        },
+        "cells": [
+          "Hiểu bối cảnh",
+          "Nêu Lợi & Hại",
+          "Xếp ưu tiên",
+          "Chọn mức đủ tốt",
+          "Quản lý hệ quả"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 1, "label": "Không giấu chi phí", "tone": "yellow" },
+          { "index": 3, "label": "Tránh tối ưu quá đà", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Tư duy cốt lõi", "en": "Core Mindset" },
+          "value": { "vi": "Tốt cho ai · Trong bối cảnh nào · Đổi lại cái gì?", "en": "Good for whom · In what context · At what cost?" },
+          "tone": "blue"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,414 @@
+{
+  "version": 1,
+  "base": "s1-leader-follower",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng gửi đồng thời thao tác cập nhật hồ sơ (ghi) và xem trang (đọc).",
+          "en": "Users sending concurrent profile updates (writes) and page views (reads)."
+        },
+        "how": {
+          "vi": "Kỳ vọng nhìn thấy ngay thay đổi của chính mình khi tải lại trang vừa lưu.",
+          "en": "Expects to immediately see their own saved changes upon reloading."
+        },
+        "why": {
+          "vi": "Độ trễ sao chép vài trăm mili-giây đủ khiến giao diện trông như bị mất dữ liệu.",
+          "en": "Even hundreds of milliseconds of replication lag can look like data loss to users."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Bộ cân bằng tải chia đều request vào cụm App Router.", "en": "Distributes requests across App Router instances." },
+        "how": { "vi": "Định tuyến Round-robin không giữ trạng thái phiên.", "en": "Stateless Round-robin routing." },
+        "why": { "vi": "Mỗi lần tải lại trang của cùng một người dùng có thể đi qua instance App khác nhau.", "en": "Consecutive requests from the same user may land on different App servers." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Router", "en": "App Router" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng ứng dụng kiêm bộ định tuyến đọc/ghi xuống cụm cơ sở dữ liệu.",
+          "en": "Application tier splitting writes to Leader and reads to Followers."
+        },
+        "how": {
+          "vi": "Đẩy INSERT/UPDATE/DELETE sang Primary; đẩy SELECT sang Read Replicas (trừ khi cần Read-Your-Writes).",
+          "en": "Routes mutations to Primary and SELECTs to Read Replicas unless pinned to Leader."
+        },
+        "why": {
+          "vi": "Là nơi cài đặt logic ghim đọc về Leader tạm thời sau khi người dùng vừa ghi.",
+          "en": "Enforces Read-Your-Writes routing using write timestamps or WAL LSN positions."
+        }
+      }
+    },
+    "primary": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Primary (Leader)", "en": "Primary (Leader)" },
+      "inspector": {
+        "what": {
+          "vi": "Máy cơ sở dữ liệu dẫn đầu (Leader), điểm duy nhất tiếp nhận mọi thao tác thay đổi dữ liệu.",
+          "en": "Single-leader database executing all write transactions."
+        },
+        "how": {
+          "vi": "Ghi bền vững vào nhật ký Write-Ahead Log (WAL / Binlog) rồi truyền luồng nhật ký này sang các Follower.",
+          "en": "Appends committed mutations to WAL/Binlog and streams them to Followers."
+        },
+        "why": {
+          "vi": "Tránh xung đột ghi đồng thời giữa nhiều máy mà không tốn chi phí đồng thuận trên mỗi câu lệnh.",
+          "en": "Prevents write-write conflicts without multi-leader coordination overhead."
+        },
+        "tip": {
+          "vi": "Nếu Primary dừng đột ngột khi sao chép bất đồng bộ, phần WAL chưa kịp gửi đi có nguy cơ mất khi bầu Leader mới.",
+          "en": "Under async replication, unshipped WAL records risk loss upon sudden Primary crash."
+        }
+      }
+    },
+    "replica": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Read Replicas", "en": "Read Replicas" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm bản sao theo sau (Followers) áp lại nhật ký WAL và phục vụ truy vấn chỉ đọc.",
+          "en": "Follower replicas replaying WAL logs and serving read-only queries."
+        },
+        "how": {
+          "vi": "Khi tải ghi cao hoặc máy Follower bận phục vụ SELECT (ρ cao), tốc độ áp WAL giảm làm lagMs tăng lên.",
+          "en": "High write bursts or heavy SELECT load slow down WAL replay, accumulating lagMs."
+        },
+        "why": {
+          "vi": "Gánh 75–90% lưu lượng đọc và đóng vai trò ứng viên dự phòng để thăng cấp khi Leader hỏng.",
+          "en": "Offloads read traffic and provides warm standby candidates for failover."
+        },
+        "tip": {
+          "vi": "Luôn giám sát chỉ số replication_lag_ms và tỷ lệ đọc cũ (staleReadPct) trên từng bản sao.",
+          "en": "Monitor replication_lag_ms and stale read rates on every follower."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Đường kết nối từ người dùng vào hệ thống.", "en": "Public client traffic." },
+        "how": { "vi": "Mang hỗn hợp truy vấn đọc và cập nhật dữ liệu.", "en": "Carries mixed read and write requests." },
+        "why": { "vi": "Phản ánh độ trễ và lỗi đầu-cuối.", "en": "Measures end-to-end SLOs." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Kết nối nội bộ sang cụm App Router.", "en": "Internal link to App Router." },
+        "how": { "vi": "Chia đều lưu lượng qua 4 instance.", "en": "Splits traffic across 4 App instances." },
+        "why": { "vi": "Đảm bảo tầng ứng dụng phi trạng thái luôn thông thoáng.", "en": "Keeps compute tier healthy." }
+      }
+    },
+    "app-primary": {
+      "inspector": {
+        "what": { "vi": "Đường gửi lệnh ghi (và lượt đọc cần nhất quán mạnh) vào Primary.", "en": "Write and strong-read path to Primary." },
+        "how": { "vi": "Mang 20–25% lưu lượng là các câu lệnh thay đổi dữ liệu.", "en": "Carries all write transactions to the Leader." },
+        "why": { "vi": "Đảm bảo mọi thay đổi đi qua một thứ tự tuần tự duy nhất trên WAL.", "en": "Serializes all state mutations through one WAL log." }
+      }
+    },
+    "app-replica": {
+      "inspector": {
+        "what": { "vi": "Đường gửi truy vấn SELECT sang cụm Read Replicas.", "en": "Read query path to Read Replicas." },
+        "how": { "vi": "Phân phối đều lượt đọc qua các Follower đang hoạt động.", "en": "Balances SELECT queries across active Followers." },
+        "why": { "vi": "Giải phóng tài nguyên cho Primary.", "en": "Shields Primary from read volume." }
+      }
+    },
+    "primary-replica": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": { "vi": "Luồng sao chép nhật ký WAL / Binlog từ Primary sang Read Replicas.", "en": "WAL / Binlog replication stream from Leader to Followers." },
+        "how": { "vi": "Truyền bất đồng bộ các giao dịch đã COMMIT; kiểm tra nhịp tim (heartbeat) liên tục.", "en": "Streams committed WAL segments asynchronously alongside heartbeats." },
+        "why": { "vi": "Độ trễ trên đường này cộng với thời gian áp lại WAL quyết định Replication Lag.", "en": "Network transfer plus replay backlog determines Replication Lag." }
+      }
+    }
+  },
+  "zones": {
+    "db-cluster": {
+      "nodeIds": ["primary", "replica"],
+      "label": { "vi": "CỤM LEADER – FOLLOWER", "en": "LEADER – FOLLOWER CLUSTER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-leader-follower": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 20 },
+        "primary": {
+          "loadPct": 18,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghi + phát WAL", "en": "Writes + WAL" }, "tone": "ok" }
+        },
+        "replica": {
+          "loadPct": 33,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Đọc · Lag ≈ 1 ms", "en": "Reads · Lag ≈ 1 ms" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô hình Sao chép Leader–Follower", "en": "Leader–Follower Replication" },
+        "lines": [
+          { "text": { "vi": "Leader nhận 100% lệnh ghi và phát dòng nhật ký WAL", "en": "Leader handles 100% writes and streams WAL" }, "tone": "plain" },
+          { "text": { "vi": "Followers áp lại WAL để phục vụ đọc & dự phòng", "en": "Followers replay WAL for reads & HA failover" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-wal-pipeline": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Chuỗi nhân quả tạo ra Độ trễ sao chép (Replication Lag)",
+          "en": "WAL Shipping & Replay Pipeline Behind Replication Lag"
+        },
+        "subtitle": {
+          "vi": "Khi tốc độ ghi trên Leader vượt tốc độ áp lại (applyRps) ở Follower, hàng đợi WAL tích luỹ",
+          "en": "Lag grows whenever Leader write rate exceeds Follower WAL apply rate"
+        },
+        "cells": ["1. Ghi WAL Leader", "2. Trả OK khách", "3. Truyền mạng", "4. Đợi áp ở Replica", "5. Hiển thị đọc"],
+        "activeIndices": [1, 3],
+        "pointers": [
+          { "index": 1, "label": "khách thấy đã lưu", "tone": "green" },
+          { "index": 3, "label": "cổ chai tạo Lag", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hệ quả", "en": "Effect" },
+          "value": { "vi": "Đọc vào Follower trong khoảng hở 2 → 5 sẽ nhận giá trị cũ (Stale Read)", "en": "Reads hitting Follower between steps 2 and 5 return stale values" },
+          "tone": "orange"
+        }
+      }
+    },
+    "s3-live-lag": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cao điểm ghi t = 15..45 s (4.000 req/s)", "en": "Write Surge t = 15..45 s (4,000 req/s)" },
+        "lines": [
+          { "text": { "vi": "Ghi tăng lên 1.000 w/s > năng lực áp WAL của Replica", "en": "1,000 writes/s exceeds Replica WAL apply rate" }, "tone": "bad" },
+          { "text": { "vi": "Nhãn LAG bật sáng; thử tăng Số Read Replica để giảm ρ", "en": "LAG badge lights up; raise Read Replicas to speed replay" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-ryw": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Lượt truy vấn của người dùng", "en": "User Operations" },
+        "rightTitle": { "vi": "Đích định tuyến thông minh", "en": "Smart Routing Target" },
+        "names": [
+          { "id": "u1", "name": "An vừa sửa hồ sơ (t < 5s)", "note": { "vi": "Cần Read-Your-Writes", "en": "Needs Read-Your-Writes" }, "targetId": "lead" },
+          { "id": "u2", "name": "Khách khác xem trang An", "note": { "vi": "Chấp nhận trễ ngắn", "en": "Tolerates brief lag" }, "targetId": "foll" },
+          { "id": "u3", "name": "Phiên đọc kèm mốc LSN", "note": { "vi": "Monotonic Reads", "en": "Monotonic Reads" }, "targetId": "foll" }
+        ],
+        "objects": [
+          {
+            "id": "lead",
+            "typeTag": "LEADER",
+            "value": "Primary DB (LSN #980)",
+            "fields": ["Bản mới nhất vừa ghi", "Chỉ nhận phần nhỏ lượt đọc ghim"],
+            "tone": "orange"
+          },
+          {
+            "id": "foll",
+            "typeTag": "FOLLOWER",
+            "value": "Read Replica (LSN ≥ mốc)",
+            "fields": ["Gánh phần lớn lượt đọc công khai", "Gắn cố định hoặc kiểm LSN để không lùi"],
+            "tone": "blue"
+          }
+        ]
+      }
+    },
+    "s5-sync-modes": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 28 },
+        "primary": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Semi-sync (1 ACK)", "en": "Semi-sync (1 ACK)" }, "tone": "warn" }
+        },
+        "replica": {
+          "loadPct": 50,
+          "highlighted": true,
+          "badge": { "text": { "vi": "RPO = 0 trên 1 bản", "en": "Zero loss on 1 standby" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba chế độ cam kết sao chép", "en": "Three Replication Modes" },
+        "lines": [
+          { "text": { "vi": "Async: ghi nhanh nhất, có thể mất WAL khi Leader sập", "en": "Async: fastest writes, non-zero RPO on crash" }, "tone": "amber" },
+          { "text": { "vi": "Semi-sync: đợi ≥ 1 Follower nhận WAL, giữ RPO = 0", "en": "Semi-sync: waits for 1 Follower WAL ack (RPO = 0)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-live-failover": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự cố t = 20 s: Primary ngừng hoạt động", "en": "Incident t = 20 s: Primary Crashes" },
+        "lines": [
+          { "text": { "vi": "80% lượt đọc sang Read Replicas vẫn thành công", "en": "80% reads on Replicas continue succeeding" }, "tone": "good" },
+          { "text": { "vi": "20% lượt ghi thất bại cho tới khi bầu Leader mới", "en": "20% writes fail until failover completes" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-failover-steps": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy trình 4 bước chuyển đổi dự phòng (Failover) an toàn",
+          "en": "4-Step Safe Leader Failover Sequence"
+        },
+        "subtitle": {
+          "vi": "Bắt buộc cô lập (Fencing) Leader cũ trước khi mở quyền ghi cho Leader mới để chặn Split-Brain",
+          "en": "Fence the old Leader before promoting the new Leader to prevent Split-Brain"
+        },
+        "cells": ["1. Mất Heartbeat", "2. Cô lập Leader cũ", "3. Chọn LSN cao nhất", "4. Đổi định tuyến ghi"],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 1, "label": "chặn Split-Brain", "tone": "rose" },
+          { "index": 2, "label": "giảm mất dữ liệu", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Thời gian gián đoạn ghi (RTO)", "en": "Write RTO" },
+          "value": { "vi": "Thường mất 10 – 30 giây từ lúc mất nhịp tim tới lúc DNS/Proxy trỏ xong", "en": "Typically 10–30 seconds from timeout detection to traffic cutover" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s8-not-backup": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 25 },
+        "primary": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": { "text": { "vi": "DELETE nhầm!", "en": "Accidental DELETE!" }, "tone": "bad" }
+        },
+        "replica": {
+          "loadPct": 40,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Xoá theo sau 1 s!", "en": "Wiped 1 s later!" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "primary-replica": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Replication KHÔNG phải là Backup", "en": "Replication Is NOT Backup" },
+        "lines": [
+          { "text": { "vi": "Lỗi DROP/DELETE trên Leader lan sang mọi Replica tức thì", "en": "Accidental DROP/DELETE replicates to all Followers" }, "tone": "bad" },
+          { "text": { "vi": "Phải có Snapshot bất biến + lưu trữ WAL (PITR)", "en": "Requires immutable Snapshots + WAL archive (PITR)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 25 },
+        "primary": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Leader + Fencing", "en": "Leader + Fencing" }, "tone": "ok" }
+        },
+        "replica": {
+          "loadPct": 42,
+          "highlighted": true,
+          "badge": { "text": { "vi": "RYW + Giám sát Lag", "en": "RYW + Lag Alert" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Vận hành Replication", "en": "Replication Operations Checklist" },
+        "lines": [
+          { "text": { "vi": "Định tuyến về Leader cho Read-Your-Writes", "en": "Pin post-write reads to Leader for RYW" }, "tone": "good" },
+          { "text": { "vi": "Semi-sync + Fencing + PITR Backup cho dữ liệu cốt lõi", "en": "Semi-sync + Fencing + PITR Backup for critical data" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "lag-surge": {
+      "sim": "S2-08/lag-surge",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow", "partition"],
+        "knobs": [
+          { "node": "replica", "key": "replicas" },
+          { "node": "primary", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tổng lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 85, "badAbove": 150 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 }
+      ],
+      "focus": { "nodes": ["primary", "replica"], "links": ["primary-replica"] }
+    },
+    "failover": {
+      "sim": "S2-08/failover",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["kill", "partition"],
+        "knobs": [
+          { "node": "replica", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 180 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi toàn cục", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+      ],
+      "slo": [
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["primary", "replica"] }
+    }
+  }
+}

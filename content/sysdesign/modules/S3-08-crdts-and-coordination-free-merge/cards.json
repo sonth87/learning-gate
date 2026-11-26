@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-08.c1",
+    "front": "CRDT (Conflict-free Replicated Data Type) giải quyết bài toán gì?",
+    "back": "Cho phép nhiều bản sao nhận lệnh ghi độc lập ngay cả khi đứt mạng (AP) mà không cần khoá hay bầu Leader, đồng thời đảm bảo mọi bản sao tự động hội tụ về cùng một kết quả khi đã nhận đủ tập cập nhật (Strong Eventual Consistency)."
+  },
+  {
+    "id": "S3-08.c2",
+    "front": "Ba tính chất ACI của hàm hợp nhất State-based CRDT là gì và chống lại lỗi mạng nào?",
+    "back": "Giao hoán (A ⊔ B = B ⊔ A) chống đảo thứ tự gói tin; Kết hợp ((A ⊔ B) ⊔ C = A ⊔ (B ⊔ C)) cho phép gộp theo từng cặp bất kỳ; Luỹ đẳng (A ⊔ A = A) chống cộng dư khi gói Gossip bị gửi lặp nhiều lần."
+  },
+  {
+    "id": "S3-08.c3",
+    "front": "Cơ chế hoạt động của G-Counter và PN-Counter?",
+    "back": "G-Counter tách thành mảng một ô cho mỗi replica (replica nào chỉ cộng vào ô đó), đọc bằng tổng các ô và gộp bằng max() từng ô. PN-Counter ghép hai G-Counter độc lập P (lượt cộng) và N (lượt trừ), giá trị bằng sum(P) − sum(N)."
+  },
+  {
+    "id": "S3-08.c4",
+    "front": "Vì sao Add-Wins OR-Set không làm mất món hàng khi một vùng thêm lại đồng thời với vùng khác bấm xoá?",
+    "back": "Mỗi lần add(x) sinh một thẻ duy nhất (replica:seq), còn remove(x) chỉ đưa các thẻ đã nhìn thấy tại bản sao đó vào tập tombstones. Thẻ mới của lệnh add đồng thời chưa nằm trong tombstones nên phần tử vẫn tồn tại sau khi hợp nhất."
+  },
+  {
+    "id": "S3-08.c5",
+    "front": "Khi nào được dùng LWW-Register và rủi ro cần lưu ý là gì?",
+    "back": "Chỉ dùng khi cập nhật gán đè trọn vẹn một trường đơn trị (như tên hiển thị, tiêu đề) kèm phân xử hoà theo (timestamp, replicaId). Rủi ro: đồng hồ vật lý chạy nhanh trên một máy sẽ đè sai các cập nhật sau, nên ưu tiên dùng HLC."
+  },
+  {
+    "id": "S3-08.c6",
+    "front": "Những bài toán nào TUYỆT ĐỐI không được giao phó hoàn toàn cho CRDT?",
+    "back": "Các bài toán có ràng buộc bất biến toàn cục chặn ngưỡng như không cho số dư ví âm, không bán trùng chiếc ghế cuối cùng hoặc cấp tên tài khoản duy nhất — những tác vụ này bắt buộc cần khoá hoặc giao thức đồng thuận (Raft/Paxos)."
+  }
+]

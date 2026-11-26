@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S2-01.q1",
+    "type": "mc",
+    "q": "Một API có hai nhóm endpoint: truy vấn hồ sơ mất 15 ms và xuất báo cáo PDF mất 8 giây trên cùng cụm máy chủ đồng nhất. Thuật toán cân bằng tải nào giúp tránh dồn ứ vào máy đang bận xuất báo cáo?",
+    "code": "",
+    "choices": [
+      "Round Robin",
+      "Least Connections",
+      "Random",
+      "IP Hash"
+    ],
+    "answer": 1,
+    "explain": "Round Robin chia đều số lượng request mà không xét độ dài xử lý, khiến máy đang giữ nhiều kết nối xuất báo cáo vẫn tiếp tục nhận thêm việc mới. Least Connections ưu tiên đẩy request sang máy đang có ít kết nối hoạt động nhất, cân bằng tải thực tế."
+  },
+  {
+    "id": "S2-01.q2",
+    "type": "output",
+    "q": "Cụm Weighted Round Robin gồm 3 máy có trọng số lần lượt là A = 5, B = 3 và C = 2. Khi Load Balancer nhận 1.000 request, máy A nhận bao nhiêu request? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "500",
+    "explain": "Tổng trọng số của cả cụm là 5 + 3 + 2 = 10. Tỷ trọng lưu lượng phân bổ cho máy A bằng 5 / 10 = 50%, tương ứng 1.000 × 0,5 = 500 request; máy B nhận 300 và máy C nhận 200."
+  },
+  {
+    "id": "S2-01.q3",
+    "type": "tf",
+    "q": "Đặt Timeout của Health Check cực ngắn (ví dụ 50 ms) và gỡ máy ngay sau 1 lần thất bại luôn giúp hệ thống đạt độ sẵn sàng cao hơn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Timeout quá ngắn kèm ngưỡng 1 lần lỗi dễ gây cảnh báo giả khi GC dừng ngắn hoặc Database tăng độ trễ tạm thời. Load Balancer có thể loại nhầm hàng loạt máy đang khoẻ khỏi pool và làm sập toàn bộ cụm."
+  },
+  {
+    "id": "S2-01.q4",
+    "type": "mc",
+    "q": "Yêu cầu nào dưới đây BẮT BUỘC phải dùng Load Balancer Layer 7 thay vì chỉ dùng Layer 4?",
+    "code": "",
+    "choices": [
+      "Chuyển tiếp kết nối TCP đến cụm PostgreSQL qua cổng 5432",
+      "Định tuyến đường dẫn /api/orders vào Order Service và /api/users vào User Service",
+      "Phân phối gói tin UDP cho máy chủ trò chơi thời gian thực",
+      "Chia tải dựa thuần trên địa chỉ IP và cổng nguồn của client"
+    ],
+    "answer": 1,
+    "explain": "Layer 4 chỉ đọc thông tin tầng giao vận (IP và cổng TCP/UDP) nên không thấy nội dung HTTP bên trong. Muốn định tuyến theo đường dẫn URL, HTTP header hay cookie, Load Balancer phải giải mã và phân tích cú pháp ở Layer 7."
+  },
+  {
+    "id": "S2-01.q5",
+    "type": "mc",
+    "q": "Cặp Load Balancer Active-Standby dùng cơ chế nào để máy dự phòng tiếp nhận lưu lượng khi máy chính ngừng hoạt động mà client không cần đổi địa chỉ IP?",
+    "code": "",
+    "choices": [
+      "Yêu cầu người dùng xoá bộ nhớ đệm trình duyệt thủ công",
+      "Theo dõi nhịp tim (Heartbeat) giữa hai máy và chuyển quyền giữ địa chỉ Virtual IP (VIP)",
+      "Nhân đôi mọi gói tin từ phía trình duyệt gửi đồng thời tới hai địa chỉ IP",
+      "Tắt kiểm tra sức khoẻ trên toàn bộ tầng ứng dụng"
+    ],
+    "answer": 1,
+    "explain": "Hai Load Balancer liên tục gửi tín hiệu Heartbeat (ví dụ qua giao thức VRRP). Khi LB chính mất tín hiệu, LB dự phòng nhận lại địa chỉ Virtual IP đang quảng bá ra ngoài trong vài giây mà phía client không cần cấu hình lại."
+  },
+  {
+    "id": "S2-01.q6",
+    "type": "tf",
+    "q": "Khi triển khai phiên bản mới không gián đoạn (Rolling Deployment), Connection Draining cho phép máy chủ ngừng nhận kết nối mới nhưng vẫn hoàn tất các request đang xử lý dở trước khi tắt.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Nếu tắt tiến trình ngay lập tức khi rút máy khỏi Load Balancer, mọi kết nối đang chạy dở sẽ bị ngắt lỗi 502/504. Connection Draining đợi các request hiện hữu trả kết quả xong (trong một thời hạn chờ) rồi mới dừng máy để cập nhật."
+  }
+]

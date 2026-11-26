@@ -1,0 +1,86 @@
+[
+  {
+    "id": "S2-11.A1",
+    "kind": "predict",
+    "title": { "vi": "Điều gì xảy ra với đơn hàng khi Email Service sập?" },
+    "prompt": { "vi": "Trong kiến trúc gọi đồng bộ nối tiếp (Order Service → Order DB → Email Service → Loyalty Service), lưu lượng đang ở 500 đơn/giây. Tại giây 20, Email Service ngừng hoạt động hoàn toàn. Dự đoán điều gì xảy ra trong khoảng giây 20 đến giây 45?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Đơn hàng vẫn lưu vào Order DB thành công, chỉ thiếu email xác nhận" },
+        { "vi": "Tỷ lệ lỗi đặt hàng vọt lên 100% (goodput về 0 req/s) dù Order DB vẫn hoàn toàn khoẻ" },
+        { "vi": "Load Balancer tự động bỏ qua Email Service và chuyển toàn bộ tải sang Loyalty Service" },
+        { "vi": "Độ trễ p99 giảm xuống vì không còn tốn 45 ms gửi thư qua SMTP" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 36, "speed": 2 },
+    "hints": [
+      { "vi": "Kiểm tra chế độ định tuyến của Order Service: các lời gọi tới DB, Email và Loyalty đều là đồng bộ nối tiếp không có fallback." },
+      { "vi": "Khi một chặng bắt buộc trong chuỗi đồng bộ có tỷ lệ thành công bằng 0%, tích xác suất thành công của cả request bằng bao nhiêu?" }
+    ],
+    "explain": { "vi": "Vì Order Service gọi đồng bộ tới Email Service mà không tách bất đồng bộ, khi Email Service ngừng hoạt động ở giây 20, tỷ lệ lỗi toàn hệ thống vọt lên {global.errorRate@25:0%} và lượng đơn thành công rơi xuống {global.goodputRps@25:0} req/s dù mức sử dụng của Order DB rất thấp." },
+    "sim": { "simId": "S2-11/sync-coupled", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S2-11/sync-coupled", "seekSec": 18, "focus": { "nodes": ["checkout", "email_svc"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-11.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: đơn đã trừ tiền nhưng mất thông báo và cộng điểm đúp" },
+    "prompt": { "vi": "Sau khi chuyển sang Event Bus, nhóm phát hiện hai lỗi nghiêm trọng trong đợt khởi động lại container đêm qua: (1) 43 đơn hàng đã lưu trong Order DB và trừ tiền khách nhưng không hề có trên Event Bus; (2) khi viết script phát bù sự kiện, một số khách hàng lại được cộng điểm thưởng hai lần. Hãy phân tích nguyên nhân gốc và chọn biện pháp khắc phục chuẩn." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S2-11/pubsub-outbox",
+      "seekSec": 25,
+      "focus": { "nodes": ["checkout", "order_db", "event_bus", "loyalty_svc"] }
+    },
+    "questions": [
+      {
+        "id": "root-loss",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân gốc khiến 43 đơn hàng đã lưu trong Order DB nhưng không có sự kiện trên Event Bus là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Topic Pub/Sub chỉ giao sự kiện cho một subscriber duy nhất nên nhánh còn lại bị thiếu" } },
+          { "id": "b", "text": { "vi": "Order Service thực hiện ghi kép trần (COMMIT vào DB xong mới gọi mạng publish lên Bus) và bị tắt đúng giữa hai bước" } },
+          { "id": "c", "text": { "vi": "Load Balancer chia tải Round-robin không đều giữa các instance Order Service" } },
+          { "id": "d", "text": { "vi": "Order DB thiếu chỉ mục trên cột mã khách hàng làm chậm câu truy vấn đọc" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-outbox",
+        "type": "single",
+        "prompt": { "vi": "Kiến trúc nào loại bỏ triệt để khe hở mất sự kiện giữa lúc lưu đơn hàng và lúc phát lên Event Bus?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đảo ngược thứ tự: gọi hàm publish lên Event Bus trước rồi mới chạy lệnh COMMIT vào Order DB" } },
+          { "id": "b", "text": { "vi": "Tăng gấp đôi thời gian chờ Timeout của kết nối mạng từ Order Service tới Event Bus" } },
+          { "id": "c", "text": { "vi": "Ghi cả dòng đơn hàng và dòng outbox_events trong cùng một giao dịch ACID của Order DB, rồi dùng tiến trình Relay/CDC đẩy lên Event Bus" } },
+          { "id": "d", "text": { "vi": "Quay về gọi HTTP đồng bộ nối tiếp từ Order Service sang mọi dịch vụ phụ" } }
+        ],
+        "correct": ["c"],
+        "weight": 35
+      },
+      {
+        "id": "fix-dup",
+        "type": "multi",
+        "prompt": { "vi": "Vì tiến trình Outbox Relay hoạt động theo ngữ nghĩa chuyển giao ít nhất một lần (At-least-once), cần áp dụng những biện pháp nào ở phía Loyalty Service để không cộng điểm hai lần?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đính kèm định danh duy nhất event_id cho mỗi sự kiện ngay từ lúc tạo bản ghi Outbox" } },
+          { "id": "b", "text": { "vi": "Lưu event_id vào bảng processed_events có ràng buộc UNIQUE trong cùng giao dịch cộng điểm của Loyalty Service" } },
+          { "id": "c", "text": { "vi": "Tắt hoàn toàn cơ chế thử lại (Retry) trên cả Outbox Relay lẫn Event Bus" } },
+          { "id": "d", "text": { "vi": "Giảm số lượng worker của Loyalty Service xuống còn cố định 1 tiến trình" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Database và Event Bus là hai tiến trình độc lập; bất kỳ lệnh dừng container nào chen vào giữa lệnh COMMIT và lệnh publish đều gây lệch trạng thái." },
+      { "vi": "Nếu tắt thử lại sẽ quay về nguy cơ mất sự kiện; cách chuẩn là chấp nhận At-least-once ở tầng truyền và khử trùng lặp bằng khoá UNIQUE ở tầng nhận." }
+    ],
+    "explain": { "vi": "Ghi kép trần giữa DB và Broker không có tính nguyên tử nên tiến trình dừng sau COMMIT sẽ đánh rơi sự kiện. Mẫu Transactional Outbox gói đơn hàng và sự kiện vào chung một giao dịch SQL cục bộ, còn khoá UNIQUE(event_id) tại subscriber đảm bảo mỗi sự kiện chỉ cộng điểm đúng một lần dù Relay phát lặp." }
+  }
+]

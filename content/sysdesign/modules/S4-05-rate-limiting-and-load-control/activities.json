@@ -1,0 +1,43 @@
+[
+  {
+    "id": "S4-05.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán thành phần quá tải đầu tiên khi script cào dữ liệu tràn vào" },
+    "prompt": { "vi": "Khi Token Bucket Limiter đang để mở ở mức 5.000 req/s, tại giây 12 một script cào dữ liệu tăng vọt lưu lượng đẩy tổng tải từ 1.000 lên 4.400 req/s. Theo bạn, thành phần nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 10,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 10 },
+      "expected": ["api"]
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 25, "speed": 2 },
+    "hints": [
+      { "vi": "API Gateway có 2 instance (tổng năng lực 10.000 req/s), Database có 2 bản sao (5.200 req/s), còn Catalog API chỉ có 1 instance (1.600 req/s)." },
+      { "vi": "Khi bộ giới hạn chưa kẹp hạn mức, toàn bộ 4.400 req/s đi xuyên qua Gateway xuống thẳng Catalog API." }
+    ],
+    "explain": { "vi": "{api.name} chạm trạng thái quá tải đầu tiên vào giây {t.first.api:1}, khi lưu lượng dồn xuống đạt {api.lambda@20:0} req/s gấp {api.rho@20:2} lần năng lực xử lý (1.600 req/s), kéo độ trễ p99 vọt lên {global.p99@20:0} ms và đánh rớt cả người dùng hợp lệ." },
+    "sim": { "simId": "S4-05/flood", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S4-05/flood", "seekSec": 10, "focus": { "nodes": ["limiter", "api"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-05.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Xác định lưu lượng bền vững tối đa qua Token Bucket" },
+    "prompt": { "vi": "Trên kịch bản S4-05/bucket-limit, đối tác được cấp Token Bucket với tốc độ nạp ratePerSec = 1.800 token/s và sức chứa xô burst = 500 token (trong khi Catalog API phía sau dư sức xử lý 3.200 req/s). Hãy kéo thanh trượt tải để tìm mức lưu lượng ổn định cao nhất (req/s) sao cho tỷ lệ bị từ chối HTTP 429 không vượt quá 1% và p99 ≤ 90 ms trong cửa sổ giây 15–45." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 90, "window": { "fromSec": 15, "toSec": 45 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 45 } }
+    ],
+    "runSec": 45,
+    "reference": { "value": 1819, "tolPassPct": 8, "tolFullPct": 4 },
+    "hints": [
+      { "vi": "Lượng token tích sẵn trong burst = 500 chỉ bù được trong tích tắc đầu tiên; khi duy trì tải liên tục tới giây 45, xô chỉ cho phép tối đa tốc độ nạp mới mỗi giây." },
+      { "vi": "Để tỷ lệ bị chặn HTTP 429 không quá 1%, lưu lượng đầu vào λ phải thoả mãn (λ − 1.800) / λ ≤ 0,01." }
+    ],
+    "explain": { "vi": "Dưới tải ổn định dài hạn, sức chứa burst = 500 token bị tiêu cạn ngay giây đầu nếu λ > R. Tốc độ cho qua trung bình bằng đúng ratePerSec = 1.800 req/s, nên để tỷ lệ lỗi 429 ≤ 1% lưu lượng tối đa đạt ≈ {ref.value:0} req/s (1.800 / 0,99)." },
+    "sim": { "simId": "S4-05/bucket-limit", "seekSec": 0, "autoplay": false }
+  }
+]

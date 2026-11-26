@@ -1,0 +1,24 @@
+{
+  "id": "S2-09",
+  "slug": "S2-09-sharding-and-hot-keys",
+  "level": 2,
+  "order": 9,
+  "title": "Sharding, chọn Shard Key và xử lý Hot Key",
+  "summary": "So sánh phân mảnh theo khoảng (Range) và theo băm (Hash), định lượng cách một khoá nóng theo phân phối Zipf kéo tụt thông lượng cả cụm NoSQL và giải cứu bằng Cache khoá nóng hoặc tách khoá.",
+  "durationMin": 17,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "So sánh cơ chế định tuyến và ưu nhược điểm của phân mảnh theo khoảng (Range Sharding) với phân mảnh theo băm (Hash Sharding)" },
+    { "vi": "Tính toán thông lượng hiệu dụng của cụm phân mảnh khi xuất hiện một khoá nóng (Hot Key) và giải thích vì sao chỉ tăng số shard không xử lý được" },
+    { "vi": "Áp dụng bộ nhớ đệm khoá nóng cho tải thiên về đọc và kỹ thuật thêm hậu tố ngẫu nhiên (Key Salting) cho tải ghi tập trung" },
+    { "vi": "Đánh giá chi phí của truy vấn xuyên phân mảnh (Scatter-Gather) và bài toán dời dữ liệu khi đổi số shard theo phép chia lấy dư" }
+  ],
+  "tags": ["sharding", "shard-key", "hot-key", "zipf", "partitioning", "nosql"],
+  "prerequisites": ["S1-03", "S2-03", "S2-07"],
+  "related": ["S2-02", "S2-08", "S2-10"],
+  "dtsRef": "sharding",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về phân mảnh theo khoảng (Range) và theo băm (Hash), điểm nóng dữ liệu (Hot Key/Zipf) và cách giảm tải shard nóng."
+  }
+}

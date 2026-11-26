@@ -1,0 +1,29 @@
+{
+  "id": "S0-08",
+  "slug": "S0-08-mental-model-recap",
+  "level": 0,
+  "order": 8,
+  "title": "Tổng kết 4 mindset của Phase 0",
+  "summary": "Hệ thống hóa 4 chuyển dịch tư duy nền tảng của kiến trúc sư hệ thống và nối từng tư duy với các công cụ phân tích đã rèn luyện từ S0-01 đến S0-07.",
+  "durationMin": 12,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích vì sao không tồn tại kiến trúc tốt nhất tuyệt đối mà chỉ có kiến trúc khớp với ràng buộc hiện tại" },
+    { "vi": "Áp dụng kỹ thuật hỏi truy nguyên 5 lần Tại sao (5 Whys) để tìm nguyên nhân gốc trước khi thêm thành phần mới" },
+    { "vi": "Đặt sự đánh đổi (Trade-off) lên trước việc chọn công nghệ và nhìn toàn cục luồng dữ liệu, điểm hỏng thay vì chỉ nhìn mã nguồn" },
+    { "vi": "Liên kết 4 chuyển dịch tư duy với 4 công cụ thực hành của Phase 0 trước khi bước vào mô phỏng định lượng" }
+  ],
+  "tags": ["mental-model", "trade-offs", "five-whys", "system-thinking", "recap"],
+  "prerequisites": ["S0-01", "S0-02", "S0-04", "S0-05", "S0-06", "S0-07"],
+  "related": ["S0-09", "S1-01", "S6-01"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-8-mental-model-recap.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-8-mental-model-recap.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại súc tích toàn bộ bài tổng kết Phase 0, bỏ văn phong hội thoại pha tiếng Anh, chuyển sơ đồ Mermaid sang các cảnh memory-2d liên kết 4 mindset với 4 công cụ thực hành của khóa học."
+  }
+}

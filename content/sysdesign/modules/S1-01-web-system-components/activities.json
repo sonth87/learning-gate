@@ -1,0 +1,39 @@
+[
+  {
+    "id": "S1-01.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào quá tải khi mất Cache?" },
+    "prompt": { "vi": "Hệ thống đang phục vụ ổn định 450 req/s nhờ Cache giữ 89% lượt đọc. Đúng giây 20, Cache bị xoá trắng dữ liệu do khởi động lại. Dự đoán xem thành phần nào sẽ chuyển sang trạng thái Quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 18 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 32, "speed": 2 },
+    "hints": [
+      { "vi": "Kiểm tra năng lực μ của từng thành phần trong Inspector khi toàn bộ 450 req/s đi xuyên qua tầng Cache." },
+      { "vi": "App Server xử lý được 800 req/s, trong khi Database chỉ xử lý tối đa 400 req/s." }
+    ],
+    "explain": { "vi": "Khi Cache mất dữ liệu lúc giây 20, gần như toàn bộ 450 req/s tràn thẳng xuống Database có năng lực μ = 400 req/s. Database chạm trạng thái quá tải lúc giây {t.first.db:1} với ρ = {db.rho@23:2}, trong khi App Server vẫn ở mức ρ = {app.rho@23:2}." },
+    "sim": { "simId": "S1-01/overload", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S1-01/overload", "seekSec": 18, "focus": { "nodes": ["cache", "db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S1-01.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Xác định thành phần chịu tải sát ngưỡng nhất" },
+    "prompt": { "vi": "Ở kịch bản 200 req/s ngay sau khi Cache mất dữ liệu (giây 26), hãy nhấn vào thành phần đang có mức sử dụng ρ cao nhất trên đường đi của request." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 26,
+    "maxPicks": 1,
+    "expected": ["db"],
+    "hints": [
+      { "vi": "So sánh tỉ số λ / μ của App Server (800 req/s) và Database (400 req/s) khi cả hai cùng nhận gần 200 req/s." }
+    ],
+    "explain": { "vi": "Tại giây 26, {db.name} nhận {db.lambda@26:0} req/s trên năng lực 400 req/s nên ρ nhảy lên {db.rho@26:2}, cao gấp đôi App Server (ρ = {app.rho@26:2}). Database vì thế là thành phần giới hạn khoảng dư tải của toàn chuỗi." },
+    "sim": { "simId": "S1-01/steady", "seekSec": 26, "autoplay": false }
+  }
+]

@@ -1,0 +1,9 @@
+[
+  { "id": "S2-04.c1", "front": "Message Queue giải quyết vấn đề gì trên đường phản hồi của API?", "back": "Tách các bước nặng hoặc phụ thuộc bên ngoài (xử lý video, xuất báo cáo, gửi email) ra khỏi luồng đồng bộ: API chỉ ghi nhận job vào Queue trong vài mili-giây rồi trả lời ngay, còn Worker xử lý nền." },
+  { "id": "S2-04.c2", "front": "Quy luật thông lượng cốt lõi khi đặt Queue giữa Producer và Worker?", "back": "Queue hấp thụ đột biến lưu lượng ngắn hạn thành backlog nhưng không tạo thêm công suất xử lý; về dài hạn, tốc độ xả trung bình của cụm Worker bắt buộc phải lớn hơn tốc độ gửi trung bình." },
+  { "id": "S2-04.c3", "front": "Phân biệt mô hình Queue (Point-to-Point) và Pub/Sub?", "back": "Với Queue, các Worker cạnh tranh nhau nên mỗi thông điệp chỉ do một Worker xử lý để chia tải; với Pub/Sub, một sự kiện phát lên Topic được sao gửi tới tất cả các dịch vụ đăng ký độc lập." },
+  { "id": "S2-04.c4", "front": "Tổ hợp chuẩn mực để xử lý tin cậy trong hệ phân tán là gì?", "back": "Giao nhận ít nhất một lần (At-least-once qua Ack sau khi xong việc + Visibility Timeout) kết hợp xử lý lũy đẳng (Idempotent Consumer) ở phía Worker." },
+  { "id": "S2-04.c5", "front": "Dead Letter Queue (DLQ) hoạt động như thế nào?", "back": "Khi một thông điệp thất bại liên tiếp chạm ngưỡng maxRetries, Broker gỡ nó khỏi hàng đợi chính và chuyển sang DLQ để đội vận hành kiểm tra nguyên nhân gốc, sửa lỗi rồi phát lại nếu cần." },
+  { "id": "S2-04.c6", "front": "Làm sao vừa giữ thứ tự sự kiện vừa chạy nhiều Worker song song?", "back": "Chia hàng đợi thành nhiều phân vùng (Partition) và băm theo khoá thực thể (như user_id, order_id) để mọi thông điệp cùng khoá luôn được một Worker xử lý tuần tự." },
+  { "id": "S2-04.c7", "front": "Hai chỉ số giám sát quan trọng nhất của một Message Queue?", "back": "Độ sâu tồn đọng (Queue Depth / Backlog) và tuổi của thông điệp cũ nhất chưa xử lý (Oldest Message Age — phản ánh trực tiếp độ trễ thực tế người dùng phải chờ)." }
+]

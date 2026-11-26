@@ -1,0 +1,424 @@
+{
+  "version": 1,
+  "base": "s1-setup",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người mua vé", "en": "Ticket Buyers" },
+      "inspector": {
+        "what": {
+          "vi": "Khách hàng săn vé sự kiện gửi 320 req/s (50% xem chỗ trống, 50% đặt ghế).",
+          "en": "Concert buyers sending 320 req/s (50% seat checks, 50% booking writes)."
+        },
+        "how": {
+          "vi": "Nhiều người cùng nhấp vào một ghế đẹp cuối cùng (ví dụ A12) trong cùng một mili-giây.",
+          "en": "Multiple buyers click the exact same last desirable seat (e.g. A12) within milliseconds."
+        },
+        "why": {
+          "vi": "Tạo ra điều kiện đua tranh (Race Condition) đòi hỏi cơ sở dữ liệu phải cô lập các giao dịch đồng thời.",
+          "en": "Creates high-contention race conditions that test database concurrency control."
+        }
+      }
+    },
+    "app1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Booking API 1", "en": "Booking API 1" },
+      "inspector": {
+        "what": {
+          "vi": "Instance ứng dụng thứ nhất thực thi giao dịch đặt ghế TX1.",
+          "en": "First stateless Booking API server executing transaction TX1."
+        },
+        "how": {
+          "vi": "Mở giao dịch SQL tới Seat DB để kiểm tra và cập nhật ghế, sau đó thu tiền qua Payment API.",
+          "en": "Runs SQL transactions against Seat DB and charges cards via Payment API."
+        },
+        "why": {
+          "vi": "Đại diện cho luồng xử lý của khách hàng thứ nhất khi đua tranh cùng một dòng dữ liệu.",
+          "en": "Represents buyer #1 racing on the same seat row."
+        }
+      }
+    },
+    "app2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Booking API 2", "en": "Booking API 2" },
+      "inspector": {
+        "what": {
+          "vi": "Instance ứng dụng thứ hai thực thi giao dịch đặt ghế TX2 đồng thời với TX1.",
+          "en": "Second stateless Booking API server executing concurrent transaction TX2."
+        },
+        "how": {
+          "vi": "Chạy độc lập trên máy chủ khác nên khoá bộ nhớ trong tiến trình (mutex) không có tác dụng giữa API 1 và API 2.",
+          "en": "Runs on a separate process/host, so in-memory application mutexes cannot coordinate TX1 and TX2."
+        },
+        "why": {
+          "vi": "Buộc việc đồng bộ hoá phải đặt tại tầng cơ sở dữ liệu dùng chung.",
+          "en": "Forces concurrency control down into the shared transactional database."
+        }
+      }
+    },
+    "seat_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Seat DB", "en": "Seat DB" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ quản lý bảng seats và bookings với Connection Pool 20 kết nối (μ = 1.800 ops/s khi giao dịch ngắn 8 ms).",
+          "en": "Relational database storing seats and bookings with a 20-connection pool (μ = 1,800 ops/s at 8 ms hold time)."
+        },
+        "how": {
+          "vi": "Bảo đảm ACID qua WAL và MVCC. Nếu mỗi giao dịch giữ kết nối lâu 250 ms để chờ HTTP ngoài, thông lượng pool tụt còn 20 / 0,25 = 80 ops/s.",
+          "en": "Enforces ACID via WAL and MVCC. Holding connections for 250 ms collapses pool capacity to 20 / 0.25 = 80 ops/s."
+        },
+        "why": {
+          "vi": "Là nguồn sự thật duy nhất quyết định một ghế chỉ được bán cho đúng một người.",
+          "en": "Single source of truth guaranteeing each seat is sold at most once."
+        },
+        "tip": {
+          "vi": "Không bao giờ giữ giao dịch SQL đang mở trong lúc chờ phản hồi mạng từ dịch vụ bên thứ ba.",
+          "en": "Never keep an open SQL transaction waiting on external third-party HTTP calls."
+        }
+      }
+    },
+    "pay_gw": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "shield",
+      "label": { "vi": "Payment API", "en": "Payment API" },
+      "inspector": {
+        "what": {
+          "vi": "Cổng thanh toán thẻ bên ngoài hệ thống cơ sở dữ liệu.",
+          "en": "External card payment gateway service."
+        },
+        "how": {
+          "vi": "Xử lý xác thực ngân hàng mất vài chục đến vài trăm mili-giây và không tham gia rollback cùng Seat DB.",
+          "en": "Takes tens to hundreds of milliseconds over the network and cannot roll back with Seat DB."
+        },
+        "why": {
+          "vi": "Cần gọi tách biệt ở ngoài phạm vi giữ khoá dòng của Seat DB.",
+          "en": "Must be invoked outside Seat DB's row-lock and connection scope."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-app1": {
+      "inspector": {
+        "what": { "vi": "Luồng đặt vé vào Booking API 1.", "en": "Buyer requests routed to Booking API 1." },
+        "how": { "vi": "Nhận 50% tổng lưu lượng người mua.", "en": "Carries half of buyer traffic." },
+        "why": { "vi": "Tạo giao dịch đồng thời với nhánh API 2.", "en": "Generates concurrent transactions alongside API 2." }
+      }
+    },
+    "client-app2": {
+      "inspector": {
+        "what": { "vi": "Luồng đặt vé vào Booking API 2.", "en": "Buyer requests routed to Booking API 2." },
+        "how": { "vi": "Nhận 50% tổng lưu lượng người mua.", "en": "Carries half of buyer traffic." },
+        "why": { "vi": "Mô phỏng hai khách bấm đặt ghế cùng lúc.", "en": "Models simultaneous seat checkout attempts." }
+      }
+    },
+    "app1-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối SQL từ Booking API 1 tới Seat DB.", "en": "SQL connection from Booking API 1 to Seat DB." },
+        "how": { "vi": "Mượn một kết nối từ pool trong suốt thời gian BEGIN...COMMIT.", "en": "Borrows a pooled DB connection from BEGIN until COMMIT/ROLLBACK." },
+        "why": { "vi": "Giao dịch càng ngắn thì kết nối càng sớm trả về cho request tiếp theo.", "en": "Shorter transactions return pooled connections faster." }
+      }
+    },
+    "app2-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối SQL từ Booking API 2 tới Seat DB.", "en": "SQL connection from Booking API 2 to Seat DB." },
+        "how": { "vi": "Đua tranh khoá dòng hoặc kiểm tra version trên cùng bản ghi ghế A12.", "en": "Contends for row locks or version CAS on seat A12." },
+        "why": { "vi": "Nơi lộ rõ sự khác biệt giữa khoá bi quan và kiểm soát lạc quan.", "en": "Shows the trade-off between pessimistic locking and optimistic CAS." }
+      }
+    },
+    "app1-pay": {
+      "inspector": {
+        "what": { "vi": "Lời gọi thu tiền từ Booking API 1 sang Payment API.", "en": "Payment charge call from Booking API 1." },
+        "how": { "vi": "Chỉ phát sinh cho các giao dịch đặt vé ghi.", "en": "Triggered on booking write operations." },
+        "why": { "vi": "Phải đặt ngoài khối giao dịch giữ khoá của Seat DB.", "en": "Should execute outside Seat DB lock scope." }
+      }
+    },
+    "app2-pay": {
+      "inspector": {
+        "what": { "vi": "Lời gọi thu tiền từ Booking API 2 sang Payment API.", "en": "Payment charge call from Booking API 2." },
+        "how": { "vi": "Gọi qua mạng với độ trễ biến thiên theo ngân hàng phát hành.", "en": "Network call subject to upstream bank latency." },
+        "why": { "vi": "Tách rời khỏi giao dịch DB để bảo vệ Connection Pool.", "en": "Decoupled from DB transactions to protect the connection pool." }
+      }
+    }
+  },
+  "zones": {
+    "tx-tier": {
+      "nodeIds": ["app1", "app2", "seat_db"],
+      "label": { "vi": "PHẠM VI GIAO DỊCH SQL", "en": "SQL TRANSACTION SCOPE" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-setup": {
+      "show": { "nodes": ["client", "app1", "app2", "seat_db"] },
+      "zones": ["tx-tier"],
+      "state": {
+        "app1": { "loadPct": 22 },
+        "app2": { "loadPct": 22 },
+        "seat_db": {
+          "loadPct": 18,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghế A12: còn 1", "en": "Seat A12: 1 left" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giao dịch ACID cục bộ", "en": "Local ACID Transaction" },
+        "lines": [
+          { "text": { "vi": "Atomicity · Consistency · Isolation · Durability", "en": "Atomicity · Consistency · Isolation · Durability" }, "tone": "good" },
+          { "text": { "vi": "Hai khách cùng nhắm vào chiếc ghế cuối A12", "en": "Two buyers target the last seat A12" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-lost-update": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Chu trình Read-Modify-Write ở mức Read Committed làm mất cập nhật",
+          "en": "Read-Modify-Write Race Under Read Committed Causes Lost Update"
+        },
+        "subtitle": {
+          "vi": "Cả TX1 và TX2 đều bọc BEGIN...COMMIT nhưng cùng đọc left = 1 trước khi bên kia kịp COMMIT",
+          "en": "Both TX1 and TX2 use BEGIN...COMMIT, yet both read left = 1 before the other commits"
+        },
+        "cells": [
+          "t1: TX1 đọc left=1",
+          "t2: TX2 đọc left=1",
+          "t3: TX1 ghi left=0",
+          "t4: TX2 ghi left=0"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 1, "label": "TX2 thấy bản cũ", "tone": "orange" },
+          { "index": 3, "label": "Ghi đè TX1!", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hậu quả", "en": "Outcome" },
+          "value": {
+            "vi": "1 ghế A12 xuất 2 vé hợp lệ (Oversold) vì phép trừ tính trong bộ nhớ ứng dụng",
+            "en": "1 seat sold twice (Oversold) because subtraction used a stale read"
+          },
+          "tone": "rose"
+        }
+      }
+    },
+    "s3-pessimistic-lock": {
+      "show": { "nodes": ["client", "app1", "app2", "seat_db"] },
+      "zones": ["tx-tier"],
+      "state": {
+        "app1": {
+          "loadPct": 28,
+          "badge": { "text": { "vi": "Giữ khoá A12", "en": "Holds lock A12" }, "tone": "ok" }
+        },
+        "app2": {
+          "loadPct": 45,
+          "badge": { "text": { "vi": "Chờ mở khoá", "en": "Waiting on lock" }, "tone": "warn" }
+        },
+        "seat_db": {
+          "loadPct": 32,
+          "highlighted": true,
+          "badge": { "text": { "vi": "FOR UPDATE", "en": "FOR UPDATE" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khoá bi quan & UPDATE nguyên tử", "en": "Pessimistic Lock & Atomic UPDATE" },
+        "lines": [
+          { "text": { "vi": "TX1 khoá dòng A12; TX2 xếp hàng tới khi TX1 chốt", "en": "TX1 locks row A12; TX2 waits until commit" }, "tone": "good" },
+          { "text": { "vi": "TX2 đọc lại thấy left = 0 nên từ chối an toàn", "en": "TX2 re-reads left = 0 and rejects cleanly" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-optimistic-cas": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Hai giao dịch cùng đọc ver = 1", "en": "Concurrent Updates (ver = 1)" },
+        "rightTitle": { "vi": "Kết quả kiểm tra CAS tại Seat DB", "en": "CAS Outcome in Seat DB" },
+        "names": [
+          {
+            "id": "tx1",
+            "name": "TX1: WHERE ver = 1",
+            "note": { "vi": "Đến trước · khớp ver = 1", "en": "Arrives first · matches ver = 1" },
+            "targetId": "row_v2",
+            "style": "solid"
+          },
+          {
+            "id": "tx2",
+            "name": "TX2: WHERE ver = 1",
+            "note": { "vi": "Đến sau · ver đã lên 2", "en": "Arrives second · ver is now 2" },
+            "targetId": "cas_conflict",
+            "style": "danger"
+          }
+        ],
+        "objects": [
+          {
+            "id": "row_v2",
+            "typeTag": "COMMIT OK",
+            "value": "left = 0, ver = 2",
+            "fields": ["1 dòng cập nhật", "không giữ khoá lúc đọc"],
+            "tone": "green",
+            "badge": { "vi": "TX1 mua ghế thành công", "en": "TX1 wins the seat" }
+          },
+          {
+            "id": "cas_conflict",
+            "typeTag": "0 ROWS",
+            "value": "Lệch phiên bản!",
+            "fields": ["ứng dụng đọc lại bản mới", "hoặc báo hết ghế ngay"],
+            "tone": "rose",
+            "badge": { "vi": "Chặn Lost Update không cần khoá chờ", "en": "Prevents Lost Update without lock waits" }
+          }
+        ]
+      }
+    },
+    "s5-isolation-levels": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Phổ mức cô lập SQL và các bất thường dữ liệu bị chặn",
+          "en": "SQL Isolation Spectrum and Prevented Anomalies"
+        },
+        "nodes": [
+          { "id": "rc", "x": -185, "y": -60, "label": "Read Committed", "sub": { "vi": "Chặn Dirty Read · còn Lost Update", "en": "No Dirty Read · allows Lost Update" }, "tone": "yellow" },
+          { "id": "rr", "x": 0, "y": -60, "label": "Snapshot / Repeatable", "sub": { "vi": "Đọc nhất quán theo mốc mở TX", "en": "Consistent point-in-time snapshot" }, "tone": "blue" },
+          { "id": "ser", "x": 185, "y": -60, "label": "Serializable (SSI)", "sub": { "vi": "Chặn cả Write Skew & Phantom", "en": "Blocks Write Skew & Phantoms" }, "tone": "green" },
+          { "id": "ws", "x": 0, "y": 62, "label": "Write Skew (2 bác sĩ trực)", "sub": { "vi": "Đọc 2 bảng giao nhau rồi ghi lệch", "en": "Disjoint writes break shared invariant" }, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "rc", "to": "rr", "label": "MVCC snapshot" },
+          { "from": "rr", "to": "ser", "label": "kiểm xung đột SSI" },
+          { "from": "rr", "to": "ws", "label": "vẫn lọt!", "style": "danger" }
+        ]
+      }
+    },
+    "s6-deadlock-unique": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Vòng khoá chéo (Deadlock) khi đặt cặp ghế ngược thứ tự",
+          "en": "Deadlock Cycle When Locking Seat Pairs in Opposite Order"
+        },
+        "nodes": [
+          { "id": "t1", "x": -155, "y": -55, "label": "TX1 (giữ ghế A1)", "sub": { "vi": "Bước 2: xin khoá ghế A2", "en": "Step 2: waits for seat A2" }, "tone": "orange" },
+          { "id": "t2", "x": 155, "y": -55, "label": "TX2 (giữ ghế A2)", "sub": { "vi": "Bước 2: xin khoá ghế A1", "en": "Step 2: waits for seat A1" }, "tone": "orange" },
+          { "id": "fix", "x": 0, "y": 66, "label": "ORDER BY seat_id ASC + UNIQUE", "sub": { "vi": "Khoá cùng chiều A1 → A2 triệt tiêu vòng chờ", "en": "Canonical A1 → A2 lock order breaks cycle" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "t1", "to": "t2", "label": "chờ A2", "style": "danger" },
+          { "from": "t2", "to": "t1", "label": "chờ A1", "style": "danger" },
+          { "from": "t1", "to": "fix", "label": "chuẩn hoá", "style": "dashed" },
+          { "from": "t2", "to": "fix", "label": "chuẩn hoá", "style": "dashed" }
+        ]
+      }
+    },
+    "s7-hold-lock-live": {
+      "show": { "nodes": "*" },
+      "zones": ["tx-tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giữ khoá khi gọi Payment API", "en": "Holding DB Connections Across HTTP" },
+        "lines": [
+          { "text": { "vi": "t < 16 s: giữ DB 8 ms → μ = 1.800 ops/s", "en": "t < 16 s: 8 ms hold → μ = 1,800 ops/s" }, "tone": "good" },
+          { "text": { "vi": "t = 16 s: giữ DB 250 ms → μ = 20 / 0,25 = 80 ops/s", "en": "t = 16 s: 250 ms hold → μ = 80 ops/s" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-reservation-fix": {
+      "show": { "nodes": "*" },
+      "zones": ["tx-tier"],
+      "state": {
+        "app1": { "loadPct": 22 },
+        "app2": { "loadPct": 22 },
+        "seat_db": {
+          "loadPct": 18,
+          "highlighted": true,
+          "badge": { "text": { "vi": "TX ngắn 8 ms", "en": "Short 8 ms TX" }, "tone": "ok" }
+        },
+        "pay_gw": {
+          "loadPct": 16,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ngoài giao dịch DB", "en": "Outside DB TX" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mẫu Giữ chỗ (Reservation 3 bước)", "en": "Three-Step Reservation Pattern" },
+        "lines": [
+          { "text": { "vi": "1. TX1 ngắn: đặt trạng thái HELD + expires_at", "en": "1. Short TX1: mark HELD + expires_at" }, "tone": "good" },
+          { "text": { "vi": "2. Gọi Payment API ở ngoài giao dịch SQL", "en": "2. Call Payment API outside SQL TX" }, "tone": "plain" },
+          { "text": { "vi": "3. TX2 ngắn: đổi sang CONFIRMED hoặc trả ghế", "en": "3. Short TX2: mark CONFIRMED or release" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["tx-tier"],
+      "state": {
+        "app1": { "loadPct": 22 },
+        "app2": { "loadPct": 22 },
+        "seat_db": {
+          "loadPct": 18,
+          "badge": { "text": { "vi": "ACID + UNIQUE", "en": "ACID + UNIQUE" }, "tone": "ok" }
+        },
+        "pay_gw": { "loadPct": 16 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Nguyên tắc kiểm soát đồng thời", "en": "Concurrency Control Checklist" },
+        "lines": [
+          { "text": { "vi": "Tranh chấp cao → FOR UPDATE / UPDATE nguyên tử", "en": "High contention → FOR UPDATE / atomic UPDATE" }, "tone": "amber" },
+          { "text": { "vi": "Tranh chấp thấp → Optimistic CAS (version)", "en": "Low contention → Optimistic CAS (version)" }, "tone": "good" },
+          { "text": { "vi": "Tuyệt đối không gọi mạng ngoài khi đang giữ khoá", "en": "Never make external calls while holding locks" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "lock-pool": {
+      "sim": "S3-07/lock-pool",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "seat_db", "key": "poolSize" },
+          { "node": "seat_db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tải vào", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 200, "badAbove": 500 } },
+        { "metric": "errorRate", "label": { "vi": "Tỉ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 250 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["seat_db", "pay_gw"] }
+    }
+  }
+}

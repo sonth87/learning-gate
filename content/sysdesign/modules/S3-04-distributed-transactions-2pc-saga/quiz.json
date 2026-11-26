@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-04.q1",
+    "type": "mc",
+    "q": "Vì sao giao thức 2-Phase Commit (2PC) được xếp vào nhóm giao thức khoá chặn (Blocking Protocol)?",
+    "code": "",
+    "choices": [
+      "Vì nó chỉ cho phép chạy tối đa 2 giao dịch mỗi ngày trên toàn cụm",
+      "Vì nếu Coordinator dừng hoạt động sau khi các DB đã bỏ phiếu YES ở Pha 1, các DB đó bị kẹt ở trạng thái in-doubt và phải ngâm khoá dòng cho tới khi Coordinator hồi phục",
+      "Vì nó không bao giờ ghi nhật ký xuống ổ cứng trước khi trả kết quả",
+      "Vì nó buộc mọi dịch vụ phải dùng chung một bảng dữ liệu duy nhất"
+    ],
+    "answer": 1,
+    "explain": "Sau khi trả lời VOTE_YES ở Pha Prepare, thành viên không thể tự ý quyết định COMMIT hay ABORT khi mất liên lạc với Coordinator (do không biết các thành viên khác đã nhận lệnh gì), dẫn tới ngâm khoá tài nguyên không xác định thời hạn."
+  },
+  {
+    "id": "S3-04.q2",
+    "type": "mc",
+    "q": "Một Saga gồm 4 bước thực thi tuần tự T1 → T2 → T3 → T4. Nếu T1, T2, T3 đã COMMIT cục bộ thành công nhưng T4 gặp lỗi nghiệp vụ, chuỗi giao dịch bù trừ chuẩn phải chạy theo thứ tự nào?",
+    "code": "",
+    "choices": [
+      "C1 → C2 → C3 → C4",
+      "C3 → C2 → C1",
+      "Chỉ chạy mỗi C4 rồi dừng",
+      "Gọi lệnh SQL ROLLBACK đồng thời trên cả 4 cơ sở dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Bước T4 thất bại chưa tạo thay đổi đã chốt nên không cần C4; ba bước đã COMMIT trước đó phải được hoàn tác theo đúng thứ tự ngược từ mới nhất về cũ nhất: C3 trước, tiếp theo là C2, cuối cùng là C1."
+  },
+  {
+    "id": "S3-04.q3",
+    "type": "tf",
+    "q": "Trong mẫu Saga, giao dịch bù trừ (Compensation) xoá sạch mọi dấu vết lịch sử y hệt câu lệnh ROLLBACK cục bộ, đồng thời Saga mặc định đảm bảo đầy đủ tính cô lập (Isolation) giữa các bước đang chạy.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sai ở cả hai vế: giao dịch bù trừ là một giao dịch mới đảo ngược hiệu ứng nghiệp vụ (cả giao dịch gốc lẫn giao dịch hoàn tiền đều còn nguyên trên sổ cái kiểm toán), và Saga thiếu chữ I (chỉ có ACD) nên cần dùng cờ trạng thái tạm như PENDING (Semantic Lock) để ngăn giao dịch khác đọc/sửa nhầm dữ liệu trung gian."
+  },
+  {
+    "id": "S3-04.q4",
+    "type": "mc",
+    "q": "Khi Orchestrator gọi API trừ tiền sang dịch vụ Thanh toán và nhận lỗi Timeout sau 3 giây, hành động an toàn duy nhất là gì?",
+    "code": "",
+    "choices": [
+      "Mặc định coi như chưa trừ tiền, tạo một mã giao dịch hoàn toàn mới và gọi trừ tiền lại ngay",
+      "Mặc định coi như đã trừ tiền thành công và xuất hàng luôn không cần kiểm tra",
+      "Xem Timeout là trạng thái chưa rõ kết quả: thử lại yêu cầu với CÙNG một Idempotency-Key ban đầu (hoặc truy vấn trạng thái đơn theo khoá đó)",
+      "Xoá bản ghi đơn hàng khỏi cơ sở dữ liệu của Orchestrator"
+    ],
+    "answer": 2,
+    "explain": "Timeout không cho biết gói tin rơi ở chiều đi hay chiều về (gói ACK rơi sau khi đã trừ tiền). Giữ nguyên Idempotency-Key ban đầu đảm bảo nếu dịch vụ Thanh toán đã xử lý rồi thì lần gọi lại chỉ nhận về biên lai cũ chứ không trừ tiền lần thứ hai."
+  },
+  {
+    "id": "S3-04.q5",
+    "type": "output",
+    "q": "Khách hàng thanh toán đơn hàng trị giá 500 (nghìn đồng) kèm Idempotency-Key = 'ord_88_pay'. Do mạng chập chờn làm rớt gói phản hồi hai lần, client gửi tổng cộng 3 request giống hệt nhau mang cùng Idempotency-Key đó tới dịch vụ Thanh toán đã cài đặt chuẩn luỹ đẳng. Tổng số tiền thực tế bị trừ khỏi tài khoản khách là bao nhiêu nghìn đồng? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "500",
+    "explain": "Nhờ tính luỹ đẳng f(f(f(x))) = f(x), lần gọi đầu tiên trừ 500 nghìn đồng và lưu kết quả gắn với khoá UNIQUE 'ord_88_pay'; hai lần gửi lại kế tiếp phát hiện trùng khoá nên chỉ đọc và trả về kết quả đã lưu, tổng tiền trừ vẫn đúng 500."
+  },
+  {
+    "id": "S3-04.q6",
+    "type": "mc",
+    "q": "Trong quy trình đặt hàng gồm: (A) Gửi SMS thông báo giao hàng cho khách, (B) Giữ tồn kho tạm thời, (C) Khấu trừ thanh toán thẻ. Thứ tự thiết kế Saga nào hợp lý nhất?",
+    "code": "",
+    "choices": [
+      "A → B → C",
+      "B → C → A",
+      "A → C → B",
+      "Chạy song song A, B, C không cần thứ tự"
+    ],
+    "answer": 1,
+    "explain": "Tin nhắn SMS đã gửi đi không thể thu hồi (non-compensable), vì vậy phải đặt các bước có thể bù trừ được là Giữ tồn kho (B) và Khấu trừ thanh toán (C) lên trước; chỉ khi cả B và C đều thành công mới thực hiện Gửi SMS (A) ở bước cuối cùng."
+  }
+]

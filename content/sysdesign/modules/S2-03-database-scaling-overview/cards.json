@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S2-03.c1",
+    "front": "Ba lý do khiến Database thường trở thành điểm nghẽn trước tầng ứng dụng?",
+    "back": "Tốc độ I/O đĩa chậm hơn RAM nhiều bậc độ lớn, yêu cầu duy trì trạng thái nhất quán khiến khó nhân bản ngang tự do, và cấu hình một máy đơn dễ trở thành điểm lỗi đơn (SPOF)."
+  },
+  {
+    "id": "S2-03.c2",
+    "front": "Ưu điểm và giới hạn chính của Vertical Scaling (Scale-up) cho Database?",
+    "back": "Ưu điểm: triển khai nhanh, không sửa mã nguồn, giữ trọn ACID và JOIN. Giới hạn: đụng trần phần cứng vật lý, chi phí tăng luỹ thừa ở cỡ máy lớn, cần thời gian ngừng máy khi nâng cấp và vẫn là SPOF."
+  },
+  {
+    "id": "S2-03.c3",
+    "front": "Kiến trúc Primary - Read Replica phân chia tải như thế nào?",
+    "back": "Mọi thao tác ghi đi vào Primary rồi sao chép bất đồng bộ sang các Read Replicas; truy vấn đọc được chia đều qua cụm Replicas, giúp mở rộng thông lượng đọc cho ứng dụng thiên về đọc."
+  },
+  {
+    "id": "S2-03.c4",
+    "front": "Vì sao Read Replica không giải quyết được bài toán quá tải ghi?",
+    "back": "Toàn bộ lệnh ghi vẫn phải thực thi trên một máy Primary duy nhất trước tiên, đồng thời mỗi Read Replica đều phải áp lại luồng ghi đó nên thông lượng ghi vẫn bị chặn bởi năng lực một máy."
+  },
+  {
+    "id": "S2-03.c5",
+    "front": "Sharding khác Read Replica ở điểm cốt lõi nào?",
+    "back": "Read Replica nhân bản toàn bộ tập dữ liệu lên nhiều máy để chia tải đọc, còn Sharding chia tập dữ liệu thành các phần riêng biệt trên nhiều máy để chia đều cả tải ghi lẫn dung lượng đĩa."
+  },
+  {
+    "id": "S2-03.c6",
+    "front": "Thứ tự mở rộng tầng Database được khuyến nghị trong thực tế?",
+    "back": "1) Tối ưu truy vấn và thêm chỉ mục; 2) Đặt tầng Cache giảm đọc lặp; 3) Vertical Scale-up hợp lý; 4) Tách đọc sang Read Replicas; 5) Sharding ngang khi tải ghi hoặc dung lượng vượt trần."
+  }
+]

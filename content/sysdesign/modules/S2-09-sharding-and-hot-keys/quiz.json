@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S2-09.q1",
+    "type": "mc",
+    "q": "Nhược điểm điển hình nhất khi dùng cột thời gian tạo (created_at) hoặc mã số nguyên tự tăng làm Shard Key trong chiến lược Range Sharding là gì?",
+    "code": "",
+    "choices": [
+      "Không thể thực hiện bất kỳ truy vấn lọc theo khoảng thời gian nào",
+      "Toàn bộ thao tác ghi mới và phần lớn lượt đọc dữ liệu gần đây dồn cục bộ vào phân mảnh cuối cùng, gây điểm nóng quá tải",
+      "Hàm băm tiêu tốn quá nhiều chu kỳ CPU trên tầng Load Balancer",
+      "Mỗi bản ghi bị nhân bản trùng lặp sang tất cả các phân mảnh trong cụm"
+    ],
+    "answer": 1,
+    "explain": "Với khoá tăng đơn điệu theo thời gian, mọi bản ghi vừa sinh ra đều rơi vào khoảng giá trị cao nhất nằm trên đúng một phân mảnh cuối, khiến các phân mảnh cũ ngồi rảnh trong khi phân mảnh mới nhất bị nghẽn."
+  },
+  {
+    "id": "S2-09.q2",
+    "type": "output",
+    "q": "Cụm NoSQL có 4 phân mảnh, mỗi phân mảnh chịu tối đa 3.000 ops/s. Một khoá nổi tiếng chiếm s = 0,70 (70%) tổng truy cập, 30% còn lại chia đều cho cả 4 phân mảnh. Phân mảnh chứa khoá nổi tiếng nhận bao nhiêu phần trăm lưu lượng nếu làm tròn đến số nguyên gần nhất? (nhập ví dụ: 78)",
+    "code": "",
+    "choices": [],
+    "answer": "78",
+    "explain": "Tỷ trọng lưu lượng rơi vào phân mảnh nóng là f_hot = 0,70 + (1 − 0,70) / 4 = 0,70 + 0,075 = 0,775, tức 77,5% (làm tròn thành 78%). Một phân mảnh duy nhất phải gánh gần bốn phần năm tải của toàn cụm."
+  },
+  {
+    "id": "S2-09.q3",
+    "type": "tf",
+    "q": "Khi một phân mảnh bị quá tải do hàng chục nghìn người dùng cùng đọc một bài viết nổi tiếng duy nhất, chỉ cần tăng gấp đôi số lượng phân mảnh theo Hash Sharding là lưu lượng của bài viết đó sẽ được chia đôi sang hai máy.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Hàm băm xác định luôn ánh xạ cùng một mã khoá bài viết về duy nhất một phân mảnh, dù tổng số phân mảnh là 4, 8 hay 32. Muốn giảm tải đọc của một khoá nóng, cần dùng bộ nhớ đệm (Cache + Singleflight hoặc L1 Cache) hoặc bản sao đọc."
+  },
+  {
+    "id": "S2-09.q4",
+    "type": "mc",
+    "q": "Kỹ thuật nào phù hợp nhất để xử lý điểm nóng GHI (ví dụ đếm hàng chục nghìn lượt thả tim mỗi giây vào cùng một video phát trực tiếp)?",
+    "code": "",
+    "choices": [
+      "Đặt TTL của bộ nhớ đệm đọc lên 24 giờ và tắt ghi xuống cơ sở dữ liệu",
+      "Dùng Key Salting: cộng hậu tố ngẫu nhiên 0..K−1 vào khoá (ví dụ video_88#0 đến video_88#7) để rải lượt ghi sang nhiều phân mảnh, rồi cộng tổng K mảnh con khi đọc",
+      "Chuyển từ Hash Sharding quay về Range Sharding theo ngày tạo video",
+      "Giảm kích thước Connection Pool của tầng ứng dụng xuống còn 2 kết nối"
+    ],
+    "answer": 1,
+    "explain": "Cache chỉ chặn được lượt đọc lặp lại chứ không tự gánh được lượt ghi mới nếu không gom lô. Gắn hậu tố 0..K−1 biến một khoá nóng thành K khoá độc lập băm ra nhiều phân mảnh khác nhau, chia tải ghi giảm đi tới K lần."
+  },
+  {
+    "id": "S2-09.q5",
+    "type": "mc",
+    "q": "Vì sao các câu truy vấn không chứa Shard Key trong điều kiện lọc (Scatter-Gather) lại làm xấu đi độ trễ đuôi p99 khi số phân mảnh N tăng lớn?",
+    "code": "",
+    "choices": [
+      "Vì bộ định tuyến chỉ chọn ngẫu nhiên 1 phân mảnh nên trả thiếu dữ liệu",
+      "Vì bộ định tuyến phải gửi truy vấn tới tất cả N phân mảnh và đợi phân mảnh phản hồi chậm nhất mới trả kết quả về được",
+      "Vì cơ sở dữ liệu tự động xoá mọi chỉ mục cục bộ khi chạy truy vấn rộng",
+      "Vì giao thức TCP không cho phép mở quá 4 kết nối song song"
+    ],
+    "answer": 1,
+    "explain": "Khi thiếu Shard Key, dữ liệu cần tìm có thể nằm ở bất kỳ phân mảnh nào nên Router phải hỏi cả N nơi. Tổng thời gian chờ bằng max độ trễ của N máy, khiến xác suất gặp ít nhất một máy đang chậm tăng theo N."
+  },
+  {
+    "id": "S2-09.q6",
+    "type": "output",
+    "q": "Hệ thống định tuyến bản ghi theo công thức hash(key) mod N. Khi mở rộng từ N = 4 lên N + 1 = 5 phân mảnh, trung bình bao nhiêu phần trăm tổng số bản ghi sẽ bị đổi sang phân mảnh khác? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "80",
+    "explain": "Khi đổi mẫu số từ N sang N + 1 trong phép chia lấy dư đồng đều, xác suất một khoá giữ nguyên chỉ số cũ chỉ là 1 / (N + 1) = 1/5 = 20%. Do đó tỷ lệ bản ghi phải di chuyển chỗ là N / (N + 1) = 4/5 = 80%."
+  }
+]

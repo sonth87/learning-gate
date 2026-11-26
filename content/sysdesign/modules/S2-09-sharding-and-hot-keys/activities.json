@@ -1,0 +1,64 @@
+[
+  {
+    "id": "S2-09.A1",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra thành phần bị nghẽn khi xuất hiện khoá nổi tiếng" },
+    "prompt": { "vi": "Tại giây 35, dù tổng lưu lượng chỉ 5.200 req/s (thấp hơn nhiều so với năng lực danh nghĩa 10.000 req/s của tầng App và 12.000 ops/s của 4 NoSQL Shards), độ trễ p99 vẫn vọt cao và xuất hiện lỗi rơi gói. Hãy bấm chọn thành phần đang là điểm nghẽn thực sự." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 35,
+    "maxPicks": 1,
+    "expected": ["shard_db"],
+    "hints": [
+      { "vi": "Kiểm tra nhãn cảnh báo và mức sử dụng ρ thực tế của từng thành phần ở giây 35 sau khi sự kiện hot-key kích hoạt." }
+    ],
+    "explain": { "vi": "{shard_db.name} đang có ρ = {shard_db.rho@35:2} với hàng đợi {shard_db.queue@35:0} request, trong khi tầng App chỉ ở ρ = {app.rho@35:2}. Một khoá nóng chiếm 70% truy cập đã dồn 77,5% lưu lượng xuống đúng 1 phân mảnh 3.000 ops/s, kéo năng lực hiệu dụng toàn cụm xuống khoảng 3.871 ops/s." },
+    "sim": { "simId": "S2-09/hotkey", "seekSec": 35, "autoplay": false }
+  },
+  {
+    "id": "S2-09.A2",
+    "kind": "predict",
+    "title": { "vi": "Tăng gấp 4 lần số Shard có dập được một Hot Key không?" },
+    "prompt": { "vi": "Ở giây 15, một bài đăng nổi tiếng chiếm s = 70% lưu lượng xuống cụm NoSQL (mỗi shard 3.000 ops/s), trong khi tổng lưu lượng lọt qua Cache xuống NoSQL là khoảng 4.358 ops/s. Nếu bạn giữ nguyên Cache nhỏ (4.000 key) và chỉ tăng số phân mảnh từ 4 lên 16 Shards, điều gì sẽ xảy ra?" },
+    "difficulty": 2,
+    "at": 12,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Hệ thống hết nghẽn hoàn toàn vì 16 Shards có tổng năng lực 48.000 ops/s, dư sức xử lý 4.358 ops/s" },
+        { "vi": "Cụm NoSQL vẫn quá tải (ρ > 1): 1 shard chứa khoá nóng vẫn phải gánh ~71,9% lưu lượng (năng lực hiệu dụng ~4.174 ops/s < 4.358 ops/s) dù chi phí tăng gấp 4" },
+        { "vi": "Lưu lượng của khoá nổi tiếng tự động tách đều thành 16 phần bằng nhau sang cả 16 phân mảnh" },
+        { "vi": "Điểm nghẽn chuyển ngay lập tức sang Load Balancer" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 12, "playToSec": 32, "speed": 2 },
+    "hints": [
+      { "vi": "Mọi truy vấn cùng khoá luôn băm về đúng 1 shard duy nhất, bất kể tổng số shard N lớn đến đâu." },
+      { "vi": "Tính tỷ trọng vào shard nóng: f_hot = 0,70 + 0,30 / 16 ≈ 0,719, rồi lấy 3.000 chia cho f_hot để so với 4.358 ops/s." }
+    ],
+    "explain": { "vi": "Thêm phân mảnh không thể chẻ đôi một khoá đơn lẻ. Với 16 Shards, phân mảnh giữ khoá nóng vẫn nhận 71,9% tải nên năng lực hiệu dụng chỉ nhích lên ≈ 4.174 ops/s, thấp hơn dòng truy vấn {shard_db.lambda@25:0} ops/s đi xuống DB. Mở rộng Hot-Key Cache để chặn 90% lượt đọc từ trên mới là lời giải đúng." },
+    "sim": { "simId": "S2-09/hotkey", "seekSec": 12, "autoplay": false },
+    "replay": { "simId": "S2-09/hotkey", "seekSec": 12, "focus": { "nodes": ["cache", "shard_db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-09.A3",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần lưu lượng thực tế khi bị lệch tải Hot Key 70%" },
+    "prompt": { "vi": "Trên cấu hình mặc định (4 Shards × 3.000 ops/s, Cache nhỏ 4.000 key nên ~83,8% request xuống DB) khi đang chịu sự kiện một khoá nóng chiếm 70% tải (từ giây 15 trở đi), hãy tìm lưu lượng đầu vào tối đa (req/s) mà hệ thống vẫn giữ p99 ≤ 200 ms và lỗi ≤ 1% trong cửa sổ giây 20..45." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 200, "window": { "fromSec": 20, "toSec": 45 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 20, "toSec": 45 } }
+    ],
+    "runSec": 45,
+    "reference": { "value": 4555, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Với 4 shards và s = 0,70, shard nóng nhận f_hot = 0,775 nên năng lực tối đa của cụm DB chỉ khoảng 3.000 / 0,775 ≈ 3.871 ops/s." },
+      { "vi": "Chia năng lực ~3.871 ops/s cho tỷ lệ request lọt xuống DB (~0,838) rồi trừ nhẹ biên độ hàng đợi để giữ p99 ≤ 200 ms." }
+    ],
+    "explain": { "vi": "Dù 4 phân mảnh có tổng công suất danh nghĩa 12.000 ops/s, khoá nóng 70% kéo trần của cụm NoSQL về 3.871 ops/s. Chia cho tỷ lệ {shard_db.share@25:2} lưu lượng xuống DB cho ra trần tải toàn hệ thống chỉ khoảng {ref.value:0} req/s." },
+    "sim": { "simId": "S2-09/hotkey", "seekSec": 0, "autoplay": false }
+  }
+]

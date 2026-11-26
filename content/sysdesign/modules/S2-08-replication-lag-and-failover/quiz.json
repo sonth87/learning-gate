@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S2-08.q1",
+    "type": "mc",
+    "q": "Trong mô hình sao chép Leader-Follower bất đồng bộ, nguyên nhân nào làm độ trễ sao chép (Replication Lag) tăng vọt lên hàng giây?",
+    "code": "",
+    "choices": [
+      "Tầng ứng dụng có quá nhiều máy chủ phi trạng thái cùng kết nối vào Load Balancer",
+      "Tốc độ phát sinh giao dịch ghi trên Leader vượt quá tốc độ truyền hoặc áp lại nhật ký WAL trên Follower",
+      "Người dùng không gửi bất kỳ câu lệnh ghi nào trong suốt nhiều giờ liền",
+      "Cơ sở dữ liệu có sử dụng khoá chính kiểu số nguyên tự tăng"
+    ],
+    "answer": 1,
+    "explain": "Replication Lag là độ trễ giữa thời điểm ghi trên Leader và thời điểm áp xong trên Follower. Khi lượng ghi tăng cao hoặc Follower bận đọc khiến tốc độ áp lại WAL thấp hơn tốc độ ghi vào Leader, hàng đợi nhật ký tích luỹ làm lag tăng dần."
+  },
+  {
+    "id": "S2-08.q2",
+    "type": "mc",
+    "q": "Cách hiệu quả và tiết kiệm tài nguyên nhất để đảm bảo người dùng vừa cập nhật hồ sơ xong sẽ thấy ngay thông tin mới của chính mình (Read-Your-Writes) là gì?",
+    "code": "",
+    "choices": [
+      "Xoá bỏ toàn bộ Read Replicas và bắt mọi người dùng trên hệ thống đọc trực tiếp từ Leader",
+      "Định tuyến các lượt đọc hồ sơ của riêng người dùng vừa ghi về Leader trong một cửa sổ ngắn (hoặc kiểm tra mốc WAL LSN), còn người xem khác vẫn đọc từ Read Replicas",
+      "Bắt trình duyệt chờ cứng 30 giây sau mỗi lần bấm nút Lưu",
+      "Chuyển toàn bộ câu lệnh ghi sang thực thi trực tiếp trên các Read Replicas"
+    ],
+    "answer": 1,
+    "explain": "Ghim tạm thời người vừa thực hiện thao tác ghi về Leader (hoặc chọn Replica đã đạt mốc LSN tương ứng) đảm bảo Read-Your-Writes mà vẫn giữ nguyên lợi ích giảm tải đọc từ Read Replicas cho đại đa số lượt xem còn lại."
+  },
+  {
+    "id": "S2-08.q3",
+    "type": "tf",
+    "q": "Sao chép bán đồng bộ (Semi-synchronous Replication) yêu cầu TẤT CẢ các Follower phải ghi xong nhật ký WAL thì Leader mới được báo thành công cho ứng dụng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Semi-synchronous chỉ yêu cầu Leader cùng ÍT NHẤT MỘT Follower xác nhận đã ghi bền vững nhật ký WAL; các Follower còn lại vẫn nhận bất đồng bộ. Nhờ vậy hệ thống vẫn đạt RPO = 0 mà không bị treo khi một Follower lẻ bị chậm."
+  },
+  {
+    "id": "S2-08.q4",
+    "type": "output",
+    "q": "Trong một đợt cao điểm kéo dài 10 giây, Leader ghi đều đặn 900 giao dịch/giây trong khi một Follower chỉ áp lại được 650 giao dịch/giây. Hết 10 giây, Follower đó còn tồn đọng bao nhiêu giao dịch chưa áp xong? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "2500",
+    "explain": "Mỗi giây lượng nhật ký chưa áp kịp cộng thêm 900 − 650 = 250 giao dịch. Sau 10 giây liên tục, hàng đợi tồn đọng trên Follower là 250 × 10 = 2.500 giao dịch."
+  },
+  {
+    "id": "S2-08.q5",
+    "type": "mc",
+    "q": "Trong quy trình Failover tự động, hiện tượng Split-Brain xảy ra khi nào và gây hậu quả gì?",
+    "code": "",
+    "choices": [
+      "Khi một Follower được thăng cấp làm Leader mới nhưng Leader cũ chưa bị cô lập quyền ghi và quay lại nhận lệnh ghi song song, gây xung đột và mất dữ liệu",
+      "Khi App Router chia đều câu lệnh SELECT cho hai Read Replicas khác nhau",
+      "Khi dung lượng ổ cứng của Leader mới lớn gấp đôi Leader cũ",
+      "Khi người dùng mở cùng một trang web trên hai tab trình duyệt"
+    ],
+    "answer": 0,
+    "explain": "Split-Brain là lỗi hai nút cùng tin mình là Leader duy nhất và cùng chấp nhận giao dịch ghi độc lập, làm lịch sử dữ liệu phân nhánh không thể gộp sạch. Cơ chế Fencing (tắt nguồn hoặc khoá token nhiệm kỳ) dùng để chặn lỗi này."
+  },
+  {
+    "id": "S2-08.q6",
+    "type": "tf",
+    "q": "Duy trì 3 Read Replicas ở 3 vùng khả dụng khác nhau là đủ để khôi phục dữ liệu khi lập trình viên chạy nhầm lệnh DROP TABLE trên máy Primary.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Replication sao chép trung thực cả các lệnh xoá hợp lệ như DROP TABLE hay DELETE sang toàn bộ Read Replicas gần như tức thì. Để khôi phục sau lỗi thao tác hoặc lỗi phần mềm, bắt buộc phải có bản sao lưu Snapshot bất biến kèm lưu trữ WAL (PITR)."
+  }
+]

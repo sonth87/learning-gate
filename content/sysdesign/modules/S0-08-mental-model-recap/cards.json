@@ -1,0 +1,8 @@
+[
+  { "id": "S0-08.c1", "front": "Bốn chuyển dịch tư duy cốt lõi của Phase 0 là gì?", "back": "1. Không có giải pháp tốt nhất tuyệt đối (chỉ có phù hợp bối cảnh); 2. Luôn hỏi Tại sao (5 Whys); 3. Đánh đổi quan trọng hơn công nghệ; 4. Tư duy toàn hệ thống vượt lên trên tư duy mã nguồn." },
+  { "id": "S0-08.c2", "front": "Vì sao sao chép nguyên xi kiến trúc của các tập đoàn lớn thường thất bại ở dự án nhỏ?", "back": "Vì tập đoàn lớn giải bài toán ở quy mô lưu lượng, ngân sách và số lượng kỹ sư vận hành khác hẳn; áp vào đội nhỏ sẽ gánh toàn bộ độ phức tạp phân tán mà chưa hưởng lợi ích tương xứng." },
+  { "id": "S0-08.c3", "front": "Kỹ thuật 5 Whys giúp ích gì trong thiết kế hệ thống?", "back": "Truy ngược từ triệu chứng bề mặt về nguyên nhân gốc rễ qua từng câu hỏi Tại sao, giúp tìm ra cách xử lý gọn nhẹ (như thêm chỉ mục) thay vì vội thêm tầng hạ tầng mới." },
+  { "id": "S0-08.c4", "front": "Ba cặp đánh đổi thường gặp nhất khi ra quyết định kiến trúc?", "back": "Tính nhất quán tức thời so với Độ sẵn sàng cao; Hiệu năng/độ trễ thấp so với Chi phí hạ tầng; Kiến trúc đơn giản dễ vận hành so với Khả năng mở rộng tách rời linh hoạt." },
+  { "id": "S0-08.c5", "front": "Điểm khác biệt chính giữa tư duy mã nguồn và tư duy hệ thống?", "back": "Tư duy mã nguồn tập trung vào logic và cấu trúc bên trong một tiến trình; tư duy hệ thống bao quát tương tác giữa các thành phần, độ trễ mạng, kịch bản lỗi từng phần, khả năng chịu tải và giám sát vận hành." },
+  { "id": "S0-08.c6", "front": "Bốn nhóm công cụ của Phase 0 tương ứng với thực hành nào?", "back": "Bảng 7 câu hỏi làm rõ yêu cầu (S0-01, S0-07), Ma trận đánh đổi có trọng số (S0-02), Ngân sách ràng buộc & Napkin Math (S0-04, S0-05), và Phân rã luồng I → P → S → O (S0-03, S0-06)." }
+]

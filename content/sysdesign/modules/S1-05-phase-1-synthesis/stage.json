@@ -1,0 +1,324 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng toàn cầu bấm vào liên kết rút gọn (95% đọc GET /{code}) và tạo liên kết mới (5% ghi POST /shorten).",
+          "en": "Global users clicking short links (95% GET redirects) and creating links (5% POST writes)."
+        },
+        "how": {
+          "vi": "Tạo tải cao điểm 2.500 req/s (và vọt lên 4.200 req/s khi có chiến dịch lan truyền).",
+          "en": "Generates 2,500 req/s normal peak traffic (spiking to 4,200 req/s during viral campaigns)."
+        },
+        "why": {
+          "vi": "Tỉ lệ đọc áp đảo giúp tầng Cache phát huy hiệu quả tối đa nếu được định cỡ đủ tập khóa nóng.",
+          "en": "Extreme read skew makes an adequately sized Cache extraordinarily effective."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải đón yêu cầu chuyển hướng và phân phối sang cụm Shortener API (μ = 20.000 req/s).",
+          "en": "Entry load balancer distributing redirect traffic across Shortener API servers."
+        },
+        "how": {
+          "vi": "Bản nháp chỉ chạy 1 instance nên đang là điểm lỗi đơn (SPOF); cần tối thiểu 2 instance để đạt chuẩn sẵn sàng cao.",
+          "en": "Runs a single instance in the draft (SPOF); needs ≥ 2 instances for high availability."
+        },
+        "why": {
+          "vi": "Cho phép mở rộng ngang tầng Shortener API từ 1 lên 2–3 máy mà không đổi địa chỉ tên miền.",
+          "en": "Enables seamless horizontal scaling of the stateless API tier."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shortener API", "en": "Shortener API" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng Stateless giải mã short_code, tra Cache và trả mã chuyển hướng 302 (μ = 1.800 req/s mỗi máy).",
+          "en": "Stateless API server resolving short_codes via Cache and returning 302 redirects (μ = 1,800 req/s)."
+        },
+        "how": {
+          "vi": "Ở bản nháp chỉ có 1 instance nên quá tải ngay trước 2.500 req/s (ρ = 1,39); cần 2 máy cho 2.500 req/s và 3 máy cho đỉnh 4.200 req/s.",
+          "en": "1 instance saturates at 2,500 req/s (ρ = 1.39); requires 2 instances for 2,500 and 3 for 4,200 req/s."
+        },
+        "why": {
+          "vi": "Nơi thực thi mã hóa Base62 khi tạo link mới và điều phối luồng đọc tốc độ cao.",
+          "en": "Executes Base62 encoding on writes and orchestrates low-latency cached redirects."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm lưu ánh xạ short_code → long_url đang được bấm nhiều (tập làm việc nóng gồm 200.000 key).",
+          "en": "In-memory cache storing hot short_code → long_url mappings (200,000-key working set)."
+        },
+        "how": {
+          "vi": "Bản nháp chỉ cấp 10.000 key nên Hit Ratio mới đạt ~21%; nâng đủ 200.000 key đưa Hit Ratio lên ~96% với chi phí không đổi.",
+          "en": "Draft holds only 10k keys (~21% hit ratio); sizing to 200k keys raises hit ratio to ~96%."
+        },
+        "why": {
+          "vi": "200.000 liên kết × 500 byte chỉ chiếm khoảng 100 MB RAM nhưng chặn được gần như toàn bộ truy vấn đọc xuống Database.",
+          "en": "200k URLs × 500 B takes ~100 MB RAM yet shields the Database from 96% of reads."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "URL Database", "en": "URL Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ lưu bảng urls có chỉ mục duy nhất trên short_code (μ = 900 req/s, xử lý ~6 ms).",
+          "en": "Relational Database storing the indexed urls table (μ = 900 req/s, ~6 ms base)."
+        },
+        "how": {
+          "vi": "Khi Cache quá nhỏ, hơn 1.900 req/s tràn xuống làm DB quá tải; khi Cache đạt 96% Hit Ratio, DB chỉ còn nhận ~220 req/s (ρ = 0,24).",
+          "en": "Overwhelmed when Cache is undersized, but drops to ~220 req/s (ρ = 0.24) once Cache hits 96%."
+        },
+        "why": {
+          "vi": "Bảo toàn hàng tỉ ánh xạ liên kết trong nhiều năm mà không sợ mất khi khởi động lại Cache.",
+          "en": "Durably retains billions of URL mappings across multi-year lifespans."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Chặng HTTPS từ trình duyệt tới Load Balancer (~30 ms).", "en": "Public HTTPS hop from browsers to Load Balancer (~30 ms)." },
+        "how": { "vi": "Nhận yêu cầu GET /{short_code} và trả về header Location kèm mã HTTP 302.", "en": "Carries GET /{short_code} and returns HTTP 302 Location redirect." },
+        "why": { "vi": "Điểm vào duy nhất của dịch vụ rút gọn liên kết.", "en": "Single public ingress for short links." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường phân phối nội bộ sang cụm Shortener API (~0,5 ms).", "en": "Internal routing link to Shortener API instances (~0.5 ms)." },
+        "how": { "vi": "Chia tải đều Round-robin giữa các instance API khỏe mạnh.", "en": "Balances traffic evenly across healthy API servers." },
+        "why": { "vi": "Giữ mức sử dụng CPU đồng đều trên tầng xử lý.", "en": "Maintains balanced CPU utilization across API nodes." }
+      }
+    },
+    "app-cache": {
+      "inspector": {
+        "what": { "vi": "Tra cứu bộ nhớ đệm tốc độ cao từ Shortener API sang Redis Cache.", "en": "Sub-millisecond lookup from Shortener API to Redis Cache." },
+        "how": { "vi": "95% lưu lượng là lượt đọc chuyển hướng nên đi qua đường này đầu tiên.", "en": "95% of traffic is redirect reads checking Redis first." },
+        "why": { "vi": "Giúp lượt bấm phổ biến phản hồi ngay từ bộ nhớ RAM.", "en": "Serves popular short links directly from RAM." }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn xuống URL Database cho lượt Cache Miss và lượt tạo link mới.", "en": "Fallback link to URL Database on Cache Misses and new URL writes." },
+        "how": { "vi": "Lưu lượng trên chặng này phụ thuộc trực tiếp vào độ phủ key của Redis Cache.", "en": "Traffic volume here is governed directly by Redis key coverage." },
+        "why": { "vi": "Bảo vệ tầng lưu trữ đĩa khỏi phải nâng cấp phần cứng đắt đỏ.", "en": "Protects disk storage from expensive vertical hardware upgrades." }
+      }
+    }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": ["lb", "app", "cache", "db"],
+      "label": { "vi": "DỊCH VỤ RÚT GỌN URL (URL SHORTENER)", "en": "URL SHORTENER BACKEND" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 13 },
+        "app": { "loadPct": 46, "badge": { "text": { "vi": "Base62 · 302", "en": "Base62 · 302" }, "tone": "ok" } },
+        "cache": { "loadPct": 6, "badge": { "text": { "vi": "95% Đọc", "en": "95% Reads" }, "tone": "ok" } },
+        "db": { "loadPct": 24, "badge": { "text": { "vi": "0,9 TB / 5 năm", "en": "0.9 TB / 5 yrs" }, "tone": "default" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng hợp kỹ năng Phase 1", "en": "Phase 1 Synthesis" },
+        "lines": [
+          { "text": { "vi": "1. Lần luồng & tìm nghẽn ứng dụng thực", "en": "1. Trace flows & bottlenecks" }, "tone": "plain" },
+          { "text": { "vi": "2. Thiết kế URL Shortener · 3. Tải Avatar", "en": "2. URL Shortener · 3. Avatar Upload" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-reverse": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 15 },
+        "app": { "loadPct": 50, "highlighted": true, "badge": { "text": { "vi": "Sync < 200 ms", "en": "Sync < 200 ms" }, "tone": "ok" } },
+        "cache": { "loadPct": 12 },
+        "db": { "loadPct": 65, "highlighted": true, "badge": { "text": { "vi": "Xét ở quy mô ×10", "en": "Check at 10× scale" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khung 3 bước phân tích ứng dụng", "en": "3-Step Reverse Engineering" },
+        "lines": [
+          { "text": { "vi": "Vẽ thành phần → Lần đường Sync / Async", "en": "Map components → Trace Sync / Async" }, "tone": "plain" },
+          { "text": { "vi": "Dự báo nút chạm ρ = 1 khi tải nhân 10", "en": "Predict what hits ρ = 1 at 10× load" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-napkin": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Ước lượng công suất URL Shortener (1M ghi/ngày · 100M đọc/ngày)", "en": "URL Shortener Capacity Math (1M writes/day · 100M reads/day)" },
+        "subtitle": { "vi": "Áp dụng công thức tính nhẩm S0-05 và bảng câu hỏi S0-07 để dẫn dắt kiến trúc", "en": "Applying S0-05 napkin math and S0-07 question checklist" },
+        "cells": [
+          "Ghi TB: ~12 req/s",
+          "Đọc TB: ~1.157 req/s",
+          "Đỉnh đọc: 2.500–3.500 req/s",
+          "Lưu 5 năm: ~0,9 TB"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 2, "label": "Đọc gấp ~100× ghi", "color": "green" },
+          { "index": 3, "label": "Vừa 1 SQL chuẩn", "color": "blue" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hệ quả thiết kế", "en": "Design Implication" },
+          "value": { "vi": "Cache RAM là đòn bẩy số 1", "en": "RAM Cache is #1 lever" },
+          "tone": "good"
+        }
+      }
+    },
+    "s5-draft-live": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bản nháp ở 2.500 req/s", "en": "Draft under 2,500 req/s" },
+        "lines": [
+          { "text": { "vi": "1 API (μ = 1.800) → ρ = 1,39 quá tải", "en": "1 API (μ = 1,800) → ρ = 1.39 overloaded" }, "tone": "bad" },
+          { "text": { "vi": "Cache 10k/200k key → DB ρ = 1,59 quá tải", "en": "Cache 10k/200k keys → DB ρ = 1.59 overloaded" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-resilient": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 11, "highlighted": true, "badge": { "text": { "vi": "2 LB · Không SPOF", "en": "2 LBs · No SPOF" }, "tone": "ok" } },
+        "app": { "loadPct": 78, "highlighted": true, "badge": { "text": { "vi": "3 API · Chịu 4.200 req/s", "en": "3 APIs · Handles 4,200" }, "tone": "ok" } },
+        "cache": { "loadPct": 10, "highlighted": true, "badge": { "text": { "vi": "200k key · Hit 96%", "en": "200k keys · Hit 96%" }, "tone": "ok" } },
+        "db": { "loadPct": 41, "badge": { "text": { "vi": "ρ = 0,41 ở đỉnh", "en": "ρ = 0.41 at peak" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc đạt chuẩn 4.200 req/s", "en": "Production-Ready at 4,200 req/s" },
+        "lines": [
+          { "text": { "vi": "p99 ≈ 64 ms · Không lỗi · Không SPOF", "en": "p99 ≈ 64 ms · Zero errors · No App/LB SPOF" }, "tone": "good" },
+          { "text": { "vi": "Tổng chi phí chỉ 1,20 USD/giờ", "en": "Total cost only $1.20/hr" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-avatar": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Bài 3: So sánh 3 phương án tải và xử lý ảnh đại diện (Avatar Upload)", "en": "Exercise 3: Comparing 3 Avatar Upload Architectures" },
+        "nodes": [
+          { "id": "req", "x": 0, "y": -104, "label": "Tải ảnh đại diện (Kiểm tra + Nén 3 cỡ + Lưu S3)", "sub": { "vi": "Cần phản hồi nhanh nhưng vẫn có ảnh hiển thị ngay", "en": "Needs fast UX plus immediate preview" }, "tone": "blue" },
+          { "id": "sync", "x": -185, "y": 8, "label": "A. Đồng bộ hết (~4,6 s)", "sub": { "vi": "Chờ lâu · Giữ chặt luồng API", "en": "Slow UX · Blocks API threads" }, "tone": "orange" },
+          { "id": "async", "x": 0, "y": 8, "label": "B. Bất đồng bộ thuần (~1,6 s)", "sub": { "vi": "Nhanh nhưng thiếu ảnh xem ngay", "en": "Fast but blank preview window" }, "tone": "yellow" },
+          { "id": "hybrid", "x": 185, "y": 8, "label": "C. Lai Hybrid (~2,0 s)", "sub": { "vi": "Tạo 1 ảnh nhỏ Sync + Nén nét cao qua Queue", "en": "Quick thumb sync + HQ via Queue" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "req", "to": "sync" },
+          { "from": "req", "to": "async" },
+          { "from": "req", "to": "hybrid" }
+        ]
+      }
+    },
+    "s8-mistakes": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 13 },
+        "app": { "loadPct": 46 },
+        "cache": { "loadPct": 6, "badge": { "text": { "vi": "Tính RAM & TTL rõ", "en": "Specify RAM & TTL" }, "tone": "ok" } },
+        "db": { "loadPct": 24, "badge": { "text": { "vi": "Đừng nâng ×3 mù quáng", "en": "No blind ×3 scale-up" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "4 lỗi thường gặp cần tránh", "en": "4 Classic Design Mistakes" },
+        "lines": [
+          { "text": { "vi": "Over-engineering · Thiếu đặc tả cụ thể", "en": "Over-engineering · Vague specs" }, "tone": "bad" },
+          { "text": { "vi": "Bỏ qua con số · Không nêu đánh đổi", "en": "Ignoring numbers · Skipping trade-offs" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 11, "badge": { "text": { "vi": "99,9% SLA", "en": "99.9% SLA" }, "tone": "ok" } },
+        "app": { "loadPct": 56, "badge": { "text": { "vi": "Stateless", "en": "Stateless" }, "tone": "ok" } },
+        "cache": { "loadPct": 8, "badge": { "text": { "vi": "Hit 96%", "en": "Hit 96%" }, "tone": "ok" } },
+        "db": { "loadPct": 24, "badge": { "text": { "vi": "Indexed SQL", "en": "Indexed SQL" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Hoàn thành nền tảng Phase 1", "en": "Phase 1 Foundations Complete" },
+        "lines": [
+          { "text": { "vi": "Con số dẫn dắt → Khởi đầu đơn giản", "en": "Numbers lead → Start simple" }, "tone": "good" },
+          { "text": { "vi": "Đo ρ từng chặng → Luôn nêu đánh đổi", "en": "Measure ρ → State every trade-off" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "shortener": {
+      "sim": "S1-05/shortener",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["kill", "expire-cache"],
+        "knobs": [
+          { "node": "lb", "key": "replicas" },
+          { "node": "app", "key": "replicas" },
+          { "node": "cache", "key": "capacityKeys" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 85, "badAbove": 250 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 85 }
+      ],
+      "focus": { "nodes": ["app", "cache", "db"] }
+    }
+  }
+}

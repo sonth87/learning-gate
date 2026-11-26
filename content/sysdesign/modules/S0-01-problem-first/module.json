@@ -1,0 +1,29 @@
+{
+  "id": "S0-01",
+  "slug": "S0-01-problem-first",
+  "level": 0,
+  "order": 1,
+  "title": "Problem-first: hỏi bài toán trước khi chọn công nghệ",
+  "summary": "Chuyển từ phản xạ chọn ngay công cụ quen thuộc sang quy trình làm rõ bài toán: định lượng triệu chứng, truy tìm nguyên nhân gốc bằng chuỗi câu hỏi Why, đánh giá chi phí đi kèm và ưu tiên giải pháp đơn giản.",
+  "durationMin": 12,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt tư duy chọn công cụ trước (Code-first) với tư duy xuất phát từ bài toán (Problem-first)" },
+    { "vi": "Áp dụng chuỗi câu hỏi Why và khung 5 câu hỏi kiểm chứng để tìm nguyên nhân gốc trước khi thiết kế" },
+    { "vi": "Làm rõ các ràng buộc ẩn về độ chính xác, độ bền dữ liệu và lưu lượng trong bài toán đếm lượt xem" },
+    { "vi": "Chọn cấu hình kiến trúc vừa đủ đáp ứng SLO và ngân sách thay vì mở rộng mù quáng" }
+  ],
+  "tags": ["problem-first", "requirements", "root-cause", "architecture", "trade-off"],
+  "prerequisites": [],
+  "related": ["S0-02", "S0-04", "S0-07"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-1-code-first-to-problem-first.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-1-code-first-to-problem-first.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong sư phạm trực diện: bỏ giai thoại ngôi thứ nhất và khẩu ngữ; chuyển các đoạn đối chiếu thành 8 cảnh memory-2d (tape, refs, tree); bổ sung mô hình định lượng và bài tập design-constraint cho bài toán đếm lượt xem."
+  }
+}

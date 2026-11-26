@@ -1,0 +1,84 @@
+[
+  {
+    "id": "S0-04.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng dung lượng RAM khi chỉ đệm người dùng hoạt động" },
+    "prompt": { "vi": "Ứng dụng có 15 triệu tài khoản đăng ký nhưng chỉ có 1.500.000 người dùng hoạt động hằng ngày (DAU). Bạn quyết định chỉ lưu đệm bảng tin cho nhóm DAU này, mỗi bảng tin gồm 80 bài viết và mỗi bài chiếm 1 KB. Cần khoảng bao nhiêu GB RAM (tính 1 GB ≈ 1.000.000 KB)?" },
+    "difficulty": 1,
+    "quantity": "Dung lượng RAM đệm bảng tin DAU",
+    "unit": "GB",
+    "truth": {
+      "type": "formula",
+      "expr": "1500000 * 80 * 1 / 1000000",
+      "vars": {}
+    },
+    "scale": "linear",
+    "tol": {
+      "full": 0.05,
+      "pass": 0.15
+    },
+    "workings": [
+      { "vi": "Dung lượng mỗi người dùng hoạt động: 80 bài × 1 KB = 80 KB." },
+      { "vi": "Tổng dung lượng cho 1.500.000 DAU: 1.500.000 × 80 KB = 120.000.000 KB ≈ 120 GB." },
+      { "vi": "So với đệm toàn bộ 15 triệu tài khoản (1.200 GB), lọc theo DAU tiết kiệm 90% ngân sách RAM." }
+    ],
+    "hints": [
+      { "vi": "Chỉ nhân số người dùng hoạt động hằng ngày (1.500.000) với 80 KB mỗi người rồi đổi sang GB." }
+    ],
+    "explain": { "vi": "Dung lượng cần thiết là {truth:0} GB RAM. Thay vì tốn 1,2 TB cho cả các tài khoản không mở ứng dụng, thiết kế theo ràng buộc bộ nhớ giúp gói gọn trong một cụm nhỏ hợp ngân sách." }
+  },
+  {
+    "id": "S0-04.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Thiết kế hệ thống chịu tải 3.600 req/s dưới trần 1,15 USD/giờ" },
+    "prompt": { "vi": "Hệ thống nhận 3.600 req/s ổn định (90% đọc trên tập 50.000 key). Mỗi App Server xử lý tối đa 1.500 req/s (0,12 USD/giờ), PostgreSQL xử lý 950 req/s (0,55 USD/giờ). Với giới hạn cứng chi phí ≤ 1,15 USD/giờ và tối đa 2 thay đổi, hãy cấu hình để đạt p99 ≤ 100 ms, lỗi ≤ 1% và không có điểm lỗi đơn ở tầng App." },
+    "difficulty": 2,
+    "simId": "S0-04/budget-fit",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-3600",
+        "label": { "vi": "Lưu lượng 3.600 req/s (p99 ≤ 100 ms, lỗi ≤ 1%)" },
+        "simId": "S0-04/budget-fit",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 100, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "no-app-spof", "kind": "structural", "rule": "no-spof", "node": "app" }
+    ],
+    "budget": {
+      "maxCostPerHour": 1.15,
+      "maxChanges": 2
+    },
+    "par": {
+      "costPerHour": 1.06,
+      "changes": 2
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app", "key": "replicas", "value": 3 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 50000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "db-scaleup-overbudget",
+        "label": { "vi": "Nâng cỡ máy PostgreSQL lên gấp đôi kèm 3 App Server" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 3 },
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Riêng việc tăng cỡ máy PostgreSQL lên mức 2 đã đẩy chi phí toàn hệ thống vượt ngưỡng cứng 1,15 USD/giờ, trong khi mở rộng dung lượng Cache giải quyết tải đọc rẻ hơn nhiều." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tính ngân sách Compute: để gánh 3.600 req/s với mỗi máy 1.500 req/s, tầng App cần ít nhất 3 instance (tổng 4.500 req/s)." },
+      { "vi": "Để không phải nâng cấp máy PostgreSQL đắt đỏ, hãy nâng dung lượng Cache phủ đủ 50.000 key đang hoạt động." }
+    ],
+    "explain": { "vi": "3 instance App Server cung cấp 4.500 req/s (ρ = {app.rho'@30:2}) và Cache 50.000 key đạt Hit Ratio {cache.hitRatio'@30:0%}, kéo tải xuống PostgreSQL còn ρ = {db.rho'@30:2}. Hệ thống giữ p99 ở {m.p99'@30:0} ms với tổng chi phí {m.cost'@30:2} USD/giờ, nằm gọn dưới trần 1,15 USD/giờ." }
+  }
+]

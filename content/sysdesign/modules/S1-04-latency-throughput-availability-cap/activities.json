@@ -1,0 +1,44 @@
+[
+  {
+    "id": "S1-04.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào chạm trần thông lượng và quá tải trước?" },
+    "prompt": { "vi": "Lưu lượng đang tăng tuyến tính từ 100 lên 1.000 req/s. Mô phỏng tạm dừng ở giây 20 (lưu lượng 400 req/s, hệ thống vẫn phản hồi nhanh p99 ≈ 69 ms). Hãy dự đoán node nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên khi tải tiếp tục tăng." },
+    "difficulty": 1,
+    "at": 20,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 20 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 20, "playToSec": 58, "speed": 2 },
+    "hints": [
+      { "vi": "Tính tổng thông lượng tối đa μ của từng tầng: chú ý App Tier đang chạy song song 2 instance." },
+      { "vi": "App Tier có tổng năng lực 2 × 600 = 1.200 req/s, trong khi Database chỉ có 1 máy với μ = 800 req/s." }
+    ],
+    "explain": { "vi": "{db.name} có trần thông lượng 800 req/s nên chạm ngưỡng quá tải vào giây {t.first.db:0}. Tại giây 55 (lưu lượng 925 req/s), {db.name} ở ρ = {db.rho@55:2} với hàng đợi {db.queue@55:0} request làm p99 toàn tuyến vọt lên {m.p99@55:0} ms, trong khi {app.name} vẫn ở ρ = {app.rho@55:2}." },
+    "sim": { "simId": "S1-04/ramp", "seekSec": 20, "autoplay": false },
+    "replay": { "simId": "S1-04/ramp", "seekSec": 38, "focus": { "nodes": ["db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S1-04.A2",
+    "kind": "estimate",
+    "title": { "vi": "Tính ngân sách ngừng hoạt động một năm của SLA 99,99%" },
+    "prompt": { "vi": "Một cổng thanh toán ký cam kết độ sẵn sàng 99,99% (bốn chữ số 9) tính trên một năm tiêu chuẩn 365 ngày. Hệ thống được phép ngừng phục vụ tối đa bao nhiêu phút trong cả năm mà không vi phạm SLA?" },
+    "difficulty": 2,
+    "quantity": "Thời gian ngừng hoạt động tối đa mỗi năm",
+    "unit": "phút",
+    "truth": { "type": "formula", "expr": "365 * 24 * 60 * (1 - 0.9999)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Tổng số phút trong 1 năm (365 ngày): 365 × 24 × 60 = 525.600 phút." },
+      { "vi": "Tỉ lệ thời gian ngừng cho phép ở mức 99,99%: 1 − 0,9999 = 0,0001 (tức 1 / 10.000)." },
+      { "vi": "Ngân sách ngừng tối đa: 525.600 × 0,0001 = 52,56 phút/năm (khoảng 4,38 phút/tháng)." }
+    ],
+    "hints": [
+      { "vi": "Đổi 365 ngày sang tổng số phút (365 × 24 × 60), sau đó nhân với phần bù (1 − 0,9999) = 0,0001." }
+    ],
+    "explain": { "vi": "Ngân sách ngừng phục vụ tối đa cả năm của mức 99,99% là {truth:1} phút (chưa đầy 1 giờ cho suốt 12 tháng). Vì con số này quá hẹp cho thao tác thủ công, kiến trúc 99,99% bắt buộc phải triển khai không gián đoạn và tự động chuyển đổi dự phòng." }
+  }
+]

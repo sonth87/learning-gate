@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S1-01.c1",
+    "front": "Năm thành phần cơ bản trên đường đi của một hệ thống web tiêu chuẩn là gì?",
+    "back": "Client (hiển thị giao diện), Load Balancer (phân tải và kiểm tra sức khoẻ), App Server (logic nghiệp vụ), Cache (bộ nhớ đệm RAM cho lượt đọc nóng) và Database (lưu trữ bền vững trên đĩa)."
+  },
+  {
+    "id": "S1-01.c2",
+    "front": "Vì sao không bao giờ chỉ kiểm tra dữ liệu hợp lệ ở phía Client?",
+    "back": "Client chạy trên thiết bị ngoài tầm kiểm soát; người dùng có thể sửa mã giao diện hoặc gửi gói tin thẳng lên API. Kiểm tra ở Client chỉ hỗ trợ UX, còn Server bắt buộc xác thực lại mọi quy tắc."
+  },
+  {
+    "id": "S1-01.c3",
+    "front": "App Server Stateless khác Stateful ở điểm cốt lõi nào?",
+    "back": "Server Stateless không giữ phiên đăng nhập trong RAM riêng của từng máy mà tách ra token hoặc kho chung, cho phép mọi instance xử lý bất kỳ request nào và mở rộng ngang dễ dàng."
+  },
+  {
+    "id": "S1-01.c4",
+    "front": "Cơ chế Cache-Aside vận hành như thế nào khi đọc dữ liệu?",
+    "back": "Ứng dụng hỏi Cache trước: nếu trúng (Cache Hit) thì trả kết quả ngay từ RAM; nếu trượt (Cache Miss) thì truy vấn Database, lưu kết quả vào Cache kèm TTL rồi trả về."
+  },
+  {
+    "id": "S1-01.c5",
+    "front": "Điều gì xảy ra với Database khi cụm Cache mất dữ liệu đột ngột?",
+    "back": "Toàn bộ lưu lượng đọc trước đó được Cache chặn lại sẽ đổ thẳng xuống Database cùng lúc, làm mức sử dụng ρ của Database tăng vọt và dễ gây quá tải dây chuyền."
+  },
+  {
+    "id": "S1-01.c6",
+    "front": "Thứ tự 4 bước tối ưu Database theo độ phức tạp tăng dần?",
+    "back": "1. Tối ưu câu truy vấn và thêm chỉ mục (Index); 2. Dùng Connection Pool tái sử dụng kết nối; 3. Bổ sung Read Replica cho tải đọc; 4. Phân mảnh Sharding khi một máy chạm trần."
+  }
+]

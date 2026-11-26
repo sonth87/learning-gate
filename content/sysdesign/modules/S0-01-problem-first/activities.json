@@ -1,0 +1,55 @@
+[
+  {
+    "id": "S0-01.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Cấu hình dịch vụ đếm lượt xem theo đúng ràng buộc đã làm rõ" },
+    "prompt": { "vi": "Sau khi đặt câu hỏi làm rõ, bạn biết dịch vụ nhận 2.500 req/s (85% đọc, 15% ghi) trên 60.000 video đang hoạt động. Hiện tại View API chỉ có 1 instance (μ = 1.600 req/s) và Cache chỉ chứa 10.000 key. Với tối đa 2 thay đổi và chi phí ≤ 1,20 USD/giờ, hãy giữ p99 ≤ 100 ms, lỗi ≤ 1% và loại bỏ điểm lỗi đơn ở tầng View API." },
+    "difficulty": 2,
+    "simId": "S0-01/view-counter",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-2500",
+        "label": { "vi": "Tải thực tế 2.500 req/s (p99 ≤ 100 ms, lỗi ≤ 1%)" },
+        "simId": "S0-01/view-counter",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 100, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "no-app-spof", "kind": "structural", "rule": "no-spof", "node": "app" }
+    ],
+    "budget": {
+      "maxCostPerHour": 1.2,
+      "maxChanges": 2
+    },
+    "par": {
+      "costPerHour": 1.05,
+      "changes": 2
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 60000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "blind-db-scaleup",
+        "label": { "vi": "Tăng cỡ máy Database lên gấp 3 mà không xét tầng View API và Cache" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Nâng cấp Database làm chi phí vọt lên hơn 2,50 USD/giờ (vượt ngân sách) trong khi 1 instance View API (μ = 1.600 req/s) vẫn quá tải trước lưu lượng 2.500 req/s." }
+      }
+    ],
+    "hints": [
+      { "vi": "Kiểm tra năng lực tầng View API trước: 1 instance xử lý 1.600 req/s không đủ nhận 2.500 req/s đầu vào." },
+      { "vi": "Tập video đang hoạt động có 60.000 key; nâng dung lượng Cache phủ đủ tập key giúp giảm mạnh lượt đọc rơi xuống Database mà không cần tăng cỡ máy Database." }
+    ],
+    "explain": { "vi": "Khi phân tích từ bài toán thay vì nâng cấp máy mù quáng, ta thấy hai nút thắt thật sự: View API cần 2 instance (tổng μ = 3.200 req/s, ρ = {app.rho'@30:2}) và Cache cần đủ 60.000 key để đạt Hit Ratio {cache.hitRatio'@30:0%}. Lượng truy vấn xuống Database giảm còn ρ = {db.rho'@30:2}, giữ p99 ở {m.p99'@30:0} ms với tổng chi phí chỉ {m.cost'@30:2} USD/giờ." }
+  }
+]

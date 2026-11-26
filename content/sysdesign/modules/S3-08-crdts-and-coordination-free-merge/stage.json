@@ -1,0 +1,402 @@
+{
+  "version": 1,
+  "base": "s1-ap-dilemma",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Thiết bị đồng bộ", "en": "Sync Clients" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng chỉnh sửa giỏ hàng, tài liệu cộng tác và bấm lượt thích ở tốc độ 1.800 req/s.",
+          "en": "Users editing carts, collaborative docs, and counters at 1,800 req/s."
+        },
+        "how": {
+          "vi": "Ghi trực tiếp vào bản sao gần nhất (hoặc ghi ngoại tuyến trên thiết bị) mà không cần chờ bầu đa số liên lục địa.",
+          "en": "Writes locally to the nearest replica without waiting for cross-region quorum."
+        },
+        "why": {
+          "vi": "Ưu tiên nhánh AP của định lý CAP: luôn cho phép ghi với độ trễ thấp kể cả khi đứt cáp biển.",
+          "en": "Chooses AP under CAP: always writable at low latency even during WAN partitions."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "globe",
+      "label": { "vi": "Geo Router", "en": "Geo Router" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ định tuyến phân phối người dùng về hai vùng dữ liệu Hà Nội và Singapore.",
+          "en": "Global router splitting traffic across Hanoi and Singapore replicas."
+        },
+        "how": {
+          "vi": "Nếu không gắn kết phiên (ip-hash / sticky), một thiết bị chuyển vùng có thể đọc phải bản sao chưa kịp nhận gói đồng bộ mới nhất.",
+          "en": "Without session affinity, a roaming client may hit a lagging replica and observe non-monotonic reads."
+        },
+        "why": {
+          "vi": "Đảm bảo cả hai vùng đều tiếp nhận lưu lượng đọc/ghi song song (Multi-Leader / Leaderless).",
+          "en": "Enables active-active multi-replica reads and writes."
+        }
+      }
+    },
+    "rep_hn": {
+      "shape": "db",
+      "tone": "green",
+      "label": { "vi": "Replica Hà Nội", "en": "Hanoi Replica" },
+      "inspector": {
+        "what": {
+          "vi": "Bản sao trạng thái CRDT đặt tại vùng Hà Nội (μ = 2.500 ops/s).",
+          "en": "CRDT state replica in Hanoi (μ = 2,500 ops/s)."
+        },
+        "how": {
+          "vi": "Cập nhật trực tiếp ô trạng thái riêng của miền hn và định kỳ gửi bản chụp trạng thái sang Singapore qua giao thức Gossip.",
+          "en": "Mutates its own hn state slot locally and gossips state snapshots asynchronously to Singapore."
+        },
+        "why": {
+          "vi": "Tiếp tục nhận 100% lệnh ghi cục bộ ngay cả khi đường truyền đi Singapore bị cắt đứt.",
+          "en": "Continues accepting 100% of local writes when the link to Singapore is severed."
+        }
+      }
+    },
+    "rep_sg": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Replica Singapore", "en": "Singapore Replica" },
+      "inspector": {
+        "what": {
+          "vi": "Bản sao trạng thái CRDT đặt tại vùng Singapore (μ = 2.500 ops/s).",
+          "en": "CRDT state replica in Singapore (μ = 2,500 ops/s)."
+        },
+        "how": {
+          "vi": "Khi mạng nối lại, áp dụng hàm hợp nhất state_hn ⊔ state_sg để tự hội tụ mà không cần trọng tài phân xử.",
+          "en": "On partition heal, computes state_hn ⊔ state_sg to converge deterministically without conflict resolution."
+        },
+        "why": {
+          "vi": "Nhờ tính giao hoán, kết hợp và luỹ đẳng, hai bản sao chắc chắn đạt cùng một giá trị khi ngừng ghi mới.",
+          "en": "Commutative, associative, idempotent merge guarantees Strong Eventual Consistency."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ các thiết bị người dùng tới tầng định tuyến.", "en": "Client requests to Geo Router." },
+        "how": { "vi": "Gồm 60% truy vấn đọc và 40% thao tác cập nhật.", "en": "Carries 60% reads and 40% mutations." },
+        "why": { "vi": "Tải ghi cao trên nhiều vùng cùng lúc kiểm chứng khả năng hợp nhất không khoá.", "en": "Tests coordination-free multi-region write merging." }
+      }
+    },
+    "lb-hn": {
+      "inspector": {
+        "what": { "vi": "Nhánh lưu lượng vào Replica Hà Nội.", "en": "Traffic routed to Hanoi Replica." },
+        "how": { "vi": "Xử lý nội vùng độ trễ thấp không cần chờ Singapore xác nhận.", "en": "Served locally without waiting for Singapore ACK." },
+        "why": { "vi": "Loại bỏ hoàn toàn độ trễ xuyên quốc gia trên đường ghi.", "en": "Eliminates cross-region WAN RTT from the write path." }
+      }
+    },
+    "lb-sg": {
+      "inspector": {
+        "what": { "vi": "Nhánh lưu lượng vào Replica Singapore.", "en": "Traffic routed to Singapore Replica." },
+        "how": { "vi": "Xử lý độc lập 50% lưu lượng người dùng.", "en": "Independently serves half of incoming traffic." },
+        "why": { "vi": "Giữ độ sẵn sàng ghi 100% cho khu vực Đông Nam Á.", "en": "Maintains 100% write availability in Southeast Asia." }
+      }
+    },
+    "hn-sg": {
+      "inspector": {
+        "what": { "vi": "Kênh đồng bộ trạng thái Gossip bất đồng bộ giữa Hà Nội và Singapore (RTT 35 ms).", "en": "Asynchronous anti-entropy gossip link (35 ms RTT)." },
+        "how": { "vi": "Bị đứt từ giây 15 đến giây 40; khi nối lại ở giây 40 sẽ trao đổi và hợp nhất toàn bộ thay đổi tồn đọng.", "en": "Partitioned during t = 15..40s; exchanges and merges accumulated state upon healing." },
+        "why": { "vi": "Gói tin đồng bộ có thể đến trễ, đảo thứ tự hoặc lặp lại nhiều lần mà kết quả hợp nhất vẫn không đổi.", "en": "Tolerates delayed, reordered, and duplicate sync messages thanks to ACI properties." }
+      }
+    }
+  },
+  "zones": {
+    "replicas": {
+      "nodeIds": ["rep_hn", "rep_sg"],
+      "label": { "vi": "CỤM ĐA BẢN SAO GHI ĐỘC LẬP (AP)", "en": "ACTIVE-ACTIVE AP REPLICAS" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-ap-dilemma": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "rep_hn": {
+          "loadPct": 36,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghi cục bộ OK", "en": "Local writes OK" }, "tone": "ok" }
+        },
+        "rep_sg": {
+          "loadPct": 36,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghi cục bộ OK", "en": "Local writes OK" }, "tone": "ok" }
+        }
+      },
+      "linkState": {
+        "hn-sg": { "style": "cut", "label": { "vi": "Đứt cáp liên vùng", "en": "WAN Partition" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bài toán hợp nhất sau phân tách", "en": "Post-Partition Merge Problem" },
+        "lines": [
+          { "text": { "vi": "Khi đứt mạng: cả HN và SG đều cho ghi (AP)", "en": "During partition: both HN and SG accept writes" }, "tone": "good" },
+          { "text": { "vi": "Khi nối mạng: làm sao gộp mà không mất dữ liệu?", "en": "On heal: how to merge without losing updates?" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-lww-pitfall": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Vì sao ghi đè theo mốc thời gian (Last-Write-Wins) làm mất lượt cập nhật?",
+          "en": "Why Naive Last-Write-Wins (LWW) Silently Drops Concurrent Updates"
+        },
+        "subtitle": {
+          "vi": "Ban đầu lượt thích = 10 · Hai vùng cùng cộng +1 trong lúc đứt mạng",
+          "en": "Initial likes = 10 · Both replicas concurrently increment +1 during partition"
+        },
+        "cells": [
+          "Gốc: likes = 10",
+          "HN +1 → ghi 11 (t=102)",
+          "SG +1 → ghi 11 (t=105)",
+          "Gộp LWW → giữ 11!"
+        ],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 1, "label": "bị đè mất!", "tone": "rose" },
+          { "index": 3, "label": "đúng ra phải = 12", "tone": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên nhân", "en": "Root Cause" },
+          "value": {
+            "vi": "Lưu 1 con số vô hướng làm mất thông tin mỗi vùng đã đóng góp bao nhiêu đơn vị",
+            "en": "Overwriting a single scalar discards per-replica contribution history"
+          },
+          "tone": "rose"
+        }
+      }
+    },
+    "s3-aci-semilattice": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Ba luật đại số của phép hợp nhất CRDT (Join-Semilattice: A ⊔ B)",
+          "en": "Three Algebraic Laws of State-Based CRDT Merge (Join-Semilattice)"
+        },
+        "nodes": [
+          { "id": "join", "x": 0, "y": -82, "label": "Hàm hợp nhất merge(A, B) = A ⊔ B", "sub": { "vi": "Trạng thái luôn tiến lên trên dàn bán phần", "en": "Monotonically advances on a join-semilattice" }, "tone": "purple" },
+          { "id": "comm", "x": -195, "y": 44, "label": "Giao hoán: A ⊔ B = B ⊔ A", "sub": { "vi": "Chấp nhận gói tin đến ngược thứ tự", "en": "Tolerates out-of-order network delivery" }, "tone": "blue" },
+          { "id": "assoc", "x": 0, "y": 44, "label": "Kết hợp: (A⊔B)⊔C = A⊔(B⊔C)", "sub": { "vi": "Gộp theo nhóm bất kỳ giữa N máy", "en": "Any pairwise gossip order yields same result" }, "tone": "green" },
+          { "id": "idem", "x": 195, "y": 44, "label": "Luỹ đẳng: A ⊔ A = A", "sub": { "vi": "Gửi lặp 10 lần cũng không cộng dư", "en": "Safe to retry gossip arbitrarily many times" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "join", "to": "comm", "label": "không cần thứ tự" },
+          { "from": "join", "to": "assoc", "label": "đa bản sao" },
+          { "from": "join", "to": "idem", "label": "chống trùng gói" }
+        ]
+      }
+    },
+    "s4-gcounter": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "G-Counter (Grow-only Counter): tách mảng ô riêng cho từng Replica rồi lấy max",
+          "en": "G-Counter: Per-Replica Vector Slots Merged via Element-Wise max()"
+        },
+        "subtitle": {
+          "vi": "HN chỉ tăng ô hn · SG chỉ tăng ô sg · Hợp nhất: merged[i] = max(A[i], B[i])",
+          "en": "Each replica increments only its own slot · Merge: merged[i] = max(A[i], B[i])"
+        },
+        "cells": [
+          "HN: [hn:15, sg:4]",
+          "SG: [hn:8, sg:12]",
+          "Gộp: [max(15,8), max(4,12)]",
+          "Kết quả: [15, 12] → Tổng = 27"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 0, "label": "chỉ HN sửa ô 0", "tone": "green" },
+          { "index": 2, "label": "max() thoả ACI", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Vì sao không mất dữ liệu?", "en": "Why Zero Lost Increments?" },
+          "value": {
+            "vi": "Phép max(a, b) có tính giao hoán, kết hợp và max(a, a) = a nên nhận trùng gói vẫn ra đúng 27",
+            "en": "max(a, b) is commutative, associative, and idempotent — duplicate syncs never double-count"
+          },
+          "tone": "green"
+        }
+      }
+    },
+    "s5-pncounter": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "PN-Counter (Positive-Negative Counter): hỗ trợ cả tăng lẫn giảm bằng 2 G-Counter",
+          "en": "PN-Counter: Supporting Both Increment and Decrement via Paired G-Counters"
+        },
+        "nodes": [
+          { "id": "p", "x": -160, "y": -55, "label": "Vector P (lượt cộng)", "sub": { "vi": "P = [hn: 15, sg: 12] → sum(P) = 27", "en": "P = [hn: 15, sg: 12] → sum(P) = 27" }, "tone": "green" },
+          { "id": "n", "x": 160, "y": -55, "label": "Vector N (lượt trừ)", "sub": { "vi": "N = [hn: 3, sg: 2] → sum(N) = 5", "en": "N = [hn: 3, sg: 2] → sum(N) = 5" }, "tone": "orange" },
+          { "id": "val", "x": 0, "y": 64, "label": "Giá trị hội tụ = sum(P) − sum(N) = 22", "sub": { "vi": "Cả P và N chỉ tăng đơn điệu nên vẫn giữ nguyên luật max()", "en": "Both P and N grow monotonically, preserving max() merge" }, "tone": "blue" }
+        ],
+        "edges": [
+          { "from": "p", "to": "val", "label": "+27" },
+          { "from": "n", "to": "val", "label": "−5" }
+        ]
+      }
+    },
+    "s6-lww-register": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Hai bản ghi trường đơn (Bio / Tiêu đề)", "en": "Concurrent Scalar Register Writes" },
+        "rightTitle": { "vi": "Quy tắc phân xử LWW-Register", "en": "Deterministic LWW-Register Tie-Break" },
+        "names": [
+          {
+            "id": "w_hn",
+            "name": "HN: ('Kỹ sư', ts=500, 'hn')",
+            "note": { "vi": "Cùng mốc ts = 500 · 'hn' < 'sg'", "en": "Same ts = 500 · 'hn' < 'sg'" },
+            "targetId": "winner",
+            "style": "dashed"
+          },
+          {
+            "id": "w_sg",
+            "name": "SG: ('Kiến trúc sư', ts=500, 'sg')",
+            "note": { "vi": "Thắng phân xử theo mã replica", "en": "Wins deterministic replica-ID tie-break" },
+            "targetId": "winner",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "winner",
+            "typeTag": "LWW MERGE",
+            "value": "('Kiến trúc sư', 500, 'sg')",
+            "fields": ["so sánh (timestamp, replicaId)", "mọi máy đều chọn giống hệt nhau"],
+            "tone": "blue",
+            "badge": { "vi": "Hợp cho trường gán trọn vẹn · nhạy cảm lệch đồng hồ", "en": "Fits whole-field assignment · sensitive to clock skew" }
+          }
+        ]
+      }
+    },
+    "s7-orset-addwins": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Thêm và Xoá đồng thời trên Giỏ hàng", "en": "Concurrent Add vs Remove on Cart" },
+        "rightTitle": { "vi": "Trạng thái hợp nhất Add-Wins OR-Set", "en": "Merged Add-Wins OR-Set State" },
+        "names": [
+          {
+            "id": "sg_rm",
+            "name": "SG: remove('tai-nghe')",
+            "note": { "vi": "Chỉ biết thẻ cũ hn:1 → xoá hn:1", "en": "Only observed hn:1 → tombstones hn:1" },
+            "targetId": "tomb",
+            "style": "danger"
+          },
+          {
+            "id": "hn_add",
+            "name": "HN: add('tai-nghe') mới",
+            "note": { "vi": "Sinh thẻ duy nhất mới hn:2", "en": "Mints fresh unique tag hn:2" },
+            "targetId": "alive",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "tomb",
+            "typeTag": "TOMBSTONE",
+            "value": "tombstones = { hn:1 }",
+            "fields": ["chỉ gạch thẻ đã quan sát thấy"],
+            "tone": "neutral"
+          },
+          {
+            "id": "alive",
+            "typeTag": "ADD-WINS",
+            "value": "adds['tai-nghe'] = { hn:1, hn:2 }",
+            "fields": ["thẻ hn:2 ∉ tombstones → CÒN TRONG GIỎ!"],
+            "tone": "green",
+            "badge": { "vi": "Không làm bay mất món khách vừa bấm thêm lại", "en": "Preserves concurrent re-addition in cart" }
+          }
+        ]
+      }
+    },
+    "s8-partition-live": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Phân tách t = 15..40 s rồi Gossip hội tụ", "en": "Partition t = 15..40s Then Gossip Heal" },
+        "lines": [
+          { "text": { "vi": "t = 15..40 s: đứt mạng nhưng lỗi vẫn 0% (AP)", "en": "t = 15..40s: partitioned yet 0% error (AP)" }, "tone": "good" },
+          { "text": { "vi": "t = 40 s: nối mạng, xả hết backlog trong ~6 s", "en": "t = 40s: link heals, merges backlog in ~6s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "rep_hn": {
+          "loadPct": 36,
+          "badge": { "text": { "vi": "Hội tụ 100%", "en": "Converged" }, "tone": "ok" }
+        },
+        "rep_sg": {
+          "loadPct": 36,
+          "badge": { "text": { "vi": "Hội tụ 100%", "en": "Converged" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khi nào dùng CRDT, khi nào KHÔNG?", "en": "When to Use vs Avoid CRDTs" },
+        "lines": [
+          { "text": { "vi": "Dùng: bộ đếm lượt xem, giỏ hàng, tài liệu offline", "en": "Use: view counters, carts, collaborative docs" }, "tone": "good" },
+          { "text": { "vi": "Tránh: trừ số dư không được âm, vé duy nhất (cần khoá/Raft)", "en": "Avoid: non-negative balance, last seat (needs consensus)" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "ap-sync": {
+      "sim": "S3-08/ap-sync",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["partition"],
+        "knobs": [
+          { "node": "lb", "key": "algorithm" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thông lượng đạt", "en": "Goodput" }, "format": "rps" },
+        { "metric": "errorRate", "label": { "vi": "Tỉ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 300 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 150 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["rep_hn", "rep_sg"] }
+    }
+  }
+}

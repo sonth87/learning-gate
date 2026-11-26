@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "base": "s1-framework",
+  "nodes": {},
+  "scenes": {
+    "s1-framework": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Khung thiết kế: Hệ thống = Ràng buộc + Đánh đổi",
+          "en": "Framework: System = Constraints + Trade-Offs"
+        },
+        "nodes": [
+          { "id": "prob", "x": 0, "y": -106, "label": "Bài toán nghiệp vụ (Problem)", "tone": "blue" },
+          { "id": "c-tech", "x": -185, "y": -32, "label": "Giới hạn kỹ thuật (CPU/RAM/Mạng/DB)", "tone": "orange" },
+          { "id": "c-res", "x": 0, "y": -32, "label": "Giới hạn nguồn lực (Tiền & Thời hạn)", "tone": "yellow" },
+          { "id": "c-hum", "x": 185, "y": -32, "label": "Giới hạn nhân sự (Quy mô & Kỹ năng)", "tone": "purple" },
+          { "id": "trade", "x": 0, "y": 42, "label": "Đánh giá Đánh đổi trong vùng khả thi", "tone": "blue" },
+          { "id": "fit", "x": 0, "y": 108, "label": "Giải pháp vừa vặn (Right-sized Solution)", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "prob", "to": "c-tech" },
+          { "from": "prob", "to": "c-res" },
+          { "from": "prob", "to": "c-hum" },
+          { "from": "c-tech", "to": "trade" },
+          { "from": "c-res", "to": "trade" },
+          { "from": "c-hum", "to": "trade" },
+          { "from": "trade", "to": "fit", "label": "Khớp toàn bộ giới hạn cứng" }
+        ]
+      }
+    },
+    "s2-compute": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ngân sách Compute: xử lý 1.000.000 ảnh trong 30 phút (1.800 giây)",
+          "en": "Compute Budget: 1,000,000 Images in 30 Minutes (1,800s)"
+        },
+        "subtitle": {
+          "vi": "1 máy đơn (100 ảnh/s) mất 2,8 giờ; cần đạt tối thiểu 556 ảnh/s bằng thêm máy hoặc tối ưu đa luồng",
+          "en": "1 server (100 img/s) takes 2.8h; need ≥ 556 img/s via scale-out or parallel code"
+        },
+        "cells": [
+          "Đích: 556 ảnh/s",
+          "1 máy: 100 ảnh/s",
+          "PA 1: 6 máy (600/s)",
+          "PA 2: Tối ưu + 2 máy"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 1, "label": "Trễ hạn (2,8 giờ)", "tone": "rose" },
+          { "index": 2, "label": "Nhanh, tốn tiền thuê", "tone": "yellow" },
+          { "index": 3, "label": "Rẻ, tốn công code", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Quy tắc Compute", "en": "Compute Rule" },
+          "value": { "vi": "Tổng năng lực cụm ≥ Lưu lượng yêu cầu / Thời hạn", "en": "Cluster capacity ≥ Workload / Deadline" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s3-memory": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Phân bổ thanh ngân sách RAM trên máy chủ 16 GB",
+          "en": "RAM Budget Breakdown on a 16 GB Server"
+        },
+        "subtitle": {
+          "vi": "Luôn trừ phần Hệ điều hành, Tiến trình ứng dụng và Kết nối DB trước khi tính dung lượng Cache",
+          "en": "Subtract OS, App runtime, and DB connections before sizing in-memory Cache"
+        },
+        "cells": [
+          "HĐH: 2 GB",
+          "App Runtime: 2 GB",
+          "100 Conn DB: 1 GB",
+          "Quỹ Cache: 10 GB",
+          "Dự phòng: 1 GB"
+        ],
+        "activeIndices": [3],
+        "pointers": [
+          { "index": 2, "label": "~10 MB / kết nối", "tone": "orange" },
+          { "index": 3, "label": "Chỉ đệm dữ liệu nóng (LRU)", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Trần vật lý", "en": "Physical Cap" },
+          "value": { "vi": "Tổng cố định = 16 GB (vượt ngưỡng gây tràn Swap)", "en": "Hard cap = 16 GB (exceeding triggers swap)" },
+          "tone": "purple"
+        }
+      }
+    },
+    "s4-network": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ngân sách độ trễ mạng cho mục tiêu tải trang ≤ 200 ms",
+          "en": "Network Latency Budget for ≤ 200 ms Page Load"
+        },
+        "subtitle": {
+          "vi": "Bắt tay mạng ban đầu đã dùng mất 100 ms; máy chủ phía sau chỉ còn tối đa 100 ms để xử lý",
+          "en": "Initial network handshakes consume 100 ms, leaving ≤ 100 ms for backend processing"
+        },
+        "cells": [
+          "DNS: 20 ms",
+          "TCP: 20 ms",
+          "TLS: 40 ms",
+          "Truyền: 20 ms",
+          "Quỹ Server: ≤ 100 ms"
+        ],
+        "activeIndices": [4],
+        "pointers": [
+          { "index": 2, "label": "Đã tiêu 100 ms mạng", "tone": "yellow" },
+          { "index": 4, "label": "Đặt App gần DB + dùng CDN", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Giới hạn vật lý", "en": "Physics Limit" },
+          "value": { "vi": "Ánh sáng trong cáp quang ≈ 200.000 km/s", "en": "Light in fiber ≈ 200,000 km/s" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s5-database": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Giới hạn của 1 máy Database", "en": "Single Database Limit" },
+        "rightTitle": { "vi": "Giải pháp tôn trọng ràng buộc", "en": "Constraint-Aware Remedy" },
+        "names": [
+          {
+            "id": "write-cap",
+            "name": "Trần ghi rời rạc (~10k/s)",
+            "note": { "vi": "Nhật ký đến 50.000 writes/s", "en": "Incoming 50,000 writes/s" },
+            "targetId": "batch-sol",
+            "style": "solid"
+          },
+          {
+            "id": "conn-cap",
+            "name": "Trần kết nối (~200–500)",
+            "note": { "vi": "Nhiều App instance mở kết nối", "en": "Many App instances connecting" },
+            "targetId": "pool-sol",
+            "style": "solid"
+          },
+          {
+            "id": "read-cap",
+            "name": "Trần đọc truy vấn phức tạp",
+            "note": { "vi": "Tốn CPU & I/O ổ cứng", "en": "Heavy disk I/O & CPU" },
+            "targetId": "cache-idx-sol",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "batch-sol",
+            "typeTag": "BATCHING",
+            "value": "Gom lô 100 bản ghi / lần",
+            "fields": ["Đạt ~100k writes/s", "Giữ nguyên PostgreSQL quen thuộc"],
+            "tone": "green"
+          },
+          {
+            "id": "pool-sol",
+            "typeTag": "POOLING",
+            "value": "Giới hạn Connection Pool",
+            "fields": ["Tái sử dụng kết nối", "Tránh tràn RAM trên DB"],
+            "tone": "blue"
+          },
+          {
+            "id": "cache-idx-sol",
+            "typeTag": "INDEX + CACHE",
+            "value": "Chỉ mục + Đệm kết quả nóng",
+            "fields": ["Giảm 80–90% tải đọc xuống đĩa"],
+            "tone": "yellow"
+          }
+        ]
+      }
+    },
+    "s6-human": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Quy mô đội ngũ kỹ sư", "en": "Engineering Team Size" },
+        "rightTitle": { "vi": "Độ phức tạp vận hành chịu được", "en": "Sustainable Architecture" },
+        "names": [
+          {
+            "id": "t-small",
+            "name": "Nhóm 1–3 kỹ sư",
+            "note": { "vi": "Không có người trực Ops riêng", "en": "No dedicated Ops" },
+            "targetId": "arch-mono",
+            "style": "solid"
+          },
+          {
+            "id": "t-small-bad",
+            "name": "Nhóm 3 người chọn 8 dịch vụ",
+            "note": { "vi": "Vượt trần năng lực bảo trì", "en": "Exceeds maintenance cap" },
+            "targetId": "arch-micro",
+            "style": "danger"
+          },
+          {
+            "id": "t-large",
+            "name": "Nhóm 20+ kỹ sư",
+            "note": { "vi": "Có nhóm hạ tầng chuyên trách", "en": "Dedicated Platform team" },
+            "targetId": "arch-micro",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "arch-mono",
+            "typeTag": "LOW OPS",
+            "value": "Monolith + Managed DB",
+            "fields": ["Ra mắt trong 6 tuần", "Tập trung làm tính năng"],
+            "tone": "green"
+          },
+          {
+            "id": "arch-micro",
+            "typeTag": "HIGH OPS",
+            "value": "Microservices + Kubernetes",
+            "fields": ["Triển khai & Giám sát riêng", "Chỉ khớp khi đội ngũ lớn"],
+            "tone": "purple"
+          }
+        ]
+      }
+    },
+    "s7-mistakes": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Kiểm tra ràng buộc cho bài toán 3.600 req/s (Trần ≤ 1,15 USD/giờ)",
+          "en": "Constraint Check for 3,600 req/s (Hard Cap ≤ $1.15/hr)"
+        },
+        "nodes": [
+          { "id": "req", "x": 0, "y": -102, "label": "Tải 3.600 req/s · 90% đọc · 50k key", "tone": "blue" },
+          { "id": "cpu", "x": -175, "y": -24, "label": "App 1.500 req/s ($0,12/h)", "tone": "green" },
+          { "id": "db", "x": 175, "y": -24, "label": "PostgreSQL 950 req/s ($0,55/h)", "tone": "orange" },
+          { "id": "bad", "x": 175, "y": 62, "label": "Scale-up DB ×2 ($1,26/h > $1,15/h)", "tone": "rose", "pruned": true },
+          { "id": "good", "x": -95, "y": 62, "label": "3 App + Cache 50k key = $1,06/h", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "req", "to": "cpu" },
+          { "from": "req", "to": "db" },
+          { "from": "cpu", "to": "good", "label": "3 máy đạt 4.500 req/s" },
+          { "from": "db", "to": "good", "label": "Cache gánh lượt đọc" },
+          { "from": "db", "to": "bad", "label": "Vi phạm trần ngân sách", "style": "danger" }
+        ]
+      }
+    },
+    "s8-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "5 nhóm ràng buộc định hình mọi bản thiết kế thực tế",
+          "en": "5 Constraint Categories Shaping Real Systems"
+        },
+        "subtitle": {
+          "vi": "Bài toán → Ràng buộc → Đánh đổi → Giải pháp vừa vặn",
+          "en": "Problem → Constraints → Trade-Offs → Right-Sized Solution"
+        },
+        "cells": [
+          "1. Compute (CPU)",
+          "2. Memory (RAM)",
+          "3. Network (RTT)",
+          "4. Database (I/O)",
+          "5. Nhân sự & Tiền"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "Giới hạn kỹ thuật", "tone": "blue" },
+          { "index": 4, "label": "Giới hạn con người & ngân sách", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc", "en": "Principle" },
+          "value": { "vi": "Giải quyết ràng buộc hôm nay, mở rộng khi có quy mô thật", "en": "Solve today's constraints, adapt as real scale arrives" },
+          "tone": "green"
+        }
+      }
+    }
+  }
+}

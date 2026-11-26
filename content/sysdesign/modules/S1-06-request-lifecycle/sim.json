@@ -1,0 +1,104 @@
+{
+  "sims": [
+    {
+      "id": "S1-06/trace",
+      "scenario": {
+        "id": "S1-06/trace",
+        "seed": 1106,
+        "durationSec": 60,
+        "mix": { "readRatio": 1.0 },
+        "clientTimeoutMs": 3000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 10 },
+        "events": [
+          { "at": 25, "type": "slowdown", "node": "db", "addMs": 385, "durationSec": 35 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Thiết bị", "en": "Device" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "dns",
+              "kind": "dns",
+              "label": { "vi": "DNS Resolver", "en": "DNS Resolver" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.02,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "ttlSec": 60 },
+              "knobs": [
+                { "key": "ttlSec", "type": "number", "label": { "vi": "TTL bản ghi DNS", "en": "DNS record TTL" }, "min": 5, "max": 3600, "step": 5, "default": 60, "unit": "s" }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "DNS ngừng phản hồi", "en": "DNS unreachable" } }
+              ]
+            },
+            {
+              "id": "web",
+              "kind": "service",
+              "label": { "vi": "Web Server", "en": "Web Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1000 },
+              "latency": { "baseMs": 18, "cv": 0.25 },
+              "params": { "replicas": 1, "poolSize": 32 },
+              "knobs": [
+                { "key": "replicas", "type": "number", "label": { "vi": "Số instance", "en": "Instances" }, "min": 1, "max": 8, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Web Server ngừng hoạt động", "en": "Web Server down" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 15, "cv": 0.25 },
+              "params": { "shards": 1, "applyRps": 500, "rewriteHotness": 0.02, "maxConnections": 200, "poolSize": 32, "sizeFactor": 1 },
+              "knobs": [
+                { "key": "sizeFactor", "type": "number", "label": { "vi": "Cỡ máy DB", "en": "DB size" }, "min": 1, "max": 4, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Truy vấn thiếu chỉ mục làm tăng vọt thời gian đọc", "en": "Unindexed query spikes DB latency" } }
+              ]
+            }
+          ],
+          "links": [
+            { "id": "client-dns", "from": "client", "to": "dns", "mode": "sync", "netMs": 18, "timeoutMs": 1000 },
+            { "id": "client-web", "from": "client", "to": "web", "mode": "sync", "netMs": 75, "timeoutMs": 2500 },
+            { "id": "web-db", "from": "web", "to": "db", "mode": "sync", "netMs": 1, "timeoutMs": 2000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "web": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

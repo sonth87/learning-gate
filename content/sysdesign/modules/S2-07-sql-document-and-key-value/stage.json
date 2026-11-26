@@ -1,0 +1,395 @@
+{
+  "version": 1,
+  "base": "s6-polyglot",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Khách hàng duyệt danh mục, tìm kiếm sản phẩm và đặt đơn hàng.",
+          "en": "Shoppers browsing catalog items, running searches, and placing orders."
+        },
+        "how": {
+          "vi": "Tạo nhiều mẫu truy cập khác nhau trong cùng phiên: kiểm tra token, đọc chi tiết mặt hàng, tìm theo từ khoá và thanh toán.",
+          "en": "Generates diverse access patterns: token lookups, item detail reads, full-text queries, and checkout transactions."
+        },
+        "why": {
+          "vi": "Sự khác biệt về mẫu truy cập là lý do một loại cơ sở dữ liệu duy nhất khó tối ưu mọi tác vụ.",
+          "en": "Distinct access patterns explain why a single storage engine struggles to optimize every workload."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải điều phối request vào cụm Commerce API.",
+          "en": "Distributes client traffic evenly across stateless Commerce API instances."
+        },
+        "how": {
+          "vi": "Chia đều theo vòng Round-robin và kiểm tra sức khoẻ định kỳ.",
+          "en": "Routes via Round-robin with periodic health checks."
+        },
+        "why": {
+          "vi": "Tách rời người dùng khỏi số lượng máy chủ ứng dụng phía sau.",
+          "en": "Decouples clients from backend application server count."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Commerce API", "en": "Commerce API" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng dịch vụ thương mại điện tử điều phối đọc/ghi tới các kho dữ liệu chuyên biệt.",
+          "en": "Stateless commerce service routing each operation to the right specialized store."
+        },
+        "how": {
+          "vi": "Tra phiên ở Key-Value, đọc hồ sơ sản phẩm ở Document Store, truy vấn từ khoá ở Search và ghi giao dịch vào SQL.",
+          "en": "Checks sessions in Key-Value, reads product specs from Document Store, queries Search, and commits orders in SQL."
+        },
+        "why": {
+          "vi": "Đóng gói độ phức tạp đa lưu trữ sau một giao diện API thống nhất.",
+          "en": "Encapsulates polyglot persistence behind a clean domain API."
+        }
+      }
+    },
+    "kv": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Key-Value Session", "en": "Key-Value Session" },
+      "inspector": {
+        "what": {
+          "vi": "Kho khoá-giá trị trong bộ nhớ RAM (ví dụ Redis) lưu phiên đăng nhập và giỏ hàng tạm.",
+          "en": "In-memory Key-Value store holding user sessions and ephemeral carts."
+        },
+        "how": {
+          "vi": "Tra cứu trực tiếp theo khoá chính xác với độ phức tạp O(1) dưới 1 ms và tự hết hạn theo TTL.",
+          "en": "Performs exact-key O(1) hash lookups in sub-millisecond latency with automatic TTL expiration."
+        },
+        "why": {
+          "vi": "Mọi request đều cần xác thực phiên nên chặng này phải cực nhanh và không chạm đĩa.",
+          "en": "Every request validates session state, requiring ultra-low latency without disk I/O."
+        },
+        "tip": {
+          "vi": "Không dùng Key-Value Store khi bạn cần lọc theo các trường nằm bên trong giá trị.",
+          "en": "Avoid Key-Value stores when queries must filter on internal value attributes."
+        }
+      }
+    },
+    "doc": {
+      "shape": "db",
+      "tone": "green",
+      "label": { "vi": "Document Catalog", "en": "Document Catalog" },
+      "inspector": {
+        "what": {
+          "vi": "Kho tài liệu (ví dụ MongoDB) lưu thông tin chi tiết sản phẩm có cấu trúc thuộc tính đa dạng.",
+          "en": "Document database storing polymorphic product catalog entries as self-contained JSON/BSON."
+        },
+        "how": {
+          "vi": "Mỗi sản phẩm lưu trọn các thuộc tính riêng (kích cỡ áo, cấu hình laptop) trong một tài liệu, đọc một lần không cần JOIN.",
+          "en": "Stores category-specific nested attributes together in one document for single-read retrieval."
+        },
+        "why": {
+          "vi": "Lược đồ linh hoạt và dễ phân mảnh ngang theo mã sản phẩm khi catalog tăng lên hàng chục triệu mục.",
+          "en": "Flexible schema and straightforward horizontal sharding by product ID."
+        }
+      }
+    },
+    "sql": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "SQL Orders", "en": "SQL Orders" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ (ví dụ PostgreSQL) lưu đơn hàng, thanh toán và tồn kho.",
+          "en": "Relational database storing orders, payment ledgers, and inventory balances."
+        },
+        "how": {
+          "vi": "Thực thi giao dịch ACID trên nhiều bảng có ràng buộc khoá ngoại, đảm bảo trừ kho và tạo đơn thành công hoặc huỷ cùng nhau.",
+          "en": "Enforces multi-table ACID transactions and foreign-key constraints across orders and inventory."
+        },
+        "why": {
+          "vi": "Dữ liệu tài chính đòi hỏi tính toàn vẹn chặt chẽ, không chấp nhận trạng thái ghi dở dang.",
+          "en": "Financial records require strict transactional integrity without partial updates."
+        }
+      }
+    },
+    "search": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Search Engine", "en": "Search Engine" },
+      "inspector": {
+        "what": {
+          "vi": "Hệ thống tìm kiếm toàn văn dùng chỉ mục đảo (ví dụ Elasticsearch / OpenSearch).",
+          "en": "Inverted-index search engine serving multi-facet text queries."
+        },
+        "how": {
+          "vi": "Tách từ, xếp hạng độ liên quan và lọc kết hợp nhiều tiêu chí; nhận dữ liệu đồng bộ bất đồng bộ từ DB gốc.",
+          "en": "Tokenizes text, scores relevance, and ingests asynchronous Change Stream updates from source stores."
+        },
+        "why": {
+          "vi": "Giải phóng SQL và Document Store khỏi các truy vấn quét chuỗi ký tự tốn CPU.",
+          "en": "Offloads expensive wildcard text scans and faceted aggregations from transactional stores."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối HTTPS từ người dùng tới Load Balancer.", "en": "HTTPS traffic from end users." },
+        "how": { "vi": "Mang hỗn hợp truy vấn xem hàng, tìm kiếm và đặt đơn.", "en": "Carries mixed browse, search, and checkout requests." },
+        "why": { "vi": "Điểm vào duy nhất của toàn hệ thống.", "en": "Single entry point for clients." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường truyền nội bộ vào cụm Commerce API.", "en": "Internal hop to Commerce API instances." },
+        "how": { "vi": "Phân phối đều lưu lượng giữa các máy ứng dụng.", "en": "Balances requests evenly across API instances." },
+        "why": { "vi": "Giữ mức sử dụng CPU đồng đều ở tầng xử lý nghiệp vụ.", "en": "Keeps compute utilization even." }
+      }
+    },
+    "app-kv": {
+      "inspector": {
+        "what": { "vi": "Tra cứu phiên theo khoá O(1) tới Key-Value Store.", "en": "Sub-millisecond O(1) session lookup." },
+        "how": { "vi": "Truy xuất trực tiếp bằng khoá sess:<id> trong RAM.", "en": "Fetches value directly by exact key in RAM." },
+        "why": { "vi": "Tránh đánh thức ổ đĩa cho thao tác lặp lại ở mọi request.", "en": "Avoids disk I/O on per-request session checks." }
+      }
+    },
+    "app-doc": {
+      "inspector": {
+        "what": { "vi": "Đọc tài liệu sản phẩm từ Document Store.", "en": "Product document lookup." },
+        "how": { "vi": "Lấy trọn cấu trúc JSON lồng nhau theo product_id.", "en": "Fetches nested JSON document by product_id." },
+        "why": { "vi": "Hiển thị trang chi tiết mặt hàng mà không cần nối nhiều bảng.", "en": "Renders product pages without multi-table JOINs." }
+      }
+    },
+    "app-sql": {
+      "inspector": {
+        "what": { "vi": "Giao dịch ghi đơn hàng và trừ tồn kho xuống SQL.", "en": "Transactional order and inventory writes to SQL." },
+        "how": { "vi": "Gói BEGIN...COMMIT đảm bảo tính nguyên tử ACID.", "en": "Executes atomic BEGIN...COMMIT transactions." },
+        "why": { "vi": "Ngăn lỗi thu tiền nhưng không tạo đơn hoặc bán vượt tồn kho.", "en": "Prevents orphaned payments or overselling." }
+      }
+    },
+    "app-search": {
+      "inspector": {
+        "what": { "vi": "Truy vấn từ khoá và bộ lọc nhiều chiều tới Search Engine.", "en": "Full-text and faceted search queries." },
+        "how": { "vi": "Tra chỉ mục đảo thay vì dùng LIKE '%...%' trên bảng gốc.", "en": "Queries inverted indexes instead of table scans." },
+        "why": { "vi": "Giữ tốc độ tìm kiếm ổn định ngay cả khi danh mục hàng triệu mục.", "en": "Maintains fast search latency across millions of SKUs." }
+      }
+    }
+  },
+  "zones": {
+    "storage": {
+      "nodeIds": ["kv", "doc", "sql", "search"],
+      "label": { "vi": "TẦNG ĐA LƯU TRỮ (POLYGLOT)", "en": "POLYGLOT STORAGE TIER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-sql-tables": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Mô hình Quan hệ (SQL): chuẩn hoá đơn hàng #901 qua 3 bảng",
+          "en": "Relational Model (SQL): Order #901 normalized across 3 tables"
+        },
+        "nodes": [
+          { "id": "tx", "x": 0, "y": -92, "label": "BEGIN ... COMMIT (ACID)", "sub": { "vi": "Thành công trọn gói hoặc huỷ hết", "en": "All-or-nothing transaction" }, "tone": "orange" },
+          { "id": "orders", "x": -185, "y": 24, "label": "orders (id=901)", "sub": { "vi": "user_id=42 · status=PAID", "en": "user_id=42 · status=PAID" }, "tone": "blue" },
+          { "id": "items", "x": 0, "y": 24, "label": "order_items", "sub": { "vi": "order_id=901 · sku=A1 · qty=2", "en": "order_id=901 · sku=A1 · qty=2" }, "tone": "green" },
+          { "id": "pay", "x": 185, "y": 24, "label": "payments", "sub": { "vi": "order_id=901 · 580.000đ", "en": "order_id=901 · 580,000 VND" }, "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "tx", "to": "orders", "label": "INSERT" },
+          { "from": "tx", "to": "items", "label": "FK order_id" },
+          { "from": "tx", "to": "pay", "label": "FK order_id" }
+        ]
+      }
+    },
+    "s2-sparse-schema": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Bảng cứng khi danh mục đa dạng: phần lớn cột bị bỏ trống (NULL)",
+          "en": "Rigid table for diverse catalog: sparse NULL columns"
+        },
+        "subtitle": {
+          "vi": "Mặt hàng Áo thun trong bảng dùng chung với Laptop và Sách",
+          "en": "T-shirt row sharing one wide table with Laptops and Books"
+        },
+        "cells": ["sku:TS01", "size:L", "cpu:NULL", "ram:NULL", "isbn:NULL"],
+        "activeIndices": [0, 1],
+        "pointers": [
+          { "index": 2, "label": "cột thừa", "tone": "rose" },
+          { "index": 4, "label": "ALTER TABLE", "tone": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hệ quả", "en": "Impact" },
+          "value": { "vi": "Hàng trăm cột NULL hoặc phải tách bảng EAV nhiều phép JOIN", "en": "Sparse NULL columns or slow multi-JOIN EAV tables" },
+          "tone": "rose"
+        }
+      }
+    },
+    "s3-doc-model": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Document Store: một tài liệu JSON tự chứa trọn thông tin sản phẩm",
+          "en": "Document Store: one self-contained JSON document per product"
+        },
+        "nodes": [
+          { "id": "doc", "x": 0, "y": -90, "label": "doc product:901", "sub": { "vi": "1 lần đọc theo _id · không cần JOIN", "en": "Single read by _id · zero JOINs" }, "tone": "green" },
+          { "id": "meta", "x": -180, "y": 28, "label": "title & price", "sub": { "vi": "Giày chạy bộ · 1.290k", "en": "Running shoe · 1,290k" }, "tone": "blue" },
+          { "id": "specs", "x": 0, "y": 28, "label": "attributes{}", "sub": { "vi": "drop: 8mm · weight: 220g", "en": "drop: 8mm · weight: 220g" }, "tone": "yellow" },
+          { "id": "vars", "x": 180, "y": 28, "label": "variants[]", "sub": { "vi": "[size 41, size 42, đỏ]", "en": "[size 41, size 42, red]" }, "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "doc", "to": "meta", "label": "nhúng" },
+          { "from": "doc", "to": "specs", "label": "linh hoạt" },
+          { "from": "doc", "to": "vars", "label": "mảng con" }
+        ]
+      }
+    },
+    "s4-kv-model": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Key-Value Store: bảng băm phẳng tra cứu O(1) trong RAM",
+          "en": "Key-Value Store: flat in-memory O(1) hash table"
+        },
+        "subtitle": {
+          "vi": "Chỉ truy cập qua khoá chính xác · hộp giá trị trong suốt với tầng lưu trữ",
+          "en": "Exact-key lookup only · opaque value payload"
+        },
+        "cells": ["sess:u19", "sess:u42", "cart:u42", "otp:9921", "rate:ip8"],
+        "activeIndices": [1, 2],
+        "pointers": [
+          { "index": 1, "label": "GET O(1) · 0,5 ms", "tone": "green" },
+          { "index": 2, "label": "TTL = 1800s", "tone": "yellow" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Đánh đổi", "en": "Trade-off" },
+          "value": { "vi": "Tốc độ dưới 1 ms nhưng không lọc được theo nội dung bên trong value", "en": "Sub-ms speed, no secondary query on value fields" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s5-nosql-tradeoffs": {
+      "show": { "nodes": ["client", "lb", "app", "doc", "sql"] },
+      "state": {
+        "app": { "loadPct": 52 },
+        "doc": {
+          "loadPct": 88,
+          "badge": { "text": { "vi": "Không JOIN rộng", "en": "No cross-JOIN" }, "tone": "warn" }
+        },
+        "sql": {
+          "loadPct": 60,
+          "highlighted": true,
+          "badge": { "text": { "vi": "ACID đa bảng", "en": "Multi-table ACID" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đánh đổi khi rời SQL", "en": "Leaving Relational Guarantees" },
+        "lines": [
+          { "text": { "vi": "SQL: mạnh về ACID, JOIN, ràng buộc toàn vẹn", "en": "SQL: strong ACID, JOINs, constraints" }, "tone": "good" },
+          { "text": { "vi": "NoSQL: dữ liệu trùng lặp, ứng dụng tự giữ nhất quán", "en": "NoSQL: denormalization & app-level consistency" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-polyglot": {
+      "show": { "nodes": ["client", "lb", "app", "kv", "doc", "sql"] },
+      "zones": ["storage"],
+      "state": {
+        "app": { "loadPct": 51 },
+        "kv": {
+          "loadPct": 9,
+          "badge": { "text": { "vi": "Session O(1)", "en": "Session O(1)" }, "tone": "ok" }
+        },
+        "doc": {
+          "loadPct": 78,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Catalog JSON", "en": "Catalog JSON" }, "tone": "ok" }
+        },
+        "sql": {
+          "loadPct": 64,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Đơn hàng ACID", "en": "ACID Orders" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc đa lưu trữ", "en": "Polyglot Persistence" },
+        "lines": [
+          { "text": { "vi": "Key-Value: phiên & giỏ tạm (< 1 ms)", "en": "Key-Value: sessions & carts (< 1 ms)" }, "tone": "plain" },
+          { "text": { "vi": "Document: catalog lược đồ mở", "en": "Document: flexible product catalog" }, "tone": "good" },
+          { "text": { "vi": "SQL: đơn hàng & sổ cái thanh toán", "en": "SQL: orders & payment ledger" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-search-sync": {
+      "show": { "nodes": "*" },
+      "zones": ["storage"],
+      "state": {
+        "app": { "loadPct": 51 },
+        "kv": { "loadPct": 9 },
+        "doc": { "loadPct": 78 },
+        "sql": { "loadPct": 55 },
+        "search": {
+          "loadPct": 68,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Chỉ mục đảo", "en": "Inverted Index" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bổ sung Search Engine", "en": "Adding Dedicated Search" },
+        "lines": [
+          { "text": { "vi": "DB gốc phát sự kiện qua Change Stream / CDC", "en": "Source DB streams changes via CDC" }, "tone": "plain" },
+          { "text": { "vi": "Search phục vụ lọc nhiều tiêu chí & xếp hạng từ khoá", "en": "Search handles multi-facet text ranking" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["storage"],
+      "state": {
+        "app": { "loadPct": 51 },
+        "kv": { "loadPct": 9 },
+        "doc": { "loadPct": 78 },
+        "sql": { "loadPct": 55 },
+        "search": { "loadPct": 68 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khung chọn lưu trữ", "en": "Storage Selection Guide" },
+        "lines": [
+          { "text": { "vi": "Giao dịch chặt & liên kết chéo → SQL", "en": "Strict ACID & relations → SQL" }, "tone": "amber" },
+          { "text": { "vi": "Thực thể tự chứa đa hình → Document", "en": "Self-contained flexible entities → Document" }, "tone": "good" },
+          { "text": { "vi": "Tra theo khoá đơn cực nhanh → Key-Value", "en": "Exact-key ultra-fast lookup → Key-Value" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  }
+}

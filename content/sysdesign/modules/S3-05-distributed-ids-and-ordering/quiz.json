@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-05.q1",
+    "type": "mc",
+    "q": "Nhược điểm lớn nhất khi dùng UUID v4 (128 bit ngẫu nhiên hoàn toàn) làm khoá chính (Clustered Primary Key) trên bảng SQL có hàng trăm triệu bản ghi là gì?",
+    "code": "",
+    "choices": [
+      "Xác suất sinh trùng hai ID trong cùng một ngày vượt quá 5%",
+      "Bắt buộc các máy chủ ứng dụng phải xin khoá qua mạng từ một máy chủ điều phối trung tâm",
+      "Giá trị ngẫu nhiên chèn rải rác khắp cây chỉ mục B-tree gây tách trang (Page Split) liên tục, phân mảnh đĩa và chiếm gấp đôi dung lượng so với BIGINT 64-bit",
+      "Không thể lưu trữ được trong PostgreSQL hay MySQL"
+    ],
+    "answer": 2,
+    "explain": "UUID v4 không có tính thứ tự nên mỗi bản ghi mới rơi vào một trang lá ngẫu nhiên giữa cây B-tree, buộc Database đọc trang từ đĩa lên RAM và tách trang thường xuyên thay vì nối gọn vào trang cuối như khoá tăng dần."
+  },
+  {
+    "id": "S3-05.q2",
+    "type": "output",
+    "q": "Trong cấu trúc Snowflake 64-bit chuẩn gồm 1 bit dấu + 41 bit timestamp (ms) + 10 bit worker_id + 12 bit sequence, trường worker_id cho phép phân biệt tối đa bao nhiêu máy/tiến trình sinh ID khác nhau? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "1024",
+    "explain": "Với 10 bit nhị phân không dấu (từ 0 đến 2^10 − 1), hệ thống định danh được tối đa 2^10 = 1.024 tiến trình sinh ID độc lập mà không bao giờ đụng độ nhau."
+  },
+  {
+    "id": "S3-05.q3",
+    "type": "mc",
+    "q": "UUID v7 cải thiện điểm cốt lõi nào so với UUID v4 trong khi vẫn giữ nguyên kích thước chuẩn 128 bit?",
+    "code": "",
+    "choices": [
+      "Nén định danh xuống còn 32 bit để tiết kiệm RAM",
+      "Đặt 48 bit mốc thời gian Unix (mili-giây) ở đầu định danh giúp các ID sinh ra tăng dần theo thời gian, khôi phục chèn tuần tự vào B-tree",
+      "Nhúng địa chỉ MAC phần cứng của card mạng giống hệt UUID v1",
+      "Yêu cầu gọi RPC tới máy chủ NTP trước mỗi lần tạo bản ghi"
+    ],
+    "answer": 1,
+    "explain": "Nhờ 48 bit thời gian đứng ở phần trọng số cao nhất, UUID v7 vừa giữ được sự tiện lợi không cần quản lý worker_id của họ UUID, vừa gom toàn bộ thao tác INSERT mới về nhánh phải cùng của chỉ mục B-tree."
+  },
+  {
+    "id": "S3-05.q4",
+    "type": "tf",
+    "q": "Khi trả một định danh 64-bit Snowflake qua JSON API cho ứng dụng trình duyệt viết bằng JavaScript, có thể truyền trực tiếp dưới kiểu số JSON Number mà không lo sai lệch giá trị.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Kiểu Number trong JavaScript dùng chuẩn dấu phẩy động IEEE-754 chỉ giữ chính xác số nguyên tới 2^53 − 1 (Number.MAX_SAFE_INTEGER), nhỏ hơn 64 bit của Snowflake. Truyền kiểu số sẽ làm tròn hỏng các bit cuối, nên bắt buộc phải truyền dưới dạng chuỗi (String) trong JSON."
+  },
+  {
+    "id": "S3-05.q5",
+    "type": "mc",
+    "q": "Điều gì xảy ra nếu đồng hồ hệ thống của một máy chạy bộ sinh Snowflake bị dịch vụ NTP chỉnh giật lùi 200 ms về quá khứ mà mã nguồn KHÔNG kiểm tra last_timestamp?",
+    "code": "",
+    "choices": [
+      "Không có ảnh hưởng gì vì 10 bit worker_id đã đảm bảo duy nhất",
+      "Cùng máy đó đi lặp lại đúng các mốc mili-giây vừa cấp cách đó 200 ms với sequence bắt đầu lại từ 0, dẫn tới nguy cơ sinh trùng chính xác ID đã phát hành",
+      "Cây chỉ mục B-tree tự động chuyển sang cấu trúc bảng băm",
+      "ID sinh ra tự động tăng kích thước lên 128 bit"
+    ],
+    "answer": 1,
+    "explain": "worker_id chỉ phân biệt máy A với máy B, còn trên cùng máy A tính duy nhất dựa vào việc cặp (timestamp_ms, sequence) không lặp lại. Nếu thời gian lùi lại đúng mili-giây cũ và sequence = 0, máy A sẽ cấp trùng ID cũ; do đó bắt buộc lưu và kiểm tra last_timestamp."
+  },
+  {
+    "id": "S3-05.q6",
+    "type": "mc",
+    "q": "Cách thiết kế nào vừa tối ưu tốc độ JOIN và chỉ mục nội bộ, vừa ngăn đối thủ cạnh tranh đoán được tổng số đơn hàng mỗi ngày qua URL công khai?",
+    "code": "",
+    "choices": [
+      "Dùng chuỗi ngẫu nhiên dài 64 ký tự làm khoá chính duy nhất cho mọi bảng và khoá ngoại",
+      "Dùng BIGINT tự tăng công khai thẳng trên URL nhưng mã hoá giao thức bằng HTTPS",
+      "Kết hợp hai định danh: cột id BIGINT (Snowflake) làm khoá chính/khoá ngoại nội bộ, và cột public_id ngẫu nhiên mật mã học (NanoID / UUID v4) hiển thị ra URL bên ngoài",
+      "Đổi toàn bộ khoá chính sang địa chỉ IP của khách hàng"
+    ],
+    "answer": 2,
+    "explain": "HTTPS chỉ mã hoá đường truyền chứ không giấu URL trước chính người dùng đặt đơn. Tách khoá nội bộ BIGINT 8 byte có thứ tự với mã public_id ngẫu nhiên giúp đạt trọn vẹn cả hiệu năng cơ sở dữ liệu lẫn tính riêng tư nghiệp vụ."
+  }
+]

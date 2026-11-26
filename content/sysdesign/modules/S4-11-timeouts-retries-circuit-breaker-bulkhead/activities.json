@@ -1,0 +1,153 @@
+[
+  {
+    "id": "S4-11.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán trạng thái giả bền sau khi sự cố chậm tạm thời kết thúc" },
+    "prompt": { "vi": "Hệ thống nhận 1.000 req/s (65% xem Catalog trên khoang Bulkhead riêng, 35% gọi Checkout → Payment). Từ giây 12 đến giây 26, Payment chậm thêm 380 ms, trong khi đường gọi checkout-payment đang đặt retry tối đa 3 lần ngay lập tức (backoff: none, không có ngân sách Retry). Ở giây 45 (tức 19 giây SAU KHI sự cố chậm ở Payment đã hoàn toàn chấm dứt), trạng thái hệ thống sẽ như thế nào?" },
+    "difficulty": 2,
+    "at": 10,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Payment tự động trở về mức tải bình thường 350 req/s và tỷ lệ lỗi toàn hệ thống về 0% ngay ở giây 27" },
+        { "vi": "Payment vẫn bị kẹt cứng trong bão Retry ở mức 1.400–2.100 req/s (gấp 4–6 lần tải gốc) làm hỏng toàn bộ 35% luồng đặt hàng, nhưng 65% luồng xem Catalog vẫn hoạt động bình thường nhờ cô lập Bulkhead" },
+        { "vi": "Cả 100% lưu lượng gồm cả Catalog lẫn Checkout đều bị lỗi Timeout hoàn toàn" },
+        { "vi": "API Gateway tự động xoá toàn bộ các lượt thử lại mà không cần cấu hình gì thêm" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 50, "speed": 2 },
+    "hints": [
+      { "vi": "Trong khoảng t = 12..26 s, mỗi request quá hạn đẻ thêm 3 lần gọi ngay lập tức đẩy tải vào Payment vượt xa năng lực 500 req/s và làm đầy cứng hàng đợi 2.500 phần tử." },
+      { "vi": "Khi giây 26 qua đi, chính hàng đợi 2.500 phần tử đó tiếp tục gây Timeout cho mọi request mới, duy trì vòng lặp phản hồi dương tự nuôi sống bão Retry; trong khi đó Catalog chạy trên Pool riêng biệt." }
+    ],
+    "explain": { "vi": "Đây là trạng thái hỏng giả bền (Metastable Failure): ở giây 45, dù Payment đã hết chậm từ lâu nhưng lưu lượng đập vào nó vẫn lên tới {payment.lambda@45:0} req/s (ρ = {payment.rho@45:2}) với hàng đợi {payment.queue@45:0} request, giam tỷ lệ lỗi toàn cục ở {global.errorRate@45:0%} (toàn bộ 35% lượt Checkout lỗi, còn 65% lượt xem Catalog vẫn an toàn nhờ Bulkhead)." },
+    "sim": { "simId": "S4-11/retry-storm", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S4-11/retry-storm", "seekSec": 10, "focus": { "nodes": ["checkout", "payment", "catalog"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-11.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Dập bão Retry và giúp hệ thống tự phục hồi hoàn toàn sau sự cố" },
+    "prompt": { "vi": "Với tối đa 3 thay đổi trên đường nối checkout-payment (không tăng chi phí vượt quá 1,85 USD/giờ), hãy cấu hình cơ chế phòng vệ để: (1) trong suốt đợt chậm tạm thời (t = 12..26 s), hệ thống cắt mạch nhanh giữ p99 không bị treo vọt hàng giây; và (2) từ giây 32 tới giây 75, hệ thống tự động phục hồi hoàn toàn về mức lỗi ≤ 1% và p99 ≤ 180 ms." },
+    "difficulty": 3,
+    "simId": "S4-11/retry-storm",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 1.85 },
+    "allowed": [
+      { "type": "link", "link": "checkout-payment", "fields": ["timeoutMs", "cancelOnTimeout", "retry", "breaker"] },
+      { "type": "knob", "node": "checkout", "key": "replicas", "min": 1, "max": 6 }
+    ],
+    "goal": [
+      { "id": "recover-err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 35, "toSec": 75 } },
+      { "id": "recover-p99", "kind": "slo-latency", "metric": "p99", "maxMs": 180, "window": { "fromSec": 35, "toSec": 75 }, "allowViolationPct": 2 },
+      { "id": "fast-fail-p99", "kind": "slo-latency", "metric": "p99", "maxMs": 430, "window": { "fromSec": 0, "toSec": 75 }, "allowViolationPct": 6 }
+    ],
+    "soft": [
+      { "id": "retry-safe", "kind": "structural", "rule": "has-retry-backoff", "link": "checkout-payment" },
+      { "id": "pay-calm", "kind": "node-state", "node": "payment", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 35, "toSec": 75 }, "allowViolationPct": 3 }
+    ],
+    "observe": { "runSec": 75 },
+    "par": { "changes": 3, "costPerHour": 1.75 },
+    "solution": [
+      {
+        "type": "link",
+        "link": "checkout-payment",
+        "patch": {
+          "cancelOnTimeout": true,
+          "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 },
+          "breaker": { "errorThreshold": 0.45, "minRps": 50, "windowSec": 2, "openSec": 5, "probeRps": 30, "closeAfterOk": 0.8 }
+        }
+      }
+    ],
+    "traps": [
+      {
+        "id": "more-checkout-pods",
+        "label": { "vi": "Nhân bản tầng Checkout Service lên 6 instance" },
+        "changes": [
+          { "type": "knob", "node": "checkout", "key": "replicas", "value": 6 }
+        ],
+        "why": { "vi": "Checkout không phải điểm nghẽn; thêm máy Checkout vẫn đẩy nguyên cơn bão Retry 2.100 req/s xuống làm ngập Payment Service." }
+      },
+      {
+        "id": "longer-timeout-more-retries",
+        "label": { "vi": "Nới dài timeoutMs lên 1.500 ms và tăng retry lên 5 lần tức thì" },
+        "changes": [
+          {
+            "type": "link",
+            "link": "checkout-payment",
+            "patch": {
+              "timeoutMs": 1500,
+              "retry": { "max": 5, "backoff": "none", "baseMs": 0, "jitter": "none" }
+            }
+          }
+        ],
+        "why": { "vi": "Nới dài Timeout làm giam giữ luồng lâu hơn, còn tăng số lần thử lại tức thì khuếch đại tải tới ×6 lần khiến hệ thống càng lún sâu vào quá tải." }
+      }
+    ],
+    "hints": [
+      { "vi": "Đổi chính sách retry trên checkout-payment sang backoff: exponential, jitter: full và thêm budgetRatio: 0.1 để khóa lượng thử lại tối đa 10%." },
+      { "vi": "Bật cancelOnTimeout: true để huỷ ngay các yêu cầu đã quá hạn khỏi hàng đợi của Payment." },
+      { "vi": "Cấu hình thêm Circuit Breaker (ví dụ errorThreshold: 0.45, windowSec: 2, openSec: 5, probeRps: 30, closeAfterOk: 0.8) để ngắt mạch nhanh trong 14 giây sự cố và tự đóng lại khi Payment hồi phục." }
+    ],
+    "explain": { "vi": "Kết hợp Circuit Breaker (cắt nhanh trong đợt chậm t = 12..26 s), huỷ việc quá hạn (cancelOnTimeout) và Retry có Exponential Backoff + Full Jitter + Retry Budget 10% giúp tải vào Payment ở giây 45 hạ từ {payment.lambda@45:0} về đúng mức gốc {payment.lambda'@45:0} req/s (ρ = {payment.rho'@45:2}), đưa lỗi về 0% và p99 về {global.p99'@45:0} ms." },
+    "replay": { "simId": "S4-11/retry-storm", "seekSec": 10, "focus": { "nodes": ["checkout", "payment"] }, "autoplay": true }
+  },
+  {
+    "id": "S4-11.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố dây chuyền: Retry chồng 3 tầng, cạn chung Pool và trừ tiền hai lần" },
+    "prompt": { "vi": "Một sàn thương mại điện tử gặp sự cố diện rộng lúc 11:30 khi đối tác cổng thẻ phản hồi chậm 2 giây trong vòng 40 giây: (1) Lưu lượng gọi sang đối tác thẻ vọt gấp 27 lần bình thường vì ứng dụng di động thử lại 2 lần (tổng 3 lượt), API Gateway thử lại 2 lần (×3) và Checkout Service cũng thử lại 2 lần (×3) đều không có Backoff; (2) Dù tính năng Tìm kiếm sản phẩm không hề gọi cổng thẻ, toàn bộ API Tìm kiếm trên cùng ứng dụng nguyên khối cũng treo cứng 100% vì dùng chung một HTTP Worker Pool 200 luồng với API Thanh toán; (3) Sau sự cố, bộ phận đối soát phát hiện 1.400 khách hàng bị trừ tiền thẻ 2–3 lần cho cùng một đơn hàng. Hãy chọn chẩn đoán và biện pháp khắc phục đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S4-11/retry-storm",
+      "seekSec": 22,
+      "focus": { "nodes": ["lb", "checkout", "payment", "catalog"] }
+    },
+    "questions": [
+      {
+        "id": "why-27x",
+        "type": "single",
+        "prompt": { "vi": "Quy tắc thiết kế nào đã bị vi phạm dẫn tới hệ số khuếch đại lưu lượng 3 × 3 × 3 = 27 lần đập vào cổng thanh toán đang gặp khó khăn?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đặt Timeout của tầng ngoài ngắn hơn tầng trong" } },
+          { "id": "b", "text": { "vi": "Bật Retry chồng chéo ở nhiều tầng nối tiếp nhau mà không giới hạn tại một tầng duy nhất kèm Retry Budget toàn cục" } },
+          { "id": "c", "text": { "vi": "Sử dụng giao thức HTTPS thay vì HTTP thuần" } },
+          { "id": "d", "text": { "vi": "Đặt số lượng máy chủ API Gateway là số chẵn" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "isolate-and-recover",
+        "type": "multi",
+        "prompt": { "vi": "Những thay đổi kiến trúc nào giúp bảo vệ tính năng Tìm kiếm không bị vạ lây và giải phóng nhanh các luồng khi đối tác thẻ bị treo?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Áp dụng mẫu Bulkhead: tách riêng Thread Pool / Connection Pool của luồng Thanh toán khỏi luồng Tìm kiếm sản phẩm" } },
+          { "id": "b", "text": { "vi": "Bọc lời gọi sang đối tác thẻ bằng Timeout chặt chẽ kết hợp Circuit Breaker để thất bại nhanh (< 1 ms) khi tỷ lệ lỗi vượt ngưỡng" } },
+          { "id": "c", "text": { "vi": "Bỏ hoàn toàn mọi giới hạn Timeout để chờ đối tác thẻ trả lời bằng mọi giá" } },
+          { "id": "d", "text": { "vi": "Tăng số lần thử lại ở cả 3 tầng từ 2 lần lên 5 lần" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-double-charge",
+        "type": "single",
+        "prompt": { "vi": "Biện pháp bắt buộc nào ngăn chặn triệt để việc một đơn hàng bị trừ tiền nhiều lần khi hệ thống thực hiện Retry sau lỗi Timeout mạng?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Chỉ thực hiện Retry vào ban đêm khi ít người dùng" } },
+          { "id": "b", "text": { "vi": "Sinh một khoá Idempotency-Key duy nhất gắn với mã đơn hàng ngay từ lần gọi đầu và truyền xuyên suốt sang cổng thanh toán để khử trùng nguyên tử" } },
+          { "id": "c", "text": { "vi": "Đổi thuật toán cân bằng tải sang Random" } },
+          { "id": "d", "text": { "vi": "Nén gói tin JSON bằng thuật toán Gzip trước khi gửi" } }
+        ],
+        "correct": ["b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Trong chuỗi nhiều tầng, chỉ thực hiện Retry tại MỘT tầng duy nhất (thường là tầng sát dịch vụ đích hoặc SDK đầu cuối tuỳ kiến trúc), các tầng còn lại báo lỗi thẳng về." },
+      { "vi": "Timeout mạng không đồng nghĩa giao dịch thất bại — có thể đối tác đã trừ tiền xong nhưng gói phản hồi bị rơi, nên bắt buộc phải có Idempotency-Key." }
+    ],
+    "explain": { "vi": "Ba bài học cốt lõi từ sự cố: (1) chỉ Retry ở một tầng duy nhất kèm Exponential Backoff + Full Jitter + Retry Budget (tối đa 10%) để triệt tiêu hiệu ứng nhân tích 3³ = 27×; (2) dùng Bulkhead tách biệt tài nguyên giữa các phụ thuộc kết hợp Timeout + Circuit Breaker để ngăn lỗi lan truyền sang tính năng Tìm kiếm; (3) mọi thao tác ghi/trừ tiền có Retry bắt buộc mang theo Idempotency-Key duy nhất." }
+  }
+]

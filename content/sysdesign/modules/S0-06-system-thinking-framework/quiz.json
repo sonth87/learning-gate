@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S0-06.q1",
+    "type": "mc",
+    "q": "Trong tính năng đăng bài mạng xã hội có đính kèm ảnh độ phân giải cao, cách phân bổ tầng Storage nào dưới đây đúng nguyên tắc thiết kế hệ thống?",
+    "code": "",
+    "choices": [
+      "Lưu cả nội dung văn bản bài viết lẫn tệp ảnh gốc trong Redis Cache làm nguồn dữ liệu duy nhất",
+      "Lưu văn bản và siêu dữ liệu đường dẫn trong Database, còn tệp ảnh nhị phân lưu trên Object Storage",
+      "Lưu toàn bộ tệp ảnh trong Message Queue lâu dài để Client tải trực tiếp từ Queue",
+      "Lưu tệp ảnh trên ổ đĩa cục bộ của từng máy API Server để đọc nhanh nhất"
+    ],
+    "answer": 1,
+    "explain": "Database tối ưu cho bản ghi có cấu trúc và truy vấn theo chỉ mục, trong khi Object Storage (như S3) được thiết kế cho tệp nhị phân dung lượng lớn, chi phí thấp và tích hợp trực tiếp với CDN."
+  },
+  {
+    "id": "S0-06.q2",
+    "type": "tf",
+    "q": "Vì Redis Cache truy xuất trong bộ nhớ RAM nhanh hơn đĩa nhiều lần, ta có thể bỏ hẳn Database và dùng Redis Cache làm nơi lưu trữ duy nhất cho đơn hàng thanh toán.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Cache là lớp tăng tốc đọc tạm thời: dữ liệu có thể bị loại bỏ khi đầy RAM (eviction), hết hạn TTL hoặc mất khi sự cố phần cứng. Dữ liệu giao dịch bắt buộc phải có Database bền vững làm Source of Truth."
+  },
+  {
+    "id": "S0-06.q3",
+    "type": "mc",
+    "q": "Lợi ích trực tiếp nhất của việc chuyển tác vụ gửi email xác nhận từ gọi đồng bộ trong API sang đẩy vào Message Queue cho Background Worker xử lý là gì?",
+    "code": "",
+    "choices": [
+      "Giảm số lượng bản ghi cần lưu trong Database xuống bằng không",
+      "Giúp trình duyệt của người dùng không cần kết nối mạng Internet",
+      "Tách thời gian chờ và sự cố của dịch vụ email bên ngoài khỏi đường phản hồi trực tiếp tới người dùng",
+      "Thay thế hoàn toàn vai trò kiểm tra hợp lệ đầu vào của API Server"
+    ],
+    "answer": 2,
+    "explain": "Đẩy thông điệp vào Queue chỉ tốn vài mili-giây nên API trả kết quả ngay cho người dùng; nếu máy chủ email chậm hoặc tạm ngưng, thông điệp vẫn nằm an toàn trong Queue chờ Worker thử lại."
+  },
+  {
+    "id": "S0-06.q4",
+    "type": "output",
+    "q": "Một luồng cập nhật hồ sơ thực hiện nối tiếp các chặng đồng bộ: Load Balancer 8 ms, API kiểm tra hợp lệ 15 ms, Database UPDATE 90 ms, xoá khoá Cache 4 ms, đẩy sự kiện vào Queue 3 ms. Worker xử lý nền mất thêm 1.500 ms để gửi email. Người dùng phải chờ phản hồi trong bao nhiêu mili-giây? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "120",
+    "explain": "Người dùng chỉ chờ các chặng đồng bộ trên đường đi của request: 8 + 15 + 90 + 4 + 3 = 120 ms. Tác vụ gửi email 1.500 ms của Worker chạy bất đồng bộ ở nền sau khi API đã trả phản hồi."
+  },
+  {
+    "id": "S0-06.q5",
+    "type": "mc",
+    "q": "Vì sao API Server trong kiến trúc web hiện đại luôn được khuyến nghị thiết kế theo kiểu không giữ trạng thái cục bộ (Stateless)?",
+    "code": "",
+    "choices": [
+      "Để bất kỳ instance API nào sau Load Balancer cũng xử lý được request kế tiếp, giúp mở rộng ngang và thay thế máy lỗi tự do",
+      "Vì máy chủ ứng dụng không có bộ nhớ RAM để tạo biến tạm trong hàm",
+      "Để không bao giờ cần kiểm tra quyền truy cập của dữ liệu từ Client",
+      "Vì Stateless giúp tự động mã hoá mọi tệp video trên Object Storage"
+    ],
+    "answer": 0,
+    "explain": "Khi API Server không giữ phiên hay tệp riêng trên máy cục bộ, Load Balancer có thể điều phối request tới bất kỳ instance nào, và việc thêm hoặc rút bớt máy không làm gián đoạn phiên của người dùng."
+  },
+  {
+    "id": "S0-06.q6",
+    "type": "mc",
+    "q": "Khi người dùng báo API tải trang đơn hàng phản hồi mất 5 giây, cách tiếp cận nào thể hiện đúng tư duy hệ thống (System Thinking)?",
+    "code": "",
+    "choices": [
+      "Đọc tuần tự toàn bộ mã nguồn giao diện và viết lại các vòng lặp xử lý mảng ngay lập tức",
+      "Nhân đôi số lượng Background Worker gửi email dù hàng đợi đang trống",
+      "Đo thời gian từng chặng trên luồng Client → LB → API → Cache → Database để xác định mắt xích chiếm phần lớn 5 giây rồi mới kiểm tra sâu thành phần đó",
+      "Xoá bỏ tầng Cache để giảm số lượng thành phần trong sơ đồ"
+    ],
+    "answer": 2,
+    "explain": "Tư duy hệ thống bắt đầu từ việc lần theo luồng dữ liệu đầu-cuối và đo thời gian từng thành phần để khoanh vùng đúng mắt xích gây trễ (chẳng hạn truy vấn Database thiếu chỉ mục), tránh sửa sai chỗ."
+  }
+]

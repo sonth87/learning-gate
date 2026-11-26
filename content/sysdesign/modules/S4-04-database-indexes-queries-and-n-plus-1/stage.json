@@ -1,0 +1,463 @@
+{
+  "version": 1,
+  "base": "s1-seq-scan",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng mở trang lịch sử 24 đơn hàng gần nhất, lưu lượng tăng từ 30 lên 220 req/s.",
+          "en": "Users loading their 24-order history page, ramping from 30 to 220 req/s."
+        },
+        "how": {
+          "vi": "Từ phía trình duyệt chỉ gửi đúng 1 HTTP request cho mỗi lần tải trang.",
+          "en": "Issues a single HTTP request per page view."
+        },
+        "why": {
+          "vi": "Cho thấy lưu lượng đầu vào rất nhỏ (220 req/s) vẫn làm sập DB nếu tầng ứng dụng sinh lỗi khuếch đại N+1.",
+          "en": "Shows how a modest 220 req/s traffic stream can overwhelm DB when amplified 25x by N+1."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải định tuyến vào nhánh API đang được bật.",
+          "en": "Load balancer routing requests to enabled API handlers."
+        },
+        "how": {
+          "vi": "Chuyển đổi lưu lượng không gián đoạn giữa phiên bản mã cũ (ORM N+1) và phiên bản đã tối ưu gom lô (Batch IN).",
+          "en": "Shifts traffic cleanly from the legacy ORM N+1 handler to the batched WHERE IN handler."
+        },
+        "why": {
+          "vi": "Giúp so sánh trực tiếp hiệu năng trước và sau khi sửa mẫu truy vấn trên cùng một tải đầu vào.",
+          "en": "Allows side-by-side comparison of N+1 vs batched SQL under identical load."
+        }
+      }
+    },
+    "api_n1": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "alert",
+      "label": { "vi": "Order API (N+1)", "en": "Order API (N+1)" },
+      "inspector": {
+        "what": {
+          "vi": "Phiên bản API mắc lỗi vòng lặp ORM N+1: 1 truy vấn lấy 24 đơn + 24 truy vấn lẻ lấy chi tiết từng đơn.",
+          "en": "Unoptimized API handler triggering 1 parent query + 24 per-order child queries."
+        },
+        "how": {
+          "vi": "Dù bản thân CPU của API chỉ bận dưới 8%, đường nối n1-db nhân hệ số calls = 25 khiến mỗi request biến thành 25 vòng khứ hồi tuần tự xuống DB.",
+          "en": "Even at <8% App CPU, calls = 25 multiplies DB load 25x and adds 25 serial network/SQL round-trips."
+        },
+        "why": {
+          "vi": "Minh hoạ nguyên nhân phổ biến làm ứng dụng chậm dần theo số phần tử trên trang.",
+          "en": "Illustrates why page latency degrades linearly with list length."
+        }
+      }
+    },
+    "api_batch": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "code",
+      "label": { "vi": "Order API (Batch IN)", "en": "Order API (Batch IN)" },
+      "inspector": {
+        "what": {
+          "vi": "Phiên bản API đã gom lô bằng mệnh đề WHERE order_id IN (...) kết hợp Covering Index.",
+          "en": "Optimized API handler using batched WHERE order_id IN (...) and Covering Indexes."
+        },
+        "how": {
+          "vi": "Gom toàn bộ 24 mã đơn vào đúng 1 câu truy vấn thứ hai (tổng cộng 2 câu thay vì 25 câu) và tận dụng Query Cache.",
+          "en": "Fetches all 24 order item lists in one batched query (2 total queries instead of 25)."
+        },
+        "why": {
+          "vi": "Cắt giảm hơn 92% số câu lệnh SQL đổ vào cơ sở dữ liệu mà không tốn thêm đồng nâng cấp phần cứng nào.",
+          "en": "Eliminates >92% of SQL queries without spending extra hardware budget."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Query Cache", "en": "Query Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm lưu kết quả tổng hợp đơn hàng đã gom lô (μ = 40.000 ops/s).",
+          "en": "Read-through cache storing batched order summaries (μ = 40,000 ops/s)."
+        },
+        "how": {
+          "vi": "Khi nâng dung lượng đủ tập làm việc 50.000 key, hấp thụ tới 85% lượt đọc lịch sử đơn lặp lại.",
+          "en": "At 50,000 keys, absorbs up to 85% of repeated order-history reads."
+        },
+        "why": {
+          "vi": "Phát huy hiệu quả cao nhất sau khi câu truy vấn bên dưới đã được gom thành khoá gọn.",
+          "en": "Works best once underlying N+1 loops are consolidated into clean batch keys."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Orders DB", "en": "Orders DB" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ chứa 50 triệu dòng đơn hàng, năng lực μ = 2.200 truy vấn đã đánh chỉ mục mỗi giây.",
+          "en": "Relational database holding 50M order rows (μ = 2,200 indexed queries/sec)."
+        },
+        "how": {
+          "vi": "Dùng B+Tree tra cứu trong ~3,5 ms; nhưng nếu bị dội 220 × 25 = 5.500 query/s do N+1 (hoặc phải Seq Scan cả bảng), hàng đợi sẽ tràn ngay.",
+          "en": "Serves indexed lookups in ~3.5 ms, but collapses under 5,500 queries/s from N+1 amplification."
+        },
+        "why": {
+          "vi": "Luôn tối ưu Index và xoá N+1 trước khi tính tới chuyện mua máy DB lớn hơn hay phân mảnh Sharding.",
+          "en": "Always fix missing indexes and N+1 queries before vertical scaling or sharding."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng tải trang lịch sử đơn hàng (30 → 220 req/s).", "en": "Order-history page traffic (30 → 220 req/s)." },
+        "how": { "vi": "92% là truy vấn đọc danh sách, 8% là tạo đơn mới.", "en": "92% reads and 8% new order writes." },
+        "why": { "vi": "Mức tải rất vừa phải cho một dịch vụ web thông thường.", "en": "Modest web traffic volume." }
+      }
+    },
+    "lb-n1": {
+      "inspector": {
+        "what": { "vi": "Đường dẫn vào nhánh code ORM N+1.", "en": "Route to legacy ORM N+1 handler." },
+        "how": { "vi": "Đang bật mặc định lúc đầu kịch bản.", "en": "Enabled by default at scenario start." },
+        "why": { "vi": "Cần tắt nhánh này sau khi bật nhánh gom lô Batch IN.", "en": "Should be disabled once Batch IN handler is enabled." }
+      }
+    },
+    "lb-batch": {
+      "inspector": {
+        "what": { "vi": "Đường dẫn vào nhánh code Batch IN đã tối ưu.", "en": "Route to optimized Batch IN handler." },
+        "how": { "vi": "Chỉ nhận lưu lượng khi bật núm enabled = true.", "en": "Carries traffic once enabled = true." },
+        "why": { "vi": "Đưa số vòng gọi DB về mức hằng số O(1) không phụ thuộc số dòng hiển thị.", "en": "Reduces DB round-trips to constant O(1) regardless of page size." }
+      }
+    },
+    "n1-db": {
+      "label": { "vi": "×25 query / req", "en": "×25 queries / req" },
+      "inspector": {
+        "what": { "vi": "Chặng truy vấn lặp N+1 từ API xuống Orders DB (calls = 25).", "en": "N+1 query loop link with calls = 25." },
+        "how": { "vi": "Mỗi HTTP request gọi nối tiếp 1 câu lấy danh sách + 24 câu lấy chi tiết từng đơn.", "en": "Executes 1 list query followed by 24 sequential item queries per request." },
+        "why": { "vi": "Làm cả lưu lượng vào DB lẫn độ trễ mạng nội bộ bị nhân lên gấp 25 lần.", "en": "Multiplies both DB QPS and serial round-trip latency by 25x." }
+      }
+    },
+    "batch-cache": {
+      "inspector": {
+        "what": { "vi": "Chặng đọc qua Query Cache của nhánh Batch IN.", "en": "Cache lookup hop from Batch IN handler." },
+        "how": { "vi": "Trả kết quả dưới 1 ms khi trúng bộ nhớ đệm.", "en": "Returns cached order bundles in <1 ms on hit." },
+        "why": { "vi": "Giảm tiếp áp lực đọc xuống Orders DB.", "en": "Further shields Orders DB from repetitive reads." }
+      }
+    },
+    "cache-db": {
+      "label": { "vi": "×2 query gom lô", "en": "×2 batched queries" },
+      "inspector": {
+        "what": { "vi": "Chặng truy vấn đã gom lô khi Cache Miss (calls = 2).", "en": "Batched DB lookup on Cache Miss (calls = 2)." },
+        "how": { "vi": "1 câu SELECT orders + 1 câu SELECT order_items WHERE order_id IN (...).", "en": "1 SELECT on orders + 1 batched SELECT ... WHERE order_id IN (...)." },
+        "why": { "vi": "Dù danh sách hiển thị 24 hay 100 đơn thì vẫn chỉ tốn đúng 2 câu SQL.", "en": "Stays at 2 SQL queries whether rendering 24 or 100 orders." }
+      }
+    }
+  },
+  "zones": {
+    "data-path": {
+      "nodeIds": ["api_n1", "api_batch", "cache", "db"],
+      "label": { "vi": "ĐƯỜNG TRUY VẤN DỮ LIỆU", "en": "DATA QUERY PATH" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-seq-scan": {
+      "show": { "nodes": ["client", "lb", "api_n1", "db"] },
+      "state": {
+        "lb": { "loadPct": 8 },
+        "api_n1": { "loadPct": 15 },
+        "db": {
+          "loadPct": 98,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Seq Scan 50M dòng", "en": "Seq Scan 50M rows" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "n1-db": {
+          "style": "danger",
+          "label": { "vi": "Đọc 625.000 trang", "en": "625,000 pages read" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Quét toàn bảng (Full Table Scan)", "en": "Full Table Scan Cost" },
+        "lines": [
+          { "text": { "vi": "Tìm 1 email trên 50 triệu dòng mất ~1,8 giây", "en": "Finding 1 email in 50M rows takes ~1.8 s" }, "tone": "bad" },
+          { "text": { "vi": "Tối ưu truy vấn & Index luôn rẻ hơn mua thêm máy", "en": "Indexes & query tuning beat buying hardware" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-btree-structure": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Cây chỉ mục B+Tree: hệ số phân nhánh lớn giữ chiều cao chỉ 3–4 tầng",
+          "en": "B+Tree Index: High Branching Factor Keeps 50M Rows Within 3–4 Levels"
+        },
+        "nodes": [
+          { "id": "root", "x": 0, "y": -90, "label": "Root Page [k < 'm' | k ≥ 'm']", "sub": { "vi": "Nằm sẵn trong RAM Buffer Pool", "en": "Pinned in RAM Buffer Pool" }, "tone": "purple" },
+          { "id": "b1", "x": -155, "y": -6, "label": "Nhánh trái ['d' | 'h']", "sub": { "vi": "Mỗi trang 8 KB rẽ ~500 con", "en": "Each 8 KB page branches ~500 ways" }, "tone": "blue" },
+          { "id": "b2", "x": 155, "y": -6, "label": "Nhánh phải ['r' | 'v']", "sub": { "vi": "Bỏ qua không cần đọc", "en": "Pruned without disk I/O" }, "tone": "neutral", "pruned": true },
+          { "id": "l1", "x": -205, "y": 80, "label": "Lá: an@.. → ctid(42,3)", "sub": { "vi": "Trúng đích sau 3 bước!", "en": "Exact hit in 3 hops!" }, "tone": "green" },
+          { "id": "l2", "x": -5, "y": 80, "label": "Lá: ha@.. ↔ lan@..", "sub": { "vi": "Nối kép hỗ trợ quét khoảng", "en": "Doubly linked for range scans" }, "tone": "yellow" }
+        ],
+        "edges": [
+          { "from": "root", "to": "b1", "label": "'an@' < 'm'" },
+          { "from": "root", "to": "b2", "label": "nhánh khác", "style": "dashed" },
+          { "from": "b1", "to": "l1", "label": "< 'd'" },
+          { "from": "b1", "to": "l2", "label": "≥ 'h'", "style": "dashed" },
+          { "from": "l1", "to": "l2", "label": "next leaf", "style": "dashed" }
+        ]
+      }
+    },
+    "s3-write-tradeoff": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Cái giá của chỉ mục: Khuếch đại ghi (Write Amplification = 1 + k)",
+          "en": "The Price of Indexes: Write Amplification (1 Heap Write + k Index Updates)"
+        },
+        "subtitle": {
+          "vi": "Một lệnh INSERT đơn lẻ trên bảng gắn k = 4 chỉ mục phụ phải sửa 5 cấu trúc khác nhau",
+          "en": "A single INSERT on a table with k = 4 secondary indexes mutates 5 separate structures"
+        },
+        "cells": [
+          "1. Ghi Heap (dòng mới)",
+          "2. Chèn idx_email",
+          "3. Chèn idx_phone",
+          "4. Chèn idx_status",
+          "5. Chèn idx_created"
+        ],
+        "activeIndices": [1, 2, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "bắt buộc", "tone": "green" },
+          { "index": 3, "label": "idx_scan = 0 (thừa!)", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc vệ sinh DB", "en": "Index Hygiene" },
+          "value": {
+            "vi": "Định kỳ kiểm tra pg_stat_user_indexes để xoá các chỉ mục thừa không ai đọc nhưng tốn I/O ở mọi lần ghi",
+            "en": "Drop unused indexes (idx_scan = 0) that tax every INSERT/UPDATE without helping reads"
+          },
+          "tone": "orange"
+        }
+      }
+    },
+    "s4-composite-prefix": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Composite Index (user_id, status, created_at): Quy tắc tiền tố trái",
+          "en": "Composite Index (user_id, status, created_at): Leftmost Prefix Rule"
+        },
+        "subtitle": {
+          "vi": "B+Tree sắp theo cột 1 trước, trùng cột 1 mới sắp tới cột 2, trùng cột 2 mới sắp tới cột 3",
+          "en": "Sorted by col 1 first, ties broken by col 2, then col 3 — like Surname → Middle → Given Name"
+        },
+        "cells": [
+          "WHERE user_id=42 (OK)",
+          "user_id=42 & status (OK)",
+          "+ ORDER BY created_at (OK)",
+          "Chỉ lọc status='PAID' (X)"
+        ],
+        "activeIndices": [0, 1, 2],
+        "pointers": [
+          { "index": 2, "label": "khớp trọn 3 cột", "tone": "green" },
+          { "index": 3, "label": "thiếu cột trái user_id!", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Thứ tự cột chuẩn", "en": "Column Ordering Rule" },
+          "value": {
+            "vi": "Đặt cột so sánh bằng (=) có độ chọn lọc cao ở bên trái, đặt cột khoảng (>, <, BETWEEN) hoặc ORDER BY ở bên phải",
+            "en": "Put equality (=) columns first on the left, and range (>, <) or ORDER BY columns on the right"
+          },
+          "tone": "blue"
+        }
+      }
+    },
+    "s5-covering-index": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Kiểu chỉ mục cho SELECT created_at, total", "en": "Index Type for SELECT created_at, total" },
+        "rightTitle": { "vi": "Số lần chạm đĩa trên mỗi dòng khớp", "en": "Disk Access Pattern per Matched Row" },
+        "names": [
+          {
+            "id": "std",
+            "name": "INDEX (user_id, created_at)",
+            "note": { "vi": "Thiếu cột total trong lá", "en": "Missing total column in leaf" },
+            "targetId": "heap_io",
+            "style": "danger"
+          },
+          {
+            "id": "cov",
+            "name": "INCLUDE (total) — Covering",
+            "note": { "vi": "Đủ mọi cột ngay tại lá B+Tree", "en": "All needed columns in leaf page" },
+            "targetId": "idx_only",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "heap_io",
+            "typeTag": "HEAP FETCH",
+            "value": "Nhảy đọc ngẫu nhiên bảng gốc",
+            "fields": ["20 đơn = tới 20 lần nhảy trang Heap"],
+            "tone": "orange"
+          },
+          {
+            "id": "idx_only",
+            "typeTag": "INDEX-ONLY",
+            "value": "0 lần đọc bảng Heap!",
+            "fields": ["tránh SELECT * để giữ Covering Index"],
+            "tone": "green",
+            "badge": { "vi": "Tăng tốc rõ rệt cho danh sách phân trang nóng", "en": "Major speedup for hot paginated lists" }
+          }
+        ]
+      }
+    },
+    "s6-explain-anti-patterns": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Đọc EXPLAIN ANALYZE và 3 thói quen viết SQL vô hiệu hoá Index",
+          "en": "EXPLAIN ANALYZE Diagnostics and Three SQL Anti-Patterns That Defeat Indexes"
+        },
+        "nodes": [
+          { "id": "exp", "x": 0, "y": -84, "label": "EXPLAIN ANALYZE", "sub": { "vi": "So Seq Scan, Index Scan và Rows Removed by Filter", "en": "Check Seq Scan vs Index Scan & Rows Removed" }, "tone": "purple" },
+          { "id": "fn", "x": -195, "y": 46, "label": "YEAR(created_at) = 2026", "sub": { "vi": "Sửa: >= '2026-01-01' AND < '2027-01-01'", "en": "Fix: sargable half-open date range" }, "tone": "rose" },
+          { "id": "wc", "x": 0, "y": 46, "label": "LIKE '%nguyen@gmail.com'", "sub": { "vi": "% đứng đầu làm mù thứ tự từ điển B+Tree", "en": "Leading % breaks lexicographical order" }, "tone": "rose" },
+          { "id": "star", "x": 195, "y": 46, "label": "SELECT * không có LIMIT", "sub": { "vi": "Mất Index-Only Scan + tốn băng thông mạng", "en": "Breaks Index-Only Scan & wastes I/O" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "exp", "to": "fn", "label": "bọc hàm", "style": "danger" },
+          { "from": "exp", "to": "wc", "label": "wildcard đầu", "style": "danger" },
+          { "from": "exp", "to": "star", "label": "lấy thừa cột", "style": "dashed" }
+        ]
+      }
+    },
+    "s7-n-plus-1-live": {
+      "show": { "nodes": "*" },
+      "zones": ["data-path"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khuếch đại N+1 (calls = 25)", "en": "N+1 Query Amplification (calls = 25)" },
+        "lines": [
+          { "text": { "vi": "220 req/s × 25 = 5.500 SQL/giây dội vào DB", "en": "220 req/s × 25 = 5,500 SQL/s hitting DB" }, "tone": "bad" },
+          { "text": { "vi": "Mỗi câu 3,5 ms vẫn thành p99 > 1.800 ms!", "en": "Fast 3.5 ms queries still cause >1,800 ms p99!" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-batch-denorm": {
+      "show": { "nodes": ["client", "lb", "api_batch", "cache", "db"] },
+      "zones": ["data-path"],
+      "state": {
+        "lb": { "loadPct": 8 },
+        "api_batch": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "WHERE id IN (...)", "en": "WHERE id IN (...)" }, "tone": "ok" }
+        },
+        "cache": {
+          "loadPct": 10,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hit ≈ 85%", "en": "Hit ≈ 85%" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 4,
+          "badge": { "text": { "vi": "ρ = 0,02 · êm", "en": "ρ = 0.02 · calm" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Gom lô Batch IN + Phi chuẩn hoá", "en": "Batch Loading & Denormalization" },
+        "lines": [
+          { "text": { "vi": "25 câu tuần tự rút gọn còn đúng 2 câu SQL", "en": "25 serial queries collapsed into 2 queries" }, "tone": "good" },
+          { "text": { "vi": "Lưu sẵn cột tổng / Materialized View cho thống kê nặng", "en": "Precompute totals / Materialized Views for heavy stats" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["data-path"],
+      "state": {
+        "lb": { "loadPct": 8 },
+        "api_n1": { "dimmed": true },
+        "api_batch": {
+          "loadPct": 15,
+          "badge": { "text": { "vi": "Đang phục vụ", "en": "Active" }, "tone": "ok" }
+        },
+        "cache": { "loadPct": 10 },
+        "db": {
+          "loadPct": 6,
+          "badge": { "text": { "vi": "B+Tree chuẩn", "en": "Indexed" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Lộ trình tối ưu Database theo thứ tự", "en": "Ordered DB Optimization Progression" },
+        "lines": [
+          { "text": { "vi": "1. EXPLAIN + B+Tree / Covering Index + Xoá N+1", "en": "1. EXPLAIN + B+Tree / Covering Index + Fix N+1" }, "tone": "good" },
+          { "text": { "vi": "2. Query Cache + Read Replica · 3. Cuối cùng mới Shard", "en": "2. Cache + Replicas · 3. Shard only as last resort" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "n-plus-1": {
+      "sim": "S4-04/n-plus-1",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "api_n1", "key": "enabled" },
+          { "node": "api_batch", "key": "enabled" },
+          { "node": "cache", "key": "capacityKeys" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tải người dùng", "en": "User RPS" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 250 } },
+        { "metric": "costPerHour", "label": { "vi": "Chi phí", "en": "Cost" }, "format": "usd-hour", "tone": { "warnAbove": 1.5, "badAbove": 2.2 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 90 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["api_n1", "api_batch", "db"] }
+    }
+  }
+}

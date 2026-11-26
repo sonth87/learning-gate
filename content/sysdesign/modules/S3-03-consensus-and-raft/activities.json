@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S3-03.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp quy trình bầu chọn Leader mới trong thuật toán Raft" },
+    "prompt": { "vi": "Khi Leader nhiệm kỳ hiện tại ngừng hoạt động và thôi gửi Heartbeat, hãy sắp xếp đúng thứ tự 5 bước để cụm Raft chuyển sang Leader mới một cách an toàn." },
+    "difficulty": 1,
+    "items": [
+      { "id": "timeout", "text": { "vi": "Một Follower hết hạn bộ đếm Election Timeout ngẫu nhiên (150–300 ms) khi không nhận được Heartbeat" } },
+      { "id": "campaign", "text": { "vi": "Nút đó chuyển sang Candidate, tăng số Term thêm 1, tự bỏ phiếu cho mình và gửi RequestVote tới toàn cụm" } },
+      { "id": "vote", "text": { "vi": "Các nút còn lại kiểm tra chưa bầu cho ai trong Term mới và nhật ký của ứng viên đủ mới rồi trả lời cấp phiếu" } },
+      { "id": "win", "text": { "vi": "Ứng viên gom đủ đa số quá bán floor(N/2) + 1 phiếu, thăng cấp thành Leader và phát ngay Heartbeat đầu tiên" } },
+      { "id": "stepdown", "text": { "vi": "Nếu nút Leader cũ kết nối lại và thấy gói tin mang Term cao hơn, nó lập tức hạ quyền về làm Follower" } }
+    ],
+    "shuffleSeed": 1,
+    "explain": { "vi": "Bộ đếm ngẫu nhiên giúp một nút khởi xướng trước tránh chia phiếu; kiểm tra nhật ký lúc cấp phiếu đảm bảo không mất mục đã commit; và quy tắc hạ bậc khi gặp Term cao hơn khép lại vòng đời nhiệm kỳ cũ." }
+  },
+  {
+    "id": "S3-03.A2",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán kết cục tại Node 1 khi bị cô lập ở nhánh thiểu số 1/3" },
+    "prompt": { "vi": "Cụm Raft 3 nút đang có Node 1 là Leader nhiệm kỳ 1. Tại giây 20, sự cố mạng cắt rời hoàn toàn Node 1 khỏi cả Node 2 và Node 3. Với các yêu cầu đồng thuận vẫn tiếp tục gửi trực tiếp vào Node 1 đang bị cô lập, ở giây 25 kết cục trên Node 1 sẽ như thế nào?" },
+    "difficulty": 2,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Node 1 tự hạ ngưỡng xác nhận từ 2 xuống 1 để tiếp tục ghi thành công 100% yêu cầu" },
+        { "vi": "100% yêu cầu gửi vào Node 1 bị từ chối (goodput = 0 req/s) vì chỉ có 1/3 phiếu không đạt đa số, ngăn chặn triệt để Split-Brain" },
+        { "vi": "Khoảng 50% yêu cầu thành công nhờ Node 1 ghi thẳng xuống Kho dữ liệu nội vùng" },
+        { "vi": "Node 1 tự động tăng Term liên tục để giành lại quyền ghi cục bộ mà không cần phiếu của Node 2 và Node 3" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 34, "speed": 2 },
+    "hints": [
+      { "vi": "Trong cụm N = 3, đa số quá bán bắt buộc là floor(3/2) + 1 = 2 nút." },
+      { "vi": "Node 1 bị cắt khỏi cả Node 2 lẫn Node 3 nên chỉ có duy nhất 1 phiếu xác nhận của chính nó." }
+    ],
+    "explain": { "vi": "Khi mất kết nối tới cả hai Follower ở giây 20, Node 1 không thể gom đủ 2/3 xác nhận nên bác bỏ toàn bộ thao tác đồng thuận: tại giây 25 tỷ lệ lỗi trên đường vào Node 1 là {global.errorRate@25:0%} và lưu lượng hoàn tất bằng {global.goodputRps@25:0} req/s, trong khi nhánh đa số [Node 2, Node 3] bầu Leader mới ở Term 2." },
+    "sim": { "simId": "S3-03/minority-isolated", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S3-03/minority-isolated", "seekSec": 18, "focus": { "nodes": ["leader", "f1", "f2"], "links": ["leader-f1", "leader-f2"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-03.A3",
+    "kind": "timeline-read",
+    "title": { "vi": "Chỉ ra các lượt đọc vi phạm Linearizability khi thiếu ReadIndex trên Leader cũ" },
+    "prompt": { "vi": "Ban đầu N1 là Leader Term 1 và đã commit cấu hình leader_cfg = v1_term1 (w1). Tới t = 50 ms, N1 bị cô lập mạng nhưng chưa tự biết mình mất quyền (chưa bật kiểm chứng ReadIndex). Nhánh đa số bầu N2 làm Leader Term 2 và commit leader_cfg = v2_term2 (w2 hoàn tất lúc t = 95 ms). Tới t = 150 ms mạng mới nối lại. Hãy chọn TẤT CẢ các lượt đọc vi phạm tính tuyến tính hoá (Linearizability)." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-linearizability-violations",
+    "history": [
+      { "id": "w1", "client": "ops", "op": "write", "key": "leader_cfg", "value": "v1_term1", "start": 10, "end": 35, "node": "N1" },
+      { "id": "w2", "client": "ops", "op": "write", "key": "leader_cfg", "value": "v2_term2", "start": 70, "end": 95, "node": "N2" },
+      { "id": "r1", "client": "svc-a", "op": "read", "key": "leader_cfg", "value": "v1_term1", "start": 105, "end": 115, "node": "N1" },
+      { "id": "r2", "client": "svc-b", "op": "read", "key": "leader_cfg", "value": "v2_term2", "start": 110, "end": 125, "node": "N2" },
+      { "id": "r3", "client": "svc-c", "op": "read", "key": "leader_cfg", "value": "v1_term1", "start": 130, "end": 140, "node": "N1" },
+      { "id": "r4", "client": "svc-a", "op": "read", "key": "leader_cfg", "value": "v2_term2", "start": 160, "end": 175, "node": "N1" }
+    ],
+    "expected": ["r1", "r3"],
+    "hints": [
+      { "vi": "Lệnh ghi w2 đã hoàn tất commit v2_term2 tại mốc t = 95 ms. Theo Linearizability, mọi lượt đọc bắt đầu sau mốc 95 ms bắt buộc phải thấy v2_term2." },
+      { "vi": "Kiểm tra các lượt đọc đánh vào N1 trước lúc mạng nối lại ở t = 150 ms." }
+    ],
+    "explain": { "vi": "Cả r1 (t = 105 ms) và r3 (t = 130 ms) bắt đầu sau khi w2 đã commit v2_term2 ở t = 95 ms nhưng lại đọc thẳng bộ nhớ cục bộ của Leader cũ N1 đang bị cô lập nên nhận nhầm v1_term1. Bật ReadIndex buộc N1 kiểm tra nhịp tim đa số trước khi trả kết quả đọc sẽ chặn được hai lượt đọc sai này." }
+  }
+]

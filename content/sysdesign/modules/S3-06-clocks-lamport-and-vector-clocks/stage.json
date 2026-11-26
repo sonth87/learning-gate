@@ -1,0 +1,260 @@
+{
+  "version": 1,
+  "base": "s1-no-global-clock",
+  "nodes": {},
+  "scenes": {
+    "s1-no-global-clock": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Trình tự xảy ra thực tế", "en": "Actual Causal Sequence" },
+        "rightTitle": { "vi": "Nhãn giờ vật lý ghi nhận trên mỗi máy", "en": "Recorded Local Wall-Clock Timestamp" },
+        "names": [
+          { "id": "e1", "name": "1. Tạo đơn tại Server Singapore", "note": { "vi": "Đồng hồ nhanh +120 ms", "en": "Clock +120 ms ahead" }, "targetId": "ts1" },
+          { "id": "e2", "name": "2. Thanh toán đơn đó tại Server Tokyo", "note": { "vi": "Xảy ra SAU nhưng đồng hồ chậm -80 ms!", "en": "Happens AFTER, clock -80 ms slow!" }, "targetId": "ts2", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "ts1",
+            "typeTag": "SERVER 1 (NHANH)",
+            "value": "wall_ts = 10:00:00.140",
+            "fields": ["Thực tế diễn ra ở mốc chuẩn .020", "Gửi tiếp yêu cầu sang Server 2"],
+            "tone": "orange"
+          },
+          {
+            "id": "ts2",
+            "typeTag": "SERVER 2 (CHẬM)",
+            "value": "wall_ts = 10:00:00.000 (Nhỏ hơn!)",
+            "fields": ["Thực tế diễn ra ở mốc chuẩn .080", "Sắp theo wall_ts sẽ báo Thanh toán có trước Tạo đơn!"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s2-clock-drift-ntp": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Hai nguồn đồng hồ của Hệ điều hành", "en": "Two OS Clock Sources" },
+        "rightTitle": { "vi": "Đặc tính vật lý & Phạm vi sử dụng đúng", "en": "Behavior & Safe Engineering Usage" },
+        "names": [
+          { "id": "tod", "name": "Time-of-Day (CLOCK_REALTIME)", "note": { "vi": "Đồng bộ định kỳ qua NTP", "en": "Synced periodically via NTP" }, "targetId": "wall", "style": "danger" },
+          { "id": "mono", "name": "Monotonic (CLOCK_MONOTONIC)", "note": { "vi": "Đếm nhịp phần cứng nội bộ", "en": "Local forward-only tick counter" }, "targetId": "perf" }
+        ],
+        "objects": [
+          {
+            "id": "wall",
+            "typeTag": "CÓ THỂ NHẢY LÙI",
+            "value": "Thạch anh trôi ±50 ppm (~4,3 s/ngày)",
+            "fields": ["Sai số mạng WAN ±10..100 ms", "Chỉ dùng ghi log hiển thị, KHÔNG đo Timeout"],
+            "tone": "orange"
+          },
+          {
+            "id": "perf",
+            "typeTag": "LUÔN TIẾN VỀ PHÍA TRƯỚC",
+            "value": "time.monotonic() / perf_counter()",
+            "fields": ["An toàn tuyệt đối để đo độ trễ, Timeout, Lease", "Không thể đem so giá trị trực tiếp giữa 2 máy"],
+            "tone": "green"
+          }
+        ]
+      }
+    },
+    "s3-lww-anomaly": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Dị thường mất cập nhật mới khi dùng Last-Write-Wins (LWW) trên giờ vật lý lệch",
+          "en": "Silent Lost Update Under Physical-Clock Last-Write-Wins (LWW)"
+        },
+        "subtitle": {
+          "vi": "N1 chạy nhanh +120 ms · N2 chạy chậm -80 ms · Bản ghi mới trên N2 bị coi là cũ và bị xoá!",
+          "en": "N1 +120 ms fast · N2 -80 ms slow · Newer causal write on N2 has smaller timestamp!"
+        },
+        "cells": [
+          "t=20: Ghi v1 ở N1 (ts=140)",
+          "t=50: Đọc thấy v1",
+          "t=80: Ghi v2 ở N2 (ts=0!)",
+          "t=90: Đồng bộ LWW (140 > 0)",
+          "t=120: Đọc lại → Mất v2!"
+        ],
+        "activeIndices": [0, 2, 4],
+        "pointers": [
+          { "index": 0, "label": "ts=140 thắng nhầm", "tone": "orange" },
+          { "index": 2, "label": "bản mới bị vứt bỏ!", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hậu quả nghiêm trọng", "en": "Impact" },
+          "value": { "vi": "Ứng dụng nhận 200 OK cho v2 nhưng dữ liệu v2 biến mất vĩnh viễn mà không báo lỗi", "en": "Client got 200 OK for v2, yet v2 is silently overwritten by older v1" },
+          "tone": "rose"
+        }
+      }
+    },
+    "s4-happens-before": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Đồ thị nhân quả Happens-Before (a → b) so với Sự kiện đồng thời (a ∥ b)",
+          "en": "Causal Happens-Before Graph (a → b) vs Concurrent Events (a ∥ b)"
+        },
+        "nodes": [
+          { "id": "a1", "x": -185, "y": -82, "label": "P1: e1 (Tạo đơn)", "sub": { "vi": "Khởi phát chuỗi nhân quả", "en": "Causal origin" }, "tone": "blue" },
+          { "id": "b1", "x": 0, "y": -82, "label": "P2: e2 (Nhận tin từ P1)", "sub": { "vi": "e1 → e2 qua thông điệp", "en": "e1 → e2 via message" }, "tone": "green" },
+          { "id": "b2", "x": 185, "y": -82, "label": "P2: e3 (Trừ kho)", "sub": { "vi": "e1 → e2 → e3 (bắc cầu)", "en": "e1 → e2 → e3 (transitive)" }, "tone": "green" },
+          { "id": "c1", "x": 0, "y": 54, "label": "P3: e4 (Sửa ảnh đại diện độc lập)", "sub": { "vi": "Không có đường nối tới e1, e2, e3 ⇒ Đồng thời (e4 ∥ e3)", "en": "No causal path ⇒ Concurrent (e4 ∥ e3)" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "a1", "to": "b1", "label": "send → recv" },
+          { "from": "b1", "to": "b2", "label": "cùng P2" }
+        ]
+      }
+    },
+    "s5-lamport-clock": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Bước nhảy của Đồng hồ Lamport qua chuỗi thông điệp P1 → P2 → P3",
+          "en": "Lamport Logical Clock Progression Across P1 → P2 → P3"
+        },
+        "subtitle": {
+          "vi": "Khi nhận thông điệp mang nhãn T: cập nhật LC = max(LC_cục_bộ, T) + 1",
+          "en": "On message receive with timestamp T: set LC = max(local_LC, T) + 1"
+        },
+        "cells": [
+          "P1 nội bộ: LC=1",
+          "P1 gửi tin: LC=2",
+          "P2 nhận (đang 4): max(4,2)+1 = 5",
+          "P2 gửi P3: LC=6",
+          "P3 nhận (đang 0): max(0,6)+1 = 7"
+        ],
+        "activeIndices": [1, 2, 4],
+        "pointers": [
+          { "index": 2, "label": "giữ lớn hơn cả 4 và 2", "tone": "green" },
+          { "index": 4, "label": "kéo P3 vọt lên 7", "tone": "blue" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Định lý thuận", "en": "Forward Guarantee" },
+          "value": { "vi": "Mọi mắt xích nhân quả a → b đều thoả mãn LC(a) < LC(b) với chi phí chỉ 1 số nguyên", "en": "Every causal link a → b guarantees LC(a) < LC(b) in O(1) space" },
+          "tone": "green"
+        }
+      }
+    },
+    "s6-lamport-limit": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Hai bản cập nhật lúc đứt mạng", "en": "Two Disconnected Updates" },
+        "rightTitle": { "vi": "Vì sao Lamport không nhận ra xung đột", "en": "Why Scalar Lamport Misses Concurrency" },
+        "names": [
+          { "id": "u1", "name": "Nhánh P1 sửa giỏ hàng: LC = 1", "note": { "vi": "Chưa từng liên lạc P2", "en": "No communication with P2" }, "targetId": "amb", "style": "danger" },
+          { "id": "u2", "name": "Nhánh P2 sửa giỏ hàng: LC = 4", "note": { "vi": "Tăng do việc riêng trên P2", "en": "Incremented by unrelated local events" }, "targetId": "amb", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "amb",
+            "typeTag": "NHẬP NHẰNG 1 CHIỀU",
+            "value": "Thấy 1 < 4 nhưng thực chất P1 ∥ P2 (Xung đột!)",
+            "fields": ["Trường hợp nhân quả P1 → P2 cũng cho kết quả 1 < 4", "Một số nguyên duy nhất không đủ phân biệt hai trường hợp"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s7-vector-clock": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Vector Clock [P1, P2]: phân biệt rạch ròi ghi nối tiếp nhân quả với xung đột đồng thời",
+          "en": "Vector Clocks [P1, P2]: Distinguishing Causal Overwrite from Concurrent Siblings"
+        },
+        "nodes": [
+          { "id": "v0", "x": 0, "y": -96, "label": "Gốc ban đầu trên P1: VC = [1, 0]", "sub": { "vi": "Đồng bộ sang P2 → P2 nhận [1, 1]", "en": "Synced to P2 → P2 at [1, 1]" }, "tone": "blue" },
+          { "id": "v1", "x": -175, "y": 24, "label": "P1 ghi thêm độc lập: [2, 0]", "sub": { "vi": "Ô 0 lớn hơn (2 > 1), nhưng ô 1 nhỏ hơn (0 < 2)!", "en": "Idx 0 bigger (2>1), Idx 1 smaller (0<2)!" }, "tone": "orange" },
+          { "id": "v2", "x": 175, "y": 24, "label": "P2 ghi thêm độc lập: [1, 2]", "sub": { "vi": "[2, 0] ∥ [1, 2] → Phát hiện XUNG ĐỘT, giữ cả hai!", "en": "[2, 0] ∥ [1, 2] → Conflict detected, keep siblings!" }, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "v0", "to": "v1", "label": "nhánh P1" },
+          { "from": "v0", "to": "v2", "label": "nhánh P2", "style": "danger" }
+        ]
+      }
+    },
+    "s8-hlc-truetime": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Đồng hồ logic lai HLC = (pt_ms, lc): không bao giờ lùi và bám sát giờ thực",
+          "en": "Hybrid Logical Clock HLC = (pt_ms, lc): Monotonic Causal + Wall-Clock Proximity"
+        },
+        "subtitle": {
+          "vi": "Khi nhiều sự kiện xảy ra trong cùng 1 ms hoặc gặp đồng hồ nhanh, bộ đếm phụ lc tăng dần",
+          "en": "Sub-millisecond bursts or fast-clock messages increment lc until wall clock catches up"
+        },
+        "cells": [
+          "e1 (now=100): (100, 0)",
+          "e2 (now=100): (100, 1)",
+          "Nhận tin (105, 0) khi now=101 → (105, 1)",
+          "e4 (now=106 > 105): (106, 0)"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 2, "label": "bảo toàn nhân quả khi lệch giờ", "tone": "orange" },
+          { "index": 3, "label": "reset lc=0 khi giờ thực đuổi kịp", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Ứng dụng sản xuất", "en": "Production Usage" },
+          "value": { "vi": "Dùng làm nhãn phiên bản MVCC trong CockroachDB, YugabyteDB và MongoDB Cluster Time", "en": "Powers distributed MVCC snapshots in CockroachDB, YugabyteDB, and MongoDB" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s9-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Bài toán kỹ thuật cần giải quyết", "en": "Engineering Requirement" },
+        "rightTitle": { "vi": "Loại đồng hồ chuẩn cần chọn", "en": "Right Clock Primitive" },
+        "names": [
+          { "id": "r1", "name": "Đo thời gian chờ Timeout / RTT nội bộ", "note": { "vi": "Cấm bị giật lùi bởi NTP", "en": "Immune to NTP jumps" }, "targetId": "c1" },
+          { "id": "r2", "name": "Phát hiện 2 bản sao sửa xung đột nhau", "note": { "vi": "Cần biết a ∥ b chính xác", "en": "Exact concurrency detection" }, "targetId": "c2" },
+          { "id": "r3", "name": "Đóng dấu giao dịch MVCC phân tán", "note": { "vi": "Gọn O(1) + gần giờ thực", "en": "Compact O(1) + real-time close" }, "targetId": "c3" }
+        ],
+        "objects": [
+          {
+            "id": "c1",
+            "typeTag": "MONOTONIC CLOCK",
+            "value": "CLOCK_MONOTONIC / perf_counter()",
+            "fields": ["Chỉ so sánh trên cùng một tiến trình"],
+            "tone": "green"
+          },
+          {
+            "id": "c2",
+            "typeTag": "VECTOR CLOCK",
+            "value": "Version Vector [v1, v2, ..., vN]",
+            "fields": ["Giữ các bản xung đột (siblings) hoặc dùng CRDT"],
+            "tone": "orange"
+          },
+          {
+            "id": "c3",
+            "typeTag": "HLC / TRUETIME",
+            "value": "Hybrid Logical Clock (pt, lc)",
+            "fields": ["Kết hợp NTP chặt chẽ với bộ đếm Lamport"],
+            "tone": "blue"
+          }
+        ]
+      }
+    }
+  }
+}

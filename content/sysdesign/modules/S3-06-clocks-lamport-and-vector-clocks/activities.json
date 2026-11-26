@@ -1,0 +1,40 @@
+[
+  {
+    "id": "S3-06.A1",
+    "kind": "order",
+    "title": { "vi": "Xếp thứ tự nhân quả và tính nhãn Lamport qua 3 tiến trình" },
+    "prompt": { "vi": "Ba tiến trình P1, P2, P3 đều khởi tạo đồng hồ Lamport bằng 0. Biết trước đó P2 đã tự chạy 3 sự kiện nội bộ riêng (LC của P2 đang ở 3). Hãy sắp xếp 5 sự kiện thuộc chuỗi giao dịch đặt hàng dưới đây theo đúng thứ tự nhân quả Happens-Before (từ nhỏ đến lớn theo nhãn Lamport của chuỗi này)." },
+    "difficulty": 2,
+    "items": [
+      { "id": "p1_create", "text": { "vi": "P1 nhận yêu cầu khởi tạo giỏ hàng từ người dùng (sự kiện đầu tiên trên P1 → LC = 1)" } },
+      { "id": "p1_send", "text": { "vi": "P1 gửi thông điệp kiểm tra thanh toán sang P2 đính kèm nhãn thời gian (LC = 2)" } },
+      { "id": "p2_recv", "text": { "vi": "P2 (đang có LC = 3) nhận thông điệp từ P1 và cập nhật LC = max(3, 2) + 1 = 4" } },
+      { "id": "p2_send", "text": { "vi": "P2 trừ tiền xong và gửi thông điệp xuất kho sang P3 đính kèm nhãn (LC = 5)" } },
+      { "id": "p3_recv", "text": { "vi": "P3 (đang có LC = 0) nhận thông điệp từ P2 và cập nhật LC = max(0, 5) + 1 = 6" } }
+    ],
+    "shuffleSeed": 1,
+    "explain": { "vi": "Theo quy tắc Happens-Before, hành động gửi luôn đứng trước hành động nhận cùng thông điệp và nhãn Lamport tăng nghiêm ngặt dọc theo chuỗi: 1 → 2 → 4 (do P2 đang ở 3 nên max(3,2)+1 = 4) → 5 → 6." }
+  },
+  {
+    "id": "S3-06.A2",
+    "kind": "timeline-read",
+    "title": { "vi": "Chỉ ra các lượt đọc trả dữ liệu sai do LWW dùng đồng hồ vật lý bị lệch" },
+    "prompt": { "vi": "Hai bản sao N1 (đồng hồ chạy nhanh +120 ms) và N2 (đồng hồ chạy chậm −80 ms) dùng quy tắc Last-Write-Wins (LWW) theo đồng hồ vật lý hệ thống. Ở w1 (t = 20..40 ms), người dùng an ghi email = an_old@mail.vn trên N1 (đóng dấu ts = 140). Sau khi đọc kiểm tra ở r1, tới w2 (t = 80..100 ms) chính an cập nhật sang email = an_new@mail.vn trên N2 (đóng dấu ts = 0 < 140 nên bị LWW bỏ qua khi hợp nhất!). Hãy chọn TẤT CẢ các lượt đọc bị trả về dữ liệu cũ sai so với lịch sử ghi thực tế." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-stale-reads",
+    "history": [
+      { "id": "w1", "client": "an", "op": "write", "key": "email", "value": "an_old@mail.vn", "start": 20, "end": 40, "node": "N1 (+120ms)" },
+      { "id": "r1", "client": "an", "op": "read", "key": "email", "value": "an_old@mail.vn", "start": 50, "end": 65, "node": "N2 (-80ms)" },
+      { "id": "w2", "client": "an", "op": "write", "key": "email", "value": "an_new@mail.vn", "start": 80, "end": 100, "node": "N2 (-80ms)" },
+      { "id": "r2", "client": "an", "op": "read", "key": "email", "value": "an_old@mail.vn", "start": 120, "end": 135, "node": "N1 (+120ms)" },
+      { "id": "r3", "client": "binh", "op": "read", "key": "email", "value": "an_old@mail.vn", "start": 150, "end": 165, "node": "N2 (-80ms)" }
+    ],
+    "expected": ["r2", "r3"],
+    "hints": [
+      { "vi": "Ở mốc r1 (t = 50 ms), lệnh ghi w2 chưa diễn ra nên an_old@mail.vn vẫn là giá trị mới nhất hợp lệ." },
+      { "vi": "Lệnh ghi w2 đã hoàn tất trả thành công ở t = 100 ms; mọi lượt đọc bắt đầu từ t ≥ 100 ms lẽ ra phải nhận được an_new@mail.vn." }
+    ],
+    "explain": { "vi": "Tại r1 (t = 50 ms), w2 chưa chạy nên kết quả đúng. Nhưng sau khi w2 hoàn tất ở t = 100 ms, cả r2 (t = 120 ms) lẫn r3 (t = 150 ms) đều trả về an_old@mail.vn vì N1 có đồng hồ nhanh (ts = 140) đã ghi đè mất bản ghi mới hơn của N2 (ts = 0). Dùng Vector Clock hoặc HLC sẽ bảo toàn được w2." }
+  }
+]

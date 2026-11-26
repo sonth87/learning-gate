@@ -1,0 +1,299 @@
+{
+  "sims": [
+    {
+      "id": "S3-05/ticket-spof",
+      "scenario": {
+        "id": "S3-05/ticket-spof",
+        "seed": 3307,
+        "durationSec": 55,
+        "mix": { "readRatio": 0.25 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1200 },
+        "events": [
+          { "at": 20, "type": "crash", "node": "ticket" },
+          { "at": 38, "type": "recover", "node": "ticket" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 7, "cv": 0.3 },
+              "params": { "replicas": 3, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order Service", "en": "Order Service instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "ticket",
+              "kind": "coordinator",
+              "label": { "vi": "Ticket Server (Cấp ID)", "en": "Ticket Server (ID Gen)" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.3,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": { "replicas": 1, "enabled": true },
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": { "vi": "Dùng Ticket Server tập trung (tắt = Snowflake cục bộ)", "en": "Use centralized Ticket Server (off = local Snowflake)" },
+                  "default": true,
+                  "changeCost": 1
+                },
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Ticket Server", "en": "Ticket Servers" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Ticket Server sập làm kẹt toàn bộ lệnh tạo đơn", "en": "Ticket Server SPOF halts writes" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "nosql",
+              "label": { "vi": "Order DB Shards", "en": "Order DB Shards" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 2,
+              "costPerHour": 0.35,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 650 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "shards": 2, "replicas": 2, "maxConnections": 2000, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số DB Shard", "en": "DB Shards" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-ticket", "from": "app", "to": "ticket", "mode": "sync", "carries": "w", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "app-db", "from": "app", "to": "db", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential"
+          }
+        }
+      }
+    },
+    {
+      "id": "S3-05/id-scale",
+      "scenario": {
+        "id": "S3-05/id-scale",
+        "seed": 3308,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.25 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 600, "to": 3600, "overSec": 50 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 7, "cv": 0.3 },
+              "params": { "replicas": 3, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order Service", "en": "Order Service instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "ticket",
+              "kind": "coordinator",
+              "label": { "vi": "Ticket Server (Cấp ID)", "en": "Ticket Server (ID Gen)" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.3,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": { "replicas": 1, "enabled": true },
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": { "vi": "Dùng Ticket Server tập trung (tắt = Snowflake cục bộ)", "en": "Use centralized Ticket Server (off = local Snowflake)" },
+                  "default": true,
+                  "changeCost": 1
+                },
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Ticket Server", "en": "Ticket Servers" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db",
+              "kind": "nosql",
+              "label": { "vi": "Order DB Shards", "en": "Order DB Shards" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 2,
+              "costPerHour": 0.35,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 650 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "shards": 2, "replicas": 2, "maxConnections": 2000, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số DB Shard", "en": "DB Shards" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-ticket", "from": "app", "to": "ticket", "mode": "sync", "carries": "w", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "app-db", "from": "app", "to": "db", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "ticket",
+        "maxSustainableRpsApprox": [1550, 1650]
+      }
+    }
+  ]
+}

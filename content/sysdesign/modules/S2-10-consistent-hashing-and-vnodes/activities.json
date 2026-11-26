@@ -1,0 +1,45 @@
+[
+  {
+    "id": "S2-10.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào quá tải đầu tiên khi mở rộng cụm Cache bằng mod N?" },
+    "prompt": { "vi": "Cụm đang phục vụ 5.000 req/s (95% đọc) với 4 máy Cache (mỗi máy 25.000 ops/s) đứng trước Origin Database (2.000 ops/s). Tại giây 20, việc đổi số nút theo công thức hash(key) mod N làm 3 trên 4 máy Cache mất hiệu lực ánh xạ cùng lúc. Theo bạn, thành phần nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 18 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 34, "speed": 2 },
+    "hints": [
+      { "vi": "Mỗi nút Cache có năng lực tới 25.000 ops/s trong RAM nên xử lý 1.250 req/s rất nhẹ kể cả khi bị Cache Miss." },
+      { "vi": "Mỗi lượt Cache Miss không dừng ở Cache mà chảy thẳng xuống thành phần lưu trữ phía sau có năng lực 2.000 ops/s." }
+    ],
+    "explain": { "vi": "Các nút Cache rất nhanh nên chỉ ở ρ ≈ {cache_1.rho@24:2}, nhưng 75% lượt đọc bị Cache Miss đồng loạt đã đẩy lưu lượng xuống {db.name} vọt lên {db.lambda@22:0} ops/s so với năng lực 2.000 ops/s (ρ = {db.rho@22:2}), làm {db.name} quá tải đầu tiên vào giây {t.first.db:1}." },
+    "sim": { "simId": "S2-10/mod-resize", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S2-10/mod-resize", "seekSec": 18, "focus": { "nodes": ["cache_1", "db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-10.A2",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng số khoá phải di chuyển trên vòng băm nhất quán" },
+    "prompt": { "vi": "Một cụm Cache phân tán dùng Consistent Hashing (kèm Virtual Nodes phân bố đều) hiện có N = 4 máy chủ, lưu tổng cộng 1.000.000 khoá. Khi thêm máy chủ thứ 5 vào cụm (nâng tổng số máy lên 5), ước lượng có bao nhiêu khoá phải chuyển sang máy mới?" },
+    "difficulty": 2,
+    "quantity": "Số khoá di chuyển sang nút thứ 5",
+    "unit": "khoá",
+    "truth": { "type": "formula", "expr": "1000000/(4+1)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Sau khi thêm máy thứ 5, với Virtual Nodes đồng đều, cả 5 máy chia nhau mỗi máy 1 / (4 + 1) = 1/5 = 20% không gian vòng băm." },
+      { "vi": "Chỉ phần 20% khoá rơi vào các cung mới của máy thứ 5 mới phải đổi chủ; 80% khoá còn lại giữ nguyên trên 4 máy cũ." },
+      { "vi": "Số khoá di chuyển: 1.000.000 × (1 / 5) = 200.000 khoá (so với 800.000 khoá nếu dùng hash mod N)." }
+    ],
+    "hints": [
+      { "vi": "Áp dụng công thức tỷ lệ dời khoá khi nâng từ N lên N + 1 nút trên vòng băm nhất quán: 1 / (N + 1)." }
+    ],
+    "explain": { "vi": "Kết quả chuẩn là {truth:0} khoá (20% tổng số khoá), ít hơn gấp 4 lần so với mức 800.000 khoá bị xáo trộn nếu dùng phép chia dư mod N." },
+    "replay": { "simId": "S2-10/ring-resize", "seekSec": 20, "focus": { "nodes": ["cache_4", "db"] } }
+  }
+]

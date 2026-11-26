@@ -1,0 +1,54 @@
+[
+  {
+    "id": "S3-08.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán độ sẵn sàng và giá trị hội tụ của G-Counter sau khi nối mạng" },
+    "prompt": { "vi": "Cụm hai bản sao Active-Active (Hà Nội và Singapore) phục vụ 1.800 req/s và lưu bộ đếm lượt thích bằng G-Counter. Trước giây 15, Hà Nội đang có vector [hn: 10, sg: 4] còn Singapore có [hn: 8, sg: 9]. Từ giây 15 đến giây 40, cáp liên vùng bị đứt hoàn toàn: trong khoảng này Hà Nội nhận thêm +5 lượt thích cục bộ (lên hn: 15), còn Singapore nhận thêm +3 lượt thích cục bộ (lên sg: 12). Khi mạng nối lại ở giây 40, gói Gossip của Hà Nội bị gửi lặp 3 lần sang Singapore do trễ mạng. Hãy dự đoán tỷ lệ lỗi trong lúc đứt cáp và tổng giá trị G-Counter sau khi hai bên hợp nhất." },
+    "difficulty": 2,
+    "at": 12,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "50% request ghi bị lỗi trong lúc đứt cáp; khi nối lại tổng bộ đếm bằng 15" },
+        { "vi": "0% lỗi trong suốt lúc đứt cáp; khi nối lại gói gửi lặp 3 lần làm tổng bộ đếm vọt lên 57" },
+        { "vi": "0% lỗi trong suốt lúc đứt cáp (cả hai vùng vẫn nhận ghi cục bộ); khi nối lại hai bên lấy max từng ô được [hn: 15, sg: 12] nên hội tụ chính xác về 27 bất chấp gói Gossip lặp 3 lần" },
+        { "vi": "100% lỗi vì G-Counter cần bầu đa số 2/2 bản sao cho mọi thao tác tăng" }
+      ],
+      "correct": 2
+    },
+    "reveal": { "playFromSec": 12, "playToSec": 48, "speed": 2 },
+    "hints": [
+      { "vi": "Trong thiết kế AP dùng CRDT, mỗi replica ghi thẳng vào ô của riêng mình mà không cần chờ phía bên kia xác nhận." },
+      { "vi": "Tính merge([15, 4], [8, 12]) bằng max từng vị trí, và nhớ tính luỹ đẳng max(15, 15) = 15 khi gói tin bị nhận lặp." }
+    ],
+    "explain": { "vi": "Trong suốt giai đoạn phân tách mạng ở giây 15..40, cả hai bản sao tiếp tục phục vụ {global.goodputRps@28:0} req/s với tỷ lệ lỗi {global.errorRate@28:0%}. Khi đường truyền khôi phục ở giây 40, phép hợp nhất lấy [max(15, 8), max(4, 12)] = [15, 12] cho tổng bằng 27; nhờ tính luỹ đẳng (A ⊔ A = A), 3 gói Gossip trùng lặp từ Hà Nội không tạo ra bất kỳ đơn vị cộng dư nào." },
+    "sim": { "simId": "S3-08/ap-sync", "seekSec": 12, "autoplay": false },
+    "replay": { "simId": "S3-08/ap-sync", "seekSec": 12, "focus": { "nodes": ["rep_hn", "rep_sg"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-08.A2",
+    "kind": "timeline-read",
+    "title": { "vi": "Tìm các lượt đọc bị nhảy lùi (Non-Monotonic Reads) khi Gossip chưa kịp tới" },
+    "prompt": { "vi": "Trong lúc hai bản sao rep-hn và rep-sg đang đồng bộ trạng thái G-Counter (khoá views) và số món giỏ hàng OR-Set (khoá cart_len) qua Gossip bất đồng bộ, Geo Router lại chia tải Round-robin không gắn phiên cố định. Hãy chọn TẤT CẢ các thao tác đọc vi phạm bảo đảm Monotonic Reads (cùng một người dùng đã đọc thấy phiên bản mới hơn ở lần trước nhưng lần đọc kế tiếp trên khoá đó lại thấy giá trị cũ hơn)." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-non-monotonic",
+    "history": [
+      { "id": "w1", "client": "sys", "op": "write", "key": "views", "value": 12, "start": 0, "end": 1, "node": "rep-hn" },
+      { "id": "w2", "client": "sys", "op": "write", "key": "views", "value": 18, "start": 2, "end": 3, "node": "rep-hn" },
+      { "id": "r1", "client": "lan", "op": "read", "key": "views", "value": 18, "start": 4, "end": 5, "node": "rep-hn" },
+      { "id": "r2", "client": "lan", "op": "read", "key": "views", "value": 12, "start": 6, "end": 7, "node": "rep-sg" },
+      { "id": "r3", "client": "lan", "op": "read", "key": "views", "value": 18, "start": 9, "end": 10, "node": "rep-sg" },
+      { "id": "w3", "client": "sys", "op": "write", "key": "cart_len", "value": 1, "start": 10, "end": 11, "node": "rep-sg" },
+      { "id": "w4", "client": "sys", "op": "write", "key": "cart_len", "value": 3, "start": 12, "end": 13, "node": "rep-sg" },
+      { "id": "r4", "client": "minh", "op": "read", "key": "cart_len", "value": 3, "start": 14, "end": 15, "node": "rep-sg" },
+      { "id": "r5", "client": "minh", "op": "read", "key": "cart_len", "value": 1, "start": 16, "end": 17, "node": "rep-hn" }
+    ],
+    "expected": ["r2", "r5"],
+    "hints": [
+      { "vi": "Theo dõi riêng từng cặp (client, key): nếu ở lần đọc trước client đã thấy giá trị của một bản ghi muộn hơn, nhưng lần đọc sau lại rơi vào bản sao chưa nhận Gossip và trả về bản ghi sớm hơn, đó là vi phạm Monotonic Reads." },
+      { "vi": "Kiểm tra chuỗi đọc của lan trên views (18 → 12 → 18) và chuỗi đọc của minh trên cart_len (3 → 1)." }
+    ],
+    "explain": { "vi": "Dù hai bản sao CRDT cuối cùng đều hội tụ (như ở r3 khi rep-sg đã gộp lên 18), việc thiếu Sticky Session khiến r2 (lan thấy views tụt từ 18 về 12 khi chuyển từ rep-hn sang rep-sg) và r5 (minh thấy cart_len tụt từ 3 về 1 khi chuyển từ rep-sg sang rep-hn) bị nhảy lùi thời gian. Bật định tuyến gắn phiên theo người dùng (ip-hash / session affinity) sẽ giữ trải nghiệm đọc đơn điệu." }
+  }
+]

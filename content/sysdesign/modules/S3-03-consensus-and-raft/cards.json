@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-03.c1",
+    "front": "Split-Brain là gì và Raft ngăn chặn nó bằng nguyên lý toán học nào?",
+    "back": "Split-Brain là sự cố hai hay nhiều máy cùng tự coi mình là Leader và nhận ghi độc lập làm phân nhánh dữ liệu. Raft chặn bằng đa số quá bán floor(N/2) + 1: hai tập đa số bất kỳ luôn giao nhau nên nhánh thiểu số không thể bầu Leader hay commit."
+  },
+  {
+    "id": "S3-03.c2",
+    "front": "Vai trò của nhiệm kỳ (Term) trong thuật toán Raft?",
+    "back": "Term là bộ đếm thời gian logic tăng đơn điệu theo mỗi cuộc bầu cử; mỗi Term có tối đa 1 Leader. Bất kỳ nút nào nhận gói tin có Term lớn hơn Term hiện tại của mình đều lập tức hạ quyền xuống Follower."
+  },
+  {
+    "id": "S3-03.c3",
+    "front": "Vì sao Election Timeout trong Raft phải được chọn ngẫu nhiên (ví dụ 150–300 ms)?",
+    "back": "Để tránh tất cả Follower hết hạn chờ nhịp tim cùng một khoảnh khắc rồi đồng loạt tự bầu cho mình gây chia phiếu (Split Vote). Độ lệch ngẫu nhiên giúp một nút thức dậy sớm gom đủ đa số ngay vòng đầu."
+  },
+  {
+    "id": "S3-03.c4",
+    "front": "Khi nào một mục nhật ký trong Raft mới thực sự được coi là Committed?",
+    "back": "Khi Leader của nhiệm kỳ hiện tại đã nhân bản mục đó lên đĩa bền vững của ít nhất floor(N/2) + 1 nút (bao gồm chính Leader). Chỉ sau mốc này mục mới được áp vào máy trạng thái và đảm bảo không mất ở mọi nhiệm kỳ sau."
+  },
+  {
+    "id": "S3-03.c5",
+    "front": "Fencing Token giải quyết lỗ hổng nào mà riêng bầu chọn Leader chưa che hết?",
+    "back": "Chặn gói tin trễ từ Zombie Leader (tiến trình Leader cũ bị treo GC tạm thời rồi tỉnh dậy ghi vào kho lưu trữ ngoài): kho lưu trữ đối chiếu số token tăng đơn điệu và từ chối mọi token nhỏ hơn max_token đã thực thi."
+  },
+  {
+    "id": "S3-03.c6",
+    "front": "Vì sao đọc thẳng bộ nhớ cục bộ của Leader không kiểm tra thêm có thể vi phạm Linearizability?",
+    "back": "Nếu Leader vừa bị cô lập mạng nhưng chưa nhận gói Term cao hơn từ nhánh đa số (nơi đã bầu Leader mới và ghi dữ liệu mới), nó vẫn trả giá trị cũ. Cần ReadIndex (xác nhận nhịp tim đa số) hoặc Lease hợp lệ trước khi trả kết quả đọc."
+  }
+]

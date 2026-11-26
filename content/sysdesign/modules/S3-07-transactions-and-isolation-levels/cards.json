@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-07.c1",
+    "front": "Vì sao bọc BEGIN...COMMIT ở mức Read Committed không tự chặn được lỗi Lost Update?",
+    "back": "Vì câu SELECT thông thường chỉ đọc ảnh chụp đã COMMIT tại thời điểm câu lệnh chạy mà không giữ khoá dòng. Hai giao dịch chạy song song sẽ cùng đọc giá trị cũ rồi lần lượt ghi đè kết quả của nhau."
+  },
+  {
+    "id": "S3-07.c2",
+    "front": "Ba cách chuẩn để chặn Lost Update trên một dòng dữ liệu trong SQL là gì?",
+    "back": "1) Câu UPDATE nguyên tử có điều kiện (SET left = left - 1 WHERE id = ? AND left > 0); 2) Khoá dòng bi quan SELECT ... FOR UPDATE; 3) Kiểm soát lạc quan CAS kiểm tra cột phiên bản (WHERE id = ? AND version = v)."
+  },
+  {
+    "id": "S3-07.c3",
+    "front": "Sự khác biệt giữa lỗi Lost Update và lỗi Write Skew là gì?",
+    "back": "Lost Update xảy ra khi hai giao dịch cùng đọc rồi ghi đè lên CÙNG một dòng; Write Skew xảy ra khi hai giao dịch đọc chung một tập điều kiện nhưng mỗi bên lại ghi sang HAI dòng khác nhau, làm vỡ bất biến toàn cục."
+  },
+  {
+    "id": "S3-07.c4",
+    "front": "Cách phòng chống Deadlock khi một giao dịch cần khoá nhiều bản ghi cùng lúc?",
+    "back": "Chuẩn hoá thứ tự xin khoá giống hệt nhau ở mọi giao dịch (ví dụ luôn sắp xếp danh sách ID tăng dần ORDER BY id ASC trước khi gọi SELECT ... FOR UPDATE) để triệt tiêu chu trình chờ vòng tròn."
+  },
+  {
+    "id": "S3-07.c5",
+    "front": "Vì sao tuyệt đối không gọi API thanh toán bên ngoài khi đang mở giao dịch giữ khoá DB?",
+    "back": "Theo định luật Little (μ = Pool / T_giữ), chờ HTTP mất vài trăm mili-giây đến vài giây sẽ ngâm cứng các kết nối trong Connection Pool, làm thông lượng toàn DB sụp đổ và kéo sập cả các truy vấn chỉ đọc."
+  },
+  {
+    "id": "S3-07.c6",
+    "front": "Mẫu Giữ chỗ (Reservation Pattern) gồm 3 bước nào để tách API ngoài khỏi giao dịch DB?",
+    "back": "Bước 1: Giao dịch ngắn đổi trạng thái sang HELD kèm mốc hết hạn expires_at rồi COMMIT ngay. Bước 2: Gọi API thanh toán ở ngoài giao dịch DB. Bước 3: Giao dịch ngắn xác nhận CONFIRMED (hoặc job nền thu hồi khi hết hạn)."
+  }
+]

@@ -1,0 +1,403 @@
+{
+  "version": 1,
+  "base": "s1-single",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Tập người dùng gửi lưu lượng tăng dần từ 500 lên 8.000 req/s.",
+          "en": "Concurrent users ramping load from 500 to 8,000 req/s."
+        },
+        "how": {
+          "vi": "Tạo hỗn hợp đọc và ghi liên tục để kiểm chứng trần chịu tải của từng bậc mở rộng Database.",
+          "en": "Generates continuous read/write traffic to test each database scaling tier."
+        },
+        "why": {
+          "vi": "Lưu lượng tăng trưởng buộc kiến trúc dữ liệu phải chuyển bậc đúng thời điểm.",
+          "en": "Growing demand forces timely transitions up the database scaling ladder."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Bộ cân bằng tải chia đều lưu lượng vào tầng App.", "en": "Load Balancer routing traffic across App instances." },
+        "how": { "vi": "Định tuyến Round-robin độ trễ thấp trong cùng vùng khả dụng.", "en": "Low-latency intra-AZ Round-robin routing." },
+        "why": { "vi": "Đảm bảo tầng ứng dụng không trở thành điểm nghẽn giả.", "en": "Keeps the stateless tier evenly utilized." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Tier", "en": "App Tier" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 6 máy ứng dụng phi trạng thái (tổng năng lực 12.000 req/s).",
+          "en": "Stateless application cluster (6 instances, 12,000 req/s total capacity)."
+        },
+        "how": {
+          "vi": "Tách luồng truy vấn: đẩy lệnh ghi (INSERT/UPDATE) vào Primary và lệnh đọc (SELECT) sang Read Replicas.",
+          "en": "Splits queries: sends writes to Primary DB and reads to Read Replicas."
+        },
+        "why": {
+          "vi": "Vì không giữ trạng thái trên đĩa nên tầng này nhân bản ngang rất dễ; điểm nghẽn dồn xuống Database.",
+          "en": "Stateless compute scales out effortlessly, exposing the stateful Database bottleneck."
+        }
+      }
+    },
+    "primary": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Primary DB", "en": "Primary DB" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu chính tiếp nhận toàn bộ thao tác ghi và phát luồng sao chép sang bản sao đọc.",
+          "en": "Primary relational database handling all writes and streaming changes to replicas."
+        },
+        "how": {
+          "vi": "Mở rộng dọc bằng cỡ máy (sizeFactor ×1..×4, gốc 1.500 ops/s); chi phí tăng luỹ thừa theo bậc phần cứng.",
+          "en": "Scales vertically via sizeFactor (1,500 ops/s base) with superlinear hardware cost."
+        },
+        "why": {
+          "vi": "Giữ một nguồn sự thật duy nhất cho giao dịch ACID mà không cần giao thức đồng thuận phức tạp.",
+          "en": "Maintains a single source of truth for ACID writes without cross-node coordination."
+        },
+        "tip": {
+          "vi": "Khi lượng ghi vượt trần máy lớn nhất của nhà cung cấp cloud, bạn buộc phải giảm ghi hoặc phân mảnh (Sharding).",
+          "en": "Once write load exceeds the largest instance ceiling, sharding or write offloading is required."
+        }
+      }
+    },
+    "replica": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Read Replicas", "en": "Read Replicas" },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm bản sao chỉ đọc (mỗi máy 2.200 ops/s) nhận dữ liệu bất đồng bộ từ Primary DB.",
+          "en": "Read-only database replicas (2,200 ops/s each) asynchronously synced from Primary."
+        },
+        "how": {
+          "vi": "Nhân bản ngang từ 1 đến 6 máy để chia sẻ lưu lượng đọc chiếm 85% tổng truy cập.",
+          "en": "Scales horizontally from 1 to 6 replicas to absorb read-heavy workloads."
+        },
+        "why": {
+          "vi": "Giải phóng CPU và I/O đĩa trên Primary cho các giao dịch ghi quan trọng.",
+          "en": "Frees Primary CPU and disk I/O to focus on transactional writes."
+        },
+        "tip": {
+          "vi": "Read Replica không làm tăng thông lượng ghi vì mọi bản sao vẫn phải áp lại cùng luồng ghi từ Primary.",
+          "en": "Read Replicas do not scale write throughput since every replica replays Primary writes."
+        }
+      }
+    },
+    "shard_db": {
+      "shape": "db",
+      "tone": "purple",
+      "label": { "vi": "Sharded DB Cluster", "en": "Sharded DB Cluster" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm cơ sở dữ liệu phân mảnh ngang (mỗi shard 2.600 ops/s), chia nhỏ cả dữ liệu lẫn tải ghi.",
+          "en": "Horizontally partitioned database cluster (2,600 ops/s per shard) splitting data and writes."
+        },
+        "how": {
+          "vi": "Băm khoá phân mảnh (shard key) để định tuyến mỗi người dùng hoặc đơn hàng về đúng một shard độc lập.",
+          "en": "Hashes the shard key to route each record's reads and writes to a dedicated shard."
+        },
+        "why": {
+          "vi": "Phá bỏ trần ghi và trần dung lượng đĩa của một máy chủ đơn lẻ.",
+          "en": "Breaks the single-server ceiling on both write throughput and storage size."
+        },
+        "tip": {
+          "vi": "Chỉ phân mảnh khi đã tối ưu truy vấn, đặt Cache và dùng hết khả năng của Read Replica.",
+          "en": "Treat sharding as the final scaling step due to cross-shard query and operational complexity."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Đường truyền từ người dùng tới Load Balancer.", "en": "Public hop to Load Balancer." },
+        "how": { "vi": "Tăng tải tuyến tính từ 500 lên 8.000 req/s trong 60 giây.", "en": "Ramps linearly from 500 to 8,000 req/s over 60 seconds." },
+        "why": { "vi": "Mô phỏng quá trình tăng trưởng lưu lượng qua các ngưỡng kiến trúc.", "en": "Simulates traffic growth across scaling thresholds." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ Load Balancer vào cụm App Tier.", "en": "Internal link to App Tier." },
+        "how": { "vi": "Chia đều tải cho 6 máy ứng dụng.", "en": "Evenly splits requests across 6 App servers." },
+        "why": { "vi": "Đảm bảo tầng ứng dụng luôn còn dư năng lực.", "en": "Ensures compute headroom." }
+      }
+    },
+    "app-primary": {
+      "inspector": {
+        "what": { "vi": "Đường gửi toàn bộ lệnh ghi xuống Primary DB.", "en": "Write path to Primary DB." },
+        "how": { "vi": "Mang 15% lưu lượng ở kịch bản đọc nhiều, hoặc 45% ở kịch bản ghi cao.", "en": "Carries write operations exclusively to Primary." },
+        "why": { "vi": "Tập trung thay đổi trạng thái tại một điểm để giữ nhất quán.", "en": "Centralizes mutations on the leader." }
+      }
+    },
+    "app-replica": {
+      "inspector": {
+        "what": { "vi": "Đường phân phối truy vấn đọc sang cụm Read Replicas.", "en": "Read query path to Read Replicas." },
+        "how": { "vi": "Chia tải các câu lệnh SELECT qua tất cả bản sao đọc đang hoạt động.", "en": "Load-balances SELECT queries across active replicas." },
+        "why": { "vi": "Hấp thụ phần lớn lưu lượng truy cập cho ứng dụng thiên về đọc.", "en": "Absorbs the majority of read-heavy traffic." }
+      }
+    },
+    "primary-replica": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": { "vi": "Luồng sao chép nhật ký ghi (WAL / Binlog) từ Primary sang Read Replicas.", "en": "Asynchronous WAL/binlog replication stream." },
+        "how": { "vi": "Truyền bất đồng bộ các bản ghi vừa cam kết để bản sao cập nhật theo.", "en": "Streams committed mutations asynchronously to followers." },
+        "why": { "vi": "Giữ dữ liệu trên các bản sao đọc bám sát bản gốc mà không chặn lệnh ghi.", "en": "Keeps read replicas synchronized without blocking primary writes." }
+      }
+    },
+    "app-shards": {
+      "inspector": {
+        "what": { "vi": "Đường định tuyến đọc và ghi theo khoá phân mảnh vào cụm Sharded DB.", "en": "Shard-routed read/write path." },
+        "how": { "vi": "Tính hash(shard_key) để gửi thẳng tới phân mảnh sở hữu dữ liệu.", "en": "Computes hash(shard_key) to hit the owning partition." },
+        "why": { "vi": "Chia đều cả tải đọc lẫn tải ghi lên N máy chủ độc lập.", "en": "Splits both reads and writes across N independent nodes." }
+      }
+    }
+  },
+  "zones": {
+    "db-cluster": {
+      "nodeIds": ["primary", "replica"],
+      "label": { "vi": "CỤM PRIMARY + READ REPLICAS", "en": "PRIMARY + READ REPLICAS" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-single": {
+      "show": { "nodes": ["client", "lb", "app", "primary"] },
+      "state": {
+        "app": { "loadPct": 42 },
+        "primary": {
+          "loadPct": 98,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Điểm nghẽn · SPOF", "en": "Bottleneck · SPOF" }, "tone": "bad" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Một Database gánh mọi thứ", "en": "Single Database Bottleneck" },
+        "chart": { "utilPct": 96 },
+        "lines": [
+          { "text": { "vi": "I/O đĩa chậm hơn RAM hàng nghìn lần", "en": "Disk I/O orders slower than RAM" }, "tone": "bad" },
+          { "text": { "vi": "Giữ trạng thái nên không thể nhân bản tự do như App", "en": "Stateful storage cannot clone freely like App" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-vertical": {
+      "show": { "nodes": ["client", "lb", "app", "primary"] },
+      "state": {
+        "app": { "loadPct": 42 },
+        "primary": {
+          "loadPct": 48,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Scale-up ×4", "en": "Scale-up ×4" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bậc 1: Vertical Scale-up", "en": "Tier 1: Vertical Scale-up" },
+        "lines": [
+          { "text": { "vi": "Không phải sửa mã nguồn ứng dụng, giữ nguyên ACID", "en": "Zero code change, full ACID" }, "tone": "good" },
+          { "text": { "vi": "Đụng trần phần cứng, chi phí tăng luỹ thừa, vẫn SPOF", "en": "Hardware ceiling, superlinear cost, still SPOF" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-replica": {
+      "show": { "nodes": ["client", "lb", "app", "primary", "replica"] },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 55 },
+        "primary": {
+          "loadPct": 62,
+          "badge": { "text": { "vi": "15% Ghi", "en": "15% Writes" }, "tone": "ok" }
+        },
+        "replica": {
+          "loadPct": 77,
+          "highlighted": true,
+          "badge": { "text": { "vi": "85% Đọc · ×4 máy", "en": "85% Reads · ×4" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bậc 2: Tách đọc sang Read Replicas", "en": "Tier 2: Read Replicas" },
+        "lines": [
+          { "text": { "vi": "Ghi vào Primary, sao chép bất đồng bộ sang Replicas", "en": "Write Primary, async replicate to Replicas" }, "tone": "good" },
+          { "text": { "vi": "Đánh đổi: độ trễ sao chép (Replication Lag)", "en": "Trade-off: Replication Lag" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-live-ramp": {
+      "show": { "nodes": ["client", "lb", "app", "primary", "replica"] },
+      "zones": ["db-cluster"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng 500 → 8.000 req/s (85% đọc)", "en": "Live Ramp 500 → 8,000 req/s" },
+        "lines": [
+          { "text": { "vi": "1 Replica (2.200 ops/s) chạm trần ở ≈ 2.590 req/s", "en": "1 Replica saturates around 2,590 req/s" }, "tone": "bad" },
+          { "text": { "vi": "Thử tăng số Read Replica và cỡ máy Primary", "en": "Tune Read Replicas and Primary sizeFactor" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-write-wall": {
+      "show": { "nodes": ["client", "lb", "app", "primary", "replica"] },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 58 },
+        "primary": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Nghẽn ghi!", "en": "Write bottleneck!" }, "tone": "bad" }
+        },
+        "replica": {
+          "loadPct": 42,
+          "badge": { "text": { "vi": "Đọc còn rảnh", "en": "Reads idle" }, "tone": "ok" }
+        }
+      },
+      "linkState": {
+        "app-primary": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giới hạn của Read Replica", "en": "Where Read Replicas Stop" },
+        "lines": [
+          { "text": { "vi": "Mọi lệnh ghi vẫn dồn vào 1 Primary duy nhất", "en": "All writes still hit a single Primary" }, "tone": "bad" },
+          { "text": { "vi": "Mỗi Replica cũng phải ghi lặp lại toàn bộ luồng WAL", "en": "Every Replica replays the full write stream" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-live-shard": {
+      "show": { "nodes": ["client", "lb", "app", "shard_db"] },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bậc 3: Sharding dưới tải 50% ghi", "en": "Tier 3: Sharding at 50% Writes" },
+        "lines": [
+          { "text": { "vi": "Chia dữ liệu & lệnh ghi đều sang N phân mảnh độc lập", "en": "Splits data and writes across N shards" }, "tone": "good" },
+          { "text": { "vi": "Kéo thanh Số phân mảnh từ 1 lên 4 để giữ p99 thấp", "en": "Raise Shards from 1 to 4 to sustain 8,000 req/s" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-ladder": {
+      "show": { "nodes": ["client", "lb", "app", "primary", "replica"] },
+      "zones": ["db-cluster"],
+      "state": {
+        "app": { "loadPct": 65 },
+        "primary": {
+          "loadPct": 75,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Primary ×2", "en": "Primary ×2" }, "tone": "ok" }
+        },
+        "replica": {
+          "loadPct": 77,
+          "highlighted": true,
+          "badge": { "text": { "vi": "4 Replicas", "en": "4 Replicas" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thứ tự mở rộng thực tế", "en": "Practical Scaling Order" },
+        "lines": [
+          { "text": { "vi": "1. Chỉ mục + Cache → 2. Scale-up vừa phải", "en": "1. Index + Cache → 2. Moderate Scale-up" }, "tone": "plain" },
+          { "text": { "vi": "3. Read Replicas → 4. Sharding (cuối cùng)", "en": "3. Read Replicas → 4. Sharding (last resort)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Thang 4 bước mở rộng tầng Cơ sở dữ liệu",
+          "en": "4-Step Database Scaling Ladder"
+        },
+        "subtitle": {
+          "vi": "Chỉ bước lên bậc kế tiếp khi số đo cho thấy bậc hiện tại đã kịch trần",
+          "en": "Advance only when metrics prove the current step is exhausted"
+        },
+        "cells": ["Index & Cache", "Scale-up dọc", "Read Replicas", "Sharding ngang"],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 1, "label": "Đơn giản · có trần", "tone": "orange" },
+          { "index": 2, "label": "Tăng thông lượng đọc", "tone": "blue" },
+          { "index": 3, "label": "Tăng ghi & dung lượng", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc", "en": "Rule" },
+          "value": { "vi": "Tránh phân mảnh sớm khi Read Replica và Scale-up còn đáp ứng tốt", "en": "Avoid premature sharding while Replicas + Scale-up suffice" },
+          "tone": "green"
+        }
+      }
+    }
+  },
+  "live": {
+    "ramp": {
+      "sim": "S2-03/ramp",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["kill", "slow"],
+        "knobs": [
+          { "node": "primary", "key": "sizeFactor" },
+          { "node": "replica", "key": "replicas" },
+          { "node": "app", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 220 } },
+        { "metric": "costPerHour", "label": { "vi": "Chi phí", "en": "Cost" }, "format": "usd-hour", "tone": { "warnAbove": 4.5, "badAbove": 6.0 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 }
+      ],
+      "focus": { "nodes": ["primary", "replica"] }
+    },
+    "sharded": {
+      "sim": "S2-03/sharded",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "shard_db", "key": "shards" },
+          { "node": "app", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng (50% ghi)", "en": "Load (50% write)" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 220 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 }
+      ],
+      "focus": { "nodes": ["shard_db"] }
+    }
+  }
+}

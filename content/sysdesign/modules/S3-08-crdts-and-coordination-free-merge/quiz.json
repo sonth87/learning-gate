@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S3-08.q1",
+    "type": "mc",
+    "q": "Hàm hợp nhất trạng thái merge(A, B) của một State-based CRDT bắt buộc phải thoả mãn ba tính chất đại số nào để các bản sao luôn hội tụ bất chấp gói tin đồng bộ bị trễ, đảo thứ tự hoặc gửi lặp?",
+    "code": "",
+    "choices": [
+      "Tuyến tính, Khả nghịch và Phân phối",
+      "Giao hoán (Commutative), Kết hợp (Associative) và Luỹ đẳng (Idempotent)",
+      "Nguyên tử, Cô lập tuần tự và Khoá hai pha",
+      "Bất biến kích thước, Tốc độ hằng số và Không dùng bộ nhớ phụ"
+    ],
+    "answer": 1,
+    "explain": "Giao hoán (A ⊔ B = B ⊔ A) giúp miễn nhiễm với đảo thứ tự gói tin; Kết hợp ((A ⊔ B) ⊔ C = A ⊔ (B ⊔ C)) cho phép gộp theo nhóm bất kỳ giữa nhiều bản sao; còn Luỹ đẳng (A ⊔ A = A) đảm bảo nhận trùng gói Gossip nhiều lần vẫn không làm sai lệch kết quả."
+  },
+  {
+    "id": "S3-08.q2",
+    "type": "output",
+    "q": "Ba bản sao A, B, C dùng chung một PN-Counter. Sau khi hợp nhất hoàn tất, vector lượt tăng là P = {A: 9, B: 4, C: 5} và vector lượt giảm là N = {A: 2, B: 3, C: 1}. Giá trị hiện tại của PN-Counter bằng bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "12",
+    "explain": "Giá trị đọc ra của PN-Counter bằng tổng các phần tử của vector P trừ đi tổng các phần tử của vector N: (9 + 4 + 5) − (2 + 3 + 1) = 18 − 6 = 12."
+  },
+  {
+    "id": "S3-08.q3",
+    "type": "mc",
+    "q": "Giỏ hàng lưu bằng Add-Wins OR-Set đang có món 'ban-phim' gắn thẻ {r1:1} trên cả hai bản sao R1 và R2. Khi mạng giữa hai vùng bị đứt, khách trên R1 bấm thêm lại 'ban-phim' (sinh thẻ mới r1:2), đồng thời trên R2 khách bấm xoá 'ban-phim'. Sau khi mạng nối lại và hai bên gọi merge(), trạng thái của 'ban-phim' là gì?",
+    "code": "",
+    "choices": [
+      "Bị xoá vĩnh viễn và không bao giờ thêm lại vào giỏ được nữa",
+      "Vẫn còn trong giỏ hàng vì R2 lúc bấm xoá chỉ nhìn thấy và đưa thẻ {r1:1} vào tombstones, còn thẻ {r1:2} chưa bị xoá",
+      "Hệ thống báo lỗi xung đột và khoá giỏ hàng bắt bầu Leader",
+      "Số lượng 'ban-phim' biến thành số âm"
+    ],
+    "answer": 1,
+    "explain": "Trong Add-Wins OR-Set, thao tác remove chỉ gạch bỏ những thẻ đã quan sát được tại bản sao đó ({r1:1}). Thẻ {r1:2} sinh ra đồng thời ở R1 không nằm trong tập tombstones hợp nhất, nên phần tử 'ban-phim' được giữ lại đúng tinh thần Add-Wins."
+  },
+  {
+    "id": "S3-08.q4",
+    "type": "tf",
+    "q": "PN-Counter là cấu trúc dữ liệu lý tưởng để trừ thẳng số dư tài khoản ngân hàng có quy định nghiêm ngặt không bao giờ được phép âm tiền khi đứt cáp liên vùng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "PN-Counter cho phép mỗi bản sao tự do cộng vào vector N mà không phối hợp trước. Nếu tài khoản còn 100 USD và khách rút đồng thời 80 USD ở hai vùng khác nhau lúc đứt mạng, cả hai vùng đều thấy hợp lệ cục bộ (100 - 80 = 20 ≥ 0) nhưng khi hợp nhất số dư thành 100 - 160 = -60 USD."
+  },
+  {
+    "id": "S3-08.q5",
+    "type": "mc",
+    "q": "Khi hai bản sao cập nhật một LWW-Register ở đúng cùng một mili-giây timestamp (ts = 1700000500), làm thế nào để cả hai bản sao vẫn hội tụ về đúng cùng một giá trị mà không cần hỏi ý kiến nhau thêm?",
+    "code": "",
+    "choices": [
+      "Mỗi bản sao tự giữ giá trị cục bộ của riêng mình mãi mãi",
+      "Dùng quy tắc phân xử hoà tất định (ví dụ so sánh thứ tự từ điển của mã replicaId đi kèm bản ghi)",
+      "Xoá trắng trường dữ liệu về NULL khi phát hiện hai timestamp bằng nhau",
+      "Tung đồng xu ngẫu nhiên trên từng máy khi chạy hàm merge"
+    ],
+    "answer": 1,
+    "explain": "Tung đồng xu hoặc giữ bản đến trước sẽ phá vỡ tính giao hoán làm hai máy giữ hai kết quả khác nhau. So sánh cặp thứ tự toàn phần (timestamp, replicaId) đảm bảo mọi máy chạy merge(A, B) hay merge(B, A) đều chọn ra cùng một bản thắng duy nhất."
+  },
+  {
+    "id": "S3-08.q6",
+    "type": "output",
+    "q": "Hai bản sao X và Y quản lý một G-Counter có trạng thái cục bộ lần lượt là X = {x: 14, y: 3} và Y = {x: 9, y: 11}. Sau khi hai bản sao đồng bộ hai chiều hoàn tất bằng hàm merge, giá trị tổng của G-Counter trên cả hai máy là bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "25",
+    "explain": "Hàm merge của G-Counter lấy giá trị lớn nhất trên từng ô định danh replica: ô x là max(14, 9) = 14, ô y là max(3, 11) = 11. Tổng giá trị hội tụ trên cả hai máy là 14 + 11 = 25."
+  }
+]

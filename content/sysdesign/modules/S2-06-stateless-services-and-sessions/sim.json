@@ -1,0 +1,254 @@
+{
+  "sims": [
+    {
+      "id": "S2-06/session",
+      "scenario": {
+        "id": "S2-06/session",
+        "seed": 2206,
+        "durationSec": 65,
+        "mix": { "readRatio": 0.85 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 650 },
+        "events": [
+          { "at": 22, "type": "crash", "node": "app1" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [
+                {
+                  "key": "algorithm",
+                  "type": "select",
+                  "label": { "vi": "Chế độ định tuyến", "en": "Routing mode" },
+                  "default": "ip-hash",
+                  "options": [
+                    { "value": "ip-hash", "label": { "vi": "ip-hash (Sticky)", "en": "ip-hash (Sticky)" } },
+                    { "value": "round-robin", "label": { "vi": "round-robin", "en": "round-robin" } },
+                    { "value": "least-conn", "label": { "vi": "least-conn", "en": "least-conn" } }
+                  ]
+                },
+                {
+                  "key": "healthCheckSec",
+                  "type": "number",
+                  "label": { "vi": "Chu kỳ Health Check", "en": "Health check interval" },
+                  "min": 1,
+                  "max": 30,
+                  "step": 1,
+                  "default": 18,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "ip-hash", "healthCheckSec": 18 }
+            },
+            {
+              "id": "app1",
+              "kind": "service",
+              "label": { "vi": "App A", "en": "App A" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App A dừng đột ngột", "en": "App A crash" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 450 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 15 }
+            },
+            {
+              "id": "app2",
+              "kind": "service",
+              "label": { "vi": "App B", "en": "App B" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": { "vi": "Bật App B (Stateless)", "en": "Enable App B" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App B dừng đột ngột", "en": "App B crash" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 450 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "enabled": false, "replicas": 1, "poolSize": 15 }
+            },
+            {
+              "id": "app3",
+              "kind": "service",
+              "label": { "vi": "App C", "en": "App C" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": { "vi": "Bật App C (Stateless)", "en": "Enable App C" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App C dừng đột ngột", "en": "App C crash" } }
+              ],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 450 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "enabled": false, "replicas": 1, "poolSize": 15 }
+            },
+            {
+              "id": "session_store",
+              "kind": "cache",
+              "label": { "vi": "Session Cache", "en": "Session Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số bản sao Session Cache", "en": "Session Cache replicas" },
+                  "min": 1,
+                  "max": 3,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Mất phiên nếu không sao lưu", "en": "Session loss if un-replicated" } }
+              ],
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.8, "cv": 0.25 },
+              "params": {
+                "replicas": 1,
+                "ttlSec": 1800,
+                "ttlJitterPct": 0.2,
+                "hitRatioMax": 0.96,
+                "workingSetKeys": 40000,
+                "capacityKeys": 80000,
+                "warmupSec": 10,
+                "singleflight": true
+              }
+            },
+            {
+              "id": "object_store",
+              "kind": "blob",
+              "label": { "vi": "Object Storage", "en": "Object Storage" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 18, "cv": 0.3 },
+              "params": { "replicas": 3 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app1", "from": "lb", "to": "app1", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lb-app2", "from": "lb", "to": "app2", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lb-app3", "from": "lb", "to": "app3", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "app1-session", "from": "app1", "to": "session_store", "mode": "sync", "netClass": "same-az", "timeoutMs": 150 },
+            { "id": "app2-session", "from": "app2", "to": "session_store", "mode": "sync", "netClass": "same-az", "timeoutMs": 150 },
+            { "id": "app3-session", "from": "app3", "to": "session_store", "mode": "sync", "netClass": "cross-az", "timeoutMs": 150 },
+            { "id": "app1-blob", "from": "app1", "to": "object_store", "mode": "sync", "netClass": "same-az", "fraction": 0.15, "timeoutMs": 800 },
+            { "id": "app2-blob", "from": "app2", "to": "object_store", "mode": "sync", "netClass": "same-az", "fraction": 0.15, "timeoutMs": 800 },
+            { "id": "app3-blob", "from": "app3", "to": "object_store", "mode": "sync", "netClass": "cross-az", "fraction": 0.15, "timeoutMs": 800 },
+            { "id": "session-db", "from": "session_store", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "app1": "all-parallel",
+            "app2": "all-parallel",
+            "app3": "all-parallel",
+            "session_store": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 160, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 3 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 65 } }
+      ],
+      "presets": [
+        {
+          "id": "fix-stateless-pool",
+          "label": { "vi": "Cụm 3 App phi trạng thái + Session Cache dự phòng", "en": "3 Stateless Apps + replicated Session Cache" },
+          "changes": [
+            { "type": "knob", "node": "app2", "key": "enabled", "value": true },
+            { "type": "knob", "node": "app3", "key": "enabled", "value": true },
+            { "type": "knob", "node": "lb", "key": "algorithm", "value": "round-robin" },
+            { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 },
+            { "type": "knob", "node": "session_store", "key": "replicas", "value": 2 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-sticky-two-apps",
+          "label": { "vi": "Thêm 1 App nhưng giữ Sticky Session và Health Check 18s", "en": "Add 1 App while keeping sticky ip-hash and slow health check" },
+          "changes": [
+            { "type": "knob", "node": "app2", "key": "enabled", "value": true }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

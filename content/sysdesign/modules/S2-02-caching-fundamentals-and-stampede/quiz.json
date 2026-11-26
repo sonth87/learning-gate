@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S2-02.q1",
+    "type": "output",
+    "q": "Hệ thống nhận 4.000 req/s gồm 90% lượt đọc và 10% lượt ghi. Cache đạt Hit Ratio 80% trên lượt đọc, còn mọi lượt ghi đều đi vào Database. Database phải xử lý bao nhiêu req/s? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "1120",
+    "explain": "Có 4.000 × 0,9 = 3.600 lượt đọc/giây; phần Cache Miss đi xuống Database là 3.600 × (1 − 0,8) = 720 req/s. Cộng thêm 4.000 × 0,1 = 400 lượt ghi/giây, tổng tải vào Database bằng 720 + 400 = 1.120 req/s."
+  },
+  {
+    "id": "S2-02.q2",
+    "type": "mc",
+    "q": "Khi nâng Cache Hit Ratio trên luồng thuần đọc từ 80% lên 95%, lượng truy vấn đọc rơi xuống Database giảm đi bao nhiêu lần?",
+    "code": "",
+    "choices": [
+      "Giảm khoảng 1,2 lần (từ 95 xuống 80)",
+      "Giảm 4 lần (tỷ lệ Miss giảm từ 20% xuống còn 5%)",
+      "Giảm 15 lần",
+      "Không đổi vì dung lượng Database giữ nguyên"
+    ],
+    "answer": 1,
+    "explain": "Tải lên Database tỷ lệ thuận với Miss Ratio = 1 − Hit Ratio. Khi Hit Ratio tăng từ 80% lên 95%, Miss Ratio giảm từ 20% xuống 5%, tức lượng truy vấn chạm Database giảm đúng 20% / 5% = 4 lần."
+  },
+  {
+    "id": "S2-02.q3",
+    "type": "mc",
+    "q": "Trong mô hình Cache-Aside, thao tác cập nhật bản ghi thường xoá khoá trên Cache (`DELETE`) sau khi ghi Database thay vì ghi đè giá trị mới vào Cache (`SET`) vì lý do chính nào?",
+    "code": "",
+    "choices": [
+      "Lệnh DELETE tốn nhiều bộ nhớ RAM hơn lệnh SET",
+      "Tránh nạp dữ liệu ít đọc vào RAM và giảm nguy cơ hai luồng ghi đồng thời ghi đè thứ tự ngược nhau lên Cache",
+      "Redis không cho phép ghi đè khoá đang còn hạn TTL",
+      "Để bắt buộc mọi lượt đọc sau đó đều biến thành Cache Penetration"
+    ],
+    "answer": 1,
+    "explain": "Xoá khoá giúp chỉ nạp lại vào RAM khi thực sự có người đọc tiếp theo (lazy), đồng thời giảm cửa sổ tranh chấp thứ tự giữa hai giao dịch cập nhật song song so với việc tự tính và ghi đè giá trị lên Cache."
+  },
+  {
+    "id": "S2-02.q4",
+    "type": "tf",
+    "q": "Chỉ cần cộng thêm độ lệch ngẫu nhiên vào TTL (TTL Jitter) là đã chặn hoàn toàn được Cache Stampede trên một khoá đơn lẻ cực nóng vừa bị xoá chủ động.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "TTL Jitter giúp rải thời điểm hết hạn của hàng nghìn khoá được nạp cùng lúc, nhưng không ngăn được hàng trăm request đồng thời cùng lao xuống Database khi một khoá cực nóng vừa hết hạn hoặc vừa bị xoá. Trường hợp này cần thêm Singleflight (Request Coalescing) hoặc làm mới sớm."
+  },
+  {
+    "id": "S2-02.q5",
+    "type": "mc",
+    "q": "Cơ chế Singleflight (Request Coalescing) bảo vệ Database khi xảy ra Cache Miss hàng loạt trên cùng một khoá theo cách nào?",
+    "code": "",
+    "choices": [
+      "Từ chối toàn bộ request bằng mã lỗi 429 cho tới khi quản trị viên nạp lại Cache",
+      "Chỉ cho phép một truy vấn đại diện xuống Database lấy dữ liệu và chia sẻ kết quả đó cho các request đang chờ cùng khoá",
+      "Tự động nhân đôi số lượng phân mảnh của Database trong vòng 100 ms",
+      "Đặt TTL bằng vô hạn để khoá không bao giờ hết hạn"
+    ],
+    "answer": 1,
+    "explain": "Singleflight gom các request trùng khoá đang bay đồng thời thành một nhóm: chỉ một request giữ khoá/chốt đi hỏi Database rồi ghi vào Cache, các request còn lại nhận chung kết quả vừa nạp mà không tạo thêm truy vấn trùng lặp."
+  },
+  {
+    "id": "S2-02.q6",
+    "type": "mc",
+    "q": "Kẻ tấn công gửi liên tục hàng nghìn truy vấn với product_id âm hoặc ngẫu nhiên không tồn tại khiến cả Cache lẫn Database đều không có bản ghi (Cache Penetration). Biện pháp nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Tăng kích thước ổ cứng của Database",
+      "Đổi sang chiến lược Write-Behind cho mọi bảng",
+      "Lưu tạm kết quả rỗng (negative caching) với TTL ngắn kết hợp bộ lọc Bloom Filter chặn trước khoá không tồn tại",
+      "Giảm TTL của các sản phẩm hợp lệ xuống 1 giây"
+    ],
+    "answer": 2,
+    "explain": "Vì bản ghi không có trong Database nên Cache-Aside thông thường không lưu gì và mọi lượt gọi tiếp theo vẫn xuyên thẳng xuống DB. Lưu giá trị đánh dấu rỗng với TTL ngắn (30–60 giây) hoặc kiểm tra qua Bloom Filter giúp chặn truy vấn ngay ở tầng trên."
+  }
+]

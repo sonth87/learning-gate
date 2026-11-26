@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-03.q1",
+    "type": "output",
+    "q": "Một cụm đồng thuận Raft gồm N = 7 máy chủ có thể tiếp tục bầu Leader và commit lệnh ghi bình thường khi tối đa bao nhiêu máy chủ ngừng hoạt động cùng lúc? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "3",
+    "explain": "Với N = 7, ngưỡng đa số quá bán là floor(7/2) + 1 = 4 máy. Do chỉ cần 4 máy còn sống và liên lạc được với nhau là đủ đa số, cụm chịu được tối đa 7 − 4 = 3 máy hỏng đồng thời."
+  },
+  {
+    "id": "S3-03.q2",
+    "type": "mc",
+    "q": "Vì sao người ta hầu như luôn triển khai cụm Raft / etcd với 3 hoặc 5 máy chủ thay vì 4 hoặc 6 máy chủ?",
+    "code": "",
+    "choices": [
+      "Vì giao thức TCP không hỗ trợ số lượng kết nối chẵn",
+      "Vì cụm 4 máy đòi hỏi đa số là 3 máy nên chỉ chịu được 1 máy hỏng — ngang bằng cụm 3 máy nhưng tốn thêm chi phí phần cứng và lưu lượng sao chép",
+      "Vì cụm số chẵn hoàn toàn không thể bầu chọn được Leader trong mọi trường hợp",
+      "Vì số máy chẵn làm giảm một nửa dung lượng ổ cứng của mỗi máy"
+    ],
+    "answer": 1,
+    "explain": "Cụm N = 4 cần floor(4/2) + 1 = 3 phiếu, tức chỉ chịu được 4 − 3 = 1 máy chết (không hơn gì cụm 3 máy chỉ cần 2 phiếu), trong khi lại tốn tiền nuôi máy thứ 4 và làm tăng xác suất có một máy gặp trục trặc."
+  },
+  {
+    "id": "S3-03.q3",
+    "type": "mc",
+    "q": "Trong Raft, cơ chế nào đóng vai trò chính giúp giảm thiểu tình trạng hai ứng viên cùng ứng cử một lúc và chia phiếu (Split Vote) bất phân thắng bại?",
+    "code": "",
+    "choices": [
+      "Đặt thời gian chờ bầu cử (Election Timeout) ngẫu nhiên khác nhau trên từng nút, ví dụ trong khoảng 150–300 ms",
+      "Bắt buộc quản trị viên gõ lệnh chỉ định ứng viên bằng tay mỗi khi đứt mạng",
+      "Đồng bộ đồng hồ nguyên tử GPS trên tất cả máy chủ chính xác tới nano-giây",
+      "Cho phép mỗi Follower được cấp phiếu cho không giới hạn số ứng viên trong cùng một Term"
+    ],
+    "answer": 0,
+    "explain": "Nhờ mỗi Follower bốc thăm một khoảng chờ ngẫu nhiên trong dải 150–300 ms, xác suất rất cao một nút sẽ hết hạn sớm hơn hẳn, kịp tăng Term, thu thập đa số phiếu và gửi Heartbeat khoá bầu cử trước khi các nút khác thức dậy."
+  },
+  {
+    "id": "S3-03.q4",
+    "type": "tf",
+    "q": "Trong Raft, ngay khi Leader ghi xong một lệnh mới vào nhật ký WAL trên ổ đĩa của chính mình (trước khi gửi sang các Follower), lệnh đó đã được tính là Committed và đảm bảo không bao giờ mất.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Mục mới chỉ nằm trên 1 máy chưa đạt đa số. Nếu Leader sập ngay lúc đó và các nút còn lại bầu Leader mới, mục chưa đủ đa số sẽ bị xoá bỏ. Chỉ khi ít nhất floor(N/2) + 1 máy đã lưu bền vững thì mục đó mới trở thành Committed."
+  },
+  {
+    "id": "S3-03.q5",
+    "type": "mc",
+    "q": "Một dịch vụ giữ quyền Leader ở Term 4 bị đóng băng 8 giây do thu gom rác bộ nhớ (GC pause). Trong 8 giây đó cụm đã bầu Leader mới ở Term 5. Khi tiến trình cũ tỉnh dậy và gửi thẳng lệnh ghi muộn xuống Kho lưu trữ chung, cơ chế nào chặn lệnh ghi muộn này?",
+    "code": "",
+    "choices": [
+      "Tăng kích thước Connection Pool của Kho lưu trữ",
+      "Fencing Token: mỗi nhiệm kỳ gắn kèm số token tăng đơn điệu (token = 5 > 4) và Kho lưu trữ từ chối mọi thao tác mang token nhỏ hơn max_token đã thấy",
+      "Nén gói tin mạng bằng thuật toán gzip",
+      "Đặt Load Balancer dùng thuật toán Round-robin phía trước Kho lưu trữ"
+    ],
+    "answer": 1,
+    "explain": "Bản thân tiến trình bị treo không biết thời gian đã trôi qua bao lâu khi vừa tỉnh lại. Nhờ Kho lưu trữ kiểm tra trực tiếp token nhiệm kỳ và đã ghi nhận max_token = 5 từ Leader mới, gói ghi mang token = 4 bị bác bỏ ngay tại cửa Kho lưu trữ."
+  },
+  {
+    "id": "S3-03.q6",
+    "type": "mc",
+    "q": "Khi Follower nhận gói xin phiếu RequestVote từ một Candidate có số Term lớn hơn nhưng nhật ký (Log) của Candidate lại cũ hơn nhật ký của Follower đó, Follower sẽ xử lý thế nào?",
+    "code": "",
+    "choices": [
+      "Vẫn cấp phiếu vì Candidate có số Term cao hơn",
+      "Cập nhật Term của mình lên bằng Term mới nhưng TỪ CHỐI cấp phiếu để bảo vệ các mục đã Committed trong nhật ký",
+      "Xoá bớt nhật ký của chính mình cho khớp với Candidate rồi cấp phiếu",
+      "Tự động tắt máy để tránh xung đột"
+    ],
+    "answer": 1,
+    "explain": "Raft tách hai việc: thấy Term cao hơn thì cập nhật currentTerm của mình, nhưng điều kiện cấp phiếu bắt buộc nhật ký của Candidate phải mới ít nhất ngang bằng nhật ký của người bầu nhằm đảm bảo Leader đắc cử luôn giữ trọn mọi mục đã Committed."
+  }
+]

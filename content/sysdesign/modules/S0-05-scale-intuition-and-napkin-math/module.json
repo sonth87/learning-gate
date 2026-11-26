@@ -1,0 +1,30 @@
+{
+  "id": "S0-05",
+  "slug": "S0-05-scale-intuition-and-napkin-math",
+  "level": 0,
+  "order": 5,
+  "title": "Scale Intuition và Napkin Math: ước lượng tải, lưu trữ và băng thông",
+  "summary": "Chuyển đổi số người dùng hoạt động hằng ngày (DAU) thành RPS trung bình, RPS đỉnh, số máy chủ, dung lượng lưu trữ, băng thông mạng và bộ nhớ đệm RAM với sai số trong ngưỡng ±30%.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt đặc trưng kiến trúc và điểm nghẽn ở các bậc quy mô 1K, 10K, 100K và 1M người dùng hoạt động mỗi ngày" },
+    { "vi": "Quy đổi nhanh từ DAU sang RPS trung bình, RPS đỉnh và số lượng máy chủ cần thiết có dự phòng tải" },
+    { "vi": "Ước lượng tốc độ tăng trưởng lưu trữ nhiều năm, băng thông truyền tải và dung lượng RAM cho tập dữ liệu nóng" },
+    { "vi": "Xác định chiến lược tối ưu phù hợp theo tỉ lệ đọc và ghi (Read-Heavy, Balanced, Write-Heavy)" }
+  ],
+  "tags": ["napkin-math", "capacity-planning", "rps", "storage", "bandwidth", "scale"],
+  "prerequisites": ["S0-04"],
+  "related": ["S0-07", "S1-03", "S1-05"],
+  "dtsRef": "napkin-math",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-5-scale-intuition.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-5-scale-intuition.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ lời giảng: bỏ giai thoại phỏng vấn ngôi thứ nhất và ẩn dụ xe cộ, thay sơ đồ Mermaid bằng 8 cảnh memory-2d (tape, refs, tree), chuẩn hoá quy tắc tính nhẩm 1 ngày = 86.400 s ≈ 10^5 s và bổ sung bước tính số máy chủ có headroom cùng ước lượng RAM cache 20%. Sửa sai số tính toán ở bản gốc (chi phí CDN theo tháng quên nhân 30 ngày từ mức 50 PB/ngày, và gộp phần trăm giảm dung lượng ảnh) đồng thời thêm 2 bài tập estimate chấm tự động."
+  }
+}

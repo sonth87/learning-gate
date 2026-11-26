@@ -1,0 +1,429 @@
+{
+  "version": 1,
+  "base": "s9-scale-live",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Khách hàng gửi lưu lượng thiên về ghi (75% đặt đơn mới, 25% tra cứu đơn).",
+          "en": "Write-heavy e-commerce traffic (75% new orders, 25% order lookups)."
+        },
+        "how": {
+          "vi": "Tăng từ 600 lên 3.600 req/s trong đợt cao điểm mở bán.",
+          "en": "Ramps from 600 to 3,600 req/s during a flash sale."
+        },
+        "why": {
+          "vi": "Tải ghi cao làm lộ rõ chi phí của việc xin ID qua mạng và phân mảnh B-tree.",
+          "en": "Heavy write volume exposes ID coordination bottlenecks and B-tree write amplification."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Cặp cân bằng tải dự phòng (2 instance) điều phối lưu lượng vào Order Service.", "en": "Redundant Load Balancer pair routing requests to Order Service." },
+        "how": { "vi": "Chia đều Round-robin không giữ trạng thái.", "en": "Stateless Round-robin distribution." },
+        "why": { "vi": "Chạy cặp dự phòng để tầng vào không trở thành SPOF.", "en": "Active-active pair eliminates entry-tier SPOF." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Order Service", "en": "Order Service" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 3 máy chủ xử lý đơn hàng, mỗi máy mang một worker_id (0..1023) riêng.",
+          "en": "Three stateless Order Service instances, each assigned a distinct worker_id."
+        },
+        "how": {
+          "vi": "Khi tắt Ticket Server, mỗi máy tự sinh mã Snowflake 64-bit ngay trong RAM với tốc độ 4.096 ID/ms.",
+          "en": "When Ticket Server is disabled, generates 64-bit Snowflake IDs in-memory at 4,096 IDs/ms."
+        },
+        "why": {
+          "vi": "Loại bỏ hoàn toàn chặng gọi mạng xin ID và cho phép mở rộng ngang độc lập.",
+          "en": "Eliminates network round-trips for ID allocation and scales out linearly."
+        }
+      }
+    },
+    "ticket": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "hash",
+      "label": { "vi": "Ticket Server (Cấp ID)", "en": "Ticket Server (ID Gen)" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ bộ đếm tập trung cấp phát ID tuần tự qua mạng (μ = 1.200 ID/s).",
+          "en": "Centralized counter server issuing sequential IDs over the network (μ = 1,200 IDs/s)."
+        },
+        "how": {
+          "vi": "Mỗi lệnh tạo đơn phải gọi đồng bộ tới đây để tăng bộ đếm bền vững trước khi chèn DB.",
+          "en": "Every order write makes a synchronous RPC here to increment a shared counter."
+        },
+        "why": {
+          "vi": "Khi chỉ chạy 1 máy, đây vừa là điểm lỗi đơn (SPOF) vừa là cổ chai chặn trần ghi ở 1.200 đơn/giây.",
+          "en": "As a single instance, acts as both a critical write SPOF and a 1,200 writes/s bottleneck."
+        },
+        "tip": {
+          "vi": "Tắt thành phần này để chuyển sang sinh Snowflake/UUIDv7 cục bộ ngay tại Order Service.",
+          "en": "Disable this component to switch to local in-memory Snowflake/UUIDv7 generation."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Order DB Shards", "en": "Order DB Shards" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm cơ sở dữ liệu đơn hàng đã phân mảnh (mỗi shard có cặp bản sao dự phòng).",
+          "en": "Partitioned Order Database cluster with replicated shards."
+        },
+        "how": {
+          "vi": "Dùng khoá chính BIGINT 64-bit có thứ tự thời gian để chèn thẳng vào trang lá bên phải của B-tree.",
+          "en": "Uses time-ordered 64-bit BIGINT primary keys for sequential rightmost B-tree appends."
+        },
+        "why": {
+          "vi": "Tránh tách trang ngẫu nhiên của UUID v4 và tăng thông lượng ghi tuyến tính theo số shard.",
+          "en": "Avoids random UUIDv4 page splits and scales write throughput with shard count."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ người dùng vào hệ thống đặt hàng.", "en": "Public client traffic." },
+        "how": { "vi": "Mang 75% lệnh tạo đơn mới và 25% lệnh xem đơn.", "en": "Carries 75% order writes and 25% reads." },
+        "why": { "vi": "Đo thông lượng tạo đơn và độ trễ đầu-cuối.", "en": "Measures end-to-end order ingestion SLOs." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường chia tải sang 3 instance Order Service.", "en": "Load-balanced link to Order Service." },
+        "how": { "vi": "Phân phối đều yêu cầu giữa các máy ứng dụng.", "en": "Splits requests evenly across instances." },
+        "why": { "vi": "Giữ mức bận CPU ứng dụng cân bằng.", "en": "Balances application CPU load." }
+      }
+    },
+    "app-ticket": {
+      "inspector": {
+        "what": { "vi": "Chặng gọi mạng đồng bộ xin cấp ID cho mỗi đơn hàng mới.", "en": "Synchronous RPC to fetch a unique ID per write." },
+        "how": { "vi": "Chỉ đi qua ở 75% lưu lượng là thao tác ghi; biến mất khi chuyển sang sinh Snowflake cục bộ.", "en": "Triggered on all writes; bypassed completely once local Snowflake is enabled." },
+        "why": { "vi": "Minh hoạ chi phí phối hợp tập trung trên đường nóng.", "en": "Illustrates centralized coordination overhead on the hot write path." }
+      }
+    },
+    "app-db": {
+      "inspector": {
+        "what": { "vi": "Đường ghi đơn hàng và đọc tra cứu xuống cụm Order DB Shards.", "en": "Read/write connection to partitioned Order DB Shards." },
+        "how": { "vi": "Định tuyến tới đúng shard theo khoá phân mảnh.", "en": "Routes operations across database shards." },
+        "why": { "vi": "Lưu trữ bền vững toàn bộ đơn hàng.", "en": "Persists order records durably." }
+      }
+    }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": ["app", "ticket", "db"],
+      "label": { "vi": "TẦNG ĐẶT ĐƠN & CẤP ĐỊNH DANH", "en": "ORDER & ID GENERATION TIER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-shard-collision": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Bộ đếm cục bộ trên từng Shard", "en": "Independent Per-Shard Counters" },
+        "rightTitle": { "vi": "Hệ quả khi gộp / tra cứu toàn cục", "en": "Global Lookup / Merge Outcome" },
+        "names": [
+          { "id": "sh1", "name": "DB Shard 1: AUTO_INCREMENT → #101", "note": { "vi": "Đơn hàng của An", "en": "An's Order" }, "targetId": "col", "style": "danger" },
+          { "id": "sh2", "name": "DB Shard 2: AUTO_INCREMENT → #101", "note": { "vi": "Đơn hàng của Bình", "en": "Binh's Order" }, "targetId": "col", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "col",
+            "typeTag": "PRIMARY KEY COLLISION",
+            "value": "Trùng khoá order:101 trên Cache, Khoá ngoại & Kho phân tích!",
+            "fields": ["AUTO_INCREMENT chỉ duy nhất trong phạm vi 1 bảng đơn", "Bước nhảy chẵn/lẻ khó mở rộng khi thêm Shard mới"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s2-ticket-live": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự cố t = 20 s: Ticket Server ngừng chạy", "en": "Incident t = 20 s: Ticket Server Crashes" },
+        "lines": [
+          { "text": { "vi": "75% lưu lượng (tạo đơn) thất bại hoàn toàn", "en": "75% traffic (order writes) fails completely" }, "tone": "bad" },
+          { "text": { "vi": "Bộ cấp ID tập trung đơn lẻ trở thành SPOF", "en": "Single centralized ID server becomes a SPOF" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-uuid-btree": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Tác động lên cây chỉ mục B-tree: UUID v4 ngẫu nhiên gây tách trang liên tục",
+          "en": "B-Tree Index Impact: Random UUID v4 Causes Frequent Mid-Tree Page Splits"
+        },
+        "nodes": [
+          { "id": "root", "x": 0, "y": -96, "label": "Nút gốc B-tree Primary Key", "sub": { "vi": "Các trang lá 16 KB phải giữ thứ tự tăng dần", "en": "16 KB leaf pages maintained in sorted key order" }, "tone": "purple" },
+          { "id": "p1", "x": -185, "y": 24, "label": "Trang lá [00..5f] · Đầy", "sub": { "vi": "Chèn 3a9f... → Tách đôi trang!", "en": "Insert 3a9f... → Page Split!" }, "tone": "rose" },
+          { "id": "p2", "x": 0, "y": 24, "label": "Trang lá [60..af] · Đầy", "sub": { "vi": "Chèn 8c12... → Đọc đĩa + Tách!", "en": "Insert 8c12... → Disk I/O + Split!" }, "tone": "rose" },
+          { "id": "p3", "x": 185, "y": 24, "label": "Trang cuối [b0..ff] (Trong RAM)", "sub": { "vi": "ID tuần tự chỉ nối êm vào đây", "en": "Sequential IDs append cleanly here" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "root", "to": "p1", "label": "UUID v4", "style": "danger" },
+          { "from": "root", "to": "p2", "label": "UUID v4", "style": "danger" },
+          { "from": "root", "to": "p3", "label": "Snowflake / v7" }
+        ]
+      }
+    },
+    "s4-uuid-v7": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Bố cục 128 bit của UUID v7 (RFC 9562): thời gian đứng đầu, ngẫu nhiên đứng sau",
+          "en": "128-Bit UUID v7 Layout (RFC 9562): Time-Ordered Prefix + Randomness"
+        },
+        "subtitle": {
+          "vi": "Khắc phục hoàn toàn nhược điểm tách trang B-tree của UUID v4 mà không cần quản lý mã máy",
+          "en": "Eliminates UUID v4 B-tree fragmentation with zero machine-ID coordination"
+        },
+        "cells": [
+          "48b unix_ts_ms",
+          "4b ver (0111)",
+          "12b rand_a / seq",
+          "2b var (10)",
+          "62b rand_b"
+        ],
+        "activeIndices": [0, 2, 4],
+        "pointers": [
+          { "index": 0, "label": "sắp xếp tăng theo ms", "tone": "green" },
+          { "index": 4, "label": "chống đụng độ toàn cục", "tone": "blue" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Đánh đổi so với Snowflake", "en": "Trade-off vs Snowflake" },
+          "value": { "vi": "Dễ triển khai nhất (0 cấu hình), nhưng tốn 16 byte thay vì 8 byte BIGINT", "en": "Zero worker-ID config, at the cost of 16 bytes instead of 8-byte BIGINT" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s5-snowflake-bits": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Bố cục 64 bit chuẩn của Snowflake: 1 + 41 + 10 + 12 = 64 bit (8 byte BIGINT)",
+          "en": "Standard 64-Bit Snowflake Layout: 1 + 41 + 10 + 12 = 64 Bits"
+        },
+        "subtitle": {
+          "vi": "Mỗi nút tự sinh độc lập trong bộ nhớ RAM mà không bao giờ trùng với 1.023 nút còn lại",
+          "en": "Generated locally in RAM with zero cross-node locking across 1,024 workers"
+        },
+        "cells": [
+          "1b Dấu (0)",
+          "41b Timestamp ms (~69 năm)",
+          "10b Worker ID (1.024 máy)",
+          "12b Sequence (4.096 / ms)"
+        ],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 1, "label": "sắp xếp chèn B-tree", "tone": "orange" },
+          { "index": 3, "label": "4,096 triệu ID/s/máy", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Tổng năng lực toàn cụm", "en": "Cluster Capacity" },
+          "value": { "vi": "1.024 máy × 4.096 ID/ms ≈ 4,19 tỷ ID duy nhất mỗi giây", "en": "1,024 nodes × 4,096 IDs/ms ≈ 4.19 billion unique IDs/sec" },
+          "tone": "green"
+        }
+      }
+    },
+    "s6-snowflake-decode": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Phép dịch bit trên ID 64-bit", "en": "Bitwise Extraction on 64-Bit ID" },
+        "rightTitle": { "vi": "Ý nghĩa vận hành & Lưu ý JSON", "en": "Operational Metadata & JSON Caveat" },
+        "names": [
+          { "id": "ts", "name": "(id >> 22) + EPOCH_MS", "note": { "vi": "Lấy 41 bit cao", "en": "Top 41 bits" }, "targetId": "meta" },
+          { "id": "wk", "name": "(id >> 12) & 0x3FF · id & 0xFFF", "note": { "vi": "Lấy Worker & Sequence", "en": "Worker & Sequence" }, "targetId": "meta" },
+          { "id": "js", "name": "Trả qua JSON cho trình duyệt Web", "note": { "vi": "JS Number chỉ chính xác 53 bit!", "en": "JS Number max safe = 53 bits!" }, "targetId": "str", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "meta",
+            "typeTag": "SELF-DESCRIBING ID",
+            "value": "Biết ngay giờ tạo đơn & máy phát sinh lỗi",
+            "fields": ["Gỡ lỗi nhanh từ log mà không cần JOIN bảng", "Hỗ trợ phân vùng bảng theo khoảng thời gian"],
+            "tone": "green"
+          },
+          {
+            "id": "str",
+            "typeTag": "JSON SERIALIZATION",
+            "value": "Bắt buộc bọc chuỗi \"id\": \"185920419283746816\"",
+            "fields": ["Tránh làm tròn hỏng 11 bit cuối trên Frontend", "Trong DB và Backend vẫn giữ nguyên BIGINT 8 byte"],
+            "tone": "orange"
+          }
+        ]
+      }
+    },
+    "s7-clock-rollback": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Xử lý sự cố đồng hồ hệ thống nhảy lùi (now_ms < last_timestamp_ms)",
+          "en": "Guarding Snowflake Against Physical Clock Rollback (NTP Step-Back)"
+        },
+        "nodes": [
+          { "id": "chk", "x": 0, "y": -96, "label": "Kiểm tra: now_ms < last_ts?", "sub": { "vi": "So với mili-giây lớn nhất từng cấp trên máy này", "en": "Compare against highest issued ms" }, "tone": "purple" },
+          { "id": "ok", "x": -185, "y": 24, "label": "Không lùi (now_ms ≥ last_ts)", "sub": { "vi": "Tăng seq hoặc sang ms mới · Cấp ngay", "en": "Increment seq or reset · Issue ID" }, "tone": "green" },
+          { "id": "sml", "x": 0, "y": 24, "label": "Lùi nhẹ (≤ 5 ms)", "sub": { "vi": "Tạm chờ vài ms cho đồng hồ đuổi kịp last_ts", "en": "Spin/sleep briefly until clock catches up" }, "tone": "yellow" },
+          { "id": "big", "x": 185, "y": 24, "label": "Lùi sâu (> 5 ms)", "sub": { "vi": "Từ chối sinh ID & bắn cảnh báo NTP", "en": "Refuse ID generation & alert ops" }, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "chk", "to": "ok", "label": "bình thường" },
+          { "from": "chk", "to": "sml", "label": "trôi nhẹ" },
+          { "from": "chk", "to": "big", "label": "lỗi NTP!", "style": "danger" }
+        ]
+      }
+    },
+    "s8-public-private-id": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Ngữ cảnh sử dụng định danh", "en": "Identifier Boundary" },
+        "rightTitle": { "vi": "Mẫu thiết kế cặp định danh kép", "en": "Dual-Identifier Pattern" },
+        "names": [
+          { "id": "in", "name": "Khoá chính / Khoá ngoại nội bộ", "note": { "vi": "JOIN, phân trang, chỉ mục", "en": "JOINs, indexes, shards" }, "targetId": "pk" },
+          { "id": "out", "name": "Đường dẫn URL / API đối tác ngoài", "note": { "vi": "Hiển thị cho người dùng cuối", "en": "Exposed to external clients" }, "targetId": "pub" }
+        ],
+        "objects": [
+          {
+            "id": "pk",
+            "typeTag": "INTERNAL PK (BIGINT)",
+            "value": "id = 185920419283746816 (Snowflake)",
+            "fields": ["8 byte gọn nhẹ, chèn tuần tự B-tree cực nhanh", "Không bao giờ trả trực tiếp ra URL công khai"],
+            "tone": "orange"
+          },
+          {
+            "id": "pub",
+            "typeTag": "PUBLIC TOKEN (UNIQUE)",
+            "value": "public_id = \"ord_9kF3xP8m2QvL\" (NanoID)",
+            "fields": ["Ngẫu nhiên mật mã học, không đoán được đơn kế tiếp", "Che giấu sản lượng kinh doanh và mã máy chủ"],
+            "tone": "green"
+          }
+        ]
+      }
+    },
+    "s9-scale-live": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cao điểm ghi 600 → 3.600 req/s", "en": "Write Ramp 600 → 3,600 req/s" },
+        "lines": [
+          { "text": { "vi": "Ticket Server (1.200/s) thành cổ chai & SPOF", "en": "Ticket Server (1,200/s) bottlenecks writes" }, "tone": "bad" },
+          { "text": { "vi": "Chuyển sang Snowflake cục bộ + tăng DB Shards", "en": "Switch to local Snowflake + add DB Shards" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": { "nodes": ["client", "lb", "app", "db"] },
+      "zones": ["backend"],
+      "state": {
+        "app": {
+          "loadPct": 50,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Snowflake trong RAM", "en": "In-RAM Snowflake" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 52,
+          "highlighted": true,
+          "badge": { "text": { "vi": "4 Shards · B-tree tuần tự", "en": "4 Shards · Sequential B-tree" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Định danh Phân tán", "en": "Distributed ID Summary" },
+        "lines": [
+          { "text": { "vi": "Snowflake (64b) / UUIDv7 (128b) thân thiện B-tree", "en": "Snowflake (64b) / UUIDv7 (128b) keep B-trees fast" }, "tone": "good" },
+          { "text": { "vi": "Canh giữ đồng hồ lùi & che ID nội bộ khỏi URL", "en": "Guard clock rollback & use opaque public IDs" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "ticket-spof": {
+      "sim": "S3-05/ticket-spof",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["kill", "slow"],
+        "knobs": [
+          { "node": "ticket", "key": "enabled" },
+          { "node": "ticket", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 180 } },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+      ],
+      "slo": [
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["app", "ticket"], "links": ["app-ticket"] }
+    },
+    "id-scale": {
+      "sim": "S3-05/id-scale",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "ticket", "key": "enabled" },
+          { "node": "db", "key": "shards" },
+          { "node": "app", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Đơn hoàn tất", "en": "Completed" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 95, "badAbove": 200 } },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 95 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["app", "ticket", "db"] }
+    }
+  }
+}

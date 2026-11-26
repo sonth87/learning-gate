@@ -1,0 +1,565 @@
+{
+  "version": 1,
+  "base": "s1-problem",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm người dùng truy cập hệ thống với lưu lượng ổn định λ = 600 req/s.",
+          "en": "Concurrent clients sending steady traffic at λ = 600 req/s."
+        },
+        "how": {
+          "vi": "Chỉ kết nối tới một địa chỉ tên miền / Virtual IP duy nhất thay vì cần biết danh sách máy chủ phía sau.",
+          "en": "Connects to a single public endpoint / Virtual IP without knowing individual backend servers."
+        },
+        "why": {
+          "vi": "Cho phép cụm phía sau tự do thêm, bớt hoặc bảo trì máy chủ mà không ảnh hưởng phía client.",
+          "en": "Decouples external clients from internal server topology changes."
+        }
+      }
+    },
+    "vip": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "globe",
+      "label": { "vi": "Virtual IP", "en": "Virtual IP" },
+      "inspector": {
+        "what": {
+          "vi": "Địa chỉ IP ảo (Floating VIP) đứng trước cặp Load Balancer chính và dự phòng.",
+          "en": "Floating Virtual IP shared between the Active and Standby Load Balancers."
+        },
+        "how": {
+          "vi": "Dùng giao thức nhịp tim VRRP (chu kỳ 0,5 s): bình thường trỏ vào LB Chính, khi mất nhịp tim sẽ chuyển quyền giữ IP sang LB Dự phòng.",
+          "en": "Monitors VRRP heartbeats (0.5 s) and reassigns the VIP to Standby LB upon Active failure."
+        },
+        "why": {
+          "vi": "Giúp quá trình chuyển đổi dự phòng ở tầng cân bằng tải diễn ra trong tích tắc mà không chờ DNS TTL.",
+          "en": "Enables sub-second Load Balancer failover without waiting for client DNS cache expiry."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "LB Chính", "en": "Active LB" },
+      "inspector": {
+        "what": {
+          "vi": "Load Balancer chính nhận lưu lượng 600 req/s và phân phối sang cụm 3 máy App (năng lực 15.000 req/s).",
+          "en": "Primary Load Balancer distributing 600 req/s across 3 App servers (15,000 req/s capacity)."
+        },
+        "how": {
+          "vi": "Hỗ trợ chọn thuật toán chia tải (Round Robin, Least Connections, Weighted, IP Hash) và thăm dò sức khoẻ định kỳ.",
+          "en": "Supports configurable routing algorithms and periodic backend health checks."
+        },
+        "why": {
+          "vi": "Biến nhiều máy chủ ứng dụng rời rạc thành một dịch vụ thống nhất có khả năng chịu lỗi và mở rộng ngang.",
+          "en": "Unifies multiple backend instances into a scalable, fault-tolerant service tier."
+        },
+        "tip": {
+          "vi": "Nếu chạy đơn lẻ không có máy dự phòng, bản thân Load Balancer sẽ trở thành điểm lỗi đơn (SPOF).",
+          "en": "Without a standby peer, a single Load Balancer becomes a Single Point of Failure."
+        }
+      }
+    },
+    "lb_standby": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "shield",
+      "label": { "vi": "LB Dự phòng", "en": "Standby LB" },
+      "inspector": {
+        "what": {
+          "vi": "Load Balancer dự phòng đặt ở vùng khả dụng thứ hai, sẵn sàng tiếp quản Virtual IP.",
+          "en": "Standby Load Balancer in a secondary AZ ready to assume the Virtual IP."
+        },
+        "how": {
+          "vi": "Liên tục lắng nghe Heartbeat từ LB Chính và duy trì cấu hình định tuyến Least Connections đồng bộ.",
+          "en": "Tracks heartbeats from Active LB and mirrors routing and health-check configuration."
+        },
+        "why": {
+          "vi": "Loại bỏ điểm lỗi đơn ở cửa ngõ vào hệ thống khi LB Chính bảo trì hoặc gặp sự cố phần cứng.",
+          "en": "Eliminates the entry-tier Single Point of Failure during crashes or maintenance."
+        }
+      }
+    },
+    "app1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App A", "en": "App A" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng thứ nhất (năng lực μ = 360 req/s, độ trễ cơ sở 20 ms).",
+          "en": "First stateless application server (μ = 360 req/s, 20 ms base latency)."
+        },
+        "how": {
+          "vi": "Xử lý các truy vấn đọc ghi nhanh và vẫn dư công suất để gánh thêm lưu lượng khi máy khác chậm hoặc sập.",
+          "en": "Handles standard API traffic with headroom to absorb load when peers slow down or fail."
+        },
+        "why": {
+          "vi": "Cùng với App B và App C tạo tổng công suất 1.080 req/s, bảo đảm dự phòng N + 1 cho mức tải 600 req/s.",
+          "en": "Forms an N+1 redundant pool (1,080 req/s total) for 600 req/s demand."
+        }
+      }
+    },
+    "app2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App B", "en": "App B" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng thứ hai (μ = 360 req/s khi bình thường, pool 9 kết nối đồng thời).",
+          "en": "Second application server (360 req/s normal capacity, concurrency pool = 9)."
+        },
+        "how": {
+          "vi": "Trong khoảng giây 10–35 nhận nhiều tác vụ báo cáo nặng khiến thời gian xử lý tăng lên 55 ms, hạ thông lượng còn ~164 req/s.",
+          "en": "Experiences heavy 55 ms requests during t = 10–35 s, dropping effective throughput to ~164 req/s."
+        },
+        "why": {
+          "vi": "Minh hoạ rõ sự khác biệt giữa Round Robin (ép nhận đủ 200 req/s gây nghẽn) và Least Connections (tự giảm tải về ~109 req/s).",
+          "en": "Highlights how Round Robin overloads a slow server while Least Connections adapts dynamically."
+        }
+      }
+    },
+    "app3": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App C", "en": "App C" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng thứ ba đặt tại vùng khả dụng B (μ = 360 req/s).",
+          "en": "Third application server in AZ-B (μ = 360 req/s)."
+        },
+        "how": {
+          "vi": "Gặp sự cố ngừng hoạt động từ giây 38 đến giây 56; chỉ được gỡ khỏi vòng chia tải sau khi Health Check phát hiện.",
+          "en": "Crashes at t = 38 s and recovers at t = 56 s; removed from rotation once health check triggers."
+        },
+        "why": {
+          "vi": "Cho thấy chu kỳ Health Check quyết định trực tiếp độ dài khoảng thời gian người dùng gặp lỗi 502/504.",
+          "en": "Demonstrates how health-check interval governs error duration during instance crashes."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm cơ sở dữ liệu đã nhân bản sẵn (tổng năng lực 6.000 req/s, độ trễ 3 ms).",
+          "en": "Replicated database tier (6,000 req/s capacity, 3 ms base latency)."
+        },
+        "how": {
+          "vi": "Lưu trữ bền vững dữ liệu cho cả 3 máy App với mức sử dụng rất thấp (ρ ≈ 0,10).",
+          "en": "Provides shared durable storage at low utilization (ρ ≈ 0.10)."
+        },
+        "why": {
+          "vi": "Đảm bảo tầng dữ liệu không gây nghẽn để bài học tập trung hoàn toàn vào hành vi của tầng Load Balancing.",
+          "en": "Kept ample so routing and failover behavior at the Load Balancer tier is isolated."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-vip": {
+      "inspector": {
+        "what": { "vi": "Kết nối HTTPS từ người dùng qua Internet tới địa chỉ Virtual IP.", "en": "HTTPS traffic from users to the public Virtual IP." },
+        "how": { "vi": "Mọi client chỉ gọi một điểm vào cố định duy nhất.", "en": "Single stable entry endpoint for all clients." },
+        "why": { "vi": "Che giấu số lượng máy chủ và sự kiện chuyển đổi dự phòng phía trong.", "en": "Hides internal scaling and failover events." }
+      }
+    },
+    "vip-lb": {
+      "inspector": {
+        "what": { "vi": "Luồng lưu lượng chính từ Virtual IP vào LB Chính.", "en": "Primary traffic path from Virtual IP to Active LB." },
+        "how": { "vi": "Nhận gần như toàn bộ lưu lượng khi LB Chính còn gửi nhịp tim hợp lệ.", "en": "Carries active traffic while Active LB heartbeats are healthy." },
+        "why": { "vi": "Đảm bảo độ trễ nội bộ thấp nhất trong trạng thái vận hành bình thường.", "en": "Provides lowest-latency routing during normal operation." }
+      }
+    },
+    "vip-standby": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": { "vi": "Đường chuyển đổi dự phòng từ Virtual IP sang LB Dự phòng.", "en": "Failover path from Virtual IP to Standby LB." },
+        "how": { "vi": "Ở chế độ chờ và tự động gánh 100% lưu lượng sau 0,5 giây nếu LB Chính ngừng phản hồi.", "en": "Takes over 100% of traffic within 0.5 s when Active LB fails." },
+        "why": { "vi": "Giữ tính sẵn sàng cao cho chính tầng cân bằng tải.", "en": "Provides high availability for the load-balancing tier itself." }
+      }
+    },
+    "lb-app1": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp từ LB Chính tới App A.", "en": "Internal hop from Active LB to App A." },
+        "how": { "vi": "Phân phối lưu lượng theo thuật toán đang chọn trên LB Chính.", "en": "Routes requests according to Active LB algorithm." },
+        "why": { "vi": "Đưa request vào máy chủ xử lý khoẻ mạnh.", "en": "Delivers requests to healthy compute capacity." }
+      }
+    },
+    "lb-app2": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp từ LB Chính tới App B.", "en": "Internal hop from Active LB to App B." },
+        "how": { "vi": "Với Round Robin vẫn nhận 1/3 lưu lượng dù App B chậm; với Least Connections lưu lượng tự giảm tương ứng.", "en": "Receives fixed 1/3 share under Round Robin or adaptive share under Least Connections." },
+        "why": { "vi": "Là nơi thể hiện tác động của thuật toán chia tải lên độ trễ đuôi p99.", "en": "Shows how routing choice affects tail latency on slow backends." }
+      }
+    },
+    "lb-app3": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp kèm thăm dò `/health` tới App C.", "en": "Internal routing and `/health` probe link to App C." },
+        "how": { "vi": "Tự ngắt lưu lượng sau khi Health Check phát hiện App C ngừng phản hồi.", "en": "Stops forwarding once health check detects App C crash." },
+        "why": { "vi": "Ngăn việc gửi request của người dùng vào máy chủ đã sập.", "en": "Prevents blackholing user requests into dead instances." }
+      }
+    }
+  },
+  "zones": {
+    "lb_pair": {
+      "nodeIds": ["lb", "lb_standby"],
+      "label": { "vi": "CẶP LOAD BALANCER HA", "en": "HA LOAD BALANCER PAIR" },
+      "tone": "purple"
+    },
+    "app_pool": {
+      "nodeIds": ["app1", "app2", "app3"],
+      "label": { "vi": "POOL MÁY CHỦ ỨNG DỤNG", "en": "APP SERVER POOL" },
+      "tone": "green"
+    }
+  },
+  "scenes": {
+    "s1-problem": {
+      "show": { "nodes": ["client", "app1", "app2", "app3", "db"] },
+      "state": {
+        "app1": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "600 / 360 req/s", "en": "600 / 360 req/s" }, "tone": "bad" }
+        },
+        "app2": {
+          "loadPct": 0,
+          "dimmed": true,
+          "badge": { "text": { "vi": "Bỏ không", "en": "Idle" }, "tone": "default" }
+        },
+        "app3": {
+          "loadPct": 0,
+          "dimmed": true,
+          "badge": { "text": { "vi": "Bỏ không", "en": "Idle" }, "tone": "default" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thêm máy nhưng thiếu điều phối", "en": "Servers Without Coordination" },
+        "lines": [
+          { "text": { "vi": "Client chỉ gọi IP của App A (ρ = 1,67)", "en": "Clients hit App A only (ρ = 1.67)" }, "tone": "bad" },
+          { "text": { "vi": "App B và App C rảnh hoàn toàn", "en": "App B and App C sit idle" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-even": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["app_pool"],
+      "state": {
+        "lb": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Round Robin", "en": "Round Robin" }, "tone": "ok" }
+        },
+        "app1": { "loadPct": 56 },
+        "app2": { "loadPct": 56 },
+        "app3": { "loadPct": 56 },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chia đều 600 req/s qua LB", "en": "Even Distribution via LB" },
+        "lines": [
+          { "text": { "vi": "Mỗi máy nhận 200 req/s (ρ = 0,56)", "en": "Each server gets 200 req/s (ρ = 0.56)" }, "tone": "good" },
+          { "text": { "vi": "Tổng năng lực cụm: 1.080 req/s", "en": "Cluster capacity: 1,080 req/s" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-rr-overload": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["app_pool"],
+      "state": {
+        "lb": {
+          "loadPct": 8,
+          "badge": { "text": { "vi": "Round Robin", "en": "Round Robin" }, "tone": "warn" }
+        },
+        "app1": { "loadPct": 56 },
+        "app2": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "55 ms · ρ = 1,22", "en": "55 ms · ρ = 1.22" }, "tone": "bad" }
+        },
+        "app3": { "loadPct": 56 },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "lb-app2": { "style": "danger", "label": { "vi": "200 req/s", "en": "200 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tác vụ nặng làm nghẽn Round Robin", "en": "Heavy Requests Break Round Robin" },
+        "lines": [
+          { "text": { "vi": "App B giảm năng lực còn ~164 req/s", "en": "App B drops to ~164 req/s capacity" }, "tone": "amber" },
+          { "text": { "vi": "Vẫn bị giao 200 req/s → hàng đợi tràn", "en": "Still sent 200 req/s → queue overflows" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-least-conn": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["app_pool"],
+      "state": {
+        "lb": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Least Connections", "en": "Least Connections" }, "tone": "ok" }
+        },
+        "app1": {
+          "loadPct": 68,
+          "badge": { "text": { "vi": "≈ 245 req/s", "en": "≈ 245 req/s" }, "tone": "ok" }
+        },
+        "app2": {
+          "loadPct": 68,
+          "badge": { "text": { "vi": "≈ 110 req/s", "en": "≈ 110 req/s" }, "tone": "ok" }
+        },
+        "app3": {
+          "loadPct": 68,
+          "badge": { "text": { "vi": "≈ 245 req/s", "en": "≈ 245 req/s" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Least Connections tự san tải", "en": "Least Connections Adapts" },
+        "lines": [
+          { "text": { "vi": "Ưu tiên máy ít kết nối đang mở nhất", "en": "Routes to fewest active connections" }, "tone": "good" },
+          { "text": { "vi": "Cả 3 máy cân bằng quanh ρ ≈ 0,68", "en": "All 3 servers balance near ρ ≈ 0.68" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-live-algo": {
+      "show": { "nodes": "*" },
+      "zones": ["lb_pair", "app_pool"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng 600 req/s (0 → 80 s)", "en": "600 req/s Live Run (0 → 80 s)" },
+        "lines": [
+          { "text": { "vi": "t = 10 s: App B chậm (+35 ms)", "en": "t = 10 s: App B slows (+35 ms)" }, "tone": "amber" },
+          { "text": { "vi": "t = 38 s: App C sập · t = 64 s: LB sập", "en": "t = 38 s: App C down · t = 64 s: LB down" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-healthcheck": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["app_pool"],
+      "state": {
+        "lb": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "GET /health · 2 s", "en": "GET /health · 2 s" }, "tone": "ok" }
+        },
+        "app1": { "loadPct": 83, "badge": { "text": { "vi": "300 req/s", "en": "300 req/s" }, "tone": "ok" } },
+        "app2": { "loadPct": 83, "badge": { "text": { "vi": "300 req/s", "en": "300 req/s" }, "tone": "ok" } },
+        "app3": { "dead": true, "badge": { "text": { "vi": "Ngừng phản hồi", "en": "Unhealthy" }, "tone": "bad" } },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "lb-app3": { "style": "off", "label": { "vi": "Đã gỡ khỏi pool", "en": "Removed" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Health Check cô lập máy lỗi", "en": "Health Check Isolates Crash" },
+        "lines": [
+          { "text": { "vi": "App C sập → gỡ khỏi pool sau vài giây", "en": "App C crashes → removed within seconds" }, "tone": "good" },
+          { "text": { "vi": "App A & App B chia nhau 600 req/s", "en": "App A & App B absorb 600 req/s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-standby": {
+      "show": { "nodes": "*" },
+      "zones": ["lb_pair", "app_pool"],
+      "state": {
+        "vip": {
+          "loadPct": 2,
+          "highlighted": true,
+          "badge": { "text": { "vi": "VIP chuyển đích", "en": "VIP Failover" }, "tone": "ok" }
+        },
+        "lb": {
+          "dead": true,
+          "badge": { "text": { "vi": "Mất Heartbeat", "en": "No Heartbeat" }, "tone": "bad" }
+        },
+        "lb_standby": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Tiếp quản VIP", "en": "Active Now" }, "tone": "ok" }
+        },
+        "app1": { "loadPct": 56 },
+        "app2": { "loadPct": 56 },
+        "app3": { "loadPct": 56 },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "vip-lb": { "style": "cut" },
+        "vip-standby": { "style": "solid", "label": { "vi": "600 req/s", "en": "600 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dự phòng Active-Standby cho LB", "en": "Active-Standby LB Failover" },
+        "lines": [
+          { "text": { "vi": "LB Chính sập → mất nhịp tim VRRP", "en": "Active LB crashes → VRRP timeout" }, "tone": "bad" },
+          { "text": { "vi": "LB Dự phòng nhận VIP trong < 1 giây", "en": "Standby LB claims VIP in < 1 s" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-l4-l7": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["app_pool"],
+      "state": {
+        "lb": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Layer 7 HTTP", "en": "Layer 7 HTTP" }, "tone": "ok" }
+        },
+        "app1": { "loadPct": 45, "badge": { "text": { "vi": "/api/users/*", "en": "/api/users/*" }, "tone": "default" } },
+        "app2": { "loadPct": 60, "badge": { "text": { "vi": "/api/orders/*", "en": "/api/orders/*" }, "tone": "default" } },
+        "app3": { "loadPct": 25, "badge": { "text": { "vi": "Draining...", "en": "Draining..." }, "tone": "warn" } },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "lb-app1": { "label": { "vi": "/users", "en": "/users" } },
+        "lb-app2": { "label": { "vi": "/orders", "en": "/orders" } },
+        "lb-app3": { "style": "dashed", "label": { "vi": "Xả kết nối dở", "en": "Draining" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Layer 7 & Connection Draining", "en": "Layer 7 & Connection Draining" },
+        "lines": [
+          { "text": { "vi": "Định tuyến theo URL path / header", "en": "Route by URL path and headers" }, "tone": "good" },
+          { "text": { "vi": "Draining: chờ xong việc cũ mới tắt máy", "en": "Draining finishes inflight requests" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-live-fix": {
+      "show": { "nodes": "*" },
+      "zones": ["lb_pair", "app_pool"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thử thách cấu hình 3 lớp bảo vệ", "en": "3-Layer Resilience Challenge" },
+        "lines": [
+          { "text": { "vi": "1. Chọn thuật toán thích ứng độ trễ", "en": "1. Adaptive routing algorithm" }, "tone": "plain" },
+          { "text": { "vi": "2. Rút ngắn Health Check + bật Standby", "en": "2. Fast health check + Standby LB" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["lb_pair", "app_pool"],
+      "state": {
+        "vip": { "loadPct": 2 },
+        "lb": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Least-Conn + HC", "en": "Least-Conn + HC" }, "tone": "ok" }
+        },
+        "lb_standby": {
+          "loadPct": 2,
+          "badge": { "text": { "vi": "Standby sẵn sàng", "en": "Warm Standby" }, "tone": "ok" }
+        },
+        "app1": { "loadPct": 56 },
+        "app2": { "loadPct": 56 },
+        "app3": { "loadPct": 56 },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": " Bốn trụ cột của Load Balancing", "en": "Four Load Balancing Pillars" },
+        "lines": [
+          { "text": { "vi": "Thuật toán đúng · Health Check chuẩn", "en": "Right algorithm · Safe health checks" }, "tone": "good" },
+          { "text": { "vi": "Cặp Active-Standby · Layer 4 / Layer 7", "en": "Active-Standby · Layer 4 vs Layer 7" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "balance": {
+      "sim": "S2-01/balance",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "chaos": ["kill", "slow"],
+        "knobs": [
+          { "node": "lb", "key": "algorithm" },
+          { "node": "lb", "key": "healthCheckSec" },
+          { "node": "lb_standby", "key": "enabled" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 120, "badAbove": 220 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 220 },
+        { "metric": "errorRate", "value": 0.02 }
+      ],
+      "focus": { "nodes": ["lb", "app2", "app3"] }
+    },
+    "fix": {
+      "sim": "S2-01/balance",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 2,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          { "node": "lb", "key": "algorithm" },
+          { "node": "lb", "key": "healthCheckSec" },
+          { "node": "lb_standby", "key": "enabled" }
+        ]
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 120, "badAbove": 220 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.02 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 220 },
+        { "metric": "errorRate", "value": 0.02 }
+      ],
+      "focus": { "nodes": ["lb", "lb_standby", "app2", "app3"] }
+    }
+  }
+}

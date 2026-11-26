@@ -1,0 +1,377 @@
+{
+  "version": 1,
+  "base": "s1-why-shard",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng truy cập mạng xã hội / sàn thương mại điện tử ở mức 5.200 req/s.",
+          "en": "Users generating 5,200 req/s of social/commerce traffic."
+        },
+        "how": {
+          "vi": "Bình thường phân tán trên hàng trăm nghìn mục, nhưng khi có bài đăng nổi tiếng sẽ dồn 70% lượt xem vào đúng 1 khoá.",
+          "en": "Normally spread across 100k items, but spikes 70% onto a single celebrity key."
+        },
+        "why": {
+          "vi": "Phân phối lệch Zipf là đặc tính tự nhiên của dữ liệu đời thực cần tính trước khi chọn Shard Key.",
+          "en": "Power-law Zipf skew is inherent in real-world traffic and challenges naive sharding."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Bộ cân bằng tải chia đều request vào tầng Shard Router App.", "en": "Balances incoming traffic across Shard Router App instances." },
+        "how": { "vi": "Phân phối Round-robin không phụ thuộc khoá dữ liệu.", "en": "Stateless Round-robin across App servers." },
+        "why": { "vi": "Giữ tầng ứng dụng luôn đều tải ngay cả khi một khoá dữ liệu bên dưới bị nóng.", "en": "Keeps App CPU even even during a data-tier hot key." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "hash",
+      "label": { "vi": "Shard Router App", "en": "Shard Router App" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng ứng dụng tính toán vị trí phân mảnh từ Shard Key (5 instance, tổng 10.000 req/s).",
+          "en": "Application router computing target partition from the Shard Key."
+        },
+        "how": {
+          "vi": "Tra bảng ánh xạ khoảng hoặc tính hàm băm hash(shard_key) để biết bản ghi nằm ở shard nào.",
+          "en": "Evaluates range map or hash(shard_key) to route directly to the owning shard."
+        },
+        "why": {
+          "vi": "Tránh phải hỏi tất cả các máy khi truy vấn đã có sẵn Shard Key trong mệnh đề lọc.",
+          "en": "Targets a single partition whenever queries include the Shard Key."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Hot-Key Cache", "en": "Hot-Key Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng bộ nhớ đệm tốc độ cao (50.000 ops/s) kèm Singleflight đứng chắn trước cụm Shards.",
+          "en": "High-throughput in-memory cache (50,000 ops/s) with Singleflight fronting the shards."
+        },
+        "how": {
+          "vi": "Ở cấu hình ban đầu chỉ giữ 4.000 / 100.000 key (Hit Ratio ~18%); khi mở rộng đủ tập làm việc, hấp thụ 90% lượt đọc nóng.",
+          "en": "Starts undersized at 4k/100k keys (~18% hit); expanding capacity absorbs 90% of hot reads."
+        },
+        "why": {
+          "vi": "Giải cứu phân mảnh đang giữ khoá nổi tiếng khỏi hàng nghìn lượt đọc lặp lại mỗi giây.",
+          "en": "Shields the single hot partition from repetitive celebrity-key reads."
+        }
+      }
+    },
+    "shard_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "NoSQL Shards", "en": "NoSQL Shards" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm cơ sở dữ liệu NoSQL phân mảnh ngang (mặc định 4 shard × 3.000 = 12.000 ops/s danh nghĩa).",
+          "en": "Partitioned NoSQL cluster (4 shards × 3,000 = 12,000 ops/s nominal capacity)."
+        },
+        "how": {
+          "vi": "Mọi truy cập có cùng một khoá luôn rơi vào đúng 1 shard cố định; khi 1 khoá chiếm 70% tải, shard đó nhận 77,5% lưu lượng.",
+          "en": "Identical keys always hash to the same shard; a 70% hot key concentrates 77.5% of load onto one shard."
+        },
+        "why": {
+          "vi": "Thông lượng thực tế của cả cụm bị kéo tụt về giới hạn của phân mảnh bận nhất: μ_cụm = μ_shard / f_hot.",
+          "en": "Effective cluster throughput collapses to the busiest shard's limit: μ_eff = μ_shard / f_hot."
+        },
+        "tip": {
+          "vi": "Thêm shard chỉ chia nhỏ phần lưu lượng nền còn lại, không thể tách đôi một khoá nóng đơn lẻ.",
+          "en": "Adding shards only subdivides cold traffic and cannot split a single hot key."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng từ Internet (5.200 req/s).", "en": "Client traffic at 5,200 req/s." },
+        "how": { "vi": "Gồm 90% truy vấn đọc và 10% thao tác ghi.", "en": "90% reads and 10% writes." },
+        "why": { "vi": "Tải đầu vào kiểm tra độ cân bằng giữa các phân mảnh.", "en": "Tests partition load distribution." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường truyền nội bộ từ Load Balancer sang cụm App.", "en": "Internal link to App tier." },
+        "how": { "vi": "Chia đều cho 5 máy ứng dụng.", "en": "Splits evenly across 5 App instances." },
+        "why": { "vi": "Đảm bảo tầng định tuyến luôn còn dư công suất.", "en": "Maintains router headroom." }
+      }
+    },
+    "app-cache": {
+      "inspector": {
+        "what": { "vi": "Đường kiểm tra bộ nhớ đệm trước khi xuống phân mảnh.", "en": "Cache lookup hop before hitting storage shards." },
+        "how": { "vi": "Trả kết quả trong ~0,5 ms nếu trúng khoá trong RAM.", "en": "Serves cached keys in ~0.5 ms." },
+        "why": { "vi": "Lớp phòng thủ đầu tiên cho các khoá đọc tần suất cao.", "en": "First line of defense against read hot spots." }
+      }
+    },
+    "cache-shards": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn xuống cụm NoSQL Shards khi Cache Miss hoặc ghi.", "en": "Downstream read-miss and write path to NoSQL Shards." },
+        "how": { "vi": "Định tuyến thẳng vào shard sở hữu khoá theo hàm băm.", "en": "Routes each key deterministically to its owning shard." },
+        "why": { "vi": "Trở thành cổ chai ngay khi một shard nhận lưu lượng vượt 3.000 ops/s.", "en": "Bottlenecks as soon as any single shard exceeds 3,000 ops/s." }
+      }
+    }
+  },
+  "zones": {
+    "data-tier": {
+      "nodeIds": ["cache", "shard_db"],
+      "label": { "vi": "TẦNG DỮ LIỆU PHÂN MẢNH", "en": "PARTITIONED DATA TIER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-why-shard": {
+      "show": { "nodes": ["client", "lb", "app", "shard_db"] },
+      "state": {
+        "app": { "loadPct": 52 },
+        "shard_db": {
+          "loadPct": 36,
+          "highlighted": true,
+          "badge": { "text": { "vi": "4 Shards × 3.000", "en": "4 Shards × 3,000" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Phân mảnh ngang (Horizontal Sharding)", "en": "Horizontal Sharding" },
+        "lines": [
+          { "text": { "vi": "Chia tập dữ liệu lớn thành N phần độc lập trên N máy", "en": "Splits dataset across N independent machines" }, "tone": "good" },
+          { "text": { "vi": "Mở rộng tuyến tính cả dung lượng đĩa lẫn thông lượng ghi", "en": "Scales both storage size and write throughput" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-range-hotspot": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Range Sharding theo thời gian / ID tự tăng: dồn nóng vào phân mảnh cuối",
+          "en": "Range Sharding by Timestamp / Auto-ID: Hot Spot on Latest Shard"
+        },
+        "subtitle": {
+          "vi": "Shard 1..3 giữ dữ liệu lịch sử ngồi rảnh · mọi đơn hàng và bài đăng mới dồn cả vào Shard 4",
+          "en": "Historical shards sit idle while 100% of new writes hammer Shard 4"
+        },
+        "cells": ["Shard 1 (Tháng 1)", "Shard 2 (Tháng 2)", "Shard 3 (Tháng 3)", "Shard 4 (Hôm nay)"],
+        "activeIndices": [3],
+        "pointers": [
+          { "index": 0, "label": "5% tải", "tone": "blue" },
+          { "index": 3, "label": "78% tải · QUÁ TẢI!", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Ưu & Nhược", "en": "Trade-off" },
+          "value": { "vi": "Quét khoảng (WHERE created_at BETWEEN...) nhanh nhưng dễ lệch tải nghiêm trọng", "en": "Fast range scans, severe write hot-spotting on monotonic keys" },
+          "tone": "orange"
+        }
+      }
+    },
+    "s3-hash-even": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Khoá đầu vào liên tiếp", "en": "Sequential Input Keys" },
+        "rightTitle": { "vi": "Phân phối đều qua hash(key) % 4", "en": "Even Spread via hash(key) % 4" },
+        "names": [
+          { "id": "k1", "name": "order:1001", "note": { "vi": "hash % 4 = 2", "en": "hash % 4 = 2" }, "targetId": "s2" },
+          { "id": "k2", "name": "order:1002", "note": { "vi": "hash % 4 = 0", "en": "hash % 4 = 0" }, "targetId": "s0" },
+          { "id": "k3", "name": "order:1003", "note": { "vi": "hash % 4 = 3", "en": "hash % 4 = 3" }, "targetId": "s3" },
+          { "id": "k4", "name": "order:1004", "note": { "vi": "hash % 4 = 1", "en": "hash % 4 = 1" }, "targetId": "s1" }
+        ],
+        "objects": [
+          { "id": "s0", "typeTag": "SHARD 0", "value": "≈ 25% lưu lượng", "tone": "green" },
+          { "id": "s1", "typeTag": "SHARD 1", "value": "≈ 25% lưu lượng", "tone": "blue" },
+          { "id": "s2", "typeTag": "SHARD 2", "value": "≈ 25% lưu lượng", "tone": "purple" },
+          { "id": "s3", "typeTag": "SHARD 3", "value": "≈ 25% lưu lượng", "tone": "yellow" }
+        ]
+      }
+    },
+    "s4-live-hotkey": {
+      "show": { "nodes": "*" },
+      "zones": ["data-tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự kiện t = 15 s: Khoá nổi tiếng chiếm 70% tải", "en": "Event t = 15 s: Celebrity Key Takes 70% Traffic" },
+        "lines": [
+          { "text": { "vi": "t < 15 s: 4 shard đều nhau, ρ = 0,36 êm ái", "en": "t < 15 s: 4 even shards, ρ = 0.36 healthy" }, "tone": "good" },
+          { "text": { "vi": "t ≥ 15 s: 1 shard gánh 77,5% → ρ = 1,13 quá tải!", "en": "t ≥ 15 s: 1 shard takes 77.5% → ρ = 1.13 overloaded!" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-trap-shards": {
+      "show": { "nodes": "*" },
+      "zones": ["data-tier"],
+      "state": {
+        "app": { "loadPct": 52 },
+        "cache": {
+          "loadPct": 10,
+          "badge": { "text": { "vi": "4k key · Hit 18%", "en": "4k keys · Hit 18%" }, "tone": "warn" }
+        },
+        "shard_db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "16 Shards vẫn ρ > 1!", "en": "16 Shards still ρ > 1!" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "cache-shards": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bẫy mở rộng: nhân 4 lần số Shard vẫn nghẽn", "en": "Scaling Trap: 4× More Shards Still Saturates" },
+        "chart": { "utilPct": 99 },
+        "lines": [
+          { "text": { "vi": "hash('celeb_post') luôn ra cùng 1 con số duy nhất", "en": "hash('celeb_post') always maps to 1 shard" }, "tone": "bad" },
+          { "text": { "vi": "16 shards: μ_cụm chỉ nhích từ 3.871 lên 4.174 ops/s", "en": "16 shards: μ_eff barely moves (3,871 → 4,174 ops/s)" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-fix-hotkey": {
+      "show": { "nodes": "*" },
+      "zones": ["data-tier"],
+      "state": {
+        "app": { "loadPct": 52 },
+        "cache": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hit 90% · chặn đọc nóng", "en": "Hit 90% · absorbs hot reads" }, "tone": "ok" }
+        },
+        "shard_db": {
+          "loadPct": 26,
+          "highlighted": true,
+          "badge": { "text": { "vi": "4 Shards · ρ = 0,26", "en": "4 Shards · ρ = 0.26" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Hai cách giải cứu Shard nóng", "en": "Two Remedies for Hot Keys" },
+        "lines": [
+          { "text": { "vi": "Đọc nóng: Cache + Singleflight (hoặc Local In-process Cache)", "en": "Hot reads: Cache + Singleflight (or L1 local cache)" }, "tone": "good" },
+          { "text": { "vi": "Ghi nóng: thêm hậu tố key#0..7 để rải ra K shard", "en": "Hot writes: Key Salting key#0..7 across K shards" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-scatter-gather": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Truy vấn thiếu Shard Key (Scatter-Gather): phải hỏi tất cả N phân mảnh",
+          "en": "Query Without Shard Key (Scatter-Gather): Fan-out Across All N Shards"
+        },
+        "nodes": [
+          { "id": "rt", "x": 0, "y": -92, "label": "SELECT * WHERE status = 'PENDING'", "sub": { "vi": "Không có user_id → hỏi cả 4 nơi", "en": "Missing user_id → broadcast to all 4" }, "tone": "orange" },
+          { "id": "sh0", "x": -205, "y": 36, "label": "Shard 0 (4 ms)", "sub": { "vi": "Xong sớm vẫn phải đợi", "en": "Waits for slowest" }, "tone": "green" },
+          { "id": "sh1", "x": -68, "y": 36, "label": "Shard 1 (5 ms)", "sub": { "vi": "Xong sớm", "en": "Done early" }, "tone": "green" },
+          { "id": "sh2", "x": 68, "y": 36, "label": "Shard 2 (4 ms)", "sub": { "vi": "Xong sớm", "en": "Done early" }, "tone": "green" },
+          { "id": "sh3", "x": 205, "y": 36, "label": "Shard 3 (85 ms)", "sub": { "vi": "Đang GC → kéo p99 cả câu!", "en": "GC pause dictates tail latency!" }, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "rt", "to": "sh0", "label": "quét" },
+          { "from": "rt", "to": "sh1", "label": "quét" },
+          { "from": "rt", "to": "sh2", "label": "quét" },
+          { "from": "rt", "to": "sh3", "label": "chậm nhất!", "style": "danger" }
+        ]
+      }
+    },
+    "s8-modn-pain": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Nhược điểm của hash(key) mod N khi thêm máy thứ 5 (N: 4 → 5)",
+          "en": "Resharding Pain of hash(key) mod N When Adding a 5th Node"
+        },
+        "subtitle": {
+          "vi": "Số dư đổi hàng loạt: N / (N + 1) = 4 / 5 = 80% tổng số bản ghi phải chuyển sang máy khác!",
+          "en": "Remainders shift everywhere: N / (N + 1) = 80% of all rows must migrate across the network!"
+        },
+        "cells": ["h=1: 1→1 (giữ)", "h=4: 0→4 (DỜI)", "h=5: 1→0 (DỜI)", "h=6: 2→1 (DỜI)", "h=7: 3→2 (DỜI)"],
+        "activeIndices": [1, 2, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "chỉ 20% đứng yên", "tone": "green" },
+          { "index": 2, "label": "80% phải chép lại!", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Bước tiếp theo (S2-10)", "en": "Next Lesson (S2-10)" },
+          "value": { "vi": "Consistent Hashing giảm tỷ lệ dời khoá từ 80% xuống chỉ còn 1 / (N + 1) = 20%", "en": "Consistent Hashing cuts key movement from 80% down to 1 / (N + 1) = 20%" },
+          "tone": "purple"
+        }
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["data-tier"],
+      "state": {
+        "app": { "loadPct": 52 },
+        "cache": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Chặn đọc nóng", "en": "Hot-read shield" }, "tone": "ok" }
+        },
+        "shard_db": {
+          "loadPct": 26,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hash Key + Salting", "en": "Hash Key + Salting" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba tiêu chí chọn Shard Key chuẩn", "en": "Three Criteria for a Good Shard Key" },
+        "lines": [
+          { "text": { "vi": "1. Độ đa dạng cao (High Cardinality) · 2. Tần suất đều", "en": "1. High cardinality · 2. Even access frequency" }, "tone": "good" },
+          { "text": { "vi": "3. Xuất hiện trong hầu hết câu truy vấn chính", "en": "3. Present in primary query predicates" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "hotkey": {
+      "sim": "S2-09/hotkey",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["hot-key", "expire-cache"],
+        "knobs": [
+          { "node": "shard_db", "key": "shards" },
+          { "node": "cache", "key": "capacityKeys" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 200 } },
+        { "metric": "costPerHour", "label": { "vi": "Chi phí", "en": "Cost" }, "format": "usd-hour", "tone": { "warnAbove": 4.0, "badAbove": 8.0 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["cache", "shard_db"] }
+    }
+  }
+}

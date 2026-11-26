@@ -1,0 +1,244 @@
+{
+  "sims": [
+    {
+      "id": "S4-08/write-heavy",
+      "scenario": {
+        "id": "S4-08/write-heavy",
+        "seed": 4408,
+        "durationSec": 70,
+        "mix": {
+          "readRatio": 0.1
+        },
+        "clientTimeoutMs": 1500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "ramp",
+          "from": 10000,
+          "to": 85000,
+          "overSec": 40
+        },
+        "events": [
+          {
+            "at": 50,
+            "type": "slowdown",
+            "node": "lsm_db",
+            "addMs": 8,
+            "durationSec": 6
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Cảm biến IoT",
+                "en": "IoT Sensors"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {}
+            },
+            {
+              "id": "ingest_gw",
+              "kind": "gateway",
+              "label": {
+                "vi": "Ingest Gateway",
+                "en": "Ingest Gateway"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance Gateway",
+                    "en": "Gateway instances"
+                  },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 35000
+              },
+              "latency": {
+                "baseMs": 1.2,
+                "cv": 0.2
+              },
+              "params": {
+                "replicas": 4,
+                "poolSize": 120
+              }
+            },
+            {
+              "id": "btree_db",
+              "kind": "sql",
+              "label": {
+                "vi": "B-Tree Engine",
+                "en": "B-Tree Engine"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.9,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": {
+                    "vi": "Bật nhánh đối chiếu B-Tree",
+                    "en": "Enable B-Tree mirror"
+                  },
+                  "default": true,
+                  "changeCost": 1
+                },
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy B-Tree",
+                    "en": "B-Tree size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Ghi trang ngẫu nhiên chạm trần IOPS đĩa",
+                    "en": "Random page writes hit disk IOPS ceiling"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 38000
+              },
+              "latency": {
+                "baseMs": 3.2,
+                "cv": 0.3
+              },
+              "params": {
+                "enabled": true,
+                "shards": 1,
+                "poolSize": 200,
+                "sizeFactor": 1,
+                "queueLimit": 40000
+              }
+            },
+            {
+              "id": "lsm_db",
+              "kind": "nosql",
+              "label": {
+                "vi": "LSM-Tree Engine",
+                "en": "LSM-Tree Engine"
+              },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.7,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số phân vùng LSM",
+                    "en": "LSM partitions"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Compaction chạy nền tranh băng thông ổ cứng",
+                    "en": "Background compaction contends for disk I/O"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 120000
+              },
+              "latency": {
+                "baseMs": 1.0,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "poolSize": 1500,
+                "queueLimit": 120000
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-gw",
+              "from": "client",
+              "to": "ingest_gw",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "gw-btree",
+              "from": "ingest_gw",
+              "to": "btree_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "gw-lsm",
+              "from": "ingest_gw",
+              "to": "lsm_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "ingest_gw": "all-parallel"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "btree_db"
+      }
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S1-01.q1",
+    "type": "mc",
+    "q": "Vì sao hệ thống bắt buộc phải kiểm tra lại giá sản phẩm và quyền truy cập ở App Server dù giao diện Client đã kiểm tra?",
+    "code": "",
+    "choices": [
+      "Vì trình duyệt không thể chạy các phép tính số học chính xác",
+      "Vì môi trường Client nằm ngoài tầm kiểm soát và người dùng có thể sửa mã hoặc gửi gói tin trực tiếp tới API",
+      "Vì Load Balancer tự động xoá mọi dữ liệu đã kiểm tra ở Client",
+      "Vì Database chỉ chấp nhận truy vấn xuất phát từ App Server"
+    ],
+    "answer": 1,
+    "explain": "Client là tầng trình diễn nằm trên thiết bị của người dùng nên mã nguồn và request đều có thể bị chỉnh sửa. Kiểm tra ở Client chỉ phục vụ phản hồi giao diện nhanh, còn tính toàn vẹn bảo mật và nghiệp vụ phải do Server quyết định."
+  },
+  {
+    "id": "S1-01.q2",
+    "type": "tf",
+    "q": "Thiết kế App Server theo kiểu Stateless giúp bất kỳ instance nào trong cụm cũng xử lý được request tiếp theo của cùng một người dùng mà không cần Sticky Session.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "App Server Stateless không lưu trạng thái phiên trong bộ nhớ cục bộ của riêng một máy mà đọc từ token hoặc kho lưu trữ chung. Nhờ đó Load Balancer phân phối tự do sang mọi máy khoẻ mạnh và dễ dàng mở rộng ngang."
+  },
+  {
+    "id": "S1-01.q3",
+    "type": "output",
+    "q": "Hệ thống nhận 200 req/s gồm 90% lượt đọc và 10% lượt ghi. Cache phục vụ thành công 80% lượt đọc, còn lượt đọc trượt và toàn bộ lượt ghi đi xuống Database. Database nhận bao nhiêu req/s? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "56",
+    "explain": "Số lượt đọc là 200 × 0,9 = 180 req/s; phần bị trượt Cache Miss là 180 × (1 − 0,8) = 36 req/s. Cộng thêm 20 req/s lượt ghi bắt buộc xuống Database, tổng lưu lượng Database phải xử lý là 36 + 20 = 56 req/s."
+  },
+  {
+    "id": "S1-01.q4",
+    "type": "mc",
+    "q": "Khi một câu truy vấn tìm người dùng theo email làm Database chậm do quét toàn bảng, hướng xử lý nào nên thực hiện đầu tiên?",
+    "code": "",
+    "choices": [
+      "Phân mảnh bảng người dùng sang nhiều máy bằng Sharding",
+      "Thêm nhiều App Server phía sau Load Balancer",
+      "Tạo chỉ mục (Index) phù hợp trên cột email và kiểm tra lại kế hoạch thực thi truy vấn",
+      "Tắt tính năng kiểm tra sức khoẻ Health Check trên Load Balancer"
+    ],
+    "answer": 2,
+    "explain": "Thứ tự tối ưu Database hợp lý luôn bắt đầu từ việc sửa câu truy vấn và đánh chỉ mục vì chi phí thấp nhưng giảm thẳng khối lượng đọc đĩa từ quét toàn bảng xuống vài trang dữ liệu. Sharding chỉ dùng khi một máy đã chạm giới hạn phần cứng."
+  },
+  {
+    "id": "S1-01.q5",
+    "type": "mc",
+    "q": "Trường hợp nào sau đây ít phù hợp nhất để đặt thêm tầng Cache đọc phía trước Database?",
+    "code": "",
+    "choices": [
+      "Trang danh mục sản phẩm có tỉ lệ đọc gấp 20 lần ghi và ít thay đổi trong ngày",
+      "Bài viết tin tức công khai được hàng chục nghìn người cùng xem",
+      "Bộ đếm số dư hoặc tồn kho cập nhật liên tục mỗi giây và yêu cầu chính xác tức thời",
+      "Kết quả tổng hợp báo cáo tốn 250 ms truy vấn nhưng chỉ cập nhật mỗi 10 phút"
+    ],
+    "answer": 2,
+    "explain": "Cache phát huy tác dụng khi dữ liệu đọc lặp lại nhiều lần và ít biến động. Với dữ liệu ghi liên tục kèm yêu cầu chính xác tuyệt đối ngay lập tức, bản lưu trên Cache liên tục bị xoá hoặc lỗi thời nên tăng độ phức tạp mà Hit Ratio vẫn thấp."
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "id": "S4-05",
+  "slug": "S4-05-rate-limiting-and-load-control",
+  "level": 4,
+  "order": 6,
+  "title": "Rate Limiting và kiểm soát tải đầu vào: Token Bucket và hạn mức phân tán",
+  "summary": "Bảo vệ API khỏi lưu lượng lạm dụng bằng Token Bucket (ratePerSec, burst), so sánh 5 thuật toán giới hạn tốc độ, đồng bộ bộ đếm nguyên tử trên Redis giữa nhiều Gateway và thiết kế HTTP 429 cùng hạn mức theo Tenant.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích cơ chế Token Bucket thông qua hai tham số độc lập ratePerSec và burst để bảo vệ Goodput của người dùng hợp lệ" },
+    { "vi": "So sánh độ chính xác, chi phí bộ nhớ và hành vi tại ranh giới cửa sổ của Fixed Window, Sliding Log, Sliding Counter, Token Bucket và Leaky Bucket" },
+    { "vi": "Xử lý bài toán bộ đếm phân tán trên nhiều API Gateway bằng Redis Lua Script nguyên tử kết hợp bộ đệm cục bộ ngắn hạn" },
+    { "vi": "Cấu hình bộ Header phản hồi HTTP 429 (Retry-After, RateLimit-*) và phân tầng hạn mức theo gói khách hàng (Multi-tenant)" }
+  ],
+  "tags": ["rate-limiting", "token-bucket", "leaky-bucket", "sliding-window", "api-gateway", "redis", "multi-tenant"],
+  "prerequisites": ["S1-03", "S2-01", "S2-02"],
+  "related": ["S4-01", "S4-10", "S4-11"],
+  "dtsRef": "rate-limiting",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-5-rate-limiting-and-load-control.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-5-rate-limiting-and-load-control.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: tách phần Back-pressure, Load Shedding và Circuit Breaker sang hai bài chuyên sâu S4-10 và S4-11; dựng mô phỏng trực tiếp Token Bucket (ratePerSec, burst) bảo vệ Goodput trước script cào dữ liệu, đối chiếu 5 thuật toán giới hạn tốc độ, đồng bộ bộ đếm phân tán bằng Redis Lua nguyên tử, chuẩn hoá HTTP 429 headers và hạn mức theo Tenant."
+  }
+}

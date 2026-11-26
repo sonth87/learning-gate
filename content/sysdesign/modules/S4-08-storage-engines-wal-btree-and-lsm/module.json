@@ -1,0 +1,36 @@
+{
+  "id": "S4-08",
+  "slug": "S4-08-storage-engines-wal-btree-and-lsm",
+  "level": 4,
+  "order": 5,
+  "title": "Storage Engine: WAL, B-Tree và LSM-Tree",
+  "summary": "Tìm hiểu điều thực sự diễn ra bên dưới một lệnh ghi cơ sở dữ liệu: nhật ký ghi trước (WAL), Group Commit và Checkpoint để khôi phục sau mất điện; đối chiếu B-Tree cập nhật tại chỗ với LSM-Tree (MemTable, SSTable, Compaction, Bloom Filter) và lưu trữ theo dòng so với theo cột.",
+  "durationMin": 17,
+  "difficulty": "Intermediate",
+  "objectives": [
+    {
+      "vi": "Giải thích cơ chế Nhật ký ghi trước (Write-Ahead Log — WAL), Group Commit và Checkpoint giúp đảm bảo tính bền vững mà không cần xả trang dữ liệu ngẫu nhiên ở mọi giao dịch",
+      "en": "Explain how Write-Ahead Logging (WAL), Group Commit, and Checkpoints guarantee crash durability without random page flushes per commit"
+    },
+    {
+      "vi": "Đối chiếu kiến trúc B-Tree cập nhật trang tại chỗ (tối ưu cho đọc) với LSM-Tree ghi tuần tự vào MemTable rồi xả thành SSTable bất biến (tối ưu cho ghi cường độ cao)",
+      "en": "Contrast in-place B-Tree page updates (read-optimized) with sequential LSM-Tree MemTable/SSTable writes (write-optimized)"
+    },
+    {
+      "vi": "Mô tả vai trò của tiến trình Compaction chạy nền, thẻ xoá Tombstone và bộ lọc xác suất Bloom Filter trên đường đọc của LSM-Tree",
+      "en": "Describe background Compaction, Tombstone deletes, and how Bloom Filters prevent unnecessary SSTable disk reads"
+    },
+    {
+      "vi": "Phân biệt bố cục lưu trữ theo dòng (Row-oriented cho OLTP) với lưu trữ theo cột (Column-oriented cho truy vấn phân tích OLAP và nén dữ liệu)",
+      "en": "Distinguish Row-oriented storage (OLTP) from Column-oriented storage (OLAP scans and compression)"
+    }
+  ],
+  "tags": ["storage-engine", "wal", "b-tree", "lsm-tree", "sstable", "compaction", "bloom-filter", "columnar"],
+  "prerequisites": ["S2-07", "S3-07", "S4-04"],
+  "related": ["S2-08", "S4-01"],
+  "dtsRef": "storage-engines",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về nhật ký ghi trước (WAL), so sánh B-Tree cập nhật tại chỗ với LSM-Tree (MemTable, SSTable, Compaction, Bloom Filter) và lưu trữ theo dòng so với theo cột."
+  }
+}

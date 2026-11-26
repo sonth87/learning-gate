@@ -1,0 +1,396 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Client" },
+      "inspector": {
+        "what": {
+          "vi": "Trình duyệt và ứng dụng di động khởi tạo request đọc và cập nhật hồ sơ.",
+          "en": "Browsers and mobile apps initiating profile read and update requests."
+        },
+        "how": {
+          "vi": "Gửi HTTP request qua mạng Internet (70% GET đọc hồ sơ, 30% POST cập nhật) và hiển thị kết quả trả về.",
+          "en": "Sends HTTP requests over the Internet (70% reads, 30% writes) and renders responses."
+        },
+        "why": {
+          "vi": "Đóng vai trò tầng Input khởi phát mọi luồng dữ liệu đi vào hệ thống.",
+          "en": "Acts as the Input layer driving all system traffic."
+        },
+        "tip": {
+          "vi": "Luôn coi dữ liệu từ Client là chưa đáng tin cậy và kiểm tra lại toàn bộ ở API Server.",
+          "en": "Never trust client input; always validate permissions and schema on the API Server."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải đón lưu lượng đầu vào và chia đều sang cụm API Server (μ = 15.000 req/s).",
+          "en": "Entry load balancer distributing requests across API instances (μ = 15,000 req/s)."
+        },
+        "how": {
+          "vi": "Định tuyến Round-robin và kiểm tra sức khoẻ định kỳ để bỏ qua máy chủ lỗi.",
+          "en": "Routes via Round-robin with periodic health checks to bypass unhealthy instances."
+        },
+        "why": {
+          "vi": "Cho phép tầng API mở rộng ngang nhiều máy phía sau một địa chỉ duy nhất.",
+          "en": "Enables horizontal scaling of the stateless API tier behind a single endpoint."
+        },
+        "tip": {
+          "vi": "Triển khai cặp Active-Passive để bản thân Load Balancer không trở thành điểm lỗi đơn.",
+          "en": "Run active-passive pairs so the Load Balancer itself is not a single point of failure."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "API Server", "en": "API Server" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng Processing không trạng thái (2 instance × 1.400 = 2.800 req/s) thực thi nghiệp vụ.",
+          "en": "Stateless Processing tier (2 × 1,400 = 2,800 req/s) executing business rules."
+        },
+        "how": {
+          "vi": "Xác thực quyền, kiểm tra dữ liệu, đọc/xoá Cache, cập nhật Database và đẩy sự kiện nền vào Queue.",
+          "en": "Validates input, orchestrates Cache/DB operations, and publishes async events to the Queue."
+        },
+        "why": {
+          "vi": "Tách biệt quy tắc nghiệp vụ khỏi tầng lưu trữ và dễ dàng thêm máy khi CPU tăng cao.",
+          "en": "Separates business orchestration from stateful storage and scales horizontally."
+        },
+        "tip": {
+          "vi": "Không giữ phiên đăng nhập trên RAM cục bộ của API Server để bất kỳ máy nào cũng phục vụ được request kế tiếp.",
+          "en": "Keep API servers stateless so any instance can serve subsequent requests."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm trong RAM lưu bản sao hồ sơ truy cập thường xuyên (μ = 30.000 req/s).",
+          "en": "In-memory cache holding frequently read user profiles (μ = 30,000 req/s)."
+        },
+        "how": {
+          "vi": "Phục vụ ngay 75% lượt đọc trong < 1 ms; khi hồ sơ cập nhật, khoá cũ được xoá để nạp lại bản mới.",
+          "en": "Serves 75% of reads in < 1 ms; invalidated on profile updates to prevent stale data."
+        },
+        "why": {
+          "vi": "Chặn phần lớn truy vấn đọc lặp lại trước khi chúng chạm tới Database.",
+          "en": "Shields the Database from repetitive read traffic."
+        },
+        "tip": {
+          "vi": "Cache chỉ là lớp tăng tốc tạm thời, tuyệt đối không lưu dữ liệu chỉ có duy nhất trên Cache.",
+          "en": "Treat Cache strictly as an optimization layer, never as the primary source of truth."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ giữ bản ghi gốc bền vững (μ = 800 req/s).",
+          "en": "Relational Database acting as the durable source of truth (μ = 800 req/s)."
+        },
+        "how": {
+          "vi": "Xử lý toàn bộ lượt ghi cập nhật (30%) và phần lượt đọc Cache Miss (17,5%), tổng cộng 47,5% lưu lượng.",
+          "en": "Handles all writes (30%) plus Cache Miss reads (17.5%), totaling 47.5% of system load."
+        },
+        "why": {
+          "vi": "Đảm bảo tính toàn vẹn ACID và lưu giữ dữ liệu an toàn qua sự cố mất điện hoặc khởi động lại.",
+          "en": "Guarantees ACID durability and data integrity across restarts."
+        },
+        "tip": {
+          "vi": "Với μ = 800 req/s và nhận 47,5% tải, Database chạm ngưỡng ρ = 1,00 khi tổng lưu lượng vượt ~1.684 req/s.",
+          "en": "At μ = 800 req/s receiving 47.5% of traffic, DB hits ρ = 1.00 above ~1,684 total req/s."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "layers",
+      "label": { "vi": "Message Queue", "en": "Message Queue" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi thông điệp nhận sự kiện user.updated bất đồng bộ từ API Server.",
+          "en": "Asynchronous message broker buffering user.updated events from the API tier."
+        },
+        "how": {
+          "vi": "Ghi nhận sự kiện trong vài mili-giây để API trả kết quả ngay, sau đó giữ thông điệp cho Worker kéo về.",
+          "en": "Accepts events in milliseconds so the API returns early while Workers drain jobs."
+        },
+        "why": {
+          "vi": "Tách rời đường phản hồi người dùng khỏi các tác vụ phụ chậm hoặc dễ lỗi bên ngoài.",
+          "en": "Decouples user-facing latency from slow or flaky downstream side effects."
+        },
+        "tip": {
+          "vi": "Bật Dead-Letter Queue (DLQ) để cô lập thông điệp lỗi sau nhiều lần thử lại.",
+          "en": "Configure a Dead-Letter Queue (DLQ) to isolate poison messages."
+        }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "neutral",
+      "icon": "terminal",
+      "label": { "vi": "Background Worker", "en": "Background Worker" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm tiến trình nền (3 worker × 350 = 1.050 tác vụ/s) tiêu thụ sự kiện từ Queue.",
+          "en": "Background consumer pool (3 × 350 = 1,050 jobs/s) pulling events from the Queue."
+        },
+        "how": {
+          "vi": "Gửi email xác nhận cập nhật hồ sơ, đồng bộ chỉ mục tìm kiếm và ghi nhận số liệu phân tích.",
+          "en": "Sends confirmation emails, updates search indexes, and logs analytics asynchronously."
+        },
+        "why": {
+          "vi": "Giữ cho thời gian phản hồi API luôn ngắn ngay cả khi dịch vụ gửi email phản hồi chậm.",
+          "en": "Keeps API response times fast even when external email or indexing services are slow."
+        },
+        "tip": {
+          "vi": "Thiết kế logic Worker có tính lũy đẳng (Idempotent) vì Queue có thể giao lặp thông điệp.",
+          "en": "Make worker handlers idempotent to safely handle at-least-once message delivery."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối HTTP/TLS từ thiết bị người dùng tới Load Balancer.", "en": "Public HTTP/TLS connection from Client to Load Balancer." },
+        "how": { "vi": "Truyền request qua Internet công cộng với thời gian khứ hồi phụ thuộc khoảng cách địa lý.", "en": "Carries requests over the public Internet." },
+        "why": { "vi": "Đưa sự kiện đầu vào (Input) từ người dùng vào biên hệ thống.", "en": "Delivers user Input into the system boundary." }
+      }
+    },
+    "lb-api": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp nội bộ từ Load Balancer vào cụm API Server.", "en": "Internal hop from Load Balancer to API Server." },
+        "how": { "vi": "Chia tải đều giữa 2 instance API trong cùng vùng mạng tốc độ cao.", "en": "Splits traffic evenly across API instances in the same AZ." },
+        "why": { "vi": "Đảm bảo không một máy API đơn lẻ nào bị dồn tải.", "en": "Prevents uneven compute load across API servers." }
+      }
+    },
+    "api-cache": {
+      "inspector": {
+        "what": { "vi": "Đường kiểm tra đọc và xoá khoá trên Redis Cache.", "en": "Low-latency lookup and invalidation hop to Redis Cache." },
+        "how": { "vi": "Đọc khoá user:id trong < 1 ms hoặc xoá khoá ngay sau khi cập nhật Database.", "en": "Reads cached profiles in < 1 ms or invalidates stale keys on updates." },
+        "why": { "vi": "Giữ 75% lượt đọc dừng lại ở RAM mà không chạm xuống đĩa.", "en": "Absorbs 75% of reads in memory." }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn xuống Database cho lượt đọc Cache Miss và mọi lượt ghi.", "en": "Downstream path to Database for Cache Misses and all Writes." },
+        "how": { "vi": "Mang 47,5% tổng lưu lượng (17,5% đọc Miss + 30% ghi cập nhật) xuống Database.", "en": "Carries 47.5% of total traffic (17.5% read misses + 30% writes) to the Database." },
+        "why": { "vi": "Đảm bảo mọi thay đổi được ghi bền vững và nạp lại dữ liệu chuẩn khi Cache trống.", "en": "Persists updates durably and populates cache misses from the source of truth." }
+      }
+    },
+    "api-queue": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường phát sự kiện bất đồng bộ từ API Server sang Message Queue.", "en": "Asynchronous event publish path from API Server to Message Queue." },
+        "how": { "vi": "Chỉ kích hoạt trên 30% request cập nhật hồ sơ, trả quyền điều khiển ngay sau 2 ms.", "en": "Triggered on profile updates (30% writes), returning immediately in ~2 ms." },
+        "why": { "vi": "Không bắt người dùng phải chờ gửi email hay đánh chỉ mục.", "en": "Prevents background side effects from blocking the user response." }
+      }
+    },
+    "queue-worker": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường Worker kéo công việc từ Message Queue về xử lý nền.", "en": "Pull consumer link from Message Queue to Background Workers." },
+        "how": { "vi": "3 instance Worker kéo thông điệp theo tốc độ ổn định (tối đa 1.050 tác vụ/s).", "en": "Workers pull messages at a controlled pace (up to 1,050 jobs/s)." },
+        "why": { "vi": "Làm phẳng các đợt tăng vọt lượt cập nhật và cô lập lỗi dịch vụ phụ.", "en": "Smooths write bursts and isolates downstream service failures." }
+      }
+    }
+  },
+  "zones": {
+    "sync-core": {
+      "nodeIds": ["lb", "api", "cache", "db"],
+      "label": { "vi": "ĐƯỜNG ĐỒNG BỘ (SYNC)", "en": "SYNC HOT PATH" },
+      "tone": "blue"
+    },
+    "async-bg": {
+      "nodeIds": ["queue", "worker"],
+      "label": { "vi": "XỬ LÝ NỀN (ASYNC)", "en": "ASYNC BACKGROUND" },
+      "tone": "purple"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": ["client", "api", "db"] },
+      "state": {
+        "api": { "loadPct": 35, "highlighted": true },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Hai cấp độ quan sát", "en": "Two Levels of View" },
+        "lines": [
+          { "text": { "vi": "Code view: chỉ thấy bên trong API", "en": "Code view: inside one function" }, "tone": "muted" },
+          { "text": { "vi": "System view: thấy luồng & điểm nghẽn", "en": "System view: end-to-end flow" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-ipso": {
+      "show": { "nodes": ["client", "lb", "api", "db"] },
+      "state": {
+        "client": { "badge": { "text": { "vi": "1. Input", "en": "1. Input" }, "tone": "default" } },
+        "lb": { "loadPct": 12 },
+        "api": { "loadPct": 40, "badge": { "text": { "vi": "2. Processing", "en": "2. Processing" }, "tone": "ok" } },
+        "db": { "loadPct": 52, "badge": { "text": { "vi": "3. Storage", "en": "3. Storage" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khuôn mẫu phổ quát", "en": "Universal Pattern" },
+        "lines": [
+          { "text": { "vi": "Input → Processing → Storage → Output", "en": "Input → Processing → Storage → Output" }, "tone": "good" },
+          { "text": { "vi": "Response quay ngược về làm Output", "en": "Response returns as Output" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-input-proc": {
+      "show": { "nodes": ["client", "lb", "api"] },
+      "state": {
+        "client": { "badge": { "text": { "vi": "Không tin cậy", "en": "Untrusted" }, "tone": "warn" } },
+        "lb": { "loadPct": 15, "highlighted": true },
+        "api": { "loadPct": 42, "highlighted": true, "badge": { "text": { "vi": "Stateless ×2", "en": "Stateless ×2" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tiếp nhận & Thực thi", "en": "Ingress & Processing" },
+        "lines": [
+          { "text": { "vi": "API kiểm tra hợp lệ & phân quyền", "en": "API validates input & auth" }, "tone": "good" },
+          { "text": { "vi": "Stateless giúp nhân bản ngang dễ dàng", "en": "Stateless enables horizontal scale" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-storage-cache": {
+      "show": { "nodes": ["client", "lb", "api", "cache", "db"] },
+      "state": {
+        "lb": { "loadPct": 15 },
+        "api": { "loadPct": 45 },
+        "cache": { "loadPct": 10, "highlighted": true, "badge": { "text": { "vi": "RAM · Hit 75%", "en": "RAM · Hit 75%" }, "tone": "ok" } },
+        "db": { "loadPct": 62, "highlighted": true, "badge": { "text": { "vi": "Source of Truth", "en": "Source of Truth" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tăng tốc vs Lưu bền vững", "en": "Speed vs Durability" },
+        "lines": [
+          { "text": { "vi": "Cache: đọc < 1 ms, có thể mất", "en": "Cache: < 1 ms, volatile" }, "tone": "good" },
+          { "text": { "vi": "DB / Object Store: dữ liệu gốc bền vững", "en": "DB / Object Store: durable truth" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-async": {
+      "show": { "nodes": "*" },
+      "zones": ["async-bg"],
+      "state": {
+        "lb": { "loadPct": 15 },
+        "api": { "loadPct": 48 },
+        "cache": { "loadPct": 8 },
+        "db": { "loadPct": 60 },
+        "queue": { "loadPct": 6, "highlighted": true, "badge": { "text": { "vi": "Đệm sự kiện", "en": "Event Buffer" }, "tone": "ok" } },
+        "worker": { "loadPct": 42, "highlighted": true, "badge": { "text": { "vi": "Email · Index", "en": "Email · Index" }, "tone": "default" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách nhánh bất đồng bộ", "en": "Async Decoupling" },
+        "lines": [
+          { "text": { "vi": "API đẩy sự kiện (2 ms) rồi trả lời ngay", "en": "API enqueues in 2 ms & returns" }, "tone": "good" },
+          { "text": { "vi": "Worker xử lý nền không chặn Client", "en": "Workers run off the hot path" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-profile-flow": {
+      "show": { "nodes": "*" },
+      "zones": ["sync-core", "async-bg"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "api": { "loadPct": 44, "badge": { "text": { "vi": "20 ms xử lý", "en": "20 ms validate" }, "tone": "default" } },
+        "cache": { "loadPct": 8, "badge": { "text": { "vi": "Xoá khoá 5 ms", "en": "Invalidate 5 ms" }, "tone": "ok" } },
+        "db": { "loadPct": 65, "highlighted": true, "badge": { "text": { "vi": "UPDATE 100 ms", "en": "UPDATE 100 ms" }, "tone": "warn" } },
+        "queue": { "loadPct": 5 },
+        "worker": { "loadPct": 38 }
+      },
+      "linkState": {
+        "lb-api": { "label": { "vi": "10 ms", "en": "10 ms" } },
+        "api-cache": { "label": { "vi": "5 ms", "en": "5 ms" } },
+        "cache-db": { "label": { "vi": "100 ms", "en": "100 ms" } },
+        "api-queue": { "style": "dashed", "label": { "vi": "2 ms async", "en": "2 ms async" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Luồng POST /users/123", "en": "POST /users/123 Trace" },
+        "lines": [
+          { "text": { "vi": "Đồng bộ: 10+20+100+5+2 = 137 ms", "en": "Sync total: 137 ms" }, "tone": "good" },
+          { "text": { "vi": "Gửi email & lập chỉ mục chạy nền", "en": "Email & search index run async" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-bottleneck": {
+      "show": { "nodes": "*" },
+      "zones": ["sync-core", "async-bg"],
+      "state": {
+        "lb": { "loadPct": 13 },
+        "api": { "loadPct": 71, "badge": { "text": { "vi": "ρ = 0,71", "en": "ρ = 0.71" }, "tone": "warn" } },
+        "cache": { "loadPct": 7, "badge": { "text": { "vi": "ρ = 0,07", "en": "ρ = 0.07" }, "tone": "ok" } },
+        "db": { "loadPct": 100, "highlighted": true, "badge": { "text": { "vi": "ρ = 1,18 · Quá tải", "en": "ρ = 1.18 · Overloaded" }, "tone": "bad" } },
+        "queue": { "loadPct": 4 },
+        "worker": { "loadPct": 57, "badge": { "text": { "vi": "ρ = 0,57", "en": "ρ = 0.57" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "cache-db": { "style": "danger", "label": { "vi": "945 req/s > 800", "en": "945 req/s > 800" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tại t = 40 s (≈ 1.989 req/s)", "en": "At t = 40 s (≈ 1,989 req/s)" },
+        "chart": { "utilPct": 99 },
+        "lines": [
+          { "text": { "vi": "47,5% tải xuống DB → ρ = 1,18", "en": "47.5% hits DB → ρ = 1.18" }, "tone": "bad" },
+          { "text": { "vi": "API (0,71) và Worker (0,57) chưa nghẽn", "en": "API (0.71) & Worker (0.57) OK" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["sync-core", "async-bg"],
+      "state": {
+        "lb": { "loadPct": 11 },
+        "api": { "loadPct": 52 },
+        "cache": { "loadPct": 6 },
+        "db": { "loadPct": 75, "highlighted": true },
+        "queue": { "loadPct": 4 },
+        "worker": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết System Thinking", "en": "System Thinking Summary" },
+        "lines": [
+          { "text": { "vi": "1. Phân rã Input → Process → Store → Out", "en": "1. Map Input → Process → Store → Out" }, "tone": "good" },
+          { "text": { "vi": "2. Tách việc phụ sang Queue + Worker", "en": "2. Offload side effects to Queue" }, "tone": "plain" },
+          { "text": { "vi": "3. Đo ρ từng hộp để tìm điểm nghẽn", "en": "3. Check per-node ρ for bottlenecks" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  }
+}

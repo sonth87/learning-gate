@@ -1,0 +1,446 @@
+{
+  "version": 1,
+  "base": "s1-serial",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng người dùng gửi liên tục vào dịch vụ từ Internet.",
+          "en": "Continuous user traffic arriving from the public Internet."
+        },
+        "how": {
+          "vi": "Phân giải tên miền hoặc gọi qua Virtual IP để đi vào vùng khả dụng đang hoạt động.",
+          "en": "Resolves DNS or connects via Anycast VIP to reach healthy availability zones."
+        },
+        "why": {
+          "vi": "Người dùng đánh giá độ sẵn sàng ở đầu-cuối, không quan tâm thành phần nội bộ nào vừa hỏng.",
+          "en": "Users experience end-to-end availability regardless of which internal tier failed."
+        }
+      }
+    },
+    "dns": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "globe",
+      "label": { "vi": "Global DNS / VIP", "en": "Global DNS / VIP" },
+      "inspector": {
+        "what": {
+          "vi": "Lớp điều hướng đầu vào (Anycast VIP hoặc DNS có Health Check).",
+          "en": "Entry routing layer using Anycast VIP or health-checked DNS."
+        },
+        "how": {
+          "vi": "Chia tải giữa LB ở AZ-A và AZ-B; khi AZ-A mất phản hồi, ngắt định tuyến sang AZ-A sau khoảng ttlSec.",
+          "en": "Splits traffic across AZ-A and AZ-B Load Balancers and cuts over after ttlSec upon AZ failure."
+        },
+        "why": {
+          "vi": "Loại bỏ điểm lỗi đơn ở cửa ngõ và tự động cô lập vùng gặp sự cố.",
+          "en": "Eliminates entry-tier SPOF and isolates failed zones automatically."
+        },
+        "tip": {
+          "vi": "Đặt DNS TTL quá dài (ví dụ 600 giây) khiến client tiếp tục gọi vào địa chỉ IP đã ngừng hoạt động.",
+          "en": "Long DNS TTLs (e.g. 600 s) keep clients hitting dead IPs long after failover."
+        }
+      }
+    },
+    "lb_a": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "LB (AZ-A)", "en": "LB (AZ-A)" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải đặt tại vùng khả dụng A.",
+          "en": "Load Balancer deployed in Availability Zone A."
+        },
+        "how": {
+          "vi": "Nhận lưu lượng đi vào AZ-A và chuyển tiếp sang cụm App nội vùng.",
+          "en": "Receives AZ-A ingress traffic and forwards to local App instances."
+        },
+        "why": {
+          "vi": "Nếu đứng một mình không có LB ở AZ-B, nó sẽ trở thành điểm lỗi đơn (SPOF).",
+          "en": "Acts as an SPOF unless paired with a peer Load Balancer in AZ-B."
+        }
+      }
+    },
+    "lb_b": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "shield",
+      "label": { "vi": "LB (AZ-B)", "en": "LB (AZ-B)" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải song song đặt tại vùng khả dụng B.",
+          "en": "Redundant Load Balancer deployed in Availability Zone B."
+        },
+        "how": {
+          "vi": "Chạy song song Active-Active cùng LB (AZ-A) và gánh 100% lưu lượng khi AZ-A mất điện.",
+          "en": "Runs Active-Active with AZ-A and absorbs 100% of traffic during an AZ-A outage."
+        },
+        "why": {
+          "vi": "Bảo đảm tầng cân bằng tải vẫn hoạt động khi một phòng máy mất kết nối.",
+          "en": "Ensures load balancing survives a full datacenter outage."
+        }
+      }
+    },
+    "app_a": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App 1 (AZ-A)", "en": "App 1 (AZ-A)" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm máy chủ ứng dụng phi trạng thái tại vùng AZ-A.",
+          "en": "Stateless application server pool in AZ-A."
+        },
+        "how": {
+          "vi": "Xử lý logic nghiệp vụ với mức dư công suất để chịu tải đỉnh.",
+          "en": "Executes stateless business logic with N+1 capacity headroom."
+        },
+        "why": {
+          "vi": "Không lưu phiên cục bộ nên mọi request có thể chuyển sang App 2 (AZ-B) ngay lập tức.",
+          "en": "Stateless design lets requests shift seamlessly to App 2 (AZ-B)."
+        }
+      }
+    },
+    "app_b": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App 2 (AZ-B)", "en": "App 2 (AZ-B)" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm máy chủ ứng dụng phi trạng thái tại vùng AZ-B (tổng năng lực 1.800 req/s).",
+          "en": "Stateless application server pool in AZ-B (1,800 req/s capacity)."
+        },
+        "how": {
+          "vi": "Bình thường xử lý 50% tải; khi AZ-A ngừng hoạt động sẽ gánh toàn bộ 1.200 req/s (ρ ≈ 0,67).",
+          "en": "Handles 50% load normally and absorbs full 1,200 req/s (ρ ≈ 0.67) on AZ-A failure."
+        },
+        "why": {
+          "vi": "Dự phòng thực sự đòi hỏi vùng còn lại đủ công suất gánh toàn bộ lưu lượng, không chỉ sống về mặt kết nối.",
+          "en": "True redundancy requires enough spare capacity in surviving AZs to carry 100% of traffic."
+        }
+      }
+    },
+    "db_proxy": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "git",
+      "label": { "vi": "DB Failover Router", "en": "DB Failover Router" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ điều phối kết nối và chuyển đổi dự phòng cơ sở dữ liệu.",
+          "en": "Database connection router and automated failover orchestrator."
+        },
+        "how": {
+          "vi": "Giám sát nhịp tim của DB Primary (AZ-A); khi mất kết nối sẽ cô lập máy cũ và thăng cấp DB Standby (AZ-B).",
+          "en": "Monitors Primary heartbeats, fences the dead Primary, and promotes Standby in AZ-B."
+        },
+        "why": {
+          "vi": "Quyết định trực tiếp thời gian khôi phục ghi (RTO) mà ứng dụng không cần khởi động lại.",
+          "en": "Governs database RTO without requiring application restarts."
+        }
+      }
+    },
+    "db_a": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "DB Primary (AZ-A)", "en": "DB Primary (AZ-A)" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu chính (Leader) đặt tại vùng AZ-A.",
+          "en": "Primary Leader database in Availability Zone A."
+        },
+        "how": {
+          "vi": "Xử lý giao dịch đọc ghi và truyền liên tục nhật ký WAL sang DB Standby ở AZ-B.",
+          "en": "Serves read/write transactions and streams WAL logs across AZs to DB Standby."
+        },
+        "why": {
+          "vi": "Nếu chạy đơn lẻ không có Standby khác vùng, hỏng ổ cứng hoặc mất điện AZ-A sẽ gây ngừng toàn hệ thống.",
+          "en": "Without a cross-AZ standby, any AZ-A outage halts the entire system."
+        }
+      }
+    },
+    "db_b": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "DB Standby (AZ-B)", "en": "DB Standby (AZ-B)" },
+      "inspector": {
+        "what": {
+          "vi": "Bản sao dự phòng nóng (Warm Standby) đặt tại vùng AZ-B.",
+          "en": "Warm Standby replica located in Availability Zone B."
+        },
+        "how": {
+          "vi": "Áp nhật ký WAL liên tục từ DB Primary (AZ-A) và sẵn sàng nhận quyền ghi ngay khi được thăng cấp.",
+          "en": "Continuously replays WAL from AZ-A Primary and promotes to Leader upon failover."
+        },
+        "why": {
+          "vi": "Giữ RPO thấp nhất (bằng 0 với Semi-sync) và rút ngắn RTO từ hàng giờ khôi phục băng từ xuống vài giây.",
+          "en": "Minimizes RPO (zero with Semi-sync) and cuts RTO from hours to seconds."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lba": {
+      "inspector": {
+        "what": { "vi": "Kết nối trực tiếp từ người dùng tới một Load Balancer duy nhất.", "en": "Direct client connection to a single Load Balancer." },
+        "how": { "vi": "Không có cơ chế chuyển sang máy dự phòng nếu LB ngừng phản hồi.", "en": "No failover path if the Load Balancer stops responding." },
+        "why": { "vi": "Biến LB đơn lẻ thành điểm lỗi đơn của toàn bộ đường đi.", "en": "Makes the single LB a critical Single Point of Failure." }
+      }
+    },
+    "dba-dbb": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": { "vi": "Đường truyền nhật ký WAL liên vùng từ AZ-A sang AZ-B.", "en": "Cross-AZ WAL replication link from AZ-A to AZ-B." },
+        "how": { "vi": "Độ trễ mạng nội vùng chỉ khoảng 1–2 ms, phù hợp cho cả sao chép bán đồng bộ (Semi-sync).", "en": "Low 1–2 ms intra-region RTT supports Semi-synchronous replication." },
+        "why": { "vi": "Quyết định lượng dữ liệu có nguy cơ mất (RPO) khi vùng AZ-A mất điện đột ngột.", "en": "Determines Recovery Point Objective (RPO) during sudden AZ-A power loss." }
+      }
+    }
+  },
+  "zones": {
+    "az_a": {
+      "nodeIds": ["lb_a", "app_a", "db_a"],
+      "label": { "vi": "VÙNG KHẢ DỤNG A (AZ-A)", "en": "AVAILABILITY ZONE A (AZ-A)" },
+      "tone": "orange"
+    },
+    "az_b": {
+      "nodeIds": ["lb_b", "app_b", "db_b"],
+      "label": { "vi": "VÙNG KHẢ DỤNG B (AZ-B)", "en": "AVAILABILITY ZONE B (AZ-B)" },
+      "tone": "blue"
+    }
+  },
+  "scenes": {
+    "s1-serial": {
+      "show": { "nodes": ["client", "lb_a", "app_a", "db_a"] },
+      "state": {
+        "lb_a": { "loadPct": 15, "badge": { "text": { "vi": "99,95%", "en": "99.95%" }, "tone": "warn" } },
+        "app_a": { "loadPct": 55, "badge": { "text": { "vi": "99,90%", "en": "99.90%" }, "tone": "warn" } },
+        "db_a": { "loadPct": 45, "badge": { "text": { "vi": "99,85%", "en": "99.85%" }, "tone": "warn" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chuỗi nối tiếp làm giảm Availability", "en": "Serial Chain Lowers Availability" },
+        "lines": [
+          { "text": { "vi": "A_chuỗi = 0,9995 × 0,999 × 0,9985 ≈ 99,70%", "en": "A_total = 0.9995 × 0.999 × 0.9985 ≈ 99.70%" }, "tone": "amber" },
+          { "text": { "vi": "Ngừng hoạt động ≈ 26,3 giờ mỗi năm", "en": "≈ 26.3 hours of downtime per year" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-spof": {
+      "show": { "nodes": ["client", "lb_a", "app_a", "app_b", "db_a"] },
+      "state": {
+        "lb_a": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "SPOF?", "en": "SPOF?" }, "tone": "warn" }
+        },
+        "app_a": { "loadPct": 42, "badge": { "text": { "vi": "Song song", "en": "Parallel" }, "tone": "ok" } },
+        "app_b": { "loadPct": 42, "badge": { "text": { "vi": "Song song", "en": "Parallel" }, "tone": "ok" } },
+        "db_a": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Đơn lẻ", "en": "Single DB" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiểm toán Điểm lỗi đơn (SPOF)", "en": "Single Point of Failure Audit" },
+        "lines": [
+          { "text": { "vi": "App 1 & App 2 đã có nhánh song song", "en": "App 1 & App 2 have parallel redundancy" }, "tone": "good" },
+          { "text": { "vi": "Nút nào hỏng sẽ cắt đứt toàn bộ dịch vụ?", "en": "Which nodes cut 100% of traffic if down?" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-parallel": {
+      "show": { "nodes": "*" },
+      "state": {
+        "dns": { "loadPct": 5, "badge": { "text": { "vi": "VIP / DNS", "en": "VIP / DNS" }, "tone": "ok" } },
+        "lb_a": { "loadPct": 12 },
+        "lb_b": { "loadPct": 12 },
+        "app_a": { "loadPct": 34 },
+        "app_b": { "loadPct": 34 },
+        "db_proxy": { "loadPct": 6 },
+        "db_a": { "loadPct": 54, "badge": { "text": { "vi": "Leader", "en": "Leader" }, "tone": "ok" } },
+        "db_b": { "loadPct": 10, "badge": { "text": { "vi": "Standby", "en": "Standby" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dự phòng song song mọi tầng", "en": "Parallel Redundancy Across Tiers" },
+        "lines": [
+          { "text": { "vi": "2 máy 99,9% độc lập → 99,9999%", "en": "Two independent 99.9% nodes → 99.9999%" }, "tone": "good" },
+          { "text": { "vi": "Mọi tầng đều có ít nhất 2 thành phần", "en": "Every tier has ≥ 2 redundant instances" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-correlated": {
+      "show": { "nodes": ["client", "lb_a", "app_a", "db_a"] },
+      "zones": ["az_a"],
+      "state": {
+        "lb_a": { "dead": true },
+        "app_a": { "dead": true },
+        "db_a": { "dead": true }
+      },
+      "linkState": {
+        "client-lba": { "style": "cut" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Lỗi tương quan trong cùng phòng máy", "en": "Correlated Single-DC Failure" },
+        "lines": [
+          { "text": { "vi": "Chung nguồn điện, làm mát và cáp mạng lõi", "en": "Shared power, cooling, and core switch" }, "tone": "bad" },
+          { "text": { "vi": "Bản chính và bản phụ ngừng hoạt động cùng lúc", "en": "Primary and standby go down together" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-multi-az": {
+      "show": { "nodes": "*" },
+      "zones": ["az_a", "az_b"],
+      "state": {
+        "dns": { "loadPct": 5 },
+        "lb_a": { "loadPct": 10 },
+        "lb_b": { "loadPct": 10 },
+        "app_a": { "loadPct": 34, "badge": { "text": { "vi": "AZ-A · 50%", "en": "AZ-A · 50%" }, "tone": "ok" } },
+        "app_b": { "loadPct": 34, "badge": { "text": { "vi": "AZ-B · 50%", "en": "AZ-B · 50%" }, "tone": "ok" } },
+        "db_proxy": { "loadPct": 6 },
+        "db_a": { "loadPct": 55, "highlighted": true, "badge": { "text": { "vi": "Primary", "en": "Primary" }, "tone": "ok" } },
+        "db_b": { "loadPct": 12, "highlighted": true, "badge": { "text": { "vi": "Warm Standby", "en": "Warm Standby" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Trải đều qua 2 Availability Zone", "en": "Multi-AZ Isolation" },
+        "lines": [
+          { "text": { "vi": "Tách biệt nguồn điện, ngập lụt và mạng lõi", "en": "Isolated power, cooling, and network" }, "tone": "good" },
+          { "text": { "vi": "Độ trễ sao chép nội vùng chỉ ≈ 1,5 ms", "en": "Cross-AZ replication RTT ≈ 1.5 ms" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-live-failover": {
+      "show": { "nodes": "*" },
+      "zones": ["az_a", "az_b"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "t = 18 s: Mất điện toàn bộ vùng AZ-A", "en": "t = 18 s: Full AZ-A Power Outage" },
+        "lines": [
+          { "text": { "vi": "DNS cắt lưu lượng sang LB (AZ-B) sau 4 s", "en": "DNS shifts ingress to AZ-B in 4 s" }, "tone": "amber" },
+          { "text": { "vi": "DB Standby thăng cấp hoàn tất ở t = 26 s", "en": "DB Standby promoted by t = 26 s" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-rto-rpo": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Dòng thời gian sự cố: Phân biệt RPO (mất dữ liệu) và RTO (gián đoạn dịch vụ)",
+          "en": "Incident Timeline: RPO (Data Loss Window) vs RTO (Service Recovery Time)"
+        },
+        "subtitle": {
+          "vi": "RPO nhìn ngược về quá khứ trước sự cố; RTO nhìn xuôi về tương lai tới lúc phục vụ lại",
+          "en": "RPO measures backward from crash; RTO measures forward until recovery completes"
+        },
+        "cells": ["Bản WAL cuối đã đồng bộ", "Khoảng RPO (WAL chưa kịp gửi)", "t = 18s: AZ-A sập", "Phát hiện + Thăng cấp DB", "t = 26s: AZ-B phục vụ 100%"],
+        "activeIndices": [1, 3],
+        "pointers": [
+          { "index": 1, "label": "RPO (mất dữ liệu)", "tone": "orange" },
+          { "index": 3, "label": "RTO (thời gian khôi phục)", "tone": "blue" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Cấu hình chuẩn", "en": "Target Practice" },
+          "value": { "vi": "Semi-sync giữa 2 AZ giữ RPO = 0; tự động hoá Health Check + VIP rút RTO còn vài giây", "en": "Cross-AZ Semi-sync achieves RPO = 0; automated failover cuts RTO to seconds" },
+          "tone": "green"
+        }
+      }
+    },
+    "s8-canary": {
+      "show": { "nodes": "*" },
+      "zones": ["az_a", "az_b"],
+      "state": {
+        "dns": { "loadPct": 5 },
+        "lb_a": { "loadPct": 10 },
+        "lb_b": { "loadPct": 10 },
+        "app_a": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Canary v2.4 (5%)", "en": "Canary v2.4 (5%)" }, "tone": "warn" }
+        },
+        "app_b": {
+          "loadPct": 62,
+          "badge": { "text": { "vi": "Stable v2.3 (95%)", "en": "Stable v2.3 (95%)" }, "tone": "ok" }
+        },
+        "db_proxy": { "loadPct": 6 },
+        "db_a": { "loadPct": 54 },
+        "db_b": { "loadPct": 12 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giới hạn phạm vi lỗi bằng Canary", "en": "Containing Bad Releases via Canary" },
+        "lines": [
+          { "text": { "vi": "Multi-AZ không chặn được bug đẩy đồng loạt", "en": "Multi-AZ cannot stop global bad deploys" }, "tone": "bad" },
+          { "text": { "vi": "Canary 1–5% + Tự động Rollback theo SLO", "en": "1–5% Canary + Automated SLO Rollback" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["az_a", "az_b"],
+      "state": {
+        "dns": { "loadPct": 5, "badge": { "text": { "vi": "TTL ngắn", "en": "Short TTL" }, "tone": "ok" } },
+        "lb_a": { "loadPct": 10 },
+        "lb_b": { "loadPct": 10 },
+        "app_a": { "loadPct": 34 },
+        "app_b": { "loadPct": 34 },
+        "db_proxy": { "loadPct": 6, "badge": { "text": { "vi": "Auto Failover", "en": "Auto Failover" }, "tone": "ok" } },
+        "db_a": { "loadPct": 54, "badge": { "text": { "vi": "Semi-sync", "en": "Semi-sync" }, "tone": "ok" } },
+        "db_b": { "loadPct": 12, "badge": { "text": { "vi": "Diễn tập định kỳ", "en": "Tested Standby" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bốn lớp bảo vệ Độ sẵn sàng cao", "en": "Four High-Availability Layers" },
+        "lines": [
+          { "text": { "vi": "Loại SPOF · Trải đa vùng AZ đủ công suất", "en": "Eliminate SPOFs · Multi-AZ N+1 headroom" }, "tone": "good" },
+          { "text": { "vi": "Đo RTO/RPO thực tế · Canary chống lỗi phần mềm", "en": "Tested RTO/RPO · Canary rollout safety" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "az-failover": {
+      "sim": "S3-09/az-failover",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "chaos": ["kill", "partition"],
+        "knobs": [
+          { "node": "dns", "key": "ttlSec" },
+          { "node": "db_proxy", "key": "healthCheckSec" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 180 } },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+      ],
+      "slo": [
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["lb_b", "app_b", "db_b"] }
+    }
+  }
+}

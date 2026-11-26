@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-04.c1",
+    "front": "Công thức khung tư duy kết nối Ràng buộc và Đánh đổi trong thiết kế hệ thống là gì?",
+    "back": "Thiết kế hệ thống = Ràng buộc (Constraints) + Đánh đổi (Trade-offs). Ràng buộc khoanh vùng những phương án khả thi; đánh đổi chọn ra phương án tối ưu bên trong vùng khả thi đó."
+  },
+  {
+    "id": "S0-04.c2",
+    "front": "Năm nhóm ràng buộc thực tế cần kiểm tra trước khi thiết kế là gì?",
+    "back": "1) Compute (năng lực lõi CPU); 2) Memory (dung lượng RAM khả dụng); 3) Network (độ trễ vật lý RTT và băng thông); 4) Database (thông lượng đọc/ghi, dung lượng, số kết nối); 5) Con người & Ngân sách (quy mô nhóm, kỹ năng, chi phí, thời hạn)."
+  },
+  {
+    "id": "S0-04.c3",
+    "front": "Vì sao không thể dùng tiền nâng cấp CPU để khắc phục độ trễ mạng xuyên lục địa?",
+    "back": "Vì tín hiệu ánh sáng trong sợi cáp quang bị chặn bởi giới hạn vật lý (~200.000 km/s) cộng trễ định tuyến. Muốn giảm độ trễ này phải rút ngắn khoảng cách bằng CDN, đặt cùng vùng hoặc dùng Read Replica gần người dùng."
+  },
+  {
+    "id": "S0-04.c4",
+    "front": "Khi lập ngân sách RAM trên một máy chủ, cần khấu trừ những phần nào trước khi cấp cho Cache?",
+    "back": "Phải trừ bộ nhớ của Hệ điều hành (~2 GB), tiến trình ứng dụng (~2 GB), vùng nhớ cho các kết nối Database (~10 MB mỗi kết nối) và một khoảng đệm dự phòng để tránh tràn sang ổ đĩa Swap."
+  },
+  {
+    "id": "S0-04.c5",
+    "front": "Vì sao quy mô đội ngũ (Team Size) là ràng buộc quyết định giữa Monolith và Microservices?",
+    "back": "Mỗi dịch vụ tách rời nhân bội công việc triển khai, theo dõi và trực sự cố. Nhóm 1–3 kỹ sư chỉ vận hành bền vững được Monolith và dịch vụ quản lý sẵn; tách nhiều Microservices chỉ khả thi khi đội ngũ đủ lớn."
+  },
+  {
+    "id": "S0-04.c6",
+    "front": "Sự khác biệt giữa giới hạn cứng (Hard Constraint) và giới hạn mềm (Soft Constraint) là gì?",
+    "back": "Giới hạn cứng là ranh giới không thể vi phạm (trần ngân sách tiền mặt, quy định pháp lý, tốc độ ánh sáng); giới hạn mềm là mục tiêu có thể thương lượng hoặc đánh đổi (chấp nhận dữ liệu bảng tin trễ vài giây)."
+  }
+]

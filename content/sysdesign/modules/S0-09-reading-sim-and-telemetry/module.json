@@ -1,0 +1,23 @@
+{
+  "id": "S0-09",
+  "slug": "S0-09-reading-sim-and-telemetry",
+  "level": 0,
+  "order": 9,
+  "title": "Cách đọc mô phỏng và telemetry",
+  "summary": "Hướng dẫn thực hành làm quen bàn mô phỏng trực tiếp trước khi sang Phase 1: đọc mức sử dụng ρ = λ/μ, phân biệt độ trễ p50 và p99, quan sát hàng đợi dồn trên dây nối, tua thanh thời gian và tra cứu bảng chi tiết thực thể.",
+  "durationMin": 12,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Đọc mức sử dụng ρ = λ/μ và nhận biết ý nghĩa các trạng thái màu của khối trên sân khấu mô phỏng" },
+    { "vi": "Giải thích sự khác biệt giữa p50 và p99, và lý do p99 tăng dựng đứng khi ρ tiến sát 1 trước khi tỉ lệ lỗi xuất hiện" },
+    { "vi": "Sử dụng thanh tua thời gian (Timeline), núm nhân tải (LoadKnob) và bảng chi tiết thực thể (Inspector) để kiểm chứng giả thuyết" },
+    { "vi": "Hiểu phạm vi áp dụng của mô phỏng: phản ánh đúng xu hướng nhân quả chứ không thay thế số đo môi trường thật" }
+  ],
+  "tags": ["simulation", "telemetry", "utilization", "p50", "p99", "queueing", "timeline"],
+  "prerequisites": ["S0-03", "S0-04"],
+  "related": ["S1-01", "S1-03", "S1-07"],
+  "source": {
+    "kind": "original",
+    "changes": "Bài tự biên soạn hướng dẫn đọc mức sử dụng ρ, p50/p99, hàng đợi trên dây nối, thanh tua và bảng chi tiết thực thể."
+  }
+}

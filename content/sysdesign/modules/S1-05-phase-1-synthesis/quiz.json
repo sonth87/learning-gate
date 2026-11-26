@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S1-05.q1",
+    "type": "output",
+    "q": "Dịch vụ rút gọn URL nhận 86,4 triệu lượt bấm chuyển hướng mỗi ngày (1 ngày = 86.400 giây). Lưu lượng đọc trung bình mỗi giây bằng bao nhiêu req/s? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "1000",
+    "explain": "Lấy 86.400.000 lượt chuyển hướng chia cho 86.400 giây trong ngày được đúng 1.000 req/s trung bình; khi thiết kế công suất ta nhân thêm hệ số đỉnh (ví dụ ×3 thành 3.000 req/s)."
+  },
+  {
+    "id": "S1-05.q2",
+    "type": "mc",
+    "q": "Vì sao chuyển đổi định danh số nguyên tự tăng (hoặc Snowflake ID) sang chuỗi Base62 dài 6–7 ký tự thường được ưu tiên hơn cắt 7 ký tự đầu của hàm băm MD5 khi tạo mã URL rút gọn?",
+    "code": "",
+    "choices": [
+      "Vì MD5 không chạy được trên máy chủ Linux",
+      "Vì mỗi ID số nguyên là duy nhất nên ảnh Base62 của nó đảm bảo không va chạm, không cần truy vấn lặp để xử lý trùng mã",
+      "Vì chuỗi Base62 tự động nén toàn bộ trang đích vào bên trong URL mà không cần Database",
+      "Vì Base62 chỉ dùng 2 ký tự 0 và 1 nên ngắn hơn MD5"
+    ],
+    "answer": 1,
+    "explain": "Phép đổi cơ số sang Base62 là song ánh trên các số nguyên dương: hai ID khác nhau luôn sinh ra hai chuỗi ngắn khác nhau, trong khi cắt bớt chuỗi băm MD5 làm mất thông tin nên có xác suất sinh trùng mã cho hai URL khác nhau."
+  },
+  {
+    "id": "S1-05.q3",
+    "type": "mc",
+    "q": "Để việc ghi nhận thống kê chi tiết mỗi lượt bấm (IP, quốc gia, thiết bị, thời điểm) không làm chậm phản hồi chuyển hướng 302 của URL Shortener, cách thiết kế phù hợp nhất là gì?",
+    "code": "",
+    "choices": [
+      "Thực thi tuần tự câu lệnh INSERT vào bảng clicks lớn và tính lại báo cáo ngày ngay trước khi trả mã 302",
+      "Đẩy sự kiện lượt bấm vào Message Queue bất đồng bộ rồi trả ngay mã 302; Worker nền sẽ gom ghi theo lô xuống kho phân tích",
+      "Bắt trình duyệt của người dùng gửi hai request đồng bộ liên tiếp trước khi chuyển trang",
+      "Xóa bỏ hoàn toàn Redis Cache để mọi lượt đọc đều đi qua Database chính"
+    ],
+    "answer": 1,
+    "explain": "Người dùng bấm vào link rút gọn chỉ cần nhận URL đích nhanh nhất có thể; thống kê lượt bấm chấp nhận trễ vài giây nên tách sang Message Queue kết hợp ghi theo lô giúp giữ đường đọc siêu nhẹ và giảm hàng chục lần tải ghi xuống Database."
+  },
+  {
+    "id": "S1-05.q4",
+    "type": "tf",
+    "q": "Trong bản nháp URL Shortener có 95% lưu lượng là đọc trên 200.000 liên kết nóng, nâng dung lượng key của Redis Cache phủ đủ 200.000 key thường rẻ và hiệu quả hơn nhiều so với nâng cấp phần cứng Database gấp ba lần.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "200.000 bản ghi ánh xạ ngắn chỉ chiếm khoảng 100 MB RAM nhưng nâng Hit Ratio lên ~96%, cắt giảm gần 90% lượng truy vấn rơi xuống Database với chi phí chỉ bằng một phần nhỏ so với nâng cấp máy chủ Database."
+  },
+  {
+    "id": "S1-05.q5",
+    "type": "mc",
+    "q": "Trong bài toán tải ảnh đại diện (Upload Avatar), ưu điểm nổi bật nhất của phương án Lai (Hybrid: tạo nhanh 1 ảnh thu nhỏ đồng bộ, đẩy các bản phân giải cao sang Queue) so với hai phương án thuần túy là gì?",
+    "code": "",
+    "choices": [
+      "Không cần dùng tới Object Storage hay Database để lưu đường dẫn ảnh",
+      "Người dùng vẫn nhận phản hồi nhanh (~2 giây) và thấy ngay ảnh đại diện mới trên giao diện, trong khi phần nén nặng không giữ luồng API Server",
+      "Loại bỏ hoàn toàn nhu cầu kiểm tra định dạng tệp đầu vào trên máy chủ",
+      "Giúp thời gian nén 3 bức ảnh chất lượng cao giảm xuống còn 0 ms"
+    ],
+    "answer": 1,
+    "explain": "Phương án Lai giải quyết điểm yếu của cả hai thái cực: tránh bắt người dùng đợi 4,6 giây như đồng bộ hoàn toàn, đồng thời tránh trạng thái khung ảnh trống chưa có hình xem trước của bất đồng bộ thuần túy."
+  },
+  {
+    "id": "S1-05.q6",
+    "type": "tf",
+    "q": "Với hệ thống mới chỉ tạo 12 liên kết mỗi giây và tổng dữ liệu 5 năm dưới 1 TB, tách ngay thành 8 microservice kèm phân mảnh cơ sở dữ liệu ngay từ ngày đầu là lựa chọn tối ưu.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đó là lỗi thiết kế quá mức (Over-engineering): chi phí vận hành, gỡ lỗi phân tán và giao dịch liên dịch vụ tăng vọt trong khi một tầng API Stateless gọn gàng đi cùng Redis Cache và một cụm SQL chuẩn đã dư sức đáp ứng."
+  }
+]

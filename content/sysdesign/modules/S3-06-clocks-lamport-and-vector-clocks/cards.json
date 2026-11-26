@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-06.c1",
+    "front": "Sự khác biệt cốt lõi giữa Time-of-Day Clock và Monotonic Clock?",
+    "back": "Time-of-Day (đồng hồ tường) trả ngày giờ thực nhưng có thể nhảy vọt hoặc giật lùi khi NTP đồng bộ; Monotonic Clock chỉ tiến đều về phía trước trên từng máy nên bắt buộc dùng để đo độ trễ, Timeout và Lease."
+  },
+  {
+    "id": "S3-06.c2",
+    "front": "Quan hệ nhân quả Happens-Before (a → b) và đồng thời (a ∥ b) được định nghĩa thế nào?",
+    "back": "a → b khi a đứng trước b trên cùng tiến trình, hoặc a là gửi và b là nhận cùng một thông điệp, hoặc bắc cầu qua sự kiện trung gian. Nếu cả a → b và b → a đều không xảy ra thì a và b đồng thời (a ∥ b)."
+  },
+  {
+    "id": "S3-06.c3",
+    "front": "Quy tắc cập nhật của Đồng hồ Lamport và giới hạn của nó?",
+    "back": "Sự kiện nội bộ/gửi tin: LC = LC + 1; nhận tin mang nhãn T: LC = max(LC, T) + 1. Bảo đảm a → b ⇒ LC(a) < LC(b), nhưng chiều ngược lại không đúng nên Lamport không phát hiện được xung đột đồng thời."
+  },
+  {
+    "id": "S3-06.c4",
+    "front": "Làm sao Vector Clock phát hiện được hai bản ghi đang xung đột đồng thời?",
+    "back": "Mỗi nút giữ mảng N bộ đếm. Nếu véc-tơ U có ít nhất một phần tử lớn hơn V và một phần tử khác nhỏ hơn V (ví dụ [2, 0] và [1, 2]), hai cập nhật chắc chắn đồng thời (U ∥ V) và phải được hợp nhất thay vì ghi đè mù quáng."
+  },
+  {
+    "id": "S3-06.c5",
+    "front": "Vì sao Last-Write-Wins (LWW) dựa trên đồng hồ vật lý gây nguy hiểm?",
+    "back": "Độ lệch NTP vài chục mili-giây khiến máy có đồng hồ chạy nhanh gắn nhãn giờ tương lai; mọi cập nhật mới hơn về mặt nhân quả trên máy đồng hồ chậm đều mang nhãn nhỏ hơn và bị xoá mất âm thầm."
+  },
+  {
+    "id": "S3-06.c6",
+    "front": "Hybrid Logical Clock (HLC) hoạt động theo nguyên tắc nào?",
+    "back": "Ghép cặp (pt, lc) kích thước O(1): pt giữ max của đồng hồ thực và các mốc từng nhận (không bao giờ lùi), còn lc tự tăng để phân tách nhân quả khi nhiều sự kiện rơi vào cùng mili-giây hoặc gặp máy đồng hồ nhanh."
+  }
+]

@@ -1,0 +1,8 @@
+[
+  { "id": "S0-07.c1", "front": "7 nhóm câu hỏi cốt lõi trước khi thiết kế hệ thống là gì?", "back": "1. Scale (quy mô), 2. Traffic Pattern (mẫu lưu lượng & Đọc:Ghi), 3. Data Size (dung lượng & vòng đời), 4. Availability (độ sẵn sàng), 5. Consistency (tính nhất quán), 6. Latency (độ trễ p95/p99), 7. Cost & Team (ngân sách & đội ngũ)." },
+  { "id": "S0-07.c2", "front": "Scale và Traffic Pattern bổ sung cho nhau như thế nào?", "back": "Scale cho biết tổng lượng người dùng và dữ liệu, còn Traffic Pattern cho biết hành vi theo thời gian: tỉ lệ Đọc:Ghi và biên độ đỉnh nhọn (spike) so với mức trung bình." },
+  { "id": "S0-07.c3", "front": "Cần hỏi những gì ở mục Data Size và vòng đời dữ liệu?", "back": "Kích thước trung bình mỗi bản ghi, tốc độ tăng trưởng mỗi ngày/tháng, thời hạn lưu trữ bắt buộc và tỉ lệ truy cập giữa dữ liệu nóng (gần đây) với dữ liệu lạnh (lịch sử)." },
+  { "id": "S0-07.c4", "front": "Sự khác biệt thực tế giữa 99,9% và 99,99% uptime là gì?", "back": "99,9% cho phép khoảng 8,76 giờ ngừng hoạt động mỗi năm (~43 phút/tháng), còn 99,99% chỉ cho phép ~52,6 phút/năm (~4,3 phút/tháng), đòi hỏi dự phòng tự động không cần dừng bảo trì." },
+  { "id": "S0-07.c5", "front": "Vì sao mục tiêu Latency cần chốt theo p95/p99 thay vì trung bình?", "back": "Số trung bình che giấu nhóm 1%–5% request chậm nhất nơi người dùng chịu trải nghiệm tệ nhất; các luồng khác nhau (gợi ý ô tìm kiếm vs xuất báo cáo nền) cũng có ngưỡng p99 rất khác nhau." },
+  { "id": "S0-07.c6", "front": "Chi phí trong câu hỏi số 7 bao gồm những thành phần nào?", "back": "Không chỉ hóa đơn máy chủ và lưu trữ đám mây, mà còn gồm chi phí dịch vụ bên thứ ba, thời gian kỹ sư xây dựng và gánh nặng vận hành, giám sát, trực sự cố lâu dài." }
+]

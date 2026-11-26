@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "base": "s1-four-shifts",
+  "scenes": {
+    "s1-four-shifts": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Bốn chuyển dịch tư duy nền tảng của Phase 0", "en": "Four Core Mindset Shifts of Phase 0" },
+        "nodes": [
+          { "id": "root", "label": "Tư duy Thiết kế Hệ thống", "sub": "Nền móng trước khi học công nghệ", "layer": 0, "tone": "amber" },
+          { "id": "m1", "label": "1. Không có giải pháp tối ưu chung", "sub": "Phù hợp bối cảnh > Hoàn hảo", "layer": 1, "tone": "blue" },
+          { "id": "m2", "label": "2. Luôn hỏi Tại sao (5 Whys)", "sub": "Hiểu lý do gốc > Sao chép mẫu", "layer": 1, "tone": "green" },
+          { "id": "m3", "label": "3. Đánh đổi > Công nghệ", "sub": "Ràng buộc dẫn dắt công cụ", "layer": 1, "tone": "purple" },
+          { "id": "m4", "label": "4. Hệ thống > Mã nguồn đơn lẻ", "sub": "Luồng dữ liệu · Điểm hỏng · Vận hành", "layer": 1, "tone": "rose" }
+        ],
+        "edges": [
+          { "from": "root", "to": "m1" },
+          { "from": "root", "to": "m2" },
+          { "from": "root", "to": "m3" },
+          { "from": "root", "to": "m4" }
+        ]
+      }
+    },
+    "s2-no-best": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Mindset 1: Cùng câu hỏi chọn Database, bối cảnh khác cho đáp án khác", "en": "Mindset 1: Context Determines the Right Fit" },
+        "names": [
+          { "id": "ctx1", "name": "Sổ cái giao dịch tài chính ACID", "target": "db-sql" },
+          { "id": "ctx2", "name": "Lưu phiên đăng nhập hết hạn 30 phút", "target": "db-kv" },
+          { "id": "ctx3", "name": "Ghi 250.000 điểm GPS tài xế/giây", "target": "db-wide" }
+        ],
+        "objects": [
+          { "id": "db-sql", "type": "Quan hệ (PostgreSQL)", "value": "Mạnh về ràng buộc toàn vẹn và giao dịch nhiều bảng", "tone": "blue" },
+          { "id": "db-kv", "type": "Key-Value trong RAM (Redis)", "value": "Độ trễ dưới 1 ms, hỗ trợ TTL tự xóa tự nhiên", "tone": "green" },
+          { "id": "db-wide", "type": "Phân mảnh ghi tuần tự (LSM/Wide-Column)", "value": "Thông lượng ghi cao, mở rộng ngang theo phân vùng", "tone": "purple" }
+        ]
+      }
+    },
+    "s3-five-whys": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Mindset 2: Chuỗi 5 lần hỏi Tại sao ngăn thêm thành phần thừa", "en": "Mindset 2: Five Whys Uncovers Simpler Fixes" },
+        "cells": [
+          { "id": "w1", "label": "Đề xuất ban đầu", "value": "Thêm cụm Redis Cache mới", "note": "Khoan triển khai — hỏi Tại sao cần thêm?", "tone": "amber" },
+          { "id": "w2", "label": "Tại sao #1 & #2", "value": "API mất 1,8 giây do câu SQL chậm", "note": "Đo tiếp xem vì sao câu SQL chạy lâu", "tone": "blue" },
+          { "id": "w3", "label": "Tại sao #3 & #4", "value": "Bảng 5 triệu dòng bị quét tuần tự toàn bộ", "note": "Cột lọc trạng thái chưa được đánh chỉ mục", "tone": "purple" },
+          { "id": "w4", "label": "Giải pháp gốc", "value": "Tạo Composite Index giảm còn 6 ms", "note": "Không tốn thêm cụm máy hay lỗi lệch bộ đệm", "tone": "green" }
+        ]
+      }
+    },
+    "s4-tradeoffs": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Mindset 3: Xếp hạng đánh đổi trước, chọn công nghệ sau", "en": "Mindset 3: Rank Trade-offs Before Picking Tech" },
+        "cells": [
+          { "id": "t1", "label": "Nhất quán vs Sẵn sàng", "value": "Chặn giao dịch lỗi hay giữ dịch vụ luôn trả lời?", "note": "Quyết định cơ chế đồng bộ giữa các bản sao", "tone": "rose" },
+          { "id": "t2", "label": "Độ trễ thấp vs Chi phí", "value": "Đặt bộ đệm đa tầng hay tiết kiệm RAM/máy chủ?", "note": "Mỗi mili-giây rút ngắn đều có giá hạ tầng", "tone": "amber" },
+          { "id": "t3", "label": "Đơn giản vs Linh hoạt", "value": "Một khối dễ vận hành hay tách nhỏ nhiều dịch vụ?", "note": "Phù hợp quy mô đội ngũ hiện tại", "tone": "blue" }
+        ]
+      }
+    },
+    "s5-system-vs-code": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Mindset 4: Góc nhìn hàm mã nguồn so với góc nhìn toàn hệ thống", "en": "Mindset 4: Code View vs System View" },
+        "names": [
+          { "id": "c-view", "name": "Tư duy thuần mã nguồn", "target": "o-code" },
+          { "id": "s-view", "name": "Tư duy cấp hệ thống", "target": "o-sys" }
+        ],
+        "objects": [
+          { "id": "o-code", "type": "Bên trong một tiến trình", "value": "Tối ưu vòng lặp, tách lớp sạch, gọi cổng thanh toán rồi lưu DB", "tone": "blue" },
+          { "id": "o-sys", "type": "Giữa các thành phần & khi gặp lỗi", "value": "Cổng thanh toán treo 10 s thì sao? Trừ tiền xong DB sập thì đối soát thế nào?", "tone": "green" }
+        ]
+      }
+    },
+    "s6-tool-map": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Nối 4 Mindset với bộ công cụ thực hành của Phase 0", "en": "Connecting Mindsets to Phase 0 Tools" },
+        "names": [
+          { "id": "m-why", "name": "Luôn hỏi Tại sao & Bài toán trước", "target": "tool-q" },
+          { "id": "m-no", "name": "Không có giải pháp hoàn hảo chung", "target": "tool-mat" },
+          { "id": "m-tr", "name": "Thiết kế trong giới hạn thực tế", "target": "tool-bud" },
+          { "id": "m-sys", "name": "Nhìn luồng tổng thể I → P → S → O", "target": "tool-flow" }
+        ],
+        "objects": [
+          { "id": "tool-q", "type": "S0-01 & S0-07 · Khung 7 câu hỏi", "value": "Làm rõ quy mô, mẫu tải và cam kết trước khi vẽ", "tone": "blue" },
+          { "id": "tool-mat", "type": "S0-02 · Ma trận đánh đổi có trọng số", "value": "Chấm điểm phương án dựa trên ưu tiên cụ thể", "tone": "purple" },
+          { "id": "tool-bud", "type": "S0-04 & S0-05 · Ngân sách & Napkin Math", "value": "Định lượng RPS, dung lượng và trần chi phí", "tone": "amber" },
+          { "id": "tool-flow", "type": "S0-03 & S0-06 · Luồng thành phần & Điểm hỏng", "value": "Lần theo đường đi dữ liệu và cô lập sự cố", "tone": "green" }
+        ]
+      }
+    }
+  }
+}
