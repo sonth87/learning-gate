@@ -307,4 +307,22 @@ export const DECLARATIONS_GLOSSARY: GlossaryTerm[] = [
     jsEquivalent: 'JSDoc /** ... */',
     relatedTerms: ['decl-def-func', 'decl-class'],
   },
+  {
+    id: 'decl-lambda',
+    term: 'lambda (Anonymous / Arrow Function)',
+    aliases: ['lambda', 'arrow function', 'hàm ẩn danh'],
+    category: 'declaration',
+    level: 'basic',
+    stageId: 'stage-2',
+    shortSummary: 'Cú pháp khai báo hàm ẩn danh 1 biểu thức `lambda params: expr` (tương đương `(params) => expr` trong JS).',
+    detailedExplanation:
+      'Dùng để tạo nhanh một hàm nhỏ không tên ngay tại vị trí truyền đối số (như `key=lambda x: ...` trong `sorted`, `min`, `max`, hoặc `default_factory=lambda: ...`). Khác với Arrow Function trong JS có thể mở `{ ... }` viết nhiều dòng lệnh, `lambda` trong Python bị giới hạn nghiêm ngặt chỉ chứa đúng 1 biểu thức (single expression) và tự động return kết quả của biểu thức đó.',
+    analogy:
+      'Giống như chiếc máy tính bỏ túi cài sẵn 1 công thức duy nhất đặt ngay tại quầy thu ngân để bấm nhanh giá sau thuế mà không cần lập cả một quy trình văn bản.',
+    syntaxExample: `# 1. Làm hàm đo key= cho sorted() / max():\norders = [{"id": 1, "total": 250}, {"id": 2, "total": 900}]\ntop_order = max(orders, key=lambda o: o["total"])\n\n# 2. Nhiều tham số và tham số mặc định:\ncalc_tax = lambda amount, rate=0.08: round(amount * (1 + rate), 2)\nprint(calc_tax(100))  # 108.0`,
+    commonGotcha:
+      'Theo chuẩn PEP 8 (E731), chỉ nên dùng `lambda` làm hàm truyền trực tiếp vào tham số (`key=lambda ...`). Nếu bạn định gán `fn = lambda x: ...` để gọi nhiều nơi, hãy viết `def fn(x): return ...` để có tên hàm rõ ràng khi debug Traceback!',
+    jsEquivalent: '(o) => o.total  |  (amount, rate = 0.08) => amount * (1 + rate)',
+    relatedTerms: ['kw-lambda', 'decl-def-func', 'concept-list-comp'],
+  },
 ];

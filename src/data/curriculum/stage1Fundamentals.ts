@@ -390,6 +390,7 @@ match event:
     theoryParagraphs: [
       'Hàm trong Python cực kỳ linh hoạt nhờ hỗ trợ cả đối số theo vị trí (`Positional Arguments`) và đối số truyền theo tên (`Keyword Arguments`: `create_user(age=25, name="An")`). Bạn còn có thể dùng dấu `*` trong danh sách tham số để bắt buộc các tham số đứng sau nó phải truyền theo tên (`Keyword-only arguments`), giúp code gọi hàm cực kỳ tự minh bạch.',
       'Toán tử gom/trải `*args` thu thập các đối số vị trí dư thừa vào một `tuple`, còn `**kwargs` thu thập các đối số đặt tên dư thừa vào một `dict`. Ngược lại, khi gọi hàm, `*my_list` và `**my_dict` sẽ giải nén (unpack) danh sách/từ điển thành từng đối số riêng lẻ.',
+      '**Giải mã `lambda` cho người từ JavaScript sang (`(x) => expr` vs `lambda x: expr`)**: Trong JavaScript, bạn dùng Arrow Function `(x) => x * 2` ở khắp mọi nơi. Trong Python, từ khóa **`lambda tham_số: biểu_thức`** chính là hàm ẩn danh 1 dòng tương đương với `(tham_số) => biểu_thức` (Python tự động `return` giá trị của biểu thức sau dấu `:` mà không cần viết chữ `return`). Tuy nhiên, có **3 khác biệt sống còn** khi chuyển từ JS sang Python: (1) `lambda` trong Python **chỉ được phép chứa đúng 1 biểu thức đơn (Single Expression)** — cấm mở `{}` viết nhiều dòng lệnh, cấm `for/while`, cấm `try/except`; nếu callback cần nhiều dòng, hãy viết một hàm `def` có tên ngay bên trong hàm hiện tại! (2) 90% ứng dụng của `lambda` trong Python là truyền vào tham số **`key=`** của `sorted(users, key=lambda u: u["age"])`, `min()`, `max()` (khác với `arr.sort((a, b) => a.age - b.age)` của JS nhận 2 tham số, `key=` của Python chỉ nhận **1 phần tử** và trả về tiêu chí đem đi so sánh!). (3) Để biến đổi hoặc lọc mảng (`.map()` / `.filter()` trong JS), dân Python hầu như không viết `map(lambda x: ...)` mà dùng **List Comprehension** `[x * 2 for x in arr if x > 0]`.',
       'Về phạm vi biến (Variable Scope), Python tra cứu tên biến theo **Quy tắc 4 tầng LEGB**: **L (Local - Trong hàm hiện tại)** → **E (Enclosing - Hàm bao ngoài của Closure)** → **G (Global - Cấp độ file module)** → **B (Built-in - Các hàm tích hợp sẵn như `len`, `print`)**. Lưu ý quan trọng: Python KHÔNG có Block Scope cho `if/else` hay `for/while` — biến khai báo trong `if` hay `for` thuộc toàn hàm (`Local`).',
     ],
     analogy: {
@@ -534,6 +535,14 @@ print(s1["tags"], s2["tags"])  # Mỗi sinh viên có 1 list độc lập!`,
         jsCode: `if (true) {\n  const msg = "Hello";\n}\n// console.log(msg); -> ReferenceError!`,
         pythonCode: `if True:\n    msg = "Hello"\nprint(msg)  # In ra "Hello" bình thường vì msg thuộc Function Scope!`,
         keyDifference: 'Cẩn thận khi dùng biến trong nhánh `if`: nếu điều kiện `if` sai và không có nhánh `else` khởi tạo biến đó, truy cập biến phía dưới sẽ ném `UnboundLocalError`.',
+      },
+      {
+        concept: 'Hàm ẩn danh: Arrow Function (=>) vs lambda & Sắp xếp key=',
+        jsTsWay: '(x) => x * 2  |  users.sort((a, b) => a.age - b.age)',
+        pythonWay: 'lambda x: x * 2  |  sorted(users, key=lambda u: u["age"])',
+        jsCode: `const byAge = [...users].sort((a, b) => a.age - b.age);\nconst doubled = nums.map(x => x * 2);`,
+        pythonCode: `by_age = sorted(users, key=lambda u: u["age"])\ndoubled = [x * 2 for x in nums]  # Dùng Comprehension thay cho map(lambda)!`,
+        keyDifference: '`lambda` trong Python chỉ chứa được ĐÚNG 1 biểu thức đơn (không mở `{}` viết nhiều dòng như JS). Khi cần sắp xếp giảm dần hoặc nhiều tiêu chí, trả về một Tuple âm trong `key=`: `sorted(users, key=lambda u: (-u["score"], u["name"]))`.',
       },
     ],
     externalReferences: [
