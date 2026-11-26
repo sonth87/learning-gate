@@ -7,6 +7,9 @@ import YAML from 'yaml';
 import type {
   BilingualText,
   CalloutKind,
+  LiveChaosKind,
+  LiveMetricSpec,
+  LiveSimSpec,
   ScaleLessonStep,
   ScaleModuleLesson,
   StageRenderMode,
@@ -15,7 +18,9 @@ import type {
   StepDiffItem,
 } from '@/components/scale-workbench/types';
 import { buildCodeTraceFromSection, extractFirstCodeBlock } from '@/features/devops-course/scale/courseLessonBuilder';
-import type { SdBilingual, SdCurriculum, SdModule, SdStepBlock, SdText } from '../types';
+import { sdAttributionLine } from '../credits';
+import { createSim, type SimFrame, type SimScenario } from '../sim';
+import type { SdBilingual, SdCurriculum, SdLiveDef, SdModule, SdStepBlock, SdText } from '../types';
 import { buildSdMemoryScene, buildSdStageScene, toBilingual, type SdModelLike } from './sdSceneBuilder';
 
 export const SD_MAX_STEPS = 12;
@@ -23,11 +28,17 @@ export const SD_MAX_STEPS = 12;
 const CATEGORIES = new Set<string>(['SETUP', 'PROBLEM', 'TECHNIQUE', 'MECHANISM', 'PITFALL', 'REAL_CODE', 'RECAP']);
 const CALLOUT_KINDS = new Set<string>(['key-idea', 'watch-out', 'good-to-know', 'compare', 'technique']);
 const TONES = new Set<string>(['default', 'ok', 'warn', 'bad']);
+const CHAOS_KINDS = new Set<string>(['kill', 'slow', 'partition', 'expire-cache', 'hot-key', 'bad-deploy']);
+const METRIC_FORMATS = new Set<string>(['rps', 'ms', 'pct', 'usd-hour', 'count']);
 
 /** Phần tối thiểu của một phần tử `sims[id]` trong sims.json (04 §10). */
 export interface SdSimDocLike {
   id: string;
-  scenario?: { model?: SdModelLike };
+  scenario?: {
+    model?: SdModelLike;
+    durationSec?: number;
+    load?: unknown;
+  };
 }
 export type SdSimsMap = Record<string, SdSimDocLike>;
 
@@ -109,17 +120,177 @@ function whatChangedOf(items: string[] | undefined): StepDiffItem[] {
   });
 }
 
-function telemetryOf(items: SdStepBlock['telemetry']): StageTelemetryItem[] {
+/** Cache kết quả chạy headless theo simId để phân giải biến `{node.field@t:dp}` (06 §8.3, 07 §2.3). */
+const headlessFrameCache = new WeakMap<object, Map<number, SimFrame>>();
+
+function getFrameAtSec(doc: SdSimDocLike | undefined, tSec: number): SimFrame | null {
+  const sc = doc?.scenario;
+  if (!sc || typeof sc.durationSec !== 'number' || !sc.load || !sc.model) return null;
+  let byTick = headlessFrameCache.get(sc);
+  const targetTick = Math.max(0, Math.round(tSec * 10));
+  if (byTick?.has(targetTick)) return byTick.get(targetTick) ?? null;
+
+  try {
+    const sim = createSim(sc as unknown as SimScenario);
+    if (!byTick) {
+      byTick = new Map<number, SimFrame>();
+      headlessFrameCache.set(sc, byTick);
+    }
+    const f0 = sim.frame() ?? sim.step();
+    byTick.set(f0.tick, f0);
+    const maxTick = Math.min(Math.round(sc.durationSec * 10), Math.max(targetTick, 600));
+    for (let k = 1; k <= maxTick; k++) {
+      const f = sim.step();
+      byTick.set(f.tick, f);
+    }
+    return byTick.get(targetTick) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Phân giải chuỗi chứa biến `{entity.field@t:fmt}` (vd `{cache.hitRatio@10:0%}`, `{db.rho@30:2}`).
+ * Nếu không có scenario đầy đủ hoặc không tìm thấy trường ⇒ trả null để hiển thị `'—'`.
+ */
+export function resolveTelemetryTemplate(
+  raw: string,
+  doc: SdSimDocLike | undefined
+): string | null {
+  if (!/\{[^}]+\}/.test(raw)) return raw;
+  let failed = false;
+  const replaced = raw.replace(
+    /\{([a-zA-Z0-9_-]+)\.([a-zA-Z0-9_]+)@([0-9.]+)(?::([^}]+))?\}/g,
+    (_m, ent: string, field: string, tStr: string, fmt?: string) => {
+      const tSec = Number(tStr);
+      const frame = getFrameAtSec(doc, tSec);
+      if (!frame) {
+        failed = true;
+        return '—';
+      }
+      let val: number | undefined;
+      if (ent === 'global' || ent === 'metrics') {
+        const gm = frame.metrics as unknown as Record<string, unknown>;
+        if (field === 'p50' || field === 'p95' || field === 'p99' || field === 'mean') {
+          val = frame.metrics.latency[field];
+        } else if (typeof gm[field] === 'number') {
+          val = gm[field] as number;
+        }
+      } else if (frame.nodes[ent]) {
+        const nf = frame.nodes[ent] as unknown as Record<string, unknown>;
+        if (field === 'p50' || field === 'p95' || field === 'p99' || field === 'mean') {
+          val = frame.nodes[ent].latency[field];
+        } else if (typeof nf[field] === 'number') {
+          val = nf[field] as number;
+        }
+      } else if (frame.links[ent]) {
+        const lf = frame.links[ent] as unknown as Record<string, unknown>;
+        if (typeof lf[field] === 'number') val = lf[field] as number;
+      }
+      if (typeof val !== 'number' || !Number.isFinite(val)) {
+        failed = true;
+        return '—';
+      }
+      const fStr = (fmt ?? '0').trim();
+      if (fStr.endsWith('%')) {
+        const dp = Math.max(0, parseInt(fStr.slice(0, -1), 10) || 0);
+        return `${(val * 100).toFixed(dp)}%`;
+      }
+      const dp = Math.max(0, parseInt(fStr, 10) || 0);
+      return val.toFixed(dp);
+    }
+  );
+  return failed ? null : replaced;
+}
+
+function telemetryOf(
+  items: SdStepBlock['telemetry'],
+  simDoc: SdSimDocLike | undefined
+): StageTelemetryItem[] {
   return (items ?? []).slice(0, 3).map((it) => {
     const value = textOf(it.value);
-    // TODO(T3.6/T4.x): biến `{node.field@t:dp}` cần engine lúc build; tạm hiển thị "—".
-    const unresolved = /\{[^}]+\}/.test(value.vi);
+    const resolvedVi = resolveTelemetryTemplate(value.vi, simDoc);
+    const resolvedEn = resolveTelemetryTemplate(value.en, simDoc);
     return {
       label: textOf(it.label),
-      value: unresolved ? { vi: '—', en: '—' } : value,
+      value:
+        resolvedVi !== null && resolvedEn !== null
+          ? { vi: resolvedVi, en: resolvedEn }
+          : { vi: '—', en: '—' },
       tone: it.tone && TONES.has(it.tone) ? it.tone : 'default',
     };
   });
+}
+
+function toLiveSimSpec(def: SdLiveDef): LiveSimSpec {
+  const rawCtrl = (def.controls ?? {}) as Record<string, unknown>;
+  const chaos = Array.isArray(rawCtrl.chaos)
+    ? (rawCtrl.chaos.filter((c) => typeof c === 'string' && CHAOS_KINDS.has(c)) as LiveChaosKind[])
+    : undefined;
+  const knobs = Array.isArray(rawCtrl.knobs)
+    ? rawCtrl.knobs
+        .filter(
+          (k): k is { node: string; key: string } =>
+            Boolean(k && typeof k === 'object' && typeof (k as { node?: unknown }).node === 'string' && typeof (k as { key?: unknown }).key === 'string')
+        )
+        .map((k) => ({ node: k.node, key: k.key }))
+    : undefined;
+
+  const telemetry: LiveMetricSpec[] | undefined = Array.isArray(def.telemetry)
+    ? def.telemetry
+        .filter((t): t is Record<string, unknown> => Boolean(t && typeof t === 'object' && typeof (t as { metric?: unknown }).metric === 'string'))
+        .map((t) => {
+          const fmt = typeof t.format === 'string' && METRIC_FORMATS.has(t.format)
+            ? (t.format as LiveMetricSpec['format'])
+            : 'count';
+          const rawTone = t.tone && typeof t.tone === 'object' ? (t.tone as Record<string, unknown>) : undefined;
+          return {
+            metric: String(t.metric),
+            label: toBilingual(t.label as SdBilingual | string | undefined, String(t.metric)),
+            format: fmt,
+            tone: rawTone
+              ? {
+                  warnAbove: typeof rawTone.warnAbove === 'number' ? rawTone.warnAbove : undefined,
+                  badAbove: typeof rawTone.badAbove === 'number' ? rawTone.badAbove : undefined,
+                  warnBelow: typeof rawTone.warnBelow === 'number' ? rawTone.warnBelow : undefined,
+                  badBelow: typeof rawTone.badBelow === 'number' ? rawTone.badBelow : undefined,
+                }
+              : undefined,
+          };
+        })
+    : undefined;
+
+  const slo = Array.isArray(def.slo)
+    ? def.slo
+        .filter(
+          (s): s is { metric: 'p99' | 'errorRate'; value: number; unit?: string } =>
+            Boolean(
+              s &&
+                typeof s === 'object' &&
+                ((s as { metric?: unknown }).metric === 'p99' || (s as { metric?: unknown }).metric === 'errorRate') &&
+                typeof (s as { value?: unknown }).value === 'number'
+            )
+        )
+        .map((s) => ({ metric: s.metric, value: s.value, unit: s.unit }))
+    : undefined;
+
+  return {
+    simId: def.sim,
+    startAtSec: def.startAtSec,
+    autoplay: def.autoplay,
+    speed: def.speed,
+    controls: {
+      timeline: rawCtrl.timeline !== false,
+      load: Boolean(rawCtrl.load),
+      chaos,
+      knobs,
+      tracer: Boolean(rawCtrl.tracer),
+    },
+    telemetry,
+    slo,
+    pauseAtSec: Array.isArray(def.pauseAtSec) ? def.pauseAtSec : undefined,
+    focus: def.focus,
+  };
 }
 
 function modelFor(mod: SdModule, simId: string | undefined, sims: SdSimsMap | null): SdModelLike | null {
@@ -185,22 +356,42 @@ export function buildSdModuleLesson(
       b.category && CATEGORIES.has(b.category) ? (b.category as StepCategory) : fallbackCategory(idx, total);
 
     const wantsCode = b.mode === 'code' && extractFirstCodeBlock(sec.body) !== undefined;
+    const liveDef = !wantsCode && b.live && mod.stage?.live ? mod.stage.live[b.live] : undefined;
+    const stepSimId = b.sim ?? liveDef?.sim ?? mod.simIds[0];
+    const stepSimDoc = stepSimId && sims ? sims[stepSimId] : undefined;
 
     let scene: ScaleLessonStep['scene'];
     let memoryScene: ScaleLessonStep['memoryScene'];
     let stageMode: StageRenderMode = 'code-trace';
+    let liveSim: LiveSimSpec | undefined;
+
     if (!wantsCode) {
-      // TODO(T3.6): b.live (live-sim) tạm dựng như cảnh tĩnh theo `scene`; engine/stage live chưa có.
       const explicit = b.scene && b.scene !== 'none' ? (b.scene === '@prev' ? prevScene : b.scene) : undefined;
-      let built = tryBuild(explicit, b.sim);
-      if (!built) built = tryBuild(lastIso, b.sim);
-      if (!built) built = tryBuild(baseKey, b.sim);
+      let built = tryBuild(explicit, stepSimId);
+      if (!built) built = tryBuild(lastIso, stepSimId);
+      if (!built) built = tryBuild(baseKey, stepSimId);
       if (built) {
         stageMode = built.stageMode;
         scene = 'scene' in built ? built.scene : undefined;
         memoryScene = 'memoryScene' in built ? built.memoryScene : undefined;
         prevScene = built.key;
         if (built.stageMode === 'isometric') lastIso = built.key;
+
+        if (liveDef && scene && built.stageMode === 'isometric') {
+          stageMode = 'live-sim';
+          liveSim = toLiveSimSpec(liveDef);
+          // 05 §3.3 & §3.4: scene của step live-sim có packets rỗng, giữ loadPct=0 làm vật cản đặt pill
+          scene = {
+            ...scene,
+            packets: [],
+            nodes: scene.nodes.map((n) => ({
+              ...n,
+              loadPct: 0,
+              dead: undefined,
+              badge: undefined,
+            })),
+          };
+        }
       }
     }
     const isCodeTrace = stageMode === 'code-trace';
@@ -242,13 +433,18 @@ export function buildSdModuleLesson(
       codeSnippet: snippet,
       callout,
       whatChanged: whatChangedOf(b.whatChanged),
-      telemetry: telemetryOf(b.telemetry),
+      telemetry: telemetryOf(b.telemetry, stepSimDoc),
       stageMode,
       scene,
       memoryScene,
       codeTrace,
+      liveSim,
+      activityId: b.activity,
+      activityGate: b.activity ? (b.gate ?? 'optional') : undefined,
     };
   });
+
+  const attr = sdAttributionLine(mod);
 
   return {
     moduleId: mod.id,
@@ -263,7 +459,7 @@ export function buildSdModuleLesson(
     subtitle: { vi: mod.summary, en: mod.summaryEn ?? mod.summary },
     durationMin: mod.durationMin,
     difficulty: mod.difficulty,
-    primaryMode: steps.some((s) => s.stageMode === 'isometric')
+    primaryMode: steps.some((s) => s.stageMode === 'isometric' || s.stageMode === 'live-sim')
       ? 'isometric'
       : steps.some((s) => s.stageMode === 'memory-2d')
         ? 'memory-2d'
@@ -275,6 +471,12 @@ export function buildSdModuleLesson(
     exerciseCount: 0,
     cardCount: mod.cards.length,
     readingCount: 0,
+    attribution: attr
+      ? {
+          text: { vi: attr.text, en: attr.text },
+          href: attr.href,
+        }
+      : undefined,
   };
 }
 

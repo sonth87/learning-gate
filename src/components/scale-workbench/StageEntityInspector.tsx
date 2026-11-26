@@ -4,6 +4,7 @@ import { BookOpen, Cpu, HelpCircle, Lightbulb, Sparkles, X } from 'lucide-react'
 import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 import { EXTRA_ENTITY_KNOWLEDGE } from './entityKnowledgeExtra';
+import { WORKBENCH_I18N } from './i18n';
 import { pickText, type BilingualText, type StageInspectorInfo } from './types';
 
 const bi = (vi: string, en: string): BilingualText => ({ vi, en });

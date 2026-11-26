@@ -10,6 +10,9 @@
           "readRatio": 0.9
         },
         "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
         "load": {
           "kind": "ramp",
           "from": 200,

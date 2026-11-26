@@ -33,7 +33,7 @@ export const LoadKnob: React.FC<LoadKnobProps> = ({ session, lang, compact }) =>
   const t = WORKBENCH_I18N[lang];
   const [mult, setMult] = useState<number>(() => session.getLoadMultiplier?.() ?? 1);
   const [open, setOpen] = useState(false);
-  const rpsRef = useRef<HTMLSpanElement | null>(null);
+  const rpsRef = useRef<HTMLDivElement | null>(null);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {

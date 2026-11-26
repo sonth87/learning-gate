@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { ArrowLeft, Layers, ListChecks, Map as MapIcon, Trophy } from 'lucide-react';
 import { useSdCurriculum, useSdSims } from './data';
+import { createSdLiveSimAdapter } from './live/liveSimAdapter';
 import { buildSdScaleLessons } from './scale/sdLessonBuilder';
 import { lessonSatisfied, quizSatisfied, sdModuleDone } from './logic';
 import { useSdNav, useSdProgress } from './store';
@@ -102,6 +103,7 @@ export const SdLearnShell: React.FC = () => {
   }, [view]);
 
   const scaleLessons = useMemo(() => (cur ? buildSdScaleLessons(cur, sims) : []), [cur, sims]);
+  const liveSimAdapter = useMemo(() => createSdLiveSimAdapter(sims), [sims]);
 
   const getModuleStatus = useCallback(
     (moduleId: string): ModuleStatusSnapshot => {
@@ -133,6 +135,7 @@ export const SdLearnShell: React.FC = () => {
         }}
         onOpenQuiz={(moduleId) => go({ name: 'quiz', mode: 'module', moduleId })}
         onOpenFlashcards={(moduleId) => go({ name: 'flash', moduleId })}
+        liveSimAdapter={liveSimAdapter}
       />
     );
   }

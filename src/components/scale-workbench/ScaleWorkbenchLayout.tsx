@@ -39,10 +39,20 @@ import { WORKBENCH_I18N } from './i18n';
 import {
   pickText,
   type CalloutKind,
+  type LiveSimAdapter,
+  type LiveSimSession,
+  type LiveTrace,
   type PacketKind,
   type ScaleModuleLesson,
   type StepCategory,
 } from './types';
+import { useSimClock } from './live/useSimClock';
+import { LiveTelemetryStrip } from './live/LiveTelemetryStrip';
+import { SimTimeline } from './live/SimTimeline';
+import { LoadKnob } from './live/LoadKnob';
+import { ChaosToolbox, type ActiveChaosPick } from './live/ChaosToolbox';
+import { KnobPanel } from './live/KnobPanel';
+import { RequestTracerButton, RequestTracerDrawer } from './live/RequestTracer';
 import { cn } from '@/utils/cn';
 
 const FOLDER_COLORS = [
@@ -164,6 +174,8 @@ export interface ScaleWorkbenchLayoutProps {
   onRunCodeSnippet?: (code: string) => Promise<RunResult>;
   sandboxTitle?: string;
   runCodeLabel?: string;
+  /** live-sim: adapter do feature cấp (05 §2.1); không truyền thì bước live-sim rơi về isometric tĩnh */
+  liveSimAdapter?: LiveSimAdapter;
 }
 
 export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
@@ -178,6 +190,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   onRunCodeSnippet,
   sandboxTitle = 'Python 3.12 (Pyodide)',
   runCodeLabel,
+  liveSimAdapter,
 }) => {
   const {
     lang,
@@ -240,6 +253,101 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     | { kind: 'chapter'; level: number; top: number }
     | null
   >(null);
+
+  // ── live-sim state (đặt trước early return theo F3) ──
+  const [liveSession, setLiveSession] = useState<LiveSimSession | null>(null);
+  const [simSpeed, setSimSpeed] = useState<1 | 2 | 5>(1);
+  const [activeChaosPick, setActiveChaosPick] = useState<ActiveChaosPick | null>(null);
+  const [chaosToast, setChaosToast] = useState<string | null>(null);
+  const [activeTrace, setActiveTrace] = useState<LiveTrace | null>(null);
+  const [liveLegendKinds, setLiveLegendKinds] = useState<PacketKind[]>(['request', 'response']);
+  const [livePacketScale, setLivePacketScale] = useState<number>(0);
+
+  useEffect(() => {
+    setActiveChaosPick(null);
+    setChaosToast(null);
+    setActiveTrace(null);
+    if (
+      !activeLesson ||
+      !activeStep ||
+      activeStep.stageMode !== 'live-sim' ||
+      !activeStep.liveSim ||
+      !liveSimAdapter
+    ) {
+      setLiveSession(null);
+      return;
+    }
+    const spec = activeStep.liveSim;
+    const sess = liveSimAdapter.open(spec, {
+      lang,
+      moduleId: activeLesson.moduleId,
+      stepIndex: safeStepIdx,
+    });
+    setLiveSession(sess);
+    setSimSpeed(spec.speed ?? 1);
+    setIsPlaying(spec.autoplay ?? true);
+    return () => {
+      sess?.dispose();
+    };
+    // Mở lại session khi đổi bài hoặc bước (05 §2.1, §11 mục 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeLesson?.moduleId,
+    safeStepIdx,
+    activeStep?.stageMode,
+    activeStep?.liveSim,
+    liveSimAdapter,
+  ]);
+
+  useEffect(() => {
+    if (!liveSession) return;
+    const updateLegend = () => {
+      const f = liveSession.source.getFrame();
+      if (!f) return;
+      setLivePacketScale(f.packetScale);
+      const set = new Set<PacketKind>(['request', 'response']);
+      for (const p of f.packets) set.add(p.kind);
+      const next = [...set];
+      setLiveLegendKinds((prev) =>
+        prev.length === next.length && prev.every((k, i) => k === next[i])
+          ? prev
+          : next
+      );
+    };
+    updateLegend();
+    return liveSession.source.subscribe(updateLegend, { hz: 2 });
+  }, [liveSession]);
+
+  const simClock = useSimClock({
+    session: liveSession,
+    isPlaying: isPlaying && !manualSandboxOpen,
+    speed: simSpeed,
+    pauseAtSec: activeStep?.liveSim?.pauseAtSec,
+    onPause: () => setIsPlaying(false),
+    onEnd: () => setIsPlaying(false),
+  });
+
+  const handleChaosPick = useCallback(
+    (entity: { kind: 'node' | 'link'; id: string }) => {
+      if (!liveSession || !activeChaosPick) return;
+      const target =
+        entity.kind === 'node' ? { node: entity.id } : { link: entity.id };
+      liveSession.inject(activeChaosPick.kind, target, activeChaosPick.opts);
+      const labelMap: Record<ActiveChaosPick['kind'], string> = {
+        kill: t.live.chaos.kill,
+        slow: t.live.chaos.slow,
+        partition: t.live.chaos.partition,
+        'expire-cache': t.live.chaos.expireCache,
+        'hot-key': t.live.chaos.hotKey,
+        'bad-deploy': t.live.chaos.badDeploy,
+      };
+      setChaosToast(
+        t.live.chaos.injected(labelMap[activeChaosPick.kind], entity.id)
+      );
+      setActiveChaosPick(null);
+    },
+    [liveSession, activeChaosPick, t.live.chaos]
+  );
 
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const leftAsideRef = useRef<HTMLElement>(null);
@@ -443,10 +551,22 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (activeChaosPick) {
+          e.preventDefault();
+          setActiveChaosPick(null);
+          return;
+        }
+        if (activeTrace) {
+          e.preventDefault();
+          setActiveTrace(null);
+          return;
+        }
+      }
       const el = e.target as HTMLElement | null;
       if (
         el?.closest(
-          'input, textarea, select, [contenteditable="true"], [role="dialog"]'
+          'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"]'
         )
       ) {
         return;
@@ -461,6 +581,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         handlePrevStep();
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
+        liveSession?.reset();
         setIsPlaying(true);
         setReplayNonce((n) => n + 1);
       } else if (e.key === ' ') {
@@ -470,7 +591,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleNextStep, handlePrevStep]);
+  }, [handleNextStep, handlePrevStep, activeChaosPick, activeTrace, liveSession]);
 
   const handleRunSandbox = async () => {
     if (!onRunCodeSnippet || sandboxRunning) return;
@@ -502,8 +623,16 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const nextStepObj = activeLesson.steps[safeStepIdx + 1];
   const nextLessonObj = lessons[activeLessonIdx + 1];
 
+  const isLiveStage =
+    activeStep.stageMode === 'live-sim' &&
+    Boolean(activeStep.scene) &&
+    Boolean(activeStep.liveSim) &&
+    Boolean(liveSimAdapter) &&
+    Boolean(liveSession);
   const isIsometricStage =
-    activeStep.stageMode === 'isometric' && Boolean(activeStep.scene);
+    (activeStep.stageMode === 'isometric' ||
+      (activeStep.stageMode === 'live-sim' && !isLiveStage)) &&
+    Boolean(activeStep.scene);
   const isMemoryStage =
     activeStep.stageMode === 'memory-2d' && Boolean(activeStep.memoryScene);
   const isNativeCodeTrace = activeStep.stageMode === 'code-trace';
@@ -1015,52 +1144,61 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
           {/* Designed-to-Scale Compact Telemetry Strip + Stage Controls (single-row friendly so stage stays tall!) */}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
-            <div className="flex flex-wrap items-stretch gap-1.5">
-              {activeStep.telemetry.slice(0, 3).map((kpi, idx) => {
-                const barBg =
-                  kpi.tone === 'ok'
-                    ? 'bg-[#4caf50]'
-                    : kpi.tone === 'bad'
-                      ? 'bg-[#e5534b]'
-                      : kpi.tone === 'warn'
-                        ? 'bg-[#e8a33a]'
-                        : 'bg-transparent';
-                const valColor =
-                  kpi.tone === 'ok'
-                    ? 'text-[#2e6b19] dark:text-[#a8e686]'
-                    : kpi.tone === 'bad'
-                      ? 'text-[#b82c24] dark:text-[#fca5a5]'
-                      : kpi.tone === 'warn'
-                        ? 'text-[#8a5708] dark:text-[#fde68a]'
-                        : 'text-[var(--dts-ink)]';
+            {isLiveStage && liveSession ? (
+              <LiveTelemetryStrip
+                source={liveSession.source}
+                specs={activeStep.liveSim?.telemetry}
+                fallbackTelemetry={activeStep.telemetry}
+                lang={lang}
+              />
+            ) : (
+              <div className="flex flex-wrap items-stretch gap-1.5">
+                {activeStep.telemetry.slice(0, 3).map((kpi, idx) => {
+                  const barBg =
+                    kpi.tone === 'ok'
+                      ? 'bg-[#4caf50]'
+                      : kpi.tone === 'bad'
+                        ? 'bg-[#e5534b]'
+                        : kpi.tone === 'warn'
+                          ? 'bg-[#e8a33a]'
+                          : 'bg-transparent';
+                  const valColor =
+                    kpi.tone === 'ok'
+                      ? 'text-[#2e6b19] dark:text-[#a8e686]'
+                      : kpi.tone === 'bad'
+                        ? 'text-[#b82c24] dark:text-[#fca5a5]'
+                        : kpi.tone === 'warn'
+                          ? 'text-[#8a5708] dark:text-[#fde68a]'
+                          : 'text-[var(--dts-ink)]';
 
-                return (
-                  <div
-                    key={idx}
-                    className="relative flex min-w-0 flex-col rounded-[9px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
-                  >
-                    {kpi.tone && kpi.tone !== 'default' && (
-                      <span
-                        className={cn(
-                          'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r',
-                          barBg
-                        )}
-                      />
-                    )}
-                    <div className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)] leading-tight">
-                      {pickText(kpi.label, lang)}
+                  return (
+                    <div
+                      key={idx}
+                      className="relative flex min-w-0 flex-col rounded-[9px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
+                    >
+                      {kpi.tone && kpi.tone !== 'default' && (
+                        <span
+                          className={cn(
+                            'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r',
+                            barBg
+                          )}
+                        />
+                      )}
+                      <div className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)] leading-tight">
+                        {pickText(kpi.label, lang)}
+                      </div>
+                      <div className={cn('font-mono text-[12px] font-extrabold tabular-nums leading-snug', valColor)}>
+                        {pickText(kpi.value, lang)}
+                      </div>
                     </div>
-                    <div className={cn('font-mono text-[12px] font-extrabold tabular-nums leading-snug', valColor)}>
-                      {pickText(kpi.value, lang)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Playback & Live Code Controls (icon-only on mobile/tablet OR when center column is resized narrow!) */}
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              {!isNativeCodeTrace && onRunCodeSnippet && (
+            <div className="ml-auto flex shrink-0 flex-wrap items-center gap-1.5">
+              {!isNativeCodeTrace && onRunCodeSnippet && courseId !== 'sdmastery' && (
                 <button
                   type="button"
                   onClick={() => setManualSandboxOpen((o) => !o)}
@@ -1081,10 +1219,54 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </button>
               )}
 
-              {(isIsometricStage || isMemoryStage) && !manualSandboxOpen && (
+              {isLiveStage && liveSession && !manualSandboxOpen && (
+                <>
+                  {activeStep.liveSim?.controls.load && (
+                    <LoadKnob
+                      session={liveSession}
+                      lang={lang}
+                      compact={isCenterCompact}
+                    />
+                  )}
+                  {activeStep.liveSim?.controls.knobs &&
+                    activeStep.liveSim.controls.knobs.length > 0 && (
+                      <KnobPanel
+                        session={liveSession}
+                        allowed={activeStep.liveSim.controls.knobs}
+                        lang={lang}
+                        compact={isCenterCompact}
+                      />
+                    )}
+                  {activeStep.liveSim?.controls.chaos &&
+                    activeStep.liveSim.controls.chaos.length > 0 && (
+                      <ChaosToolbox
+                        allowed={activeStep.liveSim.controls.chaos}
+                        lang={lang}
+                        activePick={activeChaosPick}
+                        onStartPick={setActiveChaosPick}
+                        lastToast={chaosToast}
+                        compact={isCenterCompact}
+                      />
+                    )}
+                  {activeStep.liveSim?.controls.tracer && (
+                    <RequestTracerButton
+                      onTraceSample={() => {
+                        setIsPlaying(false);
+                        setActiveTrace(liveSession.trace());
+                      }}
+                      lang={lang}
+                      compact={isCenterCompact}
+                      active={Boolean(activeTrace)}
+                    />
+                  )}
+                </>
+              )}
+
+              {(isIsometricStage || isMemoryStage || isLiveStage) && !manualSandboxOpen && (
                 <button
                   type="button"
                   onClick={() => {
+                    liveSession?.reset();
                     setIsPlaying(true);
                     setReplayNonce((n) => n + 1);
                   }}
@@ -1106,7 +1288,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </button>
               )}
 
-              {isIsometricStage && !manualSandboxOpen && (
+              {(isIsometricStage || isLiveStage) && !manualSandboxOpen && (
                 <button
                   type="button"
                   onClick={() => setIsPlaying((p) => !p)}
@@ -1137,7 +1319,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             </div>
           </div>
 
-          {/* Stage Viewport: Isometric 2.5D OR 2D Memory/Slice OR Interactive Code Trace */}
+          {/* Stage Viewport: Live-Sim OR Isometric 2.5D OR 2D Memory/Slice OR Interactive Code Trace */}
           <div className="relative mt-2.5 flex min-h-[260px] sm:min-h-[300px] xl:min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
             {manualSandboxOpen ? (
               <WorkbenchCodeSurface
@@ -1151,6 +1333,67 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 runLabel={runCodeLabel ?? t.runCode}
                 className="h-full min-h-[250px] flex-1"
               />
+            ) : isLiveStage && activeStep.scene && liveSession && activeStep.liveSim ? (
+              <>
+                <div className="dts-stage-noselect relative min-h-0 flex-1 select-none">
+                  <ScaleStageSvg
+                    scene={activeStep.scene}
+                    lang={lang}
+                    theme={theme}
+                    isPlaying={isPlaying}
+                    replayNonce={replayNonce}
+                    frameSource={liveSession.source}
+                    liveOptions={{
+                      tracerEnabled: Boolean(activeStep.liveSim.controls.tracer),
+                      focus: activeStep.liveSim.focus,
+                    }}
+                    onPacketPick={(p) => {
+                      setIsPlaying(false);
+                      setActiveTrace(
+                        liveSession.trace({
+                          packetId: p.id,
+                          linkId: p.linkId,
+                          kind: p.kind,
+                        })
+                      );
+                    }}
+                    pickMode={
+                      activeChaosPick
+                        ? {
+                            accept: activeChaosPick.accept,
+                            onPick: handleChaosPick,
+                          }
+                        : null
+                    }
+                    renderLiveSlot={(ent) =>
+                      liveSimAdapter?.renderNodeLiveSlot?.(
+                        liveSession,
+                        activeStep.liveSim!,
+                        ent,
+                        lang
+                      )
+                    }
+                  />
+                  <RequestTracerDrawer
+                    trace={activeTrace}
+                    lang={lang}
+                    onClose={() => setActiveTrace(null)}
+                  />
+                </div>
+                <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
+                  {liveLegendKinds.map((kind) => (
+                    <span key={kind} className="inline-flex items-center gap-1.5">
+                      <LegendDot kind={kind} />
+                      <span>{t.packets[kind]}</span>
+                    </span>
+                  ))}
+                  {livePacketScale > 0 && (
+                    <span className="text-[10.5px] font-bold">
+                      — {t.live.packetScale(livePacketScale)}
+                    </span>
+                  )}
+                </div>
+              </>
             ) : isIsometricStage && activeStep.scene ? (
               <>
                 <div className="dts-stage-noselect min-h-0 flex-1 select-none">
@@ -1191,6 +1434,27 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             ) : null}
           </div>
         </div>
+
+        {/* Live-Sim Timeline between Stage and Stepper (05 §5.1, §5.2) */}
+        {isLiveStage &&
+          liveSession &&
+          activeStep.liveSim &&
+          (activeStep.liveSim.controls.timeline ?? true) && (
+            <SimTimeline
+              session={liveSession}
+              spec={activeStep.liveSim}
+              lang={lang}
+              isPlaying={isPlaying}
+              speed={simSpeed}
+              onTogglePlay={() => setIsPlaying((p) => !p)}
+              onChangeSpeed={setSimSpeed}
+              onSeek={(tSec) => simClock.seek(tSec)}
+              onReset={() => {
+                liveSession.reset();
+                setReplayNonce((n) => n + 1);
+              }}
+            />
+          )}
 
         {/* Bottom Horizontal Timeline Stepper */}
         <div className="dts-panel shrink-0 rounded-2xl px-4 py-2.5">
@@ -1405,7 +1669,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </kbd>{' '}
                 {t.keyboardHint.step}
               </span>
-              {isIsometricStage && (
+              {(isIsometricStage || isLiveStage) && (
                 <>
                   <span>·</span>
                   <span>
@@ -1542,6 +1806,23 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                   </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeLesson.attribution && (
+            <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10px] leading-relaxed text-[var(--dts-ink-muted)]">
+              {activeLesson.attribution.href ? (
+                <a
+                  href={activeLesson.attribution.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-[var(--dts-ink)]"
+                >
+                  {pickText(activeLesson.attribution.text, lang)}
+                </a>
+              ) : (
+                <span>{pickText(activeLesson.attribution.text, lang)}</span>
+              )}
             </div>
           )}
         </div>

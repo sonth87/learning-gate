@@ -27,6 +27,23 @@ assert(s103!.steps[s103!.steps.length - 1].category === 'RECAP', 'step cuối l�
 assert(s103!.steps.every((st, i) => st.index === i + 1), 'chỉ số step liên tục');
 const codeSteps = s103!.steps.filter((st) => st.stageMode === 'code-trace');
 assert(codeSteps.length === 1 && codeSteps[0].codeTrace, 'S1-03 chỉ có đúng 1 step code-trace (step khai báo mode: code)');
+const liveSteps = s103!.steps.filter((st) => st.stageMode === 'live-sim');
+assert(
+  liveSteps.length === 2 &&
+    liveSteps[0].index === 6 &&
+    liveSteps[0].liveSim?.simId === 'S1-03/ramp' &&
+    liveSteps[1].index === 9 &&
+    liveSteps[1].liveSim?.startAtSec === 30,
+  'S1-03 bước 6 (ramp) và bước 9 (trap) là live-sim với LiveSimSpec đầy đủ'
+);
+assert(
+  liveSteps.every((st) => st.scene?.packets.length === 0 && st.scene?.nodes.every((n) => n.loadPct === 0)),
+  'scene của step live-sim có packets rỗng và loadPct = 0'
+);
+assert(
+  Boolean(s103!.attribution?.text.vi.includes('System Design Core') && s103!.attribution?.href),
+  'S1-03 có dòng nguồn attribution từ SDC'
+);
 assert(
   s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 5 && !st.codeTrace),
   'step isometric có scene ≥ 5 node và không kèm codeTrace'
