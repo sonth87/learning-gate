@@ -443,7 +443,9 @@ export const StageEntityInspectorCard: React.FC<{
   lang: WorkbenchLang;
   onClose: () => void;
   maxHeightStyle?: string;
-}> = ({ info, lang, onClose, maxHeightStyle }) => {
+  /** live-sim: số liệu trực tiếp chèn giữa header và khối What/How/Why */
+  liveSlot?: React.ReactNode;
+}> = ({ info, lang, onClose, maxHeightStyle, liveSlot }) => {
   return (
     <div
       role="region"
@@ -470,6 +472,18 @@ export const StageEntityInspectorCard: React.FC<{
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {liveSlot ? (
+        <section
+          aria-live="off"
+          className="border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3.5 py-2"
+        >
+          <div className="mb-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+            {lang === 'en' ? 'Live metrics' : 'Số liệu trực tiếp'}
+          </div>
+          {liveSlot}
+        </section>
+      ) : null}
 
       {/* Body: What / How / Why / Tips & Case Study */}
       <div className="min-h-0 flex-1 overflow-y-auto p-3.5 space-y-2.5 text-[12px] leading-relaxed">
@@ -535,7 +549,8 @@ export const StageInspectorPortal: React.FC<{
   theme: WorkbenchTheme;
   anchorRef: React.RefObject<HTMLElement | null>;
   onClose: () => void;
-}> = ({ info, lang, theme, anchorRef, onClose }) => {
+  liveSlot?: React.ReactNode;
+}> = ({ info, lang, theme, anchorRef, onClose, liveSlot }) => {
   const [layout, setLayout] = useState<{
     isMobile: boolean;
     right: number;
@@ -634,6 +649,7 @@ export const StageInspectorPortal: React.FC<{
           lang={lang}
           onClose={onClose}
           maxHeightStyle={`${layout.maxH}px`}
+          liveSlot={liveSlot}
         />
       </div>
     </div>,

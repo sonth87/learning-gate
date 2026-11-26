@@ -1,5 +1,5 @@
 import type { WorkbenchLang } from '@/stores/useWorkbenchStore';
-import type { CalloutKind, PacketKind, StepCategory } from './types';
+import type { CalloutKind, LiveNodeState, PacketKind, StepCategory } from './types';
 
 export const WORKBENCH_I18N: Record<
   WorkbenchLang,
@@ -67,6 +67,13 @@ export const WORKBENCH_I18N: Record<
     categories: Record<StepCategory, string>;
     calloutTitles: Record<CalloutKind, string>;
     packets: Record<PacketKind, string>;
+    /** live-sim: nhóm tối thiểu cho stage (timeline/controls bổ sung ở T3.4–T3.5) */
+    live: {
+      packetScale: (n: number) => string;
+      loadWord: string;
+      states: Record<LiveNodeState, string>;
+      down: string;
+    };
     themes: {
       light: string;
       dark: string;
@@ -162,6 +169,20 @@ export const WORKBENCH_I18N: Record<
       timeout: 'quá thời gian chờ (timeout)',
       dropped: 'bị loại bỏ (dropped)',
     },
+    live: {
+      packetScale: (n) => `1 chấm = ${n} req/s`,
+      loadWord: 'tải',
+      states: {
+        idle: 'Nhàn rỗi',
+        healthy: 'Bình thường',
+        busy: 'Đang bận',
+        saturated: 'Gần quá tải',
+        overloaded: 'Quá tải',
+        down: 'Đã dừng',
+        recovering: 'Đang khởi động lại',
+      },
+      down: 'DOWN',
+    },
     themes: {
       light: 'Giấy sáng (Paper)',
       dark: 'Bản vẽ tối (Espresso)',
@@ -255,6 +276,20 @@ export const WORKBENCH_I18N: Record<
       retry: 'retry',
       timeout: 'timed out',
       dropped: 'dropped',
+    },
+    live: {
+      packetScale: (n) => `1 dot = ${n} req/s`,
+      loadWord: 'load',
+      states: {
+        idle: 'Idle',
+        healthy: 'Healthy',
+        busy: 'Busy',
+        saturated: 'Saturated',
+        overloaded: 'Overloaded',
+        down: 'Stopped',
+        recovering: 'Recovering',
+      },
+      down: 'DOWN',
     },
     themes: {
       light: 'Paper Light',

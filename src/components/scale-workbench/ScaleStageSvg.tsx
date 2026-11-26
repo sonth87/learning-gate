@@ -19,6 +19,16 @@ import {
   StageInspectorPortal,
   resolveFallbackInspector,
 } from './StageEntityInspector';
+import { WORKBENCH_I18N } from './i18n';
+import {
+  createLiveFrameApplier,
+  type LiveEl,
+  type LiveFrameApplier,
+  type LiveLinkEls,
+  type LiveNodeEls,
+  type LivePacketEls,
+} from './live/liveStageApplier';
+import { PILE_MAX } from './live/liveFrameMath';
 
 interface Pt {
   x: number;
@@ -1566,6 +1576,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   // F1: đúng MỘT vòng rAF được cộng dt vào packetElapsedRef. Vòng choreography là chủ
   // khi nó còn sống; vòng "Resume" chỉ chạy khi choreography đã dừng (xem bên dưới).
   const choreoAliveRef = useRef(false);
+  // live-sim: thời điểm choreography "tiếp đất" xong (0 = chưa xong); overlay live chỉ hiện sau đó.
+  const choreoSettledAtRef = useRef(0);
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
 
@@ -1738,6 +1750,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     let lastTick = startAt;
     let rafId = 0;
     let exitCleaned = !hasExits;
+    choreoSettledAtRef.current = 0;
 
     const getMarkerUrl = (st?: StageLink['style']): string => {
       if (st === 'off' || st === 'heartbeat' || st === 'cut') return '';
@@ -1974,6 +1987,10 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           ...Array.from(linkPlans.values()).map((p) => p.readyAt + 320)
         ) || 1200;
 
+      if (elapsed > maxChoreoTime && choreoSettledAtRef.current === 0) {
+        choreoSettledAtRef.current = now;
+      }
+
       if (elapsed <= maxChoreoTime || (isPlayingRef.current && scene.packets.length > 0)) {
         rafId = requestAnimationFrame(tick);
       } else {
@@ -2038,6 +2055,337 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [isPlaying, scene.packets]);
+
+  /* ============================================================================
+   * LIVE-SIM (05 §3.2–3.4): ref map + rAF áp frame. Chỉ chạy khi có frameSource.
+   * ============================================================================ */
+  const liveNodeRoots = useRef<Map<string, SVGGElement>>(new Map());
+  const liveLinkRoots = useRef<Map<string, SVGGElement>>(new Map());
+  const livePoolRef = useRef<Array<SVGGElement | null>>([]);
+  const liveLayerLinksRef = useRef<SVGGElement | null>(null);
+  const liveLayerEntsRef = useRef<SVGGElement | null>(null);
+  const liveLayerPacketsRef = useRef<SVGGElement | null>(null);
+  const livePillRef = useRef<HTMLDivElement | null>(null);
+  const liveApplierRef = useRef<LiveFrameApplier | null>(null);
+  const liveMaxPackets = liveOptions?.maxPackets ?? (stageWidth < 640 ? 80 : 200);
+  const liveReducedOpt = liveOptions?.reducedMotion;
+
+  useEffect(() => {
+    if (!frameSource) return;
+    const reduced =
+      liveReducedOpt ??
+      (typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const q = (root: Element, sel: string): LiveEl => root.querySelector(sel) as unknown as LiveEl;
+
+    const nodes: LiveNodeEls[] = [];
+    for (const n of expandedNodes) {
+      const root = liveNodeRoots.current.get(n.id);
+      if (!root) continue;
+      nodes.push({
+        id: n.id,
+        label: pickText(n.label, lang),
+        baseX: n.x,
+        baseY: n.y,
+        overlay: root as unknown as LiveEl,
+        tint: q(root, '[data-r="tint"]'),
+        warm: q(root, '[data-r="warm"]'),
+        bar: q(root, '[data-r="bar"]'),
+        barFill: q(root, '[data-r="barFill"]'),
+        barText: q(root, '[data-r="barText"]'),
+        pile: q(root, '[data-r="pile"]'),
+        pileRects: Array.from(root.querySelectorAll('[data-r="pr"]')) as unknown as LiveEl[],
+        queueText: q(root, '[data-r="queueText"]'),
+        x: q(root, '[data-r="x"]'),
+        badge: q(root, '[data-r="badge"]'),
+        badgeRect: q(root, '[data-r="badgeRect"]'),
+        badgeText: q(root, '[data-r="badgeText"]'),
+        outer: (nodeOuterRefs.current.get(n.id) as unknown as LiveEl) ?? null,
+      });
+    }
+    const links: LiveLinkEls[] = [];
+    const pathEls = new Map<string, SVGPathElement>();
+    const pathLens = new Map<string, number>();
+    for (const { link } of builtLinks) {
+      const root = liveLinkRoots.current.get(link.id);
+      if (!root) continue;
+      pathEls.set(link.id, root.querySelector('[data-r="path"]') as SVGPathElement);
+      links.push({
+        id: link.id,
+        path: q(root, '[data-r="path"]'),
+        err: q(root, '[data-r="err"]'),
+        cut: q(root, '[data-r="cut"]'),
+        gate: q(root, '[data-r="gate"]'),
+        gateRect: q(root, '[data-r="gateRect"]'),
+        gateText: q(root, '[data-r="gateText"]'),
+        lag: q(root, '[data-r="lag"]'),
+        lag2: q(root, '[data-r="lag2"]'),
+        lagText: q(root, '[data-r="lagText"]'),
+      });
+    }
+    const pool: LivePacketEls[] = [];
+    for (let i = 0; i < liveMaxPackets; i++) {
+      const g = livePoolRef.current[i];
+      if (!g) continue;
+      pool.push({
+        g: g as unknown as LiveEl,
+        circle: q(g, '[data-r="c"]'),
+        rect: q(g, '[data-r="r"]'),
+        ring: q(g, '[data-r="ring"]'),
+      });
+    }
+    const t = WORKBENCH_I18N[lang];
+    const applier = createLiveFrameApplier({
+      source: frameSource,
+      nodes,
+      links,
+      pool,
+      layers: {
+        links: liveLayerLinksRef.current as unknown as LiveEl | null,
+        ents: liveLayerEntsRef.current as unknown as LiveEl | null,
+        packets: liveLayerPacketsRef.current as unknown as LiveEl | null,
+      },
+      scalePill: livePillRef.current as unknown as LiveEl | null,
+      sampleLink: (id, frac) => {
+        const pe = pathEls.get(id);
+        if (!pe) return null;
+        let len = pathLens.get(id);
+        if (len === undefined) {
+          try {
+            len = pe.getTotalLength();
+          } catch {
+            len = 0;
+          }
+          pathLens.set(id, len);
+        }
+        if (len <= 1) return null;
+        const pt = pe.getPointAtLength(frac * len);
+        return { x: pt.x, y: pt.y };
+      },
+      inkColor: pal.ink,
+      pillBg: pal.pillBg,
+      pillInk: pal.pillInk,
+      reducedMotion: Boolean(reduced),
+      stateLabel: (st) => t.live.states[st as keyof typeof t.live.states] ?? st,
+      ariaLabel: (label, stateText, pct) => `${label}, ${stateText}, ${t.live.loadWord} ${pct}%`,
+      scaleText: (n) => t.live.packetScale(n),
+      pickText: (b) => pickText(b, lang),
+    });
+    liveApplierRef.current = applier;
+    let raf = 0;
+    const loop = (now: number) => {
+      const settled = choreoSettledAtRef.current;
+      applier.step(now, settled > 0 && now - settled > 120, isPlayingRef.current);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      applier.dispose();
+      liveApplierRef.current = null;
+    };
+  }, [frameSource, builtLinks, expandedNodes, pal, lang, liveMaxPackets, liveReducedOpt]);
+
+  const renderLiveLinksAndPackets = () => (
+    <>
+      <g
+        className="layer-live-links"
+        ref={liveLayerLinksRef}
+        pointerEvents="none"
+        opacity={0}
+        style={{ transition: 'opacity 240ms ease-out' }}
+      >
+        {builtLinks.map(({ link, d, pts }) => {
+          const mid = sampleSegmentPoint(pts, 0.5);
+          const m0 = sampleSegmentPoint(pts, 0.46);
+          const m1 = sampleSegmentPoint(pts, 0.54);
+          const ang = (Math.atan2(m1.y - m0.y, m1.x - m0.x) * 180) / Math.PI;
+          const tf = `translate(${mid.x.toFixed(1)}, ${mid.y.toFixed(1)})`;
+          return (
+            <g
+              key={link.id}
+              data-live-link={link.id}
+              ref={(el) => {
+                if (el) liveLinkRoots.current.set(link.id, el);
+                else liveLinkRoots.current.delete(link.id);
+              }}
+            >
+              <path data-r="path" d={d} fill="none" stroke={pal.ink} strokeLinecap="round" strokeLinejoin="round" opacity={0} display="none" />
+              <path data-r="err" d={d} fill="none" stroke="#e5534b" strokeLinecap="round" strokeLinejoin="round" opacity={0} display="none" />
+              <g data-r="cut" transform={tf} display="none">
+                <circle r={7.5} fill={pal.pillBg} stroke="#9a948a" strokeWidth={1.5} />
+                <path d="M-3.2,-3.2 L3.2,3.2 M3.2,-3.2 L-3.2,3.2" stroke="#9a948a" strokeWidth={2} strokeLinecap="round" />
+              </g>
+              <g data-r="gate" transform={tf} display="none">
+                <rect data-r="gateRect" x={-5} y={-7} width={10} height={14} rx={2.5} fill="#7fc278" stroke={pal.ink} strokeWidth={1.4} />
+                <text data-r="gateText" x={0} y={3.2} textAnchor="middle" fontSize={8} fontWeight={800} fill={pal.pillInk} />
+              </g>
+              <g data-r="lag" transform={`${tf} rotate(${ang.toFixed(1)})`} display="none">
+                <line x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
+                <line data-r="lag2" x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
+                <text data-r="lagText" x={0} y={-13} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+              </g>
+            </g>
+          );
+        })}
+      </g>
+      <g
+        className="layer-live-packets"
+        ref={liveLayerPacketsRef}
+        pointerEvents="none"
+        opacity={0}
+        style={{ transition: 'opacity 240ms ease-out' }}
+      >
+        {Array.from({ length: liveMaxPackets }, (_, i) => (
+          <g
+            key={i}
+            ref={(el) => {
+              livePoolRef.current[i] = el;
+            }}
+            display="none"
+          >
+            <circle data-r="ring" r={7.4} fill="none" stroke="#7a3a0c" strokeWidth={0.9} display="none" />
+            <circle data-r="c" r={4.4} />
+            <rect data-r="r" rx={2.2} display="none" />
+            {liveOptions?.tracerEnabled && (
+              <circle
+                r={10}
+                fill="transparent"
+                pointerEvents="all"
+                data-no-pan="true"
+                style={{ cursor: 'pointer' }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  const meta = liveApplierRef.current?.packetAtSlot(i);
+                  if (meta) onPacketPick?.(meta);
+                }}
+              />
+            )}
+          </g>
+        ))}
+      </g>
+    </>
+  );
+
+  const renderLiveEnts = () => (
+    <g
+      className="layer-live-ents"
+      ref={liveLayerEntsRef}
+      pointerEvents="none"
+      opacity={0}
+      style={{ transition: 'opacity 240ms ease-out' }}
+    >
+      {expandedNodes.map((node) => {
+        const poly = getSilhouettePolygon(node.shape);
+        let minY = Infinity;
+        let maxY = -Infinity;
+        let maxX = 0;
+        for (const p of poly) {
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+          maxX = Math.max(maxX, p.x);
+        }
+        const points = poly.map((p) => `${p.x},${p.y}`).join(' ');
+        const cyMid = (minY + maxY) / 2;
+        const warmRx = maxX * 0.85;
+        return (
+          <g
+            key={node.id}
+            data-live-node={node.id}
+            transform={`translate(${node.x}, ${node.y})`}
+            ref={(el) => {
+              if (el) liveNodeRoots.current.set(node.id, el);
+              else liveNodeRoots.current.delete(node.id);
+            }}
+          >
+            <polygon
+              data-r="tint"
+              points={points}
+              fill="none"
+              stroke="none"
+              strokeWidth={1.4}
+              strokeLinejoin="round"
+              opacity={0}
+              style={{ mixBlendMode: isDark ? 'screen' : 'multiply' }}
+            />
+            {pickMode?.accept.includes('node') && (
+              <polygon
+                points={points}
+                fill="none"
+                stroke="#2f8a43"
+                strokeWidth={1.8}
+                strokeDasharray="4 3"
+                strokeLinejoin="round"
+              />
+            )}
+            <ellipse
+              data-r="warm"
+              cx={0}
+              cy={getGroundOffset(node.shape) + 4}
+              rx={warmRx}
+              ry={warmRx * 0.5}
+              fill="none"
+              stroke="#7d98a8"
+              strokeWidth={3}
+              strokeLinecap="round"
+              pathLength={100}
+              display="none"
+            />
+            <g data-r="bar" transform={`translate(0, ${minY - 12})`} display="none">
+              <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
+              <rect x={-37} y={-10.5} width={74} height={19} rx={9.5} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.3} />
+              <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
+              <rect data-r="barFill" x={-29} y={-4} width={3} height={6} rx={3} fill="#7fc278" />
+              <text data-r="barText" x={29} y={2.4} textAnchor="end" fontSize={9.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+            </g>
+            <g data-r="pile" transform={`translate(${-maxX - 12}, ${maxY - 6})`} display="none">
+              {Array.from({ length: PILE_MAX }, (_, i) => (
+                <rect
+                  key={i}
+                  data-r="pr"
+                  x={-3}
+                  y={-4 - i * 5.2}
+                  width={6}
+                  height={4}
+                  rx={1}
+                  fill="#f2994a"
+                  stroke={pal.ink}
+                  strokeWidth={0.6}
+                  display="none"
+                />
+              ))}
+              <text data-r="queueText" x={0} y={8} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" display="none" />
+            </g>
+            <g data-r="x" display="none">
+              <path d="M-12,-12 L12,12 M12,-12 L-12,12" transform={`translate(0, ${cyMid})`} stroke="#e5534b" strokeWidth={4.5} strokeLinecap="round" />
+              <text x={0} y={cyMid + 30} textAnchor="middle" fontSize={9.5} fontWeight={900} fill="#e5534b" fontFamily="var(--dts-font-mono)">
+                {WORKBENCH_I18N[lang].live.down}
+              </text>
+            </g>
+            <g data-r="badge" transform={`translate(0, ${maxY + 14})`} display="none">
+              <rect data-r="badgeRect" x={-30} y={-10.5} width={60} height={20} rx={10} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.35} />
+              <text data-r="badgeText" x={0} y={2.4} textAnchor="middle" fontSize={9.5} fontWeight={750} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+            </g>
+          </g>
+        );
+      })}
+    </g>
+  );
+
+  const liveSlotNode: React.ReactNode =
+    selectedInfo && frameSource && renderLiveSlot
+      ? (() => {
+          const key = selectedInfo.key;
+          const i = key.indexOf(':');
+          const kind = key.slice(0, i);
+          const id = key.slice(i + 1);
+          if (kind === 'node') return renderLiveSlot({ kind: 'node', id });
+          if (kind === 'link' || kind === 'pill') return renderLiveSlot({ kind: 'link', id });
+          return null;
+        })()
+      : undefined;
+
 
   const getNodeInspector = (node: StageNode): StageInspectorInfo => {
     if (node.inspector) return node.inspector;
@@ -2288,7 +2636,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 />
               )}
 
-              {!isDead && typeof node.loadPct === 'number' && (() => {
+              {!isDead && !frameSource && typeof node.loadPct === 'number' && (() => {
                 const pct = Math.max(0, Math.min(100, node.loadPct));
                 const barColor =
                   pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
@@ -2991,6 +3339,10 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (pickMode?.accept.includes('link')) {
+                      pickMode.onPick({ kind: 'link', id: link.id });
+                      return;
+                    }
                     setSelectedInfo({ key: linkKey, info });
                   }}
                   style={{ cursor: 'pointer' }}
@@ -3035,6 +3387,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           </g>
 
           {/* 4. Animated Traffic Packets (begin flowing once link finishes drawing) */}
+          {!frameSource && (
           <g className="layer-packets" pointerEvents="none">
             {scene.packets.map((pkt) => (
               <g
@@ -3084,6 +3437,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               </g>
             ))}
           </g>
+          )}
+
+          {frameSource && renderLiveLinksAndPackets()}
 
           {/* 5. Exiting Entities (smooth lift & fade out during step transition) */}
           <g className="layer-exiting" pointerEvents="none">
@@ -3128,15 +3484,38 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (pickMode?.accept.includes('node')) {
+                      pickMode.onPick({ kind: 'node', id: node.id });
+                      return;
+                    }
                     setSelectedInfo({ key: nodeKey, info });
                   }}
                   style={{ cursor: 'pointer' }}
+                  {...(frameSource
+                    ? {
+                        tabIndex: 0,
+                        role: 'button',
+                        'aria-label': pickText(node.label, lang),
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key !== 'Enter') return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (pickMode?.accept.includes('node')) {
+                            pickMode.onPick({ kind: 'node', id: node.id });
+                            return;
+                          }
+                          setSelectedInfo({ key: nodeKey, info });
+                        },
+                      }
+                    : {})}
                 >
                   {renderNodeBody(node, isHovered, isSelected, false)}
                 </g>
               );
             })}
           </g>
+
+          {frameSource && renderLiveEnts()}
 
           {/* 7. Interactive Floating Link Label Pills */}
           <g className="layer-link-labels">
@@ -3181,7 +3560,13 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                     setHoveredKey(null);
                     setHoverPreview(null);
                   }}
-                  onClick={() => setSelectedInfo({ key: linkKey, info })}
+                  onClick={() => {
+                    if (pickMode?.accept.includes('link')) {
+                      pickMode.onPick({ kind: 'link', id: link.id });
+                      return;
+                    }
+                    setSelectedInfo({ key: linkKey, info });
+                  }}
                 />
               );
             })}
@@ -3316,6 +3701,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </g>
       </svg>
 
+      {frameSource && (
+        <div
+          ref={livePillRef}
+          data-no-pan="true"
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-2 left-2.5 z-20 rounded-full border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--dts-ink-muted)] empty:hidden"
+        />
+      )}
+
       {/* Top-Right Interactive Zoom Toolbar (desktop with spacious stage only; Replay resets zoom & pan when narrow/mobile) */}
       {stageWidth >= 420 && (
         <div
@@ -3420,6 +3814,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           theme={theme}
           anchorRef={containerRef}
           onClose={() => setSelectedInfo(null)}
+          liveSlot={liveSlotNode}
         />
       )}
     </div>
