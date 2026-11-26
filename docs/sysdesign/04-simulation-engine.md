@@ -1169,8 +1169,8 @@ Ghi chú:
 | # | Vấn đề | Tình trạng |
 |---|---|---|
 | 1 | Công thức `c = round(μ_tot·S)` làm `c` thay đổi khi `replicas` đổi ⇒ p99 thay đổi nhẹ ngay cả khi ρ đã thấp | **Đã chốt (T2.8):** chấp nhận — đúng lý thuyết hàng đợi M/M/c (cùng ρ nhưng tăng số kênh phục vụ `c` làm giảm `Wq` theo Sakasegawa); đây cũng là lý do I4 giảm 6,5% khi nhân đôi App |
-| 2 | Xử lý `cancelOnTimeout` (callee huỷ công việc đã bị bỏ) | Mặc định `false` để thấy lãng phí; thêm knob ở war-room (T7.2) |
-| 3 | Chạy engine trong Web Worker | Chưa quyết — quyết sau bench ở T3.6/T3.7 (≥ 20 node; hiện trung vị tick 30 node = 0,16 ms nên main thread dư sức) |
+| 2 | Xử lý `cancelOnTimeout` (callee huỷ công việc đã bị bỏ) | **Đã chốt (T7.2/ADR-020):** mặc định `false` để thấy lãng phí; thêm `LinkSpec.cancelOnTimeout?: boolean` huỷ công việc quá hạn trước khi dồn xuống downstream |
+| 3 | Chạy engine trong Web Worker | **Đã chốt (T3.7/ADR-020):** chạy trên main thread (trung vị tick 30 node ≈ 0,10 ms < 1% khung 16 ms; không cần chi phí tuần tự hoá Worker) |
 | 4 | Mô hình sticky read-after-write | Chưa quyết (routing trong scene hay knob) — chốt ở T6.5 (batch 5, S2-08) |
 | 5 | Ghost timeline cho A/B compare | M8 (T8.2) |
 | 6 | Raft trên engine tải, multi-region nâng cao | M8 (T8.3). Raft dạng kịch bản cho S3-03 thuộc §12 |
@@ -1188,7 +1188,7 @@ Ghi chú:
 
 ---
 
-## 12. Mô phỏng sự kiện (Time view, state machine) — phạm vi, **Chưa quyết**
+## 12. Mô phỏng sự kiện (Time view, state machine) — **Đã chốt (T6.0a/T6.0b, ADR-020)**
 
 19 bài có cột Sim = `sự kiện` trong `02-curriculum.md`. Chia hai loại:
 

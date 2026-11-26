@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useContextAction, useMenuAction } from '@sonth87/device-layout';
 import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
@@ -16,18 +16,21 @@ import { SD_TAB_ORDER, type SdMainTab } from './sd.types';
 import { useSdStore } from './store/useSdStore';
 import { SdHeader } from './components/SdHeader';
 import { SdMobileBottomNav } from './components/SdMobileBottomNav';
-import { SdPlaceholder } from './components/SdPlaceholder';
+import { SD_COMMAND_PALETTE_GLOSSARY } from './data/atlasPatterns';
+import { SdLabView } from './views/SdLabView';
+import { SdWarRoomView } from './views/SdWarRoomView';
+import { SdCasesView } from './views/SdCasesView';
+import { SdAtlasView } from './views/SdAtlasView';
+import { SdInterviewView } from './views/SdInterviewView';
 
 export interface SdMasteryAppProps {
   appId?: string;
   windowId?: string;
 }
 
-// Chưa có glossary riêng (T7.4); truyền mảng rỗng để palette không hiện thuật ngữ của app khác.
-const NO_GLOSSARY: { id: string; term: string; shortSummary: string }[] = [];
-
 export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
   const { activeTab, setActiveTab } = useSdStore();
+  const [atlasInitialTermId, setAtlasInitialTermId] = useState<string | null>(null);
   const setSettingsOpen = useNavigationStore((s) => s.setSettingsOpen);
   const hideTermPopover = useNavigationStore((s) => s.hideTermPopover);
   const hydrateSd = useSdProgress((s) => s.hydrate);
@@ -45,6 +48,30 @@ export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
   useEffect(() => {
     hydrateSd();
   }, [hydrateSd]);
+
+  const openModuleInLearn = useCallback(
+    (moduleId: string, stepIdx = 0) => {
+      const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
+      const stepObj = lesson?.steps[stepIdx];
+      setCourseCursor(
+        'sdmastery',
+        moduleId,
+        stepIdx,
+        lesson && stepObj
+          ? {
+              moduleTitleVi: lesson.title.vi,
+              moduleTitleEn: lesson.title.en,
+              stepTitleVi: stepObj.title.vi,
+              stepTitleEn: stepObj.title.en,
+            }
+          : undefined
+      );
+      if (lesson) setExpandedLevel('sdmastery', lesson.level);
+      setActiveTab('learn');
+      goSd({ name: 'workbench' });
+    },
+    [goSd, scaleLessons, setActiveTab, setCourseCursor, setExpandedLevel]
+  );
 
   const handleAction = useCallback(
     (action: string) => {
@@ -79,12 +106,23 @@ export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
 
       <main className="flex-1 min-h-0 min-w-0 overflow-hidden relative">
         {activeTab === 'learn' && <SdLearnShell />}
+        {activeTab === 'lab' && <SdLabView />}
+        {activeTab === 'warroom' && <SdWarRoomView onOpenModule={openModuleInLearn} />}
+        {activeTab === 'cases' && <SdCasesView onOpenModule={openModuleInLearn} />}
+        {activeTab === 'atlas' && (
+          <SdAtlasView initialTermId={atlasInitialTermId} onOpenModule={openModuleInLearn} />
+        )}
+        {activeTab === 'interview' && (
+          <SdInterviewView
+            onOpenModule={openModuleInLearn}
+            onOpenLab={() => setActiveTab('lab')}
+          />
+        )}
         {activeTab === 'credits' && (
           <div className="h-full overflow-y-auto">
             <SdCreditsView />
           </div>
         )}
-        {activeTab !== 'learn' && activeTab !== 'credits' && <SdPlaceholder tab={activeTab} />}
       </main>
 
       <SdMobileBottomNav />
@@ -93,28 +131,12 @@ export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
       <ScaleCommandPalette
         courseId="sdmastery"
         lessons={scaleLessons}
-        glossaryItems={NO_GLOSSARY}
+        glossaryItems={SD_COMMAND_PALETTE_GLOSSARY}
         onSelectLessonStep={(moduleId, stepIdx) => {
-          const lesson = scaleLessons.find((l) => l.moduleId === moduleId);
-          const stepObj = lesson?.steps[stepIdx];
-          setCourseCursor(
-            'sdmastery',
-            moduleId,
-            stepIdx,
-            lesson && stepObj
-              ? {
-                  moduleTitleVi: lesson.title.vi,
-                  moduleTitleEn: lesson.title.en,
-                  stepTitleVi: stepObj.title.vi,
-                  stepTitleEn: stepObj.title.en,
-                }
-              : undefined
-          );
-          if (lesson) setExpandedLevel('sdmastery', lesson.level);
-          setActiveTab('learn');
-          goSd({ name: 'workbench' });
+          openModuleInLearn(moduleId, stepIdx);
         }}
-        onSelectGlossaryTerm={() => {
+        onSelectGlossaryTerm={(termId) => {
+          setAtlasInitialTermId(termId);
           setActiveTab('atlas');
         }}
       />

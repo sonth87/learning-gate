@@ -16,6 +16,7 @@ export {
 export type { Comp, Dist } from './latency';
 export { effectiveHit, hitTarget, singleflightCap } from './cache';
 export { KIND_DEFAULTS, makeNode } from './primitives';
+export type { NodeOverrides } from './primitives';
 export { cloneState, createInitialState, createSim, stepInPlace, stepState } from './engine';
 export type { Sim } from './engine';
 export { PACKET_SCALE_MAX } from './packets';
@@ -30,3 +31,4 @@ export { applyChangesToModel, evaluate, runAndEvaluate, seriesFromRecorder, simu
 export type { Constraint, ConstraintResult, RunSeries, StructuralRule, TimeWindow } from './grade';
 export { traceRequest } from './trace';
 export type { RequestTrace, TraceHint, TraceOutcome, TraceSpan, TraceSpanKind } from './trace';
+export * from './timeline';

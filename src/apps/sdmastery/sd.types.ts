@@ -29,7 +29,7 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'Lab',
     descVi: 'Kéo thả các thành phần để thiết kế hệ thống, chạy mô phỏng và được chấm theo ràng buộc.',
     descEn: 'Drag components to design a system, run the simulation and get graded against constraints.',
-    milestone: 'T7.1 (M7)',
+    milestone: '',
   },
   warroom: {
     id: 'warroom',
@@ -37,7 +37,7 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'War-Room',
     descVi: 'Chín sự cố giả lập: quan sát dấu hiệu, tìm nguyên nhân, khắc phục và viết postmortem.',
     descEn: 'Nine simulated incidents: read the signals, find the cause, fix it and write a postmortem.',
-    milestone: 'T7.2 (M7)',
+    milestone: '',
   },
   cases: {
     id: 'cases',
@@ -45,7 +45,7 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'Design Cases',
     descVi: 'Thiết kế hệ thống hoàn chỉnh (URL Shortener, News Feed...) và xem kiến trúc phát triển từ v1 đến vN.',
     descEn: 'Full system designs (URL Shortener, News Feed...) with an evolution timeline from v1 to vN.',
-    milestone: 'T7.3 (M7)',
+    milestone: '',
   },
   atlas: {
     id: 'atlas',
@@ -53,7 +53,7 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'Pattern Atlas',
     descVi: 'Tra cứu mẫu thiết kế và thuật ngữ, gắn với popover thuật ngữ trong bài học.',
     descEn: 'Look up design patterns and terms, linked to the term popover in lessons.',
-    milestone: 'T7.4 (M7)',
+    milestone: '',
   },
   interview: {
     id: 'interview',
@@ -61,7 +61,7 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'Interview',
     descVi: 'Luyện phỏng vấn system design theo 5 chặng SNAKE, có đồng hồ bấm giờ.',
     descEn: 'Practice system design interviews in 5 SNAKE stages with a timer.',
-    milestone: 'T7.5 (M7)',
+    milestone: '',
   },
   credits: {
     id: 'credits',

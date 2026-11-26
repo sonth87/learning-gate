@@ -57,7 +57,7 @@ export type AllowedAction =
   | {
       type: 'link';
       link: LinkId;
-      fields: ('timeoutMs' | 'retry' | 'breaker' | 'fallback' | 'weight')[];
+      fields: ('timeoutMs' | 'cancelOnTimeout' | 'retry' | 'breaker' | 'fallback' | 'weight')[];
     };
 
 export interface ActivityBase {

@@ -439,14 +439,37 @@ export function stepInPlace(
       }
     } else {
       const qLimit = numParam(inputs, nd, 'queueLimit', mu * 5);
-      const Qcap = Math.max(0, qLimit);
+      let Qcap = Math.max(0, qLimit);
+      // Nếu link gọi vào bật cancelOnTimeout + timeoutMs: huỷ sớm các request chờ quá ngân sách timeout
+      let minCancelSec = Infinity;
+      let hasCancelLink = false;
+      for (const e of nd.inFlow) {
+        if (effLink(inputs, links[e], 'cancelOnTimeout') === true && !Number.isNaN(w.tau[e])) {
+          const remSec = Math.max(0.005, (w.tau[e] - links[e].netMs) / 1000);
+          if (remSec < minCancelSec) minCancelSec = remSec;
+          hasCancelLink = true;
+        }
+      }
+      if (hasCancelLink && Number.isFinite(minCancelSec)) {
+        const cancelQCap = Math.max(0, mu * Math.max(0, minCancelSec - w.sSec[n]));
+        Qcap = Math.min(Qcap, cancelQCap);
+      }
       w.qCap[n] = Qcap;
-      served = Math.min(mu, lam + Qn / DT);
+      const effMu = hasCancelLink && w.sSec[n] > minCancelSec && minCancelSec > 0
+        ? mu * (w.sSec[n] / minCancelSec)
+        : mu;
+      served = Math.min(effMu, lam + Qn / DT);
       let q2 = Qn + (lam - served) * DT;
       if (q2 < 0) q2 = 0;
       if (q2 > Qcap) { drop = (q2 - Qcap) / DT; q2 = Qcap; }
       Qn = q2;
       rt.queue = Qn;
+      if (hasCancelLink && w.sSec[n] > minCancelSec) {
+        // Request bị huỷ giữa chừng không chuyển tiếp xuống downstream
+        const cancelAbort = served;
+        served = 0;
+        drop += cancelAbort;
+      }
     }
     w.lim[n] = lim;
     w.drop[n] = drop;

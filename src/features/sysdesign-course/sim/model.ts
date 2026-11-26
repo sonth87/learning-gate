@@ -97,6 +97,8 @@ export interface LinkSpec {
   netClass?: NetClass;
   netMs?: number;
   timeoutMs?: number;
+  /** Huỷ công việc phía callee khi hết timeoutMs (04 §11 #2, mặc định false). */
+  cancelOnTimeout?: boolean;
   retry?: RetryPolicy;
   breaker?: BreakerPolicy;
   fallback?: 'error' | 'bypass' | 'degrade';

@@ -86,7 +86,7 @@ Chạy **tuần tự** (cùng chạm `types.ts`, `i18n.ts`, `ScaleStageSvg.tsx`,
 | T3.4 | `SimTimeline` (thanh tua, sparkline SVG tự vẽ, mốc sự kiện) giữa stage (1184) và stepper (1188); `LiveTelemetryStrip` tự subscribe; nhóm i18n `live` (phần timeline/telemetry) | T3.2, T3.3 | Sonnet | `scale-workbench/live/*` (mới), `ScaleWorkbenchLayout.tsx`, `i18n.ts` | Kéo thanh tua đổi t và frame; layout không re-render mỗi tick (React Profiler) | — | done |
 | T3.5 | Controls: `LoadKnob`, `ChaosToolbox`, `KnobPanel`, `RequestTracer`; `StageEntityInspectorCard`/`StageInspectorPortal` thêm `liveSlot`; `NodeLivePanel` ở feature; i18n `live` phần còn lại | T3.3, T3.4, T2.9 | Sonnet | `scale-workbench/live/*`, `StageEntityInspector.tsx`, `i18n.ts`, `sysdesign-course/live/NodeLivePanel.tsx` | Kéo tải thấy DB đỏ và hàng đợi dồn; bấm packet ra waterfall; inspector hiển thị số liệu node | — | done (5f0cef8) |
 | T3.6 | `ScaleWorkbenchLayout.tsx`: nhánh `live-sim` vào renderer (1134-1183), controls cạnh cụm 1054-1129, prop `liveSimAdapter`, selector phím, render `attribution` cuối cột phải; `sysdesign-course/live/liveSimAdapter.ts`; `sdLessonBuilder` điền `liveSim`, `activityId`, `attribution` | T3.4, T3.5 | Opus | `ScaleWorkbenchLayout.tsx`, `sysdesign-course/live/liveSimAdapter.ts`, `sysdesign-course/scale/sdLessonBuilder.ts` | Bước không có `liveSim` chạy y hệt hiện tại; bước `live-sim` 60 fps với ~200 packet; dòng nguồn hiện ở bài có `source` | — | done |
-| T3.7 | Review M3 (Opus) + kiểm hồi quy bằng tay theo `05-live-stage.md` §9; quyết Web Worker (04 §11 mục 3) | T3.1–T3.6 | Opus | — | Redis, K8s, CI/CD, PMP, Python xác nhận isometric như cũ; ghi kết quả vào "Ghi chú review" | — | todo |
+| T3.7 | Review M3 (Opus) + kiểm hồi quy bằng tay theo `05-live-stage.md` §9; quyết Web Worker (04 §11 mục 3) | T3.1–T3.6 | Opus | — | Redis, K8s, CI/CD, PMP, Python xác nhận isometric như cũ; ghi kết quả vào "Ghi chú review" | — | done (28e9c9c, ADR-020) |
 
 ---
 
@@ -116,7 +116,7 @@ Kịch bản và số liệu chốt: `04-simulation-engine.md` §10 (ramp 200 �
 | T5.2 | `stage.json` + `sim.json` (`S1-03/ramp` đúng 04 §10); tracer waterfall | T3.6, T2.8 | Sonnet | `content/sysdesign/modules/S1-03-*/{stage,sim}.json` | DB đỏ trước tầng app; `expect` đạt; tua được | T5.1 | done (a5c3b37 + 470b12f) |
 | T5.3 | `activities.json` (A1–A6 theo 06 §3) | T5.2, T4.7 | Sonnet | `.../activities.json` | `sd:doctor`: starter không đạt, lời giải đạt, bẫy không đạt | — | done |
 | T5.4 | Review nội dung + trải nghiệm (Opus), chạy app thật theo 05 §9.4 | T5.1–T5.3 | Opus | — | Checklist `08-workflow.md` §5 đạt; `build`, `lint`, `sd:*`, `course:*`, `pmp:doctor` xanh | — | done — chờ T5.5 cổng duyệt người dùng |
-| T5.5 | **Cổng duyệt của người dùng**: tự chạy hết bài mẫu và duyệt | T5.4 | Người dùng | — | Người dùng ghi "duyệt" hoặc danh sách sửa vào "Ghi chú review". **Không nhân rộng (M6, M7) trước khi có "duyệt"** (ADR-008) | — | todo |
+| T5.5 | **Cổng duyệt của người dùng**: tự chạy hết bài mẫu và duyệt | T5.4 | Người dùng | — | Người dùng ghi "duyệt" hoặc danh sách sửa vào "Ghi chú review". **Không nhân rộng (M6, M7) trước khi có "duyệt"** (ADR-008) | — | done (người dùng duyệt sau 28e9c9c) |
 
 ---
 
@@ -128,8 +128,8 @@ Mỗi bài là một task con trong batch: `lesson.md` (biên tập tay), `modul
 
 | ID | Batch | Bài | Cần thêm (engine/công cụ) | Phụ thuộc riêng | Agent | Trạng thái |
 |---|---|---|---|---|---|---|
-| T6.0a | Chốt phạm vi mô phỏng sự kiện | — | Quyết 3 câu ở 04 §12 (engine `sim/timeline/` hay kịch bản tĩnh; vị trí Time view; phạm vi Raft); cập nhật 04 §12 + ADR; người dùng xem đề xuất | T5.5; **phải xong trước T6.4** | Opus | todo |
-| T6.0b | Hiện thực mô phỏng sự kiện | — | `sim/timeline/` (actor, message, đồng hồ, quorum, lock, saga, CRDT), checker (stale read, RYW, lost update), Time view; test | T6.0a; **phải xong trước T6.4 (phần S2-06, S2-11), T6.7, T6.8** | Opus | todo |
+| T6.0a | Chốt phạm vi mô phỏng sự kiện | — | Quyết 3 câu ở 04 §12 (engine `sim/timeline/` hay kịch bản tĩnh; vị trí Time view; phạm vi Raft); cập nhật 04 §12 + ADR; người dùng xem đề xuất | T5.5; **phải xong trước T6.4** | Opus | done (ADR-020) |
+| T6.0b | Hiện thực mô phỏng sự kiện | — | `sim/timeline/` (actor, message, đồng hồ, quorum, lock, saga, CRDT), checker (stale read, RYW, lost update), Time view; test | T6.0a; **phải xong trước T6.4 (phần S2-06, S2-11), T6.7, T6.8** | Opus | done |
 | T6.1 | 1 | S1-07, S1-04, S1-01, S1-02, S1-06 | Capacity view (đường latency–throughput), kịch bản fan-out | — | Sonnet | todo |
 | T6.2 | 2 | S0-01, S0-02, S0-03, S0-04, S0-09 | Công cụ Làm rõ yêu cầu, Trade-off Matrix, Ngân sách ràng buộc | T6.1 (S0-09 tham chiếu giao diện sim đã ổn định) | Sonnet | todo |
 | T6.3 | 3 | S0-05, S0-06, S0-07, S0-08, S1-05 | Estimator ("Đưa vào mô phỏng"), Requirements Card, slot lắp ô | — | Sonnet | todo |
@@ -157,13 +157,13 @@ Nghiệm thu chung mỗi bài: checklist "xong" ở `07-content-authoring.md` §
 
 | ID | Tab | Mô tả | Phụ thuộc | Agent | Nghiệm thu | Song song với | Trạng thái |
 |---|---|---|---|---|---|---|---|
-| T7.1 | `lab` | Canvas Lab: lưới 2D vuông góc, cùng `SystemModel` (ADR-007); mở `design-constraint` với canvas trống (06 §10) | T2.8, T4.7 | Opus | Kéo-thả primitive, nối link, chạy sim, chấm bằng `grade.ts`; lưu thiết kế vào ghi chú | T7.2–T7.6 | todo |
-| T7.2 | `warroom` | War-Room: 9 sự cố chạy trên engine (02 §7.1); knob `cancelOnTimeout` (04 §11) | T3.7, T4.7 | Sonnet | Mỗi sự cố có kịch bản sim, dấu hiệu quan sát, nhiệm vụ khắc phục, `postmortem` | T7.1, T7.3–T7.6 | todo |
-| T7.3 | `cases` | Design Cases + Evolution timeline (02 §7.2; URL Shortener và News Feed bọc S5-02, S5-03) | T3.7, T4.7 | Sonnet | Mỗi case có bước hỏi bắt buộc đầu tiên (khung câu hỏi SDC) và timeline v1→vN chạy được | T7.1, T7.2, T7.4–T7.6 | todo |
-| T7.4 | `atlas` | Pattern Atlas/Glossary, gắn vào `TermPopover` qua `src/data/glossary/devopsAndPmpData.ts` (file dùng chung) | T5.5 | Sonnet | Thuật ngữ hiện popover ở bài học; không phá glossary của app khác | T7.1–T7.3, T7.5, T7.6 | todo |
-| T7.5 | `interview` | Interview Mode: SNAKE 5 chặng, bấm giờ | T4.7 | Sonnet | Chạy đủ 5 chặng, có đồng hồ, lưu kết quả | T7.1–T7.4, T7.6 | todo |
+| T7.1 | `lab` | Canvas Lab: lưới 2D vuông góc, cùng `SystemModel` (ADR-007); mở `design-constraint` với canvas trống (06 §10) | T2.8, T4.7 | Opus | Kéo-thả primitive, nối link, chạy sim, chấm bằng `grade.ts`; lưu thiết kế vào ghi chú | T7.2–T7.6 | done |
+| T7.2 | `warroom` | War-Room: 9 sự cố chạy trên engine (02 §7.1); knob `cancelOnTimeout` (04 §11) | T3.7, T4.7 | Sonnet | Mỗi sự cố có kịch bản sim, dấu hiệu quan sát, nhiệm vụ khắc phục, `postmortem` | T7.1, T7.3–T7.6 | done |
+| T7.3 | `cases` | Design Cases + Evolution timeline (02 §7.2; URL Shortener và News Feed bọc S5-02, S5-03) | T3.7, T4.7 | Sonnet | Mỗi case có bước hỏi bắt buộc đầu tiên (khung câu hỏi SDC) và timeline v1→vN chạy được | T7.1, T7.2, T7.4–T7.6 | done |
+| T7.4 | `atlas` | Pattern Atlas/Glossary, gắn vào `TermPopover` qua `src/data/glossary/devopsAndPmpData.ts` (file dùng chung) | T5.5 | Sonnet | Thuật ngữ hiện popover ở bài học; không phá glossary của app khác | T7.1–T7.3, T7.5, T7.6 | done |
+| T7.5 | `interview` | Interview Mode: SNAKE 5 chặng, bấm giờ | T4.7 | Sonnet | Chạy đủ 5 chặng, có đồng hồ, lưu kết quả | T7.1–T7.4, T7.6 | done |
 | T7.6 | `credits` | Trang Credits (nội dung theo `01-sources-and-credits.md` §3.3). **Khuyến nghị làm sớm** (ngay sau T1.3) vì liên quan giấy phép | T1.3 | Sonnet | Liệt kê SDC (repo, sha, giấy phép, ghi chú MIT), DTS (tham chiếu), danh sách bài đã chuyển lấy từ `source` | bất kỳ | done (b9a355d, cd6e3e0) |
-| T7.7 | Review M7 (Opus), một dòng cho mỗi tab | T7.1–T7.6 | Opus | — | Tab hoạt động; không hồi quy | — | todo |
+| T7.7 | Review M7 (Opus), một dòng cho mỗi tab | T7.1–T7.6 | Opus | — | Tab hoạt động; không hồi quy | — | done |
 
 ---
 
