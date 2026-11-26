@@ -1,0 +1,28 @@
+{
+  "id": "S1-03",
+  "slug": "S1-03-data-flow-and-bottlenecks",
+  "level": 1,
+  "order": 5,
+  "title": "Data Flow và Bottleneck: tìm và sửa điểm nghẽn",
+  "summary": "Theo dõi một request đi qua các thành phần, đo tải ở từng chặng và tìm thành phần giới hạn thông lượng của toàn hệ thống. (Fixture tạm: M5 viết nội dung thật.)",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Mô tả đường đi của một request từ client tới database và quay về" },
+    { "vi": "Tính mức sử dụng ρ = λ/μ của một thành phần" },
+    { "vi": "Xác định điểm nghẽn bằng quy trình đo, tìm, sửa" }
+  ],
+  "tags": ["bottleneck", "latency", "throughput", "fixture"],
+  "dtsRef": "latency-throughput",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+    "adaptedBy": "sonnet",
+    "adaptedAt": "2026-11-26",
+    "changes": "Fixture tạm cho T1.4: chỉ để kiểm builder và doctor; nội dung thật do M5 (T5.1) viết.",
+    "adaptation": "rewritten"
+  },
+  "status": "draft"
+}

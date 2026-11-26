@@ -1,0 +1,82 @@
+{
+  "courseId": "sysdesign",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Mental Model Shift: tư duy hệ thống, đánh đổi và ràng buộc",
+    "1": "Foundation: thành phần, giao tiếp, luồng dữ liệu và điểm nghẽn",
+    "2": "Core Building Blocks: Load Balancing, Caching, Database, Queue",
+    "3": "Distributed Fundamentals: lỗi, nhất quán, đồng thuận, giao dịch, thời gian",
+    "4": "Scalability và Performance: hiệu năng, CDN, rate limiting, quan sát hệ thống",
+    "5": "Real-World Patterns: kiến trúc theo thời gian, hệ thống đọc nhiều, news feed",
+    "6": "Mastery: khung tư duy, quyết định kiến trúc, phỏng vấn, vận hành",
+    "7": "Case Studies: thiết kế hệ thống hoàn chỉnh"
+  },
+  "modules": [
+    {
+      "id": "S1-03",
+      "slug": "S1-03-data-flow-and-bottlenecks",
+      "level": 1,
+      "order": 5,
+      "title": "Data Flow và Bottleneck: tìm và sửa điểm nghẽn",
+      "summary": "Theo dõi một request đi qua các thành phần, đo tải ở từng chặng và tìm thành phần giới hạn thông lượng của toàn hệ thống. (Fixture tạm: M5 viết nội dung thật.)",
+      "durationMin": 16,
+      "difficulty": "Beginner",
+      "objectives": [
+        {
+          "vi": "Mô tả đường đi của một request từ client tới database và quay về"
+        },
+        {
+          "vi": "Tính mức sử dụng ρ = λ/μ của một thành phần"
+        },
+        {
+          "vi": "Xác định điểm nghẽn bằng quy trình đo, tìm, sửa"
+        }
+      ],
+      "tags": [
+        "bottleneck",
+        "latency",
+        "throughput",
+        "fixture"
+      ],
+      "dtsRef": "latency-throughput",
+      "source": {
+        "kind": "sdc",
+        "path": "content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+        "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+        "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
+        "adaptedBy": "sonnet",
+        "adaptedAt": "2026-11-26",
+        "changes": "Fixture tạm cho T1.4: chỉ để kiểm builder và doctor; nội dung thật do M5 (T5.1) viết.",
+        "adaptation": "rewritten"
+      },
+      "status": "draft",
+      "lesson": "<!-- fixture — M5 viết thật -->\n\n## 1. Điểm nghẽn (Bottleneck): thành phần giới hạn thông lượng của cả hệ thống\n\n```step\ncategory: SETUP\nshort: Điểm nghẽn\nscene: none\ncallout:\n  kind: key-idea\n  vi: Thêm tài nguyên cho thành phần không phải điểm nghẽn không làm tăng thông lượng của hệ thống.\n```\n\n**Điểm nghẽn (Bottleneck)** là thành phần có mức sử dụng cao nhất trên đường đi của request. Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần này, vì mọi request đều phải đi qua nó.\n\nBạn có thể hình dung giống một đường ống: tốc độ nước chảy qua cả đường ống bị quyết định bởi đoạn hẹp nhất.\n\n## 2. Mức sử dụng ρ = λ / μ: đo mức tải của một thành phần\n\n```step\ncategory: MECHANISM\nshort: Mức sử dụng ρ\nscene: none\nwhatChanged:\n  - \"+ Thêm công thức ρ = λ / μ\"\n```\n\nMức sử dụng của một thành phần là ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần đó xử lý tối đa mỗi giây. Khi ρ ≥ 1, hàng đợi trước thành phần tăng không dừng và độ trễ tăng theo.\n\n## 3. Quy trình đo, tìm, sửa\n\n```step\ncategory: TECHNIQUE\nshort: Đo, tìm, sửa\nscene: none\n```\n\nĐo ρ của từng thành phần trên đường đi của request, chọn thành phần có ρ cao nhất, rồi mới tăng năng lực của thành phần đó. Sau khi sửa, đo lại: điểm nghẽn có thể chuyển sang thành phần kế tiếp.\n\n## 4. Sai lầm phổ biến: thêm server ở tầng không nghẽn\n\n```step\ncategory: PITFALL\nshort: Sai lầm phổ biến\nscene: none\n```\n\nKhi database là điểm nghẽn, thêm instance ở tầng ứng dụng chỉ tăng chi phí mà không tăng thông lượng, vì tải vào database không đổi.\n\n## 5. Tóm tắt\n\n```step\ncategory: RECAP\nshort: Tóm tắt\n```\n\nĐiểm nghẽn là thành phần có ρ cao nhất. Đo trước, sửa đúng chỗ, rồi đo lại.",
+      "quiz": [
+        {
+          "id": "S1-03.q1",
+          "type": "mc",
+          "q": "Một thành phần có năng lực 1 000 req/s nhận 1 100 req/s trong 5 phút. Điều nào xảy ra với hàng đợi của nó?",
+          "code": "",
+          "choices": [
+            "Hàng đợi luôn bằng 0",
+            "Hàng đợi tăng đều đặn theo thời gian",
+            "Hàng đợi tự ổn định ở mức nhỏ",
+            "Hàng đợi giảm dần"
+          ],
+          "answer": 1,
+          "explain": "Khi tải vào λ vượt năng lực μ (ρ > 1), phần dư λ − μ = 100 req/s tích luỹ mỗi giây, nên hàng đợi tăng khoảng 100 request mỗi giây."
+        }
+      ],
+      "cards": [
+        {
+          "id": "S1-03.c1",
+          "front": "Điểm nghẽn (Bottleneck) là gì?",
+          "back": "Thành phần có ρ = λ/μ cao nhất trên đường đi của request; nó quyết định thông lượng tối đa của cả hệ thống."
+        }
+      ],
+      "stage": null,
+      "activities": [],
+      "simIds": []
+    }
+  ]
+}

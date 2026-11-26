@@ -1,0 +1,11 @@
+[
+  {
+    "id": "S1-03.q1",
+    "type": "mc",
+    "q": "Một thành phần có năng lực 1 000 req/s nhận 1 100 req/s trong 5 phút. Điều nào xảy ra với hàng đợi của nó?",
+    "code": "",
+    "choices": ["Hàng đợi luôn bằng 0", "Hàng đợi tăng đều đặn theo thời gian", "Hàng đợi tự ổn định ở mức nhỏ", "Hàng đợi giảm dần"],
+    "answer": 1,
+    "explain": "Khi tải vào λ vượt năng lực μ (ρ > 1), phần dư λ − μ = 100 req/s tích luỹ mỗi giây, nên hàng đợi tăng khoảng 100 request mỗi giây."
+  }
+]

@@ -95,3 +95,9 @@ Trạng thái chung: tất cả ADR dưới đây có hiệu lực từ 2026-11-
 - **Ngữ cảnh:** ADR-003 chia vai Sonnet làm, Opus review; cần nói rõ hơn về phân quyền và tránh xung đột khi nhiều agent chạy song song.
 - **Quyết định:** Mọi task triển khai do Sonnet thực hiện. Agent điều phối (Opus) chỉ review và kiểm soát chất lượng. Mỗi agent làm việc trong worktree riêng và **không sửa `TASKS.md`**; điều phối viên cập nhật `TASKS.md` sau khi review.
 - **Hệ quả:** Không xung đột khi merge `TASKS.md`. Agent báo cáo kết quả trong báo cáo cuối; trạng thái task chỉ đổi sau review.
+
+## ADR-016 — Theo dõi `src/data/courses/sysdesign/` trong git; builder/doctor dùng chung thư viện đọc nội dung
+- **Ngày:** 2026-11-26
+- **Ngữ cảnh:** T1.4 phải quyết việc có commit file do `sd:build` sinh ra hay không. Các khoá khác (kube, cicd, pmp) commit `src/data/courses/<khoá>/*.json`.
+- **Quyết định:** Theo thông lệ: `src/data/courses/sysdesign/{curriculum,sims}.json` **được theo dõi trong git**, không sửa tay, chỉ sinh bằng `npm run sd:build`; file không có dấu thời gian để kết quả build tất định (diff chỉ đổi khi nội dung đổi). `curriculum.json` chứa `lesson` (markdown thô, builder runtime tách step ở T1.1c), `quiz`, `cards`, `stage`, `activities`, `simIds`; `sims.json` là `{ sims: { <simId>: SimDoc } }`. Builder và doctor chia sẻ `scripts/lib/sysdesign-content.mjs` (đọc `content/sysdesign/`, tách step), bỏ qua `_source/`. Doctor đọc thẳng `content/`, không đọc file build. Bài bị coi là chuyển thể từ SDC (bắt buộc `source`) khi dòng của nó trong `02-curriculum.md` có cột SDC dạng `p<n>/l<n>`.
+- **Hệ quả:** Mọi PR đổi nội dung phải kèm file build đã sinh lại. Phần chạy engine của doctor (rule 10, 11 đầy đủ, 12 đầy đủ) để TODO trỏ T4.6.
