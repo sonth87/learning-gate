@@ -166,7 +166,7 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 | S1-06 | Vòng đời một request: DNS, kết nối, server, database | — | `request-lifecycle` | sự kiện | estimate, timeline-read | P1 | 1 | todo |
 | S1-02 | Communication Patterns: sync, async, event-driven | `p1/l2` communication-patterns | `queues` (một phần), `pubsub` (một phần) | live | predict, spot-bottleneck | P1 | 1 | todo |
 | S1-08 | REST, RPC và GraphQL: chi phí trên mạng di động | — | `apis` | — | estimate | P2 | 10 | todo |
-| S1-03 | Data Flow và Bottleneck: tìm và sửa điểm nghẽn | `p1/l3` data-flow-and-bottlenecks | `latency-throughput` (một phần), `request-lifecycle` (một phần) | live | predict, spot-bottleneck, tune-to-limit, estimate, fix-challenge, order | P0 | M5 | review (bài đọc 11 step, stage.json, sim.json, quiz, cards xong; live-sim chờ T3.6, activities chờ M4) |
+| S1-03 | Data Flow và Bottleneck: tìm và sửa điểm nghẽn | `p1/l3` data-flow-and-bottlenecks | `latency-throughput` (một phần), `request-lifecycle` (một phần) | live | predict, spot-bottleneck, tune-to-limit, estimate, fix-challenge, order | P0 | M5 | review (T5.1–T5.4 xong: 11 step, stage.json, sim.json, activities.json A1–A6, quiz, cards; chờ T5.5 cổng duyệt người dùng) |
 | S1-04 | Latency, Throughput, Availability và CAP (mở đầu) | `p1/l4` cac-khai-niem-quan-trong | `latency-throughput` (một phần), `cap` (một phần) | live | predict, estimate | P1 | 1 | todo |
 | S1-07 | Hàng đợi, Little's Law và tail latency ★ | — | `latency-throughput` | live | predict, estimate, tune-to-limit | P1 | 1 | todo |
 | S1-05 | Bài tập tổng hợp Phase 1 | `p1/l5` bai-tap-tong-hop | `design-url-shortener` (một phần) | live | fix-challenge, design-constraint | P2 | 3 | todo |

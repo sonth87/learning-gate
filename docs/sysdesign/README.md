@@ -10,8 +10,10 @@ Liên kết nhanh: **[HANDOFF — bắt đầu từ đây nếu bạn tiếp qu�
 - **M0 — Bộ tài liệu: xong** (`0ba5606` + cập nhật ADR-001..018, `HANDOFF.md`).
 - **M1 — Khung app và feature module: xong** (T1.1a–T1.6, kèm T7.6 trang Credits và bài mẫu S1-03 phần nội dung T5.1).
 - **M2 — Engine mô phỏng (`src/features/sysdesign-course/sim/`): xong** (T2.1–T2.9, đủ 22 bất biến I1–I22, review T2.8 xong).
-- **M3 — Stage chế độ `live-sim`: xong code (T3.1–T3.6)**, đang chờ kiểm hồi quy bằng mắt 5 app cũ (T3.7).
-- **Tiếp theo:** T3.7 (kiểm bằng mắt) + quyết SLO p99 của S1-03 → M4 (T4.1–T4.7: Activities & chấm điểm) → M5 (T5.3–T5.5: `activities.json` cho S1-03 và cổng duyệt người dùng).
+- **M3 — Stage chế độ `live-sim`: xong code (T3.1–T3.6)**, chờ kiểm hồi quy bằng mắt 5 app cũ (T3.7).
+- **M4 — Activities và chấm điểm (`src/features/sysdesign-course/activities/`): xong** (T4.1–T4.7: 9 dạng activity, `ActivityGate`, `ExerciseRecord.best/stars`, `sysdesign-doctor` chạy engine cho `sim.json` & `activities.json`).
+- **M5 — Bài mẫu `S1-03 Data Flow & Bottlenecks`: xong code & nội dung (T5.1–T5.4)** — đủ 11 step, `stage.json`, `sim.json`, `activities.json` (`A1`–`A6`), `quiz.json`, `cards.json`; đang dừng tại **T5.5 (Cổng duyệt của người dùng, ADR-008)**.
+- **Tiếp theo:** Người dùng duyệt bài mẫu `S1-03` (T5.5) và kiểm bằng mắt 5 app cũ (T3.7) → sau khi có "duyệt" mới bắt đầu M6 (15 batch nội dung) và M7 (các tab mở rộng).
 - Chương trình chốt: 74 bài (40 SDC + 22 bổ sung từ chủ đề DTS + 12 tự thêm ★), level 0–7 (`02-curriculum.md`, ADR-010).
 - Thứ tự phụ thuộc: M0 → (M1 ∥ M2) → M3 → M4 → M5 (cổng duyệt của người dùng) → (M6 ∥ M7) → M8.
 - Việc chờ người dùng: xem bảng tổng hợp tại [`HANDOFF.md`](./HANDOFF.md) §8.

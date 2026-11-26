@@ -41,6 +41,8 @@ Bạn có thể hình dung giống một đường ống: tốc độ nước ch
 category: MECHANISM
 short: Đường đi request
 scene: s2-flow
+activity: S1-03.A6
+gate: optional
 callout:
   kind: good-to-know
   vi: "Độ trễ (Latency) trả lời câu hỏi một request mất bao lâu. Thông lượng (Throughput) trả lời câu hỏi mỗi giây xử lý được bao nhiêu request. Hai đại lượng này do hai tiêu chí khác nhau quyết định."
@@ -157,6 +159,8 @@ def load_profile(user_id: int) -> dict:
 category: TECHNIQUE
 short: Tìm bằng ρ
 scene: s5-hot
+activity: S1-03.A4
+gate: optional
 callout:
   kind: key-idea
   title: Điểm nghẽn là thành phần có ρ cao nhất
@@ -196,6 +200,8 @@ category: PROBLEM
 short: Tải tăng dần
 scene: s6-live
 live: ramp
+activity: S1-03.A1
+gate: optional
 callout:
   kind: watch-out
   title: Độ trễ tăng dựng đứng gần ρ = 1
@@ -232,6 +238,8 @@ Tầng App chỉ chạm ρ = 0,9 ở khoảng giây thứ 58, rất lâu sau Dat
 category: MECHANISM
 short: Các loại nghẽn
 scene: s7-diagnosis
+activity: S1-03.A2
+gate: optional
 callout:
   kind: compare
   title: Triệu chứng chỉ ra loại điểm nghẽn
@@ -264,6 +272,8 @@ Tình huống: ứng dụng báo trễ khoảng 10 giây, CPU và RAM bình thư
 category: TECHNIQUE
 short: Sửa đúng chỗ
 scene: s8-fix
+activity: S1-03.A3
+gate: optional
 callout:
   kind: technique
   title: Ưu tiên cách rẻ trước
@@ -301,6 +311,8 @@ category: PITFALL
 short: Thêm app vô ích
 scene: s9-live
 live: trap
+activity: S1-03.A5
+gate: required
 callout:
   kind: watch-out
   title: Sai chỗ thì tốn tiền mà không hiệu quả

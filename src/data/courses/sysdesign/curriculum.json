@@ -64,7 +64,7 @@
         "adaptation": "rewritten",
         "changes": "Viết lại gần như toàn bộ: bỏ giai thoại mở đầu (giữ phần kỹ thuật thành tình huống connection pool), đổi Mermaid thành scene isometric và cây chẩn đoán, thêm mức sử dụng ρ = λ/μ, tải bền vững tối đa và mô phỏng tải tăng dần, bổ sung CPU/bộ nhớ/I/O. Sửa lỗi số học của bản gốc: tổng ví dụ thanh toán sau khi cache là 894 ms (bản gốc ghi 590 ms) và tỉ trọng API vận chuyển là 77% (bản gốc ghi cả 67% và 77%). Làm mềm các khẳng định tuyệt đối về mức cải thiện (60 lần, 100 lần) thành ví dụ cụ thể."
       },
-      "lesson": "## 1. Điểm nghẽn (Bottleneck): thông lượng của hệ thống bị giới hạn bởi thành phần chậm nhất\n\n```step\ncategory: SETUP\nshort: Điểm nghẽn\nscene: s1-path\ncallout:\n  kind: key-idea\n  title: Luật cốt lõi\n  vi: \"Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần chậm nhất trên đường đi của request. Tối ưu một thành phần khác không làm hệ thống nhanh hơn.\"\nwhatChanged:\n  - \"+ Đường đi của một request: Client, Load Balancer, App, Cache, Database\"\n  - \"~ Database là thành phần đầu tiên chạm ρ = 1 khi tải tăng\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải vào (t = 35 s)\"\n    value: \"≈ 3.000 req/s\"\n```\n\n**Điểm nghẽn (Bottleneck)** là thành phần giới hạn thông lượng của toàn bộ đường đi: mọi request đều phải qua nó, nên cả hệ thống không thể xử lý nhanh hơn nó. Điều này kéo theo một hệ quả thực tế: thêm tài nguyên cho thành phần không phải điểm nghẽn không làm hệ thống nhanh hơn.\n\nHãy xem một chuỗi sản xuất ba bước: cắt vải 1 phút, may 5 phút, đóng gói 30 giây mỗi sản phẩm. Cả chuỗi ra một sản phẩm mỗi 5 phút. Rút bước cắt vải xuống 10 giây không đổi gì, vì bước may vẫn là bước chậm nhất.\n\nVới một request đi qua hệ thống, ta cộng thời gian các chặng. Giả sử mạng của client 50 ms mỗi chiều, server 10 ms mỗi chiều, Database 500 ms. Tổng là 50 + 10 + 500 + 10 + 50 = 620 ms.\n\n| Cách tối ưu | Tiết kiệm | Tỉ lệ trên 620 ms |\n|---|---|---|\n| Server 10 ms xuống 1 ms (qua hai chiều) | 18 ms | khoảng 3% |\n| Database 500 ms xuống 50 ms | 450 ms | khoảng 73% |\n\nBạn có thể hình dung giống một đường ống: tốc độ nước chảy qua cả đường ống do đoạn hẹp nhất quyết định.\n\n## 2. Đường đi của request: độ trễ là tổng thời gian các chặng nối tiếp\n\n```step\ncategory: MECHANISM\nshort: Đường đi request\nscene: s2-flow\ncallout:\n  kind: good-to-know\n  vi: \"Độ trễ (Latency) trả lời câu hỏi một request mất bao lâu. Thông lượng (Throughput) trả lời câu hỏi mỗi giây xử lý được bao nhiêu request. Hai đại lượng này do hai tiêu chí khác nhau quyết định.\"\nwhatChanged:\n  - \"+ Cache nằm giữa App và Database (read-through)\"\n  - \"~ Khoảng 53% request cuối cùng mới đi tới Database\"\ntelemetry:\n  - label: \"Tỉ lệ đọc\"\n    value: \"90%\"\n  - label: \"Cache Hit (trên lượt đọc)\"\n    value: \"≈ 52%\"\n    tone: ok\n  - label: \"Request tới Database\"\n    value: \"≈ 53%\"\n    tone: warn\n```\n\n**Data flow** là đường đi của dữ liệu qua các thành phần. Trong hệ thống của bài này, một request đi theo thứ tự: Client, Load Balancer, một trong ba App, rồi Cache. Nếu Cache có dữ liệu (Cache Hit) thì App nhận kết quả ngay. Nếu không (Cache Miss), Cache hỏi tiếp Database rồi nhớ lại kết quả. Response đi ngược đường cũ.\n\n**Độ trễ của một request** bằng tổng thời gian các chặng nối tiếp: mạng, xử lý ở từng thành phần, thời gian chờ trong hàng đợi trước mỗi thành phần. Một chặng chậm kéo cả tổng lên.\n\n**Thông lượng** thì khác: nó bị giới hạn bởi thành phần có mức tải cao nhất so với năng lực của chính nó. Để tính tải lên Database, ta xét: 90% request là đọc, Cache trả lời khoảng 52% lượt đọc, nên tỉ lệ tới Database là 0,9 × (1 − 0,52) + 0,1 ≈ 0,53, tức hơn một nửa số request vẫn xuống Database (gồm các lượt đọc Cache Miss và toàn bộ lượt ghi).\n\n## 3. Bước 1: đo thời gian từng chặng, không đoán\n\n```step\ncategory: TECHNIQUE\nshort: Đo từng chặng\nscene: s3-trace\ncallout:\n  kind: watch-out\n  title: Đo trước khi sửa\n  vi: \"Mỗi nhóm trong team thường có một giả thuyết riêng (Database chậm, mạng chậm, code kém). Chỉ số đo từng chặng mới cho biết giả thuyết nào đúng.\"\nwhatChanged:\n  - \"+ Gắn thời gian cho từng chặng của một request\"\n  - \"~ Database chiếm 300 ms trên tổng 427 ms\"\ntelemetry:\n  - label: \"Tổng thời gian (ví dụ)\"\n    value: \"427 ms\"\n  - label: \"Chặng Database\"\n    value: \"300 ms\"\n    tone: bad\n  - label: \"Tỉ trọng Database\"\n    value: \"70%\"\n    tone: warn\n```\n\nBước đầu tiên của phân tích điểm nghẽn là **đo thời gian từng chặng** của một request cụ thể. Ví dụ dưới đây là một request tải trang hồ sơ người dùng, lần này Cache Miss nên request đi xuống Database. Đây là số liệu minh hoạ cho một hệ thống khác với mô phỏng ở các bước sau.\n\n| Chặng | Thời gian |\n|---|---|\n| Client tới Load Balancer | 50 ms |\n| Load Balancer tới App | 10 ms |\n| App kiểm tra Cache (Miss) | 5 ms |\n| App truy vấn Database | 300 ms |\n| App ghi kết quả vào Cache | 2 ms |\n| App trả về Load Balancer | 10 ms |\n| Load Balancer trả về Client | 50 ms |\n| **Tổng** | **427 ms** |\n\nChặng Database chiếm 300 / 427, khoảng 70% tổng thời gian. Trên sơ đồ, mỗi đường nối gộp thời gian đi và về của chặng đó (ví dụ Client và Load Balancer: 50 + 50 = 100 ms).\n\nMột lưu ý khi đọc kết quả: đo một request cho biết thời gian nằm ở đâu, còn câu hỏi hệ thống chịu được bao nhiêu tải thì cần đo theo mức sử dụng ở bước 5.\n\n## 4. Công cụ đo: log thời gian, APM, tracing và EXPLAIN\n\n```step\ncategory: TECHNIQUE\nshort: Công cụ đo\nmode: code\ncallout:\n  kind: technique\n  title: Ba lớp công cụ\n  vi: \"Log thời gian tự viết cho câu trả lời nhanh, APM và Distributed Tracing cho cả đường đi của request, EXPLAIN ANALYZE cho từng câu truy vấn.\"\n```\n\nCó ba cách phổ biến để lấy số đo ở môi trường thật, từ đơn giản đến đầy đủ.\n\n**Log thời gian tự viết** đo từng đoạn mã bằng đồng hồ đơn điệu (`time.perf_counter`) và ghi thành một dòng log có cấu trúc:\n\n```python\nimport logging\nimport time\n\nlog = logging.getLogger(\"profile\")\n\ndef load_profile(user_id: int) -> dict:\n    t0 = time.perf_counter()\n    user = cache.get(f\"user:{user_id}\")\n    t_cache = time.perf_counter() - t0\n\n    t_db = 0.0\n    if user is None:  # Cache Miss\n        t1 = time.perf_counter()\n        user = db.query(\"SELECT id, name, email FROM users WHERE id = %s\", user_id)\n        t_db = time.perf_counter() - t1\n        cache.set(f\"user:{user_id}\", user, ttl=300)\n\n    total = time.perf_counter() - t0\n    log.info(\"load_profile total=%.0fms cache=%.0fms db=%.0fms\",\n             total * 1e3, t_cache * 1e3, t_db * 1e3)\n    return user\n\n# Dòng log mẫu: load_profile total=307ms cache=5ms db=300ms\n```\n\n**APM và Distributed Tracing** (công cụ như OpenTelemetry cùng một hệ thống quan sát) gắn mỗi request một trace gồm nhiều span, mỗi span là một chặng có thời gian bắt đầu và kết thúc. Biểu đồ waterfall của trace cho thấy ngay span nào dài nhất.\n\n**EXPLAIN ANALYZE** cho biết một câu truy vấn mất thời gian ở đâu. Kết quả có dòng `Seq Scan on users ... Execution Time: 285 ms` nghĩa là Database quét toàn bộ bảng, dấu hiệu thiếu chỉ mục (Index).\n\n## 5. Bước 2: tìm điểm nghẽn bằng mức sử dụng ρ = λ / μ\n\n```step\ncategory: TECHNIQUE\nshort: Tìm bằng ρ\nscene: s5-hot\ncallout:\n  kind: key-idea\n  title: Điểm nghẽn là thành phần có ρ cao nhất\n  vi: \"ρ ≥ 1 nghĩa là request đến nhanh hơn thành phần xử lý được, hàng đợi trước nó tăng không dừng.\"\nwhatChanged:\n  - \"+ Gắn mức sử dụng ρ lên từng thành phần tại t = 35 s\"\n  - \"~ Database ρ = 1,00 trong khi mỗi App chỉ 0,56\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n    tone: warn\n```\n\nThời gian của một request cho biết chặng nào chậm. Còn để biết thành phần nào **giới hạn thông lượng**, ta so **mức sử dụng** ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần xử lý tối đa mỗi giây.\n\nNăng lực μ trong hệ thống của bài: Load Balancer 20.000, mỗi App 1.800, Cache 40.000, Database 1.600 (req/s). Khi tải vào λ = 3.000 req/s:\n\n| Thành phần | Tải đến | μ | ρ |\n|---|---|---|---|\n| Load Balancer | 3.000 | 20.000 | 0,15 |\n| App (mỗi instance, chia đều 3) | 1.000 | 1.800 | 0,56 |\n| Cache | 3.000 | 40.000 | 0,07 |\n| Database | 0,53 × 3.000 ≈ 1.590 | 1.600 | 1,00 |\n\nDatabase có ρ cao nhất nên là điểm nghẽn. Tải bền vững tối đa của cả hệ thống là μ của Database chia cho tỉ lệ request xuống Database: 1.600 / 0,531 ≈ 3.010 req/s. Vượt mức đó, phần dư λ − μ cộng dồn mỗi giây vào hàng đợi.\n\n## 6. Quan sát tải tăng dần: Database chạm ρ = 1 trước tầng App\n\n```step\ncategory: PROBLEM\nshort: Tải tăng dần\nscene: s6-live\nlive: ramp\ncallout:\n  kind: watch-out\n  title: Độ trễ tăng dựng đứng gần ρ = 1\n  vi: \"Độ trễ không tăng đều theo tải. Khi ρ tiến tới 1, thời gian chờ trong hàng đợi chiếm phần lớn, nên p99 tăng nhanh trước khi lỗi xuất hiện.\"\nwhatChanged:\n  - \"~ Tải tăng từ 200 lên 5.000 req/s trong 60 giây\"\n  - \"~ Database ρ = 0,6 (t = 20 s), 0,9 (t ≈ 31 s), 1,0 (t ≈ 35 s)\"\ntelemetry:\n  - label: \"p99 (t = 20 s, rồi t = 35 s)\"\n    value: \"≈ 64 ms, rồi ≈ 143 ms\"\n    tone: warn\n  - label: \"Lỗi (t = 35 s, rồi t = 40 s)\"\n    value: \"≈ 0,9%, rồi ≈ 53%\"\n    tone: bad\n  - label: \"ρ của App (t = 40 s)\"\n    value: \"0,63\"\n    tone: ok\n```\n\nKịch bản mô phỏng của bài tăng tải từ 200 lên 5.000 req/s trong 60 giây, rồi giữ ở 5.000 tới giây thứ 90. Kết quả theo mốc thời gian (không có nhiễu ngẫu nhiên):\n\n- **t = 20 s** (λ = 1.800): ρ của Database 0,60, p99 khoảng 64 ms. Hệ thống còn dư năng lực.\n- **t ≈ 31 s** (λ ≈ 2.700): ρ của Database chạm 0,9, thành phần chuyển sang trạng thái bận.\n- **t ≈ 35 s** (λ ≈ 3.000): ρ của Database bằng 1,00, p99 tăng lên khoảng 143 ms, bắt đầu có lỗi. Mỗi App mới ở ρ khoảng 0,56.\n- **t = 40 s**: ρ của Database 1,13, hàng đợi trước Database dài ra (khoảng 500 request), hơn một nửa request lỗi hoặc quá hạn.\n\nCó thêm một cơ chế làm tình hình xấu đi nhanh: link từ Cache tới Database cho phép thử lại tối đa 2 lần, không có Backoff. Mỗi request lỗi sinh thêm tải lên đúng thành phần đang quá tải.\n\nTầng App chỉ chạm ρ = 0,9 ở khoảng giây thứ 58, rất lâu sau Database. Nghẽn xảy ra ở Database trước, không phải ở nơi có nhiều instance nhất.\n\n## 7. Các loại điểm nghẽn thường gặp: CPU, bộ nhớ, I/O, mạng, API ngoài và Database\n\n```step\ncategory: MECHANISM\nshort: Các loại nghẽn\nscene: s7-diagnosis\ncallout:\n  kind: compare\n  title: Triệu chứng chỉ ra loại điểm nghẽn\n  vi: \"Số đo tài nguyên của từng thành phần (CPU, RAM, I/O, mạng, hàng đợi) cho biết điểm nghẽn thuộc loại nào, từ đó chọn đúng cách sửa.\"\nwhatChanged:\n  - \"+ Cây chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn\"\ntelemetry:\n  - label: \"Loại phổ biến\"\n    value: \"5 loại\"\n  - label: \"Tình huống minh hoạ\"\n    value: \"Pool 10 kết nối\"\n    tone: warn\n```\n\nCùng một triệu chứng \"chậm khi tải tăng\" có nhiều nguyên nhân. Mỗi loại để lại dấu hiệu đo được khác nhau:\n\n| Loại | Dấu hiệu | Cách đo | Hướng xử lý |\n|---|---|---|---|\n| CPU, logic ứng dụng | CPU gần 100% | Profiler (ví dụ `cProfile`) | Đổi thuật toán, chuyển việc nặng sang Queue, scale ngang |\n| Bộ nhớ | RAM cạn, swap | Giám sát RAM, heap | Giảm kích thước dữ liệu giữ trong RAM, tăng RAM |\n| I/O đĩa | Thời gian chờ I/O cao | Số liệu disk I/O | Chỉ mục, đĩa nhanh hơn, ghi theo lô |\n| Mạng, API ngoài | RTT cao, Timeout | Đo thời gian từng lời gọi | Gọi song song, Cache, Timeout ngắn, Circuit Breaker, đặt dịch vụ gần người dùng |\n| Database | Truy vấn chậm, hàng đợi trước DB, pool đầy | `EXPLAIN`, `pg_stat_statements` | Chỉ mục, Cache, tối ưu truy vấn, Read Replica |\n\nTình huống: ứng dụng báo trễ khoảng 10 giây, CPU và RAM bình thường, Redis chỉ có Connection Pool 10 kết nối trong khi khoảng 1.000 request đang xếp hàng chờ kết nối. Tăng pool lên 100 đưa độ trễ về khoảng 200 ms. Giới hạn kết nối (pool, thread) cũng là một dạng điểm nghẽn, và nó cũng được đo bằng ρ.\n\n## 8. Bước 3: sửa đúng thành phần, giảm tải vào Database hoặc tăng năng lực Database\n\n```step\ncategory: TECHNIQUE\nshort: Sửa đúng chỗ\nscene: s8-fix\ncallout:\n  kind: technique\n  title: Ưu tiên cách rẻ trước\n  vi: \"Thứ tự thường hợp lý: tối ưu truy vấn và chỉ mục, tăng Cache Hit Ratio, rồi mới tăng năng lực Database. Cách nào cũng phải đo lại sau khi sửa.\"\nwhatChanged:\n  - \"~ Cache từ 25.000 lên 50.000 key, Hit Ratio từ 52% lên 74%\"\n  - \"~ Database tăng cỡ máy gấp đôi (1.600 lên 3.200 req/s)\"\n  - \"~ Request xuống Database giảm từ 53% còn 34%\"\ntelemetry:\n  - label: \"ρ của Database (λ = 5.000)\"\n    value: \"0,53\"\n    tone: ok\n  - label: \"p99 (λ = 5.000)\"\n    value: \"≈ 106 ms\"\n    tone: ok\n  - label: \"Chi phí\"\n    value: \"1,27 lên 2,31 USD/giờ\"\n    tone: warn\n```\n\nBước thứ ba là **sửa đúng thành phần là điểm nghẽn**. Với Database có ba hướng:\n\n1. **Tối ưu truy vấn và chỉ mục.** Thêm chỉ mục cho câu truy vấn quét toàn bảng đưa 300 ms xuống khoảng 5 ms, tức nhanh gấp 60 lần. Chọn đúng cột cần lấy (không dùng `SELECT *`) cũng giảm thời gian truyền.\n2. **Giảm số request xuống Database bằng Cache.** Trong mô phỏng, Cache tăng từ 25.000 lên 50.000 key nâng Cache Hit Ratio lên khoảng 74%, tỉ lệ request xuống Database còn 0,9 × 0,26 + 0,1 ≈ 0,34.\n3. **Tăng năng lực Database** (scale-up). Cỡ máy gấp đôi nâng μ lên 3.200 req/s.\n\nKết hợp cách 2 và 3, ở tải đỉnh 5.000 req/s ρ của Database còn khoảng 0,53 và p99 khoảng 106 ms. Cái giá là chi phí tăng từ khoảng 1,27 lên 2,31 USD/giờ.\n\nVí dụ khác: trang thanh toán mất 2.590 ms, trong đó một API tính phí vận chuyển bên ngoài chiếm 2.000 ms (khoảng 77%). Cache kết quả với Hit Ratio 85% cho thời gian trung bình 0,85 × 5 + 0,15 × 2.000 ≈ 304 ms, tổng còn khoảng 894 ms (giảm khoảng 65%).\n\n## 9. Sai lầm phổ biến: thêm instance ở tầng không phải điểm nghẽn\n\n```step\ncategory: PITFALL\nshort: Thêm app vô ích\nscene: s9-live\nlive: trap\ncallout:\n  kind: watch-out\n  title: Sai chỗ thì tốn tiền mà không hiệu quả\n  vi: \"Khi Database là điểm nghẽn, nhân đôi số instance App làm ρ của App giảm nhưng tải vào Database không đổi, nên p99 gần như giữ nguyên.\"\nwhatChanged:\n  - \"~ Mỗi App từ 1 lên 2 instance, ρ của App giảm còn khoảng 0,28\"\n  - \"~ Tải vào Database không đổi, ρ vẫn bằng 1,00\"\ntelemetry:\n  - label: \"ρ của App (t = 35 s)\"\n    value: \"0,56 xuống 0,28\"\n    tone: ok\n  - label: \"ρ của Database\"\n    value: \"1,00 (không đổi)\"\n    tone: bad\n  - label: \"p99 (t = 35 s)\"\n    value: \"≈ 143 ms (đổi dưới 1%)\"\n    tone: bad\n```\n\nKhi hệ thống chậm, phản xạ thường gặp là thêm server. Phản xạ này chỉ đúng nếu server được thêm đúng ở thành phần là điểm nghẽn.\n\nTrong mô phỏng, nhân đôi số instance của cả ba App làm ρ của mỗi App giảm từ 0,56 xuống 0,28. Nhưng số request xuống Database vẫn như cũ, nên ρ của Database vẫn bằng 1,00 và p99 ở t = 35 s gần như không đổi (khoảng 143 ms, chênh lệch dưới 1%). Chi phí thì tăng từ khoảng 1,27 lên 1,58 USD/giờ.\n\nMột ví dụ số khác cho cùng sai lầm: API mất 1.000 ms, trong đó server 50 ms và Database 950 ms. Viết lại code server từ 50 xuống 10 ms chỉ giảm tổng còn 960 ms (cải thiện 4%). Thêm chỉ mục đưa Database từ 950 xuống 50 ms, tổng còn 100 ms (cải thiện 90%).\n\nNguyên tắc kiểm tra nhanh: trước khi thêm tài nguyên, hỏi thành phần này có ρ cao nhất trên đường đi hay không.\n\n## 10. Sai lầm khi tối ưu: tối ưu sớm, không đo lại và tối ưu quá mức\n\n```step\ncategory: PITFALL\nshort: Sai lầm tối ưu\nscene: s10-loop\ncallout:\n  kind: key-idea\n  vi: \"Mỗi lần sửa là một giả thuyết. Số đo trước và sau khi sửa là cách duy nhất xác nhận giả thuyết đó đúng.\"\nwhatChanged:\n  - \"+ Vòng lặp đo, tìm, sửa, đo lại\"\ntelemetry:\n  - label: \"Mức cải thiện tối thiểu\"\n    value: \"10%\"\n  - label: \"Nếu dưới mức này\"\n    value: \"Xem lại giả thuyết\"\n    tone: warn\n```\n\nNgoài việc chọn sai thành phần (bước 9), có ba sai lầm khác khi tối ưu:\n\n- **Tối ưu sớm (Premature Optimization).** Thêm Cache, phân trang, cụm Redis khi chưa đo xem phần nào chậm. Lời của Donald Knuth thường được trích: tối ưu sớm là gốc của nhiều vấn đề. Cách tránh: có số đo chỉ ra điểm nghẽn rồi mới sửa.\n- **Không đo lại sau khi sửa.** Chỉ đo lại mới biết cải tiến có hiệu quả. Nếu mức cải thiện dưới khoảng 10%, giả thuyết có thể sai: kiểm tra lại số đo, hoặc thử cách khác.\n- **Tối ưu quá mức.** Một API đang trả lời trong 100 ms. Giảm xuống 50 ms tốn nhiều công sức nhưng người dùng khó nhận ra, vì ngưỡng cảm nhận phản hồi là tức thì thường được nhắc ở khoảng 100 ms. Chỉ tối ưu khi hiệu năng hiện tại chưa đạt yêu cầu và lợi ích đáng kể.\n\nSau mỗi lần sửa, điểm nghẽn có thể chuyển sang thành phần kế tiếp. Ở bài này, sau khi sửa Database, tầng App là thành phần chạm ρ cao nhất (khoảng 0,93 ở tải 5.000 req/s).\n\n## 11. Tóm tắt: quy trình đo, tìm, sửa và đo lại\n\n```step\ncategory: RECAP\nshort: Tóm tắt\nscene: s11-recap\ncallout:\n  kind: key-idea\n  title: Quy trình\n  vi: \"Đo, tìm điểm nghẽn, sửa đúng chỗ, đo lại, lặp lại. Hệ thống chỉ nhanh bằng thành phần chậm nhất.\"\nwhatChanged:\n  - \"+ Quy trình 5 bước áp dụng cho mọi hệ thống\"\ntelemetry:\n  - label: \"Điểm nghẽn của bài\"\n    value: \"Database (ρ = 1,00)\"\n    tone: bad\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n```\n\nĐiểm nghẽn là thành phần giới hạn thông lượng của cả đường đi. Quy trình xử lý gồm năm bước:\n\n1. **Đo.** Lấy thời gian từng chặng của một request và mức sử dụng ρ = λ / μ của từng thành phần. Không đoán.\n2. **Tìm.** Chọn thành phần có ρ cao nhất (và chặng chiếm nhiều thời gian nhất trong trace).\n3. **Sửa.** Chỉ tác động vào thành phần đó: giảm tải đi vào nó hoặc tăng năng lực của nó. Chọn cách rẻ nhất đạt mục tiêu.\n4. **Đo lại.** Xác nhận cải thiện bằng số liệu.\n5. **Lặp lại.** Điểm nghẽn có thể chuyển sang thành phần kế tiếp.\n\nGhi nhớ các số của bài: Database μ = 1.600 req/s, tỉ lệ request xuống Database khoảng 0,53, nên tải bền vững tối đa khoảng 3.010 req/s. Thêm App không đổi con số này, còn tăng Cache Hit Ratio hoặc tăng năng lực Database thì có.",
+      "lesson": "## 1. Điểm nghẽn (Bottleneck): thông lượng của hệ thống bị giới hạn bởi thành phần chậm nhất\n\n```step\ncategory: SETUP\nshort: Điểm nghẽn\nscene: s1-path\ncallout:\n  kind: key-idea\n  title: Luật cốt lõi\n  vi: \"Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần chậm nhất trên đường đi của request. Tối ưu một thành phần khác không làm hệ thống nhanh hơn.\"\nwhatChanged:\n  - \"+ Đường đi của một request: Client, Load Balancer, App, Cache, Database\"\n  - \"~ Database là thành phần đầu tiên chạm ρ = 1 khi tải tăng\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải vào (t = 35 s)\"\n    value: \"≈ 3.000 req/s\"\n```\n\n**Điểm nghẽn (Bottleneck)** là thành phần giới hạn thông lượng của toàn bộ đường đi: mọi request đều phải qua nó, nên cả hệ thống không thể xử lý nhanh hơn nó. Điều này kéo theo một hệ quả thực tế: thêm tài nguyên cho thành phần không phải điểm nghẽn không làm hệ thống nhanh hơn.\n\nHãy xem một chuỗi sản xuất ba bước: cắt vải 1 phút, may 5 phút, đóng gói 30 giây mỗi sản phẩm. Cả chuỗi ra một sản phẩm mỗi 5 phút. Rút bước cắt vải xuống 10 giây không đổi gì, vì bước may vẫn là bước chậm nhất.\n\nVới một request đi qua hệ thống, ta cộng thời gian các chặng. Giả sử mạng của client 50 ms mỗi chiều, server 10 ms mỗi chiều, Database 500 ms. Tổng là 50 + 10 + 500 + 10 + 50 = 620 ms.\n\n| Cách tối ưu | Tiết kiệm | Tỉ lệ trên 620 ms |\n|---|---|---|\n| Server 10 ms xuống 1 ms (qua hai chiều) | 18 ms | khoảng 3% |\n| Database 500 ms xuống 50 ms | 450 ms | khoảng 73% |\n\nBạn có thể hình dung giống một đường ống: tốc độ nước chảy qua cả đường ống do đoạn hẹp nhất quyết định.\n\n## 2. Đường đi của request: độ trễ là tổng thời gian các chặng nối tiếp\n\n```step\ncategory: MECHANISM\nshort: Đường đi request\nscene: s2-flow\nactivity: S1-03.A6\ngate: optional\ncallout:\n  kind: good-to-know\n  vi: \"Độ trễ (Latency) trả lời câu hỏi một request mất bao lâu. Thông lượng (Throughput) trả lời câu hỏi mỗi giây xử lý được bao nhiêu request. Hai đại lượng này do hai tiêu chí khác nhau quyết định.\"\nwhatChanged:\n  - \"+ Cache nằm giữa App và Database (read-through)\"\n  - \"~ Khoảng 53% request cuối cùng mới đi tới Database\"\ntelemetry:\n  - label: \"Tỉ lệ đọc\"\n    value: \"90%\"\n  - label: \"Cache Hit (trên lượt đọc)\"\n    value: \"≈ 52%\"\n    tone: ok\n  - label: \"Request tới Database\"\n    value: \"≈ 53%\"\n    tone: warn\n```\n\n**Data flow** là đường đi của dữ liệu qua các thành phần. Trong hệ thống của bài này, một request đi theo thứ tự: Client, Load Balancer, một trong ba App, rồi Cache. Nếu Cache có dữ liệu (Cache Hit) thì App nhận kết quả ngay. Nếu không (Cache Miss), Cache hỏi tiếp Database rồi nhớ lại kết quả. Response đi ngược đường cũ.\n\n**Độ trễ của một request** bằng tổng thời gian các chặng nối tiếp: mạng, xử lý ở từng thành phần, thời gian chờ trong hàng đợi trước mỗi thành phần. Một chặng chậm kéo cả tổng lên.\n\n**Thông lượng** thì khác: nó bị giới hạn bởi thành phần có mức tải cao nhất so với năng lực của chính nó. Để tính tải lên Database, ta xét: 90% request là đọc, Cache trả lời khoảng 52% lượt đọc, nên tỉ lệ tới Database là 0,9 × (1 − 0,52) + 0,1 ≈ 0,53, tức hơn một nửa số request vẫn xuống Database (gồm các lượt đọc Cache Miss và toàn bộ lượt ghi).\n\n## 3. Bước 1: đo thời gian từng chặng, không đoán\n\n```step\ncategory: TECHNIQUE\nshort: Đo từng chặng\nscene: s3-trace\ncallout:\n  kind: watch-out\n  title: Đo trước khi sửa\n  vi: \"Mỗi nhóm trong team thường có một giả thuyết riêng (Database chậm, mạng chậm, code kém). Chỉ số đo từng chặng mới cho biết giả thuyết nào đúng.\"\nwhatChanged:\n  - \"+ Gắn thời gian cho từng chặng của một request\"\n  - \"~ Database chiếm 300 ms trên tổng 427 ms\"\ntelemetry:\n  - label: \"Tổng thời gian (ví dụ)\"\n    value: \"427 ms\"\n  - label: \"Chặng Database\"\n    value: \"300 ms\"\n    tone: bad\n  - label: \"Tỉ trọng Database\"\n    value: \"70%\"\n    tone: warn\n```\n\nBước đầu tiên của phân tích điểm nghẽn là **đo thời gian từng chặng** của một request cụ thể. Ví dụ dưới đây là một request tải trang hồ sơ người dùng, lần này Cache Miss nên request đi xuống Database. Đây là số liệu minh hoạ cho một hệ thống khác với mô phỏng ở các bước sau.\n\n| Chặng | Thời gian |\n|---|---|\n| Client tới Load Balancer | 50 ms |\n| Load Balancer tới App | 10 ms |\n| App kiểm tra Cache (Miss) | 5 ms |\n| App truy vấn Database | 300 ms |\n| App ghi kết quả vào Cache | 2 ms |\n| App trả về Load Balancer | 10 ms |\n| Load Balancer trả về Client | 50 ms |\n| **Tổng** | **427 ms** |\n\nChặng Database chiếm 300 / 427, khoảng 70% tổng thời gian. Trên sơ đồ, mỗi đường nối gộp thời gian đi và về của chặng đó (ví dụ Client và Load Balancer: 50 + 50 = 100 ms).\n\nMột lưu ý khi đọc kết quả: đo một request cho biết thời gian nằm ở đâu, còn câu hỏi hệ thống chịu được bao nhiêu tải thì cần đo theo mức sử dụng ở bước 5.\n\n## 4. Công cụ đo: log thời gian, APM, tracing và EXPLAIN\n\n```step\ncategory: TECHNIQUE\nshort: Công cụ đo\nmode: code\ncallout:\n  kind: technique\n  title: Ba lớp công cụ\n  vi: \"Log thời gian tự viết cho câu trả lời nhanh, APM và Distributed Tracing cho cả đường đi của request, EXPLAIN ANALYZE cho từng câu truy vấn.\"\n```\n\nCó ba cách phổ biến để lấy số đo ở môi trường thật, từ đơn giản đến đầy đủ.\n\n**Log thời gian tự viết** đo từng đoạn mã bằng đồng hồ đơn điệu (`time.perf_counter`) và ghi thành một dòng log có cấu trúc:\n\n```python\nimport logging\nimport time\n\nlog = logging.getLogger(\"profile\")\n\ndef load_profile(user_id: int) -> dict:\n    t0 = time.perf_counter()\n    user = cache.get(f\"user:{user_id}\")\n    t_cache = time.perf_counter() - t0\n\n    t_db = 0.0\n    if user is None:  # Cache Miss\n        t1 = time.perf_counter()\n        user = db.query(\"SELECT id, name, email FROM users WHERE id = %s\", user_id)\n        t_db = time.perf_counter() - t1\n        cache.set(f\"user:{user_id}\", user, ttl=300)\n\n    total = time.perf_counter() - t0\n    log.info(\"load_profile total=%.0fms cache=%.0fms db=%.0fms\",\n             total * 1e3, t_cache * 1e3, t_db * 1e3)\n    return user\n\n# Dòng log mẫu: load_profile total=307ms cache=5ms db=300ms\n```\n\n**APM và Distributed Tracing** (công cụ như OpenTelemetry cùng một hệ thống quan sát) gắn mỗi request một trace gồm nhiều span, mỗi span là một chặng có thời gian bắt đầu và kết thúc. Biểu đồ waterfall của trace cho thấy ngay span nào dài nhất.\n\n**EXPLAIN ANALYZE** cho biết một câu truy vấn mất thời gian ở đâu. Kết quả có dòng `Seq Scan on users ... Execution Time: 285 ms` nghĩa là Database quét toàn bộ bảng, dấu hiệu thiếu chỉ mục (Index).\n\n## 5. Bước 2: tìm điểm nghẽn bằng mức sử dụng ρ = λ / μ\n\n```step\ncategory: TECHNIQUE\nshort: Tìm bằng ρ\nscene: s5-hot\nactivity: S1-03.A4\ngate: optional\ncallout:\n  kind: key-idea\n  title: Điểm nghẽn là thành phần có ρ cao nhất\n  vi: \"ρ ≥ 1 nghĩa là request đến nhanh hơn thành phần xử lý được, hàng đợi trước nó tăng không dừng.\"\nwhatChanged:\n  - \"+ Gắn mức sử dụng ρ lên từng thành phần tại t = 35 s\"\n  - \"~ Database ρ = 1,00 trong khi mỗi App chỉ 0,56\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n    tone: warn\n```\n\nThời gian của một request cho biết chặng nào chậm. Còn để biết thành phần nào **giới hạn thông lượng**, ta so **mức sử dụng** ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần xử lý tối đa mỗi giây.\n\nNăng lực μ trong hệ thống của bài: Load Balancer 20.000, mỗi App 1.800, Cache 40.000, Database 1.600 (req/s). Khi tải vào λ = 3.000 req/s:\n\n| Thành phần | Tải đến | μ | ρ |\n|---|---|---|---|\n| Load Balancer | 3.000 | 20.000 | 0,15 |\n| App (mỗi instance, chia đều 3) | 1.000 | 1.800 | 0,56 |\n| Cache | 3.000 | 40.000 | 0,07 |\n| Database | 0,53 × 3.000 ≈ 1.590 | 1.600 | 1,00 |\n\nDatabase có ρ cao nhất nên là điểm nghẽn. Tải bền vững tối đa của cả hệ thống là μ của Database chia cho tỉ lệ request xuống Database: 1.600 / 0,531 ≈ 3.010 req/s. Vượt mức đó, phần dư λ − μ cộng dồn mỗi giây vào hàng đợi.\n\n## 6. Quan sát tải tăng dần: Database chạm ρ = 1 trước tầng App\n\n```step\ncategory: PROBLEM\nshort: Tải tăng dần\nscene: s6-live\nlive: ramp\nactivity: S1-03.A1\ngate: optional\ncallout:\n  kind: watch-out\n  title: Độ trễ tăng dựng đứng gần ρ = 1\n  vi: \"Độ trễ không tăng đều theo tải. Khi ρ tiến tới 1, thời gian chờ trong hàng đợi chiếm phần lớn, nên p99 tăng nhanh trước khi lỗi xuất hiện.\"\nwhatChanged:\n  - \"~ Tải tăng từ 200 lên 5.000 req/s trong 60 giây\"\n  - \"~ Database ρ = 0,6 (t = 20 s), 0,9 (t ≈ 31 s), 1,0 (t ≈ 35 s)\"\ntelemetry:\n  - label: \"p99 (t = 20 s, rồi t = 35 s)\"\n    value: \"≈ 64 ms, rồi ≈ 143 ms\"\n    tone: warn\n  - label: \"Lỗi (t = 35 s, rồi t = 40 s)\"\n    value: \"≈ 0,9%, rồi ≈ 53%\"\n    tone: bad\n  - label: \"ρ của App (t = 40 s)\"\n    value: \"0,63\"\n    tone: ok\n```\n\nKịch bản mô phỏng của bài tăng tải từ 200 lên 5.000 req/s trong 60 giây, rồi giữ ở 5.000 tới giây thứ 90. Kết quả theo mốc thời gian (không có nhiễu ngẫu nhiên):\n\n- **t = 20 s** (λ = 1.800): ρ của Database 0,60, p99 khoảng 64 ms. Hệ thống còn dư năng lực.\n- **t ≈ 31 s** (λ ≈ 2.700): ρ của Database chạm 0,9, thành phần chuyển sang trạng thái bận.\n- **t ≈ 35 s** (λ ≈ 3.000): ρ của Database bằng 1,00, p99 tăng lên khoảng 143 ms, bắt đầu có lỗi. Mỗi App mới ở ρ khoảng 0,56.\n- **t = 40 s**: ρ của Database 1,13, hàng đợi trước Database dài ra (khoảng 500 request), hơn một nửa request lỗi hoặc quá hạn.\n\nCó thêm một cơ chế làm tình hình xấu đi nhanh: link từ Cache tới Database cho phép thử lại tối đa 2 lần, không có Backoff. Mỗi request lỗi sinh thêm tải lên đúng thành phần đang quá tải.\n\nTầng App chỉ chạm ρ = 0,9 ở khoảng giây thứ 58, rất lâu sau Database. Nghẽn xảy ra ở Database trước, không phải ở nơi có nhiều instance nhất.\n\n## 7. Các loại điểm nghẽn thường gặp: CPU, bộ nhớ, I/O, mạng, API ngoài và Database\n\n```step\ncategory: MECHANISM\nshort: Các loại nghẽn\nscene: s7-diagnosis\nactivity: S1-03.A2\ngate: optional\ncallout:\n  kind: compare\n  title: Triệu chứng chỉ ra loại điểm nghẽn\n  vi: \"Số đo tài nguyên của từng thành phần (CPU, RAM, I/O, mạng, hàng đợi) cho biết điểm nghẽn thuộc loại nào, từ đó chọn đúng cách sửa.\"\nwhatChanged:\n  - \"+ Cây chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn\"\ntelemetry:\n  - label: \"Loại phổ biến\"\n    value: \"5 loại\"\n  - label: \"Tình huống minh hoạ\"\n    value: \"Pool 10 kết nối\"\n    tone: warn\n```\n\nCùng một triệu chứng \"chậm khi tải tăng\" có nhiều nguyên nhân. Mỗi loại để lại dấu hiệu đo được khác nhau:\n\n| Loại | Dấu hiệu | Cách đo | Hướng xử lý |\n|---|---|---|---|\n| CPU, logic ứng dụng | CPU gần 100% | Profiler (ví dụ `cProfile`) | Đổi thuật toán, chuyển việc nặng sang Queue, scale ngang |\n| Bộ nhớ | RAM cạn, swap | Giám sát RAM, heap | Giảm kích thước dữ liệu giữ trong RAM, tăng RAM |\n| I/O đĩa | Thời gian chờ I/O cao | Số liệu disk I/O | Chỉ mục, đĩa nhanh hơn, ghi theo lô |\n| Mạng, API ngoài | RTT cao, Timeout | Đo thời gian từng lời gọi | Gọi song song, Cache, Timeout ngắn, Circuit Breaker, đặt dịch vụ gần người dùng |\n| Database | Truy vấn chậm, hàng đợi trước DB, pool đầy | `EXPLAIN`, `pg_stat_statements` | Chỉ mục, Cache, tối ưu truy vấn, Read Replica |\n\nTình huống: ứng dụng báo trễ khoảng 10 giây, CPU và RAM bình thường, Redis chỉ có Connection Pool 10 kết nối trong khi khoảng 1.000 request đang xếp hàng chờ kết nối. Tăng pool lên 100 đưa độ trễ về khoảng 200 ms. Giới hạn kết nối (pool, thread) cũng là một dạng điểm nghẽn, và nó cũng được đo bằng ρ.\n\n## 8. Bước 3: sửa đúng thành phần, giảm tải vào Database hoặc tăng năng lực Database\n\n```step\ncategory: TECHNIQUE\nshort: Sửa đúng chỗ\nscene: s8-fix\nactivity: S1-03.A3\ngate: optional\ncallout:\n  kind: technique\n  title: Ưu tiên cách rẻ trước\n  vi: \"Thứ tự thường hợp lý: tối ưu truy vấn và chỉ mục, tăng Cache Hit Ratio, rồi mới tăng năng lực Database. Cách nào cũng phải đo lại sau khi sửa.\"\nwhatChanged:\n  - \"~ Cache từ 25.000 lên 50.000 key, Hit Ratio từ 52% lên 74%\"\n  - \"~ Database tăng cỡ máy gấp đôi (1.600 lên 3.200 req/s)\"\n  - \"~ Request xuống Database giảm từ 53% còn 34%\"\ntelemetry:\n  - label: \"ρ của Database (λ = 5.000)\"\n    value: \"0,53\"\n    tone: ok\n  - label: \"p99 (λ = 5.000)\"\n    value: \"≈ 106 ms\"\n    tone: ok\n  - label: \"Chi phí\"\n    value: \"1,27 lên 2,31 USD/giờ\"\n    tone: warn\n```\n\nBước thứ ba là **sửa đúng thành phần là điểm nghẽn**. Với Database có ba hướng:\n\n1. **Tối ưu truy vấn và chỉ mục.** Thêm chỉ mục cho câu truy vấn quét toàn bảng đưa 300 ms xuống khoảng 5 ms, tức nhanh gấp 60 lần. Chọn đúng cột cần lấy (không dùng `SELECT *`) cũng giảm thời gian truyền.\n2. **Giảm số request xuống Database bằng Cache.** Trong mô phỏng, Cache tăng từ 25.000 lên 50.000 key nâng Cache Hit Ratio lên khoảng 74%, tỉ lệ request xuống Database còn 0,9 × 0,26 + 0,1 ≈ 0,34.\n3. **Tăng năng lực Database** (scale-up). Cỡ máy gấp đôi nâng μ lên 3.200 req/s.\n\nKết hợp cách 2 và 3, ở tải đỉnh 5.000 req/s ρ của Database còn khoảng 0,53 và p99 khoảng 106 ms. Cái giá là chi phí tăng từ khoảng 1,27 lên 2,31 USD/giờ.\n\nVí dụ khác: trang thanh toán mất 2.590 ms, trong đó một API tính phí vận chuyển bên ngoài chiếm 2.000 ms (khoảng 77%). Cache kết quả với Hit Ratio 85% cho thời gian trung bình 0,85 × 5 + 0,15 × 2.000 ≈ 304 ms, tổng còn khoảng 894 ms (giảm khoảng 65%).\n\n## 9. Sai lầm phổ biến: thêm instance ở tầng không phải điểm nghẽn\n\n```step\ncategory: PITFALL\nshort: Thêm app vô ích\nscene: s9-live\nlive: trap\nactivity: S1-03.A5\ngate: required\ncallout:\n  kind: watch-out\n  title: Sai chỗ thì tốn tiền mà không hiệu quả\n  vi: \"Khi Database là điểm nghẽn, nhân đôi số instance App làm ρ của App giảm nhưng tải vào Database không đổi, nên p99 gần như giữ nguyên.\"\nwhatChanged:\n  - \"~ Mỗi App từ 1 lên 2 instance, ρ của App giảm còn khoảng 0,28\"\n  - \"~ Tải vào Database không đổi, ρ vẫn bằng 1,00\"\ntelemetry:\n  - label: \"ρ của App (t = 35 s)\"\n    value: \"0,56 xuống 0,28\"\n    tone: ok\n  - label: \"ρ của Database\"\n    value: \"1,00 (không đổi)\"\n    tone: bad\n  - label: \"p99 (t = 35 s)\"\n    value: \"≈ 143 ms (đổi dưới 1%)\"\n    tone: bad\n```\n\nKhi hệ thống chậm, phản xạ thường gặp là thêm server. Phản xạ này chỉ đúng nếu server được thêm đúng ở thành phần là điểm nghẽn.\n\nTrong mô phỏng, nhân đôi số instance của cả ba App làm ρ của mỗi App giảm từ 0,56 xuống 0,28. Nhưng số request xuống Database vẫn như cũ, nên ρ của Database vẫn bằng 1,00 và p99 ở t = 35 s gần như không đổi (khoảng 143 ms, chênh lệch dưới 1%). Chi phí thì tăng từ khoảng 1,27 lên 1,58 USD/giờ.\n\nMột ví dụ số khác cho cùng sai lầm: API mất 1.000 ms, trong đó server 50 ms và Database 950 ms. Viết lại code server từ 50 xuống 10 ms chỉ giảm tổng còn 960 ms (cải thiện 4%). Thêm chỉ mục đưa Database từ 950 xuống 50 ms, tổng còn 100 ms (cải thiện 90%).\n\nNguyên tắc kiểm tra nhanh: trước khi thêm tài nguyên, hỏi thành phần này có ρ cao nhất trên đường đi hay không.\n\n## 10. Sai lầm khi tối ưu: tối ưu sớm, không đo lại và tối ưu quá mức\n\n```step\ncategory: PITFALL\nshort: Sai lầm tối ưu\nscene: s10-loop\ncallout:\n  kind: key-idea\n  vi: \"Mỗi lần sửa là một giả thuyết. Số đo trước và sau khi sửa là cách duy nhất xác nhận giả thuyết đó đúng.\"\nwhatChanged:\n  - \"+ Vòng lặp đo, tìm, sửa, đo lại\"\ntelemetry:\n  - label: \"Mức cải thiện tối thiểu\"\n    value: \"10%\"\n  - label: \"Nếu dưới mức này\"\n    value: \"Xem lại giả thuyết\"\n    tone: warn\n```\n\nNgoài việc chọn sai thành phần (bước 9), có ba sai lầm khác khi tối ưu:\n\n- **Tối ưu sớm (Premature Optimization).** Thêm Cache, phân trang, cụm Redis khi chưa đo xem phần nào chậm. Lời của Donald Knuth thường được trích: tối ưu sớm là gốc của nhiều vấn đề. Cách tránh: có số đo chỉ ra điểm nghẽn rồi mới sửa.\n- **Không đo lại sau khi sửa.** Chỉ đo lại mới biết cải tiến có hiệu quả. Nếu mức cải thiện dưới khoảng 10%, giả thuyết có thể sai: kiểm tra lại số đo, hoặc thử cách khác.\n- **Tối ưu quá mức.** Một API đang trả lời trong 100 ms. Giảm xuống 50 ms tốn nhiều công sức nhưng người dùng khó nhận ra, vì ngưỡng cảm nhận phản hồi là tức thì thường được nhắc ở khoảng 100 ms. Chỉ tối ưu khi hiệu năng hiện tại chưa đạt yêu cầu và lợi ích đáng kể.\n\nSau mỗi lần sửa, điểm nghẽn có thể chuyển sang thành phần kế tiếp. Ở bài này, sau khi sửa Database, tầng App là thành phần chạm ρ cao nhất (khoảng 0,93 ở tải 5.000 req/s).\n\n## 11. Tóm tắt: quy trình đo, tìm, sửa và đo lại\n\n```step\ncategory: RECAP\nshort: Tóm tắt\nscene: s11-recap\ncallout:\n  kind: key-idea\n  title: Quy trình\n  vi: \"Đo, tìm điểm nghẽn, sửa đúng chỗ, đo lại, lặp lại. Hệ thống chỉ nhanh bằng thành phần chậm nhất.\"\nwhatChanged:\n  - \"+ Quy trình 5 bước áp dụng cho mọi hệ thống\"\ntelemetry:\n  - label: \"Điểm nghẽn của bài\"\n    value: \"Database (ρ = 1,00)\"\n    tone: bad\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n```\n\nĐiểm nghẽn là thành phần giới hạn thông lượng của cả đường đi. Quy trình xử lý gồm năm bước:\n\n1. **Đo.** Lấy thời gian từng chặng của một request và mức sử dụng ρ = λ / μ của từng thành phần. Không đoán.\n2. **Tìm.** Chọn thành phần có ρ cao nhất (và chặng chiếm nhiều thời gian nhất trong trace).\n3. **Sửa.** Chỉ tác động vào thành phần đó: giảm tải đi vào nó hoặc tăng năng lực của nó. Chọn cách rẻ nhất đạt mục tiêu.\n4. **Đo lại.** Xác nhận cải thiện bằng số liệu.\n5. **Lặp lại.** Điểm nghẽn có thể chuyển sang thành phần kế tiếp.\n\nGhi nhớ các số của bài: Database μ = 1.600 req/s, tỉ lệ request xuống Database khoảng 0,53, nên tải bền vững tối đa khoảng 3.010 req/s. Thêm App không đổi con số này, còn tăng Cache Hit Ratio hoặc tăng năng lực Database thì có.",
       "quiz": [
         {
           "id": "S1-03.q1",
@@ -1378,7 +1378,7 @@
             "slo": [
               {
                 "metric": "p99",
-                "value": 300
+                "value": 130
               }
             ],
             "pauseAtSec": [
@@ -1398,6 +1398,14 @@
             "controls": {
               "timeline": true,
               "knobs": [
+                {
+                  "node": "cache",
+                  "key": "capacityKeys"
+                },
+                {
+                  "node": "db",
+                  "key": "sizeFactor"
+                },
                 {
                   "node": "app1",
                   "key": "replicas"
@@ -1449,7 +1457,7 @@
             "slo": [
               {
                 "metric": "p99",
-                "value": 300
+                "value": 130
               }
             ],
             "focus": {
@@ -1464,7 +1472,440 @@
         }
       },
       "noStage": false,
-      "activities": [],
+      "activities": [
+        {
+          "id": "S1-03.A1",
+          "kind": "predict",
+          "title": {
+            "vi": "Node nào quá tải trước?"
+          },
+          "prompt": {
+            "vi": "Tải đang tăng từ 200 lên 5.000 req/s. Mô phỏng dừng ở giây thứ 20. Theo bạn, node nào sẽ chuyển sang trạng thái Quá tải đầu tiên?"
+          },
+          "difficulty": 1,
+          "at": 20,
+          "question": {
+            "type": "node",
+            "rule": {
+              "first": "overloaded",
+              "after": 20
+            },
+            "expected": [
+              "db"
+            ]
+          },
+          "reveal": {
+            "playFromSec": 20,
+            "playToSec": 42,
+            "speed": 2
+          },
+          "hints": [
+            {
+              "vi": "So sánh năng lực xử lý của từng node với lưu lượng đi vào node đó, không phải tổng lưu lượng."
+            },
+            {
+              "vi": "Cache giữ lại khoảng một nửa số lượt đọc. Phần còn lại cộng với mọi lượt ghi đi tới database."
+            }
+          ],
+          "explain": {
+            "vi": "Database nhận khoảng 53% lưu lượng (phần cache không trả lời và toàn bộ lượt ghi), nhưng năng lực chỉ 1.600 req/s. Database là node đầu tiên quá tải, vào giây {t.first.db:0}; lưu lượng vào DB là {db.lambda@36:0} req/s so với năng lực 1.600 req/s (ρ = {db.rho@36:2}). Lưu lượng vào các node app chỉ bằng ρ = {app1.rho@36:2}."
+          },
+          "sim": {
+            "simId": "S1-03/ramp",
+            "seekSec": 20,
+            "autoplay": false
+          },
+          "replay": {
+            "simId": "S1-03/ramp",
+            "seekSec": 20,
+            "focus": {
+              "nodes": [
+                "db"
+              ]
+            },
+            "autoplay": true,
+            "speed": 2
+          }
+        },
+        {
+          "id": "S1-03.A2",
+          "kind": "spot-bottleneck",
+          "title": {
+            "vi": "Chỉ ra điểm nghẽn"
+          },
+          "prompt": {
+            "vi": "Tại giây 38, người dùng thấy hơn một nửa số request bị lỗi hoặc quá hạn dù 3 node app còn rảnh. Nhấn vào node là điểm nghẽn của hệ thống."
+          },
+          "difficulty": 1,
+          "mode": "bottleneck",
+          "atSec": 38,
+          "maxPicks": 1,
+          "expected": [
+            "db"
+          ],
+          "hints": [
+            {
+              "vi": "Tìm node có hàng đợi chất đống phía trước và ρ ≥ 1."
+            }
+          ],
+          "explain": {
+            "vi": "{db.name} đang ρ = {db.rho@38:2} với hàng đợi {db.queue@38:0} request; trong khi app chỉ ρ = {app1.rho@38:2}. Mọi request phải đi qua DB nên độ trễ đuôi và lỗi toàn hệ thống bị quyết định bởi thời gian chờ ở DB ({db.queueWaitMs@38:0} ms)."
+          },
+          "sim": {
+            "simId": "S1-03/ramp",
+            "seekSec": 38,
+            "autoplay": false
+          }
+        },
+        {
+          "id": "S1-03.A3",
+          "kind": "tune-to-limit",
+          "title": {
+            "vi": "Tìm tải tối đa hệ thống chịu được"
+          },
+          "prompt": {
+            "vi": "Dùng núm tải để tìm lưu lượng cao nhất (req/s) mà hệ thống hiện tại vẫn giữ p99 ≤ 300 ms và lỗi ≤ 1%. Nhập kết quả."
+          },
+          "difficulty": 2,
+          "objective": "max-load",
+          "constraints": [
+            {
+              "id": "p99",
+              "kind": "slo-latency",
+              "metric": "p99",
+              "maxMs": 300,
+              "window": {
+                "fromSec": 20,
+                "toSec": 40
+              },
+              "allowViolationPct": 2
+            },
+            {
+              "id": "err",
+              "kind": "slo-error",
+              "maxRate": 0.01,
+              "window": {
+                "fromSec": 20,
+                "toSec": 40
+              }
+            }
+          ],
+          "runSec": 40,
+          "reference": {
+            "value": 2950,
+            "tolPassPct": 10,
+            "tolFullPct": 5
+          },
+          "hints": [
+            {
+              "vi": "Tìm node đầu tiên có ρ chạm 1 khi tăng tải, rồi tính lưu lượng làm ρ của nó bằng 1."
+            }
+          ],
+          "explain": {
+            "vi": "Giới hạn do database quyết định: năng lực 1.600 req/s chia cho tỉ lệ {db.share@0:2} lưu lượng đổ vào DB ≈ {ref.value:0} req/s. Vượt mức này hàng đợi ở DB tăng không dừng."
+          },
+          "sim": {
+            "simId": "S1-03/ramp",
+            "seekSec": 0,
+            "autoplay": false
+          }
+        },
+        {
+          "id": "S1-03.A4",
+          "kind": "estimate",
+          "title": {
+            "vi": "Database nhận bao nhiêu request?"
+          },
+          "prompt": {
+            "vi": "Hệ thống nhận 3.000 req/s, 90% là lượt đọc, cache trả lời khoảng 52% lượt đọc. Mỗi lượt ghi đều đi tới database. Ước lượng số req/s database phải xử lý."
+          },
+          "difficulty": 2,
+          "quantity": "Lưu lượng vào database",
+          "unit": "req/s",
+          "truth": {
+            "type": "formula",
+            "expr": "3000*(0.9*(1-0.52)+0.1)",
+            "vars": {}
+          },
+          "scale": "linear",
+          "tol": {
+            "full": 0.1,
+            "pass": 0.25
+          },
+          "workings": [
+            {
+              "vi": "Đọc đi tới DB: 3.000 × 0,9 × (1 − 0,52) = 1.296 req/s."
+            },
+            {
+              "vi": "Ghi đi tới DB: 3.000 × 0,1 = 300 req/s."
+            },
+            {
+              "vi": "Tổng ≈ 1.596 req/s ≈ 1.600: DB đã gần ρ = 1."
+            }
+          ],
+          "hints": [
+            {
+              "vi": "Tách lượt đọc và lượt ghi. Cache chỉ giúp lượt đọc."
+            }
+          ],
+          "explain": {
+            "vi": "Giá trị đúng ≈ {truth:0} req/s. Con số này sát năng lực 1.600 req/s của DB, nên ở 3.000 req/s hệ thống đã sát giới hạn."
+          },
+          "replay": {
+            "simId": "S1-03/ramp",
+            "seekSec": 33,
+            "focus": {
+              "nodes": [
+                "db"
+              ]
+            }
+          }
+        },
+        {
+          "id": "S1-03.A5",
+          "kind": "fix-challenge",
+          "title": {
+            "vi": "Đưa p99 về dưới 130 ms"
+          },
+          "prompt": {
+            "vi": "Hệ thống bắt đầu vi phạm SLO từ giây 35. Với tối đa 3 thay đổi và chi phí không quá 2,50 USD/giờ, hãy giữ p99 ≤ 130 ms và lỗi ≤ 1% trong suốt 90 giây (kể cả khi tải đạt 5.000 req/s)."
+          },
+          "difficulty": 3,
+          "simId": "S1-03/ramp",
+          "budget": {
+            "maxChanges": 3,
+            "maxCostPerHour": 2.5
+          },
+          "allowed": [
+            {
+              "type": "knob",
+              "node": "cache",
+              "key": "capacityKeys",
+              "min": 10000,
+              "max": 100000
+            },
+            {
+              "type": "knob",
+              "node": "db",
+              "key": "sizeFactor",
+              "min": 1,
+              "max": 4
+            },
+            {
+              "type": "knob",
+              "node": "app1",
+              "key": "replicas",
+              "min": 1,
+              "max": 6
+            },
+            {
+              "type": "knob",
+              "node": "app2",
+              "key": "replicas",
+              "min": 1,
+              "max": 6
+            },
+            {
+              "type": "knob",
+              "node": "app3",
+              "key": "replicas",
+              "min": 1,
+              "max": 6
+            },
+            {
+              "type": "link",
+              "link": "cache-db",
+              "fields": [
+                "retry",
+                "timeoutMs",
+                "breaker"
+              ]
+            }
+          ],
+          "goal": [
+            {
+              "id": "p99",
+              "kind": "slo-latency",
+              "metric": "p99",
+              "maxMs": 130,
+              "window": {
+                "fromSec": 0,
+                "toSec": 90
+              },
+              "allowViolationPct": 2
+            },
+            {
+              "id": "err",
+              "kind": "slo-error",
+              "maxRate": 0.01,
+              "window": {
+                "fromSec": 0,
+                "toSec": 90
+              }
+            }
+          ],
+          "soft": [
+            {
+              "id": "db-calm",
+              "kind": "node-state",
+              "node": "db",
+              "notIn": [
+                "saturated",
+                "overloaded",
+                "down"
+              ],
+              "window": {
+                "fromSec": 0,
+                "toSec": 90
+              },
+              "allowViolationPct": 5
+            },
+            {
+              "id": "retry-safe",
+              "kind": "structural",
+              "rule": "has-retry-backoff",
+              "link": "cache-db"
+            }
+          ],
+          "observe": {
+            "runSec": 90
+          },
+          "par": {
+            "changes": 3,
+            "costPerHour": 2.31
+          },
+          "solution": [
+            {
+              "type": "knob",
+              "node": "cache",
+              "key": "capacityKeys",
+              "value": 50000
+            },
+            {
+              "type": "knob",
+              "node": "db",
+              "key": "sizeFactor",
+              "value": 2
+            },
+            {
+              "type": "link",
+              "link": "cache-db",
+              "patch": {
+                "retry": {
+                  "max": 2,
+                  "backoff": "exponential",
+                  "baseMs": 100,
+                  "jitter": "full",
+                  "budgetRatio": 0.1
+                }
+              }
+            }
+          ],
+          "traps": [
+            {
+              "id": "more-apps",
+              "label": {
+                "vi": "Tăng gấp đôi số instance của cả 3 app"
+              },
+              "changes": [
+                {
+                  "type": "knob",
+                  "node": "app1",
+                  "key": "replicas",
+                  "value": 2
+                },
+                {
+                  "type": "knob",
+                  "node": "app2",
+                  "key": "replicas",
+                  "value": 2
+                },
+                {
+                  "type": "knob",
+                  "node": "app3",
+                  "key": "replicas",
+                  "value": 2
+                }
+              ],
+              "why": {
+                "vi": "Tầng app không phải điểm nghẽn. Thêm instance làm tăng chi phí nhưng p99 gần như không đổi, vì mọi request vẫn phải chờ ở database."
+              }
+            }
+          ],
+          "hints": [
+            {
+              "vi": "Tìm node có ρ ≥ 1 trước khi quyết định thêm tài nguyên ở đâu."
+            },
+            {
+              "vi": "Có hai cách giảm áp lực lên database: giảm lượng request đi tới nó, hoặc tăng năng lực của nó."
+            },
+            {
+              "vi": "Cache có đủ chỗ cho tập key đang dùng hay chưa? Hãy xem Hit Ratio trong Inspector."
+            }
+          ],
+          "explain": {
+            "vi": "Cache lớn hơn nâng Hit Ratio từ {cache.hitRatio@10:0%} lên {cache.hitRatio'@10:0%}, nên lưu lượng vào DB giảm. Scale-up DB gấp đôi đưa ρ xuống {db.rho'@60:2} ở tải 5.000 req/s. Retry có backoff, jitter và budget ngăn việc mỗi lỗi tạo thêm 2 lần gọi."
+          },
+          "replay": {
+            "simId": "S1-03/ramp",
+            "seekSec": 30,
+            "focus": {
+              "nodes": [
+                "db",
+                "cache"
+              ]
+            },
+            "autoplay": true
+          }
+        },
+        {
+          "id": "S1-03.A6",
+          "kind": "order",
+          "title": {
+            "vi": "Thứ tự một request đi qua hệ thống"
+          },
+          "prompt": {
+            "vi": "Sắp xếp các chặng theo thứ tự một lượt đọc bị cache miss đi qua hệ thống."
+          },
+          "difficulty": 1,
+          "items": [
+            {
+              "id": "lb",
+              "text": {
+                "vi": "Load Balancer chọn một app"
+              }
+            },
+            {
+              "id": "app",
+              "text": {
+                "vi": "App hỏi cache"
+              }
+            },
+            {
+              "id": "miss",
+              "text": {
+                "vi": "Cache không có key (Cache Miss)"
+              }
+            },
+            {
+              "id": "db",
+              "text": {
+                "vi": "Request đi tới database"
+              }
+            },
+            {
+              "id": "fill",
+              "text": {
+                "vi": "Kết quả được ghi vào cache và trả về"
+              }
+            }
+          ],
+          "shuffleSeed": 7,
+          "explain": {
+            "vi": "Cache Miss đi hết đường tới DB nên độ trễ gồm cả chặng cache lẫn chặng DB; đó là lý do p99 chịu ảnh hưởng của DB dù đa số request là Cache Hit."
+          }
+        }
+      ],
       "simIds": [
         "S1-03/ramp"
       ]

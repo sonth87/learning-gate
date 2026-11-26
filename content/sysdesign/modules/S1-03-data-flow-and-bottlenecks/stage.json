@@ -1203,7 +1203,7 @@
       "slo": [
         {
           "metric": "p99",
-          "value": 300
+          "value": 130
         }
       ],
       "pauseAtSec": [
@@ -1223,6 +1223,14 @@
       "controls": {
         "timeline": true,
         "knobs": [
+          {
+            "node": "cache",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          },
           {
             "node": "app1",
             "key": "replicas"
@@ -1274,7 +1282,7 @@
       "slo": [
         {
           "metric": "p99",
-          "value": 300
+          "value": 130
         }
       ],
       "focus": {

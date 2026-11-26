@@ -1,0 +1,147 @@
+[
+  {
+    "id": "S1-03.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải trước?" },
+    "prompt": { "vi": "Tải đang tăng từ 200 lên 5.000 req/s. Mô phỏng dừng ở giây thứ 20. Theo bạn, node nào sẽ chuyển sang trạng thái Quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 20,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 20 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 20, "playToSec": 42, "speed": 2 },
+    "hints": [
+      { "vi": "So sánh năng lực xử lý của từng node với lưu lượng đi vào node đó, không phải tổng lưu lượng." },
+      { "vi": "Cache giữ lại khoảng một nửa số lượt đọc. Phần còn lại cộng với mọi lượt ghi đi tới database." }
+    ],
+    "explain": { "vi": "Database nhận khoảng 53% lưu lượng (phần cache không trả lời và toàn bộ lượt ghi), nhưng năng lực chỉ 1.600 req/s. Database là node đầu tiên quá tải, vào giây {t.first.db:0}; lưu lượng vào DB là {db.lambda@36:0} req/s so với năng lực 1.600 req/s (ρ = {db.rho@36:2}). Lưu lượng vào các node app chỉ bằng ρ = {app1.rho@36:2}." },
+    "sim": { "simId": "S1-03/ramp", "seekSec": 20, "autoplay": false },
+    "replay": { "simId": "S1-03/ramp", "seekSec": 20, "focus": { "nodes": ["db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S1-03.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra điểm nghẽn" },
+    "prompt": { "vi": "Tại giây 38, người dùng thấy hơn một nửa số request bị lỗi hoặc quá hạn dù 3 node app còn rảnh. Nhấn vào node là điểm nghẽn của hệ thống." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 38,
+    "maxPicks": 1,
+    "expected": ["db"],
+    "hints": [
+      { "vi": "Tìm node có hàng đợi chất đống phía trước và ρ ≥ 1." }
+    ],
+    "explain": { "vi": "{db.name} đang ρ = {db.rho@38:2} với hàng đợi {db.queue@38:0} request; trong khi app chỉ ρ = {app1.rho@38:2}. Mọi request phải đi qua DB nên độ trễ đuôi và lỗi toàn hệ thống bị quyết định bởi thời gian chờ ở DB ({db.queueWaitMs@38:0} ms)." },
+    "sim": { "simId": "S1-03/ramp", "seekSec": 38, "autoplay": false }
+  },
+  {
+    "id": "S1-03.A3",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm tải tối đa hệ thống chịu được" },
+    "prompt": { "vi": "Dùng núm tải để tìm lưu lượng cao nhất (req/s) mà hệ thống hiện tại vẫn giữ p99 ≤ 300 ms và lỗi ≤ 1%. Nhập kết quả." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 300, "window": { "fromSec": 20, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 20, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2950, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Tìm node đầu tiên có ρ chạm 1 khi tăng tải, rồi tính lưu lượng làm ρ của nó bằng 1." }
+    ],
+    "explain": { "vi": "Giới hạn do database quyết định: năng lực 1.600 req/s chia cho tỉ lệ {db.share@0:2} lưu lượng đổ vào DB ≈ {ref.value:0} req/s. Vượt mức này hàng đợi ở DB tăng không dừng." },
+    "sim": { "simId": "S1-03/ramp", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S1-03.A4",
+    "kind": "estimate",
+    "title": { "vi": "Database nhận bao nhiêu request?" },
+    "prompt": { "vi": "Hệ thống nhận 3.000 req/s, 90% là lượt đọc, cache trả lời khoảng 52% lượt đọc. Mỗi lượt ghi đều đi tới database. Ước lượng số req/s database phải xử lý." },
+    "difficulty": 2,
+    "quantity": "Lưu lượng vào database",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "3000*(0.9*(1-0.52)+0.1)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.1, "pass": 0.25 },
+    "workings": [
+      { "vi": "Đọc đi tới DB: 3.000 × 0,9 × (1 − 0,52) = 1.296 req/s." },
+      { "vi": "Ghi đi tới DB: 3.000 × 0,1 = 300 req/s." },
+      { "vi": "Tổng ≈ 1.596 req/s ≈ 1.600: DB đã gần ρ = 1." }
+    ],
+    "hints": [
+      { "vi": "Tách lượt đọc và lượt ghi. Cache chỉ giúp lượt đọc." }
+    ],
+    "explain": { "vi": "Giá trị đúng ≈ {truth:0} req/s. Con số này sát năng lực 1.600 req/s của DB, nên ở 3.000 req/s hệ thống đã sát giới hạn." },
+    "replay": { "simId": "S1-03/ramp", "seekSec": 33, "focus": { "nodes": ["db"] } }
+  },
+  {
+    "id": "S1-03.A5",
+    "kind": "fix-challenge",
+    "title": { "vi": "Đưa p99 về dưới 130 ms" },
+    "prompt": { "vi": "Hệ thống bắt đầu vi phạm SLO từ giây 35. Với tối đa 3 thay đổi và chi phí không quá 2,50 USD/giờ, hãy giữ p99 ≤ 130 ms và lỗi ≤ 1% trong suốt 90 giây (kể cả khi tải đạt 5.000 req/s)." },
+    "difficulty": 3,
+    "simId": "S1-03/ramp",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 2.5 },
+    "allowed": [
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 10000, "max": 100000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app1", "key": "replicas", "min": 1, "max": 6 },
+      { "type": "knob", "node": "app2", "key": "replicas", "min": 1, "max": 6 },
+      { "type": "knob", "node": "app3", "key": "replicas", "min": 1, "max": 6 },
+      { "type": "link", "link": "cache-db", "fields": ["retry", "timeoutMs", "breaker"] }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 0, "toSec": 90 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 90 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 90 }, "allowViolationPct": 5 },
+      { "id": "retry-safe", "kind": "structural", "rule": "has-retry-backoff", "link": "cache-db" }
+    ],
+    "observe": { "runSec": 90 },
+    "par": { "changes": 3, "costPerHour": 2.31 },
+    "solution": [
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 50000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 },
+      { "type": "link", "link": "cache-db", "patch": { "retry": { "max": 2, "backoff": "exponential", "baseMs": 100, "jitter": "full", "budgetRatio": 0.1 } } }
+    ],
+    "traps": [
+      {
+        "id": "more-apps",
+        "label": { "vi": "Tăng gấp đôi số instance của cả 3 app" },
+        "changes": [
+          { "type": "knob", "node": "app1", "key": "replicas", "value": 2 },
+          { "type": "knob", "node": "app2", "key": "replicas", "value": 2 },
+          { "type": "knob", "node": "app3", "key": "replicas", "value": 2 }
+        ],
+        "why": { "vi": "Tầng app không phải điểm nghẽn. Thêm instance làm tăng chi phí nhưng p99 gần như không đổi, vì mọi request vẫn phải chờ ở database." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tìm node có ρ ≥ 1 trước khi quyết định thêm tài nguyên ở đâu." },
+      { "vi": "Có hai cách giảm áp lực lên database: giảm lượng request đi tới nó, hoặc tăng năng lực của nó." },
+      { "vi": "Cache có đủ chỗ cho tập key đang dùng hay chưa? Hãy xem Hit Ratio trong Inspector." }
+    ],
+    "explain": { "vi": "Cache lớn hơn nâng Hit Ratio từ {cache.hitRatio@10:0%} lên {cache.hitRatio'@10:0%}, nên lưu lượng vào DB giảm. Scale-up DB gấp đôi đưa ρ xuống {db.rho'@60:2} ở tải 5.000 req/s. Retry có backoff, jitter và budget ngăn việc mỗi lỗi tạo thêm 2 lần gọi." },
+    "replay": { "simId": "S1-03/ramp", "seekSec": 30, "focus": { "nodes": ["db", "cache"] }, "autoplay": true }
+  },
+  {
+    "id": "S1-03.A6",
+    "kind": "order",
+    "title": { "vi": "Thứ tự một request đi qua hệ thống" },
+    "prompt": { "vi": "Sắp xếp các chặng theo thứ tự một lượt đọc bị cache miss đi qua hệ thống." },
+    "difficulty": 1,
+    "items": [
+      { "id": "lb", "text": { "vi": "Load Balancer chọn một app" } },
+      { "id": "app", "text": { "vi": "App hỏi cache" } },
+      { "id": "miss", "text": { "vi": "Cache không có key (Cache Miss)" } },
+      { "id": "db", "text": { "vi": "Request đi tới database" } },
+      { "id": "fill", "text": { "vi": "Kết quả được ghi vào cache và trả về" } }
+    ],
+    "shuffleSeed": 7,
+    "explain": { "vi": "Cache Miss đi hết đường tới DB nên độ trễ gồm cả chặng cache lẫn chặng DB; đó là lý do p99 chịu ảnh hưởng của DB dù đa số request là Cache Hit." }
+  }
+]
