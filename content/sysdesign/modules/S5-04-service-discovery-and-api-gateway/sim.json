@@ -1,0 +1,146 @@
+{
+  "sims": [
+    {
+      "id": "S5-04/discovery-churn",
+      "scenario": {
+        "id": "S5-04/discovery-churn",
+        "seed": 5401,
+        "durationSec": 45,
+        "mix": { "readRatio": 0.85 },
+        "clientTimeoutMs": 1500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1500 },
+        "events": [
+          { "at": 18, "type": "crash", "node": "payments_a" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gateway",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 1.5, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "orders",
+              "kind": "lb",
+              "label": { "vi": "Orders Service", "en": "Orders Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.24,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4000 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "algorithm": "weighted", "healthCheckSec": 3 }
+            },
+            {
+              "id": "registry",
+              "kind": "service",
+              "label": { "vi": "Service Registry (3 node)", "en": "Service Registry (3 nodes)" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.18,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1, "cv": 0.15 },
+              "params": { "replicas": 3 }
+            },
+            {
+              "id": "payments_a",
+              "kind": "service",
+              "label": { "vi": "Payments A", "en": "Payments A" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Instance Payments A bị thay thế và đổi IP", "en": "Payments A replaced with new IP" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 1, "poolSize": 24 }
+            },
+            {
+              "id": "payments_b",
+              "kind": "service",
+              "label": { "vi": "Payments B", "en": "Payments B" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 1, "poolSize": 24 }
+            },
+            {
+              "id": "db_pay",
+              "kind": "sql",
+              "label": { "vi": "Payments DB", "en": "Payments DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4500 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "maxConnections": 400 }
+            }
+          ],
+          "links": [
+            { "id": "client-gw", "from": "client", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 1500 },
+            { "id": "gw-orders", "from": "gateway", "to": "orders", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "orders-reg", "from": "orders", "to": "registry", "mode": "async", "netClass": "same-az", "timeoutMs": 500, "weight": 0 },
+            { "id": "orders-paya", "from": "orders", "to": "payments_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "orders-payb", "from": "orders", "to": "payments_b", "mode": "sync", "netClass": "cross-az", "timeoutMs": 800 },
+            { "id": "paya-db", "from": "payments_a", "to": "db_pay", "mode": "sync", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "payb-db", "from": "payments_b", "to": "db_pay", "mode": "sync", "netClass": "cross-az", "timeoutMs": 600 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "gateway": "all-sequential",
+            "orders": "split",
+            "payments_a": "all-sequential",
+            "payments_b": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

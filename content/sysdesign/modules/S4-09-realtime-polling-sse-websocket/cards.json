@@ -1,0 +1,9 @@
+[
+  { "id": "S4-09.c1", "front": "Short Polling vs Long Polling khác nhau thế nào?", "back": "Short Polling hỏi định kỳ mỗi N giây và nhận phản hồi ngay (thường rỗng). Long Polling giữ request mở ở server cho đến khi có sự kiện mới hoặc hết timeout rồi client mới mở request kế tiếp." },
+  { "id": "S4-09.c2", "front": "Server-Sent Events (SSE) là gì?", "back": "Là chuẩn HTTP giữ một kết nối mở để server đẩy luồng sự kiện một chiều xuống client (`text/event-stream`). Hỗ trợ tự động nối lại và truyền `Last-Event-ID`, phù hợp thông báo, tỷ số, AI streaming." },
+  { "id": "S4-09.c3", "front": "Khi nào cần dùng WebSocket?", "back": "Khi cần giao tiếp hai chiều song công (full-duplex) độ trễ cực thấp trên một kết nối TCP bền vững sau bước nâng cấp từ HTTP, ví dụ ứng dụng chat, cộng tác trực tuyến hoặc game." },
+  { "id": "S4-09.c4", "front": "Vì sao nhiều máy chủ WebSocket cần Pub/Sub?", "back": "Mỗi socket nằm trong bộ nhớ của một Gateway cụ thể (stateful). Khi dịch vụ phát tin, Pub/Sub (như Redis Pub/Sub hoặc NATS) chuyển tiếp thông điệp tới đúng Gateway đang giữ socket của người nhận." },
+  { "id": "S4-09.c5", "front": "Presence (trạng thái online) thiết kế ra sao?", "back": "Client gửi heartbeat định kỳ (ví dụ mỗi 15 giây) để làm mới một khóa trong Redis có TTL ngắn (ví dụ 35 giây). Nếu mất mạng không báo trước, khóa tự hết hạn và trạng thái chuyển sang offline." },
+  { "id": "S4-09.c6", "front": "Xử lý tin nhắn khi người dùng ngoại tuyến thế nào?", "back": "Lưu tin nhắn bền vững vào Database kèm số thứ tự trước khi đẩy qua socket. Nếu người nhận offline, gửi Push Notification; khi họ online lại, đồng bộ theo mốc thứ tự cuối đã nhận." },
+  { "id": "S4-09.c7", "front": "Rủi ro Reconnect Storm khi một Gateway gặp sự cố?", "back": "Nếu một Gateway giữ 100.000 socket sập, toàn bộ thiết bị cùng lúc nối lại sẽ đánh sập các Gateway còn lại. Cần dùng Exponential Backoff + Jitter ở phía client khi nối lại." }
+]

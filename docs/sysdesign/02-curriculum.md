@@ -74,15 +74,15 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S0-01 | Problem-first: hỏi bài toán trước khi chọn công nghệ | `p0/l1` code-first-to-problem-first | — | — | design-constraint | P2 | 2 | todo |
-| S0-02 | Trade-off thay vì giải pháp hoàn hảo | `p0/l2` perfect-solution-to-trade-of… | — | — | predict, design-constraint | P1 | 2 | todo |
-| S0-03 | Components và Communication: bài khởi động | `p0/l3` foundation-exercises | — | — | order | P2 | 2 | todo |
-| S0-04 | Thinking in Constraints: giới hạn compute, memory, network, DB, nhân sự | `p0/l4` thinking-in-constraints | — | — | estimate, design-constraint | P1 | 2 | todo |
-| S0-05 | Scale Intuition và Napkin Math | `p0/l5` scale-intuition | `napkin-math` | — | estimate | P1 | 3 | todo |
-| S0-06 | System Thinking: Input → Processing → Storage → Output | `p0/l6` system-thinking-framework | — | — | order, spot-bottleneck | P2 | 3 | todo |
-| S0-07 | Khung 7 câu hỏi khi thiết kế hệ thống | `p0/l7` system-question-framework | — | — | design-constraint | P1 | 3 | todo |
-| S0-08 | Tổng kết 4 mindset của Phase 0 | `p0/l8` mental-model-recap | — | — | — | P2 | 3 | todo |
-| S0-09 | Cách đọc mô phỏng và telemetry ★ | — | — | live | predict | P1 | 2 | todo |
+| S0-01 | Problem-first: hỏi bài toán trước khi chọn công nghệ | `p0/l1` code-first-to-problem-first | — | — | design-constraint | P2 | 2 | done |
+| S0-02 | Trade-off thay vì giải pháp hoàn hảo | `p0/l2` perfect-solution-to-trade-of… | — | — | predict, design-constraint | P1 | 2 | done |
+| S0-03 | Components và Communication: bài khởi động | `p0/l3` foundation-exercises | — | — | order | P2 | 2 | done |
+| S0-04 | Thinking in Constraints: giới hạn compute, memory, network, DB, nhân sự | `p0/l4` thinking-in-constraints | — | — | estimate, design-constraint | P1 | 2 | done |
+| S0-05 | Scale Intuition và Napkin Math | `p0/l5` scale-intuition | `napkin-math` | — | estimate | P1 | 3 | done |
+| S0-06 | System Thinking: Input → Processing → Storage → Output | `p0/l6` system-thinking-framework | — | — | order, spot-bottleneck | P2 | 3 | done |
+| S0-07 | Khung 7 câu hỏi khi thiết kế hệ thống | `p0/l7` system-question-framework | — | — | design-constraint | P1 | 3 | done |
+| S0-08 | Tổng kết 4 mindset của Phase 0 | `p0/l8` mental-model-recap | — | — | — | P2 | 3 | done |
+| S0-09 | Cách đọc mô phỏng và telemetry ★ | — | — | live | predict | P1 | 2 | done |
 
 #### S0-01 — Problem-first: hỏi bài toán trước khi chọn công nghệ
 
@@ -162,14 +162,14 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S1-01 | Các thành phần của một hệ thống web | `p1/l1` components-trong-he-thong-we… | `request-lifecycle` (một phần) | live | predict | P1 | 1 | todo |
-| S1-06 | Vòng đời một request: DNS, kết nối, server, database | — | `request-lifecycle` | sự kiện | estimate, timeline-read | P1 | 1 | todo |
-| S1-02 | Communication Patterns: sync, async, event-driven | `p1/l2` communication-patterns | `queues` (một phần), `pubsub` (một phần) | live | predict, spot-bottleneck | P1 | 1 | todo |
-| S1-08 | REST, RPC và GraphQL: chi phí trên mạng di động | — | `apis` | — | estimate | P2 | 10 | todo |
-| S1-03 | Data Flow và Bottleneck: tìm và sửa điểm nghẽn | `p1/l3` data-flow-and-bottlenecks | `latency-throughput` (một phần), `request-lifecycle` (một phần) | live | predict, spot-bottleneck, tune-to-limit, estimate, fix-challenge, order | P0 | M5 | review (T5.1–T5.4 xong: 11 step, stage.json, sim.json, activities.json A1–A6, quiz, cards; chờ T5.5 cổng duyệt người dùng) |
-| S1-04 | Latency, Throughput, Availability và CAP (mở đầu) | `p1/l4` cac-khai-niem-quan-trong | `latency-throughput` (một phần), `cap` (một phần) | live | predict, estimate | P1 | 1 | todo |
-| S1-07 | Hàng đợi, Little's Law và tail latency ★ | — | `latency-throughput` | live | predict, estimate, tune-to-limit | P1 | 1 | todo |
-| S1-05 | Bài tập tổng hợp Phase 1 | `p1/l5` bai-tap-tong-hop | `design-url-shortener` (một phần) | live | fix-challenge, design-constraint | P2 | 3 | todo |
+| S1-01 | Các thành phần của một hệ thống web | `p1/l1` components-trong-he-thong-we… | `request-lifecycle` (một phần) | live | predict | P1 | 1 | done |
+| S1-06 | Vòng đời một request: DNS, kết nối, server, database | — | `request-lifecycle` | sự kiện | estimate, timeline-read | P1 | 1 | done |
+| S1-02 | Communication Patterns: sync, async, event-driven | `p1/l2` communication-patterns | `queues` (một phần), `pubsub` (một phần) | live | predict, spot-bottleneck | P1 | 1 | done |
+| S1-08 | REST, RPC và GraphQL: chi phí trên mạng di động | — | `apis` | — | estimate | P2 | 10 | done |
+| S1-03 | Data Flow và Bottleneck: tìm và sửa điểm nghẽn | `p1/l3` data-flow-and-bottlenecks | `latency-throughput` (một phần), `request-lifecycle` (một phần) | live | predict, spot-bottleneck, tune-to-limit, estimate, fix-challenge, order | P0 | M5 | done |
+| S1-04 | Latency, Throughput, Availability và CAP (mở đầu) | `p1/l4` cac-khai-niem-quan-trong | `latency-throughput` (một phần), `cap` (một phần) | live | predict, estimate | P1 | 1 | done |
+| S1-07 | Hàng đợi, Little's Law và tail latency ★ | — | `latency-throughput` | live | predict, estimate, tune-to-limit | P1 | 1 | done |
+| S1-05 | Bài tập tổng hợp Phase 1 | `p1/l5` bai-tap-tong-hop | `design-url-shortener` (một phần) | live | fix-challenge, design-constraint | P2 | 3 | done |
 
 #### S1-01 — Các thành phần của một hệ thống web
 
@@ -244,18 +244,18 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S2-01 | Load Balancing: thuật toán, health check, Layer 4 và Layer 7 | `p2/l1` load-balancing | `load-balancing` | live | predict, spot-bottleneck, fix-challenge | P1 | 4 | todo |
-| S2-06 | Stateless services và nơi lưu session | — | `stateless` | sự kiện | predict, fix-challenge | P2 | 4 | todo |
-| S2-02 | Caching: hit ratio, TTL, invalidation, stampede | `p2/l2` caching | `caching` | live | predict, tune-to-limit, fix-challenge | P1 | 4 | todo |
-| S2-04 | Message Queues và xử lý bất đồng bộ | `p2/l4` message-queues-async-process… | `queues`, `pubsub` (một phần) | live | predict, tune-to-limit, timeline-read | P1 | 4 | todo |
-| S2-11 | Pub/Sub, event và outbox | — | `pubsub` | sự kiện | predict, postmortem | P2 | 4 | todo |
-| S2-07 | SQL, document và key-value: chọn loại lưu trữ | — | `sql-nosql` | — | design-constraint | P2 | 5 | todo |
-| S2-03 | Database Scaling: vertical, replica, sharding | `p2/l3` database | `replication` (một phần), `sharding` (một phần) | live | tune-to-limit, design-constraint | P1 | 5 | todo |
-| S2-08 | Replication: replication lag, read-your-writes, failover | — | `replication` | live | timeline-read, predict, postmortem | P1 | 5 | todo |
-| S2-09 | Sharding, shard key và hot key | — | `sharding` | live | spot-bottleneck, tune-to-limit, predict | P1 | 5 | todo |
-| S2-10 | Consistent Hashing và virtual node | — | `consistent-hashing` | live | predict, estimate | P1 | 5 | todo |
-| S2-12 | Files và media: object storage, presigned URL, CDN | — | `files` | sự kiện | predict, estimate | P2 | 10 | todo |
-| S2-05 | Integration và trade-off: ghép các thành phần | `p2/l5` integration-trade-off-thinki… | — | live | design-constraint, fix-challenge | P2 | 10 | todo |
+| S2-01 | Load Balancing: thuật toán, health check, Layer 4 và Layer 7 | `p2/l1` load-balancing | `load-balancing` | live | predict, spot-bottleneck, fix-challenge | P1 | 4 | done |
+| S2-06 | Stateless services và nơi lưu session | — | `stateless` | sự kiện | predict, fix-challenge | P2 | 4 | done |
+| S2-02 | Caching: hit ratio, TTL, invalidation, stampede | `p2/l2` caching | `caching` | live | predict, tune-to-limit, fix-challenge | P1 | 4 | done |
+| S2-04 | Message Queues và xử lý bất đồng bộ | `p2/l4` message-queues-async-process… | `queues`, `pubsub` (một phần) | live | predict, tune-to-limit, timeline-read | P1 | 4 | done |
+| S2-11 | Pub/Sub, event và outbox | — | `pubsub` | sự kiện | predict, postmortem | P2 | 4 | done |
+| S2-07 | SQL, document và key-value: chọn loại lưu trữ | — | `sql-nosql` | — | design-constraint | P2 | 5 | done |
+| S2-03 | Database Scaling: vertical, replica, sharding | `p2/l3` database | `replication` (một phần), `sharding` (một phần) | live | tune-to-limit, design-constraint | P1 | 5 | done |
+| S2-08 | Replication: replication lag, read-your-writes, failover | — | `replication` | live | timeline-read, predict, postmortem | P1 | 5 | done |
+| S2-09 | Sharding, shard key và hot key | — | `sharding` | live | spot-bottleneck, tune-to-limit, predict | P1 | 5 | done |
+| S2-10 | Consistent Hashing và virtual node | — | `consistent-hashing` | live | predict, estimate | P1 | 5 | done |
+| S2-12 | Files và media: object storage, presigned URL, CDN | — | `files` | sự kiện | predict, estimate | P2 | 10 | done |
+| S2-05 | Integration và trade-off: ghép các thành phần | `p2/l5` integration-trade-off-thinki… | — | live | design-constraint, fix-challenge | P2 | 10 | done |
 
 #### S2-01 — Load Balancing: thuật toán, health check, Layer 4 và Layer 7
 
@@ -364,15 +364,15 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S3-01 | Hệ phân tán thực tế: failure model và CAP | `p3/l1` reality-of-distributed-syste… | `cap` | sự kiện | predict, design-constraint | P1 | 7 | todo |
-| S3-09 | Redundancy, availability zone và failover | — | `redundancy` | sự kiện | spot-bottleneck, estimate, postmortem | P1 | 6 | todo |
-| S3-02 | Consistency model: strong và eventual | `p3/l2` consistency-models-strong-an… | `cap` (một phần) | sự kiện | timeline-read, tune-to-limit | P1 | 7 | todo |
-| S3-03 | Consensus và leader election (Raft) | `p3/l3` consensus-leader-election | `consensus` | sự kiện | order, predict, timeline-read | P1 | 7 | todo |
-| S3-07 | Transaction và isolation level | — | `transactions` | sự kiện | predict, timeline-read, postmortem | P2 | 8 | todo |
-| S3-04 | Distributed transaction: 2PC, Saga, idempotency | `p3/l4` distributed-transactions-dat… | `sagas`, `transactions` (một phần) | sự kiện | order, predict, postmortem | P2 | 8 | todo |
-| S3-05 | Distributed ID và thứ tự sự kiện | `p3/l5` distributed-id-and-ordering | `unique-ids` | sự kiện | predict, estimate, fix-challenge | P2 | 7 | todo |
-| S3-06 | Thời gian và thứ tự: clock drift, Lamport, vector clock | `p3/l6` time-event-ordering-clock-pr… | `cap` (một phần) | sự kiện | order, timeline-read | P2 | 7 | todo |
-| S3-08 | CRDT và hợp nhất dữ liệu không cần phối hợp ★ | — | — | sự kiện | predict, timeline-read | P2 | 8 | todo |
+| S3-01 | Hệ phân tán thực tế: failure model và CAP | `p3/l1` reality-of-distributed-syste… | `cap` | sự kiện | predict, design-constraint | P1 | 7 | done |
+| S3-09 | Redundancy, availability zone và failover | — | `redundancy` | sự kiện | spot-bottleneck, estimate, postmortem | P1 | 6 | done |
+| S3-02 | Consistency model: strong và eventual | `p3/l2` consistency-models-strong-an… | `cap` (một phần) | sự kiện | timeline-read, tune-to-limit | P1 | 7 | done |
+| S3-03 | Consensus và leader election (Raft) | `p3/l3` consensus-leader-election | `consensus` | sự kiện | order, predict, timeline-read | P1 | 7 | done |
+| S3-07 | Transaction và isolation level | — | `transactions` | sự kiện | predict, timeline-read, postmortem | P2 | 8 | done |
+| S3-04 | Distributed transaction: 2PC, Saga, idempotency | `p3/l4` distributed-transactions-dat… | `sagas`, `transactions` (một phần) | sự kiện | order, predict, postmortem | P2 | 8 | done |
+| S3-05 | Distributed ID và thứ tự sự kiện | `p3/l5` distributed-id-and-ordering | `unique-ids` | sự kiện | predict, estimate, fix-challenge | P2 | 7 | done |
+| S3-06 | Thời gian và thứ tự: clock drift, Lamport, vector clock | `p3/l6` time-event-ordering-clock-pr… | `cap` (một phần) | sự kiện | order, timeline-read | P2 | 7 | done |
+| S3-08 | CRDT và hợp nhất dữ liệu không cần phối hợp ★ | — | — | sự kiện | predict, timeline-read | P2 | 8 | done |
 
 #### S3-01 — Hệ phân tán thực tế: failure model và CAP
 
@@ -453,17 +453,17 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S4-01 | Performance và scaling: bottleneck, Amdahl, vertical và horizontal | `p4/l1` performance-bottleneck-think… | `vertical-horizontal` | live | tune-to-limit, predict, fix-challenge | P1 | 6 | todo |
-| S4-02 | Caching strategy: write-through, write-behind, invalidation, eviction | `p4/l2` caching-strategy-trade-consi… | `caching` (một phần) | live | predict, spot-bottleneck, fix-challenge | P2 | 9 | todo |
-| S4-03 | CDN và edge computing | `p4/l3` cdn-and-edge-computing-distr… | `cdn` | live | predict, estimate | P2 | 9 | todo |
-| S4-04 | Database optimization: index, query, N+1 | `p4/l4` database-scaling-optimizatio… | `indexes` | live | predict, estimate, fix-challenge | P2 | 8 | todo |
-| S4-08 | Storage engine: WAL, B-tree và LSM-tree | — | `storage-engines` | live | predict, order | P2 | 8 | todo |
-| S4-05 | Rate limiting và kiểm soát tải | `p4/l5` rate-limiting-and-load-contr… | `rate-limiting` | live | predict, tune-to-limit | P1 | 6 | todo |
-| S4-10 | Back-pressure và load shedding ★ | — | `rate-limiting` (một phần) | live | tune-to-limit, postmortem | P1 | 6 | todo |
-| S4-11 | Timeout, retry, circuit breaker và bulkhead | — | `timeouts-retries` | live | predict, fix-challenge, postmortem | P1 | 6 | todo |
-| S4-06 | Xử lý bất đồng bộ: background job, retry, DLQ, idempotency | `p4/l6` asynchronous-processin-queue… | `queues` (một phần), `pubsub` (một phần) | sự kiện | predict, postmortem | P2 | 9 | todo |
-| S4-09 | Cập nhật thời gian thực: polling, SSE, WebSocket | — | `realtime` | live | estimate, predict | P2 | 9 | todo |
-| S4-07 | Observability: metric, log, trace, SLO | `p4/l7` monitoring-observability-per… | `observability` | live | timeline-read, spot-bottleneck, postmortem | P1 | 9 | todo |
+| S4-01 | Performance và scaling: bottleneck, Amdahl, vertical và horizontal | `p4/l1` performance-bottleneck-think… | `vertical-horizontal` | live | tune-to-limit, predict, fix-challenge | P1 | 6 | done |
+| S4-02 | Caching strategy: write-through, write-behind, invalidation, eviction | `p4/l2` caching-strategy-trade-consi… | `caching` (một phần) | live | predict, spot-bottleneck, fix-challenge | P2 | 9 | done |
+| S4-03 | CDN và edge computing | `p4/l3` cdn-and-edge-computing-distr… | `cdn` | live | predict, estimate | P2 | 9 | done |
+| S4-04 | Database optimization: index, query, N+1 | `p4/l4` database-scaling-optimizatio… | `indexes` | live | predict, estimate, fix-challenge | P2 | 8 | done |
+| S4-08 | Storage engine: WAL, B-tree và LSM-tree | — | `storage-engines` | live | predict, order | P2 | 8 | done |
+| S4-05 | Rate limiting và kiểm soát tải | `p4/l5` rate-limiting-and-load-contr… | `rate-limiting` | live | predict, tune-to-limit | P1 | 6 | done |
+| S4-10 | Back-pressure và load shedding ★ | — | `rate-limiting` (một phần) | live | tune-to-limit, postmortem | P1 | 6 | done |
+| S4-11 | Timeout, retry, circuit breaker và bulkhead | — | `timeouts-retries` | live | predict, fix-challenge, postmortem | P1 | 6 | done |
+| S4-06 | Xử lý bất đồng bộ: background job, retry, DLQ, idempotency | `p4/l6` asynchronous-processin-queue… | `queues` (một phần), `pubsub` (một phần) | sự kiện | predict, postmortem | P2 | 9 | done |
+| S4-09 | Cập nhật thời gian thực: polling, SSE, WebSocket | — | `realtime` | live | estimate, predict | P2 | 9 | done |
+| S4-07 | Observability: metric, log, trace, SLO | `p4/l7` monitoring-observability-per… | `observability` | live | timeline-read, spot-bottleneck, postmortem | P1 | 9 | done |
 
 #### S4-01 — Performance và scaling: bottleneck, Amdahl, vertical và horizontal
 
@@ -563,12 +563,12 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S5-01 | Architecture Evolution: monolith đến microservices | `p5/l1` architecture-evolution-minds… | `microservices` | live | order, design-constraint | P1 | 10 | todo |
-| S5-02 | Hệ thống read-heavy: URL shortener và phân phối nội dung | `p5/l2` head-heavy-systems | `design-url-shortener` | live | estimate, fix-challenge | P1 | 10 | todo |
-| S5-03 | Social feed: fan-out on read, on write và hybrid | `p5/l3` social-feed-systems | `design-news-feed` | live | predict, tune-to-limit, design-constraint | P1 | 10 | todo |
-| S5-04 | Service discovery và API gateway | — | `service-discovery` | sự kiện | predict, spot-bottleneck | P2 | 11 | todo |
-| S5-05 | Batch và stream processing | — | `batch-stream` | live | predict, tune-to-limit | P2 | 11 | todo |
-| S5-06 | Multi-region: replication xuyên vùng, failover, xung đột ★ | — | — | sự kiện | design-constraint, timeline-read, tune-to-limit | P2 | 11 | todo |
+| S5-01 | Architecture Evolution: monolith đến microservices | `p5/l1` architecture-evolution-minds… | `microservices` | live | order, design-constraint | P1 | 10 | done |
+| S5-02 | Hệ thống read-heavy: URL shortener và phân phối nội dung | `p5/l2` head-heavy-systems | `design-url-shortener` | live | estimate, fix-challenge | P1 | 10 | done |
+| S5-03 | Social feed: fan-out on read, on write và hybrid | `p5/l3` social-feed-systems | `design-news-feed` | live | predict, tune-to-limit, design-constraint | P1 | 10 | done |
+| S5-04 | Service discovery và API gateway | — | `service-discovery` | sự kiện | predict, spot-bottleneck | P2 | 11 | done |
+| S5-05 | Batch và stream processing | — | `batch-stream` | live | predict, tune-to-limit | P2 | 11 | done |
+| S5-06 | Multi-region: replication xuyên vùng, failover, xung đột ★ | — | — | sự kiện | design-constraint, timeline-read, tune-to-limit | P2 | 11 | done |
 
 #### S5-01 — Architecture Evolution: monolith đến microservices
 
@@ -627,18 +627,18 @@ Mỗi phase có một bảng tổng và một tiểu mục chi tiết cho từng
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S6-01 | Khung tư duy thiết kế: requirement, constraint, top-down | `p6/l1` system-design-thinking-frame… | `hld-lld` | — | design-constraint | P2 | 11 | todo |
-| S6-02 | SNAKE Framework cho phỏng vấn system design | `p6/l2` snake-framework | `hld-lld` (một phần) | — | design-constraint | P2 | 11 | todo |
-| S6-03 | Trade-off và ra quyết định kiến trúc | `p6/l3` trade-offs-and-architecture-… | `cap` (một phần) | live | design-constraint | P2 | 11 | todo |
-| S6-04 | Chiến lược phỏng vấn trên hệ thống thực tế | `p6/l4` real-interview-strategy | `design-chat` (một phần) | — | design-constraint | P2 | 12 | todo |
-| S6-05 | Chủ đề nâng cao: Event Sourcing, CQRS, Service Mesh, Chaos Engineering | `p6/l5` advanced-architecture-topics | — | sự kiện | predict, postmortem | P2 | 12 | todo |
-| S6-06 | Tư duy kiến trúc sư: vận hành production, capacity planning | `p6/l6` architect-mindset-production… | `observability` (một phần) | live | postmortem, estimate | P1 | 12 | todo |
-| S6-07 | Chi phí và capacity: cost per request, đánh đổi cost và SLO ★ | — | — | live | tune-to-limit, fix-challenge | P2 | 12 | todo |
-| S6-08 | Authentication: mật khẩu, session, MFA, passkey | — | `authentication` | — | spot-bottleneck | P2 | 12 | todo |
-| S6-09 | Authorization: ownership, role, quan hệ, least privilege | — | `authorization` | — | spot-bottleneck | P2 | 13 | todo |
-| S6-10 | Mã hóa và quản lý secret | — | `encryption` | — | order | P2 | 13 | todo |
-| S6-11 | Testing: unit, integration, contract, end-to-end | — | `testing` | — | order | P2 | 13 | todo |
-| S6-12 | CI/CD và chiến lược triển khai: blue-green, canary, feature flag | — | `cicd` | sự kiện | predict, postmortem | P2 | 13 | todo |
+| S6-01 | Khung tư duy thiết kế: requirement, constraint, top-down | `p6/l1` system-design-thinking-frame… | `hld-lld` | — | design-constraint | P2 | 11 | done |
+| S6-02 | SNAKE Framework cho phỏng vấn system design | `p6/l2` snake-framework | `hld-lld` (một phần) | — | design-constraint | P2 | 11 | done |
+| S6-03 | Trade-off và ra quyết định kiến trúc | `p6/l3` trade-offs-and-architecture-… | `cap` (một phần) | live | design-constraint | P2 | 11 | done |
+| S6-04 | Chiến lược phỏng vấn trên hệ thống thực tế | `p6/l4` real-interview-strategy | `design-chat` (một phần) | — | design-constraint | P2 | 12 | done |
+| S6-05 | Chủ đề nâng cao: Event Sourcing, CQRS, Service Mesh, Chaos Engineering | `p6/l5` advanced-architecture-topics | — | sự kiện | predict, postmortem | P2 | 12 | done |
+| S6-06 | Tư duy kiến trúc sư: vận hành production, capacity planning | `p6/l6` architect-mindset-production… | `observability` (một phần) | live | postmortem, estimate | P1 | 12 | done |
+| S6-07 | Chi phí và capacity: cost per request, đánh đổi cost và SLO ★ | — | — | live | tune-to-limit, fix-challenge | P2 | 12 | done |
+| S6-08 | Authentication: mật khẩu, session, MFA, passkey | — | `authentication` | — | spot-bottleneck | P2 | 12 | done |
+| S6-09 | Authorization: ownership, role, quan hệ, least privilege | — | `authorization` | — | spot-bottleneck | P2 | 13 | done |
+| S6-10 | Mã hóa và quản lý secret | — | `encryption` | — | order | P2 | 13 | done |
+| S6-11 | Testing: unit, integration, contract, end-to-end | — | `testing` | — | order | P2 | 13 | done |
+| S6-12 | CI/CD và chiến lược triển khai: blue-green, canary, feature flag | — | `cicd` | sự kiện | predict, postmortem | P2 | 13 | done |
 
 #### S6-01 — Khung tư duy thiết kế: requirement, constraint, top-down
 
@@ -748,13 +748,13 @@ Case studies. Không có nguồn SDC; kiến thức dựng từ các phase trư�
 
 | Id | Tiêu đề | SDC | DTS | Sim | Bài tập | Ưu | Batch | Trạng thái |
 |---|---|---|---|---|---|---|---|---|
-| S7-01 | Case: Chat system | — | `design-chat` | live | design-constraint, postmortem, tune-to-limit | P2 | 14 | todo |
-| S7-02 | Case: Rate limiter phân tán ★ | — | — | live | design-constraint, fix-challenge | P2 | 14 | todo |
-| S7-03 | Case: Hệ thống thông báo (notification) ★ | — | — | live | design-constraint, postmortem | P2 | 14 | todo |
-| S7-04 | Case: Ride-hailing và tìm kiếm theo vị trí ★ | — | — | live | estimate, spot-bottleneck, design-constraint | P2 | 14 | todo |
-| S7-05 | Case: Video streaming ★ | — | — | live | estimate, tune-to-limit | P2 | 15 | todo |
-| S7-06 | Case: Hệ thống thanh toán ★ | — | — | sự kiện | postmortem, design-constraint | P2 | 15 | todo |
-| S7-07 | Case: Autocomplete (typeahead) ★ | — | — | live | estimate, fix-challenge | P2 | 15 | todo |
+| S7-01 | Case: Chat system | — | `design-chat` | live | design-constraint, postmortem, tune-to-limit | P2 | 14 | done |
+| S7-02 | Case: Rate limiter phân tán ★ | — | — | live | design-constraint, fix-challenge | P2 | 14 | done |
+| S7-03 | Case: Hệ thống thông báo (notification) ★ | — | — | live | design-constraint, postmortem | P2 | 14 | done |
+| S7-04 | Case: Ride-hailing và tìm kiếm theo vị trí ★ | — | — | live | estimate, spot-bottleneck, design-constraint | P2 | 14 | done |
+| S7-05 | Case: Video streaming ★ | — | — | live | estimate, tune-to-limit | P2 | 15 | done |
+| S7-06 | Case: Hệ thống thanh toán ★ | — | — | sự kiện | postmortem, design-constraint | P2 | 15 | done |
+| S7-07 | Case: Autocomplete (typeahead) ★ | — | — | live | estimate, fix-challenge | P2 | 15 | done |
 
 #### S7-01 — Case: Chat system
 

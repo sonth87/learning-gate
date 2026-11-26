@@ -1,0 +1,8 @@
+[
+  { "id": "S1-08.c1", "front": "Over-fetching trong REST là gì?", "back": "Là khi API trả về toàn bộ trường của tài nguyên (ví dụ 20 trường) trong khi màn hình client chỉ cần 2–3 trường, gây lãng phí băng thông và pin trên di động." },
+  { "id": "S1-08.c2", "front": "GraphQL giải quyết vấn đề gì của REST?", "back": "Cho phép client yêu cầu chính xác các trường cần thiết từ nhiều nguồn trong một vòng khứ hồi (1 RTT) duy nhất tới Gateway." },
+  { "id": "S1-08.c3", "front": "Ba biện pháp cần có khi vận hành GraphQL?", "back": "Giới hạn độ sâu/chi phí truy vấn (Depth & Cost Limit), dùng DataLoader để gom truy vấn tránh lỗi N+1, và dùng Persisted Queries nếu cần cache HTTP GET." },
+  { "id": "S1-08.c4", "front": "Vì sao gRPC nhanh hơn REST JSON trong nội bộ DC?", "back": "Dùng Protobuf nhị phân nhỏ gọn hơn JSON 3–4 lần, giảm CPU giải mã, chạy ghép kênh trên HTTP/2 và có hợp đồng kiểu dữ liệu chặt qua file .proto." },
+  { "id": "S1-08.c5", "front": "Vì sao Cursor Pagination tốt hơn OFFSET ở trang sâu?", "back": "OFFSET N buộc DB đọc và bỏ qua N dòng (O(N)) và dễ lệch trang khi có dữ liệu mới; Cursor dùng khóa có chỉ mục (WHERE id > cursor) nên ổn định và nhanh." },
+  { "id": "S1-08.c6", "front": "Quy tắc giữ tương thích ngược khi nâng cấp API?", "back": "Ưu tiên thêm trường mới thay vì đổi tên hay xóa trường cũ để app di động chưa cập nhật không bị lỗi; chỉ tăng phiên bản (/v2/) khi buộc thay đổi cấu trúc gây hỏng." }
+]

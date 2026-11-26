@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S2-05.q1",
+    "type": "mc",
+    "q": "Trong tư duy tích hợp hệ thống, vì sao không nên thêm Redis Cache hay Message Queue ngay từ ngày đầu tiên khi chưa có số đo?",
+    "code": "",
+    "choices": [
+      "Vì Redis và Queue không chạy được trên đám mây",
+      "Vì mỗi thành phần thêm vào đều tăng độ phức tạp vận hành, chi phí và điểm lỗi mới khi chưa giải quyết nút thắt thực sự",
+      "Vì Database luôn nhanh hơn Cache",
+      "Vì Load Balancer không hỗ trợ Cache"
+    ],
+    "answer": 1,
+    "explain": "Nguyên tắc cốt lõi là xây cho hiện tại và tiến hóa theo số đo: mỗi thành phần mới kéo theo chi phí bảo trì, giám sát và đánh đổi riêng."
+  },
+  {
+    "id": "S2-05.q2",
+    "type": "mc",
+    "q": "Khi tích hợp tính năng nén ảnh cho nền tảng Blog có tải đọc cao, vì sao nên dùng Queue + Image Worker thay vì nén đồng bộ ngay trong Blog API?",
+    "code": "",
+    "choices": [
+      "Để giữ kết nối HTTP mở lâu hơn",
+      "Để cách ly tác vụ CPU nặng khỏi luồng API, giúp API trả lời ngay và không làm nghẽn luồng đọc bài viết khi tải tăng vọt",
+      "Để bỏ qua hoàn toàn Object Storage",
+      "Để Database tự động nén ảnh"
+    ],
+    "answer": 1,
+    "explain": "Xử lý ảnh đồng bộ giữ worker thread của API hàng giây; Queue + Worker hấp thụ đột biến lượt ghi và giữ tầng API thông thoáng cho 85% lượt đọc."
+  },
+  {
+    "id": "S2-05.q3",
+    "type": "tf",
+    "q": "Nếu một hệ thống có 2 điểm nghẽn nối tiếp nhau (API quá tải và Database quá tải do Cache quá nhỏ), việc chỉ nhân bản thêm máy chủ API sẽ tự động giải quyết hoàn toàn p99.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Nhân bản API chỉ hết nghẽn ở tầng API; lượng request trượt Cache vẫn đổ xuống Database và tiếp tục giữ p99 ở mức cao."
+  },
+  {
+    "id": "S2-05.q4",
+    "type": "mc",
+    "q": "Trong quy trình 5 bước từ bài toán đến kiến trúc, bước nào giúp xác định ranh giới giữa xử lý đồng bộ và bất đồng bộ?",
+    "code": "",
+    "choices": [
+      "Vẽ luồng dữ liệu (Data Flow) từ client tới từng thành phần và quay về",
+      "Chọn ngôn ngữ lập trình",
+      "Đặt tên miền DNS",
+      "Cấu hình màu sắc giao diện"
+    ],
+    "answer": 0,
+    "explain": "Khi lần theo đường đi từng bước của request, ta thấy rõ chặng nào người dùng cần kết quả ngay (đồng bộ) và chặng nào có thể chạy nền (bất đồng bộ)."
+  },
+  {
+    "id": "S2-05.q5",
+    "type": "output",
+    "q": "Hệ thống nhận đỉnh 3.400 req/s với 15% là lượt đăng ảnh cần Worker xử lý. Mỗi Image Worker xử lý được tối đa 500 job/s. Cần tối thiểu bao nhiêu Image Worker để không bị tồn đọng hàng đợi? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "2",
+    "explain": "Lượt ghi ở đỉnh = 3.400 × 0,15 = 510 job/s. Với công suất 500 job/s mỗi máy, 1 Worker bị thiếu (ρ = 1,02), nên cần tối thiểu 2 Worker."
+  }
+]

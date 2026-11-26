@@ -1,0 +1,8 @@
+[
+  { "id": "S5-02.c1", "front": "Đặc điểm chính của hệ thống Read-Heavy 99% đọc là gì?", "back": "Lượt đọc gấp 100–1000 lần lượt ghi; hiệu năng và chi phí phụ thuộc vào tỷ lệ trúng Cache (Cache Hit Ratio ≥ 90%), đường ghi nhỏ và thống kê tách bất đồng bộ." },
+  { "id": "S5-02.c2", "front": "Vì sao dùng bộ đếm cấp theo lô + Base62 + xáo ID để sinh mã ngắn?", "back": "Không bị va chạm như hàm băm cắt ngắn, cấp phát tức thì trong RAM không cần kiểm tra DB, và xáo trộn bit giúp tránh đoán thứ tự hay số lượng URL." },
+  { "id": "S5-02.c3", "front": "Khi nào chọn HTTP 301 và khi nào chọn HTTP 302?", "back": "Chọn 301 khi muốn giảm tải tối đa (trình duyệt tự cache vĩnh viễn); chọn 302 khi cần đếm chính xác mọi lượt nhấp hoặc có thể thay đổi URL đích." },
+  { "id": "S5-02.c4", "front": "Tại sao không ghi thống kê lượt nhấp đồng bộ lúc chuyển hướng?", "back": "Ghi đồng bộ cộng thêm độ trễ và có thể làm tắc đường đọc nóng; phát sự kiện sang Message Queue + Worker giúp chuyển hướng dưới 50–80 ms." },
+  { "id": "S5-02.c5", "front": "NoSQL trong URL Shortener nên phân mảnh (Shard) theo khóa nào?", "back": "Phân mảnh theo short_code (hoặc hash của short_code) để mọi lượt chuyển hướng đều tìm đúng một shard duy nhất trong O(1)." },
+  { "id": "S5-02.c6", "front": "Ước lượng nhanh: 100 triệu URL/tháng × 250 byte sau 5 năm tốn bao nhiêu dung lượng?", "back": "25 GB/tháng × 60 tháng = 1.500 GB (1,5 TB); trong đó 20% dữ liệu nóng (~300 GB) có thể nằm gọn trong RAM Cache." }
+]

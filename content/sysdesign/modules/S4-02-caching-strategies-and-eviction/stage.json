@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "base": "s1-patterns",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Lưu lượng 90% đọc và 10% ghi tăng dần từ 600 lên 4.200 req/s.", "en": "Traffic (90% reads, 10% writes) ramping from 600 to 4,200 req/s." },
+        "how": { "vi": "Truy cập tập dữ liệu nóng 80.000 khóa theo phân phối lệch.", "en": "Queries an 80,000-key hot working set." },
+        "why": { "vi": "Tốc độ đọc cao đòi hỏi tầng Cache giữ được phần lớn lượt đọc.", "en": "High read ratio requires Cache to absorb most lookups." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Điều phối lưu lượng đều vào cụm App Server.", "en": "Distributes requests evenly across App Servers." },
+        "how": { "vi": "Cộng thêm độ trễ mạng nội bộ dưới 1 ms.", "en": "Adds sub-millisecond internal routing overhead." },
+        "why": { "vi": "Giúp tầng App mở rộng ngang độc lập.", "en": "Enables horizontal scaling of the App tier." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Server", "en": "App Server" },
+      "inspector": {
+        "what": { "vi": "Cụm 4 máy ứng dụng (tổng năng lực 6.400 req/s).", "en": "4 App instances (6,400 req/s total capacity)." },
+        "how": { "vi": "Thực thi logic Cache-Aside, Write-Through hoặc Write-Behind tùy kịch bản.", "en": "Implements Cache-Aside, Write-Through, or Write-Behind logic." },
+        "why": { "vi": "Chọn sai chiến lược cập nhật dễ gây dữ liệu cũ hoặc nghẽn đường ghi.", "en": "Choosing the wrong write strategy causes stale reads or slow writes." }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": { "vi": "Bộ nhớ đệm RAM lưu 20.000 key mặc định (tập nóng 80.000 key).", "en": "In-memory cache sized at 20,000 keys (80,000-key working set)." },
+        "how": { "vi": "Khi bộ nhớ đầy, thuật toán LRU đẩy các khóa ít dùng gần nhất ra ngoài.", "en": "When full, LRU evicts the least recently used keys." },
+        "why": { "vi": "Dung lượng quá nhỏ gây thrashing: dữ liệu vừa nạp đã bị đẩy ra, làm Hit Ratio tụt xuống ~42%.", "en": "Undersized capacity causes thrashing, dropping Hit Ratio to ~42%." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Primary DB", "en": "Primary DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu bền vững (năng lực 1.400 req/s).", "en": "Persistent SQL Database (1,400 req/s capacity)." },
+        "how": { "vi": "Nhận toàn bộ lượt ghi (10%) cộng với phần đọc bị Cache Miss.", "en": "Handles all writes (10%) plus cache miss reads." },
+        "why": { "vi": "Khi Hit Ratio thấp, lượng miss cộng lượt ghi vượt 1.400 req/s khiến DB quá tải.", "en": "Low Hit Ratio pushes DB past 1,400 req/s into overload." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": { "inspector": { "what": { "vi": "Kết nối từ người dùng tới Load Balancer.", "en": "User connection to Load Balancer." }, "how": { "vi": "Đi qua mạng Internet.", "en": "Traverses public Internet." }, "why": { "vi": "Điểm vào của hệ thống.", "en": "System entry hop." } } },
+    "lb-app": { "inspector": { "what": { "vi": "Đường nội bộ từ LB tới App Server.", "en": "Internal hop from LB to App." }, "how": { "vi": "Chia đều Round-robin.", "en": "Round-robin distribution." }, "why": { "vi": "Cân bằng tải tầng ứng dụng.", "en": "Balances App tier load." } } },
+    "app-cache": { "inspector": { "what": { "vi": "Truy cập RAM Cache từ App.", "en": "Low-latency hop from App to Cache." }, "how": { "vi": "Độ trễ 0,5 ms trong cùng Availability Zone.", "en": "0.5 ms within the same AZ." }, "why": { "vi": "Nhanh hơn nhiều so với đọc đĩa DB.", "en": "Orders of magnitude faster than DB disk reads." } } },
+    "cache-db": { "inspector": { "what": { "vi": "Truy vấn xuống DB khi Cache Miss hoặc ghi.", "en": "Fallback path to DB on Miss or Write." }, "how": { "vi": "Gánh toàn bộ lượt ghi và phần đọc không trúng Cache.", "en": "Carries all writes and missed reads." }, "why": { "vi": "Tỷ lệ đi qua đường này quyết định tuổi thọ của Primary DB.", "en": "Traffic on this link determines DB saturation." } } }
+  },
+  "zones": {
+    "backend": { "nodeIds": ["app", "cache", "db"], "label": { "vi": "TẦNG DỮ LIỆU", "en": "DATA TIER" }, "tone": "neutral" }
+  },
+  "scenes": {
+    "s1-patterns": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Cache-Aside", "en": "Cache-Aside" }, "tone": "ok" } },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba mẫu đọc/ghi chính", "en": "Three Core Patterns" },
+        "lines": [
+          { "text": { "vi": "Cache-Aside: App tự quản lý đọc/nạp", "en": "Cache-Aside: App manages cache" }, "tone": "good" },
+          { "text": { "vi": "Write-Through: Ghi đồng bộ qua Cache", "en": "Write-Through: Sync write via Cache" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-write-through": {
+      "show": { "nodes": ["app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 22, "highlighted": true, "badge": { "text": { "vi": "Đồng bộ 2 lớp", "en": "Sync 2-layer" }, "tone": "ok" } },
+        "db": { "loadPct": 52 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Write-Through: Nhất quán cao", "en": "Write-Through: High Consistency" },
+        "lines": [
+          { "text": { "vi": "Ghi vào Cache rồi ghi ngay xuống DB", "en": "Writes Cache then DB synchronously" }, "tone": "good" },
+          { "text": { "vi": "Đổi lại: độ trễ ghi cộng dồn cả hai", "en": "Trade-off: higher write latency" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-write-behind": {
+      "show": { "nodes": ["app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 28, "highlighted": true, "badge": { "text": { "vi": "Ghi bất đồng bộ", "en": "Async flush" }, "tone": "warn" } },
+        "db": { "loadPct": 30 }
+      },
+      "linkState": {
+        "cache-db": { "style": "dashed", "label": { "vi": "Gộp lô nền", "en": "Batch flush" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Write-Behind: Tối ưu ghi", "en": "Write-Behind: Write Speed" },
+        "lines": [
+          { "text": { "vi": "Trả kết quả ngay sau khi ghi RAM", "en": "Returns immediately after RAM write" }, "tone": "good" },
+          { "text": { "vi": "Rủi ro mất dữ liệu nếu Cache sập sớm", "en": "Risk of data loss before DB flush" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-invalidation": {
+      "show": { "nodes": ["app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 20, "highlighted": true, "badge": { "text": { "vi": "Dữ liệu cũ", "en": "Stale entry" }, "tone": "bad" } },
+        "db": { "loadPct": 40, "badge": { "text": { "vi": "Giá mới", "en": "New price" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Invalidation khi dữ liệu đổi", "en": "Cache Invalidation" },
+        "lines": [
+          { "text": { "vi": "DB đã cập nhật nhưng Cache còn bản cũ", "en": "DB updated while Cache holds stale value" }, "tone": "bad" },
+          { "text": { "vi": "Xóa khóa khi ghi + đặt TTL phòng hờ", "en": "Delete key on write + TTL safety net" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-eviction-live": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cache 20k key vs Tập nóng 80k key", "en": "20k Cache vs 80k Working Set" },
+        "lines": [
+          { "text": { "vi": "LRU liên tục đẩy khóa nóng ra ngoài", "en": "LRU evicts hot keys continuously" }, "tone": "amber" },
+          { "text": { "vi": "Quan sát node nào quá tải trước", "en": "Watch which node saturates first" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-penetration": {
+      "show": { "nodes": ["client", "app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 35, "badge": { "text": { "vi": "50% ID ảo miss", "en": "50% ghost IDs" }, "tone": "bad" } },
+        "db": { "loadPct": 96, "highlighted": true, "badge": { "text": { "vi": "Quét ID rỗng", "en": "Empty lookups" }, "tone": "bad" } }
+      },
+      "linkState": {
+        "cache-db": { "style": "danger", "label": { "vi": "Xuyên thẳng", "en": "Bypass" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cache Penetration & Bloom Filter", "en": "Penetration & Bloom Filter" },
+        "lines": [
+          { "text": { "vi": "ID không tồn tại luôn trượt qua Cache", "en": "Missing IDs bypass Cache every time" }, "tone": "bad" },
+          { "text": { "vi": "Lưu kết quả rỗng + chặn bằng Bloom Filter", "en": "Negative cache + Bloom Filter guard" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-recap": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "state": {
+        "cache": { "loadPct": 18, "highlighted": true, "badge": { "text": { "vi": "Hit ≈ 92%", "en": "Hit ≈ 92%" }, "tone": "ok" } },
+        "db": { "loadPct": 44, "badge": { "text": { "vi": "Ổn định", "en": "Healthy" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết chiến lược Cache", "en": "Caching Strategy Recap" },
+        "lines": [
+          { "text": { "vi": "Đủ dung lượng + Invalidation + TTL Jitter", "en": "Right capacity + Invalidation + Jitter" }, "tone": "good" },
+          { "text": { "vi": "Bloom Filter chặn truy vấn ID không có", "en": "Bloom Filter blocks ghost IDs" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "eviction": {
+      "sim": "S4-02/eviction",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "cache", "key": "capacityKeys" },
+          { "node": "cache", "key": "ttlSec" },
+          { "node": "db", "key": "sizeFactor" },
+          { "node": "app", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 130 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 130 }],
+      "focus": { "nodes": ["cache", "db"] }
+    }
+  }
+}

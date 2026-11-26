@@ -1,0 +1,23 @@
+{
+  "id": "S7-04",
+  "slug": "S7-04-case-ride-hailing-and-geo",
+  "level": 7,
+  "order": 4,
+  "title": "Case: Hệ thống gọi xe và chỉ mục không gian",
+  "summary": "Thiết kế hệ thống định vị và ghép tài xế thời gian thực: lập chỉ mục không gian bằng Geohash và Quadtree, chịu tải ghi 250.000 cập nhật vị trí/giây từ 1 triệu tài xế và xử lý điểm nóng (hot cell) ở khu vực sân bay.",
+  "durationMin": 20,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Ước lượng lưu lượng ghi vị trí từ hàng triệu tài xế gửi tọa độ định kỳ" },
+    { "vi": "So sánh Geohash (lưới cố định theo tiền tố chuỗi) và Quadtree (chia cây thích ứng theo mật độ)" },
+    { "vi": "Nhận diện hiện tượng điểm nóng (hot cell) khi dồn quá nhiều tài xế vào một ô Geohash sân bay" },
+    { "vi": "Chia nhỏ ô nóng và phân mảnh Geo Index Shards để cân bằng tải ghi và tìm kiếm lân cận" }
+  ],
+  "tags": ["case-study", "ride-hailing", "geohash", "quadtree", "hot-key", "sharding"],
+  "prerequisites": ["S2-09", "S0-05"],
+  "related": ["S7-01", "S2-10"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế hệ thống gọi xe và chỉ mục không gian: Geohash/Quadtree, tải ghi 250.000 cập nhật vị trí/giây, điểm nóng sân bay và ghép tài xế."
+  }
+}

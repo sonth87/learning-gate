@@ -1,0 +1,30 @@
+{
+  "id": "S6-04",
+  "slug": "S6-04-real-interview-strategy",
+  "level": 6,
+  "order": 4,
+  "title": "Chiến lược phỏng vấn trên hệ thống thực tế",
+  "summary": "Áp dụng khung SNAKE vào bốn bài toán kinh điển — Twitter, YouTube, WhatsApp và Google Drive — nhận diện đúng điểm nghẽn đặc thù và trọng tâm cần đào sâu ở từng hệ thống.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Xác định trọng tâm cốt lõi của từng nhóm hệ thống: Fan-out (Twitter), Encoding và CDN (YouTube), Giao tiếp thời gian thực (WhatsApp), Đồng bộ khối dữ liệu (Google Drive)" },
+    { "vi": "Áp dụng 5 chặng SNAKE để dẫn dắt câu trả lời có số liệu ước lượng và hợp đồng API rõ ràng" },
+    { "vi": "Phân tích chiến lược Hybrid Fan-out cho tài khoản thường và tài khoản có hàng triệu người theo dõi" },
+    { "vi": "Chuyển đổi bài toán phỏng vấn thành cấu hình đáp ứng SLO trong giới hạn ngân sách" }
+  ],
+  "tags": ["interview-strategy", "snake", "twitter", "youtube", "whatsapp", "google-drive"],
+  "prerequisites": ["S6-02", "S6-03"],
+  "related": ["S5-03", "S7-01", "S7-05"],
+  "dtsRef": "design-chat",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-4-real-interview-strategy.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-4-real-interview-strategy.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn bằng lời mới: bỏ ngôi thứ nhất và các câu kể phỏng vấn cá nhân, chuyển sơ đồ tĩnh sang các scene memory-2d phân tích sâu 4 hệ thống, gắn liên kết tới các bài chuyên sâu S5-03, S7-01, S7-05 và bổ sung mô phỏng headless cho design-constraint."
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "version": 1,
+  "base": "s1-distance",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng toàn cầu", "en": "Global Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng ở xa như London hoặc Sydney gửi tối đa 9.000 req/s.", "en": "Distant users (London/Sydney) sending up to 9,000 req/s." },
+        "how": { "vi": "Kết nối tới Edge POP gần nhất thay vì vượt đại dương về Origin.", "en": "Connects to nearest Edge POP instead of crossing oceans to Origin." },
+        "why": { "vi": "Rút ngắn độ trễ khứ hồi (RTT) từ hàng trăm ms xuống còn vài chục ms.", "en": "Cuts round-trip time from hundreds of ms down to tens of ms." }
+      }
+    },
+    "edge": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "globe",
+      "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+      "inspector": {
+        "what": { "vi": "Cụm Edge Server gần người dùng, giữ lại tới 90% lượt đọc khi đã ấm.", "en": "Edge POPs near users offloading up to 90% of reads once warm." },
+        "how": { "vi": "Khởi đầu ở trạng thái nguội (warm = 0) và làm ấm dần trong 15 giây đầu.", "en": "Starts cold (warm = 0) and warms up over the first 15 seconds." },
+        "why": { "vi": "Hấp thụ các đợt tăng tải đột ngột (spike) ngay ở biên mạng.", "en": "Absorbs traffic spikes at the network edge before reaching Origin." }
+      }
+    },
+    "shield": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "shield",
+      "label": { "vi": "Origin Shield", "en": "Origin Shield" },
+      "inspector": {
+        "what": { "vi": "Tầng đệm tập trung đặt trước Origin để gom các lượt miss từ nhiều Edge.", "en": "Mid-tier cache aggregating misses from distributed Edge POPs." },
+        "how": { "vi": "Gộp các yêu cầu trùng lặp (Singleflight) nên Origin chỉ bị hỏi một lần mỗi file.", "en": "Coalesces duplicate misses so Origin is queried once per asset." },
+        "why": { "vi": "Ngăn 200 điểm Edge cùng lúc gọi về Origin khi tài nguyên mới phát hành.", "en": "Prevents 200 Edge POPs from flooding Origin on new releases." }
+      }
+    },
+    "origin": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "server",
+      "label": { "vi": "Origin Server", "en": "Origin Server" },
+      "inspector": {
+        "what": { "vi": "Máy chủ gốc (2 instance, tổng năng lực 1.400 req/s).", "en": "Origin server tier (2 instances, 1,400 req/s total capacity)." },
+        "how": { "vi": "Chỉ nhận các lượt Cache Miss đi qua cả Edge và Origin Shield.", "en": "Only receives requests that miss both Edge and Origin Shield." },
+        "why": { "vi": "Nhờ Edge + Shield, tải thực tế về Origin luôn nằm dưới ngưỡng bão hòa ngay cả khi tải biên tăng gấp 3.", "en": "Stays safely below saturation even during 3x edge traffic spikes." }
+      }
+    }
+  },
+  "links": {
+    "client-edge": { "inspector": { "what": { "vi": "Đường truyền ngắn từ người dùng tới Edge gần nhất.", "en": "Short hop from user to nearest Edge." }, "how": { "vi": "Độ trễ thấp trong cùng khu vực địa lý.", "en": "Low regional latency." }, "why": { "vi": "Tránh chặng Internet xuyên lục địa cho phần lớn request.", "en": "Avoids transoceanic round trips for most requests." } } },
+    "edge-shield": { "inspector": { "what": { "vi": "Đường truyền từ Edge về Origin Shield khi Edge Miss.", "en": "Backhaul from Edge to Origin Shield on miss." }, "how": { "vi": "Đi qua mạng đường trục (Internet RTT).", "en": "Traverses WAN backbone." }, "why": { "vi": "Chỉ ~10% lượt đọc sau khi Edge ấm phải đi qua chặng này.", "en": "Only ~10% of reads traverse this link once Edge is warm." } } },
+    "shield-origin": { "inspector": { "what": { "vi": "Đường nội bộ từ Origin Shield vào Origin Server.", "en": "Internal link from Shield to Origin." }, "how": { "vi": "Chỉ chuyển các lượt miss thực sự chưa có ở Shield.", "en": "Forwards only true misses absent from Shield." }, "why": { "vi": "Bảo vệ Origin khỏi bão miss khi Edge nguội.", "en": "Protects Origin from cold-edge miss storms." } } }
+  },
+  "zones": {
+    "origin-dc": { "nodeIds": ["shield", "origin"], "label": { "vi": "TRUNG TÂM DỮ LIỆU GỐC", "en": "ORIGIN DATACENTER" }, "tone": "neutral" }
+  },
+  "scenes": {
+    "s1-distance": {
+      "show": { "nodes": ["client", "origin"] },
+      "state": {
+        "origin": { "loadPct": 92, "highlighted": true, "badge": { "text": { "vi": "RTT > 200 ms", "en": "RTT > 200 ms" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giới hạn vật lý của khoảng cách", "en": "Physical Distance Limit" },
+        "lines": [
+          { "text": { "vi": "Mọi người dùng ở xa đều phải gọi về Origin", "en": "Distant users hit Origin directly" }, "tone": "bad" },
+          { "text": { "vi": "RTT xuyên lục địa đặt sàn trễ hàng trăm ms", "en": "Cross-ocean RTT sets high latency floor" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-edge-hit": {
+      "show": { "nodes": ["client", "edge", "origin"] },
+      "state": {
+        "edge": { "loadPct": 18, "highlighted": true, "badge": { "text": { "vi": "Offload 90%", "en": "90% Offload" }, "tone": "ok" } },
+        "origin": { "loadPct": 22, "badge": { "text": { "vi": "Nhận 10%", "en": "10% load" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đặt CDN Edge gần người dùng", "en": "CDN Edge Caching" },
+        "lines": [
+          { "text": { "vi": "90% lượt đọc trả ngay tại Edge gần nhất", "en": "90% of reads served right at Edge" }, "tone": "good" },
+          { "text": { "vi": "Tải Origin giảm từ 9.000 xuống ~900 req/s", "en": "Origin load drops 9,000 → ~900 req/s" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-headers": {
+      "show": { "nodes": ["client", "edge", "origin"] },
+      "state": {
+        "edge": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Cache-Control", "en": "Cache-Control" }, "tone": "ok" } },
+        "origin": { "loadPct": 25 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Điều khiển bằng HTTP Headers", "en": "HTTP Cache Headers" },
+        "lines": [
+          { "text": { "vi": "Tài nguyên tĩnh: public, immutable", "en": "Static assets: public, immutable" }, "tone": "good" },
+          { "text": { "vi": "Trang cá nhân: private (cấm lưu ở Edge)", "en": "Personal pages: private (no Edge cache)" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-versioning": {
+      "show": { "nodes": ["client", "edge", "origin"] },
+      "state": {
+        "edge": { "loadPct": 16, "highlighted": true, "badge": { "text": { "vi": "app.v2.js", "en": "app.v2.js" }, "tone": "ok" } },
+        "origin": { "loadPct": 20 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đặt tên file theo mã băm phiên bản", "en": "Versioned URLs" },
+        "lines": [
+          { "text": { "vi": "Đổi nội dung → đổi URL mới (app.def456.js)", "en": "Content change → new URL hash" }, "tone": "good" },
+          { "text": { "vi": "Không cần Purge, cập nhật tức thì", "en": "Instant rollout without Purge API" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-edge-live": {
+      "show": { "nodes": ["client", "edge", "shield", "origin"] },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Edge nguội lúc đầu & Spike 9.000 req/s", "en": "Cold Edge & 9,000 req/s Spike" },
+        "lines": [
+          { "text": { "vi": "t = 0..15 s: Edge nguội, miss dồn về sau", "en": "t = 0..15s: Cold Edge warms up" }, "tone": "amber" },
+          { "text": { "vi": "t = 25 s: Spike 9.000 req/s sau khi Edge ấm", "en": "t = 25s: 9,000 req/s spike on warm Edge" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-private": {
+      "show": { "nodes": ["client", "edge", "shield", "origin"] },
+      "state": {
+        "edge": { "loadPct": 14, "badge": { "text": { "vi": "Bỏ qua Cache", "en": "Bypass" }, "tone": "warn" } },
+        "origin": { "loadPct": 48, "highlighted": true, "badge": { "text": { "vi": "private", "en": "private" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "edge-shield": { "style": "dashed", "label": { "vi": "Cache-Control: private", "en": "Cache-Control: private" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Trang cá nhân: Cache-Control private", "en": "Personal Pages: private" },
+        "lines": [
+          { "text": { "vi": "Tuyệt đối không lưu dữ liệu riêng tư ở Edge", "en": "Never cache user-specific HTML at Edge" }, "tone": "bad" },
+          { "text": { "vi": "Origin Shield gom miss cho phần tĩnh chung", "en": "Origin Shield protects Origin for shared files" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-recap": {
+      "show": { "nodes": ["client", "edge", "shield", "origin"] },
+      "state": {
+        "edge": { "loadPct": 18, "highlighted": true, "badge": { "text": { "vi": "Hit ≈ 90%", "en": "Hit ≈ 90%" }, "tone": "ok" } },
+        "shield": { "loadPct": 10, "badge": { "text": { "vi": "Lớp đệm", "en": "Shield" }, "tone": "ok" } },
+        "origin": { "loadPct": 22, "badge": { "text": { "vi": "An toàn", "en": "Protected" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết CDN & Edge Computing", "en": "CDN & Edge Recap" },
+        "lines": [
+          { "text": { "vi": "Edge giảm RTT + Origin Shield gộp miss", "en": "Edge cuts RTT + Shield collapses misses" }, "tone": "good" },
+          { "text": { "vi": "Versioned URL + Cache-Control chuẩn xác", "en": "Versioned URLs + proper Cache-Control" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "edge-offload": {
+      "sim": "S4-03/edge-offload",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "edge", "key": "ttlSec" },
+          { "node": "edge", "key": "singleflight" },
+          { "node": "shield", "key": "capacityKeys" },
+          { "node": "origin", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng biên", "en": "Edge Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 120 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 120 }],
+      "focus": { "nodes": ["edge", "shield", "origin"] }
+    }
+  }
+}

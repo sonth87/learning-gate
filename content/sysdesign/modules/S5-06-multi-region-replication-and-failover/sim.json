@@ -1,0 +1,174 @@
+{
+  "sims": [
+    {
+      "id": "S5-06/region-failover",
+      "scenario": {
+        "id": "S5-06/region-failover",
+        "seed": 5601,
+        "durationSec": 45,
+        "mix": { "readRatio": 0.8 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2000 },
+        "events": [
+          { "at": 20, "type": "crash", "node": "app_a" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng toàn cầu", "en": "Global Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "geo_lb",
+              "kind": "lb",
+              "label": { "vi": "Global Router", "en": "Global Router" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app_a",
+              "kind": "service",
+              "label": { "vi": "App Region A", "en": "App Region A" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.25,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Instance Region A", "en": "Region A Instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Region A mất kết nối", "en": "Region A outage" } }
+              ],
+              "zone": "region-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.2 },
+              "params": { "replicas": 2, "poolSize": 32 }
+            },
+            {
+              "id": "app_b",
+              "kind": "service",
+              "label": { "vi": "App Region B", "en": "App Region B" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Instance Region B", "en": "Region B Instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "region-b",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.2 },
+              "params": { "replicas": 1, "poolSize": 32 }
+            },
+            {
+              "id": "db_a",
+              "kind": "sql",
+              "label": { "vi": "DB Primary (Region A)", "en": "DB Primary (Region A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ DB Region A", "en": "DB A Size" },
+                  "min": 1,
+                  "max": 3,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "region-a",
+              "capacity": { "opsPerSec": 3500 },
+              "latency": { "baseMs": 5, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "maxConnections": 500 }
+            },
+            {
+              "id": "db_b",
+              "kind": "sql",
+              "label": { "vi": "DB Replica (Region B)", "en": "DB Replica (Region B)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "region-b",
+              "capacity": { "opsPerSec": 3500 },
+              "latency": { "baseMs": 5, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-geo", "from": "client", "to": "geo_lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "geo-appa", "from": "geo_lb", "to": "app_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "geo-appb", "from": "geo_lb", "to": "app_b", "mode": "sync", "netClass": "cross-region", "netMs": 45, "timeoutMs": 1500 },
+            { "id": "appa-dba", "from": "app_a", "to": "db_a", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "appb-dbb", "from": "app_b", "to": "db_b", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            {
+              "id": "appb-dba",
+              "from": "app_b",
+              "to": "db_a",
+              "mode": "sync",
+              "netClass": "cross-region",
+              "netMs": 100,
+              "timeoutMs": 1200,
+              "onMissOf": "db_b",
+              "fallback": "fail",
+              "retry": { "max": 2, "backoff": "none" }
+            },
+            { "id": "dba-dbb", "from": "db_a", "to": "db_b", "mode": "replicate", "netClass": "cross-region", "netMs": 100 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "geo_lb": "split",
+            "app_a": "all-sequential",
+            "app_b": "split"
+          }
+        }
+      }
+    }
+  ]
+}

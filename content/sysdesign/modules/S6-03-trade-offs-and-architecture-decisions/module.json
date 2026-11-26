@@ -1,0 +1,30 @@
+{
+  "id": "S6-03",
+  "slug": "S6-03-trade-offs-and-architecture-decisions",
+  "level": 6,
+  "order": 3,
+  "title": "Đánh đổi kiến trúc và ra quyết định bằng số liệu",
+  "summary": "Không có giải pháp hoàn hảo trong thiết kế hệ thống, chỉ có sự đánh đổi phù hợp ngữ cảnh. Học cách so sánh Consistency–Availability, Latency–Cost, Simplicity–Scalability và viết ADR có số liệu bảo vệ.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân tích ba cặp đánh đổi cốt lõi: Consistency so với Availability, Latency so với Cost, Simplicity so với Scalability" },
+    { "vi": "Áp dụng trực giác CAP và ma trận đánh đổi vào từng loại tính năng (thanh toán, tồn kho, lượt thích)" },
+    { "vi": "So sánh A/B hai phương án kiến trúc trên cùng một mức tải bằng các chỉ số p99, lỗi và chi phí theo giờ" },
+    { "vi": "Viết Architecture Decision Record (ADR) ngắn gọn gồm bối cảnh, phương án cân nhắc, quyết định và hệ quả" }
+  ],
+  "tags": ["trade-offs", "adr", "cap", "cost-optimization", "architecture-decisions"],
+  "prerequisites": ["S6-01", "S3-01", "S0-02"],
+  "related": ["S6-02", "S5-06"],
+  "dtsRef": "cap",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-3-trade-offs-and-architecture-decision-making.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-3-trade-offs-and-architecture-decision-making.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn bằng lời mới: bỏ giai thoại thăng cấp và hội thoại mở đầu ở bản gốc, dựng scene isometric so sánh A/B kết hợp memory-2d cho ma trận đánh đổi và mẫu ADR, kèm bài tập design-constraint."
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S5-01.q1",
+    "type": "mc",
+    "q": "Vì sao một startup nhỏ (< 10 kỹ sư) mới làm sản phẩm không nên khởi đầu bằng 10 Microservices?",
+    "code": "",
+    "choices": [
+      "Vì Microservices không chạy được trên Docker",
+      "Vì độ phức tạp mạng phân tán, triển khai nhiều repo và gỡ lỗi xuyên dịch vụ làm chậm tốc độ phát triển khi chưa có quy mô",
+      "Vì Monolith luôn nhanh hơn Microservices ở mọi quy mô công ty",
+      "Vì Microservices không dùng được cơ sở dữ liệu quan hệ"
+    ],
+    "answer": 1,
+    "explain": "Ở giai đoạn đầu, tốc độ lặp sản phẩm quan trọng nhất. Modular Monolith tránh chi phí vận hành phân tán mà vẫn giữ ranh giới sạch cho tương lai."
+  },
+  {
+    "id": "S5-01.q2",
+    "type": "mc",
+    "q": "Dấu hiệu nào sau đây chỉ ra hệ thống đang rơi vào phản mẫu Distributed Monolith?",
+    "code": "",
+    "choices": [
+      "Mỗi service sở hữu một Database riêng và giao tiếp qua API",
+      "Nhiều service dùng chung một Database và phải triển khai đồng thời cùng lúc mới chạy đúng",
+      "Dùng API Gateway định tuyến tới các service",
+      "Áp dụng Contract Test trong quy trình CI/CD"
+    ],
+    "answer": 1,
+    "explain": "Distributed Monolith tách thành nhiều tiến trình qua mạng nhưng vẫn dính chặt dữ liệu và chu kỳ phát hành, gánh cả nhược điểm của Monolith lẫn hệ phân tán."
+  },
+  {
+    "id": "S5-01.q3",
+    "type": "tf",
+    "q": "Khi tách từ Monolith sang Microservices, mỗi service nên sở hữu Database riêng theo ranh giới nghiệp vụ (Bounded Context) thay vì chia sẻ trực tiếp bảng dữ liệu với service khác.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Sở hữu Database riêng giúp các nhóm tự do thay đổi cấu trúc dữ liệu nội bộ, chọn loại DB phù hợp và không làm hỏng dịch vụ láng giềng."
+  },
+  {
+    "id": "S5-01.q4",
+    "type": "mc",
+    "q": "Trong mẫu di chuyển Strangler Fig, thành phần nào đóng vai trò chuyển dần từng đường dẫn (như /payments/*) từ Monolith sang service mới?",
+    "code": "",
+    "choices": [
+      "Dead Letter Queue",
+      "API Gateway hoặc Reverse Proxy ở cửa ngõ",
+      "Trình biên dịch cơ sở dữ liệu",
+      "Cron job xóa bảng"
+    ],
+    "answer": 1,
+    "explain": "API Gateway đứng ở biên cho phép định tuyến thử nghiệm một tỷ lệ nhỏ lưu lượng sang service mới và quay lui tức thì nếu có lỗi."
+  },
+  {
+    "id": "S5-01.q5",
+    "type": "output",
+    "q": "Một trang chi tiết đơn hàng trong Microservices gọi nối tiếp 4 service nội bộ (mỗi chặng mạng mất 2 ms khứ hồi và mỗi service xử lý 10 ms). Tổng độ trễ xử lý nội bộ là bao nhiêu ms? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "48",
+    "explain": "4 chặng × (2 ms mạng + 10 ms xử lý) = 48 ms. Trong Monolith, lời gọi hàm cùng bộ nhớ gần như bằng 0 ms."
+  }
+]

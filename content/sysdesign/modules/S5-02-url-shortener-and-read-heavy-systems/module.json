@@ -1,0 +1,30 @@
+{
+  "id": "S5-02",
+  "slug": "S5-02-url-shortener-and-read-heavy-systems",
+  "level": 5,
+  "order": 2,
+  "title": "Hệ thống Read-Heavy: URL Shortener và phân phối nội dung",
+  "summary": "Thiết kế hệ thống 99% đọc với bài toán URL Shortener ở mức 4.000–12.000 req/s: ước lượng dung lượng 5 năm, sinh mã Base62 chống đoán, chọn mã 301 vs 302, đa tầng đệm CDN + Cache + NoSQL và đếm lượt nhấp bất đồng bộ.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Tính toán lưu lượng đỉnh, dung lượng lưu trữ 5 năm và bộ nhớ đệm nóng cho hệ thống tỷ lệ đọc/ghi 100:1" },
+    { "vi": "So sánh chiến lược sinh mã ngắn bằng hàm băm (Hash + va chạm) với bộ đếm cấp theo lô + Base62 + xáo ID" },
+    { "vi": "Phân tích đánh đổi giữa HTTP 301 (cache ở trình duyệt) và HTTP 302 (đo lường đầy đủ) khi chuyển hướng" },
+    { "vi": "Thiết kế đường đọc nhiều tầng (CDN → Cache → NoSQL) và tách luồng thống kê lượt nhấp qua Queue" }
+  ],
+  "tags": ["url-shortener", "read-heavy", "base62", "cdn", "cache", "nosql"],
+  "prerequisites": ["S2-02", "S2-07", "S2-09"],
+  "related": ["S1-05", "S4-03", "S5-03"],
+  "dtsRef": "design-url-shortener",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-5/lessons/lesson-2-head-heavy-systems.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-2-head-heavy-systems.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn từ bài gốc: bỏ sơ đồ mermaid, bổ sung mô phỏng tải read-heavy 99% tăng từ 4.000 lên 12.000 req/s qua CDN → Cache → NoSQL, bài tập ước lượng dung lượng 5 năm và thử thách sửa cấu hình."
+  }
+}

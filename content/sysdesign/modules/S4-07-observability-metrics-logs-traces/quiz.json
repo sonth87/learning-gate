@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-07.q1",
+    "type": "mc",
+    "q": "Trong ba trụ cột Observability (Metrics, Logs, Traces), trụ cột nào trả lời nhanh nhất câu hỏi 'Một request cụ thể đang bị chậm ở dịch vụ nào trên đường đi qua 5 microservice'?",
+    "code": "",
+    "choices": [
+      "Metrics tổng hợp CPU của từng máy",
+      "Distributed Tracing (biểu đồ Trace Waterfall theo trace_id)",
+      "Chỉ xem dung lượng ổ đĩa trống",
+      "Kiểm tra cấu hình DNS"
+    ],
+    "answer": 1,
+    "explain": "Distributed Tracing theo dõi một request xuyên suốt nhiều dịch vụ qua `trace_id`, tách thành từng span có thời gian bắt đầu và kết thúc để chỉ rõ chặng chậm nhất."
+  },
+  {
+    "id": "S4-07.q2",
+    "type": "mc",
+    "q": "Bộ chỉ số RED dùng để giám sát các microservice gồm những đại lượng nào?",
+    "code": "",
+    "choices": [
+      "RAM, Energy, Disk",
+      "Rate (lưu lượng), Errors (tỷ lệ lỗi), Duration (độ trễ phân vị)",
+      "Read, Execute, Delete",
+      "Retries, Evictions, Deadlocks"
+    ],
+    "answer": 1,
+    "explain": "Phương pháp RED tập trung vào ba tín hiệu phản ánh trực tiếp trải nghiệm dịch vụ: Rate (số req/s), Errors (tỷ lệ lỗi) và Duration (thường đo bằng p50, p95, p99)."
+  },
+  {
+    "id": "S4-07.q3",
+    "type": "tf",
+    "q": "Nếu một API có 99 request mất 50 ms và 1 request mất 5.050 ms, giá trị trung bình (100 ms) vẫn phản ánh đầy đủ trải nghiệm tồi tệ của 1% người dùng đó.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Giá trị trung bình che giấu các ngoại lệ ở phần đuôi. Cần dùng phân vị p95 và p99 để nhìn thấy đúng độ trễ mà nhóm người dùng chậm nhất đang gánh chịu."
+  },
+  {
+    "id": "S4-07.q4",
+    "type": "mc",
+    "q": "Nguyên tắc đặt cảnh báo nào giúp giảm tình trạng mệt mỏi vì báo động giả (alert fatigue)?",
+    "code": "",
+    "choices": [
+      "Gửi tin nhắn cảnh báo mỗi 1 phút bất cứ khi nào CPU vượt 70%",
+      "Cảnh báo dựa trên triệu chứng ảnh hưởng người dùng (SLO p99, Error Rate và tốc độ đốt Error Budget) kèm hướng dẫn xử lý cụ thể",
+      "Chỉ bật cảnh báo vào ban ngày",
+      "Tắt toàn bộ cảnh báo của dịch vụ phụ thuộc"
+    ],
+    "answer": 1,
+    "explain": "CPU cao chưa chắc làm người dùng bị lỗi, còn Error Rate hoặc p99 vượt SLO phản ánh trực tiếp tác động thật. Cảnh báo theo Burn Rate vừa nhạy với sự cố lớn vừa tránh nhiễu."
+  },
+  {
+    "id": "S4-07.q5",
+    "type": "mc",
+    "q": "Mục tiêu chính của tài liệu Postmortem sau sự cố là gì?",
+    "code": "",
+    "choices": [
+      "Tìm cá nhân gây lỗi để kỷ luật",
+      "Phân tích dòng thời gian, nguyên nhân gốc rễ mang tính hệ thống và đề ra hành động cải thiện quy trình/công cụ để lỗi tương tự không lặp lại",
+      "Xóa bớt log cũ để giải phóng bộ nhớ",
+      "Ẩn thông tin sự cố khỏi các nhóm khác"
+    ],
+    "answer": 1,
+    "explain": "Postmortem không đổ lỗi (blameless) tập trung vào câu hỏi vì sao hệ thống cho phép lỗi xảy ra và làm sao phát hiện, ngăn chặn tự động ở lần sau."
+  },
+  {
+    "id": "S4-07.q6",
+    "type": "output",
+    "q": "Một dịch vụ cam kết SLO khả dụng 99,9% trong một chu kỳ 30 ngày (tức 43.200 phút). Ngân sách lỗi (Error Budget) tối đa của chu kỳ đó là bao nhiêu phút? (nhập số thập phân dùng dấu chấm, ví dụ 12.5)",
+    "code": "",
+    "choices": [],
+    "answer": "43.2",
+    "explain": "Error Budget = (1 − 0,999) × 43.200 phút = 0,001 × 43.200 = 43,2 phút."
+  }
+]

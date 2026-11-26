@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "base": "s2-blast-radius",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng gửi yêu cầu xem sản phẩm và thanh toán đơn hàng.", "en": "Users browsing catalog and placing orders." },
+        "how": { "vi": "Gửi lưu lượng chuẩn 1.500 req/s, có thể vọt lên 3.000 req/s.", "en": "Sends 1,500 req/s steady load, spiking to 3,000 req/s." },
+        "why": { "vi": "Mọi độ trễ cộng dồn trên các chặng nội bộ đều dồn vào trải nghiệm người dùng.", "en": "Internal multi-hop latency accumulates directly on user experience." }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": { "vi": "Cửa ngõ định tuyến và áp dụng Strangler Fig chuyển dần đường dẫn sang service mới.", "en": "Entry gateway routing requests and enabling Strangler Fig migration." },
+        "how": { "vi": "Mỗi instance xử lý tối đa 3.000 req/s; cần ≥ 2 instance để xóa SPOF.", "en": "Handles 3,000 req/s per instance; needs ≥ 2 instances for zero SPOF." },
+        "why": { "vi": "Tách biệt đường dẫn công khai khỏi cấu trúc dịch vụ phía sau.", "en": "Decouples external routes from internal service topology." }
+      }
+    },
+    "orders": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Orders Service", "en": "Orders Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ điều phối đơn hàng (μ = 1.600 req/s mỗi instance).", "en": "Order orchestration service (μ = 1,600 req/s per instance)." },
+        "how": { "vi": "Gọi sang Catalog để kiểm tra hàng, lưu Orders DB và gọi Payments.", "en": "Calls Catalog, writes Orders DB, and invokes Payments." },
+        "why": { "vi": "Là nút trung tâm nên dễ bị nghẽn dây chuyền nếu Payments chậm.", "en": "Central orchestrator vulnerable to downstream Payments stalls." }
+      }
+    },
+    "catalog": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Catalog Service", "en": "Catalog Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ danh mục sản phẩm (μ = 2.000 req/s mỗi instance).", "en": "Product catalog service (μ = 2,000 req/s per instance)." },
+        "how": { "vi": "Phục vụ thông tin sản phẩm từ Catalog DB riêng.", "en": "Serves product metadata from its dedicated Catalog DB." },
+        "why": { "vi": "Tách riêng giúp nhóm Catalog triển khai độc lập với nhóm Thanh toán.", "en": "Allows Catalog team to deploy independently of Payments." }
+      }
+    },
+    "payments": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "cpu",
+      "label": { "vi": "Payments Service", "en": "Payments Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ thanh toán (nhận ~30% lưu lượng đặt hàng, μ = 1.200 req/s).", "en": "Payments service (receives ~30% order checkout calls, μ = 1,200 req/s)." },
+        "how": { "vi": "Có thể bị chậm khi đối tác cổng thanh toán phản hồi chậm.", "en": "Can experience latency spikes from external payment gateways." },
+        "why": { "vi": "Cần Timeout và Circuit Breaker ở phía Orders để không kéo sập toàn trang.", "en": "Requires Timeout and Circuit Breaker on caller side to isolate faults." }
+      }
+    },
+    "db_ord": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Orders DB", "en": "Orders DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu riêng của Orders Service.", "en": "Dedicated database owned by Orders Service." },
+        "how": { "vi": "Chỉ Orders Service được quyền đọc ghi trực tiếp.", "en": "Accessed exclusively by Orders Service." },
+        "why": { "vi": "Tránh phản mẫu Distributed Monolith dùng chung bảng.", "en": "Prevents shared-database Distributed Monolith coupling." }
+      }
+    },
+    "db_cat": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Catalog DB", "en": "Catalog DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu riêng của Catalog Service.", "en": "Dedicated database owned by Catalog Service." },
+        "how": { "vi": "Chứa dữ liệu sản phẩm và tồn kho.", "en": "Stores product catalog and inventory data." },
+        "why": { "vi": "Cho phép chọn công nghệ lưu trữ tối ưu riêng cho đọc danh mục.", "en": "Enables storage tuning tailored to catalog reads." }
+      }
+    },
+    "db_pay": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Payments DB", "en": "Payments DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu giao dịch riêng của Payments Service.", "en": "Dedicated ledger database owned by Payments Service." },
+        "how": { "vi": "Lưu trạng thái thanh toán với tính nhất quán cao.", "en": "Stores payment transactions with strict consistency." },
+        "why": { "vi": "Cô lập dữ liệu tài chính nhạy cảm khỏi các miền khác.", "en": "Isolates sensitive financial records from other domains." }
+      }
+    }
+  },
+  "links": {
+    "client-gateway": { "inspector": { "what": { "vi": "Lưu lượng từ người dùng vào API Gateway.", "en": "Client traffic entering API Gateway." }, "how": { "vi": "Một điểm vào duy nhất cho mọi route.", "en": "Single external entry point." }, "why": { "vi": "Hỗ trợ định tuyến và chuyển đổi Strangler Fig.", "en": "Enables Strangler Fig routing." } } },
+    "gateway-orders": { "inspector": { "what": { "vi": "Gateway chuyển yêu cầu đơn hàng tới Orders Service.", "en": "Gateway forwards order requests to Orders Service." }, "how": { "vi": "Gọi qua mạng nội bộ DC.", "en": "Internal DC call." }, "why": { "vi": "Mỗi chặng cộng thêm độ trễ mạng và rủi ro timeout.", "en": "Each hop adds network latency and timeout risk." } } },
+    "orders-catalog": { "inspector": { "what": { "vi": "Orders gọi Catalog kiểm tra thông tin sản phẩm.", "en": "Orders calls Catalog for product details." }, "how": { "vi": "Gọi theo lô (batch) để tránh lặp N+1.", "en": "Batched lookup to avoid N+1 chatter." }, "why": { "vi": "Giữ độ trễ đa chặng ở mức thấp.", "en": "Keeps multi-hop latency low." } } },
+    "orders-payments": { "inspector": { "what": { "vi": "Orders gọi Payments để thanh toán (~30% tổng lưu lượng).", "en": "Orders invokes Payments (~30% of traffic)." }, "how": { "vi": "Cần cấu hình Timeout ngắn và Circuit Breaker.", "en": "Needs short Timeout and Circuit Breaker." }, "why": { "vi": "Ngăn lỗi chậm từ Payments lan ngược lên Orders.", "en": "Prevents slow Payments from stalling Orders." } } },
+    "orders-db_ord": { "inspector": { "what": { "vi": "Orders ghi đọc dữ liệu trên Orders DB.", "en": "Orders reads/writes Orders DB." }, "how": { "vi": "Sở hữu dữ liệu độc lập.", "en": "Independent data ownership." }, "why": { "vi": "Đảm bảo ranh giới Bounded Context.", "en": "Enforces Bounded Context boundary." } } },
+    "catalog-db_cat": { "inspector": { "what": { "vi": "Catalog đọc ghi trên Catalog DB.", "en": "Catalog reads/writes Catalog DB." }, "how": { "vi": "Sở hữu dữ liệu độc lập.", "en": "Independent data ownership." }, "why": { "vi": "Tự do nâng cấp schema Catalog.", "en": "Independent schema evolution." } } },
+    "payments-db_pay": { "inspector": { "what": { "vi": "Payments đọc ghi trên Payments DB.", "en": "Payments reads/writes Payments DB." }, "how": { "vi": "Sở hữu dữ liệu độc lập.", "en": "Independent data ownership." }, "why": { "vi": "Bảo vệ tính toàn vẹn giao dịch tài chính.", "en": "Protects financial ledger integrity." } } }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "gateway": { "col": 2, "row": 1 },
+    "orders": { "col": 4, "row": 1 },
+    "db_ord": { "col": 4, "row": 0 },
+    "catalog": { "col": 6, "row": 0 },
+    "db_cat": { "col": 8, "row": 0 },
+    "payments": { "col": 6, "row": 2 },
+    "db_pay": { "col": 8, "row": 2 }
+  },
+  "zones": {
+    "orders_ctx": {
+      "nodeIds": ["orders", "db_ord"],
+      "label": { "vi": "CONTEXT: ORDERS", "en": "CONTEXT: ORDERS" },
+      "tone": "neutral"
+    },
+    "catalog_ctx": {
+      "nodeIds": ["catalog", "db_cat"],
+      "label": { "vi": "CONTEXT: CATALOG", "en": "CONTEXT: CATALOG" },
+      "tone": "neutral"
+    },
+    "payments_ctx": {
+      "nodeIds": ["payments", "db_pay"],
+      "label": { "vi": "CONTEXT: PAYMENTS", "en": "CONTEXT: PAYMENTS" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-evolution-tape": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Dải tiến hóa kiến trúc v1 → v4", "en": "Architecture Evolution Spectrum v1 → v4" },
+        "subtitle": { "vi": "Mỗi bước chỉ kích hoạt khi quy mô đội ngũ và điểm nghẽn thực tế vượt quá mô hình hiện tại", "en": "Each stage is triggered only when team size and real bottlenecks outgrow the current stage" },
+        "cells": [
+          "v1: MVP Monolith (<10 dev)",
+          "v2: Scaled Monolith (LB + Cache)",
+          "v3: Modular Monolith (Ranh giới)",
+          "v4: Microservices (50+ dev)"
+        ],
+        "activeIndices": [0, 1, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "Nhanh nhất để thử sản phẩm", "tone": "green" },
+          { "index": 2, "label": "Chuẩn bị ranh giới sạch", "tone": "blue" },
+          { "index": 3, "label": "Độc lập team & DB riêng", "tone": "yellow" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Quy tắc vàng", "en": "Golden Rule" },
+          "value": { "vi": "Không nhảy thẳng lên v4 khi chưa có quy mô", "en": "Never start at v4 without scale triggers" },
+          "tone": "green"
+        }
+      }
+    },
+    "s2-blast-radius": {
+      "show": { "nodes": "*" },
+      "zones": ["orders_ctx", "catalog_ctx", "payments_ctx"],
+      "state": {
+        "gateway": { "loadPct": 25 },
+        "orders": { "loadPct": 30, "badge": { "text": { "vi": "DB riêng", "en": "Own DB" }, "tone": "ok" } },
+        "catalog": { "loadPct": 22, "badge": { "text": { "vi": "DB riêng", "en": "Own DB" }, "tone": "ok" } },
+        "payments": { "loadPct": 20, "badge": { "text": { "vi": "DB riêng", "en": "Own DB" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách theo Bounded Context", "en": "Bounded Context Isolation" },
+        "lines": [
+          { "text": { "vi": "Mỗi nhóm làm chủ 1 service + 1 database riêng", "en": "Each team owns 1 service + 1 dedicated DB" }, "tone": "good" },
+          { "text": { "vi": "Sự cố ở một miền không làm hỏng mã nguồn miền khác", "en": "Deployments and failures stay bounded" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-live-multihop": {
+      "show": { "nodes": "*" },
+      "zones": ["orders_ctx", "catalog_ctx", "payments_ctx"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng đa chặng & Sự cố Payments", "en": "Multi-Hop & Payments Slowdown" },
+        "lines": [
+          { "text": { "vi": "Tải 1.500 req/s đi qua Gateway → Orders → Catalog/Payments", "en": "1,500 req/s flows through Gateway → Orders → Catalog/Payments" }, "tone": "plain" },
+          { "text": { "vi": "Quan sát độ trễ đuôi khi Payments chậm từ giây 20", "en": "Watch tail latency when Payments slows at t = 20s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-distributed-monolith": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Phản mẫu Distributed Monolith", "en": "Distributed Monolith Pitfalls" },
+        "rightTitle": { "vi": "Giải pháp kiến trúc đúng", "en": "Proper Architecture Fix" },
+        "names": [
+          { "id": "shared-db", "name": "Nhiều service đọc chung 1 DB", "note": { "vi": "Đổi bảng là sập chéo", "en": "Schema change breaks neighbors" }, "targetId": "own-db", "style": "danger" },
+          { "id": "chatty", "name": "Gọi 20 lần lấy chi tiết đơn", "note": { "vi": "Độ trễ mạng nhân 20 lần", "en": "20x network hop latency" }, "targetId": "local-cache", "style": "danger" },
+          { "id": "lockstep", "name": "Phát hành cùng lúc nhiều service", "note": { "vi": "Mất quyền tự chủ triển khai", "en": "Loses independent deploy" }, "targetId": "contract", "style": "danger" }
+        ],
+        "objects": [
+          { "id": "own-db", "typeTag": "BOUNDARY", "value": "API + Event Ownership", "fields": ["Chỉ giao tiếp qua hợp đồng API", "Mỗi service tự quản schema"], "tone": "green", "badge": { "vi": "Tách rời dữ liệu", "en": "Data isolation" } },
+          { "id": "local-cache", "typeTag": "READ MODEL", "value": "Batch API / Local Read Copy", "fields": ["Cập nhật bản sao qua sự kiện", "Đọc cục bộ trong 1 chặng"], "tone": "green", "badge": { "vi": "Giảm hop mạng", "en": "Cuts network hops" } },
+          { "id": "contract", "typeTag": "CI/CD", "value": "Contract Testing", "fields": ["Kiểm tra tương thích ở CI", "Triển khai độc lập từng service"], "tone": "yellow", "badge": { "vi": "An toàn phát hành", "en": "Safe releases" } }
+        ]
+      }
+    },
+    "s5-strangler-tape": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Di chuyển Strangler Fig: Bóc tách Payments khỏi Monolith", "en": "Strangler Fig Migration: Extracting Payments" },
+        "subtitle": { "vi": "Thay thế từng phần qua API Gateway mà không phải dừng hệ thống hay viết lại từ đầu", "en": "Incrementally route traffic at the Gateway without downtime or Big Bang rewrites" },
+        "cells": [
+          "1. Đặt API Gateway",
+          "2. Dựng Payments + DB",
+          "3. Định tuyến thử 5%",
+          "4. Chuyển 100% route",
+          "5. Xóa code cũ"
+        ],
+        "activeIndices": [0, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "Cửa ngõ kiểm soát", "tone": "blue" },
+          { "index": 2, "label": "Canary & Rollback nhanh", "tone": "yellow" },
+          { "index": 4, "label": "Thu gọn Monolith", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Ưu điểm", "en": "Benefit" },
+          "value": { "vi": "Không downtime · Giảm rủi ro chuyển đổi", "en": "Zero downtime · Low migration risk" },
+          "tone": "green"
+        }
+      }
+    },
+    "s6-live-hardened": {
+      "show": { "nodes": "*" },
+      "zones": ["orders_ctx", "catalog_ctx", "payments_ctx"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Gia cố chuỗi Microservices", "en": "Hardening the Service Chain" },
+        "lines": [
+          { "text": { "vi": "Chịu tải chuẩn 1.500 req/s và đỉnh 3.000 req/s", "en": "Sustain 1,500 req/s steady and 3,000 req/s spike" }, "tone": "amber" },
+          { "text": { "vi": "Xóa SPOF ở Gateway & Orders trong ngân sách", "en": "Eliminate Gateway & Orders SPOFs within budget" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["orders_ctx", "catalog_ctx", "payments_ctx"],
+      "state": {
+        "gateway": { "loadPct": 25, "badge": { "text": { "vi": "2+ Strangler", "en": "2+ Strangler" }, "tone": "ok" } },
+        "orders": { "loadPct": 40, "badge": { "text": { "vi": "2+ Replicas", "en": "2+ Replicas" }, "tone": "ok" } },
+        "catalog": { "loadPct": 35, "badge": { "text": { "vi": "Độc lập", "en": "Independent" }, "tone": "ok" } },
+        "payments": { "loadPct": 30, "badge": { "text": { "vi": "Cô lập lỗi", "en": "Fault Isolated" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc tiến hóa bền vững", "en": "Sustainable Architecture Evolution" },
+        "lines": [
+          { "text": { "vi": "Start Monolith → Scale → Modular → Microservices", "en": "Start Monolith → Scale → Modular → Microservices" }, "tone": "good" },
+          { "text": { "vi": "Tách bằng Strangler Fig · Bảo vệ bằng Breaker", "en": "Migrate via Strangler Fig · Protect with Breakers" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sim": "S5-01/evolution",
+    "startAtSec": 0,
+    "autoplay": true,
+    "speed": 1,
+    "controls": {
+      "timeline": true,
+      "knobs": [
+        { "node": "gateway", "key": "replicas" },
+        { "node": "orders", "key": "replicas" },
+        { "node": "catalog", "key": "replicas" },
+        { "node": "payments", "key": "replicas" }
+      ]
+    },
+    "telemetry": [
+      { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+      { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 200 } },
+      { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+    ],
+    "slo": [
+      { "metric": "p99", "value": 150 }
+    ],
+    "focus": { "nodes": ["gateway", "orders", "payments"] }
+  }
+}

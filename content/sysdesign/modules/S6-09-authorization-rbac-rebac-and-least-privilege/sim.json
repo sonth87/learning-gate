@@ -1,0 +1,114 @@
+{
+  "sims": [
+    {
+      "id": "S6-09/authz-load",
+      "scenario": {
+        "id": "S6-09/authz-load",
+        "seed": 6609,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.8 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 200, "to": 1200, "overSec": 40 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Tenant Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gateway",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "authz",
+              "kind": "service",
+              "label": { "vi": "AuthZ Service", "en": "Policy Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance AuthZ", "en": "AuthZ instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": { "vi": "Truy vấn đồ thị quyền chưa cache làm nghẽn toàn luồng", "en": "Uncached permission graph lookups saturate AuthZ" }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 25, "cv": 0.25 },
+              "params": { "replicas": 1 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Multi-tenant DB", "en": "Multi-tenant DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "shards": 1, "maxConnections": 400, "poolSize": 16, "sizeFactor": 1, "queueLimit": 2000 }
+            }
+          ],
+          "links": [
+            { "id": "client-gateway", "from": "client", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gateway-authz", "from": "gateway", "to": "authz", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "authz-db", "from": "authz", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "gateway": "all-sequential",
+            "authz": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 200, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ],
+      "expect": {
+        "bottleneck": "authz"
+      }
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "version": 1,
+  "base": "s1-http-plaintext",
+  "layout": {
+    "device": { "col": 0, "row": 1 },
+    "lb": { "col": 2, "row": 1 },
+    "app": { "col": 4, "row": 1 },
+    "db": { "col": 6, "row": 1 },
+    "backup": { "col": 8, "row": 1 }
+  },
+  "nodes": {
+    "device": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Thiết bị", "en": "Client Device" },
+      "inspector": {
+        "what": { "vi": "Thiết bị người dùng gửi dữ liệu qua mạng công cộng (Wi-Fi, 4G).", "en": "End-user device sending traffic across public networks." },
+        "how": { "vi": "Xác minh chứng chỉ TLS của máy chủ trước khi gửi thông tin nhạy cảm.", "en": "Verifies server TLS certificate before transmitting sensitive payloads." },
+        "why": { "vi": "Chặn nghe lén và giả mạo (Man-in-the-Middle) ngay từ chặng đầu tiên.", "en": "Prevents eavesdropping and MitM tampering on the first hop." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Điểm kết thúc TLS (TLS Termination) từ Internet và chuyển tiếp qua mTLS nội bộ.", "en": "Terminates public TLS and forwards traffic via internal mTLS." },
+        "how": { "vi": "Tự động gia hạn chứng chỉ qua ACME và cảnh báo trước hạn 30 ngày.", "en": "Automates certificate renewal via ACME with 30-day expiry alerts." },
+        "why": { "vi": "Tránh sự cố chứng chỉ hết hạn lúc nửa đêm làm sập toàn bộ truy cập.", "en": "Prevents expired-certificate outages from taking down all traffic." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Service", "en": "App Service" },
+      "inspector": {
+        "what": { "vi": "Ứng dụng xử lý nghiệp vụ, lấy secret từ Secrets Manager khi khởi động.", "en": "Application service fetching runtime secrets from Secrets Manager." },
+        "how": { "vi": "Dùng mTLS giao tiếp nội bộ, gọi KMS bọc/mở DEK và token hóa số thẻ.", "en": "Uses mTLS internally, calls KMS for DEK wrapping, and tokenizes cards." },
+        "why": { "vi": "Không lưu mật khẩu hay khóa cứng trong mã nguồn hoặc biến môi trường tĩnh.", "en": "Keeps API keys and DB credentials out of source code and static configs." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu lưu bản mã được bảo vệ bởi DEK riêng, tách biệt khỏi KMS.", "en": "Database storing ciphertext encrypted with DEKs separate from KMS." },
+        "how": { "vi": "Mã hóa đĩa (TDE) kết hợp mã hóa từng cột nhạy cảm bằng Envelope Encryption.", "en": "Combines disk encryption with column-level Envelope Encryption." },
+        "why": { "vi": "Nếu tệp dữ liệu bị lộ, kẻ tấn công không đọc được nếu thiếu quyền gọi KMS.", "en": "Raw storage leaks remain unreadable without KMS decryption permissions." }
+      }
+    },
+    "backup": {
+      "shape": "db",
+      "tone": "yellow",
+      "label": { "vi": "Backup Storage", "en": "Backup Storage" },
+      "inspector": {
+        "what": { "vi": "Kho lưu bản sao lưu định kỳ (snapshot) phục vụ khôi phục sự cố.", "en": "Periodic snapshot storage for disaster recovery." },
+        "how": { "vi": "Bản sao lưu vẫn giữ nguyên trạng thái mã hóa; khóa KEK nằm hoàn toàn ở KMS.", "en": "Snapshots stay encrypted at rest while KEK never leaves KMS." },
+        "why": { "vi": "Ngăn thảm kịch lộ dữ liệu khách hàng nếu bucket lưu backup bị cấu hình sai quyền.", "en": "Protects customer data even if a backup bucket is misconfigured." }
+      }
+    }
+  },
+  "links": {
+    "device-lb": {
+      "inspector": {
+        "what": { "vi": "Chặng mạng công cộng từ thiết bị người dùng tới Load Balancer.", "en": "Public network hop from Client Device to Load Balancer." },
+        "how": { "vi": "Bắt buộc HTTPS / TLS 1.3 để mã hóa toàn bộ header, cookie và body.", "en": "Enforces HTTPS / TLS 1.3 to encrypt headers, cookies, and body." },
+        "why": { "vi": "Bảo vệ dữ liệu khi người dùng truy cập từ Wi-Fi công cộng.", "en": "Protects traffic over untrusted public Wi-Fi networks." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Chặng nội bộ giữa Load Balancer và App Service.", "en": "Internal hop between Load Balancer and App Service." },
+        "how": { "vi": "Áp dụng mutual TLS (mTLS): cả hai đầu đều xuất trình chứng chỉ xác thực.", "en": "Enforces mutual TLS (mTLS): both sides present and verify certificates." },
+        "why": { "vi": "Ngăn kẻ xâm nhập nội bộ nghe lén hoặc giả mạo dịch vụ trong mạng riêng.", "en": "Blocks lateral eavesdropping and spoofing inside the private network." }
+      }
+    },
+    "app-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ App Service xuống Database.", "en": "Connection from App Service to Database." },
+        "how": { "vi": "Sử dụng TLS và credential ngắn hạn được xoay vòng tự động bởi Secrets Manager.", "en": "Uses TLS and short-lived credentials rotated by Secrets Manager." },
+        "why": { "vi": "Giảm thiểu rủi ro nếu một kết nối hoặc mật khẩu bị rò rỉ.", "en": "Limits exposure if a credential is ever leaked." }
+      }
+    },
+    "db-backup": {
+      "inspector": {
+        "what": { "vi": "Luồng sao lưu dữ liệu từ Database sang Backup Storage.", "en": "Snapshot replication path from Database to Backup Storage." },
+        "how": { "vi": "Sao chép bản mã cùng DEK đã được bọc bởi KMS.", "en": "Copies encrypted blocks alongside KMS-wrapped DEKs." },
+        "why": { "vi": "Khóa giải mã không bao giờ đi cùng bản sao lưu.", "en": "Decryption keys never travel with the backup files." }
+      }
+    }
+  },
+  "zones": {
+    "datacenter": {
+      "nodeIds": ["lb", "app", "db", "backup"],
+      "label": { "vi": "MẠNG NỘI BỘ (ZERO TRUST)", "en": "INTERNAL NETWORK (ZERO TRUST)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-http-plaintext": {
+      "show": { "nodes": ["device", "lb", "app", "db"] },
+      "zones": ["datacenter"],
+      "state": {
+        "device": { "loadPct": 15, "badge": { "text": { "vi": "HTTP thường", "en": "Plain HTTP" }, "tone": "bad" } },
+        "lb": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Lộ token/mật khẩu", "en": "Exposed secrets" }, "tone": "bad" } },
+        "app": { "loadPct": 20 },
+        "db": { "loadPct": 20 }
+      },
+      "linkState": {
+        "device-lb": { "style": "danger", "label": { "vi": "Bản rõ trên Wi-Fi", "en": "Cleartext on Wi-Fi" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dữ liệu không mã hóa trên đường truyền", "en": "Unencrypted In-Transit Data" },
+        "lines": [
+          { "text": { "vi": "HTTP thường truyền token và mật khẩu dưới dạng chữ rõ", "en": "Plain HTTP sends tokens and passwords in cleartext" }, "tone": "bad" },
+          { "text": { "vi": "Bất kỳ điểm trung chuyển nào trên Wi-Fi đều đọc được", "en": "Any intermediary on public Wi-Fi can sniff payloads" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-tls-handshake": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Trình tự bắt tay TLS 1.3 (1-RTT) thiết lập kênh mã hóa", "en": "TLS 1.3 (1-RTT) Handshake Sequence" },
+        "subtitle": { "vi": "Dùng mã hóa bất đối xứng để thỏa thuận khóa phiên đối xứng", "en": "Uses asymmetric crypto to agree on a fast symmetric session key" },
+        "cells": [
+          "1. ClientHello",
+          "2. ServerHello + Cert",
+          "3. Verify Cert & Key",
+          "4. Derive Session Key",
+          "5. Encrypted Data"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 1, "label": "X.509 Cert", "tone": "purple" },
+          { "index": 3, "label": "AES-GCM Key", "tone": "green" }
+        ]
+      }
+    },
+    "s3-mtls-internal": {
+      "show": { "nodes": ["device", "lb", "app", "db"] },
+      "zones": ["datacenter"],
+      "state": {
+        "device": { "loadPct": 15 },
+        "lb": { "loadPct": 20, "badge": { "text": { "vi": "TLS 1.3 ngoài", "en": "Public TLS 1.3" }, "tone": "ok" } },
+        "app": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "mTLS 2 chiều", "en": "Mutual TLS" }, "tone": "ok" } },
+        "db": { "loadPct": 20, "badge": { "text": { "vi": "TLS nội bộ", "en": "Internal TLS" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "lb-app": { "label": { "vi": "Xác thực cả 2 đầu", "en": "Both sides verified" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "mTLS & Tự động gia hạn chứng chỉ", "en": "mTLS & Automated Cert Renewal" },
+        "lines": [
+          { "text": { "vi": "mTLS buộc cả client nội bộ và server xuất trình chứng chỉ", "en": "mTLS requires both internal caller and server certs" }, "tone": "good" },
+          { "text": { "vi": "Cài cert-manager tự gia hạn trước khi chứng chỉ hết hạn", "en": "Auto-renew certs via ACME before 3 AM expiry" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-envelope-kms": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Envelope Encryption: tách khóa khỏi dữ liệu & xoay vòng nhanh", "en": "Envelope Encryption: Key Hierarchy & Fast Rotation" },
+        "nodes": [
+          { "id": "kms", "x": 0, "y": -90, "label": "KMS Master Key (KEK)", "sub": { "vi": "Không bao giờ rời khỏi KMS", "en": "Never leaves KMS" }, "tone": "purple" },
+          { "id": "dek_wrapped", "x": -150, "y": 10, "label": "DEK đã bọc (Wrapped)", "sub": { "vi": "Lưu cạnh dữ liệu · xoay KEK chỉ bọc lại DEK", "en": "Stored with data · rotation only re-wraps DEK" }, "tone": "yellow" },
+          { "id": "dek_plain", "x": 150, "y": 10, "label": "DEK giải mã (RAM)", "sub": { "vi": "Mã hóa AES-256-GCM tốc độ cao", "en": "Fast AES-256-GCM in memory" }, "tone": "green" },
+          { "id": "data", "x": 150, "y": 95, "label": "Dữ liệu & Backup", "sub": { "vi": "Bản mã an toàn dù bucket lộ", "en": "Ciphertext safe even if bucket leaks" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "kms", "to": "dek_wrapped", "label": "bọc / mở khóa" },
+          { "from": "dek_wrapped", "to": "dek_plain", "label": "KMS Decrypt" },
+          { "from": "dek_plain", "to": "data", "label": "mã hóa bản rõ" }
+        ]
+      }
+    },
+    "s5-secrets-rotation": {
+      "show": { "nodes": ["device", "lb", "app", "db", "backup"] },
+      "zones": ["datacenter"],
+      "state": {
+        "lb": { "loadPct": 15 },
+        "app": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "Secrets Manager", "en": "Secrets Manager" }, "tone": "ok" } },
+        "db": { "loadPct": 20, "badge": { "text": { "vi": "Dynamic Creds", "en": "Dynamic Creds" }, "tone": "ok" } },
+        "backup": { "loadPct": 10, "badge": { "text": { "vi": "KMS Encrypted", "en": "KMS Encrypted" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Secrets Manager & Quét mã nguồn", "en": "Secrets Manager & CI Scanning" },
+        "lines": [
+          { "text": { "vi": "Cấm commit API key vào Git; quét tự động trên mọi PR", "en": "Never commit API keys; scan every PR in CI" }, "tone": "good" },
+          { "text": { "vi": "Secrets Manager cấp và xoay vòng mật khẩu DB tự động", "en": "Secrets Manager rotates DB credentials automatically" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-tokenization-e2ee": {
+      "show": { "nodes": ["device", "lb", "app", "db"] },
+      "zones": ["datacenter"],
+      "state": {
+        "device": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Khóa E2EE ở Client", "en": "Client E2EE Key" }, "tone": "ok" } },
+        "lb": { "loadPct": 15 },
+        "app": { "loadPct": 20, "badge": { "text": { "vi": "Chỉ thấy Token/Bản mã", "en": "Sees Token/Ciphertext" }, "tone": "warn" } },
+        "db": { "loadPct": 20, "badge": { "text": { "vi": "Không lưu số thẻ gốc", "en": "No raw PAN stored" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tokenization & Mã hóa đầu cuối (E2EE)", "en": "Tokenization & End-to-End Encryption" },
+        "lines": [
+          { "text": { "vi": "Tokenization: đổi số thẻ thành tok_9f2a, giảm phạm vi PCI", "en": "Tokenization: replace PAN with tok_9f2a to shrink PCI scope" }, "tone": "good" },
+          { "text": { "vi": "E2EE: ngay cả server trung gian cũng không giải mã được", "en": "E2EE: even intermediate servers cannot read message content" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  }
+}

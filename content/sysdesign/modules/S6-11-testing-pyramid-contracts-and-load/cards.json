@@ -1,0 +1,9 @@
+[
+  { "id": "S6-11.c1", "front": "Tháp Kiểm thử (Test Pyramid) gồm những tầng nào?", "back": "Từ đáy lên đỉnh: Unit Test (nhiều nhất, nhanh nhất), Contract & Integration Test ở giữa (kiểm ghép nối và DB thật), và End-to-End Test ở đỉnh (ít nhất, chậm nhất)." },
+  { "id": "S6-11.c2", "front": "Test Doubles gồm những loại phổ biến nào?", "back": "Stub (trả về dữ liệu cố định), Fake (bản cài đặt nhẹ chạy được như in-memory DB) và Mock (ghi nhận và xác minh lời gọi hàm/tham số). Dùng để cô lập Unit Test khỏi phụ thuộc ngoài." },
+  { "id": "S6-11.c3", "front": "Khi nào cần Integration Test thay vì Unit Test?", "back": "Khi cần kiểm tra tương tác thật với Database, Message Queue, migration, khóa ngoại, hoặc hành vi tuần tự hóa dữ liệu mà Mock không mô phỏng chính xác được." },
+  { "id": "S6-11.c4", "front": "Contract Testing hoạt động như thế nào?", "back": "Dịch vụ gọi (Consumer) xuất bản hợp đồng mong đợi về request/response lên Broker; dịch vụ cung cấp (Provider) chạy xác minh hợp đồng đó trong CI để phát hiện lệch API mà không cần dựng môi trường E2E." },
+  { "id": "S6-11.c5", "front": "Vì sao phải xử lý triệt để Flaky Test?", "back": "Flaky Test (lúc xanh lúc đỏ dù không đổi code) làm đội ngũ quen bỏ qua báo động đỏ, dẫn đến lọt lỗi thật lên production. Cần cách ly và sửa nguyên nhân (race condition, clock, shared state)." },
+  { "id": "S6-11.c6", "front": "Phân biệt Baseline, Stress, Spike và Soak Test?", "back": "Baseline đo mốc thường; Stress tăng dần tới điểm gãy; Spike tăng dựng đứng đột ngột; Soak chạy tải cao nhiều giờ để tìm rò rỉ bộ nhớ hoặc cạn connection pool." },
+  { "id": "S6-11.c7", "front": "Chaos / Fault Injection Test kiểm chứng điều gì?", "back": "Chủ động tiêm lỗi (ngắt mạng, tăng độ trễ, tắt một node) để xác minh Timeout, Retry, Circuit Breaker và Fallback hoạt động đúng như thiết kế." }
+]

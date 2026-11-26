@@ -1,0 +1,160 @@
+{
+  "sims": [
+    {
+      "id": "S6-04/twitter-fanout",
+      "scenario": {
+        "id": "S6-04/twitter-fanout",
+        "seed": 6401,
+        "durationSec": 50,
+        "mix": { "readRatio": 0.92 },
+        "clientTimeoutMs": 1500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 3000 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.5, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Timeline API", "en": "Timeline API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.22,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Timeline API", "en": "Timeline API Instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 1, "poolSize": 32 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Timeline Cache", "en": "Redis Timeline Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng key Cache", "en": "Cache Capacity Keys" },
+                  "min": 10000,
+                  "max": 160000,
+                  "step": 10000,
+                  "default": 15000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 45000 },
+              "latency": { "baseMs": 0.6, "cv": 0.15 },
+              "params": { "ttlSec": 300, "capacityKeys": 15000, "workingSetKeys": 80000 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Tweet DB", "en": "Tweet DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.55,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ Tweet DB", "en": "Tweet DB Size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 5, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "poolSize": 20 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 1500 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "api-cache", "from": "api", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 300 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "all-sequential",
+            "api": "all-sequential",
+            "cache": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 110,
+          "window": { "fromSec": 10, "toSec": 45 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 10, "toSec": 45 }
+        }
+      ],
+      "expect": {
+        "bottleneck": "api"
+      }
+    }
+  ]
+}

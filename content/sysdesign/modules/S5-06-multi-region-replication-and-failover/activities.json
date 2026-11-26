@@ -1,0 +1,114 @@
+[
+  {
+    "id": "S5-06.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Cấu hình hệ thống Multi-Region chịu tải đỉnh và mất Region A" },
+    "prompt": { "vi": "Hệ thống chạy trên Region A và Region B với đường liên vùng RTT = 100 ms. Hiện tại App Region B chỉ có 1 instance (1.500 req/s), còn đường truyền appb-dba dùng Retry không Backoff và trả lỗi cứng. Với ngân sách ≤ 2,80 USD/giờ và tối đa 2 thay đổi, hãy cấu hình để hệ thống đạt SLO cả khi bình thường (2.200 req/s) lẫn khi Region A ngừng hoạt động ở giây 20 (2.000 req/s)." },
+    "difficulty": 3,
+    "simId": "S5-06/region-failover",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "normal-peak",
+        "label": { "vi": "Mạng bình thường (2.200 req/s)" },
+        "simId": "S5-06/region-failover",
+        "events": [],
+        "loadOverride": { "kind": "steady", "rps": 2200 },
+        "constraints": [
+          { "id": "p99-norm", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 5, "toSec": 40 }, "allowViolationPct": 2 },
+          { "id": "err-norm", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 40 } }
+        ],
+        "weight": 1
+      },
+      {
+        "id": "region-a-down",
+        "label": { "vi": "Mất Region A tại giây 20 (2.000 req/s)" },
+        "simId": "S5-06/region-failover",
+        "loadOverride": { "kind": "steady", "rps": 2000 },
+        "constraints": [
+          { "id": "p99-fail", "kind": "slo-latency", "metric": "p99", "maxMs": 300, "window": { "fromSec": 5, "toSec": 40 }, "allowViolationPct": 5 },
+          { "id": "err-fail", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 24, "toSec": 40 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "wan-backoff", "kind": "structural", "rule": "has-retry-backoff", "link": "appb-dba" }
+    ],
+    "budget": { "maxCostPerHour": 2.8, "maxChanges": 2 },
+    "par": { "costPerHour": 2.8, "changes": 2 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app_b", "key": "replicas", "value": 2 },
+        {
+          "type": "link",
+          "link": "appb-dba",
+          "patch": {
+            "fallback": "degrade",
+            "timeoutMs": 300,
+            "retry": { "max": 1, "backoff": "exponential", "baseMs": 80, "jitter": "full", "budgetRatio": 0.1 }
+          }
+        }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-db-only",
+        "label": { "vi": "Nâng cỡ máy DB Primary ở Region A lên ×2 và giữ nguyên App Region B" },
+        "changes": [
+          { "type": "knob", "node": "db_a", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "DB Region A vốn chưa quá tải. Khi Region A ngừng ở giây 20, toàn bộ 2.000 req/s dồn sang App Region B (chỉ có 1 instance 1.500 req/s) gây bão hòa và rớt gói hàng loạt." }
+      }
+    ],
+    "hints": [
+      { "vi": "Khi Region A dừng ở giây 20, toàn bộ 2.000 req/s dồn về App Region B. Một instance 1.500 req/s sẽ không chịu nổi." },
+      { "vi": "Cấu hình link appb-dba dùng Exponential Backoff có Jitter và fallback degrade để tránh bão retry xuyên vùng." }
+    ],
+    "explain": { "vi": "Tăng App Region B lên 2 instance (tổng 3.000 req/s) giúp gánh toàn bộ tải khi Region A mất ở giây 20, đồng thời cấu hình Backoff + Jitter trên đường appb-dba giữ chi phí ở 2,80 USD/giờ và tỉ lệ lỗi ≤ 1%." },
+    "replay": { "simId": "S5-06/region-failover", "seekSec": 20, "focus": { "nodes": ["app_b", "db_a"] } }
+  },
+  {
+    "id": "S5-06.A2",
+    "kind": "timeline-read",
+    "title": { "vi": "Tìm lượt đọc xuyên vùng vi phạm Read-Your-Writes" },
+    "prompt": { "vi": "Dưới đây là lịch sử đọc/ghi của hai người dùng (minh, lan) trên hệ thống hai vùng US (Primary) và EU (Replica có độ trễ sao chép xuyên vùng ~100 ms). Hãy chọn TẤT CẢ các lượt đọc vi phạm bảo đảm Read-Your-Writes." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-violations-of-ryw",
+    "history": [
+      { "id": "w1", "client": "minh", "op": "write", "key": "status", "value": "Online", "start": 1, "end": 3, "node": "db_a" },
+      { "id": "r1", "client": "minh", "op": "read", "key": "status", "value": "Offline", "start": 4, "end": 5, "node": "db_b" },
+      { "id": "r2", "client": "lan", "op": "read", "key": "status", "value": "Offline", "start": 4, "end": 5, "node": "db_b" },
+      { "id": "r3", "client": "minh", "op": "read", "key": "status", "value": "Online", "start": 8, "end": 9, "node": "db_a" },
+      { "id": "w2", "client": "lan", "op": "write", "key": "plan", "value": "Pro", "start": 10, "end": 12, "node": "db_a" },
+      { "id": "r4", "client": "lan", "op": "read", "key": "plan", "value": "Free", "start": 13, "end": 14, "node": "db_b" }
+    ],
+    "expected": ["r1", "r4"],
+    "hints": [
+      { "vi": "Read-Your-Writes chỉ xét trên cùng một người dùng và cùng một khóa sau khi lệnh ghi của người đó đã hoàn tất." },
+      { "vi": "Lượt đọc r2 là của lan đọc dữ liệu do minh vừa sửa nên không phải vi phạm Read-Your-Writes của lan." }
+    ],
+    "explain": { "vi": "r1 (minh tự đọc lại status tại db_b và nhận giá trị cũ Offline) và r4 (lan tự đọc lại plan tại db_b và nhận giá trị cũ Free) là hai lượt vi phạm Read-Your-Writes do Replication Lag xuyên vùng." }
+  },
+  {
+    "id": "S5-06.A3",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm tải tối đa trước khi xảy ra sự cố Region A" },
+    "prompt": { "vi": "Dùng núm tải để tìm lưu lượng cao nhất (req/s) mà cấu hình mặc định (App A: 2 instance, App B: 1 instance) vẫn giữ p99 ≤ 350 ms và lỗi ≤ 1% trong khoảng giây 5–18 (trước khi Region A ngừng). Nhập kết quả." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 350, "window": { "fromSec": 5, "toSec": 18 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 18 } }
+    ],
+    "runSec": 18,
+    "reference": { "value": 3012, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Global Router chia đều tải 50/50 giữa App Region A (3.000 req/s) và App Region B (1.500 req/s)." },
+      { "vi": "Khi nửa lưu lượng vào App B chạm trần 1.500 req/s, tổng tải toàn cầu vào khoảng 2.800–3.000 req/s." }
+    ],
+    "explain": { "vi": "Do Global Router chia tải đều hai vùng, App Region B (1 instance, μ = 1.500 req/s) chạm giới hạn trước khi tổng tải đạt khoảng {ref.value:0} req/s." },
+    "sim": { "simId": "S5-06/region-failover", "seekSec": 0, "autoplay": false }
+  }
+]

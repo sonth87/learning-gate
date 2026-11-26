@@ -1,0 +1,8 @@
+[
+  { "id": "S5-03.c1", "front": "Fan-out on Read (Pull) hoạt động thế nào và yếu ở đâu?", "back": "Khi người dùng mở feed mới truy vấn bài của tất cả người họ theo dõi rồi gộp lại. Nhẹ lúc đăng nhưng gây khuếch đại đọc hàng triệu truy vấn/giây làm quá tải Post DB." },
+  { "id": "S5-03.c2", "front": "Fan-out on Write (Push) hoạt động thế nào?", "back": "Khi tác giả đăng bài, Worker đẩy sẵn post_id vào Timeline Cache (Redis Sorted Set) của từng người theo dõi qua Message Queue, giúp đọc feed dưới 10 ms." },
+  { "id": "S5-03.c3", "front": "Vì sao Timeline Cache chỉ lưu post_id và giới hạn ~1.000 mục?", "back": "Giảm mạnh chi phí RAM (8 byte/ID), tránh sao chép nội dung bài viết hàng triệu lần, và dễ lấy nội dung mới nhất theo lô khi người dùng mở app." },
+  { "id": "S5-03.c4", "front": "Kiến trúc Hybrid Fan-out giải quyết bài toán Celebrity ra sao?", "back": "Dùng Push (Fan-out on Write) cho tài khoản thường, nhưng dùng Pull (Fan-out on Read) lúc mở app cho tài khoản người nổi tiếng để tránh bão 50 triệu lệnh ghi." },
+  { "id": "S5-03.c5", "front": "Cách tiết kiệm tài nguyên với người dùng không hoạt động trong News Feed?", "back": "Không đẩy bài vào Timeline Cache cho tài khoản không đăng nhập dài ngày (ví dụ > 30 ngày); chỉ dựng lại có điều tiết nếu họ quay lại." },
+  { "id": "S5-03.c6", "front": "Vì sao News Feed phải dùng Cursor Pagination thay vì OFFSET?", "back": "Vì bài mới liên tục chèn lên đầu danh sách; OFFSET theo số trang sẽ làm dịch vị trí và hiển thị trùng các bài người dùng vừa xem." }
+]

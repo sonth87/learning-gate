@@ -1,0 +1,244 @@
+{
+  "version": 1,
+  "base": "s1-ci-pipeline",
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "lb": { "col": 2, "row": 1 },
+    "app_stable": { "col": 4, "row": 0 },
+    "app_canary": { "col": 4, "row": 2 },
+    "db": { "col": 6, "row": 1 }
+  },
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng thực tế gửi yêu cầu vào hệ thống (800 req/s).", "en": "Production user traffic arriving at 800 req/s." },
+        "how": { "vi": "Một phần nhỏ lưu lượng (10–25%) được điều hướng sang nhánh Canary để kiểm chứng phiên bản mới.", "en": "A small traffic slice is routed to Canary to validate the new release." },
+        "why": { "vi": "Giới hạn bán kính ảnh hưởng nếu phiên bản mới phát sinh lỗi ngoài dự kiến.", "en": "Limits blast radius if the newly deployed version misbehaves." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Traffic Router", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Load Balancer / Ingress chia tỉ lệ lưu lượng giữa cụm Stable và cụm Canary.", "en": "Load Balancer splitting traffic weights between Stable and Canary pools." },
+        "how": { "vi": "Theo dõi Error Rate và p99 của Canary; tự động rút lưu lượng về 0% nếu vượt ngưỡng.", "en": "Watches Canary Error Rate and p99, auto-draining traffic on threshold breach." },
+        "why": { "vi": "Cho phép tăng dần hoặc hoàn tác (rollback) trong vài giây mà không gián đoạn.", "en": "Enables progressive rollout and instant rollback within seconds." }
+      }
+    },
+    "app_stable": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Stable (v2.3)", "en": "App Stable (v2.3)" },
+      "inspector": {
+        "what": { "vi": "Cụm ứng dụng phiên bản v2.3 đang chạy ổn định, gánh phần lớn lưu lượng.", "en": "Stable v2.3 application pool serving the majority of production traffic." },
+        "how": { "vi": "Làm nhóm đối chứng (baseline) để so sánh Error Rate và độ trễ với cụm Canary.", "en": "Serves as the baseline control group for Canary error and latency comparison." },
+        "why": { "vi": "Phải tương thích ngược với mọi thay đổi lược đồ Database trong lúc rollout.", "en": "Must remain backward-compatible with Database schema changes during rollout." }
+      }
+    },
+    "app_canary": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "cpu",
+      "label": { "vi": "App Canary (v2.4)", "en": "App Canary (v2.4)" },
+      "inspector": {
+        "what": { "vi": "Cụm nhận bản dựng mới v2.4 từ artifact bất biến trên Registry.", "en": "Canary pool running the newly promoted v2.4 immutable build artifact." },
+        "how": { "vi": "Ở giây 18 bản v2.4 bị lỗi được triển khai lên Canary; đến giây 36 hệ thống tự động rollback.", "en": "At t = 18 s a faulty v2.4 build deploys here; at t = 36 s auto-rollback restores health." },
+        "why": { "vi": "Phát hiện lỗi trên nhóm nhỏ trước khi đẩy lên 100% người dùng.", "en": "Catches regressions on a small slice before full production promotion." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Production DB", "en": "Production DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu dùng chung cho cả App Stable (v2.3) và App Canary (v2.4).", "en": "Shared production Database accessed concurrently by both v2.3 and v2.4." },
+        "how": { "vi": "Áp dụng di trú Expand-Migrate-Contract để không làm gãy câu truy vấn của bản cũ.", "en": "Uses Expand-Migrate-Contract migrations so old queries never break." },
+        "why": { "vi": "Đổi tên hoặc xóa cột trực tiếp trong một bước sẽ làm sập cụm Stable ngay lập tức.", "en": "One-step destructive column renames immediately break the running Stable pool." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng đi vào Load Balancer.", "en": "Incoming user traffic entering the Load Balancer." },
+        "how": { "vi": "Giữ ổn định 800 req/s trong suốt quá trình triển khai.", "en": "Steady 800 req/s load throughout the deployment window." },
+        "why": { "vi": "Người dùng cuối không cần biết phía sau đang chuyển phiên bản.", "en": "End users experience zero downtime during progressive rollouts." }
+      }
+    },
+    "lb-app_stable": {
+      "inspector": {
+        "what": { "vi": "Nhánh lưu lượng đi tới cụm App Stable v2.3.", "en": "Traffic branch routed to the Stable v2.3 pool." },
+        "how": { "vi": "Nhận phần lưu lượng chính và gánh lại 100% khi Canary rollback.", "en": "Carries baseline traffic and absorbs 100% on Canary rollback." },
+        "why": { "vi": "Đảm bảo dịch vụ luôn sẵn sàng dù bản mới gặp sự cố.", "en": "Preserves overall availability when a new release fails." }
+      }
+    },
+    "lb-app_canary": {
+      "inspector": {
+        "what": { "vi": "Nhánh lưu lượng thử nghiệm đi tới cụm App Canary v2.4.", "en": "Experimental traffic branch routed to the Canary v2.4 pool." },
+        "how": { "vi": "Tỉ lệ lưu lượng tăng dần (5% → 25% → 100%) nếu các chỉ số đạt ngưỡng an toàn.", "en": "Traffic weight ramps up (5% → 25% → 100%) only when metrics stay healthy." },
+        "why": { "vi": "Ngắt nhánh ngay lập tức khi Error Rate của Canary vượt xa Stable.", "en": "Drained immediately when Canary Error Rate diverges from Stable." }
+      }
+    },
+    "app_stable-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ App Stable (v2.3) tới Production DB.", "en": "Database queries from Stable v2.3." },
+        "how": { "vi": "Tiếp tục đọc/ghi theo lược đồ cũ trong giai đoạn chuyển tiếp.", "en": "Continues reading and writing the existing schema during rollout." },
+        "why": { "vi": "Nếu migration xóa cột cũ quá sớm, nhánh này sẽ lỗi hàng loạt.", "en": "Dropping old columns early breaks this path immediately." }
+      }
+    },
+    "app_canary-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ App Canary (v2.4) tới Production DB.", "en": "Database queries from Canary v2.4." },
+        "how": { "vi": "Bắt đầu ghi song song hoặc đọc cột mới ở giai đoạn Expand.", "en": "Dual-writes or reads new columns during the Expand phase." },
+        "why": { "vi": "Đảm bảo dữ liệu tương thích hai chiều nếu phải rollback về v2.3.", "en": "Keeps data compatible if Canary must roll back to v2.3." }
+      }
+    }
+  },
+  "zones": {
+    "prod": {
+      "nodeIds": ["lb", "app_stable", "app_canary", "db"],
+      "label": { "vi": "MÔI TRƯỜNG PRODUCTION", "en": "PRODUCTION CLUSTER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-ci-pipeline": {
+      "show": { "nodes": ["client", "lb", "app_stable", "db"] },
+      "zones": ["prod"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app_stable": { "loadPct": 35, "highlighted": true, "badge": { "text": { "vi": "Artifact v2.3", "en": "Artifact v2.3" }, "tone": "ok" } },
+        "db": { "loadPct": 30 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Build một lần, dùng mọi môi trường", "en": "Build Once, Promote Everywhere" },
+        "lines": [
+          { "text": { "vi": "CI dựng đúng 1 image bất biến (SHA) sau khi pass test", "en": "CI builds one immutable image (SHA) after tests pass" }, "tone": "good" },
+          { "text": { "vi": "Thúc đẩy cùng artifact từ Staging lên Production", "en": "Promote the exact same artifact from Staging to Prod" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-blue-green": {
+      "show": { "nodes": ["client", "lb", "app_stable", "app_canary", "db"] },
+      "zones": ["prod"],
+      "state": {
+        "lb": { "loadPct": 12, "highlighted": true, "badge": { "text": { "vi": "Switch 0% → 100%", "en": "Switch 0% → 100%" }, "tone": "default" } },
+        "app_stable": { "loadPct": 35, "badge": { "text": { "vi": "Blue (cũ)", "en": "Blue (old)" }, "tone": "ok" } },
+        "app_canary": { "loadPct": 0, "badge": { "text": { "vi": "Green (chờ)", "en": "Green (standby)" }, "tone": "warn" } },
+        "db": { "loadPct": 30 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chiến lược Blue-Green", "en": "Blue-Green Deployment" },
+        "lines": [
+          { "text": { "vi": "Dựng song song 2 cụm giống nhau; chuyển 100% một lần", "en": "Run two identical pools; cut over 100% traffic at once" }, "tone": "plain" },
+          { "text": { "vi": "Rollback tức thì nhưng tốn gấp đôi tài nguyên máy chủ", "en": "Instant rollback, but requires 2× compute capacity" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-canary-live": {
+      "show": { "nodes": "*" },
+      "zones": ["prod"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Canary v2.4 lỗi (t = 18 s) & Rollback (t = 36 s)", "en": "Canary v2.4 Fault (t = 18 s) & Rollback (t = 36 s)" },
+        "lines": [
+          { "text": { "vi": "t = 18 s: deploy bản v2.4 lỗi lên nhánh Canary", "en": "t = 18 s: faulty v2.4 deployed to Canary" }, "tone": "bad" },
+          { "text": { "vi": "t = 36 s: Error Rate vượt ngưỡng → tự động rollback", "en": "t = 36 s: Error threshold breached → auto-rollback" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-expand-contract": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Di trú dữ liệu không gián đoạn: Expand → Migrate → Contract", "en": "Zero-Downtime Schema Migration: Expand → Migrate → Contract" },
+        "subtitle": { "vi": "Không bao giờ đổi tên hoặc xóa cột đang dùng trong 1 lần triển khai duy nhất", "en": "Never rename or drop an active column in a single deployment" },
+        "cells": [
+          "1. Expand (+ cột mới)",
+          "2. Dual-Write (v2.4)",
+          "3. Backfill dữ liệu cũ",
+          "4. Switch Read (v2.5)",
+          "5. Contract (xóa cũ)"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "Tương thích v2.3", "tone": "green" },
+          { "index": 4, "label": "Sau khi tắt hẳn v2.3", "tone": "orange" }
+        ]
+      }
+    },
+    "s5-feature-flags": {
+      "show": { "nodes": ["client", "lb", "app_stable", "app_canary", "db"] },
+      "zones": ["prod"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app_stable": { "loadPct": 25, "badge": { "text": { "vi": "Flag: OFF", "en": "Flag: OFF" }, "tone": "default" } },
+        "app_canary": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "Flag: ON (5%)", "en": "Flag: ON (5%)" }, "tone": "ok" } },
+        "db": { "loadPct": 30 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Feature Flag: Tách Deploy khỏi Release", "en": "Feature Flags: Decouple Deploy from Release" },
+        "lines": [
+          { "text": { "vi": "Triển khai code tắt sẵn, bật dần cho 5% người dùng qua cấu hình", "en": "Deploy dark code, enable for 5% via runtime config" }, "tone": "good" },
+          { "text": { "vi": "Tắt ngay trong 1 giây bằng công tắc nếu có lỗi mà không cần build lại", "en": "Instant kill-switch in 1 second without redeploying" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-dora-metrics": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "4 chỉ số DORA đo năng lực giao hàng", "en": "4 DORA Delivery Metrics" },
+        "rightTitle": { "vi": "Ý nghĩa & Cách cải thiện", "en": "Meaning & How to Improve" },
+        "names": [
+          { "id": "d1", "name": "1. Deployment Frequency", "note": { "vi": "Tần suất đưa code lên prod", "en": "How often code ships" }, "targetId": "m1" },
+          { "id": "d2", "name": "2. Lead Time for Changes", "note": { "vi": "Từ commit đến production", "en": "Commit to production time" }, "targetId": "m2" },
+          { "id": "d3", "name": "3. Change Failure Rate", "note": { "vi": "Tỉ lệ deploy gây sự cố", "en": "% deploys causing failure" }, "targetId": "m3" },
+          { "id": "d4", "name": "4. Time to Restore (MTTR)", "note": { "vi": "Thời gian khôi phục dịch vụ", "en": "Mean time to recovery" }, "targetId": "m4" }
+        ],
+        "objects": [
+          { "id": "m1", "typeTag": "THROUGHPUT", "value": "Phát hành nhỏ, đều đặn mỗi ngày", "fields": ["Giảm kích thước mỗi lô thay đổi nhờ Feature Flag"], "tone": "blue" },
+          { "id": "m2", "typeTag": "VELOCITY", "value": "Rút ngắn thời gian chờ review và CI/CD", "fields": ["Tự động hóa test và build một lần"], "tone": "green" },
+          { "id": "m3", "typeTag": "STABILITY", "value": "Giữ tỉ lệ lỗi triển khai ở mức thấp", "fields": ["Chặn bằng Unit/Contract Test & Canary Rollout"], "tone": "orange" },
+          { "id": "m4", "typeTag": "RECOVERY", "value": "Khôi phục nhanh trong vài giây đến vài phút", "fields": ["Tự động rollback Canary & công tắc Feature Flag"], "tone": "purple" }
+        ]
+      }
+    }
+  },
+  "live": {
+    "canary-rollout": {
+      "sim": "S6-12/canary-rollout",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "knobs": [
+          { "node": "app_canary", "key": "replicas" }
+        ]
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 250 } },
+        { "metric": "errorRate", "label": { "vi": "Tỉ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "focus": { "nodes": ["app_stable", "app_canary"] }
+    }
+  }
+}

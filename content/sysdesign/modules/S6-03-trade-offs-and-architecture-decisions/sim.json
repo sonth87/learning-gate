@@ -1,0 +1,141 @@
+{
+  "sims": [
+    {
+      "id": "S6-03/ab-tradeoff",
+      "scenario": {
+        "id": "S6-03/ab-tradeoff",
+        "seed": 6301,
+        "durationSec": 50,
+        "mix": { "readRatio": 0.85 },
+        "clientTimeoutMs": 1500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 3000 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.4, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Order API", "en": "Order API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.22,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order API", "en": "Order API Instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 32 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Catalog Cache", "en": "Catalog Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.18,
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng key Cache", "en": "Cache Keys" },
+                  "min": 5000,
+                  "max": 100000,
+                  "step": 5000,
+                  "default": 10000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 45000 },
+              "latency": { "baseMs": 0.5, "cv": 0.15 },
+              "params": { "ttlSec": 300, "capacityKeys": 10000, "workingSetKeys": 60000 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Catalog DB", "en": "Catalog DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.65,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ Catalog DB", "en": "Catalog DB Size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "maxConnections": 400 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 1500 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "onMissOf": "cache", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "all-sequential",
+            "app": "all-sequential",
+            "cache": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

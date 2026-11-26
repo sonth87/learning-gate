@@ -1,0 +1,7 @@
+[
+  { "id": "S6-02.c1", "front": "5 chặng của khung SNAKE và phân bổ thời gian trong 45 phút?", "back": "S - Scope (5–7 phút), N - Numbers (5–7 phút), A - API (5 phút), K - Key Components (10–12 phút), E - Elaborate (10–12 phút), cộng khoảng 5 phút dự phòng cho câu hỏi phát sinh." },
+  { "id": "S6-02.c2", "front": "Cần làm rõ những gì trong chặng Scope (S)?", "back": "Chức năng cốt lõi (must-have), phần nằm ngoài phạm vi (out-of-scope), quy mô người dùng, yêu cầu phi chức năng (p99, availability, consistency) và các ràng buộc." },
+  { "id": "S6-02.c3", "front": "4 đại lượng cần ước lượng ở chặng Numbers (N)?", "back": "1. Lưu lượng (RPS trung bình và đỉnh 3×, tỉ lệ đọc:ghi). 2. Dung lượng lưu trữ (ngày, năm, 5 năm). 3. Băng thông vào/ra và media. 4. Bộ nhớ RAM cho tập dữ liệu nóng (Cache)." },
+  { "id": "S6-02.c4", "front": "Vì sao phải thiết kế API (A) trước khi vẽ sơ đồ Key Components (K)?", "back": "Hợp đồng API (endpoint, đầu vào/ra, phân trang, Idempotency Key) biến yêu cầu mơ hồ thành giao diện cụ thể, giúp sơ đồ thành phần phía sau bám sát đúng luồng dữ liệu thật." },
+  { "id": "S6-02.c5", "front": "Nên tập trung vào điều gì ở chặng Elaborate (E)?", "back": "Chọn 2–3 nút thắt hoặc rủi ro lớn nhất của hệ thống (hot key, fan-out người nổi tiếng, replication lag, failure mode) để phân tích sâu và nêu rõ sự đánh đổi." }
+]

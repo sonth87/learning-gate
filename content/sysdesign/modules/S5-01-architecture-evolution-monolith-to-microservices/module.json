@@ -1,0 +1,30 @@
+{
+  "id": "S5-01",
+  "slug": "S5-01-architecture-evolution-monolith-to-microservices",
+  "level": 5,
+  "order": 1,
+  "title": "Architecture Evolution: từ Monolith đến Microservices",
+  "summary": "Tiến hóa kiến trúc theo đúng quy mô: bắt đầu từ Monolith gọn nhẹ, nhận diện ngưỡng kích hoạt tách dịch vụ theo ranh giới nghiệp vụ, tránh bẫy Distributed Monolith và di chuyển an toàn bằng Strangler Fig.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích lộ trình tiến hóa 4 giai đoạn từ MVP Monolith, Scaled Monolith, Modular Monolith đến Microservices" },
+    { "vi": "Nhận diện ngưỡng kích hoạt (Scale Trigger) thực sự khi quy mô đội ngũ và miền nghiệp vụ đòi hỏi tách service" },
+    { "vi": "Phân tích cái giá của Microservices: độ trễ nhiều chặng (Multi-hop), lan truyền lỗi và lỗi phản mẫu Distributed Monolith" },
+    { "vi": "Áp dụng mẫu Strangler Fig qua API Gateway để di chuyển dần từng phần từ Monolith sang Microservices" }
+  ],
+  "tags": ["architecture", "monolith", "microservices", "strangler-fig", "bounded-context", "evolution"],
+  "prerequisites": ["S2-05", "S2-06"],
+  "related": ["S5-04", "S3-04", "S4-11"],
+  "dtsRef": "microservices",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-5/lessons/lesson-1-architecture-evolution-mindset.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-1-architecture-evolution-mindset.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn từ bài gốc: loại bỏ sơ đồ mermaid, bổ sung băng tiến hóa v1→vN (memory-2d), mô phỏng chuỗi gọi nhiều chặng và lan truyền lỗi thanh toán, bài tập sắp xếp Strangler Fig và thử thách thiết kế."
+  }
+}

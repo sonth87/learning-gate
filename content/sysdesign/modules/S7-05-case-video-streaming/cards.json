@@ -1,0 +1,7 @@
+[
+  { "id": "S7-05.c1", "front": "Presigned URL trong tải lên video giải quyết vấn đề gì?", "back": "Cho phép client tải từng mảnh (chunk) video trực tiếp lên Object Storage mà không đi qua API Server, tránh nghẽn băng thông và giữ kết nối lâu ở tầng ứng dụng." },
+  { "id": "S7-05.c2", "front": "Adaptive Bitrate Streaming (HLS/DASH) là gì?", "back": "Kỹ thuật cắt video thành các đoạn ngắn 4–6 giây ở nhiều độ phân giải (1080p, 720p, 480p, 360p) kèm file manifest, giúp trình phát tự động đổi chất lượng theo băng thông thực tế." },
+  { "id": "S7-05.c3", "front": "Vì sao phải chuyển mã (Transcoding) bất đồng bộ qua hàng đợi?", "back": "Chuyển mã rất tốn CPU và mất thời gian. Hàng đợi giúp trả phản hồi ngay cho người tải lên, hấp thụ đột biến tải (spike) và cho phép nhiều Worker xử lý song song từng đoạn GOP." },
+  { "id": "S7-05.c4", "front": "Vai trò của CDN Edge và Origin Shield trong Video Streaming?", "back": "CDN Edge phục vụ 90%+ lượt xem gần người dùng để giảm độ trễ khởi phát. Origin Shield gộp các lượt Cache Miss từ nhiều Edge để bảo vệ Object Storage và giảm chi phí Egress." },
+  { "id": "S7-05.c5", "front": "Chi phí lưu trữ đa độ phân giải thường gấp bao nhiêu lần file gốc?", "back": "Khoảng 2× đến 2,5× dung lượng file gốc khi lưu thêm các bản 1080p, 720p, 480p, 360p; có thể giảm bằng codec mới (AV1/HEVC) hoặc chuyển mã theo yêu cầu cho video ít lượt xem." }
+]

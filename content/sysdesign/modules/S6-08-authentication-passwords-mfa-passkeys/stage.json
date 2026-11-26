@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "base": "s3-stuffing-live",
+  "nodes": {
+    "browser": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Trình duyệt & Bot", "en": "Browsers & Bots" },
+      "inspector": {
+        "what": { "vi": "Lưu lượng đăng nhập gồm người dùng thật và bot Credential Stuffing.", "en": "Login traffic mixing real users and credential stuffing bots." },
+        "how": { "vi": "Đợt tấn công đẩy tải đăng nhập từ 200 lên 1.400 req/s.", "en": "Attack flood ramps login requests from 200 to 1,400 req/s." },
+        "why": { "vi": "Kiểm chứng tác động của lưu lượng dò mật khẩu lên hệ thống xác thực.", "en": "Tests how stuffing floods impact authentication tiers." }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": { "vi": "Cổng tiếp nhận lưu lượng đăng nhập (μ = 15.000 req/s).", "en": "Ingress gateway receiving login requests (μ = 15,000 req/s)." },
+        "how": { "vi": "Nơi đặt Rate Limiter chặn bot theo IP và tài khoản trước khi tới tầng Auth.", "en": "Enforces IP and per-account rate limiting before hitting Auth." },
+        "why": { "vi": "Chặn sớm tại biên giúp tiết kiệm CPU băm mật khẩu ở phía sau.", "en": "Early edge throttling protects expensive password hashing." }
+      }
+    },
+    "auth": {
+      "shape": "block",
+      "tone": "amber",
+      "icon": "cpu",
+      "label": { "vi": "Auth Service", "en": "Auth Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ xác thực chạy hàm băm chậm Argon2id (tổng μ = 600 req/s).", "en": "Auth Service executing CPU-heavy Argon2id hashing (μ = 600 req/s)." },
+        "how": { "vi": "Mỗi lần kiểm tra mật khẩu tốn ~50 ms CPU nên rất dễ bão hòa khi bị dò hàng loạt.", "en": "Each password check takes ~50 ms CPU, saturating quickly under floods." },
+        "why": { "vi": "Là điểm nghẽn trực tiếp khi không có Rate Limiter bảo vệ phía trước.", "en": "Becomes the immediate bottleneck without upstream rate limiting." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Auth DB", "en": "Auth DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu lưu mã băm Argon2id, Salt riêng và Refresh Token (μ = 3.000 req/s).", "en": "Stores Argon2id hashes, per-user salts, and refresh tokens (μ = 3,000 req/s)." },
+        "how": { "vi": "Nhận truy vấn đọc thông tin tài khoản và ghi phiên đăng nhập.", "en": "Serves credential lookups and session/token writes." },
+        "why": { "vi": "Được bảo vệ bằng hàm băm chậm có Salt phòng trường hợp rò rỉ dữ liệu.", "en": "Protected by slow salted hashes against offline cracking." }
+      }
+    }
+  },
+  "links": {
+    "browser-gateway": {
+      "inspector": {
+        "what": { "vi": "Luồng yêu cầu đăng nhập từ trình duyệt và bot.", "en": "Login requests from browsers and bots." },
+        "how": { "vi": "Tăng vọt lên 1.400 req/s trong đợt Credential Stuffing.", "en": "Ramps to 1,400 req/s during credential stuffing." },
+        "why": { "vi": "Đặt áp lực trực tiếp lên lớp kiểm soát biên.", "en": "Tests edge rate-limiting posture." }
+      }
+    },
+    "gateway-auth": {
+      "inspector": {
+        "what": { "vi": "Chuyển tiếp yêu cầu đăng nhập vào Auth Service.", "en": "Forwards login requests to Auth Service." },
+        "how": { "vi": "Nếu không bật Rate Limit, toàn bộ 1.400 req/s lọt thẳng vào bước băm Argon2id.", "en": "Without rate limiting, all 1,400 req/s hit Argon2id hashing." },
+        "why": { "vi": "Cần chặn bớt tại Gateway để bảo vệ CPU của Auth Service.", "en": "Must be throttled at Gateway to protect Auth CPU." }
+      }
+    },
+    "auth-db": {
+      "inspector": {
+        "what": { "vi": "Truy vấn bản ghi mật khẩu băm và lưu phiên.", "en": "Fetches salted password hashes and writes sessions." },
+        "how": { "vi": "Mỗi lượt đăng nhập đọc thông tin Salt + Hash của người dùng.", "en": "Reads user salt and hash per login attempt." },
+        "why": { "vi": "Không bao giờ lưu hoặc truyền mật khẩu dạng thô.", "en": "Never stores or returns plaintext passwords." }
+      }
+    }
+  },
+  "scenes": {
+    "s1-hashing": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "So sánh lưu trữ mật khẩu: Plaintext, SHA-256 và Argon2id", "en": "Password Storage Comparison" },
+        "names": [
+          { "id": "h1", "name": "Plaintext / Mã hóa 2 chiều", "target": "o1" },
+          { "id": "h2", "name": "SHA-256 không Salt", "target": "o2" },
+          { "id": "h3", "name": "Argon2id + Salt riêng 128-bit", "target": "o3" }
+        ],
+        "objects": [
+          { "id": "o1", "type": "Rủi ro cực cao", "value": "Lộ cơ sở dữ liệu là lộ ngay toàn bộ mật khẩu thật của người dùng", "tone": "rose" },
+          { "id": "o2", "type": "Chưa đủ an toàn", "value": "Bị dò hàng tỷ tổ hợp/giây trên GPU và dễ bị tấn công Rainbow Table", "tone": "amber" },
+          { "id": "o3", "type": "Chuẩn bảo mật", "value": "Tốn CPU & RAM có chủ đích (~50 ms/lần) + Salt riêng chặn tra cứu sẵn", "tone": "green" }
+        ]
+      }
+    },
+    "s2-tokens": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Session tập trung (Redis) và JWT + Refresh Token", "en": "Stateful Session vs JWT + Refresh Token" },
+        "cells": [
+          { "id": "t1", "label": "Session (Redis)", "value": "Cookie HttpOnly trỏ tới kho chung", "note": "Thu hồi tức thì, nhưng mỗi request cần 1 hop tới Redis", "tone": "blue" },
+          { "id": "t2", "label": "Access Token (JWT)", "value": "Ngắn hạn 5–15 phút · Có chữ ký", "note": "Dịch vụ tự kiểm tra cục bộ, không cần hỏi Auth DB", "tone": "green" },
+          { "id": "t3", "label": "Refresh Token", "value": "Lưu kho kiểm soát · Xoay vòng", "note": "Thu hồi được khi phát hiện đánh cắp hoặc đăng xuất từ xa", "tone": "purple" }
+        ]
+      }
+    },
+    "s3-stuffing-live": {
+      "mode": "isometric",
+      "show": {
+        "nodes": ["browser", "gateway", "auth", "db"],
+        "links": ["browser-gateway", "gateway-auth", "auth-db"]
+      },
+      "floor": { "label": "Đợt Credential Stuffing đánh vào Auth Service (200 → 1.400 req/s)" },
+      "entities": [
+        { "id": "browser", "col": 0, "row": 2 },
+        { "id": "gateway", "col": 4, "row": 2 },
+        { "id": "auth", "col": 8, "row": 2 },
+        { "id": "db", "col": 12, "row": 2 }
+      ],
+      "edges": [
+        { "id": "browser-gateway", "from": "browser", "to": "gateway", "style": "solid" },
+        { "id": "gateway-auth", "from": "gateway", "to": "auth", "style": "solid" },
+        { "id": "auth-db", "from": "auth", "to": "db", "style": "solid" }
+      ],
+      "packets": "auto"
+    },
+    "s4-passkey": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "MFA (OTP) so với Passkey (WebAuthn) trước tấn công Phishing", "en": "MFA vs Passkey Against Phishing" },
+        "nodes": [
+          { "id": "phish", "label": "Trang đăng nhập giả mạo", "sub": "Chuyển tiếp trung gian (Proxy Phishing)", "layer": 0, "tone": "rose" },
+          { "id": "otp", "label": "MFA bằng OTP 6 số", "sub": "Người dùng nhập mã → Kẻ tấn công chuyển tiếp thành công", "layer": 1, "tone": "amber" },
+          { "id": "passkey", "label": "Passkey (WebAuthn)", "sub": "Chữ ký gắn cứng tên miền thật → Vô hiệu trên trang giả", "layer": 1, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "phish", "to": "otp", "label": "dễ bị lừa" },
+          { "from": "phish", "to": "passkey", "label": "từ chối ký" }
+        ]
+      }
+    },
+    "s5-recap": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Bốn lớp phòng vệ trong kiến trúc xác thực", "en": "Four Layers of Authentication Defense" },
+        "names": [
+          { "id": "l1", "name": "Kho lưu trữ mật khẩu", "target": "v1" },
+          { "id": "l2", "name": "Chống dò mật khẩu", "target": "v2" },
+          { "id": "l3", "name": "Quản lý phiên", "target": "v3" },
+          { "id": "l4", "name": "Chống Phishing", "target": "v4" }
+        ],
+        "objects": [
+          { "id": "v1", "type": "Bảo vệ tĩnh", "value": "Argon2id hoặc bcrypt với Salt ngẫu nhiên riêng từng tài khoản", "tone": "blue" },
+          { "id": "v2", "type": "Bảo vệ CPU", "value": "Rate Limiting theo IP + tài khoản tại API Gateway và chặn mật khẩu đã lộ", "tone": "amber" },
+          { "id": "v3", "type": "Kiểm soát phiên", "value": "Session Redis hoặc JWT ngắn hạn (5–15 phút) + Refresh Token xoay vòng", "tone": "purple" },
+          { "id": "v4", "type": "Xác thực mạnh", "value": "Passkey (WebAuthn) gắn tên miền giúp miễn nhiễm với trang giả mạo", "tone": "green" }
+        ]
+      }
+    }
+  },
+  "live": {
+    "stuffing": {
+      "sim": "S6-08/stuffing-defense",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 150, "badAbove": 300 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 300 }],
+      "focus": { "nodes": ["gateway", "auth", "db"] }
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "sims": [
+    {
+      "id": "S6-08/stuffing-defense",
+      "scenario": {
+        "id": "S6-08/stuffing-defense",
+        "seed": 6801,
+        "durationSec": 50,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 200, "to": 1400, "overSec": 25 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "browser",
+              "kind": "client",
+              "label": { "vi": "Trình duyệt & Bot", "en": "Browsers & Bots" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gateway",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 1, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "auth",
+              "kind": "service",
+              "label": { "vi": "Auth Service", "en": "Auth Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.3,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Băm Argon2id làm bão hòa CPU Auth Service", "en": "Argon2id hashing saturates Auth Service CPU" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 300 },
+              "latency": { "baseMs": 45, "cv": 0.2 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Auth DB", "en": "Auth DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "poolSize": 40 }
+            }
+          ],
+          "links": [
+            { "id": "browser-gateway", "from": "browser", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gateway-auth", "from": "gateway", "to": "auth", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "auth-db", "from": "auth", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "browser": "all-sequential",
+            "gateway": "all-sequential",
+            "auth": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 300,
+          "window": { "fromSec": 0, "toSec": 50 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 0, "toSec": 50 }
+        }
+      ],
+      "expect": {
+        "bottleneck": "auth"
+      }
+    }
+  ]
+}

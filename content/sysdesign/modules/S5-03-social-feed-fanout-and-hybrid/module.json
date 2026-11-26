@@ -1,0 +1,30 @@
+{
+  "id": "S5-03",
+  "slug": "S5-03-social-feed-fanout-and-hybrid",
+  "level": 5,
+  "order": 3,
+  "title": "Social Feed: Fan-out on Read, on Write và Hybrid",
+  "summary": "Thiết kế hệ thống News Feed cho hàng triệu người dùng: so sánh Fan-out on Read, Fan-out on Write và kiến trúc Hybrid cho tài khoản người nổi tiếng, tối ưu Timeline Cache chỉ lưu ID, phân trang con trỏ và xếp hạng.",
+  "durationMin": 20,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích bài toán khuếch đại đọc (Read Amplification) khiến Fan-out on Read làm quá tải shard bài viết" },
+    { "vi": "Thiết kế mô hình Fan-out on Write dùng Message Queue, Worker và Timeline Cache chỉ lưu danh sách post_id" },
+    { "vi": "Phân tích bài toán người nổi tiếng (50 triệu người theo dõi) và cách kết hợp Hybrid Push/Pull" },
+    { "vi": "Áp dụng phân trang con trỏ (Cursor Pagination), dựng lại Cache có điều tiết và lớp xếp hạng (Ranking)" }
+  ],
+  "tags": ["news-feed", "fanout", "hybrid", "timeline-cache", "celebrity", "pagination"],
+  "prerequisites": ["S2-02", "S2-04", "S5-02"],
+  "related": ["S1-08", "S2-09", "S4-10"],
+  "dtsRef": "design-news-feed",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-5/lessons/lesson-3-social-feed-systems.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-5/lessons/lesson-3-social-feed-systems.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn từ bài gốc: loại bỏ giai thoại mở đầu và sơ đồ mermaid, bổ sung mô phỏng tải tăng dần trên Feed Cache và Post DB, bài tập dự đoán nghẽn, tìm giới hạn tải và thiết kế Hybrid."
+  }
+}

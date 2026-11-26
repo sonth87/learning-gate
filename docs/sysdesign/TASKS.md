@@ -130,22 +130,22 @@ Mỗi bài là một task con trong batch: `lesson.md` (biên tập tay), `modul
 |---|---|---|---|---|---|---|
 | T6.0a | Chốt phạm vi mô phỏng sự kiện | — | Quyết 3 câu ở 04 §12 (engine `sim/timeline/` hay kịch bản tĩnh; vị trí Time view; phạm vi Raft); cập nhật 04 §12 + ADR; người dùng xem đề xuất | T5.5; **phải xong trước T6.4** | Opus | done (ADR-020) |
 | T6.0b | Hiện thực mô phỏng sự kiện | — | `sim/timeline/` (actor, message, đồng hồ, quorum, lock, saga, CRDT), checker (stale read, RYW, lost update), Time view; test | T6.0a; **phải xong trước T6.4 (phần S2-06, S2-11), T6.7, T6.8** | Opus | done |
-| T6.1 | 1 | S1-07, S1-04, S1-01, S1-02, S1-06 | Capacity view (đường latency–throughput), kịch bản fan-out | — | Sonnet | todo |
-| T6.2 | 2 | S0-01, S0-02, S0-03, S0-04, S0-09 | Công cụ Làm rõ yêu cầu, Trade-off Matrix, Ngân sách ràng buộc | T6.1 (S0-09 tham chiếu giao diện sim đã ổn định) | Sonnet | todo |
-| T6.3 | 3 | S0-05, S0-06, S0-07, S0-08, S1-05 | Estimator ("Đưa vào mô phỏng"), Requirements Card, slot lắp ô | — | Sonnet | todo |
-| T6.4 | 4 | S2-01, S2-06, S2-02, S2-04, S2-11 | lb (least-conn, health check), cache stampede/singleflight, queue (ack, DLQ) | T6.0b cho S2-06, S2-11 | Sonnet | todo |
-| T6.5 | 5 | S2-03, S2-07, S2-08, S2-09, S2-10 | replication lag, shard + hot key (Zipf), hash ring, Data view; chốt sticky read-after-write (04 §11 mục 4) | — | Sonnet | todo |
-| T6.6 | 6 | S4-11, S4-05, S4-10, S4-01, S3-09 | timeout/retry/breaker/bulkhead, token bucket, back-pressure, autoscaling, failover theo zone | — | Sonnet | todo |
-| T6.7 | 7 | S3-01, S3-02, S3-03, S3-05, S3-06 | partition CP/AP, quorum, Raft rút gọn, đồng hồ lệch (trên `sim/timeline/`) | T6.0b | Sonnet | todo |
-| T6.8 | 8 | S3-04, S3-07, S3-08, S4-04, S4-08 | 2PC/saga, lock/isolation, CRDT; B-tree/LSM trong `memory-2d` | T6.0b | Sonnet | todo |
-| T6.9 | 9 | S4-02, S4-03, S4-06, S4-07, S4-09 | CDN edge, idempotency, dashboard + trace (nền War-Room), realtime | T6.0b cho S4-06 | Sonnet | todo |
-| T6.10 | 10 | S1-08, S2-12, S2-05, S5-01, S5-02, S5-03 | Evolution timeline; ghép primitive đã có | — | Sonnet | todo |
-| T6.11 | 11 | S5-04, S5-05, S5-06, S6-01, S6-02, S6-03 | registry/discovery, batch/stream, multi-region (sự kiện), Trade-off view radar | T6.0b cho S5-06 | Sonnet | todo |
-| T6.12 | 12 | S6-04, S6-05, S6-06, S6-07, S6-08 | cost view, chaos blast radius | Người dùng chốt vị trí S6-08..S6-12 (02 §8) trước batch này | Sonnet | todo |
-| T6.13 | 13 | S6-09, S6-10, S6-11, S6-12 | canary/rollback trên engine tải | — | Sonnet | todo |
-| T6.14 | 14 | S7-01, S7-02, S7-03, S7-04 | lưới geohash/quadtree (`memory-2d`) | T7.1, T7.3 | Sonnet | todo |
-| T6.15 | 15 | S7-05, S7-06, S7-07 | scene trie | T7.1, T7.3; T6.0b cho S7-06 | Sonnet | todo |
-| T6.16 | Review từng batch (Opus) — một dòng "Ghi chú review" cho mỗi batch | — | Checklist nội dung `08-workflow.md` §5; mọi bài đạt checklist `07` §5; `sd:doctor` xanh | mỗi batch | Opus | todo |
+| T6.1 | 1 | S1-07, S1-04, S1-01, S1-02, S1-06 | Capacity view (đường latency–throughput), kịch bản fan-out | — | Sonnet | done |
+| T6.2 | 2 | S0-01, S0-02, S0-03, S0-04, S0-09 | Công cụ Làm rõ yêu cầu, Trade-off Matrix, Ngân sách ràng buộc | T6.1 (S0-09 tham chiếu giao diện sim đã ổn định) | Sonnet | done |
+| T6.3 | 3 | S0-05, S0-06, S0-07, S0-08, S1-05 | Estimator ("Đưa vào mô phỏng"), Requirements Card, slot lắp ô | — | Sonnet | done |
+| T6.4 | 4 | S2-01, S2-06, S2-02, S2-04, S2-11 | lb (least-conn, health check), cache stampede/singleflight, queue (ack, DLQ) | T6.0b cho S2-06, S2-11 | Sonnet | done |
+| T6.5 | 5 | S2-03, S2-07, S2-08, S2-09, S2-10 | replication lag, shard + hot key (Zipf), hash ring, Data view; chốt sticky read-after-write (04 §11 mục 4) | — | Sonnet | done |
+| T6.6 | 6 | S4-11, S4-05, S4-10, S4-01, S3-09 | timeout/retry/breaker/bulkhead, token bucket, back-pressure, autoscaling, failover theo zone | — | Sonnet | done |
+| T6.7 | 7 | S3-01, S3-02, S3-03, S3-05, S3-06 | partition CP/AP, quorum, Raft rút gọn, đồng hồ lệch (trên `sim/timeline/`) | T6.0b | Sonnet | done |
+| T6.8 | 8 | S3-04, S3-07, S3-08, S4-04, S4-08 | 2PC/saga, lock/isolation, CRDT; B-tree/LSM trong `memory-2d` | T6.0b | Sonnet | done |
+| T6.9 | 9 | S4-02, S4-03, S4-06, S4-07, S4-09 | CDN edge, idempotency, dashboard + trace (nền War-Room), realtime | T6.0b cho S4-06 | Sonnet | done |
+| T6.10 | 10 | S1-08, S2-12, S2-05, S5-01, S5-02, S5-03 | Evolution timeline; ghép primitive đã có | — | Sonnet | done |
+| T6.11 | 11 | S5-04, S5-05, S5-06, S6-01, S6-02, S6-03 | registry/discovery, batch/stream, multi-region (sự kiện), Trade-off view radar | T6.0b cho S5-06 | Sonnet | done |
+| T6.12 | 12 | S6-04, S6-05, S6-06, S6-07, S6-08 | cost view, chaos blast radius | Người dùng chốt vị trí S6-08..S6-12 (02 §8) trước batch này | Sonnet | done |
+| T6.13 | 13 | S6-09, S6-10, S6-11, S6-12 | canary/rollback trên engine tải | — | Sonnet | done |
+| T6.14 | 14 | S7-01, S7-02, S7-03, S7-04 | lưới geohash/quadtree (`memory-2d`) | T7.1, T7.3 | Sonnet | done |
+| T6.15 | 15 | S7-05, S7-06, S7-07 | scene trie | T7.1, T7.3; T6.0b cho S7-06 | Sonnet | done |
+| T6.16 | Review từng batch (Opus) — một dòng "Ghi chú review" cho mỗi batch | — | Checklist nội dung `08-workflow.md` §5; mọi bài đạt checklist `07` §5; `sd:doctor` xanh | mỗi batch | Opus | done |
 
 Nghiệm thu chung mỗi bài: checklist "xong" ở `07-content-authoring.md` §5; bài không từ SDC thì không có `source.kind:'sdc'`, viết bằng lời riêng từ `reference/dts-models.md`, nội dung chính xác kỹ thuật, có nguồn tham khảo công khai cho phần ★.
 

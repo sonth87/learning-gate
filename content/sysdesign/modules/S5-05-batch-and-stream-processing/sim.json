@@ -1,0 +1,118 @@
+{
+  "sims": [
+    {
+      "id": "S5-05/stream-lag",
+      "scenario": {
+        "id": "S5-05/stream-lag",
+        "seed": 5501,
+        "durationSec": 50,
+        "mix": { "readRatio": 0.2 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "ramp",
+          "from": 1000,
+          "to": 4500,
+          "overSec": 45
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Nguồn sự kiện", "en": "Event Producers" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "broker",
+              "kind": "queue",
+              "label": { "vi": "Event Log (Broker)", "en": "Event Log (Broker)" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 3,
+              "costPerHour": 0.25,
+              "knobs": [
+                {
+                  "key": "partitions",
+                  "type": "number",
+                  "label": { "vi": "Số Partition", "en": "Partitions" },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1.5, "cv": 0.15 },
+              "params": { "partitions": 4, "maxQueueDepth": 50000 }
+            },
+            {
+              "id": "processor",
+              "kind": "service",
+              "label": { "vi": "Stream Processor", "en": "Stream Processor" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Processor", "en": "Processors" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 12, "cv": 0.25 },
+              "params": { "replicas": 1, "poolSize": 32 }
+            },
+            {
+              "id": "warehouse",
+              "kind": "sql",
+              "label": { "vi": "Data Warehouse", "en": "Data Warehouse" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.6,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 12000 },
+              "latency": { "baseMs": 5, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-broker", "from": "client", "to": "broker", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "broker-proc", "from": "broker", "to": "processor", "mode": "pull", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "proc-wh", "from": "processor", "to": "warehouse", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "broker": "all-sequential",
+            "processor": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

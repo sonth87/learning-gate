@@ -1,0 +1,7 @@
+[
+  { "id": "S7-02.c1", "front": "Nhược điểm của bộ đếm Rate Limit cục bộ trên từng Gateway?", "back": "Khi có N Gateway sau Load Balancer, mỗi máy đếm riêng khiến ngưỡng thực tế bị nhân lên tới N lần (lệch ngưỡng)." },
+  { "id": "S7-02.c2", "front": "Đánh đổi khi dùng Redis tập trung cho Rate Limiter?", "back": "Đảm bảo chính xác toàn cục nhờ Lua script nguyên tử, nhưng phải đánh đổi thêm 1 hop mạng (~0,5 ms) và cần cụm Redis dự phòng tránh SPOF." },
+  { "id": "S7-02.c3", "front": "Fail-open và Fail-closed khác nhau thế nào?", "back": "Fail-open cho request đi tiếp khi Redis lỗi để giữ tính sẵn sàng; Fail-closed từ chối request để bảo vệ tuyệt đối tài nguyên nhạy cảm." },
+  { "id": "S7-02.c4", "front": "Token Bucket xử lý burst thế nào?", "back": "Xô chứa tối đa burst token và nạp đều ratePerSec token mỗi giây; burst ngắn dùng phần token tích sẵn, dài hạn không vượt ratePerSec." },
+  { "id": "S7-02.c5", "front": "Sliding Window Counter giải quyết vấn đề gì của Fixed Window?", "back": "Tính trọng số trượt giữa cửa sổ trước và cửa sổ hiện tại để triệt tiêu lỗi lọt gấp đôi ngưỡng tại thời điểm chuyển giao phút." }
+]

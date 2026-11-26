@@ -1,0 +1,81 @@
+[
+  {
+    "id": "S4-02.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải trước khi Cache bị thiếu dung lượng?" },
+    "prompt": { "vi": "Tập dữ liệu nóng có 80.000 key nhưng Redis Cache chỉ chứa được 20.000 key khiến LRU liên tục đẩy dữ liệu vừa nạp ra ngoài. Lưu lượng đang tăng từ 600 lên 4.200 req/s (90% đọc, 10% ghi). Mô phỏng tạm dừng ở giây 15: node nào sẽ chuyển sang Quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 15,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 15 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 15, "playToSec": 50, "speed": 2 },
+    "hints": [
+      { "vi": "Kiểm tra tỷ lệ Cache Hit thực tế khi dung lượng Cache chỉ bằng 1/4 tập dữ liệu nóng." },
+      { "vi": "Mọi lượt đọc Cache Miss và toàn bộ 10% lượt ghi đều rơi xuống Primary DB (năng lực 1.400 req/s)." }
+    ],
+    "explain": { "vi": "Do dung lượng Cache chỉ đạt 20.000 / 80.000 key, Cache Hit Ratio chỉ quanh {cache.hitRatio@20:0%}. Hơn một nửa số lượt đọc bị miss cộng với 10% lượt ghi đổ vào {db.name} khiến nó chạm ngưỡng quá tải đầu tiên vào giây {t.first.db:1} (ρ = {db.rho@35:2})." },
+    "sim": { "simId": "S4-02/eviction", "seekSec": 15, "autoplay": false },
+    "replay": { "simId": "S4-02/eviction", "seekSec": 15, "focus": { "nodes": ["cache", "db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-02.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra điểm nghẽn đang gánh toàn bộ Cache Miss" },
+    "prompt": { "vi": "Ở giây 45 (tải gần 3.800 req/s), tỷ lệ lỗi tăng vọt và p99 vượt ngưỡng SLO dù cụm App Server vẫn còn rảnh. Nhấn vào node đang là điểm nghẽn." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 45,
+    "maxPicks": 1,
+    "expected": ["db"],
+    "hints": [
+      { "vi": "Tìm node có mức sử dụng ρ ≥ 1 và hàng đợi đang phình to." }
+    ],
+    "explain": { "vi": "{db.name} đang ở ρ = {db.rho@45:2} với hàng đợi {db.queue@45:0} request, trong khi {app.name} chỉ có ρ = {app.rho@45:2}. Nguyên nhân gốc là Cache thiếu chỗ khiến LRU đẩy khóa nóng ra liên tục." },
+    "sim": { "simId": "S4-02/eviction", "seekSec": 45, "autoplay": false }
+  },
+  {
+    "id": "S4-02.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Chặn tình trạng LRU đẩy khóa nóng để đạt SLO" },
+    "prompt": { "vi": "Với tối đa 2 thay đổi và chi phí không vượt quá 1,60 USD/giờ, hãy xử lý nguyên nhân gốc để giữ p99 ≤ 130 ms và lỗi ≤ 1% suốt 70 giây mô phỏng." },
+    "difficulty": 2,
+    "simId": "S4-02/eviction",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.6 },
+    "allowed": [
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 5000, "max": 100000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app", "key": "replicas", "min": 2, "max": 8 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 70 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 70 },
+    "par": { "changes": 1, "costPerHour": 1.54 },
+    "solution": [
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 }
+    ],
+    "traps": [
+      {
+        "id": "scale-app-only",
+        "label": { "vi": "Tăng số instance App lên 8 máy" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 8 }
+        ],
+        "why": { "vi": "App Server không phải điểm nghẽn; thêm App không làm tăng dung lượng Cache nên tải miss đổ xuống Primary DB vẫn y nguyên." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tập dữ liệu nóng có 80.000 key, còn Cache hiện chỉ có 20.000 key." },
+      { "vi": "Mở rộng dung lượng Cache để giảm tải miss xuống DB sẽ rẻ hơn nhiều so với nâng cấp phần cứng DB." }
+    ],
+    "explain": { "vi": "Nâng dung lượng Cache lên 80.000 key giúp Hit Ratio tăng từ {cache.hitRatio@10:0%} lên {cache.hitRatio'@10:0%}, kéo ρ của {db.name} ở cuối kịch bản xuống còn {db.rho'@60:2} và giữ p99 đạt chuẩn {global.p99'@60:0} ms." },
+    "replay": { "simId": "S4-02/eviction", "seekSec": 15, "focus": { "nodes": ["cache", "db"] }, "autoplay": true }
+  }
+]

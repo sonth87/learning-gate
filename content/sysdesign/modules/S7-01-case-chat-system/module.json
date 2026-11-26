@@ -1,0 +1,24 @@
+{
+  "id": "S7-01",
+  "slug": "S7-01-case-chat-system",
+  "level": 7,
+  "order": 1,
+  "title": "Case: Thiết kế hệ thống Chat thời gian thực",
+  "summary": "Thiết kế hệ thống chat 20 triệu kết nối đồng thời: tách WebSocket Gateway giữ socket khỏi Chat Service không trạng thái, quản lý Session Registry, lưu Message Store theo hội thoại, đồng bộ ngoại tuyến và chống Reconnect Storm.",
+  "durationMin": 20,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Phân tách tầng WebSocket Gateway có trạng thái khỏi tầng Chat Service không trạng thái và tra cứu qua Session Registry" },
+    { "vi": "Thiết kế Message Store theo hội thoại với số thứ tự tăng dần và khử trùng bằng client_msg_id" },
+    { "vi": "Xử lý tin nhắn khi người nhận ngoại tuyến bằng Push Notification và đồng bộ theo sequence ID" },
+    { "vi": "Ngăn Reconnect Storm khi một Gateway gặp sự cố bằng Exponential Backoff có Jitter" }
+  ],
+  "tags": ["case-study", "chat", "websocket", "session-registry", "offline-sync", "reconnect-storm"],
+  "prerequisites": ["S4-09", "S4-11", "S2-09"],
+  "related": ["S6-04", "S7-03"],
+  "dtsRef": "design-chat",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế hệ thống Chat thời gian thực 20 triệu kết nối: WebSocket Gateway, Session Registry, Message Store, Offline Sync và chống Reconnect Storm."
+  }
+}

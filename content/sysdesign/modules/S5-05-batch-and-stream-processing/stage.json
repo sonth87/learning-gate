@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "base": "s1-setup",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Nguồn sự kiện", "en": "Event Producers" },
+      "inspector": {
+        "what": { "vi": "Ứng dụng và thiết bị phát sinh hàng tỉ sự kiện nhấp chuột, xem video.", "en": "Apps and devices emitting click and view events." },
+        "how": { "vi": "Gửi luồng sự kiện liên tục vào Event Log theo từng sự kiện nhỏ.", "en": "Streams events continuously into the Event Log." },
+        "why": { "vi": "Tách luồng ghi sự kiện phân tích khỏi cơ sở dữ liệu giao dịch chính.", "en": "Keeps analytical write volume off the primary OLTP database." }
+      }
+    },
+    "broker": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Event Log", "en": "Event Log" },
+      "inspector": {
+        "what": { "vi": "Bộ đệm nhật ký phân tán chia thành nhiều Partition (μ = 20.000 event/s).", "en": "Partitioned distributed event log (μ = 20,000 events/s)." },
+        "how": { "vi": "Lưu sự kiện theo thứ tự trong mỗi Partition và giữ lại để Processor kéo đọc.", "en": "Appends ordered events per partition for downstream consumers." },
+        "why": { "vi": "Hấp thụ đột biến lưu lượng và cho phép xử lý lại khi cần.", "en": "Buffers traffic spikes and enables replayability." }
+      }
+    },
+    "processor": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Stream Processor", "en": "Stream Processor" },
+      "inspector": {
+        "what": { "vi": "Cụm worker đọc sự kiện, gom Window và tổng hợp (μ = 2.000 event/s mỗi worker).", "en": "Stream worker aggregating windows and metrics (μ = 2,000 events/s each)." },
+        "how": { "vi": "Mỗi worker phụ trách một tập Partition; giữ trạng thái cửa sổ và khử trùng lặp.", "en": "Reads assigned partitions, maintains window state, and deduplicates IDs." },
+        "why": { "vi": "Nếu tốc độ xử lý nhỏ hơn tải đến, Consumer Lag sẽ tăng liên tục.", "en": "Consumer lag grows whenever arrival rate exceeds worker throughput." }
+      }
+    },
+    "warehouse": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Data Warehouse", "en": "Data Warehouse" },
+      "inspector": {
+        "what": { "vi": "Kho dữ liệu phân tích phục vụ bảng điều khiển và báo cáo (μ = 12.000 event/s).", "en": "Analytical warehouse serving dashboards and reports." },
+        "how": { "vi": "Nhận kết quả đã tổng hợp từ các job Batch hoặc Stream Processor.", "en": "Stores aggregated outputs from batch jobs and stream processors." },
+        "why": { "vi": "Tối ưu cho truy vấn cột trên lượng dữ liệu lịch sử lớn.", "en": "Optimized for columnar queries over large historical datasets." }
+      }
+    }
+  },
+  "links": {
+    "client-broker": {
+      "inspector": {
+        "what": { "vi": "Luồng đẩy sự kiện thô vào Event Log.", "en": "Raw event ingestion stream into Event Log." },
+        "how": { "vi": "Ghi nối tiếp vào các Partition theo khóa băm.", "en": "Appends events to partitions by key." },
+        "why": { "vi": "Đảm bảo không làm chậm luồng phục vụ người dùng.", "en": "Decouples ingestion from user-facing latency." }
+      }
+    },
+    "broker-proc": {
+      "inspector": {
+        "what": { "vi": "Luồng kéo sự kiện từ Event Log sang Stream Processor.", "en": "Event consumption stream from Event Log to Processor." },
+        "how": { "vi": "Mỗi Partition được giao cho một worker xử lý tuần tự.", "en": "Assigns each partition to a single worker." },
+        "why": { "vi": "Độ trễ giữa đầu vào và đầu ra thể hiện qua Consumer Lag.", "en": "Processing backlog appears here as Consumer Lag." }
+      }
+    },
+    "proc-wh": {
+      "inspector": {
+        "what": { "vi": "Ghi kết quả đã gom theo cửa sổ xuống Data Warehouse.", "en": "Writes aggregated window results to Data Warehouse." },
+        "how": { "vi": "Ghi theo lô nhỏ (micro-batch) để tối ưu thông lượng ghi.", "en": "Flushes aggregated batches for efficient storage." },
+        "why": { "vi": "Cung cấp số liệu tươi mới cho báo cáo theo thời gian thực.", "en": "Delivers fresh metrics for real-time dashboards." }
+      }
+    }
+  },
+  "scenes": {
+    "s1-setup": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "processor": { "badge": { "text": "Batch đêm", "tone": "default" } },
+        "warehouse": { "badge": { "text": "Trễ 24h", "tone": "warn" } }
+      }
+    },
+    "s2-skew": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "processor": { "loadPct": 98, "badge": { "text": "Hot Key 40%", "tone": "bad" } },
+        "warehouse": { "badge": { "text": "Chờ 3 giờ", "tone": "bad" } }
+      }
+    },
+    "s3-window": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "processor": { "badge": { "text": "Window + Watermark", "tone": "ok" } },
+        "warehouse": { "badge": { "text": "Độ tươi < 5s", "tone": "ok" } }
+      }
+    },
+    "s4-live-lag": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto"
+    },
+    "s5-scale": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "broker": { "badge": { "text": "4 Partition", "tone": "ok" } },
+        "processor": { "badge": { "text": "3 Worker", "tone": "ok" } },
+        "warehouse": { "badge": { "text": "Lag < 2s", "tone": "ok" } }
+      }
+    }
+  },
+  "live": {
+    "stream-lag": {
+      "sim": "S5-05/stream-lag",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "broker", "key": "partitions" },
+          { "node": "processor", "key": "replicas" }
+        ]
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 150, "badAbove": 300 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 250 }],
+      "focus": { "nodes": ["broker", "processor"] }
+    }
+  }
+}

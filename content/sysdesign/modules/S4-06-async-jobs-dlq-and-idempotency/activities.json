@@ -1,0 +1,86 @@
+[
+  {
+    "id": "S4-06.A1",
+    "kind": "predict",
+    "title": { "vi": "Điều gì xảy ra với Job Queue khi Worker gặp lỗi 40% mà DLQ đang tắt?" },
+    "prompt": { "vi": "Hệ thống đang nhận 900 đơn/s. Order API đẩy job vào Job Queue (maxDepth = 6.000, dlq = false), còn 3 Worker có tổng năng lực 1.200 job/s. Ở giây 15, bản phát hành lỗi khiến Worker gặp tỷ lệ lỗi 40% (bad deploy). Mô phỏng dừng ở giây 12. Theo bạn, sau giây 15 thành phần nào sẽ tích tụ hàng đợi và quá tải?" },
+    "difficulty": 1,
+    "at": 12,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Không có thành phần nào quá tải vì Worker có năng lực 1.200 job/s lớn hơn 900 đơn/s" },
+        { "vi": "Job Queue tích tụ dần các job lỗi quay vòng lại vì thiếu DLQ, tiến tới đầy maxDepth 6.000 và rớt đơn mới" },
+        { "vi": "Load Balancer tự động chuyển 40% đơn hàng sang Order DB bỏ qua API" },
+        { "vi": "Order DB là thành phần đầu tiên cạn kết nối" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 12, "playToSec": 55, "speed": 2 },
+    "hints": [
+      { "vi": "Khi dlq = false, mỗi job lỗi khi Worker xử lý không bị loại bỏ mà quay ngược lại vào Job Queue." },
+      { "vi": "Cộng dồn 900 job mới mỗi giây với các job lỗi quay vòng làm tốc độ vào Queue vượt quá tốc độ xả thực tế." }
+    ],
+    "explain": { "vi": "Từ giây 15, {worker.name} bị lỗi 40% nên mỗi giây có hàng trăm job thất bại quay vòng lại {queue.name} vì `dlq = false`. Hàng đợi trong {queue.name} tăng không dừng (đạt {queue.queue@45:0} job ở giây 45) cho tới khi chạm trần `maxDepth = 6.000` và bắt đầu rớt yêu cầu từ API." },
+    "sim": { "simId": "S4-06/dlq-poison", "seekSec": 12, "autoplay": false },
+    "replay": { "simId": "S4-06/dlq-poison", "seekSec": 12, "focus": { "nodes": ["queue", "worker"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-06.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Điều tra sự cố: Kẹt hàng đợi vì thông điệp lỗi và tạo đơn trùng khi Worker retry" },
+    "prompt": { "vi": "Lúc 14:20, một đợt cập nhật định dạng JSON khiến 15% thông điệp đặt hàng bị lỗi phân tích cú pháp ở Worker. Vì hàng đợi không cấu hình Dead Letter Queue (DLQ), các thông điệp lỗi này liên tục quay lại hàng đợi làm tắc nghẽn toàn bộ Worker trong 40 phút. Đồng thời, một số Worker bị tắt giữa chừng sau khi đã ghi đơn vào Database nhưng chưa kịp gửi Ack, khiến thông điệp được giao lại và tạo ra 320 đơn hàng trùng lặp. Hãy chọn nguyên nhân gốc và biện pháp khắc phục đúng." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S4-06/dlq-poison",
+      "seekSec": 35,
+      "focus": { "nodes": ["queue", "worker", "db"] }
+    },
+    "questions": [
+      {
+        "id": "poison-root-cause",
+        "type": "single",
+        "prompt": { "vi": "Vì sao 15% thông điệp lỗi định dạng JSON lại làm đình trệ cả những đơn hàng hợp lệ còn lại?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Vì thiếu DLQ và giới hạn số lần retry, thông điệp lỗi vĩnh viễn quay vòng vô tận chiếm hết lượt xử lý của Worker" } },
+          { "id": "b", "text": { "vi": "Vì Load Balancer không hỗ trợ giao thức HTTP/2" } },
+          { "id": "c", "text": { "vi": "Vì Order DB tự động khóa toàn bảng khi thấy JSON lỗi" } },
+          { "id": "d", "text": { "vi": "Vì Order API không dùng Cache-Aside" } }
+        ],
+        "correct": ["a"],
+        "weight": 40
+      },
+      {
+        "id": "duplicate-orders-cause",
+        "type": "single",
+        "prompt": { "vi": "Cơ chế nào bị thiếu dẫn đến việc 320 đơn hàng bị tạo trùng lặp khi Worker khởi động lại trước lúc gửi Ack?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Thiếu CDN Edge trước Order API" } },
+          { "id": "b", "text": { "vi": "Worker chưa kiểm tra Idempotency Key (ràng buộc duy nhất trong DB) dưới cơ chế giao tin at-least-once" } },
+          { "id": "c", "text": { "vi": "TTL của Redis đặt quá ngắn" } },
+          { "id": "d", "text": { "vi": "Số lượng Worker là số lẻ" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-actions",
+        "type": "multi",
+        "prompt": { "vi": "Chọn các biện pháp khắc phục triệt để cả hai vấn đề trên:" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đặt max_retries kèm Exponential Backoff và chuyển thông điệp vượt ngưỡng sang Dead Letter Queue (DLQ)" } },
+          { "id": "b", "text": { "vi": "Bắt buộc mỗi job mang idempotency_key và đặt ràng buộc UNIQUE trong Order DB trước khi tạo đơn" } },
+          { "id": "c", "text": { "vi": "Tắt hoàn toàn cơ chế Ack để Worker không bao giờ nhận lại job" } },
+          { "id": "d", "text": { "vi": "Tăng maxDepth của hàng đợi lên vô hạn để không bao giờ báo lỗi" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 25
+      }
+    ],
+    "hints": [
+      { "vi": "Thông điệp lỗi cú pháp không bao giờ thành công dù thử lại bao nhiêu lần — cần tách nó ra khỏi hàng đợi chính." },
+      { "vi": "Trong hệ thống phân tán, giao tin ít nhất một lần (at-least-once) là phổ biến; tính đúng một lần đạt được nhờ phía nhận có tính lũy đẳng (idempotent)." }
+    ],
+    "explain": { "vi": "Hàng đợi cần giới hạn số lần thử lại và đẩy các poison message sang DLQ để bảo vệ luồng chính. Đồng thời, dưới cơ chế at-least-once, Worker phải ghi nhận `idempotency_key` với ràng buộc UNIQUE trong DB để lần giao lại không tạo trùng đơn hàng." }
+  }
+]

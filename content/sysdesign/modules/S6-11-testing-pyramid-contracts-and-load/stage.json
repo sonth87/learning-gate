@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "base": "s1-manual-gap",
+  "layout": {
+    "test_runner": { "col": 0, "row": 1 },
+    "app": { "col": 2, "row": 1 },
+    "db_container": { "col": 4, "row": 0 },
+    "mock_payment": { "col": 4, "row": 2 }
+  },
+  "nodes": {
+    "test_runner": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Test Runner (CI)", "en": "Test Runner (CI)" },
+      "inspector": {
+        "what": { "vi": "Trình chạy kiểm thử tự động thực thi bộ test trên mỗi commit.", "en": "Automated test runner executing suites on every commit." },
+        "how": { "vi": "Chạy Unit & Contract Test trong vài giây trước, sau đó mới chạy Integration và E2E.", "en": "Runs fast Unit & Contract tests first, followed by Integration and E2E." },
+        "why": { "vi": "Phát hiện lỗi sớm ngay khi lập trình viên còn nhớ rõ ngữ cảnh đoạn mã.", "en": "Delivers fast feedback while the developer still holds full context." }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Order Service", "en": "Order Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ đang được kiểm thử (System Under Test), xử lý logic đơn hàng và tính tiền.", "en": "System Under Test handling order logic and currency rounding." },
+        "how": { "vi": "Logic thuần túy kiểm bằng Unit Test; câu truy vấn SQL kiểm bằng Integration Test.", "en": "Pure logic verified by Unit Tests; SQL queries verified by Integration Tests." },
+        "why": { "vi": "Tách biệt phần tính toán khỏi hạ tầng ngoài giúp bộ test vừa nhanh vừa đáng tin.", "en": "Decoupling calculation from I/O keeps the suite both fast and reliable." }
+      }
+    },
+    "db_container": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "DB Container", "en": "Test DB Container" },
+      "inspector": {
+        "what": { "vi": "Database thật (PostgreSQL) chạy tạm trong Docker (Testcontainers) cho Integration Test.", "en": "Ephemeral real PostgreSQL container (Testcontainers) for Integration Tests." },
+        "how": { "vi": "Khởi tạo mới cho mỗi lần chạy, áp dụng đúng file migration và dọn sạch sau khi xong.", "en": "Spins up clean per run, applies real migrations, and tears down afterward." },
+        "why": { "vi": "Mock không bắt được lỗi cú pháp SQL, khóa ngoại hay hành vi giao dịch thật của DB.", "en": "Mocks cannot catch SQL syntax errors, constraints, or transaction quirks." }
+      }
+    },
+    "mock_payment": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Payment Double", "en": "Payment Test Double" },
+      "inspector": {
+        "what": { "vi": "Test Double (Fake/Stub hoặc Mock Server từ Contract) thay cho cổng thanh toán thật.", "en": "Test Double (Fake/Stub or Contract Mock) standing in for the external gateway." },
+        "how": { "vi": "Trả về phản hồi cố định hoặc giả lập lỗi timeout để kiểm tra nhánh xử lý lỗi.", "en": "Returns deterministic responses or injects timeouts to test error paths." },
+        "why": { "vi": "Không gọi thẻ thật hay phụ thuộc mạng ngoài khi chạy kiểm thử tự động.", "en": "Avoids real charges and external network flakiness in automated tests." }
+      }
+    }
+  },
+  "links": {
+    "test_runner-app": {
+      "inspector": {
+        "what": { "vi": "Luồng gọi API hoặc hàm nội bộ từ Test Runner vào Order Service.", "en": "Test assertions invoking Order Service functions or HTTP endpoints." },
+        "how": { "vi": "Kiểm tra kết quả trả về, mã trạng thái và trạng thái dữ liệu sau khi chạy.", "en": "Asserts return values, status codes, and resulting state." },
+        "why": { "vi": "Xác nhận thay đổi mã nguồn mới không làm hỏng hành vi cũ (regression).", "en": "Confirms new changes do not break existing behavior." }
+      }
+    },
+    "app-db_container": {
+      "inspector": {
+        "what": { "vi": "Kết nối SQL thật từ Order Service tới PostgreSQL container.", "en": "Real SQL connection from Order Service to the PostgreSQL container." },
+        "how": { "vi": "Kiểm tra truy vấn, chỉ mục, ràng buộc duy nhất và kiểu dữ liệu số thập phân.", "en": "Verifies queries, constraints, indexes, and decimal precision." },
+        "why": { "vi": "Phát hiện lỗi làm tròn hoặc lệch kiểu dữ liệu trước khi lên staging.", "en": "Catches rounding or schema mismatches before staging." }
+      }
+    },
+    "app-mock_payment": {
+      "inspector": {
+        "what": { "vi": "Lời gọi giả lập từ Order Service sang Payment Double.", "en": "Simulated call from Order Service to Payment Test Double." },
+        "how": { "vi": "Khớp chặt với hợp đồng API (Contract) mà đội Payment đã cam kết.", "en": "Strictly matches the API Contract published by the Payment team." },
+        "why": { "vi": "Đảm bảo Test Double không bị lỗi thời so với dịch vụ Payment thật.", "en": "Prevents Test Doubles from drifting out of sync with the real service." }
+      }
+    }
+  },
+  "zones": {
+    "ci_sandbox": {
+      "nodeIds": ["app", "db_container", "mock_payment"],
+      "label": { "vi": "MÔI TRƯỜNG CI CÔ LẬP", "en": "ISOLATED CI SANDBOX" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-manual-gap": {
+      "show": { "nodes": ["test_runner", "app", "db_container"] },
+      "zones": ["ci_sandbox"],
+      "state": {
+        "test_runner": { "loadPct": 10, "badge": { "text": { "vi": "Bấm thử tay", "en": "Manual QA" }, "tone": "warn" } },
+        "app": { "loadPct": 45, "highlighted": true, "badge": { "text": { "vi": "Sót lỗi làm tròn", "en": "Missed rounding bug" }, "tone": "bad" } },
+        "db_container": { "loadPct": 20 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giới hạn của kiểm thử thủ công", "en": "Limits of Manual Testing" },
+        "lines": [
+          { "text": { "vi": "Chỉ thử vài ca chuẩn, dễ bỏ sót trường hợp biên", "en": "Covers happy paths only, misses edge cases" }, "tone": "bad" },
+          { "text": { "vi": "Khách hàng phát hiện lỗi trước đội ngũ phát triển", "en": "Customers discover regressions before the team" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-unit-doubles": {
+      "show": { "nodes": ["test_runner", "app", "mock_payment"] },
+      "zones": ["ci_sandbox"],
+      "state": {
+        "test_runner": { "loadPct": 25, "badge": { "text": { "vi": "< 10 ms / test", "en": "< 10 ms / test" }, "tone": "ok" } },
+        "app": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "Cô lập hàm tính", "en": "Isolated unit" }, "tone": "ok" } },
+        "mock_payment": { "loadPct": 10, "badge": { "text": { "vi": "Stub / Fake", "en": "Stub / Fake" }, "tone": "default" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Unit Test & Test Doubles", "en": "Unit Tests & Test Doubles" },
+        "lines": [
+          { "text": { "vi": "Kiểm một đơn vị logic thuần túy trong vài mili-giây", "en": "Verifies pure logic in milliseconds" }, "tone": "good" },
+          { "text": { "vi": "Stub trả dữ liệu cố định; Mock kiểm chứng lời gọi", "en": "Stubs return canned data; Mocks verify interactions" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-integration-container": {
+      "show": { "nodes": ["test_runner", "app", "db_container", "mock_payment"] },
+      "zones": ["ci_sandbox"],
+      "state": {
+        "test_runner": { "loadPct": 20 },
+        "app": { "loadPct": 35, "badge": { "text": { "vi": "Truy vấn thật", "en": "Real queries" }, "tone": "ok" } },
+        "db_container": { "loadPct": 40, "highlighted": true, "badge": { "text": { "vi": "Postgres Docker", "en": "Postgres Docker" }, "tone": "ok" } },
+        "mock_payment": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Integration Test với Container thật", "en": "Integration Test with Real Container" },
+        "lines": [
+          { "text": { "vi": "Chạy PostgreSQL thật trong Docker qua Testcontainers", "en": "Runs real PostgreSQL in Docker via Testcontainers" }, "tone": "good" },
+          { "text": { "vi": "Bắt lỗi làm tròn DECIMAL, khóa ngoại và migration", "en": "Catches DECIMAL rounding, constraints & migrations" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-contract-testing": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Consumer-Driven Contract Testing (ví dụ Pact) giữa hai đội", "en": "Consumer-Driven Contract Testing Between Teams" },
+        "subtitle": { "vi": "Phát hiện lệch tên trường hoặc kiểu dữ liệu mà không cần dựng toàn bộ môi trường E2E", "en": "Catches schema drift without spinning up a full E2E environment" },
+        "cells": [
+          "1. Order viết Contract",
+          "2. Đẩy lên Broker",
+          "3. Payment tải Contract",
+          "4. Verify trên Provider",
+          "5. Chặn PR nếu lệch"
+        ],
+        "activeIndices": [0, 1, 2, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "Consumer (Order)", "tone": "blue" },
+          { "index": 3, "label": "Provider (Payment)", "tone": "green" }
+        ]
+      }
+    },
+    "s5-test-pyramid": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Tháp Kiểm thử: nhiều test nhanh ở đáy, ít test chậm ở đỉnh", "en": "Test Pyramid: Fast & Many at Base, Slow & Few at Top" },
+        "nodes": [
+          { "id": "e2e", "x": 0, "y": -92, "label": "E2E Test (Ít nhất)", "sub": { "vi": "Toàn hành trình · phút · dễ chập chờn", "en": "Full journey · minutes · higher flake risk" }, "tone": "rose" },
+          { "id": "integ", "x": -110, "y": -5, "label": "Integration Test", "sub": { "vi": "DB/Queue thật · vài giây", "en": "Real DB/Queue · seconds" }, "tone": "orange" },
+          { "id": "contract", "x": 110, "y": -5, "label": "Contract Test", "sub": { "vi": "Khớp schema API giữa đội · giây", "en": "Cross-team API schema · seconds" }, "tone": "purple" },
+          { "id": "unit", "x": 0, "y": 88, "label": "Unit Test (Nhiều nhất)", "sub": { "vi": "Logic thuần · mili-giây · ổn định cao", "en": "Pure logic · milliseconds · deterministic" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "unit", "to": "integ", "label": "tăng phạm vi" },
+          { "from": "unit", "to": "contract", "label": "tăng tích hợp" },
+          { "from": "integ", "to": "e2e", "label": "chậm hơn" },
+          { "from": "contract", "to": "e2e", "label": "chậm hơn" }
+        ]
+      }
+    },
+    "s6-flaky-and-load": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "4 bài Load Test & Chaos Test", "en": "4 Load & Chaos Test Types" },
+        "rightTitle": { "vi": "Mục tiêu kiểm chứng thực tế", "en": "What Each Test Uncovers" },
+        "names": [
+          { "id": "l1", "name": "1. Baseline / Load Test", "note": { "vi": "Tải ngày thường ổn định", "en": "Normal expected traffic" }, "targetId": "r1" },
+          { "id": "l2", "name": "2. Stress & Spike Test", "note": { "vi": "Tăng tải tới điểm gãy", "en": "Ramp or surge past limits" }, "targetId": "r2" },
+          { "id": "l3", "name": "3. Soak Test (dài giờ)", "note": { "vi": "Chạy liên tục 8–24 giờ", "en": "Sustained 8–24h load" }, "targetId": "r3" },
+          { "id": "l4", "name": "4. Chaos / Fault Test", "note": { "vi": "Tiêm lỗi mất mạng / chậm", "en": "Inject latency or node loss" }, "targetId": "r4" }
+        ],
+        "objects": [
+          { "id": "r1", "typeTag": "BASELINE", "value": "Đo p50 / p99 chuẩn làm mốc so sánh", "fields": ["Xác nhận không tụt hiệu năng sau release"], "tone": "blue" },
+          { "id": "r2", "typeTag": "CAPACITY", "value": "Tìm điểm nghẽn đầu tiên & độ trễ Autoscaling", "fields": ["Kiểm tra giới hạn hàng đợi và tải đỉnh"], "tone": "orange" },
+          { "id": "r3", "typeTag": "ENDURANCE", "value": "Lộ rò rỉ bộ nhớ, cạn connection pool", "fields": ["Những lỗi không xuất hiện trong bài chạy ngắn"], "tone": "purple" },
+          { "id": "r4", "typeTag": "RESILIENCE", "value": "Kiểm chứng Timeout, Retry, Circuit Breaker", "fields": ["Đảm bảo một phụ thuộc lỗi không kéo sập toàn cụm"], "tone": "rose" }
+        ]
+      }
+    }
+  }
+}

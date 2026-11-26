@@ -1,0 +1,7 @@
+[
+  { "id": "S7-07.c1", "front": "Cây Trie lưu sẵn Top-K hoạt động thế nào?", "back": "Mỗi nút tiền tố trên cây Trie lưu sẵn mảng 5–10 từ khoá phổ biến nhất của nhánh đó. Khi tra cứu tiền tố dài p ký tự, hệ thống chỉ đi qua p nút rồi trả về ngay danh sách trong O(p)." },
+  { "id": "S7-07.c2", "front": "Vì sao Prefix Cache cho 1–3 ký tự lại rất hiệu quả ở 50.000 QPS?", "back": "Số lượng tiền tố 1–3 ký tự chỉ khoảng 18.278 tổ hợp (tốn vài chục MB RAM) nhưng lại chiếm tới ~90% lưu lượng truy vấn, giúp bảo vệ cụm Trie Shards." },
+  { "id": "S7-07.c3", "front": "Xếp hạng ngoại tuyến (Offline Ranking) cập nhật Trie như thế nào?", "back": "Thu thập Search Logs bất đồng bộ, chạy MapReduce/Spark tính lại Top-K, dựng ảnh chụp Trie mới ở tiến trình nền rồi Atomic Swap lên các shard mà không khoá luồng đọc." },
+  { "id": "S7-07.c4", "front": "Debouncing phía Client trong Autocomplete là gì?", "back": "Trình duyệt chờ khoảng 150–200 ms sau lần nhấn phím cuối cùng trước khi gọi API gợi ý, giúp cắt giảm 40–60% request thừa khi người dùng gõ nhanh." },
+  { "id": "S7-07.c5", "front": "Khi cây Trie vượt quá RAM một máy chủ thì phân mảnh (Sharding) thế nào?", "back": "Phân mảnh cây Trie theo dải ký tự đầu tiên (ví dụ a–g, h–p, q–z) dựa trên tần suất truy vấn để cân bằng tải đọc và bộ nhớ giữa các shard." }
+]

@@ -1,0 +1,30 @@
+{
+  "id": "S4-06",
+  "slug": "S4-06-async-jobs-dlq-and-idempotency",
+  "level": 4,
+  "order": 9,
+  "title": "Xử lý bất đồng bộ: Background Job, Retry, DLQ và Idempotency",
+  "summary": "Giảm độ trễ API bằng cách đẩy tác vụ nặng sang hàng đợi nền; thiết kế chiến lược Retry có Backoff, cách ly thông điệp độc qua Dead Letter Queue (DLQ) và chống tạo đơn trùng lặp bằng Idempotency Key.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân định rõ tác vụ nào cần chạy đồng bộ và tác vụ nào nên đẩy vào Message Queue để hạ độ trễ API" },
+    { "vi": "Thiết lập chiến lược Retry có Exponential Backoff, Jitter và giới hạn số lần thử để tránh làm quá tải dịch vụ đích" },
+    { "vi": "Cấu hình Dead Letter Queue (DLQ) để tách các thông điệp lỗi vĩnh viễn (poison message) khỏi hàng đợi chính" },
+    { "vi": "Áp dụng Idempotency Key ở Worker và Database nhằm đảm bảo an toàn khi cùng một job được giao lại nhiều lần" }
+  ],
+  "tags": ["async", "queues", "dlq", "idempotency", "retry", "background-jobs"],
+  "prerequisites": ["S2-04", "S1-02"],
+  "related": ["S2-11", "S4-11", "S4-09"],
+  "dtsRef": "queues",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-6-asynchronous-processin-queues.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-6-asynchronous-processin-queues.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo tiếng Việt chuẩn mực, bỏ sơ đồ Mermaid thay bằng scene isometric API → Queue → Worker → DB/DLQ, bổ sung mô phỏng vòng lặp poison message khi tắt DLQ và bài tập postmortem về đơn hàng trùng."
+  }
+}

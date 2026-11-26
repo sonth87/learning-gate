@@ -1,0 +1,8 @@
+[
+  { "id": "S6-12.c1", "front": "Nguyên tắc Build Once, Promote Everywhere là gì?", "back": "CI chỉ dựng một artifact bất biến duy nhất (gắn mã SHA) sau khi qua kiểm thử, rồi thúc đẩy chính artifact đó qua Staging tới Production để loại bỏ sai khác môi trường." },
+  { "id": "S6-12.c2", "front": "So sánh Blue-Green Deployment và Canary Rollout?", "back": "Blue-Green chạy 2 cụm song song và chuyển 100% lưu lượng một lần (tốn 2× tài nguyên). Canary chuyển dần 5% → 25% → 100%, so sánh Error Rate/p99 với bản ổn định và tự động rollback nếu vượt ngưỡng." },
+  { "id": "S6-12.c3", "front": "Quy trình Expand-Migrate-Contract gồm những bước nào?", "back": "1. Expand: thêm cột/bảng mới (nullable); 2. Dual-Write: bản mới ghi cả cũ lẫn mới; 3. Backfill: chép dữ liệu cũ; 4. Switch Read: đọc từ cột mới; 5. Contract: xóa cột cũ khi bản cũ đã tắt hẳn." },
+  { "id": "S6-12.c4", "front": "Vì sao không được đổi tên cột Database trong một bước?", "back": "Trong lúc rollout, phiên bản cũ vẫn đang chạy và truy vấn tên cột cũ. Đổi tên một bước làm bản cũ lỗi SQL hàng loạt và không thể rollback code." },
+  { "id": "S6-12.c5", "front": "Feature Flag mang lại lợi ích gì khi phát hành?", "back": "Tách Deploy (đưa code lên server) khỏi Release (mở tính năng cho người dùng). Cho phép bật dần theo nhóm nhỏ và tắt khẩn cấp trong 1 giây không cần deploy lại." },
+  { "id": "S6-12.c6", "front": "4 chỉ số DORA là gì?", "back": "Deployment Frequency (tần suất deploy), Lead Time for Changes (thời gian từ commit đến prod), Change Failure Rate (tỉ lệ deploy gây lỗi) và Time to Restore - MTTR (thời gian khôi phục)." }
+]

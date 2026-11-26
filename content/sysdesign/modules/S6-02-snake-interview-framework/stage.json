@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "base": "s1-timeline",
+  "scenes": {
+    "s1-timeline": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Bản đồ thời gian 45 phút theo khung SNAKE", "en": "45-Minute SNAKE Timeline" },
+        "cells": [
+          { "id": "s", "label": "S — Scope (5–7 phút)", "value": "Chốt tính năng & ràng buộc", "note": "Nêu rõ phần ngoài phạm vi", "tone": "rose" },
+          { "id": "n", "label": "N — Numbers (5–7 phút)", "value": "RPS · Lưu trữ · Băng thông · RAM", "note": "Tính đỉnh tải gấp 3 lần trung bình", "tone": "amber" },
+          { "id": "a", "label": "A — API (5 phút)", "value": "Định nghĩa hợp đồng giao tiếp", "note": "REST/RPC, phân trang, Idempotency", "tone": "green" },
+          { "id": "k", "label": "K — Key Components (10–12 phút)", "value": "Vẽ luồng đọc/ghi tổng thể", "note": "Gắn số liệu từ bước N vào từng khối", "tone": "blue" },
+          { "id": "e", "label": "E — Elaborate (10–12 phút)", "value": "Đào sâu nút nghẽn & lỗi", "note": "Giữ 5 phút dự phòng hỏi đáp", "tone": "purple" }
+        ]
+      }
+    },
+    "s2-scope-numbers": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "title": { "vi": "Chặng S & N: Biến đề bài mơ hồ thành số đo cụ thể", "en": "Scope & Numbers Conversion" },
+        "names": [
+          { "id": "n1", "name": "100M DAU × 10 lần đọc/ngày", "target": "o1" },
+          { "id": "n2", "name": "200M bài đăng/ngày × 600 B", "target": "o2" },
+          { "id": "n3", "name": "30% bài có ảnh/video 2 MB", "target": "o3" }
+        ],
+        "objects": [
+          { "id": "o1", "type": "Lưu lượng đọc", "value": "TB ~12.000 req/s · Đỉnh ~36.000 req/s ⇒ Cần Load Balancer + Cache", "tone": "blue" },
+          { "id": "o2", "type": "Lưu trữ 5 năm", "value": "120 GB/ngày ⇒ ~219 TB sau 5 năm ⇒ Cần kế hoạch Sharding", "tone": "amber" },
+          { "id": "o3", "type": "Băng thông Media", "value": "Hàng GB/s dữ liệu tĩnh ⇒ Bắt buộc dùng Object Storage + CDN", "tone": "green" }
+        ]
+      }
+    },
+    "s3-api-components": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Chặng A & K: Từ hợp đồng API đến sơ đồ thành phần", "en": "API Contracts to Key Components" },
+        "nodes": [
+          { "id": "api", "label": "Hợp đồng API", "sub": "POST /posts · GET /feed?cursor=...", "layer": 0, "tone": "green" },
+          { "id": "write", "label": "Luồng Ghi (8%)", "sub": "API → Post DB + Event Queue", "layer": 1, "tone": "amber" },
+          { "id": "read", "label": "Luồng Đọc (92%)", "sub": "API → Feed Cache → Post DB", "layer": 1, "tone": "blue" },
+          { "id": "cdn", "label": "Luồng Media", "sub": "Client → CDN → Object Storage", "layer": 1, "tone": "purple" }
+        ],
+        "edges": [
+          { "from": "api", "to": "write", "label": "tạo bài" },
+          { "from": "api", "to": "read", "label": "tải bảng tin" },
+          { "from": "api", "to": "cdn", "label": "tải ảnh/video" }
+        ]
+      }
+    },
+    "s4-elaborate": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Chặng E (Elaborate): Ba chủ đề đào sâu trọng tâm", "en": "Elaborate Focus Areas" },
+        "cells": [
+          { "id": "e1", "label": "1. Nút nghẽn & Hot Key", "value": "Fan-out kết hợp cho người nổi tiếng", "note": "Đẩy cho người thường, kéo khi xem với tài khoản triệu follower", "tone": "amber" },
+          { "id": "e2", "label": "2. Độ tin cậy & Lỗi", "value": "Không SPOF · Backoff · Failover", "note": "Đảm bảo mất 1 node API không làm gián đoạn dịch vụ", "tone": "blue" },
+          { "id": "e3", "label": "3. Chi phí & Đánh đổi", "value": "Chốt cấu hình nằm trong trần $/giờ", "note": "Bảo vệ lý do chọn Cache thay vì phình to Database", "tone": "green" }
+        ]
+      }
+    }
+  }
+}

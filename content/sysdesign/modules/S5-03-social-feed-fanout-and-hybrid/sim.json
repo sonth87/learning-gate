@@ -1,0 +1,203 @@
+{
+  "sims": [
+    {
+      "id": "S5-03/feed",
+      "scenario": {
+        "id": "S5-03/feed",
+        "seed": 5503,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 500, "to": 5000, "overSec": 40 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB dừng làm mất kết nối toàn cụm", "en": "LB crash drops all traffic" } }
+              ]
+            },
+            {
+              "id": "feed_api",
+              "kind": "service",
+              "label": { "vi": "Feed API", "en": "Feed API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 3, "poolSize": 50 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Feed API", "en": "Feed API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Feed API gặp sự cố", "en": "Feed API crash" } }
+              ]
+            },
+            {
+              "id": "feed_cache",
+              "kind": "cache",
+              "label": { "vi": "Timeline Cache", "en": "Timeline Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 60000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "ttlSec": 600,
+                "ttlJitterPct": 0.05,
+                "hitRatioMax": 0.95,
+                "workingSetKeys": 150000,
+                "capacityKeys": 10000,
+                "warmupSec": 10,
+                "singleflight": true
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Timeline Cache (key)", "en": "Timeline Cache capacity (keys)" },
+                  "min": 10000,
+                  "max": 250000,
+                  "step": 10000,
+                  "default": 10000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "post_db",
+              "kind": "nosql",
+              "label": { "vi": "Post DB (NoSQL)", "en": "Post DB (NoSQL)" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "shards": 1, "maxConnections": 2000 },
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số shard Post DB", "en": "Post DB shards" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Fan-out Queue", "en": "Fan-out Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.06,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "maxDepth": 100000, "dlq": true },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "fanout_worker",
+              "kind": "worker",
+              "label": { "vi": "Fan-out Worker", "en": "Fan-out Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 400 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 2 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Fan-out Worker", "en": "Fan-out Workers" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-feed_api", "from": "lb", "to": "feed_api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "feed_api-feed_cache", "from": "feed_api", "to": "feed_cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "feed_cache-post_db", "from": "feed_cache", "to": "post_db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "feed_api-queue", "from": "feed_api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500, "fraction": 0.1 },
+            { "id": "queue-fanout_worker", "from": "queue", "to": "fanout_worker", "mode": "pull", "netClass": "same-az" },
+            { "id": "fanout_worker-feed_cache", "from": "fanout_worker", "to": "feed_cache", "mode": "async", "netClass": "same-az", "timeoutMs": 500 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "feed_api": "all-sequential",
+            "feed_cache": "split",
+            "queue": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ]
+    }
+  ]
+}

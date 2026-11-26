@@ -1,0 +1,18 @@
+[
+  {
+    "id": "S6-08.A1",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra điểm nghẽn khi đợt Credential Stuffing tràn vào hệ thống" },
+    "prompt": { "vi": "Một đợt tấn công Credential Stuffing đẩy lưu lượng đăng nhập tăng từ 200 lên 1.400 req/s qua API Gateway chưa bật Rate Limiter. Tại giây 25, người dùng thật không thể đăng nhập. Hãy nhấn vào node đang bị bão hòa và là điểm nghẽn của toàn luồng xác thực." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 25,
+    "maxPicks": 1,
+    "expected": ["auth"],
+    "hints": [
+      { "vi": "Mỗi lần xác minh mật khẩu bằng Argon2id cố tình tốn ~45–50 ms CPU, khiến tầng nào cạn kiệt năng lực trước?" }
+    ],
+    "explain": { "vi": "{auth.name} bị bão hòa ở mức ρ = {auth.rho@25:2} với hàng đợi {auth.queue@25:0} request do phải chạy hàm băm chậm Argon2id cho toàn bộ lưu lượng tấn công, trong khi {db.name} mới ở ρ = {db.rho@25:2}. Đặt Rate Limiter tại API Gateway là cách chặn sớm trước khi chạm tới tầng Auth." },
+    "sim": { "simId": "S6-08/stuffing-defense", "seekSec": 25, "autoplay": false }
+  }
+]

@@ -1,0 +1,9 @@
+[
+  { "id": "S6-09.c1", "front": "Authentication (AuthN) khác Authorization (AuthZ) ở điểm nào?", "back": "AuthN xác minh người gọi là ai (đăng nhập, JWT); AuthZ quyết định người đó có được phép thực hiện hành động lên tài nguyên cụ thể hay không." },
+  { "id": "S6-09.c2", "front": "Lỗ hổng IDOR là gì và cách phòng chống?", "back": "Insecure Direct Object Reference xảy ra khi ứng dụng dùng ID từ client để truy vấn mà không kiểm tra quyền sở hữu. Khắc phục bằng cách luôn gắn `owner_id` hoặc `tenant_id` từ token đã xác thực vào mọi truy vấn." },
+  { "id": "S6-09.c3", "front": "Mass Assignment là gì và xử lý thế nào?", "back": "Lỗi xảy ra khi server bind thẳng payload JSON từ client vào model DB, cho phép sửa trường nhạy cảm như `role`. Xử lý bằng danh sách trường cho phép ghi (allow-list / DTO tường minh)." },
+  { "id": "S6-09.c4", "front": "Row-Level Security (RLS) đóng vai trò gì trong hệ thống nhiều tenant?", "back": "RLS là lớp phòng vệ chiều sâu ngay tại Database, tự động lọc mọi câu lệnh SQL theo `tenant_id` của phiên làm việc để ngăn rò rỉ chéo tenant kể cả khi code ứng dụng có sai sót." },
+  { "id": "S6-09.c5", "front": "Khi nào dùng RBAC, khi nào dùng ReBAC?", "back": "RBAC (User → Role → Permission) gọn cho quyền theo chức năng cố định. ReBAC (đồ thị quan hệ user–relation–object) phù hợp cho chia sẻ tài nguyên, nhóm lồng nhau và thừa kế thư mục cha-con." },
+  { "id": "S6-09.c6", "front": "Nguyên tắc Least Privilege và lỗi Confused Deputy là gì?", "back": "Least Privilege cấp cho mỗi dịch vụ quyền tối thiểu cần thiết. Confused Deputy xảy ra khi dịch vụ dùng quyền cao của chính nó để hành động theo yêu cầu user mà không kiểm tra quyền của user trên tài nguyên đích." },
+  { "id": "S6-09.c7", "front": "Audit Log cần ghi những thông tin nào?", "back": "Ghi bất biến danh tính người gọi, dịch vụ thực thi, hành động, ID tài nguyên đích, thời điểm và kết quả Allow/Deny để phục vụ điều tra sự cố và cảnh báo truy cập bất thường." }
+]

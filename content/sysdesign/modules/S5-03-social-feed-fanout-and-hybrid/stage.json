@@ -1,0 +1,255 @@
+{
+  "version": 1,
+  "base": "s1-feed-challenge",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng mở trang chủ xem Feed (90%) và đăng bài viết mới (10%).", "en": "Users loading home feeds (90%) and publishing posts (10%)." },
+        "how": { "vi": "Lưu lượng tăng từ 500 lên 5.000 req/s.", "en": "Traffic ramps from 500 to 5,000 req/s." },
+        "why": { "vi": "Đòi hỏi tốc độ mở Feed nhanh dưới 120 ms.", "en": "Expects fast feed loads under 120 ms." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Điều phối yêu cầu vào cụm Feed API.", "en": "Distributes requests across Feed API instances." },
+        "how": { "vi": "Cần tối thiểu 2 instance để xóa điểm lỗi đơn.", "en": "Needs at least 2 instances for zero SPOF." },
+        "why": { "vi": "Đảm bảo tính sẵn sàng cho cửa ngõ hệ thống.", "en": "Ensures high availability at the entry tier." }
+      }
+    },
+    "feed_api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Feed API", "en": "Feed API" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ đọc Timeline Cache, trộn bài Celebrity và tiếp nhận bài đăng mới (μ = 2.000 req/s).", "en": "Reads Timeline Cache, merges Celebrity posts, and accepts new posts (μ = 2,000 req/s)." },
+        "how": { "vi": "Đọc Feed Cache trước khi hỏi Post DB; khi có bài mới thì đẩy vào Queue.", "en": "Checks Feed Cache before Post DB; enqueues new posts for fan-out." },
+        "why": { "vi": "Tầng không giữ trạng thái giúp mở rộng ngang dễ dàng.", "en": "Stateless tier for easy horizontal scaling." }
+      }
+    },
+    "feed_cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Timeline Cache", "en": "Timeline Cache" },
+      "inspector": {
+        "what": { "vi": "Redis Sorted Set lưu danh sách post_id cho từng người dùng hoạt động.", "en": "Redis Sorted Set storing post_ids per active user timeline." },
+        "how": { "vi": "Tập người dùng hoạt động gồm 150.000 key; dung lượng nhỏ hơn sẽ đẩy lượt đọc xuống Post DB.", "en": "Active working set is 150,000 keys; smaller capacity pushes reads to Post DB." },
+        "why": { "vi": "Giữ lượt mở Feed dưới 10 ms và bảo vệ Post DB.", "en": "Keeps feed reads under 10 ms and shields Post DB." }
+      }
+    },
+    "post_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Post DB (NoSQL)", "en": "Post DB (NoSQL)" },
+      "inspector": {
+        "what": { "vi": "Kho lưu trữ nội dung bài viết phân mảnh theo tác giả/ID (μ = 1.200 req/s mỗi shard).", "en": "Sharded post store holding post payloads (μ = 1,200 req/s per shard)." },
+        "how": { "vi": "Nhận lượt đọc trượt Cache và toàn bộ bài đăng mới.", "en": "Serves cache-miss reads and all new post writes." },
+        "why": { "vi": "Dễ bị quá tải đầu tiên nếu Fan-out on Read hoặc Cache quá nhỏ.", "en": "First to saturate under Fan-out on Read or undersized Cache." }
+      }
+    },
+    "queue": {
+      "shape": "queue",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": { "vi": "Fan-out Queue", "en": "Fan-out Queue" },
+      "inspector": {
+        "what": { "vi": "Hàng đợi nhận sự kiện bài đăng mới để phát tới người theo dõi.", "en": "Queue buffering new-post events for follower fan-out." },
+        "how": { "vi": "Hấp thụ lưu lượng phát bài bất đồng bộ.", "en": "Buffers fan-out writes asynchronously." },
+        "why": { "vi": "Giúp tác giả nhận phản hồi đăng bài ngay lập tức.", "en": "Gives authors instant post confirmation." }
+      }
+    },
+    "fanout_worker": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Fan-out Worker", "en": "Fan-out Worker" },
+      "inspector": {
+        "what": { "vi": "Worker đẩy post_id vào Timeline Cache của người theo dõi (bỏ qua Celebrity để Pull lúc đọc).", "en": "Worker pushing post_ids into follower Timeline Caches (skipping Celebrities)." },
+        "how": { "vi": "Xử lý ở tốc độ 400 job/s mỗi worker.", "en": "Processes 400 fan-out jobs/s per worker." },
+        "why": { "vi": "Đảm bảo bài viết mới xuất hiện trên feed người theo dõi trong vài giây.", "en": "Delivers new posts to follower timelines within seconds." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": { "inspector": { "what": { "vi": "Lưu lượng người dùng tới Load Balancer.", "en": "User traffic to Load Balancer." }, "how": { "vi": "Gồm 90% đọc feed và 10% đăng bài.", "en": "90% feed reads and 10% post writes." }, "why": { "vi": "Điểm vào thống nhất.", "en": "Unified entry point." } } },
+    "lb-feed_api": { "inspector": { "what": { "vi": "Chuyển tiếp yêu cầu tới các instance Feed API.", "en": "Forwards requests to Feed API instances." }, "how": { "vi": "Chia tải đều theo Round-robin.", "en": "Round-robin load balancing." }, "why": { "vi": "Tránh quá tải đơn lẻ.", "en": "Prevents single-node overload." } } },
+    "feed_api-feed_cache": { "inspector": { "what": { "vi": "Feed API đọc danh sách post_id từ Timeline Cache.", "en": "Feed API reads post_ids from Timeline Cache." }, "how": { "vi": "Trúng đệm trả về ngay trong vài mili-giây.", "en": "Cache hit returns in milliseconds." }, "why": { "vi": "Tránh truy vấn hàng trăm tác giả mỗi lần mở app.", "en": "Avoids querying hundreds of authors per feed load." } } },
+    "feed_cache-post_db": { "inspector": { "what": { "vi": "Truy vấn trượt đệm và bài đăng mới đi xuống Post DB.", "en": "Cache misses and new post writes to Post DB." }, "how": { "vi": "Tải phụ thuộc trực tiếp vào Hit Ratio của Timeline Cache.", "en": "Load depends directly on Timeline Cache Hit Ratio." }, "why": { "vi": "Cần giữ tải trong năng lực của các shard Post DB.", "en": "Must stay within Post DB shard capacity." } } },
+    "feed_api-queue": { "inspector": { "what": { "vi": "Đẩy sự kiện bài đăng mới vào Fan-out Queue.", "en": "Enqueues new-post events to Fan-out Queue." }, "how": { "vi": "Thực hiện bất đồng bộ (10% lưu lượng).", "en": "Async enqueue (10% of traffic)." }, "why": { "vi": "Không bắt người đăng chờ phát tới hàng nghìn người.", "en": "Authors do not wait for follower fan-out." } } },
+    "queue-fanout_worker": { "inspector": { "what": { "vi": "Fan-out Worker kéo sự kiện từ hàng đợi.", "en": "Fan-out Worker pulls events from Queue." }, "how": { "vi": "Áp dụng luật Hybrid: Push tài khoản thường, bỏ qua Celebrity.", "en": "Applies Hybrid rule: push regular, skip Celebrity." }, "why": { "vi": "Ngăn tắc nghẽn hàng đợi khi người nổi tiếng đăng bài.", "en": "Prevents queue backlog when celebrities post." } } },
+    "fanout_worker-feed_cache": { "inspector": { "what": { "vi": "Worker ghi post_id vào Timeline Cache của người theo dõi.", "en": "Worker inserts post_id into follower Timeline Caches." }, "how": { "vi": "Chỉ giữ tối đa 1.000 ID mới nhất mỗi người.", "en": "Caps each timeline at ~1,000 recent IDs." }, "why": { "vi": "Kiểm soát dung lượng RAM của Redis.", "en": "Bounds Redis memory footprint." } } }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "lb": { "col": 2, "row": 1 },
+    "feed_api": { "col": 4, "row": 1 },
+    "feed_cache": { "col": 6, "row": 0 },
+    "post_db": { "col": 8, "row": 0 },
+    "queue": { "col": 6, "row": 2 },
+    "fanout_worker": { "col": 8, "row": 2 }
+  },
+  "zones": {
+    "feed_tier": {
+      "nodeIds": ["lb", "feed_api", "feed_cache", "post_db", "queue", "fanout_worker"],
+      "label": { "vi": "HỆ THỐNG NEWS FEED (HYBRID FAN-OUT)", "en": "NEWS FEED SYSTEM (HYBRID FAN-OUT)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-feed-challenge": {
+      "show": { "nodes": "*" },
+      "zones": ["feed_tier"],
+      "state": {
+        "feed_api": { "loadPct": 25 },
+        "feed_cache": { "loadPct": 20, "highlighted": true, "badge": { "text": { "vi": "Chỉ lưu ID", "en": "IDs Only" }, "tone": "ok" } },
+        "post_db": { "loadPct": 22 },
+        "queue": { "loadPct": 15 },
+        "fanout_worker": { "loadPct": 18, "badge": { "text": { "vi": "Hybrid", "en": "Hybrid" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đọc Feed vs Phát bài mới", "en": "Feed Read vs Post Fan-out" },
+        "lines": [
+          { "text": { "vi": "Đọc (90%): API → Timeline Cache → Post DB", "en": "Read (90%): API → Timeline Cache → Post DB" }, "tone": "good" },
+          { "text": { "vi": "Đăng (10%): API → Queue → Worker → Cache", "en": "Write (10%): API → Queue → Worker → Cache" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-live-read-overload": {
+      "show": { "nodes": "*" },
+      "zones": ["feed_tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng tải tăng 500 → 5.000 req/s", "en": "Load Ramp 500 → 5,000 req/s" },
+        "lines": [
+          { "text": { "vi": "Feed Cache mới phủ 50k / 150k key hoạt động", "en": "Feed Cache covers only 50k / 150k active keys" }, "tone": "bad" },
+          { "text": { "text": "Theo dõi node nào quá tải đầu tiên", "vi": "Theo dõi node nào quá tải đầu tiên", "en": "Watch which node saturates first" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-live-limit": {
+      "show": { "nodes": "*" },
+      "zones": ["feed_tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đo giới hạn tải bền vững", "en": "Measuring Sustainable Load Limit" },
+        "lines": [
+          { "text": { "vi": "Tìm mức req/s tối đa giữ p99 ≤ 120 ms & lỗi ≤ 1%", "en": "Find max req/s keeping p99 ≤ 120 ms & error ≤ 1%" }, "tone": "amber" },
+          { "text": { "vi": "Dùng núm tải để thử và xác nhận trên đồ thị", "en": "Use load knob to test and verify on chart" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-fanout-write": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Fan-out on Write: Chuẩn bị sẵn Timeline Cache", "en": "Fan-out on Write: Pre-computed Timeline Cache" },
+        "subtitle": { "vi": "Chỉ lưu tối đa 1.000 post_id (8 byte/mục) trong Redis Sorted Set, lấy chi tiết bài viết theo lô lúc đọc", "en": "Store up to 1,000 post_ids (8 bytes each) in Redis Sorted Set; batch-hydrate on read" },
+        "cells": [
+          "1. Tác giả đăng bài",
+          "2. Lưu Post DB + Queue",
+          "3. Worker đẩy post_id",
+          "4. Đọc Feed < 10 ms"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 2, "label": "8 byte/ID · max 1.000", "tone": "blue" },
+          { "index": 3, "label": "1 lần đọc RAM", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hiệu quả", "en": "Effect" },
+          "value": { "vi": "Chuyển tải từ lúc đọc sang chạy nền lúc đăng", "en": "Shifts work from read path to async write path" },
+          "tone": "green"
+        }
+      }
+    },
+    "s5-hybrid-celebrity": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Phân loại tác giả", "en": "Author Tier" },
+        "rightTitle": { "vi": "Chiến lược Hybrid", "en": "Hybrid Strategy" },
+        "names": [
+          { "id": "regular", "name": "Tài khoản thường (< 100k follower)", "note": { "vi": "Đa số người dùng", "en": "Majority of users" }, "targetId": "push", "style": "solid" },
+          { "id": "celeb", "name": "Người nổi tiếng (50M follower)", "note": { "vi": "Gây bão ghi nếu Push", "en": "Causes write storm on Push" }, "targetId": "pull", "style": "danger" },
+          { "id": "inactive", "name": "Người đọc không hoạt động > 30 ngày", "note": { "vi": "Không mở app", "en": "Dormant accounts" }, "targetId": "skip", "style": "solid" }
+        ],
+        "objects": [
+          { "id": "push", "typeTag": "PUSH", "value": "Fan-out on Write", "fields": ["Worker đẩy vào Timeline Cache", "Đọc feed tức thì < 10 ms"], "tone": "green", "badge": { "vi": "Nhanh lúc đọc", "en": "Fast reads" } },
+          { "id": "pull", "typeTag": "PULL", "value": "Fan-out on Read lúc mở app", "fields": ["Không đẩy 50 triệu job vào Queue", "Trộn bài mới của Celebrity khi đọc"], "tone": "yellow", "badge": { "vi": "Tránh backlog 50M", "en": "Avoids 50M backlog" } },
+          { "id": "skip", "typeTag": "PRUNE", "value": "Bỏ qua & Dựng lại khi quay lại", "fields": ["Tiết kiệm RAM và lượt ghi Queue", "Dựng lại có điều tiết nếu mở app"], "tone": "green", "badge": { "vi": "Tiết kiệm tài nguyên", "en": "Saves RAM & CPU" } }
+        ]
+      }
+    },
+    "s6-live-hardened": {
+      "show": { "nodes": "*" },
+      "zones": ["feed_tier"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thiết kế Feed chịu đỉnh 4.500 req/s", "en": "Hardening Feed for 4,500 req/s Peak" },
+        "lines": [
+          { "text": { "vi": "Chịu tải chuẩn 2.000 req/s và đột biến 4.500 req/s", "en": "Sustain 2,000 req/s steady and 4,500 req/s spike" }, "tone": "amber" },
+          { "text": { "vi": "Nâng Feed Cache & Shard Post DB trong ngân sách", "en": "Tune Feed Cache & Post DB shards within budget" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["feed_tier"],
+      "state": {
+        "lb": { "loadPct": 15, "badge": { "text": { "vi": "2+ Active", "en": "2+ Active" }, "tone": "ok" } },
+        "feed_api": { "loadPct": 35, "badge": { "text": { "vi": "Merge + Rank", "en": "Merge + Rank" }, "tone": "ok" } },
+        "feed_cache": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "150k keys", "en": "150k keys" }, "tone": "ok" } },
+        "post_db": { "loadPct": 32, "badge": { "text": { "vi": "Sharded", "en": "Sharded" }, "tone": "ok" } },
+        "fanout_worker": { "loadPct": 25, "badge": { "text": { "vi": "Hybrid Push", "en": "Hybrid Push" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc Hybrid News Feed", "en": "Hybrid News Feed Architecture" },
+        "lines": [
+          { "text": { "vi": "Push cho đa số · Pull cho Celebrity", "en": "Push for regular users · Pull for Celebrities" }, "tone": "good" },
+          { "text": { "vi": "Timeline Cache lưu ID · Cursor Pagination", "en": "ID-only Timeline Cache · Cursor Pagination" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sim": "S5-03/feed",
+    "startAtSec": 0,
+    "autoplay": true,
+    "speed": 1,
+    "controls": {
+      "timeline": true,
+      "knobs": [
+        { "node": "feed_api", "key": "replicas" },
+        { "node": "feed_cache", "key": "capacityKeys" },
+        { "node": "post_db", "key": "shards" },
+        { "node": "fanout_worker", "key": "replicas" }
+      ]
+    },
+    "telemetry": [
+      { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+      { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 120 } },
+      { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+    ],
+    "slo": [
+      { "metric": "p99", "value": 120 }
+    ],
+    "focus": { "nodes": ["feed_cache", "post_db", "fanout_worker"] }
+  }
+}

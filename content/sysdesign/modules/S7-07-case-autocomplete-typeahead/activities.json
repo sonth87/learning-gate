@@ -1,0 +1,65 @@
+[
+  {
+    "id": "S7-07.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng số tiền tố 1–3 ký tự cần lưu trong Prefix Cache" },
+    "prompt": { "vi": "Với bảng chữ cái 26 ký tự tiếng Anh (a–z), tổng số chuỗi tiền tố khác nhau có độ dài từ 1 đến 3 ký tự là bao nhiêu? (Công thức: 26 + 26² + 26³)" },
+    "difficulty": 2,
+    "quantity": "Tổng số tiền tố 1–3 ký tự",
+    "unit": "tiền tố",
+    "truth": { "type": "formula", "expr": "26 + 26*26 + 26*26*26", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.02, "pass": 0.1 },
+    "workings": [
+      { "vi": "Tiền tố 1 ký tự: 26." },
+      { "vi": "Tiền tố 2 ký tự: 26² = 676." },
+      { "vi": "Tiền tố 3 ký tự: 26³ = 17.576." },
+      { "vi": "Tổng cộng = 26 + 676 + 17.576 = 18.278 tiền tố." }
+    ],
+    "hints": [
+      { "vi": "Cộng số tổ hợp có độ dài 1, 2 và 3 ký tự: 26¹ + 26² + 26³." }
+    ],
+    "explain": { "vi": "Chỉ có đúng {truth:0} tiền tố độ dài 1–3 ký tự. Nếu mỗi tiền tố lưu Top-10 gợi ý (~500 byte), toàn bộ bộ nhớ đệm này chỉ tốn khoảng 9 MB RAM nhưng gánh được phần lớn lưu lượng 50.000 QPS." }
+  },
+  {
+    "id": "S7-07.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Giữ độ trễ p99 dưới 80 ms ở đỉnh 50.000 QPS" },
+    "prompt": { "vi": "Khi tải tăng lên 50.000 QPS, Prefix Cache mặc định (8.000 key) không đủ chứa 20.000 tiền tố nóng nên đẩy quá nhiều Miss xuống 3 Trie Shards. Với tối đa 1 thay đổi và ngân sách ≤ 0,80 USD/giờ, hãy giữ p99 ≤ 80 ms và tỷ lệ lỗi ≤ 1% trong suốt 75 giây." },
+    "difficulty": 2,
+    "simId": "S7-07/typeahead",
+    "budget": { "maxChanges": 1, "maxCostPerHour": 0.8 },
+    "allowed": [
+      { "type": "knob", "node": "prefix_cache", "key": "capacityKeys", "min": 4000, "max": 40000 },
+      { "type": "knob", "node": "trie_shards", "key": "replicas", "min": 1, "max": 12 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 80, "window": { "fromSec": 0, "toSec": 75 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 75 } }
+    ],
+    "soft": [
+      { "id": "shards-calm", "kind": "node-state", "node": "trie_shards", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 75 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 75 },
+    "par": { "changes": 1, "costPerHour": 0.7 },
+    "solution": [
+      { "type": "knob", "node": "prefix_cache", "key": "capacityKeys", "value": 20000 }
+    ],
+    "traps": [
+      {
+        "id": "only-shards",
+        "label": { "vi": "Chỉ tăng lên 5 Trie Shard mà không mở rộng Prefix Cache" },
+        "changes": [
+          { "type": "knob", "node": "trie_shards", "key": "replicas", "value": 5 }
+        ],
+        "why": { "vi": "Khi Prefix Cache thiếu chỗ, hơn một nửa của 50.000 QPS vẫn rơi xuống Trie Shards, vượt quá năng lực của 5 shard và đẩy chi phí vượt ngân sách 0,80 USD/giờ." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tập tiền tố nóng có kích thước 20.000 key, nhưng Prefix Cache đang chỉ đặt 8.000 key." },
+      { "vi": "Tăng capacityKeys của Prefix Cache lên 20.000 chỉ cần 1 thay đổi và đẩy Hit Ratio lên ~90%." }
+    ],
+    "explain": { "vi": "Mở rộng Prefix Cache lên 20.000 key nâng Hit Ratio từ {prefix_cache.hitRatio@10:0%} lên {prefix_cache.hitRatio'@10:0%}, giảm tải vào Trie Shards xuống chỉ còn khoảng 12% (≈ 6.000 req/s) để 3 shard xử lý mượt ở p99 < 80 ms." },
+    "replay": { "simId": "S7-07/typeahead", "seekSec": 45, "focus": { "nodes": ["prefix_cache", "trie_shards"] }, "autoplay": true }
+  }
+]

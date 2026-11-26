@@ -1,0 +1,9 @@
+[
+  { "id": "S4-03.c1", "front": "Vì sao CDN giải quyết được bài toán độ trễ địa lý?", "back": "Tín hiệu mạng qua cáp quang bị giới hạn bởi tốc độ ánh sáng, nên gọi xuyên lục địa luôn tốn hàng trăm ms RTT. CDN đặt bản sao tại các Edge Server gần người dùng để trả lời ngay trong khu vực." },
+  { "id": "S4-03.c2", "front": "Phân biệt `Cache-Control: public` và `private`?", "back": "`public` cho phép bộ nhớ đệm dùng chung (CDN Edge, proxy) lưu và phục vụ cho nhiều người dùng. `private` chỉ cho phép trình duyệt của chính người dùng đó lưu, cấm CDN lưu chung." },
+  { "id": "S4-03.c3", "front": "Ý nghĩa của `max-age` và `s-maxage`?", "back": "`max-age` quy định thời gian hợp lệ cho cả trình duyệt và CDN. `s-maxage` ghi đè riêng cho shared cache (CDN), cho phép CDN giữ bản lâu hơn trình duyệt." },
+  { "id": "S4-03.c4", "front": "Versioned URL (Cache Busting) hoạt động thế nào?", "back": "Gắn mã băm nội dung vào tên file (ví dụ `style.a1b2c3.css`). Khi file đổi, tên URL đổi theo nên trình duyệt và Edge nạp bản mới ngay mà không cần gọi Purge API, đồng thời đặt được `immutable`." },
+  { "id": "S4-03.c5", "front": "Origin Shield giải quyết vấn đề gì?", "back": "Khi nhiều Edge POP cùng bị miss một tài nguyên mới hoặc khi Edge còn nguội, Origin Shield đứng ở giữa gom các yêu cầu trùng lặp lại để Origin chỉ bị hỏi một lần." },
+  { "id": "S4-03.c6", "front": "Edge nguội (Cold Edge) là gì?", "back": "Trạng thái khi cụm Edge mới bật hoặc vừa bị purge trắng nên chưa có dữ liệu; các lượt truy cập đầu tiên đều bị miss và đổ dồn về tầng sau cho đến khi Edge được làm ấm." },
+  { "id": "S4-03.c7", "front": "Edge Computing mở rộng vai trò của CDN ra sao?", "back": "Ngoài lưu trữ file tĩnh, Edge Computing cho phép chạy mã nhẹ (như kiểm tra JWT, định tuyến A/B testing, chuyển hướng theo vùng) ngay tại Edge gần người dùng trước khi chạm tới Origin." }
+]

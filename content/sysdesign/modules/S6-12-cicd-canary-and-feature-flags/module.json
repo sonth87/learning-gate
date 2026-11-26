@@ -1,0 +1,24 @@
+{
+  "id": "S6-12",
+  "slug": "S6-12-cicd-canary-and-feature-flags",
+  "level": 6,
+  "order": 12,
+  "title": "CI/CD, Canary Rollout và Feature Flag",
+  "summary": "Xây dựng quy trình CI/CD dựng artifact một lần và triển khai an toàn qua nhiều môi trường: Blue-Green, Canary Rollout tự động rollback khi lỗi, di trú dữ liệu Expand-Migrate-Contract, Feature Flag và 4 chỉ số DORA.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Áp dụng nguyên tắc Build Once, Promote Everywhere với artifact bất biến từ CI qua Staging tới Production" },
+    { "vi": "So sánh chiến lược triển khai Blue-Green với Canary Rollout và thiết lập ngưỡng tự động rollback khi tỉ lệ lỗi tăng" },
+    { "vi": "Thực hiện di trú lược đồ Database không gián đoạn theo mẫu Expand-Migrate-Contract để bản cũ và bản mới cùng chạy song song" },
+    { "vi": "Dùng Feature Flag để tách thời điểm triển khai (Deploy) khỏi thời điểm phát hành (Release) và đo lường hiệu quả qua 4 chỉ số DORA" }
+  ],
+  "tags": ["cicd", "canary", "blue-green", "feature-flags", "database-migration", "dora"],
+  "prerequisites": ["S1-05", "S6-11"],
+  "related": ["S4-07", "S6-11"],
+  "dtsRef": "cicd",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về CI/CD dựng một lần dùng nhiều môi trường, chiến lược triển khai Blue-Green, Canary Rollout tự động rollback khi lỗi, di trú dữ liệu Expand-Migrate-Contract, Feature Flag và 4 chỉ số DORA."
+  }
+}

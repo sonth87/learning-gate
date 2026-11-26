@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S5-02.q1",
+    "type": "mc",
+    "q": "Vì sao chiến lược dùng bộ đếm cấp theo lô + xáo trộn ID + mã hóa Base62 thường được ưu tiên hơn hàm băm MD5 cắt 7 ký tự trong URL Shortener?",
+    "code": "",
+    "choices": [
+      "Vì Base62 tạo ra mã dài hơn 100 ký tự",
+      "Vì bộ đếm loại bỏ hoàn toàn nguy cơ va chạm (không cần truy vấn DB kiểm tra trùng) và xáo ID giúp tránh đoán thứ tự",
+      "Vì hàm băm MD5 không chạy được trên Linux",
+      "Vì Base62 tự động nén URL gốc"
+    ],
+    "answer": 1,
+    "explain": "Hàm băm cắt ngắn có xác suất va chạm nên phải kiểm tra DB mỗi lần tạo. Bộ đếm cấp theo dải + xáo ID đảm bảo duy nhất 100% ngay trong RAM và không lộ số thứ tự."
+  },
+  {
+    "id": "S5-02.q2",
+    "type": "mc",
+    "q": "Sự khác biệt quan trọng nhất giữa mã HTTP 301 và HTTP 302 khi chuyển hướng URL ngắn là gì?",
+    "code": "",
+    "choices": [
+      "301 bảo trình duyệt cache vĩnh viễn (giảm tải server nhưng mất thống kê click), còn 302 luôn hỏi lại server (đo được đủ click)",
+      "302 nhanh hơn 301 gấp 10 lần",
+      "301 chỉ dùng cho ảnh, 302 chỉ dùng cho văn bản",
+      "302 không cần DNS"
+    ],
+    "answer": 0,
+    "explain": "Với 301, các lần bấm tiếp theo trên cùng trình duyệt tự chuyển hướng mà không báo về server; 302 buộc quay lại server giúp ghi nhận đầy đủ dữ liệu phân tích."
+  },
+  {
+    "id": "S5-02.q3",
+    "type": "tf",
+    "q": "Khi người dùng nhấp vào liên kết ngắn, việc cập nhật số đếm lượt nhấp nên được thực hiện đồng bộ trực tiếp vào Database phân tích trước khi trả về phản hồi chuyển hướng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Ghi thống kê đồng bộ sẽ làm chậm đường đọc nóng của mọi lượt chuyển hướng. Hãy phát sự kiện vào Message Queue để Worker xử lý bất đồng bộ."
+  },
+  {
+    "id": "S5-02.q4",
+    "type": "mc",
+    "q": "Trong hệ thống 99% đọc (tỷ lệ đọc/ghi 100:1), giải pháp nào mang lại hiệu quả cao nhất về cả độ trễ lẫn chi phí để bảo vệ NoSQL Store?",
+    "code": "",
+    "choices": [
+      "Tắt hoàn toàn Cache và mua thêm nhiều ổ SSD",
+      "Đặt CDN ở biên và nâng dung lượng Redis Cache đủ phủ tập liên kết nóng (ví dụ 20% URL nóng)",
+      "Chuyển toàn bộ lượt đọc sang Message Queue",
+      "Giảm kích thước đường truyền mạng"
+    ],
+    "answer": 1,
+    "explain": "Nhờ quy luật phân phối lệch (20% liên kết nóng chiếm đa số lượt đọc), CDN + Redis RAM hấp thụ trên 90% truy vấn trước khi chạm tới NoSQL."
+  },
+  {
+    "id": "S5-02.q5",
+    "type": "output",
+    "q": "Với bảng chữ cái Base62 (62 ký tự), một mã ngắn có độ dài 6 ký tự biểu diễn được tối đa bao nhiêu tỷ URL (làm tròn xuống phần nguyên, 62^6 ≈ 56.800.235.584)? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "56",
+    "explain": "62^6 = 56.800.235.584, tức hơn 56 tỷ liên kết duy nhất. Tăng lên 7 ký tự sẽ đạt 62^7 ≈ 3,5 nghìn tỷ."
+  }
+]

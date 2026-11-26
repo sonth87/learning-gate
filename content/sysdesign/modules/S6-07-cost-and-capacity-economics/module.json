@@ -1,0 +1,23 @@
+{
+  "id": "S6-07",
+  "slug": "S6-07-cost-and-capacity-economics",
+  "level": 6,
+  "order": 7,
+  "title": "Kinh tế học chi phí và công suất: Cost per Request và SLO",
+  "summary": "Đo lường hiệu quả hạ tầng bằng chi phí theo giờ và chi phí trên mỗi triệu request, hiểu quy luật hiệu suất giảm dần khi đẩy headroom quá cao, và tối ưu cấu hình đạt SLO trong ngân sách chặt chẽ.",
+  "durationMin": 15,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Tính toán chi phí vận hành theo giờ ($/giờ) và quy đổi sang chi phí trên một triệu request (Cost per Million Requests)" },
+    { "vi": "Giải thích quy luật hiệu suất giảm dần (Diminishing Returns) khi tăng dư tải (Headroom) để ép p99 xuống thấp quá mức cần thiết" },
+    { "vi": "So sánh mô hình dư tải cố định (Over-provisioned Static Pool) với mô hình căn chỉnh sát nhu cầu (Right-sized / Autoscaling) theo chu kỳ ngày đêm" },
+    { "vi": "Cân bằng giữa Cache, Scale-out và Scale-up để đạt SLO p99 trong trần ngân sách cho trước" }
+  ],
+  "tags": ["cost-optimization", "capacity-economics", "slo", "headroom", "autoscaling", "diurnal"],
+  "prerequisites": ["S4-01", "S6-06"],
+  "related": ["S6-03", "S4-02"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về kinh tế học chi phí và công suất: chi phí mỗi giờ, cost per million requests, quy luật hiệu suất giảm dần khi đẩy headroom, so sánh dư tải cố định với autoscaling theo chu kỳ ngày đêm."
+  }
+}

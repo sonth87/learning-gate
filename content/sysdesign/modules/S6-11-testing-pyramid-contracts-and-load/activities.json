@@ -1,0 +1,18 @@
+[
+  {
+    "id": "S6-11.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp các tầng kiểm thử theo tốc độ phản hồi" },
+    "prompt": { "vi": "Sắp xếp 5 loại kiểm thử theo thứ tự từ chạy NHANH nhất (phản hồi sớm nhất) đến chạy CHẬM nhất." },
+    "difficulty": 1,
+    "items": [
+      { "id": "unit", "text": { "vi": "Unit Test (kiểm logic thuần với Test Double, vài mili-giây)" } },
+      { "id": "contract", "text": { "vi": "Contract Test (xác minh schema API giữa Consumer và Provider)" } },
+      { "id": "integration", "text": { "vi": "Integration Test (chạy với Database thật trong container tạm)" } },
+      { "id": "e2e", "text": { "vi": "End-to-End Test (đi qua toàn bộ hành trình người dùng trên UI/API)" } },
+      { "id": "soak", "text": { "vi": "Soak / Load Test (chạy tải cao liên tục nhiều giờ để tìm rò rỉ)" } }
+    ],
+    "shuffleSeed": 23,
+    "explain": { "vi": "Tháp kiểm thử đặt nhiều Unit Test ở đáy vì chúng chạy trong mili-giây và ổn định nhất; Contract và Integration Test nằm ở giữa; E2E và Load/Soak Test tốn thời gian và hạ tầng nhất nên chạy ít hơn hoặc theo lịch." }
+  }
+]

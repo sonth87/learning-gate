@@ -1,0 +1,8 @@
+[
+  { "id": "S5-05.c1", "front": "Batch Processing và Stream Processing khác nhau ở điểm cốt lõi nào?", "back": "Batch xử lý tập dữ liệu hữu hạn theo từng lô định kỳ (độ trễ tính bằng phút hoặc giờ, thông lượng rất cao). Stream xử lý liên tục từng sự kiện ngay khi đến (độ trễ tính bằng mili-giây hoặc giây)." },
+  { "id": "S5-05.c2", "front": "Ba bước của mô hình Map-Shuffle-Reduce là gì?", "back": "Map đọc dữ liệu thô và phát ra cặp (key, value); Shuffle gom và chuyển mọi bản ghi cùng key về cùng một máy; Reduce tổng hợp các giá trị của từng key để ra kết quả cuối." },
+  { "id": "S5-05.c3", "front": "Làm sao xử lý lỗi lệch khóa nóng (Hot Key Skew) trong Reduce?", "back": "Dùng Combiner để cộng dồn cục bộ ngay tại Mapper trước khi Shuffle, kết hợp kỹ thuật Salting (gắn thêm số ngẫu nhiên 0..k vào key nóng) để chia đều sang k Reducer rồi mới gộp bước cuối." },
+  { "id": "S5-05.c4", "front": "Window và Watermark trong Stream Processing giải quyết vấn đề gì?", "back": "Window gom luồng sự kiện vô hạn thành từng khung thời gian (Tumbling hoặc Sliding) để tính toán. Watermark xác định ngưỡng chờ sự kiện đến muộn theo Event Time trước khi đóng cửa sổ." },
+  { "id": "S5-05.c5", "front": "Quy tắc mở rộng Stream Processor theo Consumer Lag là gì?", "back": "Consumer Lag đo khoảng cách giữa sự kiện mới nhất trong Event Log và vị trí Processor đã đọc. Muốn giảm lag bằng cách thêm worker, số Partition của topic phải lớn hơn hoặc bằng số worker." },
+  { "id": "S5-05.c6", "front": "Khi nào nên dùng thuật toán Sketch (như HyperLogLog)?", "back": "Khi cần đếm số lượng phần tử duy nhất (unique users) trên luồng dữ liệu khổng lồ với bộ nhớ cố định vài KB, chấp nhận sai số nhỏ (1–2%) thay vì lưu toàn bộ ID vào RAM." }
+]

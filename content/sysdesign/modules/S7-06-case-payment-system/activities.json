@@ -1,0 +1,114 @@
+[
+  {
+    "id": "S7-06.A1",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: trừ tiền hai lần khi Timeout và lệch sổ cái cuối ngày" },
+    "prompt": { "vi": "Trong đợt khuyến mãi, cổng thanh toán (PSP) bị chậm đột ngột khiến 42 giao dịch vượt ngưỡng Timeout 600 ms. Đội vận hành ghi nhận hai vấn đề: (1) Hệ thống tự động gửi lại yêu cầu trừ tiền cho 42 đơn này, làm 19 khách bị trừ tiền 2 lần trên thẻ vì PSP xử lý cả hai lần như hai đơn mới; (2) Có 3 giao dịch PSP đã trừ tiền thành công nhưng Payment Service bị sập đúng lúc ghi vào Ledger DB trước khi gửi sự kiện sang Outbox. Hãy chọn nguyên nhân và giải pháp đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S7-06/payment",
+      "seekSec": 22,
+      "focus": { "nodes": ["payment_svc", "provider", "ledger_db"] }
+    },
+    "questions": [
+      {
+        "id": "cause-double-debit",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân gốc khiến 19 khách hàng bị trừ tiền hai lần khi Timeout là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do Ledger DB dùng mô hình Sổ cái kép thay vì cập nhật trực tiếp cột balance" } },
+          { "id": "b", "text": { "vi": "Timeout nghĩa là không biết kết quả (PSP đã trừ tiền xong nhưng gói phản hồi về chậm), nhưng yêu cầu gửi lại thiếu Idempotency-Key cố định nên PSP xem đó là giao dịch mới" } },
+          { "id": "c", "text": { "vi": "Do Checkout API có 2 instance chạy song song" } },
+          { "id": "d", "text": { "vi": "Do Outbox gửi sự kiện theo cơ chế At-least-once" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-outbox",
+        "type": "single",
+        "prompt": { "vi": "Làm thế nào để ngăn lỗi ghi xong Ledger DB nhưng mất sự kiện thông báo sang dịch vụ Đơn hàng khi Payment Service sập giữa chừng?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Ghi bản ghi Sổ cái và bản ghi vào bảng Outbox trong cùng một Transaction ACID cục bộ trên Ledger DB, rồi để Worker đọc Outbox đẩy sang Event Bus" } },
+          { "id": "b", "text": { "vi": "Gửi sự kiện sang Event Bus trước rồi mới ghi Ledger DB" } },
+          { "id": "c", "text": { "vi": "Tăng số lượng Checkout API lên 8 instance" } },
+          { "id": "d", "text": { "vi": "Bỏ qua không cần gửi sự kiện sang dịch vụ Đơn hàng" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "fix-reconcile",
+        "type": "multi",
+        "prompt": { "vi": "Với 3 giao dịch đã trừ tiền ở PSP nhưng chưa có trong Ledger DB, cơ chế nào giúp phát hiện và xử lý triệt để?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Chạy tác vụ đối soát cuối ngày (Reconciliation T+1) so sánh tệp sao kê của PSP với Ledger DB theo mã giao dịch" } },
+          { "id": "b", "text": { "vi": "Gắn Idempotency-Key cố định cho mọi giao dịch và tự động bù bản ghi hoặc hoàn tiền có kiểm soát khi đối soát thấy lệch" } },
+          { "id": "c", "text": { "vi": "Xoá toàn bộ các dòng giao dịch bị lệch trong Ledger DB để hai bên khớp nhau" } },
+          { "id": "d", "text": { "vi": "Tắt hoàn toàn cơ chế Timeout khi gọi sang PSP" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Timeout không đồng nghĩa với giao dịch thất bại; nó chỉ có nghĩa là bên gọi chưa nhận được phản hồi." },
+      { "vi": "Sổ cái kép là bất biến (append-only): không bao giờ xoá dòng cũ, mọi điều chỉnh phải là bút toán mới." }
+    ],
+    "explain": { "vi": "Trong thanh toán: (1) Luôn truyền Idempotency-Key cố định để retry khi Timeout trả về kết quả cũ; (2) Dùng Transactional Outbox trong cùng ACID transaction với Ledger DB; (3) Đối soát cuối ngày (Reconciliation) là chốt chặn cuối để phát hiện và bù đắp các giao dịch lệch." }
+  },
+  {
+    "id": "S7-06.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Cấu hình đường gọi PSP chịu được sự cố chậm mà không vượt ngân sách" },
+    "prompt": { "vi": "Khi PSP bị chậm gấp 12 lần từ giây 18 đến 38, cấu hình mặc định (timeoutMs 600 ms, retry không Backoff) gây bão thử lại và vi phạm SLO (p99 ≤ 350 ms, lỗi ≤ 2%). Với ngân sách ≤ 1,05 USD/giờ và tối đa 1 thay đổi trên đường nối payment_svc-provider, hãy điều chỉnh Timeout, Retry có Backoff và Circuit Breaker để hệ thống đạt SLO." },
+    "difficulty": 2,
+    "simId": "S7-06/payment",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "psp-slowdown",
+        "label": { "vi": "PSP chậm giây 18–38 (p99 ≤ 350 ms, lỗi ≤ 2%)" },
+        "simId": "S7-06/payment",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 350, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 5 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 65 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "safe-retry", "kind": "structural", "rule": "has-retry-backoff", "link": "payment_svc-provider" }
+    ],
+    "budget": { "maxCostPerHour": 1.05, "maxChanges": 2 },
+    "par": { "costPerHour": 0.95, "changes": 1 },
+    "solution": {
+      "changes": [
+        {
+          "type": "link",
+          "link": "payment_svc-provider",
+          "patch": {
+            "timeoutMs": 1200,
+            "retry": { "max": 1, "backoff": "exponential", "baseMs": 100, "jitter": "full", "budgetRatio": 0.1 },
+            "breaker": { "enabled": true, "errorRate": 0.5, "windowSec": 10, "openSec": 10 }
+          }
+        }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-ledger-only",
+        "label": { "vi": "Chỉ tăng cỡ máy Ledger DB lên ×2" },
+        "changes": [
+          { "type": "knob", "node": "ledger_db", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Điểm nghẽn nằm ở chặng gọi sang PSP bị chậm và retry không Backoff, không phải ở Ledger DB. Tăng cỡ Ledger DB làm tốn tiền vô ích và vẫn vi phạm SLO." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ledger DB đang rảnh (tải 600 req/s trên năng lực 1.200 req/s). Vấn đề nằm ở link payment_svc-provider." },
+      { "vi": "Mở Inspector của link payment_svc-provider: tăng timeoutMs lên 1200 ms, bật Exponential Backoff + Jitter (với retry budget 0.1) và bật Circuit Breaker." }
+    ],
+    "explain": { "vi": "Điều chỉnh timeoutMs = 1200 ms kết hợp Retry có Exponential Backoff + Jitter + Retry Budget và Circuit Breaker trên chặng payment_svc-provider ngăn bão thử lại khi PSP chậm, giữ chi phí ở {m.cost'@30:2} USD/giờ và đạt SLO." }
+  }
+]

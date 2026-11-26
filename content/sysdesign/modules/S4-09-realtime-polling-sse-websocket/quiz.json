@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-09.q1",
+    "type": "mc",
+    "q": "Nhược điểm lớn nhất của Short Polling ở quy mô lớn là gì?",
+    "code": "",
+    "choices": [
+      "Không hoạt động trên giao thức HTTPS",
+      "Tạo ra lượng request lặp lại khổng lồ với phần lớn phản hồi rỗng, lãng phí CPU và băng thông",
+      "Bắt buộc trình duyệt phải cài thêm tiện ích mở rộng",
+      "Không thể gửi dữ liệu dạng JSON"
+    ],
+    "answer": 1,
+    "explain": "Short Polling hỏi định kỳ bất kể có sự kiện mới hay không. Ở quy mô hàng trăm nghìn thiết bị, phần lớn request trả về rỗng nhưng vẫn ngốn tài nguyên xử lý và kết nối."
+  },
+  {
+    "id": "S4-09.q2",
+    "type": "mc",
+    "q": "Khi nào Server-Sent Events (SSE) là lựa chọn phù hợp hơn WebSocket?",
+    "code": "",
+    "choices": [
+      "Khi cần truyền âm thanh/video hai chiều thời gian thực",
+      "Khi chỉ cần máy chủ đẩy dữ liệu một chiều xuống trình duyệt (bảng tin, tỷ số trực tiếp, thông báo) trên HTTP chuẩn và muốn tự động kết nối lại",
+      "Khi muốn gửi dữ liệu nhị phân tốc độ cao từ client lên server",
+      "Khi không muốn giữ kết nối mở"
+    ],
+    "answer": 1,
+    "explain": "SSE chạy trên HTTP chuẩn, hỗ trợ luồng đẩy một chiều từ server xuống client kèm cơ chế tự động kết nối lại (EventSource), rất gọn nhẹ cho thông báo hoặc cập nhật tiến độ."
+  },
+  {
+    "id": "S4-09.q3",
+    "type": "tf",
+    "q": "Khi mở rộng hệ thống WebSocket ra nhiều máy chủ Gateway, một máy chủ có thể tự gửi tin trực tiếp tới kết nối WebSocket đang nằm trên máy chủ khác mà không cần cơ chế trung gian.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Kết nối WebSocket gắn cố định với RAM của một máy chủ Gateway cụ thể. Để máy chủ A gửi tin tới người dùng đang nối vào máy chủ B, cần có tầng Pub/Sub (hoặc sổ đăng ký kết nối) làm trung gian định tuyến."
+  },
+  {
+    "id": "S4-09.q4",
+    "type": "mc",
+    "q": "Trạng thái trực tuyến (Presence: đang online/offline) của người dùng thường được duy trì bằng cách nào?",
+    "code": "",
+    "choices": [
+      "Quét toàn bộ bảng Users trong SQL mỗi giây",
+      "Thiết bị gửi nhịp tim (heartbeat) định kỳ để gia hạn khóa có TTL ngắn trong bộ nhớ đệm (như Redis)",
+      "Lưu cố định vĩnh viễn vào CDN Edge",
+      "Chỉ cập nhật khi người dùng đăng xuất thủ công"
+    ],
+    "answer": 1,
+    "explain": "Người dùng thường tắt máy hoặc mất mạng đột ngột mà không kịp báo đăng xuất. Dùng heartbeat làm mới khóa TTL (ví dụ 30 giây) giúp tự động chuyển sang offline khi hết hạn."
+  },
+  {
+    "id": "S4-09.q5",
+    "type": "mc",
+    "q": "Vì sao hệ thống chat dùng WebSocket vẫn phải lưu tin nhắn vào Database trước khi đẩy qua socket?",
+    "code": "",
+    "choices": [
+      "Để người nhận đang ngoại tuyến có thể đồng bộ lại các tin nhắn bị lỡ khi kết nối lại",
+      "Vì WebSocket không truyền được chuỗi ký tự UTF-8",
+      "Để giảm số lượng kết nối TCP trên Gateway",
+      "Vì Pub/Sub bắt buộc phải đọc từ SQL"
+    ],
+    "answer": 0,
+    "explain": "WebSocket chỉ giao tin được khi thiết bị đang mở kết nối. Lưu vào DB kèm số thứ tự giúp thiết bị ngoại tuyến kéo lại đầy đủ tin nhắn sau khi kết nối lại."
+  },
+  {
+    "id": "S4-09.q6",
+    "type": "output",
+    "q": "Có 600.000 thiết bị dùng Short Polling với chu kỳ 3 giây một lần. Tổng số request mỗi giây đổ vào hệ thống là bao nhiêu? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "200000",
+    "explain": "Tổng RPS = 600.000 thiết bị / 3 giây = 200.000 req/s đổ liên tục vào máy chủ dù phần lớn lượt hỏi không có tin mới."
+  }
+]

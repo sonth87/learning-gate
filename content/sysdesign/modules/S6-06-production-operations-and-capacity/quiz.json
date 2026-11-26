@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S6-06.q1",
+    "type": "mc",
+    "q": "Khi sự cố nghiêm trọng xảy ra trên Production làm 20% giao dịch thất bại ngay sau khi phát hành phiên bản mới, hành động ưu tiên ở pha Giảm thiểu (Mitigation) là gì?",
+    "code": "",
+    "choices": [
+      "Mở phiên họp 1 tiếng để tìm xem ai viết dòng code lỗi",
+      "Thực hiện Rollback hoặc tắt Feature Flag để khôi phục dịch vụ trước",
+      "Viết thêm unit test rồi mới sửa trực tiếp trên Production",
+      "Chờ tới sáng hôm sau để kiểm tra log"
+    ],
+    "answer": 1,
+    "explain": "Ưu tiên số một khi có sự cố là giảm thiểu tác động cho người dùng (Rollback hoặc tắt Feature Flag). Phân tích nguyên nhân gốc sẽ thực hiện sau khi hệ thống ổn định."
+  },
+  {
+    "id": "S6-06.q2",
+    "type": "mc",
+    "q": "Cảnh báo nào sau đây tuân thủ nguyên tắc cảnh báo theo triệu chứng (Symptom-based Alerting)?",
+    "code": "",
+    "choices": [
+      "Cảnh báo khẩn cấp khi CPU đạt 75%",
+      "Cảnh báo khẩn cấp khi tỉ lệ lỗi 5xx vượt 1% hoặc p95 vượt ngưỡng SLO trong 5 phút",
+      "Cảnh báo khẩn cấp khi bộ nhớ đệm dùng 60% RAM",
+      "Cảnh báo khẩn cấp mỗi khi có một lượt truy vấn bình thường"
+    ],
+    "answer": 1,
+    "explain": "Cảnh báo theo triệu chứng đo trực tiếp trải nghiệm người dùng (Error Rate, Latency, Availability), giúp tránh mỏi mệt cảnh báo (Alert Fatigue) do các biến động tài nguyên vô hại."
+  },
+  {
+    "id": "S6-06.q3",
+    "type": "tf",
+    "q": "Mục tiêu chính của Postmortem không đổ lỗi (Blameless Postmortem) là tìm ra cá nhân mắc sai sót để kỷ luật nhằm răn đe.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đổ lỗi khiến mọi người giấu giếm sai sót. Postmortem không đổ lỗi tập trung vào việc vá các lỗ hổng trong quy trình kiểm thử, triển khai và giám sát."
+  },
+  {
+    "id": "S6-06.q4",
+    "type": "output",
+    "q": "Lưu lượng hiện tại là 1.000 req/s và tăng trưởng kép 20% mỗi tháng. Sau 3 tháng, lưu lượng đạt bao nhiêu req/s? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "1728",
+    "explain": "1.000 × 1,2^3 = 1.000 × 1,728 = 1.728 req/s."
+  },
+  {
+    "id": "S6-06.q5",
+    "type": "mc",
+    "q": "Trong mô hình Strangler Fig khi chuyển đổi cơ sở dữ liệu không gián đoạn, bước nào giúp xác minh dữ liệu giữa DB cũ và DB mới khớp nhau trước khi chuyển lưu lượng đọc?",
+    "code": "",
+    "choices": [
+      "Xóa ngay DB cũ rồi kiểm tra sau",
+      "Chạy Dual-Write và Dual-Read để đối chiếu kết quả trong khi vẫn trả về từ DB cũ",
+      "Tạm dừng toàn bộ hệ thống trong 48 giờ",
+      "Chỉ chuyển dữ liệu của 10 người dùng đầu tiên rồi tắt DB cũ"
+    ],
+    "answer": 1,
+    "explain": "Dual-Write kết hợp Dual-Read đối chiếu ngầm giúp phát hiện sớm mọi sai lệch dữ liệu mà không gây rủi ro cho người dùng thật."
+  },
+  {
+    "id": "S6-06.q6",
+    "type": "mc",
+    "q": "Bốn tín hiệu vàng (Golden Signals) trong giám sát vận hành gồm những chỉ số nào?",
+    "code": "",
+    "choices": [
+      "CPU, RAM, Ổ đĩa, Băng thông",
+      "Latency, Traffic, Errors, Saturation",
+      "DAU, MAU, Doanh thu, Lợi nhuận",
+      "Số dòng code, Số commit, Số test, Số nhánh Git"
+    ],
+    "answer": 1,
+    "explain": "Bốn tín hiệu vàng theo chuẩn SRE là Độ trễ (Latency), Lưu lượng (Traffic), Tỉ lệ lỗi (Errors) và Độ bão hòa (Saturation)."
+  }
+]

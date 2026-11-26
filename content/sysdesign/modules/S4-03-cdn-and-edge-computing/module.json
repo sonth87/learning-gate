@@ -1,0 +1,30 @@
+{
+  "id": "S4-03",
+  "slug": "S4-03-cdn-and-edge-computing",
+  "level": 4,
+  "order": 3,
+  "title": "CDN và Edge Computing: phân phối nội dung gần người dùng",
+  "summary": "Đặt bản sao nội dung tại Edge Server gần người dùng để giảm độ trễ địa lý và cắt 90% tải về Origin; điều khiển bằng Cache-Control, URL có phiên bản, Origin Shield và xử lý an toàn trang cá nhân hóa.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích giới hạn tốc độ ánh sáng qua cáp quang và vai trò của Edge Server trong việc hạ RTT cho người dùng ở xa" },
+    { "vi": "Cấu hình chính xác các chỉ thị Cache-Control (public, private, max-age, s-maxage, immutable) cho tài nguyên tĩnh và trang cá nhân" },
+    { "vi": "Áp dụng URL gắn mã băm nội dung (versioned URL) thay cho việc xóa bộ nhớ đệm thủ công" },
+    { "vi": "Sử dụng tầng Origin Shield để gom các lượt miss từ nhiều Edge và bảo vệ Origin khi Edge còn nguội hoặc có đột biến tải" }
+  ],
+  "tags": ["cdn", "edge-computing", "cache-control", "origin-shield", "invalidation", "latency"],
+  "prerequisites": ["S2-02", "S1-06"],
+  "related": ["S4-02", "S2-12", "S4-05"],
+  "dtsRef": "cdn",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-3-cdn-and-edge-computing-distributed-cache-gan-user.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-3-cdn-and-edge-computing-distributed-cache-gan-user.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật súc tích, bỏ Mermaid thay bằng scene isometric gồm User, Edge CDN, Origin Shield và Origin, bổ sung mô phỏng làm ấm Edge nguội và đột biến lưu lượng."
+  }
+}

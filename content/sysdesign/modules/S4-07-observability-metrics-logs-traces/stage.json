@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "base": "s1-symptom",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người mua", "en": "Shoppers" },
+      "inspector": {
+        "what": { "vi": "Lưu lượng 600 đơn hàng/giây vào luồng thanh toán.", "en": "600 checkout requests/s from shoppers." },
+        "how": { "vi": "Phản ánh trang thanh toán chậm nhưng số đo CPU thông thường trông vẫn ổn.", "en": "Reports slow checkout despite normal server CPU metrics." },
+        "why": { "vi": "Cần đo từ góc nhìn người dùng (p99, Error Rate) thay vì chỉ nhìn CPU.", "en": "Must measure user-facing p99 and errors instead of CPU alone." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": { "vi": "Cổng vào gắn `trace_id` duy nhất cho mỗi request.", "en": "Entry gateway injecting a unique `trace_id` per request." },
+        "how": { "vi": "Truyền ngữ cảnh trace qua HTTP header tới các dịch vụ phía sau.", "en": "Propagates trace context headers downstream." },
+        "why": { "vi": "Giúp gom toàn bộ log và span của một giao dịch lại thành một dòng thời gian.", "en": "Correlates logs and spans across all microservices." }
+      }
+    },
+    "checkout": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Checkout Service", "en": "Checkout Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ điều phối thanh toán (3 máy, xử lý nội bộ chỉ 12 ms).", "en": "Checkout orchestrator (3 instances, ~12 ms own processing)." },
+        "how": { "vi": "Gọi tuần tự sang Inventory Service, Fraud API và Order DB.", "en": "Calls Inventory Service, Fraud API, and Order DB sequentially." },
+        "why": { "vi": "Dù bản thân Checkout rất rảnh, p99 của nó bị kéo vọt bởi dịch vụ gọi chậm nhất.", "en": "Even with low own latency, its p99 is dominated by the slowest dependency." }
+      }
+    },
+    "inventory": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Inventory Service", "en": "Inventory Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ giữ hàng tồn kho (~15 ms).", "en": "Inventory reservation service (~15 ms)." },
+        "how": { "vi": "Hoạt động ổn định với mức tải 600 req/s.", "en": "Healthy at 600 req/s." },
+        "why": { "vi": "Span trên Trace Waterfall rất ngắn.", "en": "Shows a very short span in the Trace Waterfall." }
+      }
+    },
+    "fraud": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "shield",
+      "label": { "vi": "Fraud API", "en": "Fraud API" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ chấm điểm gian lận (2 máy, 220 ms mỗi lượt, tổng năng lực 700 req/s).", "en": "Fraud scoring API (2 instances, ~220 ms/call, 700 req/s total)." },
+        "how": { "vi": "Chiếm phần lớn độ trễ p99 của Checkout và bị deploy cấu hình lỗi lúc giây 30.", "en": "Dominates Checkout p99 and receives a bad config deploy at t = 30s." },
+        "why": { "vi": "Nhờ Distributed Tracing mới thấy rõ span của Fraud API chiếm tới ~85% tổng thời gian.", "en": "Distributed tracing reveals Fraud API accounts for ~85% of total trace time." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Order DB", "en": "Order DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu lưu đơn hàng (~6 ms mỗi truy vấn).", "en": "Order database (~6 ms per query)." },
+        "how": { "vi": "Chưa quá tải ở mức 600 req/s.", "en": "Plenty of headroom at 600 req/s." },
+        "why": { "vi": "Không phải nguyên nhân làm Checkout chậm.", "en": "Not the bottleneck in this incident." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": { "inspector": { "what": { "vi": "Kết nối từ người mua tới API Gateway.", "en": "Shopper connection to Gateway." }, "how": { "vi": "Gắn traceparent tại biên.", "en": "Injects traceparent at edge." }, "why": { "vi": "Khởi tạo Trace ID.", "en": "Starts the distributed trace." } } },
+    "lb-checkout": { "inspector": { "what": { "vi": "Chuyển tiếp yêu cầu vào Checkout Service.", "en": "Forwards request to Checkout." }, "how": { "vi": "Mạng nội bộ.", "en": "Internal network." }, "why": { "vi": "Bắt đầu span gốc của Checkout.", "en": "Root span for checkout flow." } } },
+    "checkout-inventory": { "inspector": { "what": { "vi": "Kiểm tra tồn kho (~15 ms).", "en": "Inventory check (~15 ms)." }, "how": { "vi": "Gọi đồng bộ nhanh.", "en": "Fast sync call." }, "why": { "vi": "Chiếm tỷ trọng nhỏ trên trace.", "en": "Small fraction of total trace." } } },
+    "checkout-fraud": { "inspector": { "what": { "vi": "Kiểm tra gian lận sang Fraud API.", "en": "Fraud check call." }, "how": { "vi": "Chiếm phần lớn độ trễ p99 của Checkout.", "en": "Occupies majority of Checkout p99." }, "why": { "vi": "Cần đặt Timeout chặt, Cache kết quả an toàn hoặc tách kiểm tra bất đồng bộ.", "en": "Needs strict Timeout, safe caching, or async decoupling." } } },
+    "checkout-db": { "inspector": { "what": { "vi": "Lưu đơn hàng vào Order DB (~6 ms).", "en": "Persist order to DB (~6 ms)." }, "how": { "vi": "Truy vấn có chỉ mục.", "en": "Indexed query." }, "why": { "vi": "Nhanh và ổn định.", "en": "Fast and healthy." } } }
+  },
+  "zones": {
+    "checkout-mesh": { "nodeIds": ["checkout", "inventory", "fraud", "db"], "label": { "vi": "CỤM DỊCH VỤ THANH TOÁN", "en": "CHECKOUT SERVICES" }, "tone": "neutral" }
+  },
+  "scenes": {
+    "s1-symptom": {
+      "show": { "nodes": ["client", "lb", "checkout", "inventory", "fraud", "db"] },
+      "state": {
+        "checkout": { "loadPct": 40, "badge": { "text": { "vi": "CPU 35%", "en": "CPU 35%" }, "tone": "ok" } },
+        "fraud": { "loadPct": 86, "highlighted": true, "badge": { "text": { "vi": "p99 cao", "en": "High p99" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Triệu chứng: Checkout chậm dù CPU thấp", "en": "Symptom: Slow Checkout Despite Low CPU" },
+        "lines": [
+          { "text": { "vi": "CPU máy chủ chỉ 35% nhưng người dùng kêu chậm", "en": "Server CPU is 35% yet users report slowness" }, "tone": "amber" },
+          { "text": { "vi": "Chỉ số trung bình che giấu đuôi p99", "en": "Averages hide the p99 tail latency" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-red-dashboard": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Bảng điều khiển RED theo từng Service", "en": "Per-Service RED Dashboard" },
+        "rightTitle": { "vi": "Trạng thái chỉ số & Cảnh báo SLO", "en": "Metric Status & SLO Alert" },
+        "names": [
+          { "id": "svc-checkout", "name": "Checkout Service", "note": { "vi": "Rate: 600 req/s", "en": "Rate: 600 req/s" }, "targetId": "m-checkout" },
+          { "id": "svc-inventory", "name": "Inventory Service", "note": { "vi": "Rate: 600 req/s", "en": "Rate: 600 req/s" }, "targetId": "m-inventory" },
+          { "id": "svc-fraud", "name": "Fraud API", "note": { "vi": "Rate: 600 req/s", "en": "Rate: 600 req/s" }, "targetId": "m-fraud" },
+          { "id": "svc-db", "name": "Order DB", "note": { "vi": "Rate: 600 req/s", "en": "Rate: 600 req/s" }, "targetId": "m-db" }
+        ],
+        "objects": [
+          { "id": "m-checkout", "typeTag": "RED", "value": "Duration p99: ~540 ms (chờ downstream)", "fields": ["Errors: 0,2% | Tự xử lý: 12 ms"], "tone": "amber" },
+          { "id": "m-inventory", "typeTag": "RED", "value": "Duration p99: 28 ms", "fields": ["Errors: 0,0% | Ổn định"], "tone": "green" },
+          { "id": "m-fraud", "typeTag": "RED", "value": "Duration p99: 480 ms (chiếm 88%)", "fields": ["Errors: 0,2% → 40% khi deploy lỗi"], "tone": "rose" },
+          { "id": "m-db", "typeTag": "RED", "value": "Duration p99: 14 ms", "fields": ["Errors: 0,0% | Ổn định"], "tone": "green" }
+        ],
+        "links": [
+          { "from": "svc-checkout", "to": "m-checkout", "tone": "amber" },
+          { "from": "svc-inventory", "to": "m-inventory", "tone": "green" },
+          { "from": "svc-fraud", "to": "m-fraud", "tone": "rose" },
+          { "from": "svc-db", "to": "m-db", "tone": "green" }
+        ]
+      }
+    },
+    "s3-trace-live": {
+      "show": { "nodes": ["client", "lb", "checkout", "inventory", "fraud", "db"] },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Theo dõi Trace & sự cố Deploy lúc t = 30 s", "en": "Trace & Bad Config Deploy at t = 30s" },
+        "lines": [
+          { "text": { "vi": "t = 0..29 s: Fraud API chiếm phần lớn p99", "en": "t = 0..29s: Fraud API dominates p99" }, "tone": "amber" },
+          { "text": { "vi": "t = 30 s: Deploy lỗi → t = 45 s: Rollback", "en": "t = 30s: Bad deploy → t = 45s: Rollback" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-slo-alert": {
+      "show": { "nodes": ["lb", "checkout", "fraud"] },
+      "state": {
+        "checkout": { "loadPct": 40, "badge": { "text": { "vi": "SLO p99", "en": "SLO p99" }, "tone": "ok" } },
+        "fraud": { "loadPct": 88, "highlighted": true, "badge": { "text": { "vi": "Đốt budget", "en": "Burn rate" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cảnh báo theo SLO & Burn Rate", "en": "SLO & Error Budget Burn Rate" },
+        "lines": [
+          { "text": { "vi": "Báo động theo triệu chứng người dùng thấy", "en": "Alert on user-facing symptoms" }, "tone": "good" },
+          { "text": { "vi": "Tránh cảnh báo CPU gây mệt mỏi ca trực", "en": "Avoid noisy CPU-only alerts" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-recap": {
+      "show": { "nodes": ["client", "lb", "checkout", "inventory", "fraud", "db"] },
+      "state": {
+        "checkout": { "loadPct": 40, "badge": { "text": { "vi": "Trace ID", "en": "Trace ID" }, "tone": "ok" } },
+        "fraud": { "loadPct": 45, "highlighted": true, "badge": { "text": { "vi": "Rollback", "en": "Rollback" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Observability", "en": "Observability Recap" },
+        "lines": [
+          { "text": { "vi": "Metrics (RED) → Traces (Waterfall) → Logs", "en": "Metrics (RED) → Traces → Structured Logs" }, "tone": "good" },
+          { "text": { "vi": "Phát hiện nhanh, Rollback sớm, Postmortem", "en": "Fast detect, quick rollback, Postmortem" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "checkout-trace": {
+      "sim": "S4-07/checkout-trace",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "fraud", "key": "replicas" },
+          { "node": "checkout", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99 Checkout", "en": "Checkout p99" }, "format": "ms", "tone": { "warnAbove": 300, "badAbove": 500 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.02, "badAbove": 0.1 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 300 }],
+      "focus": { "nodes": ["checkout", "fraud"] }
+    }
+  }
+}

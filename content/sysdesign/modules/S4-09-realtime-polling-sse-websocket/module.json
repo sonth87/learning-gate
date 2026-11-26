@@ -1,0 +1,24 @@
+{
+  "id": "S4-09",
+  "slug": "S4-09-realtime-polling-sse-websocket",
+  "level": 4,
+  "order": 10,
+  "title": "Cập nhật thời gian thực: Polling, SSE và WebSocket",
+  "summary": "Đối chiếu Short Polling, Long Polling, Server-Sent Events (SSE) và WebSocket; phân tích cơn bão request rỗng của Polling và cách mở rộng nhiều máy chủ giữ kết nối thông qua tầng Pub/Sub.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Tính toán lượng tải RPS và tỷ lệ phản hồi rỗng do Short Polling gây ra ở quy mô hàng trăm nghìn thiết bị" },
+    { "vi": "Phân biệt cơ chế và trường hợp áp dụng của Long Polling, Server-Sent Events (SSE) và WebSocket" },
+    { "vi": "Thiết kế tầng Gateway giữ kết nối bền kết hợp Pub/Sub để định tuyến tin nhắn giữa nhiều máy chủ" },
+    { "vi": "Xử lý trạng thái hiện diện (presence) bằng TTL/heartbeat và đồng bộ lại tin nhắn khi thiết bị ngoại tuyến" }
+  ],
+  "tags": ["realtime", "polling", "sse", "websocket", "pubsub", "presence"],
+  "prerequisites": ["S1-08", "S2-11"],
+  "related": ["S4-06", "S7-01", "S2-06"],
+  "dtsRef": "realtime",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về cập nhật thời gian thực: đối chiếu Polling, Long Polling, Server-Sent Events (SSE), WebSocket và mở rộng nhiều máy giữ kết nối qua Pub/Sub."
+  }
+}

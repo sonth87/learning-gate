@@ -1,0 +1,8 @@
+[
+  { "id": "S5-06.c1", "front": "So sánh Active-Passive và Active-Active đa vùng?", "back": "Active-Passive: một vùng nhận ghi chính, vùng kia dự phòng (dễ giữ nhất quán, tốn tài nguyên chờ). Active-Active: mọi vùng đều nhận ghi gần người dùng (độ trễ thấp, nhưng phải xử lý xung đột và chi phí đồng bộ cao)." },
+  { "id": "S5-06.c2", "front": "RTT liên vùng ảnh hưởng thế nào đến ghi đồng bộ?", "back": "Mỗi vòng giao tiếp liên vùng (ví dụ 100 ms) cộng trực tiếp vào thời gian COMMIT nếu bật sao chép đồng bộ. Điều này đẩy p99 của mọi thao tác ghi vượt quá 100 ms bất kể phần cứng mạnh đến đâu." },
+  { "id": "S5-06.c3", "front": "RPO và RTO trong sự cố mất một Region là gì?", "back": "RPO (Recovery Point Objective) là lượng dữ liệu tối đa chấp nhận mất (do Replication Lag ở chế độ bất đồng bộ). RTO (Recovery Time Objective) là thời gian để Global Router phát hiện hỏng và chuyển toàn bộ traffic sang vùng còn lại." },
+  { "id": "S5-06.c4", "front": "Vì sao Last-Write-Wins (LWW) nguy hiểm khi giải quyết xung đột đa vùng?", "back": "Do đồng hồ vật lý giữa các máy chủ bị lệch (Clock Skew), một thao tác ghi thực tế xảy ra trước có thể mang timestamp lớn hơn và âm thầm ghi đè mất dữ liệu mới hơn." },
+  { "id": "S5-06.c5", "front": "Định tuyến toàn cầu (Global Routing) chuyển vùng bằng cách nào?", "back": "Dùng GeoDNS (với TTL ngắn) hoặc Anycast IP kết hợp Health Check chủ động để điều hướng người dùng tới vùng gần nhất đang khỏe mạnh và tự động loại vùng gặp sự cố." },
+  { "id": "S5-06.c6", "front": "Chi phí ẩn lớn nhất của kiến trúc Multi-Region là gì?", "back": "Ngoài việc nhân đôi hạ tầng tính toán và cơ sở dữ liệu, cước truyền dữ liệu liên vùng (Cross-region Egress/Replication) thường chiếm tỷ trọng đáng kể trong hóa đơn hàng tháng." }
+]

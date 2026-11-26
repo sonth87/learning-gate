@@ -1,0 +1,48 @@
+[
+  {
+    "id": "S7-07.q1",
+    "type": "mc",
+    "q": "Vì sao mỗi nút trên cây Trie của hệ thống Autocomplete thường lưu sẵn danh sách Top-K từ khoá phổ biến nhất thay vì chỉ lưu ký tự?",
+    "code": "",
+    "choices": [
+      "Để chỉ cần đi tới nút tiền tố độ dài p là trả về ngay kết quả trong O(p), không phải duyệt toàn bộ các nút con bên dưới để sắp xếp lại",
+      "Để nén dung lượng ổ cứng của cơ sở dữ liệu quan hệ",
+      "Để người dùng có thể chỉnh sửa trực tiếp cây Trie từ trình duyệt",
+      "Vì cây Trie không thể tìm kiếm được các từ có độ dài lớn hơn 3 ký tự"
+    ],
+    "answer": 0,
+    "explain": "Nếu không lưu sẵn Top-K tại nút, mỗi truy vấn ngắn như 'a' sẽ phải duyệt hàng triệu nút con bên dưới. Lưu sẵn Top-K giúp tra cứu luôn đạt O(p)."
+  },
+  {
+    "id": "S7-07.q2",
+    "type": "mc",
+    "q": "Vì sao việc cập nhật tần suất tìm kiếm mới lên cây Trie thường được chạy ngoại tuyến (Offline Ranking) và đổi ảnh chụp định kỳ thay vì ghi trực tiếp khi người dùng gõ phím?",
+    "code": "",
+    "choices": [
+      "Vì ghi trực tiếp ở 50.000 QPS sẽ gây tranh chấp khoá (Lock) làm tăng đột biến độ trễ đọc, trong khi gợi ý tìm kiếm chấp nhận độ trễ cập nhật vài phút đến hàng giờ",
+      "Vì ngôn ngữ lập trình không hỗ trợ cập nhật cấu trúc cây trong RAM",
+      "Để bắt buộc người dùng phải tải lại trang web mỗi giờ",
+      "Vì ghi ngoại tuyến giúp bỏ qua hoàn toàn nhu cầu dùng Prefix Cache"
+    ],
+    "answer": 0,
+    "explain": "Tách luồng ghi ngoại tuyến và đổi con trỏ nguyên tử (Atomic Swap) giữ cho luồng đọc 50.000 QPS hoàn toàn không bị khoá đồng bộ."
+  },
+  {
+    "id": "S7-07.q3",
+    "type": "tf",
+    "q": "Kỹ thuật Debouncing phía client (chờ khoảng 150–200 ms sau lần gõ cuối mới gửi request) giúp giảm đáng kể lưu lượng QPS thừa gửi về máy chủ Autocomplete.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Người gõ nhanh thường nhập liên tiếp nhiều ký tự trong vài trăm mili-giây; Debouncing gộp các lần gõ sát nhau thành một request duy nhất."
+  },
+  {
+    "id": "S7-07.q4",
+    "type": "output",
+    "q": "Với bảng chữ cái 26 ký tự tiếng Anh, có bao nhiêu tiền tố khác nhau có độ dài đúng 2 ký tự? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "676",
+    "explain": "Số tổ hợp 2 ký tự là 26 × 26 = 676 tiền tố."
+  }
+]

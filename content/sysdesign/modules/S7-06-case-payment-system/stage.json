@@ -1,0 +1,360 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người mua",
+        "en": "Customers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng nhấn nút thanh toán và có thể nhấn lại hoặc tự động gửi lại khi mạng chậm.",
+          "en": "Customers initiating checkout requests that may retry on network timeouts."
+        },
+        "how": {
+          "vi": "Ứng dụng tạo sẵn một Idempotency-Key (UUID v4) cho mỗi ý định thanh toán trước khi gửi yêu cầu.",
+          "en": "Client attaches a unique Idempotency-Key (UUID v4) per payment attempt."
+        },
+        "why": {
+          "vi": "Nếu mất kết nối sau khi trừ tiền, việc gửi lại cùng Idempotency-Key đảm bảo không bị trừ tiền lần hai.",
+          "en": "Retries with the same Idempotency-Key prevent duplicate charges after timeouts."
+        }
+      }
+    },
+    "checkout": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "layers",
+      "label": {
+        "vi": "Checkout API",
+        "en": "Checkout API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng tiếp nhận đơn hàng, kiểm tra giá trị và chuyển lệnh thanh toán sang Payment Service.",
+          "en": "Order intake API validating totals before delegating to Payment Service."
+        },
+        "how": {
+          "vi": "Kiểm tra quyền sở hữu đơn hàng và truyền tiếp Idempotency-Key xuống tầng xử lý thanh toán.",
+          "en": "Validates order ownership and forwards the Idempotency-Key downstream."
+        },
+        "why": {
+          "vi": "Tách biệt logic giỏ hàng/khuyến mãi khỏi quy trình hạch toán tiền tệ nhạy cảm.",
+          "en": "Decouples cart/promo logic from strict financial ledger operations."
+        }
+      }
+    },
+    "payment_svc": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "cpu",
+      "label": {
+        "vi": "Payment Service",
+        "en": "Payment Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ điều phối thanh toán: kiểm tra khoá luỹ đẳng, gọi cổng thanh toán (PSP) và ghi sổ cái kép.",
+          "en": "Orchestrates idempotency checks, PSP calls, and double-entry ledger writes."
+        },
+        "how": {
+          "vi": "Lưu trạng thái PENDING → SUCCEEDED / FAILED, kèm Outbox event trong cùng một transaction cục bộ.",
+          "en": "Transitions state PENDING → SUCCEEDED/FAILED with transactional outbox events."
+        },
+        "why": {
+          "vi": "Đảm bảo mọi đồng tiền ra vào đều có dấu vết trạng thái rõ ràng và không bị trừ kép.",
+          "en": "Guarantees every cent is accounted for and resilient to duplicate retries."
+        }
+      }
+    },
+    "provider": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "globe",
+      "label": {
+        "vi": "Cổng thanh toán (PSP)",
+        "en": "Payment Provider (PSP)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Đối tác ngân hàng / thẻ bên ngoài (Stripe, VNPay, Napas) thực hiện trừ tiền thật trên tài khoản.",
+          "en": "External payment gateway (Stripe/bank) executing real card/bank debits."
+        },
+        "how": {
+          "vi": "Độ trễ cao hơn mạng nội bộ và có thể bị chậm hoặc Timeout khiến Payment Service không biết kết quả ngay.",
+          "en": "Higher WAN latency and occasional slowdowns leave outcomes ambiguous on timeout."
+        },
+        "why": {
+          "vi": "Bắt buộc phải truyền Idempotency-Key sang PSP và đối soát lại bằng Webhook + file cuối ngày.",
+          "en": "Must forward Idempotency-Key to PSP and reconcile via webhooks + daily files."
+        }
+      }
+    },
+    "ledger_db": {
+      "shape": "db",
+      "tone": "yellow",
+      "label": {
+        "vi": "Ledger DB",
+        "en": "Ledger DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu Sổ cái kép chỉ cho phép ghi nối thêm (Append-only), không sửa hay xoá dòng cũ.",
+          "en": "Append-only Double-Entry Ledger database with strict ACID guarantees."
+        },
+        "how": {
+          "vi": "Mỗi giao dịch tạo ít nhất 2 dòng (Debit tài khoản người mua, Credit tài khoản người bán) có tổng bằng 0.",
+          "en": "Every transaction writes balanced Debit and Credit entries summing to zero."
+        },
+        "why": {
+          "vi": "Giúp kiểm toán chính xác từng đồng và tự phát hiện sai lệch nếu có lỗi logic.",
+          "en": "Provides full auditability and mathematical invariant checks."
+        }
+      }
+    },
+    "outbox": {
+      "shape": "queue",
+      "tone": "green",
+      "label": {
+        "vi": "Outbox / Event Bus",
+        "en": "Outbox / Event Bus"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi nhận sự kiện thanh toán từ bảng Outbox trong Ledger DB để cập nhật đơn hàng và gửi hoá đơn.",
+          "en": "Event bus receiving outbox messages to update orders and send receipts."
+        },
+        "how": {
+          "vi": "Worker đọc bảng Outbox đã COMMIT cùng sổ cái và đẩy sang Event Bus với cơ chế At-least-once.",
+          "en": "Relay publishes committed outbox rows with at-least-once delivery."
+        },
+        "why": {
+          "vi": "Tránh lỗi ghi xong sổ cái nhưng sập trước khi kịp gửi sự kiện sang dịch vụ Đơn hàng.",
+          "en": "Eliminates dual-write inconsistency between ledger commits and order updates."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-checkout": {
+      "inspector": {
+        "what": {
+          "vi": "Yêu cầu thanh toán từ người dùng kèm Idempotency-Key.",
+          "en": "Checkout request carrying client Idempotency-Key."
+        }
+      }
+    },
+    "checkout-payment_svc": {
+      "inspector": {
+        "what": {
+          "vi": "Chuyển lệnh thanh toán nội bộ sang Payment Service.",
+          "en": "Internal RPC from Checkout API to Payment Service."
+        }
+      }
+    },
+    "payment_svc-provider": {
+      "inspector": {
+        "what": {
+          "vi": "Gọi API đối tác thanh toán (PSP) qua mạng Internet.",
+          "en": "External HTTPS call to the Payment Service Provider."
+        }
+      }
+    },
+    "payment_svc-ledger_db": {
+      "inspector": {
+        "what": {
+          "vi": "Ghi giao dịch sổ cái kép và bảng Outbox trong cùng một ACID transaction.",
+          "en": "Writes balanced ledger entries and outbox row in one ACID transaction."
+        }
+      }
+    },
+    "payment_svc-outbox": {
+      "inspector": {
+        "what": {
+          "vi": "Phát sự kiện PaymentSucceeded / PaymentFailed sang các dịch vụ khác.",
+          "en": "Publishes payment outcome events to downstream services."
+        }
+      }
+    }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "checkout": { "col": 1, "row": 1 },
+    "payment_svc": { "col": 2, "row": 1 },
+    "provider": { "col": 3, "row": 0 },
+    "ledger_db": { "col": 3, "row": 1 },
+    "outbox": { "col": 3, "row": 2 }
+  },
+  "floor": {
+    "cols": 4,
+    "rows": 3,
+    "label": {
+      "vi": "Kiến trúc Hệ thống Thanh toán",
+      "en": "Payment System Architecture"
+    }
+  },
+  "zones": {
+    "core": {
+      "nodeIds": ["payment_svc", "ledger_db", "outbox"],
+      "label": {
+        "vi": "LÕI HẠCH TOÁN & SỰ KIỆN",
+        "en": "PAYMENT CORE & LEDGER"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": "*" },
+      "zones": ["core"],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Luồng thanh toán chuẩn",
+          "en": "Payment Flow"
+        },
+        "lines": [
+          {
+            "text": { "vi": "Checkout → Payment → PSP & Ledger DB", "en": "Checkout → Payment → PSP & Ledger DB" },
+            "tone": "plain"
+          },
+          {
+            "text": { "vi": "Outbox phát sự kiện sang Đơn hàng", "en": "Outbox emits Order events" },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-ledger": {
+      "show": { "nodes": ["payment_svc", "ledger_db"] },
+      "state": {
+        "ledger_db": {
+          "highlighted": true,
+          "badge": { "text": { "vi": "Debit + Credit = 0", "en": "Debit + Credit = 0" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto"
+    },
+    "s3-idempotency": {
+      "show": { "nodes": ["client", "checkout", "payment_svc", "provider", "ledger_db"] },
+      "state": {
+        "payment_svc": {
+          "highlighted": true,
+          "badge": { "text": { "vi": "Idempotency-Key", "en": "Idempotency-Key" }, "tone": "ok" }
+        },
+        "provider": {
+          "badge": { "text": { "vi": "Timeout?", "en": "Timeout?" }, "tone": "warn" }
+        }
+      },
+      "linkState": {
+        "payment_svc-provider": {
+          "style": "danger",
+          "label": { "vi": "Timeout 600 ms", "en": "600 ms Timeout" }
+        }
+      },
+      "packets": "auto"
+    },
+    "s4-live": {
+      "show": { "nodes": "*" },
+      "zones": ["core"],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Sự cố Timeout từ PSP",
+          "en": "PSP Slowdown & Timeout"
+        },
+        "lines": [
+          {
+            "text": { "vi": "t = 18–38 s: PSP chậm gấp 12 lần", "en": "t = 18–38 s: PSP 12x slower" },
+            "tone": "bad"
+          },
+          {
+            "text": { "vi": "Retry không Backoff làm kẹt luồng", "en": "Blind retries amplify overload" },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-outbox": {
+      "show": { "nodes": ["payment_svc", "ledger_db", "outbox"] },
+      "zones": ["core"],
+      "state": {
+        "ledger_db": {
+          "highlighted": true,
+          "badge": { "text": { "vi": "ACID Commit", "en": "ACID Commit" }, "tone": "ok" }
+        },
+        "outbox": {
+          "highlighted": true,
+          "badge": { "text": { "vi": "At-least-once", "en": "At-least-once" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto"
+    },
+    "s6-reconcile": {
+      "show": { "nodes": ["payment_svc", "provider", "ledger_db"] },
+      "state": {
+        "provider": {
+          "badge": { "text": { "vi": "Sao kê T+1", "en": "T+1 Settlement" }, "tone": "default" }
+        },
+        "ledger_db": {
+          "highlighted": true,
+          "badge": { "text": { "vi": "Đối soát lệch", "en": "Reconcile diff" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto"
+    },
+    "s7-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["core"],
+      "packets": "auto"
+    }
+  },
+  "live": {
+    "payment": {
+      "sim": "S7-06/payment",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow", "kill"],
+        "knobs": [
+          { "node": "payment_svc", "key": "replicas" },
+          { "node": "ledger_db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": { "vi": "Lưu lượng", "en": "Offered Load" },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 200, "badAbove": 350 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Lỗi", "en": "Errors" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 350 }
+      ],
+      "focus": {
+        "nodes": ["payment_svc", "provider", "ledger_db"]
+      }
+    }
+  }
+}

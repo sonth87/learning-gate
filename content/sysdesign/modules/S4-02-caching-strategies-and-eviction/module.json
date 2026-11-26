@@ -1,0 +1,30 @@
+{
+  "id": "S4-02",
+  "slug": "S4-02-caching-strategies-and-eviction",
+  "level": 4,
+  "order": 2,
+  "title": "Chiến lược Cache: Write-Through, Write-Behind và Eviction",
+  "summary": "So sánh Cache-Aside, Write-Through và Write-Behind theo mức nhất quán và độ trễ ghi; xử lý Invalidation, chính sách loại bỏ LRU/LFU và chặn Cache Penetration bằng Negative Caching và Bloom Filter.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt ba mẫu đọc/ghi Cache-Aside, Write-Through và Write-Behind cùng đánh đổi về độ trễ ghi và rủi ro mất dữ liệu" },
+    { "vi": "Kết hợp TTL có Jitter, xóa khóa khi ghi và khóa phiên bản để giảm cửa sổ dữ liệu cũ" },
+    { "vi": "Giải thích tác động của dung lượng Cache thiếu hụt dẫn đến loại bỏ LRU liên tục làm tụt Hit Ratio" },
+    { "vi": "Áp dụng Negative Caching và Bloom Filter để ngăn truy vấn ID không tồn tại xuyên thẳng xuống Database" }
+  ],
+  "tags": ["caching", "write-through", "write-behind", "invalidation", "lru", "bloom-filter"],
+  "prerequisites": ["S2-02", "S1-03"],
+  "related": ["S4-03", "S2-04", "S4-04"],
+  "dtsRef": "caching",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-2-caching-strategy-trade-consistency-de-lay-speed.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-2-caching-strategy-trade-consistency-de-lay-speed.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ bằng tiếng Việt chuẩn mực, bỏ sơ đồ Mermaid thay bằng scene isometric và mô phỏng tải LRU eviction, bổ sung đối chiếu Negative Caching và Bloom Filter."
+  }
+}

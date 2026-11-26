@@ -1,0 +1,53 @@
+[
+  {
+    "id": "S7-06.q1",
+    "type": "mc",
+    "q": "Đặc điểm cốt lõi của mô hình Sổ cái kép (Double-Entry Ledger) trong hệ thống thanh toán là gì?",
+    "code": "",
+    "choices": [
+      "Cập nhật trực tiếp số dư trên một cột balance để truy vấn nhanh hơn",
+      "Chỉ cho phép ghi nối thêm (append-only) các cặp bút toán Debit và Credit có tổng bằng không, không sửa hay xoá dòng cũ",
+      "Lưu toàn bộ lịch sử giao dịch vào bộ nhớ đệm Redis và xoá sau 24 giờ",
+      "Sao chép cùng một bảng dữ liệu sang hai cơ sở dữ liệu khác nhau"
+    ],
+    "answer": 1,
+    "explain": "Sổ cái kép bất biến (append-only) ghi nhận cả bên ghi nợ (Debit) và bên ghi có (Credit) với tổng bằng 0, giúp kiểm toán chính xác và phát hiện sai lệch ngay lập tức."
+  },
+  {
+    "id": "S7-06.q2",
+    "type": "mc",
+    "q": "Khi Payment Service gọi cổng thanh toán (PSP) và gặp Timeout, kết luận nào sau đây là chính xác nhất?",
+    "code": "",
+    "choices": [
+      "Giao dịch chắc chắn đã thất bại và tiền chưa bị trừ",
+      "Giao dịch chắc chắn đã thành công và chỉ cần gửi email xác nhận",
+      "Trạng thái giao dịch là chưa biết kết quả; nếu thử lại bắt buộc phải dùng cùng một Idempotency-Key",
+      "Phải xoá đơn hàng ngay lập tức trong Ledger DB"
+    ],
+    "answer": 2,
+    "explain": "Timeout chỉ có nghĩa là bên gọi chưa nhận được phản hồi; PSP có thể đã trừ tiền xong. Dùng lại cùng Idempotency-Key giúp tránh trừ tiền lần hai."
+  },
+  {
+    "id": "S7-06.q3",
+    "type": "tf",
+    "q": "Mẫu Transactional Outbox giải quyết lỗi không đồng bộ bằng cách ghi bản ghi nghiệp vụ và bản ghi sự kiện vào cùng một Transaction ACID cục bộ.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Vì cả hai bản ghi nằm trong cùng một Transaction của Database, không bao giờ xảy ra tình trạng ghi sổ cái xong nhưng mất sự kiện gửi sang Event Bus khi ứng dụng sập."
+  },
+  {
+    "id": "S7-06.q4",
+    "type": "mc",
+    "q": "Mục đích chính của tác vụ Đối soát cuối ngày (Reconciliation T+1) trong hệ thống thanh toán là gì?",
+    "code": "",
+    "choices": [
+      "Tăng tốc độ phản hồi của Checkout API xuống dưới 10 ms",
+      "So khớp sổ cái nội bộ (Ledger DB) với tệp sao kê của cổng thanh toán (PSP) để phát hiện và xử lý các giao dịch lệch",
+      "Thay thế hoàn toàn nhu cầu sử dụng Idempotency-Key",
+      "Nén dữ liệu cũ để giảm dung lượng ổ cứng của Load Balancer"
+    ],
+    "answer": 1,
+    "explain": "Đối soát cuối ngày là chốt chặn an toàn giúp phát hiện các trường hợp lệch trạng thái hiếm gặp giữa hệ thống nội bộ và đối tác ngân hàng/PSP."
+  }
+]

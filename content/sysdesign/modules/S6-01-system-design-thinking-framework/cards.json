@@ -1,0 +1,7 @@
+[
+  { "id": "S6-01.c1", "front": "Tư duy dựa trên yêu cầu (Requirement-Driven Design) bắt đầu từ đâu?", "back": "Bắt đầu bằng việc làm rõ Yêu cầu chức năng (hệ thống làm gì) và Yêu cầu phi chức năng (quy mô, độ trễ p99, độ sẵn sàng, tính nhất quán, ngân sách) trước khi nhắc đến tên công nghệ." },
+  { "id": "S6-01.c2", "front": "Ba nhóm ràng buộc chính định hình kiến trúc là gì?", "back": "1. Ràng buộc kỹ thuật (giới hạn DB, tốc độ mạng, định lý CAP). 2. Ràng buộc kinh doanh (ngân sách, thời hạn, quy mô đội ngũ, tuân thủ pháp lý). 3. Ràng buộc quy mô (tải hiện tại, tốc độ tăng trưởng, độ nhọn đột biến)." },
+  { "id": "S6-01.c3", "front": "Phân biệt Top-Down và Bottom-Up trong thiết kế?", "back": "Top-Down đi từ bản đồ tổng thể các thành phần rồi mới đi vào chi tiết từng hộp (hợp với phỏng vấn và hệ thống mới). Bottom-Up đi từ mô hình dữ liệu và logic cốt lõi lên tầng API (hợp với tính năng chuyên sâu)." },
+  { "id": "S6-01.c4", "front": "High-Level Design (HLD) và Low-Level Design (LLD) khác nhau thế nào?", "back": "HLD là bản đồ toàn hệ thống (các dịch vụ, luồng dữ liệu, đánh đổi CAP/chi phí). LLD là thiết kế bên trong một dịch vụ (schema, máy trạng thái, thuật toán, xử lý trường hợp biên)." },
+  { "id": "S6-01.c5", "front": "Chỗ giao nhau giữa HLD và LLD là gì?", "back": "Là hợp đồng giao tiếp (API Contract, Schema sự kiện, SLO độ trễ và lỗi) nằm ở ranh giới giữa các dịch vụ." }
+]

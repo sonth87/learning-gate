@@ -1,0 +1,23 @@
+{
+  "id": "S7-03",
+  "slug": "S7-03-case-notification-system",
+  "level": 7,
+  "order": 3,
+  "title": "Case: Hệ thống thông báo đa kênh",
+  "summary": "Thiết kế hệ thống gửi thông báo Push, SMS và Email quy mô lớn: tách hàng đợi theo độ ưu tiên để chiến dịch tiếp thị 10 triệu tin không chặn OTP giao dịch, Retry có Jitter, Circuit Breaker cho nhà cung cấp chậm và chống gửi trùng.",
+  "durationMin": 18,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Tách hàng đợi và nhóm worker theo độ ưu tiên để cô lập luồng OTP giao dịch khỏi chiến dịch tiếp thị" },
+    { "vi": "Bảo vệ hệ thống khi nhà cung cấp (APNs/FCM/SMS) chậm bằng Retry có Exponential Backoff + Jitter và Circuit Breaker" },
+    { "vi": "Ngăn gửi trùng thông báo khi worker thử lại bằng khóa khử trùng (dedup key / idempotency key)" },
+    { "vi": "Kiểm soát tốc độ đẩy sang đối tác theo hạn mức (rate limit) của từng nhà cung cấp" }
+  ],
+  "tags": ["case-study", "notification", "priority-queue", "retry-jitter", "circuit-breaker", "dedup"],
+  "prerequisites": ["S2-04", "S4-11"],
+  "related": ["S2-11", "S7-01"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế hệ thống Thông báo đa kênh (Push/SMS/Email): tách hàng đợi theo độ ưu tiên, chống chiến dịch tiếp thị nghẽn OTP giao dịch, Retry có jitter và chống gửi trùng."
+  }
+}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "S4-09.A1",
+    "kind": "estimate",
+    "title": { "vi": "Tính cơn bão RPS từ 1 triệu thiết bị dùng Short Polling" },
+    "prompt": { "vi": "Một ứng dụng có 1.000.000 thiết bị đang mở. Mỗi thiết bị dùng Short Polling gửi 1 HTTP request hỏi tin mới mỗi 2 giây. Hỏi tổng lưu lượng đổ vào hệ thống là bao nhiêu req/s?" },
+    "difficulty": 1,
+    "quantity": "Tổng lưu lượng Polling",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "1000000/2", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Mỗi thiết bị gửi 1 / 2 = 0,5 req/s." },
+      { "vi": "Với 1.000.000 thiết bị: 1.000.000 × 0,5 = 500.000 req/s." }
+    ],
+    "hints": [
+      { "vi": "Chia tổng số thiết bị cho chu kỳ lặp lại (tính bằng giây)." }
+    ],
+    "explain": { "vi": "1 triệu thiết bị hỏi mỗi 2 giây tạo ra {truth:0} req/s liên tục, ngay cả khi 95% thời gian không hề có tin nhắn mới nào — đây là lý do Short Polling không mở rộng được ở quy mô lớn." },
+    "replay": { "simId": "S4-09/polling-storm", "seekSec": 25, "focus": { "nodes": ["api"] } }
+  },
+  {
+    "id": "S4-09.A2",
+    "kind": "predict",
+    "title": { "vi": "Node nào bão hòa trước khi cơn bão Polling tăng lên 12.000 req/s?" },
+    "prompt": { "vi": "Trong kịch bản mô phỏng, lưu lượng Polling tăng từ 1.000 lên 12.000 req/s trong 45 giây. Edge Gateway có tổng năng lực 18.000 req/s (3 máy × 6.000), Polling API có tổng năng lực 4.500 req/s (3 máy × 1.500), và Message DB đạt 4.500 req/s. Mô phỏng dừng ở giây 10: node nào sẽ quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 10,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 10 },
+      "expected": ["api"]
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 35, "speed": 2 },
+    "hints": [
+      { "vi": "Mọi request Polling đều đi qua Edge Gateway vào Polling API trước khi chạm tới DB." },
+      { "vi": "So sánh tổng năng lực của cụm Polling API (4.500 req/s) với mức tải tăng dần." }
+    ],
+    "explain": { "vi": "Vì mọi lượt hỏi lặp lại (kể cả 95% lượt rỗng) đều tốn công xử lý ở {api.name} (năng lực 4.500 req/s), {api.name} chạm ρ = 1 và quá tải đầu tiên vào giây {t.first.api:1}, trong khi {gateway.name} vẫn còn dư công suất (ρ = {gateway.rho@25:2})." },
+    "sim": { "simId": "S4-09/polling-storm", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S4-09/polling-storm", "seekSec": 10, "focus": { "nodes": ["gateway", "api"] }, "autoplay": true, "speed": 2 }
+  }
+]

@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "base": "s1-read-heavy",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng bấm liên kết rút gọn (99%) và tạo liên kết mới (1%).", "en": "Users clicking short links (99%) and creating new links (1%)." },
+        "how": { "vi": "Lưu lượng tăng từ 4.000 lên đỉnh 12.000 req/s.", "en": "Traffic ramps from 4,000 up to 12,000 req/s peak." },
+        "why": { "vi": "Đòi hỏi độ trễ chuyển hướng dưới 80 ms.", "en": "Expects redirect p99 latency under 80 ms." }
+      }
+    },
+    "cdn": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "globe",
+      "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+      "inspector": {
+        "what": { "vi": "Mạng biên lưu đệm các liên kết cực nóng gần người dùng.", "en": "Edge CDN caching ultra-hot short links." },
+        "how": { "vi": "Hấp thụ khoảng 55–60% lượt đọc trước khi vào trung tâm dữ liệu.", "en": "Absorbs ~55–60% of reads before hitting origin." },
+        "why": { "vi": "Cắt giảm một nửa tải cho API và Cache gốc.", "en": "Halves traffic reaching origin API and Cache." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Phân phối các yêu cầu lọt qua CDN tới cụm Shortener API.", "en": "Distributes origin requests across Shortener API instances." },
+        "how": { "vi": "Chịu tải cao tới 30.000 req/s với độ trễ dưới 1 ms.", "en": "Handles up to 30,000 req/s with sub-millisecond overhead." },
+        "why": { "vi": "Cho phép mở rộng ngang tầng API không giữ trạng thái.", "en": "Enables stateless horizontal scaling of the API tier." }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Shortener API", "en": "Shortener API" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ tra cứu URL gốc, cấp phát mã Base62 và phát sự kiện click (μ = 2.000 req/s mỗi máy).", "en": "Stateless API resolving URLs, minting Base62 IDs, and emitting click events (μ = 2,000 req/s)." },
+        "how": { "vi": "Đọc Redis Cache trước khi hỏi NoSQL; phát sự kiện click bất đồng bộ.", "en": "Checks Redis Cache before NoSQL; emits async click events." },
+        "why": { "vi": "Cần đủ instance để xử lý phần lưu lượng không trúng CDN ở đỉnh 12.000 req/s.", "en": "Needs enough replicas for CDN-miss traffic at 12,000 req/s peak." }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": { "vi": "Bộ nhớ đệm RAM lưu ánh xạ short_code → long_url.", "en": "In-memory Redis cache storing short_code → long_url mappings." },
+        "how": { "vi": "Tập key nóng là 200.000 liên kết; cần nâng dung lượng Cache đủ 200.000 key.", "en": "Hot working set is 200,000 links; capacity must cover 200,000 keys." },
+        "why": { "vi": "Giữ Hit Ratio trên 90% để bảo vệ NoSQL.", "en": "Maintains >90% Hit Ratio to shield NoSQL." }
+      }
+    },
+    "nosql": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "NoSQL Store", "en": "NoSQL Store" },
+      "inspector": {
+        "what": { "vi": "Kho Key-Value phân mảnh lưu hàng tỷ bản ghi URL (μ = 2.000 req/s mỗi shard).", "en": "Sharded Key-Value store holding billions of URLs (μ = 2,000 req/s per shard)." },
+        "how": { "vi": "Phân mảnh theo khóa short_code giúp tra cứu O(1).", "en": "Partitioned by short_code for O(1) key lookups." },
+        "why": { "vi": "Lưu trữ bền vững dữ liệu 5 năm (~1,5 TB) và mở rộng theo số shard.", "en": "Persists 5-year dataset (~1.5 TB) and scales via shards." }
+      }
+    },
+    "queue": {
+      "shape": "queue",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": { "vi": "Analytics Queue", "en": "Analytics Queue" },
+      "inspector": {
+        "what": { "vi": "Hàng đợi nhận sự kiện lượt nhấp bất đồng bộ.", "en": "Queue buffering async clickstream events." },
+        "how": { "vi": "Tách việc đếm click khỏi đường nóng chuyển hướng.", "en": "Decouples click counting from the redirect hot path." },
+        "why": { "vi": "Đảm bảo thống kê không bao giờ làm chậm người dùng.", "en": "Ensures analytics never slows down user redirects." }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Analytics Worker", "en": "Analytics Worker" },
+      "inspector": {
+        "what": { "vi": "Worker gom lô sự kiện lượt nhấp để ghi vào kho phân tích.", "en": "Worker batching click events for analytics storage." },
+        "how": { "vi": "Đọc từ Analytics Queue và tổng hợp theo phút/giờ.", "en": "Consumes from Analytics Queue and aggregates metrics." },
+        "why": { "vi": "Giảm áp lực ghi xuống hệ thống lưu trữ phân tích.", "en": "Reduces write amplification on analytics storage." }
+      }
+    }
+  },
+  "links": {
+    "client-cdn": { "inspector": { "what": { "vi": "Lượt truy cập vào liên kết ngắn qua CDN.", "en": "Short link requests hitting CDN." }, "how": { "vi": "Trúng đệm biên được trả về ngay.", "en": "Edge hits return immediately." }, "why": { "vi": "Giảm tải tối đa cho Origin.", "en": "Maximizes origin offload." } } },
+    "cdn-lb": { "inspector": { "what": { "vi": "Lưu lượng trượt CDN đi tiếp vào Load Balancer.", "en": "CDN misses and writes forwarded to LB." }, "how": { "vi": "Chiếm khoảng 40–45% tổng lưu lượng.", "en": "Roughly 40–45% of total traffic." }, "why": { "vi": "Đưa vào cụm máy chủ gốc.", "en": "Routes to origin cluster." } } },
+    "lb-api": { "inspector": { "what": { "vi": "Chia tải đều tới các instance Shortener API.", "en": "Distributes load across Shortener API instances." }, "how": { "vi": "Dùng Round-robin.", "en": "Round-robin balancing." }, "why": { "vi": "Tránh quá tải cục bộ.", "en": "Prevents single-node overload." } } },
+    "api-cache": { "inspector": { "what": { "vi": "API tra cứu short_code trong Redis Cache.", "en": "API looks up short_code in Redis Cache." }, "how": { "vi": "Độ trễ RAM dưới 1 ms.", "en": "Sub-millisecond RAM lookup." }, "why": { "vi": "Chặn phần lớn truy vấn trước NoSQL.", "en": "Absorbs most reads before NoSQL." } } },
+    "cache-nosql": { "inspector": { "what": { "vi": "Truy vấn trượt đệm và lệnh tạo URL mới xuống NoSQL.", "en": "Cache misses and new URL writes to NoSQL." }, "how": { "vi": "Gồm Cache Miss đọc và 1% lượt ghi.", "en": "Includes read misses and 1% writes." }, "why": { "vi": "Cần giữ tải dưới công suất tổng của các shard NoSQL.", "en": "Must stay below aggregate NoSQL shard capacity." } } },
+    "api-queue": { "inspector": { "what": { "vi": "Phát sự kiện click bất đồng bộ vào Analytics Queue.", "en": "Emits async click events to Analytics Queue." }, "how": { "vi": "Không chờ phản hồi từ Worker.", "en": "Fire-and-forget async enqueue." }, "why": { "vi": "Giữ đường chuyển hướng cực nhanh.", "en": "Keeps redirect path ultra-fast." } } },
+    "queue-worker": { "inspector": { "what": { "vi": "Analytics Worker tiêu thụ sự kiện lượt nhấp.", "en": "Analytics Worker consumes click events." }, "how": { "vi": "Xử lý nền theo lô.", "en": "Processes in background batches." }, "why": { "vi": "Tách biệt khỏi SLO chuyển hướng.", "en": "Isolated from redirect SLO." } } }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "cdn": { "col": 2, "row": 1 },
+    "lb": { "col": 4, "row": 1 },
+    "api": { "col": 6, "row": 1 },
+    "cache": { "col": 8, "row": 0 },
+    "nosql": { "col": 10, "row": 0 },
+    "queue": { "col": 8, "row": 2 },
+    "worker": { "col": 10, "row": 2 }
+  },
+  "zones": {
+    "origin": {
+      "nodeIds": ["lb", "api", "cache", "nosql", "queue", "worker"],
+      "label": { "vi": "TRUNG TÂM DỮ LIỆU GỐC", "en": "ORIGIN DATA CENTER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-read-heavy": {
+      "show": { "nodes": "*" },
+      "zones": ["origin"],
+      "state": {
+        "cdn": { "loadPct": 30, "badge": { "text": { "vi": "Edge 60%", "en": "Edge 60%" }, "tone": "ok" } },
+        "api": { "loadPct": 25 },
+        "cache": { "loadPct": 20, "highlighted": true, "badge": { "text": { "vi": "RAM Hot", "en": "RAM Hot" }, "tone": "ok" } },
+        "nosql": { "loadPct": 15 },
+        "queue": { "loadPct": 10, "badge": { "text": { "vi": "Click Async", "en": "Click Async" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc Read-Heavy 99% đọc", "en": "99% Read-Heavy Architecture" },
+        "lines": [
+          { "text": { "vi": "Đọc nóng: Client → CDN → Cache → NoSQL", "en": "Hot read: Client → CDN → Cache → NoSQL" }, "tone": "good" },
+          { "text": { "vi": "Thống kê: API → Queue → Worker (bất đồng bộ)", "en": "Analytics: API → Queue → Worker (async)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-napkin-math": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Ước lượng nhanh cho URL Shortener (5 năm)", "en": "Back-of-the-Envelope Sizing (5 Years)" },
+        "subtitle": { "vi": "100 triệu URL/tháng · 10 tỷ lượt chuyển hướng/tháng · 250 byte mỗi bản ghi", "en": "100M URLs/month · 10B redirects/month · 250 bytes per record" },
+        "cells": [
+          "Ghi: 40 URL/s",
+          "Đọc: 4k–12k req/s",
+          "1 tháng: 25 GB",
+          "5 năm: 1.500 GB",
+          "Cache nóng 20%: 300 GB"
+        ],
+        "activeIndices": [1, 3, 4],
+        "pointers": [
+          { "index": 1, "label": "Tỷ lệ đọc/ghi 100:1", "tone": "blue" },
+          { "index": 3, "label": "Cần Sharding NoSQL", "tone": "yellow" },
+          { "index": 4, "label": "Nằm gọn trong Redis RAM", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Kết luận", "en": "Takeaway" },
+          "value": { "vi": "Đọc gấp 100× ghi → Ưu tiên tối đa Cache & CDN", "en": "100:1 read/write → Maximize Cache & CDN" },
+          "tone": "green"
+        }
+      }
+    },
+    "s3-id-generation": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Cách sinh mã ngắn", "en": "ID Generation Strategy" },
+        "rightTitle": { "vi": "Đặc tính vận hành", "en": "Operational Behavior" },
+        "names": [
+          { "id": "hash", "name": "Hash MD5/SHA256 cắt 7 ký tự", "note": { "vi": "Không cần bộ đếm chung", "en": "No central counter" }, "targetId": "collision", "style": "danger" },
+          { "id": "counter", "name": "Bộ đếm theo lô + Xáo ID + Base62", "note": { "vi": "Mỗi API xin dải 1.000 ID", "en": "Each API leases 1,000 IDs" }, "targetId": "nocollision", "style": "solid" }
+        ],
+        "objects": [
+          { "id": "collision", "typeTag": "HASH", "value": "Có thể va chạm", "fields": ["Phải truy vấn DB kiểm tra trùng", "Tốn thêm vòng lặp thử lại"], "tone": "rose", "badge": { "vi": "Chậm đường ghi", "en": "Slows write path" } },
+          { "id": "nocollision", "typeTag": "BASE62", "value": "0% va chạm · Khó đoán", "fields": ["62^7 ≈ 3,5 nghìn tỷ mã", "Xáo bit che thứ tự tăng dần"], "tone": "green", "badge": { "vi": "Nhanh & An toàn", "en": "Fast & Unpredictable" } }
+        ]
+      }
+    },
+    "s4-301-vs-302": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Mã trạng thái HTTP", "en": "HTTP Status Code" },
+        "rightTitle": { "vi": "Hệ quả thực tế", "en": "Real-World Trade-off" },
+        "names": [
+          { "id": "c301", "name": "301 Moved Permanently", "note": { "vi": "Trình duyệt cache vĩnh viễn", "en": "Browser caches forever" }, "targetId": "low-load", "style": "solid" },
+          { "id": "c302", "name": "302 Found (Temporary)", "note": { "vi": "Luôn hỏi lại server/CDN", "en": "Always hits server/CDN" }, "targetId": "full-stats", "style": "solid" }
+        ],
+        "objects": [
+          { "id": "low-load", "typeTag": "CACHE", "value": "Giảm tải Server tối đa", "fields": ["Lần bấm sau từ cùng trình duyệt = 0 ms", "Không đếm được đủ lượt click"], "tone": "yellow", "badge": { "vi": "Thiếu analytics", "en": "Misses analytics" } },
+          { "id": "full-stats", "typeTag": "ANALYTICS", "value": "Đo lường 100% lượt click", "fields": ["Gửi sự kiện sang Queue bất đồng bộ", "Hỗ trợ đổi URL đích linh hoạt"], "tone": "green", "badge": { "vi": "Đủ dữ liệu kinh doanh", "en": "Full click telemetry" } }
+        ]
+      }
+    },
+    "s5-live-shortener": {
+      "show": { "nodes": "*" },
+      "zones": ["origin"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tăng tải 4.000 → 12.000 req/s", "en": "Load Ramp 4,000 → 12,000 req/s" },
+        "lines": [
+          { "text": { "vi": "API (2 máy) & Cache (50k/200k key) đang thiếu tải", "en": "API (2) & Cache (50k/200k keys) under-provisioned" }, "tone": "bad" },
+          { "text": { "vi": "Chỉnh cấu hình giữ p99 ≤ 80 ms trong ngân sách", "en": "Tune config to keep p99 ≤ 80 ms within budget" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["origin"],
+      "state": {
+        "cdn": { "loadPct": 35, "badge": { "text": { "vi": "Edge 60%", "en": "Edge 60%" }, "tone": "ok" } },
+        "api": { "loadPct": 50, "badge": { "text": { "vi": "Base62", "en": "Base62" }, "tone": "ok" } },
+        "cache": { "loadPct": 40, "highlighted": true, "badge": { "text": { "vi": "200k keys", "en": "200k keys" }, "tone": "ok" } },
+        "nosql": { "loadPct": 25, "badge": { "text": { "vi": "Sharded", "en": "Sharded" }, "tone": "ok" } },
+        "worker": { "loadPct": 15, "badge": { "text": { "vi": "Click Stats", "en": "Click Stats" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thiết kế URL Shortener hoàn chỉnh", "en": "Complete URL Shortener Design" },
+        "lines": [
+          { "text": { "vi": "CDN + Redis RAM gánh > 90% lưu lượng đọc", "en": "CDN + Redis RAM absorb >90% of reads" }, "tone": "good" },
+          { "text": { "vi": "Queue tách thống kê khỏi đường chuyển hướng", "en": "Queue isolates analytics from redirects" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sim": "S5-02/shortener",
+    "startAtSec": 0,
+    "autoplay": true,
+    "speed": 1,
+    "controls": {
+      "timeline": true,
+      "knobs": [
+        { "node": "api", "key": "replicas" },
+        { "node": "cache", "key": "capacityKeys" },
+        { "node": "nosql", "key": "shards" }
+      ]
+    },
+    "telemetry": [
+      { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+      { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 60, "badAbove": 80 } },
+      { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+    ],
+    "slo": [
+      { "metric": "p99", "value": 80 }
+    ],
+    "focus": { "nodes": ["api", "cache", "nosql"] }
+  }
+}

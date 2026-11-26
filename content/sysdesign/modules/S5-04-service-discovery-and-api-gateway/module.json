@@ -1,0 +1,24 @@
+{
+  "id": "S5-04",
+  "slug": "S5-04-service-discovery-and-api-gateway",
+  "level": 5,
+  "order": 4,
+  "title": "Service Discovery và API Gateway",
+  "summary": "Cách các service tìm thấy nhau khi địa chỉ IP thay đổi liên tục bằng Service Registry, Heartbeat, Readiness Check, Slow-Start, Draining, Service Mesh và API Gateway ở rìa hệ thống.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích vì sao cấu hình IP cứng gây lỗi khi instance tự động thay thế và cách Service Registry + Heartbeat giải quyết" },
+    { "vi": "Phân biệt Client-side Discovery, Server-side Discovery và giới hạn của DNS TTL" },
+    { "vi": "Áp dụng Readiness Check, Slow-Start và Connection Draining để tránh lỗi trong lúc triển khai hoặc khởi động" },
+    { "vi": "Phân định rõ vai trò của API Gateway ở rìa hệ thống và Service Mesh (Sidecar) trong giao tiếp nội bộ" }
+  ],
+  "tags": ["service-discovery", "api-gateway", "service-mesh", "heartbeat", "readiness", "draining"],
+  "prerequisites": ["S2-01", "S4-11"],
+  "related": ["S5-01", "S5-06"],
+  "dtsRef": "service-discovery",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về Service Registry, heartbeat, Client-side so với Server-side discovery, Readiness/Slow-Start/Draining, Service Mesh và API Gateway."
+  }
+}

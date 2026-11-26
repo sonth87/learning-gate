@@ -1,0 +1,73 @@
+[
+  {
+    "id": "S6-07.A1",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần tải bền vững của cấu hình khởi điểm" },
+    "prompt": { "vi": "Với cấu hình khởi điểm (2 instance App = 2.400 req/s, Redis Cache 20.000/80.000 key, Primary DB = 1.500 req/s), hãy dùng thanh trượt tải để tìm lưu lượng ổn định cao nhất (req/s) mà hệ thống vẫn giữ p99 ≤ 130 ms và lỗi ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2250, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "So sánh trần 2.400 req/s của 2 instance App với tải rơi xuống Primary DB (khoảng 60% tổng lưu lượng khi Cache chỉ chứa 20.000 key)." }
+    ],
+    "explain": { "vi": "Ở cấu hình khởi điểm, 2 instance App có trần 2.400 req/s nên lưu lượng ổn định tối đa đạt quanh {ref.value:0} req/s trước khi p99 vượt 130 ms." },
+    "sim": { "simId": "S6-07/diurnal-cost", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S6-07.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Đạt SLO qua đỉnh chu kỳ ngày đêm trong ngân sách 1,85 USD/giờ" },
+    "prompt": { "vi": "Tải chu kỳ ngày đêm đạt đỉnh 3.600 req/s trong chu kỳ 80 giây. Với tối đa 2 thay đổi và trần ngân sách chặt ≤ 1,85 USD/giờ, hãy hiệu chỉnh cấu hình để giữ p99 ≤ 130 ms và lỗi ≤ 1% xuyên suốt 80 giây (tránh cấp dư thừa gây đội chi phí)." },
+    "difficulty": 3,
+    "simId": "S6-07/diurnal-cost",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.85 },
+    "allowed": [
+      { "type": "knob", "node": "api", "key": "replicas", "min": 1, "max": 8 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 10000, "max": 120000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 80 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 },
+      { "id": "api-calm", "kind": "node-state", "node": "api", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 }
+    ],
+    "observe": { "runSec": 80 },
+    "par": { "changes": 2, "costPerHour": 1.8 },
+    "solution": [
+      { "type": "knob", "node": "api", "key": "replicas", "value": 4 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 }
+    ],
+    "traps": [
+      {
+        "id": "overprovision-api",
+        "label": { "vi": "Cấp dư 6 instance App và giữ nguyên Cache 20.000 key" },
+        "changes": [
+          { "type": "knob", "node": "api", "key": "replicas", "value": 6 }
+        ],
+        "why": { "vi": "6 instance App đẩy chi phí lên trên 2,20 USD/giờ (vượt trần 1,75 USD/giờ), đồng thời không giảm tải cho Primary DB vì Cache vẫn thiếu dung lượng." }
+      },
+      {
+        "id": "scale-db-expensive",
+        "label": { "vi": "Nâng cỡ Primary DB lên ×3 và giữ 2 instance App" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Scale-up DB ×3 rất đắt và vượt ngân sách, trong khi 2 instance App (2.000 req/s) vẫn bị nghẽn ở đỉnh 3.600 req/s." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ở đỉnh 3.600 req/s, tầng App (1.000 req/s mỗi máy) cần đúng 4 instance để đủ 4.000 req/s mà không lãng phí." },
+      { "vi": "Nâng Redis Cache lên 80.000 key giúp giảm mạnh lượt đọc xuống Primary DB mà không làm tăng chi phí giờ." }
+    ],
+    "explain": { "vi": "Cấu hình tối ưu gồm 4 instance App (ρ = {api.rho'@40:2}) và Redis Cache 80.000 key giữ Primary DB ở ρ = {db.rho'@40:2}, đạt p99 ≤ 130 ms với tổng chi phí đúng 1,80 USD/giờ." },
+    "replay": { "simId": "S6-07/diurnal-cost", "seekSec": 40, "focus": { "nodes": ["api", "cache", "db"] }, "autoplay": true }
+  }
+]

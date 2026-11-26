@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S5-03.q1",
+    "type": "mc",
+    "q": "Nhược điểm chí tử của mô hình thuần túy Fan-out on Read (Pull) khi hệ thống có hàng triệu người dùng là gì?",
+    "code": "",
+    "choices": [
+      "Tốn quá nhiều dung lượng Redis",
+      "Gây khuếch đại đọc khổng lồ: mỗi lần mở feed phải truy vấn hàng trăm tác giả và gộp lại, làm quá tải shard bài viết",
+      "Không hỗ trợ bình luận bài viết",
+      "Không thể lưu bài viết vào Database"
+    ],
+    "answer": 1,
+    "explain": "Với 23.000 lượt mở feed/s và mỗi người theo dõi 200 tác giả, Fan-out on Read tạo ra 4,6 triệu lượt tra cứu/s xuống Post DB."
+  },
+  {
+    "id": "S5-03.q2",
+    "type": "mc",
+    "q": "Vì sao Timeline Cache trong mô hình Fan-out on Write chỉ nên lưu danh sách post_id thay vì lưu toàn bộ nội dung và ảnh bài viết?",
+    "code": "",
+    "choices": [
+      "Vì Redis không lưu được chuỗi văn bản",
+      "Để tiết kiệm dung lượng RAM khổng lồ, tránh trùng lặp nội dung bài viết cho hàng triệu người theo dõi và dễ cập nhật khi tác giả sửa bài",
+      "Để bắt buộc người dùng tải lại trang nhiều lần",
+      "Vì post_id tự động nén ảnh"
+    ],
+    "answer": 1,
+    "explain": "Mỗi post_id chỉ tốn 8 byte; giữ nội dung bài viết ở một nơi duy nhất giúp sửa/xóa bài đồng bộ ngay lập tức khi đọc theo lô."
+  },
+  {
+    "id": "S5-03.q3",
+    "type": "tf",
+    "q": "Trong kiến trúc Hybrid Fan-out, bài đăng của tài khoản người nổi tiếng có 50 triệu người theo dõi nên được đẩy (Push) đồng loạt vào Timeline Cache của tất cả 50 triệu người ngay lúc đăng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đẩy 50 triệu lệnh ghi cùng lúc sẽ làm tắc nghẽn Queue và tốn nhiều phút. Kiến trúc Hybrid dùng Pull lúc đọc cho tài khoản người nổi tiếng."
+  },
+  {
+    "id": "S5-03.q4",
+    "type": "mc",
+    "q": "Khi người dùng cuộn xuống trang tiếp theo của News Feed trong lúc có bài mới vừa được đăng lên đầu danh sách, kỹ thuật phân trang nào tránh bị lặp bài?",
+    "code": "",
+    "choices": [
+      "Dùng OFFSET và LIMIT theo số trang",
+      "Dùng Cursor Pagination dựa trên post_id hoặc timestamp của bài cuối cùng vừa xem",
+      "Tải ngẫu nhiên không sắp xếp",
+      "Xóa hết Timeline Cache mỗi khi cuộn trang"
+    ],
+    "answer": 1,
+    "explain": "Cursor Pagination neo theo vị trí bài cuối (before_id / before_timestamp) nên không bị dịch chuyển trang khi có bài mới chèn lên đầu."
+  },
+  {
+    "id": "S5-03.q5",
+    "type": "output",
+    "q": "Nếu một mạng xã hội có 20.000 lượt mở feed mỗi giây và mô hình Fan-out on Read phải truy vấn 200 tác giả cho mỗi lượt mở feed, tổng số truy vấn bài viết mỗi giây lên Post DB là bao nhiêu triệu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4",
+    "explain": "20.000 × 200 = 4.000.000 truy vấn/giây = 4 triệu truy vấn/giây."
+  }
+]

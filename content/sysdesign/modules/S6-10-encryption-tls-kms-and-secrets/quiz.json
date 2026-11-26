@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-10.q1",
+    "type": "mc",
+    "q": "Vì sao trong Envelope Encryption, việc xoay vòng khóa chính (KEK) ở KMS diễn ra rất nhanh ngay cả khi Database chứa hàng terabyte dữ liệu?",
+    "code": "",
+    "choices": [
+      "Vì chỉ cần giải mã và bọc lại các Data Encryption Key (DEK) nhỏ gọn bằng KEK mới, không phải mã hóa lại toàn bộ dữ liệu gốc",
+      "Vì KMS xóa toàn bộ dữ liệu cũ mỗi khi xoay khóa",
+      "Vì dữ liệu gốc thực chất không được mã hóa",
+      "Vì hệ thống tắt TLS trong lúc xoay khóa"
+    ],
+    "answer": 0,
+    "explain": "Dữ liệu được mã hóa bằng DEK. KEK chỉ dùng để bọc DEK. Khi xoay KEK, hệ thống chỉ cần bọc lại DEK (vài chục byte) mà không cần chạm vào hàng terabyte bản mã trên đĩa."
+  },
+  {
+    "id": "S6-10.q2",
+    "type": "mc",
+    "q": "Điểm khác biệt chính của mutual TLS (mTLS) so với TLS một chiều thông thường là gì?",
+    "code": "",
+    "choices": [
+      "mTLS không sử dụng chứng chỉ số",
+      "Cả phía gọi (client) và phía nhận (server) đều phải xuất trình và xác minh chứng chỉ của nhau",
+      "mTLS chỉ chạy trên trình duyệt web công cộng",
+      "mTLS bỏ qua bước kiểm tra hạn sử dụng chứng chỉ"
+    ],
+    "answer": 1,
+    "explain": "Trong TLS thông thường chỉ server xuất trình chứng chỉ cho client. Với mTLS giữa các microservice nội bộ, cả hai chiều đều xác thực danh tính bằng chứng chỉ để thực thi Zero Trust."
+  },
+  {
+    "id": "S6-10.q3",
+    "type": "tf",
+    "q": "Khi một API key bị vô tình commit lên kho mã nguồn Git công khai rồi xóa ở commit tiếp theo, ta chỉ cần giữ nguyên khóa đó vì lịch sử mới nhất không còn chứa khóa nữa.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Lịch sử Git vẫn lưu commit cũ và các bot quét tự động thu thập khóa chỉ trong vài giây. Phải thu hồi (revoke) và xoay vòng ngay khóa bị lộ, đồng thời bật secret scanning trong CI."
+  },
+  {
+    "id": "S6-10.q4",
+    "type": "mc",
+    "q": "Mục đích chính của Tokenization khi xử lý số thẻ thanh toán là gì?",
+    "code": "",
+    "choices": [
+      "Tăng tốc độ nén ảnh trên trang chủ",
+      "Thay thế số thẻ thật bằng chuỗi đại diện không có giá trị khai thác để giảm phạm vi hệ thống phải tuân thủ PCI-DSS",
+      "Cho phép lưu mật khẩu người dùng dưới dạng bản rõ",
+      "Thay thế hoàn toàn giao thức HTTPS"
+    ],
+    "answer": 1,
+    "explain": "Tokenization lưu số thẻ thật trong kho bảo mật tách biệt (vault) và cấp mã token (`tok_...`) cho các dịch vụ ứng dụng, giúp thu hẹp đáng kể phạm vi kiểm toán PCI-DSS."
+  },
+  {
+    "id": "S6-10.q5",
+    "type": "mc",
+    "q": "So với mã hóa TLS + KMS thông thường, mã hóa đầu cuối (E2EE) bổ sung đảm bảo gì?",
+    "code": "",
+    "choices": [
+      "Chứng chỉ TLS không bao giờ hết hạn",
+      "Ngay cả máy chủ trung gian chuyển tiếp dữ liệu cũng không có khóa để giải mã nội dung",
+      "Database tự động tạo chỉ mục nhanh hơn",
+      "Người dùng không cần đăng nhập vẫn gửi được dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Trong E2EE, dữ liệu được mã hóa tại thiết bị gửi bằng khóa chỉ thiết bị nhận giải mã được; server trung gian chỉ chuyển tiếp bản mã."
+  }
+]

@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "base": "s1-authn-vs-authz",
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "gateway": { "col": 2, "row": 1 },
+    "authz": { "col": 4, "row": 1 },
+    "db": { "col": 6, "row": 1 }
+  },
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Tenant Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng thuộc nhiều tổ chức (Tenant A, Tenant B) gửi request kèm token.", "en": "Multi-tenant users sending requests with authenticated tokens." },
+        "how": { "vi": "Token chỉ chứng minh danh tính (AuthN); tham số trên URL hoặc body có thể bị sửa bởi người gọi.", "en": "Tokens prove identity (AuthN); URL or body IDs can be tampered with by callers." },
+        "why": { "vi": "Không bao giờ tin ID tài nguyên hoặc trường vai trò từ client nếu chưa đối chiếu quyền.", "en": "Never trust client-supplied resource IDs or role fields without authorization checks." }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": { "vi": "Điểm tiếp nhận request, xác thực chữ ký JWT và trích xuất `user_id`, `tenant_id`.", "en": "Entry point verifying JWT signatures and extracting `user_id` and `tenant_id`." },
+        "how": { "vi": "Chặn request thiếu token hoặc hết hạn trước khi chuyển tiếp vào tầng kiểm tra quyền.", "en": "Rejects missing or expired tokens before forwarding to the authorization layer." },
+        "why": { "vi": "Tách rõ lớp xác thực ở biên với lớp quyết định quyền chi tiết ở phía sau.", "en": "Separates edge authentication from fine-grained authorization decisions." }
+      }
+    },
+    "authz": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "AuthZ Service", "en": "Policy Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ quyết định phân quyền tập trung (PDP), đánh giá Ownership, RBAC và ReBAC.", "en": "Centralized Policy Decision Point (PDP) evaluating Ownership, RBAC, and ReBAC." },
+        "how": { "vi": "Kiểm tra xem `user_id` trong `tenant_id` có quyền thực hiện hành động lên đối tượng đích hay không.", "en": "Evaluates whether `user_id` in `tenant_id` is allowed to act on the target object." },
+        "why": { "vi": "Nếu gọi đồng bộ không cache khi tải cao, AuthZ dễ thành điểm nghẽn toàn luồng.", "en": "Synchronous uncached policy checks can become the throughput bottleneck under load." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Multi-tenant DB", "en": "Multi-tenant DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu lưu dữ liệu nhiều tenant, bật Row-Level Security (RLS) làm lớp khóa cuối.", "en": "Shared multi-tenant database enforcing Row-Level Security (RLS) as defense in depth." },
+        "how": { "vi": "Mỗi truy vấn đều lọc theo `tenant_id` và mỗi dịch vụ chỉ dùng credential quyền tối thiểu.", "en": "Every query scopes by `tenant_id` and each service uses least-privilege credentials." },
+        "why": { "vi": "Ngăn rò rỉ dữ liệu chéo tenant ngay cả khi tầng ứng dụng sót điều kiện lọc.", "en": "Prevents cross-tenant data leaks even if application code misses a filter." }
+      }
+    }
+  },
+  "links": {
+    "client-gateway": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ client mang token và payload dữ liệu tới API Gateway.", "en": "Client connection carrying auth token and payload to API Gateway." },
+        "how": { "vi": "Payload có thể chứa trường thừa như `role: admin` hoặc ID thuộc tenant khác.", "en": "Payloads may contain extra fields like `role: admin` or cross-tenant IDs." },
+        "why": { "vi": "Cần lọc allow-list và kiểm tra quyền sở hữu ngay sau khi qua cổng.", "en": "Requires allow-list filtering and ownership checks right after the gateway." }
+      }
+    },
+    "gateway-authz": {
+      "inspector": {
+        "what": { "vi": "Lời gọi kiểm tra quyền từ Gateway tới AuthZ Service.", "en": "Authorization check call from Gateway to AuthZ Service." },
+        "how": { "vi": "Truyền ngữ cảnh người dùng thực (`sub`, `tenant_id`) để tránh Confused Deputy.", "en": "Propagates end-user identity context (`sub`, `tenant_id`) to prevent Confused Deputy." },
+        "why": { "vi": "Đảm bảo mọi hành động đều được kiểm tra với danh nghĩa người dùng gọi ban đầu.", "en": "Ensures every action is evaluated on behalf of the originating user." }
+      }
+    },
+    "authz-db": {
+      "inspector": {
+        "what": { "vi": "Truy vấn dữ liệu và bảng quan hệ quyền xuống Multi-tenant DB.", "en": "Data and permission-tuple queries from AuthZ/App to Multi-tenant DB." },
+        "how": { "vi": "Sử dụng credential riêng theo từng dịch vụ và kích hoạt chính sách RLS theo tenant.", "en": "Uses per-service scoped credentials and enforces tenant RLS policies." },
+        "why": { "vi": "Giảm bán kính ảnh hưởng nếu xảy ra lỗi truy vấn hoặc SQL Injection.", "en": "Limits blast radius if query bugs or SQL injection occur." }
+      }
+    }
+  },
+  "zones": {
+    "trust": {
+      "nodeIds": ["gateway", "authz", "db"],
+      "label": { "vi": "RANH GIỚI TIN CẬY", "en": "TRUST BOUNDARY" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-authn-vs-authz": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 15, "badge": { "text": { "vi": "AuthN: Hợp lệ", "en": "AuthN: Valid" }, "tone": "ok" } },
+        "authz": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "IDOR: Thiếu kiểm tra", "en": "IDOR: Unchecked" }, "tone": "bad" } },
+        "db": { "loadPct": 20, "badge": { "text": { "vi": "Lộ dữ liệu Tenant B", "en": "Leaks Tenant B" }, "tone": "bad" } }
+      },
+      "linkState": {
+        "authz-db": { "style": "danger", "label": { "vi": "GET /invoices/902", "en": "GET /invoices/902" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đã đăng nhập ≠ Được phép", "en": "Authenticated ≠ Authorized" },
+        "lines": [
+          { "text": { "vi": "User thuộc Tenant A gọi hóa đơn #902 của Tenant B", "en": "Tenant A user requests Tenant B invoice #902" }, "tone": "bad" },
+          { "text": { "vi": "Token hợp lệ, nhưng thiếu kiểm tra quyền sở hữu", "en": "Token is valid, but ownership check is missing" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-ownership-rls": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 15, "badge": { "text": { "vi": "tenant_id = A", "en": "tenant_id = A" }, "tone": "ok" } },
+        "authz": { "loadPct": 30, "badge": { "text": { "vi": "Khớp owner_id", "en": "Owner Match" }, "tone": "ok" } },
+        "db": { "loadPct": 22, "highlighted": true, "badge": { "text": { "vi": "RLS: tenant_id = A", "en": "RLS: tenant_id = A" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "authz-db": { "label": { "vi": "WHERE tenant_id = 'A'", "en": "WHERE tenant_id = 'A'" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiểm tra sở hữu & Row-Level Security", "en": "Ownership Check & RLS" },
+        "lines": [
+          { "text": { "vi": "App gắn tenant_id từ JWT vào mọi truy vấn", "en": "App binds JWT tenant_id to every query" }, "tone": "good" },
+          { "text": { "vi": "DB bật RLS chặn chéo tenant ở tầng dữ liệu", "en": "DB RLS blocks cross-tenant access at storage layer" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-mass-assignment": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Allow-list DTO", "en": "Allow-list DTO" }, "tone": "ok" } },
+        "authz": { "loadPct": 25, "badge": { "text": { "vi": "Chặn role=admin", "en": "Drop role=admin" }, "tone": "warn" } },
+        "db": { "loadPct": 20 }
+      },
+      "linkState": {
+        "client-gateway": { "style": "danger", "label": { "vi": "{ name, role: admin }", "en": "{ name, role: admin }" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chống Mass Assignment bằng Allow-list", "en": "Prevent Mass Assignment" },
+        "lines": [
+          { "text": { "vi": "Không bind thẳng JSON body vào model DB", "en": "Never bind raw JSON body into DB models" }, "tone": "bad" },
+          { "text": { "vi": "Chỉ cho phép ghi trường an toàn: [name, phone]", "en": "Allow-list writable fields only: [name, phone]" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-rbac-rebac-graph": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "RBAC (theo vai trò) vs ReBAC (đồ thị quan hệ Zanzibar)", "en": "RBAC (Role-Based) vs ReBAC (Relationship Graph)" },
+        "nodes": [
+          { "id": "u_an", "x": -180, "y": -85, "label": "User: An", "sub": { "vi": "RBAC: role = Editor", "en": "RBAC: role = Editor" }, "tone": "blue" },
+          { "id": "perm_rbac", "x": -180, "y": 40, "label": "Quyền: edit_post", "sub": { "vi": "Áp dụng chung toàn hệ thống", "en": "Global role permission" }, "tone": "green" },
+          { "id": "u_binh", "x": 140, "y": -85, "label": "User: Bình", "sub": { "vi": "member của Team Design", "en": "member of Team Design" }, "tone": "purple" },
+          { "id": "folder", "x": 60, "y": 15, "label": "Folder: Q4-Specs", "sub": { "vi": "Team Design là editor", "en": "Team Design is editor" }, "tone": "yellow" },
+          { "id": "doc", "x": 220, "y": 85, "label": "Doc: AuthZ-Plan", "sub": { "vi": "parent = Q4-Specs → Bình được sửa", "en": "parent = Q4-Specs → Binh can edit" }, "tone": "orange" }
+        ],
+        "edges": [
+          { "from": "u_an", "to": "perm_rbac", "label": "has_role" },
+          { "from": "u_binh", "to": "folder", "label": "member → editor" },
+          { "from": "folder", "to": "doc", "label": "parent_of" }
+        ]
+      }
+    },
+    "s5-least-privilege": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 15 },
+        "authz": { "loadPct": 28, "badge": { "text": { "vi": "Role: report_ro", "en": "Role: report_ro" }, "tone": "ok" } },
+        "db": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "Chỉ SELECT invoices", "en": "SELECT invoices only" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Quyền tối thiểu (Least Privilege)", "en": "Least Privilege Credentials" },
+        "lines": [
+          { "text": { "vi": "Mỗi dịch vụ giữ credential riêng, chỉ đủ quyền cần thiết", "en": "Each service uses scoped DB credentials" }, "tone": "good" },
+          { "text": { "vi": "Chặn lây lan sang bảng users/secrets nếu có injection", "en": "Contains blast radius if SQL injection occurs" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-confused-deputy": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 15 },
+        "authz": { "loadPct": 35, "highlighted": true, "badge": { "text": { "vi": "Chạy quyền Service!", "en": "Service Privilege!" }, "tone": "bad" } },
+        "db": { "loadPct": 25, "badge": { "text": { "vi": "Xóa nhầm file khác", "en": "Deletes other file" }, "tone": "bad" } }
+      },
+      "linkState": {
+        "gateway-authz": { "style": "danger", "label": { "vi": "Bỏ qua user_id gốc", "en": "Drops caller user_id" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Lỗi Confused Deputy", "en": "Confused Deputy Problem" },
+        "lines": [
+          { "text": { "vi": "Worker dùng quyền admin của chính nó để đọc/xóa hộ user", "en": "Worker acts with its own admin role on user input" }, "tone": "bad" },
+          { "text": { "vi": "Khắc phục: truyền token/danh tính user khi kiểm tra quyền", "en": "Fix: authorize against the originating user identity" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-bottleneck-check": {
+      "show": { "nodes": ["client", "gateway", "authz", "db"] },
+      "zones": ["trust"],
+      "state": {
+        "gateway": { "loadPct": 6 },
+        "authz": { "loadPct": 100, "highlighted": true, "badge": { "text": { "vi": "ρ = 1,38 · nghẽn", "en": "ρ = 1.38 · overloaded" }, "tone": "bad" } },
+        "db": { "loadPct": 33 }
+      },
+      "linkState": {
+        "gateway-authz": { "style": "danger", "label": { "vi": "825 req/s", "en": "825 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Audit Log & Hiệu năng AuthZ (t = 25 s)", "en": "Audit Log & AuthZ Bottleneck (t = 25 s)" },
+        "lines": [
+          { "text": { "vi": "AuthZ chưa cache đồ thị quyền: μ = 600 req/s", "en": "Uncached AuthZ graph lookup: μ = 600 req/s" }, "tone": "bad" },
+          { "text": { "vi": "Ghi Audit Log bất đồng bộ để không chặn luồng chính", "en": "Emit Audit Logs asynchronously off the hot path" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  }
+}

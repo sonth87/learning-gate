@@ -1,0 +1,53 @@
+[
+  {
+    "id": "S7-02.q1",
+    "type": "mc",
+    "q": "Khi có 4 API Gateway chạy sau Load Balancer Round-robin và mỗi Gateway dùng bộ đếm cục bộ trong RAM (ngưỡng 100 req/phút), một người dùng có thể gửi tối đa bao nhiêu request hợp lệ trong 1 phút?",
+    "code": "",
+    "choices": [
+      "100 request",
+      "Khoảng 400 request (100 request trên mỗi Gateway)",
+      "25 request",
+      "Không giới hạn"
+    ],
+    "answer": 1,
+    "explain": "Vì mỗi Gateway giữ bộ đếm riêng không đồng bộ với nhau, các request của cùng một người dùng được chia đều sang cả 4 máy nên tổng ngưỡng thực tế bị nhân lên gấp 4 lần."
+  },
+  {
+    "id": "S7-02.q2",
+    "type": "mc",
+    "q": "Vì sao khi dùng Redis làm bộ đếm tập trung cho Rate Limiter, ta thường gói thao tác đọc-kiểm tra-tăng vào một Lua script?",
+    "code": "",
+    "choices": [
+      "Để đảm bảo tính nguyên tử (atomic), tránh Race Condition khi nhiều Gateway cập nhật cùng một khóa đồng thời",
+      "Vì Redis không hỗ trợ lưu số nguyên",
+      "Để bỏ qua hoàn toàn kết nối mạng",
+      "Để tăng độ trễ lên 500 ms"
+    ],
+    "answer": 0,
+    "explain": "Nếu tách thành hai lệnh GET rồi INCR rời rạc, hai Gateway đọc cùng giá trị cũ sẽ cùng cho qua request vượt ngưỡng. Lua script chạy đơn luồng nguyên tử trên Redis loại bỏ hoàn toàn Race Condition này."
+  },
+  {
+    "id": "S7-02.q3",
+    "type": "tf",
+    "q": "Trong trường hợp cụm Redis đếm ngưỡng mất kết nối tạm thời, chính sách Fail-open cho phép request đi tiếp thay vì chặn toàn bộ hệ thống.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Với đa số API phục vụ người dùng, thà tạm thời không giới hạn tốc độ trong vài giây còn hơn trả lỗi 500/429 cho 100% khách hàng hợp lệ khi Redis gặp sự cố."
+  },
+  {
+    "id": "S7-02.q4",
+    "type": "mc",
+    "q": "Điểm khác biệt chính của Token Bucket so với Fixed Window Counter khi có tải đột biến (burst) là gì?",
+    "code": "",
+    "choices": [
+      "Token Bucket cho phép tiêu thụ lượng token tích sẵn trong xô để hấp thụ burst ngắn nhưng vẫn giữ tốc độ trung bình dài hạn bằng ratePerSec",
+      "Token Bucket luôn chặn mọi burst ngay lập tức",
+      "Fixed Window Counter không bao giờ bị lỗi gấp đôi ngưỡng ở ranh giới phút",
+      "Token Bucket bắt buộc lưu toàn bộ lịch sử timestamp từng request"
+    ],
+    "answer": 0,
+    "explain": "Token Bucket tích lũy token tối đa bằng kích thước xô (burst) khi rảnh, giúp xử lý các đợt burst hợp lệ ngắn hạn mà vẫn khống chế tốc độ trung bình dài hạn."
+  }
+]

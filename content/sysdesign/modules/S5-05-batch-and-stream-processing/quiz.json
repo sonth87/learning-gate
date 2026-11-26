@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S5-05.q1",
+    "type": "mc",
+    "q": "Vì sao không nên chạy các truy vấn tổng hợp (GROUP BY hàng tỉ dòng) trực tiếp trên Database sản xuất (OLTP)?",
+    "code": "",
+    "choices": [
+      "Vì Database OLTP không hỗ trợ câu lệnh SQL",
+      "Vì truy vấn quét toàn bảng chiếm hết I/O, CPU và bộ nhớ đệm, làm chậm các giao dịch của người dùng đang chạy",
+      "Vì dữ liệu trên OLTP tự động bị xóa sau mỗi phút",
+      "Vì kết quả tổng hợp trên OLTP luôn sai số học"
+    ],
+    "answer": 1,
+    "explain": "Cơ sở dữ liệu OLTP được tối ưu cho các giao dịch ngắn và nhanh. Chạy truy vấn phân tích nặng trực tiếp sẽ cạnh tranh tài nguyên và làm tăng p99 của ứng dụng."
+  },
+  {
+    "id": "S5-05.q2",
+    "type": "mc",
+    "q": "Trong bài toán đếm lượt xem video bằng Map-Shuffle-Reduce, một video nổi tiếng chiếm 40% tổng sự kiện khiến một Reducer chạy mất 3 giờ trong khi các Reducer khác xong sau 5 phút. Biện pháp nào khắc phục hiệu quả nhất?",
+    "code": "",
+    "choices": [
+      "Tăng thêm số lượng Mapper",
+      "Dùng Combiner gộp cục bộ ở Mapper và thêm hậu tố ngẫu nhiên (Salting) vào khóa nóng để chia tải sang nhiều Reducer",
+      "Tắt bước Shuffle",
+      "Giảm kích thước ổ đĩa của Data Warehouse"
+    ],
+    "answer": 1,
+    "explain": "Combiner giảm lượng dữ liệu truyền qua mạng ở bước Shuffle, còn Salting tách khóa nóng thành nhiều khóa con (ví dụ video_1#0..#9) để phân tán sang nhiều Reducer, sau đó gộp lại ở bước hai."
+  },
+  {
+    "id": "S5-05.q3",
+    "type": "mc",
+    "q": "Trong Stream Processing, Watermark dùng để làm gì?",
+    "code": "",
+    "choices": [
+      "Để đóng dấu bản quyền lên từng gói tin",
+      "Để đánh dấu mốc thời gian sự kiện (Event Time) mà hệ thống tin rằng phần lớn sự kiện trước mốc đó đã đến đủ, từ đó chốt kết quả Window",
+      "Để mã hóa dữ liệu truyền qua mạng",
+      "Để xóa sạch dữ liệu trong Event Log mỗi giờ"
+    ],
+    "answer": 1,
+    "explain": "Sự kiện từ thiết bị di động có thể đến trễ do mất mạng. Watermark cho phép cửa sổ thời gian chờ thêm một khoảng trễ hợp lý trước khi chốt và phát kết quả."
+  },
+  {
+    "id": "S5-05.q4",
+    "type": "tf",
+    "q": "Khi Consumer Lag tăng liên tục, tăng số lượng Stream Processor vượt quá số Partition của topic sẽ giúp mỗi Partition được hai Processor đọc song song để giảm lag nhanh gấp đôi.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Trong một Consumer Group, mỗi Partition chỉ được giao cho tối đa một Processor tại một thời điểm. Thêm Processor vượt quá số Partition sẽ chỉ tạo ra worker nhàn rỗi."
+  },
+  {
+    "id": "S5-05.q5",
+    "type": "mc",
+    "q": "Cấu trúc dữ liệu HyperLogLog (Sketch) thường dùng trong xử lý luồng để giải quyết bài toán nào?",
+    "code": "",
+    "choices": [
+      "Lưu toàn bộ mật khẩu người dùng",
+      "Đếm xấp xỉ số phần tử duy nhất (ví dụ số người xem khác nhau) với bộ nhớ cố định cực nhỏ (vài KB) thay vì lưu hàng trăm triệu ID",
+      "Sắp xếp chính xác mọi giao dịch tài chính",
+      "Thay thế hoàn toàn Message Broker"
+    ],
+    "answer": 1,
+    "explain": "Lưu một tập HashSet chứa 100 triệu user_id tốn hàng GB RAM. HyperLogLog chấp nhận sai số nhỏ (khoảng 1–2%) để đếm phần tử duy nhất chỉ với vài KB bộ nhớ."
+  }
+]

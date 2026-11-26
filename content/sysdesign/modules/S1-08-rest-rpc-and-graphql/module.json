@@ -1,0 +1,24 @@
+{
+  "id": "S1-08",
+  "slug": "S1-08-rest-rpc-and-graphql",
+  "level": 1,
+  "order": 4,
+  "title": "REST, RPC và GraphQL: chi phí trên mạng di động",
+  "summary": "So sánh REST, GraphQL và gRPC theo số vòng khứ hồi RTT trên mạng di động 4G, kích thước payload, phân trang con trỏ và chiến lược tương thích phiên bản API.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân tích chi phí một màn hình di động theo số vòng khứ hồi RTT và kích thước payload của REST, GraphQL và gRPC" },
+    { "vi": "Nhận diện vấn đề gọi lặp và dư dữ liệu (Over-fetching) của REST trên mạng di động có RTT cao" },
+    { "vi": "Đánh giá đánh đổi của GraphQL (N+1, giới hạn độ sâu truy vấn, cache HTTP) và phạm vi dùng gRPC trong nội bộ" },
+    { "vi": "Áp dụng phân trang con trỏ (Cursor Pagination) cho danh sách lớn và giữ tương thích ngược khi nâng cấp API" }
+  ],
+  "tags": ["api", "rest", "graphql", "grpc", "protobuf", "pagination"],
+  "prerequisites": ["S1-01", "S1-06"],
+  "related": ["S1-02", "S1-03", "S5-04"],
+  "dtsRef": "apis",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới so sánh REST, GraphQL và gRPC theo số vòng khứ hồi RTT trên mạng di động, kích thước payload, phân trang con trỏ và tương thích phiên bản."
+  }
+}

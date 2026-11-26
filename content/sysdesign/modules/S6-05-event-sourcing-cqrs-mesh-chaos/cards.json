@@ -1,0 +1,8 @@
+[
+  { "id": "S6-05.c1", "front": "Event Sourcing là gì?", "back": "Mô hình lưu mọi thay đổi dưới dạng chuỗi sự kiện bất biến (append-only) thay vì ghi đè trạng thái cuối, cho phép Audit Trail đầy đủ và Replay trạng thái." },
+  { "id": "S6-05.c2", "front": "CQRS giải quyết vấn đề gì và đánh đổi điều gì?", "back": "Tách Write Model (chuẩn hóa, kiểm tra quy tắc) khỏi Read Model (phi chuẩn hóa, đọc nhanh). Đánh đổi là Eventual Consistency (Projection Lag) và tăng độ phức tạp." },
+  { "id": "S6-05.c3", "front": "Vai trò của Sidecar Proxy trong Service Mesh?", "back": "Chạy cạnh mỗi dịch vụ để thực thi đồng nhất mTLS, Load Balancing, Retry, Circuit Breaker và Distributed Tracing mà không cần nhúng vào mã nghiệp vụ." },
+  { "id": "S6-05.c4", "front": "Khi nào KHÔNG nên dùng Service Mesh?", "back": "Khi hệ thống là Monolith hoặc có ít hơn ~10 microservice, vì chi phí vận hành và độ trễ proxy vượt quá lợi ích." },
+  { "id": "S6-05.c5", "front": "Ba nguyên tắc cốt lõi của Chaos Engineering?", "back": "Bắt đầu với giả thuyết về trạng thái ổn định, giới hạn phạm vi ảnh hưởng (Blast Radius) nhỏ rồi mới mở rộng, và tự động hóa thí nghiệm khi giám sát đã hoàn thiện." },
+  { "id": "S6-05.c6", "front": "Vì sao CQRS + Event Log giúp thu hẹp Blast Radius khi Projector chậm?", "back": "Vì Write API chỉ đẩy sự kiện bất đồng bộ vào Event Log và Read API đọc độc lập trên Read DB, nên Projector chậm chỉ làm tăng Lag chứ không làm sập đường đọc/ghi." }
+]

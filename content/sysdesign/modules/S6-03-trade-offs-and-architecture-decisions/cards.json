@@ -1,0 +1,7 @@
+[
+  { "id": "S6-03.c1", "front": "Nguyên tắc cốt lõi của tư duy đánh đổi (Trade-off Thinking) là gì?", "back": "Không có kiến trúc hoàn hảo tuyệt đối; mọi lựa chọn đều đổi một lợi ích lấy một chi phí hoặc giới hạn khác. Nhiệm vụ của kiến trúc sư là chọn sự đánh đổi phù hợp nhất với bối cảnh và ràng buộc." },
+  { "id": "S6-03.c2", "front": "Khi nào chọn Strong Consistency (CP) và khi nào chọn High Availability (AP)?", "back": "Chọn CP khi dữ liệu sai gây thiệt hại tài chính hoặc vi phạm pháp lý (thanh toán, trừ kho). Chọn AP khi độ trễ thấp và khả năng phục vụ liên tục quan trọng hơn độ chính xác tức thì (lượt thích, bảng tin, đếm lượt xem)." },
+  { "id": "S6-03.c3", "front": "Đánh đổi Simplicity so với Scalability phụ thuộc vào yếu tố nào?", "back": "Phụ thuộc vào quy mô đội ngũ, ngân sách và giai đoạn sản phẩm. Đội nhỏ cần ra mắt nhanh nên ưu tiên Modular Monolith; hệ thống lớn nhiều đội độc lập mới cần tách Microservices." },
+  { "id": "S6-03.c4", "front": "Làm sao bảo vệ quyết định giữa nâng cấp DB và mở rộng Cache?", "back": "So sánh A/B trên cùng mức tải: đo p99, ρ của DB và chi phí USD/giờ của cả hai phương án, chứng minh phương án nào đạt SLO với chi phí và độ phức tạp thấp hơn." },
+  { "id": "S6-03.c5", "front": "Cấu trúc một Architecture Decision Record (ADR) gồm những gì?", "back": "Gồm 4 phần: Context (bối cảnh và ràng buộc), Options Considered (các phương án thay thế kèm ưu/nhược điểm), Decision (lựa chọn cuối và căn cứ số liệu), Consequences (hệ quả và nợ kỹ thuật chấp nhận)." }
+]

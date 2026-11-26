@@ -1,0 +1,8 @@
+[
+  { "id": "S6-07.c1", "front": "Công thức tính Cost per Million Requests?", "back": "Cost per 1M req = (Chi phí USD/giờ ÷ (λ × 3.600)) × 10^6. Giúp đo hiệu quả kinh tế thực tế ở từng mức tải." },
+  { "id": "S6-07.c2", "front": "Quy luật hiệu suất giảm dần trong Headroom là gì?", "back": "Hạ ρ từ 0,95 xuống 0,70 giúp p99 giảm rất mạnh, nhưng hạ tiếp từ 0,40 xuống 0,20 tốn gấp đôi chi phí mà p99 chỉ giảm vài mili-giây." },
+  { "id": "S6-07.c3", "front": "Nhược điểm của Over-provisioned Static Pool theo tải ngày đêm?", "back": "Cấp dư tài nguyên cho giờ cao điểm chạy suốt 24 giờ khiến Cost per Million Requests vào ban đêm tăng vọt do phần cứng nhàn rỗi." },
+  { "id": "S6-07.c4", "front": "Thứ tự ưu tiên tối ưu khi vừa thiếu công suất vừa chặt ngân sách?", "back": "1) Tăng Cache Hit Ratio để giảm tải xuống DB đắt tiền; 2) Right-sizing tầng App vừa đủ giữ ρ đỉnh quanh 0,7; 3) Chỉ Scale-up DB khi thực sự cần." },
+  { "id": "S6-07.c5", "front": "Mức sử dụng ρ mục tiêu ở tải đỉnh thường là bao nhiêu?", "back": "Khoảng 0,65 – 0,75: đủ dư địa hấp thụ dao động nhỏ mà không phải trả tiền cho phần cứng nhàn rỗi quá mức." },
+  { "id": "S6-07.c6", "front": "Lưu ý quan trọng khi cấu hình Autoscaling?", "back": "Tính đến thời gian khởi động (Cold Start) để đặt ngưỡng kích hoạt sớm trước khi tải dốc gây vi phạm SLO." }
+]

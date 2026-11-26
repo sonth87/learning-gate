@@ -1,0 +1,24 @@
+{
+  "id": "S2-12",
+  "slug": "S2-12-files-media-and-presigned-urls",
+  "level": 2,
+  "order": 11,
+  "title": "Files và Media: Object Storage, Presigned URL và CDN",
+  "summary": "Tách tệp nhị phân lớn khỏi Database sang Object Storage, tải lên trực tiếp bằng Presigned URL và Multipart, xử lý nền bằng hàng đợi và tối ưu chi phí bằng vòng đời lưu trữ.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích vì sao không nên lưu ảnh và video trong Database mà chỉ giữ metadata, còn byte nằm ở Object Storage" },
+    { "vi": "Áp dụng Presigned URL và Multipart Upload để client tải tệp lớn trực tiếp lên Object Storage mà không nghẽn App Server" },
+    { "vi": "Thiết kế luồng xử lý media bất đồng bộ (tạo thumbnail, nén ảnh, transcode video) qua Queue và Worker" },
+    { "vi": "Tính toán tăng trưởng dung lượng lưu trữ và áp dụng Storage Lifecycle cùng quy tắc bảo mật bucket" }
+  ],
+  "tags": ["object-storage", "presigned-url", "multipart", "cdn", "media", "lifecycle"],
+  "prerequisites": ["S2-04", "S2-06"],
+  "related": ["S2-07", "S4-03"],
+  "dtsRef": "files",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về lưu trữ tệp lớn ngoài Database, tải trực tiếp bằng Presigned URL, tải nhiều phần (Multipart), xử lý nền và vòng đời lưu trữ."
+  }
+}

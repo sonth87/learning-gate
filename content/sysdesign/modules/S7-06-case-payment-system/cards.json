@@ -1,0 +1,7 @@
+[
+  { "id": "S7-06.c1", "front": "Sổ cái kép (Double-Entry Ledger) hoạt động thế nào?", "back": "Bảng chỉ ghi thêm (append-only), không sửa/xoá. Mỗi giao dịch tạo cặp bút toán Debit và Credit có tổng bằng 0; hoàn tiền cũng ghi bằng một bút toán đảo chiều mới." },
+  { "id": "S7-06.c2", "front": "Vì sao Timeout khi gọi cổng thanh toán (PSP) lại nguy hiểm?", "back": "Timeout là trạng thái chưa biết kết quả: PSP có thể đã trừ tiền xong nhưng gói phản hồi bị mất. Nếu retry mà thiếu Idempotency-Key cố định, khách sẽ bị trừ tiền hai lần." },
+  { "id": "S7-06.c3", "front": "Transactional Outbox giải quyết vấn đề gì?", "back": "Ghi bản ghi sổ cái và bản ghi sự kiện vào cùng một ACID Transaction trong Database, sau đó Worker đọc Outbox đẩy sang Event Bus, tránh mất sự kiện nếu app sập giữa chừng." },
+  { "id": "S7-06.c4", "front": "Vai trò của Đối soát cuối ngày (Reconciliation)?", "back": "So khớp từng giao dịch giữa Ledger DB nội bộ và sao kê quyết toán của đối tác (PSP) để phát hiện giao dịch lệch và tạo bút toán bù hoặc hoàn tiền kịp thời." },
+  { "id": "S7-06.c5", "front": "Vì sao đường gọi sang cổng thanh toán (PSP) cần Retry Backoff + Circuit Breaker?", "back": "Khi PSP chậm hoặc quá tải, thử lại ngay lập tức (không Backoff) sẽ tạo bão request dội ngược; Exponential Backoff + Jitter và Circuit Breaker giúp bảo vệ cả Payment Service lẫn đối tác." }
+]
