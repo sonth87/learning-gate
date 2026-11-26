@@ -1961,6 +1961,26 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
       const sec = packetElapsedRef.current;
 
+      // Hiệu ứng rung nhẹ (bottleneck shake) cho các node tĩnh có loadPct >= 90 sau khi đã tiếp đất
+      if (!frameSource && isPlayingRef.current) {
+        for (const n of expandedNodes) {
+          if (typeof n.loadPct === 'number' && n.loadPct >= 90) {
+            const plan = nodePlans.get(n.id);
+            if (plan && elapsed > plan.delay + plan.dur) {
+              const outerEl = nodeOuterRefs.current.get(n.id);
+              if (outerEl) {
+                const amp = n.loadPct >= 100 ? 0.95 : 0.55;
+                const shakeX = amp * Math.sin(sec * 2 * Math.PI * 16);
+                outerEl.setAttribute(
+                  'transform',
+                  `translate(${(plan.toX + shakeX).toFixed(2)}, ${plan.toY.toFixed(2)})`
+                );
+              }
+            }
+          }
+        }
+      }
+
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
         const pEl = pathRefs.current.get(pkt.linkId);
@@ -2038,6 +2058,21 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
       packetElapsedRef.current += dt;
       const sec = packetElapsedRef.current;
+      if (!frameSource) {
+        for (const n of expandedNodes) {
+          if (typeof n.loadPct === 'number' && n.loadPct >= 90) {
+            const outerEl = nodeOuterRefs.current.get(n.id);
+            if (outerEl) {
+              const amp = n.loadPct >= 100 ? 0.95 : 0.55;
+              const shakeX = amp * Math.sin(sec * 2 * Math.PI * 16);
+              outerEl.setAttribute(
+                'transform',
+                `translate(${(n.x + shakeX).toFixed(2)}, ${n.y.toFixed(2)})`
+              );
+            }
+          }
+        }
+      }
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
         const pEl = pathRefs.current.get(pkt.linkId);
@@ -2771,6 +2806,83 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 shadow={pal.pillShadow}
                 isSelected={isSelected}
               />
+              {(node.badge || subText) && (
+                <TactilePill
+                  x={0}
+                  y={84}
+                  text={node.badge ? pickText(node.badge.text, lang) : subText}
+                  bg={
+                    node.badge?.tone === 'bad'
+                      ? pal.tones.rose.top0
+                      : node.badge?.tone === 'ok'
+                        ? pal.tones.green.top0
+                        : node.badge?.tone === 'warn'
+                          ? pal.tones.yellow.top0
+                          : pal.pillBg
+                  }
+                  fg={pal.pillInk}
+                  stroke={node.badge?.tone === 'bad' ? pal.dangerLink : pal.ink}
+                  shadow={pal.pillShadow}
+                  isSelected={isSelected}
+                />
+              )}
+              {!isDead && !frameSource && typeof node.loadPct === 'number' && (() => {
+                const pct = Math.max(0, Math.min(100, node.loadPct));
+                const barColor =
+                  pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
+                return (
+                  <g transform="translate(0, -34)">
+                    <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
+                    <rect
+                      x={-37}
+                      y={-10.5}
+                      width={74}
+                      height={19}
+                      rx={9.5}
+                      fill={pal.pillBg}
+                      stroke={pct >= 90 ? pal.dangerLink : pal.ink}
+                      strokeWidth={1.3}
+                    />
+                    <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
+                    <rect
+                      x={-29}
+                      y={-4}
+                      width={Math.max(3, (30 * pct) / 100)}
+                      height={6}
+                      rx={3}
+                      fill={barColor}
+                    />
+                    <text
+                      x={29}
+                      y={2.4}
+                      textAnchor="end"
+                      fontSize={9.5}
+                      fontWeight={800}
+                      fill={pct >= 90 ? '#c93b32' : pal.pillInk}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {pct}%
+                    </text>
+                  </g>
+                );
+              })()}
+              {!isDead && !frameSource && typeof node.loadPct === 'number' && node.loadPct >= 90 && (
+                <g transform="translate(-44, 18)">
+                  {[0, 1, 2, 3, 4].map((qi) => (
+                    <rect
+                      key={qi}
+                      x={-3.5}
+                      y={-qi * 5.4}
+                      width={7}
+                      height={4.2}
+                      rx={1.1}
+                      fill={node.loadPct! >= 100 ? '#e5534b' : '#f2994a'}
+                      stroke={pal.ink}
+                      strokeWidth={0.7}
+                    />
+                  ))}
+                </g>
+              )}
             </g>
           </g>
         )}

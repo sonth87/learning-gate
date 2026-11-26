@@ -45,8 +45,8 @@ assert(
   'S1-03 có dòng nguồn attribution từ SDC'
 );
 assert(
-  s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 4 && !st.codeTrace),
-  'step isometric có scene ≥ 4 node và không kèm codeTrace'
+  s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 3 && !st.codeTrace),
+  'step isometric có scene ≥ 3 node và không kèm codeTrace'
 );
 assert(s103!.steps.some((st) => st.stageMode === 'memory-2d' && st.memoryScene?.kind === 'tree'), 'có step memory-2d dựng MemoryScene tree');
 assert(s103!.primaryMode === 'isometric', 'S1-03 primaryMode isometric');
@@ -118,7 +118,7 @@ const out = buildSdScaleLessons({ ...cur, modules: [synthetic] }, sims);
 const st = out[0].steps;
 assert(st.length === 2, 'bài tổng hợp có 2 step');
 assert(st[0].stageMode === 'isometric' && st[0].scene?.nodes.length === 3, 'scene dựng 3 node');
-assert(st[0].scene?.links.length === 2 && (st[0].scene?.packets.length ?? 0) === 2, 'link và packet auto');
+assert(st[0].scene?.links.length === 2 && (st[0].scene?.packets.length ?? 0) >= 2, 'link và packet auto');
 assert(st[0].telemetry[0].value.vi === '—', 'biến telemetry chưa phân giải hiển thị —');
 assert(st[0].telemetry[1].value.vi === '3 req/s', 'telemetry tĩnh giữ nguyên');
 assert(st[1].stageMode === 'isometric', '@prev giữ cảnh bước trước');

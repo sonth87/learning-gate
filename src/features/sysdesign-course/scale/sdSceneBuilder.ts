@@ -321,22 +321,39 @@ export function buildSdStageScene(
   const rawModelLinks = model?.links ?? [];
   const linkIds = def.show.links === undefined || def.show.links === '*' ? null : new Set(def.show.links);
 
-  // Tìm các đường nối trực tiếp giữa các node đang hiển thị; nếu hai node nối nhau qua 1 node trung gian đang ẩn
-  // (ví dụ Step 1 hiện [client, lb, app1, db] khi cache chưa xuất hiện), tự động bắc cầu (bridge link) để luồng liền mạch.
+  // Tìm các đường nối trực tiếp giữa các node đang hiển thị; nếu hai node nối nhau qua 1 hoặc nhiều node trung gian đang ẩn
+  // (ví dụ Step 1 hiện [client, app1, db] khi lb và cache chưa xuất hiện), tự động bắc cầu (transitive bridge link) để luồng liền mạch.
   const directLinks = rawModelLinks.filter((l) => shown.has(l.from) && shown.has(l.to));
   const bridgedLinks: SdModelLinkLike[] = [...directLinks];
   if (def.show.links === undefined || def.show.links === '*') {
     const directPairs = new Set(directLinks.map((l) => `${l.from}->${l.to}`));
-    for (const hidden of model?.nodes ?? []) {
-      if (shown.has(hidden.id)) continue;
-      const inLinks = rawModelLinks.filter((l) => l.to === hidden.id && shown.has(l.from));
-      const outLinks = rawModelLinks.filter((l) => l.from === hidden.id && shown.has(l.to));
-      for (const il of inLinks) {
-        for (const ol of outLinks) {
-          const key = `${il.from}->${ol.to}`;
-          if (!directPairs.has(key)) {
-            directPairs.add(key);
-            bridgedLinks.push({ id: il.id, from: il.from, to: ol.to });
+    const adjHidden = new Map<string, SdModelLinkLike[]>();
+    for (const l of rawModelLinks) {
+      const list = adjHidden.get(l.from) ?? [];
+      list.push(l);
+      adjHidden.set(l.from, list);
+    }
+    for (const startId of nodeIds) {
+      // BFS chỉ đi qua các node trung gian KHÔNG nằm trong `shown`
+      const queue: Array<{ cur: string; lastLink: SdModelLinkLike }> = [];
+      for (const l of adjHidden.get(startId) ?? []) {
+        if (!shown.has(l.to)) queue.push({ cur: l.to, lastLink: l });
+      }
+      const visited = new Set<string>();
+      while (queue.length > 0) {
+        const { cur, lastLink } = queue.shift()!;
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+        for (const nl of adjHidden.get(cur) ?? []) {
+          if (shown.has(nl.to)) {
+            const key = `${startId}->${nl.to}`;
+            if (!directPairs.has(key)) {
+              directPairs.add(key);
+              const chosenId = stage.links?.[nl.id] ? nl.id : lastLink.id;
+              bridgedLinks.push({ id: chosenId, from: startId, to: nl.to });
+            }
+          } else {
+            queue.push({ cur: nl.to, lastLink: nl });
           }
         }
       }
@@ -406,10 +423,43 @@ export function buildSdStageScene(
 
   let packets: StagePacket[] = [];
   if (def.packets === 'auto') {
-    packets = links
-      .filter((l) => l.style !== 'off' && l.style !== 'cut')
-      .slice(0, 6)
-      .map((l, i) => ({ id: `pk_${l.id}`, linkId: l.id, kind: 'request' as PacketKind, speed: 0.4, offset: (i % 3) * 0.3 }));
+    const out: StagePacket[] = [];
+    for (let li = 0; li < links.length; li++) {
+      const l = links[li];
+      if (l.style === 'off' || l.style === 'cut') continue;
+      const toLoad = def.state?.[l.to]?.loadPct ?? 0;
+      const fromLoad = def.state?.[l.from]?.loadPct ?? 0;
+      const isOverloaded = toLoad >= 95 || l.style === 'danger';
+      const isHot = toLoad >= 75 || fromLoad >= 75;
+      // Khi đi vào thành phần đang nghẽn (ρ >= 95%), bắn dồn dập 3–4 hạt (xen hạt lỗi đỏ và phản hồi chậm)
+      // để thể hiện rõ sự gấp gáp, ùn ứ tại điểm nghẽn thay vì chảy đều đều.
+      const count = isOverloaded ? 4 : isHot ? 3 : 2;
+      const baseSpeed = isOverloaded ? 0.68 : isHot ? 0.54 : 0.44;
+      for (let k = 0; k < count; k++) {
+        let kind: PacketKind = 'request';
+        let reverse = false;
+        let speed = baseSpeed;
+        if (isOverloaded && k === count - 1) {
+          kind = 'error';
+          speed = baseSpeed * 0.52; // ùn chậm trước điểm nghẽn
+        } else if (!isOverloaded && k === count - 1 && l.to === 'cache') {
+          kind = 'cache-hit';
+          reverse = true;
+        } else if (!isOverloaded && k === count - 1 && li === 0) {
+          kind = 'response';
+          reverse = true;
+        }
+        out.push({
+          id: `pk_${l.id}_${k}`,
+          linkId: l.id,
+          kind,
+          speed,
+          offset: Number(((k / count + li * 0.17) % 1).toFixed(2)),
+          reverse,
+        });
+      }
+    }
+    packets = out.slice(0, 24);
   } else if (Array.isArray(def.packets)) {
     const have = new Set(links.map((l) => l.id));
     packets = def.packets

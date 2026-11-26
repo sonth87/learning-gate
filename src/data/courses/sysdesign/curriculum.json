@@ -608,15 +608,11 @@
             "show": {
               "nodes": [
                 "client",
-                "lb",
                 "app1",
                 "db"
               ]
             },
             "state": {
-              "lb": {
-                "loadPct": 15
-              },
               "app1": {
                 "loadPct": 56
               },
@@ -632,24 +628,39 @@
                 }
               }
             },
+            "linkState": {
+              "lb-app1": {
+                "label": {
+                  "vi": "gửi request",
+                  "en": "gửi request"
+                }
+              },
+              "cache-db": {
+                "style": "danger",
+                "label": {
+                  "vi": "truy vấn SQL (nghẽn!)",
+                  "en": "truy vấn SQL (nghẽn!)"
+                }
+              }
+            },
             "packets": "auto",
             "noteCard": {
               "title": {
-                "vi": "Tại t = 35 s (λ ≈ 3.000 req/s)",
-                "en": "Tại t = 35 s (λ ≈ 3.000 req/s)"
+                "vi": "Chưa có LB & Cache (λ ≈ 3.000 req/s)",
+                "en": "Chưa có LB & Cache (λ ≈ 3.000 req/s)"
               },
               "lines": [
                 {
                   "text": {
-                    "vi": "ρ Database 1,00",
-                    "en": "ρ Database 1,00"
+                    "vi": "ρ Database 1,00 (hàng đợi dồn)",
+                    "en": "ρ Database 1,00 (hàng đợi dồn)"
                   },
                   "tone": "bad"
                 },
                 {
                   "text": {
-                    "vi": "ρ mỗi App 0,56",
-                    "en": "ρ mỗi App 0,56"
+                    "vi": "ρ App 0,56 (còn dư năng lực)",
+                    "en": "ρ App 0,56 (còn dư năng lực)"
                   },
                   "tone": "good"
                 }
@@ -661,23 +672,42 @@
             "show": {
               "nodes": [
                 "client",
-                "lb",
                 "app1",
                 "cache",
                 "db"
               ]
             },
+            "state": {
+              "app1": {
+                "loadPct": 56
+              },
+              "cache": {
+                "loadPct": 18,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "Hit ≈ 52%",
+                    "en": "Hit ≈ 52%"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "db": {
+                "loadPct": 100,
+                "badge": {
+                  "text": {
+                    "vi": "53% request vẫn xuống DB",
+                    "en": "53% request vẫn xuống DB"
+                  },
+                  "tone": "warn"
+                }
+              }
+            },
             "linkState": {
-              "client-lb": {
+              "lb-app1": {
                 "label": {
                   "vi": "request đi, response về",
                   "en": "request đi, response về"
-                }
-              },
-              "lb-app1": {
-                "label": {
-                  "vi": "chuyển tiếp",
-                  "en": "chuyển tiếp"
                 }
               },
               "app1-cache": {
@@ -687,74 +717,33 @@
                 }
               },
               "cache-db": {
+                "style": "danger",
                 "label": {
                   "vi": "Miss: hỏi Database",
                   "en": "Miss: hỏi Database"
                 }
               }
             },
-            "packets": [
-              {
-                "id": "pk-req-1",
-                "linkId": "client-lb",
-                "kind": "request",
-                "speed": 0.4
-              },
-              {
-                "id": "pk-res-1",
-                "linkId": "client-lb",
-                "kind": "response",
-                "speed": 0.4,
-                "offset": 0.5,
-                "reverse": true
-              },
-              {
-                "id": "pk-req-2",
-                "linkId": "lb-app1",
-                "kind": "request",
-                "speed": 0.45
-              },
-              {
-                "id": "pk-req-3",
-                "linkId": "app1-cache",
-                "kind": "request",
-                "speed": 0.5
-              },
-              {
-                "id": "pk-hit-3",
-                "linkId": "app1-cache",
-                "kind": "cache-hit",
-                "speed": 0.5,
-                "offset": 0.5,
-                "reverse": true
-              },
-              {
-                "id": "pk-req-4",
-                "linkId": "cache-db",
-                "kind": "request",
-                "speed": 0.4,
-                "offset": 0.3
-              }
-            ],
+            "packets": "auto",
             "noteCard": {
               "title": {
-                "vi": "Phân bổ request",
-                "en": "Phân bổ request"
+                "vi": "Thêm Cache trước Database",
+                "en": "Thêm Cache trước Database"
               },
               "lines": [
-                {
-                  "text": {
-                    "vi": "Khoảng 53% request tới Database",
-                    "en": "Khoảng 53% request tới Database"
-                  },
-                  "tone": "amber"
-                },
                 {
                   "text": {
                     "vi": "Cache Hit khoảng 52% lượt đọc",
                     "en": "Cache Hit khoảng 52% lượt đọc"
                   },
                   "tone": "good"
+                },
+                {
+                  "text": {
+                    "vi": "Khoảng 53% request vẫn tới DB",
+                    "en": "Khoảng 53% request vẫn tới DB"
+                  },
+                  "tone": "amber"
                 }
               ],
               "position": "bottom-left"
@@ -1329,12 +1318,30 @@
         "live": {
           "ramp": {
             "sim": "S1-03/ramp",
-            "startAtSec": 0,
-            "autoplay": false,
+            "startAtSec": 20,
+            "autoplay": true,
             "speed": 1,
             "controls": {
               "timeline": true,
               "load": true,
+              "chaos": [
+                "kill",
+                "slow"
+              ],
+              "knobs": [
+                {
+                  "node": "cache",
+                  "key": "capacityKeys"
+                },
+                {
+                  "node": "db",
+                  "key": "sizeFactor"
+                },
+                {
+                  "node": "app1",
+                  "key": "replicas"
+                }
+              ],
               "tracer": true
             },
             "telemetry": [
@@ -1377,9 +1384,6 @@
                 "value": 130
               }
             ],
-            "pauseAtSec": [
-              20
-            ],
             "focus": {
               "nodes": [
                 "db"
@@ -1389,7 +1393,7 @@
           "trap": {
             "sim": "S1-03/ramp",
             "startAtSec": 30,
-            "autoplay": false,
+            "autoplay": true,
             "speed": 1,
             "controls": {
               "timeline": true,
