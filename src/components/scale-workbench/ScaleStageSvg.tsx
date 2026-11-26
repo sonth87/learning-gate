@@ -1507,6 +1507,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
    * ============================================================================ */
 
   const packetElapsedRef = useRef(0);
+  // F1: đúng MỘT vòng rAF được cộng dt vào packetElapsedRef. Vòng choreography là chủ
+  // khi nó còn sống; vòng "Resume" chỉ chạy khi choreography đã dừng (xem bên dưới).
+  const choreoAliveRef = useRef(false);
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
 
@@ -1917,11 +1920,17 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
 
       if (elapsed <= maxChoreoTime || (isPlayingRef.current && scene.packets.length > 0)) {
         rafId = requestAnimationFrame(tick);
+      } else {
+        choreoAliveRef.current = false;
       }
     };
 
+    choreoAliveRef.current = true;
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      choreoAliveRef.current = false;
+    };
   }, [
     expandedNodes,
     builtLinks,
@@ -1942,6 +1951,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
+      // F1: choreography còn sống ⇒ nó đã cộng dt và vẽ packet (có cổng readyAt); không cộng lần 2.
+      if (choreoAliveRef.current) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       packetElapsedRef.current += dt;
       const sec = packetElapsedRef.current;
       for (const pkt of scene.packets) {
