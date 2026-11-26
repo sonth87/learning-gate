@@ -20,3 +20,8 @@ export { cloneState, createInitialState, createSim, stepInPlace, stepState } fro
 export type { Sim } from './engine';
 export { createRecorder, flushInputs, linkKey, nodeKey, NODE_STATE_BY_CODE, NODE_STATE_CODE } from './recorder';
 export type { Checkpoint, Recorder, RecorderMarker, RestoreResult } from './recorder';
+export { fnv1a32, modNAssign, movedFraction, ringAssign, zipfKeys } from './hashing';
+export { effReplicas, findBottleneck, findSpofs, maxSustainableRps, structuralWarnings } from './analyze';
+export type {
+  BottleneckReason, BottleneckReport, SpofReport, StructuralWarning, StructuralWarningCode,
+} from './analyze';

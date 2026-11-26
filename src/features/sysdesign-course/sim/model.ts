@@ -240,7 +240,7 @@ export function defaultRoute(kind: PrimitiveKind): RouteMode {
   return DEFAULT_SPLIT_KINDS.has(kind) ? 'split' : 'all-sequential';
 }
 
-function deriveNetClass(a: NodeSpec | undefined, b: NodeSpec | undefined): NetClass {
+export function deriveNetClass(a: NodeSpec | undefined, b: NodeSpec | undefined): NetClass {
   const za = a?.zone;
   const zb = b?.zone;
   if (!za || !zb) return 'same-az';
