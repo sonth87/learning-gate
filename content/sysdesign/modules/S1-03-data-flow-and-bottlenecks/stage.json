@@ -1,0 +1,1290 @@
+{
+  "version": 1,
+  "base": "s1-path",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "sublabel": {
+        "vi": "Client",
+        "en": "Client"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm người dùng gửi request tới hệ thống qua Internet.",
+          "en": "Nhóm người dùng gửi request tới hệ thống qua Internet."
+        },
+        "how": {
+          "vi": "Mỗi người dùng gửi request độc lập; tổng số request mỗi giây (λ) là tải đầu vào của cả hệ thống. Trong mô phỏng, λ tăng từ 200 lên 5.000 req/s.",
+          "en": "Mỗi người dùng gửi request độc lập; tổng số request mỗi giây (λ) là tải đầu vào của cả hệ thống. Trong mô phỏng, λ tăng từ 200 lên 5.000 req/s."
+        },
+        "why": {
+          "vi": "Tải đầu vào là thứ ta không kiểm soát trực tiếp; thiết kế hệ thống phải chịu được mức tải dự kiến.",
+          "en": "Tải đầu vào là thứ ta không kiểm soát trực tiếp; thiết kế hệ thống phải chịu được mức tải dự kiến."
+        },
+        "tip": {
+          "vi": "Luôn ghi lại λ khi đo: cùng một thành phần có thể ổn ở 1.000 req/s nhưng nghẽn ở 3.000 req/s.",
+          "en": "Luôn ghi lại λ khi đo: cùng một thành phần có thể ổn ở 1.000 req/s nhưng nghẽn ở 3.000 req/s."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "sublabel": {
+        "vi": "μ = 20.000 req/s",
+        "en": "μ = 20.000 req/s"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Load Balancer nhận request và chia cho các instance App phía sau.",
+          "en": "Load Balancer nhận request và chia cho các instance App phía sau."
+        },
+        "how": {
+          "vi": "Dùng thuật toán chia tải (ở đây Round-robin) và loại instance lỗi sau khi Health Check thất bại. Năng lực khoảng 20.000 req/s, thêm vài phần mười mili-giây vào mỗi request.",
+          "en": "Dùng thuật toán chia tải (ở đây Round-robin) và loại instance lỗi sau khi Health Check thất bại. Năng lực khoảng 20.000 req/s, thêm vài phần mười mili-giây vào mỗi request."
+        },
+        "why": {
+          "vi": "Chia đều tải giúp mỗi App chạy ở mức sử dụng thấp như nhau và cho phép thêm bớt instance mà người dùng không biết.",
+          "en": "Chia đều tải giúp mỗi App chạy ở mức sử dụng thấp như nhau và cho phép thêm bớt instance mà người dùng không biết."
+        },
+        "tip": {
+          "vi": "Load Balancer hiếm khi là điểm nghẽn về thông lượng, nhưng nếu chỉ có một cái thì nó là điểm lỗi đơn (SPOF).",
+          "en": "Load Balancer hiếm khi là điểm nghẽn về thông lượng, nhưng nếu chỉ có một cái thì nó là điểm lỗi đơn (SPOF)."
+        }
+      }
+    },
+    "app1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "App 1",
+        "en": "App 1"
+      },
+      "sublabel": {
+        "vi": "μ = 1.800 req/s",
+        "en": "μ = 1.800 req/s"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Instance ứng dụng xử lý logic nghiệp vụ của request.",
+          "en": "Instance ứng dụng xử lý logic nghiệp vụ của request."
+        },
+        "how": {
+          "vi": "Mỗi instance xử lý tối đa khoảng 1.800 req/s, mất trung bình 12 ms cho mỗi request, rồi gọi Cache. Ba instance chia đều tải nên tổng μ là 5.400 req/s.",
+          "en": "Mỗi instance xử lý tối đa khoảng 1.800 req/s, mất trung bình 12 ms cho mỗi request, rồi gọi Cache. Ba instance chia đều tải nên tổng μ là 5.400 req/s."
+        },
+        "why": {
+          "vi": "Tầng App không giữ trạng thái nên scale ngang bằng cách thêm instance, nhưng chỉ có ích khi chính App là điểm nghẽn.",
+          "en": "Tầng App không giữ trạng thái nên scale ngang bằng cách thêm instance, nhưng chỉ có ích khi chính App là điểm nghẽn."
+        },
+        "tip": {
+          "vi": "Khi ρ của App thấp (ví dụ 0,56) mà hệ thống vẫn chậm, đừng thêm App: hãy tìm thành phần có ρ cao hơn.",
+          "en": "Khi ρ của App thấp (ví dụ 0,56) mà hệ thống vẫn chậm, đừng thêm App: hãy tìm thành phần có ρ cao hơn."
+        }
+      }
+    },
+    "app2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "App 2",
+        "en": "App 2"
+      },
+      "sublabel": {
+        "vi": "μ = 1.800 req/s",
+        "en": "μ = 1.800 req/s"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Instance ứng dụng thứ hai, cùng cấu hình với App 1.",
+          "en": "Instance ứng dụng thứ hai, cùng cấu hình với App 1."
+        },
+        "how": {
+          "vi": "Nhận một phần ba request từ Load Balancer và xử lý độc lập.",
+          "en": "Nhận một phần ba request từ Load Balancer và xử lý độc lập."
+        },
+        "why": {
+          "vi": "Các instance giống nhau cho phép Load Balancer chia đều và mất một instance vẫn phục vụ được.",
+          "en": "Các instance giống nhau cho phép Load Balancer chia đều và mất một instance vẫn phục vụ được."
+        },
+        "tip": {
+          "vi": "So ρ của từng instance: nếu một instance cao hơn hẳn, nguyên nhân thường là chia tải lệch.",
+          "en": "So ρ của từng instance: nếu một instance cao hơn hẳn, nguyên nhân thường là chia tải lệch."
+        }
+      }
+    },
+    "app3": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "App 3",
+        "en": "App 3"
+      },
+      "sublabel": {
+        "vi": "μ = 1.800 req/s",
+        "en": "μ = 1.800 req/s"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Instance ứng dụng thứ ba, cùng cấu hình với App 1.",
+          "en": "Instance ứng dụng thứ ba, cùng cấu hình với App 1."
+        },
+        "how": {
+          "vi": "Nhận một phần ba request từ Load Balancer và xử lý độc lập.",
+          "en": "Nhận một phần ba request từ Load Balancer và xử lý độc lập."
+        },
+        "why": {
+          "vi": "Ba instance cho tổng năng lực 5.400 req/s, đủ rộng so với Database ở mức tải của bài.",
+          "en": "Ba instance cho tổng năng lực 5.400 req/s, đủ rộng so với Database ở mức tải của bài."
+        },
+        "tip": {
+          "vi": "Thêm instance chỉ có tác dụng ở thành phần đang là điểm nghẽn.",
+          "en": "Thêm instance chỉ có tác dụng ở thành phần đang là điểm nghẽn."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Cache",
+        "en": "Cache"
+      },
+      "sublabel": {
+        "vi": "Read-through",
+        "en": "Read-through"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cache lưu tạm kết quả đọc để không phải hỏi Database mỗi lần.",
+          "en": "Cache lưu tạm kết quả đọc để không phải hỏi Database mỗi lần."
+        },
+        "how": {
+          "vi": "Chế độ read-through: App hỏi Cache; nếu Hit thì trả ngay (khoảng 0,5 ms), nếu Miss thì Cache hỏi Database rồi lưu lại. Với 25.000 key trên 50.000 key đang dùng, Hit Ratio khoảng 52% trên lượt đọc.",
+          "en": "Chế độ read-through: App hỏi Cache; nếu Hit thì trả ngay (khoảng 0,5 ms), nếu Miss thì Cache hỏi Database rồi lưu lại. Với 25.000 key trên 50.000 key đang dùng, Hit Ratio khoảng 52% trên lượt đọc."
+        },
+        "why": {
+          "vi": "Mỗi lượt Hit là một request không tới Database, nên Cache là cách giảm tải vào điểm nghẽn mà không đổi Database.",
+          "en": "Mỗi lượt Hit là một request không tới Database, nên Cache là cách giảm tải vào điểm nghẽn mà không đổi Database."
+        },
+        "tip": {
+          "vi": "Cache chỉ giúp lượt đọc: mọi lượt ghi vẫn xuống Database, nên tỉ lệ ghi cao làm Cache kém hiệu quả.",
+          "en": "Cache chỉ giúp lượt đọc: mọi lượt ghi vẫn xuống Database, nên tỉ lệ ghi cao làm Cache kém hiệu quả."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Database",
+        "en": "Database"
+      },
+      "sublabel": {
+        "vi": "μ = 1.600 req/s",
+        "en": "μ = 1.600 req/s"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Database lưu dữ liệu lâu dài và trả lời các request mà Cache không có.",
+          "en": "Database lưu dữ liệu lâu dài và trả lời các request mà Cache không có."
+        },
+        "how": {
+          "vi": "Xử lý tối đa khoảng 1.600 req/s, mất khoảng 4 ms mỗi truy vấn khi rảnh. Khi ρ tiến tới 1, request xếp hàng chờ và thời gian chờ tăng nhanh; hàng đợi đầy thì request bị từ chối.",
+          "en": "Xử lý tối đa khoảng 1.600 req/s, mất khoảng 4 ms mỗi truy vấn khi rảnh. Khi ρ tiến tới 1, request xếp hàng chờ và thời gian chờ tăng nhanh; hàng đợi đầy thì request bị từ chối."
+        },
+        "why": {
+          "vi": "Database là thành phần có trạng thái, khó scale ngang, nên thường là nơi đầu tiên chạm giới hạn. Với tỉ lệ khoảng 53% request xuống Database, tải bền vững tối đa của cả hệ thống là 1.600 / 0,531, khoảng 3.010 req/s.",
+          "en": "Database là thành phần có trạng thái, khó scale ngang, nên thường là nơi đầu tiên chạm giới hạn. Với tỉ lệ khoảng 53% request xuống Database, tải bền vững tối đa của cả hệ thống là 1.600 / 0,531, khoảng 3.010 req/s."
+        },
+        "tip": {
+          "vi": "Trước khi tăng cỡ máy Database, thử giảm tải vào nó: chỉ mục, tối ưu truy vấn, tăng Cache Hit Ratio.",
+          "en": "Trước khi tăng cỡ máy Database, thử giảm tải vào nó: chỉ mục, tối ưu truy vấn, tăng Cache Hit Ratio."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "label": {
+        "vi": "Internet",
+        "en": "Internet"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng từ người dùng tới Load Balancer qua Internet.",
+          "en": "Chặng từ người dùng tới Load Balancer qua Internet."
+        },
+        "how": {
+          "vi": "Thời gian phụ thuộc khoảng cách địa lý và số lần bắt tay; thường là chặng mạng lớn nhất của một request.",
+          "en": "Thời gian phụ thuộc khoảng cách địa lý và số lần bắt tay; thường là chặng mạng lớn nhất của một request."
+        },
+        "why": {
+          "vi": "Độ trễ mạng đặt mức sàn cho tổng độ trễ mà tối ưu phía server không giảm được.",
+          "en": "Độ trễ mạng đặt mức sàn cho tổng độ trễ mà tối ưu phía server không giảm được."
+        },
+        "tip": {
+          "vi": "Đo từ nhiều vùng địa lý; nếu chặng này chiếm phần lớn, cân nhắc CDN hoặc đặt dịch vụ gần người dùng.",
+          "en": "Đo từ nhiều vùng địa lý; nếu chặng này chiếm phần lớn, cân nhắc CDN hoặc đặt dịch vụ gần người dùng."
+        }
+      }
+    },
+    "lb-app1": {
+      "label": {
+        "vi": "chia tải",
+        "en": "chia tải"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng Load Balancer chuyển request tới một App.",
+          "en": "Chặng Load Balancer chuyển request tới một App."
+        },
+        "how": {
+          "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+          "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+        },
+        "why": {
+          "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+          "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+        },
+        "tip": {
+          "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+          "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+        }
+      }
+    },
+    "lb-app2": {
+      "label": {
+        "vi": "chia tải",
+        "en": "chia tải"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng Load Balancer chuyển request tới một App.",
+          "en": "Chặng Load Balancer chuyển request tới một App."
+        },
+        "how": {
+          "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+          "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+        },
+        "why": {
+          "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+          "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+        },
+        "tip": {
+          "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+          "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+        }
+      }
+    },
+    "lb-app3": {
+      "label": {
+        "vi": "chia tải",
+        "en": "chia tải"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng Load Balancer chuyển request tới một App.",
+          "en": "Chặng Load Balancer chuyển request tới một App."
+        },
+        "how": {
+          "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+          "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+        },
+        "why": {
+          "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+          "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+        },
+        "tip": {
+          "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+          "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+        }
+      }
+    },
+    "app1-cache": {
+      "label": {
+        "vi": "đọc Cache",
+        "en": "đọc Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+          "en": "Chặng App hỏi Cache trước khi hỏi Database."
+        },
+        "how": {
+          "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+          "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+        },
+        "why": {
+          "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+          "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+        },
+        "tip": {
+          "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+          "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+        }
+      }
+    },
+    "app2-cache": {
+      "label": {
+        "vi": "đọc Cache",
+        "en": "đọc Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+          "en": "Chặng App hỏi Cache trước khi hỏi Database."
+        },
+        "how": {
+          "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+          "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+        },
+        "why": {
+          "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+          "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+        },
+        "tip": {
+          "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+          "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+        }
+      }
+    },
+    "app3-cache": {
+      "label": {
+        "vi": "đọc Cache",
+        "en": "đọc Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+          "en": "Chặng App hỏi Cache trước khi hỏi Database."
+        },
+        "how": {
+          "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+          "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+        },
+        "why": {
+          "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+          "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+        },
+        "tip": {
+          "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+          "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+        }
+      }
+    },
+    "cache-db": {
+      "label": {
+        "vi": "khi Miss hoặc ghi",
+        "en": "khi Miss hoặc ghi"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chặng Cache hỏi Database khi Miss, cộng với mọi lượt ghi.",
+          "en": "Chặng Cache hỏi Database khi Miss, cộng với mọi lượt ghi."
+        },
+        "how": {
+          "vi": "Mỗi request lỗi được thử lại tối đa 2 lần, không có Backoff, nên khi Database quá tải mỗi lỗi sinh thêm tải.",
+          "en": "Mỗi request lỗi được thử lại tối đa 2 lần, không có Backoff, nên khi Database quá tải mỗi lỗi sinh thêm tải."
+        },
+        "why": {
+          "vi": "Đây là chặng đi vào điểm nghẽn: khoảng 53% request đi qua nó, và cơ chế thử lại không Backoff làm nó xấu đi nhanh khi ρ vượt 1.",
+          "en": "Đây là chặng đi vào điểm nghẽn: khoảng 53% request đi qua nó, và cơ chế thử lại không Backoff làm nó xấu đi nhanh khi ρ vượt 1."
+        },
+        "tip": {
+          "vi": "Thử lại cần Backoff có Jitter và giới hạn ngân sách thử lại; nếu không, nó khuếch đại sự cố thay vì chữa.",
+          "en": "Thử lại cần Backoff có Jitter và giới hạn ngân sách thử lại; nếu không, nó khuếch đại sự cố thay vì chữa."
+        }
+      }
+    }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": [
+        "app1",
+        "app2",
+        "app3",
+        "cache",
+        "db"
+      ],
+      "label": {
+        "vi": "TẦNG BACKEND",
+        "en": "TẦNG BACKEND"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-path": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app1",
+          "cache",
+          "db"
+        ]
+      },
+      "state": {
+        "lb": {
+          "loadPct": 15
+        },
+        "app1": {
+          "loadPct": 56
+        },
+        "cache": {
+          "loadPct": 7
+        },
+        "db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Điểm nghẽn · ρ 1,00",
+              "en": "Điểm nghẽn · ρ 1,00"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tại t = 35 s (λ ≈ 3.000 req/s)",
+          "en": "Tại t = 35 s (λ ≈ 3.000 req/s)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "ρ Database 1,00",
+              "en": "ρ Database 1,00"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "ρ mỗi App 0,56",
+              "en": "ρ mỗi App 0,56"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s2-flow": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app1",
+          "cache",
+          "db"
+        ]
+      },
+      "linkState": {
+        "client-lb": {
+          "label": {
+            "vi": "request đi, response về",
+            "en": "request đi, response về"
+          }
+        },
+        "lb-app1": {
+          "label": {
+            "vi": "chuyển tiếp",
+            "en": "chuyển tiếp"
+          }
+        },
+        "app1-cache": {
+          "label": {
+            "vi": "Hit: trả ngay",
+            "en": "Hit: trả ngay"
+          }
+        },
+        "cache-db": {
+          "label": {
+            "vi": "Miss: hỏi Database",
+            "en": "Miss: hỏi Database"
+          }
+        }
+      },
+      "packets": [
+        {
+          "id": "pk-req-1",
+          "linkId": "client-lb",
+          "kind": "request",
+          "speed": 0.4
+        },
+        {
+          "id": "pk-res-1",
+          "linkId": "client-lb",
+          "kind": "response",
+          "speed": 0.4,
+          "offset": 0.5,
+          "reverse": true
+        },
+        {
+          "id": "pk-req-2",
+          "linkId": "lb-app1",
+          "kind": "request",
+          "speed": 0.45
+        },
+        {
+          "id": "pk-req-3",
+          "linkId": "app1-cache",
+          "kind": "request",
+          "speed": 0.5
+        },
+        {
+          "id": "pk-hit-3",
+          "linkId": "app1-cache",
+          "kind": "cache-hit",
+          "speed": 0.5,
+          "offset": 0.5,
+          "reverse": true
+        },
+        {
+          "id": "pk-req-4",
+          "linkId": "cache-db",
+          "kind": "request",
+          "speed": 0.4,
+          "offset": 0.3
+        }
+      ],
+      "noteCard": {
+        "title": {
+          "vi": "Phân bổ request",
+          "en": "Phân bổ request"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Khoảng 53% request tới Database",
+              "en": "Khoảng 53% request tới Database"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Cache Hit khoảng 52% lượt đọc",
+              "en": "Cache Hit khoảng 52% lượt đọc"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s3-trace": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app1",
+          "cache",
+          "db"
+        ]
+      },
+      "state": {
+        "db": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "300 ms · 70%",
+              "en": "300 ms · 70%"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "linkState": {
+        "client-lb": {
+          "label": {
+            "vi": "100 ms (50 + 50)",
+            "en": "100 ms (50 + 50)"
+          }
+        },
+        "lb-app1": {
+          "label": {
+            "vi": "20 ms (10 + 10)",
+            "en": "20 ms (10 + 10)"
+          }
+        },
+        "app1-cache": {
+          "label": {
+            "vi": "7 ms (5 + 2)",
+            "en": "7 ms (5 + 2)"
+          }
+        },
+        "cache-db": {
+          "label": {
+            "vi": "300 ms",
+            "en": "300 ms"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Ví dụ: trang hồ sơ (số minh hoạ)",
+          "en": "Ví dụ: trang hồ sơ (số minh hoạ)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Tổng 427 ms",
+              "en": "Tổng 427 ms"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Database 300 ms, khoảng 70%",
+              "en": "Database 300 ms, khoảng 70%"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s5-hot": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
+      "state": {
+        "lb": {
+          "loadPct": 15,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,15",
+              "en": "ρ 0,15"
+            },
+            "tone": "ok"
+          }
+        },
+        "app1": {
+          "loadPct": 56,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,56",
+              "en": "ρ 0,56"
+            },
+            "tone": "ok"
+          }
+        },
+        "app2": {
+          "loadPct": 56,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,56",
+              "en": "ρ 0,56"
+            },
+            "tone": "ok"
+          }
+        },
+        "app3": {
+          "loadPct": 56,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,56",
+              "en": "ρ 0,56"
+            },
+            "tone": "ok"
+          }
+        },
+        "cache": {
+          "loadPct": 7,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,07",
+              "en": "ρ 0,07"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "ρ 1,00 · điểm nghẽn",
+              "en": "ρ 1,00 · điểm nghẽn"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "t = 35 s, λ ≈ 3.000 req/s",
+          "en": "t = 35 s, λ ≈ 3.000 req/s"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "ρ = λ / μ",
+              "en": "ρ = λ / μ"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Database cao nhất, chạm 1,00",
+              "en": "Database cao nhất, chạm 1,00"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s6-live": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tải tăng 200 → 5.000 req/s",
+          "en": "Tải tăng 200 → 5.000 req/s"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "t = 20 s: ρ Database 0,60",
+              "en": "t = 20 s: ρ Database 0,60"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "t ≈ 31 s: ρ Database 0,9",
+              "en": "t ≈ 31 s: ρ Database 0,9"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "t ≈ 35 s: ρ Database 1,00",
+              "en": "t ≈ 35 s: ρ Database 1,00"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "top-left"
+      }
+    },
+    "s7-diagnosis": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn",
+          "en": "Chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn"
+        },
+        "nodes": [
+          {
+            "id": "root",
+            "x": 0,
+            "y": -95,
+            "label": "Chậm khi tải tăng",
+            "sub": {
+              "vi": "đo từng thành phần",
+              "en": "đo từng thành phần"
+            },
+            "tone": "neutral"
+          },
+          {
+            "id": "cpu",
+            "x": -240,
+            "y": 70,
+            "label": "CPU, logic",
+            "sub": {
+              "vi": "thuật toán, Queue",
+              "en": "thuật toán, Queue"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "mem",
+            "x": -120,
+            "y": 70,
+            "label": "Bộ nhớ",
+            "sub": {
+              "vi": "giảm dữ liệu",
+              "en": "giảm dữ liệu"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "io",
+            "x": 0,
+            "y": 70,
+            "label": "I/O đĩa",
+            "sub": {
+              "vi": "chỉ mục, ghi lô",
+              "en": "chỉ mục, ghi lô"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "net",
+            "x": 120,
+            "y": 70,
+            "label": "Mạng, API ngoài",
+            "sub": {
+              "vi": "song song, Cache",
+              "en": "song song, Cache"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "db",
+            "x": 240,
+            "y": 70,
+            "label": "Database, pool",
+            "sub": {
+              "vi": "chỉ mục, Cache",
+              "en": "chỉ mục, Cache"
+            },
+            "tone": "orange"
+          }
+        ],
+        "edges": [
+          {
+            "from": "root",
+            "to": "cpu",
+            "label": "CPU ≈ 100%"
+          },
+          {
+            "from": "root",
+            "to": "mem",
+            "label": "RAM cạn"
+          },
+          {
+            "from": "root",
+            "to": "io",
+            "label": "I/O wait"
+          },
+          {
+            "from": "root",
+            "to": "net",
+            "label": "RTT, timeout"
+          },
+          {
+            "from": "root",
+            "to": "db",
+            "label": "hàng đợi, ρ → 1",
+            "style": "danger"
+          }
+        ]
+      }
+    },
+    "s8-fix": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
+      "state": {
+        "lb": {
+          "loadPct": 25
+        },
+        "app1": {
+          "loadPct": 93,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,93",
+              "en": "ρ 0,93"
+            },
+            "tone": "warn"
+          }
+        },
+        "app2": {
+          "loadPct": 93,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,93",
+              "en": "ρ 0,93"
+            },
+            "tone": "warn"
+          }
+        },
+        "app3": {
+          "loadPct": 93,
+          "badge": {
+            "text": {
+              "vi": "ρ 0,93",
+              "en": "ρ 0,93"
+            },
+            "tone": "warn"
+          }
+        },
+        "cache": {
+          "loadPct": 13,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "50.000 key · Hit 74%",
+              "en": "50.000 key · Hit 74%"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 53,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "×2 · ρ 0,53",
+              "en": "×2 · ρ 0,53"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Sau khi sửa (λ = 5.000 req/s)",
+          "en": "Sau khi sửa (λ = 5.000 req/s)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "p99 ≈ 106 ms, không lỗi",
+              "en": "p99 ≈ 106 ms, không lỗi"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Chi phí ≈ 2,31 USD/giờ",
+              "en": "Chi phí ≈ 2,31 USD/giờ"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s9-live": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Nhân đôi instance mỗi App (t = 35 s)",
+          "en": "Nhân đôi instance mỗi App (t = 35 s)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "ρ App 0,56 xuống 0,28",
+              "en": "ρ App 0,56 xuống 0,28"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "ρ Database vẫn 1,00",
+              "en": "ρ Database vẫn 1,00"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "p99 vẫn ≈ 143 ms",
+              "en": "p99 vẫn ≈ 143 ms"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "top-left"
+      }
+    },
+    "s10-loop": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app1",
+          "cache",
+          "db"
+        ]
+      },
+      "state": {
+        "db": {
+          "highlighted": true
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Vòng lặp tối ưu",
+          "en": "Vòng lặp tối ưu"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "1. Đo ρ và thời gian từng chặng",
+              "en": "1. Đo ρ và thời gian từng chặng"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "2. Tìm thành phần ρ cao nhất",
+              "en": "2. Tìm thành phần ρ cao nhất"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "3. Sửa đúng thành phần đó",
+              "en": "3. Sửa đúng thành phần đó"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "4. Đo lại, so trước và sau",
+              "en": "4. Đo lại, so trước và sau"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Cải thiện dưới 10%: xem lại giả thuyết",
+              "en": "Cải thiện dưới 10%: xem lại giả thuyết"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    },
+    "s11-recap": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
+      "state": {
+        "lb": {
+          "loadPct": 15
+        },
+        "app1": {
+          "loadPct": 56
+        },
+        "app2": {
+          "loadPct": 56
+        },
+        "app3": {
+          "loadPct": 56
+        },
+        "cache": {
+          "loadPct": 7
+        },
+        "db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Điểm nghẽn",
+              "en": "Điểm nghẽn"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Đo, tìm, sửa, đo lại",
+          "en": "Đo, tìm, sửa, đo lại"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Tải bền vững tối đa ≈ 3.010 req/s",
+              "en": "Tải bền vững tối đa ≈ 3.010 req/s"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Thêm App không đổi con số này",
+              "en": "Thêm App không đổi con số này"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-left"
+      }
+    }
+  },
+  "live": {
+    "ramp": {
+      "sim": "S1-03/ramp",
+      "startAtSec": 0,
+      "autoplay": false,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Lưu lượng"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 300
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Lỗi"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 300
+        }
+      ],
+      "pauseAtSec": [
+        20
+      ],
+      "focus": {
+        "nodes": [
+          "db"
+        ]
+      }
+    },
+    "trap": {
+      "sim": "S1-03/ramp",
+      "startAtSec": 30,
+      "autoplay": false,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          {
+            "node": "app1",
+            "key": "replicas"
+          },
+          {
+            "node": "app2",
+            "key": "replicas"
+          },
+          {
+            "node": "app3",
+            "key": "replicas"
+          }
+        ]
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Lưu lượng"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 300
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Lỗi"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 300
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "app1",
+          "app2",
+          "app3",
+          "db"
+        ]
+      }
+    }
+  }
+}

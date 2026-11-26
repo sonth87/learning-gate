@@ -4,25 +4,27 @@
   "level": 1,
   "order": 5,
   "title": "Data Flow và Bottleneck: tìm và sửa điểm nghẽn",
-  "summary": "Theo dõi một request đi qua các thành phần, đo tải ở từng chặng và tìm thành phần giới hạn thông lượng của toàn hệ thống. (Fixture tạm: M5 viết nội dung thật.)",
-  "durationMin": 16,
+  "summary": "Theo dõi một request đi qua Load Balancer, App, Cache và Database, đo thời gian từng chặng và mức sử dụng ρ để tìm thành phần giới hạn thông lượng của toàn hệ thống, rồi sửa đúng chỗ.",
+  "durationMin": 18,
   "difficulty": "Beginner",
   "objectives": [
-    { "vi": "Mô tả đường đi của một request từ client tới database và quay về" },
-    { "vi": "Tính mức sử dụng ρ = λ/μ của một thành phần" },
-    { "vi": "Xác định điểm nghẽn bằng quy trình đo, tìm, sửa" }
+    { "vi": "Mô tả đường đi của một request từ client tới database và quay về, và tính độ trễ là tổng các chặng nối tiếp" },
+    { "vi": "Tính mức sử dụng ρ = λ/μ của từng thành phần và xác định điểm nghẽn là thành phần có ρ cao nhất" },
+    { "vi": "Áp dụng quy trình đo, tìm, sửa, đo lại và nhận diện các loại điểm nghẽn: CPU, bộ nhớ, I/O, mạng, database" },
+    { "vi": "Giải thích vì sao thêm server ở tầng không nghẽn không cải thiện hệ thống" }
   ],
-  "tags": ["bottleneck", "latency", "throughput", "fixture"],
+  "tags": ["bottleneck", "latency", "throughput", "capacity", "cache", "profiling"],
+  "prerequisites": ["S1-01", "S1-06", "S1-02"],
+  "related": ["S1-04", "S1-07", "S4-01"],
   "dtsRef": "latency-throughput",
   "source": {
     "kind": "sdc",
     "path": "content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
     "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
     "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
-    "adaptedBy": "sonnet",
+    "adaptedBy": "claude-opus",
     "adaptedAt": "2026-11-26",
-    "changes": "Fixture tạm cho T1.4: chỉ để kiểm builder và doctor; nội dung thật do M5 (T5.1) viết.",
-    "adaptation": "rewritten"
-  },
-  "status": "draft"
+    "adaptation": "rewritten",
+    "changes": "Viết lại gần như toàn bộ: bỏ giai thoại mở đầu (giữ phần kỹ thuật thành tình huống connection pool), đổi Mermaid thành scene isometric và cây chẩn đoán, thêm mức sử dụng ρ = λ/μ, tải bền vững tối đa và mô phỏng tải tăng dần, bổ sung CPU/bộ nhớ/I/O. Sửa lỗi số học của bản gốc: tổng ví dụ thanh toán sau khi cache là 894 ms (bản gốc ghi 590 ms) và tỉ trọng API vận chuyển là 77% (bản gốc ghi cả 67% và 77%). Làm mềm các khẳng định tuyệt đối về mức cải thiện (60 lần, 100 lần) thành ví dụ cụ thể."
+  }
 }

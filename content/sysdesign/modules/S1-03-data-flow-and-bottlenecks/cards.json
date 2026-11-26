@@ -1,3 +1,9 @@
 [
-  { "id": "S1-03.c1", "front": "Điểm nghẽn (Bottleneck) là gì?", "back": "Thành phần có ρ = λ/μ cao nhất trên đường đi của request; nó quyết định thông lượng tối đa của cả hệ thống." }
+  { "id": "S1-03.c1", "front": "Điểm nghẽn (Bottleneck) là gì?", "back": "Thành phần giới hạn thông lượng của cả đường đi request, thường là thành phần có ρ = λ/μ cao nhất. Mọi request đều phải qua nó nên tối ưu thành phần khác không làm hệ thống nhanh hơn." },
+  { "id": "S1-03.c2", "front": "Công thức mức sử dụng ρ và ý nghĩa của ρ ≥ 1?", "back": "ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần xử lý tối đa mỗi giây. Khi ρ ≥ 1, hàng đợi trước thành phần tăng không dừng." },
+  { "id": "S1-03.c3", "front": "Quy trình xử lý điểm nghẽn gồm những bước nào?", "back": "Đo (thời gian từng chặng và ρ của từng thành phần), tìm (thành phần ρ cao nhất), sửa (đúng thành phần đó), đo lại để xác nhận, rồi lặp lại vì điểm nghẽn có thể chuyển sang thành phần kế tiếp." },
+  { "id": "S1-03.c4", "front": "Độ trễ của một request được tính thế nào?", "back": "Bằng tổng thời gian các chặng nối tiếp: mạng đi và về, xử lý ở từng thành phần và thời gian chờ trong hàng đợi. Một chặng chậm kéo cả tổng lên." },
+  { "id": "S1-03.c5", "front": "Vì sao không nên thêm App khi Database là điểm nghẽn?", "back": "Thêm App chỉ giảm ρ của tầng App. Số request xuống Database không đổi nên ρ của Database vẫn bằng 1, p99 gần như không đổi và chi phí tăng." },
+  { "id": "S1-03.c6", "front": "Có những cách nào giảm tải vào Database?", "back": "Thêm chỉ mục và tối ưu truy vấn, tăng Cache Hit Ratio (tăng dung lượng Cache hoặc TTL hợp lý), rồi mới tăng năng lực Database (scale-up, Read Replica). Luôn đo lại sau khi sửa." },
+  { "id": "S1-03.c7", "front": "Các công cụ đo điểm nghẽn phổ biến?", "back": "Log thời gian từng đoạn mã, APM và Distributed Tracing (trace gồm các span), profiler cho CPU, và EXPLAIN ANALYZE hoặc pg_stat_statements cho truy vấn Database." }
 ]

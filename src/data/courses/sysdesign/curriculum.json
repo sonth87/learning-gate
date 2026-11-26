@@ -18,25 +18,40 @@
       "level": 1,
       "order": 5,
       "title": "Data Flow và Bottleneck: tìm và sửa điểm nghẽn",
-      "summary": "Theo dõi một request đi qua các thành phần, đo tải ở từng chặng và tìm thành phần giới hạn thông lượng của toàn hệ thống. (Fixture tạm: M5 viết nội dung thật.)",
-      "durationMin": 16,
+      "summary": "Theo dõi một request đi qua Load Balancer, App, Cache và Database, đo thời gian từng chặng và mức sử dụng ρ để tìm thành phần giới hạn thông lượng của toàn hệ thống, rồi sửa đúng chỗ.",
+      "durationMin": 18,
       "difficulty": "Beginner",
       "objectives": [
         {
-          "vi": "Mô tả đường đi của một request từ client tới database và quay về"
+          "vi": "Mô tả đường đi của một request từ client tới database và quay về, và tính độ trễ là tổng các chặng nối tiếp"
         },
         {
-          "vi": "Tính mức sử dụng ρ = λ/μ của một thành phần"
+          "vi": "Tính mức sử dụng ρ = λ/μ của từng thành phần và xác định điểm nghẽn là thành phần có ρ cao nhất"
         },
         {
-          "vi": "Xác định điểm nghẽn bằng quy trình đo, tìm, sửa"
+          "vi": "Áp dụng quy trình đo, tìm, sửa, đo lại và nhận diện các loại điểm nghẽn: CPU, bộ nhớ, I/O, mạng, database"
+        },
+        {
+          "vi": "Giải thích vì sao thêm server ở tầng không nghẽn không cải thiện hệ thống"
         }
       ],
       "tags": [
         "bottleneck",
         "latency",
         "throughput",
-        "fixture"
+        "capacity",
+        "cache",
+        "profiling"
+      ],
+      "prerequisites": [
+        "S1-01",
+        "S1-06",
+        "S1-02"
+      ],
+      "related": [
+        "S1-04",
+        "S1-07",
+        "S4-01"
       ],
       "dtsRef": "latency-throughput",
       "source": {
@@ -44,39 +59,1415 @@
         "path": "content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
         "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
         "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-3-data-flow-and-bottlenecks.mdx",
-        "adaptedBy": "sonnet",
+        "adaptedBy": "claude-opus",
         "adaptedAt": "2026-11-26",
-        "changes": "Fixture tạm cho T1.4: chỉ để kiểm builder và doctor; nội dung thật do M5 (T5.1) viết.",
-        "adaptation": "rewritten"
+        "adaptation": "rewritten",
+        "changes": "Viết lại gần như toàn bộ: bỏ giai thoại mở đầu (giữ phần kỹ thuật thành tình huống connection pool), đổi Mermaid thành scene isometric và cây chẩn đoán, thêm mức sử dụng ρ = λ/μ, tải bền vững tối đa và mô phỏng tải tăng dần, bổ sung CPU/bộ nhớ/I/O. Sửa lỗi số học của bản gốc: tổng ví dụ thanh toán sau khi cache là 894 ms (bản gốc ghi 590 ms) và tỉ trọng API vận chuyển là 77% (bản gốc ghi cả 67% và 77%). Làm mềm các khẳng định tuyệt đối về mức cải thiện (60 lần, 100 lần) thành ví dụ cụ thể."
       },
-      "status": "draft",
-      "lesson": "<!-- fixture — M5 viết thật -->\n\n## 1. Điểm nghẽn (Bottleneck): thành phần giới hạn thông lượng của cả hệ thống\n\n```step\ncategory: SETUP\nshort: Điểm nghẽn\nscene: none\ncallout:\n  kind: key-idea\n  vi: Thêm tài nguyên cho thành phần không phải điểm nghẽn không làm tăng thông lượng của hệ thống.\n```\n\n**Điểm nghẽn (Bottleneck)** là thành phần có mức sử dụng cao nhất trên đường đi của request. Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần này, vì mọi request đều phải đi qua nó.\n\nBạn có thể hình dung giống một đường ống: tốc độ nước chảy qua cả đường ống bị quyết định bởi đoạn hẹp nhất.\n\n## 2. Mức sử dụng ρ = λ / μ: đo mức tải của một thành phần\n\n```step\ncategory: MECHANISM\nshort: Mức sử dụng ρ\nscene: none\nwhatChanged:\n  - \"+ Thêm công thức ρ = λ / μ\"\n```\n\nMức sử dụng của một thành phần là ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần đó xử lý tối đa mỗi giây. Khi ρ ≥ 1, hàng đợi trước thành phần tăng không dừng và độ trễ tăng theo.\n\n## 3. Quy trình đo, tìm, sửa\n\n```step\ncategory: TECHNIQUE\nshort: Đo, tìm, sửa\nscene: none\n```\n\nĐo ρ của từng thành phần trên đường đi của request, chọn thành phần có ρ cao nhất, rồi mới tăng năng lực của thành phần đó. Sau khi sửa, đo lại: điểm nghẽn có thể chuyển sang thành phần kế tiếp.\n\n## 4. Sai lầm phổ biến: thêm server ở tầng không nghẽn\n\n```step\ncategory: PITFALL\nshort: Sai lầm phổ biến\nscene: none\n```\n\nKhi database là điểm nghẽn, thêm instance ở tầng ứng dụng chỉ tăng chi phí mà không tăng thông lượng, vì tải vào database không đổi.\n\n## 5. Tóm tắt\n\n```step\ncategory: RECAP\nshort: Tóm tắt\n```\n\nĐiểm nghẽn là thành phần có ρ cao nhất. Đo trước, sửa đúng chỗ, rồi đo lại.",
+      "lesson": "## 1. Điểm nghẽn (Bottleneck): thông lượng của hệ thống bị giới hạn bởi thành phần chậm nhất\n\n```step\ncategory: SETUP\nshort: Điểm nghẽn\nscene: s1-path\ncallout:\n  kind: key-idea\n  title: Luật cốt lõi\n  vi: \"Thông lượng tối đa của cả hệ thống bằng thông lượng tối đa của thành phần chậm nhất trên đường đi của request. Tối ưu một thành phần khác không làm hệ thống nhanh hơn.\"\nwhatChanged:\n  - \"+ Đường đi của một request: Client, Load Balancer, App, Cache, Database\"\n  - \"~ Database là thành phần đầu tiên chạm ρ = 1 khi tải tăng\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải vào (t = 35 s)\"\n    value: \"≈ 3.000 req/s\"\n```\n\n**Điểm nghẽn (Bottleneck)** là thành phần giới hạn thông lượng của toàn bộ đường đi: mọi request đều phải qua nó, nên cả hệ thống không thể xử lý nhanh hơn nó. Điều này kéo theo một hệ quả thực tế: thêm tài nguyên cho thành phần không phải điểm nghẽn không làm hệ thống nhanh hơn.\n\nHãy xem một chuỗi sản xuất ba bước: cắt vải 1 phút, may 5 phút, đóng gói 30 giây mỗi sản phẩm. Cả chuỗi ra một sản phẩm mỗi 5 phút. Rút bước cắt vải xuống 10 giây không đổi gì, vì bước may vẫn là bước chậm nhất.\n\nVới một request đi qua hệ thống, ta cộng thời gian các chặng. Giả sử mạng của client 50 ms mỗi chiều, server 10 ms mỗi chiều, Database 500 ms. Tổng là 50 + 10 + 500 + 10 + 50 = 620 ms.\n\n| Cách tối ưu | Tiết kiệm | Tỉ lệ trên 620 ms |\n|---|---|---|\n| Server 10 ms xuống 1 ms (qua hai chiều) | 18 ms | khoảng 3% |\n| Database 500 ms xuống 50 ms | 450 ms | khoảng 73% |\n\nBạn có thể hình dung giống một đường ống: tốc độ nước chảy qua cả đường ống do đoạn hẹp nhất quyết định.\n\n## 2. Đường đi của request: độ trễ là tổng thời gian các chặng nối tiếp\n\n```step\ncategory: MECHANISM\nshort: Đường đi request\nscene: s2-flow\ncallout:\n  kind: good-to-know\n  vi: \"Độ trễ (Latency) trả lời câu hỏi một request mất bao lâu. Thông lượng (Throughput) trả lời câu hỏi mỗi giây xử lý được bao nhiêu request. Hai đại lượng này do hai tiêu chí khác nhau quyết định.\"\nwhatChanged:\n  - \"+ Cache nằm giữa App và Database (read-through)\"\n  - \"~ Khoảng 53% request cuối cùng mới đi tới Database\"\ntelemetry:\n  - label: \"Tỉ lệ đọc\"\n    value: \"90%\"\n  - label: \"Cache Hit (trên lượt đọc)\"\n    value: \"≈ 52%\"\n    tone: ok\n  - label: \"Request tới Database\"\n    value: \"≈ 53%\"\n    tone: warn\n```\n\n**Data flow** là đường đi của dữ liệu qua các thành phần. Trong hệ thống của bài này, một request đi theo thứ tự: Client, Load Balancer, một trong ba App, rồi Cache. Nếu Cache có dữ liệu (Cache Hit) thì App nhận kết quả ngay. Nếu không (Cache Miss), Cache hỏi tiếp Database rồi nhớ lại kết quả. Response đi ngược đường cũ.\n\n**Độ trễ của một request** bằng tổng thời gian các chặng nối tiếp: mạng, xử lý ở từng thành phần, thời gian chờ trong hàng đợi trước mỗi thành phần. Một chặng chậm kéo cả tổng lên.\n\n**Thông lượng** thì khác: nó bị giới hạn bởi thành phần có mức tải cao nhất so với năng lực của chính nó. Để tính tải lên Database, ta xét: 90% request là đọc, Cache trả lời khoảng 52% lượt đọc, nên tỉ lệ tới Database là 0,9 × (1 − 0,52) + 0,1 ≈ 0,53, tức hơn một nửa số request vẫn xuống Database (gồm các lượt đọc Cache Miss và toàn bộ lượt ghi).\n\n## 3. Bước 1: đo thời gian từng chặng, không đoán\n\n```step\ncategory: TECHNIQUE\nshort: Đo từng chặng\nscene: s3-trace\ncallout:\n  kind: watch-out\n  title: Đo trước khi sửa\n  vi: \"Mỗi nhóm trong team thường có một giả thuyết riêng (Database chậm, mạng chậm, code kém). Chỉ số đo từng chặng mới cho biết giả thuyết nào đúng.\"\nwhatChanged:\n  - \"+ Gắn thời gian cho từng chặng của một request\"\n  - \"~ Database chiếm 300 ms trên tổng 427 ms\"\ntelemetry:\n  - label: \"Tổng thời gian (ví dụ)\"\n    value: \"427 ms\"\n  - label: \"Chặng Database\"\n    value: \"300 ms\"\n    tone: bad\n  - label: \"Tỉ trọng Database\"\n    value: \"70%\"\n    tone: warn\n```\n\nBước đầu tiên của phân tích điểm nghẽn là **đo thời gian từng chặng** của một request cụ thể. Ví dụ dưới đây là một request tải trang hồ sơ người dùng, lần này Cache Miss nên request đi xuống Database. Đây là số liệu minh hoạ cho một hệ thống khác với mô phỏng ở các bước sau.\n\n| Chặng | Thời gian |\n|---|---|\n| Client tới Load Balancer | 50 ms |\n| Load Balancer tới App | 10 ms |\n| App kiểm tra Cache (Miss) | 5 ms |\n| App truy vấn Database | 300 ms |\n| App ghi kết quả vào Cache | 2 ms |\n| App trả về Load Balancer | 10 ms |\n| Load Balancer trả về Client | 50 ms |\n| **Tổng** | **427 ms** |\n\nChặng Database chiếm 300 / 427, khoảng 70% tổng thời gian. Trên sơ đồ, mỗi đường nối gộp thời gian đi và về của chặng đó (ví dụ Client và Load Balancer: 50 + 50 = 100 ms).\n\nMột lưu ý khi đọc kết quả: đo một request cho biết thời gian nằm ở đâu, còn câu hỏi hệ thống chịu được bao nhiêu tải thì cần đo theo mức sử dụng ở bước 5.\n\n## 4. Công cụ đo: log thời gian, APM, tracing và EXPLAIN\n\n```step\ncategory: TECHNIQUE\nshort: Công cụ đo\nmode: code\ncallout:\n  kind: technique\n  title: Ba lớp công cụ\n  vi: \"Log thời gian tự viết cho câu trả lời nhanh, APM và Distributed Tracing cho cả đường đi của request, EXPLAIN ANALYZE cho từng câu truy vấn.\"\n```\n\nCó ba cách phổ biến để lấy số đo ở môi trường thật, từ đơn giản đến đầy đủ.\n\n**Log thời gian tự viết** đo từng đoạn mã bằng đồng hồ đơn điệu (`time.perf_counter`) và ghi thành một dòng log có cấu trúc:\n\n```python\nimport logging\nimport time\n\nlog = logging.getLogger(\"profile\")\n\ndef load_profile(user_id: int) -> dict:\n    t0 = time.perf_counter()\n    user = cache.get(f\"user:{user_id}\")\n    t_cache = time.perf_counter() - t0\n\n    t_db = 0.0\n    if user is None:  # Cache Miss\n        t1 = time.perf_counter()\n        user = db.query(\"SELECT id, name, email FROM users WHERE id = %s\", user_id)\n        t_db = time.perf_counter() - t1\n        cache.set(f\"user:{user_id}\", user, ttl=300)\n\n    total = time.perf_counter() - t0\n    log.info(\"load_profile total=%.0fms cache=%.0fms db=%.0fms\",\n             total * 1e3, t_cache * 1e3, t_db * 1e3)\n    return user\n\n# Dòng log mẫu: load_profile total=307ms cache=5ms db=300ms\n```\n\n**APM và Distributed Tracing** (công cụ như OpenTelemetry cùng một hệ thống quan sát) gắn mỗi request một trace gồm nhiều span, mỗi span là một chặng có thời gian bắt đầu và kết thúc. Biểu đồ waterfall của trace cho thấy ngay span nào dài nhất.\n\n**EXPLAIN ANALYZE** cho biết một câu truy vấn mất thời gian ở đâu. Kết quả có dòng `Seq Scan on users ... Execution Time: 285 ms` nghĩa là Database quét toàn bộ bảng, dấu hiệu thiếu chỉ mục (Index).\n\n## 5. Bước 2: tìm điểm nghẽn bằng mức sử dụng ρ = λ / μ\n\n```step\ncategory: TECHNIQUE\nshort: Tìm bằng ρ\nscene: s5-hot\ncallout:\n  kind: key-idea\n  title: Điểm nghẽn là thành phần có ρ cao nhất\n  vi: \"ρ ≥ 1 nghĩa là request đến nhanh hơn thành phần xử lý được, hàng đợi trước nó tăng không dừng.\"\nwhatChanged:\n  - \"+ Gắn mức sử dụng ρ lên từng thành phần tại t = 35 s\"\n  - \"~ Database ρ = 1,00 trong khi mỗi App chỉ 0,56\"\ntelemetry:\n  - label: \"ρ của Database\"\n    value: \"1,00\"\n    tone: bad\n  - label: \"ρ của mỗi App\"\n    value: \"0,56\"\n    tone: ok\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n    tone: warn\n```\n\nThời gian của một request cho biết chặng nào chậm. Còn để biết thành phần nào **giới hạn thông lượng**, ta so **mức sử dụng** ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần xử lý tối đa mỗi giây.\n\nNăng lực μ trong hệ thống của bài: Load Balancer 20.000, mỗi App 1.800, Cache 40.000, Database 1.600 (req/s). Khi tải vào λ = 3.000 req/s:\n\n| Thành phần | Tải đến | μ | ρ |\n|---|---|---|---|\n| Load Balancer | 3.000 | 20.000 | 0,15 |\n| App (mỗi instance, chia đều 3) | 1.000 | 1.800 | 0,56 |\n| Cache | 3.000 | 40.000 | 0,07 |\n| Database | 0,53 × 3.000 ≈ 1.590 | 1.600 | 1,00 |\n\nDatabase có ρ cao nhất nên là điểm nghẽn. Tải bền vững tối đa của cả hệ thống là μ của Database chia cho tỉ lệ request xuống Database: 1.600 / 0,531 ≈ 3.010 req/s. Vượt mức đó, phần dư λ − μ cộng dồn mỗi giây vào hàng đợi.\n\n## 6. Quan sát tải tăng dần: Database chạm ρ = 1 trước tầng App\n\n```step\ncategory: PROBLEM\nshort: Tải tăng dần\nscene: s6-live\nlive: ramp\ncallout:\n  kind: watch-out\n  title: Độ trễ tăng dựng đứng gần ρ = 1\n  vi: \"Độ trễ không tăng đều theo tải. Khi ρ tiến tới 1, thời gian chờ trong hàng đợi chiếm phần lớn, nên p99 tăng nhanh trước khi lỗi xuất hiện.\"\nwhatChanged:\n  - \"~ Tải tăng từ 200 lên 5.000 req/s trong 60 giây\"\n  - \"~ Database ρ = 0,6 (t = 20 s), 0,9 (t ≈ 31 s), 1,0 (t ≈ 35 s)\"\ntelemetry:\n  - label: \"p99 (t = 20 s, rồi t = 35 s)\"\n    value: \"≈ 64 ms, rồi ≈ 143 ms\"\n    tone: warn\n  - label: \"Lỗi (t = 35 s, rồi t = 40 s)\"\n    value: \"≈ 0,9%, rồi ≈ 53%\"\n    tone: bad\n  - label: \"ρ của App (t = 40 s)\"\n    value: \"0,63\"\n    tone: ok\n```\n\nKịch bản mô phỏng của bài tăng tải từ 200 lên 5.000 req/s trong 60 giây, rồi giữ ở 5.000 tới giây thứ 90. Kết quả theo mốc thời gian (không có nhiễu ngẫu nhiên):\n\n- **t = 20 s** (λ = 1.800): ρ của Database 0,60, p99 khoảng 64 ms. Hệ thống còn dư năng lực.\n- **t ≈ 31 s** (λ ≈ 2.700): ρ của Database chạm 0,9, thành phần chuyển sang trạng thái bận.\n- **t ≈ 35 s** (λ ≈ 3.000): ρ của Database bằng 1,00, p99 tăng lên khoảng 143 ms, bắt đầu có lỗi. Mỗi App mới ở ρ khoảng 0,56.\n- **t = 40 s**: ρ của Database 1,13, hàng đợi trước Database dài ra (khoảng 500 request), hơn một nửa request lỗi hoặc quá hạn.\n\nCó thêm một cơ chế làm tình hình xấu đi nhanh: link từ Cache tới Database cho phép thử lại tối đa 2 lần, không có Backoff. Mỗi request lỗi sinh thêm tải lên đúng thành phần đang quá tải.\n\nTầng App chỉ chạm ρ = 0,9 ở khoảng giây thứ 58, rất lâu sau Database. Nghẽn xảy ra ở Database trước, không phải ở nơi có nhiều instance nhất.\n\n## 7. Các loại điểm nghẽn thường gặp: CPU, bộ nhớ, I/O, mạng, API ngoài và Database\n\n```step\ncategory: MECHANISM\nshort: Các loại nghẽn\nscene: s7-diagnosis\ncallout:\n  kind: compare\n  title: Triệu chứng chỉ ra loại điểm nghẽn\n  vi: \"Số đo tài nguyên của từng thành phần (CPU, RAM, I/O, mạng, hàng đợi) cho biết điểm nghẽn thuộc loại nào, từ đó chọn đúng cách sửa.\"\nwhatChanged:\n  - \"+ Cây chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn\"\ntelemetry:\n  - label: \"Loại phổ biến\"\n    value: \"5 loại\"\n  - label: \"Tình huống minh hoạ\"\n    value: \"Pool 10 kết nối\"\n    tone: warn\n```\n\nCùng một triệu chứng \"chậm khi tải tăng\" có nhiều nguyên nhân. Mỗi loại để lại dấu hiệu đo được khác nhau:\n\n| Loại | Dấu hiệu | Cách đo | Hướng xử lý |\n|---|---|---|---|\n| CPU, logic ứng dụng | CPU gần 100% | Profiler (ví dụ `cProfile`) | Đổi thuật toán, chuyển việc nặng sang Queue, scale ngang |\n| Bộ nhớ | RAM cạn, swap | Giám sát RAM, heap | Giảm kích thước dữ liệu giữ trong RAM, tăng RAM |\n| I/O đĩa | Thời gian chờ I/O cao | Số liệu disk I/O | Chỉ mục, đĩa nhanh hơn, ghi theo lô |\n| Mạng, API ngoài | RTT cao, Timeout | Đo thời gian từng lời gọi | Gọi song song, Cache, Timeout ngắn, Circuit Breaker, đặt dịch vụ gần người dùng |\n| Database | Truy vấn chậm, hàng đợi trước DB, pool đầy | `EXPLAIN`, `pg_stat_statements` | Chỉ mục, Cache, tối ưu truy vấn, Read Replica |\n\nTình huống: ứng dụng báo trễ khoảng 10 giây, CPU và RAM bình thường, Redis chỉ có Connection Pool 10 kết nối trong khi khoảng 1.000 request đang xếp hàng chờ kết nối. Tăng pool lên 100 đưa độ trễ về khoảng 200 ms. Giới hạn kết nối (pool, thread) cũng là một dạng điểm nghẽn, và nó cũng được đo bằng ρ.\n\n## 8. Bước 3: sửa đúng thành phần, giảm tải vào Database hoặc tăng năng lực Database\n\n```step\ncategory: TECHNIQUE\nshort: Sửa đúng chỗ\nscene: s8-fix\ncallout:\n  kind: technique\n  title: Ưu tiên cách rẻ trước\n  vi: \"Thứ tự thường hợp lý: tối ưu truy vấn và chỉ mục, tăng Cache Hit Ratio, rồi mới tăng năng lực Database. Cách nào cũng phải đo lại sau khi sửa.\"\nwhatChanged:\n  - \"~ Cache từ 25.000 lên 50.000 key, Hit Ratio từ 52% lên 74%\"\n  - \"~ Database tăng cỡ máy gấp đôi (1.600 lên 3.200 req/s)\"\n  - \"~ Request xuống Database giảm từ 53% còn 34%\"\ntelemetry:\n  - label: \"ρ của Database (λ = 5.000)\"\n    value: \"0,53\"\n    tone: ok\n  - label: \"p99 (λ = 5.000)\"\n    value: \"≈ 106 ms\"\n    tone: ok\n  - label: \"Chi phí\"\n    value: \"1,27 lên 2,31 USD/giờ\"\n    tone: warn\n```\n\nBước thứ ba là **sửa đúng thành phần là điểm nghẽn**. Với Database có ba hướng:\n\n1. **Tối ưu truy vấn và chỉ mục.** Thêm chỉ mục cho câu truy vấn quét toàn bảng đưa 300 ms xuống khoảng 5 ms, tức nhanh gấp 60 lần. Chọn đúng cột cần lấy (không dùng `SELECT *`) cũng giảm thời gian truyền.\n2. **Giảm số request xuống Database bằng Cache.** Trong mô phỏng, Cache tăng từ 25.000 lên 50.000 key nâng Cache Hit Ratio lên khoảng 74%, tỉ lệ request xuống Database còn 0,9 × 0,26 + 0,1 ≈ 0,34.\n3. **Tăng năng lực Database** (scale-up). Cỡ máy gấp đôi nâng μ lên 3.200 req/s.\n\nKết hợp cách 2 và 3, ở tải đỉnh 5.000 req/s ρ của Database còn khoảng 0,53 và p99 khoảng 106 ms. Cái giá là chi phí tăng từ khoảng 1,27 lên 2,31 USD/giờ.\n\nVí dụ khác: trang thanh toán mất 2.590 ms, trong đó một API tính phí vận chuyển bên ngoài chiếm 2.000 ms (khoảng 77%). Cache kết quả với Hit Ratio 85% cho thời gian trung bình 0,85 × 5 + 0,15 × 2.000 ≈ 304 ms, tổng còn khoảng 894 ms (giảm khoảng 65%).\n\n## 9. Sai lầm phổ biến: thêm instance ở tầng không phải điểm nghẽn\n\n```step\ncategory: PITFALL\nshort: Thêm app vô ích\nscene: s9-live\nlive: trap\ncallout:\n  kind: watch-out\n  title: Sai chỗ thì tốn tiền mà không hiệu quả\n  vi: \"Khi Database là điểm nghẽn, nhân đôi số instance App làm ρ của App giảm nhưng tải vào Database không đổi, nên p99 gần như giữ nguyên.\"\nwhatChanged:\n  - \"~ Mỗi App từ 1 lên 2 instance, ρ của App giảm còn khoảng 0,28\"\n  - \"~ Tải vào Database không đổi, ρ vẫn bằng 1,00\"\ntelemetry:\n  - label: \"ρ của App (t = 35 s)\"\n    value: \"0,56 xuống 0,28\"\n    tone: ok\n  - label: \"ρ của Database\"\n    value: \"1,00 (không đổi)\"\n    tone: bad\n  - label: \"p99 (t = 35 s)\"\n    value: \"≈ 143 ms (đổi dưới 1%)\"\n    tone: bad\n```\n\nKhi hệ thống chậm, phản xạ thường gặp là thêm server. Phản xạ này chỉ đúng nếu server được thêm đúng ở thành phần là điểm nghẽn.\n\nTrong mô phỏng, nhân đôi số instance của cả ba App làm ρ của mỗi App giảm từ 0,56 xuống 0,28. Nhưng số request xuống Database vẫn như cũ, nên ρ của Database vẫn bằng 1,00 và p99 ở t = 35 s gần như không đổi (khoảng 143 ms, chênh lệch dưới 1%). Chi phí thì tăng từ khoảng 1,27 lên 1,58 USD/giờ.\n\nMột ví dụ số khác cho cùng sai lầm: API mất 1.000 ms, trong đó server 50 ms và Database 950 ms. Viết lại code server từ 50 xuống 10 ms chỉ giảm tổng còn 960 ms (cải thiện 4%). Thêm chỉ mục đưa Database từ 950 xuống 50 ms, tổng còn 100 ms (cải thiện 90%).\n\nNguyên tắc kiểm tra nhanh: trước khi thêm tài nguyên, hỏi thành phần này có ρ cao nhất trên đường đi hay không.\n\n## 10. Sai lầm khi tối ưu: tối ưu sớm, không đo lại và tối ưu quá mức\n\n```step\ncategory: PITFALL\nshort: Sai lầm tối ưu\nscene: s10-loop\ncallout:\n  kind: key-idea\n  vi: \"Mỗi lần sửa là một giả thuyết. Số đo trước và sau khi sửa là cách duy nhất xác nhận giả thuyết đó đúng.\"\nwhatChanged:\n  - \"+ Vòng lặp đo, tìm, sửa, đo lại\"\ntelemetry:\n  - label: \"Mức cải thiện tối thiểu\"\n    value: \"10%\"\n  - label: \"Nếu dưới mức này\"\n    value: \"Xem lại giả thuyết\"\n    tone: warn\n```\n\nNgoài việc chọn sai thành phần (bước 9), có ba sai lầm khác khi tối ưu:\n\n- **Tối ưu sớm (Premature Optimization).** Thêm Cache, phân trang, cụm Redis khi chưa đo xem phần nào chậm. Lời của Donald Knuth thường được trích: tối ưu sớm là gốc của nhiều vấn đề. Cách tránh: có số đo chỉ ra điểm nghẽn rồi mới sửa.\n- **Không đo lại sau khi sửa.** Chỉ đo lại mới biết cải tiến có hiệu quả. Nếu mức cải thiện dưới khoảng 10%, giả thuyết có thể sai: kiểm tra lại số đo, hoặc thử cách khác.\n- **Tối ưu quá mức.** Một API đang trả lời trong 100 ms. Giảm xuống 50 ms tốn nhiều công sức nhưng người dùng khó nhận ra, vì ngưỡng cảm nhận phản hồi là tức thì thường được nhắc ở khoảng 100 ms. Chỉ tối ưu khi hiệu năng hiện tại chưa đạt yêu cầu và lợi ích đáng kể.\n\nSau mỗi lần sửa, điểm nghẽn có thể chuyển sang thành phần kế tiếp. Ở bài này, sau khi sửa Database, tầng App là thành phần chạm ρ cao nhất (khoảng 0,93 ở tải 5.000 req/s).\n\n## 11. Tóm tắt: quy trình đo, tìm, sửa và đo lại\n\n```step\ncategory: RECAP\nshort: Tóm tắt\nscene: s11-recap\ncallout:\n  kind: key-idea\n  title: Quy trình\n  vi: \"Đo, tìm điểm nghẽn, sửa đúng chỗ, đo lại, lặp lại. Hệ thống chỉ nhanh bằng thành phần chậm nhất.\"\nwhatChanged:\n  - \"+ Quy trình 5 bước áp dụng cho mọi hệ thống\"\ntelemetry:\n  - label: \"Điểm nghẽn của bài\"\n    value: \"Database (ρ = 1,00)\"\n    tone: bad\n  - label: \"Tải bền vững tối đa\"\n    value: \"≈ 3.010 req/s\"\n```\n\nĐiểm nghẽn là thành phần giới hạn thông lượng của cả đường đi. Quy trình xử lý gồm năm bước:\n\n1. **Đo.** Lấy thời gian từng chặng của một request và mức sử dụng ρ = λ / μ của từng thành phần. Không đoán.\n2. **Tìm.** Chọn thành phần có ρ cao nhất (và chặng chiếm nhiều thời gian nhất trong trace).\n3. **Sửa.** Chỉ tác động vào thành phần đó: giảm tải đi vào nó hoặc tăng năng lực của nó. Chọn cách rẻ nhất đạt mục tiêu.\n4. **Đo lại.** Xác nhận cải thiện bằng số liệu.\n5. **Lặp lại.** Điểm nghẽn có thể chuyển sang thành phần kế tiếp.\n\nGhi nhớ các số của bài: Database μ = 1.600 req/s, tỉ lệ request xuống Database khoảng 0,53, nên tải bền vững tối đa khoảng 3.010 req/s. Thêm App không đổi con số này, còn tăng Cache Hit Ratio hoặc tăng năng lực Database thì có.",
       "quiz": [
         {
           "id": "S1-03.q1",
           "type": "mc",
-          "q": "Một thành phần có năng lực 1 000 req/s nhận 1 100 req/s trong 5 phút. Điều nào xảy ra với hàng đợi của nó?",
+          "q": "Một request đi qua ba thành phần nối tiếp có thông lượng tối đa lần lượt là 800, 300 và 1.200 req/s. Thông lượng tối đa của cả chuỗi là bao nhiêu?",
           "code": "",
           "choices": [
-            "Hàng đợi luôn bằng 0",
-            "Hàng đợi tăng đều đặn theo thời gian",
-            "Hàng đợi tự ổn định ở mức nhỏ",
-            "Hàng đợi giảm dần"
+            "1.200 req/s",
+            "300 req/s",
+            "800 req/s",
+            "2.300 req/s"
           ],
           "answer": 1,
-          "explain": "Khi tải vào λ vượt năng lực μ (ρ > 1), phần dư λ − μ = 100 req/s tích luỹ mỗi giây, nên hàng đợi tăng khoảng 100 request mỗi giây."
+          "explain": "Điểm nghẽn là thành phần có thông lượng tối đa thấp nhất trên đường đi. Mọi request đều phải qua nó, nên cả chuỗi không thể vượt 300 req/s, dù hai thành phần còn lại nhanh hơn nhiều."
+        },
+        {
+          "id": "S1-03.q2",
+          "type": "output",
+          "q": "Database xử lý tối đa 1.600 req/s và đang nhận 2.000 req/s. Mức sử dụng ρ = λ/μ bằng bao nhiêu phần trăm? (chỉ nhập số nguyên)",
+          "code": "",
+          "choices": [],
+          "answer": "125",
+          "explain": "ρ = λ / μ = 2.000 / 1.600 = 1,25, tức 125%. Vì ρ lớn hơn 1, mỗi giây có 400 request không được xử lý và cộng dồn vào hàng đợi, nên hàng đợi tăng không dừng."
+        },
+        {
+          "id": "S1-03.q3",
+          "type": "tf",
+          "q": "Khi Database là điểm nghẽn, nhân đôi số instance App luôn giúp giảm p99 của toàn hệ thống.",
+          "code": "",
+          "choices": [],
+          "answer": false,
+          "explain": "Thêm instance App chỉ giảm ρ của tầng App, còn lượng request xuống Database không đổi. Database vẫn ở ρ = 1 nên p99 gần như giữ nguyên, trong khi chi phí tăng."
+        },
+        {
+          "id": "S1-03.q4",
+          "type": "mc",
+          "q": "Trace của một request cho thấy: Load Balancer 10 ms, App 20 ms, Cache 5 ms, Database 300 ms. Nên tối ưu thành phần nào trước?",
+          "code": "",
+          "choices": [
+            "Load Balancer",
+            "App",
+            "Cache",
+            "Database"
+          ],
+          "answer": 3,
+          "explain": "Database chiếm 300 trên 335 ms, khoảng 90% tổng thời gian, nên giảm chặng này cho mức cải thiện lớn nhất. Tối ưu các chặng nhỏ chỉ tiết kiệm được vài phần trăm."
+        },
+        {
+          "id": "S1-03.q5",
+          "type": "output",
+          "q": "Hệ thống có 90% request là đọc, Cache Hit trên 50% lượt đọc, và mọi lượt ghi đều xuống Database. Bao nhiêu phần trăm tổng số request tới Database? (chỉ nhập số nguyên)",
+          "code": "",
+          "choices": [],
+          "answer": "55",
+          "explain": "Lượt đọc Cache Miss là 0,9 × (1 − 0,5) = 0,45. Cộng 10% lượt ghi được 0,55, tức 55% request tới Database. Tỉ lệ này nhân với λ rồi chia cho μ của Database cho ra ρ của nó."
+        },
+        {
+          "id": "S1-03.q6",
+          "type": "mc",
+          "q": "Sau khi thêm chỉ mục cho một truy vấn chậm, độ trễ toàn hệ thống chỉ cải thiện 3%. Bước hợp lý tiếp theo là gì?",
+          "code": "",
+          "choices": [
+            "Coi như đã xong vì độ trễ đã giảm",
+            "Xem lại số đo: truy vấn đó có thật sự là chặng chậm nhất hay không",
+            "Thêm server ở tầng ứng dụng",
+            "Bỏ chỉ mục vừa tạo mà không kiểm tra gì thêm"
+          ],
+          "answer": 1,
+          "explain": "Mỗi lần sửa là một giả thuyết cần kiểm chứng bằng đo lại. Cải thiện quá nhỏ cho thấy chặng vừa sửa có thể không phải điểm nghẽn, nên cần quay lại bước đo và tìm."
         }
       ],
       "cards": [
         {
           "id": "S1-03.c1",
           "front": "Điểm nghẽn (Bottleneck) là gì?",
-          "back": "Thành phần có ρ = λ/μ cao nhất trên đường đi của request; nó quyết định thông lượng tối đa của cả hệ thống."
+          "back": "Thành phần giới hạn thông lượng của cả đường đi request, thường là thành phần có ρ = λ/μ cao nhất. Mọi request đều phải qua nó nên tối ưu thành phần khác không làm hệ thống nhanh hơn."
+        },
+        {
+          "id": "S1-03.c2",
+          "front": "Công thức mức sử dụng ρ và ý nghĩa của ρ ≥ 1?",
+          "back": "ρ = λ / μ, với λ là số request đến mỗi giây và μ là số request thành phần xử lý tối đa mỗi giây. Khi ρ ≥ 1, hàng đợi trước thành phần tăng không dừng."
+        },
+        {
+          "id": "S1-03.c3",
+          "front": "Quy trình xử lý điểm nghẽn gồm những bước nào?",
+          "back": "Đo (thời gian từng chặng và ρ của từng thành phần), tìm (thành phần ρ cao nhất), sửa (đúng thành phần đó), đo lại để xác nhận, rồi lặp lại vì điểm nghẽn có thể chuyển sang thành phần kế tiếp."
+        },
+        {
+          "id": "S1-03.c4",
+          "front": "Độ trễ của một request được tính thế nào?",
+          "back": "Bằng tổng thời gian các chặng nối tiếp: mạng đi và về, xử lý ở từng thành phần và thời gian chờ trong hàng đợi. Một chặng chậm kéo cả tổng lên."
+        },
+        {
+          "id": "S1-03.c5",
+          "front": "Vì sao không nên thêm App khi Database là điểm nghẽn?",
+          "back": "Thêm App chỉ giảm ρ của tầng App. Số request xuống Database không đổi nên ρ của Database vẫn bằng 1, p99 gần như không đổi và chi phí tăng."
+        },
+        {
+          "id": "S1-03.c6",
+          "front": "Có những cách nào giảm tải vào Database?",
+          "back": "Thêm chỉ mục và tối ưu truy vấn, tăng Cache Hit Ratio (tăng dung lượng Cache hoặc TTL hợp lý), rồi mới tăng năng lực Database (scale-up, Read Replica). Luôn đo lại sau khi sửa."
+        },
+        {
+          "id": "S1-03.c7",
+          "front": "Các công cụ đo điểm nghẽn phổ biến?",
+          "back": "Log thời gian từng đoạn mã, APM và Distributed Tracing (trace gồm các span), profiler cho CPU, và EXPLAIN ANALYZE hoặc pg_stat_statements cho truy vấn Database."
         }
       ],
-      "stage": null,
+      "stage": {
+        "version": 1,
+        "base": "s1-path",
+        "nodes": {
+          "client": {
+            "shape": "crowd",
+            "tone": "blue",
+            "label": {
+              "vi": "Người dùng",
+              "en": "Users"
+            },
+            "sublabel": {
+              "vi": "Client",
+              "en": "Client"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Nhóm người dùng gửi request tới hệ thống qua Internet.",
+                "en": "Nhóm người dùng gửi request tới hệ thống qua Internet."
+              },
+              "how": {
+                "vi": "Mỗi người dùng gửi request độc lập; tổng số request mỗi giây (λ) là tải đầu vào của cả hệ thống. Trong mô phỏng, λ tăng từ 200 lên 5.000 req/s.",
+                "en": "Mỗi người dùng gửi request độc lập; tổng số request mỗi giây (λ) là tải đầu vào của cả hệ thống. Trong mô phỏng, λ tăng từ 200 lên 5.000 req/s."
+              },
+              "why": {
+                "vi": "Tải đầu vào là thứ ta không kiểm soát trực tiếp; thiết kế hệ thống phải chịu được mức tải dự kiến.",
+                "en": "Tải đầu vào là thứ ta không kiểm soát trực tiếp; thiết kế hệ thống phải chịu được mức tải dự kiến."
+              },
+              "tip": {
+                "vi": "Luôn ghi lại λ khi đo: cùng một thành phần có thể ổn ở 1.000 req/s nhưng nghẽn ở 3.000 req/s.",
+                "en": "Luôn ghi lại λ khi đo: cùng một thành phần có thể ổn ở 1.000 req/s nhưng nghẽn ở 3.000 req/s."
+              }
+            }
+          },
+          "lb": {
+            "shape": "block",
+            "tone": "purple",
+            "icon": "layers",
+            "label": {
+              "vi": "Load Balancer",
+              "en": "Load Balancer"
+            },
+            "sublabel": {
+              "vi": "μ = 20.000 req/s",
+              "en": "μ = 20.000 req/s"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Load Balancer nhận request và chia cho các instance App phía sau.",
+                "en": "Load Balancer nhận request và chia cho các instance App phía sau."
+              },
+              "how": {
+                "vi": "Dùng thuật toán chia tải (ở đây Round-robin) và loại instance lỗi sau khi Health Check thất bại. Năng lực khoảng 20.000 req/s, thêm vài phần mười mili-giây vào mỗi request.",
+                "en": "Dùng thuật toán chia tải (ở đây Round-robin) và loại instance lỗi sau khi Health Check thất bại. Năng lực khoảng 20.000 req/s, thêm vài phần mười mili-giây vào mỗi request."
+              },
+              "why": {
+                "vi": "Chia đều tải giúp mỗi App chạy ở mức sử dụng thấp như nhau và cho phép thêm bớt instance mà người dùng không biết.",
+                "en": "Chia đều tải giúp mỗi App chạy ở mức sử dụng thấp như nhau và cho phép thêm bớt instance mà người dùng không biết."
+              },
+              "tip": {
+                "vi": "Load Balancer hiếm khi là điểm nghẽn về thông lượng, nhưng nếu chỉ có một cái thì nó là điểm lỗi đơn (SPOF).",
+                "en": "Load Balancer hiếm khi là điểm nghẽn về thông lượng, nhưng nếu chỉ có một cái thì nó là điểm lỗi đơn (SPOF)."
+              }
+            }
+          },
+          "app1": {
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "label": {
+              "vi": "App 1",
+              "en": "App 1"
+            },
+            "sublabel": {
+              "vi": "μ = 1.800 req/s",
+              "en": "μ = 1.800 req/s"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Instance ứng dụng xử lý logic nghiệp vụ của request.",
+                "en": "Instance ứng dụng xử lý logic nghiệp vụ của request."
+              },
+              "how": {
+                "vi": "Mỗi instance xử lý tối đa khoảng 1.800 req/s, mất trung bình 12 ms cho mỗi request, rồi gọi Cache. Ba instance chia đều tải nên tổng μ là 5.400 req/s.",
+                "en": "Mỗi instance xử lý tối đa khoảng 1.800 req/s, mất trung bình 12 ms cho mỗi request, rồi gọi Cache. Ba instance chia đều tải nên tổng μ là 5.400 req/s."
+              },
+              "why": {
+                "vi": "Tầng App không giữ trạng thái nên scale ngang bằng cách thêm instance, nhưng chỉ có ích khi chính App là điểm nghẽn.",
+                "en": "Tầng App không giữ trạng thái nên scale ngang bằng cách thêm instance, nhưng chỉ có ích khi chính App là điểm nghẽn."
+              },
+              "tip": {
+                "vi": "Khi ρ của App thấp (ví dụ 0,56) mà hệ thống vẫn chậm, đừng thêm App: hãy tìm thành phần có ρ cao hơn.",
+                "en": "Khi ρ của App thấp (ví dụ 0,56) mà hệ thống vẫn chậm, đừng thêm App: hãy tìm thành phần có ρ cao hơn."
+              }
+            }
+          },
+          "app2": {
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "label": {
+              "vi": "App 2",
+              "en": "App 2"
+            },
+            "sublabel": {
+              "vi": "μ = 1.800 req/s",
+              "en": "μ = 1.800 req/s"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Instance ứng dụng thứ hai, cùng cấu hình với App 1.",
+                "en": "Instance ứng dụng thứ hai, cùng cấu hình với App 1."
+              },
+              "how": {
+                "vi": "Nhận một phần ba request từ Load Balancer và xử lý độc lập.",
+                "en": "Nhận một phần ba request từ Load Balancer và xử lý độc lập."
+              },
+              "why": {
+                "vi": "Các instance giống nhau cho phép Load Balancer chia đều và mất một instance vẫn phục vụ được.",
+                "en": "Các instance giống nhau cho phép Load Balancer chia đều và mất một instance vẫn phục vụ được."
+              },
+              "tip": {
+                "vi": "So ρ của từng instance: nếu một instance cao hơn hẳn, nguyên nhân thường là chia tải lệch.",
+                "en": "So ρ của từng instance: nếu một instance cao hơn hẳn, nguyên nhân thường là chia tải lệch."
+              }
+            }
+          },
+          "app3": {
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "label": {
+              "vi": "App 3",
+              "en": "App 3"
+            },
+            "sublabel": {
+              "vi": "μ = 1.800 req/s",
+              "en": "μ = 1.800 req/s"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Instance ứng dụng thứ ba, cùng cấu hình với App 1.",
+                "en": "Instance ứng dụng thứ ba, cùng cấu hình với App 1."
+              },
+              "how": {
+                "vi": "Nhận một phần ba request từ Load Balancer và xử lý độc lập.",
+                "en": "Nhận một phần ba request từ Load Balancer và xử lý độc lập."
+              },
+              "why": {
+                "vi": "Ba instance cho tổng năng lực 5.400 req/s, đủ rộng so với Database ở mức tải của bài.",
+                "en": "Ba instance cho tổng năng lực 5.400 req/s, đủ rộng so với Database ở mức tải của bài."
+              },
+              "tip": {
+                "vi": "Thêm instance chỉ có tác dụng ở thành phần đang là điểm nghẽn.",
+                "en": "Thêm instance chỉ có tác dụng ở thành phần đang là điểm nghẽn."
+              }
+            }
+          },
+          "cache": {
+            "shape": "block",
+            "tone": "yellow",
+            "icon": "zap",
+            "label": {
+              "vi": "Cache",
+              "en": "Cache"
+            },
+            "sublabel": {
+              "vi": "Read-through",
+              "en": "Read-through"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Cache lưu tạm kết quả đọc để không phải hỏi Database mỗi lần.",
+                "en": "Cache lưu tạm kết quả đọc để không phải hỏi Database mỗi lần."
+              },
+              "how": {
+                "vi": "Chế độ read-through: App hỏi Cache; nếu Hit thì trả ngay (khoảng 0,5 ms), nếu Miss thì Cache hỏi Database rồi lưu lại. Với 25.000 key trên 50.000 key đang dùng, Hit Ratio khoảng 52% trên lượt đọc.",
+                "en": "Chế độ read-through: App hỏi Cache; nếu Hit thì trả ngay (khoảng 0,5 ms), nếu Miss thì Cache hỏi Database rồi lưu lại. Với 25.000 key trên 50.000 key đang dùng, Hit Ratio khoảng 52% trên lượt đọc."
+              },
+              "why": {
+                "vi": "Mỗi lượt Hit là một request không tới Database, nên Cache là cách giảm tải vào điểm nghẽn mà không đổi Database.",
+                "en": "Mỗi lượt Hit là một request không tới Database, nên Cache là cách giảm tải vào điểm nghẽn mà không đổi Database."
+              },
+              "tip": {
+                "vi": "Cache chỉ giúp lượt đọc: mọi lượt ghi vẫn xuống Database, nên tỉ lệ ghi cao làm Cache kém hiệu quả.",
+                "en": "Cache chỉ giúp lượt đọc: mọi lượt ghi vẫn xuống Database, nên tỉ lệ ghi cao làm Cache kém hiệu quả."
+              }
+            }
+          },
+          "db": {
+            "shape": "db",
+            "tone": "orange",
+            "label": {
+              "vi": "Database",
+              "en": "Database"
+            },
+            "sublabel": {
+              "vi": "μ = 1.600 req/s",
+              "en": "μ = 1.600 req/s"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Database lưu dữ liệu lâu dài và trả lời các request mà Cache không có.",
+                "en": "Database lưu dữ liệu lâu dài và trả lời các request mà Cache không có."
+              },
+              "how": {
+                "vi": "Xử lý tối đa khoảng 1.600 req/s, mất khoảng 4 ms mỗi truy vấn khi rảnh. Khi ρ tiến tới 1, request xếp hàng chờ và thời gian chờ tăng nhanh; hàng đợi đầy thì request bị từ chối.",
+                "en": "Xử lý tối đa khoảng 1.600 req/s, mất khoảng 4 ms mỗi truy vấn khi rảnh. Khi ρ tiến tới 1, request xếp hàng chờ và thời gian chờ tăng nhanh; hàng đợi đầy thì request bị từ chối."
+              },
+              "why": {
+                "vi": "Database là thành phần có trạng thái, khó scale ngang, nên thường là nơi đầu tiên chạm giới hạn. Với tỉ lệ khoảng 53% request xuống Database, tải bền vững tối đa của cả hệ thống là 1.600 / 0,531, khoảng 3.010 req/s.",
+                "en": "Database là thành phần có trạng thái, khó scale ngang, nên thường là nơi đầu tiên chạm giới hạn. Với tỉ lệ khoảng 53% request xuống Database, tải bền vững tối đa của cả hệ thống là 1.600 / 0,531, khoảng 3.010 req/s."
+              },
+              "tip": {
+                "vi": "Trước khi tăng cỡ máy Database, thử giảm tải vào nó: chỉ mục, tối ưu truy vấn, tăng Cache Hit Ratio.",
+                "en": "Trước khi tăng cỡ máy Database, thử giảm tải vào nó: chỉ mục, tối ưu truy vấn, tăng Cache Hit Ratio."
+              }
+            }
+          }
+        },
+        "links": {
+          "client-lb": {
+            "label": {
+              "vi": "Internet",
+              "en": "Internet"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng từ người dùng tới Load Balancer qua Internet.",
+                "en": "Chặng từ người dùng tới Load Balancer qua Internet."
+              },
+              "how": {
+                "vi": "Thời gian phụ thuộc khoảng cách địa lý và số lần bắt tay; thường là chặng mạng lớn nhất của một request.",
+                "en": "Thời gian phụ thuộc khoảng cách địa lý và số lần bắt tay; thường là chặng mạng lớn nhất của một request."
+              },
+              "why": {
+                "vi": "Độ trễ mạng đặt mức sàn cho tổng độ trễ mà tối ưu phía server không giảm được.",
+                "en": "Độ trễ mạng đặt mức sàn cho tổng độ trễ mà tối ưu phía server không giảm được."
+              },
+              "tip": {
+                "vi": "Đo từ nhiều vùng địa lý; nếu chặng này chiếm phần lớn, cân nhắc CDN hoặc đặt dịch vụ gần người dùng.",
+                "en": "Đo từ nhiều vùng địa lý; nếu chặng này chiếm phần lớn, cân nhắc CDN hoặc đặt dịch vụ gần người dùng."
+              }
+            }
+          },
+          "lb-app1": {
+            "label": {
+              "vi": "chia tải",
+              "en": "chia tải"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng Load Balancer chuyển request tới một App.",
+                "en": "Chặng Load Balancer chuyển request tới một App."
+              },
+              "how": {
+                "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+                "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+              },
+              "why": {
+                "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+                "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+              },
+              "tip": {
+                "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+                "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+              }
+            }
+          },
+          "lb-app2": {
+            "label": {
+              "vi": "chia tải",
+              "en": "chia tải"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng Load Balancer chuyển request tới một App.",
+                "en": "Chặng Load Balancer chuyển request tới một App."
+              },
+              "how": {
+                "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+                "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+              },
+              "why": {
+                "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+                "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+              },
+              "tip": {
+                "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+                "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+              }
+            }
+          },
+          "lb-app3": {
+            "label": {
+              "vi": "chia tải",
+              "en": "chia tải"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng Load Balancer chuyển request tới một App.",
+                "en": "Chặng Load Balancer chuyển request tới một App."
+              },
+              "how": {
+                "vi": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn.",
+                "en": "Round-robin lần lượt gửi request tới App 1, 2, 3. Chặng trong cùng vùng nên rất ngắn."
+              },
+              "why": {
+                "vi": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau.",
+                "en": "Chia đều giúp mức sử dụng của các App xấp xỉ nhau."
+              },
+              "tip": {
+                "vi": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check.",
+                "en": "Nếu ρ của các App lệch nhau, kiểm tra thuật toán chia tải và Health Check."
+              }
+            }
+          },
+          "app1-cache": {
+            "label": {
+              "vi": "đọc Cache",
+              "en": "đọc Cache"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+                "en": "Chặng App hỏi Cache trước khi hỏi Database."
+              },
+              "how": {
+                "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+                "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+              },
+              "why": {
+                "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+                "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+              },
+              "tip": {
+                "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+                "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+              }
+            }
+          },
+          "app2-cache": {
+            "label": {
+              "vi": "đọc Cache",
+              "en": "đọc Cache"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+                "en": "Chặng App hỏi Cache trước khi hỏi Database."
+              },
+              "how": {
+                "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+                "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+              },
+              "why": {
+                "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+                "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+              },
+              "tip": {
+                "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+                "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+              }
+            }
+          },
+          "app3-cache": {
+            "label": {
+              "vi": "đọc Cache",
+              "en": "đọc Cache"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng App hỏi Cache trước khi hỏi Database.",
+                "en": "Chặng App hỏi Cache trước khi hỏi Database."
+              },
+              "how": {
+                "vi": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database.",
+                "en": "Hit: Cache trả dữ liệu ngay, chỉ vài phần mười mili-giây. Miss: Cache chuyển tiếp xuống Database."
+              },
+              "why": {
+                "vi": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database.",
+                "en": "Đặt Cache trên đường đi của mọi lượt đọc giúp phần lớn request không bao giờ tới Database."
+              },
+              "tip": {
+                "vi": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm.",
+                "en": "Timeout ngắn (ở đây 100 ms) giúp App không bị treo khi Cache chậm."
+              }
+            }
+          },
+          "cache-db": {
+            "label": {
+              "vi": "khi Miss hoặc ghi",
+              "en": "khi Miss hoặc ghi"
+            },
+            "inspector": {
+              "what": {
+                "vi": "Chặng Cache hỏi Database khi Miss, cộng với mọi lượt ghi.",
+                "en": "Chặng Cache hỏi Database khi Miss, cộng với mọi lượt ghi."
+              },
+              "how": {
+                "vi": "Mỗi request lỗi được thử lại tối đa 2 lần, không có Backoff, nên khi Database quá tải mỗi lỗi sinh thêm tải.",
+                "en": "Mỗi request lỗi được thử lại tối đa 2 lần, không có Backoff, nên khi Database quá tải mỗi lỗi sinh thêm tải."
+              },
+              "why": {
+                "vi": "Đây là chặng đi vào điểm nghẽn: khoảng 53% request đi qua nó, và cơ chế thử lại không Backoff làm nó xấu đi nhanh khi ρ vượt 1.",
+                "en": "Đây là chặng đi vào điểm nghẽn: khoảng 53% request đi qua nó, và cơ chế thử lại không Backoff làm nó xấu đi nhanh khi ρ vượt 1."
+              },
+              "tip": {
+                "vi": "Thử lại cần Backoff có Jitter và giới hạn ngân sách thử lại; nếu không, nó khuếch đại sự cố thay vì chữa.",
+                "en": "Thử lại cần Backoff có Jitter và giới hạn ngân sách thử lại; nếu không, nó khuếch đại sự cố thay vì chữa."
+              }
+            }
+          }
+        },
+        "zones": {
+          "backend": {
+            "nodeIds": [
+              "app1",
+              "app2",
+              "app3",
+              "cache",
+              "db"
+            ],
+            "label": {
+              "vi": "TẦNG BACKEND",
+              "en": "TẦNG BACKEND"
+            },
+            "tone": "neutral"
+          }
+        },
+        "scenes": {
+          "s1-path": {
+            "show": {
+              "nodes": [
+                "client",
+                "lb",
+                "app1",
+                "cache",
+                "db"
+              ]
+            },
+            "state": {
+              "lb": {
+                "loadPct": 15
+              },
+              "app1": {
+                "loadPct": 56
+              },
+              "cache": {
+                "loadPct": 7
+              },
+              "db": {
+                "loadPct": 100,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "Điểm nghẽn · ρ 1,00",
+                    "en": "Điểm nghẽn · ρ 1,00"
+                  },
+                  "tone": "bad"
+                }
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Tại t = 35 s (λ ≈ 3.000 req/s)",
+                "en": "Tại t = 35 s (λ ≈ 3.000 req/s)"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "ρ Database 1,00",
+                    "en": "ρ Database 1,00"
+                  },
+                  "tone": "bad"
+                },
+                {
+                  "text": {
+                    "vi": "ρ mỗi App 0,56",
+                    "en": "ρ mỗi App 0,56"
+                  },
+                  "tone": "good"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s2-flow": {
+            "show": {
+              "nodes": [
+                "client",
+                "lb",
+                "app1",
+                "cache",
+                "db"
+              ]
+            },
+            "linkState": {
+              "client-lb": {
+                "label": {
+                  "vi": "request đi, response về",
+                  "en": "request đi, response về"
+                }
+              },
+              "lb-app1": {
+                "label": {
+                  "vi": "chuyển tiếp",
+                  "en": "chuyển tiếp"
+                }
+              },
+              "app1-cache": {
+                "label": {
+                  "vi": "Hit: trả ngay",
+                  "en": "Hit: trả ngay"
+                }
+              },
+              "cache-db": {
+                "label": {
+                  "vi": "Miss: hỏi Database",
+                  "en": "Miss: hỏi Database"
+                }
+              }
+            },
+            "packets": [
+              {
+                "id": "pk-req-1",
+                "linkId": "client-lb",
+                "kind": "request",
+                "speed": 0.4
+              },
+              {
+                "id": "pk-res-1",
+                "linkId": "client-lb",
+                "kind": "response",
+                "speed": 0.4,
+                "offset": 0.5,
+                "reverse": true
+              },
+              {
+                "id": "pk-req-2",
+                "linkId": "lb-app1",
+                "kind": "request",
+                "speed": 0.45
+              },
+              {
+                "id": "pk-req-3",
+                "linkId": "app1-cache",
+                "kind": "request",
+                "speed": 0.5
+              },
+              {
+                "id": "pk-hit-3",
+                "linkId": "app1-cache",
+                "kind": "cache-hit",
+                "speed": 0.5,
+                "offset": 0.5,
+                "reverse": true
+              },
+              {
+                "id": "pk-req-4",
+                "linkId": "cache-db",
+                "kind": "request",
+                "speed": 0.4,
+                "offset": 0.3
+              }
+            ],
+            "noteCard": {
+              "title": {
+                "vi": "Phân bổ request",
+                "en": "Phân bổ request"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "Khoảng 53% request tới Database",
+                    "en": "Khoảng 53% request tới Database"
+                  },
+                  "tone": "amber"
+                },
+                {
+                  "text": {
+                    "vi": "Cache Hit khoảng 52% lượt đọc",
+                    "en": "Cache Hit khoảng 52% lượt đọc"
+                  },
+                  "tone": "good"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s3-trace": {
+            "show": {
+              "nodes": [
+                "client",
+                "lb",
+                "app1",
+                "cache",
+                "db"
+              ]
+            },
+            "state": {
+              "db": {
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "300 ms · 70%",
+                    "en": "300 ms · 70%"
+                  },
+                  "tone": "bad"
+                }
+              }
+            },
+            "linkState": {
+              "client-lb": {
+                "label": {
+                  "vi": "100 ms (50 + 50)",
+                  "en": "100 ms (50 + 50)"
+                }
+              },
+              "lb-app1": {
+                "label": {
+                  "vi": "20 ms (10 + 10)",
+                  "en": "20 ms (10 + 10)"
+                }
+              },
+              "app1-cache": {
+                "label": {
+                  "vi": "7 ms (5 + 2)",
+                  "en": "7 ms (5 + 2)"
+                }
+              },
+              "cache-db": {
+                "label": {
+                  "vi": "300 ms",
+                  "en": "300 ms"
+                }
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Ví dụ: trang hồ sơ (số minh hoạ)",
+                "en": "Ví dụ: trang hồ sơ (số minh hoạ)"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "Tổng 427 ms",
+                    "en": "Tổng 427 ms"
+                  },
+                  "tone": "plain"
+                },
+                {
+                  "text": {
+                    "vi": "Database 300 ms, khoảng 70%",
+                    "en": "Database 300 ms, khoảng 70%"
+                  },
+                  "tone": "bad"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s5-hot": {
+            "show": {
+              "nodes": "*"
+            },
+            "zones": [
+              "backend"
+            ],
+            "state": {
+              "lb": {
+                "loadPct": 15,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,15",
+                    "en": "ρ 0,15"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "app1": {
+                "loadPct": 56,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,56",
+                    "en": "ρ 0,56"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "app2": {
+                "loadPct": 56,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,56",
+                    "en": "ρ 0,56"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "app3": {
+                "loadPct": 56,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,56",
+                    "en": "ρ 0,56"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "cache": {
+                "loadPct": 7,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,07",
+                    "en": "ρ 0,07"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "db": {
+                "loadPct": 100,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 1,00 · điểm nghẽn",
+                    "en": "ρ 1,00 · điểm nghẽn"
+                  },
+                  "tone": "bad"
+                }
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "t = 35 s, λ ≈ 3.000 req/s",
+                "en": "t = 35 s, λ ≈ 3.000 req/s"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "ρ = λ / μ",
+                    "en": "ρ = λ / μ"
+                  },
+                  "tone": "plain"
+                },
+                {
+                  "text": {
+                    "vi": "Database cao nhất, chạm 1,00",
+                    "en": "Database cao nhất, chạm 1,00"
+                  },
+                  "tone": "bad"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s6-live": {
+            "show": {
+              "nodes": "*"
+            },
+            "zones": [
+              "backend"
+            ],
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Tải tăng 200 → 5.000 req/s",
+                "en": "Tải tăng 200 → 5.000 req/s"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "t = 20 s: ρ Database 0,60",
+                    "en": "t = 20 s: ρ Database 0,60"
+                  },
+                  "tone": "good"
+                },
+                {
+                  "text": {
+                    "vi": "t ≈ 31 s: ρ Database 0,9",
+                    "en": "t ≈ 31 s: ρ Database 0,9"
+                  },
+                  "tone": "amber"
+                },
+                {
+                  "text": {
+                    "vi": "t ≈ 35 s: ρ Database 1,00",
+                    "en": "t ≈ 35 s: ρ Database 1,00"
+                  },
+                  "tone": "bad"
+                }
+              ],
+              "position": "top-left"
+            }
+          },
+          "s7-diagnosis": {
+            "mode": "memory-2d",
+            "show": {
+              "nodes": []
+            },
+            "memory": {
+              "kind": "tree",
+              "title": {
+                "vi": "Chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn",
+                "en": "Chẩn đoán: triệu chứng đo được dẫn tới loại điểm nghẽn"
+              },
+              "nodes": [
+                {
+                  "id": "root",
+                  "x": 0,
+                  "y": -95,
+                  "label": "Chậm khi tải tăng",
+                  "sub": {
+                    "vi": "đo từng thành phần",
+                    "en": "đo từng thành phần"
+                  },
+                  "tone": "neutral"
+                },
+                {
+                  "id": "cpu",
+                  "x": -240,
+                  "y": 70,
+                  "label": "CPU, logic",
+                  "sub": {
+                    "vi": "thuật toán, Queue",
+                    "en": "thuật toán, Queue"
+                  },
+                  "tone": "green"
+                },
+                {
+                  "id": "mem",
+                  "x": -120,
+                  "y": 70,
+                  "label": "Bộ nhớ",
+                  "sub": {
+                    "vi": "giảm dữ liệu",
+                    "en": "giảm dữ liệu"
+                  },
+                  "tone": "purple"
+                },
+                {
+                  "id": "io",
+                  "x": 0,
+                  "y": 70,
+                  "label": "I/O đĩa",
+                  "sub": {
+                    "vi": "chỉ mục, ghi lô",
+                    "en": "chỉ mục, ghi lô"
+                  },
+                  "tone": "yellow"
+                },
+                {
+                  "id": "net",
+                  "x": 120,
+                  "y": 70,
+                  "label": "Mạng, API ngoài",
+                  "sub": {
+                    "vi": "song song, Cache",
+                    "en": "song song, Cache"
+                  },
+                  "tone": "blue"
+                },
+                {
+                  "id": "db",
+                  "x": 240,
+                  "y": 70,
+                  "label": "Database, pool",
+                  "sub": {
+                    "vi": "chỉ mục, Cache",
+                    "en": "chỉ mục, Cache"
+                  },
+                  "tone": "orange"
+                }
+              ],
+              "edges": [
+                {
+                  "from": "root",
+                  "to": "cpu",
+                  "label": "CPU ≈ 100%"
+                },
+                {
+                  "from": "root",
+                  "to": "mem",
+                  "label": "RAM cạn"
+                },
+                {
+                  "from": "root",
+                  "to": "io",
+                  "label": "I/O wait"
+                },
+                {
+                  "from": "root",
+                  "to": "net",
+                  "label": "RTT, timeout"
+                },
+                {
+                  "from": "root",
+                  "to": "db",
+                  "label": "hàng đợi, ρ → 1",
+                  "style": "danger"
+                }
+              ]
+            }
+          },
+          "s8-fix": {
+            "show": {
+              "nodes": "*"
+            },
+            "zones": [
+              "backend"
+            ],
+            "state": {
+              "lb": {
+                "loadPct": 25
+              },
+              "app1": {
+                "loadPct": 93,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,93",
+                    "en": "ρ 0,93"
+                  },
+                  "tone": "warn"
+                }
+              },
+              "app2": {
+                "loadPct": 93,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,93",
+                    "en": "ρ 0,93"
+                  },
+                  "tone": "warn"
+                }
+              },
+              "app3": {
+                "loadPct": 93,
+                "badge": {
+                  "text": {
+                    "vi": "ρ 0,93",
+                    "en": "ρ 0,93"
+                  },
+                  "tone": "warn"
+                }
+              },
+              "cache": {
+                "loadPct": 13,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "50.000 key · Hit 74%",
+                    "en": "50.000 key · Hit 74%"
+                  },
+                  "tone": "ok"
+                }
+              },
+              "db": {
+                "loadPct": 53,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "×2 · ρ 0,53",
+                    "en": "×2 · ρ 0,53"
+                  },
+                  "tone": "ok"
+                }
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Sau khi sửa (λ = 5.000 req/s)",
+                "en": "Sau khi sửa (λ = 5.000 req/s)"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "p99 ≈ 106 ms, không lỗi",
+                    "en": "p99 ≈ 106 ms, không lỗi"
+                  },
+                  "tone": "good"
+                },
+                {
+                  "text": {
+                    "vi": "Chi phí ≈ 2,31 USD/giờ",
+                    "en": "Chi phí ≈ 2,31 USD/giờ"
+                  },
+                  "tone": "amber"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s9-live": {
+            "show": {
+              "nodes": "*"
+            },
+            "zones": [
+              "backend"
+            ],
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Nhân đôi instance mỗi App (t = 35 s)",
+                "en": "Nhân đôi instance mỗi App (t = 35 s)"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "ρ App 0,56 xuống 0,28",
+                    "en": "ρ App 0,56 xuống 0,28"
+                  },
+                  "tone": "good"
+                },
+                {
+                  "text": {
+                    "vi": "ρ Database vẫn 1,00",
+                    "en": "ρ Database vẫn 1,00"
+                  },
+                  "tone": "bad"
+                },
+                {
+                  "text": {
+                    "vi": "p99 vẫn ≈ 143 ms",
+                    "en": "p99 vẫn ≈ 143 ms"
+                  },
+                  "tone": "bad"
+                }
+              ],
+              "position": "top-left"
+            }
+          },
+          "s10-loop": {
+            "show": {
+              "nodes": [
+                "client",
+                "lb",
+                "app1",
+                "cache",
+                "db"
+              ]
+            },
+            "state": {
+              "db": {
+                "highlighted": true
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Vòng lặp tối ưu",
+                "en": "Vòng lặp tối ưu"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "1. Đo ρ và thời gian từng chặng",
+                    "en": "1. Đo ρ và thời gian từng chặng"
+                  },
+                  "tone": "plain"
+                },
+                {
+                  "text": {
+                    "vi": "2. Tìm thành phần ρ cao nhất",
+                    "en": "2. Tìm thành phần ρ cao nhất"
+                  },
+                  "tone": "plain"
+                },
+                {
+                  "text": {
+                    "vi": "3. Sửa đúng thành phần đó",
+                    "en": "3. Sửa đúng thành phần đó"
+                  },
+                  "tone": "plain"
+                },
+                {
+                  "text": {
+                    "vi": "4. Đo lại, so trước và sau",
+                    "en": "4. Đo lại, so trước và sau"
+                  },
+                  "tone": "good"
+                },
+                {
+                  "text": {
+                    "vi": "Cải thiện dưới 10%: xem lại giả thuyết",
+                    "en": "Cải thiện dưới 10%: xem lại giả thuyết"
+                  },
+                  "tone": "amber"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          },
+          "s11-recap": {
+            "show": {
+              "nodes": "*"
+            },
+            "zones": [
+              "backend"
+            ],
+            "state": {
+              "lb": {
+                "loadPct": 15
+              },
+              "app1": {
+                "loadPct": 56
+              },
+              "app2": {
+                "loadPct": 56
+              },
+              "app3": {
+                "loadPct": 56
+              },
+              "cache": {
+                "loadPct": 7
+              },
+              "db": {
+                "loadPct": 100,
+                "highlighted": true,
+                "badge": {
+                  "text": {
+                    "vi": "Điểm nghẽn",
+                    "en": "Điểm nghẽn"
+                  },
+                  "tone": "bad"
+                }
+              }
+            },
+            "packets": "auto",
+            "noteCard": {
+              "title": {
+                "vi": "Đo, tìm, sửa, đo lại",
+                "en": "Đo, tìm, sửa, đo lại"
+              },
+              "lines": [
+                {
+                  "text": {
+                    "vi": "Tải bền vững tối đa ≈ 3.010 req/s",
+                    "en": "Tải bền vững tối đa ≈ 3.010 req/s"
+                  },
+                  "tone": "amber"
+                },
+                {
+                  "text": {
+                    "vi": "Thêm App không đổi con số này",
+                    "en": "Thêm App không đổi con số này"
+                  },
+                  "tone": "bad"
+                }
+              ],
+              "position": "bottom-left"
+            }
+          }
+        },
+        "live": {
+          "ramp": {
+            "sim": "S1-03/ramp",
+            "startAtSec": 0,
+            "autoplay": false,
+            "speed": 1,
+            "controls": {
+              "timeline": true,
+              "load": true,
+              "tracer": true
+            },
+            "telemetry": [
+              {
+                "metric": "offeredRps",
+                "label": {
+                  "vi": "Lưu lượng",
+                  "en": "Lưu lượng"
+                },
+                "format": "rps"
+              },
+              {
+                "metric": "p99",
+                "label": {
+                  "vi": "p99",
+                  "en": "p99"
+                },
+                "format": "ms",
+                "tone": {
+                  "warnAbove": 100,
+                  "badAbove": 300
+                }
+              },
+              {
+                "metric": "errorRate",
+                "label": {
+                  "vi": "Lỗi",
+                  "en": "Lỗi"
+                },
+                "format": "pct",
+                "tone": {
+                  "warnAbove": 0.01,
+                  "badAbove": 0.05
+                }
+              }
+            ],
+            "slo": [
+              {
+                "metric": "p99",
+                "value": 300
+              }
+            ],
+            "pauseAtSec": [
+              20
+            ],
+            "focus": {
+              "nodes": [
+                "db"
+              ]
+            }
+          },
+          "trap": {
+            "sim": "S1-03/ramp",
+            "startAtSec": 30,
+            "autoplay": false,
+            "speed": 1,
+            "controls": {
+              "timeline": true,
+              "knobs": [
+                {
+                  "node": "app1",
+                  "key": "replicas"
+                },
+                {
+                  "node": "app2",
+                  "key": "replicas"
+                },
+                {
+                  "node": "app3",
+                  "key": "replicas"
+                }
+              ]
+            },
+            "telemetry": [
+              {
+                "metric": "offeredRps",
+                "label": {
+                  "vi": "Lưu lượng",
+                  "en": "Lưu lượng"
+                },
+                "format": "rps"
+              },
+              {
+                "metric": "p99",
+                "label": {
+                  "vi": "p99",
+                  "en": "p99"
+                },
+                "format": "ms",
+                "tone": {
+                  "warnAbove": 100,
+                  "badAbove": 300
+                }
+              },
+              {
+                "metric": "errorRate",
+                "label": {
+                  "vi": "Lỗi",
+                  "en": "Lỗi"
+                },
+                "format": "pct",
+                "tone": {
+                  "warnAbove": 0.01,
+                  "badAbove": 0.05
+                }
+              }
+            ],
+            "slo": [
+              {
+                "metric": "p99",
+                "value": 300
+              }
+            ],
+            "focus": {
+              "nodes": [
+                "app1",
+                "app2",
+                "app3",
+                "db"
+              ]
+            }
+          }
+        }
+      },
+      "noStage": false,
       "activities": [],
-      "simIds": []
+      "simIds": [
+        "S1-03/ramp"
+      ]
     }
   ]
 }
