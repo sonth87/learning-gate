@@ -6,6 +6,8 @@ import {
   type IsoNodeShape,
   type IsoTone,
   type LegacyNodeShape,
+  type LiveSimSource,
+  type PacketKind,
   type StageIconKind,
   type StageInspectorInfo,
   type StageLink,
@@ -1000,6 +1002,25 @@ export interface ScaleStageSvgProps {
   isPlaying: boolean;
   replayNonce: number;
   className?: string;
+  // ── live-sim (05 §3.1) — tất cả tuỳ chọn; không truyền frameSource ⇒ hành vi cũ ──
+  frameSource?: LiveSimSource;
+  liveOptions?: {
+    /** mặc định 200 (80 khi stage hẹp) */
+    maxPackets?: number;
+    /** ghi đè prefers-reduced-motion (test) */
+    reducedMotion?: boolean;
+    /** chấm nhận pointer events */
+    tracerEnabled?: boolean;
+    focus?: { nodes?: string[]; links?: string[] };
+  };
+  onPacketPick?: (p: { id: number; linkId: string; kind: PacketKind }) => void;
+  /** Chế độ nhặt đích: click chọn entity thay vì mở inspector. */
+  pickMode?: {
+    accept: ('node' | 'link')[];
+    onPick: (e: { kind: 'node' | 'link'; id: string }) => void;
+  } | null;
+  /** Nội dung số liệu live chèn vào thẻ inspector. */
+  renderLiveSlot?: (e: { kind: 'node' | 'link'; id: string }) => React.ReactNode;
 }
 
 export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
@@ -1009,6 +1030,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   isPlaying,
   replayNonce,
   className,
+  frameSource,
+  liveOptions,
+  onPacketPick,
+  pickMode,
+  renderLiveSlot,
 }) => {
   const uid = useId().replace(/:/g, '');
   const isDark = theme === 'dark';
@@ -1096,13 +1122,43 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     return () => window.clearTimeout(timer);
   }, []);
 
+  // F2 (05 §3.5): scene thường ⇒ reset theo identity `scene` (hành vi cũ, không đổi);
+  // live-sim ⇒ chỉ reset khi CẤU TRÚC đổi (id/shape node, id/from/to link), để zoom/pan/inspector
+  // sống sót khi builder dựng lại object scene mà cấu trúc không đổi.
+  const structureKey = useMemo(
+    () =>
+      scene.nodes.map((n) => `${n.id}:${n.shape}`).join(',') +
+      '|' +
+      scene.links.map((l) => `${l.id}:${l.from}>${l.to}`).join(','),
+    [scene]
+  );
+  const resetDep: StageScene | string = frameSource ? structureKey : scene;
   useEffect(() => {
     setSelectedInfo(null);
     setHoverPreview(null);
     camRef.current = { zoom: 1, panX: 0, panY: 0 };
     setZoom(1);
     setPan({ x: 0, y: 0 });
-  }, [scene]);
+  }, [resetDep]);
+
+  // DEV: cảnh báo khi scene của step live-sim bị dựng lại quá thường xuyên (>2 lần/giây).
+  const sceneChurnRef = useRef<{ scene: StageScene | null; times: number[] }>({
+    scene: null,
+    times: [],
+  });
+  if (import.meta.env.DEV && frameSource && sceneChurnRef.current.scene !== scene) {
+    const now = typeof performance !== 'undefined' ? performance.now() : 0;
+    const rec = sceneChurnRef.current;
+    rec.scene = scene;
+    rec.times = rec.times.filter((t) => now - t < 1000);
+    rec.times.push(now);
+    if (rec.times.length > 2) {
+      console.warn(
+        '[live-sim] scene thay đổi quá thường xuyên (>2 lần/giây): builder phải tạo scene một lần (memo).'
+      );
+      rec.times = [];
+    }
+  }
 
   const expandedNodes = useMemo(() => {
     const positioned = composeIsometricLayout(scene.nodes, scene.links);
