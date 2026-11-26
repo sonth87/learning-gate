@@ -25,3 +25,5 @@ export { effReplicas, findBottleneck, findSpofs, maxSustainableRps, structuralWa
 export type {
   BottleneckReason, BottleneckReport, SpofReport, StructuralWarning, StructuralWarningCode,
 } from './analyze';
+export { applyChangesToModel, evaluate, runAndEvaluate, seriesFromRecorder, simulate } from './grade';
+export type { Constraint, ConstraintResult, RunSeries, StructuralRule, TimeWindow } from './grade';
