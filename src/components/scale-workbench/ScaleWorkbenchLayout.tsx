@@ -301,6 +301,31 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const [sandboxRunning, setSandboxRunning] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [isResizingRight, setIsResizingRight] = useState(false);
+  const [isDraggingStepper, setIsDraggingStepper] = useState(false);
+  const stepperScrollRef = useRef<HTMLDivElement | null>(null);
+  const stepperDragRef = useRef<{
+    active: boolean;
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+  }>({ active: false, pointerId: -1, startX: 0, startScrollLeft: 0 });
+  const stepperDidDragRef = useRef(false);
+
+  // Tự động cuộn bước đang chọn vào giữa thanh "TRONG BÀI HỌC NÀY" khi chuyển bước
+  useEffect(() => {
+    const container = stepperScrollRef.current;
+    if (!container) return;
+    const item = container.querySelector<HTMLElement>(
+      `[data-step-item="${safeStepIdx}"]`
+    );
+    if (!item) return;
+    const targetLeft =
+      item.offsetLeft + item.offsetWidth / 2 - container.clientWidth / 2;
+    container.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior: 'smooth',
+    });
+  }, [activeLesson?.moduleId, safeStepIdx]);
   const [railFlyout, setRailFlyout] = useState<
     | { kind: 'expand' | 'progress'; top: number }
     | { kind: 'chapter'; level: number; top: number }
@@ -1544,14 +1569,83 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             />
           )}
 
-        {/* Bottom Horizontal Timeline Stepper */}
+        {/* Bottom Horizontal Timeline Stepper (Drag-to-scroll left/right + Wheel + Auto-center active step) */}
         <div className="dts-panel shrink-0 rounded-2xl px-4 py-2.5">
           <div className="mb-2 flex items-center justify-between font-mono text-[10.5px] font-extrabold tracking-wider text-[var(--dts-ink-muted)]">
             <span>{t.inThisLesson}</span>
             <span>{t.stepOf(safeStepIdx + 1, activeLesson.steps.length)}</span>
           </div>
 
-          <div className="overflow-x-auto pt-1.5 pb-1.5 px-1 no-scrollbar">
+          <div
+            ref={stepperScrollRef}
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              const el = stepperScrollRef.current;
+              if (!el) return;
+              stepperDragRef.current = {
+                active: true,
+                pointerId: e.pointerId,
+                startX: e.clientX,
+                startScrollLeft: el.scrollLeft,
+              };
+              stepperDidDragRef.current = false;
+            }}
+            onPointerMove={(e) => {
+              const st = stepperDragRef.current;
+              const el = stepperScrollRef.current;
+              if (!st.active || !el) return;
+              const dx = e.clientX - st.startX;
+              if (!stepperDidDragRef.current && Math.abs(dx) > 4) {
+                stepperDidDragRef.current = true;
+                setIsDraggingStepper(true);
+                try {
+                  el.setPointerCapture(st.pointerId);
+                } catch {
+                  // ignore if pointer capture unavailable
+                }
+              }
+              if (stepperDidDragRef.current) {
+                el.scrollLeft = st.startScrollLeft - dx;
+              }
+            }}
+            onPointerUp={(e) => {
+              const st = stepperDragRef.current;
+              const el = stepperScrollRef.current;
+              if (!st.active) return;
+              st.active = false;
+              setIsDraggingStepper(false);
+              if (el) {
+                try {
+                  if (el.hasPointerCapture(e.pointerId)) {
+                    el.releasePointerCapture(e.pointerId);
+                  }
+                } catch {
+                  // ignore
+                }
+              }
+              if (stepperDidDragRef.current) {
+                window.setTimeout(() => {
+                  stepperDidDragRef.current = false;
+                }, 0);
+              }
+            }}
+            onPointerCancel={() => {
+              stepperDragRef.current.active = false;
+              setIsDraggingStepper(false);
+              stepperDidDragRef.current = false;
+            }}
+            onWheel={(e) => {
+              const el = stepperScrollRef.current;
+              if (!el || el.scrollWidth <= el.clientWidth) return;
+              if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                el.scrollLeft += e.deltaY;
+              }
+            }}
+            className={cn(
+              'overflow-x-auto pt-1.5 pb-1.5 px-1 no-scrollbar select-none',
+              isDraggingStepper ? 'cursor-grabbing' : 'cursor-grab'
+            )}
+          >
             <div className="relative flex min-w-max items-start justify-between gap-2 px-1">
               {activeLesson.steps.map((st, idx) => {
                 const isActive = idx === safeStepIdx;
@@ -1559,12 +1653,17 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 return (
                   <div
                     key={st.index}
-                    className="relative flex flex-1 min-w-[68px] flex-col items-center"
+                    data-step-item={idx}
+                    onClick={() => {
+                      if (stepperDidDragRef.current) return;
+                      selectLessonAndStep(activeLesson.moduleId, idx);
+                    }}
+                    className="relative flex flex-1 min-w-[68px] flex-col items-center cursor-pointer"
                   >
                     {idx < activeLesson.steps.length - 1 && (
                       <div
                         className={cn(
-                          'absolute top-[13px] left-1/2 h-[1.5px] w-full',
+                          'absolute top-[13px] left-1/2 h-[1.5px] w-full pointer-events-none',
                           idx < safeStepIdx
                             ? 'bg-[var(--dts-ink)]'
                             : 'bg-[var(--dts-line-strong)]'
@@ -1573,11 +1672,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                     )}
                     <button
                       type="button"
-                      onClick={() =>
-                        selectLessonAndStep(activeLesson.moduleId, idx)
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (stepperDidDragRef.current) return;
+                        selectLessonAndStep(activeLesson.moduleId, idx);
+                      }}
                       className={cn(
-                        'relative z-10 grid h-[26px] w-[26px] place-items-center rounded-full font-mono text-[11.5px] font-bold transition-transform',
+                        'relative z-10 grid h-[26px] w-[26px] place-items-center rounded-full font-mono text-[11.5px] font-bold transition-transform cursor-pointer',
                         isActive
                           ? 'scale-108 border-[1.5px] border-[var(--dts-border)] bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
                           : isDone
