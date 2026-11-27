@@ -3,6 +3,7 @@ import { DeviceLayout, useStore } from '@sonth87/device-layout';
 import { ALL_LEARNING_APPS } from '@/apps/appRegistry';
 import { LearningGateGlyph, LearningGateLogo } from '@/components/common/AppLogos';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
+import { useSettingsStore, resolveWorkbenchTheme } from '@/stores/useSettingsStore';
 import { useCloudSyncStore } from '@/stores/useCloudSyncStore';
 import { useCloudMenuBarExtras } from '@/components/common/MenuBarUserExtra';
 
@@ -35,6 +36,7 @@ function detectHardwareFormFactor(): 'phone' | 'tablet' | 'desktop' {
 export const App: React.FC = () => {
   const shellRootRef = useRef<HTMLDivElement>(null);
   const workbenchTheme = useWorkbenchStore((s) => s.workbenchTheme);
+  const settingsTheme = useSettingsStore((s) => s.theme);
   const menuBarExtras = useCloudMenuBarExtras();
   const hasOpenWindow = useStore((s) =>
     Object.values(s.windows).some((w) => !w.isMinimized)
@@ -99,6 +101,23 @@ export const App: React.FC = () => {
     }
     meta.setAttribute('content', surfaceColor);
   }, [workbenchTheme, hasOpenWindow]);
+
+  // Keep workbenchTheme in sync with OS color scheme when Settings theme is 'system' (Auto).
+  useEffect(() => {
+    if (settingsTheme !== 'system' || typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return;
+    }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const syncSystemTheme = () => {
+      const resolved = resolveWorkbenchTheme('system');
+      if (useWorkbenchStore.getState().workbenchTheme !== resolved) {
+        useWorkbenchStore.getState().setWorkbenchTheme(resolved);
+      }
+    };
+    syncSystemTheme();
+    mq.addEventListener('change', syncSystemTheme);
+    return () => mq.removeEventListener('change', syncSystemTheme);
+  }, [settingsTheme]);
 
   useEffect(() => {
     const unsubCloudAuth = useCloudSyncStore.getState().initAuthListener();

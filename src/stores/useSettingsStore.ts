@@ -1,12 +1,25 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useStore as useDeviceStore } from '@sonth87/device-layout';
+import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import {
   CurriculumOrganizationMode,
   IdeThemeId,
   ThemeMode,
   UserSettings,
 } from '@/types/user.types';
+
+export function resolveWorkbenchTheme(theme: ThemeMode): 'light' | 'dark' {
+  if (theme === 'light' || theme === 'dark') return theme;
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  ) {
+    return 'dark';
+  }
+  return 'light';
+}
 
 interface SettingsState extends UserSettings {
   setOrganizationMode: (mode: CurriculumOrganizationMode) => void;
@@ -50,6 +63,10 @@ export const useSettingsStore = create<SettingsState>()(
       setFontSize: (fontSize) => set({ fontSize }),
       setTheme: (theme) => {
         set({ theme });
+        const resolved = resolveWorkbenchTheme(theme);
+        if (useWorkbenchStore.getState().workbenchTheme !== resolved) {
+          useWorkbenchStore.getState().setWorkbenchTheme(resolved);
+        }
         const mapped = theme === 'system' ? 'auto' : theme;
         if (useDeviceStore.getState().colorScheme !== mapped) {
           useDeviceStore.getState().setColorScheme(mapped);
