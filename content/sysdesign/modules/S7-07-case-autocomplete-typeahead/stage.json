@@ -69,6 +69,52 @@
           "en": "Handles longer prefix cache misses (4+ chars) in single-digit milliseconds."
         }
       }
+    },
+    "log_aggregator": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "filter",
+      "label": {
+        "vi": "Query Log Aggregator",
+        "en": "Query Log Aggregator"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Đường ống phụ trợ thu thập nhật ký tìm kiếm và tổng hợp tần suất từ khóa theo cửa sổ thời gian.",
+          "en": "Offline pipeline aggregating raw search logs into weighted prefix frequencies."
+        },
+        "how": {
+          "vi": "Gom lô (MapReduce / Spark) và áp dụng hệ số suy giảm theo thời gian để ưu tiên xu hướng mới.",
+          "en": "Batches query counts with time-decay weighting to surface trending searches."
+        },
+        "why": {
+          "vi": "Tách hoàn toàn tải ghi thống kê ra khỏi đường đọc thời gian thực 50.000 QPS.",
+          "en": "Completely isolates heavy analytics writes from the 50,000 QPS real-time read path."
+        }
+      }
+    },
+    "trie_builder": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Offline Trie Builder",
+        "en": "Offline Trie Builder"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ dựng lại cây Trie và tính sẵn Top-5 tại mỗi nút ở hậu trường.",
+          "en": "Background worker building new Trie snapshots with precomputed Top-5 per node."
+        },
+        "how": {
+          "vi": "Dựng bản chụp (snapshot) hoàn chỉnh rồi đẩy sang các Trie Shards bằng kỹ thuật tráo đổi con trỏ nguyên tử (Atomic Swap).",
+          "en": "Builds immutable Trie images and ships them to Trie Shards for lock-free atomic swap."
+        },
+        "why": {
+          "vi": "Đảm bảo các Trie Shards phục vụ đọc 100% không bao giờ bị khóa bởi thao tác cập nhật cây.",
+          "en": "Ensures read-serving Trie Shards never suffer write locks during updates."
+        }
+      }
     }
   },
   "links": {
@@ -87,12 +133,48 @@
           "en": "Forwards cache misses (long/rare prefixes) to in-memory Trie Shards."
         }
       }
+    },
+    "trie_shards-log_aggregator": {
+      "from": "trie_shards",
+      "to": "log_aggregator",
+      "label": {
+        "vi": "Ghi Log bất đồng bộ",
+        "en": "Async Query Logs"
+      },
+      "style": "dashed"
+    },
+    "log_aggregator-trie_builder": {
+      "from": "log_aggregator",
+      "to": "trie_builder",
+      "label": {
+        "vi": "Tần suất Top-K",
+        "en": "Top-K Frequencies"
+      },
+      "style": "dashed"
+    },
+    "trie_builder-trie_shards": {
+      "from": "trie_builder",
+      "to": "trie_shards",
+      "label": {
+        "vi": "Atomic Snapshot Swap",
+        "en": "Atomic Snapshot Swap"
+      },
+      "style": "dashed"
     }
   },
   "layout": {
-    "client": { "col": 0, "row": 1 },
-    "prefix_cache": { "col": 2, "row": 1 },
-    "trie_shards": { "col": 4, "row": 1 }
+    "client": {
+      "col": 0,
+      "row": 1
+    },
+    "prefix_cache": {
+      "col": 2,
+      "row": 1
+    },
+    "trie_shards": {
+      "col": 4,
+      "row": 1
+    }
   },
   "floor": {
     "cols": 5,
@@ -104,7 +186,9 @@
   },
   "scenes": {
     "s1-overview": {
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto",
       "noteCard": {
         "title": {
@@ -113,11 +197,17 @@
         },
         "lines": [
           {
-            "text": { "vi": "Prefix Cache chặn ~90% truy vấn ngắn", "en": "Prefix Cache absorbs ~90% of reads" },
+            "text": {
+              "vi": "Prefix Cache chặn ~90% truy vấn ngắn",
+              "en": "Prefix Cache absorbs ~90% of reads"
+            },
             "tone": "good"
           },
           {
-            "text": { "vi": "Trie Shards xử lý 10% tiền tố dài", "en": "Trie Shards serve 10% long prefixes" },
+            "text": {
+              "vi": "Trie Shards xử lý 10% tiền tố dài",
+              "en": "Trie Shards serve 10% long prefixes"
+            },
             "tone": "plain"
           }
         ],
@@ -126,7 +216,9 @@
     },
     "s2-trie": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -134,25 +226,85 @@
           "en": "Trie with Precomputed Top-K per Prefix Node"
         },
         "nodes": [
-          { "id": "root", "x": 0, "y": -108, "label": "Gốc \"\" (Top-K toàn cục)", "tone": "blue" },
-          { "id": "s", "x": -130, "y": -36, "label": "\"s\" → [system, sql, search]", "tone": "yellow" },
-          { "id": "p", "x": 130, "y": -36, "label": "\"p\" → [python, payment]", "tone": "neutral" },
-          { "id": "sy", "x": -190, "y": 42, "label": "\"sy\" → [system, sysdesign]", "tone": "green" },
-          { "id": "sq", "x": -30, "y": 42, "label": "\"sq\" → [sql, sqlite]", "tone": "neutral" },
-          { "id": "sys", "x": -190, "y": 112, "label": "\"sys\" → [system design, sysctl]", "tone": "green" }
+          {
+            "id": "root",
+            "x": 0,
+            "y": -108,
+            "label": "Gốc \"\" (Top-K toàn cục)",
+            "tone": "blue"
+          },
+          {
+            "id": "s",
+            "x": -130,
+            "y": -36,
+            "label": "\"s\" → [system, sql, search]",
+            "tone": "yellow"
+          },
+          {
+            "id": "p",
+            "x": 130,
+            "y": -36,
+            "label": "\"p\" → [python, payment]",
+            "tone": "neutral"
+          },
+          {
+            "id": "sy",
+            "x": -190,
+            "y": 42,
+            "label": "\"sy\" → [system, sysdesign]",
+            "tone": "green"
+          },
+          {
+            "id": "sq",
+            "x": -30,
+            "y": 42,
+            "label": "\"sq\" → [sql, sqlite]",
+            "tone": "neutral"
+          },
+          {
+            "id": "sys",
+            "x": -190,
+            "y": 112,
+            "label": "\"sys\" → [system design, sysctl]",
+            "tone": "green"
+          }
         ],
         "edges": [
-          { "from": "root", "to": "s", "label": "s" },
-          { "from": "root", "to": "p", "label": "p", "style": "dashed" },
-          { "from": "s", "to": "sy", "label": "y" },
-          { "from": "s", "to": "sq", "label": "q", "style": "dashed" },
-          { "from": "sy", "to": "sys", "label": "s (O(3))" }
+          {
+            "from": "root",
+            "to": "s",
+            "label": "s"
+          },
+          {
+            "from": "root",
+            "to": "p",
+            "label": "p",
+            "style": "dashed"
+          },
+          {
+            "from": "s",
+            "to": "sy",
+            "label": "y"
+          },
+          {
+            "from": "s",
+            "to": "sq",
+            "label": "q",
+            "style": "dashed"
+          },
+          {
+            "from": "sy",
+            "to": "sys",
+            "label": "s (O(3))"
+          }
         ]
       }
     },
     "s3-offline": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -160,37 +312,101 @@
           "en": "Offline Ranking & Async Trie Rebuild Pipeline"
         },
         "nodes": [
-          { "id": "logs", "x": 0, "y": -108, "label": "1. Nhật ký tìm kiếm (Search Logs)", "tone": "blue" },
-          { "id": "agg", "x": 0, "y": -36, "label": "2. Tổng hợp tần suất (MapReduce / Spark)", "tone": "yellow" },
-          { "id": "build", "x": -110, "y": 42, "label": "3. Dựng cây Trie mới (Worker nền)", "tone": "green" },
-          { "id": "live_lock", "x": 135, "y": 42, "label": "Ghi trực tiếp khi gõ phím", "tone": "orange", "pruned": true },
-          { "id": "swap", "x": -110, "y": 112, "label": "4. Đổi ảnh chụp (Atomic Swap) lên Shards", "tone": "green" }
+          {
+            "id": "logs",
+            "x": 0,
+            "y": -108,
+            "label": "1. Nhật ký tìm kiếm (Search Logs)",
+            "tone": "blue"
+          },
+          {
+            "id": "agg",
+            "x": 0,
+            "y": -36,
+            "label": "2. Tổng hợp tần suất (MapReduce / Spark)",
+            "tone": "yellow"
+          },
+          {
+            "id": "build",
+            "x": -110,
+            "y": 42,
+            "label": "3. Dựng cây Trie mới (Worker nền)",
+            "tone": "green"
+          },
+          {
+            "id": "live_lock",
+            "x": 135,
+            "y": 42,
+            "label": "Ghi trực tiếp khi gõ phím",
+            "tone": "orange",
+            "pruned": true
+          },
+          {
+            "id": "swap",
+            "x": -110,
+            "y": 112,
+            "label": "4. Đổi ảnh chụp (Atomic Swap) lên Shards",
+            "tone": "green"
+          }
         ],
         "edges": [
-          { "from": "logs", "to": "agg", "label": "Theo giờ / ngày" },
-          { "from": "agg", "to": "build", "label": "Top-K mới" },
-          { "from": "agg", "to": "live_lock", "style": "dashed", "label": "Tránh khoá ghi" },
-          { "from": "build", "to": "swap", "label": "Không gián đoạn đọc" }
+          {
+            "from": "logs",
+            "to": "agg",
+            "label": "Theo giờ / ngày"
+          },
+          {
+            "from": "agg",
+            "to": "build",
+            "label": "Top-K mới"
+          },
+          {
+            "from": "agg",
+            "to": "live_lock",
+            "style": "dashed",
+            "label": "Tránh khoá ghi"
+          },
+          {
+            "from": "build",
+            "to": "swap",
+            "label": "Không gián đoạn đọc"
+          }
         ]
       }
     },
     "s4-cache": {
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "state": {
         "prefix_cache": {
           "loadPct": 50,
           "highlighted": true,
-          "badge": { "text": { "vi": "Hit ≈ 90%", "en": "Hit ≈ 90%" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Hit ≈ 90%",
+              "en": "Hit ≈ 90%"
+            },
+            "tone": "ok"
+          }
         },
         "trie_shards": {
           "loadPct": 57,
-          "badge": { "text": { "vi": "10% Miss", "en": "10% Miss" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "10% Miss",
+              "en": "10% Miss"
+            },
+            "tone": "ok"
+          }
         }
       },
       "packets": "auto"
     },
     "s5-live": {
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto",
       "noteCard": {
         "title": {
@@ -199,11 +415,17 @@
         },
         "lines": [
           {
-            "text": { "vi": "Cache nhỏ (8.000 key) đẩy Miss sang Shards", "en": "Small cache (8k keys) floods Shards" },
+            "text": {
+              "vi": "Cache nhỏ (8.000 key) đẩy Miss sang Shards",
+              "en": "Small cache (8k keys) floods Shards"
+            },
             "tone": "bad"
           },
           {
-            "text": { "vi": "Mở rộng Cache giữ p99 < 80 ms", "en": "Expand Cache to keep p99 < 80 ms" },
+            "text": {
+              "vi": "Mở rộng Cache giữ p99 < 80 ms",
+              "en": "Expand Cache to keep p99 < 80 ms"
+            },
             "tone": "good"
           }
         ],
@@ -211,26 +433,144 @@
       }
     },
     "s6-pitfall": {
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "state": {
         "prefix_cache": {
           "loadPct": 45,
-          "badge": { "text": { "vi": "Cache thiếu chỗ", "en": "Undersized" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Cache thiếu chỗ",
+              "en": "Undersized"
+            },
+            "tone": "warn"
+          }
         },
         "trie_shards": {
           "loadPct": 100,
           "highlighted": true,
-          "badge": { "text": { "vi": "Quá tải Miss", "en": "Miss overload" }, "tone": "bad" }
+          "badge": {
+            "text": {
+              "vi": "Quá tải Miss",
+              "en": "Miss overload"
+            },
+            "tone": "bad"
+          }
         }
       },
       "linkState": {
-        "prefix_cache-trie_shards": { "style": "danger" }
+        "prefix_cache-trie_shards": {
+          "style": "danger"
+        }
       },
       "packets": "auto"
     },
     "s7-recap": {
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": [
+          "client",
+          "prefix_cache",
+          "trie_shards",
+          "log_aggregator",
+          "trie_builder"
+        ],
+        "links": [
+          "client-prefix_cache",
+          "prefix_cache-trie_shards",
+          "trie_shards-log_aggregator",
+          "log_aggregator-trie_builder",
+          "trie_builder-trie_shards"
+        ]
+      },
       "packets": "auto"
+    },
+    "s6-client-debounce": {
+      "show": {
+        "nodes": [
+          "client",
+          "prefix_cache",
+          "trie_shards",
+          "log_aggregator",
+          "trie_builder"
+        ],
+        "links": [
+          "client-prefix_cache",
+          "prefix_cache-trie_shards",
+          "trie_shards-log_aggregator",
+          "log_aggregator-trie_builder",
+          "trie_builder-trie_shards"
+        ]
+      },
+      "state": {
+        "client": {
+          "loadPct": 25,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Debounce 150ms (−70% QPS)",
+              "en": "Debounce 150ms (−70% QPS)"
+            },
+            "tone": "ok"
+          }
+        },
+        "prefix_cache": {
+          "loadPct": 30,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "90% Hit (1–3 ký tự)",
+              "en": "90% Hit (1–3 chars)"
+            },
+            "tone": "ok"
+          }
+        },
+        "trie_shards": {
+          "loadPct": 28,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Shard a–g · h–p · q–z",
+              "en": "Shards a–g · h–p · q–z"
+            },
+            "tone": "ok"
+          }
+        },
+        "trie_builder": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Atomic Swap không khóa",
+              "en": "Lock-free Atomic Swap"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tối ưu toàn diện Đường Đọc & Đường Dựng Trie",
+          "en": "End-to-End Read & Offline Build Pipeline"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Client Debounce 150 ms cắt 70% request gõ phím trung gian",
+              "en": "Client 150 ms debounce cuts 70% intermediate keystroke requests"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Phân mảnh Trie theo chữ cái + Dựng lại ngoại tuyến không khóa đọc",
+              "en": "Prefix-sharded Trie + lock-free offline snapshot rebuild"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
     }
   },
   "live": {
@@ -242,37 +582,67 @@
       "controls": {
         "timeline": true,
         "load": true,
-        "chaos": ["slow", "kill"],
+        "chaos": [
+          "slow",
+          "kill"
+        ],
         "knobs": [
-          { "node": "prefix_cache", "key": "capacityKeys" },
-          { "node": "trie_shards", "key": "replicas" }
+          {
+            "node": "prefix_cache",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "trie_shards",
+            "key": "replicas"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
         {
           "metric": "offeredRps",
-          "label": { "vi": "Lưu lượng", "en": "Offered Load" },
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
           "format": "rps"
         },
         {
           "metric": "p99",
-          "label": { "vi": "p99", "en": "p99" },
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
           "format": "ms",
-          "tone": { "warnAbove": 50, "badAbove": 80 }
+          "tone": {
+            "warnAbove": 50,
+            "badAbove": 80
+          }
         },
         {
           "metric": "errorRate",
-          "label": { "vi": "Lỗi", "en": "Errors" },
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
           "format": "pct",
-          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
         }
       ],
       "slo": [
-        { "metric": "p99", "value": 80 }
+        {
+          "metric": "p99",
+          "value": 80
+        }
       ],
       "focus": {
-        "nodes": ["prefix_cache", "trie_shards"]
+        "nodes": [
+          "prefix_cache",
+          "trie_shards"
+        ]
       }
     }
   }

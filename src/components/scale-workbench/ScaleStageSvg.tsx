@@ -160,20 +160,52 @@ function normalizeShape(shape: LegacyNodeShape): IsoNodeShape {
 
 function splitShortLines(raw: string): string[] {
   const clean = raw.trim();
-  if (clean.length <= 13) return [clean];
+  if (clean.length <= 15) return [clean];
   const words = clean.split(/\s+/);
   if (words.length === 1) {
-    return [clean.slice(0, 14)];
+    return [clean.slice(0, 16)];
   }
   let line1 = words[0];
   let idx = 1;
-  while (idx < words.length && (line1 + ' ' + words[idx]).length <= 12) {
+  while (idx < words.length && (line1 + ' ' + words[idx]).length <= 14) {
     line1 += ' ' + words[idx];
     idx++;
   }
   const rest = words.slice(idx).join(' ');
   if (!rest) return [line1];
-  return [line1, rest.length > 14 ? `${rest.slice(0, 13)}…` : rest];
+  return [line1, rest.length > 16 ? `${rest.slice(0, 15)}…` : rest];
+}
+
+function wrapNoteLines<T extends { text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>(
+  lines: T[],
+  maxChars = 48
+): T[] {
+  const out: T[] = [];
+  for (const ln of lines) {
+    const clean = ln.text.trim();
+    if (clean.length <= maxChars) {
+      out.push({ ...ln, text: clean });
+      continue;
+    }
+    const words = clean.split(/\s+/);
+    let line1 = '';
+    let idx = 0;
+    while (idx < words.length && (line1 ? `${line1} ${words[idx]}` : words[idx]).length <= maxChars) {
+      line1 = line1 ? `${line1} ${words[idx]}` : words[idx];
+      idx++;
+    }
+    if (!line1) {
+      line1 = clean.slice(0, maxChars);
+      const rest = clean.slice(maxChars).trim();
+      out.push({ ...ln, text: line1 });
+      if (rest) out.push({ ...ln, text: rest });
+    } else {
+      out.push({ ...ln, text: line1 });
+      const rest = words.slice(idx).join(' ').trim();
+      if (rest) out.push({ ...ln, text: rest });
+    }
+  }
+  return out;
 }
 
 function getGroundOffset(shape: LegacyNodeShape): number {
@@ -301,7 +333,7 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const cx = (Math.min(...gxs) + Math.max(...gxs)) / 2;
     const cy = (Math.min(...gys) + Math.max(...gys)) / 2;
     const spread = spanX >= 360 || spanY >= 150 ? 1.04 : 1.16;
-    return nodes.map((nd) => {
+    const out = nodes.map((nd) => {
       const gOff = getGroundOffset(nd.shape);
       const gx = cx + (nd.x - cx) * spread;
       const gy = cy + (nd.y + gOff - cy) * spread;
@@ -311,6 +343,40 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
         y: Math.round(gy - gOff),
       };
     });
+    // Hậu kiểm tách va chạm (de-collision) trên mặt phẳng isometric để mọi khối + pill không bao giờ đè nhau
+    const minRx = 124;
+    const minRy = 84;
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false;
+      for (let i = 0; i < out.length; i++) {
+        for (let j = i + 1; j < out.length; j++) {
+          const a = out[i];
+          const b = out[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          if (Math.abs(dx) >= minRx || Math.abs(dy) >= minRy) continue;
+          const norm = Math.hypot(dx / minRx, dy / minRy);
+          if (norm >= 1) continue;
+          moved = true;
+          if (norm < 1e-3) {
+            a.x -= 64;
+            a.y -= 32;
+            b.x += 64;
+            b.y += 32;
+          } else {
+            const scale = (1 - norm) * 0.55;
+            const pushX = Math.round((dx === 0 ? 48 : (dx / norm) * scale));
+            const pushY = Math.round((dy === 0 ? 32 : (dy / norm) * scale));
+            a.x -= pushX;
+            a.y -= pushY;
+            b.x += pushX;
+            b.y += pushY;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+    return out;
   }
 
   const placeAtGround = (nd: StageNode, gx: number, gy: number): StageNode => ({
@@ -376,11 +442,32 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const [n0, n1, n2, n3] = sorted;
     const map = new Map<string, StageNode>();
 
-    if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0) {
+    // 1. Fan-out từ n0 ra 3 nhánh lá (n1, n2, n3)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0 && (inDeg.get(n3.id) ?? 0) <= 1) {
       map.set(n0.id, placeAtGround(n0, -180, 56));
       map.set(n1.id, placeAtGround(n1, 16, -96));
       map.set(n2.id, placeAtGround(n2, 108, -50));
       map.set(n3.id, placeAtGround(n3, 200, -4));
+      return nodes.map((nd) => map.get(nd.id) ?? nd);
+    }
+
+    // 2. Đồ thị hình thoi 4 đỉnh (Diamond DAG: n0 -> {n1, n2} -> n3, ví dụ S3-07 client -> {app1, app2} -> seat_db)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && (inDeg.get(n3.id) ?? 0) >= 2) {
+      map.set(n0.id, placeAtGround(n0, -200, 50));
+      map.set(n1.id, placeAtGround(n1, -36, -68));
+      map.set(n2.id, placeAtGround(n2, 24, 68));
+      map.set(n3.id, placeAtGround(n3, 196, -24));
+      return nodes.map((nd) => map.get(nd.id) ?? nd);
+    }
+
+    // 3. Đồ thị có 1 nhánh phụ lá xuất phát từ n0 và 1 trục chính đi tiếp (ví dụ S1-06: client -> dns [lá], client -> web -> db)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && ((outDeg.get(n1.id) ?? 0) === 0 || (outDeg.get(n2.id) ?? 0) === 0)) {
+      const leafNode = (outDeg.get(n1.id) ?? 0) === 0 ? n1 : n2;
+      const midNode = leafNode.id === n1.id ? n2 : n1;
+      map.set(n0.id, placeAtGround(n0, -196, 56));
+      map.set(leafNode.id, placeAtGround(leafNode, -64, -76));
+      map.set(midNode.id, placeAtGround(midNode, 16, 28));
+      map.set(n3.id, placeAtGround(n3, 188, -58));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
@@ -535,26 +622,65 @@ function buildIsoLink(
 
   let waypoints: Pt[];
 
+  const scoreElbow = (eb: Pt): number => {
+    let penalty = 0;
+    for (const other of allNodes) {
+      if (other.id === from.id || other.id === to.id) continue;
+      const oc = getGroundCenter(other);
+      const d1 = distPointToSeg(oc, c0, eb);
+      const d2 = distPointToSeg(oc, eb, c1);
+      const minD = Math.min(d1, d2);
+      if (minD < 82) {
+        penalty += (82 - minD) * 10;
+      }
+    }
+    return penalty;
+  };
+
+  const scoreStraight = (): number => {
+    let penalty = 0;
+    for (const other of allNodes) {
+      if (other.id === from.id || other.id === to.id) continue;
+      const oc = getGroundCenter(other);
+      const d = distPointToSeg(oc, c0, c1);
+      if (d < 64) {
+        penalty += (64 - d) * 14;
+      }
+    }
+    return penalty;
+  };
+
   if (lenA < 10 || lenB < 10) {
-    waypoints = [c0, c1];
+    if (scoreStraight() === 0) {
+      waypoints = [c0, c1];
+    } else {
+      // Nếu đường thẳng đâm xuyên qua một node trung gian nằm cùng trục (ví dụ S5-03 hoặc S2-12),
+      // tự động bẻ vòng qua bên sườn có ít vật cản nhất!
+      const midX = (c0.x + c1.x) / 2;
+      const midY = (c0.y + c1.y) / 2;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const detours: Pt[] = [
+        { x: midX + nx * 92, y: midY + ny * 92 },
+        { x: midX - nx * 92, y: midY - ny * 92 },
+        { x: midX + nx * 128, y: midY + ny * 128 },
+        { x: midX - nx * 128, y: midY - ny * 128 },
+      ];
+      let bestDetour = detours[0];
+      let bestPen = Infinity;
+      for (const dt of detours) {
+        const p = scoreElbow(dt);
+        if (p < bestPen) {
+          bestPen = p;
+          bestDetour = dt;
+        }
+      }
+      waypoints = [c0, bestDetour, c1];
+    }
   } else {
     const elbowSE: Pt = { x: c0.x + 2 * a, y: c0.y + a };
     const elbowNE: Pt = { x: c0.x + 2 * b, y: c0.y - b };
-
-    const scoreElbow = (eb: Pt): number => {
-      let penalty = 0;
-      for (const other of allNodes) {
-        if (other.id === from.id || other.id === to.id) continue;
-        const oc = getGroundCenter(other);
-        const d1 = distPointToSeg(oc, c0, eb);
-        const d2 = distPointToSeg(oc, eb, c1);
-        const minD = Math.min(d1, d2);
-        if (minD < 82) {
-          penalty += (82 - minD) * 10;
-        }
-      }
-      return penalty;
-    };
 
     const penSE = scoreElbow(elbowSE);
     const penNE = scoreElbow(elbowNE);
@@ -574,7 +700,42 @@ function buildIsoLink(
       useNE = dy < -28;
     }
 
-    waypoints = [c0, useNE ? elbowNE : elbowSE, c1];
+    let chosenElbow = useNE ? elbowNE : elbowSE;
+    const chosenPen = useNE ? penNE : penSE;
+    // Nếu cả 2 góc L-bend đều cắt gần tâm một node khác (ví dụ lưới 3x3 ở S2-06 hoặc Active/Standby ở S2-01),
+    // thử đường thẳng hoặc điểm vòng lệch sườn có penalty nhỏ nhất
+    if (chosenPen > 260) {
+      const straightPen = scoreStraight();
+      if (straightPen === 0) {
+        waypoints = [c0, c1];
+      } else {
+        const midX = (c0.x + c1.x) / 2;
+        const midY = (c0.y + c1.y) / 2;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const candidates: Pt[] = [
+          chosenElbow,
+          { x: midX + nx * 88, y: midY + ny * 88 },
+          { x: midX - nx * 88, y: midY - ny * 88 },
+          { x: midX + nx * 124, y: midY + ny * 124 },
+          { x: midX - nx * 124, y: midY - ny * 124 },
+        ];
+        let bestCand = chosenElbow;
+        let bestP = chosenPen;
+        for (const c of candidates) {
+          const p = scoreElbow(c);
+          if (p < bestP) {
+            bestP = p;
+            bestCand = c;
+          }
+        }
+        chosenElbow = bestCand;
+        waypoints = [c0, chosenElbow, c1];
+      }
+    } else {
+      waypoints = [c0, chosenElbow, c1];
+    }
   }
 
   const firstNext = waypoints[1];
@@ -1146,7 +1307,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const nodeOuterRefs = useRef<Map<string, SVGGElement>>(new Map());
   const nodeLiftRefs = useRef<Map<string, SVGGElement>>(new Map());
   const nodeShadowRefs = useRef<Map<string, SVGElement>>(new Map());
-  const spotRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const spotRefs = useRef<Map<string, SVGGElement>>(new Map());
   const exitNodeRefs = useRef<Map<string, SVGGElement>>(new Map());
   const linkGroupRefs = useRef<Map<string, SVGGElement>>(new Map());
   const linkHitRefs = useRef<Map<string, SVGPathElement>>(new Map());
@@ -1155,7 +1316,8 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
   const staticQueueRefs = useRef<Map<string, SVGGElement>>(new Map());
   const zoneRefs = useRef<Map<string, SVGGElement>>(new Map());
-  const noteCardRef = useRef<SVGGElement | null>(null);
+  const noteCardRef = useRef<HTMLDivElement | null>(null);
+  const [noteCardCollapsed, setNoteCardCollapsed] = useState(false);
 
   const prevSnapshotRef = useRef<{
     nodes: Map<string, StageNode>;
@@ -1503,10 +1665,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       (scene.noteCard.lines.length > 0 || scene.noteCard.chart)
     ) {
       const titleStr = pickText(scene.noteCard.title, lang);
-      const lines = scene.noteCard.lines.map((ln) => ({
+      const rawLines = scene.noteCard.lines.map((ln) => ({
         text: pickText(ln.text, lang),
         tone: (ln.tone ?? 'plain') as 'plain' | 'muted' | 'good' | 'bad' | 'amber',
       }));
+      const lines = wrapNoteLines(rawLines, 48);
       const chart = scene.noteCard.chart
         ? {
             utilPct: Math.max(2, Math.min(100, scene.noteCard.chart.utilPct)),
@@ -1527,12 +1690,12 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         ...lines.map(
           (ln) =>
             ln.text.length +
-            (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 3 : 0)
+            (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 2 : 0)
         )
       );
       const cardW = Math.max(
         chart ? 208 : 182,
-        Math.min(244, Math.round(maxChars * 5.75 + 26))
+        Math.min(340, Math.round(maxChars * 5.85 + 30))
       );
       const chartBlockH = chart ? 70 : 0;
       const cardH = Math.round(30 + chartBlockH + lines.length * 18.5 + 8);
@@ -1589,18 +1752,14 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
 
       resolvedNote = {
-        x: Math.round(best.x),
-        y: Math.round(best.y),
+        x: 0,
+        y: 0,
         w: cardW,
         h: cardH,
         title: titleStr,
         lines,
         chart,
       };
-      minX = Math.min(minX, resolvedNote.x - 8);
-      maxX = Math.max(maxX, resolvedNote.x + cardW + 8);
-      minY = Math.min(minY, resolvedNote.y - 8);
-      maxY = Math.max(maxY, resolvedNote.y + cardH + 8);
     }
 
     const padX = 28;
@@ -1682,11 +1841,14 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    setStageWidth(el.getBoundingClientRect().width || window.innerWidth);
+    const bucketWidth = (rawW: number): number =>
+      rawW < 420 ? 360 : rawW < 560 ? 480 : rawW < 640 ? 600 : 1024;
+    setStageWidth(bucketWidth(el.getBoundingClientRect().width || window.innerWidth));
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (typeof w === 'number' && w > 0) {
-        setStageWidth(w);
+        const nextBucket = bucketWidth(w);
+        setStageWidth((prev) => (prev === nextBucket ? prev : nextBucket));
       }
     });
     ro.observe(el);
@@ -2001,8 +2163,37 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           shadowEl.setAttribute('opacity', (baseShadowOp * heightFactor).toFixed(3));
         }
         if (spotEl) {
-          const settleProgress = clamp01((elapsed - (plan.delay + plan.dur * 0.72)) / 360);
-          spotEl.setAttribute('opacity', settleProgress.toFixed(3));
+          const gOff = getGroundOffset(n.shape);
+          const gx = curX;
+          const gy = curY + gOff;
+          if (n.dead) {
+            const settleProgress = clamp01((elapsed - (plan.delay + plan.dur * 0.72)) / 360);
+            spotEl.setAttribute('transform', `translate(${gx.toFixed(1)}, ${gy.toFixed(1)})`);
+            spotEl.setAttribute('opacity', settleProgress.toFixed(3));
+          } else if (plan.kind === 'enter') {
+            // Quầng sáng xanh lá dưới chân khối toả rộng ra xung quanh rồi tan dần ngay khi khối rơi chạm sàn
+            const waveStart = plan.delay + plan.dur * 0.52;
+            const waveDur = 760;
+            const wt = (elapsed - waveStart) / waveDur;
+            if (wt <= 0 || wt >= 1) {
+              spotEl.setAttribute('opacity', '0');
+            } else {
+              const easeW = easeOutCubic(wt);
+              const scale = 0.58 + 0.94 * easeW;
+              const fade =
+                wt < 0.22
+                  ? wt / 0.22
+                  : Math.pow(Math.max(0, 1 - (wt - 0.22) / 0.78), 1.55);
+              const peakOp = isDark ? 0.92 : 0.86;
+              spotEl.setAttribute(
+                'transform',
+                `translate(${gx.toFixed(1)}, ${gy.toFixed(1)}) scale(${scale.toFixed(3)})`
+              );
+              spotEl.setAttribute('opacity', (fade * peakOp).toFixed(3));
+            }
+          } else {
+            spotEl.setAttribute('opacity', '0');
+          }
         }
       }
 
@@ -2017,12 +2208,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       if (noteCardRef.current && noteCardLayout) {
         const noteDelay = baseEnterDelay + Math.min(260, enteringSorted.length * 75) + 180;
         const nt = easeOutCubic((elapsed - noteDelay) / 480);
-        const ny = noteCardLayout.y + (1 - nt) * 10;
-        noteCardRef.current.setAttribute(
-          'transform',
-          `translate(${noteCardLayout.x.toFixed(1)}, ${ny.toFixed(1)})`
-        );
-        noteCardRef.current.setAttribute('opacity', nt.toFixed(3));
+        const ny = (1 - nt) * 8;
+        noteCardRef.current.style.transform = `translateY(${ny.toFixed(1)}px)`;
+        noteCardRef.current.style.opacity = nt.toFixed(3);
       }
 
       // E. Animate links (draw AFTER both blocks land, or stretch live during morph!)
@@ -2097,22 +2285,29 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         }
       }
 
-      // F. Flow traffic packets & in-line queue dots ONLY on links whose draw animation has completed!
+      // F. Flow traffic packets & in-line FIFO queue dots ONLY on links whose draw animation has completed!
       if (isPlayingRef.current && scene.packets.length > 0) {
         packetElapsedRef.current += dt;
       }
       const sec = packetElapsedRef.current;
 
-      const linkQueueStopPx = new Map<string, number>();
+      const queueMetaByLink = new Map<
+        string,
+        { queueCount: number; hasDrop: boolean; fwdPktIds: string[] }
+      >();
       if (!frameSource) {
         for (const bl of builtLinks) {
           const qEl = staticQueueRefs.current.get(bl.link.id);
           const lPlan = linkPlans.get(bl.link.id);
           if (bl.queueCount > 0) {
-            linkQueueStopPx.set(
-              bl.link.id,
-              (bl.hasDrop ? 23 : 12) + bl.queueCount * 10.5
-            );
+            const fwdPktIds = scene.packets
+              .filter((p) => p.linkId === bl.link.id && !p.reverse)
+              .map((p) => p.id);
+            queueMetaByLink.set(bl.link.id, {
+              queueCount: bl.queueCount,
+              hasDrop: bl.hasDrop,
+              fwdPktIds,
+            });
           }
           if (qEl && lPlan) {
             const fade = elapsed < lPlan.readyAt ? 0 : clamp01((elapsed - lPlan.readyAt) / 260);
@@ -2120,6 +2315,351 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           }
         }
       }
+
+      const activeQueueShiftByLink = new Map<string, number>();
+
+      const stepStaticPacketDom = (
+        pkt: StageScene['packets'][number],
+        gEl: SVGGElement,
+        pEl: SVGPathElement,
+        totalLen: number,
+        qMeta: { queueCount: number; hasDrop: boolean; fwdPktIds: string[] } | undefined,
+        secNow: number,
+        fadeInAfterLink: number
+      ) => {
+        const bodyEl = gEl.children[0] as SVGGElement | undefined;
+        const fxOkEl = gEl.children[1] as SVGGElement | undefined;
+        const fxFailEl = gEl.children[2] as SVGGElement | undefined;
+        const holdRingEl = bodyEl?.children[0] as SVGCircleElement | undefined;
+        const shapeEl = bodyEl?.children[1] as SVGElement | undefined;
+        const baseFill = shapeEl?.getAttribute('data-base-fill') ?? '#f3b47f';
+        const baseStrokeW = shapeEl?.getAttribute('data-base-sw') ?? '1.5';
+
+        // ── Nhánh 1: Đường nối có Hàng đợi FIFO trước node bận/nghẽn (qCount > 0) ──
+        // Hạt mới chạy tới đuôi hàng đợi sẽ đẩy vào vị trí cuối hàng (dTailSlot),
+        // làm toàn bộ các hạt đang chờ trong hàng đợi dồn lên 1 nấc (qi -> qi - 1),
+        // còn hạt cũ nhất ở đầu hàng (qi = 0) chui vào trong DB/Server để xử lý rồi mới trả Response xanh lá về!
+        if (qMeta && qMeta.queueCount > 0 && !pkt.reverse) {
+          const qCount = qMeta.queueCount;
+          const slotGap = 10.5;
+          const headDistFromEnd = qMeta.hasDrop ? 21 : 11;
+          const dStart = totalLen > 32 ? 6 : 0;
+          const dDoor = Math.max(dStart + 22, totalLen - headDistFromEnd);
+          const dTailSlot = Math.max(dStart + 14, dDoor - (qCount - 1) * slotGap);
+          const dEntryBehindTail = Math.max(dStart + 10, dDoor - qCount * slotGap);
+
+          // Đồng bộ chu kỳ tất cả hạt đi xuôi trên cùng sợi dây có hàng đợi để nhịp dồn hàng 1-1 không bao giờ chồng nhau
+          const fwdIdx = Math.max(0, qMeta.fwdPktIds.indexOf(pkt.id));
+          const fwdTotal = Math.max(1, qMeta.fwdPktIds.length);
+          const approachLen = Math.max(18, dTailSlot - dStart);
+          const conveyorFwdSec = Math.max(0.85, approachLen / 92);
+          const conveyorHoldSec = 0.06;
+          const fxKind = pkt.arrivalFx ?? 'ok';
+          const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+          const returnLen = Math.max(18, dDoor - dStart);
+          const conveyorRetSec = hasBounce ? Math.max(0.52, returnLen / 138) : 0;
+          const fxDurSec = fxKind === 'fail' ? 0.58 : fxKind === 'ok' ? 0.44 : 0.16;
+          const cycleSec =
+            conveyorFwdSec + conveyorHoldSec + conveyorRetSec + fxDurSec;
+
+          const slotOffsetSec = (fwdIdx / fwdTotal) * cycleSec;
+          const localT =
+            (((secNow + slotOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+          if (localT < conveyorFwdSec) {
+            const u = localT / conveyorFwdSec;
+            let dist: number;
+            let pushingTailS = 0;
+            if (u < 0.68) {
+              const uApp = u / 0.68;
+              dist = dStart + uApp * (dEntryBehindTail - dStart);
+            } else {
+              const rawS = clamp01((u - 0.68) / 0.32);
+              pushingTailS =
+                rawS < 0.5
+                  ? 4 * rawS * rawS * rawS
+                  : 1 - Math.pow(-2 * rawS + 2, 3) / 2;
+              dist =
+                dEntryBehindTail + pushingTailS * (dTailSlot - dEntryBehindTail);
+              const prevMax = activeQueueShiftByLink.get(pkt.linkId) ?? 0;
+              if (pushingTailS > prevMax) {
+                activeQueueShiftByLink.set(pkt.linkId, pushingTailS);
+              }
+            }
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.07 ? u / 0.07 : 1;
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              // Khi hạt mới chạm vào đuôi hàng đợi, chuyển dần sang màu vàng hàng đợi (#efb041) để khớp 100% với ô cuối hàng
+              shapeEl.setAttribute(
+                'fill',
+                pushingTailS > 0.45 ? '#efb041' : baseFill
+              );
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else if (localT < conveyorFwdSec + conveyorHoldSec) {
+            // Hạt mới đã nhập vào vị trí cuối hàng đợi (được vẽ bởi circle N-1 của hàng đợi), còn hạt đầu hàng vừa chui vào DB/Server
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (
+            hasBounce &&
+            localT < conveyorFwdSec + conveyorHoldSec + conveyorRetSec
+          ) {
+            // Sau khi hạt đầu hàng (qi = 0) được DB/Server xử lý xong, kết quả Response xanh lá (#9fd28f) đi từ cửa DB/Server (dDoor) về lại nguồn!
+            const uBack =
+              (localT - conveyorFwdSec - conveyorHoldSec) / conveyorRetSec;
+            const dist = dDoor - uBack * (dDoor - dStart);
+            const pt = pEl.getPointAtLength(dist);
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', '#9fd28f');
+              shapeEl.setAttribute('stroke-width', '1.5');
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - conveyorFwdSec - conveyorHoldSec - conveyorRetSec) /
+                Math.max(0.05, fxDurSec)
+            );
+            const burstDist = hasBounce ? dStart : Math.min(totalLen - 4, dDoor + 6);
+            const pt = pEl.getPointAtLength(burstDist);
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'fail') {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) {
+                const scale = 0.72 + fxT * 1.48;
+                const op =
+                  fxT < 0.18
+                    ? fxT / 0.18
+                    : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+                fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxFailEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else if (fxKind === 'ok') {
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+              if (fxOkEl) {
+                const scale = 0.8 + fxT * 1.32;
+                const op = Math.pow(1 - fxT, 1.15) * 0.9;
+                fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxOkEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            }
+          }
+          return;
+        }
+
+        // ── Nhánh 2: Đường nối không có hàng đợi xếp hàng (qCount === 0) ──
+        const dStart = totalLen > 32 ? 6 : 0;
+        const dEnd = totalLen > 32 ? Math.max(dStart + 14, totalLen - 10) : totalLen;
+        const spanLen = Math.max(12, dEnd - dStart);
+
+        const basePxPerSec = 152;
+        const variantMult =
+          pkt.variant === 'slow'
+            ? 0.34
+            : pkt.variant === 'heavy'
+              ? 0.7
+              : pkt.variant === 'ping'
+                ? 0.85
+                : 1.0;
+        const spd = pkt.speed ?? 0.9;
+        const fwdSpeedPx = basePxPerSec * spd * variantMult;
+        const forwardSec = Math.max(0.42, spanLen / Math.max(24, fwdSpeedPx));
+        const holdSec = Math.max(0, pkt.holdSec ?? 0);
+        const fxKind = pkt.arrivalFx ?? 'ok';
+        const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+        const backSpeedPx =
+          basePxPerSec * Math.max(0.82, spd) * (pkt.variant === 'ping' ? 0.9 : 1.0);
+        const returnSec = hasBounce
+          ? Math.max(0.38, spanLen / Math.max(35, backSpeedPx))
+          : 0;
+        const fxDurSec =
+          fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
+        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+
+        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const localT =
+          (((secNow + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+        // Với hạt Response đi ngược (pkt.reverse === true): chờ xử lý tại đích (dEnd) suốt holdSec trước,
+        // sau đó mới xuất phát từ đích (dEnd) đi ngược về nguồn (dStart) và tỏa vòng sóng fx-ok ngay khi chạm nguồn!
+        if (pkt.reverse && !hasBounce) {
+          if (localT < holdSec) {
+            const holdElapsed = localT;
+            const pt = pEl.getPointAtLength(dEnd);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            if (holdSec >= 0.25) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5);
+              gEl.setAttribute('opacity', ((0.25 + pulse * 0.45) * fadeInAfterLink).toFixed(2));
+              if (bodyEl) bodyEl.setAttribute('opacity', '1');
+              if (shapeEl) {
+                shapeEl.setAttribute('fill', baseFill);
+                shapeEl.setAttribute('stroke-width', (1.4 + pulse * 1.2).toFixed(2));
+              }
+            } else {
+              gEl.setAttribute('opacity', '0');
+            }
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (localT < holdSec + forwardSec) {
+            const u = (localT - holdSec) / forwardSec;
+            const dist = dEnd - u * spanLen;
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.06 ? u / 0.06 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', baseFill);
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - holdSec - forwardSec) / Math.max(0.05, fxDurSec)
+            );
+            const pt = pEl.getPointAtLength(dStart);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'ok' && fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            } else if (fxOkEl) {
+              fxOkEl.setAttribute('opacity', '0');
+            }
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+          return;
+        }
+
+        if (localT < forwardSec) {
+          const u = localT / forwardSec;
+          const dist = pkt.reverse ? dEnd - u * spanLen : dStart + u * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          const edgeFade = u < 0.07 ? u / 0.07 : 1;
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            shapeEl.setAttribute('stroke-width', baseStrokeW);
+          }
+        } else if (localT < forwardSec + holdSec) {
+          const holdElapsed = localT - forwardSec;
+          const dist = pkt.reverse ? dStart : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            if (holdSec >= 0.18) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5.5);
+              shapeEl.setAttribute('stroke-width', (1.5 + pulse * 1.85).toFixed(2));
+              if (holdRingEl) {
+                holdRingEl.setAttribute('opacity', (0.22 + pulse * 0.56).toFixed(2));
+                holdRingEl.setAttribute('r', (5.6 + pulse * 2.8).toFixed(2));
+              }
+            } else {
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+              if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            }
+          }
+        } else if (hasBounce && localT < forwardSec + holdSec + returnSec) {
+          const uBack = (localT - forwardSec - holdSec) / returnSec;
+          const dist = pkt.reverse
+            ? dStart + uBack * spanLen
+            : dEnd - uBack * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', '#9fd28f');
+            shapeEl.setAttribute('stroke-width', '1.5');
+          }
+        } else {
+          const fxT = clamp01(
+            (localT - forwardSec - holdSec - returnSec) / Math.max(0.05, fxDurSec)
+          );
+          const dist = hasBounce
+            ? pkt.reverse
+              ? dEnd
+              : dStart
+            : pkt.reverse
+              ? dStart
+              : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (fxKind === 'fail') {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) {
+              const scale = 0.72 + fxT * 1.48;
+              const op =
+                fxT < 0.18
+                  ? fxT / 0.18
+                  : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+              fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxFailEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else if (fxKind === 'ok') {
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+        }
+      };
 
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
@@ -2135,18 +2675,56 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         const totalLen = measureLinkLen(pkt.linkId, pEl);
         if (totalLen <= 1) continue;
 
-        const speed = pkt.speed ?? 0.44;
-        const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const qStop = !pkt.reverse ? (linkQueueStopPx.get(pkt.linkId) ?? 0) : 0;
-        const maxFrac = qStop > 0 ? Math.max(0.24, 1 - qStop / totalLen) : 1;
-        const t = pkt.reverse ? 1 - phase : phase * maxFrac;
-        const pt = pEl.getPointAtLength(t * totalLen);
+        const qMeta = queueMetaByLink.get(pkt.linkId);
         const fadeInAfterLink = clamp01((elapsed - lPlan.readyAt) / 260);
-        const edgeFade =
-          phase < 0.08 ? phase / 0.08 : phase > 0.9 ? (1 - phase) / 0.1 : 1;
+        stepStaticPacketDom(
+          pkt,
+          gEl,
+          pEl,
+          totalLen,
+          qMeta,
+          sec,
+          fadeInAfterLink
+        );
+      }
 
-        gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-        gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+      // Cập nhật vị trí dồn hàng FIFO cho các hạt đang xếp hàng chờ trước cửa DB/Server
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          if (bl.queueCount <= 0) continue;
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          if (!qEl) continue;
+          const shiftS = activeQueueShiftByLink.get(bl.link.id) ?? 0;
+          const headDist = bl.hasDrop ? 21 : 11;
+          const slotGap = 10.5;
+          for (let qi = 0; qi < bl.queueCount; qi++) {
+            const cEl = qEl.children[qi] as SVGCircleElement | undefined;
+            if (!cEl) continue;
+            const baseDist = headDist + qi * slotGap;
+            if (qi === 0) {
+              // Hạt đứng đầu hàng (qi = 0): tiến thẳng vào cửa DB/Server để được xử lý (thu nhỏ & mờ dần khi chui vào node)
+              const consumeDist = Math.max(
+                2.5,
+                baseDist - shiftS * (bl.hasDrop ? 11.5 : 8.5)
+              );
+              const qp = samplePolylineFromEnd(bl.pts, consumeDist);
+              const rNow = 4.2 - shiftS * 2.0;
+              const opNow = 1 - Math.pow(shiftS, 1.45) * 0.92;
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', rNow.toFixed(2));
+              cEl.setAttribute('opacity', opNow.toFixed(2));
+            } else {
+              // Các hạt phía sau (qi = 1 .. N-1): đồng loạt dồn lên 1 nấc (qi -> qi - 1) mỗi khi có hạt mới đẩy vào đuôi hàng
+              const shiftedDist = baseDist - shiftS * slotGap;
+              const qp = samplePolylineFromEnd(bl.pts, shiftedDist);
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', '4.2');
+              cEl.setAttribute('opacity', '1');
+            }
+          }
+        }
       }
 
       const isTopologyUnchanged =
@@ -2155,7 +2733,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         ? 180
         : Math.max(
             TIMING.exit + TIMING.move + 120,
-            ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 360),
+            ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 680),
             ...Array.from(linkPlans.values()).map((p) => p.readyAt + 280)
           ) || 1100;
 
@@ -2203,14 +2781,26 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
       packetElapsedRef.current += dt;
       const sec = packetElapsedRef.current;
-      const qStopByLink = new Map<string, number>();
+      const queueMetaByLink = new Map<
+        string,
+        { queueCount: number; hasDrop: boolean; fwdPktIds: string[] }
+      >();
       if (!frameSource) {
         for (const bl of builtLinks) {
           if (bl.queueCount > 0) {
-            qStopByLink.set(bl.link.id, (bl.hasDrop ? 23 : 12) + bl.queueCount * 10.5);
+            const fwdPktIds = scene.packets
+              .filter((p) => p.linkId === bl.link.id && !p.reverse)
+              .map((p) => p.id);
+            queueMetaByLink.set(bl.link.id, {
+              queueCount: bl.queueCount,
+              hasDrop: bl.hasDrop,
+              fwdPktIds,
+            });
           }
         }
       }
+      const activeQueueShiftByLink = new Map<string, number>();
+
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
         const pEl = pathRefs.current.get(pkt.linkId);
@@ -2222,15 +2812,356 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           len = 0;
         }
         if (len <= 1) continue;
-        const speed = pkt.speed ?? 0.44;
-        const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const qStop = !pkt.reverse ? (qStopByLink.get(pkt.linkId) ?? 0) : 0;
-        const maxFrac = qStop > 0 ? Math.max(0.24, 1 - qStop / len) : 1;
-        const t = pkt.reverse ? 1 - phase : phase * maxFrac;
-        const pt = pEl.getPointAtLength(t * len);
-        const fade = phase < 0.08 ? phase / 0.08 : phase > 0.9 ? (1 - phase) / 0.1 : 1;
-        gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-        gEl.setAttribute('opacity', fade.toFixed(2));
+
+        const bodyEl = gEl.children[0] as SVGGElement | undefined;
+        const fxOkEl = gEl.children[1] as SVGGElement | undefined;
+        const fxFailEl = gEl.children[2] as SVGGElement | undefined;
+        const holdRingEl = bodyEl?.children[0] as SVGCircleElement | undefined;
+        const shapeEl = bodyEl?.children[1] as SVGElement | undefined;
+        const baseFill = shapeEl?.getAttribute('data-base-fill') ?? '#f3b47f';
+        const baseStrokeW = shapeEl?.getAttribute('data-base-sw') ?? '1.5';
+
+        const qMeta = queueMetaByLink.get(pkt.linkId);
+        if (qMeta && qMeta.queueCount > 0 && !pkt.reverse) {
+          const qCount = qMeta.queueCount;
+          const slotGap = 10.5;
+          const headDistFromEnd = qMeta.hasDrop ? 21 : 11;
+          const dStart = len > 32 ? 6 : 0;
+          const dDoor = Math.max(dStart + 22, len - headDistFromEnd);
+          const dTailSlot = Math.max(dStart + 14, dDoor - (qCount - 1) * slotGap);
+          const dEntryBehindTail = Math.max(dStart + 10, dDoor - qCount * slotGap);
+
+          const fwdIdx = Math.max(0, qMeta.fwdPktIds.indexOf(pkt.id));
+          const fwdTotal = Math.max(1, qMeta.fwdPktIds.length);
+          const approachLen = Math.max(18, dTailSlot - dStart);
+          const conveyorFwdSec = Math.max(0.85, approachLen / 92);
+          const conveyorHoldSec = 0.06;
+          const fxKind = pkt.arrivalFx ?? 'ok';
+          const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+          const returnLen = Math.max(18, dDoor - dStart);
+          const conveyorRetSec = hasBounce ? Math.max(0.52, returnLen / 138) : 0;
+          const fxDurSec = fxKind === 'fail' ? 0.58 : fxKind === 'ok' ? 0.44 : 0.16;
+          const cycleSec =
+            conveyorFwdSec + conveyorHoldSec + conveyorRetSec + fxDurSec;
+
+          const slotOffsetSec = (fwdIdx / fwdTotal) * cycleSec;
+          const localT =
+            (((sec + slotOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+          if (localT < conveyorFwdSec) {
+            const u = localT / conveyorFwdSec;
+            let dist: number;
+            let pushingTailS = 0;
+            if (u < 0.68) {
+              const uApp = u / 0.68;
+              dist = dStart + uApp * (dEntryBehindTail - dStart);
+            } else {
+              const rawS = clamp01((u - 0.68) / 0.32);
+              pushingTailS =
+                rawS < 0.5
+                  ? 4 * rawS * rawS * rawS
+                  : 1 - Math.pow(-2 * rawS + 2, 3) / 2;
+              dist =
+                dEntryBehindTail + pushingTailS * (dTailSlot - dEntryBehindTail);
+              const prevMax = activeQueueShiftByLink.get(pkt.linkId) ?? 0;
+              if (pushingTailS > prevMax) {
+                activeQueueShiftByLink.set(pkt.linkId, pushingTailS);
+              }
+            }
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.07 ? u / 0.07 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', edgeFade.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute(
+                'fill',
+                pushingTailS > 0.45 ? '#efb041' : baseFill
+              );
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else if (localT < conveyorFwdSec + conveyorHoldSec) {
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (
+            hasBounce &&
+            localT < conveyorFwdSec + conveyorHoldSec + conveyorRetSec
+          ) {
+            const uBack =
+              (localT - conveyorFwdSec - conveyorHoldSec) / conveyorRetSec;
+            const dist = dDoor - uBack * (dDoor - dStart);
+            const pt = pEl.getPointAtLength(dist);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', '#9fd28f');
+              shapeEl.setAttribute('stroke-width', '1.5');
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - conveyorFwdSec - conveyorHoldSec - conveyorRetSec) /
+                Math.max(0.05, fxDurSec)
+            );
+            const burstDist = hasBounce ? dStart : Math.min(len - 4, dDoor + 6);
+            const pt = pEl.getPointAtLength(burstDist);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'fail') {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) {
+                const scale = 0.72 + fxT * 1.48;
+                const op =
+                  fxT < 0.18
+                    ? fxT / 0.18
+                    : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+                fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxFailEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else if (fxKind === 'ok') {
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+              if (fxOkEl) {
+                const scale = 0.8 + fxT * 1.32;
+                const op = Math.pow(1 - fxT, 1.15) * 0.9;
+                fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxOkEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            }
+          }
+          continue;
+        }
+
+        const dStart = len > 32 ? 6 : 0;
+        const dEnd = len > 32 ? Math.max(dStart + 14, len - 10) : len;
+        const spanLen = Math.max(12, dEnd - dStart);
+
+        const basePxPerSec = 152;
+        const variantMult =
+          pkt.variant === 'slow'
+            ? 0.34
+            : pkt.variant === 'heavy'
+              ? 0.7
+              : pkt.variant === 'ping'
+                ? 0.85
+                : 1.0;
+        const spd = pkt.speed ?? 0.9;
+        const fwdSpeedPx = basePxPerSec * spd * variantMult;
+        const forwardSec = Math.max(0.42, spanLen / Math.max(24, fwdSpeedPx));
+        const holdSec = Math.max(0, pkt.holdSec ?? 0);
+        const fxKind = pkt.arrivalFx ?? 'ok';
+        const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+        const backSpeedPx =
+          basePxPerSec * Math.max(0.82, spd) * (pkt.variant === 'ping' ? 0.9 : 1.0);
+        const returnSec = hasBounce
+          ? Math.max(0.38, spanLen / Math.max(35, backSpeedPx))
+          : 0;
+        const fxDurSec =
+          fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
+        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+
+        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const localT =
+          (((sec + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+        if (pkt.reverse && !hasBounce) {
+          if (localT < holdSec) {
+            const holdElapsed = localT;
+            const pt = pEl.getPointAtLength(dEnd);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            if (holdSec >= 0.25) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5);
+              gEl.setAttribute('opacity', (0.25 + pulse * 0.45).toFixed(2));
+              if (bodyEl) bodyEl.setAttribute('opacity', '1');
+              if (shapeEl) {
+                shapeEl.setAttribute('fill', baseFill);
+                shapeEl.setAttribute('stroke-width', (1.4 + pulse * 1.2).toFixed(2));
+              }
+            } else {
+              gEl.setAttribute('opacity', '0');
+            }
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (localT < holdSec + forwardSec) {
+            const u = (localT - holdSec) / forwardSec;
+            const dist = dEnd - u * spanLen;
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.06 ? u / 0.06 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', edgeFade.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', baseFill);
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - holdSec - forwardSec) / Math.max(0.05, fxDurSec)
+            );
+            const pt = pEl.getPointAtLength(dStart);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'ok' && fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            } else if (fxOkEl) {
+              fxOkEl.setAttribute('opacity', '0');
+            }
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+          continue;
+        }
+
+        if (localT < forwardSec) {
+          const u = localT / forwardSec;
+          const dist = pkt.reverse ? dEnd - u * spanLen : dStart + u * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          const edgeFade = u < 0.07 ? u / 0.07 : 1;
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', edgeFade.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            shapeEl.setAttribute('stroke-width', baseStrokeW);
+          }
+        } else if (localT < forwardSec + holdSec) {
+          const holdElapsed = localT - forwardSec;
+          const dist = pkt.reverse ? dStart : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            if (holdSec >= 0.18) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5.5);
+              shapeEl.setAttribute('stroke-width', (1.5 + pulse * 1.85).toFixed(2));
+              if (holdRingEl) {
+                holdRingEl.setAttribute('opacity', (0.22 + pulse * 0.56).toFixed(2));
+                holdRingEl.setAttribute('r', (5.6 + pulse * 2.8).toFixed(2));
+              }
+            } else {
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+              if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            }
+          }
+        } else if (hasBounce && localT < forwardSec + holdSec + returnSec) {
+          const uBack = (localT - forwardSec - holdSec) / returnSec;
+          const dist = pkt.reverse
+            ? dStart + uBack * spanLen
+            : dEnd - uBack * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', '#9fd28f');
+            shapeEl.setAttribute('stroke-width', '1.5');
+          }
+        } else {
+          const fxT = clamp01(
+            (localT - forwardSec - holdSec - returnSec) / Math.max(0.05, fxDurSec)
+          );
+          const dist = hasBounce
+            ? pkt.reverse
+              ? dEnd
+              : dStart
+            : pkt.reverse
+              ? dStart
+              : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (fxKind === 'fail') {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) {
+              const scale = 0.72 + fxT * 1.48;
+              const op =
+                fxT < 0.18
+                  ? fxT / 0.18
+                  : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+              fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxFailEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else if (fxKind === 'ok') {
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+        }
+      }
+
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          if (bl.queueCount <= 0) continue;
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          if (!qEl) continue;
+          const shiftS = activeQueueShiftByLink.get(bl.link.id) ?? 0;
+          const headDist = bl.hasDrop ? 21 : 11;
+          const slotGap = 10.5;
+          for (let qi = 0; qi < bl.queueCount; qi++) {
+            const cEl = qEl.children[qi] as SVGCircleElement | undefined;
+            if (!cEl) continue;
+            const baseDist = headDist + qi * slotGap;
+            if (qi === 0) {
+              const consumeDist = Math.max(
+                2.5,
+                baseDist - shiftS * (bl.hasDrop ? 11.5 : 8.5)
+              );
+              const qp = samplePolylineFromEnd(bl.pts, consumeDist);
+              const rNow = 4.2 - shiftS * 2.0;
+              const opNow = 1 - Math.pow(shiftS, 1.45) * 0.92;
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', rNow.toFixed(2));
+              cEl.setAttribute('opacity', opNow.toFixed(2));
+            } else {
+              const shiftedDist = baseDist - shiftS * slotGap;
+              const qp = samplePolylineFromEnd(bl.pts, shiftedDist);
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', '4.2');
+              cEl.setAttribute('opacity', '1');
+            }
+          }
+        }
       }
       raf = requestAnimationFrame(loop);
     };
@@ -2289,10 +3220,16 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     const links: LiveLinkEls[] = [];
     const pathEls = new Map<string, SVGPathElement>();
     const pathLens = new Map<string, number>();
-    for (const { link } of builtLinks) {
+    const linkPtsMap = new Map<string, Pt[]>();
+    for (const { link, pts } of builtLinks) {
+      linkPtsMap.set(link.id, pts);
       const root = liveLinkRoots.current.get(link.id);
       if (!root) continue;
-      pathEls.set(link.id, root.querySelector('[data-r="path"]') as SVGPathElement);
+      const visiblePath = pathRefs.current.get(link.id);
+      pathEls.set(
+        link.id,
+        visiblePath ?? (root.querySelector('[data-r="path"]') as SVGPathElement)
+      );
       links.push({
         id: link.id,
         toNodeId: link.to,
@@ -2335,19 +3272,27 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       scalePill: livePillRef.current as unknown as LiveEl | null,
       sampleLink: (id, frac) => {
         const pe = pathEls.get(id);
-        if (!pe) return null;
-        let len = pathLens.get(id);
-        if (len === undefined) {
-          try {
-            len = pe.getTotalLength();
-          } catch {
-            len = 0;
+        if (pe) {
+          let len = pathLens.get(id);
+          if (len === undefined) {
+            try {
+              len = pe.getTotalLength();
+            } catch {
+              len = 0;
+            }
+            pathLens.set(id, len);
           }
-          pathLens.set(id, len);
+          if (len > 1) {
+            try {
+              const pt = pe.getPointAtLength(frac * len);
+              return { x: pt.x, y: pt.y };
+            } catch {
+              // fallback to analytic polyline sampling below
+            }
+          }
         }
-        if (len <= 1) return null;
-        const pt = pe.getPointAtLength(frac * len);
-        return { x: pt.x, y: pt.y };
+        const pts = linkPtsMap.get(id);
+        return pts && pts.length >= 2 ? sampleSegmentPoint(pts, frac) : null;
       },
       inkColor: pal.ink,
       pillBg: pal.pillBg,
@@ -3597,23 +4542,40 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
 
             {expandedNodes.map((node) => {
-              if (!node.dead) return null;
               const gc = getGroundCenter(node);
+              const isDead = Boolean(node.dead);
+              const haloFill = isDead ? pal.dangerLink : '#7fc278';
+              const haloStroke = isDead ? pal.dangerLink : '#3fa456';
               return (
-                <path
+                <g
                   key={`spot-${node.id}`}
                   ref={(el) => {
                     if (el) spotRefs.current.set(node.id, el);
                     else spotRefs.current.delete(node.id);
                   }}
-                  d={GROUND_SPOT_PATH}
                   transform={`translate(${gc.x.toFixed(1)}, ${gc.y.toFixed(1)})`}
-                  fill={pal.dangerLink}
-                  fillOpacity={isDark ? 0.14 : 0.1}
-                  stroke={pal.dangerLink}
-                  strokeOpacity={0.55}
-                  strokeWidth={1.5}
-                />
+                  opacity={0}
+                >
+                  {!isDead && (
+                    <path
+                      d={GROUND_SPOT_PATH}
+                      fill={haloFill}
+                      fillOpacity={isDark ? 0.34 : 0.28}
+                      stroke={haloStroke}
+                      strokeOpacity={isDark ? 0.65 : 0.52}
+                      strokeWidth={2.4}
+                      filter={`url(#blur-sm-${uid})`}
+                    />
+                  )}
+                  <path
+                    d={GROUND_SPOT_PATH}
+                    fill={haloFill}
+                    fillOpacity={isDead ? (isDark ? 0.14 : 0.1) : isDark ? 0.16 : 0.12}
+                    stroke={haloStroke}
+                    strokeOpacity={isDead ? 0.55 : 0.72}
+                    strokeWidth={1.6}
+                  />
+                </g>
               );
             })}
           </g>
@@ -3752,53 +4714,193 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 </g>
               );
             })}
-            {scene.packets.map((pkt) => (
-              <g
-                key={pkt.id}
-                ref={(el) => {
-                  if (el) packetRefs.current.set(pkt.id, el);
-                  else packetRefs.current.delete(pkt.id);
-                }}
-                opacity={0}
-              >
-                {pkt.kind === 'request' && (
-                  <circle r={4.4} fill="#f3b47f" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'response' && (
-                  <circle r={4.4} fill="#9fd28f" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'pointer' && (
-                  <circle r={4.4} fill="#f4fbef" stroke="#2f8a43" strokeWidth={2} />
-                )}
-                {pkt.kind === 'mutation' && (
-                  <rect
-                    x={-4.2}
-                    y={-4.2}
-                    width={8.4}
-                    height={8.4}
-                    rx={2}
-                    fill="#b79ce6"
-                    stroke={pal.ink}
-                    strokeWidth={1.5}
-                  />
-                )}
-                {pkt.kind === 'cache-hit' && (
-                  <circle r={4.5} fill="#efb041" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'error' && (
-                  <rect
-                    x={-4.8}
-                    y={-4.8}
-                    width={9.6}
-                    height={9.6}
-                    rx={2.4}
-                    fill="#e5534b"
-                    stroke="#5e1b16"
-                    strokeWidth={1.5}
-                  />
-                )}
-              </g>
-            ))}
+            {scene.packets.map((pkt) => {
+              const v = pkt.variant ?? 'default';
+              const isHeavy = v === 'heavy';
+              const isMsg = v === 'msg';
+              const isPoison = v === 'poison' || pkt.kind === 'error';
+              const isMutation = pkt.kind === 'mutation';
+              const isPing = v === 'ping' || pkt.kind === 'pointer';
+              const isKill = v === 'kill';
+              const isResp = pkt.kind === 'response';
+              const isDropped = pkt.kind === 'dropped';
+              const isTimeout = pkt.kind === 'timeout';
+              const isSlow =
+                !isResp &&
+                !isDropped &&
+                !isTimeout &&
+                (v === 'slow' || pkt.kind === 'retry' || pkt.kind === 'cache-hit');
+              return (
+                <g
+                  key={pkt.id}
+                  ref={(el) => {
+                    if (el) packetRefs.current.set(pkt.id, el);
+                    else packetRefs.current.delete(pkt.id);
+                  }}
+                  opacity={0}
+                >
+                  <g data-part="body">
+                    <circle
+                      data-part="hold-ring"
+                      r={6.8}
+                      fill="none"
+                      stroke={isPoison || isDropped ? '#e5534b' : '#efb041'}
+                      strokeWidth={1.35}
+                      opacity={0}
+                    />
+                    {isHeavy ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#e8834d"
+                        data-base-sw="1.65"
+                        x={-5.8}
+                        y={-5.8}
+                        width={11.6}
+                        height={11.6}
+                        rx={3.2}
+                        fill="#e8834d"
+                        stroke={pal.ink}
+                        strokeWidth={1.65}
+                      />
+                    ) : isMsg ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#efb041"
+                        data-base-sw="1.5"
+                        x={-4.7}
+                        y={-4.7}
+                        width={9.4}
+                        height={9.4}
+                        rx={2.4}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isPoison ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#e5534b"
+                        data-base-sw="1.55"
+                        x={-4.8}
+                        y={-4.8}
+                        width={9.6}
+                        height={9.6}
+                        rx={2.4}
+                        fill="#e5534b"
+                        stroke="#5e1b16"
+                        strokeWidth={1.55}
+                      />
+                    ) : isMutation ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#b79ce6"
+                        data-base-sw="1.5"
+                        x={-4.2}
+                        y={-4.2}
+                        width={8.4}
+                        height={8.4}
+                        rx={2}
+                        fill="#b79ce6"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isPing ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#f4fbef"
+                        data-base-sw="2.05"
+                        r={3.8}
+                        fill="#f4fbef"
+                        stroke="#2f8a43"
+                        strokeWidth={2.05}
+                      />
+                    ) : isKill ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#fde3df"
+                        data-base-sw="2.05"
+                        r={3.8}
+                        fill="#fde3df"
+                        stroke="#c0392b"
+                        strokeWidth={2.05}
+                      />
+                    ) : isSlow ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#efb041"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isDropped ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#e5534b"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#e5534b"
+                        stroke="#5e1b16"
+                        strokeWidth={1.5}
+                      />
+                    ) : isTimeout ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#bdb4a8"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#bdb4a8"
+                        stroke="#8a8176"
+                        strokeWidth={1.5}
+                      />
+                    ) : isResp ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#9fd28f"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#9fd28f"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#f3b47f"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#f3b47f"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    )}
+                  </g>
+                  <g data-part="fx-ok" opacity={0}>
+                    <circle
+                      r={4.4}
+                      fill="none"
+                      stroke="#3fa456"
+                      strokeWidth={1.85}
+                    />
+                  </g>
+                  <g data-part="fx-fail" opacity={0}>
+                    <circle
+                      r={5.2}
+                      fill="#e5534b"
+                      stroke="#5e1b16"
+                      strokeWidth={1.35}
+                    />
+                    <path
+                      d="M-2.3,-2.3 L2.3,2.3 M2.3,-2.3 L-2.3,2.3"
+                      stroke="#ffffff"
+                      strokeWidth={1.75}
+                      strokeLinecap="round"
+                    />
+                  </g>
+                </g>
+              );
+            })}
           </g>
           )}
 
@@ -3943,67 +5045,53 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
           </g>
 
-          {/* 8. Non-Colliding Tactile SVG Stage Note Card ("bảng ghi chú nhỏ" like Designed-to-Scale) */}
-          {noteCardLayout && (
-            <g
-              className="layer-note-card"
-              ref={noteCardRef}
-              transform={`translate(${noteCardLayout.x}, ${noteCardLayout.y})`}
-              opacity={0}
-              pointerEvents="none"
-            >
-              <rect
-                x={0}
-                y={2.4}
-                width={noteCardLayout.w}
-                height={noteCardLayout.h}
-                rx={10}
-                fill={pal.pillShadow}
-              />
-              <rect
-                x={0}
-                y={0}
-                width={noteCardLayout.w}
-                height={noteCardLayout.h}
-                rx={10}
-                fill={pal.pillBg}
-                stroke={pal.ink}
-                strokeWidth={1.4}
-              />
-              <line
-                x1={11}
-                y1={25.5}
-                x2={noteCardLayout.w - 11}
-                y2={25.5}
-                stroke={isDark ? '#423b33' : '#e6ddd0'}
-                strokeWidth={1}
-              />
-              <MinimalIcon
-                kind="sparkles"
-                stroke={isDark ? '#efb041' : '#b7791f'}
-                x={17}
-                y={13.2}
-                scale={0.62}
-              />
-              <text
-                x={27}
-                y={16.5}
-                fontSize={9}
-                fontWeight={800}
-                letterSpacing={0.9}
-                fill={isDark ? '#b5aa9a' : '#6f6961'}
-                fontFamily="var(--dts-font-mono)"
-              >
-                {noteCardLayout.title.toUpperCase()}
-              </text>
+          {/* 8. Note Card has been moved outside <svg> as a fixed HUD overlay so it never scales on zoom! */}
+        </g>
+      </svg>
 
+      {/* Fixed Corner HUD Stage Note Card (outside <svg> zoom/pan group so zooming never distorts or moves it!) */}
+      {noteCardLayout && (
+        <div
+          ref={noteCardRef}
+          data-no-pan="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setNoteCardCollapsed((v) => !v);
+          }}
+          title={
+            lang === 'en'
+              ? 'Click to collapse / expand note card'
+              : 'Nhấn để thu gọn / mở rộng thẻ ghi chú'
+          }
+          style={{ opacity: 0 }}
+          className={`${selectedInfo ? 'hidden' : 'pointer-events-auto'} absolute z-20 cursor-pointer select-none rounded-xl border-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 shadow-[2px_2.5px_0_var(--dts-shadow-color)] backdrop-blur-[3px] transition-shadow hover:shadow-[2.5px_3px_0_var(--dts-shadow-color)] ${
+            scene.noteCard?.position === 'top-left'
+              ? 'left-2.5 top-10'
+              : scene.noteCard?.position === 'bottom-left'
+                ? 'bottom-2.5 left-2.5'
+                : 'bottom-2.5 right-2.5'
+          } ${noteCardCollapsed ? 'px-2.5 py-1.5' : 'w-auto max-w-[310px] px-3 py-2'}`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+              <span className="text-[var(--dts-amber-ink)]">✦</span>
+              <span>{noteCardLayout.title}</span>
+            </div>
+            <span className="font-mono text-[9px] font-bold text-[var(--dts-ink-muted)] opacity-70">
+              {noteCardCollapsed ? '+' : '−'}
+            </span>
+          </div>
+
+          {!noteCardCollapsed && (
+            <div className="mt-1.5 border-t border-[var(--dts-line)] pt-1.5">
               {noteCardLayout.chart && (() => {
                 const ch = noteCardLayout.chart;
-                const plotX0 = 15;
-                const plotX1 = noteCardLayout.w - 13;
-                const plotW = Math.max(80, plotX1 - plotX0);
-                const plotY0 = 32;
-                const plotY1 = 83;
+                const plotX0 = 10;
+                const plotX1 = 216;
+                const plotW = plotX1 - plotX0;
+                const plotY0 = 8;
+                const plotY1 = 54;
                 const plotH = plotY1 - plotY0;
                 const curveYAt = (u: number) => {
                   const raw = 1 / (1 - 0.915 * Math.min(0.975, Math.max(0, u))) - 1;
@@ -4022,7 +5110,10 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 const dotCol =
                   ch.utilPct >= 90 ? '#e5534b' : ch.utilPct >= 65 ? '#efb041' : '#7fc278';
                 return (
-                  <g>
+                  <svg
+                    viewBox="0 0 226 68"
+                    className="mb-1.5 h-[64px] w-[226px] overflow-visible"
+                  >
                     <rect
                       x={plotX0 + plotW * 0.78}
                       y={plotY0}
@@ -4104,84 +5195,42 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                     >
                       {Math.round(ch.utilPct)}%
                     </text>
-                  </g>
+                  </svg>
                 );
               })()}
 
-              {noteCardLayout.lines.map((ln, idx) => {
-                const rowY = (noteCardLayout.chart ? 100 : 30) + idx * 18.5;
-                if (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber') {
-                  const pBg =
+              <div className="flex flex-col gap-1">
+                {noteCardLayout.lines.map((ln, idx) => {
+                  const toneCls =
                     ln.tone === 'good'
                       ? isDark
-                        ? '#2b3e24'
-                        : '#dcefd2'
+                        ? 'bg-[#2b3e24] text-[#b8e8a3] px-2 py-0.5 rounded-md font-extrabold'
+                        : 'bg-[#dcefd2] text-[#24521c] px-2 py-0.5 rounded-md font-extrabold'
                       : ln.tone === 'bad'
                         ? isDark
-                          ? '#4d2328'
-                          : '#f8d5cf'
-                        : isDark
-                          ? '#4a3a1b'
-                          : '#fbe5bd';
-                  const pFg =
-                    ln.tone === 'good'
-                      ? isDark
-                        ? '#b8e8a3'
-                        : '#24521c'
-                      : ln.tone === 'bad'
-                        ? isDark
-                          ? '#fca5a5'
-                          : '#8f2a22'
-                        : isDark
-                          ? '#fde68a'
-                          : '#6d4a0c';
+                          ? 'bg-[#4d2328] text-[#fca5a5] px-2 py-0.5 rounded-md font-extrabold'
+                          : 'bg-[#f8d5cf] text-[#8f2a22] px-2 py-0.5 rounded-md font-extrabold'
+                        : ln.tone === 'amber'
+                          ? isDark
+                            ? 'bg-[#4a3a1b] text-[#fde68a] px-2 py-0.5 rounded-md font-extrabold'
+                            : 'bg-[#fbe5bd] text-[#6d4a0c] px-2 py-0.5 rounded-md font-extrabold'
+                          : ln.tone === 'muted'
+                            ? 'text-[var(--dts-ink-muted)] font-semibold'
+                            : 'text-[var(--dts-ink)] font-bold';
                   return (
-                    <g key={idx}>
-                      <rect
-                        x={9}
-                        y={rowY}
-                        width={noteCardLayout.w - 18}
-                        height={16}
-                        rx={5}
-                        fill={pBg}
-                      />
-                      <text
-                        x={15}
-                        y={rowY + 11.2}
-                        fontSize={9.4}
-                        fontWeight={800}
-                        fill={pFg}
-                        fontFamily="var(--dts-font-mono)"
-                      >
-                        {ln.text}
-                      </text>
-                    </g>
+                    <div
+                      key={idx}
+                      className={`font-mono text-[10.5px] leading-snug ${toneCls}`}
+                    >
+                      {ln.text}
+                    </div>
                   );
-                }
-                return (
-                  <text
-                    key={idx}
-                    x={11}
-                    y={rowY + 11.2}
-                    fontSize={ln.tone === 'muted' ? 9.2 : 9.6}
-                    fontWeight={ln.tone === 'muted' ? 600 : 700}
-                    fill={
-                      ln.tone === 'muted'
-                        ? isDark
-                          ? '#a89d8e'
-                          : '#7d756b'
-                        : pal.pillInk
-                    }
-                    fontFamily="var(--dts-font-mono)"
-                  >
-                    {ln.text}
-                  </text>
-                );
-              })}
-            </g>
+                })}
+              </div>
+            </div>
           )}
-        </g>
-      </svg>
+        </div>
+      )}
 
       {frameSource && (
         <div

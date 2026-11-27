@@ -298,7 +298,9 @@ export const SdWarRoomView: React.FC<SdWarRoomViewProps> = ({
     session,
     isPlaying,
     speed,
-    onEnd: () => setIsPlaying(false),
+    onEnd: () => {
+      session.reset();
+    },
   });
 
   const handleResetPlayback = useCallback(() => {

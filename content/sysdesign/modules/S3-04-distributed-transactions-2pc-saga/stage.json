@@ -5,7 +5,10 @@
     "client": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Khách đặt chuyến", "en": "Travelers" },
+      "label": {
+        "vi": "Khách đặt chuyến",
+        "en": "Travelers"
+      },
       "inspector": {
         "what": {
           "vi": "Khách hàng đặt trọn gói chuyến du lịch (vé máy bay + phòng khách sạn + thanh toán) ở tốc độ 450 req/s.",
@@ -25,7 +28,10 @@
       "shape": "block",
       "tone": "purple",
       "icon": "git",
-      "label": { "vi": "Trip Coordinator", "en": "Trip Coordinator" },
+      "label": {
+        "vi": "Trip Coordinator",
+        "en": "Trip Coordinator"
+      },
       "inspector": {
         "what": {
           "vi": "Bộ điều phối trung tâm: đóng vai Coordinator trong 2PC hoặc Saga Orchestrator lưu máy trạng thái bước đi.",
@@ -44,7 +50,10 @@
     "flight_db": {
       "shape": "db",
       "tone": "green",
-      "label": { "vi": "Flight DB", "en": "Flight DB" },
+      "label": {
+        "vi": "Flight DB",
+        "en": "Flight DB"
+      },
       "inspector": {
         "what": {
           "vi": "Cơ sở dữ liệu riêng của dịch vụ Hàng không quản lý ghế chuyến bay.",
@@ -63,7 +72,10 @@
     "hotel_db": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Hotel DB", "en": "Hotel DB" },
+      "label": {
+        "vi": "Hotel DB",
+        "en": "Hotel DB"
+      },
       "inspector": {
         "what": {
           "vi": "Cơ sở dữ liệu riêng của dịch vụ Khách sạn quản lý tồn kho phòng nghỉ.",
@@ -82,7 +94,10 @@
     "pay_db": {
       "shape": "db",
       "tone": "yellow",
-      "label": { "vi": "Payment DB", "en": "Payment DB" },
+      "label": {
+        "vi": "Payment DB",
+        "en": "Payment DB"
+      },
       "inspector": {
         "what": {
           "vi": "Sổ cái thanh toán quản lý giao dịch thu tiền và hoàn tiền kèm bảng khoá luỹ đẳng.",
@@ -102,76 +117,162 @@
   "links": {
     "client-coord": {
       "inspector": {
-        "what": { "vi": "Yêu cầu đặt trọn gói chuyến đi từ khách hàng.", "en": "Bundled trip booking request from client." },
-        "how": { "vi": "Đính kèm Idempotency-Key sinh từ phía thiết bị khách.", "en": "Carries a client-generated Idempotency-Key." },
-        "why": { "vi": "Cho phép khách bấm thử lại an toàn khi mạng di động chập chờn.", "en": "Allows safe client retries over unreliable mobile networks." }
+        "what": {
+          "vi": "Yêu cầu đặt trọn gói chuyến đi từ khách hàng.",
+          "en": "Bundled trip booking request from client."
+        },
+        "how": {
+          "vi": "Đính kèm Idempotency-Key sinh từ phía thiết bị khách.",
+          "en": "Carries a client-generated Idempotency-Key."
+        },
+        "why": {
+          "vi": "Cho phép khách bấm thử lại an toàn khi mạng di động chập chờn.",
+          "en": "Allows safe client retries over unreliable mobile networks."
+        }
       }
     },
     "coord-flight": {
       "inspector": {
-        "what": { "vi": "Chặng gọi RPC/HTTP từ bộ điều phối sang kho dữ liệu chuyến bay.", "en": "Coordinator hop to Flight domain store." },
-        "how": { "vi": "Thực thi bước giữ ghế T1 hoặc bước giải phóng ghế C1.", "en": "Executes forward reservation T1 or compensating release C1." },
-        "why": { "vi": "Tách biệt hoàn toàn qua mạng nên có thể quá hạn bất kỳ lúc nào.", "en": "Network hop subject to timeouts and packet loss." }
+        "what": {
+          "vi": "Chặng gọi RPC/HTTP từ bộ điều phối sang kho dữ liệu chuyến bay.",
+          "en": "Coordinator hop to Flight domain store."
+        },
+        "how": {
+          "vi": "Thực thi bước giữ ghế T1 hoặc bước giải phóng ghế C1.",
+          "en": "Executes forward reservation T1 or compensating release C1."
+        },
+        "why": {
+          "vi": "Tách biệt hoàn toàn qua mạng nên có thể quá hạn bất kỳ lúc nào.",
+          "en": "Network hop subject to timeouts and packet loss."
+        }
       }
     },
     "coord-hotel": {
       "inspector": {
-        "what": { "vi": "Chặng gọi từ bộ điều phối sang kho dữ liệu khách sạn.", "en": "Coordinator hop to Hotel domain store." },
-        "how": { "vi": "Thực thi bước đặt phòng hoặc huỷ phòng bù trừ.", "en": "Executes room booking or compensating cancellation." },
-        "why": { "vi": "Không thể dùng chung câu lệnh ROLLBACK của cơ sở dữ liệu chuyến bay.", "en": "Cannot share a local SQL ROLLBACK with Flight DB." }
+        "what": {
+          "vi": "Chặng gọi từ bộ điều phối sang kho dữ liệu khách sạn.",
+          "en": "Coordinator hop to Hotel domain store."
+        },
+        "how": {
+          "vi": "Thực thi bước đặt phòng hoặc huỷ phòng bù trừ.",
+          "en": "Executes room booking or compensating cancellation."
+        },
+        "why": {
+          "vi": "Không thể dùng chung câu lệnh ROLLBACK của cơ sở dữ liệu chuyến bay.",
+          "en": "Cannot share a local SQL ROLLBACK with Flight DB."
+        }
       }
     },
     "coord-pay": {
       "inspector": {
-        "what": { "vi": "Chặng gọi thu tiền / hoàn tiền tới sổ cái thanh toán.", "en": "Charge and refund hop to Payment DB." },
-        "how": { "vi": "Truyền mã khoá luỹ đẳng riêng cho từng bước (ví dụ trip_901:charge và trip_901:refund).", "en": "Passes step-specific idempotency keys for charge and refund." },
-        "why": { "vi": "Ngăn rủi ro trừ tiền hai lần hoặc hoàn tiền hai lần.", "en": "Prevents both duplicate charges and duplicate refunds." }
+        "what": {
+          "vi": "Chặng gọi thu tiền / hoàn tiền tới sổ cái thanh toán.",
+          "en": "Charge and refund hop to Payment DB."
+        },
+        "how": {
+          "vi": "Truyền mã khoá luỹ đẳng riêng cho từng bước (ví dụ trip_901:charge và trip_901:refund).",
+          "en": "Passes step-specific idempotency keys for charge and refund."
+        },
+        "why": {
+          "vi": "Ngăn rủi ro trừ tiền hai lần hoặc hoàn tiền hai lần.",
+          "en": "Prevents both duplicate charges and duplicate refunds."
+        }
       }
     }
   },
   "zones": {
     "services": {
-      "nodeIds": ["flight_db", "hotel_db", "pay_db"],
-      "label": { "vi": "BA KHO DỮ LIỆU ĐỘC LẬP", "en": "THREE INDEPENDENT DATABASES" },
+      "nodeIds": [
+        "flight_db",
+        "hotel_db",
+        "pay_db"
+      ],
+      "label": {
+        "vi": "BA KHO DỮ LIỆU ĐỘC LẬP",
+        "en": "THREE INDEPENDENT DATABASES"
+      },
       "tone": "neutral"
     }
   },
   "scenes": {
     "s1-multi-db": {
-      "show": { "nodes": "*" },
-      "zones": ["services"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "services"
+      ],
       "state": {
-        "coord": { "loadPct": 18 },
+        "coord": {
+          "loadPct": 18
+        },
         "flight_db": {
           "loadPct": 25,
-          "badge": { "text": { "vi": "Đã giữ ghế", "en": "Seat booked" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Đã giữ ghế",
+              "en": "Seat booked"
+            },
+            "tone": "ok"
+          }
         },
         "pay_db": {
           "loadPct": 25,
-          "badge": { "text": { "vi": "Đã trừ tiền", "en": "Card charged" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Đã trừ tiền",
+              "en": "Card charged"
+            },
+            "tone": "ok"
+          }
         },
         "hotel_db": {
           "loadPct": 30,
           "highlighted": true,
-          "badge": { "text": { "vi": "Hết phòng!", "en": "Out of rooms!" }, "tone": "bad" }
+          "badge": {
+            "text": {
+              "vi": "Hết phòng!",
+              "en": "Out of rooms!"
+            },
+            "tone": "bad"
+          }
         }
       },
       "linkState": {
-        "coord-hotel": { "style": "danger" }
+        "coord-hotel": {
+          "style": "danger"
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Vì sao BEGIN...COMMIT bất lực?", "en": "Why Local ACID Breaks" },
+        "title": {
+          "vi": "Vì sao BEGIN...COMMIT bất lực?",
+          "en": "Why Local ACID Breaks"
+        },
         "lines": [
-          { "text": { "vi": "Mỗi dịch vụ sở hữu một DB riêng biệt", "en": "Each service owns a separate DB" }, "tone": "plain" },
-          { "text": { "vi": "Payment đã COMMIT, Hotel lỗi → không thể ROLLBACK chung", "en": "Payment committed, Hotel failed → no shared ROLLBACK" }, "tone": "bad" }
+          {
+            "text": {
+              "vi": "Mỗi dịch vụ sở hữu một DB riêng biệt",
+              "en": "Each service owns a separate DB"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Payment đã COMMIT, Hotel lỗi → không thể ROLLBACK chung",
+              "en": "Payment committed, Hotel failed → no shared ROLLBACK"
+            },
+            "tone": "bad"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-2pc-protocol": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -179,38 +280,133 @@
           "en": "Two-Phase Commit (2PC): Prepare Vote Phase Followed by Global Commit"
         },
         "nodes": [
-          { "id": "c1", "x": 0, "y": -90, "label": "Pha 1: Coordinator gửi PREPARE", "sub": { "vi": "Yêu cầu mọi DB khoá dòng và ghi sẵn WAL", "en": "All DBs lock rows & flush prepare log" }, "tone": "purple" },
-          { "id": "f", "x": -185, "y": 0, "label": "Flight DB: VOTE YES", "sub": { "vi": "Đang ngâm khoá ghế", "en": "Holding seat row lock" }, "tone": "blue" },
-          { "id": "h", "x": 0, "y": 0, "label": "Hotel DB: VOTE YES", "sub": { "vi": "Đang ngâm khoá phòng", "en": "Holding room row lock" }, "tone": "blue" },
-          { "id": "p", "x": 185, "y": 0, "label": "Payment DB: VOTE YES", "sub": { "vi": "Đang ngâm khoá số dư", "en": "Holding balance lock" }, "tone": "blue" },
-          { "id": "c2", "x": 0, "y": 84, "label": "Pha 2: Đủ 3 phiếu YES → gửi COMMIT", "sub": { "vi": "Chỉ cần 1 phiếu NO → phát ABORT toàn cục", "en": "Any NO vote triggers global ABORT" }, "tone": "green" }
+          {
+            "id": "c1",
+            "x": 0,
+            "y": -90,
+            "label": "Pha 1: Coordinator gửi PREPARE",
+            "sub": {
+              "vi": "Yêu cầu mọi DB khoá dòng và ghi sẵn WAL",
+              "en": "All DBs lock rows & flush prepare log"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "f",
+            "x": -185,
+            "y": 0,
+            "label": "Flight DB: VOTE YES",
+            "sub": {
+              "vi": "Đang ngâm khoá ghế",
+              "en": "Holding seat row lock"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "h",
+            "x": 0,
+            "y": 0,
+            "label": "Hotel DB: VOTE YES",
+            "sub": {
+              "vi": "Đang ngâm khoá phòng",
+              "en": "Holding room row lock"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "p",
+            "x": 185,
+            "y": 0,
+            "label": "Payment DB: VOTE YES",
+            "sub": {
+              "vi": "Đang ngâm khoá số dư",
+              "en": "Holding balance lock"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "c2",
+            "x": 0,
+            "y": 84,
+            "label": "Pha 2: Đủ 3 phiếu YES → gửi COMMIT",
+            "sub": {
+              "vi": "Chỉ cần 1 phiếu NO → phát ABORT toàn cục",
+              "en": "Any NO vote triggers global ABORT"
+            },
+            "tone": "green"
+          }
         ],
         "edges": [
-          { "from": "c1", "to": "f", "label": "PREPARE" },
-          { "from": "c1", "to": "h", "label": "PREPARE" },
-          { "from": "c1", "to": "p", "label": "PREPARE" },
-          { "from": "f", "to": "c2", "label": "YES" },
-          { "from": "h", "to": "c2", "label": "YES" },
-          { "from": "p", "to": "c2", "label": "YES" }
+          {
+            "from": "c1",
+            "to": "f",
+            "label": "PREPARE"
+          },
+          {
+            "from": "c1",
+            "to": "h",
+            "label": "PREPARE"
+          },
+          {
+            "from": "c1",
+            "to": "p",
+            "label": "PREPARE"
+          },
+          {
+            "from": "f",
+            "to": "c2",
+            "label": "YES"
+          },
+          {
+            "from": "h",
+            "to": "c2",
+            "label": "YES"
+          },
+          {
+            "from": "p",
+            "to": "c2",
+            "label": "YES"
+          }
         ]
       }
     },
     "s3-2pc-blocking-live": {
-      "show": { "nodes": "*" },
-      "zones": ["services"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "services"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "2PC là giao thức khoá chặn (Blocking)", "en": "2PC Blocking Failure Mode" },
+        "title": {
+          "vi": "2PC là giao thức khoá chặn (Blocking)",
+          "en": "2PC Blocking Failure Mode"
+        },
         "lines": [
-          { "text": { "vi": "t = 20 s: Coordinator dừng ngay sau pha Prepare", "en": "t = 20 s: Coordinator crashes after Prepare" }, "tone": "bad" },
-          { "text": { "vi": "Các DB kẹt in-doubt, giữ khoá chờ Coordinator hồi phục", "en": "Participants stuck in-doubt holding locks" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "t = 20 s: Coordinator dừng ngay sau pha Prepare",
+              "en": "t = 20 s: Coordinator crashes after Prepare"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Các DB kẹt in-doubt, giữ khoá chờ Coordinator hồi phục",
+              "en": "Participants stuck in-doubt holding locks"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s4-saga-forward-comp": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tape",
         "title": {
@@ -228,13 +424,28 @@
           "C2: Hoàn tiền",
           "C1: Huỷ vé bay"
         ],
-        "activeIndices": [2, 3, 4],
+        "activeIndices": [
+          2,
+          3,
+          4
+        ],
         "pointers": [
-          { "index": 2, "label": "điểm gãy", "tone": "rose" },
-          { "index": 3, "label": "bù trừ ngược", "tone": "orange" }
+          {
+            "index": 2,
+            "label": "điểm gãy",
+            "tone": "rose"
+          },
+          {
+            "index": 3,
+            "label": "bù trừ ngược",
+            "tone": "orange"
+          }
         ],
         "outputPill": {
-          "label": { "vi": "Khác biệt cốt lõi", "en": "Key Distinction" },
+          "label": {
+            "vi": "Khác biệt cốt lõi",
+            "en": "Key Distinction"
+          },
           "value": {
             "vi": "Bù trừ ≠ Rollback: cả giao dịch gốc lẫn giao dịch hoàn tiền đều lưu vết rõ trên sổ cái",
             "en": "Compensation ≠ Rollback: both forward and reversal entries remain visible in the audit log"
@@ -244,31 +455,114 @@
       }
     },
     "s5-orch-vs-choreo": {
-      "show": { "nodes": "*" },
-      "zones": ["services"],
-      "state": {
-        "coord": {
-          "loadPct": 20,
-          "highlighted": true,
-          "badge": { "text": { "vi": "Saga State Log", "en": "Saga State Log" }, "tone": "ok" }
-        },
-        "flight_db": { "loadPct": 25 },
-        "hotel_db": { "loadPct": 28 },
-        "pay_db": { "loadPct": 25 }
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
       },
-      "packets": "auto",
-      "noteCard": {
-        "title": { "vi": "Orchestration so với Choreography", "en": "Orchestration vs Choreography" },
-        "lines": [
-          { "text": { "vi": "Orchestration: 1 nhạc trưởng nắm rõ trạng thái, dễ gỡ lỗi", "en": "Orchestration: explicit central state machine" }, "tone": "good" },
-          { "text": { "vi": "Choreography: bắn sự kiện nối đuôi, khó lần vết khi nhiều bước", "en": "Choreography: event-driven, harder to trace > 4 steps" }, "tone": "amber" }
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Đối chiếu Saga Orchestration (Nhạc trưởng trung tâm) và Choreography (Qua Event Bus)",
+          "en": "Saga Orchestration (Central Coordinator) vs Choreography (Event Bus)"
+        },
+        "nodes": [
+          {
+            "id": "orch",
+            "x": -165,
+            "y": -92,
+            "label": "A. Orchestrator (Nhạc trưởng)",
+            "sub": {
+              "vi": "Giữ máy trạng thái Saga tập trung",
+              "en": "Holds central Saga state machine"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "o_svc",
+            "x": -165,
+            "y": -6,
+            "label": "Gọi lệnh: Flight → Pay → Hotel",
+            "sub": {
+              "vi": "Dễ theo dõi & gỡ lỗi luồng lớn",
+              "en": "Easy to trace & debug complex flows"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "o_comp",
+            "x": -165,
+            "y": 82,
+            "label": "Hotel lỗi → Phát lệnh C2, C1",
+            "sub": {
+              "vi": "Nhạc trưởng chủ động gọi bù trừ",
+              "en": "Orchestrator triggers compensations"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "chor",
+            "x": 165,
+            "y": -92,
+            "label": "B. Choreography (Event Bus)",
+            "sub": {
+              "vi": "Không có bộ điều phối trung tâm",
+              "en": "No central coordinator node"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "c_bus",
+            "x": 165,
+            "y": -6,
+            "label": "FlightBooked → PaymentCharged",
+            "sub": {
+              "vi": "Mỗi Service tự lắng nghe & phát tiếp",
+              "en": "Services subscribe & emit events"
+            },
+            "tone": "orange"
+          },
+          {
+            "id": "c_risk",
+            "x": 165,
+            "y": 82,
+            "label": "> 4 Service: Khó lần vết vòng lặp",
+            "sub": {
+              "vi": "Chỉ hợp luồng ngắn 2–3 bước",
+              "en": "Best kept to short 2–3 step flows"
+            },
+            "tone": "rose"
+          }
         ],
-        "position": "bottom-right"
+        "edges": [
+          {
+            "from": "orch",
+            "to": "o_svc",
+            "label": "1. Command"
+          },
+          {
+            "from": "o_svc",
+            "to": "o_comp",
+            "label": "2. Rollback C2→C1"
+          },
+          {
+            "from": "chor",
+            "to": "c_bus",
+            "label": "1. Publish Event"
+          },
+          {
+            "from": "c_bus",
+            "to": "c_risk",
+            "label": "2. Event Chain",
+            "style": "dashed"
+          }
+        ]
       }
     },
     "s6-semantic-lock": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -276,37 +570,104 @@
           "en": "Saga Lacks Isolation (ACD): Semantic Locks and Step Ordering"
         },
         "nodes": [
-          { "id": "s1", "x": -185, "y": -52, "label": "1. Bước bù trừ được", "sub": { "vi": "Đặt cờ PENDING (Semantic Lock)", "en": "Mark PENDING (Semantic Lock)" }, "tone": "blue" },
-          { "id": "s2", "x": 0, "y": -52, "label": "2. Bước chốt (Pivot)", "sub": { "vi": "Quyết định thành / bại của cả Saga", "en": "Go / no-go decision boundary" }, "tone": "orange" },
-          { "id": "s3", "x": 185, "y": -52, "label": "3. Không bù trừ được", "sub": { "vi": "Gửi email xác nhận / xuất mã cứng", "en": "Send email / physical dispatch" }, "tone": "green" },
-          { "id": "iso", "x": 0, "y": 64, "label": "Cờ PENDING chặn đọc nhầm", "sub": { "vi": "Khách chưa thể đổi vé khi Saga chưa chốt xong", "en": "Blocks concurrent edits until CONFIRMED" }, "tone": "purple" }
+          {
+            "id": "s1",
+            "x": -185,
+            "y": -52,
+            "label": "1. Bước bù trừ được",
+            "sub": {
+              "vi": "Đặt cờ PENDING (Semantic Lock)",
+              "en": "Mark PENDING (Semantic Lock)"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "s2",
+            "x": 0,
+            "y": -52,
+            "label": "2. Bước chốt (Pivot)",
+            "sub": {
+              "vi": "Quyết định thành / bại của cả Saga",
+              "en": "Go / no-go decision boundary"
+            },
+            "tone": "orange"
+          },
+          {
+            "id": "s3",
+            "x": 185,
+            "y": -52,
+            "label": "3. Không bù trừ được",
+            "sub": {
+              "vi": "Gửi email xác nhận / xuất mã cứng",
+              "en": "Send email / physical dispatch"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "iso",
+            "x": 0,
+            "y": 64,
+            "label": "Cờ PENDING chặn đọc nhầm",
+            "sub": {
+              "vi": "Khách chưa thể đổi vé khi Saga chưa chốt xong",
+              "en": "Blocks concurrent edits until CONFIRMED"
+            },
+            "tone": "purple"
+          }
         ],
         "edges": [
-          { "from": "s1", "to": "s2", "label": "thành công" },
-          { "from": "s2", "to": "s3", "label": "đặt cuối cùng" },
-          { "from": "s1", "to": "iso", "label": "bù chữ I", "style": "dashed" }
+          {
+            "from": "s1",
+            "to": "s2",
+            "label": "thành công"
+          },
+          {
+            "from": "s2",
+            "to": "s3",
+            "label": "đặt cuối cùng"
+          },
+          {
+            "from": "s1",
+            "to": "iso",
+            "label": "bù chữ I",
+            "style": "dashed"
+          }
         ]
       }
     },
     "s7-idempotency-timeout": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "Timeout = Chưa rõ kết quả (gửi lại)", "en": "Timeout = Unknown Outcome (Retried)" },
-        "rightTitle": { "vi": "Bảng đối chiếu tại Payment DB", "en": "Deduplication Table in Payment DB" },
+        "leftTitle": {
+          "vi": "Timeout = Chưa rõ kết quả (gửi lại)",
+          "en": "Timeout = Unknown Outcome (Retried)"
+        },
+        "rightTitle": {
+          "vi": "Bảng đối chiếu tại Payment DB",
+          "en": "Deduplication Table in Payment DB"
+        },
         "names": [
           {
             "id": "att1",
             "name": "Lần 1: key = trip_901_pay",
-            "note": { "vi": "Đã trừ 2,4tr · rớt gói ACK!", "en": "Charged 2.4M · ACK dropped!" },
+            "note": {
+              "vi": "Đã trừ 2,4tr · rớt gói ACK!",
+              "en": "Charged 2.4M · ACK dropped!"
+            },
             "targetId": "pay_rec",
             "style": "dashed"
           },
           {
             "id": "att2",
             "name": "Thử lại: key = trip_901_pay",
-            "note": { "vi": "Trùng key → trả lại kết quả cũ", "en": "Duplicate key → returns cached receipt" },
+            "note": {
+              "vi": "Trùng key → trả lại kết quả cũ",
+              "en": "Duplicate key → returns cached receipt"
+            },
             "targetId": "pay_rec",
             "style": "solid"
           }
@@ -316,65 +677,151 @@
             "id": "pay_rec",
             "typeTag": "UNIQUE KEY",
             "value": "pay_789 · 2.400.000đ",
-            "fields": ["chỉ trừ tiền đúng 1 lần", "lưu kết quả kèm TTL 24–48h"],
+            "fields": [
+              "chỉ trừ tiền đúng 1 lần",
+              "lưu kết quả kèm TTL 24–48h"
+            ],
             "tone": "green",
-            "badge": { "vi": "f(f(x)) = f(x) — an toàn khi thử lại", "en": "f(f(x)) = f(x) — retry-safe" }
+            "badge": {
+              "vi": "f(f(x)) = f(x) — an toàn khi thử lại",
+              "en": "f(f(x)) = f(x) — retry-safe"
+            }
           }
         ]
       }
     },
     "s8-comp-failure": {
-      "show": { "nodes": "*" },
-      "zones": ["services"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "services"
+      ],
       "state": {
         "coord": {
           "loadPct": 24,
           "highlighted": true,
-          "badge": { "text": { "vi": "Retry bù trừ + DLQ", "en": "Retry Comp + Escalate" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Retry bù trừ + DLQ",
+              "en": "Retry Comp + Escalate"
+            },
+            "tone": "warn"
+          }
         },
         "flight_db": {
           "loadPct": 20,
-          "badge": { "text": { "vi": "Đã huỷ vé", "en": "Cancelled" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Đã huỷ vé",
+              "en": "Cancelled"
+            },
+            "tone": "ok"
+          }
         },
         "hotel_db": {
           "loadPct": 20,
-          "badge": { "text": { "vi": "Từ chối bước 3", "en": "Step 3 failed" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Từ chối bước 3",
+              "en": "Step 3 failed"
+            },
+            "tone": "warn"
+          }
         },
         "pay_db": {
           "loadPct": 65,
           "highlighted": true,
-          "badge": { "text": { "vi": "Hoàn tiền trễ → thử lại", "en": "Refund retry" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Hoàn tiền trễ → thử lại",
+              "en": "Refund retry"
+            },
+            "tone": "warn"
+          }
         }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Khi chính bước bù trừ bị lỗi", "en": "When Compensation Fails" },
+        "title": {
+          "vi": "Khi chính bước bù trừ bị lỗi",
+          "en": "When Compensation Fails"
+        },
         "lines": [
-          { "text": { "vi": "Bước bù trừ cũng phải luỹ đẳng để thử lại bền bỉ", "en": "Compensations must be idempotent for retries" }, "tone": "good" },
-          { "text": { "vi": "Quá ngưỡng thử lại → đẩy vào hàng đợi đối soát vận hành", "en": "After max retries → alert ops for reconciliation" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Bước bù trừ cũng phải luỹ đẳng để thử lại bền bỉ",
+              "en": "Compensations must be idempotent for retries"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Quá ngưỡng thử lại → đẩy vào hàng đợi đối soát vận hành",
+              "en": "After max retries → alert ops for reconciliation"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s9-recap": {
-      "show": { "nodes": "*" },
-      "zones": ["services"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "services"
+      ],
       "state": {
         "coord": {
           "loadPct": 18,
-          "badge": { "text": { "vi": "Saga + Idempotency", "en": "Saga + Idempotency" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Saga + Idempotency",
+              "en": "Saga + Idempotency"
+            },
+            "tone": "ok"
+          }
         },
-        "flight_db": { "loadPct": 25 },
-        "hotel_db": { "loadPct": 25 },
-        "pay_db": { "loadPct": 25 }
+        "flight_db": {
+          "loadPct": 25
+        },
+        "hotel_db": {
+          "loadPct": 25
+        },
+        "pay_db": {
+          "loadPct": 25
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Khung quyết định toàn vẹn phân tán", "en": "Distributed Integrity Guide" },
+        "title": {
+          "vi": "Khung quyết định toàn vẹn phân tán",
+          "en": "Distributed Integrity Guide"
+        },
         "lines": [
-          { "text": { "vi": "Cần nhất quán tức thì nội bộ ít node → 2PC", "en": "Strict atomic lock across internal DBs → 2PC" }, "tone": "plain" },
-          { "text": { "vi": "Microservices & API ngoài → Saga + Bù trừ ngược", "en": "Microservices & external APIs → Saga" }, "tone": "good" },
-          { "text": { "vi": "Mọi lệnh ghi & hoàn tiền → bắt buộc Idempotency Key", "en": "All mutations & refunds → Idempotency Key" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Cần nhất quán tức thì nội bộ ít node → 2PC",
+              "en": "Strict atomic lock across internal DBs → 2PC"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Microservices & API ngoài → Saga + Bù trừ ngược",
+              "en": "Microservices & external APIs → Saga"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Mọi lệnh ghi & hoàn tiền → bắt buộc Idempotency Key",
+              "en": "All mutations & refunds → Idempotency Key"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
@@ -389,22 +836,69 @@
       "controls": {
         "timeline": true,
         "load": true,
-        "chaos": ["kill"],
+        "chaos": [
+          "kill"
+        ],
         "knobs": [
-          { "node": "coord", "key": "replicas" }
+          {
+            "node": "coord",
+            "key": "replicas"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "goodputRps", "label": { "vi": "Thông lượng đạt", "en": "Goodput" }, "format": "rps" },
-        { "metric": "errorRate", "label": { "vi": "Tỉ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 150, "badAbove": 400 } }
+        {
+          "metric": "goodputRps",
+          "label": {
+            "vi": "Thông lượng đạt",
+            "en": "Goodput"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỉ lệ lỗi",
+            "en": "Error Rate"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.1
+          }
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 150,
+            "badAbove": 400
+          }
+        }
       ],
       "slo": [
-        { "metric": "p99", "value": 200 },
-        { "metric": "errorRate", "value": 0.01 }
+        {
+          "metric": "p99",
+          "value": 200
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
       ],
-      "focus": { "nodes": ["coord", "flight_db", "hotel_db", "pay_db"] }
+      "focus": {
+        "nodes": [
+          "coord",
+          "flight_db",
+          "hotel_db",
+          "pay_db"
+        ]
+      }
     }
   }
 }

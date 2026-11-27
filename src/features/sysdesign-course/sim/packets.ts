@@ -81,7 +81,7 @@ export function stepPackets(c: CompiledModel, s: SimState, k: number, inp: Packe
       let reverse = false;
       let spawnResponse = false;
       if (u2 < inp.pHit[e]) {
-        kind = 'cache-hit'; reverse = true; fate = 0.5;
+        kind = 'cache-hit'; reverse = false; fate = 0.5;
       } else if (u3 < inp.pSucc[e]) {
         kind = u1 < pRetry ? 'retry' : 'request';
         spawnResponse = true;

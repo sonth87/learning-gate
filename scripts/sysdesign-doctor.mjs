@@ -721,10 +721,13 @@ function checkStage(m, ctx) {
   if (!isObj(st.scenes)) return E(`${id}: stage.json thiếu scenes`);
   if (/_source\/|designed-to-scale/i.test(JSON.stringify(st))) E(`${id}: stage.json chứa đường dẫn tới _source/ hoặc domain DTS`);
 
-  // Tập node/link của mọi sim trong module (hợp), nếu có sim
+  // Tập node/link của mọi sim trong module (hợp), nếu có sim; cho phép stage.nodes / stage.links khai báo thêm
+  // thành phần phụ trợ (auxiliary nodes/links) cho các cảnh giảng bài tĩnh (non-live).
   const sims = [...(ctx.moduleSims.get(id) ?? [])].map((sid) => ctx.simModels.get(sid)).filter(Boolean);
-  const nodeSet = new Set(sims.flatMap((s) => [...s.nodeIds]));
-  const linkSet = new Set(sims.flatMap((s) => [...s.linkIds]));
+  const simNodeSet = new Set(sims.flatMap((s) => [...s.nodeIds]));
+  const simLinkSet = new Set(sims.flatMap((s) => [...s.linkIds]));
+  const nodeSet = new Set([...simNodeSet, ...Object.keys(st.nodes ?? {})]);
+  const linkSet = new Set([...simLinkSet, ...Object.keys(st.links ?? {})]);
   const hasModel = sims.length > 0;
   const liveScenes = new Set();
   if (Object.keys(st.scenes).length === 0) E(`${id}: stage.json không có scene nào`);
@@ -733,6 +736,9 @@ function checkStage(m, ctx) {
     W(`${id}: scene đầu tiên là memory-2d và không có stage.base: bước không khai báo scene sẽ lấy scene này làm mặc định`);
   }
   for (const [lvKey, lv] of Object.entries(st.live ?? {})) {
+    if (lv?.autoplay === false) {
+      E(`${id} live "${lvKey}": không được đặt autoplay: false (sẽ làm đứng luồng chạy khi mở bước)`);
+    }
     if (lv?.sim && !ctx.simClaimed.has(lv.sim)) E(`${id}: live.sim "${lv.sim}" không có trong sim.json`);
     const simModel = lv?.sim ? ctx.simModels.get(lv.sim) : null;
     if (simModel) {
@@ -757,7 +763,59 @@ function checkStage(m, ctx) {
         isObj(mm) &&
         MEMORY_KINDS.includes(mm.kind) &&
         (mm.kind === 'tape' ? Array.isArray(mm.cells) : mm.kind === 'refs' ? Array.isArray(mm.names) && Array.isArray(mm.objects) : Array.isArray(mm.nodes) && Array.isArray(mm.edges));
-      if (!okShape) E(`${where}: mode memory-2d cần "memory" đúng dạng tape|refs|tree (xem scale-workbench/types.ts)`);
+      if (!okShape) {
+        E(`${where}: mode memory-2d cần "memory" đúng dạng tape|refs|tree (xem scale-workbench/types.ts)`);
+        continue;
+      }
+      if (mm.kind === 'tape') {
+        if (mm.cells.length === 0) E(`${where}: tape.cells không được rỗng`);
+        mm.cells.forEach((cell, idx) => {
+          if (typeof cell !== 'string' || !cell.trim() || cell.includes('[object Object]')) {
+            E(`${where}: tape.cells[${idx}] phải là chuỗi hợp lệ`);
+          }
+        });
+      } else if (mm.kind === 'refs') {
+        if (!mm.leftTitle || !mm.rightTitle) E(`${where}: refs thiếu leftTitle hoặc rightTitle`);
+        const objIds = new Set();
+        mm.objects.forEach((o, idx) => {
+          if (!o?.id) E(`${where}: refs.objects[${idx}] thiếu id`);
+          else objIds.add(o.id);
+          if (typeof o?.typeTag !== 'string' || !o.typeTag.trim()) {
+            E(`${where}: refs.objects[${idx}] (${o?.id ?? '?'}) thiếu typeTag`);
+          }
+        });
+        mm.names.forEach((n, idx) => {
+          if (!n?.id || !(n?.name || n?.label)) E(`${where}: refs.names[${idx}] thiếu id hoặc name`);
+          if (!n?.targetId || !objIds.has(n.targetId)) {
+            E(`${where}: refs.names[${idx}] (${n?.id ?? '?'}) có targetId "${n?.targetId ?? ''}" không khớp objects`);
+          }
+        });
+      } else if (mm.kind === 'tree') {
+        const treeIds = new Set();
+        mm.nodes.forEach((n, idx) => {
+          if (!n?.id || !n?.label) E(`${where}: tree.nodes[${idx}] thiếu id hoặc label`);
+          else treeIds.add(n.id);
+          if (!Number.isFinite(n?.x) || !Number.isFinite(n?.y)) {
+            E(`${where}: tree.nodes[${idx}] (${n?.id ?? '?'}) thiếu toạ độ số x, y`);
+          }
+        });
+        for (let i = 0; i < mm.nodes.length; i++) {
+          for (let j = i + 1; j < mm.nodes.length; j++) {
+            const a = mm.nodes[i];
+            const b = mm.nodes[j];
+            if (Number.isFinite(a?.x) && Number.isFinite(a?.y) && Number.isFinite(b?.x) && Number.isFinite(b?.y)) {
+              if (Math.abs(a.x - b.x) < 40 && Math.abs(a.y - b.y) < 35) {
+                E(`${where}: tree.nodes "${a.id}" và "${b.id}" bị đè toạ độ (${a.x},${a.y}) vs (${b.x},${b.y})`);
+              }
+            }
+          }
+        }
+        mm.edges.forEach((e, idx) => {
+          if (!treeIds.has(e?.from) || !treeIds.has(e?.to)) {
+            E(`${where}: tree.edges[${idx}] (${e?.from}->${e?.to}) trỏ tới node không tồn tại`);
+          }
+        });
+      }
       continue;
     }
     if (!isObj(sc) || !isObj(sc.show)) {
@@ -774,6 +832,19 @@ function checkStage(m, ctx) {
       const sl = sc.show.links === '*' ? [] : sc.show.links ?? [];
       for (const l of sl) if (!linkSet.has(l)) E(`${where}: link "${l}" không có trong sim`);
       for (const n of Object.keys(sc.state ?? {})) if (!nodeSet.has(n)) E(`${where}: state trỏ tới node "${n}" không có trong sim`);
+    } else {
+      const stageNodes = new Set(Object.keys(st.nodes ?? {}));
+      const shown = sc.show.nodes === '*' ? [...stageNodes] : sc.show.nodes ?? [];
+      for (const n of shown) if (!stageNodes.has(n)) E(`${where}: node "${n}" không có trong stage.nodes`);
+      const stageLinkKeys = [
+        ...Object.keys(st.links ?? {}),
+        ...(Array.isArray(sc.show.links) ? sc.show.links : []),
+        ...Object.keys(sc.linkState ?? {}),
+        ...(Array.isArray(sc.raw?.links) ? sc.raw.links : []),
+      ];
+      if (shown.length >= 2 && stageLinkKeys.length === 0) {
+        E(`${where}: module không có sim.json nhưng scene có ≥ 2 node mà không khai báo stage.links / show.links`);
+      }
     }
   }
   if (hasModel) {

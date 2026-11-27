@@ -3,7 +3,7 @@
 ```step
 category: SETUP
 short: Địa chỉ IP cũ
-scene: s2-stale-ip
+scene: s1-setup
 callout:
   kind: watch-out
   title: IP trên cloud là tạm thời
@@ -32,7 +32,7 @@ Mỗi lần triển khai phiên bản mới, nâng cấp máy chủ hay autoscal
 ```step
 category: TECHNIQUE
 short: Registry & Beat
-scene: s3-registry
+scene: s2-stale-ip
 callout:
   kind: key-idea
   title: Tự đăng ký và gia hạn TTL

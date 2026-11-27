@@ -162,6 +162,43 @@ export interface ModuleStatusSnapshot {
   quizPassed: boolean;
 }
 
+const SmoothCollapsible: React.FC<{
+  open: boolean;
+  children: React.ReactNode;
+}> = ({ open, children }) => {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [contentH, setContentH] = useState<number>(0);
+
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const h = el.scrollHeight;
+      setContentH((prev) => (prev === h ? prev : h));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open, children]);
+
+  return (
+    <div
+      aria-hidden={!open}
+      style={{ height: open ? (contentH > 0 ? `${contentH}px` : 'auto') : '0px' }}
+      className={cn(
+        'overflow-hidden transition-[height,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[height,opacity]',
+        open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      )}
+    >
+      <div ref={innerRef} className="flow-root">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 export interface ScaleWorkbenchLayoutProps {
   courseId: string;
   lessons: ScaleModuleLesson[];
@@ -258,6 +295,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const [isPlaying, setIsPlaying] = useState(true);
   const [replayNonce, setReplayNonce] = useState(0);
   const [manualSandboxOpen, setManualSandboxOpen] = useState(false);
+  const [rightTab, setRightTab] = useState<'step' | 'story'>('step');
   const [sandboxCode, setSandboxCode] = useState('');
   const [sandboxOut, setSandboxOut] = useState<RunResult | null>(null);
   const [sandboxRunning, setSandboxRunning] = useState(false);
@@ -290,6 +328,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       !liveSimAdapter
     ) {
       setLiveSession(null);
+      setIsPlaying(true);
       return;
     }
     const spec = activeStep.liveSim;
@@ -339,7 +378,9 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     speed: simSpeed,
     pauseAtSec: activeStep?.liveSim?.pauseAtSec,
     onPause: () => setIsPlaying(false),
-    onEnd: () => setIsPlaying(false),
+    onEnd: () => {
+      liveSession?.reset();
+    },
   });
 
   const handleChaosPick = useCallback(
@@ -366,6 +407,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const leftAsideRef = useRef<HTMLElement>(null);
+  const rightAsideRef = useRef<HTMLElement>(null);
   const centerStageCardRef = useRef<HTMLDivElement>(null);
   const railHideTimerRef = useRef<number | null>(null);
   const narrativeScrollRef = useRef<HTMLDivElement>(null);
@@ -379,7 +421,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (typeof w === 'number' && w > 0) {
-        setIsCenterCompact(w < 585);
+        const nextCompact = w < 585;
+        setIsCenterCompact((prev) => (prev === nextCompact ? prev : nextCompact));
       }
     });
     ro.observe(el);
@@ -439,7 +482,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     (e: React.PointerEvent<HTMLDivElement>) => {
       e.preventDefault();
       const startX = e.clientX;
-      const startWidth = rightSidebarWidth;
+      const startWidth =
+        rightAsideRef.current?.getBoundingClientRect().width ?? rightSidebarWidth;
       const containerW =
         rootContainerRef.current?.getBoundingClientRect().width ?? 1440;
       const leftW =
@@ -456,13 +500,31 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
 
+      let latestW = Math.round(startWidth);
+      let rafId: number | null = null;
+
+      const applyDomWidth = () => {
+        rafId = null;
+        rightAsideRef.current?.style.setProperty('--dts-right-w', `${latestW}px`);
+      };
+
       const onMove = (ev: PointerEvent) => {
         const delta = startX - ev.clientX;
-        const nextW = Math.max(320, Math.min(maxAllowed, startWidth + delta));
-        setRightSidebarWidth(nextW);
+        latestW = Math.round(
+          Math.max(320, Math.min(maxAllowed, startWidth + delta))
+        );
+        if (rafId === null) {
+          rafId = window.requestAnimationFrame(applyDomWidth);
+        }
       };
 
       const onUp = () => {
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        rightAsideRef.current?.style.setProperty('--dts-right-w', `${latestW}px`);
+        setRightSidebarWidth(latestW);
         setIsResizingRight(false);
         document.body.style.cursor = prevCursor;
         document.body.style.userSelect = prevSelect;
@@ -790,16 +852,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           />
         </div>
 
-        <div
-          aria-hidden={!isProgressExpanded}
-          className={cn(
-            'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
-            isProgressExpanded
-              ? 'grid-rows-[1fr] opacity-100'
-              : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-          )}
-        >
-          <div className="overflow-hidden">
+        <SmoothCollapsible open={isProgressExpanded}>
             <div className="mt-2.5 max-h-44 space-y-1.5 overflow-y-auto pr-1">
               {levelGroups.map((grp) => {
                 const doneInGrp = grp.items.filter((it) => {
@@ -837,8 +890,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 );
               })}
             </div>
-          </div>
-        </div>
+        </SmoothCollapsible>
       </div>
     </div>
   );
@@ -1575,6 +1627,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
       {/* 3. RIGHT COLUMN (Resizable on xl+ via --dts-right-w) */}
       <aside
+        ref={rightAsideRef}
         style={
           {
             '--dts-right-w': `${rightSidebarWidth}px`,
@@ -1583,88 +1636,198 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         className="flex w-full xl:w-[var(--dts-right-w)] shrink-0 flex-col gap-2.5 xl:min-h-0"
       >
         <div className="dts-panel flex flex-1 flex-col rounded-2xl p-4 xl:min-h-0">
-          <div className="mb-2.5 flex items-center justify-between gap-2">
-            <span className="font-mono text-xs font-extrabold tracking-wider text-[var(--dts-ink-muted)]">
-              STEP {safeStepIdx + 1} / {activeLesson.steps.length}
-            </span>
-            <span
-              className={cn(
-                'rounded-full border border-[var(--dts-border)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider',
-                getCategoryStyle(activeStep.category)
-              )}
+          {activeLesson.story && (
+            <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-muted)] p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setRightTab('step');
+                  narrativeScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-extrabold transition-all cursor-pointer',
+                  rightTab === 'step'
+                    ? 'border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
+                    : 'text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]'
+                )}
+              >
+                <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {lang === 'en'
+                    ? `Lesson (${safeStepIdx + 1}/${activeLesson.steps.length})`
+                    : `Bài học (${safeStepIdx + 1}/${activeLesson.steps.length})`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRightTab('story');
+                  narrativeScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-extrabold transition-all cursor-pointer',
+                  rightTab === 'story'
+                    ? 'border border-[var(--dts-border)] bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
+                    : 'text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]'
+                )}
+              >
+                <Lightbulb className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {lang === 'en' ? 'Story & Mindset' : 'Câu chuyện & Tư duy'}
+                </span>
+              </button>
+            </div>
+          )}
+
+          {rightTab === 'story' && activeLesson.story ? (
+            <div
+              ref={narrativeScrollRef}
+              className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
             >
-              {t.categories[activeStep.category]}
-            </span>
-          </div>
-
-          <div
-            ref={narrativeScrollRef}
-            className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
-          >
-            <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
-              {pickText(activeStep.title, lang)}
-            </h2>
-
-            <BlueprintMarkdown
-              source={
-                lang === 'en' ? activeStep.summaryEn : activeStep.summaryVi
-              }
-            />
-
-            {activeStep.callout && (() => {
-              const { boxCls, Icon } = getCalloutMeta(activeStep.callout.kind);
-              const cTitle = activeStep.callout.title
-                ? pickText(activeStep.callout.title, lang)
-                : t.calloutTitles[activeStep.callout.kind];
-              return (
-                <div className={cn('rounded-xl border p-3', boxCls)}>
-                  <div className="flex items-start gap-2.5">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-current/30 bg-black/5">
-                      <Icon className="h-3.5 w-3.5" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
-                        {cTitle}
-                      </div>
-                      <p className="mt-0.5 text-[12.5px] leading-relaxed font-medium">
-                        {pickText(activeStep.callout.text, lang)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {activeStep.whatChanged.length > 0 && (
-              <div className="pt-1">
-                <div className="mb-1.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                  {t.whatChanged}
-                </div>
-                <ul className="space-y-1.5">
-                  {activeStep.whatChanged.map((diff, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 font-mono text-[12px] leading-snug text-[var(--dts-ink)]"
-                    >
-                      <span
-                        className={cn(
-                          'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded font-extrabold text-[11px]',
-                          diff.op === '+'
-                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                            : diff.op === '-'
-                              ? 'bg-[var(--dts-rose-bg)] text-[var(--dts-rose-ink)]'
-                              : 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
-                        )}
-                      >
-                        {diff.op}
-                      </span>
-                      <span>{pickText(diff.text, lang)}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                  {activeLesson.moduleId} · {lang === 'en' ? 'REAL-WORLD CONTEXT' : 'BỐI CẢNH & TƯ DUY THỰC CHIẾN'}
+                </span>
+                <span className="rounded-full border border-[var(--dts-border)] bg-[var(--dts-amber-bg)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-amber-ink)]">
+                  {lang === 'en' ? 'STORY' : 'TÌNH HUỐNG'}
+                </span>
               </div>
-            )}
-          </div>
+
+              <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
+                {pickText(activeLesson.title, lang)}
+              </h2>
+
+              <BlueprintMarkdown source={pickText(activeLesson.story, lang)} />
+
+              {activeLesson.attribution?.href && (
+                <div className="mt-3 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-blue-soft)] p-3 text-[var(--dts-blue-ink)]">
+                  <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
+                    {lang === 'en' ? 'Original Article on Web' : 'Bài viết gốc trên trang web'}
+                  </div>
+                  <p className="mt-1 text-[12px] leading-relaxed text-[var(--dts-ink-soft)]">
+                    {lang === 'en'
+                      ? 'Want to read the full original long-form article and author stories on System Design Core?'
+                      : 'Bạn có thể đọc thêm bài viết dài nguyên bản cùng câu chuyện chi tiết của tác giả trên trang web System Design Core:'}
+                  </p>
+                  <a
+                    href={activeLesson.attribution.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="dts-btn-tactile mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--dts-panel-elevated)] px-3 py-1.5 font-mono text-[11px] font-extrabold text-[var(--dts-ink)] hover:opacity-90"
+                  >
+                    <span>
+                      {activeLesson.attribution.sourceTitle
+                        ? pickText(activeLesson.attribution.sourceTitle, lang)
+                        : 'systemdesigncore.site'}
+                    </span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="mb-2.5 flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-extrabold tracking-wider text-[var(--dts-ink-muted)]">
+                  STEP {safeStepIdx + 1} / {activeLesson.steps.length}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full border border-[var(--dts-border)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider',
+                    getCategoryStyle(activeStep.category)
+                  )}
+                >
+                  {t.categories[activeStep.category]}
+                </span>
+              </div>
+
+              <div
+                ref={narrativeScrollRef}
+                className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
+              >
+                <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
+                  {pickText(activeStep.title, lang)}
+                </h2>
+
+                <BlueprintMarkdown
+                  source={
+                    lang === 'en' ? activeStep.summaryEn : activeStep.summaryVi
+                  }
+                />
+
+                {activeStep.callout && (() => {
+                  const { boxCls, Icon } = getCalloutMeta(activeStep.callout.kind);
+                  const cTitle = activeStep.callout.title
+                    ? pickText(activeStep.callout.title, lang)
+                    : t.calloutTitles[activeStep.callout.kind];
+                  return (
+                    <div className={cn('rounded-xl border p-3', boxCls)}>
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-current/30 bg-black/5">
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
+                            {cTitle}
+                          </div>
+                          <p className="mt-0.5 text-[12.5px] leading-relaxed font-medium">
+                            {pickText(activeStep.callout.text, lang)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {activeStep.whatChanged.length > 0 && (
+                  <div className="pt-1">
+                    <div className="mb-1.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                      {t.whatChanged}
+                    </div>
+                    <ul className="space-y-1.5">
+                      {activeStep.whatChanged.map((diff, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-2 font-mono text-[12px] leading-snug text-[var(--dts-ink)]"
+                        >
+                          <span
+                            className={cn(
+                              'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded font-extrabold text-[11px]',
+                              diff.op === '+'
+                                ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                                : diff.op === '-'
+                                  ? 'bg-[var(--dts-rose-bg)] text-[var(--dts-rose-ink)]'
+                                  : 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
+                            )}
+                          >
+                            {diff.op}
+                          </span>
+                          <span>{pickText(diff.text, lang)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeLesson.attribution && (
+            <div className="mt-2.5 shrink-0 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
+              {activeLesson.attribution.href ? (
+                <a
+                  href={activeLesson.attribution.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-[var(--dts-blue-ink)] underline underline-offset-2 hover:opacity-85"
+                >
+                  <span>{pickText(activeLesson.attribution.text, lang)}</span>
+                </a>
+              ) : (
+                <span>{pickText(activeLesson.attribution.text, lang)}</span>
+              )}
+            </div>
+          )}
 
           {/* Navigation Footer (Desktop lg+; Mobile/Tablet uses the sticky bottom bar snapped above the 5-tab nav!) */}
           <div className="mt-3 hidden lg:block shrink-0 border-t border-[var(--dts-border-soft)] pt-3">
@@ -1771,16 +1934,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             </span>
           </button>
 
-          <div
-            aria-hidden={!isObjectivesExpanded}
-            className={cn(
-              'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
-              isObjectivesExpanded
-                ? 'grid-rows-[1fr] opacity-100'
-                : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-            )}
-          >
-            <div className="overflow-hidden">
+          <SmoothCollapsible open={isObjectivesExpanded}>
               <ul className="mt-2 space-y-1.5">
                 {activeLesson.objectives.map((obj, idx) => {
                   const threshold = Math.floor(
@@ -1910,8 +2064,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                   )}
                 </div>
               )}
-            </div>
-          </div>
+          </SmoothCollapsible>
         </div>
       </aside>
       </div>

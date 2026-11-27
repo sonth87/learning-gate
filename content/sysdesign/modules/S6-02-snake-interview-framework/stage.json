@@ -6,13 +6,47 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "tape",
-        "title": { "vi": "Bản đồ thời gian 45 phút theo khung SNAKE", "en": "45-Minute SNAKE Timeline" },
+        "title": {
+          "vi": "Bản đồ thời gian 45 phút theo khung SNAKE",
+          "en": "45-Minute SNAKE Timeline"
+        },
         "cells": [
-          { "id": "s", "label": "S — Scope (5–7 phút)", "value": "Chốt tính năng & ràng buộc", "note": "Nêu rõ phần ngoài phạm vi", "tone": "rose" },
-          { "id": "n", "label": "N — Numbers (5–7 phút)", "value": "RPS · Lưu trữ · Băng thông · RAM", "note": "Tính đỉnh tải gấp 3 lần trung bình", "tone": "amber" },
-          { "id": "a", "label": "A — API (5 phút)", "value": "Định nghĩa hợp đồng giao tiếp", "note": "REST/RPC, phân trang, Idempotency", "tone": "green" },
-          { "id": "k", "label": "K — Key Components (10–12 phút)", "value": "Vẽ luồng đọc/ghi tổng thể", "note": "Gắn số liệu từ bước N vào từng khối", "tone": "blue" },
-          { "id": "e", "label": "E — Elaborate (10–12 phút)", "value": "Đào sâu nút nghẽn & lỗi", "note": "Giữ 5 phút dự phòng hỏi đáp", "tone": "purple" }
+          "S — Scope (5–7 phút): Chốt tính năng & ràng buộc",
+          "N — Numbers (5–7 phút): RPS · Lưu trữ · Băng thông · RAM",
+          "A — API (5 phút): Định nghĩa hợp đồng giao tiếp",
+          "K — Key Components (10–12 phút): Vẽ luồng đọc/ghi tổng thể",
+          "E — Elaborate (10–12 phút): Đào sâu nút nghẽn & lỗi"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Nêu rõ phần ngoài phạm vi",
+            "tone": "rose"
+          },
+          {
+            "index": 1,
+            "label": "Tính đỉnh tải gấp 3 lần trung bình",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "REST/RPC, phân trang, Idempotency",
+            "tone": "green"
+          },
+          {
+            "index": 3,
+            "label": "Gắn số liệu từ bước N vào từng khối",
+            "tone": "blue"
+          },
+          {
+            "index": 4,
+            "label": "Giữ 5 phút dự phòng hỏi đáp",
+            "tone": "purple"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
         ]
       }
     },
@@ -20,34 +54,114 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "refs",
-        "title": { "vi": "Chặng S & N: Biến đề bài mơ hồ thành số đo cụ thể", "en": "Scope & Numbers Conversion" },
         "names": [
-          { "id": "n1", "name": "100M DAU × 10 lần đọc/ngày", "target": "o1" },
-          { "id": "n2", "name": "200M bài đăng/ngày × 600 B", "target": "o2" },
-          { "id": "n3", "name": "30% bài có ảnh/video 2 MB", "target": "o3" }
+          {
+            "id": "n1",
+            "name": "100M DAU × 10 lần đọc/ngày",
+            "targetId": "o1"
+          },
+          {
+            "id": "n2",
+            "name": "200M bài đăng/ngày × 600 B",
+            "targetId": "o2"
+          },
+          {
+            "id": "n3",
+            "name": "30% bài có ảnh/video 2 MB",
+            "targetId": "o3"
+          }
         ],
         "objects": [
-          { "id": "o1", "type": "Lưu lượng đọc", "value": "TB ~12.000 req/s · Đỉnh ~36.000 req/s ⇒ Cần Load Balancer + Cache", "tone": "blue" },
-          { "id": "o2", "type": "Lưu trữ 5 năm", "value": "120 GB/ngày ⇒ ~219 TB sau 5 năm ⇒ Cần kế hoạch Sharding", "tone": "amber" },
-          { "id": "o3", "type": "Băng thông Media", "value": "Hàng GB/s dữ liệu tĩnh ⇒ Bắt buộc dùng Object Storage + CDN", "tone": "green" }
-        ]
+          {
+            "id": "o1",
+            "value": "TB ~12.000 req/s · Đỉnh ~36.000 req/s ⇒ Cần Load Balancer + Cache",
+            "tone": "blue",
+            "typeTag": "Lưu lượng đọc"
+          },
+          {
+            "id": "o2",
+            "value": "120 GB/ngày ⇒ ~219 TB sau 5 năm ⇒ Cần kế hoạch Sharding",
+            "tone": "amber",
+            "typeTag": "Lưu trữ 5 năm"
+          },
+          {
+            "id": "o3",
+            "value": "Băng thông Media",
+            "tone": "green",
+            "typeTag": "STORAGE & BW",
+            "fields": [
+              "Hàng GB/s dữ liệu tĩnh ⇒ Bắt buộc dùng Object Storage + CDN"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Chặng S & N: Biến đề bài mơ hồ thành số đo cụ thể",
+          "en": "Scope & Numbers Conversion"
+        }
       }
     },
     "s3-api-components": {
       "mode": "memory-2d",
       "memory": {
         "kind": "tree",
-        "title": { "vi": "Chặng A & K: Từ hợp đồng API đến sơ đồ thành phần", "en": "API Contracts to Key Components" },
+        "title": {
+          "vi": "Chặng A & K: Từ hợp đồng API đến sơ đồ thành phần",
+          "en": "API Contracts to Key Components"
+        },
         "nodes": [
-          { "id": "api", "label": "Hợp đồng API", "sub": "POST /posts · GET /feed?cursor=...", "layer": 0, "tone": "green" },
-          { "id": "write", "label": "Luồng Ghi (8%)", "sub": "API → Post DB + Event Queue", "layer": 1, "tone": "amber" },
-          { "id": "read", "label": "Luồng Đọc (92%)", "sub": "API → Feed Cache → Post DB", "layer": 1, "tone": "blue" },
-          { "id": "cdn", "label": "Luồng Media", "sub": "Client → CDN → Object Storage", "layer": 1, "tone": "purple" }
+          {
+            "id": "api",
+            "label": "Hợp đồng API",
+            "sub": "POST /posts · GET /feed?cursor=...",
+            "tone": "green",
+            "x": 0,
+            "y": -39
+          },
+          {
+            "id": "write",
+            "label": "Luồng Ghi (8%)",
+            "sub": "API → Post DB + Event Queue",
+            "tone": "amber",
+            "x": -172,
+            "y": 39
+          },
+          {
+            "id": "read",
+            "label": "Luồng Đọc (92%)",
+            "sub": "API → Feed Cache → Post DB",
+            "tone": "blue",
+            "x": 0,
+            "y": 39
+          },
+          {
+            "id": "cdn",
+            "label": "Luồng Media",
+            "sub": "Client → CDN → Object Storage",
+            "tone": "purple",
+            "x": 172,
+            "y": 39
+          }
         ],
         "edges": [
-          { "from": "api", "to": "write", "label": "tạo bài" },
-          { "from": "api", "to": "read", "label": "tải bảng tin" },
-          { "from": "api", "to": "cdn", "label": "tải ảnh/video" }
+          {
+            "from": "api",
+            "to": "write",
+            "label": "tạo bài"
+          },
+          {
+            "from": "api",
+            "to": "read",
+            "label": "tải bảng tin"
+          },
+          {
+            "from": "api",
+            "to": "cdn",
+            "label": "tải ảnh/video"
+          }
         ]
       }
     },
@@ -55,11 +169,35 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "tape",
-        "title": { "vi": "Chặng E (Elaborate): Ba chủ đề đào sâu trọng tâm", "en": "Elaborate Focus Areas" },
+        "title": {
+          "vi": "Chặng E (Elaborate): Ba chủ đề đào sâu trọng tâm",
+          "en": "Elaborate Focus Areas"
+        },
         "cells": [
-          { "id": "e1", "label": "1. Nút nghẽn & Hot Key", "value": "Fan-out kết hợp cho người nổi tiếng", "note": "Đẩy cho người thường, kéo khi xem với tài khoản triệu follower", "tone": "amber" },
-          { "id": "e2", "label": "2. Độ tin cậy & Lỗi", "value": "Không SPOF · Backoff · Failover", "note": "Đảm bảo mất 1 node API không làm gián đoạn dịch vụ", "tone": "blue" },
-          { "id": "e3", "label": "3. Chi phí & Đánh đổi", "value": "Chốt cấu hình nằm trong trần $/giờ", "note": "Bảo vệ lý do chọn Cache thay vì phình to Database", "tone": "green" }
+          "1. Nút nghẽn & Hot Key: Fan-out kết hợp cho người nổi tiếng",
+          "2. Độ tin cậy & Lỗi: Không SPOF · Backoff · Failover",
+          "3. Chi phí & Đánh đổi: Chốt cấu hình nằm trong trần $/giờ"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Đẩy cho người thường, kéo khi xem với tài khoản triệu follower",
+            "tone": "amber"
+          },
+          {
+            "index": 1,
+            "label": "Đảm bảo mất 1 node API không làm gián đoạn dịch vụ",
+            "tone": "blue"
+          },
+          {
+            "index": 2,
+            "label": "Bảo vệ lý do chọn Cache thay vì phình to Database",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          0,
+          2
         ]
       }
     }

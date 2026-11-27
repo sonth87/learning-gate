@@ -163,6 +163,7 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
   let lastNow = 0;
   let lastReady = false;
   const tmp = { x: 0, y: 0 };
+  const liveQueueByLink = new Map<string, { qCount: number; hasDrop: boolean }>();
 
   const hidePool = (): void => {
     for (let i = 0; i < cfg.pool.length; i++) show(cfg.pool[i].g, false);
@@ -209,7 +210,7 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
         slotOf.set(p.id, slot);
         rec = {
           id: p.id, linkId: p.linkId, kind: p.kind, reverse: p.reverse, fate: p.fate,
-          p0: p.progress, v: 0, arrival: now, styleKind: '',
+          p0: p.progress, v: 0.82, arrival: now, styleKind: '',
         };
         recs[slot] = rec;
       } else {
@@ -365,18 +366,22 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
                 : st === 'busy' || qPct >= 0.08 || load >= 68
                   ? 3
                   : 0;
+        liveQueueByLink.set(l.id, { qCount, hasDrop });
         show(l.qdots, qCount > 0 && Boolean(lut));
         if (qCount > 0 && lut) {
           const baseEnd = hasDrop ? 0.87 : 0.93;
+          const slotGap = 0.068;
           for (let qi = 0; qi < l.qdotCircles.length; qi++) {
             const cEl = l.qdotCircles[qi];
             const vis = qi < qCount;
             show(cEl, vis);
             if (vis) {
-              const frac = Math.max(0.28, baseEnd - qi * 0.068);
+              const frac = Math.max(0.28, baseEnd - qi * slotGap);
               lutAt(lut, frac, tmp);
               put(cEl, 'cx', n1(tmp.x));
               put(cEl, 'cy', n1(tmp.y));
+              put(cEl, 'r', '4.2');
+              put(cEl, 'opacity', '1');
             }
           }
         }
@@ -392,6 +397,8 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
   };
 
   const applyPackets = (now: number, isPlaying: boolean): void => {
+    const activeShiftByLink = new Map<string, number>();
+
     for (let slot = 0; slot < recs.length; slot++) {
       const rec = recs[slot];
       if (!rec) continue;
@@ -406,11 +413,71 @@ export function createLiveFrameApplier(cfg: LiveApplierConfig): LiveFrameApplier
         rec.styleKind = rec.kind;
       }
       const extra = isPlaying ? (Math.min(250, Math.max(0, now - rec.arrival)) * rec.v) / 1000 : 0;
-      const pv = packetVisual(rec.kind, Math.min(1, rec.p0 + extra), rec.fate, rec.reverse);
-      lutAt(lut, pv.t, tmp);
+      const rawProg = Math.min(1, rec.p0 + extra);
+      const pv = packetVisual(rec.kind, rawProg, rec.fate, rec.reverse);
+      if (rec.kind === 'cache-hit' && rec.fate !== undefined) {
+        put(el.circle, 'fill', rawProg > rec.fate ? '#9fd28f' : '#efb041');
+      }
+
+      const qInfo = !rec.reverse ? liveQueueByLink.get(rec.linkId) : undefined;
+      let tOnLink = pv.t;
+      if (qInfo && qInfo.qCount > 0 && !rec.reverse) {
+        const baseEnd = qInfo.hasDrop ? 0.87 : 0.93;
+        const slotGap = 0.068;
+        const tailFrac = Math.max(0.28, baseEnd - (qInfo.qCount - 1) * slotGap);
+        const entryBehindTail = Math.max(0.22, baseEnd - qInfo.qCount * slotGap);
+        if (rawProg < 0.68) {
+          tOnLink = (rawProg / 0.68) * entryBehindTail;
+        } else {
+          const rawS = Math.min(1, Math.max(0, (rawProg - 0.68) / 0.32));
+          const shiftS =
+            rawS < 0.5
+              ? 4 * rawS * rawS * rawS
+              : 1 - Math.pow(-2 * rawS + 2, 3) / 2;
+          tOnLink = entryBehindTail + shiftS * (tailFrac - entryBehindTail);
+          const prevS = activeShiftByLink.get(rec.linkId) ?? 0;
+          if (shiftS > prevS) activeShiftByLink.set(rec.linkId, shiftS);
+          if (rec.kind === 'request' && shiftS > 0.45) {
+            put(el.circle, 'fill', '#efb041');
+            rec.styleKind = '';
+          }
+        }
+      }
+
+      lutAt(lut, tOnLink, tmp);
       put(el.g, 'transform', `translate(${n1(tmp.x)} ${n1(tmp.y + pv.dy)})`);
       put(el.g, 'opacity', n2(roundTo(pv.opacity, 0.05)));
       show(el.g, pv.opacity > 0.01);
+    }
+
+    // Dồn hàng FIFO cho các chấm hàng đợi trong live-sim khi có gói mới đẩy vào đuôi
+    for (const l of cfg.links) {
+      const qInfo = liveQueueByLink.get(l.id);
+      if (!qInfo || qInfo.qCount <= 0 || !l.qdotCircles) continue;
+      const lut = luts.get(l.id);
+      if (!lut) continue;
+      const shiftS = activeShiftByLink.get(l.id) ?? 0;
+      const baseEnd = qInfo.hasDrop ? 0.87 : 0.93;
+      const slotGap = 0.068;
+      for (let qi = 0; qi < qInfo.qCount && qi < l.qdotCircles.length; qi++) {
+        const cEl = l.qdotCircles[qi];
+        const baseFrac = Math.max(0.28, baseEnd - qi * slotGap);
+        if (qi === 0) {
+          const consumeFrac = Math.min(0.98, baseFrac + shiftS * 0.052);
+          lutAt(lut, consumeFrac, tmp);
+          put(cEl, 'cx', n1(tmp.x));
+          put(cEl, 'cy', n1(tmp.y));
+          put(cEl, 'r', n1(4.2 - shiftS * 2.0));
+          put(cEl, 'opacity', n2(1 - Math.pow(shiftS, 1.45) * 0.9));
+        } else {
+          const shiftedFrac = Math.min(baseEnd, baseFrac + shiftS * slotGap);
+          lutAt(lut, shiftedFrac, tmp);
+          put(cEl, 'cx', n1(tmp.x));
+          put(cEl, 'cy', n1(tmp.y));
+          put(cEl, 'r', '4.2');
+          put(cEl, 'opacity', '1');
+        }
+      }
     }
   };
 

@@ -5,277 +5,852 @@
     "client": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Người dùng", "en": "Users" },
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
       "inspector": {
-        "what": { "vi": "Người dùng tải ảnh/video lên và xem lại nội dung media.", "en": "Users uploading and viewing media files." },
-        "how": { "vi": "Khi dùng Presigned URL, client đẩy byte trực tiếp tới Object Storage.", "en": "With Presigned URLs, clients upload bytes straight to Object Storage." },
-        "why": { "vi": "Tránh giữ kết nối lâu qua tầng API Server.", "en": "Avoids pinning API Server threads during slow uploads." }
+        "what": {
+          "vi": "Người dùng tải ảnh/video lên và xem lại nội dung media.",
+          "en": "Users uploading and viewing media files."
+        },
+        "how": {
+          "vi": "Khi dùng Presigned URL, client đẩy byte trực tiếp tới Object Storage.",
+          "en": "With Presigned URLs, clients upload bytes straight to Object Storage."
+        },
+        "why": {
+          "vi": "Tránh giữ kết nối lâu qua tầng API Server.",
+          "en": "Avoids pinning API Server threads during slow uploads."
+        }
       }
     },
     "cdn": {
       "shape": "block",
       "tone": "purple",
       "icon": "globe",
-      "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+      "label": {
+        "vi": "CDN Edge",
+        "en": "CDN Edge"
+      },
       "inspector": {
-        "what": { "vi": "Mạng phân phối nội dung lưu đệm ảnh và video tại điểm biên gần người dùng.", "en": "Edge CDN caching images and video segments near users." },
-        "how": { "vi": "Phục vụ 80–95% lượt đọc trực tiếp từ biên, chỉ gọi về gốc khi Cache Miss.", "en": "Serves 80–95% of reads from edge, hitting origin only on misses." },
-        "why": { "vi": "Giảm độ trễ tải media và cắt giảm chi phí băng thông ra ngoài.", "en": "Cuts media latency and storage egress cost." }
+        "what": {
+          "vi": "Mạng phân phối nội dung lưu đệm ảnh và video tại điểm biên gần người dùng.",
+          "en": "Edge CDN caching images and video segments near users."
+        },
+        "how": {
+          "vi": "Phục vụ 80–95% lượt đọc trực tiếp từ biên, chỉ gọi về gốc khi Cache Miss.",
+          "en": "Serves 80–95% of reads from edge, hitting origin only on misses."
+        },
+        "why": {
+          "vi": "Giảm độ trễ tải media và cắt giảm chi phí băng thông ra ngoài.",
+          "en": "Cuts media latency and storage egress cost."
+        }
       }
     },
     "lb": {
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
       "inspector": {
-        "what": { "vi": "Điều phối các yêu cầu API và xin cấp Presigned URL.", "en": "Routes API and presigned-URL initiation requests." },
-        "how": { "vi": "Chia đều lưu lượng tới cụm API Server.", "en": "Distributes requests across API Server instances." },
-        "why": { "vi": "Cho phép mở rộng ngang tầng API.", "en": "Enables horizontal scaling of the API tier." }
+        "what": {
+          "vi": "Điều phối các yêu cầu API và xin cấp Presigned URL.",
+          "en": "Routes API and presigned-URL initiation requests."
+        },
+        "how": {
+          "vi": "Chia đều lưu lượng tới cụm API Server.",
+          "en": "Distributes requests across API Server instances."
+        },
+        "why": {
+          "vi": "Cho phép mở rộng ngang tầng API.",
+          "en": "Enables horizontal scaling of the API tier."
+        }
       }
     },
     "api": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "API Server", "en": "API Server" },
+      "label": {
+        "vi": "API Server",
+        "en": "API Server"
+      },
       "inspector": {
-        "what": { "vi": "Máy chủ xử lý logic, xác thực quyền và ghi metadata.", "en": "Stateless API handling auth, metadata, and URL signing." },
-        "how": { "vi": "Nếu phải trung chuyển byte, 2 máy chủ chỉ chịu được khoảng 300 req/s trước khi cạn luồng.", "en": "If proxying file bytes, 2 instances saturate around 300 req/s." },
-        "why": { "vi": "Chỉ nên cấp Presigned URL nhẹ thay vì giữ luồng tải tệp lớn.", "en": "Should sign short-lived URLs instead of buffering uploads." }
+        "what": {
+          "vi": "Máy chủ xử lý logic, xác thực quyền và ghi metadata.",
+          "en": "Stateless API handling auth, metadata, and URL signing."
+        },
+        "how": {
+          "vi": "Nếu phải trung chuyển byte, 2 máy chủ chỉ chịu được khoảng 300 req/s trước khi cạn luồng.",
+          "en": "If proxying file bytes, 2 instances saturate around 300 req/s."
+        },
+        "why": {
+          "vi": "Chỉ nên cấp Presigned URL nhẹ thay vì giữ luồng tải tệp lớn.",
+          "en": "Should sign short-lived URLs instead of buffering uploads."
+        }
       }
     },
     "db": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Metadata DB", "en": "Metadata DB" },
+      "label": {
+        "vi": "Metadata DB",
+        "en": "Metadata DB"
+      },
       "inspector": {
-        "what": { "vi": "Cơ sở dữ liệu lưu thông tin mô tả tệp (id, owner, key, status).", "en": "Relational DB storing lightweight file metadata." },
-        "how": { "vi": "Mỗi bản ghi chỉ tốn vài trăm byte thay vì hàng megabyte.", "en": "Each row takes ~300 bytes instead of megabytes." },
-        "why": { "vi": "Giữ DB gọn nhẹ, sao lưu nhanh và chỉ mục nằm trọn trong RAM.", "en": "Keeps backups fast and hot indexes in memory." }
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu thông tin mô tả tệp (id, owner, key, status).",
+          "en": "Relational DB storing lightweight file metadata."
+        },
+        "how": {
+          "vi": "Mỗi bản ghi chỉ tốn vài trăm byte thay vì hàng megabyte.",
+          "en": "Each row takes ~300 bytes instead of megabytes."
+        },
+        "why": {
+          "vi": "Giữ DB gọn nhẹ, sao lưu nhanh và chỉ mục nằm trọn trong RAM.",
+          "en": "Keeps backups fast and hot indexes in memory."
+        }
       }
     },
     "queue": {
       "shape": "queue",
       "tone": "yellow",
       "icon": "layers",
-      "label": { "vi": "Media Queue", "en": "Media Queue" },
+      "label": {
+        "vi": "Media Queue",
+        "en": "Media Queue"
+      },
       "inspector": {
-        "what": { "vi": "Hàng đợi chứa tác vụ tạo thumbnail và chuyển mã video.", "en": "Queue buffering thumbnail and transcode jobs." },
-        "how": { "vi": "Hấp thụ đột biến số lượng tệp vừa tải lên.", "en": "Absorbs upload spikes for asynchronous processing." },
-        "why": { "vi": "Tách thời gian xử lý nặng khỏi phản hồi tức thì cho người dùng.", "en": "Decouples heavy media processing from user response time." }
+        "what": {
+          "vi": "Hàng đợi chứa tác vụ tạo thumbnail và chuyển mã video.",
+          "en": "Queue buffering thumbnail and transcode jobs."
+        },
+        "how": {
+          "vi": "Hấp thụ đột biến số lượng tệp vừa tải lên.",
+          "en": "Absorbs upload spikes for asynchronous processing."
+        },
+        "why": {
+          "vi": "Tách thời gian xử lý nặng khỏi phản hồi tức thì cho người dùng.",
+          "en": "Decouples heavy media processing from user response time."
+        }
       }
     },
     "worker": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Media Worker", "en": "Media Worker" },
+      "label": {
+        "vi": "Media Worker",
+        "en": "Media Worker"
+      },
       "inspector": {
-        "what": { "vi": "Cụm worker nén ảnh, cắt thumbnail và chuyển mã video.", "en": "Worker pool resizing images and transcoding video." },
-        "how": { "vi": "Đọc tệp gốc từ Storage, xử lý xong ghi các phiên bản mới lên lại Storage.", "en": "Reads raw objects, writes optimized renditions back to Storage." },
-        "why": { "vi": "Có thể tự động tăng giảm số worker theo độ dài hàng đợi.", "en": "Scales independently based on queue depth." }
+        "what": {
+          "vi": "Cụm worker nén ảnh, cắt thumbnail và chuyển mã video.",
+          "en": "Worker pool resizing images and transcoding video."
+        },
+        "how": {
+          "vi": "Đọc tệp gốc từ Storage, xử lý xong ghi các phiên bản mới lên lại Storage.",
+          "en": "Reads raw objects, writes optimized renditions back to Storage."
+        },
+        "why": {
+          "vi": "Có thể tự động tăng giảm số worker theo độ dài hàng đợi.",
+          "en": "Scales independently based on queue depth."
+        }
       }
     },
     "blob": {
       "shape": "db",
       "tone": "blue",
-      "label": { "vi": "Object Storage", "en": "Object Storage" },
+      "label": {
+        "vi": "Object Storage",
+        "en": "Object Storage"
+      },
       "inspector": {
-        "what": { "vi": "Kho lưu trữ đối tượng bền vững cho ảnh, video và tệp lớn.", "en": "Durable object storage for raw and processed media." },
-        "how": { "vi": "Nhận tải lên trực tiếp qua Presigned URL và hỗ trợ Lifecycle chuyển tầng lạnh.", "en": "Accepts direct Presigned URL uploads and applies Lifecycle tiering." },
-        "why": { "vi": "Rẻ hơn nhiều lần so với Database và mở rộng dung lượng gần như vô hạn.", "en": "Far cheaper than DB storage with virtually unlimited capacity." }
+        "what": {
+          "vi": "Kho lưu trữ đối tượng bền vững cho ảnh, video và tệp lớn.",
+          "en": "Durable object storage for raw and processed media."
+        },
+        "how": {
+          "vi": "Nhận tải lên trực tiếp qua Presigned URL và hỗ trợ Lifecycle chuyển tầng lạnh.",
+          "en": "Accepts direct Presigned URL uploads and applies Lifecycle tiering."
+        },
+        "why": {
+          "vi": "Rẻ hơn nhiều lần so với Database và mở rộng dung lượng gần như vô hạn.",
+          "en": "Far cheaper than DB storage with virtually unlimited capacity."
+        }
       }
     }
   },
   "links": {
     "client-cdn": {
       "inspector": {
-        "what": { "vi": "Luồng đọc ảnh/video từ người dùng tới CDN Edge.", "en": "Media read traffic from Users to CDN Edge." },
-        "how": { "vi": "Đa số lượt xem được trả lời ngay tại biên.", "en": "Most reads terminate at the nearest edge POP." },
-        "why": { "vi": "Giảm tải cho hạ tầng gốc và tăng tốc độ hiển thị.", "en": "Offloads origin and speeds up page loads." }
+        "what": {
+          "vi": "Luồng đọc ảnh/video từ người dùng tới CDN Edge.",
+          "en": "Media read traffic from Users to CDN Edge."
+        },
+        "how": {
+          "vi": "Đa số lượt xem được trả lời ngay tại biên.",
+          "en": "Most reads terminate at the nearest edge POP."
+        },
+        "why": {
+          "vi": "Giảm tải cho hạ tầng gốc và tăng tốc độ hiển thị.",
+          "en": "Offloads origin and speeds up page loads."
+        }
       }
     },
     "cdn-lb": {
       "inspector": {
-        "what": { "vi": "Lưu lượng không trúng CDN đi tiếp vào Load Balancer.", "en": "Cache-miss and write traffic forwarded to Load Balancer." },
-        "how": { "vi": "Gồm toàn bộ lượt ghi và phần nhỏ lượt đọc chưa có trên biên.", "en": "Includes all uploads and uncached read misses." },
-        "why": { "vi": "Giữ đường vào thống nhất.", "en": "Provides a single backend entry point." }
+        "what": {
+          "vi": "Lưu lượng không trúng CDN đi tiếp vào Load Balancer.",
+          "en": "Cache-miss and write traffic forwarded to Load Balancer."
+        },
+        "how": {
+          "vi": "Gồm toàn bộ lượt ghi và phần nhỏ lượt đọc chưa có trên biên.",
+          "en": "Includes all uploads and uncached read misses."
+        },
+        "why": {
+          "vi": "Giữ đường vào thống nhất.",
+          "en": "Provides a single backend entry point."
+        }
       }
     },
     "lb-api": {
       "inspector": {
-        "what": { "vi": "Chuyển tiếp yêu cầu từ Load Balancer sang API Server.", "en": "Forwards requests from LB to API Server." },
-        "how": { "vi": "Chia tải đều theo vòng Round-robin.", "en": "Distributes traffic evenly via Round-robin." },
-        "why": { "vi": "Tránh dồn tải vào một instance duy nhất.", "en": "Prevents single-instance overload." }
+        "what": {
+          "vi": "Chuyển tiếp yêu cầu từ Load Balancer sang API Server.",
+          "en": "Forwards requests from LB to API Server."
+        },
+        "how": {
+          "vi": "Chia tải đều theo vòng Round-robin.",
+          "en": "Distributes traffic evenly via Round-robin."
+        },
+        "why": {
+          "vi": "Tránh dồn tải vào một instance duy nhất.",
+          "en": "Prevents single-instance overload."
+        }
       }
     },
     "api-db": {
       "inspector": {
-        "what": { "vi": "API ghi và đọc metadata tệp trong Database.", "en": "API reads and writes file metadata in DB." },
-        "how": { "vi": "Lưu khóa đối tượng, kích thước, trạng thái.", "en": "Stores object key, size, and processing status." },
-        "why": { "vi": "Truy vấn nhanh nhờ chỉ lưu metadata nhẹ.", "en": "Keeps queries fast with lightweight metadata." }
+        "what": {
+          "vi": "API ghi và đọc metadata tệp trong Database.",
+          "en": "API reads and writes file metadata in DB."
+        },
+        "how": {
+          "vi": "Lưu khóa đối tượng, kích thước, trạng thái.",
+          "en": "Stores object key, size, and processing status."
+        },
+        "why": {
+          "vi": "Truy vấn nhanh nhờ chỉ lưu metadata nhẹ.",
+          "en": "Keeps queries fast with lightweight metadata."
+        }
       }
     },
     "api-blob": {
       "inspector": {
-        "what": { "vi": "Đường truyền tệp khi API làm trung gian (hoặc kiểm tra đối tượng).", "en": "File path when API proxies bytes (or verifies object)." },
-        "how": { "vi": "Gây nghẽn API nếu truyền trực tiếp byte tệp lớn qua đây.", "en": "Becomes a bottleneck when proxying large uploads." },
-        "why": { "vi": "Nên thay bằng Presigned URL để client đẩy thẳng lên Storage.", "en": "Replace byte proxying with direct Presigned URLs." }
+        "what": {
+          "vi": "Đường truyền tệp khi API làm trung gian (hoặc kiểm tra đối tượng).",
+          "en": "File path when API proxies bytes (or verifies object)."
+        },
+        "how": {
+          "vi": "Gây nghẽn API nếu truyền trực tiếp byte tệp lớn qua đây.",
+          "en": "Becomes a bottleneck when proxying large uploads."
+        },
+        "why": {
+          "vi": "Nên thay bằng Presigned URL để client đẩy thẳng lên Storage.",
+          "en": "Replace byte proxying with direct Presigned URLs."
+        }
       }
     },
     "api-queue": {
       "inspector": {
-        "what": { "vi": "API đẩy thông điệp yêu cầu xử lý media vào Queue.", "en": "API enqueues media processing jobs." },
-        "how": { "vi": "Gửi bất đồng bộ ngay sau khi tệp tải lên hoàn tất.", "en": "Async enqueue immediately after upload completion." },
-        "why": { "vi": "Giúp API trả lời người dùng trong vài mili-giây.", "en": "Allows API to respond in milliseconds." }
+        "what": {
+          "vi": "API đẩy thông điệp yêu cầu xử lý media vào Queue.",
+          "en": "API enqueues media processing jobs."
+        },
+        "how": {
+          "vi": "Gửi bất đồng bộ ngay sau khi tệp tải lên hoàn tất.",
+          "en": "Async enqueue immediately after upload completion."
+        },
+        "why": {
+          "vi": "Giúp API trả lời người dùng trong vài mili-giây.",
+          "en": "Allows API to respond in milliseconds."
+        }
       }
     },
     "queue-worker": {
       "inspector": {
-        "what": { "vi": "Media Worker kéo công việc từ Queue để xử lý.", "en": "Media Worker pulls jobs from Queue." },
-        "how": { "vi": "Lấy từng job nén ảnh/cắt video theo tốc độ chịu tải.", "en": "Consumes resize/transcode jobs at worker capacity." },
-        "why": { "vi": "Bảo vệ hệ thống khỏi quá tải khi nhiều người đăng video cùng lúc.", "en": "Smooths out bursty upload processing." }
+        "what": {
+          "vi": "Media Worker kéo công việc từ Queue để xử lý.",
+          "en": "Media Worker pulls jobs from Queue."
+        },
+        "how": {
+          "vi": "Lấy từng job nén ảnh/cắt video theo tốc độ chịu tải.",
+          "en": "Consumes resize/transcode jobs at worker capacity."
+        },
+        "why": {
+          "vi": "Bảo vệ hệ thống khỏi quá tải khi nhiều người đăng video cùng lúc.",
+          "en": "Smooths out bursty upload processing."
+        }
       }
     },
     "worker-blob": {
       "inspector": {
-        "what": { "vi": "Worker đọc tệp gốc và ghi các phiên bản đã xử lý lên Storage.", "en": "Worker reads raw media and writes processed renditions to Storage." },
-        "how": { "vi": "Tạo thumbnail và nhiều mức chất lượng video.", "en": "Produces thumbnails and adaptive bitrates." },
-        "why": { "vi": "Tối ưu dung lượng tải về cho mọi loại thiết bị.", "en": "Optimizes delivery for every device screen." }
+        "what": {
+          "vi": "Worker đọc tệp gốc và ghi các phiên bản đã xử lý lên Storage.",
+          "en": "Worker reads raw media and writes processed renditions to Storage."
+        },
+        "how": {
+          "vi": "Tạo thumbnail và nhiều mức chất lượng video.",
+          "en": "Produces thumbnails and adaptive bitrates."
+        },
+        "why": {
+          "vi": "Tối ưu dung lượng tải về cho mọi loại thiết bị.",
+          "en": "Optimizes delivery for every device screen."
+        }
+      }
+    },
+    "client-blob": {
+      "label": {
+        "vi": "2. Presigned PUT (Tải thẳng)",
+        "en": "2. Direct Presigned PUT"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Trình duyệt tải trực tiếp tệp lớn lên Object Storage bằng Presigned URL có chữ ký tạm thời.",
+          "en": "Client uploads large files directly to Object Storage using a short-lived Presigned URL."
+        },
+        "how": {
+          "vi": "Bước 1 gọi API xin URL ký sẵn; Bước 2 đẩy thẳng luồng byte lên S3/Blob không đi qua RAM của App Server.",
+          "en": "Fetches signed URL from API, then streams bytes directly to Object Storage."
+        },
+        "why": {
+          "vi": "Giải phóng hoàn toàn băng thông và luồng xử lý của tầng API Server.",
+          "en": "Completely offloads heavy file transfer traffic from the API tier."
+        }
+      }
+    },
+    "client-lb": {
+      "label": {
+        "vi": "1. Xin Presigned URL",
+        "en": "1. Request Presigned URL"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Client gửi yêu cầu nhẹ qua Load Balancer vào API để xin cấp Presigned URL.",
+          "en": "Client sends a lightweight control request through LB to API to obtain a Presigned URL."
+        },
+        "how": {
+          "vi": "Chỉ truyền metadata tệp (tên, kích thước, Content-Type), không đính kèm byte tệp.",
+          "en": "Sends only file metadata (filename, size, Content-Type) without file bytes."
+        },
+        "why": {
+          "vi": "Tách luồng điều khiển (Control Plane) khỏi luồng dữ liệu nặng (Data Plane).",
+          "en": "Separates the lightweight Control Plane from the heavy Data Plane."
+        }
       }
     }
   },
   "layout": {
-    "client": { "col": 0, "row": 1 },
-    "cdn": { "col": 2, "row": 1 },
-    "lb": { "col": 4, "row": 1 },
-    "api": { "col": 6, "row": 1 },
-    "db": { "col": 8, "row": 0 },
-    "blob": { "col": 8, "row": 1 },
-    "queue": { "col": 6, "row": 2 },
-    "worker": { "col": 8, "row": 2 }
+    "client": {
+      "col": 0,
+      "row": 1
+    },
+    "cdn": {
+      "col": 2,
+      "row": 1
+    },
+    "lb": {
+      "col": 4,
+      "row": 1
+    },
+    "api": {
+      "col": 6,
+      "row": 1
+    },
+    "db": {
+      "col": 8,
+      "row": 0
+    },
+    "blob": {
+      "col": 8,
+      "row": 1
+    },
+    "queue": {
+      "col": 6,
+      "row": 2
+    },
+    "worker": {
+      "col": 8,
+      "row": 2
+    }
   },
   "zones": {
     "origin": {
-      "nodeIds": ["lb", "api", "db", "blob", "queue", "worker"],
-      "label": { "vi": "HẠ TẦNG GỐC (ORIGIN)", "en": "ORIGIN INFRASTRUCTURE" },
+      "nodeIds": [
+        "lb",
+        "api",
+        "db",
+        "blob",
+        "queue",
+        "worker"
+      ],
+      "label": {
+        "vi": "HẠ TẦNG GỐC (ORIGIN)",
+        "en": "ORIGIN INFRASTRUCTURE"
+      },
       "tone": "neutral"
     }
   },
   "scenes": {
     "s1-blob-in-db": {
-      "show": { "nodes": ["client", "api", "db", "blob"] },
+      "show": {
+        "nodes": [
+          "client",
+          "api",
+          "db",
+          "blob"
+        ]
+      },
       "state": {
-        "api": { "loadPct": 25 },
-        "db": { "loadPct": 20, "badge": { "text": { "vi": "Chỉ lưu Metadata", "en": "Metadata Only" }, "tone": "ok" } },
-        "blob": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Byte Media", "en": "Media Bytes" }, "tone": "ok" } }
+        "api": {
+          "loadPct": 25
+        },
+        "db": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Chỉ lưu Metadata",
+              "en": "Metadata Only"
+            },
+            "tone": "ok"
+          }
+        },
+        "blob": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Byte Media",
+              "en": "Media Bytes"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "linkState": {
-        "api-db": { "label": { "vi": "300 B / dòng", "en": "300 B / row" } },
-        "api-blob": { "label": { "vi": "Ảnh & Video", "en": "Images & Video" } }
+        "api-db": {
+          "label": {
+            "vi": "300 B / dòng",
+            "en": "300 B / row"
+          }
+        },
+        "api-blob": {
+          "label": {
+            "vi": "Ảnh & Video",
+            "en": "Images & Video"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tách Metadata và Byte", "en": "Separate Metadata & Bytes" },
+        "title": {
+          "vi": "Tách Metadata và Byte",
+          "en": "Separate Metadata & Bytes"
+        },
         "lines": [
-          { "text": { "vi": "DB giữ cấu trúc nhẹ để truy vấn & sao lưu nhanh", "en": "DB stays lean for fast queries & backups" }, "tone": "good" },
-          { "text": { "vi": "Object Storage lưu byte với chi phí rẻ hơn 5–10×", "en": "Object Storage holds bytes 5–10x cheaper" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "DB giữ cấu trúc nhẹ để truy vấn & sao lưu nhanh",
+              "en": "DB stays lean for fast queries & backups"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Object Storage lưu byte với chi phí rẻ hơn 5–10×",
+              "en": "Object Storage holds bytes 5–10x cheaper"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-live-upload": {
-      "show": { "nodes": "*" },
-      "zones": ["origin"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "origin"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "App Server trung chuyển Upload", "en": "App Server Proxying Uploads" },
+        "title": {
+          "vi": "App Server trung chuyển Upload",
+          "en": "App Server Proxying Uploads"
+        },
         "lines": [
-          { "text": { "vi": "Tải tăng 100 → 1.000 req/s (70% ghi tệp)", "en": "Load ramps 100 → 1,000 req/s (70% uploads)" }, "tone": "amber" },
-          { "text": { "vi": "Theo dõi node nào chạm ngưỡng quá tải trước", "en": "Watch which node saturates first" }, "tone": "plain" }
+          {
+            "text": {
+              "vi": "Tải tăng 100 → 1.000 req/s (70% ghi tệp)",
+              "en": "Load ramps 100 → 1,000 req/s (70% uploads)"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Theo dõi node nào chạm ngưỡng quá tải trước",
+              "en": "Watch which node saturates first"
+            },
+            "tone": "plain"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s3-presigned": {
-      "show": { "nodes": ["client", "lb", "api", "db", "blob"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "db",
+          "blob"
+        ],
+        "links": [
+          "client-lb",
+          "lb-api",
+          "api-db",
+          "client-blob"
+        ]
+      },
       "state": {
-        "api": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Chỉ ký URL (~5 ms)", "en": "Sign URL (~5 ms)" }, "tone": "ok" } },
-        "db": { "loadPct": 15 },
-        "blob": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "Multipart Direct", "en": "Multipart Direct" }, "tone": "ok" } }
+        "api": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Chỉ ký URL (~5 ms)",
+              "en": "Sign URL (~5 ms)"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 15
+        },
+        "blob": {
+          "loadPct": 30,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Multipart Direct",
+              "en": "Multipart Direct"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "linkState": {
-        "api-blob": { "style": "dashed", "label": { "vi": "Chỉ cấp Presigned URL", "en": "Presigned URL Only" } }
+        "api-blob": {
+          "style": "dashed",
+          "label": {
+            "vi": "Chỉ cấp Presigned URL",
+            "en": "Presigned URL Only"
+          }
+        },
+        "client-lb": {
+          "label": {
+            "vi": "1. Xin Presigned URL",
+            "en": "1. Request Presigned URL"
+          }
+        },
+        "client-blob": {
+          "label": {
+            "vi": "2. Tải thẳng lên Blob",
+            "en": "2. Direct PUT to Blob"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Presigned URL + Multipart", "en": "Presigned URL + Multipart" },
+        "title": {
+          "vi": "Presigned URL + Multipart",
+          "en": "Presigned URL + Multipart"
+        },
         "lines": [
-          { "text": { "vi": "API không nhận byte, chỉ cấp vé có hạn 5–15 phút", "en": "API skips file bytes, signs 5–15m tickets" }, "tone": "good" },
-          { "text": { "vi": "Chia mảnh 5–10 MB để tải song song & nối lại", "en": "5–10 MB chunks allow parallel & resumable upload" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "API không nhận byte, chỉ cấp vé có hạn 5–15 phút",
+              "en": "API skips file bytes, signs 5–15m tickets"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Chia mảnh 5–10 MB để tải song song & nối lại",
+              "en": "5–10 MB chunks allow parallel & resumable upload"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s4-async-cdn": {
-      "show": { "nodes": "*" },
-      "zones": ["origin"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "origin"
+      ],
       "state": {
-        "cdn": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "Hit 80–95%", "en": "Hit 80–95%" }, "tone": "ok" } },
-        "queue": { "loadPct": 20 },
-        "worker": { "loadPct": 35, "highlighted": true, "badge": { "text": { "vi": "Thumbnail / HLS", "en": "Thumbnail / HLS" }, "tone": "ok" } },
-        "blob": { "loadPct": 20 }
+        "cdn": {
+          "loadPct": 25,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Hit 80–95%",
+              "en": "Hit 80–95%"
+            },
+            "tone": "ok"
+          }
+        },
+        "queue": {
+          "loadPct": 20
+        },
+        "worker": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Thumbnail / HLS",
+              "en": "Thumbnail / HLS"
+            },
+            "tone": "ok"
+          }
+        },
+        "blob": {
+          "loadPct": 20
+        }
       },
       "linkState": {
-        "api-queue": { "style": "dashed", "label": { "vi": "Job bất đồng bộ", "en": "Async job" } },
-        "queue-worker": { "label": { "vi": "Xử lý nền", "en": "Background" } }
+        "api-queue": {
+          "style": "dashed",
+          "label": {
+            "vi": "Job bất đồng bộ",
+            "en": "Async job"
+          }
+        },
+        "queue-worker": {
+          "label": {
+            "vi": "Xử lý nền",
+            "en": "Background"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Xử lý nền & Phân phối CDN", "en": "Async Workers & CDN Delivery" },
+        "title": {
+          "vi": "Xử lý nền & Phân phối CDN",
+          "en": "Async Workers & CDN Delivery"
+        },
         "lines": [
-          { "text": { "vi": "Worker tạo thumbnail/video nhiều độ phân giải", "en": "Workers build thumbnails & adaptive video" }, "tone": "good" },
-          { "text": { "vi": "CDN phục vụ người xem tại điểm biên gần nhất", "en": "CDN serves viewers from nearest edge POP" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Worker tạo thumbnail/video nhiều độ phân giải",
+              "en": "Workers build thumbnails & adaptive video"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "CDN phục vụ người xem tại điểm biên gần nhất",
+              "en": "CDN serves viewers from nearest edge POP"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s5-lifecycle-sec": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "Bài toán vận hành Storage", "en": "Storage Operations" },
-        "rightTitle": { "vi": "Cơ chế kiểm soát", "en": "Control Mechanism" },
+        "leftTitle": {
+          "vi": "Bài toán vận hành Storage",
+          "en": "Storage Operations"
+        },
+        "rightTitle": {
+          "vi": "Cơ chế kiểm soát",
+          "en": "Control Mechanism"
+        },
         "names": [
-          { "id": "cold", "name": "Tệp cũ > 90 ngày ít truy cập", "note": { "vi": "Chiếm dung lượng giá cao", "en": "Consumes hot tier budget" }, "targetId": "lifecycle", "style": "solid" },
-          { "id": "orphan", "name": "Upload bỏ dở / Tệp mồ côi", "note": { "vi": "Tốn tiền lưu mảnh rác", "en": "Pays for abandoned chunks" }, "targetId": "abort", "style": "danger" },
-          { "id": "leak", "name": "Bucket mở Public List", "note": { "vi": "Lộ toàn bộ danh sách tệp", "en": "Exposes private object keys" }, "targetId": "private", "style": "danger" }
+          {
+            "id": "cold",
+            "name": "Tệp cũ > 90 ngày ít truy cập",
+            "note": {
+              "vi": "Chiếm dung lượng giá cao",
+              "en": "Consumes hot tier budget"
+            },
+            "targetId": "lifecycle",
+            "style": "solid"
+          },
+          {
+            "id": "orphan",
+            "name": "Upload bỏ dở / Tệp mồ côi",
+            "note": {
+              "vi": "Tốn tiền lưu mảnh rác",
+              "en": "Pays for abandoned chunks"
+            },
+            "targetId": "abort",
+            "style": "danger"
+          },
+          {
+            "id": "leak",
+            "name": "Bucket mở Public List",
+            "note": {
+              "vi": "Lộ toàn bộ danh sách tệp",
+              "en": "Exposes private object keys"
+            },
+            "targetId": "private",
+            "style": "danger"
+          }
         ],
         "objects": [
-          { "id": "lifecycle", "typeTag": "COST", "value": "Lifecycle Policy", "fields": ["Chuyển sang tầng lạnh / Archive", "Tiết kiệm 40–70% chi phí"], "tone": "green", "badge": { "vi": "Tối ưu chi phí", "en": "Cost optimization" } },
-          { "id": "abort", "typeTag": "CLEANUP", "value": "Abort Multipart + GC", "fields": ["Hủy mảnh treo sau 24 giờ", "Xóa hai pha theo trạng thái DB"], "tone": "yellow", "badge": { "vi": "Tránh phình dung lượng", "en": "Prevents bloat" } },
-          { "id": "private", "typeTag": "SECURITY", "value": "Private + Signed GET", "fields": ["Tắt Public List hoàn toàn", "Ký URL đọc ngắn hạn theo quyền"], "tone": "green", "badge": { "vi": "Quyền tối thiểu", "en": "Least privilege" } }
+          {
+            "id": "lifecycle",
+            "typeTag": "COST",
+            "value": "Lifecycle Policy",
+            "fields": [
+              "Chuyển sang tầng lạnh / Archive",
+              "Tiết kiệm 40–70% chi phí"
+            ],
+            "tone": "green",
+            "badge": {
+              "vi": "Tối ưu chi phí",
+              "en": "Cost optimization"
+            }
+          },
+          {
+            "id": "abort",
+            "typeTag": "CLEANUP",
+            "value": "Abort Multipart + GC",
+            "fields": [
+              "Hủy mảnh treo sau 24 giờ",
+              "Xóa hai pha theo trạng thái DB"
+            ],
+            "tone": "yellow",
+            "badge": {
+              "vi": "Tránh phình dung lượng",
+              "en": "Prevents bloat"
+            }
+          },
+          {
+            "id": "private",
+            "typeTag": "SECURITY",
+            "value": "Private + Signed GET",
+            "fields": [
+              "Tắt Public List hoàn toàn",
+              "Ký URL đọc ngắn hạn theo quyền"
+            ],
+            "tone": "green",
+            "badge": {
+              "vi": "Quyền tối thiểu",
+              "en": "Least privilege"
+            }
+          }
         ]
       }
     },
     "s6-recap": {
-      "show": { "nodes": "*" },
-      "zones": ["origin"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "origin"
+      ],
       "state": {
-        "cdn": { "loadPct": 20, "badge": { "text": { "vi": "Edge Read", "en": "Edge Read" }, "tone": "ok" } },
-        "api": { "loadPct": 15, "badge": { "text": { "vi": "Sign URL", "en": "Sign URL" }, "tone": "ok" } },
-        "db": { "loadPct": 12, "badge": { "text": { "vi": "Metadata", "en": "Metadata" }, "tone": "ok" } },
-        "blob": { "loadPct": 25, "badge": { "text": { "vi": "Lifecycle", "en": "Lifecycle" }, "tone": "ok" } },
-        "worker": { "loadPct": 20, "badge": { "text": { "vi": "Async Media", "en": "Async Media" }, "tone": "ok" } }
+        "cdn": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Edge Read",
+              "en": "Edge Read"
+            },
+            "tone": "ok"
+          }
+        },
+        "api": {
+          "loadPct": 15,
+          "badge": {
+            "text": {
+              "vi": "Sign URL",
+              "en": "Sign URL"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 12,
+          "badge": {
+            "text": {
+              "vi": "Metadata",
+              "en": "Metadata"
+            },
+            "tone": "ok"
+          }
+        },
+        "blob": {
+          "loadPct": 25,
+          "badge": {
+            "text": {
+              "vi": "Lifecycle",
+              "en": "Lifecycle"
+            },
+            "tone": "ok"
+          }
+        },
+        "worker": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Async Media",
+              "en": "Async Media"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Kiến trúc Media hoàn chỉnh", "en": "Complete Media Architecture" },
+        "title": {
+          "vi": "Kiến trúc Media hoàn chỉnh",
+          "en": "Complete Media Architecture"
+        },
         "lines": [
-          { "text": { "vi": "Ghi: Presigned URL + Multipart thẳng lên Storage", "en": "Write: Presigned URL + Multipart to Storage" }, "tone": "good" },
-          { "text": { "vi": "Xử lý: Queue + Worker · Đọc: CDN Edge", "en": "Process: Queue + Worker · Read: CDN Edge" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Ghi: Presigned URL + Multipart thẳng lên Storage",
+              "en": "Write: Presigned URL + Multipart to Storage"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Xử lý: Queue + Worker · Đọc: CDN Edge",
+              "en": "Process: Queue + Worker · Read: CDN Edge"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
@@ -289,18 +864,62 @@
     "controls": {
       "timeline": true,
       "knobs": [
-        { "node": "api", "key": "replicas" },
-        { "node": "worker", "key": "replicas" }
+        {
+          "node": "api",
+          "key": "replicas"
+        },
+        {
+          "node": "worker",
+          "key": "replicas"
+        }
       ]
     },
     "telemetry": [
-      { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
-      { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 300 } },
-      { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      {
+        "metric": "offeredRps",
+        "label": {
+          "vi": "Lưu lượng",
+          "en": "Offered Load"
+        },
+        "format": "rps"
+      },
+      {
+        "metric": "p99",
+        "label": {
+          "vi": "p99",
+          "en": "p99"
+        },
+        "format": "ms",
+        "tone": {
+          "warnAbove": 120,
+          "badAbove": 300
+        }
+      },
+      {
+        "metric": "errorRate",
+        "label": {
+          "vi": "Lỗi",
+          "en": "Errors"
+        },
+        "format": "pct",
+        "tone": {
+          "warnAbove": 0.01,
+          "badAbove": 0.05
+        }
+      }
     ],
     "slo": [
-      { "metric": "p99", "value": 150 }
+      {
+        "metric": "p99",
+        "value": 150
+      }
     ],
-    "focus": { "nodes": ["api", "blob", "worker"] }
+    "focus": {
+      "nodes": [
+        "api",
+        "blob",
+        "worker"
+      ]
+    }
   }
 }

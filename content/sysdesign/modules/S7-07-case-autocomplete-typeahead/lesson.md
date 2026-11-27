@@ -139,7 +139,7 @@ Trong mô phỏng trực tiếp, lưu lượng tăng từ 5.000 lên 50.000 QPS:
 ```step
 category: TECHNIQUE
 short: Debounce & Shard
-scene: s6-pitfall
+scene: s6-client-debounce
 callout:
   kind: technique
   title: Giảm tải ngay từ trình duyệt

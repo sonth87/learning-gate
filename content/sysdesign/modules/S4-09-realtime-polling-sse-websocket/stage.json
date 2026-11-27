@@ -5,156 +5,532 @@
     "device": {
       "shape": "device",
       "tone": "blue",
-      "label": { "vi": "Thiết bị (1M)", "en": "Devices (1M)" },
+      "label": {
+        "vi": "Thiết bị (1M)",
+        "en": "Devices (1M)"
+      },
       "inspector": {
-        "what": { "vi": "Hàng triệu điện thoại hoặc trình duyệt cần nhận cập nhật thời gian thực.", "en": "Millions of mobile or web clients awaiting real-time updates." },
-        "how": { "vi": "Nếu dùng Short Polling mỗi 2 giây, lượng request rỗng chiếm tới 95%.", "en": "With 2s Short Polling, 95% of requests return empty responses." },
-        "why": { "vi": "Chuyển sang SSE hoặc WebSocket chỉ gửi dữ liệu khi thực sự có sự kiện mới.", "en": "SSE or WebSocket pushes data only when events actually occur." }
+        "what": {
+          "vi": "Hàng triệu điện thoại hoặc trình duyệt cần nhận cập nhật thời gian thực.",
+          "en": "Millions of mobile or web clients awaiting real-time updates."
+        },
+        "how": {
+          "vi": "Nếu dùng Short Polling mỗi 2 giây, lượng request rỗng chiếm tới 95%.",
+          "en": "With 2s Short Polling, 95% of requests return empty responses."
+        },
+        "why": {
+          "vi": "Chuyển sang SSE hoặc WebSocket chỉ gửi dữ liệu khi thực sự có sự kiện mới.",
+          "en": "SSE or WebSocket pushes data only when events actually occur."
+        }
       }
     },
     "gateway": {
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "Edge Gateway", "en": "Edge Gateway" },
+      "label": {
+        "vi": "Edge Gateway",
+        "en": "Edge Gateway"
+      },
       "inspector": {
-        "what": { "vi": "Tầng giữ kết nối bền (SSE/WebSocket) hoặc tiếp nhận HTTP Polling.", "en": "Edge tier terminating persistent SSE/WS connections or HTTP polls." },
-        "how": { "vi": "Mỗi kết nối WebSocket chỉ tốn vài KB RAM khi nhàn rỗi, không tốn chu kỳ xử lý liên tục như Polling.", "en": "Each idle WebSocket consumes a few KB of RAM without constant request overhead." },
-        "why": { "vi": "Khi có nhiều máy Gateway, cần Pub/Sub Bus để chuyển tin đến đúng máy đang giữ socket của người nhận.", "en": "Multiple Gateways require a Pub/Sub Bus to route messages to the right socket." }
+        "what": {
+          "vi": "Tầng giữ kết nối bền (SSE/WebSocket) hoặc tiếp nhận HTTP Polling.",
+          "en": "Edge tier terminating persistent SSE/WS connections or HTTP polls."
+        },
+        "how": {
+          "vi": "Mỗi kết nối WebSocket chỉ tốn vài KB RAM khi nhàn rỗi, không tốn chu kỳ xử lý liên tục như Polling.",
+          "en": "Each idle WebSocket consumes a few KB of RAM without constant request overhead."
+        },
+        "why": {
+          "vi": "Khi có nhiều máy Gateway, cần Pub/Sub Bus để chuyển tin đến đúng máy đang giữ socket của người nhận.",
+          "en": "Multiple Gateways require a Pub/Sub Bus to route messages to the right socket."
+        }
       }
     },
     "api": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Polling API", "en": "Polling API" },
+      "label": {
+        "vi": "Polling API",
+        "en": "Polling API"
+      },
       "inspector": {
-        "what": { "vi": "Cụm 3 máy xử lý yêu cầu hỏi tin (tổng năng lực 4.500 req/s).", "en": "3 API instances handling poll requests (4,500 req/s total)." },
-        "how": { "vi": "Với Short Polling, 95% lượt gọi phải kiểm tra rồi trả về rỗng nhưng vẫn ngốn CPU.", "en": "Under Short Polling, 95% of calls return empty yet still burn CPU." },
-        "why": { "vi": "Cơn bão Polling khiến API nhanh chóng bão hòa ở tải trên 4.500 req/s.", "en": "Polling storms saturate API beyond 4,500 req/s." }
+        "what": {
+          "vi": "Cụm 3 máy xử lý yêu cầu hỏi tin (tổng năng lực 4.500 req/s).",
+          "en": "3 API instances handling poll requests (4,500 req/s total)."
+        },
+        "how": {
+          "vi": "Với Short Polling, 95% lượt gọi phải kiểm tra rồi trả về rỗng nhưng vẫn ngốn CPU.",
+          "en": "Under Short Polling, 95% of calls return empty yet still burn CPU."
+        },
+        "why": {
+          "vi": "Cơn bão Polling khiến API nhanh chóng bão hòa ở tải trên 4.500 req/s.",
+          "en": "Polling storms saturate API beyond 4,500 req/s."
+        }
       }
     },
     "pubsub": {
       "shape": "block",
       "tone": "yellow",
       "icon": "zap",
-      "label": { "vi": "Pub/Sub Bus", "en": "Pub/Sub Bus" },
+      "label": {
+        "vi": "Pub/Sub Bus",
+        "en": "Pub/Sub Bus"
+      },
       "inspector": {
-        "what": { "vi": "Kênh phát thanh nội bộ kết nối các máy chủ Gateway giữ socket.", "en": "Internal Pub/Sub bus linking stateful Gateway instances." },
-        "how": { "vi": "Phát sự kiện tới đúng kênh hoặc phân vùng nơi người nhận đang kết nối.", "en": "Routes events to the channel/partition holding the target user." },
-        "why": { "vi": "Giải bài toán mở rộng ngang khi Alice và Bob kết nối vào hai Gateway khác nhau.", "en": "Solves horizontal fan-out when sender and receiver sit on different Gateways." }
+        "what": {
+          "vi": "Kênh phát thanh nội bộ kết nối các máy chủ Gateway giữ socket.",
+          "en": "Internal Pub/Sub bus linking stateful Gateway instances."
+        },
+        "how": {
+          "vi": "Phát sự kiện tới đúng kênh hoặc phân vùng nơi người nhận đang kết nối.",
+          "en": "Routes events to the channel/partition holding the target user."
+        },
+        "why": {
+          "vi": "Giải bài toán mở rộng ngang khi Alice và Bob kết nối vào hai Gateway khác nhau.",
+          "en": "Solves horizontal fan-out when sender and receiver sit on different Gateways."
+        }
       }
     },
     "db": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Message DB", "en": "Message DB" },
+      "label": {
+        "vi": "Message DB",
+        "en": "Message DB"
+      },
       "inspector": {
-        "what": { "vi": "Kho lưu trữ tin nhắn bền vững (năng lực 4.500 req/s).", "en": "Persistent message store (4,500 req/s capacity)." },
-        "how": { "vi": "Lưu tin nhắn trước khi đẩy qua WebSocket để người dùng ngoại tuyến vẫn đồng bộ lại được.", "en": "Persists messages so offline devices can sync upon reconnect." },
-        "why": { "vi": "Kết nối thời gian thực giúp giao tin nhanh, còn DB đảm bảo không mất lịch sử.", "en": "Real-time sockets deliver fast; DB guarantees durability." }
+        "what": {
+          "vi": "Kho lưu trữ tin nhắn bền vững (năng lực 4.500 req/s).",
+          "en": "Persistent message store (4,500 req/s capacity)."
+        },
+        "how": {
+          "vi": "Lưu tin nhắn trước khi đẩy qua WebSocket để người dùng ngoại tuyến vẫn đồng bộ lại được.",
+          "en": "Persists messages so offline devices can sync upon reconnect."
+        },
+        "why": {
+          "vi": "Kết nối thời gian thực giúp giao tin nhanh, còn DB đảm bảo không mất lịch sử.",
+          "en": "Real-time sockets deliver fast; DB guarantees durability."
+        }
       }
     }
   },
   "links": {
-    "device-gateway": { "inspector": { "what": { "vi": "Kết nối từ thiết bị người dùng tới Edge Gateway.", "en": "Client connection to Edge Gateway." }, "how": { "vi": "Có thể là HTTP lặp lại (Polling), luồng một chiều (SSE) hoặc hai chiều (WebSocket).", "en": "Either repeated HTTP (Polling), 1-way stream (SSE), or 2-way (WebSocket)." }, "why": { "vi": "Lựa chọn giao thức quyết định băng thông và độ trễ nhận tin.", "en": "Protocol choice governs bandwidth and delivery latency." } } },
-    "gateway-api": { "inspector": { "what": { "vi": "Chuyển tiếp yêu cầu từ Gateway vào dịch vụ API.", "en": "Gateway to API forwarding." }, "how": { "vi": "Mạng nội bộ tốc độ cao.", "en": "High-speed internal link." }, "why": { "vi": "Mỗi lượt Polling rỗng đều phải đi qua chặng này.", "en": "Every empty poll traverses this hop." } } },
-    "api-pubsub": { "inspector": { "what": { "vi": "Phát sự kiện mới lên Pub/Sub Bus.", "en": "Publish new event to Pub/Sub Bus." }, "how": { "vi": "Bất đồng bộ, độ trễ ~1 ms.", "en": "Async publish (~1 ms)." }, "why": { "vi": "Giúp mọi Gateway biết có tin mới để đẩy xuống thiết bị.", "en": "Notifies Gateways to push down to connected clients." } } },
-    "api-db": { "inspector": { "what": { "vi": "Đọc hoặc ghi tin nhắn vào Message DB.", "en": "Read/write messages in DB." }, "how": { "vi": "Truy vấn đồng bộ.", "en": "Sync query." }, "why": { "vi": "Đảm bảo tin nhắn được lưu trước khi báo đã gửi.", "en": "Ensures durability before delivery." } } }
+    "device-gateway": {
+      "inspector": {
+        "what": {
+          "vi": "Kết nối từ thiết bị người dùng tới Edge Gateway.",
+          "en": "Client connection to Edge Gateway."
+        },
+        "how": {
+          "vi": "Có thể là HTTP lặp lại (Polling), luồng một chiều (SSE) hoặc hai chiều (WebSocket).",
+          "en": "Either repeated HTTP (Polling), 1-way stream (SSE), or 2-way (WebSocket)."
+        },
+        "why": {
+          "vi": "Lựa chọn giao thức quyết định băng thông và độ trễ nhận tin.",
+          "en": "Protocol choice governs bandwidth and delivery latency."
+        }
+      }
+    },
+    "gateway-api": {
+      "inspector": {
+        "what": {
+          "vi": "Chuyển tiếp yêu cầu từ Gateway vào dịch vụ API.",
+          "en": "Gateway to API forwarding."
+        },
+        "how": {
+          "vi": "Mạng nội bộ tốc độ cao.",
+          "en": "High-speed internal link."
+        },
+        "why": {
+          "vi": "Mỗi lượt Polling rỗng đều phải đi qua chặng này.",
+          "en": "Every empty poll traverses this hop."
+        }
+      }
+    },
+    "api-pubsub": {
+      "inspector": {
+        "what": {
+          "vi": "Phát sự kiện mới lên Pub/Sub Bus.",
+          "en": "Publish new event to Pub/Sub Bus."
+        },
+        "how": {
+          "vi": "Bất đồng bộ, độ trễ ~1 ms.",
+          "en": "Async publish (~1 ms)."
+        },
+        "why": {
+          "vi": "Giúp mọi Gateway biết có tin mới để đẩy xuống thiết bị.",
+          "en": "Notifies Gateways to push down to connected clients."
+        }
+      }
+    },
+    "api-db": {
+      "inspector": {
+        "what": {
+          "vi": "Đọc hoặc ghi tin nhắn vào Message DB.",
+          "en": "Read/write messages in DB."
+        },
+        "how": {
+          "vi": "Truy vấn đồng bộ.",
+          "en": "Sync query."
+        },
+        "why": {
+          "vi": "Đảm bảo tin nhắn được lưu trước khi báo đã gửi.",
+          "en": "Ensures durability before delivery."
+        }
+      }
+    },
+    "pubsub-gateway": {
+      "label": {
+        "vi": "Đẩy sự kiện về WS Gateway",
+        "en": "Push event to WS Gateway"
+      },
+      "style": "dashed",
+      "inspector": {
+        "what": {
+          "vi": "Luồng phát sóng từ Pub/Sub Bus về các Edge Gateway đang giữ kết nối WebSocket của người nhận.",
+          "en": "Broadcast path from Pub/Sub Bus back to Edge Gateways holding recipient WebSockets."
+        },
+        "how": {
+          "vi": "Khi bất kỳ máy API nào phát sự kiện mới vào kênh Pub/Sub, mọi Gateway đăng ký kênh đó sẽ nhận ngay để đẩy xuống socket người dùng.",
+          "en": "Gateways subscribe to Pub/Sub topics and immediately push events down open client WebSockets."
+        },
+        "why": {
+          "vi": "Cho phép mở rộng ngang hàng chục máy Gateway có trạng thái mà người gửi và người nhận không cần nằm trên cùng một máy.",
+          "en": "Enables horizontal scaling across multiple stateful WebSocket gateways."
+        }
+      }
+    }
   },
   "zones": {
-    "server-tier": { "nodeIds": ["gateway", "api", "pubsub", "db"], "label": { "vi": "HẠ TẦNG THỜI GIAN THỰC", "en": "REALTIME INFRASTRUCTURE" }, "tone": "neutral" }
+    "server-tier": {
+      "nodeIds": [
+        "gateway",
+        "api",
+        "pubsub",
+        "db"
+      ],
+      "label": {
+        "vi": "HẠ TẦNG THỜI GIAN THỰC",
+        "en": "REALTIME INFRASTRUCTURE"
+      },
+      "tone": "neutral"
+    }
   },
   "scenes": {
     "s1-polling": {
-      "show": { "nodes": ["device", "gateway", "api", "db"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api",
+          "db"
+        ]
+      },
       "state": {
-        "api": { "loadPct": 85, "highlighted": true, "badge": { "text": { "vi": "95% rỗng", "en": "95% empty" }, "tone": "bad" } },
-        "db": { "loadPct": 70 }
+        "api": {
+          "loadPct": 85,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "95% rỗng",
+              "en": "95% empty"
+            },
+            "tone": "bad"
+          }
+        },
+        "db": {
+          "loadPct": 70
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Short Polling: Hỏi liên tục theo chu kỳ", "en": "Short Polling: Periodic Checks" },
+        "title": {
+          "vi": "Short Polling: Hỏi liên tục theo chu kỳ",
+          "en": "Short Polling: Periodic Checks"
+        },
         "lines": [
-          { "text": { "vi": "Thiết bị hỏi lại mỗi 2 giây dù không có tin", "en": "Devices poll every 2s even when idle" }, "tone": "amber" },
-          { "text": { "vi": "95% phản hồi rỗng nhưng vẫn ngốn CPU/DB", "en": "95% empty replies still burn CPU/DB" }, "tone": "bad" }
+          {
+            "text": {
+              "vi": "Thiết bị hỏi lại mỗi 2 giây dù không có tin",
+              "en": "Devices poll every 2s even when idle"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "95% phản hồi rỗng nhưng vẫn ngốn CPU/DB",
+              "en": "95% empty replies still burn CPU/DB"
+            },
+            "tone": "bad"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-polling-live": {
-      "show": { "nodes": ["device", "gateway", "api", "pubsub", "db"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api",
+          "pubsub",
+          "db"
+        ]
+      },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Cơn bão Polling tăng lên 12.000 req/s", "en": "Polling Storm Ramp to 12,000 req/s" },
+        "title": {
+          "vi": "Cơn bão Polling tăng lên 12.000 req/s",
+          "en": "Polling Storm Ramp to 12,000 req/s"
+        },
         "lines": [
-          { "text": { "vi": "Tải Polling tăng từ 1.000 lên 12.000 req/s", "en": "Polling load ramps 1,000 → 12,000 req/s" }, "tone": "amber" },
-          { "text": { "vi": "Quan sát node nào quá tải trước", "en": "Watch which node saturates first" }, "tone": "bad" }
+          {
+            "text": {
+              "vi": "Tải Polling tăng từ 1.000 lên 12.000 req/s",
+              "en": "Polling load ramps 1,000 → 12,000 req/s"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Quan sát node nào quá tải trước",
+              "en": "Watch which node saturates first"
+            },
+            "tone": "bad"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s3-long-polling": {
-      "show": { "nodes": ["device", "gateway", "api"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api"
+        ]
+      },
       "state": {
-        "gateway": { "loadPct": 40, "highlighted": true, "badge": { "text": { "vi": "Giữ mở HTTP", "en": "Held HTTP" }, "tone": "warn" } },
-        "api": { "loadPct": 30 }
+        "gateway": {
+          "loadPct": 40,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Giữ mở HTTP",
+              "en": "Held HTTP"
+            },
+            "tone": "warn"
+          }
+        },
+        "api": {
+          "loadPct": 30
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Long Polling: Treo request chờ tin mới", "en": "Long Polling: Hold Until Event" },
+        "title": {
+          "vi": "Long Polling: Treo request chờ tin mới",
+          "en": "Long Polling: Hold Until Event"
+        },
         "lines": [
-          { "text": { "vi": "Server giữ kết nối mở tới khi có dữ liệu", "en": "Server holds request until data arrives" }, "tone": "good" },
-          { "text": { "vi": "Giảm request rỗng, nhưng vẫn tốn header HTTP", "en": "Cuts empty polls, still pays HTTP overhead" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Server giữ kết nối mở tới khi có dữ liệu",
+              "en": "Server holds request until data arrives"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Giảm request rỗng, nhưng vẫn tốn header HTTP",
+              "en": "Cuts empty polls, still pays HTTP overhead"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s4-sse": {
-      "show": { "nodes": ["device", "gateway", "api"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api"
+        ]
+      },
       "state": {
-        "gateway": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "SSE 1 chiều", "en": "SSE 1-way" }, "tone": "ok" } },
-        "api": { "loadPct": 15 }
+        "gateway": {
+          "loadPct": 25,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "SSE 1 chiều",
+              "en": "SSE 1-way"
+            },
+            "tone": "ok"
+          }
+        },
+        "api": {
+          "loadPct": 15
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Server-Sent Events (SSE): Luồng đẩy 1 chiều", "en": "SSE: Unidirectional Stream" },
+        "title": {
+          "vi": "Server-Sent Events (SSE): Luồng đẩy 1 chiều",
+          "en": "SSE: Unidirectional Stream"
+        },
         "lines": [
-          { "text": { "vi": "Một kết nối HTTP giữ mở, server đẩy liên tục", "en": "Single persistent HTTP stream from server" }, "tone": "good" },
-          { "text": { "vi": "Tự nối lại sẵn có, hợp bảng tin/thông báo", "en": "Built-in reconnect, great for feeds/alerts" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Một kết nối HTTP giữ mở, server đẩy liên tục",
+              "en": "Single persistent HTTP stream from server"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Tự nối lại sẵn có, hợp bảng tin/thông báo",
+              "en": "Built-in reconnect, great for feeds/alerts"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s5-websocket-pubsub": {
-      "show": { "nodes": ["device", "gateway", "api", "pubsub", "db"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api",
+          "pubsub",
+          "db"
+        ],
+        "links": [
+          "device-gateway",
+          "gateway-api",
+          "api-pubsub",
+          "pubsub-gateway",
+          "api-db"
+        ]
+      },
       "state": {
-        "gateway": { "loadPct": 32, "badge": { "text": { "vi": "WebSocket 2 chiều", "en": "2-way WS" }, "tone": "ok" } },
-        "pubsub": { "loadPct": 18, "highlighted": true, "badge": { "text": { "vi": "Định tuyến tin", "en": "Fan-out" }, "tone": "ok" } },
-        "api": { "loadPct": 12 }
+        "gateway": {
+          "loadPct": 32,
+          "badge": {
+            "text": {
+              "vi": "WebSocket 2 chiều",
+              "en": "2-way WS"
+            },
+            "tone": "ok"
+          }
+        },
+        "pubsub": {
+          "loadPct": 18,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Định tuyến tin",
+              "en": "Fan-out"
+            },
+            "tone": "ok"
+          }
+        },
+        "api": {
+          "loadPct": 12
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "WebSocket + Pub/Sub mở rộng nhiều Gateway", "en": "WebSocket + Pub/Sub Fan-out" },
+        "title": {
+          "vi": "WebSocket + Pub/Sub mở rộng nhiều Gateway",
+          "en": "WebSocket + Pub/Sub Fan-out"
+        },
         "lines": [
-          { "text": { "vi": "Giao tiếp hai chiều độ trễ thấp (chat, game)", "en": "Low-latency bidirectional channel" }, "tone": "good" },
-          { "text": { "vi": "Pub/Sub chuyển tin đúng Gateway giữ socket", "en": "Pub/Sub routes events to right Gateway" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Giao tiếp hai chiều độ trễ thấp (chat, game)",
+              "en": "Low-latency bidirectional channel"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Pub/Sub chuyển tin đúng Gateway giữ socket",
+              "en": "Pub/Sub routes events to right Gateway"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s6-recap": {
-      "show": { "nodes": ["device", "gateway", "api", "pubsub", "db"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gateway",
+          "api",
+          "pubsub",
+          "db"
+        ],
+        "links": [
+          "device-gateway",
+          "gateway-api",
+          "api-pubsub",
+          "pubsub-gateway",
+          "api-db"
+        ]
+      },
       "state": {
-        "gateway": { "loadPct": 30, "badge": { "text": { "vi": "Giữ socket", "en": "Stateful Edge" }, "tone": "ok" } },
-        "pubsub": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Pub/Sub", "en": "Pub/Sub" }, "tone": "ok" } }
+        "gateway": {
+          "loadPct": 30,
+          "badge": {
+            "text": {
+              "vi": "Giữ socket",
+              "en": "Stateful Edge"
+            },
+            "tone": "ok"
+          }
+        },
+        "pubsub": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Pub/Sub",
+              "en": "Pub/Sub"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tổng kết cập nhật thời gian thực", "en": "Real-time Updates Recap" },
+        "title": {
+          "vi": "Tổng kết cập nhật thời gian thực",
+          "en": "Real-time Updates Recap"
+        },
         "lines": [
-          { "text": { "vi": "Chọn SSE (1 chiều) hoặc WebSocket (2 chiều)", "en": "Pick SSE (1-way) or WebSocket (2-way)" }, "tone": "good" },
-          { "text": { "vi": "Dùng Pub/Sub + Presence TTL + Offline Sync", "en": "Use Pub/Sub + Presence TTL + Offline Sync" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Chọn SSE (1 chiều) hoặc WebSocket (2 chiều)",
+              "en": "Pick SSE (1-way) or WebSocket (2-way)"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Dùng Pub/Sub + Presence TTL + Offline Sync",
+              "en": "Use Pub/Sub + Presence TTL + Offline Sync"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
@@ -170,19 +546,68 @@
         "timeline": true,
         "load": true,
         "knobs": [
-          { "node": "api", "key": "replicas" },
-          { "node": "gateway", "key": "replicas" },
-          { "node": "db", "key": "sizeFactor" }
+          {
+            "node": "api",
+            "key": "replicas"
+          },
+          {
+            "node": "gateway",
+            "key": "replicas"
+          },
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Lưu lượng Polling", "en": "Polling RPS" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 150 } },
-        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng Polling",
+            "en": "Polling RPS"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 90,
+            "badAbove": 150
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
-      "slo": [{ "metric": "p99", "value": 150 }],
-      "focus": { "nodes": ["gateway", "api", "pubsub"] }
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 150
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "gateway",
+          "api",
+          "pubsub"
+        ]
+      }
     }
   }
 }

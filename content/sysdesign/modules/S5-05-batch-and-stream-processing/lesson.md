@@ -145,7 +145,7 @@ Với các bài toán đếm người dùng duy nhất (Unique Users) trên hàn
 ```step
 category: RECAP
 short: Tổng kết
-scene: s1-setup
+scene: s5-scale
 callout:
   kind: good-to-know
   title: Tốc độ của Stream và độ chính xác của Batch

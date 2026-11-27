@@ -5,7 +5,10 @@
     "client": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Người dùng", "en": "Users" },
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
       "inspector": {
         "what": {
           "vi": "Lưu lượng người dùng biến thiên theo giờ trong ngày (Diurnal) hoặc tăng đột ngột lúc Flash Sale.",
@@ -25,7 +28,10 @@
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
       "inspector": {
         "what": {
           "vi": "Cặp Load Balancer chia tải Least Connections sang tầng ứng dụng.",
@@ -45,7 +51,10 @@
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "App Tier", "en": "App Tier" },
+      "label": {
+        "vi": "App Tier",
+        "en": "App Tier"
+      },
       "inspector": {
         "what": {
           "vi": "Tầng ứng dụng phi trạng thái (mỗi máy cỡ chuẩn xử lý 900 req/s, 0,12 USD/giờ).",
@@ -65,7 +74,10 @@
       "shape": "block",
       "tone": "green",
       "icon": "sparkles",
-      "label": { "vi": "Instance mới (Cold Start)", "en": "New Instances (Cold Start)" },
+      "label": {
+        "vi": "Instance mới",
+        "en": "New Instances"
+      },
       "inspector": {
         "what": {
           "vi": "Nhóm 3 instance mới do bộ Autoscaler tự động cấp phát khi phát hiện tải tăng vọt.",
@@ -85,7 +97,10 @@
       "shape": "block",
       "tone": "yellow",
       "icon": "zap",
-      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "label": {
+        "vi": "Redis Cache",
+        "en": "Redis Cache"
+      },
       "inspector": {
         "what": {
           "vi": "Bộ nhớ đệm Read-through đứng trước Primary DB (tập dữ liệu nóng 80.000 key).",
@@ -104,7 +119,10 @@
     "db": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Primary DB", "en": "Primary DB" },
+      "label": {
+        "vi": "Primary DB",
+        "en": "Primary DB"
+      },
       "inspector": {
         "what": {
           "vi": "Cơ sở dữ liệu quan hệ xử lý toàn bộ lượt ghi và các lượt đọc Cache Miss.",
@@ -124,96 +142,252 @@
   "links": {
     "client-lb": {
       "inspector": {
-        "what": { "vi": "Chiều Network: kết nối từ người dùng qua Internet tới Load Balancer.", "en": "Network dimension: Internet hop from users to Load Balancer." },
-        "how": { "vi": "Bị chi phối bởi khoảng cách địa lý (RTT) và băng thông truyền tải.", "en": "Governed by geographic RTT and payload bandwidth." },
-        "why": { "vi": "Khi nghẽn ở chiều này, cần nén dữ liệu, giảm số vòng gọi hoặc đặt CDN gần người dùng.", "en": "Network bottlenecks require payload compression, fewer round trips, or edge CDN." }
+        "what": {
+          "vi": "Chiều Network: kết nối từ người dùng qua Internet tới Load Balancer.",
+          "en": "Network dimension: Internet hop from users to Load Balancer."
+        },
+        "how": {
+          "vi": "Bị chi phối bởi khoảng cách địa lý (RTT) và băng thông truyền tải.",
+          "en": "Governed by geographic RTT and payload bandwidth."
+        },
+        "why": {
+          "vi": "Khi nghẽn ở chiều này, cần nén dữ liệu, giảm số vòng gọi hoặc đặt CDN gần người dùng.",
+          "en": "Network bottlenecks require payload compression, fewer round trips, or edge CDN."
+        }
       }
     },
     "cache-db": {
       "inspector": {
-        "what": { "vi": "Luồng truy vấn đi xuyên qua Cache xuống Primary DB.", "en": " serial database traffic bypassing or missing Cache." },
-        "how": { "vi": "Mang toàn bộ 15% lượt ghi cộng phần lượt đọc Cache Miss.", "en": "Carries all 15% writes plus uncached read misses." },
-        "why": { "vi": "Quyết định phần tuần tự không thể giải quyết bằng cách chỉ nhân bản tầng App.", "en": "Determines the serial workload unaffected by App tier horizontal scaling." }
+        "what": {
+          "vi": "Luồng truy vấn đi xuyên qua Cache xuống Primary DB.",
+          "en": " serial database traffic bypassing or missing Cache."
+        },
+        "how": {
+          "vi": "Mang toàn bộ 15% lượt ghi cộng phần lượt đọc Cache Miss.",
+          "en": "Carries all 15% writes plus uncached read misses."
+        },
+        "why": {
+          "vi": "Quyết định phần tuần tự không thể giải quyết bằng cách chỉ nhân bản tầng App.",
+          "en": "Determines the serial workload unaffected by App tier horizontal scaling."
+        }
       }
     }
   },
   "zones": {
     "compute_pool": {
-      "nodeIds": ["app", "app_auto"],
-      "label": { "vi": "TẦNG COMPUTE CO GIÃN", "en": "ELASTIC COMPUTE TIER" },
+      "nodeIds": [
+        "app",
+        "app_auto"
+      ],
+      "label": {
+        "vi": "TẦNG COMPUTE CO GIÃN",
+        "en": "ELASTIC COMPUTE TIER"
+      },
       "tone": "green"
     }
   },
   "scenes": {
     "s1-dimensions": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "state": {
-        "app": { "loadPct": 65, "badge": { "text": { "vi": "Compute (CPU)", "en": "Compute (CPU)" }, "tone": "warn" } },
-        "cache": { "loadPct": 15, "badge": { "text": { "vi": "RAM Cache", "en": "RAM Cache" }, "tone": "ok" } },
-        "db": { "loadPct": 72, "badge": { "text": { "vi": "Storage (Disk I/O)", "en": "Storage (Disk I/O)" }, "tone": "warn" } }
+        "app": {
+          "loadPct": 65,
+          "badge": {
+            "text": {
+              "vi": "Compute (CPU)",
+              "en": "Compute (CPU)"
+            },
+            "tone": "warn"
+          }
+        },
+        "cache": {
+          "loadPct": 15,
+          "badge": {
+            "text": {
+              "vi": "RAM Cache",
+              "en": "RAM Cache"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 72,
+          "badge": {
+            "text": {
+              "vi": "Storage (Disk I/O)",
+              "en": "Storage (Disk I/O)"
+            },
+            "tone": "warn"
+          }
+        }
       },
       "linkState": {
-        "client-lb": { "label": { "vi": "Network (RTT / BW)", "en": "Network (RTT / BW)" } }
+        "client-lb": {
+          "label": {
+            "vi": "Network (RTT / BW)",
+            "en": "Network (RTT / BW)"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Ba chiều Hiệu năng & Mở rộng", "en": "Three Scalability Dimensions" },
+        "title": {
+          "vi": "Ba chiều Hiệu năng & Mở rộng",
+          "en": "Three Scalability Dimensions"
+        },
         "lines": [
-          { "text": { "vi": "Compute (CPU) · Storage (I/O) · Network", "en": "Compute (CPU) · Storage (I/O) · Network" }, "tone": "plain" },
-          { "text": { "vi": "Mỗi kỹ thuật chỉ gỡ đúng 1 chiều nghẽn", "en": "Each technique targets one specific dimension" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Compute (CPU) · Storage (I/O) · Network",
+              "en": "Compute (CPU) · Storage (I/O) · Network"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Mỗi kỹ thuật chỉ gỡ đúng 1 chiều nghẽn",
+              "en": "Each technique targets one specific dimension"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-scale-up": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "state": {
         "app": {
           "loadPct": 100,
           "highlighted": true,
-          "badge": { "text": { "vi": "sizeFactor=4 · Trần 3.600", "en": "size=4 · Cap 3,600" }, "tone": "bad" }
+          "badge": {
+            "text": {
+              "vi": "sizeFactor=4 · Trần 3.600",
+              "en": "size=4 · Cap 3,600"
+            },
+            "tone": "bad"
+          }
         },
-        "cache": { "loadPct": 12 },
-        "db": { "loadPct": 48 }
+        "cache": {
+          "loadPct": 12
+        },
+        "db": {
+          "loadPct": 48
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Giới hạn của Scale-up (Mở rộng dọc)", "en": "Limits of Vertical Scaling" },
+        "title": {
+          "vi": "Giới hạn của Scale-up (Mở rộng dọc)",
+          "en": "Limits of Vertical Scaling"
+        },
         "lines": [
-          { "text": { "vi": "Đụng trần phần cứng (3.600 < 4.200 req/s)", "en": "Hits hardware ceiling (3,600 < 4,200 req/s)" }, "tone": "bad" },
-          { "text": { "vi": "Giá tăng phi tuyến & vẫn là 1 điểm SPOF", "en": "Superlinear cost & remains a single SPOF" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Đụng trần phần cứng (3.600 < 4.200 req/s)",
+              "en": "Hits hardware ceiling (3,600 < 4,200 req/s)"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Giá tăng phi tuyến & vẫn là 1 điểm SPOF",
+              "en": "Superlinear cost & remains a single SPOF"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s3-live-diurnal": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Chu kỳ ngày đêm 600 → 4.200 req/s", "en": "Diurnal Wave 600 → 4,200 req/s" },
+        "title": {
+          "vi": "Chu kỳ ngày đêm 600 → 4.200 req/s",
+          "en": "Diurnal Wave 600 → 4,200 req/s"
+        },
         "lines": [
-          { "text": { "vi": "Thử tăng sizeFactor = 4 so với replicas = 6", "en": "Compare sizeFactor = 4 vs replicas = 6" }, "tone": "amber" },
-          { "text": { "vi": "Quan sát chi phí $/giờ và p99 lúc đỉnh t = 40 s", "en": "Watch $/h cost and p99 at peak t = 40 s" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Thử tăng sizeFactor = 4 so với replicas = 6",
+              "en": "Compare sizeFactor = 4 vs replicas = 6"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Quan sát chi phí $/giờ và p99 lúc đỉnh t = 40 s",
+              "en": "Watch $/h cost and p99 at peak t = 40 s"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s4-live-cold": {
-      "show": { "nodes": "*" },
-      "zones": ["compute_pool"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "compute_pool"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "t = 8 s: Flash Sale 1.000 → 3.100 req/s", "en": "t = 8 s: Flash Sale 1,000 → 3,100 req/s" },
+        "title": {
+          "vi": "t = 8 s: Flash Sale 1.000 → 3.100 req/s",
+          "en": "t = 8 s: Flash Sale 1,000 → 3,100 req/s"
+        },
         "lines": [
-          { "text": { "vi": "t = 10..15 s: Máy mới đang nạp container", "en": "t = 10..15 s: New instances booting" }, "tone": "bad" },
-          { "text": { "vi": "t = 15..35 s: Làm nóng JIT & kết nối dần", "en": "t = 15..35 s: JIT & pool warming up" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "t = 10..15 s: Máy mới đang nạp container",
+              "en": "t = 10..15 s: New instances booting"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "t = 15..35 s: Làm nóng JIT & kết nối dần",
+              "en": "t = 15..35 s: JIT & pool warming up"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s5-amdahl-law": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tape",
         "title": {
@@ -224,115 +398,378 @@
           "vi": "S(N) = 1 / ((1 − p) + p / N) — Khi N → ∞, tốc độ tối đa bị khoá cứng ở 1 / (1 − p)",
           "en": "S(N) = 1 / ((1 − p) + p / N) — Even with infinite servers, speedup never exceeds 1 / (1 − p)"
         },
-        "cells": ["80% Song song (p = 0,80)", "Chia cho N = 4 máy → còn 20%", "Chia cho N = ∞ → tiến về 0%", "20% Tuần tự (1 − p = 0,20)", "Trần tối đa = 1 / 0,20 = 5×"],
-        "activeIndices": [3, 4],
+        "cells": [
+          "80% Song song (p = 0,80)",
+          "Chia cho N = 4 máy → còn 20%",
+          "Chia cho N = ∞ → tiến về 0%",
+          "20% Tuần tự (1 − p = 0,20)",
+          "Trần tối đa = 1 / 0,20 = 5×"
+        ],
+        "activeIndices": [
+          3,
+          4
+        ],
         "pointers": [
-          { "index": 1, "label": "giảm nhanh khi thêm máy", "tone": "green" },
-          { "index": 3, "label": "không đổi khi thêm App", "tone": "rose" }
+          {
+            "index": 1,
+            "label": "giảm nhanh khi thêm máy",
+            "tone": "green"
+          },
+          {
+            "index": 3,
+            "label": "không đổi khi thêm App",
+            "tone": "rose"
+          }
         ],
         "outputPill": {
-          "label": { "vi": "Hệ quả kiến trúc", "en": "Architectural Takeaway" },
-          "value": { "vi": "Muốn vượt trần 5×, bắt buộc phải thu hẹp phần tuần tự (1 − p) bằng Cache, Index hoặc bất đồng bộ", "en": "To break the 5× ceiling, shrink the serial fraction (1 − p) via caching, indexing, or async" },
+          "label": {
+            "vi": "Hệ quả kiến trúc",
+            "en": "Architectural Takeaway"
+          },
+          "value": {
+            "vi": "Muốn vượt trần 5×, bắt buộc phải thu hẹp phần tuần tự (1 − p) bằng Cache, Index hoặc bất đồng bộ",
+            "en": "To break the 5× ceiling, shrink the serial fraction (1 − p) via caching, indexing, or async"
+          },
           "tone": "orange"
         }
       }
     },
     "s6-amdahl-limit": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "state": {
-        "app": { "loadPct": 58, "badge": { "text": { "vi": "4 máy · μ = 3.600", "en": "4x · μ = 3,600" }, "tone": "ok" } },
-        "cache": { "loadPct": 8, "badge": { "text": { "vi": "Hit ≈ 42,5%", "en": "Hit ≈ 42.5%" }, "tone": "warn" } },
+        "app": {
+          "loadPct": 58,
+          "badge": {
+            "text": {
+              "vi": "4 máy · μ = 3.600",
+              "en": "4x · μ = 3,600"
+            },
+            "tone": "ok"
+          }
+        },
+        "cache": {
+          "loadPct": 8,
+          "badge": {
+            "text": {
+              "vi": "Hit ≈ 42,5%",
+              "en": "Hit ≈ 42.5%"
+            },
+            "tone": "warn"
+          }
+        },
         "db": {
           "loadPct": 98,
           "highlighted": true,
-          "badge": { "text": { "vi": "64% dồn vào DB", "en": "64% hits DB" }, "tone": "bad" }
+          "badge": {
+            "text": {
+              "vi": "64% dồn vào DB",
+              "en": "64% hits DB"
+            },
+            "tone": "bad"
+          }
         }
       },
       "linkState": {
-        "cache-db": { "style": "danger" }
+        "cache-db": {
+          "style": "danger"
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tìm trần thông lượng thực tế", "en": "Find True Throughput Ceiling" },
+        "title": {
+          "vi": "Tìm trần thông lượng thực tế",
+          "en": "Find True Throughput Ceiling"
+        },
         "lines": [
-          { "text": { "vi": "App Tier dư năng lực tới 3.600 req/s", "en": "App Tier has 3,600 req/s capacity" }, "tone": "good" },
-          { "text": { "vi": "Nhưng 64% request phải xếp hàng ở DB", "en": "Yet 64% of requests serialize at DB" }, "tone": "bad" }
+          {
+            "text": {
+              "vi": "App Tier dư năng lực tới 3.600 req/s",
+              "en": "App Tier has 3,600 req/s capacity"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Nhưng 64% request phải xếp hàng ở DB",
+              "en": "Yet 64% of requests serialize at DB"
+            },
+            "tone": "bad"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s7-live-amdahl": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Ramp 400 → 4.800 req/s (60 giây)", "en": "Load Ramp 400 → 4,800 req/s" },
+        "title": {
+          "vi": "Ramp 400 → 4.800 req/s (60 giây)",
+          "en": "Load Ramp 400 → 4,800 req/s"
+        },
         "lines": [
-          { "text": { "vi": "4 máy App chạy song song ở tầng trước", "en": "4 App instances run in parallel" }, "tone": "good" },
-          { "text": { "vi": "Theo dõi nút nào chuyển Đỏ (Quá tải) trước", "en": "Watch which node hits Overloaded first" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "4 máy App chạy song song ở tầng trước",
+              "en": "4 App instances run in parallel"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Theo dõi nút nào chuyển Đỏ (Quá tải) trước",
+              "en": "Watch which node hits Overloaded first"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s8-fix-amdahl": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "state": {
-        "app": { "loadPct": 76, "badge": { "text": { "vi": "Scale-out ×7", "en": "Scale-out ×7" }, "tone": "ok" } },
+        "app": {
+          "loadPct": 76,
+          "badge": {
+            "text": {
+              "vi": "Scale-out ×7",
+              "en": "Scale-out ×7"
+            },
+            "tone": "ok"
+          }
+        },
         "cache": {
           "loadPct": 12,
           "highlighted": true,
-          "badge": { "text": { "vi": "80k key · Hit 85%", "en": "80k keys · Hit 85%" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "80k key · Hit 85%",
+              "en": "80k keys · Hit 85%"
+            },
+            "tone": "ok"
+          }
         },
         "db": {
           "loadPct": 48,
           "highlighted": true,
-          "badge": { "text": { "vi": "Scale-up ×2", "en": "Scale-up ×2" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Scale-up ×2",
+              "en": "Scale-up ×2"
+            },
+            "tone": "ok"
+          }
         }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Kết hợp Lai (Hybrid Scaling)", "en": "Hybrid Scaling Solution" },
+        "title": {
+          "vi": "Kết hợp Lai (Hybrid Scaling)",
+          "en": "Hybrid Scaling Solution"
+        },
         "lines": [
-          { "text": { "vi": "Cache cắt tỷ lệ xuống DB từ 64% về 28%", "en": "Cache cuts DB share from 64% to 28%" }, "tone": "good" },
-          { "text": { "vi": "Scale-up DB ×2 + Scale-out App ×7 đạt SLO", "en": "Scale-up DB ×2 + Scale-out App ×7 meets SLO" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Cache cắt tỷ lệ xuống DB từ 64% về 28%",
+              "en": "Cache cuts DB share from 64% to 28%"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Scale-up DB ×2 + Scale-out App ×7 đạt SLO",
+              "en": "Scale-up DB ×2 + Scale-out App ×7 meets SLO"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s9-load-tests": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "4 bài Kiểm thử tải (Load Testing)", "en": "4 Load Test Profiles" },
-        "rightTitle": { "vi": "Lỗi kiến trúc được phát hiện sớm", "en": "Exposed Architectural Weakness" },
+        "leftTitle": {
+          "vi": "4 bài Kiểm thử tải (Load Testing)",
+          "en": "4 Load Test Profiles"
+        },
+        "rightTitle": {
+          "vi": "Lỗi kiến trúc được phát hiện sớm",
+          "en": "Exposed Architectural Weakness"
+        },
         "names": [
-          { "id": "t1", "name": "1. Baseline Test", "note": { "vi": "Tải ngày thường ổn định", "en": "Normal steady traffic" }, "targetId": "g1" },
-          { "id": "t2", "name": "2. Stress Test (Ramp)", "note": { "vi": "Tăng dần tới điểm gãy", "en": "Ramp up to breaking point" }, "targetId": "g2" },
-          { "id": "t3", "name": "3. Spike Test", "note": { "vi": "Tăng dựng đứng tức thì", "en": "Sudden vertical surge" }, "targetId": "g3" },
-          { "id": "t4", "name": "4. Soak Test (8–24 giờ)", "note": { "vi": "Tải cao duy trì dài hạn", "en": "Sustained long-duration run" }, "targetId": "g4" }
+          {
+            "id": "t1",
+            "name": "1. Baseline Test",
+            "note": {
+              "vi": "Tải ngày thường ổn định",
+              "en": "Normal steady traffic"
+            },
+            "targetId": "g1"
+          },
+          {
+            "id": "t2",
+            "name": "2. Stress Test (Ramp)",
+            "note": {
+              "vi": "Tăng dần tới điểm gãy",
+              "en": "Ramp up to breaking point"
+            },
+            "targetId": "g2"
+          },
+          {
+            "id": "t3",
+            "name": "3. Spike Test",
+            "note": {
+              "vi": "Tăng dựng đứng tức thì",
+              "en": "Sudden vertical surge"
+            },
+            "targetId": "g3"
+          },
+          {
+            "id": "t4",
+            "name": "4. Soak Test (8–24 giờ)",
+            "note": {
+              "vi": "Tải cao duy trì dài hạn",
+              "en": "Sustained long-duration run"
+            },
+            "targetId": "g4"
+          }
         ],
         "objects": [
-          { "id": "g1", "typeTag": "BASELINE", "value": "Độ trễ nền p50 / p99 khi chưa nghẽn", "fields": ["Làm mốc đối chiếu trước và sau mỗi lần tối ưu"], "tone": "blue" },
-          { "id": "g2", "typeTag": "BOTTLENECK", "value": "Trần thông lượng & nút chạm ρ = 1 đầu tiên", "fields": ["Chỉ ra giới hạn tuần tự theo Amdahl"], "tone": "orange" },
-          { "id": "g3", "typeTag": "COLD START", "value": "Độ trễ Autoscaling & tràn hàng đợi ngắn hạn", "fields": ["Kiểm tra Pre-warming và khả năng tự phục hồi"], "tone": "purple" },
-          { "id": "g4", "typeTag": "ENDURANCE", "value": "Rò rỉ bộ nhớ, cạn Connection Pool, đầy đĩa", "fields": ["Những lỗi không bao giờ lộ ra ở bài chạy 5 phút"], "tone": "rose" }
+          {
+            "id": "g1",
+            "typeTag": "BASELINE",
+            "value": "Độ trễ nền p50 / p99 khi chưa nghẽn",
+            "fields": [
+              "Làm mốc đối chiếu trước và sau mỗi lần tối ưu"
+            ],
+            "tone": "blue"
+          },
+          {
+            "id": "g2",
+            "typeTag": "BOTTLENECK",
+            "value": "Trần thông lượng & nút chạm ρ = 1 đầu tiên",
+            "fields": [
+              "Chỉ ra giới hạn tuần tự theo Amdahl"
+            ],
+            "tone": "orange"
+          },
+          {
+            "id": "g3",
+            "typeTag": "COLD START",
+            "value": "Độ trễ Autoscaling & tràn hàng đợi ngắn hạn",
+            "fields": [
+              "Kiểm tra Pre-warming và khả năng tự phục hồi"
+            ],
+            "tone": "purple"
+          },
+          {
+            "id": "g4",
+            "typeTag": "ENDURANCE",
+            "value": "Rò rỉ bộ nhớ, cạn Connection Pool, đầy đĩa",
+            "fields": [
+              "Những lỗi không bao giờ lộ ra ở bài chạy 5 phút"
+            ],
+            "tone": "rose"
+          }
         ]
       }
     },
     "s10-recap": {
-      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "cache",
+          "db"
+        ]
+      },
       "state": {
-        "lb": { "loadPct": 16 },
-        "app": { "loadPct": 72, "badge": { "text": { "vi": "Scale-out + Pre-warm", "en": "Scale-out + Pre-warm" }, "tone": "ok" } },
-        "cache": { "loadPct": 12, "badge": { "text": { "vi": "Giảm (1 − p)", "en": "Shrinks (1 − p)" }, "tone": "ok" } },
-        "db": { "loadPct": 48, "badge": { "text": { "vi": "Scale-up hợp lý", "en": "Right-sized DB" }, "tone": "ok" } }
+        "lb": {
+          "loadPct": 16
+        },
+        "app": {
+          "loadPct": 72,
+          "badge": {
+            "text": {
+              "vi": "Scale-out + Pre-warm",
+              "en": "Scale-out + Pre-warm"
+            },
+            "tone": "ok"
+          }
+        },
+        "cache": {
+          "loadPct": 12,
+          "badge": {
+            "text": {
+              "vi": "Giảm (1 − p)",
+              "en": "Shrinks (1 − p)"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 48,
+          "badge": {
+            "text": {
+              "vi": "Scale-up hợp lý",
+              "en": "Right-sized DB"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tư duy Mở rộng Hệ thống", "en": "System Scaling Mindset" },
+        "title": {
+          "vi": "Tư duy Mở rộng Hệ thống",
+          "en": "System Scaling Mindset"
+        },
         "lines": [
-          { "text": { "vi": "Scale-out cho Compute · Scale-up + Cache cho DB", "en": "Scale-out Compute · Scale-up + Cache for DB" }, "tone": "good" },
-          { "text": { "vi": "Thu hẹp phần tuần tự trước khi nhân bản máy", "en": "Shrink serial work before adding servers" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Scale-out cho Compute · Scale-up + Cache cho DB",
+              "en": "Scale-out Compute · Scale-up + Cache for DB"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Thu hẹp phần tuần tự trước khi nhân bản máy",
+              "en": "Shrink serial work before adding servers"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
@@ -348,21 +785,62 @@
         "timeline": true,
         "load": false,
         "knobs": [
-          { "node": "app", "key": "replicas" },
-          { "node": "app", "key": "sizeFactor" }
+          {
+            "node": "app",
+            "key": "replicas"
+          },
+          {
+            "node": "app",
+            "key": "sizeFactor"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Tải ngày đêm", "en": "Diurnal Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 95, "badAbove": 140 } },
-        { "metric": "costPerHour", "label": { "vi": "Chi phí", "en": "Cost" }, "format": "usd-hour" }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Tải ngày đêm",
+            "en": "Diurnal Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 95,
+            "badAbove": 140
+          }
+        },
+        {
+          "metric": "costPerHour",
+          "label": {
+            "vi": "Chi phí",
+            "en": "Cost"
+          },
+          "format": "usd-hour"
+        }
       ],
       "slo": [
-        { "metric": "p99", "value": 120 },
-        { "metric": "errorRate", "value": 0.01 }
+        {
+          "metric": "p99",
+          "value": 120
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
       ],
-      "focus": { "nodes": ["app"] }
+      "focus": {
+        "nodes": [
+          "app"
+        ]
+      }
     },
     "cold-start": {
       "sim": "S4-01/cold-start",
@@ -372,45 +850,130 @@
       "controls": {
         "timeline": true,
         "knobs": [
-          { "node": "app", "key": "replicas" }
+          {
+            "node": "app",
+            "key": "replicas"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Tải Flash Sale", "en": "Flash Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 250 } },
-        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Tải Flash Sale",
+            "en": "Flash Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 120,
+            "badAbove": 250
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỷ lệ lỗi",
+            "en": "Error Rate"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
       "slo": [
-        { "metric": "errorRate", "value": 0.01 }
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
       ],
-      "focus": { "nodes": ["app", "app_auto"] }
+      "focus": {
+        "nodes": [
+          "app",
+          "app_auto"
+        ]
+      }
     },
     "amdahl": {
       "sim": "S4-01/amdahl",
       "startAtSec": 0,
-      "autoplay": false,
       "speed": 2,
       "controls": {
         "timeline": true,
         "load": true,
         "knobs": [
-          { "node": "app", "key": "replicas" },
-          { "node": "cache", "key": "capacityKeys" },
-          { "node": "db", "key": "sizeFactor" }
+          {
+            "node": "app",
+            "key": "replicas"
+          },
+          {
+            "node": "cache",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 100, "badAbove": 150 } },
-        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 150
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỷ lệ lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
       "slo": [
-        { "metric": "p99", "value": 120 }
+        {
+          "metric": "p99",
+          "value": 120
+        }
       ],
-      "pauseAtSec": [15],
-      "focus": { "nodes": ["app", "cache", "db"] }
+      "focus": {
+        "nodes": [
+          "app",
+          "cache",
+          "db"
+        ]
+      }
     }
   }
 }

@@ -452,8 +452,11 @@ Các trường `path`, `sha`, `url`, `fetchedAt` theo `01-sources-and-credits.md
 **Cấu trúc**
 - [ ] 8–12 step, `category` tường minh, step đầu `SETUP`, cuối `RECAP`; mỗi step có `scene`/`live` hoặc lý do (RECAP).
 - [ ] `whatChanged`/`telemetry` ngắn gọn; số telemetry lấy từ sim bằng biến `{…}` (không số tay).
-- [ ] `stage.json`: id node/link khớp `sim.json`; chế độ stage đúng guidelines §1 (không ép sơ đồ).
-- [ ] `inspector` (What/How/Why/Tips) cho node/link quan trọng (guidelines §3) hoặc dùng mặc định theo primitive.
+- [ ] `stage.json`: id node/link khớp `sim.json` (hoặc khai báo bổ sung trong `stage.nodes`/`stage.links` cho các thành phần phụ trợ như `dlq`, `kms`, `outbox`, `registry`); chế độ stage đúng guidelines §1 (không ép sơ đồ Isometric cho chuỗi thời gian/ma trận quyết định/máy trạng thái 2D).
+- [ ] **Tiến hóa Pipeline & Đủ đối tượng tham gia (guidelines §7.5):** Các bước mở đầu (`SETUP`/`PROBLEM`) chỉ hiển thị kiến trúc ban đầu (`show.nodes` rút gọn) để bộc lộ vấn đề; các bước giải pháp mới thêm dần thành phần mới. Không bỏ sót thành phần phụ trợ được nhắc trong bài và không dùng mã nháp (`O1..O3`, `C1..C4`) làm `typeTag`.
+- [ ] **Hạt tín hiệu nhân quả & Hàng đợi FIFO (guidelines §7.2–§7.3):** Để `"packets": "auto"` (hoặc qua `buildCausalPacketsForScene`) để mọi truy vấn đồng bộ xuống DB/Cache đều có cả hạt Request/Query đi vào lẫn hạt Response xanh lá (`#9fd28f`) trả ngược về, lan truyền đúng độ trễ từ DB ngược lên App/Client và dồn hàng đợi FIFO thực sự khi node bận. Không dùng `style: "danger"` thay cho `cut`/`dead` nếu đường nối vẫn còn lưu lượng phản hồi.
+- [ ] **Popup ghi chú nằm ngoài SVG zoom (guidelines §7.1):** `noteCard` và `outputPill` luôn hiển thị ở lớp HUD cố định ngoài `<svg>`, không bị phóng to/thu nhỏ khi zoom mô hình.
+- [ ] `inspector` (What/How/Why/Tips) cho node/link quan trọng (guidelines §3) hoặc dùng mặc định theo primitive đúng ngữ cảnh System Design.
 
 **Mô phỏng và bài tập**
 - [ ] `sim.json`: `expect` đúng (bottleneck, mốc thời gian), `slos` hợp lý, `presets` gồm lời giải và ≥ 1 bẫy.

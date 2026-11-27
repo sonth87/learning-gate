@@ -1,7 +1,7 @@
-export type SdMainTab = 'learn' | 'lab' | 'warroom' | 'cases' | 'atlas' | 'interview' | 'credits';
+export type SdMainTab = 'learn' | 'lab' | 'warroom' | 'cases' | 'atlas' | 'interview';
 
-/** Thứ tự tab cố định; ⌘1..⌘7 theo thứ tự này (menu trong appRegistry). */
-export const SD_TAB_ORDER: SdMainTab[] = ['learn', 'lab', 'warroom', 'cases', 'atlas', 'interview', 'credits'];
+/** Thứ tự tab cố định; ⌘1..⌘6 theo thứ tự này (menu trong appRegistry). */
+export const SD_TAB_ORDER: SdMainTab[] = ['learn', 'lab', 'warroom', 'cases', 'atlas', 'interview'];
 
 export interface SdTabMeta {
   id: SdMainTab;
@@ -61,14 +61,6 @@ export const SD_TABS: Record<SdMainTab, SdTabMeta> = {
     labelEn: 'Interview',
     descVi: 'Luyện phỏng vấn system design theo 5 chặng SNAKE, có đồng hồ bấm giờ.',
     descEn: 'Practice system design interviews in 5 SNAKE stages with a timer.',
-    milestone: '',
-  },
-  credits: {
-    id: 'credits',
-    labelVi: 'Nguồn',
-    labelEn: 'Credits',
-    descVi: 'Nguồn nội dung và giấy phép.',
-    descEn: 'Content sources and licensing.',
     milestone: '',
   },
 };

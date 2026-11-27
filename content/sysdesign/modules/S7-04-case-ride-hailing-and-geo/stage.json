@@ -5,97 +5,307 @@
     "drivers": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Tài xế (1M)", "en": "Drivers (1M)" },
+      "label": {
+        "vi": "Tài xế (1M)",
+        "en": "Drivers (1M)"
+      },
       "inspector": {
-        "what": { "vi": "1 triệu tài xế đang trực tuyến gửi tọa độ GPS mỗi 4 giây.", "en": "1M active drivers reporting GPS coordinates every 4 seconds." },
-        "how": { "vi": "Tạo ra tổng cộng 250.000 lượt cập nhật vị trí mỗi giây.", "en": "Generates 250,000 location write operations per second." },
-        "why": { "vi": "Độ tươi dữ liệu vị trí quyết định độ chính xác khi ghép chuyến.", "en": "Fresh driver coordinates govern dispatch matching accuracy." }
+        "what": {
+          "vi": "1 triệu tài xế đang trực tuyến gửi tọa độ GPS mỗi 4 giây.",
+          "en": "1M active drivers reporting GPS coordinates every 4 seconds."
+        },
+        "how": {
+          "vi": "Tạo ra tổng cộng 250.000 lượt cập nhật vị trí mỗi giây.",
+          "en": "Generates 250,000 location write operations per second."
+        },
+        "why": {
+          "vi": "Độ tươi dữ liệu vị trí quyết định độ chính xác khi ghép chuyến.",
+          "en": "Fresh driver coordinates govern dispatch matching accuracy."
+        }
       }
     },
     "lb": {
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
       "inspector": {
-        "what": { "vi": "Bộ cân bằng tải chia đều kết nối cập nhật vị trí sang Location API.", "en": "Load Balancer distributing driver GPS updates to Location API." },
-        "how": { "vi": "Định tuyến Round-robin độ trễ thấp.", "en": "Low-latency Round-robin routing." },
-        "why": { "vi": "Giữ tầng API không trạng thái mở rộng ngang dễ dàng.", "en": "Keeps stateless Location API horizontally scalable." }
+        "what": {
+          "vi": "Bộ cân bằng tải chia đều kết nối cập nhật vị trí sang Location API.",
+          "en": "Load Balancer distributing driver GPS updates to Location API."
+        },
+        "how": {
+          "vi": "Định tuyến Round-robin độ trễ thấp.",
+          "en": "Low-latency Round-robin routing."
+        },
+        "why": {
+          "vi": "Giữ tầng API không trạng thái mở rộng ngang dễ dàng.",
+          "en": "Keeps stateless Location API horizontally scalable."
+        }
       }
     },
     "geo_api": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Location API", "en": "Location API" },
+      "label": {
+        "vi": "Location API",
+        "en": "Location API"
+      },
       "inspector": {
-        "what": { "vi": "Dịch vụ chuyển đổi tọa độ (lat, lng) sang mã ô không gian (Geohash / Quadtree).", "en": "Stateless service encoding (lat, lng) into spatial index keys." },
-        "how": { "vi": "Ghi vị trí mới nhất của tài xế vào đúng phân mảnh chỉ mục không gian.", "en": "Routes location updates to the owning spatial index shard." },
-        "why": { "vi": "Tách riêng luồng ghi vị trí tần suất cao khỏi cơ sở dữ liệu chuyến đi.", "en": "Isolates high-frequency location writes from trip database." }
+        "what": {
+          "vi": "Dịch vụ chuyển đổi tọa độ (lat, lng) sang mã ô không gian (Geohash / Quadtree).",
+          "en": "Stateless service encoding (lat, lng) into spatial index keys."
+        },
+        "how": {
+          "vi": "Ghi vị trí mới nhất của tài xế vào đúng phân mảnh chỉ mục không gian.",
+          "en": "Routes location updates to the owning spatial index shard."
+        },
+        "why": {
+          "vi": "Tách riêng luồng ghi vị trí tần suất cao khỏi cơ sở dữ liệu chuyến đi.",
+          "en": "Isolates high-frequency location writes from trip database."
+        }
       }
     },
     "geo_shards": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Geo Index Shards", "en": "Geo Index Shards" },
+      "label": {
+        "vi": "Geo Index Shards",
+        "en": "Geo Index Shards"
+      },
       "inspector": {
-        "what": { "vi": "Kho chỉ mục không gian lưu vị trí tài xế trong RAM theo từng phân mảnh.", "en": "In-memory spatial index shards storing active driver positions." },
-        "how": { "vi": "Nếu phân mảnh thô theo Geohash cấp 5, một điểm nóng như sân bay sẽ dồn 70% tải vào 1 shard.", "en": "Coarse Geohash sharding funnels 70% of airport traffic onto one hot shard." },
-        "why": { "vi": "Cần chia nhỏ ô nóng (thêm tiền tố phụ hoặc tăng shards) để trải đều tải ghi.", "en": "Hot cells must be sub-sharded to prevent single-shard saturation." }
+        "what": {
+          "vi": "Kho chỉ mục không gian lưu vị trí tài xế trong RAM theo từng phân mảnh.",
+          "en": "In-memory spatial index shards storing active driver positions."
+        },
+        "how": {
+          "vi": "Nếu phân mảnh thô theo Geohash cấp 5, một điểm nóng như sân bay sẽ dồn 70% tải vào 1 shard.",
+          "en": "Coarse Geohash sharding funnels 70% of airport traffic onto one hot shard."
+        },
+        "why": {
+          "vi": "Cần chia nhỏ ô nóng (thêm tiền tố phụ hoặc tăng shards) để trải đều tải ghi.",
+          "en": "Hot cells must be sub-sharded to prevent single-shard saturation."
+        }
+      }
+    },
+    "passengers": {
+      "shape": "crowd",
+      "tone": "green",
+      "label": {
+        "vi": "Hành khách đặt xe",
+        "en": "Passengers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hành khách mở ứng dụng tìm xe rảnh xung quanh và gửi yêu cầu đặt chuyến.",
+          "en": "Passengers requesting rides and querying nearby available drivers."
+        },
+        "how": {
+          "vi": "Gửi tọa độ điểm đón vào Dispatch Service để truy vấn bán kính trên Geo Index Shards.",
+          "en": "Sends pickup coordinates to Dispatch Service for spatial radius query."
+        },
+        "why": {
+          "vi": "Đại diện cho luồng Đọc & Ghép chuyến (Read/Match Path) đối xứng với luồng Ghi GPS của tài xế.",
+          "en": "Represents the read and matching path complementing the driver GPS write stream."
+        }
+      }
+    },
+    "dispatch_svc": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "cpu",
+      "label": {
+        "vi": "Dispatch Service",
+        "en": "Dispatch Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ ghép chuyến: tìm các tài xế rảnh gần nhất từ Geo Index Shards và xếp hạng theo ETA.",
+          "en": "Ride-matching service querying Geo Index Shards for nearby drivers and ranking by ETA."
+        },
+        "how": {
+          "vi": "Đọc ô Geohash tâm điểm cùng 8 ô lân cận, khóa tạm ứng viên bằng Distributed Lock rồi đẩy lời mời qua WebSocket.",
+          "en": "Queries center + 8 neighbor Geohash cells, locks candidate driver, and pushes ride offer."
+        },
+        "why": {
+          "vi": "Tách biệt hoàn toàn logic ghép chuyến phức tạp khỏi đường ống nuốt 250.000 điểm GPS/giây.",
+          "en": "Decouples ride matching logic from the 250,000 writes/s location ingestion pipeline."
+        }
+      }
+    },
+    "ws_gateway": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "zap",
+      "label": {
+        "vi": "WebSocket Gateway",
+        "en": "WebSocket Gateway"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng kết nối hai chiều thời gian thực đẩy lời mời nhận cuốc xe xuống điện thoại tài xế và cập nhật vị trí xe cho khách.",
+          "en": "Bi-directional WebSocket gateway pushing ride offers to drivers and live tracking to passengers."
+        },
+        "how": {
+          "vi": "Duy trì phiên kết nối bền vững để tài xế nhận cuốc và phản hồi chấp nhận trong vòng 10 giây.",
+          "en": "Maintains persistent connections for instant driver offer dispatch and live location streaming."
+        },
+        "why": {
+          "vi": "Đảm bảo ghép chuyến tức thời mà không bắt thiết bị phải Polling liên tục.",
+          "en": "Enables sub-second ride offer delivery without wasteful client polling."
+        }
       }
     }
   },
   "links": {
     "drivers-lb": {
       "inspector": {
-        "what": { "vi": "Luồng gửi tọa độ định kỳ mỗi 4 giây từ ứng dụng tài xế.", "en": "Periodic 4-second GPS telemetry stream from driver apps." },
-        "how": { "vi": "Gửi gói tin nhỏ chứa driver_id, lat, lng và timestamp.", "en": "Sends compact payloads with driver_id, lat, lng, timestamp." },
-        "why": { "vi": "Tải ghi cực lớn nhưng chỉ cần giữ vị trí mới nhất, không cần lưu toàn bộ lịch sử vào chỉ mục nóng.", "en": "Write-heavy stream where only latest coordinates matter for matching." }
+        "what": {
+          "vi": "Luồng gửi tọa độ định kỳ mỗi 4 giây từ ứng dụng tài xế.",
+          "en": "Periodic 4-second GPS telemetry stream from driver apps."
+        },
+        "how": {
+          "vi": "Gửi gói tin nhỏ chứa driver_id, lat, lng và timestamp.",
+          "en": "Sends compact payloads with driver_id, lat, lng, timestamp."
+        },
+        "why": {
+          "vi": "Tải ghi cực lớn nhưng chỉ cần giữ vị trí mới nhất, không cần lưu toàn bộ lịch sử vào chỉ mục nóng.",
+          "en": "Write-heavy stream where only latest coordinates matter for matching."
+        }
       }
     },
     "lb-geo": {
       "inspector": {
-        "what": { "vi": "Chuyển tiếp cập nhật vị trí từ Load Balancer vào Location API.", "en": "Internal hop from Load Balancer to Location API." },
-        "how": { "vi": "Chia đều tải cho các instance Location API.", "en": "Distributes load evenly across Location API instances." },
-        "why": { "vi": "Đảm bảo tầng API không bị nghẽn CPU khi mã hóa Geohash.", "en": "Prevents CPU saturation during spatial encoding." }
+        "what": {
+          "vi": "Chuyển tiếp cập nhật vị trí từ Load Balancer vào Location API.",
+          "en": "Internal hop from Load Balancer to Location API."
+        },
+        "how": {
+          "vi": "Chia đều tải cho các instance Location API.",
+          "en": "Distributes load evenly across Location API instances."
+        },
+        "why": {
+          "vi": "Đảm bảo tầng API không bị nghẽn CPU khi mã hóa Geohash.",
+          "en": "Prevents CPU saturation during spatial encoding."
+        }
       }
     },
     "geo-shards": {
       "inspector": {
-        "what": { "vi": "Ghi cập nhật vị trí và truy vấn lân cận xuống Geo Index Shards.", "en": "Spatial index writes and proximity lookups to Geo Shards." },
-        "how": { "vi": "Định tuyến theo khóa ô không gian; ô sân bay có thể tạo lệch tải nghiêm trọng.", "en": "Routed by spatial cell key; airport cells create severe skew." },
-        "why": { "vi": "Chia nhỏ ô nóng và tăng số phân mảnh giúp giữ ρ của từng shard dưới ngưỡng bão hòa.", "en": "Sub-sharding hot cells keeps per-shard ρ below saturation." }
+        "what": {
+          "vi": "Ghi cập nhật vị trí và truy vấn lân cận xuống Geo Index Shards.",
+          "en": "Spatial index writes and proximity lookups to Geo Shards."
+        },
+        "how": {
+          "vi": "Định tuyến theo khóa ô không gian; ô sân bay có thể tạo lệch tải nghiêm trọng.",
+          "en": "Routed by spatial cell key; airport cells create severe skew."
+        },
+        "why": {
+          "vi": "Chia nhỏ ô nóng và tăng số phân mảnh giúp giữ ρ của từng shard dưới ngưỡng bão hòa.",
+          "en": "Sub-sharding hot cells keeps per-shard ρ below saturation."
+        }
       }
+    },
+    "passengers-lb": {
+      "from": "passengers",
+      "to": "lb",
+      "label": {
+        "vi": "Đặt chuyến",
+        "en": "Request ride"
+      }
+    },
+    "lb-dispatch": {
+      "from": "lb",
+      "to": "dispatch_svc"
+    },
+    "dispatch-shards": {
+      "from": "dispatch_svc",
+      "to": "geo_shards",
+      "label": {
+        "vi": "Truy vấn 9 ô lân cận",
+        "en": "Query 9 neighbor cells"
+      }
+    },
+    "dispatch-ws": {
+      "from": "dispatch_svc",
+      "to": "ws_gateway",
+      "label": {
+        "vi": "Đẩy cuốc xe & Tracking",
+        "en": "Push Offer & Tracking"
+      },
+      "style": "dashed"
     }
   },
   "zones": {
     "geo": {
-      "nodeIds": ["geo_api", "geo_shards"],
-      "label": { "vi": "CỤM CHỈ MỤC KHÔNG GIAN", "en": "SPATIAL INDEX CLUSTER" },
+      "nodeIds": [
+        "geo_api",
+        "geo_shards"
+      ],
+      "label": {
+        "vi": "CỤM CHỈ MỤC KHÔNG GIAN",
+        "en": "SPATIAL INDEX CLUSTER"
+      },
       "tone": "neutral"
     }
   },
   "scenes": {
     "s1-write-heavy": {
-      "show": { "nodes": "*" },
-      "zones": ["geo"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "geo"
+      ],
       "state": {
-        "geo_api": { "loadPct": 65 },
-        "geo_shards": { "loadPct": 55, "badge": { "text": { "vi": "250k ghi/s", "en": "250k writes/s" }, "tone": "warn" } }
+        "geo_api": {
+          "loadPct": 65
+        },
+        "geo_shards": {
+          "loadPct": 55,
+          "badge": {
+            "text": {
+              "vi": "250k ghi/s",
+              "en": "250k writes/s"
+            },
+            "tone": "warn"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Bài toán tải ghi 250.000/s", "en": "250,000 Writes/s Challenge" },
+        "title": {
+          "vi": "Bài toán tải ghi 250.000/s",
+          "en": "250,000 Writes/s Challenge"
+        },
         "lines": [
-          { "text": { "vi": "1M tài xế ÷ 4 s = 250.000 ghi/s", "en": "1M drivers ÷ 4 s = 250k writes/s" }, "tone": "amber" },
-          { "text": { "vi": "Chỉ lưu vị trí mới nhất trong RAM", "en": "Keep latest position in RAM" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "1M tài xế ÷ 4 s = 250.000 ghi/s",
+              "en": "1M drivers ÷ 4 s = 250k writes/s"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Chỉ lưu vị trí mới nhất trong RAM",
+              "en": "Keep latest position in RAM"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-geohash-grid": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tape",
         "title": {
@@ -113,22 +323,44 @@
           "w3gv3",
           "w3gv4"
         ],
-        "activeIndices": [2],
+        "activeIndices": [
+          2
+        ],
         "pointers": [
-          { "index": 1, "label": "Ô lân cận", "tone": "blue" },
-          { "index": 2, "label": "Điểm nóng (Hot Cell)", "tone": "rose" },
-          { "index": 3, "label": "Ô lân cận", "tone": "blue" }
+          {
+            "index": 1,
+            "label": "Ô lân cận",
+            "tone": "blue"
+          },
+          {
+            "index": 2,
+            "label": "Điểm nóng (Hot Cell)",
+            "tone": "rose"
+          },
+          {
+            "index": 3,
+            "label": "Ô lân cận",
+            "tone": "blue"
+          }
         ],
         "outputPill": {
-          "label": { "vi": "Lưu ý biên", "en": "Edge Case" },
-          "value": { "vi": "Luôn truy vấn ô hiện tại + 8 ô xung quanh", "en": "Query target cell + 8 neighbors" },
+          "label": {
+            "vi": "Lưu ý biên",
+            "en": "Edge Case"
+          },
+          "value": {
+            "vi": "Luôn truy vấn ô hiện tại + 8 ô xung quanh",
+            "en": "Query target cell + 8 neighbors"
+          },
           "tone": "yellow"
         }
       }
     },
     "s3-quadtree": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -136,44 +368,240 @@
           "en": "Quadtree: Adaptive Spatial Partitioning by Driver Density"
         },
         "nodes": [
-          { "id": "root", "x": 0, "y": -82, "label": "Toàn thành phố", "sub": { "vi": "Tách làm 4 góc phần tư khi vượt ngưỡng xe", "en": "Splits into 4 quadrants when threshold exceeded" }, "tone": "purple" },
-          { "id": "sub", "x": -150, "y": 40, "label": "Vùng ngoại ô", "sub": { "vi": "Ít xe → giữ ô lớn", "en": "Sparse → large leaf cell" }, "tone": "blue" },
-          { "id": "city", "x": 0, "y": 40, "label": "Trung tâm", "sub": { "vi": "Mật độ vừa → chia 1 cấp", "en": "Medium density → 1 split" }, "tone": "green" },
-          { "id": "airport", "x": 150, "y": 40, "label": "Sân bay (Nóng)", "sub": { "vi": "Đông xe → chia sâu nhiều cấp", "en": "Dense → deep sub-splits" }, "tone": "rose" }
+          {
+            "id": "root",
+            "x": 0,
+            "y": -95,
+            "label": "Thành phố (10.000 xe > ngưỡng 500)",
+            "sub": {
+              "vi": "Tách làm 4 góc phần tư (NW, NE, SW, SE) khi vượt ngưỡng",
+              "en": "Splits into 4 quadrants (NW, NE, SW, SE) above threshold"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "q1",
+            "x": -240,
+            "y": -5,
+            "label": "NW: Ngoại ô (120 xe)",
+            "sub": {
+              "vi": "Giữ 1 nút lá",
+              "en": "Single leaf node"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "q2",
+            "x": -80,
+            "y": -5,
+            "label": "NE: Khu dân cư (280 xe)",
+            "sub": {
+              "vi": "Giữ 1 nút lá",
+              "en": "Single leaf node"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "q3",
+            "x": 80,
+            "y": -5,
+            "label": "SW: Trung tâm (1.800 xe)",
+            "sub": {
+              "vi": "Tách tiếp 4 ô con",
+              "en": "Sub-splits into 4"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "q4",
+            "x": 240,
+            "y": -5,
+            "label": "SE: Sân bay (3.200 xe)",
+            "sub": {
+              "vi": "Điểm nóng → Chia sâu",
+              "en": "Hotspot → Deep split"
+            },
+            "tone": "rose"
+          },
+          {
+            "id": "leaf1",
+            "x": 145,
+            "y": 88,
+            "label": "Nhà ga T1 (420 xe)",
+            "sub": {
+              "vi": "Ô lá ~150m",
+              "en": "150m leaf cell"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "leaf2",
+            "x": 285,
+            "y": 88,
+            "label": "Nhà ga T2 (460 xe)",
+            "sub": {
+              "vi": "Ô lá ~150m",
+              "en": "150m leaf cell"
+            },
+            "tone": "green"
+          }
         ],
         "edges": [
-          { "from": "root", "to": "sub", "label": "thưa" },
-          { "from": "root", "to": "city", "label": "vừa" },
-          { "from": "root", "to": "airport", "label": "chia sâu!", "style": "danger" }
+          {
+            "from": "root",
+            "to": "q1",
+            "label": "NW"
+          },
+          {
+            "from": "root",
+            "to": "q2",
+            "label": "NE"
+          },
+          {
+            "from": "root",
+            "to": "q3",
+            "label": "SW"
+          },
+          {
+            "from": "root",
+            "to": "q4",
+            "label": "SE",
+            "style": "danger"
+          },
+          {
+            "from": "q4",
+            "to": "leaf1",
+            "label": "Chia nhỏ"
+          },
+          {
+            "from": "q4",
+            "to": "leaf2",
+            "label": "Chia nhỏ"
+          }
         ]
       }
     },
     "s4-hotkey-live": {
-      "show": { "nodes": "*" },
-      "zones": ["geo"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "geo"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Điểm nóng sân bay (t = 15 s)", "en": "Airport Hot Cell (t = 15 s)" },
+        "title": {
+          "vi": "Điểm nóng sân bay (t = 15 s)",
+          "en": "Airport Hot Cell (t = 15 s)"
+        },
         "lines": [
-          { "text": { "vi": "70% tải dồn vào 1 phân mảnh ô sân bay", "en": "70% load hits 1 airport shard" }, "tone": "bad" },
-          { "text": { "vi": "Chia nhỏ ô nóng hoặc tăng shards", "en": "Sub-shard hot cell or scale shards" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "70% tải dồn vào 1 phân mảnh ô sân bay",
+              "en": "70% load hits 1 airport shard"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Chia nhỏ ô nóng hoặc tăng shards",
+              "en": "Sub-shard hot cell or scale shards"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s5-recap": {
-      "show": { "nodes": "*" },
-      "zones": ["geo"],
+      "show": {
+        "nodes": [
+          "drivers",
+          "passengers",
+          "lb",
+          "geo_api",
+          "dispatch_svc",
+          "geo_shards",
+          "ws_gateway"
+        ],
+        "links": [
+          "drivers-lb",
+          "passengers-lb",
+          "lb-geo",
+          "lb-dispatch",
+          "geo-shards",
+          "dispatch-shards",
+          "dispatch-ws"
+        ]
+      },
+      "zones": [
+        "geo"
+      ],
       "state": {
-        "geo_api": { "loadPct": 50 },
-        "geo_shards": { "loadPct": 45, "badge": { "text": { "vi": "8 shards · ổn định", "en": "8 shards · balanced" }, "tone": "ok" } }
+        "geo_api": {
+          "loadPct": 45,
+          "badge": {
+            "text": {
+              "vi": "250k GPS/s",
+              "en": "250k GPS/s"
+            },
+            "tone": "ok"
+          }
+        },
+        "dispatch_svc": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Ghép chuyến < 50ms",
+              "en": "Match < 50ms"
+            },
+            "tone": "ok"
+          }
+        },
+        "geo_shards": {
+          "loadPct": 48,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Salting ô nóng #0..3",
+              "en": "Hot-cell Salting"
+            },
+            "tone": "ok"
+          }
+        },
+        "ws_gateway": {
+          "loadPct": 30,
+          "badge": {
+            "text": {
+              "vi": "Push 2 chiều",
+              "en": "2-way WebSocket"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tổng kết hệ thống gọi xe", "en": "Ride-Hailing Geo Summary" },
+        "title": {
+          "vi": "Tổng kết hệ thống gọi xe",
+          "en": "Ride-Hailing Geo Summary"
+        },
         "lines": [
-          { "text": { "vi": "Geohash / Quadtree cho tìm kiếm lân cận", "en": "Geohash / Quadtree for proximity" }, "tone": "good" },
-          { "text": { "vi": "Tách ô nóng chống nghẽn shard sân bay", "en": "Sub-sharding prevents airport hot-key" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Geohash / Quadtree cho tìm kiếm lân cận",
+              "en": "Geohash / Quadtree for proximity"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Tách ô nóng chống nghẽn shard sân bay",
+              "en": "Sub-sharding prevents airport hot-key"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
@@ -188,18 +616,63 @@
       "controls": {
         "timeline": true,
         "knobs": [
-          { "node": "geo_api", "key": "replicas" },
-          { "node": "geo_shards", "key": "shards" }
+          {
+            "node": "geo_api",
+            "key": "replicas"
+          },
+          {
+            "node": "geo_shards",
+            "key": "shards"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 80, "badAbove": 120 } },
-        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 80,
+            "badAbove": 120
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
-      "slo": [{ "metric": "p99", "value": 120 }],
-      "focus": { "nodes": ["geo_api", "geo_shards"] }
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 120
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "geo_api",
+          "geo_shards"
+        ]
+      }
     }
   }
 }

@@ -4,7 +4,6 @@ import { SettingsModal } from '@/components/layout/SettingsModal';
 import { useNavigationStore } from '@/stores/useNavigationStore';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { SdLearnShell } from '@/features/sysdesign-course/SdLearnShell';
-import { SdCreditsView } from '@/features/sysdesign-course/views/SdCreditsView';
 import { useSdCurriculum, useSdSims } from '@/features/sysdesign-course/data';
 import { buildSdScaleLessons } from '@/features/sysdesign-course/scale/sdLessonBuilder';
 import { useSdNav, useSdProgress } from '@/features/sysdesign-course/store';
@@ -117,11 +116,6 @@ export const SdMasteryApp: React.FC<SdMasteryAppProps> = ({ windowId }) => {
             onOpenModule={openModuleInLearn}
             onOpenLab={() => setActiveTab('lab')}
           />
-        )}
-        {activeTab === 'credits' && (
-          <div className="h-full overflow-y-auto">
-            <SdCreditsView />
-          </div>
         )}
       </main>
 

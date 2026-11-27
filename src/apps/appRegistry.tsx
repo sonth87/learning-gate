@@ -281,7 +281,6 @@ export const SD_MASTERY_CONFIG: AppConfig = {
     { key: 'sep2', label: '', action: '', separator: true },
     { key: 'atlas', label: 'Từ điển mẫu thiết kế', action: 'tab:atlas' },
     { key: 'interview', label: 'Luyện phỏng vấn', action: 'tab:interview' },
-    { key: 'credits', label: 'Nguồn & ghi công', action: 'tab:credits' },
   ],
   menuBarMenus: [
     {
@@ -302,7 +301,6 @@ export const SD_MASTERY_CONFIG: AppConfig = {
         { key: 'cases', label: 'Case thiết kế hoàn chỉnh', shortcut: '⌘4', action: 'tab:cases' },
         { key: 'atlas', label: 'Từ điển mẫu thiết kế', shortcut: '⌘5', action: 'tab:atlas' },
         { key: 'interview', label: 'Luyện phỏng vấn', shortcut: '⌘6', action: 'tab:interview' },
-        { key: 'credits', label: 'Nguồn & ghi công', shortcut: '⌘7', action: 'tab:credits' },
       ],
     },
   ],

@@ -64,7 +64,7 @@ const ENTITY_KNOWLEDGE: Array<{
     },
   },
   {
-    match: /processpool|đa nhân|cpu/i,
+    match: /processpool|đa nhân/i,
     info: {
       title: bi('ProcessPoolExecutor (Đa tiến trình song song)', 'ProcessPoolExecutor (Multi-Core)'),
       kindLabel: bi('Xử lý nặng CPU', 'CPU Parallelism'),
@@ -397,12 +397,143 @@ const ENTITY_KNOWLEDGE: Array<{
   },
 ];
 
+const SYSDESIGN_PRIORITY_KNOWLEDGE: Array<{
+  match: RegExp;
+  info: StageInspectorInfo;
+}> = [
+  {
+    match: /redis|timeline cache|prefix cache|query cache|hot-key cache|session cache|cache-aside|cdn edge|origin shield|bộ nhớ đệm|cache\b/i,
+    info: {
+      title: bi('Tầng Bộ Nhớ Đệm (Caching Layer: Redis / CDN)', 'Caching Layer (Redis / CDN)'),
+      kindLabel: bi('Tăng tốc đọc & Giảm tải DB', 'In-Memory / Edge Cache'),
+      what: bi(
+        'Kho lưu trữ dữ liệu nóng trên RAM (Redis/Memcached) hoặc trạm biên (CDN Edge) giúp phục vụ lượt đọc trong dưới vài mili-giây.',
+        'High-speed in-memory or edge store serving hot read data in sub-milliseconds.'
+      ),
+      how: bi(
+        'Ứng dụng kiểm tra Cache trước (Cache Hit trả về ngay); chỉ khi Cache Miss mới truy vấn Database rồi nạp bù bản sao vào Cache kèm thời gian sống TTL.',
+        'Checks cache first on reads; on a miss, queries the database and populates the cache with a TTL.'
+      ),
+      why: bi(
+        'Gánh 85–99% lưu lượng đọc lặp lại, bảo vệ cơ sở dữ liệu khỏi quá tải I/O và giữ độ trễ p99 ổn định.',
+        'Absorbs 85–99% of repetitive read traffic, shielding the primary database from saturation.'
+      ),
+      tipOrCase: bi(
+        'Lưu ý thực chiến: Luôn cộng thêm độ lệch ngẫu nhiên (TTL Jitter) và dùng khóa Singleflight cho các khóa cực nóng để tránh bão Cache Stampede khi khóa hết hạn cùng lúc.',
+        'Production Tip: Add random TTL jitter and singleflight locks on hot keys to prevent Cache Stampede storms.'
+      ),
+    },
+  },
+  {
+    match: /load balancer|cân bằng tải|traffic router|geo router|virtual ip|\blb\b/i,
+    info: {
+      title: bi('Bộ Cân Bằng Tải (Load Balancer L4 / L7)', 'Load Balancer (L4 / L7)'),
+      kindLabel: bi('Điều phối lưu lượng & HA', 'Traffic Distribution Tier'),
+      what: bi(
+        'Thành phần đứng trước cụm máy chủ ứng dụng, tiếp nhận lưu lượng từ người dùng và phân phối đều sang các instance đang khỏe mạnh.',
+        'Front-door traffic distributor routing client requests across healthy backend instances.'
+      ),
+      how: bi(
+        'Chọn máy đích theo thuật toán (Round Robin, Least Connections, Consistent Hash) và chạy Health Check định kỳ để tự động cách ly máy lỗi.',
+        'Routes via Round Robin or Least Connections while running periodic health checks to isolate failing nodes.'
+      ),
+      why: bi(
+        'Cho phép mở rộng ngang (Scale Out) tầng ứng dụng không giới hạn và triển khai phiên bản mới không gián đoạn (Zero-downtime).',
+        'Enables seamless horizontal scaling and zero-downtime rolling deployments.'
+      ),
+    },
+  },
+  {
+    match: /api gateway|edge gateway|ws gateway|upload gateway|ingest gateway/i,
+    info: {
+      title: bi('Cổng Giao Tiếp Biên (API / Realtime Gateway)', 'API / Edge Gateway'),
+      kindLabel: bi('Cửa ngõ kiểm soát & Định tuyến', 'Edge Policy & Routing'),
+      what: bi(
+        'Điểm vào thống nhất ở rìa hệ thống, xử lý các tác vụ chung trước khi chuyển yêu cầu vào các dịch vụ nghiệp vụ bên trong.',
+        'Unified entry point handling cross-cutting edge concerns before forwarding to internal services.'
+      ),
+      how: bi(
+        'Thực hiện chấm dứt TLS, xác thực token (AuthN), giới hạn tốc độ (Rate Limiting) và định tuyến đường dẫn L7 ( hoặc giữ kết nối WebSocket).',
+        'Terminates TLS, verifies auth tokens, enforces rate limits, and routes requests by L7 path.'
+      ),
+      why: bi(
+        'Tách biệt lớp bảo vệ biên khỏi logic nghiệp vụ, giúp các microservice phía sau gọn nhẹ và dễ thay đổi cấu trúc.',
+        'Decouples external clients and security policies from internal microservice boundaries.'
+      ),
+    },
+  },
+  {
+    match: /message queue|job queue|task queue|fan-out queue|priority queue|dead letter queue|\bdlq\b|event bus|pub\/sub|event log|broker/i,
+    info: {
+      title: bi('Hàng Đợi Thông Điệp & Event Bus (Queue / Pub-Sub)', 'Message Queue & Event Bus'),
+      kindLabel: bi('Xử lý bất đồng bộ & Tách tải', 'Asynchronous Messaging'),
+      what: bi(
+        'Bộ đệm trung gian lưu trữ các tác vụ hoặc sự kiện để tầng Worker xử lý nền theo tốc độ bền vững.',
+        'Durable buffer decoupling producers from background worker consumers.'
+      ),
+      how: bi(
+        'API đẩy thông điệp vào Queue rồi trả lời ngay (202 Accepted); Worker kéo việc ra xử lý, gửi ACK khi hoàn tất hoặc đẩy tin lỗi lặp vào DLQ.',
+        'Producers enqueue and return immediately; workers pull, process idempotently, and ACK or route poison pills to a DLQ.'
+      ),
+      why: bi(
+        'Hấp thụ các đợt sóng tải đột biến (Traffic Spikes) mà không làm treo luồng người dùng và cô lập lỗi giữa các dịch vụ.',
+        'Absorbs traffic spikes into a safe backlog and prevents cascading failures across services.'
+      ),
+    },
+  },
+  {
+    match: /consistent hash|vòng băm|virtual node|vnode|sha-1/i,
+    info: {
+      title: bi('Vòng Băm Nhất Quán & Nút Ảo (Consistent Hashing)', 'Consistent Hashing & Virtual Nodes'),
+      kindLabel: bi('Phân vùng dữ liệu phân tán', 'Stateful Partitioning'),
+      what: bi(
+        'Thuật toán ánh xạ cả khóa dữ liệu lẫn máy chủ lên cùng một vòng tròn không gian băm [0 .. 2^32 − 1].',
+        'Maps both keys and storage nodes onto a circular 32-bit hash ring.'
+      ),
+      how: bi(
+        'Mỗi khóa đi theo chiều kim đồng hồ đến nút đầu tiên có tọa độ ≥ hash(key); mỗi máy vật lý đặt hàng trăm điểm ảo (VNodes) đan xen để chia đều tải.',
+        'Keys route clockwise to the successor node; virtual nodes interleave arcs for uniform load balance.'
+      ),
+      why: bi(
+        'Khi thêm hoặc bớt 1 máy trong cụm N máy, chỉ có đúng ~1/N lượng khóa phải di chuyển thay vì xáo trộn toàn bộ như phép chia mod N.',
+        'Adding or removing a node remaps only ~1/N keys instead of invalidating the entire cluster.'
+      ),
+    },
+  },
+  {
+    match: /service|worker|coordinator|projector|aggregator|limiter|shedder/i,
+    info: {
+      title: bi('Tầng Dịch Vụ Nghiệp Vụ & Xử Lý (Stateless Service / Worker)', 'Stateless Application Service / Worker'),
+      kindLabel: bi('Tầng tính toán (Compute Tier)', 'Compute & Business Logic'),
+      what: bi(
+        'Tiến trình thực thi logic nghiệp vụ, điều phối luồng dữ liệu giữa bộ nhớ đệm, hàng đợi và cơ sở dữ liệu.',
+        'Stateless compute unit executing domain logic across caches, queues, and databases.'
+      ),
+      how: bi(
+        'Không lưu trạng thái phiên trên RAM/đĩa cục bộ để bất kỳ instance nào trong cụm cũng có thể xử lý mọi request hoặc tác vụ nền.',
+        'Externalizes all session and durable state so instances can scale horizontally on demand.'
+      ),
+      why: bi(
+        'Dễ dàng tự động co giãn (Auto-scaling) số lượng instance theo chu kỳ tải ngày đêm và tự phục hồi khi một máy gặp sự cố.',
+        'Allows elastic horizontal scaling and instant replacement of crashed instances.'
+      ),
+    },
+  },
+];
+
 export function resolveFallbackInspector(
   rawTitle: string,
   rawSub: string | undefined,
   isLink: boolean
 ): StageInspectorInfo {
   const combined = `${rawTitle} ${rawSub ?? ''}`;
+  if (!/package-lock|pnpm-lock|github actions|kubectl|pod|argocd|pmbok|python|gil\b/i.test(combined)) {
+    for (const item of SYSDESIGN_PRIORITY_KNOWLEDGE) {
+      if (item.match.test(combined)) {
+        return item.info;
+      }
+    }
+  }
   for (const item of ENTITY_KNOWLEDGE) {
     if (item.match.test(combined)) {
       return item.info;

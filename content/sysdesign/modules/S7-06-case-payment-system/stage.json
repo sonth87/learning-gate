@@ -178,15 +178,56 @@
           "en": "Publishes payment outcome events to downstream services."
         }
       }
+    },
+    "ledger_db-outbox": {
+      "from": "ledger_db",
+      "to": "outbox",
+      "label": {
+        "vi": "2. CDC / Outbox Relay",
+        "en": "2. CDC / Outbox Relay"
+      },
+      "style": "dashed",
+      "inspector": {
+        "what": {
+          "vi": "Tiến trình Relay / CDC đọc bảng outbox bên trong Ledger DB để phát sự kiện sang Event Bus.",
+          "en": "Outbox Relay / CDC tailing the outbox table inside Ledger DB to publish events."
+        },
+        "how": {
+          "vi": "Payment Service ghi bút toán Nợ/Có và bản ghi Outbox trong CÙNG 1 giao dịch ACID vào Ledger DB; sau đó Relay đẩy sang Event Bus theo cơ chế At-Least-Once.",
+          "en": "Commits ledger entries and outbox row in ONE local ACID transaction, then relays asynchronously."
+        },
+        "why": {
+          "vi": "Loại bỏ hoàn toàn lỗi Dual-Write (trừ tiền xong nhưng mất sự kiện tạo đơn hàng).",
+          "en": "Completely eliminates the Dual-Write bug between Ledger DB and Event Bus."
+        }
+      }
     }
   },
   "layout": {
-    "client": { "col": 0, "row": 1 },
-    "checkout": { "col": 1, "row": 1 },
-    "payment_svc": { "col": 2, "row": 1 },
-    "provider": { "col": 3, "row": 0 },
-    "ledger_db": { "col": 3, "row": 1 },
-    "outbox": { "col": 3, "row": 2 }
+    "client": {
+      "col": 0,
+      "row": 1
+    },
+    "checkout": {
+      "col": 1,
+      "row": 1
+    },
+    "payment_svc": {
+      "col": 2,
+      "row": 1
+    },
+    "provider": {
+      "col": 3,
+      "row": 0
+    },
+    "ledger_db": {
+      "col": 3,
+      "row": 1
+    },
+    "outbox": {
+      "col": 3,
+      "row": 2
+    }
   },
   "floor": {
     "cols": 4,
@@ -198,7 +239,11 @@
   },
   "zones": {
     "core": {
-      "nodeIds": ["payment_svc", "ledger_db", "outbox"],
+      "nodeIds": [
+        "payment_svc",
+        "ledger_db",
+        "outbox"
+      ],
       "label": {
         "vi": "LÕI HẠCH TOÁN & SỰ KIỆN",
         "en": "PAYMENT CORE & LEDGER"
@@ -208,8 +253,12 @@
   },
   "scenes": {
     "s1-overview": {
-      "show": { "nodes": "*" },
-      "zones": ["core"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "core"
+      ],
       "packets": "auto",
       "noteCard": {
         "title": {
@@ -218,11 +267,17 @@
         },
         "lines": [
           {
-            "text": { "vi": "Checkout → Payment → PSP & Ledger DB", "en": "Checkout → Payment → PSP & Ledger DB" },
+            "text": {
+              "vi": "Checkout → Payment → PSP & Ledger DB",
+              "en": "Checkout → Payment → PSP & Ledger DB"
+            },
             "tone": "plain"
           },
           {
-            "text": { "vi": "Outbox phát sự kiện sang Đơn hàng", "en": "Outbox emits Order events" },
+            "text": {
+              "vi": "Outbox phát sự kiện sang Đơn hàng",
+              "en": "Outbox emits Order events"
+            },
             "tone": "good"
           }
         ],
@@ -230,37 +285,75 @@
       }
     },
     "s2-ledger": {
-      "show": { "nodes": ["payment_svc", "ledger_db"] },
+      "show": {
+        "nodes": [
+          "payment_svc",
+          "ledger_db"
+        ]
+      },
       "state": {
         "ledger_db": {
           "highlighted": true,
-          "badge": { "text": { "vi": "Debit + Credit = 0", "en": "Debit + Credit = 0" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Debit + Credit = 0",
+              "en": "Debit + Credit = 0"
+            },
+            "tone": "ok"
+          }
         }
       },
       "packets": "auto"
     },
     "s3-idempotency": {
-      "show": { "nodes": ["client", "checkout", "payment_svc", "provider", "ledger_db"] },
+      "show": {
+        "nodes": [
+          "client",
+          "checkout",
+          "payment_svc",
+          "provider",
+          "ledger_db"
+        ]
+      },
       "state": {
         "payment_svc": {
           "highlighted": true,
-          "badge": { "text": { "vi": "Idempotency-Key", "en": "Idempotency-Key" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Idempotency-Key",
+              "en": "Idempotency-Key"
+            },
+            "tone": "ok"
+          }
         },
         "provider": {
-          "badge": { "text": { "vi": "Timeout?", "en": "Timeout?" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Timeout?",
+              "en": "Timeout?"
+            },
+            "tone": "warn"
+          }
         }
       },
       "linkState": {
         "payment_svc-provider": {
           "style": "danger",
-          "label": { "vi": "Timeout 600 ms", "en": "600 ms Timeout" }
+          "label": {
+            "vi": "Timeout 600 ms",
+            "en": "600 ms Timeout"
+          }
         }
       },
       "packets": "auto"
     },
     "s4-live": {
-      "show": { "nodes": "*" },
-      "zones": ["core"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "core"
+      ],
       "packets": "auto",
       "noteCard": {
         "title": {
@@ -269,11 +362,17 @@
         },
         "lines": [
           {
-            "text": { "vi": "t = 18–38 s: PSP chậm gấp 12 lần", "en": "t = 18–38 s: PSP 12x slower" },
+            "text": {
+              "vi": "t = 18–38 s: PSP chậm gấp 12 lần",
+              "en": "t = 18–38 s: PSP 12x slower"
+            },
             "tone": "bad"
           },
           {
-            "text": { "vi": "Retry không Backoff làm kẹt luồng", "en": "Blind retries amplify overload" },
+            "text": {
+              "vi": "Retry không Backoff làm kẹt luồng",
+              "en": "Blind retries amplify overload"
+            },
             "tone": "amber"
           }
         ],
@@ -281,36 +380,96 @@
       }
     },
     "s5-outbox": {
-      "show": { "nodes": ["payment_svc", "ledger_db", "outbox"] },
-      "zones": ["core"],
+      "show": {
+        "nodes": [
+          "payment_svc",
+          "ledger_db",
+          "outbox"
+        ],
+        "links": [
+          "payment_svc-ledger_db",
+          "ledger_db-outbox"
+        ]
+      },
+      "zones": [
+        "core"
+      ],
       "state": {
         "ledger_db": {
           "highlighted": true,
-          "badge": { "text": { "vi": "ACID Commit", "en": "ACID Commit" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "ACID Commit",
+              "en": "ACID Commit"
+            },
+            "tone": "ok"
+          }
         },
         "outbox": {
           "highlighted": true,
-          "badge": { "text": { "vi": "At-least-once", "en": "At-least-once" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "At-least-once",
+              "en": "At-least-once"
+            },
+            "tone": "ok"
+          }
         }
       },
-      "packets": "auto"
+      "packets": "auto",
+      "linkState": {
+        "payment_svc-ledger_db": {
+          "label": {
+            "vi": "1. COMMIT Ledger + Outbox",
+            "en": "1. COMMIT Ledger + Outbox"
+          }
+        },
+        "ledger_db-outbox": {
+          "label": {
+            "vi": "2. Relay phát sự kiện",
+            "en": "2. Relay publishes event"
+          }
+        }
+      }
     },
     "s6-reconcile": {
-      "show": { "nodes": ["payment_svc", "provider", "ledger_db"] },
+      "show": {
+        "nodes": [
+          "payment_svc",
+          "provider",
+          "ledger_db"
+        ]
+      },
       "state": {
         "provider": {
-          "badge": { "text": { "vi": "Sao kê T+1", "en": "T+1 Settlement" }, "tone": "default" }
+          "badge": {
+            "text": {
+              "vi": "Sao kê T+1",
+              "en": "T+1 Settlement"
+            },
+            "tone": "default"
+          }
         },
         "ledger_db": {
           "highlighted": true,
-          "badge": { "text": { "vi": "Đối soát lệch", "en": "Reconcile diff" }, "tone": "warn" }
+          "badge": {
+            "text": {
+              "vi": "Đối soát lệch",
+              "en": "Reconcile diff"
+            },
+            "tone": "warn"
+          }
         }
       },
       "packets": "auto"
     },
     "s7-recap": {
-      "show": { "nodes": "*" },
-      "zones": ["core"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "core"
+      ],
       "packets": "auto"
     }
   },
@@ -323,37 +482,68 @@
       "controls": {
         "timeline": true,
         "load": true,
-        "chaos": ["slow", "kill"],
+        "chaos": [
+          "slow",
+          "kill"
+        ],
         "knobs": [
-          { "node": "payment_svc", "key": "replicas" },
-          { "node": "ledger_db", "key": "sizeFactor" }
+          {
+            "node": "payment_svc",
+            "key": "replicas"
+          },
+          {
+            "node": "ledger_db",
+            "key": "sizeFactor"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
         {
           "metric": "offeredRps",
-          "label": { "vi": "Lưu lượng", "en": "Offered Load" },
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
           "format": "rps"
         },
         {
           "metric": "p99",
-          "label": { "vi": "p99", "en": "p99" },
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
           "format": "ms",
-          "tone": { "warnAbove": 200, "badAbove": 350 }
+          "tone": {
+            "warnAbove": 200,
+            "badAbove": 350
+          }
         },
         {
           "metric": "errorRate",
-          "label": { "vi": "Lỗi", "en": "Errors" },
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
           "format": "pct",
-          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
         }
       ],
       "slo": [
-        { "metric": "p99", "value": 350 }
+        {
+          "metric": "p99",
+          "value": 350
+        }
       ],
       "focus": {
-        "nodes": ["payment_svc", "provider", "ledger_db"]
+        "nodes": [
+          "payment_svc",
+          "provider",
+          "ledger_db"
+        ]
       }
     }
   }

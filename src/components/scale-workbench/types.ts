@@ -147,6 +147,14 @@ export interface StagePacket {
   speed?: number;
   offset?: number;
   reverse?: boolean;
+  /** Nếu true: hạt đi hết chiều xuôi sẽ tự đảo chiều quay về với màu response (#9fd28f) và tỏa vòng sóng fx--ok */
+  bounce?: boolean;
+  /** Thời gian (giây) hạt dừng chờ và nhấp nháy viền (.pkt--held) tại cổng đích trước khi quay về hoặc kết thúc */
+  holdSec?: number;
+  /** Hiệu ứng chạm đích ở cuối chặng: 'ok' = vòng sóng xanh lá mở rộng; 'fail' = nổ vòng tròn đỏ có dấu X trắng */
+  arrivalFx?: 'ok' | 'fail' | 'none';
+  /** Biến thể hình dáng & vận tốc theo chuẩn Designed-to-Scale */
+  variant?: 'default' | 'slow' | 'heavy' | 'msg' | 'poison' | 'ping' | 'kill';
 }
 
 export interface StageZoneSlab {
@@ -336,7 +344,9 @@ export interface ScaleModuleLesson {
   cardCount: number;
   readingCount: number;
   /** Dòng nguồn/ghi công cuối cột phải; không có thì không render gì. */
-  attribution?: { text: BilingualText; href?: string };
+  attribution?: { text: BilingualText; href?: string; sourceTitle?: BilingualText };
+  /** Tab "Câu chuyện & Tư duy giải quyết vấn đề" (Story & Problem-Solving Mindset) ở cột phải. */
+  story?: BilingualText;
 }
 
 /* ============================================================================

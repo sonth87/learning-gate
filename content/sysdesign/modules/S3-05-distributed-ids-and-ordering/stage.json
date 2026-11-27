@@ -5,7 +5,10 @@
     "client": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Người dùng", "en": "Users" },
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
       "inspector": {
         "what": {
           "vi": "Khách hàng gửi lưu lượng thiên về ghi (75% đặt đơn mới, 25% tra cứu đơn).",
@@ -25,18 +28,33 @@
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
       "inspector": {
-        "what": { "vi": "Cặp cân bằng tải dự phòng (2 instance) điều phối lưu lượng vào Order Service.", "en": "Redundant Load Balancer pair routing requests to Order Service." },
-        "how": { "vi": "Chia đều Round-robin không giữ trạng thái.", "en": "Stateless Round-robin distribution." },
-        "why": { "vi": "Chạy cặp dự phòng để tầng vào không trở thành SPOF.", "en": "Active-active pair eliminates entry-tier SPOF." }
+        "what": {
+          "vi": "Cặp cân bằng tải dự phòng (2 instance) điều phối lưu lượng vào Order Service.",
+          "en": "Redundant Load Balancer pair routing requests to Order Service."
+        },
+        "how": {
+          "vi": "Chia đều Round-robin không giữ trạng thái.",
+          "en": "Stateless Round-robin distribution."
+        },
+        "why": {
+          "vi": "Chạy cặp dự phòng để tầng vào không trở thành SPOF.",
+          "en": "Active-active pair eliminates entry-tier SPOF."
+        }
       }
     },
     "app": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Order Service", "en": "Order Service" },
+      "label": {
+        "vi": "Order Service",
+        "en": "Order Service"
+      },
       "inspector": {
         "what": {
           "vi": "Cụm 3 máy chủ xử lý đơn hàng, mỗi máy mang một worker_id (0..1023) riêng.",
@@ -56,7 +74,10 @@
       "shape": "block",
       "tone": "rose",
       "icon": "hash",
-      "label": { "vi": "Ticket Server (Cấp ID)", "en": "Ticket Server (ID Gen)" },
+      "label": {
+        "vi": "Ticket Server",
+        "en": "Ticket Server"
+      },
       "inspector": {
         "what": {
           "vi": "Máy chủ bộ đếm tập trung cấp phát ID tuần tự qua mạng (μ = 1.200 ID/s).",
@@ -79,7 +100,10 @@
     "db": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Order DB Shards", "en": "Order DB Shards" },
+      "label": {
+        "vi": "Order DB Shards",
+        "en": "Order DB Shards"
+      },
       "inspector": {
         "what": {
           "vi": "Cụm cơ sở dữ liệu đơn hàng đã phân mảnh (mỗi shard có cặp bản sao dự phòng).",
@@ -99,79 +123,172 @@
   "links": {
     "client-lb": {
       "inspector": {
-        "what": { "vi": "Kết nối từ người dùng vào hệ thống đặt hàng.", "en": "Public client traffic." },
-        "how": { "vi": "Mang 75% lệnh tạo đơn mới và 25% lệnh xem đơn.", "en": "Carries 75% order writes and 25% reads." },
-        "why": { "vi": "Đo thông lượng tạo đơn và độ trễ đầu-cuối.", "en": "Measures end-to-end order ingestion SLOs." }
+        "what": {
+          "vi": "Kết nối từ người dùng vào hệ thống đặt hàng.",
+          "en": "Public client traffic."
+        },
+        "how": {
+          "vi": "Mang 75% lệnh tạo đơn mới và 25% lệnh xem đơn.",
+          "en": "Carries 75% order writes and 25% reads."
+        },
+        "why": {
+          "vi": "Đo thông lượng tạo đơn và độ trễ đầu-cuối.",
+          "en": "Measures end-to-end order ingestion SLOs."
+        }
       }
     },
     "lb-app": {
       "inspector": {
-        "what": { "vi": "Đường chia tải sang 3 instance Order Service.", "en": "Load-balanced link to Order Service." },
-        "how": { "vi": "Phân phối đều yêu cầu giữa các máy ứng dụng.", "en": "Splits requests evenly across instances." },
-        "why": { "vi": "Giữ mức bận CPU ứng dụng cân bằng.", "en": "Balances application CPU load." }
+        "what": {
+          "vi": "Đường chia tải sang 3 instance Order Service.",
+          "en": "Load-balanced link to Order Service."
+        },
+        "how": {
+          "vi": "Phân phối đều yêu cầu giữa các máy ứng dụng.",
+          "en": "Splits requests evenly across instances."
+        },
+        "why": {
+          "vi": "Giữ mức bận CPU ứng dụng cân bằng.",
+          "en": "Balances application CPU load."
+        }
       }
     },
     "app-ticket": {
       "inspector": {
-        "what": { "vi": "Chặng gọi mạng đồng bộ xin cấp ID cho mỗi đơn hàng mới.", "en": "Synchronous RPC to fetch a unique ID per write." },
-        "how": { "vi": "Chỉ đi qua ở 75% lưu lượng là thao tác ghi; biến mất khi chuyển sang sinh Snowflake cục bộ.", "en": "Triggered on all writes; bypassed completely once local Snowflake is enabled." },
-        "why": { "vi": "Minh hoạ chi phí phối hợp tập trung trên đường nóng.", "en": "Illustrates centralized coordination overhead on the hot write path." }
+        "what": {
+          "vi": "Chặng gọi mạng đồng bộ xin cấp ID cho mỗi đơn hàng mới.",
+          "en": "Synchronous RPC to fetch a unique ID per write."
+        },
+        "how": {
+          "vi": "Chỉ đi qua ở 75% lưu lượng là thao tác ghi; biến mất khi chuyển sang sinh Snowflake cục bộ.",
+          "en": "Triggered on all writes; bypassed completely once local Snowflake is enabled."
+        },
+        "why": {
+          "vi": "Minh hoạ chi phí phối hợp tập trung trên đường nóng.",
+          "en": "Illustrates centralized coordination overhead on the hot write path."
+        }
       }
     },
     "app-db": {
       "inspector": {
-        "what": { "vi": "Đường ghi đơn hàng và đọc tra cứu xuống cụm Order DB Shards.", "en": "Read/write connection to partitioned Order DB Shards." },
-        "how": { "vi": "Định tuyến tới đúng shard theo khoá phân mảnh.", "en": "Routes operations across database shards." },
-        "why": { "vi": "Lưu trữ bền vững toàn bộ đơn hàng.", "en": "Persists order records durably." }
+        "what": {
+          "vi": "Đường ghi đơn hàng và đọc tra cứu xuống cụm Order DB Shards.",
+          "en": "Read/write connection to partitioned Order DB Shards."
+        },
+        "how": {
+          "vi": "Định tuyến tới đúng shard theo khoá phân mảnh.",
+          "en": "Routes operations across database shards."
+        },
+        "why": {
+          "vi": "Lưu trữ bền vững toàn bộ đơn hàng.",
+          "en": "Persists order records durably."
+        }
       }
     }
   },
   "zones": {
     "backend": {
-      "nodeIds": ["app", "ticket", "db"],
-      "label": { "vi": "TẦNG ĐẶT ĐƠN & CẤP ĐỊNH DANH", "en": "ORDER & ID GENERATION TIER" },
+      "nodeIds": [
+        "app",
+        "ticket",
+        "db"
+      ],
+      "label": {
+        "vi": "TẦNG ĐẶT ĐƠN & CẤP ĐỊNH DANH",
+        "en": "ORDER & ID GENERATION TIER"
+      },
       "tone": "neutral"
     }
   },
   "scenes": {
     "s1-shard-collision": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "Bộ đếm cục bộ trên từng Shard", "en": "Independent Per-Shard Counters" },
-        "rightTitle": { "vi": "Hệ quả khi gộp / tra cứu toàn cục", "en": "Global Lookup / Merge Outcome" },
+        "leftTitle": {
+          "vi": "Bộ đếm cục bộ trên từng Shard",
+          "en": "Independent Per-Shard Counters"
+        },
+        "rightTitle": {
+          "vi": "Hệ quả khi gộp / tra cứu toàn cục",
+          "en": "Global Lookup / Merge Outcome"
+        },
         "names": [
-          { "id": "sh1", "name": "DB Shard 1: AUTO_INCREMENT → #101", "note": { "vi": "Đơn hàng của An", "en": "An's Order" }, "targetId": "col", "style": "danger" },
-          { "id": "sh2", "name": "DB Shard 2: AUTO_INCREMENT → #101", "note": { "vi": "Đơn hàng của Bình", "en": "Binh's Order" }, "targetId": "col", "style": "danger" }
+          {
+            "id": "sh1",
+            "name": "DB Shard 1: AUTO_INCREMENT → #101",
+            "note": {
+              "vi": "Đơn hàng của An",
+              "en": "An's Order"
+            },
+            "targetId": "col",
+            "style": "danger"
+          },
+          {
+            "id": "sh2",
+            "name": "DB Shard 2: AUTO_INCREMENT → #101",
+            "note": {
+              "vi": "Đơn hàng của Bình",
+              "en": "Binh's Order"
+            },
+            "targetId": "col",
+            "style": "danger"
+          }
         ],
         "objects": [
           {
             "id": "col",
             "typeTag": "PRIMARY KEY COLLISION",
             "value": "Trùng khoá order:101 trên Cache, Khoá ngoại & Kho phân tích!",
-            "fields": ["AUTO_INCREMENT chỉ duy nhất trong phạm vi 1 bảng đơn", "Bước nhảy chẵn/lẻ khó mở rộng khi thêm Shard mới"],
+            "fields": [
+              "AUTO_INCREMENT chỉ duy nhất trong phạm vi 1 bảng đơn",
+              "Bước nhảy chẵn/lẻ khó mở rộng khi thêm Shard mới"
+            ],
             "tone": "rose"
           }
         ]
       }
     },
     "s2-ticket-live": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Sự cố t = 20 s: Ticket Server ngừng chạy", "en": "Incident t = 20 s: Ticket Server Crashes" },
+        "title": {
+          "vi": "Sự cố t = 20 s: Ticket Server ngừng chạy",
+          "en": "Incident t = 20 s: Ticket Server Crashes"
+        },
         "lines": [
-          { "text": { "vi": "75% lưu lượng (tạo đơn) thất bại hoàn toàn", "en": "75% traffic (order writes) fails completely" }, "tone": "bad" },
-          { "text": { "vi": "Bộ cấp ID tập trung đơn lẻ trở thành SPOF", "en": "Single centralized ID server becomes a SPOF" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "75% lưu lượng (tạo đơn) thất bại hoàn toàn",
+              "en": "75% traffic (order writes) fails completely"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Bộ cấp ID tập trung đơn lẻ trở thành SPOF",
+              "en": "Single centralized ID server becomes a SPOF"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s3-uuid-btree": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -179,21 +296,77 @@
           "en": "B-Tree Index Impact: Random UUID v4 Causes Frequent Mid-Tree Page Splits"
         },
         "nodes": [
-          { "id": "root", "x": 0, "y": -96, "label": "Nút gốc B-tree Primary Key", "sub": { "vi": "Các trang lá 16 KB phải giữ thứ tự tăng dần", "en": "16 KB leaf pages maintained in sorted key order" }, "tone": "purple" },
-          { "id": "p1", "x": -185, "y": 24, "label": "Trang lá [00..5f] · Đầy", "sub": { "vi": "Chèn 3a9f... → Tách đôi trang!", "en": "Insert 3a9f... → Page Split!" }, "tone": "rose" },
-          { "id": "p2", "x": 0, "y": 24, "label": "Trang lá [60..af] · Đầy", "sub": { "vi": "Chèn 8c12... → Đọc đĩa + Tách!", "en": "Insert 8c12... → Disk I/O + Split!" }, "tone": "rose" },
-          { "id": "p3", "x": 185, "y": 24, "label": "Trang cuối [b0..ff] (Trong RAM)", "sub": { "vi": "ID tuần tự chỉ nối êm vào đây", "en": "Sequential IDs append cleanly here" }, "tone": "green" }
+          {
+            "id": "root",
+            "x": 0,
+            "y": -96,
+            "label": "Nút gốc B-tree Primary Key",
+            "sub": {
+              "vi": "Các trang lá 16 KB phải giữ thứ tự tăng dần",
+              "en": "16 KB leaf pages maintained in sorted key order"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "p1",
+            "x": -185,
+            "y": 24,
+            "label": "Trang lá [00..5f] · Đầy",
+            "sub": {
+              "vi": "Chèn 3a9f... → Tách đôi trang!",
+              "en": "Insert 3a9f... → Page Split!"
+            },
+            "tone": "rose"
+          },
+          {
+            "id": "p2",
+            "x": 0,
+            "y": 24,
+            "label": "Trang lá [60..af] · Đầy",
+            "sub": {
+              "vi": "Chèn 8c12... → Đọc đĩa + Tách!",
+              "en": "Insert 8c12... → Disk I/O + Split!"
+            },
+            "tone": "rose"
+          },
+          {
+            "id": "p3",
+            "x": 185,
+            "y": 24,
+            "label": "Trang cuối [b0..ff] (Trong RAM)",
+            "sub": {
+              "vi": "ID tuần tự chỉ nối êm vào đây",
+              "en": "Sequential IDs append cleanly here"
+            },
+            "tone": "green"
+          }
         ],
         "edges": [
-          { "from": "root", "to": "p1", "label": "UUID v4", "style": "danger" },
-          { "from": "root", "to": "p2", "label": "UUID v4", "style": "danger" },
-          { "from": "root", "to": "p3", "label": "Snowflake / v7" }
+          {
+            "from": "root",
+            "to": "p1",
+            "label": "UUID v4",
+            "style": "danger"
+          },
+          {
+            "from": "root",
+            "to": "p2",
+            "label": "UUID v4",
+            "style": "danger"
+          },
+          {
+            "from": "root",
+            "to": "p3",
+            "label": "Snowflake / v7"
+          }
         ]
       }
     },
     "s4-uuid-v7": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tape",
         "title": {
@@ -211,21 +384,41 @@
           "2b var (10)",
           "62b rand_b"
         ],
-        "activeIndices": [0, 2, 4],
+        "activeIndices": [
+          0,
+          2,
+          4
+        ],
         "pointers": [
-          { "index": 0, "label": "sắp xếp tăng theo ms", "tone": "green" },
-          { "index": 4, "label": "chống đụng độ toàn cục", "tone": "blue" }
+          {
+            "index": 0,
+            "label": "sắp xếp tăng theo ms",
+            "tone": "green"
+          },
+          {
+            "index": 4,
+            "label": "chống đụng độ toàn cục",
+            "tone": "blue"
+          }
         ],
         "outputPill": {
-          "label": { "vi": "Đánh đổi so với Snowflake", "en": "Trade-off vs Snowflake" },
-          "value": { "vi": "Dễ triển khai nhất (0 cấu hình), nhưng tốn 16 byte thay vì 8 byte BIGINT", "en": "Zero worker-ID config, at the cost of 16 bytes instead of 8-byte BIGINT" },
+          "label": {
+            "vi": "Đánh đổi so với Snowflake",
+            "en": "Trade-off vs Snowflake"
+          },
+          "value": {
+            "vi": "Dễ triển khai nhất (0 cấu hình), nhưng tốn 16 byte thay vì 8 byte BIGINT",
+            "en": "Zero worker-ID config, at the cost of 16 bytes instead of 8-byte BIGINT"
+          },
           "tone": "blue"
         }
       }
     },
     "s5-snowflake-bits": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tape",
         "title": {
@@ -242,43 +435,100 @@
           "10b Worker ID (1.024 máy)",
           "12b Sequence (4.096 / ms)"
         ],
-        "activeIndices": [1, 2, 3],
+        "activeIndices": [
+          1,
+          2,
+          3
+        ],
         "pointers": [
-          { "index": 1, "label": "sắp xếp chèn B-tree", "tone": "orange" },
-          { "index": 3, "label": "4,096 triệu ID/s/máy", "tone": "green" }
+          {
+            "index": 1,
+            "label": "sắp xếp chèn B-tree",
+            "tone": "orange"
+          },
+          {
+            "index": 3,
+            "label": "4,096 triệu ID/s/máy",
+            "tone": "green"
+          }
         ],
         "outputPill": {
-          "label": { "vi": "Tổng năng lực toàn cụm", "en": "Cluster Capacity" },
-          "value": { "vi": "1.024 máy × 4.096 ID/ms ≈ 4,19 tỷ ID duy nhất mỗi giây", "en": "1,024 nodes × 4,096 IDs/ms ≈ 4.19 billion unique IDs/sec" },
+          "label": {
+            "vi": "Tổng năng lực toàn cụm",
+            "en": "Cluster Capacity"
+          },
+          "value": {
+            "vi": "1.024 máy × 4.096 ID/ms ≈ 4,19 tỷ ID duy nhất mỗi giây",
+            "en": "1,024 nodes × 4,096 IDs/ms ≈ 4.19 billion unique IDs/sec"
+          },
           "tone": "green"
         }
       }
     },
     "s6-snowflake-decode": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "Phép dịch bit trên ID 64-bit", "en": "Bitwise Extraction on 64-Bit ID" },
-        "rightTitle": { "vi": "Ý nghĩa vận hành & Lưu ý JSON", "en": "Operational Metadata & JSON Caveat" },
+        "leftTitle": {
+          "vi": "Phép dịch bit trên ID 64-bit",
+          "en": "Bitwise Extraction on 64-Bit ID"
+        },
+        "rightTitle": {
+          "vi": "Ý nghĩa vận hành & Lưu ý JSON",
+          "en": "Operational Metadata & JSON Caveat"
+        },
         "names": [
-          { "id": "ts", "name": "(id >> 22) + EPOCH_MS", "note": { "vi": "Lấy 41 bit cao", "en": "Top 41 bits" }, "targetId": "meta" },
-          { "id": "wk", "name": "(id >> 12) & 0x3FF · id & 0xFFF", "note": { "vi": "Lấy Worker & Sequence", "en": "Worker & Sequence" }, "targetId": "meta" },
-          { "id": "js", "name": "Trả qua JSON cho trình duyệt Web", "note": { "vi": "JS Number chỉ chính xác 53 bit!", "en": "JS Number max safe = 53 bits!" }, "targetId": "str", "style": "danger" }
+          {
+            "id": "ts",
+            "name": "(id >> 22) + EPOCH_MS",
+            "note": {
+              "vi": "Lấy 41 bit cao",
+              "en": "Top 41 bits"
+            },
+            "targetId": "meta"
+          },
+          {
+            "id": "wk",
+            "name": "(id >> 12) & 0x3FF · id & 0xFFF",
+            "note": {
+              "vi": "Lấy Worker & Sequence",
+              "en": "Worker & Sequence"
+            },
+            "targetId": "meta"
+          },
+          {
+            "id": "js",
+            "name": "Trả qua JSON cho trình duyệt Web",
+            "note": {
+              "vi": "JS Number chỉ chính xác 53 bit!",
+              "en": "JS Number max safe = 53 bits!"
+            },
+            "targetId": "str",
+            "style": "danger"
+          }
         ],
         "objects": [
           {
             "id": "meta",
             "typeTag": "SELF-DESCRIBING ID",
             "value": "Biết ngay giờ tạo đơn & máy phát sinh lỗi",
-            "fields": ["Gỡ lỗi nhanh từ log mà không cần JOIN bảng", "Hỗ trợ phân vùng bảng theo khoảng thời gian"],
+            "fields": [
+              "Gỡ lỗi nhanh từ log mà không cần JOIN bảng",
+              "Hỗ trợ phân vùng bảng theo khoảng thời gian"
+            ],
             "tone": "green"
           },
           {
             "id": "str",
             "typeTag": "JSON SERIALIZATION",
             "value": "Bắt buộc bọc chuỗi \"id\": \"185920419283746816\"",
-            "fields": ["Tránh làm tròn hỏng 11 bit cuối trên Frontend", "Trong DB và Backend vẫn giữ nguyên BIGINT 8 byte"],
+            "fields": [
+              "Tránh làm tròn hỏng 11 bit cuối trên Frontend",
+              "Trong DB và Backend vẫn giữ nguyên BIGINT 8 byte"
+            ],
             "tone": "orange"
           }
         ]
@@ -286,7 +536,9 @@
     },
     "s7-clock-rollback": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "tree",
         "title": {
@@ -294,81 +546,219 @@
           "en": "Guarding Snowflake Against Physical Clock Rollback (NTP Step-Back)"
         },
         "nodes": [
-          { "id": "chk", "x": 0, "y": -96, "label": "Kiểm tra: now_ms < last_ts?", "sub": { "vi": "So với mili-giây lớn nhất từng cấp trên máy này", "en": "Compare against highest issued ms" }, "tone": "purple" },
-          { "id": "ok", "x": -185, "y": 24, "label": "Không lùi (now_ms ≥ last_ts)", "sub": { "vi": "Tăng seq hoặc sang ms mới · Cấp ngay", "en": "Increment seq or reset · Issue ID" }, "tone": "green" },
-          { "id": "sml", "x": 0, "y": 24, "label": "Lùi nhẹ (≤ 5 ms)", "sub": { "vi": "Tạm chờ vài ms cho đồng hồ đuổi kịp last_ts", "en": "Spin/sleep briefly until clock catches up" }, "tone": "yellow" },
-          { "id": "big", "x": 185, "y": 24, "label": "Lùi sâu (> 5 ms)", "sub": { "vi": "Từ chối sinh ID & bắn cảnh báo NTP", "en": "Refuse ID generation & alert ops" }, "tone": "rose" }
+          {
+            "id": "chk",
+            "x": 0,
+            "y": -96,
+            "label": "Kiểm tra: now_ms < last_ts?",
+            "sub": {
+              "vi": "So với mili-giây lớn nhất từng cấp trên máy này",
+              "en": "Compare against highest issued ms"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "ok",
+            "x": -185,
+            "y": 24,
+            "label": "Không lùi (now_ms ≥ last_ts)",
+            "sub": {
+              "vi": "Tăng seq hoặc sang ms mới · Cấp ngay",
+              "en": "Increment seq or reset · Issue ID"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "sml",
+            "x": 0,
+            "y": 24,
+            "label": "Lùi nhẹ (≤ 5 ms)",
+            "sub": {
+              "vi": "Tạm chờ vài ms cho đồng hồ đuổi kịp last_ts",
+              "en": "Spin/sleep briefly until clock catches up"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "big",
+            "x": 185,
+            "y": 24,
+            "label": "Lùi sâu (> 5 ms)",
+            "sub": {
+              "vi": "Từ chối sinh ID & bắn cảnh báo NTP",
+              "en": "Refuse ID generation & alert ops"
+            },
+            "tone": "rose"
+          }
         ],
         "edges": [
-          { "from": "chk", "to": "ok", "label": "bình thường" },
-          { "from": "chk", "to": "sml", "label": "trôi nhẹ" },
-          { "from": "chk", "to": "big", "label": "lỗi NTP!", "style": "danger" }
+          {
+            "from": "chk",
+            "to": "ok",
+            "label": "bình thường"
+          },
+          {
+            "from": "chk",
+            "to": "sml",
+            "label": "trôi nhẹ"
+          },
+          {
+            "from": "chk",
+            "to": "big",
+            "label": "lỗi NTP!",
+            "style": "danger"
+          }
         ]
       }
     },
     "s8-public-private-id": {
       "mode": "memory-2d",
-      "show": { "nodes": [] },
+      "show": {
+        "nodes": []
+      },
       "memory": {
         "kind": "refs",
-        "leftTitle": { "vi": "Ngữ cảnh sử dụng định danh", "en": "Identifier Boundary" },
-        "rightTitle": { "vi": "Mẫu thiết kế cặp định danh kép", "en": "Dual-Identifier Pattern" },
+        "leftTitle": {
+          "vi": "Ngữ cảnh sử dụng định danh",
+          "en": "Identifier Boundary"
+        },
+        "rightTitle": {
+          "vi": "Mẫu thiết kế cặp định danh kép",
+          "en": "Dual-Identifier Pattern"
+        },
         "names": [
-          { "id": "in", "name": "Khoá chính / Khoá ngoại nội bộ", "note": { "vi": "JOIN, phân trang, chỉ mục", "en": "JOINs, indexes, shards" }, "targetId": "pk" },
-          { "id": "out", "name": "Đường dẫn URL / API đối tác ngoài", "note": { "vi": "Hiển thị cho người dùng cuối", "en": "Exposed to external clients" }, "targetId": "pub" }
+          {
+            "id": "in",
+            "name": "Khoá chính / Khoá ngoại nội bộ",
+            "note": {
+              "vi": "JOIN, phân trang, chỉ mục",
+              "en": "JOINs, indexes, shards"
+            },
+            "targetId": "pk"
+          },
+          {
+            "id": "out",
+            "name": "Đường dẫn URL / API đối tác ngoài",
+            "note": {
+              "vi": "Hiển thị cho người dùng cuối",
+              "en": "Exposed to external clients"
+            },
+            "targetId": "pub"
+          }
         ],
         "objects": [
           {
             "id": "pk",
             "typeTag": "INTERNAL PK (BIGINT)",
             "value": "id = 185920419283746816 (Snowflake)",
-            "fields": ["8 byte gọn nhẹ, chèn tuần tự B-tree cực nhanh", "Không bao giờ trả trực tiếp ra URL công khai"],
+            "fields": [
+              "8 byte gọn nhẹ, chèn tuần tự B-tree cực nhanh",
+              "Không bao giờ trả trực tiếp ra URL công khai"
+            ],
             "tone": "orange"
           },
           {
             "id": "pub",
             "typeTag": "PUBLIC TOKEN (UNIQUE)",
             "value": "public_id = \"ord_9kF3xP8m2QvL\" (NanoID)",
-            "fields": ["Ngẫu nhiên mật mã học, không đoán được đơn kế tiếp", "Che giấu sản lượng kinh doanh và mã máy chủ"],
+            "fields": [
+              "Ngẫu nhiên mật mã học, không đoán được đơn kế tiếp",
+              "Che giấu sản lượng kinh doanh và mã máy chủ"
+            ],
             "tone": "green"
           }
         ]
       }
     },
     "s9-scale-live": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Cao điểm ghi 600 → 3.600 req/s", "en": "Write Ramp 600 → 3,600 req/s" },
+        "title": {
+          "vi": "Cao điểm ghi 600 → 3.600 req/s",
+          "en": "Write Ramp 600 → 3,600 req/s"
+        },
         "lines": [
-          { "text": { "vi": "Ticket Server (1.200/s) thành cổ chai & SPOF", "en": "Ticket Server (1,200/s) bottlenecks writes" }, "tone": "bad" },
-          { "text": { "vi": "Chuyển sang Snowflake cục bộ + tăng DB Shards", "en": "Switch to local Snowflake + add DB Shards" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Ticket Server (1.200/s) thành cổ chai & SPOF",
+              "en": "Ticket Server (1,200/s) bottlenecks writes"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Chuyển sang Snowflake cục bộ + tăng DB Shards",
+              "en": "Switch to local Snowflake + add DB Shards"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s10-recap": {
-      "show": { "nodes": ["client", "lb", "app", "db"] },
-      "zones": ["backend"],
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "app",
+          "db"
+        ]
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
         "app": {
           "loadPct": 50,
           "highlighted": true,
-          "badge": { "text": { "vi": "Snowflake trong RAM", "en": "In-RAM Snowflake" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "Snowflake trong RAM",
+              "en": "In-RAM Snowflake"
+            },
+            "tone": "ok"
+          }
         },
         "db": {
           "loadPct": 52,
           "highlighted": true,
-          "badge": { "text": { "vi": "4 Shards · B-tree tuần tự", "en": "4 Shards · Sequential B-tree" }, "tone": "ok" }
+          "badge": {
+            "text": {
+              "vi": "4 Shards · B-tree tuần tự",
+              "en": "4 Shards · Sequential B-tree"
+            },
+            "tone": "ok"
+          }
         }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tổng kết Định danh Phân tán", "en": "Distributed ID Summary" },
+        "title": {
+          "vi": "Tổng kết Định danh Phân tán",
+          "en": "Distributed ID Summary"
+        },
         "lines": [
-          { "text": { "vi": "Snowflake (64b) / UUIDv7 (128b) thân thiện B-tree", "en": "Snowflake (64b) / UUIDv7 (128b) keep B-trees fast" }, "tone": "good" },
-          { "text": { "vi": "Canh giữ đồng hồ lùi & che ID nội bộ khỏi URL", "en": "Guard clock rollback & use opaque public IDs" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "Snowflake (64b) / UUIDv7 (128b) thân thiện B-tree",
+              "en": "Snowflake (64b) / UUIDv7 (128b) keep B-trees fast"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Canh giữ đồng hồ lùi & che ID nội bộ khỏi URL",
+              "en": "Guard clock rollback & use opaque public IDs"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
@@ -382,22 +772,71 @@
       "speed": 1,
       "controls": {
         "timeline": true,
-        "chaos": ["kill", "slow"],
+        "chaos": [
+          "kill",
+          "slow"
+        ],
         "knobs": [
-          { "node": "ticket", "key": "enabled" },
-          { "node": "ticket", "key": "replicas" }
+          {
+            "node": "ticket",
+            "key": "enabled"
+          },
+          {
+            "node": "ticket",
+            "key": "replicas"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "goodputRps", "label": { "vi": "Thành công", "en": "Goodput" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 180 } },
-        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.1 } }
+        {
+          "metric": "goodputRps",
+          "label": {
+            "vi": "Thành công",
+            "en": "Goodput"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 90,
+            "badAbove": 180
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỷ lệ lỗi",
+            "en": "Error Rate"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.1
+          }
+        }
       ],
       "slo": [
-        { "metric": "errorRate", "value": 0.01 }
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
       ],
-      "focus": { "nodes": ["app", "ticket"], "links": ["app-ticket"] }
+      "focus": {
+        "nodes": [
+          "app",
+          "ticket"
+        ],
+        "links": [
+          "app-ticket"
+        ]
+      }
     },
     "id-scale": {
       "sim": "S3-05/id-scale",
@@ -408,22 +847,72 @@
         "timeline": true,
         "load": true,
         "knobs": [
-          { "node": "ticket", "key": "enabled" },
-          { "node": "db", "key": "shards" },
-          { "node": "app", "key": "replicas" }
+          {
+            "node": "ticket",
+            "key": "enabled"
+          },
+          {
+            "node": "db",
+            "key": "shards"
+          },
+          {
+            "node": "app",
+            "key": "replicas"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "goodputRps", "label": { "vi": "Đơn hoàn tất", "en": "Completed" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 95, "badAbove": 200 } },
-        { "metric": "errorRate", "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "goodputRps",
+          "label": {
+            "vi": "Đơn hoàn tất",
+            "en": "Completed"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 95,
+            "badAbove": 200
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỷ lệ lỗi",
+            "en": "Error Rate"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
       "slo": [
-        { "metric": "p99", "value": 95 },
-        { "metric": "errorRate", "value": 0.01 }
+        {
+          "metric": "p99",
+          "value": 95
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
       ],
-      "focus": { "nodes": ["app", "ticket", "db"] }
+      "focus": {
+        "nodes": [
+          "app",
+          "ticket",
+          "db"
+        ]
+      }
     }
   }
 }

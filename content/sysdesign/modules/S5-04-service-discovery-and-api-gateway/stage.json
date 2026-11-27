@@ -5,182 +5,522 @@
     "client": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Người dùng", "en": "Clients" },
+      "label": {
+        "vi": "Người dùng",
+        "en": "Clients"
+      },
       "inspector": {
-        "what": { "vi": "Lưu lượng người dùng từ Internet gọi vào hệ thống.", "en": "External user traffic entering the platform." },
-        "how": { "vi": "Gửi request qua HTTPS tới một điểm vào duy nhất là API Gateway.", "en": "Sends HTTPS requests to the single API Gateway endpoint." },
-        "why": { "vi": "Client không cần biết cấu trúc service nội bộ phía sau.", "en": "Clients remain decoupled from internal service topology." }
+        "what": {
+          "vi": "Lưu lượng người dùng từ Internet gọi vào hệ thống.",
+          "en": "External user traffic entering the platform."
+        },
+        "how": {
+          "vi": "Gửi request qua HTTPS tới một điểm vào duy nhất là API Gateway.",
+          "en": "Sends HTTPS requests to the single API Gateway endpoint."
+        },
+        "why": {
+          "vi": "Client không cần biết cấu trúc service nội bộ phía sau.",
+          "en": "Clients remain decoupled from internal service topology."
+        }
       }
     },
     "gateway": {
       "shape": "gate",
       "tone": "purple",
       "icon": "shield",
-      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "label": {
+        "vi": "API Gateway",
+        "en": "API Gateway"
+      },
       "inspector": {
-        "what": { "vi": "Cổng vào duy nhất ở rìa hệ thống (North-South).", "en": "Single edge entry point for external traffic." },
-        "how": { "vi": "Kết thúc TLS, xác thực JWT, giới hạn tốc độ và định tuyến tới service nội bộ.", "en": "Terminates TLS, validates auth tokens, enforces rate limits, and routes requests." },
-        "why": { "vi": "Tập trung các chính sách biên tại một chỗ thay vì lặp lại ở từng service.", "en": "Centralizes cross-cutting edge concerns in one place." }
+        "what": {
+          "vi": "Cổng vào duy nhất ở rìa hệ thống (North-South).",
+          "en": "Single edge entry point for external traffic."
+        },
+        "how": {
+          "vi": "Kết thúc TLS, xác thực JWT, giới hạn tốc độ và định tuyến tới service nội bộ.",
+          "en": "Terminates TLS, validates auth tokens, enforces rate limits, and routes requests."
+        },
+        "why": {
+          "vi": "Tập trung các chính sách biên tại một chỗ thay vì lặp lại ở từng service.",
+          "en": "Centralizes cross-cutting edge concerns in one place."
+        }
       }
     },
     "orders": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Orders", "en": "Orders" },
+      "label": {
+        "vi": "Orders",
+        "en": "Orders"
+      },
       "inspector": {
-        "what": { "vi": "Service xử lý đơn hàng cần gọi sang Payments.", "en": "Order service calling downstream Payments instances." },
-        "how": { "vi": "Hỏi Service Registry để lấy danh sách IP đang khỏe mạnh của Payments.", "en": "Queries Service Registry for healthy Payments endpoints." },
-        "why": { "vi": "Không lưu cứng địa chỉ IP của Payments trong mã nguồn.", "en": "Avoids hardcoded downstream IPs during instance churn." }
+        "what": {
+          "vi": "Service xử lý đơn hàng cần gọi sang Payments.",
+          "en": "Order service calling downstream Payments instances."
+        },
+        "how": {
+          "vi": "Hỏi Service Registry để lấy danh sách IP đang khỏe mạnh của Payments.",
+          "en": "Queries Service Registry for healthy Payments endpoints."
+        },
+        "why": {
+          "vi": "Không lưu cứng địa chỉ IP của Payments trong mã nguồn.",
+          "en": "Avoids hardcoded downstream IPs during instance churn."
+        }
       }
     },
     "registry": {
       "shape": "block",
       "tone": "yellow",
       "icon": "layers",
-      "label": { "vi": "Registry (3 node)", "en": "Registry (3 nodes)" },
+      "label": {
+        "vi": "Registry (3 node)",
+        "en": "Registry (3 nodes)"
+      },
       "inspector": {
-        "what": { "vi": "Danh bạ động lưu địa chỉ IP và trạng thái của các instance.", "en": "Dynamic directory tracking active instance endpoints." },
-        "how": { "vi": "Nhận đăng ký khi khởi động, kiểm tra Heartbeat và chạy cụm 3 node theo Quorum.", "en": "Tracks heartbeats and maintains availability via a 3-node quorum." },
-        "why": { "vi": "Đảm bảo service gọi luôn thấy danh sách đích chính xác dù instance tự bật tắt.", "en": "Keeps service endpoints accurate as instances scale or restart." }
+        "what": {
+          "vi": "Danh bạ động lưu địa chỉ IP và trạng thái của các instance.",
+          "en": "Dynamic directory tracking active instance endpoints."
+        },
+        "how": {
+          "vi": "Nhận đăng ký khi khởi động, kiểm tra Heartbeat và chạy cụm 3 node theo Quorum.",
+          "en": "Tracks heartbeats and maintains availability via a 3-node quorum."
+        },
+        "why": {
+          "vi": "Đảm bảo service gọi luôn thấy danh sách đích chính xác dù instance tự bật tắt.",
+          "en": "Keeps service endpoints accurate as instances scale or restart."
+        }
       }
     },
     "payments_a": {
       "shape": "block",
       "tone": "blue",
       "icon": "server",
-      "label": { "vi": "Payments A", "en": "Payments A" },
+      "label": {
+        "vi": "Payments A",
+        "en": "Payments A"
+      },
       "inspector": {
-        "what": { "vi": "Instance Payments thứ nhất (μ = 1.200 req/s).", "en": "First Payments instance (μ = 1,200 req/s)." },
-        "how": { "vi": "Đăng ký IP khi khởi động và gửi Heartbeat định kỳ về Registry.", "en": "Registers its IP on startup and sends periodic heartbeats." },
-        "why": { "vi": "Chia sẻ tải thanh toán cùng Payments B.", "en": "Shares payment processing load with Payments B." }
+        "what": {
+          "vi": "Instance Payments thứ nhất (μ = 1.200 req/s).",
+          "en": "First Payments instance (μ = 1,200 req/s)."
+        },
+        "how": {
+          "vi": "Đăng ký IP khi khởi động và gửi Heartbeat định kỳ về Registry.",
+          "en": "Registers its IP on startup and sends periodic heartbeats."
+        },
+        "why": {
+          "vi": "Chia sẻ tải thanh toán cùng Payments B.",
+          "en": "Shares payment processing load with Payments B."
+        }
       }
     },
     "payments_b": {
       "shape": "block",
       "tone": "blue",
       "icon": "server",
-      "label": { "vi": "Payments B", "en": "Payments B" },
+      "label": {
+        "vi": "Payments B",
+        "en": "Payments B"
+      },
       "inspector": {
-        "what": { "vi": "Instance Payments thứ hai (μ = 1.200 req/s).", "en": "Second Payments instance (μ = 1,200 req/s)." },
-        "how": { "vi": "Tiếp nhận lưu lượng khi Payments A ngừng hoặc đang khởi động lại.", "en": "Absorbs traffic while Payments A is replaced." },
-        "why": { "vi": "Cần đủ công suất dự phòng để không quá tải khi một instance gặp sự cố.", "en": "Requires headroom so single-instance churn does not saturate it." }
+        "what": {
+          "vi": "Instance Payments thứ hai (μ = 1.200 req/s).",
+          "en": "Second Payments instance (μ = 1,200 req/s)."
+        },
+        "how": {
+          "vi": "Tiếp nhận lưu lượng khi Payments A ngừng hoặc đang khởi động lại.",
+          "en": "Absorbs traffic while Payments A is replaced."
+        },
+        "why": {
+          "vi": "Cần đủ công suất dự phòng để không quá tải khi một instance gặp sự cố.",
+          "en": "Requires headroom so single-instance churn does not saturate it."
+        }
       }
     },
     "db_pay": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Payments DB", "en": "Payments DB" },
+      "label": {
+        "vi": "Payments DB",
+        "en": "Payments DB"
+      },
       "inspector": {
-        "what": { "vi": "Cơ sở dữ liệu lưu giao dịch thanh toán (μ = 4.500 req/s).", "en": "Persistent payment transaction database." },
-        "how": { "vi": "Nhận truy vấn từ cả Payments A và Payments B.", "en": "Serves queries from both Payments instances." },
-        "why": { "vi": "Lưu trữ bền vững trạng thái thanh toán.", "en": "Persists durable payment records." }
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu giao dịch thanh toán (μ = 4.500 req/s).",
+          "en": "Persistent payment transaction database."
+        },
+        "how": {
+          "vi": "Nhận truy vấn từ cả Payments A và Payments B.",
+          "en": "Serves queries from both Payments instances."
+        },
+        "why": {
+          "vi": "Lưu trữ bền vững trạng thái thanh toán.",
+          "en": "Persists durable payment records."
+        }
       }
     }
   },
   "links": {
     "client-gw": {
       "inspector": {
-        "what": { "vi": "Kết nối từ người dùng tới API Gateway.", "en": "External HTTPS connection to API Gateway." },
-        "how": { "vi": "Đi qua mạng Internet công cộng.", "en": "Traverses public Internet." },
-        "why": { "vi": "Mọi API ngoài đều đi qua cửa ngõ này.", "en": "Single entry path for external API consumers." }
+        "what": {
+          "vi": "Kết nối từ người dùng tới API Gateway.",
+          "en": "External HTTPS connection to API Gateway."
+        },
+        "how": {
+          "vi": "Đi qua mạng Internet công cộng.",
+          "en": "Traverses public Internet."
+        },
+        "why": {
+          "vi": "Mọi API ngoài đều đi qua cửa ngõ này.",
+          "en": "Single entry path for external API consumers."
+        }
       }
     },
     "gw-orders": {
       "inspector": {
-        "what": { "vi": "Chuyển tiếp request từ Gateway tới Orders.", "en": "Internal routing from Gateway to Orders." },
-        "how": { "vi": "Sau khi xác thực và kiểm tra rate limit, Gateway gọi Orders.", "en": "Forwards authenticated requests to Orders." },
-        "why": { "vi": "Tách biệt lớp bảo vệ rìa khỏi logic đơn hàng.", "en": "Separates edge policy from order domain logic." }
+        "what": {
+          "vi": "Chuyển tiếp request từ Gateway tới Orders.",
+          "en": "Internal routing from Gateway to Orders."
+        },
+        "how": {
+          "vi": "Sau khi xác thực và kiểm tra rate limit, Gateway gọi Orders.",
+          "en": "Forwards authenticated requests to Orders."
+        },
+        "why": {
+          "vi": "Tách biệt lớp bảo vệ rìa khỏi logic đơn hàng.",
+          "en": "Separates edge policy from order domain logic."
+        }
       }
     },
     "orders-reg": {
       "inspector": {
-        "what": { "vi": "Orders tra cứu danh sách instance Payments từ Registry.", "en": "Orders queries Registry for Payments instances." },
-        "how": { "vi": "Cập nhật cache cục bộ theo sự kiện hoặc chu kỳ ngắn.", "en": "Refreshes local endpoint cache via watch or short poll." },
-        "why": { "vi": "Giúp Orders luôn biết địa chỉ IP mới nhất của Payments.", "en": "Keeps Orders aware of live Payments endpoints." }
+        "what": {
+          "vi": "Orders tra cứu danh sách instance Payments từ Registry.",
+          "en": "Orders queries Registry for Payments instances."
+        },
+        "how": {
+          "vi": "Cập nhật cache cục bộ theo sự kiện hoặc chu kỳ ngắn.",
+          "en": "Refreshes local endpoint cache via watch or short poll."
+        },
+        "why": {
+          "vi": "Giúp Orders luôn biết địa chỉ IP mới nhất của Payments.",
+          "en": "Keeps Orders aware of live Payments endpoints."
+        }
       }
     },
     "orders-paya": {
       "inspector": {
-        "what": { "vi": "Lời gọi RPC/HTTP từ Orders sang Payments A.", "en": "Service call from Orders to Payments A." },
-        "how": { "vi": "Chỉ gửi traffic khi Payments A vượt qua Readiness Check.", "en": "Receives traffic only after passing Readiness Check." },
-        "why": { "vi": "Tránh gửi request vào instance chưa khởi tạo xong.", "en": "Prevents errors during instance warm-up." }
+        "what": {
+          "vi": "Lời gọi RPC/HTTP từ Orders sang Payments A.",
+          "en": "Service call from Orders to Payments A."
+        },
+        "how": {
+          "vi": "Chỉ gửi traffic khi Payments A vượt qua Readiness Check.",
+          "en": "Receives traffic only after passing Readiness Check."
+        },
+        "why": {
+          "vi": "Tránh gửi request vào instance chưa khởi tạo xong.",
+          "en": "Prevents errors during instance warm-up."
+        }
       }
     },
     "orders-payb": {
       "inspector": {
-        "what": { "vi": "Lời gọi RPC/HTTP từ Orders sang Payments B.", "en": "Service call from Orders to Payments B." },
-        "how": { "vi": "Nhận thêm tải khi Payments A đang draining hoặc bị gỡ.", "en": "Takes failover traffic when Payments A drains." },
-        "why": { "vi": "Duy trì phục vụ liên tục khi thay thế instance.", "en": "Maintains continuity during rolling replacements." }
+        "what": {
+          "vi": "Lời gọi RPC/HTTP từ Orders sang Payments B.",
+          "en": "Service call from Orders to Payments B."
+        },
+        "how": {
+          "vi": "Nhận thêm tải khi Payments A đang draining hoặc bị gỡ.",
+          "en": "Takes failover traffic when Payments A drains."
+        },
+        "why": {
+          "vi": "Duy trì phục vụ liên tục khi thay thế instance.",
+          "en": "Maintains continuity during rolling replacements."
+        }
       }
     },
     "paya-db": {
       "inspector": {
-        "what": { "vi": "Kết nối từ Payments A xuống Payments DB.", "en": "Database connection from Payments A." },
-        "how": { "vi": "Duy trì qua connection pool nội bộ.", "en": "Managed via internal connection pool." },
-        "why": { "vi": "Lưu kết quả thanh toán.", "en": "Commits payment state." }
+        "what": {
+          "vi": "Kết nối từ Payments A xuống Payments DB.",
+          "en": "Database connection from Payments A."
+        },
+        "how": {
+          "vi": "Duy trì qua connection pool nội bộ.",
+          "en": "Managed via internal connection pool."
+        },
+        "why": {
+          "vi": "Lưu kết quả thanh toán.",
+          "en": "Commits payment state."
+        }
       }
     },
     "payb-db": {
       "inspector": {
-        "what": { "vi": "Kết nối từ Payments B xuống Payments DB.", "en": "Database connection from Payments B." },
-        "how": { "vi": "Duy trì qua connection pool nội bộ.", "en": "Managed via internal connection pool." },
-        "why": { "vi": "Lưu kết quả thanh toán.", "en": "Commits payment state." }
+        "what": {
+          "vi": "Kết nối từ Payments B xuống Payments DB.",
+          "en": "Database connection from Payments B."
+        },
+        "how": {
+          "vi": "Duy trì qua connection pool nội bộ.",
+          "en": "Managed via internal connection pool."
+        },
+        "why": {
+          "vi": "Lưu kết quả thanh toán.",
+          "en": "Commits payment state."
+        }
       }
     }
   },
   "scenes": {
     "s1-setup": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": [
+          "client",
+          "gateway",
+          "orders",
+          "payments_a",
+          "payments_b",
+          "db_pay"
+        ],
+        "links": [
+          "client-gw",
+          "gw-orders",
+          "orders-paya",
+          "orders-payb",
+          "paya-db",
+          "payb-db"
+        ]
+      },
       "packets": "auto",
       "state": {
-        "orders": { "badge": { "text": "IP tĩnh", "tone": "warn" } },
-        "payments_a": { "badge": { "text": "10.0.1.4", "tone": "ok" } },
-        "payments_b": { "badge": { "text": "10.0.1.5", "tone": "ok" } }
+        "orders": {
+          "badge": {
+            "text": {
+              "vi": "IP tĩnh",
+              "en": "IP tĩnh"
+            },
+            "tone": "warn"
+          }
+        },
+        "payments_a": {
+          "badge": {
+            "text": {
+              "vi": "10.0.1.4",
+              "en": "10.0.1.4"
+            },
+            "tone": "ok"
+          }
+        },
+        "payments_b": {
+          "badge": {
+            "text": {
+              "vi": "10.0.1.5",
+              "en": "10.0.1.5"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "noteCard": {
+        "title": {
+          "vi": "Cấu hình IP tĩnh khi chưa có Service Registry",
+          "en": "Hardcoded Static IPs Without Registry"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Orders lưu cứng IP của Payments A và Payments B",
+              "en": "Orders hardcodes Payments A & B IP addresses"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Khi container khởi động lại và đổi IP, cấu hình lập tức lỗi thời",
+              "en": "When containers restart with new IPs, config goes stale"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-right"
       }
     },
     "s2-stale-ip": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": [
+          "client",
+          "gateway",
+          "orders",
+          "payments_a",
+          "payments_b",
+          "db_pay"
+        ],
+        "links": [
+          "client-gw",
+          "gw-orders",
+          "orders-paya",
+          "orders-payb",
+          "paya-db",
+          "payb-db"
+        ]
+      },
       "packets": "auto",
       "state": {
-        "orders": { "badge": { "text": "50% lỗi", "tone": "bad" } },
-        "payments_a": { "dead": true, "badge": { "text": "IP cũ chết", "tone": "bad" } },
-        "payments_b": { "badge": { "text": "10.0.1.5", "tone": "ok" } }
+        "orders": {
+          "badge": {
+            "text": {
+              "vi": "50% lỗi",
+              "en": "50% lỗi"
+            },
+            "tone": "bad"
+          }
+        },
+        "payments_a": {
+          "dead": true,
+          "badge": {
+            "text": {
+              "vi": "IP cũ chết",
+              "en": "IP cũ chết"
+            },
+            "tone": "bad"
+          }
+        },
+        "payments_b": {
+          "badge": {
+            "text": {
+              "vi": "10.0.1.5",
+              "en": "10.0.1.5"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "noteCard": {
+        "title": {
+          "vi": "Sự cố gọi vào địa chỉ IP cũ đã chết",
+          "en": "Routing to Stale Dead IP"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Payments A đã đổi IP mới nhưng Orders vẫn bắn 50% tải vào IP cũ",
+              "en": "Payments A got a new IP, but Orders still sends 50% traffic to old IP"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Cần một danh bạ động (Service Registry) cập nhật theo nhịp tim",
+              "en": "Requires a dynamic heartbeat-driven Service Registry"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
       }
     },
     "s3-registry": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto",
       "state": {
-        "registry": { "badge": { "text": "Heartbeat", "tone": "ok" } },
-        "payments_a": { "badge": { "text": "10.0.1.9", "tone": "ok" } },
-        "payments_b": { "badge": { "text": "10.0.1.5", "tone": "ok" } }
+        "registry": {
+          "badge": {
+            "text": {
+              "vi": "Heartbeat",
+              "en": "Heartbeat"
+            },
+            "tone": "ok"
+          }
+        },
+        "payments_a": {
+          "badge": {
+            "text": {
+              "vi": "10.0.1.9",
+              "en": "10.0.1.9"
+            },
+            "tone": "ok"
+          }
+        },
+        "payments_b": {
+          "badge": {
+            "text": {
+              "vi": "10.0.1.5",
+              "en": "10.0.1.5"
+            },
+            "tone": "ok"
+          }
+        }
       }
     },
     "s4-live-churn": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto"
     },
     "s5-readiness": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto",
       "state": {
-        "payments_a": { "badge": { "text": "Slow-Start", "tone": "warn" } },
-        "payments_b": { "badge": { "text": "Ready", "tone": "ok" } }
+        "payments_a": {
+          "badge": {
+            "text": {
+              "vi": "Slow-Start",
+              "en": "Slow-Start"
+            },
+            "tone": "warn"
+          }
+        },
+        "payments_b": {
+          "badge": {
+            "text": {
+              "vi": "Ready",
+              "en": "Ready"
+            },
+            "tone": "ok"
+          }
+        }
       }
     },
     "s6-quorum": {
       "mode": "isometric",
-      "show": { "nodes": "*" },
+      "show": {
+        "nodes": "*"
+      },
       "packets": "auto",
       "state": {
-        "registry": { "badge": { "text": "2/3 Quorum", "tone": "ok" } },
-        "gateway": { "badge": { "text": "Edge Auth", "tone": "ok" } }
+        "registry": {
+          "badge": {
+            "text": {
+              "vi": "2/3 Quorum",
+              "en": "2/3 Quorum"
+            },
+            "tone": "ok"
+          }
+        },
+        "gateway": {
+          "badge": {
+            "text": {
+              "vi": "Edge Auth",
+              "en": "Edge Auth"
+            },
+            "tone": "ok"
+          }
+        }
       }
     }
   },
@@ -195,12 +535,51 @@
         "load": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 100, "badAbove": 300 } },
-        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 300
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
-      "slo": [{ "metric": "p99", "value": 150 }],
-      "focus": { "nodes": ["payments_a", "payments_b"] }
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 150
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "payments_a",
+          "payments_b"
+        ]
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookMarked, BookOpen, Briefcase, FlaskConical, Library, ScrollText, ShieldAlert } from 'lucide-react';
+import { BookMarked, BookOpen, Briefcase, FlaskConical, ScrollText, ShieldAlert } from 'lucide-react';
 import { SdMasteryLogo } from '@/components/common/AppLogos';
 import { ScaleAppHeader } from '@/components/scale-workbench/ScaleAppHeader';
 import { useSdNav } from '@/features/sysdesign-course/store';
@@ -43,7 +43,6 @@ export const SdHeader: React.FC<{ windowId?: string }> = ({ windowId }) => {
       moreItems={[
         item('atlas', <BookMarked className={ICON} />),
         item('interview', <ScrollText className={ICON} />),
-        item('credits', <Library className={ICON} />),
       ]}
     />
   );

@@ -105,6 +105,8 @@ export interface SdStageFile {
   version: 1;
   /** Khoá scene mặc định cho bước không khai báo scene và chưa có scene isometric nào trước đó (mặc định: scene đầu tiên). */
   base?: string;
+  /** Bố cục lưới mặt sàn phân làn (col = tiến theo trục chính NE, row = tách làn song song SE). */
+  layout?: Record<string, { col: number; row: number }>;
   nodes: Record<string, SdStageNodeDef>;
   links?: Record<string, SdStageLinkDef>;
   zones?: Record<string, { nodeIds: string[]; label: SdBilingual; tone?: string }>;

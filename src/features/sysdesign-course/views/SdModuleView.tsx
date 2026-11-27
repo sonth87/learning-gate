@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, CheckCircle2, ExternalLink, Layers, ListChecks, Play, SkipForward, Undo2 } from 'lucide-react';
-import { useSdCurriculum } from '../data';
 import { sdAttributionLine } from '../credits';
+import { useSdCurriculum } from '../data';
 import { isModuleSkipped, lessonRead, quizBest, sdModuleProgress } from '../logic';
 import { useSdNav, useSdProgress } from '../store';
 import { CourseBar, CourseBtn } from '@/features/devops-course/components/CourseUi';
@@ -35,7 +35,6 @@ export const SdModuleView: React.FC<{ id: string }> = ({ id }) => {
   const skipped = isModuleSkipped(s, mod.id);
   const read = lessonRead(s, mod.id);
   const best = quizBest(s, mod.id);
-  const attribution = sdAttributionLine(mod);
   const levelTitle = cur.levels[String(mod.level)];
 
   const openWorkbench = () => {
@@ -73,6 +72,27 @@ export const SdModuleView: React.FC<{ id: string }> = ({ id }) => {
         </ul>
       </Card>
 
+      {(() => {
+        const attr = sdAttributionLine(mod);
+        if (!attr) return null;
+        return (
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
+              <span>{attr.text.vi}</span>
+              <a
+                href={attr.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 font-semibold text-cyan-400 underline underline-offset-2 hover:text-cyan-300"
+              >
+                <span>Mở trên systemdesigncore.site</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            </div>
+          </Card>
+        );
+      })()}
+
       <div className="flex flex-wrap gap-2">
         <CourseBtn variant="primary" accent="cyan" onClick={openWorkbench}>
           <Play className="h-4 w-4" /> Học trong bàn học
@@ -106,20 +126,6 @@ export const SdModuleView: React.FC<{ id: string }> = ({ id }) => {
           </CourseBtn>
         )}
       </div>
-
-      {attribution && (
-        <p className="text-xs leading-relaxed text-slate-400">
-          {attribution.text}{' '}
-          <a
-            href={attribution.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-cyan-400 underline underline-offset-2"
-          >
-            Bản gốc <ExternalLink className="h-3 w-3" />
-          </a>
-        </p>
-      )}
     </div>
   );
 };

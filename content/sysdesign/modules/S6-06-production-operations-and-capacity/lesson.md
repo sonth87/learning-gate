@@ -118,7 +118,7 @@ Khi cần thay thế hệ thống cũ hoặc chuyển đổi cơ sở dữ liệ
 ```step
 category: PITFALL
 short: Bẫy vận hành
-scene: s2-postmortem
+scene: s4-migration
 callout:
   kind: watch-out
   title: Tránh cảnh báo chỉ theo CPU và triển khai Big-Bang

@@ -22,6 +22,7 @@ import { sdAttributionLine } from '../credits';
 import { createSim, type SimFrame, type SimScenario } from '../sim';
 import type { SdBilingual, SdCurriculum, SdLiveDef, SdModule, SdStepBlock, SdText } from '../types';
 import { buildSdMemoryScene, buildSdStageScene, toBilingual, type SdModelLike } from './sdSceneBuilder';
+import { buildSdModuleStory } from './sdStoryCatalog';
 
 export const SD_MAX_STEPS = 12;
 
@@ -293,11 +294,86 @@ function toLiveSimSpec(def: SdLiveDef): LiveSimSpec {
   };
 }
 
-function modelFor(mod: SdModule, simId: string | undefined, sims: SdSimsMap | null): SdModelLike | null {
+function modelFor(
+  mod: SdModule,
+  simId: string | undefined,
+  sims: SdSimsMap | null,
+  showNodes?: string[] | '*'
+): SdModelLike | null {
   if (!sims) return null;
-  const id = simId ?? mod.simIds[0];
-  const model = id ? sims[id]?.scenario?.model : undefined;
-  return model ?? null;
+  const orderedIds = [
+    ...(simId ? [simId] : []),
+    ...mod.simIds.filter((id) => id !== simId),
+  ];
+  const nodeMap = new Map<string, SdModelLike['nodes'][number]>();
+  for (const id of orderedIds) {
+    const m = sims[id]?.scenario?.model;
+    if (!m) continue;
+    for (const n of m.nodes ?? []) {
+      if (n?.id && !nodeMap.has(n.id)) nodeMap.set(n.id, n);
+    }
+  }
+
+  // Nếu module có nhiều sim (ví dụ Before/Sync và After/Async), chọn đúng sim khớp với tập node của scene
+  // để không rò rỉ đường nối của kiến trúc cũ đè lên kiến trúc mới (S1-02, S2-11, S3-09).
+  let chosenSimIds = orderedIds;
+  if (orderedIds.length > 1) {
+    if (Array.isArray(showNodes) && showNodes.length > 0) {
+      let bestId = orderedIds[0];
+      let bestScore = -Infinity;
+      for (const id of orderedIds) {
+        const m = sims[id]?.scenario?.model;
+        if (!m) continue;
+        const sNodes = new Set((m.nodes ?? []).map((n) => n.id));
+        const covered = showNodes.filter((n) => sNodes.has(n)).length;
+        const extra = Math.abs(sNodes.size - showNodes.length);
+        const score = covered * 100 - extra * 10 + (id === simId ? 5 : 0);
+        if (score > bestScore) {
+          bestScore = score;
+          bestId = id;
+        }
+      }
+      chosenSimIds = [bestId];
+    } else {
+      // Khi show.nodes === '*': nếu step chỉ định rõ sim/live thì dùng sim đó; nếu không, chọn sim có đầy đủ thành phần nhất
+      let bestId = simId && sims[simId] ? simId : orderedIds[0];
+      if (!simId) {
+        let maxNodes = -1;
+        for (const id of orderedIds) {
+          const cnt = sims[id]?.scenario?.model?.nodes?.length ?? 0;
+          if (cnt > maxNodes) {
+            maxNodes = cnt;
+            bestId = id;
+          }
+        }
+      } else {
+        // Nếu show.nodes === '*' trên một scene tĩnh mà module có sim đầy đủ hơn chứa tất cả node của stage.nodes, ưu tiên sim khớp toàn bộ stage.nodes
+        const stageNodeCount = Object.keys(mod.stage?.nodes ?? {}).length;
+        const curCount = sims[bestId]?.scenario?.model?.nodes?.length ?? 0;
+        if (stageNodeCount > curCount) {
+          for (const id of orderedIds) {
+            const cnt = sims[id]?.scenario?.model?.nodes?.length ?? 0;
+            if (cnt > curCount) bestId = id;
+          }
+        }
+      }
+      chosenSimIds = [bestId];
+    }
+  }
+
+  const linkMap = new Map<string, SdModelLike['links'][number]>();
+  for (const id of chosenSimIds) {
+    const m = sims[id]?.scenario?.model;
+    if (!m) continue;
+    for (const l of m.links ?? []) {
+      if (l?.id && !linkMap.has(l.id)) linkMap.set(l.id, l);
+    }
+  }
+  if (nodeMap.size === 0 && linkMap.size === 0) return null;
+  return {
+    nodes: [...nodeMap.values()],
+    links: [...linkMap.values()],
+  };
 }
 
 export function buildSdModuleLesson(
@@ -340,7 +416,7 @@ export function buildSdModuleLesson(
     if (!key || !def || !mod.stage) return null;
     const mode = def.mode ?? 'isometric';
     if (mode === 'isometric') {
-      const built = buildSdStageScene(mod.stage, def, modelFor(mod, simId, sims));
+      const built = buildSdStageScene(mod.stage, def, modelFor(mod, simId, sims, def.show?.nodes));
       return built ? { key, stageMode: 'isometric' as const, scene: built } : null;
     }
     if (mode === 'memory-2d') {
@@ -444,8 +520,6 @@ export function buildSdModuleLesson(
     };
   });
 
-  const attr = sdAttributionLine(mod);
-
   return {
     moduleId: mod.id,
     level: mod.level,
@@ -470,12 +544,8 @@ export function buildSdModuleLesson(
     exerciseCount: Array.isArray(mod.activities) ? mod.activities.length : 0,
     cardCount: mod.cards.length,
     readingCount: 0,
-    attribution: attr
-      ? {
-          text: { vi: attr.text, en: attr.text },
-          href: attr.href,
-        }
-      : undefined,
+    attribution: sdAttributionLine(mod) ?? undefined,
+    story: buildSdModuleStory(mod, sections),
   };
 }
 

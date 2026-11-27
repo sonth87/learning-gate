@@ -6,6 +6,8 @@ import {
   SDC_ATTRIBUTION,
   SD_REMOVAL_NOTE,
   SD_SIM_DISCLAIMER,
+  sdcSourceTitle,
+  sdcWebUrl,
   sdSources,
 } from '../credits';
 import { sortedSdModules } from '../logic';
@@ -80,7 +82,7 @@ export const SdCreditsView: React.FC = () => {
                 </div>
                 {srcs.map((s, i) => (
                   <div key={i} className="mt-1 text-xs">
-                    {s.url ? <A href={s.url}>Bài gốc</A> : <span>Bài gốc</span>}
+                    <A href={sdcWebUrl(s)}>Bài gốc trên systemdesigncore.site ({sdcSourceTitle(s)})</A>
                     {s.adaptedAt && <span> · biên tập ngày {s.adaptedAt}</span>}
                     <span> · mức biên tập: {s.adaptation === 'rewritten' ? 'viết lại' : 'biên tập'}</span>
                     {s.changes && <div className="mt-0.5 text-[var(--dts-ink-muted)]">{s.changes}</div>}

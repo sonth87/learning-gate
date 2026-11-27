@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookMarked, BookOpen, Briefcase, FlaskConical, Library, MoreHorizontal, ScrollText, ShieldAlert } from 'lucide-react';
+import { BookMarked, BookOpen, Briefcase, FlaskConical, MoreHorizontal, ScrollText, ShieldAlert } from 'lucide-react';
 import { useSdNav } from '@/features/sysdesign-course/store';
 import { useWorkbenchStore } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
@@ -13,11 +13,10 @@ const ICONS: Record<SdMainTab, React.ComponentType<{ className?: string }>> = {
   cases: Briefcase,
   atlas: BookMarked,
   interview: ScrollText,
-  credits: Library,
 };
 
 const PRIMARY: SdMainTab[] = ['learn', 'lab', 'warroom', 'cases'];
-const MORE: SdMainTab[] = ['atlas', 'interview', 'credits'];
+const MORE: SdMainTab[] = ['atlas', 'interview'];
 
 /** Thanh điều hướng dưới: chỉ hiện khi cửa sổ app hẹp (< 680px, cùng ngưỡng với header). */
 export const SdMobileBottomNav: React.FC = () => {

@@ -5,258 +5,824 @@
     "device": {
       "shape": "crowd",
       "tone": "blue",
-      "label": { "vi": "Thiết bị (20M)", "en": "Devices (20M)" },
+      "label": {
+        "vi": "Thiết bị (20M)",
+        "en": "Devices (20M)"
+      },
       "inspector": {
-        "what": { "vi": "20 triệu thiết bị duy trì kết nối WebSocket dài hạn tới cụm Gateway.", "en": "20M client devices holding persistent WebSocket connections." },
-        "how": { "vi": "Gửi trung bình 23.000 tin nhắn/giây, kèm nhịp tim (heartbeat) và cơ chế nối lại khi mất kết nối.", "en": "Sends ~23,000 messages/s with periodic heartbeats and reconnect logic." },
-        "why": { "vi": "Cần giữ kết nối mở hai chiều để giao tin tức thì dưới 200 ms.", "en": "Persistent bidirectional sockets enable sub-200 ms delivery." }
+        "what": {
+          "vi": "20 triệu thiết bị duy trì kết nối WebSocket dài hạn tới cụm Gateway.",
+          "en": "20M client devices holding persistent WebSocket connections."
+        },
+        "how": {
+          "vi": "Gửi trung bình 23.000 tin nhắn/giây, kèm nhịp tim (heartbeat) và cơ chế nối lại khi mất kết nối.",
+          "en": "Sends ~23,000 messages/s with periodic heartbeats and reconnect logic."
+        },
+        "why": {
+          "vi": "Cần giữ kết nối mở hai chiều để giao tin tức thì dưới 200 ms.",
+          "en": "Persistent bidirectional sockets enable sub-200 ms delivery."
+        }
       }
     },
     "gw1": {
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "WS Gateway 1", "en": "WS Gateway 1" },
+      "label": {
+        "vi": "WS Gateway 1",
+        "en": "WS Gateway 1"
+      },
       "inspector": {
-        "what": { "vi": "Cụm WebSocket Gateway giữ socket TCP/TLS của người dùng.", "en": "Stateful WebSocket Gateway terminating client TCP/TLS sockets." },
-        "how": { "vi": "Không chứa logic nghiệp vụ; chỉ giữ kết nối và chuyển khung tin sang Chat Service.", "en": "Holds open sockets and forwards frames to stateless Chat Service." },
-        "why": { "vi": "Tách riêng phần giữ kết nối dài hạn để Chat Service có thể triển khai và mở rộng độc lập.", "en": "Isolates stateful socket management from stateless chat logic." }
+        "what": {
+          "vi": "Cụm WebSocket Gateway giữ socket TCP/TLS của người dùng.",
+          "en": "Stateful WebSocket Gateway terminating client TCP/TLS sockets."
+        },
+        "how": {
+          "vi": "Không chứa logic nghiệp vụ; chỉ giữ kết nối và chuyển khung tin sang Chat Service.",
+          "en": "Holds open sockets and forwards frames to stateless Chat Service."
+        },
+        "why": {
+          "vi": "Tách riêng phần giữ kết nối dài hạn để Chat Service có thể triển khai và mở rộng độc lập.",
+          "en": "Isolates stateful socket management from stateless chat logic."
+        }
       }
     },
     "gw2": {
       "shape": "block",
       "tone": "purple",
       "icon": "layers",
-      "label": { "vi": "WS Gateway 2", "en": "WS Gateway 2" },
+      "label": {
+        "vi": "WS Gateway 2",
+        "en": "WS Gateway 2"
+      },
       "inspector": {
-        "what": { "vi": "Cụm WebSocket Gateway thứ hai chia tải kết nối.", "en": "Second WebSocket Gateway cluster sharing socket load." },
-        "how": { "vi": "Nhận lưu lượng chuyển hướng khi Gateway 1 gặp sự cố.", "en": "Absorbs reconnecting clients if Gateway 1 goes down." },
-        "why": { "vi": "Tránh điểm lỗi đơn ở tầng giữ socket.", "en": "Eliminates single point of failure at the socket edge." }
+        "what": {
+          "vi": "Cụm WebSocket Gateway thứ hai chia tải kết nối.",
+          "en": "Second WebSocket Gateway cluster sharing socket load."
+        },
+        "how": {
+          "vi": "Nhận lưu lượng chuyển hướng khi Gateway 1 gặp sự cố.",
+          "en": "Absorbs reconnecting clients if Gateway 1 goes down."
+        },
+        "why": {
+          "vi": "Tránh điểm lỗi đơn ở tầng giữ socket.",
+          "en": "Eliminates single point of failure at the socket edge."
+        }
       }
     },
     "chat_svc": {
       "shape": "block",
       "tone": "green",
       "icon": "cpu",
-      "label": { "vi": "Chat Service", "en": "Chat Service" },
+      "label": {
+        "vi": "Chat Service",
+        "en": "Chat Service"
+      },
       "inspector": {
-        "what": { "vi": "Dịch vụ xử lý logic chat không trạng thái (stateless).", "en": "Stateless service orchestrating message ordering, storage, and routing." },
-        "how": { "vi": "Cấp số thứ tự theo hội thoại, ghi xuống Message Store trước khi tra Session Registry để đẩy tin.", "en": "Assigns per-conversation sequence IDs, persists messages, then queries Session Registry." },
-        "why": { "vi": "Không giữ socket nên có thể khởi động lại hoặc mở rộng ngang bất cứ lúc nào.", "en": "Stateless design allows seamless horizontal scaling and rolling deploys." }
+        "what": {
+          "vi": "Dịch vụ xử lý logic chat không trạng thái (stateless).",
+          "en": "Stateless service orchestrating message ordering, storage, and routing."
+        },
+        "how": {
+          "vi": "Cấp số thứ tự theo hội thoại, ghi xuống Message Store trước khi tra Session Registry để đẩy tin.",
+          "en": "Assigns per-conversation sequence IDs, persists messages, then queries Session Registry."
+        },
+        "why": {
+          "vi": "Không giữ socket nên có thể khởi động lại hoặc mở rộng ngang bất cứ lúc nào.",
+          "en": "Stateless design allows seamless horizontal scaling and rolling deploys."
+        }
       }
     },
     "registry": {
       "shape": "block",
       "tone": "yellow",
       "icon": "zap",
-      "label": { "vi": "Session Registry", "en": "Session Registry" },
+      "label": {
+        "vi": "Session Registry",
+        "en": "Session Registry"
+      },
       "inspector": {
-        "what": { "vi": "Sổ đăng ký ánh xạ user_id → gateway_id đang giữ socket.", "en": "In-memory lookup mapping user_id to its active gateway_id." },
-        "how": { "vi": "Cập nhật khi thiết bị bắt tay và làm mới TTL qua heartbeat định kỳ.", "en": "Updated on socket connect and refreshed via periodic heartbeats." },
-        "why": { "vi": "Giúp Chat Service biết chính xác Gateway nào cần nhận tin để đẩy xuống người nhận.", "en": "Enables Chat Service to route deliveries to the exact Gateway." }
+        "what": {
+          "vi": "Sổ đăng ký ánh xạ user_id → gateway_id đang giữ socket.",
+          "en": "In-memory lookup mapping user_id to its active gateway_id."
+        },
+        "how": {
+          "vi": "Cập nhật khi thiết bị bắt tay và làm mới TTL qua heartbeat định kỳ.",
+          "en": "Updated on socket connect and refreshed via periodic heartbeats."
+        },
+        "why": {
+          "vi": "Giúp Chat Service biết chính xác Gateway nào cần nhận tin để đẩy xuống người nhận.",
+          "en": "Enables Chat Service to route deliveries to the exact Gateway."
+        }
       }
     },
     "msg_store": {
       "shape": "db",
       "tone": "orange",
-      "label": { "vi": "Message Store", "en": "Message Store" },
+      "label": {
+        "vi": "Message Store",
+        "en": "Message Store"
+      },
       "inspector": {
-        "what": { "vi": "Kho lưu trữ tin nhắn bền vững phân mảnh theo conversation_id.", "en": "Durable NoSQL store partitioned by conversation_id." },
-        "how": { "vi": "Sắp xếp tin theo (conversation_id, seq_id) và chặn trùng lặp bằng client_msg_id.", "en": "Orders messages by (conversation_id, seq_id) and deduplicates via client_msg_id." },
-        "why": { "vi": "Đảm bảo mọi tin nhắn được lưu trước khi chuyển tiếp và đồng bộ được khi ngoại tuyến.", "en": "Guarantees durability before delivery and supports offline sequence sync." }
+        "what": {
+          "vi": "Kho lưu trữ tin nhắn bền vững phân mảnh theo conversation_id.",
+          "en": "Durable NoSQL store partitioned by conversation_id."
+        },
+        "how": {
+          "vi": "Sắp xếp tin theo (conversation_id, seq_id) và chặn trùng lặp bằng client_msg_id.",
+          "en": "Orders messages by (conversation_id, seq_id) and deduplicates via client_msg_id."
+        },
+        "why": {
+          "vi": "Đảm bảo mọi tin nhắn được lưu trước khi chuyển tiếp và đồng bộ được khi ngoại tuyến.",
+          "en": "Guarantees durability before delivery and supports offline sequence sync."
+        }
+      }
+    },
+    "push_svc": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "globe",
+      "label": {
+        "vi": "Push (APNs / FCM)",
+        "en": "Push (APNs / FCM)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng thông báo đẩy của hệ điều hành (Apple APNs / Google FCM) đánh thức thiết bị khi người nhận đang ngoại tuyến.",
+          "en": "OS-level Push Notification gateway waking offline recipient devices."
+        },
+        "how": {
+          "vi": "Khi Session Registry báo người nhận B không có kết nối WebSocket nào đang mở, Chat Service lưu tin vào Message Store rồi bắn thông báo qua APNs/FCM.",
+          "en": "Triggered when Session Registry shows no active WebSocket for recipient B."
+        },
+        "why": {
+          "vi": "Đảm bảo người nhận biết có tin nhắn mới ngay cả khi đã đóng ứng dụng; khi mở lại app sẽ kéo bù theo sequence_id.",
+          "en": "Notifies offline users immediately; app syncs missing messages by sequence_id on wake."
+        }
+      }
+    },
+    "recipient": {
+      "shape": "crowd",
+      "tone": "green",
+      "label": {
+        "vi": "Người nhận B / Nhóm",
+        "en": "Recipient B / Group"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Thiết bị của người nhận tin nhắn (đang kết nối trực tuyến ở WS Gateway 2 hoặc đang ngoại tuyến nhận Push).",
+          "en": "Recipient devices receiving real-time WebSocket frames or offline Push notifications."
+        },
+        "how": {
+          "vi": "Nhận khung tin nhắn đẩy xuống qua WebSocket đang mở trong dưới 50 ms và gửi ACK kèm max_seq_id đã đọc.",
+          "en": "Receives messages over persistent WebSocket or syncs missing seq_ids upon reconnecting."
+        },
+        "why": {
+          "vi": "Khép kín luồng truyền tin hai chiều từ Người gửi A qua cụm Gateway tới tận tay Người nhận B.",
+          "en": "Completes the end-to-end bi-directional messaging pipeline."
+        }
       }
     }
   },
   "links": {
     "device-gw1": {
       "inspector": {
-        "what": { "vi": "Kết nối WebSocket từ thiết bị tới WS Gateway 1.", "en": "WebSocket connection from devices to WS Gateway 1." },
-        "how": { "vi": "Duy trì kết nối dài hạn; nếu không có Backoff + Jitter, rớt gateway sẽ tạo bão nối lại.", "en": "Persistent socket; lacking Backoff + Jitter triggers reconnect storms on failure." },
-        "why": { "vi": "Chặn bão kết nối lại bảo vệ cụm Gateway còn lại không bị quá tải dây chuyền.", "en": "Jittered backoff protects surviving gateways from thundering herds." }
+        "what": {
+          "vi": "Kết nối WebSocket từ thiết bị tới WS Gateway 1.",
+          "en": "WebSocket connection from devices to WS Gateway 1."
+        },
+        "how": {
+          "vi": "Duy trì kết nối dài hạn; nếu không có Backoff + Jitter, rớt gateway sẽ tạo bão nối lại.",
+          "en": "Persistent socket; lacking Backoff + Jitter triggers reconnect storms on failure."
+        },
+        "why": {
+          "vi": "Chặn bão kết nối lại bảo vệ cụm Gateway còn lại không bị quá tải dây chuyền.",
+          "en": "Jittered backoff protects surviving gateways from thundering herds."
+        }
       }
     },
     "device-gw2": {
       "inspector": {
-        "what": { "vi": "Kết nối WebSocket từ thiết bị tới WS Gateway 2.", "en": "WebSocket connection from devices to WS Gateway 2." },
-        "how": { "vi": "Phân bổ một phần trong 20 triệu kết nối đồng thời.", "en": "Holds a share of the 20M concurrent sockets." },
-        "why": { "vi": "Chia tải kết nối đều trên nhiều cụm.", "en": "Distributes socket memory and file descriptors." }
+        "what": {
+          "vi": "Kết nối WebSocket từ thiết bị tới WS Gateway 2.",
+          "en": "WebSocket connection from devices to WS Gateway 2."
+        },
+        "how": {
+          "vi": "Phân bổ một phần trong 20 triệu kết nối đồng thời.",
+          "en": "Holds a share of the 20M concurrent sockets."
+        },
+        "why": {
+          "vi": "Chia tải kết nối đều trên nhiều cụm.",
+          "en": "Distributes socket memory and file descriptors."
+        }
       }
     },
     "gw1-chat": {
       "inspector": {
-        "what": { "vi": "Đường chuyển tin nội bộ từ WS Gateway 1 vào Chat Service.", "en": "Internal RPC from WS Gateway 1 to Chat Service." },
-        "how": { "vi": "Chuyển tiếp sự kiện gửi tin và nhận lệnh đẩy tin xuống socket.", "en": "Forwards inbound messages and receives outbound push frames." },
-        "why": { "vi": "Tách biệt tầng mạng biên và tầng nghiệp vụ.", "en": "Decouples edge socket termination from business logic." }
+        "what": {
+          "vi": "Đường chuyển tin nội bộ từ WS Gateway 1 vào Chat Service.",
+          "en": "Internal RPC from WS Gateway 1 to Chat Service."
+        },
+        "how": {
+          "vi": "Chuyển tiếp sự kiện gửi tin và nhận lệnh đẩy tin xuống socket.",
+          "en": "Forwards inbound messages and receives outbound push frames."
+        },
+        "why": {
+          "vi": "Tách biệt tầng mạng biên và tầng nghiệp vụ.",
+          "en": "Decouples edge socket termination from business logic."
+        }
       }
     },
     "gw2-chat": {
       "inspector": {
-        "what": { "vi": "Đường chuyển tin nội bộ từ WS Gateway 2 vào Chat Service.", "en": "Internal RPC from WS Gateway 2 to Chat Service." },
-        "how": { "vi": "Hoạt động song song với Gateway 1.", "en": "Operates in parallel with Gateway 1." },
-        "why": { "vi": "Duy trì đường truyền thông suốt khi một gateway bảo trì.", "en": "Maintains delivery paths during gateway maintenance." }
+        "what": {
+          "vi": "Đường chuyển tin nội bộ từ WS Gateway 2 vào Chat Service.",
+          "en": "Internal RPC from WS Gateway 2 to Chat Service."
+        },
+        "how": {
+          "vi": "Hoạt động song song với Gateway 1.",
+          "en": "Operates in parallel with Gateway 1."
+        },
+        "why": {
+          "vi": "Duy trì đường truyền thông suốt khi một gateway bảo trì.",
+          "en": "Maintains delivery paths during gateway maintenance."
+        }
       }
     },
     "chat-reg": {
       "inspector": {
-        "what": { "vi": "Truy vấn tìm Gateway đang giữ kết nối của người nhận.", "en": "Lookup for recipient's active WebSocket Gateway." },
-        "how": { "vi": "Đọc từ cụm RAM dưới 1 ms; nếu không thấy nghĩa là người nhận đang ngoại tuyến.", "en": "Sub-millisecond in-memory lookup; miss indicates recipient is offline." },
-        "why": { "vi": "Xác định nhanh nhánh giao tin trực tiếp hay chuyển sang Push Notification.", "en": "Determines whether to push via socket or trigger offline notification." }
+        "what": {
+          "vi": "Truy vấn tìm Gateway đang giữ kết nối của người nhận.",
+          "en": "Lookup for recipient's active WebSocket Gateway."
+        },
+        "how": {
+          "vi": "Đọc từ cụm RAM dưới 1 ms; nếu không thấy nghĩa là người nhận đang ngoại tuyến.",
+          "en": "Sub-millisecond in-memory lookup; miss indicates recipient is offline."
+        },
+        "why": {
+          "vi": "Xác định nhanh nhánh giao tin trực tiếp hay chuyển sang Push Notification.",
+          "en": "Determines whether to push via socket or trigger offline notification."
+        }
       }
     },
     "chat-store": {
       "inspector": {
-        "what": { "vi": "Ghi bền vững tin nhắn vào kho theo conversation_id.", "en": "Durable write to Message Store keyed by conversation_id." },
-        "how": { "vi": "Ghi xong mới phát tin đi; lưu kèm client_msg_id để chống gửi trùng.", "en": "Persists before fan-out; stores client_msg_id for idempotency." },
-        "why": { "vi": "Mất kết nối giữa chừng không làm mất lịch sử hội thoại.", "en": "Ensures no message loss even if delivery fails mid-flight." }
+        "what": {
+          "vi": "Ghi bền vững tin nhắn vào kho theo conversation_id.",
+          "en": "Durable write to Message Store keyed by conversation_id."
+        },
+        "how": {
+          "vi": "Ghi xong mới phát tin đi; lưu kèm client_msg_id để chống gửi trùng.",
+          "en": "Persists before fan-out; stores client_msg_id for idempotency."
+        },
+        "why": {
+          "vi": "Mất kết nối giữa chừng không làm mất lịch sử hội thoại.",
+          "en": "Ensures no message loss even if delivery fails mid-flight."
+        }
+      }
+    },
+    "chat-push": {
+      "from": "chat_svc",
+      "to": "push_svc",
+      "label": {
+        "vi": "Khi B Offline",
+        "en": "When B Offline"
+      },
+      "style": "dashed",
+      "inspector": {
+        "what": {
+          "vi": "Nhánh chuyển hướng thông báo sang APNs/FCM khi người nhận không có kết nối WebSocket.",
+          "en": "Fallback notification path to APNs/FCM when recipient has no active WebSocket."
+        },
+        "how": {
+          "vi": "Gửi payload rút gọn sau khi đã ghi bền vững tin nhắn vào Message Store.",
+          "en": "Dispatches push alert after durably persisting the message in Message Store."
+        },
+        "why": {
+          "vi": "Không bao giờ làm mất tin nhắn của người dùng đang mất sóng hoặc tắt màn hình.",
+          "en": "Guarantees offline notification delivery while Message Store preserves exact history."
+        }
+      }
+    },
+    "push-recipient": {
+      "from": "push_svc",
+      "to": "recipient",
+      "label": {
+        "vi": "Đánh thức thiết bị",
+        "en": "Wake device"
+      },
+      "style": "dashed"
+    },
+    "gw2-recipient": {
+      "from": "gw2",
+      "to": "recipient",
+      "label": {
+        "vi": "Push qua WebSocket",
+        "en": "WebSocket Push"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Đường đẩy tin nhắn thời gian thực từ WS Gateway 2 xuống thiết bị của Người nhận B.",
+          "en": "Real-time message push from WS Gateway 2 down to Recipient B open socket."
+        },
+        "how": {
+          "vi": "Sử dụng kết nối TCP/WebSocket hai chiều đang mở sẵn mà không cần bắt tay lại.",
+          "en": "Streams frames over the already-established persistent WebSocket connection."
+        },
+        "why": {
+          "vi": "Đạt độ trễ đầu-cuối dưới 100 ms cho cuộc trò chuyện thời gian thực.",
+          "en": "Delivers sub-100ms end-to-end real-time chat latency."
+        }
       }
     }
   },
   "zones": {
     "backend": {
-      "nodeIds": ["gw1", "gw2", "chat_svc", "registry", "msg_store"],
-      "label": { "vi": "CỤM CHAT BACKEND", "en": "CHAT BACKEND" },
+      "nodeIds": [
+        "gw1",
+        "gw2",
+        "chat_svc",
+        "registry",
+        "msg_store"
+      ],
+      "label": {
+        "vi": "CỤM CHAT BACKEND",
+        "en": "CHAT BACKEND"
+      },
       "tone": "neutral"
     }
   },
   "scenes": {
     "s1-scale": {
-      "show": { "nodes": ["device", "gw1", "chat_svc", "msg_store"] },
+      "show": {
+        "nodes": [
+          "device",
+          "gw1",
+          "chat_svc",
+          "msg_store"
+        ]
+      },
       "state": {
-        "gw1": { "loadPct": 45 },
-        "chat_svc": { "loadPct": 50 },
-        "msg_store": { "loadPct": 55 }
+        "gw1": {
+          "loadPct": 45
+        },
+        "chat_svc": {
+          "loadPct": 50
+        },
+        "msg_store": {
+          "loadPct": 55
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Quy mô 20M kết nối", "en": "20M Connections Scale" },
+        "title": {
+          "vi": "Quy mô 20M kết nối",
+          "en": "20M Connections Scale"
+        },
         "lines": [
-          { "text": { "vi": "23.000 tin/giây liên tục", "en": "23,000 msgs/s steady" }, "tone": "plain" },
-          { "text": { "vi": "Độ trễ đích p99 ≤ 180 ms", "en": "Target p99 ≤ 180 ms" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "23.000 tin/giây liên tục",
+              "en": "23,000 msgs/s steady"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Độ trễ đích p99 ≤ 180 ms",
+              "en": "Target p99 ≤ 180 ms"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s2-split": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "gw1": { "loadPct": 48, "badge": { "text": { "vi": "Giữ socket", "en": "Stateful Edge" }, "tone": "default" } },
-        "gw2": { "loadPct": 48 },
-        "chat_svc": { "loadPct": 52, "highlighted": true, "badge": { "text": { "vi": "Stateless", "en": "Stateless" }, "tone": "ok" } },
-        "registry": { "loadPct": 28 },
-        "msg_store": { "loadPct": 58 }
+        "gw1": {
+          "loadPct": 48,
+          "badge": {
+            "text": {
+              "vi": "Giữ socket",
+              "en": "Stateful Edge"
+            },
+            "tone": "default"
+          }
+        },
+        "gw2": {
+          "loadPct": 48
+        },
+        "chat_svc": {
+          "loadPct": 52,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Stateless",
+              "en": "Stateless"
+            },
+            "tone": "ok"
+          }
+        },
+        "registry": {
+          "loadPct": 28
+        },
+        "msg_store": {
+          "loadPct": 58
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Tách Gateway và Chat Service", "en": "Gateway vs Chat Service" },
+        "title": {
+          "vi": "Tách Gateway và Chat Service",
+          "en": "Gateway vs Chat Service"
+        },
         "lines": [
-          { "text": { "vi": "Gateway giữ socket có trạng thái", "en": "Gateway holds stateful sockets" }, "tone": "amber" },
-          { "text": { "vi": "Chat Service xử lý không trạng thái", "en": "Chat Service stays stateless" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Gateway giữ socket có trạng thái",
+              "en": "Gateway holds stateful sockets"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Chat Service xử lý không trạng thái",
+              "en": "Chat Service stays stateless"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s3-registry": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "registry": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "user → gw_id", "en": "user → gw_id" }, "tone": "ok" } },
-        "chat_svc": { "loadPct": 50 }
+        "registry": {
+          "loadPct": 30,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "user → gw_id",
+              "en": "user → gw_id"
+            },
+            "tone": "ok"
+          }
+        },
+        "chat_svc": {
+          "loadPct": 50
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Session Registry", "en": "Session Registry" },
+        "title": {
+          "vi": "Session Registry",
+          "en": "Session Registry"
+        },
         "lines": [
-          { "text": { "vi": "Ánh xạ user_id → gateway_id", "en": "Maps user_id → gateway_id" }, "tone": "good" },
-          { "text": { "vi": "Làm mới TTL bằng heartbeat", "en": "Refreshed via heartbeats" }, "tone": "plain" }
+          {
+            "text": {
+              "vi": "Ánh xạ user_id → gateway_id",
+              "en": "Maps user_id → gateway_id"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Làm mới TTL bằng heartbeat",
+              "en": "Refreshed via heartbeats"
+            },
+            "tone": "plain"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s4-store": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "msg_store": { "loadPct": 62, "highlighted": true, "badge": { "text": { "vi": "seq_id + dedup", "en": "seq_id + dedup" }, "tone": "ok" } },
-        "chat_svc": { "loadPct": 55 }
+        "msg_store": {
+          "loadPct": 62,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "seq_id + dedup",
+              "en": "seq_id + dedup"
+            },
+            "tone": "ok"
+          }
+        },
+        "chat_svc": {
+          "loadPct": 55
+        }
       },
       "linkState": {
-        "chat-store": { "label": { "vi": "Ghi trước khi phát", "en": "Persist first" } }
+        "chat-store": {
+          "label": {
+            "vi": "Ghi trước khi phát",
+            "en": "Persist first"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Lưu trữ và thứ tự tin", "en": "Storage & Ordering" },
+        "title": {
+          "vi": "Lưu trữ và thứ tự tin",
+          "en": "Storage & Ordering"
+        },
         "lines": [
-          { "text": { "vi": "Phân mảnh theo conversation_id", "en": "Sharded by conversation_id" }, "tone": "plain" },
-          { "text": { "vi": "Khử trùng bằng client_msg_id", "en": "Deduplicated by client_msg_id" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Phân mảnh theo conversation_id",
+              "en": "Sharded by conversation_id"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Khử trùng bằng client_msg_id",
+              "en": "Deduplicated by client_msg_id"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s5-offline": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": [
+          "device",
+          "gw1",
+          "chat_svc",
+          "registry",
+          "msg_store",
+          "push_svc",
+          "recipient"
+        ],
+        "links": [
+          "device-gw1",
+          "gw1-chat",
+          "chat-reg",
+          "chat-store",
+          "chat-push",
+          "push-recipient"
+        ]
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "registry": { "loadPct": 25, "badge": { "text": { "vi": "Offline miss", "en": "Offline miss" }, "tone": "warn" } },
-        "msg_store": { "loadPct": 60, "highlighted": true, "badge": { "text": { "vi": "Sync seq > N", "en": "Sync seq > N" }, "tone": "ok" } }
+        "registry": {
+          "loadPct": 25,
+          "badge": {
+            "text": {
+              "vi": "Offline miss",
+              "en": "Offline miss"
+            },
+            "tone": "warn"
+          }
+        },
+        "msg_store": {
+          "loadPct": 60,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Sync seq > N",
+              "en": "Sync seq > N"
+            },
+            "tone": "ok"
+          }
+        },
+        "push_svc": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Gửi Push khi Offline",
+              "en": "Offline Push"
+            },
+            "tone": "ok"
+          }
+        },
+        "recipient": {
+          "badge": {
+            "text": {
+              "vi": "Kéo bù theo seq_id",
+              "en": "Sync by seq_id"
+            },
+            "tone": "ok"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Đồng bộ ngoại tuyến", "en": "Offline Sync" },
+        "title": {
+          "vi": "Đồng bộ ngoại tuyến",
+          "en": "Offline Sync"
+        },
         "lines": [
-          { "text": { "vi": "Lưu kho trước, gửi Push đánh thức", "en": "Store first, send Wakeup Push" }, "tone": "plain" },
-          { "text": { "vi": "Nối lại kéo tin có seq_id > last", "en": "Reconnect fetches seq_id > last" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Lưu kho trước, gửi Push đánh thức",
+              "en": "Store first, send Wakeup Push"
+            },
+            "tone": "plain"
+          },
+          {
+            "text": {
+              "vi": "Nối lại kéo tin có seq_id > last",
+              "en": "Reconnect fetches seq_id > last"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s6-storm-live": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "backend"
+      ],
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Sự cố WS Gateway 1 (t = 15 s)", "en": "WS Gateway 1 Crash (t = 15 s)" },
+        "title": {
+          "vi": "Sự cố WS Gateway 1 (t = 15 s)",
+          "en": "WS Gateway 1 Crash (t = 15 s)"
+        },
         "lines": [
-          { "text": { "vi": "200.000 socket rớt cùng lúc", "en": "200k sockets drop together" }, "tone": "bad" },
-          { "text": { "vi": "Retry tức thì gây Reconnect Storm", "en": "Immediate retry triggers storm" }, "tone": "amber" }
+          {
+            "text": {
+              "vi": "200.000 socket rớt cùng lúc",
+              "en": "200k sockets drop together"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Retry tức thì gây Reconnect Storm",
+              "en": "Immediate retry triggers storm"
+            },
+            "tone": "amber"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s7-group": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": [
+          "device",
+          "gw1",
+          "gw2",
+          "chat_svc",
+          "registry",
+          "msg_store",
+          "recipient"
+        ],
+        "links": [
+          "device-gw1",
+          "gw1-chat",
+          "chat-reg",
+          "chat-store",
+          "gw2-chat",
+          "gw2-recipient"
+        ]
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "chat_svc": { "loadPct": 65, "highlighted": true },
-        "msg_store": { "loadPct": 60, "badge": { "text": { "vi": "Lưu 1 bản", "en": "Write once" }, "tone": "ok" } },
-        "registry": { "loadPct": 45, "badge": { "text": { "vi": "Tra N thành viên", "en": "Lookup N members" }, "tone": "default" } }
+        "chat_svc": {
+          "loadPct": 65,
+          "highlighted": true
+        },
+        "msg_store": {
+          "loadPct": 60,
+          "badge": {
+            "text": {
+              "vi": "Lưu 1 bản",
+              "en": "Write once"
+            },
+            "tone": "ok"
+          }
+        },
+        "registry": {
+          "loadPct": 45,
+          "badge": {
+            "text": {
+              "vi": "Tra N thành viên",
+              "en": "Lookup N members"
+            },
+            "tone": "default"
+          }
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Chat nhóm & Presence", "en": "Group Chat & Presence" },
+        "title": {
+          "vi": "Chat nhóm & Presence",
+          "en": "Group Chat & Presence"
+        },
         "lines": [
-          { "text": { "vi": "Lưu tin 1 lần theo conversation_id", "en": "Persist once per conversation_id" }, "tone": "good" },
-          { "text": { "vi": "Presence dùng TTL ngắn, không lưu DB", "en": "Ephemeral presence uses short TTL" }, "tone": "plain" }
+          {
+            "text": {
+              "vi": "Lưu tin 1 lần theo conversation_id",
+              "en": "Persist once per conversation_id"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Presence dùng TTL ngắn, không lưu DB",
+              "en": "Ephemeral presence uses short TTL"
+            },
+            "tone": "plain"
+          }
         ],
         "position": "bottom-right"
       }
     },
     "s8-recap": {
-      "show": { "nodes": "*" },
-      "zones": ["backend"],
+      "show": {
+        "nodes": [
+          "device",
+          "gw1",
+          "gw2",
+          "chat_svc",
+          "registry",
+          "msg_store",
+          "recipient"
+        ],
+        "links": [
+          "device-gw1",
+          "gw1-chat",
+          "chat-reg",
+          "chat-store",
+          "gw2-chat",
+          "gw2-recipient"
+        ]
+      },
+      "zones": [
+        "backend"
+      ],
       "state": {
-        "gw1": { "loadPct": 45 },
-        "gw2": { "loadPct": 45 },
-        "chat_svc": { "loadPct": 50 },
-        "registry": { "loadPct": 25 },
-        "msg_store": { "loadPct": 55 }
+        "gw1": {
+          "loadPct": 45
+        },
+        "gw2": {
+          "loadPct": 45
+        },
+        "chat_svc": {
+          "loadPct": 50
+        },
+        "registry": {
+          "loadPct": 25
+        },
+        "msg_store": {
+          "loadPct": 55
+        }
       },
       "packets": "auto",
       "noteCard": {
-        "title": { "vi": "Kiến trúc Chat hoàn chỉnh", "en": "Complete Chat Architecture" },
+        "title": {
+          "vi": "Kiến trúc Chat hoàn chỉnh",
+          "en": "Complete Chat Architecture"
+        },
         "lines": [
-          { "text": { "vi": "Backoff + Jitter chặn Reconnect Storm", "en": "Backoff + Jitter stops storms" }, "tone": "good" },
-          { "text": { "vi": "seq_id + client_msg_id giữ thứ tự", "en": "seq_id + client_msg_id ensure order" }, "tone": "good" }
+          {
+            "text": {
+              "vi": "Backoff + Jitter chặn Reconnect Storm",
+              "en": "Backoff + Jitter stops storms"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "seq_id + client_msg_id giữ thứ tự",
+              "en": "seq_id + client_msg_id ensure order"
+            },
+            "tone": "good"
+          }
         ],
         "position": "bottom-right"
       }
@@ -271,19 +837,68 @@
       "controls": {
         "timeline": true,
         "knobs": [
-          { "node": "gw1", "key": "replicas" },
-          { "node": "chat_svc", "key": "replicas" },
-          { "node": "msg_store", "key": "shards" }
+          {
+            "node": "gw1",
+            "key": "replicas"
+          },
+          {
+            "node": "chat_svc",
+            "key": "replicas"
+          },
+          {
+            "node": "msg_store",
+            "key": "shards"
+          }
         ],
         "tracer": true
       },
       "telemetry": [
-        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
-        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 180 } },
-        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 120,
+            "badAbove": 180
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
       ],
-      "slo": [{ "metric": "p99", "value": 180 }],
-      "focus": { "nodes": ["gw1", "gw2", "chat_svc"] }
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 180
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "gw1",
+          "gw2",
+          "chat_svc"
+        ]
+      }
     }
   }
 }

@@ -43,8 +43,9 @@ assert(
   'scene của step live-sim có packets rỗng và loadPct = 0'
 );
 assert(
-  Boolean(s103!.attribution?.text.vi.includes('System Design Core') && s103!.attribution?.href),
-  'S1-03 có dòng nguồn attribution từ SDC'
+  s103!.attribution?.href === 'https://www.systemdesigncore.site/phase/phase-1/lesson/lesson-3-data-flow-and-bottlenecks' &&
+    Boolean(s103!.story?.vi),
+  'S1-03 có link nguồn trực tiếp tới trang đích systemdesigncore.site và nội dung tab Câu chuyện & Tư duy'
 );
 assert(
   s103!.steps.filter((st) => st.stageMode === 'isometric').every((st) => (st.scene?.nodes.length ?? 0) >= 3 && !st.codeTrace),

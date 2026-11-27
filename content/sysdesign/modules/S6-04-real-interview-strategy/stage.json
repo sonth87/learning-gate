@@ -6,37 +6,139 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "refs",
-        "title": { "vi": "Bốn hệ thống thực tế và nút thắt trọng tâm", "en": "Four Real Systems & Core Challenges" },
         "names": [
-          { "id": "sys1", "name": "Twitter / Social Feed", "target": "c1" },
-          { "id": "sys2", "name": "YouTube / Video", "target": "c2" },
-          { "id": "sys3", "name": "WhatsApp / Messaging", "target": "c3" },
-          { "id": "sys4", "name": "Google Drive / Sync", "target": "c4" }
+          {
+            "id": "sys1",
+            "name": "Twitter / Social Feed",
+            "targetId": "c1"
+          },
+          {
+            "id": "sys2",
+            "name": "YouTube / Video",
+            "targetId": "c2"
+          },
+          {
+            "id": "sys3",
+            "name": "WhatsApp / Messaging",
+            "targetId": "c3"
+          },
+          {
+            "id": "sys4",
+            "name": "Google Drive / Sync",
+            "targetId": "c4"
+          }
         ],
         "objects": [
-          { "id": "c1", "type": "Bài toán trọng tâm", "value": "Hybrid Fan-out, Redis Timeline Cache, tránh khuếch đại ghi ở người nổi tiếng", "tone": "rose" },
-          { "id": "c2", "type": "Bài toán trọng tâm", "value": "Encoding bất đồng bộ đa độ phân giải, Object Storage, phân phối biên qua CDN", "tone": "amber" },
-          { "id": "c3", "type": "Bài toán trọng tâm", "value": "WebSocket Gateway giữ kết nối, Presence, Queue cho ngoại tuyến, ACK giao nhận", "tone": "green" },
-          { "id": "c4", "type": "Bài toán trọng tâm", "value": "Chia khối 4 MB + SHA-256, Delta Sync, chống ghi đè mất dữ liệu khi xung đột", "tone": "blue" }
-        ]
+          {
+            "id": "c1",
+            "value": "Bài toán trọng tâm",
+            "tone": "rose",
+            "typeTag": "HYBRID FAN-OUT",
+            "fields": [
+              "Hybrid Fan-out, Redis Timeline Cache, tránh khuếch đại ghi ở người nổi tiếng"
+            ]
+          },
+          {
+            "id": "c2",
+            "value": "Bài toán trọng tâm",
+            "tone": "amber",
+            "typeTag": "DAG + CDN EDGE",
+            "fields": [
+              "Encoding bất đồng bộ đa độ phân giải, Object Storage, phân phối biên qua CDN"
+            ]
+          },
+          {
+            "id": "c3",
+            "value": "Bài toán trọng tâm",
+            "tone": "green",
+            "typeTag": "WS + PUB/SUB",
+            "fields": [
+              "WebSocket Gateway giữ kết nối, Presence, Queue cho ngoại tuyến, ACK giao nhận"
+            ]
+          },
+          {
+            "id": "c4",
+            "value": "Bài toán trọng tâm",
+            "tone": "blue",
+            "typeTag": "CHUNK + DIFF",
+            "fields": [
+              "Chia khối 4 MB + SHA-256, Delta Sync, chống ghi đè mất dữ liệu khi xung đột"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Bốn hệ thống thực tế và nút thắt trọng tâm",
+          "en": "Four Real Systems & Core Challenges"
+        }
       }
     },
     "s2-twitter": {
       "mode": "memory-2d",
       "memory": {
         "kind": "tree",
-        "title": { "vi": "Twitter: Chiến lược Hybrid Fan-out theo số người theo dõi", "en": "Twitter Hybrid Fan-out Strategy" },
+        "title": {
+          "vi": "Twitter: Chiến lược Hybrid Fan-out theo số người theo dõi",
+          "en": "Twitter Hybrid Fan-out Strategy"
+        },
         "nodes": [
-          { "id": "post", "label": "Post Service", "sub": "2.300 tweet/s · Lưu Post DB & đẩy Kafka", "layer": 0, "tone": "blue" },
-          { "id": "normal", "label": "Tài khoản thường (< 10K)", "sub": "Fan-out on Write → Redis Sorted Set", "layer": 1, "tone": "green" },
-          { "id": "celeb", "label": "Người nổi tiếng (> 10K)", "sub": "Fan-out on Read → Trộn khi tải bảng tin", "layer": 1, "tone": "amber" },
-          { "id": "read", "label": "Timeline Service", "sub": "36.000 req/s đỉnh · Đọc Cache < 50 ms", "layer": 2, "tone": "purple" }
+          {
+            "id": "post",
+            "label": "Post Service",
+            "sub": "2.300 tweet/s · Lưu Post DB & đẩy Kafka",
+            "tone": "blue",
+            "x": 0,
+            "y": -78
+          },
+          {
+            "id": "normal",
+            "label": "Tài khoản thường (< 10K)",
+            "sub": "Fan-out on Write → Redis Sorted Set",
+            "tone": "green",
+            "x": -86,
+            "y": 0
+          },
+          {
+            "id": "celeb",
+            "label": "Người nổi tiếng (> 10K)",
+            "sub": "Fan-out on Read → Trộn khi tải bảng tin",
+            "tone": "amber",
+            "x": 86,
+            "y": 0
+          },
+          {
+            "id": "read",
+            "label": "Timeline Service",
+            "sub": "36.000 req/s đỉnh · Đọc Cache < 50 ms",
+            "tone": "purple",
+            "x": 0,
+            "y": 78
+          }
         ],
         "edges": [
-          { "from": "post", "to": "normal", "label": "đẩy trước" },
-          { "from": "post", "to": "celeb", "label": "bỏ qua đẩy" },
-          { "from": "normal", "to": "read", "label": "đọc sẵn" },
-          { "from": "celeb", "to": "read", "label": "kéo & trộn" }
+          {
+            "from": "post",
+            "to": "normal",
+            "label": "đẩy trước"
+          },
+          {
+            "from": "post",
+            "to": "celeb",
+            "label": "bỏ qua đẩy"
+          },
+          {
+            "from": "normal",
+            "to": "read",
+            "label": "đọc sẵn"
+          },
+          {
+            "from": "celeb",
+            "to": "read",
+            "label": "kéo & trộn"
+          }
         ]
       }
     },
@@ -44,12 +146,41 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "tape",
-        "title": { "vi": "YouTube: Đường ống Upload bất đồng bộ và phân phối CDN", "en": "YouTube Encoding Pipeline & CDN" },
+        "title": {
+          "vi": "YouTube: Đường ống Upload bất đồng bộ và phân phối CDN",
+          "en": "YouTube Encoding Pipeline & CDN"
+        },
         "cells": [
-          { "id": "y1", "label": "1. Upload Thô", "value": "500K video/ngày (~1 GB/video)", "note": "Lưu ngay vào Origin Object Storage", "tone": "blue" },
-          { "id": "y2", "label": "2. Encoding Worker", "value": "360p · 720p · 1080p · 4K", "note": "Xử lý bất đồng bộ, tách phân đoạn HLS/DASH", "tone": "amber" },
-          { "id": "y3", "label": "3. CDN Edge Cache", "value": "Top 10% video thịnh hành", "note": "Đẩy chủ động ra biên, giảm tải Origin", "tone": "green" },
-          { "id": "y4", "label": "4. Adaptive Bitrate", "value": "Chuyển chất lượng theo mạng", "note": "Giữ phát mượt không giật khung hình", "tone": "purple" }
+          "1. Upload Thô: 500K video/ngày (~1 GB/video)",
+          "2. Encoding Worker: 360p · 720p · 1080p · 4K",
+          "3. CDN Edge Cache: Top 10% video thịnh hành",
+          "4. Adaptive Bitrate: Chuyển chất lượng theo mạng"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Lưu ngay vào Origin Object Storage",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Xử lý bất đồng bộ, tách phân đoạn HLS/DASH",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Đẩy chủ động ra biên, giảm tải Origin",
+            "tone": "green"
+          },
+          {
+            "index": 3,
+            "label": "Giữ phát mượt không giật khung hình",
+            "tone": "purple"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
         ]
       }
     },
@@ -57,17 +188,60 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "tree",
-        "title": { "vi": "WhatsApp: Luồng giao nhận thời gian thực và ngoại tuyến", "en": "WhatsApp Real-time & Offline Delivery" },
+        "title": {
+          "vi": "WhatsApp: Luồng giao nhận thời gian thực và ngoại tuyến",
+          "en": "WhatsApp Real-time & Offline Delivery"
+        },
         "nodes": [
-          { "id": "sender", "label": "Người gửi", "sub": "Kết nối WebSocket bền vững", "layer": 0, "tone": "blue" },
-          { "id": "msg", "label": "Message Service", "sub": "Ghi thứ tự hội thoại · Tra Presence", "layer": 1, "tone": "purple" },
-          { "id": "online", "label": "Trực tuyến", "sub": "Đẩy qua Gateway đích · Chờ ACK", "layer": 2, "tone": "green" },
-          { "id": "offline", "label": "Ngoại tuyến", "sub": "Lưu Queue bền vững · Push thông báo", "layer": 2, "tone": "amber" }
+          {
+            "id": "sender",
+            "label": "Người gửi",
+            "sub": "Kết nối WebSocket bền vững",
+            "tone": "blue",
+            "x": 0,
+            "y": -78
+          },
+          {
+            "id": "msg",
+            "label": "Message Service",
+            "sub": "Ghi thứ tự hội thoại · Tra Presence",
+            "tone": "purple",
+            "x": 0,
+            "y": 0
+          },
+          {
+            "id": "online",
+            "label": "Trực tuyến",
+            "sub": "Đẩy qua Gateway đích · Chờ ACK",
+            "tone": "green",
+            "x": -86,
+            "y": 78
+          },
+          {
+            "id": "offline",
+            "label": "Ngoại tuyến",
+            "sub": "Lưu Queue bền vững · Push thông báo",
+            "tone": "amber",
+            "x": 86,
+            "y": 78
+          }
         ],
         "edges": [
-          { "from": "sender", "to": "msg", "label": "gửi tin" },
-          { "from": "msg", "to": "online", "label": "có kết nối" },
-          { "from": "msg", "to": "offline", "label": "ngoại tuyến" }
+          {
+            "from": "sender",
+            "to": "msg",
+            "label": "gửi tin"
+          },
+          {
+            "from": "msg",
+            "to": "online",
+            "label": "có kết nối"
+          },
+          {
+            "from": "msg",
+            "to": "offline",
+            "label": "ngoại tuyến"
+          }
         ]
       }
     },
@@ -75,29 +249,95 @@
       "mode": "memory-2d",
       "memory": {
         "kind": "refs",
-        "title": { "vi": "Google Drive: Chia khối 4 MB, Delta Sync và Xung đột", "en": "Google Drive Chunking & Conflict" },
         "names": [
-          { "id": "d1", "name": "Chia khối (Chunking)", "target": "o1" },
-          { "id": "d2", "name": "Khử trùng lặp (Dedup)", "target": "o2" },
-          { "id": "d3", "name": "Xung đột ngoại tuyến", "target": "o3" }
+          {
+            "id": "d1",
+            "name": "Chia khối (Chunking)",
+            "targetId": "o1"
+          },
+          {
+            "id": "d2",
+            "name": "Khử trùng lặp (Dedup)",
+            "targetId": "o2"
+          },
+          {
+            "id": "d3",
+            "name": "Xung đột ngoại tuyến",
+            "targetId": "o3"
+          }
         ],
         "objects": [
-          { "id": "o1", "type": "Cơ chế", "value": "Cắt tệp thành khối 4 MB, tính SHA-256, chỉ tải lên khối có mã băm thay đổi", "tone": "blue" },
-          { "id": "o2", "type": "Lợi ích", "value": "Cùng mã SHA-256 chỉ lưu một bản trong Object Storage, giảm mạnh dung lượng", "tone": "green" },
-          { "id": "o3", "type": "An toàn dữ liệu", "value": "Giữ cả hai phiên bản và tạo bản sao xung đột cho người dùng tự gộp", "tone": "amber" }
-        ]
+          {
+            "id": "o1",
+            "value": "Cắt tệp thành khối 4 MB, tính SHA-256, chỉ tải lên khối có mã băm thay đổi",
+            "tone": "blue",
+            "typeTag": "Cơ chế"
+          },
+          {
+            "id": "o2",
+            "value": "Cùng mã SHA-256 chỉ lưu một bản trong Object Storage, giảm mạnh dung lượng",
+            "tone": "green",
+            "typeTag": "Lợi ích"
+          },
+          {
+            "id": "o3",
+            "value": "An toàn dữ liệu",
+            "tone": "amber",
+            "typeTag": "CONFLICT MERGE",
+            "fields": [
+              "Giữ cả hai phiên bản và tạo bản sao xung đột cho người dùng tự gộp"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Google Drive: Chia khối 4 MB, Delta Sync và Xung đột",
+          "en": "Google Drive Chunking & Conflict"
+        }
       }
     },
     "s6-signals": {
       "mode": "memory-2d",
       "memory": {
         "kind": "tape",
-        "title": { "vi": "Nhịp độ 45 phút và tín hiệu đạt chuẩn phỏng vấn", "en": "45-Minute Pacing & Interview Signals" },
+        "title": {
+          "vi": "Nhịp độ 45 phút và tín hiệu đạt chuẩn phỏng vấn",
+          "en": "45-Minute Pacing & Interview Signals"
+        },
         "cells": [
-          { "id": "p1", "label": "0–7 phút: Scope", "value": "Chốt tính năng & ngoài phạm vi", "note": "Tránh vẽ lan man các tính năng phụ", "tone": "rose" },
-          { "id": "p2", "label": "7–14 phút: Numbers", "value": "Tính đỉnh tải, lưu trữ, băng thông", "note": "Chỉ ra ngay nút thắt cần giải quyết", "tone": "amber" },
-          { "id": "p3", "label": "14–33 phút: API & K", "value": "Hợp đồng API & sơ đồ tổng thể", "note": "Gắn Cache, Queue, CDN vào đúng chỗ", "tone": "blue" },
-          { "id": "p4", "label": "33–45 phút: Elaborate", "value": "Đào sâu nút thắt & đánh đổi", "note": "Giải thích lỗi, giám sát và chi phí", "tone": "green" }
+          "0–7 phút: Scope: Chốt tính năng & ngoài phạm vi",
+          "7–14 phút: Numbers: Tính đỉnh tải, lưu trữ, băng thông",
+          "14–33 phút: API & K: Hợp đồng API & sơ đồ tổng thể",
+          "33–45 phút: Elaborate: Đào sâu nút thắt & đánh đổi"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Tránh vẽ lan man các tính năng phụ",
+            "tone": "rose"
+          },
+          {
+            "index": 1,
+            "label": "Chỉ ra ngay nút thắt cần giải quyết",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Gắn Cache, Queue, CDN vào đúng chỗ",
+            "tone": "blue"
+          },
+          {
+            "index": 3,
+            "label": "Giải thích lỗi, giám sát và chi phí",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          1,
+          3
         ]
       }
     }
