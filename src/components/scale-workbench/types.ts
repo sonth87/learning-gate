@@ -155,6 +155,10 @@ export interface StagePacket {
   arrivalFx?: 'ok' | 'fail' | 'none';
   /** Biến thể hình dáng & vận tốc theo chuẩn Designed-to-Scale */
   variant?: 'default' | 'slow' | 'heavy' | 'msg' | 'poison' | 'ping' | 'kill';
+  /** Thời điểm (giây tính từ lúc vẽ xong dây) hạt bắt đầu xuất phát lần đầu tiên để tạo hành trình nối tiếp qua từng chặng */
+  startDelaySec?: number;
+  /** Tổng chu kỳ lặp lại (giây) của một hành trình đa chặng; trong khoảng sau khi hoàn tất chặng này tới hết periodSec hạt sẽ ẩn để nhường cho các chặng kế tiếp */
+  periodSec?: number;
 }
 
 export interface StageZoneSlab {

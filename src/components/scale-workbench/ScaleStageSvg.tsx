@@ -2501,11 +2501,34 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           : 0;
         const fxDurSec =
           fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
-        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
-
-        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const activeCycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+        const startDelay = pkt.startDelaySec ?? 0;
+        if (secNow < startDelay) {
+          gEl.setAttribute('opacity', '0');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          return;
+        }
+        const effectivePeriod =
+          pkt.periodSec && pkt.periodSec > activeCycleSec
+            ? pkt.periodSec
+            : activeCycleSec;
+        const phaseOffsetSec =
+          pkt.startDelaySec !== undefined ? 0 : (pkt.offset ?? 0) * effectivePeriod;
         const localT =
-          (((secNow + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+          (((secNow - startDelay + phaseOffsetSec) % effectivePeriod) +
+            effectivePeriod) %
+          effectivePeriod;
+        if (localT >= activeCycleSec) {
+          gEl.setAttribute('opacity', '0');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          return;
+        }
 
         // Với hạt Response đi ngược (pkt.reverse === true): chờ xử lý tại đích (dEnd) suốt holdSec trước,
         // sau đó mới xuất phát từ đích (dEnd) đi ngược về nguồn (dStart) và tỏa vòng sóng fx-ok ngay khi chạm nguồn!
@@ -2970,11 +2993,34 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           : 0;
         const fxDurSec =
           fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
-        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
-
-        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const activeCycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+        const startDelay = pkt.startDelaySec ?? 0;
+        if (sec < startDelay) {
+          gEl.setAttribute('opacity', '0');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          continue;
+        }
+        const effectivePeriod =
+          pkt.periodSec && pkt.periodSec > activeCycleSec
+            ? pkt.periodSec
+            : activeCycleSec;
+        const phaseOffsetSec =
+          pkt.startDelaySec !== undefined ? 0 : (pkt.offset ?? 0) * effectivePeriod;
         const localT =
-          (((sec + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+          (((sec - startDelay + phaseOffsetSec) % effectivePeriod) +
+            effectivePeriod) %
+          effectivePeriod;
+        if (localT >= activeCycleSec) {
+          gEl.setAttribute('opacity', '0');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          continue;
+        }
 
         if (pkt.reverse && !hasBounce) {
           if (localT < holdSec) {

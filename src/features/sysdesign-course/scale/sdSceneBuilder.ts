@@ -590,15 +590,40 @@ function buildCausalPacketsForScene(
     return !isColdOrMiss && (n.loadPct ?? 0) < 80;
   });
 
+  // Bước 0: Tính thứ bậc topo (rank 0..R) của từng node để lên lịch hành trình hạt đi tuần tự từng chặng:
+  // Chặng 0 (Client -> API) đi xong mới tới Chặng 1 (API -> DB), DB xử lý xong mới trả hạt xanh lá từ DB -> API rồi mới từ API -> Client!
+  const rankOf = new Map<string, number>();
+  for (const n of nodes) rankOf.set(n.id, 0);
+  for (let pass = 0; pass < nodes.length; pass++) {
+    let changed = false;
+    for (const l of links) {
+      if (l.style === 'off' || l.style === 'cut' || l.from === l.to) continue;
+      const rf = rankOf.get(l.from) ?? 0;
+      const rt = rankOf.get(l.to) ?? 0;
+      if (rf + 1 > rt) {
+        rankOf.set(l.to, rf + 1);
+        changed = true;
+      }
+    }
+    if (!changed) break;
+  }
+
   // Bước 1: Phân loại từng đường nối và chấm điểm độ nghẽn/độ trễ cục bộ (hopSlowLevel: 0 | 1 | 2)
+  // Lưu ý quan trọng:
+  // - Khi tải bình thường (loadPct < 68%, thanh tải màu xanh lá) và không có dấu hiệu lỗi/nghẽn (style !== 'danger', không có cảnh báo Miss/Quá tải):
+  //   hopSlowLevel = 0 (hoặc nếu chặng DB có nhãn >= 180 ms thì chỉ đi chậm hơn trên chặng DB nhưng VẪN giữ tỷ lệ bảo toàn 1 Request vào = 1 Response ra!).
+  // - Chỉ khi node thực sự bận/quá tải (loadPct >= 68% có hàng đợi vàng, hoặc loadPct >= 85%, hoặc style === 'danger', hoặc >= 300 ms):
+  //   mới kích hoạt chế độ nghẽn bất đối xứng (nhiều Request dồn vào hàng đợi trong khi Response thoát ra chậm và thưa).
   interface LinkMeta {
     link: StageLink;
     fromNode?: StageNode;
     toNode?: StageNode;
+    hopRank: number;
     toLoad: number;
     fromLoad: number;
     toDead: boolean;
     parsedMs: number;
+    isExplicitRetryContext: boolean;
     isDlqTarget: boolean;
     isHardBlock: boolean;
     isHeartbeatLink: boolean;
@@ -611,17 +636,19 @@ function buildCausalPacketsForScene(
     isCacheTarget: boolean;
     isCacheColdOrMiss: boolean;
     isDbOrStorageTarget: boolean;
+    isLatencyDemoHop: boolean;
     hopSlowLevel: 0 | 1 | 2;
   }
 
   const metas: LinkMeta[] = [];
-  const metaByLinkId = new Map<string, LinkMeta>();
   const syncOutByNode = new Map<string, LinkMeta[]>();
+  let maxSyncHopRank = 0;
 
   for (const l of links) {
     if (l.style === 'off' || l.style === 'cut') continue;
     const fromNode = nodeById.get(l.from);
     const toNode = nodeById.get(l.to);
+    const hopRank = rankOf.get(l.from) ?? 0;
     const toLoad = stateMap?.[l.to]?.loadPct ?? toNode?.loadPct ?? 0;
     const fromLoad = stateMap?.[l.from]?.loadPct ?? fromNode?.loadPct ?? 0;
     const toDead = Boolean(stateMap?.[l.to]?.dead ?? toNode?.dead);
@@ -634,12 +661,12 @@ function buildCausalPacketsForScene(
     const toBadgeText = `${toNode?.badge?.text.vi ?? ''} ${toNode?.badge?.text.en ?? ''}`.toLowerCase();
     const combinedText = `${linkLabelText} ${toBadgeText}`;
     const parsedMs = Math.max(parseMs(linkLabelText), parseMs(toBadgeText));
+    const isExplicitRetryContext = /retry|retries|gọi lại|thử lại|backoff|jitter/i.test(combinedText);
 
     const isDlqTarget =
       /dlq|dead.?letter|poison/i.test(toIdLower) ||
       /dlq|thư chết|poison/i.test(toLabelLower) ||
       /dlq|thư chết|poison/i.test(linkLabelText);
-    // Lưu ý: style === 'danger' trên link DB/Server biểu diễn đường nghẽn/chậm (500 ms, 197 req/s), KHÔNG phải chặn 100% gói!
     const isHardBlock =
       toDead ||
       /429|reject|từ chối|drop\b|chặn|breaker\s*open|ngắt mạch/i.test(combinedText);
@@ -684,20 +711,28 @@ function buildCausalPacketsForScene(
       /multipart|upload|presigned put|tải thẳng|batch|bulk|100 rows|flood/i.test(linkLabelText) ||
       (fromIdLower === 'client' && /blob|s3|storage/i.test(toIdLower));
 
+    // Chặng có ghi độ trễ minh hoạ (ví dụ 200 ms ở S0-03 s1-overview) hoặc nhánh Cache Miss:
+    // Hạt vẫn đi theo tỷ lệ 1:1 ( nếu toLoad < 75 và không phải danger), nhưng chặng DB đó chạy chậm hơn (variant: 'slow')
+    const isLatencyDemoHop =
+      parsedMs >= 120 ||
+      isCacheColdOrMiss ||
+      (isDbOrStorageTarget && hasWarmCacheInScene) ||
+      /khi miss|on miss|flushed|mất dữ liệu|nhảy lên/i.test(combinedText);
+
+    // Chỉ coi là nghẽn bất đối xứng (nhiều hạt vào, ít hạt xanh ra) khi tải thực sự cao (toLoad >= 68% có hàng đợi) hoặc link danger / >= 300ms / cảnh báo quá tải!
     let hopSlowLevel: 0 | 1 | 2 = 0;
     if (
       toLoad >= 85 ||
       isDangerLink ||
-      parsedMs >= 250 ||
+      parsedMs >= 300 ||
       /quá tải|overload|nghẽn|bottleneck|stampede|miss storm|500\s*ms|400\s*ms/i.test(combinedText)
     ) {
       hopSlowLevel = 2;
     } else if (
-      toLoad >= 48 ||
-      parsedMs >= 100 ||
+      toLoad >= 68 ||
       isCacheColdOrMiss ||
-      (isDbOrStorageTarget && !isSyncWriteWithAck && (hasWarmCacheInScene || toLoad >= 35 || parsedMs >= 40)) ||
-      /200\s*ms|flushed|mất dữ liệu|khi miss|on miss|chậm|slow|lag|nhảy lên/i.test(combinedText)
+      (parsedMs >= 180 && toLoad >= 55) ||
+      /flushed|mất dữ liệu/i.test(combinedText)
     ) {
       hopSlowLevel = 1;
     }
@@ -706,10 +741,12 @@ function buildCausalPacketsForScene(
       link: l,
       fromNode,
       toNode,
+      hopRank,
       toLoad,
       fromLoad,
       toDead,
       parsedMs,
+      isExplicitRetryContext,
       isDlqTarget,
       isHardBlock,
       isHeartbeatLink,
@@ -722,10 +759,10 @@ function buildCausalPacketsForScene(
       isCacheTarget,
       isCacheColdOrMiss,
       isDbOrStorageTarget,
+      isLatencyDemoHop,
       hopSlowLevel,
     };
     metas.push(meta);
-    metaByLinkId.set(l.id, meta);
 
     const isSyncCall =
       l.style !== 'dashed' &&
@@ -735,6 +772,7 @@ function buildCausalPacketsForScene(
       !isHeartbeatLink &&
       !isDlqTarget;
     if (isSyncCall) {
+      if (hopRank > maxSyncHopRank) maxSyncHopRank = hopRank;
       const list = syncOutByNode.get(l.from) ?? [];
       list.push(meta);
       syncOutByNode.set(l.from, list);
@@ -770,12 +808,42 @@ function buildCausalPacketsForScene(
     return maxSlow;
   };
 
+  // Bước 2.5: Lên lịch thời gian hành trình nối tiếp theo tầng (Topological Sequential Wave Schedule):
+  // - Tại t = 0 khi mô hình vừa load xong: CHỈ chặng đầu tiên (rank 0: Client -> LB/API) phát hạt Request.
+  // - Khi hạt Request đi hết chặng r tới node tiếp theo, chặng r + 1 mới bắt đầu phát hạt đi tiếp.
+  // - Khi chạm tầng sâu nhất (ví dụ Database hoặc Cache), hạt Response xanh lá (#9fd28f) mới bắt đầu đi ngược từ tầng sâu nhất về dần tới rank 0!
+  const legDurByRank = new Map<number, number>();
+  for (let r = 0; r <= maxSyncHopRank; r++) {
+    const rankSlow = metas.some(
+      (m) => m.hopRank === r && (m.hopSlowLevel >= 1 || m.isLatencyDemoHop)
+    );
+    legDurByRank.set(r, rankSlow ? 1.02 : 0.68);
+  }
+  const fwdStartByRank = new Map<number, number>();
+  let accT = 0;
+  for (let r = 0; r <= maxSyncHopRank; r++) {
+    fwdStartByRank.set(r, Number(accT.toFixed(2)));
+    accT += (legDurByRank.get(r) ?? 0.68) + 0.06;
+  }
+  const retStartByRank = new Map<number, number>();
+  let retAccT = accT + 0.14;
+  for (let r = maxSyncHopRank; r >= 0; r--) {
+    retStartByRank.set(r, Number(retAccT.toFixed(2)));
+    retAccT += (legDurByRank.get(r) ?? 0.68) + 0.06;
+  }
+  const wavePeriodSec = Number(Math.max(2.6, retAccT + 0.45).toFixed(2));
+  const halfWaveSec = Number((wavePeriodSec / 2).toFixed(2));
+
   // Bước 3: Sinh hạt đi xuôi (Request / Slow Query / Async Msg) và hạt đi ngược (Green Response #9fd28f)
   for (let li = 0; li < metas.length; li++) {
     const m = metas[li];
     const l = m.link;
     const downstreamSlow = getDownstreamSlowLevel(l.to);
     const effectiveSlow = Math.max(m.hopSlowLevel, downstreamSlow) as 0 | 1 | 2;
+    const r = Math.min(m.hopRank, maxSyncHopRank);
+    const fwdDelay0 = fwdStartByRank.get(r) ?? 0;
+    const retDelay0 = retStartByRank.get(r) ?? Number((fwdDelay0 + 0.85).toFixed(2));
+    const slowFwdKind: PacketKind = m.isExplicitRetryContext ? 'retry' : 'request';
 
     const pushPkt = (
       k: number,
@@ -800,6 +868,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.15,
         arrivalFx: 'fail',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'error',
@@ -808,6 +878,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.15,
         arrivalFx: 'fail',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isHeartbeatLink) {
       pushPkt(0, 2, {
@@ -817,6 +889,8 @@ function buildCausalPacketsForScene(
         bounce: true,
         holdSec: 0.08,
         arrivalFx: 'ok',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'pointer',
@@ -825,6 +899,8 @@ function buildCausalPacketsForScene(
         bounce: true,
         holdSec: 0.08,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isCacheInvalidation) {
       pushPkt(0, 2, {
@@ -834,6 +910,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.05,
         arrivalFx: 'fail',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'dropped',
@@ -842,6 +920,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.05,
         arrivalFx: 'fail',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isHardBlock) {
       pushPkt(0, 3, {
@@ -851,22 +931,18 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: m.toDead ? 0.35 : 0.06,
         arrivalFx: 'fail',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 3, {
-        kind: 'retry',
+        kind: m.isExplicitRetryContext ? 'retry' : 'dropped',
         variant: 'slow',
         speed: 0.78,
         bounce: false,
         holdSec: m.toDead ? 0.55 : 0.12,
         arrivalFx: 'fail',
-      });
-      pushPkt(2, 3, {
-        kind: 'dropped',
-        variant: 'default',
-        speed: 0.88,
-        bounce: false,
-        holdSec: m.toDead ? 0.35 : 0.06,
-        arrivalFx: 'fail',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isHeavyBatchOrUpload) {
       pushPkt(0, 2, {
@@ -876,6 +952,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.18,
         arrivalFx: 'ok',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'request',
@@ -884,6 +962,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.18,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isQueueProducer) {
       pushPkt(0, 2, {
@@ -893,6 +973,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'ok',
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'cache-hit',
@@ -901,6 +983,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isQueueConsumer) {
       const workerHold = m.toLoad >= 85 ? 0.85 : m.toLoad >= 65 ? 0.45 : 0.22;
@@ -911,6 +995,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: workerHold,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + 0.65).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'cache-hit',
@@ -919,6 +1005,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: workerHold,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + 0.65 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isReplicationOnly) {
       pushPkt(0, 2, {
@@ -928,6 +1016,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.08,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + 0.4).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'mutation',
@@ -936,10 +1026,11 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.08,
         arrivalFx: 'ok',
+        startDelaySec: Number((fwdDelay0 + 0.4 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isCacheTarget && !m.isCacheColdOrMiss && effectiveSlow === 0) {
-      // Nhánh Cache / CDN đang ấm (Hit cao):
-      // 2 hạt Request đi vào cực nhanh (1.08x) + 2 hạt Response xanh lá (#9fd28f) trả về cực nhanh (1.08x)!
+      // Nhánh Cache / CDN đang ấm (Hit cao): bảo toàn 1:1 (1 Request đi vào -> 1 Response xanh lá trả về ngay theo hành trình)
       pushPkt(0, 2, {
         kind: 'request',
         variant: 'default',
@@ -947,7 +1038,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.02,
         arrivalFx: 'none',
-        offset: 0.08,
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'request',
@@ -956,7 +1048,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.02,
         arrivalFx: 'none',
-        offset: 0.58,
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
       pushPkt(2, 2, {
         kind: 'response',
@@ -966,7 +1059,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'ok',
-        offset: 0.32,
+        startDelaySec: Number((fwdDelay0 + 0.55).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
       pushPkt(3, 2, {
         kind: 'response',
@@ -976,16 +1070,15 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'ok',
-        offset: 0.82,
+        startDelaySec: Number((fwdDelay0 + 0.55 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     } else if (m.isDbOrStorageTarget || (m.isCacheTarget && m.isCacheColdOrMiss)) {
-      // Chặng truy vấn Database / Storage (hoặc Cache bị Miss/Flushed):
-      // Luôn có cả hạt truy vấn vàng đi vào DB LẪN hạt Response xanh lá (#9fd28f) trả ngược từ DB về App/Cache!
       if (m.hopSlowLevel >= 2) {
-        // DB quá tải / nghẽn nặng (ví dụ 500 ms, loadPct >= 85%, style: danger):
+        // DB thực sự quá tải / nghẽn nặng (ví dụ 500 ms, loadPct >= 85%, style: danger):
         // Nhiều truy vấn vàng bò chậm vào hàng đợi DB, trong khi hạt Response xanh lá từ DB trả về rất chậm và thưa!
         pushPkt(0, 3, {
-          kind: 'retry',
+          kind: slowFwdKind,
           variant: 'slow',
           speed: 0.85,
           bounce: false,
@@ -994,7 +1087,7 @@ function buildCausalPacketsForScene(
           offset: 0.06,
         });
         pushPkt(1, 3, {
-          kind: m.toLoad >= 95 ? 'dropped' : 'retry',
+          kind: m.toLoad >= 95 ? 'dropped' : slowFwdKind,
           variant: 'slow',
           speed: 0.82,
           bounce: false,
@@ -1003,7 +1096,7 @@ function buildCausalPacketsForScene(
           offset: 0.42,
         });
         pushPkt(2, 3, {
-          kind: 'retry',
+          kind: slowFwdKind,
           variant: 'slow',
           speed: 0.85,
           bounce: false,
@@ -1011,7 +1104,6 @@ function buildCausalPacketsForScene(
           arrivalFx: 'none',
           offset: 0.76,
         });
-        // Hạt Response xanh lá trả về chậm từ DB -> App/Cache sau khi giữ xử lý lâu tại DB
         pushPkt(3, 1, {
           kind: 'response',
           variant: 'slow',
@@ -1023,87 +1115,107 @@ function buildCausalPacketsForScene(
           offset: 0.54,
         });
       } else if (m.hopSlowLevel === 1) {
-        // DB chậm vừa (ví dụ 200 ms ở S0-03 s1-overview) hoặc nhánh Cache Miss (Khi Miss):
-        const isSparseCacheMiss =
-          hasWarmCacheInScene && m.toLoad < 48 && l.style !== 'danger';
-        if (isSparseCacheMiss) {
-          // Khi phía trước đã có Cache ấm chặn 89% lượt đọc: chỉ 1 hạt vàng chậm lọt xuống DB và 1 hạt xanh lá chậm trả về từ DB
-          pushPkt(0, 1, {
-            kind: 'retry',
-            variant: 'slow',
-            speed: 0.88,
-            bounce: false,
-            holdSec: 0.48,
-            arrivalFx: 'none',
-            offset: 0.16,
-          });
-          pushPkt(1, 1, {
-            kind: 'response',
-            variant: 'slow',
-            speed: 0.86,
-            reverse: true,
-            bounce: false,
-            holdSec: 0.46,
-            arrivalFx: 'ok',
-            offset: 0.62,
-          });
-        } else {
-          // Chưa có Cache (hoặc Cache vừa mất dữ liệu): 2 hạt vàng chậm nối đuôi vào DB, chỉ 1 hạt xanh lá trả về chậm từ DB
-          pushPkt(0, 2, {
-            kind: 'retry',
-            variant: 'slow',
-            speed: 0.88,
-            bounce: false,
-            holdSec: 0.52,
-            arrivalFx: 'none',
-            offset: 0.12,
-          });
-          pushPkt(1, 2, {
-            kind: 'retry',
-            variant: 'slow',
-            speed: 0.88,
-            bounce: false,
-            holdSec: 0.52,
-            arrivalFx: 'none',
-            offset: 0.62,
-          });
-          pushPkt(2, 1, {
-            kind: 'response',
-            variant: 'slow',
-            speed: 0.84,
-            reverse: true,
-            bounce: false,
-            holdSec: 0.52,
-            arrivalFx: 'ok',
-            offset: 0.44,
-          });
-        }
-      } else {
-        // Ghi/Đọc DB nhẹ hoặc bước lưu bài đồng bộ ("1. Ghi bài"):
-        pushPkt(0, 1, {
-          kind: m.isSyncWriteWithAck ? 'mutation' : 'request',
-          variant: 'default',
-          speed: 0.92,
+        // DB đang bận có hàng đợi (loadPct >= 68%) hoặc Cache vừa mất dữ liệu (Flushed!):
+        pushPkt(0, 2, {
+          kind: slowFwdKind,
+          variant: 'slow',
+          speed: 0.88,
           bounce: false,
-          holdSec: 0.18,
+          holdSec: 0.52,
           arrivalFx: 'none',
-          offset: 0.15,
+          offset: 0.12,
+        });
+        pushPkt(1, 2, {
+          kind: slowFwdKind,
+          variant: 'slow',
+          speed: 0.88,
+          bounce: false,
+          holdSec: 0.52,
+          arrivalFx: 'none',
+          offset: 0.62,
+        });
+        pushPkt(2, 1, {
+          kind: 'response',
+          variant: 'slow',
+          speed: 0.84,
+          reverse: true,
+          bounce: false,
+          holdSec: 0.52,
+          arrivalFx: 'ok',
+          offset: 0.44,
+        });
+      } else if (hasWarmCacheInScene && m.toLoad < 68 && l.style !== 'danger') {
+        // Nhánh Cache Miss phía sau một Cache đang ấm: thưa hơn nhánh Cache Hit nhưng VẪN bảo toàn 1:1 (1 truy vấn xuống DB -> 1 Response xanh lá trả về từ DB!)
+        pushPkt(0, 1, {
+          kind: 'request',
+          variant: 'slow',
+          speed: 0.9,
+          bounce: false,
+          holdSec: 0.28,
+          arrivalFx: 'none',
+          startDelaySec: fwdDelay0,
+          periodSec: wavePeriodSec,
         });
         pushPkt(1, 1, {
           kind: 'response',
-          variant: 'default',
-          speed: 0.92,
+          variant: 'slow',
+          speed: 0.9,
           reverse: true,
           bounce: false,
           holdSec: 0.18,
           arrivalFx: 'ok',
-          offset: 0.62,
+          startDelaySec: retDelay0,
+          periodSec: wavePeriodSec,
+        });
+      } else {
+        // DB ở mức tải bình thường (< 68%, không nghẽn — ví dụ bài System Thinking 45% hoặc S0-03 s1-overview):
+        // Bắt buộc bảo toàn 1 Request vào = 1 Response xanh lá đi ra (1:1), nối tiếp ngay sau khi Request từ tầng trước chạm API Server!
+        const useSlowLeg = m.isLatencyDemoHop;
+        pushPkt(0, 2, {
+          kind: m.isSyncWriteWithAck ? 'mutation' : 'request',
+          variant: useSlowLeg ? 'slow' : 'default',
+          speed: useSlowLeg ? 0.92 : 0.96,
+          bounce: false,
+          holdSec: useSlowLeg ? 0.26 : 0.14,
+          arrivalFx: 'none',
+          startDelaySec: fwdDelay0,
+          periodSec: wavePeriodSec,
+        });
+        pushPkt(1, 2, {
+          kind: m.isSyncWriteWithAck ? 'mutation' : 'request',
+          variant: useSlowLeg ? 'slow' : 'default',
+          speed: useSlowLeg ? 0.92 : 0.96,
+          bounce: false,
+          holdSec: useSlowLeg ? 0.26 : 0.14,
+          arrivalFx: 'none',
+          startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+          periodSec: wavePeriodSec,
+        });
+        pushPkt(2, 2, {
+          kind: 'response',
+          variant: useSlowLeg ? 'slow' : 'default',
+          speed: useSlowLeg ? 0.92 : 0.96,
+          reverse: true,
+          bounce: false,
+          holdSec: 0.08,
+          arrivalFx: 'ok',
+          startDelaySec: retDelay0,
+          periodSec: wavePeriodSec,
+        });
+        pushPkt(3, 2, {
+          kind: 'response',
+          variant: useSlowLeg ? 'slow' : 'default',
+          speed: useSlowLeg ? 0.92 : 0.96,
+          reverse: true,
+          bounce: false,
+          holdSec: 0.08,
+          arrivalFx: 'ok',
+          startDelaySec: Number((retDelay0 + halfWaveSec).toFixed(2)),
+          periodSec: wavePeriodSec,
         });
       }
     } else if (effectiveSlow >= 1) {
-      // Chặng đồng bộ phía trước (Client -> LB -> App Server) khi bản thân Server nghẽn HOẶC phải đứng chờ DB phía sau phản hồi chậm:
-      // - Chiều vào (Request từ User): 3 hạt đổ vào liên tục (2 hạt cam + 1 hạt vàng chờ đợi)
-      // - Chiều về (Response từ App/Web Server về User): chỉ có 1 hạt xanh lá (#9fd28f) bò chậm về sau khi DB trả lời!
+      // Chặng đồng bộ phía trước (Client -> LB -> App Server) CHỈ KHI bản thân Server nghẽn (>= 68%) HOẶC DB phía sau thực sự nghẽn (>= 68% / danger / >= 300ms):
       pushPkt(0, 3, {
         kind: 'request',
         variant: 'default',
@@ -1123,7 +1235,7 @@ function buildCausalPacketsForScene(
         offset: 0.38,
       });
       pushPkt(2, 3, {
-        kind: m.toLoad >= 95 ? 'dropped' : 'retry',
+        kind: m.toLoad >= 95 ? 'dropped' : slowFwdKind,
         variant: effectiveSlow >= 2 ? 'slow' : 'default',
         speed: 0.88,
         bounce: false,
@@ -1131,7 +1243,6 @@ function buildCausalPacketsForScene(
         arrivalFx: m.toLoad >= 95 ? 'fail' : 'none',
         offset: 0.72,
       });
-      // Hạt Response xanh lá từ App/Web Server trả về Client cũng bị chậm và thưa theo đúng nhịp phản hồi chậm của DB!
       pushPkt(3, 1, {
         kind: 'response',
         variant: 'slow',
@@ -1143,8 +1254,8 @@ function buildCausalPacketsForScene(
         offset: 0.52,
       });
     } else {
-      // Chặng đồng bộ khỏe mạnh (hoặc đã được Cache ấm / Queue bất đồng bộ giải phóng khỏi độ trễ DB):
-      // 2 hạt Request cam đi vào nhanh + 2 hạt Response xanh lá trả về nhanh cân bằng 1:1!
+      // Chặng đồng bộ khỏe mạnh bình thường (loadPct < 68% và phía sau không nghẽn):
+      // Bảo toàn tuyệt đối 1 Request vào = 1 Response xanh lá đi ra (1:1), đi tuần tự theo hành trình từ rank 0 -> rank cuối -> quay về rank 0!
       pushPkt(0, 2, {
         kind: 'request',
         variant: 'default',
@@ -1152,7 +1263,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'none',
-        offset: 0.08,
+        startDelaySec: fwdDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(1, 2, {
         kind: 'request',
@@ -1161,7 +1273,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.04,
         arrivalFx: 'none',
-        offset: 0.58,
+        startDelaySec: Number((fwdDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
       pushPkt(2, 2, {
         kind: 'response',
@@ -1171,7 +1284,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.05,
         arrivalFx: 'ok',
-        offset: 0.33,
+        startDelaySec: retDelay0,
+        periodSec: wavePeriodSec,
       });
       pushPkt(3, 2, {
         kind: 'response',
@@ -1181,7 +1295,8 @@ function buildCausalPacketsForScene(
         bounce: false,
         holdSec: 0.05,
         arrivalFx: 'ok',
-        offset: 0.83,
+        startDelaySec: Number((retDelay0 + halfWaveSec).toFixed(2)),
+        periodSec: wavePeriodSec,
       });
     }
   }

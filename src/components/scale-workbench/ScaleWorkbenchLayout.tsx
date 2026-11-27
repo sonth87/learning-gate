@@ -438,6 +438,43 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const narrativeScrollRef = useRef<HTMLDivElement>(null);
   const [isCenterCompact, setIsCenterCompact] = useState(false);
   const [isMobileHeaderStuck, setIsMobileHeaderStuck] = useState(false);
+  const [courseItemTooltip, setCourseItemTooltip] = useState<{
+    text: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const courseTooltipTimerRef = useRef<number | null>(null);
+
+  const handleCourseItemMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLElement>, text: string) => {
+      if (courseTooltipTimerRef.current !== null) {
+        window.clearTimeout(courseTooltipTimerRef.current);
+      }
+      const el = e.currentTarget;
+      courseTooltipTimerRef.current = window.setTimeout(() => {
+        if (!el.isConnected) return;
+        const rect = el.getBoundingClientRect();
+        setCourseItemTooltip({
+          text,
+          x: Math.min(window.innerWidth - 280, rect.left + 12),
+          y:
+            rect.bottom + 42 > window.innerHeight
+              ? Math.max(8, rect.top - 36)
+              : rect.bottom + 6,
+        });
+        courseTooltipTimerRef.current = null;
+      }, 500);
+    },
+    []
+  );
+
+  const handleCourseItemMouseLeave = useCallback(() => {
+    if (courseTooltipTimerRef.current !== null) {
+      window.clearTimeout(courseTooltipTimerRef.current);
+      courseTooltipTimerRef.current = null;
+    }
+    setCourseItemTooltip(null);
+  }, []);
 
   useEffect(() => {
     const el = centerStageCardRef.current;
@@ -499,6 +536,9 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     return () => {
       if (railHideTimerRef.current !== null) {
         window.clearTimeout(railHideTimerRef.current);
+      }
+      if (courseTooltipTimerRef.current !== null) {
+        window.clearTimeout(courseTooltipTimerRef.current);
       }
     };
   }, []);
@@ -780,14 +820,18 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             }).length;
             const folderColor = FOLDER_COLORS[grp.level % FOLDER_COLORS.length];
             const lvlPrefix = String(grp.level).padStart(2, '0');
+            const grpLabel = `${lvlPrefix}. ${lang === 'en' ? grp.titleEn : grp.titleVi}`;
 
             return (
               <div key={grp.level}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedLevel(courseId, isOpen ? -1 : grp.level)
-                  }
+                  onClick={() => {
+                    handleCourseItemMouseLeave();
+                    setExpandedLevel(courseId, isOpen ? -1 : grp.level);
+                  }}
+                  onMouseEnter={(e) => handleCourseItemMouseEnter(e, grpLabel)}
+                  onMouseLeave={handleCourseItemMouseLeave}
                   className="flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-[var(--dts-panel-muted)]"
                 >
                   {isOpen ? (
@@ -797,7 +841,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                   )}
                   <FolderBadge color={folderColor} />
                   <span className="min-w-0 flex-1 truncate font-mono text-[11.5px] font-bold text-[var(--dts-ink)]">
-                    {lvlPrefix}. {lang === 'en' ? grp.titleEn : grp.titleVi}
+                    {grpLabel}
                   </span>
                   <span className="shrink-0 font-mono text-[10.5px] text-[var(--dts-ink-muted)]">
                     {doneInGrp}/{grp.items.length}
@@ -810,12 +854,20 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                       const isCurrent = item.moduleId === activeLesson.moduleId;
                       const st = getModuleStatus(item.moduleId);
                       const isDone = st.completed || st.lessonRead;
+                      const itemTitle = pickText(item.title, lang);
 
                       return (
                         <button
                           key={item.moduleId}
                           type="button"
-                          onClick={() => selectLessonAndStep(item.moduleId, 0)}
+                          onClick={() => {
+                            handleCourseItemMouseLeave();
+                            selectLessonAndStep(item.moduleId, 0);
+                          }}
+                          onMouseEnter={(e) =>
+                            handleCourseItemMouseEnter(e, itemTitle)
+                          }
+                          onMouseLeave={handleCourseItemMouseLeave}
                           className={cn(
                             'flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left font-mono text-[11.5px] transition-all',
                             isCurrent
@@ -833,7 +885,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                             <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
                           )}
                           <span className="min-w-0 flex-1 truncate">
-                            {pickText(item.title, lang)}
+                            {itemTitle}
                           </span>
                         </button>
                       );
@@ -1079,14 +1131,20 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                     const isCurrent = item.moduleId === activeLesson.moduleId;
                     const st = getModuleStatus(item.moduleId);
                     const isDone = st.completed || st.lessonRead;
+                    const itemTitle = pickText(item.title, lang);
                     return (
                       <button
                         key={item.moduleId}
                         type="button"
                         onClick={() => {
+                          handleCourseItemMouseLeave();
                           selectLessonAndStep(item.moduleId, 0);
                           setRailFlyout(null);
                         }}
+                        onMouseEnter={(e) =>
+                          handleCourseItemMouseEnter(e, itemTitle)
+                        }
+                        onMouseLeave={handleCourseItemMouseLeave}
                         className={cn(
                           'flex w-full items-center gap-2 rounded-xl px-2.5 py-1.5 text-left font-mono text-[11.5px] transition-all',
                           isCurrent
@@ -1104,7 +1162,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                           <FileText className="h-3.5 w-3.5 shrink-0 opacity-60" />
                         )}
                         <span className="min-w-0 flex-1 truncate">
-                          {pickText(item.title, lang)}
+                          {itemTitle}
                         </span>
                       </button>
                     );
@@ -1800,29 +1858,37 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
               <BlueprintMarkdown source={pickText(activeLesson.story, lang)} />
 
-              {activeLesson.attribution?.href && (
-                <div className="mt-3 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-blue-soft)] p-3 text-[var(--dts-blue-ink)]">
-                  <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
-                    {lang === 'en' ? 'Original Article on Web' : 'Bài viết gốc trên trang web'}
-                  </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[var(--dts-ink-soft)]">
-                    {lang === 'en'
-                      ? 'Want to read the full original long-form article and author stories on System Design Core?'
-                      : 'Bạn có thể đọc thêm bài viết dài nguyên bản cùng câu chuyện chi tiết của tác giả trên trang web System Design Core:'}
-                  </p>
-                  <a
-                    href={activeLesson.attribution.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="dts-btn-tactile mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--dts-panel-elevated)] px-3 py-1.5 font-mono text-[11px] font-extrabold text-[var(--dts-ink)] hover:opacity-90"
-                  >
-                    <span>
-                      {activeLesson.attribution.sourceTitle
-                        ? pickText(activeLesson.attribution.sourceTitle, lang)
-                        : 'systemdesigncore.site'}
-                    </span>
-                    <span>↗</span>
-                  </a>
+              {activeLesson.attribution && (
+                <div className="mt-4 mb-2 border-t border-[var(--dts-border-soft)] pt-3 pb-1.5">
+                  {activeLesson.attribution.href ? (
+                    <div className="rounded-xl border border-[var(--dts-border)] bg-[var(--dts-blue-soft)] p-3 text-[var(--dts-blue-ink)]">
+                      <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
+                        {lang === 'en' ? 'Original Article on Web' : 'Bài viết gốc trên trang web'}
+                      </div>
+                      <p className="mt-1 text-[12px] leading-relaxed text-[var(--dts-ink-soft)]">
+                        {lang === 'en'
+                          ? 'Want to read the full original long-form article and author stories on System Design Core?'
+                          : 'Bạn có thể đọc thêm bài viết dài nguyên bản cùng câu chuyện chi tiết của tác giả trên trang web System Design Core:'}
+                      </p>
+                      <a
+                        href={activeLesson.attribution.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="dts-btn-tactile mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--dts-panel-elevated)] px-3 py-1.5 font-mono text-[11px] font-extrabold text-[var(--dts-ink)] hover:opacity-90"
+                      >
+                        <span>
+                          {activeLesson.attribution.sourceTitle
+                            ? pickText(activeLesson.attribution.sourceTitle, lang)
+                            : 'systemdesigncore.site'}
+                        </span>
+                        <span>↗</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="font-mono text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
+                      <span>{pickText(activeLesson.attribution.text, lang)}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1911,23 +1977,6 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 )}
               </div>
             </>
-          )}
-
-          {activeLesson.attribution && (
-            <div className="mt-2.5 shrink-0 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
-              {activeLesson.attribution.href ? (
-                <a
-                  href={activeLesson.attribution.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-semibold text-[var(--dts-blue-ink)] underline underline-offset-2 hover:opacity-85"
-                >
-                  <span>{pickText(activeLesson.attribution.text, lang)}</span>
-                </a>
-              ) : (
-                <span>{pickText(activeLesson.attribution.text, lang)}</span>
-              )}
-            </div>
           )}
 
           {/* Navigation Footer (Desktop lg+; Mobile/Tablet uses the sticky bottom bar snapped above the 5-tab nav!) */}
@@ -2148,27 +2197,24 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                   </div>
                 </div>
               )}
-
-              {activeLesson.attribution && (
-                <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10px] leading-relaxed text-[var(--dts-ink-muted)]">
-                  {activeLesson.attribution.href ? (
-                    <a
-                      href={activeLesson.attribution.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2 hover:text-[var(--dts-ink)]"
-                    >
-                      {pickText(activeLesson.attribution.text, lang)}
-                    </a>
-                  ) : (
-                    <span>{pickText(activeLesson.attribution.text, lang)}</span>
-                  )}
-                </div>
-              )}
           </SmoothCollapsible>
         </div>
       </aside>
       </div>
+
+      {/* 0.5s Delayed Course Item Hover Tooltip */}
+      {courseItemTooltip && (
+        <div
+          role="tooltip"
+          style={{
+            left: `${courseItemTooltip.x}px`,
+            top: `${courseItemTooltip.y}px`,
+          }}
+          className="pointer-events-none fixed z-[80] max-w-[320px] rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] px-2.5 py-1.5 font-mono text-[11.5px] font-bold leading-snug text-[var(--dts-ink)] shadow-[2px_3px_0_var(--dts-shadow-color)]"
+        >
+          {courseItemTooltip.text}
+        </div>
+      )}
 
       {/* Sticky Mobile / Tablet Step Navigation Bar — snapped directly above the 5-item Bottom Nav! */}
       <div className="shrink-0 z-30 border-t border-[var(--dts-line-strong)] bg-[var(--dts-panel)]/98 px-2.5 py-2 backdrop-blur-xs lg:hidden">
