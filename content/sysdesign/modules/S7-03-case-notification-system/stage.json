@@ -1,0 +1,742 @@
+{
+  "version": 1,
+  "base": "s1-shared-queue",
+  "nodes": {
+    "otp_src": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Luồng OTP giao dịch",
+        "en": "Transactional OTP"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Thông báo khẩn cấp như mã OTP đăng nhập và biến động số dư.",
+          "en": "Time-critical notifications like login OTPs and payment alerts."
+        },
+        "how": {
+          "vi": "Chiếm khoảng 15% lưu lượng nhưng yêu cầu giao dưới vài giây.",
+          "en": "Accounts for ~15% of volume with strict sub-second SLA."
+        },
+        "why": {
+          "vi": "Không được phép bị kẹt phía sau hàng triệu tin quảng cáo.",
+          "en": "Must never be delayed behind millions of marketing blasts."
+        }
+      }
+    },
+    "mkt_src": {
+      "shape": "crowd",
+      "tone": "rose",
+      "label": {
+        "vi": "Chiến dịch tiếp thị (10M)",
+        "en": "Marketing Blast (10M)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Chiến dịch khuyến mãi 10 triệu tin nhắn phát đồng loạt.",
+          "en": "Bulk promotional blast of 10M notifications."
+        },
+        "how": {
+          "vi": "Tạo đỉnh tải 4.800 req/s dồn vào hệ thống thông báo.",
+          "en": "Drives 4,800 req/s spike into the notification pipeline."
+        },
+        "why": {
+          "vi": "Nếu dùng chung một hàng đợi FIFO, OTP sẽ bị đẩy xuống cuối hàng.",
+          "en": "Sharing a single FIFO queue starves transactional OTPs."
+        }
+      }
+    },
+    "notify_api": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Notification API",
+        "en": "Notification API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng tiếp nhận yêu cầu gửi thông báo, kiểm tra mẫu tin và khóa khử trùng.",
+          "en": "Ingestion API validating templates and deduplication keys."
+        },
+        "how": {
+          "vi": "Đẩy ngay vào hàng đợi ưu tiên và trả mã 202 Accepted cho dịch vụ gọi.",
+          "en": "Enqueues into priority lanes and returns 202 Accepted."
+        },
+        "why": {
+          "vi": "Tách thời gian nhận yêu cầu khỏi thời gian chờ nhà cung cấp ngoài.",
+          "en": "Decouples API latency from external provider slowness."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": {
+        "vi": "Priority Queue",
+        "en": "Priority Queue"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi phân tách theo mức ưu tiên (High cho OTP, Low cho Marketing).",
+          "en": "Priority-separated queues (High for OTP, Low for Marketing)."
+        },
+        "how": {
+          "vi": "Lưu trữ đệm các đợt chiến dịch lớn và phân phối tới đúng nhóm Worker.",
+          "en": "Buffers bulk campaigns and feeds dedicated Worker pools."
+        },
+        "why": {
+          "vi": "Đảm bảo làn OTP luôn thông thoáng dù hàng đợi Marketing đang có hàng triệu tin.",
+          "en": "Keeps the OTP lane clear regardless of Marketing backlog."
+        }
+      }
+    },
+    "workers": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Delivery Workers",
+        "en": "Delivery Workers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm worker đọc từ hàng đợi, kiểm tra dedup key và gọi nhà cung cấp ngoài.",
+          "en": "Workers pulling from queues, checking dedup keys, and calling providers."
+        },
+        "how": {
+          "vi": "Áp dụng Exponential Backoff + Jitter khi đối tác lỗi và Circuit Breaker khi đối tác chậm.",
+          "en": "Applies Backoff + Jitter on transient failures and Circuit Breaker on slowdowns."
+        },
+        "why": {
+          "vi": "Tránh tạo bão Retry làm sập thêm đối tác hoặc treo cứng chính worker.",
+          "en": "Prevents retry amplification and worker exhaustion."
+        }
+      }
+    },
+    "providers": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "globe",
+      "label": {
+        "vi": "Push / SMS / Email",
+        "en": "Push / SMS / Email"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Các nhà cung cấp bên thứ ba (APNs, FCM, cổng SMS, SMTP).",
+          "en": "Third-party delivery gateways (APNs, FCM, SMS, SMTP)."
+        },
+        "how": {
+          "vi": "Có giới hạn tốc độ (rate limit) riêng và đôi khi phản hồi chậm 300+ ms.",
+          "en": "Enforce strict rate limits and occasionally degrade to 300+ ms."
+        },
+        "why": {
+          "vi": "Cần Circuit Breaker và giới hạn tốc độ ở Worker để không vượt hạn mức đối tác.",
+          "en": "Requires outbound rate shaping and circuit breaking."
+        }
+      }
+    },
+    "otp_queue": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "zap",
+      "label": {
+        "vi": "High Queue (OTP)",
+        "en": "High Queue (OTP)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi ưu tiên cao dành riêng cho mã OTP đăng nhập và cảnh báo giao dịch tài chính.",
+          "en": "Dedicated high-priority queue exclusively for login OTPs and transactional alerts."
+        },
+        "how": {
+          "vi": "Tách biệt hoàn toàn khỏi hàng đợi Marketing; luôn được nhóm OTP Workers riêng tiêu thụ tức thì.",
+          "en": "Physically isolated from marketing traffic and drained immediately by dedicated OTP workers."
+        },
+        "why": {
+          "vi": "Đảm bảo 10 triệu tin quảng cáo không bao giờ làm chậm mã OTP dù chỉ 1 giây.",
+          "en": "Guarantees zero head-of-line blocking from bulk promotional campaigns."
+        }
+      }
+    },
+    "mkt_queue": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": {
+        "vi": "Low Queue (Marketing)",
+        "en": "Low Queue (Marketing)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi ưu tiên thấp chứa hàng chục triệu thông báo khuyến mãi phát theo chiến dịch.",
+          "en": "Low-priority bulk queue buffering multi-million marketing campaign messages."
+        },
+        "how": {
+          "vi": "Lưu đệm backlog lớn an toàn và xả dần theo tốc độ cho phép của hạn mức đối tác.",
+          "en": "Safely buffers large campaign bursts and drains at a paced rate."
+        },
+        "why": {
+          "vi": "Hấp thụ đỉnh tải 4.800 req/s mà không ảnh hưởng tới luồng giao dịch cốt lõi.",
+          "en": "Absorbs 4,800 req/s marketing spikes without starving critical traffic."
+        }
+      }
+    },
+    "otp_workers": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "OTP Workers",
+        "en": "OTP Workers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm Worker chuyên trách (Bulkhead) chỉ kéo và gửi tin từ High Queue (OTP).",
+          "en": "Dedicated bulkhead worker pool processing only High Queue (OTP) messages."
+        },
+        "how": {
+          "vi": "Luôn duy trì dư công suất để độ trễ gửi mã OTP dưới 1–2 giây.",
+          "en": "Maintains ample headroom for sub-second OTP dispatch."
+        },
+        "why": {
+          "vi": "Cô lập tài nguyên tính toán để luồng OTP luôn sống khỏe ngay cả khi luồng Marketing đang bận 100%.",
+          "en": "Isolates compute threads so OTP delivery is never starved."
+        }
+      }
+    },
+    "mkt_workers": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Marketing Workers",
+        "en": "Marketing Workers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm Worker xử lý nền cho chiến dịch tiếp thị kèm bộ điều tiết tốc độ (Rate Shaper).",
+          "en": "Background worker pool draining Low Queue with outbound rate shaping."
+        },
+        "how": {
+          "vi": "Giới hạn tốc độ gọi ra đối tác thứ ba và bật Circuit Breaker khi đối tác phản hồi chậm.",
+          "en": "Shapes outbound QPS to provider quotas and trips Circuit Breaker on slowdowns."
+        },
+        "why": {
+          "vi": "Tránh làm sập cổng SMS/Email đối tác và không gây bão Retry.",
+          "en": "Prevents overloading third-party gateways and avoids retry storms."
+        }
+      }
+    },
+    "dedup_cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "filter",
+      "label": {
+        "vi": "Dedup Cache (Redis)",
+        "en": "Dedup Cache (Redis)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm kiểm tra khóa khử trùng (dedup_key / notification_id) bằng lệnh SET NX EX.",
+          "en": "Redis deduplication store checking notification_id via atomic SET NX EX."
+        },
+        "how": {
+          "vi": "Trước khi đẩy tin hoặc trước khi gọi nhà cung cấp, kiểm tra xem dedup_key đã gửi thành công chưa.",
+          "en": "Drops duplicate events generated by upstream retries or at-least-once queue redelivery."
+        },
+        "why": {
+          "vi": "Ngăn người dùng bị nhận 3–4 tin nhắn SMS giống hệt nhau khi hệ thống tự động thử lại.",
+          "en": "Prevents spamming users with duplicate SMS/Push notifications during retries."
+        }
+      }
+    }
+  },
+  "links": {
+    "otp-api": {
+      "inspector": {
+        "what": {
+          "vi": "Luồng yêu cầu gửi mã OTP giao dịch độ ưu tiên cao.",
+          "en": "High-priority transactional OTP request stream."
+        },
+        "how": {
+          "vi": "Gắn nhãn priority=high khi gọi Notification API.",
+          "en": "Tagged priority=high at Notification API."
+        },
+        "why": {
+          "vi": "Cần được định tuyến vào hàng đợi riêng để giao ngay lập tức.",
+          "en": "Must route into a dedicated lane for immediate delivery."
+        }
+      }
+    },
+    "mkt-api": {
+      "inspector": {
+        "what": {
+          "vi": "Luồng gửi chiến dịch tiếp thị số lượng lớn.",
+          "en": "Bulk marketing campaign notification stream."
+        },
+        "how": {
+          "vi": "Gắn nhãn priority=low để xử lý nền theo nhịp độ cho phép.",
+          "en": "Tagged priority=low for paced background delivery."
+        },
+        "why": {
+          "vi": "Chấp nhận trễ vài phút để nhường tài nguyên cho giao dịch.",
+          "en": "Tolerates minutes of delay to protect transactional traffic."
+        }
+      }
+    },
+    "api-queue": {
+      "inspector": {
+        "what": {
+          "vi": "Đẩy thông báo vào hàng đợi tương ứng với độ ưu tiên.",
+          "en": "Enqueues notifications into priority-partitioned queues."
+        },
+        "how": {
+          "vi": "Ghi bất đồng bộ tốc độ cao.",
+          "en": "High-throughput asynchronous enqueue."
+        },
+        "why": {
+          "vi": "Hấp thụ xung tải 4.800 req/s mà không làm chậm API.",
+          "en": "Absorbs 4,800 req/s bursts without blocking API callers."
+        }
+      }
+    },
+    "queue-workers": {
+      "inspector": {
+        "what": {
+          "vi": "Worker kéo thông báo từ hàng đợi để gửi đi.",
+          "en": "Workers consuming messages from priority queues."
+        },
+        "how": {
+          "vi": "Tách riêng pool worker cho OTP và pool worker cho Marketing.",
+          "en": "Uses isolated worker pools for OTP vs Marketing."
+        },
+        "why": {
+          "vi": "Cô lập hoàn toàn tài nguyên xử lý giữa hai luồng.",
+          "en": "Provides full bulkhead isolation between lanes."
+        }
+      }
+    },
+    "workers-providers": {
+      "inspector": {
+        "what": {
+          "vi": "Đường gọi ra nhà cung cấp Push / SMS / Email.",
+          "en": "Outbound HTTP calls to Push / SMS / Email providers."
+        },
+        "how": {
+          "vi": "Nếu bật Retry tức thì không Jitter, sự cố chậm 320 ms của đối tác sẽ gây bão Retry.",
+          "en": "Immediate retries without jitter amplify provider slowdowns into retry storms."
+        },
+        "why": {
+          "vi": "Cần Backoff + Full Jitter, Retry Budget và Circuit Breaker để tự phục hồi.",
+          "en": "Needs Backoff + Full Jitter, Retry Budget, and Circuit Breaker."
+        }
+      }
+    },
+    "api-otp_queue": {
+      "from": "notify_api",
+      "to": "otp_queue",
+      "label": {
+        "vi": "Làn High (OTP)",
+        "en": "High Lane (OTP)"
+      }
+    },
+    "api-mkt_queue": {
+      "from": "notify_api",
+      "to": "mkt_queue",
+      "label": {
+        "vi": "Làn Low (10M)",
+        "en": "Low Lane (10M)"
+      }
+    },
+    "otp_queue-otp_workers": {
+      "from": "otp_queue",
+      "to": "otp_workers"
+    },
+    "mkt_queue-mkt_workers": {
+      "from": "mkt_queue",
+      "to": "mkt_workers"
+    },
+    "otp_workers-providers": {
+      "from": "otp_workers",
+      "to": "providers"
+    },
+    "mkt_workers-providers": {
+      "from": "mkt_workers",
+      "to": "providers"
+    },
+    "api-dedup": {
+      "from": "notify_api",
+      "to": "dedup_cache",
+      "label": {
+        "vi": "SET NX dedup_key",
+        "en": "SET NX dedup_key"
+      },
+      "style": "dashed"
+    }
+  },
+  "zones": {
+    "notify": {
+      "nodeIds": [
+        "notify_api",
+        "queue",
+        "workers"
+      ],
+      "label": {
+        "vi": "HỆ THỐNG THÔNG BÁO",
+        "en": "NOTIFICATION PIPELINE"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-shared-queue": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "notify"
+      ],
+      "state": {
+        "queue": {
+          "loadPct": 92,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Nghẽn FIFO",
+              "en": "FIFO Blocked"
+            },
+            "tone": "bad"
+          }
+        },
+        "workers": {
+          "loadPct": 85
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Hàng đợi dùng chung bị nghẽn",
+          "en": "Shared Queue Starvation"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "10M tin tiếp thị chặn trước OTP",
+              "en": "10M marketing msgs block OTP"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "OTP bị trễ hàng chục phút",
+              "en": "OTPs delayed by minutes"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-priority-lanes": {
+      "show": {
+        "nodes": [
+          "otp_src",
+          "mkt_src",
+          "notify_api",
+          "otp_queue",
+          "mkt_queue",
+          "otp_workers",
+          "mkt_workers",
+          "providers"
+        ],
+        "links": [
+          "otp-api",
+          "mkt-api",
+          "api-otp_queue",
+          "api-mkt_queue",
+          "otp_queue-otp_workers",
+          "mkt_queue-mkt_workers",
+          "otp_workers-providers",
+          "mkt_workers-providers"
+        ]
+      },
+      "zones": [
+        "notify"
+      ],
+      "state": {
+        "otp_queue": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "OTP thông suốt < 1s",
+              "en": "OTP clear < 1s"
+            },
+            "tone": "ok"
+          }
+        },
+        "mkt_queue": {
+          "loadPct": 78,
+          "badge": {
+            "text": {
+              "vi": "Đệm 10M tin",
+              "en": "Buffers 10M blast"
+            },
+            "tone": "warn"
+          }
+        },
+        "otp_workers": {
+          "loadPct": 25,
+          "badge": {
+            "text": {
+              "vi": "Pool riêng",
+              "en": "Isolated Pool"
+            },
+            "tone": "ok"
+          }
+        },
+        "mkt_workers": {
+          "loadPct": 80,
+          "badge": {
+            "text": {
+              "vi": "Xả theo hạn mức",
+              "en": "Rate-paced"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tách hàng đợi theo độ ưu tiên",
+          "en": "Priority Queue Isolation"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Làn High dành riêng cho OTP",
+              "en": "High lane reserved for OTP"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Làn Low tự điều tiết cho tiếp thị",
+              "en": "Low lane paces marketing"
+            },
+            "tone": "plain"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-blast-live": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "notify"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Chiến dịch + Đối tác chậm (t = 15 s)",
+          "en": "Blast + Slow Provider (t = 15 s)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Đỉnh 4.800 req/s + đối tác chậm 320 ms",
+              "en": "4,800 req/s + 320 ms provider lag"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Retry tức thì gây kẹt giả bền",
+              "en": "Immediate retry causes backlog"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-dedup-recap": {
+      "show": {
+        "nodes": [
+          "otp_src",
+          "mkt_src",
+          "notify_api",
+          "dedup_cache",
+          "otp_queue",
+          "mkt_queue",
+          "otp_workers",
+          "mkt_workers",
+          "providers"
+        ],
+        "links": [
+          "otp-api",
+          "mkt-api",
+          "api-dedup",
+          "api-otp_queue",
+          "api-mkt_queue",
+          "otp_queue-otp_workers",
+          "mkt_queue-mkt_workers",
+          "otp_workers-providers",
+          "mkt_workers-providers"
+        ]
+      },
+      "zones": [
+        "notify"
+      ],
+      "state": {
+        "dedup_cache": {
+          "loadPct": 20,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Chặn gửi trùng",
+              "en": "Deduplicated"
+            },
+            "tone": "ok"
+          }
+        },
+        "otp_queue": {
+          "loadPct": 14,
+          "badge": {
+            "text": {
+              "vi": "High SLA",
+              "en": "High SLA"
+            },
+            "tone": "ok"
+          }
+        },
+        "mkt_queue": {
+          "loadPct": 45,
+          "badge": {
+            "text": {
+              "vi": "Low Lane",
+              "en": "Low Lane"
+            },
+            "tone": "ok"
+          }
+        },
+        "otp_workers": {
+          "loadPct": 22
+        },
+        "mkt_workers": {
+          "loadPct": 60,
+          "badge": {
+            "text": {
+              "vi": "Backoff + CB",
+              "en": "Backoff + CB"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Chống gửi trùng & Tự phục hồi",
+          "en": "Deduplication & Recovery"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "dedup_key chặn gửi 2 lần khi retry",
+              "en": "dedup_key prevents duplicate sends"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Breaker + Jitter giữ hệ thống ổn định",
+              "en": "Breaker + Jitter keeps stability"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "blast": {
+      "sim": "S7-03/notify-blast",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          {
+            "node": "notify_api",
+            "key": "replicas"
+          },
+          {
+            "node": "queue",
+            "key": "replicas"
+          },
+          {
+            "node": "workers",
+            "key": "replicas"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 180,
+            "badAbove": 320
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 320
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "queue",
+          "workers",
+          "providers"
+        ]
+      }
+    }
+  }
+}

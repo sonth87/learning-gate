@@ -1,0 +1,36 @@
+{
+  "id": "S3-07",
+  "slug": "S3-07-transactions-and-isolation-levels",
+  "level": 3,
+  "order": 5,
+  "title": "Giao dịch và mức cô lập: chặn Lost Update và Deadlock",
+  "summary": "Quan sát lỗi bán trùng ghế khi hai giao dịch đua tranh trên cùng một dòng dữ liệu, so sánh khoá dòng SELECT FOR UPDATE với Optimistic CAS theo version, phân biệt các mức cô lập và tránh bẫy giữ khoá khi gọi API thanh toán bên ngoài.",
+  "durationMin": 17,
+  "difficulty": "Intermediate",
+  "objectives": [
+    {
+      "vi": "Giải thích bốn thuộc tính ACID cục bộ và lý do chỉ bọc BEGIN...COMMIT ở mức Read Committed mặc định không tự động chặn lỗi Lost Update",
+      "en": "Explain local ACID properties and why wrapping BEGIN...COMMIT at default Read Committed does not prevent Lost Updates"
+    },
+    {
+      "vi": "Áp dụng đúng ba kỹ thuật chống ghi đè: khoá bi quan SELECT FOR UPDATE, câu UPDATE nguyên tử có điều kiện và kiểm soát lạc quan CAS theo cột version",
+      "en": "Apply pessimistic row locking (SELECT FOR UPDATE), atomic conditional UPDATE, and optimistic version CAS"
+    },
+    {
+      "vi": "Phân biệt các hiện tượng bất thường giữa Read Committed, Repeatable Read / Snapshot Isolation và Serializable, cùng cách phòng tránh Deadlock và chốt chặn UNIQUE",
+      "en": "Distinguish anomalies across Read Committed, Snapshot Isolation, and Serializable, and prevent deadlocks with canonical lock ordering and UNIQUE constraints"
+    },
+    {
+      "vi": "Tính tác động của thời gian giữ khoá lên Connection Pool theo định luật Little và tách lời gọi API ngoài khỏi giao dịch bằng mẫu Giữ chỗ (Reservation)",
+      "en": "Quantify how lock hold time shrinks DB connection pool throughput via Little's Law and decouple external API calls using the Reservation pattern"
+    }
+  ],
+  "tags": ["transactions", "acid", "isolation", "lost-update", "locking", "cas", "deadlock", "connection-pool"],
+  "prerequisites": ["S2-07", "S2-08"],
+  "related": ["S3-04", "S3-02", "S4-08"],
+  "dtsRef": "transactions",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về giao dịch ACID cục bộ, mức cô lập, lỗi Lost Update khi đua tranh tồn kho, khoá dòng SELECT FOR UPDATE, Optimistic CAS theo version và bẫy giữ khoá khi gọi API ngoài."
+  }
+}

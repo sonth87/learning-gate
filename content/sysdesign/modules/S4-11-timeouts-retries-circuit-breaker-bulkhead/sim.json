@@ -1,0 +1,194 @@
+{
+  "sims": [
+    {
+      "id": "S4-11/retry-storm",
+      "scenario": {
+        "id": "S4-11/retry-storm",
+        "seed": 4411,
+        "durationSec": 75,
+        "mix": { "readRatio": 0.65 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1000 },
+        "events": [
+          { "at": 12, "type": "slowdown", "node": "payment", "addMs": 380, "durationSec": 14 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "catalog",
+              "kind": "service",
+              "label": { "vi": "Catalog Pool (Bulkhead)", "en": "Catalog Pool (Bulkhead)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200, "concurrency": 24 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 24 }
+            },
+            {
+              "id": "checkout",
+              "kind": "service",
+              "label": { "vi": "Checkout Service", "en": "Checkout Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Checkout", "en": "Checkout instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 900, "concurrency": 24 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 24 }
+            },
+            {
+              "id": "order_db",
+              "kind": "sql",
+              "label": { "vi": "Order & Catalog DB", "en": "Order & Catalog DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 600 }
+            },
+            {
+              "id": "payment",
+              "kind": "service",
+              "label": { "vi": "Payment Service", "en": "Payment Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Payment", "en": "Payment instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Đối tác thanh toán tăng độ trễ phản hồi", "en": "Slow upstream payment dependency" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500, "concurrency": 110 },
+              "latency": { "baseMs": 35, "cv": 0.35 },
+              "params": { "replicas": 1, "poolSize": 110 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2500 },
+            { "id": "lb-catalog", "from": "lb", "to": "catalog", "mode": "sync", "carries": "r", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "catalog-db", "from": "catalog", "to": "order_db", "mode": "sync", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "lb-checkout", "from": "lb", "to": "checkout", "mode": "sync", "carries": "w", "netClass": "same-az", "timeoutMs": 2200 },
+            { "id": "checkout-db", "from": "checkout", "to": "order_db", "mode": "sync", "netClass": "same-az", "timeoutMs": 600 },
+            {
+              "id": "checkout-payment",
+              "from": "checkout",
+              "to": "payment",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 320,
+              "cancelOnTimeout": false,
+              "retry": { "max": 3, "backoff": "none", "baseMs": 0, "jitter": "none" }
+            }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "catalog": "all-sequential",
+            "checkout": "all-parallel"
+          }
+        }
+      },
+      "slos": [
+        { "id": "recover-err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 35, "toSec": 75 } },
+        { "id": "recover-p99", "kind": "slo-latency", "metric": "p99", "maxMs": 180, "window": { "fromSec": 35, "toSec": 75 }, "allowViolationPct": 2 },
+        { "id": "fast-fail-p99", "kind": "slo-latency", "metric": "p99", "maxMs": 430, "window": { "fromSec": 0, "toSec": 75 }, "allowViolationPct": 6 }
+      ],
+      "expect": {
+        "bottleneck": "payment"
+      },
+      "presets": [
+        {
+          "id": "fix-resilience",
+          "label": { "vi": "Backoff + Full Jitter + Budget 10% + Breaker + CancelOnTimeout", "en": "Backoff + Full Jitter + 10% Budget + Breaker + Cancel" },
+          "changes": [
+            {
+              "type": "link",
+              "link": "checkout-payment",
+              "patch": {
+                "cancelOnTimeout": true,
+                "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 },
+                "breaker": { "errorThreshold": 0.45, "minRps": 50, "windowSec": 2, "openSec": 5, "probeRps": 30, "closeAfterOk": 0.8 }
+              }
+            }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-more-checkout",
+          "label": { "vi": "Nhân bản Checkout lên 6 máy vẫn kẹt bão Retry ở Payment", "en": "Scaling Checkout to 6 instances leaves Payment in retry storm" },
+          "changes": [
+            { "type": "knob", "node": "checkout", "key": "replicas", "value": 6 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

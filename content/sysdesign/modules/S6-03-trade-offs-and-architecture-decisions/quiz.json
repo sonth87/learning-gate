@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-03.q1",
+    "type": "mc",
+    "q": "Vì sao tính năng thanh toán và tồn kho thường ưu tiên Consistency (CP), còn lượt thích bài viết lại ưu tiên Availability (AP)?",
+    "code": "",
+    "choices": [
+      "Vì lượt thích không thể lưu trong cơ sở dữ liệu",
+      "Vì sai số dư hoặc bán quá tồn kho gây thiệt hại tài chính trực tiếp, còn lượt thích lệch vài đơn vị trong 1–2 giây không ảnh hưởng trải nghiệm",
+      "Vì thanh toán không cần độ tin cậy",
+      "Vì giao thức HTTP chỉ hỗ trợ CP cho thanh toán"
+    ],
+    "answer": 1,
+    "explain": "Việc chọn CP hay AP phụ thuộc vào cái giá của dữ liệu sai so với cái giá của việc từ chối phục vụ tạm thời."
+  },
+  {
+    "id": "S6-03.q2",
+    "type": "mc",
+    "q": "Trong bài toán giảm độ trễ từ 400 ms xuống 50 ms cho hệ thống đọc nhiều, vì sao nâng cấp Cache thường có hiệu quả chi phí (ROI) tốt hơn nâng cấp CPU Database?",
+    "code": "",
+    "choices": [
+      "Vì RAM của Cache phục vụ các lượt đọc lặp lại ở tốc độ dưới 1 ms và chặn tải rơi xuống đĩa cứng của DB",
+      "Vì nâng cấp CPU Database làm tăng thêm 500 ms độ trễ",
+      "Vì Cache không bao giờ tốn tiền thuê máy chủ",
+      "Vì Database không hỗ trợ đọc dữ liệu"
+    ],
+    "answer": 0,
+    "explain": "Mỗi lượt Cache Hit tránh được một truy vấn xuống DB. Với tỉ lệ đọc cao, tăng Hit Ratio giảm tải DB và hạ p99 với chi phí thấp hơn nhiều so với nâng cấp phần cứng DB."
+  },
+  {
+    "id": "S6-03.q3",
+    "type": "tf",
+    "q": "Một đội ngũ 3 kỹ sư xây dựng sản phẩm MVP trong 6 tuần nên chọn kiến trúc Microservices kèm Kubernetes và Service Mesh ngay từ ngày đầu để sẵn sàng cho hàng triệu người dùng.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Với 3 kỹ sư và mục tiêu ra mắt nhanh, chi phí vận hành của Microservices sẽ làm chậm tiến độ và vượt ngân sách. Modular Monolith là đánh đổi hợp lý hơn ở giai đoạn đầu."
+  },
+  {
+    "id": "S6-03.q4",
+    "type": "mc",
+    "q": "Bốn thành phần chính của một Architecture Decision Record (ADR) chuẩn là gì?",
+    "code": "",
+    "choices": [
+      "Tên tác giả, Ngày sinh, Ngôn ngữ lập trình, Số dòng code",
+      "Bối cảnh & Ràng buộc (Context), Các phương án đã cân nhắc (Options), Quyết định & Lý do (Decision), Hệ quả & Rủi ro chấp nhận (Consequences)",
+      "Danh sách lỗi, Mã nguồn đầy đủ, Lịch trực đêm, Hóa đơn điện",
+      "Chỉ ghi tên công nghệ được chọn mà không cần giải thích"
+    ],
+    "answer": 1,
+    "explain": "ADR ghi lại bối cảnh, các lựa chọn thay thế, lý do chọn kèm số liệu và những hệ quả đánh đổi để đội ngũ sau này hiểu vì sao quyết định đó được đưa ra."
+  },
+  {
+    "id": "S6-03.q5",
+    "type": "mc",
+    "q": "Cách bảo vệ một quyết định kiến trúc thuyết phục nhất trước hội đồng kỹ thuật là gì?",
+    "code": "",
+    "choices": [
+      "Trích dẫn rằng một tập đoàn lớn cũng đang dùng công nghệ đó",
+      "Đưa ra so sánh định lượng (p99, thông lượng, chi phí/giờ) giữa các phương án gắn với ràng buộc hiện tại của dự án",
+      "Khẳng định phương án mình chọn hoàn toàn không có nhược điểm",
+      "Tránh nhắc đến các phương án thay thế"
+    ],
+    "answer": 1,
+    "explain": "Mọi lựa chọn đều có nhược điểm. Trình bày rõ số liệu đo được, các phương án đã cân nhắc và lý do chấp nhận đánh đổi mới thể hiện tư duy kiến trúc vững vàng."
+  }
+]

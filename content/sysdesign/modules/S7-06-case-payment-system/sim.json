@@ -1,0 +1,351 @@
+{
+  "sims": [
+    {
+      "id": "S7-06/payment",
+      "scenario": {
+        "id": "S7-06/payment",
+        "seed": 7706,
+        "durationSec": 65,
+        "mix": {
+          "readRatio": 0.2
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 600
+        },
+        "events": [
+          {
+            "at": 18,
+            "type": "slow",
+            "node": "provider",
+            "factor": 12
+          },
+          {
+            "at": 38,
+            "type": "recover",
+            "node": "provider"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người mua",
+                "en": "Customers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.2
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "checkout",
+              "kind": "service",
+              "label": {
+                "vi": "Checkout API",
+                "en": "Checkout API"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1000
+              },
+              "latency": {
+                "baseMs": 8,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 2,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số Checkout API",
+                    "en": "Checkout instances"
+                  },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "payment_svc",
+              "kind": "service",
+              "label": {
+                "vi": "Payment Service",
+                "en": "Payment Service"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 800
+              },
+              "latency": {
+                "baseMs": 12,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 2,
+                "poolSize": 40
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số Payment Service",
+                    "en": "Payment instances"
+                  },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "provider",
+              "kind": "service",
+              "label": {
+                "vi": "Cổng thanh toán (PSP)",
+                "en": "Payment Provider (PSP)"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 2500
+              },
+              "latency": {
+                "baseMs": 60,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 1,
+                "poolSize": 100
+              },
+              "knobs": [],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Cổng thanh toán phản hồi chậm gây Timeout",
+                    "en": "PSP slowdown triggers timeouts"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "ledger_db",
+              "kind": "sql",
+              "label": {
+                "vi": "Ledger DB",
+                "en": "Ledger DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1200
+              },
+              "latency": {
+                "baseMs": 6,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "maxConnections": 400,
+                "sizeFactor": 1
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Ledger DB",
+                    "en": "Ledger DB size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "outbox",
+              "kind": "queue",
+              "label": {
+                "vi": "Outbox / Event Bus",
+                "en": "Outbox / Event Bus"
+              },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.06,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 10000
+              },
+              "latency": {
+                "baseMs": 2,
+                "cv": 0.2
+              },
+              "params": {
+                "maxDepth": 50000,
+                "dlq": true
+              },
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            {
+              "id": "client-checkout",
+              "from": "client",
+              "to": "checkout",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "checkout-payment_svc",
+              "from": "checkout",
+              "to": "payment_svc",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "payment_svc-provider",
+              "from": "payment_svc",
+              "to": "provider",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 600,
+              "retry": {
+                "max": 2,
+                "backoff": "none",
+                "baseMs": 0,
+                "jitter": "none"
+              }
+            },
+            {
+              "id": "payment_svc-ledger_db",
+              "from": "payment_svc",
+              "to": "ledger_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "payment_svc-outbox",
+              "from": "payment_svc",
+              "to": "outbox",
+              "mode": "async",
+              "netClass": "same-az",
+              "timeoutMs": 500
+            }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "checkout": "all-sequential",
+            "payment_svc": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 350,
+          "window": {
+            "fromSec": 0,
+            "toSec": 65
+          },
+          "allowViolationPct": 5
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.02,
+          "window": {
+            "fromSec": 0,
+            "toSec": 65
+          }
+        }
+      ],
+      "presets": [
+        {
+          "id": "safe-provider-retry",
+          "label": {
+            "vi": "Tăng Timeout PSP + Retry Backoff + Circuit Breaker",
+            "en": "Raise PSP timeout + Retry Backoff + Circuit Breaker"
+          },
+          "changes": [
+            {
+              "type": "link",
+              "link": "payment_svc-provider",
+              "patch": {
+                "timeoutMs": 1200,
+                "retry": {
+                  "max": 1,
+                  "backoff": "exponential",
+                  "baseMs": 100,
+                  "jitter": "full",
+                  "budgetRatio": 0.1
+                },
+                "breaker": {
+                  "enabled": true,
+                  "errorRate": 0.5,
+                  "windowSec": 10,
+                  "openSec": 10
+                }
+              }
+            }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

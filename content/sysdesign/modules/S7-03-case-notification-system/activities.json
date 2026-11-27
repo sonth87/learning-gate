@@ -1,0 +1,131 @@
+[
+  {
+    "id": "S7-03.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố hệ thống Thông báo chịu chiến dịch 4.800 req/s và đối tác chậm" },
+    "prompt": { "vi": "Ở giây 12, chiến dịch tiếp thị đẩy tải lên 4.800 req/s; ở giây 15, nhà cung cấp Push/SMS chậm 320 ms trong 14 giây. Hãy mở rộng Delivery Workers, loại bỏ SPOF ở Notification API và Priority Queue, đồng thời cấu hình Retry có Backoff + Jitter kèm Circuit Breaker trên đường nối workers-providers để hệ thống phục hồi hoàn toàn sau giây 35 (p99 ≤ 320 ms, lỗi ≤ 1%) trong ngân sách ≤ 1,30 USD/giờ." },
+    "difficulty": 3,
+    "simId": "S7-03/notify-blast",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-1200",
+        "label": { "vi": "Tải chuẩn 1.200 req/s (p99 ≤ 150 ms, lỗi ≤ 1%)" },
+        "simId": "S7-03/notify-blast",
+        "loadOverride": { "kind": "steady", "rps": 1200 },
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 14 }, "allowViolationPct": 2 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 14 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "blast-recover",
+        "label": { "vi": "Chiến dịch 4.800 req/s + đối tác chậm (phục hồi sau t = 40 s)" },
+        "simId": "S7-03/notify-blast",
+        "constraints": [
+          { "id": "p99-rec", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 40, "toSec": 70 }, "allowViolationPct": 3 },
+          { "id": "err-rec", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 40, "toSec": 70 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "notify_api" },
+      { "id": "no-queue-spof", "kind": "structural", "rule": "no-spof", "node": "queue" },
+      { "id": "retry-jitter", "kind": "structural", "rule": "has-retry-backoff", "link": "workers-providers" }
+    ],
+    "budget": { "maxCostPerHour": 1.3, "maxChanges": 4 },
+    "par": { "changes": 4, "costPerHour": 1.02 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "notify_api", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "queue", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "workers", "key": "replicas", "value": 4 },
+        {
+          "type": "link",
+          "link": "workers-providers",
+          "patch": {
+            "cancelOnTimeout": true,
+            "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 },
+            "breaker": { "errorThreshold": 0.45, "minRps": 50, "windowSec": 2, "openSec": 5, "probeRps": 30, "closeAfterOk": 0.8 }
+          }
+        }
+      ]
+    },
+    "traps": [
+      {
+        "id": "only-scale-api",
+        "label": { "vi": "Chỉ tăng Notification API lên 4 máy, giữ nguyên Queue, Workers và Retry tức thì" },
+        "changes": [
+          { "type": "knob", "node": "notify_api", "key": "replicas", "value": 4 }
+        ],
+        "why": { "vi": "Notification API không phải điểm nghẽn; Priority Queue vẫn là SPOF và cơn bão Retry tức thì ở workers-providers làm sập đường gửi." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tăng Notification API và Priority Queue lên 2 bản sao để loại bỏ SPOF." },
+      { "vi": "Tăng Delivery Workers lên 4 bản sao (6.000 req/s) để gánh đỉnh chiến dịch 4.800 req/s." },
+      { "vi": "Trên link workers-providers, bật cancelOnTimeout: true, retry backoff exponential + jitter full + budgetRatio 0.1 và thêm Circuit Breaker." }
+    ],
+    "explain": { "vi": "Notification API và Queue dự phòng xóa SPOF, 4 Delivery Workers gánh được đỉnh 4.800 req/s, còn Backoff + Jitter + Circuit Breaker giúp hệ thống phục hồi sạch về p99 = {m.p99'@45:0} ms sau sự cố đối tác với chi phí {m.cost'@45:2} USD/giờ." }
+  },
+  {
+    "id": "S7-03.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: Chiến dịch 10M chặn OTP, bão Retry và gửi trùng thông báo" },
+    "prompt": { "vi": "Trong đợt khuyến mãi lớn: (1) Hàng triệu người dùng không nhận được mã OTP đăng nhập trong 25 phút vì thông báo tiếp thị chiếm kín hàng đợi duy nhất; (2) Khi cổng SMS chậm 320 ms, Delivery Workers thử lại 3 lần ngay lập tức không có Jitter làm nghẽn cứng hàng đợi; (3) Nhiều khách hàng nhận cùng một tin nhắn khuyến mãi tới 3 lần sau khi worker khởi động lại. Hãy chọn chẩn đoán và giải pháp đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S7-03/notify-blast",
+      "seekSec": 22,
+      "focus": { "nodes": ["queue", "workers", "providers"] }
+    },
+    "questions": [
+      {
+        "id": "fix-otp-starvation",
+        "type": "single",
+        "prompt": { "vi": "Thay đổi kiến trúc nào đảm bảo luồng OTP giao dịch luôn được giao tức thì ngay cả khi có chiến dịch 10 triệu tin?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Tách riêng hàng đợi và nhóm worker theo độ ưu tiên (High cho OTP, Low cho Marketing)" } },
+          { "id": "b", "text": { "vi": "Gộp mọi loại thông báo vào chung một bảng SQL duy nhất" } },
+          { "id": "c", "text": { "vi": "Tăng kích thước hàng đợi FIFO lên gấp 10 lần" } },
+          { "id": "d", "text": { "vi": "Tắt hoàn toàn thông báo OTP trong giờ khuyến mãi" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "fix-provider-slow",
+        "type": "multi",
+        "prompt": { "vi": "Những cơ chế nào giúp bảo vệ hệ thống khi đối tác SMS/Push phản hồi chậm hoặc vượt hạn mức?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Dùng Exponential Backoff + Full Jitter kèm Retry Budget khi thử lại" } },
+          { "id": "b", "text": { "vi": "Bọc lời gọi sang đối tác bằng Circuit Breaker và điều tiết tốc độ gửi theo quota đối tác" } },
+          { "id": "c", "text": { "vi": "Tăng số lần thử lại tức thì lên 10 lần không độ trễ" } },
+          { "id": "d", "text": { "vi": "Bỏ giới hạn Timeout trên kết nối tới đối tác" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-dup-send",
+        "type": "single",
+        "prompt": { "vi": "Cách nào ngăn chặn việc gửi trùng một thông báo cho cùng người dùng khi worker xử lý lại từ hàng đợi?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Gắn khóa khử trùng (dedup_key / idempotency_key) theo sự kiện + người nhận và kiểm tra nguyên tử trước khi gọi đối tác" } },
+          { "id": "b", "text": { "vi": "Xóa thông báo khỏi hàng đợi trước khi gọi đối tác và không bao giờ thử lại" } },
+          { "id": "c", "text": { "vi": "Chỉ gửi thông báo qua Email thay vì Push" } },
+          { "id": "d", "text": { "vi": "Đổi thuật toán Load Balancer sang Random" } }
+        ],
+        "correct": ["a"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Tách hàng đợi (Priority Queue) giúp tin tiếp thị không thể xếp hàng trước OTP." },
+      { "vi": "At-least-once delivery từ hàng đợi đòi hỏi worker phải kiểm tra dedup_key để đạt hiệu ứng gửi một lần." }
+    ],
+    "explain": { "vi": "Tách làn ưu tiên bảo vệ OTP, Backoff + Jitter + Circuit Breaker chặn bão Retry khi đối tác chậm, và dedup_key khử trùng hiệu quả khi worker thử lại." }
+  }
+]

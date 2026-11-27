@@ -1,0 +1,108 @@
+[
+  {
+    "id": "S5-03.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải đầu tiên khi tải Feed tăng?" },
+    "prompt": { "vi": "Lưu lượng mở Feed và đăng bài tăng từ 500 lên 5.000 req/s (90% đọc), Timeline Cache chỉ chứa 50.000 trên 150.000 key hoạt động. Mô phỏng dừng ở giây thứ 5. Node nào sẽ chuyển sang trạng thái Quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 5,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 5 },
+      "expected": ["post_db"]
+    },
+    "reveal": { "playFromSec": 5, "playToSec": 25, "speed": 2 },
+    "hints": [
+      { "vi": "Timeline Cache chỉ phủ được một phần ba tập key hoạt động nên phần lớn lượt đọc bị trượt đệm." },
+      { "vi": "Cụm Feed API có 6.000 req/s, trong khi Post DB hiện chỉ có 1 shard (1.200 req/s)." }
+    ],
+    "explain": { "vi": "{post_db.name} quá tải đầu tiên ở giây {t.first.post_db:0} vì Cache Hit Ratio thấp đẩy phần lớn lượt đọc cộng toàn bộ lượt ghi xuống 1 shard Post DB (1.200 req/s). Đây chính là hệ quả khi bài toán đọc đổ xuống tầng lưu trữ bài viết." },
+    "sim": { "simId": "S5-03/feed", "seekSec": 5, "autoplay": false },
+    "replay": { "simId": "S5-03/feed", "seekSec": 5, "focus": { "nodes": ["post_db", "feed_cache"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S5-03.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm tải tối đa cụm Feed hiện tại chịu được" },
+    "prompt": { "vi": "Dùng núm tải để tìm lưu lượng cao nhất (req/s) mà cấu hình Feed hiện tại vẫn giữ p99 ≤ 120 ms và lỗi ≤ 1% trong khoảng giây 20 đến 40." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 20, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 20, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 4000, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Điểm nghẽn nằm ở Post DB (1.200 req/s) khi nhận khoảng 70% lưu lượng đầu vào." }
+    ],
+    "explain": { "vi": "Giới hạn tải của hệ thống hiện tại nằm quanh {ref.value:0} req/s do Post DB (1.200 req/s) phải gánh phần lớn lượt đọc trượt Timeline Cache." },
+    "sim": { "simId": "S5-03/feed", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S5-03.A3",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố News Feed chịu đỉnh 4.500 req/s" },
+    "prompt": { "vi": "Cấu hình hệ thống News Feed để chạy ổn định ở tải chuẩn 2.000 req/s (p99 ≤ 100 ms, lỗi ≤ 1%), vượt qua đợt đột biến 4.500 req/s (p99 ≤ 130 ms, lỗi ≤ 1%) và không có điểm lỗi đơn (SPOF) ở Load Balancer và Feed API trong ngân sách ≤ 2,00 USD/giờ (tối đa 3 thay đổi)." },
+    "difficulty": 3,
+    "simId": "S5-03/feed",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-2000",
+        "label": { "vi": "Tải chuẩn 2.000 req/s (p99 ≤ 100 ms, lỗi ≤ 1%)" },
+        "simId": "S5-03/feed",
+        "loadOverride": { "kind": "steady", "rps": 2000 },
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 100, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "spike-4500",
+        "label": { "vi": "Đỉnh đột biến 4.500 req/s (p99 ≤ 130 ms, lỗi ≤ 1%)" },
+        "simId": "S5-03/feed",
+        "loadOverride": { "kind": "spike", "base": 2000, "peak": 4500, "atSec": 15, "holdSec": 20, "riseSec": 5, "fallSec": 5 },
+        "constraints": [
+          { "id": "p99-spike", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 5, "toSec": 55 }, "allowViolationPct": 2 },
+          { "id": "err-spike", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 55 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-lb-spof", "kind": "structural", "rule": "no-spof", "node": "lb" },
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "feed_api" }
+    ],
+    "budget": {
+      "maxCostPerHour": 2.0,
+      "maxChanges": 3
+    },
+    "par": {
+      "costPerHour": 1.66,
+      "changes": 2
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "feed_cache", "key": "capacityKeys", "value": 150000 },
+        { "type": "knob", "node": "post_db", "key": "shards", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "only-api-scale",
+        "label": { "vi": "Tăng Feed API lên 5 instance nhưng giữ Timeline Cache 50.000 key và 1 shard Post DB" },
+        "changes": [
+          { "type": "knob", "node": "feed_api", "key": "replicas", "value": 5 }
+        ],
+        "why": { "vi": "Feed API không phải điểm nghẽn; giữ Cache nhỏ khiến Post DB vẫn quá tải ở cả 2.000 req/s lẫn đỉnh 4.500 req/s." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tập người dùng hoạt động là 150.000 key; nâng Timeline Cache lên 150.000 key để giảm mạnh tải đọc xuống Post DB." },
+      { "vi": "Thêm 1 shard cho Post DB (tổng 2 shard = 2.400 req/s) để gánh dư phần đọc trượt đệm và lượt ghi lúc đỉnh." }
+    ],
+    "explain": { "vi": "Nâng Timeline Cache lên 150.000 key đẩy Hit Ratio lên {feed_cache.hitRatio'@30:0%} và mở rộng Post DB lên 2 shard giữ p99 ở {m.p99'@30:0} ms qua cả đỉnh 4.500 req/s với chi phí {m.cost'@30:2} USD/giờ." }
+  }
+]

@@ -1,0 +1,49 @@
+[
+  {
+    "id": "S4-03.A1",
+    "kind": "predict",
+    "title": { "vi": "Điều gì xảy ra khi Edge nguội lúc đầu rồi gặp Spike 9.000 req/s ở giây 25?" },
+    "prompt": { "vi": "Ở t = 0 s, CDN Edge khởi động ở trạng thái nguội (warm = 0) với tải nền 3.000 req/s, và làm ấm dần trong 15 giây. Đến giây 25, lưu lượng tăng vọt gấp 3 lần lên 9.000 req/s. Mô phỏng tạm dừng ở giây 20 (sau khi Edge đã ấm). Trong đợt Spike t = 25..50 s, Origin Server (năng lực 1.400 req/s) sẽ ở trạng thái nào?" },
+    "difficulty": 1,
+    "at": 20,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "Origin Server quá tải nghiêm trọng vì nhận toàn bộ 9.000 req/s" },
+        { "vi": "Origin Server vẫn ổn định dưới ngưỡng bão hòa vì Edge ấm giữ lại 90% và Origin Shield tiếp tục lọc phần miss" },
+        { "vi": "CDN Edge bị sập hoàn toàn ở 9.000 req/s" },
+        { "vi": "Origin Shield tự động tắt để chuyển thẳng lưu lượng về Origin" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 20, "playToSec": 52, "speed": 2 },
+    "hints": [
+      { "vi": "Khi Edge đã ấm ở giây 15, tỷ lệ Cache Hit của Edge đạt khoảng 90%." },
+      { "vi": "10% còn lại đi qua Origin Shield (lọc thêm 70% nữa) nên chỉ còn một phần rất nhỏ chạm tới Origin Server." }
+    ],
+    "explain": { "vi": "Trong 15 giây đầu khi Edge còn nguội, lượng miss dồn về sau khá lớn. Nhưng đến giây 25 khi Spike 9.000 req/s xảy ra, {edge.name} đã ấm và giữ lại {edge.hitRatio@35:0%} lượt đọc; cộng thêm {shield.name} lọc tiếp ở tầng giữa nên {origin.name} chỉ nhận {origin.lambda@35:0} req/s (ρ = {origin.rho@35:2}), hoàn toàn an toàn." },
+    "sim": { "simId": "S4-03/edge-offload", "seekSec": 20, "autoplay": false },
+    "replay": { "simId": "S4-03/edge-offload", "seekSec": 20, "focus": { "nodes": ["edge", "shield", "origin"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-03.A2",
+    "kind": "estimate",
+    "title": { "vi": "Tính tải còn lại đi tới Origin khi bật CDN Edge" },
+    "prompt": { "vi": "Hệ thống nhận 9.000 req/s đọc tài nguyên tĩnh. CDN Edge đạt Cache Hit Ratio 90% (chưa xét tầng Origin Shield). Hỏi có bao nhiêu req/s đi qua khỏi CDN Edge hướng về phía Origin?" },
+    "difficulty": 1,
+    "quantity": "Lưu lượng sau CDN Edge",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "9000*(1-0.9)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Tỷ lệ miss tại Edge = 1 − 0,90 = 0,10 (10%)." },
+      { "vi": "Lưu lượng đi tiếp = 9.000 × 0,10 = 900 req/s." }
+    ],
+    "hints": [
+      { "vi": "Chỉ các lượt Cache Miss tại Edge mới tiếp tục đi về phía trung tâm dữ liệu gốc." }
+    ],
+    "explain": { "vi": "Với Hit Ratio 90%, CDN Edge hấp thụ 8.100 req/s và chỉ để {truth:0} req/s đi tiếp về phía Origin (giảm 10 lần tải)." },
+    "replay": { "simId": "S4-03/edge-offload", "seekSec": 35, "focus": { "nodes": ["edge", "origin"] } }
+  }
+]

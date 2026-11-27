@@ -1,0 +1,44 @@
+[
+  {
+    "id": "S2-12.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải trước khi tải upload tăng?" },
+    "prompt": { "vi": "Lưu lượng tăng từ 100 lên 1.000 req/s với 70% là lượt tải tệp lên đi qua API Server. Mô phỏng dừng ở giây thứ 8. Theo bạn, node nào sẽ chuyển sang trạng thái Quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 8,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 8 },
+      "expected": ["api"]
+    },
+    "reveal": { "playFromSec": 8, "playToSec": 30, "speed": 2 },
+    "hints": [
+      { "vi": "CDN chỉ giữ lại các lượt đọc trúng đệm; toàn bộ lượt tải tệp lên vẫn phải đi qua tầng nhận upload." },
+      { "vi": "2 instance API chỉ chịu được tổng cộng 300 req/s khi phải giữ luồng truyền byte." }
+    ],
+    "explain": { "vi": "{api.name} chạm ngưỡng quá tải đầu tiên ở giây {t.first.api:0} vì phải trực tiếp trung chuyển byte tệp tải lên (tổng năng lực 300 req/s trong khi Metadata DB chịu được 2.500 req/s và Object Storage chịu được 5.000 req/s). Chuyển sang Presigned URL giúp bỏ tải byte khỏi API." },
+    "sim": { "simId": "S2-12/upload", "seekSec": 8, "autoplay": false },
+    "replay": { "simId": "S2-12/upload", "seekSec": 8, "focus": { "nodes": ["api"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-12.A2",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng dung lượng Object Storage sau 1 năm" },
+    "prompt": { "vi": "Một ứng dụng mạng xã hội nhận trung bình 1.000.000 ảnh mới mỗi ngày, kích thước trung bình mỗi ảnh (tính cả bản thu nhỏ) là 2 MB. Ước lượng tổng dung lượng Object Storage tích lũy sau 1 năm (365 ngày) theo đơn vị TB (lấy 1 TB = 1.000.000 MB)." },
+    "difficulty": 1,
+    "quantity": "Dung lượng tích lũy sau 1 năm",
+    "unit": "TB",
+    "truth": { "type": "formula", "expr": "1000000*2*365/1000000", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.1, "pass": 0.25 },
+    "workings": [
+      { "vi": "Dung lượng tăng thêm mỗi ngày: 1.000.000 × 2 MB = 2.000.000 MB = 2 TB/ngày." },
+      { "vi": "Sau 1 năm (365 ngày): 2 TB/ngày × 365 ngày = 730 TB." },
+      { "vi": "Con số này cho thấy vì sao không thể lưu byte trong Database và cần chính sách Lifecycle chuyển ảnh cũ sang tầng lưu trữ lạnh." }
+    ],
+    "hints": [
+      { "vi": "Tính dung lượng mỗi ngày bằng số ảnh nhân 2 MB, đổi sang TB (1 TB = 1.000.000 MB), rồi nhân 365 ngày." }
+    ],
+    "explain": { "vi": "Tổng dung lượng tích lũy sau 1 năm là {truth:0} TB. Lưu toàn bộ trong Database sẽ làm chi phí và thời gian sao lưu tăng vọt, trong khi Lifecycle trên Object Storage giúp giảm mạnh chi phí cho ảnh cũ." }
+  }
+]

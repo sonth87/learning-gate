@@ -1,0 +1,144 @@
+{
+  "sims": [
+    {
+      "id": "S7-04/geo-hotkey",
+      "scenario": {
+        "id": "S7-04/geo-hotkey",
+        "seed": 7704,
+        "durationSec": 65,
+        "mix": { "readRatio": 0.2 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "steady",
+          "rps": 8000
+        },
+        "events": [
+          { "at": 15, "type": "hot-key", "node": "geo_shards", "share": 0.5 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "drivers",
+              "kind": "client",
+              "label": { "vi": "Tài xế (1M)", "en": "Drivers (1M)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin" }
+            },
+            {
+              "id": "geo_api",
+              "kind": "service",
+              "label": { "vi": "Location API", "en": "Location API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Location API", "en": "Location API instances" },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3500 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "replicas": 3, "poolSize": 64 }
+            },
+            {
+              "id": "geo_shards",
+              "kind": "nosql",
+              "label": { "vi": "Geo Index Shards", "en": "Geo Index Shards" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.35,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số phân mảnh Geo (Shards)", "en": "Geo Shards" },
+                  "min": 1,
+                  "max": 16,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                },
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số bản sao mỗi Shard", "en": "Replicas per Shard" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4000 },
+              "latency": { "baseMs": 3, "cv": 0.2 },
+              "params": { "shards": 4, "replicas": 1 }
+            }
+          ],
+          "links": [
+            { "id": "drivers-lb", "from": "drivers", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-geo", "from": "lb", "to": "geo_api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "geo-shards", "from": "geo_api", "to": "geo_shards", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "drivers": "all-sequential",
+            "lb": "all-sequential",
+            "geo_api": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+      ],
+      "presets": [
+        {
+          "id": "split-hot-cell-shards",
+          "label": { "vi": "Chia nhỏ ô nóng thành 8 shards và tăng Location API lên 4", "en": "Split to 8 Geo Shards and scale Location API to 4" },
+          "changes": [
+            { "type": "knob", "node": "geo_shards", "key": "shards", "value": 8 },
+            { "type": "knob", "node": "geo_shards", "key": "replicas", "value": 2 },
+            { "type": "knob", "node": "geo_api", "key": "replicas", "value": 4 }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

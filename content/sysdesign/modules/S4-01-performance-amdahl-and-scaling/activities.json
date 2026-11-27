@@ -1,0 +1,99 @@
+[
+  {
+    "id": "S4-01.A1",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần thông lượng thực tế khi bị giới hạn bởi chặng tuần tự" },
+    "prompt": { "vi": "Trên kịch bản S4-01/amdahl, tầng App đã có 4 instance (tổng năng lực 3.600 req/s), nhưng Cache mới chứa 20.000/80.000 key nên phần lớn truy vấn vẫn dồn xuống Primary DB (1.400 req/s). Hãy dùng thanh trượt tải để tìm mức lưu lượng ổn định cao nhất (req/s) giữ được p99 ≤ 140 ms và lỗi ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2119, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Đừng nhìn vào năng lực 3.600 req/s của tầng App; hãy tính tỷ lệ lưu lượng đi xuống Primary DB." },
+      { "vi": "Với Hit Ratio ≈ 42,5% trên 85% lượt đọc cộng 15% lượt ghi, khoảng 63,9% tổng lưu lượng chạm vào Primary DB (năng lực 1.400 req/s)." }
+    ],
+    "explain": { "vi": "Dù tầng App chịu được 3.600 req/s, khoảng {db.share@10:0%} tổng request phải xếp hàng tuần tự tại {db.name} (năng lực 1.400 req/s), nên trần tải bền vững bị khóa quanh mức {ref.value:0} req/s." },
+    "sim": { "simId": "S4-01/amdahl", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S4-01.A2",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán thành phần quá tải đầu tiên khi tải tăng dần" },
+    "prompt": { "vi": "Lưu lượng đang tăng tuyến tính từ 400 lên 4.800 req/s trong 60 giây. Tại giây 15 mọi thành phần đều còn xanh. Theo bạn, node nào sẽ chuyển sang trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 15,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 15 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 15, "playToSec": 36, "speed": 2 },
+    "hints": [
+      { "vi": "So sánh tỷ lệ ρ = λ / μ của App Tier (μ = 3.600 req/s) với Primary DB (μ = 1.400 req/s)." },
+      { "vi": "Ở lưu lượng 2.200 req/s, khoảng 64% request đi xuống Primary DB." }
+    ],
+    "explain": { "vi": "{db.name} chuyển sang trạng thái quá tải đầu tiên ở giây {t.first.db:1}, khi lưu lượng vào DB đạt {db.lambda@28:0} req/s (ρ = {db.rho@28:2}), trong khi {app.name} lúc đó mới ở mức ρ = {app.rho@28:2} và chỉ chạm ngưỡng muộn hơn nhiều (giây {t.first.app:1})." },
+    "sim": { "simId": "S4-01/amdahl", "seekSec": 15, "autoplay": false },
+    "replay": { "simId": "S4-01/amdahl", "seekSec": 15, "focus": { "nodes": ["db", "app"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S4-01.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Phá trần Amdahl để chịu tải 4.800 req/s trong ngân sách" },
+    "prompt": { "vi": "Với tối đa 3 thay đổi và tổng chi phí không vượt quá 2,85 USD/giờ, hãy cấu hình hệ thống vượt qua toàn bộ đợt tăng tải lên 4.800 req/s (80 giây) với p99 ≤ 120 ms và tỷ lệ lỗi ≤ 1%." },
+    "difficulty": 3,
+    "simId": "S4-01/amdahl",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 2.85 },
+    "allowed": [
+      { "type": "knob", "node": "app", "key": "replicas", "min": 1, "max": 10 },
+      { "type": "knob", "node": "app", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 10000, "max": 120000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 80 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 },
+      { "id": "app-calm", "kind": "node-state", "node": "app", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 }
+    ],
+    "observe": { "runSec": 80 },
+    "par": { "changes": 3, "costPerHour": 2.62 },
+    "solution": [
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 },
+      { "type": "knob", "node": "app", "key": "replicas", "value": 7 }
+    ],
+    "traps": [
+      {
+        "id": "only-scale-out-app",
+        "label": { "vi": "Chỉ nhân bản tầng App lên 9 instance mà bỏ qua Cache và DB" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 9 }
+        ],
+        "why": { "vi": "Theo Định luật Amdahl, mở rộng phần song song (App) không làm giảm 64% lưu lượng tuần tự đổ vào Primary DB, nên hệ thống vẫn nghẽn cứng từ mốc ~2.120 req/s." }
+      },
+      {
+        "id": "scale-db-forgot-app",
+        "label": { "vi": "Tăng Cache và Scale-up DB nhưng giữ nguyên 4 instance App (3.600 req/s)" },
+        "changes": [
+          { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 },
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Sau khi gỡ nghẽn ở Primary DB, điểm nghẽn dịch chuyển lên App Tier vì 4 instance chỉ xử lý tối đa 3.600 req/s, không đủ cho đỉnh 4.800 req/s." }
+      }
+    ],
+    "hints": [
+      { "vi": "Bước 1: Thu hẹp phần tuần tự đi xuống DB bằng cách nâng dung lượng Cache phủ đủ tập workingSetKeys (80.000 key)." },
+      { "vi": "Bước 2: Ở đỉnh 4.800 req/s, khoảng 28% request vẫn tới DB (~1.330 req/s, rất sát ngưỡng 1.400); hãy Scale-up DB lên sizeFactor = 2." },
+      { "vi": "Bước 3: Khi DB đã thông thoáng, tính số instance App (mỗi máy 900 req/s) cần thiết để giữ ρ < 0,80 tại 4.800 req/s trong ngân sách 2,85 USD/giờ." }
+    ],
+    "explain": { "vi": "Nâng Cache lên 80.000 key tăng Hit Ratio từ {cache.hitRatio@10:0%} lên {cache.hitRatio'@10:0%}, kéo tải vào DB ở giây 60 giảm mạnh. Kết hợp Scale-up DB gấp đôi (ρ còn {db.rho'@60:2}) và Scale-out App lên 7 instance (ρ = {app.rho'@60:2}, rẻ hơn dùng sizeFactor vì chi phí Scale-up tăng luỹ thừa), toàn hệ thống giữ p99 ở {global.p99'@60:0} ms." },
+    "replay": { "simId": "S4-01/amdahl", "seekSec": 25, "focus": { "nodes": ["cache", "db", "app"] }, "autoplay": true }
+  }
+]

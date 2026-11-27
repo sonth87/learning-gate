@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S6-04.q1",
+    "type": "mc",
+    "q": "Trong bài toán thiết kế Twitter, đâu là chiến lược hợp lý để tránh khuếch đại ghi (Write Amplification) từ tài khoản có hàng chục triệu người theo dõi?",
+    "code": "",
+    "choices": [
+      "Luôn đẩy bài đăng vào bảng tin của tất cả người theo dõi ngay khi đăng",
+      "Dùng Hybrid Fan-out: đẩy trước cho tài khoản thường và kéo trộn khi đọc đối với tài khoản nổi tiếng",
+      "Chặn người dùng theo dõi quá 100 tài khoản",
+      "Lưu toàn bộ bảng tin trên đĩa cục bộ của từng Web Server"
+    ],
+    "answer": 1,
+    "explain": "Đẩy bài của người nổi tiếng cho hàng chục triệu người theo dõi ngay lúc đăng sẽ làm ngập hàng đợi và Redis. Hybrid Fan-out giữ tốc độ đọc nhanh cho đa số người dùng mà vẫn bảo vệ luồng ghi."
+  },
+  {
+    "id": "S6-04.q2",
+    "type": "mc",
+    "q": "Với nền tảng video như YouTube, thành phần nào giúp giảm mạnh nhất chi phí băng thông truyền tải toàn cầu và độ trễ khởi phát video?",
+    "code": "",
+    "choices": [
+      "Tăng số lượng kết nối đồng thời vào Metadata DB",
+      "Phân phối các video phổ biến qua mạng lưới nút biên CDN",
+      "Chuyển mã video đồng bộ ngay trong request tải lên của người dùng",
+      "Lưu video dưới dạng BLOB trực tiếp trong bảng quan hệ"
+    ],
+    "answer": 1,
+    "explain": "Phần lớn lượt xem tập trung vào nhóm video phổ biến. Đặt bản sao tại các nút biên CDN gần người dùng giúp giảm độ trễ khởi phát xuống dưới 100 ms và giảm mạnh lưu lượng ra từ Origin."
+  },
+  {
+    "id": "S6-04.q3",
+    "type": "tf",
+    "q": "Trong hệ thống nhắn tin như WhatsApp, nếu người nhận đang ngoại tuyến, máy chủ nên hủy tin nhắn ngay lập tức để tiết kiệm hàng đợi.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Hệ thống nhắn tin cần đảm bảo giao nhận ít nhất một lần (at-least-once). Tin nhắn cho người nhận ngoại tuyến phải được giữ trong hàng đợi bền vững và gửi lại khi thiết bị kết nối trở lại."
+  },
+  {
+    "id": "S6-04.q4",
+    "type": "output",
+    "q": "Một tệp 1 GB trên Google Drive được chia thành các khối 4 MB. Nếu người dùng sửa nội dung làm thay đổi đúng 1 khối, hệ thống cần tải lên bao nhiêu MB qua Delta Sync? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4",
+    "explain": "Nhờ chia khối 4 MB và đối chiếu mã băm SHA-256, ứng dụng chỉ cần tải lên đúng khối 4 MB bị thay đổi thay vì toàn bộ 1 GB."
+  },
+  {
+    "id": "S6-04.q5",
+    "type": "mc",
+    "q": "Khi hai thiết bị cùng chỉnh sửa ngoại tuyến một tệp Google Drive rồi đồng bộ lên máy chủ, cách xử lý an toàn nhất là gì?",
+    "code": "",
+    "choices": [
+      "Ghi đè tự động theo thời gian đồng hồ thiết bị (Last-Write-Wins)",
+      "Giữ cả hai phiên bản và tạo bản sao xung đột để người dùng tự gộp",
+      "Từ chối vĩnh viễn mọi thay đổi từ thiết bị thứ hai",
+      "Xóa tệp gốc trên máy chủ"
+    ],
+    "answer": 1,
+    "explain": "Last-Write-Wins dựa vào đồng hồ thiết bị dễ làm mất dữ liệu công sức người dùng. Lưu cả hai phiên bản dưới dạng bản sao xung đột bảo toàn tuyệt đối dữ liệu."
+  },
+  {
+    "id": "S6-04.q6",
+    "type": "mc",
+    "q": "Dấu hiệu nào cho thấy một ứng viên đang đi đúng hướng trong 7 phút đầu của buổi phỏng vấn 45 phút?",
+    "code": "",
+    "choices": [
+      "Bắt tay ngay vào vẽ sơ đồ 15 microservice",
+      "Chủ động hỏi làm rõ tính năng cốt lõi, phần ngoài phạm vi và quy mô tải mục tiêu",
+      "Chỉ nói về một loại cơ sở dữ liệu duy nhất mà không nêu đánh đổi",
+      "Bỏ qua phần ước lượng số liệu để tiết kiệm thời gian"
+    ],
+    "answer": 1,
+    "explain": "Chặng Scope (0–7 phút) quyết định toàn bộ hướng đi kiến trúc; làm rõ yêu cầu và giới hạn phạm vi giúp tránh thiết kế sai trọng tâm."
+  }
+]

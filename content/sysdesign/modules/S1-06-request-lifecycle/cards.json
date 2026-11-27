@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S1-06.c1",
+    "front": "Bốn nhóm chặng nối tiếp trong vòng đời của một HTTP request lần đầu là gì?",
+    "back": "1. Phân giải tên miền DNS lấy địa chỉ IP; 2. Bắt tay kết nối TCP và TLS; 3. Truyền HTTP request và xử lý tại Web Server; 4. Truy vấn Database nội bộ và tải dữ liệu phản hồi về thiết bị."
+  },
+  {
+    "id": "S1-06.c2",
+    "front": "RTT (Round-Trip Time) là gì và ảnh hưởng thế nào tới kết nối HTTPS mới?",
+    "back": "RTT là thời gian một gói tin đi từ thiết bị tới máy chủ rồi quay về. Mở kết nối HTTPS mới tốn 2 RTT bắt tay (1 TCP + 1 TLS 1.3) cộng 1 RTT trao đổi HTTP, nên RTT cao làm độ trễ nhân lên gấp ba lần ngay cả trước khi tính xử lý tại server."
+  },
+  {
+    "id": "S1-06.c3",
+    "front": "Đánh đổi giữa việc đặt TTL bản ghi DNS dài và ngắn?",
+    "back": "TTL dài giúp trình duyệt dùng lại IP đã đệm (0 ms) và giảm tải cho DNS, nhưng khi đổi IP máy chủ thì người dùng mất nhiều thời gian hơn mới cập nhật sang địa chỉ mới; TTL ngắn chuyển hướng nhanh khi sự cố nhưng phải tra cứu lại thường xuyên."
+  },
+  {
+    "id": "S1-06.c4",
+    "front": "HTTP Keep-Alive và ghép kênh HTTP/2 rút ngắn vòng đời request bằng cách nào?",
+    "back": "Giữ mở kết nối TCP/TLS sau request đầu tiên và gửi song song nhiều luồng dữ liệu trên cùng kết nối đó, nhờ vậy các request kế tiếp bỏ qua được cả bước phân giải DNS lẫn 2 RTT bắt tay."
+  },
+  {
+    "id": "S1-06.c5",
+    "front": "Vì sao log tại máy chủ báo API xử lý chỉ mất 30 ms nhưng người dùng ở xa vẫn chờ 500 ms?",
+    "back": "Log nội bộ chỉ đo từ lúc byte request chạm tới máy chủ đến lúc ghi xong phản hồi, không tính thời gian tra DNS và nhiều vòng RTT xuyên lục địa trên Internet công cộng."
+  },
+  {
+    "id": "S1-06.c6",
+    "front": "Cách chọn hướng tối ưu nhanh khi đọc biểu đồ thác nước (Waterfall) của request?",
+    "back": "Nhìn thanh span chiếm tỉ trọng lớn nhất: span bắt tay/mạng ngoài dài thì bật Keep-Alive, HTTP/2 và CDN Edge; span Database hoặc Server dài thì dùng EXPLAIN, thêm chỉ mục và Cache."
+  }
+]

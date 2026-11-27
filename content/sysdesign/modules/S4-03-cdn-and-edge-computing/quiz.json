@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-03.q1",
+    "type": "mc",
+    "q": "Lợi ích cốt lõi nhất của việc đặt CDN Edge Server gần người dùng về mặt vật lý là gì?",
+    "code": "",
+    "choices": [
+      "Tăng tốc độ CPU của Origin Server",
+      "Rút ngắn khoảng cách truyền tín hiệu để giảm độ trễ khứ hồi (RTT) và giảm tải trực tiếp lên Origin",
+      "Thay thế hoàn toàn Database quan hệ",
+      "Mã hóa dữ liệu trong bộ nhớ RAM của trình duyệt"
+    ],
+    "answer": 1,
+    "explain": "Tín hiệu qua cáp quang bị giới hạn bởi tốc độ ánh sáng. Đặt Edge gần người dùng rút ngắn đáng kể khoảng cách truyền và chặn phần lớn lượt đọc tĩnh ngay ở biên mạng."
+  },
+  {
+    "id": "S4-03.q2",
+    "type": "mc",
+    "q": "Header nào phù hợp nhất cho file JavaScript đã gắn mã băm nội dung trong tên file như `app.8f3a1c.js`?",
+    "code": "",
+    "choices": [
+      "Cache-Control: no-store",
+      "Cache-Control: private, max-age=0",
+      "Cache-Control: public, max-age=31536000, immutable",
+      "Cache-Control: must-revalidate"
+    ],
+    "answer": 2,
+    "explain": "Vì tên file thay đổi mỗi khi nội dung đổi, URL cũ sẽ không bao giờ thay đổi nội dung nên có thể cache công khai 1 năm (31.536.000 giây) với cờ `immutable` mà không cần hỏi lại Origin."
+  },
+  {
+    "id": "S4-03.q3",
+    "type": "tf",
+    "q": "Đối với trang giỏ hàng hoặc trang hồ sơ cá nhân chứa thông tin riêng tư của từng người dùng, ta có thể đặt `Cache-Control: public` để CDN phục vụ nhanh hơn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đặt `public` cho phép CDN Edge dùng chung phản hồi đó cho nhiều người dùng khác nhau, dẫn đến rò rỉ dữ liệu cá nhân. Dữ liệu riêng tư bắt buộc dùng `Cache-Control: private` hoặc `no-store`."
+  },
+  {
+    "id": "S4-03.q4",
+    "type": "mc",
+    "q": "Vai trò chính của tầng Origin Shield nằm giữa các CDN Edge và Origin Server là gì?",
+    "code": "",
+    "choices": [
+      "Thay thế DNS toàn cầu",
+      "Gom các lượt Cache Miss từ nhiều điểm Edge phân tán lại một chỗ để Origin chỉ phải trả lời một lần cho mỗi tài nguyên",
+      "Chạy trình duyệt của người dùng trên máy chủ",
+      "Tự động nén cơ sở dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Nếu có 200 Edge POP cùng miss một file mới phát hành, chúng sẽ gửi 200 yêu cầu về Origin. Origin Shield gom chúng lại thành một lượt gọi duy nhất về Origin."
+  },
+  {
+    "id": "S4-03.q5",
+    "type": "mc",
+    "q": "Vì sao chiến lược Versioned URL (gắn hash vào tên file) được ưu tiên hơn gọi Purge API khi cập nhật tài nguyên tĩnh?",
+    "code": "",
+    "choices": [
+      "Vì Purge API không hoạt động với HTTPS",
+      "Vì URL mới có hiệu lực tức thì trên mọi Edge mà không tốn thời gian chờ lan truyền lệnh xóa hay bị giới hạn tốc độ Purge API",
+      "Vì Versioned URL không cần dùng DNS",
+      "Vì Purge API làm mất dữ liệu trong Database"
+    ],
+    "answer": 1,
+    "explain": "Gọi Purge API mất thời gian lan truyền khắp các cụm Edge toàn cầu và thường bị giới hạn tần suất. Đổi tên file theo mã băm giúp trình duyệt và Edge nạp ngay bản mới như một tài nguyên độc lập."
+  },
+  {
+    "id": "S4-03.q6",
+    "type": "output",
+    "q": "Một dịch vụ phục vụ 12.000 req/s nội dung công khai. CDN Edge đạt Hit Ratio 85%, và tầng Origin Shield giữ lại thêm 50% số lượt lọt qua Edge. Bao nhiêu req/s cuối cùng chạm tới Origin Server? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "900",
+    "explain": "Số lượt lọt qua Edge là 12.000 × (1 − 0,85) = 1.800 req/s. Origin Shield giữ tiếp 50%, nên lượng chạm tới Origin chỉ còn 1.800 × 0,5 = 900 req/s."
+  }
+]

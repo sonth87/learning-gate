@@ -1,0 +1,8 @@
+[
+  { "id": "S6-04.c1", "front": "Bài toán cốt lõi cần đào sâu khi thiết kế Twitter là gì?", "back": "Khuếch đại ghi khi phân phối bảng tin (Fan-out). Giải pháp chuẩn là Hybrid Fan-out: đẩy trước vào Redis cho tài khoản thường (< 10K follower) và kéo trộn lúc đọc cho người nổi tiếng." },
+  { "id": "S6-04.c2", "front": "Bài toán cốt lõi khi thiết kế YouTube là gì?", "back": "Đường ống chuyển mã bất đồng bộ đa độ phân giải (360p–4K) kết hợp Object Storage và CDN biên để tối ưu băng thông hàng exabyte và độ trễ khởi phát." },
+  { "id": "S6-04.c3", "front": "Bài toán cốt lõi khi thiết kế WhatsApp là gì?", "back": "Duy trì hàng trăm triệu kết nối WebSocket Gateway, theo dõi Presence, đảm bảo giao nhận at-least-once qua hàng đợi bền vững khi ngoại tuyến và ACK." },
+  { "id": "S6-04.c4", "front": "Bài toán cốt lõi khi thiết kế Google Drive là gì?", "back": "Chia tệp thành khối 4 MB gắn mã băm SHA-256 để đồng bộ phần thay đổi (Delta Sync), khử trùng lặp và giữ cả hai phiên bản khi có xung đột ngoại tuyến." },
+  { "id": "S6-04.c5", "front": "Vì sao WhatsApp tối ưu nhắn tin nhóm bằng cách lưu một bản tin nhắn?", "back": "Thay vì nhân bản nội dung cho 256 thành viên, lưu nội dung một lần và chỉ phân phối con trỏ tham chiếu giúp tiết kiệm lưu trữ và nhất quán dữ liệu." },
+  { "id": "S6-04.c6", "front": "Bốn tín hiệu mạnh nhất trong buổi phỏng vấn thiết kế hệ thống?", "back": "Làm rõ Scope trước khi vẽ, ước lượng số liệu ở chặng Numbers để chỉ ra nút thắt, phân tích rõ đánh đổi giữa các phương án và chủ động đề cập xử lý lỗi/giám sát." }
+]

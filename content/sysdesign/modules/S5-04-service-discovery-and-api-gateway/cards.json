@@ -1,0 +1,8 @@
+[
+  { "id": "S5-04.c1", "front": "Service Registry và Heartbeat hoạt động thế nào?", "back": "Mỗi instance khi khởi động sẽ tự đăng ký IP/cổng vào Service Registry và gửi Heartbeat định kỳ. Nếu thiếu liên tiếp vài nhịp (hết TTL), Registry tự động gỡ instance đó khỏi danh sách khả dụng." },
+  { "id": "S5-04.c2", "front": "So sánh Client-side Discovery và Server-side Discovery?", "back": "Client-side: service gọi tự hỏi Registry và tự chọn instance (ít hop hơn nhưng code phải gắn thư viện discovery). Server-side: gọi qua Load Balancer trung tâm, LB tự hỏi Registry và chuyển tiếp (client đơn giản, độc lập ngôn ngữ)." },
+  { "id": "S5-04.c3", "front": "Vì sao DNS TTL dài gây rắc rối cho Service Discovery?", "back": "DNS bị cache ở nhiều lớp (hệ điều hành, runtime, DNS resolver). Nếu TTL cao, khi một instance chết hoặc đổi IP, client vẫn giữ IP cũ trong cache và gửi request vào địa chỉ lỗi." },
+  { "id": "S5-04.c4", "front": "Readiness Check, Slow-Start và Draining khác nhau thế nào?", "back": "Readiness giữ instance mới ngoài pool đến khi khởi tạo xong; Slow-Start tăng dần tỉ lệ traffic để JIT/cache kịp nóng; Draining ngừng nhận request mới nhưng chờ request cũ hoàn tất trước khi tắt." },
+  { "id": "S5-04.c5", "front": "Vì sao Service Registry thường chạy cụm lẻ (3 hoặc 5 node)?", "back": "Để tránh Registry trở thành điểm lỗi đơn (SPOF). Cụm 3 node dùng đồng thuận Quorum vẫn phục vụ bình thường khi mất 1 node vì vẫn còn đa số 2/3." },
+  { "id": "S5-04.c6", "front": "Phân biệt API Gateway và Service Mesh?", "back": "API Gateway đứng ở rìa hệ thống (North-South) xử lý SSL, xác thực, rate limit, gộp API cho client ngoài. Service Mesh đặt sidecar cạnh mỗi service để xử lý mTLS, retry, timeout và metric cho giao tiếp nội bộ (East-West)." }
+]

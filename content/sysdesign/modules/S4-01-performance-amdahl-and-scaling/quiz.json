@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S4-01.q1",
+    "type": "output",
+    "q": "Theo Định luật Amdahl, nếu 25% thời gian xử lý của một tác vụ là tuần tự không thể chia nhỏ (1 − p = 0,25) và 75% còn lại có thể chạy song song hoàn hảo, hệ số tăng tốc tối đa khi tăng số máy chủ lên vô hạn bằng bao nhiêu lần? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4",
+    "explain": "Khi số máy N tiến tới vô hạn, phần song song p / N tiến về 0. Hệ số tăng tốc tối đa bị chặn trên bởi S_max = 1 / (1 − p) = 1 / 0,25 = 4 lần, bất kể bổ sung thêm bao nhiêu máy chủ."
+  },
+  {
+    "id": "S4-01.q2",
+    "type": "mc",
+    "q": "So với mở rộng dọc (Scale-up), mở rộng ngang (Scale-out) cho tầng ứng dụng mang lại hai lợi thế cốt lõi nào?",
+    "code": "",
+    "choices": [
+      "Không cần bộ cân bằng tải và không bao giờ phải sửa cách lưu phiên đăng nhập",
+      "Vượt qua trần phần cứng của một máy đơn lẻ và loại bỏ điểm lỗi đơn (SPOF) khi một máy gặp sự cố",
+      "Luôn có độ trễ mạng nội bộ bằng 0 do mọi tiến trình nằm chung một bộ nhớ RAM",
+      "Tự động tối ưu mọi câu truy vấn thiếu chỉ mục bên trong cơ sở dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "Mở rộng ngang ghép nhiều máy chủ cỡ vừa sau Load Balancer nên tổng công suất không bị chặn bởi bo mạch lớn nhất, đồng thời nếu một instance hỏng thì các instance còn lại vẫn tiếp tục phục vụ."
+  },
+  {
+    "id": "S4-01.q3",
+    "type": "tf",
+    "q": "Chỉ cần bật chế độ Autoscaling tự động theo ngưỡng CPU 70% là hệ thống luôn tránh được mọi lỗi quá tải trong các đợt mở bán Flash Sale tăng lưu lượng gấp 5 lần chỉ trong 3 giây.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Autoscaling phản ứng dựa trên metric trễ và các máy mới cần thời gian khởi tạo container, nạp ứng dụng và làm nóng JIT/Connection Pool (Cold Start). Trong khoảng trống vài chục giây tới vài phút đó, cụm máy cũ vẫn bị quá tải nếu không Pre-warm trước."
+  },
+  {
+    "id": "S4-01.q4",
+    "type": "mc",
+    "q": "Loại kiểm thử tải nào phù hợp nhất để phát hiện lỗi rò rỉ bộ nhớ (Memory Leak) hoặc rò rỉ kết nối cơ sở dữ liệu tích tụ chậm sau nhiều giờ vận hành?",
+    "code": "",
+    "choices": [
+      "Spike Test kéo dài 30 giây",
+      "Baseline Test trong 2 phút",
+      "Soak Test (Endurance Test) duy trì tải ổn định liên tục trong 8 đến 24 giờ",
+      "Kiểm thử đơn vị (Unit Test) trên máy cá nhân"
+    ],
+    "answer": 2,
+    "explain": "Rò rỉ bộ nhớ nhỏ trên mỗi request hoặc đóng thiếu kết nối hiếm khi gây đầy RAM trong vài phút thử nghiệm ngắn. Chỉ có Soak Test chạy bền bỉ nhiều giờ mới làm các tài nguyên rò rỉ chạm ngưỡng giới hạn."
+  },
+  {
+    "id": "S4-01.q5",
+    "type": "mc",
+    "q": "Số đo giám sát lúc cao điểm cho thấy: 6 máy App có CPU trung bình 35%, mạng nội bộ dư băng thông, trong khi Primary Database có CPU 98% và thời gian chờ I/O ổ đĩa rất cao do quét toàn bảng. Hành động nào hợp lý nhất?",
+    "code": "",
+    "choices": [
+      "Nhân đôi tầng App từ 6 lên 12 máy để chia nhỏ tải tính toán",
+      "Nâng cấp băng thông card mạng của Load Balancer",
+      "Tác động trực tiếp vào điểm nghẽn Storage/DB: thêm chỉ mục cho câu truy vấn chậm và tăng tỷ lệ trúng Cache để giảm lượt đọc xuống đĩa",
+      "Giảm thời gian TTL của Cache xuống 1 giây"
+    ],
+    "answer": 2,
+    "explain": "Điểm nghẽn nằm ở chiều Storage/Database (CPU 98%, chờ I/O cao) chứ không phải tầng App (CPU 35%). Tối ưu chỉ mục và nâng Cache Hit Ratio giảm trực tiếp khối lượng công việc tuần tự tại Database với chi phí thấp nhất."
+  }
+]

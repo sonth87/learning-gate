@@ -1,0 +1,24 @@
+{
+  "id": "S4-11",
+  "slug": "S4-11-timeouts-retries-circuit-breaker-bulkhead",
+  "level": 4,
+  "order": 8,
+  "title": "Timeout, Retry, Circuit Breaker và Bulkhead: phòng vệ lỗi dây chuyền",
+  "summary": "Đặt ngân sách Timeout chặt chẽ, dập bão Retry bằng Exponential Backoff + Full Jitter + Retry Budget, ngắt mạch nhanh bằng Circuit Breaker, huỷ công việc quá hạn và cô lập tài nguyên theo mẫu Bulkhead.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Thiết lập Connect Timeout, Request Timeout và lan truyền hạn chót (Deadline Propagation) kèm huỷ công việc quá hạn" },
+    { "vi": "Giải thích cơ chế hình thành bão Retry (Retry Storm) giả bền và triệt tiêu khuếch đại tải bằng Exponential Backoff, Full Jitter và Retry Budget" },
+    { "vi": "Vận hành máy trạng thái 3 pha của Circuit Breaker (Closed, Open, Half-Open) và sử dụng Idempotency Key chống thực thi trùng" },
+    { "vi": "Áp dụng mẫu vách ngăn Bulkhead tách riêng Thread Pool / Connection Pool để một dịch vụ phụ thuộc chậm không làm tê liệt toàn hệ thống" }
+  ],
+  "tags": ["timeout", "retry-storm", "backoff", "jitter", "retry-budget", "circuit-breaker", "bulkhead", "idempotency"],
+  "prerequisites": ["S1-02", "S1-07", "S4-05", "S4-10"],
+  "related": ["S3-04", "S3-09", "S4-07"],
+  "dtsRef": "timeouts-retries",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về ngân sách Timeout, bão Retry, Exponential Backoff + Full Jitter, Retry Budget, Circuit Breaker, huỷ công việc quá hạn và cô lập Bulkhead."
+  }
+}

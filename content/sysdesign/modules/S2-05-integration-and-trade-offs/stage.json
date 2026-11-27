@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "base": "s1-gap",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": { "vi": "Độc giả xem bài viết (85%) và tác giả đăng bài kèm ảnh (15%).", "en": "Readers viewing posts (85%) and authors uploading posts with images (15%)." },
+        "how": { "vi": "Gửi lưu lượng 1.800 req/s thường ngày và có thể vọt lên 3.400 req/s.", "en": "Generates 1,800 req/s steady load, spiking up to 3,400 req/s." },
+        "why": { "vi": "Quyết định tỷ lệ đọc/ghi và yêu cầu độ trễ p99.", "en": "Drives read/write mix and p99 latency targets." }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Cửa ngõ điều phối lưu lượng vào cụm Blog API.", "en": "Entry load balancer distributing traffic to Blog API." },
+        "how": { "vi": "Cần tối thiểu 2 instance chạy song song để không trở thành điểm lỗi đơn.", "en": "Needs at least 2 instances to avoid a single point of failure." },
+        "why": { "vi": "Bảo đảm tính sẵn sàng và mở rộng ngang tầng ứng dụng.", "en": "Ensures high availability and horizontal scaling." }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Blog API", "en": "Blog API" },
+      "inspector": {
+        "what": { "vi": "Máy chủ ứng dụng xử lý đọc bài và tiếp nhận đăng ảnh (μ = 1.200 req/s mỗi máy).", "en": "Stateless Blog API server (μ = 1,200 req/s per instance)." },
+        "how": { "vi": "Đọc bài qua Cache; khi đăng bài thì lưu metadata và đẩy job nén ảnh sang Queue.", "en": "Reads posts via Cache; enqueues image resize jobs on writes." },
+        "why": { "vi": "Phải có đủ instance để gánh tải đỉnh 3.400 req/s mà không chạm ngưỡng bão hòa.", "en": "Must scale out to sustain 3,400 req/s peaks without saturation." }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": { "vi": "Bộ nhớ đệm lưu bài viết nóng trong RAM.", "en": "In-memory cache for hot blog posts." },
+        "how": { "vi": "Tập bài viết nóng khoảng 80.000 key; dung lượng nhỏ hơn sẽ gây nhiều Cache Miss.", "en": "Hot working set is ~80,000 keys; smaller capacity causes misses." },
+        "why": { "vi": "Giữ phần lớn lượt đọc ở RAM để Database không bị quá tải.", "en": "Absorbs read traffic so Database stays well below capacity." }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Blog DB", "en": "Blog DB" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu lưu nội dung bài viết, bình luận và metadata ảnh (μ = 1.200 req/s).", "en": "Relational DB storing posts, comments, and image metadata (μ = 1,200 req/s)." },
+        "how": { "vi": "Chỉ nhận lượt đọc bị Cache Miss và toàn bộ lượt ghi mới.", "en": "Receives only Cache Miss reads plus write mutations." },
+        "why": { "vi": "Là thành phần giữ trạng thái khó mở rộng nhất, cần được Cache bảo vệ.", "en": "Hardest stateful tier to scale; relies on Cache protection." }
+      }
+    },
+    "queue": {
+      "shape": "queue",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": { "vi": "Image Queue", "en": "Image Queue" },
+      "inspector": {
+        "what": { "vi": "Hàng đợi trung gian cho tác vụ nén và cắt ảnh.", "en": "Message queue buffering image resize tasks." },
+        "how": { "vi": "Nhận job bất đồng bộ từ Blog API để API trả lời ngay.", "en": "Accepts async jobs so Blog API responds immediately." },
+        "why": { "vi": "Cách ly tác vụ nặng khỏi luồng phục vụ người dùng.", "en": "Isolates heavy processing from user-facing request threads." }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Image Worker", "en": "Image Worker" },
+      "inspector": {
+        "what": { "vi": "Worker xử lý ảnh nền (μ = 500 job/s mỗi máy).", "en": "Background image processing worker (μ = 500 jobs/s per instance)." },
+        "how": { "vi": "Nén ảnh và tạo bản thu nhỏ rồi ghi vào Object Storage.", "en": "Resizes images and writes renditions to Object Storage." },
+        "why": { "vi": "Ở đỉnh 3.400 req/s (15% ghi = 510 job/s), 1 worker sẽ bị tồn đọng; cần 2 worker.", "en": "At 3,400 req/s peak (510 writes/s), 1 worker lags behind; 2 workers keep up." }
+      }
+    },
+    "blob": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Object Storage", "en": "Object Storage" },
+      "inspector": {
+        "what": { "vi": "Kho lưu trữ tệp ảnh gốc và ảnh đã xử lý.", "en": "Object storage holding raw and resized images." },
+        "how": { "vi": "Nhận tệp từ Worker với thông lượng cao và chi phí thấp.", "en": "Stores image objects from Workers at low cost." },
+        "why": { "vi": "Tách tệp nhị phân khỏi Blog DB.", "en": "Keeps binary blobs out of Blog DB." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": { "inspector": { "what": { "vi": "Lưu lượng người dùng qua Internet.", "en": "User traffic over the Internet." }, "how": { "vi": "Gửi tới Load Balancer.", "en": "Enters via Load Balancer." }, "why": { "vi": "Điểm vào duy nhất của hệ thống.", "en": "Single entry point." } } },
+    "lb-api": { "inspector": { "what": { "vi": "Phân phối tải từ LB sang các instance Blog API.", "en": "Distributes load from LB to Blog API instances." }, "how": { "vi": "Chia đều theo Round-robin.", "en": "Round-robin balancing." }, "why": { "vi": "Tránh dồn tải vào một máy.", "en": "Prevents single-instance overload." } } },
+    "api-cache": { "inspector": { "what": { "vi": "Blog API kiểm tra bài viết trong Redis Cache.", "en": "Blog API checks Redis Cache for posts." }, "how": { "vi": "Trúng Cache trả về ngay; trượt mới hỏi DB.", "en": "Cache hit returns immediately; miss falls through to DB." }, "why": { "vi": "Giảm mạnh số truy vấn xuống Database.", "en": "Cuts Database query load." } } },
+    "cache-db": { "inspector": { "what": { "vi": "Truy vấn trượt đệm và lệnh ghi xuống Blog DB.", "en": "Cache misses and writes going to Blog DB." }, "how": { "vi": "Tỷ lệ rơi xuống DB phụ thuộc Hit Ratio của Cache.", "en": "Traffic depends directly on Cache Hit Ratio." }, "why": { "vi": "Cần giữ tải dưới 1.200 req/s để DB không nghẽn.", "en": "Must stay below 1,200 req/s to protect DB." } } },
+    "api-queue": { "inspector": { "what": { "vi": "API đẩy job xử lý ảnh vào hàng đợi bất đồng bộ.", "en": "API enqueues image resize jobs asynchronously." }, "how": { "vi": "Không chờ Worker xử lý xong mới trả lời.", "en": "Returns immediately without waiting for Worker." }, "why": { "vi": "Giữ độ trễ API ổn định dưới tải cao.", "en": "Keeps API latency low under load." } } },
+    "queue-worker": { "inspector": { "what": { "vi": "Image Worker kéo job từ hàng đợi.", "en": "Image Worker pulls jobs from Queue." }, "how": { "vi": "Xử lý nền với tốc độ 500 job/s mỗi worker.", "en": "Processes at 500 jobs/s per worker." }, "why": { "vi": "Hấp thụ đột biến lượt đăng ảnh.", "en": "Smooths out upload bursts." } } },
+    "worker-blob": { "inspector": { "what": { "vi": "Worker lưu ảnh đã nén lên Object Storage.", "en": "Worker saves resized images to Object Storage." }, "how": { "vi": "Ghi nhiều kích thước ảnh khác nhau.", "en": "Writes multiple image renditions." }, "why": { "vi": "Phục vụ nhanh cho nhiều loại thiết bị.", "en": "Serves optimized sizes per device." } } }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "lb": { "col": 2, "row": 1 },
+    "api": { "col": 4, "row": 1 },
+    "cache": { "col": 6, "row": 0 },
+    "db": { "col": 8, "row": 0 },
+    "queue": { "col": 6, "row": 2 },
+    "worker": { "col": 8, "row": 2 },
+    "blob": { "col": 10, "row": 2 }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": ["lb", "api", "cache", "db", "queue", "worker", "blob"],
+      "label": { "vi": "CỤM HỆ THỐNG BLOG & MEDIA", "en": "BLOG & MEDIA BACKEND" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-gap": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 15 },
+        "api": { "loadPct": 25 },
+        "cache": { "loadPct": 18, "badge": { "text": { "vi": "Đọc nhanh", "en": "Fast Reads" }, "tone": "ok" } },
+        "db": { "loadPct": 20 },
+        "queue": { "loadPct": 15, "badge": { "text": { "vi": "Bất đồng bộ", "en": "Async" }, "tone": "ok" } },
+        "worker": { "loadPct": 20 },
+        "blob": { "loadPct": 12 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tích hợp 6 lớp thành phần", "en": "6-Layer Integration" },
+        "lines": [
+          { "text": { "vi": "Đọc: LB → API → Cache → DB", "en": "Read: LB → API → Cache → DB" }, "tone": "good" },
+          { "text": { "vi": "Xử lý ảnh: API → Queue → Worker → Storage", "en": "Images: API → Queue → Worker → Storage" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-framework": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Quy trình 5 bước từ Bài toán đến Kiến trúc", "en": "5-Step Problem-to-Architecture Framework" },
+        "subtitle": { "vi": "Chỉ thêm thành phần mới khi bước phân tích luồng dữ liệu và số đo chứng minh sự cần thiết", "en": "Add components only when data flow and measurements justify the complexity" },
+        "cells": [
+          "1. Yêu cầu & SLO",
+          "2. Thành phần lõi",
+          "3. Luồng dữ liệu",
+          "4. Đánh đổi chi phí",
+          "5. Tiến hóa theo tải"
+        ],
+        "activeIndices": [0, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "p99, RPS, Ngân sách", "tone": "blue" },
+          { "index": 3, "label": "Lợi ích vs Phức tạp", "tone": "yellow" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên tắc", "en": "Principle" },
+          "value": { "vi": "Xây cho hiện tại · Mở rộng theo số đo", "en": "Build for today · Evolve on metrics" },
+          "tone": "green"
+        }
+      }
+    },
+    "s3-live-sync-problem": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cấu hình khởi đầu quá tải ở 1.800 req/s", "en": "Initial Setup Saturated at 1,800 req/s" },
+        "lines": [
+          { "text": { "vi": "1 API (1.200 req/s) & Cache nhỏ (20k key)", "en": "1 API (1,200 req/s) & small Cache (20k keys)" }, "tone": "bad" },
+          { "text": { "vi": "Tìm nút nghẽn và chỉnh tham số trong ngân sách", "en": "Spot bottlenecks and tune within budget" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-sync-vs-async": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Quyết định tích hợp", "en": "Integration Choice" },
+        "rightTitle": { "vi": "Hệ quả vận hành", "en": "Operational Impact" },
+        "names": [
+          { "id": "sync-img", "name": "Nén ảnh đồng bộ trong API", "note": { "vi": "Giữ thread 2–5 giây mỗi ảnh", "en": "Blocks API thread 2–5s per image" }, "targetId": "bad-ux", "style": "danger" },
+          { "id": "async-img", "name": "Queue + Image Worker", "note": { "vi": "API đẩy job rồi trả lời ngay", "en": "API enqueues and returns immediately" }, "targetId": "good-ux", "style": "solid" },
+          { "id": "cache-hot", "name": "Cache phủ 80.000 bài nóng", "note": { "vi": "Hit Ratio tăng mạnh", "en": "High Cache Hit Ratio" }, "targetId": "db-safe", "style": "solid" }
+        ],
+        "objects": [
+          { "id": "bad-ux", "typeTag": "BLOCKING", "value": "Cạn luồng khi Spike", "fields": ["Độ trễ đuôi vọt > 1.500 ms", "Tác vụ ghi kéo sập luồng đọc"], "tone": "rose", "badge": { "vi": "Rủi ro lan truyền", "en": "Cascading stall" } },
+          { "id": "good-ux", "typeTag": "ASYNC", "value": "API < 100 ms ổn định", "fields": ["Hàng đợi hấp thụ đột biến", "Worker mở rộng độc lập"], "tone": "green", "badge": { "vi": "Cách ly tải nặng", "en": "Isolates heavy load" } },
+          { "id": "db-safe", "typeTag": "CACHE", "value": "Database ρ < 0,6", "fields": ["Hơn 80% lượt đọc dừng ở RAM", "Tiết kiệm chi phí nâng cấp DB"], "tone": "green", "badge": { "vi": "Bảo vệ tầng dữ liệu", "en": "Protects DB tier" } }
+        ]
+      }
+    },
+    "s5-live-hardened": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thử thách chịu đỉnh 3.400 req/s", "en": "3,400 req/s Peak Challenge" },
+        "lines": [
+          { "text": { "vi": "Giữ p99 ≤ 150 ms qua cả tải chuẩn và đột biến", "en": "Keep p99 ≤ 150 ms across steady and spike" }, "tone": "amber" },
+          { "text": { "vi": "Đảm bảo LB ≥ 2 và API ≥ 2 để xóa SPOF", "en": "Ensure LB ≥ 2 and API ≥ 2 for zero SPOF" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 12, "badge": { "text": { "vi": "2+ Active", "en": "2+ Active" }, "tone": "ok" } },
+        "api": { "loadPct": 45, "badge": { "text": { "vi": "3+ Stateless", "en": "3+ Stateless" }, "tone": "ok" } },
+        "cache": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "80k keys", "en": "80k keys" }, "tone": "ok" } },
+        "db": { "loadPct": 38, "badge": { "text": { "vi": "Được bảo vệ", "en": "Protected" }, "tone": "ok" } },
+        "worker": { "loadPct": 40, "badge": { "text": { "vi": "2+ Workers", "en": "2+ Workers" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kiến trúc cân bằng", "en": "Balanced Architecture" },
+        "lines": [
+          { "text": { "vi": "Cache bảo vệ DB · Queue cách ly Worker", "en": "Cache shields DB · Queue isolates Workers" }, "tone": "good" },
+          { "text": { "vi": "Nhân bản LB & API loại bỏ điểm lỗi đơn", "en": "Replicated LB & API eliminate SPOFs" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sim": "S2-05/image-pipeline",
+    "startAtSec": 0,
+    "autoplay": true,
+    "speed": 1,
+    "controls": {
+      "timeline": true,
+      "knobs": [
+        { "node": "lb", "key": "replicas" },
+        { "node": "api", "key": "replicas" },
+        { "node": "cache", "key": "capacityKeys" },
+        { "node": "worker", "key": "replicas" }
+      ]
+    },
+    "telemetry": [
+      { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+      { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 100, "badAbove": 150 } },
+      { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+    ],
+    "slo": [
+      { "metric": "p99", "value": 120 }
+    ],
+    "focus": { "nodes": ["api", "cache", "db", "worker"] }
+  }
+}

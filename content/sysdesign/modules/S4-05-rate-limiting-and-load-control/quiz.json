@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S4-05.q1",
+    "type": "output",
+    "q": "Một Token Bucket có sức chứa tối đa burst = 80 token (đang đầy lúc t = 0) và tốc độ nạp ratePerSec = 20 token/giây. Trong khoảng thời gian 5 giây liên tục (từ t = 0 đến t = 5 s), số lượng request tối đa có thể đi qua xô này là bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "180",
+    "explain": "Client có thể dùng hết 80 token tích sẵn trong xô cộng với lượng token nạp mới trong 5 giây là 5 × 20 = 100 token. Tổng số request tối đa được chấp nhận trong 5 giây đầu là 80 + 100 = 180 request."
+  },
+  {
+    "id": "S4-05.q2",
+    "type": "mc",
+    "q": "Nhược điểm đặc trưng nhất của thuật toán Fixed Window Counter (bộ đếm cửa sổ cố định, ví dụ 100 request mỗi phút chẵn) là gì?",
+    "code": "",
+    "choices": [
+      "Tốn bộ nhớ O(N) tỉ lệ thuận với số lượng request gửi đến",
+      "Cho phép lọt tới 200 request chỉ trong 2 giây ngay tại ranh giới chuyển giao giữa hai cửa sổ (ví dụ 00:59 và 01:00)",
+      "Không thể cài đặt được trên cơ sở dữ liệu trong bộ nhớ như Redis",
+      "Bắt buộc mọi request hợp lệ phải xếp hàng chờ đợi theo nhịp cố định"
+    ],
+    "answer": 1,
+    "explain": "Ở giây cuối cửa sổ trước (00:59), client gửi 100 request; đúng giây 01:00 bộ đếm xoá về 0 nên client gửi tiếp được 100 request nữa. Do đó 200 request đi qua trong vòng 2 giây, gấp đôi hạn mức thiết kế."
+  },
+  {
+    "id": "S4-05.q3",
+    "type": "tf",
+    "q": "Khi triển khai 4 máy chủ API Gateway đứng sau Load Balancer Round-robin, nếu mỗi máy Gateway tự lưu biến đếm hạn mức độc lập trong RAM của riêng mình (không đồng bộ), một client có cấu hình hạn mức 50 req/s có thể gửi lọt tới 200 req/s.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Load Balancer chia đều lưu lượng qua 4 máy Gateway. Mỗi máy chỉ nhìn thấy 1/4 lưu lượng của client và cho phép tối đa 50 req/s trên máy đó, nên tổng lưu lượng lọt qua cả cụm lên tới 4 × 50 = 200 req/s."
+  },
+  {
+    "id": "S4-05.q4",
+    "type": "mc",
+    "q": "Vì sao khi lưu trạng thái Token Bucket trên Redis cho nhiều API Gateway, ta nên thực hiện logic đọc-tính-ghi bên trong một Redis Lua Script thay vì gọi rời lệnh HMGET rồi mới gọi HSET từ ứng dụng?",
+    "code": "",
+    "choices": [
+      "Vì Redis không hỗ trợ câu lệnh HMGET qua kết nối mạng thông thường",
+      "Để gộp toàn bộ bước kiểm tra và trừ token thành một thao tác nguyên tử (atomic), loại bỏ Race Condition khi nhiều Gateway kiểm tra cùng một khoá đồng thời và giảm số vòng mạng",
+      "Để tự động nén dữ liệu JSON của phần thân phản hồi HTTP",
+      "Để bỏ hoàn toàn nhu cầu thiết lập thời gian hết hạn (TTL) cho khoá"
+    ],
+    "answer": 1,
+    "explain": "Nếu tách thành 2 bước mạng rời nhau, hàng chục request đến cùng mili-giây ở các Gateway khác nhau sẽ cùng đọc thấy còn 1 token cuối và cùng cho qua. Lua Script chạy đơn luồng nguyên tử ngay trong Redis nên đảm bảo mỗi token chỉ cấp cho đúng một request."
+  },
+  {
+    "id": "S4-05.q5",
+    "type": "mc",
+    "q": "Khi từ chối một request vượt hạn mức bằng mã trạng thái HTTP 429 Too Many Requests, trường Header nào quan trọng nhất giúp SDK phía client biết chính xác thời gian cần đợi trước khi gửi lại?",
+    "code": "",
+    "choices": [
+      "Content-Encoding",
+      "Cache-Control: no-store",
+      "Retry-After",
+      "X-Forwarded-For"
+    ],
+    "answer": 2,
+    "explain": "Header chuẩn Retry-After cho biết số giây (hoặc mốc thời gian) trước khi hạn mức được nạp lại. Nhờ đó client lịch sự có thể tạm nghỉ đúng khoảng thời gian này thay vì thử lại liên tục gây tốn tài nguyên đôi bên."
+  }
+]

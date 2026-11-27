@@ -1,0 +1,28 @@
+{
+  "id": "S0-03",
+  "slug": "S0-03-components-and-communication-intro",
+  "level": 0,
+  "order": 3,
+  "title": "Components và Communication: bài khởi động",
+  "summary": "Làm quen góc nhìn kiến trúc qua các khối thành phần cơ bản của hệ thống web, phân biệt đường truyền đồng bộ và bất đồng bộ bằng luồng gói tin, và nhận diện bước chậm nhất trên đường đi của request.",
+  "durationMin": 11,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Nhận diện vai trò cơ bản của Client, Load Balancer, App Server, Cache, Database, Message Queue và Worker" },
+    { "vi": "Phân biệt giao tiếp đồng bộ (Sync, nét liền) với giao tiếp bất đồng bộ qua hàng đợi (Async, nét đứt)" },
+    { "vi": "Lần theo đường đi của một hành động người dùng để xác định bước chậm nhất và tách phần xử lý nền" }
+  ],
+  "tags": ["components", "communication", "sync", "async", "data-flow", "warmup"],
+  "prerequisites": ["S0-01", "S0-02"],
+  "related": ["S1-01", "S1-02", "S1-03"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-3-foundation-exercises.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-3-foundation-exercises.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Cô đọng thành bài khởi động 7 bước để không lặp lại phần định lượng chi tiết của S1-01..S1-03; bỏ giai thoại cá nhân; dựng sân khấu isometric 2.5D tĩnh có luồng gói tin phân biệt đường nối đồng bộ (nét liền) và bất đồng bộ (nét đứt) kèm bài tập sắp xếp luồng đăng ảnh."
+  }
+}

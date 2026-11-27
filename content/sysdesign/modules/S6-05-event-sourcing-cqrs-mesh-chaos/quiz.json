@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S6-05.q1",
+    "type": "mc",
+    "q": "Điểm khác biệt cốt lõi của Event Sourcing so với cách lưu trạng thái truyền thống (CRUD) là gì?",
+    "code": "",
+    "choices": [
+      "Chỉ lưu giá trị cuối cùng để tiết kiệm ổ đĩa",
+      "Lưu toàn bộ chuỗi sự kiện thay đổi bất biến và tái dựng trạng thái bằng cách phát lại (Replay)",
+      "Không cho phép tạo chỉ mục trên cơ sở dữ liệu",
+      "Tự động xóa dữ liệu sau mỗi 24 giờ"
+    ],
+    "answer": 1,
+    "explain": "Event Sourcing lưu từng sự kiện theo thứ tự thời gian (append-only), giúp có dấu vết kiểm toán đầy đủ và khả năng tái dựng trạng thái tại bất kỳ mốc thời gian nào."
+  },
+  {
+    "id": "S6-05.q2",
+    "type": "mc",
+    "q": "Khi áp dụng CQRS tách Write Model và Read Model qua hàng đợi sự kiện bất đồng bộ, hệ thống phải chấp nhận đánh đổi nào?",
+    "code": "",
+    "choices": [
+      "Không thể mở rộng ngang tầng Read API",
+      "Độ trễ đồng bộ (Eventual Consistency / Projection Lag) giữa lúc ghi xong và lúc bản đọc cập nhật",
+      "Không thể dùng Load Balancer phía trước",
+      "Tất cả truy vấn đọc đều phải thực hiện JOIN 5 bảng"
+    ],
+    "answer": 1,
+    "explain": "Vì Projector cập nhật Read DB bất đồng bộ từ Event Log nên luôn có một khoảng trễ ngắn trước khi dữ liệu mới xuất hiện trên Read Model."
+  },
+  {
+    "id": "S6-05.q3",
+    "type": "tf",
+    "q": "Service Mesh là lựa chọn bắt buộc cho mọi hệ thống, kể cả ứng dụng Monolith hoặc hệ thống chỉ có 3 microservice.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Service Mesh mang lại thêm độ phức tạp vận hành và chi phí phụ trội qua lớp Sidecar Proxy. Nó chỉ phát huy giá trị khi số lượng microservice đủ lớn (ví dụ hàng chục dịch vụ trở lên)."
+  },
+  {
+    "id": "S6-05.q4",
+    "type": "mc",
+    "q": "Trong mô hình Service Mesh, thành phần nào trực tiếp chặn gói tin của mỗi dịch vụ để thực thi mTLS, Retry và Circuit Breaker?",
+    "code": "",
+    "choices": [
+      "Control Plane",
+      "Sidecar Proxy (ví dụ Envoy)",
+      "Metadata Database",
+      "DNS Resolver"
+    ],
+    "answer": 1,
+    "explain": "Sidecar Proxy thuộc Data Plane chạy cạnh mỗi instance dịch vụ và xử lý trực tiếp lưu lượng mạng, trong khi Control Plane chỉ phân phối cấu hình và chứng chỉ."
+  },
+  {
+    "id": "S6-05.q5",
+    "type": "mc",
+    "q": "Bước đầu tiên đúng chuẩn khi thiết kế một thí nghiệm Chaos Engineering là gì?",
+    "code": "",
+    "choices": [
+      "Tắt ngẫu nhiên toàn bộ cơ sở dữ liệu chính trên môi trường thật",
+      "Xác định giả thuyết trạng thái ổn định và giới hạn phạm vi ảnh hưởng (Blast Radius) nhỏ nhất",
+      "Tắt toàn bộ hệ thống cảnh báo trước khi tiêm lỗi",
+      "Triển khai Chaos khi hệ thống đang có sự cố diện rộng chưa khắc phục"
+    ],
+    "answer": 1,
+    "explain": "Chaos Engineering không phải phá hoại ngẫu nhiên; luôn bắt đầu từ giả thuyết đo được và thu hẹp Blast Radius (ví dụ 1 instance hoặc một tỉ lệ nhỏ lưu lượng)."
+  },
+  {
+    "id": "S6-05.q6",
+    "type": "output",
+    "q": "Một tài khoản áp dụng Event Sourcing có chuỗi sự kiện: AccountCreated(0), Deposited(+800), Withdrawn(-250), Deposited(+150). Số dư hiện tại sau khi Replay là bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "700",
+    "explain": "Phát lại tuần tự các sự kiện: 0 + 800 − 250 + 150 = 700."
+  }
+]

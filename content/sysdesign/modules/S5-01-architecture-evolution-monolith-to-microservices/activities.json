@@ -1,0 +1,85 @@
+[
+  {
+    "id": "S5-01.A1",
+    "kind": "order",
+    "title": { "vi": "Thứ tự di chuyển Strangler Fig" },
+    "prompt": { "vi": "Sắp xếp 5 bước theo đúng trình tự bóc tách chức năng Thanh toán khỏi Monolith bằng mẫu Strangler Fig." },
+    "difficulty": 1,
+    "items": [
+      { "id": "gw", "text": { "vi": "Đặt API Gateway phía trước Monolith làm cửa ngõ chung" } },
+      { "id": "svc", "text": { "vi": "Dựng Payments Service mới cùng Database riêng" } },
+      { "id": "canary", "text": { "vi": "Định tuyến thử nghiệm một phần nhỏ /payments/* sang service mới" } },
+      { "id": "cutover", "text": { "vi": "Chuyển 100% lưu lượng /payments/* sang service mới" } },
+      { "id": "retire", "text": { "vi": "Gỡ bỏ mã nguồn thanh toán cũ khỏi Monolith" } }
+    ],
+    "shuffleSeed": 11,
+    "explain": { "vi": "Strangler Fig luôn đặt cửa ngõ định tuyến trước, dựng dịch vụ độc lập kèm dữ liệu riêng, kiểm chứng dần trên tải thật rồi mới chuyển toàn bộ và xóa mã cũ." }
+  },
+  {
+    "id": "S5-01.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố chuỗi Microservices qua đỉnh 3.000 req/s" },
+    "prompt": { "vi": "Hoàn thiện cấu hình cụm Microservices để đáp ứng tải chuẩn 1.500 req/s (p99 ≤ 150 ms, lỗi ≤ 1%), vượt qua đợt tăng đột biến 3.000 req/s (p99 ≤ 180 ms, lỗi ≤ 1%) và loại bỏ điểm lỗi đơn (SPOF) ở API Gateway và Orders Service trong ngân sách ≤ 2,30 USD/giờ (tối đa 4 thay đổi)." },
+    "difficulty": 3,
+    "simId": "S5-01/evolution",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-1500",
+        "label": { "vi": "Tải chuẩn 1.500 req/s (p99 ≤ 150 ms, lỗi ≤ 1%)" },
+        "simId": "S5-01/evolution",
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 5 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "spike-3000",
+        "label": { "vi": "Đỉnh đột biến 3.000 req/s (p99 ≤ 180 ms, lỗi ≤ 1%)" },
+        "simId": "S5-01/evolution",
+        "loadOverride": { "kind": "spike", "base": 1500, "peak": 3000, "atSec": 15, "holdSec": 20, "riseSec": 5, "fallSec": 5 },
+        "constraints": [
+          { "id": "p99-spike", "kind": "slo-latency", "metric": "p99", "maxMs": 180, "window": { "fromSec": 0, "toSec": 55 }, "allowViolationPct": 5 },
+          { "id": "err-spike", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 55 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-gw-spof", "kind": "structural", "rule": "no-spof", "node": "gateway" },
+      { "id": "no-orders-spof", "kind": "structural", "rule": "no-spof", "node": "orders" }
+    ],
+    "budget": {
+      "maxCostPerHour": 2.3,
+      "maxChanges": 4
+    },
+    "par": {
+      "costPerHour": 2.06,
+      "changes": 3
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "gateway", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "orders", "key": "replicas", "value": 3 },
+        { "type": "knob", "node": "catalog", "key": "replicas", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "single-gateway",
+        "label": { "vi": "Giữ 1 API Gateway, chỉ tăng Orders lên 3 và Catalog lên 2" },
+        "changes": [
+          { "type": "knob", "node": "orders", "key": "replicas", "value": 3 },
+          { "type": "knob", "node": "catalog", "key": "replicas", "value": 2 }
+        ],
+        "why": { "vi": "1 API Gateway có công suất 3.000 req/s bị chạm trần ở đỉnh (ρ = 1,00) và vẫn là điểm lỗi đơn (SPOF) cho toàn hệ thống." }
+      }
+    ],
+    "hints": [
+      { "vi": "Đỉnh 3.000 req/s đi qua Gateway (μ = 3.000), Orders (μ = 1.600) và Catalog (μ = 2.000)." },
+      { "vi": "Cần ít nhất 2 Gateway (xóa SPOF), 3 Orders (4.800 req/s) và 2 Catalog (4.000 req/s)." }
+    ],
+    "explain": { "vi": "Cặp 2 API Gateway xóa SPOF cửa ngõ, 3 Orders Service (4.800 req/s) và 2 Catalog Service (4.000 req/s) giữ ρ an toàn qua đỉnh 3.000 req/s, đạt p99 = {m.p99'@30:0} ms với chi phí {m.cost'@30:2} USD/giờ." }
+  }
+]

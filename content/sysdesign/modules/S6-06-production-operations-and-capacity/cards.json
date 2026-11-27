@@ -1,0 +1,8 @@
+[
+  { "id": "S6-06.c1", "front": "Năm pha của quy trình ứng phó sự cố Production?", "back": "Phát hiện (Detection) → Đánh giá tác động (Assessment) → Giảm thiểu tức thời (Mitigation/Rollback) → Thông báo (Communication) → Phân tích nguyên nhân gốc (Postmortem)." },
+  { "id": "S6-06.c2", "front": "Thế nào là Postmortem không đổ lỗi (Blameless Postmortem)?", "back": "Phân tích sự cố tập trung vào lỗ hổng hệ thống, quy trình kiểm thử, Canary và công cụ giám sát thay vì quy trách nhiệm cá nhân, kèm Action Items có người phụ trách." },
+  { "id": "S6-06.c3", "front": "Bốn Golden Signals trong giám sát hệ thống là gì?", "back": "Latency (độ trễ), Traffic (lưu lượng), Errors (tỉ lệ lỗi) và Saturation (độ bão hòa tài nguyên). Cảnh báo nên bám theo triệu chứng ảnh hưởng người dùng." },
+  { "id": "S6-06.c4", "front": "Cách tính dự báo tăng trưởng kép trong Capacity Planning?", "back": "Tải_tương_lai = Tải_hiện_tại × (1 + r)^n, với r là tỉ lệ tăng trưởng mỗi tháng và n là số tháng. Cần chuẩn bị mở rộng trước khi chạm ngưỡng 70–75%." },
+  { "id": "S6-06.c5", "front": "Các bước chuyển đổi Database an toàn (Zero Downtime)?", "back": "Dual-Write (ghi cả hai nơi) → Đối soát & Dual-Read (kiểm chứng âm thầm) → Canary Read (1% → 10% → 100% qua Feature Flag) → Ngừng ghi DB cũ." },
+  { "id": "S6-06.c6", "front": "Tài liệu ADR (Architecture Decision Record) gồm những phần chính nào?", "back": "Context (bối cảnh và ràng buộc), Decision (quyết định chọn), Alternatives Considered (các phương án đã cân nhắc), Consequences (hệ quả tích cực và đánh đổi)." }
+]

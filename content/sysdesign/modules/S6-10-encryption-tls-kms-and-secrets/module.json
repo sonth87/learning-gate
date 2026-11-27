@@ -1,0 +1,24 @@
+{
+  "id": "S6-10",
+  "slug": "S6-10-encryption-tls-kms-and-secrets",
+  "level": 6,
+  "order": 10,
+  "title": "Mã hóa và Quản lý Secret: TLS, KMS và Tokenization",
+  "summary": "Bảo vệ dữ liệu ở cả ba trạng thái: mã hóa đường truyền với TLS và mTLS, mã hóa tĩnh bằng Envelope Encryption (DEK/KEK/KMS), xoay vòng khóa không mã hóa lại dữ liệu, quản lý secret tự động, Tokenization và mã hóa đầu cuối.",
+  "durationMin": 15,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt ba trạng thái cần bảo vệ của dữ liệu: đang truyền (In-Transit), đang lưu (At-Rest) và đang xử lý" },
+    { "vi": "Trình bày trình tự bắt tay TLS, cách phòng tránh sự cố hết hạn chứng chỉ và vai trò của mutual TLS (mTLS) nội bộ" },
+    { "vi": "Áp dụng Envelope Encryption với KMS (KEK bọc DEK) để mã hóa tĩnh và xoay vòng khóa nhanh không cần mã hóa lại dữ liệu gốc" },
+    { "vi": "Quản lý API key bằng Secrets Manager, thay thế số thẻ bằng Tokenization và nhận biết khi nào cần mã hóa đầu cuối (E2EE)" }
+  ],
+  "tags": ["security", "encryption", "tls", "mtls", "kms", "secrets-manager", "tokenization"],
+  "prerequisites": ["S1-05", "S6-09"],
+  "related": ["S6-09", "S6-11"],
+  "dtsRef": "encryption",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về mã hóa đường truyền (TLS/mTLS), mã hóa tĩnh với Envelope Encryption (DEK/KEK/KMS), xoay vòng khóa, Secrets Manager, Tokenization và mã hóa đầu cuối."
+  }
+}

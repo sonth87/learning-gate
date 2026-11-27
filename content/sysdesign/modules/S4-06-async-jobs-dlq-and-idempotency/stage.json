@@ -1,0 +1,693 @@
+{
+  "version": 1,
+  "base": "s1-sync-vs-async",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng gửi 900 đơn hàng mỗi giây tới Order API.",
+          "en": "Users submitting 900 orders/s to Order API."
+        },
+        "how": {
+          "vi": "Chờ phản hồi nhanh từ API thay vì đợi gửi email hay xuất hóa đơn PDF.",
+          "en": "Expects fast API response without waiting for email or PDF."
+        },
+        "why": {
+          "vi": "Tách việc nặng sang nền giúp rút ngắn độ trễ cảm nhận của người dùng.",
+          "en": "Offloading heavy work cuts user-perceived latency."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cân bằng tải đầu vào cho cụm Order API.",
+          "en": "Balances incoming requests across Order API instances."
+        },
+        "how": {
+          "vi": "Phân phối Round-robin.",
+          "en": "Round-robin distribution."
+        },
+        "why": {
+          "vi": "Đảm bảo không dồn tải vào một máy chủ API.",
+          "en": "Prevents single-instance API saturation."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Order API",
+        "en": "Order API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ nhận đơn (3 máy, tổng năng lực 4.500 req/s).",
+          "en": "Order intake API (3 instances, 4,500 req/s total capacity)."
+        },
+        "how": {
+          "vi": "Kiểm tra hợp lệ, đẩy thông điệp vào Job Queue rồi trả về thành công ngay.",
+          "en": "Validates payload, enqueues job, and returns immediately."
+        },
+        "why": {
+          "vi": "Không bị giữ kết nối chờ các tác vụ chậm ở phía sau.",
+          "en": "Avoids holding connections for slow downstream work."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": {
+        "vi": "Job Queue",
+        "en": "Job Queue"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi trung gian có sức chứa tối đa 6.000 job (mặc định tắt DLQ).",
+          "en": "Message queue with 6,000 maxDepth (DLQ disabled by default)."
+        },
+        "how": {
+          "vi": "Khi DLQ tắt, các job lỗi liên tục quay vòng lại hàng đợi làm backlog phình to tới khi tràn.",
+          "en": "With DLQ off, failing jobs loop back into the queue until maxDepth overflows."
+        },
+        "why": {
+          "vi": "Bật DLQ giúp tách thông điệp lỗi sau số lần thử tối đa, giữ hàng đợi chính thông thoáng.",
+          "en": "Enabling DLQ isolates poison messages so healthy jobs keep flowing."
+        }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "cpu",
+      "label": {
+        "vi": "Worker Pool",
+        "en": "Worker Pool"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 3 Worker xử lý nền (tổng 1.200 job/s).",
+          "en": "3 background Workers (1,200 job/s total capacity)."
+        },
+        "how": {
+          "vi": "Kéo job từ Queue, xử lý nghiệp vụ và ghi kết quả vào Order DB.",
+          "en": "Pulls jobs from Queue, runs logic, and writes to Order DB."
+        },
+        "why": {
+          "vi": "Cần dùng Idempotency Key khi ghi DB để tránh tạo trùng đơn nếu job được giao lại.",
+          "en": "Must use Idempotency Keys when writing to DB to prevent duplicate orders on retry."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Order DB",
+        "en": "Order DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trạng thái đơn hàng và bảng khóa Idempotency.",
+          "en": "Database storing orders and idempotency key constraints."
+        },
+        "how": {
+          "vi": "Áp dụng ràng buộc UNIQUE trên idempotency_key để từ chối ghi trùng.",
+          "en": "Enforces UNIQUE constraint on idempotency_key to block duplicates."
+        },
+        "why": {
+          "vi": "Là chốt chặn cuối cùng đảm bảo tính lũy đẳng (exactly-once effect).",
+          "en": "Final safety net guaranteeing exactly-once side effects."
+        }
+      }
+    },
+    "dlq": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "alert",
+      "label": {
+        "vi": "Dead Letter Queue",
+        "en": "Dead Letter Queue"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi cách ly chuyên chứa các thông điệp độc (Poison Messages) đã vượt quá số lần thử lại tối đa (maxReceiveCount = 3).",
+          "en": "Quarantine queue holding poison messages that exceeded max retry attempts."
+        },
+        "how": {
+          "vi": "Khi một job làm Worker lỗi liên tiếp 3 lần, Broker tự động tách job đó sang DLQ và phát cảnh báo cho kỹ sư kiểm tra.",
+          "en": "Broker automatically moves messages failing N times into DLQ and triggers an alert."
+        },
+        "why": {
+          "vi": "Ngăn một thông điệp lỗi lặp vô tận làm kẹt cứng toàn bộ hàng đợi của các đơn hàng hợp lệ khác.",
+          "en": "Prevents poison messages from infinitely crash-looping workers and blocking valid jobs."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": {
+          "vi": "Kết nối từ người dùng tới LB.",
+          "en": "User request to LB."
+        },
+        "how": {
+          "vi": "Qua Internet.",
+          "en": "Over Internet."
+        },
+        "why": {
+          "vi": "Điểm vào đơn hàng.",
+          "en": "Order entry point."
+        }
+      }
+    },
+    "lb-api": {
+      "inspector": {
+        "what": {
+          "vi": "Đường gọi từ LB tới Order API.",
+          "en": "LB to Order API."
+        },
+        "how": {
+          "vi": "Mạng nội bộ.",
+          "en": "Internal network."
+        },
+        "why": {
+          "vi": "Chia tải đều.",
+          "en": "Balances API load."
+        }
+      }
+    },
+    "api-queue": {
+      "inspector": {
+        "what": {
+          "vi": "Đẩy job bất đồng bộ vào hàng đợi.",
+          "en": "Async job enqueue link."
+        },
+        "how": {
+          "vi": "Mất ~2 ms để xác nhận ghi vào Queue.",
+          "en": "Takes ~2 ms to persist into Queue."
+        },
+        "why": {
+          "vi": "Tách thời gian phản hồi API khỏi tốc độ xử lý của Worker.",
+          "en": "Decouples API latency from Worker throughput."
+        }
+      }
+    },
+    "queue-worker": {
+      "inspector": {
+        "what": {
+          "vi": "Worker kéo job từ hàng đợi.",
+          "en": "Worker pulls jobs from Queue."
+        },
+        "how": {
+          "vi": "Giao ít nhất một lần (at-least-once) kèm Ack sau khi xong.",
+          "en": "At-least-once delivery with Ack on completion."
+        },
+        "why": {
+          "vi": "Job lỗi sẽ được thử lại hoặc chuyển sang DLQ nếu vượt ngưỡng.",
+          "en": "Failed jobs retry or route to DLQ after max attempts."
+        }
+      }
+    },
+    "worker-db": {
+      "inspector": {
+        "what": {
+          "vi": "Worker ghi kết quả xuống Order DB.",
+          "en": "Worker persists result to Order DB."
+        },
+        "how": {
+          "vi": "Kiểm tra idempotency_key trong cùng giao dịch.",
+          "en": "Checks idempotency_key within the same transaction."
+        },
+        "why": {
+          "vi": "Ngăn tạo đơn trùng khi Worker retry.",
+          "en": "Prevents duplicate orders on Worker retries."
+        }
+      }
+    },
+    "queue-dlq": {
+      "label": {
+        "vi": "Retry > 3 → Cách ly DLQ",
+        "en": "Max retries → Quarantine"
+      },
+      "style": "dashed",
+      "inspector": {
+        "what": {
+          "vi": "Luồng chuyển hướng tự động thông điệp lỗi từ Job Queue sang Dead Letter Queue.",
+          "en": "Automatic redrive path from Job Queue to Dead Letter Queue."
+        },
+        "how": {
+          "vi": "Kích hoạt theo Redrive Policy ngay khi bộ đếm receiveCount vượt ngưỡng.",
+          "en": "Triggered by Redrive Policy when receiveCount exceeds threshold."
+        },
+        "why": {
+          "vi": "Giải phóng ngay lập tức luồng xử lý chính trong khi vẫn bảo toàn nguyên vẹn dữ liệu lỗi để điều tra.",
+          "en": "Unblocks the main processing lane while preserving failed payloads for debugging."
+        }
+      }
+    }
+  },
+  "zones": {
+    "async-tier": {
+      "nodeIds": [
+        "queue",
+        "worker",
+        "db"
+      ],
+      "label": {
+        "vi": "TẦNG XỬ LÝ NỀN",
+        "en": "ASYNC BACKGROUND TIER"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-sync-vs-async": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "queue",
+          "worker",
+          "db"
+        ]
+      },
+      "state": {
+        "api": {
+          "loadPct": 20,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Trả nhanh",
+              "en": "Fast reply"
+            },
+            "tone": "ok"
+          }
+        },
+        "worker": {
+          "loadPct": 65
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tách tác vụ nặng khỏi đường nóng API",
+          "en": "Offload Heavy Work from API"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "API đẩy job vào Queue rồi trả lời ngay",
+              "en": "API enqueues job and replies fast"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Worker xử lý email, PDF, kho ở nền",
+              "en": "Worker handles email/PDF/warehouse async"
+            },
+            "tone": "plain"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-retry-backoff": {
+      "show": {
+        "nodes": [
+          "queue",
+          "worker",
+          "db"
+        ]
+      },
+      "state": {
+        "worker": {
+          "loadPct": 72,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Backoff + Jitter",
+              "en": "Backoff + Jitter"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Retry thông minh: Exponential Backoff",
+          "en": "Exponential Backoff + Jitter"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Thử lại giãn cách 2s → 4s → 8s + Jitter",
+              "en": "Wait 2s → 4s → 8s + random jitter"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Tránh dồn tải vào dịch vụ đang gặp lỗi",
+              "en": "Avoids hammering struggling services"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-poison-live": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "queue",
+          "worker",
+          "db"
+        ]
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Thông điệp độc (Poison Message) khi tắt DLQ",
+          "en": "Poison Message Loop (DLQ Off)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Giây 15: Worker dính lỗi 40% (bad deploy)",
+              "en": "t = 15s: Worker hits 40% fault rate"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Thiếu DLQ: job lỗi quay vòng làm tắc Queue",
+              "en": "No DLQ: failing jobs loop & fill Queue"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-dlq-fix": {
+      "show": {
+        "nodes": [
+          "api",
+          "queue",
+          "worker",
+          "dlq",
+          "db"
+        ],
+        "links": [
+          "api-queue",
+          "queue-worker",
+          "queue-dlq",
+          "worker-db"
+        ]
+      },
+      "state": {
+        "queue": {
+          "loadPct": 25,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "DLQ: Bật",
+              "en": "DLQ: On"
+            },
+            "tone": "ok"
+          }
+        },
+        "worker": {
+          "loadPct": 68
+        },
+        "dlq": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Cách ly Poison Pill",
+              "en": "Poison Isolated"
+            },
+            "tone": "warn"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Dead Letter Queue: Cách ly lỗi vĩnh viễn",
+          "en": "DLQ Isolates Poison Messages"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Quá 3 lần thử → chuyển sang DLQ kiểm tra",
+              "en": "After max retries → route to DLQ"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Hàng đợi chính không bị tắc nghẽn",
+              "en": "Main queue stays unblocked"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-idempotency": {
+      "show": {
+        "nodes": [
+          "api",
+          "queue",
+          "worker",
+          "db"
+        ]
+      },
+      "state": {
+        "worker": {
+          "loadPct": 55,
+          "badge": {
+            "text": {
+              "vi": "At-least-once",
+              "en": "At-least-once"
+            },
+            "tone": "warn"
+          }
+        },
+        "db": {
+          "loadPct": 40,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "UNIQUE key",
+              "en": "UNIQUE key"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Idempotency Key: Chống trùng khi Retry",
+          "en": "Idempotency Key Guards Retries"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Job giao lại 2 lần nhưng chỉ ghi DB 1 lần",
+              "en": "Redelivered job writes DB only once"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Lưu key + trạng thái ngay trong giao dịch SQL",
+              "en": "Persist key inside same SQL transaction"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-recap": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "queue",
+          "worker",
+          "dlq",
+          "db"
+        ],
+        "links": [
+          "client-lb",
+          "lb-api",
+          "api-queue",
+          "queue-worker",
+          "queue-dlq",
+          "worker-db"
+        ]
+      },
+      "state": {
+        "api": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Nhanh",
+              "en": "Fast"
+            },
+            "tone": "ok"
+          }
+        },
+        "queue": {
+          "loadPct": 22,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Có DLQ",
+              "en": "DLQ On"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 35,
+          "badge": {
+            "text": {
+              "vi": "Lũy đẳng",
+              "en": "Idempotent"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tổng kết xử lý bất đồng bộ",
+          "en": "Async Processing Recap"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Queue tách tải + Backoff + DLQ + Idempotency",
+              "en": "Queue + Backoff + DLQ + Idempotency"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Đảm bảo an toàn ở cả đường nóng lẫn nền",
+              "en": "Safe on both hot path and background"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "dlq-poison": {
+      "sim": "S4-06/dlq-poison",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          {
+            "node": "queue",
+            "key": "dlq"
+          },
+          {
+            "node": "queue",
+            "key": "maxDepth"
+          },
+          {
+            "node": "worker",
+            "key": "replicas"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Đơn/giây",
+            "en": "Orders/s"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99 API",
+            "en": "API p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 80,
+            "badAbove": 120
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.02,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 120
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "queue",
+          "worker"
+        ]
+      }
+    }
+  }
+}

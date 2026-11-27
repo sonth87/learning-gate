@@ -1,0 +1,23 @@
+{
+  "id": "S7-07",
+  "slug": "S7-07-case-autocomplete-typeahead",
+  "level": 7,
+  "order": 7,
+  "title": "Case Study: Thiết kế Autocomplete ở 50.000 QPS",
+  "summary": "Thiết kế hệ thống gợi ý tìm kiếm tức thời (Autocomplete/Typeahead) chịu tải 50.000 QPS với độ trễ dưới 100 ms: cấu trúc cây Trie lưu sẵn Top-K, bộ nhớ đệm tiền tố 1–3 ký tự, xếp hạng ngoại tuyến và Debouncing phía client.",
+  "durationMin": 20,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Thiết kế cây Trie lưu sẵn danh sách Top-K gợi ý tại mỗi nút tiền tố để đạt thời gian tra cứu O(p)" },
+    { "vi": "Tính toán dung lượng bộ nhớ đệm cho các tiền tố ngắn 1–3 ký tự nhằm hấp thụ phần lớn lưu lượng 50.000 QPS" },
+    { "vi": "Tách luồng cập nhật chỉ mục và xếp hạng ngoại tuyến (Offline Ranking) khỏi luồng đọc độ trễ thấp dưới 100 ms" },
+    { "vi": "Áp dụng Debouncing phía client và Sharding cây Trie theo dải tiền tố để mở rộng quy mô" }
+  ],
+  "tags": ["autocomplete", "typeahead", "trie", "prefix-cache", "sharding", "latency", "case-study"],
+  "prerequisites": ["S1-03", "S2-02", "S4-03"],
+  "related": ["S7-05", "S7-06", "S2-02"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế gợi ý tìm kiếm tức thời (Autocomplete/Typeahead) ở 50.000 QPS: cấu trúc cây Trie, bộ nhớ đệm tiền tố 1–3 ký tự, xếp hạng ngoại tuyến và độ trễ dưới 100 ms."
+  }
+}

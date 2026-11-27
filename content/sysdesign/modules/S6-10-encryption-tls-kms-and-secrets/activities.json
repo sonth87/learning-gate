@@ -1,0 +1,18 @@
+[
+  {
+    "id": "S6-10.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp trình tự bắt tay TLS" },
+    "prompt": { "vi": "Sắp xếp 5 bước theo đúng trình tự thiết lập kết nối TLS giữa trình duyệt (Client) và máy chủ (Server)." },
+    "difficulty": 1,
+    "items": [
+      { "id": "client-hello", "text": { "vi": "Client gửi ClientHello kèm phiên bản TLS và bộ mã hóa hỗ trợ" } },
+      { "id": "server-hello", "text": { "vi": "Server phản hồi ServerHello kèm chứng chỉ số X.509" } },
+      { "id": "verify-cert", "text": { "vi": "Client xác minh chữ ký chứng chỉ với Certificate Authority (CA)" } },
+      { "id": "derive-key", "text": { "vi": "Hai bên trao đổi khóa bất đối xứng để tạo khóa phiên đối xứng" } },
+      { "id": "encrypted-data", "text": { "vi": "Dữ liệu ứng dụng được mã hóa bằng khóa phiên (AES-GCM)" } }
+    ],
+    "shuffleSeed": 19,
+    "explain": { "vi": "TLS dùng mã hóa bất đối xứng và chứng chỉ CA ở bước bắt tay để xác thực máy chủ và thỏa thuận khóa phiên, sau đó chuyển sang mã hóa đối xứng (như AES-GCM) để truyền dữ liệu ứng dụng ở tốc độ cao." }
+  }
+]

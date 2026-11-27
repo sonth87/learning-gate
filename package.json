@@ -12,7 +12,10 @@
     "course:doctor": "node scripts/course-doctor.mjs",
     "course:test": "node scripts/run-engine-tests.mjs",
     "pmp:build": "node scripts/build-pmp.mjs",
-    "pmp:doctor": "node scripts/pmp-doctor.mjs"
+    "pmp:doctor": "node scripts/pmp-doctor.mjs",
+    "sd:build": "node scripts/build-sysdesign.mjs",
+    "sd:doctor": "node scripts/sysdesign-doctor.mjs",
+    "sd:test": "node scripts/run-sysdesign-tests.mjs"
   },
   "dependencies": {
     "@sonth87/device-layout": "^0.5.43",

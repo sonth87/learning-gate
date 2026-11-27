@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "base": "s1-flow",
+  "scenes": {
+    "s1-flow": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Luồng tư duy thiết kế: Từ bài toán đến quyết định",
+          "en": "System Design Decision Flow"
+        },
+        "nodes": [
+          {
+            "id": "prob",
+            "label": "Bài toán cần giải",
+            "sub": "Chưa chọn công nghệ",
+            "tone": "amber",
+            "x": 0,
+            "y": -117
+          },
+          {
+            "id": "req",
+            "label": "1. Yêu cầu",
+            "sub": "Chức năng & Phi chức năng",
+            "tone": "blue",
+            "x": -86,
+            "y": -39
+          },
+          {
+            "id": "con",
+            "label": "2. Ràng buộc",
+            "sub": "Kỹ thuật · Ngân sách · Đội ngũ",
+            "tone": "purple",
+            "x": 86,
+            "y": -39
+          },
+          {
+            "id": "trade",
+            "label": "3. Đánh đổi",
+            "sub": "So sánh phương án theo số liệu",
+            "tone": "green",
+            "x": 0,
+            "y": 39
+          },
+          {
+            "id": "arch",
+            "label": "4. Kiến trúc phù hợp",
+            "sub": "Giải thích được từng lựa chọn",
+            "tone": "green",
+            "x": 0,
+            "y": 117
+          }
+        ],
+        "edges": [
+          {
+            "from": "prob",
+            "to": "req",
+            "label": "làm rõ"
+          },
+          {
+            "from": "prob",
+            "to": "con",
+            "label": "khoanh vùng"
+          },
+          {
+            "from": "req",
+            "to": "trade"
+          },
+          {
+            "from": "con",
+            "to": "trade"
+          },
+          {
+            "from": "trade",
+            "to": "arch",
+            "label": "chốt & kiểm chứng"
+          }
+        ]
+      }
+    },
+    "s2-constraints": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ba nhóm ràng buộc định hình kiến trúc",
+          "en": "Three Constraint Pillars"
+        },
+        "cells": [
+          "Kỹ thuật: Giới hạn DB, RTT mạng, CAP",
+          "Kinh doanh: Ngân sách, Timeline, Quy mô đội",
+          "Quy mô tải: RPS hiện tại, tăng trưởng, đột biến"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Không thể phá vỡ quy luật vật lý và giới hạn phần cứng",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "3 kỹ sư và 1 tháng ra mắt không thể gánh Microservices phức tạp",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Tải 40 writes/s dùng 1 SQL; tải 40.000 writes/s cần phân mảnh",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
+        ]
+      }
+    },
+    "s3-approaches": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "td",
+            "name": "Top-Down (Tổng thể trước)",
+            "targetId": "o-td"
+          },
+          {
+            "id": "bu",
+            "name": "Bottom-Up (Dữ liệu trước)",
+            "targetId": "o-bu"
+          },
+          {
+            "id": "hy",
+            "name": "Kết hợp hai chiều",
+            "targetId": "o-hy"
+          }
+        ],
+        "objects": [
+          {
+            "id": "o-td",
+            "value": "Hợp hệ thống mới & phỏng vấn",
+            "tone": "blue",
+            "typeTag": "TD",
+            "fields": [
+              "Vẽ hộp dịch vụ, luồng dữ liệu, rồi mới đào sâu điểm nóng"
+            ]
+          },
+          {
+            "id": "o-bu",
+            "value": "Hợp bài toán thuật toán/dữ liệu",
+            "tone": "purple",
+            "typeTag": "BU",
+            "fields": [
+              "Chốt mô hình dữ liệu và logic lõi trước khi bọc API"
+            ]
+          },
+          {
+            "id": "o-hy",
+            "value": "Thực tế sản xuất",
+            "tone": "green",
+            "typeTag": "HY",
+            "fields": [
+              "Dùng Top-Down giữ bức tranh lớn, Bottom-Up kiểm chứng nút nghẽn"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "So sánh Top-Down và Bottom-Up",
+          "en": "Top-Down vs Bottom-Up"
+        }
+      }
+    },
+    "s4-zoom-hld": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Mức phóng đại 1 (HLD): Bản đồ dịch vụ và hợp đồng",
+          "en": "Zoom Level 1: High-Level Design"
+        },
+        "nodes": [
+          {
+            "id": "gw",
+            "label": "API Gateway",
+            "sub": "Auth · Rate Limit",
+            "tone": "purple",
+            "x": 0,
+            "y": -78
+          },
+          {
+            "id": "svc",
+            "label": "Order Service",
+            "sub": "Hợp đồng: POST /orders",
+            "tone": "blue",
+            "x": -86,
+            "y": 0
+          },
+          {
+            "id": "cache",
+            "label": "Cache",
+            "sub": "Read-through 50k key",
+            "tone": "amber",
+            "x": 86,
+            "y": 0
+          },
+          {
+            "id": "db",
+            "label": "Primary SQL",
+            "sub": "Lưu trữ bền vững",
+            "tone": "green",
+            "x": 0,
+            "y": 78
+          }
+        ],
+        "edges": [
+          {
+            "from": "gw",
+            "to": "svc",
+            "label": "HTTPS"
+          },
+          {
+            "from": "svc",
+            "to": "cache",
+            "label": "đọc nhanh"
+          },
+          {
+            "from": "cache",
+            "to": "db",
+            "label": "cache miss"
+          }
+        ]
+      }
+    },
+    "s5-zoom-lld": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Mức phóng đại 2 (LLD): Bên trong một Service",
+          "en": "Zoom Level 2: Low-Level Design"
+        },
+        "cells": [
+          "Schema & Chỉ mục: Bảng orders(id, user_id, status)",
+          "Máy trạng thái: PENDING → PAID → SHIPPED",
+          "Trường hợp biên: Timeout · Retry · Concurrency"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Chọn kiểu khóa chính và index cho truy vấn nóng",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Chặn chuyển trạng thái sai và xử lý Idempotency",
+            "tone": "purple"
+          },
+          {
+            "index": 2,
+            "label": "Khóa lạc quan, connection pool và giới hạn bộ nhớ",
+            "tone": "amber"
+          }
+        ],
+        "activeIndices": [
+          2
+        ]
+      }
+    }
+  }
+}

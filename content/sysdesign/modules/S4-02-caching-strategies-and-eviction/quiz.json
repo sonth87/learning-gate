@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-02.q1",
+    "type": "mc",
+    "q": "Đặc điểm nào đúng với chiến lược Write-Through?",
+    "code": "",
+    "choices": [
+      "Chỉ ghi vào Cache rồi trả kết quả ngay, ghi xuống Database ở nền",
+      "Ghi đồng bộ vào cả Cache và Database trước khi trả kết quả, giúp Cache luôn khớp Database nhưng tăng độ trễ ghi",
+      "Chỉ ghi vào Database, đợi lần đọc sau bị miss mới nạp vào Cache",
+      "Không cần quan tâm đến giới hạn RAM của Cache"
+    ],
+    "answer": 1,
+    "explain": "Write-Through cập nhật đồng bộ cả Cache và Database trong cùng luồng ghi, nên đảm bảo độ nhất quán cao nhưng độ trễ ghi cộng dồn cả hai tầng."
+  },
+  {
+    "id": "S4-02.q2",
+    "type": "mc",
+    "q": "Rủi ro lớn nhất của chiến lược Write-Behind (Write-Back) là gì?",
+    "code": "",
+    "choices": [
+      "Độ trễ ghi quá chậm đối với người dùng",
+      "Mất dữ liệu nếu nút Cache gặp sự cố trước khi kịp đẩy các thay đổi xuống Database",
+      "Không thể gộp nhiều lượt ghi thành lô (batch)",
+      "Luôn gây Cache Penetration"
+    ],
+    "answer": 1,
+    "explain": "Write-Behind trả lời ngay sau khi ghi vào bộ nhớ đệm, nên nếu Cache sập trước khi luồng nền đồng bộ xong xuống đĩa, các bản ghi nằm trong RAM sẽ bị mất."
+  },
+  {
+    "id": "S4-02.q3",
+    "type": "tf",
+    "q": "Trong Cache-Aside, nếu giá sản phẩm thay đổi trong Database nhưng ứng dụng không xóa hoặc cập nhật khóa tương ứng trong Cache, người dùng vẫn thấy giá cũ cho đến khi TTL hết hạn.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Cache-Aside không tự động đồng bộ khi Database thay đổi; cần kết hợp xóa khóa chủ động (event-based invalidation) khi ghi và đặt TTL làm lưới an toàn."
+  },
+  {
+    "id": "S4-02.q4",
+    "type": "mc",
+    "q": "Khi dung lượng Cache nhỏ hơn đáng kể so với tập dữ liệu nóng (working set) và dùng chính sách LRU, hiện tượng gì xảy ra?",
+    "code": "",
+    "choices": [
+      "Hit Ratio tăng dần lên 100%",
+      "Các khóa vừa nạp bị đẩy ra liên tục (thrashing), làm Hit Ratio tụt mạnh và đẩy tải miss xuống Database",
+      "Database tự động chuyển sang chế độ chỉ đọc",
+      "TTL tự động kéo dài gấp đôi"
+    ],
+    "answer": 1,
+    "explain": "Khi số khóa nóng vượt quá sức chứa RAM, LRU đẩy các khóa cũ ra trước khi chúng kịp được đọc lại, khiến tỷ lệ Cache Hit giảm sâu."
+  },
+  {
+    "id": "S4-02.q5",
+    "type": "mc",
+    "q": "Để ngăn kẻ tấn công gửi hàng loạt truy vấn với ID không tồn tại xuyên thẳng qua Cache xuống Database (Cache Penetration), giải pháp nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Tăng số lượng App Server",
+      "Dùng Negative Caching (lưu giá trị rỗng kèm TTL ngắn) kết hợp Bloom Filter kiểm tra sự tồn tại trước khi hỏi DB",
+      "Chuyển sang Write-Behind",
+      "Tắt hoàn toàn TTL của Cache"
+    ],
+    "answer": 1,
+    "explain": "Negative Caching giữ kết quả không tồn tại trong thời gian ngắn để chặn lặp lại, còn Bloom Filter loại bỏ ngay các ID chắc chắn chưa từng có trong Database với chi phí RAM rất nhỏ."
+  },
+  {
+    "id": "S4-02.q6",
+    "type": "output",
+    "q": "Hệ thống nhận 4.000 req/s gồm 90% đọc và 10% ghi. Nếu Cache Hit Ratio đạt 90% trên lượt đọc và mọi lượt ghi đều xuống Database, Database nhận bao nhiêu req/s? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "760",
+    "explain": "Lượt đọc miss là 4.000 × 0,9 × (1 − 0,9) = 360 req/s. Cộng thêm lượt ghi 4.000 × 0,1 = 400 req/s, tổng cộng Database nhận 760 req/s."
+  }
+]

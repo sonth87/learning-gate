@@ -1,0 +1,7 @@
+[
+  { "id": "S7-01.c1", "front": "Vai trò của WS Gateway so với Chat Service?", "back": "WS Gateway giữ kết nối WebSocket có trạng thái tại biên; Chat Service không trạng thái xử lý logic lưu tin, cấp thứ tự và định tuyến." },
+  { "id": "S7-01.c2", "front": "Session Registry lưu gì và cập nhật thế nào?", "back": "Lưu ánh xạ user_id → gateway_id trong bộ nhớ nhanh (RAM) với TTL, được làm mới định kỳ bằng gói heartbeat từ thiết bị." },
+  { "id": "S7-01.c3", "front": "Làm sao đảm bảo thứ tự và không trùng tin nhắn?", "back": "Gán seq_id tăng dần theo từng conversation_id tại Message Store và dùng client_msg_id do thiết bị sinh để khử trùng khi retry." },
+  { "id": "S7-01.c4", "front": "Quy trình xử lý khi người nhận ngoại tuyến?", "back": "Ghi tin vào Message Store trước, gửi Push Notification đánh thức qua APNs/FCM, và khi thiết bị nối lại thì đồng bộ các tin có seq_id > last_seen_seq." },
+  { "id": "S7-01.c5", "front": "Cách chống Reconnect Storm khi một WS Gateway sập?", "back": "Áp dụng Exponential Backoff kèm Full Jitter ở phía client để rải đều thời điểm kết nối lại thay vì dồn 200.000 socket vào cùng một giây." }
+]

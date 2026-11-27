@@ -1,0 +1,30 @@
+{
+  "id": "S6-06",
+  "slug": "S6-06-production-operations-and-capacity",
+  "level": 6,
+  "order": 6,
+  "title": "Vận hành Production và lập kế hoạch công suất",
+  "summary": "Chuyển từ tư duy hoàn thành tính năng sang tư duy làm chủ hệ thống trên môi trường thật: quy trình ứng phó sự cố 5 bước, Postmortem không đổ lỗi, lập kế hoạch công suất 6 tháng và chuyển đổi an toàn với Strangler Fig.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Thực hiện quy trình ứng phó sự cố 5 pha: phát hiện, đánh giá tác động, giảm thiểu tức thời, thông báo và phân tích nguyên nhân gốc" },
+    { "vi": "Viết báo cáo Postmortem không đổ lỗi tập trung vào lỗ hổng quy trình, cảnh báo theo triệu chứng và hành động khắc phục cụ thể" },
+    { "vi": "Tính toán dự báo tăng trưởng công suất kép trong 6 tháng để lên kế hoạch mở rộng trước khi chạm ngưỡng bão hòa" },
+    { "vi": "Áp dụng mô hình Strangler Fig và Dual-Write để chuyển đổi hệ thống hoặc cơ sở dữ liệu không gián đoạn" }
+  ],
+  "tags": ["production", "incident-response", "postmortem", "capacity-planning", "migration", "adr"],
+  "prerequisites": ["S4-07", "S6-03"],
+  "related": ["S6-05", "S6-07"],
+  "dtsRef": "observability",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-6-architect-mindset-production-thinking.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-6-architect-mindset-production-thinking.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn bằng lời mới: bỏ văn phong kể chuyện cá nhân, chuyển các sơ đồ tĩnh sang scene isometric và memory-2d cho quy trình sự cố 5 pha, mẫu Postmortem không đổ lỗi và Strangler Fig, kèm mô phỏng tải ngày đêm có sự cố và bài tập postmortem + estimate."
+  }
+}

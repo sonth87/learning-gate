@@ -1,0 +1,46 @@
+[
+  {
+    "id": "S0-05.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng lưu lượng đọc lúc cao điểm (Peak Read RPS)" },
+    "prompt": { "vi": "Một ứng dụng mạng xã hội có 2.000.000 người dùng hoạt động mỗi ngày (DAU), trung bình mỗi người xem 40 bài viết/ngày. Lưu lượng lúc cao điểm gấp 3 lần mức trung bình. Hãy ước lượng số lượt đọc mỗi giây lúc cao điểm (req/s)." },
+    "difficulty": 1,
+    "quantity": "Lưu lượng đọc cao điểm",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "2000000*40/86400*3", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.2, "pass": 0.35 },
+    "workings": [
+      { "vi": "Tổng lượt xem mỗi ngày: 2.000.000 × 40 = 80.000.000 lượt/ngày." },
+      { "vi": "Lưu lượng đọc trung bình: 80.000.000 / 86.400 ≈ 926 req/s (nhẩm nhanh với 10^5 giây ra 800 req/s)." },
+      { "vi": "Nhân hệ số cao điểm ×3: 926 × 3 ≈ 2.778 req/s (hoặc nhẩm nhanh 800 × 3 = 2.400 req/s, đều nằm trong biên 3 sao)." }
+    ],
+    "hints": [
+      { "vi": "Tính tổng số lượt xem trong ngày trước, rồi chia cho 86.400 giây (hoặc xấp xỉ 100.000 giây)." },
+      { "vi": "Đừng quên nhân 3 để chuyển từ RPS trung bình sang Peak RPS." }
+    ],
+    "explain": { "vi": "Giá trị chính xác là {truth:0} req/s (nhẩm nhanh với 10^5 giây/ngày cho 2.400 req/s, chênh lệch ~14% và hoàn toàn hợp lệ trong Napkin Math). Ở mức gần 2.800 lượt đọc/giây, đặt Redis Cache phía trước Database là lựa chọn hợp lý để giảm tải." }
+  },
+  {
+    "id": "S0-05.A2",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng dung lượng lưu trữ 1 năm có sao chép" },
+    "prompt": { "vi": "Hệ thống thương mại điện tử tạo mới 500.000 bản ghi đơn hàng mỗi ngày, mỗi bản ghi nặng 2 KB (lấy 2.000 byte). Cụm lưu trữ duy trì 3 bản sao (Replication Factor = 3). Ước lượng tổng dung lượng đĩa phát sinh sau 365 ngày theo đơn vị GB (1 GB = 10^9 byte)." },
+    "difficulty": 2,
+    "quantity": "Dung lượng lưu trữ 1 năm (RF=3)",
+    "unit": "GB",
+    "truth": { "type": "formula", "expr": "500000*2000*365*3/1000000000", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.15, "pass": 0.3 },
+    "workings": [
+      { "vi": "Dung lượng gốc phát sinh mỗi ngày: 500.000 × 2.000 byte = 10^9 byte = 1 GB/ngày." },
+      { "vi": "Dung lượng gốc sau 1 năm: 1 GB/ngày × 365 ngày = 365 GB." },
+      { "vi": "Nhân hệ số sao chép 3 bản (Primary + 2 Replica): 365 × 3 = 1.095 GB (≈ 1,1 TB)." }
+    ],
+    "hints": [
+      { "vi": "Tính dung lượng mới mỗi ngày trước: 500.000 × 2.000 byte bằng đúng 1 GB." },
+      { "vi": "Nhân với 365 ngày rồi nhân tiếp với 3 bản sao." }
+    ],
+    "explain": { "vi": "Tổng dung lượng vật lý cần cấp là {truth:0} GB (khoảng 1,1 TB/năm). Nhờ tính ra con số cụ thể này, ta thấy ngay một cụm PostgreSQL đơn hoàn toàn lưu trữ tốt mà chưa cần phân mảnh (Sharding) phức tạp." }
+  }
+]

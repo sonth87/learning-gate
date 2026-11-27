@@ -1,0 +1,631 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người xem & Tác giả",
+        "en": "Viewers & Creators"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Tác giả tải video gốc lên và người xem phát video theo từng đoạn nhỏ qua CDN.",
+          "en": "Creators upload raw video and viewers stream segments via CDN."
+        },
+        "how": {
+          "vi": "Tỷ lệ đọc/ghi rất lệch (thường 100:1 hoặc cao hơn): người xem gọi CDN, còn tác giả nhận Presigned URL để đẩy thẳng file lớn.",
+          "en": "Highly read-heavy ratio (100:1+): viewers hit CDN while creators upload directly via Presigned URLs."
+        },
+        "why": {
+          "vi": "Tách hai luồng giúp lưu lượng xem video viral không làm sập hạ tầng tiếp nhận upload.",
+          "en": "Separating read and write paths keeps viral playback from starving uploads."
+        },
+        "tip": {
+          "vi": "Chia video gốc thành nhiều mảnh (chunk) 5–10 MB để có thể tải lại từng mảnh khi mạng chập chờn.",
+          "en": "Split raw uploads into 5–10 MB chunks for resumable uploads."
+        }
+      }
+    },
+    "upload": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "upload",
+      "label": {
+        "vi": "Upload Gateway",
+        "en": "Upload Gateway"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng xác thực, cấp Presigned URL và ghi nhận thông điệp vào hàng đợi sau khi tải lên hoàn tất.",
+          "en": "Authenticates creators, issues Presigned URLs, and enqueues transcode jobs."
+        },
+        "how": {
+          "vi": "Không giữ kết nối luồng byte video hàng GB qua máy chủ ứng dụng mà chuyển thẳng tới Object Storage, chỉ nhận webhook hoàn tất để đẩy job.",
+          "en": "Avoids proxying gigabytes through app servers; enqueues a lightweight job on completion."
+        },
+        "why": {
+          "vi": "Giữ tầng API nhẹ và có thông lượng cao ngay cả khi hàng nghìn video đang tải lên cùng lúc.",
+          "en": "Keeps API tier stateless and responsive under heavy upload concurrency."
+        }
+      }
+    },
+    "transcode_queue": {
+      "shape": "queue",
+      "tone": "yellow",
+      "label": {
+        "vi": "Hàng đợi chuyển mã",
+        "en": "Transcode Queue"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ đệm tin nhắn chứa các tác vụ chuyển mã video (theo từng GOP/segment) chờ Worker xử lý.",
+          "en": "Durable message queue buffering video transcoding jobs for workers."
+        },
+        "how": {
+          "vi": "Khi có đột biến tải lên (upload spike), hàng đợi hấp thụ chênh lệch tốc độ giữa tốc độ gửi vào và tốc độ nén CPU.",
+          "en": "Absorbs upload bursts so sudden spikes do not drop user uploads."
+        },
+        "why": {
+          "vi": "Cho phép xử lý bất đồng bộ và chia một video dài thành nhiều đoạn song song.",
+          "en": "Enables asynchronous processing and parallel segment-level transcoding."
+        }
+      }
+    },
+    "workers": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "cpu",
+      "label": {
+        "vi": "Transcode Workers",
+        "en": "Transcode Workers"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm máy chủ chuyên dụng (CPU/GPU) chạy FFmpeg nén mỗi video thành nhiều độ phân giải (1080p, 720p, 480p, 360p).",
+          "en": "Worker pool running FFmpeg to encode multiple resolutions (1080p–360p)."
+        },
+        "how": {
+          "vi": "Mỗi worker kéo job từ hàng đợi, tách âm thanh/hình ảnh, cắt thành các segment 4–6 giây và tạo manifest HLS/DASH.",
+          "en": "Pulls jobs, encodes adaptive bitrate renditions, and outputs 4–6s segments + manifest."
+        },
+        "why": {
+          "vi": "Là khâu tốn tài nguyên tính toán nhất; mở rộng ngang theo độ sâu hàng đợi (Queue Depth).",
+          "en": "Most compute-intensive stage; autoscales horizontally based on queue depth."
+        }
+      }
+    },
+    "blob": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Object Storage",
+        "en": "Object Storage"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Kho lưu trữ đối tượng (S3/GCS) chứa video gốc và toàn bộ các đoạn HLS/DASH đã chuyển mã.",
+          "en": "Durable object store holding raw uploads and transcoded HLS/DASH segments."
+        },
+        "how": {
+          "vi": "Đóng vai trò Origin cho CDN. Nếu CDN Hit Ratio thấp, hàng loạt lượt đọc sẽ dội thẳng vào đây gây tốn chi phí Egress.",
+          "en": "Serves as the CDN origin; low CDN hit ratios drive expensive origin egress."
+        },
+        "why": {
+          "vi": "Lưu trữ bền vững, chi phí trên mỗi GB thấp hơn nhiều so với ổ đĩa khối.",
+          "en": "Provides durable, cost-effective storage for multi-petabyte video libraries."
+        }
+      }
+    },
+    "cdn": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "globe",
+      "label": {
+        "vi": "CDN Edge",
+        "en": "CDN Edge"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Mạng lưới máy chủ biên đặt gần người xem, lưu đệm các đoạn video phổ biến để giảm độ trễ và bảo vệ Origin.",
+          "en": "Edge caching network serving hot video segments close to viewers."
+        },
+        "how": {
+          "vi": "Video viral tập trung vào một nhóm nhỏ nội dung nóng (quy luật Pareto 80/20), nên CDN Hit Ratio thường đạt 90–95%.",
+          "en": "Viral traffic follows Pareto distribution, letting CDN absorb 90–95% of reads."
+        },
+        "why": {
+          "vi": "Giảm độ trễ khởi phát (time-to-first-frame) và cắt giảm mạnh chi phí băng thông ra từ Origin.",
+          "en": "Slashes startup latency and origin egress bandwidth costs."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-upload": {
+      "inspector": {
+        "what": {
+          "vi": "Luồng tải video lên từ trình duyệt hoặc ứng dụng của tác giả.",
+          "en": "Upload request path from creator client to Upload Gateway."
+        }
+      }
+    },
+    "upload-transcode_queue": {
+      "inspector": {
+        "what": {
+          "vi": "Đẩy thông điệp chuyển mã vào hàng đợi ngay sau khi nhận xong file.",
+          "en": "Enqueues transcoding task asynchronously after upload completes."
+        }
+      }
+    },
+    "transcode_queue-workers": {
+      "inspector": {
+        "what": {
+          "vi": "Worker kéo các tác vụ chuyển mã theo tốc độ xử lý khả dụng.",
+          "en": "Workers pull transcode jobs at their available CPU capacity."
+        }
+      }
+    },
+    "workers-blob": {
+      "inspector": {
+        "what": {
+          "vi": "Ghi các đoạn video đa độ phân giải và file manifest (.m3u8 / .mpd) vào Object Storage.",
+          "en": "Writes encoded segments and manifests to Object Storage."
+        }
+      }
+    },
+    "client-cdn": {
+      "inspector": {
+        "what": {
+          "vi": "Người xem tải manifest và từng đoạn 4–6 giây theo băng thông thực tế (Adaptive Bitrate).",
+          "en": "Viewers fetch manifest and 4–6s segments adaptively over HTTP."
+        }
+      }
+    },
+    "cdn-blob": {
+      "inspector": {
+        "what": {
+          "vi": "Origin Pull: CDN lấy đoạn video từ Object Storage khi Cache Miss.",
+          "en": "Origin pull from Object Storage on CDN cache misses."
+        }
+      }
+    },
+    "client-blob": {
+      "from": "client",
+      "to": "blob",
+      "label": {
+        "vi": "2. Direct Chunked PUT",
+        "en": "2. Direct Chunked PUT"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Trình duyệt cắt tệp video lớn thành từng mảnh 5–10 MB và tải trực tiếp lên Object Storage bằng Presigned URL.",
+          "en": "Client uploads 5–10 MB video chunks directly to Object Storage via Presigned URLs."
+        },
+        "how": {
+          "vi": "Mỗi mảnh tải lên độc lập; nếu rớt mạng ở mảnh thứ 42 thì chỉ cần tải lại đúng mảnh 42.",
+          "en": "Uploads chunks in parallel with resumable per-chunk retry."
+        },
+        "why": {
+          "vi": "Không làm nghẽn băng thông và RAM của cụm Upload Gateway.",
+          "en": "Bypasses Upload Gateway memory and bandwidth bottlenecks."
+        }
+      }
+    },
+    "upload-workers_sync": {
+      "from": "upload",
+      "to": "workers",
+      "label": {
+        "vi": "Gọi đồng bộ (Chặn luồng!)",
+        "en": "Sync call (Blocking!)"
+      },
+      "style": "danger",
+      "inspector": {
+        "what": {
+          "vi": "Phản mẫu gọi chuyển mã video đồng bộ trực tiếp từ Upload Gateway sang Workers mà không qua hàng đợi.",
+          "en": "Anti-pattern invoking video transcoding synchronously without a queue."
+        },
+        "how": {
+          "vi": "Bắt kết nối HTTP của người tải lên phải chờ hàng chục phút chuyển mã xong.",
+          "en": "Forces client HTTP connections to block for minutes during transcoding."
+        },
+        "why": {
+          "vi": "Gây treo luồng, timeout 504 hàng loạt và sập toàn bộ cụm khi có nhiều người cùng đăng video.",
+          "en": "Causes thread starvation and cascading 504 timeouts under concurrent uploads."
+        }
+      }
+    }
+  },
+  "layout": {
+    "client": {
+      "col": 0,
+      "row": 1
+    },
+    "upload": {
+      "col": 1,
+      "row": 0
+    },
+    "transcode_queue": {
+      "col": 2,
+      "row": 0
+    },
+    "workers": {
+      "col": 3,
+      "row": 0
+    },
+    "blob": {
+      "col": 4,
+      "row": 1
+    },
+    "cdn": {
+      "col": 2,
+      "row": 2
+    }
+  },
+  "floor": {
+    "cols": 5,
+    "rows": 3,
+    "label": {
+      "vi": "Kiến trúc Video Streaming",
+      "en": "Video Streaming Architecture"
+    }
+  },
+  "zones": {
+    "transcode": {
+      "nodeIds": [
+        "upload",
+        "transcode_queue",
+        "workers",
+        "blob"
+      ],
+      "label": {
+        "vi": "XỬ LÝ & LƯU TRỮ ORIGIN",
+        "en": "TRANSCODE & ORIGIN"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "transcode"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Hai luồng bất đối xứng",
+          "en": "Asymmetric Read/Write Paths"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Ghi: Upload → Queue → Workers → Blob",
+              "en": "Write: Upload → Queue → Workers → Blob"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Đọc: Client → CDN Edge → Blob (Miss)",
+              "en": "Read: Client → CDN Edge → Blob (Miss)"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-upload": {
+      "show": {
+        "nodes": [
+          "client",
+          "upload",
+          "blob"
+        ],
+        "links": [
+          "client-upload",
+          "client-blob"
+        ]
+      },
+      "state": {
+        "upload": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Presigned URL",
+              "en": "Presigned URL"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tải lên trực tiếp theo mảnh",
+          "en": "Direct Chunked Upload"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Chunk 5–10 MB, tải lại được khi rớt mạng",
+              "en": "5–10 MB resumable chunks"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      },
+      "linkState": {
+        "client-upload": {
+          "label": {
+            "vi": "1. Xin Presigned URL",
+            "en": "1. Get Presigned URL"
+          }
+        },
+        "client-blob": {
+          "label": {
+            "vi": "2. Tải mảnh thẳng lên Blob",
+            "en": "2. Direct Chunked PUT"
+          }
+        }
+      }
+    },
+    "s3-transcode": {
+      "show": {
+        "nodes": [
+          "upload",
+          "transcode_queue",
+          "workers",
+          "blob"
+        ]
+      },
+      "zones": [
+        "transcode"
+      ],
+      "state": {
+        "transcode_queue": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Hàng đợi DAG",
+              "en": "DAG Queue"
+            },
+            "tone": "warn"
+          }
+        },
+        "workers": {
+          "loadPct": 85,
+          "badge": {
+            "text": {
+              "vi": "4 độ phân giải",
+              "en": "4 renditions"
+            },
+            "tone": "default"
+          }
+        }
+      },
+      "packets": "auto"
+    },
+    "s4-abr": {
+      "show": {
+        "nodes": [
+          "client",
+          "cdn",
+          "blob"
+        ]
+      },
+      "state": {
+        "cdn": {
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "HLS / DASH",
+              "en": "HLS / DASH"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "linkState": {
+        "client-cdn": {
+          "label": {
+            "vi": "Segment 4–6s",
+            "en": "4–6s segments"
+          }
+        }
+      },
+      "packets": "auto"
+    },
+    "s5-live": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "transcode"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Đột biến tải lên & CDN Offload",
+          "en": "Upload Spike & CDN Offload"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "t = 15 s: Spike 2.600 req/s",
+              "en": "t = 15 s: Spike 2,600 req/s"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Theo dõi Queue Depth & Worker ρ",
+              "en": "Watch Queue Depth & Worker ρ"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-cdn-cost": {
+      "show": {
+        "nodes": [
+          "client",
+          "cdn",
+          "blob"
+        ]
+      },
+      "state": {
+        "cdn": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Hit ≥ 90%",
+              "en": "Hit ≥ 90%"
+            },
+            "tone": "ok"
+          }
+        },
+        "blob": {
+          "loadPct": 18,
+          "badge": {
+            "text": {
+              "vi": "Origin được bảo vệ",
+              "en": "Origin shielded"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto"
+    },
+    "s7-pitfall": {
+      "show": {
+        "nodes": [
+          "client",
+          "upload",
+          "workers",
+          "blob"
+        ],
+        "links": [
+          "client-upload",
+          "upload-workers_sync",
+          "workers-blob"
+        ]
+      },
+      "state": {
+        "upload": {
+          "loadPct": 98,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Nghẽn đồng bộ",
+              "en": "Sync bottleneck"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "linkState": {
+        "client-upload": {
+          "style": "danger"
+        }
+      },
+      "packets": "auto"
+    },
+    "s8-recap": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "transcode"
+      ],
+      "packets": "auto"
+    }
+  },
+  "live": {
+    "streaming": {
+      "sim": "S7-05/streaming",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": [
+          "slow",
+          "kill"
+        ],
+        "knobs": [
+          {
+            "node": "workers",
+            "key": "replicas"
+          },
+          {
+            "node": "cdn",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "upload",
+            "key": "replicas"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 150
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 150
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "workers",
+          "transcode_queue",
+          "cdn"
+        ]
+      }
+    }
+  }
+}

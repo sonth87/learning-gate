@@ -1,0 +1,9 @@
+[
+  { "id": "S6-10.c1", "front": "Ba trạng thái dữ liệu cần bảo vệ bằng mã hóa là gì?", "back": "Đang truyền (In-Transit — dùng TLS/mTLS), đang lưu (At-Rest — dùng KMS/Envelope Encryption) và đang xử lý (In-Use — kiểm soát bộ nhớ và quyền truy cập)." },
+  { "id": "S6-10.c2", "front": "Mutual TLS (mTLS) dùng để làm gì?", "back": "Xác thực hai chiều giữa các dịch vụ trong mạng nội bộ: cả client và server đều xuất trình chứng chỉ số, ngăn nghe lén và giả mạo dịch vụ ngay cả khi kẻ tấn công đã vào được mạng riêng." },
+  { "id": "S6-10.c3", "front": "Envelope Encryption (DEK / KEK / KMS) hoạt động thế nào?", "back": "DEK mã hóa dữ liệu nhanh bằng AES-GCM; KEK nằm cố định trong KMS để bọc DEK. Khóa luôn tách khỏi dữ liệu nên lộ bản sao lưu vẫn không giải mã được nếu thiếu quyền KMS." },
+  { "id": "S6-10.c4", "front": "Tại sao xoay vòng KEK lại nhanh?", "back": "Vì chỉ cần giải mã và bọc lại các DEK bằng KEK mới, không cần giải mã và mã hóa lại toàn bộ hàng terabyte dữ liệu đang lưu." },
+  { "id": "S6-10.c5", "front": "Secrets Manager giải quyết vấn đề gì?", "back": "Lưu trữ tập trung mật khẩu DB và API key, cấp phát động theo thời hạn ngắn và tự động xoay vòng định kỳ, kết hợp quét mã nguồn trong CI để chặn lộ secret qua Git." },
+  { "id": "S6-10.c6", "front": "Tokenization khác mã hóa thông thường ở điểm nào?", "back": "Tokenization thay thế dữ liệu nhạy cảm (như số thẻ) bằng token ngẫu nhiên không mang quy luật toán học; số thẻ thật nằm riêng trong vault để thu hẹp phạm vi PCI-DSS." },
+  { "id": "S6-10.c7", "front": "Mã hóa đầu cuối (End-to-End Encryption - E2EE) là gì?", "back": "Mô hình mã hóa từ thiết bị gửi đến thiết bị nhận sao cho máy chủ trung gian chỉ lưu và chuyển tiếp bản mã, không thể đọc được nội dung gốc." }
+]

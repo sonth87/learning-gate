@@ -1,0 +1,9 @@
+[
+  { "id": "S4-06.c1", "front": "Khi nào nên xử lý đồng bộ vs bất đồng bộ?", "back": "Dùng đồng bộ khi người dùng cần kết quả ngay (đăng nhập, kiểm tra số dư). Dùng bất đồng bộ qua Queue cho tác vụ nặng hoặc gọi bên thứ ba mà người dùng không cần chờ (gửi email, tạo PDF, thông báo)." },
+  { "id": "S4-06.c2", "front": "Exponential Backoff + Jitter trong Retry là gì?", "back": "Tăng thời gian chờ theo cấp số nhân giữa các lần thử lại (2s, 4s, 8s) kèm thêm khoảng lệch ngẫu nhiên (jitter) để tránh nhiều Worker đồng loạt thử lại cùng một thời điểm." },
+  { "id": "S4-06.c3", "front": "Poison Message là gì và nó gây hại thế nào?", "back": "Là thông điệp luôn gây lỗi dù thử lại bao nhiêu lần (sai định dạng JSON, dữ liệu hỏng). Nếu không giới hạn số lần retry, nó quay vòng mãi trong hàng đợi và chiếm hết tài nguyên Worker." },
+  { "id": "S4-06.c4", "front": "Dead Letter Queue (DLQ) dùng để làm gì?", "back": "Là hàng đợi phụ chứa các thông điệp vượt quá số lần retry tối đa. DLQ giúp cách ly lỗi để luồng chính tiếp tục chạy, đồng thời cho phép kỹ sư kiểm tra và phát lại sau khi sửa." },
+  { "id": "S4-06.c5", "front": "Idempotency (tính lũy đẳng) trong xử lý job là gì?", "back": "Là tính chất một thao tác dù chạy 1 lần hay chạy lặp lại nhiều lần với cùng đầu vào vẫn cho kết quả trạng thái cuối cùng giống hệt nhau, không tạo đơn trùng hay trừ tiền hai lần." },
+  { "id": "S4-06.c6", "front": "Cách triển khai Idempotency Key an toàn?", "back": "Producer sinh một mã duy nhất cho mỗi yêu cầu nghiệp vụ; Worker lưu và kiểm tra mã này với ràng buộc UNIQUE trong cùng giao dịch Database (hoặc Redis nguyên tử) trước khi thực hiện tác dụng phụ." },
+  { "id": "S4-06.c7", "front": "Tại sao không nên để hàng đợi không giới hạn kích thước (unbounded)?", "back": "Nếu Worker gặp sự cố hoặc chậm kéo dài, hàng đợi không giới hạn sẽ phình to làm tràn RAM/đĩa của Message Broker. Cần đặt maxDepth và theo dõi tuổi thông điệp cũ nhất." }
+]

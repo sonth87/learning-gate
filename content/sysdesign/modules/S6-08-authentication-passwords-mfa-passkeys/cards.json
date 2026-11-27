@@ -1,0 +1,8 @@
+[
+  { "id": "S6-08.c1", "front": "Vì sao phải dùng hàm băm chậm có Salt (Argon2id/bcrypt) cho mật khẩu?", "back": "Hàm băm chậm tốn CPU/RAM cản trở dò mật khẩu bằng GPU nếu DB bị lộ, còn Salt riêng từng tài khoản vô hiệu hóa bảng tra cứu sẵn (Rainbow Table)." },
+  { "id": "S6-08.c2", "front": "So sánh Session (Redis) và JWT + Refresh Token?", "back": "Session thu hồi tức thì nhưng cần tra Redis mỗi request. JWT tự xác thực không cần tra DB nhưng phải giữ Access Token ngắn hạn (5–15 phút) và thu hồi qua Refresh Token." },
+  { "id": "S6-08.c3", "front": "Tấn công Credential Stuffing là gì và chặn thế nào?", "back": "Bot thử hàng loạt cặp tài khoản–mật khẩu bị lộ từ nơi khác. Chặn bằng Rate Limiting theo IP/tài khoản tại Gateway, từ chối mật khẩu đã lộ và bật MFA." },
+  { "id": "S6-08.c4", "front": "Vì sao Passkey (WebAuthn) chống được Phishing tốt hơn OTP?", "back": "Passkey tạo chữ ký khóa công khai gắn chặt với tên miền gốc (Origin) do trình duyệt kiểm tra, nên trang giả mạo không thể chuyển tiếp phiên đăng nhập." },
+  { "id": "S6-08.c5", "front": "Ba quy tắc an toàn cho chức năng Quên mật khẩu?", "back": "Trả lời thông báo giống nhau dù email tồn tại hay không, cấp token dùng một lần có thời hạn ngắn (~15 phút), và vô hiệu hóa các phiên cũ sau khi đổi mật khẩu." },
+  { "id": "S6-08.c6", "front": "Refresh Token Rotation là gì?", "back": "Mỗi lần dùng Refresh Token để xin Access Token mới, hệ thống cấp Refresh Token mới và vô hiệu hóa token cũ; nếu token cũ bị dùng lại sẽ thu hồi cả chuỗi phiên." }
+]

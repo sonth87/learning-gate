@@ -1,0 +1,99 @@
+[
+  {
+    "id": "S7-04.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng tải ghi cập nhật vị trí tài xế" },
+    "prompt": { "vi": "Hệ thống gọi xe có 1.000.000 tài xế đang trực tuyến. Mỗi tài xế gửi tọa độ GPS cập nhật vị trí mỗi 4 giây một lần. Ước lượng tổng số lượt ghi vị trí mỗi giây đổ vào hệ thống." },
+    "difficulty": 1,
+    "quantity": "Tải ghi cập nhật vị trí",
+    "unit": "ghi/giây",
+    "truth": { "type": "formula", "expr": "1000000/4", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Mỗi tài xế gửi 1 / 4 = 0,25 lượt ghi mỗi giây." },
+      { "vi": "Với 1.000.000 tài xế: 1.000.000 / 4 = 250.000 lượt ghi/giây." }
+    ],
+    "hints": [
+      { "vi": "Chia tổng số tài xế đang hoạt động cho chu kỳ gửi vị trí (4 giây)." }
+    ],
+    "explain": { "vi": "1 triệu tài xế cập nhật mỗi 4 giây tạo ra {truth:0} lượt ghi/giây liên tục — lý do chỉ mục không gian phải lưu trong RAM và phân mảnh ngang." },
+    "replay": { "simId": "S7-04/geo-hotkey", "seekSec": 10, "focus": { "nodes": ["geo_shards"] } }
+  },
+  {
+    "id": "S7-04.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra điểm nghẽn khi xuất hiện ô nóng sân bay" },
+    "prompt": { "vi": "Từ giây 15, khu vực sân bay tập trung lượng lớn tài xế tạo thành ô nóng (hot cell) chiếm 70% lưu lượng ghi của một phân mảnh. Tại giây 25, hãy nhấn vào node đang trở thành điểm nghẽn của hệ thống." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 25,
+    "maxPicks": 1,
+    "expected": ["geo_shards"],
+    "hints": [
+      { "vi": "Tìm node giữ trạng thái đang có hàng đợi dồn ứ và ρ ≥ 1 do lệch tải phân mảnh." }
+    ],
+    "explain": { "vi": "{geo_shards.name} có một phân mảnh chứa ô sân bay bị dồn tải làm ρ vọt lên {geo_shards.rho@25:2} với hàng đợi {geo_shards.queue@25:0}, trong khi {geo_api.name} vẫn còn dư công suất." },
+    "sim": { "simId": "S7-04/geo-hotkey", "seekSec": 25, "autoplay": false }
+  },
+  {
+    "id": "S7-04.A3",
+    "kind": "design-constraint",
+    "title": { "vi": "Xử lý điểm nóng sân bay và đỉnh tải 11.000 req/s" },
+    "prompt": { "vi": "Cấu hình Location API và Geo Index Shards để chịu được tải chuẩn 8.000 req/s kèm điểm nóng sân bay ở giây 15 (p99 ≤ 120 ms, lỗi ≤ 1%), đồng thời vượt qua đỉnh 11.000 req/s (p99 ≤ 140 ms, lỗi ≤ 1%) và không còn SPOF ở cả hai tầng trong ngân sách ≤ 1,65 USD/giờ." },
+    "difficulty": 3,
+    "simId": "S7-04/geo-hotkey",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-hotkey",
+        "label": { "vi": "Tải chuẩn 8.000 req/s + ô nóng sân bay (p99 ≤ 120 ms, lỗi ≤ 1%)" },
+        "simId": "S7-04/geo-hotkey",
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "peak-11k",
+        "label": { "vi": "Đỉnh 11.000 req/s + ô nóng sân bay (p99 ≤ 140 ms, lỗi ≤ 1%)" },
+        "simId": "S7-04/geo-hotkey",
+        "loadOverride": { "kind": "spike", "base": 8000, "peak": 11000, "atSec": 15, "holdSec": 25, "riseSec": 3, "fallSec": 3 },
+        "constraints": [
+          { "id": "p99-peak", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 3 },
+          { "id": "err-peak", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "geo_api" },
+      { "id": "no-shard-spof", "kind": "structural", "rule": "no-spof", "node": "geo_shards" }
+    ],
+    "budget": { "maxCostPerHour": 1.65, "maxChanges": 3 },
+    "par": { "changes": 3, "costPerHour": 1.28 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "geo_shards", "key": "shards", "value": 8 },
+        { "type": "knob", "node": "geo_shards", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "geo_api", "key": "replicas", "value": 4 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "only-scale-api",
+        "label": { "vi": "Tăng Location API lên 8 instance, giữ nguyên 4 Geo Shards" },
+        "changes": [
+          { "type": "knob", "node": "geo_api", "key": "replicas", "value": 8 }
+        ],
+        "why": { "vi": "Location API không phải điểm nghẽn; 4 Geo Shards vẫn bị ô nóng sân bay làm quá tải khi 70% lưu lượng dồn vào một phân mảnh." }
+      }
+    ],
+    "hints": [
+      { "vi": "Location API 3 instance (10.500 req/s) chưa đủ cho đỉnh 11.000 req/s: hãy tăng lên 4 instance." },
+      { "vi": "Tăng số phân mảnh Geo Shards lên 8 để chia nhỏ vùng nóng và gánh tải lệch tại sân bay." }
+    ],
+    "explain": { "vi": "Tăng Geo Index Shards lên 8 phân mảnh và Location API lên 4 instance giúp hấp thụ điểm nóng sân bay và đỉnh 11.000 req/s ở mức p99 = {m.p99'@25:0} ms với chi phí {m.cost'@25:2} USD/giờ." }
+  }
+]

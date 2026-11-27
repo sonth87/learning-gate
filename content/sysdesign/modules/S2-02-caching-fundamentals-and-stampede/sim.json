@@ -1,0 +1,378 @@
+{
+  "sims": [
+    {
+      "id": "S2-02/hit-ratio",
+      "scenario": {
+        "id": "S2-02/hit-ratio",
+        "seed": 2202,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.92 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 800, "to": 5000, "overSec": 50 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Tier", "en": "App Tier" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 4, "poolSize": 30 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (số key)", "en": "Cache capacity (keys)" },
+                  "min": 2500,
+                  "max": 40000,
+                  "step": 2500,
+                  "default": 10000
+                },
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "TTL", "en": "TTL" },
+                  "min": 10,
+                  "max": 600,
+                  "step": 10,
+                  "default": 120,
+                  "unit": "s"
+                },
+                {
+                  "key": "ttlJitterPct",
+                  "type": "number",
+                  "label": { "vi": "Độ lệch TTL (Jitter)", "en": "TTL jitter" },
+                  "min": 0,
+                  "max": 0.5,
+                  "step": 0.05,
+                  "default": 0.2
+                },
+                {
+                  "key": "singleflight",
+                  "type": "bool",
+                  "label": { "vi": "Singleflight", "en": "Singleflight" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Xoá trắng Cache", "en": "Cache flush" } }
+              ],
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "replicas": 2,
+                "ttlSec": 120,
+                "ttlJitterPct": 0.2,
+                "hitRatioMax": 0.95,
+                "workingSetKeys": 40000,
+                "capacityKeys": 10000,
+                "warmupSec": 15,
+                "singleflight": false
+              }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "DB sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "replicas": 1, "sizeFactor": 1, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 120 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ],
+      "presets": [
+        {
+          "id": "high-hit-ratio",
+          "label": { "vi": "Nâng dung lượng Cache lên 40.000 key (Hit Ratio ≈ 93%)", "en": "Raise Cache capacity to 40,000 keys" },
+          "changes": [
+            { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 40000 }
+          ],
+          "expectPass": true
+        }
+      ]
+    },
+    {
+      "id": "S2-02/stampede",
+      "scenario": {
+        "id": "S2-02/stampede",
+        "seed": 2202,
+        "durationSec": 80,
+        "mix": { "readRatio": 0.92 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 3600 },
+        "events": [
+          { "at": 25, "type": "cache-expire-all", "node": "cache" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Tier", "en": "App Tier" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 4, "poolSize": 30 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "TTL", "en": "TTL" },
+                  "min": 10,
+                  "max": 600,
+                  "step": 10,
+                  "default": 60,
+                  "unit": "s"
+                },
+                {
+                  "key": "ttlJitterPct",
+                  "type": "number",
+                  "label": { "vi": "Độ lệch TTL (Jitter)", "en": "TTL jitter" },
+                  "min": 0,
+                  "max": 0.5,
+                  "step": 0.05,
+                  "default": 0
+                },
+                {
+                  "key": "singleflight",
+                  "type": "bool",
+                  "label": { "vi": "Singleflight", "en": "Singleflight" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Hết hạn đồng loạt gây Stampede", "en": "Mass expiry causes Stampede" } }
+              ],
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "replicas": 2,
+                "ttlSec": 60,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.95,
+                "workingSetKeys": 9000,
+                "capacityKeys": 9000,
+                "warmupSec": 10,
+                "singleflight": false
+              }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "DB sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Quá tải truy vấn đồng thời", "en": "Concurrent query overload" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "replicas": 1, "sizeFactor": 1, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 120 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 80 } }
+      ],
+      "presets": [
+        {
+          "id": "fix-stampede",
+          "label": { "vi": "Bật Singleflight và TTL Jitter 25%", "en": "Enable Singleflight and 25% TTL Jitter" },
+          "changes": [
+            { "type": "knob", "node": "cache", "key": "singleflight", "value": true },
+            { "type": "knob", "node": "cache", "key": "ttlJitterPct", "value": 0.25 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-only-jitter",
+          "label": { "vi": "Chỉ bật TTL Jitter mà thiếu Singleflight", "en": "Enable TTL Jitter without Singleflight" },
+          "changes": [
+            { "type": "knob", "node": "cache", "key": "ttlJitterPct", "value": 0.25 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

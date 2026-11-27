@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "base": "s1-unbounded",
+  "nodes": {
+    "crit": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Đơn thanh toán (P0)", "en": "Critical Checkout (P0)" },
+      "inspector": {
+        "what": {
+          "vi": "Luồng giao dịch cốt lõi mang lại doanh thu (chiếm 40% tổng lưu lượng = 800 req/s).",
+          "en": "Revenue-critical checkout traffic (40% of load = 800 req/s)."
+        },
+        "how": {
+          "vi": "Đi thẳng vào API Producer và được miễn trừ khỏi bộ cắt tải ưu tiên thấp.",
+          "en": "Routes directly to API Producer, bypassing low-priority shedding."
+        },
+        "why": {
+          "vi": "Khi hệ thống thiếu công suất, 800 req/s này phải được giữ thành công 100%.",
+          "en": "During capacity crunches, all 800 req/s of P0 traffic must succeed."
+        }
+      }
+    },
+    "bulk": {
+      "shape": "device",
+      "tone": "neutral",
+      "icon": "sparkles",
+      "label": { "vi": "Sự kiện gợi ý (P2)", "en": "Low-Priority Events (P2)" },
+      "inspector": {
+        "what": {
+          "vi": "Luồng cập nhật gợi ý sản phẩm và thống kê hành vi (chiếm 60% = 1.200 req/s).",
+          "en": "Non-essential recommendation and analytics events (60% = 1,200 req/s)."
+        },
+        "how": {
+          "vi": "Có thể bỏ qua tạm thời hoặc giảm mẫu mà không làm hỏng giao dịch mua hàng của khách.",
+          "en": "Can be safely dropped or sampled during overload without breaking purchases."
+        },
+        "why": {
+          "vi": "Nếu để chung hàng đợi không phân biệt, 1.200 req/s này sẽ chèn lấp mất nửa số đơn thanh toán.",
+          "en": "If queued indiscriminately, these 1,200 req/s crowd out half of critical checkouts."
+        }
+      }
+    },
+    "shedder": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "filter",
+      "label": { "vi": "Priority Load Shedder", "en": "Priority Load Shedder" },
+      "inspector": {
+        "what": {
+          "vi": "Cổng cắt tải chọn lọc đặt trên luồng ưu tiên thấp.",
+          "en": "Selective load shedder governing low-priority traffic admission."
+        },
+        "how": {
+          "vi": "Hạ ngưỡng cho phép xuống 150 req/s khi tầng tiêu thụ phía sau chỉ còn 1.000 req/s năng lực.",
+          "en": "Throttles P2 admission to 150 req/s when downstream consumer capacity is 1,000 req/s."
+        },
+        "why": {
+          "vi": "Đánh đổi suy giảm tính năng phụ (Graceful Degradation) để bảo vệ tuyệt đối tính năng cốt lõi.",
+          "en": "Trades graceful degradation of auxiliary features to preserve 100% core functionality."
+        }
+      }
+    },
+    "producer": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "code",
+      "label": { "vi": "API Producer", "en": "API Producer" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng API tiếp nhận request (năng lực 3.600 req/s) và đẩy công việc vào Task Queue.",
+          "en": "API tier accepting requests (3,600 req/s capacity) and enqueuing tasks."
+        },
+        "how": {
+          "vi": "Khi Task Queue báo đầy (Back-pressure), Producer lập tức trả mã HTTP 503 kèm Retry-After thay vì tích trữ trong RAM.",
+          "en": "When Task Queue signals full (Back-pressure), returns HTTP 503 + Retry-After immediately."
+        },
+        "why": {
+          "vi": "Truyền tín hiệu nghẽn ngược lên phía gửi để tránh nổ bộ nhớ nội bộ.",
+          "en": "Propagates congestion signals upstream to prevent internal memory exhaustion."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "layers",
+      "label": { "vi": "Task Queue", "en": "Task Queue" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi trung gian nối giữa API Producer nhanh và Worker Consumer chậm hơn.",
+          "en": "Buffer decoupling fast API Producers from slower Worker Consumers."
+        },
+        "how": {
+          "vi": "Với maxDepth = 150.000, hàng đợi phình thêm 1.000 việc/giây; với maxDepth = 1.500, nó kẹp chặt thời gian nằm chờ tối đa ~1,5 giây.",
+          "en": "Unbounded (150k) grows by +1,000 msgs/s; bounded (1,500) caps max residence time to ~1.5 s."
+        },
+        "why": {
+          "vi": "Mọi hàng đợi sản xuất đều bắt buộc có giới hạn hữu hạn để không dời lỗi thành OOM muộn.",
+          "en": "Every production queue must be bounded so overload surfaces cleanly instead of causing OOM."
+        },
+        "tip": {
+          "vi": "Giám sát tuổi của thông điệp cũ nhất (backlogAgeSec) quan trọng hơn đếm số lượng thông điệp thô.",
+          "en": "Alert on oldest message age (backlogAgeSec) rather than raw message count alone."
+        }
+      }
+    },
+    "consumer": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Worker Consumer", "en": "Worker Consumer" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm tiến trình xử lý công việc từ hàng đợi (mỗi Worker xử lý 500 việc/giây).",
+          "en": "Worker pool pulling and executing queued tasks (500 ops/s per worker)."
+        },
+        "how": {
+          "vi": "Kéo (pull) thông điệp theo đúng nhịp xử lý thực tế của mình và ghi kết quả xuống Database.",
+          "en": "Pulls tasks at its own sustainable processing pace and commits to Database."
+        },
+        "why": {
+          "vi": "Thông lượng bền vững tối đa của cả đường ống không bao giờ vượt qua tổng năng lực của cụm Consumer này.",
+          "en": "End-to-end sustainable throughput can never exceed aggregate Consumer drain rate."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu kết quả xử lý đơn hàng bền vững.",
+          "en": "Durable database persisting processed orders."
+        },
+        "how": {
+          "vi": "Nhận lưu lượng đã được điều tiết mượt qua cơ chế kéo của Worker Consumer.",
+          "en": "Receives paced writes smoothed by pull-based Worker Consumers."
+        },
+        "why": {
+          "vi": "Không bị dội trực tiếp các đỉnh lưu lượng từ phía Internet.",
+          "en": "Protected from raw Internet arrival spikes."
+        }
+      }
+    }
+  },
+  "links": {
+    "prod-queue": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường đẩy công việc từ API Producer vào Task Queue.", "en": "Enqueue path from API Producer to Task Queue." },
+        "how": { "vi": "Khi Queue chạm trần maxDepth, đường này phát tín hiệu từ chối (Back-pressure) ngược về Producer.", "en": "Signals QueueFull back-pressure to Producer once maxDepth is reached." },
+        "why": { "vi": "Ngăn Producer tiếp tục nhận việc khi phía sau đã hết chỗ chứa an toàn.", "en": "Stops Producer from accepting work that cannot finish in time." }
+      }
+    },
+    "queue-cons": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường kéo (Pull) công việc từ Task Queue sang Worker Consumer.", "en": "Pull-based consumption link from Task Queue to Worker Consumer." },
+        "how": { "vi": "Consumer chỉ lấy việc mới khi đã có khe xử lý rảnh (Credit / Prefetch).", "en": "Consumers fetch new items only when worker slots are free." },
+        "why": { "vi": "Cơ chế Pull tự nhiên ngăn việc làm ngập bộ nhớ của chính tiến trình Worker.", "en": "Pull semantics naturally protect Worker processes from memory overload." }
+      }
+    }
+  },
+  "zones": {
+    "async_core": {
+      "nodeIds": ["producer", "queue", "consumer"],
+      "label": { "vi": "ĐƯỜNG ỐNG PRODUCER – QUEUE – CONSUMER", "en": "PRODUCER – QUEUE – CONSUMER PIPELINE" },
+      "tone": "purple"
+    }
+  },
+  "scenes": {
+    "s1-unbounded": {
+      "show": { "nodes": ["crit", "producer", "queue", "consumer", "db"] },
+      "zones": ["async_core"],
+      "state": {
+        "producer": { "loadPct": 55, "badge": { "text": { "vi": "Đẩy 2.000/s", "en": "Push 2,000/s" }, "tone": "ok" } },
+        "queue": {
+          "loadPct": 95,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Tăng +1.000/s!", "en": "+1,000/s Backlog!" }, "tone": "bad" }
+        },
+        "consumer": { "loadPct": 100, "badge": { "text": { "vi": "Xả 1.000/s", "en": "Drain 1,000/s" }, "tone": "warn" } },
+        "db": { "loadPct": 40 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Hàng đợi không sinh thêm công suất", "en": "Queues Do Not Create Capacity" },
+        "lines": [
+          { "text": { "vi": "λ = 2.000 > μ = 1.000 → tích luỹ vô hạn", "en": "λ = 2,000 > μ = 1,000 → infinite growth" }, "tone": "bad" },
+          { "text": { "vi": "Chỉ dời lỗi sang tràn RAM (OOM) muộn hơn", "en": "Merely delays failure into an OOM crash" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-backlog-age": {
+      "show": { "nodes": ["crit", "producer", "queue", "consumer", "db"] },
+      "zones": ["async_core"],
+      "state": {
+        "producer": { "loadPct": 55 },
+        "queue": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "50.000 việc · Trễ 50 s", "en": "50k items · 50 s old" }, "tone": "bad" }
+        },
+        "consumer": { "loadPct": 100, "badge": { "text": { "vi": "Xử lý việc quá hạn", "en": "Serving stale work" }, "tone": "bad" } },
+        "db": { "loadPct": 40 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tuổi Backlog & Công việc quá hạn", "en": "Backlog Age & Zombie Work" },
+        "lines": [
+          { "text": { "vi": "Sau 50 s: W = 50.000 / 1.000 = 50 giây", "en": "At 50 s: W = 50,000 / 1,000 = 50 seconds" }, "tone": "bad" },
+          { "text": { "vi": "Client đã bỏ cuộc nhưng Worker vẫn tốn CPU", "en": "Clients timed out yet Workers burn CPU" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-bounded": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Bounded Queue + Back-pressure: Kẹp chặt trần độ trễ bằng maxDepth",
+          "en": "Bounded Queue + Back-pressure: Bounding Worst-Case Wait via maxDepth"
+        },
+        "subtitle": {
+          "vi": "Chọn maxDepth = μ × W_tối_đa (vd 1.000 msg/s × 1,5 s = 1.500 ô) để không việc nào nằm chờ quá 1,5 s",
+          "en": "Size maxDepth = μ × W_max (e.g. 1,000/s × 1.5 s = 1,500 slots) to cap queue wait at 1.5 s"
+        },
+        "cells": ["Consumer kéo 1.000/s", "Queue đầy 1.500/1.500 ô", "Báo QueueFull ngược lại", "Producer dừng / trả 503", "RAM & độ trễ giữ cố định"],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 1, "label": "trần bộ nhớ cố định", "tone": "orange" },
+          { "index": 2, "label": "tín hiệu Back-pressure", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nguyên lý", "en": "Core Principle" },
+          "value": { "vi": "Thà từ chối tường minh ngay lập tức (HTTP 503) còn hơn nhận lời rồi làm trễ toàn bộ hệ thống", "en": "Fail fast and explicitly (HTTP 503) rather than accepting work into an endless backlog" },
+          "tone": "green"
+        }
+      }
+    },
+    "s4-pipe-tune": {
+      "show": { "nodes": ["crit", "producer", "queue", "consumer", "db"] },
+      "zones": ["async_core"],
+      "state": {
+        "producer": { "loadPct": 42, "badge": { "text": { "vi": "μ = 3.600", "en": "μ = 3,600" }, "tone": "ok" } },
+        "queue": {
+          "loadPct": 25,
+          "highlighted": true,
+          "badge": { "text": { "vi": "maxDepth = 1.500", "en": "maxDepth = 1,500" }, "tone": "ok" }
+        },
+        "consumer": {
+          "loadPct": 95,
+          "highlighted": true,
+          "badge": { "text": { "vi": "3 Worker · μ = 1.500", "en": "3x · μ = 1,500" }, "tone": "warn" }
+        },
+        "db": { "loadPct": 60 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thông lượng bền vững của đường ống", "en": "Pipeline Sustainable Throughput" },
+        "lines": [
+          { "text": { "vi": "Bounded Queue 1.500 ô giúp đệm đỉnh ngắn", "en": "1,500-slot queue buffers brief bursts" }, "tone": "good" },
+          { "text": { "vi": "Tải dài hạn vẫn do 3 Worker quyết định", "en": "Sustained rate still governed by 3 Workers" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-live-overload": {
+      "show": { "nodes": "*" },
+      "zones": ["async_core"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "2.000 req/s vào · Consumer chỉ xả 1.000/s", "en": "2,000 req/s In · 1,000/s Drain" },
+        "lines": [
+          { "text": { "vi": "1. Hạ maxDepth = 1.500 để chặn phình Queue", "en": "1. Set maxDepth = 1,500 to stop backlog growth" }, "tone": "amber" },
+          { "text": { "vi": "2. Hạ Shedder = 150 rps cứu 100% đơn P0", "en": "2. Set Shedder = 150 rps to save 100% P0 orders" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-priority-shed": {
+      "show": { "nodes": "*" },
+      "zones": ["async_core"],
+      "state": {
+        "shedder": {
+          "loadPct": 20,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Cắt P2 còn 150/s", "en": "Shed P2 to 150/s" }, "tone": "warn" }
+        },
+        "producer": { "loadPct": 26 },
+        "queue": { "loadPct": 5, "badge": { "text": { "vi": "Backlog = 0", "en": "Backlog = 0" }, "tone": "ok" } },
+        "consumer": { "loadPct": 95, "badge": { "text": { "vi": "950 / 1.000 req/s", "en": "950 / 1,000 req/s" }, "tone": "ok" } },
+        "db": { "loadPct": 38 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cắt tải theo Độ ưu tiên (Load Shedding)", "en": "Priority-Based Load Shedding" },
+        "lines": [
+          { "text": { "vi": "100% Đơn thanh toán P0 (800/s) thành công", "en": "100% Critical Checkout P0 (800/s) succeeds" }, "tone": "good" },
+          { "text": { "vi": "Loại bỏ 1.050/s sự kiện gợi ý P2 ngay rìa", "en": "Drops 1,050/s low-priority P2 at the edge" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-lifo-codel": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Kỹ thuật Quản lý Hàng đợi Nâng cao", "en": "Advanced Overload Queue Policies" },
+        "rightTitle": { "vi": "Cơ chế bảo vệ Goodput khi nghẽn", "en": "How It Protects Goodput Under Load" },
+        "names": [
+          { "id": "p1", "name": "FIFO truyền thống khi nghẽn", "note": { "vi": "Vào trước ra trước", "en": "First-In First-Out" }, "targetId": "r1" },
+          { "id": "p2", "name": "LIFO khi quá tải", "note": { "vi": "Ưu tiên việc vừa mới đến", "en": "Last-In First-Out" }, "targetId": "r2" },
+          { "id": "p3", "name": "CoDel / Queue-Wait Timeout", "note": { "vi": "Kiểm tra tuổi lúc lấy ra", "en": "Controlled Delay TTL" }, "targetId": "r3" },
+          { "id": "p4", "name": "Adaptive Concurrency Limit", "note": { "vi": "Đo độ trễ tối thiểu RTT_min", "en": "Vegas / Gradient limit" }, "targetId": "r4" }
+        ],
+        "objects": [
+          { "id": "r1", "typeTag": "ANTI-PATTERN", "value": "Mọi phần tử cùng chờ quá Timeout → Goodput tụt về 0%", "tone": "rose" },
+          { "id": "r2", "typeTag": "LOW TAIL", "value": "Request mới nhất được xử lý ngay với trễ thấp, chỉ phần dư cũ bị huỷ", "tone": "green" },
+          { "id": "r3", "typeTag": "NO ZOMBIE", "value": "Bỏ qua ngay thông điệp đã nằm chờ quá hạn trước khi tốn CPU xử lý", "tone": "blue" },
+          { "id": "r4", "typeTag": "AUTO-TUNE", "value": "Tự động co cửa sổ inflight ngay khi thấy độ trễ hàng đợi nhích lên", "tone": "purple" }
+        ]
+      }
+    },
+    "s8-incident": {
+      "show": { "nodes": "*" },
+      "zones": ["async_core"],
+      "state": {
+        "producer": { "dead": true, "badge": { "text": { "vi": "OOM 32 GB!", "en": "OOM 32 GB!" }, "tone": "bad" } },
+        "queue": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Tràn bộ nhớ", "en": "Unbounded RAM" }, "tone": "bad" }
+        },
+        "consumer": { "loadPct": 100 },
+        "db": { "loadPct": 85 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự cố: 202 Accepted trên Queue vô hạn", "en": "Incident: 202 Accepted on Unbounded Queue" },
+        "lines": [
+          { "text": { "vi": "API nhận hết việc vào RAM → OOM đồng loạt", "en": "API buffers everything in RAM → OOM crash" }, "tone": "bad" },
+          { "text": { "vi": "Đơn thanh toán kẹt 18 phút sau log thống kê", "en": "Payments stuck 18 min behind analytics logs" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["async_core"],
+      "state": {
+        "shedder": { "loadPct": 20, "badge": { "text": { "vi": "Priority Shed", "en": "Priority Shed" }, "tone": "ok" } },
+        "producer": { "loadPct": 26, "badge": { "text": { "vi": "Back-pressure 503", "en": "Back-pressure 503" }, "tone": "ok" } },
+        "queue": { "loadPct": 10, "badge": { "text": { "vi": "Bounded + CoDel", "en": "Bounded + CoDel" }, "tone": "ok" } },
+        "consumer": { "loadPct": 90, "badge": { "text": { "vi": "Pull theo sức", "en": "Pull at pace" }, "tone": "ok" } },
+        "db": { "loadPct": 38 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ba lớp kiểm soát quá tải", "en": "Three Overload Control Mechanisms" },
+        "lines": [
+          { "text": { "vi": "Bounded Queue + Back-pressure chặn tràn RAM", "en": "Bounded Queue + Back-pressure prevent OOM" }, "tone": "good" },
+          { "text": { "vi": "Priority Load Shedding giữ 100% luồng P0", "en": "Priority Load Shedding saves 100% of P0" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "overload": {
+      "sim": "S4-10/overload",
+      "startAtSec": 5,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "knobs": [
+          { "node": "queue", "key": "maxDepth" },
+          { "node": "shedder", "key": "ratePerSec" },
+          { "node": "consumer", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tổng tải vào", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "goodputRps", "label": { "vi": "Hoàn tất (Goodput)", "en": "Goodput" }, "format": "rps" },
+        { "metric": "errorRate", "label": { "vi": "Tỷ lệ cắt/rớt", "en": "Shed / Drop Rate" }, "format": "pct", "tone": { "warnAbove": 0.1, "badAbove": 0.65 } }
+      ],
+      "focus": { "nodes": ["shedder", "queue", "consumer"] }
+    }
+  }
+}

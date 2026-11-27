@@ -1,0 +1,23 @@
+{
+  "id": "S7-05",
+  "slug": "S7-05-case-video-streaming",
+  "level": 7,
+  "order": 5,
+  "title": "Case Study: Thiết kế nền tảng Video Streaming",
+  "summary": "Thiết kế hệ thống Video Streaming quy mô lớn: tải lên trực tiếp qua Presigned URL, hàng đợi chuyển mã đa độ phân giải, phân phối Adaptive Bitrate (HLS/DASH) qua CDN và tối ưu chi phí lưu trữ, băng thông.",
+  "durationMin": 20,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Thiết kế luồng tải lên trực tiếp tới Object Storage và tách quá trình chuyển mã (Transcoding) bất đồng bộ qua hàng đợi" },
+    { "vi": "Giải thích cách Adaptive Bitrate Streaming (HLS/DASH) chia video thành các đoạn ngắn đa độ phân giải để thích ứng băng thông" },
+    { "vi": "Tính toán dung lượng lưu trữ đa phiên bản và tác động của CDN Hit Ratio tới tải Origin và chi phí Egress" },
+    { "vi": "Xử lý đột biến lưu lượng tải lên (Upload Spike) bằng cách mở rộng Worker Pool mà không làm nghẽn API" }
+  ],
+  "tags": ["video-streaming", "cdn", "transcoding", "hls", "dash", "object-storage", "case-study"],
+  "prerequisites": ["S2-04", "S2-12", "S4-03"],
+  "related": ["S7-06", "S7-07", "S4-03"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế nền tảng Video Streaming: tải lên trực tiếp, hàng đợi chuyển mã đa độ phân giải, phân phối CDN Adaptive Bitrate (HLS/DASH) và tối ưu chi phí băng thông."
+  }
+}

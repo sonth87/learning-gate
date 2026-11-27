@@ -1,0 +1,22 @@
+[
+  {
+    "id": "S0-03.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp thứ tự luồng đăng ảnh kết hợp Sync và Async" },
+    "prompt": { "vi": "Sắp xếp 6 bước theo đúng trình tự thời gian khi người dùng đăng một bức ảnh mới lên mạng xã hội (tách phần xác nhận đồng bộ cho người đăng và phần phân phối bảng tin bất đồng bộ)." },
+    "difficulty": 1,
+    "items": [
+      { "id": "upload", "text": { "vi": "Client gửi yêu cầu tạo bài đăng qua Load Balancer vào App Server" } },
+      { "id": "save-db", "text": { "vi": "App Server kiểm tra hợp lệ và ghi bản ghi bài đăng vào Database bền vững" } },
+      { "id": "enqueue", "text": { "vi": "App Server đẩy sự kiện phân phối bài viết vào Message Queue" } },
+      { "id": "ack", "text": { "vi": "App Server trả phản hồi đăng bài thành công ngay cho Client" } },
+      { "id": "worker", "text": { "vi": "Background Worker lấy sự kiện từ Message Queue và tra danh sách người theo dõi" } },
+      { "id": "feed", "text": { "vi": "Worker cập nhật bài đăng mới vào Feed Cache của những người theo dõi" } }
+    ],
+    "shuffleSeed": 5,
+    "hints": [
+      { "vi": "Bốn bước đầu thuộc nhánh đồng bộ để lưu dữ liệu gốc và trả lời nhanh cho người đăng; hai bước cuối chạy nền sau khi người đăng đã nhận phản hồi." }
+    ],
+    "explain": { "vi": "App Server phải ghi bền vững vào Database và đẩy thông điệp vào Message Queue trước khi trả xác nhận thành công cho Client; sau đó Worker nền mới đọc từ Queue và cập nhật dần vào Feed Cache mà không làm người đăng phải chờ." }
+  }
+]

@@ -53,18 +53,36 @@ function toneColors(tone: IsoTone, isDark: boolean): { bg: string; border: strin
   }
 }
 
-function wrapTextTwoLines(text: string, maxChars = 66): string[] {
+function wrapTextLines(text: string, maxChars = 66, maxLines = 3): string[] {
   const clean = text.trim();
+  if (!clean) return [''];
   if (clean.length <= maxChars) return [clean];
   const words = clean.split(/\s+/);
-  let line1 = '';
+  const lines: string[] = [];
   let idx = 0;
-  while (idx < words.length && (line1 ? `${line1} ${words[idx]}` : words[idx]).length <= maxChars) {
-    line1 = line1 ? `${line1} ${words[idx]}` : words[idx];
-    idx++;
+
+  while (idx < words.length && lines.length < maxLines - 1) {
+    let cur = '';
+    while (idx < words.length && (cur ? `${cur} ${words[idx]}` : words[idx]).length <= maxChars) {
+      cur = cur ? `${cur} ${words[idx]}` : words[idx];
+      idx++;
+    }
+    if (!cur) {
+      cur = words[idx].slice(0, maxChars);
+      words[idx] = words[idx].slice(maxChars);
+    }
+    lines.push(cur);
   }
-  const rest = words.slice(idx).join(' ');
-  return rest ? [line1, rest] : [clean];
+
+  const rest = words.slice(idx).join(' ').trim();
+  if (rest) {
+    lines.push(rest.length > maxChars + 3 ? `${rest.slice(0, maxChars + 1).trimEnd()}…` : rest);
+  }
+  return lines.length > 0 ? lines : [clean];
+}
+
+function wrapTextTwoLines(text: string, maxChars = 66): string[] {
+  return wrapTextLines(text, maxChars, 2);
 }
 
 export const MemoryStageSvg: React.FC<{
@@ -88,8 +106,59 @@ export const MemoryStageSvg: React.FC<{
   const [hintAutoOpen, setHintAutoOpen] = useState(true);
   const [hintHovered, setHintHovered] = useState(false);
 
-  const baseW = 810;
-  const baseH = 395;
+  const { baseW, baseH } = React.useMemo(() => {
+    if (scene.kind === 'tape') {
+      const n = Math.max(1, scene.cells.length);
+      const maxCellLen = Math.max(1, ...scene.cells.map((c) => c.length));
+      const isStageCards = maxCellLen > 4;
+      const gap = isStageCards ? 12 : 6;
+      const minCardW = maxCellLen > 32 ? 168 : maxCellLen > 22 ? 146 : 114;
+      const cw = isStageCards
+        ? Math.max(minCardW, Math.min(maxCellLen * 6.8 + 24, Math.floor((740 - (n - 1) * gap) / n)))
+        : Math.min(58, Math.max(42, Math.floor(560 / n)));
+      const totalW = n * cw + (n - 1) * gap;
+      return {
+        baseW: Math.max(810, totalW + 76),
+        baseH: 430,
+      };
+    }
+    if (scene.kind === 'refs') {
+      const nCount = scene.names.length;
+      const oCount = scene.objects.length;
+      const maxRows = Math.max(nCount, oCount);
+      return {
+        baseW: 840,
+        baseH: Math.max(395, maxRows * 96 + 110),
+      };
+    }
+    if (scene.kind === 'tree') {
+      const items = scene.nodes.map((n) => {
+        const subRaw = n.sub ? pickText(n.sub, lang) : '';
+        const subLines = subRaw ? wrapTextLines(subRaw, 34, 2) : [];
+        const maxSubLen = subLines.reduce((m, s) => Math.max(m, s.length), 0);
+        const w = Math.max(
+          112,
+          Math.round(n.label.length * 7.6 + 28),
+          Math.round(maxSubLen * 5.9 + 24)
+        );
+        const y = Math.round((Number.isFinite(n.y) ? n.y : 0) * 1.2);
+        return { y, w };
+      });
+      const rows: Array<typeof items> = [];
+      for (const it of [...items].sort((a, b) => a.y - b.y)) {
+        const r = rows.find((row) => Math.abs(row[0].y - it.y) < 42);
+        if (r) r.push(it);
+        else rows.push([it]);
+      }
+      let maxRowW = 820;
+      for (const r of rows) {
+        const rw = r.reduce((s, x) => s + x.w, 0) + Math.max(0, r.length - 1) * 18 + 64;
+        if (rw > maxRowW) maxRowW = rw;
+      }
+      return { baseW: maxRowW, baseH: 425 };
+    }
+    return { baseW: 820, baseH: 405 };
+  }, [scene, lang]);
   const viewBoxStr = `${-baseW / 2} ${-baseH / 2} ${baseW} ${baseH}`;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -458,27 +527,35 @@ export const MemoryStageSvg: React.FC<{
           const maxCellLen = Math.max(1, ...scene.cells.map((c) => c.length));
           const isStageCards = maxCellLen > 4;
           const gap = isStageCards ? 12 : 6;
+          const minCardW = maxCellLen > 32 ? 168 : maxCellLen > 22 ? 146 : 114;
           const cw = isStageCards
-            ? Math.min(
-                Math.max(108, maxCellLen * 7.2 + 24),
-                Math.floor((710 - (n - 1) * gap) / Math.max(1, n))
+            ? Math.max(
+                minCardW,
+                Math.min(
+                  maxCellLen * 6.8 + 24,
+                  Math.floor((740 - (n - 1) * gap) / Math.max(1, n))
+                )
               )
             : Math.min(58, Math.max(42, Math.floor(560 / Math.max(1, n))));
-          const ch = isStageCards ? 54 : 50;
+          const maxCharsInCell = Math.max(10, Math.floor((cw - 16) / 6.3));
+          const wrappedCells = scene.cells.map((val) =>
+            isStageCards ? wrapTextLines(val, maxCharsInCell, 3) : [val]
+          );
+          const hasThreeLineCell = wrappedCells.some((lines) => lines.length >= 3);
+          const ch = isStageCards ? (hasThreeLineCell ? 66 : 54) : 50;
           const totalW = n * cw + (n - 1) * gap;
           const startX = -totalW / 2;
           const activeSet = new Set(scene.activeIndices ?? []);
           const subLines = scene.subtitle
-            ? wrapTextTwoLines(pickText(scene.subtitle, lang), 68)
+            ? wrapTextTwoLines(pickText(scene.subtitle, lang), 76)
             : [];
-          const maxCharsInCell = Math.max(6, Math.floor((cw - 16) / 6.8));
 
           // Precompute non-overlapping rows for pointer pills below cells
           const row0Intervals: Array<[number, number]> = [];
           const pointerPlacements = (scene.pointers ?? []).map((ptr) => {
             const clamped = Math.max(0, Math.min(n - 1, ptr.index));
             const px = startX + clamped * (cw + gap) + cw / 2;
-            const bw = Math.max(52, ptr.label.length * 6.8 + 20);
+            const bw = Math.max(52, ptr.label.length * 6.5 + 20);
             const x0 = px - bw / 2 - 5;
             const x1 = px + bw / 2 + 5;
             const collidesRow0 = row0Intervals.some(
@@ -522,9 +599,7 @@ export const MemoryStageSvg: React.FC<{
                 const isAct = activeSet.has(idx);
                 const tc = toneColors(isAct ? 'green' : 'neutral', isDark);
                 const negIdx = idx - n;
-                const cellLines = isStageCards
-                  ? wrapTextTwoLines(val, maxCharsInCell)
-                  : [val];
+                const cellLines = wrappedCells[idx];
                 const cellInfo = scene.showNegativeIndices
                   ? {
                       title: bi(`Ô nhớ [chỉ số ${idx}] = ${val}`, `Cell [index ${idx}] = ${val}`),
@@ -616,13 +691,13 @@ export const MemoryStageSvg: React.FC<{
                         >
                           {cellLines[0]}
                         </text>
-                      ) : (
+                      ) : cellLines.length === 2 ? (
                         <>
                           <text
                             x={cw / 2}
-                            y={22}
+                            y={ch / 2 - 4}
                             textAnchor="middle"
-                            fontSize={10.5}
+                            fontSize={10.4}
                             fontWeight={800}
                             fill={tc.fg}
                             fontFamily="var(--dts-font-mono)"
@@ -631,14 +706,50 @@ export const MemoryStageSvg: React.FC<{
                           </text>
                           <text
                             x={cw / 2}
-                            y={37}
+                            y={ch / 2 + 11}
                             textAnchor="middle"
-                            fontSize={10.2}
+                            fontSize={10}
                             fontWeight={700}
                             fill={tc.fg}
                             fontFamily="var(--dts-font-mono)"
                           >
                             {cellLines[1]}
+                          </text>
+                        </>
+                      ) : (
+                        <>
+                          <text
+                            x={cw / 2}
+                            y={19}
+                            textAnchor="middle"
+                            fontSize={10}
+                            fontWeight={800}
+                            fill={tc.fg}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {cellLines[0]}
+                          </text>
+                          <text
+                            x={cw / 2}
+                            y={33}
+                            textAnchor="middle"
+                            fontSize={9.6}
+                            fontWeight={700}
+                            fill={tc.fg}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {cellLines[1]}
+                          </text>
+                          <text
+                            x={cw / 2}
+                            y={47}
+                            textAnchor="middle"
+                            fontSize={9.6}
+                            fontWeight={700}
+                            fill={tc.fg}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {cellLines[2]}
                           </text>
                         </>
                       )}
@@ -660,7 +771,7 @@ export const MemoryStageSvg: React.FC<{
                       {scene.showNegativeIndices && (
                         <text
                           x={cw / 2}
-                          y={69}
+                          y={ch + 15}
                           textAnchor="middle"
                           fontSize={11}
                           fontWeight={700}
@@ -676,7 +787,7 @@ export const MemoryStageSvg: React.FC<{
               })}
 
               {pointerPlacements.map(({ ptr, px, bw, row }, pIdx) => {
-                const basePy = scene.showNegativeIndices ? 68 : isStageCards ? 52 : 48;
+                const basePy = scene.showNegativeIndices ? ch + 18 : isStageCards ? ch - 2 : 48;
                 const rowShift = row * 30;
                 const pc = toneColors(ptr.tone ?? 'blue', isDark);
 
@@ -732,39 +843,7 @@ export const MemoryStageSvg: React.FC<{
                 );
               })}
 
-              {scene.outputPill && (() => {
-                const oc = toneColors(scene.outputPill.tone ?? 'green', isDark);
-                const full = `${pickText(scene.outputPill.label, lang)}: ${pickText(scene.outputPill.value, lang)}`;
-                const pw = Math.max(180, full.length * 7.2 + 32);
-                return (
-                  <g transform="translate(0, 128)">
-                    <g className="dts-anim-pill" style={{ animationDelay: '300ms' }}>
-                      <rect x={-pw / 2 + 2} y={-12} width={pw} height={30} rx={15} fill={shadow} />
-                      <rect
-                        x={-pw / 2}
-                        y={-14}
-                        width={pw}
-                        height={30}
-                        rx={15}
-                        fill={oc.bg}
-                        stroke={oc.border}
-                        strokeWidth={1.5}
-                      />
-                      <text
-                        x={0}
-                        y={5}
-                        textAnchor="middle"
-                        fontSize={12}
-                        fontWeight={800}
-                        fill={oc.fg}
-                        fontFamily="var(--dts-font-mono)"
-                      >
-                        {full}
-                      </text>
-                    </g>
-                  </g>
-                );
-              })()}
+              {/* outputPill moved outside <svg> zoom group as a fixed corner HUD pill */}
             </g>
           );
         })()}
@@ -773,17 +852,85 @@ export const MemoryStageSvg: React.FC<{
         {scene.kind === 'refs' && (() => {
           const nCount = scene.names.length;
           const oCount = scene.objects.length;
-          const nameY = (i: number) => (i - (nCount - 1) / 2) * 76;
-          const objY = (i: number) => (i - (oCount - 1) / 2) * 96;
+
+          const maxLeftChars = Math.max(
+            18,
+            ...scene.names.map((nm) =>
+              Math.max(
+                (nm.name ?? '').length,
+                nm.note ? Math.round(pickText(nm.note, lang).length * 0.85) : 0
+              )
+            )
+          );
+          const leftW = Math.max(176, Math.min(252, Math.round(maxLeftChars * 6.8 + 28)));
+          const leftMaxChars = Math.max(18, Math.floor((leftW - 22) / 6.6));
+
+          const maxRightChars = Math.max(
+            26,
+            ...scene.objects.map((o) => {
+              const tagLen = (o.typeTag ?? '').length;
+              const valLen = (o.value ?? '').length;
+              const fieldsStr = (o.fields ?? []).join('  ·  ');
+              return Math.max(tagLen + valLen + 4, fieldsStr.length, valLen + 4);
+            })
+          );
+          const rightW = Math.max(272, Math.min(368, Math.round(maxRightChars * 6.4 + 32)));
+          const rightValMaxChars = Math.max(24, Math.floor((rightW - 26) / 6.8));
+          const rightFieldMaxChars = Math.max(28, Math.floor((rightW - 26) / 5.9));
+
+          const leftX = -Math.round(rightW / 2 + 48);
+          const rightX = Math.round(leftW / 2 + 48);
+
+          // Pre-layout each object card so stacked value/fields never collide with typeTag
+          const objCards = scene.objects.map((obj) => {
+            const tagStr = obj.typeTag ?? 'SPEC';
+            const valStr = obj.value ?? '';
+            const tagW = Math.max(52, tagStr.length * 6.6 + 14);
+            const valW = valStr.length * 7.2;
+            const sideBySide = tagW + valW + 22 <= rightW - 24;
+            const valLines = sideBySide ? [valStr] : wrapTextLines(valStr, rightValMaxChars, 2);
+            const rawFieldsStr = (obj.fields ?? []).join('  ·  ');
+            const fieldLines = rawFieldsStr
+              ? wrapTextLines(rawFieldsStr, rightFieldMaxChars, 2)
+              : [];
+            const h =
+              (sideBySide ? 30 : 30 + valLines.length * 15) +
+              (fieldLines.length > 0 ? fieldLines.length * 14 + 6 : 6) +
+              12;
+            return {
+              obj,
+              tagStr,
+              tagW,
+              sideBySide,
+              valLines,
+              fieldLines,
+              h: Math.max(54, h),
+            };
+          });
+
+          const maxObjH = Math.max(58, ...objCards.map((c) => c.h));
+          const objStepY = Math.max(88, maxObjH + (scene.objects.some((o) => o.badge) ? 28 : 18));
+          const nameStepY = Math.max(72, Math.min(92, objStepY - 8));
+          const nameY = (i: number) => (i - (nCount - 1) / 2) * nameStepY;
+          const objY = (i: number) => (i - (oCount - 1) / 2) * objStepY;
+          const headerY =
+            Math.min(
+              nCount > 0 ? nameY(0) - 38 : -110,
+              oCount > 0 ? objY(0) - maxObjH / 2 - 22 : -110
+            );
 
           const objPos = new Map<string, number>();
           scene.objects.forEach((o, idx) => objPos.set(o.id, objY(idx)));
 
+          const wireStartX = leftX + leftW / 2 + 2;
+          const wireEndX = rightX - rightW / 2 - 5;
+          const wireMidX = (wireStartX + wireEndX) / 2;
+
           return (
             <g>
               <text
-                x={-205}
-                y={-142}
+                x={leftX}
+                y={headerY}
                 textAnchor="middle"
                 fontSize={11}
                 fontWeight={800}
@@ -794,8 +941,8 @@ export const MemoryStageSvg: React.FC<{
                 {pickText(scene.leftTitle, lang).toUpperCase()}
               </text>
               <text
-                x={145}
-                y={-142}
+                x={rightX}
+                y={headerY}
                 textAnchor="middle"
                 fontSize={11}
                 fontWeight={800}
@@ -808,12 +955,12 @@ export const MemoryStageSvg: React.FC<{
 
               {scene.names.map((nm, idx) => {
                 const y1 = nameY(idx);
-                const y2 = objPos.get(nm.targetId) ?? 0;
+                const y2 = objPos.get(nm.targetId) ?? objY(Math.min(idx, oCount - 1));
                 const isErr = nm.style === 'danger';
                 return (
                   <path
                     key={`ref-${nm.id}`}
-                    d={`M -128,${y1} C -40,${y1} -35,${y2} 32,${y2}`}
+                    d={`M ${wireStartX},${y1} C ${wireMidX},${y1} ${wireMidX},${y2} ${wireEndX},${y2}`}
                     fill="none"
                     className="dts-anim-line"
                     style={
@@ -834,27 +981,76 @@ export const MemoryStageSvg: React.FC<{
               {scene.names.map((nm, idx) => {
                 const ny = nameY(idx);
                 const bc = toneColors('blue', isDark);
-                const nmInfo: StageInspectorInfo = {
-                  title: bi(`Tên biến / Tham chiếu: ${nm.name}`, `Reference Tag: ${nm.name}`),
-                  kindLabel: bi('Nhãn trong Namespace', 'Namespace Binding'),
-                  what: bi(
-                    'Trong Python, biến không phải là hộp chứa giá trị trực tiếp mà là một nhãn tên giữ con trỏ tham chiếu (reference) trỏ sang đối tượng trên Heap.',
-                    'In Python, variables are labels holding memory references to objects on the Heap rather than raw value boxes.'
-                  ),
-                  how: bi(
-                    'Phép gán (=) chỉ gắn nhãn tên vào địa chỉ đối tượng, hoàn toàn không tự động sao chép dữ liệu bên trong.',
-                    'Assignment (=) binds the label to an object address without copying nested contents.'
-                  ),
-                  why: bi(
-                    'Giúp truyền danh sách lớn vào hàm cực nhanh trong O(1), nhưng cần chú ý dùng copy.deepcopy() khi muốn tách độc lập dữ liệu khả biến lồng nhau.',
-                    'Makes passing large structures O(1), while requiring explicit copy/deepcopy when isolating mutable nested objects.'
-                  ),
-                };
+                const nameLines = wrapTextLines(nm.name, leftMaxChars, 2);
+                const noteText = nm.note ? pickText(nm.note, lang) : '';
+                const noteLines = noteText
+                  ? wrapTextLines(noteText, Math.floor((leftW - 20) / 5.5), 1)
+                  : [];
+                const boxH = nameLines.length > 1 && noteLines.length > 0 ? 54 : 46;
+                const targetObj = scene.objects.find((o) => o.id === nm.targetId);
+                const isPythonNamespace = /namespace|heap|biến/i.test(
+                  `${pickText(scene.leftTitle, 'en')} ${pickText(scene.rightTitle, 'en')} ${pickText(scene.leftTitle, 'vi')}`
+                );
+                const nmInfo: StageInspectorInfo = isPythonNamespace
+                  ? {
+                      title: bi(`Tên biến / Tham chiếu: ${nm.name}`, `Reference Tag: ${nm.name}`),
+                      kindLabel: bi('Nhãn trong Namespace', 'Namespace Binding'),
+                      what: bi(
+                        'Trong Python, biến không phải là hộp chứa giá trị trực tiếp mà là một nhãn tên giữ con trỏ tham chiếu (reference) trỏ sang đối tượng trên Heap.',
+                        'In Python, variables are labels holding memory references to objects on the Heap rather than raw value boxes.'
+                      ),
+                      how: bi(
+                        'Phép gán (=) chỉ gắn nhãn tên vào địa chỉ đối tượng, hoàn toàn không tự động sao chép dữ liệu bên trong.',
+                        'Assignment (=) binds the label to an object address without copying nested contents.'
+                      ),
+                      why: bi(
+                        'Giúp truyền danh sách lớn vào hàm cực nhanh trong O(1), nhưng cần chú ý dùng copy.deepcopy() khi muốn tách độc lập dữ liệu khả biến lồng nhau.',
+                        'Makes passing large structures O(1), while requiring explicit copy/deepcopy when isolating mutable nested objects.'
+                      ),
+                    }
+                  : {
+                      title: bi(
+                        `${pickText(scene.leftTitle, 'vi')}: ${nm.name}`,
+                        `${pickText(scene.leftTitle, 'en')}: ${nm.name}`
+                      ),
+                      kindLabel: bi(
+                        pickText(scene.leftTitle, 'vi'),
+                        pickText(scene.leftTitle, 'en')
+                      ),
+                      what: bi(
+                        nm.note
+                          ? `${nm.name} (${pickText(nm.note, 'vi')}) dẫn tới lựa chọn / đặc tả "${targetObj?.value ?? nm.targetId}".`
+                          : `Trường hợp "${nm.name}" ánh xạ trực tiếp sang "${targetObj?.value ?? nm.targetId}".`,
+                        nm.note
+                          ? `${nm.name} (${pickText(nm.note, 'en')}) maps to "${targetObj?.value ?? nm.targetId}".`
+                          : `"${nm.name}" maps directly to "${targetObj?.value ?? nm.targetId}".`
+                      ),
+                      how: bi(
+                        targetObj?.fields?.length
+                          ? `Đặc tính kỹ thuật: ${targetObj.fields.join(' · ')}.`
+                          : `Áp dụng cơ chế của "${targetObj?.value ?? nm.targetId}" ở cột bên phải.`,
+                        targetObj?.fields?.length
+                          ? `Technical behavior: ${targetObj.fields.join(' · ')}.`
+                          : `Applies the mechanism of "${targetObj?.value ?? nm.targetId}" on the right.`
+                      ),
+                      why: bi(
+                        targetObj?.badge
+                          ? pickText(targetObj.badge, 'vi')
+                          : nm.style === 'danger'
+                            ? 'Đây là nhánh rủi ro cao hoặc phản mẫu thiết kế cần tránh trong môi trường thực tế.'
+                            : 'Giúp đối chiếu bối cảnh đầu vào với cấu hình kiến trúc và sự đánh đổi phù hợp.',
+                        targetObj?.badge
+                          ? pickText(targetObj.badge, 'en')
+                          : nm.style === 'danger'
+                            ? 'Highlights a high-risk path or architectural anti-pattern to avoid.'
+                            : 'Connects the input scenario to the appropriate architectural trade-off.'
+                      ),
+                    };
 
                 return (
                   <g
                     key={nm.id}
-                    transform={`translate(-205, ${ny})`}
+                    transform={`translate(${leftX}, ${ny})`}
                     onMouseEnter={() => setHoverInfo(nmInfo)}
                     onMouseLeave={() => setHoverInfo(null)}
                     onClick={(e) => {
@@ -864,39 +1060,66 @@ export const MemoryStageSvg: React.FC<{
                     style={{ cursor: 'pointer' }}
                   >
                     <g className="dts-anim-drop" style={{ animationDelay: `${idx * 70}ms` }}>
-                      <rect x={-76} y={-20} width={156} height={44} rx={11} fill={shadow} />
+                      <rect x={-leftW / 2 + 2} y={-boxH / 2 + 2} width={leftW} height={boxH} rx={11} fill={shadow} />
                       <rect
-                        x={-78}
-                        y={-22}
-                        width={156}
-                        height={44}
+                        x={-leftW / 2}
+                        y={-boxH / 2}
+                        width={leftW}
+                        height={boxH}
                         rx={11}
                         fill={bc.bg}
                         stroke={bc.border}
                         strokeWidth={1.6}
                       />
-                      <text
-                        x={0}
-                        y={nm.note ? -3 : 4}
-                        textAnchor="middle"
-                        fontSize={12}
-                        fontWeight={800}
-                        fill={bc.fg}
-                        fontFamily="var(--dts-font-mono)"
-                      >
-                        {nm.name}
-                      </text>
-                      {nm.note && (
+                      {nameLines.length === 1 ? (
                         <text
                           x={0}
-                          y={12}
+                          y={noteLines.length ? -3 : 4}
+                          textAnchor="middle"
+                          fontSize={11.5}
+                          fontWeight={800}
+                          fill={bc.fg}
+                          fontFamily="var(--dts-font-mono)"
+                        >
+                          {nameLines[0]}
+                        </text>
+                      ) : (
+                        <>
+                          <text
+                            x={0}
+                            y={noteLines.length ? -10 : -3}
+                            textAnchor="middle"
+                            fontSize={10.5}
+                            fontWeight={800}
+                            fill={bc.fg}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {nameLines[0]}
+                          </text>
+                          <text
+                            x={0}
+                            y={noteLines.length ? 3 : 11}
+                            textAnchor="middle"
+                            fontSize={10.2}
+                            fontWeight={800}
+                            fill={bc.fg}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {nameLines[1]}
+                          </text>
+                        </>
+                      )}
+                      {noteLines.length > 0 && (
+                        <text
+                          x={0}
+                          y={nameLines.length > 1 ? 17 : 12}
                           textAnchor="middle"
                           fontSize={9.2}
                           fontWeight={600}
                           fill={muted}
                           fontFamily="var(--dts-font-mono)"
                         >
-                          {pickText(nm.note, lang)}
+                          {noteLines[0]}
                         </text>
                       )}
                     </g>
@@ -904,35 +1127,38 @@ export const MemoryStageSvg: React.FC<{
                 );
               })}
 
-              {scene.objects.map((obj, idx) => {
+              {objCards.map(({ obj, tagStr, tagW, sideBySide, valLines, fieldLines, h }, idx) => {
                 const oy = objY(idx);
                 const oc = toneColors(obj.tone, isDark);
-                const h = obj.fields?.length ? 68 : 54;
+                const valStartY = -h / 2 + 37;
+                const fieldStartY = sideBySide
+                  ? -h / 2 + 41
+                  : valStartY + valLines.length * 14.5 + 3;
                 const objInfo: StageInspectorInfo = {
-                  title: bi(`Đối tượng Heap (${obj.typeTag}): ${obj.value}`, `Heap Object (${obj.typeTag}): ${obj.value}`),
-                  kindLabel: bi('Vùng nhớ đối tượng (PyObject)', 'Heap PyObject'),
+                  title: bi(`Đối tượng (${tagStr}): ${obj.value}`, `Object (${tagStr}): ${obj.value}`),
+                  kindLabel: bi('Thực thể / Cấu hình đích', 'Target Object / Spec'),
                   what: bi(
-                    `Thực thể kiểu ${obj.typeTag} nằm trên Heap, mang kiểu dữ liệu thực sự, bộ đếm tham chiếu (ob_refcnt) và nội dung ${obj.value}.`,
-                    `Concrete ${obj.typeTag} object allocated on CPython’s heap with its own identity id() and refcount.`
+                    `Thực thể kiểu ${tagStr} mang đặc tả ${obj.value}.`,
+                    `Concrete ${tagStr} entity holding ${obj.value}.`
                   ),
                   how: bi(
-                    obj.tone === 'rose'
-                      ? 'Đang có nhiều biến hoặc nhiều lần gọi hàm cùng trỏ chung vào đối tượng khả biến này, nên sửa qua một tên sẽ làm thay đổi tất cả tên còn lại!'
-                      : 'Được cấp phát độc lập trên Heap; nếu là kiểu bất biến (int, str, tuple), không phép toán nào sửa được nội dung tại chỗ.',
-                    obj.tone === 'rose'
-                      ? 'Multiple references alias this single mutable object — mutating through one mutates all!'
-                      : 'Independently allocated on the heap.'
+                    obj.fields?.length
+                      ? obj.fields.join(' · ')
+                      : 'Áp dụng trực tiếp cho nhánh tham chiếu tương ứng ở cột trái.',
+                    obj.fields?.length
+                      ? obj.fields.join(' · ')
+                      : 'Applies directly to the mapped reference on the left.'
                   ),
                   why: bi(
-                    'Hiểu rõ đối tượng nào đang dùng chung địa chỉ (id(a) == id(b)) giúp bạn tránh 100% lỗi dữ liệu tự nhảy ngoài ý muốn.',
-                    'Knowing when id(a) == id(b) prevents subtle shared-state mutation bugs.'
+                    'Đối chiếu rõ ràng mối quan hệ ánh xạ giữa trường hợp sử dụng và cấu hình kỹ thuật.',
+                    'Maps each scenario or reference directly to its concrete technical behavior.'
                   ),
                 };
 
                 return (
                   <g
                     key={obj.id}
-                    transform={`translate(155, ${oy})`}
+                    transform={`translate(${rightX}, ${oy})`}
                     onMouseEnter={() => setHoverInfo(objInfo)}
                     onMouseLeave={() => setHoverInfo(null)}
                     onClick={(e) => {
@@ -942,11 +1168,11 @@ export const MemoryStageSvg: React.FC<{
                     style={{ cursor: 'pointer' }}
                   >
                     <g className="dts-anim-drop" style={{ animationDelay: `${90 + idx * 80}ms` }}>
-                      <rect x={-116} y={-h / 2 + 2.5} width={236} height={h} rx={12} fill={shadow} />
+                      <rect x={-rightW / 2 + 2} y={-h / 2 + 2.5} width={rightW} height={h} rx={12} fill={shadow} />
                       <rect
-                        x={-118}
+                        x={-rightW / 2}
                         y={-h / 2}
-                        width={236}
+                        width={rightW}
                         height={h}
                         rx={12}
                         fill={cardBg}
@@ -954,9 +1180,9 @@ export const MemoryStageSvg: React.FC<{
                         strokeWidth={1.7}
                       />
                       <rect
-                        x={-108}
+                        x={-rightW / 2 + 10}
                         y={-h / 2 + 8}
-                        width={Math.max(52, obj.typeTag.length * 6.8 + 14)}
+                        width={tagW}
                         height={18}
                         rx={6}
                         fill={oc.bg}
@@ -964,49 +1190,67 @@ export const MemoryStageSvg: React.FC<{
                         strokeWidth={1.2}
                       />
                       <text
-                        x={-108 + Math.max(52, obj.typeTag.length * 6.8 + 14) / 2}
+                        x={-rightW / 2 + 10 + tagW / 2}
                         y={-h / 2 + 20}
                         textAnchor="middle"
-                        fontSize={9.5}
+                        fontSize={9.4}
                         fontWeight={800}
                         fill={oc.fg}
                         fontFamily="var(--dts-font-mono)"
                       >
-                        {obj.typeTag}
+                        {tagStr}
                       </text>
 
-                      <text
-                        x={106}
-                        y={-h / 2 + 20.5}
-                        textAnchor="end"
-                        fontSize={12.5}
-                        fontWeight={800}
-                        fill={ink}
-                        fontFamily="var(--dts-font-mono)"
-                      >
-                        {obj.value}
-                      </text>
-
-                      {obj.fields && (
+                      {sideBySide ? (
                         <text
+                          x={rightW / 2 - 12}
+                          y={-h / 2 + 20.5}
+                          textAnchor="end"
+                          fontSize={11.5}
+                          fontWeight={800}
+                          fill={ink}
+                          fontFamily="var(--dts-font-mono)"
+                        >
+                          {valLines[0]}
+                        </text>
+                      ) : (
+                        valLines.map((vl, vIdx) => (
+                          <text
+                            key={vIdx}
+                            x={0}
+                            y={valStartY + vIdx * 14.5}
+                            textAnchor="middle"
+                            fontSize={10.8}
+                            fontWeight={800}
+                            fill={ink}
+                            fontFamily="var(--dts-font-mono)"
+                          >
+                            {vl}
+                          </text>
+                        ))
+                      )}
+
+                      {fieldLines.map((fl, fIdx) => (
+                        <text
+                          key={fIdx}
                           x={0}
-                          y={16}
+                          y={fieldStartY + fIdx * 13.5}
                           textAnchor="middle"
-                          fontSize={10.5}
+                          fontSize={9.8}
                           fontWeight={600}
                           fill={muted}
                           fontFamily="var(--dts-font-mono)"
                         >
-                          {obj.fields.join('  ·  ')}
+                          {fl}
                         </text>
-                      )}
+                      ))}
 
                       {obj.badge && (
                         <text
                           x={0}
-                          y={h / 2 + 16}
+                          y={h / 2 + 14}
                           textAnchor="middle"
-                          fontSize={10}
+                          fontSize={9.8}
                           fontWeight={800}
                           fill={obj.tone === 'rose' ? '#dc2626' : muted}
                           fontFamily="var(--dts-font-mono)"
@@ -1024,15 +1268,85 @@ export const MemoryStageSvg: React.FC<{
 
         {/* 3. CLEAN 2D CALL TREE / GRAPH */}
         {scene.kind === 'tree' && (() => {
-          const pos = new Map<string, { x: number; y: number; w: number }>();
+          const pos = new Map<
+            string,
+            { id: string; x: number; y: number; w: number; h: number; subLines: string[] }
+          >();
+          const items: Array<{
+            id: string;
+            x: number;
+            y: number;
+            w: number;
+            h: number;
+            subLines: string[];
+          }> = [];
+
           scene.nodes.forEach((n) => {
-            const w = Math.max(106, n.label.length * 7.8 + 30);
-            pos.set(n.id, {
-              x: Math.round(n.x * 1.34),
-              y: Math.round(n.y * 1.2),
+            const subRaw = n.sub ? pickText(n.sub, lang) : '';
+            const subLines = subRaw ? wrapTextLines(subRaw, 34, 2) : [];
+            const maxSubLen = subLines.reduce((m, s) => Math.max(m, s.length), 0);
+            const w = Math.max(112, Math.round(n.label.length * 7.6 + 28), Math.round(maxSubLen * 5.9 + 24));
+            const h = subLines.length > 1 ? 52 : 40;
+            const item = {
+              id: n.id,
+              x: Math.round((Number.isFinite(n.x) ? n.x : 0) * 1.34),
+              y: Math.round((Number.isFinite(n.y) ? n.y : 0) * 1.2),
               w,
-            });
+              h,
+              subLines,
+            };
+            items.push(item);
+            pos.set(n.id, item);
           });
+
+          // Gom các nút có cùng tầng ngang (|Δy| < 42) và tách khoảng cách ngang tối thiểu 18px để không bao giờ đè nhau
+          const rows: Array<typeof items> = [];
+          const sortedByY = [...items].sort((a, b) => a.y - b.y);
+          for (const it of sortedByY) {
+            const row = rows.find((r) => Math.abs(r[0].y - it.y) < 42);
+            if (row) row.push(it);
+            else rows.push([it]);
+          }
+          for (const row of rows) {
+            if (row.length <= 1) continue;
+            row.sort((a, b) => a.x - b.x || a.id.localeCompare(b.id));
+            const minGap = 18;
+            let hasOverlap = false;
+            for (let i = 0; i < row.length - 1; i++) {
+              if (row[i + 1].x - row[i + 1].w / 2 < row[i].x + row[i].w / 2 + minGap) {
+                hasOverlap = true;
+                break;
+              }
+            }
+            if (hasOverlap) {
+              const totalRowW =
+                row.reduce((s, r) => s + r.w, 0) + (row.length - 1) * minGap;
+              const center =
+                (row[0].x + row[row.length - 1].x) / 2;
+              let cursor = center - totalRowW / 2;
+              for (const r of row) {
+                r.x = Math.round(cursor + r.w / 2);
+                cursor += r.w + minGap;
+              }
+            }
+            // Nếu cả hàng vượt quá [-halfW..halfW], dịch tâm hàng về 0
+            const halfLimit = Math.floor(baseW / 2) - 18;
+            const leftEdge = row[0].x - row[0].w / 2;
+            const rightEdge = row[row.length - 1].x + row[row.length - 1].w / 2;
+            if (leftEdge < -halfLimit || rightEdge > halfLimit) {
+              const shift = Math.round((leftEdge + rightEdge) / 2);
+              for (const r of row) r.x -= shift;
+            }
+          }
+
+          // Ngăn thẻ trên cùng đè lên dòng tiêu đề ở y = -166 (ví dụ S6-01/s1-flow)
+          if (items.length > 0) {
+            const minTopEdge = Math.min(...items.map((it) => it.y - it.h / 2));
+            if (minTopEdge < -142) {
+              const shiftDown = Math.round(-142 - minTopEdge);
+              for (const it of items) it.y += shiftDown;
+            }
+          }
 
           return (
             <g>
@@ -1062,13 +1376,13 @@ export const MemoryStageSvg: React.FC<{
                     ? a.x + a.w / 2 + 2
                     : a.x - a.w / 2 - 2
                   : a.x;
-                const y1 = isHorizontal ? a.y : dy >= 0 ? a.y + 20 : a.y - 20;
+                const y1 = isHorizontal ? a.y : dy >= 0 ? a.y + a.h / 2 : a.y - a.h / 2;
                 const x2 = isHorizontal
                   ? dx >= 0
                     ? b.x - b.w / 2 - 5
                     : b.x + b.w / 2 + 5
                   : b.x;
-                const y2 = isHorizontal ? b.y : dy >= 0 ? b.y - 23 : b.y + 23;
+                const y2 = isHorizontal ? b.y : dy >= 0 ? b.y - b.h / 2 - 3 : b.y + b.h / 2 + 3;
 
                 return (
                   <g key={idx}>
@@ -1103,6 +1417,8 @@ export const MemoryStageSvg: React.FC<{
                 const tc = toneColors(nd.tone, isDark);
                 const p = pos.get(nd.id)!;
                 const w = p.w;
+                const h = p.h;
+                const subLines = p.subLines;
                 const isFibCall = /\bfib\s*\(/i.test(nd.label);
                 const treeInfo: StageInspectorInfo = isFibCall
                   ? {
@@ -1145,12 +1461,12 @@ export const MemoryStageSvg: React.FC<{
                     style={{ cursor: 'pointer' }}
                   >
                     <g className="dts-anim-drop" style={{ animationDelay: `${idx * 65}ms` }}>
-                      <rect x={-w / 2 + 2} y={-18} width={w} height={40} rx={12} fill={shadow} />
+                      <rect x={-w / 2 + 2} y={-h / 2 + 2} width={w} height={h} rx={12} fill={shadow} />
                       <rect
                         x={-w / 2}
-                        y={-20}
+                        y={-h / 2}
                         width={w}
-                        height={40}
+                        height={h}
                         rx={12}
                         fill={tc.bg}
                         stroke={tc.border}
@@ -1159,7 +1475,7 @@ export const MemoryStageSvg: React.FC<{
                       />
                       <text
                         x={0}
-                        y={nd.sub ? -2 : 4}
+                        y={subLines.length === 0 ? 4 : subLines.length === 1 ? -3 : -9}
                         textAnchor="middle"
                         fontSize={12}
                         fontWeight={800}
@@ -1168,19 +1484,20 @@ export const MemoryStageSvg: React.FC<{
                       >
                         {nd.label}
                       </text>
-                      {nd.sub && (
+                      {subLines.map((sl, sIdx) => (
                         <text
+                          key={sIdx}
                           x={0}
-                          y={12}
+                          y={(subLines.length === 1 ? 12 : 6) + sIdx * 12}
                           textAnchor="middle"
                           fontSize={9.2}
                           fontWeight={600}
                           fill={muted}
                           fontFamily="var(--dts-font-mono)"
                         >
-                          {pickText(nd.sub, lang)}
+                          {sl}
                         </text>
-                      )}
+                      ))}
                     </g>
                   </g>
                 );
@@ -1190,6 +1507,27 @@ export const MemoryStageSvg: React.FC<{
         })()}
         </g>
       </svg>
+
+      {/* Fixed Corner HUD Output Pill for tape scenes (outside <svg> so zooming never distorts or moves it) */}
+      {scene.kind === 'tape' && scene.outputPill && !selectedInfo && (() => {
+        const oc = toneColors(scene.outputPill.tone ?? 'green', isDark);
+        const full = `${pickText(scene.outputPill.label, lang)}: ${pickText(scene.outputPill.value, lang)}`;
+        return (
+          <div
+            data-no-pan="true"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: oc.bg,
+              borderColor: oc.border,
+              color: oc.fg,
+            }}
+            className="pointer-events-auto absolute bottom-2.5 right-2.5 z-20 max-w-[calc(100%-20px)] rounded-full border-[1.5px] px-3.5 py-1 font-mono text-[11px] font-extrabold shadow-[2px_2px_0_var(--dts-shadow-color)]"
+          >
+            {full}
+          </div>
+        );
+      })()}
 
       {/* Top-Right Interactive Zoom Toolbar (desktop only; Replay resets zoom & pan on mobile/tablet) */}
       <div

@@ -1,0 +1,24 @@
+{
+  "id": "S1-06",
+  "slug": "S1-06-request-lifecycle",
+  "level": 1,
+  "order": 2,
+  "title": "Vòng đời một request: DNS, kết nối, server, database",
+  "summary": "Lần theo hành trình chi tiết của một request từ thiết bị qua phân giải DNS, bắt tay TCP/TLS, xử lý ứng dụng và truy vấn cơ sở dữ liệu để biết thời gian phản hồi thực sự nằm ở chặng nào.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân rã một lượt gọi web thành các chặng nối tiếp gồm DNS, bắt tay TCP/TLS, gửi nhận HTTP, xử lý tại Web Server và truy vấn Database" },
+    { "vi": "Tính tổng độ trễ đầu-cuối theo số vòng khứ hồi mạng RTT và thời gian xử lý nội bộ ở máy chủ" },
+    { "vi": "Giải thích cách bộ đệm DNS TTL, tái sử dụng kết nối Keep-Alive và HTTP/2 cắt giảm chi phí vòng mạng" },
+    { "vi": "Phân biệt hai nguyên nhân gây chậm phổ biến trên biểu đồ thác nước: truy vấn Database nặng và khoảng cách địa lý xa" }
+  ],
+  "tags": ["request-lifecycle", "dns", "tcp", "tls", "rtt", "waterfall", "http2"],
+  "prerequisites": ["S1-01"],
+  "related": ["S1-03", "S1-08", "S4-03"],
+  "dtsRef": "request-lifecycle",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới theo hành trình một request qua DNS, kết nối mạng, ứng dụng và cơ sở dữ liệu."
+  }
+}

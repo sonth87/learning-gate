@@ -586,14 +586,11 @@ export function buildPythonScaleModule(
       .replace(/`/g, '')
       .trim();
 
-    // Choose the honest visual mode per step:
-    // - Recap / Real-Code steps or Group-C syntax modules use 'code-trace' (no forced diagrams!)
-    // - Group-A architectural steps use curated 8-layer 'isometric'
-    // - Group-B data-structure steps use spacious 2D 'memory-2d'
+    // Giữ nhất quán sân khấu trực quan xuyên suốt toàn bộ bài học:
+    // - Nhóm A giữ sân khấu 'isometric' xuyên suốt mọi bước (morph mượt mà)
+    // - Nhóm B giữ sân khấu 'memory-2d' xuyên suốt mọi bước
+    // - Nhóm C giữ sân khấu 'code-trace' xuyên suốt mọi bước
     let stepMode: StageRenderMode = primaryMode;
-    if (category === 'RECAP' || category === 'REAL_CODE') {
-      stepMode = 'code-trace';
-    }
 
     const rawIsoScene =
       stepMode === 'isometric'

@@ -1,0 +1,30 @@
+{
+  "id": "S3-05",
+  "slug": "S3-05-distributed-ids-and-ordering",
+  "level": 3,
+  "order": 7,
+  "title": "Định danh phân tán (Distributed ID): Ticket Server, UUID và Snowflake",
+  "summary": "Giải bài toán sinh khoá chính duy nhất toàn cục không cần khoá đồng bộ: đối chiếu Ticket Server, UUID v4/v7 và cấu trúc 64-bit Snowflake dưới góc độ hiệu năng B-tree, độ lệch đồng hồ và bảo mật.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích vì sao AUTO_INCREMENT cục bộ gây trùng khoá khi phân mảnh và vì sao Ticket Server đơn lẻ tạo ra điểm lỗi đơn (SPOF)" },
+    { "vi": "Phân tích tác động của khoá ngẫu nhiên 128-bit (UUID v4) lên hiện tượng tách trang B-tree (Page Split) so với khoá có tiền tố thời gian (UUID v7, Snowflake)" },
+    { "vi": "Phân rã bố cục 64 bit của Snowflake (1 + 41 + 10 + 12), tính thông lượng sinh ID mỗi mili-giây và xử lý sự cố đồng hồ hệ thống nhảy lùi" },
+    { "vi": "Kết hợp định danh nội bộ có thứ tự (64-bit BIGINT) với định danh công khai không đoán trước được để chống lộ quy mô dữ liệu" }
+  ],
+  "tags": ["distributed-id", "snowflake", "uuid", "uuidv7", "btree", "ticket-server", "sharding"],
+  "prerequisites": ["S2-09", "S3-01"],
+  "related": ["S3-06", "S4-04", "S4-08"],
+  "dtsRef": "unique-ids",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-5-distributed-id-and-ordering.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-5-distributed-id-and-ordering.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân mở đầu, tách phần Lamport/Vector Clock/HLC sang bài chuyên sâu S3-06 để đi sâu vào Ticket Server & xin ID theo lô, tác động vật lý của UUID v4 vs UUID v7/Snowflake lên trang lá B-tree, sơ đồ bit 64-bit Snowflake trên memory-2d, cơ chế chống đồng hồ NTP nhảy lùi và mẫu thiết kế cặp ID nội bộ - công khai."
+  }
+}

@@ -1,0 +1,145 @@
+[
+  {
+    "id": "S7-01.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố hệ thống Chat chịu bão nối lại và đỉnh 32.000 tin/giây" },
+    "prompt": { "vi": "Cấu hình cụm Chat để đáp ứng tải chuẩn 23.000 tin/giây (p99 ≤ 180 ms, lỗi ≤ 1% khi WS Gateway 1 gặp sự cố), vượt qua đỉnh đột biến 32.000 tin/giây (p99 ≤ 200 ms, lỗi ≤ 1%), loại bỏ SPOF ở WS Gateway 1 và bật Backoff + Jitter trên đường nối device-gw1 trong ngân sách ≤ 2,20 USD/giờ." },
+    "difficulty": 3,
+    "simId": "S7-01/chat-storm",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-storm",
+        "label": { "vi": "Tải chuẩn 23.000 tin/s kèm sự cố WS Gateway 1 (phục hồi sau t = 35 s)" },
+        "simId": "S7-01/chat-storm",
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 35, "toSec": 70 }, "allowViolationPct": 3 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 35, "toSec": 70 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "peak-32k",
+        "label": { "vi": "Đỉnh 32.000 tin/giây (p99 ≤ 320 ms, lỗi ≤ 1% sau t = 45 s)" },
+        "simId": "S7-01/chat-storm",
+        "loadOverride": { "kind": "spike", "base": 23000, "peak": 32000, "atSec": 15, "holdSec": 25, "riseSec": 4, "fallSec": 4 },
+        "constraints": [
+          { "id": "p99-peak", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 45, "toSec": 70 }, "allowViolationPct": 3 },
+          { "id": "err-peak", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 45, "toSec": 70 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-gw1-spof", "kind": "structural", "rule": "no-spof", "node": "gw1" },
+      { "id": "jitter-on-gw1", "kind": "structural", "rule": "has-retry-backoff", "link": "device-gw1" }
+    ],
+    "budget": { "maxCostPerHour": 2.2, "maxChanges": 4 },
+    "par": { "changes": 3, "costPerHour": 2.09 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "gw1", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "chat_svc", "key": "replicas", "value": 4 },
+        {
+          "type": "link",
+          "link": "device-gw1",
+          "patch": { "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 } }
+        }
+      ]
+    },
+    "traps": [
+      {
+        "id": "only-scale-store",
+        "label": { "vi": "Chỉ tăng Message Store lên 8 shards, giữ 1 WS Gateway 1 và không bật Backoff" },
+        "changes": [
+          { "type": "knob", "node": "msg_store", "key": "shards", "value": 8 }
+        ],
+        "why": { "vi": "WS Gateway 1 vẫn là SPOF và khi sập ở t = 15 s sẽ gây bão nối lại không có Jitter, làm rớt kết nối hàng loạt." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tăng WS Gateway 1 lên 2 cụm để xóa SPOF khi một cụm gặp sự cố." },
+      { "vi": "Ở đỉnh 32.000 tin/giây, 3 Chat Service (30.000 req/s) không đủ: cần tăng lên 4 instance." },
+      { "vi": "Đổi retry trên device-gw1 sang backoff: exponential, jitter: full và budgetRatio: 0.1." }
+    ],
+    "explain": { "vi": "2 cụm WS Gateway 1 xóa SPOF, Backoff + Jitter triệt tiêu bão nối lại và 4 Chat Service gánh được đỉnh 32.000 tin/giây ở mức p99 = {m.p99'@25:0} ms với chi phí {m.cost'@25:2} USD/giờ." }
+  },
+  {
+    "id": "S7-01.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: Bão nối lại, tin nhắn trùng và mất thứ tự khi ngoại tuyến" },
+    "prompt": { "vi": "Sau khi một WS Gateway bị khởi động lại lúc 20:00: (1) 200.000 thiết bị đồng loạt kết nối lại mỗi giây không có độ trễ ngẫu nhiên làm sập tiếp các gateway còn lại; (2) nhiều người dùng thấy một tin nhắn hiển thị 2 lần sau khi mạng chập chờn; (3) người dùng vừa bật lại máy nhận tin nhắn mới trước khi thấy các tin cũ hơn. Hãy chọn nguyên nhân và giải pháp đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S7-01/chat-storm",
+      "seekSec": 20,
+      "focus": { "nodes": ["device", "gw1", "gw2", "msg_store"] }
+    },
+    "questions": [
+      {
+        "id": "why-storm",
+        "type": "single",
+        "prompt": { "vi": "Cơ chế nào ngăn 200.000 thiết bị dồn vào bắt tay TLS/WebSocket cùng một thời điểm sau khi Gateway sập?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Bắt buộc thiết bị thử lại ngay lập tức sau mỗi 100 ms" } },
+          { "id": "b", "text": { "vi": "Áp dụng Exponential Backoff kèm Full Jitter ở phía thiết bị để rải đều thời điểm nối lại" } },
+          { "id": "c", "text": { "vi": "Chuyển toàn bộ sang Short Polling mỗi 1 giây" } },
+          { "id": "d", "text": { "vi": "Tăng TTL của Session Registry lên 24 giờ" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-duplicate",
+        "type": "single",
+        "prompt": { "vi": "Làm thế nào để tin nhắn gửi lại do Timeout mạng không bị lưu và hiển thị hai lần?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Thiết bị tự sinh client_msg_id duy nhất (UUID) cho mỗi tin nhắn và Message Store khử trùng theo khóa này" } },
+          { "id": "b", "text": { "vi": "Không bao giờ cho phép thiết bị thử lại khi gửi tin" } },
+          { "id": "c", "text": { "vi": "Dùng dấu thời gian của thiết bị làm khóa chính duy nhất" } },
+          { "id": "d", "text": { "vi": "Chỉ lưu tin nhắn vào bộ nhớ RAM của Gateway" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "fix-offline-order",
+        "type": "multi",
+        "prompt": { "vi": "Những quy tắc nào đảm bảo người dùng ngoại tuyến nhận đủ tin và đúng thứ tự khi trực tuyến trở lại?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Cấp số thứ tự seq_id tăng dần theo từng hội thoại tại Message Store trước khi phát tin" } },
+          { "id": "b", "text": { "vi": "Khi nối lại, thiết bị gửi last_seen_seq để kéo đồng bộ mọi tin có seq_id lớn hơn từ Message Store" } },
+          { "id": "c", "text": { "vi": "Xóa tin nhắn ngay khi người nhận ngoại tuyến để tiết kiệm dung lượng" } },
+          { "id": "d", "text": { "vi": "Dựa vào đồng hồ cục bộ trên điện thoại người gửi để sắp xếp tin nhắn" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Exponential Backoff + Jitter rải tải kết nối lại thay vì dồn vào cùng một giây." },
+      { "vi": "Idempotency dựa trên client_msg_id do thiết bị sinh một lần trước khi thử lại." }
+    ],
+    "explain": { "vi": "Backoff có Jitter triệt tiêu bão nối lại, client_msg_id đảm bảo gửi lại vẫn chỉ lưu đúng 1 lần, và cặp (conversation_id, seq_id) cho phép đồng bộ ngoại tuyến chính xác." }
+  },
+  {
+    "id": "S7-01.A3",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm thông lượng tối đa của cụm Chat hiện tại" },
+    "prompt": { "vi": "Trên kịch bản S7-01/chat-cap (WS Gateway 48.000 req/s, Chat Service 30.000 req/s, Message Store 4 shards = 20.000 ops/s), hãy tìm mức tải ổn định cao nhất (tin/giây) mà hệ thống giữ được p99 ≤ 180 ms và lỗi ≤ 1% trong cửa sổ giây 15–45." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 180, "window": { "fromSec": 15, "toSec": 45 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 45 } }
+    ],
+    "runSec": 45,
+    "reference": { "value": 19600, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Kiểm tra năng lực của từng tầng nối tiếp: WS Gateway 48.000, Chat Service 30.000, Message Store 20.000." },
+      { "vi": "Thành phần chậm nhất quyết định trần thông lượng của toàn đường đi." }
+    ],
+    "explain": { "vi": "Message Store 4 shards có tổng năng lực 20.000 ops/s là điểm nghẽn thấp nhất trên đường đi, nên tải bền vững tối đa đạt xấp xỉ {ref.value:0} tin/giây trước khi hàng đợi dồn ứ đẩy p99 vượt 180 ms." },
+    "sim": { "simId": "S7-01/chat-cap", "seekSec": 0, "autoplay": false }
+  }
+]

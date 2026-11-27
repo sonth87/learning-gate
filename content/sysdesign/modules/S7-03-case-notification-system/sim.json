@@ -1,0 +1,204 @@
+{
+  "sims": [
+    {
+      "id": "S7-03/notify-blast",
+      "scenario": {
+        "id": "S7-03/notify-blast",
+        "seed": 7703,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.2 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": {
+          "kind": "spike",
+          "base": 1200,
+          "peak": 4800,
+          "atSec": 12,
+          "holdSec": 14,
+          "riseSec": 3,
+          "fallSec": 3
+        },
+        "events": [
+          { "at": 15, "type": "slowdown", "node": "providers", "addMs": 480, "durationSec": 10 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "otp_src",
+              "kind": "client",
+              "label": { "vi": "Luồng OTP giao dịch", "en": "Transactional OTP" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": { "loadShare": 0.15 }
+            },
+            {
+              "id": "mkt_src",
+              "kind": "client",
+              "label": { "vi": "Chiến dịch tiếp thị (10M)", "en": "Marketing Blast (10M)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": { "loadShare": 0.85 }
+            },
+            {
+              "id": "notify_api",
+              "kind": "service",
+              "label": { "vi": "Notification API", "en": "Notification API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 6000 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "replicas": 1, "poolSize": 64 }
+            },
+            {
+              "id": "queue",
+              "kind": "log",
+              "label": { "vi": "Priority Queue", "en": "Priority Queue" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số phân vùng Queue", "en": "Queue partitions" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 1, "maxDepth": 100000 }
+            },
+            {
+              "id": "workers",
+              "kind": "service",
+              "label": { "vi": "Delivery Workers", "en": "Delivery Workers" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số cụm Worker", "en": "Worker replicas" },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 200 }
+            },
+            {
+              "id": "providers",
+              "kind": "service",
+              "label": { "vi": "Push / SMS / Email", "en": "Push / SMS / Email" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Nhà cung cấp phản hồi chậm 320 ms", "en": "Provider degrades to 320 ms" } }
+              ],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 5000 },
+              "latency": { "baseMs": 20, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 500 }
+            }
+          ],
+          "links": [
+            { "id": "otp-api", "from": "otp_src", "to": "notify_api", "mode": "sync", "netClass": "internet", "timeoutMs": 2500 },
+            { "id": "mkt-api", "from": "mkt_src", "to": "notify_api", "mode": "sync", "netClass": "internet", "timeoutMs": 2500 },
+            { "id": "api-queue", "from": "notify_api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "queue-workers", "from": "queue", "to": "workers", "mode": "async", "netClass": "same-az", "timeoutMs": 800 },
+            {
+              "id": "workers-providers",
+              "from": "workers",
+              "to": "providers",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 450,
+              "cancelOnTimeout": false,
+              "retry": { "max": 3, "backoff": "none", "baseMs": 0, "jitter": "none" }
+            }
+          ],
+          "routes": {
+            "otp_src": "all-sequential",
+            "mkt_src": "all-sequential",
+            "notify_api": "all-sequential",
+            "queue": "all-sequential",
+            "workers": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 40, "toSec": 70 }, "allowViolationPct": 3 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 40, "toSec": 70 } }
+      ],
+      "presets": [
+        {
+          "id": "ha-and-safe-retry",
+          "label": { "vi": "Tăng Worker, xóa SPOF và bật Retry Jitter + Circuit Breaker", "en": "Scale Workers, remove SPOFs, enable Jitter + Breaker" },
+          "changes": [
+            { "type": "knob", "node": "notify_api", "key": "replicas", "value": 2 },
+            { "type": "knob", "node": "queue", "key": "replicas", "value": 2 },
+            { "type": "knob", "node": "workers", "key": "replicas", "value": 4 },
+            {
+              "type": "link",
+              "link": "workers-providers",
+              "patch": {
+                "cancelOnTimeout": true,
+                "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 },
+                "breaker": { "errorThreshold": 0.45, "minRps": 50, "windowSec": 2, "openSec": 5, "probeRps": 30, "closeAfterOk": 0.8 }
+              }
+            }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

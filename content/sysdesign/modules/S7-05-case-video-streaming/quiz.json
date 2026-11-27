@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S7-05.q1",
+    "type": "mc",
+    "q": "Vì sao nên cấp Presigned URL cho client tải video theo từng mảnh (chunk) trực tiếp lên Object Storage thay vì gửi qua API Server?",
+    "code": "",
+    "choices": [
+      "Để tránh tốn băng thông, RAM và giữ kết nối lâu làm nghẽn tầng API Server, đồng thời hỗ trợ tải lại từng mảnh khi rớt mạng",
+      "Vì Object Storage tự động nén video sang 1080p và 720p ngay khi nhận file",
+      "Vì trình duyệt không thể gửi dữ liệu lớn qua giao thức HTTPS tới API Server",
+      "Để bỏ qua hoàn toàn bước xác thực người dùng trước khi tải lên"
+    ],
+    "answer": 0,
+    "explain": "Tải video trực tiếp bằng Presigned URL giúp tầng API chỉ xử lý xác thực và metadata nhẹ, tránh giữ hàng nghìn luồng byte lớn gây nghẽn cổ chai."
+  },
+  {
+    "id": "S7-05.q2",
+    "type": "mc",
+    "q": "Cơ chế Adaptive Bitrate Streaming (HLS/DASH) hoạt động dựa trên nguyên tắc nào?",
+    "code": "",
+    "choices": [
+      "Tải toàn bộ file video 1080p về máy người dùng trước rồi mới bắt đầu phát",
+      "Chia video thành các đoạn 4–6 giây ở nhiều mức chất lượng, để trình phát tự chọn độ phân giải phù hợp băng thông ở mỗi đoạn",
+      "Giữ một kết nối TCP duy nhất và tự động giảm tốc độ khung hình xuống 5 fps khi mạng yếu",
+      "Yêu cầu máy chủ chuyển mã lại video theo thời gian thực cho từng người xem"
+    ],
+    "answer": 1,
+    "explain": "HLS/DASH cắt sẵn các đoạn ngắn (segment) ở nhiều độ phân giải kèm file manifest, cho phép trình phát chuyển đổi chất lượng mượt mà sau mỗi 4–6 giây qua HTTP."
+  },
+  {
+    "id": "S7-05.q3",
+    "type": "output",
+    "q": "Một hệ thống phát video phục vụ 50.000 req/s qua CDN Edge. Nếu CDN đạt Hit Ratio 90%, Object Storage Origin nhận bao nhiêu req/s? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "5000",
+    "explain": "Tỷ lệ Cache Miss là 100% − 90% = 10%. Lưu lượng quay về Origin là 50.000 × 0,10 = 5.000 req/s."
+  },
+  {
+    "id": "S7-05.q4",
+    "type": "tf",
+    "q": "Đặt Transcode Queue giữa Upload Gateway và cụm Transcode Workers giúp hệ thống hấp thụ các đợt tăng đột biến lượt tải lên mà không làm rơi request của tác giả.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Hàng đợi đóng vai trò bộ đệm bất đồng bộ, tách tốc độ tải lên của người dùng khỏi tốc độ nén CPU của Worker."
+  },
+  {
+    "id": "S7-05.q5",
+    "type": "mc",
+    "q": "Giải pháp nào giúp ngăn tình trạng hàng loạt điểm CDN Edge trên toàn cầu cùng lúc kéo một đoạn video vừa viral từ Object Storage Origin?",
+    "code": "",
+    "choices": [
+      "Tắt bộ nhớ đệm tại CDN Edge",
+      "Đặt thêm lớp Origin Shield ở giữa các CDN Edge và Object Storage",
+      "Giảm TTL của mỗi đoạn video xuống 1 giây",
+      "Chuyển toàn bộ video về lưu trên ổ đĩa của Upload Gateway"
+    ],
+    "answer": 1,
+    "explain": "Origin Shield đóng vai trò lớp đệm tập trung trước Origin, gộp nhiều Cache Miss từ các vùng Edge thành một lượt tải duy nhất về Object Storage."
+  }
+]

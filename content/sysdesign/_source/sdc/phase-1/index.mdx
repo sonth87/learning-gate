@@ -1,0 +1,69 @@
+---
+title: "Phase 1 — Foundation: Thinking in Systems"
+description: "Nền tảng tư duy hệ thống để chuyển từ hiểu khái niệm sang phân tích hệ thống thực tế."
+progress: 24
+lessons:
+  - "Components trong một hệ thống web"
+  - "Communication Patterns — Sync vs Async trong Distributed Systems"
+  - "Data Flow & Bottlenecks — Tìm và tối ưu điểm nghẽn"
+  - "Latency, Throughput, Availability và CAP Theorem"
+---
+
+## 1) Giới thiệu Phase
+
+Phase 1 là nền tảng bắt buộc trước khi đi sâu vào distributed systems và kiến trúc quy mô lớn.
+
+Mục tiêu của phase này là giúp bạn nhìn hệ thống như một dòng chảy hoàn chỉnh: từ request đầu vào, qua các thành phần xử lý, đến dữ liệu và phản hồi cuối cùng.
+
+Khi học xong, bạn không chỉ "biết thuật ngữ" mà có thể phân tích hệ thống theo tư duy kỹ sư thiết kế.
+
+## 2) Learning Objectives
+
+- Hiểu vai trò của từng thành phần trong một hệ thống web.
+- Phân biệt khi nào nên dùng sync, khi nào nên dùng async.
+- Theo dõi data flow để tìm bottleneck chính xác.
+- Đọc và đánh giá hệ thống bằng các chỉ số nền tảng: latency, throughput, availability.
+- Nhận diện constraint và trade-off khi ra quyết định kiến trúc.
+
+## 3) Bạn sẽ học gì trong phase này
+
+- **System components:** client, API, service, database, cache, queue và mối quan hệ giữa chúng.
+- **Communication patterns:** cách service giao tiếp đồng bộ và bất đồng bộ trong bối cảnh thực tế.
+- **Data flow:** request đi qua hệ thống như thế nào và điểm nghẽn thường xuất hiện ở đâu.
+- **Bottlenecks:** cách phát hiện, ưu tiên, và xử lý bottleneck theo impact.
+- **Performance fundamentals:** đọc đúng các chỉ số quan trọng thay vì tối ưu cảm tính.
+- **Constraints & trade-offs:** vì sao mỗi quyết định luôn có mặt được và mặt mất.
+
+## 4) Lessons Overview
+
+### Lesson 1 — Components trong một hệ thống web
+
+Hiểu kiến trúc cơ bản của hệ thống web hiện đại và trách nhiệm của từng thành phần.
+
+### Lesson 2 — Communication Patterns — Sync vs Async trong Distributed Systems
+
+Nắm cách chọn mô hình giao tiếp phù hợp theo yêu cầu latency, reliability và complexity.
+
+### Lesson 3 — Data Flow & Bottlenecks — Tìm và tối ưu điểm nghẽn
+
+Phân tích đường đi dữ liệu để xác định đúng bottleneck và đưa ra hướng tối ưu thực dụng.
+
+### Lesson 4 — Latency, Throughput, Availability và CAP Theorem
+
+Xây nền tảng tư duy về hiệu năng, độ sẵn sàng và các giới hạn cốt lõi trong hệ phân tán.
+
+## 5) Kết quả sau khi hoàn thành Phase 1
+
+Bạn có thể:
+
+- Phân tích một hệ thống ở mức kiến trúc cơ bản.
+- Đặt câu hỏi đúng về scale, hiệu năng và độ ổn định.
+- Giải thích rõ quyết định sync/async theo bối cảnh.
+- Nhìn thấy bottleneck trước khi tối ưu.
+- Thảo luận trade-off với tư duy hệ thống thay vì tư duy tính năng đơn lẻ.
+
+## 6) Chuẩn bị cho Phase 2
+
+Sau Phase 1, bạn đã có nền tư duy đủ chắc để bước vào **Phase 2 — Core Building Blocks**.
+
+Ở phase tiếp theo, bạn sẽ đi sâu vào từng khối cốt lõi như load balancing, caching, database scaling và message queue, với trọng tâm là cách dùng đúng theo bài toán thực tế.

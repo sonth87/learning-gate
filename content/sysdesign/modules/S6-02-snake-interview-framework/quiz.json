@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-02.q1",
+    "type": "mc",
+    "q": "Thứ tự 5 chặng của khung SNAKE là gì?",
+    "code": "",
+    "choices": [
+      "Scale → Network → Auth → Kubernetes → Errors",
+      "Scope → Numbers → API → Key Components → Elaborate",
+      "Schema → Nodes → Alerts → Keys → Endpoints",
+      "Start → Normalize → Aggregate → Keep → Exit"
+    ],
+    "answer": 1,
+    "explain": "SNAKE viết tắt của Scope (phạm vi) → Numbers (ước lượng số liệu) → API (hợp đồng giao tiếp) → Key Components (kiến trúc tổng thể) → Elaborate (đào sâu điểm nóng)."
+  },
+  {
+    "id": "S6-02.q2",
+    "type": "mc",
+    "q": "Trong một buổi thiết kế kéo dài 45 phút, nên phân bổ khoảng bao nhiêu thời gian cho hai chặng đầu (Scope và Numbers)?",
+    "code": "",
+    "choices": [
+      "Chỉ 1 phút để dành toàn bộ thời gian vẽ sơ đồ",
+      "Khoảng 10–15 phút tổng cộng (5–7 phút mỗi chặng) để chốt đúng bài toán và quy mô trước khi vẽ",
+      "35 phút cho Scope và Numbers, 10 phút còn lại cho mọi thứ khác",
+      "Bỏ qua Scope và Numbers nếu đã biết tên công nghệ"
+    ],
+    "answer": 1,
+    "explain": "Dành 5–7 phút cho Scope và 5–7 phút cho Numbers giúp tránh thiết kế nhầm bài toán và có căn cứ định lượng cho mọi quyết định ở chặng Key Components và Elaborate."
+  },
+  {
+    "id": "S6-02.q3",
+    "type": "tf",
+    "q": "Trong chặng Scope, ứng viên nên hỏi thụ động từng câu rời rạc như 'Hệ thống có bao nhiêu người dùng?' thay vì chủ động đề xuất giả định hợp lý để đối phương xác nhận.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đưa ra giả định có căn cứ (ví dụ: 100M DAU, tỉ lệ đọc:ghi 10:1) rồi hỏi lại để xác nhận thể hiện tư duy chủ động và tiết kiệm thời gian."
+  },
+  {
+    "id": "S6-02.q4",
+    "type": "mc",
+    "q": "Khi tính toán ở chặng Numbers thấy lưu lượng media đạt 7,2 GB/s trong khi lưu lượng ghi văn bản chỉ 1,4 MB/s, quyết định kiến trúc nào được suy ra trực tiếp?",
+    "code": "",
+    "choices": [
+      "Phải dùng Object Storage kết hợp CDN để gánh băng thông media thay vì đẩy qua máy chủ ứng dụng",
+      "Cần bỏ hoàn toàn bộ nhớ đệm",
+      "Phải lưu tệp video trực tiếp vào cột BLOB của PostgreSQL",
+      "Không cần Load Balancer"
+    ],
+    "answer": 0,
+    "explain": "Số liệu băng thông ở chặng Numbers chỉ rõ nút thắt nằm ở phân phối nội dung tĩnh/media, chứng minh sự cần thiết của CDN."
+  },
+  {
+    "id": "S6-02.q5",
+    "type": "mc",
+    "q": "Ở chặng Elaborate (10–15 phút cuối), nên ưu tiên làm gì?",
+    "code": "",
+    "choices": [
+      "Liệt kê lại toàn bộ câu hỏi ở chặng Scope",
+      "Đào sâu 2–3 điểm nóng quan trọng nhất (như xử lý hot key, fan-out, chống trùng lặp, failover) và phân tích đánh đổi",
+      "Viết đầy đủ mã HTML/CSS cho giao diện",
+      "Đổi toàn bộ đề bài sang một hệ thống khác"
+    ],
+    "answer": 1,
+    "explain": "Chặng Elaborate là nơi thể hiện chiều sâu kỹ thuật bằng cách xử lý các nút thắt, kịch bản lỗi và sự đánh đổi của chính kiến trúc vừa đề xuất."
+  }
+]

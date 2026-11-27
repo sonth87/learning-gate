@@ -6,6 +6,8 @@ import {
   type IsoNodeShape,
   type IsoTone,
   type LegacyNodeShape,
+  type LiveSimSource,
+  type PacketKind,
   type StageIconKind,
   type StageInspectorInfo,
   type StageLink,
@@ -17,6 +19,16 @@ import {
   StageInspectorPortal,
   resolveFallbackInspector,
 } from './StageEntityInspector';
+import { WORKBENCH_I18N } from './i18n';
+import {
+  createLiveFrameApplier,
+  type LiveEl,
+  type LiveFrameApplier,
+  type LiveLinkEls,
+  type LiveNodeEls,
+  type LivePacketEls,
+} from './live/liveStageApplier';
+import { PILE_MAX } from './live/liveFrameMath';
 
 interface Pt {
   x: number;
@@ -148,28 +160,60 @@ function normalizeShape(shape: LegacyNodeShape): IsoNodeShape {
 
 function splitShortLines(raw: string): string[] {
   const clean = raw.trim();
-  if (clean.length <= 13) return [clean];
+  if (clean.length <= 15) return [clean];
   const words = clean.split(/\s+/);
   if (words.length === 1) {
-    return [clean.slice(0, 14)];
+    return [clean.slice(0, 16)];
   }
   let line1 = words[0];
   let idx = 1;
-  while (idx < words.length && (line1 + ' ' + words[idx]).length <= 12) {
+  while (idx < words.length && (line1 + ' ' + words[idx]).length <= 14) {
     line1 += ' ' + words[idx];
     idx++;
   }
   const rest = words.slice(idx).join(' ');
   if (!rest) return [line1];
-  return [line1, rest.length > 14 ? `${rest.slice(0, 13)}…` : rest];
+  return [line1, rest.length > 16 ? `${rest.slice(0, 15)}…` : rest];
+}
+
+function wrapNoteLines<T extends { text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>(
+  lines: T[],
+  maxChars = 48
+): T[] {
+  const out: T[] = [];
+  for (const ln of lines) {
+    const clean = ln.text.trim();
+    if (clean.length <= maxChars) {
+      out.push({ ...ln, text: clean });
+      continue;
+    }
+    const words = clean.split(/\s+/);
+    let line1 = '';
+    let idx = 0;
+    while (idx < words.length && (line1 ? `${line1} ${words[idx]}` : words[idx]).length <= maxChars) {
+      line1 = line1 ? `${line1} ${words[idx]}` : words[idx];
+      idx++;
+    }
+    if (!line1) {
+      line1 = clean.slice(0, maxChars);
+      const rest = clean.slice(maxChars).trim();
+      out.push({ ...ln, text: line1 });
+      if (rest) out.push({ ...ln, text: rest });
+    } else {
+      out.push({ ...ln, text: line1 });
+      const rest = words.slice(idx).join(' ').trim();
+      if (rest) out.push({ ...ln, text: rest });
+    }
+  }
+  return out;
 }
 
 function getGroundOffset(shape: LegacyNodeShape): number {
   const kind = normalizeShape(shape);
   if (kind === 'block') return 22;
-  if (kind === 'db') return 21;
-  if (kind === 'device') return 16;
-  return 14;
+  if (kind === 'db') return 16;
+  if (kind === 'device') return 12;
+  return 10;
 }
 
 function getGroundCenter(node: { x: number; y: number; shape: LegacyNodeShape }): Pt {
@@ -284,14 +328,55 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
   const spanY = Math.max(...ys) - Math.min(...ys);
 
   if (n >= 5 || (spanY >= 125 && spanX <= 440)) {
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const spread = 1.26;
-    return nodes.map((nd) => ({
-      ...nd,
-      x: Math.round(cx + (nd.x - cx) * spread),
-      y: Math.round(cy + (nd.y - cy) * spread),
-    }));
+    const gxs = nodes.map((nd) => nd.x);
+    const gys = nodes.map((nd) => nd.y + getGroundOffset(nd.shape));
+    const cx = (Math.min(...gxs) + Math.max(...gxs)) / 2;
+    const cy = (Math.min(...gys) + Math.max(...gys)) / 2;
+    const spread = spanX >= 360 || spanY >= 150 ? 1.04 : 1.16;
+    const out = nodes.map((nd) => {
+      const gOff = getGroundOffset(nd.shape);
+      const gx = cx + (nd.x - cx) * spread;
+      const gy = cy + (nd.y + gOff - cy) * spread;
+      return {
+        ...nd,
+        x: Math.round(gx),
+        y: Math.round(gy - gOff),
+      };
+    });
+    // Hậu kiểm tách va chạm (de-collision) trên mặt phẳng isometric để mọi khối + pill không bao giờ đè nhau
+    const minRx = 124;
+    const minRy = 84;
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false;
+      for (let i = 0; i < out.length; i++) {
+        for (let j = i + 1; j < out.length; j++) {
+          const a = out[i];
+          const b = out[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          if (Math.abs(dx) >= minRx || Math.abs(dy) >= minRy) continue;
+          const norm = Math.hypot(dx / minRx, dy / minRy);
+          if (norm >= 1) continue;
+          moved = true;
+          if (norm < 1e-3) {
+            a.x -= 64;
+            a.y -= 32;
+            b.x += 64;
+            b.y += 32;
+          } else {
+            const scale = (1 - norm) * 0.55;
+            const pushX = Math.round((dx === 0 ? 48 : (dx / norm) * scale));
+            const pushY = Math.round((dy === 0 ? 32 : (dy / norm) * scale));
+            a.x -= pushX;
+            a.y -= pushY;
+            b.x += pushX;
+            b.y += pushY;
+          }
+        }
+      }
+      if (!moved) break;
+    }
+    return out;
   }
 
   const placeAtGround = (nd: StageNode, gx: number, gy: number): StageNode => ({
@@ -303,8 +388,8 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
   if (n === 2) {
     const ordered = [...nodes].sort((a, b) => a.x - b.x);
     const map = new Map<string, StageNode>();
-    map.set(ordered[0].id, placeAtGround(ordered[0], -128, 64));
-    map.set(ordered[1].id, placeAtGround(ordered[1], 128, -64));
+    map.set(ordered[0].id, placeAtGround(ordered[0], -126, 63));
+    map.set(ordered[1].id, placeAtGround(ordered[1], 126, -63));
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
 
@@ -325,32 +410,29 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const map = new Map<string, StageNode>();
 
     if ((outDeg.get(n0.id) ?? 0) >= 2 && !links.some((l) => l.from === n1.id && l.to === n2.id)) {
-      map.set(n0.id, placeAtGround(n0, -172, 56));
-      map.set(n1.id, placeAtGround(n1, 56, -58));
-      map.set(n2.id, placeAtGround(n2, 176, 52));
+      map.set(n0.id, placeAtGround(n0, -168, 52));
+      map.set(n1.id, placeAtGround(n1, 48, -56));
+      map.set(n2.id, placeAtGround(n2, 160, 52));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((inDeg.get(n2.id) ?? 0) >= 2 && !links.some((l) => l.from === n0.id && l.to === n1.id)) {
-      map.set(n0.id, placeAtGround(n0, -96, -80));
-      map.set(n1.id, placeAtGround(n1, -186, 80));
-      map.set(n2.id, placeAtGround(n2, 144, 40));
+      map.set(n0.id, placeAtGround(n0, -96, -72));
+      map.set(n1.id, placeAtGround(n1, -180, 68));
+      map.set(n2.id, placeAtGround(n2, 136, 32));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
-    const variant = hashIds(sorted) % 3;
+    // Chuẩn bố cục góc vuông isometric 2:1 (SW -> NE -> SE như DTS) gọn gàng, dành khoảng trống góc dưới cho bảng ghi chú
+    const variant = hashIds(sorted) % 2;
     if (variant === 0) {
-      map.set(n0.id, placeAtGround(n0, -226, 62));
-      map.set(n1.id, placeAtGround(n1, 0, -51));
-      map.set(n2.id, placeAtGround(n2, 226, 62));
-    } else if (variant === 1) {
-      map.set(n0.id, placeAtGround(n0, -224, -46));
-      map.set(n1.id, placeAtGround(n1, 0, 66));
-      map.set(n2.id, placeAtGround(n2, 224, -46));
+      map.set(n0.id, placeAtGround(n0, -176, 48));
+      map.set(n1.id, placeAtGround(n1, -16, -32));
+      map.set(n2.id, placeAtGround(n2, 144, 48));
     } else {
-      map.set(n0.id, placeAtGround(n0, -216, 88));
-      map.set(n1.id, placeAtGround(n1, 0, -20));
-      map.set(n2.id, placeAtGround(n2, 216, -128));
+      map.set(n0.id, placeAtGround(n0, -176, -24));
+      map.set(n1.id, placeAtGround(n1, -16, 56));
+      map.set(n2.id, placeAtGround(n2, 144, -24));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -360,41 +442,63 @@ function composeIsometricLayout(nodes: StageNode[], links: StageLink[]): StageNo
     const [n0, n1, n2, n3] = sorted;
     const map = new Map<string, StageNode>();
 
-    if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0) {
-      map.set(n0.id, placeAtGround(n0, -188, 56));
-      map.set(n1.id, placeAtGround(n1, 24, -104));
-      map.set(n2.id, placeAtGround(n2, 136, -48));
-      map.set(n3.id, placeAtGround(n3, 248, 8));
+    // 1. Fan-out từ n0 ra 3 nhánh lá (n1, n2, n3)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && (outDeg.get(n1.id) ?? 0) === 0 && (outDeg.get(n2.id) ?? 0) === 0 && (inDeg.get(n3.id) ?? 0) <= 1) {
+      map.set(n0.id, placeAtGround(n0, -180, 56));
+      map.set(n1.id, placeAtGround(n1, 16, -96));
+      map.set(n2.id, placeAtGround(n2, 108, -50));
+      map.set(n3.id, placeAtGround(n3, 200, -4));
+      return nodes.map((nd) => map.get(nd.id) ?? nd);
+    }
+
+    // 2. Đồ thị hình thoi 4 đỉnh (Diamond DAG: n0 -> {n1, n2} -> n3, ví dụ S3-07 client -> {app1, app2} -> seat_db)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && (inDeg.get(n3.id) ?? 0) >= 2) {
+      map.set(n0.id, placeAtGround(n0, -200, 50));
+      map.set(n1.id, placeAtGround(n1, -36, -68));
+      map.set(n2.id, placeAtGround(n2, 24, 68));
+      map.set(n3.id, placeAtGround(n3, 196, -24));
+      return nodes.map((nd) => map.get(nd.id) ?? nd);
+    }
+
+    // 3. Đồ thị có 1 nhánh phụ lá xuất phát từ n0 và 1 trục chính đi tiếp (ví dụ S1-06: client -> dns [lá], client -> web -> db)
+    if ((outDeg.get(n0.id) ?? 0) >= 2 && ((outDeg.get(n1.id) ?? 0) === 0 || (outDeg.get(n2.id) ?? 0) === 0)) {
+      const leafNode = (outDeg.get(n1.id) ?? 0) === 0 ? n1 : n2;
+      const midNode = leafNode.id === n1.id ? n2 : n1;
+      map.set(n0.id, placeAtGround(n0, -196, 56));
+      map.set(leafNode.id, placeAtGround(leafNode, -64, -76));
+      map.set(midNode.id, placeAtGround(midNode, 16, 28));
+      map.set(n3.id, placeAtGround(n3, 188, -58));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((outDeg.get(n1.id) ?? 0) >= 2) {
-      map.set(n0.id, placeAtGround(n0, -228, 62));
-      map.set(n1.id, placeAtGround(n1, -16, -44));
-      map.set(n2.id, placeAtGround(n2, 196, -90));
-      map.set(n3.id, placeAtGround(n3, 196, 62));
+      map.set(n0.id, placeAtGround(n0, -208, 56));
+      map.set(n1.id, placeAtGround(n1, -32, -32));
+      map.set(n2.id, placeAtGround(n2, 152, -84));
+      map.set(n3.id, placeAtGround(n3, 152, 56));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
     if ((inDeg.get(n2.id) ?? 0) >= 2) {
-      map.set(n0.id, placeAtGround(n0, -172, -84));
-      map.set(n1.id, placeAtGround(n1, -214, 84));
-      map.set(n2.id, placeAtGround(n2, 36, 20));
-      map.set(n3.id, placeAtGround(n3, 248, -86));
+      map.set(n0.id, placeAtGround(n0, -164, -76));
+      map.set(n1.id, placeAtGround(n1, -200, 72));
+      map.set(n2.id, placeAtGround(n2, 28, 16));
+      map.set(n3.id, placeAtGround(n3, 204, -72));
       return nodes.map((nd) => map.get(nd.id) ?? nd);
     }
 
+    // Thay vì trải ngang zíc-zắc / \ / tốn 590px, đi dọc trục chính NE rồi rẽ vuông góc SE (gọn 408px, có chiều sâu 2.5D)
     const flip = hashIds(sorted) % 2 === 1;
     if (!flip) {
-      map.set(n0.id, placeAtGround(n0, -294, 58));
-      map.set(n1.id, placeAtGround(n1, -98, -40));
-      map.set(n2.id, placeAtGround(n2, 98, 58));
-      map.set(n3.id, placeAtGround(n3, 294, -40));
+      map.set(n0.id, placeAtGround(n0, -188, 68));
+      map.set(n1.id, placeAtGround(n1, -52, 0));
+      map.set(n2.id, placeAtGround(n2, 84, -68));
+      map.set(n3.id, placeAtGround(n3, 220, 0));
     } else {
-      map.set(n0.id, placeAtGround(n0, -294, -32));
-      map.set(n1.id, placeAtGround(n1, -98, 66));
-      map.set(n2.id, placeAtGround(n2, 98, -32));
-      map.set(n3.id, placeAtGround(n3, 294, 66));
+      map.set(n0.id, placeAtGround(n0, -204, 48));
+      map.set(n1.id, placeAtGround(n1, -68, -20));
+      map.set(n2.id, placeAtGround(n2, 68, 48));
+      map.set(n3.id, placeAtGround(n3, 204, -20));
     }
     return nodes.map((nd) => map.get(nd.id) ?? nd);
   }
@@ -451,19 +555,62 @@ function sampleSegmentPoint(pts: Pt[], t: number): Pt {
   };
 }
 
+function samplePolylineFromEnd(pts: Pt[], distFromEnd: number): Pt {
+  if (pts.length === 0) return { x: 0, y: 0 };
+  if (pts.length === 1) return pts[0];
+  let rem = Math.max(0, distFromEnd);
+  for (let i = pts.length - 1; i >= 1; i--) {
+    const p1 = pts[i];
+    const p0 = pts[i - 1];
+    const segLen = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    if (rem <= segLen || i === 1) {
+      const u = segLen > 1e-3 ? Math.min(1, rem / segLen) : 0;
+      return {
+        x: p1.x + (p0.x - p1.x) * u,
+        y: p1.y + (p0.y - p1.y) * u,
+      };
+    }
+    rem -= segLen;
+  }
+  return pts[0];
+}
+
+function getPolylineSegmentNormalAt(pts: Pt[], t: number): Pt {
+  const pA = sampleSegmentPoint(pts, Math.max(0, t - 0.04));
+  const pB = sampleSegmentPoint(pts, Math.min(1, t + 0.04));
+  const dx = pB.x - pA.x;
+  const dy = pB.y - pA.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // Pháp tuyến hướng lên trên (ny <= 0) để nhãn nổi gọn bên cạnh dây nối như DTS
+  let nx = -dy / len;
+  let ny = dx / len;
+  if (ny > 0) {
+    nx = -nx;
+    ny = -ny;
+  }
+  return { x: nx, y: ny };
+}
+
 /**
  * Pure 2:1 grid-aligned isometric elbow router:
- * Decomposes every connector onto exact SE (+2,+1) and NE (+2,-1) isometric floor axes
- * and automatically chooses the elbow that routes cleanly AROUND intermediate blocks!
+ * Decomposes every connector onto exact SE (+2,+1) and NE (+2,-1) isometric floor axes,
+ * distributes fan-out / fan-in across distinct walls (like DTS Fan-out), and trims flush!
  */
 function buildIsoLink(
   link: StageLink,
   from: { id: string; x: number; y: number; shape: LegacyNodeShape },
   to: { id: string; x: number; y: number; shape: LegacyNodeShape },
-  allNodes: ReadonlyArray<{ id: string; x: number; y: number; shape: LegacyNodeShape }> = []
+  allNodes: ReadonlyArray<{ id: string; x: number; y: number; shape: LegacyNodeShape }> = [],
+  degreeHint?: { outFrom: number; inTo: number; startSlotOffset?: Pt; endSlotOffset?: Pt }
 ): { d: string; pts: Pt[]; labelPos: Pt } {
-  const c0 = getGroundCenter(from);
-  const c1 = getGroundCenter(to);
+  const rawC0 = getGroundCenter(from);
+  const rawC1 = getGroundCenter(to);
+  const c0: Pt = degreeHint?.startSlotOffset
+    ? { x: rawC0.x + degreeHint.startSlotOffset.x, y: rawC0.y + degreeHint.startSlotOffset.y }
+    : rawC0;
+  const c1: Pt = degreeHint?.endSlotOffset
+    ? { x: rawC1.x + degreeHint.endSlotOffset.x, y: rawC1.y + degreeHint.endSlotOffset.y }
+    : rawC1;
   const dx = c1.x - c0.x;
   const dy = c1.y - c0.y;
 
@@ -475,26 +622,65 @@ function buildIsoLink(
 
   let waypoints: Pt[];
 
+  const scoreElbow = (eb: Pt): number => {
+    let penalty = 0;
+    for (const other of allNodes) {
+      if (other.id === from.id || other.id === to.id) continue;
+      const oc = getGroundCenter(other);
+      const d1 = distPointToSeg(oc, c0, eb);
+      const d2 = distPointToSeg(oc, eb, c1);
+      const minD = Math.min(d1, d2);
+      if (minD < 82) {
+        penalty += (82 - minD) * 10;
+      }
+    }
+    return penalty;
+  };
+
+  const scoreStraight = (): number => {
+    let penalty = 0;
+    for (const other of allNodes) {
+      if (other.id === from.id || other.id === to.id) continue;
+      const oc = getGroundCenter(other);
+      const d = distPointToSeg(oc, c0, c1);
+      if (d < 64) {
+        penalty += (64 - d) * 14;
+      }
+    }
+    return penalty;
+  };
+
   if (lenA < 10 || lenB < 10) {
-    waypoints = [c0, c1];
+    if (scoreStraight() === 0) {
+      waypoints = [c0, c1];
+    } else {
+      // Nếu đường thẳng đâm xuyên qua một node trung gian nằm cùng trục (ví dụ S5-03 hoặc S2-12),
+      // tự động bẻ vòng qua bên sườn có ít vật cản nhất!
+      const midX = (c0.x + c1.x) / 2;
+      const midY = (c0.y + c1.y) / 2;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const detours: Pt[] = [
+        { x: midX + nx * 92, y: midY + ny * 92 },
+        { x: midX - nx * 92, y: midY - ny * 92 },
+        { x: midX + nx * 128, y: midY + ny * 128 },
+        { x: midX - nx * 128, y: midY - ny * 128 },
+      ];
+      let bestDetour = detours[0];
+      let bestPen = Infinity;
+      for (const dt of detours) {
+        const p = scoreElbow(dt);
+        if (p < bestPen) {
+          bestPen = p;
+          bestDetour = dt;
+        }
+      }
+      waypoints = [c0, bestDetour, c1];
+    }
   } else {
     const elbowSE: Pt = { x: c0.x + 2 * a, y: c0.y + a };
     const elbowNE: Pt = { x: c0.x + 2 * b, y: c0.y - b };
-
-    const scoreElbow = (eb: Pt): number => {
-      let penalty = 0;
-      for (const other of allNodes) {
-        if (other.id === from.id || other.id === to.id) continue;
-        const oc = getGroundCenter(other);
-        const d1 = distPointToSeg(oc, c0, eb);
-        const d2 = distPointToSeg(oc, eb, c1);
-        const minD = Math.min(d1, d2);
-        if (minD < 82) {
-          penalty += (82 - minD) * 10;
-        }
-      }
-      return penalty;
-    };
 
     const penSE = scoreElbow(elbowSE);
     const penNE = scoreElbow(elbowNE);
@@ -504,11 +690,52 @@ function buildIsoLink(
       useNE = penNE < penSE;
     } else if (link.curve !== undefined) {
       useNE = link.curve < 0;
+    } else if (degreeHint && degreeHint.outFrom >= 2 && degreeHint.inTo <= 1) {
+      // Fan-out (vd LB -> App 1..3): rẽ ngang NW/SE trước rồi tiến thẳng NE vào mặt trước mỗi server
+      useNE = Math.abs(b) < Math.abs(a) * 0.45;
+    } else if (degreeHint && degreeHint.inTo >= 2 && degreeHint.outFrom <= 1) {
+      // Fan-in (vd App 1..3 -> Cache): tiến thẳng NE ra khỏi mặt sau mỗi server rồi hội tụ NW/SE
+      useNE = Math.abs(b) >= Math.abs(a) * 0.45;
     } else {
       useNE = dy < -28;
     }
 
-    waypoints = [c0, useNE ? elbowNE : elbowSE, c1];
+    let chosenElbow = useNE ? elbowNE : elbowSE;
+    const chosenPen = useNE ? penNE : penSE;
+    // Nếu cả 2 góc L-bend đều cắt gần tâm một node khác (ví dụ lưới 3x3 ở S2-06 hoặc Active/Standby ở S2-01),
+    // thử đường thẳng hoặc điểm vòng lệch sườn có penalty nhỏ nhất
+    if (chosenPen > 260) {
+      const straightPen = scoreStraight();
+      if (straightPen === 0) {
+        waypoints = [c0, c1];
+      } else {
+        const midX = (c0.x + c1.x) / 2;
+        const midY = (c0.y + c1.y) / 2;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const candidates: Pt[] = [
+          chosenElbow,
+          { x: midX + nx * 88, y: midY + ny * 88 },
+          { x: midX - nx * 88, y: midY - ny * 88 },
+          { x: midX + nx * 124, y: midY + ny * 124 },
+          { x: midX - nx * 124, y: midY - ny * 124 },
+        ];
+        let bestCand = chosenElbow;
+        let bestP = chosenPen;
+        for (const c of candidates) {
+          const p = scoreElbow(c);
+          if (p < bestP) {
+            bestP = p;
+            bestCand = c;
+          }
+        }
+        chosenElbow = bestCand;
+        waypoints = [c0, chosenElbow, c1];
+      }
+    } else {
+      waypoints = [c0, chosenElbow, c1];
+    }
   }
 
   const firstNext = waypoints[1];
@@ -517,8 +744,9 @@ function buildIsoLink(
   const fLen = Math.hypot(fdx, fdy) || 1;
   const fux = fdx / fLen;
   const fuy = fdy / fLen;
+  // Tucked -1.2px behind outer border (since layer-links sits beneath layer-ents) so zero air gap ever appears
   const startTrim = Math.min(
-    getBoundaryDistAlongDir(from.shape, fux, fuy, 2),
+    Math.max(8, getBoundaryDistAlongDir(from.shape, fux, fuy, -1.2)),
     fLen * 0.46
   );
   const pStart: Pt = {
@@ -533,7 +761,7 @@ function buildIsoLink(
   const lux = ldx / lLen;
   const luy = ldy / lLen;
   const endTrim = Math.min(
-    getBoundaryDistAlongDir(to.shape, -lux, -luy, 4.5),
+    getBoundaryDistAlongDir(to.shape, -lux, -luy, 2.8),
     lLen * 0.46
   );
   const pEnd: Pt = {
@@ -544,9 +772,10 @@ function buildIsoLink(
   const finalPts =
     waypoints.length === 2 ? [pStart, pEnd] : [pStart, waypoints[1], pEnd];
 
-  let labelPos: Pt;
+  let midAnchor: Pt;
+  let anchorT = 0.5;
   if (finalPts.length === 2) {
-    labelPos = {
+    midAnchor = {
       x: (finalPts[0].x + finalPts[1].x) / 2,
       y: (finalPts[0].y + finalPts[1].y) / 2,
     };
@@ -559,17 +788,27 @@ function buildIsoLink(
       finalPts[2].x - finalPts[1].x,
       finalPts[2].y - finalPts[1].y
     );
-    labelPos =
-      seg1 >= seg2
-        ? {
-            x: (finalPts[0].x + finalPts[1].x) / 2,
-            y: (finalPts[0].y + finalPts[1].y) / 2,
-          }
-        : {
-            x: (finalPts[1].x + finalPts[2].x) / 2,
-            y: (finalPts[1].y + finalPts[2].y) / 2,
-          };
+    const total = seg1 + seg2 || 1;
+    if (seg1 >= seg2) {
+      midAnchor = {
+        x: (finalPts[0].x + finalPts[1].x) / 2,
+        y: (finalPts[0].y + finalPts[1].y) / 2,
+      };
+      anchorT = (seg1 * 0.5) / total;
+    } else {
+      midAnchor = {
+        x: (finalPts[1].x + finalPts[2].x) / 2,
+        y: (finalPts[1].y + finalPts[2].y) / 2,
+      };
+      anchorT = (seg1 + seg2 * 0.5) / total;
+    }
   }
+
+  const nrm = getPolylineSegmentNormalAt(finalPts, anchorT);
+  const labelPos: Pt = {
+    x: midAnchor.x + nrm.x * 24,
+    y: midAnchor.y + nrm.y * 24,
+  };
 
   return {
     d: roundedPolylinePath(finalPts, 14),
@@ -669,6 +908,7 @@ function getPalette(isDark: boolean): {
   pillInk: string;
   slab: FaceGrad;
   dead: FaceGrad;
+  overload: FaceGrad;
   tones: Record<IsoTone, FaceGrad>;
 } {
   if (isDark) {
@@ -684,6 +924,7 @@ function getPalette(isDark: boolean): {
       pillInk: '#f2e9dc',
       slab: { top0: '#38322b', top1: '#302b25', side0: '#29241f', side1: '#221e1a' },
       dead: { top0: '#49443e', top1: '#3e3a34', side0: '#33302b', side1: '#2a2723' },
+      overload: { top0: '#663840', top1: '#552d34', side0: '#46242a', side1: '#381c21' },
       tones: {
         orange: { top0: '#6e4527', top1: '#5d391f', side0: '#4e301a', side1: '#402614' },
         green: { top0: '#3d5430', top1: '#334728', side0: '#2a3b20', side1: '#22301a' },
@@ -708,6 +949,7 @@ function getPalette(isDark: boolean): {
     pillInk: '#211e1b',
     slab: { top0: '#f7f0e7', top1: '#f0e7dc', side0: '#ece2d5', side1: '#e3d7c8' },
     dead: { top0: '#d0c9bf', top1: '#c2bab0', side0: '#b3aba0', side1: '#a49b90' },
+    overload: { top0: '#ecd4d8', top1: '#dec0c6', side0: '#d1aeb5', side1: '#c299a2' },
     tones: {
       orange: { top0: '#fee6cc', top1: '#fcd4ad', side0: '#f9c697', side1: '#f3b47f' },
       green: { top0: '#e2f2d7', top1: '#d1e9c2', side0: '#c3e1b2', side1: '#b3d79f' },
@@ -1000,6 +1242,25 @@ export interface ScaleStageSvgProps {
   isPlaying: boolean;
   replayNonce: number;
   className?: string;
+  // ── live-sim (05 §3.1) — tất cả tuỳ chọn; không truyền frameSource ⇒ hành vi cũ ──
+  frameSource?: LiveSimSource;
+  liveOptions?: {
+    /** mặc định 200 (80 khi stage hẹp) */
+    maxPackets?: number;
+    /** ghi đè prefers-reduced-motion (test) */
+    reducedMotion?: boolean;
+    /** chấm nhận pointer events */
+    tracerEnabled?: boolean;
+    focus?: { nodes?: string[]; links?: string[] };
+  };
+  onPacketPick?: (p: { id: number; linkId: string; kind: PacketKind }) => void;
+  /** Chế độ nhặt đích: click chọn entity thay vì mở inspector. */
+  pickMode?: {
+    accept: ('node' | 'link')[];
+    onPick: (e: { kind: 'node' | 'link'; id: string }) => void;
+  } | null;
+  /** Nội dung số liệu live chèn vào thẻ inspector. */
+  renderLiveSlot?: (e: { kind: 'node' | 'link'; id: string }) => React.ReactNode;
 }
 
 export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
@@ -1009,6 +1270,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   isPlaying,
   replayNonce,
   className,
+  frameSource,
+  liveOptions,
+  onPacketPick,
+  pickMode,
+  renderLiveSlot,
 }) => {
   const uid = useId().replace(/:/g, '');
   const isDark = theme === 'dark';
@@ -1019,6 +1285,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const [selectedInfo, setSelectedInfo] = useState<{
     key: string;
     info: StageInspectorInfo;
+    preferLeft?: boolean;
   } | null>(null);
 
   const [exitingNodes, setExitingNodes] = useState<StageNode[]>([]);
@@ -1040,15 +1307,17 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   const nodeOuterRefs = useRef<Map<string, SVGGElement>>(new Map());
   const nodeLiftRefs = useRef<Map<string, SVGGElement>>(new Map());
   const nodeShadowRefs = useRef<Map<string, SVGElement>>(new Map());
-  const spotRefs = useRef<Map<string, SVGPathElement>>(new Map());
+  const spotRefs = useRef<Map<string, SVGGElement>>(new Map());
   const exitNodeRefs = useRef<Map<string, SVGGElement>>(new Map());
   const linkGroupRefs = useRef<Map<string, SVGGElement>>(new Map());
   const linkHitRefs = useRef<Map<string, SVGPathElement>>(new Map());
   const pathRefs = useRef<Map<string, SVGPathElement>>(new Map());
   const linkPillRefs = useRef<Map<string, SVGGElement>>(new Map());
   const packetRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const staticQueueRefs = useRef<Map<string, SVGGElement>>(new Map());
   const zoneRefs = useRef<Map<string, SVGGElement>>(new Map());
-  const noteCardRef = useRef<SVGGElement | null>(null);
+  const noteCardRef = useRef<HTMLDivElement | null>(null);
+  const [noteCardCollapsed, setNoteCardCollapsed] = useState(false);
 
   const prevSnapshotRef = useRef<{
     nodes: Map<string, StageNode>;
@@ -1096,13 +1365,43 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     return () => window.clearTimeout(timer);
   }, []);
 
+  // F2 (05 §3.5): scene thường ⇒ reset theo identity `scene` (hành vi cũ, không đổi);
+  // live-sim ⇒ chỉ reset khi CẤU TRÚC đổi (id/shape node, id/from/to link), để zoom/pan/inspector
+  // sống sót khi builder dựng lại object scene mà cấu trúc không đổi.
+  const structureKey = useMemo(
+    () =>
+      scene.nodes.map((n) => `${n.id}:${n.shape}`).join(',') +
+      '|' +
+      scene.links.map((l) => `${l.id}:${l.from}>${l.to}`).join(','),
+    [scene]
+  );
+  const resetDep: StageScene | string = frameSource ? structureKey : scene;
   useEffect(() => {
     setSelectedInfo(null);
     setHoverPreview(null);
     camRef.current = { zoom: 1, panX: 0, panY: 0 };
     setZoom(1);
     setPan({ x: 0, y: 0 });
-  }, [scene]);
+  }, [resetDep]);
+
+  // DEV: cảnh báo khi scene của step live-sim bị dựng lại quá thường xuyên (>2 lần/giây).
+  const sceneChurnRef = useRef<{ scene: StageScene | null; times: number[] }>({
+    scene: null,
+    times: [],
+  });
+  if (import.meta.env.DEV && frameSource && sceneChurnRef.current.scene !== scene) {
+    const now = typeof performance !== 'undefined' ? performance.now() : 0;
+    const rec = sceneChurnRef.current;
+    rec.scene = scene;
+    rec.times = rec.times.filter((t) => now - t < 1000);
+    rec.times.push(now);
+    if (rec.times.length > 2) {
+      console.warn(
+        '[live-sim] scene thay đổi quá thường xuyên (>2 lần/giây): builder phải tạo scene một lần (memo).'
+      );
+      rec.times = [];
+    }
+  }
 
   const expandedNodes = useMemo(() => {
     const positioned = composeIsometricLayout(scene.nodes, scene.links);
@@ -1136,29 +1435,30 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       obstacles: RectBox[],
       placedPills: RectBox[]
     ): Pt => {
-      const hw = Math.max(34, (txt.length * 6.4 + 22) / 2) + 3;
-      const hh = 12.5;
-      const candidates: { pt: Pt; distPenalty: number }[] = [
-        { pt: defaultPos, distPenalty: 0 },
-      ];
-      const offsets: Array<[number, number]> = [
-        [0, 0],
-        [0, -18],
-        [0, 18],
-        [-18, -20],
-        [18, -20],
-        [-18, 20],
-        [18, 20],
-        [0, -30],
-        [0, 30],
-      ];
+      const hw = Math.max(32, (txt.length * 6.2 + 20) / 2) + 4;
+      const hh = 13;
+      const candidates: { pt: Pt; distPenalty: number }[] = [];
+
+      // Luôn đặt pill tách hẳn sang cạnh bên vuông góc với dây nối (24..34px), TUYỆT ĐỐI không đè lên [0,0] giữa dây!
       for (const t of [0.5, 0.42, 0.58, 0.34, 0.66]) {
         const base = sampleSegmentPoint(rawPts, t);
-        for (const [dxOff, dyOff] of offsets) {
-          candidates.push({
-            pt: { x: base.x + dxOff, y: base.y + dyOff },
-            distPenalty: Math.abs(t - 0.5) * 18 + Math.hypot(dxOff, dyOff) * 0.42,
-          });
+        const nrm = getPolylineSegmentNormalAt(rawPts, t);
+        const tx = -nrm.y;
+        const ty = nrm.x;
+        for (const perpDist of [24, -24, 32, -32]) {
+          for (const tangShift of [0, -14, 14]) {
+            candidates.push({
+              pt: {
+                x: base.x + nrm.x * perpDist + tx * tangShift,
+                y: base.y + nrm.y * perpDist + ty * tangShift,
+              },
+              distPenalty:
+                Math.abs(t - 0.5) * 22 +
+                (perpDist < 0 ? 3 : 0) +
+                Math.abs(perpDist - 24) * 0.35 +
+                Math.abs(tangShift) * 0.25,
+            });
+          }
         }
       }
 
@@ -1173,12 +1473,12 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         };
         let overlap = 0;
         for (const obs of obstacles) overlap += rectOverlapArea(box, obs);
-        for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.5;
-        const score = overlap * 100 + cand.distPenalty;
+        for (const prev of placedPills) overlap += rectOverlapArea(box, prev) * 1.8;
+        const score = overlap * 120 + cand.distPenalty;
         if (score < bestScore) {
           bestScore = score;
           best = cand.pt;
-          if (overlap === 0 && cand.distPenalty === 0) break;
+          if (overlap === 0 && cand.distPenalty < 1) break;
         }
       }
 
@@ -1194,55 +1494,98 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   );
 
   const builtLinks = useMemo(() => {
+    const outDeg = new Map<string, number>();
+    const inDeg = new Map<string, number>();
+    for (const l of scene.links) {
+      outDeg.set(l.from, (outDeg.get(l.from) ?? 0) + 1);
+      inDeg.set(l.to, (inDeg.get(l.to) ?? 0) + 1);
+    }
+
     const obstacles: RectBox[] = [];
     for (const n of expandedNodes) {
       const kind = normalizeShape(n.shape);
+      const hasLoad = typeof n.loadPct === 'number' || Boolean(n.dead);
+      const hasBadge = Boolean(n.badge);
       obstacles.push({
-        x0: n.x - (kind === 'db' ? 42 : kind === 'block' ? 68 : 62),
-        y0: n.y - (kind === 'block' ? 44 : kind === 'db' ? 40 : 32),
-        x1: n.x + (kind === 'db' ? 42 : kind === 'block' ? 68 : 62),
-        y1: n.y + (kind === 'block' ? 48 : 40),
+        x0: n.x - (kind === 'db' ? 40 : kind === 'block' ? 64 : 62),
+        y0: n.y - (kind === 'block' ? 44 : kind === 'db' ? 34 : 26),
+        x1: n.x + (kind === 'db' ? 40 : kind === 'block' ? 64 : 62),
+        y1: n.y + (kind === 'block' ? 52 : kind === 'db' ? 34 : 44),
       });
+      // Top pills (loadPct và badge xếp chồng phía trên cho block & db)
+      if (kind === 'block' || kind === 'db') {
+        const baseTopY = kind === 'block' ? n.y - 53 : n.y - 44;
+        if (hasLoad) {
+          obstacles.push({ x0: n.x - 45, y0: baseTopY - 12, x1: n.x + 45, y1: baseTopY + 12 });
+        }
+        if (hasBadge && n.badge) {
+          const bTxt = pickText(n.badge.text, lang);
+          const bHw = Math.max(40, (bTxt.length * 6.2 + 22) / 2);
+          const bY = hasLoad ? baseTopY - 23 : baseTopY;
+          obstacles.push({ x0: n.x - bHw, y0: bY - 12, x1: n.x + bHw, y1: bY + 12 });
+        }
+      }
+      // Bottom name pill (chỉ db, crowd, device mới có 1 nhãn tên phía dưới)
       if (kind !== 'block') {
         const lbl = pickText(n.label, lang);
-        const hw = Math.max(44, (lbl.length * 6.4 + 24) / 2);
-        const py = kind === 'db' ? n.y + 50 : n.y + 56;
-        obstacles.push({ x0: n.x - hw, y0: py - 13, x1: n.x + hw, y1: py + 13 });
-      } else if (n.badge || n.sublabel || n.dead) {
-        const txt = n.badge
-          ? pickText(n.badge.text, lang)
-          : n.sublabel
-            ? pickText(n.sublabel, lang)
-            : 'DOWN';
-        const hw = Math.max(44, (txt.length * 6.4 + 26) / 2);
-        obstacles.push({ x0: n.x - hw, y0: n.y + 51, x1: n.x + hw, y1: n.y + 77 });
-      }
-      if (typeof n.loadPct === 'number' || n.dead) {
-        obstacles.push({ x0: n.x - 42, y0: n.y - 68, x1: n.x + 42, y1: n.y - 40 });
+        const hw = Math.max(42, (lbl.length * 6.2 + 22) / 2);
+        const py = kind === 'db' ? n.y + 42 : n.y + 56;
+        obstacles.push({ x0: n.x - hw, y0: py - 12, x1: n.x + hw, y1: py + 12 });
       }
     }
 
-    const placedPills: RectBox[] = [];
-    return scene.links
+    const rawBuilt = scene.links
       .map((l) => {
         const a = nodeMap.get(l.from);
         const b = nodeMap.get(l.to);
         if (!a || !b) return null;
-        const raw = buildIsoLink(l, a, b, expandedNodes);
-        if (!l.label) return { link: l, ...raw };
-        const txt = pickText(l.label, lang);
-        if (!txt) return { link: l, ...raw };
-        const best = resolveLinkLabelPlacement(
-          raw.pts,
-          raw.labelPos,
-          txt,
-          obstacles,
-          placedPills
-        );
-        return { link: l, d: raw.d, pts: raw.pts, labelPos: best };
+        const degHint = {
+          outFrom: outDeg.get(l.from) ?? 1,
+          inTo: inDeg.get(l.to) ?? 1,
+        };
+        const raw = buildIsoLink(l, a, b, expandedNodes, degHint);
+        const toLoad = !frameSource && typeof b.loadPct === 'number' && !b.dead ? b.loadPct : 0;
+        const st = l.style ?? 'solid';
+        const queueCount =
+          st === 'off' || st === 'cut'
+            ? 0
+            : toLoad >= 95
+              ? 5
+              : toLoad >= 85
+                ? 4
+                : toLoad >= 75
+                  ? 3
+                  : toLoad >= 68
+                    ? 2
+                    : 0;
+        const hasDrop = queueCount > 0 && toLoad >= 95;
+        return { link: l, ...raw, degHint, queueCount, hasDrop };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
-  }, [scene.links, nodeMap, expandedNodes, lang, resolveLinkLabelPlacement]);
+
+    // Đưa cả các đoạn dây nối vào danh sách vật cản để nhãn đường nối không bao giờ đè lên bất kỳ dây nào
+    for (const rb of rawBuilt) {
+      for (const s of [0.16, 0.32, 0.5, 0.68, 0.84]) {
+        const wp = sampleSegmentPoint(rb.pts, s);
+        obstacles.push({ x0: wp.x - 8, y0: wp.y - 8, x1: wp.x + 8, y1: wp.y + 8 });
+      }
+    }
+
+    const placedPills: RectBox[] = [];
+    return rawBuilt.map((rb) => {
+      if (!rb.link.label) return rb;
+      const txt = pickText(rb.link.label, lang);
+      if (!txt) return rb;
+      const best = resolveLinkLabelPlacement(
+        rb.pts,
+        rb.labelPos,
+        txt,
+        obstacles,
+        placedPills
+      );
+      return { ...rb, labelPos: best };
+    });
+  }, [scene.links, nodeMap, expandedNodes, lang, frameSource, resolveLinkLabelPlacement]);
 
   const { baseBounds, noteCardLayout } = useMemo(() => {
     if (expandedNodes.length === 0) {
@@ -1259,17 +1602,20 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     const obsList: RectBox[] = [];
 
     for (const n of expandedNodes) {
-      const topReach = typeof n.loadPct === 'number' || n.dead ? 68 : 48;
-      const botReach =
-        normalizeShape(n.shape) !== 'block' || n.badge || n.sublabel ? 76 : 54;
-      minX = Math.min(minX, n.x - 76);
-      maxX = Math.max(maxX, n.x + 76);
+      const kind = normalizeShape(n.shape);
+      const hasLoad = typeof n.loadPct === 'number' || Boolean(n.dead);
+      const hasBadge = Boolean(n.badge);
+      const topReach =
+        hasLoad && hasBadge ? 90 : hasLoad || hasBadge ? 68 : 48;
+      const botReach = kind === 'block' ? 54 : kind === 'db' ? 58 : 72;
+      minX = Math.min(minX, n.x - 74);
+      maxX = Math.max(maxX, n.x + 74);
       minY = Math.min(minY, n.y - topReach);
       maxY = Math.max(maxY, n.y + botReach);
       obsList.push({
-        x0: n.x - 82,
+        x0: n.x - 80,
         y0: n.y - topReach - 4,
-        x1: n.x + 82,
+        x1: n.x + 80,
         y1: n.y + botReach + 6,
       });
     }
@@ -1283,21 +1629,23 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     }
     for (const bl of builtLinks) {
       for (const p of bl.pts) {
-        minX = Math.min(minX, p.x - 20);
-        maxX = Math.max(maxX, p.x + 20);
-        minY = Math.min(minY, p.y - 18);
-        maxY = Math.max(maxY, p.y + 18);
+        minX = Math.min(minX, p.x - 18);
+        maxX = Math.max(maxX, p.x + 18);
+        minY = Math.min(minY, p.y - 16);
+        maxY = Math.max(maxY, p.y + 16);
       }
-      minX = Math.min(minX, bl.labelPos.x - 50);
-      maxX = Math.max(maxX, bl.labelPos.x + 50);
-      minY = Math.min(minY, bl.labelPos.y - 15);
-      maxY = Math.max(maxY, bl.labelPos.y + 15);
-      obsList.push({
-        x0: bl.labelPos.x - 54,
-        y0: bl.labelPos.y - 16,
-        x1: bl.labelPos.x + 54,
-        y1: bl.labelPos.y + 16,
-      });
+      if (bl.link.label) {
+        minX = Math.min(minX, bl.labelPos.x - 48);
+        maxX = Math.max(maxX, bl.labelPos.x + 48);
+        minY = Math.min(minY, bl.labelPos.y - 14);
+        maxY = Math.max(maxY, bl.labelPos.y + 14);
+        obsList.push({
+          x0: bl.labelPos.x - 52,
+          y0: bl.labelPos.y - 16,
+          x1: bl.labelPos.x + 52,
+          y1: bl.labelPos.y + 16,
+        });
+      }
     }
 
     let resolvedNote: {
@@ -1307,21 +1655,50 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       h: number;
       title: string;
       lines: Array<{ text: string; tone: 'plain' | 'muted' | 'good' | 'bad' | 'amber' }>;
+      chart?: { utilPct: number; xLabel: string; yLabel: string };
     } | null = null;
 
     // Hide inline note card on mobile / narrow stages (< 560px) so 100% of space belongs to the model
-    if (stageWidth >= 560 && scene.noteCard && scene.noteCard.lines.length > 0) {
+    if (
+      stageWidth >= 560 &&
+      scene.noteCard &&
+      (scene.noteCard.lines.length > 0 || scene.noteCard.chart)
+    ) {
       const titleStr = pickText(scene.noteCard.title, lang);
-      const lines = scene.noteCard.lines.map((ln) => ({
+      const rawLines = scene.noteCard.lines.map((ln) => ({
         text: pickText(ln.text, lang),
         tone: (ln.tone ?? 'plain') as 'plain' | 'muted' | 'good' | 'bad' | 'amber',
       }));
+      const lines = wrapNoteLines(rawLines, 48);
+      const chart = scene.noteCard.chart
+        ? {
+            utilPct: Math.max(2, Math.min(100, scene.noteCard.chart.utilPct)),
+            xLabel: scene.noteCard.chart.xLabel
+              ? pickText(scene.noteCard.chart.xLabel, lang)
+              : lang === 'en'
+                ? 'utilization →'
+                : 'mức sử dụng →',
+            yLabel: scene.noteCard.chart.yLabel
+              ? pickText(scene.noteCard.chart.yLabel, lang)
+              : lang === 'en'
+                ? 'latency'
+                : 'độ trễ',
+          }
+        : undefined;
       const maxChars = Math.max(
         titleStr.length + 4,
-        ...lines.map((ln) => ln.text.length + (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 3 : 0))
+        ...lines.map(
+          (ln) =>
+            ln.text.length +
+            (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber' ? 2 : 0)
+        )
       );
-      const cardW = Math.max(182, Math.min(242, Math.round(maxChars * 5.75 + 26)));
-      const cardH = Math.round(30 + lines.length * 18.5 + 8);
+      const cardW = Math.max(
+        chart ? 208 : 182,
+        Math.min(340, Math.round(maxChars * 5.85 + 30))
+      );
+      const chartBlockH = chart ? 70 : 0;
+      const cardH = Math.round(30 + chartBlockH + lines.length * 18.5 + 8);
 
       const resolveCleanRect = (
         initX: number,
@@ -1375,17 +1752,14 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       }
 
       resolvedNote = {
-        x: Math.round(best.x),
-        y: Math.round(best.y),
+        x: 0,
+        y: 0,
         w: cardW,
         h: cardH,
         title: titleStr,
         lines,
+        chart,
       };
-      minX = Math.min(minX, resolvedNote.x - 8);
-      maxX = Math.max(maxX, resolvedNote.x + cardW + 8);
-      minY = Math.min(minY, resolvedNote.y - 8);
-      maxY = Math.max(maxY, resolvedNote.y + cardH + 8);
     }
 
     const padX = 28;
@@ -1467,11 +1841,14 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   useEffect(() => {
     const el = containerRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    setStageWidth(el.getBoundingClientRect().width || window.innerWidth);
+    const bucketWidth = (rawW: number): number =>
+      rawW < 420 ? 360 : rawW < 560 ? 480 : rawW < 640 ? 600 : 1024;
+    setStageWidth(bucketWidth(el.getBoundingClientRect().width || window.innerWidth));
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (typeof w === 'number' && w > 0) {
-        setStageWidth(w);
+        const nextBucket = bucketWidth(w);
+        setStageWidth((prev) => (prev === nextBucket ? prev : nextBucket));
       }
     });
     ro.observe(el);
@@ -1507,6 +1884,11 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
    * ============================================================================ */
 
   const packetElapsedRef = useRef(0);
+  // F1: đúng MỘT vòng rAF được cộng dt vào packetElapsedRef. Vòng choreography là chủ
+  // khi nó còn sống; vòng "Resume" chỉ chạy khi choreography đã dừng (xem bên dưới).
+  const choreoAliveRef = useRef(false);
+  // live-sim: thời điểm choreography "tiếp đất" xong (0 = chưa xong); overlay live chỉ hiện sau đó.
+  const choreoSettledAtRef = useRef(0);
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
 
@@ -1679,6 +2061,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     let lastTick = startAt;
     let rafId = 0;
     let exitCleaned = !hasExits;
+    choreoSettledAtRef.current = 0;
 
     const getMarkerUrl = (st?: StageLink['style']): string => {
       if (st === 'off' || st === 'heartbeat' || st === 'cut') return '';
@@ -1780,8 +2163,37 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           shadowEl.setAttribute('opacity', (baseShadowOp * heightFactor).toFixed(3));
         }
         if (spotEl) {
-          const settleProgress = clamp01((elapsed - (plan.delay + plan.dur * 0.72)) / 360);
-          spotEl.setAttribute('opacity', settleProgress.toFixed(3));
+          const gOff = getGroundOffset(n.shape);
+          const gx = curX;
+          const gy = curY + gOff;
+          if (n.dead) {
+            const settleProgress = clamp01((elapsed - (plan.delay + plan.dur * 0.72)) / 360);
+            spotEl.setAttribute('transform', `translate(${gx.toFixed(1)}, ${gy.toFixed(1)})`);
+            spotEl.setAttribute('opacity', settleProgress.toFixed(3));
+          } else if (plan.kind === 'enter') {
+            // Quầng sáng xanh lá dưới chân khối toả rộng ra xung quanh rồi tan dần ngay khi khối rơi chạm sàn
+            const waveStart = plan.delay + plan.dur * 0.52;
+            const waveDur = 760;
+            const wt = (elapsed - waveStart) / waveDur;
+            if (wt <= 0 || wt >= 1) {
+              spotEl.setAttribute('opacity', '0');
+            } else {
+              const easeW = easeOutCubic(wt);
+              const scale = 0.58 + 0.94 * easeW;
+              const fade =
+                wt < 0.22
+                  ? wt / 0.22
+                  : Math.pow(Math.max(0, 1 - (wt - 0.22) / 0.78), 1.55);
+              const peakOp = isDark ? 0.92 : 0.86;
+              spotEl.setAttribute(
+                'transform',
+                `translate(${gx.toFixed(1)}, ${gy.toFixed(1)}) scale(${scale.toFixed(3)})`
+              );
+              spotEl.setAttribute('opacity', (fade * peakOp).toFixed(3));
+            }
+          } else {
+            spotEl.setAttribute('opacity', '0');
+          }
         }
       }
 
@@ -1796,12 +2208,9 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
       if (noteCardRef.current && noteCardLayout) {
         const noteDelay = baseEnterDelay + Math.min(260, enteringSorted.length * 75) + 180;
         const nt = easeOutCubic((elapsed - noteDelay) / 480);
-        const ny = noteCardLayout.y + (1 - nt) * 10;
-        noteCardRef.current.setAttribute(
-          'transform',
-          `translate(${noteCardLayout.x.toFixed(1)}, ${ny.toFixed(1)})`
-        );
-        noteCardRef.current.setAttribute('opacity', nt.toFixed(3));
+        const ny = (1 - nt) * 8;
+        noteCardRef.current.style.transform = `translateY(${ny.toFixed(1)}px)`;
+        noteCardRef.current.style.opacity = nt.toFixed(3);
       }
 
       // E. Animate links (draw AFTER both blocks land, or stretch live during morph!)
@@ -1818,7 +2227,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           const aPos = livePositions.get(l.from);
           const bPos = livePositions.get(l.to);
           if (aPos && bPos) {
-            const liveGeo = buildIsoLink(l, aPos, bPos, liveArr);
+            const liveGeo = buildIsoLink(l, aPos, bPos, liveArr, bl.degHint);
             pEl.setAttribute('d', liveGeo.d);
             hitEl?.setAttribute('d', liveGeo.d);
             measuredLengths.delete(l.id);
@@ -1876,11 +2285,381 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         }
       }
 
-      // F. Flow traffic packets ONLY on links whose draw animation has completed!
+      // F. Flow traffic packets & in-line FIFO queue dots ONLY on links whose draw animation has completed!
       if (isPlayingRef.current && scene.packets.length > 0) {
         packetElapsedRef.current += dt;
       }
       const sec = packetElapsedRef.current;
+
+      const queueMetaByLink = new Map<
+        string,
+        { queueCount: number; hasDrop: boolean; fwdPktIds: string[] }
+      >();
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          const lPlan = linkPlans.get(bl.link.id);
+          if (bl.queueCount > 0) {
+            const fwdPktIds = scene.packets
+              .filter((p) => p.linkId === bl.link.id && !p.reverse)
+              .map((p) => p.id);
+            queueMetaByLink.set(bl.link.id, {
+              queueCount: bl.queueCount,
+              hasDrop: bl.hasDrop,
+              fwdPktIds,
+            });
+          }
+          if (qEl && lPlan) {
+            const fade = elapsed < lPlan.readyAt ? 0 : clamp01((elapsed - lPlan.readyAt) / 260);
+            qEl.setAttribute('opacity', fade.toFixed(2));
+          }
+        }
+      }
+
+      const activeQueueShiftByLink = new Map<string, number>();
+
+      const stepStaticPacketDom = (
+        pkt: StageScene['packets'][number],
+        gEl: SVGGElement,
+        pEl: SVGPathElement,
+        totalLen: number,
+        qMeta: { queueCount: number; hasDrop: boolean; fwdPktIds: string[] } | undefined,
+        secNow: number,
+        fadeInAfterLink: number
+      ) => {
+        const bodyEl = gEl.children[0] as SVGGElement | undefined;
+        const fxOkEl = gEl.children[1] as SVGGElement | undefined;
+        const fxFailEl = gEl.children[2] as SVGGElement | undefined;
+        const holdRingEl = bodyEl?.children[0] as SVGCircleElement | undefined;
+        const shapeEl = bodyEl?.children[1] as SVGElement | undefined;
+        const baseFill = shapeEl?.getAttribute('data-base-fill') ?? '#f3b47f';
+        const baseStrokeW = shapeEl?.getAttribute('data-base-sw') ?? '1.5';
+
+        // ── Nhánh 1: Đường nối có Hàng đợi FIFO trước node bận/nghẽn (qCount > 0) ──
+        // Hạt mới chạy tới đuôi hàng đợi sẽ đẩy vào vị trí cuối hàng (dTailSlot),
+        // làm toàn bộ các hạt đang chờ trong hàng đợi dồn lên 1 nấc (qi -> qi - 1),
+        // còn hạt cũ nhất ở đầu hàng (qi = 0) chui vào trong DB/Server để xử lý rồi mới trả Response xanh lá về!
+        if (qMeta && qMeta.queueCount > 0 && !pkt.reverse) {
+          const qCount = qMeta.queueCount;
+          const slotGap = 10.5;
+          const headDistFromEnd = qMeta.hasDrop ? 21 : 11;
+          const dStart = totalLen > 32 ? 6 : 0;
+          const dDoor = Math.max(dStart + 22, totalLen - headDistFromEnd);
+          const dTailSlot = Math.max(dStart + 14, dDoor - (qCount - 1) * slotGap);
+          const dEntryBehindTail = Math.max(dStart + 10, dDoor - qCount * slotGap);
+
+          // Đồng bộ chu kỳ tất cả hạt đi xuôi trên cùng sợi dây có hàng đợi để nhịp dồn hàng 1-1 không bao giờ chồng nhau
+          const fwdIdx = Math.max(0, qMeta.fwdPktIds.indexOf(pkt.id));
+          const fwdTotal = Math.max(1, qMeta.fwdPktIds.length);
+          const approachLen = Math.max(18, dTailSlot - dStart);
+          const conveyorFwdSec = Math.max(0.85, approachLen / 92);
+          const conveyorHoldSec = 0.06;
+          const fxKind = pkt.arrivalFx ?? 'ok';
+          const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+          const returnLen = Math.max(18, dDoor - dStart);
+          const conveyorRetSec = hasBounce ? Math.max(0.52, returnLen / 138) : 0;
+          const fxDurSec = fxKind === 'fail' ? 0.58 : fxKind === 'ok' ? 0.44 : 0.16;
+          const cycleSec =
+            conveyorFwdSec + conveyorHoldSec + conveyorRetSec + fxDurSec;
+
+          const slotOffsetSec = (fwdIdx / fwdTotal) * cycleSec;
+          const localT =
+            (((secNow + slotOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+          if (localT < conveyorFwdSec) {
+            const u = localT / conveyorFwdSec;
+            let dist: number;
+            let pushingTailS = 0;
+            if (u < 0.68) {
+              const uApp = u / 0.68;
+              dist = dStart + uApp * (dEntryBehindTail - dStart);
+            } else {
+              const rawS = clamp01((u - 0.68) / 0.32);
+              pushingTailS =
+                rawS < 0.5
+                  ? 4 * rawS * rawS * rawS
+                  : 1 - Math.pow(-2 * rawS + 2, 3) / 2;
+              dist =
+                dEntryBehindTail + pushingTailS * (dTailSlot - dEntryBehindTail);
+              const prevMax = activeQueueShiftByLink.get(pkt.linkId) ?? 0;
+              if (pushingTailS > prevMax) {
+                activeQueueShiftByLink.set(pkt.linkId, pushingTailS);
+              }
+            }
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.07 ? u / 0.07 : 1;
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              // Khi hạt mới chạm vào đuôi hàng đợi, chuyển dần sang màu vàng hàng đợi (#efb041) để khớp 100% với ô cuối hàng
+              shapeEl.setAttribute(
+                'fill',
+                pushingTailS > 0.45 ? '#efb041' : baseFill
+              );
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else if (localT < conveyorFwdSec + conveyorHoldSec) {
+            // Hạt mới đã nhập vào vị trí cuối hàng đợi (được vẽ bởi circle N-1 của hàng đợi), còn hạt đầu hàng vừa chui vào DB/Server
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (
+            hasBounce &&
+            localT < conveyorFwdSec + conveyorHoldSec + conveyorRetSec
+          ) {
+            // Sau khi hạt đầu hàng (qi = 0) được DB/Server xử lý xong, kết quả Response xanh lá (#9fd28f) đi từ cửa DB/Server (dDoor) về lại nguồn!
+            const uBack =
+              (localT - conveyorFwdSec - conveyorHoldSec) / conveyorRetSec;
+            const dist = dDoor - uBack * (dDoor - dStart);
+            const pt = pEl.getPointAtLength(dist);
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', '#9fd28f');
+              shapeEl.setAttribute('stroke-width', '1.5');
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - conveyorFwdSec - conveyorHoldSec - conveyorRetSec) /
+                Math.max(0.05, fxDurSec)
+            );
+            const burstDist = hasBounce ? dStart : Math.min(totalLen - 4, dDoor + 6);
+            const pt = pEl.getPointAtLength(burstDist);
+            gEl.setAttribute(
+              'transform',
+              `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`
+            );
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'fail') {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) {
+                const scale = 0.72 + fxT * 1.48;
+                const op =
+                  fxT < 0.18
+                    ? fxT / 0.18
+                    : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+                fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxFailEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else if (fxKind === 'ok') {
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+              if (fxOkEl) {
+                const scale = 0.8 + fxT * 1.32;
+                const op = Math.pow(1 - fxT, 1.15) * 0.9;
+                fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxOkEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            }
+          }
+          return;
+        }
+
+        // ── Nhánh 2: Đường nối không có hàng đợi xếp hàng (qCount === 0) ──
+        const dStart = totalLen > 32 ? 6 : 0;
+        const dEnd = totalLen > 32 ? Math.max(dStart + 14, totalLen - 10) : totalLen;
+        const spanLen = Math.max(12, dEnd - dStart);
+
+        const basePxPerSec = 152;
+        const variantMult =
+          pkt.variant === 'slow'
+            ? 0.34
+            : pkt.variant === 'heavy'
+              ? 0.7
+              : pkt.variant === 'ping'
+                ? 0.85
+                : 1.0;
+        const spd = pkt.speed ?? 0.9;
+        const fwdSpeedPx = basePxPerSec * spd * variantMult;
+        const forwardSec = Math.max(0.42, spanLen / Math.max(24, fwdSpeedPx));
+        const holdSec = Math.max(0, pkt.holdSec ?? 0);
+        const fxKind = pkt.arrivalFx ?? 'ok';
+        const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+        const backSpeedPx =
+          basePxPerSec * Math.max(0.82, spd) * (pkt.variant === 'ping' ? 0.9 : 1.0);
+        const returnSec = hasBounce
+          ? Math.max(0.38, spanLen / Math.max(35, backSpeedPx))
+          : 0;
+        const fxDurSec =
+          fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
+        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+
+        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const localT =
+          (((secNow + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+        // Với hạt Response đi ngược (pkt.reverse === true): chờ xử lý tại đích (dEnd) suốt holdSec trước,
+        // sau đó mới xuất phát từ đích (dEnd) đi ngược về nguồn (dStart) và tỏa vòng sóng fx-ok ngay khi chạm nguồn!
+        if (pkt.reverse && !hasBounce) {
+          if (localT < holdSec) {
+            const holdElapsed = localT;
+            const pt = pEl.getPointAtLength(dEnd);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            if (holdSec >= 0.25) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5);
+              gEl.setAttribute('opacity', ((0.25 + pulse * 0.45) * fadeInAfterLink).toFixed(2));
+              if (bodyEl) bodyEl.setAttribute('opacity', '1');
+              if (shapeEl) {
+                shapeEl.setAttribute('fill', baseFill);
+                shapeEl.setAttribute('stroke-width', (1.4 + pulse * 1.2).toFixed(2));
+              }
+            } else {
+              gEl.setAttribute('opacity', '0');
+            }
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (localT < holdSec + forwardSec) {
+            const u = (localT - holdSec) / forwardSec;
+            const dist = dEnd - u * spanLen;
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.06 ? u / 0.06 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', baseFill);
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - holdSec - forwardSec) / Math.max(0.05, fxDurSec)
+            );
+            const pt = pEl.getPointAtLength(dStart);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'ok' && fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            } else if (fxOkEl) {
+              fxOkEl.setAttribute('opacity', '0');
+            }
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+          return;
+        }
+
+        if (localT < forwardSec) {
+          const u = localT / forwardSec;
+          const dist = pkt.reverse ? dEnd - u * spanLen : dStart + u * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          const edgeFade = u < 0.07 ? u / 0.07 : 1;
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            shapeEl.setAttribute('stroke-width', baseStrokeW);
+          }
+        } else if (localT < forwardSec + holdSec) {
+          const holdElapsed = localT - forwardSec;
+          const dist = pkt.reverse ? dStart : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            if (holdSec >= 0.18) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5.5);
+              shapeEl.setAttribute('stroke-width', (1.5 + pulse * 1.85).toFixed(2));
+              if (holdRingEl) {
+                holdRingEl.setAttribute('opacity', (0.22 + pulse * 0.56).toFixed(2));
+                holdRingEl.setAttribute('r', (5.6 + pulse * 2.8).toFixed(2));
+              }
+            } else {
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+              if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            }
+          }
+        } else if (hasBounce && localT < forwardSec + holdSec + returnSec) {
+          const uBack = (localT - forwardSec - holdSec) / returnSec;
+          const dist = pkt.reverse
+            ? dStart + uBack * spanLen
+            : dEnd - uBack * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', '#9fd28f');
+            shapeEl.setAttribute('stroke-width', '1.5');
+          }
+        } else {
+          const fxT = clamp01(
+            (localT - forwardSec - holdSec - returnSec) / Math.max(0.05, fxDurSec)
+          );
+          const dist = hasBounce
+            ? pkt.reverse
+              ? dEnd
+              : dStart
+            : pkt.reverse
+              ? dStart
+              : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', fadeInAfterLink.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (fxKind === 'fail') {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) {
+              const scale = 0.72 + fxT * 1.48;
+              const op =
+                fxT < 0.18
+                  ? fxT / 0.18
+                  : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+              fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxFailEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else if (fxKind === 'ok') {
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+        }
+      };
 
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
@@ -1896,32 +2675,85 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         const totalLen = measureLinkLen(pkt.linkId, pEl);
         if (totalLen <= 1) continue;
 
-        const speed = pkt.speed ?? 0.42;
-        const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const t = pkt.reverse ? 1 - phase : phase;
-        const pt = pEl.getPointAtLength(t * totalLen);
+        const qMeta = queueMetaByLink.get(pkt.linkId);
         const fadeInAfterLink = clamp01((elapsed - lPlan.readyAt) / 260);
-        const edgeFade =
-          phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
-
-        gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-        gEl.setAttribute('opacity', (edgeFade * fadeInAfterLink).toFixed(2));
+        stepStaticPacketDom(
+          pkt,
+          gEl,
+          pEl,
+          totalLen,
+          qMeta,
+          sec,
+          fadeInAfterLink
+        );
       }
 
-      const maxChoreoTime =
-        Math.max(
-          TIMING.exit + TIMING.move + 120,
-          ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 400),
-          ...Array.from(linkPlans.values()).map((p) => p.readyAt + 320)
-        ) || 1200;
+      // Cập nhật vị trí dồn hàng FIFO cho các hạt đang xếp hàng chờ trước cửa DB/Server
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          if (bl.queueCount <= 0) continue;
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          if (!qEl) continue;
+          const shiftS = activeQueueShiftByLink.get(bl.link.id) ?? 0;
+          const headDist = bl.hasDrop ? 21 : 11;
+          const slotGap = 10.5;
+          for (let qi = 0; qi < bl.queueCount; qi++) {
+            const cEl = qEl.children[qi] as SVGCircleElement | undefined;
+            if (!cEl) continue;
+            const baseDist = headDist + qi * slotGap;
+            if (qi === 0) {
+              // Hạt đứng đầu hàng (qi = 0): tiến thẳng vào cửa DB/Server để được xử lý (thu nhỏ & mờ dần khi chui vào node)
+              const consumeDist = Math.max(
+                2.5,
+                baseDist - shiftS * (bl.hasDrop ? 11.5 : 8.5)
+              );
+              const qp = samplePolylineFromEnd(bl.pts, consumeDist);
+              const rNow = 4.2 - shiftS * 2.0;
+              const opNow = 1 - Math.pow(shiftS, 1.45) * 0.92;
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', rNow.toFixed(2));
+              cEl.setAttribute('opacity', opNow.toFixed(2));
+            } else {
+              // Các hạt phía sau (qi = 1 .. N-1): đồng loạt dồn lên 1 nấc (qi -> qi - 1) mỗi khi có hạt mới đẩy vào đuôi hàng
+              const shiftedDist = baseDist - shiftS * slotGap;
+              const qp = samplePolylineFromEnd(bl.pts, shiftedDist);
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', '4.2');
+              cEl.setAttribute('opacity', '1');
+            }
+          }
+        }
+      }
+
+      const isTopologyUnchanged =
+        !isReplay && !hasExits && !hasMoves && enteringSorted.length === 0;
+      const maxChoreoTime = isTopologyUnchanged
+        ? 180
+        : Math.max(
+            TIMING.exit + TIMING.move + 120,
+            ...Array.from(nodePlans.values()).map((p) => p.delay + p.dur + 680),
+            ...Array.from(linkPlans.values()).map((p) => p.readyAt + 280)
+          ) || 1100;
+
+      if (elapsed > maxChoreoTime && choreoSettledAtRef.current === 0) {
+        choreoSettledAtRef.current = now;
+      }
 
       if (elapsed <= maxChoreoTime || (isPlayingRef.current && scene.packets.length > 0)) {
         rafId = requestAnimationFrame(tick);
+      } else {
+        choreoAliveRef.current = false;
       }
     };
 
+    choreoAliveRef.current = true;
     rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      choreoAliveRef.current = false;
+    };
   }, [
     expandedNodes,
     builtLinks,
@@ -1942,8 +2774,33 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
+      // F1: choreography còn sống ⇒ nó đã cộng dt và vẽ packet (có cổng readyAt); không cộng lần 2.
+      if (choreoAliveRef.current) {
+        raf = requestAnimationFrame(loop);
+        return;
+      }
       packetElapsedRef.current += dt;
       const sec = packetElapsedRef.current;
+      const queueMetaByLink = new Map<
+        string,
+        { queueCount: number; hasDrop: boolean; fwdPktIds: string[] }
+      >();
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          if (bl.queueCount > 0) {
+            const fwdPktIds = scene.packets
+              .filter((p) => p.linkId === bl.link.id && !p.reverse)
+              .map((p) => p.id);
+            queueMetaByLink.set(bl.link.id, {
+              queueCount: bl.queueCount,
+              hasDrop: bl.hasDrop,
+              fwdPktIds,
+            });
+          }
+        }
+      }
+      const activeQueueShiftByLink = new Map<string, number>();
+
       for (const pkt of scene.packets) {
         const gEl = packetRefs.current.get(pkt.id);
         const pEl = pathRefs.current.get(pkt.linkId);
@@ -1955,19 +2812,740 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
           len = 0;
         }
         if (len <= 1) continue;
-        const speed = pkt.speed ?? 0.42;
-        const phase = ((sec * speed + (pkt.offset ?? 0)) % 1 + 1) % 1;
-        const t = pkt.reverse ? 1 - phase : phase;
-        const pt = pEl.getPointAtLength(t * len);
-        const fade = phase < 0.08 ? phase / 0.08 : phase > 0.92 ? (1 - phase) / 0.08 : 1;
-        gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
-        gEl.setAttribute('opacity', fade.toFixed(2));
+
+        const bodyEl = gEl.children[0] as SVGGElement | undefined;
+        const fxOkEl = gEl.children[1] as SVGGElement | undefined;
+        const fxFailEl = gEl.children[2] as SVGGElement | undefined;
+        const holdRingEl = bodyEl?.children[0] as SVGCircleElement | undefined;
+        const shapeEl = bodyEl?.children[1] as SVGElement | undefined;
+        const baseFill = shapeEl?.getAttribute('data-base-fill') ?? '#f3b47f';
+        const baseStrokeW = shapeEl?.getAttribute('data-base-sw') ?? '1.5';
+
+        const qMeta = queueMetaByLink.get(pkt.linkId);
+        if (qMeta && qMeta.queueCount > 0 && !pkt.reverse) {
+          const qCount = qMeta.queueCount;
+          const slotGap = 10.5;
+          const headDistFromEnd = qMeta.hasDrop ? 21 : 11;
+          const dStart = len > 32 ? 6 : 0;
+          const dDoor = Math.max(dStart + 22, len - headDistFromEnd);
+          const dTailSlot = Math.max(dStart + 14, dDoor - (qCount - 1) * slotGap);
+          const dEntryBehindTail = Math.max(dStart + 10, dDoor - qCount * slotGap);
+
+          const fwdIdx = Math.max(0, qMeta.fwdPktIds.indexOf(pkt.id));
+          const fwdTotal = Math.max(1, qMeta.fwdPktIds.length);
+          const approachLen = Math.max(18, dTailSlot - dStart);
+          const conveyorFwdSec = Math.max(0.85, approachLen / 92);
+          const conveyorHoldSec = 0.06;
+          const fxKind = pkt.arrivalFx ?? 'ok';
+          const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+          const returnLen = Math.max(18, dDoor - dStart);
+          const conveyorRetSec = hasBounce ? Math.max(0.52, returnLen / 138) : 0;
+          const fxDurSec = fxKind === 'fail' ? 0.58 : fxKind === 'ok' ? 0.44 : 0.16;
+          const cycleSec =
+            conveyorFwdSec + conveyorHoldSec + conveyorRetSec + fxDurSec;
+
+          const slotOffsetSec = (fwdIdx / fwdTotal) * cycleSec;
+          const localT =
+            (((sec + slotOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+          if (localT < conveyorFwdSec) {
+            const u = localT / conveyorFwdSec;
+            let dist: number;
+            let pushingTailS = 0;
+            if (u < 0.68) {
+              const uApp = u / 0.68;
+              dist = dStart + uApp * (dEntryBehindTail - dStart);
+            } else {
+              const rawS = clamp01((u - 0.68) / 0.32);
+              pushingTailS =
+                rawS < 0.5
+                  ? 4 * rawS * rawS * rawS
+                  : 1 - Math.pow(-2 * rawS + 2, 3) / 2;
+              dist =
+                dEntryBehindTail + pushingTailS * (dTailSlot - dEntryBehindTail);
+              const prevMax = activeQueueShiftByLink.get(pkt.linkId) ?? 0;
+              if (pushingTailS > prevMax) {
+                activeQueueShiftByLink.set(pkt.linkId, pushingTailS);
+              }
+            }
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.07 ? u / 0.07 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', edgeFade.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute(
+                'fill',
+                pushingTailS > 0.45 ? '#efb041' : baseFill
+              );
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else if (localT < conveyorFwdSec + conveyorHoldSec) {
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (
+            hasBounce &&
+            localT < conveyorFwdSec + conveyorHoldSec + conveyorRetSec
+          ) {
+            const uBack =
+              (localT - conveyorFwdSec - conveyorHoldSec) / conveyorRetSec;
+            const dist = dDoor - uBack * (dDoor - dStart);
+            const pt = pEl.getPointAtLength(dist);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', '#9fd28f');
+              shapeEl.setAttribute('stroke-width', '1.5');
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - conveyorFwdSec - conveyorHoldSec - conveyorRetSec) /
+                Math.max(0.05, fxDurSec)
+            );
+            const burstDist = hasBounce ? dStart : Math.min(len - 4, dDoor + 6);
+            const pt = pEl.getPointAtLength(burstDist);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'fail') {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) {
+                const scale = 0.72 + fxT * 1.48;
+                const op =
+                  fxT < 0.18
+                    ? fxT / 0.18
+                    : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+                fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxFailEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else if (fxKind === 'ok') {
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+              if (fxOkEl) {
+                const scale = 0.8 + fxT * 1.32;
+                const op = Math.pow(1 - fxT, 1.15) * 0.9;
+                fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+                fxOkEl.setAttribute('opacity', op.toFixed(2));
+              }
+            } else {
+              if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+              if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            }
+          }
+          continue;
+        }
+
+        const dStart = len > 32 ? 6 : 0;
+        const dEnd = len > 32 ? Math.max(dStart + 14, len - 10) : len;
+        const spanLen = Math.max(12, dEnd - dStart);
+
+        const basePxPerSec = 152;
+        const variantMult =
+          pkt.variant === 'slow'
+            ? 0.34
+            : pkt.variant === 'heavy'
+              ? 0.7
+              : pkt.variant === 'ping'
+                ? 0.85
+                : 1.0;
+        const spd = pkt.speed ?? 0.9;
+        const fwdSpeedPx = basePxPerSec * spd * variantMult;
+        const forwardSec = Math.max(0.42, spanLen / Math.max(24, fwdSpeedPx));
+        const holdSec = Math.max(0, pkt.holdSec ?? 0);
+        const fxKind = pkt.arrivalFx ?? 'ok';
+        const hasBounce = Boolean(pkt.bounce) && fxKind !== 'fail';
+        const backSpeedPx =
+          basePxPerSec * Math.max(0.82, spd) * (pkt.variant === 'ping' ? 0.9 : 1.0);
+        const returnSec = hasBounce
+          ? Math.max(0.38, spanLen / Math.max(35, backSpeedPx))
+          : 0;
+        const fxDurSec =
+          fxKind === 'fail' ? 0.62 : fxKind === 'ok' ? 0.46 : 0.16;
+        const cycleSec = forwardSec + holdSec + returnSec + fxDurSec;
+
+        const phaseOffsetSec = (pkt.offset ?? 0) * cycleSec;
+        const localT =
+          (((sec + phaseOffsetSec) % cycleSec) + cycleSec) % cycleSec;
+
+        if (pkt.reverse && !hasBounce) {
+          if (localT < holdSec) {
+            const holdElapsed = localT;
+            const pt = pEl.getPointAtLength(dEnd);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            if (holdSec >= 0.25) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5);
+              gEl.setAttribute('opacity', (0.25 + pulse * 0.45).toFixed(2));
+              if (bodyEl) bodyEl.setAttribute('opacity', '1');
+              if (shapeEl) {
+                shapeEl.setAttribute('fill', baseFill);
+                shapeEl.setAttribute('stroke-width', (1.4 + pulse * 1.2).toFixed(2));
+              }
+            } else {
+              gEl.setAttribute('opacity', '0');
+            }
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          } else if (localT < holdSec + forwardSec) {
+            const u = (localT - holdSec) / forwardSec;
+            const dist = dEnd - u * spanLen;
+            const pt = pEl.getPointAtLength(dist);
+            const edgeFade = u < 0.06 ? u / 0.06 : 1;
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', edgeFade.toFixed(2));
+            if (bodyEl) bodyEl.setAttribute('opacity', '1');
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (shapeEl) {
+              shapeEl.setAttribute('fill', baseFill);
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+            }
+          } else {
+            const fxT = clamp01(
+              (localT - holdSec - forwardSec) / Math.max(0.05, fxDurSec)
+            );
+            const pt = pEl.getPointAtLength(dStart);
+            gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+            gEl.setAttribute('opacity', '1');
+            if (bodyEl) bodyEl.setAttribute('opacity', '0');
+            if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            if (fxKind === 'ok' && fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            } else if (fxOkEl) {
+              fxOkEl.setAttribute('opacity', '0');
+            }
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+          continue;
+        }
+
+        if (localT < forwardSec) {
+          const u = localT / forwardSec;
+          const dist = pkt.reverse ? dEnd - u * spanLen : dStart + u * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          const edgeFade = u < 0.07 ? u / 0.07 : 1;
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', edgeFade.toFixed(2));
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            shapeEl.setAttribute('stroke-width', baseStrokeW);
+          }
+        } else if (localT < forwardSec + holdSec) {
+          const holdElapsed = localT - forwardSec;
+          const dist = pkt.reverse ? dStart : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', baseFill);
+            if (holdSec >= 0.18) {
+              const pulse = 0.5 - 0.5 * Math.cos(holdElapsed * Math.PI * 5.5);
+              shapeEl.setAttribute('stroke-width', (1.5 + pulse * 1.85).toFixed(2));
+              if (holdRingEl) {
+                holdRingEl.setAttribute('opacity', (0.22 + pulse * 0.56).toFixed(2));
+                holdRingEl.setAttribute('r', (5.6 + pulse * 2.8).toFixed(2));
+              }
+            } else {
+              shapeEl.setAttribute('stroke-width', baseStrokeW);
+              if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+            }
+          }
+        } else if (hasBounce && localT < forwardSec + holdSec + returnSec) {
+          const uBack = (localT - forwardSec - holdSec) / returnSec;
+          const dist = pkt.reverse
+            ? dStart + uBack * spanLen
+            : dEnd - uBack * spanLen;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '1');
+          if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+          if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (shapeEl) {
+            shapeEl.setAttribute('fill', '#9fd28f');
+            shapeEl.setAttribute('stroke-width', '1.5');
+          }
+        } else {
+          const fxT = clamp01(
+            (localT - forwardSec - holdSec - returnSec) / Math.max(0.05, fxDurSec)
+          );
+          const dist = hasBounce
+            ? pkt.reverse
+              ? dEnd
+              : dStart
+            : pkt.reverse
+              ? dStart
+              : dEnd;
+          const pt = pEl.getPointAtLength(dist);
+          gEl.setAttribute('transform', `translate(${pt.x.toFixed(2)} ${pt.y.toFixed(2)})`);
+          gEl.setAttribute('opacity', '1');
+          if (bodyEl) bodyEl.setAttribute('opacity', '0');
+          if (holdRingEl) holdRingEl.setAttribute('opacity', '0');
+          if (fxKind === 'fail') {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) {
+              const scale = 0.72 + fxT * 1.48;
+              const op =
+                fxT < 0.18
+                  ? fxT / 0.18
+                  : Math.pow(Math.max(0, 1 - (fxT - 0.18) / 0.82), 1.3);
+              fxFailEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxFailEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else if (fxKind === 'ok') {
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+            if (fxOkEl) {
+              const scale = 0.8 + fxT * 1.32;
+              const op = Math.pow(1 - fxT, 1.15) * 0.9;
+              fxOkEl.setAttribute('transform', `scale(${scale.toFixed(2)})`);
+              fxOkEl.setAttribute('opacity', op.toFixed(2));
+            }
+          } else {
+            if (fxOkEl) fxOkEl.setAttribute('opacity', '0');
+            if (fxFailEl) fxFailEl.setAttribute('opacity', '0');
+          }
+        }
+      }
+
+      if (!frameSource) {
+        for (const bl of builtLinks) {
+          if (bl.queueCount <= 0) continue;
+          const qEl = staticQueueRefs.current.get(bl.link.id);
+          if (!qEl) continue;
+          const shiftS = activeQueueShiftByLink.get(bl.link.id) ?? 0;
+          const headDist = bl.hasDrop ? 21 : 11;
+          const slotGap = 10.5;
+          for (let qi = 0; qi < bl.queueCount; qi++) {
+            const cEl = qEl.children[qi] as SVGCircleElement | undefined;
+            if (!cEl) continue;
+            const baseDist = headDist + qi * slotGap;
+            if (qi === 0) {
+              const consumeDist = Math.max(
+                2.5,
+                baseDist - shiftS * (bl.hasDrop ? 11.5 : 8.5)
+              );
+              const qp = samplePolylineFromEnd(bl.pts, consumeDist);
+              const rNow = 4.2 - shiftS * 2.0;
+              const opNow = 1 - Math.pow(shiftS, 1.45) * 0.92;
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', rNow.toFixed(2));
+              cEl.setAttribute('opacity', opNow.toFixed(2));
+            } else {
+              const shiftedDist = baseDist - shiftS * slotGap;
+              const qp = samplePolylineFromEnd(bl.pts, shiftedDist);
+              cEl.setAttribute('cx', qp.x.toFixed(2));
+              cEl.setAttribute('cy', qp.y.toFixed(2));
+              cEl.setAttribute('r', '4.2');
+              cEl.setAttribute('opacity', '1');
+            }
+          }
+        }
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, scene.packets]);
+  }, [isPlaying, scene.packets, builtLinks, frameSource]);
+
+  /* ============================================================================
+   * LIVE-SIM (05 §3.2–3.4): ref map + rAF áp frame. Chỉ chạy khi có frameSource.
+   * ============================================================================ */
+  const liveNodeRoots = useRef<Map<string, SVGGElement>>(new Map());
+  const liveLinkRoots = useRef<Map<string, SVGGElement>>(new Map());
+  const livePoolRef = useRef<Array<SVGGElement | null>>([]);
+  const liveLayerLinksRef = useRef<SVGGElement | null>(null);
+  const liveLayerEntsRef = useRef<SVGGElement | null>(null);
+  const liveLayerPacketsRef = useRef<SVGGElement | null>(null);
+  const livePillRef = useRef<HTMLDivElement | null>(null);
+  const liveApplierRef = useRef<LiveFrameApplier | null>(null);
+  const liveMaxPackets = liveOptions?.maxPackets ?? (stageWidth < 640 ? 80 : 200);
+  const liveReducedOpt = liveOptions?.reducedMotion;
+
+  useEffect(() => {
+    if (!frameSource) return;
+    const reduced =
+      liveReducedOpt ??
+      (typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const q = (root: Element, sel: string): LiveEl => root.querySelector(sel) as unknown as LiveEl;
+
+    const nodes: LiveNodeEls[] = [];
+    for (const n of expandedNodes) {
+      const root = liveNodeRoots.current.get(n.id);
+      if (!root) continue;
+      nodes.push({
+        id: n.id,
+        label: pickText(n.label, lang),
+        baseX: n.x,
+        baseY: n.y,
+        overlay: root as unknown as LiveEl,
+        tint: q(root, '[data-r="tint"]'),
+        warm: q(root, '[data-r="warm"]'),
+        bar: q(root, '[data-r="bar"]'),
+        barFill: q(root, '[data-r="barFill"]'),
+        barText: q(root, '[data-r="barText"]'),
+        pile: q(root, '[data-r="pile"]'),
+        pileRects: Array.from(root.querySelectorAll('[data-r="pr"]')) as unknown as LiveEl[],
+        queueText: q(root, '[data-r="queueText"]'),
+        x: q(root, '[data-r="x"]'),
+        badge: q(root, '[data-r="badge"]'),
+        badgeRect: q(root, '[data-r="badgeRect"]'),
+        badgeText: q(root, '[data-r="badgeText"]'),
+        outer: (nodeOuterRefs.current.get(n.id) as unknown as LiveEl) ?? null,
+      });
+    }
+    const links: LiveLinkEls[] = [];
+    const pathEls = new Map<string, SVGPathElement>();
+    const pathLens = new Map<string, number>();
+    const linkPtsMap = new Map<string, Pt[]>();
+    for (const { link, pts } of builtLinks) {
+      linkPtsMap.set(link.id, pts);
+      const root = liveLinkRoots.current.get(link.id);
+      if (!root) continue;
+      const visiblePath = pathRefs.current.get(link.id);
+      pathEls.set(
+        link.id,
+        visiblePath ?? (root.querySelector('[data-r="path"]') as SVGPathElement)
+      );
+      links.push({
+        id: link.id,
+        toNodeId: link.to,
+        path: q(root, '[data-r="path"]'),
+        err: q(root, '[data-r="err"]'),
+        cut: q(root, '[data-r="cut"]'),
+        gate: q(root, '[data-r="gate"]'),
+        gateRect: q(root, '[data-r="gateRect"]'),
+        gateText: q(root, '[data-r="gateText"]'),
+        lag: q(root, '[data-r="lag"]'),
+        lag2: q(root, '[data-r="lag2"]'),
+        lagText: q(root, '[data-r="lagText"]'),
+        qdots: q(root, '[data-r="qdots"]'),
+        qdotCircles: Array.from(root.querySelectorAll('[data-r="qd"]')) as unknown as LiveEl[],
+        qdrop: q(root, '[data-r="qdrop"]'),
+      });
+    }
+    const pool: LivePacketEls[] = [];
+    for (let i = 0; i < liveMaxPackets; i++) {
+      const g = livePoolRef.current[i];
+      if (!g) continue;
+      pool.push({
+        g: g as unknown as LiveEl,
+        circle: q(g, '[data-r="c"]'),
+        rect: q(g, '[data-r="r"]'),
+        ring: q(g, '[data-r="ring"]'),
+      });
+    }
+    const t = WORKBENCH_I18N[lang];
+    const applier = createLiveFrameApplier({
+      source: frameSource,
+      nodes,
+      links,
+      pool,
+      layers: {
+        links: liveLayerLinksRef.current as unknown as LiveEl | null,
+        ents: liveLayerEntsRef.current as unknown as LiveEl | null,
+        packets: liveLayerPacketsRef.current as unknown as LiveEl | null,
+      },
+      scalePill: livePillRef.current as unknown as LiveEl | null,
+      sampleLink: (id, frac) => {
+        const pe = pathEls.get(id);
+        if (pe) {
+          let len = pathLens.get(id);
+          if (len === undefined) {
+            try {
+              len = pe.getTotalLength();
+            } catch {
+              len = 0;
+            }
+            pathLens.set(id, len);
+          }
+          if (len > 1) {
+            try {
+              const pt = pe.getPointAtLength(frac * len);
+              return { x: pt.x, y: pt.y };
+            } catch {
+              // fallback to analytic polyline sampling below
+            }
+          }
+        }
+        const pts = linkPtsMap.get(id);
+        return pts && pts.length >= 2 ? sampleSegmentPoint(pts, frac) : null;
+      },
+      inkColor: pal.ink,
+      pillBg: pal.pillBg,
+      pillInk: pal.pillInk,
+      reducedMotion: Boolean(reduced),
+      stateLabel: (st) => t.live.states[st as keyof typeof t.live.states] ?? st,
+      ariaLabel: (label, stateText, pct) => `${label}, ${stateText}, ${t.live.loadWord} ${pct}%`,
+      scaleText: (n) => t.live.packetScale(n),
+      pickText: (b) => pickText(b, lang),
+    });
+    liveApplierRef.current = applier;
+    let raf = 0;
+    const loop = (now: number) => {
+      const settled = choreoSettledAtRef.current;
+      applier.step(now, settled > 0 && now - settled > 120, isPlayingRef.current);
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      applier.dispose();
+      liveApplierRef.current = null;
+    };
+  }, [frameSource, builtLinks, expandedNodes, pal, lang, liveMaxPackets, liveReducedOpt]);
+
+  const renderLiveLinksAndPackets = () => (
+    <>
+      <g
+        className="layer-live-links"
+        ref={liveLayerLinksRef}
+        pointerEvents="none"
+        opacity={0}
+        style={{ transition: 'opacity 240ms ease-out' }}
+      >
+        {builtLinks.map(({ link, d, pts }) => {
+          const mid = sampleSegmentPoint(pts, 0.5);
+          const m0 = sampleSegmentPoint(pts, 0.46);
+          const m1 = sampleSegmentPoint(pts, 0.54);
+          const ang = (Math.atan2(m1.y - m0.y, m1.x - m0.x) * 180) / Math.PI;
+          const tf = `translate(${mid.x.toFixed(1)}, ${mid.y.toFixed(1)})`;
+          return (
+            <g
+              key={link.id}
+              data-live-link={link.id}
+              ref={(el) => {
+                if (el) liveLinkRoots.current.set(link.id, el);
+                else liveLinkRoots.current.delete(link.id);
+              }}
+            >
+              <path data-r="path" d={d} fill="none" stroke={pal.ink} strokeLinecap="round" strokeLinejoin="round" opacity={0} display="none" />
+              <path data-r="err" d={d} fill="none" stroke="#e5534b" strokeLinecap="round" strokeLinejoin="round" opacity={0} display="none" />
+              <g data-r="cut" transform={tf} display="none">
+                <circle r={7.5} fill={pal.pillBg} stroke="#9a948a" strokeWidth={1.5} />
+                <path d="M-3.2,-3.2 L3.2,3.2 M3.2,-3.2 L-3.2,3.2" stroke="#9a948a" strokeWidth={2} strokeLinecap="round" />
+              </g>
+              <g data-r="gate" transform={tf} display="none">
+                <rect data-r="gateRect" x={-5} y={-7} width={10} height={14} rx={2.5} fill="#7fc278" stroke={pal.ink} strokeWidth={1.4} />
+                <text data-r="gateText" x={0} y={3.2} textAnchor="middle" fontSize={8} fontWeight={800} fill={pal.pillInk} />
+              </g>
+              <g data-r="lag" transform={`${tf} rotate(${ang.toFixed(1)})`} display="none">
+                <line x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
+                <line data-r="lag2" x1={0} y1={-7} x2={0} y2={7} stroke={pal.ink} strokeWidth={1.6} strokeLinecap="round" />
+                <text data-r="lagText" x={0} y={-13} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+              </g>
+              <g data-r="qdots" display="none">
+                {[0, 1, 2, 3, 4].map((qi) => (
+                  <circle
+                    key={qi}
+                    data-r="qd"
+                    r={4.2}
+                    fill="#efb041"
+                    stroke={pal.ink}
+                    strokeWidth={1.45}
+                    display="none"
+                  />
+                ))}
+              </g>
+              <g data-r="qdrop" display="none">
+                <circle r={5.4} fill="#e05249" stroke={pal.ink} strokeWidth={1.4} />
+                <path
+                  d="M-2.2,-2.2 L2.2,2.2 M2.2,-2.2 L-2.2,2.2"
+                  stroke="#ffffff"
+                  strokeWidth={1.7}
+                  strokeLinecap="round"
+                />
+              </g>
+            </g>
+          );
+        })}
+      </g>
+      <g
+        className="layer-live-packets"
+        ref={liveLayerPacketsRef}
+        pointerEvents="none"
+        opacity={0}
+        style={{ transition: 'opacity 240ms ease-out' }}
+      >
+        {Array.from({ length: liveMaxPackets }, (_, i) => (
+          <g
+            key={i}
+            ref={(el) => {
+              livePoolRef.current[i] = el;
+            }}
+            display="none"
+          >
+            <circle data-r="ring" r={7.4} fill="none" stroke="#7a3a0c" strokeWidth={0.9} display="none" />
+            <circle data-r="c" r={4.4} />
+            <rect data-r="r" rx={2.2} display="none" />
+            {liveOptions?.tracerEnabled && (
+              <circle
+                r={10}
+                fill="transparent"
+                pointerEvents="all"
+                data-no-pan="true"
+                style={{ cursor: 'pointer' }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  const meta = liveApplierRef.current?.packetAtSlot(i);
+                  if (meta) onPacketPick?.(meta);
+                }}
+              />
+            )}
+          </g>
+        ))}
+      </g>
+    </>
+  );
+
+  const renderLiveEnts = () => (
+    <g
+      className="layer-live-ents"
+      ref={liveLayerEntsRef}
+      pointerEvents="none"
+      opacity={0}
+      style={{ transition: 'opacity 240ms ease-out' }}
+    >
+      {expandedNodes.map((node) => {
+        const poly = getSilhouettePolygon(node.shape);
+        let minY = Infinity;
+        let maxY = -Infinity;
+        let maxX = 0;
+        for (const p of poly) {
+          minY = Math.min(minY, p.y);
+          maxY = Math.max(maxY, p.y);
+          maxX = Math.max(maxX, p.x);
+        }
+        const points = poly.map((p) => `${p.x},${p.y}`).join(' ');
+        const cyMid = (minY + maxY) / 2;
+        const warmRx = maxX * 0.85;
+        return (
+          <g
+            key={node.id}
+            data-live-node={node.id}
+            transform={`translate(${node.x}, ${node.y})`}
+            ref={(el) => {
+              if (el) liveNodeRoots.current.set(node.id, el);
+              else liveNodeRoots.current.delete(node.id);
+            }}
+          >
+            <polygon
+              data-r="tint"
+              points={points}
+              fill="none"
+              stroke="none"
+              strokeWidth={1.4}
+              strokeLinejoin="round"
+              opacity={0}
+              style={{ mixBlendMode: isDark ? 'screen' : 'multiply' }}
+            />
+            {pickMode?.accept.includes('node') && (
+              <polygon
+                points={points}
+                fill="none"
+                stroke="#2f8a43"
+                strokeWidth={1.8}
+                strokeDasharray="4 3"
+                strokeLinejoin="round"
+              />
+            )}
+            <ellipse
+              data-r="warm"
+              cx={0}
+              cy={getGroundOffset(node.shape) + 4}
+              rx={warmRx}
+              ry={warmRx * 0.5}
+              fill="none"
+              stroke="#7d98a8"
+              strokeWidth={3}
+              strokeLinecap="round"
+              pathLength={100}
+              display="none"
+            />
+            <g data-r="bar" transform={`translate(0, ${minY - 13})`} display="none">
+              <rect x={-41} y={-8.5} width={82} height={19} rx={9.5} fill={pal.pillShadow} />
+              <rect x={-41} y={-10.5} width={82} height={19} rx={9.5} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.3} />
+              <g transform="translate(-31.5, -1)" fill="none" stroke={pal.ink} strokeWidth={1.25} strokeLinecap="round">
+                <circle r={2.8} />
+                <path d="M0,-4.5V-3.4 M0,3.4V4.5 M-3.9,-2.2L-3,-1.7 M3,1.7L3.9,2.2 M-3.9,2.2L-3,1.7 M3,-1.7L3.9,-2.2" />
+              </g>
+              <rect x={-22} y={-4} width={30} height={6} rx={3} fill={isDark ? '#423b33' : '#e6ddd0'} />
+              <rect data-r="barFill" x={-22} y={-4} width={3} height={6} rx={3} fill="#7fc278" />
+              <text data-r="barText" x={34} y={2.4} textAnchor="end" fontSize={9.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+            </g>
+            {/* Giữ DOM pile ẩn (opacity=0) để tương thích test liveStageApplier, hiển thị hàng đợi thật trực tiếp trên dây nối (qdots) */}
+            <g opacity={0} pointerEvents="none">
+              <g data-r="pile" transform={`translate(${-maxX - 12}, ${maxY - 6})`} display="none">
+                {Array.from({ length: PILE_MAX }, (_, i) => (
+                  <rect
+                    key={i}
+                    data-r="pr"
+                    x={-3}
+                    y={-4 - i * 5.2}
+                    width={6}
+                    height={4}
+                    rx={1}
+                    fill="#f2994a"
+                    stroke={pal.ink}
+                    strokeWidth={0.6}
+                    display="none"
+                  />
+                ))}
+                <text data-r="queueText" x={0} y={8} textAnchor="middle" fontSize={8.5} fontWeight={800} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" display="none" />
+              </g>
+            </g>
+            <g data-r="x" display="none">
+              <path d="M-12,-12 L12,12 M12,-12 L-12,12" transform={`translate(0, ${cyMid})`} stroke="#e5534b" strokeWidth={4.5} strokeLinecap="round" />
+              <text x={0} y={cyMid + 30} textAnchor="middle" fontSize={9.5} fontWeight={900} fill="#e5534b" fontFamily="var(--dts-font-mono)">
+                {WORKBENCH_I18N[lang].live.down}
+              </text>
+            </g>
+            <g data-r="badge" transform={`translate(0, ${minY - 36})`} display="none">
+              <rect data-r="badgeRect" x={-30} y={-10.5} width={60} height={20} rx={10} fill={pal.pillBg} stroke={pal.ink} strokeWidth={1.35} />
+              <text data-r="badgeText" x={0} y={2.4} textAnchor="middle" fontSize={9.5} fontWeight={750} fill={pal.pillInk} fontFamily="var(--dts-font-mono)" />
+            </g>
+          </g>
+        );
+      })}
+    </g>
+  );
+
+  const liveSlotNode: React.ReactNode =
+    selectedInfo && frameSource && renderLiveSlot
+      ? (() => {
+          const key = selectedInfo.key;
+          const i = key.indexOf(':');
+          const kind = key.slice(0, i);
+          const id = key.slice(i + 1);
+          if (kind === 'node') return renderLiveSlot({ kind: 'node', id });
+          if (kind === 'link' || kind === 'pill') return renderLiveSlot({ kind: 'link', id });
+          return null;
+        })()
+      : undefined;
+
 
   const getNodeInspector = (node: StageNode): StageInspectorInfo => {
     if (node.inspector) return node.inspector;
@@ -2046,6 +3624,71 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
     }
   };
 
+  const maxSceneLoad = useMemo(() => {
+    let m = 0;
+    for (const n of scene.nodes) {
+      if (typeof n.loadPct === 'number' && n.loadPct > m) m = n.loadPct;
+    }
+    return m;
+  }, [scene.nodes]);
+
+  const renderLoadBarPill = (pctRaw: number, yPos: number) => {
+    const pct = Math.max(0, Math.min(100, Math.round(pctRaw)));
+    const barColor = pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
+    return (
+      <g transform={`translate(0, ${yPos})`}>
+        <rect x={-41} y={-8.5} width={82} height={19} rx={9.5} fill={pal.pillShadow} />
+        <rect
+          x={-41}
+          y={-10.5}
+          width={82}
+          height={19}
+          rx={9.5}
+          fill={pal.pillBg}
+          stroke={pct >= 90 ? pal.dangerLink : pal.ink}
+          strokeWidth={1.35}
+        />
+        <g
+          transform="translate(-31.5, -1)"
+          fill="none"
+          stroke={pal.ink}
+          strokeWidth={1.25}
+          strokeLinecap="round"
+        >
+          <circle r={2.8} />
+          <path d="M0,-4.5V-3.4 M0,3.4V4.5 M-3.9,-2.2L-3,-1.7 M3,1.7L3.9,2.2 M-3.9,2.2L-3,1.7 M3,-1.7L3.9,-2.2" />
+        </g>
+        <rect
+          x={-22}
+          y={-4}
+          width={30}
+          height={6}
+          rx={3}
+          fill={isDark ? '#423b33' : '#e6ddd0'}
+        />
+        <rect
+          x={-22}
+          y={-4}
+          width={Math.max(3, (30 * pct) / 100)}
+          height={6}
+          rx={3}
+          fill={barColor}
+        />
+        <text
+          x={34}
+          y={2.4}
+          textAnchor="end"
+          fontSize={9.5}
+          fontWeight={800}
+          fill={pct >= 90 ? '#c93b32' : pal.pillInk}
+          fontFamily="var(--dts-font-mono)"
+        >
+          {pct}%
+        </text>
+      </g>
+    );
+  };
+
   const renderNodeBody = (
     node: StageNode,
     isHovered: boolean,
@@ -2054,18 +3697,39 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
   ) => {
     const kind = normalizeShape(node.shape);
     const rawLabel = pickText(node.label, lang);
-    const subText = node.sublabel ? pickText(node.sublabel, lang) : '';
     const lines = splitShortLines(rawLabel);
     const strokeW = isHovered || isSelected ? 2.35 : 1.85;
     const isDead = Boolean(node.dead);
-    const topGrad = isDead ? `url(#g-dead-top-${uid})` : `url(#g-${node.tone}-top-${uid})`;
-    const sideGrad = isDead ? `url(#g-dead-side-${uid})` : `url(#g-${node.tone}-side-${uid})`;
+    const isOverloaded =
+      !isDead && !frameSource && typeof node.loadPct === 'number' && node.loadPct >= 88;
+    const topGrad = isDead
+      ? `url(#g-dead-top-${uid})`
+      : isOverloaded
+        ? `url(#g-overload-top-${uid})`
+        : `url(#g-${node.tone}-top-${uid})`;
+    const sideGrad = isDead
+      ? `url(#g-dead-side-${uid})`
+      : isOverloaded
+        ? `url(#g-overload-side-${uid})`
+        : `url(#g-${node.tone}-side-${uid})`;
+    const hasStaticLoad = !isDead && !frameSource && typeof node.loadPct === 'number';
 
     return (
       <>
-        {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK (with shifted-up crisp typography & dead state) */}
+        {/* A. ROUNDED 8-LAYER ISOMETRIC BLOCK (top-stacked pills only — zero bottom wire collisions!) */}
         {kind === 'block' && (
           <g>
+            {isOverloaded && (
+              <ellipse
+                cx={0}
+                cy={14}
+                rx={64}
+                ry={36}
+                fill="#e5534b"
+                opacity={isDark ? 0.24 : 0.16}
+                filter={`url(#blur-lg-${uid})`}
+              />
+            )}
             <path
               ref={
                 !isExiting
@@ -2143,7 +3807,6 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 <MinimalIcon kind={node.icon} stroke={pal.ink} x={0} y={-20} />
               )}
 
-              {/* Shifted up +10.5px so 1-line and 2-line labels never touch sloping bottom borders */}
               <g opacity={isDead ? 0.58 : 1}>
                 {lines.length === 1 ? (
                   <text
@@ -2188,7 +3851,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               {isDead && (
                 <TactilePill
                   x={0}
-                  y={-54}
+                  y={-53}
                   text={lang === 'en' ? '⚠ DOWN' : '⚠ NGỪNG ĐÁP ỨNG'}
                   bg={pal.tones.rose.top0}
                   fg={isDark ? '#fde2e4' : '#7f1d1d'}
@@ -2197,67 +3860,28 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 />
               )}
 
-              {(node.badge || subText) && (
+              {hasStaticLoad && renderLoadBarPill(node.loadPct!, -53)}
+
+              {!frameSource && node.badge && (
                 <TactilePill
                   x={0}
-                  y={64}
-                  text={node.badge ? pickText(node.badge.text, lang) : subText}
+                  y={hasStaticLoad || isDead ? -76 : -53}
+                  text={pickText(node.badge.text, lang)}
                   bg={
-                    node.badge?.tone === 'bad'
+                    node.badge.tone === 'bad'
                       ? pal.tones.rose.top0
-                      : node.badge?.tone === 'ok'
+                      : node.badge.tone === 'ok'
                         ? pal.tones.green.top0
-                        : node.badge?.tone === 'warn'
+                        : node.badge.tone === 'warn'
                           ? pal.tones.yellow.top0
                           : pal.pillBg
                   }
                   fg={pal.pillInk}
-                  stroke={pal.ink}
+                  stroke={node.badge.tone === 'bad' ? pal.dangerLink : pal.ink}
                   shadow={pal.pillShadow}
                   isSelected={isSelected}
                 />
               )}
-
-              {!isDead && typeof node.loadPct === 'number' && (() => {
-                const pct = Math.max(0, Math.min(100, node.loadPct));
-                const barColor =
-                  pct >= 90 ? '#e5534b' : pct >= 65 ? '#efb041' : '#7fc278';
-                return (
-                  <g transform="translate(0, -54)">
-                    <rect x={-37} y={-8.5} width={74} height={19} rx={9.5} fill={pal.pillShadow} />
-                    <rect
-                      x={-37}
-                      y={-10.5}
-                      width={74}
-                      height={19}
-                      rx={9.5}
-                      fill={pal.pillBg}
-                      stroke={pal.ink}
-                      strokeWidth={1.3}
-                    />
-                    <rect x={-29} y={-4} width={30} height={6} rx={3} fill="#e6ddd0" />
-                    <rect
-                      x={-29}
-                      y={-4}
-                      width={Math.max(3, (30 * pct) / 100)}
-                      height={6}
-                      rx={3}
-                      fill={barColor}
-                    />
-                    <text
-                      x={29}
-                      y={2.4}
-                      textAnchor="end"
-                      fontSize={9.5}
-                      fontWeight={800}
-                      fill={pct >= 90 ? '#c93b32' : pal.pillInk}
-                      fontFamily="var(--dts-font-mono)"
-                    >
-                      {pct}%
-                    </text>
-                  </g>
-                );
-              })()}
             </g>
           </g>
         )}
@@ -2265,6 +3889,17 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         {/* B. CYLINDER DATABASE */}
         {kind === 'db' && (
           <g transform="translate(0, -10)">
+            {isOverloaded && (
+              <ellipse
+                cx={0}
+                cy={22}
+                rx={46}
+                ry={26}
+                fill="#e5534b"
+                opacity={isDark ? 0.25 : 0.17}
+                filter={`url(#blur-lg-${uid})`}
+              />
+            )}
             <ellipse
               ref={
                 !isExiting
@@ -2338,7 +3973,7 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
               )}
               <TactilePill
                 x={0}
-                y={60}
+                y={53}
                 text={rawLabel}
                 bg={pal.pillBg}
                 fg={pal.pillInk}
@@ -2346,6 +3981,27 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 shadow={pal.pillShadow}
                 isSelected={isSelected}
               />
+              {hasStaticLoad && renderLoadBarPill(node.loadPct!, -34)}
+              {!frameSource && node.badge && (
+                <TactilePill
+                  x={0}
+                  y={hasStaticLoad || isDead ? -57 : -34}
+                  text={pickText(node.badge.text, lang)}
+                  bg={
+                    node.badge.tone === 'bad'
+                      ? pal.tones.rose.top0
+                      : node.badge.tone === 'ok'
+                        ? pal.tones.green.top0
+                        : node.badge.tone === 'warn'
+                          ? pal.tones.yellow.top0
+                          : pal.pillBg
+                  }
+                  fg={pal.pillInk}
+                  stroke={node.badge.tone === 'bad' ? pal.dangerLink : pal.ink}
+                  shadow={pal.pillShadow}
+                  isSelected={isSelected}
+                />
+              )}
             </g>
           </g>
         )}
@@ -2466,32 +4122,50 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                 strokeWidth={isHovered || isSelected ? 2.2 : 1.65}
                 strokeLinejoin="round"
               />
-              {[
-                { x: -22, y: 2, c: '#f6cd82' },
-                { x: -6, y: -6, c: '#a9c5e8' },
-                { x: 10, y: -14, c: '#b3d79f' },
-                { x: -6, y: 10, c: '#cbbae6' },
-                { x: 10, y: 2, c: '#f3b47f' },
-                { x: 24, y: -5, c: '#f9cbd0' },
-              ].map((av, aIdx) => (
-                <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
-                  <ellipse cx={0} cy={0} rx={5.2} ry={2.5} fill="#6b5236" opacity={0.18} />
-                  <path
-                    d="M-4.8,0 V-8.2 A4.8,4.8 0 0 1 4.8,-8.2 V0 A4.8,2.2 0 0 1 -4.8,0 Z"
-                    fill={av.c}
-                    stroke={pal.ink}
-                    strokeWidth={1.3}
-                  />
-                  <circle
-                    cx={0}
-                    cy={-15.5}
-                    r={3.9}
-                    fill="#fdf6ec"
-                    stroke={pal.ink}
-                    strokeWidth={1.3}
-                  />
-                </g>
-              ))}
+              {(() => {
+                const allAvatars = [
+                  { x: 0, y: -16, c: '#a9c5e8' },
+                  { x: -16, y: -8, c: '#cbbae6' },
+                  { x: 16, y: -8, c: '#b3d79f' },
+                  { x: -30, y: 0, c: '#f6cd82' },
+                  { x: 0, y: 0, c: '#f3b47f' },
+                  { x: 30, y: 0, c: '#a9c5e8' },
+                  { x: -16, y: 8, c: '#b3d79f' },
+                  { x: 16, y: 8, c: '#f9cbd0' },
+                  { x: 0, y: 16, c: '#cbbae6' },
+                  { x: -8, y: -12, c: '#f6cd82' },
+                  { x: 8, y: -4, c: '#b3d79f' },
+                  { x: -8, y: 4, c: '#f3b47f' },
+                ];
+                const count =
+                  frameSource || maxSceneLoad >= 88 || scene.nodes.length >= 6
+                    ? 11
+                    : maxSceneLoad >= 50
+                      ? 8
+                      : 5;
+                const chosen = allAvatars
+                  .slice(0, count)
+                  .sort((a, b) => a.y - b.y || a.x - b.x);
+                return chosen.map((av, aIdx) => (
+                  <g key={aIdx} transform={`translate(${av.x}, ${av.y})`}>
+                    <ellipse cx={0} cy={0} rx={5} ry={2.4} fill="#6b5236" opacity={0.18} />
+                    <path
+                      d="M-4.6,0 V-8 A4.6,4.6 0 0 1 4.6,-8 V0 A4.6,2.1 0 0 1 -4.6,0 Z"
+                      fill={av.c}
+                      stroke={pal.ink}
+                      strokeWidth={1.3}
+                    />
+                    <circle
+                      cx={0}
+                      cy={-15}
+                      r={3.7}
+                      fill="#fdf6ec"
+                      stroke={pal.ink}
+                      strokeWidth={1.3}
+                    />
+                  </g>
+                ));
+              })()}
               <TactilePill
                 x={0}
                 y={50}
@@ -2723,6 +4397,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             <stop offset="100%" stopColor={pal.dead.side1} />
           </linearGradient>
 
+          <linearGradient id={`g-overload-top-${uid}`} x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0%" stopColor={pal.overload.top0} />
+            <stop offset="100%" stopColor={pal.overload.top1} />
+          </linearGradient>
+          <linearGradient id={`g-overload-side-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={pal.overload.side0} />
+            <stop offset="100%" stopColor={pal.overload.side1} />
+          </linearGradient>
+
           <linearGradient id={`cyl-sheen-${uid}`} x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#ffffff" stopOpacity={0} />
             <stop offset="30%" stopColor="#ffffff" stopOpacity={isDark ? 0.14 : 0.36} />
@@ -2859,25 +4542,40 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
 
             {expandedNodes.map((node) => {
-              if (!node.highlighted && !node.dead) return null;
               const gc = getGroundCenter(node);
               const isDead = Boolean(node.dead);
-              const strokeCol = isDead ? pal.dangerLink : pal.beatLink;
+              const haloFill = isDead ? pal.dangerLink : '#7fc278';
+              const haloStroke = isDead ? pal.dangerLink : '#3fa456';
               return (
-                <path
+                <g
                   key={`spot-${node.id}`}
                   ref={(el) => {
                     if (el) spotRefs.current.set(node.id, el);
                     else spotRefs.current.delete(node.id);
                   }}
-                  d={GROUND_SPOT_PATH}
                   transform={`translate(${gc.x.toFixed(1)}, ${gc.y.toFixed(1)})`}
-                  fill={strokeCol}
-                  fillOpacity={isDark ? 0.14 : 0.1}
-                  stroke={strokeCol}
-                  strokeOpacity={0.65}
-                  strokeWidth={1.8}
-                />
+                  opacity={0}
+                >
+                  {!isDead && (
+                    <path
+                      d={GROUND_SPOT_PATH}
+                      fill={haloFill}
+                      fillOpacity={isDark ? 0.34 : 0.28}
+                      stroke={haloStroke}
+                      strokeOpacity={isDark ? 0.65 : 0.52}
+                      strokeWidth={2.4}
+                      filter={`url(#blur-sm-${uid})`}
+                    />
+                  )}
+                  <path
+                    d={GROUND_SPOT_PATH}
+                    fill={haloFill}
+                    fillOpacity={isDead ? (isDark ? 0.14 : 0.1) : isDark ? 0.16 : 0.12}
+                    stroke={haloStroke}
+                    strokeOpacity={isDead ? 0.55 : 0.72}
+                    strokeWidth={1.6}
+                  />
+                </g>
               );
             })}
           </g>
@@ -2921,7 +4619,15 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedInfo({ key: linkKey, info });
+                    if (pickMode?.accept.includes('link')) {
+                      pickMode.onPick({ kind: 'link', id: link.id });
+                      return;
+                    }
+                    setSelectedInfo({
+                      key: linkKey,
+                      info,
+                      preferLeft: midPt.x > baseBounds.cx,
+                    });
                   }}
                   style={{ cursor: 'pointer' }}
                 >
@@ -2964,56 +4670,241 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
             })}
           </g>
 
-          {/* 4. Animated Traffic Packets (begin flowing once link finishes drawing) */}
+          {/* 4. Animated Traffic Packets + In-Line Bottleneck Queue Dots & Drop Marker (chuẩn DTS) */}
+          {!frameSource && (
           <g className="layer-packets" pointerEvents="none">
-            {scene.packets.map((pkt) => (
-              <g
-                key={pkt.id}
-                ref={(el) => {
-                  if (el) packetRefs.current.set(pkt.id, el);
-                  else packetRefs.current.delete(pkt.id);
-                }}
-                opacity={0}
-              >
-                {pkt.kind === 'request' && (
-                  <circle r={4.4} fill="#f3b47f" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'response' && (
-                  <circle r={4.4} fill="#9fd28f" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'pointer' && (
-                  <circle r={4.4} fill="#f4fbef" stroke="#2f8a43" strokeWidth={2} />
-                )}
-                {pkt.kind === 'mutation' && (
-                  <rect
-                    x={-4.2}
-                    y={-4.2}
-                    width={8.4}
-                    height={8.4}
-                    rx={2}
-                    fill="#b79ce6"
-                    stroke={pal.ink}
-                    strokeWidth={1.5}
-                  />
-                )}
-                {pkt.kind === 'cache-hit' && (
-                  <circle r={4.5} fill="#efb041" stroke={pal.ink} strokeWidth={1.5} />
-                )}
-                {pkt.kind === 'error' && (
-                  <rect
-                    x={-4.8}
-                    y={-4.8}
-                    width={9.6}
-                    height={9.6}
-                    rx={2.4}
-                    fill="#e5534b"
-                    stroke="#5e1b16"
-                    strokeWidth={1.5}
-                  />
-                )}
-              </g>
-            ))}
+            {builtLinks.map(({ link, pts, queueCount, hasDrop }) => {
+              if (queueCount <= 0) return null;
+              const dropPt = hasDrop ? samplePolylineFromEnd(pts, 9.5) : null;
+              return (
+                <g
+                  key={`sq-${link.id}`}
+                  ref={(el) => {
+                    if (el) staticQueueRefs.current.set(link.id, el);
+                    else staticQueueRefs.current.delete(link.id);
+                  }}
+                  opacity={0}
+                >
+                  {Array.from({ length: queueCount }, (_, qi) => {
+                    const dist = (hasDrop ? 21 : 11) + qi * 10.5;
+                    const qp = samplePolylineFromEnd(pts, dist);
+                    return (
+                      <circle
+                        key={qi}
+                        cx={qp.x}
+                        cy={qp.y}
+                        r={4.2}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.45}
+                      />
+                    );
+                  })}
+                  {dropPt && (
+                    <g transform={`translate(${dropPt.x.toFixed(1)}, ${dropPt.y.toFixed(1)})`}>
+                      <circle r={5.4} fill="#e05249" stroke={pal.ink} strokeWidth={1.4} />
+                      <path
+                        d="M-2.2,-2.2 L2.2,2.2 M2.2,-2.2 L-2.2,2.2"
+                        stroke="#ffffff"
+                        strokeWidth={1.7}
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+            {scene.packets.map((pkt) => {
+              const v = pkt.variant ?? 'default';
+              const isHeavy = v === 'heavy';
+              const isMsg = v === 'msg';
+              const isPoison = v === 'poison' || pkt.kind === 'error';
+              const isMutation = pkt.kind === 'mutation';
+              const isPing = v === 'ping' || pkt.kind === 'pointer';
+              const isKill = v === 'kill';
+              const isResp = pkt.kind === 'response';
+              const isDropped = pkt.kind === 'dropped';
+              const isTimeout = pkt.kind === 'timeout';
+              const isSlow =
+                !isResp &&
+                !isDropped &&
+                !isTimeout &&
+                (v === 'slow' || pkt.kind === 'retry' || pkt.kind === 'cache-hit');
+              return (
+                <g
+                  key={pkt.id}
+                  ref={(el) => {
+                    if (el) packetRefs.current.set(pkt.id, el);
+                    else packetRefs.current.delete(pkt.id);
+                  }}
+                  opacity={0}
+                >
+                  <g data-part="body">
+                    <circle
+                      data-part="hold-ring"
+                      r={6.8}
+                      fill="none"
+                      stroke={isPoison || isDropped ? '#e5534b' : '#efb041'}
+                      strokeWidth={1.35}
+                      opacity={0}
+                    />
+                    {isHeavy ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#e8834d"
+                        data-base-sw="1.65"
+                        x={-5.8}
+                        y={-5.8}
+                        width={11.6}
+                        height={11.6}
+                        rx={3.2}
+                        fill="#e8834d"
+                        stroke={pal.ink}
+                        strokeWidth={1.65}
+                      />
+                    ) : isMsg ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#efb041"
+                        data-base-sw="1.5"
+                        x={-4.7}
+                        y={-4.7}
+                        width={9.4}
+                        height={9.4}
+                        rx={2.4}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isPoison ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#e5534b"
+                        data-base-sw="1.55"
+                        x={-4.8}
+                        y={-4.8}
+                        width={9.6}
+                        height={9.6}
+                        rx={2.4}
+                        fill="#e5534b"
+                        stroke="#5e1b16"
+                        strokeWidth={1.55}
+                      />
+                    ) : isMutation ? (
+                      <rect
+                        data-part="shape"
+                        data-base-fill="#b79ce6"
+                        data-base-sw="1.5"
+                        x={-4.2}
+                        y={-4.2}
+                        width={8.4}
+                        height={8.4}
+                        rx={2}
+                        fill="#b79ce6"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isPing ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#f4fbef"
+                        data-base-sw="2.05"
+                        r={3.8}
+                        fill="#f4fbef"
+                        stroke="#2f8a43"
+                        strokeWidth={2.05}
+                      />
+                    ) : isKill ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#fde3df"
+                        data-base-sw="2.05"
+                        r={3.8}
+                        fill="#fde3df"
+                        stroke="#c0392b"
+                        strokeWidth={2.05}
+                      />
+                    ) : isSlow ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#efb041"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#efb041"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : isDropped ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#e5534b"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#e5534b"
+                        stroke="#5e1b16"
+                        strokeWidth={1.5}
+                      />
+                    ) : isTimeout ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#bdb4a8"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#bdb4a8"
+                        stroke="#8a8176"
+                        strokeWidth={1.5}
+                      />
+                    ) : isResp ? (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#9fd28f"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#9fd28f"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    ) : (
+                      <circle
+                        data-part="shape"
+                        data-base-fill="#f3b47f"
+                        data-base-sw="1.5"
+                        r={4.4}
+                        fill="#f3b47f"
+                        stroke={pal.ink}
+                        strokeWidth={1.5}
+                      />
+                    )}
+                  </g>
+                  <g data-part="fx-ok" opacity={0}>
+                    <circle
+                      r={4.4}
+                      fill="none"
+                      stroke="#3fa456"
+                      strokeWidth={1.85}
+                    />
+                  </g>
+                  <g data-part="fx-fail" opacity={0}>
+                    <circle
+                      r={5.2}
+                      fill="#e5534b"
+                      stroke="#5e1b16"
+                      strokeWidth={1.35}
+                    />
+                    <path
+                      d="M-2.3,-2.3 L2.3,2.3 M2.3,-2.3 L-2.3,2.3"
+                      stroke="#ffffff"
+                      strokeWidth={1.75}
+                      strokeLinecap="round"
+                    />
+                  </g>
+                </g>
+              );
+            })}
           </g>
+          )}
+
+          {frameSource && renderLiveLinksAndPackets()}
 
           {/* 5. Exiting Entities (smooth lift & fade out during step transition) */}
           <g className="layer-exiting" pointerEvents="none">
@@ -3058,15 +4949,42 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                   }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelectedInfo({ key: nodeKey, info });
+                    if (pickMode?.accept.includes('node')) {
+                      pickMode.onPick({ kind: 'node', id: node.id });
+                      return;
+                    }
+                    setSelectedInfo({
+                      key: nodeKey,
+                      info,
+                      preferLeft: node.x > baseBounds.cx,
+                    });
                   }}
                   style={{ cursor: 'pointer' }}
+                  {...(frameSource
+                    ? {
+                        tabIndex: 0,
+                        role: 'button',
+                        'aria-label': pickText(node.label, lang),
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key !== 'Enter') return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (pickMode?.accept.includes('node')) {
+                            pickMode.onPick({ kind: 'node', id: node.id });
+                            return;
+                          }
+                          setSelectedInfo({ key: nodeKey, info });
+                        },
+                      }
+                    : {})}
                 >
                   {renderNodeBody(node, isHovered, isSelected, false)}
                 </g>
               );
             })}
           </g>
+
+          {frameSource && renderLiveEnts()}
 
           {/* 7. Interactive Floating Link Label Pills */}
           <g className="layer-link-labels">
@@ -3111,140 +5029,217 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
                     setHoveredKey(null);
                     setHoverPreview(null);
                   }}
-                  onClick={() => setSelectedInfo({ key: linkKey, info })}
+                  onClick={() => {
+                    if (pickMode?.accept.includes('link')) {
+                      pickMode.onPick({ kind: 'link', id: link.id });
+                      return;
+                    }
+                    setSelectedInfo({
+                      key: linkKey,
+                      info,
+                      preferLeft: labelPos.x > baseBounds.cx,
+                    });
+                  }}
                 />
               );
             })}
           </g>
 
-          {/* 8. Non-Colliding Tactile SVG Stage Note Card ("bảng ghi chú nhỏ" like Designed-to-Scale) */}
-          {noteCardLayout && (
-            <g
-              className="layer-note-card"
-              ref={noteCardRef}
-              transform={`translate(${noteCardLayout.x}, ${noteCardLayout.y})`}
-              opacity={0}
-              pointerEvents="none"
-            >
-              <rect
-                x={0}
-                y={2.4}
-                width={noteCardLayout.w}
-                height={noteCardLayout.h}
-                rx={10}
-                fill={pal.pillShadow}
-              />
-              <rect
-                x={0}
-                y={0}
-                width={noteCardLayout.w}
-                height={noteCardLayout.h}
-                rx={10}
-                fill={pal.pillBg}
-                stroke={pal.ink}
-                strokeWidth={1.4}
-              />
-              <line
-                x1={11}
-                y1={25.5}
-                x2={noteCardLayout.w - 11}
-                y2={25.5}
-                stroke={isDark ? '#423b33' : '#e6ddd0'}
-                strokeWidth={1}
-              />
-              <MinimalIcon
-                kind="sparkles"
-                stroke={isDark ? '#efb041' : '#b7791f'}
-                x={17}
-                y={13.2}
-                scale={0.62}
-              />
-              <text
-                x={27}
-                y={16.5}
-                fontSize={9}
-                fontWeight={800}
-                letterSpacing={0.9}
-                fill={isDark ? '#b5aa9a' : '#6f6961'}
-                fontFamily="var(--dts-font-mono)"
-              >
-                {noteCardLayout.title.toUpperCase()}
-              </text>
-
-              {noteCardLayout.lines.map((ln, idx) => {
-                const rowY = 30 + idx * 18.5;
-                if (ln.tone === 'good' || ln.tone === 'bad' || ln.tone === 'amber') {
-                  const pBg =
-                    ln.tone === 'good'
-                      ? isDark
-                        ? '#2b3e24'
-                        : '#dcefd2'
-                      : ln.tone === 'bad'
-                        ? isDark
-                          ? '#4d2328'
-                          : '#f8d5cf'
-                        : isDark
-                          ? '#4a3a1b'
-                          : '#fbe5bd';
-                  const pFg =
-                    ln.tone === 'good'
-                      ? isDark
-                        ? '#b8e8a3'
-                        : '#24521c'
-                      : ln.tone === 'bad'
-                        ? isDark
-                          ? '#fca5a5'
-                          : '#8f2a22'
-                        : isDark
-                          ? '#fde68a'
-                          : '#6d4a0c';
-                  return (
-                    <g key={idx}>
-                      <rect
-                        x={9}
-                        y={rowY}
-                        width={noteCardLayout.w - 18}
-                        height={16}
-                        rx={5}
-                        fill={pBg}
-                      />
-                      <text
-                        x={15}
-                        y={rowY + 11.2}
-                        fontSize={9.4}
-                        fontWeight={800}
-                        fill={pFg}
-                        fontFamily="var(--dts-font-mono)"
-                      >
-                        {ln.text}
-                      </text>
-                    </g>
-                  );
-                }
-                return (
-                  <text
-                    key={idx}
-                    x={11}
-                    y={rowY + 11.2}
-                    fontSize={ln.tone === 'muted' ? 9.2 : 9.6}
-                    fontWeight={ln.tone === 'muted' ? 600 : 700}
-                    fill={
-                      ln.tone === 'muted'
-                        ? isDark
-                          ? '#a89d8e'
-                          : '#7d756b'
-                        : pal.pillInk
-                    }
-                    fontFamily="var(--dts-font-mono)"
-                  >
-                    {ln.text}
-                  </text>
-                );
-              })}
-            </g>
-          )}
+          {/* 8. Note Card has been moved outside <svg> as a fixed HUD overlay so it never scales on zoom! */}
         </g>
       </svg>
+
+      {/* Fixed Corner HUD Stage Note Card (outside <svg> zoom/pan group so zooming never distorts or moves it!) */}
+      {noteCardLayout && (
+        <div
+          ref={noteCardRef}
+          data-no-pan="true"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            setNoteCardCollapsed((v) => !v);
+          }}
+          title={
+            lang === 'en'
+              ? 'Click to collapse / expand note card'
+              : 'Nhấn để thu gọn / mở rộng thẻ ghi chú'
+          }
+          style={{ opacity: 0 }}
+          className={`${selectedInfo ? 'hidden' : 'pointer-events-auto'} absolute z-20 cursor-pointer select-none rounded-xl border-[1.5px] border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 shadow-[2px_2.5px_0_var(--dts-shadow-color)] backdrop-blur-[3px] transition-shadow hover:shadow-[2.5px_3px_0_var(--dts-shadow-color)] ${
+            scene.noteCard?.position === 'top-left'
+              ? 'left-2.5 top-10'
+              : scene.noteCard?.position === 'bottom-left'
+                ? 'bottom-2.5 left-2.5'
+                : 'bottom-2.5 right-2.5'
+          } ${noteCardCollapsed ? 'px-2.5 py-1.5' : 'w-auto max-w-[310px] px-3 py-2'}`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+              <span className="text-[var(--dts-amber-ink)]">✦</span>
+              <span>{noteCardLayout.title}</span>
+            </div>
+            <span className="font-mono text-[9px] font-bold text-[var(--dts-ink-muted)] opacity-70">
+              {noteCardCollapsed ? '+' : '−'}
+            </span>
+          </div>
+
+          {!noteCardCollapsed && (
+            <div className="mt-1.5 border-t border-[var(--dts-line)] pt-1.5">
+              {noteCardLayout.chart && (() => {
+                const ch = noteCardLayout.chart;
+                const plotX0 = 10;
+                const plotX1 = 216;
+                const plotW = plotX1 - plotX0;
+                const plotY0 = 8;
+                const plotY1 = 54;
+                const plotH = plotY1 - plotY0;
+                const curveYAt = (u: number) => {
+                  const raw = 1 / (1 - 0.915 * Math.min(0.975, Math.max(0, u))) - 1;
+                  return plotY1 - 2 - Math.min(1, raw / 7.9) * (plotH - 6);
+                };
+                const curvePts: string[] = [];
+                for (let s = 0; s <= 22; s++) {
+                  const u = (s / 22) * 0.97;
+                  const cx = plotX0 + u * plotW;
+                  const cy = curveYAt(u);
+                  curvePts.push(`${s === 0 ? 'M' : 'L'} ${cx.toFixed(1)},${cy.toFixed(1)}`);
+                }
+                const uDot = Math.max(0.05, Math.min(0.97, ch.utilPct / 100));
+                const dotX = plotX0 + uDot * plotW;
+                const dotY = curveYAt(uDot);
+                const dotCol =
+                  ch.utilPct >= 90 ? '#e5534b' : ch.utilPct >= 65 ? '#efb041' : '#7fc278';
+                return (
+                  <svg
+                    viewBox="0 0 226 68"
+                    className="mb-1.5 h-[64px] w-[226px] overflow-visible"
+                  >
+                    <rect
+                      x={plotX0 + plotW * 0.78}
+                      y={plotY0}
+                      width={plotW * 0.22}
+                      height={plotH}
+                      rx={3}
+                      fill={isDark ? '#4d2328' : '#f9dfe0'}
+                      opacity={0.85}
+                    />
+                    <line
+                      x1={plotX0}
+                      y1={plotY0}
+                      x2={plotX0}
+                      y2={plotY1}
+                      stroke={isDark ? '#706558' : '#b8ad9e'}
+                      strokeWidth={1}
+                    />
+                    <line
+                      x1={plotX0}
+                      y1={plotY1}
+                      x2={plotX1}
+                      y2={plotY1}
+                      stroke={isDark ? '#706558' : '#b8ad9e'}
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={plotX0 + 4}
+                      y={plotY0 + 8}
+                      fontSize={8}
+                      fontWeight={650}
+                      fill={isDark ? '#a89d8e' : '#7d756b'}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {ch.yLabel}
+                    </text>
+                    <text
+                      x={plotX1}
+                      y={plotY1 + 10}
+                      textAnchor="end"
+                      fontSize={8}
+                      fontWeight={650}
+                      fill={isDark ? '#a89d8e' : '#7d756b'}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {ch.xLabel}
+                    </text>
+                    <path
+                      d={curvePts.join(' ')}
+                      fill="none"
+                      stroke={pal.ink}
+                      strokeWidth={1.65}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={dotX}
+                      y1={dotY}
+                      x2={dotX}
+                      y2={plotY1}
+                      stroke={dotCol}
+                      strokeWidth={1.1}
+                      strokeDasharray="2.5 2.5"
+                    />
+                    <circle
+                      cx={dotX}
+                      cy={dotY}
+                      r={4}
+                      fill={dotCol}
+                      stroke={pal.ink}
+                      strokeWidth={1.4}
+                    />
+                    <text
+                      x={uDot > 0.8 ? dotX - 6 : dotX}
+                      y={uDot > 0.8 ? dotY + 3 : dotY - 6}
+                      textAnchor={uDot > 0.8 ? 'end' : 'middle'}
+                      fontSize={8.8}
+                      fontWeight={800}
+                      fill={pal.pillInk}
+                      fontFamily="var(--dts-font-mono)"
+                    >
+                      {Math.round(ch.utilPct)}%
+                    </text>
+                  </svg>
+                );
+              })()}
+
+              <div className="flex flex-col gap-1">
+                {noteCardLayout.lines.map((ln, idx) => {
+                  const toneCls =
+                    ln.tone === 'good'
+                      ? isDark
+                        ? 'bg-[#2b3e24] text-[#b8e8a3] px-2 py-0.5 rounded-md font-extrabold'
+                        : 'bg-[#dcefd2] text-[#24521c] px-2 py-0.5 rounded-md font-extrabold'
+                      : ln.tone === 'bad'
+                        ? isDark
+                          ? 'bg-[#4d2328] text-[#fca5a5] px-2 py-0.5 rounded-md font-extrabold'
+                          : 'bg-[#f8d5cf] text-[#8f2a22] px-2 py-0.5 rounded-md font-extrabold'
+                        : ln.tone === 'amber'
+                          ? isDark
+                            ? 'bg-[#4a3a1b] text-[#fde68a] px-2 py-0.5 rounded-md font-extrabold'
+                            : 'bg-[#fbe5bd] text-[#6d4a0c] px-2 py-0.5 rounded-md font-extrabold'
+                          : ln.tone === 'muted'
+                            ? 'text-[var(--dts-ink-muted)] font-semibold'
+                            : 'text-[var(--dts-ink)] font-bold';
+                  return (
+                    <div
+                      key={idx}
+                      className={`font-mono text-[10.5px] leading-snug ${toneCls}`}
+                    >
+                      {ln.text}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {frameSource && (
+        <div
+          ref={livePillRef}
+          data-no-pan="true"
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-2 left-2.5 z-20 rounded-full border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)]/95 px-2 py-0.5 font-mono text-[10px] font-bold text-[var(--dts-ink-muted)] empty:hidden"
+        />
+      )}
 
       {/* Top-Right Interactive Zoom Toolbar (desktop with spacious stage only; Replay resets zoom & pan when narrow/mobile) */}
       {stageWidth >= 420 && (
@@ -3342,14 +5337,16 @@ export const ScaleStageSvg: React.FC<ScaleStageSvgProps> = ({
         </div>
       )}
 
-      {/* Full Deep-Dive Inspector Card (rendered via Portal so short diagrams never squash it!) */}
+      {/* Compact Corner Inspector Popover (anchored away from clicked node so diagram stays unobstructed!) */}
       {selectedInfo && (
         <StageInspectorPortal
           info={selectedInfo.info}
           lang={lang}
           theme={theme}
           anchorRef={containerRef}
+          preferLeft={selectedInfo.preferLeft}
           onClose={() => setSelectedInfo(null)}
+          liveSlot={liveSlotNode}
         />
       )}
     </div>

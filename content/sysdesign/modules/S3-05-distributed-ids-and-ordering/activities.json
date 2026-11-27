@@ -1,0 +1,94 @@
+[
+  {
+    "id": "S3-05.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán tỷ lệ lỗi khi Ticket Server đơn lẻ gặp sự cố" },
+    "prompt": { "vi": "Hệ thống nhận ổn định 1.200 req/s gồm 25% truy vấn xem trạng thái đơn (chỉ đọc DB) và 75% lệnh tạo đơn mới (bắt buộc gọi đồng bộ vào Ticket Server để lấy ID trước khi ghi DB). Tại giây 20, Ticket Server đơn lẻ ngừng hoạt động. Ở giây 25, tỷ lệ lỗi toàn cục của hệ thống là bao nhiêu?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "0% lỗi vì Order DB Shards tự động bật lại AUTO_INCREMENT thay thế" },
+        { "vi": "25% lỗi vì chỉ các truy vấn xem đơn bị ảnh hưởng" },
+        { "vi": "75% lỗi: toàn bộ 900 lệnh tạo đơn/giây thất bại do mất bộ cấp ID, chỉ còn 300 lượt đọc/giây thành công" },
+        { "vi": "100% lỗi trên cả đọc lẫn ghi vì tầng Order Service ngừng chạy theo" }
+      ],
+      "correct": 2
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 34, "speed": 2 },
+    "hints": [
+      { "vi": "Các truy vấn xem đơn cũ (25% lưu lượng) đã có sẵn mã đơn nên đi thẳng xuống Order DB Shards mà không qua Ticket Server." },
+      { "vi": "Mọi lệnh tạo đơn mới (75% lưu lượng) đều phụ thuộc cứng vào Ticket Server." }
+    ],
+    "explain": { "vi": "Khi Ticket Server dừng ở giây 20, 300 req/s đọc vẫn thành công ({global.goodputRps@25:0} req/s) nhưng toàn bộ 900 req/s tạo đơn bị chặn đứng, đẩy tỷ lệ lỗi toàn cục lên đúng {global.errorRate@25:0%}. Đây là rủi ro kinh điển của bộ cấp ID tập trung không dự phòng." },
+    "sim": { "simId": "S3-05/ticket-spof", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S3-05/ticket-spof", "seekSec": 18, "focus": { "nodes": ["app", "ticket"], "links": ["app-ticket"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-05.A2",
+    "kind": "estimate",
+    "title": { "vi": "Tính tổng số ID Snowflake tối đa sinh ra trong 1 mili-giây của cụm 5 máy" },
+    "prompt": { "vi": "Cấu trúc Snowflake 64-bit chuẩn dành 12 bit cuối cho bộ đếm cục bộ sequence trong cùng một mili-giây (từ 0 đến 2^12 − 1). Nếu tầng Order Service chạy song song 5 máy chủ với worker_id khác nhau, cả cụm có thể phát hành tối đa bao nhiêu ID duy nhất trong đúng 1 mili-giây?" },
+    "difficulty": 1,
+    "quantity": "Tổng số ID tối đa mỗi mili-giây trên 5 máy",
+    "unit": "ID/ms",
+    "truth": { "type": "formula", "expr": "(2 ^ 12) * 5", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.02, "pass": 0.1 },
+    "workings": [
+      { "vi": "Số giá trị sequence trên 1 máy trong 1 mili-giây: 2^12 = 4.096 ID/ms." },
+      { "vi": "Vì mỗi máy có 10-bit worker_id riêng biệt không cần phối hợp với nhau, năng lực cộng tuyến tính theo số máy." },
+      { "vi": "Tổng trên 5 máy: 4.096 × 5 = 20.480 ID/ms (tương đương hơn 20,4 triệu ID/giây)." }
+    ],
+    "hints": [
+      { "vi": "Tính 2^12 cho một máy, sau đó nhân với 5 máy chạy độc lập." }
+    ],
+    "explain": { "vi": "Cả 5 máy phát hành song song được tối đa {truth:0} ID mỗi mili-giây (hơn 20 triệu ID/giây) hoàn toàn trong bộ nhớ RAM mà không tốn bất kỳ gói tin phối hợp nào." }
+  },
+  {
+    "id": "S3-05.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Chuyển sang Snowflake cục bộ và mở rộng Shard cho đợt tải 3.600 req/s" },
+    "prompt": { "vi": "Lưu lượng tăng từ 600 lên 3.600 req/s (75% ghi = 2.700 đơn mới/giây) làm Ticket Server đơn lẻ (1.200 ID/s) và cụm 2 DB Shard quá tải nặng. Với tối đa 3 thay đổi và ngân sách ≤ 1,50 USD/giờ, hãy giữ p99 ≤ 95 ms, lỗi ≤ 1% suốt 70 giây và loại bỏ hoàn toàn điểm lỗi đơn (SPOF)." },
+    "difficulty": 3,
+    "simId": "S3-05/id-scale",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 1.5 },
+    "allowed": [
+      { "type": "knob", "node": "ticket", "key": "enabled" },
+      { "type": "knob", "node": "ticket", "key": "replicas", "min": 1, "max": 4 },
+      { "type": "knob", "node": "db", "key": "shards", "min": 1, "max": 8 },
+      { "type": "knob", "node": "app", "key": "replicas", "min": 1, "max": 8 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 95, "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 70 } }
+    ],
+    "soft": [
+      { "id": "no-spof", "kind": "structural", "rule": "no-spof" },
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 70 },
+    "par": { "changes": 2, "costPerHour": 1.11 },
+    "solution": [
+      { "type": "knob", "node": "ticket", "key": "enabled", "value": false },
+      { "type": "knob", "node": "db", "key": "shards", "value": 4 }
+    ],
+    "traps": [
+      {
+        "id": "scale-app-keep-ticket",
+        "label": { "vi": "Chỉ tăng số instance Order Service lên 6 mà giữ nguyên Ticket Server và 2 DB Shard" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 6 }
+        ],
+        "why": { "vi": "Order Service (3 × 1.600 = 4.800 req/s) vốn không nghẽn; mọi lệnh ghi vẫn bị chặn ở Ticket Server (1.200 req/s, SPOF) và 2 DB Shard (2.600 req/s)." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tắt Ticket Server tập trung (enabled = false) để Order Service tự sinh mã Snowflake 64-bit trong RAM — vừa khử SPOF, vừa bỏ 1 chặng mạng, vừa giảm chi phí." },
+      { "vi": "Kiểm tra tổng năng lực của Order DB Shards: với 2 shard hiện tại (2 × 2 × 650 = 2.600 req/s), cụm chưa đủ gánh 3.600 req/s." }
+    ],
+    "explain": { "vi": "Tắt Ticket Server chuyển sang sinh Snowflake cục bộ giúp loại bỏ hoàn toàn SPOF và chặng gọi mạng xin ID; nâng Order DB Shards từ 2 lên 4 hạ mức sử dụng ở tải đỉnh từ {db.rho@55:2} xuống {db.rho'@55:2}, đưa p99 về {m.p99'@55:0} ms với chi phí chỉ 1,11 USD/giờ." },
+    "replay": { "simId": "S3-05/id-scale", "seekSec": 45, "focus": { "nodes": ["app", "db"] }, "autoplay": true }
+  }
+]

@@ -464,19 +464,20 @@ export const KEYWORDS_GLOSSARY: GlossaryTerm[] = [
   {
     id: 'kw-lambda',
     term: 'lambda',
+    aliases: ['anonymous function', 'arrow function =>', 'hàm ẩn danh'],
     category: 'keyword',
     level: 'basic',
     stageId: 'stage-2',
-    shortSummary: 'Khai báo hàm ẩn danh (Anonymous Function) ngắn gọn trên 1 dòng duy nhất.',
+    shortSummary: 'Khai báo hàm ẩn danh 1 biểu thức (tương đương Arrow Function `(x) => expr` trong JavaScript).',
     detailedExplanation:
-      '`lambda args: expression` tạo một hàm nhỏ trả về kết quả của biểu thức sau dấu hai chấm. Thường dùng làm hàm so sánh trong `sorted()` hoặc callback.',
+      'Cú pháp `lambda tham_số: biểu_thức` tạo ra một đối tượng hàm nhỏ không có tên, nhận các tham số trước dấu `:` và TỰ ĐỘNG trả về kết quả của biểu thức đứng sau dấu `:` (không viết từ khóa `return`).\n• Nếu bạn chuyển từ JavaScript sang: `lambda x, y: x + y` chính là `(x, y) => x + y`.\n• Điểm khác biệt lớn nhất với JS: Trong JS `(x) => { ... }` mở ngoặc nhọn viết nhiều dòng lệnh được, còn `lambda` của Python CHỈ ĐƯỢC PHÉP chứa duy nhất 1 biểu thức (Expression) — không được chứa câu lệnh nhiều dòng, không `for/while`, không `try/except`, không gán biến `=`. Khi cần callback nhiều dòng, hãy viết hàm `def` bình thường!\n• 90% trường hợp dùng `lambda` trong Python là truyền vào tham số `key=` của `sorted()`, `list.sort()`, `min()`, `max()` (ví dụ: `sorted(users, key=lambda u: u["age"])`). Với `.map()` và `.filter()` của JS, dân Python hầu như không dùng `map(lambda ...)` mà dùng List Comprehension `[x * 2 for x in arr if x > 0]`.',
     analogy:
-      'Tờ giấy note ghi nhanh công thức tính toán tạm thời dùng một lần rồi vứt đi.',
-    syntaxExample: `pairs = [(1, "b"), (2, "a")]\npairs.sort(key=lambda x: x[1])  # Sắp theo chữ cái`,
+      'Tờ giấy note ghi nhanh công thức tính toán 1 dòng gắn trực tiếp vào máy phân loại (`sorted(key=lambda ...)`): dùng ngay tại chỗ mà không cần đặt tên hàm.',
+    syntaxExample: `# 1. Đối chiếu với JS Arrow Function: (u) => u["age"]\nusers = [{"name": "Bình", "age": 30}, {"name": "An", "age": 22}]\nby_age = sorted(users, key=lambda u: u["age"])\n\n# 2. Sắp xếp nhiều tiêu chí (Điểm giảm dần, trùng điểm thì Tên A->Z):\nstudents = [("Bình", 90), ("An", 90), ("Chi", 85)]\nranked = sorted(students, key=lambda s: (-s[1], s[0]))\n\n# 3. Rẽ nhánh 1 dòng trong lambda bằng toán tử 3 ngôi:\nphan_loai = lambda diem: "Đậu" if diem >= 50 else "Trượt"`,
     commonGotcha:
-      'Lambda chỉ chứa được 1 biểu thức (expression), không thể chứa lệnh gán hoặc khối lệnh nhiều dòng.',
-    jsEquivalent: '(x) => x[1]',
-    relatedTerms: ['kw-def', 'decl-lambda'],
+      '1) Lambda chỉ chứa được 1 biểu thức (không viết `return` bên trong!). 2) Bẫy Late-Binding trong vòng lặp: `[lambda x: x * i for i in range(3)]` sẽ dùng chung `i=2` ở cuối vòng lặp — phải khóa giá trị bằng tham số mặc định `lambda x, i=i: x * i`.',
+    jsEquivalent: '(x) => x * 2  |  users.sort((a, b) => a.age - b.age) -> sorted(users, key=lambda u: u["age"])',
+    relatedTerms: ['kw-def', 'decl-lambda', 'concept-list-comp', 'fn-sorted'],
   },
 
   // 26. pass

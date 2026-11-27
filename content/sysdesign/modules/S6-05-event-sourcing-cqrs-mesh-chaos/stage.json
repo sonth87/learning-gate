@@ -1,0 +1,732 @@
+{
+  "version": 1,
+  "base": "s2-cqrs",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Clients"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm người dùng gửi lệnh ghi và truy vấn đọc.",
+          "en": "Clients sending commands and queries."
+        },
+        "how": {
+          "vi": "Lưu lượng tổng 1.600 req/s đi qua API Gateway.",
+          "en": "Total 1,600 req/s routed through API Gateway."
+        },
+        "why": {
+          "vi": "Đại diện cho tải thực tế trên cả hai đường đọc và ghi.",
+          "en": "Represents combined read and write workload."
+        }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "API Gateway",
+        "en": "API Gateway"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng điều phối định tuyến lệnh ghi sang Write API và truy vấn sang Read API.",
+          "en": "Routes write commands to Write API and queries to Read API."
+        },
+        "how": {
+          "vi": "Tách hai đường đọc/ghi theo mô hình CQRS (μ = 20.000 req/s).",
+          "en": "Splits read and write paths under CQRS."
+        },
+        "why": {
+          "vi": "Ngăn truy vấn đọc phức tạp làm nghẽn luồng ghi lệnh.",
+          "en": "Prevents heavy reads from blocking write commands."
+        }
+      }
+    },
+    "write-api": {
+      "shape": "block",
+      "tone": "amber",
+      "icon": "cpu",
+      "label": {
+        "vi": "Write API",
+        "en": "Write API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ tiếp nhận lệnh ghi và kiểm tra quy tắc nghiệp vụ.",
+          "en": "Validates commands and appends domain events."
+        },
+        "how": {
+          "vi": "Đẩy sự kiện bất đồng bộ vào Event Log để giảm độ trễ phản hồi.",
+          "en": "Publishes events asynchronously to Event Log."
+        },
+        "why": {
+          "vi": "Giữ luồng ghi độc lập với tốc độ cập nhật của Read DB.",
+          "en": "Decouples write availability from Read DB projection lag."
+        }
+      }
+    },
+    "event-log": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": {
+        "vi": "Event Log",
+        "en": "Event Log"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nhật ký sự kiện bất biến (Append-only) lưu toàn bộ lịch sử thay đổi.",
+          "en": "Immutable append-only event stream."
+        },
+        "how": {
+          "vi": "Đóng vai trò bộ đệm bền vững giữa Write API và Projector.",
+          "en": "Buffers events durably between Write API and Projector."
+        },
+        "why": {
+          "vi": "Cho phép Replay tái dựng trạng thái và hấp thụ xung nhịp khi Projector chậm.",
+          "en": "Enables state replay and absorbs bursts when Projector slows."
+        }
+      }
+    },
+    "projector": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Projector",
+        "en": "Projector"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Worker tiêu thụ sự kiện từ Event Log để cập nhật bản đọc phi chuẩn hóa.",
+          "en": "Consumes events and updates denormalized read views."
+        },
+        "how": {
+          "vi": "Khi bị tiêm lỗi chậm +450 ms ở t = 18 s, thông lượng sụt giảm làm hàng đợi dồn ứ.",
+          "en": "Slowdown injection at t = 18 s causes queue buildup."
+        },
+        "why": {
+          "vi": "Là điểm kiểm chứng giả thuyết Blast Radius trong bài tập Chaos.",
+          "en": "Target of Chaos fault injection to measure blast radius."
+        }
+      }
+    },
+    "read-api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Read API",
+        "en": "Read API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ phục vụ truy vấn đọc nhanh từ mô hình đã phi chuẩn hóa.",
+          "en": "Serves fast read queries from denormalized projections."
+        },
+        "how": {
+          "vi": "Đọc trực tiếp từ Read DB mà không cần JOIN nhiều bảng.",
+          "en": "Reads directly from Read DB without complex joins."
+        },
+        "why": {
+          "vi": "Hoạt động ổn định ngay cả khi đường ghi hoặc Projector gặp sự cố.",
+          "en": "Stays available even when write/projection path degrades."
+        }
+      }
+    },
+    "read-db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Read DB",
+        "en": "Read DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu bản chiếu (Projection) tối ưu cho truy vấn đọc.",
+          "en": "Denormalized read store updated by Projector."
+        },
+        "how": {
+          "vi": "Nhận cập nhật từ Projector và phục vụ Read API.",
+          "en": "Receives updates from Projector and serves Read API."
+        },
+        "why": {
+          "vi": "Nếu Projector chậm, dữ liệu trên Read DB sẽ trễ một khoảng Lag nhưng không làm sập luồng đọc.",
+          "en": "Shows stale lag if Projector slows, without failing reads."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-gateway": {
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng người dùng đi vào API Gateway.",
+          "en": "Incoming user traffic to API Gateway."
+        },
+        "how": {
+          "vi": "Gồm cả yêu cầu đọc và ghi.",
+          "en": "Combined read and write traffic."
+        },
+        "why": {
+          "vi": "Điểm vào duy nhất của hệ thống.",
+          "en": "Single entry point."
+        }
+      }
+    },
+    "gateway-write": {
+      "inspector": {
+        "what": {
+          "vi": "Đường chuyển lệnh ghi sang Write API.",
+          "en": "Command path to Write API."
+        },
+        "how": {
+          "vi": "Xử lý các thao tác thay đổi trạng thái.",
+          "en": "Handles state-mutating commands."
+        },
+        "why": {
+          "vi": "Tách biệt hoàn toàn với đường đọc.",
+          "en": "Isolated from read queries."
+        }
+      }
+    },
+    "gateway-read": {
+      "inspector": {
+        "what": {
+          "vi": "Đường chuyển truy vấn sang Read API.",
+          "en": "Query path to Read API."
+        },
+        "how": {
+          "vi": "Phục vụ phần lớn lưu lượng truy cập.",
+          "en": "Serves read traffic."
+        },
+        "why": {
+          "vi": "Không bị chặn bởi xử lý ghi hay Projector.",
+          "en": "Unblocked by write or projection delays."
+        }
+      }
+    },
+    "write-eventlog": {
+      "inspector": {
+        "what": {
+          "vi": "Ghi nối tiếp sự kiện vào Event Log.",
+          "en": "Appends events to Event Log."
+        },
+        "how": {
+          "vi": "Giao tiếp bất đồng bộ (async).",
+          "en": "Asynchronous event publishing."
+        },
+        "why": {
+          "vi": "Ngăn lỗi chậm ở Projector lan ngược về Write API.",
+          "en": "Prevents Projector slowdowns from cascading to Write API."
+        }
+      }
+    },
+    "eventlog-projector": {
+      "inspector": {
+        "what": {
+          "vi": "Luồng đẩy sự kiện từ Event Log sang Projector.",
+          "en": "Event stream consumed by Projector."
+        },
+        "how": {
+          "vi": "Tạo độ trễ đồng bộ (Projection Lag) khi Projector quá tải.",
+          "en": "Builds projection lag when Projector saturates."
+        },
+        "why": {
+          "vi": "Thể hiện rõ phạm vi ảnh hưởng cô lập trong CQRS.",
+          "en": "Demonstrates bounded blast radius in CQRS."
+        }
+      }
+    },
+    "projector-readdb": {
+      "inspector": {
+        "what": {
+          "vi": "Projector cập nhật bản chiếu vào Read DB.",
+          "en": "Projector updates Read DB views."
+        },
+        "how": {
+          "vi": "Ghi dữ liệu đã phi chuẩn hóa.",
+          "en": "Writes denormalized projections."
+        },
+        "why": {
+          "vi": "Giữ Read DB sẵn sàng cho truy vấn tốc độ cao.",
+          "en": "Keeps Read DB ready for fast queries."
+        }
+      }
+    },
+    "read-readdb": {
+      "inspector": {
+        "what": {
+          "vi": "Read API truy vấn dữ liệu từ Read DB.",
+          "en": "Read API queries Read DB."
+        },
+        "how": {
+          "vi": "Truy vấn đơn giản, độ trễ thấp.",
+          "en": "Simple low-latency lookups."
+        },
+        "why": {
+          "vi": "Duy trì trải nghiệm đọc mượt mà kể cả khi Projector chậm.",
+          "en": "Maintains smooth reads even during Projector lag."
+        }
+      }
+    }
+  },
+  "scenes": {
+    "s1-events": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Event Sourcing: Chuỗi sự kiện bất biến và tái dựng trạng thái",
+          "en": "Event Sourcing: Immutable Event Log & Replay"
+        },
+        "cells": [
+          "Event #1: AccountCreated { id: 123 }",
+          "Event #2: MoneyDeposited { +500 }",
+          "Event #3: MoneyWithdrawn { -200 }",
+          "Event #4: MoneyDeposited { +700 }"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Số dư khởi tạo = 0",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Số dư sau Replay = 500",
+            "tone": "green"
+          },
+          {
+            "index": 2,
+            "label": "Số dư sau Replay = 300",
+            "tone": "amber"
+          },
+          {
+            "index": 3,
+            "label": "Trạng thái hiện tại = 1.000",
+            "tone": "purple"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
+        ]
+      }
+    },
+    "s2-cqrs": {
+      "mode": "isometric",
+      "show": {
+        "nodes": [
+          "client",
+          "gateway",
+          "write-api",
+          "event-log",
+          "projector",
+          "read-api",
+          "read-db"
+        ],
+        "links": [
+          "client-gateway",
+          "gateway-write",
+          "gateway-read",
+          "write-eventlog",
+          "eventlog-projector",
+          "projector-readdb",
+          "read-readdb"
+        ]
+      },
+      "floor": {
+        "label": "Kiến trúc CQRS: Tách luồng Ghi (trên) và luồng Đọc (dưới)"
+      },
+      "entities": [
+        {
+          "id": "client",
+          "col": 0,
+          "row": 2
+        },
+        {
+          "id": "gateway",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "write-api",
+          "col": 6,
+          "row": 0
+        },
+        {
+          "id": "event-log",
+          "col": 9,
+          "row": 0
+        },
+        {
+          "id": "projector",
+          "col": 12,
+          "row": 0
+        },
+        {
+          "id": "read-api",
+          "col": 6,
+          "row": 4
+        },
+        {
+          "id": "read-db",
+          "col": 12,
+          "row": 4
+        }
+      ],
+      "edges": [
+        {
+          "id": "client-gateway",
+          "from": "client",
+          "to": "gateway",
+          "style": "solid"
+        },
+        {
+          "id": "gateway-write",
+          "from": "gateway",
+          "to": "write-api",
+          "style": "solid"
+        },
+        {
+          "id": "gateway-read",
+          "from": "gateway",
+          "to": "read-api",
+          "style": "solid"
+        },
+        {
+          "id": "write-eventlog",
+          "from": "write-api",
+          "to": "event-log",
+          "style": "dashed"
+        },
+        {
+          "id": "eventlog-projector",
+          "from": "event-log",
+          "to": "projector",
+          "style": "dashed"
+        },
+        {
+          "id": "projector-readdb",
+          "from": "projector",
+          "to": "read-db",
+          "style": "dashed"
+        },
+        {
+          "id": "read-readdb",
+          "from": "read-api",
+          "to": "read-db",
+          "style": "solid"
+        }
+      ],
+      "state": {
+        "write-api": {
+          "loadPct": 35
+        },
+        "event-log": {
+          "loadPct": 25
+        },
+        "projector": {
+          "loadPct": 45,
+          "badge": {
+            "text": {
+              "vi": "Projection Lag",
+              "en": "Projection Lag"
+            },
+            "tone": "warn"
+          }
+        },
+        "read-api": {
+          "loadPct": 40,
+          "badge": {
+            "text": {
+              "vi": "Đọc nhanh",
+              "en": "Fast Read"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto"
+    },
+    "s3-mesh": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Service Mesh: Tách Control Plane và Sidecar Data Plane",
+          "en": "Service Mesh Architecture"
+        },
+        "nodes": [
+          {
+            "id": "cp",
+            "label": "Control Plane",
+            "sub": "Cấp chứng chỉ mTLS · Chính sách Retry & Canary",
+            "tone": "purple",
+            "x": 0,
+            "y": -39
+          },
+          {
+            "id": "sa",
+            "label": "Sidecar Proxy A",
+            "sub": "Chặn traffic ra từ Service A · Gắn Trace ID",
+            "tone": "blue",
+            "x": -86,
+            "y": 39
+          },
+          {
+            "id": "sb",
+            "label": "Sidecar Proxy B",
+            "sub": "Xác thực mTLS · Circuit Breaker cho Service B",
+            "tone": "green",
+            "x": 86,
+            "y": 39
+          }
+        ],
+        "edges": [
+          {
+            "from": "cp",
+            "to": "sa",
+            "label": "cấu hình"
+          },
+          {
+            "from": "cp",
+            "to": "sb",
+            "label": "cấu hình"
+          }
+        ]
+      }
+    },
+    "s4-chaos-live": {
+      "mode": "isometric",
+      "show": {
+        "nodes": [
+          "client",
+          "gateway",
+          "write-api",
+          "event-log",
+          "projector",
+          "read-api",
+          "read-db"
+        ],
+        "links": [
+          "client-gateway",
+          "gateway-write",
+          "gateway-read",
+          "write-eventlog",
+          "eventlog-projector",
+          "projector-readdb",
+          "read-readdb"
+        ]
+      },
+      "floor": {
+        "label": "Mô phỏng Chaos: Tiêm lỗi chậm vào Projector tại t = 18 s"
+      },
+      "entities": [
+        {
+          "id": "client",
+          "col": 0,
+          "row": 2
+        },
+        {
+          "id": "gateway",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "write-api",
+          "col": 6,
+          "row": 0
+        },
+        {
+          "id": "event-log",
+          "col": 9,
+          "row": 0
+        },
+        {
+          "id": "projector",
+          "col": 12,
+          "row": 0
+        },
+        {
+          "id": "read-api",
+          "col": 6,
+          "row": 4
+        },
+        {
+          "id": "read-db",
+          "col": 12,
+          "row": 4
+        }
+      ],
+      "edges": [
+        {
+          "id": "client-gateway",
+          "from": "client",
+          "to": "gateway",
+          "style": "solid"
+        },
+        {
+          "id": "gateway-write",
+          "from": "gateway",
+          "to": "write-api",
+          "style": "solid"
+        },
+        {
+          "id": "gateway-read",
+          "from": "gateway",
+          "to": "read-api",
+          "style": "solid"
+        },
+        {
+          "id": "write-eventlog",
+          "from": "write-api",
+          "to": "event-log",
+          "style": "dashed"
+        },
+        {
+          "id": "eventlog-projector",
+          "from": "event-log",
+          "to": "projector",
+          "style": "dashed"
+        },
+        {
+          "id": "projector-readdb",
+          "from": "projector",
+          "to": "read-db",
+          "style": "dashed"
+        },
+        {
+          "id": "read-readdb",
+          "from": "read-api",
+          "to": "read-db",
+          "style": "solid"
+        }
+      ],
+      "packets": "auto"
+    },
+    "s5-recap": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "r1",
+            "name": "Event Sourcing",
+            "targetId": "v1"
+          },
+          {
+            "id": "r2",
+            "name": "CQRS",
+            "targetId": "v2"
+          },
+          {
+            "id": "r3",
+            "name": "Service Mesh",
+            "targetId": "v3"
+          },
+          {
+            "id": "r4",
+            "name": "Chaos Engineering",
+            "targetId": "v4"
+          }
+        ],
+        "objects": [
+          {
+            "id": "v1",
+            "value": "Cần Audit Trail đầy đủ, Time Travel và nhiều bản chiếu (Tài chính/Đơn hàng)",
+            "tone": "blue",
+            "typeTag": "Điều kiện dùng"
+          },
+          {
+            "id": "v2",
+            "value": "Đọc/ghi chênh lệch lớn, chấp nhận Eventual Consistency giữa Write và Read",
+            "tone": "green",
+            "typeTag": "Điều kiện dùng"
+          },
+          {
+            "id": "v3",
+            "value": "Trên 50 microservice đa ngôn ngữ, cần mTLS và quản lý lưu lượng tập trung",
+            "tone": "purple",
+            "typeTag": "Điều kiện dùng"
+          },
+          {
+            "id": "v4",
+            "value": "Hệ thống đã có giám sát đầy đủ, muốn kiểm chứng khả năng chịu lỗi thực tế",
+            "tone": "amber",
+            "typeTag": "Điều kiện dùng"
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Khi nào nên dùng bốn chủ đề nâng cao?",
+          "en": "When to Use Advanced Patterns"
+        }
+      }
+    }
+  },
+  "live": {
+    "chaos": {
+      "sim": "S6-05/chaos-cqrs",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": [
+          "slow"
+        ]
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 300
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "event-log",
+          "projector",
+          "read-api"
+        ]
+      }
+    }
+  }
+}

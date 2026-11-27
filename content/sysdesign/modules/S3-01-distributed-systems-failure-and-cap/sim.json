@@ -1,0 +1,527 @@
+{
+  "sims": [
+    {
+      "id": "S3-01/cp-partition",
+      "scenario": {
+        "id": "S3-01/cp-partition",
+        "seed": 3301,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2000 },
+        "events": [
+          { "at": 20, "type": "partition", "link": "eu-wan" },
+          { "at": 20, "type": "partition", "link": "dc-repl" },
+          { "at": 45, "type": "heal", "link": "eu-wan" },
+          { "at": 45, "type": "heal", "link": "dc-repl" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng (US & EU)", "en": "Users (US & EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app-us",
+              "kind": "service",
+              "label": { "vi": "App Vùng A (US)", "en": "App Region A (US)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App US", "en": "App US instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App Vùng A ngừng hoạt động", "en": "Region A App down" } }
+              ]
+            },
+            {
+              "id": "app-eu",
+              "kind": "service",
+              "label": { "vi": "App Vùng B (EU)", "en": "App Region B (EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App EU", "en": "App EU instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App Vùng B ngừng hoạt động", "en": "Region B App down" } }
+              ]
+            },
+            {
+              "id": "db-us",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng A (Primary)", "en": "DB Region A (Primary)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.08,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB US", "en": "DB US size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "partition", "note": { "vi": "Đứt cáp xuyên lục địa", "en": "Cross-region partition" } }
+              ]
+            },
+            {
+              "id": "db-eu",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng B (Replica)", "en": "DB Region B (Replica)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 1800,
+                "rewriteHotness": 0.15,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB EU", "en": "DB EU size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "partition", "note": { "vi": "Cô lập khỏi Vùng A", "en": "Isolated from Region A" } }
+              ]
+            }
+          ],
+          "links": [
+            { "id": "client-us", "from": "client", "to": "app-us", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "client-eu", "from": "client", "to": "app-eu", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "us-db", "from": "app-us", "to": "db-us", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "eu-db", "from": "app-eu", "to": "db-eu", "mode": "sync", "carries": "r", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "eu-wan", "from": "app-eu", "to": "db-us", "mode": "sync", "carries": "w", "netClass": "cross-region", "netMs": 65, "timeoutMs": 400, "fallback": "error" },
+            { "id": "dc-repl", "from": "db-us", "to": "db-eu", "mode": "replicate", "netClass": "cross-region", "netMs": 65 }
+          ],
+          "routes": {
+            "client": "split",
+            "app-us": "all-sequential",
+            "app-eu": "split"
+          }
+        }
+      }
+    },
+    {
+      "id": "S3-01/ap-partition",
+      "scenario": {
+        "id": "S3-01/ap-partition",
+        "seed": 3302,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2000 },
+        "events": [
+          { "at": 20, "type": "partition", "link": "eu-wan" },
+          { "at": 20, "type": "partition", "link": "dc-repl" },
+          { "at": 45, "type": "heal", "link": "eu-wan" },
+          { "at": 45, "type": "heal", "link": "dc-repl" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng (US & EU)", "en": "Users (US & EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app-us",
+              "kind": "service",
+              "label": { "vi": "App Vùng A (US)", "en": "App Region A (US)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App US", "en": "App US instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "app-eu",
+              "kind": "service",
+              "label": { "vi": "App Vùng B (EU)", "en": "App Region B (EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App EU", "en": "App EU instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db-us",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng A (Primary)", "en": "DB Region A (Primary)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.08,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB US", "en": "DB US size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db-eu",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng B (Replica)", "en": "DB Region B (Replica)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 1800,
+                "rewriteHotness": 0.15,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB EU", "en": "DB EU size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-us", "from": "client", "to": "app-us", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "client-eu", "from": "client", "to": "app-eu", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "us-db", "from": "app-us", "to": "db-us", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "eu-db", "from": "app-eu", "to": "db-eu", "mode": "sync", "carries": "r", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "eu-wan", "from": "app-eu", "to": "db-us", "mode": "sync", "carries": "w", "netClass": "cross-region", "netMs": 65, "timeoutMs": 200, "fallback": "degrade" },
+            { "id": "dc-repl", "from": "db-us", "to": "db-eu", "mode": "replicate", "netClass": "cross-region", "netMs": 65 }
+          ],
+          "routes": {
+            "client": "split",
+            "app-us": "all-sequential",
+            "app-eu": "split"
+          }
+        }
+      }
+    },
+    {
+      "id": "S3-01/wan-design",
+      "scenario": {
+        "id": "S3-01/wan-design",
+        "seed": 3303,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.75 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2600 },
+        "events": [
+          { "at": 20, "type": "partition", "link": "eu-wan" },
+          { "at": 20, "type": "partition", "link": "dc-repl" },
+          { "at": 45, "type": "heal", "link": "eu-wan" },
+          { "at": 45, "type": "heal", "link": "dc-repl" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng (US & EU)", "en": "Users (US & EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app-us",
+              "kind": "service",
+              "label": { "vi": "App Vùng A (US)", "en": "App Region A (US)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App US", "en": "App US instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "app-eu",
+              "kind": "service",
+              "label": { "vi": "App Vùng B (EU)", "en": "App Region B (EU)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App EU", "en": "App EU instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db-us",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng A (Primary)", "en": "DB Region A (Primary)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-us",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.08,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB US", "en": "DB US size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db-eu",
+              "kind": "sql",
+              "label": { "vi": "DB Vùng B (Replica)", "en": "DB Region B (Replica)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.85,
+              "zone": "region-eu",
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 1800,
+                "rewriteHotness": 0.15,
+                "maxConnections": 800,
+                "poolSize": 32
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB EU", "en": "DB EU size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-us", "from": "client", "to": "app-us", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "client-eu", "from": "client", "to": "app-eu", "mode": "sync", "netClass": "internet", "timeoutMs": 2000, "weight": 1 },
+            { "id": "us-db", "from": "app-us", "to": "db-us", "mode": "sync", "carries": "rw", "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "eu-db", "from": "app-eu", "to": "db-eu", "mode": "sync", "carries": "r", "netClass": "same-az", "timeoutMs": 600 },
+            {
+              "id": "eu-wan",
+              "from": "app-eu",
+              "to": "db-us",
+              "mode": "sync",
+              "carries": "w",
+              "netClass": "cross-region",
+              "netMs": 65,
+              "timeoutMs": 1200,
+              "fallback": "error",
+              "retry": { "max": 2, "backoff": "none", "baseMs": 0, "jitter": "none" }
+            },
+            { "id": "dc-repl", "from": "db-us", "to": "db-eu", "mode": "replicate", "netClass": "cross-region", "netMs": 65 }
+          ],
+          "routes": {
+            "client": "split",
+            "app-us": "all-sequential",
+            "app-eu": "split"
+          }
+        }
+      }
+    }
+  ]
+}

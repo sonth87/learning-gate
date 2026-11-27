@@ -1,0 +1,57 @@
+[
+  {
+    "id": "S3-09.q1",
+    "type": "mc",
+    "q": "Hai máy chủ ứng dụng giống hệt nhau có độ sẵn sàng mỗi máy là 99% (0,99) được đặt ở hai Availability Zone độc lập và chạy song song dự phòng (chỉ ngừng dịch vụ khi cả hai cùng hỏng). Độ sẵn sàng của cả cặp là bao nhiêu?",
+    "code": "",
+    "choices": ["98,01%", "99,00%", "99,99%", "99,50%"],
+    "answer": 2,
+    "explain": "Với hai thành phần song song có lỗi độc lập, xác suất cả hai hỏng cùng lúc là (1 − 0,99) × (1 − 0,99) = 0,01 × 0,01 = 0,0001. Do đó độ sẵn sàng của cặp là 1 − 0,0001 = 0,9999, tức 99,99%."
+  },
+  {
+    "id": "S3-09.q2",
+    "type": "tf",
+    "q": "Đặt hai máy chủ Database Primary và Standby trên cùng một tủ rack trong một phòng máy duy nhất vẫn đảm bảo lỗi giữa hai máy là độc lập hoàn toàn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Hai máy chung tủ rack dùng chung nguồn điện (PDU), hệ thống làm mát và switch đầu tủ. Chỉ một sự cố nguồn hoặc mạng tại tủ rack đó sẽ tạo ra lỗi tương quan làm cả hai máy ngừng hoạt động cùng lúc."
+  },
+  {
+    "id": "S3-09.q3",
+    "type": "output",
+    "q": "Khi vùng AZ-A mất điện lúc 10:00:00, hệ thống mất 3 giây để phát hiện mất nhịp tim, 6 giây để cô lập Primary cũ và thăng cấp DB Standby ở AZ-B, sau đó thêm 2 giây để bộ định tuyến chuyển lưu lượng sang DB mới. Chỉ số RTO của lần chuyển đổi này bằng bao nhiêu giây? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "11",
+    "explain": "RTO (Recovery Time Objective) là tổng thời gian gián đoạn từ lúc sự cố xảy ra tới khi dịch vụ phục hồi hoàn toàn: 3 + 6 + 2 = 11 giây."
+  },
+  {
+    "id": "S3-09.q4",
+    "type": "mc",
+    "q": "Một cụm gồm 2 vùng khả dụng AZ-A và AZ-B đang chia đều tổng lưu lượng 1.600 req/s (mỗi vùng chạy 800 req/s). Mỗi vùng có năng lực xử lý tối đa là 1.000 req/s. Điều gì xảy ra nếu AZ-A mất điện?",
+    "code": "",
+    "choices": [
+      "AZ-B tiếp nhận êm ái toàn bộ 1.600 req/s với độ trễ không đổi",
+      "AZ-B bị quá tải nghiêm trọng (ρ = 1,60) vì tổng lưu lượng 1.600 req/s vượt năng lực 1.000 req/s của vùng còn lại",
+      "Lưu lượng người dùng tự động giảm một nửa xuống 800 req/s",
+      "Cả hai vùng tự động tăng gấp đôi công suất phần cứng tức thì"
+    ],
+    "answer": 1,
+    "explain": "Dự phòng Multi-AZ yêu cầu vùng còn lại đủ dư công suất gánh toàn bộ lưu lượng. Khi AZ-A sập, toàn bộ 1.600 req/s dồn sang AZ-B có năng lực chỉ 1.000 req/s (ρ = 1,60 > 1), làm hàng đợi tràn và gây lỗi dây chuyền."
+  },
+  {
+    "id": "S3-09.q5",
+    "type": "mc",
+    "q": "Chỉ số RPO = 0 trong chuyển đổi dự phòng cơ sở dữ liệu giữa hai vùng khả dụng mang ý nghĩa nào?",
+    "code": "",
+    "choices": [
+      "Hệ thống chuyển đổi không có bất kỳ mili-giây gián đoạn nào",
+      "Không có giao dịch nào đã báo COMMIT thành công cho khách hàng bị mất dữ liệu khi vùng chính gặp sự cố",
+      "Không cần sao lưu dữ liệu định kỳ ra Object Storage",
+      "Database không bao giờ cần nâng cấp phần mềm"
+    ],
+    "answer": 1,
+    "explain": "RPO (Recovery Point Objective) đo khoảng dữ liệu có thể bị mất tính ngược về trước thời điểm sự cố. RPO = 0 nghĩa là mọi giao dịch đã xác nhận COMMIT đều đã được lưu bền vững trên ít nhất một bản sao ở vùng khác."
+  }
+]

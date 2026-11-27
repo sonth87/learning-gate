@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-03.q1",
+    "type": "mc",
+    "q": "Vì sao mọi quy tắc về giá tiền và quyền truy cập bắt buộc phải kiểm tra lại ở App Server thay vì chỉ kiểm tra trên trình duyệt (Client)?",
+    "code": "",
+    "choices": [
+      "Vì trình duyệt không hỗ trợ thực thi các phép toán số học trên dữ liệu đơn hàng",
+      "Vì môi trường Client nằm ngoài tầm kiểm soát của hệ thống, người dùng có thể sửa mã hoặc gửi request giả lập trực tiếp",
+      "Vì kiểm tra ở App Server tự động xoá bỏ nhu cầu lưu trữ đơn hàng trong Database",
+      "Vì Load Balancer chặn toàn bộ các biểu mẫu đã kiểm tra hợp lệ ở trình duyệt"
+    ],
+    "answer": 1,
+    "explain": "Client là tầng hiển thị không đáng tin cậy về mặt bảo mật vì người dùng cuối kiểm soát thiết bị và có thể chỉnh sửa dữ liệu gửi đi. Kiểm tra ở Client chỉ cải thiện trải nghiệm, còn kiểm tra ở Server bảo vệ toàn vẹn nghiệp vụ."
+  },
+  {
+    "id": "S0-03.q2",
+    "type": "tf",
+    "q": "Thiết kế App Server không trạng thái (Stateless) giúp Load Balancer có thể điều phối request tiếp theo của cùng một người dùng sang bất kỳ máy chủ ứng dụng nào trong cụm.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Khi App Server không giữ phiên riêng trong bộ nhớ cục bộ của từng máy lẻ, mọi instance đều có thể xác thực token và đọc dữ liệu chung như nhau, giúp mở rộng ngang và thay thế máy lỗi rất thuận lợi."
+  },
+  {
+    "id": "S0-03.q3",
+    "type": "mc",
+    "q": "Tác vụ nào sau đây phù hợp nhất để chuyển sang giao tiếp bất đồng bộ (Async) qua Message Queue và Worker?",
+    "code": "",
+    "choices": [
+      "Kiểm tra tên đăng nhập và mật khẩu khi người dùng bấm nút Đăng nhập",
+      "Lấy số dư khả dụng của tài khoản ngay trước bước xác nhận chuyển khoản",
+      "Tạo 3 độ phân giải video và gửi thông báo đẩy sau khi người dùng tải video gốc lên",
+      "Đọc tiêu đề và giá niêm yết của một sản phẩm đang hiển thị trên màn hình"
+    ],
+    "answer": 2,
+    "explain": "Chuyển mã nhiều độ phân giải video tốn hàng chục giây và người dùng không cần toàn bộ bản mã hoá ngay trong tích tắc bấm tải lên. Đưa vào Message Queue giúp trả phản hồi sớm và tránh nghẽn kết nối HTTP."
+  },
+  {
+    "id": "S0-03.q4",
+    "type": "output",
+    "q": "Một lượt tải trang đi qua các bước nối tiếp: mạng và bắt tay 170 ms, App Server xử lý 40 ms, truy vấn Database 500 ms, trả về và hiển thị 230 ms. Nếu đặt Cache giúp thay bước truy vấn Database 500 ms bằng một lượt đọc Cache 5 ms, tổng thời gian mới còn bao nhiêu mili-giây? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "445",
+    "explain": "Thay chặng 500 ms bằng 5 ms giúp tiết kiệm 495 ms trên đường đi nối tiếp: 940 − 495 = 445 ms (hoặc cộng trực tiếp 170 + 40 + 5 + 230 = 445 ms). Cải thiện đúng bước chậm nhất mang lại mức giảm hơn một nửa tổng độ trễ."
+  },
+  {
+    "id": "S0-03.q5",
+    "type": "mc",
+    "q": "Loại dữ liệu nào sau đây phù hợp nhất để lưu trong tầng Cache?",
+    "code": "",
+    "choices": [
+      "Thông tin chi tiết sản phẩm có tỉ lệ đọc gấp hàng chục lần ghi và ít thay đổi trong giờ",
+      "Nhật ký ghi sự kiện cảm biến chỉ ghi liên tục và hầu như không bao giờ đọc lại trực tuyến",
+      "Số lượng tồn kho biến động từng phần mười giây trong đợt mở bán giới hạn cần chính xác tuyệt đối",
+      "Dữ liệu tạm chỉ dùng đúng một lần duy nhất cho từng request riêng biệt"
+    ],
+    "answer": 0,
+    "explain": "Cache phát huy hiệu quả cao nhất khi dữ liệu được đọc lặp lại nhiều lần (tỉ lệ đọc cao hơn nhiều so với ghi) và ít biến đổi trong khoảng thời gian TTL, giúp đạt tỉ lệ Cache Hit cao."
+  }
+]

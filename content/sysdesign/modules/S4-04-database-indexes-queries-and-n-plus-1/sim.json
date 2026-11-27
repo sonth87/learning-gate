@@ -1,0 +1,381 @@
+{
+  "sims": [
+    {
+      "id": "S4-04/n-plus-1",
+      "scenario": {
+        "id": "S4-04/n-plus-1",
+        "seed": 4404,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.92
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "ramp",
+          "from": 30,
+          "to": 220,
+          "overSec": 40
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người dùng",
+                "en": "Users"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": {
+                "vi": "Load Balancer",
+                "en": "Load Balancer"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 20000
+              },
+              "latency": {
+                "baseMs": 0.3,
+                "cv": 0.2
+              },
+              "params": {
+                "algorithm": "weighted",
+                "healthCheckSec": 3
+              }
+            },
+            {
+              "id": "api_n1",
+              "kind": "service",
+              "label": {
+                "vi": "Order API (N+1)",
+                "en": "Order API (N+1)"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": {
+                    "vi": "Bật endpoint ORM N+1 (25 query/req)",
+                    "en": "Enable ORM N+1 endpoint (25 queries/req)"
+                  },
+                  "default": true,
+                  "changeCost": 1
+                },
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance API N+1",
+                    "en": "N+1 API instances"
+                  },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1500
+              },
+              "latency": {
+                "baseMs": 5,
+                "cv": 0.25
+              },
+              "params": {
+                "enabled": true,
+                "replicas": 2,
+                "poolSize": 60
+              }
+            },
+            {
+              "id": "api_batch",
+              "kind": "service",
+              "label": {
+                "vi": "Order API (Batch IN)",
+                "en": "Order API (Batch IN)"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": {
+                    "vi": "Bật endpoint Batch WHERE IN + Index",
+                    "en": "Enable Batch WHERE IN + Index endpoint"
+                  },
+                  "default": false,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1500
+              },
+              "latency": {
+                "baseMs": 6,
+                "cv": 0.25
+              },
+              "params": {
+                "enabled": false,
+                "replicas": 2,
+                "poolSize": 60
+              }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": {
+                "vi": "Query Cache",
+                "en": "Query Cache"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "initial": {
+                "warm": 1
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": {
+                    "vi": "Dung lượng Cache (số key)",
+                    "en": "Cache capacity (keys)"
+                  },
+                  "min": 5000,
+                  "max": 100000,
+                  "step": 5000,
+                  "default": 10000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 40000
+              },
+              "latency": {
+                "baseMs": 0.5,
+                "cv": 0.2
+              },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0.1,
+                "hitRatioMax": 0.85,
+                "workingSetKeys": 50000,
+                "capacityKeys": 10000,
+                "warmupSec": 15,
+                "singleflight": true
+              }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": {
+                "vi": "Orders DB",
+                "en": "Orders DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy DB (scale-up)",
+                    "en": "DB instance size"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Thiếu Index gây quét toàn bảng (Seq Scan)",
+                    "en": "Missing index triggers full Seq Scan"
+                  }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 2200
+              },
+              "latency": {
+                "baseMs": 3.5,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 1200,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "poolSize": 32,
+                "sizeFactor": 1,
+                "queueLimit": 2500
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-n1",
+              "from": "lb",
+              "to": "api_n1",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1800,
+              "weight": 1
+            },
+            {
+              "id": "lb-batch",
+              "from": "lb",
+              "to": "api_batch",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1800,
+              "weight": 1
+            },
+            {
+              "id": "n1-db",
+              "from": "api_n1",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1200,
+              "calls": 25
+            },
+            {
+              "id": "batch-cache",
+              "from": "api_batch",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 150
+            },
+            {
+              "id": "cache-db",
+              "from": "cache",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800,
+              "calls": 2
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "api_n1": "all-sequential",
+            "api_batch": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 90,
+          "window": {
+            "fromSec": 0,
+            "toSec": 60
+          },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": {
+            "fromSec": 0,
+            "toSec": 60
+          }
+        }
+      ],
+      "expect": {
+        "bottleneck": "db"
+      },
+      "presets": [
+        {
+          "id": "fix-batch-and-cache",
+          "label": {
+            "vi": "Chuyển sang Batch IN (2 query) và mở rộng Cache",
+            "en": "Switch to Batch IN (2 queries) and expand Cache"
+          },
+          "changes": [
+            { "type": "knob", "node": "api_n1", "key": "enabled", "value": false },
+            { "type": "knob", "node": "api_batch", "key": "enabled", "value": true },
+            { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 50000 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-scale-up-db",
+          "label": {
+            "vi": "Giữ nguyên code N+1, chỉ nâng gấp đôi cỡ máy DB",
+            "en": "Keep N+1 loop and double DB instance size"
+          },
+          "changes": [
+            { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

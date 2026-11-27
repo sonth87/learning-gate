@@ -1,0 +1,343 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Client", "en": "Clients" },
+      "inspector": {
+        "what": {
+          "vi": "Trình duyệt web và ứng dụng di động gửi request từ ngoài Internet.",
+          "en": "Browsers and mobile apps sending requests over the public Internet."
+        },
+        "how": {
+          "vi": "Hiển thị giao diện, kiểm tra định dạng nhập liệu sơ bộ và phát sinh tổng lưu lượng λ = 200 req/s.",
+          "en": "Renders UI, performs basic input UX checks, and generates λ = 200 req/s."
+        },
+        "why": {
+          "vi": "Tách phần hiển thị sang thiết bị người dùng để giảm tải dựng giao diện cho máy chủ.",
+          "en": "Offloads presentation rendering to end-user devices."
+        },
+        "tip": {
+          "vi": "Không bao giờ tin dữ liệu từ Client: giá tiền, quyền hạn và quy tắc nghiệp vụ phải kiểm tra lại ở App Server.",
+          "en": "Never trust client inputs: always re-validate prices, permissions, and invariants server-side."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải đứng ở cửa ngõ Backend, năng lực μ = 10.000 req/s.",
+          "en": "Entry load balancer distributing traffic across backend servers (μ = 10,000 req/s)."
+        },
+        "how": {
+          "vi": "Chia đều request theo thuật toán Round-robin và thăm dò sức khoẻ (Health Check) mỗi 3 giây.",
+          "en": "Routes requests via Round-robin and runs health checks every 3 seconds."
+        },
+        "why": {
+          "vi": "Cho phép thêm bớt nhiều App Server phía sau một địa chỉ truy cập duy nhất và triển khai không gián đoạn.",
+          "en": "Enables horizontal App scaling and zero-downtime rolling deployments."
+        },
+        "tip": {
+          "vi": "Luôn chạy cặp dự phòng Active-Standby để bản thân Load Balancer không trở thành điểm lỗi đơn (SPOF).",
+          "en": "Deploy redundant Active-Standby pairs so the Load Balancer itself is not a SPOF."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Server", "en": "App Server" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng Stateless thực thi logic nghiệp vụ (μ = 800 req/s, xử lý nền ~10 ms).",
+          "en": "Stateless application server executing business logic (μ = 800 req/s, ~10 ms base)."
+        },
+        "how": {
+          "vi": "Xác thực token, kiểm tra quy tắc nghiệp vụ rồi tra cứu dữ liệu qua tầng Cache trước khi chạm Database.",
+          "en": "Validates auth tokens, runs domain logic, and queries Cache before Database."
+        },
+        "why": {
+          "vi": "Không lưu phiên cục bộ trong RAM nên có thể nhân bản ngang ngay khi CPU ứng dụng tăng cao.",
+          "en": "Keeping session state external allows effortless horizontal scaling."
+        },
+        "tip": {
+          "vi": "Chọn mô hình đồng thời phù hợp: Event-loop cho tác vụ chờ mạng/DB nhiều, Worker đa tiến trình cho tác vụ nặng CPU.",
+          "en": "Match concurrency model to workload: event-loop for I/O-bound, worker pool for CPU-bound tasks."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Cache", "en": "Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm trên RAM lưu 40.000 khoá đọc thường xuyên (μ = 20.000 req/s, ~0,5 ms).",
+          "en": "In-memory cache holding 40,000 hot keys (μ = 20,000 req/s, ~0.5 ms)."
+        },
+        "how": {
+          "vi": "Phục vụ ngay 89% lượt đọc khi ấm; các lượt trượt (Cache Miss) mới chuyển tiếp xuống Database.",
+          "en": "Serves 89% of reads from RAM when warm; forwards misses to the Database."
+        },
+        "why": {
+          "vi": "Giữ mức sử dụng ρ của Database ở 0,10 thay vì phải gánh toàn bộ lưu lượng đọc trực tiếp.",
+          "en": "Shields the slower disk-backed Database from repetitive read queries."
+        },
+        "tip": {
+          "vi": "Kết hợp TTL với xoá khoá chủ động khi cập nhật dữ liệu quan trọng, và tính sẵn kịch bản Cache khởi động lại.",
+          "en": "Pair TTL with active invalidation on critical writes, and capacity-plan for cold-cache restarts."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ lưu trữ bền vững trên đĩa (μ = 400 req/s, xử lý nền ~8 ms).",
+          "en": "Persistent relational Database acting as source of truth (μ = 400 req/s, ~8 ms base)."
+        },
+        "how": {
+          "vi": "Đảm bảo giao dịch ACID cho mọi lượt ghi và trả lời các lượt đọc không có trong Cache.",
+          "en": "Executes ACID writes and serves read queries that miss the Cache."
+        },
+        "why": {
+          "vi": "Bảo toàn dữ liệu lâu dài không mất khi khởi động lại máy chủ.",
+          "en": "Guarantees durable storage and transactional data integrity."
+        },
+        "tip": {
+          "vi": "Tối ưu theo thứ tự: thêm chỉ mục (Index) và sửa câu truy vấn → Connection Pool → Read Replica → Sharding.",
+          "en": "Optimize in order: Indexes & query tuning → Connection Pool → Read Replicas → Sharding."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối HTTPS từ thiết bị người dùng qua Internet tới Load Balancer.", "en": "HTTPS hop over the Internet from Client to Load Balancer." },
+        "how": { "vi": "Mất khoảng 30 ms độ trễ mạng công cộng; mọi đầu vào qua đường này đều coi là chưa xác thực.", "en": "Adds ~30 ms WAN latency; all payloads crossing this boundary are untrusted." },
+        "why": { "vi": "Điểm tiếp nhận duy nhất giúp ẩn cấu trúc mạng nội bộ phía sau.", "en": "Single public ingress shielding internal backend topology." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp nội bộ từ Load Balancer vào App Server.", "en": "Private network hop from Load Balancer to App Server." },
+        "how": { "vi": "Độ trễ nội bộ ~0,5 ms; tự ngắt nếu Health Check báo máy ứng dụng lỗi.", "en": "Sub-millisecond LAN hop gated by periodic health checks." },
+        "why": { "vi": "Phân phối đều request tới các máy ứng dụng khoẻ mạnh.", "en": "Balances incoming load across healthy stateless servers." }
+      }
+    },
+    "app-cache": {
+      "inspector": {
+        "what": { "vi": "Đường tra cứu bộ nhớ đệm tốc độ cao từ App Server sang Cache.", "en": "Low-latency lookup link from App Server to Cache." },
+        "how": { "vi": "Chặn khoảng 89% lượt đọc ngay tại RAM khi Cache ấm.", "en": "Short-circuits ~89% of read traffic in memory when warm." },
+        "why": { "vi": "Rút ngắn thời gian phản hồi và bảo vệ năng lực I/O của Database.", "en": "Cuts read latency and protects Database I/O capacity." }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn xuống Database cho các lượt Cache Miss và toàn bộ lượt ghi.", "en": "Fallback query path to Database on Cache Misses and all Writes." },
+        "how": { "vi": "Bình thường chỉ mang ~40 req/s, nhưng tăng vọt lên ~200 req/s ngay khi Cache rỗng.", "en": "Carries ~40 req/s normally, surging to ~200 req/s if Cache flushes." },
+        "why": { "vi": "Đảm bảo luôn lấy được dữ liệu chuẩn từ nguồn lưu trữ bền vững.", "en": "Ensures misses and writes reach the durable source of truth." }
+      }
+    }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": ["lb", "app", "cache", "db"],
+      "label": { "vi": "MẠNG NỘI BỘ BACKEND", "en": "BACKEND PRIVATE NETWORK" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25 },
+        "cache": { "loadPct": 1, "badge": { "text": { "vi": "Hit 89%", "en": "Hit 89%" }, "tone": "ok" } },
+        "db": { "loadPct": 10, "badge": { "text": { "vi": "ρ = 0,10", "en": "ρ = 0.10" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tải ổn định 200 req/s", "en": "Steady Load 200 req/s" },
+        "lines": [
+          { "text": { "vi": "90% đọc · 10% ghi", "en": "90% reads · 10% writes" }, "tone": "plain" },
+          { "text": { "vi": "Cache gánh ~160 req/s đọc", "en": "Cache serves ~160 read req/s" }, "tone": "good" },
+          { "text": { "vi": "Database chỉ nhận ~40 req/s", "en": "DB handles only ~40 req/s" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-client": {
+      "show": { "nodes": ["client", "lb", "app"] },
+      "state": {
+        "client": { "highlighted": true, "badge": { "text": { "vi": "Không tin cậy", "en": "Untrusted" }, "tone": "warn" } },
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25, "badge": { "text": { "vi": "Kiểm tra lại", "en": "Re-validate" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "client-lb": { "label": { "vi": "Internet ~30 ms", "en": "Internet ~30 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ranh giới tin cậy", "en": "Trust Boundary" },
+        "lines": [
+          { "text": { "vi": "Client: kiểm tra nhanh cho UX", "en": "Client: fast UX feedback only" }, "tone": "amber" },
+          { "text": { "vi": "Server: bắt buộc tính lại giá & quyền", "en": "Server: enforce auth & pricing" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-lb": {
+      "show": { "nodes": ["client", "lb", "app"] },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2, "highlighted": true, "badge": { "text": { "vi": "Round-robin", "en": "Round-robin" }, "tone": "ok" } },
+        "app": { "loadPct": 25 }
+      },
+      "linkState": {
+        "lb-app": { "label": { "vi": "Health check 3s", "en": "Health check 3s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Vai trò Load Balancer", "en": "Load Balancer Role" },
+        "lines": [
+          { "text": { "vi": "Phân tải đều sang tầng App", "en": "Distributes traffic evenly" }, "tone": "good" },
+          { "text": { "vi": "Tự ngắt máy lỗi qua Health Check", "en": "Drops unhealthy nodes automatically" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-app": {
+      "show": { "nodes": ["client", "lb", "app", "cache"] },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25, "highlighted": true, "badge": { "text": { "vi": "Stateless · 10 ms", "en": "Stateless · 10 ms" }, "tone": "ok" } },
+        "cache": { "loadPct": 1 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "App Server Stateless", "en": "Stateless App Server" },
+        "lines": [
+          { "text": { "vi": "Không giữ session trong RAM riêng", "en": "No local in-memory session" }, "tone": "good" },
+          { "text": { "vi": "Dễ nhân bản ngang nhiều máy", "en": "Scales horizontally on demand" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-cache": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25 },
+        "cache": { "loadPct": 1, "highlighted": true, "badge": { "text": { "vi": "Hit 89% · 0,5 ms", "en": "Hit 89% · 0.5 ms" }, "tone": "ok" } },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "app-cache": { "label": { "vi": "200 req/s", "en": "200 req/s" } },
+        "cache-db": { "label": { "vi": "40 req/s", "en": "40 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tác dụng của Cache ấm", "en": "Warm Cache Shielding" },
+        "lines": [
+          { "text": { "vi": "RAM ~0,5 ms so với DB ~8 ms", "en": "RAM ~0.5 ms vs DB ~8 ms" }, "tone": "good" },
+          { "text": { "vi": "Đánh đổi: dữ liệu cũ trong khoảng TTL", "en": "Trade-off: stale window up to TTL" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-db": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25 },
+        "cache": { "loadPct": 1, "badge": { "text": { "vi": "Mất dữ liệu!", "en": "Flushed!" }, "tone": "warn" } },
+        "db": { "loadPct": 49, "highlighted": true, "badge": { "text": { "vi": "ρ nhảy lên 0,49", "en": "ρ jumps to 0.49" }, "tone": "warn" } }
+      },
+      "linkState": {
+        "cache-db": { "style": "danger", "label": { "vi": "≈ 197 req/s", "en": "≈ 197 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Nguồn sự thật bền vững", "en": "Durable Source of Truth" },
+        "lines": [
+          { "text": { "vi": "μ = 400 req/s (thấp nhất chuỗi)", "en": "μ = 400 req/s (lowest in chain)" }, "tone": "amber" },
+          { "text": { "vi": "Ưu tiên Index & Pool trước khi nâng máy", "en": "Index & Pool before scaling hardware" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-live": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng mất Cache ở t = 25 s", "en": "Cache Flush at t = 25 s" },
+        "lines": [
+          { "text": { "vi": "Trước t = 25 s: ρ DB = 0,10", "en": "Before t = 25 s: DB ρ = 0.10" }, "tone": "good" },
+          { "text": { "vi": "Tại t = 26 s: ρ DB vọt lên 0,49", "en": "At t = 26 s: DB ρ jumps to 0.49" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 25, "badge": { "text": { "vi": "Stateless", "en": "Stateless" }, "tone": "ok" } },
+        "cache": { "loadPct": 1, "badge": { "text": { "vi": "Hit 89%", "en": "Hit 89%" }, "tone": "ok" } },
+        "db": { "loadPct": 10, "badge": { "text": { "vi": "ACID · Đĩa", "en": "ACID · Disk" }, "tone": "default" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "5 khối nền tảng", "en": "5 Core Building Blocks" },
+        "lines": [
+          { "text": { "vi": "Client → LB → App → Cache → DB", "en": "Client → LB → App → Cache → DB" }, "tone": "plain" },
+          { "text": { "vi": "Đo ρ từng khối trước khi mở rộng", "en": "Measure per-component ρ before scaling" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "steady": {
+      "sim": "S1-01/steady",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["kill", "slow"],
+        "knobs": [
+          { "node": "app", "key": "replicas" },
+          { "node": "cache", "key": "capacityKeys" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 80, "badAbove": 250 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "focus": { "nodes": ["cache", "db"] }
+    }
+  }
+}

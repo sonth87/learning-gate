@@ -1,0 +1,23 @@
+{
+  "id": "S7-02",
+  "slug": "S7-02-case-distributed-rate-limiter",
+  "level": 7,
+  "order": 2,
+  "title": "Case: Thiết kế Rate Limiter phân tán",
+  "summary": "Thiết kế bộ giới hạn tải dùng chung cho nhiều API Gateway: so sánh bộ đếm cục bộ bị lệch ngưỡng với Redis tập trung, đánh đổi độ trễ thêm 1 hop và SPOF, cùng hành vi Sliding Window và Token Bucket dưới tải đột biến.",
+  "durationMin": 18,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Giải thích vì sao bộ đếm cục bộ trên từng Gateway gây lệch ngưỡng khi có nhiều instance phía sau Load Balancer" },
+    { "vi": "Thiết kế bộ đếm tập trung trên Redis bằng lệnh nguyên tử (Lua script) và xử lý đánh đổi độ trễ thêm 1 hop" },
+    { "vi": "So sánh Token Bucket và Sliding Window Counter khi xử lý lưu lượng tăng đột biến (burst)" },
+    { "vi": "Lựa chọn chính sách Fail-open hay Fail-closed khi cụm Redis đếm ngưỡng gặp sự cố" }
+  ],
+  "tags": ["case-study", "rate-limiter", "distributed", "redis", "token-bucket", "sliding-window"],
+  "prerequisites": ["S4-05", "S2-02"],
+  "related": ["S4-11", "S7-03"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế bộ giới hạn tải phân tán (Distributed Rate Limiter): bộ đếm cục bộ lệch ngưỡng so với Redis tập trung, Sliding Window, Token Bucket dưới tải đột biến."
+  }
+}

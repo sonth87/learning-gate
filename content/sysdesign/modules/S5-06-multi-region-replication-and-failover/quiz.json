@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S5-06.q1",
+    "type": "mc",
+    "q": "Vì sao bật sao chép đồng bộ (Synchronous Replication) giữa hai vùng địa lý cách nhau RTT = 100 ms làm tăng mạnh độ trễ p99 của thao tác ghi?",
+    "code": "",
+    "choices": [
+      "Vì mỗi giao dịch ghi phải chờ tối thiểu thêm một vòng RTT 100 ms để vùng kia xác nhận trước khi trả lời client",
+      "Vì sao chép đồng bộ luôn nén dữ liệu gấp 10 lần",
+      "Vì CPU của Database giảm xuống còn một nửa",
+      "Vì trình duyệt người dùng tự động chặn kết nối đa vùng"
+    ],
+    "answer": 0,
+    "explain": "Tốc độ ánh sáng trong cáp quang đặt ra mức sàn vật lý. Ghi đồng bộ xuyên vùng buộc mọi lệnh COMMIT phải đợi 100 ms khứ hồi qua đại dương hoặc liên lục địa."
+  },
+  {
+    "id": "S5-06.q2",
+    "type": "mc",
+    "q": "Điểm khác biệt chính giữa kiến trúc Active-Passive và Active-Active đa vùng là gì?",
+    "code": "",
+    "choices": [
+      "Active-Passive chỉ dùng một vùng phục vụ ghi chính còn vùng kia dự phòng; Active-Active cho phép nhiều vùng cùng nhận ghi cục bộ nhưng phải giải quyết xung đột ghi đồng thời",
+      "Active-Passive luôn đắt gấp đôi Active-Active",
+      "Active-Active không bao giờ gặp xung đột dữ liệu",
+      "Active-Passive không cần cơ chế Failover"
+    ],
+    "answer": 0,
+    "explain": "Active-Passive đơn giản về tính nhất quán vì chỉ có một điểm ghi duy nhất. Active-Active giảm độ trễ cho người dùng ở xa nhưng phát sinh bài toán xung đột khi hai vùng cùng sửa một bản ghi."
+  },
+  {
+    "id": "S5-06.q3",
+    "type": "tf",
+    "q": "Dùng Last-Write-Wins (LWW) dựa trên đồng hồ vật lý của từng máy chủ luôn chọn đúng bản ghi mới nhất theo thời gian thực khi hai vùng ghi đồng thời.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đồng hồ vật lý giữa các máy chủ luôn có độ lệch (Clock Skew). Một bản ghi cũ hơn có thể mang timestamp lớn hơn và ghi đè mất dữ liệu mới hơn."
+  },
+  {
+    "id": "S5-06.q4",
+    "type": "mc",
+    "q": "Khi Region A sập đột ngột trong mô hình sao chép bất đồng bộ với Replication Lag = 800 ms, điều gì xảy ra khi failover sang Region B?",
+    "code": "",
+    "choices": [
+      "Không mất bất kỳ dữ liệu nào vì Region B tự suy luận ra các giao dịch bị thiếu",
+      "Khoảng 800 ms giao dịch cuối cùng đã ghi ở Region A nhưng chưa kịp truyền sang Region B có nguy cơ bị mất (RPO > 0)",
+      "Toàn bộ dữ liệu lịch sử từ trước đến nay bị xóa sạch",
+      "RTT liên vùng lập tức giảm xuống 0 ms"
+    ],
+    "answer": 1,
+    "explain": "Trong sao chép bất đồng bộ, độ trễ sao chép (Replication Lag) chính là khoảng dữ liệu chưa kịp rời khỏi vùng gốc khi sự cố xảy ra."
+  },
+  {
+    "id": "S5-06.q5",
+    "type": "mc",
+    "q": "Khi thiết kế hệ thống đa vùng, yếu tố chi phí nào thường tăng mạnh nhất ngoài tiền thuê máy chủ?",
+    "code": "",
+    "choices": [
+      "Chi phí cấp phát địa chỉ IP nội bộ",
+      "Chi phí truyền dữ liệu liên vùng (Cross-region Data Transfer / Egress) và duy trì cụm dự phòng chạy song song",
+      "Chi phí biên dịch mã nguồn",
+      "Chi phí tạo bảng trong SQL"
+    ],
+    "answer": 1,
+    "explain": "Các nhà cung cấp cloud tính phí rất cao cho lưu lượng truyền giữa các vùng địa lý (Cross-region transfer) bên cạnh chi phí nhân đôi cụm máy chủ và cơ sở dữ liệu."
+  }
+]

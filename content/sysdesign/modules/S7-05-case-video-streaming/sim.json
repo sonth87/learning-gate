@@ -1,0 +1,364 @@
+{
+  "sims": [
+    {
+      "id": "S7-05/streaming",
+      "scenario": {
+        "id": "S7-05/streaming",
+        "seed": 7705,
+        "durationSec": 80,
+        "mix": {
+          "readRatio": 0.85
+        },
+        "clientTimeoutMs": 2500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "spike",
+          "base": 400,
+          "peak": 2600,
+          "atSec": 15,
+          "holdSec": 25,
+          "riseSec": 4,
+          "fallSec": 4
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người xem & Tác giả",
+                "en": "Viewers & Creators"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.25
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "upload",
+              "kind": "service",
+              "label": {
+                "vi": "Upload Gateway",
+                "en": "Upload Gateway"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1200
+              },
+              "latency": {
+                "baseMs": 10,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 3,
+                "poolSize": 40
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số Upload Gateway",
+                    "en": "Upload Gateways"
+                  },
+                  "min": 1,
+                  "max": 10,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Upload Gateway sập: không nhận được video mới",
+                    "en": "Upload Gateway down: new uploads fail"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "transcode_queue",
+              "kind": "queue",
+              "label": {
+                "vi": "Hàng đợi chuyển mã",
+                "en": "Transcode Queue"
+              },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.08,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 15000
+              },
+              "latency": {
+                "baseMs": 2,
+                "cv": 0.2
+              },
+              "params": {
+                "maxDepth": 60000,
+                "dlq": true
+              },
+              "knobs": [
+                {
+                  "key": "maxDepth",
+                  "type": "number",
+                  "label": {
+                    "vi": "Sức chứa hàng đợi",
+                    "en": "Max queue depth"
+                  },
+                  "min": 5000,
+                  "max": 200000,
+                  "step": 5000,
+                  "default": 60000
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "workers",
+              "kind": "worker",
+              "label": {
+                "vi": "Transcode Workers",
+                "en": "Transcode Workers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.18,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 140
+              },
+              "latency": {
+                "baseMs": 45,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 2,
+                "poolSize": 16
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số Transcode Worker",
+                    "en": "Transcode Workers"
+                  },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Worker chậm làm backlog chuyển mã tăng cao",
+                    "en": "Slow workers build transcode backlog"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "blob",
+              "kind": "blob",
+              "label": {
+                "vi": "Object Storage",
+                "en": "Object Storage"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 4000
+              },
+              "latency": {
+                "baseMs": 14,
+                "cv": 0.3
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "cdn",
+              "kind": "cdn",
+              "label": {
+                "vi": "CDN Edge",
+                "en": "CDN Edge"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "zone": "internet",
+              "initial": {
+                "warm": 1
+              },
+              "capacity": {
+                "opsPerSec": 50000
+              },
+              "latency": {
+                "baseMs": 4,
+                "cv": 0.25
+              },
+              "params": {
+                "ttlSec": 600,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.92,
+                "workingSetKeys": 40000,
+                "capacityKeys": 20000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": {
+                    "vi": "Dung lượng đệm CDN (key)",
+                    "en": "CDN cache capacity (keys)"
+                  },
+                  "min": 10000,
+                  "max": 100000,
+                  "step": 10000,
+                  "default": 20000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            {
+              "id": "client-upload",
+              "from": "client",
+              "to": "upload",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "upload-transcode_queue",
+              "from": "upload",
+              "to": "transcode_queue",
+              "mode": "async",
+              "netClass": "same-az",
+              "timeoutMs": 500
+            },
+            {
+              "id": "transcode_queue-workers",
+              "from": "transcode_queue",
+              "to": "workers",
+              "mode": "pull",
+              "netClass": "same-az"
+            },
+            {
+              "id": "workers-blob",
+              "from": "workers",
+              "to": "blob",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "client-cdn",
+              "from": "client",
+              "to": "cdn",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "cdn-blob",
+              "from": "cdn",
+              "to": "blob",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "upload": "all-sequential",
+            "transcode_queue": "split",
+            "workers": "all-sequential",
+            "cdn": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 150,
+          "window": {
+            "fromSec": 0,
+            "toSec": 80
+          },
+          "allowViolationPct": 3
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": {
+            "fromSec": 0,
+            "toSec": 80
+          }
+        }
+      ],
+      "presets": [
+        {
+          "id": "scale-workers-and-cdn",
+          "label": {
+            "vi": "Tăng lên 4 Worker và mở rộng CDN Edge",
+            "en": "Scale to 4 Workers and expand CDN cache"
+          },
+          "changes": [
+            {
+              "type": "knob",
+              "node": "workers",
+              "key": "replicas",
+              "value": 4
+            },
+            {
+              "type": "knob",
+              "node": "cdn",
+              "key": "capacityKeys",
+              "value": 40000
+            }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

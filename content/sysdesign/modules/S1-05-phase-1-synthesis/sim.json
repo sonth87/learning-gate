@@ -1,0 +1,249 @@
+{
+  "sims": [
+    {
+      "id": "S1-05/shortener",
+      "scenario": {
+        "id": "S1-05/shortener",
+        "seed": 1105,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.95 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2500 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3, "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Load Balancer", "en": "LB instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB đơn lẻ ngừng chạy làm đứt toàn bộ truy cập", "en": "Single LB crash drops all traffic" } }
+              ]
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Shortener API", "en": "Shortener API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 48 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Máy chủ API gặp sự cố", "en": "API instance crash" } }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 40000 },
+              "latency": { "baseMs": 0.5, "cv": 0.3 },
+              "params": {
+                "ttlSec": 600,
+                "ttlJitterPct": 0.15,
+                "hitRatioMax": 0.96,
+                "workingSetKeys": 200000,
+                "capacityKeys": 10000,
+                "warmupSec": 20,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (key)", "en": "Cache capacity (keys)" },
+                  "min": 10000,
+                  "max": 500000,
+                  "step": 10000,
+                  "default": 10000,
+                  "changeCost": 1
+                },
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "TTL", "en": "TTL" },
+                  "min": 60,
+                  "max": 86400,
+                  "step": 60,
+                  "default": 600,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Xóa trắng Cache làm lượt đọc tràn xuống Database", "en": "Cache flush sends reads to DB" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "URL Database", "en": "URL Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.7,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 900 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": {
+                "shards": 1,
+                "applyRps": 800,
+                "rewriteHotness": 0.01,
+                "maxConnections": 400,
+                "poolSize": 32,
+                "sizeFactor": 1
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "DB size factor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Thiếu chỉ mục trên cột short_code làm chậm tra cứu", "en": "Missing short_code index slows lookups" } }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-app",
+              "from": "lb",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-cache",
+              "from": "app",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 120
+            },
+            {
+              "id": "cache-db",
+              "from": "cache",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 900
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 85,
+          "window": { "fromSec": 10, "toSec": 60 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 10, "toSec": 60 }
+        }
+      ],
+      "presets": [
+        {
+          "id": "fix-api-and-cache",
+          "label": { "vi": "2 Shortener API + Cache 200k key", "en": "2 API instances + 200k Cache keys" },
+          "changes": [
+            { "type": "knob", "node": "app", "key": "replicas", "value": 2 },
+            { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 200000 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-only-db",
+          "label": { "vi": "Chỉ nâng cỡ máy Database ×3", "en": "Scale-up DB ×3 only" },
+          "changes": [
+            { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

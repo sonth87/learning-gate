@@ -1,0 +1,227 @@
+{
+  "sims": [
+    {
+      "id": "S7-07/typeahead",
+      "scenario": {
+        "id": "S7-07/typeahead",
+        "seed": 7707,
+        "durationSec": 75,
+        "mix": {
+          "readRatio": 0.98
+        },
+        "clientTimeoutMs": 1000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "ramp",
+          "from": 5000,
+          "to": 50000,
+          "overSec": 50
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Người dùng gõ tìm kiếm",
+                "en": "Search Clients"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.2
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "prefix_cache",
+              "kind": "cache",
+              "label": {
+                "vi": "Prefix Cache (1–3 ký tự)",
+                "en": "Prefix Cache (1–3 chars)"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.25,
+              "zone": "az-a",
+              "initial": {
+                "warm": 1
+              },
+              "capacity": {
+                "opsPerSec": 100000
+              },
+              "latency": {
+                "baseMs": 1,
+                "cv": 0.2
+              },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.9,
+                "workingSetKeys": 20000,
+                "capacityKeys": 8000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": {
+                    "vi": "Dung lượng Prefix Cache (key)",
+                    "en": "Prefix Cache capacity (keys)"
+                  },
+                  "min": 4000,
+                  "max": 40000,
+                  "step": 2000,
+                  "default": 8000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "trie_shards",
+              "kind": "service",
+              "label": {
+                "vi": "Trie Shards (RAM)",
+                "en": "Trie Shards (In-Memory)"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 3500
+              },
+              "latency": {
+                "baseMs": 8,
+                "cv": 0.25
+              },
+              "params": {
+                "replicas": 3,
+                "poolSize": 64
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số Trie Shard",
+                    "en": "Trie Shards"
+                  },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Trie Shard quá tải làm độ trễ vượt 100 ms",
+                    "en": "Trie Shard overload pushes latency past 100 ms"
+                  }
+                }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-prefix_cache",
+              "from": "client",
+              "to": "prefix_cache",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1000
+            },
+            {
+              "id": "prefix_cache-trie_shards",
+              "from": "prefix_cache",
+              "to": "trie_shards",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 500
+            }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "prefix_cache": "split"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 80,
+          "window": {
+            "fromSec": 0,
+            "toSec": 75
+          },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": {
+            "fromSec": 0,
+            "toSec": 75
+          }
+        }
+      ],
+      "presets": [
+        {
+          "id": "expand-prefix-cache",
+          "label": {
+            "vi": "Mở rộng Prefix Cache lên 20.000 key",
+            "en": "Expand Prefix Cache to 20,000 keys"
+          },
+          "changes": [
+            {
+              "type": "knob",
+              "node": "prefix_cache",
+              "key": "capacityKeys",
+              "value": 20000
+            }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-only-shards",
+          "label": {
+            "vi": "Chỉ tăng lên 5 Trie Shard mà không mở rộng Cache",
+            "en": "Only scale to 5 Trie Shards without expanding Cache"
+          },
+          "changes": [
+            {
+              "type": "knob",
+              "node": "trie_shards",
+              "key": "replicas",
+              "value": 5
+            }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

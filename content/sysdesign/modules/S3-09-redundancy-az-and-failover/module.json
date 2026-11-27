@@ -1,0 +1,24 @@
+{
+  "id": "S3-09",
+  "slug": "S3-09-redundancy-az-and-failover",
+  "level": 3,
+  "order": 2,
+  "title": "Redundancy, Availability Zone và Failover: loại bỏ điểm lỗi đơn",
+  "summary": "Tính độ sẵn sàng của chuỗi thành phần nối tiếp và song song, loại bỏ điểm lỗi đơn (SPOF), phân bố hạ tầng qua nhiều Availability Zone, đo RTO/RPO và giới hạn phạm vi lỗi bằng Canary.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Tính độ sẵn sàng tổng thể của các thành phần mắc nối tiếp và mắc song song dự phòng" },
+    { "vi": "Xác định điểm lỗi đơn (SPOF) trên đồ thị kiến trúc và phân biệt lỗi độc lập với lỗi tương quan" },
+    { "vi": "Thiết kế kiến trúc đa vùng khả dụng (Multi-AZ) kết hợp chuyển đổi dự phòng tự động cho Load Balancer và Database" },
+    { "vi": "Phân tích hai chỉ số RTO, RPO và sử dụng triển khai Canary để tránh lỗi phần mềm lan rộng toàn cụm" }
+  ],
+  "tags": ["redundancy", "availability", "spof", "multi-az", "failover", "rto", "rpo", "canary"],
+  "prerequisites": ["S1-04", "S2-01", "S2-08"],
+  "related": ["S3-01", "S3-03", "S4-11"],
+  "dtsRef": "redundancy",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về loại bỏ SPOF, tính độ sẵn sàng nối tiếp và song song, phân bố đa Availability Zone và chỉ số RTO/RPO."
+  }
+}

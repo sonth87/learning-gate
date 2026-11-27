@@ -1,0 +1,514 @@
+{
+  "sims": [
+    {
+      "id": "S2-11/pubsub-outbox",
+      "scenario": {
+        "id": "S2-11/pubsub-outbox",
+        "seed": 2211,
+        "durationSec": 65,
+        "mix": {
+          "readRatio": 0.1
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 500
+        },
+        "events": [
+          {
+            "at": 20,
+            "type": "crash",
+            "node": "email_svc"
+          },
+          {
+            "at": 42,
+            "type": "recover",
+            "node": "email_svc"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Khách mua hàng", "en": "Shoppers" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB dừng hoạt động", "en": "LB down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "checkout",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order", "en": "Order instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Instance Order dừng", "en": "Order instance down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "order_db",
+              "kind": "sql",
+              "label": { "vi": "Order DB + Outbox", "en": "Order DB + Outbox" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Order DB", "en": "Order DB size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Ghi bảng đơn chậm", "en": "Slow order writes" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": {
+                "sizeFactor": 1,
+                "shards": 1,
+                "applyRps": 2000,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "poolSize": 24
+              }
+            },
+            {
+              "id": "event_bus",
+              "kind": "log",
+              "label": { "vi": "Event Bus", "en": "Event Bus" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.3,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Event Bus gián đoạn", "en": "Broker down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 80000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "sub_email",
+              "kind": "queue",
+              "label": { "vi": "Sub: Email", "en": "Sub: Email" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.08,
+              "knobs": [
+                {
+                  "key": "dlq",
+                  "type": "bool",
+                  "label": { "vi": "Dead-letter queue", "en": "Dead-letter queue" },
+                  "default": true
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "maxDepth": 100000, "dlq": true, "visibilitySec": 30 }
+            },
+            {
+              "id": "sub_loyalty",
+              "kind": "queue",
+              "label": { "vi": "Sub: Loyalty", "en": "Sub: Loyalty" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "maxDepth": 100000, "dlq": true, "visibilitySec": 30 }
+            },
+            {
+              "id": "email_svc",
+              "kind": "worker",
+              "label": { "vi": "Email Service", "en": "Email Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số worker Email", "en": "Email workers" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Dịch vụ Email sập", "en": "Email service down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 45, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 60 }
+            },
+            {
+              "id": "loyalty_svc",
+              "kind": "worker",
+              "label": { "vi": "Loyalty Service", "en": "Loyalty Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số worker Loyalty", "en": "Loyalty workers" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Dịch vụ tích điểm sập", "en": "Loyalty service down" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 30 }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-checkout",
+              "from": "lb",
+              "to": "checkout",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "checkout-db",
+              "from": "checkout",
+              "to": "order_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "db-bus",
+              "from": "order_db",
+              "to": "event_bus",
+              "mode": "async",
+              "netClass": "same-az",
+              "timeoutMs": 500
+            },
+            {
+              "id": "bus-sub-email",
+              "from": "event_bus",
+              "to": "sub_email",
+              "mode": "async",
+              "netClass": "same-az"
+            },
+            {
+              "id": "bus-sub-loyalty",
+              "from": "event_bus",
+              "to": "sub_loyalty",
+              "mode": "async",
+              "netClass": "same-az"
+            },
+            {
+              "id": "sub-email-worker",
+              "from": "sub_email",
+              "to": "email_svc",
+              "mode": "pull",
+              "netClass": "same-az"
+            },
+            {
+              "id": "sub-loyalty-worker",
+              "from": "sub_loyalty",
+              "to": "loyalty_svc",
+              "mode": "pull",
+              "netClass": "same-az"
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "checkout": "all-sequential",
+            "order_db": "all-sequential",
+            "event_bus": "all-parallel"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 120,
+          "window": { "fromSec": 0, "toSec": 65 },
+          "allowViolationPct": 2
+        },
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.01,
+          "window": { "fromSec": 0, "toSec": 65 }
+        }
+      ]
+    },
+    {
+      "id": "S2-11/sync-coupled",
+      "scenario": {
+        "id": "S2-11/sync-coupled",
+        "seed": 2212,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.1
+        },
+        "clientTimeoutMs": 2000,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 500
+        },
+        "events": [
+          {
+            "at": 20,
+            "type": "crash",
+            "node": "email_svc"
+          },
+          {
+            "at": 45,
+            "type": "recover",
+            "node": "email_svc"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Khách mua hàng", "en": "Shoppers" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "checkout",
+              "kind": "service",
+              "label": { "vi": "Order Service", "en": "Order Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Order", "en": "Order instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "order_db",
+              "kind": "sql",
+              "label": { "vi": "Order DB + Outbox", "en": "Order DB + Outbox" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "shards": 1, "poolSize": 24 }
+            },
+            {
+              "id": "email_svc",
+              "kind": "service",
+              "label": { "vi": "Email Service", "en": "Email Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Email sập làm lỗi đơn hàng", "en": "Email outage breaks checkout" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 45, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 60 }
+            },
+            {
+              "id": "loyalty_svc",
+              "kind": "service",
+              "label": { "vi": "Loyalty Service", "en": "Loyalty Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 30 }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "lb-checkout",
+              "from": "lb",
+              "to": "checkout",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "checkout-db",
+              "from": "checkout",
+              "to": "order_db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "checkout-email",
+              "from": "checkout",
+              "to": "email_svc",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "checkout-loyalty",
+              "from": "checkout",
+              "to": "loyalty_svc",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "checkout": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

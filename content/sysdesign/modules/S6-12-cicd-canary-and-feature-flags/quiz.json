@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-12.q1",
+    "type": "mc",
+    "q": "Ý nghĩa của nguyên tắc Build Once, Promote Everywhere trong CI/CD là gì?",
+    "code": "",
+    "choices": [
+      "Chỉ dựng một artifact bất biến duy nhất ở CI rồi đưa chính artifact đó qua Staging và Production, không biên dịch lại ở từng môi trường",
+      "Mỗi môi trường tự tải mã nguồn và biên dịch lại với bộ thư viện mới nhất",
+      "Chỉ chạy kiểm thử tự động trên môi trường Production",
+      "Gộp tất cả các dịch vụ thành một file thực thi duy nhất"
+    ],
+    "answer": 0,
+    "explain": "Dựng lại ở mỗi môi trường có thể kéo về phiên bản thư viện khác nhau. Dùng cùng một artifact bất biến (như Docker image gắn mã SHA) đảm bảo thứ chạy trên Production giống hệt thứ đã qua kiểm thử ở Staging."
+  },
+  {
+    "id": "S6-12.q2",
+    "type": "mc",
+    "q": "Điểm khác biệt chính giữa Blue-Green Deployment và Canary Rollout là gì?",
+    "code": "",
+    "choices": [
+      "Blue-Green chuyển 100% lưu lượng sang cụm mới cùng lúc (tốn 2× tài nguyên), còn Canary chuyển dần từng phần nhỏ (5% → 25% → 100%) để so sánh chỉ số",
+      "Blue-Green không cần Load Balancer",
+      "Canary luôn yêu cầu dừng toàn bộ hệ thống trong 15 phút",
+      "Blue-Green chỉ dùng cho ứng dụng di động"
+    ],
+    "answer": 0,
+    "explain": "Blue-Green giữ hai cụm hoàn chỉnh song song nên tốn gấp đôi tài nguyên nhưng chuyển/hoàn tác tức thì. Canary tiết kiệm hơn và cho phép kiểm chứng thực tế trên tỉ lệ nhỏ người dùng trước khi mở rộng."
+  },
+  {
+    "id": "S6-12.q3",
+    "type": "mc",
+    "q": "Trong quy trình di trú Database Expand-Migrate-Contract, khi nào mới được phép xóa cột cũ (Contract)?",
+    "code": "",
+    "choices": [
+      "Ngay trước khi triển khai phiên bản ứng dụng mới",
+      "Cùng một lệnh SQL với bước thêm cột mới",
+      "Chỉ sau khi dữ liệu đã backfill xong và 100% instance phiên bản cũ không còn chạy hay đọc/ghi cột đó nữa",
+      "Ngay khi vừa bật Feature Flag cho 5% người dùng"
+    ],
+    "answer": 2,
+    "explain": "Nếu xóa cột cũ khi bản cũ vẫn đang chạy hoặc còn khả năng rollback, hệ thống sẽ lỗi SQL ngay lập tức. Bước Contract luôn là bước cuối cùng sau khi bản cũ đã tắt hoàn toàn."
+  },
+  {
+    "id": "S6-12.q4",
+    "type": "tf",
+    "q": "Feature Flag cho phép tách thời điểm triển khai mã nguồn (Deploy) khỏi thời điểm mở tính năng cho người dùng (Release).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Mã nguồn có thể được deploy sẵn lên production ở trạng thái tắt, sau đó đội sản phẩm bật dần theo phần trăm hoặc nhóm người dùng qua cấu hình động và tắt ngay nếu có sự cố."
+  },
+  {
+    "id": "S6-12.q5",
+    "type": "mc",
+    "q": "Bốn chỉ số DORA dùng để đo lường hiệu quả giao hàng phần mềm bao gồm những gì?",
+    "code": "",
+    "choices": [
+      "CPU, RAM, Disk I/O và Băng thông mạng",
+      "Deployment Frequency, Lead Time for Changes, Change Failure Rate và Time to Restore (MTTR)",
+      "Số dòng code, số lượng commit, số pull request và số giờ họp",
+      "Cache Hit Ratio, p50, p95 và p99"
+    ],
+    "answer": 1,
+    "explain": "Bộ 4 chỉ số DORA cân bằng cả tốc độ giao hàng (Deployment Frequency, Lead Time) và độ ổn định vận hành (Change Failure Rate, MTTR)."
+  }
+]

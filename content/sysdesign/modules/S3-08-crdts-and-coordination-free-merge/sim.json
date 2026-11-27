@@ -1,0 +1,232 @@
+{
+  "sims": [
+    {
+      "id": "S3-08/ap-sync",
+      "scenario": {
+        "id": "S3-08/ap-sync",
+        "seed": 3308,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.6
+        },
+        "clientTimeoutMs": 1500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 1800
+        },
+        "events": [
+          {
+            "at": 15,
+            "type": "partition",
+            "link": "hn-sg"
+          },
+          {
+            "at": 40,
+            "type": "heal",
+            "link": "hn-sg"
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Thiết bị đồng bộ",
+                "en": "Sync Clients"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": {
+                "vi": "Geo Router",
+                "en": "Geo Router"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "knobs": [
+                {
+                  "key": "algorithm",
+                  "type": "select",
+                  "label": {
+                    "vi": "Chế độ định tuyến",
+                    "en": "Routing mode"
+                  },
+                  "default": "round-robin",
+                  "options": [
+                    {
+                      "value": "round-robin",
+                      "label": { "vi": "round-robin", "en": "round-robin" }
+                    },
+                    {
+                      "value": "ip-hash",
+                      "label": { "vi": "ip-hash", "en": "ip-hash" }
+                    }
+                  ]
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 20000
+              },
+              "latency": {
+                "baseMs": 0.3,
+                "cv": 0.2
+              },
+              "params": {
+                "algorithm": "round-robin",
+                "healthCheckSec": 3
+              }
+            },
+            {
+              "id": "rep_hn",
+              "kind": "nosql",
+              "label": {
+                "vi": "Replica Hà Nội",
+                "en": "Hanoi Replica"
+              },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số phân vùng HN",
+                    "en": "HN partitions"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 2500
+              },
+              "latency": {
+                "baseMs": 3,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 2400,
+                "rewriteHotness": 0.05,
+                "maxConnections": 1000,
+                "poolSize": 40
+              }
+            },
+            {
+              "id": "rep_sg",
+              "kind": "nosql",
+              "label": {
+                "vi": "Replica Singapore",
+                "en": "Singapore Replica"
+              },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số phân vùng SG",
+                    "en": "SG partitions"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-b",
+              "capacity": {
+                "opsPerSec": 2500
+              },
+              "latency": {
+                "baseMs": 3,
+                "cv": 0.25
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 2400,
+                "rewriteHotness": 0.05,
+                "maxConnections": 1000,
+                "poolSize": 40
+              }
+            }
+          ],
+          "links": [
+            {
+              "id": "client-lb",
+              "from": "client",
+              "to": "lb",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "lb-hn",
+              "from": "lb",
+              "to": "rep_hn",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "lb-sg",
+              "from": "lb",
+              "to": "rep_sg",
+              "mode": "sync",
+              "netClass": "cross-az",
+              "timeoutMs": 800
+            },
+            {
+              "id": "hn-sg",
+              "from": "rep_hn",
+              "to": "rep_sg",
+              "mode": "replicate",
+              "netClass": "cross-region",
+              "netMs": 35
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split"
+          }
+        }
+      }
+    }
+  ]
+}

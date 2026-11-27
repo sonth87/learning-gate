@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-02.c1",
+    "front": "Vì sao không tồn tại kiến trúc hoàn hảo trong thiết kế hệ thống?",
+    "back": "Vì các thuộc tính chất lượng thường đối lập nhau (như độ trễ thấp và tính nhất quán tức thời, khả năng mở rộng lớn và sự đơn giản vận hành). Tối ưu mặt này luôn đòi hỏi chi phí ở mặt kia."
+  },
+  {
+    "id": "S0-02.c2",
+    "front": "Ba bước lập Ma trận đánh đổi (Trade-off Matrix) là gì?",
+    "back": "1) Xác định rõ ràng buộc kỹ thuật, kinh doanh và nhân sự; 2) Liệt kê tường minh Lợi ích (Gains) và Chi phí (Costs) của từng phương án; 3) Xếp hạng ưu tiên của dự án để chọn phương án khớp nhất."
+  },
+  {
+    "id": "S0-02.c3",
+    "front": "Đánh đổi chính khi đặt thêm tầng Cache trước Database là gì?",
+    "back": "Đạt được độ trễ đọc thấp (vài ms) và giảm mạnh tải cho Database; đổi lại phải chịu chi phí RAM, độ phức tạp khi xoá đệm (Cache Invalidation) và rủi ro người dùng đọc phải dữ liệu cũ trong khoảng TTL."
+  },
+  {
+    "id": "S0-02.c4",
+    "front": "Khi nào chọn giao tiếp Đồng bộ (Sync) và khi nào chọn Bất đồng bộ (Async)?",
+    "back": "Chọn Sync khi người dùng cần kết quả ngay lập tức để đi bước tiếp theo (như đăng nhập, thanh toán). Chọn Async qua hàng đợi khi tác vụ kéo dài nhiều giây, không cần kết quả tức thì hoặc cần hấp thụ tải tăng vọt."
+  },
+  {
+    "id": "S0-02.c5",
+    "front": "Nguyên tắc Đủ tốt (Good Enough) và quy luật 80/20 trong tối ưu hiệu năng nói lên điều gì?",
+    "back": "Các bước đơn giản đầu tiên (như thêm Index, đặt Cache hợp lý) thường giải quyết 80% độ trễ với chi phí thấp. Khi đã đạt mục tiêu SLO, nên dừng lại thay vì tốn nhiều tháng cho mức cải thiện nhỏ khó nhận biết."
+  },
+  {
+    "id": "S0-02.c6",
+    "front": "Mô hình Khả năng đảo ngược (Reversibility) phân loại quyết định kiến trúc như thế nào?",
+    "back": "Quyết định dễ đảo ngược (đổi cấu hình TTL, thư viện phụ) thì chốt nhanh và điều chỉnh dần; quyết định khó đảo ngược (chọn Database cốt lõi, tách Microservices) thì phải phân tích kỹ ràng buộc dài hạn."
+  }
+]

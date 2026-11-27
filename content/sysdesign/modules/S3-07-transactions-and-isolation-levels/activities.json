@@ -1,0 +1,105 @@
+[
+  {
+    "id": "S3-07.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào cạn năng lực khi giữ giao dịch chờ cổng thanh toán?" },
+    "prompt": { "vi": "Hệ thống đặt vé đang phục vụ êm 320 req/s với Seat DB có Connection Pool 20 kết nối (mỗi giao dịch SQL cục bộ giữ kết nối 8 ms). Ở giây 16, bản cập nhật mới đặt lời gọi HTTP chờ cổng thanh toán vào bên trong khối BEGIN...COMMIT làm thời gian giữ mỗi kết nối tăng lên 250 ms. Mô phỏng dừng ở giây 12: hãy dự đoán node nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên." },
+    "difficulty": 1,
+    "at": 12,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 12 },
+      "expected": ["seat_db"]
+    },
+    "reveal": { "playFromSec": 12, "playToSec": 28, "speed": 2 },
+    "hints": [
+      { "vi": "Áp dụng định luật Little cho Connection Pool của cơ sở dữ liệu: thông lượng tối đa μ = poolSize / thời_gian_giữ_kết_nối." },
+      { "vi": "Với 20 kết nối mà mỗi kết nối bị chiếm 0,25 giây, Seat DB chỉ xử lý được tối đa 20 / 0,25 = 80 req/s trong khi tải vào là 320 req/s." }
+    ],
+    "explain": { "vi": "Ngay khi thời gian giữ kết nối tăng lên 250 ms ở giây {t.first.seat_db:0}, thông lượng tối đa của {seat_db.name} bị khóa cứng bởi Connection Pool còn 20 / 0,25 = 80 ops/s, khiến mức sử dụng vọt lên ρ = {seat_db.rho@25:2} với hàng đợi {seat_db.queue@25:0} request dù tầng ứng dụng mới ở ρ = {app1.rho@25:2}." },
+    "sim": { "simId": "S3-07/lock-pool", "seekSec": 12, "autoplay": false },
+    "replay": { "simId": "S3-07/lock-pool", "seekSec": 12, "focus": { "nodes": ["seat_db", "pay_gw"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-07.A2",
+    "kind": "timeline-read",
+    "title": { "vi": "Phát hiện các lượt đọc ảnh chụp bỏ lỡ cập nhật đã COMMIT" },
+    "prompt": { "vi": "Dưới đây là lịch sử thời gian thực trên hai ghế A12 và B05 khi các phiên đặt vé chạy ở chế độ đọc ảnh chụp không khoá dòng (không có FOR UPDATE). Hãy chọn TẤT CẢ các thao tác đọc vi phạm tính tuyến tính hoá (trả về số ghế cũ dù trước lúc bắt đầu đọc đã có một giao dịch khác COMMIT thành công giá trị 0)." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-linearizability-violations",
+    "history": [
+      { "id": "w1", "client": "init", "op": "write", "key": "seat_A12", "value": 1, "start": 0, "end": 1, "node": "seat_db" },
+      { "id": "w2", "client": "tx1", "op": "write", "key": "seat_A12", "value": 0, "start": 2, "end": 4, "node": "seat_db" },
+      { "id": "r1", "client": "tx2", "op": "read", "key": "seat_A12", "value": 1, "start": 5, "end": 6, "node": "seat_db" },
+      { "id": "r2", "client": "tx3", "op": "read", "key": "seat_A12", "value": 0, "start": 7, "end": 8, "node": "seat_db" },
+      { "id": "w3", "client": "init", "op": "write", "key": "seat_B05", "value": 1, "start": 8, "end": 9, "node": "seat_db" },
+      { "id": "w4", "client": "tx4", "op": "write", "key": "seat_B05", "value": 0, "start": 10, "end": 12, "node": "seat_db" },
+      { "id": "r3", "client": "tx5", "op": "read", "key": "seat_B05", "value": 1, "start": 13, "end": 14, "node": "seat_db" }
+    ],
+    "expected": ["r1", "r3"],
+    "hints": [
+      { "vi": "Đối chiếu thời điểm kết thúc (end) của lệnh ghi gần nhất trên cùng khoá với thời điểm bắt đầu (start) của từng lệnh đọc." },
+      { "vi": "Nếu w.end ≤ r.start mà r vẫn trả về giá trị trước w (và không có lệnh ghi đồng thời nào mang giá trị đó), r đã đọc phải ảnh chụp cũ." }
+    ],
+    "explain": { "vi": "r1 (của tx2 ở t = 5..6) vẫn thấy seat_A12 = 1 dù tx1 đã chốt seat_A12 = 0 từ t = 4; tương tự r3 (của tx5 ở t = 13..14) vẫn thấy seat_B05 = 1 dù tx4 đã chốt seat_B05 = 0 từ t = 12. Nếu tx2 và tx5 dùng giá trị đọc này để quyết định xuất vé mà không khoá dòng hoặc kiểm tra version, cả hai ghế đều sẽ bị bán trùng." }
+  },
+  {
+    "id": "S3-07.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố mở bán vé: bán vượt 42 ghế và treo toàn bộ ứng dụng" },
+    "prompt": { "vi": "Trong đợt mở bán 1.000 vé đêm nhạc lúc 20:00, hệ thống gặp liên tiếp ba sự cố: (1) Phút đầu tiên, mã đặt vé chạy khối BEGIN...COMMIT ở mức Read Committed mặc định (SELECT seats_left → kiểm tra > 0 trong Python → UPDATE seats_left - 1) khiến 1.000 ghế bị xuất thành 1.042 vé hợp lệ; (2) Lúc 20:05, nhóm kỹ thuật sửa nóng bằng cách thêm SELECT ... FOR UPDATE ở đầu hàm rồi gọi thẳng HTTP sang cổng thanh toán (mất ~250–600 ms) trước khi COMMIT — chỉ 15 giây sau, toàn bộ 20 kết nối DB đều cạn sạch làm cả trang xem lịch diễn chỉ đọc cũng báo lỗi 504; (3) Các đơn đặt theo cặp ghế [A1, A2] và [A2, A1] liên tục văng lỗi deadlock detected. Hãy xác định nguyên nhân gốc và hướng khắc phục chuẩn." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S3-07/lock-pool",
+      "seekSec": 25,
+      "focus": { "nodes": ["seat_db", "pay_gw"] }
+    },
+    "questions": [
+      {
+        "id": "cause-oversell",
+        "type": "single",
+        "prompt": { "vi": "Vì sao bọc BEGIN...COMMIT ở mức Read Committed trong phút đầu tiên vẫn để lọt 42 vé bán trùng?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do cơ sở dữ liệu quan hệ không ghi nhật ký WAL khi tải cao" } },
+          { "id": "b", "text": { "vi": "Câu SELECT thường không giữ khoá dòng nên nhiều giao dịch đồng thời cùng đọc thấy seats_left = 1 trước khi giao dịch đầu kịp COMMIT, dẫn tới Lost Update" } },
+          { "id": "c", "text": { "vi": "Do hai máy Booking API dùng Load Balancer thuật toán Round-robin" } },
+          { "id": "d", "text": { "vi": "Do CPU của máy chủ ứng dụng xử lý phép trừ số nguyên bị sai số dấu phẩy động" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "cause-pool-outage",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân trực tiếp khiến bản sửa nóng lúc 20:05 làm sập luôn cả các trang chỉ đọc của toàn hệ thống là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Mệnh đề FOR UPDATE tự động khoá toàn bộ mọi bảng trong cơ sở dữ liệu" } },
+          { "id": "b", "text": { "vi": "Giữ giao dịch và kết nối DB đang mở trong lúc chờ mạng từ cổng thanh toán bên ngoài làm thời gian chiếm kết nối vọt lên hàng trăm mili-giây, rút cạn sạch Connection Pool dùng chung" } },
+          { "id": "c", "text": { "vi": "Cổng thanh toán gửi truy vấn SQL ngược vào bảng seats làm đầy ổ cứng" } },
+          { "id": "d", "text": { "vi": "Thiếu bộ nhớ đệm CDN cho các tệp ảnh poster sự kiện" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-architecture",
+        "type": "multi",
+        "prompt": { "vi": "Tổ hợp biện pháp nào giải quyết trọn vẹn cả ba lỗi (bán trùng ghế, cạn Connection Pool và Deadlock đặt cặp ghế)?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Áp dụng mẫu Giữ chỗ 3 bước: TX1 ngắn đánh dấu ghế HELD kèm expires_at rồi COMMIT ngay, gọi Payment API ở ngoài giao dịch DB, sau đó TX2 ngắn đổi sang CONFIRMED" } },
+          { "id": "b", "text": { "vi": "Sắp xếp danh sách mã ghế theo thứ tự chuẩn (ORDER BY seat_id ASC) trước khi khoá nhiều dòng, kết hợp ràng buộc UNIQUE trên bảng vé" } },
+          { "id": "c", "text": { "vi": "Đặt biến mutex trong RAM của từng máy Booking API để khỏi cần dùng giao dịch SQL" } },
+          { "id": "d", "text": { "vi": "Tăng thời gian timeout của kết nối DB lên 10 phút và giữ nguyên lời gọi HTTP bên trong BEGIN...COMMIT" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Mutex trong RAM của một máy Booking API không thể chặn tiến trình chạy trên máy Booking API thứ hai." },
+      { "vi": "Để bảo vệ Connection Pool, khối BEGIN...COMMIT chỉ được phép chứa các thao tác dữ liệu cục bộ tốn vài mili-giây." }
+    ],
+    "explain": { "vi": "Bọc BEGIN...COMMIT ở mức Read Committed không tự khoá SELECT nên để lọt Lost Update; ngược lại, giữ SELECT FOR UPDATE xuyên qua lời gọi HTTP thanh toán đẩy mức sử dụng Seat DB lên ρ = {seat_db.rho@25:2} làm cạn sạch Connection Pool. Kiến trúc chuẩn là tách giao dịch bằng trạng thái tạm giữ chỗ (HELD + expires_at), gọi thanh toán ngoài DB, chuẩn hoá thứ tự khoá ORDER BY seat_id ASC và đặt ràng buộc UNIQUE làm chốt chặn cuối." }
+  }
+]

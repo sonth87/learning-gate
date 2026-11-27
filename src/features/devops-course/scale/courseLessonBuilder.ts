@@ -918,11 +918,9 @@ export function buildDevOpsScaleLessons(
         fallbackEx ??
         `# ${mod.id} — ${mod.title}`;
 
-      // Only use code-trace on final step when totalSteps >= 4 (so 2-3 step lessons keep their visual models!)
+      // Giữ nguyên một loại sân khấu trực quan xuyên suốt toàn bộ các bước của bài học
+      // (người học có thể mở Code Sandbox qua nút trên thanh công cụ bất cứ lúc nào mà không bị giật chuyển chế độ)
       let stepMode: StageRenderMode = primaryMode;
-      if (totalSteps >= 4 && (category === 'RECAP' || category === 'REAL_CODE')) {
-        stepMode = 'code-trace';
-      }
       if (stepMode === 'isometric' && !curated.scene) {
         stepMode = curated.memoryScene ? 'memory-2d' : 'code-trace';
       }
@@ -1061,9 +1059,6 @@ export function buildPmpScaleLessons(
       const effectiveSnippet = extracted ?? curated.defaultCode ?? defaultPmpBrief;
 
       let stepMode: StageRenderMode = primaryMode;
-      if (category === 'RECAP') {
-        stepMode = 'code-trace';
-      }
       if (stepMode === 'isometric' && !curated.scene) {
         stepMode = curated.memoryScene ? 'memory-2d' : 'code-trace';
       }

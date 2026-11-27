@@ -1,0 +1,106 @@
+[
+  {
+    "id": "S3-04.A1",
+    "kind": "order",
+    "title": { "vi": "Sắp xếp đúng trình tự thực thi và bù trừ ngược của Saga" },
+    "prompt": { "vi": "Một khách đặt chuyến du lịch gồm giữ ghế máy bay, trừ tiền thẻ và đặt phòng khách sạn, nhưng đến bước đặt phòng thì khách sạn vừa hết chỗ. Hãy sắp xếp các sự kiện theo đúng trình tự thời gian chuẩn của mẫu Saga Orchestration." },
+    "difficulty": 1,
+    "items": [
+      { "id": "t1", "text": { "vi": "T1: Flight DB giữ ghế ở trạng thái PENDING và COMMIT cục bộ" } },
+      { "id": "t2", "text": { "vi": "T2: Payment DB kiểm tra Idempotency-Key, trừ tiền và COMMIT cục bộ" } },
+      { "id": "t3_err", "text": { "vi": "T3: Hotel DB báo hết phòng trống, Orchestrator chuyển Saga sang pha bù trừ" } },
+      { "id": "c2", "text": { "vi": "C2: Payment DB chạy giao dịch bù trừ tạo bút toán hoàn tiền (kèm khoá luỹ đẳng hoàn tiền)" } },
+      { "id": "c1", "text": { "vi": "C1: Flight DB chạy giao dịch bù trừ chuyển ghế về trạng thái AVAILABLE và đóng Saga" } }
+    ],
+    "shuffleSeed": 11,
+    "hints": [
+      { "vi": "Các bước tiến chạy tuần tự T1 → T2 → T3; bước nào đã COMMIT cục bộ thành công thì mới cần bù trừ." },
+      { "vi": "Giao dịch bù trừ luôn chạy theo thứ tự NGƯỢC LẠI với thứ tự thực thi ban đầu (bước hoàn tất muộn nhất phải hoàn tác trước: C2 trước, C1 sau)." }
+    ],
+    "explain": { "vi": "Trong Saga, T1 và T2 tự COMMIT cục bộ ngay khi xong nên không giữ khoá xuyên dịch vụ. Ngay khi T3 từ chối do hết phòng, Orchestrator thu hồi theo thứ tự ngược C2 (hoàn tiền) → C1 (trả ghế bay) mà tuyệt đối không gửi email xác nhận thành công." }
+  },
+  {
+    "id": "S3-04.A2",
+    "kind": "predict",
+    "title": { "vi": "Điều gì xảy ra khi Coordinator của 2PC sập ngay sau Pha Prepare?" },
+    "prompt": { "vi": "Hệ thống đặt chuyến dùng giao thức 2-Phase Commit đang chạy ổn định ở 450 req/s. Đúng giây 20, sau khi Flight DB, Hotel DB và Payment DB vừa ghi nhật ký chuẩn bị và trả phiếu VOTE_YES, máy Trip Coordinator bị mất điện đột ngột (tới giây 42 mới khởi động lại). Tại giây 25, hệ thống và các kho dữ liệu bên dưới ở trạng thái nào?" },
+    "difficulty": 2,
+    "at": 16,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "0% lỗi vì Flight DB tự bầu mình lên làm Coordinator mới và gửi lệnh COMMIT cho các DB còn lại" },
+        { "vi": "0% lỗi vì sau 1 giây chờ không thấy lệnh Pha 2, cả ba DB tự động ROLLBACK để giải phóng khoá" },
+        { "vi": "100% request mới bị lỗi (thông lượng đạt 0 req/s), đồng thời các dòng dữ liệu đã bỏ phiếu YES bị kẹt khoá ở trạng thái in-doubt chờ Coordinator sống lại" },
+        { "vi": "50% request thành công vì các thao tác đọc vẫn bỏ qua toàn bộ Coordinator đã dừng" }
+      ],
+      "correct": 2
+    },
+    "reveal": { "playFromSec": 16, "playToSec": 46, "speed": 2 },
+    "hints": [
+      { "vi": "Mọi request đặt chuyến đều đi qua Trip Coordinator đơn lẻ; khi node này dừng, không có đường đi thay thế." },
+      { "vi": "Trong 2PC, thành viên đã bỏ phiếu YES không dám tự ý ABORT hay COMMIT vì không biết Coordinator đã kịp gửi quyết định cho một thành viên khác trước lúc tắt máy hay chưa." }
+    ],
+    "explain": { "vi": "Từ giây 20 đến giây 42 khi Trip Coordinator dừng hoạt động, thông lượng hoàn tất sụp về {global.goodputRps@25:0} req/s (tỷ lệ lỗi {global.errorRate@25:0%}) và mọi dòng dữ liệu vừa bỏ phiếu YES bị giam khoá trong trạng thái in-doubt cho tới khi Coordinator phục hồi ở giây 42 để đọc lại nhật ký quyết định." },
+    "sim": { "simId": "S3-04/two-pc-hang", "seekSec": 16, "autoplay": false },
+    "replay": { "simId": "S3-04/two-pc-hang", "seekSec": 16, "focus": { "nodes": ["coord", "flight_db", "hotel_db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S3-04.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố Saga thanh toán: trừ tiền kép, gửi nhầm email và sót đơn hoàn tiền" },
+    "prompt": { "vi": "Sau khi chuyển quy trình đặt tour sang Saga Orchestration gồm 4 bước (T1: Giữ chỗ vé bay → T2: Gửi email xác nhận đặt tour thành công → T3: Trừ tiền thẻ → T4: Đặt phòng khách sạn), đội vận hành ghi nhận ba lỗi nghiêm trọng trong ngày cao điểm: (1) Mạng giữa Orchestrator và Payment DB bị rớt gói phản hồi ACK ở 18 đơn; Orchestrator thấy Timeout sau 2 giây liền tự động gọi lại bước T3 khiến 18 khách bị trừ tiền 2 lần cho cùng một tour; (2) Có 65 đơn bị từ chối ở bước T4 do hết phòng khách sạn nhưng khách đã nhận được email báo đặt tour thành công từ bước T2; (3) Khi chạy bù trừ hoàn tiền cho 65 đơn trên, có 4 đơn gặp lúc cổng ngân hàng bảo trì 30 giây nên hàm refund() văng lỗi rồi bị khối try/except bỏ qua, làm 4 khách không nhận lại được tiền. Hãy chọn chẩn đoán và thiết kế khắc phục đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S3-04/two-pc-hang",
+      "seekSec": 25,
+      "focus": { "nodes": ["coord", "pay_db", "hotel_db"] }
+    },
+    "questions": [
+      {
+        "id": "cause-double-charge",
+        "type": "single",
+        "prompt": { "vi": "Vì sao cơ chế thử lại khi Timeout ở bước T3 lại gây trừ tiền hai lần trên 18 đơn hàng?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do Saga dùng Orchestration thay vì dùng 2-Phase Commit" } },
+          { "id": "b", "text": { "vi": "Timeout có nghĩa là không rõ kết quả (Payment DB thực tế đã trừ tiền xong chỉ mất gói ACK quay về), nhưng yêu cầu trừ tiền thiếu Idempotency-Key cố định nên lần thử lại bị xử lý như giao dịch mới" } },
+          { "id": "c", "text": { "vi": "Do thời gian Timeout 2 giây quá dài so với độ trễ mạng nội bộ" } },
+          { "id": "d", "text": { "vi": "Do Payment DB bật mức cô lập Serializable" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-step-order",
+        "type": "single",
+        "prompt": { "vi": "Cần sắp xếp lại thứ tự các bước trong Saga như thế nào để triệt tiêu lỗi gửi email báo thành công cho đơn bị hết phòng khách sạn?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đưa bước Gửi email xác nhận lên làm bước T1 đầu tiên để khách yên tâm sớm hơn" } },
+          { "id": "b", "text": { "vi": "Viết hàm bù trừ tự động xoá email trong hộp thư cá nhân của khách hàng khi T4 thất bại" } },
+          { "id": "c", "text": { "vi": "Đặt tất cả các bước có thể bù trừ (Giữ vé PENDING, Giữ phòng PENDING, Trừ tiền) lên trước, chuyển sang CONFIRMED rồi mới đặt bước không thể hoàn tác (Gửi email xác nhận) ở cuối cùng" } },
+          { "id": "d", "text": { "vi": "Gộp chung Flight DB, Hotel DB và máy chủ SMTP gửi email vào một câu lệnh SQL JOIN" } }
+        ],
+        "correct": ["c"],
+        "weight": 35
+      },
+      {
+        "id": "fix-comp-resilience",
+        "type": "multi",
+        "prompt": { "vi": "Để đảm bảo 4 đơn bị lỗi lúc hoàn tiền không bao giờ bị bỏ sót mất tiền nhưng cũng không hoàn tiền gấp đôi khi thử lại, cần áp dụng những cơ chế nào?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Gắn Idempotency-Key riêng cho bước bù trừ (ví dụ tour_id:refund) để thử lại nhiều lần vẫn chỉ hoàn tiền đúng một lần" } },
+          { "id": "b", "text": { "vi": "Lưu bền trạng thái COMPENSATING của Saga, tự động thử lại có Exponential Backoff và đẩy vào hàng đợi đối soát (DLQ + cảnh báo vận hành) nếu vượt ngưỡng thử lại" } },
+          { "id": "c", "text": { "vi": "Bắt ngoại lệ try/except rồi đánh dấu luôn Saga là COMPLETED để giải phóng bộ nhớ" } },
+          { "id": "d", "text": { "vi": "Tắt hoàn toàn cơ chế thử lại trên mọi bước hoàn tiền" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Email đã gửi ra Internet là hành động không thể hoàn tác (non-compensable), nên chỉ được chạy sau khi mọi rủi ro từ chối đơn đã vượt qua." },
+      { "vi": "Cả bước trừ tiền (forward) lẫn bước hoàn tiền (compensation) đều đi qua mạng không tin cậy nên cả hai đều bắt buộc phải luỹ đẳng." }
+    ],
+    "explain": { "vi": "Ba quy tắc cốt lõi khi vận hành Saga: (1) Timeout là trạng thái chưa biết nên mọi lệnh ghi và hoàn tác phải mang Idempotency-Key cố định để khử trùng lặp; (2) Đặt các bước có thể bù trừ kèm cờ PENDING lên trước và đẩy bước không thể hoàn tác (gửi email) xuống cuối cùng; (3) Lưu bền trạng thái bù trừ để thử lại có Backoff và chuyển sang đối soát vận hành nếu lỗi kéo dài." }
+  }
+]

@@ -62,9 +62,7 @@ export function buildCuratedIsometricScene(
 ): StageScene | null {
   switch (moduleId) {
     case 'M00': {
-      // Only show isometric runtime diagram on architectural steps (Step 0: Tooling/Runtime, Step 3: __main__ vs import)
-      if (stepIdx !== 0 && stepIdx !== 3) return null;
-      const isImport = stepIdx === 3;
+      const isImport = stepIdx >= 3;
       return {
         nodes: [
           { id: 'ed', shape: 'device', tone: 'neutral', x: -245, y: 18, label: bi('app.py · uv', 'app.py · uv') },

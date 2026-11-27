@@ -1,0 +1,30 @@
+{
+  "id": "S3-01",
+  "slug": "S3-01-distributed-systems-failure-and-cap",
+  "level": 3,
+  "order": 1,
+  "title": "Hệ phân tán thực tế: mô hình lỗi và định lý CAP",
+  "summary": "Nhận diện các dạng sự cố đặc trưng của mạng phân tán — mất gói, độ trễ tăng vọt, thông điệp trùng lặp, lỗi một phần và chia cắt mạng — để định lượng đánh đổi giữa CP và AP trên kiến trúc đa vùng.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt lời gọi nội bộ trong một máy với lời gọi qua mạng và giải thích vì sao timeout không cho biết yêu cầu đã thực thi hay chưa" },
+    { "vi": "Xử lý ba hệ quả của mạng không tin cậy gồm độ trễ lan truyền, thông điệp trùng lặp (bằng Idempotency Key) và lỗi một phần (Partial Failure)" },
+    { "vi": "Phân tích hành vi của hệ thống hai trung tâm dữ liệu khi xảy ra chia cắt mạng (Network Partition) dưới hai lựa chọn CP và AP" },
+    { "vi": "Áp dụng định lý CAP và mô hình mở rộng PACELC để chọn chế độ nhất quán riêng cho từng nghiệp vụ trong cùng một ứng dụng" }
+  ],
+  "tags": ["distributed-systems", "cap-theorem", "network-partition", "partial-failure", "pacelc", "idempotency"],
+  "prerequisites": ["S1-02", "S1-04", "S2-08"],
+  "related": ["S3-02", "S3-03", "S3-04", "S3-09"],
+  "dtsRef": "cap",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-1-reality-of-distributed-systems.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-1-reality-of-distributed-systems.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân đầu bài, chuyển toàn bộ sơ đồ Mermaid sang sân khấu isometric hai vùng dữ liệu (US - EU) và sơ đồ memory-2d, bổ sung mô phỏng trực tiếp sự cố đứt cáp liên vùng tại t = 20 s để đối chiếu định lượng CP với AP, làm rõ phạm vi của định lý CAP và bổ sung mô hình PACELC."
+  }
+}

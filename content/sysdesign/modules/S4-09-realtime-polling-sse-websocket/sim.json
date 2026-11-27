@@ -1,0 +1,153 @@
+{
+  "sims": [
+    {
+      "id": "S4-09/polling-storm",
+      "scenario": {
+        "id": "S4-09/polling-storm",
+        "seed": 4409,
+        "durationSec": 65,
+        "mix": { "readRatio": 0.95 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 1000, "to": 12000, "overSec": 45 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "device",
+              "kind": "client",
+              "label": { "vi": "Thiết bị (1M)", "en": "Devices (1M)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gateway",
+              "kind": "gateway",
+              "label": { "vi": "Edge Gateway", "en": "Edge Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.08,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Gateway", "en": "Gateways" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Gateway sập: thiết bị nối lại đồng loạt", "en": "Gateway down: reconnect storm" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 6000 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "replicas": 3 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Polling API", "en": "Polling API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số máy API", "en": "API instances" },
+                  "min": 1,
+                  "max": 10,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 40 }
+            },
+            {
+              "id": "pubsub",
+              "kind": "log",
+              "label": { "vi": "Pub/Sub Bus", "en": "Pub/Sub Bus" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 80000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 2 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Message DB", "en": "Message DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy DB", "en": "DB sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 1, "sizeFactor": 1, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "device-gateway", "from": "device", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gateway-api", "from": "gateway", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-pubsub", "from": "api", "to": "pubsub", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "api-db", "from": "api", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "device": "all-sequential",
+            "gateway": "all-sequential",
+            "api": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+      ],
+      "presets": [
+        {
+          "id": "scale-api-polling",
+          "label": { "vi": "Tăng lên 9 máy API (chi phí cao hơn nhiều so với chuyển sang WebSocket/SSE)", "en": "Scale Polling API to 9 instances" },
+          "changes": [
+            { "type": "knob", "node": "api", "key": "replicas", "value": 9 }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

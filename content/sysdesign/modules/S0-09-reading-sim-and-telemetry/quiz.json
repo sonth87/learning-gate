@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-09.q1",
+    "type": "output",
+    "q": "Một dịch vụ có năng lực xử lý tối đa μ = 300 req/s đang nhận lưu lượng λ = 225 req/s. Mức sử dụng ρ = λ/μ tính theo phần trăm bằng bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "75",
+    "explain": "Mức sử dụng ρ = λ / μ = 225 / 300 = 0,75, tương đương 75%. Tại ngưỡng 75%, khối dịch vụ bắt đầu chuyển từ trạng thái healthy sang busy và độ trễ đuôi p99 bắt đầu nhích lên."
+  },
+  {
+    "id": "S0-09.q2",
+    "type": "mc",
+    "q": "Khi đọc thanh telemetry của một dịch vụ đang nhận 1.000 req/s, con số p99 = 420 ms có ý nghĩa chính xác là gì?",
+    "code": "",
+    "choices": [
+      "Mọi request đi qua hệ thống đều mất đúng 420 ms để hoàn thành",
+      "99% số request hoàn thành trong vòng 420 ms trở xuống, còn 1% chậm nhất (khoảng 10 request mỗi giây) mất từ 420 ms trở lên",
+      "Có 99% số request bị lỗi quá hạn kết nối trên đường truyền",
+      "Trung bình cộng thời gian xử lý của máy chủ luôn bằng 420 ms ở mọi mức tải"
+    ],
+    "answer": 1,
+    "explain": "Phân vị thứ 99 (p99) cho biết ngưỡng thời gian bao phủ 99% request nhanh hơn và phơi bày độ trễ đuôi mà 1% request chậm nhất đang phải chịu, giúp phát hiện nghẽn hàng đợi sớm hơn nhiều so với p50."
+  },
+  {
+    "id": "S0-09.q3",
+    "type": "tf",
+    "q": "Chỉ cần đồng hồ tỉ lệ lỗi (errorRate) vẫn hiển thị 0% thì chắc chắn hệ thống còn nhiều dư địa năng lực và chưa bị bão hoà.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Khi ρ tiến sát hoặc vừa vượt 1,00, các request xếp hàng chờ nhau làm p99 tăng vọt lên hàng trăm mili-giây nhưng chưa chạm ngưỡng timeout của Client nên errorRate vẫn là 0%. Chỉ nhìn tỉ lệ lỗi sẽ phát hiện sự cố quá muộn."
+  },
+  {
+    "id": "S0-09.q4",
+    "type": "mc",
+    "q": "Trong kịch bản App Service có μ = 300 req/s nhưng nhận tải ổn định λ = 360 req/s trong 10 giây liên tiếp (chưa tính request hết hạn), điều gì xảy ra ở cửa vào dịch vụ?",
+    "code": "",
+    "choices": [
+      "Hàng đợi đứng yên ở 0 vì dịch vụ tự động tăng tốc độ CPU lên 360 req/s",
+      "Mỗi giây có thêm 60 request chưa xử lý kịp tích luỹ vào hàng đợi, sau 10 giây dồn khoảng 600 request làm thời gian chờ tăng nhanh",
+      "Độ trễ p50 và p99 giảm đi một nửa nhờ hiệu ứng gom gói tin tự động",
+      "Thanh mức sử dụng ρ giảm từ 1,00 xuống 0,83"
+    ],
+    "answer": 1,
+    "explain": "Khi λ > μ (360 > 300), tốc độ đến vượt tốc độ phục vụ 60 req/s; phần dư λ − μ này cộng dồn mỗi giây vào hàng đợi trước thành phần, kéo thời gian chờ của các request đến sau dài ra liên tục."
+  },
+  {
+    "id": "S0-09.q5",
+    "type": "mc",
+    "q": "Cách hiểu nào sau đây là đúng nhất về vai trò và giới hạn của bàn mô phỏng trong khoá học?",
+    "code": "",
+    "choices": [
+      "Con số độ trễ trong mô phỏng trùng khớp từng mili-giây với mọi máy chủ đám mây ngoài đời thực nên không cần đo lại",
+      "Mô phỏng chỉ vẽ hoạt cảnh trang trí ngẫu nhiên, không dựa trên công thức lưu lượng hay hàng đợi",
+      "Mô phỏng phản ánh trung thực xu hướng nhân quả giữa tải, năng lực, hàng đợi và p99, nhưng khi vận hành thật vẫn phải đo bằng APM và benchmark thực tế",
+      "Mô phỏng chỉ áp dụng được cho hệ thống có duy nhất 1 máy chủ ứng dụng"
+    ],
+    "answer": 2,
+    "explain": "Mô hình mô phỏng giữ đúng các định luật bảo toàn dòng và lý thuyết hàng đợi để rèn tư duy tìm điểm nghẽn, đồng thời lược bỏ nhiễu phần cứng hay GC pause nên không thay thế số đo thực tế trên Production."
+  }
+]

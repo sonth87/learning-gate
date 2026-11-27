@@ -1,0 +1,264 @@
+{
+  "sims": [
+    {
+      "id": "S2-01/balance",
+      "scenario": {
+        "id": "S2-01/balance",
+        "seed": 2201,
+        "durationSec": 80,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 600 },
+        "events": [
+          { "at": 10, "type": "slowdown", "node": "app2", "addMs": 35, "durationSec": 25 },
+          { "at": 38, "type": "crash", "node": "app3" },
+          { "at": 56, "type": "recover", "node": "app3" },
+          { "at": 64, "type": "crash", "node": "lb" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "vip",
+              "kind": "dns",
+              "label": { "vi": "Virtual IP", "en": "Virtual IP" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.01,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.1, "cv": 0.1 },
+              "params": { "replicas": 2, "ttlSec": 0.5, "algorithm": "weighted" }
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "LB Chính", "en": "Active LB" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.04,
+              "knobs": [
+                {
+                  "key": "algorithm",
+                  "type": "select",
+                  "label": { "vi": "Thuật toán chia tải", "en": "Routing algorithm" },
+                  "default": "round-robin",
+                  "options": [
+                    { "value": "round-robin", "label": { "vi": "round-robin", "en": "round-robin" } },
+                    { "value": "least-conn", "label": { "vi": "least-conn", "en": "least-conn" } },
+                    { "value": "weighted", "label": { "vi": "weighted", "en": "weighted" } },
+                    { "value": "ip-hash", "label": { "vi": "ip-hash", "en": "ip-hash" } }
+                  ]
+                },
+                {
+                  "key": "healthCheckSec",
+                  "type": "number",
+                  "label": { "vi": "Chu kỳ Health Check", "en": "Health check interval" },
+                  "min": 1,
+                  "max": 30,
+                  "step": 1,
+                  "default": 20,
+                  "unit": "s"
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB chính ngừng hoạt động", "en": "Active LB crash" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 20 }
+            },
+            {
+              "id": "lb_standby",
+              "kind": "lb",
+              "label": { "vi": "LB Dự phòng", "en": "Standby LB" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.04,
+              "knobs": [
+                {
+                  "key": "enabled",
+                  "type": "bool",
+                  "label": { "vi": "Bật LB Dự phòng", "en": "Enable Standby LB" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB dự phòng ngừng hoạt động", "en": "Standby LB crash" } }
+              ],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "enabled": false, "algorithm": "least-conn", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app1",
+              "kind": "service",
+              "label": { "vi": "App A", "en": "App A" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App A", "en": "App A instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App A dừng đột ngột", "en": "App A crash" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 360 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 10 }
+            },
+            {
+              "id": "app2",
+              "kind": "service",
+              "label": { "vi": "App B", "en": "App B" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App B", "en": "App B instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Tác vụ nặng làm chậm App B", "en": "Heavy requests slow App B" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 360 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 9 }
+            },
+            {
+              "id": "app3",
+              "kind": "service",
+              "label": { "vi": "App C", "en": "App C" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App C", "en": "App C instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App C ngừng phản hồi", "en": "App C crash" } }
+              ],
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 360 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 10 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.4,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-vip", "from": "client", "to": "vip", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "vip-lb", "from": "vip", "to": "lb", "mode": "sync", "netClass": "same-az", "weight": 50, "timeoutMs": 1800 },
+            { "id": "vip-standby", "from": "vip", "to": "lb_standby", "mode": "sync", "netClass": "cross-az", "weight": 1, "timeoutMs": 1800 },
+            { "id": "lb-app1", "from": "lb", "to": "app1", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lb-app2", "from": "lb", "to": "app2", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lb-app3", "from": "lb", "to": "app3", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "standby-app1", "from": "lb_standby", "to": "app1", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "standby-app2", "from": "lb_standby", "to": "app2", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "standby-app3", "from": "lb_standby", "to": "app3", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app1-db", "from": "app1", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "app2-db", "from": "app2", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "app3-db", "from": "app3", "to": "db", "mode": "sync", "netClass": "cross-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "vip": "split",
+            "lb": "split",
+            "lb_standby": "split",
+            "app1": "all-sequential",
+            "app2": "all-sequential",
+            "app3": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 220, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 80 } }
+      ],
+      "presets": [
+        {
+          "id": "fix-lb-ha",
+          "label": { "vi": "Least-conn, Health Check 1s và bật Standby LB", "en": "Least-conn, 1s health check, and Standby LB" },
+          "changes": [
+            { "type": "knob", "node": "lb", "key": "algorithm", "value": "least-conn" },
+            { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 },
+            { "type": "knob", "node": "lb_standby", "key": "enabled", "value": true }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-only-algo",
+          "label": { "vi": "Chỉ đổi sang Least-conn, quên dự phòng LB", "en": "Switch to least-conn without Standby LB" },
+          "changes": [
+            { "type": "knob", "node": "lb", "key": "algorithm", "value": "least-conn" },
+            { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 }
+          ],
+          "expectPass": false
+        }
+      ]
+    }
+  ]
+}

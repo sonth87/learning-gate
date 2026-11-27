@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S6-07.q1",
+    "type": "output",
+    "q": "Một hệ thống có chi phí vận hành 1,80 USD/giờ và xử lý trung bình 1.000 req/s (tức 3,6 triệu request mỗi giờ). Chi phí trên mỗi triệu request bằng bao nhiêu cent (USD × 100)? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "50",
+    "explain": "1,80 USD / 3,6 triệu request = 0,50 USD mỗi triệu request, tương đương 50 cent."
+  },
+  {
+    "id": "S6-07.q2",
+    "type": "mc",
+    "q": "Theo quy luật hiệu suất giảm dần trong kinh tế học công suất, vùng mức sử dụng ρ nào thường mang lại cân bằng tốt nhất giữa độ trễ p99 và chi phí ở đỉnh tải?",
+    "code": "",
+    "choices": [
+      "ρ = 0,98 để tận dụng tối đa phần cứng",
+      "ρ khoảng 0,65 – 0,75 để tránh hàng đợi dựng đứng mà không dư thừa tài nguyên",
+      "ρ < 0,15 ở mọi thời điểm trong ngày",
+      "ρ = 1,20 để ép hàng đợi hoạt động hết công suất"
+    ],
+    "answer": 1,
+    "explain": "Ở ρ = 0,65–0,75, hàng đợi vẫn thấp nên p99 ổn định; đẩy ρ xuống dưới 0,30 tốn thêm rất nhiều chi phí nhưng p99 chỉ giảm thêm vài mili-giây."
+  },
+  {
+    "id": "S6-07.q3",
+    "type": "tf",
+    "q": "Dùng một cụm máy chủ cố định cấp dư cho đỉnh ban ngày chạy suốt 24 giờ luôn rẻ hơn theo đơn vị Cost per Million Requests so với cụm có Autoscaling theo chu kỳ ngày đêm.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Vào ban đêm khi tải giảm mạnh, cụm cố định vẫn tốn nguyên chi phí mỗi giờ nên Cost per Million Requests tăng vọt. Autoscaling thu gọn tài nguyên lúc thấp điểm giúp giảm lãng phí."
+  },
+  {
+    "id": "S6-07.q4",
+    "type": "mc",
+    "q": "Khi tải đọc tăng cao làm Primary DB nghẽn và ngân sách đang bị giới hạn chặt, hướng xử lý nào thường hiệu quả về chi phí nhất trước khi Scale-up DB?",
+    "code": "",
+    "choices": [
+      "Tăng gấp ba kích thước phần cứng Primary DB ngay lập tức",
+      "Mở rộng dung lượng Cache để tăng Hit Ratio và giảm truy vấn rơi xuống DB",
+      "Thêm nhiều Load Balancer phía trước",
+      "Nhân bản số lượng App Server lên 10 máy"
+    ],
+    "answer": 1,
+    "explain": "RAM của Cache rẻ hơn nhiều so với nâng cấp phần cứng Database có trạng thái; tăng Hit Ratio giải tỏa trực tiếp áp lực cho DB."
+  },
+  {
+    "id": "S6-07.q5",
+    "type": "mc",
+    "q": "Nếu một hệ thống đang có ρ = 0,40 và đạt p99 = 65 ms (SLO yêu cầu ≤ 150 ms), việc nhân đôi số máy chủ để hạ ρ xuống 0,20 sẽ dẫn tới kết quả nào?",
+    "code": "",
+    "choices": [
+      "p99 giảm một nửa xuống còn 32 ms",
+      "Chi phí tăng gấp đôi trong khi p99 chỉ cải thiện rất ít (hiệu suất giảm dần)",
+      "Thông lượng tải thực tế tự động tăng gấp đôi",
+      "Tỉ lệ Cache Hit tăng lên 100%"
+    ],
+    "answer": 1,
+    "explain": "Khi ρ đã ở mức thấp (0,40), độ trễ chờ hàng đợi gần như bằng 0; thêm máy chủ không rút ngắn được thời gian xử lý cơ bản mà chỉ làm đội chi phí."
+  },
+  {
+    "id": "S6-07.q6",
+    "type": "mc",
+    "q": "Tại sao khi áp dụng Autoscaling cho tải chu kỳ ngày đêm, ta vẫn cần tính đến thời gian khởi động (Cold Start) của instance mới?",
+    "code": "",
+    "choices": [
+      "Vì instance mới mất vài phút khởi động và làm ấm kết nối, nếu kích hoạt quá muộn sẽ gây vi phạm SLO lúc tải tăng dốc",
+      "Vì Autoscaling chỉ hoạt động vào ban đêm",
+      "Vì Load Balancer không nhận diện được instance mới",
+      "Vì Database tự động xóa dữ liệu khi có instance mới"
+    ],
+    "answer": 0,
+    "explain": "Cold Start tạo độ trễ mở rộng; cần đặt ngưỡng kích hoạt hợp lý (ví dụ khi ρ hoặc CPU chạm 65%) để instance mới kịp sẵn sàng trước khi quá tải."
+  }
+]

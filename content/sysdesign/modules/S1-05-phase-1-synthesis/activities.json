@@ -1,0 +1,122 @@
+[
+  {
+    "id": "S1-05.A1",
+    "kind": "fix-challenge",
+    "title": { "vi": "Gỡ nghẽn bản nháp URL Shortener ở tải 2.500 req/s" },
+    "prompt": { "vi": "Bản nháp URL Shortener đang nhận 2.500 req/s (95% đọc chuyển hướng, 5% tạo link mới) trên tập 200.000 liên kết hoạt động mạnh, nhưng lỗi vọt lên 100%. Với tối đa 2 thay đổi và tổng chi phí ≤ 1,20 USD/giờ, hãy đưa p99 ≤ 85 ms và tỉ lệ lỗi ≤ 1%." },
+    "difficulty": 2,
+    "simId": "S1-05/shortener",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.2 },
+    "allowed": [
+      { "type": "knob", "node": "lb", "key": "replicas", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app", "key": "replicas", "min": 1, "max": 6 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 10000, "max": 500000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 85, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+      { "id": "app-calm", "kind": "node-state", "node": "app", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 }
+    ],
+    "observe": { "runSec": 60 },
+    "par": { "changes": 2, "costPerHour": 1.08 },
+    "solution": [
+      { "type": "knob", "node": "app", "key": "replicas", "value": 2 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 200000 }
+    ],
+    "traps": [
+      {
+        "id": "only-scale-db",
+        "label": { "vi": "Chỉ tăng cỡ máy URL Database lên gấp 3" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Nâng cỡ máy Database đẩy chi phí vọt lên gần 2,90 USD/giờ (vượt xa ngân sách 1,20 USD/giờ), đồng thời 1 instance Shortener API (μ = 1.800 req/s) ở phía trước vẫn bị quá tải trước lưu lượng 2.500 req/s." }
+      },
+      {
+        "id": "only-scale-app",
+        "label": { "vi": "Chỉ tăng Shortener API lên 2 instance mà để nguyên Cache 10.000 key" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 2 }
+        ],
+        "why": { "vi": "Tầng Shortener API hết nghẽn nhưng Redis Cache 10.000 key chỉ chặn được ~21% lượt đọc, để gần 2.000 req/s tràn thẳng xuống làm quá tải URL Database (μ = 900 req/s)." }
+      }
+    ],
+    "hints": [
+      { "vi": "Kiểm tra đồng thời cả Shortener API (1 máy xử lý 1.800 req/s có gánh nổi 2.500 req/s không?) lẫn độ phủ key của Redis Cache." },
+      { "vi": "Tập liên kết nóng gồm 200.000 key; nâng dung lượng Cache phủ trọn 200.000 key giúp giảm mạnh tải xuống URL Database mà không phải nâng cỡ máy DB." }
+    ],
+    "explain": { "vi": "Tăng {app.name} lên 2 instance nâng tổng năng lực tầng API lên 3.600 req/s (ρ = {app.rho'@30:2}), còn nâng {cache.name} lên 200.000 key đẩy Hit Ratio từ {cache.hitRatio@30:0%} lên {cache.hitRatio'@30:0%}. Lượng truy vấn rơi xuống {db.name} giảm mạnh về ρ = {db.rho'@30:2}, giữ p99 ở {m.p99'@30:0} ms với chi phí {m.cost'@30:2} USD/giờ." },
+    "replay": { "simId": "S1-05/shortener", "seekSec": 15, "focus": { "nodes": ["app", "cache", "db"] }, "autoplay": true }
+  },
+  {
+    "id": "S1-05.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố URL Shortener chịu đỉnh 4.200 req/s và xóa điểm lỗi đơn" },
+    "prompt": { "vi": "Hoàn thiện thiết kế URL Shortener để vừa chạy mượt ở tải chuẩn 2.500 req/s (p99 ≤ 85 ms), vừa trụ vững qua đợt lan truyền tăng vọt lên 4.200 req/s (p99 ≤ 110 ms, lỗi ≤ 1%), đồng thời loại bỏ điểm lỗi đơn (SPOF) ở cả Load Balancer và Shortener API trong ngân sách ≤ 1,35 USD/giờ (tối đa 3 thay đổi)." },
+    "difficulty": 3,
+    "simId": "S1-05/shortener",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "normal-2500",
+        "label": { "vi": "Tải cao điểm thường ngày 2.500 req/s (p99 ≤ 85 ms, lỗi ≤ 1%)" },
+        "simId": "S1-05/shortener",
+        "constraints": [
+          { "id": "p99-normal", "kind": "slo-latency", "metric": "p99", "maxMs": 85, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-normal", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "viral-spike-4200",
+        "label": { "vi": "Đỉnh chiến dịch lan truyền 4.200 req/s (p99 ≤ 110 ms, lỗi ≤ 1%)" },
+        "simId": "S1-05/shortener",
+        "loadOverride": { "kind": "spike", "base": 2200, "peak": 4200, "atSec": 15, "holdSec": 20, "riseSec": 5, "fallSec": 5 },
+        "constraints": [
+          { "id": "p99-spike", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 5, "toSec": 55 }, "allowViolationPct": 2 },
+          { "id": "err-spike", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 55 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-lb-spof", "kind": "structural", "rule": "no-spof", "node": "lb" },
+      { "id": "no-app-spof", "kind": "structural", "rule": "no-spof", "node": "app" }
+    ],
+    "budget": {
+      "maxCostPerHour": 1.35,
+      "maxChanges": 3
+    },
+    "par": {
+      "costPerHour": 1.2,
+      "changes": 3
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "lb", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "app", "key": "replicas", "value": 3 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 200000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "two-apps-single-lb",
+        "label": { "vi": "Giữ 1 Load Balancer, đặt 2 Shortener API và Cache 200.000 key" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 2 },
+          { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 200000 }
+        ],
+        "why": { "vi": "Cấu hình 2 instance Shortener API chỉ có tổng năng lực 3.600 req/s nên bị quá tải khi lưu lượng vọt lên 4.200 req/s, đồng thời 1 Load Balancer đơn lẻ vẫn vi phạm điều kiện không có điểm lỗi đơn (SPOF)." }
+      }
+    ],
+    "hints": [
+      { "vi": "Để gánh đỉnh 4.200 req/s với khoảng thở an toàn trên máy μ = 1.800 req/s, hãy tính ceil(4.200 / (1.800 × 0,80))." },
+      { "vi": "Đừng quên nâng số lượng Load Balancer lên 2 để xóa SPOF ở tầng cửa ngõ và giữ Cache đủ 200.000 key." }
+    ],
+    "explain": { "vi": "Cặp 2 Load Balancer xóa bỏ điểm lỗi đơn ở cửa ngõ, cụm 3 Shortener API cung cấp 5.400 req/s (giữ ρ ≈ 0,78 ngay tại đỉnh 4.200 req/s), và Redis Cache 200.000 key giữ Hit Ratio {cache.hitRatio'@30:0%} để bảo vệ URL Database mà tổng chi phí chỉ {m.cost'@30:2} USD/giờ." }
+  }
+]

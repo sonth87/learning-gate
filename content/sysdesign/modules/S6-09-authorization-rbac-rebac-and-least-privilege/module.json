@@ -1,0 +1,24 @@
+{
+  "id": "S6-09",
+  "slug": "S6-09-authorization-rbac-rebac-and-least-privilege",
+  "level": 6,
+  "order": 9,
+  "title": "Phân quyền: Ownership, RBAC, ReBAC và Least Privilege",
+  "summary": "Thiết kế lớp phân quyền chặt chẽ ở mọi request: kiểm tra quyền sở hữu chống IDOR, dùng allow-list chống Mass Assignment, tách vai trò RBAC và quan hệ ReBAC, áp dụng Least Privilege, phòng tránh Confused Deputy và lưu Audit Log.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt xác thực (Authentication) với phân quyền (Authorization) và kiểm tra quyền sở hữu tài nguyên ở mọi request để chống IDOR" },
+    { "vi": "Dùng danh sách trường cho phép ghi (allow-list) để chặn lỗ hổng Mass Assignment và kết hợp Row-Level Security tại database" },
+    { "vi": "Lựa chọn và kết hợp mô hình RBAC theo vai trò với ReBAC theo đồ thị quan hệ (như mô hình Zanzibar)" },
+    { "vi": "Áp dụng nguyên tắc quyền tối thiểu (Least Privilege), phòng tránh lỗi Confused Deputy và thiết lập Audit Log bất biến" }
+  ],
+  "tags": ["security", "authorization", "rbac", "rebac", "idor", "least-privilege", "audit-log"],
+  "prerequisites": ["S1-05", "S6-01"],
+  "related": ["S6-03", "S6-10"],
+  "dtsRef": "authorization",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về phân quyền: kiểm tra quyền sở hữu tài nguyên (chống IDOR), danh sách trường cho phép ghi (chống Mass Assignment), RBAC, phân quyền theo quan hệ (ReBAC), Confused Deputy và Audit Log."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "S2-07",
+  "slug": "S2-07-sql-document-and-key-value",
+  "level": 2,
+  "order": 6,
+  "title": "SQL, Document và Key-Value: chọn mô hình lưu trữ theo mẫu truy cập",
+  "summary": "Đối chiếu cách tổ chức cùng một nghiệp vụ thương mại điện tử trên cơ sở dữ liệu quan hệ (SQL), tài liệu (Document) và khoá-giá trị (Key-Value), hiểu đánh đổi cốt lõi và phối hợp đa lưu trữ.",
+  "durationMin": 15,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt cách biểu diễn dữ liệu và mẫu truy cập tối ưu của SQL, Document Store và Key-Value Store" },
+    { "vi": "Giải thích những đảm bảo phải đánh đổi khi rời bỏ mô hình quan hệ như giao dịch ACID đa bản ghi và phép nối JOIN" },
+    { "vi": "Áp dụng kiến trúc đa lưu trữ (Polyglot Persistence) để chọn đúng cơ sở dữ liệu cho đơn hàng, catalog, phiên đăng nhập và tìm kiếm" },
+    { "vi": "Định cỡ tài nguyên cho từng kho lưu trữ chuyên biệt trong giới hạn ngân sách và SLO độ trễ" }
+  ],
+  "tags": ["sql", "nosql", "document-store", "key-value", "polyglot-persistence", "storage"],
+  "prerequisites": ["S1-01", "S1-03"],
+  "related": ["S2-02", "S2-03", "S3-07"],
+  "dtsRef": "sql-nosql",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới so sánh mô hình dữ liệu quan hệ (SQL), tài liệu (Document) và khoá-giá trị (Key-Value) cùng kiến trúc đa lưu trữ."
+  }
+}

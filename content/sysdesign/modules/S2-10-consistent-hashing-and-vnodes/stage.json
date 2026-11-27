@@ -1,0 +1,1107 @@
+{
+  "version": 1,
+  "base": "s1-cluster",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng gửi ổn định 5.000 req/s (95% đọc, 5% ghi).",
+          "en": "Users sending a steady 5,000 req/s (95% reads, 5% writes)."
+        },
+        "how": {
+          "vi": "Dựa vào cụm Cache phân tán giữ Hit Ratio ~92% để bảo vệ Origin Database phía sau.",
+          "en": "Relies on a distributed cache cluster (~92% hit ratio) to shield Origin Database."
+        },
+        "why": {
+          "vi": "Nếu cụm Cache mất đồng loạt ánh xạ khoá lúc thêm máy, toàn bộ 5.000 req/s sẽ tràn thẳng xuống DB.",
+          "en": "Mass cache remapping during scale-out dumps nearly all 5,000 req/s onto Origin DB."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải chia đều request vào cụm App Hash Client.",
+          "en": "Balances incoming requests across App instances."
+        },
+        "how": {
+          "vi": "Định tuyến Round-robin tới 4 máy ứng dụng.",
+          "en": "Round-robin across 4 stateless App servers."
+        },
+        "why": {
+          "vi": "Giữ tầng ứng dụng luôn thông thoáng.",
+          "en": "Keeps stateless compute evenly loaded."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "hash",
+      "label": {
+        "vi": "App Hash Client",
+        "en": "App Hash Client"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Thư viện định tuyến trong tầng App quyết định mỗi khoá thuộc về máy Cache nào.",
+          "en": "Client-side hash router mapping each cache key to its owning Cache node."
+        },
+        "how": {
+          "vi": "Hoặc tính hash(key) mod N (cũ), hoặc tìm nhị phân trên mảng điểm đã sắp xếp của Vòng băm nhất quán.",
+          "en": "Uses either hash(key) mod N or binary search on a sorted Consistent Hash Ring."
+        },
+        "why": {
+          "vi": "Thuật toán ánh xạ ở đây quyết định bao nhiêu phần trăm khoá bị Cache Miss khi thêm hoặc bớt máy.",
+          "en": "The hashing algorithm here dictates what fraction of keys miss upon cluster resize."
+        }
+      }
+    },
+    "cache_1": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Cache 1",
+        "en": "Cache 1"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút bộ nhớ đệm thứ nhất trong cụm phân tán (25.000 ops/s).",
+          "en": "First distributed cache node (25,000 ops/s)."
+        },
+        "how": {
+          "vi": "Với Consistent Hashing, giữ nguyên các khoá cũ ấm trong RAM khi thêm Cache 4.",
+          "en": "Retains warm keys untouched when Cache 4 joins the ring."
+        },
+        "why": {
+          "vi": "Ngăn các lượt đọc đang trúng Cache bỗng nhiên trở thành Cache Miss.",
+          "en": "Prevents warm hits from turning into cold misses."
+        }
+      }
+    },
+    "cache_2": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Cache 2",
+        "en": "Cache 2"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút bộ nhớ đệm thứ hai trong cụm phân tán.",
+          "en": "Second distributed cache node."
+        },
+        "how": {
+          "vi": "Với mod N, bị đổi chỉ số dư nên mất hiệu lực phần lớn khoá đang lưu.",
+          "en": "Under mod N, remainder shifts invalidate most of its cached keys."
+        },
+        "why": {
+          "vi": "Minh hoạ sự khác biệt giữa đổi chỗ 75% và đổi chỗ 25%.",
+          "en": "Contrasts 75% remapping against 25% ring movement."
+        }
+      }
+    },
+    "cache_3": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Cache 3",
+        "en": "Cache 3"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút bộ nhớ đệm thứ ba trong cụm phân tán.",
+          "en": "Third distributed cache node."
+        },
+        "how": {
+          "vi": "Nhận 1/4 lưu lượng sau khi cụm mở rộng từ 3 lên 4 nút.",
+          "en": "Serves 1/4 of traffic after resizing from 3 to 4 nodes."
+        },
+        "why": {
+          "vi": "Chia sẻ dung lượng RAM cho tập làm việc lớn.",
+          "en": "Shares total working-set RAM capacity."
+        }
+      }
+    },
+    "cache_4": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "sparkles",
+      "label": {
+        "vi": "Cache 4 (mới)",
+        "en": "Cache 4 (new)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút bộ nhớ đệm thứ tư vừa được thêm vào cụm lúc t = 20 s.",
+          "en": "Fourth cache node added to the cluster at t = 20 s."
+        },
+        "how": {
+          "vi": "Trên vòng băm nhất quán, chỉ nhận bàn giao 1/(3+1) = 25% không gian khoá và làm ấm dần trong ~24 s.",
+          "en": "On a Consistent Hash Ring, claims only 1/(3+1) = 25% of keys and warms up smoothly."
+        },
+        "why": {
+          "vi": "Giúp mở rộng dung lượng RAM cụm Cache ngay trong giờ cao điểm mà không đánh sập DB.",
+          "en": "Enables live cache scale-out under peak traffic without overloading Origin DB."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Origin Database",
+        "en": "Origin Database"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu gốc phía sau cụm Cache, năng lực tối đa 2.000 ops/s.",
+          "en": "Backing Origin Database with maximum service rate μ = 2,000 ops/s."
+        },
+        "how": {
+          "vi": "Bình thường chỉ nhận ~630 ops/s (ρ = 0,32). Khi mod N làm 75% Cache nguội cùng lúc, DB vọt lên ~3.908 ops/s (ρ = 1,95).",
+          "en": "Normally handles ~630 ops/s (ρ = 0.32), but spikes to ~3,908 ops/s under a 75% mod-N miss storm."
+        },
+        "why": {
+          "vi": "Là nạn nhân thực sự của thuật toán băm tồi ở tầng Cache.",
+          "en": "Suffers cascading overload whenever cache routing invalidates keys en masse."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng 5.000 req/s từ người dùng.",
+          "en": "5,000 req/s user traffic."
+        },
+        "how": {
+          "vi": "95% là truy vấn đọc phụ thuộc vào độ ấm của Cache.",
+          "en": "95% read traffic reliant on cache warmth."
+        },
+        "why": {
+          "vi": "Giữ nguyên không đổi trong lúc cụm Cache thay đổi số máy.",
+          "en": "Remains steady while the cache tier resizes."
+        }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": {
+          "vi": "Kết nối nội bộ sang cụm App Hash Client.",
+          "en": "Internal hop to App Hash Client."
+        },
+        "how": {
+          "vi": "Chia đều qua 4 máy ứng dụng.",
+          "en": "Balanced across 4 App servers."
+        },
+        "why": {
+          "vi": "Mọi máy App dùng chung hàm băm nhất quán để trỏ đúng nút Cache.",
+          "en": "All App servers compute identical ring assignments."
+        }
+      }
+    },
+    "app-c1": {
+      "inspector": {
+        "what": {
+          "vi": "Đường đọc/ghi vào Cache 1.",
+          "en": "Lookup path to Cache 1."
+        },
+        "how": {
+          "vi": "Nhận các khoá thuộc cung của Cache 1.",
+          "en": "Carries keys owned by Cache 1."
+        },
+        "why": {
+          "vi": "Trả về dưới 1 ms khi Cache Hit.",
+          "en": "Sub-ms response on Cache Hit."
+        }
+      }
+    },
+    "app-c2": {
+      "inspector": {
+        "what": {
+          "vi": "Đường đọc/ghi vào Cache 2.",
+          "en": "Lookup path to Cache 2."
+        },
+        "how": {
+          "vi": "Nhận các khoá thuộc cung của Cache 2.",
+          "en": "Carries keys owned by Cache 2."
+        },
+        "why": {
+          "vi": "Chia tải RAM đồng đều nhờ Virtual Nodes.",
+          "en": "Evenly balanced via Virtual Nodes."
+        }
+      }
+    },
+    "app-c3": {
+      "inspector": {
+        "what": {
+          "vi": "Đường đọc/ghi vào Cache 3.",
+          "en": "Lookup path to Cache 3."
+        },
+        "how": {
+          "vi": "Nhận các khoá thuộc cung của Cache 3.",
+          "en": "Carries keys owned by Cache 3."
+        },
+        "why": {
+          "vi": "Giữ nguyên dữ liệu ấm khi dùng vòng băm.",
+          "en": "Preserves warm entries on ring resize."
+        }
+      }
+    },
+    "app-c4": {
+      "inspector": {
+        "what": {
+          "vi": "Đường đọc/ghi vào nút mới Cache 4.",
+          "en": "Lookup path to newly added Cache 4."
+        },
+        "how": {
+          "vi": "Nhận 25% không gian khoá bàn giao sang.",
+          "en": "Receives 25% migrated keyspace."
+        },
+        "why": {
+          "vi": "Mở rộng tổng dung lượng bộ nhớ đệm lên 4 máy.",
+          "en": "Expands aggregate cache capacity."
+        }
+      }
+    },
+    "c1-db": {
+      "inspector": {
+        "what": {
+          "vi": "Đường truy vấn xuống DB khi Cache 1 bị Miss.",
+          "en": "Cache-miss query path from Cache 1 to DB."
+        },
+        "how": {
+          "vi": "Bình thường rất thưa (~158 ops/s); tăng vọt nếu Cache 1 mất ánh xạ.",
+          "en": "Sparse when warm (~158 ops/s); surges if invalidated."
+        },
+        "why": {
+          "vi": "Truyền áp lực Cache Miss xuống Origin DB.",
+          "en": "Forwards cache misses to Origin DB."
+        }
+      }
+    },
+    "c2-db": {
+      "inspector": {
+        "what": {
+          "vi": "Đường truy vấn xuống DB khi Cache 2 bị Miss.",
+          "en": "Cache-miss query path from Cache 2 to DB."
+        },
+        "how": {
+          "vi": "Đi xuống Origin DB khi chưa có khoá trong RAM.",
+          "en": "Queries Origin DB on misses."
+        },
+        "why": {
+          "vi": "Nạp lại dữ liệu cho Cache 2.",
+          "en": "Repopulates Cache 2."
+        }
+      }
+    },
+    "c3-db": {
+      "inspector": {
+        "what": {
+          "vi": "Đường truy vấn xuống DB khi Cache 3 bị Miss.",
+          "en": "Cache-miss query path from Cache 3 to DB."
+        },
+        "how": {
+          "vi": "Đi xuống Origin DB khi chưa có khoá trong RAM.",
+          "en": "Queries Origin DB on misses."
+        },
+        "why": {
+          "vi": "Nạp lại dữ liệu cho Cache 3.",
+          "en": "Repopulates Cache 3."
+        }
+      }
+    },
+    "c4-db": {
+      "inspector": {
+        "what": {
+          "vi": "Đường nạp ấm ban đầu từ Cache 4 mới thêm xuống Origin DB.",
+          "en": "Warm-up miss path from newly added Cache 4 to DB."
+        },
+        "how": {
+          "vi": "Trên vòng băm nhất quán, chỉ duy nhất đường này tăng tạm thời lúc t = 20 s.",
+          "en": "Under Consistent Hashing, only this single link spikes briefly at t = 20 s."
+        },
+        "why": {
+          "vi": "Origin DB đủ dư năng lực (2.000 ops/s) để làm ấm riêng 1 nút mới an toàn.",
+          "en": "Origin DB has enough headroom to warm one new node safely."
+        }
+      }
+    }
+  },
+  "zones": {
+    "cache-ring": {
+      "nodeIds": [
+        "cache_1",
+        "cache_2",
+        "cache_3",
+        "cache_4"
+      ],
+      "label": {
+        "vi": "CỤM CACHE PHÂN TÁN (4 NÚT)",
+        "en": "DISTRIBUTED CACHE CLUSTER (4 NODES)"
+      },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-cluster": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "cache-ring"
+      ],
+      "state": {
+        "app": {
+          "loadPct": 62
+        },
+        "cache_1": {
+          "loadPct": 5
+        },
+        "cache_2": {
+          "loadPct": 5
+        },
+        "cache_3": {
+          "loadPct": 5
+        },
+        "cache_4": {
+          "loadPct": 5,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Thêm nút #4",
+              "en": "Add Node #4"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 32,
+          "badge": {
+            "text": {
+              "vi": "ρ = 0,32 khi ấm",
+              "en": "ρ = 0.32 when warm"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Co giãn cụm Cache đang chạy thật",
+          "en": "Live Distributed Cache Scaling"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "92% lượt đọc được chặn tại 4 máy Cache",
+              "en": "92% of reads absorbed by Cache tier"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Điều gì xảy ra với Origin DB ngay giây thêm máy #4?",
+              "en": "What happens to Origin DB the moment Node #4 joins?"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-mod-remap": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": {
+          "vi": "Khoá đang ấm (cụm 3 nút)",
+          "en": "Warm Keys (3-Node Cluster)"
+        },
+        "rightTitle": {
+          "vi": "Đích mới theo hash(k) mod 4",
+          "en": "New Target Under hash(k) mod 4"
+        },
+        "names": [
+          {
+            "id": "k0",
+            "name": "user:10 (h=12)",
+            "note": {
+              "vi": "12 mod 3 = 0 → 12 mod 4 = 0 (Giữ nguyên)",
+              "en": "12 mod 3 = 0 → 12 mod 4 = 0 (Kept)"
+            },
+            "targetId": "c0",
+            "style": "solid"
+          },
+          {
+            "id": "k1",
+            "name": "item:11 (h=7)",
+            "note": {
+              "vi": "7 mod 3 = 1 → 7 mod 4 = 3 (Đổi máy → MISS!)",
+              "en": "7 mod 3 = 1 → 7 mod 4 = 3 (Moved → MISS!)"
+            },
+            "targetId": "c3",
+            "style": "danger"
+          },
+          {
+            "id": "k2",
+            "name": "cart:12 (h=5)",
+            "note": {
+              "vi": "5 mod 3 = 2 → 5 mod 4 = 1 (Đổi máy → MISS!)",
+              "en": "5 mod 3 = 2 → 5 mod 4 = 1 (Moved → MISS!)"
+            },
+            "targetId": "c1",
+            "style": "danger"
+          },
+          {
+            "id": "k3",
+            "name": "feed:13 (h=10)",
+            "note": {
+              "vi": "10 mod 3 = 1 → 10 mod 4 = 2 (Đổi máy → MISS!)",
+              "en": "10 mod 3 = 1 → 10 mod 4 = 2 (Moved → MISS!)"
+            },
+            "targetId": "c2",
+            "style": "danger"
+          }
+        ],
+        "objects": [
+          {
+            "id": "c0",
+            "typeTag": "CACHE 1 (dư 0)",
+            "value": "Chỉ 25% khoá đúng chỗ",
+            "tone": "green"
+          },
+          {
+            "id": "c1",
+            "typeTag": "CACHE 2 (dư 1)",
+            "value": "Hỏi nhầm nút → MISS",
+            "tone": "rose"
+          },
+          {
+            "id": "c2",
+            "typeTag": "CACHE 3 (dư 2)",
+            "value": "Hỏi nhầm nút → MISS",
+            "tone": "rose"
+          },
+          {
+            "id": "c3",
+            "typeTag": "CACHE 4 (dư 3)",
+            "value": "75% tổng khoá bị MISS!",
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s3-ring-clock": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Vòng băm nhất quán [0 .. 2^32 − 1]: đi chiều kim đồng hồ gặp nút đầu tiên ≥ hash(k)",
+          "en": "Consistent Hash Ring [0 .. 2^32 − 1]: Clockwise Walk to First Node ≥ hash(k)"
+        },
+        "nodes": [
+          {
+            "id": "nA",
+            "x": -115,
+            "y": -86,
+            "label": "Cache 1 (góc 30°)",
+            "sub": {
+              "vi": "Nhận cung (260° → 30°]",
+              "en": "Owns arc (260° → 30°]"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "k1",
+            "x": 115,
+            "y": -86,
+            "label": "key:u42 (h = 95°)",
+            "sub": {
+              "vi": "Đi xuôi → thuộc Cache 2",
+              "en": "Walks clockwise → Cache 2"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "nB",
+            "x": 205,
+            "y": 14,
+            "label": "Cache 2 (góc 140°)",
+            "sub": {
+              "vi": "Nhận cung (30° → 140°]",
+              "en": "Owns arc (30° → 140°]"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "k2",
+            "x": 115,
+            "y": 112,
+            "label": "key:u88 (h = 210°)",
+            "sub": {
+              "vi": "Đi xuôi → thuộc Cache 3",
+              "en": "Walks clockwise → Cache 3"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "nC",
+            "x": -115,
+            "y": 112,
+            "label": "Cache 3 (góc 260°)",
+            "sub": {
+              "vi": "Nhận cung (140° → 260°]",
+              "en": "Owns arc (140° → 260°]"
+            },
+            "tone": "purple"
+          },
+          {
+            "id": "k3",
+            "x": -205,
+            "y": 14,
+            "label": "key:u99 (h = 320°)",
+            "sub": {
+              "vi": "Qua 0° → gặp Cache 1",
+              "en": "Wraps 0° → Cache 1"
+            },
+            "tone": "yellow"
+          }
+        ],
+        "edges": [
+          {
+            "from": "nA",
+            "to": "k1",
+            "style": "dashed"
+          },
+          {
+            "from": "k1",
+            "to": "nB",
+            "label": "thuộc về"
+          },
+          {
+            "from": "nB",
+            "to": "k2",
+            "style": "dashed"
+          },
+          {
+            "from": "k2",
+            "to": "nC",
+            "label": "thuộc về"
+          },
+          {
+            "from": "nC",
+            "to": "k3",
+            "style": "dashed"
+          },
+          {
+            "from": "k3",
+            "to": "nA",
+            "label": "quay vòng"
+          }
+        ]
+      }
+    },
+    "s4-ring-insert": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Chèn thêm Cache 4 tại góc 315°: chỉ duy nhất 1 cung trước nó đổi chủ (≈ 25% khoá)",
+          "en": "Inserting Cache 4 at 315°: Only One Preceding Arc Changes Owner (≈ 25% Keys)"
+        },
+        "nodes": [
+          {
+            "id": "nA",
+            "x": -115,
+            "y": -86,
+            "label": "Cache 1 (30°)",
+            "sub": {
+              "vi": "Giữ nguyên (315° → 30°]",
+              "en": "Keeps (315° → 30°]"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "nB",
+            "x": 165,
+            "y": -32,
+            "label": "Cache 2 (140°)",
+            "sub": {
+              "vi": "Không đổi 1 khoá nào!",
+              "en": "0% keys moved!"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "nC",
+            "x": 115,
+            "y": 108,
+            "label": "Cache 3 (260°)",
+            "sub": {
+              "vi": "Không đổi 1 khoá nào!",
+              "en": "0% keys moved!"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "km",
+            "x": -115,
+            "y": 108,
+            "label": "Cung (260° → 315°]",
+            "sub": {
+              "vi": "Chỉ ≈ 1/4 khoá chuyển sang #4",
+              "en": "Only ≈ 1/4 keys move to #4"
+            },
+            "tone": "orange"
+          },
+          {
+            "id": "nD",
+            "x": -205,
+            "y": 10,
+            "label": "Cache 4 MỚI (315°)",
+            "sub": {
+              "vi": "Chèn giữa Cache 3 & 1",
+              "en": "Inserted between 3 & 1"
+            },
+            "tone": "blue"
+          }
+        ],
+        "edges": [
+          {
+            "from": "nA",
+            "to": "nB",
+            "label": "giữ ấm"
+          },
+          {
+            "from": "nB",
+            "to": "nC",
+            "label": "giữ ấm"
+          },
+          {
+            "from": "nC",
+            "to": "km",
+            "style": "dashed"
+          },
+          {
+            "from": "km",
+            "to": "nD",
+            "label": "dời 1/(N+1)"
+          },
+          {
+            "from": "nD",
+            "to": "nA",
+            "style": "dashed"
+          }
+        ]
+      }
+    },
+    "s5-live-mod": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "cache-ring"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "t = 20 s: Mở rộng 3 → 4 nút bằng mod N",
+          "en": "t = 20 s: 3 → 4 Resize Under mod N"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "75% khoá (3 nút Cache) bị Miss đồng loạt",
+              "en": "75% of keys (3 Cache nodes) miss at once"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Origin DB vọt lên ~3.908 ops/s (ρ = 1,95) → quá tải!",
+              "en": "Origin DB spikes to ~3,908 ops/s (ρ = 1.95) → overload!"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-live-ring": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "cache-ring"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "t = 20 s: Mở rộng 3 → 4 nút bằng Vòng băm",
+          "en": "t = 20 s: 3 → 4 Resize on Consistent Hash Ring"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Cache 1..3 giữ nguyên dữ liệu ấm; chỉ Cache 4 nạp mới",
+              "en": "Cache 1..3 stay warm; only Cache 4 warms up"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Origin DB chạm đỉnh nhẹ ρ = 0,86 rồi hạ êm · 0% lỗi!",
+              "en": "Origin DB peaks gently at ρ = 0.86 · 0% errors!"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-ring-skew": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Nhược điểm khi mỗi máy chỉ đặt 1 điểm trên vòng (vnodes = 1): cung dài ngắn ngẫu nhiên",
+          "en": "Problem With 1 Point Per Node (vnodes = 1): Skewed Arc Lengths"
+        },
+        "subtitle": {
+          "vi": "Với ít máy vật lý, hàm băm ngẫu nhiên dễ đặt 3 điểm chụm một góc, để lại 1 cung khổng lồ cho Cache 1",
+          "en": "With few physical nodes, random hashes cluster unevenly, leaving one huge arc"
+        },
+        "cells": [
+          "Cache 1: 54% khoá",
+          "Cache 2: 14% khoá",
+          "Cache 3: 19% khoá",
+          "Cache 4: 13% khoá"
+        ],
+        "activeIndices": [
+          0
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "gánh gấp đôi trung bình!",
+            "tone": "rose"
+          },
+          {
+            "index": 3,
+            "label": "lãng phí RAM",
+            "tone": "blue"
+          }
+        ],
+        "outputPill": {
+          "label": {
+            "vi": "Hệ quả",
+            "en": "Consequence"
+          },
+          "value": {
+            "vi": "Vẫn giữ được tính ít dời khoá, nhưng tải phân bố lệch nặng giữa các máy",
+            "en": "Low key movement holds, but load balance across servers is poor"
+          },
+          "tone": "orange"
+        }
+      }
+    },
+    "s8-vnodes": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Virtual Nodes (V = 150 điểm ảo / máy): đan xen hàng trăm cung nhỏ quanh vòng",
+          "en": "Virtual Nodes (V = 150 Tokens / Node): Interleaved Micro-Arcs Across the Ring"
+        },
+        "subtitle": {
+          "vi": "Băm nhãn Cache1#0 .. Cache1#149 · độ lệch chuẩn giảm theo 1 / √V · khi 1 máy tắt, tải chia đều cho mọi máy còn lại",
+          "en": "Hashes Cache1#0..149 · variance shrinks as 1/√V · dead node load scatters across all peers"
+        },
+        "cells": [
+          "C1#0",
+          "C3#8",
+          "C2#4",
+          "C4#1",
+          "C1#9",
+          "C2#7",
+          "C4#5",
+          "C3#2"
+        ],
+        "activeIndices": [
+          0,
+          4
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "mỗi máy ≈ 25% ± 2%",
+            "tone": "green"
+          },
+          {
+            "index": 5,
+            "label": "máy mạnh ×2 → 300 vnodes",
+            "tone": "purple"
+          }
+        ],
+        "outputPill": {
+          "label": {
+            "vi": "Ba lợi ích của VNodes",
+            "en": "Three VNode Benefits"
+          },
+          "value": {
+            "vi": "1) Cân bằng tải đều · 2) Rải đều tải khi 1 máy sập · 3) Gán trọng số theo cấu hình phần cứng",
+            "en": "1) Uniform balance · 2) Even failover scatter · 3) Heterogeneous hardware weights"
+          },
+          "tone": "green"
+        }
+      }
+    },
+    "s9-recap": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "cache-ring"
+      ],
+      "state": {
+        "app": {
+          "loadPct": 62,
+          "badge": {
+            "text": {
+              "vi": "Binary Search O(log M)",
+              "en": "Binary Search O(log M)"
+            },
+            "tone": "ok"
+          }
+        },
+        "cache_1": {
+          "loadPct": 5
+        },
+        "cache_2": {
+          "loadPct": 5
+        },
+        "cache_3": {
+          "loadPct": 5
+        },
+        "cache_4": {
+          "loadPct": 5,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "150 VNodes · 25%",
+              "en": "150 VNodes · 25%"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 32,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "An toàn khi scale",
+              "en": "Safe during scale-out"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tổng kết Consistent Hashing",
+          "en": "Consistent Hashing Summary"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Thêm nút thứ N+1 chỉ dời 1/(N+1) khoá thay vì N/(N+1)",
+              "en": "Adding (N+1)th node moves 1/(N+1) keys instead of N/(N+1)"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "100–200 Virtual Nodes giữ tải đều & xả sự cố an toàn",
+              "en": "100–200 VNodes equalize load and scatter node failures"
+            },
+            "tone": "plain"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "mod-resize": {
+      "sim": "S2-10/mod-resize",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 90,
+            "badAbove": 200
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 120
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "cache_1",
+          "cache_2",
+          "cache_3",
+          "db"
+        ]
+      }
+    },
+    "ring-resize": {
+      "sim": "S2-10/ring-resize",
+      "startAtSec": 14,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 90,
+            "badAbove": 200
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 120
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "cache_4",
+          "db"
+        ]
+      }
+    }
+  }
+}

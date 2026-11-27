@@ -1,0 +1,23 @@
+[
+  {
+    "id": "S1-08.A1",
+    "kind": "estimate",
+    "title": { "vi": "Thời gian màn hình sẵn sàng với REST vs GraphQL" },
+    "prompt": { "vi": "Một màn hình di động trên mạng 4G (RTT = 120 ms) cần gọi 3 API REST nối tiếp nhau, mỗi API mất 15 ms xử lý ở backend (bỏ qua thời gian truyền tải dữ liệu). Ước lượng tổng thời gian màn hình sẵn sàng theo mili-giây." },
+    "difficulty": 1,
+    "quantity": "Thời gian màn hình sẵn sàng",
+    "unit": "ms",
+    "truth": { "type": "formula", "expr": "3*(120+15)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.1, "pass": 0.2 },
+    "workings": [
+      { "vi": "Mỗi yêu cầu REST nối tiếp tốn 1 RTT mạng 4G (120 ms) + 15 ms xử lý backend = 135 ms." },
+      { "vi": "Gọi 3 yêu cầu nối tiếp: 3 × 135 = 405 ms." },
+      { "vi": "Nếu gom thành 1 truy vấn GraphQL, mạng ngoài chỉ tốn 1 RTT (120 ms), giảm hơn một nửa thời gian chờ." }
+    ],
+    "hints": [
+      { "vi": "Cộng (RTT + thời gian xử lý) cho một lượt gọi, rồi nhân với số lượt gọi nối tiếp." }
+    ],
+    "explain": { "vi": "Tổng thời gian bằng {truth:0} ms. Phần lớn thời gian (360 ms) nằm ở 3 vòng khứ hồi qua mạng di động chứ không phải ở server." }
+  }
+]

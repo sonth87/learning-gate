@@ -27,6 +27,7 @@ interface WorkbenchState {
   expandedLevels: Record<string, number>;
   recentSteps: RecentStepEntry[];
   isProgressExpanded: boolean;
+  isObjectivesExpanded: boolean;
   isSearchPaletteOpen: boolean;
   searchPaletteCourseId: string | null;
   isLeftSidebarCollapsed: boolean;
@@ -51,6 +52,8 @@ interface WorkbenchState {
   setExpandedLevel: (courseId: string, level: number) => void;
   setProgressExpanded: (open: boolean) => void;
   toggleProgressExpanded: () => void;
+  setObjectivesExpanded: (open: boolean) => void;
+  toggleObjectivesExpanded: () => void;
   setSearchPaletteOpen: (open: boolean, courseId?: string) => void;
   setLeftSidebarCollapsed: (collapsed: boolean) => void;
   toggleLeftSidebarCollapsed: () => void;
@@ -72,6 +75,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         kubemastery: { moduleId: 'K00', stepIndex: 0 },
         cicdmastery: { moduleId: 'C00', stepIndex: 0 },
         pmpmastery: { moduleId: 'P00', stepIndex: 0 },
+        sdmastery: { moduleId: 'S0-01', stepIndex: 0 },
       },
       expandedLevels: {
         pymastery: 0,
@@ -79,9 +83,11 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         kubemastery: 0,
         cicdmastery: 0,
         pmpmastery: 0,
+        sdmastery: 0,
       },
       recentSteps: [],
       isProgressExpanded: false,
+      isObjectivesExpanded: true,
       isSearchPaletteOpen: false,
       searchPaletteCourseId: null,
       isLeftSidebarCollapsed: false,
@@ -135,6 +141,11 @@ export const useWorkbenchStore = create<WorkbenchState>()(
       toggleProgressExpanded: () =>
         set((s) => ({ isProgressExpanded: !s.isProgressExpanded })),
 
+      setObjectivesExpanded: (isObjectivesExpanded) =>
+        set({ isObjectivesExpanded }),
+      toggleObjectivesExpanded: () =>
+        set((s) => ({ isObjectivesExpanded: !s.isObjectivesExpanded })),
+
       setSearchPaletteOpen: (isSearchPaletteOpen, courseId) =>
         set((s) => ({
           isSearchPaletteOpen,
@@ -167,6 +178,7 @@ export const useWorkbenchStore = create<WorkbenchState>()(
         expandedLevels: s.expandedLevels,
         recentSteps: s.recentSteps,
         isProgressExpanded: s.isProgressExpanded,
+        isObjectivesExpanded: s.isObjectivesExpanded,
         isLeftSidebarCollapsed: s.isLeftSidebarCollapsed,
         isCodeTraceCollapsed: s.isCodeTraceCollapsed,
         rightSidebarWidth: s.rightSidebarWidth,

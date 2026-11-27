@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-01.q1",
+    "type": "mc",
+    "q": "Điểm khác biệt cốt lõi giữa tư duy chọn công nghệ trước (Pattern Thinking) và tư duy thiết kế hệ thống (System Design Thinking) là gì?",
+    "code": "",
+    "choices": [
+      "Tư duy thiết kế luôn chọn công nghệ đắt tiền nhất ngay từ đầu",
+      "Tư duy thiết kế bắt đầu từ việc làm rõ bài toán, yêu cầu và ràng buộc rồi mới chọn giải pháp phù hợp ngữ cảnh",
+      "Tư duy thiết kế không bao giờ dùng cơ sở dữ liệu quan hệ",
+      "Hai cách tư duy này cho ra cùng một kiến trúc cho mọi quy mô"
+    ],
+    "answer": 1,
+    "explain": "Áp dụng rập khuôn các mẫu phức tạp cho một sản phẩm mới 100 người dùng gây lãng phí và chậm tiến độ. Giải pháp đúng luôn xuất phát từ yêu cầu và ràng buộc thực tế."
+  },
+  {
+    "id": "S6-01.q2",
+    "type": "mc",
+    "q": "Nhóm ràng buộc nào KHÔNG thuộc nhóm ràng buộc kinh doanh (Business Constraints)?",
+    "code": "",
+    "choices": [
+      "Ngân sách vận hành hàng tháng",
+      "Thời hạn ra mắt sản phẩm (Timeline)",
+      "Quy mô đội ngũ kỹ sư và năng lực vận hành",
+      "Giới hạn số kết nối tối đa trên một instance PostgreSQL"
+    ],
+    "answer": 3,
+    "explain": "Giới hạn kết nối của PostgreSQL là ràng buộc kỹ thuật (Technical Constraint), còn ngân sách, timeline và nhân sự là ràng buộc kinh doanh."
+  },
+  {
+    "id": "S6-01.q3",
+    "type": "tf",
+    "q": "High-Level Design (HLD) tập trung vào cấu trúc bảng dữ liệu chi tiết, thuật toán từng hàm và xử lý trường hợp biên bên trong một service.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đó là phạm vi của Low-Level Design (LLD). HLD nhìn ở mức bản đồ toàn hệ thống: các thành phần chính, luồng dữ liệu, giao tiếp và đánh đổi kiến trúc."
+  },
+  {
+    "id": "S6-01.q4",
+    "type": "mc",
+    "q": "Điểm gặp nhau giữa High-Level Design (HLD) và Low-Level Design (LLD) là gì?",
+    "code": "",
+    "choices": [
+      "Màu sắc của sơ đồ kiến trúc",
+      "Hợp đồng giao tiếp (API contract, định dạng sự kiện, SLO) ở ranh giới giữa các service",
+      "Tên biến cục bộ trong mã nguồn",
+      "Cấu hình màn hình của kỹ sư"
+    ],
+    "answer": 1,
+    "explain": "Ranh giới giữa HLD và LLD là hợp đồng giao tiếp (Contract). HLD chốt các hộp giao tiếp với nhau qua hợp đồng nào, còn LLD thiết kế phần cài đặt bên trong mỗi hộp để giữ đúng hợp đồng đó."
+  },
+  {
+    "id": "S6-01.q5",
+    "type": "mc",
+    "q": "Khi thiết kế một hệ thống lớn từ đầu, cách kết hợp Top-Down và Bottom-Up hiệu quả nhất là gì?",
+    "code": "",
+    "choices": [
+      "Chỉ viết code chi tiết trước rồi mới nghĩ đến kiến trúc",
+      "Đi từ tổng thể (Top-Down) để chốt ranh giới và luồng chính, rồi kiểm chứng các thành phần cốt lõi bằng thiết kế chi tiết (Bottom-Up)",
+      "Chỉ vẽ các hộp tổng quát và bỏ qua hoàn toàn mô hình dữ liệu",
+      "Chọn ngẫu nhiên một hướng và không bao giờ thay đổi"
+    ],
+    "answer": 1,
+    "explain": "Top-Down giúp giữ bức tranh toàn cảnh và tránh sa lầy chi tiết sớm, trong khi Bottom-Up kiểm chứng xem mô hình dữ liệu và điểm nghẽn cốt lõi có khả thi ở mức cài đặt hay không."
+  }
+]

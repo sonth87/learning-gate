@@ -1,0 +1,158 @@
+{
+  "sims": [
+    {
+      "id": "S6-05/chaos-cqrs",
+      "scenario": {
+        "id": "S6-05/chaos-cqrs",
+        "seed": 6501,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.5 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1600 },
+        "events": [
+          { "at": 18, "type": "slowdown", "node": "projector", "addMs": 450, "durationSec": 25 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gateway",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "write-api",
+              "kind": "service",
+              "label": { "vi": "Write API", "en": "Write API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.24,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.2 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "event-log",
+              "kind": "queue",
+              "label": { "vi": "Event Log", "en": "Event Log" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "maxDepth": 20000 }
+            },
+            {
+              "id": "projector",
+              "kind": "service",
+              "label": { "vi": "Projector", "en": "Projector" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Projector chậm gây tăng độ trễ đồng bộ (Lag)", "en": "Slow Projector increases projection lag" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 15, "cv": 0.2 },
+              "params": { "replicas": 1, "poolSize": 60 }
+            },
+            {
+              "id": "read-api",
+              "kind": "service",
+              "label": { "vi": "Read API", "en": "Read API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.24,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 5, "cv": 0.2 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "read-db",
+              "kind": "sql",
+              "label": { "vi": "Read DB", "en": "Read DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000 },
+              "latency": { "baseMs": 3, "cv": 0.2 },
+              "params": { "sizeFactor": 1, "poolSize": 60 }
+            }
+          ],
+          "links": [
+            { "id": "client-gateway", "from": "client", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gateway-write", "from": "gateway", "to": "write-api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "gateway-read", "from": "gateway", "to": "read-api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "write-eventlog", "from": "write-api", "to": "event-log", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "eventlog-projector", "from": "event-log", "to": "projector", "mode": "pull", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "projector-readdb", "from": "projector", "to": "read-db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "read-readdb", "from": "read-api", "to": "read-db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "gateway": "split",
+            "write-api": "all-sequential",
+            "event-log": "all-sequential",
+            "projector": "all-sequential",
+            "read-api": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "err",
+          "kind": "slo-error",
+          "maxRate": 0.02,
+          "window": { "fromSec": 0, "toSec": 60 }
+        }
+      ],
+      "expect": {
+        "bottleneck": "projector"
+      }
+    }
+  ]
+}

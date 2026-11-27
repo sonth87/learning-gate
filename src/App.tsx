@@ -123,6 +123,7 @@ export const App: React.FC = () => {
             'kubemastery',
             'cicdmastery',
             'pmpmastery',
+            'sdmastery',
           ])
         );
 

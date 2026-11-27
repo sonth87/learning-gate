@@ -1,0 +1,23 @@
+{
+  "id": "S5-06",
+  "slug": "S5-06-multi-region-replication-and-failover",
+  "level": 5,
+  "order": 6,
+  "title": "Kiến trúc Multi-Region: Sao chép, Failover và Xung đột",
+  "summary": "Thiết kế hệ thống đa vùng địa lý: so sánh Active-Passive với Active-Active, tác động của RTT liên vùng lên p99, Replication Lag khi failover, xung đột ghi đồng thời và chi phí vận hành.",
+  "durationMin": 17,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "So sánh kiến trúc Active-Passive và Active-Active về độ trễ, chi phí, RPO/RTO và độ phức tạp dữ liệu" },
+    { "vi": "Tính toán tác động của RTT liên vùng (100 ms) khi ghi đồng bộ xuyên vùng lên độ trễ p99" },
+    { "vi": "Phân tích Replication Lag và xử lý xung đột ghi đồng thời khi Region A gặp sự cố và failover sang Region B" },
+    { "vi": "Thiết kế cấu hình đa vùng đạt SLO cả khi tải đỉnh lẫn khi mất một vùng trong giới hạn ngân sách theo giờ" }
+  ],
+  "tags": ["multi-region", "failover", "replication-lag", "active-active", "global-routing", "conflict-resolution"],
+  "prerequisites": ["S2-08", "S3-01", "S3-08", "S3-09"],
+  "related": ["S3-02", "S5-04", "S6-03"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về kiến trúc đa vùng Active-Passive so với Active-Active, RTT liên vùng, Replication Lag, xung đột ghi đồng thời và chi phí."
+  }
+}

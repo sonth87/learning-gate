@@ -1,0 +1,162 @@
+{
+  "sims": [
+    {
+      "id": "S4-07/checkout-trace",
+      "scenario": {
+        "id": "S4-07/checkout-trace",
+        "seed": 4407,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.2 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 600 },
+        "events": [
+          { "at": 30, "type": "deploy", "node": "fraud", "bad": true, "version": "cfg-v3.10" },
+          { "at": 45, "type": "rollback", "node": "fraud" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người mua", "en": "Shoppers" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.25 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "checkout",
+              "kind": "service",
+              "label": { "vi": "Checkout Service", "en": "Checkout Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số máy Checkout", "en": "Checkout instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 12, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 40 }
+            },
+            {
+              "id": "inventory",
+              "kind": "service",
+              "label": { "vi": "Inventory Service", "en": "Inventory Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 15, "cv": 0.2 },
+              "params": { "replicas": 2, "poolSize": 30 }
+            },
+            {
+              "id": "fraud",
+              "kind": "service",
+              "label": { "vi": "Fraud API", "en": "Fraud API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số máy Fraud API", "en": "Fraud API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Fraud API chậm làm vọt p99 toàn luồng Checkout", "en": "Slow Fraud API spikes Checkout p99" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 350 },
+              "latency": { "baseMs": 220, "cv": 0.35 },
+              "params": { "replicas": 2, "poolSize": 180 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Order DB", "en": "Order DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 6, "cv": 0.2 },
+              "params": { "replicas": 1, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2500 },
+            { "id": "lb-checkout", "from": "lb", "to": "checkout", "mode": "sync", "netClass": "same-az", "timeoutMs": 2000 },
+            { "id": "checkout-inventory", "from": "checkout", "to": "inventory", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "checkout-fraud", "from": "checkout", "to": "fraud", "mode": "sync", "netClass": "cross-az", "timeoutMs": 1500 },
+            { "id": "checkout-db", "from": "checkout", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "checkout": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 680, "window": { "fromSec": 0, "toSec": 28 }, "allowViolationPct": 5 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 48, "toSec": 70 } }
+      ],
+      "presets": [
+        {
+          "id": "scale-fraud",
+          "label": { "vi": "Mở rộng Fraud API lên 4 instance để giảm bão hòa", "en": "Scale Fraud API to 4 instances" },
+          "changes": [
+            { "type": "knob", "node": "fraud", "key": "replicas", "value": 4 }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,564 @@
+{
+  "version": 1,
+  "base": "s3-diurnal-live",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng dao động ngày đêm từ 600 đến 3.600 req/s.",
+          "en": "Diurnal traffic from 600 to 3,600 req/s."
+        },
+        "how": {
+          "vi": "85% là truy vấn đọc, 15% là thao tác ghi.",
+          "en": "85% read queries and 15% writes."
+        },
+        "why": {
+          "vi": "Tạo bài toán tối ưu chi phí theo chu kỳ tải biến thiên.",
+          "en": "Drives cost optimization across diurnal peaks and troughs."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Phân phối tải tới cụm App Service (0,05 USD/giờ).",
+          "en": "Distributes load to App Service ($0.05/hr)."
+        },
+        "how": {
+          "vi": "Năng lực 25.000 req/s.",
+          "en": "25,000 req/s capacity."
+        },
+        "why": {
+          "vi": "Chi phí cố định nhỏ so với tầng ứng dụng và DB.",
+          "en": "Minimal fixed cost compared to compute and DB."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "App Service",
+        "en": "App Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm xử lý nghiệp vụ (μ = 1.000 req/s mỗi máy, 0,25 USD/giờ/máy).",
+          "en": "Stateless App tier (μ = 1,000 req/s per instance, $0.25/hr)."
+        },
+        "how": {
+          "vi": "Cần ít nhất 4 máy (tổng 4.000 req/s) để gánh đỉnh 3.600 req/s mà không quá tải.",
+          "en": "Needs 4 instances (4,000 req/s) for the 3,600 req/s peak."
+        },
+        "why": {
+          "vi": "Đặt 6–8 máy (Over-provision) sẽ vượt trần ngân sách 1,75 USD/giờ.",
+          "en": "Over-provisioning to 6–8 instances blows the $1.75/hr budget."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Redis Cache",
+        "en": "Redis Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm RAM cho tập dữ liệu nóng 80.000 key (0,20 USD/giờ).",
+          "en": "In-memory cache for 80,000 hot keys ($0.20/hr)."
+        },
+        "how": {
+          "vi": "Mặc định chỉ chứa 20.000 key; mở rộng lên 80.000 key giảm mạnh tải xuống DB.",
+          "en": "Starts at 20k keys; expanding to 80k keys shields Primary DB."
+        },
+        "why": {
+          "vi": "Đòn bẩy tiết kiệm chi phí lớn nhất vì rẻ hơn nâng cấp phần cứng DB.",
+          "en": "Highest-leverage cost saver compared to scaling up DB."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Primary DB",
+        "en": "Primary DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu chính (μ = 1.500 req/s, 0,50 USD/giờ).",
+          "en": "Primary Database (μ = 1,500 req/s, $0.50/hr)."
+        },
+        "how": {
+          "vi": "Chi phí tăng nhanh khi Scale-up (sizeFactor ×2, ×3).",
+          "en": "Vertical scaling (sizeFactor) is expensive."
+        },
+        "why": {
+          "vi": "Nếu Cache đủ lớn, DB giữ được ρ an toàn ở sizeFactor = 1.",
+          "en": "With adequate cache, DB stays healthy at sizeFactor = 1."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng người dùng vào Load Balancer.",
+          "en": "User traffic to LB."
+        },
+        "how": {
+          "vi": "Chu kỳ ngày đêm 600 → 3.600 req/s.",
+          "en": "Diurnal 600 to 3,600 req/s."
+        },
+        "why": {
+          "vi": "Kiểm tra khả năng chịu đỉnh và chi phí trung bình.",
+          "en": "Tests peak SLO and average cost."
+        }
+      }
+    },
+    "lb-api": {
+      "inspector": {
+        "what": {
+          "vi": "Chuyển tiếp tới các instance App Service.",
+          "en": "Forwards to App Service instances."
+        },
+        "how": {
+          "vi": "Chia đều qua Round-robin.",
+          "en": "Balanced via Round-robin."
+        },
+        "why": {
+          "vi": "Số lượng instance quyết định trực tiếp chi phí giờ.",
+          "en": "Instance count directly drives hourly cost."
+        }
+      }
+    },
+    "api-cache": {
+      "inspector": {
+        "what": {
+          "vi": "Đọc kiểm tra bộ nhớ đệm.",
+          "en": "Cache lookup hop."
+        },
+        "how": {
+          "vi": "Độ trễ ~0,6 ms.",
+          "en": "~0.6 ms lookup."
+        },
+        "why": {
+          "vi": "Chặn lượt đọc lặp lại xuống DB.",
+          "en": "Prevents redundant DB reads."
+        }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": {
+          "vi": "Lượt đọc miss và lượt ghi xuống Primary DB.",
+          "en": "Cache misses and writes to Primary DB."
+        },
+        "how": {
+          "vi": "Tỉ lệ miss tăng cao khi Cache chỉ có 20.000/80.000 key.",
+          "en": "High miss rate when cache only holds 20k/80k keys."
+        },
+        "why": {
+          "vi": "Đẩy DB vào quá tải nếu không mở rộng Cache.",
+          "en": "Overloads DB unless Cache capacity is raised."
+        }
+      }
+    }
+  },
+  "scenes": {
+    "s1-economics": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "m1",
+            "name": "Giờ cao điểm (3.600 req/s)",
+            "targetId": "o1"
+          },
+          {
+            "id": "m2",
+            "name": "Giờ thấp điểm (600 req/s)",
+            "targetId": "o2"
+          },
+          {
+            "id": "m3",
+            "name": "Autoscaling theo tải",
+            "targetId": "o3"
+          }
+        ],
+        "objects": [
+          {
+            "id": "o1",
+            "value": "Cụm 1,75 $/giờ xử lý 12,96M req/giờ ⇒ chỉ 0,135 USD / 1M requests",
+            "tone": "green",
+            "typeTag": "Hiệu suất cao"
+          },
+          {
+            "id": "o2",
+            "value": "Giữ nguyên cụm 1,75 $/giờ ở 600 req/s ⇒ vọt lên 0,81 USD / 1M requests (gấp 6×)",
+            "tone": "rose",
+            "typeTag": "Dư tải tĩnh"
+          },
+          {
+            "id": "o3",
+            "value": "Thu gọn tầng App ban đêm giúp giữ ổn định chi phí trên mỗi triệu request",
+            "tone": "blue",
+            "typeTag": "Tối ưu chi phí"
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Kinh tế học chi phí: USD/giờ và Cost per 1M Requests",
+          "en": "Capacity Economics Metrics"
+        }
+      }
+    },
+    "s2-diminishing": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy luật hiệu suất giảm dần khi đẩy Headroom",
+          "en": "Diminishing Returns of Excess Headroom"
+        },
+        "cells": [
+          "ρ = 0,95 (Quá sát): p99 ≈ 380 ms · Rủi ro cao",
+          "ρ = 0,70 (Vùng tối ưu): p99 ≈ 65 ms · Đầu tư hiệu quả",
+          "ρ = 0,25 (Dư thừa): p99 ≈ 52 ms · Chi phí ×2,8"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Hàng đợi phình to khi có nhiễu nhẹ",
+            "tone": "rose"
+          },
+          {
+            "index": 1,
+            "label": "Cân bằng tốt nhất giữa SLO và chi phí",
+            "tone": "green"
+          },
+          {
+            "index": 2,
+            "label": "Tốn gần gấp 3 tiền chỉ để giảm 13 ms",
+            "tone": "amber"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
+        ]
+      }
+    },
+    "s3-diurnal-live": {
+      "mode": "isometric",
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "cache",
+          "db"
+        ],
+        "links": [
+          "client-lb",
+          "lb-api",
+          "api-cache",
+          "cache-db"
+        ]
+      },
+      "floor": {
+        "label": "Mô phỏng chu kỳ ngày đêm (600 → 3.600 req/s)"
+      },
+      "entities": [
+        {
+          "id": "client",
+          "col": 0,
+          "row": 2
+        },
+        {
+          "id": "lb",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "api",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "cache",
+          "col": 9,
+          "row": 2
+        },
+        {
+          "id": "db",
+          "col": 12,
+          "row": 2
+        }
+      ],
+      "edges": [
+        {
+          "id": "client-lb",
+          "from": "client",
+          "to": "lb",
+          "style": "solid"
+        },
+        {
+          "id": "lb-api",
+          "from": "lb",
+          "to": "api",
+          "style": "solid"
+        },
+        {
+          "id": "api-cache",
+          "from": "api",
+          "to": "cache",
+          "style": "solid"
+        },
+        {
+          "id": "cache-db",
+          "from": "cache",
+          "to": "db",
+          "style": "solid"
+        }
+      ],
+      "packets": "auto"
+    },
+    "s4-rightsizing": {
+      "mode": "isometric",
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "cache",
+          "db"
+        ],
+        "links": [
+          "client-lb",
+          "lb-api",
+          "api-cache",
+          "cache-db"
+        ]
+      },
+      "floor": {
+        "label": "So sánh cấu hình Right-sized (≤ 1,75 USD/giờ) với Over-provisioned"
+      },
+      "entities": [
+        {
+          "id": "client",
+          "col": 0,
+          "row": 2
+        },
+        {
+          "id": "lb",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "api",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "cache",
+          "col": 9,
+          "row": 2
+        },
+        {
+          "id": "db",
+          "col": 12,
+          "row": 2
+        }
+      ],
+      "edges": [
+        {
+          "id": "client-lb",
+          "from": "client",
+          "to": "lb",
+          "style": "solid"
+        },
+        {
+          "id": "lb-api",
+          "from": "lb",
+          "to": "api",
+          "style": "solid"
+        },
+        {
+          "id": "api-cache",
+          "from": "api",
+          "to": "cache",
+          "style": "solid"
+        },
+        {
+          "id": "cache-db",
+          "from": "cache",
+          "to": "db",
+          "style": "solid"
+        }
+      ],
+      "state": {
+        "api": {
+          "loadPct": 72,
+          "badge": {
+            "text": {
+              "vi": "4 instance",
+              "en": "4 instances"
+            },
+            "tone": "ok"
+          }
+        },
+        "cache": {
+          "loadPct": 15,
+          "badge": {
+            "text": {
+              "vi": "80k keys",
+              "en": "80k keys"
+            },
+            "tone": "ok"
+          }
+        },
+        "db": {
+          "loadPct": 68,
+          "badge": {
+            "text": {
+              "vi": "1,75 $/giờ",
+              "en": "$1.75/hr"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto"
+    },
+    "s5-recap": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ba đòn bẩy tối ưu kinh tế công suất",
+          "en": "Three Capacity Economics Levers"
+        },
+        "cells": [
+          "1. Cache Hit Ratio: Chặn lượt đọc bằng RAM",
+          "2. Right-sizing: Giữ ρ đỉnh quanh 0,65–0,75",
+          "3. Autoscaling: Co giãn theo chu kỳ ngày đêm"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Rẻ hơn nhiều so với Scale-up Database",
+            "tone": "green"
+          },
+          {
+            "index": 1,
+            "label": "Tránh dư tải lãng phí dưới 0,30",
+            "tone": "blue"
+          },
+          {
+            "index": 2,
+            "label": "Hạ chi phí mỗi triệu request vào ban đêm",
+            "tone": "purple"
+          }
+        ],
+        "activeIndices": [
+          0
+        ]
+      }
+    }
+  },
+  "live": {
+    "diurnal": {
+      "sim": "S6-07/diurnal-cost",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          {
+            "node": "api",
+            "key": "replicas"
+          },
+          {
+            "node": "cache",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
+        ]
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 130
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 130
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "api",
+          "cache",
+          "db"
+        ]
+      }
+    }
+  }
+}

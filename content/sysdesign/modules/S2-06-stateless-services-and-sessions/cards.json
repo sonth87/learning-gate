@@ -1,0 +1,9 @@
+[
+  { "id": "S2-06.c1", "front": "Dịch vụ phi trạng thái (Stateless Service) nghĩa là gì?", "back": "Máy chủ ứng dụng không lưu dữ liệu phiên hay tệp của người dùng giữa hai request liên tiếp; mọi thông tin cần thiết đi kèm trong request hoặc nằm ở kho lưu trữ dùng chung bên ngoài." },
+  { "id": "S2-06.c2", "front": "Vì sao tính phi trạng thái là điều kiện tiên quyết để Autoscaling?", "back": "Khi bất kỳ instance nào cũng xử lý được mọi request, hệ thống có thể thêm máy mới lúc tải cao hoặc thu hồi máy lúc tải thấp mà không làm đứt phiên của người dùng." },
+  { "id": "S2-06.c3", "front": "Hai nhược điểm chính của Sticky Session (Session Affinity)?", "back": "Một là mất trắng phiên khi máy chủ được ghim gặp sự cố; hai là phân bổ tải lệch khi một số phiên hoạt động nặng hơn hẳn hoặc nhiều người dùng chung IP NAT." },
+  { "id": "S2-06.c4", "front": "Mô hình Shared Session Store vận hành thế nào?", "back": "Trình duyệt chỉ giữ cookie chứa session_id mờ (opaque ID); bất kỳ máy App nào nhận request cũng tra cứu đối tượng phiên trong kho Key-Value trên RAM (như Redis) trong chưa đầy 1 ms." },
+  { "id": "S2-06.c5", "front": "Khi nào chọn Session Store tập trung thay vì JWT tự chứa?", "back": "Khi cần quyền thu hồi phiên tức thì (đăng xuất từ xa, khoá tài khoản, đổi mật khẩu) hoặc dữ liệu phiên thay đổi liên tục giữa các thao tác." },
+  { "id": "S2-06.c6", "front": "Vì sao không lưu tệp người dùng tải lên vào ổ đĩa cục bộ của App Server?", "back": "Các App Server khác không nhìn thấy tệp đó, và khi container hoặc máy ảo bị thay thế trong quá trình triển khai hay scale-in thì ổ đĩa cục bộ sẽ bị xoá." },
+  { "id": "S2-06.c7", "front": "Ba nơi chuẩn để tách trạng thái ra khỏi tầng ứng dụng?", "back": "Kho Key-Value tốc độ cao cho phiên đăng nhập, Database cho dữ liệu nghiệp vụ bền vững, và Object Storage (kèm CDN) cho tệp nhị phân như ảnh, video, tài liệu." }
+]

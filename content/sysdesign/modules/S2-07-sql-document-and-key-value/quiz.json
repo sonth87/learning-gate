@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S2-07.q1",
+    "type": "mc",
+    "q": "Hệ thống cần lưu sổ cái giao dịch ví điện tử, trong đó lệnh trừ tiền người gửi và cộng tiền người nhận bắt buộc thành công hoặc huỷ bỏ cùng nhau. Loại lưu trữ nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Key-Value Store thuần trong RAM với TTL ngắn",
+      "Cơ sở dữ liệu quan hệ (SQL) hỗ trợ giao dịch ACID",
+      "Search Engine dùng chỉ mục đảo",
+      "Bộ nhớ đệm CDN đặt tại biên mạng"
+    ],
+    "answer": 1,
+    "explain": "Giao dịch tài chính đòi hỏi tính nguyên tử (Atomicity) và cô lập (Isolation) của ACID trên nhiều bản ghi. Cơ sở dữ liệu quan hệ cưỡng chế các bất biến này trực tiếp ở tầng lưu trữ, ngăn mất tiền hoặc chi tiêu kép."
+  },
+  {
+    "id": "S2-07.q2",
+    "type": "mc",
+    "q": "Vì sao Document Store thường được chọn cho danh mục sản phẩm có hàng trăm ngành hàng khác nhau trên sàn thương mại điện tử?",
+    "code": "",
+    "choices": [
+      "Vì Document Store luôn thực hiện phép nối JOIN qua 10 bảng nhanh hơn SQL",
+      "Vì mỗi sản phẩm có bộ thuộc tính riêng được gói gọn trong một tài liệu JSON tự chứa, đọc trọn trong một lần tra cứu",
+      "Vì Document Store không cần dùng ổ đĩa để lưu trữ bền vững",
+      "Vì Document Store tự động thay thế hoàn toàn Search Engine cho tìm kiếm văn bản mờ"
+    ],
+    "answer": 1,
+    "explain": "Document Store lưu thực thể đa hình dưới dạng tài liệu lồng nhau có lược đồ linh hoạt. Toàn bộ thuộc tính riêng của mặt hàng nằm chung một chỗ nên ứng dụng đọc một lần theo ID mà không sinh hàng trăm cột NULL hay tốn phép JOIN."
+  },
+  {
+    "id": "S2-07.q3",
+    "type": "tf",
+    "q": "Key-Value Store đạt độ trễ dưới 1 ms cho tra cứu theo khoá chính xác, nhưng không phù hợp khi ứng dụng thường xuyên lọc dữ liệu theo nhiều trường bên trong giá trị mà không có chỉ mục phụ.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Key-Value Store coi phần value như khối dữ liệu hộp đen và chỉ băm theo key với độ phức tạp O(1). Nếu lọc theo trường bên trong value, hệ thống buộc phải quét tuần tự rất nhiều khoá gây nghẽn nghiêm trọng."
+  },
+  {
+    "id": "S2-07.q4",
+    "type": "output",
+    "q": "Commerce API nhận 4.000 req/s, trong đó 80% là lượt đọc. Nếu 75% số lượt đọc đi vào Document Catalog, kho Document phải phục vụ bao nhiêu req/s? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "2400",
+    "explain": "Số lượt đọc của toàn hệ thống là 4.000 × 0,80 = 3.200 req/s. Kho Document nhận 75% lượng đọc này, tức 3.200 × 0,75 = 2.400 req/s; con số này dùng trực tiếp để tính số shard cần thiết."
+  },
+  {
+    "id": "S2-07.q5",
+    "type": "mc",
+    "q": "Khi kết hợp SQL/Document Store với Search Engine trong kiến trúc đa lưu trữ, cách đồng bộ dữ liệu nào tránh được lỗi ghi thành công ở DB nhưng thất bại ở Search?",
+    "code": "",
+    "choices": [
+      "Ứng dụng gọi đồng thời hai lệnh ghi độc lập tới DB và Search mà không kiểm tra lỗi",
+      "Dùng Search Engine làm nơi lưu trữ gốc duy nhất và bỏ hoàn toàn DB",
+      "Ghi vào DB làm nguồn sự thật duy nhất rồi phát luồng thay đổi qua Change Stream / CDC sang Search",
+      "Xoá toàn bộ chỉ mục Search mỗi phút rồi nạp lại từ đầu"
+    ],
+    "answer": 2,
+    "explain": "Ghi kép trực tiếp từ ứng dụng dễ dẫn tới lệch dữ liệu khi một trong hai nhánh lỗi mạng. Đặt DB làm nguồn sự thật duy nhất và đồng bộ qua Change Data Capture (CDC) đảm bảo mọi thay đổi đã cam kết đều lần lượt tới Search."
+  }
+]

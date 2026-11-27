@@ -1,0 +1,80 @@
+[
+  {
+    "id": "S6-06.A1",
+    "kind": "postmortem",
+    "title": { "vi": "Viết Postmortem cho sự cố triển khai schema làm chậm Primary DB" },
+    "prompt": { "vi": "Lúc 02:15 (t = 42 s trong mô phỏng), một bản cập nhật schema được triển khai thẳng lên 100% hệ thống mà chưa kiểm thử tải, khiến truy vấn trên Primary DB chậm thêm 220 ms và làm p99 vọt ngưỡng SLO trong 20 phút trước khi đội trực hoàn tất Rollback. Hãy chọn chẩn đoán và hành động khắc phục đúng chuẩn Postmortem không đổ lỗi." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S6-06/capacity-growth",
+      "seekSec": 48,
+      "focus": { "nodes": ["api", "cache", "db"] }
+    },
+    "questions": [
+      {
+        "id": "mitigation-first",
+        "type": "single",
+        "prompt": { "vi": "Khi nhận cảnh báo p99 vượt ngưỡng lúc 02:17 sau bản cập nhật lúc 02:15, hành động ưu tiên đầu tiên ở pha Giảm thiểu (Mitigation) là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Rollback bản cập nhật hoặc tắt Feature Flag để khôi phục dịch vụ ngay lập tức, sau đó mới phân tích nguyên nhân gốc" } },
+          { "id": "b", "text": { "vi": "Mở trình gỡ lỗi trực tiếp trên máy chủ Production trong vài giờ để tìm dòng code sai" } },
+          { "id": "c", "text": { "vi": "Khởi động lại Load Balancer nhiều lần" } },
+          { "id": "d", "text": { "vi": "Tắt toàn bộ cảnh báo để đội trực không bị làm phiền" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "blameless-root",
+        "type": "single",
+        "prompt": { "vi": "Cách diễn đạt nguyên nhân gốc (Root Cause) nào thể hiện đúng tinh thần Postmortem không đổ lỗi?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Kỹ sư A đã thiếu cẩn thận khi đẩy migration lúc nửa đêm" } },
+          { "id": "b", "text": { "vi": "Quy trình CI/CD chưa có bước kiểm tra EXPLAIN ANALYZE trên dữ liệu mẫu và triển khai thẳng 100% thay vì Canary" } },
+          { "id": "c", "text": { "vi": "Vì người dùng truy cập quá nhiều vào ban đêm" } },
+          { "id": "d", "text": { "vi": "Vì Redis Cache không lưu toàn bộ bảng giao dịch" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "prevent-actions",
+        "type": "multi",
+        "prompt": { "vi": "Chọn các hành động phòng ngừa (Action Items) hiệu quả để ngăn sự cố lặp lại:" },
+        "options": [
+          { "id": "a", "text": { "vi": "Bổ sung bước kiểm thử tải và kiểm tra kế hoạch thực thi truy vấn (EXPLAIN) trước khi duyệt migration" } },
+          { "id": "b", "text": { "vi": "Áp dụng triển khai Canary (1% → 10% → 100%) kèm cơ chế tự động Rollback khi p99 hoặc Error Rate vượt ngưỡng" } },
+          { "id": "c", "text": { "vi": "Cấm toàn bộ đội ngũ triển khai thay đổi schema trong 6 tháng tới" } },
+          { "id": "d", "text": { "vi": "Xóa bỏ cảnh báo p99 để giảm số lượng thông báo" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Pha Mitigation ưu tiên khôi phục nhanh bằng Rollback; phần RCA tập trung vào lỗ hổng quy trình và công cụ kiểm thử." }
+    ],
+    "explain": { "vi": "Rollback giúp khôi phục dịch vụ nhanh nhất ở pha Mitigation. Postmortem không đổ lỗi tập trung vào việc bổ sung kiểm tra EXPLAIN/kiểm thử tải tự động và Canary Rollout để khóa phạm vi ảnh hưởng." }
+  },
+  {
+    "id": "S6-06.A2",
+    "kind": "estimate",
+    "title": { "vi": "Dự báo tải đỉnh sau 6 tháng với tăng trưởng kép 20%/tháng" },
+    "prompt": { "vi": "Hệ thống hiện tại có lưu lượng đỉnh 1.000 req/s và đang tăng trưởng kép 20% mỗi tháng. Hãy ước lượng lưu lượng đỉnh sau 6 tháng (req/s) để lập kế hoạch công suất." },
+    "difficulty": 2,
+    "quantity": "Lưu lượng đỉnh sau 6 tháng",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "1000 * (1.2 ^ 6)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.08, "pass": 0.2 },
+    "workings": [
+      { "vi": "Hệ số tăng trưởng kép sau 6 tháng: 1,20^6 ≈ 2,986 lần." },
+      { "vi": "Lưu lượng đỉnh dự kiến: 1.000 × 2,986 ≈ 2.986 req/s (gần gấp 3 lần hiện tại)." }
+    ],
+    "hints": [
+      { "vi": "Dùng công thức tăng trưởng kép: Tải_hiện_tại × (1 + r)^n với r = 0,20 và n = 6." }
+    ],
+    "explain": { "vi": "Với tăng trưởng kép 20%/tháng, sau 6 tháng lưu lượng đạt ≈ {truth:0} req/s (gần 3 lần hiện tại), đòi hỏi chuẩn bị nâng cấp công suất ngay từ tháng thứ 2–3." },
+    "replay": { "simId": "S6-06/capacity-growth", "seekSec": 18, "focus": { "nodes": ["api", "db"] } }
+  }
+]

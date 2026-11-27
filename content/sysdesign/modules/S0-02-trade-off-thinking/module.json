@@ -1,0 +1,29 @@
+{
+  "id": "S0-02",
+  "slug": "S0-02-trade-off-thinking",
+  "level": 0,
+  "order": 2,
+  "title": "Trade-off thay vì giải pháp hoàn hảo",
+  "summary": "Mọi quyết định kiến trúc đều đánh đổi giữa các thuộc tính mâu thuẫn nhau như độ trễ, tính nhất quán, chi phí và độ đơn giản; học cách lập Ma trận đánh đổi theo bối cảnh và xác định ngưỡng đủ tốt.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Giải thích vì sao không tồn tại kiến trúc hoàn hảo tách rời khỏi bối cảnh và ràng buộc cụ thể" },
+    { "vi": "Xây dựng Ma trận đánh đổi (Trade-off Matrix) gồm ràng buộc, lợi ích, chi phí và thứ tự ưu tiên" },
+    { "vi": "Phân tích ba cặp đánh đổi phổ biến: Nhất quán vs Sẵn sàng, Chuẩn hoá vs Phi chuẩn hoá, Đồng bộ vs Bất đồng bộ" },
+    { "vi": "Vận dụng quy tắc lợi suất giảm dần, khả năng đảo ngược và cân đối ngân sách để chọn phương án phù hợp" }
+  ],
+  "tags": ["trade-off", "decision-matrix", "consistency", "caching", "reversibility", "roi"],
+  "prerequisites": ["S0-01"],
+  "related": ["S0-04", "S1-02", "S1-04", "S6-03"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-2-perfect-solution-to-trade-off-thinking.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-2-perfect-solution-to-trade-off-thinking.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong sư phạm trực diện: bỏ giai thoại cá nhân; dựng 8 cảnh memory-2d minh hoạ các trục đánh đổi, ma trận trọng số A/B, lợi suất giảm dần và 3 mô hình quyết định; thêm kịch bản định lượng danh mục sản phẩm cho 2 bài tập predict và design-constraint."
+  }
+}

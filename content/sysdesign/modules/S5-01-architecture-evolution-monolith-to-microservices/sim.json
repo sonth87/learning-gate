@@ -1,0 +1,218 @@
+{
+  "sims": [
+    {
+      "id": "S5-01/evolution",
+      "scenario": {
+        "id": "S5-01/evolution",
+        "seed": 5501,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1500 },
+        "events": [
+          {
+            "id": "payments-slow",
+            "atSec": 20,
+            "durationSec": 15,
+            "kind": "node-slow",
+            "target": "payments",
+            "factor": 4
+          }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "gateway",
+              "kind": "gateway",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.08,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số API Gateway", "en": "Gateway instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Gateway đơn lẻ sập làm gián đoạn toàn tuyến", "en": "Single Gateway crash cuts all traffic" } }
+              ]
+            },
+            {
+              "id": "orders",
+              "kind": "service",
+              "label": { "vi": "Orders Service", "en": "Orders Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Orders", "en": "Orders instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Orders đơn lẻ dừng gây lỗi đặt hàng", "en": "Single Orders crash fails checkouts" } }
+              ]
+            },
+            {
+              "id": "catalog",
+              "kind": "service",
+              "label": { "vi": "Catalog Service", "en": "Catalog Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Catalog", "en": "Catalog instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "payments",
+              "kind": "service",
+              "label": { "vi": "Payments Service", "en": "Payments Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": { "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Payments", "en": "Payments instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db_ord",
+              "kind": "sql",
+              "label": { "vi": "Orders DB", "en": "Orders DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.4,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4000 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "maxConnections": 500 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "db_cat",
+              "kind": "sql",
+              "label": { "vi": "Catalog DB", "en": "Catalog DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.4,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4000 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "maxConnections": 500 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "db_pay",
+              "kind": "sql",
+              "label": { "vi": "Payments DB", "en": "Payments DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.4,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "maxConnections": 500 },
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-gateway", "from": "client", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gateway-orders", "from": "gateway", "to": "orders", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "orders-db_ord", "from": "orders", "to": "db_ord", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "orders-catalog", "from": "orders", "to": "catalog", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "catalog-db_cat", "from": "catalog", "to": "db_cat", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "orders-payments", "from": "orders", "to": "payments", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000, "fraction": 0.3 },
+            { "id": "payments-db_pay", "from": "payments", "to": "db_pay", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "gateway": "all-sequential",
+            "orders": "all-sequential",
+            "catalog": "all-sequential",
+            "payments": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 5 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ]
+    }
+  ]
+}

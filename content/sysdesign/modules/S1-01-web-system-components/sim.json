@@ -1,0 +1,296 @@
+{
+  "sims": [
+    {
+      "id": "S1-01/steady",
+      "scenario": {
+        "id": "S1-01/steady",
+        "seed": 1101,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 200 },
+        "events": [
+          { "at": 25, "type": "cache-expire-all", "node": "cache" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [
+                {
+                  "key": "algorithm",
+                  "type": "select",
+                  "label": { "vi": "Thuật toán chia tải", "en": "Algorithm" },
+                  "default": "round-robin",
+                  "options": [
+                    { "value": "round-robin", "label": { "vi": "round-robin", "en": "round-robin" } },
+                    { "value": "least-conn", "label": { "vi": "least-conn", "en": "least-conn" } },
+                    { "value": "weighted", "label": { "vi": "weighted", "en": "weighted" } },
+                    { "value": "random", "label": { "vi": "random", "en": "random" } },
+                    { "value": "ip-hash", "label": { "vi": "ip-hash", "en": "ip-hash" } }
+                  ]
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB ngừng hoạt động: mọi request lỗi", "en": "LB down: all requests fail" } }
+              ]
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Server", "en": "App Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 20 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance", "en": "Instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "App ngừng hoạt động", "en": "App down" } }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Cache", "en": "Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.89,
+                "workingSetKeys": 40000,
+                "capacityKeys": 40000,
+                "warmupSec": 60,
+                "singleflight": false
+              },
+              "knobs": [
+                { "key": "ttlSec", "type": "number", "label": { "vi": "TTL", "en": "TTL" }, "min": 5, "max": 3600, "step": 5, "default": 300, "unit": "s" },
+                { "key": "capacityKeys", "type": "number", "label": { "vi": "Dung lượng cache (số key)", "en": "Cache keys" }, "min": 5000, "max": 200000, "step": 5000, "default": 40000, "changeCost": 1 }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Mất dữ liệu cache: lượt đọc dồn về DB", "en": "Cache flush: reads hit DB" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 400 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": {
+                "shards": 1,
+                "applyRps": 500,
+                "rewriteHotness": 0.02,
+                "maxConnections": 200,
+                "poolSize": 16,
+                "sizeFactor": 1,
+                "queueLimit": 1200
+              },
+              "knobs": [
+                { "key": "sizeFactor", "type": "number", "label": { "vi": "Cỡ máy (scale-up)", "en": "Instance size" }, "min": 1, "max": 4, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Truy vấn chậm làm giảm thông lượng", "en": "Slow queries reduce throughput" } }
+              ]
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 200 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 60 } },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ]
+    },
+    {
+      "id": "S1-01/overload",
+      "scenario": {
+        "id": "S1-01/overload",
+        "seed": 11012,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 450 },
+        "events": [
+          { "at": 20, "type": "cache-expire-all", "node": "cache" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Server", "en": "App Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 800 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 20 },
+              "knobs": [
+                { "key": "replicas", "type": "number", "label": { "vi": "Số instance", "en": "Instances" }, "min": 1, "max": 8, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Cache", "en": "Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.89,
+                "workingSetKeys": 40000,
+                "capacityKeys": 40000,
+                "warmupSec": 60,
+                "singleflight": false
+              },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 400 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": {
+                "shards": 1,
+                "applyRps": 500,
+                "rewriteHotness": 0.02,
+                "maxConnections": 200,
+                "poolSize": 16,
+                "sizeFactor": 1,
+                "queueLimit": 1200
+              },
+              "knobs": [
+                { "key": "sizeFactor", "type": "number", "label": { "vi": "Cỡ máy (scale-up)", "en": "Instance size" }, "min": 1, "max": 4, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 200 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      }
+    }
+  ]
+}

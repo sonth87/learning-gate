@@ -19,7 +19,7 @@ import type {
 } from '@/types/user.types';
 import type { ExamAttemptRecord, FlashcardSrsState } from '@/types/assessment.types';
 
-export const ALL_PROGRESS_SLOTS: ProgressSlotId[] = ['wp', 'kube', 'cicd', 'pmp', 'redis'];
+export const ALL_PROGRESS_SLOTS: ProgressSlotId[] = ['wp', 'kube', 'cicd', 'pmp', 'redis', 'sysdesign'];
 
 const LESSON_STUDY_SECONDS_STORAGE_KEY = 'pylearn_lesson_study_seconds_v1';
 const SETTINGS_UPDATED_AT_KEY = 'pylearn_settings_updated_at_v1';

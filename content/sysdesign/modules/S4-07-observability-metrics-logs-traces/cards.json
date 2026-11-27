@@ -1,0 +1,9 @@
+[
+  { "id": "S4-07.c1", "front": "Ba trụ cột của Observability là gì?", "back": "1) Metrics: số đo tổng hợp theo thời gian (Rate, Errors, Duration); 2) Logs: sự kiện rời rạc có cấu trúc kèm `trace_id`; 3) Traces: hành trình đầy đủ của một request qua nhiều dịch vụ." },
+  { "id": "S4-07.c2", "front": "Phương pháp RED dùng để đo gì?", "back": "Dùng cho dịch vụ (service), gồm Rate (tải req/s), Errors (tỷ lệ lỗi) và Duration (phân vị độ trễ p50/p95/p99). Bổ sung cho phương pháp USE (Utilization, Saturation, Errors) dùng cho phần cứng." },
+  { "id": "S4-07.c3", "front": "Vì sao phải dùng phân vị p95/p99 thay cho trung bình?", "back": "Giá trị trung bình che giấu các request chậm bất thường ở đuôi phân phối. Ở hệ thống lớn, 1% chậm đồng nghĩa hàng nghìn người dùng gặp trải nghiệm tệ." },
+  { "id": "S4-07.c4", "front": "SLO và Error Budget liên hệ với nhau thế nào?", "back": "SLO là mục tiêu độ tin cậy (ví dụ 99,9% thành công). Phần còn lại (0,1%) là Error Budget — ngân sách lỗi cho phép trong kỳ. Cảnh báo theo tốc độ đốt Error Budget (Burn Rate) giúp phát hiện sớm sự cố thật." },
+  { "id": "S4-07.c5", "front": "Distributed Tracing tìm điểm chậm bằng cách nào?", "back": "Gateway gắn `trace_id` và truyền qua các dịch vụ. Mỗi chặng tạo một span ghi thời gian bắt đầu/kết thúc, ghép thành Trace Waterfall để thấy ngay dịch vụ nào chiếm tỷ trọng thời gian lớn nhất." },
+  { "id": "S4-07.c6", "front": "Nguyên tắc đặt cảnh báo hiệu quả?", "back": "Cảnh báo theo triệu chứng ảnh hưởng người dùng (SLO/RED) thay vì nguyên nhân thô (CPU); mọi cảnh báo gửi trực ban phải kèm Runbook hành động rõ ràng để tránh alert fatigue." },
+  { "id": "S4-07.c7", "front": "Blameless Postmortem là gì?", "back": "Là buổi rà soát sau sự cố không quy trách nhiệm cá nhân, tập trung dựng lại dòng thời gian (phát hiện, xử lý, phục hồi) và tạo Action Items cụ thể (như Canary, cảnh báo Burn Rate) để củng cố hệ thống." }
+]

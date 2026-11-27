@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "base": "s1-setup",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng toàn cầu", "en": "Global Users" },
+      "inspector": {
+        "what": { "vi": "Người dùng phân bố ở nhiều châu lục khác nhau.", "en": "Globally distributed end users." },
+        "how": { "vi": "Kết nối tới Global Router qua Internet.", "en": "Connects to Global Router over the Internet." },
+        "why": { "vi": "Định tuyến tới vùng gần nhất giúp giảm RTT mạng.", "en": "Routing to the nearest region minimizes WAN RTT." }
+      }
+    },
+    "geo_lb": {
+      "shape": "gate",
+      "tone": "purple",
+      "icon": "globe",
+      "label": { "vi": "Global Router", "en": "Global Router" },
+      "inspector": {
+        "what": { "vi": "Bộ định tuyến toàn cầu (GeoDNS / Anycast).", "en": "Global traffic router (GeoDNS / Anycast)." },
+        "how": { "vi": "Kiểm tra sức khỏe từng vùng và chuyển hướng khi một vùng mất kết nối.", "en": "Monitors regional health and reroutes traffic on region outage." },
+        "why": { "vi": "Quyết định thời gian phục hồi RTO khi có sự cố vùng.", "en": "Governs failover speed (RTO) during regional outages." }
+      }
+    },
+    "app_a": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "server",
+      "label": { "vi": "App Region A", "en": "App Region A" },
+      "inspector": {
+        "what": { "vi": "Cụm ứng dụng tại Region A (2 instance, tổng μ = 3.000 req/s).", "en": "Application tier in Region A (2 instances, 3,000 req/s)." },
+        "how": { "vi": "Đọc và ghi trực tiếp vào DB Primary nội vùng với độ trễ dưới 1 ms.", "en": "Reads and writes locally to Primary DB with sub-ms network hop." },
+        "why": { "vi": "Khi Region A ngừng hoạt động, toàn bộ tải chuyển sang Region B.", "en": "When Region A fails, traffic shifts to Region B." }
+      }
+    },
+    "app_b": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "server",
+      "label": { "vi": "App Region B", "en": "App Region B" },
+      "inspector": {
+        "what": { "vi": "Cụm ứng dụng tại Region B (mặc định 1 instance, μ = 1.500 req/s).", "en": "Application tier in Region B (default 1 instance, 1,500 req/s)." },
+        "how": { "vi": "Đọc từ Replica nội vùng, chuyển tiếp ghi sang Primary qua liên kết xuyên vùng.", "en": "Reads local replica and forwards writes cross-region to Primary." },
+        "why": { "vi": "Cần đủ công suất dự phòng để gánh tải khi Region A gặp sự cố.", "en": "Needs failover headroom to absorb Region A traffic." }
+      }
+    },
+    "db_a": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "DB Primary (A)", "en": "DB Primary (A)" },
+      "inspector": {
+        "what": { "vi": "Cơ sở dữ liệu chính đặt tại Region A (μ = 3.500 req/s).", "en": "Primary database in Region A (μ = 3,500 req/s)." },
+        "how": { "vi": "Nhận toàn bộ giao dịch ghi và phát luồng sao chép sang Region B.", "en": "Handles primary writes and replicates WAL stream to Region B." },
+        "why": { "vi": "Giữ nguồn sự thật duy nhất để tránh xung đột ghi.", "en": "Maintains single source of truth to prevent write conflicts." }
+      }
+    },
+    "db_b": {
+      "shape": "db",
+      "tone": "yellow",
+      "label": { "vi": "DB Replica (B)", "en": "DB Replica (B)" },
+      "inspector": {
+        "what": { "vi": "Bản sao cơ sở dữ liệu đặt tại Region B (μ = 3.500 req/s).", "en": "Database replica in Region B (μ = 3,500 req/s)." },
+        "how": { "vi": "Phục vụ đọc cục bộ và nhận bản sao qua đường truyền RTT 100 ms.", "en": "Serves local reads and receives replication over 100 ms RTT link." },
+        "why": { "vi": "Sẵn sàng thăng cấp khi Region A mất kết nối.", "en": "Ready for promotion if Region A goes down." }
+      }
+    }
+  },
+  "links": {
+    "client-geo": {
+      "inspector": {
+        "what": { "vi": "Kết nối từ người dùng tới Global Router.", "en": "User connection to Global Router." },
+        "how": { "vi": "Phân giải qua GeoDNS hoặc Anycast.", "en": "Resolved via GeoDNS or Anycast." },
+        "why": { "vi": "Điểm điều phối lưu lượng toàn cầu.", "en": "Global traffic entry point." }
+      }
+    },
+    "geo-appa": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng định tuyến vào Region A.", "en": "Traffic routed to Region A." },
+        "how": { "vi": "Độ trễ thấp cho người dùng gần Region A.", "en": "Low latency for users near Region A." },
+        "why": { "vi": "Ngắt kết nối khi Region A gặp sự cố.", "en": "Cut off during Region A outage." }
+      }
+    },
+    "geo-appb": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng định tuyến vào Region B.", "en": "Traffic routed to Region B." },
+        "how": { "vi": "Tiếp nhận thêm lưu lượng từ Region A khi failover.", "en": "Absorbs Region A traffic during failover." },
+        "why": { "vi": "Duy trì dịch vụ liên tục ở quy mô toàn cầu.", "en": "Maintains global service continuity." }
+      }
+    },
+    "appa-dba": {
+      "inspector": {
+        "what": { "vi": "Truy vấn nội vùng từ App A tới DB Primary.", "en": "Local query link from App A to DB Primary." },
+        "how": { "vi": "Cùng vùng địa lý nên RTT dưới 1 ms.", "en": "Same-region hop with sub-ms RTT." },
+        "why": { "vi": "Đạt độ trễ đọc ghi thấp nhất.", "en": "Achieves lowest read/write latency." }
+      }
+    },
+    "appb-dbb": {
+      "inspector": {
+        "what": { "vi": "Đọc nội vùng từ App B tới DB Replica.", "en": "Local read link from App B to DB Replica." },
+        "how": { "vi": "Trả lời nhanh tại chỗ nhưng có thể gặp Replication Lag.", "en": "Fast local reads subject to replication lag." },
+        "why": { "vi": "Giảm tải đọc xuyên vùng.", "en": "Offloads cross-region read traffic." }
+      }
+    },
+    "appb-dba": {
+      "inspector": {
+        "what": { "vi": "Đường ghi xuyên vùng từ App B về DB Primary (RTT 100 ms).", "en": "Cross-region write path from App B to Primary (100 ms RTT)." },
+        "how": { "vi": "Chịu độ trễ vật lý 100 ms và cần Backoff khi nghẽn.", "en": "Incurs 100 ms WAN RTT; requires backoff on failures." },
+        "why": { "vi": "Đảm bảo ghi tập trung ở Primary.", "en": "Centralizes writes on the primary database." }
+      }
+    },
+    "dba-dbb": {
+      "inspector": {
+        "what": { "vi": "Luồng sao chép dữ liệu xuyên vùng từ Region A sang Region B.", "en": "Cross-region replication stream from Region A to Region B." },
+        "how": { "vi": "Truyền WAL qua đường mạng RTT 100 ms.", "en": "Streams WAL over 100 ms RTT WAN link." },
+        "why": { "vi": "Đồng bộ dữ liệu dự phòng sang Region B.", "en": "Keeps Region B replica synchronized." }
+      }
+    }
+  },
+  "scenes": {
+    "s1-setup": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "db_a": { "badge": { "text": "Primary", "tone": "ok" } },
+        "db_b": { "badge": { "text": "Replica", "tone": "default" } }
+      }
+    },
+    "s2-rtt": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "app_b": { "badge": { "text": "RTT 100 ms", "tone": "warn" } },
+        "db_a": { "badge": { "text": "Sync RTT", "tone": "warn" } }
+      }
+    },
+    "s3-live-failover": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto"
+    },
+    "s4-conflict": {
+      "mode": "isometric",
+      "show": { "nodes": "*" },
+      "packets": "auto",
+      "state": {
+        "app_a": { "dead": true, "badge": { "text": "DOWN", "tone": "bad" } },
+        "db_b": { "badge": { "text": "Promoted", "tone": "ok" } }
+      }
+    }
+  },
+  "live": {
+    "region-failover": {
+      "sim": "S5-06/region-failover",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "app_b", "key": "replicas" },
+          { "node": "db_a", "key": "sizeFactor" }
+        ]
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 200, "badAbove": 350 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 320 }],
+      "focus": { "nodes": ["app_b", "db_a"] }
+    }
+  }
+}

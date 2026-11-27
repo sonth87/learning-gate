@@ -1,0 +1,30 @@
+{
+  "id": "S1-01",
+  "slug": "S1-01-web-system-components",
+  "level": 1,
+  "order": 1,
+  "title": "Các thành phần của một hệ thống web",
+  "summary": "Nhận diện vai trò, giới hạn năng lực, cách mở rộng và kiểu lỗi đặc trưng của năm khối cơ bản: Client, Load Balancer, App Server, Cache và Database.",
+  "durationMin": 15,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt vai trò và ranh giới trách nhiệm của Client, Load Balancer, App Server, Cache và Database trên đường đi của request" },
+    { "vi": "Giải thích vì sao không bao giờ tin dữ liệu kiểm tra từ phía Client và vì sao App Server nên thiết kế Stateless" },
+    { "vi": "Đánh giá tác động của Cache Hit Ratio lên mức sử dụng ρ của Database khi vận hành ổn định và khi mất dữ liệu đệm" },
+    { "vi": "Nhận diện kiểu lỗi đặc trưng và hướng mở rộng phù hợp cho từng thành phần" }
+  ],
+  "tags": ["components", "client", "load-balancer", "stateless", "cache", "database"],
+  "prerequisites": ["S0-03", "S0-09"],
+  "related": ["S1-06", "S1-02", "S1-03"],
+  "dtsRef": "request-lifecycle",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-1/lessons/lesson-1-components-trong-he-thong-web.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-1-components-trong-he-thong-web.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật trực diện: bỏ giai thoại cá nhân và ẩn dụ nhà hàng, chuẩn hoá mô hình 5 thành phần trên sân khấu isometric kèm kịch bản mô phỏng 200 req/s và sự cố mất Cache làm ρ của Database tăng từ 0,10 lên 0,49."
+  }
+}

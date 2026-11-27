@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-06.c1",
+    "front": "Khuôn mẫu bốn pha phổ quát của mọi hệ thống phần mềm là gì?",
+    "back": "Input (nhận request/sự kiện) → Processing (kiểm tra hợp lệ, thực thi nghiệp vụ) → Storage (lưu trữ bền vững) → Output (trả phản hồi hoặc phát hành động tiếp theo)."
+  },
+  {
+    "id": "S0-06.c2",
+    "front": "Sự khác biệt cốt lõi giữa góc nhìn mức mã nguồn (Code-level) và góc nhìn hệ thống (System-level)?",
+    "back": "Code-level nhìn logic bên trong một hàm; System-level nhìn luồng dữ liệu đi qua các thành phần, độ trễ mạng, sự phụ thuộc đồng bộ/bất đồng bộ và kịch bản lỗi khi một thành phần chậm hoặc ngừng chạy."
+  },
+  {
+    "id": "S0-06.c3",
+    "front": "Nguyên tắc bảo mật và độ tin cậy quan trọng nhất đối với tầng Client là gì?",
+    "back": "Không bao giờ tin cậy dữ liệu đến từ Client: API Server luôn phải xác thực danh tính, kiểm tra quyền sở hữu và kiểm tra định dạng dữ liệu đầu vào."
+  },
+  {
+    "id": "S0-06.c4",
+    "front": "Phân biệt vai trò của Database, Object Storage và Cache trong tầng dữ liệu?",
+    "back": "Database giữ dữ liệu có cấu trúc làm Source of Truth; Object Storage giữ tệp nhị phân lớn (ảnh, video); Cache giữ bản sao dữ liệu nóng trong RAM để tăng tốc đọc chứ không thay thế lưu trữ bền vững."
+  },
+  {
+    "id": "S0-06.c5",
+    "front": "Khi nào nên tách một bước xử lý sang Message Queue và Background Worker?",
+    "back": "Khi bước đó tốn nhiều thời gian hoặc gọi dịch vụ phụ (gửi email, tạo ảnh thu nhỏ, cập nhật chỉ mục tìm kiếm) và người dùng không cần kết quả của nó ngay trong phản hồi tức thời."
+  },
+  {
+    "id": "S0-06.c6",
+    "front": "Vì sao sau khi UPDATE dữ liệu trong Database cần thực hiện xoá khoá tương ứng trên Cache (Cache Invalidation)?",
+    "back": "Để loại bỏ bản sao cũ (Stale Data) còn nằm trong RAM, buộc lượt đọc kế tiếp nạp lại dữ liệu mới nhất từ Database."
+  }
+]

@@ -1,0 +1,192 @@
+{
+  "sims": [
+    {
+      "id": "S4-02/eviction",
+      "scenario": {
+        "id": "S4-02/eviction",
+        "seed": 4402,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 600, "to": 4200, "overSec": 50 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "App Server", "en": "App Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance App", "en": "App instances" },
+                  "min": 2,
+                  "max": 8,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "replicas": 4, "poolSize": 40 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (số key)", "en": "Cache capacity (keys)" },
+                  "min": 5000,
+                  "max": 100000,
+                  "step": 5000,
+                  "default": 5000,
+                  "changeCost": 1
+                },
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "TTL", "en": "TTL" },
+                  "min": 15,
+                  "max": 600,
+                  "step": 15,
+                  "default": 120,
+                  "unit": "s"
+                },
+                {
+                  "key": "ttlJitterPct",
+                  "type": "number",
+                  "label": { "vi": "Jitter TTL", "en": "TTL jitter" },
+                  "min": 0,
+                  "max": 0.5,
+                  "step": 0.05,
+                  "default": 0.15
+                },
+                {
+                  "key": "singleflight",
+                  "type": "bool",
+                  "label": { "vi": "Singleflight", "en": "Singleflight" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Mất cache: lượt đọc dồn về Database", "en": "Cache loss: reads hit Database" } }
+              ],
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "replicas": 2,
+                "ttlSec": 120,
+                "ttlJitterPct": 0.15,
+                "hitRatioMax": 0.92,
+                "workingSetKeys": 80000,
+                "capacityKeys": 5000,
+                "warmupSec": 15,
+                "singleflight": false
+              }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Primary DB", "en": "Primary DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "DB sizeFactor" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1100 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "params": { "replicas": 1, "sizeFactor": 1, "maxConnections": 500 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 120 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 70 } }
+      ],
+      "presets": [
+        {
+          "id": "expand-cache",
+          "label": { "vi": "Tăng dung lượng Cache lên 80.000 key khớp tập dữ liệu nóng", "en": "Expand Cache capacity to 80,000 keys" },
+          "changes": [
+            { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

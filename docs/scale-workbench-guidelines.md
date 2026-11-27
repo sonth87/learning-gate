@@ -1,6 +1,6 @@
-# Quy Chuẩn Thiết Kế & Sư Phạm `ScaleWorkbench` (Áp Dụng Bắt Buộc Cho Cả 5 Ứng Dụng Learning Gate)
+# Quy Chuẩn Thiết Kế & Sư Phạm `ScaleWorkbench` (Áp Dụng Bắt Buộc Cho Cả 6 Ứng Dụng Learning Gate)
 
-Tài liệu này khóa cứng toàn bộ quy tắc về **phân loại bài học, đồ họa Isometric 2.5D, animation, tương tác chi tiết, bố cục co giãn và chuẩn hóa thuật ngữ Tiếng Việt / Tiếng Anh** để áp dụng thống nhất xuyên suốt cả 5 ứng dụng: `PyMastery`, `RedisMastery`, `KubeMastery`, `CicdMastery` và `PmpMastery`.
+Tài liệu này khóa cứng toàn bộ quy tắc về **phân loại bài học, đồ họa Isometric 2.5D, animation, tương tác chi tiết, bố cục co giãn và chuẩn hóa thuật ngữ Tiếng Việt / Tiếng Anh** để áp dụng thống nhất xuyên suốt cả 6 ứng dụng: `PyMastery`, `RedisMastery`, `KubeMastery`, `CicdMastery`, `PmpMastery` và `SdMastery` (System Design Mastery).
 
 ---
 
@@ -97,3 +97,72 @@ Mọi thành phần trên sơ đồ (`block`, `db`, `device`, `crowd`, đường
 8. **Chuẩn Hiển Thị Code IDE (`WorkbenchCodeSurface`) & Bảng Phân Tích Nhanh Thu Gọn Được (`CodeTraceStage`)**:
    - Mọi khung hiển thị code (sân khấu `CodeTraceStage`, khung `Chạy thử Code` và các khối code trong `BlueprintMarkdown`) bắt buộc hiển thị chuẩn trình soạn thảo mã nguồn: có **cột đánh số dòng (`1..N`)**, **cuộn ngang `whitespace-pre` không tự xuống dòng giữa câu lệnh**, **tô màu cú pháp 1-1** (`renderHighlightedPython` / `renderHighlightedConfig`) và **nút đổi giao diện 6 bảng màu IDE** (`Nord`, `Dracula`, `Monokai`, `Midnight`, `Solarized`, `GitHub Light`) đồng bộ xuyên suốt ứng dụng.
    - `Bảng phân tích nhanh` bên phải của `CodeTraceStage` có nút **thu gọn thành thanh dọc gọn `42px`** (và mở rộng lại bất cứ lúc nào), nhường tối đa chiều ngang cho khung soạn thảo code khi cần đọc những dòng mã dài.
+
+---
+
+## 6. Chế độ `live-sim` (System Design Mastery)
+
+Ngoài 3 chế độ ở §1, ứng dụng `SdMastery` có thêm chế độ sân khấu **`live-sim`**: dùng `ScaleStageSvg` với `scene` cố định cho cả bước, còn trạng thái theo thời gian (tải, hàng đợi, trạng thái node, packet) đi qua một kênh frame riêng (`frameSource`, dữ liệu `LiveSimFrame` do engine mô phỏng sinh ra qua adapter của feature). Bước không khai báo `liveSim` vẫn chạy đúng như các quy chuẩn ở trên. Các quy tắc §2, §3, §5 áp dụng nguyên vẹn cho `live-sim`.
+
+Chi tiết (kênh frame riêng `frameSource`, packet pool, `SimTimeline`, controls, inspector `liveSlot`, các lỗi cần sửa kèm): xem [`docs/sysdesign/05-live-stage.md`](./sysdesign/05-live-stage.md).
+
+---
+
+## 7. Quy Chuẩn Chống Lỗi Vẽ Mô Hình, Hạt Tín Hiệu Nhân Quả & Lớp HUD (Bài Học Kinh Nghiệm Bắt Buộc)
+
+Toàn bộ các lỗi thiết kế và hiển thị sơ đồ từng gặp phải dưới đây **tuyệt đối không được tái phạm** khi thêm bài học mới hoặc chỉnh sửa `ScaleStageSvg`, `MemoryStageSvg` và `sdSceneBuilder`:
+
+### 7.1. Không Đặt Thẻ Popup / Ghi Chú (`noteCard`, `outputPill`) Bên Trong Nhóm Zoom `<svg>`
+- ❌ **Lỗi từng gặp:** Vẽ `noteCard` (*"GÓC NHÌN KIẾN TRÚC"*, *"CHƯA CHẠM 100% ĐÃ RẤT CHẬM"*) hoặc `outputPill` trực tiếp bên trong nhóm `<g ref={sceneCamRef}>` / `<g ref={camGroupRef}>` của `<svg>` và cộng kích thước của thẻ vào `baseBounds`. Hậu quả: khi người dùng zoom in/out hoặc pan sơ đồ, thẻ popup bị phóng to/thu nhỏ và trôi theo sơ đồ, đồng thời đẩy lệch tâm các khối kiến trúc chính.
+- ✅ **Quy tắc bắt buộc:** Mọi thẻ popup tổng kết, thẻ ghi chú góc sân khấu (`noteCard` trong `ScaleStageSvg`, `outputPill` trong `MemoryStageSvg`), thanh công cụ zoom và thẻ `StageInspectorPortal` **phải đặt ở lớp HTML HUD bên ngoài `<svg>`** (`position: absolute`, `data-no-pan="true"`), đứng cố định ở góc khung hình và có khả năng nhấn thu gọn (`−` / `+`) để không bao giờ bị biến dạng theo mức zoom hay chiếm mất `viewBox` của mô hình.
+
+### 7.2. Hạt Tín Hiệu (`Packets`) Phải Thể Hiện Đúng Nhân Quả Đa Chặng, Vận Tốc Vật Lý & Hiệu Ứng Chạm Đích
+- ❌ **Lỗi từng gặp:**
+  1. Cho các hạt chạy đều đều một tốc độ theo `% chiều dài dây` bất kể dây dài hay ngắn, thậm chí khi node quá tải lại cho hạt chạy nhanh hơn (`0.72` so với `0.44`).
+  2. Chỉ có hạt `request` đi từ `App → DB` mà quên hạt `response` màu xanh lá (`#9fd28f`) trả ngược từ `DB → App`.
+  3. Không có sự liên kết nhân quả giữa các chặng nối tiếp: chặng `App → DB` đang bị chậm (`200 ms` / `500 ms` / quá tải), nhưng chặng trước `Client ↔ LB ↔ App` vẫn bắn hạt Response xanh lá về nhanh liên tục như thể `App` không phải đợi `DB`.
+  4. Trong nhánh chọn màu SVG của hạt, đặt điều kiện `isSlow` (`variant === 'slow'`) trước `isResp` (`kind === 'response'`), làm các hạt Response trả về chậm bị tô nhầm thành màu vàng (`#efb041`) thay vì giữ màu xanh lá (`#9fd28f`).
+- ✅ **Quy tắc bắt buộc:**
+  1. **Vận tốc tính theo pixel/giây trên chiều dài thực của dây (`~152 px/s` cơ sở)** nhân với hệ số ngữ nghĩa:
+     - `Cache Hit / RPC nhanh`: `1.08x`.
+     - `Health-check / Heartbeat (ping)`: `0.85x` (hạt tròn nhỏ viền xanh lá).
+     - `Batch lớn / Multipart Upload (heavy)`: `0.70x` (khối vuông cam lớn `11.6×11.6`).
+     - `Truy vấn DB chậm / Cache Miss / Đuôi p99 (slow)`: `0.34x` (bò chậm bằng 1/3 tốc độ Cache Hit để mắt thường thấy rõ sự khác biệt RAM vs. Disk).
+  2. **Màu sắc bất biến theo `PacketKind`**:
+     - `kind === 'response'` **luôn luôn có màu xanh lá `#9fd28f`** (dù phản hồi nhanh `1.08x` hay phản hồi chậm `variant: 'slow' 0.34x`).
+     - `kind === 'request'` đi chiều vào bình thường có màu cam đào `#f3b47f`; khi chậm/chờ đợi (`retry` hoặc `variant: 'slow'`) có màu vàng hổ phách `#efb041`; khi bị từ chối/rớt gói (`dropped` / `error`) có màu đỏ `#e5534b`.
+  3. **Lan truyền độ trễ nhân quả từ tầng sau lên tầng trước (`Downstream Bottleneck Propagation`)**:
+     - Mọi chặng gọi đồng bộ (`solid`) xuống `Database` hoặc dịch vụ phía sau bắt buộc có cả hạt truy vấn đi xuống lẫn **hạt Response xanh lá (`#9fd28f`, `reverse: true`) trả ngược về** (chờ tại cổng đích hết thời gian xử lý `holdSec` rồi mới xuất phát quay về).
+     - Khi chặng sau (`Database`) bị chậm (`200 ms`, `500 ms`, `loadPct >= 48%`, `style: "danger"`) và không được `Cache` ấm che chắn, độ trễ phải truyền ngược lên `App Server → Load Balancer → Client`: chiều vào từ User có mật độ Request dày (**3 hạt đổ vào**), trong khi chiều trả về từ `DB → App` và từ `App → LB → Client` chỉ có **1 hạt Response xanh lá bò chậm (`0.34x`)**, thể hiện trực quan việc *DB trả lời chậm làm kéo chậm phản hồi của Web/App Server về User*.
+  4. **Hiệu ứng tại đích (`Hold` & `Arrival FX`)**:
+     - Khi hạt chờ xử lý tại nút chậm (`holdSec >= 0.18s`), viền hạt co giãn nhịp nhàng (`stroke-width: 1.5px → 3.35px`) kèm vòng hào quang xung quanh.
+     - Khi hoàn tất hành trình (`arrivalFx: 'ok'`), tỏa vòng sóng xanh lá (`#3fa456`) mở rộng `scale(0.8 → 2.1)`.
+     - Khi bị chặn bởi Rate Limiter (`429`), Circuit Breaker `OPEN`, Node `DOWN` hoặc đẩy vào `DLQ` (`arrivalFx: 'fail'`), nổ vòng tròn đỏ kèm dấu `✕` trắng (`#e5534b`).
+     - Lưu ý: `link.style === 'danger'` trên dây nối tới DB/Server dùng để chỉ đường truyền đang nóng/nghẽn (vẫn phải có hạt Response xanh lá trả về chậm), **không** được gộp chung với link bị cắt đứt hoàn toàn (`cut` / `dead`).
+
+### 7.3. Hàng Đợi Trước Cửa Node Bận Phải Dồn Hàng FIFO Thực Sự (`Shift-and-Consume FIFO Queue`)
+- ❌ **Lỗi từng gặp:** Vẽ 3–5 hạt vàng đứng đóng băng tại chỗ trước cửa DB/Server bận (`loadPct >= 68%`), còn hạt mới chạy từ nguồn đến đuôi hàng đợi rồi tự biến mất, không đẩy các hạt cũ nhích lên.
+- ✅ **Quy tắc bắt buộc:** Khi dây nối có hàng đợi (`queueCount > 0` trên cả sân khấu tĩnh và `live-sim`):
+  1. Hạt mới tiến tới cuối hàng sẽ **nhập thẳng vào ô cuối hàng (`qi = N - 1`)** và chuyển sang màu vàng hàng đợi (`#efb041`).
+  2. Toàn bộ các hạt cũ đang chờ trong hàng (`qi = N - 1 .. 1`) **đồng loạt trượt lên 1 ô (`qi → qi - 1`)** về phía cửa DB/Server.
+  3. Hạt cũ nhất ở đầu hàng (`qi = 0`) **tiến thẳng vào trong cổng DB/Server** (thu nhỏ dần và mờ đi khi chui vào node để được xử lý), sau đó hạt Response xanh lá (`#9fd28f`) mới đi ra từ chính cổng DB/Server để quay về nguồn.
+
+### 7.4. Định Tuyến Đường Nối Isometric, Phân Làn `stage.layout` & Chống Đâm Xuyên Qua Node Trung Gian
+- ❌ **Lỗi từng gặp:**
+  1. Trong bài có nhiều `sim` (`S1-02`, `S2-11`, `S3-09`), nạp gộp toàn bộ `links` của mọi `sim` vào cùng một cảnh gây rò rỉ dây nối thừa đè chéo lên sơ đồ.
+  2. Bỏ qua cấu hình phân làn `stage.layout` (`col, row`), hoặc xếp 3–4 node thẳng hàng cùng một trục khiến đường nối tắt (`Client → Web Server` khi có `DNS Resolver`, hoặc `API → Blob` khi có `Worker`) cắt xuyên qua chính giữa khối trung gian.
+  3. Trong `Memory-2D`, để cố định `baseW = 720` làm cây nhiều nhánh ngang bị cắt cụt hai bên, hoặc đặt đỉnh cây quá cao chạm vào tiêu đề ở `y = -166`.
+- ✅ **Quy tắc bắt buộc:**
+  1. Chỉ lấy `links` từ đúng `sim` gắn với step/scene hiện tại; không tự động nhét mọi khóa của `stage.links` vào cảnh nếu không thuộc `sim` hoặc `show.links` của cảnh đó.
+  2. Tôn trọng tọa độ phân làn `stage.layout` (`col, row`) trên lưới Isometric `2:1`; tự động đẩy lệch trục (`±0.88` theo hướng `SE`) cho các tầng trung gian chỉ có 1 node bị đường nối tắt đi vòng qua, kết hợp kiểm tra va chạm hộp bao (`obstacle detour`) trong `buildIsoLink`.
+  3. Trong `Memory-2D` (`tree`), luôn tính `baseW` động theo bề rộng thực của các tầng và đẩy toàn bộ cây xuống nếu cạnh trên của tầng gốc cao hơn `y = -142`.
+
+### 7.5. Biểu Đạt Đầy Đủ Đối Tượng Tham Gia, Thành Phần Phụ Trợ & Tiến Hóa Pipeline Theo Từng Bước
+- ❌ **Lỗi từng gặp:**
+  1. Bài học giảng về `DLQ`, `Presigned URL`, `Outbox Relay`, `Service Registry`, `KMS / Secrets Manager`, `Push Service + Người nhận`, hay `OTP Queue vs Marketing Queue` nhưng trên sơ đồ lại thiếu hẳn khối đó hoặc thiếu đường nối trực tiếp (`Client → Object Storage`, `SQL → Search Engine`).
+  2. Ngay từ Bước 1 (`SETUP` / `PROBLEM` — kiến trúc ngây thơ ban đầu) đã vẽ luôn tất cả các khối giải pháp của Bước 4–5 (`Service Registry`, `Fan-out Queue`), làm mất tính tiến hóa của pipeline.
+  3. Sử dụng mã biến viết tắt vô nghĩa (`O1, O2, O3, C1..C4, V2, V3`) làm nhãn `typeTag` trên thẻ sơ đồ, hoặc hiển thị nhầm Tooltip của khóa học khác (Python Namespace, Python GIL, K8s Pod, PMP).
+- ✅ **Quy tắc bắt buộc:**
+  1. Mọi thành phần chính và thành phần phụ trợ được phân tích trong lời giảng của bước nào phải xuất hiện đúng trên sơ đồ của bước đó với đường nối đúng chiều dữ liệu.
+  2. Tuân thủ **Tiến hóa Pipeline (`Progressive Pipeline Evolution`)**: Bước `SETUP`/`PROBLEM` chỉ vẽ đúng kiến trúc khởi đầu (ví dụ `A → B`) để bộc lộ điểm nghẽn; sang các bước `MECHANISM`/`TECHNIQUE` mới thêm dần nhánh phân tách (`A → B → {C, D, E}`) hoặc chèn thành phần trung gian (`Z`) vào giữa.
+  3. Tuyệt đối không dùng mã nháp (`O1..O3`, `C1..C4`) trên giao diện và đảm bảo `StageEntityInspector` ưu tiên từ điển thuật ngữ của đúng khóa học hiện tại.

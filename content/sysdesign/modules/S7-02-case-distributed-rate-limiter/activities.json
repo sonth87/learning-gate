@@ -1,0 +1,107 @@
+[
+  {
+    "id": "S7-02.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Cấu hình Rate Limiter phân tán chịu đỉnh 5.500 req/s" },
+    "prompt": { "vi": "Hệ thống có 35% lưu lượng từ người dùng hợp lệ và 65% từ client gửi burst (đạt đỉnh 5.500 req/s ở giây 12). Hãy điều chỉnh Rate Limiter, Backend API và xóa SPOF ở Redis Counter Store để đạt p99 ≤ 120 ms và lỗi ≤ 1% cho người dùng hợp lệ ở cả mức tải 1.800 req/s lẫn đỉnh 5.500 req/s, trong ngân sách ≤ 1,35 USD/giờ." },
+    "difficulty": 3,
+    "simId": "S7-02/dist-limiter",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-1800",
+        "label": { "vi": "Tải chuẩn 1.800 req/s (p99 ≤ 100 ms, lỗi ≤ 1%)" },
+        "simId": "S7-02/dist-limiter",
+        "loadOverride": { "kind": "steady", "rps": 1800 },
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 100, "window": { "fromSec": 0, "toSec": 45 }, "allowViolationPct": 2 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 45 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "burst-5500",
+        "label": { "vi": "Đỉnh burst 5.500 req/s (p99 ≤ 120 ms, lỗi ≤ 1%)" },
+        "simId": "S7-02/dist-limiter",
+        "constraints": [
+          { "id": "p99-burst", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 3 },
+          { "id": "err-burst", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-redis-spof", "kind": "structural", "rule": "no-spof", "node": "redis" }
+    ],
+    "budget": { "maxCostPerHour": 1.35, "maxChanges": 4 },
+    "par": { "changes": 4, "costPerHour": 1.12 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "limiter", "key": "ratePerSec", "value": 1600 },
+        { "type": "knob", "node": "limiter", "key": "burst", "value": 400 },
+        { "type": "knob", "node": "api", "key": "replicas", "value": 3 },
+        { "type": "knob", "node": "redis", "key": "replicas", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "only-scale-gateways",
+        "label": { "vi": "Tăng API Gateways lên 6 máy, giữ nguyên ratePerSec = 6.000 và 1 Redis" },
+        "changes": [
+          { "type": "knob", "node": "gateways", "key": "replicas", "value": 6 }
+        ],
+        "why": { "vi": "Cổng vào rộng hơn không chặn được tải burst 5.500 req/s tràn xuống Backend API (chỉ chịu 3.000 req/s), và Redis vẫn là SPOF." }
+      }
+    ],
+    "hints": [
+      { "vi": "Đặt Redis lên 2 node để xóa SPOF cho kho đếm tập trung." },
+      { "vi": "Siết ratePerSec xuống khoảng 1.200 rps và burst = 300 để chặn phần tải đột biến dư thừa, đồng thời nâng Backend API lên 3 instance (4.500 req/s)." }
+    ],
+    "explain": { "vi": "Redis 2 node loại bỏ SPOF, limiter siết ở mức 1.200 rps (burst 300) bảo vệ Backend API 3 instance, giữ p99 = {m.p99'@25:0} ms ở đỉnh 5.500 req/s với chi phí {m.cost'@25:2} USD/giờ." }
+  },
+  {
+    "id": "S7-02.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Siết ngưỡng Token Bucket để bảo vệ Backend API" },
+    "prompt": { "vi": "Ở mức cấu hình mặc định (ratePerSec = 6.000), đỉnh 5.500 req/s tràn qua bộ giới hạn làm Backend API quá tải. Với tối đa 3 thay đổi và ngân sách ≤ 1,10 USD/giờ, hãy giữ p99 ≤ 120 ms và lỗi ≤ 1% trong suốt 65 giây." },
+    "difficulty": 2,
+    "simId": "S7-02/dist-limiter",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 1.1 },
+    "allowed": [
+      { "type": "knob", "node": "limiter", "key": "ratePerSec", "min": 500, "max": 10000 },
+      { "type": "knob", "node": "limiter", "key": "burst", "min": 100, "max": 3000 },
+      { "type": "knob", "node": "api", "key": "replicas", "min": 1, "max": 8 },
+      { "type": "knob", "node": "gateways", "key": "replicas", "min": 1, "max": 8 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+    ],
+    "soft": [
+      { "id": "api-calm", "kind": "node-state", "node": "api", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 65 },
+    "par": { "changes": 3, "costPerHour": 0.97 },
+    "solution": [
+      { "type": "knob", "node": "limiter", "key": "ratePerSec", "value": 1600 },
+      { "type": "knob", "node": "limiter", "key": "burst", "value": 400 },
+      { "type": "knob", "node": "api", "key": "replicas", "value": 3 }
+    ],
+    "traps": [
+      {
+        "id": "more-gateways",
+        "label": { "vi": "Tăng API Gateways lên 6 máy" },
+        "changes": [
+          { "type": "knob", "node": "gateways", "key": "replicas", "value": 6 }
+        ],
+        "why": { "vi": "API Gateways đang dư công suất; nút cổ chai nằm ở Backend API khi limiter để lọt toàn bộ tải burst." }
+      }
+    ],
+    "hints": [
+      { "vi": "35% của 5.500 req/s là 1.925 req/s từ người dùng hợp lệ; nếu limiter cho qua thêm 1.200 rps từ nhánh burst thì tổng vào Backend API là ~3.125 req/s." },
+      { "vi": "Nâng Backend API lên 3 instance (4.500 req/s) kết hợp siết ratePerSec = 1.200 và burst = 300." }
+    ],
+    "explain": { "vi": "Siết ratePerSec về 1.200 và burst về 300 cùng 3 instance Backend API giúp ρ của API luôn dưới ngưỡng bão hòa, đưa p99 về {global.p99'@25:0} ms và lỗi về {global.errorRate'@25:1%}." },
+    "replay": { "simId": "S7-02/dist-limiter", "seekSec": 12, "focus": { "nodes": ["limiter", "api"] }, "autoplay": true }
+  }
+]

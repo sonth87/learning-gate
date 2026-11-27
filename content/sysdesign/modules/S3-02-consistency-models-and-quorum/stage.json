@@ -1,0 +1,407 @@
+{
+  "version": 1,
+  "base": "s5-quorum-overlap",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Nhiều khách hàng đọc và cập nhật cùng tập khoá dữ liệu trên cụm phân tán.",
+          "en": "Concurrent clients reading and updating shared keys across the cluster."
+        },
+        "how": {
+          "vi": "Tăng lưu lượng từ 400 lên 3.200 req/s (70% đọc, 30% ghi).",
+          "en": "Ramps traffic from 400 to 3,200 req/s (70% reads, 30% writes)."
+        },
+        "why": {
+          "vi": "Làm bộc lộ sự đánh đổi trực tiếp giữa mức độ nhất quán (W, R) và thông lượng trần.",
+          "en": "Exposes the direct trade-off between quorum strictness and throughput ceiling."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Bộ cân bằng tải rải đều truy vấn vào tầng Quorum Coordinator.", "en": "Distributes requests evenly across stateless Coordinators." },
+        "how": { "vi": "Chuyển tiếp không giữ trạng thái với độ trễ 0,3 ms.", "en": "Stateless Round-robin forwarding in 0.3 ms." },
+        "why": { "vi": "Bất kỳ nút Coordinator nào cũng có thể điều phối truy vấn cho mọi khoá.", "en": "Any Coordinator node can orchestrate reads/writes for any key." }
+      }
+    },
+    "coord": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "git",
+      "label": { "vi": "Quorum Coordinator", "en": "Quorum Coordinator" },
+      "inspector": {
+        "what": {
+          "vi": "Tầng điều phối gửi yêu cầu song song tới các bản sao và gom kết quả theo ngưỡng W, R.",
+          "en": "Coordinator fanning out requests to replicas and enforcing W and R thresholds."
+        },
+        "how": {
+          "vi": "Khi đọc R bản sao, chọn bản có số phiên bản cao nhất và phát lệnh Read Repair cho bản cũ.",
+          "en": "Picks the highest version among R replies and triggers background Read Repair."
+        },
+        "why": {
+          "vi": "Cho phép tuỳ chỉnh mức nhất quán (ONE, QUORUM, ALL) ngay trên từng câu lệnh.",
+          "en": "Enables per-request tunable consistency (ONE, QUORUM, ALL)."
+        }
+      }
+    },
+    "r1": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Replica 1 (AZ-A)", "en": "Replica 1 (AZ-A)" },
+      "inspector": {
+        "what": { "vi": "Bản sao lưu trữ thứ nhất đặt tại AZ-A (μ = 1.800 req/s, nền 4 ms).", "en": "First storage replica in AZ-A (μ = 1,800 req/s, 4 ms base)." },
+        "how": { "vi": "Lưu mỗi giá trị kèm số phiên bản tăng dần để so sánh độ mới.", "en": "Stores values tagged with monotonic version numbers." },
+        "why": { "vi": "Nằm cùng AZ với Coordinator nên phản hồi nhanh nhất.", "en": "Co-located in AZ-A for lowest network RTT." }
+      }
+    },
+    "r2": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Replica 2 (AZ-B)", "en": "Replica 2 (AZ-B)" },
+      "inspector": {
+        "what": { "vi": "Bản sao lưu trữ thứ hai đặt tại AZ-B (μ = 1.800 req/s, mạng chéo AZ 2 ms).", "en": "Second storage replica in AZ-B (μ = 1,800 req/s, 2 ms cross-AZ)." },
+        "how": { "vi": "Cùng với Replica 1 tạo thành cặp đa số 2/3 nhanh nhất trong vùng.", "en": "Forms the fastest 2-of-3 quorum pair alongside Replica 1." },
+        "why": { "vi": "Đảm bảo dữ liệu sống sót nếu toàn bộ AZ-A ngừng hoạt động.", "en": "Preserves durability across Availability Zone failures." }
+      }
+    },
+    "r3": {
+      "shape": "db",
+      "tone": "purple",
+      "label": { "vi": "Replica 3 (AZ-C)", "en": "Replica 3 (AZ-C)" },
+      "inspector": {
+        "what": { "vi": "Bản sao thứ ba ở AZ-C xa hơn (μ = 1.600 req/s, nền 8 ms, mạng 6 ms).", "en": "Third replica in distant AZ-C (μ = 1,600 req/s, 8 ms base, 6 ms net)." },
+        "how": { "vi": "Ở chế độ W = R = 2, nhận trung bình 2/3 tổng tải toàn hệ thống nên chạm ngưỡng bão hoà sớm nhất.", "en": "Receives 2/3 of cluster traffic under W = R = 2, saturating first." },
+        "why": { "vi": "Đóng vai trò phiếu dự phòng khi R1 hoặc R2 bảo trì hay gặp sự cố.", "en": "Acts as the tie-breaking replica when R1 or R2 is unavailable." }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối Internet từ người dùng tới Load Balancer.", "en": "Client Internet connection." },
+        "how": { "vi": "Mang hỗn hợp 70% đọc và 30% ghi.", "en": "Carries 70% reads and 30% writes." },
+        "why": { "vi": "Đo độ trễ p99 và tỷ lệ lỗi đầu-cuối.", "en": "Measures end-to-end latency and error SLOs." }
+      }
+    },
+    "lb-coord": {
+      "inspector": {
+        "what": { "vi": "Đường chuyển tiếp nội bộ vào cụm Quorum Coordinator.", "en": "Internal link to Coordinator tier." },
+        "how": { "vi": "Chia đều tải qua 3 instance Coordinator.", "en": "Balances requests across 3 Coordinator nodes." },
+        "why": { "vi": "Giữ tầng điều phối phi trạng thái thông thoáng.", "en": "Prevents Coordinator bottlenecks." }
+      }
+    },
+    "coord-r1": {
+      "inspector": {
+        "what": { "vi": "Nhánh đọc/ghi nội vùng tới Replica 1 (~0,5 ms).", "en": "Same-AZ hop to Replica 1 (~0.5 ms)." },
+        "how": { "vi": "Nhận 67% tải ở chế độ QUORUM hoặc 33% tải ở chế độ ONE.", "en": "Carries 67% load under QUORUM vs 33% under ONE." },
+        "why": { "vi": "Nhánh phản hồi nhanh nhất trong ba bản sao.", "en": "Fastest leg of the replica set." }
+      }
+    },
+    "coord-r2": {
+      "inspector": {
+        "what": { "vi": "Nhánh đọc/ghi chéo vùng sang Replica 2 (~2 ms).", "en": "Cross-AZ hop to Replica 2 (~2 ms)." },
+        "how": { "vi": "Tham gia hoàn tất ngưỡng đa số 2/3 bản sao.", "en": "Completes the 2-of-3 majority quorum." },
+        "why": { "vi": "Cung cấp bản xác nhận độc lập thứ hai.", "en": "Provides independent cross-AZ confirmation." }
+      }
+    },
+    "coord-r3": {
+      "inspector": {
+        "what": { "vi": "Nhánh đọc/ghi chéo vùng xa sang Replica 3 (~6 ms).", "en": "Distant cross-AZ hop to Replica 3 (~6 ms)." },
+        "how": { "vi": "Kéo p99 tăng cao khi Replica 3 tiến sát mức sử dụng ρ = 1.", "en": "Drives tail latency upward when Replica 3 nears ρ = 1." },
+        "why": { "vi": "Hoàn thiện bộ 3 bản sao phân tán địa lý.", "en": "Completes 3-AZ fault-tolerant placement." }
+      }
+    }
+  },
+  "zones": {
+    "replicas": {
+      "nodeIds": ["r1", "r2", "r3"],
+      "label": { "vi": "CỤM 3 BẢN SAO (N = 3)", "en": "3-REPLICA RING (N = 3)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-spectrum": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Phổ mô hình nhất quán dữ liệu (từ chặt chẽ nhất đến lỏng lẻo nhất)",
+          "en": "Spectrum of Data Consistency Models (Strongest to Weakest)"
+        },
+        "subtitle": {
+          "vi": "Càng sang trái càng dễ lập trình đúng đắn; càng sang phải càng giảm chờ đợi mạng",
+          "en": "Left simplifies application correctness; right minimizes network coordination"
+        },
+        "cells": [
+          "1. Linearizable",
+          "2. Sequential",
+          "3. Causal",
+          "4. Session (RYW)",
+          "5. Eventual"
+        ],
+        "activeIndices": [0, 3, 4],
+        "pointers": [
+          { "index": 0, "label": "tiền bạc, khoá, ghế cuối", "tone": "orange" },
+          { "index": 4, "label": "lượt thích, gợi ý, feed", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Quy luật đánh đổi", "en": "Core Trade-off" },
+          "value": { "vi": "Nhất quán mạnh đòi hỏi đồng bộ đa số qua mạng; nhất quán cuối cùng trả lời ngay tại chỗ", "en": "Strong consistency pays network quorum RTT; eventual replies locally" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s2-linearizable": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Tuyến tính hoá (Linearizability): quy tắc điểm có hiệu lực tức thời",
+          "en": "Linearizability: Every Read After Write Completion Sees the New Value"
+        },
+        "subtitle": {
+          "vi": "Sau khi W(x=10) kết thúc ở t=50ms, mọi lượt đọc bắt đầu từ t>50ms bắt buộc trả 10",
+          "en": "Once W(x=10) finishes at t=50ms, any read starting at t>50ms must return 10"
+        },
+        "cells": [
+          "t=0: x = 5",
+          "t=10..50: W(x=10)",
+          "t=30: R_cờ (5 hoặc 10)",
+          "t=55: R_sau → PHẢI = 10",
+          "t=70: R_kế → PHẢI = 10"
+        ],
+        "activeIndices": [1, 3],
+        "pointers": [
+          { "index": 1, "label": "điểm tuyến tính hoá", "tone": "orange" },
+          { "index": 3, "label": "cấm trả về 5!", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Ứng dụng bắt buộc", "en": "Required For" },
+          "value": { "vi": "Distributed Lock, bầu Leader, trừ tồn kho cuối cùng và giao dịch ví", "en": "Distributed locks, leader election, last-seat booking, ledgers" },
+          "tone": "orange"
+        }
+      }
+    },
+    "s3-eventual-stale": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Thao tác khách hàng (W=1, R=1)", "en": "Client Operations (W=1, R=1)" },
+        "rightTitle": { "vi": "Trạng thái tức thời trên từng Replica", "en": "Instantaneous Replica State" },
+        "names": [
+          { "id": "op1", "name": "An ghi stock = 0 (t=60..89ms)", "note": { "vi": "Xác nhận ngay tại R1", "en": "Acked immediately on R1" }, "targetId": "rep1" },
+          { "id": "op2", "name": "Chi đọc tại t=100ms → thấy 0", "note": { "vi": "Trúng bản sao đã mới", "en": "Hits fresh R1" }, "targetId": "rep1" },
+          { "id": "op3", "name": "Bình đọc tại t=95ms → thấy 5!", "note": { "vi": "Stale Read do đồng bộ trễ", "en": "Stale Read before sync arrives" }, "targetId": "rep2", "style": "danger" }
+        ],
+        "objects": [
+          {
+            "id": "rep1",
+            "typeTag": "REPLICA 1",
+            "value": "stock = 0 (version v2)",
+            "fields": ["Nhận trực tiếp lệnh ghi của An", "Đẩy bản sao bất đồng bộ sang R2, R3"],
+            "tone": "green"
+          },
+          {
+            "id": "rep2",
+            "typeTag": "REPLICA 2 & 3",
+            "value": "stock = 5 (version v1 · Cũ!)",
+            "fields": ["Gói đồng bộ v2 đang bay trên mạng", "Tới t=145ms mới hội tụ về stock = 0"],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s4-session-guarantees": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Bảo đảm theo phiên người dùng", "en": "Session Guarantee" },
+        "rightTitle": { "vi": "Kỹ thuật cài đặt chi phí thấp", "en": "Lightweight Implementation" },
+        "names": [
+          { "id": "ryw", "name": "Read-Your-Writes", "note": { "vi": "Tác giả thấy ngay bài vừa đăng", "en": "Author sees own post immediately" }, "targetId": "pin" },
+          { "id": "mono", "name": "Monotonic Reads", "note": { "vi": "Tải lại trang không bị lùi ngược", "en": "Reloads never jump backward in time" }, "targetId": "lsn" }
+        ],
+        "objects": [
+          {
+            "id": "pin",
+            "typeTag": "CLIENT VERSION TOKEN",
+            "value": "Đọc nơi có version ≥ last_write_ver",
+            "fields": ["Ghim tạm người vừa ghi về Leader / R1", "99% người đọc khác vẫn dùng bản sao thường"],
+            "tone": "orange"
+          },
+          {
+            "id": "lsn",
+            "typeTag": "STICKY / MIN-VERSION",
+            "value": "Băm session_id hoặc kèm max_seen_ver",
+            "fields": ["Từ chối đọc từ Replica có LSN thấp hơn", "Tránh hiện tượng bình luận vừa hiện lại biến mất"],
+            "tone": "blue"
+          }
+        ]
+      }
+    },
+    "s5-quorum-overlap": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "state": {
+        "coord": {
+          "loadPct": 36,
+          "highlighted": true,
+          "badge": { "text": { "vi": "W=2 · R=2 (2+2>3)", "en": "W=2 · R=2 (2+2>3)" }, "tone": "ok" }
+        },
+        "r1": {
+          "loadPct": 48,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghi v2 · Đọc v2", "en": "Write v2 · Read v2" }, "tone": "ok" }
+        },
+        "r2": {
+          "loadPct": 48,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ghi v2 (Giao nhau!)", "en": "Write v2 (Overlap!)" }, "tone": "ok" }
+        },
+        "r3": {
+          "loadPct": 42,
+          "badge": { "text": { "vi": "Đọc v1 → Read Repair", "en": "v1 → Read Repair" }, "tone": "warn" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giao nhau Quorum: W + R > N", "en": "Quorum Intersection: W + R > N" },
+        "lines": [
+          { "text": { "vi": "Tập ghi {R1, R2} ∩ Tập đọc {R2, R3} = {R2}", "en": "Write {R1, R2} ∩ Read {R2, R3} = {R2}" }, "tone": "good" },
+          { "text": { "vi": "Coordinator chọn v2 cao nhất & sửa bù cho R3", "en": "Coordinator picks v2 & repairs R3" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-quorum-live": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tải tăng trên Quorum W = 2, R = 2", "en": "Load Ramp Under W = 2, R = 2" },
+        "lines": [
+          { "text": { "vi": "Mỗi bản sao gánh ~67% tổng lưu lượng", "en": "Each replica handles ~67% of total load" }, "tone": "amber" },
+          { "text": { "vi": "Replica 3 chạm trần quanh 2.300 req/s", "en": "Replica 3 saturates near 2,300 req/s" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-one-live": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đối chiếu Eventual W = 1, R = 1", "en": "Comparison: Eventual W = 1, R = 1" },
+        "lines": [
+          { "text": { "vi": "Mỗi bản sao chỉ gánh 33% lưu lượng trực tiếp", "en": "Each replica handles 33% direct load" }, "tone": "good" },
+          { "text": { "vi": "p99 ≈ 60 ms ở 2.920 req/s · Đánh đổi Stale Read", "en": "p99 ≈ 60 ms at 2,920 req/s · Stale reads possible" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-sloppy-lww": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Ba tình huống khiến Quorum W + R > N vẫn lệch khỏi Linearizability",
+          "en": "Three Edge Cases Where W + R > N Falls Short of Strict Linearizability"
+        },
+        "nodes": [
+          { "id": "q", "x": 0, "y": -96, "label": "Quorum phi Leader (W + R > N)", "sub": { "vi": "Không có thuật toán đồng thuận tuần tự hoá", "en": "Leaderless quorum without consensus" }, "tone": "purple" },
+          { "id": "slop", "x": -185, "y": 24, "label": "1. Sloppy Quorum", "sub": { "vi": "Ghi tạm sang nút hộ khi đứt mạng → lệch tập đọc", "en": "Hinted handoff breaks intersection" }, "tone": "orange" },
+          { "id": "lww", "x": 0, "y": 24, "label": "2. Xung đột LWW lệch giờ", "sub": { "vi": "Hai lệnh ghi đồng thời giữ nhầm bản đồng hồ nhanh", "en": "Clock skew drops newer write" }, "tone": "rose" },
+          { "id": "partw", "x": 185, "y": 24, "label": "3. Đọc gối đầu lệnh ghi", "sub": { "vi": "Người trước thấy bản mới, người ngay sau thấy bản cũ", "en": "Concurrent reads flip new → old" }, "tone": "yellow" }
+        ],
+        "edges": [
+          { "from": "q", "to": "slop", "label": "ưu tiên A" },
+          { "from": "q", "to": "lww", "label": "lệch NTP", "style": "danger" },
+          { "from": "q", "to": "partw", "label": "chưa Repair kịp" }
+        ]
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["replicas"],
+      "state": {
+        "coord": { "loadPct": 32, "badge": { "text": { "vi": "Tuỳ chỉnh theo API", "en": "Tunable per API" }, "tone": "ok" } },
+        "r1": { "loadPct": 42, "badge": { "text": { "vi": "QUORUM cho đơn hàng", "en": "QUORUM for orders" }, "tone": "warn" } },
+        "r2": { "loadPct": 42, "badge": { "text": { "vi": "RYW cho chủ tài khoản", "en": "RYW for author" }, "tone": "ok" } },
+        "r3": { "loadPct": 38, "badge": { "text": { "vi": "ONE cho lượt xem", "en": "ONE for view counts" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Nhất quán & Quorum", "en": "Consistency & Quorum Summary" },
+        "lines": [
+          { "text": { "vi": "W + R > N đảm bảo giao nhau nhưng tăng tải bản sao", "en": "W + R > N intersects but multiplies replica load" }, "tone": "amber" },
+          { "text": { "vi": "Kết hợp QUORUM, RYW và ONE theo rủi ro nghiệp vụ", "en": "Mix QUORUM, RYW, and ONE per business need" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "quorum-strict": {
+      "sim": "S3-02/quorum-strict",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "chaos": ["slow", "partition"],
+        "knobs": [
+          { "node": "r1", "key": "sizeFactor" },
+          { "node": "r2", "key": "sizeFactor" },
+          { "node": "r3", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tải vào", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 150 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 140 }
+      ],
+      "focus": { "nodes": ["coord", "r1", "r2", "r3"] }
+    },
+    "eventual-one": {
+      "sim": "S3-02/eventual-one",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "coord", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tải vào", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 150 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 140 }
+      ],
+      "focus": { "nodes": ["coord", "r1", "r2", "r3"] }
+    }
+  }
+}

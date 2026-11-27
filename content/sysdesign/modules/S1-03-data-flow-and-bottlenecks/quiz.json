@@ -1,0 +1,61 @@
+[
+  {
+    "id": "S1-03.q1",
+    "type": "mc",
+    "q": "Một request đi qua ba thành phần nối tiếp có thông lượng tối đa lần lượt là 800, 300 và 1.200 req/s. Thông lượng tối đa của cả chuỗi là bao nhiêu?",
+    "code": "",
+    "choices": ["1.200 req/s", "300 req/s", "800 req/s", "2.300 req/s"],
+    "answer": 1,
+    "explain": "Điểm nghẽn là thành phần có thông lượng tối đa thấp nhất trên đường đi. Mọi request đều phải qua nó, nên cả chuỗi không thể vượt 300 req/s, dù hai thành phần còn lại nhanh hơn nhiều."
+  },
+  {
+    "id": "S1-03.q2",
+    "type": "output",
+    "q": "Database xử lý tối đa 1.600 req/s và đang nhận 2.000 req/s. Mức sử dụng ρ = λ/μ bằng bao nhiêu phần trăm? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "125",
+    "explain": "ρ = λ / μ = 2.000 / 1.600 = 1,25, tức 125%. Vì ρ lớn hơn 1, mỗi giây có 400 request không được xử lý và cộng dồn vào hàng đợi, nên hàng đợi tăng không dừng."
+  },
+  {
+    "id": "S1-03.q3",
+    "type": "tf",
+    "q": "Khi Database là điểm nghẽn, nhân đôi số instance App luôn giúp giảm p99 của toàn hệ thống.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Thêm instance App chỉ giảm ρ của tầng App, còn lượng request xuống Database không đổi. Database vẫn ở ρ = 1 nên p99 gần như giữ nguyên, trong khi chi phí tăng."
+  },
+  {
+    "id": "S1-03.q4",
+    "type": "mc",
+    "q": "Trace của một request cho thấy: Load Balancer 10 ms, App 20 ms, Cache 5 ms, Database 300 ms. Nên tối ưu thành phần nào trước?",
+    "code": "",
+    "choices": ["Load Balancer", "App", "Cache", "Database"],
+    "answer": 3,
+    "explain": "Database chiếm 300 trên 335 ms, khoảng 90% tổng thời gian, nên giảm chặng này cho mức cải thiện lớn nhất. Tối ưu các chặng nhỏ chỉ tiết kiệm được vài phần trăm."
+  },
+  {
+    "id": "S1-03.q5",
+    "type": "output",
+    "q": "Hệ thống có 90% request là đọc, Cache Hit trên 50% lượt đọc, và mọi lượt ghi đều xuống Database. Bao nhiêu phần trăm tổng số request tới Database? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "55",
+    "explain": "Lượt đọc Cache Miss là 0,9 × (1 − 0,5) = 0,45. Cộng 10% lượt ghi được 0,55, tức 55% request tới Database. Tỉ lệ này nhân với λ rồi chia cho μ của Database cho ra ρ của nó."
+  },
+  {
+    "id": "S1-03.q6",
+    "type": "mc",
+    "q": "Sau khi thêm chỉ mục cho một truy vấn chậm, độ trễ toàn hệ thống chỉ cải thiện 3%. Bước hợp lý tiếp theo là gì?",
+    "code": "",
+    "choices": [
+      "Coi như đã xong vì độ trễ đã giảm",
+      "Xem lại số đo: truy vấn đó có thật sự là chặng chậm nhất hay không",
+      "Thêm server ở tầng ứng dụng",
+      "Bỏ chỉ mục vừa tạo mà không kiểm tra gì thêm"
+    ],
+    "answer": 1,
+    "explain": "Mỗi lần sửa là một giả thuyết cần kiểm chứng bằng đo lại. Cải thiện quá nhỏ cho thấy chặng vừa sửa có thể không phải điểm nghẽn, nên cần quay lại bước đo và tìm."
+  }
+]

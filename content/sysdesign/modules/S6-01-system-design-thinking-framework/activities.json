@@ -1,0 +1,49 @@
+[
+  {
+    "id": "S6-01.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Biến yêu cầu và ràng buộc thành cấu hình hệ thống hợp lý" },
+    "prompt": { "vi": "Bảng yêu cầu ghi nhận: tải đỉnh 2.800 req/s (90% đọc, 10% ghi), tập dữ liệu nóng 50.000 key, mục tiêu p99 ≤ 100 ms, tỉ lệ lỗi ≤ 1%, không để tầng API Service thành điểm lỗi đơn (SPOF) và ngân sách tối đa 1,20 USD/giờ (tối đa 2 thay đổi). Hãy cấu hình lại kiến trúc từ điểm khởi đầu đang có 1 API Service (1.800 req/s) và Cache 10.000 key." },
+    "difficulty": 2,
+    "simId": "S6-01/req-driven",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "peak-2800",
+        "label": { "vi": "Đỉnh tải 2.800 req/s (p99 ≤ 100 ms, lỗi ≤ 1%)" },
+        "simId": "S6-01/req-driven",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 100, "window": { "fromSec": 10, "toSec": 45 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 45 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "no-app-spof", "kind": "structural", "rule": "no-spof", "node": "app" }
+    ],
+    "budget": { "maxCostPerHour": 1.2, "maxChanges": 2 },
+    "par": { "costPerHour": 1.09, "changes": 2 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "app", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 50000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "over-scale-db",
+        "label": { "vi": "Nâng cỡ Database lên ×3 thay vì mở rộng API Service và Cache" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Nâng Database đẩy chi phí vượt 1,20 USD/giờ mà tầng API Service vẫn chỉ có 1 instance (1.800 req/s), vừa nghẽn tải 2.800 req/s vừa vi phạm điều kiện không SPOF." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ràng buộc tải 2.800 req/s và không SPOF đòi hỏi API Service phải có tối thiểu 2 instance (tổng 3.600 req/s)." },
+      { "vi": "Tăng dung lượng Cache lên 50.000 key phủ đủ tập dữ liệu nóng mà không làm tăng chi phí theo giờ." }
+    ],
+    "explain": { "vi": "Xuất phát từ ràng buộc: 2 instance API Service loại bỏ SPOF và đáp ứng tải 2.800 req/s; Cache 50.000 key nâng Hit Ratio giúp giảm mạnh lưu lượng xuống SQL, giữ p99 dưới 100 ms với chi phí chỉ 1,09 USD/giờ." }
+  }
+]

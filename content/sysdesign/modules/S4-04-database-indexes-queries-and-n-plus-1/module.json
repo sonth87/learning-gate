@@ -1,0 +1,42 @@
+{
+  "id": "S4-04",
+  "slug": "S4-04-database-indexes-queries-and-n-plus-1",
+  "level": 4,
+  "order": 4,
+  "title": "Tối ưu cơ sở dữ liệu: Index, câu truy vấn và lỗi N+1",
+  "summary": "Giảm số trang đĩa phải đọc từ hàng trăm nghìn xuống 3–4 bước nhảy bằng chỉ mục B+Tree, nắm vững thứ tự cột của Composite Index, Covering Index, đọc kế hoạch EXPLAIN ANALYZE, triệt tiêu bẫy khuếch đại N+1 của ORM và cân đối chi phí ghi của chỉ mục phụ.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    {
+      "vi": "Giải thích vì sao cây B+Tree có hệ số phân nhánh cao giữ độ sâu chỉ 3–4 tầng cho bảng chục triệu dòng và tính chi phí khuếch đại ghi (1 + k) khi thêm chỉ mục phụ",
+      "en": "Explain why high-fanout B+Trees stay 3–4 levels deep across tens of millions of rows and calculate (1 + k) write amplification from secondary indexes"
+    },
+    {
+      "vi": "Thiết kế đúng thứ tự cột trong Composite Index theo quy tắc tiền tố trái (Leftmost Prefix) và dùng Covering Index để đạt Index-Only Scan",
+      "en": "Order columns in Composite Indexes using the Leftmost Prefix rule and eliminate heap fetches with Covering Indexes"
+    },
+    {
+      "vi": "Đọc kết quả EXPLAIN ANALYZE và tránh các mẫu câu lệnh làm vô hiệu hoá chỉ mục như bọc hàm quanh cột, ký tự đại diện đầu chuỗi và SELECT *",
+      "en": "Read EXPLAIN ANALYZE plans and fix anti-patterns that defeat indexes (functions on columns, leading wildcards, SELECT *)"
+    },
+    {
+      "vi": "Phát hiện và sửa lỗi truy vấn lặp N+1 (khuếch đại số vòng gọi DB theo kích thước danh sách) bằng gom lô WHERE IN, JOIN và phi chuẩn hoá có kiểm soát",
+      "en": "Eliminate ORM N+1 query amplification using batched WHERE IN queries, JOINs, and targeted denormalization"
+    }
+  ],
+  "tags": ["database", "index", "b-tree", "composite-index", "covering-index", "explain", "n-plus-1", "denormalization"],
+  "prerequisites": ["S1-03", "S2-07", "S2-08"],
+  "related": ["S4-08", "S4-01", "S2-09"],
+  "dtsRef": "indexes",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-4-database-scaling-optimization.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-4-database-scaling-optimization.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn tập trung vào tối ưu bên trong một cơ sở dữ liệu trước khi mở rộng cụm (phần Read Replicas và Sharding đã tách sâu ở S2-08 và S2-09): thay Mermaid bằng sân khấu memory-2d minh hoạ B+Tree 3 tầng, quy tắc tiền tố trái của Composite Index và Covering Index; bổ sung mô phỏng trực tiếp lỗi ORM N+1 với hệ số nhân calls = 25 trên đường nối đối chiếu với nhánh gom lô WHERE IN + Query Cache và bài tập tính khuếch đại ghi của chỉ mục."
+  }
+}

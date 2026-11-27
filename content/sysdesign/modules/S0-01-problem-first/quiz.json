@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-01.q1",
+    "type": "mc",
+    "q": "Khi nhận phản hồi rằng trang danh sách đơn hàng tải chậm, hành động đầu tiên đúng theo tư duy Problem-first là gì?",
+    "code": "",
+    "choices": [
+      "Triển khai ngay cụm Redis để lưu đệm kết quả danh sách đơn hàng",
+      "Tách dịch vụ đơn hàng khỏi ứng dụng chính thành một Microservice riêng",
+      "Đo thời gian từng chặng và xác định độ trễ hiện tại cùng ngưỡng mục tiêu cần đạt",
+      "Nâng cấp cấu hình CPU và RAM của máy chủ Database lên gấp đôi"
+    ],
+    "answer": 2,
+    "explain": "Tư duy Problem-first bắt đầu bằng việc định lượng triệu chứng và đo lường để biết chính xác thời gian nằm ở chặng nào. Chọn công cụ hoặc nâng cấp máy khi chưa có số đo dễ dẫn tới sửa sai chỗ và lãng phí ngân sách."
+  },
+  {
+    "id": "S0-01.q2",
+    "type": "tf",
+    "q": "Một công nghệ được các tập đoàn quy mô hàng trăm triệu người dùng áp dụng thành công thì luôn là lựa chọn phù hợp cho một sản phẩm khởi nghiệp mới chưa có lưu lượng lớn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Công nghệ của tập đoàn lớn được thiết kế để giải quyết bài toán quy mô lớn và phối hợp hàng trăm nhóm kỹ sư. Áp dụng nguyên mẫu đó cho nhóm nhỏ chưa có tải sẽ tạo ra chi phí vận hành và gỡ lỗi vượt quá lợi ích."
+  },
+  {
+    "id": "S0-01.q3",
+    "type": "mc",
+    "q": "Bộ đếm lượt xem video chỉ dùng lệnh tăng trực tiếp trên RAM mà không đồng bộ xuống Database bền vững sẽ gặp rủi ro chính nào?",
+    "code": "",
+    "choices": [
+      "Tốc độ đọc lượt xem bị chậm hơn so với truy vấn SQL trực tiếp",
+      "Mất dữ liệu số đếm khi máy chủ RAM khởi động lại và thiếu lịch sử theo thời gian",
+      "Không thể phục vụ nhiều người xem cùng lúc trên một video",
+      "Tăng gấp đôi băng thông mạng giữa trình duyệt và máy chủ ứng dụng"
+    ],
+    "answer": 1,
+    "explain": "Bộ nhớ RAM mang tính khả biến và chỉ giữ giá trị tổng hiện tại nếu không thiết kế lưu trữ bền vững. Khi tiến trình khởi động lại hoặc cần thống kê xu hướng theo ngày, hệ thống sẽ mất dữ liệu gốc."
+  },
+  {
+    "id": "S0-01.q4",
+    "type": "output",
+    "q": "Trong khung kiểm chứng nguyên nhân gốc của bài học, bạn nên đặt câu hỏi Why liên tiếp tối thiểu bao nhiêu lần trước khi chốt nguyên nhân? (nhập một số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "3",
+    "explain": "Hỏi Why liên tiếp tối thiểu 3 lần giúp đi xuyên qua triệu chứng bề mặt (trang chậm -> truy vấn DB lâu -> quét toàn bảng -> thiếu chỉ mục) để chạm tới nguyên nhân gốc có thể xử lý gọn nhẹ."
+  },
+  {
+    "id": "S0-01.q5",
+    "type": "mc",
+    "q": "Cách giải thích nào sau đây thể hiện đúng tư duy của một kiến trúc sư hệ thống khi đề xuất bổ sung tầng Cache?",
+    "code": "",
+    "choices": [
+      "Dùng Redis vì đây là bộ nhớ đệm phổ biến nhất hiện nay và rất nhanh",
+      "Thêm Cache cho mọi bảng trong hệ thống để phòng ngừa trường hợp lưu lượng tăng đột biến",
+      "Dùng Cache cho luồng đọc sản phẩm (tỉ lệ đọc 90%) để giảm tải Database từ 1.500 xuống 300 req/s, chấp nhận dữ liệu trễ tối đa 60 giây",
+      "Thêm Cache để thay thế hoàn toàn nhu cầu đánh chỉ mục trên các bảng Database"
+    ],
+    "answer": 2,
+    "explain": "Một đề xuất kiến trúc chuẩn phải nêu rõ bài toán định lượng, cơ chế tác động (giảm bao nhiêu tải vào đâu) và chi phí đánh đổi được chấp nhận (độ trễ làm mới dữ liệu trong khoảng TTL)."
+  }
+]

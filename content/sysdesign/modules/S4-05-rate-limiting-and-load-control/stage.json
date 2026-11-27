@@ -1,0 +1,352 @@
+{
+  "version": 1,
+  "base": "s1-noisy-neighbor",
+  "nodes": {
+    "users": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng hợp lệ", "en": "Legitimate Users" },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm khách hàng thật chiếm 25% tổng lưu lượng lúc cao điểm (1.100 req/s).",
+          "en": "Genuine customers generating 25% of peak volume (1,100 req/s)."
+        },
+        "how": {
+          "vi": "Gửi lưu lượng nằm trong hạn mức hợp lệ và kỳ vọng phản hồi dưới 100 ms.",
+          "en": "Sends normal request rates within quota expecting sub-100 ms responses."
+        },
+        "why": {
+          "vi": "Nếu thiếu bộ giới hạn theo từng định danh, lưu lượng của người dùng thật sẽ bị chèn ép bởi một bên lạm dụng.",
+          "en": "Without per-identity quotas, genuine users get starved by a single noisy neighbor."
+        }
+      }
+    },
+    "abuser": {
+      "shape": "device",
+      "tone": "rose",
+      "icon": "terminal",
+      "label": { "vi": "Script cào dữ liệu", "en": "Scraper Bot" },
+      "inspector": {
+        "what": {
+          "vi": "Một script tự động hoặc vòng lặp lỗi phía client bắn vọt 3.300 req/s (75% tổng tải).",
+          "en": "Automated scraper or buggy client loop flooding 3,300 req/s (75% of total load)."
+        },
+        "how": {
+          "vi": "Gửi liên tục không ngừng nghỉ, vượt xa năng lực 1.600 req/s của tầng Catalog API.",
+          "en": "Fires back-to-back requests exceeding Catalog API's 1,600 req/s capacity."
+        },
+        "why": {
+          "vi": "Một khách hàng đơn lẻ không bao giờ được phép chiếm trọn tài nguyên dùng chung của toàn hệ thống.",
+          "en": "A single tenant or IP must never monopolize shared backend capacity."
+        }
+      }
+    },
+    "limiter": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "filter",
+      "label": { "vi": "Token Bucket Limiter", "en": "Token Bucket Limiter" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ giới hạn tốc độ theo thuật toán Token Bucket đặt ngay rìa cổng vào.",
+          "en": "Edge Token Bucket rate limiter enforcing per-client quotas."
+        },
+        "how": {
+          "vi": "Nạp đều ratePerSec token mỗi giây (tối đa burst token); có token thì cho qua (0,3 ms), hết token thì trả ngay HTTP 429.",
+          "en": "Refills ratePerSec tokens/s up to burst capacity; admits with a token or immediately returns HTTP 429."
+        },
+        "why": {
+          "vi": "Chặn đứng lưu lượng thừa với chi phí vài phần mười mili-giây trước khi chúng chạm tới ứng dụng và cơ sở dữ liệu.",
+          "en": "Drops abusive traffic in sub-milliseconds before it consumes expensive backend CPU or DB connections."
+        },
+        "tip": {
+          "vi": "Khi chạy nhiều máy Gateway song song, bộ đếm token phải đồng bộ trên Redis dùng Lua Script nguyên tử.",
+          "en": "Across multiple Gateways, synchronize token state in Redis via atomic Lua scripts."
+        }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "shield",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm API Gateway tiếp nhận, xác thực API Key / JWT và định tuyến vào dịch vụ nội bộ.",
+          "en": "API Gateway cluster authenticating API Keys / JWTs and routing requests."
+        },
+        "how": {
+          "vi": "Trích xuất định danh (Tenant ID, User ID, IP) làm khoá tra cứu hạn mức và đính kèm các header RateLimit-*.",
+          "en": "Extracts client identity keys for rate limiting and attaches RateLimit-* response headers."
+        },
+        "why": {
+          "vi": "Tập trung chính sách bảo vệ ở một lớp thay vì viết lặp lại trong từng microservice.",
+          "en": "Centralizes traffic governance outside individual business microservices."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Catalog API", "en": "Catalog API" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ nghiệp vụ xử lý danh mục sản phẩm (năng lực μ = 1.600 req/s mỗi máy).",
+          "en": "Business service serving product catalog queries (μ = 1,600 req/s per instance)."
+        },
+        "how": {
+          "vi": "Khi bị tràn 4.400 req/s (ρ = 2,75), hàng đợi kết nối tràn ngập làm cả người dùng thật bị Timeout.",
+          "en": "Under an unthrottled 4,400 req/s flood (ρ = 2.75), connection queues overflow and starve real users."
+        },
+        "why": {
+          "vi": "Khi Limiter kẹp script cào dữ liệu ở 160 req/s, tải vào API giảm còn 1.260 req/s (ρ = 0,79) và chạy êm hoàn toàn.",
+          "en": "Capping the scraper at 160 req/s drops API load to 1,260 req/s (ρ = 0.79) with zero queueing."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trữ dữ liệu sản phẩm và kho trạng thái bền vững.",
+          "en": "Backing database storing catalog records."
+        },
+        "how": {
+          "vi": "Được bảo vệ gián tiếp khi lưu lượng rác bị cắt ngay từ tầng Token Bucket Limiter.",
+          "en": "Shielded from abusive query volume by edge rate limiting."
+        },
+        "why": {
+          "vi": "Ngăn một đợt tấn công cào dữ liệu làm cạn kiệt IOPS và kết nối của tầng lưu trữ.",
+          "en": "Prevents scraping floods from exhausting scarce database connections and IOPS."
+        }
+      }
+    }
+  },
+  "links": {
+    "abuser-lim": {
+      "inspector": {
+        "what": { "vi": "Luồng lưu lượng 3.300 req/s từ script tự động đi vào bộ giới hạn.", "en": "3,300 req/s flood from scraper bot hitting the rate limiter." },
+        "how": { "vi": "Mỗi request phải lấy được 1 token mới được chuyển tiếp sang API Gateway.", "en": "Each request must consume 1 token to pass through to API Gateway." },
+        "why": { "vi": "Là ranh giới chặn sớm tiết kiệm tài nguyên nhất.", "en": "Earliest and cheapest boundary to reject excess load." }
+      }
+    }
+  },
+  "zones": {
+    "edge_guard": {
+      "nodeIds": ["limiter", "gateway"],
+      "label": { "vi": "LỚP KIỂM SOÁT CỔNG VÀO", "en": "EDGE ADMISSION LAYER" },
+      "tone": "yellow"
+    }
+  },
+  "scenes": {
+    "s1-noisy-neighbor": {
+      "show": { "nodes": "*" },
+      "zones": ["edge_guard"],
+      "state": {
+        "limiter": { "loadPct": 5, "badge": { "text": { "vi": "Chưa giới hạn", "en": "Unthrottled" }, "tone": "warn" } },
+        "gateway": { "loadPct": 44 },
+        "api": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "ρ = 2,75 · Nghẽn!", "en": "ρ = 2.75 · Flooded!" }, "tone": "bad" }
+        },
+        "db": { "loadPct": 62 }
+      },
+      "linkState": {
+        "abuser-lim": { "style": "danger", "label": { "vi": "3.300 req/s", "en": "3,300 req/s" } },
+        "gw-api": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Láng giềng ồn ào (Noisy Neighbor)", "en": "Noisy Neighbor Problem" },
+        "lines": [
+          { "text": { "vi": "1 script bắn 3.300 req/s làm tràn Catalog API", "en": "1 bot sends 3,300 req/s, saturating API" }, "tone": "bad" },
+          { "text": { "vi": "1.100 req/s của khách thật bị vạ lây Timeout", "en": "1,100 req/s of real users suffer timeouts" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-live-flood": {
+      "show": { "nodes": "*" },
+      "zones": ["edge_guard"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "t = 12 s: Script tăng vọt lên 3.300 req/s", "en": "t = 12 s: Bot Floods 3,300 req/s" },
+        "lines": [
+          { "text": { "vi": "Kéo ratePerSec về 160 để cắt lưu lượng rác", "en": "Dial ratePerSec down to 160 to block bot" }, "tone": "good" },
+          { "text": { "vi": "Quan sát Goodput phục hồi cho khách hợp lệ", "en": "Watch Goodput recover for genuine users" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-token-bucket": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Cơ chế Token Bucket: Tách biệt tốc độ dài hạn (ratePerSec) và cụm ngắn hạn (burst)",
+          "en": "Token Bucket Mechanics: Long-Term Rate (ratePerSec) vs Short-Term Capacity (burst)"
+        },
+        "subtitle": {
+          "vi": "Xô chứa tối đa B token, nạp đều R token/giây; mỗi request lấy 1 token, xô cạn trả ngay HTTP 429",
+          "en": "Bucket holds max B tokens, refills at R tokens/s; 1 token per request, empty bucket returns 429"
+        },
+        "cells": ["Xô đầy: B = 60 token", "Đợt gộp 60 req đi qua ngay", "Xô về 0 → req 61 nhận 429", "Mỗi giây nạp thêm R = 160", "Dài hạn khoá đúng 160 req/s"],
+        "activeIndices": [1, 2, 4],
+        "pointers": [
+          { "index": 1, "label": "cho phép burst hợp lệ", "tone": "green" },
+          { "index": 2, "label": "chặn ngay khi cạn xô", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Độ phức tạp", "en": "Complexity" },
+          "value": { "vi": "Chỉ lưu 2 con số {tokens, lastRefill} cho mỗi khoá — bộ nhớ O(1) và thời gian kiểm tra O(1)", "en": "Stores just 2 numbers {tokens, lastRefill} per key — O(1) memory and O(1) time" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s4-bucket-tune": {
+      "show": { "nodes": ["abuser", "limiter", "gateway", "api", "db"] },
+      "zones": ["edge_guard"],
+      "state": {
+        "limiter": {
+          "loadPct": 18,
+          "highlighted": true,
+          "badge": { "text": { "vi": "R=1.800 · B=500", "en": "R=1,800 · B=500" }, "tone": "ok" }
+        },
+        "gateway": { "loadPct": 30 },
+        "api": { "loadPct": 56, "badge": { "text": { "vi": "μ = 3.200 req/s", "en": "μ = 3,200 req/s" }, "tone": "ok" } },
+        "db": { "loadPct": 32 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ai quyết định thông lượng dài hạn?", "en": "What Governs Sustained Admission?" },
+        "lines": [
+          { "text": { "vi": "API dư sức xử lý 3.200 req/s, burst = 500", "en": "API supports 3,200 req/s, burst = 500" }, "tone": "plain" },
+          { "text": { "vi": "Nhưng tốc độ nạp token R chỉ 1.800 token/s", "en": "Yet refill rate R is 1,800 tokens/s" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-algorithms": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "5 Thuật toán Giới hạn tốc độ", "en": "5 Rate Limiting Algorithms" },
+        "rightTitle": { "vi": "Đặc tính kỹ thuật & Ứng dụng chuẩn", "en": "Trade-offs & Ideal Use Case" },
+        "names": [
+          { "id": "a1", "name": "Fixed Window Counter", "note": { "vi": "Đếm theo phút chẵn", "en": "Fixed clock buckets" }, "targetId": "o1" },
+          { "id": "a2", "name": "Sliding Window Log", "note": { "vi": "Lưu mọi timestamp", "en": "Stores every timestamp" }, "targetId": "o2" },
+          { "id": "a3", "name": "Sliding Window Counter", "note": { "vi": "Trọng số 2 cửa sổ liền kề", "en": "Weighted 2-window hybrid" }, "targetId": "o3" },
+          { "id": "a4", "name": "Token Bucket", "note": { "vi": "Nạp R token/s, trần B", "en": "Refill R/s, cap B" }, "targetId": "o4" },
+          { "id": "a5", "name": "Leaky Bucket", "note": { "vi": "Hàng đợi xả nhịp cố định", "en": "Constant-rate outflow FIFO" }, "targetId": "o5" }
+        ],
+        "objects": [
+          { "id": "o1", "typeTag": "BOUNDARY SPIKE", "value": "RAM O(1) nhưng lọt 2× hạn mức ở mép phút (00:59 + 01:00)", "tone": "orange" },
+          { "id": "o2", "typeTag": "EXACT · O(N)", "value": "Chính xác tuyệt đối nhưng tốn RAM lưu danh sách dấu thời gian", "tone": "purple" },
+          { "id": "o3", "typeTag": "BALANCED · O(1)", "value": "Xấp xỉ mượt với O(1) RAM, rất hợp cho hạn mức theo phút/giờ", "tone": "blue" },
+          { "id": "o4", "typeTag": "API STANDARD", "value": "O(1) RAM, cho phép cụm burst ngắn hạn của người dùng thật", "tone": "green" },
+          { "id": "o5", "typeTag": "SMOOTHING", "value": "Triệt tiêu hoàn toàn burst đầu ra, hợp khi gọi đối tác nhạy cảm tải", "tone": "neutral" }
+        ]
+      }
+    },
+    "s6-distributed": {
+      "show": { "nodes": "*" },
+      "zones": ["edge_guard"],
+      "state": {
+        "limiter": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Redis Lua Atomic", "en": "Redis Lua Atomic" }, "tone": "ok" }
+        },
+        "gateway": {
+          "loadPct": 28,
+          "badge": { "text": { "vi": "2 Gateway dùng chung", "en": "Shared Across Gateways" }, "tone": "ok" }
+        },
+        "api": { "loadPct": 78 },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đồng bộ Bộ đếm Phân tán", "en": "Distributed State Synchronization" },
+        "lines": [
+          { "text": { "vi": "Đếm riêng trên N Gateway → lọt N × hạn mức", "en": "Local counters across N nodes leak N× quota" }, "tone": "bad" },
+          { "text": { "vi": "Gộp đọc-tính-ghi trong 1 Redis Lua Script", "en": "Single atomic Redis Lua script avoids races" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-multi-tenant": {
+      "show": { "nodes": "*" },
+      "zones": ["edge_guard"],
+      "state": {
+        "limiter": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Quota theo Tenant", "en": "Per-Tenant Quota" }, "tone": "ok" }
+        },
+        "gateway": { "loadPct": 28 },
+        "api": { "loadPct": 78, "badge": { "text": { "vi": "ρ = 0,79 · Ổn định", "en": "ρ = 0.79 · Healthy" }, "tone": "ok" } },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Phân tầng Hạn mức Đa cấp", "en": "Hierarchical Multi-Tenant Quotas" },
+        "lines": [
+          { "text": { "vi": "Theo Gói (Free/Pro) + Theo User + Toàn cục", "en": "Per-Tier + Per-User + Global safety cap" }, "tone": "good" },
+          { "text": { "vi": "Trả kèm Retry-After để client tự lùi nhịp", "en": "Return Retry-After so clients back off cleanly" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["edge_guard"],
+      "state": {
+        "limiter": { "loadPct": 15, "badge": { "text": { "vi": "160 rps · HTTP 429", "en": "160 rps · HTTP 429" }, "tone": "ok" } },
+        "gateway": { "loadPct": 28 },
+        "api": { "loadPct": 79, "badge": { "text": { "vi": "100% khách thật OK", "en": "100% Real Users OK" }, "tone": "ok" } },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tổng kết Rate Limiting", "en": "Rate Limiting Summary" },
+        "lines": [
+          { "text": { "vi": "Token Bucket ở cổng vào bảo vệ Goodput", "en": "Edge Token Bucket protects downstream Goodput" }, "tone": "good" },
+          { "text": { "vi": "Redis Lua nguyên tử + Header 429 chuẩn hoá", "en": "Atomic Redis Lua + standard 429 headers" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "flood": {
+      "sim": "S4-05/flood",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "knobs": [
+          { "node": "limiter", "key": "ratePerSec" },
+          { "node": "limiter", "key": "burst" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Tổng lưu lượng đến", "en": "Total Arrival" }, "format": "rps" },
+        { "metric": "goodputRps", "label": { "vi": "Thành công (Goodput)", "en": "Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 150 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 110 }
+      ],
+      "focus": { "nodes": ["limiter", "api"] }
+    }
+  }
+}

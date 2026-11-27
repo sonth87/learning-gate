@@ -1,0 +1,30 @@
+{
+  "id": "S6-02",
+  "slug": "S6-02-snake-interview-framework",
+  "level": 6,
+  "order": 2,
+  "title": "Khung SNAKE: Quy trình 5 chặng cho bài toán thiết kế 45 phút",
+  "summary": "Áp dụng quy trình 5 chặng có phân bổ thời gian rõ ràng — Scope, Numbers, API, Key Components, Elaborate — để dẫn dắt buổi thiết kế hệ thống có cấu trúc và đầy đủ căn cứ số liệu.",
+  "durationMin": 15,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân bổ ngân sách 45 phút hợp lý qua 5 chặng của khung SNAKE kèm 5 phút dự phòng" },
+    { "vi": "Thực hiện chặng Scope và Numbers: chốt phạm vi, đưa giả định chủ động và tính nhanh RPS, lưu trữ, băng thông, RAM" },
+    { "vi": "Thiết kế hợp đồng API rõ ràng và kiến trúc thành phần cốt lõi trước khi đi sâu vào điểm nghẽn" },
+    { "vi": "Chuyển đổi số liệu tính tay từ chặng Numbers thành cấu hình kiến trúc đạt SLO trong bài tập thực hành" }
+  ],
+  "tags": ["snake-framework", "interview", "capacity-estimation", "api-design", "architecture"],
+  "prerequisites": ["S6-01", "S0-05"],
+  "related": ["S6-03", "S5-02"],
+  "dtsRef": "hld-lld",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-2-snake-framework.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-2-snake-framework.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn bằng lời mới: bỏ câu chuyện cá nhân và từ ngữ suồng sã ở bản gốc, chuyển sơ đồ tĩnh thành timeline 5 chặng SNAKE bằng memory-2d và thêm mô phỏng headless cho bài tập design-constraint."
+  }
+}

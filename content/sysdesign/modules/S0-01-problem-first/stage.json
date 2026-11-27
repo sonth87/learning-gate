@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "base": "s1-reflex",
+  "nodes": {},
+  "scenes": {
+    "s1-reflex": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Phản xạ chọn công cụ trước (Solution-first)",
+          "en": "Solution-First Reflex"
+        },
+        "subtitle": {
+          "vi": "Nhảy qua bước đo lường và xác định nguyên nhân gốc khiến hệ thống thêm phức tạp mà vẫn chậm",
+          "en": "Skipping measurement and root-cause analysis adds complexity without fixing slowness"
+        },
+        "cells": [
+          "Thấy trang chậm",
+          "Đoán cần Cache",
+          "Dựng cụm Redis",
+          "DB vẫn nghẽn"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 1, "label": "Bỏ qua đo đạc", "tone": "rose" },
+          { "index": 3, "label": "Thêm chi phí RAM", "tone": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hệ quả", "en": "Outcome" },
+          "value": { "vi": "Sai điểm nghẽn · tăng độ phức tạp", "en": "Wrong target · extra complexity" },
+          "tone": "rose"
+        }
+      }
+    },
+    "s2-questions": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "5 câu hỏi bị bỏ sót khi vội chọn Cache",
+          "en": "5 Questions Skipped by Premature Caching"
+        },
+        "subtitle": {
+          "vi": "Trả lời đủ 5 câu hỏi này biến nhận xét cảm tính thành bài toán kỹ thuật đo lường được",
+          "en": "Answering all 5 turns vague complaints into measurable engineering requirements"
+        },
+        "cells": [
+          "Chậm ở đâu?",
+          "Chậm lúc nào?",
+          "Đích bao nhiêu ms?",
+          "Cache có trúng?",
+          "Chi phí phát sinh?"
+        ],
+        "activeIndices": [0, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "DB / Mạng / API", "tone": "blue" },
+          { "index": 2, "label": "3.000 ms → < 1.000 ms", "tone": "green" },
+          { "index": 4, "label": "RAM + Dữ liệu cũ", "tone": "yellow" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Đầu ra cần có", "en": "Required Output" },
+          "value": { "vi": "Số đo hiện tại + Mục tiêu định lượng", "en": "Baseline metric + Target SLO" },
+          "tone": "green"
+        }
+      }
+    },
+    "s3-overeng": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Bối cảnh đội ngũ", "en": "Team Context" },
+        "rightTitle": { "vi": "Kiến trúc lựa chọn", "en": "Chosen Architecture" },
+        "names": [
+          {
+            "id": "startup-bad",
+            "name": "Startup mới (sao chép)",
+            "note": { "vi": "0 người dùng · nhóm nhỏ", "en": "0 users · tiny team" },
+            "targetId": "micro",
+            "style": "danger"
+          },
+          {
+            "id": "enterprise",
+            "name": "Nền tảng quy mô lớn",
+            "note": { "vi": "Trăm nhóm · triệu req/s", "en": "100+ teams · millions req/s" },
+            "targetId": "micro",
+            "style": "solid"
+          },
+          {
+            "id": "startup-good",
+            "name": "Startup mới (Problem-first)",
+            "note": { "vi": "Cần ra mắt & lặp nhanh", "en": "Needs fast iteration" },
+            "targetId": "mono",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "micro",
+            "typeTag": "15 SERVICES",
+            "value": "Microservices",
+            "fields": ["Deploy 2h", "Gỡ lỗi phân tán"],
+            "tone": "rose",
+            "badge": { "vi": "Quá tải vận hành nếu chưa có quy mô", "en": "Ops overload without scale" }
+          },
+          {
+            "id": "mono",
+            "typeTag": "MODULAR",
+            "value": "Monolith gọn",
+            "fields": ["1 quy trình deploy", "Dễ đo & sửa nhanh"],
+            "tone": "green",
+            "badge": { "vi": "Khớp đúng bài toán giai đoạn đầu", "en": "Right fit for early stage" }
+          }
+        ]
+      }
+    },
+    "s4-process": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Quy trình 4 bước của tư duy Problem-first",
+          "en": "4-Step Problem-First Workflow"
+        },
+        "nodes": [
+          { "id": "measure", "x": 0, "y": -102, "label": "1. Đo triệu chứng (80% ở DB)", "tone": "blue" },
+          { "id": "why", "x": 0, "y": -38, "label": "2. Truy gốc: thiếu Index", "tone": "yellow" },
+          { "id": "optA", "x": -175, "y": 36, "label": "PA A: Thêm Index", "tone": "green" },
+          { "id": "optB", "x": 0, "y": 36, "label": "PA B: Thêm Cache", "tone": "neutral" },
+          { "id": "optC", "x": 175, "y": 36, "label": "PA C: Đổi Schema", "tone": "orange", "pruned": true },
+          { "id": "decide", "x": -90, "y": 108, "label": "4. Áp PA A trước → Đo lại", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "measure", "to": "why", "label": "EXPLAIN" },
+          { "from": "why", "to": "optA" },
+          { "from": "why", "to": "optB", "style": "dashed" },
+          { "from": "why", "to": "optC", "style": "dashed" },
+          { "from": "optA", "to": "decide", "label": "Đơn giản, tác động cao" },
+          { "from": "optB", "to": "decide", "label": "Chỉ thêm khi cần", "style": "dashed" }
+        ]
+      }
+    },
+    "s5-fiveq": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Khung 5 câu hỏi kiểm chứng quyết định kỹ thuật",
+          "en": "5-Question Architecture Validation Checklist"
+        },
+        "subtitle": {
+          "vi": "Mọi công nghệ đưa vào bản vẽ đều phải vượt qua cả 5 chốt kiểm tra này",
+          "en": "Every proposed component must justify itself across all 5 checkpoints"
+        },
+        "cells": [
+          "1. Vấn đề đo được",
+          "2. Hỏi Why ≥ 3 lần",
+          "3. Tác động cụ thể",
+          "4. Chi phí đi kèm",
+          "5. Cách đơn giản hơn?"
+        ],
+        "activeIndices": [1, 4],
+        "pointers": [
+          { "index": 1, "label": "Tìm nguyên nhân gốc", "tone": "purple" },
+          { "index": 4, "label": "Chốt chặn làm quá mức", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Tiêu chuẩn", "en": "Standard" },
+          "value": { "vi": "Giải thích được bằng số liệu và lý do rõ ràng", "en": "Defensible with data & reasoning" },
+          "tone": "blue"
+        }
+      }
+    },
+    "s6-viewcount": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Cách tiếp cận đếm lượt xem", "en": "View Counter Approaches" },
+        "rightTitle": { "vi": "Đặc tính vận hành thực tế", "en": "Production Behavior" },
+        "names": [
+          {
+            "id": "cf",
+            "name": "Code-first: chỉ Redis INCR",
+            "note": { "vi": "Không hỏi yêu cầu trước", "en": "Skipped requirements" },
+            "targetId": "ram-only",
+            "style": "danger"
+          },
+          {
+            "id": "pf-read",
+            "name": "Problem-first: Đường đọc",
+            "note": { "vi": "Chấp nhận trễ vài giây", "en": "Tolerates slight delay" },
+            "targetId": "hybrid-cache",
+            "style": "solid"
+          },
+          {
+            "id": "pf-write",
+            "name": "Problem-first: Đường ghi",
+            "note": { "vi": "Gom lô định kỳ 10 giây", "en": "10s batched flush" },
+            "targetId": "persistent-db",
+            "style": "solid"
+          }
+        ],
+        "objects": [
+          {
+            "id": "ram-only",
+            "typeTag": "VOLATILE",
+            "value": "Bộ đếm đơn trên RAM",
+            "fields": ["Restart mất số", "Thiếu lịch sử ngày"],
+            "tone": "rose",
+            "badge": { "vi": "Phải viết lại khi lên môi trường thật", "en": "Requires costly production rewrite" }
+          },
+          {
+            "id": "hybrid-cache",
+            "typeTag": "FAST READ",
+            "value": "Cache + Rate Limit",
+            "fields": ["Đọc < 5 ms", "Chặn spam bot"],
+            "tone": "yellow"
+          },
+          {
+            "id": "persistent-db",
+            "typeTag": "SOURCE OF TRUTH",
+            "value": "Database bền vững",
+            "fields": ["Lưu theo ngày", "Không mất dữ liệu"],
+            "tone": "green"
+          }
+        ]
+      }
+    },
+    "s7-clarify": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Làm rõ ràng buộc bài toán Đếm lượt xem (2.500 req/s)",
+          "en": "Clarified Constraints for View Counter (2,500 req/s)"
+        },
+        "nodes": [
+          { "id": "brief", "x": 0, "y": -104, "label": "Brief: 60.000 video · 2.500 req/s", "tone": "blue" },
+          { "id": "q-load", "x": -180, "y": -28, "label": "Tầng View API: μ = 1.600/máy", "tone": "orange" },
+          { "id": "q-cache", "x": 0, "y": -28, "label": "85% đọc · Cache mới 10k key", "tone": "yellow" },
+          { "id": "q-cost", "x": 180, "y": -28, "label": "Ngân sách ≤ 1,20 USD/giờ", "tone": "purple" },
+          { "id": "bad-db", "x": 150, "y": 58, "label": "Tăng cỡ DB ×3 ($2,54/h)", "tone": "rose", "pruned": true },
+          { "id": "good-fit", "x": -95, "y": 58, "label": "2 View API + Cache 60k key ($1,05/h)", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "brief", "to": "q-load" },
+          { "from": "brief", "to": "q-cache" },
+          { "from": "brief", "to": "q-cost" },
+          { "from": "q-load", "to": "good-fit", "label": "Đủ tải 3.200 req/s" },
+          { "from": "q-cache", "to": "good-fit", "label": "Giảm tải xuống DB" },
+          { "from": "q-cost", "to": "bad-db", "label": "Vượt trần chi phí", "style": "danger" }
+        ]
+      }
+    },
+    "s8-recap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Tóm tắt chuỗi tư duy Problem-first",
+          "en": "Problem-First Thinking Summary"
+        },
+        "subtitle": {
+          "vi": "Luôn đi từ bài toán định lượng tới giải pháp vừa vặn thay vì đi ngược từ tên công nghệ",
+          "en": "Always move from quantified problems to right-sized solutions, never backwards from hype"
+        },
+        "cells": [
+          "Định lượng vấn đề",
+          "Truy nguyên nhân gốc",
+          "So sánh phương án",
+          "Chọn cách đơn giản"
+        ],
+        "activeIndices": [0, 1, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "Số đo + SLO", "tone": "blue" },
+          { "index": 3, "label": "Phù hợp (Fit)", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Chuyển đổi cốt lõi", "en": "Core Shift" },
+          "value": { "vi": "Hỏi Why trước khi bàn How", "en": "Ask Why before deciding How" },
+          "tone": "green"
+        }
+      }
+    }
+  }
+}

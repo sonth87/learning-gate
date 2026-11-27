@@ -1,0 +1,357 @@
+{
+  "version": 1,
+  "base": "s1-ab",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Clients"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng truy cập 3.000 req/s (85% đọc, 15% ghi).",
+          "en": "Incoming traffic at 3,000 req/s (85% reads, 15% writes)."
+        },
+        "how": {
+          "vi": "Gửi yêu cầu xem và đặt hàng qua Load Balancer.",
+          "en": "Sends catalog read and order write requests via LB."
+        },
+        "why": {
+          "vi": "Mức tải cố định dùng để so sánh A/B hai phương án.",
+          "en": "Fixed workload baseline for A/B architecture comparison."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Phân phối tải đều cho cụm Order API (μ = 25.000 req/s).",
+          "en": "Distributes traffic across Order API instances."
+        },
+        "how": {
+          "vi": "Chuyển tiếp theo vòng Round-robin.",
+          "en": "Uses Round-robin distribution."
+        },
+        "why": {
+          "vi": "Không phải nút thắt trong cả hai phương án A và B.",
+          "en": "Remains well below saturation in both A and B options."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Order API",
+        "en": "Order API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm ứng dụng 2 instance (tổng μ = 4.000 req/s).",
+          "en": "2-instance application tier (4,000 req/s combined)."
+        },
+        "how": {
+          "vi": "Kiểm tra Catalog Cache trước khi truy vấn Catalog DB.",
+          "en": "Checks Catalog Cache before falling back to Catalog DB."
+        },
+        "why": {
+          "vi": "Đủ công suất gánh 3.000 req/s mà không cần thêm máy.",
+          "en": "Has sufficient capacity for 3,000 req/s without scaling."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Catalog Cache",
+        "en": "Catalog Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm RAM cho tập 60.000 sản phẩm nóng.",
+          "en": "In-memory cache for 60,000 hot catalog items."
+        },
+        "how": {
+          "vi": "Khi mở rộng từ 10.000 lên 60.000 key, phần lớn lượt đọc được trả lời ngay.",
+          "en": "Expanding from 10k to 60k keys absorbs most read traffic."
+        },
+        "why": {
+          "vi": "Phương án B đạt SLO với chi phí 1,32 USD/giờ thay vì 2,40+ USD/giờ.",
+          "en": "Option B meets SLO at $1.32/hr instead of $2.40+/hr."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Catalog DB",
+        "en": "Catalog DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu danh mục (mặc định μ = 1.600 req/s).",
+          "en": "Primary catalog database (base μ = 1,600 req/s)."
+        },
+        "how": {
+          "vi": "Nâng cỡ lên ×3 (Phương án A) giải quyết nghẽn nhưng chi phí rất cao.",
+          "en": "Scaling DB to 3x (Option A) resolves saturation at high cost."
+        },
+        "why": {
+          "vi": "Giảm tải đọc bằng Cache rẻ hơn nhiều so với nâng cấp phần cứng DB.",
+          "en": "Offloading reads to cache is far more cost-effective."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": {
+          "vi": "Kết nối từ người dùng tới Load Balancer.",
+          "en": "Client connection to Load Balancer."
+        },
+        "how": {
+          "vi": "Lưu lượng 3.000 req/s.",
+          "en": "3,000 req/s steady load."
+        },
+        "why": {
+          "vi": "Điểm vào chung của bài toán so sánh.",
+          "en": "Shared entry load for comparison."
+        }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": {
+          "vi": "Đường truyền từ Load Balancer vào Order API.",
+          "en": "Internal hop from LB to Order API."
+        },
+        "how": {
+          "vi": "Chia đều cho 2 instance.",
+          "en": "Balanced across 2 instances."
+        },
+        "why": {
+          "vi": "Giữ mức sử dụng tầng App dưới 75%.",
+          "en": "Keeps App tier utilization below 75%."
+        }
+      }
+    },
+    "app-cache": {
+      "inspector": {
+        "what": {
+          "vi": "Truy vấn đọc bộ nhớ đệm từ Order API.",
+          "en": "Cache lookup hop from Order API."
+        },
+        "how": {
+          "vi": "Độ trễ ~0,5 ms cho mỗi lần kiểm tra.",
+          "en": "~0.5 ms lookup latency."
+        },
+        "why": {
+          "vi": "Chặn lượt đọc lặp lại xuống DB.",
+          "en": "Shields DB from repeated reads."
+        }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": {
+          "vi": "Lượt đọc miss và lượt ghi đi xuống Catalog DB.",
+          "en": "Cache misses and writes going to Catalog DB."
+        },
+        "how": {
+          "vi": "Tỉ lệ miss phụ thuộc dung lượng key của Cache.",
+          "en": "Miss rate depends on Cache key capacity."
+        },
+        "why": {
+          "vi": "Quyết định trực tiếp mức sử dụng ρ của Database.",
+          "en": "Directly drives Database utilization ρ."
+        }
+      }
+    }
+  },
+  "scenes": {
+    "s1-ab": {
+      "mode": "isometric",
+      "show": {
+        "nodes": "*"
+      },
+      "packets": "auto"
+    },
+    "s2-matrix": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "t1",
+            "name": "Thanh toán & Tồn kho",
+            "targetId": "o1"
+          },
+          {
+            "id": "t2",
+            "name": "Lượt thích & Bộ đếm",
+            "targetId": "o2"
+          },
+          {
+            "id": "t3",
+            "name": "MVP đội 3 kỹ sư",
+            "targetId": "o3"
+          }
+        ],
+        "objects": [
+          {
+            "id": "o1",
+            "value": "Ưu tiên Consistency (CP)",
+            "tone": "rose",
+            "typeTag": "CONSISTENCY",
+            "fields": [
+              "Chấp nhận độ trễ khóa & chi phí cao hơn để không sai số dư"
+            ]
+          },
+          {
+            "id": "o2",
+            "value": "Ưu tiên Availability (AP)",
+            "tone": "green",
+            "typeTag": "LATENCY vs COST",
+            "fields": [
+              "Ghi bất đồng bộ < 10 ms, chấp nhận trễ đồng bộ 1–2 giây"
+            ]
+          },
+          {
+            "id": "o3",
+            "value": "Ưu tiên Simplicity",
+            "tone": "blue",
+            "typeTag": "SIMPLICITY",
+            "fields": [
+              "Modular Monolith ra mắt sau 6 tuần thay vì Microservices 6 tháng"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Ma trận đánh đổi: Consistency, Availability, Latency, Cost",
+          "en": "Architecture Trade-off Matrix"
+        }
+      }
+    },
+    "s3-adr": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Mẫu Architecture Decision Record (ADR) chuẩn",
+          "en": "Standard ADR Template"
+        },
+        "cells": [
+          "1. Context (Bối cảnh): Tải 3.000 req/s, DB nghẽn, ngân sách ≤ 1,45$/h",
+          "2. Options (Phương án): A: Scale DB ×3 (2,40$/h) · B: Cache 60k (1,32$/h)",
+          "3. Decision & Consequences: Chọn B: Đạt p99 < 110 ms, tiết kiệm 45% chi phí"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Ghi rõ các ràng buộc không thể vi phạm",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Luôn đặt ít nhất 2 phương án lên bàn cân",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Chấp nhận thêm bài toán vô hiệu hóa Cache khi ghi",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          1,
+          2
+        ]
+      }
+    }
+  },
+  "live": {
+    "ab-tradeoff": {
+      "sim": "S6-03/ab-tradeoff",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          {
+            "node": "cache",
+            "key": "capacityKeys"
+          },
+          {
+            "node": "db",
+            "key": "sizeFactor"
+          }
+        ]
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 110,
+            "badAbove": 250
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 110
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "cache",
+          "db"
+        ]
+      }
+    }
+  }
+}

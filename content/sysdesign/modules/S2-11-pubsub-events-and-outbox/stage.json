@@ -1,0 +1,538 @@
+{
+  "version": 1,
+  "base": "s3-pubsub",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Khách mua hàng", "en": "Shoppers" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng bấm nút đặt hàng với lưu lượng ổn định 500 đơn/giây.",
+          "en": "Shoppers submitting checkout requests at a steady 500 req/s."
+        },
+        "how": {
+          "vi": "Chỉ cần biết đơn hàng đã được ghi nhận thành công, không cần chờ gửi xong email hay cộng điểm.",
+          "en": "Only needs confirmation that the order is recorded, without waiting for emails or loyalty points."
+        },
+        "why": {
+          "vi": "Trải nghiệm thanh toán đòi hỏi phản hồi nhanh và độ khả dụng cao.",
+          "en": "Checkout conversion requires fast response times and high availability."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": { "vi": "Bộ cân bằng tải điều phối request đặt hàng vào Order Service.", "en": "Distributes checkout traffic across Order Service instances." },
+        "how": { "vi": "Chia đều theo vòng Round-robin độ trễ thấp.", "en": "Routes via intra-AZ Round-robin." },
+        "why": { "vi": "Tách điểm vào khỏi số lượng instance xử lý đơn hàng.", "en": "Decouples entry endpoint from Order Service replica count." }
+      }
+    },
+    "checkout": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Order Service", "en": "Order Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ xử lý nghiệp vụ đặt hàng (2 instance, tổng 2.400 req/s).",
+          "en": "Core checkout service validating and recording orders (2,400 req/s total)."
+        },
+        "how": {
+          "vi": "Trong kiến trúc Pub/Sub + Outbox, chỉ ghi đơn và dòng sự kiện vào Order DB trong một giao dịch ACID rồi trả kết quả ngay.",
+          "en": "Commits the order and outbox event in one ACID DB transaction and returns immediately."
+        },
+        "why": {
+          "vi": "Không bị phụ thuộc thời gian hay trạng thái sống/chết của các dịch vụ phụ phía sau.",
+          "en": "Eliminates temporal and availability coupling to downstream auxiliary services."
+        }
+      }
+    },
+    "order_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Order DB + Outbox", "en": "Order DB + Outbox" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ chứa bảng orders cùng bảng outbox_events.",
+          "en": "Relational database storing both orders and outbox_events tables."
+        },
+        "how": {
+          "vi": "Gói INSERT orders và INSERT outbox_events trong cùng một BEGIN...COMMIT; tiến trình Relay/CDC đọc bảng outbox đẩy sang Event Bus.",
+          "en": "Commits order and outbox row atomically; Relay/CDC forwards unpublished events to Event Bus."
+        },
+        "why": {
+          "vi": "Đảm bảo không bao giờ xảy ra trạng thái đã lưu đơn nhưng mất sự kiện thông báo.",
+          "en": "Prevents dual-write inconsistency where an order commits but its event is lost."
+        },
+        "tip": {
+          "vi": "Relay có thể đẩy trùng sự kiện khi khởi động lại, nên mọi subscriber phía sau cần xử lý bất biến (idempotent).",
+          "en": "Outbox relay delivers at-least-once, so subscribers must be idempotent."
+        }
+      }
+    },
+    "event_bus": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "sparkles",
+      "label": { "vi": "Event Bus", "en": "Event Bus" },
+      "inspector": {
+        "what": {
+          "vi": "Trục phát sự kiện theo chủ đề (Topic, ví dụ Kafka / SNS / PubSub) nhận sự kiện OrderCreated.",
+          "en": "Pub/Sub Topic broker broadcasting OrderCreated events to all subscriptions."
+        },
+        "how": {
+          "vi": "Sao chép mỗi sự kiện sang tất cả các kênh đăng ký (Sub: Email, Sub: Loyalty) độc lập nhau.",
+          "en": "Fans out every published event to every registered subscription independently."
+        },
+        "why": {
+          "vi": "Thêm tính năng mới chỉ cần đăng ký vào Topic mà không phải sửa mã của Order Service.",
+          "en": "New features subscribe to the topic without modifying Order Service code."
+        }
+      }
+    },
+    "sub_email": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "layers",
+      "label": { "vi": "Sub: Email", "en": "Sub: Email" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi đăng ký riêng của nhánh Email trên Topic OrderCreated.",
+          "en": "Dedicated subscription backlog for the Email consumer group."
+        },
+        "how": {
+          "vi": "Giữ con trỏ đọc (offset / ack) riêng cho Email Service; tích luỹ sự kiện khi Email Service ngừng hoạt động.",
+          "en": "Tracks Email Service offset/acks independently and buffers events during outages."
+        },
+        "why": {
+          "vi": "Cô lập sự cố chậm hoặc sập của nhánh gửi thư khỏi nhánh tích điểm và luồng đặt hàng.",
+          "en": "Isolates email delays or crashes from other subscribers and checkout."
+        }
+      }
+    },
+    "sub_loyalty": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "layers",
+      "label": { "vi": "Sub: Loyalty", "en": "Sub: Loyalty" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi đăng ký riêng của nhánh cộng điểm thưởng khách hàng.",
+          "en": "Dedicated subscription queue for the Loyalty consumer group."
+        },
+        "how": {
+          "vi": "Nhận bản sao sự kiện song song với nhánh Email và chuyển cho Loyalty Service xử lý ngay.",
+          "en": "Receives its own copy of each event and feeds Loyalty Service without waiting on Email."
+        },
+        "why": {
+          "vi": "Đảm bảo mỗi nhóm nghiệp vụ tiêu thụ sự kiện theo tốc độ riêng.",
+          "en": "Lets each domain consume events at its own pace."
+        }
+      }
+    },
+    "email_svc": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "globe",
+      "label": { "vi": "Email Service", "en": "Email Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ gửi email xác nhận đơn hàng qua nhà cung cấp SMTP bên ngoài (mất ~45 ms/lượt).",
+          "en": "Worker calling external SMTP provider to send order confirmation emails (~45 ms)."
+        },
+        "how": {
+          "vi": "Kéo sự kiện từ Sub: Email; khi sống lại sau sự cố sẽ tiêu thụ dần phần backlog tồn đọng.",
+          "en": "Pulls events from Sub: Email and drains accumulated backlog upon recovery."
+        },
+        "why": {
+          "vi": "Tác vụ gọi mạng ngoài chậm và dễ lỗi không nên nằm trực tiếp trên đường đồng bộ của khách.",
+          "en": "Slow, flaky external API calls belong off the critical user-facing path."
+        }
+      }
+    },
+    "loyalty_svc": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "zap",
+      "label": { "vi": "Loyalty Service", "en": "Loyalty Service" },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ tính và cộng điểm tích luỹ sau mỗi đơn hàng thành công.",
+          "en": "Subscriber awarding loyalty points for completed orders."
+        },
+        "how": {
+          "vi": "Kiểm tra event_id đã xử lý chưa trước khi cộng điểm để tránh cộng hai lần khi nhận lại sự kiện.",
+          "en": "Checks processed event_ids before crediting points to remain idempotent."
+        },
+        "why": {
+          "vi": "Minh hoạ khả năng mở rộng tính năng phụ độc lập quanh cùng một sự kiện nghiệp vụ.",
+          "en": "Demonstrates independent side-effect processing from the same domain event."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Đường gửi yêu cầu đặt hàng từ người dùng qua Internet.", "en": "HTTPS checkout requests from shoppers." },
+        "how": { "vi": "Truyền 500 đơn hàng mỗi giây vào cổng cân bằng tải.", "en": "Carries 500 checkout req/s." },
+        "why": { "vi": "Đo lường trực tiếp độ trễ và tỷ lệ lỗi mà khách hàng cảm nhận.", "en": "Reflects end-user checkout latency and error rate." }
+      }
+    },
+    "lb-checkout": {
+      "inspector": {
+        "what": { "vi": "Đường nội bộ từ Load Balancer tới cụm Order Service.", "en": "Internal hop to Order Service." },
+        "how": { "vi": "Chia đều tải cho 2 instance ứng dụng.", "en": "Splits load across 2 instances." },
+        "why": { "vi": "Duy trì dự phòng cho tầng xử lý đơn.", "en": "Keeps stateless compute balanced." }
+      }
+    },
+    "checkout-db": {
+      "inspector": {
+        "what": { "vi": "Giao dịch ghi đơn hàng và bản ghi Outbox xuống cơ sở dữ liệu.", "en": "ACID transaction writing order and outbox record." },
+        "how": { "vi": "Thực thi đồng bộ trong ~5 ms trên cùng kết nối SQL.", "en": "Executes synchronously in ~5 ms within one transaction." },
+        "why": { "vi": "Gắn chặt việc lưu trạng thái và việc xếp lịch phát sự kiện làm một nguyên tử.", "en": "Atomically couples state persistence with event scheduling." }
+      }
+    },
+    "checkout-email": {
+      "inspector": {
+        "what": { "vi": "Lời gọi đồng bộ trực tiếp từ Order Service sang Email Service.", "en": "Tightly coupled synchronous RPC to Email Service." },
+        "how": { "vi": "Bắt luồng đặt hàng đứng chờ 45 ms và trả lỗi ngay khi Email Service sập.", "en": "Blocks checkout for 45 ms and propagates Email crashes as 5xx errors." },
+        "why": { "vi": "Mẫu thiết kế ghép chặt cần thay thế bằng phát sự kiện bất đồng bộ.", "en": "Anti-pattern creating temporal coupling on auxiliary work." }
+      }
+    },
+    "checkout-loyalty": {
+      "inspector": {
+        "what": { "vi": "Lời gọi đồng bộ trực tiếp sang Loyalty Service.", "en": "Synchronous call to Loyalty Service." },
+        "how": { "vi": "Cộng dồn thêm độ trễ vào thời gian phản hồi nút mua hàng.", "en": "Adds serial latency onto checkout response time." },
+        "why": { "vi": "Mỗi dịch vụ phụ gắn thêm theo kiểu này lại làm luồng chính mong manh hơn.", "en": "Each synchronous side-effect lowers overall availability." }
+      }
+    },
+    "db-bus": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Luồng Outbox Relay / CDC đọc sự kiện chưa gửi từ DB đẩy lên Event Bus.", "en": "Outbox Relay / CDC publishing committed events to Event Bus." },
+        "how": { "vi": "Quét các dòng chưa đánh dấu gửi hoặc đọc nhật ký WAL để phát sự kiện và cập nhật trạng thái.", "en": "Polls unpublished outbox rows or tails WAL log and marks rows published." },
+        "why": { "vi": "Tách hẳn thao tác gửi mạng sang Broker ra khỏi giao dịch của người dùng.", "en": "Removes broker network calls from the user-facing transaction." }
+      }
+    },
+    "bus-sub-email": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Nhánh phân phối bản sao sự kiện vào Subscription của Email.", "en": "Topic fan-out copy to Email subscription." },
+        "how": { "vi": "Mọi sự kiện OrderCreated đều được ghi nhận vào hàng đợi đăng ký này.", "en": "Appends every OrderCreated event to the Email subscription log." },
+        "why": { "vi": "Bảo toàn sự kiện ngay cả khi toàn bộ worker Email đang tắt.", "en": "Durably retains events while Email workers are offline." }
+      }
+    },
+    "bus-sub-loyalty": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Nhánh phân phối bản sao sự kiện vào Subscription của Loyalty.", "en": "Topic fan-out copy to Loyalty subscription." },
+        "how": { "vi": "Nhận 100% sự kiện song song, hoàn toàn độc lập với tiến độ gửi email.", "en": "Receives 100% of events independently of Email consumer progress." },
+        "why": { "vi": "Hiện thực hoá mô hình một lần phát — nhiều nơi cùng phản ứng.", "en": "Enables one-to-many broadcast decoupling." }
+      }
+    },
+    "sub-email-worker": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Luồng kéo (pull) sự kiện từ Sub: Email về Email Service.", "en": "Pull consumption from Sub: Email by Email Service." },
+        "how": { "vi": "Chỉ gửi xác nhận hoàn tất (ack) sau khi SMTP nhận thư thành công.", "en": "Acknowledges offset only after SMTP delivery succeeds." },
+        "why": { "vi": "Đảm bảo thư xác nhận chỉ bị trễ chứ không bị mất khi gặp sự cố tạm thời.", "en": "Delays rather than drops confirmation emails during provider outages." }
+      }
+    },
+    "sub-loyalty-worker": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Luồng kéo sự kiện từ Sub: Loyalty về Loyalty Service.", "en": "Pull consumption from Sub: Loyalty." },
+        "how": { "vi": "Xử lý ngay trong ~12 ms mà không bị nghẽn bởi hàng đợi bên nhánh Email.", "en": "Processes in ~12 ms unaffected by Email backlog." },
+        "why": { "vi": "Giữ điểm thưởng của khách cập nhật gần như tức thì.", "en": "Keeps loyalty point updates near-real-time." }
+      }
+    }
+  },
+  "zones": {
+    "subscribers": {
+      "nodeIds": ["sub_email", "sub_loyalty", "email_svc", "loyalty_svc"],
+      "label": { "vi": "CÁC NHÁNH ĐĂNG KÝ ĐỘC LẬP (SUBSCRIBERS)", "en": "INDEPENDENT SUBSCRIBERS" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-sync": {
+      "show": {
+        "nodes": ["client", "lb", "checkout", "order_db", "email_svc", "loyalty_svc"],
+        "links": ["client-lb", "lb-checkout", "checkout-db", "checkout-email", "checkout-loyalty"]
+      },
+      "state": {
+        "checkout": {
+          "loadPct": 62,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Gọi nối tiếp 3 nơi", "en": "3 serial sync calls" }, "tone": "warn" }
+        },
+        "order_db": { "loadPct": 25 },
+        "email_svc": {
+          "loadPct": 42,
+          "badge": { "text": { "vi": "+45 ms SMTP", "en": "+45 ms SMTP" }, "tone": "warn" }
+        },
+        "loyalty_svc": { "loadPct": 42 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Ghép nối chặt đồng bộ (Sync Coupling)", "en": "Tightly Coupled Sync Checkout" },
+        "lines": [
+          { "text": { "vi": "Độ trễ cộng dồn mọi dịch vụ phụ (~110 ms)", "en": "Latency sums all side-effects (~110 ms)" }, "tone": "amber" },
+          { "text": { "vi": "Chỉ cần 1 dịch vụ phụ lỗi là hỏng cả đơn hàng", "en": "One auxiliary failure breaks checkout" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-live-sync": {
+      "show": {
+        "nodes": ["client", "lb", "checkout", "order_db", "email_svc", "loyalty_svc"],
+        "links": ["client-lb", "lb-checkout", "checkout-db", "checkout-email", "checkout-loyalty"]
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự kiện t = 20 s: Email Service sập", "en": "Event t = 20 s: Email Service Crashes" },
+        "lines": [
+          { "text": { "vi": "t = 20..45 s: Email dừng → Checkout lỗi 100%", "en": "t = 20..45 s: Email down → 100% checkout error" }, "tone": "bad" },
+          { "text": { "vi": "Order DB vẫn khoẻ nhưng không lưu được đơn nào", "en": "Order DB healthy yet zero orders succeed" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-pubsub": {
+      "show": { "nodes": "*" },
+      "zones": ["subscribers"],
+      "state": {
+        "checkout": {
+          "loadPct": 21,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Trả lời sớm", "en": "Fast ack" }, "tone": "ok" }
+        },
+        "order_db": { "loadPct": 25 },
+        "event_bus": {
+          "loadPct": 6,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Topic OrderCreated", "en": "OrderCreated Topic" }, "tone": "ok" }
+        },
+        "email_svc": { "loadPct": 42 },
+        "loyalty_svc": { "loadPct": 42 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách rời bằng Event Bus (Pub/Sub)", "en": "Event Bus Decoupling (Pub/Sub)" },
+        "lines": [
+          { "text": { "vi": "Order Service chỉ lưu đơn + phát 1 sự kiện", "en": "Order Service persists + emits 1 event" }, "tone": "good" },
+          { "text": { "vi": "Email và Loyalty tự đăng ký nhận bản sao riêng", "en": "Email & Loyalty subscribe independently" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-queue-vs-topic": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Queue (chia việc 1 người nhận) so với Pub/Sub Topic (quảng bá mọi nhóm đăng ký)",
+          "en": "Point-to-Point Queue vs Pub/Sub Topic Fan-out"
+        },
+        "nodes": [
+          { "id": "q", "x": -155, "y": -82, "label": "Message Queue", "sub": { "vi": "1 job → đúng 1 worker nhận", "en": "1 job → 1 competing worker" }, "tone": "orange" },
+          { "id": "w1", "x": -225, "y": 42, "label": "Worker A (nhận #1)", "sub": { "vi": "Chia tải cùng loại việc", "en": "Shares same workload" }, "tone": "green" },
+          { "id": "w2", "x": -85, "y": 42, "label": "Worker B (nhận #2)", "sub": { "vi": "Không nhận lại #1", "en": "Skips job #1" }, "tone": "neutral", "pruned": true },
+          { "id": "tp", "x": 155, "y": -82, "label": "Pub/Sub Topic", "sub": { "vi": "1 event → mọi subscriber đều nhận", "en": "1 event → all subscribers" }, "tone": "purple" },
+          { "id": "s1", "x": 85, "y": 42, "label": "Email (nhận #1)", "sub": { "vi": "Gửi thư xác nhận", "en": "Sends receipt" }, "tone": "blue" },
+          { "id": "s2", "x": 225, "y": 42, "label": "Loyalty (nhận #1)", "sub": { "vi": "Cộng điểm thưởng", "en": "Credits points" }, "tone": "yellow" }
+        ],
+        "edges": [
+          { "from": "q", "to": "w1", "label": "job #1" },
+          { "from": "q", "to": "w2", "label": "job #2", "style": "dashed" },
+          { "from": "tp", "to": "s1", "label": "bản sao #1" },
+          { "from": "tp", "to": "s2", "label": "bản sao #1" }
+        ]
+      }
+    },
+    "s5-live-pubsub": {
+      "show": { "nodes": "*" },
+      "zones": ["subscribers"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Email sập t = 20..42 s trên kiến trúc Pub/Sub", "en": "Email Outage on Pub/Sub (t = 20..42 s)" },
+        "lines": [
+          { "text": { "vi": "Checkout giữ 0% lỗi, Loyalty vẫn chạy bình thường", "en": "Checkout 0% error, Loyalty unaffected" }, "tone": "good" },
+          { "text": { "vi": "Sub: Email giữ hộ sự kiện, tự xả khi Email sống lại", "en": "Sub: Email buffers & drains after recovery" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-dual-write": {
+      "show": {
+        "nodes": ["client", "lb", "checkout", "order_db", "event_bus"]
+      },
+      "state": {
+        "checkout": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Crash sau COMMIT!", "en": "Crash after COMMIT!" }, "tone": "bad" }
+        },
+        "order_db": {
+          "loadPct": 25,
+          "badge": { "text": { "vi": "Đã lưu đơn #904", "en": "Order #904 saved" }, "tone": "ok" }
+        },
+        "event_bus": {
+          "loadPct": 0,
+          "badge": { "text": { "vi": "Mất sự kiện #904!", "en": "Missing event #904!" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "db-bus": { "style": "cut" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Lỗi ghi kép (Dual-Write Problem)", "en": "Dual-Write Consistency Gap" },
+        "lines": [
+          { "text": { "vi": "1. Lưu DB xong rồi tiến trình sập → mất sự kiện", "en": "1. DB commit then crash → silent event loss" }, "tone": "bad" },
+          { "text": { "vi": "2. Phát sự kiện trước rồi DB rollback → sự kiện ma", "en": "2. Publish then DB rollback → phantom event" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-outbox": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Mẫu Transactional Outbox: gói dữ liệu và sự kiện vào chung 1 giao dịch SQL",
+          "en": "Transactional Outbox: atomic SQL commit + asynchronous Relay"
+        },
+        "subtitle": {
+          "vi": "Không gọi mạng tới Event Bus bên trong giao dịch của người dùng",
+          "en": "Zero broker network I/O inside the checkout database transaction"
+        },
+        "cells": ["BEGIN TX", "INSERT orders", "INSERT outbox", "COMMIT", "Relay → Bus"],
+        "activeIndices": [1, 2, 3],
+        "pointers": [
+          { "index": 2, "label": "cùng giao dịch ACID", "tone": "green" },
+          { "index": 4, "label": "thử lại tới khi ACK", "tone": "purple" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Đảm bảo", "en": "Guarantee" },
+          "value": { "vi": "Chuyển giao ít nhất một lần (At-least-once) · không rơi sự kiện", "en": "At-least-once event publication without dual-write loss" },
+          "tone": "green"
+        }
+      }
+    },
+    "s8-idempotent": {
+      "show": { "nodes": "*" },
+      "zones": ["subscribers"],
+      "state": {
+        "checkout": { "loadPct": 21 },
+        "order_db": {
+          "loadPct": 28,
+          "badge": { "text": { "vi": "Outbox + Relay", "en": "Outbox + Relay" }, "tone": "ok" }
+        },
+        "event_bus": { "loadPct": 8 },
+        "email_svc": {
+          "loadPct": 42,
+          "highlighted": true,
+          "badge": { "text": { "vi": "UNIQUE(event_id)", "en": "UNIQUE(event_id)" }, "tone": "ok" }
+        },
+        "loyalty_svc": {
+          "loadPct": 42,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Bất biến (Idempotent)", "en": "Idempotent" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đánh đổi của kiến trúc hướng sự kiện", "en": "Event-Driven Trade-offs" },
+        "lines": [
+          { "text": { "vi": "At-least-once có thể gửi lặp → Subscriber phải bất biến", "en": "At-least-once may duplicate → Idempotent consumers" }, "tone": "amber" },
+          { "text": { "vi": "Nhất quán cuối cùng & cần gắn trace_id xuyên suốt", "en": "Eventual consistency & distributed trace_id required" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["subscribers"],
+      "state": {
+        "checkout": { "loadPct": 21 },
+        "order_db": {
+          "loadPct": 28,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Outbox ACID", "en": "Outbox ACID" }, "tone": "ok" }
+        },
+        "event_bus": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Fan-out Topic", "en": "Topic Fan-out" }, "tone": "ok" }
+        },
+        "email_svc": { "loadPct": 42 },
+        "loyalty_svc": { "loadPct": 42 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bộ ba tin cậy: Topic + Outbox + Idempotency", "en": "Reliable Event Triad" },
+        "lines": [
+          { "text": { "vi": "Pub/Sub tách rời độ trễ và cô lập lỗi dịch vụ phụ", "en": "Pub/Sub decouples latency and isolates faults" }, "tone": "good" },
+          { "text": { "vi": "Outbox chống mất sự kiện; Idempotency chống xử lý lặp", "en": "Outbox prevents loss; Idempotency prevents duplicates" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "sync-crash": {
+      "sim": "S2-11/sync-coupled",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["kill", "slow"],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Đơn thành công", "en": "Checkout Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 250 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi đặt hàng", "en": "Checkout Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["checkout", "email_svc"] }
+    },
+    "pubsub-resilient": {
+      "sim": "S2-11/pubsub-outbox",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["kill", "slow"],
+        "knobs": [
+          { "node": "email_svc", "key": "replicas" },
+          { "node": "loyalty_svc", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Đơn thành công", "en": "Checkout Goodput" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99 đặt hàng", "en": "Checkout p99" }, "format": "ms", "tone": { "warnAbove": 90, "badAbove": 150 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi đặt hàng", "en": "Checkout Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["event_bus", "sub_email", "email_svc"] }
+    }
+  }
+}

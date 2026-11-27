@@ -1,0 +1,475 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": { "shape": "crowd", "tone": "blue", "label": { "vi": "Client", "en": "Client" } },
+    "lb": { "shape": "block", "tone": "purple", "icon": "layers", "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+    "app": { "shape": "block", "tone": "green", "icon": "cpu", "label": { "vi": "App Server", "en": "App Server" } },
+    "cache": { "shape": "block", "tone": "yellow", "icon": "zap", "label": { "vi": "Cache", "en": "Cache" } },
+    "db": { "shape": "db", "tone": "orange", "label": { "vi": "Database", "en": "Database" } },
+    "queue": { "shape": "block", "tone": "rose", "icon": "layers", "label": { "vi": "Message Queue", "en": "Message Queue" } },
+    "worker": { "shape": "block", "tone": "purple", "icon": "cpu", "label": { "vi": "Worker", "en": "Worker" } }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": ["client", "app", "db"] },
+      "raw": {
+        "nodes": [
+          {
+            "id": "client",
+            "shape": "crowd",
+            "tone": "blue",
+            "x": -160,
+            "y": 0,
+            "label": { "vi": "Client", "en": "Client" },
+            "inspector": {
+              "title": { "vi": "Client (Trình duyệt / Mobile App)", "en": "Client (Browser / Mobile App)" },
+              "kindLabel": { "vi": "Thiết bị người dùng", "en": "End-User Client" },
+              "what": { "vi": "Giao diện tương tác gửi HTTP request tới hệ thống và hiển thị kết quả.", "en": "User-facing interface sending requests and rendering responses." },
+              "how": { "vi": "Gửi yêu cầu qua mạng Internet công cộng và nhận dữ liệu JSON/HTML trả về.", "en": "Sends requests over the public Internet and renders returned payloads." },
+              "why": { "vi": "Tách phần hiển thị trên thiết bị cá nhân khỏi phần xử lý nghiệp vụ tập trung.", "en": "Separates user presentation from centralized backend logic." },
+              "tipOrCase": { "vi": "Không bao giờ chỉ kiểm tra giá tiền hay quyền hạn ở phía Client vì người dùng có thể sửa mã trên trình duyệt.", "en": "Never rely solely on client-side validation for prices or permissions." }
+            }
+          },
+          {
+            "id": "app",
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "x": 0,
+            "y": 0,
+            "loadPct": 28,
+            "label": { "vi": "App Server", "en": "App Server" },
+            "inspector": {
+              "title": { "vi": "App Server", "en": "App Server" },
+              "kindLabel": { "vi": "Máy chủ ứng dụng", "en": "Application Server" },
+              "what": { "vi": "Thành phần thực thi quy tắc nghiệp vụ, xác thực và điều phối truy vấn dữ liệu.", "en": "Executes business rules, authentication, and data orchestration." },
+              "how": { "vi": "Nhận request từ Client (10 ms), gọi xuống Database lấy dữ liệu rồi đóng gói phản hồi.", "en": "Processes requests (~10 ms), queries Database, and formats responses." },
+              "why": { "vi": "Nơi tập trung logic cốt lõi được kiểm soát an toàn trên hạ tầng máy chủ.", "en": "Centralizes trusted business logic in a controlled server environment." }
+            }
+          },
+          {
+            "id": "db",
+            "shape": "db",
+            "tone": "orange",
+            "x": 160,
+            "y": 0,
+            "loadPct": 68,
+            "highlighted": true,
+            "badge": { "text": { "vi": "200 ms", "en": "200 ms" }, "tone": "warn" },
+            "label": { "vi": "Database", "en": "Database" },
+            "inspector": {
+              "title": { "vi": "Database", "en": "Database" },
+              "kindLabel": { "vi": "Cơ sở dữ liệu bền vững", "en": "Persistent Database" },
+              "what": { "vi": "Kho lưu trữ lâu dài trên đĩa cứng, giữ nguồn dữ liệu chính xác của hệ thống.", "en": "Durable storage holding the system's source-of-truth records." },
+              "how": { "vi": "Thực thi câu truy vấn đọc/ghi bền vững; trong ví dụ chiếm 200 ms trên tổng 260 ms.", "en": "Executes durable read/write queries; accounts for 200 ms of 260 ms here." },
+              "why": { "vi": "Đảm bảo dữ liệu không bị mất khi tiến trình ứng dụng khởi động lại.", "en": "Guarantees durability across process restarts." }
+            }
+          }
+        ],
+        "links": [
+          {
+            "id": "client-app",
+            "from": "client",
+            "to": "app",
+            "style": "solid",
+            "label": { "vi": "50 ms", "en": "50 ms" },
+            "inspector": {
+              "title": { "vi": "Client → App Server", "en": "Client → App Server" },
+              "kindLabel": { "vi": "Đường truyền đồng bộ", "en": "Synchronous Hop" },
+              "what": { "vi": "Kết nối HTTP qua Internet từ thiết bị người dùng tới máy chủ.", "en": "HTTP request hop over the Internet." },
+              "how": { "vi": "Client mở kết nối và đợi phản hồi trả về trên cùng phiên gọi.", "en": "Client waits synchronously for the HTTP response." },
+              "why": { "vi": "Cung cấp phản hồi trực tiếp cho thao tác của người dùng.", "en": "Delivers immediate feedback to user actions." }
+            }
+          },
+          {
+            "id": "app-db",
+            "from": "app",
+            "to": "db",
+            "style": "solid",
+            "label": { "vi": "200 ms", "en": "200 ms" },
+            "inspector": {
+              "title": { "vi": "App Server → Database", "en": "App Server → Database" },
+              "kindLabel": { "vi": "Truy vấn đồng bộ", "en": "Synchronous Query" },
+              "what": { "vi": "Lời gọi truy vấn dữ liệu từ ứng dụng xuống tầng lưu trữ.", "en": "Database query hop from application server." },
+              "how": { "vi": "Ứng dụng chờ Database đọc đĩa và trả tập bản ghi kết quả.", "en": "App blocks until the database returns rows." },
+              "why": { "vi": "Lấy dữ liệu chính xác để dựng câu trả lời cho Client.", "en": "Fetches authoritative state for the response." }
+            }
+          }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-app", "kind": "request", "speed": 0.45, "offset": 0.1 },
+          { "id": "p2", "linkId": "client-app", "kind": "response", "speed": 0.45, "offset": 0.6, "reverse": true },
+          { "id": "p3", "linkId": "app-db", "kind": "request", "speed": 0.38, "offset": 0.35 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Góc nhìn kiến trúc", "en": "Architecture View" },
+          "lines": [
+            { "text": { "vi": "Tổng độ trễ: 260 ms", "en": "Total latency: 260 ms" }, "tone": "plain" },
+            { "text": { "vi": "Database chiếm 77% thời gian", "en": "Database takes 77% of time" }, "tone": "amber" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s2-entry": {
+      "show": { "nodes": ["client", "lb", "app"] },
+      "raw": {
+        "nodes": [
+          {
+            "id": "client",
+            "shape": "crowd",
+            "tone": "blue",
+            "x": -160,
+            "y": 0,
+            "badge": { "text": { "vi": "Không tin cậy", "en": "Untrusted" }, "tone": "warn" },
+            "label": { "vi": "Client", "en": "Client" },
+            "inspector": {
+              "title": { "vi": "Client", "en": "Client" },
+              "kindLabel": { "vi": "Thiết bị ngoài ranh giới tin cậy", "en": "Untrusted Boundary" },
+              "what": { "vi": "Trình duyệt hoặc ứng dụng di động nằm trên thiết bị của người dùng cuối.", "en": "Browser or mobile app running on user hardware." },
+              "how": { "vi": "Người dùng có thể can thiệp mã JavaScript hoặc giả lập gói tin gửi thẳng lên API.", "en": "Users can inspect and tamper with client-side requests." },
+              "why": { "vi": "Mọi kiểm tra giá bán, số lượng và quyền truy cập đều phải xác thực ở phía máy chủ.", "en": "Server-side validation is mandatory for security and integrity." }
+            }
+          },
+          {
+            "id": "lb",
+            "shape": "block",
+            "tone": "purple",
+            "icon": "layers",
+            "x": 0,
+            "y": 0,
+            "highlighted": true,
+            "loadPct": 20,
+            "badge": { "text": { "vi": "Round-robin", "en": "Round-robin" }, "tone": "ok" },
+            "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+            "inspector": {
+              "title": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "kindLabel": { "vi": "Bộ cân bằng tải", "en": "Load Balancer" },
+              "what": { "vi": "Thành phần đứng đầu cụm máy chủ, phân phối đều lưu lượng sang các App Server.", "en": "Distributes incoming requests across multiple App Servers." },
+              "how": { "vi": "Dùng thuật toán Round-robin hoặc Least Connections kèm kiểm tra sức khoẻ định kỳ.", "en": "Routes via Round-robin or Least Connections with health checks." },
+              "why": { "vi": "Giúp mở rộng nhiều máy chủ ứng dụng và duy trì dịch vụ khi một máy bảo trì.", "en": "Enables horizontal scale-out and rolling deployments." }
+            }
+          },
+          {
+            "id": "app",
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "x": 160,
+            "y": 0,
+            "loadPct": 35,
+            "label": { "vi": "App Server", "en": "App Server" },
+            "inspector": {
+              "title": { "vi": "App Server", "en": "App Server" },
+              "kindLabel": { "vi": "Tầng nghiệp vụ xác thực", "en": "Trusted Business Tier" },
+              "what": { "vi": "Cụm máy chủ ứng dụng nhận request từ Load Balancer và kiểm tra hợp lệ.", "en": "Application servers validating inputs and running logic." },
+              "how": { "vi": "Xác thực chữ ký token, kiểm tra dữ liệu đầu vào trước khi xử lý.", "en": "Verifies tokens and business rules server-side." },
+              "why": { "vi": "Bảo vệ toàn vẹn dữ liệu trước mọi đầu vào không tin cậy từ Internet.", "en": "Protects data integrity from untrusted inputs." }
+            }
+          }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid" },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid" }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.48, "offset": 0.15 },
+          { "id": "p2", "linkId": "lb-app", "kind": "request", "speed": 0.48, "offset": 0.55 },
+          { "id": "p3", "linkId": "client-lb", "kind": "response", "speed": 0.48, "offset": 0.75, "reverse": true }
+        ],
+        "noteCard": {
+          "title": { "vi": "Tầng đón lưu lượng", "en": "Entry Tier" },
+          "lines": [
+            { "text": { "vi": "Luôn kiểm tra dữ liệu ở Server", "en": "Always validate server-side" }, "tone": "amber" },
+            { "text": { "vi": "LB chia tải sang cụm máy", "en": "LB spreads load across servers" }, "tone": "good" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s3-storage": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "raw": {
+        "zones": [
+          { "id": "backend", "nodeIds": ["app", "cache", "db"], "label": { "vi": "XỬ LÝ & LƯU TRỮ", "en": "COMPUTE & STORAGE" }, "tone": "neutral" }
+        ],
+        "nodes": [
+          { "id": "client", "shape": "crowd", "tone": "blue", "x": -232, "y": 66, "label": { "vi": "Client", "en": "Client" } },
+          { "id": "lb", "shape": "block", "tone": "purple", "icon": "layers", "x": -104, "y": -10, "loadPct": 18, "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+          {
+            "id": "app",
+            "shape": "block",
+            "tone": "green",
+            "icon": "cpu",
+            "x": 24,
+            "y": -74,
+            "loadPct": 36,
+            "badge": { "text": { "vi": "Stateless", "en": "Stateless" }, "tone": "ok" },
+            "label": { "vi": "App Server", "en": "App Server" },
+            "inspector": {
+              "title": { "vi": "App Server (Stateless)", "en": "Stateless App Server" },
+              "kindLabel": { "vi": "Tầng xử lý không trạng thái", "en": "Stateless Compute" },
+              "what": { "vi": "Máy chủ ứng dụng không giữ phiên người dùng trong bộ nhớ riêng.", "en": "Application server storing no local session state." },
+              "how": { "vi": "Kiểm tra Cache trước; nếu Cache Miss mới truy vấn Database rồi cập nhật lại Cache.", "en": "Implements Cache-Aside: checks Cache first, queries DB on miss." },
+              "why": { "vi": "Cho phép bất kỳ máy nào trong cụm phục vụ request tiếp theo.", "en": "Any server instance can serve any request." }
+            }
+          },
+          {
+            "id": "cache",
+            "shape": "block",
+            "tone": "yellow",
+            "icon": "zap",
+            "x": 152,
+            "y": -10,
+            "loadPct": 22,
+            "highlighted": true,
+            "badge": { "text": { "vi": "RAM · TTL", "en": "RAM · TTL" }, "tone": "ok" },
+            "label": { "vi": "Cache", "en": "Cache" },
+            "inspector": {
+              "title": { "vi": "Cache (Bộ nhớ đệm)", "en": "In-Memory Cache" },
+              "kindLabel": { "vi": "Bộ nhớ đệm tốc độ cao", "en": "RAM Cache" },
+              "what": { "vi": "Kho lưu trữ tạm trong RAM cho dữ liệu đọc nhiều ít biến đổi.", "en": "Fast RAM store for frequently read data." },
+              "how": { "vi": "Phản hồi lượt đọc trúng (Cache Hit) trong vài phần mười mili-giây và tự hết hạn theo TTL.", "en": "Serves cache hits in sub-milliseconds with TTL expiration." },
+              "why": { "vi": "Chặn phần lớn lượt đọc lặp lại khỏi chạm xuống ổ đĩa Database.", "en": "Shields the Database from repetitive read traffic." }
+            }
+          },
+          {
+            "id": "db",
+            "shape": "db",
+            "tone": "orange",
+            "x": 280,
+            "y": 60,
+            "loadPct": 45,
+            "label": { "vi": "Database", "en": "Database" },
+            "inspector": {
+              "title": { "vi": "Database", "en": "Database" },
+              "kindLabel": { "vi": "Lưu trữ nguồn sự thật", "en": "Source of Truth" },
+              "what": { "vi": "Cơ sở dữ liệu bền vững lưu toàn bộ bản ghi chính thức.", "en": "Durable storage holding authoritative data." },
+              "how": { "vi": "Chỉ xử lý các lượt đọc Cache Miss và các thao tác ghi cập nhật.", "en": "Handles cache misses and durable write transactions." },
+              "why": { "vi": "Giữ toàn vẹn dữ liệu lâu dài kèm chỉ mục tra cứu.", "en": "Provides durable persistence and indexed queries." }
+            }
+          }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid" },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid" },
+          { "id": "app-cache", "from": "app", "to": "cache", "style": "solid" },
+          { "id": "cache-db", "from": "cache", "to": "db", "style": "solid", "label": { "vi": "Khi Miss", "en": "On Miss" } }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.46, "offset": 0.1 },
+          { "id": "p2", "linkId": "lb-app", "kind": "request", "speed": 0.46, "offset": 0.4 },
+          { "id": "p3", "linkId": "app-cache", "kind": "cache-hit", "speed": 0.52, "offset": 0.7, "reverse": true },
+          { "id": "p4", "linkId": "cache-db", "kind": "request", "speed": 0.38, "offset": 0.25 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Mẫu Cache-Aside", "en": "Cache-Aside Pattern" },
+          "lines": [
+            { "text": { "vi": "Cache Hit → trả ngay từ RAM", "en": "Cache Hit → instant RAM reply" }, "tone": "good" },
+            { "text": { "vi": "Cache Miss → đọc DB & nạp đệm", "en": "Cache Miss → read DB & populate" }, "tone": "plain" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s4-sync-async": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db", "queue", "worker"] },
+      "raw": {
+        "nodes": [
+          { "id": "client", "shape": "crowd", "tone": "blue", "x": -244, "y": 54, "label": { "vi": "Client", "en": "Client" } },
+          { "id": "lb", "shape": "block", "tone": "purple", "icon": "layers", "x": -108, "y": -26, "loadPct": 20, "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+          { "id": "app", "shape": "block", "tone": "green", "icon": "cpu", "x": 28, "y": -94, "loadPct": 38, "label": { "vi": "App Server", "en": "App Server" } },
+          { "id": "cache", "shape": "block", "tone": "yellow", "icon": "zap", "x": 164, "y": -162, "loadPct": 20, "label": { "vi": "Cache", "en": "Cache" } },
+          { "id": "db", "shape": "db", "tone": "orange", "x": 300, "y": -88, "loadPct": 42, "label": { "vi": "Database", "en": "Database" } },
+          {
+            "id": "queue",
+            "shape": "block",
+            "tone": "rose",
+            "icon": "layers",
+            "x": 164,
+            "y": -26,
+            "highlighted": true,
+            "loadPct": 30,
+            "badge": { "text": { "vi": "Async", "en": "Async" }, "tone": "ok" },
+            "label": { "vi": "Message Queue", "en": "Message Queue" },
+            "inspector": {
+              "title": { "vi": "Message Queue", "en": "Message Queue" },
+              "kindLabel": { "vi": "Hàng đợi thông điệp bất đồng bộ", "en": "Async Message Queue" },
+              "what": { "vi": "Bộ đệm lưu giữ các gói công việc để xử lý tách rời khỏi luồng chờ của người dùng.", "en": "Buffers background jobs decoupled from user request latency." },
+              "how": { "vi": "App Server đẩy thông điệp vào hàng đợi trong vài mili-giây rồi trả lời Client ngay.", "en": "App enqueues a job in milliseconds and responds immediately." },
+              "why": { "vi": "Tránh bắt người dùng chờ tác vụ dài (chuyển mã video, gửi thông báo) và hấp thụ tải đột biến.", "en": "Prevents timeouts on slow tasks and absorbs traffic spikes." }
+            }
+          },
+          {
+            "id": "worker",
+            "shape": "block",
+            "tone": "purple",
+            "icon": "cpu",
+            "x": 300,
+            "y": 42,
+            "highlighted": true,
+            "loadPct": 55,
+            "label": { "vi": "Worker", "en": "Worker" },
+            "inspector": {
+              "title": { "vi": "Background Worker", "en": "Background Worker" },
+              "kindLabel": { "vi": "Tiến trình xử lý nền", "en": "Async Worker" },
+              "what": { "vi": "Dịch vụ chạy nền chuyên lấy công việc từ Message Queue để thực thi.", "en": "Background consumer pulling and executing queued jobs." },
+              "how": { "vi": "Đọc từng thông điệp theo tốc độ kiểm soát được và tự thử lại nếu gặp lỗi tạm thời.", "en": "Processes jobs at a steady pace with built-in retries." },
+              "why": { "vi": "Tách riêng tài nguyên tính toán nặng để không làm nghẽn API chính.", "en": "Isolates heavy compute from user-facing APIs." }
+            }
+          }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid", "label": { "vi": "Sync", "en": "Sync" } },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid" },
+          { "id": "app-cache", "from": "app", "to": "cache", "style": "solid", "label": { "vi": "Sync", "en": "Sync" } },
+          { "id": "cache-db", "from": "cache", "to": "db", "style": "solid" },
+          {
+            "id": "app-queue",
+            "from": "app",
+            "to": "queue",
+            "style": "dashed",
+            "label": { "vi": "Async", "en": "Async" },
+            "inspector": {
+              "title": { "vi": "App Server → Message Queue (Async)", "en": "App Server → Queue (Async)" },
+              "kindLabel": { "vi": "Giao tiếp bất đồng bộ (nét đứt)", "en": "Asynchronous Link (dashed)" },
+              "what": { "vi": "Đường gửi thông điệp không chặn luồng chờ của người dùng.", "en": "Non-blocking job enqueue hop." },
+              "how": { "vi": "App chỉ xác nhận hàng đợi đã nhận gói tin, không chờ Worker làm xong.", "en": "App only waits for queue acknowledgement, not job completion." },
+              "why": { "vi": "Giữ thời gian phản hồi người dùng ngắn và ổn định.", "en": "Keeps user-facing response time fast and predictable." }
+            }
+          },
+          { "id": "queue-worker", "from": "queue", "to": "worker", "style": "dashed", "label": { "vi": "Xử lý nền", "en": "Background" } }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.48, "offset": 0.1 },
+          { "id": "p2", "linkId": "lb-app", "kind": "request", "speed": 0.48, "offset": 0.4 },
+          { "id": "p3", "linkId": "app-cache", "kind": "cache-hit", "speed": 0.52, "offset": 0.65, "reverse": true },
+          { "id": "p4", "linkId": "app-queue", "kind": "pointer", "speed": 0.42, "offset": 0.2 },
+          { "id": "p5", "linkId": "queue-worker", "kind": "pointer", "speed": 0.36, "offset": 0.55 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Sync vs Async", "en": "Sync vs Async" },
+          "lines": [
+            { "text": { "vi": "Nét liền (Sync): đợi kết quả ngay", "en": "Solid (Sync): wait for reply" }, "tone": "plain" },
+            { "text": { "vi": "Nét đứt (Async): đẩy vào Queue", "en": "Dashed (Async): enqueue job" }, "tone": "good" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s5-slow-step": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db"] },
+      "raw": {
+        "nodes": [
+          { "id": "client", "shape": "crowd", "tone": "blue", "x": -232, "y": 66, "label": { "vi": "Client", "en": "Client" } },
+          { "id": "lb", "shape": "block", "tone": "purple", "icon": "layers", "x": -104, "y": -10, "loadPct": 15, "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+          { "id": "app", "shape": "block", "tone": "green", "icon": "cpu", "x": 24, "y": -74, "loadPct": 30, "badge": { "text": { "vi": "30 ms", "en": "30 ms" }, "tone": "ok" }, "label": { "vi": "App Server", "en": "App Server" } },
+          { "id": "cache", "shape": "block", "tone": "yellow", "icon": "zap", "x": 152, "y": -10, "loadPct": 10, "badge": { "text": { "vi": "Miss", "en": "Miss" }, "tone": "warn" }, "label": { "vi": "Cache", "en": "Cache" } },
+          { "id": "db", "shape": "db", "tone": "orange", "x": 280, "y": 60, "loadPct": 94, "highlighted": true, "badge": { "text": { "vi": "500 ms · 53%", "en": "500 ms · 53%" }, "tone": "bad" }, "label": { "vi": "Database", "en": "Database" } }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid", "label": { "vi": "170 ms", "en": "170 ms" } },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid", "label": { "vi": "20 ms", "en": "20 ms" } },
+          { "id": "app-cache", "from": "app", "to": "cache", "style": "solid", "label": { "vi": "5 ms", "en": "5 ms" } },
+          { "id": "cache-db", "from": "cache", "to": "db", "style": "danger", "label": { "vi": "500 ms", "en": "500 ms" } }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.45, "offset": 0.1 },
+          { "id": "p2", "linkId": "lb-app", "kind": "request", "speed": 0.45, "offset": 0.45 },
+          { "id": "p3", "linkId": "cache-db", "kind": "request", "speed": 0.68, "offset": 0.2 },
+          { "id": "p4", "linkId": "cache-db", "kind": "request", "speed": 0.68, "offset": 0.55 },
+          { "id": "p5", "linkId": "cache-db", "kind": "request", "speed": 0.68, "offset": 0.85 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Nhận diện bước chậm nhất", "en": "Spotting the Slowest Step" },
+          "lines": [
+            { "text": { "vi": "Trước tối ưu: 940 ms (DB 500 ms)", "en": "Before: 940 ms (DB 500 ms)" }, "tone": "bad" },
+            { "text": { "vi": "Index + Cache Hit: còn 445 ms", "en": "Index + Cache Hit: 445 ms" }, "tone": "good" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s6-post-flow": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db", "queue", "worker"] },
+      "raw": {
+        "zones": [
+          { "id": "async-fanout", "nodeIds": ["queue", "worker", "cache"], "label": { "vi": "PHÂN PHỐI BẢNG TIN (ASYNC)", "en": "ASYNC FEED FANOUT" }, "tone": "purple" }
+        ],
+        "nodes": [
+          { "id": "client", "shape": "crowd", "tone": "blue", "x": -244, "y": 54, "label": { "vi": "Client", "en": "Client" } },
+          { "id": "lb", "shape": "block", "tone": "purple", "icon": "layers", "x": -108, "y": -26, "loadPct": 22, "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+          { "id": "app", "shape": "block", "tone": "green", "icon": "cpu", "x": 28, "y": -94, "loadPct": 40, "badge": { "text": { "vi": "Lưu + Đẩy Queue", "en": "Save + Enqueue" }, "tone": "ok" }, "label": { "vi": "App Server", "en": "App Server" } },
+          { "id": "db", "shape": "db", "tone": "orange", "x": 164, "y": -162, "loadPct": 48, "label": { "vi": "Database", "en": "Database" } },
+          { "id": "queue", "shape": "block", "tone": "rose", "icon": "layers", "x": 164, "y": -26, "loadPct": 35, "highlighted": true, "label": { "vi": "Message Queue", "en": "Message Queue" } },
+          { "id": "worker", "shape": "block", "tone": "purple", "icon": "cpu", "x": 300, "y": 42, "loadPct": 62, "highlighted": true, "label": { "vi": "Worker", "en": "Worker" } },
+          { "id": "cache", "shape": "block", "tone": "yellow", "icon": "zap", "x": 300, "y": -88, "loadPct": 28, "badge": { "text": { "vi": "Feed Cache", "en": "Feed Cache" }, "tone": "ok" }, "label": { "vi": "Cache", "en": "Cache" } }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid" },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid" },
+          { "id": "app-db", "from": "app", "to": "db", "style": "solid", "label": { "vi": "1. Ghi bài", "en": "1. Save post" } },
+          { "id": "app-queue", "from": "app", "to": "queue", "style": "dashed", "label": { "vi": "2. Sự kiện", "en": "2. Event" } },
+          { "id": "queue-worker", "from": "queue", "to": "worker", "style": "dashed", "label": { "vi": "3. Xử lý nền", "en": "3. Consume" } },
+          { "id": "worker-cache", "from": "worker", "to": "cache", "style": "dashed", "label": { "vi": "4. Cập nhật Feed", "en": "4. Fanout" } }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.5, "offset": 0.1 },
+          { "id": "p2", "linkId": "client-lb", "kind": "response", "speed": 0.5, "offset": 0.65, "reverse": true },
+          { "id": "p3", "linkId": "lb-app", "kind": "request", "speed": 0.5, "offset": 0.35 },
+          { "id": "p4", "linkId": "app-db", "kind": "mutation", "speed": 0.45, "offset": 0.25 },
+          { "id": "p5", "linkId": "app-queue", "kind": "pointer", "speed": 0.42, "offset": 0.5 },
+          { "id": "p6", "linkId": "queue-worker", "kind": "pointer", "speed": 0.4, "offset": 0.2 },
+          { "id": "p7", "linkId": "worker-cache", "kind": "mutation", "speed": 0.4, "offset": 0.7 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Luồng đăng ảnh thực tế", "en": "Photo Publish Flow" },
+          "lines": [
+            { "text": { "vi": "Tác giả nhận xác nhận ngay (Sync)", "en": "Author gets instant ack (Sync)" }, "tone": "good" },
+            { "text": { "vi": "Worker rải bài vào Feed (Async)", "en": "Worker fans out to Feeds (Async)" }, "tone": "plain" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    },
+    "s7-recap": {
+      "show": { "nodes": ["client", "lb", "app", "cache", "db", "queue", "worker"] },
+      "raw": {
+        "nodes": [
+          { "id": "client", "shape": "crowd", "tone": "blue", "x": -244, "y": 54, "label": { "vi": "Client", "en": "Client" } },
+          { "id": "lb", "shape": "block", "tone": "purple", "icon": "layers", "x": -108, "y": -26, "loadPct": 20, "label": { "vi": "Load Balancer", "en": "Load Balancer" } },
+          { "id": "app", "shape": "block", "tone": "green", "icon": "cpu", "x": 28, "y": -94, "loadPct": 35, "label": { "vi": "App Server", "en": "App Server" } },
+          { "id": "cache", "shape": "block", "tone": "yellow", "icon": "zap", "x": 164, "y": -162, "loadPct": 22, "label": { "vi": "Cache", "en": "Cache" } },
+          { "id": "db", "shape": "db", "tone": "orange", "x": 300, "y": -88, "loadPct": 45, "label": { "vi": "Database", "en": "Database" } },
+          { "id": "queue", "shape": "block", "tone": "rose", "icon": "layers", "x": 164, "y": -26, "loadPct": 25, "label": { "vi": "Message Queue", "en": "Message Queue" } },
+          { "id": "worker", "shape": "block", "tone": "purple", "icon": "cpu", "x": 300, "y": 42, "loadPct": 40, "label": { "vi": "Worker", "en": "Worker" } }
+        ],
+        "links": [
+          { "id": "client-lb", "from": "client", "to": "lb", "style": "solid" },
+          { "id": "lb-app", "from": "lb", "to": "app", "style": "solid" },
+          { "id": "app-cache", "from": "app", "to": "cache", "style": "solid" },
+          { "id": "cache-db", "from": "cache", "to": "db", "style": "solid" },
+          { "id": "app-queue", "from": "app", "to": "queue", "style": "dashed" },
+          { "id": "queue-worker", "from": "queue", "to": "worker", "style": "dashed" }
+        ],
+        "packets": [
+          { "id": "p1", "linkId": "client-lb", "kind": "request", "speed": 0.45, "offset": 0.15 },
+          { "id": "p2", "linkId": "lb-app", "kind": "request", "speed": 0.45, "offset": 0.5 },
+          { "id": "p3", "linkId": "app-cache", "kind": "cache-hit", "speed": 0.5, "offset": 0.8, "reverse": true },
+          { "id": "p4", "linkId": "app-queue", "kind": "pointer", "speed": 0.4, "offset": 0.3 },
+          { "id": "p5", "linkId": "queue-worker", "kind": "pointer", "speed": 0.4, "offset": 0.65 }
+        ],
+        "noteCard": {
+          "title": { "vi": "Ba câu hỏi khởi động", "en": "Three Warm-Up Questions" },
+          "lines": [
+            { "text": { "vi": "1. Gồm những thành phần nào?", "en": "1. Which components exist?" }, "tone": "plain" },
+            { "text": { "vi": "2. Nối Sync (liền) hay Async (đứt)?", "en": "2. Sync (solid) or Async (dashed)?" }, "tone": "good" },
+            { "text": { "vi": "3. Bước nào đang chậm nhất?", "en": "3. Which hop is slowest?" }, "tone": "amber" }
+          ],
+          "position": "bottom-right"
+        }
+      }
+    }
+  }
+}

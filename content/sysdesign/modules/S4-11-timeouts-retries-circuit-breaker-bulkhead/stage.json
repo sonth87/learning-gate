@@ -1,0 +1,893 @@
+{
+  "version": 1,
+  "base": "s1-timeout-hang",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng ổn định 1.000 req/s: 65% xem sản phẩm (đọc) và 35% đặt thanh toán (ghi).",
+          "en": "Steady 1,000 req/s: 65% catalog browsing (reads) and 35% checkout orders (writes)."
+        },
+        "how": {
+          "vi": "Đi vào qua API Gateway chung nhưng rẽ sang hai cụm xử lý tách biệt.",
+          "en": "Enters via API Gateway and routes to two isolated service pools."
+        },
+        "why": {
+          "vi": "Khách chỉ xem sản phẩm không nên bị sập trang chỉ vì cổng thanh toán bên thứ ba đang chậm.",
+          "en": "Shoppers browsing products should never see errors when an external payment gateway slows down."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "API Gateway",
+        "en": "API Gateway"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cổng điều hướng phân tách luồng xem hàng (650 req/s) và luồng thanh toán (350 req/s).",
+          "en": "API Gateway routing browse traffic (650 req/s) and checkout traffic (350 req/s)."
+        },
+        "how": {
+          "vi": "Chuyển hướng theo đường dẫn HTTP sang từng Bulkhead Pool độc lập.",
+          "en": "Routes by path to isolated Bulkhead worker pools."
+        },
+        "why": {
+          "vi": "Tạo ranh giới cô lập ngay từ tầng định tuyến.",
+          "en": "Establishes fault isolation boundaries at ingress."
+        }
+      }
+    },
+    "catalog": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "box",
+      "label": {
+        "vi": "Catalog Pool (Bulkhead)",
+        "en": "Catalog Pool (Bulkhead)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm tiến trình và Thread Pool dành riêng cho 650 req/s truy vấn danh mục.",
+          "en": "Dedicated process and thread pool serving 650 req/s of catalog reads."
+        },
+        "how": {
+          "vi": "Hoàn toàn không dùng chung luồng hay kết nối với Checkout Service.",
+          "en": "Shares zero threads or connection pools with Checkout Service."
+        },
+        "why": {
+          "vi": "Nhờ vách ngăn Bulkhead, dù Payment treo cứng thì 65% lưu lượng trang chủ vẫn xanh suốt sự cố.",
+          "en": "Bulkhead isolation keeps 65% of site traffic fast and error-free during payment outages."
+        }
+      }
+    },
+    "checkout": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Checkout Service",
+        "en": "Checkout Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ đặt hàng xử lý 350 giao dịch mua mỗi giây.",
+          "en": "Checkout service handling 350 purchase transactions per second."
+        },
+        "how": {
+          "vi": "Ghi đơn vào Order DB đồng thời gọi đồng bộ sang Payment Service.",
+          "en": "Persists orders in Order DB and calls Payment Service synchronously."
+        },
+        "why": {
+          "vi": "Nếu gọi Payment mà thiếu Timeout ngắn và Circuit Breaker, toàn bộ luồng của Checkout sẽ bị ngâm cạn.",
+          "en": "Without tight timeouts and a Circuit Breaker, slow Payment responses exhaust Checkout threads."
+        }
+      }
+    },
+    "order_db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Order & Catalog DB",
+        "en": "Order & Catalog DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu nội bộ nhanh và ổn định (4 ms, năng lực 5.000 req/s).",
+          "en": "Fast internal database (4 ms base latency, 5,000 req/s capacity)."
+        },
+        "how": {
+          "vi": "Lưu danh mục sản phẩm, đơn hàng và bảng khóa Idempotency Key.",
+          "en": "Stores product catalog, order records, and Idempotency Key ledger."
+        },
+        "why": {
+          "vi": "Dùng ràng buộc UNIQUE trên Idempotency Key để đảm bảo thử lại không tạo đơn trùng.",
+          "en": "Enforces UNIQUE constraints on Idempotency Keys to prevent duplicate charges."
+        }
+      }
+    },
+    "payment": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "shield",
+      "label": {
+        "vi": "Payment Service",
+        "en": "Payment Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ thanh toán (năng lực 500 req/s, bình thường mất 35 ms).",
+          "en": "Payment gateway service (500 req/s capacity, 35 ms normal latency)."
+        },
+        "how": {
+          "vi": "Trong khoảng t = 12..26 s bị chậm thêm +380 ms; nếu bị dội bão Retry ×4 sẽ kẹt luôn trong quá tải vĩnh viễn.",
+          "en": "Suffers a +380 ms slowdown during t = 12..26 s; immediate ×4 retries lock it in permanent overload."
+        },
+        "why": {
+          "vi": "Cần được giảm áp bằng Retry Budget, Backoff + Jitter, Circuit Breaker và huỷ yêu cầu quá hạn.",
+          "en": "Requires Retry Budget, Backoff + Jitter, Circuit Breaker, and timeout cancellation to recover."
+        }
+      }
+    }
+  },
+  "links": {
+    "checkout-payment": {
+      "inspector": {
+        "what": {
+          "vi": "Lời gọi mạng đồng bộ từ Checkout Service sang Payment Service.",
+          "en": "Synchronous RPC/HTTP call from Checkout to Payment."
+        },
+        "how": {
+          "vi": "Mặc định thử lại 3 lần tức thì (backoff: none) gây khuếch đại tải ×4 lên 1.400–2.100 req/s.",
+          "en": "Default immediate 3× retries amplify 350 req/s into a 1,400–2,100 req/s storm."
+        },
+        "why": {
+          "vi": "Là nơi cấu hình bộ tứ bảo vệ: Timeout + CancelOnTimeout, Backoff + Full Jitter, Retry Budget và Circuit Breaker.",
+          "en": "Critical boundary for Timeout + Cancel, Backoff + Jitter, Retry Budget, and Circuit Breaker."
+        }
+      }
+    }
+  },
+  "zones": {
+    "bulkhead_read": {
+      "nodeIds": [
+        "catalog"
+      ],
+      "label": {
+        "vi": "KHOANG BULKHEAD ĐỌC (65%)",
+        "en": "READ BULKHEAD (65%)"
+      },
+      "tone": "green"
+    },
+    "bulkhead_write": {
+      "nodeIds": [
+        "checkout",
+        "payment"
+      ],
+      "label": {
+        "vi": "KHOANG THANH TOÁN (35%)",
+        "en": "CHECKOUT BULKHEAD (35%)"
+      },
+      "tone": "orange"
+    }
+  },
+  "scenes": {
+    "s1-timeout-hang": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "checkout",
+          "payment"
+        ]
+      },
+      "state": {
+        "checkout": {
+          "loadPct": 96,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Cạn Thread Pool!",
+              "en": "Threads Starved!"
+            },
+            "tone": "bad"
+          }
+        },
+        "payment": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Chậm 415 ms",
+              "en": "Slow 415 ms"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "linkState": {
+        "checkout-payment": {
+          "style": "danger",
+          "label": {
+            "vi": "Chờ quá lâu",
+            "en": "Long Hang"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Thiếu Timeout gây cạn kiệt luồng",
+          "en": "Missing Timeouts Starve Caller Pools"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Định luật Little: W tăng 12× → luồng bận tăng 12×",
+              "en": "Little's Law: 12× latency holds 12× threads"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Luôn đặt Connect Timeout & Request Timeout",
+              "en": "Always set tight Connect & Request Timeouts"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-live-storm": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "bulkhead_read",
+        "bulkhead_write"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "t = 12..26 s: Payment chậm tạm thời",
+          "en": "t = 12..26 s: Transient Payment Slowdown"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Retry max=3 tức thì đẩy tải Payment ×4–×6",
+              "en": "Immediate 3× retries amplify load 4×–6×"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Xem điều gì xảy ra sau t = 26 s khi hết chậm!",
+              "en": "Watch what happens after t = 26 s!"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-jitter": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Ba quy tắc Retry an toàn: Exponential Backoff + Full Jitter + Retry Budget",
+          "en": "Three Safe Retry Rules: Exponential Backoff + Full Jitter + Retry Budget"
+        },
+        "subtitle": {
+          "vi": "Chờ ngẫu nhiên trong [0, B0 · 2^(k−1)] và khoá tổng lượng Retry ≤ 10% lưu lượng gốc (budgetRatio = 0,1)",
+          "en": "Sleep uniformly in [0, B0 · 2^(k−1)] and cap total retries at ≤ 10% of base load (budgetRatio = 0.1)"
+        },
+        "cells": [
+          "Lỗi thoáng qua (< 2%)",
+          "Retry Budget còn token → cho thử lại",
+          "Full Jitter trải đều theo thời gian",
+          "Sự cố diện rộng (50% lỗi)",
+          "Cạn Budget 10% → chặn bão Retry (×1,1)"
+        ],
+        "activeIndices": [
+          2,
+          4
+        ],
+        "pointers": [
+          {
+            "index": 2,
+            "label": "xoá sóng cộng hưởng",
+            "tone": "blue"
+          },
+          {
+            "index": 4,
+            "label": "chặn đứng khuếch đại ×4",
+            "tone": "green"
+          }
+        ],
+        "outputPill": {
+          "label": {
+            "vi": "Cấm kỵ",
+            "en": "Never Do"
+          },
+          "value": {
+            "vi": "Nhân tầng 3 lớp: 3 × 3 × 3 = 27 lần tải dội vào DB nếu thiếu Retry Budget",
+            "en": "3-tier retry amplification: 3 × 3 × 3 = 27× load hitting DB without Retry Budget"
+          },
+          "tone": "rose"
+        }
+      }
+    },
+    "s4-breaker": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Máy trạng thái Circuit Breaker: Tự động ngắt mạch nhanh và thăm dò hồi phục",
+          "en": "Circuit Breaker State Machine: Fast-Fail Tripping and Probe Recovery"
+        },
+        "nodes": [
+          {
+            "id": "closed",
+            "x": -210,
+            "y": -65,
+            "label": "1. CLOSED (Đóng mạch)",
+            "sub": {
+              "vi": "Cho request đi qua · Đếm tỷ lệ lỗi",
+              "en": "Requests pass · Tracks error rate"
+            },
+            "tone": "green"
+          },
+          {
+            "id": "open",
+            "x": 210,
+            "y": -65,
+            "label": "2. OPEN (Ngắt mạch nhanh)",
+            "sub": {
+              "vi": "Chặn ngay < 1ms · Trả fallback / 503",
+              "en": "Fails fast < 1ms · Protects downstream"
+            },
+            "tone": "rose"
+          },
+          {
+            "id": "half",
+            "x": 0,
+            "y": 78,
+            "label": "3. HALF-OPEN (Thăm dò)",
+            "sub": {
+              "vi": "Hết cooldown 15s → Thả 1–2 request thử",
+              "en": "Cooldown expired → Allows 1–2 probes"
+            },
+            "tone": "yellow"
+          }
+        ],
+        "edges": [
+          {
+            "from": "closed",
+            "to": "open",
+            "label": "Lỗi > 50% (Trip!)",
+            "style": "danger"
+          },
+          {
+            "from": "open",
+            "to": "half",
+            "label": "Hết Cooldown 15s",
+            "style": "dashed"
+          },
+          {
+            "from": "half",
+            "to": "closed",
+            "label": "Probe OK → Đóng lại"
+          },
+          {
+            "from": "half",
+            "to": "open",
+            "label": "Probe Lỗi → Ngắt lại",
+            "style": "danger"
+          }
+        ]
+      }
+    },
+    "s5-deadline": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "checkout",
+          "payment"
+        ]
+      },
+      "state": {
+        "checkout": {
+          "loadPct": 22,
+          "badge": {
+            "text": {
+              "vi": "Deadline 320 ms",
+              "en": "Deadline 320 ms"
+            },
+            "tone": "ok"
+          }
+        },
+        "payment": {
+          "loadPct": 68,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "cancelOnTimeout",
+              "en": "cancelOnTimeout"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "linkState": {
+        "checkout-payment": {
+          "label": {
+            "vi": "gRPC Deadline / Context",
+            "en": "Deadline Context"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Truyền Hạn chót & Huỷ việc quá hạn",
+          "en": "Deadline Propagation & Cancellation"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Đính kèm thời gian còn lại theo từng hop",
+              "en": "Propagate remaining time budget across hops"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Huỷ ngay request đã hết hạn trong hàng đợi",
+              "en": "Abort expired requests before wasting CPU"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-idempotency": {
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "checkout",
+          "order_db",
+          "payment"
+        ]
+      },
+      "state": {
+        "checkout": {
+          "loadPct": 22,
+          "badge": {
+            "text": {
+              "vi": "Idempotency-Key",
+              "en": "Idempotency-Key"
+            },
+            "tone": "ok"
+          }
+        },
+        "order_db": {
+          "loadPct": 28,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "UNIQUE(idem_key)",
+              "en": "UNIQUE(idem_key)"
+            },
+            "tone": "ok"
+          }
+        },
+        "payment": {
+          "loadPct": 70,
+          "badge": {
+            "text": {
+              "vi": "Trừ tiền đúng 1 lần",
+              "en": "Charged Once"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Timeout = Chưa biết kết quả!",
+          "en": "Timeout Means Unknown Outcome!"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Có thể đã trừ tiền xong nhưng rớt gói trả về",
+              "en": "Charge may have succeeded before response dropped"
+            },
+            "tone": "amber"
+          },
+          {
+            "text": {
+              "vi": "Bắt buộc kèm Idempotency-Key khi Retry ghi",
+              "en": "Mutations require an Idempotency-Key to retry safely"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-bulkhead": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "bulkhead_read",
+        "bulkhead_write"
+      ],
+      "state": {
+        "catalog": {
+          "loadPct": 27,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "650/s · 0% lỗi",
+              "en": "650/s · 0% err"
+            },
+            "tone": "ok"
+          }
+        },
+        "checkout": {
+          "loadPct": 40
+        },
+        "order_db": {
+          "loadPct": 20
+        },
+        "payment": {
+          "loadPct": 100,
+          "badge": {
+            "text": {
+              "vi": "Đang gặp sự cố",
+              "en": "Degraded"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "linkState": {
+        "checkout-payment": {
+          "style": "danger"
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Vách ngăn Bulkhead cô lập sự cố",
+          "en": "Bulkhead Resource Isolation"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Khoang Catalog tách riêng Pool kết nối & luồng",
+              "en": "Catalog runs in a dedicated thread/conn pool"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Payment lỗi không làm sập 65% khách xem hàng",
+              "en": "Payment issues cannot bring down 65% browse traffic"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-fix-storm": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "bulkhead_read",
+        "bulkhead_write"
+      ],
+      "state": {
+        "catalog": {
+          "loadPct": 27
+        },
+        "checkout": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Breaker + Budget",
+              "en": "Breaker + Budget"
+            },
+            "tone": "ok"
+          }
+        },
+        "order_db": {
+          "loadPct": 20
+        },
+        "payment": {
+          "loadPct": 70,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Tự hồi phục ρ = 0,70",
+              "en": "Self-healed ρ = 0.70"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Tự phục hồi hoàn toàn sau t = 26 s",
+          "en": "Clean Self-Healing After t = 26 s"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Breaker cắt nhanh lúc lỗi (p99 ≈ 59 ms)",
+              "en": "Breaker fails fast during slowdown (p99 ≈ 59 ms)"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Budget 10% + Cancel giúp hồi phục về 0% lỗi",
+              "en": "10% Budget + Cancel restores 0% error post-spike"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-postmortem": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "bulkhead_read",
+        "bulkhead_write"
+      ],
+      "state": {
+        "lb": {
+          "loadPct": 85,
+          "badge": {
+            "text": {
+              "vi": "Retry ×3",
+              "en": "Retry ×3"
+            },
+            "tone": "bad"
+          }
+        },
+        "checkout": {
+          "loadPct": 100,
+          "badge": {
+            "text": {
+              "vi": "Retry ×3 · Chung Pool",
+              "en": "Retry ×3 · Shared Pool"
+            },
+            "tone": "bad"
+          }
+        },
+        "payment": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Dội tải ×27!",
+              "en": "27× Amplification!"
+            },
+            "tone": "bad"
+          }
+        }
+      },
+      "linkState": {
+        "lb-checkout": {
+          "style": "danger"
+        },
+        "checkout-payment": {
+          "style": "danger"
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Sự cố: Retry chồng nhiều lớp (3³ = 27×)",
+          "en": "Incident: Stacked Multi-Layer Retries"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "App ×3 · Gateway ×3 · Checkout ×3 = 27 lượt!",
+              "en": "App ×3 · Gateway ×3 · Checkout ×3 = 27 calls!"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Thiếu Idempotency-Key gây trừ tiền trùng lặp",
+              "en": "Missing Idempotency-Key causes double charges"
+            },
+            "tone": "bad"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "bulkhead_read",
+        "bulkhead_write"
+      ],
+      "state": {
+        "catalog": {
+          "loadPct": 27,
+          "badge": {
+            "text": {
+              "vi": "Bulkhead riêng",
+              "en": "Isolated Bulkhead"
+            },
+            "tone": "ok"
+          }
+        },
+        "checkout": {
+          "loadPct": 20,
+          "badge": {
+            "text": {
+              "vi": "Idempotency Key",
+              "en": "Idempotency Key"
+            },
+            "tone": "ok"
+          }
+        },
+        "order_db": {
+          "loadPct": 20
+        },
+        "payment": {
+          "loadPct": 70,
+          "badge": {
+            "text": {
+              "vi": "Timeout + Breaker",
+              "en": "Timeout + Breaker"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Năm chốt chặn Gọi mạng An toàn",
+          "en": "Five Safe Network Call Guardrails"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Timeout + Cancel · Backoff + Jitter + Budget",
+              "en": "Timeout + Cancel · Backoff + Jitter + Budget"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Circuit Breaker · Idempotency · Bulkhead",
+              "en": "Circuit Breaker · Idempotency · Bulkhead"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "retry-storm": {
+      "sim": "S4-11/retry-storm",
+      "startAtSec": 6,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "chaos": [
+          "slow",
+          "kill"
+        ],
+        "knobs": [
+          {
+            "node": "checkout",
+            "key": "replicas"
+          },
+          {
+            "node": "payment",
+            "key": "replicas"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "goodputRps",
+          "label": {
+            "vi": "Thành công (Goodput)",
+            "en": "Goodput"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 180,
+            "badAbove": 400
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Tỷ lệ lỗi",
+            "en": "Error Rate"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.1
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 180
+        },
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "checkout",
+          "payment"
+        ],
+        "links": [
+          "checkout-payment"
+        ]
+      }
+    }
+  }
+}

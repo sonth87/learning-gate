@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-09.q1",
+    "type": "mc",
+    "q": "Người dùng đã đăng nhập hợp lệ vào Tenant A nhưng sửa tham số URL từ `/invoices/101` thành `/invoices/902` để xem hóa đơn của Tenant B. Đây là lỗ hổng nào?",
+    "code": "",
+    "choices": [
+      "IDOR (Insecure Direct Object Reference)",
+      "Cross-Site Scripting (XSS)",
+      "DNS Cache Poisoning",
+      "Buffer Overflow"
+    ],
+    "answer": 0,
+    "explain": "IDOR xảy ra khi hệ thống chỉ kiểm tra người dùng đã đăng nhập mà không kiểm tra quyền sở hữu đối tượng được yêu cầu theo `tenant_id` hoặc `owner_id` lấy từ token."
+  },
+  {
+    "id": "S6-09.q2",
+    "type": "mc",
+    "q": "Cách nào phòng chống hiệu quả nhất lỗi Mass Assignment khi người dùng gửi thêm trường `{\"role\": \"admin\"}` vào API cập nhật hồ sơ?",
+    "code": "",
+    "choices": [
+      "Ẩn ô nhập `role` trên giao diện frontend",
+      "Chỉ định rõ danh sách trường cho phép ghi (allow-list) trên server trước khi lưu DB",
+      "Mã hóa toàn bộ JSON body bằng Base64",
+      "Chuyển phương thức từ PATCH sang POST"
+    ],
+    "answer": 1,
+    "explain": "Kẻ tấn công có thể gọi API trực tiếp mà không qua giao diện. Server phải dùng allow-list (ví dụ DTO chỉ nhận `name`, `phone`) để loại bỏ mọi trường nhạy cảm như `role` hoặc `tenant_id`."
+  },
+  {
+    "id": "S6-09.q3",
+    "type": "tf",
+    "q": "Khi đã kiểm tra `tenant_id` trong code ứng dụng, việc bật thêm Row-Level Security (RLS) ở Database là thừa thãi và không có giá trị bảo vệ.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "RLS là lớp phòng vệ chiều sâu (Defense in Depth): nếu một truy vấn mới trong ứng dụng vô tình quên điều kiện `WHERE tenant_id = ?`, Database vẫn chặn việc đọc hoặc ghi dữ liệu chéo tenant."
+  },
+  {
+    "id": "S6-09.q4",
+    "type": "mc",
+    "q": "Bài toán nào phù hợp nhất với mô hình phân quyền theo quan hệ (ReBAC) thay vì chỉ dùng RBAC thuần túy?",
+    "code": "",
+    "choices": [
+      "Kiểm tra tài khoản có vai trò `admin` để vào trang cấu hình hệ thống",
+      "Cho phép thành viên của nhóm Design kế thừa quyền sửa mọi tài liệu nằm trong thư mục Q4-Specs",
+      "Giới hạn số request mỗi giây theo địa chỉ IP",
+      "Xác thực chữ ký JWT bằng khóa công khai"
+    ],
+    "answer": 1,
+    "explain": "ReBAC biểu diễn quyền qua đồ thị quan hệ giữa người dùng, nhóm, thư mục cha và tài liệu con (như mô hình Google Zanzibar), rất phù hợp cho chia sẻ phân cấp."
+  },
+  {
+    "id": "S6-09.q5",
+    "type": "mc",
+    "q": "Tình huống nào mô tả đúng lỗi Confused Deputy?",
+    "code": "",
+    "choices": [
+      "Dịch vụ xuất báo cáo dùng tài khoản quyền cao của chính nó để đọc dữ liệu theo đường dẫn người dùng gửi lên mà không kiểm tra lại quyền của người dùng đó",
+      "Database bị quá tải vì thiếu chỉ mục trên cột `created_at`",
+      "Người dùng quên mật khẩu và yêu cầu gửi lại email xác nhận",
+      "Load Balancer chia tải không đều giữa các instance"
+    ],
+    "answer": 0,
+    "explain": "Trong Confused Deputy, một dịch vụ trung gian có đặc quyền bị đánh lừa thực thi hành động vượt quá quyền hạn của người dùng gọi ban đầu vì không mang theo ngữ cảnh danh tính người dùng."
+  }
+]

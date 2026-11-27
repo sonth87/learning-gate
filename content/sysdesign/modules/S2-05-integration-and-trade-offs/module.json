@@ -1,0 +1,29 @@
+{
+  "id": "S2-05",
+  "slug": "S2-05-integration-and-trade-offs",
+  "level": 2,
+  "order": 12,
+  "title": "Integration và Trade-off: ghép thành phần thành hệ thống",
+  "summary": "Ghép Load Balancer, Cache, Database, Message Queue và Worker thành kiến trúc hoàn chỉnh theo ràng buộc thực tế; đánh giá đánh đổi giữa xử lý đồng bộ và bất đồng bộ.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân tích tương tác giữa các thành phần thay vì chỉ chọn từng mảnh rời rạc" },
+    { "vi": "Áp dụng quy trình 5 bước từ yêu cầu bài toán đến sơ đồ luồng dữ liệu và điểm đánh đổi" },
+    { "vi": "So sánh trực tiếp xử lý ảnh đồng bộ (blocking) với xử lý bất đồng bộ qua Queue, Worker và Cache dưới tải cao" },
+    { "vi": "Ra quyết định mở rộng kiến trúc theo từng giai đoạn tăng trưởng dựa trên số đo và ngân sách" }
+  ],
+  "tags": ["integration", "trade-off", "architecture", "queue", "cache", "blog"],
+  "prerequisites": ["S2-01", "S2-02", "S2-04"],
+  "related": ["S1-05", "S5-01"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-2/lessons/lesson-5-integration-trade-off-thinking.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-2/lessons/lesson-5-integration-trade-off-thinking.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn từ bài gốc: loại bỏ giai thoại mở đầu và sơ đồ mermaid, tập trung vào khung quyết định 5 bước, ví dụ nền tảng blog và dịch vụ xử lý ảnh kèm mô phỏng tải thực tế."
+  }
+}

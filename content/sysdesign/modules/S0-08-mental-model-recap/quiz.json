@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-08.q1",
+    "type": "mc",
+    "q": "Một đồng nghiệp đề xuất tách ứng dụng thương mại điện tử của nhóm 4 kỹ sư (đang có 80 req/s ổn định) thành 18 microservices vì các tập đoàn lớn đều làm vậy. Tư duy nào của Phase 0 bị bỏ qua rõ nhất?",
+    "code": "",
+    "choices": [
+      "Tối ưu độ phức tạp thuật toán trong từng hàm",
+      "Không có giải pháp tốt nhất chung cho mọi quy mô và phải hỏi Tại sao theo đúng ràng buộc đội ngũ hiện tại",
+      "Luôn ưu tiên cơ sở dữ liệu NoSQL hơn cơ sở dữ liệu quan hệ",
+      "Mọi hệ thống đều bắt buộc chạy đa vùng ngay từ ngày đầu"
+    ],
+    "answer": 1,
+    "explain": "Sao chép kiến trúc của tập đoàn hàng nghìn kỹ sư vào nhóm 4 người ở mức tải 80 req/s tạo ra gánh nặng vận hành và độ trễ mạng không cần thiết, đi ngược lại tư duy khớp bối cảnh và hỏi Tại sao."
+  },
+  {
+    "id": "S0-08.q2",
+    "type": "mc",
+    "q": "API tra cứu lịch sử đơn hàng phản hồi mất 2,2 giây. Theo kỹ thuật truy nguyên 5 Whys, bước nào nên làm TRƯỚC khi đề xuất dựng thêm cụm bộ nhớ đệm phân tán?",
+    "code": "",
+    "choices": [
+      "Mua máy chủ ứng dụng lớn gấp bốn lần ngay lập tức",
+      "Đo xem thời gian 2,2 giây nằm ở chặng nào và kiểm tra kế hoạch thực thi truy vấn Database xem có thiếu chỉ mục hay không",
+      "Viết lại toàn bộ dịch vụ bằng ngôn ngữ lập trình khác",
+      "Tăng thời gian chờ timeout của trình duyệt lên 30 giây"
+    ],
+    "answer": 1,
+    "explain": "Truy nguyên nguyên nhân gốc giúp phát hiện những điểm nghẽn đơn giản như thiếu chỉ mục bảng hoặc truy vấn thừa N+1, giải quyết tận gốc mà không làm kiến trúc phức tạp thêm."
+  },
+  {
+    "id": "S0-08.q3",
+    "type": "tf",
+    "q": "Nếu mã nguồn của một dịch vụ tuân thủ chặt chẽ các nguyên tắc thiết kế hướng đối tượng và chạy kiểm thử đơn vị đạt 100%, dịch vụ đó chắc chắn không gây sự cố dây chuyền khi chạy trong hệ thống phân tán.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Kiểm thử đơn vị bên trong tiến trình không bảo vệ hệ thống khỏi các vấn đề cấp hệ thống như dịch vụ phụ thuộc phản hồi chậm làm cạn luồng xử lý, bão gọi lại (retry) hay mất đồng bộ khi cơ sở dữ liệu ngắt kết nối."
+  },
+  {
+    "id": "S0-08.q4",
+    "type": "output",
+    "q": "Trong Phase 0, chúng ta đã tổng kết bao nhiêu chuyển dịch tư duy (mindset shifts) cốt lõi làm nền tảng cho kiến trúc sư hệ thống? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4",
+    "explain": "Có 4 chuyển dịch tư duy cốt lõi: (1) Không có giải pháp tối ưu tuyệt đối, (2) Luôn hỏi Tại sao, (3) Đánh đổi quan trọng hơn công nghệ, và (4) Tư duy toàn hệ thống vượt lên trên tư duy mã nguồn đơn lẻ."
+  },
+  {
+    "id": "S0-08.q5",
+    "type": "mc",
+    "q": "Trình tự ra quyết định nào phản ánh đúng tư duy Đánh đổi quan trọng hơn công nghệ?",
+    "code": "",
+    "choices": [
+      "Chọn công nghệ đang thịnh hành → Tìm chỗ ghép vào dự án → Bỏ qua chi phí bảo trì",
+      "Hiểu bài toán & ràng buộc → Xếp hạng các cặp đánh đổi cốt lõi → Chọn công nghệ khớp nhất với các đánh đổi đó",
+      "Luôn chọn giải pháp đắt nhất để khỏi phải suy nghĩ về giới hạn",
+      "Chỉ viết mã trước rồi mới hỏi yêu cầu độ trễ khi người dùng phàn nàn"
+    ],
+    "answer": 1,
+    "explain": "Bài toán và ràng buộc xác định cặp đánh đổi nào được ưu tiên (ví dụ nhất quán chặt hay độ trễ thấp, chi phí rẻ hay dự phòng đa vùng), từ đó mới chọn công cụ phù hợp."
+  }
+]

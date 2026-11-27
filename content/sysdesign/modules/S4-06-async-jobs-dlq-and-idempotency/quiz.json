@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S4-06.q1",
+    "type": "mc",
+    "q": "Tác vụ nào sau đây KHÔNG nên đẩy sang xử lý bất đồng bộ qua Message Queue?",
+    "code": "",
+    "choices": [
+      "Gửi email xác nhận đơn hàng",
+      "Tạo file hóa đơn PDF và đồng bộ kho",
+      "Xác thực mật khẩu khi người dùng bấm Đăng nhập để quyết định cho vào trang chủ",
+      "Cập nhật số liệu thống kê hành vi người dùng"
+    ],
+    "answer": 2,
+    "explain": "Đăng nhập yêu cầu phản hồi tức thì (đúng hay sai) để điều hướng người dùng ngay lập tức, nên bắt buộc phải xử lý đồng bộ."
+  },
+  {
+    "id": "S4-06.q2",
+    "type": "mc",
+    "q": "Khi một job gửi email thất bại do dịch vụ SMTP tạm thời quá tải, chiến lược Retry nào an toàn nhất?",
+    "code": "",
+    "choices": [
+      "Thử lại ngay lập tức không giới hạn số lần",
+      "Exponential Backoff kèm Jitter và giới hạn số lần thử tối đa",
+      "Xóa luôn job ngay ở lần lỗi đầu tiên mà không ghi log",
+      "Tạm dừng toàn bộ Order API cho đến khi SMTP phục hồi"
+    ],
+    "answer": 1,
+    "explain": "Exponential Backoff giãn thời gian chờ giữa các lần thử, Jitter tránh nhiều Worker thử lại cùng một nhịp, và giới hạn số lần giúp không kẹt mãi vào một job."
+  },
+  {
+    "id": "S4-06.q3",
+    "type": "tf",
+    "q": "Dead Letter Queue (DLQ) dùng để chứa các thông điệp đã vượt quá số lần thử lại cho phép hoặc gặp lỗi vĩnh viễn, giúp hàng đợi chính không bị tắc nghẽn.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "DLQ cách ly các poison message để đội ngũ kỹ thuật kiểm tra, sửa lỗi và phát lại (replay) sau, trong khi các job hợp lệ khác vẫn được xử lý bình thường."
+  },
+  {
+    "id": "S4-06.q4",
+    "type": "mc",
+    "q": "Vì sao hệ thống dùng Message Queue với cơ chế giao tin at-least-once cần Idempotency Key ở Worker?",
+    "code": "",
+    "choices": [
+      "Để tăng tốc độ nén dữ liệu trên đường truyền",
+      "Vì một job có thể bị giao lại nhiều lần (khi Worker mất kết nối trước lúc Ack), nên Worker cần nhận diện khóa trùng để không thực hiện tác dụng phụ hai lần",
+      "Để bỏ qua bước lưu vào Database",
+      "Để giảm số lượng partition của hàng đợi"
+    ],
+    "answer": 1,
+    "explain": "Trong at-least-once delivery, việc Worker xử lý xong nhưng chết trước khi gửi Ack là bình thường. Idempotency Key đảm bảo lần giao lại không tạo đơn trùng hay trừ tiền hai lần."
+  },
+  {
+    "id": "S4-06.q5",
+    "type": "mc",
+    "q": "Khi đặt ràng buộc Idempotency trong Database, cách triển khai nào an toàn trước điều kiện tranh chấp (race condition)?",
+    "code": "",
+    "choices": [
+      "Chỉ kiểm tra bằng biến trong bộ nhớ RAM của từng Worker",
+      "Dùng cột idempotency_key có ràng buộc UNIQUE trong cùng giao dịch Database khi ghi kết quả",
+      "Chờ 5 giây rồi mới kiểm tra",
+      "Ghi vào file log cục bộ trên ổ đĩa Worker"
+    ],
+    "answer": 1,
+    "explain": "Biến RAM chỉ có tác dụng trên một máy và mất khi khởi động lại. Ràng buộc UNIQUE ở Database trong cùng giao dịch đảm bảo chỉ duy nhất một lần thực thi được xác nhận."
+  },
+  {
+    "id": "S4-06.q6",
+    "type": "output",
+    "q": "Một cụm có 4 Worker, mỗi Worker xử lý được 150 job/s. Nếu Order API đẩy vào hàng đợi trung bình 500 job/s và có đợt tăng đột biến 1.000 job/s kéo dài 10 giây, hàng đợi tích tụ thêm bao nhiêu job sau 10 giây đó? (nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "4000",
+    "explain": "Tổng năng lực 4 Worker là 4 × 150 = 600 job/s. Trong 10 giây đột biến ở mức 1.000 job/s, mỗi giây dư 1.000 − 600 = 400 job, nên sau 10 giây tích tụ thêm 4.000 job."
+  }
+]

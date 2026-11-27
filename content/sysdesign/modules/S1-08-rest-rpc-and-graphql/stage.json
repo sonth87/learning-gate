@@ -1,0 +1,291 @@
+{
+  "version": 1,
+  "base": "s1-contract",
+  "nodes": {
+    "client": {
+      "shape": "device",
+      "tone": "blue",
+      "label": { "vi": "Điện thoại 4G", "en": "Mobile 4G" },
+      "inspector": {
+        "what": { "vi": "Ứng dụng di động kết nối qua mạng 4G có RTT trung bình 120 ms.", "en": "Mobile client on 4G with ~120 ms network RTT." },
+        "how": { "vi": "Gửi yêu cầu HTTP/HTTPS tới API Gateway để dựng màn hình hồ sơ và đơn hàng.", "en": "Sends HTTP/HTTPS requests to the API Gateway to render screens." },
+        "why": { "vi": "Mỗi vòng khứ hồi qua mạng di động đắt gấp hơn 100 lần mạng nội bộ.", "en": "Each mobile round trip costs 100x more than an internal DC hop." },
+        "tip": { "vi": "Đo độ trễ trên mạng 4G thực tế thay vì chỉ đo trên Wi-Fi văn phòng.", "en": "Measure latency on real 4G networks rather than office Wi-Fi." }
+      }
+    },
+    "gateway": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateway", "en": "API Gateway" },
+      "inspector": {
+        "what": { "vi": "Cửa ngõ tiếp nhận yêu cầu từ client và điều phối tới các service nội bộ.", "en": "Entry gateway routing and aggregating calls to internal services." },
+        "how": { "vi": "Chấm dứt TLS, xác thực token và có thể chạy lớp tổng hợp GraphQL.", "en": "Terminates TLS, authenticates requests, and optionally hosts GraphQL." },
+        "why": { "vi": "Cho phép biến nhiều lời gọi mạng ngoài thành một lời gọi duy nhất từ phía thiết bị.", "en": "Turns multiple external round trips into a single mobile request." }
+      }
+    },
+    "users": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Users Service", "en": "Users Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ quản lý hồ sơ người dùng (~15 ms xử lý).", "en": "User profile microservice (~15 ms)." },
+        "how": { "vi": "Trả thông tin tài khoản qua REST JSON hoặc gRPC Protobuf.", "en": "Serves user records via REST JSON or gRPC Protobuf." },
+        "why": { "vi": "Tách biệt dữ liệu định danh khỏi đơn hàng và sản phẩm.", "en": "Isolates user identity data from order and catalog domains." }
+      }
+    },
+    "orders": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Orders Service", "en": "Orders Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ quản lý danh sách đơn hàng (~15 ms xử lý).", "en": "Order history microservice (~15 ms)." },
+        "how": { "vi": "Truy vấn các đơn hàng gần nhất theo mã người dùng.", "en": "Queries recent orders by user ID." },
+        "why": { "vi": "Cung cấp danh sách mã sản phẩm để màn hình hiển thị.", "en": "Provides item IDs needed for the order summary view." }
+      }
+    },
+    "items": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "cpu",
+      "label": { "vi": "Items Service", "en": "Items Service" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ thông tin chi tiết sản phẩm (~15 ms xử lý).", "en": "Product catalog microservice (~15 ms)." },
+        "how": { "vi": "Nhận danh sách mã sản phẩm và trả về tên, giá, ảnh thu nhỏ.", "en": "Batch-fetches item titles, prices, and thumbnails." },
+        "why": { "vi": "Tránh N+1 bằng cách hỗ trợ truy vấn hàng loạt theo danh sách ID.", "en": "Supports batch lookup by IDs to avoid N+1 calls." }
+      }
+    }
+  },
+  "links": {
+    "client-gateway": {
+      "inspector": {
+        "what": { "vi": "Đường truyền mạng di động 4G (120 ms/RTT).", "en": "4G mobile network link (120 ms/RTT)." },
+        "how": { "vi": "Mỗi yêu cầu tuần tự chịu thêm một lần 120 ms.", "en": "Each sequential request incurs another 120 ms round trip." },
+        "why": { "vi": "Là thành phần chi phối tổng thời gian tải màn hình.", "en": "Dominates end-to-end screen load time." }
+      }
+    },
+    "gateway-users": {
+      "inspector": {
+        "what": { "vi": "Kết nối nội bộ DC tới Users Service (1 ms).", "en": "Internal DC link to Users Service (1 ms)." },
+        "how": { "vi": "Giao tiếp qua mạng LAN hoặc gRPC trên HTTP/2.", "en": "Communicates over internal LAN or gRPC HTTP/2." },
+        "why": { "vi": "Độ trễ cực thấp nên gọi nhiều service nội bộ không đáng kể so với 4G.", "en": "Negligible latency compared to the 4G WAN hop." }
+      }
+    },
+    "gateway-orders": {
+      "inspector": {
+        "what": { "vi": "Kết nối nội bộ DC tới Orders Service (1 ms).", "en": "Internal DC link to Orders Service (1 ms)." },
+        "how": { "vi": "Truyền tải danh sách đơn hàng trong trung tâm dữ liệu.", "en": "Transfers order records within the data center." },
+        "why": { "vi": "Đặt chung vùng mạng giúp gom dữ liệu nhanh.", "en": "Same-AZ placement keeps aggregation fast." }
+      }
+    },
+    "gateway-items": {
+      "inspector": {
+        "what": { "vi": "Kết nối nội bộ DC tới Items Service (1 ms).", "en": "Internal DC link to Items Service (1 ms)." },
+        "how": { "vi": "Gửi lô mã sản phẩm cần lấy thông tin.", "en": "Sends batched item IDs for lookup." },
+        "why": { "vi": "Giảm số lần gọi qua mạng nội bộ.", "en": "Reduces internal network chatter." }
+      }
+    }
+  },
+  "layout": {
+    "client": { "col": 0, "row": 1 },
+    "gateway": { "col": 2, "row": 1 },
+    "users": { "col": 4, "row": 0 },
+    "orders": { "col": 4, "row": 1 },
+    "items": { "col": 4, "row": 2 }
+  },
+  "zones": {
+    "dc": {
+      "nodeIds": ["gateway", "users", "orders", "items"],
+      "label": { "vi": "TRUNG TÂM DỮ LIỆU (1 ms RTT)", "en": "DATA CENTER (1 ms RTT)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-contract": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "gateway": { "loadPct": 15 },
+        "users": { "loadPct": 12 },
+        "orders": { "loadPct": 14 },
+        "items": { "loadPct": 12 }
+      },
+      "linkState": {
+        "client-gateway": { "label": { "vi": "4G: 120 ms/RTT", "en": "4G: 120 ms/RTT" } },
+        "gateway-users": { "label": { "vi": "1 ms", "en": "1 ms" } },
+        "gateway-orders": { "label": { "vi": "1 ms", "en": "1 ms" } },
+        "gateway-items": { "label": { "vi": "1 ms", "en": "1 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chi phí mạng ngoài vs nội bộ", "en": "WAN vs DC Network Cost" },
+        "lines": [
+          { "text": { "vi": "Mạng 4G: 120 ms mỗi vòng khứ hồi", "en": "4G WAN: 120 ms per round trip" }, "tone": "amber" },
+          { "text": { "vi": "Nội bộ DC: 1 ms mỗi vòng khứ hồi", "en": "Internal DC: 1 ms per round trip" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-rest": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "gateway": { "loadPct": 18, "badge": { "text": { "vi": "REST JSON", "en": "REST JSON" }, "tone": "ok" } },
+        "users": { "loadPct": 15 },
+        "orders": { "loadPct": 15 },
+        "items": { "loadPct": 15 }
+      },
+      "linkState": {
+        "client-gateway": { "label": { "vi": "GET /users, /orders, /items", "en": "GET /users, /orders, /items" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "REST: tài nguyên cố định", "en": "REST: Fixed Resources" },
+        "lines": [
+          { "text": { "vi": "Dễ đọc, dễ cache HTTP GET ở CDN", "en": "Simple, CDN-cacheable HTTP GET" }, "tone": "good" },
+          { "text": { "vi": "Mỗi tài nguyên cần một endpoint riêng", "en": "Each resource has a fixed endpoint" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-rest-waterfall": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Waterfall REST tuần tự trên 4G (3 RTT = 405 ms)", "en": "Sequential REST Waterfall on 4G (3 RTT = 405 ms)" },
+        "subtitle": { "vi": "Mỗi bước phải chờ kết quả bước trước để biết ID gọi tiếp, trả về tổng 56 KB JSON (thừa 48 KB)", "en": "Each call waits for the previous ID, returning 56 KB JSON (48 KB unused)" },
+        "cells": [
+          "1. GET /users (135 ms)",
+          "2. GET /orders (135 ms)",
+          "3. GET /items (135 ms)",
+          "Tổng: 405 ms · 56 KB"
+        ],
+        "activeIndices": [0, 1, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "120 ms 4G + 15 ms", "tone": "orange" },
+          { "index": 1, "label": "120 ms 4G + 15 ms", "tone": "orange" },
+          { "index": 2, "label": "120 ms 4G + 15 ms", "tone": "rose" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hiệu quả", "en": "Efficiency" },
+          "value": { "vi": "3 RTT · 405 ms · dư 48 KB payload", "en": "3 RTT · 405 ms · 48 KB over-fetched" },
+          "tone": "rose"
+        }
+      }
+    },
+    "s4-graphql-waterfall": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Waterfall GraphQL trên 4G (1 RTT = 167 ms)", "en": "GraphQL Waterfall on 4G (1 RTT = 167 ms)" },
+        "subtitle": { "vi": "Điện thoại gửi 1 truy vấn, Gateway gọi 3 chặng nội bộ (1 ms/chặng) và lọc đúng 8 KB trường cần thiết", "en": "Phone sends 1 query, Gateway fans out over 1 ms DC links and returns 8 KB" },
+        "cells": [
+          "1. POST /graphql (120 ms 4G)",
+          "2. DC: Users+Orders (16 ms)",
+          "3. DC: Items (16 ms)",
+          "Tổng: 167 ms · 8 KB"
+        ],
+        "activeIndices": [0, 1, 2, 3],
+        "pointers": [
+          { "index": 0, "label": "Chỉ 1 RTT mạng ngoài", "tone": "green" },
+          { "index": 3, "label": "Tiết kiệm 238 ms & 48 KB", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Hiệu quả", "en": "Efficiency" },
+          "value": { "vi": "1 RTT · 167 ms · đúng 8 KB cần dùng", "en": "1 RTT · 167 ms · exact 8 KB payload" },
+          "tone": "green"
+        }
+      }
+    },
+    "s5-graphql-tradeoff": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Rủi ro khi mở GraphQL", "en": "GraphQL Risks" },
+        "rightTitle": { "vi": "Biện pháp kiểm soát", "en": "Mitigations" },
+        "names": [
+          { "id": "deep", "name": "Query lồng quá sâu", "note": { "vi": "Làm cạn CPU Gateway & DB", "en": "Exhausts Gateway & DB CPU" }, "targetId": "depth-limit", "style": "danger" },
+          { "id": "nplus1", "name": "Lỗi N+1 ở Resolver", "note": { "vi": "20 item thành 20 query lẻ", "en": "20 items trigger 20 queries" }, "targetId": "dataloader", "style": "danger" },
+          { "id": "cache", "name": "POST /graphql khó cache CDN", "note": { "vi": "URL giống nhau cho mọi query", "en": "Same URL for all queries" }, "targetId": "persisted", "style": "solid" }
+        ],
+        "objects": [
+          { "id": "depth-limit", "typeTag": "GUARD", "value": "Depth & Cost Limit", "fields": ["Chặn query > 5 tầng", "Tính điểm chi phí trước khi chạy"], "tone": "green", "badge": { "vi": "Bảo vệ tài nguyên", "en": "Protects backend" } },
+          { "id": "dataloader", "typeTag": "BATCH", "value": "DataLoader", "fields": ["Gom nhiều ID thành 1 batch", "Chạy trong 1 tick sự kiện"], "tone": "green", "badge": { "vi": "Loại bỏ N+1", "en": "Eliminates N+1" } },
+          { "id": "persisted", "typeTag": "CACHE", "value": "Persisted Queries (GET)", "fields": ["Gửi hash query qua HTTP GET", "Cho phép CDN lưu đệm"], "tone": "yellow", "badge": { "vi": "Bù lại cache HTTP", "en": "Restores HTTP caching" } }
+        ]
+      }
+    },
+    "s6-grpc-waterfall": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "So sánh payload nội bộ: REST JSON vs gRPC Protobuf", "en": "Internal Payload: REST JSON vs gRPC Protobuf" },
+        "subtitle": { "vi": "Trong trung tâm dữ liệu, gRPC loại bỏ tên trường lặp lại và chạy ghép kênh trên HTTP/2", "en": "Inside the DC, gRPC removes repeated field names and multiplexes over HTTP/2" },
+        "cells": [
+          "JSON: 8 KB văn bản",
+          "Giải mã JSON: ~2,5 ms",
+          "Protobuf: 2 KB nhị phân",
+          "Giải mã Protobuf: ~0,4 ms"
+        ],
+        "activeIndices": [2, 3],
+        "pointers": [
+          { "index": 0, "label": "Lặp tên trường", "tone": "yellow" },
+          { "index": 2, "label": "Nhỏ hơn 4 lần", "tone": "green" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Nội bộ DC", "en": "Internal DC" },
+          "value": { "vi": "gRPC giảm 75% băng thông & CPU parse", "en": "gRPC cuts 75% bandwidth & parse CPU" },
+          "tone": "green"
+        }
+      }
+    },
+    "s7-cursor-version": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": { "vi": "Vấn đề vận hành API", "en": "API Operations" },
+        "rightTitle": { "vi": "Mẫu giải quyết chuẩn", "en": "Standard Pattern" },
+        "names": [
+          { "id": "offset", "name": "OFFSET 1.000.000", "note": { "vi": "Quét bỏ 1 triệu dòng đầu", "en": "Scans & discards 1M rows" }, "targetId": "cursor", "style": "danger" },
+          { "id": "breaking", "name": "Đổi tên trường JSON", "note": { "vi": "App di động bản cũ bị lỗi", "en": "Breaks older mobile apps" }, "targetId": "additive", "style": "danger" }
+        ],
+        "objects": [
+          { "id": "cursor", "typeTag": "PAGINATION", "value": "Cursor (after_id)", "fields": ["WHERE id > cursor LIMIT 20", "Thời gian ổn định O(1) qua Index"], "tone": "green", "badge": { "vi": "Không sót/trùng dòng", "en": "No skipped/dup rows" } },
+          { "id": "additive", "typeTag": "VERSIONING", "value": "Additive Evolution", "fields": ["Chỉ thêm trường mới, giữ trường cũ", "Tách /v2/ khi buộc thay đổi lớn"], "tone": "green", "badge": { "vi": "Tương thích ngược", "en": "Backward compatible" } }
+        ]
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "gateway": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "REST / GraphQL", "en": "REST / GraphQL" }, "tone": "ok" } },
+        "users": { "loadPct": 10, "badge": { "text": { "vi": "gRPC", "en": "gRPC" }, "tone": "ok" } },
+        "orders": { "loadPct": 10, "badge": { "text": { "vi": "gRPC", "en": "gRPC" }, "tone": "ok" } },
+        "items": { "loadPct": 10, "badge": { "text": { "vi": "gRPC", "en": "gRPC" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "client-gateway": { "label": { "vi": "1 RTT cho màn hình phức tạp", "en": "1 RTT for complex screens" } },
+        "gateway-users": { "label": { "vi": "Protobuf nhị phân", "en": "Binary Protobuf" } },
+        "gateway-orders": { "label": { "vi": "Protobuf nhị phân", "en": "Binary Protobuf" } },
+        "gateway-items": { "label": { "vi": "Protobuf nhị phân", "en": "Binary Protobuf" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kết hợp theo lớp mạng", "en": "Layered Protocol Fit" },
+        "lines": [
+          { "text": { "vi": "Biên ngoài: GraphQL (giảm RTT) hoặc REST (cache CDN)", "en": "Edge: GraphQL (fewer RTTs) or REST (CDN cache)" }, "tone": "good" },
+          { "text": { "vi": "Nội bộ: gRPC + Protobuf tối ưu băng thông & CPU", "en": "Internal: gRPC + Protobuf for speed & contracts" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-01.c1",
+    "front": "Sự khác biệt cốt lõi giữa tư duy Code-first và Problem-first trong thiết kế hệ thống là gì?",
+    "back": "Code-first phản xạ chọn ngay công cụ quen thuộc khi vừa nghe yêu cầu; Problem-first bắt đầu bằng việc định lượng vấn đề, đo tìm nguyên nhân gốc, so sánh các phương án kèm chi phí rồi mới chọn giải pháp phù hợp."
+  },
+  {
+    "id": "S0-01.c2",
+    "front": "Năm câu hỏi cần làm rõ trước khi quyết định thêm một công nghệ mới là gì?",
+    "back": "1) Bài toán định lượng cụ thể là gì? 2) Tại sao vấn đề xảy ra (hỏi Why ≥ 3 lần)? 3) Giải pháp tác động định lượng thế nào? 4) Chi phí vận hành và độ phức tạp đi kèm là gì? 5) Có phương án nào đơn giản hơn không?"
+  },
+  {
+    "id": "S0-01.c3",
+    "front": "Vì sao sao chép kiến trúc Microservices của các tập đoàn lớn cho sản phẩm mới là sai lầm?",
+    "back": "Vì sản phẩm mới chưa có bài toán mở rộng quy mô hàng trăm nhóm kỹ sư nhưng lại phải gánh ngay chi phí triển khai chậm, gỡ lỗi qua mạng phức tạp và tốn nhân lực vận hành."
+  },
+  {
+    "id": "S0-01.c4",
+    "front": "Khi một trang web phản hồi chậm, quy trình 4 bước của Problem-first xử lý như thế nào?",
+    "back": "1) Đo thời gian từng chặng để xác định nơi chiếm tỷ trọng lớn nhất; 2) Phân tích nguyên nhân gốc (ví dụ thiếu Index); 3) So sánh các phương án từ đơn giản đến phức tạp; 4) Thực hiện cách đơn giản trước rồi đo lại."
+  },
+  {
+    "id": "S0-01.c5",
+    "front": "Những yêu cầu ẩn nào thường cần hỏi rõ khi thiết kế tính năng đếm lượt xem (View Count)?",
+    "back": "Độ chính xác có cần tuyệt đối theo thời gian thực không, lưu lượng đọc/ghi mỗi giây là bao nhiêu, có cần lưu lịch sử theo ngày/giờ để tính xu hướng không, và cơ chế chặn bot tăng ảo là gì."
+  },
+  {
+    "id": "S0-01.c6",
+    "front": "Tiêu chí chọn giải pháp theo tư duy kiến trúc là tốt nhất (Best) hay phù hợp nhất (Fit)?",
+    "back": "Phù hợp nhất (Fit): chọn phương án đơn giản nhất giải quyết trọn vẹn yêu cầu định lượng và nằm trong giới hạn ngân sách, thời gian, năng lực vận hành của đội ngũ hiện tại."
+  }
+]

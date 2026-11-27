@@ -1,0 +1,53 @@
+[
+  {
+    "id": "S7-03.q1",
+    "type": "mc",
+    "q": "Vì sao không nên dùng chung một hàng đợi FIFO cho cả mã OTP giao dịch và chiến dịch tiếp thị 10 triệu tin?",
+    "code": "",
+    "choices": [
+      "Chiến dịch tiếp thị sẽ lấp đầy hàng đợi, làm mã OTP bị kẹt phía sau và hết hạn trước khi tới tay người dùng",
+      "Hàng đợi FIFO không hỗ trợ gửi tin nhắn văn bản",
+      "OTP và tiếp thị không thể chạy trên cùng một ngôn ngữ lập trình",
+      "Tách hàng đợi luôn tốn kém hơn gấp 100 lần"
+    ],
+    "answer": 0,
+    "explain": "Trong hàng đợi FIFO duy nhất, 10 triệu tin tiếp thị đẩy vào trước sẽ buộc mọi mã OTP phải chờ đến lượt, gây trễ hàng chục phút cho giao dịch khẩn cấp."
+  },
+  {
+    "id": "S7-03.q2",
+    "type": "tf",
+    "q": "Khi nhà cung cấp SMS/Push phản hồi chậm, bật Retry tức thì không Jitter sẽ khuếch đại tải và kéo dài thời gian nghẽn.",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Retry tức thì nhân số lượng request đổ vào đúng đối tác đang chậm. Cần kết hợp Exponential Backoff, Full Jitter và Circuit Breaker."
+  },
+  {
+    "id": "S7-03.q3",
+    "type": "mc",
+    "q": "Cơ chế nào giúp chống gửi trùng thông báo khi hàng đợi giao thông điệp theo kiểu ít nhất một lần (at-least-once)?",
+    "code": "",
+    "choices": [
+      "Lưu dedup_key (idempotency key) trong Redis/DB với TTL và kiểm tra nguyên tử trước khi gọi nhà cung cấp",
+      "Tắt cơ chế xác nhận ACK trên hàng đợi",
+      "Chạy duy nhất 1 worker cho toàn hệ thống",
+      "Giảm kích thước payload JSON"
+    ],
+    "answer": 0,
+    "explain": "Vì hàng đợi có thể giao lại cùng một thông điệp khi worker khởi động lại hoặc mất mạng, kiểm tra dedup_key nguyên tử trước khi gửi sẽ chặn được các lần gửi trùng."
+  },
+  {
+    "id": "S7-03.q4",
+    "type": "mc",
+    "q": "Vì sao Delivery Workers cần có bộ điều tiết tốc độ (Rate Limiter) ở đầu ra khi gọi APNs, FCM hoặc cổng SMS?",
+    "code": "",
+    "choices": [
+      "Để không vượt quá hạn mức (quota) của nhà cung cấp bên thứ ba và tránh bị chặn IP/tài khoản",
+      "Để làm chậm mã OTP cho khớp với tin tiếp thị",
+      "Để tăng số lượng lỗi HTTP 429 từ đối tác",
+      "Để loại bỏ hoàn toàn nhu cầu dùng hàng đợi"
+    ],
+    "answer": 0,
+    "explain": "Mỗi nhà cung cấp ngoài đều có giới hạn số tin/giây. Điều tiết tốc độ ở đầu ra của Worker giúp giữ nhịp gửi ổn định trong hạn mức cho phép."
+  }
+]

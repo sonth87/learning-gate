@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-07.q1",
+    "type": "mc",
+    "q": "Vì sao sau khi biết tổng số request mỗi ngày (Scale), kỹ sư vẫn bắt buộc phải hỏi tiếp về Mẫu lưu lượng (Traffic Pattern)?",
+    "code": "",
+    "choices": [
+      "Vì tổng số request mỗi ngày không dùng để tính dung lượng ổ cứng",
+      "Vì cùng tổng lượt gọi trong ngày nhưng tải dồn vào vài phút cao điểm và tỉ lệ Đọc:Ghi quyết định hẳn chiến lược Cache, Queue và Autoscaling",
+      "Vì Traffic Pattern cho biết ngôn ngữ lập trình nào chạy nhanh nhất",
+      "Vì chỉ những hệ thống nhỏ mới có đỉnh tải theo giờ"
+    ],
+    "answer": 1,
+    "explain": "Tổng lượt gọi chia đều cho 86.400 giây chỉ cho RPS trung bình. Nếu lưu lượng dồn gấp 5–10 lần vào giờ mở bán hoặc 95% là đọc lặp lại, kiến trúc cần bộ nhớ đệm và hàng đợi khác hẳn tải phẳng."
+  },
+  {
+    "id": "S0-07.q2",
+    "type": "output",
+    "q": "Một dịch vụ lưu 2 triệu bản ghi mới mỗi ngày, trung bình mỗi bản ghi nặng 500 byte. Mỗi ngày dữ liệu thô tăng thêm bao nhiêu GB (tính gần đúng 1 GB = 10^9 byte, chỉ nhập số nguyên)?",
+    "code": "",
+    "choices": [],
+    "answer": "1",
+    "explain": "2.000.000 bản ghi × 500 byte = 1.000.000.000 byte = 10^9 byte ≈ 1 GB mỗi ngày (tương đương khoảng 365 GB mỗi năm, vẫn đủ gọn cho một cụm cơ sở dữ liệu đơn chưa cần phân mảnh phức tạp)."
+  },
+  {
+    "id": "S0-07.q3",
+    "type": "tf",
+    "q": "Khi bên yêu cầu nói hệ thống cần độ sẵn sàng rất cao và không bao giờ dừng, kỹ sư nên thiết kế ngay kiến trúc đa vùng 99,999% mà không cần hỏi lại ngân sách hay thời gian gián đoạn chấp nhận được.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Mỗi chữ số 9 thêm vào làm chi phí hạ tầng và công sức trực vận hành tăng gấp nhiều lần. Kỹ sư phải làm rõ con số downtime chấp nhận được (ví dụ 43 phút/tháng ở 99,9% so với 5 phút/năm ở 99,999%) và đối chiếu với ngân sách."
+  },
+  {
+    "id": "S0-07.q4",
+    "type": "mc",
+    "q": "Cặp tính năng nào dưới đây ghép ĐÚNG với yêu cầu Tính nhất quán (Consistency) hợp lý nhất?",
+    "code": "",
+    "choices": [
+      "Trừ số dư ví điện tử: Eventual Consistency; Bộ đếm lượt xem video: Strong Consistency",
+      "Trừ số dư ví điện tử: Strong Consistency; Bộ đếm lượt xem video: Eventual Consistency",
+      "Cả hai đều bắt buộc dùng Eventual Consistency để tiết kiệm máy chủ",
+      "Cả hai đều không liên quan tới câu hỏi Consistency"
+    ],
+    "answer": 1,
+    "explain": "Giao dịch tiền tệ và tồn kho không chấp nhận đọc sai số dư sau khi trừ nên cần Strong Consistency; ngược lại lượt xem video lệch vài đơn vị trong vài giây không ảnh hưởng trải nghiệm nên dùng Eventual Consistency để tăng tốc độ."
+  },
+  {
+    "id": "S0-07.q5",
+    "type": "mc",
+    "q": "Đề bài yêu cầu đồng thời: độ trễ p99 dưới 15 ms cho người dùng toàn cầu, nhất quán tức thời mọi thao tác ghi xuyên lục địa và ngân sách hạ tầng tối đa 80 USD/tháng. Phản ứng chuyên nghiệp nhất là gì?",
+    "code": "",
+    "choices": [
+      "Nhận lời ngay rồi âm thầm bỏ bớt yêu cầu trong lúc lập trình",
+      "Chỉ ra ngay mâu thuẫn vật lý (RTT xuyên lục địa và chi phí đa vùng) dựa trên bảng 7 câu hỏi, rồi cùng thống nhất thứ tự ưu tiên",
+      "Chọn một cơ sở dữ liệu mới nhất với kỳ vọng tự khắc phục được độ trễ ánh sáng",
+      "Chỉ tập trung tối ưu thuật toán sắp xếp trong mã nguồn ứng dụng"
+    ],
+    "answer": 1,
+    "explain": "Một trong những giá trị lớn nhất của bảng kiểm 7 câu hỏi là phát hiện sớm các yêu cầu xung đột nhau để minh bạch hóa đánh đổi và chốt lại biên bài toán khả thi trước khi thiết kế."
+  }
+]

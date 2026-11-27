@@ -1,0 +1,313 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "device",
+      "tone": "blue",
+      "label": { "vi": "Thiết bị", "en": "Device" },
+      "inspector": {
+        "what": {
+          "vi": "Trình duyệt hoặc ứng dụng di động phát sinh request từ phía người dùng.",
+          "en": "Browser or mobile client initiating the HTTP request."
+        },
+        "how": {
+          "vi": "Thực hiện tuần tự: tra cứu địa chỉ IP trên DNS trước, sau đó bắt tay kết nối và gửi HTTP request tới Web Server.",
+          "en": "Sequentially resolves DNS first, then establishes TCP/TLS and sends the HTTP request."
+        },
+        "why": {
+          "vi": "Là điểm đo độ trễ đầu-cuối (End-to-End Latency) mà người dùng thực sự trải nghiệm.",
+          "en": "Measures true user-perceived end-to-end latency including WAN round trips."
+        },
+        "tip": {
+          "vi": "Số liệu đo tại Server không bao gồm DNS và RTT mạng ngoài; cần đối chiếu thêm chỉ số từ phía trình duyệt.",
+          "en": "Server-side logs miss DNS and client WAN RTT; always pair backend metrics with client waterfall traces."
+        }
+      }
+    },
+    "dns": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "globe",
+      "label": { "vi": "DNS Resolver", "en": "DNS Resolver" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ phân giải tên miền thành địa chỉ IP kèm thời hạn lưu đệm TTL.",
+          "en": "Recursive DNS resolver translating domain names into IP addresses with TTL."
+        },
+        "how": {
+          "vi": "Lần tra cứu nguội tốn khoảng 20 ms; các lượt kế tiếp trong cửa sổ TTL được lấy thẳng từ bộ nhớ đệm cục bộ.",
+          "en": "Cold lookups take ~20 ms; subsequent requests within TTL resolve in ~0 ms locally."
+        },
+        "why": {
+          "vi": "Tách tên miền cố định của ứng dụng khỏi địa chỉ IP vật lý có thể thay đổi phía dưới.",
+          "en": "Decouples human-readable domain names from underlying server IP addresses."
+        },
+        "tip": {
+          "vi": "Hạ TTL xuống ngắn (30–60 giây) trước khi chuyển đổi hạ tầng để giảm thời gian client gọi nhầm IP cũ.",
+          "en": "Lower DNS TTL ahead of planned migrations to shrink the stale-IP window."
+        }
+      }
+    },
+    "web": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Web Server", "en": "Web Server" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ tiếp nhận kết nối TCP/TLS, xử lý HTTP và chạy logic ứng dụng (~18 ms).",
+          "en": "Application web server terminating TCP/TLS and executing request logic (~18 ms)."
+        },
+        "how": {
+          "vi": "Xác thực yêu cầu, truy vấn dữ liệu từ Database trong cùng vùng mạng rồi đóng gói phản hồi trả về.",
+          "en": "Validates the HTTP request, queries the co-located Database, and serializes the response."
+        },
+        "why": {
+          "vi": "Chấm dứt kết nối bảo mật và điều phối luồng dữ liệu trả về cho thiết bị.",
+          "en": "Terminates secure transport and orchestrates backend data retrieval."
+        },
+        "tip": {
+          "vi": "Bật HTTP Keep-Alive và HTTP/2 để hàng chục request kế tiếp dùng lại kết nối TLS đã mở.",
+          "en": "Enable HTTP Keep-Alive and HTTP/2 multiplexing to amortize handshake RTTs."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trữ dữ liệu ứng dụng (truy vấn chuẩn ~15 ms, khi thiếu chỉ mục vọt lên 400 ms).",
+          "en": "Backing Database (~15 ms indexed query, spiking to 400 ms on unindexed scan)."
+        },
+        "how": {
+          "vi": "Nhận truy vấn qua mạng nội bộ tốc độ cao (~1 ms) và đọc dữ liệu từ bộ nhớ/đĩa.",
+          "en": "Executes SQL queries over a 1 ms same-AZ link."
+        },
+        "why": {
+          "vi": "Cung cấp dữ liệu động cần thiết để lắp ghép câu trả lời HTTP.",
+          "en": "Supplies persistent dynamic data for the response."
+        },
+        "tip": {
+          "vi": "Trên biểu đồ Waterfall, một thanh span Database kéo dài bất thường là dấu hiệu trực tiếp cần kiểm tra EXPLAIN.",
+          "en": "A wide Database span in a request waterfall points directly to slow query execution."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-dns": {
+      "inspector": {
+        "what": { "vi": "Chặng hỏi địa chỉ IP từ Thiết bị tới DNS Resolver.", "en": "DNS query hop from Device to DNS Resolver." },
+        "how": { "vi": "Tốn 1 vòng khứ hồi tới trình phân giải (~18 ms mạng + ~2 ms xử lý) khi chưa có trong bộ đệm.", "en": "Costs one round trip (~18 ms network + ~2 ms lookup) on cache miss." },
+        "why": { "vi": "Cần có địa chỉ IP đích trước khi mở kết nối TCP.", "en": "Required to obtain the target IP before opening a TCP socket." }
+      }
+    },
+    "client-web": {
+      "inspector": {
+        "what": { "vi": "Đường kết nối HTTPS qua Internet từ Thiết bị tới Web Server.", "en": "Public Internet HTTPS connection from Device to Web Server." },
+        "how": { "vi": "Với kết nối mới gồm 2 RTT bắt tay TCP/TLS cộng 1 RTT gửi nhận HTTP (tổng 3 × 25 ms = 75 ms).", "en": "Includes 2 RTTs for TCP+TLS 1.3 handshake plus 1 HTTP RTT (75 ms at 25 ms RTT)." },
+        "why": { "vi": "Thiết lập kênh truyền tin cậy, chống nghe lén và truyền tải dữ liệu ứng dụng.", "en": "Provides encrypted, reliable transport over public networks." }
+      }
+    },
+    "web-db": {
+      "inspector": {
+        "what": { "vi": "Kết nối nội bộ cùng vùng khả dụng từ Web Server sang Database.", "en": "Same-AZ internal connection from Web Server to Database." },
+        "how": { "vi": "Dùng sẵn kết nối trong Connection Pool nên độ trễ truyền mạng chỉ khoảng 1 ms.", "en": "Uses pooled connections over a ~1 ms private LAN hop." },
+        "why": { "vi": "Giúp ứng dụng đọc ghi dữ liệu mà không chịu chi phí bắt tay mạng lặp lại.", "en": "Fetches persistent state with minimal internal network overhead." }
+      }
+    }
+  },
+  "zones": {
+    "dc": {
+      "nodeIds": ["web", "db"],
+      "label": { "vi": "TRUNG TÂM DỮ LIỆU (SAME-AZ)", "en": "DATA CENTER (SAME-AZ)" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "dns": { "loadPct": 5 },
+        "web": { "loadPct": 12 },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "client-dns": { "label": { "vi": "1. DNS ~20 ms", "en": "1. DNS ~20 ms" } },
+        "client-web": { "label": { "vi": "2. Kết nối + HTTP ~75 ms", "en": "2. Connect + HTTP ~75 ms" } },
+        "web-db": { "label": { "vi": "3. Nội bộ ~1 ms", "en": "3. LAN ~1 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Vòng đời một request (~129 ms)", "en": "Request Lifecycle (~129 ms)" },
+        "lines": [
+          { "text": { "vi": "DNS: ~20 ms · Kết nối & HTTP: ~75 ms", "en": "DNS: ~20 ms · Connect & HTTP: ~75 ms" }, "tone": "plain" },
+          { "text": { "vi": "Web: ~18 ms · Database: ~16 ms", "en": "Web: ~18 ms · Database: ~16 ms" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-dns": {
+      "show": { "nodes": ["client", "dns"] },
+      "state": {
+        "dns": { "loadPct": 5, "highlighted": true, "badge": { "text": { "vi": "TTL = 60s", "en": "TTL = 60s" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "client-dns": { "label": { "vi": "Tra cứu ~20 ms", "en": "Lookup ~20 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chặng 1: Phân giải DNS", "en": "Step 1: DNS Resolution" },
+        "lines": [
+          { "text": { "vi": "Tên miền → Địa chỉ IP máy chủ", "en": "Domain name → Server IP" }, "tone": "plain" },
+          { "text": { "vi": "Lần gọi sau trong 60s: 0 ms (từ đệm)", "en": "Cached calls within 60s: 0 ms" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-connect": {
+      "show": { "nodes": ["client", "dns", "web"] },
+      "state": {
+        "dns": { "dimmed": true },
+        "web": { "loadPct": 12, "highlighted": true, "badge": { "text": { "vi": "TCP + TLS 1.3", "en": "TCP + TLS 1.3" }, "tone": "default" } }
+      },
+      "linkState": {
+        "client-dns": { "style": "off" },
+        "client-web": { "label": { "vi": "2 RTT bắt tay + 1 RTT HTTP", "en": "2 RTT handshake + 1 RTT HTTP" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chặng 2: Mở kết nối (RTT = 25 ms)", "en": "Step 2: Handshake (RTT = 25 ms)" },
+        "lines": [
+          { "text": { "vi": "TCP (1 RTT) + TLS 1.3 (1 RTT) = 50 ms", "en": "TCP (1 RTT) + TLS 1.3 (1 RTT) = 50 ms" }, "tone": "amber" },
+          { "text": { "vi": "Truyền HTTP khứ hồi (1 RTT) = 25 ms", "en": "HTTP round trip (1 RTT) = 25 ms" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-backend": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "dns": { "loadPct": 5 },
+        "web": { "loadPct": 12, "highlighted": true, "badge": { "text": { "vi": "18 ms", "en": "18 ms" }, "tone": "ok" } },
+        "db": { "loadPct": 10, "highlighted": true, "badge": { "text": { "vi": "15 ms", "en": "15 ms" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "web-db": { "label": { "vi": "1 ms", "en": "1 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chặng 3 & 4: Xử lý Backend", "en": "Steps 3 & 4: Backend Execution" },
+        "lines": [
+          { "text": { "vi": "Web + DB chỉ mất ~34 ms (26%)", "en": "Web + DB take ~34 ms (26%)" }, "tone": "good" },
+          { "text": { "vi": "DNS + Mạng ngoài chiếm ~95 ms (74%)", "en": "DNS + WAN take ~95 ms (74%)" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-http2": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "dns": { "dimmed": true, "badge": { "text": { "vi": "Đệm cục bộ", "en": "Cached" }, "tone": "default" } },
+        "web": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "HTTP/2 Keep-Alive", "en": "HTTP/2 Keep-Alive" }, "tone": "ok" } },
+        "db": { "loadPct": 12 }
+      },
+      "linkState": {
+        "client-dns": { "style": "dashed", "label": { "vi": "0 ms (còn TTL)", "en": "0 ms (within TTL)" } },
+        "client-web": { "label": { "vi": "1 RTT = 25 ms", "en": "1 RTT = 25 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Kết nối ấm tái sử dụng", "en": "Warm Reused Connection" },
+        "lines": [
+          { "text": { "vi": "Bỏ DNS (−20 ms) & bắt tay (−50 ms)", "en": "Skips DNS (−20 ms) & TLS (−50 ms)" }, "tone": "good" },
+          { "text": { "vi": "Tổng giảm từ ~129 ms còn ~59 ms", "en": "Total drops from ~129 ms to ~59 ms" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-live": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bấm gói tin để mở Tracer", "en": "Click a Packet to Open Tracer" },
+        "lines": [
+          { "text": { "vi": "Trước t = 25 s: DB 15 ms (~129 ms)", "en": "Before t = 25 s: DB 15 ms (~129 ms)" }, "tone": "good" },
+          { "text": { "vi": "Sau t = 25 s: DB 400 ms (~514 ms)", "en": "After t = 25 s: DB 400 ms (~514 ms)" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-rtt": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "client": { "highlighted": true, "badge": { "text": { "vi": "RTT = 150 ms", "en": "RTT = 150 ms" }, "tone": "warn" } },
+        "dns": { "dimmed": true },
+        "web": { "loadPct": 12 },
+        "db": { "loadPct": 10, "badge": { "text": { "vi": "25 ms", "en": "25 ms" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "client-dns": { "style": "off" },
+        "client-web": { "style": "danger", "label": { "vi": "3 RTT = 450 ms", "en": "3 RTT = 450 ms" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Người dùng xuyên lục địa", "en": "Cross-Continent User" },
+        "lines": [
+          { "text": { "vi": "2 RTT bắt tay + 1 RTT HTTP = 450 ms", "en": "2 RTT handshake + 1 RTT HTTP = 450 ms" }, "tone": "bad" },
+          { "text": { "vi": "Cần CDN Edge gần người dùng", "en": "Requires nearby CDN Edge" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["dc"],
+      "state": {
+        "dns": { "loadPct": 5, "badge": { "text": { "vi": "TTL", "en": "TTL" }, "tone": "default" } },
+        "web": { "loadPct": 12, "badge": { "text": { "vi": "HTTP/2", "en": "HTTP/2" }, "tone": "ok" } },
+        "db": { "loadPct": 10, "badge": { "text": { "vi": "Index", "en": "Index" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đọc Waterfall → Sửa đúng chặng", "en": "Read Waterfall → Fix Right Hop" },
+        "lines": [
+          { "text": { "vi": "Mạng dài → Keep-Alive, HTTP/2, CDN", "en": "Wide net spans → HTTP/2, CDN" }, "tone": "plain" },
+          { "text": { "vi": "DB dài → EXPLAIN, Index, Cache", "en": "Wide DB span → Index, Cache" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "trace": {
+      "sim": "S1-06/trace",
+      "startAtSec": 18,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["slow"],
+        "knobs": [
+          { "node": "dns", "key": "ttlSec" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "p50", "label": { "vi": "p50 toàn trình", "en": "End-to-end p50" }, "format": "ms", "tone": { "warnAbove": 200, "badAbove": 400 } },
+        { "metric": "p99", "label": { "vi": "p99 toàn trình", "en": "End-to-end p99" }, "format": "ms", "tone": { "warnAbove": 250, "badAbove": 500 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "focus": { "nodes": ["web", "db"] }
+    }
+  }
+}

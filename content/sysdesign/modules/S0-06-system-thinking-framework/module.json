@@ -1,0 +1,29 @@
+{
+  "id": "S0-06",
+  "slug": "S0-06-system-thinking-framework",
+  "level": 0,
+  "order": 6,
+  "title": "System Thinking: Input, Processing, Storage và Output",
+  "summary": "Nhìn hệ thống như một chuỗi thành phần phối hợp theo khuôn mẫu Input → Processing → Storage → Output, phân rã luồng cập nhật hồ sơ thành đường đồng bộ và bất đồng bộ, và truy vết điểm nghẽn theo luồng dữ liệu.",
+  "durationMin": 15,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt góc nhìn mức hàm (Code-level) với góc nhìn toàn hệ thống (System-level) trên đường đi của một request" },
+    { "vi": "Áp dụng khuôn mẫu Input → Processing → Storage → Output để phân rã các tính năng web thực tế" },
+    { "vi": "Xác định đúng vai trò và kiểu lỗi của Client, Load Balancer, API Server, Cache, Database, Queue và Object Storage" },
+    { "vi": "Lần theo luồng cập nhật hồ sơ người dùng và chỉ ra thành phần gây nghẽn khi tải đọc/ghi tăng cao" }
+  ],
+  "tags": ["system-thinking", "architecture", "components", "data-flow", "async", "bottleneck"],
+  "prerequisites": ["S0-03", "S0-05"],
+  "related": ["S0-07", "S1-01", "S1-02", "S1-03"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-6-system-thinking-framework.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-6-system-thinking-framework.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại đối thoại đầu bài, chuyển 3 sơ đồ Mermaid sang 8 cảnh isometric lộ dần thành phần (Client → LB → API → Cache/Queue → DB/Worker), bổ sung mô hình định lượng S0-06/profile-flow cho tải hỗn hợp 70% đọc - 30% ghi, làm rõ ranh giới dữ liệu gốc (Database/Object Storage) so với lớp tăng tốc (Cache), và thêm bài tập sắp xếp luồng (order) cùng bài tập chỉ điểm nghẽn (spot-bottleneck)."
+  }
+}

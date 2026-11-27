@@ -1,0 +1,39 @@
+[
+  {
+    "id": "S1-02.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào quá tải đầu tiên khi đối tác chậm?" },
+    "prompt": { "vi": "Chuỗi đặt hàng đồng bộ đang phục vụ 180 req/s ổn định. Ở giây 20, đối tác SMTP bên ngoài làm một khâu chậm thêm 500 ms. Mô phỏng dừng tại giây 15 — hãy dự đoán node nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên." },
+    "difficulty": 1,
+    "at": 15,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 15 },
+      "expected": ["notify"]
+    },
+    "reveal": { "playFromSec": 15, "playToSec": 30, "speed": 2 },
+    "hints": [
+      { "vi": "Kiểm tra thông số poolSize và phụ thuộc mạng bên ngoài trong Inspector của từng dịch vụ." },
+      { "vi": "Khi thời gian xử lý tăng từ 25 ms lên 525 ms trên pool 42 luồng, năng lực tối đa μ = poolSize / S sẽ tụt xuống dưới 180 req/s." }
+    ],
+    "explain": { "vi": "{notify.name} bị chậm từ 25 ms lên 525 ms vào giây {t.first.notify:0}. Với pool 42 luồng, năng lực thực tế sụt từ 600 xuống 80 req/s nên ở tải {notify.lambda@25:0} req/s mức sử dụng nhảy lên ρ = {notify.rho@25:2}, làm hàng đợi dồn lên {notify.queue@25:0} request." },
+    "sim": { "simId": "S1-02/sync", "seekSec": 15, "autoplay": false },
+    "replay": { "simId": "S1-02/sync", "seekSec": 18, "focus": { "nodes": ["notify"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S1-02.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra mắt xích làm treo luồng đặt hàng" },
+    "prompt": { "vi": "Tại giây 32 trên mô hình đồng bộ, toàn bộ yêu cầu tạo đơn của người dùng bị lỗi quá hạn dù API Server và Order Service đều còn dư CPU. Nhấn chọn đúng node đang là điểm nghẽn của chuỗi." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 32,
+    "maxPicks": 1,
+    "expected": ["notify"],
+    "hints": [
+      { "vi": "So sánh mức sử dụng ρ và độ dài hàng đợi chờ trước từng dịch vụ ở giây 32." }
+    ],
+    "explain": { "vi": "{notify.name} đang ở ρ = {notify.rho@32:2} với hàng đợi {notify.queue@32:0} request trong khi {api.name} chỉ ρ = {api.rho@32:2} và {order.name} chỉ ρ = {order.rho@32:2}. Tách {notify.name} sang Message Queue là cách cắt đứt điểm nghẽn này khỏi đường chờ của người dùng." },
+    "sim": { "simId": "S1-02/sync", "seekSec": 32, "autoplay": false }
+  }
+]

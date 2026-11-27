@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-06.q1",
+    "type": "mc",
+    "q": "Trong mã nguồn máy chủ, khi cần đo chính xác thời gian thực thi của một truy vấn Database hoặc kiểm tra xem một yêu cầu đã vượt ngưỡng Timeout 500 ms hay chưa, ta phải dùng loại đồng hồ nào?",
+    "code": "",
+    "choices": [
+      "Đồng hồ tường (Time-of-Day / CLOCK_REALTIME) vì nó luôn đồng bộ với giờ quốc tế UTC",
+      "Đồng hồ đơn điệu (Monotonic Clock / CLOCK_MONOTONIC / perf_counter) vì nó không bao giờ nhảy lùi khi dịch vụ NTP chỉnh giờ",
+      "Gọi API sang máy chủ NTP ở đầu và cuối mỗi câu truy vấn",
+      "Lấy số thứ tự khoá chính tự tăng của bảng Database"
+    ],
+    "answer": 1,
+    "explain": "Đồng hồ tường có thể bị dịch vụ NTP chỉnh nhảy lùi hoặc vọt tiến vài chục đến vài trăm mili-giây làm phép trừ (t_end − t_start) ra số âm hoặc báo Timeout sai. Đồng hồ đơn điệu chỉ đếm tiến ổn định trên từng máy nên chuyên dùng đo khoảng thời gian."
+  },
+  {
+    "id": "S3-06.q2",
+    "type": "output",
+    "q": "Tiến trình P2 hiện có đồng hồ Lamport cục bộ LC = 4. Ngay lúc đó P2 nhận một thông điệp mạng gửi tới mang nhãn thời gian Lamport bằng 9. Sau khi xử lý sự kiện nhận thông điệp này, giá trị LC mới của P2 bằng bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "10",
+    "explain": "Theo quy tắc nhận thông điệp của đồng hồ Lamport: LC_mới = max(LC_cục_bộ, LC_thông_điệp) + 1 = max(4, 9) + 1 = 10, đảm bảo sự kiện nhận luôn có nhãn lớn hơn sự kiện gửi (9)."
+  },
+  {
+    "id": "S3-06.q3",
+    "type": "tf",
+    "q": "Với đồng hồ Lamport, nếu quan sát thấy nhãn thời gian LC(A) < LC(B) thì ta luôn khẳng định chắc chắn được rằng sự kiện A đã xảy ra trước và gây ảnh hưởng nhân quả lên sự kiện B (A → B).",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đồng hồ Lamport chỉ đảm bảo chiều thuận (nếu A → B thì LC(A) < LC(B)). Chiều ngược lại không đúng: hai sự kiện hoàn toàn độc lập đồng thời trên hai máy chưa từng giao tiếp với nhau vẫn có thể có LC(A) = 2 < LC(B) = 5."
+  },
+  {
+    "id": "S3-06.q4",
+    "type": "mc",
+    "q": "Trên hệ thống 3 bản sao dùng Vector Clock [N1, N2, N3], kho lưu trữ nhận được hai phiên bản của cùng một khoá: bản X mang véc-tơ [2, 1, 0] và bản Y mang véc-tơ [1, 2, 0]. Kết luận nào sau đây là ĐÚNG?",
+    "code": "",
+    "choices": [
+      "Bản X xảy ra trước bản Y về mặt nhân quả nên có thể xoá X và chỉ giữ Y",
+      "Bản Y xảy ra trước bản X về mặt nhân quả nên có thể xoá Y và chỉ giữ X",
+      "Hai bản X và Y bằng nhau vì tổng các phần tử đều bằng 3",
+      "Hai bản X và Y được ghi đồng thời (X ∥ Y, xung đột) vì ở vị trí đầu 2 > 1 nhưng ở vị trí thứ hai 1 < 2; cần giữ cả hai để hợp nhất"
+    ],
+    "answer": 3,
+    "explain": "So sánh từng phần tử của [2, 1, 0] và [1, 2, 0]: tại N1 thì X lớn hơn (2 > 1), nhưng tại N2 thì Y lớn hơn (2 > 1). Không véc-tơ nào lớn hơn hay bằng véc-tơ kia trên mọi vị trí, chứng tỏ hai cập nhật diễn ra độc lập đồng thời và cần cơ chế hợp nhất xung đột."
+  },
+  {
+    "id": "S3-06.q5",
+    "type": "mc",
+    "q": "Vì sao chiến lược giải quyết xung đột Last-Write-Wins (LWW) dựa trên đồng hồ vật lý dễ gây mất dữ liệu âm thầm trong cơ sở dữ liệu phân tán?",
+    "code": "",
+    "choices": [
+      "Vì đồng hồ vật lý chỉ đếm được tới tối đa 24 giờ rồi quay về 0",
+      "Vì nếu nút A có đồng hồ chạy nhanh hơn nút B 100 ms, một lệnh ghi xảy ra thực tế muộn hơn trên nút B vẫn mang timestamp nhỏ hơn bản ghi cũ của nút A và bị xoá mất khi đồng bộ",
+      "Vì đồng hồ vật lý làm tăng kích thước gói tin lên hàng megabyte",
+      "Vì giao thức NTP chặn toàn bộ cổng kết nối của cơ sở dữ liệu"
+    ],
+    "answer": 1,
+    "explain": "LWW tin tưởng mù quáng rằng timestamp lớn hơn nghĩa là mới hơn. Chỉ cần đồng hồ NTP lệch vài chục mili-giây, bản ghi sinh ra từ máy đồng hồ nhanh sẽ đè chết các cập nhật hợp lệ tiếp theo trên máy đồng hồ chậm trong suốt khoảng lệch đó."
+  },
+  {
+    "id": "S3-06.q6",
+    "type": "mc",
+    "q": "Ưu điểm nổi bật giúp Hybrid Logical Clock (HLC) được các hệ SQL phân tán như CockroachDB và YugabyteDB lựa chọn thay vì dùng riêng Lamport thuần hay Vector Clock là gì?",
+    "code": "",
+    "choices": [
+      "Hoàn toàn không cần bất kỳ giao thức mạng nào giữa các máy chủ",
+      "Vừa có kích thước cố định nhỏ gọn O(1), vừa không bao giờ lùi và bảo toàn thứ tự nhân quả a → b, lại vừa bám sát thời gian thực để phục vụ truy vấn Snapshot theo mốc ngày giờ",
+      "Tự động sửa mọi lỗi logic nghiệp vụ trong mã nguồn ứng dụng",
+      "Thay thế hoàn toàn nhu cầu sao chép nhật ký WAL xuống ổ đĩa"
+    ],
+    "answer": 1,
+    "explain": "HLC kết hợp phần giờ vật lý đơn điệu pt với bộ đếm logic phụ lc: giữ kích thước O(1) thay vì O(N) như Vector Clock, đảm bảo thứ tự nhân quả giống Lamport, đồng thời cho phép đọc dữ liệu lịch sử theo mốc thời gian thực."
+  }
+]

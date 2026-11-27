@@ -1,0 +1,331 @@
+{
+  "sims": [
+    {
+      "id": "S4-10/overload",
+      "scenario": {
+        "id": "S4-10/overload",
+        "seed": 4410,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.3 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 2000 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "crit",
+              "kind": "client",
+              "label": { "vi": "Đơn thanh toán (Ưu tiên cao)", "en": "Critical Checkout" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0.4 }
+            },
+            {
+              "id": "bulk",
+              "kind": "client",
+              "label": { "vi": "Sự kiện gợi ý (Ưu tiên thấp)", "en": "Low-Priority Events" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0.6 }
+            },
+            {
+              "id": "shedder",
+              "kind": "rate-limiter",
+              "label": { "vi": "Priority Load Shedder", "en": "Priority Load Shedder" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.03,
+              "knobs": [
+                {
+                  "key": "ratePerSec",
+                  "type": "number",
+                  "label": { "vi": "Ngưỡng nhận luồng ưu tiên thấp", "en": "Low-priority admit rate" },
+                  "min": 50,
+                  "max": 3000,
+                  "step": 50,
+                  "default": 3000,
+                  "unit": "rps"
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 100000 },
+              "latency": { "baseMs": 0.2, "cv": 0.2 },
+              "params": { "replicas": 2, "ratePerSec": 3000, "burst": 200 }
+            },
+            {
+              "id": "producer",
+              "kind": "service",
+              "label": { "vi": "API Producer", "en": "API Producer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200, "concurrency": 20 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 20 }
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Task Queue", "en": "Task Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "maxDepth",
+                  "type": "number",
+                  "label": { "vi": "Sức chứa hàng đợi (maxDepth)", "en": "Bounded queue maxDepth" },
+                  "min": 500,
+                  "max": 150000,
+                  "step": 500,
+                  "default": 150000
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 40000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 2, "maxDepth": 150000, "dlq": true }
+            },
+            {
+              "id": "consumer",
+              "kind": "worker",
+              "label": { "vi": "Worker Consumer", "en": "Worker Consumer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số lượng Worker", "en": "Worker instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500, "concurrency": 15 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 15 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "crit-prod", "from": "crit", "to": "producer", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "bulk-shed", "from": "bulk", "to": "shedder", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "shed-prod", "from": "shedder", "to": "producer", "mode": "sync", "netClass": "same-az", "timeoutMs": 1800 },
+            { "id": "prod-queue", "from": "producer", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "queue-cons", "from": "queue", "to": "consumer", "mode": "pull", "netClass": "same-az" },
+            { "id": "cons-db", "from": "consumer", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "crit": "all-sequential",
+            "bulk": "all-sequential",
+            "shedder": "all-sequential",
+            "producer": "all-sequential",
+            "queue": "split",
+            "consumer": "all-sequential"
+          }
+        }
+      }
+    },
+    {
+      "id": "S4-10/bounded-pipe",
+      "scenario": {
+        "id": "S4-10/bounded-pipe",
+        "seed": 4412,
+        "durationSec": 45,
+        "mix": { "readRatio": 0.3 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1000 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "crit",
+              "kind": "client",
+              "label": { "vi": "Đơn thanh toán (Ưu tiên cao)", "en": "Critical Checkout" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 1 }
+            },
+            {
+              "id": "bulk",
+              "kind": "client",
+              "label": { "vi": "Sự kiện gợi ý (Ưu tiên thấp)", "en": "Low-Priority Events" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0 }
+            },
+            {
+              "id": "shedder",
+              "kind": "rate-limiter",
+              "label": { "vi": "Priority Load Shedder", "en": "Priority Load Shedder" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.03,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 100000 },
+              "latency": { "baseMs": 0.2, "cv": 0.2 },
+              "params": { "replicas": 2, "ratePerSec": 3000, "burst": 200 }
+            },
+            {
+              "id": "producer",
+              "kind": "service",
+              "label": { "vi": "API Producer", "en": "API Producer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200, "concurrency": 20 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 20 }
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Task Queue", "en": "Task Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "maxDepth",
+                  "type": "number",
+                  "label": { "vi": "Sức chứa hàng đợi (maxDepth)", "en": "Bounded queue maxDepth" },
+                  "min": 500,
+                  "max": 150000,
+                  "step": 500,
+                  "default": 1500
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 40000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 2, "maxDepth": 1500, "dlq": true }
+            },
+            {
+              "id": "consumer",
+              "kind": "worker",
+              "label": { "vi": "Worker Consumer", "en": "Worker Consumer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số lượng Worker", "en": "Worker instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500, "concurrency": 15 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 3, "poolSize": 15 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "crit-prod", "from": "crit", "to": "producer", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "bulk-shed", "from": "bulk", "to": "shedder", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "shed-prod", "from": "shedder", "to": "producer", "mode": "sync", "netClass": "same-az", "timeoutMs": 1800 },
+            { "id": "prod-queue", "from": "producer", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "queue-cons", "from": "queue", "to": "consumer", "mode": "pull", "netClass": "same-az" },
+            { "id": "cons-db", "from": "consumer", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "crit": "all-sequential",
+            "bulk": "all-sequential",
+            "shedder": "all-sequential",
+            "producer": "all-sequential",
+            "queue": "split",
+            "consumer": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

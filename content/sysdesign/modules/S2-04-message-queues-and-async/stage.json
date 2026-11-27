@@ -1,0 +1,500 @@
+{
+  "version": 1,
+  "base": "s1-sync-block",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Người dùng gửi yêu cầu đặt hàng / tải tệp xử lý (bình thường 300 req/s, tăng vọt lên 3.000 req/s lúc cao điểm).",
+          "en": "Users submitting requests (300 req/s baseline, spiking 10× to 3,000 req/s)."
+        },
+        "how": {
+          "vi": "Chỉ cần nhận xác nhận yêu cầu hợp lệ trong vài chục mili-giây thay vì chờ toàn bộ các bước hậu kỳ hoàn tất.",
+          "en": "Expects fast acknowledgement rather than waiting synchronously for slow background tasks."
+        },
+        "why": {
+          "vi": "Giữ trải nghiệm mượt mà và tránh quá hạn kết nối trên mạng di động.",
+          "en": "Prevents client timeouts and thread exhaustion during traffic bursts."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Cặp Load Balancer phân phối lưu lượng vào cụm API Server.",
+          "en": "Redundant Load Balancer pair fronting the API Server tier."
+        },
+        "how": {
+          "vi": "Chia đều lưu lượng qua Round Robin với năng lực 40.000 req/s.",
+          "en": "Distributes requests evenly across API instances."
+        },
+        "why": {
+          "vi": "Đảm bảo không nghẽn ở cửa ngõ ngay cả khi lưu lượng tăng gấp 10 lần.",
+          "en": "Maintains sub-millisecond entry overhead during 10× traffic spikes."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "API Server", "en": "API Server" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 3 máy chủ API đóng vai trò Producer (tổng năng lực 4.500 req/s, xử lý nhẹ ~8 ms).",
+          "en": "3-instance API tier acting as Producer (4,500 req/s total capacity, ~8 ms base)."
+        },
+        "how": {
+          "vi": "Kiểm tra đầu vào nhanh, đẩy thông điệp công việc vào Message Queue rồi trả mã `202 Accepted` ngay cho người dùng.",
+          "en": "Validates input, enqueues a compact job message, and immediately returns `202 Accepted`."
+        },
+        "why": {
+          "vi": "Giải phóng luồng kết nối sớm nên 3 máy nhỏ vẫn đón êm đợt sóng 3.000 req/s ở ρ = 0,67.",
+          "en": "Frees request threads immediately, absorbing 3,000 req/s at ρ = 0.67."
+        }
+      }
+    },
+    "queue": {
+      "shape": "block",
+      "tone": "rose",
+      "icon": "layers",
+      "label": { "vi": "Message Queue", "en": "Message Queue" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi thông điệp bền vững (như RabbitMQ, SQS, Kafka) lưu đệm tối đa `maxDepth = 80.000` job.",
+          "en": "Durable Message Queue buffering up to `maxDepth = 80,000` pending jobs."
+        },
+        "how": {
+          "vi": "Tiếp nhận tới 20.000 msg/s trong ~2 ms; giữ thông điệp an toàn cho tới khi Worker gửi tín hiệu xác nhận `Ack`.",
+          "en": "Accepts 20,000 msg/s in ~2 ms and retains each job until a Worker acknowledges completion."
+        },
+        "why": {
+          "vi": "Biến đợt tăng tải gấp 10 lần thành backlog xếp hàng có trật tự thay vì biến thành lỗi quá tải.",
+          "en": "Converts a 10× traffic spike into a bounded backlog instead of dropped requests."
+        },
+        "tip": {
+          "vi": "Luôn đặt giới hạn `maxDepth` và cảnh báo tuổi của thông điệp cũ nhất (`backlogAgeSec`).",
+          "en": "Always bound `maxDepth` and alert on `Oldest Message Age`."
+        }
+      }
+    },
+    "worker": {
+      "shape": "block",
+      "tone": "blue",
+      "icon": "terminal",
+      "label": { "vi": "Worker Pool", "en": "Worker Pool" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm tiến trình nền Consumer (mặc định 3 máy × 200 job/s = 600 job/s, mỗi việc nặng ~50 ms).",
+          "en": "Background Worker pool (default 3 instances × 200 jobs/s = 600 jobs/s, ~50 ms per job)."
+        },
+        "how": {
+          "vi": "Chủ động kéo (`pull`) thông điệp từ Queue theo đúng sức xử lý của mình, ghi kết quả vào Database rồi mới gửi `Ack`.",
+          "en": "Pulls jobs at its own sustainable pace, writes results to Database, then sends `Ack`."
+        },
+        "why": {
+          "vi": "Tự bảo vệ mình và Database phía sau không bao giờ bị ép vượt quá công suất định mức.",
+          "en": "Naturally rate-limits downstream Database load regardless of upstream traffic spikes."
+        },
+        "tip": {
+          "vi": "Vì một thông điệp có thể được giao lại khi mạng chập chờn, mã nguồn Worker bắt buộc phải có tính lũy đẳng (Idempotent).",
+          "en": "Always make Worker logic idempotent to safely handle redelivered messages."
+        }
+      }
+    },
+    "dlq": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "alert",
+      "label": { "vi": "Dead Letter Queue", "en": "Dead Letter Queue" },
+      "inspector": {
+        "what": {
+          "vi": "Hàng đợi cách ly dành riêng cho các thông điệp thất bại liên tiếp vượt ngưỡng thử lại (ví dụ 3 lần).",
+          "en": "Quarantine queue storing poison messages that exceed maximum retry attempts."
+        },
+        "how": {
+          "vi": "Tách riêng khoảng 2% bản tin lỗi định dạng hoặc lỗi nghiệp vụ cố hữu ra khỏi luồng xử lý chính.",
+          "en": "Sidelines malformed or permanently failing jobs away from the main queue."
+        },
+        "why": {
+          "vi": "Ngăn vòng lặp thử lại vô tận làm nghẽn hàng đợi chính mà vẫn bảo toàn dữ liệu để kỹ sư kiểm tra và phát lại.",
+          "en": "Prevents infinite retry loops from blocking healthy jobs while preserving evidence for replay."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trạng thái công việc, hoá đơn và khoá chống trùng lặp (`idempotency_key`).",
+          "en": "Replicated SQL Database storing job results and idempotency keys."
+        },
+        "how": {
+          "vi": "Nhận lưu lượng ghi mượt và đều đặn từ cụm Worker thay vì phải hứng trực tiếp đỉnh 3.000 req/s từ người dùng.",
+          "en": "Receives smoothed write traffic paced by the Worker Pool rather than raw user spikes."
+        },
+        "why": {
+          "vi": "Minh hoạ lợi ích làm phẳng tải (Load Leveling) giúp tiết kiệm đáng kể chi phí định cỡ Database.",
+          "en": "Demonstrates how queue load-leveling protects stateful storage from burst provisioning."
+        }
+      }
+    }
+  },
+  "links": {
+    "api-queue": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường đẩy thông điệp bất đồng bộ (`publish / enqueue`) từ API vào Message Queue.", "en": "Asynchronous enqueue path from API Server to Message Queue." },
+        "how": { "vi": "Chỉ truyền payload nhỏ gọn (ID tham chiếu, tên sự kiện) trong ~2 ms.", "en": "Sends lightweight reference IDs in ~2 ms." },
+        "why": { "vi": "Cắt đứt sự phụ thuộc thời gian giữa phản hồi người dùng và xử lý hậu kỳ.", "en": "Decouples user-facing response latency from heavy background processing." }
+      }
+    },
+    "queue-worker": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Cơ chế kéo (`pull / poll`) có điều tiết giữa Message Queue và Worker Pool.", "en": "Demand-driven pull link from Message Queue to Worker Pool." },
+        "how": { "vi": "Worker chỉ lấy việc mới khi còn luồng trống và xác nhận `Ack` sau khi hoàn thành.", "en": "Workers fetch jobs only when threads are free and `Ack` upon completion." },
+        "why": { "vi": "Ngăn hiện tượng đẩy tràn làm sập tiến trình xử lý nền.", "en": "Prevents overwhelming background consumers during spikes." }
+      }
+    },
+    "worker-dlq": {
+      "style": "dashed",
+      "inspector": {
+        "what": { "vi": "Đường chuyển thông điệp độc (Poison Message) sang Dead Letter Queue.", "en": "Routing path moving exhausted failed jobs to the Dead Letter Queue." },
+        "how": { "vi": "Kích hoạt tự động khi `retry_count >= max_retries`.", "en": "Triggered once `retry_count` reaches `max_retries`." },
+        "why": { "vi": "Giữ cho hàng đợi chính luôn thông suốt.", "en": "Keeps the primary processing pipeline unblocked." }
+      }
+    }
+  },
+  "zones": {
+    "async_pipeline": {
+      "nodeIds": ["queue", "worker", "dlq"],
+      "label": { "vi": "ĐƯỜNG ỐNG BẤT ĐỒNG BỘ", "en": "ASYNC PROCESSING PIPELINE" },
+      "tone": "rose"
+    }
+  },
+  "scenes": {
+    "s1-sync-block": {
+      "show": { "nodes": ["client", "lb", "api", "db"] },
+      "state": {
+        "lb": { "loadPct": 15 },
+        "api": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Giữ kết nối 5–30 s!", "en": "Blocked 5–30 s!" }, "tone": "bad" }
+        },
+        "db": { "loadPct": 85 }
+      },
+      "linkState": {
+        "lb-api": { "style": "danger", "label": { "vi": "Timeout hàng loạt", "en": "Timeouts" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Gộp việc nặng trong luồng đồng bộ", "en": "Synchronous Heavy Work" },
+        "lines": [
+          { "text": { "vi": "Xuất PDF / gửi mail giữ chặt thread API", "en": "PDF / email work blocks API threads" }, "tone": "bad" },
+          { "text": { "vi": "1 dịch vụ phụ chậm kéo hỏng cả API", "en": "Slow downstream stalls entire API" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-decoupled": {
+      "show": { "nodes": ["client", "lb", "api", "queue", "worker", "db"] },
+      "zones": ["async_pipeline"],
+      "state": {
+        "lb": { "loadPct": 5 },
+        "api": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "202 Accepted · 50 ms", "en": "202 Accepted · 50 ms" }, "tone": "ok" }
+        },
+        "queue": {
+          "loadPct": 5,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Bộ đệm tách tải", "en": "Buffer" }, "tone": "ok" }
+        },
+        "worker": {
+          "loadPct": 50,
+          "badge": { "text": { "vi": "Xử lý nền 600 job/s", "en": "Draining 600/s" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách phản hồi khỏi xử lý hậu kỳ", "en": "Decoupled Producer & Consumer" },
+        "lines": [
+          { "text": { "vi": "API ghi vào Queue rồi trả lời ngay", "en": "API enqueues and responds fast" }, "tone": "good" },
+          { "text": { "vi": "Worker tự kéo việc theo sức mình", "en": "Workers pull jobs at steady pace" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-live-spike": {
+      "show": { "nodes": "*" },
+      "zones": ["async_pipeline"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng Spike ×10 (300 → 3.000 RPS)", "en": "10× Spike Live Run (300 → 3,000 RPS)" },
+        "lines": [
+          { "text": { "vi": "t = 15–40 s: đỉnh 3.000 req/s ập tới", "en": "t = 15–40 s: 3,000 req/s burst" }, "tone": "amber" },
+          { "text": { "vi": "API vẫn ~60 ms · Queue gom backlog", "en": "API stays ~60 ms · Queue buffers spike" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-ack-idempotency": {
+      "show": { "nodes": ["api", "queue", "worker", "db"] },
+      "zones": ["async_pipeline"],
+      "state": {
+        "api": { "loadPct": 20 },
+        "queue": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Chờ Ack · Giao lại", "en": "Wait Ack · Redeliver" }, "tone": "warn" }
+        },
+        "worker": {
+          "loadPct": 65,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Idempotent Key", "en": "Idempotent Key" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 20,
+          "badge": { "text": { "vi": "UNIQUE(msg_id)", "en": "UNIQUE(msg_id)" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "At-Least-Once + Tính lũy đẳng", "en": "At-Least-Once + Idempotency" },
+        "lines": [
+          { "text": { "vi": "Chỉ xoá khỏi Queue sau khi nhận Ack", "en": "Delete from Queue only after Ack" }, "tone": "good" },
+          { "text": { "vi": "Khử trùng theo message_id để không lặp", "en": "Deduplicate by message_id in DB" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-dlq": {
+      "show": { "nodes": ["api", "queue", "worker", "dlq", "db"] },
+      "zones": ["async_pipeline"],
+      "state": {
+        "api": { "loadPct": 20 },
+        "queue": { "loadPct": 15 },
+        "worker": {
+          "loadPct": 60,
+          "badge": { "text": { "vi": "Thử tối đa 3 lần", "en": "Max 3 Retries" }, "tone": "warn" }
+        },
+        "dlq": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Cô lập Poison Msg", "en": "Quarantined" }, "tone": "bad" }
+        },
+        "db": { "loadPct": 18 }
+      },
+      "linkState": {
+        "worker-dlq": { "style": "danger", "label": { "vi": "Quá 3 lần lỗi", "en": "> 3 failures" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dead Letter Queue (DLQ)", "en": "Dead Letter Queue (DLQ)" },
+        "lines": [
+          { "text": { "vi": "Bản tin hỏng không chặn hàng đợi chính", "en": "Poison jobs don't stall main queue" }, "tone": "good" },
+          { "text": { "vi": "Giữ nguyên mẫu lỗi để sửa code & replay", "en": "Preserves payload for fix & replay" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-queue-vs-pubsub": {
+      "show": { "nodes": ["api", "queue", "worker", "db"] },
+      "zones": ["async_pipeline"],
+      "state": {
+        "api": { "loadPct": 20, "badge": { "text": { "vi": "Producer", "en": "Producer" }, "tone": "default" } },
+        "queue": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "1 việc → 1 Worker", "en": "1 job → 1 Worker" }, "tone": "ok" }
+        },
+        "worker": {
+          "loadPct": 55,
+          "badge": { "text": { "vi": "Competing Consumers", "en": "Competing Consumers" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 18 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Queue chia việc khác với Pub/Sub", "en": "Work Queue vs Pub/Sub" },
+        "lines": [
+          { "text": { "vi": "Queue: nhiều Worker chia nhau tập job", "en": "Queue: workers share one job stream" }, "tone": "good" },
+          { "text": { "vi": "Pub/Sub: phát 1 sự kiện cho nhiều dịch vụ", "en": "Pub/Sub: broadcast to many services" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-live-capacity": {
+      "show": { "nodes": "*" },
+      "zones": ["async_pipeline"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đo trần thông lượng bền vững", "en": "Sustainable Throughput Ceiling" },
+        "lines": [
+          { "text": { "vi": "Queue đệm đỉnh nhưng không tạo công suất", "en": "Queue buffers bursts, adds 0 capacity" }, "tone": "amber" },
+          { "text": { "vi": "Thử tăng số Worker để xả sạch backlog", "en": "Scale Worker replicas to drain backlog" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-ordering": {
+      "show": { "nodes": ["api", "queue", "worker", "db"] },
+      "zones": ["async_pipeline"],
+      "state": {
+        "api": { "loadPct": 25, "badge": { "text": { "vi": "Key = order_id", "en": "Key = order_id" }, "tone": "ok" } },
+        "queue": {
+          "loadPct": 20,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Partition theo khoá", "en": "Keyed Partitions" }, "tone": "ok" }
+        },
+        "worker": {
+          "loadPct": 60,
+          "badge": { "text": { "vi": "1 Partition → 1 luồng", "en": "1 Partition → 1 Worker" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 20 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giữ thứ tự sự kiện theo Partition Key", "en": "Per-Entity Ordering via Partition Key" },
+        "lines": [
+          { "text": { "vi": "Không Partition Key: PAID dễ đè SHIPPED", "en": "Unkeyed: slow PAID overwrites SHIPPED" }, "tone": "bad" },
+          { "text": { "vi": "Băm order_id: tuần tự trên từng đơn hàng", "en": "Hash order_id: strict per-order sequence" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-backpressure": {
+      "show": { "nodes": "*" },
+      "zones": ["async_pipeline"],
+      "state": {
+        "lb": { "loadPct": 15 },
+        "api": { "loadPct": 45 },
+        "queue": {
+          "loadPct": 85,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Giám sát Oldest Age", "en": "Alert Oldest Age" }, "tone": "warn" }
+        },
+        "worker": { "loadPct": 88, "badge": { "text": { "vi": "Autoscale theo trễ", "en": "Autoscale on lag" }, "tone": "ok" } },
+        "dlq": { "loadPct": 5 },
+        "db": { "loadPct": 25 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giới hạn hàng đợi & Backpressure", "en": "Bounded Queues & Backpressure" },
+        "lines": [
+          { "text": { "vi": "Hàng đợi vô hạn sẽ làm tràn bộ nhớ Broker", "en": "Unbounded queues exhaust broker RAM/disk" }, "tone": "bad" },
+          { "text": { "vi": "Cảnh báo theo tuổi job cũ nhất chưa xử lý", "en": "Alert on oldest unacked message age" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["async_pipeline"],
+      "state": {
+        "lb": { "loadPct": 8 },
+        "api": { "loadPct": 20, "badge": { "text": { "vi": "Phản hồi sớm", "en": "Fast Ack" }, "tone": "ok" } },
+        "queue": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "Bounded + Partitioned", "en": "Bounded + Partitioned" }, "tone": "ok" } },
+        "worker": { "loadPct": 50, "badge": { "text": { "vi": "Ack + Idempotent", "en": "Ack + Idempotent" }, "tone": "ok" } },
+        "dlq": { "loadPct": 4, "badge": { "text": { "vi": "Giám sát & Replay", "en": "Monitor & Replay" }, "tone": "ok" } },
+        "db": { "loadPct": 12 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Năm mảnh ghép của Async Queue", "en": "Five Async Queue Building Blocks" },
+        "lines": [
+          { "text": { "vi": "Làm phẳng đỉnh tải · Ack + Idempotency", "en": "Load leveling · Ack + Idempotency" }, "tone": "good" },
+          { "text": { "vi": "DLQ cô lập lỗi · Partition Key giữ thứ tự", "en": "DLQ isolation · Partition Key ordering" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "spike": {
+      "sim": "S2-04/spike",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "chaos": ["kill"],
+        "knobs": [
+          { "node": "worker", "key": "replicas" },
+          { "node": "queue", "key": "maxDepth" },
+          { "node": "queue", "key": "dlq" },
+          { "node": "api", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99 của API", "en": "API p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 80, "badAbove": 110 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 110 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["api", "queue", "worker"] }
+    },
+    "capacity": {
+      "sim": "S2-04/spike",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 2,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "worker", "key": "replicas" },
+          { "node": "queue", "key": "maxDepth" }
+        ]
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99 của API", "en": "API p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 80, "badAbove": 110 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 110 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["queue", "worker"] }
+    }
+  }
+}

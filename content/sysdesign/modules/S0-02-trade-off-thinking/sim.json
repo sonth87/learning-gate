@@ -1,0 +1,251 @@
+{
+  "sims": [
+    {
+      "id": "S0-02/catalog",
+      "scenario": {
+        "id": "S0-02/catalog",
+        "seed": 102,
+        "durationSec": 60,
+        "mix": {
+          "readRatio": 0.92
+        },
+        "clientTimeoutMs": 1500,
+        "options": {
+          "noise": false
+        },
+        "load": {
+          "kind": "steady",
+          "rps": 3200
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": {
+                "vi": "Khách mua hàng",
+                "en": "Shoppers"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": {
+                "opsPerSec": 1000000
+              },
+              "latency": {
+                "baseMs": 0,
+                "cv": 0.3
+              },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": {
+                "vi": "Catalog API",
+                "en": "Catalog API"
+              },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1600
+              },
+              "latency": {
+                "baseMs": 10,
+                "cv": 0.3
+              },
+              "params": {
+                "replicas": 2,
+                "poolSize": 20
+              },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": {
+                    "vi": "Số instance Catalog API",
+                    "en": "Catalog API instances"
+                  },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": {
+                    "vi": "Instance dừng hoạt động",
+                    "en": "Instance down"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": {
+                "vi": "Product Cache",
+                "en": "Product Cache"
+              },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": {
+                "warm": 1
+              },
+              "capacity": {
+                "opsPerSec": 40000
+              },
+              "latency": {
+                "baseMs": 0.5,
+                "cv": 0.3
+              },
+              "params": {
+                "ttlSec": 180,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.88,
+                "workingSetKeys": 80000,
+                "capacityKeys": 20000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": {
+                    "vi": "Dung lượng Cache (số key)",
+                    "en": "Cache capacity (keys)"
+                  },
+                  "min": 20000,
+                  "max": 120000,
+                  "step": 20000,
+                  "default": 20000,
+                  "changeCost": 1
+                },
+                {
+                  "key": "ttlJitterPct",
+                  "type": "number",
+                  "label": {
+                    "vi": "Độ lệch TTL Jitter",
+                    "en": "TTL jitter ratio"
+                  },
+                  "min": 0,
+                  "max": 0.4,
+                  "step": 0.1,
+                  "default": 0,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "data-loss",
+                  "note": {
+                    "vi": "Mất dữ liệu Cache",
+                    "en": "Cache loss"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": {
+                "vi": "Product DB",
+                "en": "Product DB"
+              },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.7,
+              "zone": "az-a",
+              "capacity": {
+                "opsPerSec": 1200
+              },
+              "latency": {
+                "baseMs": 5,
+                "cv": 0.3
+              },
+              "params": {
+                "shards": 1,
+                "applyRps": 1000,
+                "rewriteHotness": 0.02,
+                "maxConnections": 500,
+                "poolSize": 16,
+                "sizeFactor": 1
+              },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": {
+                    "vi": "Cỡ máy Product DB (scale-up)",
+                    "en": "Product DB size factor"
+                  },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "slow",
+                  "note": {
+                    "vi": "Truy vấn chậm",
+                    "en": "Slow queries"
+                  }
+                }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-app",
+              "from": "client",
+              "to": "app",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 1500
+            },
+            {
+              "id": "app-cache",
+              "from": "app",
+              "to": "cache",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 200
+            },
+            {
+              "id": "cache-db",
+              "from": "cache",
+              "to": "db",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "client": "split",
+            "app": "all-sequential",
+            "cache": "split"
+          }
+        }
+      }
+    }
+  ]
+}

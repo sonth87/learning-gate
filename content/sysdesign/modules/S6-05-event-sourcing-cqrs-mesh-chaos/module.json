@@ -1,0 +1,29 @@
+{
+  "id": "S6-05",
+  "slug": "S6-05-event-sourcing-cqrs-mesh-chaos",
+  "level": 6,
+  "order": 5,
+  "title": "Chủ đề nâng cao: Event Sourcing, CQRS, Service Mesh và Chaos",
+  "summary": "Nắm vững kiến trúc nâng cao cho hệ thống phân tán quy mô lớn: lưu vết sự kiện bất biến với Event Sourcing, tách luồng đọc ghi bằng CQRS, điều phối mạng qua Service Mesh Sidecar và kiểm chứng độ bền bằng Chaos Engineering.",
+  "durationMin": 17,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Phân biệt lưu trạng thái hiện tại với lưu chuỗi sự kiện bất biến trong Event Sourcing và cơ chế tái dựng trạng thái (Replay)" },
+    { "vi": "Thiết kế mô hình CQRS tách riêng Write Model và Read Model qua Projection bất đồng bộ và đánh giá độ trễ đồng bộ" },
+    { "vi": "Giải thích vai trò của Service Mesh Sidecar Proxy trong mTLS, Circuit Breaker, Retry và Distributed Tracing" },
+    { "vi": "Áp dụng Chaos Engineering có giả thuyết rõ ràng và khoanh vùng phạm vi ảnh hưởng (Blast Radius)" }
+  ],
+  "tags": ["event-sourcing", "cqrs", "service-mesh", "chaos-engineering", "blast-radius"],
+  "prerequisites": ["S2-11", "S5-01", "S4-11"],
+  "related": ["S6-06", "S4-07"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-5-advanced-architecture-topics.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-5-advanced-architecture-topics.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn bằng lời mới: bỏ văn phong so sánh chức danh, chuyển sơ đồ tĩnh sang scene isometric (CQRS event log -> projection, Service Mesh sidecar) và memory-2d (Event Sourcing tape), bổ sung mô phỏng tiêm lỗi Chaos Engineering và bài tập predict + postmortem."
+  }
+}

@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "base": "s1-overview",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Tập người dùng gửi lưu lượng thực tế để đo đồng thời độ trễ phản hồi và thông lượng hoàn thành.",
+          "en": "Concurrent users driving traffic to measure response latency and completed throughput."
+        },
+        "how": {
+          "vi": "Ở kịch bản nền giữ ổn định 360 req/s; ở kịch bản bão hòa tăng tuyến tính từ 100 lên 1.000 req/s trong 60 giây.",
+          "en": "Sends 360 req/s in the steady scenario, or ramps 100 → 1,000 req/s over 60 seconds."
+        },
+        "why": {
+          "vi": "Cho phép đối chiếu cùng một kiến trúc ở vùng dư công suất so với vùng vượt trần thông lượng.",
+          "en": "Contrasts the exact same topology under comfortable headroom versus saturation."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ cân bằng tải chia đều lưu lượng vào cụm App Tier (μ = 15.000 req/s).",
+          "en": "Entry load balancer routing requests across the App Tier (μ = 15,000 req/s)."
+        },
+        "how": {
+          "vi": "Cộng thêm ~0,5 ms xử lý và kiểm tra sức khỏe định kỳ mỗi 3 giây.",
+          "en": "Adds ~0.5 ms overhead and runs 3-second health checks."
+        },
+        "why": {
+          "vi": "Loại bỏ điểm lỗi đơn ở tầng ứng dụng nhưng bản thân nó cũng cần chạy cặp dự phòng để đạt SLA ≥ 99,9%.",
+          "en": "Removes App-tier SPOFs, though the LB itself needs redundancy for ≥ 99.9% SLA."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Tier", "en": "App Tier" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 2 instance ứng dụng chạy song song (mỗi máy 600 req/s, tổng μ = 1.200 req/s).",
+          "en": "Two stateless App instances running in parallel (600 req/s each, 1,200 req/s total)."
+        },
+        "how": {
+          "vi": "Nhân đôi số máy nâng gấp đôi thông lượng tầng App, nhưng thời gian xử lý nền của mỗi request vẫn là 10 ms.",
+          "en": "Doubling instances doubles tier throughput while base per-request processing stays 10 ms."
+        },
+        "why": {
+          "vi": "Minh họa rõ sự độc lập giữa mở rộng thông lượng song song và độ trễ của một thao tác đơn lẻ.",
+          "en": "Illustrates that horizontal parallelism raises throughput without shrinking single-item work."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trữ bền vững, xử lý nền 8 ms và thông lượng tối đa μ = 800 req/s.",
+          "en": "Persistent relational Database with 8 ms base service time and μ = 800 req/s ceiling."
+        },
+        "how": {
+          "vi": "Khi lưu lượng tiến sát 800 req/s (ρ → 1), hàng đợi trước DB làm p99 tăng dựng đứng dù p50 tăng chậm hơn.",
+          "en": "As load approaches 800 req/s, queueing drives p99 sharply upward well ahead of p50."
+        },
+        "why": {
+          "vi": "Đặt trần thông lượng của toàn hệ thống ở 800 req/s khi chưa có tầng Cache chắn phía trước.",
+          "en": "Caps end-to-end system throughput at 800 req/s when unshielded by a Cache."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Chặng Internet từ người dùng tới Load Balancer (~30 ms).", "en": "Public Internet hop from Users to Load Balancer (~30 ms)." },
+        "how": { "vi": "Tạo mức sàn độ trễ địa lý cho mọi request.", "en": "Establishes the geographic WAN floor for request latency." },
+        "why": { "vi": "Dùng CDN hoặc triển khai đa vùng nếu muốn cắt giảm phần độ trễ mạng ngoài này.", "en": "Requires CDN or regional edge placement to reduce." }
+      }
+    },
+    "lb-app": {
+      "inspector": {
+        "what": { "vi": "Đường phân tải nội bộ từ Load Balancer sang cụm 2 máy App (~0,5 ms).", "en": "Internal load-balancing hop to the 2-node App Tier (~0.5 ms)." },
+        "how": { "vi": "Chia đều mỗi máy nhận một nửa tổng số request mỗi giây.", "en": "Splits incoming request rate evenly across active instances." },
+        "why": { "vi": "Giữ mức bận của tầng App thấp và cho phép chịu lỗi khi 1 máy ngừng chạy.", "en": "Keeps App utilization low and tolerates single-instance failure." }
+      }
+    },
+    "app-db": {
+      "inspector": {
+        "what": { "vi": "Đường truy vấn đồng bộ từ App Tier xuống Database (~0,5 ms, Timeout 1.200 ms).", "en": "Synchronous query link from App Tier to Database (~0.5 ms, 1,200 ms timeout)." },
+        "how": { "vi": "Toàn bộ lưu lượng hội tụ về một Database duy nhất có trần 800 req/s.", "en": "Concentrates 100% of requests onto the 800 req/s Database." },
+        "why": { "vi": "Là nơi xuất hiện hàng đợi khi tải tăng vượt ngưỡng 80% công suất DB.", "en": "Forms the saturation queue once traffic exceeds 80% of DB capacity." }
+      }
+    }
+  },
+  "zones": {
+    "backend": {
+      "nodeIds": ["lb", "app", "db"],
+      "label": { "vi": "HẠ TẦNG BACKEND", "en": "BACKEND INFRASTRUCTURE" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-overview": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2 },
+        "app": { "loadPct": 30, "badge": { "text": { "vi": "μ = 1.200 req/s", "en": "μ = 1,200 req/s" }, "tone": "ok" } },
+        "db": { "loadPct": 45, "badge": { "text": { "vi": "μ = 800 req/s", "en": "μ = 800 req/s" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "4 trụ cột định lượng thiết kế", "en": "4 Quantitative Design Pillars" },
+        "lines": [
+          { "text": { "vi": "Latency (ms) · Throughput (req/s)", "en": "Latency (ms) · Throughput (req/s)" }, "tone": "plain" },
+          { "text": { "vi": "Availability (số 9) · CAP (CP / AP)", "en": "Availability (nines) · CAP (CP / AP)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-steady": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tải ổn định 360 req/s", "en": "Steady Load 360 req/s" },
+        "lines": [
+          { "text": { "vi": "Throughput hoàn thành: 360 req/s", "en": "Completed throughput: 360 req/s" }, "tone": "good" },
+          { "text": { "vi": "Latency: p50 ≈ 48 ms · p99 ≈ 67 ms", "en": "Latency: p50 ≈ 48 ms · p99 ≈ 67 ms" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-ramp": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tải tăng 100 → 1.000 req/s", "en": "Load Ramp 100 → 1,000 req/s" },
+        "lines": [
+          { "text": { "vi": "Dưới 600 req/s: p99 tăng nhẹ (< 90 ms)", "en": "Below 600 req/s: flat p99 (< 90 ms)" }, "tone": "good" },
+          { "text": { "vi": "Chạm 800 req/s: thông lượng kịch trần, p99 vọt", "en": "Near 800 req/s: throughput caps, p99 spikes" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-optimize": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 5 },
+        "app": { "loadPct": 60, "highlighted": true, "badge": { "text": { "vi": "Scale ngang → Tăng req/s", "en": "Scale out → More req/s" }, "tone": "ok" } },
+        "db": { "loadPct": 55, "highlighted": true, "badge": { "text": { "vi": "Index / Cache → Hạ ms", "en": "Index / Cache → Lower ms" }, "tone": "ok" } }
+      },
+      "linkState": {
+        "client-lb": { "label": { "vi": "CDN giảm RTT", "en": "CDN cuts RTT" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Hai nhóm kỹ thuật tối ưu", "en": "Two Distinct Optimization Levers" },
+        "lines": [
+          { "text": { "vi": "Hạ Latency: Cache, Index, CDN, giảm hop", "en": "Cut Latency: Cache, Index, CDN" }, "tone": "good" },
+          { "text": { "vi": "Tăng Throughput: thêm máy, Queue, Pool", "en": "Raise Throughput: scale out, Queue, Pool" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-nines": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tape",
+        "title": { "vi": "Quy đổi bậc số 9 độ sẵn sàng sang thời gian ngừng tối đa mỗi năm", "en": "Availability Nines to Maximum Allowed Downtime per Year" },
+        "subtitle": { "vi": "Mỗi một chữ số 9 thêm vào cắt giảm 10 lần thời gian ngừng phục vụ cho phép", "en": "Each additional nine shrinks allowed annual downtime by 10×" },
+        "cells": [
+          "99% (3,65 ngày/năm)",
+          "99,9% (8,76 giờ/năm)",
+          "99,99% (52,6 phút/năm)",
+          "99,999% (5,26 phút/năm)"
+        ],
+        "activeIndices": [1, 2],
+        "pointers": [
+          { "index": 1, "label": "TMĐT phổ biến", "color": "green" },
+          { "index": 2, "label": "Thanh toán", "color": "orange" }
+        ],
+        "outputPill": {
+          "label": { "vi": "Công thức", "en": "Formula" },
+          "value": { "vi": "Uptime / (Uptime + Downtime)", "en": "Uptime / (Uptime + Downtime)" },
+          "tone": "good"
+        }
+      }
+    },
+    "s6-ha-cost": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 3, "highlighted": true, "badge": { "text": { "vi": "Cần cặp dự phòng", "en": "Needs standby pair" }, "tone": "warn" } },
+        "app": { "loadPct": 30, "badge": { "text": { "vi": "2 máy · Chịu lỗi 1", "en": "2 nodes · Survives 1" }, "tone": "ok" } },
+        "db": { "loadPct": 45, "highlighted": true, "badge": { "text": { "vi": "SPOF nếu 1 máy", "en": "SPOF if single" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chi phí tăng nhanh theo số 9", "en": "Cost Escalation per Nine" },
+        "lines": [
+          { "text": { "vi": "99,9%: nhiều App + LB + Health Check", "en": "99.9%: multi-App + LB + Health Check" }, "tone": "good" },
+          { "text": { "vi": "99,99%+: đa vùng, tự chuyển đổi không dừng", "en": "99.99%+: multi-region, zero-downtime failover" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-cap": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Định lý CAP khi xảy ra chia cắt mạng (Network Partition - P)", "en": "CAP Theorem Under a Network Partition (P)" },
+        "nodes": [
+          { "id": "part", "x": 0, "y": -102, "label": "Đứt kết nối giữa Node A và Node B (P)", "sub": { "vi": "Bắt buộc phải tính đến trong hệ phân tán", "en": "Inevitable in distributed networks" }, "tone": "rose" },
+          { "id": "cp", "x": -170, "y": 4, "label": "Chọn CP (Consistency)", "sub": { "vi": "Từ chối ghi/đọc phía bị cô lập", "en": "Reject isolated writes/reads" }, "tone": "orange" },
+          { "id": "ap", "x": 170, "y": 4, "label": "Chọn AP (Availability)", "sub": { "vi": "Cả hai phía tiếp tục phản hồi", "en": "Both sides keep serving" }, "tone": "green" },
+          { "id": "cp-res", "x": -170, "y": 92, "label": "Không sai lệch số dư · Có lỗi tạm thời", "tone": "orange" },
+          { "id": "ap-res", "x": 170, "y": 92, "label": "Luôn truy cập được · Tạm lệch vài giây", "tone": "green" }
+        ],
+        "edges": [
+          { "from": "part", "to": "cp" },
+          { "from": "part", "to": "ap" },
+          { "from": "cp", "to": "cp-res" },
+          { "from": "ap", "to": "ap-res" }
+        ]
+      }
+    },
+    "s8-cap-choice": {
+      "mode": "memory-2d",
+      "show": { "nodes": [] },
+      "memory": {
+        "kind": "tree",
+        "title": { "vi": "Chọn CP hay AP theo từng tính năng trong cùng một ứng dụng", "en": "Choosing CP vs AP Per Feature Within One System" },
+        "nodes": [
+          { "id": "sys", "x": 0, "y": -102, "label": "Nền tảng Thương mại điện tử", "sub": { "vi": "Không áp cứng một mức cho toàn bộ hệ thống", "en": "Choose per business invariant" }, "tone": "blue" },
+          { "id": "f1", "x": -185, "y": 8, "label": "Thanh toán & Trừ tồn kho", "sub": { "vi": "CP: Cấm bán quá số hàng thật", "en": "CP: Prevent overselling" }, "tone": "orange" },
+          { "id": "f2", "x": 0, "y": 8, "label": "Danh mục & Ảnh sản phẩm", "sub": { "vi": "AP: Chậm cập nhật vài giây vẫn ổn", "en": "AP: Brief staleness acceptable" }, "tone": "green" },
+          { "id": "f3", "x": 185, "y": 8, "label": "Lượt xem & Lượt thích", "sub": { "vi": "AP: Ưu tiên hiển thị nhanh", "en": "AP: Prioritize fast reads" }, "tone": "green" }
+        ],
+        "edges": [
+          { "from": "sys", "to": "f1" },
+          { "from": "sys", "to": "f2" },
+          { "from": "sys", "to": "f3" }
+        ]
+      }
+    },
+    "s9-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["backend"],
+      "state": {
+        "lb": { "loadPct": 2, "badge": { "text": { "vi": "HA · 99,9%", "en": "HA · 99.9%" }, "tone": "ok" } },
+        "app": { "loadPct": 30, "badge": { "text": { "vi": "Throughput", "en": "Throughput" }, "tone": "ok" } },
+        "db": { "loadPct": 45, "badge": { "text": { "vi": "Latency · CP/AP", "en": "Latency · CP/AP" }, "tone": "default" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Gắn con số cho từng yêu cầu", "en": "Quantify Every Requirement" },
+        "lines": [
+          { "text": { "vi": "Latency: p50 & p99 · Throughput: đỉnh req/s", "en": "Latency: p50 & p99 · Throughput: peak req/s" }, "tone": "plain" },
+          { "text": { "vi": "Availability: số 9 · CAP: chọn lúc đứt mạng", "en": "Availability: nines · CAP: partition choice" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "steady": {
+      "sim": "S1-04/steady",
+      "startAtSec": 10,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "app", "key": "replicas" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thông lượng", "en": "Throughput" }, "format": "rps" },
+        { "metric": "p50", "label": { "vi": "p50", "en": "p50" }, "format": "ms" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 100, "badAbove": 250 } }
+      ],
+      "focus": { "nodes": ["app", "db"] }
+    },
+    "ramp": {
+      "sim": "S1-04/ramp",
+      "startAtSec": 15,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "app", "key": "replicas" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "goodputRps", "label": { "vi": "Thông lượng", "en": "Throughput" }, "format": "rps" },
+        { "metric": "p50", "label": { "vi": "p50", "en": "p50" }, "format": "ms" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 120, "badAbove": 250 } }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 150 }
+      ],
+      "focus": { "nodes": ["db"] }
+    }
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "base": "s1-local-skew",
+  "nodes": {
+    "users": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng hợp lệ", "en": "Valid Users" },
+      "inspector": {
+        "what": { "vi": "Nhóm người dùng thật chiếm 35% lưu lượng, cần được bảo vệ độ trễ ổn định.", "en": "Legitimate users (35% of traffic) needing low latency." },
+        "how": { "vi": "Gửi lưu lượng đều qua API Gateways.", "en": "Sends steady requests through API Gateways." },
+        "why": { "vi": "Rate Limiter phải chặn lưu lượng đột biến mà không làm nghẽn người dùng thật.", "en": "Limiter must shed burst traffic without starving valid users." }
+      }
+    },
+    "burst_client": {
+      "shape": "crowd",
+      "tone": "rose",
+      "label": { "vi": "Client gửi burst", "en": "Burst Clients" },
+      "inspector": {
+        "what": { "vi": "Nhóm client hoặc bot tạo đỉnh lưu lượng 5.500 req/s ở giây thứ 12.", "en": "Burst clients driving peak load up to 5,500 req/s at t = 12 s." },
+        "how": { "vi": "Đi qua bộ kiểm tra Rate Limiter trước khi vào API Gateways.", "en": "Passes through Rate Limiter before reaching API Gateways." },
+        "why": { "vi": "Nếu ngưỡng quá rộng, toàn bộ tải burst tràn thẳng xuống Backend API.", "en": "Loose thresholds let burst traffic overwhelm Backend API." }
+      }
+    },
+    "gateways": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "API Gateways", "en": "API Gateways" },
+      "inspector": {
+        "what": { "vi": "Cụm nhiều API Gateway nằm ngang sau Load Balancer.", "en": "Horizontally scaled API Gateways behind Load Balancer." },
+        "how": { "vi": "Tra cứu bộ đếm tập trung trên Redis thay vì giữ bộ đếm cục bộ trong RAM.", "en": "Queries centralized Redis counter instead of local in-memory counters." },
+        "why": { "vi": "Đảm bảo mọi Gateway nhìn thấy cùng một hạn mức chung của từng người dùng.", "en": "Ensures consistent global rate limit enforcement across all Gateways." }
+      }
+    },
+    "limiter": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "shield",
+      "label": { "vi": "Rate Limiter", "en": "Rate Limiter" },
+      "inspector": {
+        "what": { "vi": "Bộ điều phối ngưỡng tốc độ dùng Token Bucket hoặc Sliding Window.", "en": "Rate limiter enforcing Token Bucket or Sliding Window rules." },
+        "how": { "vi": "Kiểm tra ratePerSec và burst; trả mã HTTP 429 cho phần lưu lượng vượt hạn mức.", "en": "Checks ratePerSec and burst; rejects excess requests with HTTP 429." },
+        "why": { "vi": "Bảo vệ tầng Backend API khỏi bão tải đột biến.", "en": "Protects Backend API from sudden traffic spikes." }
+      }
+    },
+    "redis": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "zap",
+      "label": { "vi": "Redis Counter Store", "en": "Redis Counter Store" },
+      "inspector": {
+        "what": { "vi": "Kho lưu bộ đếm tập trung trong RAM dùng chung cho toàn bộ Gateway.", "en": "Shared in-memory Redis store holding rate-limit counters." },
+        "how": { "vi": "Chạy Lua script nguyên tử để đọc-cộng-kiểm tra trong một lượt mạng (~0,5 ms).", "en": "Executes atomic Lua scripts for read-increment-check in one hop." },
+        "why": { "vi": "Tránh Race Condition và sai số đếm khi nhiều Gateway cùng cập nhật một khóa.", "en": "Prevents race conditions across concurrent Gateway updates." }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "Backend API", "en": "Backend API" },
+      "inspector": {
+        "what": { "vi": "Dịch vụ nghiệp vụ phía sau với năng lực 1.500 req/s mỗi instance.", "en": "Downstream service with 1,500 req/s capacity per instance." },
+        "how": { "vi": "Xử lý request hợp lệ sau khi đã qua lớp lọc của Gateway và Limiter.", "en": "Processes allowed requests after Gateway and Limiter checks." },
+        "why": { "vi": "Là thành phần tốn kém nhất, cần được bảo vệ bằng ngưỡng Rate Limiter phù hợp.", "en": "Expensive compute tier shielded by accurate rate limiting." }
+      }
+    }
+  },
+  "links": {
+    "users-gw": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng người dùng hợp lệ đi vào API Gateways.", "en": "Legitimate user traffic entering API Gateways." },
+        "how": { "vi": "Giữ ổn định 35% tổng tải hệ thống.", "en": "Accounts for 35% of total offered traffic." },
+        "why": { "vi": "Cần duy trì p99 ≤ 120 ms ngay cả khi có burst.", "en": "Must maintain p99 ≤ 120 ms even during bursts." }
+      }
+    },
+    "burst-lim": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng đột biến đi qua lớp kiểm tra Rate Limiter.", "en": "Burst traffic entering the Rate Limiter tier." },
+        "how": { "vi": "Phần vượt quá ratePerSec + burst bị từ chối ngay tại biên.", "en": "Excess requests beyond ratePerSec + burst are shed at the edge." },
+        "why": { "vi": "Chặn tải dư trước khi tiêu tốn tài nguyên xử lý bên trong.", "en": "Sheds excess load before consuming backend capacity." }
+      }
+    },
+    "lim-gw": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng đã được lọc chuyển tiếp vào API Gateways.", "en": "Admitted traffic forwarded to API Gateways." },
+        "how": { "vi": "Giới hạn tốc độ trung bình bằng ratePerSec.", "en": "Average admitted rate bounded by ratePerSec." },
+        "why": { "vi": "Giữ lưu lượng vào Backend API nằm trong vùng an toàn.", "en": "Keeps downstream API utilization below saturation." }
+      }
+    },
+    "gw-redis": {
+      "inspector": {
+        "what": { "vi": "Đường gọi nội bộ từ Gateway sang Redis để kiểm tra bộ đếm.", "en": "Internal lookup from Gateways to Redis Counter Store." },
+        "how": { "vi": "Tốn thêm 1 hop mạng (~0,5 ms) đổi lấy độ chính xác toàn cục.", "en": "Adds 1 internal network hop (~0.5 ms) for global accuracy." },
+        "why": { "vi": "Đặt Timeout ngắn (50–100 ms) và cấu hình Fail-open để Redis lỗi không chặn toàn bộ API.", "en": "Short timeouts and fail-open policy prevent Redis issues from blocking all traffic." }
+      }
+    },
+    "gw-api": {
+      "inspector": {
+        "what": { "vi": "Lưu lượng hợp lệ chuyển tiếp từ Gateway xuống Backend API.", "en": "Admitted requests forwarded from Gateways to Backend API." },
+        "how": { "vi": "Tổng tải gồm người dùng hợp lệ cộng phần được phép từ bộ lọc.", "en": "Carries valid user traffic plus admitted burst share." },
+        "why": { "vi": "Nếu limiter để lọt quá 3.000 req/s, Backend API (2 máy) sẽ bão hòa.", "en": "If admitted load exceeds 3,000 req/s, 2 API instances saturate." }
+      }
+    }
+  },
+  "zones": {
+    "edge": {
+      "nodeIds": ["gateways", "limiter", "redis", "api"],
+      "label": { "vi": "CỤM GATEWAY & RATE LIMITER", "en": "GATEWAY & LIMITER CLUSTER" },
+      "tone": "neutral"
+    }
+  },
+  "scenes": {
+    "s1-local-skew": {
+      "show": { "nodes": ["users", "gateways", "api"] },
+      "state": {
+        "gateways": { "loadPct": 55, "badge": { "text": { "vi": "Đếm cục bộ", "en": "Local counter" }, "tone": "warn" } },
+        "api": { "loadPct": 95, "highlighted": true, "badge": { "text": { "vi": "Vượt ngưỡng ×3", "en": "3x limit leak" }, "tone": "bad" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bẫy bộ đếm cục bộ", "en": "Local Counter Skew" },
+        "lines": [
+          { "text": { "vi": "3 Gateway đếm riêng → lọt gấp 3 lần", "en": "3 Gateways count separately → 3x leak" }, "tone": "bad" },
+          { "text": { "vi": "Cần kho đếm tập trung dùng chung", "en": "Need shared centralized counter" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-central-redis": {
+      "show": { "nodes": "*" },
+      "zones": ["edge"],
+      "state": {
+        "gateways": { "loadPct": 45 },
+        "redis": { "loadPct": 15, "highlighted": true, "badge": { "text": { "vi": "+1 hop · 0,5 ms", "en": "+1 hop · 0.5 ms" }, "tone": "ok" } },
+        "api": { "loadPct": 60 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bộ đếm tập trung trên Redis", "en": "Centralized Redis Counter" },
+        "lines": [
+          { "text": { "vi": "Lua script nguyên tử chống Race Condition", "en": "Atomic Lua script prevents races" }, "tone": "good" },
+          { "text": { "vi": "Đánh đổi: thêm 1 hop và nguy cơ SPOF", "en": "Trade-off: +1 hop and Redis SPOF" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-algorithms": {
+      "show": { "nodes": "*" },
+      "zones": ["edge"],
+      "state": {
+        "limiter": { "loadPct": 30, "highlighted": true, "badge": { "text": { "vi": "Token Bucket", "en": "Token Bucket" }, "tone": "ok" } },
+        "redis": { "loadPct": 18 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Token Bucket vs Sliding Window", "en": "Token Bucket vs Sliding Window" },
+        "lines": [
+          { "text": { "vi": "Token Bucket: cho phép burst ngắn", "en": "Token Bucket: allows controlled burst" }, "tone": "good" },
+          { "text": { "vi": "Sliding Window: làm mượt ranh giới phút", "en": "Sliding Window: smooths boundary" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-burst-live": {
+      "show": { "nodes": "*" },
+      "zones": ["edge"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đỉnh tải 5.500 req/s (t = 12 s)", "en": "Burst Peak 5,500 req/s (t = 12 s)" },
+        "lines": [
+          { "text": { "vi": "Limiter để 6.000 rps → API quá tải", "en": "Limiter at 6,000 rps → API saturates" }, "tone": "bad" },
+          { "text": { "vi": "Chỉnh ratePerSec và API replicas", "en": "Tune ratePerSec and API replicas" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-failover": {
+      "show": { "nodes": "*" },
+      "zones": ["edge"],
+      "state": {
+        "redis": { "loadPct": 20, "highlighted": true, "badge": { "text": { "vi": "2+ node · Fail-open", "en": "2+ nodes · Fail-open" }, "tone": "ok" } },
+        "gateways": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dự phòng Redis & Fail-open", "en": "Redis Redundancy & Fail-open" },
+        "lines": [
+          { "text": { "vi": "Đặt ≥ 2 node Redis tránh SPOF", "en": "Deploy ≥ 2 Redis nodes for HA" }, "tone": "good" },
+          { "text": { "vi": "Fail-open bảo vệ luồng người dùng thật", "en": "Fail-open preserves valid user traffic" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "burst": {
+      "sim": "S7-02/dist-limiter",
+      "startAtSec": 8,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "knobs": [
+          { "node": "limiter", "key": "ratePerSec" },
+          { "node": "limiter", "key": "burst" },
+          { "node": "api", "key": "replicas" },
+          { "node": "redis", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Offered Load" }, "format": "rps" },
+        { "metric": "p99", "label": { "vi": "p99", "en": "p99" }, "format": "ms", "tone": { "warnAbove": 80, "badAbove": 120 } },
+        { "metric": "errorRate", "label": { "vi": "Lỗi", "en": "Errors" }, "format": "pct", "tone": { "warnAbove": 0.01, "badAbove": 0.05 } }
+      ],
+      "slo": [{ "metric": "p99", "value": 120 }],
+      "focus": { "nodes": ["limiter", "redis", "api"] }
+    }
+  }
+}

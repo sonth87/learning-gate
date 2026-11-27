@@ -1,0 +1,76 @@
+[
+  {
+    "id": "S3-01.q1",
+    "type": "mc",
+    "q": "Khi Client gọi một dịch vụ thanh toán qua mạng và nhận lỗi hết thời gian chờ (Timeout), kết luận nào sau đây là ĐÚNG?",
+    "code": "",
+    "choices": [
+      "Giao dịch chắc chắn chưa được thực thi ở phía máy chủ thanh toán",
+      "Giao dịch chắc chắn đã hoàn tất nhưng gói phản hồi bị rớt",
+      "Không thể biết chắc yêu cầu đã chạy hay chưa; muốn thử lại an toàn bắt buộc phải kèm Idempotency Key",
+      "Chỉ cần tăng thời gian Timeout lên 60 giây là loại bỏ hoàn toàn lỗi mạng"
+    ],
+    "answer": 2,
+    "explain": "Timeout chỉ cho biết Client không nhận được gói trả lời đúng hạn, không cho biết gói tin rơi ở chiều đi, đang kẹt trong hàng đợi hay rơi ở chiều về sau khi Database đã ghi. Do đó mọi lệnh thử lại đều cần Idempotency Key để tránh trừ tiền hai lần."
+  },
+  {
+    "id": "S3-01.q2",
+    "type": "tf",
+    "q": "Trong một hệ cơ sở dữ liệu phân tán trải qua nhiều vùng địa lý, ta có thể thiết kế để loại bỏ hoàn toàn khả năng chia cắt mạng (chọn CA) nhằm giữ cả tính nhất quán tức thời lẫn độ khả dụng 100%.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Sự cố đứt cáp, lỗi bộ định tuyến hoặc nghẽn đường trục là thực tế vật lý ngoài tầm kiểm soát của phần mềm. Do P là điều kiện bắt buộc phải tính đến trong hệ phân tán, khi đứt mạng hệ thống chỉ có thể chọn bảo toàn C hoặc A."
+  },
+  {
+    "id": "S3-01.q3",
+    "type": "output",
+    "q": "Hệ thống đa vùng nhận 4.000 req/s chia đều 50/50 cho Vùng A (giữ Primary) và Vùng B. Tải gồm 80% lượt đọc nội vùng và 20% lượt ghi phải đồng bộ về Primary (chế độ CP). Khi cáp nối hai vùng bị đứt hoàn toàn, có bao nhiêu request mỗi giây bị từ chối? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "400",
+    "explain": "Vùng B nhận 50% × 4.000 = 2.000 req/s. Trong đó 80% lượt đọc (1.600 req/s) vẫn phục vụ từ bản sao nội vùng, còn 20% lượt ghi (2.000 × 0,20 = 400 req/s) không thể đồng bộ sang Vùng A nên bị từ chối ở chế độ CP."
+  },
+  {
+    "id": "S3-01.q4",
+    "type": "mc",
+    "q": "Cặp tính năng nào dưới đây được gán chế độ CP / AP hợp lý nhất trong cùng một nền tảng thương mại điện tử?",
+    "code": "",
+    "choices": [
+      "Trừ số dư ví điện tử: AP — Đếm lượt xem sản phẩm: CP",
+      "Đặt ghế máy bay cuối cùng: CP — Cập nhật danh sách sản phẩm vừa xem: AP",
+      "Cả trừ tồn kho lẫn đếm lượt thích đều bắt buộc dùng CP xuyên lục địa",
+      "Đổi mật khẩu bảo mật: AP — Gợi ý mặt hàng tương tự: CP"
+    ],
+    "answer": 1,
+    "explain": "Đặt ghế cuối cùng hoặc trừ tiền không được phép bán trùng nên cần CP (chấp nhận báo lỗi tạm thời khi mất kết nối). Ngược lại, danh sách vừa xem hay lượt thích chịu được độ lệch vài giây nên chọn AP để luôn phản hồi nhanh."
+  },
+  {
+    "id": "S3-01.q5",
+    "type": "mc",
+    "q": "Mô hình PACELC bổ sung điểm cốt lõi nào mà cách diễn giải hẹp của định lý CAP chưa nhắc tới?",
+    "code": "",
+    "choices": [
+      "Cách nén dữ liệu JSON để tiết kiệm băng thông đường trục",
+      "Ngay cả khi mạng bình thường không có chia cắt (Else), hệ thống có sao chép vẫn phải đánh đổi giữa Độ trễ thấp (Latency) và Nhất quán mạnh (Consistency)",
+      "Phương pháp mã hoá đầu-cuối cho các gói tin đi qua Internet công cộng",
+      "Quy tắc chia bảng dữ liệu theo khoá băm đồng nhất"
+    ],
+    "answer": 1,
+    "explain": "PACELC chỉ ra rằng 99,9% thời gian khi mạng ổn định (Else), việc đợi các bản sao ở xa xác nhận để giữ Consistency (EC) vẫn làm tăng trực tiếp độ trễ mỗi thao tác so với việc trả lời ngay tại chỗ (EL)."
+  },
+  {
+    "id": "S3-01.q6",
+    "type": "mc",
+    "q": "Khi một dịch vụ phụ thuộc ở xa phản hồi chậm bất thường, phản ứng phòng vệ nào giúp ngăn lỗi lan dây chuyền sang toàn bộ tầng gọi?",
+    "code": "",
+    "choices": [
+      "Tăng Timeout lên 30 giây và thử lại ngay lập tức 5 lần liên tiếp không chờ",
+      "Đặt Timeout ngắn (Fail Fast), giới hạn thử lại kèm Exponential Backoff + Jitter và ngắt mạch bằng Circuit Breaker",
+      "Dùng chung một Thread Pool duy nhất cho mọi dịch vụ bên ngoài",
+      "Bỏ kiểm tra lỗi mạng để luồng ứng dụng tự chờ vô hạn tới khi TCP đóng kết nối"
+    ],
+    "answer": 1,
+    "explain": "Timeout dài kết hợp thử lại tức thì làm cạn kiệt kết nối và nhân bội tải lên dịch vụ đang yếu. Fail Fast + Exponential Backoff có Jitter + Circuit Breaker giải phóng tài nguyên sớm và giúp nhánh lỗi có khoảng thở để hồi phục."
+  }
+]

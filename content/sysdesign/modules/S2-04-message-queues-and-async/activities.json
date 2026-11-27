@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S2-04.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào chạm ngưỡng trước trong đợt Spike gấp 10 lần?" },
+    "prompt": { "vi": "Hệ thống đang nhận 300 req/s ổn định. Từ giây 15, lưu lượng tăng đột biến gấp 10 lần lên 3.000 req/s trong hơn 20 giây. Cụm API có năng lực 4.500 req/s đẩy bất đồng bộ vào Queue, còn cụm 3 Worker phía sau kéo xử lý tối đa 600 job/s. Thành phần nào sẽ chuyển sang trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 14,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 14 },
+      "expected": ["worker"]
+    },
+    "reveal": { "playFromSec": 14, "playToSec": 32, "speed": 2 },
+    "hints": [
+      { "vi": "API chỉ tốn vài mili-giây ghi nhận thông điệp vào Queue rồi trả kết quả ngay." },
+      { "vi": "So sánh tốc độ kéo tối đa của cụm Worker (3 × 200 = 600 job/s) với lượng thông điệp dồn sẵn trong Queue." }
+    ],
+    "explain": { "vi": "Nhờ {queue.name} tách tải ở giữa, {api.name} xử lý 3.000 req/s dễ dàng ở ρ = {api.rho@25:2} với p99 chỉ khoảng {m.p99@25:0} ms và 0% lỗi. Phần việc nặng dồn thành backlog, khiến {worker.name} chạy hết 100% công suất (ρ = {worker.rho@25:2}) và chạm trạng thái quá tải đầu tiên ở giây {t.first.worker:1}." },
+    "sim": { "simId": "S2-04/spike", "seekSec": 14, "autoplay": false },
+    "replay": { "simId": "S2-04/spike", "seekSec": 14, "focus": { "nodes": ["api", "queue", "worker"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-04.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Đo thông lượng bền vững dài hạn của chuỗi Queue – Worker" },
+    "prompt": { "vi": "Message Queue hấp thụ tốt đột biến ngắn hạn nhưng không tự sinh thêm công suất xử lý. Với 3 Worker hiện tại (mỗi máy 200 job/s), hãy tìm mức lưu lượng cố định cao nhất (req/s) mà cụm Worker chưa bị rơi vào trạng thái Quá tải (overloaded) và tỷ lệ lỗi giữ ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "worker-ok", "kind": "node-state", "node": "worker", "notIn": ["overloaded"], "window": { "fromSec": 10, "toSec": 50 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 50 } }
+    ],
+    "runSec": 50,
+    "reference": { "value": 595, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Để hàng đợi không tích tụ tăng dần mãi mãi và Worker không chạm ρ = 1,00, tốc độ đầu vào dài hạn không được vượt tổng năng lực của 3 Worker." }
+    ],
+    "explain": { "vi": "Dù {api.name} nhận được 4.500 req/s và {queue.name} nhận 20.000 msg/s, thông lượng bền vững dài hạn vẫn bị khoá bởi tổng năng lực tiêu thụ của 3 {worker.name} là 3 × 200 ≈ {ref.value:0} req/s. Mọi lưu lượng duy trì liên tục trên 600 req/s đều làm backlog tăng không dừng." },
+    "sim": { "simId": "S2-04/spike", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S2-04.A3",
+    "kind": "timeline-read",
+    "title": { "vi": "Phát hiện lượt đọc lùi trạng thái do Worker xử lý lệch thứ tự" },
+    "prompt": { "vi": "Đơn hàng order:108 lần lượt phát sinh ba sự kiện CREATED, PAID và SHIPPED nhưng đẩy vào hàng đợi chung không có Partition Key nên 3 Worker xử lý song song và ghi đè trạng thái không kiểm soát phiên bản. Trên dòng thời gian bên dưới, hãy chọn thao tác đọc của người mua (buyer) vi phạm tính đơn điệu (Monotonic Reads — nhìn thấy trạng thái cũ hơn trạng thái đã từng thấy trước đó)." },
+    "difficulty": 2,
+    "question": "find-non-monotonic",
+    "scoring": "f1",
+    "history": [
+      { "id": "w1", "client": "worker-1", "op": "write", "key": "order:108", "value": "CREATED", "start": 2, "end": 8, "node": "db" },
+      { "id": "w2", "client": "worker-2", "op": "write", "key": "order:108", "value": "PAID", "start": 12, "end": 18, "node": "db" },
+      { "id": "r1", "client": "buyer", "op": "read", "key": "order:108", "value": "PAID", "start": 20, "end": 24, "node": "api" },
+      { "id": "w3", "client": "worker-3", "op": "write", "key": "order:108", "value": "SHIPPED", "start": 26, "end": 32, "node": "db" },
+      { "id": "r2", "client": "buyer", "op": "read", "key": "order:108", "value": "SHIPPED", "start": 35, "end": 39, "node": "api" },
+      { "id": "r3", "client": "buyer", "op": "read", "key": "order:108", "value": "PAID", "start": 44, "end": 48, "node": "api" },
+      { "id": "r4", "client": "buyer", "op": "read", "key": "order:108", "value": "SHIPPED", "start": 54, "end": 58, "node": "api" }
+    ],
+    "expected": ["r3"],
+    "hints": [
+      { "vi": "Theo dõi chuỗi kết quả mà cùng một client buyer nhận được từ r1 đến r4." },
+      { "vi": "Sau khi buyer đã thấy SHIPPED ở r2, lượt đọc nào lại trả ngược về trạng thái PAID cũ hơn?" }
+    ],
+    "explain": { "vi": "Ở r2 (giây 35–39), người mua đã thấy đơn hàng chuyển sang SHIPPED. Tuy nhiên tại r3 (giây 44–48), do một bản tin PAID thử lại muộn hoặc bản sao đọc chưa đồng bộ mà thiếu kiểm tra thứ tự theo Partition Key / số phiên bản, người mua lại thấy trạng thái lùi ngược về PAID — vi phạm tính đọc đơn điệu." }
+  }
+]

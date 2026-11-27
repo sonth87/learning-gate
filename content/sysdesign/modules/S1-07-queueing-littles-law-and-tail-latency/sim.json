@@ -1,0 +1,253 @@
+{
+  "sims": [
+    {
+      "id": "S1-07/queueing",
+      "scenario": {
+        "id": "S1-07/queueing",
+        "seed": 1107,
+        "durationSec": 75,
+        "mix": { "readRatio": 1.0 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 50, "to": 480, "overSec": 60 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Client" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Checkout API", "en": "Checkout API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500 },
+              "latency": { "baseMs": 10, "cv": 0.6 },
+              "params": { "replicas": 1, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance", "en": "Instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Tác vụ CPU kéo dài làm tăng hệ số sử dụng ρ", "en": "CPU spike raises utilization ρ" } }
+              ]
+            }
+          ],
+          "links": [
+            {
+              "id": "client-app",
+              "from": "client",
+              "to": "app",
+              "mode": "sync",
+              "netMs": 2,
+              "timeoutMs": 2500
+            }
+          ],
+          "routes": {
+            "client": "all-sequential"
+          }
+        }
+      }
+    },
+    {
+      "id": "S1-07/fanout",
+      "scenario": {
+        "id": "S1-07/fanout",
+        "seed": 1108,
+        "durationSec": 60,
+        "mix": { "readRatio": 1.0 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 420 },
+        "events": [
+          { "at": 25, "type": "slowdown", "node": "s6", "addMs": 90, "durationSec": 35 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Client", "en": "Client" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "coord",
+              "kind": "coordinator",
+              "label": { "vi": "Aggregator", "en": "Aggregator" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 128 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Aggregator", "en": "Aggregators" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "s1",
+              "kind": "service",
+              "label": { "vi": "Shard 1", "en": "Shard 1" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "s2",
+              "kind": "service",
+              "label": { "vi": "Shard 2", "en": "Shard 2" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "s3",
+              "kind": "service",
+              "label": { "vi": "Shard 3", "en": "Shard 3" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "s4",
+              "kind": "service",
+              "label": { "vi": "Shard 4", "en": "Shard 4" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "s5",
+              "kind": "service",
+              "label": { "vi": "Shard 5", "en": "Shard 5" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "s6",
+              "kind": "service",
+              "label": { "vi": "Shard 6", "en": "Shard 6" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 600 },
+              "latency": { "baseMs": 12, "cv": 0.7 },
+              "params": { "replicas": 1, "poolSize": 128 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số bản sao Shard 6", "en": "Shard 6 replicas" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "GC pause làm Shard 6 chậm +90 ms, kéo cả truy vấn song song chậm theo", "en": "GC pause adds +90 ms to Shard 6, dragging every parallel fan-out" } }
+              ]
+            }
+          ],
+          "links": [
+            { "id": "client-coord", "from": "client", "to": "coord", "mode": "sync", "netMs": 10, "timeoutMs": 2500 },
+            { "id": "coord-s1", "from": "coord", "to": "s1", "mode": "sync", "netMs": 1, "timeoutMs": 2000 },
+            { "id": "coord-s2", "from": "coord", "to": "s2", "mode": "sync", "netMs": 1, "timeoutMs": 2000 },
+            { "id": "coord-s3", "from": "coord", "to": "s3", "mode": "sync", "netMs": 1, "timeoutMs": 2000 },
+            { "id": "coord-s4", "from": "coord", "to": "s4", "mode": "sync", "netMs": 1, "timeoutMs": 2000 },
+            { "id": "coord-s5", "from": "coord", "to": "s5", "mode": "sync", "netMs": 1, "timeoutMs": 2000 },
+            { "id": "coord-s6", "from": "coord", "to": "s6", "mode": "sync", "netMs": 1, "timeoutMs": 2000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "coord": "all-parallel"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S0-05.q1",
+    "type": "output",
+    "q": "Một dịch vụ nhận trung bình 30.000.000 request mỗi ngày. Nếu dùng xấp xỉ Napkin Math 1 ngày ≈ 100.000 giây và hệ số đỉnh gấp 3 lần trung bình, Peak RPS bằng bao nhiêu? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "900",
+    "explain": "Lưu lượng trung bình xấp xỉ 30.000.000 / 100.000 = 300 req/s. Nhân hệ số cao điểm ×3 thu được Peak RPS = 900 req/s (tính chính xác theo 86.400 giây là 1.042 req/s, cùng bậc độ lớn ~1.000 req/s)."
+  },
+  {
+    "id": "S0-05.q2",
+    "type": "mc",
+    "q": "Hệ thống cần chịu Peak RPS = 2.100 req/s. Mỗi instance ứng dụng có năng lực tối đa μ = 1.000 req/s và nhóm quy định giữ mức sử dụng mục tiêu ρ ≤ 0,7. Số instance tối thiểu nên triển khai là bao nhiêu?",
+    "code": "",
+    "choices": ["2 instance", "3 instance", "4 instance", "1 instance"],
+    "answer": 1,
+    "explain": "Với trần sử dụng mục tiêu ρ ≤ 0,7, mỗi instance xử lý an toàn tối đa 1.000 × 0,7 = 700 req/s. Chia Peak RPS 2.100 cho 700 được đúng 3 instance; nếu chỉ dùng 2 instance thì ρ vượt 1,05 và hệ thống sẽ dồn hàng đợi."
+  },
+  {
+    "id": "S0-05.q3",
+    "type": "tf",
+    "q": "Khi ước lượng băng thông mạng cho luồng trả dữ liệu kích thước 100 MB mỗi giây, đường truyền mạng 100 Megabit/giây (Mb/s) là đủ đáp ứng mà không bị nghẽn.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "1 Byte bằng 8 bit, nên lưu lượng 100 MegaByte/giây (MB/s) tương đương 800 Megabit/giây (Mb/s), vượt gấp 8 lần đường truyền 100 Mb/s. Quên nhân 8 khi đổi từ Byte sang bit là lỗi phổ biến khi tính băng thông."
+  },
+  {
+    "id": "S0-05.q4",
+    "type": "mc",
+    "q": "Một ứng dụng chia sẻ ảnh phát sinh 500 MB metadata văn bản và 400 GB tệp ảnh nén mỗi ngày. Quyết định lưu trữ nào dưới đây phù hợp nhất với số liệu ước lượng này?",
+    "code": "",
+    "choices": [
+      "Lưu cả metadata lẫn toàn bộ tệp ảnh trực tiếp dưới dạng cột BLOB trong một SQL Database duy nhất",
+      "Lưu metadata (≈ 182,5 GB/năm) trong Database và đặt tệp ảnh (≈ 146 TB/năm) trên Object Storage kèm CDN",
+      "Phân mảnh (Shard) SQL Database thành 16 cụm ngay ngày đầu vì metadata tăng quá nhanh",
+      "Giữ toàn bộ 146 TB tệp ảnh của cả năm trong bộ nhớ RAM của Redis để đọc nhanh"
+    ],
+    "answer": 1,
+    "explain": "Metadata chỉ tăng khoảng 182,5 GB mỗi năm nên nằm gọn trong một Database chuẩn, trong khi tệp ảnh tăng tới 146 TB mỗi năm nên cần Object Storage chi phí thấp kết hợp CDN để giảm tải băng thông ra."
+  },
+  {
+    "id": "S0-05.q5",
+    "type": "mc",
+    "q": "Hệ thống thu thập chỉ số cảm biến IoT nhận 15.000 lượt ghi/giây nhưng chỉ có 20 lượt đọc/giây từ trang biểu đồ nội bộ. Hướng kiến trúc nào khớp với đặc trưng tải này?",
+    "code": "",
+    "choices": [
+      "Đặt nhiều lớp CDN và Read Replica để tăng tốc độ đọc trang biểu đồ",
+      "Chỉ cần thêm Redis Cache kiểu Cache-Aside trước một SQL Database nhỏ",
+      "Đặt Message Queue làm bộ đệm đầu vào, gộp ghi theo lô (Batch Write) vào cơ sở dữ liệu tối ưu cho ghi",
+      "Không cần bộ đệm vì lưu lượng trung bình đọc rất thấp"
+    ],
+    "answer": 2,
+    "explain": "Tỉ lệ ghi áp đảo (Write-Heavy, hơn 99,8% là ghi) làm Cache đọc hầu như không giảm được tải. Đặt Queue đệm đỉnh tải kết hợp Batch Write và lưu trữ chuyên cho chuỗi thời gian mới giải quyết đúng cổ chai ghi."
+  },
+  {
+    "id": "S0-05.q6",
+    "type": "output",
+    "q": "Tập dữ liệu được đọc trong ngày có tổng dung lượng 40 GB. Theo quy tắc 80/20, nhóm giữ 20% lượng dữ liệu nóng nhất này trong RAM (chưa tính overhead con trỏ). Cần bao nhiêu GB dữ liệu trong Cache? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "8",
+    "explain": "Theo quy tắc Pareto 80/20, lưu 20% tập dữ liệu được truy cập nhiều nhất (40 GB × 0,2 = 8 GB) thường giúp phục vụ phần lớn lượt đọc trực tiếp từ bộ nhớ RAM mà không phải chạm xuống đĩa của Database."
+  }
+]

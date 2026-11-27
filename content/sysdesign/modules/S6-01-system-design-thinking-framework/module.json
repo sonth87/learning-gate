@@ -1,0 +1,30 @@
+{
+  "id": "S6-01",
+  "slug": "S6-01-system-design-thinking-framework",
+  "level": 6,
+  "order": 1,
+  "title": "Khung tư duy thiết kế hệ thống: Từ yêu cầu đến kiến trúc",
+  "summary": "Chuyển từ tư duy áp đặt công nghệ sang tư duy xuất phát từ yêu cầu và ràng buộc, phân biệt hướng tiếp cận Top-Down với Bottom-Up và hai mức thu phóng HLD/LLD.",
+  "durationMin": 15,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt tư duy chọn công nghệ trước với tư duy xuất phát từ yêu cầu chức năng và phi chức năng" },
+    { "vi": "Phân tích ba nhóm ràng buộc: kỹ thuật, kinh doanh (ngân sách, thời gian, đội ngũ) và quy mô tải" },
+    { "vi": "So sánh hướng thiết kế Top-Down với Bottom-Up và biết khi nào kết hợp cả hai" },
+    { "vi": "Phân định ranh giới giữa High-Level Design (HLD) và Low-Level Design (LLD) qua hợp đồng giao tiếp" }
+  ],
+  "tags": ["thinking-framework", "requirements", "constraints", "hld", "lld", "top-down"],
+  "prerequisites": ["S0-07", "S1-05"],
+  "related": ["S6-02", "S6-03"],
+  "dtsRef": "hld-lld",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-6/lessons/lesson-1-system-design-thinking-framework.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-6/lessons/lesson-1-system-design-thinking-framework.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ bằng lời mới: bỏ giai thoại mở đầu và lời kể ngôi thứ nhất, chuyển sơ đồ tĩnh sang scene memory-2d hai mức thu phóng HLD/LLD và luồng quyết định, bổ sung mô phỏng headless cho bài tập design-constraint."
+  }
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "S0-09.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán thời điểm App Service chạm ngưỡng ρ = 1,00" },
+    "prompt": { "vi": "Lưu lượng bắt đầu từ 50 req/s ở t = 0 s và tăng tuyến tính lên 400 req/s ở t = 70 s (tăng 5 req/s mỗi giây). App Service có năng lực tối đa μ = 300 req/s. Mô phỏng đang dừng ở t = 20 s (λ = 150 req/s). Dự đoán ở giây thứ mấy thì mức sử dụng ρ chạm 1,00?" },
+    "difficulty": 1,
+    "at": 20,
+    "question": {
+      "type": "number",
+      "metric": "thời điểm ρ = 1,00",
+      "atSec": 50,
+      "expected": 50,
+      "tolerancePct": 6,
+      "unit": "giây"
+    },
+    "reveal": { "playFromSec": 20, "playToSec": 62, "speed": 2 },
+    "hints": [
+      { "vi": "ρ = 1,00 khi lưu lượng đến λ bằng đúng năng lực xử lý μ = 300 req/s." },
+      { "vi": "Từ 50 req/s để tăng thêm 250 req/s với tốc độ 5 req/s mỗi giây sẽ mất bao nhiêu giây?" }
+    ],
+    "explain": { "vi": "Ta có λ(t) = 50 + 5t. Đặt 50 + 5t = 300 suy ra t = {truth:0} giây. Tại t = 50 s, lưu lượng đạt {svc.lambda@50:0} req/s (ρ = {svc.rho@50:2}), p99 đã tăng lên {m.p99@50:0} ms trước khi hàng đợi bắt đầu tích luỹ nhanh ở các giây tiếp theo." },
+    "sim": { "simId": "S0-09/ramp", "seekSec": 20, "autoplay": false },
+    "replay": { "simId": "S0-09/ramp", "seekSec": 20, "focus": { "nodes": ["svc"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S0-09.A2",
+    "kind": "predict",
+    "title": { "vi": "Giải thích vì sao p99 vọt cao trước khi đồng hồ Lỗi nhảy số" },
+    "prompt": { "vi": "Khi tua thanh thời gian tới t = 50 s, đồng hồ p99 đã vượt quá 500 ms nhưng tỉ lệ lỗi (errorRate) vẫn bằng 0%. Điều gì xảy ra nếu để mô phỏng chạy tiếp tới t = 65 s mà không thêm instance?" },
+    "difficulty": 1,
+    "at": 50,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "p99 tự giảm dần về 60 ms vì các request đến sau tự động đi vòng qua hàng đợi" },
+        { "vi": "Phần dư λ − μ tích luỹ vào hàng đợi mỗi giây làm thời gian chờ chạm trần timeout 1.500 ms, khiến tỉ lệ lỗi tăng vọt" },
+        { "vi": "Độ trễ giữ nguyên ở mức 500 ms mãi mãi và không bao giờ phát sinh lỗi" },
+        { "vi": "Lưu lượng đầu vào từ người dùng tự động giảm xuống để khớp với năng lực 300 req/s" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 50, "playToSec": 72, "speed": 2 },
+    "hints": [
+      { "vi": "So sánh thời gian chờ trong hàng đợi khi hàng đợi dài ra hàng trăm request với ngưỡng clientTimeoutMs = 1.500 ms." }
+    ],
+    "explain": { "vi": "Ở t = 50 s, request mới chỉ bắt đầu chờ lâu hơn nhưng tổng thời gian vẫn dưới ngưỡng timeout 1.500 ms nên chưa báo lỗi. Sau mốc này λ > 300 req/s làm hàng đợi ở t = 60 s dồn lên {svc.queue@60:0} request, kéo p99 tới {m.p99@60:0} ms rồi chạm trần 1.500 ms gây lỗi hàng loạt." },
+    "sim": { "simId": "S0-09/ramp", "seekSec": 50, "autoplay": false },
+    "replay": { "simId": "S0-09/ramp", "seekSec": 50, "focus": { "nodes": ["svc"] }, "autoplay": true, "speed": 2 }
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "id": "S5-05",
+  "slug": "S5-05-batch-and-stream-processing",
+  "level": 5,
+  "order": 5,
+  "title": "Xử lý Batch và Stream: Map-Shuffle-Reduce, Window và Lag",
+  "summary": "Tách tải phân tích khỏi database sản xuất bằng Batch (Map-Shuffle-Reduce, xử lý lệch khóa nóng) và Stream Processing (Window, Watermark, Consumer Lag và mở rộng theo Partition).",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt khi nào dùng Batch Processing và khi nào cần Stream Processing theo yêu cầu độ tươi dữ liệu" },
+    { "vi": "Giải thích cơ chế Map-Shuffle-Reduce và cách khắc phục lệch dữ liệu (Hot Key Skew) bằng Combiner và Salting" },
+    { "vi": "Áp dụng Window, Watermark và Idempotent Deduplication để xử lý sự kiện đến muộn hoặc trùng lặp trong luồng" },
+    { "vi": "Đo Consumer Lag và mở rộng số lượng Processor theo số Partition để giữ độ trễ ổn định khi tải tăng gấp nhiều lần" }
+  ],
+  "tags": ["batch-processing", "stream-processing", "mapreduce", "windowing", "watermark", "consumer-lag"],
+  "prerequisites": ["S2-04", "S2-11"],
+  "related": ["S2-09", "S4-10", "S5-04"],
+  "dtsRef": "batch-stream",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về xử lý lô (Map-Shuffle-Reduce, xử lý skew) và xử lý luồng (Window, Watermark, độ trễ tiêu thụ và chia Partition)."
+  }
+}

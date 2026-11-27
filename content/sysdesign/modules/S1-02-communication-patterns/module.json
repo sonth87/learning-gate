@@ -1,0 +1,30 @@
+{
+  "id": "S1-02",
+  "slug": "S1-02-communication-patterns",
+  "level": 1,
+  "order": 3,
+  "title": "Communication Patterns: đồng bộ, hàng đợi và hướng sự kiện",
+  "summary": "So sánh Request-Response đồng bộ, Message Queue bất đồng bộ và kiến trúc Event-Driven trên cùng kịch bản dịch vụ cuối chuỗi bị chậm để chọn đúng mẫu giao tiếp theo độ trễ, độ tin cậy và mức gắn kết.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt cơ chế hoạt động của giao tiếp đồng bộ (Request-Response), hàng đợi thông điệp (Message Queue) và phát-đăng ký sự kiện (Event-Driven)" },
+    { "vi": "Giải thích vì sao một dịch vụ cuối chuỗi chậm thêm 500 ms làm cạn luồng và kéo vọt p99 của toàn bộ chuỗi gọi đồng bộ" },
+    { "vi": "Thiết kế luồng bất đồng bộ trả sớm mã 202 Accepted kết hợp tính lũy đẳng (Idempotency) cho cơ chế giao ít nhất một lần" },
+    { "vi": "Áp dụng khung 4 câu hỏi về nhu cầu phản hồi tức thì, thời gian xử lý, độ ổn định phụ thuộc và số bên nhận để chọn mẫu phù hợp" }
+  ],
+  "tags": ["communication", "sync", "async", "message-queue", "event-driven", "idempotency"],
+  "prerequisites": ["S1-01", "S1-06"],
+  "related": ["S1-03", "S2-04", "S2-11"],
+  "dtsRef": "queues",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-1/lessons/lesson-2-communication-patterns.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-2-communication-patterns.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật trực diện: bỏ giai thoại cá nhân, thay các sơ đồ Mermaid bằng hai kịch bản mô phỏng đối chiếu chuỗi 3 dịch vụ đồng bộ bị nghẽn pool khi Email Service chậm +500 ms với kiến trúc Message Queue + Worker trả sớm mã 202 Accepted, bổ sung cây Event-Driven và bài tập predict, spot-bottleneck."
+  }
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-02.c1",
+    "front": "Tuyến tính hoá (Linearizability) cam kết điều gì?",
+    "back": "Mọi thao tác hành xử như thể thực thi nguyên tử tại một điểm thời gian duy nhất giữa lúc bắt đầu và kết thúc trên một bản sao duy nhất; một khi lệnh ghi hoàn tất, mọi lượt đọc bắt đầu sau đó đều thấy giá trị mới."
+  },
+  {
+    "id": "S3-02.c2",
+    "front": "Nhất quán cuối cùng (Eventual Consistency) là gì và đánh đổi điều gì?",
+    "back": "Cam kết rằng khi không còn lệnh ghi mới, mọi bản sao cuối cùng sẽ hội tụ về cùng giá trị. Đổi lấy độ trễ cực thấp và khả dụng cao là nguy cơ đọc dữ liệu cũ (Stale Read) và phải xử lý xung đột ghi."
+  },
+  {
+    "id": "S3-02.c3",
+    "front": "Phân biệt hai bảo đảm phiên: Read-Your-Writes và Monotonic Reads?",
+    "back": "Read-Your-Writes đảm bảo người dùng luôn đọc thấy cập nhật do chính mình vừa lưu; Monotonic Reads đảm bảo các lần đọc liên tiếp của cùng người dùng không bao giờ quay ngược về phiên bản cũ hơn phiên bản họ đã từng thấy."
+  },
+  {
+    "id": "S3-02.c4",
+    "front": "Công thức Quorum W + R > N hoạt động như thế nào?",
+    "back": "Trên N bản sao, ghi đợi W máy và đọc hỏi R máy với W + R > N (ví dụ N=3, W=2, R=2) buộc tập đọc và tập ghi mới nhất giao nhau ít nhất 1 máy; Coordinator lấy bản có version cao nhất và chạy Read Repair cho máy cũ."
+  },
+  {
+    "id": "S3-02.c5",
+    "front": "Chi phí hiệu năng khi nâng từ W = R = 1 lên W = R = 2 trên cụm N = 3?",
+    "back": "Mỗi bản sao phải gánh trung bình 2/3 thay vì 1/3 lưu lượng toàn cụm (giảm một nửa trần thông lượng tối đa), đồng thời độ trễ mỗi thao tác phải chờ bản sao nhanh thứ hai phản hồi qua mạng chéo AZ."
+  },
+  {
+    "id": "S3-02.c6",
+    "front": "Vì sao Quorum kiểu Dynamo (W + R > N) vẫn chưa phải là Linearizability hoàn chỉnh?",
+    "back": "Vì có thể bật Sloppy Quorum khi đứt mạng, mất bản ghi đồng thời khi dùng Last-Write-Wins với đồng hồ lệch, hoặc hai lượt đọc diễn ra trong lúc lệnh ghi mới kịp ghi lên một phần tập W."
+  }
+]

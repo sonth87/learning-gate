@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S7-01.q1",
+    "type": "mc",
+    "q": "Vì sao nên tách WebSocket Gateway (giữ socket) khỏi Chat Service (xử lý logic)?",
+    "code": "",
+    "choices": [
+      "Để Chat Service trở thành không trạng thái (stateless), dễ mở rộng và triển khai mà không làm rớt 20 triệu socket",
+      "Vì WebSocket không thể chạy qua TCP",
+      "Để loại bỏ hoàn toàn nhu cầu dùng cơ sở dữ liệu",
+      "Để mỗi thiết bị phải mở 2 kết nối song song"
+    ],
+    "answer": 0,
+    "explain": "WebSocket Gateway giữ trạng thái kết nối TCP/TLS dài hạn. Tách logic nghiệp vụ sang Chat Service không trạng thái giúp cập nhật code hoặc scale tầng logic mà không ngắt kết nối của người dùng."
+  },
+  {
+    "id": "S7-01.q2",
+    "type": "mc",
+    "q": "Session Registry trong hệ thống chat dùng để làm gì?",
+    "code": "",
+    "choices": [
+      "Lưu toàn bộ nội dung tin nhắn vĩnh viễn",
+      "Ánh xạ user_id tới đúng WS Gateway đang giữ kết nối của người đó",
+      "Mã hóa mật khẩu người dùng",
+      "Thay thế hoàn toàn Push Notification"
+    ],
+    "answer": 1,
+    "explain": "Chat Service cần biết người nhận đang kết nối vào Gateway nào để chuyển tiếp tin nhắn đúng nơi; thông tin này được lưu trong Session Registry (thường là cụm RAM như Redis) và làm mới qua heartbeat."
+  },
+  {
+    "id": "S7-01.q3",
+    "type": "tf",
+    "q": "Khi một WS Gateway sập làm rớt 200.000 kết nối, thiết bị nên thử kết nối lại ngay lập tức sau 0 ms để giảm độ trễ.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "200.000 thiết bị nối lại cùng một lúc sẽ tạo ra Reconnect Storm đánh sập các Gateway còn lại. Cần dùng Exponential Backoff kèm Jitter để rải đều lưu lượng bắt tay."
+  },
+  {
+    "id": "S7-01.q4",
+    "type": "mc",
+    "q": "Cơ chế nào giúp chống gửi trùng tin nhắn khi mạng chập chờn và thiết bị tự động thử lại?",
+    "code": "",
+    "choices": [
+      "Dùng Round-robin trên Load Balancer",
+      "Sinh client_msg_id duy nhất ở thiết bị ngay lần gửi đầu và khử trùng ở Message Store",
+      "Tắt tính năng Retry trên mọi thiết bị",
+      "Lưu tin nhắn theo địa chỉ IP của thiết bị"
+    ],
+    "answer": 1,
+    "explain": "Nếu gói ACK bị rơi và thiết bị gửi lại cùng tin nhắn đó, server dựa vào client_msg_id để nhận ra tin đã được lưu và trả về kết quả cũ thay vì tạo bản ghi thứ hai."
+  },
+  {
+    "id": "S7-01.q5",
+    "type": "mc",
+    "q": "Trạng thái trực tuyến (Presence) và đang gõ (Typing indicator) nên được xử lý khác tin nhắn thường như thế nào?",
+    "code": "",
+    "choices": [
+      "Ghi vào Message Store bền vững giống hệt tin nhắn",
+      "Giữ tạm trong bộ nhớ với TTL ngắn và cho phép rơi gói mà không ảnh hưởng lịch sử chat",
+      "Gửi qua SMS cho mọi thành viên nhóm",
+      "Lưu vào bảng Outbox trong SQL"
+    ],
+    "answer": 1,
+    "explain": "Presence và Typing mang tính tức thời, tần suất rất cao nhưng không cần lưu trữ bền vững. Dùng bộ nhớ tạm với TTL ngắn giúp giảm tải ghi xuống Message Store."
+  }
+]

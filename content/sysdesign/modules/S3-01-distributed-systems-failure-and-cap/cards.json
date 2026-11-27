@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-01.c1",
+    "front": "Vì sao lỗi Timeout trong hệ phân tán khác hẳn ngoại lệ của lời gọi hàm cục bộ?",
+    "back": "Lời gọi cục bộ thất bại nghĩa là chưa hoàn tất; còn Timeout qua mạng là trạng thái bất định: yêu cầu có thể rơi lúc đi, đang xếp hàng ở Server, hoặc đã ghi xong vào DB nhưng rơi gói trả lời lúc về."
+  },
+  {
+    "id": "S3-01.c2",
+    "front": "Idempotency Key giải quyết bài toán gì khi mạng đánh rơi gói tin?",
+    "back": "Giúp thao tác thử lại (Retry) của Client trở nên bất biến: nếu Server thấy khoá này đã xử lý trước đó thì trả lại kết quả đã lưu thay vì thực thi lặp lần thứ hai (như trừ tiền kép hay tạo đơn trùng)."
+  },
+  {
+    "id": "S3-01.c3",
+    "front": "Lỗi một phần (Partial Failure) trong kiến trúc phân tán là gì?",
+    "back": "Tình huống một số máy chủ hoặc bước gọi dịch vụ thành công nhưng các bước kế tiếp thất bại/quá hạn, để lại dữ liệu toàn hệ thống ở trạng thái lưng chừng cần cơ chế bù trừ (Saga) hoặc hàng đợi đối soát."
+  },
+  {
+    "id": "S3-01.c4",
+    "front": "Định lý CAP thực sự đặt ra lựa chọn gì khi xảy ra chia cắt mạng (Network Partition)?",
+    "back": "Khi liên kết giữa các bản sao bị đứt (P), hệ thống buộc phải chọn giữa CP (từ chối thao tác ở phía không đủ đồng thuận để bảo toàn dữ liệu đúng) hoặc AP (tiếp tục phản hồi cục bộ nhưng chấp nhận dữ liệu tạm lệch và xung đột)."
+  },
+  {
+    "id": "S3-01.c5",
+    "front": "Mô hình PACELC mở rộng định lý CAP như thế nào?",
+    "back": "Nếu có Partition (P) thì chọn Availability (A) hay Consistency (C); ngược lại khi mạng bình thường (Else), hệ thống vẫn phải đánh đổi giữa Latency thấp (L — trả lời ngay tại bản sao gần) và Consistency mạnh (C — chờ sao chép đồng bộ)."
+  },
+  {
+    "id": "S3-01.c6",
+    "front": "Nguyên tắc chọn CP hay AP cho từng tính năng trong cùng một ứng dụng?",
+    "back": "Chọn CP cho nghiệp vụ không chấp nhận sai lệch như sổ cái thanh toán, đặt vé/tồn kho cuối cùng, xác thực; chọn AP cho nghiệp vụ ưu tiên phản hồi không gián đoạn như bảng tin, hồ sơ, giỏ hàng tạm và lượt thích."
+  }
+]

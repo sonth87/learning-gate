@@ -1,0 +1,30 @@
+{
+  "id": "S4-07",
+  "slug": "S4-07-observability-metrics-logs-traces",
+  "level": 4,
+  "order": 11,
+  "title": "Observability: Metric, Log, Trace và SLO",
+  "summary": "Quan sát hệ thống phân tán qua ba trụ cột Metric, Log và Distributed Trace; đọc bảng điều khiển RED, đặt cảnh báo theo SLO và Error Budget thay vì ngưỡng CPU, và tìm dịch vụ chậm qua Trace Waterfall.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân biệt vai trò bổ sung lẫn nhau của Metrics (cái gì đang xảy ra), Logs (vì sao xảy ra) và Distributed Traces (chậm ở chặng nào)" },
+    { "vi": "Áp dụng bộ chỉ số RED (Rate, Errors, Duration) và phân vị p95/p99 thay cho giá trị trung bình" },
+    { "vi": "Thiết kế cảnh báo gắn với SLO và tốc độ đốt Error Budget để giảm nhiễu báo động giả" },
+    { "vi": "Đọc Trace Waterfall để xác định dịch vụ chiếm tỷ trọng độ trễ lớn nhất và thực hiện Postmortem không đổ lỗi" }
+  ],
+  "tags": ["observability", "metrics", "logs", "tracing", "slo", "red-method", "postmortem"],
+  "prerequisites": ["S1-03", "S1-06", "S1-07"],
+  "related": ["S4-11", "S6-06", "S6-12"],
+  "dtsRef": "observability",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-7-monitoring-observability-performance-debugging.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-7-monitoring-observability-performance-debugging.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ bằng tiếng Việt chuẩn mực, bỏ Mermaid thay bằng scene isometric luồng Checkout → Fraud / Inventory / Order DB và bảng điều khiển RED dạng memory-2d, bổ sung mô phỏng sự cố deploy cấu hình lỗi và rollback."
+  }
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "S6-09.A1",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Tìm điểm nghẽn trong luồng kiểm tra phân quyền" },
+    "prompt": { "vi": "Tại giây 25, tải đạt khoảng 825 req/s và người dùng bắt đầu gặp lỗi quá hạn dù API Gateway và Multi-tenant DB vẫn còn dư nhiều năng lực. Nhấn vào node đang là điểm nghẽn trên đường đi." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 25,
+    "maxPicks": 1,
+    "expected": ["authz"],
+    "hints": [
+      { "vi": "So sánh năng lực xử lý μ của từng dịch vụ với tải 825 req/s đi qua mọi bước nối tiếp." }
+    ],
+    "explain": { "vi": "{authz.name} xử lý mỗi lượt kiểm tra đồ thị quyền mất ~25 ms với năng lực 600 req/s nên tại giây 25 đã đạt ρ = {authz.rho@25:2}, gây xếp hàng và kéo chậm toàn bộ request dù Gateway và DB còn rảnh." },
+    "sim": { "simId": "S6-09/authz-load", "seekSec": 25, "autoplay": false }
+  }
+]

@@ -1,0 +1,334 @@
+{
+  "sims": [
+    {
+      "id": "S3-02/quorum-strict",
+      "scenario": {
+        "id": "S3-02/quorum-strict",
+        "seed": 3304,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 400, "to": 3200, "overSec": 50 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "coord",
+              "kind": "coordinator",
+              "label": { "vi": "Quorum Coordinator", "en": "Quorum Coordinator" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 2.5, "cv": 0.25 },
+              "params": { "replicas": 3 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Coordinator", "en": "Coordinators" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r1",
+              "kind": "nosql",
+              "label": { "vi": "Replica 1 (AZ-A)", "en": "Replica 1 (AZ-A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R1", "en": "R1 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r2",
+              "kind": "nosql",
+              "label": { "vi": "Replica 2 (AZ-B)", "en": "Replica 2 (AZ-B)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4.5, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R2", "en": "R2 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r3",
+              "kind": "nosql",
+              "label": { "vi": "Replica 3 (AZ-C)", "en": "Replica 3 (AZ-C)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-c",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R3", "en": "R3 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-coord", "from": "lb", "to": "coord", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "coord-r1", "from": "coord", "to": "r1", "mode": "sync", "fraction": 0.67, "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "coord-r2", "from": "coord", "to": "r2", "mode": "sync", "fraction": 0.67, "netClass": "cross-az", "netMs": 2, "timeoutMs": 600 },
+            { "id": "coord-r3", "from": "coord", "to": "r3", "mode": "sync", "fraction": 0.67, "netClass": "cross-az", "netMs": 6, "timeoutMs": 600 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "coord": "all-parallel"
+          }
+        }
+      },
+      "expect": {
+        "bottleneck": "r3",
+        "maxSustainableRpsApprox": [2300, 2450]
+      }
+    },
+    {
+      "id": "S3-02/eventual-one",
+      "scenario": {
+        "id": "S3-02/eventual-one",
+        "seed": 3305,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 400, "to": 3200, "overSec": 50 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "coord",
+              "kind": "coordinator",
+              "label": { "vi": "Quorum Coordinator", "en": "Quorum Coordinator" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 2.5, "cv": 0.25 },
+              "params": { "replicas": 3 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Coordinator", "en": "Coordinators" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r1",
+              "kind": "nosql",
+              "label": { "vi": "Replica 1 (AZ-A)", "en": "Replica 1 (AZ-A)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R1", "en": "R1 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r2",
+              "kind": "nosql",
+              "label": { "vi": "Replica 2 (AZ-B)", "en": "Replica 2 (AZ-B)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-b",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 4.5, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R2", "en": "R2 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "r3",
+              "kind": "nosql",
+              "label": { "vi": "Replica 3 (AZ-C)", "en": "Replica 3 (AZ-C)" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-c",
+              "capacity": { "opsPerSec": 1600 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "params": { "sizeFactor": 1, "maxConnections": 1500, "poolSize": 32 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy R3", "en": "R3 size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-coord", "from": "lb", "to": "coord", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "coord-r1", "from": "coord", "to": "r1", "mode": "sync", "weight": 1, "netClass": "same-az", "timeoutMs": 600 },
+            { "id": "coord-r2", "from": "coord", "to": "r2", "mode": "sync", "weight": 1, "netClass": "cross-az", "netMs": 2, "timeoutMs": 600 },
+            { "id": "coord-r3", "from": "coord", "to": "r3", "mode": "sync", "weight": 1, "netClass": "cross-az", "netMs": 6, "timeoutMs": 600 }
+          ],
+          "routes": {
+            "client": "split",
+            "lb": "split",
+            "coord": "split"
+          }
+        }
+      }
+    }
+  ]
+}

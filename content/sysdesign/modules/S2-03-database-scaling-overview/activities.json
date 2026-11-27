@@ -1,0 +1,88 @@
+[
+  {
+    "id": "S2-03.A1",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần lưu lượng của cụm 1 Primary + 1 Read Replica" },
+    "prompt": { "vi": "Trên cấu hình gốc (Primary 1.500 ops/s nhận 15% ghi, 1 Read Replica 2.200 ops/s nhận 85% đọc), hãy tìm lưu lượng ổn định tối đa (req/s) mà hệ thống vẫn giữ p99 ≤ 220 ms và lỗi ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 220, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2595, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "85% lưu lượng đi vào 1 Read Replica có năng lực 2.200 ops/s; 15% đi vào Primary 1.500 ops/s." },
+      { "vi": "Chia năng lực của thành phần chạm ρ = 1 trước cho tỷ lệ lưu lượng đi vào nó: 2.200 / 0,85." }
+    ],
+    "explain": { "vi": "Read Replica nhận 85% tổng lưu lượng nên chạm giới hạn trước Primary: 2.200 / 0,85 ≈ {ref.value:0} req/s (khi đó Primary mới nhận khoảng 389 lượt ghi/giây, còn rất rảnh)." },
+    "sim": { "simId": "S2-03/ramp", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S2-03.A2",
+    "kind": "design-constraint",
+    "title": { "vi": "Cân đối Scale-up Primary và số lượng Read Replicas" },
+    "prompt": { "vi": "Cụm Database phải vượt qua cả hai kịch bản: tải tăng lên 8.000 req/s thiên về đọc (85% đọc) và đợt cao điểm 5.000 req/s nhiều ghi (45% ghi). Với ngân sách ≤ 5,00 USD/giờ và tối đa 3 thay đổi, hãy chọn cấu hình giữ p99 ≤ 120 ms, lỗi ≤ 1% và có từ 2 Read Replicas trở lên." },
+    "difficulty": 2,
+    "simId": "S2-03/ramp",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "read-ramp",
+        "label": { "vi": "Tải tăng 500 → 8.000 req/s (85% đọc, 15% ghi)" },
+        "simId": "S2-03/ramp",
+        "constraints": [
+          { "id": "p99-read", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 },
+          { "id": "err-read", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 80 } }
+        ],
+        "weight": 1
+      },
+      {
+        "id": "write-surge",
+        "label": { "vi": "Cao điểm ghi 5.000 req/s (55% đọc, 45% ghi)" },
+        "simId": "S2-03/write-surge",
+        "constraints": [
+          { "id": "p99-write", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-write", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 1
+      }
+    ],
+    "structural": [
+      { "id": "replica-ha", "kind": "structural", "rule": "stateful-has-replica", "node": "replica" }
+    ],
+    "budget": { "maxCostPerHour": 5.0, "maxChanges": 3 },
+    "par": { "costPerHour": 4.47, "changes": 2 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "replica", "key": "replicas", "value": 4 },
+        { "type": "knob", "node": "primary", "key": "sizeFactor", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "replicas-only",
+        "label": { "vi": "Chỉ tăng lên 5 Read Replicas, giữ nguyên Primary ×1" },
+        "changes": [
+          { "type": "knob", "node": "replica", "key": "replicas", "value": 5 }
+        ],
+        "why": { "vi": "5 Read Replicas đủ gánh lượt đọc, nhưng ở kịch bản 45% ghi (2.250 lượt ghi/giây) máy Primary ×1 (1.500 ops/s) bị quá tải hoàn toàn." }
+      },
+      {
+        "id": "vertical-max-only",
+        "label": { "vi": "Chỉ nâng cỡ máy Primary lên mức tối đa ×4" },
+        "changes": [
+          { "type": "knob", "node": "primary", "key": "sizeFactor", "value": 4 }
+        ],
+        "why": { "vi": "Chi phí tăng luỹ thừa vượt ngân sách nhưng 1 Read Replica duy nhất vẫn quá tải ở 6.800 lượt đọc/giây." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ở 8.000 req/s (85% đọc), cụm Read Replica cần gánh 6.800 req/s (mỗi máy 2.200 ops/s)." },
+      { "vi": "Ở 5.000 req/s (45% ghi), Primary cần gánh 2.250 req/s (mức gốc là 1.500 ops/s)." }
+    ],
+    "explain": { "vi": "4 Read Replicas nâng năng lực đọc lên 8.800 ops/s (ρ đọc ≈ {replica.rho'@70:2} ở 8.000 req/s), kết hợp nâng Primary lên ×2 (3.000 ops/s) giúp xử lý êm 2.250 lượt ghi/giây trong đợt cao điểm ghi với chi phí khoảng 4,46 USD/giờ." },
+    "replay": { "simId": "S2-03/ramp", "seekSec": 55, "focus": { "nodes": ["primary", "replica"] } }
+  }
+]

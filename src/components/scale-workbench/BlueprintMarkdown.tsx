@@ -83,6 +83,354 @@ const PLAIN_TERM_REGEX =
     ? new RegExp(`\\b(${PLAIN_TERM_PATTERNS.map(escapeRegex).join('|')})\\b`, 'g')
     : null;
 
+const LATEX_SYMBOLS: Record<string, string> = {
+  '\\rho': 'ρ',
+  '\\lambda': 'λ',
+  '\\mu': 'μ',
+  '\\sigma': 'σ',
+  '\\alpha': 'α',
+  '\\beta': 'β',
+  '\\gamma': 'γ',
+  '\\delta': 'δ',
+  '\\Delta': 'Δ',
+  '\\epsilon': 'ε',
+  '\\varepsilon': 'ε',
+  '\\theta': 'θ',
+  '\\pi': 'π',
+  '\\tau': 'τ',
+  '\\omega': 'ω',
+  '\\Omega': 'Ω',
+  '\\Sigma': 'Σ',
+  '\\sum': '∑',
+  '\\prod': '∏',
+  '\\approx': ' ≈ ',
+  '\\times': ' × ',
+  '\\cdot': ' · ',
+  '\\le': ' ≤ ',
+  '\\leq': ' ≤ ',
+  '\\ge': ' ≥ ',
+  '\\geq': ' ≥ ',
+  '\\neq': ' ≠ ',
+  '\\ne': ' ≠ ',
+  '\\to': ' → ',
+  '\\rightarrow': ' → ',
+  '\\leftarrow': ' ← ',
+  '\\leftrightarrow': ' ↔ ',
+  '\\implies': ' ⇒ ',
+  '\\Rightarrow': ' ⇒ ',
+  '\\Leftarrow': ' ⇐ ',
+  '\\sqcup': ' ⊔ ',
+  '\\cap': ' ∩ ',
+  '\\cup': ' ∪ ',
+  '\\land': ' ∧ ',
+  '\\lor': ' ∨ ',
+  '\\in': ' ∈ ',
+  '\\notin': ' ∉ ',
+  '\\subset': ' ⊂ ',
+  '\\subseteq': ' ⊆ ',
+  '\\infty': '∞',
+  '\\pm': ' ± ',
+  '\\dots': '…',
+  '\\cdots': '⋯',
+  '\\ldots': '…',
+  '\\bmod': ' mod ',
+  '\\mod': ' mod ',
+  '\\max': 'max',
+  '\\min': 'min',
+  '\\log': 'log',
+  '\\ln': 'ln',
+  '\\circ': '°',
+  '\\parallel': ' ∥ ',
+  '\\lceil': '⌈',
+  '\\rceil': '⌉',
+  '\\lfloor': '⌊',
+  '\\rfloor': '⌋',
+  '\\quad': '  ',
+  '\\qquad': '    ',
+  '\\,': ' ',
+  '\\;': ' ',
+  '\\!': '',
+  '\\bigl': '',
+  '\\bigr': '',
+  '\\Bigl': '',
+  '\\Bigr': '',
+  '\\left': '',
+  '\\right': '',
+};
+
+function readBracedArg(s: string, startBraceIdx: number): { content: string; nextIdx: number } | null {
+  if (s[startBraceIdx] !== '{') return null;
+  let depth = 0;
+  let i = startBraceIdx;
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch === '\\' && i + 1 < s.length) {
+      i += 2;
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        return { content: s.slice(startBraceIdx + 1, i), nextIdx: i + 1 };
+      }
+    }
+    i++;
+  }
+  return { content: s.slice(startBraceIdx + 1), nextIdx: s.length };
+}
+
+function renderLatexNodes(rawTex: string, keyPrefix: string, displayMode = false): React.ReactNode[] {
+  const s = rawTex
+    .replace(/\{,\}/g, ',')
+    .replace(/\\_/g, '_')
+    .replace(/\\%/g, '%')
+    .replace(/\\&/g, '&');
+
+  // Check for \begin{cases} ... \end{cases}
+  const casesMatch = /([\s\S]*?)\\begin\{cases\}([\s\S]*?)\\end\{cases\}([\s\S]*)/.exec(s);
+  if (casesMatch) {
+    const [, before, casesBody, after] = casesMatch;
+    const rows = casesBody
+      .split(/\\\\/)
+      .map((r) => r.trim())
+      .filter(Boolean);
+    return [
+      ...(before.trim() ? renderLatexNodes(before, `${keyPrefix}-cb`, displayMode) : []),
+      <span
+        key={`${keyPrefix}-cases`}
+        className="my-1 inline-flex items-center gap-1.5 align-middle"
+      >
+        <span className="font-serif text-2xl font-light leading-none text-[var(--dts-ink)] select-none">
+          {'{'}
+        </span>
+        <span className="inline-grid grid-cols-[auto_auto] gap-x-3 gap-y-1 text-left text-[0.95em]">
+          {rows.map((row, rIdx) => {
+            const parts = row.split('&').map((p) => p.trim());
+            return (
+              <React.Fragment key={rIdx}>
+                <span className="font-semibold text-[var(--dts-ink)]">
+                  {renderLatexNodes(parts[0] ?? '', `${keyPrefix}-cr${rIdx}a`, false)}
+                </span>
+                <span className="text-[var(--dts-ink-soft)]">
+                  {parts[1] ? renderLatexNodes(parts[1], `${keyPrefix}-cr${rIdx}b`, false) : null}
+                </span>
+              </React.Fragment>
+            );
+          })}
+        </span>
+      </span>,
+      ...(after.trim() ? renderLatexNodes(after, `${keyPrefix}-ca`, displayMode) : []),
+    ];
+  }
+
+  const out: React.ReactNode[] = [];
+  let buf = '';
+  let i = 0;
+  let k = 0;
+
+  const flushBuf = () => {
+    if (!buf) return;
+    out.push(buf);
+    buf = '';
+  };
+
+  while (i < s.length) {
+    // 1. \frac{num}{den}
+    if (s.startsWith('\\frac', i)) {
+      let cur = i + 5;
+      while (cur < s.length && /\s/.test(s[cur])) cur++;
+      const numArg = readBracedArg(s, cur);
+      if (numArg) {
+        cur = numArg.nextIdx;
+        while (cur < s.length && /\s/.test(s[cur])) cur++;
+        const denArg = readBracedArg(s, cur);
+        if (denArg) {
+          flushBuf();
+          if (displayMode) {
+            out.push(
+              <span
+                key={`${keyPrefix}-f-${k++}`}
+                className="mx-1 inline-flex flex-col items-center justify-center align-middle leading-tight"
+              >
+                <span className="border-b border-[var(--dts-ink-soft)] px-1.5 pb-0.5 text-[0.92em]">
+                  {renderLatexNodes(numArg.content, `${keyPrefix}-fn-${k}`, false)}
+                </span>
+                <span className="px-1.5 pt-0.5 text-[0.92em]">
+                  {renderLatexNodes(denArg.content, `${keyPrefix}-fd-${k}`, false)}
+                </span>
+              </span>
+            );
+          } else {
+            out.push(
+              <span key={`${keyPrefix}-f-${k++}`} className="inline-flex items-baseline">
+                <span>(</span>
+                {renderLatexNodes(numArg.content, `${keyPrefix}-fn-${k}`, false)}
+                <span className="mx-0.5 opacity-75">/</span>
+                {renderLatexNodes(denArg.content, `${keyPrefix}-fd-${k}`, false)}
+                <span>)</span>
+              </span>
+            );
+          }
+          i = denArg.nextIdx;
+          continue;
+        }
+      }
+    }
+
+    // 2. \text{...}, \mathrm{...}, \operatorname{...}
+    const textCmd = /^\\(text|mathrm|operatorname)\s*\{/.exec(s.slice(i));
+    if (textCmd) {
+      const braceIdx = i + textCmd[0].length - 1;
+      const arg = readBracedArg(s, braceIdx);
+      if (arg) {
+        flushBuf();
+        out.push(
+          <span key={`${keyPrefix}-t-${k++}`} className="font-sans font-normal not-italic">
+            {renderLatexNodes(arg.content, `${keyPrefix}-tc-${k}`, false)}
+          </span>
+        );
+        i = arg.nextIdx;
+        continue;
+      }
+    }
+
+    // 3. \mathbf{...}
+    if (s.startsWith('\\mathbf', i)) {
+      let cur = i + 7;
+      while (cur < s.length && /\s/.test(s[cur])) cur++;
+      const arg = readBracedArg(s, cur);
+      if (arg) {
+        flushBuf();
+        out.push(
+          <strong key={`${keyPrefix}-b-${k++}`} className="font-extrabold text-[var(--dts-ink)]">
+            {renderLatexNodes(arg.content, `${keyPrefix}-bc-${k}`, false)}
+          </strong>
+        );
+        i = arg.nextIdx;
+        continue;
+      }
+    }
+
+    // 4. \sqrt{...}
+    if (s.startsWith('\\sqrt', i)) {
+      let cur = i + 5;
+      while (cur < s.length && /\s/.test(s[cur])) cur++;
+      const arg = readBracedArg(s, cur);
+      if (arg) {
+        flushBuf();
+        out.push(
+          <span key={`${keyPrefix}-sq-${k++}`} className="inline-flex items-baseline">
+            <span>√(</span>
+            {renderLatexNodes(arg.content, `${keyPrefix}-sqc-${k}`, false)}
+            <span>)</span>
+          </span>
+        );
+        i = arg.nextIdx;
+        continue;
+      }
+    }
+
+    // 5. Subscript _{...} or _x, Superscript ^{...} or ^x
+    if (s[i] === '_' || s[i] === '^') {
+      const isSub = s[i] === '_';
+      let cur = i + 1;
+      while (cur < s.length && /\s/.test(s[cur])) cur++;
+      let inner = '';
+      let nextPos = cur;
+      if (s[cur] === '{') {
+        const arg = readBracedArg(s, cur);
+        if (arg) {
+          inner = arg.content;
+          nextPos = arg.nextIdx;
+        }
+      } else if (s[cur] === '\\') {
+        const cmdM = /^\\[a-zA-Z]+/.exec(s.slice(cur));
+        if (cmdM) {
+          inner = cmdM[0];
+          nextPos = cur + cmdM[0].length;
+        }
+      } else if (cur < s.length) {
+        inner = s[cur];
+        nextPos = cur + 1;
+      }
+      if (inner) {
+        flushBuf();
+        const children = renderLatexNodes(inner, `${keyPrefix}-sp-${k}`, false);
+        out.push(
+          isSub ? (
+            <sub key={`${keyPrefix}-sub-${k++}`} className="text-[0.78em] leading-none">
+              {children}
+            </sub>
+          ) : (
+            <sup key={`${keyPrefix}-sup-${k++}`} className="text-[0.78em] leading-none">
+              {children}
+            </sup>
+          )
+        );
+        i = nextPos;
+        continue;
+      }
+    }
+
+    // 6. Other LaTeX commands (\rho, \lambda, \approx, etc.)
+    if (s[i] === '\\') {
+      const symM = /^\\([a-zA-Z]+|[,;!])/.exec(s.slice(i));
+      if (symM) {
+        const cmd = symM[0];
+        if (cmd in LATEX_SYMBOLS) {
+          buf += LATEX_SYMBOLS[cmd];
+        } else {
+          buf += symM[1];
+        }
+        i += cmd.length;
+        // Skip a single trailing space after a control word if followed by text
+        if (cmd.length > 2 && s[i] === ' ') i++;
+        continue;
+      }
+    }
+
+    // 7. Plain group {...}
+    if (s[i] === '{') {
+      const arg = readBracedArg(s, i);
+      if (arg) {
+        flushBuf();
+        out.push(...renderLatexNodes(arg.content, `${keyPrefix}-g-${k++}`, false));
+        i = arg.nextIdx;
+        continue;
+      }
+    }
+
+    buf += s[i++];
+  }
+
+  flushBuf();
+  return out;
+}
+
+const MathFormula: React.FC<{ tex: string; display?: boolean }> = ({ tex, display = false }) => {
+  const nodes = useMemo(
+    () => renderLatexNodes(tex.trim(), display ? 'disp' : 'inl', display),
+    [tex, display]
+  );
+
+  if (display) {
+    return (
+      <span className="my-2.5 block overflow-x-auto rounded-xl border border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3.5 py-2.5 text-center font-mono text-[13px] font-bold text-[var(--dts-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]">
+        <span className="inline-flex flex-wrap items-center justify-center gap-0.5 leading-relaxed">
+          {nodes}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="mx-0.5 inline-flex items-baseline rounded bg-[var(--dts-panel-muted)]/85 px-1.5 py-0.2 font-mono text-[0.92em] font-semibold text-[var(--dts-ink)]">
+      {nodes}
+    </span>
+  );
+};
+
 const BlueprintTermTrigger: React.FC<{
   term: GlossaryTerm;
   children: React.ReactNode;
@@ -229,7 +577,7 @@ const InlineCodeAware: React.FC<{ text: string; disablePlainTerms?: boolean }> =
   const parts = useMemo(() => {
     const tokens: React.ReactNode[] = [];
     const re =
-      /`([^`]+)`|\*\*(.+?)\*\*|(?<![*\w])\*([^*\s][^*]*?)\*(?![*\w])|==(.+?)==|\[([^\]]+)\]\((https?:[^)\s]+)\)|\[!badge:([a-zA-Z0-9_-]+):([^\]]+)\]/g;
+      /\$\$([\s\S]+?)\$\$|\$(?!\s)([^$\n]+?)(?<!\s)\$(?![0-9])|`([^`]+)`|\*\*(.+?)\*\*|(?<![*\w])\*([^*\s][^*]*?)\*(?![*\w])|==(.+?)==|\[([^\]]+)\]\((https?:[^)\s]+)\)|\[!badge:([a-zA-Z0-9_-]+):([^\]]+)\]/g;
     let last = 0;
     let m: RegExpExecArray | null;
     let idx = 0;
@@ -243,7 +591,11 @@ const InlineCodeAware: React.FC<{ text: string; disablePlainTerms?: boolean }> =
         );
       }
       if (m[1] !== undefined) {
-        const codeStr = m[1];
+        tokens.push(<MathFormula key={idx++} tex={m[1]} display />);
+      } else if (m[2] !== undefined) {
+        tokens.push(<MathFormula key={idx++} tex={m[2]} display={false} />);
+      } else if (m[3] !== undefined) {
+        const codeStr = m[3];
         const termMatch = enableAutoHighlight ? findGlossaryTerm(codeStr) : undefined;
         if (termMatch) {
           tokens.push(
@@ -261,8 +613,8 @@ const InlineCodeAware: React.FC<{ text: string; disablePlainTerms?: boolean }> =
             </code>
           );
         }
-      } else if (m[2] !== undefined) {
-        const boldStr = m[2];
+      } else if (m[4] !== undefined) {
+        const boldStr = m[4];
         const cleanBold = boldStr.replace(/`/g, '').trim();
         const termMatch =
           enableAutoHighlight && !disablePlainTerms
@@ -281,14 +633,14 @@ const InlineCodeAware: React.FC<{ text: string; disablePlainTerms?: boolean }> =
             </strong>
           );
         }
-      } else if (m[3] !== undefined) {
+      } else if (m[5] !== undefined) {
         tokens.push(
           <em key={idx++} className="italic">
-            <InlineCodeAware text={m[3]} disablePlainTerms={disablePlainTerms} />
+            <InlineCodeAware text={m[5]} disablePlainTerms={disablePlainTerms} />
           </em>
         );
-      } else if (m[4] !== undefined) {
-        const markStr = m[4];
+      } else if (m[6] !== undefined) {
+        const markStr = m[6];
         const cleanMark = markStr.replace(/\*|`/g, '').trim();
         const termMatch =
           enableAutoHighlight && !disablePlainTerms
@@ -310,28 +662,28 @@ const InlineCodeAware: React.FC<{ text: string; disablePlainTerms?: boolean }> =
             </mark>
           );
         }
-      } else if (m[5] !== undefined && m[6] !== undefined) {
+      } else if (m[7] !== undefined && m[8] !== undefined) {
         tokens.push(
           <a
             key={idx++}
-            href={m[6]}
+            href={m[8]}
             target="_blank"
             rel="noopener noreferrer"
             className="font-semibold underline decoration-[var(--dts-border)] underline-offset-2 hover:opacity-80"
           >
-            {m[5]}
+            {m[7]}
           </a>
         );
-      } else if (m[7] !== undefined && m[8] !== undefined) {
+      } else if (m[9] !== undefined && m[10] !== undefined) {
         tokens.push(
           <span
             key={idx++}
             className={cn(
               'mx-0.5 inline-flex items-center rounded-full border border-[var(--dts-border)] px-2 py-0.2 font-mono text-[10px] font-bold align-middle',
-              getBadgeClasses(m[7])
+              getBadgeClasses(m[9])
             )}
           >
-            {m[8]}
+            {m[10]}
           </span>
         );
       }

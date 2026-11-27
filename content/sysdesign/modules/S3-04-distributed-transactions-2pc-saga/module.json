@@ -1,0 +1,42 @@
+{
+  "id": "S3-04",
+  "slug": "S3-04-distributed-transactions-2pc-saga",
+  "level": 3,
+  "order": 6,
+  "title": "Giao dịch phân tán: 2PC, Saga và tính luỹ đẳng",
+  "summary": "Tìm hiểu vì sao một giao dịch ACID không thể trải ngang qua nhiều cơ sở dữ liệu độc lập, đối chiếu giao thức khoá chặn 2PC với mẫu Saga (Orchestration, Choreography, giao dịch bù trừ ngược) và dùng Idempotency Key để chống trừ tiền hai lần khi mạng quá hạn.",
+  "durationMin": 18,
+  "difficulty": "Advanced",
+  "objectives": [
+    {
+      "vi": "Giải thích vì sao ranh giới ACID cục bộ bị phá vỡ khi quy trình nghiệp vụ đi qua nhiều dịch vụ và cơ sở dữ liệu tách biệt",
+      "en": "Explain why single-database ACID guarantees break across independent microservice databases and external APIs"
+    },
+    {
+      "vi": "Phân tích hai pha của giao thức 2-Phase Commit (Prepare và Commit) cùng nhược điểm treo khoá in-doubt khi Coordinator gặp sự cố",
+      "en": "Analyze 2-Phase Commit (Prepare and Commit) and why Coordinator failure leaves participants blocked in-doubt"
+    },
+    {
+      "vi": "Thiết kế mẫu Saga theo hướng Orchestration và Choreography với thứ tự bù trừ ngược, Semantic Lock và vị trí đặt bước không thể hoàn tác",
+      "en": "Design Orchestration and Choreography Sagas with reverse compensation order, semantic locks, and pivot/non-compensable steps"
+    },
+    {
+      "vi": "Xử lý Timeout như trạng thái chưa rõ kết quả và triển khai Idempotency Key cho cả bước thực thi lẫn bước bù trừ",
+      "en": "Treat network timeouts as unknown outcomes and implement Idempotency Keys across forward and compensating steps"
+    }
+  ],
+  "tags": ["distributed-transactions", "2pc", "saga", "compensation", "idempotency", "orchestration", "choreography"],
+  "prerequisites": ["S3-07", "S2-11", "S3-01"],
+  "related": ["S4-06", "S4-11", "S3-02"],
+  "dtsRef": "sagas",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-4-distributed-transactions-data-integrity.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-4-distributed-transactions-data-integrity.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại hoàn toàn theo kịch bản đặt chuyến đi qua 3 cơ sở dữ liệu độc lập (Flight, Hotel, Payment): loại bỏ giai thoại cá nhân và văn phong trộn tiếng Anh, chuyển sơ đồ Mermaid sang sân khấu isometric + memory-2d, bổ sung mô phỏng sự cố dừng Coordinator làm nghẽn toàn luồng, phân tích Semantic Lock bù đắp thiếu hụt tính cô lập trong Saga và quy trình xử lý khi Timeout hoặc khi chính bước bù trừ gặp lỗi."
+  }
+}

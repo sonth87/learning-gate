@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Cpu, HelpCircle, Lightbulb, Sparkles, X } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronUp, Cpu, HelpCircle, Lightbulb, X } from 'lucide-react';
 import type { WorkbenchLang, WorkbenchTheme } from '@/stores/useWorkbenchStore';
 import { cn } from '@/utils/cn';
 import { EXTRA_ENTITY_KNOWLEDGE } from './entityKnowledgeExtra';
+import { WORKBENCH_I18N } from './i18n';
 import { pickText, type BilingualText, type StageInspectorInfo } from './types';
 
 const bi = (vi: string, en: string): BilingualText => ({ vi, en });
@@ -63,7 +64,7 @@ const ENTITY_KNOWLEDGE: Array<{
     },
   },
   {
-    match: /processpool|đa nhân|cpu/i,
+    match: /processpool|đa nhân/i,
     info: {
       title: bi('ProcessPoolExecutor (Đa tiến trình song song)', 'ProcessPoolExecutor (Multi-Core)'),
       kindLabel: bi('Xử lý nặng CPU', 'CPU Parallelism'),
@@ -396,12 +397,143 @@ const ENTITY_KNOWLEDGE: Array<{
   },
 ];
 
+const SYSDESIGN_PRIORITY_KNOWLEDGE: Array<{
+  match: RegExp;
+  info: StageInspectorInfo;
+}> = [
+  {
+    match: /redis|timeline cache|prefix cache|query cache|hot-key cache|session cache|cache-aside|cdn edge|origin shield|bộ nhớ đệm|cache\b/i,
+    info: {
+      title: bi('Tầng Bộ Nhớ Đệm (Caching Layer: Redis / CDN)', 'Caching Layer (Redis / CDN)'),
+      kindLabel: bi('Tăng tốc đọc & Giảm tải DB', 'In-Memory / Edge Cache'),
+      what: bi(
+        'Kho lưu trữ dữ liệu nóng trên RAM (Redis/Memcached) hoặc trạm biên (CDN Edge) giúp phục vụ lượt đọc trong dưới vài mili-giây.',
+        'High-speed in-memory or edge store serving hot read data in sub-milliseconds.'
+      ),
+      how: bi(
+        'Ứng dụng kiểm tra Cache trước (Cache Hit trả về ngay); chỉ khi Cache Miss mới truy vấn Database rồi nạp bù bản sao vào Cache kèm thời gian sống TTL.',
+        'Checks cache first on reads; on a miss, queries the database and populates the cache with a TTL.'
+      ),
+      why: bi(
+        'Gánh 85–99% lưu lượng đọc lặp lại, bảo vệ cơ sở dữ liệu khỏi quá tải I/O và giữ độ trễ p99 ổn định.',
+        'Absorbs 85–99% of repetitive read traffic, shielding the primary database from saturation.'
+      ),
+      tipOrCase: bi(
+        'Lưu ý thực chiến: Luôn cộng thêm độ lệch ngẫu nhiên (TTL Jitter) và dùng khóa Singleflight cho các khóa cực nóng để tránh bão Cache Stampede khi khóa hết hạn cùng lúc.',
+        'Production Tip: Add random TTL jitter and singleflight locks on hot keys to prevent Cache Stampede storms.'
+      ),
+    },
+  },
+  {
+    match: /load balancer|cân bằng tải|traffic router|geo router|virtual ip|\blb\b/i,
+    info: {
+      title: bi('Bộ Cân Bằng Tải (Load Balancer L4 / L7)', 'Load Balancer (L4 / L7)'),
+      kindLabel: bi('Điều phối lưu lượng & HA', 'Traffic Distribution Tier'),
+      what: bi(
+        'Thành phần đứng trước cụm máy chủ ứng dụng, tiếp nhận lưu lượng từ người dùng và phân phối đều sang các instance đang khỏe mạnh.',
+        'Front-door traffic distributor routing client requests across healthy backend instances.'
+      ),
+      how: bi(
+        'Chọn máy đích theo thuật toán (Round Robin, Least Connections, Consistent Hash) và chạy Health Check định kỳ để tự động cách ly máy lỗi.',
+        'Routes via Round Robin or Least Connections while running periodic health checks to isolate failing nodes.'
+      ),
+      why: bi(
+        'Cho phép mở rộng ngang (Scale Out) tầng ứng dụng không giới hạn và triển khai phiên bản mới không gián đoạn (Zero-downtime).',
+        'Enables seamless horizontal scaling and zero-downtime rolling deployments.'
+      ),
+    },
+  },
+  {
+    match: /api gateway|edge gateway|ws gateway|upload gateway|ingest gateway/i,
+    info: {
+      title: bi('Cổng Giao Tiếp Biên (API / Realtime Gateway)', 'API / Edge Gateway'),
+      kindLabel: bi('Cửa ngõ kiểm soát & Định tuyến', 'Edge Policy & Routing'),
+      what: bi(
+        'Điểm vào thống nhất ở rìa hệ thống, xử lý các tác vụ chung trước khi chuyển yêu cầu vào các dịch vụ nghiệp vụ bên trong.',
+        'Unified entry point handling cross-cutting edge concerns before forwarding to internal services.'
+      ),
+      how: bi(
+        'Thực hiện chấm dứt TLS, xác thực token (AuthN), giới hạn tốc độ (Rate Limiting) và định tuyến đường dẫn L7 ( hoặc giữ kết nối WebSocket).',
+        'Terminates TLS, verifies auth tokens, enforces rate limits, and routes requests by L7 path.'
+      ),
+      why: bi(
+        'Tách biệt lớp bảo vệ biên khỏi logic nghiệp vụ, giúp các microservice phía sau gọn nhẹ và dễ thay đổi cấu trúc.',
+        'Decouples external clients and security policies from internal microservice boundaries.'
+      ),
+    },
+  },
+  {
+    match: /message queue|job queue|task queue|fan-out queue|priority queue|dead letter queue|\bdlq\b|event bus|pub\/sub|event log|broker/i,
+    info: {
+      title: bi('Hàng Đợi Thông Điệp & Event Bus (Queue / Pub-Sub)', 'Message Queue & Event Bus'),
+      kindLabel: bi('Xử lý bất đồng bộ & Tách tải', 'Asynchronous Messaging'),
+      what: bi(
+        'Bộ đệm trung gian lưu trữ các tác vụ hoặc sự kiện để tầng Worker xử lý nền theo tốc độ bền vững.',
+        'Durable buffer decoupling producers from background worker consumers.'
+      ),
+      how: bi(
+        'API đẩy thông điệp vào Queue rồi trả lời ngay (202 Accepted); Worker kéo việc ra xử lý, gửi ACK khi hoàn tất hoặc đẩy tin lỗi lặp vào DLQ.',
+        'Producers enqueue and return immediately; workers pull, process idempotently, and ACK or route poison pills to a DLQ.'
+      ),
+      why: bi(
+        'Hấp thụ các đợt sóng tải đột biến (Traffic Spikes) mà không làm treo luồng người dùng và cô lập lỗi giữa các dịch vụ.',
+        'Absorbs traffic spikes into a safe backlog and prevents cascading failures across services.'
+      ),
+    },
+  },
+  {
+    match: /consistent hash|vòng băm|virtual node|vnode|sha-1/i,
+    info: {
+      title: bi('Vòng Băm Nhất Quán & Nút Ảo (Consistent Hashing)', 'Consistent Hashing & Virtual Nodes'),
+      kindLabel: bi('Phân vùng dữ liệu phân tán', 'Stateful Partitioning'),
+      what: bi(
+        'Thuật toán ánh xạ cả khóa dữ liệu lẫn máy chủ lên cùng một vòng tròn không gian băm [0 .. 2^32 − 1].',
+        'Maps both keys and storage nodes onto a circular 32-bit hash ring.'
+      ),
+      how: bi(
+        'Mỗi khóa đi theo chiều kim đồng hồ đến nút đầu tiên có tọa độ ≥ hash(key); mỗi máy vật lý đặt hàng trăm điểm ảo (VNodes) đan xen để chia đều tải.',
+        'Keys route clockwise to the successor node; virtual nodes interleave arcs for uniform load balance.'
+      ),
+      why: bi(
+        'Khi thêm hoặc bớt 1 máy trong cụm N máy, chỉ có đúng ~1/N lượng khóa phải di chuyển thay vì xáo trộn toàn bộ như phép chia mod N.',
+        'Adding or removing a node remaps only ~1/N keys instead of invalidating the entire cluster.'
+      ),
+    },
+  },
+  {
+    match: /service|worker|coordinator|projector|aggregator|limiter|shedder/i,
+    info: {
+      title: bi('Tầng Dịch Vụ Nghiệp Vụ & Xử Lý (Stateless Service / Worker)', 'Stateless Application Service / Worker'),
+      kindLabel: bi('Tầng tính toán (Compute Tier)', 'Compute & Business Logic'),
+      what: bi(
+        'Tiến trình thực thi logic nghiệp vụ, điều phối luồng dữ liệu giữa bộ nhớ đệm, hàng đợi và cơ sở dữ liệu.',
+        'Stateless compute unit executing domain logic across caches, queues, and databases.'
+      ),
+      how: bi(
+        'Không lưu trạng thái phiên trên RAM/đĩa cục bộ để bất kỳ instance nào trong cụm cũng có thể xử lý mọi request hoặc tác vụ nền.',
+        'Externalizes all session and durable state so instances can scale horizontally on demand.'
+      ),
+      why: bi(
+        'Dễ dàng tự động co giãn (Auto-scaling) số lượng instance theo chu kỳ tải ngày đêm và tự phục hồi khi một máy gặp sự cố.',
+        'Allows elastic horizontal scaling and instant replacement of crashed instances.'
+      ),
+    },
+  },
+];
+
 export function resolveFallbackInspector(
   rawTitle: string,
   rawSub: string | undefined,
   isLink: boolean
 ): StageInspectorInfo {
   const combined = `${rawTitle} ${rawSub ?? ''}`;
+  if (!/package-lock|pnpm-lock|github actions|kubectl|pod|argocd|pmbok|python|gil\b/i.test(combined)) {
+    for (const item of SYSDESIGN_PRIORITY_KNOWLEDGE) {
+      if (item.match.test(combined)) {
+        return item.info;
+      }
+    }
+  }
   for (const item of ENTITY_KNOWLEDGE) {
     if (item.match.test(combined)) {
       return item.info;
@@ -443,21 +575,29 @@ export const StageEntityInspectorCard: React.FC<{
   lang: WorkbenchLang;
   onClose: () => void;
   maxHeightStyle?: string;
-}> = ({ info, lang, onClose, maxHeightStyle }) => {
+  /** live-sim: số liệu trực tiếp chèn giữa header và khối What/How/Why */
+  liveSlot?: React.ReactNode;
+}> = ({ info, lang, onClose, maxHeightStyle, liveSlot }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [info]);
+
   return (
     <div
       role="region"
       aria-label={pickText(info.title, lang)}
       style={maxHeightStyle ? { maxHeight: maxHeightStyle } : undefined}
-      className="dts-card-tactile z-30 flex max-h-[min(78vh,540px)] w-full max-w-[396px] flex-col overflow-hidden rounded-2xl bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] shadow-2xl animate-[dts-pill-in_200ms_ease-out]"
+      className="dts-card-tactile z-30 flex max-h-[min(62vh,380px)] w-full max-w-[292px] flex-col overflow-hidden rounded-xl bg-[var(--dts-panel-elevated)]/98 text-[var(--dts-ink)] shadow-xl backdrop-blur-[3px] animate-[dts-pill-in_160ms_ease-out]"
     >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-3.5 py-2.5">
+      {/* Compact Header */}
+      <div className="flex items-start justify-between gap-2 border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-muted)] px-3 py-2">
         <div className="min-w-0">
-          <div className="font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+          <div className="font-mono text-[9px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
             {pickText(info.kindLabel, lang)}
           </div>
-          <h3 className="font-mono text-xs sm:text-[13px] font-extrabold text-[var(--dts-ink)] leading-snug">
+          <h3 className="font-mono text-[12px] font-extrabold text-[var(--dts-ink)] leading-snug">
             {pickText(info.title, lang)}
           </h3>
         </div>
@@ -465,87 +605,113 @@ export const StageEntityInspectorCard: React.FC<{
           type="button"
           onClick={onClose}
           aria-label="Close inspector"
-          className="rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-1 text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]"
+          className="rounded-md border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-0.5 text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)] cursor-pointer"
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      {/* Body: What / How / Why / Tips & Case Study */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3.5 space-y-2.5 text-[12px] leading-relaxed">
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-green-ink)]">
-            <HelpCircle className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'What is it?' : '1. Đây là gì?'}</span>
+      {liveSlot ? (
+        <section
+          aria-live="off"
+          className="border-b border-[var(--dts-border-soft)] bg-[var(--dts-panel-elevated)] px-3 py-1.5"
+        >
+          <div className="mb-0.5 font-mono text-[9px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+            {WORKBENCH_I18N[lang].live.inspector.title}
           </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.what, lang)}</p>
-        </div>
+          {liveSlot}
+        </section>
+      ) : null}
 
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-blue-ink)]">
-            <Cpu className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'How it works' : '2. Cơ chế hoạt động'}</span>
-          </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.how, lang)}</p>
-        </div>
+      {/* Concise Default Body + Optional Expandable Deep-Dive */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2.5 space-y-2 text-[11.5px] leading-snug">
+        <p className="text-[var(--dts-ink-soft)]">{pickText(info.what, lang)}</p>
 
-        <div>
-          <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-purple-ink)]">
-            <BookOpen className="h-3 w-3 shrink-0" />
-            <span>{lang === 'en' ? 'Why does it matter?' : '3. Tại sao lại thế?'}</span>
-          </div>
-          <p className="text-[var(--dts-ink-soft)]">{pickText(info.why, lang)}</p>
-        </div>
-
-        {info.tipOrCase && (
-          <div className="rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-amber-soft)] p-2.5 text-[var(--dts-amber-ink)]">
-            <div className="mb-0.5 flex items-center gap-1.5 font-mono text-[10px] font-extrabold uppercase tracking-wider">
-              <Lightbulb className="h-3 w-3 shrink-0" />
-              <span>
-                {lang === 'en' ? 'Tips & Real-World Case' : 'Mẹo thực chiến & Case Study'}
-              </span>
+        {expanded && (
+          <div className="space-y-2 pt-1 border-t border-[var(--dts-border-soft)]">
+            <div>
+              <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-blue-ink)]">
+                <Cpu className="h-3 w-3 shrink-0" />
+                <span>{lang === 'en' ? 'How it works' : 'Cơ chế hoạt động'}</span>
+              </div>
+              <p className="text-[var(--dts-ink-soft)]">{pickText(info.how, lang)}</p>
             </div>
-            <p className="text-[11.5px] leading-relaxed">
-              {pickText(info.tipOrCase, lang)}
-            </p>
+
+            <div>
+              <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-purple-ink)]">
+                <BookOpen className="h-3 w-3 shrink-0" />
+                <span>{lang === 'en' ? 'Why it matters' : 'Vai trò kiến trúc'}</span>
+              </div>
+              <p className="text-[var(--dts-ink-soft)]">{pickText(info.why, lang)}</p>
+            </div>
+
+            {info.tipOrCase && (
+              <div className="rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-amber-soft)] p-2 text-[var(--dts-amber-ink)]">
+                <div className="mb-0.5 flex items-center gap-1 font-mono text-[9.5px] font-extrabold uppercase tracking-wider">
+                  <Lightbulb className="h-3 w-3 shrink-0" />
+                  <span>{lang === 'en' ? 'Practical Tip' : 'Mẹo thực tế'}</span>
+                </div>
+                <p className="text-[11px] leading-snug">
+                  {pickText(info.tipOrCase, lang)}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div className="border-t border-[var(--dts-border-soft)] bg-[var(--dts-panel)] px-3.5 py-1.5 font-mono text-[10px] text-[var(--dts-ink-muted)] flex items-center gap-1.5">
-        <Sparkles className="h-3 w-3 shrink-0" />
-        <span>
-          {lang === 'en'
-            ? 'Click any other block, connector, or tag to inspect'
-            : 'Nhấn vào bất kỳ khối, đường nối hoặc nhãn nào khác để đối chiếu'}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between border-t border-[var(--dts-border-soft)] bg-[var(--dts-panel)] px-3 py-1.5 font-mono text-[10px] font-bold text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)] cursor-pointer"
+      >
+        <span className="inline-flex items-center gap-1">
+          <HelpCircle className="h-3 w-3 shrink-0" />
+          {expanded
+            ? lang === 'en'
+              ? 'Collapse details'
+              : 'Thu gọn chi tiết'
+            : lang === 'en'
+              ? 'Mechanism & practical tips'
+              : 'Xem cơ chế & mẹo thực tế'}
         </span>
-      </div>
+        {expanded ? (
+          <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+        )}
+      </button>
     </div>
   );
 };
 
 /**
- * Viewport-level Portal for StageEntityInspectorCard so its height is NEVER clipped
- * by a short SVG diagram container, while staying anchored near the stage on desktop
- * and presenting as an ergonomic sheet on mobile/tablet.
+ * Compact Corner Popover Portal:
+ * Anchors neatly in the opposite corner from the clicked node so it NEVER obscures the diagram,
+ * and closes automatically when clicking anywhere outside or pressing Escape.
  */
 export const StageInspectorPortal: React.FC<{
   info: StageInspectorInfo;
   lang: WorkbenchLang;
   theme: WorkbenchTheme;
   anchorRef: React.RefObject<HTMLElement | null>;
+  preferLeft?: boolean;
   onClose: () => void;
-}> = ({ info, lang, theme, anchorRef, onClose }) => {
+  liveSlot?: React.ReactNode;
+}> = ({ info, lang, theme, anchorRef, preferLeft = false, onClose, liveSlot }) => {
+  const cardWrapRef = useRef<HTMLDivElement | null>(null);
   const [layout, setLayout] = useState<{
     isMobile: boolean;
-    right: number;
-    bottom: number;
+    left?: number;
+    right?: number;
+    top?: number;
+    bottom?: number;
     maxH: number;
   }>(() => ({
     isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
     right: 20,
-    bottom: 24,
-    maxH: 520,
+    top: 80,
+    maxH: 360,
   }));
 
   useEffect(() => {
@@ -559,20 +725,21 @@ export const StageInspectorPortal: React.FC<{
           isMobile,
           right: 12,
           bottom: 112,
-          maxH: Math.max(280, Math.min(500, Math.floor(vh * 0.66))),
+          maxH: Math.max(240, Math.min(360, Math.floor(vh * 0.52))),
         });
         return;
       }
 
-      const right = Math.max(14, Math.min(vw - 410, Math.round(vw - rect.right + 10)));
-      const bottom = Math.max(16, Math.min(vh - 300, Math.round(vh - rect.bottom + 10)));
-      const availableAbove = vh - bottom - 18;
-      setLayout({
-        isMobile: false,
-        right,
-        bottom,
-        maxH: Math.max(300, Math.min(550, Math.floor(availableAbove))),
-      });
+      const cardW = 292;
+      const top = Math.max(12, Math.round(rect.top + 38));
+      const maxH = Math.max(210, Math.min(370, Math.floor(vh - top - 20)));
+      if (preferLeft) {
+        const left = Math.max(12, Math.min(vw - cardW - 12, Math.round(rect.left + 10)));
+        setLayout({ isMobile: false, left, top, maxH });
+      } else {
+        const right = Math.max(12, Math.min(vw - cardW - 12, Math.round(vw - rect.right + 10)));
+        setLayout({ isMobile: false, right, top, maxH });
+      }
     };
 
     updatePosition();
@@ -582,7 +749,7 @@ export const StageInspectorPortal: React.FC<{
       window.removeEventListener('resize', updatePosition);
       window.removeEventListener('scroll', updatePosition, true);
     };
-  }, [anchorRef, info]);
+  }, [anchorRef, info, preferLeft]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -591,8 +758,19 @@ export const StageInspectorPortal: React.FC<{
         onClose();
       }
     };
+    const onOutsideDown = (e: PointerEvent) => {
+      const target = e.target as Element | null;
+      if (!target) return;
+      if (cardWrapRef.current?.contains(target)) return;
+      if (target.closest('[data-iso-interactive="true"], [data-mem-interactive="true"]')) return;
+      onClose();
+    };
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
+    window.addEventListener('pointerdown', onOutsideDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('pointerdown', onOutsideDown, true);
+    };
   }, [onClose]);
 
   if (typeof document === 'undefined') return null;
@@ -607,10 +785,11 @@ export const StageInspectorPortal: React.FC<{
       {layout.isMobile && (
         <div
           onClick={onClose}
-          className="pointer-events-auto absolute inset-0 bg-black/25 backdrop-blur-[1px]"
+          className="pointer-events-auto absolute inset-0 bg-black/20 backdrop-blur-[1px]"
         />
       )}
       <div
+        ref={cardWrapRef}
         data-no-pan="true"
         data-allow-select="true"
         onClick={(e) => e.stopPropagation()}
@@ -622,9 +801,11 @@ export const StageInspectorPortal: React.FC<{
                 bottom: 'calc(env(safe-area-inset-bottom, 0px) + 114px)',
               }
             : {
-                right: `${layout.right}px`,
-                bottom: `${layout.bottom}px`,
-                width: '396px',
+                ...(layout.left !== undefined ? { left: `${layout.left}px` } : {}),
+                ...(layout.right !== undefined ? { right: `${layout.right}px` } : {}),
+                ...(layout.top !== undefined ? { top: `${layout.top}px` } : {}),
+                ...(layout.bottom !== undefined ? { bottom: `${layout.bottom}px` } : {}),
+                width: '292px',
               }
         }
         className="pointer-events-auto fixed flex justify-center sm:justify-end"
@@ -634,6 +815,7 @@ export const StageInspectorPortal: React.FC<{
           lang={lang}
           onClose={onClose}
           maxHeightStyle={`${layout.maxH}px`}
+          liveSlot={liveSlot}
         />
       </div>
     </div>,

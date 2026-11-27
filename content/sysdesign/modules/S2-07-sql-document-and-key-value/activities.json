@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S2-07.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Định cỡ kiến trúc đa lưu trữ cho sàn thương mại điện tử" },
+    "prompt": { "vi": "Hệ thống nhận 3.200 req/s qua hai kịch bản: giờ cao điểm duyệt hàng & tìm kiếm (85% đọc) và đợt cao điểm thanh toán (40% ghi vào SQL). Với ngân sách ≤ 5,20 USD/giờ và tối đa 4 thay đổi, hãy định cỡ các kho lưu trữ để giữ p99 ≤ 130 ms, lỗi ≤ 1% và đảm bảo Search Engine có bản sao dự phòng." },
+    "difficulty": 2,
+    "simId": "S2-07/polyglot",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "catalog-browse",
+        "label": { "vi": "Cao điểm duyệt catalog & tìm kiếm (85% đọc)" },
+        "simId": "S2-07/polyglot",
+        "constraints": [
+          { "id": "p99-browse", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-browse", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 1
+      },
+      {
+        "id": "checkout-rush",
+        "label": { "vi": "Cao điểm đặt đơn & thanh toán (40% ghi SQL)" },
+        "simId": "S2-07/checkout",
+        "constraints": [
+          { "id": "p99-checkout", "kind": "slo-latency", "metric": "p99", "maxMs": 130, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-checkout", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 1
+      }
+    ],
+    "structural": [
+      { "id": "search-ha", "kind": "structural", "rule": "stateful-has-replica", "node": "search" }
+    ],
+    "budget": { "maxCostPerHour": 5.2, "maxChanges": 4 },
+    "par": { "costPerHour": 4.66, "changes": 3 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "doc", "key": "shards", "value": 2 },
+        { "type": "knob", "node": "sql", "key": "sizeFactor", "value": 2 },
+        { "type": "knob", "node": "search", "key": "replicas", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-app-only",
+        "label": { "vi": "Chỉ tăng số instance tầng Commerce API lên 8" },
+        "changes": [
+          { "type": "knob", "node": "app", "key": "replicas", "value": 8 }
+        ],
+        "why": { "vi": "Tầng Commerce API vốn đã đủ năng lực (10.000 req/s). Điểm nghẽn thực sự nằm ở Document Catalog, Search Engine trong kịch bản duyệt hàng và SQL Orders trong kịch bản thanh toán." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ở kịch bản 85% đọc (2.720 lượt đọc/giây), Document nhận 75% (2.040 req/s) và Search nhận 35% (952 req/s) — hãy so với năng lực ban đầu của từng kho." },
+      { "vi": "Ở kịch bản thanh toán (40% ghi = 1.280 lượt ghi/giây), cụm SQL ban đầu chỉ xử lý tối đa 900 req/s nên cần nâng cỡ máy." },
+      { "vi": "Tăng số bản sao Search lên ít nhất 2 vừa nâng thông lượng tìm kiếm vừa thoả quy tắc dự phòng cho thành phần giữ trạng thái." }
+    ],
+    "explain": { "vi": "Phân mảnh Document lên 2 shard hạ mức sử dụng từ {doc.rho@30:2} xuống {doc.rho'@30:2}, nhân bản Search lên 2 bản sao hạ ρ từ {search.rho@30:2} xuống {search.rho'@30:2}, và nâng cỡ máy SQL lên ×2 giúp gánh trọn 1.280 giao dịch ghi/giây trong đợt thanh toán với tổng chi phí khoảng 4,65 USD/giờ." },
+    "replay": { "simId": "S2-07/polyglot", "seekSec": 30, "focus": { "nodes": ["doc", "sql", "search"] } }
+  }
+]

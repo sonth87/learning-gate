@@ -1,0 +1,125 @@
+{
+  "sims": [
+    {
+      "id": "S6-06/capacity-growth",
+      "scenario": {
+        "id": "S6-06/capacity-growth",
+        "seed": 6601,
+        "durationSec": 80,
+        "mix": { "readRatio": 0.85 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "diurnal", "min": 900, "max": 3400, "periodSec": 45 },
+        "events": [
+          { "at": 42, "type": "slowdown", "node": "db", "addMs": 220, "durationSec": 20 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 0.5, "cv": 0.15 },
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Order API", "en": "Order API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.2,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.2 },
+              "params": { "replicas": 3, "poolSize": 40 }
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 45000 },
+              "latency": { "baseMs": 0.6, "cv": 0.15 },
+              "params": { "ttlSec": 300, "capacityKeys": 60000, "workingSetKeys": 80000 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Primary DB", "en": "Primary DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.65,
+              "knobs": [],
+              "failureModes": [
+                { "kind": "slow", "note": { "vi": "Truy vấn thiếu chỉ mục làm chậm DB", "en": "Missing index slows DB queries" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 5, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "poolSize": 25 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-cache", "from": "api", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 300 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "all-sequential",
+            "api": "all-sequential",
+            "cache": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        {
+          "id": "p99",
+          "kind": "slo-latency",
+          "metric": "p99",
+          "maxMs": 150,
+          "window": { "fromSec": 0, "toSec": 80 },
+          "allowViolationPct": 5
+        }
+      ],
+      "expect": {
+        "bottleneck": "db"
+      }
+    }
+  ]
+}

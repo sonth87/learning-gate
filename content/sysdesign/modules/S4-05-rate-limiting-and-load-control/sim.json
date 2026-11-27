@@ -1,0 +1,330 @@
+{
+  "sims": [
+    {
+      "id": "S4-05/flood",
+      "scenario": {
+        "id": "S4-05/flood",
+        "seed": 4405,
+        "durationSec": 65,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "spike",
+          "base": 1000,
+          "peak": 4400,
+          "atSec": 12,
+          "holdSec": 36,
+          "riseSec": 3,
+          "fallSec": 3
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "users",
+              "kind": "client",
+              "label": { "vi": "Người dùng hợp lệ", "en": "Legitimate Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0.25 }
+            },
+            {
+              "id": "abuser",
+              "kind": "client",
+              "label": { "vi": "Script cào dữ liệu", "en": "Scraper Bot" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0.75 }
+            },
+            {
+              "id": "limiter",
+              "kind": "rate-limiter",
+              "label": { "vi": "Token Bucket Limiter", "en": "Token Bucket Limiter" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.03,
+              "knobs": [
+                {
+                  "key": "ratePerSec",
+                  "type": "number",
+                  "label": { "vi": "Tốc độ nạp token (ratePerSec)", "en": "Token refill rate (ratePerSec)" },
+                  "min": 20,
+                  "max": 5000,
+                  "step": 20,
+                  "default": 5000,
+                  "unit": "rps"
+                },
+                {
+                  "key": "burst",
+                  "type": "number",
+                  "label": { "vi": "Sức chứa xô (burst)", "en": "Bucket capacity (burst)" },
+                  "min": 20,
+                  "max": 2000,
+                  "step": 20,
+                  "default": 1000
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 100000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "ratePerSec": 5000, "burst": 1000 }
+            },
+            {
+              "id": "gateway",
+              "kind": "gateway",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000, "concurrency": 40 },
+              "latency": { "baseMs": 2, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Catalog API", "en": "Catalog API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600, "concurrency": 25 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 25 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2600 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "users-gw", "from": "users", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "abuser-lim", "from": "abuser", "to": "limiter", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lim-gw", "from": "limiter", "to": "gateway", "mode": "sync", "netClass": "same-az", "timeoutMs": 1800 },
+            { "id": "gw-api", "from": "gateway", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-db", "from": "api", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "users": "all-sequential",
+            "abuser": "all-sequential",
+            "limiter": "all-sequential",
+            "gateway": "all-sequential",
+            "api": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+        { "id": "goodput", "kind": "throughput", "minGoodputRps": 1100, "window": { "fromSec": 16, "toSec": 48 } }
+      ],
+      "expect": {
+        "bottleneck": "api"
+      },
+      "presets": [
+        {
+          "id": "enforce-quota",
+          "label": { "vi": "Đặt hạn mức 160 req/s (burst 60) cho Script cào dữ liệu", "en": "Cap scraper bot at 160 req/s (burst 60)" },
+          "changes": [
+            { "type": "knob", "node": "limiter", "key": "ratePerSec", "value": 160 },
+            { "type": "knob", "node": "limiter", "key": "burst", "value": 60 }
+          ],
+          "expectPass": true
+        },
+        {
+          "id": "trap-huge-quota",
+          "label": { "vi": "Đặt hạn mức quá lỏng (2.000 req/s) vẫn làm sập API", "en": "Overly loose 2,000 req/s cap still saturates API" },
+          "changes": [
+            { "type": "knob", "node": "limiter", "key": "ratePerSec", "value": 2000 }
+          ],
+          "expectPass": false
+        }
+      ]
+    },
+    {
+      "id": "S4-05/bucket-limit",
+      "scenario": {
+        "id": "S4-05/bucket-limit",
+        "seed": 4406,
+        "durationSec": 45,
+        "mix": { "readRatio": 0.9 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1500 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "users",
+              "kind": "client",
+              "label": { "vi": "Người dùng hợp lệ", "en": "Legitimate Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 0 }
+            },
+            {
+              "id": "abuser",
+              "kind": "client",
+              "label": { "vi": "Client đối tác (Gói Pro)", "en": "Partner Client (Pro Tier)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": { "loadShare": 1 }
+            },
+            {
+              "id": "limiter",
+              "kind": "rate-limiter",
+              "label": { "vi": "Token Bucket Limiter", "en": "Token Bucket Limiter" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.03,
+              "knobs": [
+                {
+                  "key": "ratePerSec",
+                  "type": "number",
+                  "label": { "vi": "Tốc độ nạp token (ratePerSec)", "en": "Token refill rate (ratePerSec)" },
+                  "min": 20,
+                  "max": 5000,
+                  "step": 20,
+                  "default": 1800,
+                  "unit": "rps"
+                },
+                {
+                  "key": "burst",
+                  "type": "number",
+                  "label": { "vi": "Sức chứa xô (burst)", "en": "Bucket capacity (burst)" },
+                  "min": 20,
+                  "max": 2000,
+                  "step": 20,
+                  "default": 500
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 100000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "ratePerSec": 1800, "burst": 500 }
+            },
+            {
+              "id": "gateway",
+              "kind": "gateway",
+              "label": { "vi": "API Gateway", "en": "API Gateway" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000, "concurrency": 40 },
+              "latency": { "baseMs": 2, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Catalog API", "en": "Catalog API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1600, "concurrency": 25 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 25 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Database", "en": "Database" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 2,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2600 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "replicas": 2, "maxConnections": 600 }
+            }
+          ],
+          "links": [
+            { "id": "users-gw", "from": "users", "to": "gateway", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "abuser-lim", "from": "abuser", "to": "limiter", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lim-gw", "from": "limiter", "to": "gateway", "mode": "sync", "netClass": "same-az", "timeoutMs": 1800 },
+            { "id": "gw-api", "from": "gateway", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-db", "from": "api", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "users": "all-sequential",
+            "abuser": "all-sequential",
+            "limiter": "all-sequential",
+            "gateway": "all-sequential",
+            "api": "all-sequential"
+          }
+        }
+      }
+    }
+  ]
+}

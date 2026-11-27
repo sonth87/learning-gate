@@ -1,0 +1,79 @@
+[
+  {
+    "id": "S6-12.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào gặp sự cố khi deploy v2.4?" },
+    "prompt": { "vi": "Mô phỏng dừng ở giây thứ 15 trước khi triển khai bản v2.4 (có lỗi) lên nhánh thử nghiệm ở giây 18. Theo bạn, node nào sẽ chuyển sang trạng thái lỗi/ngừng hoạt động trước?" },
+    "difficulty": 1,
+    "at": 15,
+    "question": {
+      "type": "node",
+      "rule": { "first": "recovering", "after": 15 },
+      "expected": ["app_canary"]
+    },
+    "reveal": { "playFromSec": 15, "playToSec": 40, "speed": 1 },
+    "hints": [
+      { "vi": "Trong Canary Rollout, bản dựng mới chỉ được đẩy lên một cụm nhỏ để thử nghiệm trước khi mở rộng." }
+    ],
+    "explain": { "vi": "Ở giây 18, bản v2.4 có lỗi được triển khai riêng lên {app_canary.name}, khiến tỉ lệ lỗi tăng vọt trên nhánh này trong khi cụm App Stable (v2.3) vẫn chạy bình thường. Đến giây 36, cơ chế tự động rollback đưa hệ thống về trạng thái ổn định." },
+    "sim": { "simId": "S6-12/canary-rollout", "seekSec": 15, "autoplay": false },
+    "replay": { "simId": "S6-12/canary-rollout", "seekSec": 15, "focus": { "nodes": ["app_canary", "app_stable"] }, "autoplay": true, "speed": 1 }
+  },
+  {
+    "id": "S6-12.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Postmortem sự cố đổi tên cột Database một bước" },
+    "prompt": { "vi": "Trong lúc triển khai Canary bản v2.4, đội ngũ chạy lệnh `ALTER TABLE users RENAME COLUMN full_name TO display_name` trong một bước duy nhất. Ngay lập tức, toàn bộ cụm App Stable (v2.3) đang chạy gặp lỗi SQL `column full_name does not exist`. Hãy phân tích nguyên nhân và chọn hành động khắc phục đúng." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S6-12/canary-rollout",
+      "seekSec": 25,
+      "focus": { "nodes": ["app_stable", "db"] }
+    },
+    "questions": [
+      {
+        "id": "root-cause",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân gốc rễ khiến cụm App Stable (v2.3) bị lỗi hàng loạt là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Chạy migration phá vỡ tương thích ngược (đổi tên cột đang dùng) trong khi phiên bản cũ v2.3 vẫn đang phục vụ lưu lượng" } },
+          { "id": "b", "text": { "vi": "Vì Load Balancer không bật TLS 1.3" } },
+          { "id": "c", "text": { "vi": "Vì kích thước container Docker của v2.4 quá lớn" } },
+          { "id": "d", "text": { "vi": "Vì lập trình viên quên chạy Unit Test cho giao diện" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "rollback-trap",
+        "type": "single",
+        "prompt": { "vi": "Tại sao khi xảy ra lỗi này, việc chỉ rollback code ứng dụng v2.4 về v2.3 lại không tự động sửa được sự cố?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Vì lược đồ Database đã bị đổi tên mất cột `full_name`, nên phiên bản v2.3 vẫn tiếp tục truy vấn vào cột không còn tồn tại" } },
+          { "id": "b", "text": { "vi": "Vì CI/CD không cho phép chạy lại pipeline cũ" } },
+          { "id": "c", "text": { "vi": "Vì trình duyệt người dùng cache lại schema Database" } },
+          { "id": "d", "text": { "vi": "Vì Feature Flag tự động khóa toàn bộ Database" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "action-items",
+        "type": "multi",
+        "prompt": { "vi": "Chọn các hành động phòng ngừa (Action Items) phù hợp cho quy trình di trú Database:" },
+        "options": [
+          { "id": "a", "text": { "vi": "Áp dụng quy trình Expand-Migrate-Contract qua nhiều lần triển khai để đảm bảo tương thích hai chiều" } },
+          { "id": "b", "text": { "vi": "Thêm bước kiểm tra tự động trong CI để chặn lệnh `DROP COLUMN` hoặc `RENAME COLUMN` trực tiếp" } },
+          { "id": "c", "text": { "vi": "Cấm mọi thay đổi cấu trúc Database trên production" } },
+          { "id": "d", "text": { "vi": "Tắt cảnh báo lỗi SQL để tránh làm phiền trực ban" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Trong lúc rollout, cả phiên bản cũ và mới cùng truy cập chung một Database. Mọi thay đổi schema phải tương thích với cả hai." }
+    ],
+    "explain": { "vi": "Đổi tên hoặc xóa cột đang hoạt động phá vỡ ngay lập tức các instance v2.3 còn đang chạy. Quy trình Expand-Migrate-Contract tách việc thêm cột mới, ghi song song, chuyển đọc và xóa cột cũ qua các bước độc lập để luôn rollback an toàn." }
+  }
+]

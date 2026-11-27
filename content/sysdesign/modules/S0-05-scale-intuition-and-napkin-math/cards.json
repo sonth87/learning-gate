@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S0-05.c1",
+    "front": "Mục tiêu độ chính xác của Napkin Math trong thiết kế hệ thống là gì?",
+    "back": "Xác định đúng bậc độ lớn (sai số trong khoảng ±30%) để biết hệ thống cần kiến trúc một máy, cụm có Cache/Replica hay phân mảnh phân tán, thay vì tính chính xác từng chữ số lẻ."
+  },
+  {
+    "id": "S0-05.c2",
+    "front": "Các hằng số thời gian và mạng cần nhớ khi tính nhẩm quy mô?",
+    "back": "1 ngày = 86.400 giây ≈ 10^5 giây; 1 năm ≈ 3,15 × 10^7 giây; 1 Byte = 8 bit (nhân 8 khi đổi từ MB/s sang Mb/s)."
+  },
+  {
+    "id": "S0-05.c3",
+    "front": "Công thức đổi từ DAU sang Peak RPS?",
+    "back": "Avg RPS = (DAU × số thao tác/người/ngày) / 86.400; sau đó nhân hệ số cao điểm (thường 2× đến 3×) để lấy Peak RPS làm lưu lượng thiết kế."
+  },
+  {
+    "id": "S0-05.c4",
+    "front": "Cách tính số instance ứng dụng từ Peak RPS có chừa dự phòng (Headroom)?",
+    "back": "Số instance = max(2, ceil(Peak RPS / (μ × ρ_target))), với ρ_target thường chọn 0,6–0,7 để tránh vùng độ trễ tăng vọt và chịu được sự cố mất 1 máy."
+  },
+  {
+    "id": "S0-05.c5",
+    "front": "Những yếu tố bắt buộc phải nhân vào khi ước lượng dung lượng lưu trữ dài hạn?",
+    "back": "Tách riêng Metadata (KB) và Media (MB), nhân số bản ghi mới mỗi ngày × kích thước × 365 ngày × số năm lưu giữ × hệ số sao chép (Replication Factor, thường là 3)."
+  },
+  {
+    "id": "S0-05.c6",
+    "front": "Quy tắc ước lượng nhanh bộ nhớ RAM cho tầng Cache?",
+    "back": "Áp dụng quy tắc 80/20: ước lượng tổng dữ liệu đọc trong ngày rồi giữ khoảng 20% tập khoá nóng nhất trong RAM (cộng ~30% chi phí cấu trúc dữ liệu khoá)."
+  }
+]

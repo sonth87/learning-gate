@@ -1,0 +1,24 @@
+{
+  "id": "S2-08",
+  "slug": "S2-08-replication-lag-and-failover",
+  "level": 2,
+  "order": 8,
+  "title": "Replication: độ trễ sao chép, Read-Your-Writes và Failover",
+  "summary": "Phân tích cơ chế sao chép Leader-Follower qua nhật ký WAL, lý giải vì sao tải ghi cao gây đọc dữ liệu cũ (Stale Read), áp dụng định tuyến Read-Your-Writes và xử lý chuyển đổi dự phòng (Failover).",
+  "durationMin": 17,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Mô tả luồng sao chép nhật ký ghi từ Leader sang Follower và nguyên nhân làm độ trễ sao chép (Replication Lag) tích luỹ" },
+    { "vi": "Nhận diện hiện tượng đọc dữ liệu cũ và áp dụng các kỹ thuật đảm bảo Read-Your-Writes cùng Monotonic Reads" },
+    { "vi": "So sánh đánh đổi giữa sao chép bất đồng bộ, bán đồng bộ và đồng bộ hoàn toàn theo độ trễ và nguy cơ mất dữ liệu" },
+    { "vi": "Trình bày quy trình chuyển đổi dự phòng (Failover), rủi ro hai Leader (Split-Brain) và lý do sao chép không thay thế được bản sao lưu" }
+  ],
+  "tags": ["replication", "replication-lag", "read-your-writes", "failover", "split-brain", "database"],
+  "prerequisites": ["S1-03", "S2-03"],
+  "related": ["S2-09", "S3-01", "S3-03", "S3-09"],
+  "dtsRef": "replication",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về sao chép Leader-Follower, độ trễ đồng bộ gây đọc cũ, bảo đảm Read-Your-Writes và chuyển đổi dự phòng."
+  }
+}

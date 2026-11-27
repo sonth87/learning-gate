@@ -1,0 +1,48 @@
+[
+  {
+    "id": "S7-04.q1",
+    "type": "output",
+    "q": "Có 1.000.000 tài xế gửi cập nhật vị trí GPS mỗi 4 giây một lần. Hệ thống phải xử lý bao nhiêu nghìn lượt ghi mỗi giây? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "250",
+    "explain": "1.000.000 / 4 = 250.000 lượt ghi/giây, tức 250 nghìn lượt ghi mỗi giây."
+  },
+  {
+    "id": "S7-04.q2",
+    "type": "mc",
+    "q": "Khi dùng Geohash để tìm tài xế gần người đặt xe, vì sao phải truy vấn cả ô hiện tại lẫn 8 ô lân cận xung quanh?",
+    "code": "",
+    "choices": [
+      "Vì hai điểm nằm sát nhau ở hai bên đường biên của ô lưới có thể có chuỗi tiền tố Geohash khác nhau hoàn toàn",
+      "Vì Geohash chỉ lưu được tối đa 1 tài xế mỗi ô",
+      "Để tăng gấp 9 lần chi phí lưu trữ",
+      "Vì mỗi ô chỉ chứa thông tin kinh độ mà không có vĩ độ"
+    ],
+    "answer": 0,
+    "explain": "Hai điểm chỉ cách nhau vài chục mét nhưng nằm ở hai phía ranh giới ô lưới lớn có thể khác nhau ngay từ ký tự cuối của tiền tố. Kiểm tra 8 ô xung quanh loại bỏ điểm mù biên giới."
+  },
+  {
+    "id": "S7-04.q3",
+    "type": "mc",
+    "q": "Ưu điểm chính của Quadtree so với lưới Geohash độ dài cố định ở những khu vực mật độ không đều (như sân bay và ngoại ô) là gì?",
+    "code": "",
+    "choices": [
+      "Quadtree tự động chia sâu hơn ở vùng đông xe (như sân bay) và giữ ô lớn ở vùng thưa xe (ngoại ô)",
+      "Quadtree không bao giờ cần lưu trong bộ nhớ",
+      "Quadtree biến mọi tọa độ thành một hàng đợi FIFO",
+      "Quadtree loại bỏ hoàn toàn nhu cầu cập nhật vị trí tài xế"
+    ],
+    "answer": 0,
+    "explain": "Quadtree chia 4 góc phần tư một cách thích ứng khi số điểm trong một nút vượt ngưỡng, giúp kích thước kết quả tìm kiếm đồng đều hơn giữa trung tâm đông đúc và vùng thưa dân."
+  },
+  {
+    "id": "S7-04.q4",
+    "type": "tf",
+    "q": "Nếu phân mảnh cơ sở dữ liệu vị trí theo mã Geohash thô, khu vực sân bay có hàng nghìn tài xế tụ tập có thể làm quá tải cục bộ một phân mảnh (hot cell).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Mọi tài xế trong cùng một ô Geohash sân bay đều băm về cùng một shard. Cần chia nhỏ ô nóng (thêm tiền tố phụ hoặc tăng độ dài Geohash/số shards) để trải đều tải."
+  }
+]

@@ -1,0 +1,110 @@
+[
+  {
+    "id": "S2-08.A1",
+    "kind": "timeline-read",
+    "title": { "vi": "Tìm các lượt đọc vi phạm bảo đảm Read-Your-Writes" },
+    "prompt": { "vi": "Dưới đây là lịch sử đọc/ghi theo thời gian thực của 3 người dùng (an, binh, chi) trên cụm Leader–Follower đang có độ trễ sao chép. Hãy chọn TẤT CẢ các thao tác đọc vi phạm bảo đảm Read-Your-Writes (chính người vừa ghi xong lại đọc phải giá trị cũ của khoá đó)." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-violations-of-ryw",
+    "history": [
+      { "id": "w1", "client": "an", "op": "write", "key": "bio", "value": "Ky su Backend", "start": 1, "end": 3, "node": "leader" },
+      { "id": "r1", "client": "an", "op": "read", "key": "bio", "value": "Sinh vien CNTT", "start": 4, "end": 5, "node": "follower-1" },
+      { "id": "r2", "client": "binh", "op": "read", "key": "bio", "value": "Sinh vien CNTT", "start": 4, "end": 5, "node": "follower-2" },
+      { "id": "r3", "client": "an", "op": "read", "key": "bio", "value": "Ky su Backend", "start": 7, "end": 8, "node": "leader" },
+      { "id": "w2", "client": "chi", "op": "write", "key": "addr", "value": "Quan 1 TPHCM", "start": 8, "end": 10, "node": "leader" },
+      { "id": "r4", "client": "chi", "op": "read", "key": "addr", "value": "Cau Giay HN", "start": 11, "end": 12, "node": "follower-2" },
+      { "id": "r5", "client": "chi", "op": "read", "key": "addr", "value": "Quan 1 TPHCM", "start": 15, "end": 16, "node": "follower-2" }
+    ],
+    "expected": ["r1", "r4"],
+    "hints": [
+      { "vi": "Read-Your-Writes chỉ xét trên cùng một client và cùng một khoá: client X đã hoàn tất lệnh ghi w (w.end ≤ r.start) nhưng lệnh đọc r của chính client X lại trả giá trị khác." },
+      { "vi": "Lưu ý phân biệt r2: binh đọc phải giá trị cũ do an vừa sửa, đó là Stale Read giữa hai người dùng khác nhau chứ không phải vi phạm Read-Your-Writes của binh." }
+    ],
+    "explain": { "vi": "r1 (an tự đọc lại bio sau khi w1 hoàn tất nhưng nhận giá trị cũ từ follower-1) và r4 (chi tự đọc lại addr sau khi w2 hoàn tất nhưng nhận giá trị cũ từ follower-2) là hai lượt vi phạm Read-Your-Writes. Lượt r2 là của binh (chưa từng ghi bio) nên không vi phạm Read-Your-Writes." }
+  },
+  {
+    "id": "S2-08.A2",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán tỷ lệ lỗi khi Primary ngừng hoạt động" },
+    "prompt": { "vi": "Hệ thống nhận ổn định 2.500 req/s, trong đó App Router đẩy 80% lượt đọc sang cụm Read Replicas và 20% lượt ghi vào Primary. Tại giây 20, máy Primary gặp sự cố dừng hoạt động (chưa có Failover tự động). Ở giây 25, tỷ lệ lỗi toàn hệ thống sẽ ở mức nào?" },
+    "difficulty": 1,
+    "at": 18,
+    "question": {
+      "type": "choice",
+      "options": [
+        { "vi": "0% lỗi vì cụm Read Replicas tự động nhận luôn cả các giao dịch ghi" },
+        { "vi": "Khoảng 20% lỗi: toàn bộ lượt ghi thất bại, trong khi 80% lượt đọc trên Read Replicas vẫn thành công" },
+        { "vi": "Khoảng 80% lỗi vì các Read Replicas lập tức từ chối phục vụ khi mất kết nối tới Primary" },
+        { "vi": "100% lỗi trên mọi request đọc và ghi" }
+      ],
+      "correct": 1
+    },
+    "reveal": { "playFromSec": 18, "playToSec": 34, "speed": 2 },
+    "hints": [
+      { "vi": "Read Replicas có bản dữ liệu độc lập trên đĩa nên vẫn trả lời được SELECT khi mất luồng sao chép từ Primary." },
+      { "vi": "Read Replicas ở chế độ chỉ đọc không thể tự ý nhận lệnh ghi nếu chưa qua quy trình bầu và thăng cấp Failover." }
+    ],
+    "explain": { "vi": "Khi Primary dừng ở giây 20, 2.000 lượt đọc/giây (80%) trên Read Replicas vẫn thành công nên lưu lượng hoàn tất giữ ở {global.goodputRps@25:0} req/s, còn toàn bộ 500 lượt ghi/giây thất bại làm tỷ lệ lỗi toàn cục bằng đúng {global.errorRate@25:0%}." },
+    "sim": { "simId": "S2-08/failover", "seekSec": 18, "autoplay": false },
+    "replay": { "simId": "S2-08/failover", "seekSec": 18, "focus": { "nodes": ["primary", "replica"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-08.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố kép: mất đơn khi Failover và lệnh xoá lan toàn cụm" },
+    "prompt": { "vi": "Cụm PostgreSQL của dịch vụ ví điện tử dùng sao chép bất đồng bộ (Async) sang 2 Read Replicas. Tuần qua xảy ra hai sự cố: (1) Đêm thứ Ba, khi tải ghi cao làm Replication Lag ở mức 1,2 giây, máy Primary mất kết nối mạng; kịch bản tự động thăng cấp Replica-1 lên làm Leader mới, nhưng 310 giao dịch nạp tiền đã báo thành công cho khách bị biến mất, đồng thời máy Primary cũ khi có mạng lại vẫn nhận thêm vài chục lệnh ghi cục bộ; (2) Chiều thứ Sáu, một script dọn dữ liệu chạy nhầm lệnh DELETE thiếu WHERE trên Leader mới và xoá sạch bảng trên cả 2 Replicas sau 1 giây. Hãy chọn chẩn đoán và biện pháp khắc phục đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S2-08/failover",
+      "seekSec": 22,
+      "focus": { "nodes": ["primary", "replica"] }
+    },
+    "questions": [
+      {
+        "id": "cause-loss-split",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân trực tiếp khiến 310 giao dịch đã báo thành công bị mất và hai máy cùng nhận ghi trong sự cố đêm thứ Ba là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do số lượng Read Replica quá ít nên câu lệnh SELECT làm tràn bộ nhớ RAM" } },
+          { "id": "b", "text": { "vi": "Sao chép bất đồng bộ khiến 1,2 giây WAL cuối chưa sang kịp Replica-1 lúc thăng cấp, cộng với thiếu cơ chế cô lập (Fencing) để tước quyền ghi của Primary cũ" } },
+          { "id": "c", "text": { "vi": "Load Balancer dùng thuật toán Round-robin thay vì Least-connections" } },
+          { "id": "d", "text": { "vi": "Ứng dụng thiếu bộ nhớ đệm Redis đứng trước tầng cơ sở dữ liệu" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-ha",
+        "type": "multi",
+        "prompt": { "vi": "Để bảo vệ sổ cái tài chính không mất giao dịch đã cam kết (RPO = 0) và ngăn chặn triệt để hai Leader ghi song song (Split-Brain), cần áp dụng những thay đổi kiến trúc nào?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Bật sao chép bán đồng bộ (Semi-synchronous) yêu cầu ít nhất 1 Follower xác nhận đã ghi bền vững WAL trước khi trả COMMIT" } },
+          { "id": "b", "text": { "vi": "Áp dụng Fencing (tắt máy cũ / thu hồi quyền ghi bằng epoch token) trước khi mở quyền ghi cho Leader mới" } },
+          { "id": "c", "text": { "vi": "Tăng thời gian TTL của bản ghi DNS cơ sở dữ liệu lên 24 giờ" } },
+          { "id": "d", "text": { "vi": "Cho phép mọi Read Replica tự do nhận lệnh INSERT/UPDATE bất kỳ lúc nào mà không cần điều phối" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 35
+      },
+      {
+        "id": "fix-delete",
+        "type": "single",
+        "prompt": { "vi": "Biện pháp nào giúp khôi phục bảng dữ liệu sau sự cố chạy nhầm lệnh DELETE thiếu mệnh đề WHERE vào chiều thứ Sáu?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Tăng số lượng Read Replica từ 2 lên 6 máy ở nhiều vùng khả dụng khác nhau" } },
+          { "id": "b", "text": { "vi": "Chuyển từ sao chép bất đồng bộ sang sao chép đồng bộ hoàn toàn trên mọi máy" } },
+          { "id": "c", "text": { "vi": "Dùng bản sao lưu Snapshot bất biến kết hợp kho lưu trữ nhật ký WAL để khôi phục theo mốc thời gian (PITR) về giây ngay trước lệnh DELETE" } },
+          { "id": "d", "text": { "vi": "Thực hiện Failover thăng cấp một Read Replica khác lên làm Leader" } }
+        ],
+        "correct": ["c"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Ở chế độ Async, bất kỳ đoạn WAL nào còn nằm trên đĩa của Primary cũ mà chưa truyền đi sẽ mất khi Follower lên ngôi sớm." },
+      { "vi": "Sao chép (kể cả đồng bộ hay nhiều vùng) đều chép nguyên lệnh DELETE sang mọi bản sao; chỉ có bản Backup + PITR mới quay ngược được thời gian." }
+    ],
+    "explain": { "vi": "Sao chép bất đồng bộ có RPO > 0 khi Leader hỏng đột ngột và thiếu Fencing sẽ dẫn tới Split-Brain. Với sổ cái tài chính, cần kết hợp Semi-synchronous replication (đảm bảo tối thiểu 1 bản sao giữ đủ WAL), cơ chế Fencing chặt chẽ khi Failover và hệ thống sao lưu PITR độc lập để chống lỗi xoá nhầm dữ liệu." }
+  }
+]

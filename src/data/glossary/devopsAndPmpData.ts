@@ -2,6 +2,7 @@ import { GlossaryTerm } from '@/types/glossary.types';
 import { REDIS_GLOSSARY_ENTRIES } from '@/apps/redismastery/data/redisGlossaryData';
 import { GLOSSARY_ANALOGY_ITEMS } from '@/apps/kubemastery/data/glossaryAndCheatsheetData';
 import { CICD_GLOSSARY_TERMS } from '@/apps/cicdmastery/data/cicdAssessmentsAndGlossaryData';
+import { MAPPED_SD_GLOSSARY_TERMS } from '@/apps/sdmastery/data/atlasPatterns';
 
 const MAPPED_REDIS_TERMS: GlossaryTerm[] = REDIS_GLOSSARY_ENTRIES.map((entry) => {
   const firstToken = entry.term.split(/[\s/([•]+/)[0]?.trim() || entry.term;
@@ -461,4 +462,5 @@ export const DEVOPS_AND_PMP_GLOSSARY: GlossaryTerm[] = [
   ...MAPPED_REDIS_TERMS,
   ...MAPPED_KUBE_TERMS,
   ...MAPPED_CICD_TERMS,
+  ...MAPPED_SD_GLOSSARY_TERMS,
 ];

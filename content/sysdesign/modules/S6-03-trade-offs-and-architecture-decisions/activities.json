@@ -1,0 +1,46 @@
+[
+  {
+    "id": "S6-03.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Chọn phương án đạt SLO với chi phí thấp hơn (A/B Trade-off)" },
+    "prompt": { "vi": "Hệ thống danh mục sản phẩm chịu tải 3.000 req/s (85% đọc, tập nóng 60.000 key) đang bị quá tải ở Catalog DB (μ = 1.600 req/s). Có hai hướng xử lý: Phương án A nâng cỡ DB lên ×3 (đắt, vượt ngân sách), Phương án B mở rộng dung lượng Cache lên 60.000 key (giữ chi phí thấp). Với ngân sách ≤ 1,45 USD/giờ và tối đa 2 thay đổi, hãy cấu hình để đạt p99 ≤ 110 ms và lỗi ≤ 1%." },
+    "difficulty": 2,
+    "simId": "S6-03/ab-tradeoff",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "ab-load-3000",
+        "label": { "vi": "Tải 3.000 req/s (p99 ≤ 110 ms, lỗi ≤ 1%)" },
+        "simId": "S6-03/ab-tradeoff",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 10, "toSec": 45 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 45 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [],
+    "budget": { "maxCostPerHour": 1.45, "maxChanges": 2 },
+    "par": { "costPerHour": 1.32, "changes": 1 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 60000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-db-expensive",
+        "label": { "vi": "Phương án A: Nâng cỡ Catalog DB lên ×3 thay vì mở rộng Cache" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Nâng cỡ DB lên ×3 đẩy chi phí lên trên 2,40 USD/giờ, vượt xa trần ngân sách 1,45 USD/giờ trong khi đọc qua Cache rẻ hơn rất nhiều." }
+      }
+    ],
+    "hints": [
+      { "vi": "85% lưu lượng là đọc trên tập 60.000 key. Khi Cache chỉ chứa 10.000 key, tỉ lệ miss đẩy quá nhiều truy vấn xuống Catalog DB." },
+      { "vi": "Tăng capacityKeys của Catalog Cache lên 60.000 chỉ cần 1 thay đổi và giữ tổng chi phí ở 1,32 USD/giờ." }
+    ],
+    "explain": { "vi": "Phương án B (mở rộng Catalog Cache lên 60.000 key) giữ tổng chi phí ở {m.cost'@30:2} USD/giờ (rẻ hơn hẳn nâng cỡ DB), giảm mạnh ρ của Catalog DB xuống {db.rho'@30:2} và đưa p99 về dưới 110 ms." }
+  }
+]

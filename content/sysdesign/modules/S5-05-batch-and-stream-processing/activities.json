@@ -1,0 +1,43 @@
+[
+  {
+    "id": "S5-05.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào quá tải trước khi tải sự kiện tăng gấp 3?" },
+    "prompt": { "vi": "Lưu lượng sự kiện tăng dần từ 1.000 lên 4.500 event/s trong 45 giây. Event Log chịu được 20.000 event/s, Data Warehouse chịu 12.000 event/s, còn cụm Stream Processor hiện chỉ có 1 worker (μ = 2.000 event/s). Sau giây thứ 8, node nào sẽ chuyển sang trạng thái quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 8,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 8 },
+      "expected": ["processor"]
+    },
+    "reveal": { "playFromSec": 8, "playToSec": 30, "speed": 2 },
+    "hints": [
+      { "vi": "So sánh tốc độ xử lý μ của Event Log (20.000), Stream Processor (2.000) và Data Warehouse (12.000)." },
+      { "vi": "Khi tải vượt mốc 2.000 event/s, hàng đợi và Consumer Lag sẽ tích tụ ngay trước node có μ nhỏ nhất." }
+    ],
+    "explain": { "vi": "Stream Processor có năng lực thấp nhất (2.000 event/s) nên chạm ρ = 1,00 và quá tải đầu tiên vào giây {t.first.processor:0}, làm Consumer Lag tăng vọt trong khi Event Log và Data Warehouse vẫn còn dư công suất." },
+    "sim": { "simId": "S5-05/stream-lag", "seekSec": 8, "autoplay": false },
+    "replay": { "simId": "S5-05/stream-lag", "seekSec": 8, "focus": { "nodes": ["processor", "broker"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S5-05.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm lưu lượng sự kiện tối đa với 1 Stream Processor" },
+    "prompt": { "vi": "Dùng núm điều chỉnh tải để tìm lưu lượng sự kiện tối đa (event/s) mà pipeline với 1 Stream Processor vẫn giữ được p99 ≤ 250 ms và tỉ lệ lỗi ≤ 1% trong khoảng giây 15–40. Nhập kết quả." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 250, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 4527, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Stream Processor là nút thắt cổ chai với μ = 2.000 event/s." },
+      { "vi": "Để giữ p99 ≤ 250 ms, mức sử dụng ρ phải nằm dưới ngưỡng bão hòa một chút." }
+    ],
+    "explain": { "vi": "Lưu lượng tối đa bền vững đạt khoảng {ref.value:0} event/s. Muốn xử lý tải 4.500 event/s, ta cần tăng số Stream Processor lên ít nhất 3 worker tương ứng với các Partition trên Event Log." },
+    "sim": { "simId": "S5-05/stream-lag", "seekSec": 0, "autoplay": false }
+  }
+]

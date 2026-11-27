@@ -1,0 +1,213 @@
+{
+  "sims": [
+    {
+      "id": "S5-02/shortener",
+      "scenario": {
+        "id": "S5-02/shortener",
+        "seed": 5502,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.99 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 4000, "to": 12000, "overSec": 40 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "cdn",
+              "kind": "cdn",
+              "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "internet",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 200000 },
+              "latency": { "baseMs": 1, "cv": 0.25 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.6,
+                "workingSetKeys": 200000,
+                "capacityKeys": 200000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 30000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Shortener API", "en": "Shortener API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 6, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 64 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Shortener API", "en": "Shortener API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 60000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "ttlSec": 600,
+                "ttlJitterPct": 0.05,
+                "hitRatioMax": 0.95,
+                "workingSetKeys": 200000,
+                "capacityKeys": 50000,
+                "warmupSec": 10,
+                "singleflight": true
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (key)", "en": "Cache capacity (keys)" },
+                  "min": 50000,
+                  "max": 300000,
+                  "step": 50000,
+                  "default": 50000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "nosql",
+              "kind": "nosql",
+              "label": { "vi": "NoSQL Store", "en": "NoSQL Store" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2000 },
+              "latency": { "baseMs": 3, "cv": 0.25 },
+              "params": { "shards": 1, "maxConnections": 2000 },
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số shard NoSQL", "en": "NoSQL shards" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Analytics Queue", "en": "Analytics Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "maxDepth": 100000, "dlq": false },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Analytics Worker", "en": "Analytics Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.08,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1 },
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-cdn", "from": "client", "to": "cdn", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "cdn-lb", "from": "cdn", "to": "lb", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "api-cache", "from": "api", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "cache-nosql", "from": "cache", "to": "nosql", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "api-queue", "from": "api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500, "fraction": 0.1 },
+            { "id": "queue-worker", "from": "queue", "to": "worker", "mode": "pull", "netClass": "same-az" }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "cdn": "split",
+            "lb": "split",
+            "api": "all-sequential",
+            "cache": "split",
+            "queue": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 80, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ]
+    }
+  ]
+}

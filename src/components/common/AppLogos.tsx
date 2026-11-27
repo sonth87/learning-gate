@@ -315,3 +315,44 @@ export const RedisMasteryLogo: React.FC<AppLogoProps> = ({ className, style }) =
     </svg>
   );
 };
+
+/**
+ * 6. System Design Mastery — ba thành phần nối nhau (một nút gốc phân ra hai nút con)
+ */
+export const SdMasteryLogo: React.FC<AppLogoProps> = ({ className, style }) => {
+  const id = useSvgId('sd');
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 120 120"
+      fill="none"
+      aria-hidden="true"
+      style={style}
+      className={cn('w-full h-full select-none', className)}
+    >
+      <defs>
+        <linearGradient id={`${id}-bg`} x1="12" y1="8" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#14B8A6" />
+          <stop offset="100%" stopColor="#0F766E" />
+        </linearGradient>
+      </defs>
+
+      <rect width="120" height="120" fill={`url(#${id}-bg)`} />
+
+      {/* Links */}
+      <path
+        d="M60 50V62M60 62H34V72M60 62H86V72"
+        stroke="#FFFFFF"
+        opacity="0.7"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Root node */}
+      <rect x="42" y="24" width="36" height="26" rx="7" fill="#FFFFFF" />
+      {/* Child nodes */}
+      <rect x="18" y="72" width="32" height="24" rx="7" fill="#FFFFFF" opacity="0.88" />
+      <rect x="70" y="72" width="32" height="24" rx="7" fill="#FFFFFF" opacity="0.88" />
+    </svg>
+  );
+};

@@ -1,0 +1,24 @@
+{
+  "id": "S6-08",
+  "slug": "S6-08-authentication-passwords-mfa-passkeys",
+  "level": 6,
+  "order": 8,
+  "title": "Xác thực người dùng: Mật khẩu, Session, MFA và Passkey",
+  "summary": "Thiết kế luồng xác thực an toàn trước tấn công dò mật khẩu và giả mạo: băm mật khẩu chậm có salt riêng (Argon2id/bcrypt), so sánh Session và JWT/Refresh Token, chống Credential Stuffing, MFA và Passkey (WebAuthn).",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Giải thích vì sao phải lưu mật khẩu bằng hàm băm chậm có Salt ngẫu nhiên riêng từng tài khoản (Argon2id, bcrypt) thay vì SHA-256" },
+    { "vi": "So sánh cơ chế Session tập trung với Access Token (JWT) ngắn hạn kèm Refresh Token có thể thu hồi" },
+    { "vi": "Thiết kế lớp phòng vệ chống Credential Stuffing bằng Rate Limiting theo IP/tài khoản và kiểm tra mật khẩu đã lộ" },
+    { "vi": "Phân biệt MFA truyền thống (OTP) với Passkey (WebAuthn) trong việc chống tấn công lừa đảo trung gian (Phishing)" }
+  ],
+  "tags": ["authentication", "argon2", "jwt", "session", "credential-stuffing", "mfa", "passkey"],
+  "prerequisites": ["S2-06", "S4-05"],
+  "related": ["S6-09", "S6-10"],
+  "dtsRef": "authentication",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về xác thực: băm mật khẩu chậm có salt (Argon2id/bcrypt), session so với JWT/refresh token, chống credential stuffing, MFA và Passkey (WebAuthn)."
+  }
+}

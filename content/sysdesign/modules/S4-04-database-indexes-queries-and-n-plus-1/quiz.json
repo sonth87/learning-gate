@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S4-04.q1",
+    "type": "mc",
+    "q": "Bảng orders có chỉ mục ghép CREATE INDEX idx_ord ON orders (user_id, status, created_at). Câu truy vấn nào dưới đây KHÔNG THỂ sử dụng hiệu quả thứ tự sắp xếp của chỉ mục này để nhảy thẳng tới vùng dữ liệu cần tìm?",
+    "code": "",
+    "choices": [
+      "SELECT id FROM orders WHERE user_id = 105",
+      "SELECT id FROM orders WHERE user_id = 105 AND status = 'SHIPPED'",
+      "SELECT id FROM orders WHERE status = 'SHIPPED' AND created_at >= '2026-01-01'",
+      "SELECT id FROM orders WHERE user_id = 105 AND status = 'SHIPPED' ORDER BY created_at DESC LIMIT 20"
+    ],
+    "answer": 2,
+    "explain": "Theo quy tắc tiền tố trái (Leftmost Prefix Rule), cây B+Tree sắp theo user_id trước rồi mới tới status và created_at. Câu truy vấn bỏ trống cột ngoài cùng bên trái user_id không có điểm neo đầu tiên để rẽ nhánh trên cây."
+  },
+  {
+    "id": "S4-04.q2",
+    "type": "output",
+    "q": "Một API hiển thị danh sách 30 bài viết trên bảng tin: code thực hiện 1 câu SQL lấy 30 bài viết, sau đó chạy vòng lặp qua từng bài để gọi thêm 1 câu SQL lấy thông tin tác giả của bài đó (lỗi N+1). Nếu có 100 người dùng tải trang đồng thời trong một giây, tổng cộng có bao nhiêu câu SQL bị bắn vào Database trong giây đó? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "3100",
+    "explain": "Mỗi HTTP request sinh ra 1 + 30 = 31 câu truy vấn SQL nối tiếp nhau. Nhân với 100 lượt tải trang mỗi giây tạo ra 100 × 31 = 3.100 câu SQL/giây (trong khi nếu gom bằng WHERE author_id IN (...) chỉ tốn 100 × 2 = 200 câu/giây)."
+  },
+  {
+    "id": "S4-04.q3",
+    "type": "tf",
+    "q": "Tạo càng nhiều chỉ mục B+Tree trên mọi cột của bảng thì hệ thống luôn chạy nhanh hơn trên cả thao tác đọc lẫn thao tác ghi.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Mỗi chỉ mục phụ tăng tốc cho đúng mẫu câu đọc khớp với nó, nhưng lại làm chậm mọi thao tác INSERT, DELETE và UPDATE (do phải sửa thêm trang trên từng cây B+Tree, ghi thêm WAL và chiếm chỗ RAM Buffer Pool)."
+  },
+  {
+    "id": "S4-04.q4",
+    "type": "mc",
+    "q": "Lợi ích kỹ thuật chính của Covering Index (ví dụ CREATE INDEX ON orders(user_id, created_at) INCLUDE (total)) đối với câu lệnh SELECT user_id, created_at, total FROM orders WHERE user_id = 99 là gì?",
+    "code": "",
+    "choices": [
+      "Giúp xoá tự động các đơn hàng cũ quá 30 ngày mà không cần viết cron job",
+      "Đủ toàn bộ các cột cần trả về ngay tại trang lá chỉ mục nên Database chạy Index-Only Scan, không phải nhảy đọc ngẫu nhiên sang bảng gốc (Heap)",
+      "Cho phép gọi giao dịch phân tán 2PC sang cơ sở dữ liệu khác nhanh hơn",
+      "Giúp câu lệnh LIKE '%99%' có dấu phần trăm ở đầu vẫn dùng được B+Tree"
+    ],
+    "answer": 1,
+    "explain": "Khi mọi cột trong mệnh đề SELECT và WHERE đều có mặt trên trang lá chỉ mục, Database trả kết quả trực tiếp từ chỉ mục (Index-Only Scan) và loại bỏ hoàn toàn hàng chục lần đọc ngẫu nhiên vào trang bảng Heap."
+  },
+  {
+    "id": "S4-04.q5",
+    "type": "mc",
+    "q": "Cột created_at đã có chỉ mục B+Tree chuẩn, nhưng khi chạy EXPLAIN ANALYZE cho câu lệnh SELECT id FROM orders WHERE EXTRACT(YEAR FROM created_at) = 2026, bạn vẫn thấy Seq Scan quét toàn bảng. Cách sửa đúng nhất là gì?",
+    "code": "",
+    "choices": [
+      "Tăng gấp 4 lần dung lượng RAM của máy chủ ứng dụng",
+      "Đổi sang viết điều kiện khoảng trực tiếp trên cột gốc: WHERE created_at >= '2026-01-01' AND created_at < '2027-01-01'",
+      "Đổi SELECT id thành SELECT * để buộc bộ lập kế hoạch dùng chỉ mục",
+      "Thêm từ khoá DISTINCT vào đầu câu truy vấn"
+    ],
+    "answer": 1,
+    "explain": "Bọc hàm EXTRACT(YEAR FROM ...) quanh cột khiến cơ sở dữ liệu không thể tra trực tiếp trên thứ tự thời gian gốc của cây B+Tree. Viết lại thành biểu thức khoảng nửa mở (>= đầu năm và < đầu năm kế tiếp) giữ nguyên cột trần nên tận dụng trọn vẹn Index Scan."
+  },
+  {
+    "id": "S4-04.q6",
+    "type": "tf",
+    "q": "Lỗi truy vấn N+1 thường rất dễ bị bỏ sót nếu bạn chỉ giám sát nhật ký truy vấn chậm (Slow Query Log với ngưỡng > 200 ms), vì từng câu SQL lẻ bên trong vòng lặp đều chạy rất nhanh (vài mili-giây).",
+    "code": "",
+    "choices": [],
+    "answer": true,
+    "explain": "Đúng: mỗi câu SELECT theo khoá chính trong vòng lặp N+1 chỉ tốn 1–3 ms nên không bao giờ lọt vào Slow Query Log > 200 ms; nhưng cộng dồn 50–100 câu nối tiếp lại kéo tổng thời gian phản hồi API lên hàng trăm mili-giây và đốt cạn IOPS của DB."
+  }
+]

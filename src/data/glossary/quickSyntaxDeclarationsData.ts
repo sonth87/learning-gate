@@ -1134,4 +1134,129 @@ Danh sách đủ dài (4 phần tử)`,
       note: 'Toán tử gộp dict1 | dict2 và Walrus := là đặc trưng rất tiện của Python 3.8–3.10+.',
     },
   },
+  {
+    id: 'decl-lambda-arrow-function-bridge',
+    category: 'functions',
+    categoryLabel: '6. Khai báo Hàm',
+    title: 'Giải mã `lambda` cho người từ JavaScript sang (Arrow Function `=>` vs `lambda`, `key=`, `map/filter` vs Comprehension)',
+    badge: 'lambda vs JS Arrow (=>)',
+    summary:
+      'Trong Python, từ khóa `lambda` chính là hàm ẩn danh 1 dòng (tương đương Arrow Function `(x) => biểu_thức` trong JS). Tuy nhiên, `lambda` trong Python có giới hạn nghiêm ngặt và cách dùng thực tế rất khác với callback trong JS.',
+    declarationForms: [
+      {
+        label: '1. Cú pháp Đối chiếu 1-1: JS Arrow Function (=>) ↔ Python lambda',
+        syntax: '# JS:     (x) => x * 2\n# Python:\ngap_doi = lambda x: x * 2\n\n# JS:     (a, b = 10) => a + b\n# Python:\ncong = lambda a, b=10: a + b\n\n# JS:     () => "Xin chào"\n# Python:\nchao = lambda: "Xin chào"',
+        note: 'Cấu trúc luôn là: `lambda <danh_sách_tham_số>: <biểu_thức_trả_về>`. Không có từ khóa `return` vì `lambda` tự động trả về kết quả của biểu thức đứng sau dấu `:`.',
+      },
+      {
+        label: '2. Ứng dụng số 1 của lambda (90% thực tế): Làm hàm đo `key=` trong sorted(), min(), max()',
+        syntax: 'users = [{"name": "Bình", "age": 30}, {"name": "An", "age": 22}]\n\n# Sắp xếp theo tuổi tăng dần (KHÔNG cần viết a.age - b.age như JS!):\ntheo_tuoi = sorted(users, key=lambda u: u["age"])\n\n# Sắp xếp nhiều tiêu chí: Điểm giảm dần (-u["score"]), trùng điểm thì Tên A->Z:\nranked = sorted(users, key=lambda u: (-u.get("score", 0), u["name"]))\n\n# Tìm người lớn tuổi nhất:\nmax_user = max(users, key=lambda u: u["age"])',
+        note: 'Khác biệt lớn với JS: `arr.sort((a, b) => a.age - b.age)` của JS nhận hàm so sánh 2 phần tử `(a, b)`. Còn `key=` của Python chỉ nhận hàm **1 tham số** trả về "thước đo" của phần tử đó!',
+      },
+      {
+        label: '3. Tại sao dân Python ít dùng map(lambda) / filter(lambda) mà dùng Comprehension?',
+        syntax: 'nums = [1, 2, 3, 4]\n\n# Cách giống JS (map/filter + lambda) -> Chạy được nhưng dài dòng, trả về iterator:\ndoubled_map = list(map(lambda x: x * 2, nums))\nevens_filter = list(filter(lambda x: x % 2 == 0, nums))\n\n# Cách chuẩn Pythonic (List Comprehension) -> Ngắn gọn, không cần lambda, nhanh hơn:\ndoubled = [x * 2 for x in nums]\nevens = [x for x in nums if x % 2 == 0]',
+        note: 'Trong JS bạn dùng `arr.map(x => ...)` và `arr.filter(x => ...)` mọi nơi. Trong Python, **List Comprehension `[... for x in arr if ...]`** đã thay thế 95% nhu cầu dùng `map/filter + lambda`!',
+      },
+      {
+        label: '4. Giới hạn của lambda & Khi nào bắt buộc dùng `def` lồng bên trong hàm?',
+        syntax: '# lambda CHỈ chứa được ĐÚNG 1 biểu thức (Expression)!\n# CẤM viết nhiều dòng, CẤM try/except, CẤM for/while hay gán biến `x = 1` trong lambda.\n\n# Khi callback cần nhiều dòng (tương đương `(x) => { ... }` trong JS),\n# hãy khai báo `def` có tên ngay bên trong hàm hiện tại:\ndef xu_ly_don_hang(orders: list[dict]) -> list[dict]:\n    def tinh_diem_uu_tien(o: dict) -> tuple[int, float]:\n         vip_rank = 0 if o.get("is_vip") else 1\n         return (vip_rank, -o["total"])\n    return sorted(orders, key=tinh_diem_uu_tien)',
+        note: 'Chuẩn PEP 8 (luật E731): Không nên gán `f = lambda x: ...` để tái sử dụng; nếu hàm cần đặt tên, hãy luôn viết `def f(x): return ...` để khi lỗi Traceback hiện rõ tên hàm thay vì `<lambda>`.',
+      },
+    ],
+    codeExample: `san_pham = [
+    {"ten": "Bàn phím cơ", "gia": 1200, "ton_kho": 5},
+    {"ten": "Chuột không dây", "gia": 450, "ton_kho": 0},
+    {"ten": "Tai nghe Studio", "gia": 1200, "ton_kho": 12},
+]
+
+# 1. Dùng lambda trong sorted(key=...):
+# Sắp xếp Giá giảm dần (-sp["gia"]), nếu trùng giá thì Tồn kho giảm dần (-sp["ton_kho"])
+sap_xep = sorted(san_pham, key=lambda sp: (-sp["gia"], -sp["ton_kho"]))
+print("1. Thứ tự ưu tiên:", [sp["ten"] for sp in sap_xep])
+
+# 2. Dùng lambda trong min() / max() để tìm sản phẩm rẻ nhất:
+re_nhat = min(san_pham, key=lambda sp: sp["gia"])
+print("2. Rẻ nhất:", re_nhat["ten"], "-", re_nhat["gia"])
+
+# 3. Dùng lambda làm default_factory cho defaultdict / dataclass:
+from collections import defaultdict
+bo_dem_kho = defaultdict(lambda: {"so_luong": 0, "trang_thai": "Mới"})
+bo_dem_kho["SP_01"]["so_luong"] += 10
+print("3. Default factory bằng lambda:", dict(bo_dem_kho))
+
+# 4. Bẫy Late-Binding trong vòng lặp (giống var trong JS) & Cách khóa biến i=i:
+ham_nhan = [lambda x, he_so=i: x * he_so for i in [2, 10]]
+print("4. Nhân 5 với hệ số 2 và 10:", [fn(5) for fn in ham_nhan])`,
+    output: `1. Thứ tự ưu tiên: ['Tai nghe Studio', 'Bàn phím cơ', 'Chuột không dây']
+2. Rẻ nhất: Chuột không dây - 450
+3. Default factory bằng lambda: {'SP_01': {'so_luong': 10, 'trang_thai': 'Mới'}}
+4. Nhân 5 với hệ số 2 và 10: [10, 50]`,
+    detailsAndGotchas: [
+      'Khác biệt số 1 với JS Arrow Function: Trong JS `(x) => { const y = x + 1; return y * 2; }` mở ngoặc nhọn viết bao nhiêu dòng cũng được. Trong Python, `lambda` TUYỆT ĐỐI chỉ viết được 1 biểu thức đơn (không có `return`, không có `if/elif/else` dạng khối lệnh, chỉ dùng được toán tử 3 ngôi `lambda x: "Đậu" if x >= 5 else "Trượt"`).',
+      'Khi bạn chỉ muốn gọi một hàm có sẵn làm `key=`, đừng bọc `lambda` thừa: viết trực tiếp `sorted(words, key=len)` hoặc `sorted(words, key=str.lower)` thay vì `lambda w: len(w)`.',
+      'Bẫy Late Binding Closure: `[lambda x: x * i for i in range(3)]` sẽ khiến cả 3 hàm đều dùng `i = 2` (giá trị cuối cùng sau vòng lặp). Để chụp cứng giá trị `i` tại từng vòng, truyền làm tham số mặc định: `[lambda x, i=i: x * i for i in range(3)]`.',
+    ],
+    jsEquivalent: {
+      syntax: '(x) => x * 2  ↔  lambda x: x * 2  |  arr.sort((a, b) => a.age - b.age)  ↔  sorted(arr, key=lambda u: u["age"])',
+      note: 'Trong JS dùng Arrow Function cho cả `.map()`, `.filter()`, `.sort()` lẫn hàm nhiều dòng. Trong Python: dùng Comprehension cho `.map()/.filter()`, dùng `lambda` cho `key=` / callback 1 dòng, và dùng `def` cho mọi hàm > 1 dòng.',
+    },
+  },
+  {
+    id: 'decl-js-to-python-gotchas-cheatsheet',
+    category: 'io-vars',
+    categoryLabel: '1. Xuất/Nhập, Biến & Chuỗi',
+    title: 'Cẩm nang Chuyển đổi Tư duy từ JavaScript / TypeScript sang Python (12 Khác biệt Cốt lõi)',
+    badge: 'JS/TS → Python Bridge',
+    summary:
+      'Bảng tra cứu nhanh 12 điểm khác biệt dễ gây bỡ ngỡ nhất cho lập trình viên chuyển từ JavaScript / TypeScript sang Python (từ cách đọc Object/Dict, Truthy/Falsy, Scope, this vs self cho tới Async/Await).',
+    declarationForms: [
+      {
+        label: '1. Dict `d["key"]` vs JS Object `obj.key` & Kiểm tra tồn tại `in`',
+        syntax: 'user = {"id": 101, "name": "An"}\n\n# ĐÚNG trong Python: dùng ngoặc vuông hoặc .get()\nprint(user["name"])               # "An" (Nếu thiếu key sẽ nổ lỗi KeyError!)\nprint(user.get("role", "guest"))  # "guest" (An toàn khi key không tồn tại)\nprint("name" in user)             # True (Kiểm tra key tồn tại O(1))',
+        note: 'Trong JS `user.role` trả về `undefined`. Trong Python, `dict` KHÔNG truy cập bằng dấu chấm `user.name` được (sẽ báo `AttributeError`). Muốn dùng dấu chấm `user.name`, hãy dùng `@dataclass` hoặc `Pydantic BaseModel`!',
+      },
+      {
+        label: '2. Bẫy Truthy / Falsy: Mảng rỗng `[]` và Dict rỗng `{}` trong Python là FALSY!',
+        syntax: 'items = []\nconfig = {}\n\n# Trong JS: Boolean([]) === true và Boolean({}) === true!\n# Trong Python: bool([]) === False và bool({}) === False!\nif not items:\n    print("Danh sách đang rỗng!")',
+        note: 'Nhờ quy tắc này, trong Python bạn kiểm tra mảng có phần tử chỉ bằng `if items:` (thay vì `if (items.length > 0)` như JS).',
+      },
+      {
+        label: '3. Không có `let/const` Block Scope trong `if`/`for` & Không có Hoisting',
+        syntax: 'if True:\n    thong_bao = "Sống xuyên qua khối if!"\nprint(thong_bao)  # Chạy bình thường! Biến trong if/for thuộc phạm vi toàn hàm (Function Scope)',
+        note: 'Python chỉ tạo phạm vi biến mới ở `def` (hàm), `class` và `comprehension`. Một khối `if` hoặc vòng lặp `for` KHÔNG tạo scope riêng như `let/const` trong `{}` của JS!',
+      },
+      {
+        label: '4. `this` ngầm định (JS) vs `self` tường minh (Python) & Không có từ khóa `new`',
+        syntax: 'class Counter:\n    def __init__(self, start: int = 0) -> None:\n        self.value = start\n    def inc(self) -> int:\n        self.value += 1\n        return self.value\n\nc = Counter(10)   # KHÔNG dùng từ khóa `new`!\nprint(c.inc())    # 11 (Python tự động truyền `c` vào tham số đầu tiên `self`)',
+        note: 'Mọi hàm thuộc đối tượng (instance method) trong Python bắt buộc khai báo `self` làm tham số đầu tiên, nhưng lúc gọi `c.inc()` thì không truyền `self`.',
+      },
+    ],
+    codeExample: `# 1. Đối chiếu các hàm xử lý Mảng (JS Array methods -> Python idioms)
+nums = [10, 25, 30, 45]
+
+# JS: nums.length           -> Python: len(nums)
+# JS: nums.push(50)         -> Python: nums.append(50)
+# JS: nums.includes(25)     -> Python: 25 in nums
+# JS: nums.join(", ")       -> Python: ", ".join(str(x) for x in nums)  (Gọi từ chuỗi phân cách!)
+# JS: nums.find(x => x>20)  -> Python: next((x for x in nums if x > 20), None)
+# JS: nums.some(x => x>40)  -> Python: any(x > 40 for x in nums)
+# JS: nums.every(x => x>0)  -> Python: all(x > 0 for x in nums)
+
+print("Độ dài:", len(nums), "| Có số 25?", 25 in nums)
+print("Số đầu tiên > 20:", next((x for x in nums if x > 20), None))
+print("Có số > 40?", any(x > 40 for x in nums), "| Tất cả > 0?", all(x > 0 for x in nums))`,
+    output: `Độ dài: 4 | Có số 25? True
+Số đầu tiên > 20: 25
+Có số > 40? True | Tất cả > 0? True`,
+    detailsAndGotchas: [
+      'Trong JS: `[10, 2, 5].sort()` sắp xếp theo bảng chữ cái ASCII nên ra `[10, 2, 5]`! Trong Python: `sorted([10, 2, 5])` sắp xếp chuẩn theo giá trị toán học ra `[2, 5, 10]`.',
+      'Trong JS: gọi hàm `async fn()` mà chưa `await` thì code bên trong vẫn bắt đầu chạy ngay lập tức (trả về Promise đang chạy). Trong Python: gọi hàm `async def fn()` mà không có `await` hoặc `asyncio.create_task()` thì hàm ĐÓNG BĂNG hoàn toàn, chưa một dòng code nào bên trong được chạy!',
+      'Trong JS: `"5" + 3` tự động ép kiểu thành `"53"`, `"5" - 3` thành `2`. Trong Python (Strong Typing): `"5" + 3` lập tức báo lỗi `TypeError`, bắt buộc ép kiểu rõ ràng `int("5") + 3` hoặc `f"5{3}"`.',
+    ],
+    jsEquivalent: {
+      syntax: 'arr.length -> len(arr) | arr.includes(x) -> x in arr | arr.some/every -> any/all | Promise.all -> asyncio.gather',
+      note: 'Bật nút "Bật Đối chiếu JS/TS" ở góc phải thanh công cụ để xem đối chiếu song song trên toàn bộ thẻ cú pháp và từ điển!',
+    },
+  },
 ];

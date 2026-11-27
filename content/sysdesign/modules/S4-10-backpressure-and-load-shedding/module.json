@@ -1,0 +1,24 @@
+{
+  "id": "S4-10",
+  "slug": "S4-10-backpressure-and-load-shedding",
+  "level": 4,
+  "order": 7,
+  "title": "Back-pressure và Load Shedding: kiểm soát quá tải nội bộ theo ưu tiên",
+  "summary": "Giải thích vì sao hàng đợi không giới hạn biến quá tải thành cạn kiệt bộ nhớ và độ trễ vô hạn, áp dụng hàng đợi giới hạn (Bounded Queue) kèm phản áp lực ngược về Producer và cắt tải theo độ ưu tiên.",
+  "durationMin": 16,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân tích tác hại của hàng đợi không giới hạn dưới tải vượt công suất tiêu thụ thông qua tuổi thông điệp (Backlog Age) và rủi ro tràn RAM" },
+    { "vi": "Thiết kế hàng đợi có giới hạn (maxDepth) kết hợp cơ chế truyền phản áp lực (Back-pressure) ngược về tầng gửi" },
+    { "vi": "Triển khai cắt tải theo độ ưu tiên (Priority Load Shedding) để bảo toàn 100% luồng nghiệp vụ quan trọng khi tổng tải vượt công suất thực" },
+    { "vi": "Vận dụng hàng đợi LIFO, huỷ công việc quá hạn chờ (CoDel) và giám sát tuổi thông điệp cũ nhất thay vì chỉ nhìn độ dài hàng đợi" }
+  ],
+  "tags": ["backpressure", "load-shedding", "bounded-queue", "overload-control", "priority", "lifo", "codel"],
+  "prerequisites": ["S1-07", "S2-04", "S4-05"],
+  "related": ["S4-06", "S4-11", "S4-07"],
+  "dtsRef": "rate-limiting",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về tác hại của hàng đợi không giới hạn, cơ chế phản áp lực (Back-pressure) và cắt tải theo độ ưu tiên (Load Shedding)."
+  }
+}

@@ -1,0 +1,441 @@
+{
+  "version": 1,
+  "base": "s1-local-session",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Nhóm người dùng đã đăng nhập gửi liên tiếp các thao tác duyệt hàng và giỏ hàng (λ = 650 req/s).",
+          "en": "Authenticated users sending sequential browsing and cart requests (λ = 650 req/s)."
+        },
+        "how": {
+          "vi": "Đính kèm cookie `session_id` hoặc thẻ `Authorization: Bearer <JWT>` trong mỗi HTTP request.",
+          "en": "Attaches a `session_id` cookie or `Authorization: Bearer <JWT>` header on every request."
+        },
+        "why": {
+          "vi": "Giao thức HTTP vốn không tự nhớ ngữ cảnh giữa hai lần gọi nên cần cơ chế định danh phiên rõ ràng.",
+          "en": "HTTP is stateless by protocol, requiring explicit session identification across requests."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Cặp Load Balancer dự phòng điều phối 650 req/s vào tầng máy chủ ứng dụng.",
+          "en": "Redundant Load Balancer pair routing 650 req/s to the application tier."
+        },
+        "how": {
+          "vi": "Nếu bật `ip-hash` (Sticky Session) sẽ ghim người dùng cố định vào một máy; nếu tầng App phi trạng thái có thể chia tự do bằng `round-robin` hoặc `least-conn`.",
+          "en": "Pins users via `ip-hash` when stateful, or distributes freely via `round-robin` / `least-conn` when stateless."
+        },
+        "why": {
+          "vi": "Chỉ khi bỏ được ràng buộc ghim máy, Load Balancer mới tận dụng trọn vẹn khả năng tự phục hồi và mở rộng ngang.",
+          "en": "Removing server affinity unlocks true horizontal scaling and seamless failover."
+        }
+      }
+    },
+    "app1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App A", "en": "App A" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng thứ nhất (năng lực μ = 450 req/s, xử lý cơ sở 12 ms).",
+          "en": "First application server (μ = 450 req/s, 12 ms base processing)."
+        },
+        "how": {
+          "vi": "Ở thiết kế cũ giữ phiên trong RAM cục bộ nên gánh trọn tải và làm mất sạch phiên khi dừng đột ngột ở giây 22.",
+          "en": "Initially holds sessions in local RAM; crashes at t = 22 s, wiping local state."
+        },
+        "why": {
+          "vi": "Cho thấy hậu quả trực tiếp khi buộc trạng thái người dùng gắn chặt vào vòng đời một tiến trình máy chủ.",
+          "en": "Illustrates the blast radius of tying user session state to a single process lifecycle."
+        }
+      }
+    },
+    "app2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App B", "en": "App B" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng phi trạng thái thứ hai (μ = 450 req/s).",
+          "en": "Second stateless application instance (μ = 450 req/s)."
+        },
+        "how": {
+          "vi": "Đọc thông tin phiên từ Session Cache dùng chung và tệp đính kèm từ Object Storage nên xử lý được request của bất kỳ ai.",
+          "en": "Reads session data from shared Session Cache and media from Object Storage."
+        },
+        "why": {
+          "vi": "Tiếp nhận ngay người dùng chuyển sang từ App A mà không bắt họ đăng nhập lại.",
+          "en": "Seamlessly serves users rerouted from App A without re-authentication."
+        }
+      }
+    },
+    "app3": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App C", "en": "App C" },
+      "inspector": {
+        "what": {
+          "vi": "Máy chủ ứng dụng phi trạng thái thứ ba đặt ở vùng khả dụng B (μ = 450 req/s).",
+          "en": "Third stateless application instance in AZ-B (μ = 450 req/s)."
+        },
+        "how": {
+          "vi": "Cấu hình giống hệt App A và App B; khi App A sập, cặp App B + App C đạt 900 req/s để gánh êm 650 req/s.",
+          "en": "Identical stateless clone; paired with App B provides 900 req/s surviving capacity."
+        },
+        "why": {
+          "vi": "Đảm bảo dự phòng công suất N + 1 ngay cả khi mất hẳn một máy trong cụm.",
+          "en": "Guarantees N+1 compute headroom during single-instance outages."
+        }
+      }
+    },
+    "session_store": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Session Cache", "en": "Session Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Kho lưu trữ khoá-giá trị trên RAM dùng chung (như Redis) lưu phiên đăng nhập và giỏ hàng tạm (μ = 25.000 ops/s).",
+          "en": "Shared in-memory key-value store (e.g. Redis) holding active user sessions and carts."
+        },
+        "how": {
+          "vi": "Tra cứu theo khoá `session:<id>` trong ~0,8 ms kèm thời hạn tự huỷ TTL (ví dụ 30 phút không thao tác).",
+          "en": "Looks up `session:<id>` in ~0.8 ms with sliding/fixed TTL expiration."
+        },
+        "why": {
+          "vi": "Giải phóng hoàn toàn tầng App khỏi việc giữ trạng thái trong RAM riêng mà vẫn cho phép thu hồi phiên tức thì.",
+          "en": "Makes the App tier stateless while preserving instant server-side session revocation."
+        },
+        "tip": {
+          "vi": "Bắt buộc cấu hình ít nhất 2 node (Primary + Replica) để kho phiên không trở thành điểm lỗi đơn mới.",
+          "en": "Always run Primary-Replica failover so the session store itself does not become a SPOF."
+        }
+      }
+    },
+    "object_store": {
+      "shape": "db",
+      "tone": "blue",
+      "label": { "vi": "Object Storage", "en": "Object Storage" },
+      "inspector": {
+        "what": {
+          "vi": "Kho lưu trữ đối tượng phân tán (như S3) tự sao chép trên 3 vùng cho ảnh đại diện, hoá đơn và tệp tải lên.",
+          "en": "Replicated object storage (e.g. S3) for user avatars, invoices, and uploaded files."
+        },
+        "how": {
+          "vi": "Lưu nội dung byte bền vững qua HTTP API; mọi máy App đều đọc ghi cùng một không gian bucket.",
+          "en": "Stores binary blobs durably behind a unified namespace accessible by every App instance."
+        },
+        "why": {
+          "vi": "Ngăn lỗi 404 khi tệp ghi trên ổ đĩa cục bộ của máy này nhưng lượt tải về lại rơi vào máy khác.",
+          "en": "Prevents missing-file 404s caused by writing uploads to ephemeral local disks."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu quan hệ lưu tài khoản, đơn hàng đã chốt và đường dẫn metadata tệp.",
+          "en": "Primary relational database storing accounts, committed orders, and file metadata."
+        },
+        "how": {
+          "vi": "Đã có cặp bản sao dự phòng, xử lý các truy vấn dữ liệu gốc không nằm trong bộ nhớ đệm phiên.",
+          "en": "Replicated SQL tier serving persistent account and order records."
+        },
+        "why": {
+          "vi": "Tách bạch dữ liệu giao dịch lâu dài với trạng thái phiên ngắn hạn có tần suất đọc cực cao.",
+          "en": "Separates durable business records from high-frequency ephemeral session lookups."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Kết nối HTTPS mang cookie phiên hoặc thẻ JWT từ người dùng.", "en": "HTTPS requests carrying session cookies or JWTs." },
+        "how": { "vi": "Đi vào Load Balancer với lưu lượng 650 req/s.", "en": "Arrives at the Load Balancer at 650 req/s." },
+        "why": { "vi": "Cửa ngõ duy nhất vào cụm dịch vụ.", "en": "Unified entry point to the service tier." }
+      }
+    },
+    "app1-session": {
+      "inspector": {
+        "what": { "vi": "Tra cứu phiên tốc độ cao từ App A tới Session Cache.", "en": "Sub-millisecond session lookup from App A." },
+        "how": { "vi": "Đọc/ghi đối tượng phiên qua mạng nội bộ trong chưa đầy 1 ms.", "en": "Reads/writes serialized session JSON in < 1 ms." },
+        "why": { "vi": "Giúp App A không cần giữ biến phiên trong bộ nhớ tiến trình.", "en": "Eliminates in-process session state on App A." }
+      }
+    },
+    "app2-session": {
+      "inspector": {
+        "what": { "vi": "Tra cứu phiên dùng chung từ App B tới Session Cache.", "en": "Shared session lookup from App B." },
+        "how": { "vi": "Thấy ngay phiên vừa tạo bởi App A hoặc App C.", "en": "Immediately sees sessions created on App A or App C." },
+        "why": { "vi": "Bảo đảm người dùng chuyển máy không bị gián đoạn.", "en": "Enables transparent cross-server request handling." }
+      }
+    },
+    "app3-session": {
+      "inspector": {
+        "what": { "vi": "Tra cứu phiên dùng chung từ App C tới Session Cache.", "en": "Shared session lookup from App C." },
+        "how": { "vi": "Truy cập cùng không gian khoá phiên với toàn bộ cụm App.", "en": "Shares the centralized session keyspace." },
+        "why": { "vi": "Cho phép mở rộng hoặc thu hẹp số máy App bất cứ lúc nào.", "en": "Allows elastic scale-out and scale-in." }
+      }
+    }
+  },
+  "zones": {
+    "stateless_tier": {
+      "nodeIds": ["app1", "app2", "app3"],
+      "label": { "vi": "TẦNG APP PHI TRẠNG THÁI", "en": "STATELESS APP TIER" },
+      "tone": "green"
+    },
+    "state_stores": {
+      "nodeIds": ["session_store", "object_store", "db"],
+      "label": { "vi": "TẦNG LƯU TRỮ TRẠNG THÁI", "en": "SHARED STATE TIER" },
+      "tone": "orange"
+    }
+  },
+  "scenes": {
+    "s1-local-session": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "db"] },
+      "state": {
+        "lb": { "loadPct": 8, "badge": { "text": { "vi": "Round Robin", "en": "Round Robin" }, "tone": "default" } },
+        "app1": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": { "text": { "vi": "RAM: có session", "en": "RAM: has session" }, "tone": "ok" }
+        },
+        "app2": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": { "text": { "vi": "RAM: 401 Lỗi!", "en": "RAM: 401 Unauthorized" }, "tone": "bad" }
+        },
+        "db": { "loadPct": 12 }
+      },
+      "linkState": {
+        "lb-app2": { "style": "danger", "label": { "vi": "Request thứ 2", "en": "2nd Request" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Lưu phiên trong RAM cục bộ", "en": "In-Memory Local Sessions" },
+        "lines": [
+          { "text": { "vi": "Đăng nhập ở App A → lưu vào RAM A", "en": "Login hits App A → stored in RAM A" }, "tone": "good" },
+          { "text": { "vi": "Request kế rơi sang App B → mất phiên!", "en": "Next request hits App B → 401!" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-sticky": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "db"] },
+      "state": {
+        "lb": {
+          "loadPct": 8,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Sticky (ip-hash)", "en": "Sticky (ip-hash)" }, "tone": "warn" }
+        },
+        "app1": {
+          "loadPct": 92,
+          "badge": { "text": { "vi": "Ghim nhóm khách nặng", "en": "Pinned heavy users" }, "tone": "warn" }
+        },
+        "app2": { "loadPct": 28 },
+        "db": { "loadPct": 12 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Giải pháp tạm: Sticky Session", "en": "Workaround: Sticky Sessions" },
+        "lines": [
+          { "text": { "vi": "Ghim mỗi người dùng cố định vào 1 máy", "en": "Pins each user to one server" }, "tone": "amber" },
+          { "text": { "vi": "Dễ lệch tải khi một số phiên rất nặng", "en": "Causes hot spots across servers" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-sticky-crash": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "db"] },
+      "state": {
+        "lb": { "loadPct": 8, "badge": { "text": { "vi": "Sticky (ip-hash)", "en": "Sticky (ip-hash)" }, "tone": "bad" } },
+        "app1": {
+          "dead": true,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Sập · Mất sạch RAM", "en": "Crashed · RAM lost" }, "tone": "bad" }
+        },
+        "app2": {
+          "loadPct": 100,
+          "badge": { "text": { "vi": "Không có giỏ hàng cũ", "en": "No prior cart state" }, "tone": "bad" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "linkState": {
+        "lb-app1": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Khi máy giữ phiên dừng đột ngột", "en": "When a Stateful Server Crashes" },
+        "lines": [
+          { "text": { "vi": "Toàn bộ phiên & giỏ hàng trên A biến mất", "en": "All sessions & carts on A vanish" }, "tone": "bad" },
+          { "text": { "vi": "Người dùng bị văng ra đăng nhập lại", "en": "Users are logged out mid-checkout" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-shared-session": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "session_store", "db"] },
+      "zones": ["stateless_tier"],
+      "state": {
+        "lb": { "loadPct": 8, "badge": { "text": { "vi": "Round Robin", "en": "Round Robin" }, "tone": "ok" } },
+        "app1": { "loadPct": 48 },
+        "app2": { "loadPct": 48 },
+        "app3": { "loadPct": 48 },
+        "session_store": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Redis · 0,8 ms", "en": "Redis · 0.8 ms" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đưa phiên ra Session Cache chung", "en": "Externalized Session Store" },
+        "lines": [
+          { "text": { "vi": "Mọi máy App đều đọc chung kho phiên", "en": "Every App server reads shared store" }, "tone": "good" },
+          { "text": { "vi": "Mất 1 máy App không ai bị đăng xuất", "en": "App crash causes zero logouts" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-jwt": {
+      "show": { "nodes": ["client", "lb", "app1", "app2", "app3", "db"] },
+      "zones": ["stateless_tier"],
+      "state": {
+        "client": { "badge": { "text": { "vi": "Mang JWT ký số", "en": "Signed JWT" }, "tone": "ok" } },
+        "lb": { "loadPct": 8 },
+        "app1": { "loadPct": 48, "badge": { "text": { "vi": "Xác thực chữ ký", "en": "Verify HMAC/RSA" }, "tone": "ok" } },
+        "app2": { "loadPct": 48 },
+        "app3": { "loadPct": 48 },
+        "db": { "loadPct": 12 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Thẻ tự chứa chữ ký (JWT)", "en": "Self-Contained Signed Tokens" },
+        "lines": [
+          { "text": { "vi": "Bớt 1 chặng hỏi kho phiên ở mỗi request", "en": "Saves 1 network hop per request" }, "tone": "good" },
+          { "text": { "vi": "Đánh đổi: khó thu hồi ngay trước hạn exp", "en": "Trade-off: harder instant revocation" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-object-storage": {
+      "show": { "nodes": "*" },
+      "zones": ["stateless_tier", "state_stores"],
+      "state": {
+        "lb": { "loadPct": 8 },
+        "app1": { "loadPct": 48 },
+        "app2": { "loadPct": 48 },
+        "app3": { "loadPct": 48 },
+        "session_store": { "loadPct": 15 },
+        "object_store": {
+          "loadPct": 12,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Ảnh & tệp dùng chung", "en": "Shared Media Blobs" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tách cả tệp khỏi ổ đĩa cục bộ", "en": "Externalize Uploaded Files Too" },
+        "lines": [
+          { "text": { "vi": "Không lưu /uploads trên đĩa riêng App", "en": "Never store uploads on local disk" }, "tone": "bad" },
+          { "text": { "vi": "Ghi lên Object Storage dùng chung", "en": "Store blobs in shared Object Storage" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-live-crash": {
+      "show": { "nodes": "*" },
+      "zones": ["stateless_tier", "state_stores"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng sự cố sập App A ở t = 22 s", "en": "App A Crash Simulation (t = 22 s)" },
+        "lines": [
+          { "text": { "vi": "Cấu hình đầu: 1 máy giữ trạng thái", "en": "Baseline: single stateful server" }, "tone": "bad" },
+          { "text": { "vi": "Bật cụm Stateless + Session Cache HA", "en": "Enable stateless pool + HA Session Cache" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["stateless_tier", "state_stores"],
+      "state": {
+        "lb": { "loadPct": 8, "badge": { "text": { "vi": "Chia tải tự do", "en": "Any-Server Routing" }, "tone": "ok" } },
+        "app1": { "loadPct": 48, "badge": { "text": { "vi": "Thay thế tự do", "en": "Disposable" }, "tone": "ok" } },
+        "app2": { "loadPct": 48 },
+        "app3": { "loadPct": 48 },
+        "session_store": { "loadPct": 15, "badge": { "text": { "vi": "Primary + Replica", "en": "Replicated" }, "tone": "ok" } },
+        "object_store": { "loadPct": 12 },
+        "db": { "loadPct": 10 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Nguyên lý thiết kế Stateless", "en": "Stateless Design Principle" },
+        "lines": [
+          { "text": { "vi": "Tầng tính toán không giữ dữ liệu riêng", "en": "Compute holds zero exclusive state" }, "tone": "good" },
+          { "text": { "vi": "Phiên → Cache · Tệp → Object · Bản ghi → DB", "en": "Session → Cache · File → Blob · Row → DB" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "session": {
+      "sim": "S2-06/session",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": false,
+        "chaos": ["kill"],
+        "knobs": [
+          { "node": "app2", "key": "enabled" },
+          { "node": "app3", "key": "enabled" },
+          { "node": "lb", "key": "algorithm" },
+          { "node": "lb", "key": "healthCheckSec" },
+          { "node": "session_store", "key": "replicas" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 90, "badAbove": 120 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.03 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 },
+        { "metric": "errorRate", "value": 0.02 }
+      ],
+      "focus": { "nodes": ["app1", "app2", "app3", "session_store"] }
+    }
+  }
+}

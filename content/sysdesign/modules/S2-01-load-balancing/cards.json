@@ -1,0 +1,9 @@
+[
+  { "id": "S2-01.c1", "front": "Khi nào thuật toán Round Robin bộc lộ điểm yếu?", "back": "Khi thời gian xử lý giữa các request chênh lệch lớn hoặc cấu hình phần cứng các máy không đồng nhất: máy vướng nhiều tác vụ nặng vẫn bị giao thêm việc đều đặn dẫn tới quá tải." },
+  { "id": "S2-01.c2", "front": "Least Connections phân phối lưu lượng theo nguyên tắc nào?", "back": "Load Balancer đếm số kết nối đang mở trên từng máy chủ và định tuyến request mới về máy đang có ít kết nối hoạt động nhất, thích ứng tốt với tác vụ dài ngắn khác nhau." },
+  { "id": "S2-01.c3", "front": "Khi nào nên dùng Weighted Round Robin?", "back": "Khi các máy chủ trong cụm có năng lực CPU/RAM khác nhau (ví dụ máy 8 vCPU nhận trọng số gấp đôi máy 4 vCPU) hoặc khi điều tiết tỷ lệ lưu lượng sang phiên bản mới." },
+  { "id": "S2-01.c4", "front": "Ba nguyên tắc thiết kế Health Check an toàn?", "back": "Kiểm tra cả kết nối phụ thuộc cốt lõi (DB/Cache) ở readiness check, đặt Timeout vừa phải (khoảng 2–5 giây) và chỉ loại máy sau N lần thất bại liên tiếp để tránh chập chờn (flapping)." },
+  { "id": "S2-01.c5", "front": "Sự khác nhau cốt lõi giữa Load Balancer Layer 4 và Layer 7?", "back": "Layer 4 chuyển tiếp kết nối ở mức TCP/UDP theo IP và cổng nên rất nhanh và độc lập giao thức; Layer 7 đọc nội dung HTTP (path, header, cookie), hỗ trợ giải mã TLS và định tuyến microservices." },
+  { "id": "S2-01.c6", "front": "Làm sao để bản thân Load Balancer không trở thành điểm lỗi đơn (SPOF)?", "back": "Vận hành tối thiểu hai Load Balancer ở mô hình Active-Standby (qua Heartbeat và Virtual IP) hoặc Active-Active trải trên nhiều vùng khả dụng." },
+  { "id": "S2-01.c7", "front": "Connection Draining trong triển khai không gián đoạn là gì?", "back": "Trạng thái Load Balancer ngừng gửi request mới tới máy sắp bảo trì nhưng vẫn giữ đường truyền để các request đang chạy hoàn tất trước khi tắt tiến trình." }
+]

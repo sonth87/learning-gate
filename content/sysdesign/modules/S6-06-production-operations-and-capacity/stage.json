@@ -1,0 +1,524 @@
+{
+  "version": 1,
+  "base": "s3-diurnal-live",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Người dùng",
+        "en": "Users"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Lưu lượng người dùng biến thiên theo chu kỳ ngày đêm (900 → 3.400 req/s).",
+          "en": "Diurnal traffic oscillating between 900 and 3,400 req/s."
+        },
+        "how": {
+          "vi": "Gửi yêu cầu đọc/ghi qua Load Balancer.",
+          "en": "Sends read/write requests through LB."
+        },
+        "why": {
+          "vi": "Mô phỏng tải thực tế tăng trưởng theo chu kỳ.",
+          "en": "Models realistic diurnal peak demand."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": {
+        "vi": "Load Balancer",
+        "en": "Load Balancer"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cân bằng tải cho cụm API (μ = 25.000 req/s).",
+          "en": "Balances traffic across API instances."
+        },
+        "how": {
+          "vi": "Chuyển tiếp đều và kiểm tra sức khỏe định kỳ.",
+          "en": "Distributes traffic with health checks."
+        },
+        "why": {
+          "vi": "Đảm bảo phân phối lưu lượng ổn định.",
+          "en": "Keeps ingress traffic balanced."
+        }
+      }
+    },
+    "api": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Order API",
+        "en": "Order API"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cụm dịch vụ xử lý đơn hàng gồm 3 instance (tổng μ = 4.500 req/s).",
+          "en": "3-instance Order API tier (4,500 req/s combined)."
+        },
+        "how": {
+          "vi": "Kiểm tra Cache trước khi truy vấn xuống Primary DB.",
+          "en": "Checks Cache before querying Primary DB."
+        },
+        "why": {
+          "vi": "Đủ công suất cho đỉnh 3.400 req/s khi hệ thống bình thường.",
+          "en": "Sufficient capacity for 3,400 req/s peak under normal operation."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": {
+        "vi": "Redis Cache",
+        "en": "Redis Cache"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm RAM giảm tải đọc cho Primary DB.",
+          "en": "In-memory cache offloading reads from Primary DB."
+        },
+        "how": {
+          "vi": "Phục vụ phần lớn lượt đọc khi Cache ấm.",
+          "en": "Absorbs majority of read queries."
+        },
+        "why": {
+          "vi": "Giữ mức sử dụng DB ổn định trong giờ cao điểm.",
+          "en": "Protects DB during diurnal peaks."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": {
+        "vi": "Primary DB",
+        "en": "Primary DB"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu chính (μ = 1.800 req/s).",
+          "en": "Primary Database (μ = 1,800 req/s)."
+        },
+        "how": {
+          "vi": "Tại t = 42 s gặp sự cố chậm truy vấn +220 ms do thiếu chỉ mục sau đợt cập nhật schema.",
+          "en": "Experiences +220 ms query slowdown at t = 42 s due to missing index."
+        },
+        "why": {
+          "vi": "Là điểm phát sinh sự cố trong bài tập Postmortem.",
+          "en": "Root trigger of the incident in the Postmortem exercise."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": {
+          "vi": "Kết nối từ người dùng tới Load Balancer.",
+          "en": "Client traffic to LB."
+        },
+        "how": {
+          "vi": "Biến thiên từ 900 lên 3.400 req/s.",
+          "en": "Diurnal 900 to 3,400 req/s."
+        },
+        "why": {
+          "vi": "Thể hiện đỉnh tải giờ cao điểm.",
+          "en": "Shows peak hour load."
+        }
+      }
+    },
+    "lb-api": {
+      "inspector": {
+        "what": {
+          "vi": "Chuyển tiếp nội bộ tới Order API.",
+          "en": "Internal hop to Order API."
+        },
+        "how": {
+          "vi": "Chia đều cho 3 instance.",
+          "en": "Balanced across 3 instances."
+        },
+        "why": {
+          "vi": "Không phải điểm nghẽn.",
+          "en": "Not a bottleneck."
+        }
+      }
+    },
+    "api-cache": {
+      "inspector": {
+        "what": {
+          "vi": "Truy vấn đọc bộ nhớ đệm.",
+          "en": "Cache lookup hop."
+        },
+        "how": {
+          "vi": "Phản hồi dưới 1 ms.",
+          "en": "Sub-millisecond lookup."
+        },
+        "why": {
+          "vi": "Chặn lượt đọc lặp lại.",
+          "en": "Shields DB from repeated reads."
+        }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": {
+          "vi": "Lượt đọc miss và lượt ghi xuống Primary DB.",
+          "en": "Misses and writes to Primary DB."
+        },
+        "how": {
+          "vi": "Bị dồn hàng đợi khi DB chậm đột ngột ở t = 42 s.",
+          "en": "Queues build up when DB slows at t = 42 s."
+        },
+        "why": {
+          "vi": "Khiến p99 vọt ngưỡng SLO.",
+          "en": "Drives p99 above SLO threshold."
+        }
+      }
+    }
+  },
+  "scenes": {
+    "s1-incident": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Quy trình ứng phó sự cố Production 5 pha",
+          "en": "5-Phase Production Incident Response"
+        },
+        "cells": [
+          "1. Phát hiện: Cảnh báo Error Rate / p95",
+          "2. Đánh giá: Đo phạm vi & mức ảnh hưởng",
+          "3. Giảm thiểu: Rollback · Feature Flag · Route",
+          "4. Thông báo: Cập nhật nội bộ & trạng thái",
+          "5. Postmortem: RCA không đổ lỗi & Action Items"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Biết trong 2 phút thay vì đợi khách báo",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Bao nhiêu % lỗi? Dịch vụ nào?",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Khôi phục trước, tìm gốc rễ sau",
+            "tone": "rose"
+          },
+          {
+            "index": 3,
+            "label": "Minh bạch tiến độ xử lý theo mốc giờ",
+            "tone": "purple"
+          },
+          {
+            "index": 4,
+            "label": "Cải thiện quy trình và công cụ",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          1,
+          4
+        ]
+      }
+    },
+    "s2-postmortem": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "g1",
+            "name": "Cảnh báo theo triệu chứng",
+            "targetId": "o1"
+          },
+          {
+            "id": "g2",
+            "name": "Postmortem không đổ lỗi",
+            "targetId": "o2"
+          },
+          {
+            "id": "g3",
+            "name": "Hành động khắc phục",
+            "targetId": "o3"
+          }
+        ],
+        "objects": [
+          {
+            "id": "o1",
+            "value": "Đặt ngưỡng trên Error Rate > 1%, p95 > 500 ms thay vì chỉ báo CPU > 80%",
+            "tone": "amber",
+            "typeTag": "Golden Signals"
+          },
+          {
+            "id": "o2",
+            "value": "Tư duy hệ thống",
+            "tone": "blue",
+            "typeTag": "SYMPTOM ALERT",
+            "fields": [
+              "Hỏi 'Tại sao quy trình cho phép lỗi ra Production?' thay vì đổ lỗi cá nhân"
+            ]
+          },
+          {
+            "id": "o3",
+            "value": "Thêm kiểm thử tải tự động, Canary rollout và cảnh báo sớm",
+            "tone": "green",
+            "typeTag": "Action Items"
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Giám sát Golden Signals và Postmortem không đổ lỗi",
+          "en": "Golden Signals & Blameless Postmortem"
+        }
+      }
+    },
+    "s3-diurnal-live": {
+      "mode": "isometric",
+      "show": {
+        "nodes": [
+          "client",
+          "lb",
+          "api",
+          "cache",
+          "db"
+        ],
+        "links": [
+          "client-lb",
+          "lb-api",
+          "api-cache",
+          "cache-db"
+        ]
+      },
+      "floor": {
+        "label": "Tải chu kỳ ngày đêm kèm sự cố chậm Primary DB ở t = 42 s"
+      },
+      "entities": [
+        {
+          "id": "client",
+          "col": 0,
+          "row": 2
+        },
+        {
+          "id": "lb",
+          "col": 3,
+          "row": 2
+        },
+        {
+          "id": "api",
+          "col": 6,
+          "row": 2
+        },
+        {
+          "id": "cache",
+          "col": 9,
+          "row": 2
+        },
+        {
+          "id": "db",
+          "col": 12,
+          "row": 2
+        }
+      ],
+      "edges": [
+        {
+          "id": "client-lb",
+          "from": "client",
+          "to": "lb",
+          "style": "solid"
+        },
+        {
+          "id": "lb-api",
+          "from": "lb",
+          "to": "api",
+          "style": "solid"
+        },
+        {
+          "id": "api-cache",
+          "from": "api",
+          "to": "cache",
+          "style": "solid"
+        },
+        {
+          "id": "cache-db",
+          "from": "cache",
+          "to": "db",
+          "style": "solid"
+        }
+      ],
+      "packets": "auto"
+    },
+    "s4-migration": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Chuyển đổi Database an toàn (Strangler Fig & Dual-Write)",
+          "en": "Safe Database Migration Phases"
+        },
+        "cells": [
+          "Pha 1: Dual-Write: Ghi cả DB cũ & mới",
+          "Pha 2: Dual-Read: Đọc đối chiếu dữ liệu",
+          "Pha 3: Canary Read: 1% → 10% → 50% → 100%",
+          "Pha 4: Cutover: Ngừng ghi DB cũ"
+        ],
+        "pointers": [
+          {
+            "index": 0,
+            "label": "Lỗi DB mới chỉ log, chưa chặn người dùng",
+            "tone": "blue"
+          },
+          {
+            "index": 1,
+            "label": "Xác minh nhất quán 100% trước khi chuyển",
+            "tone": "amber"
+          },
+          {
+            "index": 2,
+            "label": "Bật Feature Flag, sẵn sàng lùi về DB cũ",
+            "tone": "purple"
+          },
+          {
+            "index": 3,
+            "label": "Giữ snapshot dự phòng trước khi xóa",
+            "tone": "green"
+          }
+        ],
+        "activeIndices": [
+          1,
+          3
+        ]
+      }
+    },
+    "s5-recap": {
+      "mode": "memory-2d",
+      "memory": {
+        "kind": "refs",
+        "names": [
+          {
+            "id": "r1",
+            "name": "Sự cố 3 giờ sáng",
+            "targetId": "v1"
+          },
+          {
+            "id": "r2",
+            "name": "Công suất 6 tháng",
+            "targetId": "v2"
+          },
+          {
+            "id": "r3",
+            "name": "Quyết định ADR",
+            "targetId": "v3"
+          }
+        ],
+        "objects": [
+          {
+            "id": "v1",
+            "value": "Rollback / Tắt Flag trước để khôi phục dịch vụ, rồi mới viết Postmortem",
+            "tone": "rose",
+            "typeTag": "Phản xạ chuẩn"
+          },
+          {
+            "id": "v2",
+            "value": "Kế hoạch chủ động",
+            "tone": "amber",
+            "typeTag": "30% HEADROOM",
+            "fields": [
+              "Tính tăng trưởng kép và mở rộng trước khi ρ chạm ngưỡng 75%"
+            ]
+          },
+          {
+            "id": "v3",
+            "value": "Minh bạch kỹ thuật",
+            "tone": "green",
+            "typeTag": "STRANGLER FIG",
+            "fields": [
+              "Ghi rõ bối cảnh, phương án cân nhắc, chi phí và rủi ro trong ADR"
+            ]
+          }
+        ],
+        "leftTitle": {
+          "vi": "Bối cảnh / Trường hợp",
+          "en": "Context / Case"
+        },
+        "rightTitle": {
+          "vi": "Trụ cột tư duy vận hành Production",
+          "en": "Production Mindset Pillars"
+        }
+      }
+    }
+  },
+  "live": {
+    "capacity": {
+      "sim": "S6-06/capacity-growth",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": [
+          "slow"
+        ]
+      },
+      "telemetry": [
+        {
+          "metric": "offeredRps",
+          "label": {
+            "vi": "Lưu lượng",
+            "en": "Offered Load"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 100,
+            "badAbove": 150
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Lỗi",
+            "en": "Errors"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.05
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "p99",
+          "value": 150
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "api",
+          "cache",
+          "db"
+        ]
+      }
+    }
+  }
+}

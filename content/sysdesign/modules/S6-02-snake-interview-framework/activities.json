@@ -1,0 +1,49 @@
+[
+  {
+    "id": "S6-02.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Chốt cấu hình Key Components từ kết quả chặng Numbers" },
+    "prompt": { "vi": "Sau hai chặng Scope và Numbers cho hệ thống Bảng tin (Feed), bạn tính được: tải đỉnh 3.600 req/s (92% đọc, 8% ghi), tập bảng tin nóng cần giữ trong RAM là 100.000 key, mục tiêu p99 ≤ 110 ms, lỗi ≤ 1%, không để tầng Feed API thành điểm lỗi đơn và ngân sách ≤ 1,40 USD/giờ (tối đa 2 thay đổi). Hãy hiệu chỉnh từ cấu hình khởi điểm." },
+    "difficulty": 2,
+    "simId": "S6-02/snake-feed",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "feed-peak-3600",
+        "label": { "vi": "Tải đỉnh 3.600 req/s (92% đọc)" },
+        "simId": "S6-02/snake-feed",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 10, "toSec": 45 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 45 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "api" }
+    ],
+    "budget": { "maxCostPerHour": 1.4, "maxChanges": 2 },
+    "par": { "costPerHour": 1.31, "changes": 2 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "api", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 100000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-db-only",
+        "label": { "vi": "Tăng cỡ Post DB lên ×3 và giữ nguyên Feed API" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Ở tải 3.600 req/s, 1 instance Feed API (μ = 2.000 req/s) đã quá tải từ tầng ứng dụng, đồng thời vi phạm ràng buộc không SPOF và vượt ngân sách 1,40 USD/giờ." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tải đỉnh 3.600 req/s vượt trần 2.000 req/s của 1 instance Feed API; tăng lên 2 instance cho tổng 4.000 req/s." },
+      { "vi": "Với 92% đọc và tập nóng 100.000 key, nâng dung lượng Feed Cache lên 100.000 key giúp giảm tải xuống Post DB mà không tăng chi phí giờ." }
+    ],
+    "explain": { "vi": "Áp dụng đúng số liệu từ chặng Numbers: 2 instance Feed API đạt tổng 4.000 req/s (ρ = {api.rho'@30:2}) và loại bỏ SPOF; Feed Cache 100.000 key giữ p99 dưới 110 ms với chi phí 1,31 USD/giờ." }
+  }
+]

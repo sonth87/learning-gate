@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S2-07.c1",
+    "front": "Khi nào nên ưu tiên cơ sở dữ liệu quan hệ (SQL)?",
+    "back": "Khi dữ liệu có quan hệ chặt chẽ giữa nhiều thực thể, cần ràng buộc toàn vẹn khoá ngoại, truy vấn tổng hợp JOIN linh hoạt và giao dịch ACID đa bản ghi (ví dụ đơn hàng, thanh toán, sổ cái)."
+  },
+  {
+    "id": "S2-07.c2",
+    "front": "Document Store giải quyết hạn chế nào của bảng quan hệ cứng?",
+    "back": "Lưu thực thể đa hình dưới dạng tài liệu JSON/BSON tự mô tả, tránh bảng thưa hàng trăm cột NULL và giúp đọc trọn thực thể cùng mảng con trong một lượt tra cứu không cần JOIN."
+  },
+  {
+    "id": "S2-07.c3",
+    "front": "Mẫu truy cập tối ưu và giới hạn chính của Key-Value Store là gì?",
+    "back": "Tối ưu cho đọc/ghi O(1) cực nhanh theo khoá đơn và tự hết hạn bằng TTL (phiên đăng nhập, giỏ tạm, bộ đếm). Giới hạn là không lọc hiệu quả theo các trường nằm bên trong value."
+  },
+  {
+    "id": "S2-07.c4",
+    "front": "Đánh đổi lớn nhất khi phi chuẩn hoá (Denormalization) trong NoSQL là gì?",
+    "back": "Đọc nhanh hơn nhờ gom dữ liệu sẵn một chỗ, nhưng dữ liệu bị lưu lặp ở nhiều bản ghi nên thao tác cập nhật tốn kém hơn và tầng ứng dụng phải tự xử lý tính nhất quán."
+  },
+  {
+    "id": "S2-07.c5",
+    "front": "Polyglot Persistence (kiến trúc đa lưu trữ) là gì?",
+    "back": "Cách thiết kế dùng nhiều loại cơ sở dữ liệu chuyên biệt trong cùng một hệ thống, chọn mỗi kho lưu trữ khớp với mẫu truy cập và yêu cầu nhất quán của từng miền nghiệp vụ."
+  },
+  {
+    "id": "S2-07.c6",
+    "front": "Vì sao Search Engine dùng chỉ mục đảo nhưng không đóng vai trò nguồn dữ liệu gốc?",
+    "back": "Chỉ mục đảo tối ưu cho tách từ, xếp hạng độ liên quan và lọc nhiều tiêu chí, nhưng ưu tiên tốc độ lập chỉ mục theo lô hơn giao dịch ACID; dữ liệu gốc nằm ở SQL/Document và đồng bộ sang qua CDC."
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S0-04.q1",
+    "type": "output",
+    "q": "Cần xử lý lô 900.000 bức ảnh trong thời hạn tối đa 30 phút (1.800 giây). Nếu mỗi máy chủ xử lý được 100 ảnh/giây, cần tối thiểu bao nhiêu máy chủ chạy song song để kịp tiến độ? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "5",
+    "explain": "Thông lượng tối thiểu cần đạt là 900.000 / 1.800 = 500 ảnh/giây. Mỗi máy xử lý được 100 ảnh/giây nên số máy tối thiểu cần dùng là 500 / 100 = 5 máy."
+  },
+  {
+    "id": "S0-04.q2",
+    "type": "mc",
+    "q": "Một nhóm khởi nghiệp có 2 lập trình viên thành thạo Python và PostgreSQL, ngân sách hạ tầng 300 USD/tháng, cần ra mắt bảng phân tích cho 50 nhân sự nội bộ trong 2 tuần. Lựa chọn nào tôn trọng đúng ràng buộc?",
+    "code": "",
+    "choices": [
+      "Dựng cụm Kubernetes đa vùng chạy 10 dịch vụ viết bằng Rust kết hợp Cassandra",
+      "Viết ứng dụng Monolith bằng Python kết hợp dịch vụ PostgreSQL quản lý sẵn trên nền tảng PaaS đơn giản",
+      "Thuê thêm hạ tầng cụm Redis 1 TB RAM để đệm toàn bộ lịch sử 5 năm ngay từ ngày đầu",
+      "Trì hoãn ra mắt 4 tháng để cả nhóm học một hệ quản trị cơ sở dữ liệu phân tán mới"
+    ],
+    "answer": 1,
+    "explain": "Với 50 người dùng nội bộ, thời hạn 2 tuần và chỉ 2 kỹ sư, Monolith Python + Managed PostgreSQL khớp cả 3 giới hạn: ngân sách dưới 300 USD/tháng, tận dụng kỹ năng sẵn có và tốn tối thiểu công sức vận hành."
+  },
+  {
+    "id": "S0-04.q3",
+    "type": "tf",
+    "q": "Nếu đặt App Server ở Mỹ và Database ở châu Âu (độ trễ mạng một chiều 100 ms), một trang web thực hiện nối tiếp 10 câu truy vấn Database có thể phản hồi trong dưới 150 ms nhờ nâng cấp CPU cực mạnh.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Mỗi câu truy vấn khứ hồi xuyên lục địa đã mất ít nhất 200 ms do giới hạn tốc độ ánh sáng trong cáp quang; 10 câu nối tiếp tốn trên 2.000 ms dù CPU xử lý bằng 0 ms. Phải đặt App gần DB hoặc gom truy vấn."
+  },
+  {
+    "id": "S0-04.q4",
+    "type": "mc",
+    "q": "Trên một máy chủ có 16 GB RAM vật lý (Hệ điều hành dùng 2 GB, tiến trình ứng dụng dùng 2 GB, 100 kết nối Database dùng 1 GB), dung lượng an toàn còn lại cho tầng Cache nội bộ là khoảng bao nhiêu?",
+    "code": "",
+    "choices": [
+      "Đầy đủ 16 GB vì hệ điều hành tự nén các tiến trình còn lại về 0",
+      "Khoảng 10–11 GB sau khi trừ các thành phần hệ thống và khoảng đệm an toàn",
+      "Khoảng 32 GB nhờ nhân đôi bộ nhớ bằng phân vùng ổ cứng mà không giảm tốc độ",
+      "Dưới 500 MB vì mỗi kết nối Database chiếm tới 150 MB RAM"
+    ],
+    "answer": 1,
+    "explain": "Tổng phần nền tảng đã dùng 2 + 2 + 1 = 5 GB trên tổng 16 GB vật lý, còn lại khoảng 10–11 GB khả dụng. Nếu cấp vượt trần này, hệ điều hành phải đẩy sang Swap trên đĩa làm độ trễ tăng đột biến."
+  },
+  {
+    "id": "S0-04.q5",
+    "type": "mc",
+    "q": "Khi hệ thống ghi nhật ký sự kiện nhận 50.000 lượt ghi/giây vượt trần ghi đơn lẻ (~10.000 writes/s) của một máy PostgreSQL, giải pháp đơn giản nào tận dụng được kỹ năng PostgreSQL sẵn có khi chấp nhận trễ hiển thị 1–2 giây?",
+    "code": "",
+    "choices": [
+      "Mở mới kết nối TCP riêng cho từng dòng nhật ký đơn lẻ",
+      "Đệm ngắn hạn và gom lô (Batch Writes) hàng trăm bản ghi vào một lệnh chèn duy nhất",
+      "Thêm 20 chỉ mục phụ trên mọi cột văn bản của bảng nhật ký để tăng tốc độ ghi",
+      "Xoá bỏ khoá chính và đọc lại toàn bộ bảng sau mỗi lượt ghi"
+    ],
+    "answer": 1,
+    "explain": "Gom nhiều bản ghi vào một giao dịch ghi theo lô giảm mạnh chi phí xác nhận đĩa trên đầu bản ghi, nâng thông lượng ghi lên hàng chục đến hàng trăm nghìn bản ghi/giây mà không cần đổi hệ cơ sở dữ liệu."
+  }
+]

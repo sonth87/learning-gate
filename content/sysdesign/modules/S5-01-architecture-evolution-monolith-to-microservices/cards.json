@@ -1,0 +1,8 @@
+[
+  { "id": "S5-01.c1", "front": "4 giai đoạn tiến hóa kiến trúc là gì?", "back": "v1 MVP Monolith → v2 Scaled Monolith (nhiều instance + Cache + Replica) → v3 Modular Monolith (ranh giới module rõ) → v4 Microservices (tách dịch vụ và DB riêng)." },
+  { "id": "S5-01.c2", "front": "Scale Trigger thực sự để chuyển sang Microservices là gì?", "back": "Khi đội ngũ lớn (30–100+ người) bị xung đột lịch triển khai, bán kính lỗi lan rộng giữa các miền, hoặc các phần cần mở rộng tài nguyên và công nghệ độc lập." },
+  { "id": "S5-01.c3", "front": "Distributed Monolith là gì?", "back": "Là hệ thống tách thành nhiều service gọi nhau qua mạng nhưng vẫn dùng chung Database hoặc phải phát hành đồng bộ cùng lúc, gánh độ trễ mạng mà không có tính tự chủ." },
+  { "id": "S5-01.c4", "front": "Cách xử lý khi trang chi tiết gọi 20 lần sang service khác?", "back": "Cung cấp API lấy theo lô (Batch) hoặc giữ bản sao dữ liệu đọc cục bộ cập nhật bất đồng bộ qua sự kiện (Event) để giảm số chặng mạng." },
+  { "id": "S5-01.c5", "front": "Mẫu Strangler Fig hoạt động thế nào?", "back": "Đặt API Gateway trước Monolith, dựng service mới kèm DB riêng, chuyển dần lưu lượng từng route qua thử nghiệm (Canary) rồi mới xóa mã cũ khỏi Monolith." },
+  { "id": "S5-01.c6", "front": "Vì sao Microservices cần Timeout và Circuit Breaker?", "back": "Vì gọi qua mạng có thể chậm hoặc đứt; nếu không ngắt sớm, một service phía sau chậm sẽ làm kẹt thread và lan truyền lỗi ngược lên toàn hệ thống." }
+]

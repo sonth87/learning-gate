@@ -1,0 +1,81 @@
+[
+  {
+    "id": "S6-08.q1",
+    "type": "mc",
+    "q": "Vì sao không nên dùng SHA-256 để băm mật khẩu người dùng lưu trong cơ sở dữ liệu?",
+    "code": "",
+    "choices": [
+      "SHA-256 không thể chạy trên hệ điều hành Linux",
+      "SHA-256 quá nhanh, kẻ tấn công có thể thử hàng tỷ mật khẩu mỗi giây bằng GPU nếu DB bị lộ",
+      "SHA-256 chỉ băm được tối đa 8 ký tự",
+      "SHA-256 tự động giải mã ngược ra mật khẩu gốc"
+    ],
+    "answer": 1,
+    "explain": "SHA-256 được thiết kế cho tốc độ cao, hoàn toàn bất lợi cho mật khẩu. Argon2id hoặc bcrypt cố tình tốn CPU/RAM để làm chậm quá trình dò mật khẩu."
+  },
+  {
+    "id": "S6-08.q2",
+    "type": "mc",
+    "q": "Vai trò chính của Salt ngẫu nhiên riêng cho từng tài khoản khi băm mật khẩu là gì?",
+    "code": "",
+    "choices": [
+      "Giúp rút ngắn thời gian băm xuống dưới 1 micro-giây",
+      "Đảm bảo hai người dùng có cùng mật khẩu vẫn cho ra hai chuỗi băm khác nhau và vô hiệu hóa Rainbow Table",
+      "Thay thế hoàn toàn cho kết nối HTTPS",
+      "Cho phép máy chủ gửi lại mật khẩu gốc qua email"
+    ],
+    "answer": 1,
+    "explain": "Salt riêng ngăn kẻ tấn công dùng bảng tra cứu tính sẵn (Rainbow Table) và buộc phải dò riêng lẻ từng tài khoản."
+  },
+  {
+    "id": "S6-08.q3",
+    "type": "tf",
+    "q": "JWT (Access Token) tự chứa thông tin chữ ký nên có thể thu hồi tức thì ở mọi microservice mà không cần lưu trạng thái hay danh sách thu hồi ở bất kỳ đâu.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "JWT thuần túy có hiệu lực cho tới khi hết hạn (exp). Muốn thu hồi sớm, hệ thống phải đặt thời gian sống ngắn (5–15 phút) và quản lý thu hồi qua Refresh Token hoặc danh sách chặn."
+  },
+  {
+    "id": "S6-08.q4",
+    "type": "mc",
+    "q": "Khi bị tấn công Credential Stuffing, biện pháp nào giúp bảo vệ CPU của Auth Service đang chạy Argon2id hiệu quả nhất?",
+    "code": "",
+    "choices": [
+      "Chuyển thuật toán băm sang MD5 cho nhanh hơn",
+      "Đặt Rate Limiting theo IP và tài khoản tại API Gateway trước khi gọi Auth Service",
+      "Tắt hoàn toàn việc kiểm tra mật khẩu",
+      "Lưu mật khẩu dạng văn bản thô trong bộ nhớ đệm"
+    ],
+    "answer": 1,
+    "explain": "Chặn các lượt thử lặp lại ngay tại API Gateway giúp lưu lượng bot không lọt tới tầng băm Argon2id tốn kém."
+  },
+  {
+    "id": "S6-08.q5",
+    "type": "mc",
+    "q": "Vì sao Passkey (WebAuthn) chống được tấn công trang đăng nhập giả mạo trung gian (Proxy Phishing) tốt hơn mã OTP 6 số?",
+    "code": "",
+    "choices": [
+      "Vì Passkey dùng mã PIN 4 số cố định",
+      "Vì chữ ký của Passkey gắn chặt với tên miền gốc (Origin) do trình duyệt xác thực, không thể dùng lại trên tên miền giả",
+      "Vì Passkey gửi mật khẩu qua tin nhắn SMS",
+      "Vì Passkey không cần kết nối mạng"
+    ],
+    "answer": 1,
+    "explain": "Trình duyệt chỉ ký thử thách cho đúng tên miền đã đăng ký khóa công khai, nên trang giả mạo không thể lừa lấy chữ ký hợp lệ cho trang thật."
+  },
+  {
+    "id": "S6-08.q6",
+    "type": "mc",
+    "q": "Khi thiết kế chức năng Quên mật khẩu, đâu là hành vi chuẩn bảo mật để tránh lộ thông tin tài khoản tồn tại?",
+    "code": "",
+    "choices": [
+      "Báo rõ 'Email này chưa đăng ký' nếu không tìm thấy trong DB",
+      "Trả về thông báo giống nhau bất kể email có tồn tại hay không, kèm token một lần hết hạn ngắn (ví dụ 15 phút)",
+      "Gửi trực tiếp mật khẩu cũ của người dùng qua email",
+      "Cho phép dùng lại link đặt lại mật khẩu vô thời hạn"
+    ],
+    "answer": 1,
+    "explain": "Trả lời đồng nhất ngăn kẻ tấn công dò danh sách email đã đăng ký (User Enumeration), còn token một lần hết hạn ngắn giảm rủi ro bị chiếm dụng."
+  }
+]

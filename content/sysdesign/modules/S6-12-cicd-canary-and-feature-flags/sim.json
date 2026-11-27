@@ -1,0 +1,133 @@
+{
+  "sims": [
+    {
+      "id": "S6-12/canary-rollout",
+      "scenario": {
+        "id": "S6-12/canary-rollout",
+        "seed": 6612,
+        "durationSec": 55,
+        "mix": { "readRatio": 0.7 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 800 },
+        "events": [
+          { "at": 18, "type": "deploy", "node": "app_canary", "version": "v2.4", "bad": true },
+          { "at": 36, "type": "rollback", "node": "app_canary" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Traffic Router", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 15000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "weighted", "healthCheckSec": 2 }
+            },
+            {
+              "id": "app_stable",
+              "kind": "service",
+              "label": { "vi": "App Stable (v2.3)", "en": "App Stable (v2.3)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.3,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1000 },
+              "latency": { "baseMs": 14, "cv": 0.25 },
+              "params": { "replicas": 3 }
+            },
+            {
+              "id": "app_canary",
+              "kind": "service",
+              "label": { "vi": "App Canary (v2.4)", "en": "App Canary (v2.4)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Canary", "en": "Canary instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                {
+                  "kind": "crash",
+                  "note": { "vi": "Bản v2.4 lỗi làm tăng vọt Error Rate trên nhánh Canary", "en": "Faulty v2.4 spikes error rate on Canary pool" }
+                }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1000 },
+              "latency": { "baseMs": 14, "cv": 0.25 },
+              "params": { "replicas": 1 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Production DB", "en": "Production DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "shards": 1, "maxConnections": 400, "poolSize": 16, "sizeFactor": 1, "queueLimit": 2000 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-app_stable", "from": "lb", "to": "app_stable", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200, "weight": 0.75 },
+            { "id": "lb-app_canary", "from": "lb", "to": "app_canary", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200, "weight": 0.25 },
+            { "id": "app_stable-db", "from": "app_stable", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "app_canary-db", "from": "app_canary", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "app_stable": "all-sequential",
+            "app_canary": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 200, "window": { "fromSec": 0, "toSec": 55 }, "allowViolationPct": 5 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.05, "window": { "fromSec": 0, "toSec": 55 } }
+      ],
+      "expect": {}
+    }
+  ]
+}

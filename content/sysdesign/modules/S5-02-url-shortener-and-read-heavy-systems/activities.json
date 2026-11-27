@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S5-02.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng dung lượng lưu trữ URL sau 5 năm" },
+    "prompt": { "vi": "Hệ thống tạo mới trung bình 100.000.000 URL mỗi tháng, mỗi bản ghi tốn 250 byte (gồm short_code, long_url và siêu dữ liệu). Ước lượng tổng dung lượng lưu trữ tích lũy sau 5 năm (60 tháng) theo đơn vị GB (lấy 1 GB = 1.000.000.000 byte)." },
+    "difficulty": 1,
+    "quantity": "Dung lượng sau 5 năm",
+    "unit": "GB",
+    "truth": { "type": "formula", "expr": "100000000*250*60/1000000000", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.1, "pass": 0.25 },
+    "workings": [
+      { "vi": "Dung lượng mỗi tháng: 100.000.000 × 250 byte = 25.000.000.000 byte = 25 GB/tháng." },
+      { "vi": "Sau 5 năm (60 tháng): 25 GB/tháng × 60 tháng = 1.500 GB (1,5 TB)." },
+      { "vi": "Với 20% liên kết nóng (300 GB), toàn bộ tập nóng nằm vừa trong một cụm Redis RAM." }
+    ],
+    "hints": [
+      { "vi": "Nhân 100 triệu × 250 byte để ra dung lượng mỗi tháng (GB), rồi nhân tiếp với 60 tháng." }
+    ],
+    "explain": { "vi": "Tổng dung lượng sau 5 năm là {truth:0} GB (1,5 TB). Con số này cho thấy toàn bộ dữ liệu bền vững dễ dàng phân mảnh trên NoSQL, còn 20% tập nóng (~300 GB) nằm gọn trong RAM Cache." }
+  },
+  {
+    "id": "S5-02.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Giữ p99 ≤ 80 ms qua đỉnh 12.000 req/s" },
+    "prompt": { "vi": "Khi lưu lượng tăng từ 4.000 lên 12.000 req/s (99% đọc), hệ thống hiện tại bị nghẽn ở cả Shortener API lẫn NoSQL Store. Với tối đa 2 thay đổi và chi phí ≤ 1,70 USD/giờ, hãy giữ p99 ≤ 80 ms và lỗi ≤ 1% suốt 60 giây." },
+    "difficulty": 2,
+    "simId": "S5-02/shortener",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.7 },
+    "allowed": [
+      { "type": "knob", "node": "api", "key": "replicas", "min": 1, "max": 8 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 50000, "max": 300000 },
+      { "type": "knob", "node": "nosql", "key": "shards", "min": 1, "max": 6 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 80, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+    ],
+    "soft": [
+      { "id": "nosql-calm", "kind": "node-state", "node": "nosql", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 60 },
+    "par": { "changes": 2, "costPerHour": 1.48 },
+    "solution": [
+      { "type": "knob", "node": "api", "key": "replicas", "value": 4 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 200000 }
+    ],
+    "traps": [
+      {
+        "id": "only-nosql",
+        "label": { "vi": "Tăng NoSQL lên 3 shard nhưng giữ Cache 50.000 key và 2 API" },
+        "changes": [
+          { "type": "knob", "node": "nosql", "key": "shards", "value": 3 }
+        ],
+        "why": { "vi": "Shortener API chỉ có 2 instance (4.000 req/s) sẽ bị bão hòa khi lưu lượng qua CDN vượt 4.000 req/s ở đỉnh 12.000 req/s, khiến p99 tăng vọt dù NoSQL còn rảnh." }
+      }
+    ],
+    "hints": [
+      { "vi": "CDN hấp thụ khoảng 60% lượt đọc, phần còn lại (~4.800–5.000 req/s ở đỉnh) đi vào Shortener API (μ = 2.000 req/s mỗi máy)." },
+      { "vi": "Nâng dung lượng Redis Cache lên 200.000 key để phủ trọn tập liên kết nóng thay vì phải mua thêm shard NoSQL đắt tiền." }
+    ],
+    "explain": { "vi": "Nâng Shortener API lên 4 instance (8.000 req/s) gánh gọn lưu lượng vượt qua CDN, còn tăng Redis Cache lên 200.000 key đẩy Hit Ratio lên {cache.hitRatio'@40:0%} để bảo vệ NoSQL ở mức ρ = {nosql.rho'@40:2}, giữ p99 ở {m.p99'@40:0} ms với chi phí {m.cost'@40:2} USD/giờ." },
+    "replay": { "simId": "S5-02/shortener", "seekSec": 40, "focus": { "nodes": ["api", "cache", "nosql"] }, "autoplay": true }
+  }
+]

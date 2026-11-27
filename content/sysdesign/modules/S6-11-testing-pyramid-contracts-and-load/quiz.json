@@ -1,0 +1,67 @@
+[
+  {
+    "id": "S6-11.q1",
+    "type": "mc",
+    "q": "Vì sao Tháp Kiểm thử khuyến nghị viết nhiều Unit Test ở đáy và ít End-to-End (E2E) Test ở đỉnh?",
+    "code": "",
+    "choices": [
+      "Unit Test chạy nhanh, rẻ và dễ cô lập nguyên nhân lỗi; E2E Test chậm, tốn chi phí dựng môi trường và dễ chập chờn",
+      "Unit Test có thể thay thế hoàn toàn kiểm thử tải trên production",
+      "E2E Test không thể chạy tự động trong CI/CD",
+      "Unit Test tự động sửa lỗi cú pháp SQL trong Database"
+    ],
+    "answer": 0,
+    "explain": "Unit Test phản hồi trong mili-giây với chi phí bảo trì thấp. E2E Test kiểm tra cả chuỗi nhưng chậm và dễ gãy vì mạng hoặc UI, nên chỉ nên giữ cho các luồng nghiệp vụ trọng yếu."
+  },
+  {
+    "id": "S6-11.q2",
+    "type": "mc",
+    "q": "Khi muốn kiểm tra câu truy vấn SQL, ràng buộc khóa ngoại và file migration của Order Service, loại test nào phù hợp nhất?",
+    "code": "",
+    "choices": [
+      "Unit Test với Mock hoàn toàn lớp Database",
+      "Integration Test kết nối tới PostgreSQL thật chạy trong container tạm (Testcontainers)",
+      "Chỉ kiểm tra bằng mắt khi đọc code",
+      "Stress Test tăng tải lên 10.000 req/s"
+    ],
+    "answer": 1,
+    "explain": "Mock Database không thể bắt lỗi cú pháp SQL, sai kiểu dữ liệu hay thiếu migration. Integration Test với container Database thật kiểm chứng chính xác tầng lưu trữ."
+  },
+  {
+    "id": "S6-11.q3",
+    "type": "mc",
+    "q": "Contract Testing (ví dụ Consumer-Driven Contracts) giải quyết vấn đề gì giữa hai đội phát triển microservice?",
+    "code": "",
+    "choices": [
+      "Đo p99 của Database dưới tải 5.000 req/s",
+      "Phát hiện sớm việc đội Provider đổi tên hoặc kiểu trường API làm gãy đội Consumer mà không cần dựng toàn bộ môi trường E2E",
+      "Tự động tạo giao diện người dùng từ file JSON",
+      "Thay thế hoàn toàn việc xác thực TLS giữa hai dịch vụ"
+    ],
+    "answer": 1,
+    "explain": "Contract Testing giúp mỗi đội tự xác minh độc lập với bản hợp đồng (Contract) chung trên Broker, chặn ngay PR làm lệch schema trước khi tích hợp."
+  },
+  {
+    "id": "S6-11.q4",
+    "type": "tf",
+    "q": "Khi gặp một bài test chập chờn (Flaky Test) thỉnh thoảng báo đỏ rồi chạy lại lại xanh, cách xử lý tốt nhất là bỏ qua hoặc bấm chạy lại mãi cho đến khi xanh.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Bỏ qua Flaky Test làm cả đội mất niềm tin vào tín hiệu đỏ của CI và dễ bỏ lọt lỗi thật. Flaky Test là nợ kỹ thuật cần cách ly (quarantine) và sửa triệt để nguyên nhân (như phụ thuộc thời gian hoặc state dùng chung)."
+  },
+  {
+    "id": "S6-11.q5",
+    "type": "mc",
+    "q": "Loại kiểm thử nào được thiết kế riêng để phát hiện lỗi rò rỉ bộ nhớ (memory leak) hoặc cạn dần connection pool sau nhiều giờ vận hành?",
+    "code": "",
+    "choices": [
+      "Unit Test",
+      "Contract Test",
+      "Soak Test (Endurance Test)",
+      "Smoke Test 30 giây"
+    ],
+    "answer": 2,
+    "explain": "Soak Test duy trì tải cao ổn định trong 8–24 giờ liên tục, giúp bộc lộ các lỗi tích lũy theo thời gian như rò rỉ bộ nhớ, đầy đĩa log hoặc cạn connection pool."
+  }
+]

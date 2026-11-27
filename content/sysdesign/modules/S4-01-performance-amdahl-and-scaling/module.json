@@ -1,0 +1,30 @@
+{
+  "id": "S4-01",
+  "slug": "S4-01-performance-amdahl-and-scaling",
+  "level": 4,
+  "order": 1,
+  "title": "Performance và Scaling: Bottleneck, Amdahl, Vertical và Horizontal",
+  "summary": "Phân biệt ba chiều tài nguyên (Compute, Storage, Network), so sánh mở rộng dọc và mở rộng ngang, tính trần tăng tốc theo Định luật Amdahl và xử lý độ trễ khởi động nguội của Autoscaling.",
+  "durationMin": 18,
+  "difficulty": "Intermediate",
+  "objectives": [
+    { "vi": "Phân loại điểm nghẽn theo ba chiều Compute, Storage, Network và đánh giá đánh đổi giữa Latency với Throughput" },
+    { "vi": "So sánh mở rộng dọc (Scale-up) và mở rộng ngang (Scale-out) về trần phần cứng, chi phí theo giờ và rủi ro điểm lỗi đơn" },
+    { "vi": "Áp dụng công thức Định luật Amdahl để giải thích vì sao phần xử lý tuần tự chặn đứng lợi ích của việc thêm máy chủ" },
+    { "vi": "Vận hành Autoscaling theo chu kỳ tải ngày đêm, xử lý độ trễ Cold Start trong đợt tăng vọt và thiết kế kiểm thử tải" }
+  ],
+  "tags": ["performance", "scaling", "amdahl", "vertical-scaling", "horizontal-scaling", "autoscaling", "cold-start", "load-testing"],
+  "prerequisites": ["S1-03", "S1-07", "S2-01"],
+  "related": ["S3-09", "S4-02", "S4-04"],
+  "dtsRef": "vertical-horizontal",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-4/lessons/lesson-1-performance-bottleneck-thinking.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-4/lessons/lesson-1-performance-bottleneck-thinking.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: chuyển sơ đồ Mermaid sang sân khấu isometric và memory-2d, bổ sung công thức định lượng của Định luật Amdahl S(N) = 1 / ((1 - p) + p/N), thêm mô phỏng trần phần cứng và chi phí phi tuyến của Scale-up, tải chu kỳ ngày đêm, độ trễ Cold Start của Autoscaling và ba bài tập chấm điểm."
+  }
+}

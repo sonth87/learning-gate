@@ -1,0 +1,172 @@
+{
+  "sims": [
+    {
+      "id": "S4-03/edge-offload",
+      "scenario": {
+        "id": "S4-03/edge-offload",
+        "seed": 4403,
+        "durationSec": 65,
+        "mix": { "readRatio": 1.0 },
+        "clientTimeoutMs": 2500,
+        "options": { "noise": false },
+        "load": {
+          "kind": "spike",
+          "base": 3000,
+          "peak": 9000,
+          "atSec": 25,
+          "holdSec": 25,
+          "riseSec": 3,
+          "fallSec": 3
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng toàn cầu", "en": "Global Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.25 },
+              "params": {}
+            },
+            {
+              "id": "edge",
+              "kind": "cdn",
+              "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 4,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "ttlSec",
+                  "type": "number",
+                  "label": { "vi": "Edge TTL", "en": "Edge TTL" },
+                  "min": 30,
+                  "max": 3600,
+                  "step": 30,
+                  "default": 600,
+                  "unit": "s"
+                },
+                {
+                  "key": "singleflight",
+                  "type": "bool",
+                  "label": { "vi": "Request Collapsing", "en": "Request Collapsing" },
+                  "default": false
+                }
+              ],
+              "failureModes": [
+                { "kind": "data-loss", "note": { "vi": "Purge toàn bộ Edge: miss dồn về Origin", "en": "Edge purge: misses hit Origin" } }
+              ],
+              "zone": "internet",
+              "initial": { "warm": 0 },
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": {
+                "replicas": 4,
+                "ttlSec": 600,
+                "ttlJitterPct": 0.1,
+                "hitRatioMax": 0.9,
+                "workingSetKeys": 50000,
+                "capacityKeys": 50000,
+                "warmupSec": 15,
+                "singleflight": false
+              }
+            },
+            {
+              "id": "shield",
+              "kind": "cache",
+              "label": { "vi": "Origin Shield", "en": "Origin Shield" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Shield (key)", "en": "Shield capacity (keys)" },
+                  "min": 10000,
+                  "max": 100000,
+                  "step": 10000,
+                  "default": 50000
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 25000 },
+              "latency": { "baseMs": 1.5, "cv": 0.2 },
+              "params": {
+                "replicas": 1,
+                "ttlSec": 1200,
+                "ttlJitterPct": 0.1,
+                "hitRatioMax": 0.7,
+                "workingSetKeys": 50000,
+                "capacityKeys": 50000,
+                "warmupSec": 10,
+                "singleflight": true
+              }
+            },
+            {
+              "id": "origin",
+              "kind": "service",
+              "label": { "vi": "Origin Server", "en": "Origin Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số máy Origin", "en": "Origin instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 700 },
+              "latency": { "baseMs": 18, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 }
+            }
+          ],
+          "links": [
+            { "id": "client-edge", "from": "client", "to": "edge", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "edge-shield", "from": "edge", "to": "shield", "mode": "sync", "netClass": "cross-region", "timeoutMs": 2000 },
+            { "id": "shield-origin", "from": "shield", "to": "origin", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "edge": "split",
+            "shield": "split"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 18, "toSec": 65 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 18, "toSec": 65 } }
+      ],
+      "presets": [
+        {
+          "id": "warm-edge-collapsing",
+          "label": { "vi": "Bật Request Collapsing trên Edge để giảm tải lúc khởi động", "en": "Enable Request Collapsing on Edge" },
+          "changes": [
+            { "type": "knob", "node": "edge", "key": "singleflight", "value": true }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

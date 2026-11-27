@@ -1,0 +1,8 @@
+[
+  { "id": "S2-05.c1", "front": "Khoảng trống tích hợp (Integration Gap) trong thiết kế hệ thống là gì?", "back": "Là khoảng cách giữa việc hiểu từng thành phần rời rạc (Cache, DB, Queue) với việc biết cách ghép chúng lại, xác định thứ tự luồng dữ liệu và kiểm soát tương tác đánh đổi giữa chúng." },
+  { "id": "S2-05.c2", "front": "5 bước từ bài toán đến kiến trúc gồm những gì?", "back": "1) Yêu cầu & ràng buộc (SLO, ngân sách); 2) Chọn thành phần lõi; 3) Vẽ luồng dữ liệu; 4) Đánh giá đánh đổi từng mảnh thêm vào; 5) Bắt đầu đơn giản và tiến hóa theo số đo." },
+  { "id": "S2-05.c3", "front": "Khi nào nên đặt Queue + Worker thay vì xử lý đồng bộ trong API?", "back": "Khi tác vụ tốn nhiều thời gian/CPU (nén ảnh, gửi email, xuất báo cáo) và người dùng không cần kết quả hoàn tất ngay trong phản hồi HTTP." },
+  { "id": "S2-05.c4", "front": "Vì sao phải kiểm tra cả SPOF lẫn công suất đỉnh khi thiết kế?", "back": "Một thành phần đơn lẻ (1 LB hoặc 1 API) đủ công suất lúc bình thường nhưng sẽ làm sập toàn tuyến nếu gặp sự cố phần cứng hoặc lưu lượng vọt lên đỉnh." },
+  { "id": "S2-05.c5", "front": "4 câu hỏi kiểm tra trước khi thêm một thành phần mới vào sơ đồ?", "back": "Nó giải quyết nút thắt nào? Tốn thêm bao nhiêu chi phí và công sức vận hành? Có phương án đơn giản hơn không? Và nó tạo ra điểm lỗi mới nào?" },
+  { "id": "S2-05.c6", "front": "Tác dụng kép của Cache đủ dung lượng trong hệ thống đọc nhiều?", "back": "Vừa hạ độ trễ đọc xuống mức RAM cho người dùng, vừa chặn phần lớn lưu lượng rơi xuống Database để tránh phải nâng cấp DB đắt đỏ." }
+]

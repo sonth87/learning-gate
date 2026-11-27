@@ -1,0 +1,99 @@
+---
+title: "Phase 3 — Distributed Systems Fundamentals"
+description: "Bước chuyển sâu vào thực tế hệ phân tán: failure, consistency, coordination, integrity và ordering."
+progress: 52
+lessons:
+  - "Reality of Distributed Systems — Failure Models & CAP Thinking"
+  - "Consistency Models — Strong vs Eventual Consistency"
+  - "Consensus & Leader Election — Distributed Agreement"
+  - "Distributed Transactions & Data Integrity — Đảm Bảo Tính Nhất Quán Dữ Liệu"
+  - "Distributed ID & Ordering — Giải Quyết Vấn Đề Định Danh Trong Hệ Thống Phân Tán"
+---
+
+## 1) Giới thiệu Phase
+
+Distributed systems khác bản chất với hệ thống chạy trên một máy đơn lẻ.
+
+Trong môi trường phân tán, failure là trạng thái bình thường: node có thể chết, network có thể partition, và dữ liệu có thể tạm thời lệch trạng thái.
+
+Vì vậy, consistency và coordination trở thành bài toán trung tâm. Đây là cột mốc kỹ thuật quan trọng để bạn chuyển từ "xây service" sang "thiết kế hệ thống phân tán".
+
+## 2) Vì sao phase này tồn tại
+
+Tư duy single-server không đủ khi hệ thống mở rộng.
+
+Bạn cần hiểu rõ:
+
+- Partial failure là thực tế không thể tránh.
+- Network không đáng tin cậy tuyệt đối.
+- Consistency guarantee luôn đi kèm trade-off.
+- Dữ liệu trên nhiều node cần cơ chế coordination rõ ràng.
+
+Nếu không có distributed reasoning, rất khó thiết kế hệ thống hiện đại có độ tin cậy cao.
+
+## 3) Learning Objectives
+
+- Hiểu các failure model trong distributed systems.
+- Hiểu CAP thinking ở mức ra quyết định kiến trúc.
+- Hiểu trade-off giữa consistency và availability.
+- Hiểu các cơ chế coordination trong hệ phân tán.
+- Hiểu bài toán data integrity khi giao dịch đi qua nhiều thành phần.
+- Hiểu vấn đề identity và ordering trong môi trường multi-node.
+
+## 4) Bạn sẽ học gì trong phase này
+
+- **Failure handling:** cách tư duy và phản ứng với lỗi trong môi trường phân tán.
+- **Consistency trade-offs:** khi nào ưu tiên strong consistency, khi nào chấp nhận eventual.
+- **Distributed coordination:** cơ chế để nhiều node đạt đồng thuận trong điều kiện không hoàn hảo.
+- **Leader election:** vai trò leader/follower và các giới hạn khi election xảy ra.
+- **Distributed transactions:** cách giữ tính nhất quán dữ liệu xuyên nhiều service/store.
+- **System-wide integrity:** đảm bảo dữ liệu đúng ở quy mô hệ thống, không chỉ từng service.
+- **Distributed ID:** tạo định danh duy nhất mà không trở thành bottleneck.
+- **Event ordering:** xử lý thứ tự sự kiện trong hệ thống phân tán và bất đồng bộ.
+
+## 5) Lessons Overview
+
+### Lesson 1 — Reality of Distributed Systems — Failure Models & CAP Thinking
+
+- **Mô tả:** nhìn thẳng vào bản chất lỗi và giới hạn của hệ phân tán.
+- **Bạn nhận được:** nền tư duy CAP và failure-first để ra quyết định thực tế.
+
+### Lesson 2 — Consistency Models — Strong vs Eventual Consistency
+
+- **Mô tả:** so sánh các mức consistency trong bối cảnh sản phẩm thật.
+- **Bạn nhận được:** khả năng chọn consistency model phù hợp theo yêu cầu nghiệp vụ.
+
+### Lesson 3 — Consensus & Leader Election — Distributed Agreement
+
+- **Mô tả:** cơ chế đồng thuận và bầu leader để điều phối trạng thái hệ thống.
+- **Bạn nhận được:** trực giác về distributed agreement và giới hạn của coordination.
+
+### Lesson 4 — Distributed Transactions & Data Integrity — Đảm Bảo Tính Nhất Quán Dữ Liệu
+
+- **Mô tả:** giải bài toán nhất quán dữ liệu khi giao dịch đi qua nhiều service.
+- **Bạn nhận được:** nền tảng để đánh giá transaction strategy và integrity guarantees.
+
+### Lesson 5 — Distributed ID & Ordering — Giải Quyết Vấn Đề Định Danh Trong Hệ Thống Phân Tán
+
+- **Mô tả:** xử lý ID generation và ordering khi hệ thống không có một clock trung tâm.
+- **Bạn nhận được:** khả năng thiết kế định danh và thứ tự sự kiện ở quy mô phân tán.
+
+## 6) Kết quả sau khi hoàn thành Phase 3
+
+Bạn có thể:
+
+- Lập luận trade-off cốt lõi trong distributed systems.
+- Nhận diện rủi ro production liên quan đến failure và consistency.
+- Đánh giá chiến lược coordination theo bối cảnh hệ thống.
+- Thiết kế hệ thống với failure awareness ngay từ đầu.
+
+## 7) Chuẩn bị cho Phase 4
+
+Phase 3 cho bạn nền tảng để hiểu vì sao hệ phân tán khó và cần trade-off nghiêm túc.
+
+Sang **Phase 4 — Scalability & Performance**, bạn sẽ tập trung vào:
+
+- tối ưu hiệu năng ở quy mô lớn,
+- chiến lược scaling nâng cao,
+- tư duy tìm bottleneck theo hệ thống,
+- và observability để vận hành ổn định trong production.

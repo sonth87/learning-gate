@@ -1,0 +1,23 @@
+{
+  "id": "S7-06",
+  "slug": "S7-06-case-payment-system",
+  "level": 7,
+  "order": 6,
+  "title": "Case Study: Hệ thống Thanh toán và Sổ cái kép",
+  "summary": "Thiết kế hệ thống Thanh toán chịu lỗi và kiểm toán được: sổ cái kép bất biến (Double-Entry Ledger), Idempotency Key chống trừ tiền hai lần khi Timeout, Transactional Outbox/Saga và đối soát cuối ngày.",
+  "durationMin": 20,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Thiết kế mô hình Sổ cái kép (Double-Entry Ledger) bất biến với nguyên tắc tổng ghi nợ và ghi có luôn bằng không" },
+    { "vi": "Sử dụng Idempotency Key để xử lý an toàn trạng thái Timeout chưa biết kết quả từ cổng thanh toán bên ngoài" },
+    { "vi": "Áp dụng mẫu Transactional Outbox và Saga để đồng bộ trạng thái thanh toán với đơn hàng và thông báo" },
+    { "vi": "Thiết lập quy trình đối soát cuối ngày (Reconciliation) để phát hiện và xử lý giao dịch lệch giữa sổ cái nội bộ và đối tác" }
+  ],
+  "tags": ["payment", "ledger", "idempotency", "outbox", "saga", "reconciliation", "case-study"],
+  "prerequisites": ["S2-11", "S3-04", "S4-11"],
+  "related": ["S3-04", "S2-11", "S7-05"],
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới Case Study thiết kế hệ thống Thanh toán và Sổ cái kép (Double-Entry Ledger): Idempotency Key chống trừ tiền hai lần khi Timeout, Saga/Outbox và đối soát cuối ngày (Reconciliation)."
+  }
+}

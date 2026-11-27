@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S2-10.q1",
+    "type": "output",
+    "q": "Một cụm Cache dùng vòng băm nhất quán (Consistent Hashing kèm Virtual Nodes đều) mở rộng từ N = 9 máy chủ lên 10 máy chủ. Trung bình bao nhiêu phần trăm tổng số khoá phải chuyển sang máy thứ 10? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "10",
+    "explain": "Khi mở rộng từ N lên N + 1 nút trên vòng băm nhất quán, nút mới chỉ nhận bàn giao khoảng 1 / (N + 1) = 1 / (9 + 1) = 1/10 = 10% tổng số khoá; 90% khoá trên 9 máy cũ giữ nguyên vị trí."
+  },
+  {
+    "id": "S2-10.q2",
+    "type": "mc",
+    "q": "Trên vòng băm nhất quán [0 .. 2^32 − 1], một khoá dữ liệu có giá trị băm h = hash(key) được gán cho máy chủ nào?",
+    "code": "",
+    "choices": [
+      "Máy chủ có toạ độ băm nhỏ nhất trên toàn bộ vòng tròn",
+      "Điểm máy chủ (hoặc Virtual Node) đầu tiên gặp được khi đi từ vị trí h theo chiều kim đồng hồ (nếu vượt cuối mảng thì quay vòng về đầu mảng)",
+      "Luôn gán cố định cho máy chủ vừa mới khởi động gần đây nhất",
+      "Chia đều một nửa giá trị của khoá sang hai máy chủ đối diện nhau qua tâm vòng tròn"
+    ],
+    "answer": 1,
+    "explain": "Quy tắc chuẩn của Consistent Hashing là tìm điểm nút đầu tiên có toạ độ ≥ hash(key) theo chiều kim đồng hồ; nếu hash(key) lớn hơn mọi điểm nút hiện có thì quay vòng qua mốc 0 để nhận nút đầu tiên của mảng sắp xếp."
+  },
+  {
+    "id": "S2-10.q3",
+    "type": "tf",
+    "q": "Nếu mỗi máy chủ vật lý chỉ đặt đúng 1 điểm duy nhất trên vòng băm nhất quán (không dùng Virtual Nodes), lưu lượng giữa 4 máy chủ luôn được chia đều chính xác 25% mỗi máy.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Với chỉ 1 điểm mỗi máy trên số lượng máy ít, các vị trí băm ngẫu nhiên tạo ra các đoạn cung dài ngắn rất chênh lệch (ví dụ một cung chiếm hơn 50%, cung khác chỉ 10%), gây lệch tải nghiêm trọng nếu thiếu Virtual Nodes."
+  },
+  {
+    "id": "S2-10.q4",
+    "type": "mc",
+    "q": "Khi một máy chủ vật lý gặp sự cố ngừng hoạt động trên vòng băm có sử dụng 150 Virtual Nodes mỗi máy, lưu lượng của máy hỏng đó sẽ dịch chuyển như thế nào?",
+    "code": "",
+    "choices": [
+      "Dồn toàn bộ 100% sang duy nhất một máy chủ vật lý đứng liền sau nó",
+      "Được chia nhỏ qua 150 cung ảo và rải đều sang tất cả các máy chủ vật lý còn sống trong cụm",
+      "Làm toàn bộ các khoá của những máy chủ đang sống khác cũng bị xoá sạch",
+      "Tự động dừng toàn bộ hệ thống cho đến khi máy hỏng khởi động lại"
+    ],
+    "answer": 1,
+    "explain": "Vì 150 điểm ảo của máy hỏng nằm đan xen với điểm ảo của mọi máy khác quanh vòng, mỗi cung nhỏ của nó sẽ trượt sang một máy kế cận khác nhau, giúp chia đều gánh nặng dự phòng lên toàn cụm thay vì đánh gục một máy hàng xóm."
+  },
+  {
+    "id": "S2-10.q5",
+    "type": "mc",
+    "q": "Làm thế nào để phân bổ lưu lượng hợp lý trên vòng băm nhất quán khi cụm gồm 3 máy chủ tiêu chuẩn (16 GB RAM) và 1 máy chủ cấu hình gấp đôi (32 GB RAM)?",
+    "code": "",
+    "choices": [
+      "Cấp cho máy 32 GB RAM số lượng Virtual Nodes gấp đôi (ví dụ 300 VNodes so với 150 VNodes của các máy 16 GB RAM)",
+      "Bắt máy 32 GB RAM chạy hai vòng băm tách rời không liên lạc với nhau",
+      "Quay lại dùng công thức hash(key) mod 4 cho cả 4 máy",
+      "Tắt bớt một nửa dung lượng RAM trên máy lớn để các máy bằng nhau"
+    ],
+    "answer": 0,
+    "explain": "Tỷ trọng không gian khoá mà một máy chủ nắm giữ tỷ lệ thuận với số lượng Virtual Nodes của nó trên vòng. Cấp gấp đôi số VNodes giúp máy mạnh tự động nhận xấp xỉ gấp đôi lượng khoá và lưu lượng."
+  },
+  {
+    "id": "S2-10.q6",
+    "type": "output",
+    "q": "Cụm 4 máy chủ dùng tổng cộng 150 Virtual Nodes cho mỗi máy. Mảng toạ độ vòng băm trong bộ nhớ của App Hash Client có tổng cộng bao nhiêu phần tử điểm? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "600",
+    "explain": "Mỗi một trong 4 máy chủ đóng góp 150 điểm ảo lên vòng, tạo thành mảng đã sắp xếp gồm 4 × 150 = 600 điểm. Tìm kiếm nhị phân trên 600 phần tử chỉ cần tối đa khoảng 10 phép so sánh."
+  }
+]

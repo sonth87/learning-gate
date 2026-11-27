@@ -1,0 +1,210 @@
+{
+  "sims": [
+    {
+      "id": "S7-02/dist-limiter",
+      "scenario": {
+        "id": "S7-02/dist-limiter",
+        "seed": 7702,
+        "durationSec": 65,
+        "mix": { "readRatio": 0.8 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "spike",
+          "base": 1800,
+          "peak": 4200,
+          "atSec": 12,
+          "holdSec": 30,
+          "riseSec": 3,
+          "fallSec": 3
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "users",
+              "kind": "client",
+              "label": { "vi": "Người dùng hợp lệ", "en": "Valid Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": { "loadShare": 0.65 }
+            },
+            {
+              "id": "burst_client",
+              "kind": "client",
+              "label": { "vi": "Client gửi burst", "en": "Burst Clients" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": { "loadShare": 0.35 }
+            },
+            {
+              "id": "gateways",
+              "kind": "gateway",
+              "label": { "vi": "API Gateways", "en": "API Gateways" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.08,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số API Gateway", "en": "Gateway replicas" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 4000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "replicas": 3, "poolSize": 50 }
+            },
+            {
+              "id": "limiter",
+              "kind": "rate-limiter",
+              "label": { "vi": "Rate Limiter", "en": "Rate Limiter" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [
+                {
+                  "key": "ratePerSec",
+                  "type": "number",
+                  "label": { "vi": "Ngưỡng nạp (ratePerSec)", "en": "Refill rate (ratePerSec)" },
+                  "min": 500,
+                  "max": 10000,
+                  "step": 250,
+                  "default": 6000,
+                  "unit": "rps"
+                },
+                {
+                  "key": "burst",
+                  "type": "number",
+                  "label": { "vi": "Sức chứa burst", "en": "Burst capacity" },
+                  "min": 100,
+                  "max": 3000,
+                  "step": 100,
+                  "default": 1500
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 50000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": { "replicas": 2, "ratePerSec": 6000, "burst": 1500 }
+            },
+            {
+              "id": "redis",
+              "kind": "cache",
+              "label": { "vi": "Redis Counter Store", "en": "Redis Counter Store" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "initial": { "warm": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số node Redis", "en": "Redis nodes" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 60000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": {
+                "replicas": 1,
+                "ttlSec": 60,
+                "ttlJitterPct": 0.05,
+                "hitRatioMax": 0.99,
+                "workingSetKeys": 10000,
+                "capacityKeys": 10000,
+                "warmupSec": 5
+              }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Backend API", "en": "Backend API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Backend API", "en": "Backend API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1800 },
+              "latency": { "baseMs": 8, "cv": 0.25 },
+              "params": { "replicas": 2, "poolSize": 32 }
+            }
+          ],
+          "links": [
+            { "id": "users-gw", "from": "users", "to": "gateways", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "burst-lim", "from": "burst_client", "to": "limiter", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lim-gw", "from": "limiter", "to": "gateways", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "gw-redis", "from": "gateways", "to": "redis", "mode": "sync", "netClass": "same-az", "timeoutMs": 400 },
+            { "id": "gw-api", "from": "gateways", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 }
+          ],
+          "routes": {
+            "users": "all-sequential",
+            "burst_client": "all-sequential",
+            "limiter": "all-sequential",
+            "gateways": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 65 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 65 } }
+      ],
+      "presets": [
+        {
+          "id": "tighten-limiter-and-api",
+          "label": { "vi": "Siết ratePerSec xuống 1.200 và tăng Backend API lên 3", "en": "Tighten ratePerSec to 1,200 and scale API to 3" },
+          "changes": [
+            { "type": "knob", "node": "limiter", "key": "ratePerSec", "value": 1600 },
+            { "type": "knob", "node": "limiter", "key": "burst", "value": 400 },
+            { "type": "knob", "node": "api", "key": "replicas", "value": 3 }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S1-08.q1",
+    "type": "mc",
+    "q": "Vì sao REST thường gây chậm màn hình trên mạng di động 4G dù từng API xử lý ở server chỉ mất 15 ms?",
+    "code": "",
+    "choices": [
+      "Vì JSON luôn chậm hơn XML",
+      "Vì màn hình phải gọi nhiều endpoint nối tiếp, mỗi lần tốn thêm 1 RTT mạng 4G",
+      "Vì HTTP không hỗ trợ nén dữ liệu",
+      "Vì trình duyệt không mở được kết nối TCP"
+    ],
+    "answer": 1,
+    "explain": "Trên mạng 4G có RTT khoảng 100–150 ms, mỗi vòng khứ hồi nối tiếp cộng thêm một khoảng chờ mạng lớn hơn nhiều so với 15 ms xử lý ở backend."
+  },
+  {
+    "id": "S1-08.q2",
+    "type": "tf",
+    "q": "Khi dùng GraphQL, việc để mặc định cho client tự do truy vấn lồng nhau nhiều tầng mà không đặt giới hạn độ sâu là hoàn toàn an toàn cho database.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Truy vấn lồng nhau sâu hoặc lấy danh sách lớn không giới hạn có thể tạo ra hàng nghìn truy vấn con và làm quá tải CPU/DB. Cần đặt Depth Limit và Query Cost Limit."
+  },
+  {
+    "id": "S1-08.q3",
+    "type": "mc",
+    "q": "Giao thức nào phù hợp nhất cho giao tiếp nội bộ hiệu năng cao giữa các microservice trong cùng trung tâm dữ liệu?",
+    "code": "",
+    "choices": [
+      "REST với XML",
+      "GraphQL qua HTTP POST",
+      "gRPC với Protobuf nhị phân trên HTTP/2",
+      "SOAP"
+    ],
+    "answer": 2,
+    "explain": "gRPC dùng định dạng nhị phân Protobuf gọn nhẹ, tốc độ mã hóa/giải mã nhanh và tận dụng HTTP/2 để ghép nhiều luồng trên một kết nối."
+  },
+  {
+    "id": "S1-08.q4",
+    "type": "mc",
+    "q": "Với bảng có 2 triệu dòng thường xuyên thêm mới, kỹ thuật phân trang nào giữ tốc độ ổn định và tránh trùng/sót dòng?",
+    "code": "",
+    "choices": [
+      "LIMIT 20 OFFSET 1000000",
+      "Phân trang theo con trỏ (Cursor Pagination) dựa trên khóa có chỉ mục",
+      "Tải toàn bộ 2 triệu dòng về client rồi cắt mảng",
+      "Dùng SELECT COUNT(*) trước mỗi trang"
+    ],
+    "answer": 1,
+    "explain": "Cursor Pagination dùng WHERE id > cursor LIMIT 20 để nhảy thẳng tới vị trí qua chỉ mục (O(1) tìm điểm bắt đầu), tránh quét bỏ hàng triệu dòng như OFFSET."
+  },
+  {
+    "id": "S1-08.q5",
+    "type": "output",
+    "q": "Một API GraphQL gọi 1 RTT mạng 4G (120 ms), xử lý tổng hợp ở Gateway và 2 chặng backend nối tiếp mỗi chặng 15 ms (mạng nội bộ 1 ms mỗi chiều, tổng 2 ms cho mỗi chặng). Tổng thời gian là bao nhiêu ms? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "154",
+    "explain": "120 ms (4G RTT) + (15 + 2) + (15 + 2) = 154 ms, nhanh hơn đáng kể so với 3 lần 4G RTT."
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "S5-04.A1",
+    "kind": "predict",
+    "title": { "vi": "Node nào quá tải khi Payments A dừng?" },
+    "prompt": { "vi": "Hệ thống đang chạy ổn định ở 1.500 req/s chia đều cho Payments A (μ = 1.200 req/s) và Payments B (μ = 1.200 req/s). Tại giây 18, Payments A ngừng hoạt động để thay thế instance mới. Sau giây 14, node nào sẽ chuyển sang trạng thái quá tải đầu tiên?" },
+    "difficulty": 1,
+    "at": 14,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 14 },
+      "expected": ["payments_b"]
+    },
+    "reveal": { "playFromSec": 14, "playToSec": 32, "speed": 2 },
+    "hints": [
+      { "vi": "Khi Payments A ngừng hoạt động, Service Registry gỡ địa chỉ của nó và chuyển toàn bộ 1.500 req/s sang node còn lại." },
+      { "vi": "So sánh lưu lượng 1.500 req/s với năng lực μ = 1.200 req/s của Payments B và 4.500 req/s của Payments DB." }
+    ],
+    "explain": { "vi": "Khi Payments A dừng ở giây 18, toàn bộ 1.500 req/s dồn sang Payments B (μ = 1.200 req/s), đẩy mức sử dụng của Payments B vượt ngưỡng 1,00 và quá tải vào giây {t.first.payments_b:0}." },
+    "sim": { "simId": "S5-04/discovery-churn", "seekSec": 14, "autoplay": false },
+    "replay": { "simId": "S5-04/discovery-churn", "seekSec": 14, "focus": { "nodes": ["payments_b", "orders"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S5-04.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Chỉ ra điểm nghẽn sau khi thay thế instance" },
+    "prompt": { "vi": "Tại giây 26, lưu lượng thành công sụt giảm và hàng đợi tăng cao sau khi Payments A bị gỡ khỏi danh sách. Hãy nhấn chọn node đang là điểm nghẽn của hệ thống." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 26,
+    "maxPicks": 1,
+    "expected": ["payments_b"],
+    "hints": [
+      { "vi": "Tìm node có mức sử dụng ρ ≥ 1 và hàng đợi đang tích tụ phía trước." },
+      { "vi": "API Gateway và Payments DB vẫn còn nhiều công suất dự phòng." }
+    ],
+    "explain": { "vi": "{payments_b.name} đang nhận toàn bộ 1.500 req/s trên năng lực 1.200 req/s (ρ = {payments_b.rho@26:2}), tạo ra hàng đợi {payments_b.queue@26:0} request. Khi instance mới khởi động xong, vượt qua Readiness Check và Slow-Start, tải sẽ được chia lại." },
+    "sim": { "simId": "S5-04/discovery-churn", "seekSec": 26, "autoplay": false }
+  }
+]

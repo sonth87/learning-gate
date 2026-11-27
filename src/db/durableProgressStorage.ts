@@ -9,7 +9,7 @@ import type {
   WpState,
 } from '@/features/workpath/types';
 
-export type ProgressSlotId = 'wp' | 'kube' | 'cicd' | 'pmp' | 'redis';
+export type ProgressSlotId = 'wp' | 'kube' | 'cicd' | 'pmp' | 'redis' | 'sysdesign';
 
 export interface StorageSyncMeta {
   status: 'idle' | 'saving' | 'synced' | 'local-only' | 'error';
@@ -25,6 +25,7 @@ const LOCAL_MIRROR_KEYS: Record<ProgressSlotId, string> = {
   cicd: 'pylearn_course_state_mirror_v2_cicd',
   pmp: 'pylearn_course_state_mirror_v2_pmp',
   redis: 'pylearn_course_state_mirror_v2_redis',
+  sysdesign: 'pylearn_course_state_mirror_v2_sysdesign',
 };
 
 let persistPromise: Promise<boolean | null> | null = null;
@@ -179,6 +180,8 @@ export function mergeWpStates(
     if (ea && eb) {
       const passed = ea.status === 'passed' || eb.status === 'passed';
       const status = passed ? 'passed' : eb.status;
+      const bestVal = Math.max(ea.best ?? -1, eb.best ?? -1);
+      const starsVal = Math.max(ea.stars ?? -1, eb.stars ?? -1);
       exercises[k] = {
         status,
         attempts: Math.max(ea.attempts, eb.attempts),
@@ -191,6 +194,8 @@ export function mergeWpStates(
             : (ea.passedAt ?? eb.passedAt),
         skippedAt: status === 'skipped' ? (eb.skippedAt ?? ea.skippedAt ?? Date.now()) : undefined,
         code: eb.code ?? ea.code,
+        ...(bestVal >= 0 ? { best: bestVal } : {}),
+        ...(starsVal >= 0 ? { stars: starsVal as 0 | 1 | 2 | 3 } : {}),
       };
     } else {
       exercises[k] = structuredClone((eb ?? ea)!);
@@ -333,6 +338,7 @@ const inflightQueues: Record<
   cicd: { running: false, latest: null, listeners: [] },
   pmp: { running: false, latest: null, listeners: [] },
   redis: { running: false, latest: null, listeners: [] },
+  sysdesign: { running: false, latest: null, listeners: [] },
 };
 
 function enqueueIdbWrite(slot: ProgressSlotId, state: WpState): Promise<boolean> {

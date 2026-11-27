@@ -1,0 +1,45 @@
+[
+  {
+    "id": "S3-02.A1",
+    "kind": "timeline-read",
+    "title": { "vi": "Phát hiện các lượt đọc cũ (Stale Read) khi cấu hình W = 1, R = 1" },
+    "prompt": { "vi": "Cụm 3 bản sao (R1, R2, R3) đang chạy ở cấu hình W = 1, R = 1 (W + R = 2 ≤ 3). Nhân viên kho an lần lượt ghi cập nhật tồn kho stock = 5 rồi stock = 0 vào R1, trong khi gói đồng bộ sang R2 và R3 bị trễ trên mạng. Hãy chọn TẤT CẢ các lượt đọc trả về giá trị cũ (Stale Read) so với bản ghi đã hoàn tất trước đó." },
+    "difficulty": 2,
+    "scoring": "exact",
+    "question": "find-stale-reads",
+    "history": [
+      { "id": "w1", "client": "an", "op": "write", "key": "stock", "value": 5, "start": 10, "end": 39, "node": "R1" },
+      { "id": "w2", "client": "an", "op": "write", "key": "stock", "value": 0, "start": 60, "end": 89, "node": "R1" },
+      { "id": "r1", "client": "binh", "op": "read", "key": "stock", "value": 5, "start": 95, "end": 127, "node": "R2" },
+      { "id": "r2", "client": "chi", "op": "read", "key": "stock", "value": 0, "start": 100, "end": 132, "node": "R1" },
+      { "id": "r3", "client": "dung", "op": "read", "key": "stock", "value": 5, "start": 110, "end": 142, "node": "R3" },
+      { "id": "r4", "client": "binh", "op": "read", "key": "stock", "value": 0, "start": 160, "end": 192, "node": "R2" }
+    ],
+    "expected": ["r1", "r3"],
+    "hints": [
+      { "vi": "Lệnh ghi mới nhất w2 (stock = 0) đã hoàn tất tại mốc t = 89 ms. Mọi lượt đọc bắt đầu từ t ≥ 89 ms lẽ ra phải thấy giá trị 0." },
+      { "vi": "Đối chiếu giá trị trả về của r1, r2, r3, r4 với giá trị 0 của w2." }
+    ],
+    "explain": { "vi": "Sau khi w2 hoàn tất cập nhật stock = 0 ở t = 89 ms, cả r1 (t = 95 ms trên R2) và r3 (t = 110 ms trên R3) vẫn trả về 5 vì gói đồng bộ bất đồng bộ chưa tới kịp. Tới t = 160 ms (r4), R2 đã nhận được bản cập nhật nên trả đúng stock = 0." }
+  },
+  {
+    "id": "S3-02.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm lưu lượng bền vững tối đa của cụm Quorum W = 2, R = 2" },
+    "prompt": { "vi": "Trên cụm N = 3 cấu hình Quorum chặt (W = 2, R = 2), mỗi bản sao phải xử lý trung bình 67% tổng lưu lượng. Hãy dùng thanh trượt tải để xác định lưu lượng đầu vào cao nhất (req/s) mà cụm hiện tại vẫn giữ được p99 ≤ 140 ms và lỗi ≤ 1% trong cửa sổ ổn định." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 15, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2301, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Replica 3 (AZ-C) có năng lực thấp nhất (1.600 req/s) và nhận 0,67 × λ lưu lượng." },
+      { "vi": "Lấy trần 1.600 / 0,67 ≈ 2.388 req/s (nơi ρ = 1), sau đó trừ nhẹ phần đệm hàng đợi để p99 không vượt 140 ms." }
+    ],
+    "explain": { "vi": "Replica 3 có năng lực 1.600 req/s và gánh {r3.share@10:0%} tổng lưu lượng ở chế độ Quorum, nên lưu lượng bền vững tối đa giữ p99 ≤ 140 ms đạt khoảng {ref.value:0} req/s (thấp hơn một nửa so với mức ~4.700 req/s của chế độ W = R = 1)." },
+    "sim": { "simId": "S3-02/quorum-strict", "seekSec": 0, "autoplay": false }
+  }
+]

@@ -1,0 +1,338 @@
+{
+  "sims": [
+    {
+      "id": "S7-01/chat-storm",
+      "scenario": {
+        "id": "S7-01/chat-storm",
+        "seed": 7701,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.5 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "steady",
+          "rps": 23000
+        },
+        "events": [
+          { "at": 15, "type": "slowdown", "node": "gw1", "addMs": 220, "durationSec": 18 }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "device",
+              "kind": "client",
+              "label": { "vi": "Thiết bị (20M)", "en": "Devices (20M)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gw1",
+              "kind": "gateway",
+              "label": { "vi": "WS Gateway 1", "en": "WS Gateway 1" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.2,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số cụm WS Gateway 1", "en": "WS Gateway 1 replicas" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Rớt 200.000 socket, gây bão nối lại", "en": "Drops 200k sockets, triggers reconnect storm" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 16000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "replicas": 1 }
+            },
+            {
+              "id": "gw2",
+              "kind": "gateway",
+              "label": { "vi": "WS Gateway 2", "en": "WS Gateway 2" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.2,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số cụm WS Gateway 2", "en": "WS Gateway 2 replicas" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 2,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 16000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "replicas": 2 }
+            },
+            {
+              "id": "chat_svc",
+              "kind": "service",
+              "label": { "vi": "Chat Service", "en": "Chat Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Chat Service", "en": "Chat Service instances" },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 3,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 64 }
+            },
+            {
+              "id": "registry",
+              "kind": "cache",
+              "label": { "vi": "Session Registry", "en": "Session Registry" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 2,
+              "costPerHour": 0.15,
+              "initial": { "warm": 1 },
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 80000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "params": {
+                "replicas": 2,
+                "ttlSec": 120,
+                "ttlJitterPct": 0.1,
+                "hitRatioMax": 0.99,
+                "workingSetKeys": 20000,
+                "capacityKeys": 20000,
+                "warmupSec": 10
+              }
+            },
+            {
+              "id": "msg_store",
+              "kind": "nosql",
+              "label": { "vi": "Message Store", "en": "Message Store" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [
+                {
+                  "key": "shards",
+                  "type": "number",
+                  "label": { "vi": "Số phân mảnh (Shards)", "en": "Shards" },
+                  "min": 1,
+                  "max": 16,
+                  "step": 1,
+                  "default": 4,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "shards": 4 }
+            }
+          ],
+          "links": [
+            {
+              "id": "device-gw1",
+              "from": "device",
+              "to": "gw1",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000,
+              "retry": { "max": 2, "backoff": "none", "baseMs": 0, "jitter": "none" }
+            },
+            {
+              "id": "device-gw2",
+              "from": "device",
+              "to": "gw2",
+              "mode": "sync",
+              "netClass": "internet",
+              "timeoutMs": 2000
+            },
+            {
+              "id": "gw1-chat",
+              "from": "gw1",
+              "to": "chat_svc",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1200
+            },
+            {
+              "id": "gw2-chat",
+              "from": "gw2",
+              "to": "chat_svc",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 1200
+            },
+            {
+              "id": "chat-reg",
+              "from": "chat_svc",
+              "to": "registry",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 400
+            },
+            {
+              "id": "chat-store",
+              "from": "chat_svc",
+              "to": "msg_store",
+              "mode": "sync",
+              "netClass": "same-az",
+              "timeoutMs": 800
+            }
+          ],
+          "routes": {
+            "device": "split",
+            "gw1": "all-sequential",
+            "gw2": "all-sequential",
+            "chat_svc": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 320, "window": { "fromSec": 35, "toSec": 70 }, "allowViolationPct": 3 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 35, "toSec": 70 } }
+      ],
+      "presets": [
+        {
+          "id": "ha-gw-and-jitter",
+          "label": { "vi": "Dự phòng WS Gateway 1 và bật Backoff + Jitter", "en": "Redundant WS Gateway 1 with Backoff + Jitter" },
+          "changes": [
+            { "type": "knob", "node": "gw1", "key": "replicas", "value": 2 },
+            { "type": "knob", "node": "chat_svc", "key": "replicas", "value": 4 },
+            { "type": "link", "link": "device-gw1", "patch": { "retry": { "max": 2, "backoff": "exponential", "baseMs": 150, "jitter": "full", "budgetRatio": 0.1 } } }
+          ],
+          "expectPass": true
+        }
+      ]
+    },
+    {
+      "id": "S7-01/chat-cap",
+      "scenario": {
+        "id": "S7-01/chat-cap",
+        "seed": 7702,
+        "durationSec": 45,
+        "mix": { "readRatio": 0.5 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": {
+          "kind": "steady",
+          "rps": 25000
+        },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "device",
+              "kind": "client",
+              "label": { "vi": "Thiết bị (20M)", "en": "Devices (20M)" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "params": {}
+            },
+            {
+              "id": "gw1",
+              "kind": "gateway",
+              "label": { "vi": "WS Gateway", "en": "WS Gateway" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.2,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 16000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "replicas": 3 }
+            },
+            {
+              "id": "chat_svc",
+              "kind": "service",
+              "label": { "vi": "Chat Service", "en": "Chat Service" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 10000 },
+              "latency": { "baseMs": 6, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 64 }
+            },
+            {
+              "id": "msg_store",
+              "kind": "nosql",
+              "label": { "vi": "Message Store", "en": "Message Store" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 1,
+              "costPerHour": 0.45,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000 },
+              "latency": { "baseMs": 4, "cv": 0.2 },
+              "params": { "shards": 4 }
+            }
+          ],
+          "links": [
+            { "id": "device-gw1", "from": "device", "to": "gw1", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "gw1-chat", "from": "gw1", "to": "chat_svc", "mode": "sync", "netClass": "same-az", "timeoutMs": 1200 },
+            { "id": "chat-store", "from": "chat_svc", "to": "msg_store", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 }
+          ],
+          "routes": {
+            "device": "all-sequential",
+            "gw1": "all-sequential",
+            "chat_svc": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 180, "window": { "fromSec": 15, "toSec": 45 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 45 } }
+      ]
+    }
+  ]
+}

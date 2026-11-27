@@ -1,0 +1,80 @@
+[
+  {
+    "id": "S6-05.A1",
+    "kind": "predict",
+    "title": { "vi": "Dự đoán điểm chạm ngưỡng khi tiêm lỗi chậm vào Projector" },
+    "prompt": { "vi": "Hệ thống CQRS đang chạy ổn định ở 1.600 req/s (chia đều cho đường đọc và đường ghi). Tại giây 18, thí nghiệm Chaos tiêm độ trễ +450 ms vào Projector. Mô phỏng đang dừng ở giây 12. Theo bạn, node nào sẽ chuyển sang trạng thái Quá tải (overloaded) đầu tiên sau giây 12?" },
+    "difficulty": 2,
+    "at": 12,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 12 },
+      "expected": ["projector"]
+    },
+    "reveal": { "playFromSec": 12, "playToSec": 35, "speed": 2 },
+    "hints": [
+      { "vi": "Đường ghi gửi sự kiện bất đồng bộ qua Event Log rồi mới tới Projector." },
+      { "vi": "Khi Projector chậm thêm 450 ms, thông lượng xử lý của chính Projector giảm mạnh trong khi Write API và Read API vẫn phục vụ bình thường." }
+    ],
+    "explain": { "vi": "Projector quá tải đầu tiên vào khoảng giây 20,9 với mức sử dụng ρ = {projector.rho@25:2}. Nhờ Event Log làm bộ đệm bất đồng bộ và Read API tách riêng trên mô hình CQRS, phạm vi ảnh hưởng được khoanh vùng tại Projector thay vì làm sập cả Write API hay Read API." },
+    "sim": { "simId": "S6-05/chaos-cqrs", "seekSec": 12, "autoplay": false },
+    "replay": { "simId": "S6-05/chaos-cqrs", "seekSec": 12, "focus": { "nodes": ["event-log", "projector", "read-api"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S6-05.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích thí nghiệm Chaos: Phạm vi ảnh hưởng trên kiến trúc CQRS" },
+    "prompt": { "vi": "Trong thí nghiệm Chaos lúc 14:00, khi tiêm lỗi chậm +450 ms vào Projector trong 25 giây, dữ liệu cập nhật trên Read DB bị trễ (Projection Lag) nhưng toàn bộ Write API và Read API vẫn đạt tỷ lệ thành công trên 99%. Hãy chọn phân tích đúng về cơ chế cô lập phạm vi ảnh hưởng (Blast Radius) và bước cải tiến tiếp theo." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S6-05/chaos-cqrs",
+      "seekSec": 25,
+      "focus": { "nodes": ["write-api", "event-log", "projector", "read-api"] }
+    },
+    "questions": [
+      {
+        "id": "why-write-ok",
+        "type": "single",
+        "prompt": { "vi": "Vì sao Write API không bị nghẽn dây chuyền khi Projector bị chậm +450 ms?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Vì Write API chỉ ghi nối tiếp sự kiện vào Event Log bất đồng bộ, không chờ Projector cập nhật xong Read DB" } },
+          { "id": "b", "text": { "vi": "Vì Read API tự động chuyển hướng sang ghi dữ liệu thay cho Write API" } },
+          { "id": "c", "text": { "vi": "Vì hệ thống đã xóa bỏ hoàn toàn Event Log" } },
+          { "id": "d", "text": { "vi": "Vì API Gateway tự động tắt toàn bộ kết nối người dùng" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "what-degraded",
+        "type": "single",
+        "prompt": { "vi": "Hệ quả chính xác mà người dùng gặp phải trong 25 giây Projector bị chậm là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Toàn bộ lệnh ghi mới đều trả lỗi 500" } },
+          { "id": "b", "text": { "vi": "Dữ liệu vừa ghi chưa xuất hiện ngay trên màn hình đọc (tăng Projection Lag / Eventual Consistency)" } },
+          { "id": "c", "text": { "vi": "Mất vĩnh viễn lịch sử sự kiện trong Event Log" } },
+          { "id": "d", "text": { "vi": "Read DB tự động xóa hết bảng dữ liệu" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "next-actions",
+        "type": "multi",
+        "prompt": { "vi": "Chọn các hành động phù hợp để kiểm soát Projection Lag và nâng cao độ tin cậy:" },
+        "options": [
+          { "id": "a", "text": { "vi": "Gắn cảnh báo theo dõi độ trễ tiêu thụ sự kiện (Consumer Lag) tại Event Log → Projector" } },
+          { "id": "b", "text": { "vi": "Hỗ trợ mở rộng ngang nhiều worker Projector song song theo phân vùng (Partition)" } },
+          { "id": "c", "text": { "vi": "Bắt Write API chờ đồng bộ Projector hoàn tất mới trả lời người dùng" } },
+          { "id": "d", "text": { "vi": "Tắt hoàn toàn mọi thí nghiệm Chaos trong tương lai" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Tách bất đồng bộ qua Event Log giữ cho Write API độc lập với tốc độ của Projector, nhưng đánh đổi bằng độ trễ đồng bộ sang Read DB." }
+    ],
+    "explain": { "vi": "CQRS kết hợp Event Log bất đồng bộ giúp thu hẹp Blast Radius: Projector chậm chỉ gây tăng Projection Lag mà không làm sập Write API hay Read API. Theo dõi Consumer Lag và scale ngang Projector là hai bước cải tiến trọng tâm." }
+  }
+]

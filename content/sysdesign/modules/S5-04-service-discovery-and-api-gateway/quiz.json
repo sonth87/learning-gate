@@ -1,0 +1,81 @@
+[
+  {
+    "id": "S5-04.q1",
+    "type": "mc",
+    "q": "Vì sao cấu hình cứng địa chỉ IP của service đích trong file config dễ gây lỗi 50% hoặc 100% khi triển khai trên cloud?",
+    "code": "",
+    "choices": [
+      "Vì giao thức HTTP không hỗ trợ truyền địa chỉ IP",
+      "Vì container và VM liên tục được tạo mới, hủy bỏ hoặc tự scale nên IP thay đổi liên tục",
+      "Vì Service Registry chỉ lưu được tối đa 2 địa chỉ IP",
+      "Vì Load Balancer luôn chặn các kết nối dùng IP tĩnh"
+    ],
+    "answer": 1,
+    "explain": "Trong môi trường cloud và container, các instance liên tục thay thế khi deploy, crash hoặc autoscale, khiến IP cũ trở thành địa chỉ chết nếu không có Service Discovery cập nhật động."
+  },
+  {
+    "id": "S5-04.q2",
+    "type": "mc",
+    "q": "Sự khác biệt cốt lõi giữa Liveness Check và Readiness Check là gì?",
+    "code": "",
+    "choices": [
+      "Liveness kiểm tra tiến trình còn sống hay cần khởi động lại; Readiness kiểm tra instance đã nạp đủ dữ liệu và sẵn sàng nhận traffic chưa",
+      "Liveness chỉ chạy ở API Gateway; Readiness chỉ chạy ở Database",
+      "Liveness dùng cho Client-side Discovery; Readiness dùng cho DNS",
+      "Hai cơ chế này hoàn toàn giống nhau và chỉ khác tên gọi"
+    ],
+    "answer": 0,
+    "explain": "Một instance vừa khởi động có thể đã sống (Liveness đạt) nhưng chưa nạp xong cache hay connection pool. Readiness Check giúp Registry/LB giữ instance đó ngoài danh sách nhận traffic cho đến khi sẵn sàng."
+  },
+  {
+    "id": "S5-04.q3",
+    "type": "tf",
+    "q": "Dùng bản ghi DNS với TTL = 300 giây để làm Service Discovery giúp mọi client chuyển sang IP mới ngay lập tức trong vòng 1 giây khi instance cũ chết.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "DNS được cache ở nhiều tầng (OS, JVM, trình duyệt, resolver). Với TTL = 300 giây, client có thể tiếp tục gọi vào IP chết suốt 5 phút cho đến khi cache hết hạn."
+  },
+  {
+    "id": "S5-04.q4",
+    "type": "mc",
+    "q": "Cụm Service Registry chạy 3 node theo cơ chế Quorum (như etcd hoặc Consul). Điều gì xảy ra khi 1 node Registry ngừng hoạt động?",
+    "code": "",
+    "choices": [
+      "Toàn bộ hệ thống ngừng nhận request ngay lập tức",
+      "Cụm vẫn còn 2/3 node (đạt đa số) nên vẫn tiếp tục trả lời truy vấn và ghi nhận đăng ký bình thường",
+      "Tất cả service phải chuyển sang gọi thẳng Database",
+      "API Gateway tự động tắt toàn bộ TLS"
+    ],
+    "answer": 1,
+    "explain": "Với cụm 3 node dùng đồng thuận Quorum, đa số là 2 node. Mất 1 node vẫn còn 2 node hoạt động nên Service Registry không trở thành điểm lỗi đơn."
+  },
+  {
+    "id": "S5-04.q5",
+    "type": "mc",
+    "q": "Vì sao cần kết hợp Connection Draining khi tắt một instance đang chạy?",
+    "code": "",
+    "choices": [
+      "Để tăng tốc độ ghi xuống ổ đĩa của instance mới",
+      "Để hoàn tất các request đang xử lý dở trên instance cũ trong khi ngừng nhận request mới",
+      "Để xóa toàn bộ dữ liệu trên Service Registry",
+      "Để bỏ qua bước xác thực JWT tại API Gateway"
+    ],
+    "answer": 1,
+    "explain": "Draining đánh dấu instance sắp tắt để ngừng nhận kết nối mới, nhưng vẫn cho một khoảng thời gian ân hạn để các request đang chạy kịp trả kết quả trước khi tiến trình dừng hẳn."
+  },
+  {
+    "id": "S5-04.q6",
+    "type": "mc",
+    "q": "Vai trò chính của API Gateway so với Service Mesh là gì?",
+    "code": "",
+    "choices": [
+      "API Gateway đứng ở rìa (North-South) lo xác thực, rate limit, routing ngoài; Service Mesh lo giao tiếp nội bộ (East-West) qua sidecar",
+      "API Gateway thay thế hoàn toàn Database",
+      "Service Mesh chỉ xử lý request từ trình duyệt người dùng",
+      "API Gateway chỉ dùng cho kiến trúc Monolith"
+    ],
+    "answer": 0,
+    "explain": "API Gateway bảo vệ và điều phối lưu lượng từ bên ngoài vào (North-South), còn Service Mesh quản lý mTLS, retry, telemetry giữa các service bên trong cụm (East-West)."
+  }
+]

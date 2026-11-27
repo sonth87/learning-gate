@@ -1,0 +1,98 @@
+[
+  {
+    "id": "S2-01.A1",
+    "kind": "predict",
+    "title": { "vi": "Máy nào quá tải khi gặp tác vụ nặng?" },
+    "prompt": { "vi": "Hệ thống đang chạy ổn định ở 600 req/s với thuật toán Round Robin. Từ giây 10, một loạt truy vấn xuất báo cáo nặng rơi vào App B làm thời gian xử lý tăng lên 55 ms. Theo bạn, thành phần nào sẽ chuyển sang trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 10,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 10 },
+      "expected": ["app2"]
+    },
+    "reveal": { "playFromSec": 10, "playToSec": 22, "speed": 2 },
+    "hints": [
+      { "vi": "Round Robin chia đều 200 req/s cho mỗi máy bất kể máy đó đang rảnh hay bận." },
+      { "vi": "Khi thời gian giữ kết nối của App B tăng gấp gần 3 lần, số request tối đa nó hoàn tất mỗi giây giảm mạnh." }
+    ],
+    "explain": { "vi": "Từ giây 10, thời gian xử lý trên {app2.name} tăng lên 55 ms khiến năng lực thông lượng hạ xuống khoảng 164 req/s (giới hạn bởi pool 9 kết nối). Vì Round Robin vẫn ép đều 200 req/s vào mỗi máy, {app2.name} chạm ρ = {app2.rho@20:2} và quá tải đầu tiên ở giây {t.first.app2:1}, trong khi {app1.name} và {app3.name} chỉ ở ρ = {app1.rho@20:2}." },
+    "sim": { "simId": "S2-01/balance", "seekSec": 10, "autoplay": false },
+    "replay": { "simId": "S2-01/balance", "seekSec": 10, "focus": { "nodes": ["lb", "app2"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-01.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Tìm điểm lỗi đơn (SPOF) trên đường đi" },
+    "prompt": { "vi": "Quan sát cấu trúc hệ thống khi LB Dự phòng đang tắt: cụm ứng dụng đã có 3 máy độc lập và Database đã có bản sao. Nhấn vào thành phần đang là điểm lỗi đơn (Single Point of Failure) có thể làm ngắt 100% lưu lượng nếu dừng hoạt động." },
+    "difficulty": 1,
+    "mode": "spof",
+    "atSec": 5,
+    "maxPicks": 1,
+    "expected": ["lb"],
+    "hints": [
+      { "vi": "Tìm thành phần chỉ có đúng 1 bản đang chạy mà mọi request từ Virtual IP đều bắt buộc đi qua." }
+    ],
+    "explain": { "vi": "Khi {lb_standby.name} chưa bật, mọi kết nối đều hội tụ qua một {lb.name} duy nhất. Khi {lb.name} gặp sự cố ở giây 64, toàn bộ cụm phía sau bị cô lập khỏi người dùng và tỷ lệ lỗi tăng vọt lên {m.errorRate@70:0%}." },
+    "sim": { "simId": "S2-01/balance", "seekSec": 5, "autoplay": false }
+  },
+  {
+    "id": "S2-01.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Hoàn thiện tầng cân bằng tải chịu lỗi" },
+    "prompt": { "vi": "Trong 80 giây chạy ở 600 req/s, hệ thống lần lượt gặp ba sự cố: App B xử lý chậm (giây 10–35), App C sập (giây 38–56) và LB Chính sập (giây 64). Với tối đa 3 thay đổi và chi phí không quá 1,35 USD/giờ, hãy giữ p99 ≤ 220 ms và tỷ lệ lỗi ≤ 2%." },
+    "difficulty": 2,
+    "simId": "S2-01/balance",
+    "budget": { "maxChanges": 3, "maxCostPerHour": 1.35 },
+    "allowed": [
+      { "type": "knob", "node": "lb", "key": "algorithm", "values": ["round-robin", "least-conn", "weighted", "ip-hash"] },
+      { "type": "knob", "node": "lb", "key": "healthCheckSec", "min": 1, "max": 30 },
+      { "type": "knob", "node": "lb_standby", "key": "enabled", "values": [true, false] },
+      { "type": "knob", "node": "app1", "key": "replicas", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app2", "key": "replicas", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app3", "key": "replicas", "min": 1, "max": 4 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 220, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 3 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 80 } }
+    ],
+    "soft": [
+      { "id": "no-lb-spof", "kind": "structural", "rule": "no-spof", "node": "lb" },
+      { "id": "app2-calm", "kind": "node-state", "node": "app2", "notIn": ["overloaded"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 }
+    ],
+    "observe": { "runSec": 80 },
+    "par": { "changes": 3, "costPerHour": 1.26 },
+    "solution": [
+      { "type": "knob", "node": "lb", "key": "algorithm", "value": "least-conn" },
+      { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 },
+      { "type": "knob", "node": "lb_standby", "key": "enabled", "value": true }
+    ],
+    "traps": [
+      {
+        "id": "forget-standby",
+        "label": { "vi": "Đổi sang Least Connections và Health Check nhanh nhưng quên bật LB Dự phòng" },
+        "changes": [
+          { "type": "knob", "node": "lb", "key": "algorithm", "value": "least-conn" },
+          { "type": "knob", "node": "lb", "key": "healthCheckSec", "value": 1 }
+        ],
+        "why": { "vi": "Hệ thống vượt qua được sự cố ở App B và App C, nhưng khi LB Chính dừng ở giây 64 thì toàn bộ lưu lượng vẫn mất kết nối vì không có LB Dự phòng tiếp quản Virtual IP." }
+      },
+      {
+        "id": "forget-healthcheck",
+        "label": { "vi": "Đổi sang Least Connections và bật LB Dự phòng nhưng để Health Check 20 giây" },
+        "changes": [
+          { "type": "knob", "node": "lb", "key": "algorithm", "value": "least-conn" },
+          { "type": "knob", "node": "lb_standby", "key": "enabled", "value": true }
+        ],
+        "why": { "vi": "Chu kỳ Health Check 20 giây quá chậm khiến LB Chính tiếp tục gửi 1/3 lưu lượng vào App C đã sập suốt từ giây 38 đến giây 56, làm tổng tỷ lệ lỗi vượt ngưỡng 2%." }
+      }
+    ],
+    "hints": [
+      { "vi": "Sự cố 1 (giây 10): chọn thuật toán chia tải biết né máy đang tồn nhiều kết nối chậm." },
+      { "vi": "Sự cố 2 (giây 38): rút ngắn chu kỳ Health Check trên LB Chính để gỡ App C ngay khi sập." },
+      { "vi": "Sự cố 3 (giây 64): kích hoạt LB Dự phòng để Virtual IP tự động chuyển sang máy dự phòng." }
+    ],
+    "explain": { "vi": "Least Connections hạ mức sử dụng của {app2.name} từ {app2.rho@20:2} xuống {app2.rho'@20:2} khi gặp tác vụ nặng. Hạ Health Check xuống 1 giây cô lập {app3.name} gần như tức thì ở giây 38, và bật {lb_standby.name} giúp Virtual IP chuyển hướng lưu lượng ngay sau giây 64, giữ tỷ lệ lỗi ở giây 70 chỉ còn {m.errorRate'@70:0%}." },
+    "replay": { "simId": "S2-01/balance", "seekSec": 8, "focus": { "nodes": ["lb", "lb_standby", "app2", "app3"] }, "autoplay": true }
+  }
+]

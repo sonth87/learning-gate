@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S1-06.q1",
+    "type": "mc",
+    "q": "Khi trình duyệt mở một kết nối HTTPS (TLS 1.3 trên TCP) hoàn toàn mới tới máy chủ sau khi đã có địa chỉ IP, cần bao nhiêu vòng khứ hồi mạng (RTT) trước khi byte dữ liệu HTTP đầu tiên được gửi đi?",
+    "code": "",
+    "choices": [
+      "0 RTT vì TCP gửi dữ liệu ngay lập tức",
+      "2 RTT gồm 1 RTT bắt tay TCP và 1 RTT bắt tay TLS 1.3",
+      "5 RTT gồm 3 RTT cho TCP và 2 RTT cho TLS 1.3",
+      "Chỉ phụ thuộc băng thông đường truyền chứ không phụ thuộc RTT"
+    ],
+    "answer": 1,
+    "explain": "Trên kết nối mới, TCP cần 1 RTT (SYN và SYN-ACK) để thiết lập kênh truyền và TLS 1.3 cần thêm 1 RTT để thoả thuận khoá mã hoá, tổng cộng 2 RTT trước khi gửi gói HTTP request."
+  },
+  {
+    "id": "S1-06.q2",
+    "type": "output",
+    "q": "Một request lần đầu có thời gian từng chặng: phân giải DNS 22 ms, bắt tay TCP/TLS 60 ms, vòng truyền HTTP 30 ms, Web Server xử lý 14 ms, mạng nội bộ và Database 19 ms. Tổng thời gian hoàn tất request là bao nhiêu ms? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "145",
+    "explain": "Các chặng trong vòng đời của một request diễn ra nối tiếp nhau nên tổng độ trễ bằng tổng từng đoạn: 22 + 60 + 30 + 14 + 19 = 145 ms."
+  },
+  {
+    "id": "S1-06.q3",
+    "type": "tf",
+    "q": "Nâng băng thông đường truyền từ 100 Mbps lên 1 Gbps sẽ làm giảm mười lần thời gian bắt tay TCP và TLS giữa người dùng ở Việt Nam và máy chủ đặt tại Mỹ.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Các gói tin bắt tay TCP/TLS chỉ dài vài trăm byte nên thời gian truyền tải trên dây không đáng kể. Độ trễ bắt tay bị chi phối bởi thời gian lan truyền tín hiệu vật lý theo khoảng cách địa lý (RTT), không giảm khi chỉ tăng băng thông."
+  },
+  {
+    "id": "S1-06.q4",
+    "type": "mc",
+    "q": "Cơ chế ghép kênh (Multiplexing) của HTTP/2 cải thiện tốc độ tải trang gồm 30 tệp CSS, JS và ảnh nhỏ chủ yếu nhờ điều gì?",
+    "code": "",
+    "choices": [
+      "Bỏ qua hoàn toàn việc mã hoá TLS cho các tệp tĩnh",
+      "Tự động tạo thêm chỉ mục trong cơ sở dữ liệu phía sau",
+      "Gửi song song nhiều request và response trên một kết nối TCP/TLS duy nhất thay vì mở lặp lại nhiều kết nối mới",
+      "Xoá bỏ bước kiểm tra địa chỉ IP của hệ điều hành ở mọi lần khởi động máy"
+    ],
+    "answer": 2,
+    "explain": "HTTP/2 cho phép nhiều luồng request/response chia sẻ chung một kết nối ấm đã bắt tay xong, giúp loại bỏ chi phí 2 RTT bắt tay TCP/TLS lặp lại và tránh nghẽn đầu hàng ở tầng HTTP/1.1."
+  },
+  {
+    "id": "S1-06.q5",
+    "type": "mc",
+    "q": "Biểu đồ Waterfall của một API cho thấy: DNS 0 ms, kết nối 0 ms (dùng lại kết nối ấm), mạng HTTP 20 ms, Web Server 12 ms, Database 420 ms. Giải pháp nào mang lại hiệu quả lớn nhất?",
+    "code": "",
+    "choices": [
+      "Đổi sang HTTP/3 để giảm thời gian bắt tay kết nối",
+      "Giảm TTL của bản ghi DNS từ 300 giây xuống 30 giây",
+      "Kiểm tra kế hoạch thực thi truy vấn bằng EXPLAIN, thêm chỉ mục hoặc đặt Cache cho truy vấn Database 420 ms",
+      "Nén tiêu đề HTTP để tiết kiệm vài trăm byte trên mạng"
+    ],
+    "answer": 2,
+    "explain": "Chặng Database chiếm 420 trên tổng 452 ms (hơn 92% toàn trình), trong khi DNS và bắt tay kết nối đã bằng 0 ms nhờ tái sử dụng kết nối. Chỉ tối ưu trực tiếp chặng Database mới rút ngắn đáng kể tổng thời gian."
+  }
+]

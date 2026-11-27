@@ -1,0 +1,442 @@
+{
+  "version": 1,
+  "base": "s1-no-cache",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": { "vi": "Người dùng", "en": "Users" },
+      "inspector": {
+        "what": {
+          "vi": "Tập người dùng gửi hỗn hợp 92% lượt đọc và 8% lượt ghi (tăng từ 800 lên 5.000 req/s).",
+          "en": "Concurrent users generating 92% reads and 8% writes (800 to 5,000 req/s)."
+        },
+        "how": {
+          "vi": "Phần lớn lượt đọc tập trung vào một tập danh mục và sản phẩm phổ biến lặp đi lặp lại.",
+          "en": "Most reads skew heavily toward a hot working set of popular catalog items."
+        },
+        "why": {
+          "vi": "Độ lệch truy cập (locality of reference) chính là cơ sở giúp bộ nhớ đệm đạt Hit Ratio cao.",
+          "en": "Skewed read locality allows an in-memory cache to intercept the vast majority of queries."
+        }
+      }
+    },
+    "lb": {
+      "shape": "block",
+      "tone": "purple",
+      "icon": "layers",
+      "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+      "inspector": {
+        "what": {
+          "vi": "Cặp Load Balancer chia đều lưu lượng vào cụm 4 máy chủ ứng dụng.",
+          "en": "Redundant Load Balancer pair distributing traffic across 4 App instances."
+        },
+        "how": {
+          "vi": "Định tuyến Round Robin nội bộ với độ trễ ~0,3 ms.",
+          "en": "Routes intra-AZ requests via Round Robin in ~0.3 ms."
+        },
+        "why": {
+          "vi": "Đảm bảo tầng vào và tầng App luôn dư công suất.",
+          "en": "Keeps entry and application tiers well below saturation."
+        }
+      }
+    },
+    "app": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": { "vi": "App Tier", "en": "App Tier" },
+      "inspector": {
+        "what": {
+          "vi": "Cụm 4 máy chủ ứng dụng phi trạng thái (tổng năng lực 7.200 req/s).",
+          "en": "4-instance stateless application tier (7,200 req/s total capacity)."
+        },
+        "how": {
+          "vi": "Thực thi mẫu Cache-Aside: kiểm tra Redis Cache trước, nếu Miss mới đọc Database rồi nạp ngược vào Cache.",
+          "en": "Implements Cache-Aside: checks Redis first, queries DB on miss, and populates the key."
+        },
+        "why": {
+          "vi": "Cắt ngắn đường đi của đa số lượt đọc ngay tại bộ nhớ RAM tốc độ cao.",
+          "en": "Short-circuits repeated read requests at sub-millisecond RAM speed."
+        }
+      }
+    },
+    "cache": {
+      "shape": "block",
+      "tone": "yellow",
+      "icon": "zap",
+      "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+      "inspector": {
+        "what": {
+          "vi": "Bộ nhớ đệm trên RAM (năng lực 50.000 ops/s, độ trễ cơ sở 0,5 ms).",
+          "en": "In-memory Redis Cache tier (50,000 ops/s capacity, 0.5 ms base latency)."
+        },
+        "how": {
+          "vi": "Hiệu quả phụ thuộc tỷ lệ bao phủ tập khoá nóng (`capacityKeys / workingSetKeys`), thời hạn sống `ttlSec`, độ lệch `ttlJitterPct` và cờ `singleflight`.",
+          "en": "Governed by keyspace coverage, TTL, TTL jitter percentage, and Singleflight coalescing."
+        },
+        "why": {
+          "vi": "Giảm từ 5 đến 10 lần lượng truy vấn đọc chạm xuống đĩa cứng của Database.",
+          "en": "Shields the disk-backed Database from 80%–95% of repetitive read queries."
+        },
+        "tip": {
+          "vi": "Luôn bật TTL Jitter và Singleflight cho các khoá nóng để tránh bão Cache Stampede khi khoá hết hạn.",
+          "en": "Combine TTL Jitter and Singleflight to prevent Cache Stampedes on hot keys."
+        }
+      }
+    },
+    "db": {
+      "shape": "db",
+      "tone": "orange",
+      "label": { "vi": "Database", "en": "Database" },
+      "inspector": {
+        "what": {
+          "vi": "Cơ sở dữ liệu lưu trữ bền vững trên SSD (năng lực μ = 1.500 req/s, độ trễ 5 ms).",
+          "en": "Primary disk-backed Database (μ = 1,500 req/s, 5 ms base latency)."
+        },
+        "how": {
+          "vi": "Nhận toàn bộ 8% lượt ghi cộng với phần lượt đọc bị Cache Miss `0,92 × (1 − Hit Ratio)`.",
+          "en": "Handles all 8% write traffic plus the `0.92 × (1 − Hit Ratio)` fraction of missed reads."
+        },
+        "why": {
+          "vi": "Là thành phần giới hạn thông lượng toàn cục nếu Hit Ratio thấp hoặc khi Cache hết hạn đồng loạt.",
+          "en": "Becomes the system bottleneck whenever Cache Hit Ratio drops or keys expire together."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-lb": {
+      "inspector": {
+        "what": { "vi": "Đường truyền Internet từ người dùng tới Load Balancer.", "en": "Internet hop from users to Load Balancer." },
+        "how": { "vi": "Mang tổng lưu lượng đọc/ghi λ.", "en": "Carries total arrival traffic λ." },
+        "why": { "vi": "Đặt ngưỡng sàn RTT mạng ngoài.", "en": "Sets external WAN RTT baseline." }
+      }
+    },
+    "app-cache": {
+      "inspector": {
+        "what": { "vi": "Kết nối tra cứu bộ nhớ đệm tốc độ cao từ App sang Redis Cache.", "en": "Low-latency lookup link from App Tier to Redis Cache." },
+        "how": { "vi": "Mọi lượt đọc đều kiểm tra chặng này trước tiên (~0,5 ms).", "en": "Checked first on every read request (~0.5 ms)." },
+        "why": { "vi": "Trả kết quả sớm khi Cache Hit mà không đánh thức Database.", "en": "Returns cached responses immediately on hits." }
+      }
+    },
+    "cache-db": {
+      "inspector": {
+        "what": { "vi": "Luồng truy vấn xuống Database cho các lượt Cache Miss và thao tác ghi.", "en": "Fallback read-miss and write path to Database." },
+        "how": { "vi": "Lưu lượng trên dây này tỷ lệ thuận với `1 − Hit Ratio`; khi bật Singleflight, các Miss trùng khoá được gộp lại.", "en": "Scales with `1 − Hit Ratio`; Singleflight coalesces concurrent misses on the same key." },
+        "why": { "vi": "Giữ lưu lượng trên dây này dưới 1.500 req/s là chìa khoá để Database không nghẽn.", "en": "Keeping this link under 1,500 req/s prevents Database saturation." }
+      }
+    }
+  },
+  "zones": {
+    "data_path": {
+      "nodeIds": ["cache", "db"],
+      "label": { "vi": "TẦNG ĐỆM & LƯU TRỮ", "en": "CACHE & STORAGE TIER" },
+      "tone": "yellow"
+    }
+  },
+  "scenes": {
+    "s1-no-cache": {
+      "show": { "nodes": ["client", "lb", "app", "db"] },
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app": { "loadPct": 50 },
+        "db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "3.600 / 1.500 req/s", "en": "3,600 / 1,500 req/s" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "cache-db": { "style": "danger" }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chưa có Cache: mọi lượt đọc chạm đĩa", "en": "Without Cache: Every Read Hits Disk" },
+        "lines": [
+          { "text": { "vi": "RAM ~0,5 ms · Truy vấn SSD/DB ~5–50 ms", "en": "RAM ~0.5 ms vs SSD/DB ~5–50 ms" }, "tone": "amber" },
+          { "text": { "vi": "Database quá tải ngay từ > 1.500 req/s", "en": "Database saturates above 1,500 req/s" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-cache-aside": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app": { "loadPct": 50 },
+        "cache": {
+          "loadPct": 10,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hit 80% → 0,5 ms", "en": "Hit 80% → 0.5 ms" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 64,
+          "badge": { "text": { "vi": "Chỉ nhận Miss + Ghi", "en": "Misses + Writes only" }, "tone": "ok" }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đặt Redis Cache theo mẫu Cache-Aside", "en": "Cache-Aside Pattern" },
+        "lines": [
+          { "text": { "vi": "Hit: trả ngay từ RAM trong ~0,5 ms", "en": "Hit: served from RAM in ~0.5 ms" }, "tone": "good" },
+          { "text": { "vi": "Miss: đọc DB rồi lưu lại kèm TTL", "en": "Miss: query DB and populate with TTL" }, "tone": "plain" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s3-hit-math": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "state": {
+        "lb": { "loadPct": 18 },
+        "app": { "loadPct": 69 },
+        "cache": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hit 93% (40k key)", "en": "Hit 93% (40k keys)" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 47,
+          "badge": { "text": { "vi": "≈ 710 / 1.500 req/s", "en": "≈ 710 / 1,500 req/s" }, "tone": "ok" }
+        }
+      },
+      "linkState": {
+        "app-cache": { "label": { "vi": "5.000 req/s", "en": "5,000 req/s" } },
+        "cache-db": { "label": { "vi": "≈ 710 req/s", "en": "≈ 710 req/s" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Đòn bẩy phi tuyến của Hit Ratio", "en": "Nonlinear Leverage of Hit Ratio" },
+        "lines": [
+          { "text": { "vi": "Hit 47% → 57% tải xuống DB (nghẽn)", "en": "47% Hit → 57% reaches DB (overload)" }, "tone": "bad" },
+          { "text": { "vi": "Hit 93% → chỉ 14% xuống DB (êm ở 5k RPS)", "en": "93% Hit → 14% reaches DB (calm at 5k)" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s4-live-hit": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Tải tăng 800 → 5.000 req/s", "en": "Ramp 800 → 5,000 req/s" },
+        "lines": [
+          { "text": { "vi": "Gốc: 10.000 key (Hit Ratio ≈ 47%)", "en": "Baseline: 10,000 keys (Hit ≈ 47%)" }, "tone": "amber" },
+          { "text": { "vi": "Kéo capacityKeys lên 40.000 để so ρ DB", "en": "Raise capacityKeys to 40,000 to compare" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s5-write-strategies": {
+      "show": { "nodes": ["app", "cache", "db"] },
+      "zones": ["data_path"],
+      "state": {
+        "app": { "loadPct": 45, "badge": { "text": { "vi": "Ghi DB → Xoá Cache", "en": "Write DB → Del Key" }, "tone": "default" } },
+        "cache": { "loadPct": 12, "highlighted": true, "badge": { "text": { "vi": "TTL + Invalidate", "en": "TTL + Invalidate" }, "tone": "ok" } },
+        "db": { "loadPct": 48, "badge": { "text": { "vi": "Nguồn sự thật gốc", "en": "Source of Truth" }, "tone": "ok" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Chiến lược ghi & làm mới dữ liệu", "en": "Write & Invalidation Strategies" },
+        "lines": [
+          { "text": { "vi": "Cache-Aside: cập nhật DB rồi xoá key", "en": "Cache-Aside: update DB then delete key" }, "tone": "good" },
+          { "text": { "vi": "TTL là lưới an toàn chặn dữ liệu cũ", "en": "TTL bounds maximum staleness window" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s6-stampede": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app": { "loadPct": 50 },
+        "cache": {
+          "loadPct": 20,
+          "highlighted": true,
+          "badge": { "text": { "vi": "TTL về 0 cùng lúc!", "en": "Mass Expiry!" }, "tone": "bad" }
+        },
+        "db": {
+          "loadPct": 100,
+          "highlighted": true,
+          "badge": { "text": { "vi": "ρ = 2,40 · Quá tải", "en": "ρ = 2.40 · Overloaded" }, "tone": "bad" }
+        }
+      },
+      "linkState": {
+        "cache-db": { "style": "danger", "label": { "vi": "3.600 req/s ập xuống!", "en": "3,600 req/s flood!" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Sự cố Cache Stampede (Thundering Herd)", "en": "Cache Stampede (Thundering Herd)" },
+        "lines": [
+          { "text": { "vi": "Khoá nóng hết hạn → nghìn lượt Miss đồng thời", "en": "Hot keys expire → ribuan concurrent misses" }, "tone": "bad" },
+          { "text": { "vi": "Database nhận gấp 2,4 lần năng lực", "en": "Database hit with 2.4× capacity" }, "tone": "bad" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s7-mitigation": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app": { "loadPct": 50 },
+        "cache": {
+          "loadPct": 15,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Singleflight + Jitter", "en": "Singleflight + Jitter" }, "tone": "ok" }
+        },
+        "db": {
+          "loadPct": 79,
+          "badge": { "text": { "vi": "Đỉnh ρ = 0,79 (an toàn)", "en": "Peak ρ = 0.79 (safe)" }, "tone": "ok" }
+        }
+      },
+      "linkState": {
+        "cache-db": { "label": { "vi": "1 lượt / khoá Miss", "en": "1 query / missed key" } }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Dập Stampede bằng Jitter & Singleflight", "en": "Jitter & Singleflight Protection" },
+        "lines": [
+          { "text": { "vi": "Singleflight: gộp trùng, chỉ 1 lượt hỏi DB", "en": "Singleflight: 1 DB fetch per key" }, "tone": "good" },
+          { "text": { "vi": "TTL Jitter ±25%: rải đều nhịp hết hạn", "en": "TTL Jitter ±25%: spreads expirations" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-live-stampede": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Mô phỏng Stampede tại t = 25 s", "en": "Stampede Simulation at t = 25 s" },
+        "lines": [
+          { "text": { "vi": "t = 25 s: toàn bộ khoá hết hạn (3.600 RPS)", "en": "t = 25 s: cache-expire-all at 3,600 RPS" }, "tone": "bad" },
+          { "text": { "vi": "Giữ p99 ≤ 120 ms mà không nâng phần cứng", "en": "Keep p99 ≤ 120 ms with $0 extra hardware" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s9-penetration": {
+      "show": { "nodes": ["client", "app", "cache", "db"] },
+      "state": {
+        "app": { "loadPct": 45, "badge": { "text": { "vi": "Bloom Filter", "en": "Bloom Filter" }, "tone": "ok" } },
+        "cache": {
+          "loadPct": 14,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Lưu NULL 30 s · LRU", "en": "Cache NULL 30 s · LRU" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 40 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Cache Penetration & Eviction (LRU)", "en": "Penetration & LRU Eviction" },
+        "lines": [
+          { "text": { "vi": "Khoá không tồn tại: lưu tạm NULL / Bloom", "en": "Missing IDs: negative cache + Bloom filter" }, "tone": "good" },
+          { "text": { "vi": "RAM đầy: trục xuất khoá ít dùng (LRU/LFU)", "en": "Full RAM: evict cold keys via LRU/LFU" }, "tone": "amber" }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": { "nodes": "*" },
+      "zones": ["data_path"],
+      "state": {
+        "lb": { "loadPct": 12 },
+        "app": { "loadPct": 50 },
+        "cache": {
+          "loadPct": 14,
+          "highlighted": true,
+          "badge": { "text": { "vi": "Hit > 90% · An toàn", "en": "Hit > 90% · Protected" }, "tone": "ok" }
+        },
+        "db": { "loadPct": 45 }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": { "vi": "Bốn nguyên tắc vận hành Cache", "en": "Four Caching Rules" },
+        "lines": [
+          { "text": { "vi": "Đo Hit Ratio · Đủ dung lượng Working Set", "en": "Track Hit Ratio · Fit Working Set" }, "tone": "good" },
+          { "text": { "vi": "Xoá khi ghi + TTL Jitter + Singleflight", "en": "Invalidate on write + Jitter + Singleflight" }, "tone": "good" }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "hit_ratio": {
+      "sim": "S2-02/hit-ratio",
+      "startAtSec": 0,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "load": true,
+        "knobs": [
+          { "node": "cache", "key": "capacityKeys" },
+          { "node": "cache", "key": "ttlSec" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 90, "badAbove": 140 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 140 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["cache", "db"] }
+    },
+    "stampede": {
+      "sim": "S2-02/stampede",
+      "startAtSec": 18,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": ["expire-cache"],
+        "knobs": [
+          { "node": "cache", "key": "singleflight" },
+          { "node": "cache", "key": "ttlJitterPct" },
+          { "node": "cache", "key": "ttlSec" },
+          { "node": "db", "key": "sizeFactor" }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        { "metric": "offeredRps", "label": { "vi": "Lưu lượng", "en": "Load" }, "format": "rps" },
+        {
+          "metric": "p99",
+          "label": { "vi": "p99", "en": "p99" },
+          "format": "ms",
+          "tone": { "warnAbove": 85, "badAbove": 120 }
+        },
+        {
+          "metric": "errorRate",
+          "label": { "vi": "Tỷ lệ lỗi", "en": "Error Rate" },
+          "format": "pct",
+          "tone": { "warnAbove": 0.01, "badAbove": 0.05 }
+        }
+      ],
+      "slo": [
+        { "metric": "p99", "value": 120 },
+        { "metric": "errorRate", "value": 0.01 }
+      ],
+      "focus": { "nodes": ["cache", "db"] }
+    }
+  }
+}

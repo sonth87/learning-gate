@@ -1,0 +1,194 @@
+{
+  "sims": [
+    {
+      "id": "S2-12/upload",
+      "scenario": {
+        "id": "S2-12/upload",
+        "seed": 2212,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.3 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "ramp", "from": 100, "to": 1000, "overSec": 40 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "cdn",
+              "kind": "cdn",
+              "label": { "vi": "CDN Edge", "en": "CDN Edge" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "internet",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 200000 },
+              "latency": { "baseMs": 1, "cv": 0.3 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0,
+                "hitRatioMax": 0.8,
+                "workingSetKeys": 50000,
+                "capacityKeys": 100000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "API Server", "en": "API Server" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 150 },
+              "latency": { "baseMs": 18, "cv": 0.3 },
+              "params": { "replicas": 2, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 10,
+                  "step": 1,
+                  "default": 2
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "API quá tải vì giữ luồng upload", "en": "API saturated by upload proxying" } }
+              ]
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Metadata DB", "en": "Metadata DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.4,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 2500 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "shards": 1, "maxConnections": 500 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Media Queue", "en": "Media Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.06,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "maxDepth": 50000, "dlq": true },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Media Worker", "en": "Media Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 400 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 3 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Media Worker", "en": "Media Workers" },
+                  "min": 1,
+                  "max": 10,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "blob",
+              "kind": "blob",
+              "label": { "vi": "Object Storage", "en": "Object Storage" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000 },
+              "latency": { "baseMs": 15, "cv": 0.35 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-cdn", "from": "client", "to": "cdn", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "cdn-lb", "from": "cdn", "to": "lb", "mode": "sync", "netClass": "same-az", "timeoutMs": 1800 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-db", "from": "api", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "api-blob", "from": "api", "to": "blob", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-queue", "from": "api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "queue-worker", "from": "queue", "to": "worker", "mode": "pull", "netClass": "same-az" },
+            { "id": "worker-blob", "from": "worker", "to": "blob", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "cdn": "split",
+            "lb": "split",
+            "api": "all-sequential",
+            "queue": "split",
+            "worker": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 5 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 70 } }
+      ]
+    }
+  ]
+}

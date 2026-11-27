@@ -1,0 +1,180 @@
+{
+  "sims": [
+    {
+      "id": "S4-06/dlq-poison",
+      "scenario": {
+        "id": "S4-06/dlq-poison",
+        "seed": 4406,
+        "durationSec": 70,
+        "mix": { "readRatio": 0.1 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 900 },
+        "events": [
+          { "at": 15, "type": "deploy", "node": "worker", "bad": true, "version": "v2.4-poison" }
+        ],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.25 },
+              "params": {}
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "costPerHour": 0.04,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.4, "cv": 0.2 },
+              "params": { "replicas": 2, "algorithm": "round-robin", "healthCheckSec": 2 }
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Order API", "en": "Order API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.1,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance API", "en": "API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1500 },
+              "latency": { "baseMs": 10, "cv": 0.25 },
+              "params": { "replicas": 3, "poolSize": 30 }
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Job Queue", "en": "Job Queue" },
+              "stateful": true,
+              "scaling": "partitioned",
+              "replicas": 2,
+              "costPerHour": 0.08,
+              "knobs": [
+                {
+                  "key": "dlq",
+                  "type": "bool",
+                  "label": { "vi": "Bật Dead Letter Queue (DLQ)", "en": "Enable Dead Letter Queue" },
+                  "default": false
+                },
+                {
+                  "key": "maxDepth",
+                  "type": "number",
+                  "label": { "vi": "Giới hạn hàng đợi", "en": "Max queue depth" },
+                  "min": 1000,
+                  "max": 50000,
+                  "step": 1000,
+                  "default": 6000
+                }
+              ],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 2, "cv": 0.2 },
+              "params": { "replicas": 2, "shards": 1, "maxDepth": 50000, "dlq": false }
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Worker Pool", "en": "Worker Pool" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 3,
+              "costPerHour": 0.12,
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số lượng Worker", "en": "Worker instances" },
+                  "min": 1,
+                  "max": 12,
+                  "step": 1,
+                  "default": 3
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "Worker lỗi giao lại job nếu chưa có DLQ", "en": "Worker fault loops unacked jobs" } }
+              ],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 400 },
+              "latency": { "baseMs": 35, "cv": 0.3 },
+              "params": { "replicas": 3, "poolSize": 25 }
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Order DB", "en": "Order DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.5,
+              "knobs": [],
+              "failureModes": [],
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 3000 },
+              "latency": { "baseMs": 5, "cv": 0.25 },
+              "params": { "replicas": 1, "maxConnections": 400 }
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-queue", "from": "api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "queue-worker", "from": "queue", "to": "worker", "mode": "pull", "netClass": "same-az" },
+            { "id": "worker-db", "from": "worker", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "api": "all-sequential",
+            "queue": "split",
+            "worker": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 70 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.02, "window": { "fromSec": 0, "toSec": 70 } },
+        { "id": "queue-drain", "kind": "node-state", "node": "queue", "notIn": ["overloaded"], "window": { "fromSec": 45, "toSec": 70 }, "allowViolationPct": 5 }
+      ],
+      "presets": [
+        {
+          "id": "enable-dlq",
+          "label": { "vi": "Bật Dead Letter Queue để cách ly thông điệp lỗi", "en": "Enable Dead Letter Queue to isolate poison messages" },
+          "changes": [
+            { "type": "knob", "node": "queue", "key": "dlq", "value": true }
+          ],
+          "expectPass": true
+        }
+      ]
+    }
+  ]
+}

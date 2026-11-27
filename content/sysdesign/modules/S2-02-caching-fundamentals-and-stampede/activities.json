@@ -1,0 +1,97 @@
+[
+  {
+    "id": "S2-02.A1",
+    "kind": "predict",
+    "title": { "vi": "Thành phần nào quá tải khi Cache hết hạn đồng loạt?" },
+    "prompt": { "vi": "Hệ thống đang phục vụ 3.600 req/s ổn định nhờ Redis Cache gánh hơn 82% lượt đọc. Đúng giây 25, lô khoá nóng hết hạn cùng lúc (cache-expire-all). Theo bạn, thành phần nào sẽ rơi vào trạng thái Quá tải (overloaded) đầu tiên?" },
+    "difficulty": 1,
+    "at": 22,
+    "question": {
+      "type": "node",
+      "rule": { "first": "overloaded", "after": 22 },
+      "expected": ["db"]
+    },
+    "reveal": { "playFromSec": 22, "playToSec": 36, "speed": 2 },
+    "hints": [
+      { "vi": "Khi Cache trở nên lạnh đột ngột, gần như 100% lượt đọc biến thành Cache Miss." },
+      { "vi": "Đối chiếu 3.600 req/s đổ xuống với năng lực xử lý của App Tier (7.200 req/s) và Database (1.500 req/s)." }
+    ],
+    "explain": { "vi": "Ngay khi khoá hết hạn đồng loạt ở giây 25, lượng truy vấn xuyên qua {cache.name} dội thẳng vào {db.name} vọt từ khoảng 880 lên 3.600 req/s. Vì chỉ chịu được 1.500 req/s, {db.name} chạm trạng thái quá tải đầu tiên ở giây {t.first.db:1} với ρ = {db.rho@28:2}, trong khi {app.name} chỉ ở ρ = {app.rho@28:2}." },
+    "sim": { "simId": "S2-02/stampede", "seekSec": 22, "autoplay": false },
+    "replay": { "simId": "S2-02/stampede", "seekSec": 22, "focus": { "nodes": ["cache", "db"] }, "autoplay": true, "speed": 2 }
+  },
+  {
+    "id": "S2-02.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm trần tải bền vững ở mức Hit Ratio 47%" },
+    "prompt": { "vi": "Trong kịch bản S2-02/hit-ratio, Cache mới chứa 10.000 / 40.000 key nên Hit Ratio chỉ đạt khoảng 47% (khoảng 57% tổng request vẫn xuống Database 1.500 req/s). Hãy tìm lưu lượng đầu vào tối đa (req/s) mà cấu hình này giữ được p99 ≤ 140 ms và tỷ lệ lỗi ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 140, "window": { "fromSec": 10, "toSec": 40 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 2540, "tolPassPct": 10, "tolFullPct": 5 },
+    "hints": [
+      { "vi": "Tính tỷ lệ request chạm Database: 0,92 × (1 − 0,466) + 0,08 ≈ 0,571." },
+      { "vi": "Lấy năng lực 1.500 req/s của Database chia cho 0,571 rồi thử kiểm chứng quanh ngưỡng đó." }
+    ],
+    "explain": { "vi": "Với Hit Ratio khoảng 47%, cứ mỗi 100 request từ người dùng thì có khoảng {db.share@10:0%} đi xuống {db.name}. Trần chịu tải toàn hệ thống vì thế đạt khoảng {ref.value:0} req/s; nếu nâng dung lượng Cache lên đủ 40.000 key (Hit Ratio ≈ 93%), trần này tăng vọt lên hơn 5.000 req/s mà không cần nâng cấp Database." },
+    "sim": { "simId": "S2-02/hit-ratio", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S2-02.A3",
+    "kind": "fix-challenge",
+    "title": { "vi": "Chặn đứng Cache Stampede không tốn thêm phần cứng" },
+    "prompt": { "vi": "Trong kịch bản S2-02/stampede (3.600 req/s), sự kiện hết hạn đồng loạt ở giây 25 làm Database sụp đổ. Với tối đa 2 thay đổi và ngân sách giữ nguyên ≤ 1,65 USD/giờ (không thuê máy lớn hơn), hãy giữ p99 ≤ 120 ms, lỗi ≤ 1% và xoá cảnh báo TTL đồng bộ." },
+    "difficulty": 3,
+    "simId": "S2-02/stampede",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.65 },
+    "allowed": [
+      { "type": "knob", "node": "cache", "key": "singleflight", "values": [true, false] },
+      { "type": "knob", "node": "cache", "key": "ttlJitterPct", "min": 0, "max": 0.5 },
+      { "type": "knob", "node": "cache", "key": "ttlSec", "min": 10, "max": 600 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "app", "key": "replicas", "min": 2, "max": 8 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 80 } },
+      { "id": "jitter", "kind": "structural", "rule": "cache-has-jitter", "node": "cache" }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded"], "window": { "fromSec": 0, "toSec": 80 }, "allowViolationPct": 2 }
+    ],
+    "observe": { "runSec": 80 },
+    "par": { "changes": 2, "costPerHour": 1.58 },
+    "solution": [
+      { "type": "knob", "node": "cache", "key": "singleflight", "value": true },
+      { "type": "knob", "node": "cache", "key": "ttlJitterPct", "value": 0.25 }
+    ],
+    "traps": [
+      {
+        "id": "only-jitter",
+        "label": { "vi": "Chỉ thêm TTL Jitter 25% mà không bật Singleflight" },
+        "changes": [
+          { "type": "knob", "node": "cache", "key": "ttlJitterPct", "value": 0.25 }
+        ],
+        "why": { "vi": "TTL Jitter ngăn các chu kỳ hết hạn tự nhiên về sau đồng bộ lại, nhưng khi Cache vừa bị xoá trắng ở giây 25 thì hàng nghìn request trùng khoá vẫn ập thẳng xuống Database vì thiếu Singleflight gom nhóm." }
+      },
+      {
+        "id": "scale-up-db",
+        "label": { "vi": "Nâng cỡ máy Database lên gấp đôi (sizeFactor = 2)" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 2 }
+        ],
+        "why": { "vi": "Nâng cỡ máy làm chi phí vọt lên 2,62 USD/giờ (vượt ngân sách 1,65 USD/giờ), chưa xử lý cảnh báo TTL đồng bộ và ngay cả 3.000 req/s vẫn nhỏ hơn đỉnh 3.600 req/s lúc giây 25." }
+      }
+    ],
+    "hints": [
+      { "vi": "Ngân sách 1,65 USD/giờ không cho phép nâng cấp phần cứng Database hay thêm App; hãy chỉnh ngay trên Redis Cache." },
+      { "vi": "Cần một cơ chế hợp nhất các lượt đọc trùng khoá khi Cache Miss và một cơ chế làm lệch thời điểm hết hạn TTL." }
+    ],
+    "explain": { "vi": "Bật Singleflight kẹp lượng Cache Miss đổ xuống {db.name} ngay thời điểm giây 25 ở mức tối đa 900 req/s (cộng 288 lượt ghi là 1.188 req/s), hạ ρ từ {db.rho@28:2} xuống {db.rho'@28:2} và giữ p99 khoảng {m.p99'@28:0} ms. Kết hợp TTL Jitter ≥ 20% giúp các khoá vừa nạp lại không bao giờ hết hạn đồng loạt lần nữa." },
+    "replay": { "simId": "S2-02/stampede", "seekSec": 22, "focus": { "nodes": ["cache", "db"] }, "autoplay": true }
+  }
+]

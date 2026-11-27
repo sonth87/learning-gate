@@ -1,0 +1,7 @@
+[
+  { "id": "S7-03.c1", "front": "Tại sao phải tách hàng đợi thông báo theo độ ưu tiên?", "back": "Để chiến dịch tiếp thị hàng triệu tin (ưu tiên thấp) không chặn nghẽn các thông báo khẩn cấp như OTP đăng nhập hay biến động số dư (ưu tiên cao)." },
+  { "id": "S7-03.c2", "front": "Cách xử lý khi nhà cung cấp Push/SMS phản hồi chậm?", "back": "Dùng Timeout ngắn, Retry có Exponential Backoff + Full Jitter + Retry Budget, kết hợp Circuit Breaker để cắt mạch nhanh khi đối tác quá tải." },
+  { "id": "S7-03.c3", "front": "Làm thế nào chống gửi trùng thông báo trong kiến trúc at-least-once?", "back": "Gắn dedup_key duy nhất cho cặp (sự kiện, người nhận) và kiểm tra nguyên tử trong bộ nhớ/DB trước khi gọi API nhà cung cấp." },
+  { "id": "S7-03.c4", "front": "Vai trò của điều tiết tốc độ đầu ra (Outbound Rate Shaping)?", "back": "Giữ tốc độ đẩy tin từ Worker sang từng nhà cung cấp nằm trong hạn mức cho phép của đối tác, tránh bị trả lỗi 429 hoặc khóa tài khoản." },
+  { "id": "S7-03.c5", "front": "Tại sao Notification API nên trả về 202 Accepted ngay lập tức?", "back": "Để tách độ trễ phản hồi cho dịch vụ gọi khỏi thời gian chờ các nhà cung cấp Push/SMS/Email bên ngoài." }
+]

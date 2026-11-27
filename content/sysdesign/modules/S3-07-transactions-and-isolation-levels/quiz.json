@@ -1,0 +1,66 @@
+[
+  {
+    "id": "S3-07.q1",
+    "type": "mc",
+    "q": "Hai giao dịch chạy đồng thời ở mức cô lập Read Committed cùng thực hiện: đọc số dư (đang là 100), cộng thêm 50 trong bộ nhớ ứng dụng rồi chạy UPDATE SET balance = giá_trị_mới. Nếu cả hai cùng đọc trước khi giao dịch kia kịp COMMIT, số dư cuối cùng là bao nhiêu?",
+    "code": "",
+    "choices": ["200", "150", "100", "Báo lỗi khoá ngay từ câu SELECT đầu tiên"],
+    "answer": 1,
+    "explain": "Ở mức Read Committed, câu SELECT thông thường không khoá dòng nên cả hai giao dịch đều đọc thấy 100, cùng tính 100 + 50 = 150 và ghi đè lên nhau. Khoản cộng 50 của giao dịch đầu bị mất (Lost Update)."
+  },
+  {
+    "id": "S3-07.q2",
+    "type": "output",
+    "q": "Cơ sở dữ liệu có Connection Pool tối đa 25 kết nối. Nếu mỗi giao dịch giữ kết nối trung bình 250 ms (0,25 giây) do chờ gọi API thanh toán bên trong BEGIN...COMMIT, thông lượng tối đa mà pool này phục vụ được là bao nhiêu giao dịch mỗi giây? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "100",
+    "explain": "Theo định luật Little, thông lượng tối đa μ = kích thước Pool chia cho thời gian chiếm giữ trung bình mỗi kết nối: 25 / 0,25 = 100 giao dịch/giây. Chỉ cần tải vượt 100 req/s, hàng đợi xin kết nối sẽ dồn ứ dù CPU của DB còn rảnh."
+  },
+  {
+    "id": "S3-07.q3",
+    "type": "tf",
+    "q": "Trong mức cô lập Snapshot Isolation (Repeatable Read), hiện tượng Write Skew hoàn toàn không thể xảy ra kể cả khi hai giao dịch đọc chung điều kiện rồi cập nhật hai dòng khác nhau.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Snapshot Isolation chỉ tự động phát hiện xung đột ghi-đè trên cùng một dòng dữ liệu. Khi hai giao dịch đọc cùng một tập dữ liệu nhưng sửa hai dòng riêng biệt (như hai bác sĩ trực cùng bấm nghỉ), cả hai vẫn COMMIT thành công và gây ra Write Skew; muốn chặn phải dùng Serializable hoặc khoá FOR UPDATE."
+  },
+  {
+    "id": "S3-07.q4",
+    "type": "mc",
+    "q": "Khi nào kiểm soát đồng thời lạc quan (Optimistic CAS dùng cột version) phù hợp hơn khoá dòng bi quan (SELECT ... FOR UPDATE)?",
+    "code": "",
+    "choices": [
+      "Khi hàng nghìn người dùng cùng bấm mua 1 mã giảm giá duy nhất trong cùng một giây",
+      "Khi tỷ lệ đọc cao, hai người hiếm khi sửa trúng cùng một bản ghi trong cùng thời điểm",
+      "Khi giao dịch bắt buộc phải giữ kết nối DB mở trong lúc chờ người dùng nhập mã OTP",
+      "Khi bảng dữ liệu không có khoá chính và không cho phép chạy câu lệnh UPDATE"
+    ],
+    "answer": 1,
+    "explain": "Optimistic CAS không giữ khoá khi đọc nên rất nhẹ khi đụng độ thấp; nếu xảy ra đụng độ cao trên một dòng nóng, hàng loạt giao dịch sẽ thất bại ở bước kiểm tra WHERE version = v và phải thử lại liên tục làm tốn tài nguyên hơn xếp hàng bằng FOR UPDATE."
+  },
+  {
+    "id": "S3-07.q5",
+    "type": "mc",
+    "q": "Giao dịch TX1 khoá dòng tài khoản #90 rồi xin khoá tài khoản #12; cùng lúc TX2 khoá tài khoản #12 rồi xin khoá tài khoản #90. Cách sửa triệt để ở mã ứng dụng để ngăn Deadlock này là gì?",
+    "code": "",
+    "choices": [
+      "Giảm mức cô lập xuống Read Uncommitted để bỏ qua toàn bộ ràng buộc",
+      "Luôn sắp xếp các mã tài khoản theo thứ tự cố định (ví dụ tăng dần #12 trước, #90 sau) trước khi xin khoá",
+      "Bỏ câu lệnh COMMIT ở cuối giao dịch để giữ khoá vĩnh viễn",
+      "Chuyển sang gọi API thanh toán bên trong giao dịch để kéo dài thời gian giữ khoá"
+    ],
+    "answer": 1,
+    "explain": "Deadlock hình thành do chu trình chờ vòng tròn giữa các tài nguyên. Khi mọi giao dịch đều xin khoá theo cùng một thứ tự tăng dần (#12 rồi mới tới #90), đồ thị chờ không thể khép vòng nên Deadlock bị loại bỏ từ gốc."
+  },
+  {
+    "id": "S3-07.q6",
+    "type": "tf",
+    "q": "Câu truy vấn SELECT id FROM bookings WHERE seat_id = 'A12' FOR UPDATE đủ sức ngăn hai giao dịch đồng thời cùng INSERT bản ghi mới cho ghế A12 ngay cả khi ghế này chưa có dòng nào trong bảng bookings.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Khi dòng dữ liệu chưa tồn tại trong bảng bookings, SELECT ... FOR UPDATE trả về 0 dòng nên không có bản ghi vật lý nào để gắn khoá dòng (ở mức Read Committed / Snapshot). Bạn bắt buộc phải có ràng buộc UNIQUE trên cột seat_id (hoặc khoá dòng ghế có sẵn bên bảng seats) để chặn chèn trùng."
+  }
+]

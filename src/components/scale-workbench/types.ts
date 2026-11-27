@@ -135,7 +135,10 @@ export type PacketKind =
   | 'pointer'
   | 'mutation'
   | 'cache-hit'
-  | 'error';
+  | 'error'
+  | 'retry'
+  | 'timeout'
+  | 'dropped';
 
 export interface StagePacket {
   id: string;
@@ -144,6 +147,14 @@ export interface StagePacket {
   speed?: number;
   offset?: number;
   reverse?: boolean;
+  /** Nếu true: hạt đi hết chiều xuôi sẽ tự đảo chiều quay về với màu response (#9fd28f) và tỏa vòng sóng fx--ok */
+  bounce?: boolean;
+  /** Thời gian (giây) hạt dừng chờ và nhấp nháy viền (.pkt--held) tại cổng đích trước khi quay về hoặc kết thúc */
+  holdSec?: number;
+  /** Hiệu ứng chạm đích ở cuối chặng: 'ok' = vòng sóng xanh lá mở rộng; 'fail' = nổ vòng tròn đỏ có dấu X trắng */
+  arrivalFx?: 'ok' | 'fail' | 'none';
+  /** Biến thể hình dáng & vận tốc theo chuẩn Designed-to-Scale */
+  variant?: 'default' | 'slow' | 'heavy' | 'msg' | 'poison' | 'ping' | 'kill';
 }
 
 export interface StageZoneSlab {
@@ -163,10 +174,18 @@ export interface StageNoteLine {
   tone?: 'plain' | 'muted' | 'good' | 'bad' | 'amber';
 }
 
+export interface StageNoteChart {
+  /** Mức sử dụng 0..100 hiển thị trên đường cong độ trễ theo mức bận (hockey-stick) */
+  utilPct: number;
+  xLabel?: BilingualText;
+  yLabel?: BilingualText;
+}
+
 export interface StageNoteCard {
   id?: string;
   title: BilingualText;
   lines: StageNoteLine[];
+  chart?: StageNoteChart;
   position?: 'top-left' | 'bottom-left' | 'bottom-right';
 }
 
@@ -265,7 +284,7 @@ export interface CodeTraceScene {
   rows: TraceRowItem[];
 }
 
-export type StageRenderMode = 'isometric' | 'memory-2d' | 'code-trace';
+export type StageRenderMode = 'isometric' | 'memory-2d' | 'code-trace' | 'live-sim';
 
 export interface StageTelemetryItem {
   label: BilingualText;
@@ -299,6 +318,11 @@ export interface ScaleLessonStep {
   scene?: StageScene;
   memoryScene?: MemoryScene;
   codeTrace?: CodeTraceScene;
+  /** live-sim: cấu hình mô phỏng trực tiếp (stageMode 'live-sim' cần scene + liveSim). */
+  liveSim?: LiveSimSpec;
+  /** id hoạt động gắn vào step; workbench chỉ hiển thị cổng, không hiểu nội dung. */
+  activityId?: string;
+  activityGate?: 'required' | 'optional';
 }
 
 export interface ScaleModuleLesson {
@@ -319,4 +343,206 @@ export interface ScaleModuleLesson {
   exerciseCount: number;
   cardCount: number;
   readingCount: number;
+  /** Dòng nguồn/ghi công cuối cột phải; không có thì không render gì. */
+  attribution?: { text: BilingualText; href?: string; sourceTitle?: BilingualText };
+  /** Tab "Câu chuyện & Tư duy giải quyết vấn đề" (Story & Problem-Solving Mindset) ở cột phải. */
+  story?: BilingualText;
 }
+
+/* ============================================================================
+ * LIVE-SIM: kiểu dữ liệu tối thiểu mà workbench hiểu (không import feature).
+ * Feature (sysdesign-course) chuyển SimFrame của engine thành LiveSimFrame.
+ * ============================================================================ */
+
+export type LiveNodeState =
+  | 'idle'
+  | 'healthy'
+  | 'busy'
+  | 'saturated'
+  | 'overloaded'
+  | 'down'
+  | 'recovering';
+
+export interface LiveNodeFrame {
+  state: LiveNodeState;
+  /** 0..100, thanh tải */
+  loadPct: number;
+  /** 0..1, chiều cao "queue pile" */
+  queuePct: number;
+  /** số lượng thật (tooltip) */
+  queue?: number;
+  badge?: { text: BilingualText; tone: 'default' | 'ok' | 'warn' | 'bad' };
+  /** 0..1 vòng warming */
+  warm?: number;
+  lagMs?: number;
+  hitPct?: number;
+  metrics?: Record<string, number>;
+}
+
+export interface LiveLinkFrame {
+  rps: number;
+  throughput: number;
+  /** 0..1 */
+  errorRate: number;
+  style?: 'solid' | 'dashed' | 'off' | 'danger' | 'heartbeat' | 'cut';
+  breaker?: 'closed' | 'open' | 'half-open';
+  lagMs?: number;
+}
+
+export interface LivePacket {
+  id: number;
+  linkId: string;
+  kind: PacketKind;
+  reverse: boolean;
+  /** 0..1 tại thời điểm frame */
+  progress: number;
+  /** 0..1: mờ/rơi tại tiến độ này */
+  fate?: number;
+}
+
+export interface LiveSimFrame {
+  tick: number;
+  /** giây mô phỏng */
+  t: number;
+  nodes: Record<string, LiveNodeFrame>;
+  links: Record<string, LiveLinkFrame>;
+  packets: LivePacket[];
+  /** "1 chấm = N req/s" */
+  packetScale: number;
+  metrics: Record<string, number>;
+}
+
+export interface LiveSimSource {
+  /** Frame mới nhất (tham chiếu ổn định, không clone). null trước khi sẵn sàng. */
+  getFrame(): LiveSimFrame | null;
+  /** Subscribe tần số thấp cho UI React. Trả hàm huỷ. hz mặc định 10. */
+  subscribe(cb: (f: LiveSimFrame) => void, opts?: { hz?: number }): () => void;
+}
+
+export type LiveChaosKind =
+  | 'kill'
+  | 'slow'
+  | 'partition'
+  | 'expire-cache'
+  | 'hot-key'
+  | 'bad-deploy';
+
+export interface LiveMetricSpec {
+  metric: string;
+  label: BilingualText;
+  format: 'rps' | 'ms' | 'pct' | 'usd-hour' | 'count';
+  tone?: { warnAbove?: number; badAbove?: number; warnBelow?: number; badBelow?: number };
+}
+
+export interface LiveSimSpec {
+  simId: string;
+  startAtSec?: number;
+  autoplay?: boolean;
+  speed?: 1 | 2 | 5;
+  controls: {
+    timeline?: boolean;
+    load?: boolean;
+    chaos?: LiveChaosKind[];
+    knobs?: { node: string; key: string }[];
+    tracer?: boolean;
+  };
+  telemetry?: LiveMetricSpec[];
+  slo?: { metric: 'p99' | 'errorRate'; value: number; unit?: string }[];
+  pauseAtSec?: number[];
+  focus?: { nodes?: string[]; links?: string[] };
+}
+
+export interface LiveKnobDescriptor {
+  node: string;
+  key: string;
+  label: BilingualText;
+  type: 'number' | 'select' | 'bool';
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  options?: { value: string; label: BilingualText }[];
+  value: number | string | boolean;
+  defaultValue?: number | string | boolean;
+  changeCost?: number;
+}
+
+export interface LiveMarker {
+  t: number;
+  kind: 'event' | 'learner' | 'milestone' | 'alert';
+  label: BilingualText;
+  nodeId?: string;
+}
+
+export interface LiveSeries {
+  /** các cột cùng độ dài */
+  t: Float32Array;
+  v: Float32Array;
+  length: number;
+}
+
+export interface LiveTraceSpan {
+  id: string;
+  nodeId?: string;
+  linkId?: string;
+  kind: 'net' | 'queue' | 'service' | 'retry-wait' | 'timeout';
+  label: BilingualText;
+  startMs: number;
+  durMs: number;
+  ok: boolean;
+  isSlowest?: boolean;
+  slowestSharePct?: number;
+}
+
+export interface LiveTrace {
+  packetId?: number;
+  packetKind?: PacketKind;
+  totalMs: number;
+  attempts?: number;
+  outcome: 'ok' | 'timeout' | 'error' | 'dropped';
+  spans: LiveTraceSpan[];
+  note?: BilingualText;
+}
+
+export interface LiveSimSession {
+  readonly source: LiveSimSource;
+  readonly durationSec: number;
+  /** Tiến mô phỏng tới t giây (bước cố định 100 ms). Trả số tick đã chạy. */
+  advanceTo(tSec: number): number;
+  /** Vị trí hiện tại (giây) */
+  getT(): number;
+  /** Mép phải đã mô phỏng (giây) */
+  getHeadT(): number;
+  /** Scrub về tSec */
+  seek(tSec: number): void;
+  reset(): void;
+  getLoadMultiplier?(): number;
+  setLoadMultiplier(x: number): void;
+  setKnob(node: string, key: string, value: number | string | boolean): void;
+  resetKnob?(node: string, key: string): void;
+  inject(
+    kind: LiveChaosKind,
+    target: { node?: string; link?: string },
+    opts?: { addMs?: number; share?: number }
+  ): void;
+  knobs(): LiveKnobDescriptor[];
+  series(metric: string): LiveSeries;
+  nodeSeries?(nodeId: string, field: 'rho' | 'p99' | 'queue' | 'lambda'): LiveSeries;
+  markers(): LiveMarker[];
+  trace(hint?: { packetId?: number; linkId?: string; kind?: PacketKind }): LiveTrace | null;
+  dispose(): void;
+}
+
+export interface LiveSimAdapter {
+  open(
+    spec: LiveSimSpec,
+    ctx: { lang: WorkbenchLang; moduleId: string; stepIndex: number }
+  ): LiveSimSession | null;
+  renderNodeLiveSlot?: (
+    session: LiveSimSession,
+    spec: LiveSimSpec,
+    entity: { kind: 'node' | 'link'; id: string },
+    lang: WorkbenchLang
+  ) => React.ReactNode;
+}
+

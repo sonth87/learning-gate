@@ -1,0 +1,114 @@
+[
+  {
+    "id": "S2-05.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Gia cố Blog + Image Pipeline chịu đỉnh 3.400 req/s" },
+    "prompt": { "vi": "Hoàn thiện cấu hình để hệ thống chạy ổn định ở tải chuẩn 1.800 req/s (p99 ≤ 120 ms, lỗi ≤ 1%), vượt qua đợt đột biến 3.400 req/s (p99 ≤ 150 ms, lỗi ≤ 1%) và không có điểm lỗi đơn (SPOF) ở Load Balancer và Blog API trong ngân sách ≤ 2,20 USD/giờ (tối đa 4 thay đổi)." },
+    "difficulty": 3,
+    "simId": "S2-05/image-pipeline",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "steady-1800",
+        "label": { "vi": "Tải chuẩn 1.800 req/s (p99 ≤ 120 ms, lỗi ≤ 1%)" },
+        "simId": "S2-05/image-pipeline",
+        "constraints": [
+          { "id": "p99-steady", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+          { "id": "err-steady", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+        ],
+        "weight": 2
+      },
+      {
+        "id": "spike-3400",
+        "label": { "vi": "Đột biến 3.400 req/s (p99 ≤ 150 ms, lỗi ≤ 1%)" },
+        "simId": "S2-05/image-pipeline",
+        "loadOverride": { "kind": "spike", "base": 1500, "peak": 3400, "atSec": 15, "holdSec": 20, "riseSec": 5, "fallSec": 5 },
+        "constraints": [
+          { "id": "p99-spike", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 5, "toSec": 55 }, "allowViolationPct": 2 },
+          { "id": "err-spike", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 5, "toSec": 55 } }
+        ],
+        "weight": 3
+      }
+    ],
+    "structural": [
+      { "id": "no-lb-spof", "kind": "structural", "rule": "no-spof", "node": "lb" },
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "api" }
+    ],
+    "budget": {
+      "maxCostPerHour": 2.2,
+      "maxChanges": 4
+    },
+    "par": {
+      "costPerHour": 1.9,
+      "changes": 4
+    },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "lb", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "api", "key": "replicas", "value": 4 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 500000 },
+        { "type": "knob", "node": "worker", "key": "replicas", "value": 2 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "no-cache-upgrade",
+        "label": { "vi": "Chỉ tăng LB lên 2, API lên 4 và Worker lên 2 nhưng giữ Cache 20.000 key" },
+        "changes": [
+          { "type": "knob", "node": "lb", "key": "replicas", "value": 2 },
+          { "type": "knob", "node": "api", "key": "replicas", "value": 4 },
+          { "type": "knob", "node": "worker", "key": "replicas", "value": 2 }
+        ],
+        "why": { "vi": "Cache quá nhỏ khiến phần lớn lượt đọc trượt thẳng xuống Blog DB; khi tải vọt lên 3.400 req/s, DB vượt công suất 1.200 req/s và kéo p99 vượt ngưỡng." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tính số instance API cần thiết cho đỉnh 3.400 req/s (μ = 1.200 req/s mỗi máy)." },
+      { "vi": "Tập dữ liệu nóng gồm 80.000 key; nâng Cache lên 80.000 key để bảo vệ Blog DB, và tăng Worker lên 2 cho 15% lượt ghi ở đỉnh." }
+    ],
+    "explain": { "vi": "2 LB và 4 Blog API loại bỏ SPOF và gánh trọn đỉnh 3.400 req/s, Cache 80.000 key giữ Hit Ratio {cache.hitRatio'@30:0%} để bảo vệ Blog DB, còn 2 Image Worker xử lý kịp 510 job/s lúc đỉnh với tổng chi phí {m.cost'@30:2} USD/giờ." }
+  },
+  {
+    "id": "S2-05.A2",
+    "kind": "fix-challenge",
+    "title": { "vi": "Khắc phục đồng thời nghẽn API và Database" },
+    "prompt": { "vi": "Ở tải chuẩn 1.800 req/s, hệ thống đang vi phạm SLO p99 ≤ 120 ms và lỗi ≤ 1%. Với tối đa 2 thay đổi và chi phí ≤ 1,80 USD/giờ, hãy đưa hệ thống về trạng thái ổn định." },
+    "difficulty": 2,
+    "simId": "S2-05/image-pipeline",
+    "budget": { "maxChanges": 2, "maxCostPerHour": 1.8 },
+    "allowed": [
+      { "type": "knob", "node": "api", "key": "replicas", "min": 1, "max": 6 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "min": 5000, "max": 500000 },
+      { "type": "knob", "node": "db", "key": "sizeFactor", "min": 1, "max": 4 },
+      { "type": "knob", "node": "worker", "key": "replicas", "min": 1, "max": 4 }
+    ],
+    "goal": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 60 } }
+    ],
+    "soft": [
+      { "id": "db-calm", "kind": "node-state", "node": "db", "notIn": ["saturated", "overloaded", "down"], "window": { "fromSec": 10, "toSec": 60 }, "allowViolationPct": 5 }
+    ],
+    "observe": { "runSec": 60 },
+    "par": { "changes": 2, "costPerHour": 1.6 },
+    "solution": [
+      { "type": "knob", "node": "api", "key": "replicas", "value": 3 },
+      { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 500000 }
+    ],
+    "traps": [
+      {
+        "id": "only-api",
+        "label": { "vi": "Chỉ tăng Blog API lên 3 instance mà không mở rộng Cache" },
+        "changes": [
+          { "type": "knob", "node": "api", "key": "replicas", "value": 3 }
+        ],
+        "why": { "vi": "Tầng API hết nghẽn nhưng lưu lượng tràn xuống làm Blog DB quá tải vì Cache chỉ phủ được 20.000/80.000 key." }
+      }
+    ],
+    "hints": [
+      { "vi": "Kiểm tra ρ của cả Blog API lẫn Blog DB: một mình nâng API chưa đủ nếu Cache Hit Ratio còn thấp." }
+    ],
+    "explain": { "vi": "Nâng Blog API lên 3 instance (ρ = {api.rho'@30:2}) và mở rộng Cache lên 80.000 key đẩy Hit Ratio lên {cache.hitRatio'@30:0%}, hạ ρ của Blog DB xuống {db.rho'@30:2} và đưa p99 về {m.p99'@30:0} ms." },
+    "replay": { "simId": "S2-05/image-pipeline", "seekSec": 30, "focus": { "nodes": ["api", "cache", "db"] }, "autoplay": true }
+  }
+]

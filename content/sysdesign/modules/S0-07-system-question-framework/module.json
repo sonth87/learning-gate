@@ -1,0 +1,29 @@
+{
+  "id": "S0-07",
+  "slug": "S0-07-system-question-framework",
+  "level": 0,
+  "order": 7,
+  "title": "Khung 7 câu hỏi khi thiết kế hệ thống",
+  "summary": "Dùng bảng kiểm 7 nhóm câu hỏi (quy mô, mẫu lưu lượng, dữ liệu, độ sẵn sàng, tính nhất quán, độ trễ và chi phí) để biến đề bài mơ hồ thành bản đặc tả đo lường được.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Áp dụng tuần tự 7 nhóm câu hỏi cốt lõi để không bỏ sót ràng buộc trước khi phác thảo kiến trúc" },
+    { "vi": "Đổi các yêu cầu định tính như tải lớn hay phản hồi nhanh thành con số cụ thể (RPS, TB/năm, p99, số 9 uptime)" },
+    { "vi": "Phát hiện sớm các yêu cầu mâu thuẫn nhau giữa độ nhất quán, độ sẵn sàng, độ trễ và ngân sách" },
+    { "vi": "Tổng hợp câu trả lời thành thẻ Requirements Card dẫn dắt trực tiếp quyết định chọn thành phần" }
+  ],
+  "tags": ["requirements", "checklist", "capacity", "trade-offs", "sla", "mental-model"],
+  "prerequisites": ["S0-01", "S0-04", "S0-05"],
+  "related": ["S0-08", "S1-05", "S6-02"],
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-0/lessons/lesson-7-system-question-framework.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-0/lessons/lesson-7-system-question-framework.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật trực diện, bỏ giai thoại cá nhân, chuyển sơ đồ Mermaid sang các cảnh memory-2d biểu diễn bảng kiểm 7 câu hỏi và thẻ Requirements Card, bổ sung bài tập design-constraint kiểm chứng trên engine."
+  }
+}

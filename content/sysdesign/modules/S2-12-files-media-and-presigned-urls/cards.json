@@ -1,0 +1,8 @@
+[
+  { "id": "S2-12.c1", "front": "Metadata và byte của tệp lớn nên lưu ở đâu?", "back": "Metadata nhẹ (id, owner, object_key, status) lưu trong Database; toàn bộ byte nhị phân lưu trên Object Storage để giảm chi phí và giữ DB gọn nhẹ." },
+  { "id": "S2-12.c2", "front": "Presigned URL hoạt động như thế nào?", "back": "API Server xác thực quyền rồi ký một URL có hạn ngắn (5–15 phút) cho đúng đối tượng; Client dùng URL đó đẩy hoặc tải tệp trực tiếp với Object Storage." },
+  { "id": "S2-12.c3", "front": "Khi nào cần dùng Multipart Upload?", "back": "Khi tệp lớn (vài trăm MB đến GB) hoặc mạng không ổn định: chia tệp thành mảnh 5–10 MB để tải song song và tiếp tục từ mảnh lỗi nếu rớt mạng." },
+  { "id": "S2-12.c4", "front": "Vì sao phải xử lý ảnh/video qua Queue + Worker?", "back": "Tạo thumbnail và chuyển mã video tốn nhiều CPU và thời gian; đẩy sang Queue + Worker giúp API trả lời ngay và tự mở rộng worker theo độ dài hàng đợi." },
+  { "id": "S2-12.c5", "front": "Storage Lifecycle Policy giải quyết vấn đề gì?", "back": "Tự động chuyển tệp cũ ít truy cập (ví dụ sau 90 ngày) sang tầng lưu trữ lạnh giá rẻ hoặc xóa tệp tạm/Multipart bỏ dở để kiểm soát chi phí." },
+  { "id": "S2-12.c6", "front": "Hai quy tắc bảo mật cơ bản cho Object Storage Bucket?", "back": "Tắt hoàn toàn quyền liệt kê công khai (Public List) và giữ Bucket ở chế độ Private với tệp nhạy cảm, chỉ cấp Presigned URL đọc ngắn hạn theo quyền." }
+]

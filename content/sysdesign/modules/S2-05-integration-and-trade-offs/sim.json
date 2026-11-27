@@ -1,0 +1,230 @@
+{
+  "sims": [
+    {
+      "id": "S2-05/image-pipeline",
+      "scenario": {
+        "id": "S2-05/image-pipeline",
+        "seed": 2205,
+        "durationSec": 60,
+        "mix": { "readRatio": 0.85 },
+        "clientTimeoutMs": 2000,
+        "options": { "noise": false },
+        "load": { "kind": "steady", "rps": 1800 },
+        "events": [],
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0,
+              "zone": "internet",
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.025,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.3, "cv": 0.2 },
+              "params": { "replicas": 1, "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Load Balancer", "en": "LB instances" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "LB đơn lẻ dừng làm mất kết nối toàn bộ", "en": "Single LB crash cuts all traffic" } }
+              ]
+            },
+            {
+              "id": "api",
+              "kind": "service",
+              "label": { "vi": "Blog API", "en": "Blog API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 1200 },
+              "latency": { "baseMs": 10, "cv": 0.3 },
+              "params": { "replicas": 1, "poolSize": 40 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số instance Blog API", "en": "Blog API instances" },
+                  "min": 1,
+                  "max": 8,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": [
+                { "kind": "crash", "note": { "vi": "API đơn lẻ dừng gây gián đoạn dịch vụ", "en": "Single API crash halts service" } }
+              ]
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "Redis Cache", "en": "Redis Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.15,
+              "zone": "az-a",
+              "initial": { "warm": 1 },
+              "capacity": { "opsPerSec": 40000 },
+              "latency": { "baseMs": 0.5, "cv": 0.25 },
+              "params": {
+                "ttlSec": 300,
+                "ttlJitterPct": 0.05,
+                "hitRatioMax": 0.9,
+                "workingSetKeys": 500000,
+                "capacityKeys": 5000,
+                "warmupSec": 10,
+                "singleflight": false
+              },
+              "knobs": [
+                {
+                  "key": "capacityKeys",
+                  "type": "number",
+                  "label": { "vi": "Dung lượng Cache (key)", "en": "Cache capacity (keys)" },
+                  "min": 5000,
+                  "max": 500000,
+                  "step": 5000,
+                  "default": 5000,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "Blog DB", "en": "Blog DB" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "costPerHour": 0.8,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 850 },
+              "latency": { "baseMs": 4, "cv": 0.25 },
+              "params": { "sizeFactor": 1, "maxConnections": 500 },
+              "knobs": [
+                {
+                  "key": "sizeFactor",
+                  "type": "number",
+                  "label": { "vi": "Cỡ máy Database", "en": "Database size" },
+                  "min": 1,
+                  "max": 4,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "queue",
+              "kind": "queue",
+              "label": { "vi": "Image Queue", "en": "Image Queue" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.06,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 1, "cv": 0.2 },
+              "params": { "maxDepth": 50000, "dlq": true },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "worker",
+              "kind": "worker",
+              "label": { "vi": "Image Worker", "en": "Image Worker" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.1,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 500 },
+              "latency": { "baseMs": 20, "cv": 0.3 },
+              "params": { "replicas": 1 },
+              "knobs": [
+                {
+                  "key": "replicas",
+                  "type": "number",
+                  "label": { "vi": "Số Image Worker", "en": "Image Workers" },
+                  "min": 1,
+                  "max": 6,
+                  "step": 1,
+                  "default": 1,
+                  "changeCost": 1
+                }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "blob",
+              "kind": "blob",
+              "label": { "vi": "Object Storage", "en": "Object Storage" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "costPerHour": 0.05,
+              "zone": "az-a",
+              "capacity": { "opsPerSec": 5000 },
+              "latency": { "baseMs": 12, "cv": 0.3 },
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "client-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "timeoutMs": 2000 },
+            { "id": "lb-api", "from": "lb", "to": "api", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 },
+            { "id": "api-cache", "from": "api", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 1000 },
+            { "id": "api-queue", "from": "api", "to": "queue", "mode": "async", "netClass": "same-az", "timeoutMs": 500, "fraction": 0.15 },
+            { "id": "queue-worker", "from": "queue", "to": "worker", "mode": "pull", "netClass": "same-az" },
+            { "id": "worker-blob", "from": "worker", "to": "blob", "mode": "sync", "netClass": "same-az", "timeoutMs": 1500 }
+          ],
+          "routes": {
+            "client": "all-sequential",
+            "lb": "split",
+            "api": "all-sequential",
+            "cache": "split",
+            "queue": "split",
+            "worker": "all-sequential"
+          }
+        }
+      },
+      "slos": [
+        { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 120, "window": { "fromSec": 0, "toSec": 60 }, "allowViolationPct": 2 },
+        { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 0, "toSec": 60 } }
+      ]
+    }
+  ]
+}

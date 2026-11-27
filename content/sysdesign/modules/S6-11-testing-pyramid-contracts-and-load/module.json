@@ -1,0 +1,24 @@
+{
+  "id": "S6-11",
+  "slug": "S6-11-testing-pyramid-contracts-and-load",
+  "level": 6,
+  "order": 11,
+  "title": "Tháp Kiểm thử: Unit, Integration, Contract và Load Test",
+  "summary": "Đặt đúng loại kiểm thử vào đúng tầng trong Tháp Kiểm thử (Unit, Contract, Integration, E2E), dùng Test Doubles hợp lý, kiểm soát Flaky Test và đánh giá khả năng chịu tải bằng Load Test và Chaos Test.",
+  "durationMin": 14,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân bổ số lượng và phạm vi kiểm thử theo Tháp Kiểm thử để cân bằng giữa tốc độ phản hồi và độ tin cậy" },
+    { "vi": "Sử dụng Test Doubles (Stub, Mock, Fake) cho Unit Test và container thật cho Integration Test" },
+    { "vi": "Áp dụng Contract Testing giữa các đội để phát hiện lệch schema API mà không cần dựng toàn bộ hệ thống E2E" },
+    { "vi": "Nhận diện và xử lý Flaky Test như nợ kỹ thuật, đồng thời phân biệt các bài Load Test và Chaos/Fault Test" }
+  ],
+  "tags": ["testing", "test-pyramid", "unit-test", "integration-test", "contract-test", "load-test", "chaos"],
+  "prerequisites": ["S1-05", "S6-01"],
+  "related": ["S4-01", "S6-12"],
+  "dtsRef": "testing",
+  "source": {
+    "kind": "original",
+    "changes": "Biên soạn mới về tháp kiểm thử (Unit, Integration, Contract, E2E), Test Doubles, Contract Testing giữa các đội, xử lý Flaky Test, Load Test và Chaos/Fault Test."
+  }
+}

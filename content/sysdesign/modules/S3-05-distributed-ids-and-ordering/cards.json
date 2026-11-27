@@ -1,0 +1,32 @@
+[
+  {
+    "id": "S3-05.c1",
+    "front": "Vì sao AUTO_INCREMENT đơn thuần không dùng được trên cơ sở dữ liệu phân mảnh (Sharded DB)?",
+    "back": "Mỗi Shard tự đếm độc lập từ 1, 2, 3... sẽ sinh trùng khoá chính trên toàn cục, làm hỏng khoá ngoại, ghi đè Cache và gây lỗi khi gộp dữ liệu hoặc thay đổi số lượng Shard."
+  },
+  {
+    "id": "S3-05.c2",
+    "front": "Cấu trúc 4 phần của định danh 64-bit Snowflake chuẩn?",
+    "back": "1 bit dấu luôn bằng 0 + 41 bit mốc thời gian mili-giây (~69 năm) + 10 bit mã máy worker_id (1.024 nút) + 12 bit bộ đếm cục bộ sequence (4.096 ID mỗi mili-giây trên mỗi máy)."
+  },
+  {
+    "id": "S3-05.c3",
+    "front": "Vì sao Snowflake và UUID v7 chèn vào chỉ mục B-tree nhanh hơn nhiều so với UUID v4?",
+    "back": "Cả hai đặt mốc thời gian ở các bit đầu nên ID mới luôn lớn hơn ID cũ và nối đuôi vào trang lá ngoài cùng bên phải trong RAM; trong khi UUID v4 chèn ngẫu nhiên khắp cây gây đọc đĩa và tách trang (Page Split) liên tục."
+  },
+  {
+    "id": "S3-05.c4",
+    "front": "Bộ sinh Snowflake xử lý thế nào khi đồng hồ hệ thống nhảy lùi (Clock Rollback)?",
+    "back": "Luôn lưu last_timestamp_ms: nếu lệch lùi rất nhỏ (vài ms) thì tạm chờ đồng hồ đuổi kịp last_timestamp_ms; nếu lệch lùi lớn thì từ chối cấp ID và phát cảnh báo vận hành, kết hợp cấu hình NTP slewing không giật lùi."
+  },
+  {
+    "id": "S3-05.c5",
+    "front": "Lưu ý bắt buộc khi truyền số 64-bit Snowflake qua JSON cho trình duyệt JavaScript?",
+    "back": "Phải ép thành chuỗi (String) trong JSON vì kiểu Number của JavaScript chỉ biểu diễn chính xác số nguyên tối đa tới 53 bit (2^53 − 1), nếu để kiểu số sẽ bị làm tròn sai các bit cuối."
+  },
+  {
+    "id": "S3-05.c6",
+    "front": "Mẫu thiết kế cặp định danh (Dual-ID) giải quyết bài toán gì?",
+    "back": "Dùng BIGINT Snowflake làm Primary/Foreign Key nội bộ để tối ưu RAM và B-tree, đồng thời cấp thêm public_id ngẫu nhiên (NanoID / UUID v4) cho URL và API công khai để chống vét cạn và giấu sản lượng đơn hàng."
+  }
+]

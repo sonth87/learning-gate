@@ -1,0 +1,42 @@
+[
+  {
+    "id": "S7-05.A1",
+    "kind": "estimate",
+    "title": { "vi": "Ước lượng lưu lượng Origin khi CDN Hit Ratio thay đổi" },
+    "prompt": { "vi": "Nền tảng có 100.000 lượt yêu cầu tải đoạn video mỗi giây (req/s) vào giờ cao điểm. Nếu CDN Edge đạt Hit Ratio 92% (92% được trả lời trực tiếp tại Edge), Object Storage Origin phải phục vụ bao nhiêu req/s?" },
+    "difficulty": 2,
+    "quantity": "Lưu lượng Origin phải phục vụ",
+    "unit": "req/s",
+    "truth": { "type": "formula", "expr": "100000*(1-0.92)", "vars": {} },
+    "scale": "linear",
+    "tol": { "full": 0.05, "pass": 0.15 },
+    "workings": [
+      { "vi": "Tỷ lệ Cache Miss tại CDN = 1 − 0,92 = 0,08 (8%)." },
+      { "vi": "Lưu lượng đi về Origin = 100.000 × 0,08 = 8.000 req/s." }
+    ],
+    "hints": [
+      { "vi": "Chỉ những yêu cầu Cache Miss tại CDN mới quay về lấy dữ liệu từ Object Storage Origin." }
+    ],
+    "explain": { "vi": "Với Hit Ratio 92%, Origin chỉ nhận {truth:0} req/s thay vì toàn bộ 100.000 req/s. Nếu Hit Ratio tụt xuống 80%, tải về Origin lập tức tăng gấp 2,5 lần lên 20.000 req/s." }
+  },
+  {
+    "id": "S7-05.A2",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm ngưỡng tải tối đa của cụm Transcode & Streaming" },
+    "prompt": { "vi": "Với cấu hình mặc định (2 Transcode Worker, CDN 20.000 key), hãy dùng núm tải để tìm lưu lượng cao nhất (req/s) mà hệ thống vẫn giữ p99 ≤ 150 ms và tỷ lệ lỗi ≤ 1%." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 150, "window": { "fromSec": 10, "toSec": 40 }, "allowViolationPct": 3 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 40 } }
+    ],
+    "runSec": 40,
+    "reference": { "value": 3614, "tolPassPct": 15, "tolFullPct": 8 },
+    "hints": [
+      { "vi": "85% lưu lượng đọc đi qua CDN Edge (20.000 key trên tập nóng 40.000 key), phần Miss rơi xuống Object Storage." },
+      { "vi": "Tăng dần tải cho tới ngay trước khi p99 vượt 150 ms hoặc tỷ lệ lỗi vượt 1%." }
+    ],
+    "explain": { "vi": "Với cấu hình mặc định (2 Worker và CDN 20.000 key), giới hạn tải bền vững tối đa vào khoảng {ref.value:0} req/s trước khi p99 vượt 150 ms." },
+    "sim": { "simId": "S7-05/streaming", "seekSec": 0, "autoplay": false }
+  }
+]

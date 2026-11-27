@@ -1,0 +1,71 @@
+[
+  {
+    "id": "S1-04.q1",
+    "type": "mc",
+    "q": "Một hệ thống xử lý ảnh chuyển từ chạy 1 Worker sang chạy song song 50 Worker độc lập (mỗi Worker vẫn mất 4 giây để xử lý xong 1 bức ảnh). Hai chỉ số Latency và Throughput thay đổi thế nào ở tải nhẹ?",
+    "code": "",
+    "choices": [
+      "Latency giảm 50 lần xuống 80 ms, Throughput giữ nguyên",
+      "Latency mỗi ảnh giữ nguyên 4 giây, trần Throughput tối đa tăng gấp 50 lần",
+      "Cả Latency lẫn Throughput đều cải thiện gấp 50 lần",
+      "Cả Latency lẫn Throughput đều không thay đổi"
+    ],
+    "answer": 1,
+    "explain": "Thêm Worker song song cho phép xử lý 50 bức ảnh đồng thời nên tổng thông lượng tối đa tăng từ 0,25 ảnh/s lên 12,5 ảnh/s; tuy nhiên bản thân từng bức ảnh vẫn cần đủ 4 giây tính toán."
+  },
+  {
+    "id": "S1-04.q2",
+    "type": "output",
+    "q": "Một ứng dụng thương mại điện tử cam kết độ sẵn sàng 99,9% (ba chữ số 9) trong một tháng 30 ngày (43.200 phút). Ngân sách ngừng hoạt động tối đa trong tháng đó là bao nhiêu phút? (làm tròn đến số nguyên gần nhất)",
+    "code": "",
+    "choices": [],
+    "answer": "43",
+    "explain": "Với 30 ngày = 30 × 24 × 60 = 43.200 phút, phần thời gian ngừng tối đa cho phép ở mức 99,9% (0,001) là 43.200 × 0,001 = 43,2 phút, làm tròn thành 43 phút/tháng."
+  },
+  {
+    "id": "S1-04.q3",
+    "type": "tf",
+    "q": "Khi mức sử dụng ρ của Database tăng từ 0,40 lên 0,92, chỉ số trung vị p50 và chỉ số đuôi p99 luôn tăng với cùng một tỉ lệ như nhau.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Khi ρ vượt 0,80 tiến gần 1,00, các đợt dồn hàng đợi ngắn hạn làm nhóm 1% request chậm nhất (p99) tăng vọt gấp nhiều lần trong khi trung vị p50 tăng chậm hơn nhiều; chỉ nhìn p50 sẽ bỏ sót sự suy giảm trải nghiệm ở vùng đuôi."
+  },
+  {
+    "id": "S1-04.q4",
+    "type": "mc",
+    "q": "Theo Định lý CAP, khi cáp mạng giữa hai trung tâm dữ liệu bị đứt (xảy ra Network Partition), hệ thống quản lý số dư tài khoản ngân hàng chọn mô hình CP sẽ hành xử thế nào?",
+    "code": "",
+    "choices": [
+      "Cho phép rút hết số dư đồng thời ở cả hai trung tâm dữ liệu rồi trừ âm sau",
+      "Tạm từ chối giao dịch ở phía không đạt xác nhận nhất quán để đảm bảo không bao giờ phát sinh số dư sai",
+      "Tự động bỏ qua yêu cầu chịu lỗi phân vùng mạng để giữ cả C lẫn A",
+      "Tăng gấp đôi thông lượng bằng cách tắt kiểm tra khóa chính"
+    ],
+    "answer": 1,
+    "explain": "Với giao dịch tiền tệ, tính đúng đắn của số dư là bất biến bắt buộc. Khi xảy ra chia cắt mạng, hệ thống CP chấp nhận trả lỗi tạm thời ở phía bị cô lập thay vì cho phép ghi xung đột dẫn tới chi tiêu kép."
+  },
+  {
+    "id": "S1-04.q5",
+    "type": "mc",
+    "q": "Tính năng nào dưới đây phù hợp nhất với lựa chọn AP (ưu tiên tính sẵn sàng và chấp nhận nhất quán cuối cùng) khi có chia cắt mạng ngắn hạn?",
+    "code": "",
+    "choices": [
+      "Trừ số lượng chiếc vé máy bay cuối cùng trên chuyến bay",
+      "Chuyển khoản liên ngân hàng tức thời",
+      "Hiển thị bộ đếm tổng số lượt thích (Like) dưới một bài viết mạng xã hội",
+      "Cấp phát mã giao dịch quyết toán thuế duy nhất không trùng lặp"
+    ],
+    "answer": 2,
+    "explain": "Nếu hai người dùng ở hai vùng nhìn thấy bài viết có 1.000 và 1.002 lượt thích lệch nhau vài giây thì không gây hậu quả nghiệp vụ nào; đổi lại trang bảng tin luôn tải nhanh và không báo lỗi."
+  },
+  {
+    "id": "S1-04.q6",
+    "type": "tf",
+    "q": "Mọi dịch vụ nội bộ ít quan trọng đều nên được thiết kế đạt mức độ sẵn sàng 99,999% ngay từ phiên bản đầu tiên để phòng xa.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Đạt 99,999% (chỉ tối đa 5,26 phút ngừng/năm) đòi hỏi hạ tầng đa vùng tự động, kiểm thử tiêm lỗi liên tục và đội trực 24/7 cực kỳ tốn kém. Thiết kế tốt luôn chọn bậc số 9 cân xứng với tác động kinh doanh thực tế."
+  }
+]

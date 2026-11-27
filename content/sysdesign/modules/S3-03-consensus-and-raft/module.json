@@ -1,0 +1,30 @@
+{
+  "id": "S3-03",
+  "slug": "S3-03-consensus-and-raft",
+  "level": 3,
+  "order": 4,
+  "title": "Đồng thuận phân tán và bầu chọn Leader với Raft",
+  "summary": "Tìm hiểu cách một nhóm máy chủ thống nhất một Leader và một lịch sử nhật ký duy nhất bằng thuật toán Raft: đa số quá bán, nhiệm kỳ (Term), cam kết nhật ký, ngăn chặn Split-Brain và Fencing Token.",
+  "durationMin": 18,
+  "difficulty": "Advanced",
+  "objectives": [
+    { "vi": "Giải thích vì sao quy tắc đa số quá bán floor(N/2) + 1 loại trừ hoàn toàn hai nhóm độc lập cùng tự phong Leader và vì sao cụm đồng thuận luôn dùng số máy lẻ" },
+    { "vi": "Mô tả vòng đời ba trạng thái Follower, Candidate, Leader cùng nhiệm kỳ Term và cơ chế Election Timeout ngẫu nhiên trong Raft" },
+    { "vi": "Phân tích điều kiện cam kết nhật ký (Majority Log Commit) và hành vi từ chối ghi của Leader cũ bị cô lập ở nhánh thiểu số" },
+    { "vi": "Áp dụng Fencing Token và ReadIndex / Quorum Read để chặn Leader cũ bị tạm dừng (GC pause) ghi đè dữ liệu hoặc trả kết quả đọc cũ" }
+  ],
+  "tags": ["consensus", "raft", "leader-election", "quorum", "split-brain", "fencing-token"],
+  "prerequisites": ["S2-08", "S3-01", "S3-02"],
+  "related": ["S3-04", "S3-07", "S3-09"],
+  "dtsRef": "consensus",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-3/lessons/lesson-3-consensus-leader-election.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-3/lessons/lesson-3-consensus-leader-election.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ: bỏ giai thoại cá nhân mở đầu, thay các khối Mermaid bằng sân khấu isometric 3 node Raft + kho lưu trữ và các cảnh memory-2d, bổ sung cơ chế cam kết nhật ký (Commit Index), điều kiện kiểm độ mới của log khi bỏ phiếu, bài toán Zombie Leader do tạm dừng GC kèm giải pháp Fencing Token và ReadIndex."
+  }
+}

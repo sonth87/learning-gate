@@ -1,0 +1,49 @@
+[
+  {
+    "id": "S6-04.A1",
+    "kind": "design-constraint",
+    "title": { "vi": "Cấu hình hệ thống bảng tin Twitter đạt SLO trong ngân sách" },
+    "prompt": { "vi": "Từ bài toán thiết kế Twitter với tải đỉnh 3.000 req/s (92% đọc bảng tin, tập bảng tin nóng 80.000 key), cấu hình khởi điểm chỉ có 1 instance Timeline API (μ = 1.800 req/s) và Redis Timeline Cache 15.000 key. Với ngân sách ≤ 1,40 USD/giờ, tối đa 2 thay đổi và không để Timeline API thành điểm lỗi đơn, hãy hiệu chỉnh để giữ p99 ≤ 110 ms và lỗi ≤ 1%." },
+    "difficulty": 2,
+    "simId": "S6-04/twitter-fanout",
+    "start": "preset",
+    "scenarios": [
+      {
+        "id": "twitter-peak-3000",
+        "label": { "vi": "Tải đỉnh 3.000 req/s (92% đọc)" },
+        "simId": "S6-04/twitter-fanout",
+        "constraints": [
+          { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 110, "window": { "fromSec": 10, "toSec": 45 }, "allowViolationPct": 2 },
+          { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 10, "toSec": 45 } }
+        ],
+        "weight": 2
+      }
+    ],
+    "structural": [
+      { "id": "no-api-spof", "kind": "structural", "rule": "no-spof", "node": "api" }
+    ],
+    "budget": { "maxCostPerHour": 1.4, "maxChanges": 2 },
+    "par": { "costPerHour": 1.29, "changes": 2 },
+    "solution": {
+      "changes": [
+        { "type": "knob", "node": "api", "key": "replicas", "value": 2 },
+        { "type": "knob", "node": "cache", "key": "capacityKeys", "value": 80000 }
+      ]
+    },
+    "traps": [
+      {
+        "id": "scale-db-only",
+        "label": { "vi": "Nâng cỡ Tweet DB lên ×3 và giữ nguyên 1 instance Timeline API" },
+        "changes": [
+          { "type": "knob", "node": "db", "key": "sizeFactor", "value": 3 }
+        ],
+        "why": { "vi": "Ở tải 3.000 req/s, 1 instance Timeline API (μ = 1.800 req/s) đã nghẽn ngay ở tầng ứng dụng, đồng thời vi phạm ràng buộc không SPOF và vượt ngân sách 1,40 USD/giờ." }
+      }
+    ],
+    "hints": [
+      { "vi": "Tải 3.000 req/s vượt trần 1.800 req/s của 1 instance Timeline API; tăng lên 2 instance cho tổng 3.600 req/s và loại bỏ SPOF." },
+      { "vi": "Với 92% lượt đọc trên tập nóng 80.000 key, nâng Redis Timeline Cache lên 80.000 key giúp giảm mạnh lượt đọc rơi xuống Tweet DB." }
+    ],
+    "explain": { "vi": "2 instance Timeline API (ρ = {api.rho'@30:2}) loại bỏ SPOF ở tầng ứng dụng, kết hợp Redis Timeline Cache 80.000 key giữ tải xuống Tweet DB ở mức an toàn (ρ = {db.rho'@30:2}) và đạt p99 ≤ 110 ms với chi phí 1,29 USD/giờ." }
+  }
+]

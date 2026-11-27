@@ -1,0 +1,103 @@
+{
+  "sims": [
+    {
+      "id": "S0-07/url-brief",
+      "scenario": {
+        "id": "S0-07/url-brief",
+        "durationSec": 60,
+        "seed": 707,
+        "load": { "kind": "steady", "rps": 3500 },
+        "mix": { "readRatio": 0.97 },
+        "events": [],
+        "options": { "noise": false, "maxPackets": 80 },
+        "model": {
+          "nodes": [
+            {
+              "id": "client",
+              "kind": "client",
+              "label": { "vi": "Người dùng", "en": "Users" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "capacity": { "opsPerSec": 1000000 },
+              "latency": { "baseMs": 0, "cv": 0.2 },
+              "costPerHour": 0,
+              "params": {},
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "lb",
+              "kind": "lb",
+              "label": { "vi": "Load Balancer", "en": "Load Balancer" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 2,
+              "capacity": { "opsPerSec": 20000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "costPerHour": 0.025,
+              "params": { "algorithm": "round-robin", "healthCheckSec": 3 },
+              "knobs": [],
+              "failureModes": []
+            },
+            {
+              "id": "app",
+              "kind": "service",
+              "label": { "vi": "Redirect API", "en": "Redirect API" },
+              "stateful": false,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "capacity": { "opsPerSec": 2200 },
+              "latency": { "baseMs": 8, "cv": 0.3 },
+              "costPerHour": 0.1,
+              "params": { "replicas": 1 },
+              "knobs": [
+                { "key": "replicas", "type": "number", "label": { "vi": "Số instance App", "en": "App instances" }, "min": 1, "max": 8, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "cache",
+              "kind": "cache",
+              "label": { "vi": "URL Cache", "en": "URL Cache" },
+              "stateful": true,
+              "scaling": "horizontal",
+              "replicas": 1,
+              "capacity": { "opsPerSec": 40000 },
+              "latency": { "baseMs": 0.5, "cv": 0.2 },
+              "costPerHour": 0.15,
+              "params": { "ttlSec": 600, "ttlJitterPct": 0.2, "hitRatioMax": 0.92, "workingSetKeys": 100000, "capacityKeys": 5000, "warmupSec": 20, "singleflight": true },
+              "knobs": [
+                { "key": "capacityKeys", "type": "number", "label": { "vi": "Dung lượng Cache (key)", "en": "Cache capacity (keys)" }, "min": 5000, "max": 200000, "step": 5000, "default": 5000, "changeCost": 1 }
+              ],
+              "failureModes": []
+            },
+            {
+              "id": "db",
+              "kind": "sql",
+              "label": { "vi": "URL SQL", "en": "URL SQL" },
+              "stateful": true,
+              "scaling": "vertical",
+              "replicas": 1,
+              "capacity": { "opsPerSec": 1400 },
+              "latency": { "baseMs": 5, "cv": 0.3 },
+              "costPerHour": 0.8,
+              "params": { "sizeFactor": 1, "poolSize": 24 },
+              "knobs": [
+                { "key": "sizeFactor", "type": "number", "label": { "vi": "Cỡ máy DB", "en": "DB size" }, "min": 1, "max": 4, "step": 1, "default": 1, "changeCost": 1 }
+              ],
+              "failureModes": []
+            }
+          ],
+          "links": [
+            { "id": "c-lb", "from": "client", "to": "lb", "mode": "sync", "netClass": "internet", "netMs": 20, "timeoutMs": 1000 },
+            { "id": "lb-app", "from": "lb", "to": "app", "mode": "sync", "netClass": "same-az", "timeoutMs": 800 },
+            { "id": "app-cache", "from": "app", "to": "cache", "mode": "sync", "netClass": "same-az", "timeoutMs": 100 },
+            { "id": "cache-db", "from": "cache", "to": "db", "mode": "sync", "netClass": "same-az", "timeoutMs": 500 }
+          ],
+          "routes": { "client": "split", "lb": "split", "app": "all-sequential", "cache": "split" }
+        }
+      }
+    }
+  ]
+}

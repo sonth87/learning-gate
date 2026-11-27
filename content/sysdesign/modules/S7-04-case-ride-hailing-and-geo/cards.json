@@ -1,0 +1,7 @@
+[
+  { "id": "S7-04.c1", "front": "Tải ghi vị trí của 1 triệu tài xế gửi mỗi 4 giây là bao nhiêu?", "back": "1.000.000 / 4 = 250.000 lượt ghi/giây. Chỉ nên lưu vị trí mới nhất trong RAM (Geo Index) thay vì ghi đè trực tiếp xuống đĩa SQL." },
+  { "id": "S7-04.c2", "front": "Geohash hoạt động thế nào và cần lưu ý gì ở biên?", "back": "Geohash mã hóa tọa độ 2D thành chuỗi 1D theo lưới; các điểm gần nhau thường chung tiền tố. Khi tìm kiếm phải quét ô hiện tại cộng 8 ô lân cận để tránh sót điểm sát ranh giới." },
+  { "id": "S7-04.c3", "front": "Quadtree khác Geohash cố định ở điểm nào?", "back": "Quadtree chia cây thích ứng thành 4 góc phần tư dựa trên mật độ thực tế: vùng đông xe chia nhỏ sâu, vùng thưa xe giữ ô lớn." },
+  { "id": "S7-04.c4", "front": "Cách xử lý điểm nóng (hot cell) ở sân bay?", "back": "Chia nhỏ ô nóng thành nhiều ô con (tăng độ dài Geohash hoặc thêm hậu tố phân mảnh) và tăng số Geo Shards để trải đều tải ghi và truy vấn." },
+  { "id": "S7-04.c5", "front": "Vì sao không lưu lịch sử di chuyển GPS trực tiếp vào Geo Index Shards?", "back": "Geo Index chỉ phục vụ ghép chuyến với vị trí mới nhất nên cần nằm gọn trong RAM; lịch sử di chuyển được ghi bất đồng bộ sang kho lưu trữ lạnh." }
+]

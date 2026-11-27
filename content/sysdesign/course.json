@@ -1,0 +1,14 @@
+{
+  "courseId": "sysdesign",
+  "passQuiz": 0.7,
+  "levels": {
+    "0": "Mental Model Shift: tư duy hệ thống, đánh đổi và ràng buộc",
+    "1": "Foundation: thành phần, giao tiếp, luồng dữ liệu và điểm nghẽn",
+    "2": "Core Building Blocks: Load Balancing, Caching, Database, Queue",
+    "3": "Distributed Fundamentals: lỗi, nhất quán, đồng thuận, giao dịch, thời gian",
+    "4": "Scalability và Performance: hiệu năng, CDN, rate limiting, quan sát hệ thống",
+    "5": "Real-World Patterns: kiến trúc theo thời gian, hệ thống đọc nhiều, news feed",
+    "6": "Mastery: khung tư duy, quyết định kiến trúc, phỏng vấn, vận hành",
+    "7": "Case Studies: thiết kế hệ thống hoàn chỉnh"
+  }
+}

@@ -1,0 +1,898 @@
+{
+  "version": 1,
+  "base": "s1-cluster-setup",
+  "nodes": {
+    "client": {
+      "shape": "crowd",
+      "tone": "blue",
+      "label": {
+        "vi": "Client / Service",
+        "en": "Client / Service"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Dịch vụ ứng dụng gửi yêu cầu cập nhật cấu hình / trạng thái vào cụm đồng thuận Raft.",
+          "en": "Application services proposing state updates to the Raft consensus cluster."
+        },
+        "how": {
+          "vi": "Gửi lệnh ghi tới Leader hiện hành; nếu gửi nhầm vào Follower sẽ được chỉ dẫn chuyển tiếp về Leader.",
+          "en": "Sends writes to the active Leader; Followers redirect proposals to the current Leader."
+        },
+        "why": {
+          "vi": "Cần cam kết tuyến tính hoá rằng lệnh đã xác nhận sẽ không bao giờ mất hay bị rẽ nhánh.",
+          "en": "Requires linearizable durability across node crashes and network faults."
+        }
+      }
+    },
+    "leader": {
+      "shape": "block",
+      "tone": "orange",
+      "icon": "shield",
+      "label": {
+        "vi": "Node 1 (Leader)",
+        "en": "Node 1 (Leader)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút Raft đang giữ vai trò Leader ở nhiệm kỳ đầu (Term 1) tại AZ-A.",
+          "en": "Raft node acting as Term 1 Leader in AZ-A."
+        },
+        "how": {
+          "vi": "Ghi mục mới vào nhật ký WAL, nhân bản sang Node 2 và Node 3, đợi đủ ≥ 2/3 xác nhận rồi mới nâng commitIndex.",
+          "en": "Appends entries locally, replicates to Node 2 & 3, and commits once ≥ 2/3 acknowledge."
+        },
+        "why": {
+          "vi": "Nếu bị cô lập một mình (chỉ còn 1/3 phiếu), bắt buộc từ chối lệnh ghi để ngăn Split-Brain.",
+          "en": "Must reject writes if isolated in a 1/3 minority partition to prevent Split-Brain."
+        }
+      }
+    },
+    "f1": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Node 2 (Follower)",
+        "en": "Node 2 (Follower)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút Raft thứ hai đặt tại AZ-B, khởi đầu ở trạng thái Follower.",
+          "en": "Second Raft node in AZ-B, initially operating as a Follower."
+        },
+        "how": {
+          "vi": "Nhận nhịp tim AppendEntries từ Leader; khi mất nhịp tim quá ngưỡng ngẫu nhiên sẽ ứng cử lên Term 2.",
+          "en": "Resets election timer on heartbeats; campaigns for Term 2 upon timeout."
+        },
+        "why": {
+          "vi": "Cùng với Node 3 tạo thành nhánh đa số 2/3 để bầu Leader mới khi AZ-A bị cô lập.",
+          "en": "Forms a 2/3 majority quorum with Node 3 if AZ-A becomes unreachable."
+        }
+      }
+    },
+    "f2": {
+      "shape": "block",
+      "tone": "green",
+      "icon": "cpu",
+      "label": {
+        "vi": "Node 3 (Follower)",
+        "en": "Node 3 (Follower)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Nút Raft thứ ba đặt tại AZ-C để hoàn thiện cụm 3 nút số lẻ.",
+          "en": "Third Raft node in AZ-C completing the 3-node odd-sized cluster."
+        },
+        "how": {
+          "vi": "Lưu bản sao nhật ký bền vững và chỉ cấp tối đa 1 phiếu bầu trong mỗi Term cho ứng viên có log đủ mới.",
+          "en": "Persists replicated log entries and grants at most one vote per Term."
+        },
+        "why": {
+          "vi": "Đóng vai trò lá phiếu quyết định giúp cụm chịu được bất kỳ 1 AZ nào ngừng hoạt động.",
+          "en": "Provides the tie-breaking quorum vote across 3 Availability Zones."
+        }
+      }
+    },
+    "storage": {
+      "shape": "db",
+      "tone": "purple",
+      "label": {
+        "vi": "Kho dữ liệu (Fencing)",
+        "en": "Storage (Fencing)"
+      },
+      "inspector": {
+        "what": {
+          "vi": "Kho lưu trữ tài nguyên bên ngoài kiểm tra Fencing Token trên từng thao tác ghi.",
+          "en": "Downstream resource store enforcing monotonic Fencing Tokens on writes."
+        },
+        "how": {
+          "vi": "Ghi nhớ max_token cao nhất đã thực thi; bác bỏ ngay mọi gói ghi mang token nhỏ hơn.",
+          "en": "Tracks highest seen token and rejects stale writes carrying older tokens."
+        },
+        "why": {
+          "vi": "Bảo vệ dữ liệu khỏi tiến trình Leader cũ bị treo GC rồi tỉnh dậy gửi gói tin trễ.",
+          "en": "Protects state against delayed packets from a paused Zombie Leader."
+        }
+      }
+    }
+  },
+  "links": {
+    "client-leader": {
+      "inspector": {
+        "what": {
+          "vi": "Đường gửi yêu cầu đồng thuận từ Client vào Node 1.",
+          "en": "Client proposal path to Node 1."
+        },
+        "how": {
+          "vi": "Chờ xác nhận sau khi mục nhật ký đã đạt đa số quá bán.",
+          "en": "Blocks until majority log commit completes."
+        },
+        "why": {
+          "vi": "Đảm bảo kết quả trả về đạt tính tuyến tính hoá.",
+          "en": "Provides linearizable write confirmation."
+        }
+      }
+    },
+    "leader-f1": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": {
+          "vi": "Kênh RPC AppendEntries & Heartbeat giữa Node 1 và Node 2 (~2 ms).",
+          "en": "AppendEntries & Heartbeat RPC link between Node 1 and Node 2 (~2 ms)."
+        },
+        "how": {
+          "vi": "Truyền mục nhật ký mới kèm nhịp tim duy trì quyền Leader.",
+          "en": "Streams log entries and periodic authority heartbeats."
+        },
+        "why": {
+          "vi": "Thu thập phiếu xác nhận đa số chéo vùng khả dụng.",
+          "en": "Collects cross-AZ quorum acknowledgments."
+        }
+      }
+    },
+    "leader-f2": {
+      "style": "heartbeat",
+      "inspector": {
+        "what": {
+          "vi": "Kênh RPC AppendEntries & Heartbeat giữa Node 1 và Node 3 (~3 ms).",
+          "en": "AppendEntries & Heartbeat RPC link between Node 1 and Node 3 (~3 ms)."
+        },
+        "how": {
+          "vi": "Truyền nhật ký song song với kênh sang Node 2.",
+          "en": "Replicates log entries in parallel with Node 2."
+        },
+        "why": {
+          "vi": "Giúp Leader vẫn đạt 2/3 ngay cả khi một trong hai Follower gặp sự cố.",
+          "en": "Maintains 2/3 majority even if one Follower fails."
+        }
+      }
+    },
+    "leader-storage": {
+      "inspector": {
+        "what": {
+          "vi": "Lệnh thực thi xuống Kho dữ liệu kèm theo Fencing Token.",
+          "en": "State machine write to Storage carrying Fencing Token."
+        },
+        "how": {
+          "vi": "Đính kèm số token tăng dần theo mỗi nhiệm kỳ Leader.",
+          "en": "Attaches monotonically increasing epoch/term token."
+        },
+        "why": {
+          "vi": "Ngăn tiến trình Leader cũ ghi đè trạng thái của nhiệm kỳ mới.",
+          "en": "Prevents stale leaders from corrupting newer state."
+        }
+      }
+    }
+  },
+  "zones": {
+    "raft-quorum": {
+      "nodeIds": [
+        "leader",
+        "f1",
+        "f2"
+      ],
+      "label": {
+        "vi": "CỤM ĐỒNG THUẬN RAFT (N = 3)",
+        "en": "RAFT CONSENSUS GROUP (N = 3)"
+      },
+      "tone": "orange"
+    }
+  },
+  "scenes": {
+    "s1-cluster-setup": {
+      "show": {
+        "nodes": [
+          "client",
+          "leader",
+          "f1",
+          "f2"
+        ]
+      },
+      "zones": [
+        "raft-quorum"
+      ],
+      "state": {
+        "leader": {
+          "loadPct": 35,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "Leader · Term 1",
+              "en": "Leader · Term 1"
+            },
+            "tone": "ok"
+          }
+        },
+        "f1": {
+          "loadPct": 22,
+          "badge": {
+            "text": {
+              "vi": "Follower · Term 1",
+              "en": "Follower · Term 1"
+            },
+            "tone": "default"
+          }
+        },
+        "f2": {
+          "loadPct": 22,
+          "badge": {
+            "text": {
+              "vi": "Follower · Term 1",
+              "en": "Follower · Term 1"
+            },
+            "tone": "default"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Trạng thái ổn định trong Raft",
+          "en": "Normal Raft Operation"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "1 Leader duy nhất nhận ghi và phát Heartbeat",
+              "en": "Single Leader handles writes & heartbeats"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "2 Follower nhân bản nhật ký trên 3 AZ độc lập",
+              "en": "2 Followers replicate log across 3 AZs"
+            },
+            "tone": "plain"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s2-split-brain": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Sự cố Split-Brain khi tự thăng cấp mà không có quy tắc đa số quá bán",
+          "en": "Split-Brain Divergence Under Naive Promotion Without Majority Quorum"
+        },
+        "nodes": [
+          {
+            "id": "base",
+            "x": 0,
+            "y": -96,
+            "label": "Nhật ký gốc chung: idx #10 (x = 100)",
+            "sub": {
+              "vi": "Trước khi đứt đường truyền giữa hai phòng máy",
+              "en": "Shared history prior to network split"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "l1",
+            "x": -165,
+            "y": 18,
+            "label": "Nhánh A tự coi là Leader",
+            "sub": {
+              "vi": "Ghi idx #11: cấp khoá cho Worker 1",
+              "en": "Appends idx #11: lock → Worker 1"
+            },
+            "tone": "rose"
+          },
+          {
+            "id": "l2",
+            "x": 165,
+            "y": 18,
+            "label": "Nhánh B cũng tự phong Leader!",
+            "sub": {
+              "vi": "Ghi idx #11: cấp khoá cho Worker 2",
+              "en": "Appends idx #11: lock → Worker 2"
+            },
+            "tone": "rose"
+          }
+        ],
+        "edges": [
+          {
+            "from": "base",
+            "to": "l1",
+            "label": "ghi độc lập",
+            "style": "danger"
+          },
+          {
+            "from": "base",
+            "to": "l2",
+            "label": "xung đột!",
+            "style": "danger"
+          }
+        ]
+      }
+    },
+    "s3-majority-math": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": {
+          "vi": "Nhánh mạng / Quyết định",
+          "en": "Partition / Quorum Set"
+        },
+        "rightTitle": {
+          "vi": "Kết quả kiểm tra đa số (N = 5, Cần ≥ 3)",
+          "en": "Majority Check (N = 5, Need ≥ 3)"
+        },
+        "names": [
+          {
+            "id": "q1",
+            "name": "Nhóm bầu cử A: {N1, N2, N3}",
+            "note": {
+              "vi": "3/5 phiếu hợp lệ",
+              "en": "3/5 votes"
+            },
+            "targetId": "ok"
+          },
+          {
+            "id": "q2",
+            "name": "Nhóm ghi sau đó: {N3, N4, N5}",
+            "note": {
+              "vi": "Giao nhau tại nhân chứng N3!",
+              "en": "Intersects at witness N3!"
+            },
+            "targetId": "ok"
+          },
+          {
+            "id": "min",
+            "name": "Nhánh bị cô lập: {N1, N2}",
+            "note": {
+              "vi": "Chỉ có 2/5 phiếu (< 3)",
+              "en": "Only 2/5 votes (< 3)"
+            },
+            "targetId": "deny",
+            "style": "danger"
+          }
+        ],
+        "objects": [
+          {
+            "id": "ok",
+            "typeTag": "MAJORITY QUORUM",
+            "value": "Đủ ≥ floor(N/2) + 1 → Được phép bầu / Commit",
+            "fields": [
+              "Mọi cặp đa số đều trùng ít nhất 1 node",
+              "Chọn số lẻ 3, 5 để tối ưu chi phí chịu lỗi"
+            ],
+            "tone": "green"
+          },
+          {
+            "id": "deny",
+            "typeTag": "MINORITY SIDE",
+            "value": "Không đủ đa số → Ngưng bầu & Từ chối ghi",
+            "fields": [
+              "Loại trừ hoàn toàn nguy cơ Split-Brain",
+              "Tự đồng bộ lại khi mạng khôi phục"
+            ],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s4-raft-states": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tree",
+        "title": {
+          "vi": "Vòng đời 3 trạng thái nút và quy tắc hạ bậc theo nhiệm kỳ (Term)",
+          "en": "Raft Server State Machine and Monotonic Term Step-Down"
+        },
+        "nodes": [
+          {
+            "id": "fol",
+            "x": -180,
+            "y": -10,
+            "label": "Follower (Thụ động)",
+            "sub": {
+              "vi": "Nhận Heartbeat & đặt lại bộ đếm",
+              "en": "Receives heartbeats"
+            },
+            "tone": "blue"
+          },
+          {
+            "id": "cand",
+            "x": 0,
+            "y": -92,
+            "label": "Candidate (term = T + 1)",
+            "sub": {
+              "vi": "Tự bầu + gửi RequestVote toàn cụm",
+              "en": "Self-votes & requests votes"
+            },
+            "tone": "yellow"
+          },
+          {
+            "id": "lead",
+            "x": 180,
+            "y": -10,
+            "label": "Leader (Điều phối ghi)",
+            "sub": {
+              "vi": "Đạt đa số phiếu · Phát Heartbeat",
+              "en": "Wins majority · Sends heartbeats"
+            },
+            "tone": "orange"
+          },
+          {
+            "id": "step",
+            "x": 0,
+            "y": 82,
+            "label": "Thấy gói tin có Term cao hơn → Lùi ngay về Follower",
+            "tone": "green"
+          }
+        ],
+        "edges": [
+          {
+            "from": "fol",
+            "to": "cand",
+            "label": "hết timeout"
+          },
+          {
+            "from": "cand",
+            "to": "lead",
+            "label": "≥ đa số phiếu"
+          },
+          {
+            "from": "lead",
+            "to": "step",
+            "label": "gặp term mới",
+            "style": "dashed"
+          },
+          {
+            "from": "cand",
+            "to": "step",
+            "label": "đã có Leader",
+            "style": "dashed"
+          }
+        ]
+      }
+    },
+    "s5-election-flow": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Chuỗi bầu chọn Leader với Election Timeout ngẫu nhiên (150 – 300 ms)",
+          "en": "Leader Election Sequence with Randomized Election Timeouts"
+        },
+        "subtitle": {
+          "vi": "Nút hết thời gian chờ sớm nhất tăng Term và gom phiếu trước khi các nút khác kịp ứng cử",
+          "en": "Earliest timeout node increments Term and secures majority before peers time out"
+        },
+        "cells": [
+          "1. Mất Heartbeat",
+          "2. N2 hết 165ms trước",
+          "3. Tăng Term · Xin phiếu",
+          "4. Đạt 2/3 phiếu (Log mới)",
+          "5. Phát Heartbeat Term mới"
+        ],
+        "activeIndices": [
+          1,
+          3,
+          4
+        ],
+        "pointers": [
+          {
+            "index": 1,
+            "label": "tránh Split Vote",
+            "tone": "yellow"
+          },
+          {
+            "index": 3,
+            "label": "đắc cử Leader",
+            "tone": "green"
+          }
+        ],
+        "outputPill": {
+          "label": {
+            "vi": "Điều kiện cấp phiếu",
+            "en": "Voting Safety"
+          },
+          "value": {
+            "vi": "Mỗi Term bầu tối đa 1 lần và chỉ bầu cho ứng viên có Log mới bằng hoặc hơn mình",
+            "en": "Max 1 vote per Term, granted only if candidate log is at least as up-to-date"
+          },
+          "tone": "orange"
+        }
+      }
+    },
+    "s6-log-commit": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "tape",
+        "title": {
+          "vi": "Nhật ký tuần tự Raft: phân biệt mục đã Committed và mục đang chờ đa số",
+          "en": "Raft Replicated Log: Committed Prefix vs Uncommitted Tail"
+        },
+        "subtitle": {
+          "vi": "Leader chỉ nâng commitIndex và trả OK cho khách khi mục đã nằm trên đĩa của ≥ 2/3 node",
+          "en": "Leader advances commitIndex and replies OK only after ≥ 2/3 nodes persist the entry"
+        },
+        "cells": [
+          "#1 [t1] x=10 (3/3)",
+          "#2 [t1] y=20 (3/3)",
+          "#3 [t2] x=15 (2/3 · Commit!)",
+          "#4 [t2] z=99 (1/3 · Chờ...)"
+        ],
+        "activeIndices": [
+          2
+        ],
+        "pointers": [
+          {
+            "index": 2,
+            "label": "commitIndex = 3",
+            "tone": "green"
+          },
+          {
+            "index": 3,
+            "label": "chưa đủ đa số",
+            "tone": "orange"
+          }
+        ],
+        "outputPill": {
+          "label": {
+            "vi": "Bảo đảm Leader Completeness",
+            "en": "Leader Completeness"
+          },
+          "value": {
+            "vi": "Mục #1..#3 chắc chắn có mặt ở mọi Leader tương lai; mục #4 có thể bị ghi đè nếu Leader sập ngay",
+            "en": "Entries #1..#3 survive all future elections; uncommitted #4 may be rolled back"
+          },
+          "tone": "green"
+        }
+      }
+    },
+    "s7-minority-live": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "raft-quorum"
+      ],
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Sự cố t = 20..40 s: Cô lập Node 1 (1/3)",
+          "en": "Incident t = 20..40 s: Node 1 Isolated (1/3)"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Node 1 không đủ 2/3 phiếu → Từ chối 100% lệnh ghi",
+              "en": "Node 1 lacks 2/3 quorum → Rejects 100% writes"
+            },
+            "tone": "bad"
+          },
+          {
+            "text": {
+              "vi": "Nhánh {Node 2, Node 3} bầu Leader mới ở Term 2",
+              "en": "Majority {Node 2, Node 3} elects Term 2 Leader"
+            },
+            "tone": "good"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s8-fencing-token": {
+      "mode": "memory-2d",
+      "show": {
+        "nodes": []
+      },
+      "memory": {
+        "kind": "refs",
+        "leftTitle": {
+          "vi": "Lệnh ghi chạm Kho dữ liệu ngoài",
+          "en": "Write Arriving at Storage"
+        },
+        "rightTitle": {
+          "vi": "Bộ kiểm chứng Fencing Token tại Storage",
+          "en": "Storage Fencing Guard (max_token = 2)"
+        },
+        "names": [
+          {
+            "id": "new",
+            "name": "Node 2 (Leader Term 2 · token = 2)",
+            "note": {
+              "vi": "Ghi cfg = v2 hợp lệ",
+              "en": "Commits cfg = v2"
+            },
+            "targetId": "accept"
+          },
+          {
+            "id": "zom",
+            "name": "Node 1 tỉnh dậy sau GC (token = 1)",
+            "note": {
+              "vi": "Gói tin trễ từ nhiệm kỳ cũ!",
+              "en": "Delayed packet from stale leader!"
+            },
+            "targetId": "reject",
+            "style": "danger"
+          }
+        ],
+        "objects": [
+          {
+            "id": "accept",
+            "typeTag": "ALLOWED (token ≥ max_token)",
+            "value": "Cập nhật max_token = 2 · Lưu cfg = v2",
+            "fields": [
+              "Token tăng đơn điệu theo mỗi lần bầu Leader",
+              "Đọc tuyến tính hoá cần thêm ReadIndex"
+            ],
+            "tone": "green"
+          },
+          {
+            "id": "reject",
+            "typeTag": "FENCED OFF (1 < 2)",
+            "value": "Bác bỏ tức thì! Bảo toàn cfg = v2",
+            "fields": [
+              "Chặn đứng Zombie Leader ghi đè dữ liệu mới",
+              "Kho lưu trữ đóng vai trò chốt chặn cuối"
+            ],
+            "tone": "rose"
+          }
+        ]
+      }
+    },
+    "s9-real-systems": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "raft-quorum"
+      ],
+      "state": {
+        "leader": {
+          "loadPct": 45,
+          "highlighted": true,
+          "badge": {
+            "text": {
+              "vi": "etcd / Consul / KRaft",
+              "en": "etcd / Consul / KRaft"
+            },
+            "tone": "ok"
+          }
+        },
+        "f1": {
+          "loadPct": 35,
+          "badge": {
+            "text": {
+              "vi": "1 RTT + fsync WAL",
+              "en": "1 RTT + WAL fsync"
+            },
+            "tone": "warn"
+          }
+        },
+        "f2": {
+          "loadPct": 35,
+          "badge": {
+            "text": {
+              "vi": "Multi-Raft (CockroachDB)",
+              "en": "Multi-Raft Shards"
+            },
+            "tone": "ok"
+          }
+        },
+        "storage": {
+          "loadPct": 30,
+          "badge": {
+            "text": {
+              "vi": "Fencing Token",
+              "en": "Fencing Token"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Ứng dụng Consensus trong sản xuất",
+          "en": "Consensus in Production"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Dùng etcd / ZooKeeper cho cấu hình, khoá, bầu Leader",
+              "en": "Use etcd / ZooKeeper for metadata & locks"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Dùng Multi-Raft để chia tải ghi trên DB phân tán",
+              "en": "Use Multi-Raft shards to scale distributed SQL"
+            },
+            "tone": "plain"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    },
+    "s10-recap": {
+      "show": {
+        "nodes": "*"
+      },
+      "zones": [
+        "raft-quorum"
+      ],
+      "state": {
+        "leader": {
+          "loadPct": 35,
+          "badge": {
+            "text": {
+              "vi": "Term + Heartbeat",
+              "en": "Term + Heartbeat"
+            },
+            "tone": "ok"
+          }
+        },
+        "f1": {
+          "loadPct": 25,
+          "badge": {
+            "text": {
+              "vi": "Đa số floor(N/2)+1",
+              "en": "Majority floor(N/2)+1"
+            },
+            "tone": "ok"
+          }
+        },
+        "f2": {
+          "loadPct": 25,
+          "badge": {
+            "text": {
+              "vi": "Số máy lẻ (3, 5)",
+              "en": "Odd nodes (3, 5)"
+            },
+            "tone": "ok"
+          }
+        },
+        "storage": {
+          "loadPct": 28,
+          "badge": {
+            "text": {
+              "vi": "Kiểm Fencing + ReadIndex",
+              "en": "Fencing + ReadIndex"
+            },
+            "tone": "ok"
+          }
+        }
+      },
+      "packets": "auto",
+      "noteCard": {
+        "title": {
+          "vi": "Bốn trụ cột an toàn của Raft",
+          "en": "Four Safety Pillars of Raft"
+        },
+        "lines": [
+          {
+            "text": {
+              "vi": "Đa số quá bán + Term đơn điệu chặn Split-Brain",
+              "en": "Majority quorum + monotonic Term stop Split-Brain"
+            },
+            "tone": "good"
+          },
+          {
+            "text": {
+              "vi": "Fencing Token + ReadIndex bảo vệ biên hệ thống",
+              "en": "Fencing Token + ReadIndex guard external boundaries"
+            },
+            "tone": "amber"
+          }
+        ],
+        "position": "bottom-right"
+      }
+    }
+  },
+  "live": {
+    "minority-isolated": {
+      "sim": "S3-03/minority-isolated",
+      "startAtSec": 12,
+      "autoplay": true,
+      "speed": 1,
+      "controls": {
+        "timeline": true,
+        "chaos": [
+          "partition",
+          "slow"
+        ],
+        "knobs": [
+          {
+            "node": "leader",
+            "key": "sizeFactor"
+          }
+        ],
+        "tracer": true
+      },
+      "telemetry": [
+        {
+          "metric": "goodputRps",
+          "label": {
+            "vi": "Thành công",
+            "en": "Goodput"
+          },
+          "format": "rps"
+        },
+        {
+          "metric": "p99",
+          "label": {
+            "vi": "p99",
+            "en": "p99"
+          },
+          "format": "ms",
+          "tone": {
+            "warnAbove": 80,
+            "badAbove": 200
+          }
+        },
+        {
+          "metric": "errorRate",
+          "label": {
+            "vi": "Từ chối (CP)",
+            "en": "Rejected (CP)"
+          },
+          "format": "pct",
+          "tone": {
+            "warnAbove": 0.01,
+            "badAbove": 0.2
+          }
+        }
+      ],
+      "slo": [
+        {
+          "metric": "errorRate",
+          "value": 0.01
+        }
+      ],
+      "focus": {
+        "nodes": [
+          "leader",
+          "f1",
+          "f2"
+        ],
+        "links": [
+          "leader-f1",
+          "leader-f2"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S4-10.q1",
+    "type": "output",
+    "q": "Một cụm Worker tiêu thụ ổn định 800 thông điệp mỗi giây. Để đảm bảo không có thông điệp nào phải nằm chờ trong hàng đợi quá 2 giây, sức chứa tối đa (maxDepth) của hàng đợi chỉ nên đặt bằng bao nhiêu thông điệp? (chỉ nhập số nguyên)",
+    "code": "",
+    "choices": [],
+    "answer": "1600",
+    "explain": "Theo Định luật Little áp cho trần hàng đợi, thời gian nằm chờ tối đa bằng maxDepth chia cho tốc độ xả μ. Muốn W_max = 2 giây với μ = 800 thông điệp/giây, ta đặt maxDepth = 800 × 2 = 1.600 thông điệp."
+  },
+  {
+    "id": "S4-10.q2",
+    "type": "tf",
+    "q": "Đặt một hàng đợi không giới hạn kích thước (Unbounded Queue) phía trước cụm Worker đang quá tải lâu dài sẽ giúp tăng thông lượng xử lý trung bình của cụm Worker đó.",
+    "code": "",
+    "choices": [],
+    "answer": false,
+    "explain": "Hàng đợi chỉ là vùng đệm bộ nhớ tạm thời chứ không cung cấp thêm lõi CPU hay I/O đĩa cho Worker. Khi tải đến lớn hơn tốc độ xử lý lâu dài, hàng đợi không giới hạn chỉ làm tồn đọng tăng mãi tới lúc hết sạch RAM (OOM) và mọi thông điệp đều quá hạn chờ."
+  },
+  {
+    "id": "S4-10.q3",
+    "type": "mc",
+    "q": "Sự khác biệt cốt lõi giữa Rate Limiting theo khách hàng và Priority Load Shedding (Cắt tải theo độ ưu tiên) là gì?",
+    "code": "",
+    "choices": [
+      "Rate Limiting chỉ chạy ở tầng Database còn Load Shedding chỉ chạy trên trình duyệt",
+      "Rate Limiting giới hạn hạn mức công bằng cho từng định danh bất kể máy chủ rảnh hay bận; còn Load Shedding kích hoạt khi chính hệ thống chạm ngưỡng quá tải để chủ động loại bỏ tác vụ ưu tiên thấp nhằm giữ vững tác vụ cốt lõi",
+      "Load Shedding luôn lưu trữ lại mọi request bị cắt vào ổ cứng để chạy lại sau 1 giây",
+      "Hai khái niệm hoàn toàn giống nhau và luôn trả mã HTTP 200 OK"
+    ],
+    "answer": 1,
+    "explain": "Một khách hàng vượt quota vẫn bị Rate Limiting chặn (429) dù hệ thống đang rảnh 90%. Ngược lại, khi hàng nghìn khách hàng hợp lệ cùng thao tác vượt tổng công suất máy chủ, Load Shedding dựa trên sức khoẻ nội bộ sẽ cắt luồng phụ (P2/P3) trước để cứu luồng chính (P0)."
+  },
+  {
+    "id": "S4-10.q4",
+    "type": "mc",
+    "q": "Khi hàng đợi đang tồn đọng dày đặc và nhiều request có nguy cơ chạm ngưỡng Timeout của người dùng, vì sao chuyển sang lấy phần tử theo thứ tự LIFO kết hợp kiểm tra tuổi chờ (CoDel) lại giữ được Goodput cao hơn FIFO thuần tuý?",
+    "code": "",
+    "choices": [
+      "Vì LIFO làm tăng gấp đôi xung nhịp CPU của máy chủ Worker",
+      "Vì trong FIFO mọi request mới đều phải xếp sau toàn bộ đống tồn đọng cũ nên tất cả cùng bị hết hạn lúc tới lượt; còn LIFO xử lý ngay request vừa đến với độ trễ thấp và bỏ qua phần tử cũ đã quá hạn",
+      "Vì LIFO không cần sử dụng bất kỳ bộ nhớ RAM nào để lưu phần tử",
+      "Vì giao thức HTTP bắt buộc mọi máy chủ web chỉ được dùng LIFO"
+    ],
+    "answer": 1,
+    "explain": "Khi hàng đợi FIFO đã dài quá thời gian Timeout của client, từng phần tử lấy ra từ đầu hàng đều đã quá hạn từ lâu (Goodput tụt về 0 dù CPU chạy 100%). LIFO ưu tiên phần tử mới nhất còn tươi nguyên hạn chót nên cứu được phần lớn lưu lượng tương ứng với công suất thực của Worker."
+  },
+  {
+    "id": "S4-10.q5",
+    "type": "mc",
+    "q": "Khi hàng đợi có giới hạn (Bounded Queue) đã đầy kín do tầng dưới chậm lại, hành xử chuẩn mực của API Producer theo nguyên lý Back-pressure là gì?",
+    "code": "",
+    "choices": [
+      "Tự động tạo thêm một mảng phụ không giới hạn trong RAM của API để chứa tiếp",
+      "Trả về HTTP 200 OK giả như đã hoàn thành rồi âm thầm xoá dữ liệu",
+      "Từ chối nhận thêm việc mới một cách tường minh (ví dụ trả HTTP 503 Service Unavailable kèm Retry-After) hoặc chặn luồng đọc ngược về phía gọi",
+      "Gửi lặp lại liên tục vào Queue trong một vòng lặp while(true) không nghỉ"
+    ],
+    "answer": 2,
+    "explain": "Back-pressure đòi hỏi truyền trung thực tín hiệu hết chỗ chứa ngược về phía gửi. Trả ngay 503 kèm Retry-After (hoặc giảm cửa sổ đọc TCP/Reactive) vừa bảo vệ bộ nhớ của Producer vừa cho phép tầng điều phối phía trước chuyển hướng hoặc lùi nhịp an toàn."
+  }
+]

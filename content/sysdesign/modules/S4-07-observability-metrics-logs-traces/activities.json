@@ -1,0 +1,97 @@
+[
+  {
+    "id": "S4-07.A1",
+    "kind": "timeline-read",
+    "title": { "vi": "Đọc dòng thời gian sự cố cấu hình lúc 03:10" },
+    "prompt": { "vi": "Lúc 03:10 (t = 100 ms quy ước trên trục), đội vận hành cập nhật cấu hình `fraud.mode = strict` gây lỗi 40%, sau đó phát hiện qua cảnh báo Burn Rate và rollback về `fraud.mode = standard` hoàn tất ở t = 160 ms. Tuy nhiên một bản sao cấu hình cũ (cache cục bộ chưa làm mới) vẫn trả giá trị lỗi ở một số lượt đọc. Chọn TẤT CẢ các lượt đọc trả về cấu hình cũ (Stale Read) sau khi rollback hoàn tất." },
+    "difficulty": 2,
+    "question": "find-stale-reads",
+    "history": [
+      { "id": "w1", "client": "deploy", "op": "write", "key": "fraud.mode", "value": "strict", "start": 80, "end": 100, "node": "config-store" },
+      { "id": "w2", "client": "rollback", "op": "write", "key": "fraud.mode", "value": "standard", "start": 140, "end": 160, "node": "config-store" },
+      { "id": "r1", "client": "fraud-1", "op": "read", "key": "fraud.mode", "value": "strict", "start": 170, "end": 185, "node": "local-cache" },
+      { "id": "r2", "client": "fraud-2", "op": "read", "key": "fraud.mode", "value": "standard", "start": 175, "end": 195, "node": "config-store" },
+      { "id": "r3", "client": "fraud-1", "op": "read", "key": "fraud.mode", "value": "strict", "start": 210, "end": 225, "node": "local-cache" },
+      { "id": "r4", "client": "fraud-1", "op": "read", "key": "fraud.mode", "value": "standard", "start": 260, "end": 275, "node": "local-cache" }
+    ],
+    "expected": ["r1", "r3"],
+    "hints": [
+      { "vi": "Lệnh rollback w2 ghi giá trị `standard` hoàn tất ở mốc 160." },
+      { "vi": "Tìm các lượt đọc bắt đầu sau mốc 160 nhưng vẫn đọc phải giá trị `strict`." }
+    ],
+    "explain": { "vi": "Sau khi rollback w2 hoàn tất ở mốc 160, `fraud-1` vẫn đọc phải cấu hình lỗi `strict` ở `r1` (170–185) và `r3` (210–225) do bộ đệm cục bộ chưa làm mới, kéo dài thời gian phục hồi sự cố." }
+  },
+  {
+    "id": "S4-07.A2",
+    "kind": "spot-bottleneck",
+    "title": { "vi": "Tìm dịch vụ chiếm phần lớn độ trễ p99 trong luồng Checkout" },
+    "prompt": { "vi": "Tại giây 20, Checkout Service nhận 600 req/s nhưng p99 vượt xa 300 ms dù CPU của Checkout, Inventory và Order DB đều rất thấp. Nhấn vào node đang là điểm nghẽn và chiếm tỷ trọng thời gian lớn nhất." },
+    "difficulty": 1,
+    "mode": "bottleneck",
+    "atSec": 20,
+    "maxPicks": 1,
+    "expected": ["fraud"],
+    "hints": [
+      { "vi": "Kiểm tra mức sử dụng ρ và thời gian xử lý cơ bản (baseMs) của từng dịch vụ mà Checkout gọi tới." }
+    ],
+    "explain": { "vi": "{fraud.name} xử lý mỗi lượt mất ~220 ms với tổng năng lực 700 req/s nên ở tải 600 req/s nó đã đạt ρ = {fraud.rho@20:2}, chiếm phần lớn độ trễ đuôi p99 của toàn luồng Checkout." },
+    "sim": { "simId": "S4-07/checkout-trace", "seekSec": 20, "autoplay": false }
+  },
+  {
+    "id": "S4-07.A3",
+    "kind": "postmortem",
+    "title": { "vi": "Viết Postmortem cho sự cố deploy cấu hình lúc 03:10" },
+    "prompt": { "vi": "Lúc 03:10, một thay đổi cấu hình được đẩy thẳng lên 100% cụm Fraud API khiến tỷ lệ lỗi vọt lên 40% trong 15 phút trước khi trực ban nhận ra qua phàn nàn của khách hàng và rollback lúc 03:25. Hãy chọn phân tích nguyên nhân và hành động khắc phục đúng theo tinh thần Postmortem không đổ lỗi." },
+    "difficulty": 2,
+    "incident": {
+      "simId": "S4-07/checkout-trace",
+      "seekSec": 35,
+      "focus": { "nodes": ["checkout", "fraud"] }
+    },
+    "questions": [
+      {
+        "id": "why-late-detect",
+        "type": "single",
+        "prompt": { "vi": "Vì sao sự cố kéo dài 15 phút mới được phát hiện qua khách hàng thay vì hệ thống cảnh báo?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Hệ thống chỉ đặt cảnh báo theo ngưỡng CPU > 85%, không đặt cảnh báo theo SLO Error Rate hoặc tốc độ đốt Error Budget" } },
+          { "id": "b", "text": { "vi": "Vì người dùng không dùng trình duyệt Chrome" } },
+          { "id": "c", "text": { "vi": "Vì Order DB không có Read Replica" } },
+          { "id": "d", "text": { "vi": "Vì kỹ sư trực ban không tự viết code cấu hình đó" } }
+        ],
+        "correct": ["a"],
+        "weight": 35
+      },
+      {
+        "id": "why-blast-radius",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân khiến thay đổi cấu hình ảnh hưởng ngay 100% giao dịch là gì?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Không dùng WebSocket cho trang thanh toán" } },
+          { "id": "b", "text": { "vi": "Đẩy cấu hình mới trực tiếp cho 100% lưu lượng mà không qua Canary rollout hoặc tự động rollback khi vượt ngưỡng lỗi" } },
+          { "id": "c", "text": { "vi": "Inventory Service phản hồi quá nhanh" } },
+          { "id": "d", "text": { "vi": "API Gateway không bật nén Gzip" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "action-items",
+        "type": "multi",
+        "prompt": { "vi": "Chọn các hành động cải thiện hệ thống (Action Items) phù hợp sau sự cố:" },
+        "options": [
+          { "id": "a", "text": { "vi": "Thiết lập cảnh báo theo Error Budget Burn Rate trên bộ chỉ số RED của Checkout và Fraud API" } },
+          { "id": "b", "text": { "vi": "Áp dụng triển khai Canary (5% lưu lượng trước) kèm tự động rollback khi Error Rate vượt ngưỡng" } },
+          { "id": "c", "text": { "vi": "Kỷ luật cá nhân người đã đẩy cấu hình lúc 03:10" } },
+          { "id": "d", "text": { "vi": "Tắt hoàn toàn việc ghi log để giảm tải cho Fraud API" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Postmortem hiệu quả tập trung vào lỗ hổng quy trình và công cụ (cảnh báo SLO, Canary rollout), không đổ lỗi cho cá nhân." }
+    ],
+    "explain": { "vi": "Cảnh báo gắn với SLO (Error Rate / p99 Burn Rate) phát hiện sự cố trong vài chục giây thay vì 15 phút, còn Canary rollout kết hợp tự động rollback giúp thu hẹp phạm vi ảnh hưởng ngay khi lỗi xuất hiện." }
+  }
+]

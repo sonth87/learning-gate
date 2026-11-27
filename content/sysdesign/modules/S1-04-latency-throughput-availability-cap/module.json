@@ -1,0 +1,30 @@
+{
+  "id": "S1-04",
+  "slug": "S1-04-latency-throughput-availability-cap",
+  "level": 1,
+  "order": 6,
+  "title": "Latency, Throughput, Availability và mở đầu về CAP",
+  "summary": "Phân biệt độ trễ của một request với thông lượng toàn hệ thống qua đường cong bão hòa trực tiếp, quy đổi các bậc số 9 độ sẵn sàng ra số phút ngừng phục vụ mỗi năm và nắm đánh đổi CP so với AP khi mạng chia cắt.",
+  "durationMin": 16,
+  "difficulty": "Beginner",
+  "objectives": [
+    { "vi": "Phân biệt Độ trễ (ms mỗi request) với Thông lượng (req/s) và đọc sự phân tách giữa p50 và p99 khi thành phần chạm ngưỡng bão hòa" },
+    { "vi": "Chọn đúng nhóm kỹ thuật khi mục tiêu là giảm thời gian phản hồi đơn lẻ so với khi mục tiêu là nâng trần chịu tải" },
+    { "vi": "Quy đổi các mức SLA độ sẵn sàng 99%, 99,9%, 99,99% và 99,999% sang thời gian ngừng hoạt động tối đa trong năm và đánh giá chi phí dự phòng" },
+    { "vi": "Giải thích ở mức khái niệm vì sao khi xảy ra chia cắt mạng (Partition), hệ phân tán phải đánh đổi giữa tính nhất quán tức thời (CP) và tính sẵn sàng phản hồi (AP)" }
+  ],
+  "tags": ["latency", "throughput", "availability", "sla", "cap-theorem", "trade-offs"],
+  "prerequisites": ["S1-01", "S1-03"],
+  "related": ["S1-07", "S3-01", "S3-09"],
+  "dtsRef": "latency-throughput",
+  "source": {
+    "kind": "sdc",
+    "path": "content/phases/phase-1/lessons/lesson-4-cac-khai-niem-quan-trong.mdx",
+    "sha": "fe4234da7d6fe719e8e18547856fc0a730155420",
+    "url": "https://github.com/steve-bang/systemdesigncore/blob/fe4234da7d6fe719e8e18547856fc0a730155420/content/phases/phase-1/lessons/lesson-4-cac-khai-niem-quan-trong.mdx",
+    "adaptedBy": "gemini",
+    "adaptedAt": "2026-11-26",
+    "adaptation": "rewritten",
+    "changes": "Viết lại toàn bộ theo văn phong kỹ thuật trực diện: bỏ các giai thoại cá nhân và ẩn dụ xe buýt/taxi, bổ sung hai kịch bản mô phỏng tải ổn định 360 req/s và tải tăng dần 100 → 1.000 req/s minh họa trực tiếp trần thông lượng 800 req/s cùng sự tách biệt p50/p99, dựng băng quy đổi số 9 và cây quyết định CAP ở memory-2d."
+  }
+}

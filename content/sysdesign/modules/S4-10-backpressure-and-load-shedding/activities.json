@@ -1,0 +1,80 @@
+[
+  {
+    "id": "S4-10.A1",
+    "kind": "tune-to-limit",
+    "title": { "vi": "Tìm lưu lượng bền vững của đường ống có hàng đợi giới hạn" },
+    "prompt": { "vi": "Trong kịch bản S4-10/bounded-pipe, API Producer có năng lực tới 3.600 req/s, Task Queue giới hạn maxDepth = 1.500 thông điệp, và phía sau có 3 Worker Consumer (mỗi Worker xử lý 500 việc/giây). Hãy kéo thanh trượt tải để tìm mức lưu lượng ổn định cao nhất (req/s) sao cho tỷ lệ bị từ chối do đầy hàng đợi không vượt quá 1% và p99 ≤ 90 ms trong cửa sổ giây 15–45." },
+    "difficulty": 2,
+    "objective": "max-load",
+    "constraints": [
+      { "id": "p99", "kind": "slo-latency", "metric": "p99", "maxMs": 90, "window": { "fromSec": 15, "toSec": 45 }, "allowViolationPct": 2 },
+      { "id": "err", "kind": "slo-error", "maxRate": 0.01, "window": { "fromSec": 15, "toSec": 45 } }
+    ],
+    "runSec": 45,
+    "reference": { "value": 1543, "tolPassPct": 8, "tolFullPct": 4 },
+    "hints": [
+      { "vi": "Hàng đợi 1.500 ô chỉ đệm được lượng dư trong vài giây đầu; khi chạy liên tục tới giây 45, tốc độ nhận vào không thể vượt xa tốc độ xả của cụm 3 Worker." },
+      { "vi": "Tổng tốc độ tiêu thụ của 3 Worker là 3 × 500 = 1.500 việc/giây." }
+    ],
+    "explain": { "vi": "Hàng đợi không tạo ra thêm công suất xử lý: 3 Worker chỉ tiêu thụ tối đa 1.500 việc/giây (cộng phần đệm 1.500 ô trong cửa sổ 45 giây và ngưỡng dung sai lỗi 1%), nên lưu lượng bền vững đạt ≈ {ref.value:0} req/s. Vượt mức này, hàng đợi chạm trần maxDepth và kích hoạt Back-pressure từ chối phần dư." },
+    "sim": { "simId": "S4-10/bounded-pipe", "seekSec": 0, "autoplay": false }
+  },
+  {
+    "id": "S4-10.A2",
+    "kind": "postmortem",
+    "title": { "vi": "Phân tích sự cố: Hàng đợi RAM không giới hạn gây OOM và kẹt thanh toán" },
+    "prompt": { "vi": "Trong đợt khuyến mãi tối Chủ nhật, dịch vụ Đơn hàng nhận 2.400 req/s (gồm 700 đơn thanh toán P0 và 1.700 sự kiện cập nhật gợi ý xem hàng P2). Lập trình viên dùng một hàng đợi trong bộ nhớ không giới hạn kích thước (Unbounded In-Memory Queue) để nối từ API sang cụm Worker ghi Database rồi trả ngay HTTP 202 Accepted cho client. Lúc 20:15, ổ đĩa Database bận nên cụm Worker chỉ còn tiêu thụ được 900 việc/giây. Chỉ sau 12 phút: (1) toàn bộ 8 pod API lần lượt bị hệ điều hành tắt cưỡng bức vì hết sạch 32 GB RAM (OOMKilled), làm mất trắng các đơn đang nằm trong bộ nhớ; (2) trước lúc sập, khách thanh toán phải chờ 14 phút mới nhận được xác nhận vì đơn P0 bị xếp sau hàng triệu sự kiện P2. Hãy chọn chẩn đoán và biện pháp thiết kế đúng." },
+    "difficulty": 3,
+    "incident": {
+      "simId": "S4-10/overload",
+      "seekSec": 50,
+      "focus": { "nodes": ["shedder", "queue", "consumer"] }
+    },
+    "questions": [
+      {
+        "id": "root-cause",
+        "type": "single",
+        "prompt": { "vi": "Nguyên nhân gốc rễ nào dẫn đến hiện tượng cả 8 pod API cạn sạch RAM và độ trễ xác nhận đơn kéo dài tới 14 phút dù API vẫn trả mã 202 cực nhanh?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Do mã trạng thái HTTP 202 tốn nhiều băng thông mạng hơn mã HTTP 200" } },
+          { "id": "b", "text": { "vi": "Hàng đợi không giới hạn thiếu cơ chế Back-pressure nên tích luỹ phần chênh λ − μ = 1.500 việc/giây vào RAM suốt 12 phút, đồng thời trộn lẫn P0 và P2 trong cùng một hàng đợi FIFO" } },
+          { "id": "c", "text": { "vi": "Do cụm Worker dùng mô hình kéo (Pull) thay vì để API đẩy thẳng không kiểm soát" } },
+          { "id": "d", "text": { "vi": "Do Load Balancer chia đều lưu lượng giữa 8 pod API" } }
+        ],
+        "correct": ["b"],
+        "weight": 35
+      },
+      {
+        "id": "arch-fixes",
+        "type": "multi",
+        "prompt": { "vi": "Để hệ thống không bao giờ bị OOM và vẫn xử lý tức thì 100% đơn thanh toán P0 (700 req/s) khi Worker chỉ còn năng lực 900 việc/giây, cần kết hợp những giải pháp nào?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Đặt giới hạn cứng maxDepth cho hàng đợi (kèm lưu trữ bền vững cho P0) và phát tín hiệu Back-pressure trả HTTP 503 + Retry-After khi chạm trần" } },
+          { "id": "b", "text": { "vi": "Tách hàng đợi theo độ ưu tiên hoặc đặt bộ Load Shedding ở cổng vào để cắt bỏ phần lớn sự kiện gợi ý P2 ngay khi phát hiện tồn đọng tăng" } },
+          { "id": "c", "text": { "vi": "Tăng kích thước RAM của pod API lên 64 GB nhưng vẫn giữ hàng đợi không giới hạn" } },
+          { "id": "d", "text": { "vi": "Cấu hình phía client tự động thử lại ngay lập tức không chờ đợi mỗi khi thấy đơn xử lý chậm" } }
+        ],
+        "correct": ["a", "b"],
+        "weight": 35
+      },
+      {
+        "id": "best-metric",
+        "type": "single",
+        "prompt": { "vi": "Chỉ số giám sát nào phản ánh trực tiếp và chính xác nhất trải nghiệm chờ đợi của người dùng trên một hàng đợi bất đồng bộ (ngay cả khi tốc độ Worker thay đổi thất thường)?" },
+        "options": [
+          { "id": "a", "text": { "vi": "Mức sử dụng CPU trung bình của tầng API Producer" } },
+          { "id": "b", "text": { "vi": "Tuổi của thông điệp cũ nhất đang nằm trong hàng đợi (Oldest Message Age / backlogAgeSec)" } },
+          { "id": "c", "text": { "vi": "Tổng số bản ghi đã xử lý thành công từ đầu ngày" } },
+          { "id": "d", "text": { "vi": "Độ trễ trả mã HTTP 202 Accepted của API Producer" } }
+        ],
+        "correct": ["b"],
+        "weight": 30
+      }
+    ],
+    "hints": [
+      { "vi": "Với λ = 2.400 và μ = 900, tăng gấp đôi RAM chỉ kéo dài thời gian cầm cự từ 12 phút lên 24 phút trước khi OOM." },
+      { "vi": "Cùng tồn đọng 9.000 việc nhưng nếu μ = 3.000/s thì chỉ trễ 3 giây, còn nếu μ tụt xuống 100/s thì trễ tới 90 giây — đó là lý do tuổi thông điệp cũ nhất tốt hơn số đếm thô." }
+    ],
+    "explain": { "vi": "Hàng đợi trong bộ nhớ không giới hạn che giấu sự cố phía sau lớp vỏ 202 Accepted cho tới khi nổ RAM và mất dữ liệu. Giải pháp chuẩn là: (1) mọi hàng đợi phải có giới hạn maxDepth và truyền Back-pressure ngược về Producer; (2) tách bạch và cắt tải ưu tiên thấp (P2) trước để nhường trọn năng lực 900 việc/giây cho 700 đơn P0; (3) cảnh báo sớm theo chỉ số tuổi thông điệp cũ nhất (backlogAgeSec)." }
+  }
+]

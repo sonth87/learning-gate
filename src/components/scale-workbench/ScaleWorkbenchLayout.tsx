@@ -39,10 +39,20 @@ import { WORKBENCH_I18N } from './i18n';
 import {
   pickText,
   type CalloutKind,
+  type LiveSimAdapter,
+  type LiveSimSession,
+  type LiveTrace,
   type PacketKind,
   type ScaleModuleLesson,
   type StepCategory,
 } from './types';
+import { useSimClock } from './live/useSimClock';
+import { LiveTelemetryStrip } from './live/LiveTelemetryStrip';
+import { SimTimeline } from './live/SimTimeline';
+import { LoadKnob } from './live/LoadKnob';
+import { ChaosToolbox, type ActiveChaosPick } from './live/ChaosToolbox';
+import { KnobPanel } from './live/KnobPanel';
+import { RequestTracerButton, RequestTracerDrawer } from './live/RequestTracer';
 import { cn } from '@/utils/cn';
 
 const FOLDER_COLORS = [
@@ -135,6 +145,12 @@ const LegendDot: React.FC<{ kind: PacketKind }> = ({ kind }) => {
       return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--dts-border)] bg-[#efb041]" />;
     case 'error':
       return <span className="inline-block h-2.5 w-2.5 rounded-[2px] border border-[#5e1b16] bg-[#e5534b]" />;
+    case 'retry':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-[#a8531a] bg-[#e8883a]" />;
+    case 'timeout':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[var(--dts-border)] bg-[#bdb4a8] opacity-60" />;
+    case 'dropped':
+      return <span className="inline-block h-2.5 w-2.5 rounded-full border border-[#5e1b16] bg-[#e5534b]" />;
   }
 };
 
@@ -145,6 +161,43 @@ export interface ModuleStatusSnapshot {
   totalExercises: number;
   quizPassed: boolean;
 }
+
+const SmoothCollapsible: React.FC<{
+  open: boolean;
+  children: React.ReactNode;
+}> = ({ open, children }) => {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [contentH, setContentH] = useState<number>(0);
+
+  useEffect(() => {
+    const el = innerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const h = el.scrollHeight;
+      setContentH((prev) => (prev === h ? prev : h));
+    };
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [open, children]);
+
+  return (
+    <div
+      aria-hidden={!open}
+      style={{ height: open ? (contentH > 0 ? `${contentH}px` : 'auto') : '0px' }}
+      className={cn(
+        'overflow-hidden transition-[height,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[height,opacity]',
+        open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      )}
+    >
+      <div ref={innerRef} className="flow-root">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 export interface ScaleWorkbenchLayoutProps {
   courseId: string;
@@ -158,6 +211,17 @@ export interface ScaleWorkbenchLayoutProps {
   onRunCodeSnippet?: (code: string) => Promise<RunResult>;
   sandboxTitle?: string;
   runCodeLabel?: string;
+  /** live-sim: adapter do feature cấp (05 §2.1); không truyền thì bước live-sim rơi về isometric tĩnh */
+  liveSimAdapter?: LiveSimAdapter;
+  /** Cổng activity (05 §2.1, 06 §4): render thẻ bài tập ở cột phải trước mục objectives */
+  renderStepActivity?: (ctx: {
+    moduleId: string;
+    stepIndex: number;
+    activityId: string;
+    gate: 'required' | 'optional';
+  }) => React.ReactNode;
+  /** true ⇒ khoá nút Bước tiếp / Hoàn thành bài cho tới khi đạt/bỏ qua activity required */
+  isStepLocked?: (moduleId: string, stepIndex: number) => boolean;
 }
 
 export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
@@ -172,6 +236,9 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   onRunCodeSnippet,
   sandboxTitle = 'Python 3.12 (Pyodide)',
   runCodeLabel,
+  liveSimAdapter,
+  renderStepActivity,
+  isStepLocked,
 }) => {
   const {
     lang,
@@ -179,11 +246,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     cursors,
     expandedLevels,
     isProgressExpanded,
+    isObjectivesExpanded,
     isLeftSidebarCollapsed,
     rightSidebarWidth,
     setCourseCursor,
     setExpandedLevel,
     toggleProgressExpanded,
+    toggleObjectivesExpanded,
     toggleLeftSidebarCollapsed,
     setRightSidebarWidth,
   } = useWorkbenchStore(
@@ -193,11 +262,13 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       cursors: s.cursors,
       expandedLevels: s.expandedLevels,
       isProgressExpanded: s.isProgressExpanded,
+      isObjectivesExpanded: s.isObjectivesExpanded,
       isLeftSidebarCollapsed: s.isLeftSidebarCollapsed,
       rightSidebarWidth: s.rightSidebarWidth,
       setCourseCursor: s.setCourseCursor,
       setExpandedLevel: s.setExpandedLevel,
       toggleProgressExpanded: s.toggleProgressExpanded,
+      toggleObjectivesExpanded: s.toggleObjectivesExpanded,
       toggleLeftSidebarCollapsed: s.toggleLeftSidebarCollapsed,
       setRightSidebarWidth: s.setRightSidebarWidth,
     }))
@@ -224,6 +295,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   const [isPlaying, setIsPlaying] = useState(true);
   const [replayNonce, setReplayNonce] = useState(0);
   const [manualSandboxOpen, setManualSandboxOpen] = useState(false);
+  const [rightTab, setRightTab] = useState<'step' | 'story'>('step');
   const [sandboxCode, setSandboxCode] = useState('');
   const [sandboxOut, setSandboxOut] = useState<RunResult | null>(null);
   const [sandboxRunning, setSandboxRunning] = useState(false);
@@ -235,8 +307,107 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     | null
   >(null);
 
+  // ── live-sim state (đặt trước early return theo F3) ──
+  const [liveSession, setLiveSession] = useState<LiveSimSession | null>(null);
+  const [simSpeed, setSimSpeed] = useState<1 | 2 | 5>(1);
+  const [activeChaosPick, setActiveChaosPick] = useState<ActiveChaosPick | null>(null);
+  const [chaosToast, setChaosToast] = useState<string | null>(null);
+  const [activeTrace, setActiveTrace] = useState<LiveTrace | null>(null);
+  const [liveLegendKinds, setLiveLegendKinds] = useState<PacketKind[]>(['request', 'response']);
+  const [livePacketScale, setLivePacketScale] = useState<number>(0);
+
+  useEffect(() => {
+    setActiveChaosPick(null);
+    setChaosToast(null);
+    setActiveTrace(null);
+    if (
+      !activeLesson ||
+      !activeStep ||
+      activeStep.stageMode !== 'live-sim' ||
+      !activeStep.liveSim ||
+      !liveSimAdapter
+    ) {
+      setLiveSession(null);
+      setIsPlaying(true);
+      return;
+    }
+    const spec = activeStep.liveSim;
+    const sess = liveSimAdapter.open(spec, {
+      lang,
+      moduleId: activeLesson.moduleId,
+      stepIndex: safeStepIdx,
+    });
+    setLiveSession(sess);
+    setSimSpeed(spec.speed ?? 1);
+    setIsPlaying(spec.autoplay ?? true);
+    return () => {
+      sess?.dispose();
+    };
+    // Mở lại session khi đổi bài hoặc bước (05 §2.1, §11 mục 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeLesson?.moduleId,
+    safeStepIdx,
+    activeStep?.stageMode,
+    activeStep?.liveSim,
+    liveSimAdapter,
+  ]);
+
+  useEffect(() => {
+    if (!liveSession) return;
+    const updateLegend = () => {
+      const f = liveSession.source.getFrame();
+      if (!f) return;
+      setLivePacketScale(f.packetScale);
+      const set = new Set<PacketKind>(['request', 'response']);
+      for (const p of f.packets) set.add(p.kind);
+      const next = [...set];
+      setLiveLegendKinds((prev) =>
+        prev.length === next.length && prev.every((k, i) => k === next[i])
+          ? prev
+          : next
+      );
+    };
+    updateLegend();
+    return liveSession.source.subscribe(updateLegend, { hz: 2 });
+  }, [liveSession]);
+
+  const simClock = useSimClock({
+    session: liveSession,
+    isPlaying: isPlaying && !manualSandboxOpen,
+    speed: simSpeed,
+    pauseAtSec: activeStep?.liveSim?.pauseAtSec,
+    onPause: () => setIsPlaying(false),
+    onEnd: () => {
+      liveSession?.reset();
+    },
+  });
+
+  const handleChaosPick = useCallback(
+    (entity: { kind: 'node' | 'link'; id: string }) => {
+      if (!liveSession || !activeChaosPick) return;
+      const target =
+        entity.kind === 'node' ? { node: entity.id } : { link: entity.id };
+      liveSession.inject(activeChaosPick.kind, target, activeChaosPick.opts);
+      const labelMap: Record<ActiveChaosPick['kind'], string> = {
+        kill: t.live.chaos.kill,
+        slow: t.live.chaos.slow,
+        partition: t.live.chaos.partition,
+        'expire-cache': t.live.chaos.expireCache,
+        'hot-key': t.live.chaos.hotKey,
+        'bad-deploy': t.live.chaos.badDeploy,
+      };
+      setChaosToast(
+        t.live.chaos.injected(labelMap[activeChaosPick.kind], entity.id)
+      );
+      setActiveChaosPick(null);
+    },
+    [liveSession, activeChaosPick, t.live.chaos]
+  );
+
   const rootContainerRef = useRef<HTMLDivElement>(null);
   const leftAsideRef = useRef<HTMLElement>(null);
+  const rightAsideRef = useRef<HTMLElement>(null);
   const centerStageCardRef = useRef<HTMLDivElement>(null);
   const railHideTimerRef = useRef<number | null>(null);
   const narrativeScrollRef = useRef<HTMLDivElement>(null);
@@ -250,7 +421,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width;
       if (typeof w === 'number' && w > 0) {
-        setIsCenterCompact(w < 585);
+        const nextCompact = w < 585;
+        setIsCenterCompact((prev) => (prev === nextCompact ? prev : nextCompact));
       }
     });
     ro.observe(el);
@@ -310,7 +482,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     (e: React.PointerEvent<HTMLDivElement>) => {
       e.preventDefault();
       const startX = e.clientX;
-      const startWidth = rightSidebarWidth;
+      const startWidth =
+        rightAsideRef.current?.getBoundingClientRect().width ?? rightSidebarWidth;
       const containerW =
         rootContainerRef.current?.getBoundingClientRect().width ?? 1440;
       const leftW =
@@ -327,13 +500,31 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
 
+      let latestW = Math.round(startWidth);
+      let rafId: number | null = null;
+
+      const applyDomWidth = () => {
+        rafId = null;
+        rightAsideRef.current?.style.setProperty('--dts-right-w', `${latestW}px`);
+      };
+
       const onMove = (ev: PointerEvent) => {
         const delta = startX - ev.clientX;
-        const nextW = Math.max(320, Math.min(maxAllowed, startWidth + delta));
-        setRightSidebarWidth(nextW);
+        latestW = Math.round(
+          Math.max(320, Math.min(maxAllowed, startWidth + delta))
+        );
+        if (rafId === null) {
+          rafId = window.requestAnimationFrame(applyDomWidth);
+        }
       };
 
       const onUp = () => {
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        rightAsideRef.current?.style.setProperty('--dts-right-w', `${latestW}px`);
+        setRightSidebarWidth(latestW);
         setIsResizingRight(false);
         document.body.style.cursor = prevCursor;
         document.body.style.userSelect = prevSelect;
@@ -414,6 +605,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
   const handleNextStep = useCallback(() => {
     if (!activeLesson) return;
+    if (isStepLocked?.(activeLesson.moduleId, safeStepIdx)) return;
     if (safeStepIdx < activeLesson.steps.length - 1) {
       const nextIdx = safeStepIdx + 1;
       if (nextIdx === activeLesson.steps.length - 1) {
@@ -433,14 +625,27 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     lessons,
     onMarkLessonComplete,
     selectLessonAndStep,
+    isStepLocked,
   ]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (activeChaosPick) {
+          e.preventDefault();
+          setActiveChaosPick(null);
+          return;
+        }
+        if (activeTrace) {
+          e.preventDefault();
+          setActiveTrace(null);
+          return;
+        }
+      }
       const el = e.target as HTMLElement | null;
       if (
         el?.closest(
-          'input, textarea, select, [contenteditable="true"], [role="dialog"]'
+          'input, textarea, select, [contenteditable="true"], [role="dialog"], [role="slider"]'
         )
       ) {
         return;
@@ -455,6 +660,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         handlePrevStep();
       } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
+        liveSession?.reset();
         setIsPlaying(true);
         setReplayNonce((n) => n + 1);
       } else if (e.key === ' ') {
@@ -464,7 +670,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleNextStep, handlePrevStep]);
+  }, [handleNextStep, handlePrevStep, activeChaosPick, activeTrace, liveSession]);
 
   const handleRunSandbox = async () => {
     if (!onRunCodeSnippet || sandboxRunning) return;
@@ -477,6 +683,15 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
     }
   };
 
+  // F3: hook phải đứng trước early return (Rules of Hooks).
+  const legendScene = activeLesson?.steps[safeStepIdx]?.scene;
+  const legendKinds = useMemo(() => {
+    if (!legendScene) return [];
+    const set = new Set<PacketKind>(['request', 'response']);
+    for (const p of legendScene.packets) set.add(p.kind);
+    return [...set];
+  }, [legendScene]);
+
   if (!activeLesson || !activeStep) return null;
 
   const totalCompletedLessons = lessons.filter(
@@ -484,21 +699,23 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
   ).length;
   const activeStatus = getModuleStatus(activeLesson.moduleId);
   const isLastStep = safeStepIdx === activeLesson.steps.length - 1;
+  const stepLocked = Boolean(isStepLocked?.(activeLesson.moduleId, safeStepIdx));
   const nextStepObj = activeLesson.steps[safeStepIdx + 1];
   const nextLessonObj = lessons[activeLessonIdx + 1];
 
+  const isLiveStage =
+    activeStep.stageMode === 'live-sim' &&
+    Boolean(activeStep.scene) &&
+    Boolean(activeStep.liveSim) &&
+    Boolean(liveSimAdapter) &&
+    Boolean(liveSession);
   const isIsometricStage =
-    activeStep.stageMode === 'isometric' && Boolean(activeStep.scene);
+    (activeStep.stageMode === 'isometric' ||
+      (activeStep.stageMode === 'live-sim' && !isLiveStage)) &&
+    Boolean(activeStep.scene);
   const isMemoryStage =
     activeStep.stageMode === 'memory-2d' && Boolean(activeStep.memoryScene);
   const isNativeCodeTrace = activeStep.stageMode === 'code-trace';
-
-  const legendKinds = useMemo(() => {
-    if (!activeStep.scene) return [];
-    const set = new Set<PacketKind>(['request', 'response']);
-    for (const p of activeStep.scene.packets) set.add(p.kind);
-    return [...set];
-  }, [activeStep.scene]);
 
   const renderSyllabusContent = (showCollapseBtn = false) => (
     <div className="flex h-full min-h-0 flex-col gap-2.5">
@@ -529,7 +746,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5 space-y-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5 space-y-1">
           {levelGroups.map((grp) => {
             const isOpen = openLevel === grp.level;
             const doneInGrp = grp.items.filter((it) => {
@@ -609,16 +826,18 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         <button
           type="button"
           onClick={toggleProgressExpanded}
+          aria-expanded={isProgressExpanded}
           className="flex w-full items-center justify-between font-mono text-[11px] font-extrabold tracking-wider text-[var(--dts-ink)]"
         >
           <span>{t.progress}</span>
           <span className="flex items-center gap-1 text-[var(--dts-ink-soft)]">
             {totalCompletedLessons} / {lessons.length}
-            {isProgressExpanded ? (
-              <ChevronDown className="h-3.5 w-3.5" />
-            ) : (
-              <ChevronUp className="h-3.5 w-3.5" />
-            )}
+            <ChevronUp
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-300 ease-out',
+                isProgressExpanded && 'rotate-180'
+              )}
+            />
           </span>
         </button>
 
@@ -633,45 +852,45 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           />
         </div>
 
-        {isProgressExpanded && (
-          <div className="mt-2.5 max-h-44 space-y-1.5 overflow-y-auto pr-1">
-            {levelGroups.map((grp) => {
-              const doneInGrp = grp.items.filter((it) => {
-                const st = getModuleStatus(it.moduleId);
-                return st.completed || st.lessonRead;
-              }).length;
-              const allDone = doneInGrp === grp.items.length;
+        <SmoothCollapsible open={isProgressExpanded}>
+            <div className="mt-2.5 max-h-44 space-y-1.5 overflow-y-auto pr-1">
+              {levelGroups.map((grp) => {
+                const doneInGrp = grp.items.filter((it) => {
+                  const st = getModuleStatus(it.moduleId);
+                  return st.completed || st.lessonRead;
+                }).length;
+                const allDone = doneInGrp === grp.items.length;
 
-              return (
-                <div
-                  key={grp.level}
-                  className="flex items-center justify-between gap-2 font-mono text-[11px] text-[var(--dts-ink-soft)]"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={cn(
-                        'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-line-strong)]',
-                        allDone
-                          ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                          : doneInGrp > 0
-                            ? 'bg-[var(--dts-green-soft)]'
-                            : 'bg-[var(--dts-panel-elevated)]'
-                      )}
-                    >
-                      {allDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                    </span>
-                    <span className="truncate">
-                      {lang === 'en' ? grp.titleEn : grp.titleVi}
+                return (
+                  <div
+                    key={grp.level}
+                    className="flex items-center justify-between gap-2 font-mono text-[11px] text-[var(--dts-ink-soft)]"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span
+                        className={cn(
+                          'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-line-strong)]',
+                          allDone
+                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                            : doneInGrp > 0
+                              ? 'bg-[var(--dts-green-soft)]'
+                              : 'bg-[var(--dts-panel-elevated)]'
+                        )}
+                      >
+                        {allDone && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                      </span>
+                      <span className="truncate">
+                        {lang === 'en' ? grp.titleEn : grp.titleVi}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-[10.5px] text-[var(--dts-ink-muted)]">
+                      {doneInGrp}/{grp.items.length}
                     </span>
                   </div>
-                  <span className="shrink-0 text-[10.5px] text-[var(--dts-ink-muted)]">
-                    {doneInGrp}/{grp.items.length}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+        </SmoothCollapsible>
       </div>
     </div>
   );
@@ -903,25 +1122,17 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         </span>
       </div>
 
-      <div
-        ref={rootContainerRef}
-        onScroll={(e) => {
-          const stuck = e.currentTarget.scrollTop > 56;
-          setIsMobileHeaderStuck((prev) => (prev === stuck ? prev : stuck));
-        }}
-        className="relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 overflow-y-auto xl:overflow-hidden"
-      >
-      {/* Mobile / Tablet Slide-over Syllabus Drawer */}
+      {/* Mobile / Tablet Slide-over Syllabus Drawer (placed outside rootContainerRef so it overlays the viewport and doesn't scroll with page content) */}
       {mobileDrawerOpen && (
         <div
           onClick={() => setMobileDrawerOpen(false)}
-          className="absolute inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden overflow-hidden"
+          className="absolute inset-0 z-50 flex bg-black/45 backdrop-blur-[1px] xl:hidden overflow-hidden overscroll-contain touch-pan-y"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="flex h-full w-[290px] max-w-[85vw] flex-col bg-[var(--dts-canvas)] p-3 shadow-2xl"
+            className="flex h-full min-h-0 w-[290px] max-w-[85vw] flex-col bg-[var(--dts-canvas)] p-3 shadow-2xl overscroll-contain"
           >
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex shrink-0 items-center justify-between">
               <span className="font-mono text-xs font-extrabold uppercase tracking-wider">
                 {t.openCourseMenu}
               </span>
@@ -933,11 +1144,22 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="min-h-0 flex-1">{renderSyllabusContent(false)}</div>
+            <div className="min-h-0 flex-1 overflow-hidden">{renderSyllabusContent(false)}</div>
           </div>
         </div>
       )}
 
+      <div
+        ref={rootContainerRef}
+        onScroll={(e) => {
+          const stuck = e.currentTarget.scrollTop > 56;
+          setIsMobileHeaderStuck((prev) => (prev === stuck ? prev : stuck));
+        }}
+        className={cn(
+          'relative flex min-h-0 flex-1 w-full flex-col xl:flex-row gap-2.5 p-2.5 sm:p-3.5 xl:overflow-hidden',
+          mobileDrawerOpen ? 'overflow-hidden' : 'overflow-y-auto'
+        )}
+      >
       {/* 1. LEFT COLUMN (Collapsible into Icon + Chapter Number Rail with Hover Tooltip/Flyout) */}
       <aside
         ref={leftAsideRef}
@@ -1007,52 +1229,61 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
           {/* Designed-to-Scale Compact Telemetry Strip + Stage Controls (single-row friendly so stage stays tall!) */}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-1.5">
-            <div className="flex flex-wrap items-stretch gap-1.5">
-              {activeStep.telemetry.slice(0, 3).map((kpi, idx) => {
-                const barBg =
-                  kpi.tone === 'ok'
-                    ? 'bg-[#4caf50]'
-                    : kpi.tone === 'bad'
-                      ? 'bg-[#e5534b]'
-                      : kpi.tone === 'warn'
-                        ? 'bg-[#e8a33a]'
-                        : 'bg-transparent';
-                const valColor =
-                  kpi.tone === 'ok'
-                    ? 'text-[#2e6b19] dark:text-[#a8e686]'
-                    : kpi.tone === 'bad'
-                      ? 'text-[#b82c24] dark:text-[#fca5a5]'
-                      : kpi.tone === 'warn'
-                        ? 'text-[#8a5708] dark:text-[#fde68a]'
-                        : 'text-[var(--dts-ink)]';
+            {isLiveStage && liveSession ? (
+              <LiveTelemetryStrip
+                source={liveSession.source}
+                specs={activeStep.liveSim?.telemetry}
+                fallbackTelemetry={activeStep.telemetry}
+                lang={lang}
+              />
+            ) : (
+              <div className="flex flex-wrap items-stretch gap-1.5">
+                {activeStep.telemetry.slice(0, 3).map((kpi, idx) => {
+                  const barBg =
+                    kpi.tone === 'ok'
+                      ? 'bg-[#4caf50]'
+                      : kpi.tone === 'bad'
+                        ? 'bg-[#e5534b]'
+                        : kpi.tone === 'warn'
+                          ? 'bg-[#e8a33a]'
+                          : 'bg-transparent';
+                  const valColor =
+                    kpi.tone === 'ok'
+                      ? 'text-[#2e6b19] dark:text-[#a8e686]'
+                      : kpi.tone === 'bad'
+                        ? 'text-[#b82c24] dark:text-[#fca5a5]'
+                        : kpi.tone === 'warn'
+                          ? 'text-[#8a5708] dark:text-[#fde68a]'
+                          : 'text-[var(--dts-ink)]';
 
-                return (
-                  <div
-                    key={idx}
-                    className="relative flex min-w-0 flex-col rounded-[9px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
-                  >
-                    {kpi.tone && kpi.tone !== 'default' && (
-                      <span
-                        className={cn(
-                          'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r',
-                          barBg
-                        )}
-                      />
-                    )}
-                    <div className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)] leading-tight">
-                      {pickText(kpi.label, lang)}
+                  return (
+                    <div
+                      key={idx}
+                      className="relative flex min-w-0 flex-col rounded-[9px] border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[0_1px_0_rgba(0,0,0,0.04)]"
+                    >
+                      {kpi.tone && kpi.tone !== 'default' && (
+                        <span
+                          className={cn(
+                            'absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r',
+                            barBg
+                          )}
+                        />
+                      )}
+                      <div className="font-mono text-[8.5px] font-bold uppercase tracking-wider text-[var(--dts-ink-muted)] leading-tight">
+                        {pickText(kpi.label, lang)}
+                      </div>
+                      <div className={cn('font-mono text-[12px] font-extrabold tabular-nums leading-snug', valColor)}>
+                        {pickText(kpi.value, lang)}
+                      </div>
                     </div>
-                    <div className={cn('font-mono text-[12px] font-extrabold tabular-nums leading-snug', valColor)}>
-                      {pickText(kpi.value, lang)}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Playback & Live Code Controls (icon-only on mobile/tablet OR when center column is resized narrow!) */}
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              {!isNativeCodeTrace && onRunCodeSnippet && (
+            <div className="ml-auto flex shrink-0 flex-wrap items-center gap-1.5">
+              {!isNativeCodeTrace && onRunCodeSnippet && courseId !== 'sdmastery' && (
                 <button
                   type="button"
                   onClick={() => setManualSandboxOpen((o) => !o)}
@@ -1073,10 +1304,54 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </button>
               )}
 
-              {(isIsometricStage || isMemoryStage) && !manualSandboxOpen && (
+              {isLiveStage && liveSession && !manualSandboxOpen && (
+                <>
+                  {activeStep.liveSim?.controls.load && (
+                    <LoadKnob
+                      session={liveSession}
+                      lang={lang}
+                      compact={isCenterCompact}
+                    />
+                  )}
+                  {activeStep.liveSim?.controls.knobs &&
+                    activeStep.liveSim.controls.knobs.length > 0 && (
+                      <KnobPanel
+                        session={liveSession}
+                        allowed={activeStep.liveSim.controls.knobs}
+                        lang={lang}
+                        compact={isCenterCompact}
+                      />
+                    )}
+                  {activeStep.liveSim?.controls.chaos &&
+                    activeStep.liveSim.controls.chaos.length > 0 && (
+                      <ChaosToolbox
+                        allowed={activeStep.liveSim.controls.chaos}
+                        lang={lang}
+                        activePick={activeChaosPick}
+                        onStartPick={setActiveChaosPick}
+                        lastToast={chaosToast}
+                        compact={isCenterCompact}
+                      />
+                    )}
+                  {activeStep.liveSim?.controls.tracer && (
+                    <RequestTracerButton
+                      onTraceSample={() => {
+                        setIsPlaying(false);
+                        setActiveTrace(liveSession.trace());
+                      }}
+                      lang={lang}
+                      compact={isCenterCompact}
+                      active={Boolean(activeTrace)}
+                    />
+                  )}
+                </>
+              )}
+
+              {(isIsometricStage || isMemoryStage || isLiveStage) && !manualSandboxOpen && (
                 <button
                   type="button"
                   onClick={() => {
+                    liveSession?.reset();
                     setIsPlaying(true);
                     setReplayNonce((n) => n + 1);
                   }}
@@ -1098,7 +1373,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </button>
               )}
 
-              {isIsometricStage && !manualSandboxOpen && (
+              {(isIsometricStage || isLiveStage) && !manualSandboxOpen && (
                 <button
                   type="button"
                   onClick={() => setIsPlaying((p) => !p)}
@@ -1129,7 +1404,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             </div>
           </div>
 
-          {/* Stage Viewport: Isometric 2.5D OR 2D Memory/Slice OR Interactive Code Trace */}
+          {/* Stage Viewport: Live-Sim OR Isometric 2.5D OR 2D Memory/Slice OR Interactive Code Trace */}
           <div className="relative mt-2.5 flex min-h-[260px] sm:min-h-[300px] xl:min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
             {manualSandboxOpen ? (
               <WorkbenchCodeSurface
@@ -1143,26 +1418,90 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 runLabel={runCodeLabel ?? t.runCode}
                 className="h-full min-h-[250px] flex-1"
               />
-            ) : isIsometricStage && activeStep.scene ? (
-              <>
-                <div className="dts-stage-noselect min-h-0 flex-1 select-none">
-                  <ScaleStageSvg
-                    scene={activeStep.scene}
-                    lang={lang}
-                    theme={theme}
-                    isPlaying={isPlaying}
-                    replayNonce={replayNonce}
-                  />
-                </div>
-                <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
-                  {legendKinds.map((kind) => (
-                    <span key={kind} className="inline-flex items-center gap-1.5">
-                      <LegendDot kind={kind} />
-                      <span>{t.packets[kind]}</span>
-                    </span>
-                  ))}
-                </div>
-              </>
+            ) : (isIsometricStage || isLiveStage) && activeStep.scene ? (
+              (() => {
+                const activeLive =
+                  isLiveStage && liveSession && activeStep.liveSim
+                    ? { session: liveSession, spec: activeStep.liveSim }
+                    : null;
+                const shownLegendKinds = activeLive ? liveLegendKinds : legendKinds;
+                return (
+                  <>
+                    <div className="dts-stage-noselect relative min-h-0 flex-1 select-none">
+                      <ScaleStageSvg
+                        key={activeLesson.moduleId}
+                        scene={activeStep.scene}
+                        lang={lang}
+                        theme={theme}
+                        isPlaying={isPlaying}
+                        replayNonce={replayNonce}
+                        frameSource={activeLive?.session.source}
+                        liveOptions={
+                          activeLive
+                            ? {
+                                tracerEnabled: Boolean(activeLive.spec.controls.tracer),
+                                focus: activeLive.spec.focus,
+                              }
+                            : undefined
+                        }
+                        onPacketPick={
+                          activeLive
+                            ? (p) => {
+                                setIsPlaying(false);
+                                setActiveTrace(
+                                  activeLive.session.trace({
+                                    packetId: p.id,
+                                    linkId: p.linkId,
+                                    kind: p.kind,
+                                  })
+                                );
+                              }
+                            : undefined
+                        }
+                        pickMode={
+                          activeLive && activeChaosPick
+                            ? {
+                                accept: activeChaosPick.accept,
+                                onPick: handleChaosPick,
+                              }
+                            : null
+                        }
+                        renderLiveSlot={
+                          activeLive
+                            ? (ent) =>
+                                liveSimAdapter?.renderNodeLiveSlot?.(
+                                  activeLive.session,
+                                  activeLive.spec,
+                                  ent,
+                                  lang
+                                )
+                            : undefined
+                        }
+                      />
+                      {activeLive && (
+                        <RequestTracerDrawer
+                          trace={activeTrace}
+                          lang={lang}
+                          onClose={() => setActiveTrace(null)}
+                        />
+                      )}
+                    </div>
+                    <div className="mt-1 flex select-none flex-wrap items-center gap-x-4 gap-y-1 px-1 pt-1 font-mono text-[11px] text-[var(--dts-ink-muted)]">
+                      {shownLegendKinds.map((kind) => (
+                        <span key={kind} className="inline-flex items-center gap-1.5">
+                          <LegendDot kind={kind} />
+                          <span>{t.packets[kind]}</span>
+                        </span>
+                      ))}
+                      {activeLive && livePacketScale > 0 && (
+                        <span className="text-[10.5px] font-bold">
+                          — {t.live.packetScale(livePacketScale)}
+                        </span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()
             ) : isMemoryStage && activeStep.memoryScene ? (
               <div className="dts-stage-noselect min-h-0 flex-1 select-none">
                 <MemoryStageSvg
@@ -1183,6 +1522,27 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
             ) : null}
           </div>
         </div>
+
+        {/* Live-Sim Timeline between Stage and Stepper (05 §5.1, §5.2) */}
+        {isLiveStage &&
+          liveSession &&
+          activeStep.liveSim &&
+          (activeStep.liveSim.controls.timeline ?? true) && (
+            <SimTimeline
+              session={liveSession}
+              spec={activeStep.liveSim}
+              lang={lang}
+              isPlaying={isPlaying}
+              speed={simSpeed}
+              onTogglePlay={() => setIsPlaying((p) => !p)}
+              onChangeSpeed={setSimSpeed}
+              onSeek={(tSec) => simClock.seek(tSec)}
+              onReset={() => {
+                liveSession.reset();
+                setReplayNonce((n) => n + 1);
+              }}
+            />
+          )}
 
         {/* Bottom Horizontal Timeline Stepper */}
         <div className="dts-panel shrink-0 rounded-2xl px-4 py-2.5">
@@ -1267,6 +1627,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
 
       {/* 3. RIGHT COLUMN (Resizable on xl+ via --dts-right-w) */}
       <aside
+        ref={rightAsideRef}
         style={
           {
             '--dts-right-w': `${rightSidebarWidth}px`,
@@ -1275,88 +1636,198 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
         className="flex w-full xl:w-[var(--dts-right-w)] shrink-0 flex-col gap-2.5 xl:min-h-0"
       >
         <div className="dts-panel flex flex-1 flex-col rounded-2xl p-4 xl:min-h-0">
-          <div className="mb-2.5 flex items-center justify-between gap-2">
-            <span className="font-mono text-xs font-extrabold tracking-wider text-[var(--dts-ink-muted)]">
-              STEP {safeStepIdx + 1} / {activeLesson.steps.length}
-            </span>
-            <span
-              className={cn(
-                'rounded-full border border-[var(--dts-border)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider',
-                getCategoryStyle(activeStep.category)
-              )}
+          {activeLesson.story && (
+            <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-muted)] p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setRightTab('step');
+                  narrativeScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-extrabold transition-all cursor-pointer',
+                  rightTab === 'step'
+                    ? 'border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
+                    : 'text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]'
+                )}
+              >
+                <BookOpen className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {lang === 'en'
+                    ? `Lesson (${safeStepIdx + 1}/${activeLesson.steps.length})`
+                    : `Bài học (${safeStepIdx + 1}/${activeLesson.steps.length})`}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRightTab('story');
+                  narrativeScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className={cn(
+                  'inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 font-mono text-[11px] font-extrabold transition-all cursor-pointer',
+                  rightTab === 'story'
+                    ? 'border border-[var(--dts-border)] bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)] shadow-[1px_1.5px_0_var(--dts-shadow-color)]'
+                    : 'text-[var(--dts-ink-muted)] hover:text-[var(--dts-ink)]'
+                )}
+              >
+                <Lightbulb className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  {lang === 'en' ? 'Story & Mindset' : 'Câu chuyện & Tư duy'}
+                </span>
+              </button>
+            </div>
+          )}
+
+          {rightTab === 'story' && activeLesson.story ? (
+            <div
+              ref={narrativeScrollRef}
+              className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
             >
-              {t.categories[activeStep.category]}
-            </span>
-          </div>
-
-          <div
-            ref={narrativeScrollRef}
-            className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
-          >
-            <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
-              {pickText(activeStep.title, lang)}
-            </h2>
-
-            <BlueprintMarkdown
-              source={
-                lang === 'en' ? activeStep.summaryEn : activeStep.summaryVi
-              }
-            />
-
-            {activeStep.callout && (() => {
-              const { boxCls, Icon } = getCalloutMeta(activeStep.callout.kind);
-              const cTitle = activeStep.callout.title
-                ? pickText(activeStep.callout.title, lang)
-                : t.calloutTitles[activeStep.callout.kind];
-              return (
-                <div className={cn('rounded-xl border p-3', boxCls)}>
-                  <div className="flex items-start gap-2.5">
-                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-current/30 bg-black/5">
-                      <Icon className="h-3.5 w-3.5" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
-                        {cTitle}
-                      </div>
-                      <p className="mt-0.5 text-[12.5px] leading-relaxed font-medium">
-                        {pickText(activeStep.callout.text, lang)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {activeStep.whatChanged.length > 0 && (
-              <div className="pt-1">
-                <div className="mb-1.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                  {t.whatChanged}
-                </div>
-                <ul className="space-y-1.5">
-                  {activeStep.whatChanged.map((diff, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 font-mono text-[12px] leading-snug text-[var(--dts-ink)]"
-                    >
-                      <span
-                        className={cn(
-                          'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded font-extrabold text-[11px]',
-                          diff.op === '+'
-                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                            : diff.op === '-'
-                              ? 'bg-[var(--dts-rose-bg)] text-[var(--dts-rose-ink)]'
-                              : 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
-                        )}
-                      >
-                        {diff.op}
-                      </span>
-                      <span>{pickText(diff.text, lang)}</span>
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                  {activeLesson.moduleId} · {lang === 'en' ? 'REAL-WORLD CONTEXT' : 'BỐI CẢNH & TƯ DUY THỰC CHIẾN'}
+                </span>
+                <span className="rounded-full border border-[var(--dts-border)] bg-[var(--dts-amber-bg)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-amber-ink)]">
+                  {lang === 'en' ? 'STORY' : 'TÌNH HUỐNG'}
+                </span>
               </div>
-            )}
-          </div>
+
+              <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
+                {pickText(activeLesson.title, lang)}
+              </h2>
+
+              <BlueprintMarkdown source={pickText(activeLesson.story, lang)} />
+
+              {activeLesson.attribution?.href && (
+                <div className="mt-3 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-blue-soft)] p-3 text-[var(--dts-blue-ink)]">
+                  <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
+                    {lang === 'en' ? 'Original Article on Web' : 'Bài viết gốc trên trang web'}
+                  </div>
+                  <p className="mt-1 text-[12px] leading-relaxed text-[var(--dts-ink-soft)]">
+                    {lang === 'en'
+                      ? 'Want to read the full original long-form article and author stories on System Design Core?'
+                      : 'Bạn có thể đọc thêm bài viết dài nguyên bản cùng câu chuyện chi tiết của tác giả trên trang web System Design Core:'}
+                  </p>
+                  <a
+                    href={activeLesson.attribution.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="dts-btn-tactile mt-2 inline-flex items-center gap-1.5 rounded-lg bg-[var(--dts-panel-elevated)] px-3 py-1.5 font-mono text-[11px] font-extrabold text-[var(--dts-ink)] hover:opacity-90"
+                  >
+                    <span>
+                      {activeLesson.attribution.sourceTitle
+                        ? pickText(activeLesson.attribution.sourceTitle, lang)
+                        : 'systemdesigncore.site'}
+                    </span>
+                    <span>↗</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="mb-2.5 flex items-center justify-between gap-2">
+                <span className="font-mono text-xs font-extrabold tracking-wider text-[var(--dts-ink-muted)]">
+                  STEP {safeStepIdx + 1} / {activeLesson.steps.length}
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full border border-[var(--dts-border)] px-2.5 py-0.5 font-mono text-[10px] font-extrabold uppercase tracking-wider',
+                    getCategoryStyle(activeStep.category)
+                  )}
+                >
+                  {t.categories[activeStep.category]}
+                </span>
+              </div>
+
+              <div
+                ref={narrativeScrollRef}
+                className="min-h-0 flex-1 overflow-y-auto pr-1 space-y-3"
+              >
+                <h2 className="font-mono text-base sm:text-[17px] font-extrabold leading-snug text-[var(--dts-ink)]">
+                  {pickText(activeStep.title, lang)}
+                </h2>
+
+                <BlueprintMarkdown
+                  source={
+                    lang === 'en' ? activeStep.summaryEn : activeStep.summaryVi
+                  }
+                />
+
+                {activeStep.callout && (() => {
+                  const { boxCls, Icon } = getCalloutMeta(activeStep.callout.kind);
+                  const cTitle = activeStep.callout.title
+                    ? pickText(activeStep.callout.title, lang)
+                    : t.calloutTitles[activeStep.callout.kind];
+                  return (
+                    <div className={cn('rounded-xl border p-3', boxCls)}>
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-current/30 bg-black/5">
+                          <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider opacity-85">
+                            {cTitle}
+                          </div>
+                          <p className="mt-0.5 text-[12.5px] leading-relaxed font-medium">
+                            {pickText(activeStep.callout.text, lang)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {activeStep.whatChanged.length > 0 && (
+                  <div className="pt-1">
+                    <div className="mb-1.5 font-mono text-[10.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                      {t.whatChanged}
+                    </div>
+                    <ul className="space-y-1.5">
+                      {activeStep.whatChanged.map((diff, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-start gap-2 font-mono text-[12px] leading-snug text-[var(--dts-ink)]"
+                        >
+                          <span
+                            className={cn(
+                              'mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded font-extrabold text-[11px]',
+                              diff.op === '+'
+                                ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                                : diff.op === '-'
+                                  ? 'bg-[var(--dts-rose-bg)] text-[var(--dts-rose-ink)]'
+                                  : 'bg-[var(--dts-amber-bg)] text-[var(--dts-amber-ink)]'
+                            )}
+                          >
+                            {diff.op}
+                          </span>
+                          <span>{pickText(diff.text, lang)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {activeLesson.attribution && (
+            <div className="mt-2.5 shrink-0 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10.5px] leading-snug text-[var(--dts-ink-muted)]">
+              {activeLesson.attribution.href ? (
+                <a
+                  href={activeLesson.attribution.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-semibold text-[var(--dts-blue-ink)] underline underline-offset-2 hover:opacity-85"
+                >
+                  <span>{pickText(activeLesson.attribution.text, lang)}</span>
+                </a>
+              ) : (
+                <span>{pickText(activeLesson.attribution.text, lang)}</span>
+              )}
+            </div>
+          )}
 
           {/* Navigation Footer (Desktop lg+; Mobile/Tablet uses the sticky bottom bar snapped above the 5-tab nav!) */}
           <div className="mt-3 hidden lg:block shrink-0 border-t border-[var(--dts-border-soft)] pt-3">
@@ -1374,7 +1845,8 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="dts-btn-tactile flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)]"
+                disabled={stepLocked}
+                className="dts-btn-tactile flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-[var(--dts-green-bg)] px-3.5 py-2 font-mono text-xs font-extrabold text-[var(--dts-green-ink)] disabled:opacity-40"
               >
                 <span className="truncate">
                   {!isLastStep
@@ -1397,7 +1869,7 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
                 </kbd>{' '}
                 {t.keyboardHint.step}
               </span>
-              {isIsometricStage && (
+              {(isIsometricStage || isLiveStage) && (
                 <>
                   <span>·</span>
                   <span>
@@ -1419,123 +1891,180 @@ export const ScaleWorkbenchLayout: React.FC<ScaleWorkbenchLayoutProps> = ({
           </div>
         </div>
 
+        {activeStep.activityId &&
+          renderStepActivity?.({
+            moduleId: activeLesson.moduleId,
+            stepIndex: safeStepIdx,
+            activityId: activeStep.activityId,
+            gate: activeStep.activityGate ?? 'optional',
+          })}
+
         {/* Bottom Card: YOU'LL LEARN + Practice Links */}
         <div className="dts-panel shrink-0 rounded-2xl p-3.5">
-          <div className="mb-2 font-mono text-[11px] font-extrabold uppercase tracking-wider text-[var(--dts-ink)]">
-            {t.youWillLearn}
-          </div>
-          <ul className="space-y-1.5">
-            {activeLesson.objectives.map((obj, idx) => {
-              const threshold = Math.floor(
-                ((idx + 1) / activeLesson.objectives.length) *
-                  (activeLesson.steps.length - 1)
-              );
-              const checked =
-                activeStatus.lessonRead ||
-                activeStatus.completed ||
-                safeStepIdx >= Math.max(0, threshold);
+          <button
+            type="button"
+            onClick={toggleObjectivesExpanded}
+            aria-expanded={isObjectivesExpanded}
+            className="flex w-full items-center justify-between font-mono text-[11px] font-extrabold uppercase tracking-wider text-[var(--dts-ink)]"
+          >
+            <span>{t.youWillLearn}</span>
+            <span className="flex items-center gap-1 text-[var(--dts-ink-soft)]">
+              <span className="tabular-nums">
+                {
+                  activeLesson.objectives.filter((_, idx) => {
+                    const threshold = Math.floor(
+                      ((idx + 1) / activeLesson.objectives.length) *
+                        (activeLesson.steps.length - 1)
+                    );
+                    return (
+                      activeStatus.lessonRead ||
+                      activeStatus.completed ||
+                      safeStepIdx >= Math.max(0, threshold)
+                    );
+                  }).length
+                }{' '}
+                / {activeLesson.objectives.length}
+              </span>
+              <ChevronUp
+                className={cn(
+                  'h-3.5 w-3.5 transition-transform duration-300 ease-out',
+                  isObjectivesExpanded && 'rotate-180'
+                )}
+              />
+            </span>
+          </button>
 
-              return (
-                <li
-                  key={idx}
-                  className="flex items-start gap-2 font-mono text-[11.5px] leading-snug text-[var(--dts-ink-soft)]"
-                >
-                  <span
-                    className={cn(
-                      'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-border)] transition-colors',
-                      checked
-                        ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-panel-elevated)]'
-                    )}
-                  >
-                    {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
-                  </span>
-                  <span className={cn(checked && 'text-[var(--dts-ink)] font-medium')}>
-                    {pickText(obj, lang)}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+          <SmoothCollapsible open={isObjectivesExpanded}>
+              <ul className="mt-2 space-y-1.5">
+                {activeLesson.objectives.map((obj, idx) => {
+                  const threshold = Math.floor(
+                    ((idx + 1) / activeLesson.objectives.length) *
+                      (activeLesson.steps.length - 1)
+                  );
+                  const checked =
+                    activeStatus.lessonRead ||
+                    activeStatus.completed ||
+                    safeStepIdx >= Math.max(0, threshold);
 
-          {(onOpenQuiz || onOpenExercises || onOpenFlashcards || onOpenReadings) && (
-            <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2.5">
-              <div className="mb-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
-                {t.practiceActions.title}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {onOpenQuiz && activeLesson.quizCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenQuiz(activeLesson.moduleId)}
-                    className={cn(
-                      'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
-                      activeStatus.quizPassed
-                        ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
+                  return (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-2 font-mono text-[11.5px] leading-snug text-[var(--dts-ink-soft)]"
+                    >
+                      <span
+                        className={cn(
+                          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border border-[var(--dts-border)] transition-colors',
+                          checked
+                            ? 'bg-[var(--dts-green-bg)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-panel-elevated)]'
+                        )}
+                      >
+                        {checked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                      </span>
+                      <span className={cn(checked && 'text-[var(--dts-ink)] font-medium')}>
+                        {pickText(obj, lang)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              {(onOpenQuiz || onOpenExercises || onOpenFlashcards || onOpenReadings) && (
+                <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2.5">
+                  <div className="mb-1.5 font-mono text-[9.5px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
+                    {t.practiceActions.title}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onOpenQuiz && activeLesson.quizCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenQuiz(activeLesson.moduleId)}
+                        className={cn(
+                          'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
+                          activeStatus.quizPassed
+                            ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-panel-elevated)] text-[var(--dts-ink)]'
+                        )}
+                      >
+                        <ListChecks className="h-3 w-3" />
+                        <span>{t.practiceActions.quiz(activeLesson.quizCount)}</span>
+                      </button>
                     )}
-                  >
-                    <ListChecks className="h-3 w-3" />
-                    <span>{t.practiceActions.quiz(activeLesson.quizCount)}</span>
-                  </button>
-                )}
-                {onOpenExercises && activeLesson.exerciseCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenExercises(activeLesson.moduleId)}
-                    className={cn(
-                      'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
-                      activeStatus.passedExercises === activeLesson.exerciseCount
-                        ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
-                        : 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]'
+                    {onOpenExercises && activeLesson.exerciseCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenExercises(activeLesson.moduleId)}
+                        className={cn(
+                          'dts-btn-tactile inline-flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-[10.5px] font-bold',
+                          activeStatus.passedExercises === activeLesson.exerciseCount
+                            ? 'bg-[var(--dts-green-soft)] text-[var(--dts-green-ink)]'
+                            : 'bg-[var(--dts-blue-soft)] text-[var(--dts-blue-ink)]'
+                        )}
+                      >
+                        <Code2 className="h-3 w-3" />
+                        <span>
+                          {courseId === 'pmpmastery'
+                            ? lang === 'vi'
+                              ? `Tình huống (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
+                              : `Scenarios (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
+                            : t.practiceActions.exercises(
+                                activeStatus.passedExercises,
+                                activeLesson.exerciseCount
+                              )}
+                        </span>
+                      </button>
                     )}
-                  >
-                    <Code2 className="h-3 w-3" />
-                    <span>
-                      {courseId === 'pmpmastery'
-                        ? lang === 'vi'
-                          ? `Tình huống (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
-                          : `Scenarios (${activeStatus.passedExercises}/${activeLesson.exerciseCount})`
-                        : t.practiceActions.exercises(
-                            activeStatus.passedExercises,
-                            activeLesson.exerciseCount
-                          )}
-                    </span>
-                  </button>
-                )}
-                {onOpenFlashcards && activeLesson.cardCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenFlashcards(activeLesson.moduleId)}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
-                  >
-                    <Layers className="h-3 w-3" />
-                    <span>{t.practiceActions.flashcards(activeLesson.cardCount)}</span>
-                  </button>
-                )}
-                {onOpenReadings && activeLesson.readingCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenReadings(activeLesson.moduleId)}
-                    className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
-                  >
-                    <BookOpen className="h-3 w-3" />
-                    <span>
-                      {courseId === 'pmpmastery'
-                        ? lang === 'vi'
-                          ? `Dẫn chứng (${activeLesson.readingCount})`
-                          : `Evidence (${activeLesson.readingCount})`
-                        : courseId !== 'pymastery'
-                          ? lang === 'vi'
-                            ? `Cấu hình thật (${activeLesson.readingCount})`
-                            : `Real Configs (${activeLesson.readingCount})`
-                          : t.practiceActions.readings(activeLesson.readingCount)}
-                    </span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+                    {onOpenFlashcards && activeLesson.cardCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenFlashcards(activeLesson.moduleId)}
+                        className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
+                      >
+                        <Layers className="h-3 w-3" />
+                        <span>{t.practiceActions.flashcards(activeLesson.cardCount)}</span>
+                      </button>
+                    )}
+                    {onOpenReadings && activeLesson.readingCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenReadings(activeLesson.moduleId)}
+                        className="dts-btn-tactile inline-flex items-center gap-1 rounded-lg bg-[var(--dts-panel-elevated)] px-2 py-1 font-mono text-[10.5px] font-bold text-[var(--dts-ink)]"
+                      >
+                        <BookOpen className="h-3 w-3" />
+                        <span>
+                          {courseId === 'pmpmastery'
+                            ? lang === 'vi'
+                              ? `Dẫn chứng (${activeLesson.readingCount})`
+                              : `Evidence (${activeLesson.readingCount})`
+                            : courseId !== 'pymastery'
+                              ? lang === 'vi'
+                                ? `Cấu hình thật (${activeLesson.readingCount})`
+                                : `Real Configs (${activeLesson.readingCount})`
+                              : t.practiceActions.readings(activeLesson.readingCount)}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeLesson.attribution && (
+                <div className="mt-3 border-t border-[var(--dts-border-soft)] pt-2 font-mono text-[10px] leading-relaxed text-[var(--dts-ink-muted)]">
+                  {activeLesson.attribution.href ? (
+                    <a
+                      href={activeLesson.attribution.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-[var(--dts-ink)]"
+                    >
+                      {pickText(activeLesson.attribution.text, lang)}
+                    </a>
+                  ) : (
+                    <span>{pickText(activeLesson.attribution.text, lang)}</span>
+                  )}
+                </div>
+              )}
+          </SmoothCollapsible>
         </div>
       </aside>
       </div>

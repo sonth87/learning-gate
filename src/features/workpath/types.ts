@@ -116,8 +116,12 @@ export interface ExerciseRecord {
   lastScore?: string;
   passedAt?: number;
   skippedAt?: number;
-  /** Code người học đang viết (tự lưu) */
+  /** Code người học đang viết hoặc JSON nháp activity (tự lưu) */
   code?: string;
+  /** Điểm tốt nhất 0..100 (dùng cho activity của System Design, ADR-011) */
+  best?: number;
+  /** Số sao tốt nhất 0..3 (dùng cho activity của System Design, ADR-011) */
+  stars?: 0 | 1 | 2 | 3;
 }
 
 export interface QuizRecord {
