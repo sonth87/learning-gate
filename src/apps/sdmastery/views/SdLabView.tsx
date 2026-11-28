@@ -17,7 +17,6 @@ import {
   Cpu,
   Database,
   Eye,
-  FlaskConical,
   Gauge,
   Globe,
   HardDrive,
@@ -94,8 +93,11 @@ import {
   type LabCanvasPreset,
   type LabChallengeSpec,
   type LabGradeReport,
+  checkLabIntegrity,
 } from '../data/labChallenges';
 import { LabConfirmDialog } from '../components/lab/LabConfirmDialog';
+import { LabDifficultyPips, LabLevelBadge, LabPicker } from '../components/lab/LabPicker';
+import { checkDataFlowIntegrity } from '../data/labIntegrity';
 import {
   CARD_H,
   CARD_H_DOTS,
@@ -872,6 +874,11 @@ type RightTab = 'inspector' | 'analyzer' | 'grade';
 export const SdLabView: React.FC = () => {
   const lang = useWorkbenchStore((s) => s.language);
   const sdExercises = useSdProgress((s) => s.state.exercises);
+  const labStarsById = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const ch of LAB_CHALLENGES) out[ch.id] = sdExercises[ch.id]?.stars ?? 0;
+    return out;
+  }, [sdExercises]);
   const recordActivity = useSdProgress((s) => s.recordActivity);
   const markSolutionViewed = useSdProgress((s) => s.markActivitySolutionViewed);
 
@@ -2122,6 +2129,10 @@ export const SdLabView: React.FC = () => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || !labActiveRef.current) return;
       if (isEditableTarget(e.target)) return; // App shell đã chặn Esc trong ô nhập
+      // Esc trong hộp thoại / bộ chọn bài Lab do chính hộp thoại đó xử lý (đóng nó), không bỏ chọn canvas
+      if (e.target instanceof HTMLElement && e.target.closest('[role="dialog"],[role="alertdialog"]')) {
+        return;
+      }
       const st = escStateRef.current;
       let consumed = false;
       if (nodeDragRef.current?.moved) {
@@ -2351,6 +2362,14 @@ export const SdLabView: React.FC = () => {
     return structuralWarnings(model, frame ?? undefined);
   }, [model, frame, modelError]);
 
+  /** Ngõ cụt / dữ liệu không tới nơi lưu trữ — cùng luật với dòng "integrity" khi chấm. */
+  const integrityIssues = useMemo(() => {
+    if (modelError) return [];
+    return activeChallenge
+      ? checkLabIntegrity(activeChallenge, model)
+      : checkDataFlowIntegrity(model, { readRatio });
+  }, [model, modelError, activeChallenge, readRatio]);
+
   const bottleneck = useMemo(() => {
     if (modelError || !frame || model.nodes.length <= 1) return null;
     try {
@@ -2535,7 +2554,9 @@ export const SdLabView: React.FC = () => {
   );
 
   const analyzerIssueCount =
-    errorSpofs.length + warnings.filter((w) => w.severity !== 'info' && w.code !== 'SPOF').length;
+    errorSpofs.length +
+    integrityIssues.length +
+    warnings.filter((w) => w.severity !== 'info' && w.code !== 'SPOF').length;
 
   /* ─────────────────────────── RENDER ─────────────────────────── */
 
@@ -2549,31 +2570,13 @@ export const SdLabView: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Challenge / Sandbox selector + Starter / Blank Canvas switch */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--dts-border)] bg-[var(--dts-panel-elevated)] px-2.5 py-1 shadow-[1px_1.5px_0_var(--dts-shadow-color)]">
-              <FlaskConical className="h-3.5 w-3.5 shrink-0 text-[var(--dts-blue-ink)]" />
-              <select
-                aria-label={lang === 'en' ? 'Select Lab Challenge' : 'Chọn bài toán Phòng Lab'}
-                value={activeTemplateId}
-                onChange={(e) => handleSelectTemplate(e.target.value)}
-                className="bg-transparent font-mono text-xs font-extrabold text-[var(--dts-ink)] focus:outline-none"
-              >
-                <option value="sandbox">
-                  {lang === 'en'
-                    ? '⚡ Free Architecture Sandbox'
-                    : '⚡ Sandbox Tự do (Thử nghiệm)'}
-                </option>
-                {LAB_CHALLENGES.map((ch) => {
-                  const st = sdExercises[ch.id]?.stars ?? 0;
-                  const starTag = st > 0 ? ` (${'★'.repeat(st)})` : '';
-                  return (
-                    <option key={ch.id} value={ch.id}>
-                      {ch.code}: {pick(ch.title, lang)}
-                      {starTag}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
+            <LabPicker
+              lang={lang}
+              labs={LAB_CHALLENGES}
+              activeId={activeTemplateId}
+              starsById={labStarsById}
+              onSelect={handleSelectTemplate}
+            />
 
             {/* Starter / Blank canvas (ghi đè canvas → hỏi xác nhận nếu đã chỉnh sửa) */}
             <div className="inline-flex rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-muted)] p-0.5 text-[11px] font-bold">
@@ -3142,9 +3145,17 @@ export const SdLabView: React.FC = () => {
                     <h2 className="font-mono text-xs font-extrabold text-[var(--dts-ink)] sm:text-sm">
                       {pick(activeChallenge.title, lang)}
                     </h2>
-                    <span className="font-mono text-[10px] text-[var(--dts-ink-muted)]">
-                      {'★'.repeat(activeChallenge.difficulty)}
-                      {'☆'.repeat(3 - activeChallenge.difficulty)} · {activeChallenge.xp} XP
+                    <LabLevelBadge level={activeChallenge.level} lang={lang} />
+                    <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-[var(--dts-ink-muted)]">
+                      <LabDifficultyPips
+                        value={activeChallenge.difficulty}
+                        lang={lang}
+                        level={activeChallenge.level}
+                      />
+                      <span>
+                        {activeChallenge.xp} XP · ~{activeChallenge.estMinutes}{' '}
+                        {lang === 'en' ? 'min' : 'phút'}
+                      </span>
                     </span>
                   </div>
                   {briefExpanded && (
@@ -4306,16 +4317,43 @@ export const SdLabView: React.FC = () => {
                 <div className="rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel-elevated)] p-3 space-y-2">
                   <div className="font-mono text-[10px] font-extrabold uppercase tracking-wider text-[var(--dts-ink-muted)]">
                     {lang === 'en'
-                      ? `Structural Guidance (${warnings.filter((w) => w.code !== 'SPOF').length})`
-                      : `Khuyến nghị cấu trúc (${warnings.filter((w) => w.code !== 'SPOF').length})`}
+                      ? `Structural Guidance (${integrityIssues.length + warnings.filter((w) => w.code !== 'SPOF').length})`
+                      : `Khuyến nghị cấu trúc (${integrityIssues.length + warnings.filter((w) => w.code !== 'SPOF').length})`}
                   </div>
 
+                  {integrityIssues.length > 0 && (
+                    <div className="space-y-1.5">
+                      {integrityIssues.map((issue, idx) => (
+                        <button
+                          key={`integrity-${issue.code}-${issue.nodeId ?? idx}`}
+                          type="button"
+                          onClick={() => {
+                            if (issue.nodeId) {
+                              setSelection({ kind: 'node', id: issue.nodeId });
+                              setRightTab('inspector');
+                            }
+                          }}
+                          className="w-full rounded-lg border border-[var(--dts-line-strong)] bg-[var(--dts-rose-soft)] p-2 text-left transition-colors hover:border-[var(--dts-border)]"
+                        >
+                          <div className="font-mono text-[11px] font-extrabold text-[var(--dts-ink)]">
+                            {lang === 'en' ? 'Data never reaches storage' : 'Dữ liệu không tới nơi lưu trữ'}
+                          </div>
+                          <p className="mt-0.5 text-[11px] leading-snug text-[var(--dts-ink-soft)]">
+                            {pick(issue.message, lang)}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {warnings.filter((w) => w.code !== 'SPOF').length === 0 ? (
+                    integrityIssues.length > 0 ? null : (
                     <p className="text-[11px] text-[var(--dts-ink-muted)]">
                       {lang === 'en'
                         ? 'No structural warnings! Timeouts, jitter, and resilience settings look solid.'
                         : 'Không có cảnh báo cấu trúc nào. Các thiết lập timeout, jitter và bảo vệ đều hợp lý.'}
                     </p>
+                    )
                   ) : (
                     <div className="space-y-1.5">
                       {warnings
@@ -4371,8 +4409,8 @@ export const SdLabView: React.FC = () => {
                     </div>
                     <p className="text-[11.5px] leading-relaxed text-[var(--dts-ink-soft)]">
                       {lang === 'en'
-                        ? 'You are currently in Free Sandbox mode. Pick one of the 5 graded challenges below to test your architecture against latency, error, SPOF, and cost constraints:'
-                        : 'Bạn đang ở chế độ Sandbox Tự do. Hãy chọn 1 trong 5 bài toán dưới đây để thiết kế và chấm điểm tự động theo SLO, cấu trúc và ngân sách:'}
+                        ? `You are currently in Free Sandbox mode. Pick one of the ${LAB_CHALLENGES.length} graded challenges below to test your architecture against latency, error, SPOF, and cost constraints:`
+                        : `Bạn đang ở chế độ Sandbox Tự do. Hãy chọn 1 trong ${LAB_CHALLENGES.length} bài toán dưới đây để thiết kế và chấm điểm tự động theo SLO, cấu trúc và ngân sách:`}
                     </p>
                     <div className="space-y-1.5">
                       {LAB_CHALLENGES.map((ch) => {
@@ -4385,8 +4423,11 @@ export const SdLabView: React.FC = () => {
                             className="flex w-full items-center justify-between gap-2 rounded-xl border border-[var(--dts-line-strong)] bg-[var(--dts-panel)] p-2.5 text-left hover:border-[var(--dts-border)]"
                           >
                             <div className="min-w-0">
-                              <div className="font-mono text-[11px] font-extrabold text-[var(--dts-ink)]">
-                                {ch.code}: {pick(ch.title, lang)}
+                              <div className="flex items-center gap-1.5">
+                                <LabLevelBadge level={ch.level} lang={lang} />
+                                <span className="min-w-0 truncate font-mono text-[11px] font-extrabold text-[var(--dts-ink)]">
+                                  {ch.code}: {pick(ch.title, lang)}
+                                </span>
                               </div>
                               <div className="mt-0.5 line-clamp-2 text-[11px] text-[var(--dts-ink-muted)]">
                                 {pick(ch.summary, lang)}
@@ -4501,6 +4542,11 @@ export const SdLabView: React.FC = () => {
                                 </div>
                               </div>
 
+                              {row.category === 'integrity' && !row.pass ? (
+                                <p className="pl-5 text-[11px] leading-snug text-[#dc3d43]">
+                                  {pick(row.actual, lang)}
+                                </p>
+                              ) : (
                               <div className="flex items-center justify-between gap-2 pl-5 font-mono text-[10.5px]">
                                 <span
                                   className={cn(
@@ -4518,6 +4564,7 @@ export const SdLabView: React.FC = () => {
                                   {pick(row.target, lang)}
                                 </span>
                               </div>
+                              )}
 
                               {row.worstAtSec !== undefined && !row.pass && (
                                 <div className="pl-5">

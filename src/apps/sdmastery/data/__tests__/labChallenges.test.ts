@@ -23,6 +23,19 @@ describe('LAB challenges: reference / starter / blank', () => {
         expect(r.stars).toBe(0);
       });
 
+      it('integrity row comes first and is required', () => {
+        const r = gradeLabChallenge(c, c.referenceSolution.model);
+        expect(r.rows[0].id).toBe('integrity:data-flow');
+        expect(r.rows[0].category).toBe('integrity');
+        expect(r.rows[0].required).toBe(true);
+      });
+
+      it('starter (valid data flow, failing SLOs) scores below the 69 fail ceiling', () => {
+        const r = gradeLabChallenge(c, c.starter.model);
+        expect(r.rows[0].pass).toBe(true);
+        expect(r.score).toBeLessThanOrEqual(65);
+      });
+
       it('blank fails', () => {
         const r = gradeLabChallenge(c, c.blank.model);
         expect(r.passed).toBe(false);
@@ -66,6 +79,7 @@ describe('alternative valid designs are not blocked by topology', () => {
     delete m.routes!.lb;
     m.links.push({ id: 'client-app', from: 'client', to: 'app', mode: 'sync', carries: 'rw', timeoutMs: 1500 });
     const r = gradeLabChallenge(c1, m);
+    expect(r.rows.find((x) => x.id === 'integrity:data-flow')!.pass).toBe(true);
     expect(r.rows.find((x) => x.id === 'topo:topo-lb')!.pass).toBe(false);
     expect(r.passed).toBe(true);
     expect(r.stars).toBeLessThan(3);
@@ -81,6 +95,7 @@ describe('alternative valid designs are not blocked by topology', () => {
     const db = m.nodes.find((n) => n.id === 'db')!;
     db.params = { ...db.params, sizeFactor: 4, poolSize: 48 };
     const r = gradeLabChallenge(c1, m);
+    expect(r.rows.find((x) => x.id === 'integrity:data-flow')!.pass).toBe(true);
     expect(r.rows.find((x) => x.id === 'topo:topo-cache')!.pass).toBe(false);
     // Whatever the verdict, no topology row may be the reason it fails.
     const failedRequired = r.rows.filter((x) => x.required && !x.pass);
@@ -165,5 +180,24 @@ describe('LAB-05 hot key', () => {
     const ns = m.nodes.find((n) => n.kind === 'nosql')!;
     ns.params = { ...ns.params, shards: 4, hotKeySalt: 2 };
     expect(gradeLabChallenge(c5, m).passed).toBe(true);
+  });
+});
+
+describe('scoring formula', () => {
+  const c1 = byId('lab-01-read-api');
+
+  it('cost points are not awarded when SLOs fail (a design that does nothing is cheap)', () => {
+    const r = gradeLabChallenge(c1, c1.starter.model);
+    expect(r.rows.find((x) => x.id === 'budget:cost')!.pass).toBe(true);
+    expect(r.rows.filter((x) => x.category === 'slo').some((x) => !x.pass)).toBe(true);
+    expect(r.score).toBeLessThan(40);
+  });
+
+  it('a passing design still scores >= 70', () => {
+    const m = clone(c1.referenceSolution.model);
+    const app = m.nodes.find((n) => n.id === 'app')!;
+    app.replicas = 8;
+    app.params = { ...app.params, replicas: 8 };
+    expect(gradeLabChallenge(c1, m).score).toBeGreaterThanOrEqual(70);
   });
 });

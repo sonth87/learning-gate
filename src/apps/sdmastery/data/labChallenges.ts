@@ -22,6 +22,8 @@ import {
   type CanvasPos,
   type GridPos,
 } from '../components/lab/canvasGeometry';
+import { LAB_EXTRA_CHALLENGES } from './labs';
+import { checkDataFlowIntegrity, type IntegrityIssue } from './labIntegrity';
 
 /** Kích thước vùng dùng bởi các preset (col 0..6, row 0..4). Canvas Phòng Lab là vô hạn — toạ độ có thể vượt / âm. */
 export const LAB_GRID_COLS = 7;
@@ -101,11 +103,42 @@ export interface LabChallengeScenario {
   };
 }
 
+/** Cấp độ bài Lab (nhóm trong bộ chọn bài). */
+export type LabLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+export const LAB_LEVELS: readonly LabLevel[] = ['beginner', 'intermediate', 'advanced', 'expert'];
+
+export const LAB_LEVEL_META: Record<
+  LabLevel,
+  { label: BiText; difficulty: 1 | 2 | 3 | 4; xp: number }
+> = {
+  beginner: { label: { vi: 'Nhập môn', en: 'Beginner' }, difficulty: 1, xp: 30 },
+  intermediate: { label: { vi: 'Trung cấp', en: 'Intermediate' }, difficulty: 2, xp: 40 },
+  advanced: { label: { vi: 'Nâng cao', en: 'Advanced' }, difficulty: 3, xp: 50 },
+  expert: { label: { vi: 'Chuyên gia', en: 'Expert' }, difficulty: 4, xp: 60 },
+};
+
+/** Bài học gốc (SystemDesignCore, `content/sysdesign/_source/sdc/…`) mà bài Lab chuyển thể / luyện tập. */
+export interface LabSourceRef {
+  /** Đường dẫn trong `_source/sdc/`, ví dụ `phase-2/lessons/lesson-2-caching.mdx`. */
+  path: string;
+  phase: number;
+  title: BiText;
+}
+
 export interface LabChallengeSpec {
   id: string;
   code: string;
-  difficulty: 1 | 2 | 3;
+  level: LabLevel;
+  /** Độ khó 1–4, luôn bằng `LAB_LEVEL_META[level].difficulty`. */
+  difficulty: 1 | 2 | 3 | 4;
+  /** XP cơ bản, luôn bằng `LAB_LEVEL_META[level].xp`. */
   xp: number;
+  /** Thẻ khái niệm ngắn (song ngữ) hiển thị ở bộ chọn bài. */
+  concepts: BiText[];
+  /** Thời gian ước tính (phút). */
+  estMinutes: number;
+  sourceRef: LabSourceRef[];
   title: BiText;
   summary: BiText;
   prompt: BiText;
@@ -123,7 +156,7 @@ export interface LabChallengeSpec {
 
 export interface LabGradeRow {
   id: string;
-  category: 'topology' | 'slo' | 'structural' | 'cost';
+  category: 'integrity' | 'topology' | 'slo' | 'structural' | 'cost';
   scenarioLabel?: BiText;
   label: BiText;
   required: boolean;
@@ -354,14 +387,21 @@ function requireReachableKinds(
   };
 }
 
-/** 5 bài toán thiết kế có chấm điểm (`design-constraint`) cho T7.1. */
-export const LAB_CHALLENGES: LabChallengeSpec[] = [
+/** 5 bài toán thiết kế gốc (`design-constraint`) cho T7.1; catalog đầy đủ xem `LAB_CHALLENGES`. */
+const LAB_CORE_CHALLENGES: LabChallengeSpec[] = [
   /* ───────────── 1. API ĐỌC NẶNG 5.000 RPS DƯỚI $3.00/GIỜ ───────────── */
   {
     id: 'lab-01-read-api',
     code: 'LAB-01',
+    level: 'beginner',
     difficulty: 1,
-    xp: 40,
+    xp: 30,
+    concepts: [bi('Cache read-through', 'Read-through cache'), bi('Load Balancer', 'Load Balancer'), bi('Scale ngang', 'Horizontal scaling')],
+    estMinutes: 15,
+    sourceRef: [
+      { path: 'phase-2/lessons/lesson-2-caching.mdx', phase: 2, title: bi('Caching', 'Caching') },
+      { path: 'phase-2/lessons/lesson-1-load-balancing.mdx', phase: 2, title: bi('Load Balancing', 'Load Balancing') },
+    ],
     title: bi(
       'API đọc nặng 5.000 RPS dưới $3.00/giờ',
       '5,000 RPS Read-Heavy API Under $3.00/hr'
@@ -634,8 +674,15 @@ export const LAB_CHALLENGES: LabChallengeSpec[] = [
   {
     id: 'lab-02-flash-sale',
     code: 'LAB-02',
+    level: 'intermediate',
     difficulty: 2,
-    xp: 45,
+    xp: 40,
+    concepts: [bi('Queue + Worker', 'Queue + Worker'), bi('Load leveling', 'Load leveling'), bi('DLQ', 'DLQ')],
+    estMinutes: 20,
+    sourceRef: [
+      { path: 'phase-2/lessons/lesson-4-message-queues-async-processing-decoupling-services.mdx', phase: 2, title: bi('Message Queue & xử lý bất đồng bộ', 'Message queues & async processing') },
+      { path: 'phase-4/lessons/lesson-6-asynchronous-processin-queues.mdx', phase: 4, title: bi('Xử lý bất đồng bộ với Queue', 'Asynchronous processing with queues') },
+    ],
     title: bi(
       'Flash Sale Spike 8.000 RPS không làm quá tải DB',
       '8,000 RPS Flash Sale Spike Without Overloading DB'
@@ -983,8 +1030,15 @@ export const LAB_CHALLENGES: LabChallengeSpec[] = [
   {
     id: 'lab-03-zero-spof',
     code: 'LAB-03',
-    difficulty: 2,
-    xp: 45,
+    level: 'advanced',
+    difficulty: 3,
+    xp: 50,
+    concepts: [bi('Không SPOF', 'No SPOF'), bi('Multi-AZ', 'Multi-AZ'), bi('Diễn tập sự cố', 'Failure drill')],
+    estMinutes: 25,
+    sourceRef: [
+      { path: 'phase-3/lessons/lesson-1-reality-of-distributed-systems.mdx', phase: 3, title: bi('Thực tế của hệ phân tán', 'Reality of distributed systems') },
+      { path: 'phase-2/lessons/lesson-1-load-balancing.mdx', phase: 2, title: bi('Load Balancing', 'Load Balancing') },
+    ],
     title: bi(
       'Kiến trúc High-Availability không có SPOF',
       'Zero-SPOF High-Availability Architecture'
@@ -1409,8 +1463,15 @@ export const LAB_CHALLENGES: LabChallengeSpec[] = [
   {
     id: 'lab-04-edge-shield',
     code: 'LAB-04',
+    level: 'intermediate',
     difficulty: 2,
-    xp: 45,
+    xp: 40,
+    concepts: [bi('CDN', 'CDN'), bi('Rate limiting', 'Rate limiting'), bi('Bảo vệ origin', 'Origin shielding')],
+    estMinutes: 20,
+    sourceRef: [
+      { path: 'phase-4/lessons/lesson-3-cdn-and-edge-computing-distributed-cache-gan-user.mdx', phase: 4, title: bi('CDN & Edge', 'CDN & edge computing') },
+      { path: 'phase-4/lessons/lesson-5-rate-limiting-and-load-control.mdx', phase: 4, title: bi('Rate limiting & kiểm soát tải', 'Rate limiting & load control') },
+    ],
     title: bi(
       'Bảo vệ Origin toàn cầu với CDN & Rate Limiter',
       'Global Origin Shielding with CDN & Rate Limiter'
@@ -1735,8 +1796,15 @@ export const LAB_CHALLENGES: LabChallengeSpec[] = [
   {
     id: 'lab-05-sharded-store',
     code: 'LAB-05',
+    level: 'advanced',
     difficulty: 3,
     xp: 50,
+    concepts: [bi('Sharding', 'Sharding'), bi('Khóa nóng', 'Hot key'), bi('Key salting', 'Key salting')],
+    estMinutes: 25,
+    sourceRef: [
+      { path: 'phase-4/lessons/lesson-4-database-scaling-optimization.mdx', phase: 4, title: bi('Mở rộng & tối ưu Database', 'Database scaling & optimization') },
+      { path: 'phase-2/lessons/lesson-3-database.mdx', phase: 2, title: bi('Database', 'Database') },
+    ],
     title: bi(
       'Tầng lưu trữ phân mảnh 10.000 RPS ghi/đọc',
       '10,000 RPS Read/Write Sharded Storage Tier'
@@ -2065,6 +2133,14 @@ export const LAB_CHALLENGES: LabChallengeSpec[] = [
   },
 ];
 
+/**
+ * Catalog đầy đủ: 5 bài gốc + các bài bổ sung trong `labs/` — sắp theo cấp độ rồi theo mã bài.
+ */
+export const LAB_CHALLENGES: LabChallengeSpec[] = [...LAB_CORE_CHALLENGES, ...LAB_EXTRA_CHALLENGES].sort(
+  (a, b) =>
+    LAB_LEVELS.indexOf(a.level) - LAB_LEVELS.indexOf(b.level) || a.code.localeCompare(b.code)
+);
+
 function formatConstraintActual(c: Constraint, r: ConstraintResult): { actual: BiText; target: BiText } {
   switch (c.kind) {
     case 'slo-latency': {
@@ -2112,7 +2188,88 @@ function formatConstraintActual(c: Constraint, r: ConstraintResult): { actual: B
   }
 }
 
+/** Điểm tối đa của thiết kế không giữ được toàn vẹn luồng dữ liệu (không lưu dữ liệu ⇒ không thể điểm cao). */
+export const LAB_INTEGRITY_FAIL_SCORE_CAP = 20;
+
+/** Trọng số các dòng bắt buộc khi tính điểm: SLO nặng nhất, chi phí nhẹ nhất. */
+const REQUIRED_ROW_WEIGHT: Record<LabGradeRow['category'], number> = {
+  integrity: 3,
+  slo: 3,
+  structural: 2,
+  cost: 1,
+  topology: 1,
+};
+
+/**
+ * Điểm 0..100.
+ * - Phần bắt buộc (80đ): tỉ lệ có trọng số của các dòng bắt buộc đạt (integrity/SLO ×3, cấu trúc ×2,
+ *   chi phí ×1). Dòng chi phí chỉ được tính điểm khi MỌI dòng SLO đều đạt — thiết kế rẻ vì chẳng làm gì
+ *   không được thưởng.
+ * - Phần tuỳ chọn (15đ): tỉ lệ dòng tuỳ chọn đạt; khi chưa đạt bài, phần này nhân thêm tỉ lệ bắt buộc
+ *   (không thể kiếm điểm chỉ nhờ vẽ đúng "mẫu").
+ * - +5đ khi đạt bài và chi phí trong mức chuẩn.
+ * - Đạt bài: kẹp vào [70, 100]. Chưa đạt: ≤ 69. Hỏng toàn vẹn dữ liệu: ≤ LAB_INTEGRITY_FAIL_SCORE_CAP.
+ */
+export function computeLabScore(
+  rows: LabGradeRow[],
+  ctx: { allRequiredPass: boolean; integrityPass: boolean; withinParCost: boolean }
+): number {
+  const sloRows = rows.filter((r) => r.category === 'slo');
+  const allSloPass = sloRows.length > 0 && sloRows.every((r) => r.pass);
+  let wTotal = 0;
+  let wPassed = 0;
+  for (const r of rows) {
+    if (!r.required) continue;
+    const w = REQUIRED_ROW_WEIGHT[r.category];
+    wTotal += w;
+    const earned = r.category === 'cost' ? r.pass && allSloPass : r.pass;
+    if (earned) wPassed += w;
+  }
+  const optionalRows = rows.filter((r) => !r.required);
+  const reqRatio = wTotal > 0 ? wPassed / wTotal : 1;
+  const optRatio =
+    optionalRows.length > 0 ? optionalRows.filter((r) => r.pass).length / optionalRows.length : 1;
+  const raw =
+    reqRatio * 80 +
+    optRatio * 15 * (ctx.allRequiredPass ? 1 : reqRatio) +
+    (ctx.withinParCost && ctx.allRequiredPass ? 5 : 0);
+  let score = Math.round(raw);
+  if (ctx.allRequiredPass) return Math.max(70, Math.min(100, score));
+  score = Math.min(69, score);
+  if (!ctx.integrityPass) score = Math.min(LAB_INTEGRITY_FAIL_SCORE_CAP, Math.round(score * 0.3));
+  return Math.max(0, score);
+}
+
 /** Chấm thiết kế kiến trúc hiện tại trên toàn bộ kịch bản, cấu trúc và ngân sách của thử thách. */
+/**
+ * Toàn vẹn luồng dữ liệu của một bài Lab = luật chung (labIntegrity.ts) + thành phần bắt buộc của đề
+ * (node bị khoá trong bản khởi điểm: dịch vụ bên thứ ba, nơi nhận email…) phải còn trên luồng xử lý —
+ * chặn kiểu "lách" bằng cách xoá / rút dây khỏi chính thứ mà bài muốn bạn xử lý.
+ * Dùng chung cho bộ chấm và bảng phân tích trực tiếp.
+ */
+export function checkLabIntegrity(challenge: LabChallengeSpec, model: SystemModel): IntegrityIssue[] {
+  const issues = checkDataFlowIntegrity(model, {
+    readRatio: challenge.scenarios.map((s) => s.readRatio),
+  });
+  const reach = getReachableFromClient(model);
+  for (const id of challenge.starter.lockedNodeIds) {
+    if (id === 'client' || reach.has(id)) continue;
+    const lb =
+      model.nodes.find((n) => n.id === id)?.label ??
+      challenge.starter.model.nodes.find((n) => n.id === id)?.label ??
+      bi(id, id);
+    issues.push({
+      code: 'required-node-unreachable',
+      nodeId: id,
+      message: bi(
+        `“${lb.vi}” là thành phần bắt buộc của đề nhưng không còn nằm trên luồng xử lý — không được xoá hay ngắt nó để né sự cố.`,
+        `“${lb.en}” is a required part of the scenario but is no longer on the request path — removing or disconnecting it to dodge the incident is not allowed.`
+      ),
+    });
+  }
+  return issues;
+}
+
 export function gradeLabChallenge(
   challenge: LabChallengeSpec,
   model: SystemModel
@@ -2143,6 +2300,32 @@ export function gradeLabChallenge(
   }
 
   const rows: LabGradeRow[] = [];
+
+  // 0. Toàn vẹn luồng dữ liệu: request đọc/ghi phải thực sự tới nơi lưu dữ liệu (xem labIntegrity.ts).
+  //    Mô phỏng coi request dừng ở bất kỳ node nào là "đã phục vụ", nên thiếu dòng này thì một thiết kế
+  //    không có database vẫn đạt SLO.
+  const integrityIssues = checkLabIntegrity(challenge, model);
+  const integrityPass = integrityIssues.length === 0;
+  // Ưu tiên chỉ đúng node hỏng; chỉ dùng thông báo tổng quát khi không có node cụ thể nào.
+  const nodeIssues = integrityIssues.filter((i) => i.nodeId);
+  const integrityShown = nodeIssues.length > 0 ? nodeIssues : integrityIssues;
+  rows.push({
+    id: 'integrity:data-flow',
+    category: 'integrity',
+    label: bi(
+      'Toàn vẹn luồng dữ liệu: mọi request đọc/ghi đều tới nơi lưu dữ liệu',
+      'Data-flow integrity: every read/write reaches a data store'
+    ),
+    required: true,
+    pass: integrityPass,
+    actual: integrityPass
+      ? bi('Đạt — không có ngõ cụt', 'Pass — no dead ends')
+      : bi(
+          integrityShown.map((i) => i.message.vi).join(' '),
+          integrityShown.map((i) => i.message.en).join(' ')
+        ),
+    target: bi('Không ngõ cụt, đọc/ghi tới Database', 'No dead ends; reads/writes reach storage'),
+  });
 
   // 1. Topology checks: "mẫu thiết kế khuyến nghị" — KHÔNG chặn đạt bài (nhiều thiết kế hợp lệ khác nhau),
   //    chỉ góp vào điểm thưởng / 3 sao. Điều kiện đạt thực sự nằm ở SLO + quy tắc cấu trúc bắt buộc + chi phí.
@@ -2365,7 +2548,7 @@ export function gradeLabChallenge(
   const patternPass = rows.filter((r) => r.category === 'topology').every((r) => r.pass);
   const withinParCost = costPerHour <= challenge.parCostPerHour * 1.05 + 1e-6;
 
-  // Sao: 1★ = đạt mọi điều kiện bắt buộc (SLO + cấu trúc bắt buộc + ngân sách tối đa);
+  // Sao: 1★ = đạt mọi điều kiện bắt buộc (toàn vẹn dữ liệu + SLO + cấu trúc bắt buộc + ngân sách tối đa);
   // 2★ = thêm các quy tắc cấu trúc tuỳ chọn (timeout / jitter…);
   // 3★ = thêm mẫu thiết kế khuyến nghị (topology) và chi phí trong mức chuẩn (par).
   let stars: 0 | 1 | 2 | 3 = 0;
@@ -2377,14 +2560,7 @@ export function gradeLabChallenge(
     }
   }
 
-  const reqRatio = requiredRows.length > 0 ? reqPassedCount / requiredRows.length : 1;
-  const optRatio = optionalRows.length > 0 ? optPassedCount / optionalRows.length : 1;
-  let score = Math.round(reqRatio * 80 + optRatio * 15 + (withinParCost && allRequiredPass ? 5 : 0));
-  if (allRequiredPass) {
-    score = Math.max(70, Math.min(100, score));
-  } else {
-    score = Math.min(69, score);
-  }
+  const score = computeLabScore(rows, { allRequiredPass, integrityPass, withinParCost });
 
   const par = challenge.parCostPerHour.toFixed(2);
   const summary = allRequiredPass
@@ -2402,9 +2578,14 @@ export function gradeLabChallenge(
             'Đạt 1/3 sao! Thiết kế vượt qua các SLO và ràng buộc bắt buộc. Hoàn thiện thêm các quy tắc cấu trúc (timeout / jitter…) để nâng sao.',
             '1/3 Star! Your design meets the required SLOs and constraints. Address the optional structural rules (timeouts / TTL jitter…) to earn more stars.'
           )
-    : bi(
-        `Chưa đạt (${reqPassedCount}/${requiredRows.length} điều kiện bắt buộc: SLO, quy tắc cấu trúc bắt buộc và ngân sách). Các dòng "mẫu khuyến nghị" chỉ là gợi ý, không chặn đạt bài. Xem bảng đối chiếu bên dưới.`,
-        `Not passed yet (${reqPassedCount}/${requiredRows.length} required checks: SLOs, required structural rules and budget). "Recommended pattern" rows are hints only and never block a pass. Inspect the table below.`
+    : !integrityPass
+      ? bi(
+          `Chưa đạt: dữ liệu không tới được nơi lưu trữ — ${integrityShown[0].message.vi} Mô phỏng có thể trông "nhanh và rẻ" nhưng thực ra request bị bỏ dở, nên điểm bị giới hạn ≤ ${LAB_INTEGRITY_FAIL_SCORE_CAP}.`,
+          `Not passed: data never reaches storage — ${integrityShown[0].message.en} The simulation may look "fast and cheap" but requests are simply dropped, so the score is capped at ${LAB_INTEGRITY_FAIL_SCORE_CAP}.`
+        )
+      : bi(
+        `Chưa đạt (${reqPassedCount}/${requiredRows.length} điều kiện bắt buộc: toàn vẹn dữ liệu, SLO, quy tắc cấu trúc bắt buộc và ngân sách). Các dòng "mẫu khuyến nghị" chỉ là gợi ý, không chặn đạt bài. Xem bảng đối chiếu bên dưới.`,
+        `Not passed yet (${reqPassedCount}/${requiredRows.length} required checks: data-flow integrity, SLOs, required structural rules and budget). "Recommended pattern" rows are hints only and never block a pass. Inspect the table below.`
       );
 
   return {
